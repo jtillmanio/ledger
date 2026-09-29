@@ -251,7 +251,7 @@ Expect **13 tabs** including `RUNS`, `PREREQS`, `Reading Orders`, `EVENTS`,
 **~15 minutes**
 
 1. Sign in at neon.com → **New Project**.
-2. Name `reading`, Postgres 16, region **US East (Ohio)** — closest to you, and
+2. Name `reading`, Postgres 18 (CI's test container matches it), region **US East (Ohio)** — closest to you, and
    where Vercel's default functions run.
 3. On the connection panel, copy the **pooled** string. It has `-pooler` in the
    hostname. The direct string works locally but exhausts connections under
@@ -284,7 +284,7 @@ $env:DATABASE_URL = (Select-String -Path .env -Pattern '^DATABASE_URL=(.*)$').Ma
 psql $env:DATABASE_URL -c "select version()"
 ```
 
-Expect `PostgreSQL 16.x on x86_64-pc-linux-gnu`.
+Expect `PostgreSQL 18.x on x86_64-pc-linux-gnu`.
 
 | Symptom                          | Cause                                                                            |
 | -------------------------------- | -------------------------------------------------------------------------------- |
@@ -1003,7 +1003,7 @@ the same host and database as `DATABASE_URL` (R3-02). Pick one:
 **Branches** → **Create branch** → name it `test`, parent `main`. Open the new
 branch's **Connection details**, tick **Pooled connection** and copy the string.
 
-**B. Local Postgres.** `winget install PostgreSQL.PostgreSQL.16` (or
+**B. Local Postgres.** `winget install PostgreSQL.PostgreSQL.18` (or
 `scoop install postgresql`), then `createdb ledger_test`. The string is
 `postgresql://postgres:<your password>@localhost:5432/ledger_test`.
 

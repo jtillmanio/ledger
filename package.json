@@ -28,11 +28,12 @@
     "test:views": "node scripts/sql.mjs test etl/test_views.sql",
     "test:etl": "py -m unittest discover -s etl -p \"test_*.py\"",
     "test:tokens": "node scripts/check-tokens.mjs",
+    "check:migrations": "node scripts/check-migrations.mjs",
     "seed": "powershell -ExecutionPolicy Bypass -File etl/load.ps1",
     "seed:bash": "bash etl/load.sh",
     "rebuild": "powershell -ExecutionPolicy Bypass -File etl/rebuild.ps1",
     "rebuild:bash": "bash etl/rebuild.sh",
-    "test:all": "npm run test:tokens && npm run test:db:reset && npm test && npm run test:views && npm run test:etl"
+    "test:all": "npm run test:tokens && npm run check:migrations && npm run test:db:reset && npm test && npm run test:views && npm run test:etl"
   },
   "dependencies": {
     "drizzle-orm": "^0.36.0",

@@ -387,7 +387,7 @@ read_events.finished_on            date        NULL, finished_on_precision   tex
 | Layer | Choice | Rationale |
 |---|---|---|
 | Runtime | Next.js 15 App Router, React 19 | Server components render the 641-issue Krakoa run without shipping it to the client twice |
-| Database | Postgres 16 (Neon free tier) | Recursive CTEs, `FILTER`, array aggregation — all three are load-bearing here |
+| Database | Postgres 18 (Neon free tier) | Recursive CTEs, `FILTER`, array aggregation — all three are load-bearing here |
 | Driver | `postgres.js` with `prepare: false` | Required for Neon's transaction-mode pooler |
 | Schema | Drizzle, migrations in git | `drizzle-kit generate` produces reviewable SQL |
 | Auth | HMAC-signed cookie, one shared passcode | 40 lines. `currentUserId()` is the only seam the rest of the app knows about |

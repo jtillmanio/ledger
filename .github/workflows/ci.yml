@@ -9,7 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        # Neon's major version (backup.yml's PG_MAJOR says the same). A view or
+        # migration that works here then behaves the same on the live database.
+        image: postgres:18
         env:
           POSTGRES_PASSWORD: test
           POSTGRES_DB: reading_test
@@ -26,6 +28,8 @@ jobs:
       APP_PASSCODE: ci
     steps:
       - uses: actions/checkout@v7
+        # check:migrations diffs drizzle/ against main, so it needs main's history.
+        with: { fetch-depth: 0 }
       - uses: actions/setup-node@v7
         with: { node-version-file: .nvmrc, cache: npm }   # one Node version: .nvmrc = engines.node = Vercel
       - uses: actions/setup-python@v7
@@ -35,6 +39,9 @@ jobs:
       - run: npx tsc --noEmit
       - run: npm run lint
       - run: npm run test:tokens   # colour tokens: parity, hue distance, on-fill contrast (D-24)
+      # Journal and files agree, a drop or retype ships a down file, schema.ts has
+      # no ungenerated change, and no migration already on main was edited (rule 3).
+      - run: npm run check:migrations
       # Applies drizzle/*.sql through drizzle-kit migrate, then etl/views.sql:
       # the same path a rebuild takes, so a broken migration cannot ship green.
       - run: npm run test:db:reset

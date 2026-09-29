@@ -45,7 +45,7 @@ even on Windows.
 ```powershell
 npm run dev                 # local, needs .env
 npm test                    # vitest; needs TEST_DATABASE_URL (never DATABASE_URL), refuses without it
-npm run test:all            # test:tokens + test:db:reset + vitest + test:views + test:etl, what CI runs
+npm run test:all            # test:tokens + check:migrations + test:db:reset + vitest + test:views + test:etl, what CI runs
 npm run test:db:reset       # rebuild the TEST database: drizzle-kit migrate, then etl/views.sql
 npm run lint                # eslint, zero warnings
 npx tsc --noEmit            # typecheck
@@ -73,6 +73,8 @@ npm run rebuild             # drop, migrate from zero, extract, load, test_views
 npm run test:views          # etl/test_views.sql against TEST_DATABASE_URL; rolls back
 npm run test:etl            # py -m unittest over etl/test_*.py, no network
 npm run test:tokens         # colour tokens: mockups = globals.css, hue distance, on-fill contrast; no DB
+npm run check:migrations    # journal = files, drop/retype has a drizzle/down file, schema.ts fully generated,
+                            # no migration already on main edited (standing rule 3); no DB
 ```
 
 ## Non-obvious rules

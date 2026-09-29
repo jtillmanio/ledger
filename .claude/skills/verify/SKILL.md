@@ -15,10 +15,12 @@ npm run test:all
 npm run build
 ```
 
-`test:all` is the same set CI runs: `test:tokens`, `test:db:reset` (migrations
-plus `etl/views.sql` on the test database), vitest, `test:views` and
-`test:etl`. It needs `TEST_DATABASE_URL`. If that is unset, run the suites that
-don't need a database (`test:tokens`, `test:etl`), say plainly that the others
+`test:all` is the same set CI runs: `test:tokens`, `check:migrations` (journal,
+down files, ungenerated schema changes, edits to migrations already on `main`),
+`test:db:reset` (migrations plus `etl/views.sql` on the test database), vitest,
+`test:views` and `test:etl`. It needs `TEST_DATABASE_URL`. If that is unset, run
+the suites that don't need a database (`test:tokens`, `check:migrations`,
+`test:etl`), say plainly that the others
 ran only in CI, and never point them at `DATABASE_URL`.
 
 This is the local half of *Test on the branch* in `.claude/rules/git.md`. CI,
