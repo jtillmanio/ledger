@@ -507,4 +507,5 @@ needed.
    wasted effort.
 3. **Never let a deploy auto-migrate.** Vercel builds on every push, and there
    is no undo. Migrations reach the live database only through the Release
-   workflow, started by hand after a merge (START-HERE Step 13).
+   workflow, started by hand after a merge (START-HERE Step 13). A preview
+   build migrates its own throwaway Neon branch, never live (10f).

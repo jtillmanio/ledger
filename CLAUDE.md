@@ -223,7 +223,9 @@ npm run test:tokens         # colour tokens: mockups = globals.css, hue distance
   views and promotes, in that order. It is the only path a migration takes to
   the live database: never tell anyone to run `db:migrate`, `db:push` or
   `db:views` against `DATABASE_URL` once the repo variable `LEDGER_LIVE` is
-  `true`. Before that, a schema change goes through `npm run rebuild`.
+  `true`. Before that, a schema change goes through `npm run rebuild`. A
+  preview build migrates only its own Neon branch (`preview/<git branch>`), and
+  `scripts/vercel-build.mjs` refuses one whose database is the live host.
 - **Tests touch `TEST_DATABASE_URL` and nothing else.** `DATABASE_URL` is the live
   Neon ledger. `scripts/lib/testdb.mjs` refuses when the test URL is unset or
   names the same host and database, and `npm test` fails at once. Never point a

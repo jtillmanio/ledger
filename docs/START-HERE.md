@@ -883,7 +883,8 @@ Confirm `.env` and `seed/` are **absent** from the file list.
 1. vercel.com → **Add New → Project** → import `ledger`.
 2. Framework preset **Next.js**. Leave build settings alone.
 3. Environment variables — all five, scoped to **Production, Preview, and
-   Development**:
+   Development**, except `DATABASE_URL`: **Production and Development only**.
+   A preview gets its own copy of the database (10f), never the live one:
 
 | Key              | Value                                                                       |
 | ---------------- | --------------------------------------------------------------------------- |
@@ -1017,6 +1018,45 @@ failure. The build log says which files it compared.
 GitHub's approval gate for deployments (environments with required reviewers)
 is not available to a private repo on the free plan. Release has no second
 approver: only you can start it, and it snapshots before it migrates.
+
+### 10f. Preview databases — a PR never touches the live ledger
+
+**~10 minutes, once.** Each PR's preview runs that PR's code on its own Neon
+branch, named `preview/<git branch>` and copied from live when the branch
+first deploys. The Vercel build migrates **that branch** to the PR's schema
+before building (`scripts/vercel-build.mjs`). You click around real data, and
+nothing you do there reaches the ledger. The live database is migrated only by
+Release (Step 13). The build refuses to migrate anything it cannot prove is not
+live.
+
+1. **Vercel: take `DATABASE_URL` out of Preview.** Settings → Environment
+   Variables → `DATABASE_URL` → edit → untick **Preview**. Production and
+   Development keep it. The integration will not install over it.
+2. **Vercel: name the live host.** Add `LEDGER_LIVE_DB_HOST`, **Preview only**,
+   value the host part of your live `DATABASE_URL` (between `@` and `/`, e.g.
+   `ep-…-pooler.c-2.us-east-2.aws.neon.tech`). It is a hostname, not a secret.
+   A preview whose database has that host refuses to build.
+3. **Neon: connect Vercel.** Neon console → your project → **Integrations →
+   Vercel → Add** (the *Neon-managed* integration, for an existing project).
+   Pick the `ledger` Vercel project, tick **Preview**, and tick **Automatically
+   delete obsolete Neon branches**. Leave its build-command advice alone:
+   `vercel.json` already runs the migration.
+
+**Verify:** push any PR. The Vercel build log starts `vercel-build (preview):
+migrate → views → next build`, and the Neon console lists `preview/<branch>`.
+Open the preview: it shows your data.
+
+| Symptom                                               | Fix                                                                                          |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `This preview has no DATABASE_URL`                    | Step 3 isn't done, or Preview isn't ticked in the integration                                |
+| `LEDGER_LIVE_DB_HOST is not set`                      | Step 2                                                                                        |
+| `This preview's DATABASE_URL is the live database`    | Step 1: `DATABASE_URL` is still in Preview                                                    |
+| `migrate failed` after regenerating the PR's migration | The branch already ran the old one. Delete `preview/<branch>` in Neon and redeploy           |
+| `migrate failed` on a migration not written for existing rows (0.8a) | Expected before cutover. Test that PR locally against `TEST_DATABASE_URL` instead |
+
+Neon Free allows 10 branches per project. Main, `test`, one per open PR and
+Release's two snapshots fit. Merged branches' previews are deleted by step 3's
+option the next time any preview deploys.
 
 **Done with Part 2 when:** you can mark an issue read from your phone, and the
 Actions tab shows one successful backup.
@@ -1189,7 +1229,8 @@ try things, not to keep things.
 
 **Never let a deploy auto-migrate.** Vercel builds on every push, and an
 automatic migration on a bad push has no undo. That is why the migration is a
-step of Release, which only you start, and not of the build.
+step of Release, which only you start, and not of the build. The one build that
+migrates is a preview, on its own throwaway Neon branch (10f).
 
 ---
 
