@@ -14,6 +14,15 @@ these. Tick them here; START-HERE has the commands.
       D-R3-2). START-HERE → *Test database*. Until this is set, `npm test` refuses
       to run — by design.
 
+## Releases (START-HERE 10e), before the next merge to `main`
+
+- [ ] **Vercel:** turn off *Auto-assign Custom Production Domains* (Settings →
+      Environments → Production). Until then a merge still goes live at once.
+- [ ] **Secrets** `VERCEL_TOKEN` and `NEON_API_KEY`, **variables**
+      `VERCEL_SCOPE`, `NEON_PROJECT_ID` and `LEDGER_LIVE=false`.
+- [ ] **One dry run of Release** is green (Actions → Release → Dry run).
+- [ ] At Step 14, set the `LEDGER_LIVE` variable to `true` alongside `.env`.
+
 ## Prerequisite audit (data work in `Comics.xlsx`, PREREQS tab)
 
 The dashboards' readiness numbers are wrong until this is done (D-7). Nothing is
