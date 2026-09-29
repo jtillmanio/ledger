@@ -1,0 +1,120 @@
+import { requireUserId } from "@/lib/auth";
+import { listBooks, readWithoutYear, seriesProgress, yearSummary } from "@/db/queries";
+import Link from "next/link";
+import { seriesAllHref, seriesView } from "@/lib/series-list";
+
+export const dynamic = "force-dynamic";
+
+type Search = { status?: string; genre?: string; year?: string; q?: string; series?: string };
+
+const GENRES = ["Fantasy", "Science Fiction", "Thriller", "Nonfiction", "Horror",
+  "Young Adult", "Contemporary", "Graphic Novel", "Classics", "Historical Fiction"];
+
+export default async function Books({ searchParams }: { searchParams: Promise<Search> }) {
+  const { status, genre, year, q, series: seriesParam } = await searchParams;
+  const userId = await requireUserId();
+
+  const noYear = year === "none";
+  const [books, years, series, unyeared] = await Promise.all([
+    listBooks(userId, {
+      status, genre, q, noYear,
+      year: year && !noYear ? Number(year) : undefined,
+    }),
+    yearSummary(userId),
+    seriesProgress(userId),
+    readWithoutYear(userId),
+  ]);
+  // listBooks caps its page; the count is the whole match (R2-06).
+  const matched = books[0]?.total ?? 0;
+  const seriesList = seriesView(series, seriesParam);
+
+  const byYear = new Map<number, number>();
+  for (const y of years) byYear.set(y.year, (byYear.get(y.year) ?? 0) + Number(y.books));
+  const yearList = [...byYear.entries()].sort((a, b) => b[0] - a[0]);
+
+  return (
+    <main>
+      <h1>Books</h1>
+      <p className="muted small mono">
+        {books.length === matched
+          ? `${matched.toLocaleString()} shown`
+          : `${books.length.toLocaleString()} of ${matched.toLocaleString()} shown — search or filter to narrow`}
+      </p>
+
+      <form action="/books" className="filters" style={{ width: "100%" }}>
+        <input type="search" name="q" defaultValue={q ?? ""}
+               placeholder="Search title or author" aria-label="Search books" />
+      </form>
+
+      <div className="filters">
+        <Link href="/books" className="chip" aria-current={!status && !genre && !year}>Everything</Link>
+        <Link href="/books?status=reading" className="chip" aria-current={status === "reading"}>Reading</Link>
+        <Link href="/books?status=to_read" className="chip" aria-current={status === "to_read"}>To read</Link>
+        <Link href="/books?status=read" className="chip" aria-current={status === "read"}>Read</Link>
+      </div>
+
+      <div className="filters">
+        {yearList.map(([y, n]) => (
+          <Link key={y} href={`/books?year=${y}`} className="chip" aria-current={year === String(y)}>
+            {y} <span className="mono">{n}</span>
+          </Link>
+        ))}
+        {/* Read books with no finished year: without this the chips sum to fewer
+            than the Read chip and nothing on the page reaches the rest (R2-08). */}
+        {unyeared > 0 && (
+          <Link href="/books?year=none" className="chip" aria-current={noYear}>
+            No year <span className="mono">{unyeared}</span>
+          </Link>
+        )}
+      </div>
+
+      <div className="filters">
+        {GENRES.map((g) => (
+          <Link key={g} href={`/books?genre=${encodeURIComponent(g)}`} className="chip"
+                aria-current={genre === g}>{g}</Link>
+        ))}
+      </div>
+
+      <div className="rows">
+        {books.length === 0 && <div className="empty">Nothing matches. Try a broader filter.</div>}
+        {books.map((b) => (
+          <div key={b.id} className="row">
+            <span className="row-head">
+              <span className="row-title">{b.title}</span>
+              <span className="row-meta mono">
+                {b.finished_year ?? b.planned_year ?? ""}
+                {b.word_count ? ` · ${Math.round(b.word_count / 1000)}k` : ""}
+              </span>
+            </span>
+            <span className="row-sub">
+              {[b.author, b.series && `${b.series}${b.series_position ? ` #${b.series_position}` : ""}`,
+                b.genre].filter(Boolean).join(" · ")}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <h2>Series <span className="muted small mono">{seriesList.total}</span></h2>
+      <div className="rows">
+        {seriesList.shown.map((s) => (
+          <div key={s.series_id} className="row">
+            <span className="row-head">
+              <span className="row-title">{s.name}</span>
+              <span className="row-meta mono">{s.books_read}/{s.total_books}</span>
+            </span>
+            {s.author && <span className="row-sub">{s.author}</span>}
+            <span className="measure">
+              <span style={{ width: `${Math.round((s.pct ?? 0) * 100)}%` }} />
+            </span>
+          </div>
+        ))}
+      </div>
+      {seriesList.cut && (
+        <p className="muted small mono">
+          {seriesList.shown.length} of {seriesList.total} series ·{" "}
+          <Link href={seriesAllHref({ status, genre, year, q })}>Show all {seriesList.total}</Link>
+        </p>
+      )}
+    </main>
+  );
+}

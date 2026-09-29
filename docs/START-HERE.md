@@ -1,0 +1,1282 @@
+# Start here
+
+**This is the only document you read top to bottom.** It runs from unzipping
+the project to using the app daily, in order, with every command.
+
+Everything else is reference you open when this file sends you there:
+
+| File                  | Open it when                                                                         |
+| --------------------- | ------------------------------------------------------------------------------------ |
+| `HANDOFF.md`          | Starting a new Claude conversation, or you forgot why a decision was made            |
+| `CLAUDE-CODE.md`      | You're in Part 3 and want the technique — prompts, session hygiene, review standards |
+| `TASKS.md`            | Every build session. One task at a time                                              |
+| `FEATURES.md`         | Deciding scope, or looking up a schema addition                                      |
+| `design/mockups.html` | Building any screen. Authoritative for layout and copy                               |
+| `DIAGRAMS.md`         | You want the schema or data flow visually                                            |
+| `ARCHITECTURE.md`     | You want the reasoning behind the schema                                             |
+
+**No command appears in two documents.** If it's sequential, it's here.
+
+---
+
+## What you're signing up for
+
+About 14 hours of your own time across roughly six weeks, most of it waiting on
+Claude Code rather than typing. Ongoing cost: **$0/month**.
+
+| Part                      | Steps | Your time                              | Elapsed   |
+| ------------------------- | ----- | -------------------------------------- | --------- |
+| **1. Setup**              | 1–4   | 1 hr 15 min                            | day 1     |
+| **2. Migrate and deploy** | 5–10  | 2 hr 30 min                            | day 1–2   |
+| **3. Build**              | 11–13 | ~12 hrs across 7 sittings              | weeks 1–8 |
+| **4. Cut over**           | 14    | 1 hr, then a month of weekly checks    | weeks 8–12 |
+| **5. Everything after**   | 15    | open-ended                             | ongoing   |
+
+Steps 5 through 10 should happen close together — the migration is easier to
+verify while the spreadsheet export is fresh.
+
+---
+
+# Part 1 — Setup
+
+## Step 1 — Unzip the project
+
+**~5 minutes**
+
+1. Save `reading-tracker.zip` somewhere permanent. Not Downloads — this becomes
+   a git repo you'll work in for months. `C:\dev\` or `%USERPROFILE%\projects\`
+   are both fine.
+2. Right-click → **Extract All**. You get a `reading-tracker` folder.
+3. Open PowerShell and move into it:
+
+```powershell
+cd C:\dev\reading-tracker
+dir
+```
+
+Note: the root directory name was changed from `reading-tracker` to `ledger`.
+
+### Verify
+
+You should see nine markdown files, plus `src/`, `etl/`, `design/`,
+`.github/`, `.claude/`, `package.json`, `.env.example`.
+
+```powershell
+Test-Path etl/extract.py, src/db/schema.ts, design/mockups.html, etl/data/volume_map.csv
+```
+
+Four `True` values.
+
+**If `.claude` and `.github` are missing:** Windows Explorer hides
+dot-directories in some configurations. Check with `dir -Force`. If they really
+are absent, re-extract with 7-Zip rather than the built-in extractor.
+
+---
+
+## Step 2 — Install the tools
+
+**~30 minutes, mostly waiting**
+
+Run everything in **PowerShell**, not CMD. Your prompt shows `PS C:\>` in
+PowerShell.
+
+```powershell
+winget install OpenJS.NodeJS.LTS
+winget install Python.Python.3.12
+winget install PostgreSQL.PostgreSQL.16
+winget install Git.Git
+winget install GitHub.cli
+```
+
+The PostgreSQL installer asks for a superuser password. You will never use it —
+this is only for the `psql` client — but write it down anyway.
+
+**Close and reopen PowerShell**, then:
+
+```powershell
+py -m pip install pandas openpyxl
+```
+
+### Install Claude Code
+
+```powershell
+irm https://claude.ai/install.ps1 | iex
+```
+
+Close and reopen the terminal again. Claude Code runs natively on Windows; WSL
+is not required. Having Git for Windows installed (above) gives it the Bash
+tool via Git Bash, which this repo's `.sh` scripts want.
+
+### Verify
+
+```powershell
+node -v          # v22.x is what CI and Vercel run (.nvmrc, package.json engines); a newer local Node works, npm just warns EBADENGINE
+py -V            # Python 3.12.x
+psql --version   # psql (PostgreSQL) 16.x
+git --version    # git version 2.x
+gh --version     # gh version 2.x
+claude --version
+py -c "import pandas, openpyxl; print('ok')"
+```
+
+All seven must succeed.
+
+**If `psql` is not found**, the installer put it outside PATH:
+
+```powershell
+$env:Path += ";C:\Program Files\PostgreSQL\16\bin"
+[Environment]::SetEnvironmentVariable("Path", $env:Path, "User")
+```
+
+Reopen PowerShell and re-check.
+
+### Three Windows details that will otherwise cost you an hour
+
+1. **Use `py`, not `python`.** On Windows, `python` sometimes resolves to a
+   Microsoft Store stub that exits silently with no error.
+2. **psql's `\copy` needs forward slashes** in paths, even on Windows.
+   `etl/load.ps1` handles this; remember it if you write your own SQL.
+3. **Use Windows Terminal**, not the legacy console host. It renders the Claude
+   Code TUI properly; the old host mangles it.
+
+### Set your editor
+
+```powershell
+$env:EDITOR = "code --wait"     # or notepad
+[Environment]::SetEnvironmentVariable("EDITOR", "code --wait", "User")
+```
+
+This matters in Part 3 — `Ctrl+G` opens a Claude Code plan in your editor so you
+can edit it before approving.
+
+### Create three free accounts
+
+[github.com](https://github.com) · [neon.com](https://neon.com) ·
+[vercel.com](https://vercel.com). No card required for any of them. Doing this
+now makes steps 6 and 10 faster.
+
+---
+
+## Step 3 — Review the plan
+
+**~45 minutes · the cheapest correction point in the project**
+
+Changing a task description costs nothing. Changing shipped code costs a
+sitting. Changing a schema decision after data accumulates costs a migration.
+
+1. Read `FEATURES.md` end to end. Parts 1 and 2 are scope, Part 2d is the
+   metrics pass, Part 5 is the schema those imply.
+2. Open `design/mockups.html` in a browser — double-click it, no server needed.
+   Click through all 40 screens in the left nav. Toggle **Phone/Desktop** and
+   **Light/Dark** on at least the run detail and books dashboard.
+3. Skim `TASKS.md` for ordering. You don't need every acceptance check, but
+   confirm the phase order matches your priorities.
+
+### Decisions
+
+All settled 2026-09-20 (`docs/review/decisions.md`), matching HANDOFF §8: pace in words everywhere; ranking-only ratings; finished eras collapsed with a count on runs over 100 issues; top-books capped at 10; franchises ordered by release; the run list with no track filter is grouped track → block; "watched recently" sits on the watch screen.
+
+**Done when:** you've noted your corrections, or confirmed the plan as it
+stands.
+
+---
+
+## Step 4 — Confirm the volume map
+
+**~15 minutes**
+
+`volume_map.csv` is already reviewed and complete — **67 approved rules across
+61 series**, zero unmatched labels. This step is a sanity check, not work.
+
+Open it in Excel or a text editor. If you edit it in Excel, **save as CSV
+UTF-8**, not the default `CSV (Comma delimited)`, or the em dashes in the notes
+column come back mangled.
+
+### What the columns do
+
+| Column                    | Meaning                                                                          |
+| ------------------------- | -------------------------------------------------------------------------------- |
+| `series`                  | The title as written in your sheet, no year, no issue number                     |
+| `run_id`                  | Optional. Scopes the rule to one run — how Black Cat's two volumes are separated |
+| `issue_from` / `issue_to` | Optional. Scopes by issue number — how Incredible Hulk splits at #102            |
+| `proposed_year`           | The volume year to insert                                                        |
+| `approved`                | `yes` applies it. Anything else is ignored                                       |
+| `confidence`              | `high` / `suggested` / `review` / `low` / `resolved`                             |
+| `note`                    | The evidence, usually drawn from your own run assignments                        |
+
+Rules match most-specific-first: run + range, then run, then range, then
+series-wide.
+
+**Done when:** you've confirmed nothing looks wrong. The 533 `low` rows are
+series never written with a year anywhere — almost all genuinely single-volume,
+and correctly left alone.
+
+---
+
+# Part 2 — Migrate and deploy
+
+## Step 5 — Export the workbooks
+
+**~5 minutes**
+
+1. Open the Comics sheet in Google Sheets.
+2. **File → Download → Microsoft Excel (.xlsx)**.
+3. Same for the Books sheet.
+4. Move both into the repo root and rename them exactly:
+
+```powershell
+cd C:\dev\reading-tracker
+# after moving the downloads here:
+Move-Item "Comics (4).xlsx" etl\data\Comics.xlsx
+Move-Item   "Books (1).xlsx"  etl\data\Books.xlsx
+```
+
+The export carries cached formula results, which is what the ETL reads. It never
+evaluates a formula — which matters, because Excel can't run your Google-native
+`QUERY()` and `ARRAYFORMULA()` calls.
+
+### Verify
+
+```powershell
+py -c "import pandas as pd; x=pd.ExcelFile('etl/data/Comics.xlsx'); print(len(x.sheet_names),'tabs'); print(x.sheet_names)"
+```
+
+Expect **13 tabs** including `RUNS`, `PREREQS`, `Reading Orders`, `EVENTS`,
+`TRACKS`, `Master`.
+
+---
+
+## Step 6 — Create the database
+
+**~15 minutes**
+
+1. Sign in at neon.com → **New Project**.
+2. Name `reading`, Postgres 16, region **US East (Ohio)** — closest to you, and
+   where Vercel's default functions run.
+3. On the connection panel, copy the **pooled** string. It has `-pooler` in the
+   hostname. The direct string works locally but exhausts connections under
+   Vercel's serverless model.
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+```
+
+Fill in:
+
+| Key              | Value                                     |
+| ---------------- | ----------------------------------------- |
+| `DATABASE_URL`   | the pooled Neon string, in quotes         |
+| `OWNER_ID`       | `justin`                                  |
+| `OWNER_NAME`     | `Justin`                                  |
+| `APP_PASSCODE`   | four or more random words — a passphrase, not a PIN (D-23; it is a Step 14 gate) |
+| `SESSION_SECRET` | generated below                           |
+
+```powershell
+# generate SESSION_SECRET, paste the output into .env
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Max 256 }))
+```
+
+### Verify
+
+```powershell
+$env:DATABASE_URL = (Select-String -Path .env -Pattern '^DATABASE_URL=(.*)$').Matches.Groups[1].Value.Trim('"')
+psql $env:DATABASE_URL -c "select version()"
+```
+
+Expect `PostgreSQL 16.x on x86_64-pc-linux-gnu`.
+
+| Symptom                          | Cause                                                                            |
+| -------------------------------- | -------------------------------------------------------------------------------- |
+| `could not translate host name`  | The string didn't copy fully. Neon's are long — check for a line break           |
+| `password authentication failed` | You copied before Neon finished creating the role. Regenerate from the dashboard |
+| Hangs ~10s then connects         | Normal. Free-tier compute suspends when idle and cold-starts                     |
+
+**About the free tier:** permanent, no card, no expiry. Roughly 0.5 GB per
+project against your ~14,000 rows — three orders of magnitude of headroom. Free
+tiers move, so read any email Neon sends about plan changes.
+
+---
+
+## Step 7 — Create the tables
+
+**~10 minutes**
+
+```powershell
+npm install
+npx drizzle-kit generate
+```
+
+`generate` writes reviewable SQL into `drizzle/`. The four migrations are
+already there (`0000`–`0004`), so it should report **no schema changes**. If it
+asks a question or writes a new file, stop — `schema.ts` and `drizzle/` have
+drifted. **Read `drizzle/0002_blocks_and_derived_run_span.sql` and
+`drizzle/0003_issue_metadata.sql` before applying** — this is the only chance to
+catch a schema mistake before it's applied.
+
+- `0002` adds `blocks`, `issues.cover_date` / `cover_date_source` / `metron_id`
+  and `runs.why_source`, and drops `runs.series_issues`, `start_year`,
+  `end_year` and the old `runs.block`.
+- `0004` adds date precision (`issue_progress.completed_at_precision`, `book_status.finished_on_precision`, `finished_on` retyped to `date`) and makes `run_issues` unique per (run, issue). It ships a hand-written reverse in `drizzle/down/`.
+- `0003` makes `issues` one row per comic and moves each issue's place in a run
+  to `run_issues`; adds `creators`, `issue_credits`, `issues.story_title` /
+  `story_title_source` / `cover_url`; and drops `runs.writer` and `runs.artists`.
+  It is hand-written (drizzle-kit would stop to ask whether dropped columns were
+  renamed) and it carries data forward if a database already has rows.
+
+```powershell
+npx drizzle-kit migrate
+```
+
+`migrate` applies the exact SQL file you just reviewed. `push` recomputes its
+own diff against the live database instead, so it can silently drift from what
+you read — use `migrate` here.
+
+### Verify
+
+```powershell
+psql $env:DATABASE_URL -c "\dt"
+```
+
+Expect **23 tables**: `users`, `tracks`, `blocks`, `runs`, `run_tracks`,
+`issues`, `run_issues`, `creators`, `issue_credits`, `prereqs`, `events`,
+`event_runs`, `editions`, `authors`, `book_series`, `books`, `releases`,
+`wishlist`, `external_lists`, `issue_progress`, `edition_progress`,
+`book_status`, `reading_plan`.
+
+Task 0.3 adds 10 more, task 1.10 adds one and Phase 8 adds 6, so the finished schema is 40 tables.
+
+`blocks`, the cover-date columns and `why_source` (task 0.6), and the issue
+split, credits and story titles (task 0.7), were pulled forward out of task 0.3
+— they change the shape of `runs` and `issues`, so they had to land before any
+data loaded.
+
+```powershell
+psql $env:DATABASE_URL -c "\d issues"
+psql $env:DATABASE_URL -c "\d run_issues"
+psql $env:DATABASE_URL -c "\d runs"
+```
+
+Confirm `issues` has **no** `run_id` or `sequence`, a unique `label`, and both
+`issues_cover_date_source_check` and `issues_story_title_source_check`; that
+`run_issues` has foreign keys to `runs(id)` and `issues(id)`, both
+`ON DELETE CASCADE`; and that `runs` has `why_source` and **no** `writer`,
+`artists`, `series_issues`, `start_year` or `end_year`.
+
+### Doing Steps 7–8 again
+
+Until Step 14 the database is disposable — the workbooks are the truth. After
+any change to the workbooks, a sidecar CSV or the schema, rebuild instead of
+repeating these steps by hand:
+
+```powershell
+npm run rebuild            # asks you to type REBUILD
+npm run rebuild -- -Yes    # no prompt
+```
+
+`etl/rebuild.ps1` drops the schema, runs `drizzle-kit migrate` from zero (so
+every rebuild also proves the migrations apply), runs `npm run extract`
+(`-SkipExtract` to reuse `seed/`), loads, runs `etl/test_views.sql`, and prints
+each table's row count beside its seed CSV — any mismatch fails in red. It
+never calls Metron. It refuses to run when `.env` has `LEDGER_LIVE=true`, which
+you set in Step 14.
+
+---
+
+## Step 8 — Migrate the data
+
+**~45 minutes of your time, plus two unattended Metron sessions · the step worth doing carefully**
+
+### 8a. Extract
+
+```powershell
+npm run extract
+```
+
+Expected output, as of the 2026-09-16 export:
+
+```
+volume map: 61 series, 67 rules
+cover dates: 8159 from Metron, 0 by hand
+why review: 259 runs
+label review: 0 renames accepted
+issue details: 0 labels, story titles 0 from Metron, 0 by hand
+issue credits: 0 credits on 0 labels
+
+comics <- Comics.xlsx
+  tracks                 37 rows -> seed/tracks.csv
+  blocks                 98 rows -> seed/blocks.csv
+  runs                  259 rows -> seed/runs.csv
+  run_tracks            259 rows -> seed/run_tracks.csv
+  issues              10273 rows -> seed/issues.csv
+  run_issues          10840 rows -> seed/run_issues.csv
+  creators                0 rows -> seed/creators.csv
+  issue_credits           0 rows -> seed/issue_credits.csv
+  workbook_run_fields    259 rows -> seed/workbook_run_fields.csv
+  issue_progress         76 rows -> seed/issue_progress.csv
+  prereqs               459 rows -> seed/prereqs.csv
+  events                 30 rows -> seed/events.csv
+  event_runs             64 rows -> seed/event_runs.csv
+  editions              178 rows -> seed/editions.csv
+  edition_progress      161 rows -> seed/edition_progress.csv
+
+books <- Books.xlsx
+  authors               376 rows -> seed/authors.csv
+  book_series           214 rows -> seed/book_series.csv
+  books                1478 rows -> seed/books.csv
+  book_status          1289 rows -> seed/book_status.csv
+  reading_plan          102 rows -> seed/reading_plan.csv
+  releases               44 rows -> seed/releases.csv
+  wishlist              497 rows -> seed/wishlist.csv
+  external_lists        534 rows -> seed/external_lists.csv
+  unresolved            104 rows -> seed/unresolved.csv
+```
+
+The three sidecar lines say `not found` until Step 8c creates those files.
+
+`run_issues` is one row per line of `Reading Orders`, except that a label listed
+twice in one run keeps only its first row (see `repeat placement dropped` below);
+`issues` is one row per distinct label, so a crossover that sits in four runs is one issue with four
+placements. The counts above are from an older export and move every time you edit the workbook
+(the 2026-09-23 extract gave 10,761 placements, 10,138 issues, 258 runs; `reading_plan` is 0
+since D-13). **If a count moved and you did not edit the sheet, stop** and diff
+against your previous `seed/` before loading. `issues` is expected to drop as
+you accept label fixes in 8c — two spellings of one comic merge into one row.
+
+### 8b. Read `seed/unresolved.csv`
+
+Counts are from the 2026-09-16 export. A `0` category is one the ETL still
+checks for; it's listed so you know what a new row there means.
+
+| Rows | Category                                     | What it means                                                                                                                                                       | Action                                                                                                                                                                                                      |
+| ---- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0    | `sequence renumbered`                        | Your `Sequence` formula is `=IF($B2=$B1,F1+1,1)`, which restarts whenever a run's rows aren't contiguous. The ETL renumbers from row order — the real reading order | **Spot-check `hickman-avengers`, `bendis-initiative`, `bendis-secret-invasion` after load.** Those three are the only runs with split blocks                                                                |
+| 44   | `one Metron issue under several labels`      | Two spellings of one comic (`Pulse #1` and `The Pulse #1`) matched the same Metron issue, so they load as two issues                                               | Accept the matching `label_review.csv` rows in 8c; they merge on the next extract                                                                                                                           |
+| 13   | `repeat placement dropped`                   | The same label twice in one run. Extract keeps the first placement and drops the repeat (D-R2-1); the sheet had the same seven issues twice in a row, which looks like a block entered twice, not a reread. If a repeat is a real reread, note it and add it back at task 0.8 | **Fix the `Issue` cells in the sheet** if it was a mistake; otherwise nothing. `run_issues` is UNIQUE per (run, issue) until 0.8 |
+| 12   | `labels share a slug`                        | Two labels differ only in punctuation (`All New, All-Different Avengers #0` / `All-New, All-Different Avengers #0`), so the second id gets `-2`                     | **Must be zero before Step 14 (D-15)** — the label is the comic's permanent id. Fix the spelling in the sheet (or accept a `name_style` proposal); if they are two different comics, give them different labels |
+| 11   | `label reordered`                            | Labels like `Daredevil Annual #1 (2007)` put the year after the issue number. Reordered to canonical form                                                           | None. Informational                                                                                                                                                                                         |
+| 1    | `completed in one run, not another`          | An issue ticked Completed in one run's row and not in another's. Progress belongs to the issue now, so it loads as read                                            | None, unless it wasn't actually read                                                                                                                                                                        |
+| 0    | `event_runs not a known run`                 | `EVENTS!Runs Touched` holds a value that isn't a known run ID                                                                                                       | Fix the cells and re-extract, or accept the dropped associations                                                                                                                                            |
+| 0    | `forward-declared prereq target`             | Prereq IDs with no `RUNS` row, loaded as placeholders so the edges survive                                                                                          | None. Expected                                                                                                                                                                                              |
+| 0    | `duplicate block sequence`                   | Two runs claim the same position in the same block                                                                                                                  | **Fix the `Sequence` cells in the sheet and re-extract.** The ETL deliberately does not renumber them                                                                                                       |
+| 0    | `run on multiple tracks`                     | A run on two tracks carries one block number; it is assigned to the first track listed                                                                             | Reorder the `Track` cell if the block belongs to the other track                                                                                                                                            |
+| —    | `workbook writer not in credits`             | After 8c-4: the sheet's `Writer` names nobody in the run's issue credits. The sheet's value is not loaded — credits are                                              | Look at the run. Usually the sheet is wrong or the run holds another writer's tie-ins                                                                                                                       |
+| —    | `keyed by pre-rename label`                  | A sidecar row still sits under a label you accepted a rename for. It was used anyway                                                                                | Re-run `py etl/enrich_comics.py` (it rekeys, cached), then re-extract                                                                                                                                       |
+| —    | `stale label review`                         | An accepted rename whose old label no longer appears in the sheet — you fixed the sheet directly                                                                    | None, or blank the decision                                                                                                                                                                                 |
+| —    | `sidecar row for a label not in the sheet`  | A `cover_dates` / `issue_details` / `issue_credits` row whose label no sheet row uses any more. Not loaded. If a comic with that label ever came back it would inherit the old value, so delete the row once the comic is gone for good (`(hand-entered)` marks one you typed) |
+
+### 8c. Backfill from Metron
+
+Everything Metron gives the ledger arrives as a CSV beside `etl/data/volume_map.csv` that
+you can read, correct and re-run, and that survives every re-extract:
+
+| File                | Keyed by | Holds                                                                  | Written by                              |
+| ------------------- | -------- | ---------------------------------------------------------------------- | --------------------------------------- |
+| `cover_dates.csv`   | label    | cover date, `source` (`metron` or `hand`), match status                | `py etl/enrich_comics.py`               |
+| `issue_details.csv` | label    | Metron issue id, cover URL, story title + `story_title_source`         | both passes                             |
+| `label_review.csv`  | label    | a proposed label, its category, and your `decision`                   | `py etl/enrich_comics.py`               |
+| `issue_credits.csv` | label    | one row per creator per role, `source` (`metron` or `hand`)            | `py etl/enrich_comics.py --details`     |
+
+All need `METRON_API_TOKEN`, or `METRON_USERNAME` and `METRON_PASSWORD`, in
+`.env`. Every response is cached in `etl/.metron-cache.sqlite`, so **every
+command here is safe to stop and re-run** — a re-run only pays for what it
+hasn't fetched. Save CSVs as **CSV UTF-8** if you edit them in Excel.
+
+#### 8c-1. Dates, cover URLs and label proposals
+
+**~10 minutes of your time; 2–3 hours unattended the first time, seconds after**
+
+```powershell
+py etl/enrich_comics.py --dry-run
+py etl/enrich_comics.py
+```
+
+The dry run checks fifty labels and writes nothing. Expect a match rate and a
+request projection. A 401 means the credentials are wrong.
+
+Then open `cover_dates.csv`. Rows with a blank `cover_date` have a `status` and a
+`note` saying why:
+
+| `status`                      | Meaning                                                                                                            | Action                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| `matched`                     | Dated from Metron. A note starting "volume … inferred" means the label had no year and one volume was the only fit | Spot-check the inferred ones                                             |
+| `ambiguous_volume`            | Several volumes fit a label with no year                                                                           | Add the year to the label or a `volume_map.csv` rule, re-extract, re-run |
+| `no_series` / `not_in_series` | Metron has no series with that exact name, or not that issue                                                       | Fix the label, or enter the date by hand                                 |
+| `no_number`                   | A freeform label ("Dark Reign: The Cabal") that isn't a one-shot Metron knows by that exact name                   | Enter the date by hand                                                   |
+
+About 2,100 labels don't match. They get no date, story title or credits until
+their label is fixed. Eleven runs have **no** matched issues at all —
+`bendis-doomsday`, `captain-america-white`, `triumph-and-torment`,
+`leeditko-strange`, `ellis-extremis`, `brand-new-day`, `squadron-supreme`,
+`blue-marvel`, `liu-x-23`, `morrison-new-xmen`, `aaron-watxm` — so they'll show
+no writer or artist until you fix labels or add credits by hand. `the-oath` and
+`ellis-extremis` hold a whole mini-series in one label; split those rows in the
+sheet.
+
+#### 8c-2. Review the label proposals
+
+**~20 minutes · most of it bulk decisions by category**
+
+`label_review.csv` has a row for every label that differs from Metron's
+canonical label for the same issue. Filter on `category`, fill `decision` with
+`accept` or `reject` (blank counts as reject), save. Counts from the cache as of
+2026-09-16:
+
+| `category`       | Rows   | Example                                                                   | Usually                                                                                     |
+| ---------------- | ------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `year_added`     | ~2,325 | `AXIS: Carnage #1` → `Axis: Carnage (2014) #1`                            | Accept the category. Adds the volume year, and takes Metron's capitalization with it       |
+| `name_style`     | ~1,012 | `Amazing Spider-Man (1963) #129` → `The Amazing Spider-Man (1963) #129`   | Accept for one naming style across the catalog; reject the category to keep yours          |
+| `wrong_volume`   | ~237   | Dated 2015 in a run the workbook puts in 1984–85                          | **Row by row.** A proposal appears only when exactly one same-named volume fits; a blank `proposed_label` means none did. Many are origin runs whose typed span was simply wrong — reject those |
+| `oneshot_number` | ~123   | `A.X.E.: Avengers` → `A.X.E.: Avengers (2022) #1`                         | Accept the category                                                                         |
+| `subtitle`       | ~11    | `Incoming #1 Bar Sinister"` → `Incoming (2020) #1`                        | Row by row. Some carry notes pasted into the label; `Iron Man Annual #4 · Peter Parker…` names two issues — fix that in the sheet instead |
+
+Nothing is renamed until you accept it, and nothing is ever renamed in the
+workbook. Then:
+
+```powershell
+py etl/enrich_comics.py     # moves existing rows to the accepted labels, dates any new ones
+npm run extract
+```
+
+The enrich run rekeys `cover_dates.csv`, `issue_details.csv` and
+`issue_credits.csv` — hand rows included — and searches Metron once for each
+newly named series. Your decisions survive every later run as long as the
+proposal doesn't change; if it does, the decision is cleared and the `evidence`
+column says what it was.
+
+#### 8c-3. Story titles and credits
+
+**~5 minutes of your time · ~7 hours of requests, spread over two days**
+
+```powershell
+py etl/enrich_comics.py --details --dry-run
+py etl/enrich_comics.py --details
+```
+
+One request per matched issue — about 8,100, which is more than Metron's 5,000
+a day. The script stops cleanly when the quota runs out; **run the same command
+the next day** to finish. The dry run reads fifty issues, writes nothing, and
+prints how many requests remain.
+
+It fills `story_title` in `issue_details.csv` and writes `issue_credits.csv`,
+keeping six roles: `writer` (Writer, Script, Story, Plot), `artist` (Artist,
+Penciller, Breakdowns, Layouts), `inker`, `colorist`, `letterer`, `cover`.
+Editors aren't kept. A note of `no credits on Metron` means Metron has the issue
+but nobody credited on it yet.
+
+The cache never expires, so those issues stay uncredited on every re-run. Every
+month or so, ask again:
+
+```powershell
+npm run enrich:refresh     # re-requests only the issues noted `no credits on Metron`
+```
+
+It skips any page fetched in the last week, so if the quota cuts it short, the
+same command picks up where it stopped. `--refresh titles` does the same for
+`no story title on Metron` (about 1,300 requests), `--refresh all` for every issue.
+
+A run's writer and artist lines are **derived from these credits** — the
+workbook's `Writer` and `Artists` columns are not loaded. A creator on at least a
+quarter of a run's credited issues is listed, most issues first, three at most.
+
+#### 8c-4. Enter what Metron doesn't have
+
+You don't need to fill every gap. Fix labels first (8c-1's `ambiguous_volume` and
+`no_series` rows): once a label matches, Metron supplies the date, story title
+and all six credit roles for free, and only the freeform `no_number` labels are
+left to type. Then enter, in this order:
+
+1. **Cover dates for the first and last issue of each run.** A run's years come
+   from its earliest and latest `cover_date`, so two dates give the same span as
+   dating every issue. A year alone (`1987`) is enough. The span will still be
+   marked incomplete (`dated_issues < issue_count`); that is expected.
+2. **Writer and artist credits on a few issues per run.** These are the only
+   roles the run's credit line reads, and it lists creators on at least 25% of
+   the run's *credited* issues, so uncredited issues cost nothing. On a run with
+   one writer and one artist, two or three issues are enough. Where creators
+   change, credit one or two issues for each, or the line shows only the first.
+   Start with the eleven runs in 8c-1 that have no matched issues at all.
+3. **Everything else is optional.** Inker, colorist, letterer and cover appear
+   nowhere but the issue sheet, and it hides colorist and letterer under *More
+   credits*. Story titles show only on the issue sheet.
+
+| To add           | File                | Fill                                                                                                     |
+| ---------------- | ------------------- | -------------------------------------------------------------------------------------------------------- |
+| A cover date     | `cover_dates.csv`   | `cover_date` (`1987`, `1987-03` and `1987-03-15` all work), `source` = `hand`                           |
+| A story title    | `issue_details.csv` | `story_title`, `story_title_source` = `hand` (add a row with just `label` if the issue has none)        |
+| A credit         | `issue_credits.csv` | one row: `label`, `creator`, `role` (one of the six), `source` = `hand`; leave `metron_creator_id` blank |
+
+Write `creator` exactly as Metron spells it (`Chris Claremont`, not `Claremont`).
+With `metron_creator_id` blank, extract keys the creator on a slug of the name, so
+the same spelling joins the existing Metron creator and a different one makes a
+second person.
+
+The scripts never overwrite a `hand` value. A hand credit claims its role for
+that issue: once `Avengers (1998) #1` has any hand `writer` row, Metron's writer
+rows for that issue are left exactly as they are, and new ones aren't added, so
+list every writer the issue has. You
+don't have to finish — undated issues are left out of a run's span, and an
+uncredited run shows no credit line.
+
+**Check your entries, and see what's left.** Run it before you start, and again
+after each batch of hand entry:
+
+```powershell
+npm run extract              # first, if the workbook or label_review.csv changed
+npm run sidecars             # report only
+npm run sidecars:fix         # apply the safe fixes it reported
+npm run sidecars:prune-orphans  # optional: archive-then-remove rows for labels that are gone
+npm run enrich:details       # only if it promoted rows to matched; one request each
+npm run check:role-outliers  # optional: flags Metron credits whose role looks mistagged
+npm run titles:fandom -- --dry-run  # optional: story titles from Marvel Fandom; drop --dry-run to write,
+                                    # then npm run sidecars again to refresh the checklist
+```
+
+`etl/check_sidecars.py` repairs what hand entry in Excel tends to break, and says
+what it changed: a row shifted a column, a role typed in `metron_creator_id`,
+`penciler` for `artist`, a blank `source`, a label missing its `#1` or spelled
+with `½`, duplicate rows. It adds the Metron creator id to a hand credit whose
+creator matches a Metron creator's name, and it marks a row `matched` when a
+Metron issue id is already on file, so `--details` fetches that issue's credits
+instead of you typing them. It never invents a value, and never deletes one
+either — except a true orphan, and only when you ask for that separately (see
+below). The things it can't decide — a label that matches nothing, an unknown
+role, a creator spelled close to a Metron creator — are listed under *needs
+you*.
+
+A label that matches nothing usually means the issue was removed from the
+workbook, or a run was deleted. Left alone, its `cover_dates.csv` /
+`issue_details.csv` / `issue_credits.csv` rows — including any hand entry —
+sit under *needs you* forever. `npm run sidecars:prune-orphans` clears them
+out: it appends each one to `etl/data/pruned_orphans.csv` (label, which file,
+everything else as JSON) and then removes it, so nothing is lost, just moved
+somewhere you'd only look if you needed it back. It leaves a label mid-rename
+in `label_review.csv` alone — only a label that matches nothing at all is
+pruned. It's off by default and separate from `--fix`; run it deliberately,
+after `npm run sidecars` has shown you what it would take.
+
+It also writes `etl/data/metadata_todo.md`, a checklist of every issue still
+missing a writer, artist or cover date, grouped by whether Metron has the issue,
+with the runs that hold each one and a Marvel Fandom search link. It ends with
+the story titles still missing, one line per series, which are optional. Filled
+items drop off each time it runs; ticked boxes stay ticked while the item is
+still listed, so tick anything you've looked for and couldn't find. An issue
+whose Fandom page has a blank title (per the last `npm run titles:fandom`) isn't
+counted as missing one, since there's nothing to find; the list says how many it
+left out.
+
+`etl/check_role_outliers.py` looks for the other kind of mistake: a role
+attached to the wrong person rather than a role that's missing. For every
+Metron creator with a clear dominant role across the whole catalog (almost
+always `writer`, or almost always `cover`), it flags the rare issue where that
+same creator instead sits in an interior art role (`artist`, `inker`,
+`colorist`) — the shape Metron's own importer leaves behind when it credits a
+painted-cover artist as the interior artist too, or a writer as an inker. It's
+a heuristic, not a verdict, and it never writes anything: confirm a flagged row
+against `metron.cloud/issue/<id>/` (the id is in `issue_details.csv`) before
+changing a credit.
+
+`etl/fandom_titles.py` does the story-title part of hand entry for you. For
+every issue with no story title, it finds the issue's Marvel Fandom page and
+copies its `StoryTitle` fields in (several stories joined with `; `). Fandom
+names pages by volume (`Alias Vol 1 1`), not year, so it works out each
+series' volume from the cover dates Metron gave you. A series where no volume
+fits, or more than one does, is skipped and listed, not guessed. So is an
+issue whose Fandom year disagrees with its cover date. Titles are written as
+`hand`, exactly as if you'd typed them from Fandom, and each one is also
+logged in `etl/data/fandom_titles.csv` so you can tell which ones it supplied.
+It never touches a title that's already there. Lookups are cached in
+`etl/.fandom-cache.json`, so a re-run costs almost nothing. Many modern issues
+have no title on Fandom either; those stay on the checklist.
+
+**Working through what it skipped.** Every run (dry runs included) rewrites
+`etl/data/fandom_skipped.csv`: one row per issue it couldn't title, with the
+`reason`, a `detail` (what it tried or found), a `fix` column that tells you
+what to do, and a `fandom_link` to start from. Open it in Excel, filter on
+`reason`, and work top down. You answer it in `etl/data/fandom_pages.csv`, a
+hand-kept file with three columns: `match`, `fandom` and `note`. The next run
+uses your answer instead of guessing.
+
+| `reason` | What it means | What to put in `fandom_pages.csv` |
+| --- | --- | --- |
+| *more than one Fandom volume fits* | Two volumes match the cover year (`detail` lists them) | `match` = the `series` cell, `fandom` = the right one, e.g. `Thunderbolts Vol 1` |
+| *no Fandom volume found* | Fandom spells the series differently (`Of`/`of`, `&`/`and`, a `/`), or files it somewhere else | Find the series on Fandom with the link; `match` = the `series` cell, `fandom` = its volume page, e.g. `X Lives of Wolverine Vol 1` |
+| *no cover date to confirm the volume* | Nothing to check a volume against | Same as above: name the volume |
+| *label not understood*, *no Fandom page for the issue*, *Fandom's year disagrees* | One issue is odd (a digital chapter, a numbering Fandom doesn't use) | `match` = the `label` cell, `fandom` = the issue's full page, e.g. `Siege Prologue Vol 1 1` |
+| *no story title on Fandom either* | The page exists, but its title is blank | Nothing. `npm run sidecars` stops listing these as missing a title (add `-- --keep-fandom-untitled` to see them again). Type a title by hand if you find one elsewhere |
+
+A bare volume (`Name Vol N`) fixes the whole series, and a full page (`Name Vol
+N 1`) fixes that one issue. The shape of what you type tells the script which
+you mean. And if you've looked yourself and Fandom has no title, put `none` in
+`fandom` (with the `series` or the `label` as `match`). The script then records
+it as *no story title on Fandom either* without fetching anything, and the
+checklist stops asking. Prefer naming the page when you can, so the script
+checks it for you. Keep `none` for pages it can't reach. You can paste the page's URL from the browser instead of typing the
+name. A volume you name is still checked issue by issue against the cover dates.
+A page you name for one issue is trusted as it is. Then run it again:
+
+```powershell
+npm run titles:fandom -- --dry-run   # check: the rows you answered should now say "would write"
+npm run titles:fandom                # write them
+npm run sidecars                     # refresh metadata_todo.md
+```
+
+Rows you answered drop out of `fandom_skipped.csv` once they're titled. A
+`fandom_pages.csv` row that no longer matches anything untitled is listed as
+unused. That's normal once it has done its job, but it's also how a typo in
+`match` shows up.
+
+### 8d. Review the whys
+
+`why_review.csv` holds a drafted why for every run — 2–4 sentences on why it
+matters, what it's about, the creators and the legacy — beside the workbook's
+current why. For each row set `decision`:
+
+| `decision`      | Loads                                             |
+| --------------- | ------------------------------------------------- |
+| `accept`        | `proposed_why`, recorded as `why_source = claude` |
+| `edit`          | your text from `final_why`, recorded as `hand`    |
+| `keep` or blank | the workbook's why, recorded as `hand`            |
+
+The `check` column flags facts to confirm and data problems spotted while
+drafting (wrong volumes, typos, misattributed writers). Save as **CSV UTF-8** if
+you use Excel, as with the volume map.
+
+### 8e. Re-extract
+
+```powershell
+npm run extract
+```
+
+Folds all five sidecars into `seed/`. `run_issues` matches 8a; `issues` is lower
+by however many labels your accepted renames merged. The sidecar lines now read
+something like:
+
+```
+label review: 3460 renames accepted
+issue details: 8120 labels, story titles 7900 from Metron, 0 by hand
+issue credits: 41000 credits on 8100 labels
+```
+
+### 8f. Load
+
+The first time, after Step 7's migrate:
+
+```powershell
+.\etl\load.ps1
+```
+
+Every time after, `npm run rebuild` (see "Doing Steps 7–8 again") does the drop,
+migrate, extract, load and checks in one go.
+
+`load.ps1` reads `.env` itself — no manual exports. Truncates and reloads inside
+a transaction, so re-running is safe. **That stays true until Step 14** — after
+cutover, re-running would wipe data that exists only in the app. Once
+`LEDGER_LIVE=true`, `load.ps1`, `load.sh` and `rebuild` all refuse to run.
+
+Expect `loaded.` in green.
+
+### 8g. Verify
+
+```powershell
+psql $env:DATABASE_URL -c "select state, count(*) from run_progress group by 1;"
+```
+
+Roughly 254 `unread`, 3 `reading`, 1 `read`, 1 `empty`. One more run reads as
+`reading` than the sheet showed: an issue read in one run now counts in every
+run that holds it.
+
+```powershell
+psql $env:DATABASE_URL -c "select count(*) from run_ancestors('ewing-immortal-hulk');"
+```
+
+Expect **82**. That's the prerequisite chain behind a 64-issue run — the query
+your spreadsheet could never answer, and the one you built and abandoned a
+CLOSURE tab trying to get.
+
+```powershell
+psql $env:DATABASE_URL -c "select count(*) from run_issues;"   # 10840
+psql $env:DATABASE_URL -c "select count(*) from issues;"       # 10273 before label merges
+psql $env:DATABASE_URL -c "select count(*) from books;"        # 1478
+psql $env:DATABASE_URL -c "select run_id, issue_count, dated_issues, start_year, end_year, series_issues from run_span where run_id = 'hickman-ff';"
+psql $env:DATABASE_URL -c "select * from run_credit_line where run_id = 'hickman-ff';"
+psql $env:DATABASE_URL -c "select role, source, count(*) from issue_credits group by 1, 2 order by 1, 2;"
+psql $env:DATABASE_URL -c "select why_source, count(*) from runs group by 1;"
+npm run test:views    # silence then 'all assertions passed'
+npm run test:etl
+```
+
+`hickman-ff` should read `Dark Reign: Fantastic Four #1-5; Dark Reign: The
+Cabal; Fantastic Four (1961) #570-588, 600-611, 605.1; FF #1-23`, with years
+once its issues are dated — or the same with volume years on every series once
+you've accepted the `year_added` proposals. After 8c-3 its credit line should
+name Jonathan Hickman as writer.
+
+| Symptom                                         | Fix                                                                                         |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `too many connections`                          | You used the direct string, not the pooled one. Swap it in `.env`                           |
+| `invalid input syntax for type integer: ""`     | A CSV column has an empty string where a number is expected. The table name is in the error |
+| `violates foreign key constraint`               | An earlier `\copy` failed silently. Re-run `load.ps1` from scratch                          |
+| `duplicate key value violates "issues_label_unique"` | `seed/` is from an extract older than task 0.7. Re-run `npm run extract`               |
+| `column "writer" of relation "runs" does not exist` | Same: an old `seed/runs.csv`. Re-extract                                                |
+| Load succeeds but `run_progress` is empty       | Views didn't apply. `psql $env:DATABASE_URL -f etl/views.sql`                               |
+| `rebuild` refuses with `LEDGER_LIVE is true`    | Working as intended after cutover. Don't rebuild a live ledger                              |
+
+---
+
+## Step 9 — Run it locally
+
+**~10 minutes**
+
+```powershell
+npm run dev
+```
+
+Open `http://localhost:3000`, enter your passcode, check five things:
+
+1. The dashboard lists unlocked runs and shows Hickman progress.
+2. `hickman-krakoa` renders 641 issues without a stall.
+3. Tapping an issue marker fills it, and it survives a refresh.
+4. `/comics?track=x-men` filters correctly.
+5. `/books?q=sanderson` returns results.
+
+| Symptom                           | Fix                                                             |
+| --------------------------------- | --------------------------------------------------------------- |
+| Redirect loop on `/login`         | `SESSION_SECRET` missing or empty — the cookie can't be signed  |
+| `not signed in` on every page     | `OWNER_ID` doesn't match the `users` row                        |
+| Blank dashboard, no errors        | `npm run db:views`                                              |
+| `prepare` errors from postgres.js | `prepare: false` is required for Neon's pooler. Don't remove it |
+
+Stop the server with `Ctrl+C`.
+
+---
+
+## Step 10 — Push, deploy, and back up
+
+**~45 minutes**
+
+### 10a. GitHub
+
+```powershell
+git config --global core.autocrlf input
+git init
+git add -A
+git commit -m "ledger: migration, schema, v1 app, design"
+gh repo create ledger --private --source=. --push
+```
+
+`core.autocrlf input` matters — without it, Windows line endings get committed
+into `etl/load.sh` and break it under WSL.
+
+**Private, not public.** `seed/` is gitignored because it holds a full copy of
+your library, but the repo also carries your volume map, run list, and
+eventually your reading history.
+
+```powershell
+gh repo view --web
+```
+
+Confirm `.env` and `seed/` are **absent** from the file list.
+
+### 10b. Vercel
+
+1. vercel.com → **Add New → Project** → import `ledger`.
+2. Framework preset **Next.js**. Leave build settings alone.
+3. Environment variables — all five, scoped to **Production, Preview, and
+   Development**:
+
+| Key              | Value                                                                       |
+| ---------------- | --------------------------------------------------------------------------- |
+| `DATABASE_URL`   | the Neon pooled string                                                      |
+| `OWNER_ID`       | `justin`                                                                    |
+| `OWNER_NAME`     | `Justin`                                                                    |
+| `APP_PASSCODE`   | your passcode                                                               |
+| `SESSION_SECRET` | the generated value                                                         |
+| `TMDB_API_KEY`   | only once you start Phase 8 — free key from themoviedb.org account settings |
+
+4. **Deploy.** First build takes 2–4 minutes.
+
+Hobby is free and restricted to non-commercial personal use, which this is.
+
+| Symptom                             | Fix                                                         |
+| ----------------------------------- | ----------------------------------------------------------- |
+| Build fails on `tsc`                | Run `npx tsc --noEmit` locally first                        |
+| Build succeeds, runtime 500         | Env vars missing from the **Production** scope specifically |
+| Login works locally, fails deployed | `secure: true` on the cookie needs HTTPS. Fine on Vercel    |
+
+### 10c. Your phone
+
+1. Open the URL in **Chrome on Android**.
+2. Three-dot menu → **Add to Home screen**.
+
+The passcode cookie lasts a year, so it behaves like an installed app.
+
+**Test at real width.** A Pixel is ~412 CSS pixels, a Galaxy S ~360 — the layout
+targets 360 and up. DevTools emulation gets the layout right and touch targets
+wrong, so check the spine view on the actual device.
+
+### 10d. Backups — do not skip this
+
+Until this runs once, your Google Sheet is the only copy of eight years of
+curation.
+
+1. Repo → **Settings → Secrets and variables → Actions** → **New repository
+   secret** → name `DATABASE_URL`, value the Neon pooled string.
+2. Repo → **Settings → Actions → General** → Workflow permissions → **Read and
+   write**.
+3. Repo → **Actions** tab → **Nightly backup** → **Run workflow**.
+
+**Verify:** `backups/reading-YYYY-MM-DD.sql.gz` is committed and is roughly
+400 KB. The job now fails (red X, no commit) when `pg_dump` fails or the dump is
+nearly empty, so a green run with a file in `backups/` is a real backup. If the run
+is red, read its log first: a Neon major-version upgrade past 16 makes the pinned
+`postgresql-client-16` refuse, and the job says so in one line naming the fix.
+Neon never upgrades a project's major version by itself — if you do, change
+`postgresql-client-16` in `.github/workflows/backup.yml` the same day.
+
+**Restore — try this once now, not during an incident** (R2-AR2). A backup you
+have never restored is a hope, not a backup. The drill takes the newest nightly
+dump, loads it into a **scratch** database (never Neon's `reading`), checks it
+with the same SQL tests CI runs, and compares its row counts with the live
+ledger. It changes nothing live, and takes about ten minutes.
+
+**1. A scratch Postgres server, once.** Any Postgres works. With the scoop
+install (no Windows service), make and start a local one:
+
+```powershell
+initdb -D "$env:USERPROFILE\pgdata" -U postgres -A trust -E UTF8     # once
+pg_ctl -D "$env:USERPROFILE\pgdata" -l "$env:USERPROFILE\pgdata\server.log" start
+$server = "postgresql://postgres@localhost:5432"
+```
+
+(With the winget installer's Windows service instead, skip the first two lines
+and use `postgresql://postgres:<the password you set>@localhost:5432`. If your
+`TEST_DATABASE_URL` is local, this is the same server.)
+
+**2. The drill.** From the project folder, in PowerShell:
+
+```powershell
+git pull                                             # the nightly job commits into backups/
+$dump = (Get-ChildItem backups\*.sql.gz | Sort-Object Name | Select-Object -Last 1).FullName
+$sql  = "$env:TEMP\reading-restore.sql"
+
+# Decompress to a FILE, then psql -f. Never `gzip -dc ... | psql` in Windows
+# PowerShell: it re-encodes the stream and every ’, — and ½ arrives as ???.
+py -c "import gzip, shutil, sys; shutil.copyfileobj(gzip.open(sys.argv[1]), open(sys.argv[2], 'wb'))" $dump $sql
+
+createdb -h localhost -U postgres reading_restore_check
+$db = "$server/reading_restore_check"
+psql $db -v ON_ERROR_STOP=1 -q -f $sql               # the restore itself; must exit quietly
+psql $db -v ON_ERROR_STOP=1 -q -f etl/views.sql      # NOTICEs about "already exists" are fine
+psql $db -v ON_ERROR_STOP=1 -f etl/test_views.sql    # must end: all assertions passed
+```
+
+**3. Compare with the live ledger.** Same query on both; the second one only
+reads.
+
+```powershell
+$count = "SELECT (SELECT count(*) FROM runs) AS runs, (SELECT count(*) FROM issues) AS issues, (SELECT count(*) FROM run_issues) AS placements, (SELECT count(*) FROM issue_progress) AS reads, (SELECT count(*) FROM book_status) AS book_status, (SELECT count(*) FROM issues WHERE label ~ '[^\x01-\x7e]') AS non_ascii_labels"
+psql $db -c $count
+$env:DATABASE_URL = "<the pooled Neon string from .env>"
+psql $env:DATABASE_URL -c $count
+```
+
+Every column should match, except reads or book statuses you added after 04:00
+this morning. `non_ascii_labels` matching (it is a handful, e.g. *Marvel’s
+Voices*) proves the special characters came back intact.
+
+**4. Clean up.**
+
+```powershell
+dropdb -h localhost -U postgres reading_restore_check
+Remove-Item $sql
+```
+
+**If a step fails:** the restore stopping on an error, `test_views.sql` not
+ending with *all assertions passed*, or a count differing by more than today's
+activity each means **the backup is not trustworthy** — read the first error,
+and do not cut over until one drill passes end to end.
+
+**Rehearse it before the first nightly backup exists:** replace the `git pull`
+and `$dump` / `py` lines with a dump of your own (it only reads Neon):
+`pg_dump --no-owner --no-privileges -f $sql $env:DATABASE_URL` — then carry on
+from `createdb`.
+
+The backup is a `pg_dump` of the whole schema, so nothing needs re-migrating; the
+views are re-applied because a dump taken between a schema change and `db:views`
+would carry the old ones. Repeat quarterly (see *Ongoing maintenance*). Backups
+live in the same private repo as the code (R2-AR1): losing the repo loses both,
+which `GET /api/export` is the second copy for.
+
+The workflow keeps 30 days and runs at 08:00 UTC (04:00 Eastern). Your second
+exit ramp is `GET /api/export`, which returns every table as JSON on demand.
+
+**Check the export once, too** (D-17). Signed in on the desktop, open
+`/api/export`, save the file, and open it: every table the app has should be a
+key in it, with rows under the ones you have data in. `users` is left out on
+purpose. `test/export-tables.test.ts` keeps the list complete as tables are
+added, so this is a once-before-Step-14 look, not a chore.
+
+**Done with Part 2 when:** you can mark an issue read from your phone, and the
+Actions tab shows one successful backup.
+
+---
+
+# Part 3 — Build
+
+Read **`CLAUDE-CODE.md`** before your first session. It covers the four-phase
+loop, session hygiene, prompt patterns, and what to do when a session goes
+sideways. This section is the _sequence_; that file is the _technique_.
+
+## Test database — set this up before Step 11
+
+**~10 minutes, once.** The tests `TRUNCATE` tables. `DATABASE_URL` in `.env` is
+your real ledger, so the tests are never allowed to use it: they read
+`TEST_DATABASE_URL`, refuse to start when it is missing, and refuse when it names
+the same host and database as `DATABASE_URL` (R3-02). Pick one:
+
+**A. A Neon branch (no install).** In the Neon console: your project →
+**Branches** → **Create branch** → name it `test`, parent `main`. Open the new
+branch's **Connection details**, tick **Pooled connection** and copy the string.
+
+**B. Local Postgres.** `winget install PostgreSQL.PostgreSQL.16` (or
+`scoop install postgresql`), then `createdb ledger_test`. The string is
+`postgresql://postgres:<your password>@localhost:5432/ledger_test`.
+
+Then add it to `.env` (never `.env.example`):
+
+```
+TEST_DATABASE_URL="postgresql://..."
+```
+
+**Verify:**
+
+```powershell
+npm run test:db:reset     # migrates the test DB from zero and applies etl/views.sql
+npm test                  # vitest: 3 test files pass
+npm run test:views        # etl/test_views.sql, including the run_ancestors branching test
+```
+
+`npm run test:db:reset` **drops everything in the test database**, which is the
+point. Option A (the Neon branch) is throwaway: delete and re-create it any time.
+
+**Every session, before you open a PR:** `npm run test:all` — it rebuilds the test
+database, then runs vitest, the SQL assertions and the Python tests, which is what
+CI runs. To ask Claude to run it: *"run `npm run test:all` and report failures"*;
+Claude Code can call any of these scripts, and none of them needs `psql`. If
+`npm test` says `TEST_DATABASE_URL is not set`, that is the guard working — set the
+variable, do not work around it.
+
+## Step 11 — Sittings 1–2: Phase 0
+
+**Claude Code · ~2 sittings · `TASKS.md` phase 0**
+
+```powershell
+cd C:\dev\reading-tracker
+git checkout -b task/0.2-ci
+claude
+```
+
+One task per session, in this order. Task 0.1 (the test harness) has already
+landed.
+
+| Sitting | Tasks | Result |
+| ------- | ----- | ------ |
+| 1 | 0.2 CI, 0.3 schema additions, 0.4 soft delete, 0.5 volume years | Every later check has a runner and CI |
+| 2 | **0.8a read state per run — schema, ETL, views**, then 0.8b the spine | Reading an issue in one run leaves it unread in the others |
+
+**This builds nothing you can look at. Do it anyway.** Every later task's
+acceptance check is worthless without a runner. Skipping ahead to something
+visible means you personally become the verification loop for the next six
+weeks.
+
+Task 0.3 is one migration: `reading_settings`, `eras` (+ `run_issues.era_id`),
+`volume_rules`, `shelves` + `shelf_books` (not `shelf_titles` — that waits for
+the watchlist), a few columns on `books` and `book_status`, and `deleted_at` on
+`runs`, `issues`, `books` and `run_issues`. `sessions`, `read_events` and
+`inbox` are **not** in it; they arrive with 2.1b, 1.5 and 1.4b.
+
+**0.8a is the critical path.** Nothing in Phase 1 that marks or reads progress
+(1.1, 1.5, 1.6, 1.9, 1.10) may start before it, and **you may not cut over
+without it**: after Step 14 it would be a live data migration guessing which run
+each old read belonged to. Its schema change is applied with `npm run rebuild`,
+not `db:migrate` (see Step 13).
+
+**Done when:** a throwaway pull request goes green on the `check` job —
+typecheck, lint, tests (vitest, SQL, Python) and build — and after 0.8a,
+`npm run rebuild` loads the 76 workbook reads keyed on placements. (You need the
+private GitHub repo from Step 10a and `TEST_DATABASE_URL` first — see
+`docs/OWNER-CHECKLIST.md`.)
+
+## Step 12 — Sittings 3–7: Phase 1
+
+**Claude Code · ~5 sittings over 3–5 weeks**
+
+| Sitting | Tasks (in this order) | Result |
+| ------- | --------------------- | ------ |
+| 3 | 1.2 undo, then 1.1 range marking, 1.6 resume pointer | The app becomes pleasant to use |
+| 4 | 1.3 bulk-entry parser, 1.3c review table and insert, 1.3b add from a Metron search | Adding a run is faster than the sheet. The long one |
+| 5 | 1.4 books bulk entry, 1.4c add a book, 1.4b quick capture, 1.5 dated log + `read_events` | Books work end to end |
+| 6 | 1.7 period column, 1.8 app shell, 1.8b thumb bar and contrast | The real navigation |
+| 7 | 1.10 Up next queue, then 1.9 status screens, and **2.11a prerequisite cycle check** | Phase 1 complete; extract lists the cycles for your audit |
+
+**Task 1.5 carries a deadline.** It adds `read_events`, the re-read log, and
+projects the existing status tables from it. This has to land before real
+reading data accumulates — a second read of a book currently overwrites the
+first, and that history cannot be reconstructed.
+
+**2.11a is numbered in Phase 2 but built here** (D-20): it reports the
+prerequisite cycles you break in `Comics.xlsx` before cutover, and Step 14's
+final extract uses its `--fail-on-cycle` switch.
+
+**Done when:** every Phase 0 and Phase 1 task is ticked in `TASKS.md`, you can
+add a 24-issue run by pasting a block of labels, and marking a 100-issue range
+doesn't stall.
+
+## Step 13 — Deploy what you built
+
+After each sitting:
+
+1. Merge to `main`. Vercel deploys a preview automatically.
+2. **Test the preview on your Android phone before promoting.**
+3. Promote to production from the Vercel dashboard.
+4. If the sitting changed the schema, apply it. **Before Step 14** the database
+   is disposable, so the simplest correct way is `npm run rebuild` (it migrates
+   from zero and reloads the workbook). 0.8a *must* go this way — its migration
+   re-keys progress and is not written to convert existing rows. After Step 14,
+   migrate manually:
+
+```powershell
+$env:DATABASE_URL = "<production pooled string>"
+npm run db:migrate
+npm run db:views
+```
+
+Only **after** that day's backup has run.
+
+Anything you enter in the deployed app before Step 14 — test marks, a queue,
+shelves — is erased by the next rebuild and by Step 14's final load. Use it to
+try things, not to keep things.
+
+**Never let a deploy auto-migrate.** Vercel builds on every push, and an
+automatic migration on a bad push has no undo.
+
+---
+
+# Part 4 — Cut over
+
+## Step 14 — Load for the last time, then run both for a month
+
+**~1 hour for the switch, then a month of the app as the record (D-18)**
+
+The order matters. The final load **truncates everything the app holds** —
+progress, book status, and through `CASCADE` the queue, shelves, eras and
+inbox — so it happens **first**, and `LEDGER_LIVE=true` goes on straight after.
+From then on the app is the record and nothing reloads over it. The sheet is
+frozen and kept only to compare numbers during the month.
+
+### Before the switch — every box ticked
+
+- [ ] **Step 12 is finished**, and 0.8a / 0.8b are ticked in `TASKS.md` (read
+      state is per run). Not negotiable: after this step it cannot be done
+      without guessing.
+- [ ] **The prerequisite audit is done** (D-20, `OWNER-CHECKLIST.md`): after a
+      fresh workbook download, `npm run extract -- --fail-on-cycle` passes.
+- [ ] **No slug collisions** (D-15): `seed/unresolved.csv` has zero
+      `labels share a slug` rows.
+- [ ] **`APP_PASSCODE` in Vercel is four or more random words** (D-23, R2-12).
+- [ ] **A nightly backup has run and you have done the restore drill once**
+      (10d), and a downloaded `GET /api/export` opens and lists every table the
+      app has (D-17).
+- [ ] You have used the deployed app for a few days, knowing it is disposable,
+      until adding a run and marking reads feels faster than the sheet. **Do not
+      cut over if it doesn't** — you will drift back, and the migration will have
+      been wasted effort. This is the single most common way projects like this
+      fail.
+
+### The switch
+
+```powershell
+# 1. fresh export from Google Sheets, replacing Comics.xlsx and Books.xlsx
+# 2. re-extract into seed-final/ (a later --out overrides the script's), failing
+#    on any prerequisite cycle, and diff against the last seed
+npm run extract -- --out seed-final --fail-on-cycle
+Compare-Object (Get-Content seed/run_issues.csv) (Get-Content seed-final/run_issues.csv)
+Compare-Object (Get-Content seed/issues.csv) (Get-Content seed-final/issues.csv)
+
+# 3. load — THIS IS THE LAST load.ps1 RUN, EVER
+.\etl\load.ps1 seed-final
+```
+
+**Immediately after that load, add `LEDGER_LIVE=true` to `.env`.** With that
+line set, `load.ps1`, `load.sh` and `npm run rebuild` refuse to run instead of
+wiping what the app holds.
+
+4. Rename the sheet `Comics (archive, to 2026-XX)` and set it **read-only now**.
+   Edits to it no longer reach the app; prerequisite and catalog changes are
+   made in the app from here (3.1–3.3).
+5. Put the app URL in a note at the top of the archived sheet.
+
+### The month after
+
+Use only the app. Once a week, compare a few numbers against the frozen sheet
+(runs read, a run's issue count, books read this year). A disagreement is a bug
+to fix in the app, not a reason to go back to the sheet.
+
+**Do not delete the sheet.** Ever, but especially not in the first year.
+
+**If the app doesn't stick:** `GET /api/export` returns every table as JSON, and
+the nightly `pg_dump` gives a full Postgres dump. Neither is a spreadsheet, so
+budget an afternoon to convert — but nothing is trapped.
+
+**Done when:** a month has passed, the weekly comparisons agree, and you've gone
+two weeks without opening the sheet.
+
+---
+
+# Part 5 — Everything after
+
+## Step 15 — Phases 2 through 7
+
+**Claude Code · open-ended · `TASKS.md`**
+
+| Phase | Contents                                                                                    | Why this order                                                                                                          |
+| ----- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| 2     | Settings, pace engine, sessions, books dashboard, plan editor, comics dashboard, true unlock cost | Highest remaining value. Answers "is 2027 overcommitted" and "what does this run really cost". (2.11a was already built in Step 12) |
+| 3     | Editing: inline fields, runs, prereqs, ratings, detail sheets, eras (book status moved to 1.5) | Lets you maintain the catalog in the app                                                                                |
+| 4     | Metron and Open Library enrichment, covers                                                  | Makes it feel like a product. Prerequisite for Phase 7                                                                  |
+| 5     | Shelves, tracks page, eras, ratings, DNF, `edition_issues`                                  | Fills in remaining surfaces                                                                                             |
+| 6     | Stats, search, PWA, shortcuts, events, reading-session timer, better sign-in (6.13)          | Polish, in any order                                                                                                    |
+| 7     | AI review and drafting, then the release digest                                             | Needs Phase 4's verification layer to be trustworthy                                                                    |
+| 8     | Watchlist: TMDB client, search and add, season progress, detail sheets, franchises, shelves | **Self-contained — needs only Phase 0.** Pull it forward any time as a change of pace between the heavier comics phases |
+
+**True unlock cost is task 2.6 now** (the old 6.2b was absorbed into it). It
+counts the issues you still have to read to finish a run, prerequisites
+included (D-22). The figure once quoted here (Immortal Hulk behind 4,173) is
+withdrawn (R1-01); the real number is meaningful once your prerequisite audit is
+done, which Step 14 already requires. Given that reaching Immortal Hulk is one
+of your stated priorities, build 2.6 early in Phase 2.
+
+## Ongoing maintenance
+
+| Cadence                                      | Task                                                                      |
+| -------------------------------------------- | ------------------------------------------------------------------------- |
+| Monthly                                      | `npm outdated`, bump patch and minor versions                             |
+| Quarterly                                    | The restore drill in 10d (steps 2–4), newest nightly backup              |
+| On a Next.js major release                   | Read the upgrade guide before bumping. This is the one that will bite you |
+| When Neon or Vercel email about plan changes | Read it. Free tiers move                                                  |
+| Before any risky change                      | `GET /api/export`                                                         |
+
+## Optional: metadata enrichment
+
+After cutover, covers and page counts:
+
+```powershell
+py etl/enrich_books.py                 # (task 4.2 — not built yet) Open Library: no key, send a real User-Agent
+```
+
+Comics cover dates, cover URLs, story titles and credits were backfilled in
+Step 8c. Issues you add in the app after cutover need task 4.1, which writes to
+the database directly instead of the sidecar CSVs. Enrichment never
+overwrites a hand-entered value, and **word counts are never fetched** — no API
+exposes them. See `FEATURES.md` Part 4.

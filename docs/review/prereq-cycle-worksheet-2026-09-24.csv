@@ -1,0 +1,14 @@
+run_id,run_title,run_core_year,prereq_run_id,prereq_title,prereq_core_year,type,why_suggested,your_decision (keep|soft|delete|reverse)
+moench-moon-knight,Moench's Moon Knight,1982,ewing-defenders,Ewing Defenders,2022,soft,prerequisite was published after the run,reverse
+dematteis-cap,Dematteis's Captain America,1983,ewing-defenders,Ewing Defenders,2022,soft,prerequisite was published after the run,reverse
+squadron-supreme,Squadron Supreme,1986,ewing-defenders,Ewing Defenders,2022,soft,prerequisite was published after the run,reverse
+secret-wars-1984,Secret Wars (1984),1984,ewing-mighty-avengers,Ewing Mighty Avengers,2014,soft,prerequisite was published after the run,reverse
+heinberg-young-avengers,Heinberg's Young Avengers,2005,mackay-moon-knight,MacKay's Moon Knight,2024,soft,prerequisite was published after the run,reverse
+messiah-war,Messiah War,2009,remender-xmen,Remender's X-Men/Avengers,2013,soft,prerequisite was published after the run,delete
+bendis-civil-war,Civil War,2006,brubaker-cap,Brubaker's Captain America,2010,soft,prerequisite was published after the run,keep
+ewing-immortal-hulk,Immortal Hulk,2019,cates-thor,Cates' Thor,2022,soft,prerequisite was published after the run,reverse
+ewing-no-road-home,Avengers: No Road Home,2019,ewing-cosmic,Ewing Cosmic,2021,hard,prerequisite was published after the run,reverse
+ewing-cosmic,Ewing Cosmic,2021,hickman-krakoa,The Krakoa Era,2022,soft,prerequisite was published after the run,reverse
+fraction-thor-gillen-jim,Fraction's Thor/Gillen's Journey into Mystery,2011,bendis-fear-itself,Fear Itself,2012,soft,prerequisite was published after the run,reverse
+remender-xmen,Remender's X-Men/Avengers,2013,ewing-loki-aoa,Loki: Agent of Asgard,2014,soft,prerequisite was published after the run,reverse
+remender-xmen,Remender's X-Men/Avengers,2013,remender-cap,Remender's Captain America,2014,hard,prerequisite was published after the run,reverse

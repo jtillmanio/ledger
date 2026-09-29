@@ -1,0 +1,600 @@
+series,run_id,issue_from,issue_to,bare_issues,bare_range,years_used_elsewhere,runs,proposed_year,confidence,approved,note
+Fantastic Four,,,,306,#1-611,1998;2018;2022;2025,bendis-civil-war;black-panther-origin;byrne-ff;doom-modern,1961,high,yes,"initial volume; sheet already writes later volumes as 1998, 2018, 2022, 2025"
+Uncanny X-Men,,,,237,#94-544,1981;2011;2012,bendis-dark-reign;bendis-heroic-age;byrne-alpha-flight;carol-danvers-origin,1963,high,yes,"initial volume; sheet already writes later volumes as 1981, 2011, 2012"
+Incredible Hulk,,1,6,234,#1-467,1968;2000;2023,busiek-avengers;byrnne-hulk;classic-defenders;hulk-origin,1962,suggested,yes,vol 1 ran only #1-6 — 6 labels here
+Incredible Hulk,,102,,234,#1-467,1968;2000;2023,busiek-avengers;byrnne-hulk;classic-defenders;hulk-origin,1968,suggested,yes,"the 1968 volume, #102-474 — 228 labels here. A blanket 1962 would mislabel all of them"
+Captain America,,,,228,#100-610,1997;1998;2004;2011;2012;2013;2025,armor-wars;black-panther-origin;brubaker-cap;cap-origin,1968,high,yes,"initial volume; sheet already writes later volumes as 1997, 1998, 2004, 2011, 2012, 2013, 2025"
+Avengers,,,,198,#1-674,1997;1998;2010;2016;2018;2023,avengers-origin;bendis-disassembled;black-panther-origin;black-widow-origin,1963,high,yes,"initial volume; sheet already writes later volumes as 1997, 1998, 2010, 2016, 2018, 2023"
+Daredevil,,,,155,#69-292,1998;2011;2014;2015;2019;2022,black-panther-origin;black-widow-origin;born-again;claremont-xmen,1964,high,yes,"initial volume; sheet already writes later volumes as 1998, 2011, 2014, 2015, 2019, 2022"
+Amazing Spider-Man,,,,137,#86-388,1998;2014;2018;2022;2025,black-widow-origin;michelinie-asm;punisher-origin;stern-asm,1963,high,yes,"initial volume; sheet already writes later volumes as 1998, 2014, 2018, 2022, 2025"
+Ultimate Spider-Man,,,,135,#1-200,2024,ultimate-spider-man,2000,high,yes,initial volume; sheet already writes later volumes as 2024
+Thor,,,,112,#126-437,1966;1998;2007;2014;2018;2020,claremont-xmen;hercules-origin;inhumans-origin;leekirby-thor,1966,high,yes,"initial volume; sheet already writes later volumes as 1966, 1998, 2007, 2014, 2018, 2020"
+Iron Man,,,,101,#116-250,1998;2012;2020,armor-wars;doom-modern;michelinie-iron-man;oneil-iron-man,1968,high,yes,"initial volume; sheet already writes later volumes as 1998, 2012, 2020"
+The Amazing Spider-Man,,,,100,#1-137,2014;2015,death-of-the-stacys;lee-ditko-asm;lee-romita-asm,1963,high,yes,"initial volume; sheet already writes later volumes as 2014, 2015"
+New Mutants,,,,99,#1-98,2009;2019,claremont-xmen;deadpool-origin;jms-thor,1983,high,yes,"initial volume; sheet already writes later volumes as 2009, 2019"
+X-Factor,,,,99,#1-109,1986;2005;2020,age-of-apocalypse;claremont-xmen;hickman-krakoa;pad-xfactor-1991,1986,high,yes,"initial volume; sheet already writes later volumes as 1986, 2005, 2020"
+New Avengers,,,,97,#1-64,2010;2015,bendis-breakout;bendis-civil-war;bendis-dark-reign;bendis-house-of-m,2005,high,yes,"initial volume; sheet already writes later volumes as 2010, 2015"
+Punisher,,,,65,#1-65,2000;2011,ennis-punisher-max,2004,review,yes,"bare #1-65 could be the 1987 ongoing, the 2000 Marvel Knights run, or PunisherMAX. Ambiguous on its face."
+Thunderbolts,,,,62,#0-125,2006,bendis-initiative;bendis-secret-invasion;busiek-avengers,1997,low,yes,"1997, 2006 after and including 100"
+Wolverine and the X-Men,,,,53,#1-42,,aaron-watxm;bendis-avx;schism-regensis,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Immortal Hulk,,,,51,#0-50,,ewing-immortal-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel Comics Presents,,,,50,#1-84,,claremont-xmen;mcgregor-panthers-quest;pad-hulk;weapon-x,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Old Man Logan,,,,50,#1-50,,old-man-logan-2016,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+New X-Men,,,,45,#20-154,2004,morrison-new-xmen;x-men-decimation,2004,high,yes,initial volume; sheet already writes later volumes as 2004
+Journey into Mystery,,,,43,#83-125,2011,leekirby-thor,1952,high,yes,initial volume; sheet already writes later volumes as 2011
+Warlock and the Infinity Watch,,,,42,#1-42,,infinity-crusade;infinity-gauntlet;infinity-war,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers Academy,,,,40,#1-39,,bendis-avx;bendis-fear-itself;bendis-heroic-age;bendis-ultron,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Strange Tales,,,,39,#110-181,,death-of-captain-marvel;leeditko-strange,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Moon Knight,,,,38,#1-38,2006;2014;2016;2021,moench-moon-knight,1980,high,yes,"initial volume; sheet already writes later volumes as 2006, 2014, 2016, 2021"
+Excalibur,,,,37,#1-82,2004;2019,claremont-xmen;fatal-attractions;generation-x;hickman-krakoa,1988,high,yes,"initial volume; sheet already writes later volumes as 2004, 2019"
+Uncanny X-Force,,,,37,#1-35,,remender-xmen,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Mighty Avengers,,,,36,#1-36,2013,bendis-dark-reign;bendis-initiative;bendis-secret-invasion;bendis-siege,2007,high,yes,initial volume; sheet already writes later volumes as 2013
+Avengers: The Initiative,,,,35,#1-35,,bendis-dark-reign;bendis-initiative;bendis-secret-invasion;bendis-siege,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men,,1,66,35,#1-204,1991;2019;2021,fatal-attractions;generation-x;vision-origins;x-men-decimation,1963,suggested,yes,#1-65 are in xmen-origins and vision-origins — the 1963 vol 1
+X-Men,,188,204,35,#1-204,1991;2019;2021,fatal-attractions;generation-x;vision-origins;x-men-decimation,1991,suggested,yes,"#188-204 is legacy numbering on the 1991 vol 2, already written as (1991) elsewhere"
+Fear Itself,,,,34,#1-7,,bendis-fear-itself;brubaker-cap;fraction-iron-man;fraction-thor-gillen-jim,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Superior Spider-Man,,,,34,#1-33,,spider-verse;superior-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Generation X,,,,32,#1-32,,generation-x,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Spectacular Spider-Man,,,,32,#43-203,,death-of-jean-dewolff;michelinie-asm;stern-asm,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Alpha Flight,,,,30,#1-39,2023,byrne-alpha-flight;byrne-ff;stern-avengers,1983,high,yes,initial volume; sheet already writes later volumes as 2023
+Tales of Suspense,,,,29,#39-99,,black-panther-origin;black-widow-origin;cap-origin;iron-man-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Alias,,,,28,#1-28,,bendis-alias,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Astonishing X-Men,,,,28,#1-24,,age-of-apocalypse;whedon-xmen,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Champions,,,,28,#1-27,,wilson-ms-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Secret Warriors,,,,28,#1-28,2017,hickman-secret-warriors,2009,high,yes,initial volume; sheet already writes later volumes as 2017
+Immortal Iron Fist,,,,27,#1-27,,immortal-iron-fist,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marauders,,,,27,#1-27,2022,hickman-krakoa,2019,high,yes,initial volume; sheet already writes later volumes as 2022
+Secret Avengers,,,,27,#12-37,2010,bendis-avx;bendis-fear-itself;bendis-ultron,2010,high,yes,initial volume; sheet already writes later volumes as 2010
+Incredible Hercules,,,,26,#116-141,,pak-hercules,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Comics Spider-Man,,,,26,#1-160,2011,ultimate-spider-man,2011,high,yes,initial volume; sheet already writes later volumes as 2011
+Immortal Thor,,,,25,#1-25,,ewing-immortal-thor,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Thor: God of Thunder,,,,25,#1-25,,aaron-god-of-thunder,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Uncanny Avengers,,,,25,#1-25,2012;2015;2023,remender-xmen,2012,high,yes,"initial volume; sheet already writes later volumes as 2012, 2015, 2023"
+Captain America: Sam Wilson,,,,24,#1-24,,secret-empire,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Black Panther,,,,24,#1-24,,ultimate-2024-y1;ultimate-2024-y2;ultimate-2024-y3,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+FF,,,,23,#1-23,,hickman-ff,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ms. Marvel,,,,23,#1-23,2014;2015,carol-danvers-origin,2014,high,yes,"initial volume; sheet already writes later volumes as 2014, 2015"
+Hawkeye,,,,22,#1-22,1983,fraction-hawkeye,2012,high,yes,initial volume; sheet already writes later volumes as 1983
+Indestructible Hulk,,,,22,#1-20,,waid-daredevil;waid-indestructible-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+PunisherMAX,,,,22,#1-22,,aaron-punisher-max,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Secret Empire,,,,22,#0-10,,secret-empire;wilson-ms-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Secret Wars,,,,22,#0-12,1984,hickman-secret-wars;secret-wars-1984,2015,review,yes,"bare range is #0-12, which matches Hickman's 2015 series, not the 1984 original. The sheet already writes the original as (1984), so bare almost certainly means 2015."
+Immortal X-Men,,,,21,#1-18,,gillen-eternals;hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Civil War II,,,,20,#0-9,,bendis-civil-war-ii;ewing-immortal-hulk;wilson-ms-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Peter Parker: The Spectacular Spider-Man,,,,20,#1-310,,zdarsky-asm,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Wolverine,,,,20,#1-85,1982;1988;1998;2003;2020;2024,bendis-house-of-m;claremont-xmen;fatal-attractions;generation-x,1988,suggested,yes,"#1-10, 33-40, 75, 85 all fit the 1988 ongoing; the 1982 mini is written as (1982) elsewhere"
+Captain America: Steve Rogers,,,,19,#1-19,,secret-empire,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Eternals,,,,19,#1-19,1985;2006;2008,kirby-eternals,1976,high,yes,"initial volume; sheet already writes later volumes as 1985, 2006, 2008"
+Winter Soldier,,,,19,#1-19,,brubaker-cap,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers: The Children's Crusade,,,,18,#1-9,,bendis-heroic-age;gillen-childrens-crusade,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Hellions,,,,18,#1-18,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Jessica Jones,,,,18,#1-18,,bendis-jj,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Jungle Action,,,,18,#6-24,,mcgregor-panthers-rage,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Silver Surfer,,,,18,#1-18,1987;1997;2014;2016,silver-surfer-origin,1968,high,yes,"initial volume; sheet already writes later volumes as 1987, 1997, 2014, 2016"
+Strange Academy,,,,18,#1-18,,strange-academy,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Mortal Thor,,,,18,#1-18,,ewing-immortal-thor,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men: Red,,,,18,#1-18,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Loki: Agent of Asgard,,,,17,#1-17,,ewing-loki-aoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Superior Foes of Spider-Man,,,,17,#1-17,,superior-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Champions,,,,17,#1-17,,hercules-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+"All-New, All-Different Avengers",,,,16,#0-15,,wilson-ms-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Dark Avengers,,,,16,#1-16,,bendis-dark-reign;bendis-siege,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel Premiere,,,,16,#1-53,1972,iron-fist-origin;kirby-black-panther;warlock-counter-earth,1972,high,yes,initial volume; sheet already writes later volumes as 1972
+Mighty Avengers,,,,16,#21-36,,pak-hercules,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Moon Knight: First of Khonshu,,,,16,#0-15,,mackay-moon-knight,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Marvel Team-Up,,,,16,#1-16,,ultimate-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Wolverine,,,,16,#1-16,,ultimate-2024-y2;ultimate-2024-y3,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Venom,,159,160,16,#159-262,2011;2018;2021;2025,cates-king-in-black;ewing-venom;spiderman-worldwide,2017,high,yes,stated: #159-160 are the 2017 legacy-numbered stretch
+Venom,cates-king-in-black,200,200,16,#159-262,2011;2018;2021;2025,cates-king-in-black;ewing-venom;spiderman-worldwide,2018,suggested,yes,#200 sits in cates-king-in-black — legacy numbering on Cates's 2018 volume. Confirm
+Venom,ewing-venom,250,262,16,#159-262,2011;2018;2021;2025,cates-king-in-black;ewing-venom;spiderman-worldwide,2021,suggested,yes,#250-262 sit in ewing-venom — legacy numbering on the 2021 volume. Confirm
+Black Cat,mackay-black-cat,,,15,#1-12,2020,cates-king-in-black;mackay-black-cat,2019,high,yes,stated: MacKay's run is the 2019 volume
+Black Cat,cates-king-in-black,,,15,#1-12,2020,cates-king-in-black;mackay-black-cat,2020,high,yes,stated: the King in Black tie-in issues are the 2020 volume
+Black Panther,,,,15,#1-15,1998;2005;2009;2016;2018,kirby-black-panther,1977,review,yes,"no entry in KNOWN_FIRST_VOLUME; sheet uses 1998, 2005, 2009, 2016, 2018 elsewhere"
+Blood Hunt,,,,15,#1-5,,mackay-avengers;mackay-moon-knight;mackay-strange,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Journey Into Mystery,,,,15,#622-636,,fraction-thor-gillen-jim,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Warlock,,,,15,#1-15,,death-of-captain-marvel;warlock-counter-earth,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Amazing Spider-Man Annual,,,,14,#2-37,,brand-new-day;leeditko-strange;michelinie-asm;stern-asm,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Astonishing Tales,,,,14,#1-8,,doom-origin;hickman-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers West Coast,,,,14,#47-62,,darker-than-scarlet,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avenging Spider-Man,,,,14,#6-22,,deconnick-captain-marvel;slott-big-time;superior-spider-man;waid-daredevil,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Fantastic Four Annual,,,,14,#1-23,,byrne-ff;claremont-xmen;doom-origin;inhumans-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Original Sin,,,,14,#0-8,,aaron-original-sin;hickman-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Power Man and Iron First,,,,14,#50-125,,iron-fist-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Pulse,,,,14,#1-14,,bendis-alias,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Pulse,,,,14,#1-14,,bendis-breakout;bendis-house-of-m,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Uncanny X-Men Annual,,,,14,#3-17,,claremont-xmen;fatal-attractions,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers Vs. X-Men,,,,13,#0-12,,bendis-avx,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Empyre,,,,13,#0-6,,ewing-cosmic;slott-ff,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+All-New Ghost Rider,,,,12,#1-12,,robbie-reyes,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers Assemble,,,,12,#1-19,2012,bendis-fear-itself;deconnick-captain-marvel,2012,suggested,yes,"#1-8,16-19 sit in bendis-fear-itself and deconnick-captain-marvel — that is the 2012 Bendis/DeConnick series. No 2010 ongoing exists"
+Avengers/Invaders,,,,12,#1-12,,bendis-initiative,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers: Forever,,,,12,#1-12,,busiek-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Black Bolt,,,,12,#1-12,,black-bolt,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Captain America and the Mighty Avengers,,,,12,#1-9,,axis;ewing-mighty-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Captain America: Sentinel of Liberty,,,,12,#1-12,,waid-cap,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Dead Man Logan,,,,12,#1-12,,old-man-logan-2016,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Doomwar,,,,12,#1-6,,doomwar;hudlin-black-panther,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Infamous Iron Man,,,,12,#1-12,,infamous-iron-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Miles Morales: Ultimate Spider-Man,,,,12,#1-12,,ultimate-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Spider-Man: Life Story,,,,12,#1-6,,zdarsky-asm,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Squadron Supreme,,,,12,#1-12,,squadron-supreme,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Superior Spider-Man Team-Up,,,,12,#1-12,,superior-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Thanos,,,,12,#1-12,2016,annihilation;infinity-epilogue,2003,review,yes,no entry in KNOWN_FIRST_VOLUME; sheet uses 2016 elsewhere
+The Vision,,,,12,#1-12,,vision-modern,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+U.S. Avengers,,,,12,#1-12,,ewing-new-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Comics: Ultimates,,,,12,#1-12,,hickman-ultimates,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Fallout,,,,12,#1-6,,hickman-ultimates;ultimate-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+War of the Realms,,,,12,#1-6,,aaron-avengers;aaron-war-of-realms,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men: Deadly Genesis,,,,12,#1-6,,deadly-genesis;x-men-decimation,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Young Avengers,,,,12,#1-12,2005;2013,bendis-breakout;bendis-civil-war,2005,review,yes,"no entry in KNOWN_FIRST_VOLUME; sheet uses 2005, 2013 elsewhere"
+Age of Ultron,,,,11,#1-10,,bendis-ultron,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Civil War: Front Line,,,,11,#1-11,,bendis-civil-war,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Herc,,,,11,#1-10,,hercules-aftermath,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+New Avengers: Illuminati,,,,11,#1-5,,bendis-civil-war;bendis-illuminati;bendis-secret-invasion,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Asgardians of the Galaxy,,,,10,#1-10,,aaron-war-of-realms,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers: No Road Home,,,,10,#1-10,,ewing-no-road-home,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Captain Marvel,,,,10,#25-34,2012;2014;2019,death-of-captain-marvel,1968,review,yes,"no entry in KNOWN_FIRST_VOLUME; sheet uses 2012, 2014, 2019 elsewhere"
+Contest of Champions,,,,10,#1-10,,ewing-ultimates,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Frank Castle: The Punisher,,,,10,#66-75,,ennis-punisher-max,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Hercules,,,,10,#1-5,,hercules-aftermath;hercules-prince-of-power,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Infernal Hulk,,,,10,#1-10,,pkj-incredible-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Legion of X,,,,10,#1-10,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Silver Surfer: Black,,,,10,#1-5,,cates-symbiote;cates-thanos,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Valkyrie: Jane Foster,,,,10,#1-10,,aaron-king-thor,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+World War Hulk,,,,10,#1-5,,bendis-initiative;world-war-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+AXIS,,,,9,#1-9,,axis,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Captain America and Bucky,,,,9,#620-628,,brubaker-cap,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+One World Under Doom,,,,9,#1-9,,north-ff,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Secret Wars II,,,,9,#1-9,,stern-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers: Celestial Quest,,,,8,#1-8,,busiek-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Daredevil: Dark Nights,,,,8,#1-8,,waid-daredevil,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Elektra: Assassin,,,,8,#1-8,,miller-dd-coda,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+House of M,,,,8,#1-8,,bendis-house-of-m,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel 1602,,,,8,#1-8,,marvel-1602,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Secret Invasion,,,,8,#1-8,,bendis-secret-invasion,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Siege,,,,8,#1-4,,bendis-siege;jms-thor,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Warlock Chronicles,,,,8,#1-8,,infinity-crusade,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Web of Spider-Man,,,,8,#31-103,,ketch-ghost-rider;michelinie-asm;pad-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men: Kingbreaker,,,,8,#1-4,,shiar-empire;war-of-kings,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers Annual,,,,7,#7-15,,byrne-ff;carol-danvers-origin;claremont-xmen;death-of-captain-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers World,,,,7,#1-17,,axis;hickman-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Captain America: White,,,,7,#0-6,,captain-america-white,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Civil War,,,,7,#1-7,,bendis-civil-war,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Fear Itself: The Home Front,,,,7,#1-7,,bendis-fear-itself,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+New Mutants Annual,,,,7,#1-7,,claremont-xmen,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Crew,,,,7,#1-7,,priest-black-panther,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Six,,,,7,#1-7,,ultimate-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+A.X.E.: Death to the Mutants,,,,6,#1-3,,gillen-eternals;hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+A.X.E.: Judgement Day,,,,6,#1-6,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+A.X.E.: Judgment Day,,,,6,#1-6,,gillen-eternals,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+All-New Captain America,,,,6,#1-6,,remender-cap,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Annihilation,,,,6,#1-6,,annihilation,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Annihilation: Conquest,,,,6,#1-6,,annihilation-conquest,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers Vs. X-Men VS,,,,6,#1-6,,bendis-avx,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Beta Ray Bill: Godhunter,,,,6,#1-3,,jms-thor;pre-annihilators,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Black Panther and the Crew,,,,6,#1-6,,coates-black-panther,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Books of Doom,,,,6,#1-6,,books-of-doom,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Captain America: Reborn,,,,6,#1-6,,brubaker-cap,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Daredevil: Yellow,,,,6,#1-6,,daredevil-yellow,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Devil's Reign,,,,6,#1-6,,zdarsky-daredevil,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Generation Hope,,,,6,#10-15,,schism-regensis,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ghost Rider/Blaze: Spirits of Vengenace,,,,6,#1-18,,ketch-ghost-rider,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ghost Rider: Road to Damnation,,,,6,#1-6,,ennis-ghost-rider,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ghost Rider: Trail of Tears,,,,6,#1-6,,ennis-ghost-rider,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ghost Riders: Heaven's on Fire,,,,6,#1-6,,way-aaron-ghost-rider,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+House of X,,,,6,#1-6,,krakoa-prelude,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Hulk: Gray,,,,6,#1-6,,hulk-grey,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Incredible Hulk Annual,,,,6,#6-20,1997,pad-hulk;warlock-counter-earth,1968,suggested,yes,annuals belong to the 1968 volume
+Infinity,,,,6,#1-6,,hickman-infinity,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Infinity Abyss,,,,6,#1-6,,infinity-epilogue,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Infinity Crusade,,,,6,#1-6,,infinity-crusade,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Infinity Gauntlet,,,,6,#1-6,,infinity-gauntlet,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Infinity War,,,,6,#1-6,,infinity-war,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Kitty Pryde and Wolverine,,,,6,#1-6,,claremont-xmen,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel Graphic Novel,,,,6,#4-49,,claremont-xmen;emperor-doom;hercules-prince-of-power;stern-avengers,1982,suggested,yes,"single 1982 line, #1-36+; unambiguous"
+Marvel: The End,,,,6,#1-6,,infinity-epilogue,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvels X,,,,6,#1-6,,marvels,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvels: Eye of the Camera,,,,6,#1-6,,marvels,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+NYX: No Way Home,,,,6,#1-6,,x-23-innocence-lost,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Powers of X,,,,6,#1-6,,krakoa-prelude,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Prowler,,,,6,#1-6,,spiderman-worldwide,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Reborn: Ultimate Impact,,,,6,#1-6,,ultimate-2024-y3,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Rise of the Black Panther,,,,6,#1-6,,coates-black-panther,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Rocket,,,,6,#1-6,,ewing-cosmic,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+S.H.I.E.L.D.,,,,6,#1-6,2011;2014,hickman-shield,2010,suggested,yes,#1-6 sit in hickman-shield — the 2010 series; (2011) is the Infinity follow-up
+Silk,,,,6,#14-19,,spiderman-worldwide,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Son of M,,,,6,#1-6,,x-men-decimation,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Storm,,,,6,#1-6,,hudlin-black-panther,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Stormbreaker: the Saga of Beta Ray,,,,6,#1-6,,pre-annihilators,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Strange Academy: Finals,,,,6,#1-6,,strange-academy,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Thanos Imperative,,,,6,#1-6,,thanos-imperative,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Thor: Blood Oath,,,,6,#1-6,,hercules-prince-of-power,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Vengeance,,,,6,#1-6,,gillen-young-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+War of Kings,,,,6,#1-6,,war-of-kings,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+War of the Realms: War Scrolls,,,,6,#1-3,,aaron-avengers;aaron-war-of-realms,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+West Coast Avengers,,,,6,#31-46,1984,armor-wars;visionquest,1985,suggested,yes,"#31,42-46 are in armor-wars and visionquest, both 1988-89 crossovers into the 1985 vol 2 ongoing. 1988 is not a WCA launch year"
+World of Wakanda,,,,6,#1-6,,coates-black-panther,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-23: Innocence Lost,,,,6,#1-6,,x-23-innocence-lost,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-23: Target X,,,,6,#1-6,,x-23-innocence-lost,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+1602: New World,,,,5,#1-5,,marvel-1602,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Absolute Carnage,,,,5,#1-5,,cates-symbiote,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Adam: The Legend of the Blue Marvel,,,,5,#1-5,,blue-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ares: God of War,,,,5,#1-5,,hercules-prince-of-power,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Astonishing Iceman,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers Inc.,,,,5,#1-5,,ewing-avengers-inc,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers Vs. X-Men; Consequences,,,,5,#1-5,,bendis-avx,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers: Prime,,,,5,#1-5,,bendis-heroic-age,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers: Solo,,,,5,#1-5,,bendis-fear-itself,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Beta Ray Bill,,,,5,#1-5,,beta-ray-bill-djw,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Betsy Braddock: Captain Britain,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Bishop: War College,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Black Order,,,,5,#1-5,,ewing-no-surrender,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Captain America: Man Out of Time,,,,5,#1-5,,cap-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Cataclysm: The Ultimate's Last Stand,,,,5,#1-5,,ultimate-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Chaos War,,,,5,#1-5,,chaos-war,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Cosmic Ghost Rider,,,,5,#1-5,,cates-thanos,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Daredevil: The Man Without Fear,,,,5,#1-5,,miller-dd-coda,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Dark Reign: Fantastic Four,,,,5,#1-5,,hickman-ff,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Dark Reign: The Hood,,,,5,#1-5,,bendis-dark-reign,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Dark Reign: Young Avengers,,,,5,#1-5,,heinberg-young-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Defenders: Beyond,,,,5,#1-5,,ewing-defenders,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Doom Academy,,,,5,#1-5,,strange-academy,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Fall of the House of X,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Fallen Son,,,,5,#1-5,,bendis-civil-war,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Friendly Neighborhood Spider-Man,,,,5,#1-24,,jms-asm,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Gamma Flight,,,,5,#1-5,,ewing-immortal-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Generation M,,,,5,#1-5,,x-men-decimation,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Giant-Size Defenders,,,,5,#1-5,,classic-defenders,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Guardians of the Galaxy: Mother Entropy,,,,5,#1-5,,infinity-finale,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Iron Cat,,,,5,#1-5,,mackay-black-cat,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+King in Black,,,,5,#1-5,,cates-king-in-black,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Knight of X,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Loki,,,,5,#1-5,2004,aaron-war-of-realms,2019,review,yes,no entry in KNOWN_FIRST_VOLUME; sheet uses 2004 elsewhere
+Madrox,,,,5,#1-5,,pad-xfactor-1991,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Moon Knight: City of the Dead,,,,5,#1-5,,mackay-moon-knight,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+New Mutants: Lethan Legend,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Origin II,,,,5,#1-5,,wolverine-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Original Sin:,,,,5,#5-5,,ewing-loki-aoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Planet of the Symbiotes,,,,5,#1-5,,cates-king-in-black,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Punisher Presents: Barracuda,,,,5,#1-5,,ennis-punisher-max,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Quicksilver: No Surrender,,,,5,#1-5,,ewing-no-surrender,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Realm of Kings: Imperial Guard,,,,5,#1-5,,realm-of-kings,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Realm of Kings: Inhumans,,,,5,#1-5,,realm-of-kings,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Renew Your Vows,,,,5,#1-5,,spiderman-worldwide,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Rise of the Powers of X,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Rogue & Gambit,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Sabertooth,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Sabertooth and the Exiles,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Secret Empire: Brave New World,,,,5,#1-5,,secret-empire,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Secret War,,,,5,#1-5,,bendis-breakout,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Sentinel Squad ONE,,,,5,#1-5,,x-men-decimation,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Spider-Man: Breakout,,,,5,#1-5,,bendis-breakout,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Spider-Men,,,,5,#1-5,,ultimate-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Spider-Woman: Origin,,,,5,#1-5,,bendis-house-of-m,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Superior Carnage,,,,5,#1-5,,superior-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Symbiote Spider-Man: King in Black,,,,5,#1-5,,cates-king-in-black,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Tales to Astonish,,,,5,#1-93,,hulk-origin;pad-hulk;silver-surfer-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Clone Conspiracy,,,,5,#1-5,,spiderman-worldwide,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Death of Doctor Strange,,,,5,#1-5,,mackay-strange,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Sentry,,,,5,#1-5,,bendis-breakout,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Unworthy Thor,,,,5,#1-5,,aaron-thor-jane,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Endgame,,,,5,#1-5,,ultimate-2024-y3,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Spider-Man: Incursion,,,,5,#1-5,,ultimate-2024-y2,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Uncanny Spider-Man,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+War of the Realms: Journey into Mystery,,,,5,#1-5,,aaron-war-of-realms,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Way of X,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Winter Soldier: The Bitter March,,,,5,#1-5,,remender-cap,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+World War Hulk Aftersmash: Warbound,,,,5,#1-5,,wwh-aftersmash,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X Death of Wolverine,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X Lives of Wolverine,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Corp,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Factor Annual,,,,5,#4-8,,claremont-xmen;pad-xfactor-1991,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men - The 198,,,,5,#1-5,,x-men-decimation,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men: Emperor Vulcan,,,,5,#1-5,,war-of-kings,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men: Schism,,,,5,#1-5,,schism-regensis,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men: The Trial of Magneto,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Terminator,,,,5,#1-5,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+AXIS: Revolutions,,,,4,#1-4,,axis,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Amazing X-Men,,,,4,#1-4,2014,age-of-apocalypse,1995,review,yes,no entry in KNOWN_FIRST_VOLUME; sheet uses 2014 elsewhere
+Annihilation: Conquest - Quasar,,,,4,#1-4,,annihilation-conquest,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Annihilation: Conquest - Star-Lord,,,,4,#1-4,,annihilation-conquest,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Annihilation: Conquest - Wraith,,,,4,#1-4,,annihilation-conquest,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Annihilation: Nova,,,,4,#1-4,,annihilation,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Annihilation: Ronan,,,,4,#1-4,,annihilation,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Annihilation: Silver Surfer,,,,4,#1-4,,annihilation,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Annihilation: Super-Skrull,,,,4,#1-4,,annihilation,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Annihilators,,,,4,#1-4,,annihilators,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Annihilators: Earthfall,,,,4,#1-4,,annihilators,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers Icons: The Vision,,,,4,#1-4,,busiek-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers Infinity,,,,4,#1-4,,busiek-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers vs. Atlas,,,,4,#1-4,,bendis-siege,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers: X-Sanction,,,,4,#1-4,,bendis-avx,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Balder and the Brave,,,,4,#1-4,,simonson-thor,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Black Panther/Captain America: Flags of Our Fathers,,,,4,#1-4,,hudlin-black-panther,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Captain Britain and the Mighty Defenders,,,,4,#1-2,,ewing-mighty-avengers;hickman-secret-wars,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Captain Marvel & The Carol Corps,,,,4,#1-4,,deconnick-captain-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Cataclysm: Ultimate Comics Spider-Man,,,,4,#0-3,,ultimate-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Children of the Vault,,,,4,#1-4,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Civil War II: Gods of War,,,,4,#1-4,,hercules-aftermath,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Civil War: Young Avengers & Runaways,,,,4,#1-4,,bendis-civil-war,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Daredevil/Punisher: Seventh Circle,,,,4,#1-4,,soule-daredevil,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Daredevil: Road Warrior Infinite Comic,,,,4,#1-4,,waid-daredevil,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Dead X-Men,,,,4,#1-4,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Deadpool: The Circle Chase,,,,4,#1-4,,deadpool-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Doctor Strange: Damnation,,,,4,#1-4,,cates-strange,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Drax the Destroyer,,,,4,#1-4,,annihilation,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Edge of Spider-Verse,,,,4,#1-4,,spider-verse,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Empyre: X-Men,,,,4,#1-4,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Factor X,,,,4,#1-4,,age-of-apocalypse,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Fantastic Four vs X-Men,,,,4,#1-4,,claremont-xmen,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Gambit and the X-Ternals,,,,4,#1-4,,age-of-apocalypse,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Generation Next,,,,4,#1-4,,age-of-apocalypse,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Hail Hydra,,,,4,#1-4,,remender-cap,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Hercules: Prince of Power,,,,4,#1-4,1984,hercules-prince-of-power,1984,suggested,yes,"only one series, already written as (1984) elsewhere"
+Hercules: Twilight of a God,,,,4,#1-4,,hercules-prince-of-power,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Heroes Reborn: The Return,,,,4,#1-4,,busiek-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Heroic Age: Prince of Power,,,,4,#1-4,,pak-hercules,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Inferno,,,,4,#1-4,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Iron Man Annual,,,,4,#4-6,,gillis-eternals;hercules-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Jean Grey,,,,4,#1-4,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Killmonger,,,,4,#1-4,,coates-black-panther,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+King Thor,,,,4,#1-4,,aaron-king-thor,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Klaws of the Panther,,,,4,#1-4,,hudlin-black-panther,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Loki: Agents of Asgard,,,,4,#6-9,,axis,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Magik,,,,4,#1-4,,claremont-xmen,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel Knights Spider-Man,,,,4,#19-22,,jms-asm,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvels,,,,4,#1-4,,marvels,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ms Marvel: Mutant Menace,,,,4,#1-4,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ms. Marvel: The New Mutant,,,,4,#1-4,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+New Avengers: The Reunion,,,,4,#1-4,,bendis-dark-reign,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Punisher: Born,,,,4,#1-4,,ennis-punisher-max,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Realm of Kings: Son of Hulk,,,,4,#1-4,,realm-of-kings,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Realm of X,,,,4,#1-4,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Resurrection of Magneto,,,,4,#1-4,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Secret Invasion: Inhumans,,,,4,#1-4,,war-of-kings,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Secret Wars: Siege,,,,4,#1-4,,hickman-secret-wars,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Shuri,,,,4,#1-4,,coates-black-panther,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Siege: Embedded,,,,4,#1-4,,bendis-siege,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Silver Surfer/Warlock: Resurrection,,,,4,#1-4,,infinity-war,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Silver Surfer: In Thy Name,,,,4,#1-4,,pre-annihilators,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Sinister War,,,,4,#1-4,,spencer-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Spider-Man 2099,,,,4,#5-8,,spider-verse,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Spider-Woman,,,,4,#1-4,2015,spider-verse,1993,review,yes,no entry in KNOWN_FIRST_VOLUME; sheet uses 2015 elsewhere
+Steve Rogers: Super-Soldier,,,,4,#1-4,,brubaker-cap,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Thanos vs. Hulk,,,,4,#1-4,,infinity-finale,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Infinity Entity,,,,4,#1-4,,infinity-finale,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Thors,,,,4,#1-4,,aaron-thor-jane,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Comics Doom,,,,4,#1-4,,bendis-doomsday,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Comics Enemy,,,,4,#1-4,,bendis-doomsday,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Comics Mystery,,,,4,#1-4,,bendis-doomsday,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Comics Thor,,,,4,#1-4,,hickman-ultimates,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Comics: Hawkeye,,,,4,#1-4,,hickman-ultimates,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Invasion,,,,4,#1-4,,ultimate-invasion,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Vision and the Scarlet Witch,,,,4,#1-4,1982;1985,vision-marriage,1982,review,yes,"no entry in KNOWN_FIRST_VOLUME; sheet uses 1982, 1985 elsewhere"
+War of Kings: Ascension,,,,4,#1-4,,war-of-kings,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Weapon X,,,,4,#1-4,,age-of-apocalypse,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Wolverine/Hercules,,,,4,#1-4,,hercules-aftermath,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Wolverine: Weapons of Armageddon,,,,4,#1-4,,zdarsky-cap,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+World War Hulk: Front Line,,,,4,#1-3,,bendis-initiative;world-war-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+World War Hulk: Gamma Corps,,,,4,#1-4,,world-war-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Calibre,,,,4,#1-4,,age-of-apocalypse,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Man,,,,4,#1-4,,age-of-apocalypse,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men Forever,,,,4,#1-4,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men vs. Avengers,,,,4,#1-4,,stern-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men: Worlds Apart,,,,4,#1-4,,hudlin-black-panther,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Terminators,,,,4,#1-4,,claremont-xmen,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+AXIS: Carnage,,,,3,#1-3,,axis,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+AXIS: Hobgoblin,,,,3,#1-3,,axis,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+All-New Marvel NOW! Point One,,,,3,#1-1,,ewing-loki-aoa;slott-silver-surfer;wilson-ms-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Children of Atom,,,,3,#4-6,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Children of the Atom,,,,3,#1-3,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Civil War II: Ulysses Infinite Comic,,,,3,#1-3,,bendis-civil-war-ii,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Daredevil Annual,,,,3,#1-1,2012,brubaker-daredevil;soule-daredevil,,resolved,,"No rule needed. The three bare labels are written ""Daredevil Annual #1 (2007/2016/2018)"" — year after the issue number. etl/extract.py now reorders these to the canonical form, so they carry their own years."
+Daredevil: Woman Without Fear,,,,3,#1-3,,zdarsky-daredevil,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Devil's Reign: X-Men,,,,3,#1-3,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Doom: The Emperor Returns,,,,3,#1-3,,dixon-doom,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Immoral X-Men,,,,3,#1-3,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Incredible Hulks,,,,3,#618-620,,chaos-war,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Jessica Jones: Blind Spot,,,,3,#1-3,,thompson-jj,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Jessica Jones: Purple Daughter,,,,3,#1-3,,thompson-jj,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel Team-Up,,,,3,#55-62,,byrne-ff;death-of-captain-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel Two-in-One,,,,3,#6-50,,byrne-ff;classic-defenders,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Maximum Security,,,,3,#1-3,,busiek-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+New Avengers Annual,,,,3,#1-3,2011,bendis-alias;bendis-dark-reign;bendis-initiative,2006,high,yes,"Per your note: #1 in bendis-alias, #2 in bendis-initiative, #3 in bendis-dark-reign are all the 2006 volume. The (2011) #1 in bendis-house-of-m already carries its year and is untouched."
+New Excalibur,,,,3,#1-3,,x-men-decimation,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Nightcrawlers,,,,3,#1-3,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Scarlet Spiders,,,,3,#1-3,,spider-verse,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Spider-Man,,,,3,#35-37,,michelinie-asm,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Spider-Verse Team-Up,,,,3,#1-3,,spider-verse,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Storm and the Brotherhood of Mutants,,,,3,#1-3,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Sub-Mariner,,,,3,#22-35,,classic-defenders,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Superior Iron Man,,,,3,#1-3,,axis,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Amazing Spider-Man Annual,,,,3,#1-42,,lee-ditko-asm;spiderman-worldwide,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Incredible Hercules,,,,3,#113-115,,wwh-aftersmash,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The m Amazing Spider-Man Annual,,,,3,#3-5,,lee-romita-asm,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Thor Annual,,,,3,#2-7,,gillis-eternals;hercules-origin;leekirby-thor,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Spider-Man Annual,,,,3,#1-3,,ultimate-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Uncanny  X-Men,,,,3,#319-321,,age-of-apocalypse,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+World War Hulk: Frontline,,,,3,#4-6,,world-war-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+World War Hulk: X-Men,,,,3,#1-3,,world-war-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men (vol. 2),,,,3,#177-179,,x-men-decimation,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men Legacy,,,,3,#235-237,,second-coming,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men Red,,,,3,#5-7,,gillen-eternals,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men: Legacy,,,,3,#259-260,,schism-regensis,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men: The Times and Life of Lucas Bishop,,,,3,#1-3,,messiah-war,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Annihilation: Heralds of Galactus,,,,2,#1-2,,annihilation,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Assault on Pleasant Hill Alpha,,,,2,#1-1,,ewing-new-avengers;secret-empire,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Cable,,,,2,#20-34,2008;2020;2024,age-of-apocalypse;pad-hulk,1993,review,yes,"no entry in KNOWN_FIRST_VOLUME; sheet uses 2008, 2020, 2024 elsewhere"
+Captain America Annual,,,,2,#4-6,,dematteis-cap;kirby-cap,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Chaos War: Dead Avengers,,,,2,#2-3,,chaos-war,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Chaos War: X-Men,,,,2,#1-2,,chaos-war,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Doctor Strange,,1,88,2,#60-183,1974;2015;2018;2023,classic-defenders;stern-avengers,1974,suggested,yes,#60 is the 1974 vol 2
+Doctor Strange,,169,183,2,#60-183,1974;2015;2018;2023,classic-defenders;stern-avengers,1968,suggested,yes,"#183 is the 1968 vol 1, which ended at #183"
+Ghost Rider (2006) Annual,,,,2,#1-2,,way-aaron-ghost-rider,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Giant-Size Super-Villain Team-Up,,,,2,#1-2,,doom-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Giant-Size X-Men,,,,2,#1-3,,claremont-xmen;whedon-xmen,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Hercules: Fall of an Avenger,,,,2,#1-2,,pak-hercules,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Hulk: Future Imperfect,,,,2,#1-2,,pad-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Incoming,,,,2,#1-1,,cates-symbiote;hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Infinity Countdown: Champions,,,,2,#1-2,,wilson-ms-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Iron Man: The Iron Age,,,,2,#1-2,,busiek-iron-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Magneto,,,,2,#11-12,2014,axis,2014,review,yes,no entry in KNOWN_FIRST_VOLUME; sheet uses 2014 elsewhere
+Marvel Comics,,,,2,#1000-1001,,ewing-defenders,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel Holiday Special,,,,2,#2-3,,pad-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel Spotlight,,,,2,#28-29,,moench-moon-knight,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel Super-Heroes,,,,2,#13-20,,carol-danvers-origin;doom-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+"Peter Parker, the Spectacular Spider-Man",,,,2,#27-28,,miller-daredevil,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Power Man,,,,2,#48-49,,iron-fist-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Power Pack,,,,2,#27-28,,claremont-xmen,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ruins,,,,2,#1-2,,marvels,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Savage Avengers,,,,2,#18-19,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Silver Surfer: Parable,,,,2,#1-2,,silver-surfer-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Spider-Man Unlimited,,,,2,#1-2,,michelinie-asm,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Spider-Verse,,,,2,#1-2,,spider-verse,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Super-Villain Team-Up,,,,2,#13-14,,doom-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Superior Spider-Man Annual,,,,2,#1-2,,superior-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Thanos Quest,,,,2,#1-2,,infinity-gauntlet,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Spider-Man Requiem,,,,2,#1-2,,ultimate-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+War of Kings: Darkhawk,,,,2,#1-2,,war-of-kings,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+War of Kings: Warriors,,,,2,#1-2,,war-of-kings,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Werewolf By Night,,,,2,#32-33,,moench-moon-knight,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men & Alpha Flight,,,,2,#1-2,,claremont-xmen,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men Unlimited,,,,2,#1-2,,fatal-attractions,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men: Second Coming,,,,2,#1-2,,second-coming,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Young Avengers Special,,,,2,#1-1,,bendis-house-of-m;heinberg-young-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+2099 Alpha,,,,1,#1-1,,spencer-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+2099 Omega,,,,1,#1-1,,spencer-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+A.X.E.: Eternals,,,,1,#1-1,,gillen-eternals,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+A.X.E.: Eve of Judgment,,,,1,#1-1,,gillen-eternals,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+A.X.E.: Judgment Day Omega,,,,1,#1-1,,gillen-eternals,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+A.X.E.: Starfox,,,,1,#1-1,,gillen-eternals,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+"All New, All-Different Avengers",,,,1,#0-0,,ewing-ultimates,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+All-New X-Men Special,,,,1,#1-1,,superior-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+"All-New, All-Different Avengers Annual",,,,1,#1-1,,wilson-ms-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Amazing Fantasy,,,,1,#15-15,2004,lee-ditko-asm,1962,review,yes,no entry in KNOWN_FIRST_VOLUME; sheet uses 2004 elsewhere
+Amazing Spider-Man: Grim Hunt — The Kraven Saga,,,,1,#1-1,,brand-new-day,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Assault on Pleasant Hill Omega,,,,1,#1-1,,secret-empire,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers (2012) Annual,,,,1,#1-1,,bendis-heroic-age,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers Standoff: Assault on Pleasant Hill Omega,,,,1,#1-1,,ewing-new-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers Standoff: Welcome to Pleasant Hill,,,,1,#1-1,,ewing-new-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers: The Children's Crusade - Young Avengers,,,,1,#1-1,,gillen-childrens-crusade,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers: The Enemy Within,,,,1,#1-1,,deconnick-captain-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers: The Initiative Annual,,,,1,#1-1,,bendis-initiative,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengers: The Initiative Special,,,,1,#1-1,,bendis-dark-reign,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Avengrers: Children's Crusade: Young Avengers,,,,1,#1-1,,bendis-heroic-age,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Baby's First Deadpool Book,,,,1,#1-1,,kelly-deadpool,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Bizzaire Adventures,,,,1,#28-28,,miller-daredevil,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Black Cat (2021) Annual,,,,1,#1-1,,mackay-black-cat,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Black Cat Annual,,,,1,#1-1,,mackay-black-cat,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Black Panther (2005) Annual,,,,1,#1-1,,hudlin-black-panther,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Captain Ameria Annual,,,,1,#3-3,,kirby-cap,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Captain America Comics,,,,1,#1-1,,cap-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Champions Annual,,,,1,#1-1,,wilson-ms-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Chaos War: Thor,,,,1,#2-2,,chaos-war,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Daredevil (2019) Annual,,,,1,#1-1,,zdarsky-daredevil,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Dark Avengers Annual,,,,1,#1-1,,bendis-siege,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Dark Avengers/Uncanny X-Men: Exodus,,,,1,#1-1,,bendis-dark-reign,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Dark Avengers/Uncanny X-Men: Utopia,,,,1,#1-1,,bendis-dark-reign,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Darkhold,,,,1,#1-1,,ketch-ghost-rider,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Deadpool,,,,1,#0-0,1994;1997,kelly-deadpool,1997,suggested,yes,#0 sits in kelly-deadpool. Joe Kelly wrote the 1997 series; #0 was its 1998 promo. 1977 reads as a typo for 1997
+Defenders Annual,,,,1,#1-1,,classic-defenders,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Edge of the Spider-Verse,,,,1,#5-5,,spider-verse,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Empyre: Avengers,,,,1,#0-0,,ewing-cosmic,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Empyre: Fallout Fantastic Four,,,,1,#1-1,,ewing-cosmic,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Empyre: Fantastic Four,,,,1,#0-0,,ewing-cosmic,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Empyre: The Immortal She-Hulk,,,,1,#1-1,,ewing-cosmic,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ends of the Earth,,,,1,#1-1,,slott-big-time,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Enter the Heroic Age,,,,1,#1-1,,bendis-heroic-age,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Eternals Annual,,,,1,#1-1,,kirby-eternals,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Exiled,,,,1,#1-1,,gillen-loki,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Fantastic Four: Negative Zone,,,,1,#1-1,,slott-ff,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Fantastic Four: Road Trip,,,,1,#1-1,,slott-ff,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Fear Itself: The Book of the Skull,,,,1,#1-1,,bendis-fear-itself,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Free Comic Book Day 2019 (Avengers/Savage Avengers),,,,1,#1-1,,aaron-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Free Comic Book Day 2021: Avengers/Hulk,,,,1,#1-1,,aaron-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Free Comic Book Day 2024: Blood Hunt/X-Men,,,,1,#1-1,,mackay-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Generations: Ms. Marvel & Ms. Marvel,,,,1,#1-1,,wilson-ms-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ghost Rider (1990) Annual,,,,1,#1-1,,ketch-ghost-rider,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ghost Rider (19970 Annual,,,,1,#2-2,,ketch-ghost-rider,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ghost Rider/Punisher/Wolverine: Hearts of Darkness,,,,1,#1-1,,ketch-ghost-rider,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Giant-Size Amazing Spider-Man: King's Ransom,,,,1,#1-1,,spencer-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Giant-Size Amazing Spider-Man: The Chameleon Conspiracy,,,,1,#1-1,,spencer-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Giant-Size Avengers,,,,1,#4-4,,vision-origins,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Giant-Size Hulk,,,,1,#1-1,2024,planet-hulk,2006,review,yes,no entry in KNOWN_FIRST_VOLUME; sheet uses 2024 elsewhere
+Giant-Size Spider-Woman,,,,1,#1-1,,bendis-house-of-m,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Hawkeye Annual,,,,1,#1-1,,fraction-hawkeye,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Heroes Return,,,,1,#1-1,,aaron-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Hulk: Blood Hunt,,,,1,#1-1,,pkj-incredible-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Hulk: Cutting Edge,,,,1,#1-1,,pad-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Hulk: The End,,,,1,#1-1,,pad-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Immortal Iron Fist Annual,,,,1,#1-1,,immortal-iron-fist,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Immortal Thor Annual,,,,1,#1-1,,ewing-immortal-thor,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Incredible Hulk Vs. Venom,,,,1,#1-1,,pad-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Incredible Hulk: Hercules Unleashed,,,,1,#1-1,,pad-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Indestructible Hulk Special,,,,1,#1-1,,superior-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Infinity Wars Prime,,,,1,#1-1,,cates-thanos,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Iron-Man,,,,1,#55-55,,death-of-captain-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Irredeemable Ant-Man,,,,1,#10-10,,busiek-iron-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Journey into Mystery Annual,,,,1,#1-1,,hercules-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+King in Black: Immortal Hulk,,,,1,#1-1,,cates-king-in-black,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+King in Black: Iron Man/Doctor Doom,,,,1,#1-1,,cates-king-in-black,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Logan's run,,,,1,#6-6,,death-of-captain-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel Feature,,,,1,#12-12,1971,death-of-captain-marvel,1971,review,yes,no entry in KNOWN_FIRST_VOLUME; sheet uses 1971 elsewhere
+Marvel NOW! Point One,,,,1,#1-1,,gillen-young-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel Now! Point One,,,,1,#1-1,,bendis-ultron,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel Treasury Edition,,,,1,#12-12,,classic-defenders,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel Two-in-One Annual,,,,1,#2-2,,death-of-captain-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvels Epilogue,,,,1,#1-1,,marvels,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Marvel’s Voices,,,,1,#1-1,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Maximum Security: Dangerous Planet,,,,1,#1-1,,busiek-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Moon Knight (2006) Annual,,,,1,#1-1,,huston-moon-knight,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Morbius:L The Living Vampire,,,,1,#1-1,,ketch-ghost-rider,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+New Avengers (2011) Annual,,,,1,#1-1,,bendis-heroic-age,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+New Avengers Finale,,,,1,#1-1,,bendis-siege,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+New Mutants Special Edition,,,,1,#1-1,,claremont-xmen,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+New Warriors Annual,,,,1,#1-1,,claremont-xmen,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+New X-Men Annual,,,,1,#1-1,,morrison-new-xmen,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Nightstalkers,,,,1,#1-1,,ketch-ghost-rider,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Nova (2007) Annual,,,,1,#1-1,,annihilation-conquest,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Old Man Logan Annual,,,,1,#1-1,,old-man-logan-2016,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Onslaught: Marvel Universe,,,,1,#1-1,,pad-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Origins of Siege,,,,1,#1-1,,bendis-siege,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Peter Parker: The Spectacular Spider-Man Annual,,,,1,#1-1,,zdarsky-asm,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Quicksilver,,,,1,#10-10,,busiek-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Savage Hulk,,,,1,#1-1,,pad-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Scream: Curse of the Carnage,,,,1,#1-1,,cates-king-in-black,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Secret Empire: Omega,,,,1,#1-1,,wilson-ms-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Secret Empire: Uprising,,,,1,#1-1,,wilson-ms-marvel,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Secret Invasion: Dark Reign,,,,1,#1-1,,bendis-secret-invasion,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Secret Invasion: Requiem,,,,1,#1-1,,bendis-secret-invasion,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Secret X-Men,,,,1,#1-1,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Sensational Spider-Man,,,,1,#41-41,,jms-asm,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Sensational Spider-Man Annual,,,,1,#1-1,,bendis-civil-war,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Sgt Fury,,,,1,#13-13,,cap-origin,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Siege: The Cabal,,,,1,#1-1,,bendis-siege,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Spider-Island: The Avengers,,,,1,#1-1,,slott-big-time,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Superior Carnage Annual,,,,1,#1-1,,superior-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Superior Spider-Man Team-Up Special,,,,1,#1-1,,superior-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Incredible Hulk,,,,1,#112-112,,wwh-aftersmash,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+The Mighty Thor (2011) Annual,,,,1,#1-1,,fraction-thor-gillen-jim,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Thor (2014) Annual,,,,1,#1-1,,aaron-god-of-thunder,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Thor God-Size Special,,,,1,#1-1,,fraction-thor-gillen-jim,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Tomb of Dracula,,,,1,#44-44,1972,englehart-brunner-strange,1972,review,yes,no entry in KNOWN_FIRST_VOLUME; sheet uses 1972 elsewhere
+Ultimate Spider-Man Super Special,,,,1,#1-1,,ultimate-spider-man,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Ultimate Universe,,,,1,#1-1,,ultimate-invasion,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Uncanny Avengers Annual,,,,1,#1-1,,axis,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Vengeance of the Moon Knight,,,,1,#5-5,2009;2024,mackay-avengers,2024,review,yes,"no entry in KNOWN_FIRST_VOLUME; sheet uses 2009, 2024 elsewhere"
+War of the Realms: Omega,,,,1,#1-1,,aaron-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Web of Venom: Cult of Carnage,,,,1,#1-1,,cates-symbiote,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Web of Venom: Empyre's End,,,,1,#1-1,,cates-symbiote,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Web of Venom: Funeral Pyre,,,,1,#1-1,,cates-symbiote,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Web of Venom: The Good Son,,,,1,#1-1,,cates-symbiote,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Web of Venom: Unleashed,,,,1,#1-1,,cates-symbiote,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Welcome to Pleasant Hill,,,,1,#1-1,,secret-empire,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+West Coast Avengers Annual,,,,1,#1-1,,stern-avengers,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Wolverine and the X-Men Annual,,,,1,#1-1,,aaron-watxm,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Wolverine: Old Man Logan Giant-Size,,,,1,#1-1,,old-man-logan,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+World War Hulk Prologue: World Breaker,,,,1,#1-1,,world-war-hulk,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+World War Hulk: Aftersmash,,,,1,#1-1,,wwh-aftersmash,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+X-Men Unlimited Infinity Comic,,,,1,#142-142,,hickman-krakoa,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine
+Young Avengers Presents,,,,1,#6-6,,fraction-hawkeye,,low,,never written with a year anywhere in the sheet — probably unambiguous as-is; leaving it alone is fine

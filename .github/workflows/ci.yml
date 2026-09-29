@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  pull_request:
+  push: { branches: [main] }
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: reading_test
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+        ports: ["5432:5432"]
+    env:
+      # Tests only ever see TEST_DATABASE_URL (R3-02). There is deliberately no
+      # DATABASE_URL here, so nothing in this job can mistake one for the other.
+      TEST_DATABASE_URL: postgresql://postgres:test@localhost:5432/reading_test
+      OWNER_ID: test
+      SESSION_SECRET: ci-only-not-a-real-secret
+      APP_PASSCODE: ci
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version-file: .nvmrc, cache: npm }   # one Node version: .nvmrc = engines.node = Vercel
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: npm ci
+      - run: pip install pandas openpyxl
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm run test:tokens   # colour tokens: parity, hue distance, on-fill contrast (D-24)
+      # Applies drizzle/*.sql through drizzle-kit migrate, then etl/views.sql:
+      # the same path a rebuild takes, so a broken migration cannot ship green.
+      - run: npm run test:db:reset
+      - run: npm test
+      - run: npm run test:views
+      - run: python -m unittest discover -s etl -p "test_*.py"
+      - run: npm run build
+        env:
+          DATABASE_URL: postgresql://build:unused@localhost:5432/build_unused

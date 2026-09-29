@@ -1,0 +1,9 @@
+node_modules
+.next
+.env
+.env.local
+seed/
+*.dump
+etl/.metron-cache.sqlite
+etl/.fandom-cache.json
+__pycache__/

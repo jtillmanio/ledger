@@ -1,0 +1,71 @@
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { requireUserId } from "@/lib/auth";
+import { runDetail } from "@/db/queries";
+import IssueList from "@/components/IssueRow";
+import { yearSpan } from "@/lib/format";
+
+export const dynamic = "force-dynamic";
+
+export default async function Run({ params }: { params: Promise<{ runId: string }> }) {
+  const { runId } = await params;
+  const userId = await requireUserId();
+  const data = await runDetail(userId, decodeURIComponent(runId));
+  if (!data) notFound();
+
+  const { run, issues, prereqs } = data;
+  const unread = prereqs.filter((p) => p.pct < 1);
+
+  return (
+    <main>
+      <p className="small"><Link href="/comics">All runs</Link></p>
+      <h1>{run.title}</h1>
+      <p className="muted small">
+        {[run.writers, run.artists, run.tracks.join(", "), yearSpan(run.start_year, run.end_year)]
+          .filter(Boolean).join(" · ")}
+      </p>
+      {run.series_issues && <p className="small mono muted">{run.series_issues}</p>}
+      {run.dated_issues > 0 && run.dated_issues < run.total_issues && (
+        <p className="small muted">
+          Years from the {run.dated_issues} of {run.total_issues} issues with a cover date.
+        </p>
+      )}
+      {Number(run.credited_issues) > 0 && Number(run.credited_issues) < Number(run.distinct_issues) && (
+        <p className="small muted">
+          Credits from the {run.credited_issues} of {run.distinct_issues} issues credited on Metron.
+        </p>
+      )}
+      {run.why && <p>{run.why}</p>}
+
+      <p className="mono small muted">
+        {run.read_issues} of {run.total_issues} read
+        {run.readiness === "blocked" && " · blocked"}
+      </p>
+
+      {unread.length > 0 && (
+        <>
+          <h2>Read these first</h2>
+          <p className="muted small">
+            Including everything reachable through the prerequisite chain, not just
+            direct links.
+          </p>
+          <div className="rows">
+            {unread.map((p) => (
+              <Link key={p.id} href={`/comics/${p.id}`} className="row">
+                <span className="row-head">
+                  <span className="row-title">{p.title}</span>
+                  <span className={`row-meta mono ${p.type === "hard" ? "tag-held" : ""}`}>
+                    {p.type} · depth {p.depth}
+                  </span>
+                </span>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
+
+      <h2>Issues</h2>
+      <IssueList issues={issues} />
+    </main>
+  );
+}

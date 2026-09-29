@@ -1,0 +1,358 @@
+/* Ledger — v4 tokens.
+   Colour is functional, never decorative:
+     · --ready  green  = read / done            (the 20px check, every fill)
+     · --brand  blue   = where you are, and the primary action
+     · --blocked amber = held — a hard prereq unread, or a decision you have
+                         not made yet (over capacity, no quarter chosen)
+     · --danger red    = destructive actions and validation failures ONLY.
+                         Nothing on a dashboard is ever red.
+     · --t1..--t8      = track and genre identity, nothing else. Never within
+                         ΔE2000 15 of --ready, --blocked or --danger (D-24).
+     · --on-*          = text and glyphs on a filled --brand/--ready/--danger/
+                         --muted control; dark mode needs dark text (M-02).
+     · A progress meter fills with --ready (D-26).
+   `npm run test:tokens` asserts all three and that these values match
+   design/mockups.html.
+   Anything without meaning stays grey.
+
+   These values are the same set as design/mockups.html. When the two
+   disagree the mockup wins — it is what was reviewed. */
+
+:root{
+  --page:#eceff4; --surface:#fff; --raise:#f7f8fa; --sunk:#e6eaf0;
+  --ink:#141720; --ink-2:#3d4655; --muted:#626b7b; --faint:#606979; --faint-deco:#98a1b0;
+  --rule:#dde2ea; --rule-2:#c9d0db; --line:#eaeef4;
+
+  --brand:#2148c9; --brand-soft:#e7ecfd; --brand-ink:#1a3aa3;
+  --ready:#0b7a52; --ready-soft:#e2f4ec;
+  --blocked:#8a560c; --blocked-soft:#fbeedd;
+  --reading:#2148c9; --reading-soft:#e7ecfd;
+  --danger:#a93226; --danger-soft:#fbe9e7;
+  --on-brand:#fff; --on-ready:#fff; --on-danger:#fff; --on-muted:#fff; --toast-link:#9db4ff;
+
+  --t1:#2563eb; --t2:#a21caf; --t3:#4d7c0f; --t4:#857700;
+  --t5:#7c3aed; --t6:#0e7490; --t7:#be185d; --t8:#52606d;
+
+  --sh-1:0 1px 2px rgba(20,23,32,.05);
+  --sh-2:0 1px 3px rgba(20,23,32,.07),0 10px 26px -14px rgba(20,23,32,.28);
+  --sh-3:0 8px 32px -10px rgba(20,23,32,.3);
+
+  /* pre-v4 names kept as aliases so IssueRow.tsx and the first three routes
+     keep rendering. New code uses the names above. */
+  --paper:var(--page); --paper-sunk:var(--sunk);
+  --mark:var(--ready); --held:var(--blocked);
+  --col:72ch; --step:.55rem;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --page:#0d0f14; --surface:#171b23; --raise:#1e232d; --sunk:#232935;
+    --ink:#eaedf2; --ink-2:#bcc4d1; --muted:#8b94a4; --faint:#8a93a2; --faint-deco:#69727f;
+    --rule:#262d38; --rule-2:#323a48; --line:#222833;
+    --brand:#7fa0ff; --brand-soft:#1b2440; --brand-ink:#9db6ff;
+    --ready:#4dbf90; --ready-soft:#12291f;
+    --blocked:#d7a161; --blocked-soft:#2c2114;
+    --reading:#7fa0ff; --reading-soft:#1b2440;
+    --danger:#e5786a; --danger-soft:#2d1815;
+    --on-brand:#0d0f14; --on-ready:#0d0f14; --on-danger:#0d0f14; --on-muted:#0d0f14; --toast-link:#1a3aa3;
+    --t1:#6f9bff; --t2:#e879f9; --t3:#a3e635; --t4:#fde047;
+    --t5:#a98aee; --t6:#4fb3cc; --t7:#e878ab; --t8:#8a96a6;
+    --sh-1:0 1px 2px rgba(0,0,0,.4);
+    --sh-2:0 1px 3px rgba(0,0,0,.5),0 10px 26px -14px rgba(0,0,0,.8);
+    --sh-3:0 8px 32px -10px rgba(0,0,0,.8);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --page:#0d0f14; --surface:#171b23; --raise:#1e232d; --sunk:#232935;
+  --ink:#eaedf2; --ink-2:#bcc4d1; --muted:#8b94a4; --faint:#8a93a2; --faint-deco:#69727f;
+  --rule:#262d38; --rule-2:#323a48; --line:#222833;
+  --brand:#7fa0ff; --brand-soft:#1b2440; --brand-ink:#9db6ff;
+  --ready:#4dbf90; --ready-soft:#12291f;
+  --blocked:#d7a161; --blocked-soft:#2c2114;
+  --reading:#7fa0ff; --reading-soft:#1b2440;
+  --danger:#e5786a; --danger-soft:#2d1815;
+  --on-brand:#0d0f14; --on-ready:#0d0f14; --on-danger:#0d0f14; --on-muted:#0d0f14; --toast-link:#1a3aa3;
+  --t1:#6f9bff; --t2:#e879f9; --t3:#a3e635; --t4:#fde047;
+  --t5:#a98aee; --t6:#4fb3cc; --t7:#e878ab; --t8:#8a96a6;
+  --sh-1:0 1px 2px rgba(0,0,0,.4);
+  --sh-2:0 1px 3px rgba(0,0,0,.5),0 10px 26px -14px rgba(0,0,0,.8);
+  --sh-3:0 8px 32px -10px rgba(0,0,0,.8);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html,body{
+  margin:0;background:var(--page);color:var(--ink);
+  font-family:var(--font-sans),"Inter Tight",system-ui,sans-serif;
+  font-size:16px;line-height:1.5;-webkit-text-size-adjust:100%;
+}
+img{max-width:100%}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
+.mono{font-family:var(--font-mono),"JetBrains Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}.faint{color:var(--faint)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* --- chrome -------------------------------------------------------------
+   Phone is the primary device. The tab bar is at the top; the one action
+   you repeat is at the bottom, in .actionbar, in the same place on every
+   dashboard. Desktop swaps the tab bar for .side. */
+
+.bar{position:sticky;top:0;z-index:20;display:flex;gap:.25rem;align-items:center;
+  padding:.625rem .875rem;background:var(--surface);border-bottom:1px solid var(--rule)}
+.bar .home{font-weight:700;letter-spacing:-.02em;margin-right:auto;font-size:.9375rem}
+.bar .tab{color:var(--muted);font-size:.8125rem;font-weight:500;padding:.3125rem .5625rem;border-radius:7px}
+.bar .tab[aria-current]{color:var(--brand);background:var(--brand-soft);font-weight:600}
+.iconbtn{width:34px;height:34px;flex:0 0 auto;display:grid;place-items:center;border-radius:9px;
+  border:1px solid var(--rule);background:var(--raise);color:var(--ink-2);font-size:.875rem}
+
+.side{display:none}
+.main{min-width:0;background:var(--page)}
+.wrap{padding:1rem .875rem 5.5rem}
+@media (min-width:900px){
+  .shell{display:grid;grid-template-columns:224px 1fr}
+  .bar{display:none}
+  .side{display:block;border-right:1px solid var(--rule);padding:1.125rem .875rem;
+    background:var(--surface);min-height:100vh;position:sticky;top:0}
+  .side .brand{font-weight:700;letter-spacing:-.02em;font-size:1rem;margin:0 .5rem 1.125rem}
+  .side .grp{font-size:.6875rem;color:var(--faint);margin:1.125rem .5rem .375rem;font-weight:600}
+  .side a{display:flex;align-items:center;gap:.5rem;padding:.4375rem .5rem;border-radius:8px;
+    font-size:.875rem;color:var(--ink-2);font-weight:500}
+  .side a[aria-current]{background:var(--brand-soft);color:var(--brand-ink);font-weight:600}
+  .side .dot{width:8px;height:8px;border-radius:2px;flex:0 0 auto}
+  .wrap{padding:1.5rem 1.75rem 3rem;max-width:1000px}
+}
+
+h1,h2,h3{margin:0}
+h2.t{font-size:1.5rem;font-weight:700;letter-spacing:-.028em;margin:.25rem 0 .125rem}
+h3.s{font-size:.8125rem;font-weight:600;color:var(--muted);margin:1.5rem 0 .5rem;
+  display:flex;align-items:center;gap:.5rem}
+h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand);
+  background:var(--brand-soft);padding:.1875rem .5rem;border-radius:6px}
+.lede{color:var(--muted);font-size:.8125rem;margin:0}
+.prov{margin-top:.75rem;font-size:.75rem;color:var(--faint);line-height:1.5}
+
+/* --- grouped surfaces --- */
+.group{background:var(--surface);border:1px solid var(--rule);border-radius:14px;
+  overflow:hidden;box-shadow:var(--sh-1)}
+.group + .group{margin-top:.75rem}
+.ghead{display:flex;align-items:center;gap:.5rem;padding:.625rem .875rem;background:var(--raise);
+  border-bottom:1px solid var(--rule);font-size:.8125rem;font-weight:600}
+.ghead .n{margin-left:auto;font-size:.75rem;color:var(--muted);font-weight:400}
+.row{display:flex;gap:.75rem;padding:.75rem .875rem;align-items:center;
+  border-bottom:1px solid var(--line);position:relative}
+.row:last-child{border-bottom:0}
+.row .edge{position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--t8)}
+.rb{min-width:0;flex:1}
+.rh{display:flex;gap:.5rem;align-items:baseline}
+.rt{font-weight:600;font-size:.9375rem;letter-spacing:-.006em}
+.rm{margin-left:auto;white-space:nowrap;font-size:.75rem;color:var(--muted);
+  font-family:var(--font-mono),ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.rs{font-size:.8125rem;color:var(--muted);margin-top:.125rem}
+.chev{color:var(--faint);font-size:1.125rem;flex:0 0 auto}
+.row.dim{opacity:.6}
+.meter{height:5px;border-radius:99px;background:var(--sunk);margin-top:.4375rem;overflow:hidden}
+.meter i{display:block;height:100%;border-radius:99px;background:var(--ready)}
+.meter.rd i{background:var(--ready)}
+
+.bdg{display:inline-flex;align-items:center;gap:.3125rem;font-size:.6875rem;font-weight:600;
+  padding:.1875rem .4375rem;border-radius:6px;line-height:1.3}
+.bdg.rd{background:var(--ready-soft);color:var(--ready)}
+.bdg.bl{background:var(--blocked-soft);color:var(--blocked)}
+.bdg.rg{background:var(--reading-soft);color:var(--reading)}
+.bdg.dn{background:var(--sunk);color:var(--muted)}
+.bdg.dg{background:var(--danger-soft);color:var(--danger)}
+.tag{display:inline-flex;align-items:center;gap:.3125rem;font-size:.6875rem;font-weight:600;
+  padding:.1875rem .4375rem;border-radius:6px;background:var(--sunk);color:var(--ink-2)}
+.tag .sq{width:8px;height:8px;border-radius:2px}
+.tag.own{background:var(--brand-soft);color:var(--brand-ink)}
+.tag.warncost{background:var(--blocked-soft);color:var(--blocked)}
+.cost{margin-top:.375rem;display:flex;gap:.3125rem;flex-wrap:wrap}
+
+/* --- buttons --- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.375rem;font:inherit;
+  font-size:.875rem;font-weight:600;padding:.5625rem .875rem;border-radius:9px;
+  border:1px solid transparent;background:var(--brand);color:var(--on-brand);cursor:pointer;box-shadow:var(--sh-1)}
+.btn.sec{background:var(--surface);color:var(--ink);border-color:var(--rule)}
+.btn.dg{background:var(--danger-soft);color:var(--danger)}
+.btn.sm{font-size:.8125rem;padding:.375rem .625rem;border-radius:7px}
+.btnrow{display:flex;gap:.5rem;margin-top:.75rem}
+.btnrow .btn{flex:1}
+
+/* The thumb bar. Same position, same primary verb slot, on every dashboard
+   and on the run detail. It is the most repeated control in the app. */
+.actionbar{position:sticky;bottom:0;display:flex;gap:.5rem;
+  padding:.75rem .875rem calc(.75rem + env(safe-area-inset-bottom,0px));
+  background:var(--surface);border-top:1px solid var(--rule);
+  box-shadow:0 -6px 20px -12px rgba(20,23,32,.4);z-index:15}
+.actionbar .btn{flex:1;min-height:44px}
+.actionbar .btn.icon{flex:0 0 auto;width:44px;padding:0}
+
+/* --- the reading spine (run detail) --- */
+.era{display:flex;align-items:center;gap:.625rem;padding:.6875rem .875rem;background:var(--raise);
+  border-bottom:1px solid var(--rule);border-top:1px solid var(--rule)}
+.era:first-child{border-top:0}
+.era .nm{font-size:.8125rem;font-weight:700}
+.era .ct{font-size:.6875rem;color:var(--muted);margin-left:auto}
+.era .bar{height:5px;width:52px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.era .bar i{display:block;height:100%;background:var(--ready)}
+.iss{display:grid;grid-template-columns:2.75rem 1fr auto;align-items:center;
+  border-bottom:1px solid var(--line);gap:.5rem;padding-right:.875rem}
+.iss:last-child{border-bottom:0}
+.chk{min-height:3rem;display:flex;align-items:center;justify-content:center;
+  border:0;background:none;padding:0;position:relative;cursor:pointer}
+.chk::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;
+  background:var(--line);transform:translateX(-50%)}
+.chk i{position:relative;width:20px;height:20px;border-radius:50%;border:2px solid var(--rule);
+  background:var(--surface);display:grid;place-items:center;color:transparent;
+  font-size:.6875rem;font-weight:700;transition:background-color 90ms linear,border-color 90ms linear}
+.iss[data-read="true"] .chk i{background:var(--ready);border-color:var(--ready);color:var(--on-ready)}
+.iss[data-read="true"] .chk i::after{content:"✓"}
+.iss[data-read="true"] .lbl{color:var(--muted)}
+.iss[data-next="true"] .chk i{border-color:var(--brand);box-shadow:0 0 0 4px var(--brand-soft)}
+.iss[data-pending="true"]{opacity:.55}
+.ib{padding:.5rem 0;min-width:0}
+.lbl{font-size:.875rem;font-weight:600}
+.inote{font-size:.75rem;color:var(--muted);margin-top:.0625rem}
+
+/* --- the telescope: issue in run, run in block, block in track ----------
+   One SVG, three rails, driven by block_position + block_progress +
+   run_progress. Read is --ready, the head marker is --brand, the track hue
+   rides the left edge. */
+.telecard{background:var(--surface);border:1px solid var(--rule);border-radius:16px;
+  padding:.875rem;box-shadow:var(--sh-2);margin-top:.875rem;position:relative;overflow:hidden}
+.telecard .stripe{position:absolute;inset:0 auto 0 0;width:4px}
+.telecard .kick{font-size:.6875rem;color:var(--brand);font-weight:700}
+.telecard .name{font-size:1.0625rem;font-weight:700;letter-spacing:-.018em;line-height:1.22}
+.telecard .by{font-size:.8125rem;color:var(--muted);margin-top:.1875rem}
+.tele{display:block;margin:1rem 0 .25rem;overflow:visible;width:100%}
+.ladder{border-top:1px solid var(--line);margin-top:.625rem}
+.ladder>div{display:flex;gap:.75rem;align-items:baseline;padding:.375rem 0;font-size:.8125rem}
+.ladder .k{font-family:var(--font-mono),ui-monospace,monospace;font-size:.625rem;
+  letter-spacing:.1em;color:var(--faint);width:3.25rem;flex:0 0 auto}
+.ladder .v{margin-left:auto;text-align:right;color:var(--muted)}
+.ladder .v b{color:var(--ink);font-weight:600}
+
+/* --- the plan rail: a quarter is a column, a book is a block sized by its
+   word count, the dashed rule is capacity. Anything above the rule is
+   hatched, never red. --- */
+.planrail{display:flex;gap:.375rem;align-items:flex-end;position:relative;padding-top:.25rem}
+.qcol{flex:1;min-width:0;display:flex;flex-direction:column}
+.qcol.nq{flex:0 0 48px;border-left:1px dashed var(--rule);padding-left:.4375rem;margin-left:.1875rem}
+.qstack{display:flex;flex-direction:column;justify-content:flex-end;gap:2px;position:relative}
+.qstack i{display:block;border-radius:3px}
+.qfoot{border-top:1px solid var(--rule);margin-top:.375rem;padding-top:.3125rem;
+  display:flex;flex-direction:column;align-items:center;gap:.1875rem;text-align:center}
+.qfoot b{font-size:.75rem;font-weight:600}
+.qfoot .mono{font-size:.6875rem;color:var(--muted)}
+.qfoot .bdg{font-size:.5625rem;padding:.125rem .3125rem}
+.caprule{position:absolute;left:0;right:0;border-top:1.5px dashed var(--ink-2);z-index:2;pointer-events:none}
+.hatch,.qstack i.over{background-color:var(--blocked-soft);
+  background-image:repeating-linear-gradient(135deg,var(--blocked) 0 1.5px,transparent 1.5px 6px);
+  box-shadow:inset 0 0 0 1px var(--blocked)}
+.qstack i.fits{background:var(--reading-soft);box-shadow:inset 0 0 0 1px var(--rule)}
+.qstack i.unplaced{border:1px dashed var(--blocked);background:var(--blocked-soft)}
+
+/* --- capacity --- */
+.pacecard{background:var(--surface);border:1px solid var(--rule);border-radius:16px;
+  padding:.9375rem;box-shadow:var(--sh-1);margin-top:.75rem}
+.capnum{font-family:var(--font-mono),ui-monospace,monospace;font-size:3rem;font-weight:500;
+  letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums}
+.capnum.held{color:var(--blocked)}
+.capbar{height:18px;border-radius:8px;background:var(--sunk);position:relative;
+  display:flex;overflow:hidden;margin-top:.875rem}
+.capbar i{display:block;height:100%}
+.capbar .pin{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink)}
+.leg{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.625rem}
+
+/* --- a decision you have not made yet -----------------------------------
+   Amber, never red, and it clears when you decide — including when you
+   decide to keep the overage. An indicator you can permanently dismiss by
+   choosing is one you keep reading. */
+.decide{display:flex;gap:.625rem;align-items:flex-start;background:var(--blocked-soft);
+  border:1px solid var(--blocked);border-radius:12px;padding:.75rem .8125rem;margin-top:.75rem}
+.decide.settled{background:var(--surface);border-color:var(--rule)}
+.decide .g{width:20px;height:20px;border-radius:50%;border:2px solid var(--blocked);
+  color:var(--blocked);display:grid;place-items:center;font-size:.6875rem;font-weight:700;flex:0 0 auto}
+.decide.settled .g{border-color:var(--muted);color:var(--muted)}
+.decide .dt{font-size:.8125rem;color:var(--ink-2);line-height:1.45}
+.decide .dt b{color:var(--ink);font-weight:600}
+
+/* --- stats --- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:.625rem;margin-top:.75rem}
+@media (min-width:900px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat{background:var(--surface);border:1px solid var(--rule);border-radius:12px;
+  padding:.75rem .875rem;box-shadow:var(--sh-1)}
+.stat .n{font-family:var(--font-mono),ui-monospace,monospace;font-size:1.5rem;font-weight:500;
+  letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.stat .l{font-size:.75rem;color:var(--muted);margin-top:.125rem}
+
+.frow{display:flex;align-items:center;gap:.75rem;padding:.6875rem .875rem;border-bottom:1px solid var(--line)}
+.frow:last-child{border-bottom:0}
+.frow .k{font-size:.8125rem;color:var(--muted)}
+.frow .v{font-size:.875rem;font-weight:600}
+.frow .rm{margin-left:auto}
+.empty{padding:1.25rem .875rem;color:var(--muted);font-size:.8125rem}
+.empty b{display:block;color:var(--ink);font-weight:600;margin-bottom:.25rem;font-size:.875rem}
+
+/* --- pre-v4 compatibility ------------------------------------------------
+   The first three routes and IssueRow.tsx were written against the v1
+   newsprint stylesheet. These rules keep them rendering on the v4 tokens
+   until each screen is rebuilt against design/mockups.html. Delete a block
+   here in the same PR that rebuilds the screen that used it.
+   `.rows .row` outranks the v4 `.row` above, so the two can coexist. */
+
+main{max-width:var(--col);margin:0 auto;padding:1.5rem 1.25rem 6rem}
+.small{font-size:.8125rem}
+.bar-inner{max-width:var(--col);margin:0 auto;display:flex;align-items:baseline;
+  gap:1.25rem;padding:.75rem 1.25rem}
+h1{font-size:1.5rem;font-weight:600;letter-spacing:-.015em;margin:0 0 .25rem}
+h2:not(.t){font-size:1rem;font-weight:600;margin:2.25rem 0 .5rem}
+p{margin:0 0 .75rem;max-width:66ch}
+
+.rows{border-top:1px solid var(--rule)}
+.rows .row{display:block;padding:.75rem 0;border-bottom:1px solid var(--rule);
+  text-decoration:none;background:none}
+.rows .row:hover{background:none}
+.row-head{display:flex;gap:.75rem;align-items:baseline}
+.row-title{font-weight:500}
+.row-meta{margin-left:auto;white-space:nowrap;font-size:.8125rem;color:var(--muted)}
+.row-sub{color:var(--muted);font-size:.8125rem;margin-top:.125rem;display:block}
+.clamp-2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+.state-blocked .row-title{color:var(--muted)}
+.tag-held{color:var(--blocked)}
+.measure{display:block;height:2px;background:var(--rule);margin-top:.5rem}
+.measure span{display:block;height:100%;background:var(--ready)}
+
+.spine{border-top:1px solid var(--rule)}
+.issue{display:grid;grid-template-columns:2.5rem 3.25rem 1fr;align-items:start;
+  gap:.5rem;border-bottom:1px solid var(--rule)}
+.issue-check{grid-column:1;min-height:2.75rem;display:flex;align-items:center;
+  justify-content:center;border:0;background:none;cursor:pointer;padding:0;position:relative}
+.issue-check::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;
+  background:var(--rule);transform:translateX(-50%)}
+.issue:first-child .issue-check::before{top:50%}
+.issue:last-child .issue-check::before{bottom:50%}
+.issue-check i{position:relative;width:20px;height:20px;border-radius:50%;
+  border:2px solid var(--rule);background:var(--surface);display:grid;place-items:center;
+  color:transparent;font-size:.6875rem;font-weight:700;
+  transition:background-color 90ms linear,border-color 90ms linear}
+.issue[data-read="true"] .issue-check i{background:var(--ready);border-color:var(--ready);color:var(--on-ready)}
+.issue[data-read="true"] .issue-check i::after{content:"✓"}
+.issue[data-read="true"] .issue-label{color:var(--muted)}
+.issue[data-pending="true"]{opacity:.55}
+.issue-seq{grid-column:2;padding-top:.7rem;font-size:.75rem;color:var(--muted)}
+.issue-body{grid-column:3;padding:.65rem 0}
+.issue-label{font-size:.9375rem}
+.issue-note{font-size:.8125rem;color:var(--muted);margin-top:.125rem}
+.issue[data-type="optional"] .issue-label{color:var(--muted)}
+
+.filters{display:flex;flex-wrap:wrap;gap:.375rem;margin:1rem 0 1.25rem}
+.chip{font-size:.8125rem;padding:.25rem .625rem;text-decoration:none;
+  border:1px solid var(--rule);color:var(--muted);background:none;border-radius:999px}
+.chip[aria-current="true"]{border-color:var(--ink);color:var(--ink)}
+input[type="search"],input[type="password"]{width:100%;padding:.625rem .75rem;font:inherit;
+  background:var(--sunk);color:var(--ink);border:1px solid var(--rule);border-radius:9px}
+button.primary{font:inherit;padding:.625rem 1rem;cursor:pointer;background:var(--brand);
+  color:var(--on-brand);border:0;border-radius:9px;font-weight:600}

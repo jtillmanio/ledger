@@ -1,0 +1,52 @@
+name: Nightly backup
+
+on:
+  schedule: [{ cron: "0 8 * * *" }]   # 04:00 ET
+  workflow_dispatch:
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install postgres client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client-16
+
+      - name: Dump
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          # Actions runs bash -e without pipefail, so `pg_dump | gzip` used to
+          # exit 0 when pg_dump failed and commit an empty dump (R2-03).
+          set -euo pipefail
+          # pg_dump refuses a server newer than itself. Neon never changes major
+          # version on its own, so a mismatch means the project was upgraded: say
+          # exactly what to change instead of failing with pg_dump's message (R2 L-9).
+          server=$(psql "$DATABASE_URL" -tAc "SHOW server_version_num")
+          server_major=$(( server / 10000 ))
+          client_major=$(pg_dump --version | grep -oE '[0-9]+' | head -n 1)
+          if [ "$server_major" -gt "$client_major" ]; then
+            echo "::error::Neon is on PostgreSQL $server_major but this job installs postgresql-client-$client_major. Change postgresql-client-$client_major to postgresql-client-$server_major in .github/workflows/backup.yml." >&2
+            exit 1
+          fi
+          mkdir -p backups
+          f="backups/reading-$(date -u +%Y-%m-%d).sql.gz"
+          pg_dump --no-owner --no-privileges "$DATABASE_URL" | gzip > "$f"
+          # A real dump of this schema is far larger than an empty gzip stream.
+          test "$(gzip -dc "$f" | head -c 4000 | wc -c)" -ge 1000 \
+            || { echo "backup is empty or truncated: $f" >&2; rm -f "$f"; exit 1; }
+          # Keep 30 days of dumps in the repo; anything older is dropped.
+          ls -1t backups/*.sql.gz | tail -n +31 | xargs -r rm --
+
+      - name: Commit
+        run: |
+          git config user.name  "backup bot"
+          git config user.email "actions@github.com"
+          git add backups
+          git diff --staged --quiet || git commit -m "backup $(date -u +%F)"
+          # A concurrent push would otherwise fail the job (R2 L-10).
+          git pull --rebase
+          git push
