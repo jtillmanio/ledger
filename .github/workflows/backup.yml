@@ -3,6 +3,11 @@ name: Nightly backup
 on:
   schedule: [{ cron: "0 8 * * *" }]   # 04:00 ET
   workflow_dispatch:
+    inputs:
+      check_only:
+        description: "Restore-check the newest committed dump; take no new dump, commit nothing"
+        type: boolean
+        default: false
 
 jobs:
   dump:
@@ -12,7 +17,21 @@ jobs:
       contents: write
     env:
       # Must be at least Neon's major version: pg_dump refuses a newer server.
+      # The scratch service below must be the same major (the check says so).
       PG_MAJOR: "18"
+      # "true" only on a manual run with the box ticked; a scheduled run has no inputs.
+      CHECK_ONLY: ${{ inputs.check_only == true }}
+    services:
+      # A throwaway server every dump is restored into before it is committed
+      # (R2-AR2, D-30). It lives only as long as the job.
+      scratch:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: scratch
+        options: >-
+          --health-cmd pg_isready --health-interval 10s
+          --health-timeout 5s --health-retries 5
+        ports: ["5432:5432"]
     steps:
       - uses: actions/checkout@v7
 
@@ -29,6 +48,7 @@ jobs:
           echo "/usr/lib/postgresql/$PG_MAJOR/bin" >> "$GITHUB_PATH"
 
       - name: Dump
+        if: env.CHECK_ONLY != 'true'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
@@ -53,8 +73,84 @@ jobs:
             || { echo "backup is empty or truncated: $f" >&2; rm -f "$f"; exit 1; }
           # Keep 30 days of dumps in the repo; anything older is dropped.
           ls -1t backups/*.sql.gz | tail -n +31 | xargs -r rm --
+          echo "DUMP=$f" >> "$GITHUB_ENV"
+
+      - name: Pick the newest committed dump
+        if: env.CHECK_ONLY == 'true'
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          dumps=(backups/reading-*.sql.gz)   # dated names, so the glob sorts oldest first
+          if [ ${#dumps[@]} -eq 0 ]; then
+            echo "::error::There is no dump in backups/ to check. Run the workflow without check only first." >&2
+            exit 1
+          fi
+          echo "DUMP=${dumps[-1]}" >> "$GITHUB_ENV"
+
+      # The restore drill (START-HERE 10d): load the dump into the scratch server,
+      # re-apply the views, run the same SQL tests CI runs, and compare every
+      # table's row count with live Neon, which is only read. A failure here stops
+      # the job before Commit, so a dump that cannot be restored is never kept.
+      - name: Restore check
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          set -euo pipefail
+          scratch="postgresql://postgres:scratch@localhost:5432"
+          db="$scratch/restore_check"
+          # Only the scratch server gets this; Neon's pooler rejects startup options.
+          quiet="-c client_min_messages=warning"
+
+          scratch_major=$(( $(psql "$scratch/postgres" -tAc "SHOW server_version_num") / 10000 ))
+          if [ "$scratch_major" -ne "$PG_MAJOR" ]; then
+            echo "::error::The scratch server is PostgreSQL $scratch_major but PG_MAJOR is $PG_MAJOR. Change the scratch service image in .github/workflows/backup.yml to postgres:$PG_MAJOR." >&2
+            exit 1
+          fi
+          psql "$scratch/postgres" -qc "CREATE DATABASE restore_check"
+
+          echo "Restoring $DUMP"
+          gzip -dc "$DUMP" | PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q
+          # A dump taken between a schema change and db:views carries the old views.
+          PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q -f etl/views.sql
+          PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q -f etl/test_views.sql
+
+          # Every table the dump holds, plus the labels with characters a bad
+          # decode would mangle (Marvel’s, —, ½). Sorted in the shell, because
+          # Neon and the scratch server need not share a collation.
+          count=$(psql "$db" -tAc "
+            SELECT string_agg(format('SELECT %L, count(*) FROM %I', table_name, table_name), ' UNION ALL ')
+              FROM information_schema.tables
+             WHERE table_schema = 'public' AND table_type = 'BASE TABLE'")
+          count="$count UNION ALL SELECT 'issues with non-ASCII labels', count(*) FROM issues WHERE label ~ '[^\x01-\x7e]'"
+          restored="$RUNNER_TEMP/restored.txt"
+          live="$RUNNER_TEMP/live.txt"
+          psql "$db" -tA -c "$count" | LC_ALL=C sort > "$restored"
+          psql "$DATABASE_URL" -tA -c "$count" | LC_ALL=C sort > "$live"
+
+          {
+            echo "### Restore check: \`$DUMP\`"
+            echo
+            echo "Restored cleanly, views re-applied, \`test_views.sql\` passed."
+            echo
+            echo "| table | restored | live now |"
+            echo "| ----- | -------: | -------: |"
+            paste -d '|' "$restored" "$live" \
+              | awk -F'|' '{ d = ($2 == $4) ? "" : " **differs**"; printf "| %s | %s | %s%s |\n", $1, $2, $4, d }'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if cmp -s "$restored" "$live"; then
+            echo "Row counts match live."
+          elif [ "$CHECK_ONLY" = true ]; then
+            # An older dump trails live by whatever changed since 04:00.
+            echo "::warning::Row counts differ from live; the job summary lists which. Expected only for rows added since this dump was taken."
+          else
+            paste -d '|' "$restored" "$live" | awk -F'|' '$2 != $4 { print "  " $1 ": restored " $2 ", live " $4 }' >&2
+            echo "::error::The restored row counts differ from live. A write between the dump and this check does that (re-run the job); anything else means the dump is missing rows." >&2
+            exit 1
+          fi
 
       - name: Commit
+        if: env.CHECK_ONLY != 'true'
         run: |
           git config user.name  "backup bot"
           git config user.email "actions@github.com"

@@ -109,12 +109,15 @@ designed, and the reason the SQL and vitest suites could not be re-run here.
 
 ## Before Step 14, not before development
 
-- [ ] **The restore drill can't be run on this machine as written.** START-HERE
+- [x] **The restore drill can't be run on this machine as written.** START-HERE
       10d is the accepted alternative to a restore task (D-14), and it calls
       `createdb`, `psql` and `dropdb`. R3 proved `psql` and `docker` are both
       absent here. Either install the Postgres client tools (you need them for
       the test database anyway) or rewrite 10d around `scripts/sql.mjs`, and
       then actually run it once against a real dump.
+      **Resolved 2026-09-29 (D-30):** neither. The nightly backup job restores
+      every dump into a scratch Postgres and checks it before committing it, so
+      the drill runs in CI and nothing needs installing here.
 
 - [x] Passcode throttle (R2-12) — already listed above, repeated here because it
       is the other Step 14 gate.
@@ -238,13 +241,15 @@ run it: START-HERE 10d calls `createdb`, `psql` and `dropdb`, and R3 proved none
 of them are installed here. You need the Postgres client tools anyway if the
 test database ends up local rather than a Neon branch, so:
 
-- [ ] **Install the PostgreSQL client tools** (the Windows installer's
+- [x] **Install the PostgreSQL client tools** (the Windows installer's
       *Command Line Tools* component is enough — it gives you `psql`, `pg_dump`,
       `createdb`, `dropdb`), then run START-HERE 10d once against a real dump
       before Step 14. If you would rather not install anything, say so and I
       will rewrite 10d around `scripts/sql.mjs`, which needs only node — but
       `pg_dump` has no node equivalent, and the nightly backup already depends
       on it running in CI rather than here.
+      **Superseded 2026-09-29 (D-30):** the drill now runs inside the nightly
+      backup job, so the restore no longer needs these tools.
 
 ## What I changed in the prompt docs
 
@@ -306,10 +311,9 @@ of gates**. The items below are the ones only you can do.
 ## Before Step 14
 
 - [ ] Set `APP_PASSCODE` in Vercel to four or more random words (D-23).
-- [ ] Run the restore drill (START-HERE 10d, rewritten 2026-09-24 — the old
-      `gzip | psql` line corrupts ’ — ½ in Windows PowerShell) and open one
-      `/api/export` download. You can rehearse it today with your own
-      `pg_dump`, before the nightly backup exists.
+- [ ] See one **Nightly backup** run go green with its *Restore check* step
+      (START-HERE 10d, D-30; a manual run with *check only* ticked does the
+      same without a new dump) and open one `/api/export` download.
 
 ## Small questions for later, when their task starts
 

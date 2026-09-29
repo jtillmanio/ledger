@@ -928,87 +928,49 @@ The job asks for push access itself (`permissions: contents: write` in
 `backup.yml`), so leave **Settings → Actions → General → Workflow permissions**
 on the read-only default.
 
-**Verify:** `backups/reading-YYYY-MM-DD.sql.gz` is committed and is roughly
-400 KB. The job now fails (red X, no commit) when `pg_dump` fails or the dump is
-nearly empty, so a green run with a file in `backups/` is a real backup. If the run
-is red, read its log first: a Neon major-version upgrade past 18 makes the pinned
-client refuse, and the job says so in one line naming the fix.
-Neon never upgrades a project's major version by itself — if you do, change
-`PG_MAJOR` in `.github/workflows/backup.yml` the same day.
+**Verify:** the run is green, `backups/reading-YYYY-MM-DD.sql.gz` is committed
+and is roughly 400 KB, and the run's summary page shows a **Restore check**
+table. The job fails (red X, no commit) when `pg_dump` fails, when the dump is
+nearly empty, or when the dump does not restore cleanly (below), so a green run
+with a file in `backups/` is a backup that has been restored. If the run is red,
+read its log first: a Neon major-version upgrade past 18 makes the pinned client
+refuse, and the job says so in one line naming the fix. Neon never upgrades a
+project's major version by itself — if you do, change `PG_MAJOR` **and** the
+`scratch` service image (`postgres:18`) in `.github/workflows/backup.yml` the
+same day. The job checks that the two agree.
 
-**Restore — try this once now, not during an incident** (R2-AR2). A backup you
-have never restored is a hope, not a backup. The drill takes the newest nightly
-dump, loads it into a **scratch** database (never Neon's `reading`), checks it
-with the same SQL tests CI runs, and compares its row counts with the live
-ledger. It changes nothing live, and takes about ten minutes.
+**Restore — every night, automatically** (R2-AR2, D-30). A backup you have
+never restored is a hope, not a backup, so the job restores each dump before it
+keeps it. Straight after `pg_dump` it loads the dump into a throwaway
+PostgreSQL 18 server that lives only as long as the job (never Neon), re-applies
+`etl/views.sql`, runs `etl/test_views.sql` (the same SQL tests CI runs), and
+counts the rows of every table on both the restore and live Neon, which it only
+reads. The counts must match, and so must the number of labels with characters
+a bad decode mangles (*Marvel’s Voices*, —, ½). If any of that fails, the dump
+is not committed. Nothing to install, nothing to run by hand.
 
-**1. A scratch Postgres server, once.** Any Postgres works. With the scoop
-install (no Windows service), make and start a local one:
-
-```powershell
-initdb -D "$env:USERPROFILE\pgdata" -U postgres -A trust -E UTF8     # once
-pg_ctl -D "$env:USERPROFILE\pgdata" -l "$env:USERPROFILE\pgdata\server.log" start
-$server = "postgresql://postgres@localhost:5432"
-```
-
-(With the winget installer's Windows service instead, skip the first two lines
-and use `postgresql://postgres:<the password you set>@localhost:5432`. If your
-`TEST_DATABASE_URL` is local, this is the same server.)
-
-**2. The drill.** From the project folder, in PowerShell:
+**Run the drill on demand** (once now, and whenever you want to see it pass):
+**Actions → Nightly backup → Run workflow**, tick **check only**, **Run**. Or
+from the project folder:
 
 ```powershell
-git pull                                             # the nightly job commits into backups/
-$dump = (Get-ChildItem backups\*.sql.gz | Sort-Object Name | Select-Object -Last 1).FullName
-$sql  = "$env:TEMP\reading-restore.sql"
-
-# Decompress to a FILE, then psql -f. Never `gzip -dc ... | psql` in Windows
-# PowerShell: it re-encodes the stream and every ’, — and ½ arrives as ???.
-py -c "import gzip, shutil, sys; shutil.copyfileobj(gzip.open(sys.argv[1]), open(sys.argv[2], 'wb'))" $dump $sql
-
-createdb -h localhost -U postgres reading_restore_check
-$db = "$server/reading_restore_check"
-psql $db -v ON_ERROR_STOP=1 -q -f $sql               # the restore itself; must exit quietly
-psql $db -v ON_ERROR_STOP=1 -q -f etl/views.sql      # NOTICEs about "already exists" are fine
-psql $db -v ON_ERROR_STOP=1 -f etl/test_views.sql    # must end: all assertions passed
+gh workflow run backup.yml -f check_only=true
+gh run watch (gh run list --workflow backup.yml --limit 1 --json databaseId --jq '.[0].databaseId') --exit-status
 ```
 
-**3. Compare with the live ledger.** Same query on both; the second one only
-reads.
+That restores and checks the newest dump already in `backups/`, and takes no
+new dump and commits nothing. Its row counts will trail live by whatever you
+marked since 04:00; the summary flags those rows as *differs* and the run
+stays green.
 
-```powershell
-$count = "SELECT (SELECT count(*) FROM runs) AS runs, (SELECT count(*) FROM issues) AS issues, (SELECT count(*) FROM run_issues) AS placements, (SELECT count(*) FROM issue_progress) AS reads, (SELECT count(*) FROM book_status) AS book_status, (SELECT count(*) FROM issues WHERE label ~ '[^\x01-\x7e]') AS non_ascii_labels"
-psql $db -c $count
-$env:DATABASE_URL = "<the pooled Neon string from .env>"
-psql $env:DATABASE_URL -c $count
-```
+**If it fails:** the restore stopping on an error, `test_views.sql` raising, or
+(on the nightly run) a count differing from live each means **that night's
+backup is not trustworthy**. Read the first error in the *Restore check* step.
+One count off by a row or two on the nightly run means a write landed between
+the dump and the check; re-run the job. Do not cut over until a run is green.
 
-Every column should match, except reads or book statuses you added after 04:00
-this morning. `non_ascii_labels` matching (it is a handful, e.g. *Marvel’s
-Voices*) proves the special characters came back intact.
-
-**4. Clean up.**
-
-```powershell
-dropdb -h localhost -U postgres reading_restore_check
-Remove-Item $sql
-```
-
-**If a step fails:** the restore stopping on an error, `test_views.sql` not
-ending with *all assertions passed*, or a count differing by more than today's
-activity each means **the backup is not trustworthy** — read the first error,
-and do not cut over until one drill passes end to end.
-
-**Rehearse it before the first nightly backup exists:** replace the `git pull`
-and `$dump` / `py` lines with a dump of your own (it only reads Neon):
-`pg_dump --no-owner --no-privileges -f $sql $env:DATABASE_URL` — then carry on
-from `createdb`.
-
-The backup is a `pg_dump` of the whole schema, so nothing needs re-migrating; the
-views are re-applied because a dump taken between a schema change and `db:views`
-would carry the old ones. Repeat quarterly (see *Ongoing maintenance*). Backups
-live in the same private repo as the code (R2-AR1): losing the repo loses both,
-which `GET /api/export` is the second copy for.
+Backups live in the same private repo as the code (R2-AR1): losing the repo
+loses both, which `GET /api/export` is the second copy for.
 
 The workflow keeps 30 days and runs at 08:00 UTC (04:00 Eastern). Your second
 exit ramp is `GET /api/export`, which returns every table as JSON on demand.
@@ -1187,9 +1149,9 @@ frozen and kept only to compare numbers during the month.
 - [ ] **No slug collisions** (D-15): `seed/unresolved.csv` has zero
       `labels share a slug` rows.
 - [ ] **`APP_PASSCODE` in Vercel is four or more random words** (D-23, R2-12).
-- [ ] **A nightly backup has run and you have done the restore drill once**
-      (10d), and a downloaded `GET /api/export` opens and lists every table the
-      app has (D-17).
+- [ ] **The last nightly backup is green, restore check included** (10d, D-30),
+      and a downloaded `GET /api/export` opens and lists every table the app
+      has (D-17).
 - [ ] You have used the deployed app for a few days, knowing it is disposable,
       until adding a run and marking reads feels faster than the sheet. **Do not
       cut over if it doesn't** — you will drift back, and the migration will have
@@ -1264,7 +1226,7 @@ of your stated priorities, build 2.6 early in Phase 2.
 | Cadence                                      | Task                                                                      |
 | -------------------------------------------- | ------------------------------------------------------------------------- |
 | Monthly                                      | `npm outdated`, bump patch and minor versions                             |
-| Quarterly                                    | The restore drill in 10d (steps 2–4), newest nightly backup              |
+| Quarterly                                    | Actions → Nightly backup: recent runs green (each restores its dump, 10d) |
 | On a Next.js major release                   | Read the upgrade guide before bumping. This is the one that will bite you |
 | When Neon or Vercel email about plan changes | Read it. Free tiers move                                                  |
 | Before any risky change                      | `GET /api/export`                                                         |
