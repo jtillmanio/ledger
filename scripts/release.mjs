@@ -1,0 +1,147 @@
+// The Release workflow's two steps that need thinking (.github/workflows/release.yml).
+//   node scripts/release.mjs plan       pick the build, check CI, list pending migrations
+//   node scripts/release.mjs snapshot   Neon branch of the live database, before migrating
+//   node scripts/release.mjs migrate    drizzle-kit migrate in the current directory
+//
+// plan reads the live database (the migrations table only) and writes nothing.
+// It fails with every reason not to release, so a dry run shows them all at once.
+import { spawnSync } from "node:child_process";
+import { appendFileSync } from "node:fs";
+import postgres from "postgres";
+import { directUrl, pendingMigrations, releaseProblems, snapshotsToPrune } from "./lib/release.mjs";
+
+const env = process.env;
+const KEEP_SNAPSHOTS = 2; // Neon Free allows 10 branches; previews and `test` need the rest
+
+const git = (...args) => {
+  const r = spawnSync("git", args, { encoding: "utf8" });
+  return r.status === 0 ? r.stdout.trim() : null;
+};
+const output = (key, value) => env.GITHUB_OUTPUT && appendFileSync(env.GITHUB_OUTPUT, `${key}=${value}\n`);
+const summary = (lines) => {
+  const text = lines.join("\n");
+  console.log(text);
+  if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, `${text}\n\n`);
+};
+
+async function github(path) {
+  const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPOSITORY}/${path}`, {
+    headers: { Authorization: `Bearer ${env.GH_TOKEN}`, Accept: "application/vnd.github+json" },
+  });
+  if (!res.ok) throw new Error(`GitHub ${path}: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+/** The newest production deployment Vercel finished for a commit on main. */
+async function newestReadyDeployment() {
+  const deployments = await github("deployments?environment=Production&per_page=30");
+  for (const d of deployments) {
+    const [status] = await github(`deployments/${d.id}/statuses?per_page=1`);
+    if (status?.state !== "success" || !status.environment_url) continue;
+    if (git("merge-base", "--is-ancestor", d.sha, "origin/main") === null) continue;
+    return { sha: d.sha, url: status.environment_url };
+  }
+  return null;
+}
+
+async function ciOn(sha) {
+  const { check_runs: runs } = await github(`commits/${sha}/check-runs?check_name=check&per_page=20`);
+  const latest = runs.sort((a, b) => b.id - a.id)[0];
+  return latest ? { status: latest.status, conclusion: latest.conclusion } : null;
+}
+
+async function appliedMigrations() {
+  const sql = postgres(directUrl(env.DATABASE_URL), { max: 1, prepare: false, onnotice: () => {} });
+  try {
+    const [{ exists }] = await sql`SELECT to_regclass('drizzle.__drizzle_migrations') IS NOT NULL AS exists`;
+    if (!exists) return [];
+    return (await sql`SELECT created_at FROM drizzle.__drizzle_migrations`).map((r) => r.created_at);
+  } finally {
+    await sql.end();
+  }
+}
+
+async function plan() {
+  const live = env.LEDGER_LIVE === "true";
+  const target = await newestReadyDeployment();
+  const ci = target ? await ciOn(target.sha) : null;
+  const unreleasedFiles = target ? (git("diff", "--name-only", target.sha, "origin/main") ?? "").split("\n").filter(Boolean) : [];
+  const journal = target ? JSON.parse(git("show", `${target.sha}:drizzle/meta/_journal.json`)).entries : [];
+  const { pending, unknown } = pendingMigrations(journal, await appliedMigrations());
+  const problems = releaseProblems({ live, target, ci, unreleasedFiles, pending, unknown });
+
+  summary([
+    `### Release ${env.DRY_RUN === "true" ? "(dry run)" : ""}`,
+    "",
+    `- Build: ${target ? `\`${target.sha.slice(0, 7)}\` ${target.url}` : "none found"}`,
+    `- CI on it: ${ci ? (ci.conclusion ?? ci.status) : "no run"}`,
+    `- Cutover done (LEDGER_LIVE): ${live ? "yes" : "no"}`,
+    `- Migrations to apply: ${pending.length ? pending.join(", ") : "none"}`,
+    `- Steps: ${pending.length ? "snapshot → migrate → " : ""}views → promote`,
+    ...(problems.length ? ["", "**Refused:**", ...problems.map((p) => `- ${p}`)] : []),
+  ]);
+  if (problems.length) process.exit(1);
+  output("sha", target.sha);
+  output("url", target.url);
+  output("pending", String(pending.length));
+}
+
+async function neon(path, init = {}) {
+  const res = await fetch(`https://console.neon.tech/api/v2/projects/${env.NEON_PROJECT_ID}/${path}`, {
+    ...init,
+    headers: { Authorization: `Bearer ${env.NEON_API_KEY}`, Accept: "application/json", "Content-Type": "application/json" },
+  });
+  if (!res.ok) throw new Error(`Neon ${init.method ?? "GET"} ${path}: ${res.status} ${await res.text()}`);
+  return res.json();
+}
+
+/**
+ * A copy-on-write branch of the default (live) branch, taken just before the
+ * migration, so a bad one is undone by restoring from it in the Neon console.
+ * Waits for Neon to finish creating it, then keeps only the newest few.
+ */
+async function snapshot() {
+  const stamp = new Date().toISOString().slice(0, 16).replace(/[-:T]/g, "");
+  const name = `pre-release/${stamp}-${env.RELEASE_SHA.slice(0, 7)}`;
+  const created = await neon("branches", { method: "POST", body: JSON.stringify({ branch: { name } }) });
+  for (const op of created.operations ?? []) {
+    for (let i = 0; ; i++) {
+      const { operation } = await neon(`operations/${op.id}`);
+      if (operation.status === "finished") break;
+      if (["failed", "error", "cancelled"].includes(operation.status) || i > 60) {
+        throw new Error(`Neon did not finish creating ${name}: ${operation.status}`);
+      }
+      await new Promise((r) => setTimeout(r, 2000));
+    }
+  }
+  const { branches } = await neon("branches");
+  for (const old of snapshotsToPrune(branches, KEEP_SNAPSHOTS)) {
+    await neon(`branches/${old.id}`, { method: "DELETE" });
+    console.log(`deleted old snapshot ${old.name}`);
+  }
+  summary([`- Snapshot: Neon branch \`${name}\` (restore from it in the Neon console if the migration was wrong)`]);
+}
+
+/**
+ * drizzle-kit migrate from the working directory (the release's checkout), on
+ * the direct endpoint: the transaction pooler is for the app's short queries.
+ * The derived URL never reaches the log, where only the pooled secret is masked.
+ */
+async function migrate() {
+  const r = spawnSync(process.execPath, ["node_modules/drizzle-kit/bin.cjs", "migrate"], {
+    stdio: "inherit",
+    env: { ...env, DATABASE_URL: directUrl(env.DATABASE_URL) },
+  });
+  if (r.status !== 0) throw new Error(`drizzle-kit migrate exited ${r.status}`);
+}
+
+const command = process.argv[2];
+const run = { plan, snapshot, migrate }[command];
+if (!run) {
+  console.error("usage: node scripts/release.mjs <plan|snapshot|migrate>");
+  process.exit(2);
+}
+await run().catch((e) => {
+  console.error(e.message);
+  process.exit(1);
+});

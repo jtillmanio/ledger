@@ -50,8 +50,8 @@ npm run test:db:reset       # rebuild the TEST database: drizzle-kit migrate, th
 npm run lint                # eslint, zero warnings
 npx tsc --noEmit            # typecheck
 npm run db:generate         # after editing src/db/schema.ts
-npm run db:push             # apply migration
-npm run db:views            # re-apply etl/views.sql to DATABASE_URL — REQUIRED after schema changes (node, not psql)
+npm run db:push             # apply schema.ts to DATABASE_URL with no migration — pre-cutover only, by hand
+npm run db:views            # re-apply etl/views.sql to DATABASE_URL (node, not psql); rebuild and Release do it for you
 npm run extract             # etl/extract.py with every sidecar CSV (see below); clears seed/ first;
                             # add --with-plan to also load the workbook's To-Read tabs (off by default)
 py etl/enrich_comics.py     # Metron: dates, cover URLs, label proposals (--dry-run first)
@@ -217,6 +217,13 @@ npm run test:tokens         # colour tokens: mockups = globals.css, hue distance
   START-HERE Step 14, right after the final load and *before* the month of
   running both — D-18) makes all four refuse. Never suggest a rebuild or a load
   once that is set.
+- **A merge is not a deploy; Release is** (START-HERE Step 13). Vercel stages
+  every build of `main`, and `.github/workflows/release.yml`, run by hand after
+  the merge, checks CI on that commit, snapshots Neon, migrates, re-applies
+  views and promotes, in that order. It is the only path a migration takes to
+  the live database: never tell anyone to run `db:migrate`, `db:push` or
+  `db:views` against `DATABASE_URL` once the repo variable `LEDGER_LIVE` is
+  `true`. Before that, a schema change goes through `npm run rebuild`.
 - **Tests touch `TEST_DATABASE_URL` and nothing else.** `DATABASE_URL` is the live
   Neon ledger. `scripts/lib/testdb.mjs` refuses when the test URL is unset or
   names the same host and database, and `npm test` fails at once. Never point a
