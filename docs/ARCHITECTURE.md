@@ -665,9 +665,10 @@ allowed to degrade.
 ## 5. Operational posture
 
 - **Backups.** Nightly `pg_dump` to the repo via GitHub Actions, 30-day
-  retention, plus `GET /api/export` for a full JSON dump on demand. Both exist
-  because the workbook is currently your only copy and it shouldn't stay that
-  way.
+  retention, each dump restored into a scratch Postgres and checked before it
+  is committed (D-30), plus `GET /api/export` for a full JSON dump on demand.
+  Both exist because the workbook is currently your only copy and it shouldn't
+  stay that way.
 - **Cold starts.** Neon's free tier suspends idle compute. First request after a
   quiet period takes roughly a second. Acceptable for a single reader; the fix
   if it annoys you is a paid plan, not an architecture change.

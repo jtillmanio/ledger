@@ -74,7 +74,7 @@
 | R2-12 | MEDIUM | No throttle on POST /api/login; START-HERE asks for a phone-typable passcode | src/app/api/login/route.ts:12-19; docs/START-HERE.md:270 | Not past go-live | decided | D-23: passphrase of 4+ random words (START-HERE .env table + Step 14 gate); no throttle; better sign-in is task 6.13. Owner sets APP_PASSCODE |
 | D-R2-1 | DECISION | What is a run's issue count when a placement repeats (reread vs sheet duplication)? | R2-07 | Blocks 2.5/2.6 | decided | D-12: (b) now — collapse the 13 rows in extract; rereads return deliberately at 0.8a |
 | R2-AR1 | ACCEPTED RISK (proposed) | Backups live in the same private repo as the code | .github/workflows/backup.yml | Yes | accepted | accepted now that R2-03 is fixed |
-| R2-AR2 | ACCEPTED RISK (proposed) | No written or tested RESTORE procedure from the nightly backup | docs/START-HERE.md:935 | Yes | accepted | accepted with the alternative: four-line restore + test_views check written in START-HERE 10d |
+| R2-AR2 | ACCEPTED RISK (proposed) | No written or tested RESTORE procedure from the nightly backup | docs/START-HERE.md:935 | Yes | fixed | D-30: every nightly run restores its own dump into a scratch Postgres, runs test_views and compares row counts with live before committing it (backup.yml); START-HERE 10d |
 
 ## UI_AUDIT_REPORT.md — triage, 2026-09-21
 
