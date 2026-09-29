@@ -109,7 +109,8 @@ jobs:
           psql "$scratch/postgres" -qc "CREATE DATABASE restore_check"
 
           echo "Restoring $DUMP"
-          gzip -dc "$DUMP" | PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q
+          # stdout is only the dump's setval() results; errors still reach the log.
+          gzip -dc "$DUMP" | PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q > /dev/null
           # A dump taken between a schema change and db:views carries the old views.
           PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q -f etl/views.sql
           PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q -f etl/test_views.sql
