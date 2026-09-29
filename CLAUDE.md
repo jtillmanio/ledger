@@ -312,7 +312,10 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
 
 ## Workflow
 
-- Branch `task/<id>-<slug>`, one PR per task in `docs/TASKS.md`, squash merge.
+- IMPORTANT: never commit to `main`. Branch `task/<id>-<slug>` (or `fix/`,
+  `docs/`, `chore/` outside a task), one PR per task in `docs/TASKS.md`, squash
+  merge by the owner. Branching, staging, commit messages and PR bodies are in
+  `.claude/rules/git.md`.
 - IMPORTANT: no task merges without a test that would have failed before it.
 - Tick the task's checkbox in `docs/TASKS.md` in the same PR.
 - **Migrations that drop or retype a column ship a down file.** `drizzle-kit`
