@@ -929,10 +929,10 @@ curation.
 **Verify:** `backups/reading-YYYY-MM-DD.sql.gz` is committed and is roughly
 400 KB. The job now fails (red X, no commit) when `pg_dump` fails or the dump is
 nearly empty, so a green run with a file in `backups/` is a real backup. If the run
-is red, read its log first: a Neon major-version upgrade past 16 makes the pinned
-`postgresql-client-16` refuse, and the job says so in one line naming the fix.
+is red, read its log first: a Neon major-version upgrade past 18 makes the pinned
+client refuse, and the job says so in one line naming the fix.
 Neon never upgrades a project's major version by itself — if you do, change
-`postgresql-client-16` in `.github/workflows/backup.yml` the same day.
+`PG_MAJOR` in `.github/workflows/backup.yml` the same day.
 
 **Restore — try this once now, not during an incident** (R2-AR2). A backup you
 have never restored is a hope, not a backup. The drill takes the newest nightly
