@@ -506,4 +506,5 @@ needed.
    exist, or adding a run is slower than the spreadsheet and the migration was
    wasted effort.
 3. **Never let a deploy auto-migrate.** Vercel builds on every push, and there
-   is no undo.
+   is no undo. Migrations reach the live database only through the Release
+   workflow, started by hand after a merge (START-HERE Step 13).

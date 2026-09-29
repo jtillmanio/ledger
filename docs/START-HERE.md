@@ -981,6 +981,43 @@ key in it, with rows under the ones you have data in. `users` is left out on
 purpose. `test/export-tables.test.ts` keeps the list complete as tables are
 added, so this is a once-before-Step-14 look, not a chore.
 
+### 10e. Releases — merging is not deploying
+
+**~15 minutes, once.** Out of the box Vercel puts every merge to `main` live
+immediately, whether CI passed or not, and leaves the schema for you to catch
+up by hand. After this step a build of `main` waits, *staged*, until you run
+the **Release** workflow. Release checks CI, migrates, and promotes, in that
+order (Step 13).
+
+1. **Vercel: stage production builds.** Project → **Settings → Environments →
+   Production → Branch Tracking** → turn **Auto-assign Custom Production
+   Domains** off. Leave **Settings → Build and Deployment → Deployment Checks**
+   empty: they only work with auto-assign on, and Release checks CI itself.
+2. **Vercel token.** vercel.com → **Account Settings → Tokens** → create
+   `ledger-release` with your account as its scope.
+3. **Neon API key.** Neon console → **Account settings → API keys** → create
+   `ledger-release`. Then your project → **Settings → General** → copy the
+   **Project ID**.
+4. **GitHub.** Repo → **Settings → Secrets and variables → Actions**.
+   - **Secrets:** `VERCEL_TOKEN` and `NEON_API_KEY` from steps 2–3.
+     `DATABASE_URL` is already there from 10d.
+   - **Variables:** `VERCEL_SCOPE` = `justin-tillman` (the name in your
+     `vercel.com/<name>/ledger` URL), `NEON_PROJECT_ID` = the ID from step 3,
+     and `LEDGER_LIVE` = `false` (Step 14 sets it to `true`).
+
+**Verify:** **Actions → Release → Run workflow**, tick **Dry run**, **Run**. It
+is green, and its summary names the build it would promote, *CI on it:
+success*, and *Migrations to apply: none*.
+
+A commit that only touches `backups/`, `docs/`, `design/`, `.github/`,
+`.claude/` or Markdown shows **Canceled** in Vercel's Deployments tab. That is
+`vercel.json`'s ignore step skipping a build that would change nothing, not a
+failure. The build log says which files it compared.
+
+GitHub's approval gate for deployments (environments with required reviewers)
+is not available to a private repo on the free plan. Release has no second
+approver: only you can start it, and it snapshots before it migrates.
+
 **Done with Part 2 when:** you can mark an issue read from your phone, and the
 Actions tab shows one successful backup.
 
@@ -1099,31 +1136,60 @@ doesn't stall.
 
 ## Step 13 — Deploy what you built
 
+**Merging is not deploying.** Vercel builds every push, but a build of `main`
+sits *staged* until you run **Release** (10e). Release is also the only way a
+migration reaches the live database, so the rule is one line:
+
+> **Merge, then Release. Never migrate before the merge, and never by hand.**
+
 After each sitting:
 
-1. Merge to `main`. Vercel deploys a preview automatically.
-2. **Test the preview on your Android phone before promoting.**
-3. Promote to production from the Vercel dashboard.
-4. If the sitting changed the schema, apply it. **Before Step 14** the database
-   is disposable, so the simplest correct way is `npm run rebuild` (it migrates
-   from zero and reloads the workbook). 0.8a *must* go this way — its migration
-   re-keys progress and is not written to convert existing rows. After Step 14,
-   migrate manually:
+1. **Test the PR's preview on your Android phone**, then merge it.
+2. **Before Step 14, if the PR added a migration:** pull `main` and run
+   `npm run rebuild` (it migrates from zero and reloads the workbook). The PR's
+   CI summary says whether it added one. Release refuses to migrate before
+   cutover and says so. 0.8a *must* go this way: its migration re-keys progress
+   and is not written to convert existing rows.
+3. **Actions → Release → Run workflow → Run.** Or from the project folder:
 
 ```powershell
-$env:DATABASE_URL = "<production pooled string>"
-npm run db:migrate
-npm run db:views
+gh workflow run release.yml
+gh run watch (gh run list --workflow release.yml --limit 1 --json databaseId --jq '.[0].databaseId') --exit-status
 ```
 
-Only **after** that day's backup has run.
+Release picks the newest production build Vercel has ready for `main`, and
+refuses when CI has not passed on that exact commit, when something newer on
+`main` is still building, or (before cutover) when there is a migration to
+apply. Then it snapshots the live database if migrating, migrates, re-applies
+`etl/views.sql`, and promotes the build. Its run summary lists each step.
+**Dry run** reports all of that and changes nothing: use it when unsure.
+
+**Why this order.** Release puts the schema change in first and the new code
+second. For the minute in between, the *old* code runs on the *new* schema.
+An additive migration (a new table, column or view) is invisible to old code.
+A drop or retype can make the old code error for that minute. For a one-user
+app that is fine. When it isn't, split the change into two PRs: stop using the
+column (release), then drop it (release). Migrating before the merge would be
+the wrong way round: it puts live on a schema that no reviewed, CI-tested code
+on `main` expects yet.
+
+**When a release goes wrong:**
+
+| What                                       | Do                                                                                                   |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Refused: CI still running / newer building | Wait, run it again                                                                                   |
+| Promote failed after migrating             | Run it again: nothing is left to migrate, so it only promotes                                        |
+| Promote says the build was already promoted | It is live already. Nothing to do                                                                   |
+| The new code is broken                     | Vercel → Deployments → the previous one → **Instant Rollback**. Fix forward in a new PR              |
+| The migration was wrong                    | Neon console → Branches → `pre-release/<time>-<sha>` → restore `main` from it; or run the migration's `drizzle/down/` file |
 
 Anything you enter in the deployed app before Step 14 — test marks, a queue,
 shelves — is erased by the next rebuild and by Step 14's final load. Use it to
 try things, not to keep things.
 
 **Never let a deploy auto-migrate.** Vercel builds on every push, and an
-automatic migration on a bad push has no undo.
+automatic migration on a bad push has no undo. That is why the migration is a
+step of Release, which only you start, and not of the build.
 
 ---
 
@@ -1174,7 +1240,9 @@ Compare-Object (Get-Content seed/issues.csv) (Get-Content seed-final/issues.csv)
 
 **Immediately after that load, add `LEDGER_LIVE=true` to `.env`.** With that
 line set, `load.ps1`, `load.sh` and `npm run rebuild` refuse to run instead of
-wiping what the app holds.
+wiping what the app holds. **Also set the repo variable `LEDGER_LIVE` to `true`**
+(Settings → Secrets and variables → Actions → Variables). From then on Release
+migrates the live database instead of pointing you at a rebuild.
 
 4. Rename the sheet `Comics (archive, to 2026-XX)` and set it **read-only now**.
    Edits to it no longer reach the app; prerequisite and catalog changes are

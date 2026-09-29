@@ -1,0 +1,92 @@
+name: Release
+
+# Puts main live: the one path from a merged PR to the production URL, and the
+# one path a migration takes to the live database. Run it by hand from the
+# Actions tab after merging (START-HERE Step 13). It never runs on a push:
+# a deploy must not migrate on its own (HANDOFF §10).
+#
+#   1. plan      the newest production build Vercel has ready for a commit on
+#                main; refuses unless CI passed on that exact commit, nothing
+#                newer on main is still building, and (before cutover) there
+#                is nothing to migrate
+#   2. snapshot  Neon branch of the live database, only when migrating
+#   3. migrate   drizzle-kit migrate, from that commit's drizzle/
+#   4. views     etl/views.sql, from that commit
+#   5. promote   the staged Vercel build becomes the production URL
+#
+# Schema first, code second: the old code runs on the new schema for the
+# minute in between, never the new code on the old schema.
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run: report what would happen, change nothing"
+        type: boolean
+        default: false
+
+concurrency: { group: release, cancel-in-progress: false }
+
+permissions:
+  contents: read
+  deployments: read
+  checks: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      DRY_RUN: ${{ inputs.dry_run }}
+    steps:
+      - uses: actions/checkout@v7
+        with: { ref: main, fetch-depth: 0 }
+      - uses: actions/setup-node@v7
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci
+
+      - name: Plan
+        id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          LEDGER_LIVE: ${{ vars.LEDGER_LIVE }}
+        run: node scripts/release.mjs plan
+
+      # Migrations and views come from the commit being released, not from
+      # main's tip: a docs-only commit after it has no build of its own.
+      - name: Check out the release
+        if: ${{ !inputs.dry_run }}
+        run: |
+          git worktree add --detach "$RUNNER_TEMP/release" "${{ steps.plan.outputs.sha }}"
+          cd "$RUNNER_TEMP/release" && npm ci
+
+      - name: Snapshot the live database
+        if: ${{ !inputs.dry_run && steps.plan.outputs.pending != '0' }}
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+          RELEASE_SHA: ${{ steps.plan.outputs.sha }}
+        run: node scripts/release.mjs snapshot
+
+      - name: Migrate
+        if: ${{ !inputs.dry_run && steps.plan.outputs.pending != '0' }}
+        working-directory: ${{ runner.temp }}/release
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node "$GITHUB_WORKSPACE/scripts/release.mjs" migrate   # direct endpoint, not the pooler
+
+      - name: Apply views
+        if: ${{ !inputs.dry_run }}
+        working-directory: ${{ runner.temp }}/release
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/sql.mjs live etl/views.sql
+
+      - name: Promote
+        if: ${{ !inputs.dry_run }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE }}
+          URL: ${{ steps.plan.outputs.url }}
+        run: |
+          npx --yes vercel@61 promote "$URL" --yes --timeout 5m --token "$VERCEL_TOKEN" ${VERCEL_SCOPE:+--scope "$VERCEL_SCOPE"}
+          echo "- Promoted: $URL" >> "$GITHUB_STEP_SUMMARY"

@@ -146,6 +146,11 @@ The owner merges, with **Squash and merge**. Don't merge your own PR unless
 the owner says to for that PR. After a merge, `git switch main`,
 `git pull --ff-only`, and delete the local branch.
 
+Merging does not deploy. The owner runs the **Release** workflow (START-HERE
+Step 13), which migrates the live database and promotes the build. Never start
+it yourself, dry run included, unless the owner says to for that release: it
+reads and writes the live database.
+
 Rebase a branch on `main` only when it conflicts or is stale enough to matter;
 after a rebase, push with `--force-with-lease`, never `--force`, and only to
 your own branch.

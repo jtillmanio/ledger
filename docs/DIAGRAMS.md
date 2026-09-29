@@ -401,12 +401,15 @@ flowchart LR
         REPO[repo]
         CI["Actions: typecheck<br/>lint · build"]
         BAK["Actions: nightly<br/>pg_dump to backups/"]
+        REL["Actions: Release, by hand<br/>CI check · snapshot · migrate · promote"]
     end
 
     UI --> MW --> RSC --> VW --> TBL
     SPINE -- POST --> API --> TBL
     REPO --> CI
-    REPO -. git push deploy .-> vercel
+    REPO -. git push builds, staged .-> vercel
+    REL --> TBL
+    REL -. promote .-> vercel
     BAK --> TBL
     METRON -. enrichment script .-> TBL
     OL -.-> TBL
