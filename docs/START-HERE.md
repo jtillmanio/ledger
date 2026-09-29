@@ -1009,6 +1009,11 @@ order (Step 13).
 is green, and its summary names the build it would promote, *CI on it:
 success*, and *Migrations to apply: none*.
 
+A commit that only touches `backups/`, `docs/`, `design/`, `.github/`,
+`.claude/` or Markdown shows **Canceled** in Vercel's Deployments tab. That is
+`vercel.json`'s ignore step skipping a build that would change nothing, not a
+failure. The build log says which files it compared.
+
 GitHub's approval gate for deployments (environments with required reviewers)
 is not available to a private repo on the free plan. Release has no second
 approver: only you can start it, and it snapshots before it migrates.
