@@ -922,9 +922,11 @@ curation.
 
 1. Repo → **Settings → Secrets and variables → Actions** → **New repository
    secret** → name `DATABASE_URL`, value the Neon pooled string.
-2. Repo → **Settings → Actions → General** → Workflow permissions → **Read and
-   write**.
-3. Repo → **Actions** tab → **Nightly backup** → **Run workflow**.
+2. Repo → **Actions** tab → **Nightly backup** → **Run workflow**.
+
+The job asks for push access itself (`permissions: contents: write` in
+`backup.yml`), so leave **Settings → Actions → General → Workflow permissions**
+on the read-only default.
 
 **Verify:** `backups/reading-YYYY-MM-DD.sql.gz` is committed and is roughly
 400 KB. The job now fails (red X, no commit) when `pg_dump` fails or the dump is

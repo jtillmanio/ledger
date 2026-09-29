@@ -7,6 +7,9 @@ on:
 jobs:
   dump:
     runs-on: ubuntu-latest
+    # The repo's default token is read-only; the Commit step pushes the dump.
+    permissions:
+      contents: write
     env:
       # Must be at least Neon's major version: pg_dump refuses a newer server.
       PG_MAJOR: "18"
