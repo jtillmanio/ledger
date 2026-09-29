@@ -55,7 +55,7 @@ Three consequences:
 | `.claude/agents/schema-reviewer.md` | Subagent that reviews schema and query diffs in a fresh context |
 | `.claude/rules/schema.md`, `ui.md` | Rule sheets the subagent and the UI work read |
 | `.claude/hooks/guard-large-reads.js` | PreToolUse hook on `Read`, so a huge file can't flood the context |
-| `.github/workflows/ci.yml` | One job, eight steps, on every PR: `tsc`, lint, `test:db:reset`, vitest, `test:views`, the Python ETL tests, `build` — against a Postgres 16 service container with `TEST_DATABASE_URL` and deliberately no `DATABASE_URL` |
+| `.github/workflows/ci.yml` | One job on every PR: `tsc`, lint, `test:tokens`, `check:migrations`, `test:db:reset`, vitest, `test:views`, the Python ETL tests, `build` — against a Postgres 18 service container (Neon's major) with `TEST_DATABASE_URL` and deliberately no `DATABASE_URL` |
 | `.github/workflows/backup.yml` | Nightly `pg_dump` to `backups/` |
 | `design/mockups.html` | 40 annotated screens. Authoritative for layout and copy |
 

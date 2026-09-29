@@ -81,8 +81,9 @@ applies, not just the one nearest the change.
 
 Before pushing, locally:
 
-- `/verify`: typecheck, lint, `npm run test:all` (tokens, test-db reset, vitest,
-  SQL view tests, ETL unittests) and `next build`. It is the same set CI runs.
+- `/verify`: typecheck, lint, `npm run test:all` (tokens, migration checks,
+  test-db reset, vitest, SQL view tests, ETL unittests) and `next build`. It is
+  the same set CI runs.
 - The task's own **Check:** from `docs/TASKS.md`, exactly as written.
 - Schema or query changes: the `schema-reviewer` subagent (CLAUDE-CODE.md §3,
   phase 4). Phases 1 and 3 also get the adversarial review pass (TASKS.md
