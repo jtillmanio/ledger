@@ -7,13 +7,23 @@ on:
 jobs:
   dump:
     runs-on: ubuntu-latest
+    env:
+      # Must be at least Neon's major version: pg_dump refuses a newer server.
+      PG_MAJOR: "18"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install postgres client
         run: |
+          # Ubuntu's own archive carries only its release's default client (16 on
+          # 24.04); the PGDG repo carries every supported major on any release.
           sudo apt-get update -qq
-          sudo apt-get install -y postgresql-client-16
+          sudo apt-get install -y -qq postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y -qq "postgresql-client-$PG_MAJOR"
+          # The runner image ships its own PostgreSQL, and /usr/bin/pg_dump is a
+          # wrapper that can pick that one; put this major's binaries first.
+          echo "/usr/lib/postgresql/$PG_MAJOR/bin" >> "$GITHUB_PATH"
 
       - name: Dump
         env:
@@ -29,7 +39,7 @@ jobs:
           server_major=$(( server / 10000 ))
           client_major=$(pg_dump --version | grep -oE '[0-9]+' | head -n 1)
           if [ "$server_major" -gt "$client_major" ]; then
-            echo "::error::Neon is on PostgreSQL $server_major but this job installs postgresql-client-$client_major. Change postgresql-client-$client_major to postgresql-client-$server_major in .github/workflows/backup.yml." >&2
+            echo "::error::Neon is on PostgreSQL $server_major but this job installs postgresql-client-$client_major. Change PG_MAJOR from $client_major to $server_major in .github/workflows/backup.yml." >&2
             exit 1
           fi
           mkdir -p backups
