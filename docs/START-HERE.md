@@ -83,7 +83,7 @@ PowerShell.
 ```powershell
 winget install OpenJS.NodeJS.LTS
 winget install Python.Python.3.12
-winget install PostgreSQL.PostgreSQL.16
+winget install PostgreSQL.PostgreSQL.18
 winget install Git.Git
 winget install GitHub.cli
 ```
@@ -112,7 +112,7 @@ tool via Git Bash, which this repo's `.sh` scripts want.
 ```powershell
 node -v          # v22.x is what CI and Vercel run (.nvmrc, package.json engines); a newer local Node works, npm just warns EBADENGINE
 py -V            # Python 3.12.x
-psql --version   # psql (PostgreSQL) 16.x
+psql --version   # psql (PostgreSQL) 18.x — Neon's major; an older client works for psql, not for pg_dump
 git --version    # git version 2.x
 gh --version     # gh version 2.x
 claude --version
@@ -124,7 +124,7 @@ All seven must succeed.
 **If `psql` is not found**, the installer put it outside PATH:
 
 ```powershell
-$env:Path += ";C:\Program Files\PostgreSQL\16\bin"
+$env:Path += ";C:\Program Files\PostgreSQL\18\bin"
 [Environment]::SetEnvironmentVariable("Path", $env:Path, "User")
 ```
 
