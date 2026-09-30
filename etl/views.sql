@@ -11,7 +11,7 @@ SELECT
   u.id                                                   AS user_id,
   r.id                                                   AS run_id,
   COUNT(ri.issue_id)                                     AS total_issues,
-  COUNT(p.issue_id)                                      AS read_issues,
+  COUNT(ri.issue_id)                                      AS read_issues,
   CASE WHEN COUNT(ri.issue_id) = 0 THEN 0
        ELSE COUNT(p.issue_id)::float8 / COUNT(ri.issue_id) END AS pct,
   CASE WHEN COUNT(ri.issue_id) = 0          THEN 'empty'
