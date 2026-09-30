@@ -9,13 +9,13 @@ argue from it.
 
 ## Where we are
 
-**4 of 82 tasks done (5%).** Still in Phase 0 — nothing in Phase 1 or later has
+**4 of 83 tasks done (5%).** Still in Phase 0 — nothing in Phase 1 or later has
 started. No git repo exists yet, nothing is deployed, and `LEDGER_LIVE` is
 `false`.
 
 | Phase | Done / total | Status |
 |---|---|---|
-| 0 — Foundation | 3 / 9 | **In progress** |
+| 0 — Foundation | 3 / 10 | **In progress** |
 | 1 — Daily use | 0 / 15 | Not started |
 | 2 — The pace engine | 0 / 15 | Not started |
 | 3 — Editing | 0 / 6 | Not started |
@@ -42,7 +42,9 @@ downstream:
 2. **0.8b — Read state per run, the spine.** Follows directly from 0.8a.
 3. **0.2 CI, 0.3 schema additions, 0.4 soft-delete, 0.5 volume-year
    normalization** — smaller, no ordering dependency on each other, but all
-   still open in Phase 0.
+   still open in Phase 0. **0.9 — Page performance** is also open: the deployed
+   app feels slow, and it is cheaper to find the cause before more screens sit on
+   the same data path.
 
 Build order and the cutover gates are in START-HERE Steps 11–14 (rewritten
 2026-09-23 after the S audit). **2.11a**, though numbered in Phase 2, is built at

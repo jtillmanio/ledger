@@ -327,6 +327,74 @@ uses `--muted` (3:1). The hint is grey, never green (CLAUDE.md).
 hint, a row read only elsewhere shows it, and every `.chk` has an accessible name
 and `aria-pressed`.
 
+### ☐ 0.9 Page performance — measure, find the cause, fix it · M
+Reported by the owner on the deployed preview and production: moving between
+pages on the basic v1 app feels laggy and slow. Nothing has measured it yet, so
+this task starts with numbers, not fixes. It sits in Phase 0 on purpose: every
+later screen (1.8's shell, 1.9, 2.4's dashboards) inherits whatever is wrong in
+the data path, and it is cheaper to find it while there are four routes than
+while there are forty. It does not depend on 0.8a/0.8b and may be done before or
+between them.
+
+**1. Measure first, and write it down.** On the Vercel preview (and once on
+production), on a phone-class profile (Lighthouse mobile, or Chrome throttled to
+Slow 4G and 4× CPU) *and* on the owner's actual phone, record for `/comics`,
+`/comics/[runId]` (one small run, one 100+ issue run), `/books` and `/login`:
+TTFB, LCP, and the time from tapping a link to the next paint. Do each cold (first
+hit after 10+ minutes idle, which is the Neon scale-to-zero wake) and warm
+(second hit), and say which is which. Put the table in the PR body, with the run
+that produced it. Without the before column there is no claim of an improvement.
+
+**2. Find where the time goes**, in this order, recording each answer. The likely
+causes are listed so none is skipped, not because any is known to be it:
+
+- **Database round trips.** Time every query a page runs (`EXPLAIN (ANALYZE,
+  BUFFERS)` on the views: `run_readiness`, `run_span`, `run_progress`,
+  `run_credit_line` are the heavy ones over ~10,761 placements). Count queries
+  per request and whether any run in sequence that could be `Promise.all`. A
+  view that recomputes the whole catalog to render one run is the first suspect;
+  check whether it filters by run *before* aggregating.
+- **Region and connection.** Vercel function region against the Neon endpoint
+  (`us-east-2`, Ohio; `vercel.json` sets no `regions`, so functions use the
+  Vercel default). Confirm `DATABASE_URL` is the `-pooler` host, that `postgres.js`
+  is created once per instance and not per request, and what a cold Neon wake
+  costs (compute scales to zero after 5 minutes idle on the free plan).
+- **Rendering.** Every page is `export const dynamic = "force-dynamic"`, so
+  nothing is cached and each navigation is a full server render and query pass.
+  Decide, page by page, what may be cached or streamed: the catalog changes when
+  the owner edits, not per request. Look at `loading.tsx` / Suspense so a
+  navigation paints a skeleton at once (the UX floor) rather than blocking on the
+  slowest query, and at `<Link>` prefetching.
+- **Payload.** Bytes of HTML/RSC and JS shipped per route, how many rows a page
+  serialises (the 258-run list, a 100+ issue spine), client components that
+  could be server components, images and fonts. `next build` prints route sizes.
+- **Middleware.** `middleware.ts` runs on every request for the passcode gate;
+  confirm it does no database work.
+
+**3. Fix the causes that measured as large**, one commit each, with the
+before/after for that change. A cause that measures as small is left alone and
+named in the PR. A fix that needs a schema change (an index) stops and asks first
+(CLAUDE.md). A materialised view stores derived data and so conflicts with
+*Derived data is never stored*: prefer an index or a better query, and raise it as
+a decision if only a materialised view will do.
+
+**4. Leave a budget behind.** Add the target to `docs/ARCHITECTURE.md` as a short
+*Performance budget* section, and a cheap regression guard where one can be made
+deterministic (a vitest that a page's query count does not exceed N, or a check on
+the `next build` route-size table). No test asserts a wall-clock time: those are
+flaky in CI.
+
+**Target** (adjust after step 1 if the numbers show it is unrealistic, and say
+so): a warm navigation between dashboards and run detail paints in under 1s on
+the throttled profile; a cold Neon wake shows a skeleton immediately instead of a
+blank page; no page runs more queries than it has distinct data needs.
+
+**Check:** the PR carries the before/after table for the routes above, cold and
+warm, on the preview. The per-page query count is recorded and the guard test
+passes. `EXPLAIN` output for any view changed shows the run filter applied early.
+`/verify` is green and the migration checks pass unchanged (no schema change
+unless the owner approved one).
+
 ---
 
 ## Phase 1 — Daily use (build before anything clever)
