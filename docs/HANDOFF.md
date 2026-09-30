@@ -83,7 +83,7 @@ book between years is a cut-and-paste across sheets.
 
 | Decision | Rationale |
 |---|---|
-| **Next.js 15 App Router, React 19, TypeScript** | Server components render the 641-issue Krakoa run without shipping it twice. Chosen over Spring Boot — familiarity doesn't pay for itself on a single-user CRUD app |
+| **Next.js 16 App Router, React 19, TypeScript** | Server components render the 641-issue Krakoa run without shipping it twice. Chosen over Spring Boot — familiarity doesn't pay for itself on a single-user CRUD app |
 | **Postgres on Neon free tier** | Recursive CTEs, `FILTER`, array aggregation all load-bearing. Permanent free tier, ~0.5 GB against ~14k rows |
 | **`postgres.js` with `prepare: false`** | Required for Neon's transaction-mode pooler |
 | **Drizzle ORM, migrations in git** | `drizzle-kit generate` produces reviewable SQL |

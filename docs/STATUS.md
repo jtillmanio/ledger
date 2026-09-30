@@ -10,8 +10,10 @@ argue from it.
 ## Where we are
 
 **4 of 87 tasks done (5%).** Still in Phase 0 — nothing in Phase 1 or later has
-started. No git repo exists yet, nothing is deployed, and `LEDGER_LIVE` is
-`false`.
+started. The private GitHub repo exists and CI runs on every PR (task 0.2 stays
+open until its check, a broken view turning CI red, has been run). The Release
+workflow has deployed `main` to Vercel (last run 2026-09-30). `LEDGER_LIVE` is
+`false`, so the database is still disposable: `npm run rebuild` can reload it.
 
 | Phase | Done / total | Status |
 |---|---|---|

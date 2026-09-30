@@ -81,7 +81,7 @@ src/
 
 ## Stack
 
-Next.js 15 · Postgres on Neon · Drizzle · Vercel Hobby · plain CSS.
+Next.js 16 · Postgres on Neon · Drizzle · Vercel Hobby · plain CSS.
 **$0/month.**
 
 ## Quick start
