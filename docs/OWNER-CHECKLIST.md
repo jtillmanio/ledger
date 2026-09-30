@@ -5,14 +5,16 @@ these. Tick them here; START-HERE has the commands.
 
 ## Before Phase 0 can finish
 
-- [ ] **Create the private GitHub repository** and push (R3-01). Task 0.2's check
+- [x] **Create the private GitHub repository** and push (R3-01). *Done, verified
+      2026-09-30: the repo is private, `.gitignore` covers `.env`, `seed/` and
+      `*.dump`, the `DATABASE_URL` secret is set and the nightly backup is green.* Task 0.2's check
       (a throwaway PR) and the nightly backup both need it. Confirm it is
       **private** — `backup.yml` commits database dumps into it — and that
       `.gitignore` covers `.env`, `seed/`, `*.dump` and any sidecar CSV you would
       not publish. Add the `DATABASE_URL` secret for the backup workflow.
-- [ ] **Create the test database and set `TEST_DATABASE_URL`** in `.env` (R3-02,
+- [x] **Create the test database and set `TEST_DATABASE_URL`** in `.env` (R3-02,
       D-R3-2). START-HERE → *Test database*. Until this is set, `npm test` refuses
-      to run — by design.
+      to run — by design. *Done: `npm run test:all` passed locally on 2026-09-30.*
 
 ## Releases (START-HERE 10e), before the next merge to `main`
 
@@ -163,12 +165,10 @@ designed, and the reason the SQL and vitest suites could not be re-run here.
       permission entries and a `docs/` additional-directory, all benign; no
       `bypassPermissions`. `.claude/settings.json` is the read-guard hook only.
 
-## Still blocked on the two Phase 0 items at the top
+## ~~Still blocked on the two Phase 0 items at the top~~
 
-`npm test`, `npm run test:views` and `npm run test:all` cannot run, and CI has
-never run, until the private repo (R3-01) and the test database (R3-02) exist.
-Those are the first two boxes on this page and nothing else moves until they
-are ticked.
+*Resolved 2026-09-30:* the private repo (R3-01) and the test database (R3-02)
+both exist, `npm run test:all` runs locally, and CI runs on every PR (task 0.2).
 
 ---
 
@@ -293,8 +293,8 @@ of gates**. The items below are the ones only you can do.
 
 ## Still blocking Phase 0 (unchanged)
 
-- [ ] **Private GitHub repo** (R3-01) — top of this file.
-- [ ] **`TEST_DATABASE_URL`** (R3-02) — top of this file. PostgreSQL 18 is
+- [x] **Private GitHub repo** (R3-01) — top of this file. Done 2026-09-30.
+- [x] **`TEST_DATABASE_URL`** (R3-02) — top of this file. Done 2026-09-30. PostgreSQL 18 is
       already installed here through scoop (`psql`, `createdb` work), so the
       local option is `createdb ledger_test` plus the line in `.env`.
 

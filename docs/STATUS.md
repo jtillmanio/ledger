@@ -9,15 +9,15 @@ argue from it.
 
 ## Where we are
 
-**4 of 87 tasks done (5%).** Still in Phase 0 — nothing in Phase 1 or later has
-started. The private GitHub repo exists and CI runs on every PR (task 0.2 stays
-open until its check, a broken view turning CI red, has been run). The Release
+**5 of 87 tasks done (6%).** Still in Phase 0 — nothing in Phase 1 or later has
+started. The private GitHub repo exists and CI runs on every PR, and is proven
+to go red on a broken view (task 0.2, done 2026-09-30). The Release
 workflow has deployed `main` to Vercel (last run 2026-09-30). `LEDGER_LIVE` is
 `false`, so the database is still disposable: `npm run rebuild` can reload it.
 
 | Phase | Done / total | Status |
 |---|---|---|
-| 0 — Foundation | 3 / 10 | **In progress** |
+| 0 — Foundation | 4 / 10 | **In progress** |
 | 1 — Daily use | 0 / 16 | Not started |
 | 2 — The pace engine | 0 / 15 | Not started |
 | 3 — Editing | 0 / 7 | Not started |
@@ -42,7 +42,7 @@ downstream:
    without it either — reading an issue in one run must not silently mark it
    read in another.
 2. **0.8b — Read state per run, the spine.** Follows directly from 0.8a.
-3. **0.2 CI, 0.3 schema additions, 0.4 soft-delete, 0.5 volume-year
+3. **0.3 schema additions, 0.4 soft-delete, 0.5 volume-year
    normalization** — smaller, no ordering dependency on each other, but all
    still open in Phase 0. **0.9 — Page performance** is also open: the deployed
    app feels slow, and it is cheaper to find the cause before more screens sit on
