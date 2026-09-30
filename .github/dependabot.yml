@@ -1,8 +1,10 @@
 # Weekly dependency PRs. Every PR gets a Vercel preview and so a Neon branch
 # (START-HERE 10f), and Neon Free allows 10: main, test, two Release snapshots
 # and one per open PR. So minor and patch updates arrive as one grouped PR,
-# and at most three Dependabot PRs are open at once. A major update comes on
-# its own; comment `@dependabot ignore this major version` to put one off.
+# and at most three version-update PRs are open at once. Security updates are
+# not counted by these limits; the repo's Grouped security updates setting
+# keeps them to one PR. A major update comes on its own. One that has to wait
+# goes under `ignore` below, with why, rather than in a PR comment.
 # Merging a bump is not deploying it: Release puts it live (Step 13).
 version: 2
 updates:
@@ -13,6 +15,13 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # TypeScript 7 ships no JavaScript API (a new one is due in 7.1). Next.js
+      # 15 reads tsconfig through it and crashes loading next.config.ts, and
+      # typescript-eslint requires <6.1 (#13). Remove once both support 7.
+      # 6.x is still offered.
+      - dependency-name: typescript
+        versions: [">=7"]
     commit-message: { prefix: deps }
 
   - package-ecosystem: github-actions
