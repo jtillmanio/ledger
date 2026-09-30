@@ -43,9 +43,20 @@ describe("/api/health", () => {
   });
 });
 
-describe("middleware", () => {
+describe("proxy (the passcode gate)", () => {
+  it("is exported under the name Next 16 runs, and sends a request without a cookie to /login", async () => {
+    const { NextRequest } = await import("next/server");
+    const { proxy } = await import("../src/proxy");
+    const out = proxy(new NextRequest("http://ledger.test/comics"));
+    expect(out.status).toBe(307);
+    expect(out.headers.get("location")).toBe("http://ledger.test/login?next=%2Fcomics");
+
+    const withCookie = new NextRequest("http://ledger.test/comics", { headers: { cookie: "rt_session=x" } });
+    expect(proxy(withCookie).headers.get("x-middleware-next")).toBe("1");
+  });
+
   it("lets /api/health past the passcode gate and nothing else new", async () => {
-    const { config } = await import("../src/middleware");
+    const { config } = await import("../src/proxy");
     const gated = new RegExp(`^${config.matcher[0]}$`);
     expect(gated.test("/api/health")).toBe(false);
     expect(gated.test("/login")).toBe(false);

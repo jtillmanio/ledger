@@ -380,7 +380,7 @@ flowchart LR
     end
 
     subgraph vercel [Vercel Hobby · free]
-        MW["middleware.ts<br/>cookie presence gate"]
+        MW["proxy.ts<br/>cookie presence gate"]
         RSC["Server components<br/>db/queries.ts"]
         API["Route handlers<br/>/api/progress · /api/export"]
         CRON["Vercel cron<br/>release digest · phase 6"]
