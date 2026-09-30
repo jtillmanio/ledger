@@ -59,9 +59,11 @@ can `TRUNCATE` never guesses which database it is holding (R3-02, D-R3-2).
 - **Schema comes from the migrations,** not `db:push`: `npm run test:db:reset`
   drops everything, runs `drizzle-kit migrate` (the path a rebuild takes, so a
   broken migration cannot ship green), then applies `etl/views.sql`.
-- **What runs.** `npm test` = `vitest run`. `npm run test:all` = `test:db:reset`,
-  `npm test`, `npm run test:views` (`etl/test_views.sql`, against the test
-  database) and `npm run test:etl` (Python). CI runs the same set (0.2). Isolation
+- **What runs.** `npm test` = `vitest run`. `npm run test:all` = `test:tokens`
+  (colour tokens, D-24), `check:migrations` (journal, down files, ungenerated
+  schema changes, edits to applied migrations), `test:db:reset`, `npm test`,
+  `npm run test:views` (`etl/test_views.sql`, against the test database) and
+  `npm run test:etl` (Python). CI runs the same set (0.2). Isolation
   is `TRUNCATE` in `beforeEach`; files run one at a time.
 - **Ported ETL tests are not part of this task** (0.6's "port both into vitest"
   is dropped): the Python suite and `test_views.sql` stay where they are and run
