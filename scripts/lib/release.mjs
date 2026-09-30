@@ -90,6 +90,22 @@ export function promoteProblem(deployment) {
   return null;
 }
 
+/**
+ * Why production's /api/health is not yet the release it should be, or null.
+ *   status, body: the response (body null when it was not JSON)
+ *   sha:          the commit Release promoted
+ */
+export function smokeProblem({ status, body, sha }) {
+  if (!body) return `/api/health answered ${status} without JSON. Is PRODUCTION_URL the app's address?`;
+  if (!body.ok) return `/api/health answered ${status}: the ${body.failed ?? "unknown"} check failed.`;
+  if (!body.commit) {
+    return "/api/health reports no commit. Turn on Vercel's Settings → Environment Variables → " +
+      "Automatically expose System Environment Variables.";
+  }
+  if (body.commit !== sha) return `Production still serves ${body.commit.slice(0, 7)}, not ${sha.slice(0, 7)}.`;
+  return null;
+}
+
 /** Snapshot branches to delete so only the newest `keep` pre-release ones remain. */
 export function snapshotsToPrune(branches, keep) {
   return branches

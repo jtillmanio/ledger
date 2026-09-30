@@ -13,6 +13,8 @@ name: Release
 #   3. migrate   drizzle-kit migrate, from that commit's drizzle/
 #   4. views     etl/views.sql, from that commit
 #   5. promote   the staged Vercel build becomes the production URL
+#   6. smoke     production's /api/health answers with that commit, the
+#                database reachable and the views applied
 #
 # Schema first, code second: the old code runs on the new schema for the
 # minute in between, never the new code on the old schema.
@@ -91,3 +93,10 @@ jobs:
           VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE }}
           RELEASE_URL: ${{ steps.plan.outputs.url }}
         run: node scripts/release.mjs promote   # Vercel REST API, not the CLI
+
+      - name: Smoke test
+        if: ${{ !inputs.dry_run }}
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+          RELEASE_SHA: ${{ steps.plan.outputs.sha }}
+        run: node scripts/release.mjs smoke

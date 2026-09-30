@@ -222,7 +222,9 @@ npm run check:migrations    # journal = files, drop/retype has a drizzle/down fi
 - **A merge is not a deploy; Release is** (START-HERE Step 13). Vercel stages
   every build of `main`, and `.github/workflows/release.yml`, run by hand after
   the merge, checks CI on that commit, snapshots Neon, migrates, re-applies
-  views and promotes, in that order. It is the only path a migration takes to
+  views, promotes, and smoke-tests `/api/health`, in that order. `/api/health`
+  is the one route outside the passcode gate (`middleware.ts`), and it returns
+  no data; nothing else joins it there. It is the only path a migration takes to
   the live database: never tell anyone to run `db:migrate`, `db:push` or
   `db:views` against `DATABASE_URL` once the repo variable `LEDGER_LIVE` is
   `true`. Before that, a schema change goes through `npm run rebuild`. A

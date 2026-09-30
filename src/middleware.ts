@@ -10,6 +10,7 @@ export function middleware(req: NextRequest) {
   return NextResponse.redirect(url);
 }
 
+// api/health is Release's smoke test and returns no data (app/api/health).
 export const config = {
-  matcher: ["/((?!login|api/login|_next|favicon.ico).*)"],
+  matcher: ["/((?!login|api/login|api/health|_next|favicon.ico).*)"],
 };

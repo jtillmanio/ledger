@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  directUrl, needsBuild, pendingMigrations, promoteProblem, releaseProblems, snapshotsToPrune,
+  directUrl, needsBuild, pendingMigrations, promoteProblem, releaseProblems, smokeProblem, snapshotsToPrune,
 } from "../scripts/lib/release.mjs";
 
 describe("needsBuild (vercel.json ignoreCommand)", () => {
@@ -96,6 +96,25 @@ describe("promoteProblem", () => {
   it("refuses a preview, and a build that is not ready", () => {
     expect(promoteProblem({ url, target: null, readyState: "READY" })).toMatch(/preview build, not production/);
     expect(promoteProblem({ url, target: "production", readyState: "ERROR" })).toMatch(/is ERROR, not READY/);
+  });
+});
+
+describe("smokeProblem", () => {
+  const sha = "abcdef1234567";
+
+  it("passes when production serves the released commit, healthy", () => {
+    expect(smokeProblem({ status: 200, body: { ok: true, commit: sha }, sha })).toBeNull();
+  });
+
+  it("keeps waiting while the old build still serves", () => {
+    expect(smokeProblem({ status: 200, body: { ok: true, commit: "0123456789" }, sha }))
+      .toMatch(/still serves 0123456, not abcdef1/);
+  });
+
+  it("names the failed check, a missing commit, and a page that is not the app", () => {
+    expect(smokeProblem({ status: 503, body: { ok: false, failed: "views", commit: sha }, sha })).toMatch(/views check failed/);
+    expect(smokeProblem({ status: 200, body: { ok: true, commit: null }, sha })).toMatch(/System Environment Variables/);
+    expect(smokeProblem({ status: 404, body: null, sha })).toMatch(/without JSON/);
   });
 });
 

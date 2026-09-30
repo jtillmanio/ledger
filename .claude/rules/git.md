@@ -32,6 +32,10 @@ Lowercase, hyphenated, one purpose per branch.
 | Docs only | `docs/<slug>` |
 | Tooling, CI, deps, config | `chore/<slug>` |
 
+Dependabot's own branches (`dependabot/...`, `.github/dependabot.yml`) are the
+one exception to these names. Its PRs pass the same CI, and a merged bump is
+not live until Release runs.
+
 One task per branch, one branch per PR. A problem you notice that belongs to
 another task goes in the PR description as a follow-up, not in this diff.
 

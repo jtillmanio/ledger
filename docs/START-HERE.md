@@ -1006,7 +1006,12 @@ order (Step 13).
      `DATABASE_URL` is already there from 10d.
    - **Variables:** `VERCEL_SCOPE` = `justin-tillman` (the name in your
      `vercel.com/<name>/ledger` URL), `NEON_PROJECT_ID` = the ID from step 3,
-     and `LEDGER_LIVE` = `false` (Step 14 sets it to `true`).
+     `LEDGER_LIVE` = `false` (Step 14 sets it to `true`), and `PRODUCTION_URL`
+     = your production address, e.g. `https://ledger-justin-tillman.vercel.app`
+     (the **Domains** list on the project's Vercel page). After promoting,
+     Release asks `<PRODUCTION_URL>/api/health` whether the database answers,
+     the views are there, and it is the build just promoted. Without the
+     variable that check is skipped, with a warning.
 
 **Verify:** **Actions → Release → Run workflow**, tick **Dry run**, **Run**. It
 is green, and its summary names the build it would promote, *CI on it:
@@ -1224,6 +1229,9 @@ on `main` expects yet.
 | Promote says the build was already promoted | It is live already. Nothing to do                                                                   |
 | Promote: 401 or 403                        | The `VERCEL_TOKEN` secret is expired or has no access to the team: make a new one (10e step 2)       |
 | Promote: 404                               | `VERCEL_SCOPE` is not the team in your `vercel.com/<team>/ledger` URL                                 |
+| Smoke: *still serves* the old commit       | The promotion hasn't taken. Check the Deployments tab. If the new build is Current, run Release again |
+| Smoke: the *database* or *views* check failed | Production is live but broken: Instant Rollback (above), then read the Migrate and Apply views steps |
+| Smoke: *reports no commit*                 | Vercel → Settings → Environment Variables → tick **Automatically expose System Environment Variables** |
 | The new code is broken                     | Vercel → Deployments → the previous one → **Instant Rollback**. Fix forward in a new PR              |
 | The migration was wrong                    | Neon console → Branches → `pre-release/<time>-<sha>` → restore `main` from it; or run the migration's `drizzle/down/` file |
 
