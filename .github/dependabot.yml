@@ -1,0 +1,25 @@
+# Weekly dependency PRs. Every PR gets a Vercel preview and so a Neon branch
+# (START-HERE 10f), and Neon Free allows 10: main, test, two Release snapshots
+# and one per open PR. So minor and patch updates arrive as one grouped PR,
+# and at most three Dependabot PRs are open at once. A major update comes on
+# its own; comment `@dependabot ignore this major version` to put one off.
+# Merging a bump is not deploying it: Release puts it live (Step 13).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 2
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    commit-message: { prefix: deps }
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }
+    open-pull-requests-limit: 1
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message: { prefix: ci }

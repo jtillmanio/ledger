@@ -21,6 +21,14 @@ export type RunRow = {
  * LIMIT as if it were the count (R2-05). */
 export type WithTotal<T> = T & { total: number };
 
+/** Whether the database answers and etl/views.sql is applied: run_progress is
+ * the first view it creates, and a migration that drops views drops it too. */
+export async function healthCheck(): Promise<{ views: boolean }> {
+  const [row] = await sql<{ views: boolean }[]>`
+    SELECT to_regclass('public.run_progress') IS NOT NULL AS views`;
+  return row;
+}
+
 export async function listRuns(userId: string, track?: string): Promise<RunRow[]> {
   return sql<RunRow[]>`
     SELECT r.id, r.title, cl.writers, rs.series_issues, rs.start_year, rs.end_year,

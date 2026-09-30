@@ -3,13 +3,16 @@
 //   node scripts/release.mjs snapshot   Neon branch of the live database, before migrating
 //   node scripts/release.mjs migrate    drizzle-kit migrate in the current directory
 //   node scripts/release.mjs promote    the staged Vercel build becomes production
+//   node scripts/release.mjs smoke      production's /api/health answers with that build
 //
 // plan reads the live database (the migrations table only) and writes nothing.
 // It fails with every reason not to release, so a dry run shows them all at once.
 import { spawnSync } from "node:child_process";
 import { appendFileSync } from "node:fs";
 import postgres from "postgres";
-import { directUrl, pendingMigrations, promoteProblem, releaseProblems, snapshotsToPrune } from "./lib/release.mjs";
+import {
+  directUrl, pendingMigrations, promoteProblem, releaseProblems, smokeProblem, snapshotsToPrune,
+} from "./lib/release.mjs";
 
 const env = process.env;
 const KEEP_SNAPSHOTS = 2; // Neon Free allows 10 branches; previews and `test` need the rest
@@ -169,10 +172,40 @@ async function promote() {
   summary([`- Promoted: ${env.RELEASE_URL} (${deployment.id}, HTTP ${status}${status === 202 ? ", finishing in the background" : ""})`]);
 }
 
+/**
+ * After promoting: production's /api/health must answer with the released
+ * commit, the database reachable and the views applied. A 202 promotion
+ * finishes in the background, so it is asked again for up to two minutes.
+ */
+async function smoke() {
+  if (!env.PRODUCTION_URL) {
+    console.log("::warning::PRODUCTION_URL is not set; smoke test skipped (START-HERE 10e).");
+    summary(["- Smoke test: skipped, PRODUCTION_URL not set"]);
+    return;
+  }
+  const url = new URL("/api/health", env.PRODUCTION_URL);
+  let problem = "no answer";
+  for (let i = 0; i < 24; i++) {
+    try {
+      const res = await fetch(url, { headers: { "cache-control": "no-cache" } });
+      const body = await res.json().catch(() => null);
+      problem = smokeProblem({ status: res.status, body, sha: env.RELEASE_SHA });
+    } catch (e) {
+      problem = `could not reach ${url}: ${e.message}`;
+    }
+    if (!problem) {
+      summary([`- Smoke test: ${url} serves ${env.RELEASE_SHA.slice(0, 7)}, database and views ok`]);
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 5000));
+  }
+  throw new Error(`Smoke test failed after two minutes: ${problem} (START-HERE Step 13, "When a release goes wrong").`);
+}
+
 const command = process.argv[2];
-const run = { plan, snapshot, migrate, promote }[command];
+const run = { plan, snapshot, migrate, promote, smoke }[command];
 if (!run) {
-  console.error("usage: node scripts/release.mjs <plan|snapshot|migrate|promote>");
+  console.error("usage: node scripts/release.mjs <plan|snapshot|migrate|promote|smoke>");
   process.exit(2);
 }
 await run().catch((e) => {
