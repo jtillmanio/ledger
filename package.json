@@ -36,7 +36,7 @@
     "test:all": "npm run test:tokens && npm run check:migrations && npm run test:db:reset && npm test && npm run test:views && npm run test:etl"
   },
   "dependencies": {
-    "drizzle-orm": "^0.36.0",
+    "drizzle-orm": "^0.45.2",
     "next": "^15.1.0",
     "postgres": "^3.4.5",
     "react": "^19.0.0",
