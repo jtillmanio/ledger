@@ -994,7 +994,9 @@ order (Step 13).
    Domains** off. Leave **Settings → Build and Deployment → Deployment Checks**
    empty: they only work with auto-assign on, and Release checks CI itself.
 2. **Vercel token.** vercel.com → **Account Settings → Tokens** → create
-   `ledger-release` with your account as its scope.
+   `ledger-release`, scoped to the team that owns the project (`justin-tillman`).
+   Release promotes through Vercel's REST API, which works with a team-scoped
+   token. The `vercel` CLI does not: it fails with *User not found*.
 3. **Neon API key.** Neon console → **Account settings → API keys** → create
    `ledger-release`. Then your project → **Settings → General** → copy the
    **Project ID**.
@@ -1180,6 +1182,8 @@ on `main` expects yet.
 | Refused: CI still running / newer building | Wait, run it again                                                                                   |
 | Promote failed after migrating             | Run it again: nothing is left to migrate, so it only promotes                                        |
 | Promote says the build was already promoted | It is live already. Nothing to do                                                                   |
+| Promote: 401 or 403                        | The `VERCEL_TOKEN` secret is expired or has no access to the team: make a new one (10e step 2)       |
+| Promote: 404                               | `VERCEL_SCOPE` is not the team in your `vercel.com/<team>/ledger` URL                                 |
 | The new code is broken                     | Vercel → Deployments → the previous one → **Instant Rollback**. Fix forward in a new PR              |
 | The migration was wrong                    | Neon console → Branches → `pre-release/<time>-<sha>` → restore `main` from it; or run the migration's `drizzle/down/` file |
 

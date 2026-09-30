@@ -37,8 +37,11 @@ jobs:
     env:
       DRY_RUN: ${{ inputs.dry_run }}
     steps:
+      # The workflow's own scripts come from the ref it was started on (main,
+      # unless a branch is testing a change to Release). What it releases is
+      # always main's: plan picks a build of a commit on origin/main.
       - uses: actions/checkout@v7
-        with: { ref: main, fetch-depth: 0 }
+        with: { fetch-depth: 0 }
       - uses: actions/setup-node@v7
         with: { node-version-file: .nvmrc, cache: npm }
       - run: npm ci
@@ -86,7 +89,5 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_SCOPE: ${{ vars.VERCEL_SCOPE }}
-          URL: ${{ steps.plan.outputs.url }}
-        run: |
-          npx --yes vercel@61 promote "$URL" --yes --timeout 5m --token "$VERCEL_TOKEN" ${VERCEL_SCOPE:+--scope "$VERCEL_SCOPE"}
-          echo "- Promoted: $URL" >> "$GITHUB_STEP_SUMMARY"
+          RELEASE_URL: ${{ steps.plan.outputs.url }}
+        run: node scripts/release.mjs promote   # Vercel REST API, not the CLI

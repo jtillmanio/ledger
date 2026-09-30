@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  directUrl, needsBuild, pendingMigrations, releaseProblems, snapshotsToPrune,
+  directUrl, needsBuild, pendingMigrations, promoteProblem, releaseProblems, snapshotsToPrune,
 } from "../scripts/lib/release.mjs";
 
 describe("needsBuild (vercel.json ignoreCommand)", () => {
@@ -83,6 +83,19 @@ describe("releaseProblems", () => {
 
   it("refuses when there is no build at all", () => {
     expect(releaseProblems({ ...ok, target: null })[0]).toMatch(/No ready production deployment/);
+  });
+});
+
+describe("promoteProblem", () => {
+  const url = "ledger-x.vercel.app";
+
+  it("promotes a ready production build", () => {
+    expect(promoteProblem({ url, target: "production", readyState: "READY" })).toBeNull();
+  });
+
+  it("refuses a preview, and a build that is not ready", () => {
+    expect(promoteProblem({ url, target: null, readyState: "READY" })).toMatch(/preview build, not production/);
+    expect(promoteProblem({ url, target: "production", readyState: "ERROR" })).toMatch(/is ERROR, not READY/);
   });
 });
 
