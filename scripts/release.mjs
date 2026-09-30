@@ -2,13 +2,14 @@
 //   node scripts/release.mjs plan       pick the build, check CI, list pending migrations
 //   node scripts/release.mjs snapshot   Neon branch of the live database, before migrating
 //   node scripts/release.mjs migrate    drizzle-kit migrate in the current directory
+//   node scripts/release.mjs promote    the staged Vercel build becomes production
 //
 // plan reads the live database (the migrations table only) and writes nothing.
 // It fails with every reason not to release, so a dry run shows them all at once.
 import { spawnSync } from "node:child_process";
 import { appendFileSync } from "node:fs";
 import postgres from "postgres";
-import { directUrl, pendingMigrations, releaseProblems, snapshotsToPrune } from "./lib/release.mjs";
+import { directUrl, pendingMigrations, promoteProblem, releaseProblems, snapshotsToPrune } from "./lib/release.mjs";
 
 const env = process.env;
 const KEEP_SNAPSHOTS = 2; // Neon Free allows 10 branches; previews and `test` need the rest
@@ -135,10 +136,43 @@ async function migrate() {
   if (r.status !== 0) throw new Error(`drizzle-kit migrate exited ${r.status}`);
 }
 
+async function vercel(path, init = {}) {
+  const sep = path.includes("?") ? "&" : "?";
+  const scope = env.VERCEL_SCOPE ? `${sep}slug=${encodeURIComponent(env.VERCEL_SCOPE)}` : "";
+  const res = await fetch(`https://api.vercel.com/${path}${scope}`, {
+    ...init,
+    headers: { Authorization: `Bearer ${env.VERCEL_TOKEN}`, "Content-Type": "application/json" },
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    const hint = res.status === 401 || res.status === 403
+      ? " The VERCEL_TOKEN secret is invalid, expired, or has no access to this project's team."
+      : res.status === 404
+        ? ` Check that the token's scope and the VERCEL_SCOPE variable (${env.VERCEL_SCOPE || "unset"}) are the team that owns the project.`
+        : "";
+    throw new Error(`Vercel ${init.method ?? "GET"} ${path}: ${res.status} ${text}${hint}`);
+  }
+  return { status: res.status, body: text ? JSON.parse(text) : {} };
+}
+
+/**
+ * Point the production domains at the staged build, through Vercel's REST API.
+ * The CLI's `vercel promote` loads the token's user first, which a token scoped
+ * to a team cannot do ("User not found", 404), so it is not used.
+ */
+async function promote() {
+  const host = new URL(env.RELEASE_URL).hostname;
+  const { body: deployment } = await vercel(`v13/deployments/${host}`);
+  const problem = promoteProblem(deployment);
+  if (problem) throw new Error(problem);
+  const { status } = await vercel(`v10/projects/${deployment.projectId}/promote/${deployment.id}`, { method: "POST" });
+  summary([`- Promoted: ${env.RELEASE_URL} (${deployment.id}, HTTP ${status}${status === 202 ? ", finishing in the background" : ""})`]);
+}
+
 const command = process.argv[2];
-const run = { plan, snapshot, migrate }[command];
+const run = { plan, snapshot, migrate, promote }[command];
 if (!run) {
-  console.error("usage: node scripts/release.mjs <plan|snapshot|migrate>");
+  console.error("usage: node scripts/release.mjs <plan|snapshot|migrate|promote>");
   process.exit(2);
 }
 await run().catch((e) => {

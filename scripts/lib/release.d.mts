@@ -12,4 +12,5 @@ export function releaseProblems(input: {
   pending: string[];
   unknown: number[];
 }): string[];
+export function promoteProblem(deployment: { url: string; target?: string | null; readyState?: string }): string | null;
 export function snapshotsToPrune<T extends { name: string; created_at: string }>(branches: T[], keep: number): T[];

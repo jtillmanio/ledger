@@ -78,6 +78,18 @@ export function releaseProblems({ live, target, ci, unreleasedFiles, pending, un
   return problems;
 }
 
+/**
+ * Why a deployment (Vercel's GET /v13/deployments response) cannot be promoted,
+ * or null when it can: it must be a finished production build.
+ */
+export function promoteProblem(deployment) {
+  if (deployment.target !== "production") {
+    return `${deployment.url} is a ${deployment.target ?? "preview"} build, not production. Release only promotes builds of main.`;
+  }
+  if (deployment.readyState !== "READY") return `${deployment.url} is ${deployment.readyState}, not READY.`;
+  return null;
+}
+
 /** Snapshot branches to delete so only the newest `keep` pre-release ones remain. */
 export function snapshotsToPrune(branches, keep) {
   return branches
