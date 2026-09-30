@@ -177,3 +177,60 @@ Findings from `M-findings.md`. `claude/dashboard-*.md` is absent (R0-13), so eac
 | M-O2 | DECISION | Add --brand to D-24's distance rule now (dark --t1 is ΔE 2.6 from --brand), or leave it to 6.9 | scripts/check-tokens.mjs notes | Blocks nothing in HORIZON | open | recommend 6.9 |
 | M-O3 | DECISION | 5.3 "Era editor" duplicates 3.6 — delete 5.3 or narrow it | TASKS 5.3, 3.6 | Yes | fixed | owner: delete. 5.3 removed from TASKS (tombstone line) and CLAUDE-CODE-PROMPTS |
 | M-O4 | DECISION | Watch (8.x): the film verb in Up next, the freeform add path for films/shows, track-scope bars on tracks/stats | mockups watchlist:3260, watchadd, tracks, stats | Out of horizon | decided | film button = Start (navigates, never writes); D-28 watch add has no freeform path, fallback Save to inbox (CLAUDE.md, ui.md, ARCHITECTURE 2.15, TASKS 8.2, mockup watchadd frame 2); D-29 tracks drawn as block rows (CLAUDE.md, ui.md, TASKS 5.2/6.2, FEATURES, mockup tracks + stats) |
+
+## N — visual polish audit and Step 3 style guide, 2026-09-30
+
+Findings from `NEW_UI_AUDIT_REPORT.md` (Review N), and the Step 3 style guide
+(`design/STYLE_GUIDE.md`, `design/tokens.css`, the `design/*.dc.html` spec
+pages) that answers most of them. The owner adopted the style guide as the
+styling blueprint (D-31), so its deviations SG-D1…SG-D12 are decided, and the
+audit's items are folded into the tasks that build each surface, by priority,
+rather than into a separate phase. Where the audit and the style guide give
+different values, the style guide wins (`docs/DESIGN.md` §2).
+
+| Item(s) | Priority | Status | Where it lands |
+| --- | --- | --- | --- |
+| UX-N01 motion tokens and control-state matrix | P0 | tasked | TASKS 1.8a (tokens, state rules, test); drawn in `Specimen.dc.html` B5 |
+| UX-N02 type scale, UX-X01 11px floor app-wide | P0 | tasked | 1.8a; STYLE_GUIDE §5 supersedes the audit's nine sizes (no 17/22 step; section heads 12px caps, SG-D5) |
+| UX-N03 dark depth ladder | P0 | tasked | 1.8a; values from `tokens.css`. The audit's check (one luminance order for both themes) does not fit the light values; 1.8a asserts the style guide's per-theme order |
+| UX-N04 elevation tiers, radius scale | P0 | tasked | 1.8a (tokens, check); 2.4 (telecard to `--sh-1`) |
+| UX-N05 sticky stack, safe areas, toast position | P0 | tasked | 1.8 (`--bar-h`), 1.8b (bar, toast), 2.9 (track headers), 3.6 (era chips) |
+| UX-N06 inline-edit states | P0 | tasked | 3.1 |
+| UX-X02 failed-write toast, undo of a queued write | P0 | tasked | 1.8 already owns the failure toast (R1-07); the queued half is 6.4 |
+| UX-N07 360px and tablet frames | P1 | tasked | 1.8: four layouts by width (D-33), 360px and 834px frames and checks |
+| UX-N08 collapsible sidebar | P1 | tasked | 1.8 sets the state by width (D-33); 6.14 adds the manual toggle |
+| UX-N09 icon set | P1 | tasked | 1.8 |
+| UX-N10 sheet, dialog, toast and era motion | P1 | tasked | 3.5 (sheets), 1.8b (toast), 3.6 (era) |
+| UX-N11 focus management for overlays | P1 | tasked | TASKS header *Focus returns where it came from* |
+| UX-N12 sheet stacking | P1 | tasked | 3.5, per D-34: replace with a back chevron |
+| UX-N13 finish moment | P1 | tasked | 5.4, 5.5 (3.4 owns the book rating) |
+| UX-N14 prerequisite edit and cycle error | P1 | tasked | 3.3 |
+| UX-N15 archive and restore | P1 | tasked | new 3.7 |
+| UX-N16 run-list sort and sticky headers | P1 | tasked | 2.9 (the sort control was already there) |
+| UX-N17 desktop range selection | P1 | tasked | 1.1 |
+| UX-X03 desktop mark reach | P1 | tasked | 6.5 |
+| UX-X04 dark review of the Sept 2026 screens | P1 | tasked | 1.8a (the mockup re-renders with the new tokens) |
+| UX-N18 disabled and pending semantics | P1 | tasked | TASKS header *UX floor*; 1.8a state rules |
+| UX-N19 light neutrals, quiet links, selected states | P2 | tasked | 1.8a (values), 1.8 (SG-D4, SG-D6) |
+| UX-X05 neutral cover placeholders | P2 | tasked | 4.3 |
+| UX-N20 4px spacing grid | P2 | tasked | 1.8a (tokens) |
+| UX-X06 card kickers | P2 | tasked | 1.8 and 2.4 (SG-D7: mono `--faint`, not the medium accent the audit offered) |
+| UX-N21 mark micro-interaction | P2 | tasked | 1.8b |
+| UX-N22 sliding selection indicator | P2 | tasked | 1.9 |
+| UX-N23 keyboard layer | P2 | tasked | 6.5 |
+| UX-N24 re-read entry | P2 | partly tasked | Book *Read again*: 3.5. The run second-pass spine is **not** folded: it contradicts D-19 (no rereads inside a run) |
+| UX-N25 list → sheet continuity | P2 | tasked | 3.5 |
+| UX-N26 releases screen | P3 | tasked | D-35: 5.7 books coming out, 5.8 comic issues in followed series; each linked from its dashboard rollup slot. Reverses FEATURES/HANDOFF *not building* |
+| UX-N27 bulk add remembers the last run | P3 | tasked | 1.3c |
+| UX-X07 books and watch empty slates | P3 | tasked | 1.9, 8.8 |
+| UX-N28 *Recalculate from sessions* vs *Use these* | P3 | not a valid issue | Two controls, not two names for one: TASKS 2.1b has *Recalculate from sessions* open the comparison and **Use these** confirm it |
+| UX-N29 disabled nav stubs for deferred features | P3 | declined | Contradicts R1-06 (TASKS 1.8): a nav item for a route that does not exist is not rendered at all |
+| SG-D1 horizontal telescope | — | decided (D-31) | ARCHITECTURE §4, TASKS 2.5 / 2.5b; the mockup's vertical frames are redrawn in 2.5b |
+| SG-D2…SG-D12 | — | decided (D-31) | 1.8a, 1.8, 1.8b, 2.2b, 2.5b; each cited where it lands |
+| STYLE_GUIDE §12 conflict: *Show 27 hard-blocked* vs ~180 | — | already decided | D-7 and TASKS 2.9: N is computed, the mockup's 27 is sample data |
+| STYLE_GUIDE §12 conflict: thumb bar on desktop dashboards | — | already decided | D-25: header verbs on desktop dashboards, bottom bar on the run detail |
+| STYLE_GUIDE §2.1 rail-block height ≈150 / 176 | LOW | noted | Its own sum is 124; the component computes 124 / 140. `docs/DESIGN.md` §5.2 uses the computed figures |
+| N-DN1 Tailwind as vocabulary or implementation | DECISION | decided | D-31: vocabulary only |
+| N-DN2 mono for inline counts | DECISION | decided | D-32: mono stays |
+| N-DN3 tablet posture | DECISION | decided | D-33: navigation rail and bottom thumb bar at 768–1023px; header verbs from 1024px (amends D-25) |
+| N-DN4 sheet over sheet | DECISION | decided | D-34: one sheet at a time, replace with a back chevron |

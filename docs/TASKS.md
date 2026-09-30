@@ -14,6 +14,16 @@ Convention: branch `task/<id>-<slug>`, one PR per task, squash merge.
 for every screen. Open it before building a UI task. Where the mockup and a task
 description disagree, the mockup wins — it's the thing that was reviewed.
 
+**Styling blueprint** (D-31): `docs/DESIGN.md` indexes the Step 3 design files —
+`design/STYLE_GUIDE.md`, `design/tokens.css` and the `design/*.dc.html` spec
+pages. They win on tokens, type, elevation, motion, telescope and plan-rail
+geometry, and component states; the mockup still wins on layout and copy. Where
+they disagree with the mockup on their own ground (the mockup draws a vertical
+telescope; SG-D1 makes it horizontal), the task that builds the component
+redraws the mockup to match in the same PR (standing rule 6). Tailwind names in
+those files and in `NEW_UI_AUDIT_REPORT.md` are vocabulary, never classes to
+ship.
+
 **Four colour meanings, and only four.** `--ready` green is read. `--brand` blue
 is where you are, and the primary action. `--blocked` amber is *held* — a hard
 prerequisite unread, or a decision not yet made. `--danger` red is destructive
@@ -27,8 +37,21 @@ text is at least 4.5:1 and control outlines 3:1 in both themes; thumb-bar and
 icon buttons are 44px and nothing interactive is under 24px; every control is a
 real `<button>` or `<a href>` with an accessible name; every readiness badge
 carries a glyph and text; the phone bar is the one `Comics · Books · Watch`
-partial. Where a task says "screenshot", that means 360px and 1280px, light and
-dark.
+partial. Where a task says "screenshot", that means 360px, 834px (a tablet,
+D-33) and 1280px, light and dark. Hover reveals, hover popovers, drag and
+shift-click sit behind `(hover:hover) and (pointer:fine)`; every one of them has
+a tap, long-press or sheet route for touch, which is what a tablet gets.
+
+The states look the same everywhere (STYLE_GUIDE §9): an empty slate is a
+`--raise` panel with one primary action; a skeleton is the loaded geometry in
+`--sunk`, shimmer off under reduced motion; *rate-limited* is amber (held) with a
+mono countdown and a freeform escape (*Type it instead*); an API error is a
+neutral line with a grey `×`, never red, because nothing destructive happened;
+*metadata pending* is a dashed `--muted` cover outline and an italic line. An
+unavailable action is `aria-disabled="true"` with a visible reason under it
+(*Resolve 2 lines to add*), never a bare `disabled` that hides why (UX-N18).
+Motion confirms, never celebrates: durations come from `--dur-1`…`--dur-4`,
+and `prefers-reduced-motion` makes every one of them 0.
 
 **Focus returns where it came from** (R1-11). A sheet or dialog returns focus to
 the control that opened it when it closes, by any route — confirm, Cancel, Esc
@@ -36,6 +59,9 @@ or the back button. An intercepted route returns focus to the row link that led
 to it. This is one behaviour in the shared sheet component, not eight
 per-screen fixes: 1.1, 1.3c, 1.3b, 1.4c, 1.8b, 2.1b, 2.3, 2.6 and 2.7 all open
 one. A sheet also traps Tab while open and is labelled by its own heading.
+Opening one puts focus on that heading (`tabindex="-1"`) and marks the page
+behind it `inert`; Esc and Back both dismiss (UX-N11). Sheets are solid
+`--overlay` over `--scrim`, never glass (SG §8).
 
 **Figures in the mockups are sample data** (D-7). `design/mockups.html` wins on
 layout, wording and behaviour — never on a number. Every count, cost, capacity
@@ -404,7 +430,14 @@ Depends on 0.8a and **1.2** — build undo first (R3-10); 1.1 pushes its range m
 onto that stack and never ships a throwaway undo of its own.
 
 Shift-click on desktop, long-press on mobile, selects a range in the spine. A
-row menu offers "mark everything through here." One request, not N. **Prompts
+row menu offers "mark everything through here." One request, not N.
+
+**The desktop selection is visible before the sheet opens** (UX-N17; a mouse or
+trackpad, `(pointer:fine)`, at any width; a tablet uses long-press). The first
+click sets an anchor row (1px `--brand` ring); moving the pointer tints the rows
+it would include in `--brand-soft`; a floating pill counts them (*Mark 18 read
+· Shift-click to finish*); the shift-click opens the range sheet with that count.
+Esc clears the anchor. **Prompts
 for a date**: today, a picked date, spread across a range, or no date. Single
 taps never prompt.
 
@@ -452,8 +485,9 @@ include an id from another run is rejected and writes nothing. Adopting 9 prior
 reads writes 9 placements with `completed_at` equal to their original read dates
 (NULL where those were undated) and the same precision (an `approximate` prior
 read stays `approximate`), in one request, and one undo removes exactly
-those 9. Manually: open `hickman-krakoa` (641 issues), mark a 100-issue range,
-confirm no visible stall.
+those 9. At 1280px, a click on the fifth row and a shift-click on the
+twenty-second opens the sheet counting 18 placements. Manually: open
+`hickman-krakoa` (641 issues), mark a 100-issue range, confirm no visible stall.
 
 ### ☐ 1.2 Undo · S
 **Build before 1.1** (R3-10): 1.1's check asserts undo, and 1.1 must not carry its
@@ -532,6 +566,11 @@ in the run says *9 will be added*. Below the table an **insertion preview**
 shows three existing rows above and below the insertion point, the new rows
 highlighted, and an *Insert after* picker (default: the end of the run).
 
+**The screen names the run it adds to** (FEATURES 2c *Remember the last run*;
+UX-N27): a chip at the top of both halves of Add issues, *Adding to: Claremont —
+Uncanny X-Men · Change*, where *Change* picks another run without leaving the
+screen, so consecutive adds to different runs don't re-navigate.
+
 **Check:** integration test that pastes 24 lines into an empty run and asserts 24 issues in order, and that
 a line matching an existing label adds a placement without a second `issues`
 row. Test that the count in the header equals expanded lines minus duplicates
@@ -604,7 +643,8 @@ and "Shelves".
   to_read` or `shelf_books`. One transaction. **The plan destination arrives
   with 2.3** (R3-08): the picker it needs is a Phase 2 component, and a private
   one built here would be duplicated there. Until 2.3 the add sheet offers To read
-  and Shelf only; 2.3's check adds the flip that enables *Plan for…* on it.
+  and Shelf only; 2.3's check adds the flip that enables *Plan for…* on it, and
+  5.7 adds *Coming out* (a `releases` row with a date or none) the same way.
 
 A by-hand record starts thin: until enrichment (4.2) fills it, its cover renders
 a dashed outline and its row says *metadata pending* (`data-enrich="pending"`).
@@ -750,11 +790,90 @@ that the migration composes the legacy columns without losing a row (a fixture
 with a two-year book keeps both rows), and that `drizzle/down/<tag>.sql` restores
 them: up → down → up, asserting row values.
 
+### ☐ 1.8a Design tokens and control states · M
+D-31; Review N P0 (UX-N01, N02, N03, N04, UX-X01, and the token half of N19 and
+N20). **Build before 1.8**: every later UI task inherits these values, and a
+screen built on the old set is rework. `design/tokens.css` is the source; STYLE_GUIDE
+§4–§6 and §10 are the reasons and the measured contrast.
+
+**Move the tokens, don't reinvent them.** `tokens.css` goes into
+`src/app/globals.css` **and** into `design/mockups.html`'s `.app` token blocks in
+the same PR, because `npm run test:tokens` fails when the two differ. The
+selectors change on the way in: `tokens.css`'s `.app,:root{…}` becomes
+globals' `:root{…}`; its `.app[data-theme="dark"]{…}` becomes both
+`:root[data-theme="dark"]` and the `prefers-color-scheme: dark`
+`:root:not([data-theme="light"])` block, identical. The `@media (min-width:900px)`
+telescope overrides, the glass fallback (`@supports not (backdrop-filter)` and
+`prefers-reduced-transparency`) and the reduced-motion block move as written.
+Additions and value changes only: no token or class is renamed or removed, and
+the `--mark` / `--held` aliases stay (SG §13).
+
+- **Colour.** The retuned light neutrals (UX-N19), the dark depth ladder with
+  `--sunk` below `--surface` (UX-N03, SG-D2), and the new `--overlay`,
+  `--toast-bg` / `--toast-ink` (SG-D3), `--halo` (the telescope head, nothing
+  else), `--focus-ring`, `--glass-*`, `--scrim` (replacing the moveplan literal,
+  L-01) and `--hatch` / `--hatch-settled`. Identity hues `--t*`, `--g*`, `--m-*`
+  do not change.
+- **Scales.** Radius `--r-cell … --r-full` (six values; UX-N04), spacing
+  `--sp-0-5 … --sp-10` on a 4px base (UX-N20), type `--fs-*` (the nine styles in
+  STYLE_GUIDE §5; UX-N02), `--row-h`, telescope `--tele-*`, motion `--dur-1…4`
+  and `--ease-out` / `--ease-in`.
+- **11px floor, app-wide** (UX-X01, extending C05 beyond the telescope). A label
+  too long for its box is dropped and carried by the accessible name, never
+  shrunk.
+- **Three elevation tiers** (STYLE_GUIDE §4.1, §7; UX-N04). Grounded surfaces
+  (groups, telecard, hero, inputs, buttons) get a ring and at most `--sh-1`;
+  `--sh-2` is for menus, popovers, toasts and a drag ghost; `--sh-3` for sheets,
+  dialogs and the palette. Dark depth comes from tone plus the 1px inner top
+  highlight in the dark `--sh-*` values.
+- **The control-state matrix** (UX-N01; drawn in `design/Specimen.dc.html` B5).
+  Every interactive class (`.btn` and its variants, `.iconbtn`, `.chip`,
+  `.seg`, `.bar .tab`, `.side a`, `.row`, `.switch`, `.stepper button`) has a
+  hover rule under `@media (hover:hover)`, a pressed rule (1px down, `--dur-1`),
+  a `:focus-visible` rule using `--focus-ring`, and an `[aria-disabled="true"]`
+  rule. The reduced-motion block also stops `animation` on everything but `.spin`.
+- **The docs follow the values.** The `--faint` and `--faint-deco` hexes in
+  CLAUDE.md, `.claude/rules/ui.md` and ARCHITECTURE §4 change to `tokens.css`'s.
+- **The mockup re-renders.** Every frame picks up the new values. Capture the
+  dark phone and desktop frames of `telescope`, `queue` (lift), `planmonth`,
+  `rebalance`, `path`, `session` and `palette`, list them in
+  `design/mockups-index.md`, and close *Not shown* #11 (UX-X04).
+
+**Extend `scripts/check-tokens.mjs`** (it stays one script inside `test:tokens`):
+
+- **Elevation order** by relative luminance: dark `page < sunk < surface < raise
+  < overlay`; light `sunk < page < raise < surface`, with `overlay = surface`
+  (STYLE_GUIDE §6). The audit's N03 check wanted one order for both themes; the
+  light values do not follow it, and the style guide's is the measured one.
+- **Text tokens on every surface.** `--ink`, `--ink-2`, `--muted`, `--faint`,
+  `--brand`, `--brand-ink`, `--ready`, `--blocked` and `--danger` clear 4.5:1 on
+  `--page`, `--surface`, `--raise`, `--sunk` and `--overlay`, both themes.
+- **Paired fills** in STYLE_GUIDE §6 clear 4.5:1 (the `-soft` pairs, the `--on-*`
+  pairs, `--muted` on `--sunk`, the toast pairs).
+- **Outlines.** `--faint-deco` clears 3:1 on `--surface`, `--raise` and
+  `--overlay` (SG-D8).
+- **Glass, worst case.** `--glass-bg` composited at its own alpha over `#000`
+  (light) and `#fff` (dark): `--ink`, `--ink-2`, `--muted` and `--brand` clear
+  4.5:1 on the result. `--ready` does not have to, and no rule may put
+  `--ready` text on glass (SG-D12).
+- **No sub-11px text** in `globals.css` or the mockup's `<style>` block: every
+  `font-size` and `font` shorthand resolves to 11px or more.
+
+**Check:** `npm run test:tokens` passes, and is proven to fail three ways: dark
+`--sunk` set back to `#232935` (elevation), `--faint-deco` set back to `#98a1b0`
+(outline contrast), and a `font-size:10px` rule added to `globals.css`. A test
+parses `globals.css` and asserts every class in the state-matrix list above has a
+`(hover:hover)` hover rule, an `:active` rule, a `:focus-visible` rule and an
+`[aria-disabled="true"]` rule. `grep -oE 'border-radius:[^;]+' src/app/globals.css
+| sort -u` returns only `var(--r-*)` values and `50%` (circles). Screenshot `/comics` at 360px in both
+themes before and after: the layout is unchanged, only the values move.
+
 ### ☐ 1.8 App shell · M
+Depends on 1.8a (tokens and control states).
 The chrome every dashboard sits in. Split in two (R3-12): this task is the shell
 (nav, redirect, sync pill, skeletons, markup rules); **1.8b** is the thumb bar and
-the token contrast checks. Tab bar at the top on phone, sidebar on
-desktop at 900px. `/` redirects
+the token contrast checks. Tab bar at the top on phone, a navigation rail on a
+tablet, the sidebar on desktop (breakpoints below, D-33). `/` redirects
 to the medium you last touched; `/comics`, `/books` and `/watch` are the
 dashboards; the list screens move to `/comics/runs` and `/books/list`.
 Tokens and classes are already in `src/app/globals.css`, and the token drift
@@ -818,8 +937,54 @@ Chrome details, from the audit:
   segmented controls, chips and switches are real buttons; one `<h1>` per page;
   `.bar` is the app header only (meters are `.emeter`).
 
-**Check:** screenshot at 360px and at 1280px; assert no horizontal scroll exists
-at either width. Test that `/` redirects to the last-touched medium and to
+From the style guide (D-31; STYLE_GUIDE §7–§9, Review N):
+
+- **Glass chrome, and only chrome** (SG §8, SG-D12). The sticky `.bar` and the
+  desktop `.side` use `--glass-bg` with `backdrop-filter: blur(var(--glass-blur))
+  saturate(var(--glass-sat))`, a 1px `--glass-edge` and `--glass-hi`; they fall
+  back to solid `--surface` without `backdrop-filter` or under
+  `prefers-reduced-transparency`. No `--ready` text on glass: the sync pill is a
+  6px dot (`--ready` online, `--blocked` offline) plus `--ink-2` text. Rows, the
+  telescope, the plan rail, badges, meters and the toast are never glass.
+- **One sticky stack** (UX-N05, F1). `--bar-h` is the header's height (64px on
+  the phone, 44px targets included). Nothing but `.bar` is sticky at `top:0`;
+  everything else that sticks (the offline strip here, the era chips in 3.6, the
+  run-list track headers in 2.9) sits at `top: var(--bar-h)` or below it.
+- **Blue means position or the primary action, nothing else** (SG-D4, D6, D7).
+  A selected filter chip is neutral inverse (`--ink` on `--page`); a selected
+  segment is a raised pill (`--surface` + `--sh-1`) on a `--sunk` track; *All N*
+  is a quiet `--brand` text link, not a filled pill; card kickers are mono
+  `--faint` caps. Section heads `h3.s` are 12/16 600 caps `--ink-2`, count in
+  mono 11 `--muted` (SG-D5).
+- **Drawn icons** (UX-N09). One outline set at 1.5px stroke (Lucide or
+  Heroicons), as an inline SVG `<symbol>` sprite, neutral `--muted`. The search
+  control is a drawn magnifier, never U+26B2. The readiness glyphs `⊘ ○ ● ◐ ✓`
+  stay text, pinned with `font-variant-emoji: text`.
+- **Widths** (UX-N07, UX-N08, D-33). Four layouts, three breakpoints:
+
+  | Width | Navigation | Content | Dashboard verbs |
+  |---|---|---|---|
+  | under 768px (phone) | top media bar + 44px search | one column | bottom thumb bar |
+  | 768–1023px (tablet) | 72px navigation rail: the media switch, then the medium's items, each an icon over an 11px label (touch has no tooltips); no top media bar | one column; what the desktop puts in its side rail stacks below | bottom thumb bar |
+  | 1024–1279px | sidebar collapsed to a 64px icon rail, a tooltip and `aria-label` on each | main column plus the side rail | page header, primary last |
+  | 1280px and up | 224px sidebar | main column plus the side rail | page header, primary last |
+
+  The run detail keeps the bottom thumb bar at every width (D-25). The width
+  sets the default sidebar state; 6.14 adds the toggle that overrides it. 360px
+  is drawn, not assumed: the media bar fits without truncating *Watch*. The
+  desktop content column is centred, not pinned to the sidebar (S4). The mockup
+  gains an 834px tablet frame for `home`, `spine`, `bdash` and `status`, and a
+  360px frame for the same four.
+
+**Check:** screenshot at 360px, 834px and 1280px; assert no horizontal scroll
+exists at any of them. At 834px the page renders the navigation rail, no top
+media bar and no sidebar; each rail item shows a visible text label and is at
+least 44px tall; every dashboard renders `.actionbar`. At 1100px the sidebar is
+64px wide and each item has an accessible name. At 360px *Watch* renders untruncated in the media bar, and the
+phone `/comics` has at most one solid `--brand` fill above the fold. No computed
+`color` inside `.bar` or `.side` equals `--ready`. With the page scrolled 400px,
+every sticky element other than `.bar` has a computed `top` of at least
+`--bar-h`. The rendered HTML contains no U+26B2. Test that `/` redirects to the last-touched medium and to
 `/comics` for a user with no history. Test that every phone route renders
 exactly the same media nav. Test that a request carrying a garbage `rt_session`
 cookie redirects a page to `/login` and answers a route handler 401 (R2-11). An
@@ -844,23 +1009,48 @@ focus.
 **Slots** (D-25): 1 is the medium's mark verb, primary; 2 is the medium's second
 verb (`+ batch` comics, `✓ finished` books, `+ Add` watch; `Mark through…` on the
 run detail); 3 is search (`aria-label="Search (Ctrl K)"`) on dashboards and the
-status screen, `+` *Add issues* on the run detail. **At 900px and wider the three
-dashboards move the same verbs into the page header, primary last, and render no
-bottom bar; the run detail keeps the bottom bar at every width.**
+status screen, `+` *Add issues* on the run detail. **At 1024px and wider the
+three dashboards move the same verbs into the page header, primary last, and
+render no bottom bar; the run detail keeps the bottom bar at every width.** A
+tablet (768–1023px) keeps the bottom bar on the dashboards too: it is a touch
+device held in two hands (D-33, amending D-25's 900px).
 
 **The mark verb names the issue, never the reading-order position** (M-10):
 *Mark #141 read* is allowed only when the run spans one series; otherwise the
 full label, *Mark X-Men (2019) #8 read*, truncated with a `title`. The same
 rule applies to *Resume* on the run hero.
 
+From the style guide (D-31; STYLE_GUIDE §9, Review N):
+
+- **The bar.** Glass, like the header (1.8). The primary slot is `flex:1`, 44px,
+  `--brand` / `--on-brand`, and truncates with an ellipsis; `+ batch` is 44px
+  with a 1px `--rule-2` ring; search is 44×44 with the drawn magnifier.
+  `padding-bottom: max(12px, env(safe-area-inset-bottom))`, so the Android
+  gesture bar never covers the verb (F2).
+- **The toast sits above the bar, one at a time** (UX-N05, F3). It is pinned at
+  `bottom: calc(var(--actionbar-h) + 8px + env(safe-area-inset-bottom))`. A new
+  toast replaces the old one and commits the old one's action. It uses
+  `--toast-bg` / `--toast-ink` with Undo in `--toast-link` 700 (SG-D3), and a 2px
+  `--brand` countdown bar runs along its bottom edge over the 8 seconds and
+  pauses with the timer.
+- **The mark sequence** (UX-N21). The `.chk` scales .92→1 as `--ready` fills
+  (`--dur-2`), the ✓ draws in, then the spine `.emeter` and the telecard's run
+  segment grow (`--dur-4`, `--ease-out`) and the `n / N` count ticks in
+  tabular numerals with no layout shift. No bounce, no confetti. Under reduced
+  motion every step is instant.
+
 **Check:** screenshot at 360px; assert the primary action button is within the
-bottom 96px. `getComputedStyle` reports at least 44px for every `.actionbar .btn`
-and `.iconbtn`, and a contrast script reports at least 4.5:1 for every
+bottom 96px. At 360px the toast's bounding box does not intersect the primary
+`.actionbar .btn`; two marks in a row leave exactly one toast on screen and the
+first mark committed. Under emulated `prefers-reduced-motion` the `.chk`'s
+computed `transition-duration` is `0s`. `getComputedStyle` reports at least
+44px for every `.actionbar .btn` and `.iconbtn`, and a contrast script reports at least 4.5:1 for every
 rendered text node's computed colour against its computed background (not a list
 of token pairs: a literal `#fff` on `--brand` is 2.51:1 in dark mode, M-02) and 3:1
 for the unchecked control ring, in both themes; `npm run test:tokens` passes. At
-1280px no dashboard renders `.actionbar` and the header holds the primary verb; the
-run detail renders it at both widths. On a fixture run spanning two series the
+1280px no dashboard renders `.actionbar` and the header holds the primary verb; at
+834px every dashboard renders it, with the primary action inside the bottom
+96px; the run detail renders it at all three widths. On a fixture run spanning two series the
 thumb bar's verb contains the series name.
 
 ### ☐ 1.9 Status screens: In flight · Up next · Done · M
@@ -901,6 +1091,14 @@ ships the plan picker (the plan starts empty, D-13, and 1.4c cannot plan yet),
 so its action in this task is **Add a book** (the 1.4c sheet), never a link to
 a picker that does not exist yet; 2.3 changes it to *Plan a book* (S-L5).
 
+**The tab strip** (STYLE_GUIDE §9, UX-N22): 44px tabs, counts in mono 11, the
+selected tab `--ink` 600 with a 2px `--m-*` underline, the rest `--muted` 500.
+The underline is one element per tablist that slides between tabs (`--dur-2`);
+under reduced motion it moves without easing. **Every tab's empty slate is
+drawn** (UX-X07): nine in all, three per medium, each with the FEATURES Part 2c
+copy and one primary action. The mockup has comics' three; this task adds
+books' three and 8.8 adds watch's, closing *Not shown* #6.
+
 **Check:** seeded test: a run with 3 of 10 placements read is in In flight and
 not in Up next, even if it is queued; queued unstarted runs appear first, in
 queue order; a ready run that isn't queued appears under *Ready, not queued*
@@ -909,7 +1107,8 @@ badge; an unqueued blocked run appears in neither section; a run with all placem
 is in Done; a run whose issues are all read *in other runs* is not in Done
 (0.8); a run finished with undated reads sorts below one finished last week. A book planned `2027` appears after 2027's quarters and before
 `someday`. A DNF book appears only under Stopped. Tab counts equal row counts.
-Screenshot at 360px.
+Each tablist contains exactly one underline element. Screenshot at 360px,
+including every empty tab.
 
 ### ☐ 1.10 Comics Up next queue · M
 Requirement change, Sept 2026. ARCHITECTURE 2.16, FEATURES Part 2i. One
@@ -981,7 +1180,11 @@ they are stuck on a seeded guess. Mockup: `settings`.
 per user (45 min/day, 185 wpm, quarter — the workbook's figures) and lets it be
 edited. Controls are real (FEATURES 2c → Settings): the minutes stepper is two
 labelled buttons around an `<output>`, switches are `role="switch"`. The volume
-map line reads *67 rules · 61 series*.
+map line reads *67 rules · 61 series*. They look as STYLE_GUIDE §9 draws them: a
+36×20 switch (on: `--brand` track, `--on-brand` knob; off: `--sunk` with a
+`--faint-deco` ring and a `--muted` knob) in a 44px row; a `role="group"` stepper
+of 32px buttons on `--sunk` with a mono `<output>`; the granularity control a
+raised-pill segmented control (SG-D4).
 
 Later tasks extend this screen and do not create it: 2.1b adds *Measured from
 sessions* and **Use these**, 6.11 adds the density toggle. (2.7's stretch-year
@@ -1083,13 +1286,34 @@ the month view: `button.qb` with the book's genre hue in `--hue` (one book, one
 hue), `.over` for a block past the rule, `.un` for a fifth-lane entry (a button,
 not decoration), `data-wc` for estimated counts. No inline fills. Quarter footers
 carry an amber *over Nk* badge or a grey *Nk room* badge — never green (M-06).
+**On the phone the footer shows only the amber overage** (`+132k`); the grey
+room badge is desktop only, because *56k room* wraps in a 62px column (SG-D11).
+
+**Geometry** (STYLE_GUIDE §3; `design/Plan Rail Spec.dc.html` A4.1–A4.3): the rail
+is 230px tall on the phone and 300px on desktop, scaled so 1000k fills a quarter
+column (450k a month column); columns sit 6px apart on the phone, 10px on
+desktop. The fifth lane is 52px on the phone and 150px on desktop (*2027 · no
+quarter*), with a 1px dashed `--blocked` left border and `.un` blocks in
+`--blocked-soft` with a dashed `--blocked` ring. A block is radius 3 with a 3px
+`--hue` left edge on `--reading-soft`, gap 2. Only **the part of a block above
+the rule** takes `--hatch` over `--blocked-soft`, and that block's ring turns
+`--blocked`; its label sits on a `--surface` chip over the hatch. The capacity
+rule is 1.5px dashed `--ink-2`. Two or more adjacent sub-24px blocks merge into
+one stack button (`--raise`, dashed `--faint-deco`, `+N` over `Nk`, height the
+sum or 24px, whichever is larger); a lone sub-24px block keeps its drawn height
+and gets a 24px `::after` hit area. The month view scroll-snaps horizontally
+**inside the card**, never the page. The granularity control is a raised-pill
+segmented control (SG-D4).
 
 **Check:** a quarter whose books total 892k against a 760k capacity renders
 exactly the blocks past 760k as hatched, and a book with `period = '2027'`
-renders in the fifth lane and in no column. Every interactive element inside
+renders in the fifth lane and in no column. A block straddling the rule is
+hatched above the rule and plain below it. Every interactive element inside
 `.planrail` measures at least 24×24 CSS px, an estimated book renders the dotted
 edge and `~` label, and the Month toggle renders without horizontal page overflow
-at 360px. Nothing resolves to `--danger`. Screenshot at 360px and 412px.
+at 360px. At 360px no quarter footer renders a *room* badge; at 1280px an
+under-capacity quarter does. Nothing resolves to `--danger`. Screenshot at 360px
+and 412px.
 
 ### ☐ 2.3 Plan editor · M
 Depends on 1.7 and 2.1.
@@ -1146,6 +1370,12 @@ with the full sentence (ARCHITECTURE §4):
 | `reading` | `◐ n / N`, no prerequisite badge | blue |
 | `read` | `✓ read · date`, or `✓ read` when `finished_at` is NULL (undated reads, S-14) | grey |
 
+Badges are mono 11/14 600, radius 6 (`--r-sm`), 4×8 padding; `blocked`,
+`ready_hard` and `read` carry a 1px ring, and `blocked` is a button that opens
+*Why blocked?* (STYLE_GUIDE §9). The telecard itself is radius 16, a 1px `--rule`
+ring, a 3px identity stripe and `--sh-1`, no longer `--sh-2` (UX-N04); its kicker
+is mono `--faint` caps (SG-D7, UX-X06).
+
 The frontier tile *one soft prereq short* takes the `ready_hard` outline. The
 telecard's foot row, when the next block has no name, shows *Block 3 has no name
 yet* with a **Name it** button. Empty state: with no queue, *Pick from N ready
@@ -1181,68 +1411,156 @@ not queued*.
 
 ### ☐ 2.5 The telescope · M
 Split (R3-12): **2.5 is `layout.ts` and its unit tests** (pure geometry, no DOM);
-**2.5b** draws the SVG and the ladder from it. The comics "now" slot: three vertical rails in one SVG — the track's blocks, the
-block's runs, the run's issues — with brackets connecting the highlighted cell of
-each rail to the full extent of the next. A head marker sits at the resume
-pointer. Underneath, a three-row ladder naming what the picture shows: track and
-block ordinal, block name and run ordinal, run and issue position. DIAGRAMS 3b.
+**2.5b** draws the rails and the ladder from it. The comics "now" slot: three
+**horizontal** rails stacked top to bottom — the track's blocks, the block's runs,
+the run's issues — with brackets connecting the highlighted cell of each rail to
+the full width of the next. A head marker sits at the resume pointer.
+Underneath, a ladder naming what the picture shows: track and block ordinal,
+block name and run ordinal, run and issue position. DIAGRAMS 3b.
+
+**Horizontal at every width, phone portrait included** (D-31, SG-D1). A rail is
+a `role="slider"`, and on a phone a vertical rail's drag is the same gesture as
+page scroll; a horizontal one has no competing gesture, takes about 124px of
+height instead of about 354, and moves *Also in flight* above the fold. The
+algorithm does not change; the axis does. Spec: `design/STYLE_GUIDE.md` §2,
+drawn in `design/Telescope Spec.dc.html` (A1.1–A3.3) by `design/Telescope.dc.html`,
+whose `alloc()` is the reference implementation to port.
 
 **No new tables and no new views.** `block_progress` ordered by `block_number`
 is the track rail; `run_progress` joined to `block_position` and ordered by
 `run_ordinal` is the block rail; `run_progress` plus the resume pointer is the
 run rail; `block_position` supplies both ordinals for the ladder.
 
-The real work is legibility, not data: a minimum cell height so a 6-issue run
+The real work is legibility, not data: a minimum cell width so a 6-issue run
 beside a 381-issue one does not vanish, ruler ticks on the issue rail at a
 readable interval rather than one hairline per issue, and a run with no block
 falling back to a two-rail view without breaking (the 2026-09-23 extract has
 none, so the tests build one).
 
 **Geometry** (ARCHITECTURE §4, DIAGRAMS 3b) lives in
-`src/components/telescope/layout.ts`, exporting `allocate(counts, H, gap = 2, min
-= 14)`, `overflow(counts, avail, min)` and `niceStep(total, H)`:
+`src/components/telescope/layout.ts`, exporting
+`allocate(counts, W, gap = 2, min = 14)`, `overflow(counts, head, W, gap, min)`
+and `niceStep(total, W)`. Both layout functions return items with an `x` and a
+width `w`: a cell `{ i, x, w, floored }`, or a stub `{ stub: true, from, to,
+count, sum, x, w }`.
 
-- `min` is 14px on the phone, 16px on desktop. Each cell gets `min`, then a
-  proportional share of what remains.
+- `W` is the rail's width: the frame minus page gutters, card padding and the
+  rail-key gutter (`--tele-gutter`, 44px phone / 72px desktop). It is 250px at a
+  360px frame, 282 at 390 and 832 at 1000.
+- `min` is 14px on the phone, 16px on desktop (`--tele-min`). Each cell gets
+  `min`, then a proportional share of what remains:
+  `w = min + count/total × (avail − n·min)`, `avail = W − gap·(n−1)`.
+- A cell is **floored** when its proportional share, `count/total × avail`, is
+  under `min`: it is drawn wider than its data, and says so (SG-D10).
 - When `n · min > avail`, `overflow` keeps the head cell and two neighbours
-  either side at `min` or larger and folds the rest into at most two `+N runs` /
-  `+N blocks` stubs of 14px, labelled with their summed issue count.
-- Ticks are `niceStep(total / floor(H / 6))` from 1, 2, 5, 10, 20, 50, 100, and
-  the legend prints the computed value.
+  either side (the window shifts at an edge so five are always kept) at `min`
+  or wider and folds the rest into at most two stubs, one before and one after,
+  each `min` wide. A stub carries its run or block count and summed issue count
+  as data; they are rendered in its accessible name, the ladder and the popover,
+  not as inline text (SG-D9).
+- Ticks are `niceStep(total / floor(W / 6))` from 1, 2, 5, 10, 20, 50, 100, a
+  major tick every fifth, and the legend prints the computed value.
 - Read state is run-length segments read from the `run_read_segments` view
   (`etl/views.sql`: `is_read`, `from_ordinal`, `to_ordinal`, `len`, already built
   and tested); `src/db/queries.ts` only selects from it. A second grey dashed
   layer marks placements `issue_read_runs` reports read elsewhere, which arrives
   with 0.8 (that task changes the view's predicate to the placement).
-- The head label reads `42 / 381 · #141`, on the rail and in the ladder.
+- The head label reads `42 / 381 · #141`, ordinal first, on the rail and in the
+  ladder.
+- **Inline labels are fitted, not squeezed** (STYLE_GUIDE §2.4). Candidates are
+  tried longest first (track: `1 · Foundations` → `1`, an unnamed block `block 3`
+  → `3`; block: `Claremont · 381` → `Claremont` → `381`) and the first whose
+  `chars × 5.9px` (sans) or `× 6.7px` (mono) `+ 12px` fits is used; if none fits
+  the cell has no text and its name lives in the ladder, the `<title>`, the
+  `aria-label` and the popover. `layout.ts` exports the fitter as `fitLabel`.
 - Text is HTML or CSS-px (11px minimum), colours are classes, the `<svg>` has a
   `<desc>`, the ladder is `role="list"`. Each cell is an `<a href>` with a
   `<title>`; each rail is a `role="slider"` that scrubs by drag and arrow keys
   and navigates to `/comics/[runId]#p-[ordinal]` on release.
 - Variants: `data-rails="2"` (no block), `data-state="empty"` (no run in flight),
-  and the 641-issue Krakoa density.
+  the fully-read run, and the 641-issue Krakoa density. Their rules are in
+  ARCHITECTURE §4 *Rail count and fallbacks*.
 - Coarse-rail header: **TRACK · prerequisite order** (watch, 8.7: **FRANCHISE ·
   release order**).
 
-**Check:** unit tests for `layout.ts`: (a) `[6, 381]` at H = 300 gives both cells at
-least 14px, (b) 40 cells at H = 300 fold to at most 12 rendered cells including
-stubs, (c) heights plus gaps equal H ± 0.5px, (d) `niceStep` returns one of 1, 2,
-5, 10, 20, 50, 100.
+**Check:** unit tests for `layout.ts`, fixtures built in the test:
+(a) `allocate([6, 381], 282, 2, 14)` gives widths 17.9 and 262.1 (±0.1) and marks
+the 6-issue cell floored; at `W = 832, min = 16` it gives 28.4 (still floored)
+and 801.6.
+(b) A 60-cell rail at `W = 282` with the head at index 27 renders exactly five
+cells (indices 25–29) and two stubs, the first folding 25 cells and the second
+30, each stub's `sum` equal to its folded counts' total; with the head at index 0
+it still keeps five cells and folds the rest into one stub.
+(c) Widths plus gaps equal `W` ± 0.5px for every rail in (a), (b) and the
+seven-block track `[664, 214, 301, 268, 352, 211, 170]`.
+(d) `niceStep` returns one of 1, 2, 5, 10, 20, 50, 100: 10 for 381 issues at
+`W = 282`, 5 at `W = 832`, 20 for 641 at `W = 282`.
+(e) `fitLabel` returns `1 · Foundations` for a 120px cell, `1` for a 20px one,
+and the empty string when not even the number fits.
 
 ### ☐ 2.5b The telescope — SVG and ladder · M
-Depends on 2.5 and 0.8a. Draws the three rails in one SVG and the ladder from
-`layout.ts`'s output, with the head marker, read-state segments and the variants
-listed in 2.5.
+Depends on 2.5 and 0.8a. Draws the three rails and the ladder from `layout.ts`'s
+output, with the head marker, read-state segments and the variants listed in
+2.5, as STYLE_GUIDE §2.1 and §2.5–§2.8 specify:
+
+- **Geometry sheet.** Tier rails (track, block) are 18px tall on the phone and
+  20px on desktop (`--tele-rail`); the run rail 24 / 28 (`--tele-run`); brackets
+  16 / 20 deep (`--tele-bracket`). Cells are radius 3 (`--r-cell`) with a 1px
+  inset `--faint-deco` edge on `--sunk`. The rail keys *TRACK · BLOCK · RUN* sit
+  in the fixed left gutter, so no label can collide with a bracket.
+- **Head.** The head cell gets a 1.5px inset `--brand` ring plus `--halo`, the one
+  glow in the system. On the run rail the head is a 2px `--ink` line running 4px
+  above and below the rail with a 2px `--surface` halo, and a 20px pill (mono
+  11/20 600, `--brand-soft` / `--brand-ink`, 1px `--brand` ring) centred on it and
+  clamped inside the rail.
+- **Brackets** are trapezoids from the head cell's edges to the full width of the
+  rail below: `--brand` at 8% fill, 1px edges at 50%, `aria-hidden`.
+- **Segments.** A read segment is full rail height in `--ready` with 3px outer
+  corners; a read-elsewhere placement is an inset box (3px top and bottom) with a
+  1px dashed `--muted` edge and no fill; unread is a gap.
+- **Track and block cells** fill from the left with their own share read. A
+  partly filled cell's label starts after the fill (`padding-left = fill + 6px`)
+  so text never straddles green and grey; a full cell's text is `--on-ready`.
+  A floored cell carries a centred 4px dot (`--muted`, or `--on-ready` over a
+  fill) and the legend reads *• shown at minimum width*.
+- **Stubs** are `min` wide, `--surface` with a 1px dashed `--faint-deco` edge.
+  The accessible name is *+25 runs · 687 issues — open list*; hover or focus
+  shows a popover (*+30 runs after · 843 issues · Enter opens the block list
+  sheet*); activating one opens the block's run list as a sheet (the intercepted
+  route), scrolled to the first folded run. The ladder's BLOCK row reads
+  *run 28 of 60*.
+- **States** (STYLE_GUIDE §2.8; `Telescope Spec` A3). Hover, pointer only: the
+  cell lifts to `--raise` with an `--ink-2` edge and a tooltip on `--overlay`
+  (`--sh-2`); the phone has no hover, and the same text is in the ladder and the
+  accessible name. Pressed: `--line` fill, 1px down, `--dur-1`. Focus:
+  `--focus-ring`; the rail's slider focus rings the whole run rail. **Scrub**:
+  dragging or arrowing draws a dashed 2px `--brand` ghost head and a pill on
+  `--overlay` reading `200 / 381 · #299`; the brackets' lower edges follow the
+  ghost's cell (`--dur-3`, `--ease-out`); the real head does not move until a
+  mark. On a mark the new segment grows over `--dur-4`. Under reduced motion the
+  ghost jumps and nothing eases.
+- **Keys.** Arrow keys step one cell (run rail: one issue; Shift+arrow: one tick).
+- **The mockup follows** (standing rule 6): `design/mockups.html`'s telescope
+  frames on `home`, `telescope`, `krakoa`, `watchlist`, `dashextras` and `states`
+  are redrawn horizontal in this PR, from the same geometry, and the vertical
+  drawings are removed.
 
 **Check:** on a fixture (not the seed, which changes under the audit — S-11): a
 track of 7 blocks whose block 1 holds 5 runs, the second of them 381 issues with
-41 read. The ladder reads "block 1 of 7", "run 2 of 5", "issue 42 of 381". Render
-it for a run with `block_id IS NULL` and assert two rails and no crash. Render it
-for a block containing a 6-issue run and assert that cell is at least 14px tall.
-Screenshot at 360px. A run with a gap in its reads renders two green segments and
-a grey dashed one at the read-elsewhere placement. Tabbing through the phone
-frame reaches track, block and run cells in order, each with a visible focus
-stroke, and no `<text>` renders below 11px at 390px.
+41 read. The ladder reads "block 1 of 7", "run 2 of 5", "issue 42 of 381", and
+the rail pill `42 / 381 · #141`. Render it for a run with `block_id IS NULL` and
+assert two rails, no crash, the same bracket depth and run-rail height as the
+3-rail render, a ladder with no BLOCK row, and an italic *no block* cell as the
+track rail's head. Render it for a block containing a 6-issue run and assert
+that cell is at least 14px wide at 390px and carries the floored dot. A 60-run
+block renders two stubs whose accessible names state their run and issue
+counts. Screenshot at 360px. A run with a gap in its reads renders two green
+segments and a grey dashed one at the read-elsewhere placement. A fully read run
+renders a solid green run rail, no head marker and a grey `✓ read` badge. With
+no run in flight the telescope renders the track rail only, no brackets and one
+primary button. Tabbing through the phone frame reaches track, block and run
+cells in order, each with the `--focus-ring`, and no text renders below 11px at
+390px. At 360px the telescope's rails fit without horizontal overflow.
 
 ### ☐ 2.6 Unlock cost, leverage and the frontier · M
 Three views the comics dashboard needs, all derived, none stored. Supersedes and
@@ -1317,10 +1635,14 @@ The sheet's four options are equal-weight buttons, each showing a before/after
 delta (*2028 then holds 45 books*). Once accepted, the banner reads *2027
 accepted as a stretch year on 14 Sep · Undo* in a calm state, on the dashboard
 and the plan page. Mockup: `rebalance` (the sheet and the settled state); the legacy red classes `.capnum.over` and `.pace
-.big.behind` are deleted.
+.big.behind` are deleted. **Settling keeps the data honest** (`Plan Rail Spec`
+A4.2): the overage is still drawn, but its hatch turns from `--hatch` to the grey
+`--hatch-settled` and the legend reads *over, accepted (settled)*; only the held
+state clears.
 
 **Check:** test that accepting 2027 at 118% stores the acceptance with a date and
-that the dashboard renders `.decide.settled` rather than `.decide`; that Undo
+that the dashboard renders `.decide.settled` rather than `.decide`, and the
+over-rule part of each block uses `--hatch-settled`, not `--hatch`; that Undo
 removes it; that a later change pushing 2027 past the accepted total re-raises
 the flag; and that "even out the quarters" leaves the year's book count
 unchanged.
@@ -1367,6 +1689,12 @@ the master list's *Fits Q2* chip and *Pick one* and does not rebuild them.
 Block bands use the `.emeter` meter, which must render at 5px on desktop. Rows
 carry the five-state badge from 2.4.
 
+**Long lists keep their bearings** (UX-N16). The track header is sticky at
+`top: var(--bar-h)` (1.8's sticky stack), so the track you are scrolling through
+stays named. A partly read row says what is left (*108 left*), not a fraction
+(*11 / 25*). The sort control is a `.select` in the controls row with the five
+orders above.
+
 **Check:** test that a track with four blocks renders four bands in
 `block_number` order and that a block-less run appears in the No block group;
 that sorting by unlock cost puts a 13-issue run with a large unread closure
@@ -1375,7 +1703,8 @@ blocked switch hides **exactly** the rows
 whose `run_state = 'blocked'` and no others, whatever that count is (D-7); and
 that no element renders `--danger`. Screenshot at 360px. On the
 desktop frame every block band shows a 5px-high `.emeter`, and hiding
-hard-blocked runs leaves every `ready_hard` row in place.
+hard-blocked runs leaves every `ready_hard` row in place. On the phone, scrolled
+to the middle of a track, that track's header is fully visible below `.bar`.
 
 ### ☐ 2.10 Plan page as the full-size rail · M
 Same geometry as the books dashboard, taller, with each block's title and word
@@ -1389,7 +1718,12 @@ amber.
 
 The desktop plan rail supports drag-to-move: a ghost block and a live readout
 (*Q3 +118k → 533k / 760k*) before release, with the Move sheet as the keyboard
-and phone alternative. The month layout and the estimated-count treatment from
+and phone alternative. As drawn in `Plan Rail Spec` A4.4: the ghost is rotated
+−1.5° on `--sh-2` with a 2px dashed `--brand` outline, the source slot keeps a
+dashed placeholder, and the readout is an `output.dropdelta` with `aria-live`.
+Hover on a block shows a popover with name, words and the estimated flag. Drag
+and hover need a mouse or trackpad (`(pointer:fine)`); phone and tablet keep
+the tap to the Move sheet (D-33). The month layout and the estimated-count treatment from
 2.2 apply here too, including on plan rows, master-list `.rm` values and the book
 detail Words field.
 
@@ -1455,7 +1789,19 @@ Never inline-editable, because they are derived or per-user: anything in
 `run_span`, `run_credit_line`, `run_progress`; `book_status` (its own control, 1.5);
 `issue_progress`; `reading_plan` (2.3's picker); any `*_source` column directly.
 
-**Check:** test asserts a failed PATCH restores the prior value in the DOM.
+**One `.editable` field, six states** (UX-N06; FEATURES Part 3 §1): *idle*;
+*hover*, desktop only, a 16px pencil in `--muted`; *editing*, a 2px `--brand`
+ring with Esc and Enter hints; *saving*, an inline `.spin`; *saved*, a ✓ that
+fades after 1.5s; *error*, a `--danger` ring and message, the value reverted, and
+**Retry**. The error state is the only red, and it never appears on a dashboard
+field. The book Words field carries its `stated | estimated` flag in every
+state. The mockup draws the six on `bookdetail` (Words) and `spine` (the run
+*why*, an era name) in this PR.
+
+**Check:** test asserts a failed PATCH restores the prior value in the DOM and
+renders the error state with a working Retry; that Esc while editing restores the
+value without a request; and that no `.editable` inside a dashboard route renders
+`--danger`.
 
 ### ☐ 3.2 Create and edit runs · M
 Including track assignment. New runs get a slug ID derived from the title,
@@ -1481,13 +1827,20 @@ runs), so it rejects any edge, hard or soft, that would close a cycle of any
 length: the same invariant as 2.11a, "no strongly connected component larger
 than one". The message names the runs in the cycle it would create.
 
+**What the editor looks like** (UX-N14): editing an existing run's prerequisites
+is search to add, a hard/soft segmented control per edge, and *Remove*. A
+rejected edge shows *Adding Claremont — X-Men would create a loop* with the loop
+drawn as a short path (the `path` component: *X-Men → Excalibur → X-Men*).
+`--danger` marks only the rejected control and its message; nothing was written.
+The mockup's `newrun` gains an edit-mode frame and a cycle-error frame.
+
 **Check:** test asserts adding A→B when B→A exists is rejected with a clear
 message, and that adding A→D when D→C→B→A exists (a four-run cycle, soft edges
 included) is rejected naming all four.
 
 ### ☐ 3.5 Detail sheets — books and issues · M
 `/books/[id]` and `/comics/[runId]/[issueId]` as **intercepted routes**: a
-bottom sheet on phone and a centred modal on desktop when arrived at from a
+bottom sheet on phone and tablet and a centred modal on desktop when arrived at from a
 list, a full page on direct load or refresh. Not a hover preview — hover does
 not exist on Android, which is the primary device. FEATURES.md Part 2f;
 mockups "Book detail sheet".
@@ -1495,6 +1848,28 @@ mockups "Book detail sheet".
 Content: summary, genre, year, page and word count with the
 `stated`/`estimated` flag, notes, shelf membership, plan placement, reread
 history. The run page stays a full page — too dense for a sheet.
+
+**How the sheet moves and stacks** (UX-N10, N12, N25; STYLE_GUIDE §7):
+
+- It is `--overlay`, radius 16 at the top, a 36×4 grab handle, a 44px close,
+  over `--scrim` (which may blur 2px). The sheet itself is never glass.
+- Phone: it enters `translate-y-full → 0` over `--dur-4` `--ease-out` while the
+  scrim fades in over `--dur-3`; it follows a drag 1:1 and dismisses past 30% of
+  its height or a flick over 0.5px/ms, otherwise springs back; exit is
+  `--dur-3` `--ease-in`. A tablet (768–1023px) gets the same bottom sheet,
+  centred and at most 640px wide (D-33). Desktop modal (1024px and up): opacity
+  and `scale(.98 → 1)` over `--dur-2`. Reduced motion: an opacity-only change.
+- **One sheet at a time** (D-34). A sheet opened from inside a sheet *replaces*
+  it, with a back chevron naming where you came from (*‹ Uncanny X-Men #141*);
+  it is a route push, so Back unwinds one level. Two sheets are never on screen
+  together.
+- As a progressive enhancement, the row's cover morphs into the sheet's hero
+  cover through the View Transitions API (`view-transition-name: cover-{id}`);
+  without support it is the plain enter. Dismissing restores the list's scroll
+  position (already in the check).
+- **Read again** (the book half of UX-N24): a read book's *History* offers *Read
+  again*, which starts a `read_events` row with `reread_of` set (1.5). Runs get
+  no second pass: a reread inside a run is a note on the placement (D-19).
 
 The issue sheet lists **every run that places the issue, with its position and
 its read state in that run** (0.8). Read runs show a green tick and a date,
@@ -1531,7 +1906,8 @@ that a book with no summary renders without a layout shift; and that the sheet
 and the master list's inline editor write status through the same code path.
 Test that an issue placed in three runs, read in one, lists three runs with one
 read, and that marking a second from the sheet writes exactly one
-`issue_progress` row.
+`issue_progress` row. Opening *Why blocked?* from inside an issue sheet leaves
+exactly one sheet in the DOM, and Back returns to the issue sheet.
 
 ### ☐ 3.4 Book ratings and top-books reorder · S
 Rating, notes, and the top-books rank reorder. **Status and finish date moved to
@@ -1561,13 +1937,41 @@ them; on a run of 300+ rows a `<nav class="minimap">` (sticky right edge on the
 phone, in the desktop rail) shows era boundaries, green read stretches and grey
 dashed read-elsewhere ticks. Mockups: `spine` (header, chips) and `krakoa` (minimap).
 
+The sticky pieces join 1.8's stack (UX-N05, F1): the era chips sit at `top:
+var(--bar-h)` and the minimap below them, never at `top:0` under the header. An
+era header is a `--raise` band with a 52×5 `.emeter`, a mono count and a
+chevron; it expands with `grid-template-rows: 0fr → 1fr` over `--dur-3` and the
+chevron turns 90° over `--dur-2` (UX-N10). Spine rows have `--line` dividers and
+no zebra striping; the green ticks are the rhythm (STYLE_GUIDE §5).
+
 **Check:** test that reordering eras renumbers `ordinal` contiguously; that
 deleting an era sets its placements' `run_issues.era_id` to null rather than
 deleting them (an era is a stretch of one run's reading order, so it belongs on
 the placement, not the issue);
 that `era_progress` returns 4 of 22 for a seeded era with 22 issues and 4 read;
 and that a run with zero eras renders every issue in document order with no
-band. Screenshot the run detail at 360px with and without eras.
+band. Screenshot the run detail at 360px with and without eras. On the phone,
+scrolled 400px, the era chips are fully visible below `.bar`.
+
+### ☐ 3.7 Archive and restore · S
+FEATURES Part 3 §3, *archive, don't delete*; Review N UX-N15. Depends on 0.4
+(soft delete) and 3.2. 0.3 and 0.4 give runs, placements and books a
+`deleted_at` and filter it everywhere; no task gave the user the control. This
+one does, on the run list and the book master list.
+
+- **Archive** sits in each row's and each detail page's `⋯` menu. It is grey, not
+  red: nothing is deleted, and `--danger` stays for *Remove* and *Drop*. It
+  raises the undo toast (1.2).
+- A **Show archived (N)** switch at the foot of `/comics/runs` and `/books/list`
+  shows archived rows at reduced opacity, each with **Restore**.
+- Restoring clears `deleted_at`; reading history was never touched, so it comes
+  back as it was.
+
+**Check:** test that archiving a run with read placements hides it from the run
+list, the dashboards and the status tabs; that restoring it brings it back with
+every `issue_progress` row intact; that Undo on the toast restores it the same
+way; and that no archive or restore control renders
+`--danger`. Both lists show the switch with the right count.
 
 ---
 
@@ -1611,7 +2015,14 @@ Rows created freeform and not yet enriched render `data-enrich="pending"`: a
 dashed cover outline and a *metadata pending* line, on the spine, the master
 list and book detail.
 
-**Check:** Lighthouse CLS under 0.1 on the books page.
+**A missing cover is neutral** (UX-X05, M-01, L-01). The placeholder is `--sunk`
+with mono initials in `--muted` and a faint ring (dark: white at 10%); the
+mockup's `.k1`–`.k8` gradient covers, including the red `.k2`, go. A row carries
+its track or genre hue once — the `.edge` stripe or the tag, not both.
+
+**Check:** Lighthouse CLS under 0.1 on the books page. No cover placeholder
+renders a gradient or an identity hue, and no row renders both an `.edge` and a
+`.tag .sq`.
 
 ---
 
@@ -1629,9 +2040,83 @@ list and book detail.
   targets it. Mockup: `tracks`.
 - 5.3 — removed 2026-09-24 (review M-O3): it duplicated 3.6, which builds add,
   remove, rename, reorder and boundary drag for eras. The number is not reused.
-- ☐ 5.4 Ratings and post-read notes on runs · S
-- ☐ 5.5 DNF with a reason field · S
+- ☐ 5.4 Ratings and post-read notes on runs · S. **The finish moment**
+  (UX-N13, FEATURES #8/#11): marking a run's last placement, or setting a book
+  to *Read* (3.4 owns the book rating), shows a calm closing card in place of
+  the toast — rating (five 44px targets), a one-line note, *Skip*. The rating
+  control never fills `--ready`; it is an opinion, not progress. No celebration.
+- ☐ 5.5 DNF with a reason field · S. DNF opens the same closing card as 5.4
+  with a reason field instead of a rating; DNF stays grey (UX-N13).
 - ☐ 5.6 `edition_issues` parser: `"Avengers #500-503 and Avengers Finale"` into join rows · M
+- ☐ 5.7 **Books coming out** · M. D-35; FEATURES B1, B5; Review N UX-N26.
+  Depends on 1.4c and 1.8. `/books/releases`: the books you want when they
+  come out, read from the `releases` table (`book_id`, `release_date`; the
+  workbook's *Coming Out* tab, 44 rows on the 2026-09-23 extract) that only the
+  v1 home page ever showed, and that page goes when 1.8 makes `/` a redirect.
+  - **What counts as wanted, with no new column:** a `releases` row whose book
+    has no `book_status` row for you. **Got it** writes `book_status = to_read`
+    (the book moves to your to-read list and off this one) and raises the undo
+    toast. If the owner wants a separate per-user *want* row instead, that is a
+    schema change: ask before building (CLAUDE.md).
+  - **The list:** *Out now* first (a release date on or before today, not yet
+    got), then one group per month, then *No date yet*. Each row: cover, title,
+    author, series position, the date in mono, and **Got it**. The month
+    grouping is the calendar view FEATURES B5 asked for; a month grid is not
+    built.
+  - **Adding:** 1.4c's add sheet gains a *Coming out* destination with a
+    release-date field (a date, or *no date yet*). The book row is created or
+    reused as usual, then the `releases` row.
+  - **Notify me is in the app, not a push:** the books dashboard's rollup slot
+    gains a line, *2 out now · 3 coming this month →*, linking here, so the
+    five slots keep their order. The digest email stays 6.7.
+  - The sidebar and navigation rail gain *Coming out* under Books (flip its
+    `NAV_ITEMS` flag, R1-06); add `/books/releases` to ARCHITECTURE's route
+    table. The mockup gains a `releases` screen, phone, tablet and desktop, with
+    its empty state (*Nothing coming out · Add a book*).
+  - **Check:** a released-yesterday book with no status renders under *Out now*;
+    one due next month under that month; *Got it* writes one `to_read` row and
+    removes the row from the list, and Undo restores it; a book already `read`
+    never appears. The dashboard line's counts equal the list's. Screenshot at
+    360px, 834px and 1280px.
+- ☐ 5.8 **Comic issues coming out, for the runs you follow** · M. D-35 (this
+  reverses FEATURES' *Not building: upcoming-issue tracking*). Depends on 1.3b,
+  1.3c and 5.7 (the screen pattern). `/comics/releases`: new issues in a series
+  you follow, offered for adding to a run. **Nothing reaches `issues` or
+  `run_issues` without your explicit accept** (CLAUDE.md: Metron-proposed
+  labels pass the bulk-entry parser and an accept, like AI labels).
+  - **Settle the schema with the owner first** (CLAUDE.md, stop and ask). It
+    needs a per-user follow — which Metron series, and the run new issues go
+    to (proposed: `series_follows(user_id, metron_series_id, series_label,
+    run_id)`) — and somewhere to hold what Metron reported before you accept
+    it, which is not `issues` (proposed: a cache table keyed by Metron issue id,
+    with the label, store date and cover, plus a per-user dismissal). Every new
+    table goes into `GET /api/export` (standing rule 7).
+  - **Following:** the run hero's `⋯` menu offers *Follow new issues of X-Men
+    (2019)* for the series of the run's last placement; `/comics/releases`
+    lists what you follow, each with *Unfollow*.
+  - **Checking is a search you start, never a page render** (CLAUDE.md: the one
+    live path is an add flow). The screen renders from the cache with *Checked
+    3 days ago · Check now*; *Check now* asks Metron for each followed series'
+    issues with a store date from 30 days ago onward, through 1.3b's
+    server-side client, rate limit, cache and rate-limited state. A daily cron
+    is a later option, alongside 6.7, not this task.
+  - **The list:** *Out now*, *This month*, *Later*. Each row: cover, the label in
+    the bulk-entry grammar, the store date, the run it would join, and **Add to
+    Claremont — Uncanny X-Men**, which opens 1.3b's staged review with the
+    issue appended after the run's last placement (change the run or the
+    position there). *Not for me* dismisses it for you. An issue already placed
+    in that run never appears.
+  - The comics dashboard's rollup slot gains *2 new issues out →*; the sidebar
+    and rail gain *Coming out* under Comics; add `/comics/releases` to
+    ARCHITECTURE's route table; the mockup gains the screen and its empty state
+    (*Follow a series from a run's ⋯ menu*).
+  - **Check:** with a recorded Metron fixture, *Check now* for one followed
+    series stores its three upcoming issues and writes nothing to `issues`;
+    accepting one through the review creates exactly one `issues` row (with
+    `metron_id`) and one placement at the end of the followed run, and it leaves
+    the list; *Not for me* hides an issue for that user only; no page render
+    calls Metron (the mocked client counts calls). A mocked 429 renders the
+    rate-limited line and makes no second request before `Retry-After`.
 
 ---
 
@@ -1652,12 +2137,17 @@ list and book detail.
 - ☐ 6.3 Prereq graph visualization · M
 - ☐ 6.4 PWA: manifest, service worker, queued offline writes · M. Drives the
   sync pill from 1.8 (*Offline · 3 marks queued*); a queued write is never
-  silent.
+  silent. **Undoing a queued write removes it from the queue** and makes no
+  network call (UX-X02, F8). The failure toast is `role="alert"` (*Couldn't
+  save #141, kept offline · Retry*); `queued → online` shows *Synced ✓* for 2s,
+  the pill's dot cross-fading amber to green. The mockup's `states` gains three
+  frames: failed, retrying, undone while queued.
 - ☐ 6.8 Events page with your read-it/skip verdicts · S
 - ☐ 6.10 Master list: a *Fits Q2 · 56k* chip and a *Pick one* button (one
   highlighted row with *Another* and *Plan for…*), plus saved views (as 2.9) · S
 - ☐ 6.11 Density toggle in Settings → Appearance: `.app[data-density="compact"]`,
-  desktop only, 32px rows, `.chk` min-height 2rem · S
+  desktop only, 32px rows, `.chk` min-height 2rem · S. Compact sets `--row-h`
+  to 32px (1.8a), a 16px check ring and 13/18 mono labels (STYLE_GUIDE §5).
 - ☐ 6.12 **Reading-session timer** — deferred from 2.1b by D-8 · M. The
   start/stop timer, the **timer chip** in the thumb bars and desktop sidebar
   footer, and the two surfaces gated behind five sessions: the dashboards'
@@ -1681,11 +2171,33 @@ list and book detail.
   behind it. **Check:** a wrong credential is refused and a right one signs in,
   an old `rt_session` cookie is rejected after the switch, and every page and
   route handler still refuses an unsigned request.
-- ☐ 6.5 Keyboard shortcuts: `j`/`k`/`x`/`/` · S
+- ☐ 6.14 **Sidebar toggle** (UX-N08) · S. 1.8 sets the sidebar's state by width
+  (D-33: collapsed 64px at 1024–1279px, 224px from 1280px); this adds the
+  toggle that overrides it, desktop only. A button with `aria-expanded`, a
+  `--dur-3` width transition over `grid-template-columns: var(--side-w) 1fr` so
+  the main column reflows without a jump, and the choice kept in `localStorage`
+  (not the database). Collapsed, the sync pill and timer chip are icon-only
+  with an `aria-label`. The tablet's navigation rail (768–1023px) has no toggle.
+  **Check:** `/comics` at 1280px renders in both states with no horizontal
+  overflow, and the choice survives a reload.
+- ☐ 6.5 Keyboard shortcuts: `j`/`k`/`x`/`/` · S. The keyboard layer (UX-N23):
+  a focused-row state on desktop (2px `--brand` ring at half strength on
+  `--raise`), a `?` sheet listing `j/k`, `x`, `Shift-x` (range), `/`, `Ctrl K`
+  and `g c` / `g b` / `g w`, and the `?` hint beside `Ctrl K` in the sidebar
+  footer. **Desktop mark reach** (UX-X03, F6): the header verbs stay (D-25), and
+  with a mouse or trackpad (`(hover:hover) and (pointer:fine)`) a spine or queue
+  row also reveals a small *Mark read* button on hover or focus, with `x` as its
+  shortcut. Phone and tablet are unchanged: their check is already one tap.
 - ☐ 6.6 Goodreads and StoryGraph CSV import · M
 - ☐ 6.7 **Release digest email** — Vercel cron plus Resend free tier. Last, by your call · S
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M
+
+  **Partly done by Step 3 (D-31, 2026-09-30):** the style guide retuned the
+  neutrals and rebuilt dark depth (task 1.8a), keeping the four meanings and the
+  identity hues. What this task still owes is the lived-with pass, the CVD check
+  on the eight identity hues and `--brand` distance (M-O2). Run the prompt below
+  against `globals.css` as it then stands.
 
   The v4 palette was inherited from v3 and reconciled rather than designed. It
   works, and it has never been tested against a full app. Once the surfaces are
@@ -1887,7 +2399,8 @@ slots as comics and books. Depends on 8.3.
 
 - **Now** — seasons with `season_status = 'watching'`, with a two-rail telescope:
   the series' seasons, and the series' position in its franchise. Two levels, so
-  the component drops a rail and keeps the bracket. No episode rail — episodes
+  the component drops a rail and keeps the bracket — the same horizontal 2-rail
+  geometry as comics' no-block fallback (2.5, ARCHITECTURE §4). No episode rail — episodes
   are deliberately not tracked.
 - **Up next** — five rows from `show_progress` and unwatched films, with a
   film/TV toggle and genre chips. **No period control**: there is no watch plan
@@ -1924,7 +2437,9 @@ Screenshot at 360px.
   collapsed under *Stopped*.
 
 *Stopped* holds `dropped` shows and films as `<details class="stopped">`, each
-with a grey `dropped` badge.
+with a grey `dropped` badge. Each tab's empty slate is drawn, with the FEATURES
+Part 2c copy and one primary action; the mockup gains watch's three (UX-X07,
+see 1.9).
 
 **Check:** a show with 1 of 3 seasons watched is in In flight only; a show with
 all seasons watched is in Done with nothing written to `title_status`; a

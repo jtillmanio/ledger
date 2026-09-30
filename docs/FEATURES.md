@@ -15,7 +15,7 @@ section. Nothing here is built yet except where marked **shipped**.
 | B2 | To Read by year, switchable quarter/month, with word-count budgeting | partial | `reading_plan.planned_quarter` exists; needs `planned_month`, a `reading_settings` table, and the pace engine |
 | B3 | To-Read master list, searchable | shipped | Search works; needs sort by word count, filter by series-completeness |
 | B4 | Top books per year, editable | partial | `book_status.year_rank` holds the data; no edit UI, no reorder |
-| B5 | Coming out list | shipped | Needs "notify me" and a calendar view |
+| B5 | Coming out list | shipped | Needs "notify me" and a calendar view. Task 5.7 (D-35): *Out now* plus a month-grouped list, notified in the app; comics get the same in 5.8 |
 | B6 | Tracked series and authors with progress | partial | `series_progress` view exists; needs a `shelves` table so you can add arbitrary ones |
 | — | BookTube top 10, Download, HP Fanfiction | migrated, unsurfaced | Data is in `external_lists` and `wishlist`. No pages. Leave it |
 
@@ -259,8 +259,9 @@ means migrating what already exists. Recommendation: add a `read_events` log
 current-status projection over it. Costs one table now; impossible to
 reconstruct later.
 
-**Not building:** upcoming-issue tracking for ongoing comics. You're reading
-back catalog for the foreseeable future.
+~~**Not building:** upcoming-issue tracking for ongoing comics.~~ **Reversed by
+D-35 (2026-09-30):** new issues in a series you follow are offered for adding
+to a run (task 5.8), and books coming out get their own list (5.7).
 
 ---
 
@@ -904,8 +905,10 @@ the four numbers that change what you open.
 ### The telescope, in numbers
 
 The telescope is generated from three ordered queries, so its geometry is a
-function, not a drawing (ARCHITECTURE §4; TASKS 2.5). The rules the mockups are
-held to:
+function, not a drawing (ARCHITECTURE §4; TASKS 2.5). Its rails are horizontal at
+every width (D-31), so where this section says *H*, read the rail's width *W*;
+the variants and their fallback rules are in ARCHITECTURE §4 and
+`docs/DESIGN.md` §5. The rules the mockups are held to:
 
 - **A floor under every cell.** Cells are proportional to issue count *above a
   minimum*: 14px on the phone, 16px on desktop. Each rail allots `min` to every

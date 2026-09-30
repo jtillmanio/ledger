@@ -1,6 +1,6 @@
 # Status
 
-**Last regenerated:** 2026-09-23
+**Last regenerated:** 2026-09-30
 
 This is a rollup of `docs/TASKS.md`, not a second source of truth. Every count
 here comes from counting ☑ vs ☐ task markers in that file. If this page and
@@ -9,19 +9,19 @@ argue from it.
 
 ## Where we are
 
-**4 of 83 tasks done (5%).** Still in Phase 0 — nothing in Phase 1 or later has
+**4 of 87 tasks done (5%).** Still in Phase 0 — nothing in Phase 1 or later has
 started. No git repo exists yet, nothing is deployed, and `LEDGER_LIVE` is
 `false`.
 
 | Phase | Done / total | Status |
 |---|---|---|
 | 0 — Foundation | 3 / 10 | **In progress** |
-| 1 — Daily use | 0 / 15 | Not started |
+| 1 — Daily use | 0 / 16 | Not started |
 | 2 — The pace engine | 0 / 15 | Not started |
-| 3 — Editing | 0 / 6 | Not started |
+| 3 — Editing | 0 / 7 | Not started |
 | 4 — Enrichment | 0 / 3 | Not started |
-| 5 — Remaining surfaces | 0 / 6 | Not started |
-| 6 — Polish | 1 / 14 | Not started† |
+| 5 — Remaining surfaces | 0 / 7 | Not started |
+| 6 — Polish | 1 / 15 | Not started† |
 | 7 — AI-assisted curation | 0 / 6 | Not started |
 | 8 — Watchlist (film/TV) | 0 / 8 | Not started |
 
@@ -58,6 +58,16 @@ until 0.8a/0.8b are in, per the HANDOFF §10 warning: cutting over from Sheets
 before Phase 1 finishes defeats the migration, and accumulating real reading
 data before 0.8a lands means that history can't be reconstructed later.
 
+**Design blueprint adopted (D-31, 2026-09-30).** The Step 3 style guide and
+Review N are folded into the backlog: a new **1.8a — Design tokens and control
+states** comes before 1.8 (the first UI task), the telescope in 2.5/2.5b is now
+horizontal, and new tasks 3.7 (archive and restore), 5.7 and 5.8 (books and
+comic issues coming out) and 6.14 (sidebar toggle) were added. `docs/DESIGN.md` is the index;
+`docs/review/LEDGER.md` *N* maps every audit item to its task. Decided the same
+day: counts stay mono (D-32); tablets get a navigation rail and keep the bottom
+thumb bar, with header verbs from 1024px (D-33); one sheet at a time (D-34);
+upcoming releases are in scope for books and comics (D-35).
+
 ## What's actually built
 
 - `etl/extract.py`, `etl/enrich_comics.py`, `etl/volumes.py`,
@@ -92,4 +102,5 @@ want to reconsider the default:
 | What's in scope / out of scope? | `docs/FEATURES.md` |
 | Full project narrative, decisions, migration findings | `docs/HANDOFF.md` |
 | Layout and copy for every screen | `design/mockups.html` |
+| Tokens, type, telescope and plan-rail geometry, component states | `docs/DESIGN.md` → `design/STYLE_GUIDE.md`, `design/tokens.css` |
 | Human runbook — setup, migration, deploy steps | `docs/START-HERE.md` |

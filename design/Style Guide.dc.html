@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"><link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;650;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"><style>body{margin:0;background:#1b1d22;color:#e6e8ec;font-family:'Inter Tight',system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#a9bfff;text-decoration:none}a:hover{text-decoration:underline}</style></helmet>
+
+<section id="intro" data-screen-label="00 Intro" style="background:#1b1d22;width:max-content;min-width:100%;box-sizing:border-box;padding:48px 56px 24px;max-width:1480px">
+  <div style="font:500 11px/14px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8a93a2">LEDGER · STEP 3 · STYLE GUIDE AND DATA PRESENTATION · 2026-09-30</div>
+  <h1 style="font:700 40px/44px 'Inter Tight',sans-serif;letter-spacing:-.03em;margin:8px 0 12px;color:#fff">Horizontal telescope and a calmer, denser system</h1>
+  <p style="font:400 15px/22px 'Inter Tight',sans-serif;color:#b9c0cc;max-width:76ch;margin:0 0 20px;text-wrap:pretty">Every frame here renders the proposed tokens from <a href="tokens.css">tokens.css</a>. The telescope is drawn by the real <span style="font-family:'JetBrains Mono',monospace">allocate()</span> floor-then-distribute rule, so its geometry is computed, not placed by hand. The written spec is in <a href="STYLE_GUIDE.md">STYLE_GUIDE.md</a>: geometry sheet, state matrix, type table, contrast and ΔE tables, changelog, Tailwind appendix, proposed deviations and the §1 checklist.</p>
+  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;max-width:1400px">
+    <div style="background:#23262c;border-radius:12px;padding:16px;box-shadow:inset 0 0 0 1px #2e323a"><div style="font:600 12px/16px 'Inter Tight';letter-spacing:.06em;text-transform:uppercase;color:#8a93a2">Decision 1</div><div style="font:600 15px/20px 'Inter Tight';color:#fff;margin-top:6px">Horizontal on every width</div><div style="font:400 13px/18px 'Inter Tight';color:#b9c0cc;margin-top:4px;text-wrap:pretty">On a phone, a vertical rail's slider drag is the same gesture as page scroll. Horizontal rails scrub with the thumb, take about 150px of height instead of about 354px, and put <i>Also in flight</i> above the fold. Proposed deviation D1.</div></div>
+    <div style="background:#23262c;border-radius:12px;padding:16px;box-shadow:inset 0 0 0 1px #2e323a"><div style="font:600 12px/16px 'Inter Tight';letter-spacing:.06em;text-transform:uppercase;color:#8a93a2">Decision 2</div><div style="font:600 15px/20px 'Inter Tight';color:#fff;margin-top:6px">Same allocate(), new axis</div><div style="font:400 13px/18px 'Inter Tight';color:#b9c0cc;margin-top:4px;text-wrap:pretty">H becomes W. min 14 on phone, 16 on desktop; gap 2; head ±2 kept; at most two stubs. Rail keys sit in a fixed left gutter (44 / 72px), so no label can collide with a bracket.</div></div>
+    <div style="background:#23262c;border-radius:12px;padding:16px;box-shadow:inset 0 0 0 1px #2e323a"><div style="font:600 12px/16px 'Inter Tight';letter-spacing:.06em;text-transform:uppercase;color:#8a93a2">Decision 3</div><div style="font:600 15px/20px 'Inter Tight';color:#fff;margin-top:6px">Dark is the hero</div><div style="font:400 13px/18px 'Inter Tight';color:#b9c0cc;margin-top:4px;text-wrap:pretty">A near-black page, tonal elevation and 1px inner highlights. <span style="font-family:'JetBrains Mono'">--sunk</span> now sits below <span style="font-family:'JetBrains Mono'">--surface</span>, so tracks and empty cells read as recessed. The only glow is the halo on the head, which marks position.</div></div>
+    <div style="background:#23262c;border-radius:12px;padding:16px;box-shadow:inset 0 0 0 1px #2e323a"><div style="font:600 12px/16px 'Inter Tight';letter-spacing:.06em;text-transform:uppercase;color:#8a93a2">Unchanged</div><div style="font:600 15px/20px 'Inter Tight';color:#fff;margin-top:6px">Four colours, same copy</div><div style="font:400 13px/18px 'Inter Tight';color:#b9c0cc;margin-top:4px;text-wrap:pretty">Green is read, blue is position, amber is held, red is destructive only. No token or class is renamed. Sample figures are illustrative (D-7).</div></div>
+  </div>
+  <div style="display:flex;gap:12px;margin-top:20px;flex-wrap:wrap">
+    <a href="Telescope Spec.dc.html" style="display:flex;flex-direction:column;gap:4px;min-width:300px;padding:14px 16px;border-radius:12px;background:#172039;box-shadow:inset 0 0 0 1px #86a4ff;color:#fff;text-decoration:none"><span style="font:500 11px/14px 'JetBrains Mono';letter-spacing:.08em;color:#a9bfff">WORKSTREAM A1–A3 →</span><span style="font:600 15px/20px 'Inter Tight'">Telescope spec · 7 variants · 3 states</span></a>
+    <a href="Plan Rail Spec.dc.html" style="display:flex;flex-direction:column;gap:4px;min-width:300px;padding:14px 16px;border-radius:12px;background:#172039;box-shadow:inset 0 0 0 1px #86a4ff;color:#fff;text-decoration:none"><span style="font:500 11px/14px 'JetBrains Mono';letter-spacing:.08em;color:#a9bfff">WORKSTREAM A4 →</span><span style="font:600 15px/20px 'Inter Tight'">Plan rail · quarter, month, settled, drag</span></a>
+    <a href="STYLE_GUIDE.md" style="display:flex;flex-direction:column;gap:4px;min-width:300px;padding:14px 16px;border-radius:12px;background:#23262c;box-shadow:inset 0 0 0 1px #2e323a;color:#fff;text-decoration:none"><span style="font:500 11px/14px 'JetBrains Mono';letter-spacing:.08em;color:#8a93a2">SPEC →</span><span style="font:600 15px/20px 'Inter Tight'">STYLE_GUIDE.md · tokens.css</span></a>
+  </div>
+</section>
+
+<section id="specimen" data-screen-label="01 Specimen" style="background:#1b1d22;width:max-content;min-width:100%;box-sizing:border-box;padding:24px 56px 64px">
+  <h2 style="font:700 24px/28px 'Inter Tight';letter-spacing:-.02em;color:#fff;margin:0 0 4px">B · Specimen</h2>
+  <p style="font:400 13px/18px 'Inter Tight';color:#9aa3b2;margin:0 0 20px">Dark (hero) on the first row, light on the second. Phone 390 and desktop 1000.</p>
+  <dc-import name="Specimen" themes="both" hint-size="1418px,2600px"></dc-import>
+</section>
+</x-dc>
+</body>
+</html>

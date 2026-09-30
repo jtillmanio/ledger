@@ -320,6 +320,10 @@ flowchart LR
 | Run: issue count, read count, head | `run_progress` + resume pointer (task 1.6) | one row |
 | The ladder underneath | `block_position` | `run_ordinal / block_runs`, `block_ordinal / track_blocks` |
 
+The rails run left to right and stack top to bottom, at every width (D-31); the
+flowchart above shows their nesting, not their orientation. In the allocation
+below, `H` is the rail's length, which is its width `W` (ARCHITECTURE §4).
+
 The brackets are geometry, not data: each one connects the highlighted cell of
 a coarser rail to the full extent of the next finer one. Runs with a null
 `block_id` — nine of them — fall back to a two-rail view (`data-rails="2"`). The

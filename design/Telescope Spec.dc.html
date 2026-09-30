@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"><link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;650;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"><style>body{margin:0;background:#1b1d22;color:#e6e8ec;font-family:'Inter Tight',system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#a9bfff;text-decoration:none}a:hover{text-decoration:underline}</style></helmet>
+<section data-screen-label="A Telescope" style="background:#1b1d22;width:max-content;min-width:100%;box-sizing:border-box;padding:48px 56px 64px">
+  <div style="font:500 11px/14px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8a93a2"><a href="Style Guide.dc.html">STYLE GUIDE</a> · WORKSTREAM A · TELESCOPE</div>
+  <h1 style="font:700 36px/40px 'Inter Tight';letter-spacing:-.03em;margin:8px 0 8px;color:#fff">Horizontal telescope — every variant, 390 and 1000, dark and light</h1>
+  <p style="font:400 14px/20px 'Inter Tight';color:#b9c0cc;max-width:80ch;margin:0 0 28px;text-wrap:pretty">Geometry is computed by <span style="font-family:'JetBrains Mono'">allocate(counts, W, 2, min)</span> with W = frame − chrome − gutter (282px at 390, 832px at 1000). Each row shows dark phone, dark desktop, then light phone, light desktop. The 2-rail row sits directly under the 3-rail row: same cell height, gap, radius, bracket depth, tick rule and type. Numbers for each case are in <a href="STYLE_GUIDE.md">STYLE_GUIDE.md §2</a>.</p>
+  <div style="display:flex;flex-direction:column;gap:40px">
+    <sc-for list="{{ rows }}" as="row" hint-placeholder-count="3">
+      <div id="{{ row.id }}" style="display:flex;gap:28px;align-items:flex-start;scroll-margin-top:16px">
+        <div style="width:220px;flex:none;padding-top:8px">
+          <a href="#{{ row.id }}" style="font:600 10.5px/14px 'JetBrains Mono';padding:3px 7px;background:#2c3038;color:#e6e8ec;border-radius:5px;display:inline-block">{{ row.id }}</a>
+          <div style="font:600 15px/20px 'Inter Tight';color:#fff;margin-top:8px">{{ row.title }}</div>
+          <div style="font:400 13px/18px 'Inter Tight';color:#9aa3b2;margin-top:6px;text-wrap:pretty">{{ row.note }}</div>
+        </div>
+        <dc-import name="Telescope" variant="{{ row.variant }}" state="{{ row.state }}" themes="{{ row.themes }}" bar="{{ row.bar }}" hint-size="1418px,480px" style="flex:none"></dc-import>
+      </div>
+    </sc-for>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return { rows: [
+      {id:'A1.1', variant:'normal', state:'rest', themes:'both', bar:true, title:'Normal 3-rail', note:'Track → block → run. Head label 42 / 381 · #141, ordinal first. #142 (ordinal 43) is read in another run: a dashed box inside a gap in the green.'},
+      {id:'A2.1', variant:'tworail', state:'rest', themes:'both', bar:false, title:'2-rail fallback, no block', note:'The BLOCK rail is dropped. TRACK brackets straight to RUN with the same 16/20px bracket depth. The block-less runs sit in an italic “no block” track cell. The ladder loses its BLOCK row and closes the gap.'},
+      {id:'A1.2', variant:'shortlong', state:'rest', themes:'both', bar:false, title:'Short beside long, unnamed block', note:'The 6-issue run gets the 14/16px floor and a centred dot, meaning it is shown at minimum width, not to scale. Block 3 is unnamed: “Name it”, never an error.'},
+      {id:'A1.3', variant:'overflow', state:'rest', themes:'both', bar:false, title:'Overflow — 60 runs', note:'n·min > avail, so head ±2 stay and the rest fold into two dashed 14/16px stubs. Stub counts are in the accessible name and the popover (A3.2).'},
+      {id:'A1.4', variant:'dense', state:'rest', themes:'both', bar:true, title:'Dense — Krakoa 641', note:'Ticks = niceStep(641 / ⌊W/6⌋): 20 on phone, 5 on desktop, a major tick every fifth. The verb names the issue by label: Mark X-Men (2019) #8 read.'},
+      {id:'A2.2', variant:'empty', state:'rest', themes:'both', bar:false, title:'Empty — nothing in flight', note:'Track rail only: no head, no brackets, one primary action.'},
+      {id:'A2.3', variant:'read', state:'rest', themes:'both', bar:false, title:'Run fully read', note:'The run rail is all green, the badge is grey ✓ read, there is no head marker. A secondary action continues the block.'},
+      {id:'A3.1', variant:'normal', state:'hover', themes:'dark', bar:false, title:'Hover (pointer only)', note:'The cell lifts to --raise with an --ink-2 edge, and a tooltip appears on --overlay. The phone has no hover: the same text is in the ladder and the accessible name.'},
+      {id:'A3.2', variant:'overflow', state:'focus', themes:'dark', bar:false, title:'Focus — head and stub', note:'A 2px --brand ring outside a 2px --surface gap. A focused stub shows its popover, and Enter opens the list sheet.'},
+      {id:'A3.3', variant:'normal', state:'scrub', themes:'dark', bar:false, title:'Scrubbing', note:'Dragging or arrowing the run rail draws a dashed ghost head with a live n / N readout. Release navigates to #p-[ordinal]. The real head moves only on a mark.'}
+    ] };
+  }
+}
+</script>
+</body>
+</html>

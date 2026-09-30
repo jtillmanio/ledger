@@ -1,0 +1,119 @@
+/* ══ Ledger tokens — Review N style guide (proposal, 2026-09-30) ═══════════
+   Drop-in for src/app/globals.css: every existing name is kept. Lines marked
+   "+ NEW" are additions (see design/STYLE_GUIDE.md §7 changelog). Values marked
+   "~" differ from the shipped value; all pass `npm run test:tokens` rules as
+   computed in STYLE_GUIDE.md §6. Dark is the hero theme.
+   Colour still has four meanings: ready (read), brand (position / primary),
+   blocked (held), danger (destructive only). Nothing on a dashboard is red. */
+
+.app,:root{
+  /* surfaces — elevation order by luminance: sunk < page < raise < surface = overlay (light) */
+  --page:#f3f5f8;          /* ~ was #eceff4 */
+  --surface:#fff;
+  --raise:#f8f9fb;         /* ~ was #f7f8fa */
+  --sunk:#ebeef2;          /* ~ was #e6eaf0 (ready on sunk ≥ 4.5) */
+  --overlay:#fff;          /* + NEW sheets, menus, palette, dialog */
+  /* ink */
+  --ink:#12151c; --ink-2:#3a4250; --muted:#5c6575;
+  --faint:#5f6878;         /* ~ text-safe ≥ 4.5 on every surface */
+  --faint-deco:#848d9b;    /* ~ was #98a1b0: now ≥ 3:1 so it can outline controls (cells, stubs) */
+  /* hairlines */
+  --rule:#dfe3e9; --rule-2:#c7cdd7; --line:#eceef2;
+  /* semantic */
+  --brand:#2148c9; --brand-soft:#e8edfd; --brand-ink:#1a3aa3;
+  --ready:#0b7a52; --ready-soft:#e3f4ec;
+  --blocked:#8a560c; --blocked-soft:#fbefdf;
+  --reading:#2148c9; --reading-soft:#e8edfd;
+  --danger:#a93226; --danger-soft:#fbe9e7;
+  --on-brand:#fff; --on-ready:#fff; --on-danger:#fff; --on-muted:#fff;
+  --toast-bg:#12151c;      /* + NEW (was implicit --ink) */
+  --toast-ink:#f3f5f8;     /* + NEW (was implicit --page) */
+  --toast-link:#9db4ff;
+  /* identity — tracks and genres; ΔE2000 ≥ 15 from ready / blocked / danger */
+  --t1:#2563eb; --t2:#a21caf; --t3:#4d7c0f; --t4:#857700;
+  --t5:#7c3aed; --t6:#0e7490; --t7:#be185d; --t8:#52606d;
+  --g1:var(--t1); --g2:var(--t2); --g3:var(--t3); --g4:var(--t4);
+  --g5:var(--t5); --g6:var(--t6); --g7:var(--t7); --g8:var(--t8);
+  --m-comics:#7c3aed; --m-books:#0e7490; --m-watch:#be185d;
+  /* elevation — light: soft drop shadows */
+  --sh-1:0 1px 2px rgba(18,21,28,.04);
+  --sh-2:0 1px 2px rgba(18,21,28,.05),0 8px 24px -12px rgba(18,21,28,.18);
+  --sh-3:0 2px 6px rgba(18,21,28,.06),0 24px 48px -16px rgba(18,21,28,.28);
+  --halo:0 0 0 3px rgba(33,72,201,.16);                 /* + NEW position only: telescope head */
+  --focus-ring:0 0 0 2px var(--surface),0 0 0 4px var(--brand); /* + NEW */
+  /* glass — chrome over scrolling content only */
+  --glass-bg:rgba(255,255,255,.9);                       /* + NEW α .90 — worst-case contrast, §6 */
+  --glass-edge:rgba(18,21,28,.08);                       /* + NEW */
+  --glass-hi:inset 0 1px 0 rgba(255,255,255,.6);         /* + NEW */
+  --scrim:rgba(10,12,16,.4);                             /* + NEW replaces the moveplan literal (L-01) */
+  --hatch:repeating-linear-gradient(135deg,var(--blocked) 0 1.5px,transparent 1.5px 6px); /* + NEW */
+  --hatch-settled:repeating-linear-gradient(135deg,var(--muted) 0 1px,transparent 1px 6px); /* + NEW */
+
+  /* ── theme-independent ── */
+  --sans:"Inter Tight",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+  /* radius  + NEW */
+  --r-cell:3px; --r-sm:6px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-full:999px;
+  /* spacing (4px base)  + NEW */
+  --sp-0-5:2px; --sp-1:4px; --sp-1-5:6px; --sp-2:8px; --sp-3:12px; --sp-4:16px;
+  --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px;
+  /* type  + NEW  (size / line-height; weight + tracking in STYLE_GUIDE §3) */
+  --fs-kicker:11px/14px; --fs-caption:12px/16px; --fs-body-sm:13px/18px; --fs-body:14px/20px;
+  --fs-row-title:15px/20px; --fs-section:12px/16px; --fs-title:24px/28px; --fs-title-desk:30px/34px;
+  --fs-display:40px/40px; --fs-display-desk:48px/48px;
+  /* telescope geometry  + NEW */
+  --tele-min:14px; --tele-gap:2px; --tele-rail:18px; --tele-run:24px; --tele-bracket:16px; --tele-gutter:44px;
+  /* density  + NEW */
+  --row-h:48px;
+  /* motion  + NEW */
+  --dur-1:100ms; --dur-2:150ms; --dur-3:200ms; --dur-4:300ms;
+  --ease-out:cubic-bezier(.2,.8,.2,1); --ease-in:cubic-bezier(.4,0,1,1);
+  --glass-blur:20px; --glass-sat:1.4;
+}
+@media (min-width:900px){
+  .app,:root{--tele-min:16px;--tele-rail:20px;--tele-run:28px;--tele-bracket:20px;--tele-gutter:72px}
+  .app[data-density="compact"]{--row-h:32px}
+}
+
+.app[data-theme="dark"]{
+  --page:#0a0c10;          /* ~ was #0d0f14, OLED-friendly, not pure black */
+  --surface:#12151b;       /* ~ was #171b23 */
+  --raise:#191d25;         /* ~ was #1e232d */
+  --sunk:#0d1015;          /* ~ was #232935 — now BELOW surface: tracks and cells read as recessed */
+  --overlay:#1e232c;       /* + NEW */
+  --ink:#e8ebf0; --ink-2:#b9c0cc;
+  --muted:#8f98a7;         /* ~ was #8b94a4 */
+  --faint:#8a93a2;
+  --faint-deco:#646d7a;    /* ~ was #69727f, ≥ 3:1 on surface */
+  --rule:#252a33; --rule-2:#323945; --line:#1c2028;   /* ~ tuned to the new surfaces */
+  --brand:#86a4ff; --brand-soft:#172039; --brand-ink:#a9bfff;   /* ~ */
+  --ready:#52c496; --ready-soft:#0f231a;                         /* ~ */
+  --blocked:#e0a866; --blocked-soft:#261c10;                     /* ~ */
+  --reading:#86a4ff; --reading-soft:#172039;                     /* ~ */
+  --danger:#ef8173; --danger-soft:#2a1512;                       /* ~ */
+  --on-brand:#0a0c10; --on-ready:#0a0c10; --on-danger:#0a0c10; --on-muted:#0a0c10;
+  --toast-bg:#1e232c; --toast-ink:#e8ebf0;   /* + NEW dark toast is tonal, not a glaring light slab */
+  --toast-link:#a9bfff;    /* ~ was #1a3aa3 (it sat on the light --ink toast) */
+  --t1:#6f9bff; --t2:#e879f9; --t3:#a3e635; --t4:#fde047;
+  --t5:#a98aee; --t6:#4fb3cc; --t7:#e878ab; --t8:#8a96a6;
+  --m-comics:#a98aee; --m-books:#4fb3cc; --m-watch:#e878ab;
+  /* elevation — dark: tonal steps + 1px inner highlight; drop shadows only on overlays */
+  --sh-1:inset 0 1px 0 rgba(255,255,255,.03);
+  --sh-2:inset 0 1px 0 rgba(255,255,255,.05),0 8px 24px -12px rgba(0,0,0,.7);
+  --sh-3:inset 0 1px 0 rgba(255,255,255,.06),0 24px 56px -12px rgba(0,0,0,.85);
+  --halo:0 0 0 3px rgba(134,164,255,.22),0 0 14px rgba(134,164,255,.28);
+  --glass-bg:rgba(18,21,27,.9);
+  --glass-edge:rgba(255,255,255,.07);
+  --glass-hi:inset 0 1px 0 rgba(255,255,255,.05);
+  --scrim:rgba(0,0,0,.6);
+  color-scheme:dark;
+}
+
+/* glass fallback — solid chrome when blur is unavailable or transparency is reduced */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .app{--glass-bg:var(--surface)}
+}
+@media (prefers-reduced-transparency:reduce){ .app{--glass-bg:var(--surface)} }
+@media (prefers-reduced-motion:reduce){
+  .app{--dur-1:0ms;--dur-2:0ms;--dur-3:0ms;--dur-4:0ms}
+}
