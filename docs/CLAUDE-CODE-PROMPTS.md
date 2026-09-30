@@ -965,8 +965,9 @@ page?
 
 **Plan**
 ```
-write a plan for task 1.8: tab bar at the top on phone, sidebar at 900px on
-desktop, .actionbar fixed to the bottom with a 44px minimum target and
+write a plan for task 1.8: tab bar at the top on phone, a navigation rail on a
+tablet (768-1023px), the sidebar from 1024px (D-33; the width table is in the
+task), .actionbar fixed to the bottom with a 44px minimum target and
 env(safe-area-inset-bottom). "/" redirects to the last-touched medium, or
 /comics with no history. the list screens move to /comics/runs and
 /books/list.
@@ -1334,7 +1335,10 @@ a rendered screenshot at real data scale reveals.
 
 **Explore**
 ```
-read @docs/TASKS.md task 2.5 and DIAGRAMS.md section 3b. confirm block_progress,
+read @docs/TASKS.md tasks 2.5 and 2.5b, @docs/DESIGN.md section 5, the
+telescope part of ARCHITECTURE §4 and DIAGRAMS.md section 3b. open
+design/Telescope.dc.html: its alloc(), niceStep() and fit() are the reference
+implementation. confirm block_progress,
 run_progress joined to block_position, and the resume pointer (from 1.6)
 give you everything the three rails need with no new query. the seed moves
 while the owner audits the workbook, so build test fixtures rather than
@@ -1343,13 +1347,13 @@ asserting against a named run.
 
 **Plan**
 ```
-write a plan for task 2.5: one SVG with three vertical rails (track's blocks,
-block's runs, run's issues), brackets connecting each rail's highlighted cell
+write a plan for task 2.5: three horizontal rails stacked top to bottom
+(track's blocks, block's runs, run's issues; D-31, never vertical), brackets connecting each rail's highlighted cell
 to the next rail's full extent, a head marker at the resume pointer, and a
 three-row ladder underneath. handle the two-rail fallback for a run with no
 block explicitly — don't let it be an afterthought in the implementation.
-name your minimum cell height and ruler-tick interval and why you picked
-them.
+the minimum cell width, tick rule and 2-rail rules are already decided in
+ARCHITECTURE §4: follow them rather than picking new ones.
 ```
 
 **Implement**
@@ -1358,7 +1362,7 @@ implement the plan. write the tests first: on a fixture (a track of 7 blocks,
 block 1 holding 5 runs, the second of them 381 issues with 41 read) assert
 the ladder reads "block 1 of 7", "run 2 of 5", "issue 42 of 381"; render a run with block_id IS NULL and assert two rails and no
 crash; render a block containing a 6-issue run and assert that cell is at
-least 14px tall. screenshot at 360px and look at it yourself before showing
+least 14px wide. screenshot at 360px and look at it yourself before showing
 me — this is a task where the test can pass and the picture can still be
 wrong.
 

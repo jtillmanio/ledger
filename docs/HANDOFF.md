@@ -268,7 +268,7 @@ season-level progress; franchises; shelves; rewatch log.
 - **Episode-level TV tracking** — 2–10 seasons per show is trackable; 200 episodes is a checkbox farm. `watch_events` takes a `season_id`, so episodes are additive if this judgment proves wrong
 - **Streaming availability, Trakt sync, air-date reminders, watch-time budgeting**
 - **Hover-preview detail** — considered and rejected. Hover doesn't exist on Android, the primary device, and a tooltip can't hold notes, history, or shelf membership
-- **Upcoming-issue tracking for ongoing comics** — reading back catalog for the foreseeable future
+- ~~**Upcoming-issue tracking for ongoing comics**~~ — back in scope by D-35 (2026-09-30): tasks 5.7 (books coming out) and 5.8 (new issues in followed series)
 - **Events page** — deferred to Phase 6; data is migrated
 - **Streaks** — reward consistency over enjoyment; 20 books in 2022 and 34 in 2024 are both fine
 - **Catalog completion date** — a 50-year number shown daily is discouraging

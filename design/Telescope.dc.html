@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="display:grid;grid-template-columns:{{ cols }};gap:28px;align-items:start">
+<sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+<div role="figure" aria-label="{{ f.ariaFrame }}" style="{{ f.vars }};width:{{ f.width }}px;box-sizing:border-box;background:var(--page);color:var(--ink);font-family:var(--sans);border:1px solid var(--rule);border-radius:{{ f.frameR }}px;padding:{{ f.pad }}px;overflow:hidden">
+  <div style="display:flex;align-items:baseline;gap:10px;margin:0 0 12px">
+    <span style="font:700 {{ f.h1 }}px/1.15 var(--sans);letter-spacing:-.028em">Comics</span>
+    <span style="font:600 11px/14px var(--sans);color:var(--m-comics);border:1px solid var(--m-comics);border-radius:999px;padding:1px 8px;white-space:nowrap">sequence · issues</span>
+    <span style="margin-left:auto;font:500 11px/14px var(--mono);letter-spacing:.08em;color:var(--faint)">{{ f.tag }}</span>
+  </div>
+
+  <div style="position:relative;background:var(--surface);border-radius:16px;box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);padding:{{ f.cardPad }}px;overflow:hidden">
+    <span style="position:absolute;left:0;top:0;bottom:0;width:3px;background:{{ f.stripe }}"></span>
+    <div style="font:500 11px/14px var(--mono);letter-spacing:.08em;color:var(--faint);text-transform:uppercase">{{ f.kick }}</div>
+    <div style="display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 10px;margin-top:4px">
+      <span style="font:650 17px/22px var(--sans);letter-spacing:-.018em;min-width:0">{{ f.name }}</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;font:600 11px/14px var(--mono);padding:3px 7px;border-radius:6px;background:var({{ f.badgeBg }});color:var({{ f.badgeInk }})" aria-label="{{ f.badgeAria }}">{{ f.badge }}</span>
+    </div>
+    <div style="font:400 13px/18px var(--sans);color:var(--muted);margin-top:2px">{{ f.by }}</div>
+
+    <div style="position:relative;margin-top:16px;height:{{ f.H }}px">
+      <sc-for list="{{ f.rails }}" as="r" hint-placeholder-count="3">
+        <div style="position:absolute;left:0;top:{{ r.y }}px;width:{{ f.gutter }}px;height:{{ r.h }}px;display:flex;align-items:center;font:500 11px/14px var(--mono);letter-spacing:.08em;color:var(--faint)">{{ r.key }}</div>
+        <div role="{{ r.role }}" aria-label="{{ r.aria }}" aria-valuemin="{{ r.vmin }}" aria-valuemax="{{ r.vmax }}" aria-valuenow="{{ r.vnow }}" tabindex="0" style="position:absolute;left:{{ f.gutter }}px;top:{{ r.y }}px;width:{{ f.W }}px;height:{{ r.h }}px;outline:none">
+          <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="5">
+            <a href="#" title="{{ c.title }}" aria-label="{{ c.title }}" style="position:absolute;top:0;left:{{ c.x }}px;width:{{ c.w }}px;height:100%;box-sizing:border-box;border-radius:3px;background:{{ c.bgImg }};box-shadow:{{ c.ring }};border:{{ c.border }};overflow:hidden;text-decoration:none;white-space:nowrap;padding-left:{{ c.labPad }}px;font:{{ c.font }};color:{{ c.labInk }};line-height:{{ c.lh }}px">{{ c.label }}</a>
+          </sc-for>
+          <sc-for list="{{ r.reads }}" as="s" hint-placeholder-count="0">
+            <span style="position:absolute;top:0;bottom:0;left:{{ s.x }}px;width:{{ s.w }}px;background:var(--ready);border-radius:{{ s.rad }}"></span>
+          </sc-for>
+          <sc-for list="{{ r.elses }}" as="s" hint-placeholder-count="0">
+            <span style="position:absolute;top:3px;bottom:3px;left:{{ s.x }}px;width:{{ s.w }}px;border:1px dashed var(--muted);border-radius:2px;box-sizing:border-box"></span>
+          </sc-for>
+          <sc-if value="{{ r.showHead }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;top:-4px;height:{{ r.headH }}px;left:{{ r.headX }}px;width:2px;border-radius:1px;background:var(--ink);box-shadow:0 0 0 2px var(--surface)"></span>
+          </sc-if>
+          <sc-if value="{{ r.showGhost }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;top:-6px;height:{{ r.ghostH }}px;left:{{ r.ghostX }}px;width:0;border-left:2px dashed var(--brand)"></span>
+          </sc-if>
+        </div>
+      </sc-for>
+
+      <sc-for list="{{ f.brackets }}" as="b" hint-placeholder-count="2">
+        <svg width="{{ f.W }}" height="{{ b.h }}" viewBox="{{ b.vb }}" aria-hidden="true" style="position:absolute;left:{{ f.gutter }}px;top:{{ b.y }}px;overflow:visible">
+          <polygon points="{{ b.pts }}" style="fill:var(--brand);fill-opacity:.08"></polygon>
+          <path d="{{ b.d }}" style="stroke:var(--brand);stroke-opacity:.5;stroke-width:1;fill:none"></path>
+        </svg>
+      </sc-for>
+
+      <sc-if value="{{ f.hasRun }}" hint-placeholder-val="{{ true }}">
+        <div aria-hidden="true" style="position:absolute;left:{{ f.gutter }}px;top:{{ f.tickY }}px;width:{{ f.W }}px;height:6px;overflow:hidden;background-image:repeating-linear-gradient(90deg,var(--faint-deco) 0 1px,transparent 1px {{ f.tickSp }}px),repeating-linear-gradient(90deg,var(--faint-deco) 0 1px,transparent 1px {{ f.tickSp5 }}px);background-size:100% 3px,100% 6px;background-repeat:no-repeat;background-position:{{ f.tickSp }}px 0,{{ f.tickSp5 }}px 0"></div>
+        <div style="position:absolute;left:{{ f.gutter }}px;top:{{ f.numY }}px;width:{{ f.W }}px;height:20px;font:500 11px/20px var(--mono);font-variant-numeric:tabular-nums;color:var(--faint)">
+          <span style="position:absolute;left:0">1</span>
+          <span style="position:absolute;right:0">{{ f.totalTxt }}</span>
+          <sc-if value="{{ f.showPill }}" hint-placeholder-val="{{ true }}">
+            <span style="position:absolute;left:{{ f.pillX }}px;top:0;height:20px;padding:0 6px;border-radius:6px;background:var(--brand-soft);color:var(--brand-ink);font:600 11px/20px var(--mono);white-space:nowrap;box-shadow:inset 0 0 0 1px var(--brand)">{{ f.pill }}</span>
+          </sc-if>
+          <sc-if value="{{ f.showGhostPill }}" hint-placeholder-val="{{ false }}">
+            <span style="position:absolute;left:{{ f.ghostPillX }}px;top:-40px;height:20px;padding:0 6px;border-radius:6px;background:var(--overlay);color:var(--ink);font:600 11px/20px var(--mono);white-space:nowrap;box-shadow:inset 0 0 0 1px var(--brand),var(--sh-2)">{{ f.ghostPill }}</span>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ f.tip.show }}" hint-placeholder-val="{{ false }}">
+        <div role="tooltip" style="position:absolute;left:{{ f.tip.x }}px;top:{{ f.tip.y }}px;z-index:3;max-width:240px;padding:6px 8px;border-radius:8px;background:var(--overlay);box-shadow:inset 0 0 0 1px var(--rule-2),var(--sh-2);font:500 12px/16px var(--sans);color:var(--ink);white-space:nowrap">{{ f.tip.text }}<div style="font:500 11px/14px var(--mono);color:var(--muted);margin-top:2px">{{ f.tip.sub }}</div></div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ f.hasRun }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font:500 11px/14px var(--sans);color:var(--muted)">
+        <span style="font-family:var(--mono)">1 tick = {{ f.tickN }} issues</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><i style="width:10px;height:8px;border-radius:2px;background:var(--ready)"></i>read here</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><i style="width:10px;height:8px;border-radius:2px;border:1px dashed var(--muted);box-sizing:border-box"></i>read in another run</span>
+        <span style="display:inline-flex;align-items:center;gap:5px"><i style="width:4px;height:4px;border-radius:50%;background:var(--muted)"></i>shown at minimum width</span>
+      </div>
+    </sc-if>
+
+    <div role="list" style="display:grid;grid-template-columns:{{ f.ladderCols }};gap:0 16px;margin-top:12px;border-top:1px solid var(--line)">
+      <sc-for list="{{ f.ladder }}" as="l" hint-placeholder-count="3">
+        <div role="listitem" style="display:flex;align-items:baseline;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);min-width:0">
+          <span style="font:500 11px/14px var(--mono);letter-spacing:.08em;color:var(--faint);width:44px;flex:none">{{ l.k }}</span>
+          <span style="font:600 13px/18px var(--sans);color:var(--ink);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ l.v }}</span>
+          <span style="margin-left:auto;font:500 12px/16px var(--mono);font-variant-numeric:tabular-nums;color:var(--muted);white-space:nowrap">{{ l.m }}</span>
+          <sc-if value="{{ l.action }}" hint-placeholder-val="{{ false }}"><button style="flex:none;min-height:24px;padding:0 8px;border-radius:6px;border:1px solid var(--rule-2);background:var(--surface);color:var(--brand);font:600 12px/16px var(--sans);cursor:pointer">Name it</button></sc-if>
+        </div>
+      </sc-for>
+    </div>
+
+    <sc-if value="{{ f.cta }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:12px">
+        <div style="font:400 13px/18px var(--sans);color:var(--muted);margin-bottom:10px">{{ f.ctaNote }}</div>
+        <button style="width:100%;min-height:44px;border-radius:8px;border:0;background:var({{ f.ctaBg }});color:var({{ f.ctaInk }});box-shadow:inset 0 0 0 1px var({{ f.ctaRing }});font:600 14px/20px var(--sans);cursor:pointer">{{ f.cta }}</button>
+      </div>
+    </sc-if>
+  </div>
+
+  <sc-if value="{{ f.bar }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;gap:8px;margin:14px -{{ f.pad }}px -{{ f.pad }}px;padding:12px {{ f.pad }}px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border-top:1px solid var(--glass-edge);box-shadow:var(--glass-hi)">
+      <button style="flex:1;min-height:44px;border-radius:8px;border:0;background:var(--brand);color:var(--on-brand);font:600 14px/20px var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 12px">{{ f.verb }}</button>
+      <button style="flex:none;min-height:44px;padding:0 14px;border-radius:8px;border:0;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule-2);font:600 14px/20px var(--sans)">+ batch</button>
+      <button aria-label="Search (Ctrl K)" style="flex:none;width:44px;min-height:44px;border-radius:8px;border:0;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);display:grid;place-items:center;color:var(--ink-2)"><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="8" cy="8" r="5.25" style="fill:none;stroke:currentColor;stroke-width:1.5"></circle><path d="M12 12l3.5 3.5" style="stroke:currentColor;stroke-width:1.5;stroke-linecap:round"></path></svg></button>
+    </div>
+  </sc-if>
+</div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1420,&quot;height&quot;:1000},&quot;variant&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;shortlong&quot;,&quot;overflow&quot;,&quot;tworail&quot;,&quot;empty&quot;,&quot;dense&quot;,&quot;read&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;state&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;rest&quot;,&quot;hover&quot;,&quot;focus&quot;,&quot;scrub&quot;],&quot;default&quot;:&quot;rest&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;themes&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;both&quot;,&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;both&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;bar&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  data(v) {
+    const xmen = [{n:'Foundations',c:664,r:74},{n:'The Outback Years',c:214,r:0},{n:null,c:301,r:0},{n:'Morrison & Revolution',c:268,r:0},{n:'Whedon & Decimation',c:352,r:7},{n:null,c:211,r:0},{n:null,c:170,r:0}];
+    const blk1 = [{n:'Lee/Kirby',c:66,r:20},{n:'Claremont',c:381,r:45},{n:'Excalibur',c:47,r:0},{n:'Byrne',c:90,r:0},{n:'Simonson',c:80,r:0}];
+    const normal = {tag:'3-RAIL', kick:'Pick up where you left off', name:'Claremont — Uncanny X-Men', by:'Chris Claremont · 1975–91', badge:'◐ 42 / 381', badgeAria:'Reading, issue 42 of 381', bk:'rg', stripe:'var(--t5)',
+      track:{name:'X-Men', cells:xmen, head:0}, block:{name:'Foundations', cells:blk1, head:1},
+      run:{name:'Uncanny X-Men', total:381, head:42, lab:o=>'#'+(o+99), read:[[1,41],[44,47]], els:[[43,43]]},
+      ladder:[{k:'TRACK',v:'X-Men',m:'block 1 of 7'},{k:'BLOCK',v:'1 · Foundations',m:'run 2 of 5'},{k:'RUN',v:'Uncanny X-Men',m:'42 / 381 · #141'}], verb:'Mark #141 read'};
+    if (v === 'normal') return normal;
+    if (v === 'read') return Object.assign({}, normal, {tag:'RUN READ', kick:'Finished', badge:'✓ read · Sep 2026', badgeAria:'Read, finished September 2026', bk:'dn',
+      block:{cells:blk1.map((b,i)=>i===1?Object.assign({},b,{r:381}):b), head:1}, run:{total:381, head:null, lab:o=>'#'+(o+99), read:[[1,381]], els:[]},
+      ladder:[{k:'TRACK',v:'X-Men',m:'block 1 of 7'},{k:'BLOCK',v:'1 · Foundations',m:'run 2 of 5'},{k:'RUN',v:'Uncanny X-Men',m:'381 / 381'}],
+      cta:'Next in block · Claremont — Excalibur', ctaNote:'All 381 placements read here. The block continues.', ctaSec:true, verb:'Start Excalibur #1'});
+    if (v === 'shortlong') {
+      const t = xmen.map((b,i)=>i===2?{n:null,c:590,r:192}:b);
+      return {tag:'SHORT + LONG', kick:'Pick up where you left off', name:'Lobdell & Nicieza — X-Men', by:'Scott Lobdell · Fabian Nicieza · 1991–97', badge:'◐ 121 / 381', badgeAria:'Reading, issue 121 of 381', bk:'rg', stripe:'var(--t5)',
+        track:{cells:t, head:2}, block:{cells:[{n:'Lobdell',c:66,r:66},{n:'AoA one-shots',c:6,r:6},{n:'Lobdell & Nicieza',c:381,r:120},{n:'Kavanagh',c:47,r:0},{n:'Seagle',c:90,r:0}], head:2},
+        run:{total:381, head:121, lab:o=>'X-Men (1991) #'+(o-80), read:[[1,120]], els:[]},
+        ladder:[{k:'TRACK',v:'X-Men',m:'block 3 of 7'},{k:'BLOCK',v:'block 3',m:'unnamed',action:true},{k:'RUN',v:'Lobdell & Nicieza — X-Men',m:'121 / 381 · #41'}], verb:'Mark X-Men (1991) #41 read'};
+    }
+    if (v === 'overflow') {
+      const base = [12,6,24,50,13,8,36,18,4,60];
+      const counts = Array.from({length:60},(_,i)=>base[i%10]+(i%3)*5); counts[27]=85;
+      const cells = counts.map((c,i)=>({n:i===27?'Busiek':'Run '+(i+1), c, r:i<27?c:(i===27?30:0)}));
+      return {tag:'OVERFLOW', kick:'Pick up where you left off', name:'Busiek & Pérez — Avengers', by:'Kurt Busiek · 1998–2002', badge:'◐ 31 / 85', badgeAria:'Reading, issue 31 of 85', bk:'rg', stripe:'var(--t1)',
+        track:{cells:[{n:'Origins',c:420,r:420},{n:'Kree-Skrull',c:380,r:380},{n:'Korvac',c:510,r:510},{n:'Heroes Return',c:1520,r:640},{n:null,c:300,r:0},{n:null,c:280,r:0},{n:'Disassembled',c:450,r:0},{n:null,c:210,r:0},{n:null,c:190,r:0}], head:3},
+        block:{cells, head:27}, run:{total:85, head:31, lab:o=>'Avengers (1998) #'+o, read:[[1,30]], els:[]},
+        ladder:[{k:'TRACK',v:'Avengers',m:'block 4 of 9'},{k:'BLOCK',v:'4 · Heroes Return',m:'run 28 of 60'},{k:'RUN',v:'Busiek & Pérez — Avengers',m:'31 / 85 · #31'}], verb:'Mark Avengers (1998) #31 read'};
+    }
+    if (v === 'tworail') return {tag:'2-RAIL · NO BLOCK', kick:'Pick up where you left off', name:'Priest — Black Panther', by:'Christopher Priest · 1998–2003', badge:'◐ 15 / 62', badgeAria:'Reading, issue 15 of 62', bk:'rg', stripe:'var(--t6)', two:true,
+      track:{cells:[{n:'Lee/Kirby & McGregor',c:96,r:96},{n:'Hudlin',c:41,r:0},{n:'Coates',c:72,r:0},{nb:true,c:75,r:14}], head:3},
+      run:{total:62, head:15, lab:o=>'Black Panther (1998) #'+o, read:[[1,14]], els:[]},
+      ladder:[{k:'TRACK',v:'Black Panther',m:'no block · 2 runs'},{k:'RUN',v:'Priest — Black Panther',m:'15 / 62 · #15'}], verb:'Mark Black Panther (1998) #15 read'};
+    if (v === 'empty') return {tag:'EMPTY', kick:'Nothing in flight', name:'X-Men', by:'7 blocks · 81 of 2,180 read', badge:'● ready', badgeAria:'Top of Up next is ready', bk:'rd', stripe:'var(--t5)', empty:true,
+      track:{cells:xmen, head:null}, ladder:[{k:'TRACK',v:'X-Men',m:'81 / 2,180 read'},{k:'NEXT',v:'Simonson — Thor',m:'44 iss'}],
+      cta:'Start the top of Up next', ctaNote:'The top of Up next is Simonson — Thor, ready with nothing to read first.', verb:'Start Simonson — Thor #337'};
+    if (v === 'dense') return {tag:'DENSE · 641', kick:'Pick up where you left off', name:'Hickman et al. — Krakoa', by:'Dawn of X → Reign of X · 2019–22', badge:'◐ 118 / 641', badgeAria:'Reading, issue 118 of 641', bk:'rg', stripe:'var(--t5)',
+      track:{cells:xmen.concat([{n:'Krakoa',c:715,r:129}]), head:7}, block:{cells:[{n:'HoX/PoX',c:12,r:12},{n:'Krakoa',c:641,r:117},{n:'Inferno',c:4,r:0},{n:'X of Swords',c:22,r:0},{n:'Fall of X',c:36,r:0}], head:1},
+      run:{total:641, head:118, lab:()=>'X-Men (2019) #8', read:[[1,112],[115,117]], els:[[113,114]]},
+      ladder:[{k:'TRACK',v:'X-Men',m:'block 8 of 8'},{k:'BLOCK',v:'8 · Krakoa',m:'run 2 of 5'},{k:'RUN',v:'Krakoa',m:'118 / 641 · X-Men (2019) #8'}], verb:'Mark X-Men (2019) #8 read'};
+    return normal;
+  }
+  alloc(counts, head, W, min, gap) {
+    const n = counts.length, total = counts.reduce((a,b)=>a+b,0), avail = W - gap*(n-1);
+    if (n*min <= avail) {
+      const rest = avail - n*min; let x = 0;
+      return counts.map((c,i)=>{ const w = min + (total ? c/total*rest : rest/n); const it = {i, x, w, floored: c/total*avail < min}; x += w + gap; return it; });
+    }
+    let lo = Math.max(0, head-2), hi = Math.min(n-1, head+2);
+    while (hi - lo < 4) { if (lo > 0) lo--; else if (hi < n-1) hi++; else break; }
+    const items = [];
+    if (lo > 0) items.push({stub:true, from:0, to:lo-1});
+    for (let i = lo; i <= hi; i++) items.push({i});
+    if (hi < n-1) items.push({stub:true, from:hi+1, to:n-1});
+    const m = items.length, avail2 = W - gap*(m-1);
+    const keptTotal = items.filter(t=>!t.stub).reduce((a,t)=>a+counts[t.i],0);
+    const rest = avail2 - m*min; let x = 0;
+    items.forEach(t=>{ t.w = t.stub ? min : min + counts[t.i]/keptTotal*rest; t.x = x; x += t.w + gap;
+      if (t.stub) { t.count = t.to - t.from + 1; t.sum = counts.slice(t.from, t.to+1).reduce((a,b)=>a+b,0); } t.floored = false; });
+    return items;
+  }
+  niceStep(x) { for (const s of [1,2,5,10,20,50,100]) if (s >= x) return s; return 100; }
+  fit(cands, w) { for (const c of cands) { const cw = c.mono ? 6.7 : 5.9; if (c.t.length*cw + 12 <= w) return c; } return {t:'', mono:false}; }
+  renderVals() {
+    const themes = this.props.themes ?? 'both';
+    const V = {dark:"--page:#0a0c10;--surface:#12151b;--raise:#191d25;--sunk:#0d1015;--overlay:#1e232c;--ink:#e8ebf0;--ink-2:#b9c0cc;--muted:#8f98a7;--faint:#8a93a2;--faint-deco:#646d7a;--rule:#252a33;--rule-2:#323945;--line:#1c2028;--brand:#86a4ff;--brand-soft:#172039;--brand-ink:#a9bfff;--ready:#52c496;--ready-soft:#0f231a;--blocked:#e0a866;--blocked-soft:#261c10;--reading:#86a4ff;--reading-soft:#172039;--on-brand:#0a0c10;--on-ready:#0a0c10;--t1:#6f9bff;--t5:#a98aee;--t6:#4fb3cc;--m-comics:#a98aee;--sh-1:inset 0 1px 0 rgba(255,255,255,.03);--sh-2:inset 0 1px 0 rgba(255,255,255,.05),0 8px 24px -12px rgba(0,0,0,.7);--halo:0 0 0 3px rgba(134,164,255,.22),0 0 14px rgba(134,164,255,.28);--glass-bg:rgba(18,21,27,.9);--glass-edge:rgba(255,255,255,.07);--glass-hi:inset 0 1px 0 rgba(255,255,255,.05);--sans:'Inter Tight',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace;color-scheme:dark",
+      light:"--page:#f3f5f8;--surface:#fff;--raise:#f8f9fb;--sunk:#ebeef2;--overlay:#fff;--ink:#12151c;--ink-2:#3a4250;--muted:#5c6575;--faint:#5f6878;--faint-deco:#848d9b;--rule:#dfe3e9;--rule-2:#c7cdd7;--line:#eceef2;--brand:#2148c9;--brand-soft:#e8edfd;--brand-ink:#1a3aa3;--ready:#0b7a52;--ready-soft:#e3f4ec;--blocked:#8a560c;--blocked-soft:#fbefdf;--reading:#2148c9;--reading-soft:#e8edfd;--on-brand:#fff;--on-ready:#fff;--t1:#2563eb;--t5:#7c3aed;--t6:#0e7490;--m-comics:#7c3aed;--sh-1:0 1px 2px rgba(18,21,28,.04);--sh-2:0 1px 2px rgba(18,21,28,.05),0 8px 24px -12px rgba(18,21,28,.18);--halo:0 0 0 3px rgba(33,72,201,.16);--glass-bg:rgba(255,255,255,.9);--glass-edge:rgba(18,21,28,.08);--glass-hi:inset 0 1px 0 rgba(255,255,255,.6);--sans:'Inter Tight',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace;color-scheme:light"};
+    const list = themes === 'both' ? ['dark','light'] : [themes];
+    const g390 = this.geom(390), g1000 = Object.assign(this.geom(1000), {bar:false});
+    const frames = [];
+    list.forEach(t => { frames.push(Object.assign({vars:V[t], width:390}, g390)); frames.push(Object.assign({vars:V[t], width:1000}, g1000)); });
+    return { frames, cols: '390px 1000px' };
+  }
+  geom(frame) {
+    const variant = this.props.variant ?? 'normal', state = this.props.state ?? 'rest';
+    const d = this.data(variant), desk = frame >= 700;
+    const pad = desk ? 24 : 16, cardPad = desk ? 20 : 16, gutter = desk ? 72 : 44, min = desk ? 16 : 14, gap = 2;
+    const W = Math.round(frame - 2 - pad*2 - cardPad*2 - gutter);
+    const hR = desk ? 20 : 18, hRun = desk ? 28 : 24, br = desk ? 20 : 16;
+    const r1 = v => Math.round(v*10)/10;
+    const ringBase = 'inset 0 0 0 1px var(--faint-deco)', ringHead = 'inset 0 0 0 1.5px var(--brand), var(--halo)';
+    const ringFocus = 'inset 0 0 0 1.5px var(--brand), 0 0 0 2px var(--surface), 0 0 0 4px var(--brand)';
+    const rails = [], brackets = []; let y = 0, tip = {show:false};
+    const tierRail = (key, spec, kind) => {
+      const counts = spec.cells.map(c=>c.c);
+      const items = this.alloc(counts, spec.head ?? 0, W, min, gap);
+      const cells = items.map(it => {
+        if (it.stub) {
+          const unit = kind === 'track' ? 'blocks' : 'runs';
+          return {x:r1(it.x), w:r1(it.w), bg:'var(--surface)', fillW:0, labPad:0, label:'', font:'500 11px var(--mono)', labInk:'var(--muted)', dot:false, dotInk:'', ring:'none', border:'1px dashed var(--faint-deco)',
+            title:`+${it.count} ${unit} · ${it.sum.toLocaleString()} issues — open list`, stub:it};
+        }
+        const c = spec.cells[it.i], num = it.i + 1, isHead = spec.head === it.i;
+        const cands = kind === 'track'
+          ? (c.nb ? [{t:'no block'},{t:'—'}] : (c.n ? [{t:num+' · '+c.n},{t:String(num),mono:true}] : [{t:'block '+num},{t:String(num),mono:true}]))
+          : [{t:c.n+' · '+c.c},{t:c.n},{t:String(c.c),mono:true}];
+        const fillW = c.r ? Math.max(2, r1(it.w * c.r / c.c)) : 0;
+        const partial = fillW > 0 && fillW < it.w - 2;
+        const lab = this.fit(cands, partial ? it.w - fillW : it.w);
+        const onFill = fillW > 0 && !partial;
+        let ring = isHead ? ringHead : ringBase, bg = 'var(--sunk)';
+        if (state === 'focus' && isHead) ring = ringFocus;
+        const title = kind === 'track'
+          ? (c.nb ? `No block · ${c.c} issues · ${c.r} read` : `Block ${num}${c.n?' · '+c.n:''} · ${c.c} issues · ${c.r} read`)
+          : `${c.n} · ${c.c} issues · ${c.r} read`;
+        return {x:r1(it.x), w:r1(it.w), bg, fillW, labPad: partial ? fillW : 0, label:lab.t, font:(lab.mono?'500 11px var(--mono)':'500 11px var(--sans)')+(c.nb?';font-style:italic':''),
+          labInk: onFill ? 'var(--on-ready)' : (isHead ? 'var(--ink)' : 'var(--ink-2)'), dot:it.floored, dotInk: onFill ? 'var(--on-ready)' : 'var(--muted)', ring, border:'0', title, head:isHead, i:it.i};
+      });
+      if (state === 'hover' && kind === 'block' && !tip.show) {
+        const h = cells.find(c=>!c.head && !c.stub && c.i === (spec.head+2)) || cells.find(c=>!c.head && !c.stub);
+        if (h) { h.bg = 'var(--raise)'; h.ring = 'inset 0 0 0 1px var(--ink-2)'; tip = {show:true, x:gutter + Math.min(h.x, W-200), y:y - 44, text:h.title.split(' · ')[0], sub:h.title.split(' · ').slice(1).join(' · ')}; }
+      }
+      if (state === 'focus' && kind === 'block') {
+        const s = cells.find(c=>c.stub && c.stub.from > (spec.head ?? 0));
+        if (s) { s.ring = '0 0 0 2px var(--surface), 0 0 0 4px var(--brand)'; tip = {show:true, x:gutter + Math.max(0, s.x - 190), y:y + hR + 8, text:`+${s.stub.count} runs after · ${s.stub.sum.toLocaleString()} issues`, sub:'Enter opens the block list sheet'}; }
+      }
+      cells.forEach(c => this.finish(c, hR));
+      const headCell = cells.find(c=>c.head);
+      rails.push({key, y, h:hR, cells, reads:[], elses:[], showHead:false, showGhost:false, role:'slider', aria:`${key} rail`, vmin:1, vmax:spec.cells.length, vnow:(spec.head ?? 0)+1});
+      const out = {headCell, bottom:y + hR}; y += hR; return out;
+    };
+    const t = tierRail('TRACK', d.track, 'track');
+    let upper = t;
+    if (!d.two && !d.empty) { y += br; brackets.push(this.br(upper, y - br, br, W)); upper = tierRail('BLOCK', d.block, 'block'); }
+    let ticks = [], tickSp = 10, tickSp5 = 50, tickN = 0, pillX = 0, pill = '', ghostPill = '', ghostPillX = 0, showGhostPill = false, tickY = 0, numY = 0, showPill = false;
+    if (!d.empty) {
+      y += br; brackets.push(this.br(upper, y - br, br, W));
+      const R = d.run, N = R.total, ox = o => (o-1)/N*W;
+      const reads = R.read.map(([a,b]) => ({x:r1(ox(a)), w:r1(Math.max(2, ox(b+1)-ox(a))), rad:(a===1?'3px ':'0 ')+(b===N?'3px 3px ':'0 0 ')+(a===1?'3px':'0')}));
+      const elses = R.els.map(([a,b]) => ({x:r1(ox(a)), w:r1(Math.max(4, ox(b+1)-ox(a)))}));
+      const headX = R.head ? r1(ox(R.head) + W/N/2 - 1) : 0;
+      const ghostO = variant === 'dense' ? 300 : Math.round(N*0.52);
+      const scrub = state === 'scrub';
+      rails.push({key:'RUN', y, h:hRun, cells:[this.finish({x:0, w:W, bg:'var(--sunk)', fillW:0, labPad:0, label:'', font:'500 11px var(--sans)', labInk:'', dot:false, dotInk:'', ring: state==='focus' && d.two ? ringFocus : (R.head ? ringHead : ringBase), border:'0', title:`${R.name ?? d.name} · ${N} issues`}, hRun)],
+        reads, elses, showHead:!!R.head, headX, headH:hRun + 8, showGhost:scrub, ghostX:r1(ox(ghostO)), ghostH:hRun + 12,
+        role:'slider', aria:'Run rail — drag or use arrow keys to scrub', vmin:1, vmax:N, vnow: scrub ? ghostO : (R.head || N)});
+      tickN = this.niceStep(N / Math.floor(W/6));
+      tickSp = Math.round(tickN/N*W*100)/100; tickSp5 = Math.round(tickSp*5*100)/100;
+      tickY = y + hRun + 3; numY = y + hRun + 12;
+      if (R.head) { pill = `${R.head} / ${N} · ${R.lab(R.head)}`; const pw = pill.length*6.7 + 12; pillX = r1(Math.min(Math.max(headX - pw/2, 14), W - pw - 26)); showPill = true; }
+      if (scrub) { ghostPill = `${ghostO} / ${N} · ${R.lab(ghostO)}`; const pw = ghostPill.length*6.7 + 12; ghostPillX = r1(Math.min(Math.max(ox(ghostO) - pw/2, 0), W - pw)); showGhostPill = true; }
+      y = numY + 20;
+    }
+    const bkMap = {rg:['--reading-soft','--reading'], dn:['--sunk','--muted'], rd:['--ready-soft','--ready']};
+    return {
+      ariaFrame:`Telescope — ${d.tag.toLowerCase()} — ${desk?'desktop':'phone'}`,
+      frameR: desk ? 14 : 28, pad, cardPad, h1: desk ? 30 : 24, tag: d.tag, kick: d.kick, name: d.name, by: d.by, stripe: d.stripe,
+      badge: d.badge, badgeAria: d.badgeAria, badgeBg: bkMap[d.bk][0], badgeInk: bkMap[d.bk][1],
+      H: Math.round(y), W, gutter, rails, brackets, hasRun: !d.empty, tickSp, tickSp5, tickN, tickY, numY, totalTxt: d.run ? String(d.run.total) : '',
+      pill, pillX, showPill, ghostPill, ghostPillX, showGhostPill, tip,
+      ladder: d.ladder.map(l=>Object.assign({action:false}, l)), ladderCols: desk ? `repeat(${d.ladder.length}, minmax(0,1fr))` : '1fr',
+      cta: d.cta || '', ctaNote: d.ctaNote || '', ctaBg: d.ctaSec ? '--surface' : '--brand', ctaInk: d.ctaSec ? '--ink' : '--on-brand', ctaRing: d.ctaSec ? '--rule-2' : '--brand',
+      bar: !!this.props.bar, verb: d.verb
+    };
+  }
+  finish(c, h) {
+    const layers = [];
+    if (c.dot) layers.push('radial-gradient(circle at 50% 50%, ' + c.dotInk + ' 0 2px, transparent 2.5px)');
+    if (c.fillW) layers.push('linear-gradient(90deg, var(--ready) 0 ' + c.fillW + 'px, transparent ' + c.fillW + 'px)');
+    layers.push('linear-gradient(' + c.bg + ',' + c.bg + ')');
+    c.bgImg = layers.join(', ');
+    c.labPad = (c.labPad || 0) + 6; c.lh = h - (c.border && c.border !== '0' ? 2 : 0);
+    return c;
+  }
+  br(upper, top, h, W) {
+    const hc = upper.headCell; const x1 = hc ? hc.x : 0, x2 = hc ? hc.x + hc.w : W;
+    return {y: top, h, vb:`0 0 ${W} ${h}`, pts:`${x1},0 ${x2},0 ${W},${h} 0,${h}`, d:`M${x1} 0 L0 ${h} M${x2} 0 L${W} ${h}`};
+  }
+}
+</script>
+</body>
+</html>

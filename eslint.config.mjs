@@ -7,5 +7,7 @@ import nextTs from "eslint-config-next/typescript";
 export default defineConfig([
   ...nextVitals,
   ...nextTs,
-  globalIgnores([".next/**", "node_modules/**", "drizzle/**", "seed/**", "next-env.d.ts"]),
+  // design/ holds reference specs, not app code; support.js there is the
+  // generated Claude Design runtime and is kept exactly as delivered (D-31).
+  globalIgnores([".next/**", "node_modules/**", "drizzle/**", "seed/**", "design/**", "next-env.d.ts"]),
 ]);

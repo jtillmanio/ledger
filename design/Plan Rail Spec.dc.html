@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"><link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;650;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"><style>body{margin:0;background:#1b1d22;color:#e6e8ec;font-family:'Inter Tight',system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#a9bfff;text-decoration:none}a:hover{text-decoration:underline}</style></helmet>
+<section data-screen-label="A4 Plan rail" style="background:#1b1d22;width:max-content;min-width:100%;box-sizing:border-box;padding:48px 56px 64px">
+  <div style="font:500 11px/14px 'JetBrains Mono',monospace;letter-spacing:.08em;color:#8a93a2"><a href="Style Guide.dc.html">STYLE GUIDE</a> · WORKSTREAM A4 · PLAN RAIL</div>
+  <h1 style="font:700 36px/40px 'Inter Tight';letter-spacing:-.03em;margin:8px 0 8px;color:#fff">Plan rail — the telescope's vocabulary, measured in time</h1>
+  <p style="font:400 14px/20px 'Inter Tight';color:#b9c0cc;max-width:80ch;margin:0 0 28px;text-wrap:pretty">One <span style="font-family:'JetBrains Mono'">button.qb</span> markup with <span style="font-family:'JetBrains Mono'">--hue</span>. Cells share the telescope's radius 3, gap 2, dashed-means-folded, focus ring and hatch. Comics measure sequence (a horizontal rail); books measure time (a column per period against a capacity rule). Sub-24px neighbours merge into a <span style="font-family:'JetBrains Mono'">+N · Nk</span> stack. A single sub-24px block keeps its drawn height and gets a 24px hit area through <span style="font-family:'JetBrains Mono'">::after</span>.</p>
+  <div style="display:flex;flex-direction:column;gap:40px">
+    <sc-for list="{{ rows }}" as="row" hint-placeholder-count="2">
+      <div id="{{ row.id }}" style="display:flex;gap:28px;align-items:flex-start">
+        <div style="width:220px;flex:none;padding-top:8px">
+          <a href="#{{ row.id }}" style="font:600 10.5px/14px 'JetBrains Mono';padding:3px 7px;background:#2c3038;color:#e6e8ec;border-radius:5px;display:inline-block">{{ row.id }}</a>
+          <div style="font:600 15px/20px 'Inter Tight';color:#fff;margin-top:8px">{{ row.title }}</div>
+          <div style="font:400 13px/18px 'Inter Tight';color:#9aa3b2;margin-top:6px;text-wrap:pretty">{{ row.note }}</div>
+        </div>
+        <dc-import name="PlanRail" gran="{{ row.gran }}" state="{{ row.state }}" themes="{{ row.themes }}" hint-size="1418px,600px" style="flex:none"></dc-import>
+      </div>
+    </sc-for>
+  </div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return { rows: [
+      {id:'A4.1', gran:'quarter', state:'rest', themes:'both', title:'Quarter — held', note:'The rule is 760k a quarter. The part of a block above the rule is hatched amber. Estimated blocks have a dotted top edge and a ~ prefix. The fifth lane holds year-only entries, dashed amber, because a decision is still open. The phone drops per-quarter room badges and shows only the overage.'},
+      {id:'A4.2', gran:'quarter', state:'settled', themes:'both', title:'Quarter — settled stretch year', note:'After Accept, the hatch turns grey and the decision card goes calm (.decide.settled) with Undo. The overage is still drawn: the data stays honest, only the held state clears.'},
+      {id:'A4.3', gran:'month', state:'rest', themes:'both', title:'Month granularity', note:'Three month columns per quarter against a 253k monthly rule. The phone scroll-snaps horizontally inside the card, never the page. The desktop fits all twelve plus the no-month lane.'},
+      {id:'A4.4', gran:'quarter', state:'drag', themes:'dark', title:'Desktop drag — ghost and delta', note:'The lifted block rotates −1.5° on --sh-2 with a dashed --brand outline. Its source slot keeps a dashed placeholder. The dropdelta output (aria-live) reads Q3 +99k → 514k / 760k before release. The phone uses the Move sheet instead.'}
+    ] };
+  }
+}
+</script>
+</body>
+</html>

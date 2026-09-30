@@ -18,6 +18,12 @@ notes column before changing a layout. Where a task description and the mockup
 disagree, the mockup wins. Pull up one screen with `scripts/screen.sh <id>`
 (ids in `design/mockups-index.md`) rather than reading the whole file.
 
+The styling blueprint (D-31) is `design/STYLE_GUIDE.md`, `design/tokens.css`
+and the `design/*.dc.html` spec pages, indexed by `docs/DESIGN.md`. It wins on
+tokens, type, elevation, motion, telescope and plan-rail geometry and component
+states; the mockup wins on layout and copy. Read `docs/DESIGN.md` before
+building a component.
+
 Phone at 360–412px is the primary device and every screen is designed there
 first. A desktop layout that a phone layout degrades into is the wrong answer.
 
@@ -43,8 +49,11 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
 - **The thumb bar is fixed at the bottom of every dashboard and the run
   detail**, same position, same primary verb slot. Marking what you just read
   is one tap and reachable with a thumb. Nothing displaces it. On desktop
-  (900px+) the three dashboards carry the same verbs in the page header,
-  primary last; the run detail keeps the bottom bar at every width (D-25). The
+  (1024px+) the three dashboards carry the same verbs in the page header,
+  primary last; a tablet (768–1023px) keeps the bottom bar and gets a
+  navigation rail instead of the top media bar (D-33); the run detail keeps
+  the bottom bar at every width (D-25). Hover, drag and shift-click need
+  `(pointer:fine)` and always have a touch route. The
   mark verb names the issue by its label, never by its reading-order position
   (`Mark X-Men (2019) #8 read`; `#141` alone only on a single-series run).
 - **Position is drawn, not counted.** Three nested positions (issue in run, run
@@ -55,9 +64,11 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
   N soft unread`), `ready_all` `● ready`, `reading` `◐ n / N` with no
   prerequisite badge beside it, `read` `✓`. Glyph plus text, never colour alone.
   ARCHITECTURE §4.
-- **Telescope cells have a floor** — 14px phone, 16px desktop, overflow folded
-  into `+N runs` stubs — and read state is drawn as segments, not one fill. The
-  geometry will be `src/components/telescope/layout.ts` (task 2.5), not a hand-drawn SVG.
+- **The telescope is horizontal at every width** (D-31) and **its cells have a
+  floor** — 14px phone, 16px desktop, overflow folded into `+N runs` stubs — and
+  read state is drawn as segments, not one fill. A run with no block drops the
+  block rail and keeps everything else (2-rail). The geometry will be
+  `src/components/telescope/layout.ts` (task 2.5), not a hand-drawn SVG.
 - **Contrast and targets are tokens, not taste.** `--faint` is text-safe
   (4.5:1 or more on every surface, `#606979`); `--faint-deco` is for rules; thumb bar and icon buttons are 44px,
   nothing interactive under 24px; every control is a real button or link with a
@@ -79,7 +90,9 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
 ## Style
 
 - Plain CSS with the custom properties in `src/app/globals.css`. No Tailwind, no
-  CSS-in-JS. The token set there is the same one as `design/mockups.html`.
+  CSS-in-JS. The token set there is the same one as `design/mockups.html`, and
+  from task 1.8a its values are `design/tokens.css`'s. Tailwind names in the
+  design files are vocabulary only (`docs/DESIGN.md` §4); never ship them.
 - **Colour is functional, and there are exactly four meanings.** `--ready`
   green is read/done. `--brand` blue is where you are, and the primary action.
   `--blocked` amber is *held* — either a hard prerequisite is unread or a

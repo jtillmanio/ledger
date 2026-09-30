@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="display:grid;grid-template-columns:390px 1000px;gap:28px;align-items:start">
+<sc-for list="{{ frames }}" as="f" hint-placeholder-count="2">
+<div role="figure" aria-label="{{ f.aria }}" style="{{ f.vars }};width:{{ f.width }}px;box-sizing:border-box;background:var(--page);color:var(--ink);font-family:var(--sans);border:1px solid var(--rule);border-radius:{{ f.frameR }}px;padding:{{ f.pad }}px">
+  <div style="display:flex;align-items:baseline;gap:10px;margin:0 0 16px">
+    <span style="font:700 {{ f.h1 }}px/1.15 var(--sans);letter-spacing:-.028em">Specimen</span>
+    <span style="margin-left:auto;font:500 11px/14px var(--mono);letter-spacing:.08em;color:var(--faint)">{{ f.tag }}</span>
+  </div>
+  <div style="display:grid;grid-template-columns:{{ f.grid }};gap:16px;align-items:start">
+
+    <!-- B2 type -->
+    <div style="background:var(--surface);border-radius:16px;box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);padding:16px">
+      <div style="font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:12px">B2 · Type scale <span style="font:500 11px/14px var(--mono);letter-spacing:0;color:var(--faint);text-transform:none;margin-left:6px">11px floor</span></div>
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div><div style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--faint)">Pick up where you left off</div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:2px">kicker · 11/14 · mono 500 · +0.08em · caps</div></div>
+        <div><div style="font:500 12px/16px var(--sans);color:var(--muted)">Updated from Metron · 2 min ago</div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:2px">caption · 12/16 · 500</div></div>
+        <div><div style="font:400 13px/18px var(--sans);color:var(--muted)">Chris Claremont · 1975–91</div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:2px">body-sm · 13/18 · 400 · muted</div></div>
+        <div><div style="font:400 14px/20px var(--sans);letter-spacing:-.003em">Mark through here, then choose a date.</div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:2px">body · 14/20 · 400 · −0.003em</div></div>
+        <div><div style="font:600 15px/20px var(--sans);letter-spacing:-.006em">Claremont — Uncanny X-Men</div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:2px">row-title · 15/20 · 600 · −0.006em</div></div>
+        <div><div style="font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Also in flight <span style="font:500 11px/14px var(--mono);letter-spacing:0;color:var(--muted)">2</span></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:2px">h3.s section · 12/16 · 600 · +0.06em · caps · ink-2</div></div>
+        <div><div style="font:700 {{ f.h1 }}px/1.15 var(--sans);letter-spacing:-.028em">Comics</div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:2px">h1.t title · 24/28 phone · 30/34 desk · 700 · −0.028em</div></div>
+        <div><div style="font:500 {{ f.disp }}px/1 var(--mono);letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--blocked)">108%</div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">display · 40/40 phone · 48/48 desk · mono 500 · −0.04em</div></div>
+      </div>
+    </div>
+
+    <!-- B2 numbers -->
+    <div style="background:var(--surface);border-radius:16px;box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);padding:16px">
+      <div style="font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:12px">B2 · Numbers, estimates, truncation</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px 18px;font:500 14px/20px var(--mono);font-variant-numeric:tabular-nums">
+        <span>381</span><span>42 / 381</span><span>#141</span><span>#337–340</span><span>760k</span><span><span style="color:var(--muted);font-weight:400">~</span>65k</span><span style="color:var(--muted)">10,834</span>
+      </div>
+      <div style="font:400 12px/16px var(--sans);color:var(--muted);margin-top:8px;text-wrap:pretty">Counts, ranges and labels are tabular mono. An estimate keeps the same weight for the number and sets <span style="font-family:var(--mono)">~</span> at 400 in --muted, so it reads as softer, never as a different figure.</div>
+      <div style="margin-top:14px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;align-items:baseline;gap:0;max-width:260px;padding:8px 10px;border-radius:8px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule)"><span style="font:600 14px/20px var(--mono);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">X-Men (2019)</span><span style="font:600 14px/20px var(--mono);flex:none">&nbsp;#8</span></div>
+        <div style="display:flex;align-items:baseline;gap:0;max-width:260px;padding:8px 10px;border-radius:8px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule)"><span style="font:600 14px/20px var(--mono);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Astonishing X-Men (2004) Annual</span><span style="font:600 14px/20px var(--mono);flex:none">&nbsp;#1</span></div>
+        <div style="font:400 11px/14px var(--mono);color:var(--faint)">series truncates · issue number never does</div>
+      </div>
+      <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="border-radius:8px;box-shadow:inset 0 0 0 1px var(--rule);overflow:hidden">
+          <div style="font:500 11px/14px var(--mono);color:var(--faint);padding:6px 10px;background:var(--raise)">comfortable · 48px</div>
+          <div style="height:48px;display:flex;align-items:center;gap:10px;padding:0 10px;border-top:1px solid var(--line)"><span style="width:20px;height:20px;border-radius:50%;background:var(--ready)"></span><span style="font:600 14px/20px var(--mono)">#140</span></div>
+          <div style="height:48px;display:flex;align-items:center;gap:10px;padding:0 10px;border-top:1px solid var(--line)"><span style="width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--brand),0 0 0 4px var(--brand-soft)"></span><span style="font:600 14px/20px var(--mono)">#141</span></div>
+        </div>
+        <div style="border-radius:8px;box-shadow:inset 0 0 0 1px var(--rule);overflow:hidden">
+          <div style="font:500 11px/14px var(--mono);color:var(--faint);padding:6px 10px;background:var(--raise)">compact · 32px · desk</div>
+          <div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 10px;border-top:1px solid var(--line)"><span style="width:16px;height:16px;border-radius:50%;background:var(--ready)"></span><span style="font:600 13px/18px var(--mono)">#140</span></div>
+          <div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 10px;border-top:1px solid var(--line)"><span style="width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--brand)"></span><span style="font:600 13px/18px var(--mono)">#141</span></div>
+          <div style="height:32px;display:flex;align-items:center;gap:10px;padding:0 10px;border-top:1px solid var(--line)"><span style="width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--muted)"></span><span style="font:600 13px/18px var(--mono)">#142</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- B1 elevation -->
+    <div style="background:var(--surface);border-radius:16px;box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);padding:16px">
+      <div style="font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:12px">B1 · Elevation ladder</div>
+      <div style="background:var(--page);border-radius:12px;padding:12px;box-shadow:inset 0 0 0 1px var(--rule);position:relative">
+        <div style="font:500 11px/14px var(--mono);color:var(--faint)">--page · canvas</div>
+        <div style="margin-top:8px;height:10px;border-radius:999px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--rule)"><i style="display:block;width:44%;height:100%;border-radius:999px;background:var(--ready)"></i></div>
+        <div style="font:500 11px/14px var(--mono);color:var(--faint);margin-top:4px">--sunk · recessed: meter tracks, cells, skeleton</div>
+        <div style="margin-top:10px;background:var(--surface);border-radius:12px;padding:12px;box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+          <div style="font:500 11px/14px var(--mono);color:var(--faint)">--surface · tier 0, grounded</div>
+          <div style="margin-top:8px;background:var(--raise);border-radius:8px;padding:8px 10px;box-shadow:inset 0 0 0 1px var(--rule)"><div style="font:500 11px/14px var(--mono);color:var(--faint)">--raise · hover, selected, headers</div></div>
+        </div>
+        <div style="margin:-18px 0 0 auto;position:relative;width:62%;background:var(--overlay);border-radius:12px;padding:12px;box-shadow:var(--sh-3),inset 0 0 0 1px var(--rule-2)">
+          <div style="font:500 11px/14px var(--mono);color:var(--faint)">--overlay · sh-3 · sheets, menus</div>
+        </div>
+      </div>
+      <div style="font:400 12px/16px var(--sans);color:var(--muted);margin-top:10px;text-wrap:pretty">Light separates with soft drop shadows; dark separates with tone and a 1px top highlight. A surface is <b style="color:var(--ink);font-weight:600">bordered</b> when it sits on the page, <b style="color:var(--ink);font-weight:600">tonal</b> when it sits inside a surface, and <b style="color:var(--ink);font-weight:600">neither</b> when it is a row in a group.</div>
+    </div>
+
+    <!-- B3 containers -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Also in flight</span><span style="font:500 11px/14px var(--mono);color:var(--muted)">2</span><a href="#" style="margin-left:auto;font:500 13px/18px var(--sans);color:var(--brand);text-decoration:none">All 2</a></div>
+      <div style="background:var(--surface);border-radius:12px;box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+        <div style="position:relative;display:flex;gap:12px;align-items:center;padding:12px 14px;min-height:48px">
+          <span style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--t5)"></span>
+          <span style="flex:none;width:36px;height:54px;border-radius:6px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--rule-2);display:grid;place-items:center;font:500 11px/1 var(--mono);color:var(--muted)">AXM</span>
+          <div style="flex:1;min-width:0"><div style="display:flex;align-items:baseline;gap:8px"><span style="font:600 15px/20px var(--sans);letter-spacing:-.006em;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Whedon — Astonishing X-Men</span><span style="margin-left:auto;font:500 12px/16px var(--mono);color:var(--muted);white-space:nowrap">14 left</span></div>
+            <div style="font:400 13px/18px var(--sans);color:var(--muted)">Joss Whedon · 2004–08</div>
+            <div style="margin-top:6px;height:5px;border-radius:999px;background:var(--sunk)"><i style="display:block;width:44%;height:100%;border-radius:999px;background:var(--ready)"></i></div></div>
+          <button style="flex:none;min-height:32px;padding:0 12px;border-radius:8px;border:0;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule-2);font:600 13px/18px var(--sans)">Read #12</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--raise);border-top:1px solid var(--line);border-bottom:1px solid var(--line)"><span style="font:600 13px/18px var(--sans)">Days of Future Past</span><span style="height:5px;width:52px;border-radius:999px;background:var(--sunk);overflow:hidden"><i style="display:block;width:18%;height:100%;background:var(--ready)"></i></span><span style="margin-left:auto;font:500 11px/14px var(--mono);color:var(--muted)">4 / 22</span></div>
+        <div style="display:flex;align-items:center;gap:12px;padding:0 14px;min-height:48px"><span style="width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--muted)"></span><span style="font:600 14px/20px var(--mono)">Uncanny X-Men #142</span><span style="margin-left:auto;display:inline-flex;align-items:center;gap:4px;font:500 11px/14px var(--sans);color:var(--muted);border:1px dashed var(--faint-deco);border-radius:6px;padding:1px 6px">↺ read in Byrne — X-Men</span></div>
+      </div>
+      <div style="font:400 11px/14px var(--mono);color:var(--faint)">group r12 · row 48 · meter 5px --ready · .emeter 52×5 · read-elsewhere hint grey dashed</div>
+      <div style="background:var(--overlay);border-radius:16px 16px 0 0;box-shadow:var(--sh-3),inset 0 0 0 1px var(--rule-2);padding:6px 14px 14px">
+        <div style="width:36px;height:4px;border-radius:999px;background:var(--rule-2);margin:2px auto 8px"></div>
+        <div style="display:flex;align-items:center;gap:8px"><span style="font:650 17px/22px var(--sans)">Uncanny X-Men #141</span><button aria-label="Close" style="margin-left:auto;width:44px;height:44px;border-radius:8px;border:0;background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule);color:var(--ink-2);font:500 16px/1 var(--sans)">×</button></div>
+        <div style="font:400 13px/18px var(--sans);color:var(--muted)">Sheet · --overlay · r16 top · grab 36×4 · close 44</div>
+      </div>
+    </div>
+
+    <!-- B5 badges + chips -->
+    <div style="background:var(--surface);border-radius:16px;box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);padding:16px">
+      <div style="font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:12px">B5 · Readiness badges</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <span aria-label="Blocked: 82 runs first" style="display:inline-flex;align-items:center;gap:4px;font:600 11px/14px var(--mono);padding:4px 8px;border-radius:6px;background:var(--blocked-soft);color:var(--blocked);box-shadow:inset 0 0 0 1px var(--blocked)">⊘ 82 runs first</span>
+        <span aria-label="Ready, 1 soft prerequisite unread" style="display:inline-flex;align-items:center;gap:4px;font:600 11px/14px var(--mono);padding:4px 8px;border-radius:6px;background:var(--surface);color:var(--ready);box-shadow:inset 0 0 0 1px var(--ready)">○ ready · 1 soft unread</span>
+        <span aria-label="Ready" style="display:inline-flex;align-items:center;gap:4px;font:600 11px/14px var(--mono);padding:4px 8px;border-radius:6px;background:var(--ready-soft);color:var(--ready)">● ready</span>
+        <span aria-label="Reading, 42 of 381" style="display:inline-flex;align-items:center;gap:4px;font:600 11px/14px var(--mono);padding:4px 8px;border-radius:6px;background:var(--reading-soft);color:var(--reading)">◐ 42 / 381</span>
+        <span aria-label="Read, September 2026" style="display:inline-flex;align-items:center;gap:4px;font:600 11px/14px var(--mono);padding:4px 8px;border-radius:6px;background:var(--sunk);color:var(--muted);box-shadow:inset 0 0 0 1px var(--rule)">✓ read · Sep 2026</span>
+      </div>
+      <div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:8px">glyph + text + aria-label on every state · amber only for blocked · blocked is a button → Why blocked?</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:14px">
+        <span style="font:500 11px/14px var(--mono);padding:4px 8px;border-radius:6px;background:var(--sunk);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--rule)">costs 44</span>
+        <span style="font:500 11px/14px var(--mono);padding:4px 8px;border-radius:6px;background:var(--sunk);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--rule)">opens 2</span>
+        <span style="font:500 11px/14px var(--mono);padding:4px 8px;border-radius:6px;background:var(--blocked-soft);color:var(--blocked)">costs 4,173</span>
+        <span style="display:inline-flex;align-items:center;gap:5px;font:500 11px/14px var(--sans);padding:4px 8px;border-radius:6px;background:var(--sunk);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--rule)"><i style="width:8px;height:8px;border-radius:2px;background:var(--t5)"></i>X-Men</span>
+      </div>
+      <div style="font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin:18px 0 10px">Chips · filter</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <button aria-pressed="true" style="min-height:32px;padding:0 12px;border-radius:999px;border:0;background:var(--ink);color:var(--page);font:600 13px/18px var(--sans)">Ready</button>
+        <button aria-pressed="false" style="min-height:32px;padding:0 12px;border-radius:999px;border:0;background:var(--surface);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--rule-2);font:500 13px/18px var(--sans)">Owned</button>
+        <button aria-pressed="false" style="min-height:32px;padding:0 12px;border-radius:999px;border:0;background:var(--raise);color:var(--ink);box-shadow:inset 0 0 0 1px var(--faint-deco);font:500 13px/18px var(--sans)">Under 60 · hover</button>
+        <button aria-pressed="false" style="min-height:32px;padding:0 12px;border-radius:999px;border:0;background:var(--surface);color:var(--ink-2);box-shadow:inset 0 0 0 1px var(--rule-2),0 0 0 2px var(--surface),0 0 0 4px var(--brand);font:500 13px/18px var(--sans)">Thor · focus</button>
+      </div>
+      <div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:8px">selected = neutral inverse (ink on page), never --brand fill: blue is the primary action</div>
+    </div>
+
+    <!-- B5 buttons -->
+    <div style="background:var(--surface);border-radius:16px;box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);padding:16px">
+      <div style="font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:12px">B5 · Buttons — rest · hover · pressed · focus · unavailable</div>
+      <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;align-items:center">
+        <button style="min-height:44px;border-radius:8px;border:0;background:var(--brand);color:var(--on-brand);font:600 13px/18px var(--sans)">Mark</button>
+        <button style="min-height:44px;border-radius:8px;border:0;background:var(--brand-ink);color:var(--on-brand);font:600 13px/18px var(--sans)">Mark</button>
+        <button style="min-height:44px;border-radius:8px;border:0;background:var(--brand);color:var(--on-brand);font:600 13px/18px var(--sans);transform:translateY(1px);box-shadow:inset 0 2px 4px rgba(0,0,0,.25)">Mark</button>
+        <button style="min-height:44px;border-radius:8px;border:0;background:var(--brand);color:var(--on-brand);font:600 13px/18px var(--sans);box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--brand)">Mark</button>
+        <button aria-disabled="true" style="min-height:44px;border-radius:8px;border:0;background:var(--brand);color:var(--on-brand);font:600 13px/18px var(--sans);opacity:.45;cursor:not-allowed">Mark</button>
+        <button style="min-height:44px;border-radius:8px;border:0;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule-2);font:600 13px/18px var(--sans)">Batch</button>
+        <button style="min-height:44px;border-radius:8px;border:0;background:var(--raise);color:var(--ink);box-shadow:inset 0 0 0 1px var(--faint-deco);font:600 13px/18px var(--sans)">Batch</button>
+        <button style="min-height:44px;border-radius:8px;border:0;background:var(--sunk);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule-2);font:600 13px/18px var(--sans);transform:translateY(1px)">Batch</button>
+        <button style="min-height:44px;border-radius:8px;border:0;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule-2),0 0 0 2px var(--surface),0 0 0 4px var(--brand);font:600 13px/18px var(--sans)">Batch</button>
+        <button aria-disabled="true" style="min-height:44px;border-radius:8px;border:0;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule-2);font:600 13px/18px var(--sans);opacity:.45">Batch</button>
+        <button style="min-height:44px;border-radius:8px;border:0;background:var(--danger-soft);color:var(--danger);font:600 13px/18px var(--sans)">Drop</button>
+        <button style="min-height:44px;border-radius:8px;border:0;background:var(--danger);color:var(--on-danger);font:600 13px/18px var(--sans)">Drop</button>
+        <button style="min-height:44px;border-radius:8px;border:0;background:var(--danger);color:var(--on-danger);font:600 13px/18px var(--sans);transform:translateY(1px);box-shadow:inset 0 2px 4px rgba(0,0,0,.25)">Drop</button>
+        <button style="min-height:44px;border-radius:8px;border:0;background:var(--danger-soft);color:var(--danger);font:600 13px/18px var(--sans);box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--brand)">Drop</button>
+        <button aria-disabled="true" style="min-height:44px;border-radius:8px;border:0;background:var(--danger-soft);color:var(--danger);font:600 13px/18px var(--sans);opacity:.45">Drop</button>
+      </div>
+      <div style="font:400 12px/16px var(--sans);color:var(--muted);margin-top:10px;text-wrap:pretty">Unavailable is <span style="font-family:var(--mono)">aria-disabled</span> with a visible reason underneath (<i>Resolve 2 lines to add</i>), never a silent <span style="font-family:var(--mono)">disabled</span>. Hover 100ms, pressed = 1px down, focus = 2px ring outside a 2px gap. Red only in sheets and review tables — never on a dashboard.</div>
+    </div>
+
+    <!-- B5 controls -->
+    <div style="background:var(--surface);border-radius:16px;box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);padding:16px">
+      <div style="font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:12px">B5 · Tabs, segmented, switch, stepper</div>
+      <div role="tablist" aria-label="Status" style="display:flex;gap:18px;border-bottom:1px solid var(--rule)">
+        <a role="tab" aria-selected="true" href="#" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;font:600 14px/20px var(--sans);color:var(--ink);text-decoration:none;box-shadow:inset 0 -2px 0 var(--m-comics)">In flight <span style="font:500 11px/14px var(--mono);color:var(--muted)">2</span></a>
+        <a role="tab" aria-selected="false" href="#" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;font:500 14px/20px var(--sans);color:var(--muted);text-decoration:none">Up next <span style="font:500 11px/14px var(--mono)">12</span></a>
+        <a role="tab" aria-selected="false" href="#" style="display:inline-flex;align-items:center;gap:6px;min-height:44px;font:500 14px/20px var(--sans);color:var(--muted);text-decoration:none">Done <span style="font:500 11px/14px var(--mono)">31</span></a>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin-top:16px">
+        <div role="radiogroup" aria-label="Order" style="display:inline-flex;padding:2px;border-radius:8px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--rule)">
+          <button role="radio" aria-checked="true" style="min-height:32px;padding:0 12px;border:0;border-radius:6px;background:var(--surface);color:var(--ink);box-shadow:var(--sh-1),inset 0 0 0 1px var(--rule);font:600 13px/18px var(--sans)">Release</button>
+          <button role="radio" aria-checked="false" style="min-height:32px;padding:0 12px;border:0;border-radius:6px;background:transparent;color:var(--muted);font:500 13px/18px var(--sans)">Chronological</button>
+        </div>
+        <button role="switch" aria-checked="true" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;border:0;background:none;color:var(--ink-2);font:500 13px/18px var(--sans);padding:0"><span style="position:relative;width:36px;height:20px;border-radius:999px;background:var(--brand)"><i style="position:absolute;top:2px;left:18px;width:16px;height:16px;border-radius:50%;background:var(--on-brand)"></i></span>Show 27 hard-blocked</button>
+        <button role="switch" aria-checked="false" style="display:inline-flex;align-items:center;gap:8px;min-height:44px;border:0;background:none;color:var(--ink-2);font:500 13px/18px var(--sans);padding:0"><span style="position:relative;width:36px;height:20px;border-radius:999px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--faint-deco)"><i style="position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--muted)"></i></span>Covers</button>
+        <div role="group" aria-label="Minutes a day" style="display:inline-flex;align-items:center;gap:2px;padding:2px;border-radius:8px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--rule)">
+          <button aria-label="Decrease" style="width:32px;height:32px;border-radius:6px;border:0;background:var(--surface);box-shadow:var(--sh-1),inset 0 0 0 1px var(--rule);color:var(--ink);font:600 15px/1 var(--sans)">−</button>
+          <output style="min-width:44px;text-align:center;font:500 14px/20px var(--mono)">45</output>
+          <button aria-label="Increase" style="width:32px;height:32px;border-radius:6px;border:0;background:var(--surface);box-shadow:var(--sh-1),inset 0 0 0 1px var(--rule);color:var(--ink);font:600 15px/1 var(--sans)">+</button>
+        </div>
+      </div>
+      <div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:10px">tab underline = --m-comics (medium accent) · segmented = raised pill on --sunk · 32px controls expand to 44px hit areas</div>
+    </div>
+
+    <!-- B4 glass -->
+    <div style="background:var(--surface);border-radius:16px;box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);padding:16px">
+      <div style="font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:12px">B4 · Glass chrome — with blur · fallback</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="position:relative;height:210px;border-radius:12px;overflow:hidden;background:var(--page);box-shadow:inset 0 0 0 1px var(--rule)">
+          <div style="position:absolute;inset:0;padding:40px 8px 0;display:flex;flex-direction:column;gap:6px">
+            <div style="height:40px;border-radius:8px;background:#ffffff"></div>
+            <div style="height:40px;border-radius:8px;background:var(--t5)"></div>
+            <div style="height:40px;border-radius:8px;background:var(--t4)"></div>
+            <div style="height:40px;border-radius:8px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule)"></div>
+          </div>
+          <div style="position:absolute;left:0;right:0;top:0;height:44px;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--glass-edge);box-shadow:var(--glass-hi)"><b style="font:700 13px/1 var(--sans)">Ledger</b><span style="margin-left:auto;font:600 12px/1 var(--sans);box-shadow:inset 0 -2px 0 var(--m-comics);padding:6px 0">Comics</span><span style="font:500 12px/1 var(--sans);color:var(--ink-2)">Books</span></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;display:flex;gap:6px;padding:8px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);-webkit-backdrop-filter:blur(20px) saturate(1.4);border-top:1px solid var(--glass-edge);box-shadow:var(--glass-hi)"><span style="flex:1;min-height:36px;border-radius:8px;background:var(--brand);color:var(--on-brand);display:grid;place-items:center;font:600 12px/1 var(--sans)">Mark #141 read</span></div>
+        </div>
+        <div style="position:relative;height:210px;border-radius:12px;overflow:hidden;background:var(--page);box-shadow:inset 0 0 0 1px var(--rule)">
+          <div style="position:absolute;inset:0;padding:40px 8px 0;display:flex;flex-direction:column;gap:6px">
+            <div style="height:40px;border-radius:8px;background:#ffffff"></div>
+            <div style="height:40px;border-radius:8px;background:var(--t5)"></div>
+            <div style="height:40px;border-radius:8px;background:var(--t4)"></div>
+          </div>
+          <div style="position:absolute;left:0;right:0;top:0;height:44px;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--surface);border-bottom:1px solid var(--rule)"><b style="font:700 13px/1 var(--sans)">Ledger</b><span style="margin-left:auto;font:600 12px/1 var(--sans);box-shadow:inset 0 -2px 0 var(--m-comics);padding:6px 0">Comics</span><span style="font:500 12px/1 var(--sans);color:var(--ink-2)">Books</span></div>
+          <div style="position:absolute;left:0;right:0;bottom:0;display:flex;gap:6px;padding:8px;background:var(--surface);border-top:1px solid var(--rule)"><span style="flex:1;min-height:36px;border-radius:8px;background:var(--brand);color:var(--on-brand);display:grid;place-items:center;font:600 12px/1 var(--sans)">Mark #141 read</span></div>
+        </div>
+      </div>
+      <div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:8px">left: --glass-bg α.90 · blur 20 · saturate 1.4 · 1px edge + inner highlight · right: solid fallback (no backdrop-filter, or prefers-reduced-transparency)</div>
+      <div style="position:relative;height:150px;margin-top:12px;border-radius:12px;overflow:hidden;background:var(--page);box-shadow:inset 0 0 0 1px var(--rule)">
+        <div style="padding:10px;display:flex;flex-direction:column;gap:6px"><div style="height:30px;border-radius:8px;background:var(--surface)"></div><div style="height:30px;border-radius:8px;background:var(--surface)"></div></div>
+        <div style="position:absolute;inset:0;background:var(--scrim)"></div>
+        <div style="position:absolute;left:0;right:0;bottom:0;height:96px;background:var(--overlay);border-radius:16px 16px 0 0;box-shadow:var(--sh-3),inset 0 1px 0 var(--glass-edge);padding:6px 12px"><div style="width:36px;height:4px;border-radius:999px;background:var(--rule-2);margin:2px auto 8px"></div><div style="font:650 15px/20px var(--sans)">Batch</div><div style="font:400 12px/16px var(--sans);color:var(--muted)">Sheets are solid --overlay over a --scrim; the scrim may take backdrop-filter:blur(2px). Never blur a data surface.</div></div>
+      </div>
+    </div>
+
+    <!-- B5 feedback + states -->
+    <div style="background:var(--surface);border-radius:16px;box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);padding:16px;display:flex;flex-direction:column;gap:10px">
+      <div style="font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">B5 · Feedback and states</div>
+      <div role="status" aria-live="polite" style="position:relative;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--toast-bg);color:var(--toast-ink);box-shadow:var(--sh-2),inset 0 0 0 1px var(--rule-2);font:500 13px/18px var(--sans);overflow:hidden">Marked #141 read<a href="#" style="margin-left:auto;color:var(--toast-link);font-weight:700;text-decoration:none">Undo</a><i style="position:absolute;left:0;bottom:0;height:2px;width:62%;background:var(--brand)"></i></div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;font:500 12px/16px var(--sans);color:var(--ink-2)">
+        <span role="status" style="display:inline-flex;align-items:center;gap:6px"><i style="width:6px;height:6px;border-radius:50%;background:var(--ready)"></i>Synced</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:6px;height:6px;border-radius:50%;background:var(--blocked)"></i>Offline</span>
+        <span style="display:inline-flex;align-items:center;gap:6px"><i style="width:6px;height:6px;border-radius:50%;background:var(--blocked)"></i>Offline · 3 marks queued</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;background:var(--blocked-soft);color:var(--blocked);font:600 12px/16px var(--sans);box-shadow:inset 0 0 0 1px var(--blocked)"><i style="width:6px;height:6px;border-radius:50%;background:var(--blocked)"></i>Offline · 3 marks queued · they send when you reconnect</div>
+      <div role="status" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--blocked-soft);box-shadow:inset 0 0 0 1px var(--blocked);font:400 13px/18px var(--sans);color:var(--ink)"><span style="font:600 12px/1 var(--mono);color:var(--blocked)">40s</span>Metron is busy, retrying<button style="margin-left:auto;min-height:32px;padding:0 10px;border-radius:8px;border:0;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule-2);font:600 12px/16px var(--sans)">Type it instead</button></div>
+      <div role="status" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);font:400 13px/18px var(--sans);color:var(--ink)"><span style="width:18px;height:18px;border-radius:50%;box-shadow:inset 0 0 0 1.5px var(--muted);display:grid;place-items:center;font:700 11px/1 var(--sans);color:var(--muted)">×</span>Metron didn't answer<button style="margin-left:auto;min-height:32px;padding:0 10px;border-radius:8px;border:0;background:var(--surface);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule-2);font:600 12px/16px var(--sans)">Type it instead</button></div>
+      <div style="border-radius:12px;box-shadow:inset 0 0 0 1px var(--rule);overflow:hidden">
+        <div style="display:flex;gap:12px;align-items:center;padding:12px 14px"><span style="width:36px;height:54px;border-radius:6px;background:var(--sunk)"></span><div style="flex:1"><div style="height:12px;width:70%;border-radius:4px;background:var(--sunk)"></div><div style="height:10px;width:40%;border-radius:4px;background:var(--sunk);margin-top:8px"></div><div style="height:5px;border-radius:999px;background:var(--sunk);margin-top:10px"></div></div></div>
+        <div style="display:flex;gap:12px;align-items:center;padding:12px 14px;border-top:1px solid var(--line)"><span style="width:36px;height:54px;border-radius:6px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--muted);outline:1px dashed var(--muted);outline-offset:-1px;display:grid;place-items:center;font:500 11px/1 var(--mono);color:var(--muted)">?</span><div style="flex:1;min-width:0"><div style="font:600 14px/20px var(--mono)">Dark Reign: The Cabal</div><div style="font:italic 400 12px/16px var(--sans);color:var(--muted)">metadata pending</div></div></div>
+      </div>
+      <div style="font:400 11px/14px var(--mono);color:var(--faint)">skeleton = loaded row geometry, --sunk, shimmer off under reduced motion · pending = dashed cover + italic line</div>
+      <div style="padding:14px;border-radius:12px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule)"><div style="font:600 15px/20px var(--sans)">Up next is empty</div><div style="font:400 13px/18px var(--sans);color:var(--muted);margin:2px 0 10px">41 runs are ready with nothing to read first.</div><button style="min-height:44px;padding:0 14px;border-radius:8px;border:0;background:var(--brand);color:var(--on-brand);font:600 14px/20px var(--sans)">Pick from 41 ready runs</button></div>
+    </div>
+
+    <!-- A3 state matrix -->
+    <div style="background:var(--surface);border-radius:16px;box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);padding:16px">
+      <div style="font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:12px">A3 · Cell, stub, segment, head, plan block</div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px 10px">
+        <div><div style="height:20px;border-radius:3px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--faint-deco)"></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">cell · rest</div></div>
+        <div><div style="height:20px;border-radius:3px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--ink-2)"></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">cell · hover</div></div>
+        <div><div style="height:20px;border-radius:3px;background:var(--line);box-shadow:inset 0 0 0 1px var(--ink-2);transform:translateY(1px)"></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">cell · pressed</div></div>
+        <div><div style="height:20px;border-radius:3px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--faint-deco),0 0 0 2px var(--surface),0 0 0 4px var(--brand)"></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">cell · focus</div></div>
+        <div><div style="position:relative;height:20px;border-radius:3px;background:var(--sunk);box-shadow:inset 0 0 0 1.5px var(--brand),var(--halo);overflow:hidden"><i style="position:absolute;left:0;top:0;bottom:0;width:30%;background:var(--ready)"></i></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">head · halo</div></div>
+        <div><div style="position:relative;width:16px;height:20px;border-radius:3px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--faint-deco)"><i style="position:absolute;left:6px;top:8px;width:4px;height:4px;border-radius:50%;background:var(--muted)"></i></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">floored</div></div>
+        <div><div style="width:16px;height:20px;border-radius:3px;background:var(--surface);border:1px dashed var(--faint-deco);box-sizing:border-box"></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">stub</div></div>
+        <div><div style="width:16px;height:20px;border-radius:3px;background:var(--surface);border:1px dashed var(--faint-deco);box-sizing:border-box;box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--brand)"></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">stub · focus</div></div>
+        <div style="grid-column:span 2"><div style="position:relative;height:24px;border-radius:3px;background:var(--sunk);box-shadow:inset 0 0 0 1.5px var(--brand)"><i style="position:absolute;left:0;top:0;bottom:0;width:40%;background:var(--ready);border-radius:3px 0 0 3px"></i><i style="position:absolute;left:44%;top:3px;bottom:3px;width:10%;border:1px dashed var(--muted);border-radius:2px;box-sizing:border-box"></i><i style="position:absolute;left:56%;top:0;bottom:0;width:12%;background:var(--ready)"></i><i style="position:absolute;left:41.5%;top:-4px;bottom:-4px;width:2px;background:var(--ink);box-shadow:0 0 0 2px var(--surface)"></i><i style="position:absolute;left:78%;top:-6px;bottom:-6px;border-left:2px dashed var(--brand)"></i></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:6px">read · gap · else · head · ghost</div></div>
+        <div style="grid-column:span 2"><svg width="100%" height="24" viewBox="0 0 160 24" preserveAspectRatio="none" aria-hidden="true"><polygon points="60,0 90,0 160,24 0,24" style="fill:var(--brand);fill-opacity:.08"></polygon><path d="M60 0 L0 24 M90 0 L160 24" style="stroke:var(--brand);stroke-opacity:.5;fill:none" vector-effect="non-scaling-stroke"></path></svg><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:2px">bracket · 8% fill · 1px 50% edge</div></div>
+        <div><div style="position:relative;height:28px;border-radius:3px;background:var(--reading-soft);box-shadow:inset 0 0 0 1px var(--rule)"><i style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--t5);border-radius:3px 0 0 3px"></i></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">block · stated</div></div>
+        <div><div style="position:relative;height:28px;border-radius:3px;background:var(--reading-soft);box-shadow:inset 0 0 0 1px var(--rule);border-top:1.5px dotted var(--muted);box-sizing:border-box"><i style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--t6)"></i></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">block · ~est</div></div>
+        <div><div style="height:28px;border-radius:3px;background-color:var(--blocked-soft);background-image:var(--hatch);box-shadow:inset 0 0 0 1px var(--blocked)"></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">block · over</div></div>
+        <div><div style="height:28px;border-radius:3px;background-color:var(--sunk);background-image:var(--hatch-settled);box-shadow:inset 0 0 0 1px var(--rule-2)"></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">over · settled</div></div>
+        <div><div style="height:28px;border-radius:3px;background:var(--raise);border:1px dashed var(--faint-deco);box-sizing:border-box;display:grid;place-items:center;font:600 11px/1 var(--mono);color:var(--ink-2)">+3 · 60k</div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">stack</div></div>
+        <div><div style="height:28px;border-radius:3px;background:var(--blocked-soft);box-shadow:inset 0 0 0 1px var(--blocked);border:1px dashed var(--blocked);box-sizing:border-box"></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">no quarter</div></div>
+        <div><div style="height:28px;border-radius:3px;background:var(--reading-soft);outline:2px dashed var(--brand);outline-offset:1px;box-shadow:var(--sh-2);transform:rotate(-1.5deg)"></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:6px">drag ghost</div></div>
+        <div><div style="height:28px;border-radius:3px;border:1px dashed var(--faint-deco);box-sizing:border-box"></div><div style="font:400 11px/14px var(--mono);color:var(--faint);margin-top:4px">drag source</div></div>
+      </div>
+      <div style="font:400 12px/16px var(--sans);color:var(--muted);margin-top:12px;text-wrap:pretty">One vocabulary for both rails: radius 3, gap 2, dashed = folded or elsewhere, dotted = estimated, hatch = held, halo = where you are. Reduced motion: scrub ghost, bracket and meter changes swap instantly; no easing, no transform.</div>
+    </div>
+  </div>
+</div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1420,&quot;height&quot;:2400},&quot;themes&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;both&quot;,&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;both&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const V = {
+      dark:"--page:#0a0c10;--surface:#12151b;--raise:#191d25;--sunk:#0d1015;--overlay:#1e232c;--ink:#e8ebf0;--ink-2:#b9c0cc;--muted:#8f98a7;--faint:#8a93a2;--faint-deco:#646d7a;--rule:#252a33;--rule-2:#323945;--line:#1c2028;--brand:#86a4ff;--brand-soft:#172039;--brand-ink:#a9bfff;--ready:#52c496;--ready-soft:#0f231a;--blocked:#e0a866;--blocked-soft:#261c10;--reading:#86a4ff;--reading-soft:#172039;--danger:#ef8173;--danger-soft:#2a1512;--on-brand:#0a0c10;--on-ready:#0a0c10;--on-danger:#0a0c10;--toast-bg:#1e232c;--toast-ink:#e8ebf0;--toast-link:#a9bfff;--t4:#fde047;--t5:#a98aee;--t6:#4fb3cc;--m-comics:#a98aee;--sh-1:inset 0 1px 0 rgba(255,255,255,.03);--sh-2:inset 0 1px 0 rgba(255,255,255,.05),0 8px 24px -12px rgba(0,0,0,.7);--sh-3:inset 0 1px 0 rgba(255,255,255,.06),0 24px 56px -12px rgba(0,0,0,.85);--halo:0 0 0 3px rgba(134,164,255,.22),0 0 14px rgba(134,164,255,.28);--glass-bg:rgba(18,21,27,.9);--glass-edge:rgba(255,255,255,.07);--glass-hi:inset 0 1px 0 rgba(255,255,255,.05);--scrim:rgba(0,0,0,.6);--hatch:repeating-linear-gradient(135deg,#e0a866 0 1.5px,transparent 1.5px 6px);--hatch-settled:repeating-linear-gradient(135deg,#8f98a7 0 1px,transparent 1px 6px);--sans:'Inter Tight',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace;color-scheme:dark",
+      light:"--page:#f3f5f8;--surface:#fff;--raise:#f8f9fb;--sunk:#ebeef2;--overlay:#fff;--ink:#12151c;--ink-2:#3a4250;--muted:#5c6575;--faint:#5f6878;--faint-deco:#848d9b;--rule:#dfe3e9;--rule-2:#c7cdd7;--line:#eceef2;--brand:#2148c9;--brand-soft:#e8edfd;--brand-ink:#1a3aa3;--ready:#0b7a52;--ready-soft:#e3f4ec;--blocked:#8a560c;--blocked-soft:#fbefdf;--reading:#2148c9;--reading-soft:#e8edfd;--danger:#a93226;--danger-soft:#fbe9e7;--on-brand:#fff;--on-ready:#fff;--on-danger:#fff;--toast-bg:#12151c;--toast-ink:#f3f5f8;--toast-link:#9db4ff;--t4:#857700;--t5:#7c3aed;--t6:#0e7490;--m-comics:#7c3aed;--sh-1:0 1px 2px rgba(18,21,28,.04);--sh-2:0 1px 2px rgba(18,21,28,.05),0 8px 24px -12px rgba(18,21,28,.18);--sh-3:0 2px 6px rgba(18,21,28,.06),0 24px 48px -16px rgba(18,21,28,.28);--halo:0 0 0 3px rgba(33,72,201,.16);--glass-bg:rgba(255,255,255,.9);--glass-edge:rgba(18,21,28,.08);--glass-hi:inset 0 1px 0 rgba(255,255,255,.6);--scrim:rgba(10,12,16,.4);--hatch:repeating-linear-gradient(135deg,#8a560c 0 1.5px,transparent 1.5px 6px);--hatch-settled:repeating-linear-gradient(135deg,#5c6575 0 1px,transparent 1px 6px);--sans:'Inter Tight',system-ui,sans-serif;--mono:'JetBrains Mono',ui-monospace,monospace;color-scheme:light"
+    };
+    const themes = this.props.themes ?? 'both', list = themes === 'both' ? ['dark','light'] : [themes];
+    const frames = [];
+    list.forEach(t => [390, 1000].forEach(w => { const desk = w >= 700;
+      frames.push({vars:V[t], width:w, aria:`Specimen — ${t} — ${desk?'desktop':'phone'}`, tag:(t.toUpperCase()) + ' · ' + w, frameR: desk?14:28, pad: desk?24:16, h1: desk?30:24, disp: desk?48:40, grid: desk?'minmax(0,1fr) minmax(0,1fr)':'minmax(0,1fr)'}); }));
+    return { frames };
+  }
+}
+</script>
+</body>
+</html>
