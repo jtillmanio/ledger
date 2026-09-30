@@ -223,7 +223,7 @@ npm run check:migrations    # journal = files, drop/retype has a drizzle/down fi
   every build of `main`, and `.github/workflows/release.yml`, run by hand after
   the merge, checks CI on that commit, snapshots Neon, migrates, re-applies
   views, promotes, and smoke-tests `/api/health`, in that order. `/api/health`
-  is the one route outside the passcode gate (`middleware.ts`), and it returns
+  is the one route outside the passcode gate (`src/proxy.ts`), and it returns
   no data; nothing else joins it there. It is the only path a migration takes to
   the live database: never tell anyone to run `db:migrate`, `db:push` or
   `db:views` against `DATABASE_URL` once the repo variable `LEDGER_LIVE` is
@@ -322,6 +322,13 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
 - Server components by default. Client components only where there is state.
 - Raw SQL in `src/db/queries.ts` for anything joining views; Drizzle builder for
   writes.
+- **This is Next.js 16**, which may be newer than what you know: the passcode
+  gate is `src/proxy.ts` (not `middleware.ts`), request APIs (`cookies()`,
+  `params`, `searchParams`) are async only, and `next build` uses Turbopack.
+  Before writing Next-specific code, read the relevant guide in the
+  version-matched docs at `node_modules/next/dist/docs/`, and heed deprecation
+  warnings. (`agentRules: false` in `next.config.ts` stops `next dev` from
+  appending its own copy of this note here.)
 
 ## Workflow
 

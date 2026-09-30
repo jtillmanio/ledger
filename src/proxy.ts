@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-// Edge-safe gate: presence check only. Signature verification happens in
-// lib/auth on the Node runtime, where crypto is available.
-export function middleware(req: NextRequest) {
+// The passcode gate (Next 16 renamed middleware to proxy; it runs on Node).
+// Presence check only: the signature is verified in lib/auth, where every
+// page and route handler reads the session.
+export function proxy(req: NextRequest) {
   if (req.cookies.has("rt_session")) return NextResponse.next();
   const url = req.nextUrl.clone();
   url.pathname = "/login";
