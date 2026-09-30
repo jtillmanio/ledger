@@ -103,7 +103,7 @@ can `TRUNCATE` never guesses which database it is holding (R3-02, D-R3-2).
 `npm test` fails immediately naming the variable. **This task blocks every other
 task.** The owner sets `TEST_DATABASE_URL` once (START-HERE).
 
-### ☐ 0.2 CI · S
+### ☑ 0.2 CI · S
 `.github/workflows/ci.yml` (exists; one job, not four): `tsc --noEmit`, `npm run
 lint` (`eslint.config.mjs` landed, R0-05), `npm run test:db:reset`, `npm test`,
 `npm run test:views`, the Python tests and `next build`, against a Postgres
@@ -114,6 +114,11 @@ the private repo and confirms `.gitignore` covers `.env`, `seed/` and
 
 **Check:** open a throwaway PR, confirm the `check` job goes green and that
 breaking a view definition turns it red.
+
+**Done 2026-09-30.** Green on #26 and #27. Red on the throwaway #28, which
+made `run_progress.read_issues` count every placement: `test:views` failed with
+*shared issue not read in both runs: a 2/2, b 2/2* ([run 36777783528](https://github.com/jtillmanio/ledger/actions/runs/36777783528)),
+and #28 was closed unmerged.
 
 ### ☐ 0.3 Schema additions · M
 Apply what is still outstanding in FEATURES.md Part 5 as one Drizzle migration:
