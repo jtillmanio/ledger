@@ -22,6 +22,9 @@ these. Tick them here; START-HERE has the commands.
       `VERCEL_SCOPE`, `NEON_PROJECT_ID` and `LEDGER_LIVE=false`.
 - [ ] **One dry run of Release** is green (Actions → Release → Dry run).
 - [ ] At Step 14, set the `LEDGER_LIVE` variable to `true` alongside `.env`.
+- [ ] **Preview databases (10f):** `DATABASE_URL` out of Vercel's Preview
+      scope, `LEDGER_LIVE_DB_HOST` in it, Neon's Vercel integration installed.
+      Until then, previews of branches that include this change fail to build.
 
 ## Prerequisite audit (data work in `Comics.xlsx`, PREREQS tab)
 
