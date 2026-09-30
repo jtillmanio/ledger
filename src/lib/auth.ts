@@ -37,7 +37,7 @@ export async function currentUserId(): Promise<string | null> {
 }
 
 /**
- * Use in server components. The middleware only checks that a cookie is present,
+ * Use in server components. The proxy only checks that a cookie is present,
  * so a stale or tampered one (a rotated SESSION_SECRET, a truncated value) gets
  * this far; send it to /login instead of a 500 (R2-11).
  */

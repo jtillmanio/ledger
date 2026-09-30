@@ -1,12 +1,11 @@
-import { FlatCompat } from "@eslint/eslintrc";
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextVitals from "eslint-config-next/core-web-vitals";
+import nextTs from "eslint-config-next/typescript";
 
-const compat = new FlatCompat({ baseDirectory: dirname(fileURLToPath(import.meta.url)) });
-
-const config = [
-  { ignores: [".next/**", "node_modules/**", "drizzle/**", "seed/**", "next-env.d.ts"] },
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-];
-
-export default config;
+// eslint-config-next 16 ships flat configs, so they are spread directly; the
+// FlatCompat wrapper 15 needed fails on them.
+export default defineConfig([
+  ...nextVitals,
+  ...nextTs,
+  globalIgnores([".next/**", "node_modules/**", "drizzle/**", "seed/**", "next-env.d.ts"]),
+]);

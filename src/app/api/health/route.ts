@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 /**
  * Release's smoke test (START-HERE Step 13): the database answers, the views
  * are applied, and which commit this build is, so Release can tell the build
- * it promoted is the one serving. Outside the passcode gate (middleware.ts);
+ * it promoted is the one serving. Outside the passcode gate (proxy.ts);
  * it returns no data, and a failure says only which check failed.
  */
 export async function GET() {

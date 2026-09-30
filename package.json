@@ -37,18 +37,17 @@
   },
   "dependencies": {
     "drizzle-orm": "^0.45.3",
-    "next": "^15.1.0",
+    "next": "^16.3.7",
     "postgres": "^3.4.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3.3.7",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9.39.5",
-    "eslint-config-next": "^15.5.25",
+    "eslint-config-next": "^16.3.7",
     "typescript": "^5.7.0",
     "vitest": "^5.0.2"
   }

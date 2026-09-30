@@ -7,3 +7,4 @@ seed/
 etl/.metron-cache.sqlite
 etl/.fandom-cache.json
 __pycache__/
+next-env.d.ts
