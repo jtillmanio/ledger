@@ -101,7 +101,7 @@ book between years is a cut-and-paste across sheets.
 | **Soft delete only** | A cascade from `runs` silently takes issues and prereq edges |
 | **Typed shelves, not polymorphic** | `shelves.kind` plus `shelf_books` / `shelf_titles`. A polymorphic FK can't be enforced by the database |
 
-**Table count: 23 today, 40 once tasks 0.3 and 1.10 and Phase 8 land.**
+**Table count: 28 today (task 0.3 added five), 40 once task 1.10 and Phase 8 land.**
 
 ### What each spreadsheet artifact became
 

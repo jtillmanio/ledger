@@ -368,5 +368,25 @@ class CreatorAliases(WorkbookCase):
         self.assertIn("alias names two creators", self.reasons())
 
 
+class BookWordCountSource(unittest.TestCase):
+    """books_word_count_source_check: the source is null exactly when the count is."""
+
+    def test_a_typed_count_is_stated_and_no_count_has_no_source(self):
+        idx = ex.BookIndex()
+        counted = idx.upsert("Piranesi", "Susanna Clarke", word_count=85000)
+        bare = idx.upsert("The Way of Kings", "Brandon Sanderson")
+        books = {b["id"]: b for b in idx.by_key.values()}
+        self.assertEqual(books[counted]["word_count_source"], "stated")
+        self.assertIsNone(books[bare]["word_count"])
+        self.assertIsNone(books[bare]["word_count_source"])
+
+    def test_a_count_found_on_a_later_tab_makes_the_book_stated(self):
+        idx = ex.BookIndex()
+        bid = idx.upsert("Piranesi", "Susanna Clarke")
+        idx.upsert("Piranesi", word_count=85000)
+        book = next(b for b in idx.by_key.values() if b["id"] == bid)
+        self.assertEqual((book["word_count"], book["word_count_source"]), (85000, "stated"))
+
+
 if __name__ == "__main__":
     unittest.main()

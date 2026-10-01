@@ -1303,14 +1303,18 @@ CREATE TABLE inbox (
   run_id     text REFERENCES runs(id)
 );
 
+-- LANDED in migration 0005 (task 0.3), down to "archive instead of delete",
+-- except reading_plan.planned_month (void, 1.7) and the void shelf_items block.
+-- The shipped shapes below are the ones in src/db/schema.ts, which wins (D-1).
+
 -- pace engine
 CREATE TABLE reading_settings (
-  user_id           text PRIMARY KEY REFERENCES users(id),
+  user_id           text PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   minutes_per_day   int  NOT NULL DEFAULT 45,
   words_per_minute  int  NOT NULL DEFAULT 185,
   words_per_page    int  NOT NULL DEFAULT 275,
-  plan_granularity  text NOT NULL DEFAULT 'quarter',  -- quarter | month
-  theme             text NOT NULL DEFAULT 'system',   -- system | light | dark
+  plan_granularity  text NOT NULL DEFAULT 'quarter' CHECK (plan_granularity IN ('quarter','month')),
+  theme             text NOT NULL DEFAULT 'system'  CHECK (theme IN ('system','light','dark')),
   show_covers       boolean NOT NULL DEFAULT true
 );
 
@@ -1322,21 +1326,31 @@ CREATE TABLE eras (
   id      serial PRIMARY KEY,
   run_id  text NOT NULL REFERENCES runs(id) ON DELETE CASCADE,
   ordinal int  NOT NULL,
-  name    text NOT NULL
+  name    text NOT NULL,
+  UNIQUE (run_id, ordinal),
+  UNIQUE (id, run_id)            -- target of the composite key below
 );
-ALTER TABLE run_issues ADD COLUMN era_id int REFERENCES eras(id);
+-- A placement can only sit in an era of its own run, and deleting an era
+-- clears era_id and nothing else (SET NULL with a column list, PG 15+).
+ALTER TABLE run_issues ADD COLUMN era_id int,
+  ADD FOREIGN KEY (era_id, run_id) REFERENCES eras(id, run_id) ON DELETE SET NULL (era_id);
 
 -- The volume map, editable in the app instead of only as a CSV.
 CREATE TABLE volume_rules (
   id       serial PRIMARY KEY,
   series   text NOT NULL,
-  run_id   text REFERENCES runs(id),   -- null = any run
+  run_id   text REFERENCES runs(id) ON DELETE CASCADE,   -- null = any run
   issue_from int, issue_to int,        -- null = any issue
   year     int NOT NULL
 );
 
+-- VOID: task 1.7 replaces the plan's year/quarter columns with one period column.
 ALTER TABLE reading_plan  ADD COLUMN planned_month int;     -- 1-12, null = quarter-level
-ALTER TABLE books         ADD COLUMN word_count_source text DEFAULT 'stated';
+-- stated | estimated, NULL exactly when word_count is (no default); 0005
+-- backfills 'stated' for every book that has a count.
+ALTER TABLE books         ADD COLUMN word_count_source text
+  CHECK ((word_count IS NULL) = (word_count_source IS NULL)
+         AND (word_count_source IS NULL OR word_count_source IN ('stated','estimated')));
 ALTER TABLE books         ADD COLUMN page_count int;
 ALTER TABLE books         ADD COLUMN cover_url text;
 -- finished_on already exists as text (100% NULL); migration 0004 retyped it to
@@ -1371,7 +1385,14 @@ ALTER TABLE runs DROP COLUMN block;   -- block_id replaces it
 CREATE TABLE shelves (
   id       text PRIMARY KEY,
   name     text NOT NULL,
-  user_id  text REFERENCES users(id)
+  user_id  text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  kind     text NOT NULL CHECK (kind IN ('books','titles'))
+);
+CREATE TABLE shelf_books (
+  shelf_id text NOT NULL REFERENCES shelves(id) ON DELETE CASCADE,
+  book_id  text NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+  ordinal  int  NOT NULL,
+  PRIMARY KEY (shelf_id, book_id)
 );
 -- Books only. A curated comics list, if ever wanted, gets its own feature
 -- rather than a polymorphic table.
