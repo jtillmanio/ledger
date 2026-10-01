@@ -42,9 +42,8 @@ downstream:
    without it either — reading an issue in one run must not silently mark it
    read in another.
 2. **0.8b — Read state per run, the spine.** Follows directly from 0.8a.
-3. **0.3 schema additions, 0.4 soft-delete, 0.5 volume-year
-   normalization** — smaller, no ordering dependency on each other, but all
-   still open in Phase 0. **0.9 — Page performance** is also open: the deployed
+3. **0.5 volume-year normalization** — smaller, no ordering dependency, still
+   open in Phase 0 (0.3 and 0.4 are done). **0.9 — Page performance** is also open: the deployed
    app feels slow, and it is cheaper to find the cause before more screens sit on
    the same data path.
 

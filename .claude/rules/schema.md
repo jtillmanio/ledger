@@ -87,7 +87,7 @@ everywhere else.
 - Run IDs are hand-authored slugs (`hickman-ff`). Never regenerate them.
 - Runs with `placeholder = true` are forward-declared prereq targets. Hide them
   from run lists; keep their edges.
-- Soft delete only *(the `deleted_at` columns landed in task 0.3; reads filter on them from task 0.4, so until then nothing does)*. `deleted_at IS NULL` on every read. A hard delete on `runs`
+- Soft delete only. `deleted_at IS NULL` on every read. A hard delete on `runs`
   cascades to issues and prereq edges. That includes `run_issues` (R3-06): a hard
   delete cascades to its `issue_progress` row and drops reading history.
 - A date is stored with its precision (`exact` | `approximate` | `none`), and the
