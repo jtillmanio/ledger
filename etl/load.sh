@@ -47,7 +47,7 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
          run_tracks, event_runs, prereqs, issue_credits, creators,
          run_issues, issues, events, editions,
          runs, blocks, tracks, releases, wishlist, external_lists,
-         books, book_series, authors RESTART IDENTITY CASCADE;
+         books, book_series, authors, shelves RESTART IDENTITY CASCADE;
 
 \\copy tracks        FROM '$SEED/tracks.csv'        CSV HEADER
 \\copy blocks(id,track_id,number,name) FROM '$SEED/blocks.csv' CSV HEADER
@@ -64,7 +64,7 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
 
 \\copy authors        FROM '$SEED/authors.csv'        CSV HEADER
 \\copy book_series    FROM '$SEED/book_series.csv'    CSV HEADER
-\\copy books          FROM '$SEED/books.csv'          CSV HEADER
+\\copy books(id,title,author_id,series_id,series_position,genre,book_type,word_count,word_count_source,published_year) FROM '$SEED/books.csv' CSV HEADER
 \\copy releases       FROM '$SEED/releases.csv'       CSV HEADER
 \\copy wishlist(genre,raw_entry,book_id) FROM '$SEED/wishlist.csv' CSV HEADER
 \\copy external_lists(source,year,rank,raw_title,book_id) FROM '$SEED/external_lists.csv' CSV HEADER

@@ -120,14 +120,34 @@ made `run_progress.read_issues` count every placement: `test:views` failed with
 *shared issue not read in both runs: a 2/2, b 2/2* ([run 36777783528](https://github.com/jtillmanio/ledger/actions/runs/36777783528)),
 and #28 was closed unmerged.
 
-### ☐ 0.3 Schema additions · M
+### ☑ 0.3 Schema additions · M
 Apply what is still outstanding in FEATURES.md Part 5 as one Drizzle migration:
 `reading_settings`, `eras` (+ `run_issues.era_id`, ARCHITECTURE 2.10), `volume_rules`,
 `shelves(kind CHECK IN ('books','titles'))` with **`shelf_books` only**
 (`shelf_titles` lands with `titles` in 8.1/8.6, because a foreign key needs its
 target — R3-04; FEATURES' `shelf_items` block is void, ARCHITECTURE 2.5e),
-`word_count_source`, `page_count`, `books.cover_url`, `book_status.notes`, and
-`deleted_at` on `runs` / `issues` / `books` **and `run_issues`** (R3-06).
+`word_count_source`, `page_count`, `books.cover_url`, `books.open_library_id`,
+`books.hardcover_id`, `book_status.notes`, and `deleted_at` on `runs` / `issues` /
+`books` **and `run_issues`** (R3-06). `open_library_id` and `hardcover_id` were
+added here because 1.4c's check writes the first and no task added either
+(owner, 2026-09-30).
+
+**Done 2026-10-01, migration `0005_schema_additions`.** Shapes the owner settled
+before it was written:
+
+- `books.word_count_source` is `stated | estimated` and **NULL exactly when
+  `word_count` is** — the same pairing CHECK as `issues.cover_date_source`, no
+  default. The migration backfills `stated` for every book that has a count;
+  extract writes it.
+- `eras` is UNIQUE on `(run_id, ordinal)`, like `blocks`. `run_issues.era_id`
+  is a composite foreign key `(era_id, run_id) → eras(id, run_id)`, so a
+  placement cannot sit in another run's era, with `ON DELETE SET NULL
+  ("era_id")`: deleting an era clears the placement's era and nothing else. The
+  column list is hand-written into the migration; drizzle-kit cannot express it.
+- `shelves.user_id` and `shelf_books.ordinal` are NOT NULL.
+- `reading_settings` checks `plan_granularity IN ('quarter','month')` and
+  `theme IN ('system','light','dark')`, and goes with its user (`ON DELETE
+  CASCADE`), like every other per-user table.
 
 **Three value CHECKs** (R2 L-3/L-4, owner-approved, D-27), so a typo can never
 be stored — it matters once 3.3 lets the app write prerequisite edges, where a
@@ -171,6 +191,13 @@ spellings of one comic can both match it.
 database, `npm run test:db:reset` (which runs `drizzle-kit migrate`) applies
 clean, and `drizzle-kit push` then reports no diff — `push` alone never runs the
 generated file, so a bad `ALTER` would pass it and fail the next rebuild (R3-11).
+*(As run on 2026-10-01, push never reports no diff in this repo, on `main` either:
+it offers to drop every view and index `etl/views.sql` creates, and it reads
+composite primary keys and unique constraints back from
+`information_schema.constraint_column_usage` without an order, so it re-creates
+whichever ones come back shuffled — `blocks` and `run_issues` constraints this
+task never touched included. What the check is for is met by `test:db:reset`
+running the migration itself and the vitest test reading the catalog.)*
 A vitest test reads `information_schema.columns` and asserts each new column and
 type (`psql` is not needed and not assumed), and that inserting a prereq of type
 `Hard`, a run of tier 7 and an event verdict of `skip` each violate their CHECK.

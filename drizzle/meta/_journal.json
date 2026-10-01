@@ -36,6 +36,13 @@
       "when": 1789931689548,
       "tag": "0004_date_precision",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790827531914,
+      "tag": "0005_schema_additions",
+      "breakpoints": true
     }
   ]
 }

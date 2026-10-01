@@ -14,7 +14,7 @@ Check, in priority order:
 1. Did derived data get stored in a column instead of computed in a view?
 2. Did a per-user fact land in a catalog table (`runs`, `issues`, `books`) rather
    than a progress table?
-3. From task 0.3 onward (before it the column does not exist): does every new read query filter `deleted_at IS NULL`?
+3. From task 0.4 onward (0.3 added the columns, 0.4 adds the filtering): does every new read query filter `deleted_at IS NULL`?
 4. Was `etl/views.sql` updated to match a schema change?
 5. Is the migration reversible? A migration that drops, retypes or merges columns
    needs `drizzle/down/<tag>.sql` and an up → down → up test. Does it edit an

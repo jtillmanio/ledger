@@ -8,13 +8,15 @@
 export const CATALOG_TABLES = [
   "tracks", "blocks", "runs", "run_tracks", "issues", "run_issues", "creators",
   "issue_credits", "prereqs", "events", "event_runs",
+  "eras", "volume_rules",
   "editions", "authors", "book_series", "books", "releases", "wishlist",
-  "external_lists",
+  "external_lists", "shelf_books",
 ] as const;
 
 /** Tables with a `user_id` column: exported for the signed-in user only. */
 export const USER_TABLES = [
   "issue_progress", "edition_progress", "book_status", "reading_plan",
+  "reading_settings", "shelves",
 ] as const;
 
 /** Deliberately left out: the export is the owner's data, not the account. */

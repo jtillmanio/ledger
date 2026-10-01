@@ -902,6 +902,8 @@ class BookIndex:
                                  ("book_type", clean(book_type))):
                 if value and not b.get(field):
                     b[field] = value
+            if b["word_count"] is not None:
+                b["word_count_source"] = "stated"
             return b["id"]
         aid = self.author_id(author)
         sid, pos = self.series_id(series, aid)
@@ -911,6 +913,9 @@ class BookIndex:
             "genre": clean(genre), "book_type": clean(book_type) or "Novel",
             "word_count": as_int(word_count), "published_year": as_int(published_year),
         }
+        # Every count in the workbook was typed, so it is stated; null with the
+        # count (books_word_count_source_check).
+        b["word_count_source"] = "stated" if b["word_count"] is not None else None
         while any(x["id"] == b["id"] for x in self.by_key.values()):
             b["id"] += "-x"
         self.by_key[k] = b
@@ -1064,7 +1069,8 @@ def extract_books(path: Path, out: Path, with_plan: bool = False) -> None:
     write(out, "book_series", list(idx.series.values()),
           ["id", "name", "author_id", "total_books"])
     write(out, "books", books, ["id", "title", "author_id", "series_id", "series_position",
-                                "genre", "book_type", "word_count", "published_year"])
+                                "genre", "book_type", "word_count", "word_count_source",
+                                "published_year"])
     write(out, "book_status", list(status.values()),
           ["user_id", "book_id", "status", "finished_year", "year_rank", "rating"])
     write(out, "reading_plan", plan, ["user_id", "book_id", "planned_year", "planned_quarter"])

@@ -350,7 +350,7 @@ run_queue(user_id → users, run_id → runs, ordinal int NOT NULL,
 the dashboard and the status screen read one ordered row set with state and
 badges, and nothing is computed in the app.
 
-**Table count:** 23 today, 40 once tasks 0.3 and 1.10 and Phase 8 land.
+**Table count:** 28 today (task 0.3 added five), 40 once task 1.10 and Phase 8 land.
 
 
 **2.17 A date is stored with its precision.** *Sept 2026, D-R3-1 (closes
