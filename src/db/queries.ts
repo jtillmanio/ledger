@@ -236,8 +236,10 @@ export async function yearSummary(userId: string) {
 /** Read books with no finished year: the ones no year chip can reach. */
 export async function readWithoutYear(userId: string): Promise<number> {
   const [row] = await sql<{ n: number }[]>`
-    SELECT COUNT(*)::int AS n FROM book_status
-    WHERE user_id = ${userId} AND status = 'read' AND finished_year IS NULL
+    SELECT COUNT(*)::int AS n
+    FROM book_status s
+    JOIN books b ON b.id = s.book_id AND b.deleted_at IS NULL
+    WHERE s.user_id = ${userId} AND s.status = 'read' AND s.finished_year IS NULL
   `;
   return row.n;
 }

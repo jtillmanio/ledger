@@ -124,4 +124,41 @@ describe("a soft-deleted book", () => {
     expect(Number(series.books_listed)).toBe(1);
     expect(await count("books")).toBe(2);
   });
+
+  it("leaves the No year count, so the chip agrees with the list it opens", async () => {
+    await sql`INSERT INTO books (id, title) VALUES ('u1', 'Undated'), ('u2', 'Deleted undated')`;
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'u1', 'read'), (${USER}, 'u2', 'read')`;
+    await sql`UPDATE books SET deleted_at = now() WHERE id = 'u2'`;
+    expect(await q.readWithoutYear(USER)).toBe(1);
+    expect((await q.listBooks(USER, { noYear: true })).map((b) => b.id)).toEqual(["u1"]);
+  });
+});
+
+describe("prerequisite walk", () => {
+  it("stops at a soft-deleted run and shows the runs behind it again on restore", async () => {
+    await run("a", ["a1"]);
+    await run("b", ["b1"]);
+    await run("c", ["c1"]);
+    await sql`INSERT INTO prereqs (run_id, prereq_run_id, type) VALUES ('c', 'b', 'hard'), ('b', 'a', 'hard')`;
+    const ids = async () =>
+      (await sql`SELECT run_id FROM run_ancestors('c') ORDER BY run_id`).map((r) => r.run_id);
+    expect(await ids()).toEqual(["a", "b"]);
+    await sql`UPDATE runs SET deleted_at = now() WHERE id = 'b'`;
+    expect(await ids()).toEqual([]);
+    await sql`UPDATE runs SET deleted_at = NULL WHERE id = 'b'`;
+    expect(await ids()).toEqual(["a", "b"]);
+  });
+
+  it("drops a soft-deleted run's events from event_tracks and its segments", async () => {
+    await run("a", ["a1"]);
+    await sql`INSERT INTO tracks (id, name) VALUES ('t', 'Track')`;
+    await sql`INSERT INTO run_tracks (run_id, track_id) VALUES ('a', 't')`;
+    await sql`INSERT INTO events (id, name) VALUES ('e', 'Event')`;
+    await sql`INSERT INTO event_runs (event_id, run_id) VALUES ('e', 'a')`;
+    expect(await count("event_tracks")).toBe(1);
+    expect(await count("run_read_segments")).toBe(1);
+    await sql`UPDATE runs SET deleted_at = now() WHERE id = 'a'`;
+    expect(await count("event_tracks")).toBe(0);
+    expect(await count("run_read_segments")).toBe(0);
+  });
 });

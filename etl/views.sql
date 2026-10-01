@@ -198,6 +198,7 @@ WITH placed AS (
     ROW_NUMBER() OVER (PARTITION BY u.id, ri.run_id ORDER BY ri.sequence) AS ordinal,
     (p.issue_id IS NOT NULL) AS is_read
   FROM live_run_issues ri
+  JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL
   CROSS JOIN users u
   LEFT JOIN issue_progress p ON p.issue_id = ri.issue_id AND p.user_id = u.id
 ), islands AS (
@@ -250,6 +251,7 @@ $$ LANGUAGE sql STABLE;
 CREATE OR REPLACE VIEW event_tracks AS
 SELECT DISTINCT er.event_id, rt.track_id
 FROM event_runs er
+JOIN runs r ON r.id = er.run_id AND r.deleted_at IS NULL
 JOIN run_tracks rt ON rt.run_id = er.run_id;
 
 -- Distinct issues and distinct read issues per user, per track and per block.
