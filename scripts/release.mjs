@@ -184,12 +184,18 @@ async function smoke() {
     return;
   }
   const url = new URL("/api/health", env.PRODUCTION_URL);
+  // Every deployment of the project, production included, is behind Vercel
+  // Authentication; this header is how automation gets past it.
+  const bypass = env.VERCEL_AUTOMATION_BYPASS_SECRET;
+  const headers = { "cache-control": "no-cache", ...(bypass && { "x-vercel-protection-bypass": bypass }) };
   let problem = "no answer";
   for (let i = 0; i < 24; i++) {
     try {
-      const res = await fetch(url, { headers: { "cache-control": "no-cache" } });
+      const res = await fetch(url, { headers });
       const body = await res.json().catch(() => null);
-      problem = smokeProblem({ status: res.status, body, sha: env.RELEASE_SHA });
+      problem = smokeProblem({ status: res.status, body, sha: env.RELEASE_SHA, finalUrl: res.url, bypass: !!bypass });
+      // Retrying cannot get past a login page.
+      if (/Vercel Authentication/.test(problem ?? "")) break;
     } catch (e) {
       problem = `could not reach ${url}: ${e.message}`;
     }
@@ -199,7 +205,7 @@ async function smoke() {
     }
     await new Promise((r) => setTimeout(r, 5000));
   }
-  throw new Error(`Smoke test failed after two minutes: ${problem} (START-HERE Step 13, "When a release goes wrong").`);
+  throw new Error(`Smoke test failed: ${problem} (START-HERE Step 13, "When a release goes wrong").`);
 }
 
 const command = process.argv[2];

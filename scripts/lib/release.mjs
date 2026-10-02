@@ -94,15 +94,31 @@ export function promoteProblem(deployment) {
  * Why production's /api/health is not yet the release it should be, or null.
  *   status, body: the response (body null when it was not JSON)
  *   sha:          the commit Release promoted
+ *   finalUrl:     where the request ended up after redirects
+ *   bypass:       whether a protection-bypass secret was sent
  */
-export function smokeProblem({ status, body, sha }) {
+export function smokeProblem({ status, body, sha, finalUrl = "", bypass = false }) {
+  // Vercel Authentication answers a signed-out request with a redirect to its
+  // login page, which then says 200 in HTML: "without JSON" would send you
+  // looking at the wrong thing.
+  if (/^https:\/\/vercel\.com\/(sso-api|login)/.test(finalUrl)) {
+    return bypass
+      ? "Vercel Authentication refused the protection-bypass secret: VERCEL_AUTOMATION_BYPASS_SECRET " +
+          "does not match the project's Protection Bypass for Automation secret."
+      : "production is behind Vercel Authentication. Add the project's Protection Bypass for Automation " +
+          "secret as the VERCEL_AUTOMATION_BYPASS_SECRET repository secret (START-HERE 10e).";
+  }
   if (!body) return `/api/health answered ${status} without JSON. Is PRODUCTION_URL the app's address?`;
   if (!body.ok) return `/api/health answered ${status}: the ${body.failed ?? "unknown"} check failed.`;
   if (!body.commit) {
     return "/api/health reports no commit. Turn on Vercel's Settings → Environment Variables → " +
       "Automatically expose System Environment Variables.";
   }
-  if (body.commit !== sha) return `Production still serves ${body.commit.slice(0, 7)}, not ${sha.slice(0, 7)}.`;
+  if (body.commit !== sha) {
+    // A URL like ledger-abc123xyz-<team>.vercel.app is one deployment forever.
+    return `Production still serves ${body.commit.slice(0, 7)}, not ${sha.slice(0, 7)}. ` +
+      "If that never changes, PRODUCTION_URL may name one deployment rather than the production domain.";
+  }
   return null;
 }
 

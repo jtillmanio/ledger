@@ -99,4 +99,6 @@ jobs:
         env:
           PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
           RELEASE_SHA: ${{ steps.plan.outputs.sha }}
+          # Vercel → Settings → Deployment Protection → Protection Bypass for Automation (10e)
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: node scripts/release.mjs smoke
