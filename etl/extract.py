@@ -561,14 +561,15 @@ def extract_comics(path: Path, out: Path) -> None:
     # They are dropped: the join replaces them.
     #
     # One issue row per distinct label; one run_issues row per sheet row. The
-    # same comic in four runs is one issue, so progress and credits attach once.
+    # same comic in four runs is one issue, so credits attach once; read state
+    # attaches to each placement.
     raw = sheet(xl, "Reading Orders")
     raw = raw[raw["Run ID"].notna() & raw["Issue"].notna()]
     issues: "OrderedDict[str, dict]" = OrderedDict()     # final label -> issue row
     ids_by_slug: dict[str, str] = {}                     # slug -> first label holding it
     placements, seq_by_run, sheet_pos_by_run = [], {}, {}
-    seen_in_run: set[tuple[str, str]] = set()
-    completed_by_label: dict[str, set[bool]] = {}
+    placement_by_run_label: dict[tuple[str, str], int] = {}   # (run, label) -> placement id
+    read_placements: set[int] = set()
     sheet_labels: set[str] = set()                       # every spelling the sheet uses
     for _, r in raw.iterrows():
         rid = clean(r["Run ID"])
@@ -581,18 +582,20 @@ def extract_comics(path: Path, out: Path) -> None:
         # One placement per (run, issue) — D-R2-1. The sheet lists 13 comics twice
         # in one run (the same seven issues twice in a row, with different Type
         # values), which looks like a block entered twice, not a planned reread.
-        # Keep the first, drop the repeat, and say so. Rereads come back
-        # deliberately with per-placement progress (task 0.8), not by accident.
+        # Keep the first, drop the repeat, and say so. A planned reread is a note
+        # on the placement, not a second row (D-19). A ticked repeat marks the
+        # kept placement: same run, same issue, so nothing propagates.
         # sheet_pos counts every sheet row, dropped repeats included, so the
         # "sequence renumbered" check still compares like with like.
         sheet_pos = sheet_pos_by_run.get(rid, 0) + 1
         sheet_pos_by_run[rid] = sheet_pos
-        if (rid, label) in seen_in_run:
+        kept = placement_by_run_label.get((rid, label))
+        if kept is not None:
             flag("run_issues", "repeat placement dropped",
                  f"{rid}: {label} listed again in the sheet — kept the first placement only")
-            completed_by_label.setdefault(label, set()).add(as_bool(r.get("Completed")))
+            if as_bool(r.get("Completed")):
+                read_placements.add(kept)
             continue
-        seen_in_run.add((rid, label))
 
         # The sheet's Sequence column is =IF($B2=$B1,F1+1,1), which restarts
         # whenever a run's rows are not contiguous. Row order is the real
@@ -631,9 +634,15 @@ def extract_comics(path: Path, out: Path) -> None:
                 "_credits": sidecar(ISSUE_CREDITS, label, original, "issue_credits") or [],
             }
             issues[label] = issue
-        completed_by_label.setdefault(label, set()).add(as_bool(r.get("Completed")))
+        # The placement id is its position in the sheet, counted across every run
+        # (D-16), so issue_progress.csv can point at it before anything is loaded.
+        pid = len(placements) + 1
+        placement_by_run_label[(rid, label)] = pid
+        if as_bool(r.get("Completed")):
+            read_placements.add(pid)
         itype = (clean(r.get("Type")) or "core").lower()
         placements.append({
+            "id": pid,
             "run_id": rid,
             "sequence": seq,
             "issue_id": issue["id"],
@@ -664,18 +673,15 @@ def extract_comics(path: Path, out: Path) -> None:
             flag("issues", "one Metron issue under several labels",
                  f"Metron {mid}: {' | '.join(labels)} — accept a label_review rename to merge them")
 
-    # Completed is per-user progress, not catalog data. Read in any run means read.
-    # The sheet never recorded a date, so these load with precision 'none' and a
-    # NULL completed_at (D-R3-1). Letting the column default fire would stamp every
-    # pre-cutover read with the load time (R2-10).
-    progress = []
-    for label, values in completed_by_label.items():
-        if True in values:
-            progress.append({"user_id": "$OWNER", "issue_id": issues[label]["id"],
-                             "completed_at": "", "completed_at_precision": "none"})
-            if False in values:
-                flag("issue_progress", "completed in one run, not another",
-                     f"{label} — loaded as read")
+    # Completed is per-user progress, not catalog data, and it belongs to the
+    # placement: each Reading Orders row carries its own, so an issue ticked in
+    # one run and not another is read in one and unread in the other (ARCHITECTURE
+    # 2.14). The sheet never recorded a date, so these load with precision 'none'
+    # and a NULL completed_at (D-R3-1). Letting the column default fire would stamp
+    # every pre-cutover read with the load time (R2-10).
+    progress = [{"user_id": "$OWNER", "placement_id": pid,
+                 "completed_at": "", "completed_at_precision": "none"}
+                for pid in sorted(read_placements)]
 
     # ---- creators and credits --------------------------------------------
     creators: "OrderedDict[str, dict]" = OrderedDict()
@@ -834,13 +840,13 @@ def extract_comics(path: Path, out: Path) -> None:
     write(out, "issues", list(issues.values()),
           ["id", "label", "cover_date", "cover_date_source", "story_title",
            "story_title_source", "cover_url", "metron_id"])
-    write(out, "run_issues", placements, ["run_id", "sequence", "issue_id", "type", "notes"])
+    write(out, "run_issues", placements, ["id", "run_id", "sequence", "issue_id", "type", "notes"])
     write(out, "creators", list(creators.values()), ["id", "name", "metron_id"])
     write(out, "issue_credits", credits, ["issue_id", "creator_id", "role", "source"])
     write(out, "workbook_run_fields", workbook_fields,
           ["id", "series_issues", "start_year", "end_year", "writer", "artists"])
     write(out, "issue_progress", progress,
-          ["user_id", "issue_id", "completed_at", "completed_at_precision"])
+          ["user_id", "placement_id", "completed_at", "completed_at_precision"])
     write(out, "prereqs", prereqs, ["run_id", "prereq_run_id", "type"])
     write(out, "events", events, ["id", "name", "year", "verdict", "home_run_id", "note"])
     write(out, "event_runs", event_runs, ["event_id", "run_id"])

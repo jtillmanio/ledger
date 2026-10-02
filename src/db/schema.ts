@@ -73,9 +73,9 @@ export const runTracks = pgTable("run_tracks", {
 }, (t) => ({ pk: primaryKey({ columns: [t.runId, t.trackId] }) }));
 
 // One row per comic. The same issue in four runs is one row here and four in
-// run_issues, so reading it once marks it read everywhere it appears. The id is
-// a slug of the label ("fantastic-four-1961-570"), not a run position, so
-// inserting an issue into a reading order renumbers nothing.
+// run_issues; credits attach once, but read state belongs to each placement
+// (ARCHITECTURE 2.14). The id is a slug of the label ("fantastic-four-1961-570"),
+// not a run position, so inserting an issue into a reading order renumbers nothing.
 export const issues = pgTable("issues", {
   id: text("id").primaryKey(),              // "fantastic-four-1961-570"
   label: text("label").notNull().unique(),  // "Fantastic Four (1961) #570"
@@ -120,7 +120,11 @@ export const eras = pgTable("eras", {
 // placement: an issue can be core in one run and optional in another (213 are).
 // One placement per (run, issue) — D-R2-1, D-19. The sheet's 13 repeated pairs
 // were a block entered twice, not rereads; extract drops them.
+// The id is the placement, and what issue_progress points at (task 0.8a). It is
+// a surrogate because inserting an issue renumbers every later sequence; extract
+// assigns it in sheet order (D-16).
 export const runIssues = pgTable("run_issues", {
+  id: serial("id").primaryKey(),
   runId: text("run_id").notNull().references(() => runs.id, { onDelete: "cascade" }),
   sequence: integer("sequence").notNull(),  // 1-based reading position within the run
   issueId: text("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
@@ -133,7 +137,9 @@ export const runIssues = pgTable("run_issues", {
   // would cascade to its reading history (R3-06).
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (t) => ({
-  pk: primaryKey({ columns: [t.runId, t.sequence] }),
+  // DEFERRABLE INITIALLY DEFERRED in migration 0007, which drizzle cannot say:
+  // renumbering later sequences on insert collides mid-statement otherwise (R0-15).
+  sequenceInRun: unique("run_issues_run_id_sequence_unique").on(t.runId, t.sequence),
   onePlacementPerRun: unique("run_issues_run_id_issue_id_unique").on(t.runId, t.issueId),
   byIssue: index("run_issues_issue_id_idx").on(t.issueId),
   liveRunSeq: index("run_issues_live_run_seq_idx").on(t.runId, t.sequence)
@@ -290,16 +296,19 @@ export const externalLists = pgTable("external_lists", {
  * Progress — the only tables that are per-user
  * ------------------------------------------------------------------ */
 
+// Read state belongs to the placement, not the issue (ARCHITECTURE 2.14): reading
+// an issue in one run leaves it unread in every other run that places it, and
+// nothing propagates a mark. "Read before, in which runs" is the issue_read_runs view.
 export const issueProgress = pgTable("issue_progress", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  issueId: text("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+  placementId: integer("placement_id").notNull().references(() => runIssues.id, { onDelete: "cascade" }),
   // Nullable, because a read with no date is a real state (D-R3-1): the 76
   // workbook reads have none, and the range sheet's "No date" mode writes none.
   // Precision travels with the value: 'none' exactly when completed_at is NULL.
   completedAt: timestamp("completed_at", { withTimezone: true }).defaultNow(),
   completedAtPrecision: text("completed_at_precision").notNull().default("exact"), // exact | approximate | none
 }, (t) => ({
-  pk: primaryKey({ columns: [t.userId, t.issueId] }),
+  pk: primaryKey({ columns: [t.userId, t.placementId] }),
   precision: check("issue_progress_completed_at_precision_check", sql`
     ${t.completedAtPrecision} IN ('exact', 'approximate', 'none')
     AND (${t.completedAt} IS NULL) = (${t.completedAtPrecision} = 'none')`),

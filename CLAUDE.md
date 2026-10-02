@@ -118,7 +118,7 @@ npm run check:migrations    # journal = files, drop/retype has a drizzle/down fi
   the placement. The same issue in four runs is one `issues` row and four
   `run_issues` rows. Credits key on `issues.id`. Totals above a run count
   `DISTINCT issue_id`; never SUM run totals across runs.
-- **Read state is per run** *(target state: `schema.ts` is still keyed on the issue until task 0.8 lands)*. `issue_progress` keys on the placement
+- **Read state is per run.** `issue_progress` keys on the placement
   (`user_id, placement_id` → `run_issues.id`), never on the issue. Reading an
   issue in one run leaves it unread in every other run holding it. Nothing
   propagates a mark. "Read before, in which runs" is derived from the

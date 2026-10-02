@@ -243,10 +243,15 @@ belongs to a placement:
 
 ```
 run_issues.id   serial PRIMARY KEY          -- the placement; stable when the order changes
-                UNIQUE (run_id, sequence)   -- was the primary key
+                UNIQUE (run_id, sequence) DEFERRABLE INITIALLY DEFERRED   -- was the primary key
+                UNIQUE (run_id, issue_id)   -- one placement per run (D-19)
 issue_progress(user_id, placement_id → run_issues.id ON DELETE CASCADE,
-               completed_at)  PRIMARY KEY (user_id, placement_id)
+               completed_at, completed_at_precision)  PRIMARY KEY (user_id, placement_id)
 ```
+
+Landed in migration `0007_placement_progress` (task 0.8a). The sequence
+constraint is deferred so one `UPDATE … SET sequence = sequence + 1` can shift a
+run past an insert (R0-15); the precision pair is 2.17's, unchanged.
 
 The key is a surrogate, not `(run_id, sequence)`, because inserting an issue
 into a reading order renumbers every later sequence. `(run_id, issue_id)` is

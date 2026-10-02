@@ -95,7 +95,7 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
 \copy runs(id,title,tier,block_id,sequence,spine,rating,why,why_source,notes,placeholder) FROM '$seedPath/runs.csv' CSV HEADER
 \copy run_tracks   FROM '$seedPath/run_tracks.csv'   CSV HEADER
 \copy issues(id,label,cover_date,cover_date_source,story_title,story_title_source,cover_url,metron_id) FROM '$seedPath/issues.csv' CSV HEADER
-\copy run_issues(run_id,sequence,issue_id,type,notes) FROM '$seedPath/run_issues.csv' CSV HEADER
+\copy run_issues(id,run_id,sequence,issue_id,type,notes) FROM '$seedPath/run_issues.csv' CSV HEADER
 \copy creators(id,name,metron_id) FROM '$seedPath/creators.csv' CSV HEADER
 \copy issue_credits(issue_id,creator_id,role,source) FROM '$seedPath/issue_credits.csv' CSV HEADER
 \copy prereqs      FROM '$seedPath/prereqs.csv'      CSV HEADER
@@ -110,10 +110,16 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
 \copy wishlist(genre,raw_entry,book_id) FROM '$seedPath/wishlist.csv' CSV HEADER
 \copy external_lists(source,year,rank,raw_title,book_id) FROM '$seedPath/external_lists.csv' CSV HEADER
 
-\copy issue_progress(user_id,issue_id,completed_at,completed_at_precision) FROM '$tmpPath/issue_progress.csv' CSV HEADER
+\copy issue_progress(user_id,placement_id,completed_at,completed_at_precision) FROM '$tmpPath/issue_progress.csv' CSV HEADER
 \copy edition_progress FROM '$tmpPath/edition_progress.csv' CSV HEADER
 \copy book_status(user_id,book_id,status,finished_year,year_rank,rating) FROM '$tmpPath/book_status.csv' CSV HEADER
 \copy reading_plan     FROM '$tmpPath/reading_plan.csv'     CSV HEADER
+
+-- run_issues.id came from the CSV (extract numbers placements in sheet order,
+-- D-16), so the serial never advanced: move it past them, or the first
+-- placement the app adds collides with a loaded one.
+SELECT setval(pg_get_serial_sequence('run_issues', 'id'),
+              COALESCE((SELECT max(id) FROM run_issues), 0) + 1, false);
 
 COMMIT;
 "@

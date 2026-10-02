@@ -2,7 +2,7 @@
 // reading history (R3-06), and re-adding an issue restores its row (S-07).
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { requireTestUrl } from "../scripts/lib/testdb.mjs";
-import { testSql, truncateAll } from "./db";
+import { markRead, testSql, truncateAll } from "./db";
 
 const sql = testSql();
 const USER = "test-user";
@@ -74,7 +74,7 @@ describe("a soft-deleted run", () => {
 describe("a soft-deleted placement (R3-06)", () => {
   it("keeps its progress row, leaves the counts, and brings the read mark back on restore", async () => {
     await run("a", ["a1", "a2"]);
-    await sql`INSERT INTO issue_progress (user_id, issue_id) VALUES (${USER}, 'a1')`;
+    await markRead(sql, USER, "a", "a1");
 
     await w.removeIssueFromRun("a", "a1");
 
@@ -92,7 +92,7 @@ describe("a soft-deleted placement (R3-06)", () => {
 
   it("is restored, not duplicated, when the issue is added again", async () => {
     await run("a", ["a1", "a2", "a3"]);
-    await sql`INSERT INTO issue_progress (user_id, issue_id) VALUES (${USER}, 'a2')`;
+    await markRead(sql, USER, "a", "a2");
     await w.removeIssueFromRun("a", "a2");
 
     // Re-add at the front: a1 and a3 shift, and a2 takes sequence 1.
