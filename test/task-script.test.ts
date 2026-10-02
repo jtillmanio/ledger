@@ -75,6 +75,10 @@ const runners: [string, Run | null][] = [
   ],
 ];
 
+// Each test starts a fresh shell; a cold pwsh on the CI runner has taken over
+// 5s on its own, past vitest's default timeout.
+const SPAWN_TIMEOUT = 30_000;
+
 const lines = (out: string) => out.replace(/\r/g, "").trimEnd().split("\n");
 
 describe.each(runners)("%s", (_name, run) => {
@@ -84,7 +88,7 @@ describe.each(runners)("%s", (_name, run) => {
     expect(out).toContain("1.1 Heading task");
     expect(out).toContain("**Check:** heading check.");
     expect(out).not.toContain("1.2");
-  });
+  }, SPAWN_TIMEOUT);
 
   it.skipIf(!run)("prints a list-item task with its indented lines and inner blank line", () => {
     const { status, out } = run!("5.7");
@@ -99,14 +103,14 @@ describe.each(runners)("%s", (_name, run) => {
       "",
       "  Paragraph after a blank line.",
     ]);
-  });
+  }, SPAWN_TIMEOUT);
 
   it.skipIf(!run)("stops a list item at the next item, a rule or a heading", () => {
     expect(lines(run!("5.1").out)).toHaveLength(2);
     expect(lines(run!("5.8").out)).toHaveLength(1);
-  });
+  }, SPAWN_TIMEOUT);
 
   it.skipIf(!run)("fails on an id that is not there", () => {
     expect(run!("9.9").status).not.toBe(0);
-  });
+  }, SPAWN_TIMEOUT);
 });
