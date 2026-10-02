@@ -411,8 +411,8 @@ test:all` and show me it passes.
 
 ### 0.4 Soft-delete everywhere
 **Model:** Sonnet · **Effort:** explore medium / plan high / implement high
-**Why:** mechanically simple (`deleted_at IS NULL` on every read, one partial
-index) but touches every query file, so a missed spot is a silent bug rather
+**Why:** mechanically simple (`deleted_at IS NULL` on every read, a partial
+index per soft-deletable table) but touches every query file and view, so a missed spot is a silent bug rather
 than a loud one. `pre-build-review.md` §3.1 flags that the schema-reviewer
 subagent will wrongly flag every pre-0.4 query for this — make sure that gate
 is dated correctly before you rely on the subagent here.
@@ -420,27 +420,31 @@ is dated correctly before you rely on the subagent here.
 **Explore**
 ```
 read @docs/TASKS.md task 0.4 and @CLAUDE.md's soft-delete rule, then
-@.claude/agents/schema-reviewer.md check 3. the gate to "from task 0.3
+@.claude/agents/schema-reviewer.md check 3. the gate "from task 0.4
 onward" was added by ledger row R0-07 — confirm it is still there before you
 rely on the subagent here.
 
-list every query file under src/db that reads runs, issues, or books, so we
-know the full surface this task has to touch.
+list every query file under src/db, and every view in etl/views.sql, that
+reads runs, issues, run_issues or books, so we know the full surface this task
+has to touch.
 ```
 
 **Plan**
 ```
-write a plan for task 0.4: add deleted_at IS NULL to every read query listed
-in explore, plus a partial index on each of the three tables. name every file
-you'll change and the one test (soft-delete a run, assert it disappears from
-listRuns while its issues and prereq edges still exist).
+write a plan for task 0.4: add deleted_at IS NULL to every read query and
+view listed in explore, plus a partial index on each of the four soft-deletable
+tables (runs, issues, run_issues, books). name every file you'll change and
+the three tests in the task's Check: a soft-deleted run leaves listRuns while
+its issues and prereq edges still exist; a soft-deleted placement keeps its
+progress row and restoring it brings the read mark back; re-adding a removed
+issue restores the original row rather than inserting one.
 ```
 
 **Implement**
 ```
 implement the plan. run the soft-delete test and show the output. then grep
 the codebase yourself for any remaining unfiltered read against runs, issues,
-or books and fix what you find — don't rely only on the file list from the
+run_issues or books and fix what you find — don't rely only on the file list from the
 plan.
 ```
 
