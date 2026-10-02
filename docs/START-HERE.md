@@ -1086,7 +1086,8 @@ sideways. This section is the _sequence_; that file is the _technique_.
 ## Test database — set this up before Step 11
 
 **~10 minutes, once.** The tests `TRUNCATE` tables. `DATABASE_URL` in `.env` is
-your real ledger, so the tests are never allowed to use it: they read
+your development database (see *Four databases* below), and the tests are never
+allowed to use it either: they read
 `TEST_DATABASE_URL`, refuse to start when it is missing, and refuse when it names
 the same host and database as `DATABASE_URL` (R3-02). Pick one:
 
@@ -1121,6 +1122,35 @@ CI runs. To ask Claude to run it: *"run `npm run test:all` and report failures"*
 Claude Code can call any of these scripts, and none of them needs `psql`. If
 `npm test` says `TEST_DATABASE_URL is not set`, that is the guard working — set the
 variable, do not work around it.
+
+## Four databases — `.env` is never production
+
+**~10 minutes, once.** Until 2026-10-02, `.env` pointed at production, so every
+local `npm run dev`, rebuild and load wrote to the live ledger. Now there are
+four databases:
+
+| Database    | Where its string lives                                          | What uses it                                                                 |
+| ----------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Production  | Vercel (Production), GitHub secret `DATABASE_URL`, `.env.live`   | the app, the nightly backup, Release; locally only `-EnvFile .env.live`       |
+| Preview     | the Neon integration, one `preview/<git branch>` per PR (10f)    | that PR's preview                                                            |
+| Test        | `TEST_DATABASE_URL` in `.env`, and CI                            | `npm test`, `npm run test:all`                                               |
+| Development | `DATABASE_URL` in `.env`                                         | `npm run dev`, `rebuild`, `load.ps1`, `db:push`, `db:views`, the psql checks |
+
+1. **Development.** Neon console → **Branches** → **Create branch** `dev` (or a
+   new database), tick **Pooled connection**, and put the string in `.env` as
+   `DATABASE_URL`. Load it with `npm run rebuild -- -Yes`. `.env` keeps
+   `LEDGER_LIVE=false` forever: development is always disposable.
+2. **`.env.live`.** Beside `.env`, a file with production's string:
+
+   ```
+   DATABASE_URL="<production's pooled string>"
+   OWNER_ID="justin"
+   LEDGER_LIVE=false
+   ```
+
+   It is gitignored (`.env*`), and Next.js never reads it. Exactly two commands
+   use it: `npm run rebuild -- -EnvFile .env.live` before cutover (Step 13), and
+   Step 14's final load. Bash twins: `ENV_FILE=.env.live bash etl/rebuild.sh`.
 
 ## Step 11 — Sittings 1–2: Phase 0
 
@@ -1200,7 +1230,8 @@ After each sitting:
 
 1. **Test the PR's preview on your Android phone**, then merge it.
 2. **Before Step 14, if the PR added a migration:** pull `main` and run
-   `npm run rebuild` (it migrates from zero and reloads the workbook). The PR's
+   `npm run rebuild -- -EnvFile .env.live` (it migrates production from zero and
+   reloads the workbook; plain `npm run rebuild` only rebuilds development). The PR's
    CI summary says whether it added one. Release refuses to migrate before
    cutover and says so. 0.8a *must* go this way: its migration re-keys progress
    and is not written to convert existing rows.
@@ -1296,13 +1327,14 @@ npm run extract -- --out seed-final --fail-on-cycle
 Compare-Object (Get-Content seed/run_issues.csv) (Get-Content seed-final/run_issues.csv)
 Compare-Object (Get-Content seed/issues.csv) (Get-Content seed-final/issues.csv)
 
-# 3. load — THIS IS THE LAST load.ps1 RUN, EVER
-.\etl\load.ps1 seed-final
+# 3. load into production — THIS IS THE LAST LOAD OF PRODUCTION, EVER
+.\etl\load.ps1 seed-final -EnvFile .env.live
 ```
 
-**Immediately after that load, add `LEDGER_LIVE=true` to `.env`.** With that
-line set, `load.ps1`, `load.sh` and `npm run rebuild` refuse to run instead of
-wiping what the app holds. **Also set the repo variable `LEDGER_LIVE` to `true`**
+**Immediately after that load, set `LEDGER_LIVE=true` in `.env.live`.** With that
+line set, `load.ps1`, `load.sh` and `npm run rebuild` refuse to run against
+production instead of wiping what the app holds. `.env` stays `false`:
+development can still be rebuilt. **Also set the repo variable `LEDGER_LIVE` to `true`**
 (Settings → Secrets and variables → Actions → Variables). From then on Release
 migrates the live database instead of pointing you at a rebuild.
 

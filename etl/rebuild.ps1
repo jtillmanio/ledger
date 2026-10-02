@@ -13,14 +13,20 @@
 
   Never calls Metron: py etl/enrich_comics.py stays a separate, deliberate step.
 
-  Refuses to run when .env has LEDGER_LIVE=true. Set that at cutover (START-HERE
-  Step 14) and this script can never wipe progress that exists only in the app.
+  Reads -EnvFile (default .env, the development database). Production's
+  connection string lives in .env.live, and only `-EnvFile .env.live` reaches it
+  (START-HERE Step 13).
+
+  Refuses to run when the env file has LEDGER_LIVE=true. Set that in .env.live at
+  cutover (START-HERE Step 14) and this script can never wipe progress that
+  exists only in the app.
 
 .EXAMPLE
   .\etl\rebuild.ps1                 # asks you to type REBUILD
   .\etl\rebuild.ps1 -Yes            # no prompt
   .\etl\rebuild.ps1 -SkipExtract    # reuse seed/ as it is
   npm run rebuild -- -Yes
+  npm run rebuild -- -EnvFile .env.live   # production, before cutover only
 #>
 
 [CmdletBinding()]

@@ -28,8 +28,8 @@ these. Tick them here; START-HERE has the commands.
       needs.*
 - [x] **One dry run of Release** is green (Actions → Release → Dry run). *Done:
       run 36625396477, 2026-09-29: CI success, no migrations to apply.*
-- [ ] At Step 14, set the `LEDGER_LIVE` variable to `true` alongside `.env`.
-- [ ] **Preview databases (10f):** `DATABASE_URL` out of Vercel's Preview
+- [ ] At Step 14, set the `LEDGER_LIVE` variable to `true` alongside `.env.live`.
+- [x] **Preview databases (10f):** `DATABASE_URL` out of Vercel's Preview
       scope, `LEDGER_LIVE_DB_HOST` in it, Neon's Vercel integration installed.
       Until then, previews of branches that include this change fail to build.
       *Done, verified 2026-10-02: the previews for #37 and #38 built.

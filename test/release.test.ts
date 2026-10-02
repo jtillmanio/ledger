@@ -74,7 +74,8 @@ describe("releaseProblems", () => {
 
   it("before cutover, refuses to migrate and points at rebuild", () => {
     expect(releaseProblems({ ...ok, live: false })).toEqual([]);
-    expect(releaseProblems({ ...ok, live: false, pending: ["0005_c"] })[0]).toMatch(/npm run rebuild/);
+    expect(releaseProblems({ ...ok, live: false, pending: ["0005_c"] })[0])
+      .toMatch(/npm run rebuild -- -EnvFile \.env\.live/);
   });
 
   it("refuses to release code older than the live schema", () => {

@@ -130,11 +130,14 @@ everywhere else.
   the bulk-entry parser, a Metron existence check, and an explicit user accept.
   Metron-proposed labels (`label_review.csv`) follow the same rule: explicit
   accept only.
-- **The database is disposable until cutover.** `npm run rebuild` drops and
-  reloads everything, and the loader's `TRUNCATE … CASCADE` also empties every
-  table referencing a run, issue or book (queue, shelves, eras, inbox).
-  `.env` `LEDGER_LIVE=true` (set at START-HERE Step 14, right after the final
-  load and before the month of running both — D-18) makes load and rebuild
-  refuse. Never suggest a rebuild or `load.ps1` once that is set.
+- **Production is disposable until cutover; development always is.**
+  `npm run rebuild` drops and reloads everything, and the loader's
+  `TRUNCATE … CASCADE` also empties every table referencing a run, issue or book
+  (queue, shelves, eras, inbox). `.env` is the development database; production
+  is reached only through `-EnvFile .env.live` (`ENV_FILE=.env.live` for the
+  bash twins), and only when the owner asks. `.env.live` `LEDGER_LIVE=true` (set
+  at START-HERE Step 14, right after the final load and before the month of
+  running both — D-18) makes load and rebuild refuse against production. Never
+  suggest a rebuild or `load.ps1` of production once that is set.
 - `etl/extract.py` is the migration from the workbooks. Changing its output
   format means re-running against both `.xlsx` files and diffing the CSVs.

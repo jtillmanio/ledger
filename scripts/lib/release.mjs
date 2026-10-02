@@ -71,7 +71,8 @@ export function releaseProblems({ live, target, ci, unreleasedFiles, pending, un
   if (pending.length && !live) {
     problems.push(
       `${pending.length} migration(s) to apply (${pending.join(", ")}), and LEDGER_LIVE is not "true". ` +
-        "Before cutover a schema change goes through `npm run rebuild` on main (START-HERE Step 13); " +
+        "Before cutover a schema change reaches production through `npm run rebuild -- -EnvFile .env.live` " +
+        "on main (START-HERE Step 13); " +
         "run Release again afterwards and it will find nothing to migrate.",
     );
   }

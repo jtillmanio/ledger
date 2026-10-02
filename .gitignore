@@ -1,7 +1,9 @@
 node_modules
 .next
-.env
-.env.local
+# every env file: .env (development), .env.live (production, START-HERE Step 13),
+# .env.local; only the template is tracked
+.env*
+!.env.example
 seed/
 *.dump
 etl/.metron-cache.sqlite
