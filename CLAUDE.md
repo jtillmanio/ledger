@@ -73,7 +73,8 @@ npm run titles:fandom       # etl/fandom_titles.py: fill missing story titles fr
                             # writes fandom_skipped.csv (what it couldn't, and why); reads hand-kept
                             # fandom_pages.csv (series -> `Name Vol N`, label -> `Name Vol N issue`)
 .\etl\load.ps1              # PowerShell loader; etl/load.sh is the WSL/Git Bash twin
-npm run rebuild             # drop, migrate from zero, extract, load, test_views, row counts
+npm run rebuild             # drop, migrate from zero, extract, load, test_views, row counts;
+                            # .env (development) by default, `-- -EnvFile .env.live` is production
                             # etl/rebuild.ps1; refuses when LEDGER_LIVE=true; twin etl/rebuild.sh
 npm run test:views          # etl/test_views.sql against TEST_DATABASE_URL; rolls back
 npm run test:etl            # py -m unittest over etl/test_*.py, no network
@@ -217,13 +218,23 @@ npm run check:migrations    # journal = files, drop/retype has a drizzle/down fi
   the bulk-entry parser, a Metron existence check, and an explicit user accept.
   Metron-proposed labels (`label_review.csv`) follow the same rule: explicit
   accept only.
-- **The database is disposable until cutover.** `npm run rebuild` drops and
-  reloads everything, and `load.ps1` / `load.sh` truncate every progress table
-  **and, through `CASCADE`, every table that references a run, issue or book**
-  (queue, shelves, eras, inbox, sessions). `.env` `LEDGER_LIVE=true` (set at
-  START-HERE Step 14, right after the final load and *before* the month of
-  running both — D-18) makes all four refuse. Never suggest a rebuild or a load
-  once that is set.
+- **Four databases, and `.env` is never production.** Production (Vercel
+  production; the GitHub `DATABASE_URL` secret, for backup and Release), one
+  Neon branch per PR preview, test (`TEST_DATABASE_URL`, locally and in CI), and
+  development (`.env` `DATABASE_URL`: `npm run dev`, `rebuild`, `load`,
+  `db:push`, `db:views`). Production's local connection string lives only in
+  the gitignored `.env.live`, which a command reads only when told to:
+  `npm run rebuild -- -EnvFile .env.live` before cutover (START-HERE Step 13)
+  and Step 14's final `load.ps1 -EnvFile .env.live`. Never run or suggest
+  anything aimed at `.env.live` unless the owner asks for it.
+- **Production is disposable until cutover; development always is.**
+  `npm run rebuild` drops and reloads everything, and `load.ps1` / `load.sh`
+  truncate every progress table **and, through `CASCADE`, every table that
+  references a run, issue or book** (queue, shelves, eras, inbox, sessions).
+  `.env.live` `LEDGER_LIVE=true` (set at START-HERE Step 14, right after the
+  final load and *before* the month of running both — D-18) makes all four
+  refuse against production. Never suggest a rebuild or a load of production
+  once that is set. `.env` keeps `LEDGER_LIVE=false`.
 - **A merge is not a deploy; Release is** (START-HERE Step 13). Vercel stages
   every build of `main`, and `.github/workflows/release.yml`, run by hand after
   the merge, checks CI on that commit, snapshots Neon, migrates, re-applies
@@ -231,12 +242,14 @@ npm run check:migrations    # journal = files, drop/retype has a drizzle/down fi
   is the one route outside the passcode gate (`src/proxy.ts`), and it returns
   no data; nothing else joins it there. It is the only path a migration takes to
   the live database: never tell anyone to run `db:migrate`, `db:push` or
-  `db:views` against `DATABASE_URL` once the repo variable `LEDGER_LIVE` is
-  `true`. Before that, a schema change goes through `npm run rebuild`. A
+  `db:views` against production once the repo variable `LEDGER_LIVE` is
+  `true`. Before that, a schema change reaches production through
+  `npm run rebuild -- -EnvFile .env.live`, which Release's refusal names. A
   preview build migrates only its own Neon branch (`preview/<git branch>`), and
   `scripts/vercel-build.mjs` refuses one whose database is the live host.
-- **Tests touch `TEST_DATABASE_URL` and nothing else.** `DATABASE_URL` is the live
-  Neon ledger. `scripts/lib/testdb.mjs` refuses when the test URL is unset or
+- **Tests touch `TEST_DATABASE_URL` and nothing else.** `DATABASE_URL` is the
+  development database locally and the live Neon ledger in Vercel production
+  and the GitHub secrets. `scripts/lib/testdb.mjs` refuses when the test URL is unset or
   names the same host and database, and `npm test` fails at once. Never point a
   test, a fixture or a script that truncates at `DATABASE_URL`, and never add a
   fallback to it.

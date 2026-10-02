@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 # load.sh — push the extracted CSVs into Postgres. Safe to re-run: it truncates
 # the catalog and progress tables first, so the workbook stays the source of
-# truth until you cut over.
+# truth until you cut over. Reads $ENV_FILE (default .env, the development
+# database); ENV_FILE=.env.live loads production, at Step 14 and never after.
 set -euo pipefail
 
-if [ -f .env ]; then
-  set -a; . ./.env; set +a
+ENV_FILE="${ENV_FILE:-.env}"
+if [ -f "$ENV_FILE" ]; then
+  case "$ENV_FILE" in */*) env_path="$ENV_FILE" ;; *) env_path="./$ENV_FILE" ;; esac
+  set -a; . "$env_path"; set +a
+else
+  echo "$ENV_FILE not found; relying on existing environment variables." >&2
 fi
 
 # The guard (R2-02). This script TRUNCATEs every progress table; once the app is

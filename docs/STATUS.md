@@ -40,7 +40,8 @@ Phase 0 has one task left:
 
 0.8b (2026-10-02) draws the grey `↺ read in …` hint on the spine from
 `issue_read_runs`, on the mockup's row markup. If the live database has not
-been rebuilt since 0.8a (migration 0007), `npm run rebuild` on `main` puts
+been rebuilt since 0.8a (migration 0007), `npm run rebuild -- -EnvFile .env.live`
+on `main` puts
 the per-run reads there, then Release promotes the build (START-HERE Step 13:
 before cutover Release refuses to migrate).
 

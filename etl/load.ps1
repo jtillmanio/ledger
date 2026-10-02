@@ -9,6 +9,7 @@
 .EXAMPLE
   .\etl\load.ps1
   .\etl\load.ps1 -Seed seed -EnvFile .env
+  .\etl\load.ps1 -Seed seed-final -EnvFile .env.live   # Step 14's final load, production
 #>
 
 [CmdletBinding()]

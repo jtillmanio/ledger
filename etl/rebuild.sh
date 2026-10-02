@@ -3,8 +3,10 @@
 # load, verify. WSL/Git Bash twin of etl/rebuild.ps1; see that file for the why.
 #
 #   bash etl/rebuild.sh [--yes] [--skip-extract] [seed-dir]
+#   ENV_FILE=.env.live bash etl/rebuild.sh     # production, before cutover only
 #
-# Reads .env. Refuses when LEDGER_LIVE=true. Never calls Metron.
+# Reads $ENV_FILE (default .env, the development database) and hands it on to
+# load.sh. Refuses when LEDGER_LIVE=true. Never calls Metron.
 set -euo pipefail
 
 YES=0; SKIP_EXTRACT=0; SEED=seed
@@ -16,8 +18,12 @@ for arg in "$@"; do
   esac
 done
 
-if [ -f .env ]; then
-  set -a; . ./.env; set +a
+export ENV_FILE="${ENV_FILE:-.env}"
+if [ -f "$ENV_FILE" ]; then
+  case "$ENV_FILE" in */*) env_path="$ENV_FILE" ;; *) env_path="./$ENV_FILE" ;; esac
+  set -a; . "$env_path"; set +a
+else
+  echo "$ENV_FILE not found; relying on existing environment variables." >&2
 fi
 : "${DATABASE_URL:?set DATABASE_URL}"
 : "${OWNER_ID:?set OWNER_ID}"
