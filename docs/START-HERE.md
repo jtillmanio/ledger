@@ -1202,7 +1202,7 @@ private GitHub repo from Step 10a and `TEST_DATABASE_URL` first — see
 | 3 | 1.2 undo, then 1.1 range marking, 1.6 resume pointer | The app becomes pleasant to use |
 | 4 | 1.3 bulk-entry parser, 1.3c review table and insert, 1.3b add from a Metron search | Adding a run is faster than the sheet. The long one |
 | 5 | 1.4 books bulk entry, 1.4c add a book, 1.4b quick capture, 1.5 dated log + `read_events` | Books work end to end |
-| 6 | 1.7 period column, 1.8 app shell, 1.8b thumb bar and contrast | The real navigation |
+| 6 | 1.7 period column, 1.8a design tokens and control states, 1.8 app shell, 1.8b thumb bar and contrast | The real navigation |
 | 7 | 1.10 Up next queue, then 1.9 status screens, **2.11a prerequisite cycle check**, and 1.11 failed sign-ins wait (D-36) | Phase 1 complete; extract lists the cycles for your audit |
 
 **Task 1.5 carries a deadline.** It adds `read_events`, the re-read log, and

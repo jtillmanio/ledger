@@ -479,6 +479,40 @@ unless the owner approved one).
 
 ## Phase 1 — Daily use (build before anything clever)
 
+**Build order.** The tasks below are in the order they are built, which is
+not ID order. The IDs predate the reviews that fixed the order (R3-10, R3-12,
+D-20, D-31), and decisions, reviews, branches and commits cite them, so they
+stay. START-HERE Step 12 groups them into sittings:
+
+| Sitting | Tasks, in order | Why this order |
+|---|---|---|
+| 3 | 1.2 → 1.1 → 1.6 | 1.1's check asserts undo, and 1.1 must not carry its own (R3-10) |
+| 4 | 1.3 → 1.3c → 1.3b | 1.3c's review table takes the parser's output; 1.3b's Metron results go through the same review and insert |
+| 5 | 1.4 → 1.4c → 1.4b → 1.5 | resolving an inbox note (1.4b) routes into the add flows; 1.5 must land before real rereads overwrite history |
+| 6 | 1.7 → 1.8a → 1.8 → 1.8b | 1.8a's tokens come before the first UI task; 1.8b was split out of 1.8 (R3-12) |
+| 7 | 1.10 → 1.9 → 2.11a → 1.11 | 1.9's Up next tab reads the queue; 2.11a is numbered in Phase 2 but built here, before cutover (D-20); so is 1.11 (D-36) |
+
+### ☐ 1.2 Undo · S
+**Build before 1.1** (R3-10): 1.1's check asserts undo, and 1.1 must not carry its
+own. Last-action stack in memory, `Ctrl+Z` and a toast with an undo button. Covers
+single marks, range marks, and status changes.
+
+**One interface, three later users** (R1-09). The stack holds
+`{ label: string, undo: () => Promise<void> }`, not progress rows, so a caller
+supplies its own inverse. Build it that way now: **1.10** pushes a queue-order
+snapshot (reorder and remove), **1.1** pushes a range mark as one entry, and
+**1.4c/1.3** push an insert. Typing the stack to `issue_progress` means
+rewriting it twice.
+
+**2.7's Undo is not this.** Accepting an overage is persisted and dated, and its
+*Undo acceptance* control sits on a banner that survives a reload — it deletes
+the acceptance row. The toast stack is in memory and lasts 8 seconds. Two
+different affordances; do not share a component between them.
+
+**Check:** test asserts mark → undo restores exact prior state, including
+`completed_at`. Test that an entry pushed with an arbitrary inverse closure runs
+it on undo, so the stack is not coupled to progress rows.
+
 ### ☐ 1.1 Range marking · M
 Depends on 0.8a and **1.2** — build undo first (R3-10); 1.1 pushes its range mark
 onto that stack and never ships a throwaway undo of its own.
@@ -543,26 +577,22 @@ those 9. At 1280px, a click on the fifth row and a shift-click on the
 twenty-second opens the sheet counting 18 placements. Manually: open
 `hickman-krakoa` (641 issues), mark a 100-issue range, confirm no visible stall.
 
-### ☐ 1.2 Undo · S
-**Build before 1.1** (R3-10): 1.1's check asserts undo, and 1.1 must not carry its
-own. Last-action stack in memory, `Ctrl+Z` and a toast with an undo button. Covers
-single marks, range marks, and status changes.
+### ☐ 1.6 Resume pointer · S
+Dashboard shows "Continue: Fantastic Four #583" per in-progress run, linking to
+that row in the spine. Derived — lowest `run_issues.sequence` whose *placement*
+is unread — never stored. An issue read only in another run is still unread
+here, so the pointer stops on it; the row's `read in …` hint lets you tick it
+and move on.
 
-**One interface, three later users** (R1-09). The stack holds
-`{ label: string, undo: () => Promise<void> }`, not progress rows, so a caller
-supplies its own inverse. Build it that way now: **1.10** pushes a queue-order
-snapshot (reorder and remove), **1.1** pushes a range mark as one entry, and
-**1.4c/1.3** push an insert. Typing the stack to `issue_progress` means
-rewriting it twice.
+The pointer's home is the comics **telecard**, kicker *PICK UP WHERE YOU LEFT
+OFF*: run name, credit line, a state badge (`◐ 42 / 381`, with no prerequisite
+badge beside it — the five-state rules are in 2.4), the telescope (2.5) and the
+ladder. Its primary button, **Resume #141**, is the same verb as the thumb bar's
+*Mark #141 read*. Phone and desktop render the same badges from one component.
 
-**2.7's Undo is not this.** Accepting an overage is persisted and dated, and its
-*Undo acceptance* control sits on a banner that survives a reload — it deletes
-the acceptance row. The toast stack is in memory and lasts 8 seconds. Two
-different affordances; do not share a component between them.
-
-**Check:** test asserts mark → undo restores exact prior state, including
-`completed_at`. Test that an entry pushed with an arbitrary inverse closure runs
-it on undo, so the stack is not coupled to progress rows.
+**Check:** test with a run where issues 1-5 and 7 are read; assert the pointer
+returns issue 6. Mark issue 6 read in a different run holding it and assert the
+pointer still returns 6.
 
 ### ☐ 1.3 Bulk issue entry — parser and validation · M
 The single highest-risk feature: if adding a run is slower than Sheets you will
@@ -799,23 +829,6 @@ with no date appears under *No year*. Choosing *Year only* for 2019 in the
 finish-date control stores `2019-07-01` / `approximate`, never `exact`, and
 *No date* stores NULL / `none`. `finished_year` no longer exists. Up →
 down → up preserves the rows, including their precision.
-
-### ☐ 1.6 Resume pointer · S
-Dashboard shows "Continue: Fantastic Four #583" per in-progress run, linking to
-that row in the spine. Derived — lowest `run_issues.sequence` whose *placement*
-is unread — never stored. An issue read only in another run is still unread
-here, so the pointer stops on it; the row's `read in …` hint lets you tick it
-and move on.
-
-The pointer's home is the comics **telecard**, kicker *PICK UP WHERE YOU LEFT
-OFF*: run name, credit line, a state badge (`◐ 42 / 381`, with no prerequisite
-badge beside it — the five-state rules are in 2.4), the telescope (2.5) and the
-ladder. Its primary button, **Resume #141**, is the same verb as the thumb bar's
-*Mark #141 read*. Phone and desktop render the same badges from one component.
-
-**Check:** test with a run where issues 1-5 and 7 are read; assert the pointer
-returns issue 6. Mark issue 6 read in a different run holding it and assert the
-pointer still returns 6.
 
 ### ☐ 1.7 One period column on `reading_plan` · M
 Replace `planned_year` / `planned_quarter` / `planned_month` with a single
@@ -1107,6 +1120,60 @@ for the unchecked control ring, in both themes; `npm run test:tokens` passes. At
 96px; the run detail renders it at all three widths. On a fixture run spanning two series the
 thumb bar's verb contains the series name.
 
+### ☐ 1.10 Comics Up next queue · M
+Requirement change, Sept 2026. ARCHITECTURE 2.16, FEATURES Part 2i. One
+ordered list of runs per user, open-ended: add, reorder, remove. No years,
+quarters or capacity — do not add them. Mockups: "Comics — v4" (the Up next
+section) and "Status — in flight, up next, done". Depends on 0.8.
+
+- `run_queue(user_id, run_id, ordinal, added_at)`, with primary key
+  `(user_id, run_id)` and `UNIQUE (user_id, ordinal) DEFERRABLE INITIALLY
+  DEFERRED`. Ordinals are contiguous from 1. Reorder and remove rewrite them in
+  one transaction.
+- `run_queue_state` view: the queue joined to `run_progress` and
+  `run_readiness`, carrying state (`unstarted` / `reading` / `read`),
+  readiness and the blocked-by count. The dashboard and the status screen both
+  read it.
+- **Add** from the run detail (*+ Up next*, which appends, and *Read next*,
+  which goes to the top), run-list rows, the dashboard's *Unlocked and waiting*
+  rows, and the status screen's *Ready, not queued*. A run that's already
+  queued shows *In Up next · #3* rather than the button. Placeholder and
+  soft-deleted runs can't be queued.
+- **Reorder** by drag handle (long press on the phone) and *Move to top*.
+  **Remove** from the row menu, with the 1.2 undo toast.
+- **Dashboard:** an *Up next* section between *Also in flight* and *Unlocked
+  and waiting*, showing the first five unstarted queued runs, *Start* on the
+  first and *All N* to the tab. Each row is **the same queue row** as the
+  status tab (M-08): the named `button.drag` reorder handle and the `⋯` row
+  menu, so the dashboard's queue is keyboard-operable too. When the queue is empty: "Nothing queued —
+  pick from N ready runs" (N computed, see 2.4), which links to *Ready, not
+  queued*.
+- ***Start* navigates, it never writes** (R1-08). It goes to
+  `/comics/[runId]#p-1` — the run's first unread placement. The only controls
+  that write progress are the spine's `.chk` and the thumb bar's mark verb, so a
+  mistap on the dashboard cannot silently start a run. (Watch's equivalent is
+  named for its target, *Start S1*, 8.7.)
+- Starting or finishing a queued run changes nothing in `run_queue`. The view
+  moves it between tabs, and unmarking a run back to zero restores it to its
+  old place.
+
+The queue is keyboard-operable: the drag handle is `<button class="drag"
+aria-label="Reorder Simonson — Thor, position 2 of 12"
+aria-describedby="dnd-help">`; Space lifts, arrows move, Space drops, Esc
+cancels, announced through an `aria-live` region. The row menu offers *Move to
+top · Move up · Move down · Remove*. Below the queue, *Ready, not queued* is its
+own group with **+ Up next** per row. Mockup: `queue` (Up next, lifted row with menu, Done → Stopped, empty queue).
+
+**Check:** adding three runs gives ordinals 1–3; *Read next* on a fourth puts it
+at 1 and shifts the rest; moving #3 to the top gives a contiguous 1–4; removing
+#2 leaves 1–3 with no gap, and undo restores the exact prior order. Marking one
+placement of a queued run moves it out of the dashboard's Up next and into In
+flight while its `run_queue` row is unchanged. Queuing a blocked run succeeds
+and `run_queue_state` reports its blocked-by count. Queuing a placeholder is
+rejected. Two concurrent reorders never leave duplicate ordinals. The documented
+keyboard sequence (Space, Down, Down, Space) moves a row from position 2 to 4
+with contiguous ordinals, and Esc mid-lift leaves the order unchanged.
+
 ### ☐ 1.9 Status screens: In flight · Up next · Done · M
 Requirement change, Sept 2026. ARCHITECTURE §4. `/comics/status` and
 `/books/status`, a single component with three tabs in this order and with these
@@ -1163,60 +1230,6 @@ is in Done; a run whose issues are all read *in other runs* is not in Done
 `someday`. A DNF book appears only under Stopped. Tab counts equal row counts.
 Each tablist contains exactly one underline element. Screenshot at 360px,
 including every empty tab.
-
-### ☐ 1.10 Comics Up next queue · M
-Requirement change, Sept 2026. ARCHITECTURE 2.16, FEATURES Part 2i. One
-ordered list of runs per user, open-ended: add, reorder, remove. No years,
-quarters or capacity — do not add them. Mockups: "Comics — v4" (the Up next
-section) and "Status — in flight, up next, done". Depends on 0.8.
-
-- `run_queue(user_id, run_id, ordinal, added_at)`, with primary key
-  `(user_id, run_id)` and `UNIQUE (user_id, ordinal) DEFERRABLE INITIALLY
-  DEFERRED`. Ordinals are contiguous from 1. Reorder and remove rewrite them in
-  one transaction.
-- `run_queue_state` view: the queue joined to `run_progress` and
-  `run_readiness`, carrying state (`unstarted` / `reading` / `read`),
-  readiness and the blocked-by count. The dashboard and the status screen both
-  read it.
-- **Add** from the run detail (*+ Up next*, which appends, and *Read next*,
-  which goes to the top), run-list rows, the dashboard's *Unlocked and waiting*
-  rows, and the status screen's *Ready, not queued*. A run that's already
-  queued shows *In Up next · #3* rather than the button. Placeholder and
-  soft-deleted runs can't be queued.
-- **Reorder** by drag handle (long press on the phone) and *Move to top*.
-  **Remove** from the row menu, with the 1.2 undo toast.
-- **Dashboard:** an *Up next* section between *Also in flight* and *Unlocked
-  and waiting*, showing the first five unstarted queued runs, *Start* on the
-  first and *All N* to the tab. Each row is **the same queue row** as the
-  status tab (M-08): the named `button.drag` reorder handle and the `⋯` row
-  menu, so the dashboard's queue is keyboard-operable too. When the queue is empty: "Nothing queued —
-  pick from N ready runs" (N computed, see 2.4), which links to *Ready, not
-  queued*.
-- ***Start* navigates, it never writes** (R1-08). It goes to
-  `/comics/[runId]#p-1` — the run's first unread placement. The only controls
-  that write progress are the spine's `.chk` and the thumb bar's mark verb, so a
-  mistap on the dashboard cannot silently start a run. (Watch's equivalent is
-  named for its target, *Start S1*, 8.7.)
-- Starting or finishing a queued run changes nothing in `run_queue`. The view
-  moves it between tabs, and unmarking a run back to zero restores it to its
-  old place.
-
-The queue is keyboard-operable: the drag handle is `<button class="drag"
-aria-label="Reorder Simonson — Thor, position 2 of 12"
-aria-describedby="dnd-help">`; Space lifts, arrows move, Space drops, Esc
-cancels, announced through an `aria-live` region. The row menu offers *Move to
-top · Move up · Move down · Remove*. Below the queue, *Ready, not queued* is its
-own group with **+ Up next** per row. Mockup: `queue` (Up next, lifted row with menu, Done → Stopped, empty queue).
-
-**Check:** adding three runs gives ordinals 1–3; *Read next* on a fourth puts it
-at 1 and shifts the rest; moving #3 to the top gives a contiguous 1–4; removing
-#2 leaves 1–3 with no gap, and undo restores the exact prior order. Marking one
-placement of a queued run moves it out of the dashboard's Up next and into In
-flight while its `run_queue` row is unchanged. Queuing a blocked run succeeds
-and `run_queue_state` reports its blocked-by count. Queuing a placeholder is
-rejected. Two concurrent reorders never leave duplicate ordinals. The documented
-keyboard sequence (Space, Down, Down, Space) moves a row from position 2 to 4
-with contiguous ordinals, and Esc mid-lift leaves the order unchanged.
 
 ### ☐ 1.11 Slow down failed sign-ins · S
 `POST /api/login` compares the passcode and answers at once, so nothing slows
