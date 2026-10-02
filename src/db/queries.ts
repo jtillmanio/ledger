@@ -102,8 +102,22 @@ export async function inProgressRuns(userId: string) {
   `;
 }
 
+/** One wave, not three: the header, the spine and the prerequisites don't
+ * depend on each other, so they go out together and a missing run is caught
+ * after (task 0.9). An unknown id costs two empty queries; a known one saves
+ * two round trips. */
 export async function runDetail(userId: string, runId: string) {
-  const [run] = await sql<
+  const [[run], rows, prereqs] = await Promise.all([runHeader(userId, runId),
+    runSpine(userId, runId), runPrereqs(userId, runId)]);
+  if (!run) return null;
+  const issues = rows.map(({ first_read_at, first_read_precision, ...r }) => ({
+    ...r, read_elsewhere_when: readWhen(first_read_at, first_read_precision),
+  }));
+  return { run, issues, prereqs };
+}
+
+function runHeader(userId: string, runId: string) {
+  return sql<
     (RunRow & {
       notes: string | null; artists: string | null; why_source: "hand" | "claude";
       credited_issues: number; distinct_issues: number;
@@ -126,8 +140,9 @@ export async function runDetail(userId: string, runId: string) {
              rs.series_issues, rs.start_year, rs.end_year, rs.dated_issues,
              cl.writers, cl.artists, cl.credited_issues, cl.issue_count
   `;
-  if (!run) return null;
+}
 
+function runSpine(userId: string, runId: string) {
   // Placements, not issues: type, notes and read state belong to where the issue
   // sits in this run (ARCHITECTURE 2.14). `completed` is read *here*; a read in
   // another run does not tick it. An issue appears at most once per run (D-R2-1).
@@ -135,7 +150,7 @@ export async function runDetail(userId: string, runId: string) {
   // issue_read_runs: the spine's grey hint (0.8b). It never includes this run, so
   // the hint can return after an untick. The date is only that of a read
   // elsewhere, so it is withheld while the row is read here.
-  const rows = await sql<{
+  return sql<{
     id: string; placement_id: number; sequence: number; label: string; type: string;
     notes: string | null; completed: boolean; read_elsewhere: string[];
     first_read_at: Date | null; first_read_precision: Precision;
@@ -159,11 +174,10 @@ export async function runDetail(userId: string, runId: string) {
     WHERE ri.run_id = ${runId}
     ORDER BY ri.sequence
   `;
-  const issues = rows.map(({ first_read_at, first_read_precision, ...r }) => ({
-    ...r, read_elsewhere_when: readWhen(first_read_at, first_read_precision),
-  }));
+}
 
-  const prereqs = await sql<{
+function runPrereqs(userId: string, runId: string) {
+  return sql<{
     id: string; title: string; type: string; pct: number; depth: number;
   }[]>`
     SELECT r.id, r.title, a.type, rp.pct, a.depth
@@ -172,8 +186,6 @@ export async function runDetail(userId: string, runId: string) {
     JOIN run_progress rp ON rp.run_id = r.id AND rp.user_id = ${userId}
     ORDER BY a.depth, a.type DESC, r.title
   `;
-
-  return { run, issues, prereqs };
 }
 
 /** Distinct issues in the catalog and how many are read. A crossover placed in

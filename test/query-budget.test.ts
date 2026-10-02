@@ -14,7 +14,7 @@ const USER = "test-user";
 const BUDGET: Record<string, { queries: number; waves: number }> = {
   "/": { queries: 4, waves: 1 },
   "/comics": { queries: 2, waves: 1 },
-  "/comics/[runId]": { queries: 3, waves: 3 },
+  "/comics/[runId]": { queries: 3, waves: 1 },
   "/books": { queries: 4, waves: 1 },
   "/login": { queries: 0, waves: 0 },
 };
