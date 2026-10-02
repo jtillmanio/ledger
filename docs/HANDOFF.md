@@ -218,11 +218,15 @@ queue at current pace.
   26 cells read as unrecognized track names, before the sheet rename.
 - **6 forward-declared prereq IDs** with no `RUNS` row — loaded as
   `placeholder = true` so edges survive.
-- **`Amazing Spider-Man` and `The Amazing Spider-Man`** are both in use, 137 and
-  100 bare labels, same series. Now proposed as `name_style` fixes in
-  `label_review.csv` (task 0.7).
-- **3 labels use `X-Men (vol. 2) #177–179`** instead of a year. Won't match the
-  bulk-add grammar later (task 0.5).
+- **`Amazing Spider-Man` and `The Amazing Spider-Man` — resolved.** Were both in
+  use as of an earlier extract (137 and 100 bare labels, same series). A fresh
+  2026-10-02 extract found no bare split left in the workbook — every label
+  reads `The Amazing Spider-Man` today. The stale `volume_map.csv` row
+  describing the bare split (task 0.5) has been removed.
+- **`X-Men (vol. 2) #177–179` — resolved.** The three labels were year-less as
+  of an earlier extract; a fresh 2026-10-02 extract found them already written
+  as `X-Men (2004) #177-179`, Metron-matched. The stale `volume_map.csv` row
+  (task 0.5) has been removed.
 - **Typed run summaries had drifted from the reading orders.** `RUNS!Series
   (and Issues)` disagreed with the run's own issues in 212 of 259 runs, 30 runs
   had identical start and end years, and at least 21 ended before a volume in
