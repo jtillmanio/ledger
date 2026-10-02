@@ -9,16 +9,16 @@ argue from it.
 
 ## Where we are
 
-**10 of 87 tasks done (11%).** Still in Phase 0 — nothing in Phase 1 or later has
+**10 of 88 tasks done (11%).** Still in Phase 0 — nothing in Phase 1 or later has
 started. The private GitHub repo exists and CI runs on every PR, and is proven
 to go red on a broken view (task 0.2, done 2026-09-30). The Release
-workflow has deployed `main` to Vercel (last run 2026-09-30). `LEDGER_LIVE` is
+workflow has deployed `main` to Vercel (last run 2026-10-02). `LEDGER_LIVE` is
 `false`, so the database is still disposable: `npm run rebuild` can reload it.
 
 | Phase | Done / total | Status |
 |---|---|---|
 | 0 — Foundation | 9 / 10 | **In progress** |
-| 1 — Daily use | 0 / 16 | Not started |
+| 1 — Daily use | 0 / 17 | Not started |
 | 2 — The pace engine | 0 / 15 | Not started |
 | 3 — Editing | 0 / 7 | Not started |
 | 4 — Enrichment | 0 / 3 | Not started |
@@ -49,7 +49,9 @@ Build order and the cutover gates are in START-HERE Steps 11–14 (rewritten
 the end of Phase 1, before cutover (D-20). Decisions D-18…D-23 (2026-09-23):
 cut over by loading first, then run both for a month; no rereads inside a run;
 prerequisite audit before cutover; finish year derived from the finish date;
-unlock cost counts unread issues; passphrase login until task 6.13.
+unlock cost counts unread issues; passphrase login until task 6.13. D-36
+(2026-10-02) amends D-23: new task 1.11 makes a failed sign-in wait one second,
+built with 2.11a before cutover.
 
 With 0.8b in, Phase 1 (bulk entry, range marking, the app shell) is
 unblocked. Cutover still waits for Phase 1 to finish, per the HANDOFF §10

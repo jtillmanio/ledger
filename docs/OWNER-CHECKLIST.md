@@ -18,15 +18,24 @@ these. Tick them here; START-HERE has the commands.
 
 ## Releases (START-HERE 10e), before the next merge to `main`
 
-- [ ] **Vercel:** turn off *Auto-assign Custom Production Domains* (Settings →
+- [x] **Vercel:** turn off *Auto-assign Custom Production Domains* (Settings →
       Environments → Production). Until then a merge still goes live at once.
-- [ ] **Secrets** `VERCEL_TOKEN` and `NEON_API_KEY`, **variables**
-      `VERCEL_SCOPE`, `NEON_PROJECT_ID` and `LEDGER_LIVE=false`.
-- [ ] **One dry run of Release** is green (Actions → Release → Dry run).
+      *Done: confirmed by the owner, 2026-10-02.*
+- [x] **Secrets** `VERCEL_TOKEN` and `NEON_API_KEY`, **variables**
+      `VERCEL_SCOPE`, `NEON_PROJECT_ID` and `LEDGER_LIVE=false`. *Done, verified
+      2026-10-02 with `gh secret list` / `gh variable list`; also set are
+      `VERCEL_AUTOMATION_BYPASS_SECRET` and `PRODUCTION_URL`, which the smoke test
+      needs.*
+- [x] **One dry run of Release** is green (Actions → Release → Dry run). *Done:
+      run 36625396477, 2026-09-29: CI success, no migrations to apply.*
 - [ ] At Step 14, set the `LEDGER_LIVE` variable to `true` alongside `.env`.
 - [ ] **Preview databases (10f):** `DATABASE_URL` out of Vercel's Preview
       scope, `LEDGER_LIVE_DB_HOST` in it, Neon's Vercel integration installed.
       Until then, previews of branches that include this change fail to build.
+      *Done, verified 2026-10-02: the previews for #37 and #38 built.
+      `scripts/vercel-build.mjs` refuses a preview with no integration database,
+      with `LEDGER_LIVE_DB_HOST` unset, or with the live host. The integration's
+      "delete obsolete branches" option can't be seen from here.*
 
 ## Prerequisite audit (data work in `Comics.xlsx`, PREREQS tab)
 
@@ -51,9 +60,10 @@ blocked on it: 2.4, 2.6 and 2.9 assert relationships, not counts.
       runs (`zdarsky-asm` had the same seven issues twice in a row). If any were a
       deliberate reread, 0.8a can bring them back with an explicit marker. The
       list is in `seed/unresolved.csv`, reason `repeat placement dropped`.
-- [ ] **Passcode (R2-12, not fixed).** `POST /api/login` has no throttle and
-      START-HERE suggests a short passcode. Use a passphrase of four or more words
-      before go-live, or ask for the one-second failure delay.
+- [x] **Passcode (R2-12).** `POST /api/login` has no throttle. *Decided
+      2026-10-02 (D-36): task 1.11 adds the one-second failure delay before
+      cutover.* A passphrase of four or more words in `APP_PASSCODE` is still a
+      Step 14 gate.
 
 ---
 
