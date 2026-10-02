@@ -1,4 +1,5 @@
 import { sql } from "./index";
+import { readWhen, type Precision } from "@/lib/format";
 
 /* Raw SQL against the views in etl/views.sql. Drizzle's query builder is used
  * for writes; reads that join three or four views are clearer as SQL. */
@@ -130,18 +131,37 @@ export async function runDetail(userId: string, runId: string) {
   // Placements, not issues: type, notes and read state belong to where the issue
   // sits in this run (ARCHITECTURE 2.14). `completed` is read *here*; a read in
   // another run does not tick it. An issue appears at most once per run (D-R2-1).
-  const issues = await sql<{
+  // `read_elsewhere` is the other runs it is read in, earliest read first, from
+  // issue_read_runs: the spine's grey hint (0.8b). It never includes this run, so
+  // the hint can return after an untick. The date is only that of a read
+  // elsewhere, so it is withheld while the row is read here.
+  const rows = await sql<{
     id: string; placement_id: number; sequence: number; label: string; type: string;
-    notes: string | null; completed: boolean;
+    notes: string | null; completed: boolean; read_elsewhere: string[];
+    first_read_at: Date | null; first_read_precision: Precision;
   }[]>`
     SELECT ri.issue_id AS id, ri.id AS placement_id, ri.sequence, i.label, ri.type, ri.notes,
-           (p.placement_id IS NOT NULL) AS completed
+           (p.placement_id IS NOT NULL) AS completed,
+           COALESCE(rr.titles, '{}') AS read_elsewhere,
+           CASE WHEN p.placement_id IS NULL THEN irr.first_read_at END AS first_read_at,
+           CASE WHEN p.placement_id IS NULL THEN COALESCE(irr.first_read_precision, 'none')
+                ELSE 'none' END AS first_read_precision
     FROM live_run_issues ri
     JOIN issues i ON i.id = ri.issue_id
     LEFT JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
+    LEFT JOIN issue_read_runs irr ON irr.issue_id = ri.issue_id AND irr.user_id = ${userId}
+    LEFT JOIN LATERAL (
+      SELECT array_agg(r2.title ORDER BY u.o) AS titles
+      FROM unnest(irr.run_ids) WITH ORDINALITY u(id, o)
+      JOIN runs r2 ON r2.id = u.id
+      WHERE u.id <> ri.run_id
+    ) rr ON true
     WHERE ri.run_id = ${runId}
     ORDER BY ri.sequence
   `;
+  const issues = rows.map(({ first_read_at, first_read_precision, ...r }) => ({
+    ...r, read_elsewhere_when: readWhen(first_read_at, first_read_precision),
+  }));
 
   const prereqs = await sql<{
     id: string; title: string; type: string; pct: number; depth: number;

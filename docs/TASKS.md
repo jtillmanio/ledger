@@ -381,7 +381,7 @@ no run places stops the migration instead of being dropped. The loaders
 against the test database: 76 rows, all undated and `none`, and the Cabal
 fixture as stated.
 
-### ☐ 0.8b Read state per run — the spine · S
+### ☑ 0.8b Read state per run — the spine · S
 Depends on 0.8a. The spine renders a grey `read in <run title>` note (`+N` past one
 run) on any row whose issue is read in another run, per `design/mockups.html` →
 "Run detail — eras".
@@ -396,6 +396,16 @@ uses `--muted` (3:1). The hint is grey, never green (CLAUDE.md).
 **Check:** render test: B's spine row carries `read in A`; a row read here shows no
 hint, a row read only elsewhere shows it, and every `.chk` has an accessible name
 and `aria-pressed`.
+
+**Done 2026-10-02**, `test/spine.test.tsx` (server-rendered markup from
+`runDetail` against the test database). `runDetail` reads the other runs from
+`issue_read_runs`, excluding the run itself. The hint names the earliest read
+first and dates it only when its precision is not `none` (`· Mar 2025`,
+`· ~Mar 2025` when approximate). Until 3.5 builds the issue sheet, the `+N`
+button discloses the other run titles in place (owner's decision); 3.5 turns it
+into the sheet link. The row takes the mockup's `.iss` grid, with the reading
+order's sequence number in the trailing column where the mockup draws a cover,
+until the run-detail rebuild brings covers.
 
 ### ☐ 0.9 Page performance — measure, find the cause, fix it · M
 Reported by the owner on the deployed preview and production: moving between

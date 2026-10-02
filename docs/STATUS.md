@@ -9,7 +9,7 @@ argue from it.
 
 ## Where we are
 
-**9 of 87 tasks done (10%).** Still in Phase 0 — nothing in Phase 1 or later has
+**10 of 87 tasks done (11%).** Still in Phase 0 — nothing in Phase 1 or later has
 started. The private GitHub repo exists and CI runs on every PR, and is proven
 to go red on a broken view (task 0.2, done 2026-09-30). The Release
 workflow has deployed `main` to Vercel (last run 2026-09-30). `LEDGER_LIVE` is
@@ -17,7 +17,7 @@ workflow has deployed `main` to Vercel (last run 2026-09-30). `LEDGER_LIVE` is
 
 | Phase | Done / total | Status |
 |---|---|---|
-| 0 — Foundation | 8 / 10 | **In progress** |
+| 0 — Foundation | 9 / 10 | **In progress** |
 | 1 — Daily use | 0 / 16 | Not started |
 | 2 — The pace engine | 0 / 15 | Not started |
 | 3 — Editing | 0 / 7 | Not started |
@@ -33,17 +33,16 @@ doesn't exist until those tasks do.
 
 ## What's next
 
-Phase 0 has two tasks left:
+Phase 0 has one task left:
 
-1. **0.8b — Read state per run, the spine.** Follows directly from 0.8a, which
-   landed 2026-10-02: `issue_progress` now keys on the placement (migration
-   0007), so a read in one run leaves the issue unread in every other run, and
-   `issue_read_runs` holds the "read in …" hint 0.8b draws. After 0.8a merges,
-   `npm run rebuild` on `main` puts it on the live database with the workbook's
-   per-run values, then Release promotes the build (START-HERE Step 13: before
-   cutover Release refuses to migrate).
-2. **0.9 — Page performance.** The deployed app feels slow, and it is cheaper
+1. **0.9 — Page performance.** The deployed app feels slow, and it is cheaper
    to find the cause before more screens sit on the same data path.
+
+0.8b (2026-10-02) draws the grey `↺ read in …` hint on the spine from
+`issue_read_runs`, on the mockup's row markup. If the live database has not
+been rebuilt since 0.8a (migration 0007), `npm run rebuild` on `main` puts
+the per-run reads there, then Release promotes the build (START-HERE Step 13:
+before cutover Release refuses to migrate).
 
 Build order and the cutover gates are in START-HERE Steps 11–14 (rewritten
 2026-09-23 after the S audit). **2.11a**, though numbered in Phase 2, is built at
@@ -52,9 +51,9 @@ cut over by loading first, then run both for a month; no rereads inside a run;
 prerequisite audit before cutover; finish year derived from the finish date;
 unlock cost counts unread issues; passphrase login until task 6.13.
 
-Nothing in Phase 1 (bulk entry, range marking, the app shell) should start
-until 0.8b is in, per the HANDOFF §10 warning: cutting over from Sheets
-before Phase 1 finishes defeats the migration. Reading data recorded before
+With 0.8b in, Phase 1 (bulk entry, range marking, the app shell) is
+unblocked. Cutover still waits for Phase 1 to finish, per the HANDOFF §10
+warning: cutting over from Sheets before then defeats the migration. Reading data recorded before
 0.8a reached the live database could not say which run it was read in; that
 is why 0.8a reaches live through a rebuild, which reloads every read from the
 workbook.
@@ -82,6 +81,8 @@ upcoming releases are in scope for books and comics (D-35).
 - Placement-keyed read state (task 0.8a): migration 0007 and its down file,
   `issue_read_runs`, `test/placement-progress.test.ts` and
   `test/placement-progress-migration.test.ts`
+- The spine's read-elsewhere hint (task 0.8b): `src/components/IssueRow.tsx`
+  on the mockup's `.iss`/`.chk`/`.seen` markup, `test/spine.test.tsx`
 - `.claude/` — `/verify` skill, `schema-reviewer` subagent
 - `.github/workflows/` — CI config and nightly backup
 - `volume_map.csv` — 67 approved rules, fully reviewed
