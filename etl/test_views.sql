@@ -353,6 +353,20 @@ BEGIN
   END IF;
 END $$;
 
+-- Applying views.sql leaves every table analyzed. A table the planner has no
+-- statistics for gets nested-loop plans that ran for minutes on a preview of
+-- live (2026-10-02).
+DO $$
+DECLARE missing text;
+BEGIN
+  SELECT string_agg(relname, ', ' ORDER BY relname) INTO missing
+  FROM pg_stat_user_tables
+  WHERE schemaname = 'public' AND last_analyze IS NULL AND last_autoanalyze IS NULL;
+  IF missing IS NOT NULL THEN
+    RAISE EXCEPTION 'tables never analyzed after views.sql: %', missing;
+  END IF;
+END $$;
+
 ROLLBACK;
 
 \echo 'test_views.sql: all assertions passed'
