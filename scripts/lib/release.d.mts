@@ -17,5 +17,7 @@ export function smokeProblem(input: {
   status: number;
   body: { ok?: boolean; failed?: string; commit?: string | null } | null;
   sha: string;
+  finalUrl?: string;
+  bypass?: boolean;
 }): string | null;
 export function snapshotsToPrune<T extends { name: string; created_at: string }>(branches: T[], keep: number): T[];

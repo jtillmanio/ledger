@@ -116,6 +116,23 @@ describe("smokeProblem", () => {
     expect(smokeProblem({ status: 200, body: { ok: true, commit: null }, sha })).toMatch(/System Environment Variables/);
     expect(smokeProblem({ status: 404, body: null, sha })).toMatch(/without JSON/);
   });
+
+  // 2026-10-02: every deployment, production included, is behind Vercel
+  // Authentication, and its login page answered 200 in HTML.
+  it("names Vercel Authentication instead of 'without JSON' when it lands on the login page", () => {
+    const finalUrl = "https://vercel.com/sso-api?url=https%3A%2F%2Fledger.vercel.app%2Fapi%2Fhealth&nonce=x";
+    expect(smokeProblem({ status: 200, body: null, sha, finalUrl }))
+      .toMatch(/behind Vercel Authentication.*VERCEL_AUTOMATION_BYPASS_SECRET/);
+    expect(smokeProblem({ status: 200, body: null, sha, finalUrl, bypass: true }))
+      .toMatch(/refused the protection-bypass secret/);
+    expect(smokeProblem({ status: 200, body: { ok: true, commit: sha }, sha, finalUrl: "https://ledger.vercel.app/api/health" }))
+      .toBeNull();
+  });
+
+  it("suggests a pinned deployment URL when the old commit keeps answering", () => {
+    expect(smokeProblem({ status: 200, body: { ok: true, commit: "0123456789" }, sha }))
+      .toMatch(/one deployment rather than the production domain/);
+  });
 });
 
 describe("snapshotsToPrune", () => {

@@ -1003,12 +1003,19 @@ order (Step 13).
    **Project ID**.
 4. **GitHub.** Repo → **Settings → Secrets and variables → Actions**.
    - **Secrets:** `VERCEL_TOKEN` and `NEON_API_KEY` from steps 2–3.
-     `DATABASE_URL` is already there from 10d.
+     `DATABASE_URL` is already there from 10d. And
+     `VERCEL_AUTOMATION_BYPASS_SECRET`: every deployment of the project,
+     production included, is behind Vercel Authentication, so the smoke test
+     below would only ever reach Vercel's login page. In Vercel → project →
+     **Settings → Deployment Protection → Protection Bypass for Automation**,
+     create the secret and paste it here.
    - **Variables:** `VERCEL_SCOPE` = `justin-tillman` (the name in your
      `vercel.com/<name>/ledger` URL), `NEON_PROJECT_ID` = the ID from step 3,
      `LEDGER_LIVE` = `false` (Step 14 sets it to `true`), and `PRODUCTION_URL`
      = your production address, e.g. `https://ledger-justin-tillman.vercel.app`
-     (the **Domains** list on the project's Vercel page). After promoting,
+     (the **Domains** list on the project's Vercel page). Not a deployment's
+     own URL (`ledger-<9 characters>-justin-tillman.vercel.app`): that one is
+     a single build forever, so it never serves what Release promoted. After promoting,
      Release asks `<PRODUCTION_URL>/api/health` whether the database answers,
      the views are there, and it is the build just promoted. Without the
      variable that check is skipped, with a warning.
@@ -1231,6 +1238,8 @@ on `main` expects yet.
 | Promote: 404                               | `VERCEL_SCOPE` is not the team in your `vercel.com/<team>/ledger` URL                                 |
 | Smoke: *still serves* the old commit       | The promotion hasn't taken. Check the Deployments tab. If the new build is Current, run Release again |
 | Smoke: the *database* or *views* check failed | Production is live but broken: Instant Rollback (above), then read the Migrate and Apply views steps |
+| Smoke: *behind Vercel Authentication*      | Add `VERCEL_AUTOMATION_BYPASS_SECRET` (10e step 4). Production is already promoted; the next Release checks it |
+| Smoke: *refused the protection-bypass secret* | The GitHub secret doesn't match Vercel's current one: copy it again (regenerating it invalidates the old one) |
 | Smoke: *reports no commit*                 | Vercel → Settings → Environment Variables → tick **Automatically expose System Environment Variables** |
 | The new code is broken                     | Vercel → Deployments → the previous one → **Instant Rollback**. Fix forward in a new PR              |
 | The migration was wrong                    | Neon console → Branches → `pre-release/<time>-<sha>` → restore `main` from it; or run the migration's `drizzle/down/` file |
