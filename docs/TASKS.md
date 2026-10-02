@@ -369,10 +369,12 @@ unread in `bendis-dark-reign` (the sheet ticks it in one and not the other), and
 it as `completed in one run, not another`.
 
 **Done 2026-10-02, migration `0007_placement_progress`** (with
-`drizzle/down/0007_placement_progress.sql`). On a loaded database 0007 copies
-each issue-keyed read onto every placement of its issue, soft-deleted ones
-included, so every view answers as it did the moment before. The next
-`npm run rebuild` loads the per-row truth (owner's decision). A read on an issue
+`drizzle/down/0007_placement_progress.sql`). Live gets it through
+`npm run rebuild` on `main` after the merge, then Release (START-HERE Step 13).
+On a loaded database (a preview's copy of live) 0007 copies each issue-keyed
+read onto every placement of its issue, soft-deleted ones included, so every
+view answers as it did the moment before; a rebuild loads the per-row truth
+(owner's decision). A read on an issue
 no run places stops the migration instead of being dropped. The loaders
 `setval` the placement serial after loading extract's sheet-order ids.
 `addIssueToRun` shifts sequences in one deferred UPDATE. The rebuild was run

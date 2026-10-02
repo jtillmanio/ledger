@@ -5,7 +5,10 @@
 -- placement_id added as a possible rename and stops to ask. The snapshot was
 -- generated in two steps (add, then drop), so it matches src/db/schema.ts.
 --
--- On a loaded database:
+-- Live gets this through `npm run rebuild` before cutover (START-HERE Step 13:
+-- Release refuses to migrate until LEDGER_LIVE is true), so it runs from zero
+-- there. It runs on a loaded database when a preview build migrates its copy of
+-- live, and after cutover. On a loaded database:
 --   * run_issues.id is numbered in physical row order, not sheet order (D-16).
 --     The next `npm run rebuild` loads extract's sheet-order ids.
 --   * Each issue-keyed progress row becomes one row per placement of that issue,

@@ -39,8 +39,9 @@ Phase 0 has two tasks left:
    landed 2026-10-02: `issue_progress` now keys on the placement (migration
    0007), so a read in one run leaves the issue unread in every other run, and
    `issue_read_runs` holds the "read in …" hint 0.8b draws. After 0.8a merges,
-   Release migrates the live database (each read is copied onto every placement
-   of its issue), then `npm run rebuild` loads the workbook's per-run values.
+   `npm run rebuild` on `main` puts it on the live database with the workbook's
+   per-run values, then Release promotes the build (START-HERE Step 13: before
+   cutover Release refuses to migrate).
 2. **0.9 — Page performance.** The deployed app feels slow, and it is cheaper
    to find the cause before more screens sit on the same data path.
 
@@ -55,7 +56,8 @@ Nothing in Phase 1 (bulk entry, range marking, the app shell) should start
 until 0.8b is in, per the HANDOFF §10 warning: cutting over from Sheets
 before Phase 1 finishes defeats the migration. Reading data recorded before
 0.8a reached the live database could not say which run it was read in; that
-is why the rebuild after its Release reloads every read from the workbook.
+is why 0.8a reaches live through a rebuild, which reloads every read from the
+workbook.
 
 **Design blueprint adopted (D-31, 2026-09-30).** The Step 3 style guide and
 Review N are folded into the backlog: a new **1.8a — Design tokens and control
