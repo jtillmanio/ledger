@@ -1218,6 +1218,32 @@ rejected. Two concurrent reorders never leave duplicate ordinals. The documented
 keyboard sequence (Space, Down, Down, Space) moves a row from position 2 to 4
 with contiguous ordinals, and Esc mid-lift leaves the order unchanged.
 
+### ☐ 1.11 Slow down failed sign-ins · S
+`POST /api/login` compares the passcode and answers at once, so nothing slows
+a guessing loop (R2-12). D-23 made a four-or-more-word `APP_PASSCODE` the
+defence and ruled out a throttle task. The owner reversed that half on
+2026-10-02 (D-36). **Built in Phase 1's last sitting, with 2.11a, before
+cutover**: from Step 14 the database is the only record. Today every
+deployment, production included, also sits behind Vercel Authentication
+(START-HERE 10e); this task must not assume that stays on.
+
+- A failed sign-in waits one second before its `303` to `/login?error=1`. The
+  wait is the same for a wrong passcode, an empty one and a wrong-length one.
+  A correct one is never delayed.
+- Stateless: the wait lives in the route handler, never in an in-memory
+  counter, which a serverless instance does not keep and another instance
+  never sees. Parallel requests can still guess in parallel, and the passphrase
+  stays the defence against that. A per-client lockout would need a table: a
+  schema change, so ask the owner first, and it is not part of this task.
+- 6.13 replaces the passcode with real sign-in and keeps this delay on every
+  failed credential.
+
+**Check:** a vitest drives the route handler with fake timers. A wrong
+passcode's response is still pending at 999 ms and resolves at 1000 ms, to
+`/login?error=1` with no `rt_session` cookie. An empty one and a wrong-length
+one behave the same. A right passcode resolves without advancing the timers
+and sets the cookie. No test waits on a real clock.
+
 ---
 
 ## Phase 2 — The pace engine
@@ -2221,7 +2247,8 @@ renders a gradient or an identity hue, and no row renders both an `.edge` and a
   Step 14 gate, R2-12). Replace it with username + password (hashed, e.g.
   argon2/bcrypt) or another method chosen when the task starts — decide the
   method with the owner first. Keep what R2-11 fixed (a bad or stale session
-  redirects to `/login`; route handlers answer 401), and keep `GET /api/export`
+  redirects to `/login`; route handlers answer 401), keep 1.11's one-second
+  wait on every failed credential (D-36), and keep `GET /api/export`
   behind it. **Check:** a wrong credential is refused and a right one signs in,
   an old `rt_session` cookie is rejected after the switch, and every page and
   route handler still refuses an unsigned request.

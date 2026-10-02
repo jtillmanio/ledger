@@ -182,6 +182,7 @@ alone is enough elsewhere.
 | 1.8b Thumb bar and contrast | S | Sonnet | medium | high | high |
 | 1.9 Status screens | M | Sonnet | medium | high | high |
 | 1.10 Comics Up next queue | M | Sonnet | medium | high | xhigh |
+| 1.11 Slow down failed sign-ins (D-36) | S | Sonnet | low | medium | high |
 | 2.0 Settings | S | Sonnet | low | medium | high |
 | 2.1 Capacity view | M | Opus | high | high | xhigh |
 | 2.1b Reading sessions — after-the-fact entry | S | Sonnet | medium | high | high |
