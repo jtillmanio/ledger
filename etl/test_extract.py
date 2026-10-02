@@ -128,12 +128,27 @@ class IssuesAndPlacements(WorkbookCase):
         placements = read(self.out, "run_issues")
         self.assertEqual([i["label"] for i in issues], ["Avengers (1998) #1", "Avengers (1998) #2"])
         self.assertEqual(issues[0]["id"], "avengers-1998-1")
-        self.assertEqual([(p["run_id"], p["sequence"], p["issue_id"], p["type"]) for p in placements],
-                         [("a", "1", "avengers-1998-1", "core"), ("a", "2", "avengers-1998-2", "core"),
-                          ("b", "1", "avengers-1998-1", "optional")])
-        # Read in run a, unread in run b: one progress row, and the disagreement is reported.
-        self.assertEqual([p["issue_id"] for p in read(self.out, "issue_progress")], ["avengers-1998-1"])
-        self.assertIn("completed in one run, not another", self.reasons())
+        self.assertEqual([(p["id"], p["run_id"], p["sequence"], p["issue_id"], p["type"]) for p in placements],
+                         [("1", "a", "1", "avengers-1998-1", "core"), ("2", "a", "2", "avengers-1998-2", "core"),
+                          ("3", "b", "1", "avengers-1998-1", "optional")])
+        # Read in run a, unread in run b (ARCHITECTURE 2.14): one progress row, on
+        # run a's placement, and no longer a disagreement to report (task 0.8a).
+        self.assertEqual([p["placement_id"] for p in read(self.out, "issue_progress")], ["1"])
+        self.assertNotIn("completed in one run, not another", self.reasons())
+
+    def test_an_issue_read_in_two_runs_is_read_in_each(self):
+        self.extract([("a", "Avengers (1998) #1", True, "Core", None),
+                      ("b", "Avengers (1998) #2", False, "Core", None),
+                      ("b", "Avengers (1998) #1", True, "Core", None)])
+        self.assertEqual([p["placement_id"] for p in read(self.out, "issue_progress")], ["1", "3"])
+
+    def test_placement_ids_follow_sheet_order_across_runs(self):
+        # D-16: ids are sheet positions, interleaved runs included, and contiguous.
+        self.extract([("a", "Avengers (1998) #1", False, "Core", None),
+                      ("b", "Avengers (1998) #9", False, "Core", None),
+                      ("a", "Avengers (1998) #2", False, "Core", None)])
+        self.assertEqual([(p["id"], p["run_id"], p["sequence"]) for p in read(self.out, "run_issues")],
+                         [("1", "a", "1"), ("2", "b", "1"), ("3", "a", "2")])
 
     def test_a_label_repeated_inside_a_run_keeps_one_placement(self):
         # D-R2-1: the repeat is dropped and reported, and later sequences stay contiguous.
@@ -145,10 +160,12 @@ class IssuesAndPlacements(WorkbookCase):
                          [("1", "x-men-1991-8"), ("2", "x-men-1991-9")])
         self.assertIn("repeat placement dropped", self.reasons())
 
-    def test_a_read_repeat_still_marks_the_issue_read(self):
+    def test_a_read_repeat_marks_the_kept_placement_read(self):
+        # Same run, same issue: the dropped repeat's tick lands on the kept placement.
         self.extract([("a", "X-Men (1991) #8", False, "Core", None),
                       ("a", "X-Men (1991) #8", True, "Core", None)])
-        self.assertEqual([p["issue_id"] for p in read(self.out, "issue_progress")], ["x-men-1991-8"])
+        (placement,) = read(self.out, "run_issues")
+        self.assertEqual([p["placement_id"] for p in read(self.out, "issue_progress")], [placement["id"]])
 
     def test_workbook_reads_load_undated_not_stamped_with_the_load_time(self):
         # D-R3-1 / R2-10: no date in the sheet means precision 'none' and a blank completed_at.

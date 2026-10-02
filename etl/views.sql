@@ -5,33 +5,35 @@
 -- (task 0.4, R3-06). Every view that reads run_issues reads this instead, so the
 -- rule is written once. A soft-deleted placement keeps its issue_progress row;
 -- it just stops being counted, and restoring it brings the read mark back.
+-- id is the placement, what issue_progress.placement_id points at (task 0.8a).
+-- It is last so CREATE OR REPLACE can still apply over the older column list.
 CREATE OR REPLACE VIEW live_run_issues AS
-SELECT ri.run_id, ri.sequence, ri.issue_id, ri.type, ri.notes, ri.era_id
+SELECT ri.run_id, ri.sequence, ri.issue_id, ri.type, ri.notes, ri.era_id, ri.id
 FROM run_issues ri
 JOIN issues i ON i.id = ri.issue_id AND i.deleted_at IS NULL
 WHERE ri.deleted_at IS NULL;
 
 -- Per-run, per-user completion. Replaces RUNS!Completed / Left / % Done / Status.
--- Counts placements: an issue read in another run counts as read here too,
--- because progress belongs to the issue, not to where it sits (until task 0.8).
--- run_issues is UNIQUE (run_id, issue_id), so placements and distinct issues
--- are the same number and this agrees with run_credit_line.issue_count (D-R2-1).
+-- Counts this run's own placements: an issue read in another run is unread here
+-- (ARCHITECTURE 2.14, task 0.8a). run_issues is UNIQUE (run_id, issue_id), so
+-- placements and distinct issues are the same number and this agrees with
+-- run_credit_line.issue_count (D-R2-1).
 CREATE OR REPLACE VIEW run_progress AS
 SELECT
   u.id                                                   AS user_id,
   r.id                                                   AS run_id,
   COUNT(ri.issue_id)                                     AS total_issues,
-  COUNT(p.issue_id)                                      AS read_issues,
+  COUNT(p.placement_id)                                  AS read_issues,
   CASE WHEN COUNT(ri.issue_id) = 0 THEN 0
-       ELSE COUNT(p.issue_id)::float8 / COUNT(ri.issue_id) END AS pct,
+       ELSE COUNT(p.placement_id)::float8 / COUNT(ri.issue_id) END AS pct,
   CASE WHEN COUNT(ri.issue_id) = 0          THEN 'empty'
-       WHEN COUNT(p.issue_id) = 0           THEN 'unread'
-       WHEN COUNT(p.issue_id) = COUNT(ri.issue_id) THEN 'read'
+       WHEN COUNT(p.placement_id) = 0       THEN 'unread'
+       WHEN COUNT(p.placement_id) = COUNT(ri.issue_id) THEN 'read'
        ELSE 'reading' END                                AS state
 FROM runs r
 CROSS JOIN users u
 LEFT JOIN live_run_issues ri     ON ri.run_id = r.id
-LEFT JOIN issue_progress p  ON p.issue_id = ri.issue_id AND p.user_id = u.id
+LEFT JOIN issue_progress p  ON p.placement_id = ri.id AND p.user_id = u.id
 WHERE r.deleted_at IS NULL
 GROUP BY u.id, r.id;
 
@@ -125,6 +127,8 @@ LEFT JOIN (
 WHERE r.deleted_at IS NULL;
 
 -- Direct-prereq readiness. Replaces RUNS!Readiness / Hard Left / Soft Left / Unlocks.
+-- A prerequisite is finished when its own placements are read: reading the same
+-- issues inside some other run does not finish it (ARCHITECTURE 2.14).
 CREATE OR REPLACE VIEW run_readiness AS
 SELECT
   rp.user_id,
@@ -155,7 +159,8 @@ GROUP BY rp.user_id, rp.run_id;
 -- soft one unread) is reachable and is drawn as an outlined green badge.
 -- hard_left / soft_left are direct prerequisites still under 100%; the
 -- "N runs first" count is the transitive closure and comes from run_ancestors
--- (task 2.6). finished_at is the latest completion, for "read · Sep 2026".
+-- (task 2.6). finished_at is the latest dated completion of this run's own
+-- placements, for "read · Sep 2026"; NULL when every read is undated.
 CREATE OR REPLACE VIEW run_state AS
 SELECT
   rr.user_id,
@@ -177,7 +182,7 @@ JOIN run_progress rp ON rp.user_id = rr.user_id AND rp.run_id = rr.run_id
 LEFT JOIN LATERAL (
   SELECT MAX(p.completed_at) AS last_read_at
   FROM live_run_issues ri
-  JOIN issue_progress p ON p.issue_id = ri.issue_id AND p.user_id = rr.user_id
+  JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = rr.user_id
   WHERE ri.run_id = rr.run_id
 ) fin ON true;
 
@@ -187,20 +192,20 @@ LEFT JOIN LATERAL (
 -- one row: is_read true is a green segment, false is the gap between. Ordinals
 -- are 1-based positions in the run (the "42" in "42 / 381"), not issue numbers,
 -- so a run with a gap in `sequence` still lays out contiguously.
--- Today "read" means read anywhere, matching run_progress. Task 0.8 changes
--- both views to the placement, and adds the grey dashed "read in another run"
--- segments from issue_read_runs as a second kind.
+-- "Read" means this placement is read, matching run_progress (task 0.8a). The
+-- grey dashed "read in another run" layer is drawn from issue_read_runs by the
+-- telescope (task 2.5), not by this view.
 CREATE OR REPLACE VIEW run_read_segments AS
 WITH placed AS (
   SELECT
     u.id AS user_id,
     ri.run_id,
     ROW_NUMBER() OVER (PARTITION BY u.id, ri.run_id ORDER BY ri.sequence) AS ordinal,
-    (p.issue_id IS NOT NULL) AS is_read
+    (p.placement_id IS NOT NULL) AS is_read
   FROM live_run_issues ri
   JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL
   CROSS JOIN users u
-  LEFT JOIN issue_progress p ON p.issue_id = ri.issue_id AND p.user_id = u.id
+  LEFT JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = u.id
 ), islands AS (
   SELECT *,
     ordinal - ROW_NUMBER() OVER (PARTITION BY user_id, run_id, is_read ORDER BY ordinal) AS grp
@@ -256,28 +261,53 @@ JOIN run_tracks rt ON rt.run_id = er.run_id;
 
 -- Distinct issues and distinct read issues per user, per track and per block.
 -- A crossover issue placed in three runs of one track counts once, which is
--- why these don't SUM run_progress.
+-- why these don't SUM run_progress. An issue is read in a scope when any of its
+-- placements inside that scope is read; a read in a run outside it does not
+-- count (ARCHITECTURE 2.14).
 CREATE OR REPLACE VIEW track_issue_counts AS
 SELECT u.id AS user_id, rt.track_id,
-       COUNT(DISTINCT ri.issue_id) AS total_issues,
-       COUNT(DISTINCT p.issue_id)  AS read_issues
+       COUNT(DISTINCT ri.issue_id)                                           AS total_issues,
+       COUNT(DISTINCT ri.issue_id) FILTER (WHERE p.placement_id IS NOT NULL) AS read_issues
 FROM run_tracks rt
 JOIN runs r         ON r.id = rt.run_id AND NOT r.placeholder AND r.deleted_at IS NULL
 JOIN live_run_issues ri  ON ri.run_id = r.id
 CROSS JOIN users u
-LEFT JOIN issue_progress p ON p.issue_id = ri.issue_id AND p.user_id = u.id
+LEFT JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = u.id
 GROUP BY u.id, rt.track_id;
 
 CREATE OR REPLACE VIEW block_issue_counts AS
 SELECT u.id AS user_id, r.block_id,
-       COUNT(DISTINCT ri.issue_id) AS total_issues,
-       COUNT(DISTINCT p.issue_id)  AS read_issues
+       COUNT(DISTINCT ri.issue_id)                                           AS total_issues,
+       COUNT(DISTINCT ri.issue_id) FILTER (WHERE p.placement_id IS NOT NULL) AS read_issues
 FROM runs r
 JOIN live_run_issues ri  ON ri.run_id = r.id
 CROSS JOIN users u
-LEFT JOIN issue_progress p ON p.issue_id = ri.issue_id AND p.user_id = u.id
+LEFT JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = u.id
 WHERE NOT r.placeholder AND r.deleted_at IS NULL AND r.block_id IS NOT NULL
 GROUP BY u.id, r.block_id;
+
+-- "You've read this before": per user and issue, the runs in which a live
+-- placement of it is read, earliest read first. A hint for the spine (0.8b) and
+-- the telescope (2.5); it never checks a box (ARCHITECTURE 2.14).
+-- first_read_at ignores undated reads (precision 'none') and is NULL when every
+-- read is undated; first_read_precision is that read's precision, 'none' when
+-- first_read_at is NULL, so the range sheet's *Original dates* can copy it (S-15).
+-- run_ids needs no DISTINCT: a run places an issue at most once (D-19).
+CREATE OR REPLACE VIEW issue_read_runs AS
+SELECT
+  p.user_id,
+  ri.issue_id,
+  array_agg(ri.run_id ORDER BY p.completed_at NULLS LAST, ri.run_id)    AS run_ids,
+  MIN(p.completed_at) FILTER (WHERE p.completed_at_precision <> 'none') AS first_read_at,
+  COALESCE(
+    (array_agg(p.completed_at_precision
+               ORDER BY p.completed_at, p.completed_at_precision DESC)
+       FILTER (WHERE p.completed_at_precision <> 'none'))[1],
+    'none')                                                             AS first_read_precision
+FROM issue_progress p
+JOIN live_run_issues ri ON ri.id = p.placement_id
+JOIN runs r             ON r.id = ri.run_id AND r.deleted_at IS NULL
+GROUP BY p.user_id, ri.issue_id;
 
 -- Per-track rollup. Replaces the TRACKS tab.
 CREATE OR REPLACE VIEW track_progress AS

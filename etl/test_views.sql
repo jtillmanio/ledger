@@ -117,8 +117,8 @@ BEGIN
   END;
 END $$;
 
--- One issue in two runs of one track. Reading it once marks it read in both
--- runs, and the track counts it once.
+-- Read state belongs to the placement (ARCHITECTURE 2.14, task 0.8a). One
+-- issue in two runs of one track, read in A: unread in B, read once in the track.
 INSERT INTO users (id, name) VALUES ('zz-user', 'Fixture reader');
 INSERT INTO tracks (id, name) VALUES ('zz-track', 'Fixture track');
 INSERT INTO runs (id, title) VALUES ('zz-run-a', 'Run A'), ('zz-run-b', 'Run B');
@@ -128,21 +128,230 @@ INSERT INTO issues (id, label) VALUES
 INSERT INTO run_issues (run_id, sequence, issue_id, type) VALUES
   ('zz-run-a', 1, 'zz-x1', 'core'), ('zz-run-a', 2, 'zz-a2', 'core'),
   ('zz-run-b', 1, 'zz-b2', 'core'), ('zz-run-b', 2, 'zz-x1', 'optional');
-INSERT INTO issue_progress (user_id, issue_id) VALUES ('zz-user', 'zz-x1');
+INSERT INTO issue_progress (user_id, placement_id)
+  SELECT 'zz-user', id FROM run_issues WHERE run_id = 'zz-run-a' AND issue_id = 'zz-x1';
 
 DO $$
-DECLARE a record; b record; t record;
+DECLARE a record; b record; t record; got text[];
 BEGIN
   SELECT * INTO a FROM run_progress WHERE user_id = 'zz-user' AND run_id = 'zz-run-a';
   SELECT * INTO b FROM run_progress WHERE user_id = 'zz-user' AND run_id = 'zz-run-b';
-  IF a.read_issues <> 1 OR b.read_issues <> 1 OR a.total_issues <> 2 OR b.total_issues <> 2 THEN
-    RAISE EXCEPTION 'shared issue not read in both runs: a %/%, b %/%',
+  IF a.read_issues <> 1 OR b.read_issues <> 0 OR a.total_issues <> 2 OR b.total_issues <> 2 THEN
+    RAISE EXCEPTION 'a read in run A should leave run B unread: a %/%, b %/%',
       a.read_issues, a.total_issues, b.read_issues, b.total_issues;
+  END IF;
+  SELECT run_ids INTO got FROM issue_read_runs WHERE user_id = 'zz-user' AND issue_id = 'zz-x1';
+  IF got IS DISTINCT FROM ARRAY['zz-run-a'] THEN
+    RAISE EXCEPTION 'issue_read_runs for a read in A should be {zz-run-a}, got %', got;
   END IF;
   SELECT * INTO t FROM track_progress WHERE user_id = 'zz-user' AND track_id = 'zz-track';
   IF t.total_issues <> 3 OR t.read_issues <> 1 THEN
-    RAISE EXCEPTION 'track_progress double-counted a shared issue: %/%', t.read_issues, t.total_issues;
+    RAISE EXCEPTION 'track_progress should count the shared issue once, read via A: %/%',
+      t.read_issues, t.total_issues;
   END IF;
+END $$;
+
+-- Read in B as well: two placements read, still one issue read in the track.
+INSERT INTO issue_progress (user_id, placement_id)
+  SELECT 'zz-user', id FROM run_issues WHERE run_id = 'zz-run-b' AND issue_id = 'zz-x1';
+DO $$
+DECLARE t record; got text[];
+BEGIN
+  SELECT * INTO t FROM track_issue_counts WHERE user_id = 'zz-user' AND track_id = 'zz-track';
+  IF t.total_issues <> 3 OR t.read_issues <> 1 THEN
+    RAISE EXCEPTION 'track_issue_counts double-counted an issue read in two runs: %/%',
+      t.read_issues, t.total_issues;
+  END IF;
+  SELECT run_ids INTO got FROM issue_read_runs WHERE user_id = 'zz-user' AND issue_id = 'zz-x1';
+  IF got IS DISTINCT FROM ARRAY['zz-run-a', 'zz-run-b'] THEN
+    RAISE EXCEPTION 'issue_read_runs should list both runs, got %', got;
+  END IF;
+END $$;
+
+-- A soft-deleted placement keeps its read row but drops out of the hint (R3-06);
+-- restoring it brings the run back.
+UPDATE run_issues SET deleted_at = now() WHERE run_id = 'zz-run-b' AND issue_id = 'zz-x1';
+DO $$
+BEGIN
+  IF (SELECT run_ids FROM issue_read_runs WHERE user_id = 'zz-user' AND issue_id = 'zz-x1')
+     IS DISTINCT FROM ARRAY['zz-run-a'] THEN
+    RAISE EXCEPTION 'issue_read_runs still lists a soft-deleted placement';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM issue_progress p JOIN run_issues ri ON ri.id = p.placement_id
+                 WHERE ri.run_id = 'zz-run-b' AND ri.issue_id = 'zz-x1') THEN
+    RAISE EXCEPTION 'soft-deleting a placement lost its read row';
+  END IF;
+END $$;
+UPDATE run_issues SET deleted_at = NULL WHERE run_id = 'zz-run-b' AND issue_id = 'zz-x1';
+
+-- Reordering a run moves sequences, not ids: one UPDATE that passes through
+-- taken slots works because (run_id, sequence) is deferred (R0-15), and every
+-- read row still points at the same issue. IMMEDIATE forces the deferred check
+-- here; the ROLLBACK at the end would otherwise never run it.
+UPDATE run_issues SET sequence = sequence + 1 WHERE run_id = 'zz-run-a';
+SET CONSTRAINTS run_issues_run_id_sequence_unique IMMEDIATE;
+SET CONSTRAINTS run_issues_run_id_sequence_unique DEFERRED;
+DO $$
+BEGIN
+  IF (SELECT ri.issue_id || '@' || ri.sequence FROM issue_progress p
+      JOIN run_issues ri ON ri.id = p.placement_id
+      WHERE p.user_id = 'zz-user' AND ri.run_id = 'zz-run-a') IS DISTINCT FROM 'zz-x1@2' THEN
+    RAISE EXCEPTION 'reordering a run moved a read mark off its issue';
+  END IF;
+  IF (SELECT read_issues FROM run_progress WHERE user_id = 'zz-user' AND run_id = 'zz-run-a') <> 1 THEN
+    RAISE EXCEPTION 'reordering a run changed its read count';
+  END IF;
+END $$;
+
+-- Scope: an issue is read in a block or track when a placement of it *inside*
+-- that scope is read. zz-s-x sits in both block runs and is read in both (one
+-- issue); zz-s-y is read only in zz-s-out, outside the block and the track.
+INSERT INTO tracks (id, name) VALUES ('zz-tr-s', 'Scope track');
+INSERT INTO blocks (id, track_id, number) VALUES ('zz-tr-s-b1', 'zz-tr-s', 1);
+INSERT INTO runs (id, title, block_id) VALUES
+  ('zz-s-in1', 'Scope in 1', 'zz-tr-s-b1'), ('zz-s-in2', 'Scope in 2', 'zz-tr-s-b1'),
+  ('zz-s-out', 'Scope out', NULL);
+INSERT INTO run_tracks (run_id, track_id) VALUES ('zz-s-in1', 'zz-tr-s'), ('zz-s-in2', 'zz-tr-s');
+INSERT INTO issues (id, label) VALUES ('zz-s-x', 'Zz Scope (2004) #1'), ('zz-s-y', 'Zz Scope (2004) #2');
+INSERT INTO run_issues (run_id, sequence, issue_id) VALUES
+  ('zz-s-in1', 1, 'zz-s-x'), ('zz-s-in1', 2, 'zz-s-y'), ('zz-s-in2', 1, 'zz-s-x'),
+  ('zz-s-out', 1, 'zz-s-y');
+INSERT INTO issue_progress (user_id, placement_id)
+  SELECT 'zz-user', id FROM run_issues
+  WHERE (run_id, issue_id) IN (('zz-s-in1', 'zz-s-x'), ('zz-s-in2', 'zz-s-x'), ('zz-s-out', 'zz-s-y'));
+DO $$
+DECLARE c record;
+BEGIN
+  SELECT * INTO c FROM block_issue_counts WHERE user_id = 'zz-user' AND block_id = 'zz-tr-s-b1';
+  IF c.total_issues <> 2 OR c.read_issues <> 1 THEN
+    RAISE EXCEPTION 'block_issue_counts scope wrong: %/% (want 1/2)', c.read_issues, c.total_issues;
+  END IF;
+  SELECT * INTO c FROM block_progress WHERE user_id = 'zz-user' AND block_id = 'zz-tr-s-b1';
+  IF c.total_issues <> 2 OR c.read_issues <> 1 THEN
+    RAISE EXCEPTION 'block_progress scope wrong: %/% (want 1/2)', c.read_issues, c.total_issues;
+  END IF;
+  SELECT * INTO c FROM track_issue_counts WHERE user_id = 'zz-user' AND track_id = 'zz-tr-s';
+  IF c.total_issues <> 2 OR c.read_issues <> 1 THEN
+    RAISE EXCEPTION 'track_issue_counts counted a read from outside the track: %/%',
+      c.read_issues, c.total_issues;
+  END IF;
+END $$;
+
+-- A prerequisite whose issues are read only *elsewhere* is unfinished: the
+-- dependent stays blocked (ARCHITECTURE 2.14).
+INSERT INTO runs (id, title) VALUES
+  ('zz-pq-p', 'Prereq read elsewhere'), ('zz-pq-d', 'Depends on it'), ('zz-pq-e', 'Elsewhere');
+INSERT INTO issues (id, label) VALUES ('zz-pq1', 'Zz Prereq Elsewhere (2005) #1');
+INSERT INTO run_issues (run_id, sequence, issue_id) VALUES
+  ('zz-pq-p', 1, 'zz-pq1'), ('zz-pq-e', 1, 'zz-pq1');
+INSERT INTO prereqs (run_id, prereq_run_id, type) VALUES ('zz-pq-d', 'zz-pq-p', 'hard');
+INSERT INTO issue_progress (user_id, placement_id)
+  SELECT 'zz-user', id FROM run_issues WHERE run_id = 'zz-pq-e' AND issue_id = 'zz-pq1';
+DO $$
+BEGIN
+  IF (SELECT readiness FROM run_readiness WHERE user_id = 'zz-user' AND run_id = 'zz-pq-d')
+     IS DISTINCT FROM 'blocked' THEN
+    RAISE EXCEPTION 'a prerequisite read only in another run should still block';
+  END IF;
+  IF (SELECT read_issues FROM run_progress WHERE user_id = 'zz-user' AND run_id = 'zz-pq-p') <> 0 THEN
+    RAISE EXCEPTION 'the prerequisite run counted a read from another run';
+  END IF;
+END $$;
+
+-- First read across runs (S-15). first_read_at skips undated reads and is NULL
+-- when every read is; first_read_precision is that read's precision.
+--   zz-fr1: undated in a, approximate 2020-07-01 in b    -> 2020-07-01 approximate
+--   zz-fr2: approximate 2019-07-01 in a, exact 2021 in b -> 2019-07-01 approximate
+--   zz-fr3: undated in a only                            -> NULL none
+--   zz-fr4: approximate and exact on the same day        -> exact
+INSERT INTO runs (id, title) VALUES ('zz-fr-a', 'First read A'), ('zz-fr-b', 'First read B');
+INSERT INTO issues (id, label) VALUES
+  ('zz-fr1', 'Zz First (2006) #1'), ('zz-fr2', 'Zz First (2006) #2'),
+  ('zz-fr3', 'Zz First (2006) #3'), ('zz-fr4', 'Zz First (2006) #4');
+INSERT INTO run_issues (run_id, sequence, issue_id) VALUES
+  ('zz-fr-a', 1, 'zz-fr1'), ('zz-fr-a', 2, 'zz-fr2'), ('zz-fr-a', 3, 'zz-fr3'), ('zz-fr-a', 4, 'zz-fr4'),
+  ('zz-fr-b', 1, 'zz-fr1'), ('zz-fr-b', 2, 'zz-fr2'), ('zz-fr-b', 3, 'zz-fr4');
+INSERT INTO issue_progress (user_id, placement_id, completed_at, completed_at_precision)
+  SELECT 'zz-user', ri.id, v.at::timestamptz, v.precision
+  FROM (VALUES
+    ('zz-fr-a', 'zz-fr1', NULL, 'none'),        ('zz-fr-b', 'zz-fr1', '2020-07-01', 'approximate'),
+    ('zz-fr-a', 'zz-fr2', '2019-07-01', 'approximate'), ('zz-fr-b', 'zz-fr2', '2021-03-05', 'exact'),
+    ('zz-fr-a', 'zz-fr3', NULL, 'none'),
+    ('zz-fr-a', 'zz-fr4', '2018-07-01', 'approximate'), ('zz-fr-b', 'zz-fr4', '2018-07-01', 'exact')
+  ) AS v(run_id, issue_id, at, precision)
+  JOIN run_issues ri ON ri.run_id = v.run_id AND ri.issue_id = v.issue_id;
+DO $$
+DECLARE r record;
+BEGIN
+  FOR r IN SELECT * FROM (VALUES
+    ('zz-fr1', '2020-07-01'::date, 'approximate', ARRAY['zz-fr-b', 'zz-fr-a']),
+    ('zz-fr2', '2019-07-01'::date, 'approximate', ARRAY['zz-fr-a', 'zz-fr-b']),
+    ('zz-fr3', NULL::date,         'none',        ARRAY['zz-fr-a']),
+    ('zz-fr4', '2018-07-01'::date, 'exact',       ARRAY['zz-fr-a', 'zz-fr-b'])
+  ) AS v(issue_id, at, precision, runs) LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM issue_read_runs x
+      WHERE x.user_id = 'zz-user' AND x.issue_id = r.issue_id
+        AND x.first_read_at::date IS NOT DISTINCT FROM r.at
+        AND x.first_read_precision = r.precision
+        AND x.run_ids = r.runs) THEN
+      RAISE EXCEPTION 'issue_read_runs for % wrong: %', r.issue_id,
+        (SELECT row_to_json(x) FROM issue_read_runs x WHERE x.user_id = 'zz-user' AND x.issue_id = r.issue_id);
+    END IF;
+  END LOOP;
+END $$;
+
+-- A run's finish date comes from its own placements: reading the same issue
+-- later in another run does not move it.
+INSERT INTO runs (id, title) VALUES ('zz-fin-r', 'Finished'), ('zz-fin-o', 'Other');
+INSERT INTO issues (id, label) VALUES ('zz-fin1', 'Zz Finish (2007) #1');
+INSERT INTO run_issues (run_id, sequence, issue_id) VALUES ('zz-fin-r', 1, 'zz-fin1'), ('zz-fin-o', 1, 'zz-fin1');
+INSERT INTO issue_progress (user_id, placement_id, completed_at, completed_at_precision)
+  SELECT 'zz-user', id, CASE run_id WHEN 'zz-fin-r' THEN '2015-01-10'::timestamptz ELSE '2022-01-10'::timestamptz END, 'exact'
+  FROM run_issues WHERE issue_id = 'zz-fin1';
+DO $$
+BEGIN
+  IF (SELECT finished_at::date FROM run_state WHERE user_id = 'zz-user' AND run_id = 'zz-fin-r')
+     IS DISTINCT FROM '2015-01-10'::date THEN
+    RAISE EXCEPTION 'run_state.finished_at took a read from another run';
+  END IF;
+END $$;
+
+-- Hard-deleting a placement takes its read row with it (ON DELETE CASCADE);
+-- that is why the app only ever soft-deletes one (R3-06).
+DELETE FROM run_issues WHERE run_id = 'zz-fin-o' AND issue_id = 'zz-fin1';
+DO $$
+BEGIN
+  IF (SELECT count(*) FROM issue_progress p JOIN run_issues ri ON ri.id = p.placement_id
+      WHERE ri.issue_id = 'zz-fin1') <> 1
+     OR EXISTS (SELECT 1 FROM issue_progress p
+                WHERE NOT EXISTS (SELECT 1 FROM run_issues ri WHERE ri.id = p.placement_id)) THEN
+    RAISE EXCEPTION 'deleting a placement left its read row behind';
+  END IF;
+END $$;
+
+-- The shape 0.8a promises: placements keyed by id, (run_id, sequence) unique and
+-- deferred, (run_id, issue_id) still unique (D-19), progress with no issue_id.
+DO $$
+BEGIN
+  IF (SELECT array_agg(a.attname::text) FROM pg_constraint c
+      JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = ANY (c.conkey)
+      WHERE c.conrelid = 'run_issues'::regclass AND c.contype = 'p') IS DISTINCT FROM ARRAY['id'] THEN
+    RAISE EXCEPTION 'run_issues primary key should be (id)';
+  END IF;
+  IF NOT COALESCE((SELECT condeferrable AND condeferred FROM pg_constraint
+                   WHERE conname = 'run_issues_run_id_sequence_unique'), false) THEN
+    RAISE EXCEPTION 'run_issues (run_id, sequence) should be UNIQUE DEFERRABLE INITIALLY DEFERRED';
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'issue_progress' AND column_name = 'issue_id') THEN
+    RAISE EXCEPTION 'issue_progress still has an issue_id column';
+  END IF;
+  BEGIN
+    INSERT INTO run_issues (run_id, sequence, issue_id) VALUES ('zz-run-a', 99, 'zz-x1');
+    RAISE EXCEPTION 'a second placement of one issue in one run was accepted (D-19)';
+  EXCEPTION WHEN unique_violation THEN NULL;
+  END;
 END $$;
 
 -- Credit lines are derived from issue credits only, with a 25% line measured
@@ -218,7 +427,9 @@ INSERT INTO prereqs (run_id, prereq_run_id, type) VALUES
   ('zz-st-blocked', 'zz-st-p', 'hard'),
   ('zz-st-rh', 'zz-st-p', 'soft'),
   ('zz-st-reading', 'zz-st-p', 'hard');
-INSERT INTO issue_progress (user_id, issue_id) VALUES ('zz-user', 'zz-str1'), ('zz-user', 'zz-std1');
+INSERT INTO issue_progress (user_id, placement_id)
+  SELECT 'zz-user', id FROM run_issues
+  WHERE (run_id, issue_id) IN (('zz-st-reading', 'zz-str1'), ('zz-st-read', 'zz-std1'));
 
 DO $$
 DECLARE r record;
@@ -260,8 +471,12 @@ INSERT INTO issues (id, label) VALUES
 INSERT INTO run_issues (run_id, sequence, issue_id) VALUES
   ('zz-seg', 10, 'zz-sg1'), ('zz-seg', 20, 'zz-sg2'), ('zz-seg', 30, 'zz-sg3'),
   ('zz-seg', 40, 'zz-sg4'), ('zz-seg', 50, 'zz-sg5'), ('zz-seg', 60, 'zz-sg6');
-INSERT INTO issue_progress (user_id, issue_id) VALUES
-  ('zz-user', 'zz-sg1'), ('zz-user', 'zz-sg2'), ('zz-user', 'zz-sg3'), ('zz-user', 'zz-sg5');
+INSERT INTO issue_progress (user_id, placement_id)
+  SELECT 'zz-user', id FROM run_issues
+  WHERE run_id = 'zz-seg' AND issue_id IN ('zz-sg1', 'zz-sg2', 'zz-sg3', 'zz-sg5');
+-- zz-sg1 again, in a second run where it is not read: read elsewhere is unread here.
+INSERT INTO runs (id, title) VALUES ('zz-seg2', 'Segments elsewhere');
+INSERT INTO run_issues (run_id, sequence, issue_id) VALUES ('zz-seg2', 1, 'zz-sg1');
 
 DO $$
 DECLARE got text;
@@ -279,6 +494,11 @@ BEGIN
   -- A fully unread run for the same user is one unread segment.
   IF (SELECT COUNT(*) FROM run_read_segments WHERE user_id = 'zz-user' AND run_id = 'zz-st-blocked' AND NOT is_read) <> 1 THEN
     RAISE EXCEPTION 'an unread run should be a single unread segment';
+  END IF;
+  -- Read in zz-seg is not read in zz-seg2 (task 0.8a).
+  IF (SELECT string_agg(is_read::text, ',') FROM run_read_segments
+      WHERE user_id = 'zz-user' AND run_id = 'zz-seg2') IS DISTINCT FROM 'false' THEN
+    RAISE EXCEPTION 'run_read_segments drew a read from another run';
   END IF;
 END $$;
 
@@ -327,14 +547,14 @@ END $$;
 DO $$
 DECLARE ok boolean := false;
 BEGIN
-  INSERT INTO issue_progress (user_id, issue_id, completed_at, completed_at_precision)
-    SELECT 'zz-user', id, NULL, 'none' FROM issues
-      WHERE id NOT IN (SELECT issue_id FROM issue_progress WHERE user_id = 'zz-user') LIMIT 1;
+  INSERT INTO issue_progress (user_id, placement_id, completed_at, completed_at_precision)
+    SELECT 'zz-user', id, NULL, 'none' FROM run_issues
+      WHERE id NOT IN (SELECT placement_id FROM issue_progress WHERE user_id = 'zz-user') LIMIT 1;
   DELETE FROM issue_progress WHERE user_id = 'zz-user' AND completed_at IS NULL;
   BEGIN
-    INSERT INTO issue_progress (user_id, issue_id, completed_at, completed_at_precision)
-      SELECT 'zz-user', id, NULL, 'exact' FROM issues
-        WHERE id NOT IN (SELECT issue_id FROM issue_progress WHERE user_id = 'zz-user') LIMIT 1;
+    INSERT INTO issue_progress (user_id, placement_id, completed_at, completed_at_precision)
+      SELECT 'zz-user', id, NULL, 'exact' FROM run_issues
+        WHERE id NOT IN (SELECT placement_id FROM issue_progress WHERE user_id = 'zz-user') LIMIT 1;
   EXCEPTION WHEN check_violation THEN ok := true;
   END;
   IF NOT ok THEN RAISE EXCEPTION 'an exact read with no date should violate the precision check'; END IF;

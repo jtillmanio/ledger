@@ -1,6 +1,6 @@
 # Status
 
-**Last regenerated:** 2026-09-30
+**Last regenerated:** 2026-10-02
 
 This is a rollup of `docs/TASKS.md`, not a second source of truth. Every count
 here comes from counting ☑ vs ☐ task markers in that file. If this page and
@@ -9,7 +9,7 @@ argue from it.
 
 ## Where we are
 
-**5 of 87 tasks done (6%).** Still in Phase 0 — nothing in Phase 1 or later has
+**9 of 87 tasks done (10%).** Still in Phase 0 — nothing in Phase 1 or later has
 started. The private GitHub repo exists and CI runs on every PR, and is proven
 to go red on a broken view (task 0.2, done 2026-09-30). The Release
 workflow has deployed `main` to Vercel (last run 2026-09-30). `LEDGER_LIVE` is
@@ -17,7 +17,7 @@ workflow has deployed `main` to Vercel (last run 2026-09-30). `LEDGER_LIVE` is
 
 | Phase | Done / total | Status |
 |---|---|---|
-| 0 — Foundation | 4 / 10 | **In progress** |
+| 0 — Foundation | 8 / 10 | **In progress** |
 | 1 — Daily use | 0 / 16 | Not started |
 | 2 — The pace engine | 0 / 15 | Not started |
 | 3 — Editing | 0 / 7 | Not started |
@@ -33,19 +33,16 @@ doesn't exist until those tasks do.
 
 ## What's next
 
-Phase 0 isn't finished, and three of its remaining tasks gate everything
-downstream:
+Phase 0 has two tasks left:
 
-1. **0.8a — Read state per run (schema, ETL, views).** The critical-path item.
-   `read_events` (1.5) and the resume pointer (1.6) both key comics on the
-   placement, not the issue, so this has to land first. Cutover cannot happen
-   without it either — reading an issue in one run must not silently mark it
-   read in another.
-2. **0.8b — Read state per run, the spine.** Follows directly from 0.8a.
-3. **0.5 volume-year normalization** — smaller, no ordering dependency, still
-   open in Phase 0 (0.3 and 0.4 are done). **0.9 — Page performance** is also open: the deployed
-   app feels slow, and it is cheaper to find the cause before more screens sit on
-   the same data path.
+1. **0.8b — Read state per run, the spine.** Follows directly from 0.8a, which
+   landed 2026-10-02: `issue_progress` now keys on the placement (migration
+   0007), so a read in one run leaves the issue unread in every other run, and
+   `issue_read_runs` holds the "read in …" hint 0.8b draws. After 0.8a merges,
+   Release migrates the live database (each read is copied onto every placement
+   of its issue), then `npm run rebuild` loads the workbook's per-run values.
+2. **0.9 — Page performance.** The deployed app feels slow, and it is cheaper
+   to find the cause before more screens sit on the same data path.
 
 Build order and the cutover gates are in START-HERE Steps 11–14 (rewritten
 2026-09-23 after the S audit). **2.11a**, though numbered in Phase 2, is built at
@@ -55,9 +52,10 @@ prerequisite audit before cutover; finish year derived from the finish date;
 unlock cost counts unread issues; passphrase login until task 6.13.
 
 Nothing in Phase 1 (bulk entry, range marking, the app shell) should start
-until 0.8a/0.8b are in, per the HANDOFF §10 warning: cutting over from Sheets
-before Phase 1 finishes defeats the migration, and accumulating real reading
-data before 0.8a lands means that history can't be reconstructed later.
+until 0.8b is in, per the HANDOFF §10 warning: cutting over from Sheets
+before Phase 1 finishes defeats the migration. Reading data recorded before
+0.8a reached the live database could not say which run it was read in; that
+is why the rebuild after its Release reloads every read from the workbook.
 
 **Design blueprint adopted (D-31, 2026-09-30).** The Step 3 style guide and
 Review N are folded into the backlog: a new **1.8a — Design tokens and control
@@ -79,6 +77,9 @@ upcoming releases are in scope for books and comics (D-35).
 - Test harness (task 0.1): `test/db.ts`, `test/global-setup.ts`,
   `test/queries.test.ts`, `test/run-readiness.test.ts`,
   `test/testdb-guard.test.ts`
+- Placement-keyed read state (task 0.8a): migration 0007 and its down file,
+  `issue_read_runs`, `test/placement-progress.test.ts` and
+  `test/placement-progress-migration.test.ts`
 - `.claude/` — `/verify` skill, `schema-reviewer` subagent
 - `.github/workflows/` — CI config and nightly backup
 - `volume_map.csv` — 67 approved rules, fully reviewed

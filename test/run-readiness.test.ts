@@ -2,7 +2,7 @@
 // edge. B is blocked until A is read, then ready_all. It exercises the
 // `>= 1.0` completion threshold and the users CROSS JOIN in run_readiness.
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { testSql, truncateAll } from "./db";
+import { markRead, testSql, truncateAll } from "./db";
 
 const sql = testSql();
 const USER = "test-user";
@@ -37,10 +37,10 @@ describe("run_readiness", () => {
     expect((await readiness("b")).readiness).toBe("blocked");
     expect((await readiness("c")).readiness).toBe("ready_all");
 
-    await sql`INSERT INTO issue_progress (user_id, issue_id) VALUES (${USER}, 'a-1')`;
+    await markRead(sql, USER, "a", "a-1");
     expect((await readiness("b")).readiness).toBe("blocked"); // half read is still unread
 
-    await sql`INSERT INTO issue_progress (user_id, issue_id) VALUES (${USER}, 'a-2')`;
+    await markRead(sql, USER, "a", "a-2");
     expect((await readiness("b")).readiness).toBe("ready_all");
   });
 
@@ -62,9 +62,8 @@ describe("run_ancestors (R2-01, R2-04)", () => {
 
 describe("date precision (D-R3-1)", () => {
   it("stores an undated read, and refuses a date and a precision that disagree", async () => {
-    await sql`INSERT INTO issue_progress (user_id, issue_id, completed_at, completed_at_precision)
-              VALUES (${USER}, 'a-1', NULL, 'none')`;
-    await expect(sql`INSERT INTO issue_progress (user_id, issue_id, completed_at, completed_at_precision)
-                     VALUES (${USER}, 'a-2', NULL, 'exact')`).rejects.toThrow(/precision_check/);
+    await markRead(sql, USER, "a", "a-1", { at: null, precision: "none" });
+    await expect(markRead(sql, USER, "a", "a-2", { at: null, precision: "exact" }))
+      .rejects.toThrow(/precision_check/);
   });
 });

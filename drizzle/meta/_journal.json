@@ -50,6 +50,13 @@
       "when": 1790831539867,
       "tag": "0006_soft_delete_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790919008861,
+      "tag": "0007_placement_progress",
+      "breakpoints": true
     }
   ]
 }

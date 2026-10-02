@@ -127,18 +127,18 @@ export async function runDetail(userId: string, runId: string) {
   `;
   if (!run) return null;
 
-  // Placements, not issues: type and notes belong to where the issue sits in
-  // this run. An issue appears at most once per run (D-R2-1); until task 0.8 its
-  // progress belongs to the issue, not to the placement.
+  // Placements, not issues: type, notes and read state belong to where the issue
+  // sits in this run (ARCHITECTURE 2.14). `completed` is read *here*; a read in
+  // another run does not tick it. An issue appears at most once per run (D-R2-1).
   const issues = await sql<{
-    id: string; sequence: number; label: string; type: string;
+    id: string; placement_id: number; sequence: number; label: string; type: string;
     notes: string | null; completed: boolean;
   }[]>`
-    SELECT ri.issue_id AS id, ri.sequence, i.label, ri.type, ri.notes,
-           (p.issue_id IS NOT NULL) AS completed
+    SELECT ri.issue_id AS id, ri.id AS placement_id, ri.sequence, i.label, ri.type, ri.notes,
+           (p.placement_id IS NOT NULL) AS completed
     FROM live_run_issues ri
     JOIN issues i ON i.id = ri.issue_id
-    LEFT JOIN issue_progress p ON p.issue_id = ri.issue_id AND p.user_id = ${userId}
+    LEFT JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
     WHERE ri.run_id = ${runId}
     ORDER BY ri.sequence
   `;
@@ -157,14 +157,15 @@ export async function runDetail(userId: string, runId: string) {
 }
 
 /** Distinct issues in the catalog and how many are read. A crossover placed in
- * three runs counts once, so this is not a sum of runs or tracks. */
+ * three runs counts once, so this is not a sum of runs or tracks; it is read
+ * once any of its live placements is (ARCHITECTURE 2.14). */
 export async function catalogTotals(userId: string) {
   const [row] = await sql<{ total: number; read: number }[]>`
     SELECT COUNT(DISTINCT ri.issue_id)::int AS total,
-           COUNT(DISTINCT p.issue_id)::int  AS read
+           (COUNT(DISTINCT ri.issue_id) FILTER (WHERE p.placement_id IS NOT NULL))::int AS read
     FROM live_run_issues ri
     JOIN runs r ON r.id = ri.run_id AND NOT r.placeholder AND r.deleted_at IS NULL
-    LEFT JOIN issue_progress p ON p.issue_id = ri.issue_id AND p.user_id = ${userId}
+    LEFT JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
   `;
   return row;
 }

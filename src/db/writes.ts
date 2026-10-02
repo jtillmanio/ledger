@@ -30,7 +30,9 @@ export async function saveBookStatus(userId: string, input: BookStatusInput) {
 
 /**
  * Remove an issue from a run. The placement is soft-deleted, never deleted: a
- * hard delete cascades to issue_progress and drops reading history (R3-06).
+ * hard delete cascades to its issue_progress row and drops reading history
+ * (R3-06). Restoring the placement brings its read mark back, because the mark
+ * points at the placement's id (task 0.8a).
  */
 export async function removeIssueFromRun(runId: string, issueId: string) {
   await db
@@ -45,7 +47,8 @@ export async function removeIssueFromRun(runId: string, issueId: string) {
  * (run_id, issue_id) and (run_id, sequence) slots are full-table unique, so a
  * second row could not be inserted beside it, and the old row must not be
  * hard-deleted to make room. Placements at or after `sequence` shift up by one,
- * deleted ones too, so a restore later never lands on an occupied slot.
+ * deleted ones too, so a restore later never lands on an occupied slot. Their
+ * ids do not change, so every read mark stays on its issue (task 0.8a).
  * Returns false when the issue is already live in the run and nothing changed.
  */
 export async function addIssueToRun(
@@ -62,14 +65,12 @@ export async function addIssueToRun(
       .where(and(eq(runIssues.runId, runId), eq(runIssues.issueId, issueId)));
     if (existing && existing.deletedAt === null) return false;
 
-    // (run_id, sequence) is not deferrable, so a single "sequence + 1" can hit
-    // a row that has not moved yet. Park the rows on negatives, then flip back.
-    const shifted = and(eq(runIssues.runId, runId), gte(runIssues.sequence, sequence));
-    await tx.update(runIssues).set({ sequence: sql`-${runIssues.sequence} - 1` }).where(shifted);
+    // (run_id, sequence) is DEFERRABLE INITIALLY DEFERRED (migration 0007), so
+    // one "sequence + 1" may pass through a taken slot mid-statement (R0-15).
     await tx
       .update(runIssues)
-      .set({ sequence: sql`-${runIssues.sequence}` })
-      .where(and(eq(runIssues.runId, runId), sql`${runIssues.sequence} < 0`));
+      .set({ sequence: sql`${runIssues.sequence} + 1` })
+      .where(and(eq(runIssues.runId, runId), gte(runIssues.sequence, sequence)));
 
     if (existing) {
       await tx

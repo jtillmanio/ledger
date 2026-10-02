@@ -316,7 +316,7 @@ placements and credits). A migrate-from-zero schema is identical to
 `drizzle-kit push` from `schema.ts`, and `0003` applied to a loaded `0002`
 database keeps all 76 progress rows.
 
-### ☐ 0.8a Read state per run — schema, ETL and views · M
+### ☑ 0.8a Read state per run — schema, ETL and views · M
 Requirement change, Sept 2026. ARCHITECTURE 2.14. Reading an issue in one run
 must leave it unread in every other run that places it. **Land before 1.1, 1.5
 and 1.6** (they write or read progress) and before cutover (the database is
@@ -367,6 +367,17 @@ the rebuild, *Dark Reign: The Cabal (2009) #1* reads as read in `hickman-ff` and
 unread in `bendis-dark-reign` (the sheet ticks it in one and not the other), and
 `issue_read_runs` returns `{hickman-ff}` for it; the extract no longer reports
 it as `completed in one run, not another`.
+
+**Done 2026-10-02, migration `0007_placement_progress`** (with
+`drizzle/down/0007_placement_progress.sql`). On a loaded database 0007 copies
+each issue-keyed read onto every placement of its issue, soft-deleted ones
+included, so every view answers as it did the moment before. The next
+`npm run rebuild` loads the per-row truth (owner's decision). A read on an issue
+no run places stops the migration instead of being dropped. The loaders
+`setval` the placement serial after loading extract's sheet-order ids.
+`addIssueToRun` shifts sequences in one deferred UPDATE. The rebuild was run
+against the test database: 76 rows, all undated and `none`, and the Cabal
+fixture as stated.
 
 ### ☐ 0.8b Read state per run — the spine · S
 Depends on 0.8a. The spine renders a grey `read in <run title>` note (`+N` past one
