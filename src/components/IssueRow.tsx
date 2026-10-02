@@ -17,29 +17,33 @@ type Issue = {
  * Marking an issue read is the highest-frequency action in the app, so it is
  * optimistic and never navigates. If the write fails the row snaps back and
  * says why, rather than silently diverging from the database.
+ *
+ * useOptimistic shows its base again once the transition ends, so a saved mark
+ * goes into `saved`; with the server's first render as the base, every tick
+ * snapped back after its write landed. Fresh rows from the server replace it.
  */
 export default function IssueList({ issues }: { issues: Issue[] }) {
-  const [state, apply] = useOptimistic(
-    issues,
-    (rows: Issue[], next: { placementId: number; completed: boolean }) =>
-      rows.map((r) => (r.placement_id === next.placementId ? { ...r, completed: next.completed } : r)),
-  );
+  const [saved, setSaved] = useState(issues);
+  const [fromServer, setFromServer] = useState(issues);
+  if (issues !== fromServer) {
+    setFromServer(issues);
+    setSaved(issues);
+  }
+  const [state, apply] = useOptimistic(saved, mark);
   const [pending, start] = useTransition();
 
   function toggle(issue: Issue) {
-    const completed = !issue.completed;
-    const placementId = issue.placement_id;
+    const next = { placementId: issue.placement_id, completed: !issue.completed };
     start(async () => {
-      apply({ placementId, completed });
+      apply(next);
       const res = await fetch("/api/progress/issue", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ placementId, completed }),
+        body: JSON.stringify(next),
       });
-      if (!res.ok) {
-        apply({ placementId, completed: issue.completed });
-        alert("That didn't save. Check your connection and try again.");
-      }
+      // On failure, leaving `saved` alone is the snap back.
+      if (res.ok) setSaved((rows) => mark(rows, next));
+      else alert("That didn't save. Check your connection and try again.");
     });
   }
 
@@ -75,6 +79,10 @@ export default function IssueList({ issues }: { issues: Issue[] }) {
       ))}
     </div>
   );
+}
+
+function mark(rows: Issue[], next: { placementId: number; completed: boolean }) {
+  return rows.map((r) => (r.placement_id === next.placementId ? { ...r, completed: next.completed } : r));
 }
 
 /**
