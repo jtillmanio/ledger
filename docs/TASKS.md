@@ -226,26 +226,25 @@ restoring the placement brings the read mark back. A third soft-deletes a
 placement, re-adds the same issue to the run, and asserts one `run_issues` row
 (the original id, `deleted_at` NULL) and the progress row intact.
 
-### ☐ 0.5 Volume-year normalization · S
-**Already complete as of the last review** — `volume_map.csv` carries 67
-approved rules across 61 series, and `etl/extract.py` applies them plus the
-trailing-year label reordering. Labels carrying a volume year went from 4,225
-to 7,283 of 10,834, with zero unmatched.
+### ☑ 0.5 Volume-year normalization · S
+`volume_map.csv` carries 66 approved rules across 60 series, and
+`etl/extract.py` applies them plus the trailing-year label reordering.
 
-Remaining work in this task: normalize leading articles (`The Amazing
-Spider-Man` and `Amazing Spider-Man` are the same series — 137 and 100 bare
-labels), and convert the three `X-Men (vol. 2) #177-179` labels to `(1991)`.
-See HANDOFF.md section 5 for the full findings.
+The two items an earlier review flagged as remaining work — the `Amazing
+Spider-Man`/`The Amazing Spider-Man` leading-article split (137 vs 100 bare
+labels), and the three `X-Men (vol. 2) #177-179` labels missing a year — turned
+out to already be resolved in the workbook itself. A fresh 2026-10-02 extract
+found no bare or split spelling for either case: every Amazing Spider-Man
+label reads `The Amazing Spider-Man`, and the three X-Men labels are already
+`X-Men (2004) #177-179`, Metron-matched. The two `volume_map.csv` rows
+describing them were stale (left over from an earlier `etl/volumes.py` pass,
+predating whatever later fixed the workbook) and have been removed. See
+HANDOFF.md section 5.6.
 
-**Mostly superseded by 0.7:** `label_review.csv` proposes Metron's canonical
-label for every matched issue, so leading articles arrive as `name_style`
-proposals and missing years as `year_added`. Accept them there rather than
-writing normalization rules. Anything Metron didn't match still needs a
-`volume_map.csv` rule or a sheet fix.
-
-**Check:** re-run `etl/extract.py --volume-map`, diff `issues.csv` against the
-previous extract, assert only intended labels changed and the total row count is
-identical.
+**Check:** re-ran `etl/extract.py --volume-map`, diffed `issues.csv` against
+the previous extract — zero labels changed, row count held at 10,131. Only
+`volume_map.csv` itself changed (two stale rows removed; 67→66 rules, 61→60
+series).
 
 ### ☑ 0.6 Derived run span, cover dates, reviewed whys · M
 Landed before the first load. `runs.series_issues`, `start_year` and `end_year`
