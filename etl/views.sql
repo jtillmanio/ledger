@@ -441,3 +441,20 @@ DO $$ BEGIN
 END $$;
 CREATE INDEX IF NOT EXISTS books_title_gin_trgm ON books USING gin (title gin_trgm_ops);
 CREATE INDEX IF NOT EXISTS status_user_year ON book_status (user_id, finished_year);
+
+-- Planner statistics, last. Every view filters deleted_at (task 0.4), and a
+-- column added by a migration has no statistics until something ANALYZEs it;
+-- Neon's autovacuum may never get there on a database that scales to zero.
+-- Without them the planner takes runs and run_issues for one row each and nests
+-- loops over all 10k placements: the comics pages ran past Vercel's 300 s limit
+-- on a preview of live (2026-10-02) and took 22-66 ms once analyzed. Every path
+-- that changes the schema or reloads data applies this file afterwards (Release,
+-- the preview build, load.ps1/.sh, test:db:reset), so this is where it goes.
+-- Public tables only: a bare ANALYZE warns once per system catalog it may not touch.
+DO $$
+DECLARE t text;
+BEGIN
+  FOR t IN SELECT format('%I.%I', schemaname, tablename) FROM pg_tables WHERE schemaname = 'public' LOOP
+    EXECUTE 'ANALYZE ' || t;
+  END LOOP;
+END $$;
