@@ -16,8 +16,28 @@
 --
 -- Views depend on issue_progress.issue_id, so they are dropped here. Re-apply
 -- them with `npm run db:views` (Release, rebuild and the loaders all do it).
+-- Which views exist depends on which etl/views.sql the database last had (live
+-- can be a release behind: before task 0.4 there was no live_run_issues and
+-- run_progress read issue_progress directly), so drop whatever depends on
+-- either table or one of its constraints, found through pg_depend, not by name.
 -- Reversed by drizzle/down/0007_placement_progress.sql.
-DROP VIEW IF EXISTS live_run_issues CASCADE;
+DO $$
+DECLARE v text;
+BEGIN
+  FOR v IN
+    SELECT DISTINCT c.oid::regclass::text
+    FROM pg_depend d
+    JOIN pg_rewrite rw ON rw.oid = d.objid
+    JOIN pg_class c    ON c.oid = rw.ev_class AND c.relkind = 'v'
+    WHERE d.classid = 'pg_rewrite'::regclass
+      AND (d.refobjid IN ('issue_progress'::regclass, 'run_issues'::regclass)
+           OR (d.refclassid = 'pg_constraint'::regclass AND d.refobjid IN (
+                 SELECT oid FROM pg_constraint
+                 WHERE conrelid IN ('issue_progress'::regclass, 'run_issues'::regclass))))
+  LOOP
+    EXECUTE format('DROP VIEW IF EXISTS %s CASCADE', v);
+  END LOOP;
+END $$;
 --> statement-breakpoint
 ALTER TABLE "run_issues" DROP CONSTRAINT "run_issues_run_id_sequence_pk";
 --> statement-breakpoint

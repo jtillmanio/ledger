@@ -81,6 +81,32 @@ describe("migration 0007 (placement-keyed progress)", () => {
     ).rejects.toBeInstanceOf(Rollback);
   });
 
+  it("applies over views from an older etl/views.sql (live a release behind)", async () => {
+    // Before task 0.4 there was no live_run_issues: run_progress read
+    // issue_progress.issue_id itself, which blocked the first 0007 on a preview
+    // of live. One view leans on the old (run_id, sequence) primary key too.
+    await truncateAll(sql);
+    await expect(
+      sql.begin(async (tx) => {
+        await tx.unsafe(DOWN).simple();
+        await tx.unsafe(`
+          CREATE VIEW run_progress AS
+            SELECT ri.run_id, COUNT(p.issue_id) AS read_issues
+            FROM run_issues ri LEFT JOIN issue_progress p ON p.issue_id = ri.issue_id
+            GROUP BY ri.run_id;
+          CREATE VIEW run_readiness AS SELECT run_id FROM run_progress;
+          CREATE VIEW by_placement AS
+            SELECT ri.run_id, ri.sequence, ri.issue_id FROM run_issues ri
+            GROUP BY ri.run_id, ri.sequence;`).simple();
+        for (const statement of UP.split("--> statement-breakpoint")) await tx.unsafe(statement);
+        const left = await tx`SELECT viewname FROM pg_views
+                              WHERE viewname IN ('run_progress', 'run_readiness', 'by_placement')`;
+        expect(left).toEqual([]);
+        throw new Rollback();
+      }),
+    ).rejects.toBeInstanceOf(Rollback);
+  });
+
   it("stops rather than drop a read on an issue no run places", async () => {
     await truncateAll(sql);
     await sql`INSERT INTO users (id, name) VALUES (${USER}, 'Test')`;

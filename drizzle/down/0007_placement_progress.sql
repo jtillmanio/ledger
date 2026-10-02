@@ -8,8 +8,25 @@
 -- issue-keyed row, which keeps the earliest dated read (exact before approximate
 -- on a tie) and is undated only when every read was. A read with no date stays
 -- precision 'none' with a NULL completed_at; nothing is stamped with now().
--- Views depend on issue_progress.placement_id: re-apply etl/views.sql after.
-DROP VIEW IF EXISTS live_run_issues CASCADE;
+-- Views depend on issue_progress.placement_id: every view on either table is
+-- dropped (found through pg_depend, as in 0007); re-apply etl/views.sql after.
+DO $$
+DECLARE v text;
+BEGIN
+  FOR v IN
+    SELECT DISTINCT c.oid::regclass::text
+    FROM pg_depend d
+    JOIN pg_rewrite rw ON rw.oid = d.objid
+    JOIN pg_class c    ON c.oid = rw.ev_class AND c.relkind = 'v'
+    WHERE d.classid = 'pg_rewrite'::regclass
+      AND (d.refobjid IN ('issue_progress'::regclass, 'run_issues'::regclass)
+           OR (d.refclassid = 'pg_constraint'::regclass AND d.refobjid IN (
+                 SELECT oid FROM pg_constraint
+                 WHERE conrelid IN ('issue_progress'::regclass, 'run_issues'::regclass))))
+  LOOP
+    EXECUTE format('DROP VIEW IF EXISTS %s CASCADE', v);
+  END LOOP;
+END $$;
 ALTER TABLE "issue_progress" ADD COLUMN "issue_id" text;
 UPDATE "issue_progress" p SET "issue_id" = ri."issue_id"
   FROM "run_issues" ri WHERE ri."id" = p."placement_id";
