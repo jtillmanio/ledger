@@ -204,7 +204,7 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
   border:0;background:none;padding:0;position:relative;cursor:pointer}
 .chk::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;
   background:var(--line);transform:translateX(-50%)}
-.chk i{position:relative;width:20px;height:20px;border-radius:50%;border:2px solid var(--rule);
+.chk i{position:relative;width:20px;height:20px;border-radius:50%;border:2px solid var(--muted);
   background:var(--surface);display:grid;place-items:center;color:transparent;
   font-size:.6875rem;font-weight:700;transition:background-color 90ms linear,border-color 90ms linear}
 .iss[data-read="true"] .chk i{background:var(--ready);border-color:var(--ready);color:var(--on-ready)}
@@ -215,6 +215,17 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
 .ib{padding:.5rem 0;min-width:0}
 .lbl{font-size:.875rem;font-weight:600}
 .inote{font-size:.75rem;color:var(--muted);margin-top:.0625rem}
+.iss[data-type="optional"] .lbl{font-weight:500;color:var(--muted)}
+.iseq{font-size:.75rem;color:var(--muted)}
+/* read in another run — a hint, grey, never green: green means read here */
+.seen{display:inline-flex;align-items:center;gap:.25rem;font-size:.6875rem;font-weight:500;color:var(--muted);
+  margin-top:.1875rem;padding:.0625rem .375rem;border:1px dashed var(--rule);border-radius:6px}
+.seen::before{content:"↺";font-size:.75rem;line-height:1}
+.seen .seen-more{min-width:24px;min-height:24px;padding:0 .25rem;margin:-.25rem -.25rem -.25rem 0;
+  border:0;background:none;color:inherit;font:inherit;font-weight:600;cursor:pointer}
+.seen-others{list-style:none;margin:.25rem 0 0;padding:0;font-size:.6875rem;color:var(--muted)}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
 /* --- the telescope: issue in run, run in block, block in track ----------
    One SVG, three rails, driven by block_position + block_progress +
@@ -324,29 +335,6 @@ p{margin:0 0 .75rem;max-width:66ch}
 .tag-held{color:var(--blocked)}
 .measure{display:block;height:2px;background:var(--rule);margin-top:.5rem}
 .measure span{display:block;height:100%;background:var(--ready)}
-
-.spine{border-top:1px solid var(--rule)}
-.issue{display:grid;grid-template-columns:2.5rem 3.25rem 1fr;align-items:start;
-  gap:.5rem;border-bottom:1px solid var(--rule)}
-.issue-check{grid-column:1;min-height:2.75rem;display:flex;align-items:center;
-  justify-content:center;border:0;background:none;cursor:pointer;padding:0;position:relative}
-.issue-check::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:1px;
-  background:var(--rule);transform:translateX(-50%)}
-.issue:first-child .issue-check::before{top:50%}
-.issue:last-child .issue-check::before{bottom:50%}
-.issue-check i{position:relative;width:20px;height:20px;border-radius:50%;
-  border:2px solid var(--rule);background:var(--surface);display:grid;place-items:center;
-  color:transparent;font-size:.6875rem;font-weight:700;
-  transition:background-color 90ms linear,border-color 90ms linear}
-.issue[data-read="true"] .issue-check i{background:var(--ready);border-color:var(--ready);color:var(--on-ready)}
-.issue[data-read="true"] .issue-check i::after{content:"✓"}
-.issue[data-read="true"] .issue-label{color:var(--muted)}
-.issue[data-pending="true"]{opacity:.55}
-.issue-seq{grid-column:2;padding-top:.7rem;font-size:.75rem;color:var(--muted)}
-.issue-body{grid-column:3;padding:.65rem 0}
-.issue-label{font-size:.9375rem}
-.issue-note{font-size:.8125rem;color:var(--muted);margin-top:.125rem}
-.issue[data-type="optional"] .issue-label{color:var(--muted)}
 
 .filters{display:flex;flex-wrap:wrap;gap:.375rem;margin:1rem 0 1.25rem}
 .chip{font-size:.8125rem;padding:.25rem .625rem;text-decoration:none;
