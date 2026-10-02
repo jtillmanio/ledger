@@ -203,7 +203,7 @@ type (`psql` is not needed and not assumed), and that inserting a prereq of type
 `Hard`, a run of tier 7 and an event verdict of `skip` each violate their CHECK.
 Existing tests pass, and `npm run rebuild` still loads every row.
 
-### ☐ 0.4 Soft-delete everywhere · S
+### ☑ 0.4 Soft-delete everywhere · S
 Every read query filters `deleted_at IS NULL`. Add a partial index.
 
 Placements too (R3-06): a soft-deleted `run_issues` row is filtered from the

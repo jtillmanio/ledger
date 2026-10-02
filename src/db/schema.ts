@@ -59,8 +59,10 @@ export const runs = pgTable("runs", {
   whySource: text("why_source").notNull().default("hand"),
   notes: text("notes"),
   placeholder: boolean("placeholder").notNull().default(false),
-  deletedAt: timestamp("deleted_at", { withTimezone: true }), // soft delete; reads filter it from task 0.4
+  deletedAt: timestamp("deleted_at", { withTimezone: true }), // soft delete; every read filters it (task 0.4)
 }, (t) => ({
+  liveBlockSeq: index("runs_live_block_seq_idx").on(t.blockId, t.sequence)
+    .where(sql`${t.deletedAt} IS NULL`),
   whySource: check("runs_why_source_check", sql`${t.whySource} IN ('hand', 'claude')`),
   tier: check("runs_tier_check", sql`${t.tier} IS NULL OR ${t.tier} BETWEEN 1 AND 5`),
 }));
@@ -87,6 +89,7 @@ export const issues = pgTable("issues", {
   metronId: integer("metron_id"),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (t) => ({
+  live: index("issues_live_label_idx").on(t.label).where(sql`${t.deletedAt} IS NULL`),
   // A value and its provenance travel together: no unsourced value, no source
   // without a value. Written with IS NULL on both sides because a CHECK passes
   // on NULL: a bare `source IN (...)` would let a value through with no source.
@@ -133,6 +136,8 @@ export const runIssues = pgTable("run_issues", {
   pk: primaryKey({ columns: [t.runId, t.sequence] }),
   onePlacementPerRun: unique("run_issues_run_id_issue_id_unique").on(t.runId, t.issueId),
   byIssue: index("run_issues_issue_id_idx").on(t.issueId),
+  liveRunSeq: index("run_issues_live_run_seq_idx").on(t.runId, t.sequence)
+    .where(sql`${t.deletedAt} IS NULL`),
   // drizzle-kit writes plain SET NULL, which would null run_id too; migration
   // 0005 is hand-edited to SET NULL ("era_id").
   era: foreignKey({
@@ -251,6 +256,8 @@ export const books = pgTable("books", {
   hardcoverId: integer("hardcover_id"),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (t) => ({
+  liveSeries: index("books_live_series_idx").on(t.seriesId, t.seriesPosition)
+    .where(sql`${t.deletedAt} IS NULL`),
   wordCountSource: check("books_word_count_source_check", sql`
     (${t.wordCount} IS NULL) = (${t.wordCountSource} IS NULL)
     AND (${t.wordCountSource} IS NULL OR ${t.wordCountSource} IN ('stated', 'estimated'))`),

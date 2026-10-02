@@ -1,6 +1,16 @@
 -- views.sql — everything your spreadsheet computed in formula columns.
 -- Nothing here is stored; it is derived on read. Re-run after any schema change.
 
+-- A placement that counts: neither the placement nor its issue is soft-deleted
+-- (task 0.4, R3-06). Every view that reads run_issues reads this instead, so the
+-- rule is written once. A soft-deleted placement keeps its issue_progress row;
+-- it just stops being counted, and restoring it brings the read mark back.
+CREATE OR REPLACE VIEW live_run_issues AS
+SELECT ri.run_id, ri.sequence, ri.issue_id, ri.type, ri.notes, ri.era_id
+FROM run_issues ri
+JOIN issues i ON i.id = ri.issue_id AND i.deleted_at IS NULL
+WHERE ri.deleted_at IS NULL;
+
 -- Per-run, per-user completion. Replaces RUNS!Completed / Left / % Done / Status.
 -- Counts placements: an issue read in another run counts as read here too,
 -- because progress belongs to the issue, not to where it sits (until task 0.8).
@@ -20,8 +30,9 @@ SELECT
        ELSE 'reading' END                                AS state
 FROM runs r
 CROSS JOIN users u
-LEFT JOIN run_issues ri     ON ri.run_id = r.id
+LEFT JOIN live_run_issues ri     ON ri.run_id = r.id
 LEFT JOIN issue_progress p  ON p.issue_id = ri.issue_id AND p.user_id = u.id
+WHERE r.deleted_at IS NULL
 GROUP BY u.id, r.id;
 
 -- What a run spans: its series-and-issues text and its publication years.
@@ -44,7 +55,7 @@ WITH parsed AS NOT MATERIALIZED (
   SELECT
     ri.run_id, ri.sequence, i.label, i.cover_date,
     regexp_match(i.label, '^(.+?)\s*#\s*(-?[0-9]+(\.[0-9]+)?)\s*$') AS m
-  FROM run_issues ri
+  FROM live_run_issues ri
   JOIN issues i ON i.id = ri.issue_id
 ),
 numbered AS NOT MATERIALIZED (
@@ -104,13 +115,14 @@ FROM runs r
 LEFT JOIN (
   SELECT ri.run_id, COUNT(*) AS issue_count, COUNT(i.cover_date) AS dated_issues,
          MIN(i.cover_date) AS first_cover_date, MAX(i.cover_date) AS last_cover_date
-  FROM run_issues ri JOIN issues i ON i.id = ri.issue_id
+  FROM live_run_issues ri JOIN issues i ON i.id = ri.issue_id
   GROUP BY ri.run_id
 ) c ON c.run_id = r.id
 LEFT JOIN (
   SELECT run_id, string_agg(txt, '; ' ORDER BY first_seq, txt) AS series_issues
   FROM groups GROUP BY run_id
-) s ON s.run_id = r.id;
+) s ON s.run_id = r.id
+WHERE r.deleted_at IS NULL;
 
 -- Direct-prereq readiness. Replaces RUNS!Readiness / Hard Left / Soft Left / Unlocks.
 CREATE OR REPLACE VIEW run_readiness AS
@@ -130,6 +142,8 @@ SELECT
   END                                                           AS readiness
 FROM run_progress rp
 LEFT JOIN prereqs pr      ON pr.run_id = rp.run_id
+                         AND EXISTS (SELECT 1 FROM runs pr_r
+                                     WHERE pr_r.id = pr.prereq_run_id AND pr_r.deleted_at IS NULL)
 LEFT JOIN run_progress pp ON pp.run_id = pr.prereq_run_id AND pp.user_id = rp.user_id
 GROUP BY rp.user_id, rp.run_id;
 
@@ -162,7 +176,7 @@ FROM run_readiness rr
 JOIN run_progress rp ON rp.user_id = rr.user_id AND rp.run_id = rr.run_id
 LEFT JOIN LATERAL (
   SELECT MAX(p.completed_at) AS last_read_at
-  FROM run_issues ri
+  FROM live_run_issues ri
   JOIN issue_progress p ON p.issue_id = ri.issue_id AND p.user_id = rr.user_id
   WHERE ri.run_id = rr.run_id
 ) fin ON true;
@@ -183,7 +197,8 @@ WITH placed AS (
     ri.run_id,
     ROW_NUMBER() OVER (PARTITION BY u.id, ri.run_id ORDER BY ri.sequence) AS ordinal,
     (p.issue_id IS NOT NULL) AS is_read
-  FROM run_issues ri
+  FROM live_run_issues ri
+  JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL
   CROSS JOIN users u
   LEFT JOIN issue_progress p ON p.issue_id = ri.issue_id AND p.user_id = u.id
 ), islands AS (
@@ -213,13 +228,16 @@ CREATE OR REPLACE FUNCTION run_ancestors(target text)
 RETURNS TABLE (run_id text, type text, depth int) AS $$
   WITH RECURSIVE walk(run_id, type, depth) AS (
     SELECT p.prereq_run_id, p.type, 1
-    FROM prereqs p WHERE p.run_id = target
+    FROM prereqs p
+    JOIN runs pr ON pr.id = p.prereq_run_id AND pr.deleted_at IS NULL
+    WHERE p.run_id = target
     UNION
     SELECT p.prereq_run_id,
            CASE WHEN w.type = 'hard' AND p.type = 'hard' THEN 'hard' ELSE 'soft' END,
            w.depth + 1
     FROM prereqs p
     JOIN walk w ON p.run_id = w.run_id
+    JOIN runs pr ON pr.id = p.prereq_run_id AND pr.deleted_at IS NULL
     WHERE w.depth < 48
   )
   SELECT w.run_id, MIN(w.type) AS type, MIN(w.depth)::int AS depth
@@ -233,6 +251,7 @@ $$ LANGUAGE sql STABLE;
 CREATE OR REPLACE VIEW event_tracks AS
 SELECT DISTINCT er.event_id, rt.track_id
 FROM event_runs er
+JOIN runs r ON r.id = er.run_id AND r.deleted_at IS NULL
 JOIN run_tracks rt ON rt.run_id = er.run_id;
 
 -- Distinct issues and distinct read issues per user, per track and per block.
@@ -243,8 +262,8 @@ SELECT u.id AS user_id, rt.track_id,
        COUNT(DISTINCT ri.issue_id) AS total_issues,
        COUNT(DISTINCT p.issue_id)  AS read_issues
 FROM run_tracks rt
-JOIN runs r         ON r.id = rt.run_id AND NOT r.placeholder
-JOIN run_issues ri  ON ri.run_id = r.id
+JOIN runs r         ON r.id = rt.run_id AND NOT r.placeholder AND r.deleted_at IS NULL
+JOIN live_run_issues ri  ON ri.run_id = r.id
 CROSS JOIN users u
 LEFT JOIN issue_progress p ON p.issue_id = ri.issue_id AND p.user_id = u.id
 GROUP BY u.id, rt.track_id;
@@ -254,10 +273,10 @@ SELECT u.id AS user_id, r.block_id,
        COUNT(DISTINCT ri.issue_id) AS total_issues,
        COUNT(DISTINCT p.issue_id)  AS read_issues
 FROM runs r
-JOIN run_issues ri  ON ri.run_id = r.id
+JOIN live_run_issues ri  ON ri.run_id = r.id
 CROSS JOIN users u
 LEFT JOIN issue_progress p ON p.issue_id = ri.issue_id AND p.user_id = u.id
-WHERE NOT r.placeholder AND r.block_id IS NOT NULL
+WHERE NOT r.placeholder AND r.deleted_at IS NULL AND r.block_id IS NOT NULL
 GROUP BY u.id, r.block_id;
 
 -- Per-track rollup. Replaces the TRACKS tab.
@@ -275,7 +294,7 @@ SELECT
   )                                                     AS ready_now
 FROM tracks t
 JOIN run_tracks rt    ON rt.track_id = t.id
-JOIN runs r           ON r.id = rt.run_id AND NOT r.placeholder
+JOIN runs r           ON r.id = rt.run_id AND NOT r.placeholder AND r.deleted_at IS NULL
 JOIN run_progress rp  ON rp.run_id = r.id
 JOIN run_readiness rd ON rd.run_id = r.id AND rd.user_id = rp.user_id
 LEFT JOIN track_issue_counts tc ON tc.track_id = t.id AND tc.user_id = rp.user_id
@@ -303,7 +322,7 @@ FROM (
     DENSE_RANK() OVER (PARTITION BY b.track_id ORDER BY b.number)              AS block_ordinal
   FROM runs r
   JOIN blocks b ON b.id = r.block_id
-  WHERE NOT r.placeholder
+  WHERE NOT r.placeholder AND r.deleted_at IS NULL
 ) x;
 
 -- Per-block rollup, same column shape as track_progress so the dashboard can
@@ -322,7 +341,7 @@ SELECT
   CASE WHEN COALESCE(MAX(bc.total_issues), 0) = 0 THEN 0
        ELSE MAX(bc.read_issues)::float8 / MAX(bc.total_issues) END AS pct
 FROM blocks b
-JOIN runs r          ON r.block_id = b.id AND NOT r.placeholder
+JOIN runs r          ON r.block_id = b.id AND NOT r.placeholder AND r.deleted_at IS NULL
 JOIN run_progress rp ON rp.run_id = r.id
 LEFT JOIN block_issue_counts bc ON bc.block_id = b.id AND bc.user_id = rp.user_id
 GROUP BY rp.user_id, b.id, b.track_id, b.number, b.name;
@@ -333,7 +352,7 @@ GROUP BY rp.user_id, b.id, b.track_id, b.number, b.name;
 CREATE OR REPLACE VIEW run_creators AS
 WITH placed AS (
   SELECT DISTINCT ri.run_id, ic.issue_id, ic.creator_id, ic.role
-  FROM run_issues ri
+  FROM live_run_issues ri
   JOIN issue_credits ic ON ic.issue_id = ri.issue_id
 ),
 credited AS (
@@ -372,15 +391,16 @@ LEFT JOIN (
          COUNT(DISTINCT ri.issue_id)                                        AS issue_count,
          COUNT(DISTINCT ri.issue_id) FILTER (WHERE EXISTS (
            SELECT 1 FROM issue_credits ic WHERE ic.issue_id = ri.issue_id)) AS credited_issues
-  FROM run_issues ri GROUP BY ri.run_id
-) ci ON ci.run_id = r.id;
+  FROM live_run_issues ri GROUP BY ri.run_id
+) ci ON ci.run_id = r.id
+WHERE r.deleted_at IS NULL;
 
 -- Books read per year per genre. Replaces the Read 20XX tabs.
 CREATE OR REPLACE VIEW books_by_year AS
 SELECT s.user_id, s.finished_year AS year, b.genre,
        COUNT(*) AS books, SUM(b.word_count) AS words
 FROM book_status s JOIN books b ON b.id = s.book_id
-WHERE s.status = 'read' AND s.finished_year IS NOT NULL
+WHERE s.status = 'read' AND s.finished_year IS NOT NULL AND b.deleted_at IS NULL
 GROUP BY s.user_id, s.finished_year, b.genre;
 
 -- Series completion. Replaces the Series tab.
@@ -395,7 +415,7 @@ SELECT
 FROM book_series bs
 CROSS JOIN users u
 LEFT JOIN authors a     ON a.id = bs.author_id
-LEFT JOIN books b       ON b.series_id = bs.id
+LEFT JOIN books b       ON b.series_id = bs.id AND b.deleted_at IS NULL
 LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = u.id
 GROUP BY u.id, bs.id, bs.name, a.name, bs.total_books;
 

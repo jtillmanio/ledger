@@ -47,7 +47,7 @@ export async function listRuns(userId: string, track?: string): Promise<RunRow[]
     LEFT JOIN run_tracks rt ON rt.run_id = r.id
     LEFT JOIN tracks t      ON t.id = rt.track_id
     LEFT JOIN blocks b      ON b.id = r.block_id
-    WHERE NOT r.placeholder
+    WHERE NOT r.placeholder AND r.deleted_at IS NULL
       AND (${track ?? null}::text IS NULL OR t.id = ${track ?? null})
     GROUP BY r.id, b.number, rp.total_issues, rp.read_issues, rp.pct, rp.state,
              rd.readiness, rd.hard_total, rd.hard_done, rd.soft_total, rd.soft_done,
@@ -74,7 +74,7 @@ export async function readyToRead(userId: string, limit = 20) {
     JOIN run_credit_line cl ON cl.run_id = r.id
     LEFT JOIN run_tracks rt ON rt.run_id = r.id
     LEFT JOIN tracks t      ON t.id = rt.track_id
-    WHERE NOT r.placeholder
+    WHERE NOT r.placeholder AND r.deleted_at IS NULL
       AND rp.state = 'unread'
       AND rd.readiness = 'ready_all'
       AND rp.total_issues > 0
@@ -96,7 +96,7 @@ export async function inProgressRuns(userId: string) {
     JOIN run_progress rp ON rp.run_id = r.id AND rp.user_id = ${userId}
     JOIN run_span     rs ON rs.run_id = r.id
     JOIN run_credit_line cl ON cl.run_id = r.id
-    WHERE rp.state = 'reading'
+    WHERE r.deleted_at IS NULL AND rp.state = 'reading'
     ORDER BY rp.pct DESC
   `;
 }
@@ -120,7 +120,7 @@ export async function runDetail(userId: string, runId: string) {
     JOIN run_credit_line cl ON cl.run_id = r.id
     LEFT JOIN run_tracks rt ON rt.run_id = r.id
     LEFT JOIN tracks t      ON t.id = rt.track_id
-    WHERE r.id = ${runId}
+    WHERE r.id = ${runId} AND r.deleted_at IS NULL
     GROUP BY r.id, rp.total_issues, rp.read_issues, rp.pct, rp.state, rd.readiness,
              rs.series_issues, rs.start_year, rs.end_year, rs.dated_issues,
              cl.writers, cl.artists, cl.credited_issues, cl.issue_count
@@ -136,7 +136,7 @@ export async function runDetail(userId: string, runId: string) {
   }[]>`
     SELECT ri.issue_id AS id, ri.sequence, i.label, ri.type, ri.notes,
            (p.issue_id IS NOT NULL) AS completed
-    FROM run_issues ri
+    FROM live_run_issues ri
     JOIN issues i ON i.id = ri.issue_id
     LEFT JOIN issue_progress p ON p.issue_id = ri.issue_id AND p.user_id = ${userId}
     WHERE ri.run_id = ${runId}
@@ -148,7 +148,7 @@ export async function runDetail(userId: string, runId: string) {
   }[]>`
     SELECT r.id, r.title, a.type, rp.pct, a.depth
     FROM run_ancestors(${runId}) a
-    JOIN runs r          ON r.id = a.run_id
+    JOIN runs r          ON r.id = a.run_id AND r.deleted_at IS NULL
     JOIN run_progress rp ON rp.run_id = r.id AND rp.user_id = ${userId}
     ORDER BY a.depth, a.type DESC, r.title
   `;
@@ -162,8 +162,8 @@ export async function catalogTotals(userId: string) {
   const [row] = await sql<{ total: number; read: number }[]>`
     SELECT COUNT(DISTINCT ri.issue_id)::int AS total,
            COUNT(DISTINCT p.issue_id)::int  AS read
-    FROM run_issues ri
-    JOIN runs r ON r.id = ri.run_id AND NOT r.placeholder
+    FROM live_run_issues ri
+    JOIN runs r ON r.id = ri.run_id AND NOT r.placeholder AND r.deleted_at IS NULL
     LEFT JOIN issue_progress p ON p.issue_id = ri.issue_id AND p.user_id = ${userId}
   `;
   return row;
@@ -211,7 +211,8 @@ export async function listBooks(
       SELECT MIN(p.planned_year) AS planned_year FROM reading_plan p
       WHERE p.book_id = b.id AND p.user_id = ${userId}
     ) pl ON true
-    WHERE (${status}::text IS NULL OR COALESCE(st.status,'to_read') = ${status})
+    WHERE b.deleted_at IS NULL
+      AND (${status}::text IS NULL OR COALESCE(st.status,'to_read') = ${status})
       AND (${genre}::text  IS NULL OR b.genre = ${genre})
       AND (${year}::int    IS NULL OR st.finished_year = ${year}
            OR EXISTS (SELECT 1 FROM reading_plan p2
@@ -235,8 +236,10 @@ export async function yearSummary(userId: string) {
 /** Read books with no finished year: the ones no year chip can reach. */
 export async function readWithoutYear(userId: string): Promise<number> {
   const [row] = await sql<{ n: number }[]>`
-    SELECT COUNT(*)::int AS n FROM book_status
-    WHERE user_id = ${userId} AND status = 'read' AND finished_year IS NULL
+    SELECT COUNT(*)::int AS n
+    FROM book_status s
+    JOIN books b ON b.id = s.book_id AND b.deleted_at IS NULL
+    WHERE s.user_id = ${userId} AND s.status = 'read' AND s.finished_year IS NULL
   `;
   return row.n;
 }
@@ -259,7 +262,7 @@ export async function upcomingReleases() {
     FROM releases rl
     JOIN books b        ON b.id = rl.book_id
     LEFT JOIN authors a ON a.id = b.author_id
-    WHERE rl.release_date >= CURRENT_DATE::text
+    WHERE b.deleted_at IS NULL AND rl.release_date >= CURRENT_DATE::text
     ORDER BY rl.release_date
     LIMIT 12
   `;
