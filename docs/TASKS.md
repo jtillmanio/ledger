@@ -475,6 +475,59 @@ passes. `EXPLAIN` output for any view changed shows the run filter applied early
 `/verify` is green and the migration checks pass unchanged (no schema change
 unless the owner approved one).
 
+### ☐ 0.10 Lighthouse on every preview · M
+Depends on 0.9: its routes, its measurement runner and the *Performance budget*
+it leaves in `docs/ARCHITECTURE.md`. It does not block Phase 1, but build it
+before 1.8, so the app shell is the first screen measured on its own PR rather
+than after it ships. Asked for by the owner on 2026-10-03.
+
+0.9 measured by hand, once. A number taken once goes stale with the next screen,
+so this makes every preview measure itself and tells the PR what changed.
+
+- **When.** `.github/workflows/lighthouse.yml` runs when Vercel reports a
+  preview deployment `success` (`deployment_status`), and by hand
+  (`workflow_dispatch`) with a URL. It never runs on its own against production:
+  Release's smoke test owns production, and a pass there reads the live
+  database through the app. A hand run against production is the owner's call.
+- **Getting in.** Every deployment sits behind Vercel Authentication and the
+  passcode gate. The job sends `x-vercel-protection-bypass` from the existing
+  `VERCEL_AUTOMATION_BYPASS_SECRET`, signs in by posting a new
+  `APP_PASSCODE` repository secret to `/api/login`, and hands both the header
+  and the `rt_session` cookie to Lighthouse. Both values are masked; neither
+  is ever echoed. When 6.13 replaces the passcode, it updates this step.
+- **What is measured.** The routes 0.9 measured — `/login`, `/comics`, one
+  small run, one run of 100+ issues and `/books` — listed once in the
+  workflow; a task that adds a top-level screen adds its URL there in the same
+  PR. Lighthouse mobile with devtools throttling (Slow 4G, 4× CPU), version
+  pinned, three runs per route, median reported. Beside it, 0.9's
+  tap → next-paint runner (moved from scratch into `scripts/perf/`) times the
+  same tap pairs on the same profile.
+- **What fails the job** — only what holds still between runs:
+  - any request to a route handler (`/api/*`) during a page load or a
+    prefetch, by name (0.9 found the nav prefetching `/api/export`);
+  - per route, document plus RSC bytes, JS bytes and request count over the
+    budget in ARCHITECTURE's *Performance budget*;
+  - CLS of 0.1 or more;
+  - an accessibility category score below the one recorded in the budget.
+- **What is reported, never gated.** TTFB, response complete, FCP, LCP, TBT and
+  tap → next paint, first hit and median, against `main`'s last run where there
+  is one. One PR comment, updated in place, plus the job summary. No
+  wall-clock assertion: those flake, and a preview's Neon branch is cold or
+  warm by chance (0.9 step 4).
+- **Reports stay private.** The HTML and JSON reports are workflow artifacts
+  with 14-day retention, nothing more. Never LHCI's temporary public storage
+  or any public upload: a report holds the rendered pages — the library and
+  the reading history.
+- **Docs.** `.claude/rules/git.md`'s *Test on the branch* names this run where
+  it now says "once they exist"; START-HERE gets the `APP_PASSCODE` secret
+  beside the bypass secret (10e).
+
+**Check:** on this task's own PR the workflow runs against the PR's preview,
+posts the table and attaches the reports as artifacts. On a throwaway branch, a
+`<Link href="/api/export">` put back in the nav fails the job with that request
+named, and removing it turns the job green. A `workflow_dispatch` run with a URL
+works. Neither secret appears in any log, and no report leaves GitHub.
+
 ---
 
 ## Phase 1 — Daily use (build before anything clever)
