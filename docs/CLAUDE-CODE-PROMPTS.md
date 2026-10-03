@@ -167,8 +167,9 @@ alone is enough elsewhere.
 | 0.5 Volume-year normalization | S | Sonnet | low | medium | medium |
 | 0.8a Read state per run — schema, ETL, views | M | Opus | high | high | xhigh |
 | 0.8b Read state per run — the spine | S | Sonnet | medium | high | high |
-| 1.1 Range marking | M | Opus | high | high | xhigh |
 | 1.2 Undo | S | Sonnet | medium | high | high |
+| 1.1 Range marking | M | Opus | high | high | xhigh |
+| 1.6 Resume pointer | S | Sonnet | low | medium | high |
 | 1.3 Bulk issue entry — parser and validation | M | Opus | high | high | xhigh |
 | 1.3c Bulk issue entry — review table and insert | M | Opus | high | high | xhigh |
 | 1.3b Add issues from a Metron search | M | Opus | medium | high | xhigh |
@@ -176,12 +177,12 @@ alone is enough elsewhere.
 | 1.4c Add a book by search or by hand | M | Sonnet | medium | high | high |
 | 1.4b Quick-capture inbox | S | Sonnet | low | medium | high |
 | 1.5 Dated reading log | M | Opus | high | high | xhigh |
-| 1.6 Resume pointer | S | Sonnet | low | medium | high |
 | 1.7 One period column | M | Opus | high | high | xhigh |
+| 1.8a Design tokens and control states | M | Sonnet | medium | high | high |
 | 1.8 App shell | M | Sonnet | medium | high | high |
 | 1.8b Thumb bar and contrast | S | Sonnet | medium | high | high |
-| 1.9 Status screens | M | Sonnet | medium | high | high |
 | 1.10 Comics Up next queue | M | Sonnet | medium | high | xhigh |
+| 1.9 Status screens | M | Sonnet | medium | high | high |
 | 1.11 Slow down failed sign-ins (D-36) | S | Sonnet | low | medium | high |
 | 2.0 Settings | S | Sonnet | low | medium | high |
 | 2.1 Capacity view | M | Opus | high | high | xhigh |
@@ -555,6 +556,42 @@ shows no hint; every .chk has an accessible name and aria-pressed.
 
 ## Phase 1 — Daily use
 
+In build order, which is not ID order (TASKS.md Phase 1, *Build order*).
+1.3c uses the 1.3 prompt and 1.8b the 1.8 prompt (see the split table above);
+2.11a, built at the end of this phase (D-20), has its prompt in Phase 2.
+
+### 1.2 Undo
+**Model:** Sonnet · **Effort:** explore medium / plan high / implement high
+**Why:** an in-memory last-action stack with Ctrl+Z and a toast — well-scoped,
+but has to correctly restore `completed_at` and status together across three
+different action types (single mark, range mark, status change), which is
+easy to get subtly wrong on the range case.
+
+**Explore**
+```
+read @docs/TASKS.md task 1.2 and whatever task 1.1 built for range marking (read
+it even if you didn't build it this session — the undo stack has to cover
+range marks too). what does a mark/status-change request currently return
+that undo would need to restore prior state?
+```
+
+**Plan**
+```
+write a plan for task 1.2: an in-memory action stack, Ctrl+Z binding, and a
+toast with an undo button, covering single marks, range marks, and status
+changes. be explicit about what "prior state" means for each of the three
+action types, including completed_at.
+```
+
+**Implement**
+```
+implement the plan. write the test first: mark an issue, undo, assert the
+exact prior state including completed_at is restored. then do the same for a
+range mark and a status change.
+```
+
+---
+
 ### 1.1 Range marking
 **Model:** Opus · **Effort:** explore high / plan high / implement xhigh
 **Why:** shift-click on desktop and long-press on mobile have to resolve to
@@ -599,34 +636,34 @@ placements.
 
 ---
 
-### 1.2 Undo
-**Model:** Sonnet · **Effort:** explore medium / plan high / implement high
-**Why:** an in-memory last-action stack with Ctrl+Z and a toast — well-scoped,
-but has to correctly restore `completed_at` and status together across three
-different action types (single mark, range mark, status change), which is
-easy to get subtly wrong on the range case.
+### 1.6 Resume pointer
+**Model:** Sonnet · **Effort:** explore low / plan medium / implement high
+**Why:** small and fully derived — no new storage, just "lowest unread
+sequence" — but it has to actually never be stored, since that's the point of
+the task.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.2 and whatever task 1.1 built for range marking (read
-it even if you didn't build it this session — the undo stack has to cover
-range marks too). what does a mark/status-change request currently return
-that undo would need to restore prior state?
+read @docs/TASKS.md task 1.6. where does run_progress or a sibling view already
+expose sequence and read state per issue, so the resume pointer can be a
+query rather than a column?
 ```
 
 **Plan**
 ```
-write a plan for task 1.2: an in-memory action stack, Ctrl+Z binding, and a
-toast with an undo button, covering single marks, range marks, and status
-changes. be explicit about what "prior state" means for each of the three
-action types, including completed_at.
+write a plan for task 1.6: a derived query or view returning the lowest
+unread issue sequence per in-progress run, and the dashboard "Continue: ..."
+link using it. confirm nothing gets stored.
 ```
 
 **Implement**
 ```
-implement the plan. write the test first: mark an issue, undo, assert the
-exact prior state including completed_at is restored. then do the same for a
-range mark and a status change.
+implement the plan. write the test first: a run with issues 1-5 and 7 read,
+assert the pointer returns issue 6.
+
+the pointer lives on the telecard: the state badge reads "42 / 381" with no
+prerequisite badge, and phone and desktop render the same badges from one
+component. Resume and the thumb bar's "Mark #141 read" are the same verb.
 ```
 
 ---
@@ -875,38 +912,6 @@ never DATABASE_URL) and assert the row values and precisions survive.
 
 ---
 
-### 1.6 Resume pointer
-**Model:** Sonnet · **Effort:** explore low / plan medium / implement high
-**Why:** small and fully derived — no new storage, just "lowest unread
-sequence" — but it has to actually never be stored, since that's the point of
-the task.
-
-**Explore**
-```
-read @docs/TASKS.md task 1.6. where does run_progress or a sibling view already
-expose sequence and read state per issue, so the resume pointer can be a
-query rather than a column?
-```
-
-**Plan**
-```
-write a plan for task 1.6: a derived query or view returning the lowest
-unread issue sequence per in-progress run, and the dashboard "Continue: ..."
-link using it. confirm nothing gets stored.
-```
-
-**Implement**
-```
-implement the plan. write the test first: a run with issues 1-5 and 7 read,
-assert the pointer returns issue 6.
-
-the pointer lives on the telecard: the state badge reads "42 / 381" with no
-prerequisite badge, and phone and desktop render the same badges from one
-component. Resume and the thumb bar's "Mark #141 read" are the same verb.
-```
-
----
-
 ### 1.7 One period column on `reading_plan`
 **Model:** Opus · **Effort:** explore high / plan high / implement xhigh
 **Why:** collapsing three legacy columns into one regex-checked `period` text
@@ -952,6 +957,51 @@ migration and confirm every row matches what it started as.
 
 ---
 
+### 1.8a Design tokens and control states
+**Model:** Sonnet · **Effort:** explore medium / plan high / implement high
+**Why:** the values already exist in `design/tokens.css`; the risk is carrying
+them across without renaming anything, translating the dark selectors twice,
+and a contrast check that passes for the wrong reason. Every later UI task
+inherits whatever this gets wrong, which is why it comes before 1.8.
+
+**Explore**
+```
+read @docs/TASKS.md task 1.8a, @docs/DESIGN.md, design/STYLE_GUIDE.md §4–§7,
+§10 and §13, design/tokens.css, src/app/globals.css and
+scripts/check-tokens.mjs. list every token tokens.css adds or changes against
+globals.css, and every selector that is translated on the way in (.app,:root
+becomes :root; the dark block becomes both the data-theme block and the
+prefers-color-scheme block). for each class in the task's state-matrix list,
+say which of hover / :active / :focus-visible / [aria-disabled="true"] it has
+today. flag anything tokens.css would rename or remove: the task allows
+additions and value changes only.
+```
+
+**Plan**
+```
+write a plan for task 1.8a. extend check-tokens.mjs first (elevation order per
+theme, text tokens on every surface, paired fills, --faint-deco outlines, the
+glass worst case, the 11px floor) and write the state-matrix test, then show
+each one failing against today's globals.css where it should. after that, move
+the values into globals.css and design/mockups.html's .app blocks in the same
+commit, because test:tokens compares the two. name how you'll prove the
+check's three deliberate breakages each fail, and which docs carry the --faint
+and --faint-deco hexes.
+```
+
+**Implement**
+```
+implement the plan. no token or class is renamed or removed, and --mark and
+--held stay. npm run test:tokens passes, and fails each of the three ways the
+Check names; revert each breakage before committing. the radius grep returns
+only var(--r-*) and 50%. screenshot /comics at 360px, light and dark, before
+and after (npm run dev uses the development database): the layout must not
+move, only the values. capture the dark frames the task lists into
+design/mockups-index.md and close Not shown #11.
+```
+
+---
+
 ### 1.8 App shell and the thumb bar
 **Model:** Sonnet · **Effort:** explore medium / plan high / implement high
 **Why:** layout and routing work with tokens already defined in
@@ -961,8 +1011,8 @@ plays to Sonnet's strengths at a solid effort level.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.8 and the token/class definitions already in
-src/app/globals.css. how do the current /comics, /books, and /watch routes
+read @docs/TASKS.md task 1.8 and the token/class definitions 1.8a put in
+src/app/globals.css (use them; don't define new ones). how do the current /comics, /books, and /watch routes
 render today, and what's the smallest change that introduces the tab
 bar/sidebar shell and the fixed .actionbar around them without rewriting each
 page?
@@ -990,48 +1040,11 @@ at 360px, no horizontal scroll at either width. write the redirect test
 build the chrome from the audit: one phone media bar (Comics, Books, Watch,
 search icon, aria-current), the per-medium desktop sidebar with neutral icons
 and Inbox, a 44px thumb bar with the mark verb in the left slot, the batch sheet
-behind "+ batch", the sync pill, skeletons at the loaded dimensions, and the
-contrast tokens. write the contrast script and the computed-height test first,
-and run axe-core over each dashboard.
-```
----
-
-### 1.9 Status screens: In flight · Up next · Done
-**Model:** Sonnet · **Effort:** explore medium / plan high / implement high
-**Why:** one component over views that already exist, so there's no new
-data. The judgement is in the tab rules: blocked runs are left out of Up
-next, a bare-year plan entry sorts after its quarters, and a run read only
-*elsewhere* is not Done. Build it for comics and books now so 8.8 is a
-fill-in.
-
-**Explore**
-```
-read @docs/TASKS.md task 1.9, ARCHITECTURE.md §4 (the status-screen table), and the
-"Status" screen in design/mockups.html (scripts/screen.ps1 status). which
-existing queries in src/db/queries.ts already return in-flight, ready and
-finished runs, and which views give books by plan period and by year read?
+behind "+ batch", the sync pill and skeletons at the loaded dimensions, on
+1.8a's tokens. write the computed-height test first, and run axe-core over
+each dashboard. the contrast checks are 1.8b's.
 ```
 
-**Plan**
-```
-write a plan for task 1.9: one StatusTabs component, tab in the URL,
-/comics/status and /books/status, each tab's rows and order exactly as the
-task's table says, counts on the tabs, Stopped collapsed under Done, dashboard
-headers linking to the matching tab. nothing stored. name every file.
-```
-
-**Implement**
-```
-implement the plan. tests first: a partly-read run is in In flight only; a
-ready unstarted run is in Up next; a blocked run is in neither but is counted
-in the link; a run read only in other runs is not in Done; a '2027' plan entry
-sorts after 2027's quarters and before someday; DNF shows only under Stopped;
-tab counts equal row counts. screenshot at 360px.
-
-tabs are a real tablist of links with arrow keys, the resume button names
-its target, Stopped is a details element, and every tab has one primary-action
-empty state.
-```
 ---
 
 ### 1.10 Comics Up next queue
@@ -1075,6 +1088,70 @@ arrows move, space drops, esc cancels) with an aria-live announcement; the row
 menu has move to top/up/down and remove. write the keyboard test before the
 pointer handling.
 ```
+
+---
+
+### 1.9 Status screens: In flight · Up next · Done
+**Model:** Sonnet · **Effort:** explore medium / plan high / implement high
+**Why:** one component over views that already exist, so there's no new
+data. The judgement is in the tab rules: blocked runs are left out of Up
+next, a bare-year plan entry sorts after its quarters, and a run read only
+*elsewhere* is not Done. Build it for comics and books now so 8.8 is a
+fill-in.
+
+**Explore**
+```
+read @docs/TASKS.md task 1.9, ARCHITECTURE.md §4 (the status-screen table), and the
+"Status" screen in design/mockups.html (scripts/screen.ps1 status). which
+existing queries in src/db/queries.ts already return in-flight, ready and
+finished runs, and which views give books by plan period and by year read?
+```
+
+**Plan**
+```
+write a plan for task 1.9: one StatusTabs component, tab in the URL,
+/comics/status and /books/status, each tab's rows and order exactly as the
+task's table says, counts on the tabs, Stopped collapsed under Done, dashboard
+headers linking to the matching tab. nothing stored. name every file.
+```
+
+**Implement**
+```
+implement the plan. tests first: a partly-read run is in In flight only; a
+ready unstarted run is in Up next; a blocked run is in neither but is counted
+in the link; a run read only in other runs is not in Done; a '2027' plan entry
+sorts after 2027's quarters and before someday; DNF shows only under Stopped;
+tab counts equal row counts. screenshot at 360px.
+
+tabs are a real tablist of links with arrow keys, the resume button names
+its target, Stopped is a details element, and every tab has one primary-action
+empty state.
+```
+
+---
+
+### 1.11 Slow down failed sign-ins
+**Model:** Sonnet · **Effort:** explore low / plan medium / implement high
+**Why:** a few lines in one route handler. The whole risk is the test: it must
+prove the wait without ever waiting on a real clock.
+
+**Explore**
+```
+read @docs/TASKS.md task 1.11, D-23 and D-36 in docs/review/decisions.md,
+src/app/api/login/route.ts and src/lib/auth.ts. use test/health.test.ts as the
+shape for importing a route handler in vitest.
+```
+
+**Plan / Implement**
+```
+write the vitest first, with fake timers. a wrong, an empty and a wrong-length
+passcode are each still pending at 999 ms and resolve at 1000 ms, to a 303 to
+/login?error=1 with no rt_session cookie. a right one resolves without
+advancing the timers and sets the cookie. then add the wait to the route
+handler: stateless, with no in-memory counter and no table. nothing waits on
+a real clock.
+```
+
 ---
 
 ## Phase 2 — The pace engine
