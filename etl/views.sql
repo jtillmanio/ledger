@@ -53,12 +53,18 @@ GROUP BY u.id, r.id;
 -- published later can't make a span run backwards. Undated issues are skipped;
 -- dated_issues < issue_count means the span may be incomplete.
 CREATE OR REPLACE VIEW run_span AS
+-- The regex sits in a LATERAL with OFFSET 0 so it runs on the run's own
+-- placements. As a plain column, the "m IS NOT NULL" filter below references
+-- issues alone, so Postgres pushed it onto a scan of every issue in the catalog,
+-- once per reference: 280 ms to describe one 154-issue run (task 0.9). OFFSET 0
+-- stops that pushdown and leaves the run filter free to reach run_issues.
 WITH parsed AS NOT MATERIALIZED (
-  SELECT
-    ri.run_id, ri.sequence, i.label, i.cover_date,
-    regexp_match(i.label, '^(.+?)\s*#\s*(-?[0-9]+(\.[0-9]+)?)\s*$') AS m
+  SELECT ri.run_id, ri.sequence, i.label, i.cover_date, x.m
   FROM live_run_issues ri
   JOIN issues i ON i.id = ri.issue_id
+  CROSS JOIN LATERAL (
+    SELECT regexp_match(i.label, '^(.+?)\s*#\s*(-?[0-9]+(\.[0-9]+)?)\s*$') AS m OFFSET 0
+  ) x
 ),
 numbered AS NOT MATERIALIZED (
   SELECT
@@ -379,8 +385,13 @@ GROUP BY rp.user_id, b.id, b.track_id, b.number, b.name;
 -- Who made a run, from its issues' credits. Replaces RUNS!Writer and Artists,
 -- which are no longer loaded. share is the fraction of the run's issues that
 -- carry any credit in that role, so an uncredited issue neither helps nor hurts.
+-- placed is NOT MATERIALIZED because it is read twice, and Postgres materializes
+-- a CTE read twice: a run filter could not reach it, so every read of
+-- run_credit_line built all 87k placed credits and scanned them once per run
+-- (task 0.9: the run list spent 5.2 of its 5.8 s there). Inlined, run_id
+-- pushes down to run_issues' index.
 CREATE OR REPLACE VIEW run_creators AS
-WITH placed AS (
+WITH placed AS NOT MATERIALIZED (
   SELECT DISTINCT ri.run_id, ic.issue_id, ic.creator_id, ic.role
   FROM live_run_issues ri
   JOIN issue_credits ic ON ic.issue_id = ri.issue_id
