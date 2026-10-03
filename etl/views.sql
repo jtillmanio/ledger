@@ -491,7 +491,8 @@ CREATE INDEX IF NOT EXISTS status_user_year ON book_status (user_id, finished_ye
 -- Neon's autovacuum may never get there on a database that scales to zero.
 -- Without them the planner takes runs and run_issues for one row each and nests
 -- loops over all 10k placements: the comics pages ran past Vercel's 300 s limit
--- on a preview of live (2026-10-02) and took 22-66 ms once analyzed. Every path
+-- on a preview of live (2026-10-02) and finished once analyzed (the run list
+-- still took 5.8 s of query time until task 0.9 fixed the views). Every path
 -- that changes the schema or reloads data applies this file afterwards (Release,
 -- the preview build, load.ps1/.sh, test:db:reset), so this is where it goes.
 -- Public tables only: a bare ANALYZE warns once per system catalog it may not touch.

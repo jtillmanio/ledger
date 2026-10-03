@@ -790,9 +790,38 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
   is committed (D-30), plus `GET /api/export` for a full JSON dump on demand.
   Both exist because the workbook is currently your only copy and it shouldn't
   stay that way.
-- **Cold starts.** Neon's free tier suspends idle compute. First request after a
-  quiet period takes roughly a second. Acceptable for a single reader; the fix
-  if it annoys you is a paid plan, not an architecture change.
+- **Cold starts.** Neon's free tier suspends compute after 5 idle minutes.
+  Measured in task 0.9 (2026-10-03, throttled phone profile), the first tap after
+  a quiet period took 1.5–6 s longer than a warm one. Every data route paints its
+  skeleton at once, so a cold wake reads as loading rather than a frozen page.
+  If it still annoys you, the fix is a paid plan with suspend turned off, not an
+  architecture change.
+- **Performance budget** (task 0.9). The target, on a throttled phone profile
+  (Lighthouse mobile, devtools throttling: Slow 4G, 4× CPU): any tap paints a
+  skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
+  page within 1 s. What holds that, and the test that fails if it slips:
+  - **Queries per page, in one wave.** `/` 4 queries, `/comics` 2, a run 3,
+    `/books` 4, `/login` none, each page's queries started together
+    (`test/query-budget.test.ts`, which counts them). A query that must wait on
+    another raises a page's waves; raising either number needs a reason here.
+  - **A view read for one run filters by that run before it aggregates.** No
+    catalog-wide CTE, no scan of every issue to describe one run
+    (`test/view-plans.test.ts`, which reads the planner's plan). Catalog-wide
+    pages (the run list, home) ran in 0.27 s and 0.32 s of database time on
+    catalog-sized data when 0.9 closed, down from 5.8 s and 1.6 s; re-measure
+    with `EXPLAIN (ANALYZE, BUFFERS)` when a view changes. Not asserted: a
+    wall-clock test flakes.
+  - **No `<Link>` to a route handler** (`test/no-prefetched-handlers.test.ts`).
+    A prefetch runs the handler; the nav's Export link built the 20 MB export
+    on every page view until 0.9.
+  - **`/comics`, a run and `/books` each have a `loading.tsx`**
+    (`test/loading-states.test.tsx`). Without one, Next does not prefetch a
+    dynamic route and a tap shows nothing until the server finishes. `/` has
+    none yet: a root `loading.tsx` would be the first boundary for every route,
+    and `/` becomes a redirect to a dashboard (1.8); the dashboards bring their
+    own. A new data route ships with its `loading.tsx`.
+  - Byte and request budgets per route arrive with Lighthouse on every preview
+    (task 0.10).
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 
