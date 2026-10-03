@@ -53,11 +53,13 @@ GROUP BY u.id, r.id;
 -- published later can't make a span run backwards. Undated issues are skipped;
 -- dated_issues < issue_count means the span may be incomplete.
 CREATE OR REPLACE VIEW run_span AS
--- The regex sits in a LATERAL with OFFSET 0 so it runs on the run's own
--- placements. As a plain column, the "m IS NOT NULL" filter below references
--- issues alone, so Postgres pushed it onto a scan of every issue in the catalog,
--- once per reference: 280 ms to describe one 154-issue run (task 0.9). OFFSET 0
--- stops that pushdown and leaves the run filter free to reach run_issues.
+-- Each label is parsed once and every later step reads the step before it,
+-- never parsed twice: an inlined CTE is re-evaluated at every reference, and the
+-- regex is what costs (task 0.9). The regex sits in a LATERAL with OFFSET 0 so
+-- it runs on the run's own placements; as a plain column, the filter on it
+-- references issues alone and Postgres pushed it onto a scan of every issue.
+-- run_id is in every partition and grouping key, so a run filter reaches
+-- run_issues. island is the gaps-and-islands key over integer issue numbers.
 WITH parsed AS NOT MATERIALIZED (
   SELECT ri.run_id, ri.sequence, i.label, i.cover_date, x.m
   FROM live_run_issues ri
@@ -66,49 +68,39 @@ WITH parsed AS NOT MATERIALIZED (
     SELECT regexp_match(i.label, '^(.+?)\s*#\s*(-?[0-9]+(\.[0-9]+)?)\s*$') AS m OFFSET 0
   ) x
 ),
-numbered AS NOT MATERIALIZED (
-  SELECT
-    run_id, sequence, label, cover_date,
-    btrim(m[1])                            AS series,
-    m[2]::numeric                          AS num,
-    m[3] IS NULL                           AS is_integer
+keyed AS NOT MATERIALIZED (
+  SELECT run_id, sequence,
+         m IS NOT NULL                                   AS numbered,
+         CASE WHEN m IS NULL THEN label ELSE btrim(m[1]) END AS grp,
+         m[2]::numeric                                   AS num,
+         m IS NOT NULL AND m[3] IS NULL                  AS is_integer
   FROM parsed
-  WHERE m IS NOT NULL
 ),
--- Gaps-and-islands over distinct integer numbers within a series.
-islands AS (
-  SELECT run_id, series, num,
-         num - ROW_NUMBER() OVER (PARTITION BY run_id, series ORDER BY num) AS island
-  FROM (SELECT DISTINCT run_id, series, num FROM numbered WHERE is_integer) d
+placed AS NOT MATERIALIZED (
+  SELECT run_id, numbered, grp, num, is_integer,
+         MIN(sequence) OVER (PARTITION BY run_id, numbered, grp) AS first_seq,
+         CASE WHEN is_integer THEN
+           num - DENSE_RANK() OVER (PARTITION BY run_id, numbered, grp, is_integer ORDER BY num)
+         END AS island
+  FROM keyed
 ),
-ranges AS (
-  SELECT run_id, series, MIN(num) AS lo,
-         CASE WHEN MIN(num) = MAX(num) THEN MIN(num)::text
+pieces AS NOT MATERIALIZED (
+  SELECT run_id, numbered, grp, first_seq,
+         CASE WHEN NOT numbered THEN 0 WHEN is_integer THEN 0 ELSE 1 END AS kind,
+         MIN(num) AS lo,
+         CASE WHEN NOT numbered THEN NULL
+              WHEN NOT is_integer OR MIN(num) = MAX(num) THEN MIN(num)::text
               ELSE MIN(num)::text || '-' || MAX(num)::text END AS txt
-  FROM islands
-  GROUP BY run_id, series, island
+  FROM placed
+  GROUP BY run_id, numbered, grp, first_seq, is_integer,
+           CASE WHEN is_integer THEN island ELSE num END
 ),
-points AS (
-  SELECT DISTINCT run_id, series, num AS lo, num::text AS txt
-  FROM numbered WHERE NOT is_integer
-),
-series_parts AS (
-  SELECT run_id, series,
-         string_agg(txt, ', ' ORDER BY kind, lo) AS numbers
-  FROM (SELECT run_id, series, lo, txt, 0 AS kind FROM ranges
-        UNION ALL
-        SELECT run_id, series, lo, txt, 1 AS kind FROM points) x
-  GROUP BY run_id, series
-),
-groups AS (
-  SELECT n.run_id, MIN(n.sequence) AS first_seq, n.series || ' #' || sp.numbers AS txt
-  FROM numbered n
-  JOIN series_parts sp ON sp.run_id = n.run_id AND sp.series = n.series
-  GROUP BY n.run_id, n.series, sp.numbers
-  UNION ALL
-  SELECT run_id, MIN(sequence), label
-  FROM parsed WHERE m IS NULL
-  GROUP BY run_id, label
+groups AS NOT MATERIALIZED (
+  SELECT run_id, first_seq,
+         CASE WHEN numbered THEN grp || ' #' || string_agg(txt, ', ' ORDER BY kind, lo)
+              ELSE grp END AS txt
+  FROM pieces
+  GROUP BY run_id, numbered, grp, first_seq
 )
 SELECT
   r.id                                                        AS run_id,
