@@ -413,20 +413,31 @@ GROUP BY p.run_id, p.creator_id, c.name, p.role, cr.issues;
 -- credited issues, most issues first, at most three each. Derived only — there
 -- is no hand-typed fallback. credited_issues < issue_count means the line may be
 -- incomplete; zero means the run has no credits yet and both lines are null.
+-- Ranked once for every run with a window, then joined, rather than a LIMIT 3
+-- subquery per row: the run list asked 258 times (task 0.9). The window is
+-- partitioned by run, so a single-run read still filters before it ranks.
 CREATE OR REPLACE VIEW run_credit_line AS
+WITH ranked AS NOT MATERIALIZED (
+  SELECT run_id, role, name, issues,
+         ROW_NUMBER() OVER (PARTITION BY run_id, role ORDER BY issues DESC, name) AS rn
+  FROM run_creators
+  WHERE role IN ('writer', 'artist') AND share >= 0.25
+)
 SELECT
   r.id AS run_id,
-  (SELECT string_agg(x.name, ', ' ORDER BY x.issues DESC, x.name)
-   FROM (SELECT name, issues FROM run_creators
-         WHERE run_id = r.id AND role = 'writer' AND share >= 0.25
-         ORDER BY issues DESC, name LIMIT 3) x)            AS writers,
-  (SELECT string_agg(x.name, ', ' ORDER BY x.issues DESC, x.name)
-   FROM (SELECT name, issues FROM run_creators
-         WHERE run_id = r.id AND role = 'artist' AND share >= 0.25
-         ORDER BY issues DESC, name LIMIT 3) x)            AS artists,
+  w.names                                                AS writers,
+  a.names                                                AS artists,
   COALESCE(ci.credited_issues, 0)                        AS credited_issues,
   COALESCE(ci.issue_count, 0)                            AS issue_count
 FROM runs r
+LEFT JOIN (
+  SELECT run_id, string_agg(name, ', ' ORDER BY issues DESC, name) AS names
+  FROM ranked WHERE role = 'writer' AND rn <= 3 GROUP BY run_id
+) w ON w.run_id = r.id
+LEFT JOIN (
+  SELECT run_id, string_agg(name, ', ' ORDER BY issues DESC, name) AS names
+  FROM ranked WHERE role = 'artist' AND rn <= 3 GROUP BY run_id
+) a ON a.run_id = r.id
 LEFT JOIN (
   SELECT ri.run_id,
          COUNT(DISTINCT ri.issue_id)                                        AS issue_count,
