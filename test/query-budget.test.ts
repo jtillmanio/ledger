@@ -83,7 +83,7 @@ async function measure(render: () => Promise<unknown>) {
 const pages: [string, () => Promise<unknown>][] = [
   ["/", async () => (await import("../src/app/page")).default()],
   ["/comics", async () =>
-    (await import("../src/app/comics/page")).default({ searchParams: Promise.resolve({}) })],
+    (await import("../src/app/comics/(list)/page")).default({ searchParams: Promise.resolve({}) })],
   ["/comics/[runId]", async () =>
     (await import("../src/app/comics/[runId]/page")).default({ params: Promise.resolve({ runId: "a" }) })],
   ["/books", async () =>
