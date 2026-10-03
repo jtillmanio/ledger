@@ -18,7 +18,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="home">Ledger</Link>
             <Link href="/comics">Comics</Link>
             <Link href="/books">Books</Link>
-            <Link href="/api/export">Export</Link>
+            {/* A plain link: <Link> prefetches, and a prefetch of a route handler
+                runs it, so every page view built the whole export (task 0.9). */}
+            <a href="/api/export">Export</a>
           </div>
         </nav>
         {children}
