@@ -53,56 +53,56 @@ GROUP BY u.id, r.id;
 -- published later can't make a span run backwards. Undated issues are skipped;
 -- dated_issues < issue_count means the span may be incomplete.
 CREATE OR REPLACE VIEW run_span AS
+-- Each label is parsed once and every later step reads the step before it,
+-- never parsed twice: an inlined CTE is re-evaluated at every reference, and the
+-- regex is what costs (task 0.9). The regex sits in a LATERAL with OFFSET 0 so
+-- it runs on the run's own placements; as a plain column, the filter on it
+-- references issues alone and Postgres pushed it onto a scan of every issue.
+-- run_id is in every partition and grouping key, so a run filter reaches
+-- run_issues. island is the gaps-and-islands key over integer issue numbers.
 WITH parsed AS NOT MATERIALIZED (
-  SELECT
-    ri.run_id, ri.sequence, i.label, i.cover_date,
-    regexp_match(i.label, '^(.+?)\s*#\s*(-?[0-9]+(\.[0-9]+)?)\s*$') AS m
+  SELECT ri.run_id, ri.sequence, i.label, i.cover_date, x.m
   FROM live_run_issues ri
   JOIN issues i ON i.id = ri.issue_id
+  CROSS JOIN LATERAL (
+    SELECT regexp_match(i.label, '^(.+?)\s*#\s*(-?[0-9]+(\.[0-9]+)?)\s*$') AS m OFFSET 0
+  ) x
 ),
-numbered AS NOT MATERIALIZED (
-  SELECT
-    run_id, sequence, label, cover_date,
-    btrim(m[1])                            AS series,
-    m[2]::numeric                          AS num,
-    m[3] IS NULL                           AS is_integer
+keyed AS NOT MATERIALIZED (
+  SELECT run_id, sequence,
+         m IS NOT NULL                                   AS numbered,
+         CASE WHEN m IS NULL THEN label ELSE btrim(m[1]) END AS grp,
+         m[2]::numeric                                   AS num,
+         m IS NOT NULL AND m[3] IS NULL                  AS is_integer
   FROM parsed
-  WHERE m IS NOT NULL
 ),
--- Gaps-and-islands over distinct integer numbers within a series.
-islands AS (
-  SELECT run_id, series, num,
-         num - ROW_NUMBER() OVER (PARTITION BY run_id, series ORDER BY num) AS island
-  FROM (SELECT DISTINCT run_id, series, num FROM numbered WHERE is_integer) d
+placed AS NOT MATERIALIZED (
+  SELECT run_id, numbered, grp, num, is_integer,
+         MIN(sequence) OVER (PARTITION BY run_id, numbered, grp) AS first_seq,
+         CASE WHEN is_integer THEN
+           num - DENSE_RANK() OVER (PARTITION BY run_id, numbered, grp, is_integer ORDER BY num)
+         END AS island
+  FROM keyed
 ),
-ranges AS (
-  SELECT run_id, series, MIN(num) AS lo,
-         CASE WHEN MIN(num) = MAX(num) THEN MIN(num)::text
+pieces AS NOT MATERIALIZED (
+  SELECT run_id, numbered, grp, first_seq,
+         CASE WHEN NOT numbered THEN 0 WHEN is_integer THEN 0 ELSE 1 END AS kind,
+         MIN(num) AS lo,
+         CASE WHEN NOT numbered THEN NULL
+              WHEN NOT is_integer OR MIN(num) = MAX(num) THEN MIN(num)::text
               ELSE MIN(num)::text || '-' || MAX(num)::text END AS txt
-  FROM islands
-  GROUP BY run_id, series, island
+  FROM placed
+  GROUP BY run_id, numbered, grp, first_seq, is_integer,
+           -- a point issue by its text, as the label wrote it: #605.1 and
+           -- #605.10 are equal numbers but two issues, and both are listed
+           CASE WHEN is_integer THEN island::text ELSE num::text END
 ),
-points AS (
-  SELECT DISTINCT run_id, series, num AS lo, num::text AS txt
-  FROM numbered WHERE NOT is_integer
-),
-series_parts AS (
-  SELECT run_id, series,
-         string_agg(txt, ', ' ORDER BY kind, lo) AS numbers
-  FROM (SELECT run_id, series, lo, txt, 0 AS kind FROM ranges
-        UNION ALL
-        SELECT run_id, series, lo, txt, 1 AS kind FROM points) x
-  GROUP BY run_id, series
-),
-groups AS (
-  SELECT n.run_id, MIN(n.sequence) AS first_seq, n.series || ' #' || sp.numbers AS txt
-  FROM numbered n
-  JOIN series_parts sp ON sp.run_id = n.run_id AND sp.series = n.series
-  GROUP BY n.run_id, n.series, sp.numbers
-  UNION ALL
-  SELECT run_id, MIN(sequence), label
-  FROM parsed WHERE m IS NULL
-  GROUP BY run_id, label
+groups AS NOT MATERIALIZED (
+  SELECT run_id, first_seq,
+         CASE WHEN numbered THEN grp || ' #' || string_agg(txt, ', ' ORDER BY kind, lo, txt)
+              ELSE grp END AS txt
+  FROM pieces
+  GROUP BY run_id, numbered, grp, first_seq
 )
 SELECT
   r.id                                                        AS run_id,
@@ -379,8 +379,13 @@ GROUP BY rp.user_id, b.id, b.track_id, b.number, b.name;
 -- Who made a run, from its issues' credits. Replaces RUNS!Writer and Artists,
 -- which are no longer loaded. share is the fraction of the run's issues that
 -- carry any credit in that role, so an uncredited issue neither helps nor hurts.
+-- placed is NOT MATERIALIZED because it is read twice, and Postgres materializes
+-- a CTE read twice: a run filter could not reach it, so every read of
+-- run_credit_line built all 87k placed credits and scanned them once per run
+-- (task 0.9: the run list spent 5.2 of its 5.8 s there). Inlined, run_id
+-- pushes down to run_issues' index.
 CREATE OR REPLACE VIEW run_creators AS
-WITH placed AS (
+WITH placed AS NOT MATERIALIZED (
   SELECT DISTINCT ri.run_id, ic.issue_id, ic.creator_id, ic.role
   FROM live_run_issues ri
   JOIN issue_credits ic ON ic.issue_id = ri.issue_id
@@ -402,20 +407,31 @@ GROUP BY p.run_id, p.creator_id, c.name, p.role, cr.issues;
 -- credited issues, most issues first, at most three each. Derived only — there
 -- is no hand-typed fallback. credited_issues < issue_count means the line may be
 -- incomplete; zero means the run has no credits yet and both lines are null.
+-- Ranked once for every run with a window, then joined, rather than a LIMIT 3
+-- subquery per row: the run list asked 258 times (task 0.9). The window is
+-- partitioned by run, so a single-run read still filters before it ranks.
 CREATE OR REPLACE VIEW run_credit_line AS
+WITH ranked AS NOT MATERIALIZED (
+  SELECT run_id, role, name, issues,
+         ROW_NUMBER() OVER (PARTITION BY run_id, role ORDER BY issues DESC, name) AS rn
+  FROM run_creators
+  WHERE role IN ('writer', 'artist') AND share >= 0.25
+)
 SELECT
   r.id AS run_id,
-  (SELECT string_agg(x.name, ', ' ORDER BY x.issues DESC, x.name)
-   FROM (SELECT name, issues FROM run_creators
-         WHERE run_id = r.id AND role = 'writer' AND share >= 0.25
-         ORDER BY issues DESC, name LIMIT 3) x)            AS writers,
-  (SELECT string_agg(x.name, ', ' ORDER BY x.issues DESC, x.name)
-   FROM (SELECT name, issues FROM run_creators
-         WHERE run_id = r.id AND role = 'artist' AND share >= 0.25
-         ORDER BY issues DESC, name LIMIT 3) x)            AS artists,
+  w.names                                                AS writers,
+  a.names                                                AS artists,
   COALESCE(ci.credited_issues, 0)                        AS credited_issues,
   COALESCE(ci.issue_count, 0)                            AS issue_count
 FROM runs r
+LEFT JOIN (
+  SELECT run_id, string_agg(name, ', ' ORDER BY issues DESC, name) AS names
+  FROM ranked WHERE role = 'writer' AND rn <= 3 GROUP BY run_id
+) w ON w.run_id = r.id
+LEFT JOIN (
+  SELECT run_id, string_agg(name, ', ' ORDER BY issues DESC, name) AS names
+  FROM ranked WHERE role = 'artist' AND rn <= 3 GROUP BY run_id
+) a ON a.run_id = r.id
 LEFT JOIN (
   SELECT ri.run_id,
          COUNT(DISTINCT ri.issue_id)                                        AS issue_count,
@@ -477,7 +493,8 @@ CREATE INDEX IF NOT EXISTS status_user_year ON book_status (user_id, finished_ye
 -- Neon's autovacuum may never get there on a database that scales to zero.
 -- Without them the planner takes runs and run_issues for one row each and nests
 -- loops over all 10k placements: the comics pages ran past Vercel's 300 s limit
--- on a preview of live (2026-10-02) and took 22-66 ms once analyzed. Every path
+-- on a preview of live (2026-10-02) and finished once analyzed (the run list
+-- still took 5.8 s of query time until task 0.9 fixed the views). Every path
 -- that changes the schema or reloads data applies this file afterwards (Release,
 -- the preview build, load.ps1/.sh, test:db:reset), so this is where it goes.
 -- Public tables only: a bare ANALYZE warns once per system catalog it may not touch.

@@ -85,6 +85,30 @@ BEGIN
   END IF;
 END $$;
 
+-- Point issues are listed as written: #605.1 and #605.10 are equal numbers but
+-- two issues, so both appear, in a fixed order whatever the insert order
+-- (task 0.9 review). Integers still collapse into ranges.
+INSERT INTO runs (id, title) VALUES ('zz-test-points', 'Points fixture');
+INSERT INTO issues (id, label) VALUES
+  ('zz-p1', 'Zz Points (2001) #605.10'),
+  ('zz-p2', 'Zz Points (2001) #605.1'),
+  ('zz-p3', 'Zz Points (2001) #2'),
+  ('zz-p4', 'Zz Points (2001) #1');
+INSERT INTO run_issues (run_id, sequence, issue_id) VALUES
+  ('zz-test-points', 1, 'zz-p1'),
+  ('zz-test-points', 2, 'zz-p2'),
+  ('zz-test-points', 3, 'zz-p3'),
+  ('zz-test-points', 4, 'zz-p4');
+
+DO $$
+DECLARE s record;
+BEGIN
+  SELECT * INTO s FROM run_span WHERE run_id = 'zz-test-points';
+  IF s.series_issues IS DISTINCT FROM 'Zz Points (2001) #1-2, 605.1, 605.10' THEN
+    RAISE EXCEPTION 'run_span dropped or reordered an equal-valued point issue: %', s.series_issues;
+  END IF;
+END $$;
+
 -- The schema refuses a date without a source, and a source without a date.
 DO $$
 BEGIN

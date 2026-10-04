@@ -1,6 +1,6 @@
 # Status
 
-**Last regenerated:** 2026-10-03
+**Last regenerated:** 2026-10-04
 
 This is a rollup of `docs/TASKS.md`, not a second source of truth. Every count
 here comes from counting ☑ vs ☐ task markers in that file. If this page and
@@ -9,7 +9,7 @@ argue from it.
 
 ## Where we are
 
-**10 of 89 tasks done (11%).** Still in Phase 0 — nothing in Phase 1 or later has
+**11 of 89 tasks done (12%).** Still in Phase 0 — nothing in Phase 1 or later has
 started. The private GitHub repo exists and CI runs on every PR, and is proven
 to go red on a broken view (task 0.2, done 2026-09-30). The Release
 workflow has deployed `main` to Vercel (last run 2026-10-02). `LEDGER_LIVE` is
@@ -17,7 +17,7 @@ workflow has deployed `main` to Vercel (last run 2026-10-02). `LEDGER_LIVE` is
 
 | Phase | Done / total | Status |
 |---|---|---|
-| 0 — Foundation | 9 / 11 | **In progress** |
+| 0 — Foundation | 10 / 11 | **In progress** |
 | 1 — Daily use | 0 / 17 | Not started |
 | 2 — The pace engine | 0 / 15 | Not started |
 | 3 — Editing | 0 / 7 | Not started |
@@ -33,14 +33,20 @@ doesn't exist until those tasks do.
 
 ## What's next
 
-Phase 0 has two tasks left:
+Phase 0 has one task left:
 
-1. **0.9 — Page performance.** The deployed app feels slow, and it is cheaper
-   to find the cause before more screens sit on the same data path.
-2. **0.10 — Lighthouse on every preview.** Every preview measures itself and the
+1. **0.10 — Lighthouse on every preview.** Every preview measures itself and the
    PR shows what changed; it fails only on what holds still (bytes, requests, a
    prefetched route handler, CLS, accessibility). Doesn't block Phase 1; best
    built before 1.8.
+
+0.9 (2026-10-04) found the slowness in the database and the app, not the
+hosting. Two views computed the whole catalog to describe one run, the nav
+prefetched the 20 MB export on every page view, and no route had a loading
+boundary, so a tap froze the screen until every query answered. On the
+throttled preview, tap → page went from 7.2 s to 1.2 s warm on `/comics`, and
+a tap now paints its skeleton within about 100 ms. ARCHITECTURE §5 holds the
+budget and the tests that guard it.
 
 0.8b (2026-10-02) draws the grey `↺ read in …` hint on the spine from
 `issue_read_runs`, on the mockup's row markup. If the live database has not

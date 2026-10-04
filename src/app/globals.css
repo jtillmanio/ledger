@@ -304,6 +304,23 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
 .frow .k{font-size:.8125rem;color:var(--muted)}
 .frow .v{font-size:.875rem;font-weight:600}
 .frow .rm{margin-left:auto}
+/* Skeletons (task 0.9, STYLE_GUIDE §9): the loaded geometry in --sunk. Each bar
+   is its text's font size, with margins making up the line box it stands in for. */
+.sk{display:block;background:var(--sunk);border-radius:6px;animation:sk-pulse 1.6s ease-in-out infinite}
+.sk-h1{height:1.5rem;margin:.375rem 0 .625rem}
+.sk-line{height:.8125rem;margin:.2rem 0 .95rem}
+.sk-input{height:2.875rem;width:100%;margin:1rem 0 1.25rem;border-radius:9px}
+.sk-chip{display:inline-block;height:1.85rem;border-radius:999px}
+.sk-title{height:1rem;margin:.25rem 0}
+.sk-sub{height:.8125rem;margin:.325rem 0 .2rem}
+.sk-mono{height:.8125rem;margin:.2rem 0 .2rem}
+.sk-para{margin:.95rem 0 .75rem}
+.sk-text{height:1rem;margin:.25rem 0;width:100%}
+.iss .sk-title{height:.875rem;margin:.22rem 0}
+.iss .sk-sub{margin:0}
+.chk i.sk-dot{border-color:var(--sunk);background:var(--sunk)}
+@keyframes sk-pulse{50%{opacity:.55}}
+@media (prefers-reduced-motion:reduce){.sk{animation:none}}
 .empty{padding:1.25rem .875rem;color:var(--muted);font-size:.8125rem}
 .empty b{display:block;color:var(--ink);font-weight:600;margin-bottom:.25rem;font-size:.875rem}
 
