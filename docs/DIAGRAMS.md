@@ -196,6 +196,7 @@ erDiagram
         text user_id FK
         text book_id FK
         text period "2027-Q1 | 2027-03 | 2027 | someday"
+        int  ordinal "order within the period, D-37"
     }
     SHELVES {
         text id PK "cosmere, stephen-king"

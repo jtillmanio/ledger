@@ -1120,7 +1120,7 @@ the same names in the same order on all three: **In flight · Up next · Done**.
 | | Comics (runs) | Books | Film & TV |
 |---|---|---|---|
 | In flight | Partly read, with resume pointer | Reading | Watching — shows derived from seasons |
-| Up next | **Your queue**, in your order — then runs ready to start that aren't queued yet | The plan, by period; bare-year entries after their quarters; someday last | To watch, filtered by film/TV and genre |
+| Up next | **Your queue**, in your order — then runs ready to start that aren't queued yet | The plan, by period, each period in your order (D-37); bare-year entries after their quarters; someday last | To watch, filtered by film/TV and genre |
 | Done | Finished runs | Read, by year | Watched |
 
 DNF and dropped sit collapsed under *Stopped* at the foot of Done. The

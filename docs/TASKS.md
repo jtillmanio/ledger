@@ -923,6 +923,23 @@ as two rows, each preserved as its own period, and nothing collapses them. Reads
 that want one row per book take the earliest period (as `listBooks` does now). Add a `plan_period` view exposing `year`, `quarter`, `month`
 and `granularity` so nothing parses the string in app code.
 
+**Each period has an order (D-37).** `reading_plan` gains `ordinal integer NOT
+NULL`, with `UNIQUE (user_id, period, ordinal) DEFERRABLE INITIALLY DEFERRED`:
+contiguous from 1 within each `(user_id, period)`, the same shape as 1.10's
+`run_queue` (ARCHITECTURE 2.9). `2027-Q1`, a bare `2027` and `someday` are
+each their own period with their own order. The order is authored, so it is
+stored; nothing derives it from title, length or date added. The write helpers
+land here, so every later task uses them rather than writing ordinals itself:
+adding to a period **appends** (max + 1); removing a row or moving it to
+another period closes the gap it left and appends it to the destination;
+**reorder** and **move to top** rewrite the period's ordinals in one
+transaction. `plan_period` carries `ordinal`, and every plan read sorts by
+period, then ordinal. The migration numbers existing rows within each period
+by `books.title`, then `book_id`. `extract.py --with-plan` writes them in
+workbook row order, the closest thing the sheet has to an authored order. The
+down migration drops the column, which is the one loss it is allowed: the
+legacy columns have nowhere to keep an order.
+
 Like 1.5, this must land before real planning data accumulates.
 
 **Check:** test that a row written as `2027-Q1` reads back as year 2027,
@@ -930,7 +947,12 @@ quarter 1, granularity `quarter`; that `2027` reads back with a null quarter and
 granularity `year`; that `2027-Q5` and `2027-13` are rejected by the constraint;
 that the migration composes the legacy columns without losing a row (a fixture
 with a two-year book keeps both rows), and that `drizzle/down/<tag>.sql` restores
-them: up → down → up, asserting row values.
+them: up → down → up, asserting row values. Ordinals: adding three books to
+`2027-Q1` gives 1–3; adding one to `2027-Q2` gives it 1 there; moving #2 of Q1
+to Q2 leaves Q1 at 1–2 and puts it at Q2's 2; *move to top* on Q1's #2 gives a
+contiguous 1–2 with it first; removing a row leaves no gap. Two concurrent
+reorders of one period never leave duplicate ordinals. The migration gives every
+period a contiguous 1…N, and after up → down → up each period is 1…N again.
 
 ### ☐ 1.8a Design tokens and control states · M
 D-31; Review N P0 (UX-N01, N02, N03, N04, UX-X01, and the token half of N19 and
@@ -1259,7 +1281,7 @@ Depends on 0.8a, 1.8 and 1.10 — build the queue first.
 | Tab | Comics | Books |
 |---|---|---|
 | In flight | Runs partly read, most recently touched first, each with its resume pointer (1.6) and a one-tap *Read #N* | `book_status = reading`, with words left |
-| Up next | The queue (1.10) in your order, unstarted runs only, draggable. Then *Ready, not queued*: `ready_all` then `ready_hard` runs in track → block order, each with **+ Up next**, cost and leverage once 2.6 lands | Every `reading_plan` row grouped by period in order: quarters, then that year's bare-year lane (grey until 2.8), then `someday` |
+| Up next | The queue (1.10) in your order, unstarted runs only, draggable. Then *Ready, not queued*: `ready_all` then `ready_hard` runs in track → block order, each with **+ Up next**, cost and leverage once 2.6 lands | Every `reading_plan` row grouped by period in order: quarters, then that year's bare-year lane (grey until 2.8), then `someday`. Inside each period, rows follow its `ordinal` (D-37) and reorder with 1.10's queue row — the named `button.drag` handle and the `⋯` menu (*Move to top · Move up · Move down*) — within that period only; moving to another period is 2.3's sheet |
 | Done | Finished runs, latest `run_state.finished_at` first, **undated last** (`NULLS LAST` — every pre-cutover read is precision `none`, S-14) | `read`, grouped by year finished, *No year* last; DNF collapsed under *Stopped* |
 
 Every progress meter fills with `--ready` (D-26), on this screen and every other;
@@ -1302,7 +1324,10 @@ and not above it; a queued blocked run appears in the queue with its amber
 badge; an unqueued blocked run appears in neither section; a run with all placements read
 is in Done; a run whose issues are all read *in other runs* is not in Done
 (0.8); a run finished with undated reads sorts below one finished last week. A book planned `2027` appears after 2027's quarters and before
-`someday`. A DNF book appears only under Stopped. Tab counts equal row counts.
+`someday`. Three books planned `2027-Q1` render in ordinal order, and the
+keyboard sequence (Space, Down, Space) on the first leaves that period at a
+contiguous 1–3 with it second; a lift never carries a row into another period.
+A DNF book appears only under Stopped. Tab counts equal row counts.
 Each tablist contains exactly one underline element. Screenshot at 360px,
 including every empty tab.
 
@@ -1432,15 +1457,19 @@ does not appear anywhere on this screen.
 **Check:** screenshot at 360px and 412px — no horizontal scroll, the capacity
 rule and every quarter label legible, the primary action inside the bottom 96px.
 The plan-rail assertions live in 2.2b. Nothing on the screen resolves to `--danger`.
-Empty state: with nothing reading, the hero offers *Start the first Q-current book*.
+Empty state: with nothing reading, the hero offers *Start the first Q-current book*:
+the current quarter's lowest-ordinal book that is still `to_read` (D-37), named
+on the button.
 
 ### ☐ 2.2b The plan rail · M
 Depends on 2.2 (the slot) and 1.7. Split out of 2.2 (R3-12).
 
 A quarter is a column, a book is a block sized by its word
   count, and a dashed rule across all four columns is the quarterly capacity
-  (760k at the current settings). Blocks whose cumulative total crosses the rule
-  are hatched. Every block is a `<button>` with an accessible name (*Piranesi, 65k
+  (760k at the current settings). Blocks stack from the foot of the column in
+  the period's `ordinal` order (D-37), so the cumulative total crosses the rule
+  at the end of your order: blocks whose cumulative total crosses the rule are
+  hatched, and they are always the books you ranked last. Every block is a `<button>` with an accessible name (*Piranesi, 65k
   words, estimated, Q1 2027*) and at least a 24×24px hit area, merging sub-24px
   neighbours into a `+N · Nk` stack button; estimated counts (`data-wc="estimated"`)
   have a dotted top edge and a `~` prefix, with a legend tag; the *Quarter |
@@ -1474,7 +1503,9 @@ and gets a 24px `::after` hit area. The month view scroll-snaps horizontally
 segmented control (SG-D4).
 
 **Check:** a quarter whose books total 892k against a 760k capacity renders
-exactly the blocks past 760k as hatched, and a book with `period = '2027'`
+exactly the blocks past 760k as hatched, and those are the quarter's highest
+ordinals; moving the last hatched book to the top of the order renders it plain
+and leaves the quarter's total unchanged. A book with `period = '2027'`
 renders in the fifth lane and in no column. A block straddling the rule is
 hatched above the rule and plain below it. Every interactive element inside
 `.planrail` measures at least 24×24 CSS px, an estimated book renders the dotted
@@ -1503,9 +1534,16 @@ unscheduled-backlog state, skipping the quarter/month step. **Remove from
 plan** returns the book to unscheduled to-read rather than deleting it, and
 pushes an undo entry onto the 1.2 stack like every other row-removing action.
 
+**Order (D-37).** Every write goes through 1.7's helpers: a book placed in a
+period, from Move or from *Plan for…*, joins the **end** of that period's
+order, and the period it left closes up. The sheet does not ask for a position;
+the order is changed on the Up next tab (1.9). Undoing a Move or a Remove
+restores the exact prior order in both periods.
+
 **Check:** test that moving a 150k-word book from 2027 Q1 to 2028 Q2 changes
 both periods' totals correctly and that the preview reflects the destination
-period before the move is confirmed. Test that Someday requires no
+period before the move is confirmed. The moved book takes 2028 Q2's last
+ordinal, 2027 Q1 stays contiguous, and undo puts it back at its old position. Test that Someday requires no
 quarter/month value and that Remove from plan clears `reading_plan` without
 touching `book_status`. Test that the sheet writes one `period` value and never
 a year independent of a quarter. **Flip (R3-08):** 1.4c's add sheet now offers
@@ -1795,6 +1833,12 @@ peers, not three ways to shrink the plan:
    `accepted_total` re-raises the flag by comparing to it. *Undo acceptance* deletes
    the row. This task's migration creates the table.
 
+**Order (D-37).** The overage is the books past each quarter's rule, which are
+the end of that quarter's order (2.2b), so options 1 and 2 offer the books you
+ranked last. A moved book joins the end of its new period. *Even out the
+quarters* keeps the year's order: it reads Q1's books in ordinal order, then
+Q2's, and so on, and refills the quarters in that sequence.
+
 Accepting turns the amber to a settled grey card stating what was accepted and
 when, with an Undo. **Persistence is the whole feature** — an indicator that
 comes back next week is one the user learns to ignore.
@@ -1813,19 +1857,20 @@ that the dashboard renders `.decide.settled` rather than `.decide`, and the
 over-rule part of each block uses `--hatch-settled`, not `--hatch`; that Undo
 removes it; that a later change pushing 2027 past the accepted total re-raises
 the flag; and that "even out the quarters" leaves the year's book count
-unchanged.
+unchanged and never puts a book ahead of one that was ahead of it before.
 
 ### ☐ 2.8 Place the unquartered · M
 Plan rows with a year and no quarter — a bare `2027`. The plan starts empty (R0-04), so this flow serves whatever the owner has added without choosing a quarter; the count is always derived from `plan_period`, never a literal. A bulk flow on the books
-dashboard: one book at a time, four quarter buttons each showing that quarter's
-current word total, plus Skip and Stop. It never leaves the dashboard. Mockup:
+dashboard: one book at a time, in the bare-year lane's order (D-37), four quarter
+buttons each showing that quarter's current word total, plus Skip and Stop. A
+placed book joins the end of that quarter's order. It never leaves the dashboard. Mockup:
 `bdash`, third frame (the sheet and its closing card).
 
 The end state is honest, not congratulatory: placing every unplaced book of a year
 does not make that year fit, and the closing card says so when it doesn't.
 
-**Check:** the bare-year lane turns amber and gains *Place them* here (1.9 rendered it grey). Test that placing a book writes `period = '2027-Q3'` and that the
-fifth lane's count drops by one; that Skip advances without writing; that
+**Check:** the bare-year lane turns amber and gains *Place them* here (1.9 rendered it grey). Test that placing a book writes `period = '2027-Q3'` with Q3's next ordinal,
+that the fifth lane's count drops by one and its ordinals stay contiguous; that Skip advances without writing; that
 stopping mid-way leaves the remainder untouched; and that the closing card
 states the year is still over capacity when it is.
 
@@ -1878,8 +1923,12 @@ to the middle of a track, that track's header is fully visible below `.bar`.
 Same geometry as the books dashboard, taller, with each block's title and word
 count legible inside it. Depends on 1.7, 2.1 and 2.2.
 
-Only the quarter in focus expands to rows with Move on each; the other three are
-summary rows carrying their total, book count and room. The fifth lane is a drop
+Only the quarter in focus expands to rows with Move on each, in that quarter's
+`ordinal` order (D-37), the same order its blocks stack from the foot of the
+column; the other three are summary rows carrying their total, book count and
+room. A block dropped on another column (desktop drag, below) joins the end of
+that period's order, like Move; reordering inside a period stays on the Up next
+tab (1.9). The fifth lane is a drop
 target as well as a list. One consolidated empty state — "893k of room across
 Q2–Q4" with Suggest — instead of one per empty quarter. Over-budget badges are
 amber.

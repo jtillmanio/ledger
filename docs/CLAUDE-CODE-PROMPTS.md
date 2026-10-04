@@ -944,15 +944,25 @@ down migration reconstructs them.
 
 say explicitly how a bare "2027" (year committed, no quarter chosen) is
 represented and read back.
+
+add ordinal (D-37): contiguous from 1 within (user_id, period), unique and
+deferrable like run_queue's, carried by plan_period. plan the write helpers
+every later task must use — append, remove (closes the gap), move to another
+period (closes the source, appends to the destination), reorder, move to top —
+and how the migration numbers existing rows (title, then book_id) and how
+extract --with-plan numbers them (workbook row order).
 ```
 
 **Implement**
 ```
 implement the plan. write the tests first: "2027-Q1" reads back as year 2027,
 quarter 1, granularity quarter; "2027" reads back with a null quarter and
-granularity year; "2027-Q5" and "2027-13" are rejected by the constraint. run
-the migration against a copy of the dev database, then run the down
-migration and confirm every row matches what it started as.
+granularity year; "2027-Q5" and "2027-13" are rejected by the constraint; and
+the ordinal sequence in the task's check (append, move between periods, move
+to top, remove, two concurrent reorders). run the migration against a copy of
+the dev database, then run the down migration and confirm every row matches
+what it started as, apart from the dropped ordinal, which comes back
+contiguous on the second up.
 ```
 
 ---
@@ -1344,7 +1354,8 @@ write a plan for task 2.3: one picker sheet — year chips, a granularity
 toggle, quarter/month chips each showing that period's current word total,
 a live preview card that turns amber over capacity, and Someday as a real
 unscheduled state skipping the quarter/month step. Remove from plan clears
-reading_plan without touching book_status.
+reading_plan without touching book_status. every write goes through 1.7's
+plan helpers: a placed or moved book joins the end of its period (D-37).
 ```
 
 **Implement**
@@ -1353,7 +1364,9 @@ implement the plan. write the tests first: moving a 150k-word book from 2027
 Q1 to 2028 Q2 changes both periods' totals correctly and the preview reflects
 the destination before the move is confirmed; Someday requires no
 quarter/month value; Remove from plan clears reading_plan only; the sheet
-always writes one period value, never a year independent of a quarter.
+always writes one period value, never a year independent of a quarter; the
+moved book takes the destination's last ordinal, the source stays contiguous,
+and undo restores its old position.
 
 the live preview is amber, never red, when a move overruns a period, and
 offers "Accept as a stretch year". use the reconciled seed figures (892k, 704k,

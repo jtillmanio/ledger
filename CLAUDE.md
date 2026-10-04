@@ -148,7 +148,11 @@ npm run check:migrations    # journal = files, drop/retype has a drizzle/down fi
   skips the workbook's To-Read tabs unless `--with-plan`); an entry
   whose year and quarter could disagree is a bug the schema should not allow.
   Read year/quarter/month through the `plan_period` view, never by parsing in
-  the app.
+  the app. **Each period is ordered** (D-37, from task 1.7): `reading_plan.ordinal`
+  is contiguous from 1 within `(user_id, period)`, authored and stored like the
+  queue's. A book joins the end of the period it is placed in; write ordinals
+  only through 1.7's plan helpers, and sort every plan read by period, then
+  ordinal.
 - **Blocks group runs inside a track; eras section issues inside a run.** Both
   are tables, both are optional, and both are ordered — `blocks(track_id,
   number, name?)` and `eras(run_id, ordinal, name)`. Era membership goes on the

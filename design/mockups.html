@@ -2012,18 +2012,18 @@ output.dropdelta{display:inline-flex;gap:.375rem;font-family:var(--mono);font-si
       <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="false">In flight<span class="n">1</span></span><span role="tab" aria-selected="true" data-on>Up next<span class="n">174</span></span><span role="tab" aria-selected="false">Done<span class="n">348</span></span></span></div>
       <div class="group">
         <div class="ghead">2026 · Q4<span class="n">2 books · 486k</span></div>
-        <div class="row"><span class="edge" style="background:var(--t5)"></span><span class="cv m k1">WOK</span>
+        <div class="row"><span class="edge" style="background:var(--t5)"></span><button class="drag" aria-label="Reorder The Way of Kings, position 1 of 2 in Q4 2026" aria-describedby="dnd-help-plan">&#8942;&#8942;</button><span class="cv m k1">WOK</span>
           <div class="rb"><span class="rh"><span class="rt">The Way of Kings</span><span class="rm">387k</span></span>
-            <div class="rs">Brandon Sanderson · Stormlight Archive #1</div></div><span class="chev">&#8250;</span></div>
-        <div class="row"><span class="edge" style="background:var(--t2)"></span><span class="cv m k2">TAL</span>
+            <div class="rs">Brandon Sanderson · Stormlight Archive #1</div></div><button class="menubtn" aria-haspopup="menu" aria-label="Actions for The Way of Kings">&#8943;</button></div>
+        <div class="row"><span class="edge" style="background:var(--t2)"></span><button class="drag" aria-label="Reorder The Talisman, position 2 of 2 in Q4 2026" aria-describedby="dnd-help-plan">&#8942;&#8942;</button><span class="cv m k2">TAL</span>
           <div class="rb"><span class="rh"><span class="rt">The Talisman</span><span class="rm">99k</span></span>
-            <div class="rs">Stephen King, Peter Straub</div></div><span class="chev">&#8250;</span></div>
+            <div class="rs">Stephen King, Peter Straub</div></div><button class="menubtn" aria-haspopup="menu" aria-label="Actions for The Talisman">&#8943;</button></div>
       </div>
       <div class="group">
         <div class="ghead">2027 · Q1<span class="n">9 books · 812k</span></div>
-        <div class="row"><span class="edge" style="background:var(--t5)"></span><span class="cv m k4">TRS</span>
+        <div class="row"><span class="edge" style="background:var(--t5)"></span><button class="drag" aria-label="Reorder Tress of the Emerald Sea, position 1 of 9 in Q1 2027" aria-describedby="dnd-help-plan">&#8942;&#8942;</button><span class="cv m k4">TRS</span>
           <div class="rb"><span class="rh"><span class="rt">Tress of the Emerald Sea</span><span class="rm">118k</span></span>
-            <div class="rs">Brandon Sanderson · Cosmere</div></div><span class="chev">&#8250;</span></div>
+            <div class="rs">Brandon Sanderson · Cosmere</div></div><button class="menubtn" aria-haspopup="menu" aria-label="Actions for Tress of the Emerald Sea">&#8943;</button></div>
         <div class="row"><div class="rb"><span class="rs">+ 8 more in Q1 · Q2–Q4 below</span></div></div>
       </div>
       <div class="group">
@@ -2034,8 +2034,10 @@ output.dropdelta{display:inline-flex;gap:.375rem;font-family:var(--mono);font-si
       <div class="group">
         <div class="ghead">Someday<span class="n">38 books</span></div>
       </div>
+      <p id="dnd-help-plan" class="sr-only">Space lifts a row, arrows move it within its period, Space drops it, Esc cancels.</p>
     </div><div class="dk-rail">
       <p class="lede">Every plan entry, in period order. A year's unquartered entries come after its quarters, in amber, because a decision is waiting. <b>Someday</b> is last.</p>
+      <p class="lede" style="margin-top:.625rem">Inside a period, the books are in <b>your order</b>: drag a handle, or <b>Move to top</b> from the row menu. A book you plan joins the end of its period.</p>
       <p class="lede" style="margin-top:.625rem">Stopped books — DNF — sit collapsed at the foot of <b>Done</b>.</p>
     </div></div>
   </div>
@@ -2047,7 +2049,7 @@ output.dropdelta{display:inline-flex;gap:.375rem;font-family:var(--mono);font-si
   <ul>
     <li><b>Phone shows comics In flight; desktop shows books Up next.</b> Same component. What fills a row differs by medium, and the tabs never do.</li>
     <li><b>Comics.</b> <i>In flight</i> is runs partly read, most recently touched first, each with a one-tap <b>Read #N</b> at the resume pointer. <i>Up next</i> is <b>your queue</b> first, in your order, with drag handles, <b>Move to top</b> and <b>Remove</b> in each row menu. Queued blocked runs keep their amber badge. Below the queue, <i>Ready, not queued</i> lists runs you could start tonight, in track → block order, each with <b>+ Up next</b>. The queue has no dates and never will; a plan with periods is for books. <i>Done</i> is finished runs. A run whose issues were all read in <i>other</i> runs is not done: read state is per run.</li>
-    <li><b>Books.</b> <i>In flight</i> is what you are reading, with words left. <i>Up next</i> is the plan, period by period, with the bare-year lane in amber and a <b>Place them</b> button (the 2.8 flow), then Someday. <i>Done</i> is read books grouped by year.</li>
+    <li><b>Books.</b> <i>In flight</i> is what you are reading, with words left. <i>Up next</i> is the plan, period by period, with the bare-year lane in amber and a <b>Place them</b> button (the 2.8 flow), then Someday. <span class="chg">Oct 2026 (D-37):</span> each period is in your order, with the queue's drag handle and row menu (<b>Move to top · Move up · Move down</b>, plus <b>Move…</b> and <b>Remove from plan</b> once 2.3 lands). A row never drags into another period; that is Move. The plan rail stacks the same order from the foot of each column, so the books past the capacity rule are the ones you ranked last. <i>Done</i> is read books grouped by year.</li>
     <li><b>Film &amp; TV.</b> <i>In flight</i> is shows mid-season-list (state derived from <code>show_progress</code>) and films marked watching. <i>Up next</i> is to-watch, with the dashboard's film/TV and genre filters. <i>Done</i> is watched.</li>
     <li><b>Stopped isn't hidden.</b> DNF books and dropped titles collapse under <i>Stopped</i> at the foot of Done. Finished is finished, even when it wasn't the ending you planned.</li>
     <li><b>Counts on the tabs, in mono.</b> They are tabular data, and they are the answer to "how much is in flight" before you tap anything.</li>

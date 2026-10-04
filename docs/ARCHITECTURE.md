@@ -145,6 +145,27 @@ The dashboard depends on this. The plan rail draws four quarter columns plus a
 fifth lane for `period = year`, and the whole point of the fifth lane is that
 those books are visibly in the year and visibly not in the plan.
 
+**Each period is ordered** (D-37, task 1.7). A period says *when*; it does not
+say *which first*, and with eight books in a quarter that is the question you
+actually ask. So the plan carries the comics queue's shape (2.16) inside each
+period:
+
+```
+reading_plan.ordinal int NOT NULL
+  UNIQUE (user_id, period, ordinal) DEFERRABLE INITIALLY DEFERRED
+```
+
+Ordinals are contiguous from 1 within each `(user_id, period)`; `2027-Q1`,
+`2027` and `someday` are separate periods with separate orders, which makes
+*Someday* a ranked wishlist rather than a pile. Like the queue's order, it is
+authored, so it is stored: a book joins the end of the period it is placed in,
+a removal or a move closes the gap, and a reorder rewrites the period in one
+transaction. The rail stacks a quarter's blocks in this order from the foot of
+the column, so the books that cross the capacity rule are always the ones you
+ranked last, and the dashboard's *first Q-current book* is ordinal 1, not an
+accident of insertion. The queue stays period-free (2.16); the plan gains an
+order but keeps its periods.
+
 **2.10 An era is to a run what a block is to a track.** `design/mockups.html`
 sections the reading spine into named eras — "Second Genesis & Phoenix 38/38",
 "Days of Future Past 4/22" — each with its own count and bar. Nothing in the
@@ -442,16 +463,17 @@ back button and a refresh keep it.
 | Tab | Comics | Books | Film & TV |
 |---|---|---|---|
 | In flight | Runs with at least one placement read and not all read, most recently touched first, each with its resume pointer | `book_status = reading` | Shows whose `show_progress.state` is `watching`, films with `title_status = watching` |
-| Up next | **Your queue** (2.16), in your order, unstarted runs only, with drag handles. Below it, *Ready, not queued*: `ready_all` then `ready_hard` runs in track → block order, each with **+ Up next** | Every `reading_plan` row, grouped by period in order. Bare-year entries come after that year's quarters, `someday` last | `to_watch` films and shows, oldest added first, with the dashboard's film/TV and genre filters |
+| Up next | **Your queue** (2.16), in your order, unstarted runs only, with drag handles. Below it, *Ready, not queued*: `ready_all` then `ready_hard` runs in track → block order, each with **+ Up next** | Every `reading_plan` row, grouped by period in order. Bare-year entries come after that year's quarters, `someday` last. Inside a period, your order (2.9), with drag handles | `to_watch` films and shows, oldest added first, with the dashboard's film/TV and genre filters |
 | Done | Finished runs, most recent last read first | `read`, grouped by year finished | `watched` films and shows, with show state derived |
 
 Stopped work — DNF books, dropped titles — sits in a collapsed *Stopped* group
 at the foot of Done. It is finished, just not the way you meant it to be.
-Comics *Up next* is the one tab backed by an authored list, the queue (2.16).
-Books have the plan and watch has to-watch; comics have the queue, followed by
-what's reachable but not yet queued. Every tab reads from views
+Two *Up next* tabs are backed by an authored order: comics by the queue (2.16),
+books by the plan's per-period order (2.9). Watch has to-watch; comics follow
+the queue with what's reachable but not yet queued. Every tab reads from views
 (`run_queue_state`, `run_progress`, `run_readiness`, `plan_period`,
-`show_progress`). The queue's order is the only stored thing on this screen.
+`show_progress`). The queue's order and the plan's order are the only stored
+things on this screen.
 
 The dashboards link in: *Also in flight → All*, *Up next → All*, *Unlocked
 and waiting → All N* (computed, D-7), and the books and watch equivalents go to the matching
