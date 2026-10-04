@@ -93,11 +93,13 @@ pieces AS NOT MATERIALIZED (
               ELSE MIN(num)::text || '-' || MAX(num)::text END AS txt
   FROM placed
   GROUP BY run_id, numbered, grp, first_seq, is_integer,
-           CASE WHEN is_integer THEN island ELSE num END
+           -- a point issue by its text, as the label wrote it: #605.1 and
+           -- #605.10 are equal numbers but two issues, and both are listed
+           CASE WHEN is_integer THEN island::text ELSE num::text END
 ),
 groups AS NOT MATERIALIZED (
   SELECT run_id, first_seq,
-         CASE WHEN numbered THEN grp || ' #' || string_agg(txt, ', ' ORDER BY kind, lo)
+         CASE WHEN numbered THEN grp || ' #' || string_agg(txt, ', ' ORDER BY kind, lo, txt)
               ELSE grp END AS txt
   FROM pieces
   GROUP BY run_id, numbered, grp, first_seq
