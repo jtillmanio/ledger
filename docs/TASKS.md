@@ -407,7 +407,7 @@ into the sheet link. The row takes the mockup's `.iss` grid, with the reading
 order's sequence number in the trailing column where the mockup draws a cover,
 until the run-detail rebuild brings covers.
 
-### ☐ 0.9 Page performance — measure, find the cause, fix it · M
+### ☑ 0.9 Page performance — measure, find the cause, fix it · M
 Reported by the owner on the deployed preview and production: moving between
 pages on the basic v1 app feels laggy and slow. Nothing has measured it yet, so
 this task starts with numbers, not fixes. It sits in Phase 0 on purpose: every
@@ -447,9 +447,10 @@ causes are listed so none is skipped, not because any is known to be it:
   slowest query, and at `<Link>` prefetching.
 - **Payload.** Bytes of HTML/RSC and JS shipped per route, how many rows a page
   serialises (the 258-run list, a 100+ issue spine), client components that
-  could be server components, images and fonts. `next build` prints route sizes.
-- **Middleware.** `middleware.ts` runs on every request for the passcode gate;
-  confirm it does no database work.
+  could be server components, images and fonts. Next 16's `next build` no longer
+  prints route sizes; measure the transferred bytes instead.
+- **Proxy.** `src/proxy.ts` (Next 16's name for middleware) runs on every
+  request for the passcode gate; confirm it does no database work.
 
 **3. Fix the causes that measured as large**, one commit each, with the
 before/after for that change. A cause that measures as small is left alone and
@@ -474,6 +475,27 @@ warm, on the preview. The per-page query count is recorded and the guard test
 passes. `EXPLAIN` output for any view changed shows the run filter applied early.
 `/verify` is green and the migration checks pass unchanged (no schema change
 unless the owner approved one).
+
+**Done 2026-10-04**, no schema change. The time was in the database and in the
+app, not in Vercel or Neon's hosting. On catalog-sized data the run list's query
+took 5.8 s: run_credit_line rebuilt all 87k placed credits on every read
+(run_creators' CTE was materialized) and scanned them once per run, and run_span
+ran its label regex over every issue in the catalog, four times per reference.
+Both now filter by run first and parse each label once: the run list 5.8 s →
+0.27 s, home 1.6 s → 0.32 s, a run header 0.3–0.6 s → 15–75 ms. The run page's
+three queries go out in one wave. The nav's Export `<Link>` was prefetched on
+every page view, which ran the handler and built a 20 MB export each time; it is
+a plain link now. No route had a loading boundary, so Next prefetched nothing
+and a tap froze the screen until every query answered; `/comics`, a run and
+`/books` now paint their skeleton within about 100 ms of a tap. On the preview,
+throttled (Slow 4G, 4× CPU), tap → page went from 7.2 s to 1.2 s warm on
+`/comics` and from 5.4–8.2 s to 2.2–2.7 s cold. The table, query counts and
+`EXPLAIN` output are in the PR; the budget and its guards are in ARCHITECTURE §5.
+Left alone, measured small: the Vercel region (iad1 to Neon in Ohio, about
+10–12 ms a round trip), page bytes (3–35 KB transferred), run_readiness'
+prerequisite side (14 ms). The owner's phone column was not taken (owner's
+call); the throttled profile stands in for it. `/` has no skeleton until 1.8
+makes it a redirect.
 
 ### ☐ 0.10 Lighthouse on every preview · M
 Depends on 0.9: its routes, its measurement runner and the *Performance budget*
