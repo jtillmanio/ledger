@@ -4,7 +4,10 @@ This is the index to how the Ledger looks: which design file answers which
 question, how the tokens get into the app, how to read the Tailwind names in the
 design files, and the telescope's 3-rail and 2-rail rules. The files it points
 at came out of the Step 3 style-guide pass and Review N (2026-09-30). The owner
-adopted them as the blueprint in **D-31** (`docs/review/decisions.md`).
+adopted them as the blueprint in **D-31** (`docs/review/decisions.md`). The
+**feel pass** (2026-10-05) updated them and added cover-led dashboards, mark-read
+feedback, completion screens and the tablet layout. The owner adopted it as
+**D-40**, with palette **1c After hours**; §9 below is its index.
 
 **Nothing here is built yet.** The values reach `src/app/globals.css` in task
 1.8a, and the telescope in 2.5 and 2.5b. Until each task lands, the code is
@@ -17,8 +20,13 @@ imported by `src/` and are kept as they were delivered.
 
 | File | What it is | Open it for |
 |---|---|---|
-| `design/STYLE_GUIDE.md` | The written spec: decisions, telescope geometry sheet and state matrix, plan rail, tokens, type, contrast and ΔE tables, containers, glass, component polish, changelog, the Tailwind appendix, and the proposed deviations SG-D1…SG-D12 | The rule and the reason behind a value |
-| `design/tokens.css` | Every token in light and dark, plus the breakpoint, glass, reduced-transparency and reduced-motion blocks. Existing names kept; additions marked `+ NEW`, changed values `~` | The values. Task 1.8a moves it into `globals.css` |
+| `design/STYLE_GUIDE.md` | The written spec: decisions, telescope geometry sheet and state matrix, plan rail, tokens, type, contrast and ΔE tables (palette 1c), containers, glass, component polish, changelog, the Tailwind appendix, the proposed deviations SG-D1…SG-D12, and the feel pass: **§14 screens and behaviour, §15 copy, §16 departures FP-D1…FP-D14** | The rule and the reason behind a value |
+| `design/tokens.css` | Every token in light and dark (palette 1c, D-40), plus the breakpoint, glass, `--art`, reduced-transparency and reduced-motion blocks. Existing names kept; additions marked `+ NEW`, changed values `~` | The values. They are in `globals.css` (D-40) |
+| `design/Ledger Feel Review.dc.html` | The feel pass's review page: diagnosis, palette decision aid, and phone mockups in dark and light of comics, the mark storyboard, books (reading and between books), watch, run detail, run complete, all caught up, block complete, and the 768px tablet. Its §9 lists the departures D1–D14 (FP- in the style guide) | What a feel-pass screen or state looks like |
+| `design/LedgerComics.dc.html` | The comics dashboard component the review page imports. Mark-read is live in it | The mark sequence, frame by frame (1.8b) |
+| `design/ledger-feel-tokens.css` | All three palettes (1a, 1b, 1c) in oklch, imported by the two pages above | The oklch source of a hex |
+| `design/handoff/` | The feel pass as delivered: the prompt, the implementation checklist (each step names its task), the D-40 draft, the 1a and 1b colour blocks (`palette-swaps.css`), and the contrast report for all three palettes | Where a feel-pass step went |
+| `design/archive/` | The 2026-09-30 `STYLE_GUIDE.md` and `tokens.css`, as they were before the feel pass | History only |
 | `design/Style Guide.dc.html` | The hub page, and the **B specimen**: type, numbers, elevation, containers, badges, chips, buttons, tabs, glass, feedback states and the cell vocabulary, in dark and light at 390 and 1000px | Seeing a component in all its states |
 | `design/Telescope Spec.dc.html` | Workstream A1–A3: seven telescope variants and three interaction states, each in dark and light at 390 and 1000px | The telescope, variant by variant |
 | `design/Plan Rail Spec.dc.html` | Workstream A4: quarter (held), quarter (settled) and desktop drag; the month frame is retired (D-38) | The plan rail |
@@ -29,9 +37,10 @@ imported by `src/` and are kept as they were delivered.
 | `docs/review/NEW_UI_AUDIT_REPORT.md` | Review N: the visual-polish and UX audit (UX-N01…N29, UX-X01…X07, decisions N-DN1…N-DN4) that the style guide answers | Why a task line exists |
 
 **Opening the `.dc.html` pages.** Open them in a browser from the `design/`
-folder, with `support.js` beside them. They load React and the two web fonts
-from public CDNs, so they need a network connection. The hub links to the two
-spec pages.
+folder, with `support.js` beside them. They load React and the web fonts
+from public CDNs, so they need a network connection (the app itself makes no
+external requests: its fonts are self-hosted). The hub links to the two spec
+pages; the feel pass is `Ledger Feel Review.dc.html`.
 
 The older design files keep their roles: `design/mockups.html` (v4) for every
 screen's layout and copy, `design/mockups-index.md` for its screen ids and the
@@ -42,8 +51,9 @@ v4 absorbed.
 
 | Question | Wins | Loses to it |
 |---|---|---|
-| Layout of a screen, its copy, what sits in which slot | `design/mockups.html` | a task description (CLAUDE.md) |
-| A token's value | `design/tokens.css` (once 1.8a lands; until then `globals.css`) | the mockup's `<style>` block |
+| Layout and copy of a surface the feel pass drew (dashboards, the mark, completion, empty and caught-up states, the tablet) | `STYLE_GUIDE.md` §14–§15 and `Ledger Feel Review.dc.html` (D-40) | `design/mockups.html` |
+| Layout of any other screen, its copy, what sits in which slot | `design/mockups.html` | a task description (CLAUDE.md) |
+| A token's value | `design/tokens.css`, which `globals.css` and the mockup's `.app` blocks match (`test:tokens`) | the mockup's one-off values |
 | Type, spacing, radius, elevation, glass, motion | `design/STYLE_GUIDE.md` §4–§9 | the mockup's one-off values |
 | Telescope and plan-rail geometry, variants and states | `STYLE_GUIDE.md` §2–§3 and the two spec pages | the mockup's vertical telescope (SG-D1) |
 | Why the schema, views or routes are the way they are | `docs/ARCHITECTURE.md` | this file |
