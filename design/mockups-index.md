@@ -49,7 +49,7 @@ line numbers below drift after an edit.
 | `states` | Offline, loading, empty, metadata pending | 4851–4942 |
 | `apistates` | Live-API states — loading, rate-limited, error | 4943–5000 |
 | `rebalance` | Rebalance sheet and the settled stretch year | 5001–5052 |
-| `planmonth` | Plan rail — estimates, stacks, month, drag | 5053–5106 |
+| `planmonth` | Plan rail — estimates, stacks, drag (month retired, D-38) | 5053–5106 |
 | `watchempty` | Watch — first run | 5107–5152 |
 | `palette` | Ctrl K — search and verbs | 5153–5203 |
 
@@ -79,7 +79,7 @@ is folded into the `docs/TASKS.md` task it belongs to.
 | C14 | `tracks` |
 | C15 | `moveplan` on 760k figures with an amber over-capacity preview |
 | C16–C17 | `rebalance` (four peers, settled state); legacy red classes deleted |
-| C18–C20 | Plan-rail blocks are buttons (`bdash`, `plan`, `planmonth`); estimated treatment; stack buttons; month view; legend tag |
+| C18–C20 | Plan-rail blocks are buttons (`bdash`, `plan`, `planmonth`); estimated treatment; stack buttons; legend tag (C20's month view retired, D-38) |
 | C21 | Spine: era buttons, collapsed finished era, named `.chk`, hint hidden on rows read here, `+N` button |
 | C22 | `issuedetail` |
 | C23 | Thumb bars lead with the mark verb; 44px buttons; `batch` behind **+ batch** |
@@ -121,7 +121,7 @@ One line each. None is silently dropped.
 
 1. **Rail scrubbing (E01).** Drag or arrow-key movement along a telescope rail is an interaction; a static file cannot show it. Specified in TASKS 2.5 (`role="slider"`, release navigates to `#p-[ordinal]`).
 2. **Drag-and-drop reorder, keyboard lift/move/drop (C25, E12).** Same reason. The lifted row, announcer text and open menu are drawn as states; the sequence is a TASKS 1.10 test.
-3. **Scroll-snap behaviour of the month view (C20).** The layout is drawn; the snap is CSS in the app.
+3. ~~Scroll-snap behaviour of the month view (C20).~~ Retired with the month view (D-38).
 4. **Real `<button>` elements for chips, segmented controls, `.opts` and switches (C38).** The mockup's CSS targets `span` and `b`, so they carry `role`, `aria-pressed`/`aria-checked` and `tabindex` instead. Production must use real buttons (TASKS 1.8); the axe check will fail otherwise.
 5. **The estimated-count `~` on plan *rows* and the master-list `.rm` value (C19).** Drawn on rail blocks, the legend, the Words field and the metadata-pending frame; rows reuse the same prefix but the existing row markup was not regenerated.
 6. **Empty slates for the books and watch status tabs.** Only comics is drawn; the copy for all nine is in FEATURES Part 2c and differs by wording, not layout.

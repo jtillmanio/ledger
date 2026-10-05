@@ -12,12 +12,12 @@ section. Nothing here is built yet except where marked **shipped**.
 | # | Feature | Status | What it needs beyond v1 |
 |---|---|---|---|
 | B1 | Dashboard | new | Currently-reading, pace-vs-plan for the year, next up, upcoming releases, genre mix. Design below |
-| B2 | To Read by year, switchable quarter/month, with word-count budgeting | partial | `reading_plan.planned_quarter` exists; needs `planned_month`, a `reading_settings` table, and the pace engine |
+| B2 | To Read by year and quarter, with word-count budgeting | partial | `reading_plan.planned_quarter` exists; task 1.7 makes one period column with four to-read levels — quarter, year, On deck, Someday (D-37) — and no months (D-38); needs the pace engine |
 | B3 | To-Read master list, searchable | shipped | Search works; needs sort by word count, filter by series-completeness |
 | B4 | Top books per year, editable | partial | `book_status.year_rank` holds the data; no edit UI, no reorder |
 | B5 | Coming out list | shipped | Needs "notify me" and a calendar view. Task 5.7 (D-35): *Out now* plus a month-grouped list, notified in the app; comics get the same in 5.8 |
 | B6 | Tracked series and authors with progress | partial | `series_progress` view exists; needs a `shelves` table so you can add arbitrary ones |
-| — | BookTube top 10, Download, HP Fanfiction | migrated, unsurfaced | Data is in `external_lists` and `wishlist`. No pages. Leave it |
+| — | BookTube top 10, Download, HP Fanfiction | migrated, unsurfaced | Data is in `external_lists` and `wishlist`. No pages. Leave `external_lists`; `wishlist` is promoted into Someday (task 1.4d, D-39) |
 
 ### Comics
 
@@ -40,8 +40,8 @@ section. Nothing here is built yet except where marked **shipped**.
 **1. The pace engine (books).** Your sheet computes words/day from minutes-read-per-day
 times reading speed, projects across quarters, and lets you see whether a year's
 plan fits. Rebuild it properly: a `reading_settings` row holding your minutes/day
-and words/minute, then a view that sums planned word counts per year, quarter, or
-month and compares against capacity. Surface it as a single number per period —
+and words/minute, then a view that sums planned word counts per year and quarter
+and compares against capacity. Surface it as a single number per period —
 "2027 is at 118% of capacity" — with the overage broken out by genre. This is the
 whole reason you track word counts, and it's the feature that makes B2 worth
 building at all.
@@ -241,7 +241,8 @@ what you're adding — issue ranges, a writer, a series string. They don't cover
 the real moment: someone mentions a run in passing, or a BookTube video
 name-drops a title, and you want to jot *"Priest's Black Panther, apparently
 great"* in two seconds on a phone with zero required fields, then resolve it
-properly at a desk later. Books have `wishlist` for this; comics have nothing.
+properly at a desk later. Books had only the raw `wishlist` for this (promoted
+into Someday by task 1.4d); comics had nothing.
 One text field, optionally tagged books or comics, feeding the same
 review-and-resolve flow as bulk add.
 
@@ -393,9 +394,8 @@ Small things, ordered by how often you'd feel their absence.
   each is a `<button>` with a name (*Piranesi, 65k words, estimated, Q1 2027*)
   and at least a 24px hit area; runs of sub-24px blocks merge into a `+3 · 180k`
   stack button that opens a list sheet.
-- **Month view.** The *Quarter | Month* toggle switches to three month columns
-  per quarter, scroll-snapped on the phone, against a 253k monthly capacity,
-  with the fifth lane kept.
+- **No month view** (D-38). A quarter is the plan's finest grain: no month
+  toggle, month columns or monthly capacity.
 - **Desktop drag.** Dragging a block between quarters shows a ghost and a live
   readout (*Q3 +118k → 533k / 760k*) before release. The Move sheet stays the
   keyboard and phone route.
@@ -969,7 +969,7 @@ The plan rail: a quarter is a column, a book is a block sized by its word count,
 a dashed rule across all four columns is the 760k quarterly capacity. Anything
 above the rule is hatched. A fifth lane behind a dashed border holds entries with
 a year and no quarter — in the year, visibly not in the plan.
-Tap targets, estimated counts and the month layout are in Part 2c (Plan).
+Tap targets and estimated counts are in Part 2c (Plan).
 
 ### Over-commitment is a decision, not an error
 
@@ -983,8 +983,8 @@ The catch-up affordance is one tap from the dashboard and offers four peers:
 
 1. **Move the overage into the next year** — and show that the next year then
    holds 45 books. The overage moves; it does not leave.
-2. **Drop it back to the wishlist** — suggests the longest titles first. Nothing
-   is deleted.
+2. **Move it to On deck** — out of the year, still next in line; suggests the
+   longest titles first. Nothing is deleted.
 3. **Even out the quarters** — same books, saner shape. Fixes the shape, not the
    total.
 4. **Accept it as a stretch year** — persisted, dated, and the amber stops.
@@ -1101,7 +1101,7 @@ way, a record is created in the database before anything points at it.
 | Adding | Search | Type it | Creates |
 |---|---|---|---|
 | Issues to a run | Your catalog, then **Metron** — cover, volume year and cover date on each result, so an ambiguous `Captain America #1` is resolved by looking at it | One label per line, ranges allowed, through the bulk-entry validator (TASKS 1.3) | `issues` if the label is new, then a `run_issues` placement |
-| A book to a shelf, the to-read list or the plan | Your library, then **Open Library** — pages, year, cover, estimated words | Title and author, the rest optional; or paste a list (TASKS 1.4) | `books` (plus `authors` / `book_series`), then `shelf_books`, `book_status` or `reading_plan` |
+| A book to a to-read level (a quarter or year, On deck, Someday) or a shelf | Your library, then **Open Library** — pages, year, cover, estimated words | Title and author, the rest optional; or paste a list (TASKS 1.4) | `books` (plus `authors` / `book_series`), then `shelf_books`, `book_status` or `reading_plan` |
 
 Existing rows are always reused and shown as yours ("in 3 runs", "on
 Cosmere"). This makes Metron and Open Library **live during add** as well as
@@ -1120,7 +1120,7 @@ the same names in the same order on all three: **In flight · Up next · Done**.
 | | Comics (runs) | Books | Film & TV |
 |---|---|---|---|
 | In flight | Partly read, with resume pointer | Reading | Watching — shows derived from seasons |
-| Up next | **Your queue**, in your order — then runs ready to start that aren't queued yet | The plan, by period; bare-year entries after their quarters; someday last | To watch, filtered by film/TV and genre |
+| Up next | **Your queue**, in your order — then runs ready to start that aren't queued yet | The plan by level (D-37): each quarter in your order, then the year's bare-year entries, then On deck; Someday links to the master list | To watch, filtered by film/TV and genre |
 | Done | Finished runs | Read, by year | Watched |
 
 DNF and dropped sit collapsed under *Stopped* at the foot of Done. The
@@ -1313,7 +1313,7 @@ CREATE TABLE reading_settings (
   minutes_per_day   int  NOT NULL DEFAULT 45,
   words_per_minute  int  NOT NULL DEFAULT 185,
   words_per_page    int  NOT NULL DEFAULT 275,
-  plan_granularity  text NOT NULL DEFAULT 'quarter' CHECK (plan_granularity IN ('quarter','month')),
+  plan_granularity  text NOT NULL DEFAULT 'quarter' CHECK (plan_granularity IN ('quarter','month')),  -- dropped in 1.7 (D-38)
   theme             text NOT NULL DEFAULT 'system'  CHECK (theme IN ('system','light','dark')),
   show_covers       boolean NOT NULL DEFAULT true
 );

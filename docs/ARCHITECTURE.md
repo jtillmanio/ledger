@@ -107,8 +107,10 @@ for later; the text field is preserved verbatim so nothing is lost.
 
 **2.7 Books that aren't clean records stay as text.** The old `To-Read` tab mixes
 titles, series-plus-author strings, and `Top` markers. 497 of those land in
-`wishlist` with `raw_entry` intact and a nullable `book_id`, so you can promote
-them as you go instead of doing a data-cleaning project before the app is usable.
+`wishlist` with `raw_entry` intact and a nullable `book_id`, so nothing is lost
+before they are cleaned. They are promoted once, through 1.4's paste-a-list
+review (task 1.4d, D-39), after the final load: each line becomes a Someday book
+(2.9) or is dismissed, and the table goes once it is empty.
 The 534 BookTube entries live in `external_lists` the same way.
 
 **2.8 Blocks are a table, not a number.** A track is divided into numbered
@@ -121,29 +123,64 @@ dashboard needs ("run 3 of 5 in block 2 of 7") are computed in the
 `block_position` view rather than stored.
 
 **2.9 A plan entry has one period column, and the year is a substring of it.**
-`reading_plan` originally carried `planned_year`, `planned_quarter` and
-`planned_month` side by side, which allows a row to claim 2027 and Q1 2028 at
-the same time. It also has no way to say "this is a 2027 book and I have not
+`reading_plan` originally carried `planned_year` and `planned_quarter` side by
+side (and a `planned_month` was drafted), which allows a row to claim 2027 and
+Q1 2028 at the same time. It also has no way to say "this is a 2027 book and I have not
 decided when" without that being indistinguishable from a data-entry gap — and
 the workbook's To-Read tabs held 100-odd rows in exactly that state (the plan itself now starts empty and is built in the app, R0-04). One column solves both:
 
 ```
 reading_plan.period text NOT NULL
-  CHECK (period ~ '^[0-9]{4}(-Q[1-4]|-(0[1-9]|1[0-2]))?$' OR period = 'someday')
+  CHECK (period ~ '^[0-9]{4}(-Q[1-4])?$' OR period = 'on_deck')
 ```
 
-`2027-Q1` is a quartered book, `2027-03` a month-granular one, `2027` a book
-committed to the year with no quarter yet, and `someday` the unscheduled
-backlog the plan editor already offers. The year is `left(period, 4)`, so a
-year is literally what its quarters roll up to; nothing can disagree with
-itself. The `plan_period` view exposes `year`, `quarter`, `month` and
-`granularity` so no caller parses the string. Migration is mechanical and
-reversible: compose the three columns into one, keep them for a release, drop
-them after.
+`2027-Q1` is a quartered book, `2027` a book committed to the year with no
+quarter yet, and `on_deck` a book with no year that is next in line. The year
+is `left(period, 4)`, so a year is literally what its quarters roll up to;
+nothing can disagree with itself. The `plan_period` view exposes `year`,
+`quarter` and `level` so no caller parses the string. **There are no months**
+(D-38): a quarter is the finest grain the plan has, so there is no month period,
+month rail or monthly capacity, and `reading_settings.plan_granularity` goes.
+Migration is mechanical: compose the two columns into one (task 1.7).
 
 The dashboard depends on this. The plan rail draws four quarter columns plus a
 fifth lane for `period = year`, and the whole point of the fifth lane is that
 those books are visibly in the year and visibly not in the plan.
+
+**A to-read book sits at one of four levels** (D-37, task 1.7):
+
+| Level | Stored as | Ordered | Counts against capacity |
+|---|---|---|---|
+| Quarter | `period = '2027-Q1'` | yes | that quarter, and its year |
+| Year | `period = '2027'` | no | that year |
+| On deck | `period = 'on_deck'` | no | nothing |
+| Someday | no plan row | no | nothing |
+
+The first three are plan rows. Someday is derived — every `to_read` book with no
+plan row — so it never needs writing and cannot disagree with the plan; the
+`to_read_level` view names each book's level. A book enters at any level from
+the add sheet (2.15) and moves between levels through one picker (task 2.3);
+leaving the plan means moving to Someday.
+
+**Only quarters are ordered.** A quarter says *when*; with eight books in it,
+*which first* is the question you actually ask. So a quarter carries the comics
+queue's shape (2.16):
+
+```
+reading_plan.ordinal int   -- NULL exactly when the period is not a quarter
+  UNIQUE (user_id, period, ordinal) DEFERRABLE INITIALLY DEFERRED
+```
+
+Ordinals are contiguous from 1 within each quarter, and a year reads as its four
+quarters in order. Like the queue's order, it is authored, so it is stored: a
+book joins the end of the quarter it is placed in, leaving closes the gap, and a
+reorder rewrites the quarter in one transaction. The rail stacks a quarter's
+blocks in this order from the foot of the column, so the books that cross the
+capacity rule are always the ones you ranked last, and the dashboard's *first
+Q-current book* is ordinal 1, not an accident of insertion. The year lane and
+On deck are unordered on purpose: they hold books you have not decided about
+yet, and ranking them would be the decision those levels exist to put off. The
+queue stays period-free (2.16); the plan gains an order but keeps its periods.
 
 **2.10 An era is to a run what a block is to a track.** `design/mockups.html`
 sections the reading spine into named eras — "Second Genesis & Phoenix 38/38",
@@ -298,7 +335,7 @@ anything that points at it:
 | Adding | Search path | Freeform path | Then writes |
 |---|---|---|---|
 | An issue to a run | Your catalog first, then Metron live: series + number, cover and cover date on the result | A label, or many, through the bulk-entry parser (task 1.3) | `issues` (new label) or reuse of the existing row, then a `run_issues` placement |
-| A book to a shelf, the to-read list or the plan | Your library first, then Open Library live | Title and author required, series, position, pages and words optional | `books` (plus `authors` / `book_series` if new), then `shelf_books`, `book_status` or `reading_plan` |
+| A book to a to-read level (a quarter or year, On deck, Someday) or a shelf | Your library first, then Open Library live | Title and author required, series, position, pages and words optional | `books` (plus `authors` / `book_series` if new), then `shelf_books`, `book_status` or `reading_plan` |
 | A film or show | TMDB live (unchanged, 2.5b) | — none (D-28): when TMDB fails or finds nothing, *Save to inbox* keeps the query as a Watch capture note | `titles` / `seasons`, then status |
 
 An existing row is always reused. A search result that is already in your
@@ -420,11 +457,11 @@ of book history) and they deserve different answers.
 | `/comics/releases` | New issues in the series you follow, each offered for adding to its run (task 5.8, D-35) |
 | `/books` | Books dashboard — reading now, the plan rail, capacity, the year so far |
 | `/books/status` | In flight · Up next · Done, for books |
-| `/books/list` | Master list: search, filter by status, year or genre, series completion |
-| `/books/add` | Add books: search Open Library, paste a list, or by hand, with a destination (to-read, plan, shelf) |
+| `/books/list` | Master list: search, filter by status, to-read level, year or genre, series completion |
+| `/books/add` | Add books: search Open Library, paste a list, or by hand, with a destination (a quarter or year, On deck, Someday, or a shelf) |
 | `/books/plan` | Plan by quarter, full editor |
 | `/books/releases` | Books coming out that you want, *Out now* then by month (task 5.7, D-35) |
-| `/settings` | Minutes a day, words a minute, plan granularity — the inputs the capacity engine reads (task 2.0) |
+| `/settings` | Minutes a day, words a minute — the inputs the capacity engine reads (task 2.0) |
 | `/watch` | Films and shows, mid-show progress computed from seasons |
 | `/watch/status` | In flight · Up next · Done, for films and shows |
 | `/watch/list` | Films and shows in one list, with mid-show progress computed from seasons |
@@ -442,16 +479,17 @@ back button and a refresh keep it.
 | Tab | Comics | Books | Film & TV |
 |---|---|---|---|
 | In flight | Runs with at least one placement read and not all read, most recently touched first, each with its resume pointer | `book_status = reading` | Shows whose `show_progress.state` is `watching`, films with `title_status = watching` |
-| Up next | **Your queue** (2.16), in your order, unstarted runs only, with drag handles. Below it, *Ready, not queued*: `ready_all` then `ready_hard` runs in track → block order, each with **+ Up next** | Every `reading_plan` row, grouped by period in order. Bare-year entries come after that year's quarters, `someday` last | `to_watch` films and shows, oldest added first, with the dashboard's film/TV and genre filters |
+| Up next | **Your queue** (2.16), in your order, unstarted runs only, with drag handles. Below it, *Ready, not queued*: `ready_all` then `ready_hard` runs in track → block order, each with **+ Up next** | The plan by level (2.9): each quarter in your order, with drag handles; then that year's bare-year entries; then On deck. Someday is a link to the master list, not a list here | `to_watch` films and shows, oldest added first, with the dashboard's film/TV and genre filters |
 | Done | Finished runs, most recent last read first | `read`, grouped by year finished | `watched` films and shows, with show state derived |
 
 Stopped work — DNF books, dropped titles — sits in a collapsed *Stopped* group
 at the foot of Done. It is finished, just not the way you meant it to be.
-Comics *Up next* is the one tab backed by an authored list, the queue (2.16).
-Books have the plan and watch has to-watch; comics have the queue, followed by
-what's reachable but not yet queued. Every tab reads from views
+Two *Up next* tabs are backed by an authored order: comics by the queue (2.16),
+books by each quarter's order (2.9). Watch has to-watch; comics follow
+the queue with what's reachable but not yet queued. Every tab reads from views
 (`run_queue_state`, `run_progress`, `run_readiness`, `plan_period`,
-`show_progress`). The queue's order is the only stored thing on this screen.
+`show_progress`). The queue's order and each quarter's order are the only stored
+things on this screen.
 
 The dashboards link in: *Also in flight → All*, *Up next → All*, *Unlocked
 and waiting → All N* (computed, D-7), and the books and watch equivalents go to the matching
@@ -622,9 +660,7 @@ accessible name (*Piranesi, 65k words, estimated, Q1 2027*) and a hit area of at
 least 24×24px (`::after` inset), because a 7px block is otherwise untappable and
 `title` does not exist on Android. Adjacent sub-24px blocks merge into a
 `+N · Nk` stack button that opens a list sheet. `data-wc="estimated"` blocks get
-a dotted top edge and a `~` prefix; the monthly granularity is a
-`.planrail[data-gran="month"]` variant with three month columns per quarter
-against a 253k monthly capacity. Capacity and the hatch use `--blocked`; the
+a dotted top edge and a `~` prefix. There is no month variant (D-38). Capacity and the hatch use `--blocked`; the
 retired red classes (`.capnum.over`, `.pace .big.behind`) are gone. Only the part
 of a block above the rule is hatched. Accepting a *stretch year* turns that hatch
 grey (`--hatch-settled`) while still drawing the overage: the data stays
@@ -869,8 +905,8 @@ Responses are cached, and detail pages never re-call.
 5. `book_status.finished_year` is year-granular. Promoting it to a real date
    unlocks streaks, pace-vs-plan, and an accurate year in review, and it is far
    cheaper to do before you accumulate entries than after.
-6. `wishlist` and `external_lists` entries are unresolved text until you link
-   them to `books.id`.
+6. `external_lists` entries are unresolved text until you link them to
+   `books.id`. `wishlist` is promoted into Someday by task 1.4d (D-39).
 7. No editing UI. Reads are complete; writes are limited to issue check-off and
    book status.
 8. The watchlist is entirely unbuilt — `titles`, `seasons`, `franchises`, and

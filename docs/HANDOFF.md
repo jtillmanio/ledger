@@ -57,7 +57,8 @@ new was invented for it.
 **Not migrated, confirmed out of scope:** `Ultimate Order`, `Ultimate
 Collection`, `Sheet8`, `Reading Orders (old)`. `Master` is loaded as `editions`
 but has no UI. BookTube Top 10, Download, and HP Fanfiction tabs are in
-`external_lists` and `wishlist` but unsurfaced.
+`external_lists` and `wishlist` but unsurfaced; `wishlist` is promoted into
+Someday by task 1.4d (D-39).
 
 ---
 
@@ -250,8 +251,8 @@ queue at current pace.
 **Comics:** dashboard with in-progress runs and block position; run list with
 readiness; per-run reading order with era sections; full editing; to-read list;
 tracks page.
-**Books:** dashboard; to-read by year with quarter/month granularity and word
-budgeting; searchable master list; top books per year; coming-out list; shelves.
+**Books:** dashboard; to-read at four levels — quarter, year, On deck, Someday
+(D-37) — with word budgeting by year and quarter; searchable master list; top books per year; coming-out list; shelves.
 **Watch:** search and add via TMDB; to-watch, watching, watched, dropped;
 season-level progress; franchises; shelves; rewatch log.
 
@@ -426,7 +427,7 @@ changed; the other 21 are untouched.
 | Navigation chrome | One `Comics · Books · Watch` bar on every phone screen, no Home tab; a per-medium desktop sidebar with neutral icons and an Inbox |
 | Accessibility floor | 4.5:1 text, 3:1 controls, 44px thumb bar, real buttons with names, one `h1` per page |
 | Track filter | Multi-select dropdown, not chips |
-| Moving a book between periods | A picker sheet, not drag. Year → quarter/month, each chip showing that period's word total, with a live preview that turns amber (never red) if it would go over |
+| Moving a book between periods | A picker sheet, not drag. Year → quarter, or On deck or Someday, each year and quarter chip showing that period's word total, with a live preview that turns amber (never red) if it would go over |
 | Detail presentation | **Intercepted routes.** A sheet over the list when arrived at from a list, a full page on direct load or refresh. Back button dismisses, URL is linkable. Runs keep a dedicated full page — too dense for a sheet |
 | Watch granularity | **Seasons yes, episodes no.** Show state derived from `season_status` via `show_progress`, never stored — except `dropped`, the one stored show-level status |
 | Franchises | One table, `parent_id` for one level of nesting (Star Wars → Mandalorian era). Films auto-populate from TMDB `belongs_to_collection`; cross-media franchises hand-curated |

@@ -21,7 +21,7 @@ imported by `src/` and are kept as they were delivered.
 | `design/tokens.css` | Every token in light and dark, plus the breakpoint, glass, reduced-transparency and reduced-motion blocks. Existing names kept; additions marked `+ NEW`, changed values `~` | The values. Task 1.8a moves it into `globals.css` |
 | `design/Style Guide.dc.html` | The hub page, and the **B specimen**: type, numbers, elevation, containers, badges, chips, buttons, tabs, glass, feedback states and the cell vocabulary, in dark and light at 390 and 1000px | Seeing a component in all its states |
 | `design/Telescope Spec.dc.html` | Workstream A1–A3: seven telescope variants and three interaction states, each in dark and light at 390 and 1000px | The telescope, variant by variant |
-| `design/Plan Rail Spec.dc.html` | Workstream A4: quarter (held), quarter (settled), month, and desktop drag | The plan rail |
+| `design/Plan Rail Spec.dc.html` | Workstream A4: quarter (held), quarter (settled) and desktop drag; the month frame is retired (D-38) | The plan rail |
 | `design/Telescope.dc.html` | The telescope component the spec page imports. Its `alloc()`, `niceStep()` and `fit()` are the reference implementation of `layout.ts` | Porting the geometry (task 2.5) |
 | `design/PlanRail.dc.html` | The plan-rail component; `stackCol()` is the reference for the stack and hatch rules | Porting the plan rail (2.2b) |
 | `design/Specimen.dc.html` | The component the hub imports for the B specimen | — |
@@ -249,11 +249,10 @@ pressed, focus, scrub) are STYLE_GUIDE §2.8, and TASKS 2.5b lists every one.
 | | Phone | Desktop |
 |---|---|---|
 | Column height | 230 | 300 |
-| Scale | 1000k fills a quarter column; 450k a month column | same |
+| Scale | 1000k fills a quarter column | same |
 | Column gap | 6 | 10 |
 | Fifth lane | 52px, dashed `--blocked` left border | 150px, *2027 · no quarter* |
 | Footer | `Q1 · 892k` and an amber overage only (SG-D11) | `892k / 760k` and `over 132k` or `56k room` (grey) |
-| Month | 12 × 64px columns, scroll-snap inside the card | all 12 plus the no-month lane, no scroll |
 | Drag | the Move sheet | ghost at −1.5° on `--sh-2`, dashed `--brand` outline, `output.dropdelta` |
 
 Only the part of a block above the rule is hatched; accepting a stretch year

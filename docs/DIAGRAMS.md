@@ -157,7 +157,6 @@ erDiagram
         text user_id PK
         int  minutes_per_day
         int  words_per_minute
-        text plan_granularity "quarter|month"
     }
     AUTHORS {
         text id PK
@@ -195,7 +194,8 @@ erDiagram
     READING_PLAN {
         text user_id FK
         text book_id FK
-        text period "2027-Q1 | 2027-03 | 2027 | someday"
+        text period "2027-Q1 | 2027 | on_deck"
+        int  ordinal "quarters only, D-37"
     }
     SHELVES {
         text id PK "cosmere, stephen-king"
@@ -267,7 +267,7 @@ flowchart TD
     LEV --> CD
     FR --> CD
 
-    PL --> PP["plan_period<br/>year · quarter · month<br/>derived from period"]
+    PL --> PP["plan_period<br/>year · quarter · level<br/>derived from period"]
     PP --> CAP
     PP --> PR2([Plan rail])
     CAP --> BD([Books dashboard])
@@ -639,8 +639,9 @@ flowchart LR
 
 ## 10. Add flow — search or type it, always a real row
 
-ARCHITECTURE 2.15. The same shape for an issue into a run and a book onto a
-shelf, the to-read list or the plan.
+ARCHITECTURE 2.15. The same shape for an issue into a run and a book into a
+shelf or a to-read level: a quarter or year, On deck, or Someday (D-37; Someday
+writes `book_status` only, no plan row).
 
 ```mermaid
 flowchart TD
