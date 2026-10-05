@@ -26,6 +26,11 @@ section. Nothing here is built yet except where marked **shipped**.
 | C1 | Dashboard: reading now, block position, issues left, next up | partial | Block position is ready — `blocks` and the `block_position` view landed early; "next up" still needs a resume pointer |
 | C2 | Full run list with readiness, plus add new | partial | List and readiness shipped; no create/edit |
 | C3 | Reading order page per run | shipped | The spine view |
+| C3a | Ordinal gutter on spine rows | planned | The placement's ordinal (`42`) before the tick, matching the head pill `42 / 381 · #141`; in the row's accessible name; the scrub target. TASKS 3.6b, STYLE_GUIDE §5.1 |
+| C3b | Hide read, per run | planned | Hides rows read in this run (rows read elsewhere stay); a `+N read · Show` stub per hidden stretch; remembered per run, storage to decide. Needs per-placement read state (0.8a, done). TASKS 3.6c |
+| C3c | Real covers on spine rows | planned | `issues.cover_url` (Metron) in a fixed 28×42 box, with the text fallback, lazy loading, and a reduced-data path and a *Show covers* setting. TASKS 4.3 |
+| C3d | Release date per row | planned | `issues.cover_date` as a grey desktop column; phone rows leave it to the issue sheet, which also gains the publication date (a new column, to be approved); an opt-in per-run caption for runs not in publication order. TASKS 3.6b, 3.5 |
+| C3e | Next issue in the run hero | planned | A tonal strip above *Resume #141*: cover, label and the placement's note. TASKS 1.6 |
 | C4 | Edit everything | not built | The largest single chunk of remaining work. See Part 3 |
 | C5 | To-read list | shipped | On the dashboard as "Start next" |
 | C6 | Events and tracks tracking | partial | Views exist, no pages |

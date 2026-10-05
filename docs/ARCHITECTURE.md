@@ -621,6 +621,19 @@ Eras do not change the telescope: they section the spine, not the rails
 (2.10). The dense frame's ladder may gain an ERA row
 (*DoFP · 4 / 22*) when the run has eras.
 
+**Spine v2 (Oct 2026) stores nothing new yet.** The rows gain an ordinal
+gutter, *Hide read*, real covers and a desktop release-date column, and the
+hero gains a next-issue strip (STYLE_GUIDE §5.1 and §9). The gutter shows
+`run_read_segments`' ordinal, computed, never stored. Covers read
+`issues.cover_url` and the date column reads `issues.cover_date`, both already
+loaded from the sidecars (2.13). Three proposals would change the model, and
+each waits for the owner:
+
+- `issues.store_date`, for the issue sheet's publication date (TASKS 3.5);
+- a per-user, per-run preference for *Hide read* and *Show release dates*,
+  which is never a column on `runs` (2.1; TASKS 3.6b, 3.6c);
+- where *Show covers* is kept (TASKS 4.3).
+
 **Prerequisite state blocks.** The `run_state` view (`etl/views.sql`) combines
 `run_readiness` and `run_progress` into five states
 (DIAGRAMS §4; progress wins, so a started run is `reading` even if a hard
