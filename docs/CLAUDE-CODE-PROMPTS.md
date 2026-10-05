@@ -176,6 +176,7 @@ alone is enough elsewhere.
 | 1.4 Books bulk entry | M | Sonnet | medium | high | xhigh |
 | 1.4c Add a book by search or by hand | M | Sonnet | medium | high | high |
 | 1.4b Quick-capture inbox | S | Sonnet | low | medium | high |
+| 1.4d Promote the wishlist into Someday | S | Sonnet | low | medium | high |
 | 1.5 Dated reading log | M | Opus | high | high | xhigh |
 | 1.7 One period column | M | Opus | high | high | xhigh |
 | 1.8a Design tokens and control states | M | Sonnet | medium | high | high |
@@ -810,7 +811,9 @@ shelf_books get written today?
 **Plan**
 ```
 write a plan for task 1.4c: one add sheet opened with a preselected
-destination (to read, plan via the 2.3 picker, or a shelf); library first,
+destination. this task ships Someday (to_read, no plan row — the default) and
+a shelf; plan where On deck (1.7) and Year or quarter… (2.3) will slot in
+without rework, but don't build them (D-37). library first,
 then Open Library on submit; By hand with title and author required; create
 or reuse the books row, then the destination row, in one transaction. name
 every file.
@@ -820,8 +823,9 @@ every file.
 ```
 implement the plan with a recorded Open Library fixture. tests first: an Open
 Library result added to a shelf creates one books row and one shelf_books row;
-adding it again by hand reuses it; a by-hand book without pages lands on the
-to-read list; an Open Library failure writes nothing and leaves By hand usable.
+adding it again by hand reuses it; a by-hand book without pages lands in
+Someday (to_read, no plan row); an Open Library failure writes nothing and
+leaves By hand usable.
 ```
 
 ---
@@ -856,6 +860,26 @@ resolved_at.
 
 the kind control is Books, Comics, Watch, Unsure; a Watch note resolves to
 /watch/add pre-filled. show the inbox count as a chip on each dashboard lede.
+```
+
+---
+
+### 1.4d Promote the wishlist into Someday
+**Model:** Sonnet · **Effort:** explore low / plan medium / implement high
+**Why:** 1.4 already built the review; this feeds it 497 lines it was not
+written for. The traps are the sheet's plain-hyphen `Title - Author` form, lines
+that name a series instead of a book, and running it before the final load,
+which would erase the result (D-39).
+
+**Plan / Implement**
+```
+read @docs/TASKS.md task 1.4d and decision D-39. write a plan: a one-off
+/books/add?from=wishlist that pre-fills 1.4's paste-a-list review with the
+unresolved wishlist lines (book_id IS NULL), workbook order, grouped by genre;
+plain-hyphen lines parse like em-dash ones; series-looking lines are flagged
+"series?"; accept creates or reuses the book as to_read (Someday, no plan row)
+and sets wishlist.book_id; dismiss deletes the line. then implement it, tests
+first, with the task's five-line fixture.
 ```
 
 ---
@@ -914,13 +938,13 @@ never DATABASE_URL) and assert the row values and precisions survive.
 
 ### 1.7 One period column on `reading_plan`
 **Model:** Opus · **Effort:** explore high / plan high / implement xhigh
-**Why:** collapsing three legacy columns into one regex-checked `period` text
-column, where a bare year is a legitimate state — the plan starts empty
-(D-13), so bare years arise from the owner committing to a year without
-picking a quarter — plus a
-view that exposes parsed year/quarter/month/granularity so nothing else ever
-parses the string. The down migration has to reconstruct all three legacy
-columns without losing a row — this is the kind of migration standing rule 3
+**Why:** collapsing two legacy columns into one regex-checked `period` text
+column that holds three of the four to-read levels (D-37) — a quarter, a bare
+year, `on_deck` — while Someday stays derived (no plan row), plus views that
+expose year/quarter/level so nothing else ever parses the string. Months are
+gone (D-38), so `plan_granularity` is dropped too. The down migration has to
+reconstruct the legacy columns without losing a row, and refuse while an
+`on_deck` row exists — this is the kind of migration standing rule 3
 ("never edit a migration that's been applied to production") is protecting
 you from having to redo.
 
@@ -930,39 +954,45 @@ read @docs/TASKS.md task 1.7 and ARCHITECTURE.md section 2.9. the plan starts
 empty (D-13), so the migration will usually have nothing to carry — the fixture
 is what matters. what does a two-year book (a 2026 row and a 2027 row for one
 book) have to become under the new (user_id, book_id, period) key, and does
-anything today read planned_quarter or planned_month directly?
+anything today read planned_quarter or plan_granularity directly?
 ```
 
 **Plan**
 ```
-write a plan for task 1.7: replace planned_year/planned_quarter/planned_month
-with one period text column, checked against
-^[0-9]{4}(-Q[1-4]|-(0[1-9]|1[0-2]))?$ or the literal "someday". add a
-plan_period view exposing year, quarter, month, granularity. the migration
-composes all three legacy columns into period without losing a row, and the
-down migration reconstructs them.
+write a plan for task 1.7: replace planned_year/planned_quarter with one
+period text column, checked against ^[0-9]{4}(-Q[1-4])?$ or the literal
+"on_deck" (no months, D-38). add a plan_period view exposing year, quarter,
+level and ordinal, and a to_read_level view giving every to_read book its level
+(quarter | year | on_deck | someday — someday is "no plan row"). drop
+reading_settings.plan_granularity. the migration composes the legacy columns
+into period without losing a row; the down migration reconstructs them and
+raises while any on_deck row exists.
 
-say explicitly how a bare "2027" (year committed, no quarter chosen) is
-represented and read back.
+say explicitly how a bare "2027" (year committed, no quarter chosen) and
+"on_deck" are represented and read back.
 
-add ordinal (D-37): contiguous from 1 within (user_id, period), unique and
-deferrable like run_queue's, carried by plan_period. plan the write helpers
-every later task must use — append, remove (closes the gap), move to another
-period (closes the source, appends to the destination), reorder, move to top —
-and how the migration numbers existing rows (title, then book_id) and how
-extract --with-plan numbers them (workbook row order).
+add ordinal (D-37): quarters only — NULL exactly when the period is not a
+quarter — contiguous from 1 within each quarter, unique and deferrable like
+run_queue's. plan the write helpers every later task must use — place in a
+quarter (append), move to another level (closes the gap), move to Someday
+(deletes the plan row, leaves book_status), reorder, move to top — and how the
+migration numbers existing quarter rows (title, then book_id) and how extract
+--with-plan numbers them (workbook row order). enable On deck on 1.4c's add
+sheet.
 ```
 
 **Implement**
 ```
 implement the plan. write the tests first: "2027-Q1" reads back as year 2027,
-quarter 1, granularity quarter; "2027" reads back with a null quarter and
-granularity year; "2027-Q5" and "2027-13" are rejected by the constraint; and
-the ordinal sequence in the task's check (append, move between periods, move
-to top, remove, two concurrent reorders). run the migration against a copy of
-the dev database, then run the down migration and confirm every row matches
-what it started as, apart from the dropped ordinal, which comes back
-contiguous on the second up.
+quarter 1, level quarter; "2027" with a null quarter and level year;
+"on_deck" with a null year and level on_deck; "2027-Q5", "2027-03" and
+"someday" are rejected by the constraint; to_read_level puts a book with no
+plan row at someday; and the ordinal sequence in the task's check (append,
+move between quarters, move to a year or on_deck, move to top, two concurrent
+reorders). run the migration against a copy of the dev database, then run the
+down migration and confirm every row matches what it started as, apart from
+the dropped ordinal, which comes back contiguous on the second up; the down
+raises while an on_deck row exists.
 ```
 
 ---
@@ -1130,7 +1160,9 @@ headers linking to the matching tab. nothing stored. name every file.
 implement the plan. tests first: a partly-read run is in In flight only; a
 ready unstarted run is in Up next; a blocked run is in neither but is counted
 in the link; a run read only in other runs is not in Done; a '2027' plan entry
-sorts after 2027's quarters and before someday; DNF shows only under Stopped;
+sorts after 2027's quarters and before On deck; a to_read book with no plan row
+is only in the "Someday · N books" link, which opens the master list at
+?level=someday; DNF shows only under Stopped;
 tab counts equal row counts. screenshot at 360px.
 
 tabs are a real tablist of links with arrow keys, the resume button names
@@ -1180,8 +1212,8 @@ reading_settings exists from 0.3. confirm nothing else writes it.
 **Plan / Implement**
 ```
 /settings: minutes a day (a stepper — two labelled buttons around an <output>),
-words a minute, plan granularity (quarter | month). seed one row per user
-(45 min/day, 185 wpm, quarter) when none exists. flip the Settings nav item on
+words a minute — no plan granularity, the plan is quarters only (D-38). seed
+one row per user (45 min/day, 185 wpm) when none exists. flip the Settings nav item on
 (1.8's NAV_ITEMS). write the tests first: a user with no row gets the defaults,
 and changing 45 to 60 min/day changes 2.1's capacity view without a redeploy.
 ```
@@ -1223,15 +1255,16 @@ easy to build without and hard to retrofit.
 **Explore**
 ```
 read @docs/TASKS.md task 2.1 and the reading_settings columns added in 0.3
-(minutes/day, words/minute, granularity). where does word_count_source
+(minutes/day, words/minute). where does word_count_source
 (added in 0.3) get set today, and does anything already compute page_count ×
 275 as a fallback anywhere in the codebase?
 ```
 
 **Plan**
 ```
-write a plan for task 2.1: a view summing planned word counts per year,
-quarter, or month against capacity from reading_settings, falling back to
+write a plan for task 2.1: a view summing planned word counts per year and
+quarter against capacity from reading_settings (a bare year counts against its
+year only; On deck and Someday count against nothing), falling back to
 page_count × 275 marked estimated when a stated word count is missing. the
 view (or the query reading it) must also report what share of the total
 rests on estimates — say exactly which column carries that.
@@ -1326,7 +1359,7 @@ me.
 
 every plan-rail block is a named button with a 24px hit area, sub-24px
 neighbours merge into a stack button, estimated counts get the dotted edge and
-"~" prefix, and the Month toggle has a real layout. measure every interactive
+"~" prefix, and there is no month layout (D-38). measure every interactive
 element in .planrail in a test.
 ```
 
@@ -1350,21 +1383,24 @@ live, and can they share one sheet component?
 
 **Plan**
 ```
-write a plan for task 2.3: one picker sheet — year chips, a granularity
-toggle, quarter/month chips each showing that period's current word total,
-a live preview card that turns amber over capacity, and Someday as a real
-unscheduled state skipping the quarter/month step. Remove from plan clears
-reading_plan without touching book_status. every write goes through 1.7's
-plan helpers: a placed or moved book joins the end of its period (D-37).
+write a plan for task 2.3: one picker sheet over the four to-read levels
+(D-37) — year chips plus On deck and Someday; a year opens No quarter yet and
+Q1–Q4, each chip showing that period's current word total (no month step,
+D-38); a live preview card that turns amber over capacity. On deck and Someday
+skip the quarter row. Someday clears the plan row without touching
+book_status. every write goes through 1.7's plan helpers: a book placed in a
+quarter joins the end of its order. flip 1.4c's add sheet to offer Year or
+quarter…
 ```
 
 **Implement**
 ```
 implement the plan. write the tests first: moving a 150k-word book from 2027
 Q1 to 2028 Q2 changes both periods' totals correctly and the preview reflects
-the destination before the move is confirmed; Someday requires no
-quarter/month value; Remove from plan clears reading_plan only; the sheet
-always writes one period value, never a year independent of a quarter; the
+the destination before the move is confirmed; On deck and Someday need no year
+or quarter; Someday clears reading_plan only; No quarter yet writes a bare year;
+the sheet always writes one period value, never a year independent of a
+quarter and never a month; the
 moved book takes the destination's last ordinal, the source stays contiguous,
 and undo restores its old position.
 
@@ -1544,7 +1580,7 @@ needs to turn into .decide.settled?
 **Plan**
 ```
 write a plan for task 2.7: a sheet with four peer options — move the overage
-into next year (and show what that does to next year), drop to wishlist
+into next year (and show what that does to next year), move it to On deck
 (longest titles first, nothing deleted), even out the quarters (same books,
 redistributed), accept as a stretch year (persisted, with Undo). accepting
 renders as a settled grey card stating what was accepted and when.
@@ -1674,8 +1710,8 @@ expanding Q2 collapses Q1; the rail and the dashboard render identical
 totals from the same query. screenshot at 360px and 1280px.
 
 add desktop drag-to-move with a ghost block and a live delta readout, keeping
-the Move sheet as the keyboard and phone route; apply the month layout and the
-estimated-count treatment to plan rows and the book detail.
+the Move sheet as the keyboard and phone route; apply the estimated-count
+treatment to plan rows and the book detail.
 ```
 ---
 

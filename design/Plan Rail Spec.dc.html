@@ -32,7 +32,6 @@ class Component extends DCLogic {
     return { rows: [
       {id:'A4.1', gran:'quarter', state:'rest', themes:'both', title:'Quarter — held', note:'The rule is 760k a quarter. The part of a block above the rule is hatched amber. Estimated blocks have a dotted top edge and a ~ prefix. The fifth lane holds year-only entries, dashed amber, because a decision is still open. The phone drops per-quarter room badges and shows only the overage.'},
       {id:'A4.2', gran:'quarter', state:'settled', themes:'both', title:'Quarter — settled stretch year', note:'After Accept, the hatch turns grey and the decision card goes calm (.decide.settled) with Undo. The overage is still drawn: the data stays honest, only the held state clears.'},
-      {id:'A4.3', gran:'month', state:'rest', themes:'both', title:'Month granularity', note:'Three month columns per quarter against a 253k monthly rule. The phone scroll-snaps horizontally inside the card, never the page. The desktop fits all twelve plus the no-month lane.'},
       {id:'A4.4', gran:'quarter', state:'drag', themes:'dark', title:'Desktop drag — ghost and delta', note:'The lifted block rotates −1.5° on --sh-2 with a dashed --brand outline. Its source slot keeps a dashed placeholder. The dropdelta output (aria-live) reads Q3 +99k → 514k / 760k before release. The phone uses the Move sheet instead.'}
     ] };
   }

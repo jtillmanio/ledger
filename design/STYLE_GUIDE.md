@@ -9,7 +9,7 @@
 | `tokens.css` | Light and dark tokens, drop-in for `src/app/globals.css`. Same names; additions are marked `+ NEW` and changed values `~`. |
 | `Style Guide.dc.html` | Hub page, plus the **B specimen** in dark and light at 390 and 1000px. |
 | `Telescope Spec.dc.html` | Workstream A1–A3: 7 variants × 390/1000 × dark/light, plus hover, focus and scrub. |
-| `Plan Rail Spec.dc.html` | Workstream A4: quarter, settled, month and drag. |
+| `Plan Rail Spec.dc.html` | Workstream A4: quarter, settled and drag (the month frame is retired, D-38). |
 | `Telescope.dc.html`, `PlanRail.dc.html`, `Specimen.dc.html` | The components the pages import. Geometry is computed by the real `allocate()` rule. |
 
 **Precedence.** `design/mockups.html` wins on layout and copy, and `globals.css` wins on token values. Every place this guide departs from either is listed in §12 *Proposed deviations*.
@@ -159,8 +159,8 @@ The five-state partial, unchanged:
 | Property | Phone | Desktop |
 |---|---|---|
 | Rail height (column) | 230 | 300 |
-| Scale | 1000k = H (quarter); 450k = H (month) | same |
-| Capacity rule | 1.5px dashed `--ink-2`, label `760k` / `253k / month` on `--surface` | same |
+| Scale | 1000k = H (quarter) | same |
+| Capacity rule | 1.5px dashed `--ink-2`, label `760k` on `--surface` | same |
 | Column gap | 6 | 10 |
 | Fifth lane | 52px, 1px dashed `--blocked` left border, `.un` blocks (`--blocked-soft`, 1px dashed `--blocked`) | 150px, labelled *2027 · no quarter* |
 | Block | `button.qb`, radius 3, `--reading-soft`, 1px `--rule` ring, 3px `--hue` left edge, gap 2 | same, with inline title (≥ 18px tall) and words (≥ 32px) |
@@ -169,9 +169,7 @@ The five-state partial, unchanged:
 | Settled (stretch year) | Hatch turns `--hatch-settled` (grey). The decision card becomes `.decide.settled`: *2027 accepted as a stretch year on 14 Sep.* plus **Undo**. | same |
 | Stack | Two or more adjacent sub-24px blocks merge into one button: `--raise`, dashed `--faint-deco` (the telescope stub's vocabulary), `+N` over `Nk`, height = the sum or 24, whichever is larger. A single sub-24px block keeps its drawn height with a 24px `::after` hit area. | same |
 | Footer | `Q1`, `892k` and an overage badge only (`+132k`, amber). Room is implied by the rule. | `Q1`, `892k / 760k`, and either `over 132k` (amber) or `56k room` (grey, M-06) |
-| Month | 12 columns, 64px each, horizontal scroll-snap **inside the card** (`scroll-snap-type:x mandatory`), 253k rule | 12 columns plus the no-month lane, no scroll |
 | Drag (desktop) | — | The ghost is rotated −1.5° on `--sh-2` with a 2px dashed `--brand` outline. The source keeps a dashed placeholder. `output.dropdelta` (`aria-live`) reads *Q3 +99k → 514k / 760k*. The Move sheet stays the keyboard and phone route. |
-| Granularity control | Raised-pill segmented control on `--sunk` (`role="tablist"`) | same |
 
 **Shared with the telescope:** radius 3, gap 2, dashed = folded, dotted = estimated, hatch = held, `--focus-ring`, 11px floor, mono tabular numbers.
 

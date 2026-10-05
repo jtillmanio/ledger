@@ -337,6 +337,13 @@ of gates**. The items below are the ones only you can do.
       (START-HERE 10d, D-30; a manual run with *check only* ticked does the
       same without a new dump) and open one `/api/export` download.
 
+## After Step 14's final load
+
+- [ ] Promote the wishlist (START-HERE Step 14, *The switch* item 6; task 1.4d,
+      D-39): work through `/books/add?from=wishlist` on production. When it
+      shows nothing left, ask for the `chore/` PR that drops `wishlist` and
+      `extract.py`'s `wishlist.csv`.
+
 ## Small questions for later, when their task starts
 
 - [x] **1.4:** how similar must two titles be to flag a near-duplicate book?
