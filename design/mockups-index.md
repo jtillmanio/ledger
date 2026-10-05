@@ -14,7 +14,7 @@ line numbers below drift after an edit.
 |---|---|---|
 | `home` | Comics dashboard — with the Up next queue | 655–1001 |
 | `runs` | Run list | 1004–1090 |
-| `spine` | Run detail — with per-run "read in …" hints | 1093–1211 |
+| `spine` | Run detail — per-run "read in …" hints; spine v2 gutter, Hide read, covers, dates, next-issue strip | 1093–1211 |
 | `range` | Range marking | 1214–1300 |
 | `addsearch` | Add issues — search (Metron) | 1303–1435 |
 | `bulk` | Add issues — type it (bulk) | 1438–1542 |
@@ -46,7 +46,7 @@ line numbers below drift after an edit.
 | `batch` | Batch sheet | 4704–4749 |
 | `session` | Reading sessions | 4750–4802 |
 | `dashextras` | Dashboard extras — tonight, since, inbox, timer chip | 4803–4850 |
-| `states` | Offline, loading, empty, metadata pending | 4851–4942 |
+| `states` | Offline, loading, empty, metadata pending, all read here, covers in a row | 4851–4942 |
 | `apistates` | Live-API states — loading, rate-limited, error | 4943–5000 |
 | `rebalance` | Rebalance sheet and the settled stretch year | 5001–5052 |
 | `planmonth` | Plan rail — estimates, stacks, drag (month retired, D-38) | 5053–5106 |
@@ -155,3 +155,16 @@ One line each. None is silently dropped.
 | Out of horizon | Watch genre chips grey; *Start S{n}*; watch telescope titles; TMDB attribution on `watchlist` and `watchadd`; stats and shelves notes |
 
 Item 11 above is now partly covered: `test:tokens` checks dark-mode token contrast, and the dark captures of `home`, `bdash`, `watchlist` and `blist` were reviewed.
+
+## Oct 2026, spine v2
+
+Five additions to the run detail, from a comparison with another reading-order app. The specs are in `STYLE_GUIDE.md` §5.1 and §9, and the departures are D13–D15. The tasks are in `docs/TASKS.md`.
+
+| Addition | What changed | Where |
+|---|---|---|
+| Ordinal gutter | A leading mono column with the placement's ordinal (`42`), in `--brand-ink` on the next row; `aria-hidden`, with the ordinal in the row's name; rows carry `id="p-42"` | `spine` (both frames), `krakoa`, `states`; TASKS 3.6b, 2.5 |
+| Hide read | A neutral chip beside the era chips (on: phone `spine`, both `krakoa` frames; off: desktop `spine`); a dashed `+3 read · Show` stub per hidden stretch; the *All 381 read in this run* slate | `spine`, `krakoa`, `states`; TASKS 3.6c |
+| Real covers | 28×42 row covers (D13) mixed with the text fallback; a loading skeleton; a cover-states frame (loading, loaded, none, pending, reduced data); `krakoa`'s tile now shows the issue number (D14) | `spine`, `krakoa`, `states`; TASKS 4.3 |
+| Release date | A grey mono `Mon YYYY` column on the desktop rows only; *Dates* (cover date, publication date) in the issue sheet | `spine` (desk), `issuedetail`; TASKS 3.6b, 3.5 |
+| Next-issue strip | A tonal well in the hero above *Resume #141*: cover, *NEXT · 42 / 381*, the label and its note; the fully read hero in `states` | `spine` (both frames), `states`; TASKS 1.6 |
+| Considered, not adopted | A per-row outbound *Read* button and a condensed display face | `STYLE_GUIDE.md` §12 |

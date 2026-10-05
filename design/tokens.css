@@ -65,14 +65,19 @@
   --tele-min:14px; --tele-gap:2px; --tele-rail:18px; --tele-run:24px; --tele-bracket:16px; --tele-gutter:44px;
   /* density  + NEW */
   --row-h:48px;
+  /* spine row, Oct 2026 spine v2 (STYLE_GUIDE §5 row anatomy)  + NEW */
+  --ord-w:24px;                       /* + NEW ordinal gutter: three tabular digits at 11px mono */
+  --rdate-w:56px;                     /* + NEW release-date column, `Jul 2019` at 11px mono; 1024px+ only */
+  --cv-row-w:28px; --cv-row-h:42px;   /* + NEW spine-row cover, 2:3, inside the 48px row with 3px clear (SG-D13) */
   /* motion  + NEW */
   --dur-1:100ms; --dur-2:150ms; --dur-3:200ms; --dur-4:300ms;
   --ease-out:cubic-bezier(.2,.8,.2,1); --ease-in:cubic-bezier(.4,0,1,1);
   --glass-blur:20px; --glass-sat:1.4;
 }
 @media (min-width:900px){
-  .app,:root{--tele-min:16px;--tele-rail:20px;--tele-run:28px;--tele-bracket:20px;--tele-gutter:72px}
-  .app[data-density="compact"]{--row-h:32px}
+  .app,:root{--tele-min:16px;--tele-rail:20px;--tele-run:28px;--tele-bracket:20px;--tele-gutter:72px;
+    --ord-w:32px}                     /* + NEW four digits */
+  .app[data-density="compact"]{--row-h:32px;--cv-row-w:20px;--cv-row-h:30px}   /* + NEW compact cover */
 }
 
 .app[data-theme="dark"]{

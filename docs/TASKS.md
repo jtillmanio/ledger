@@ -665,9 +665,24 @@ badge beside it — the five-state rules are in 2.4), the telescope (2.5) and th
 ladder. Its primary button, **Resume #141**, is the same verb as the thumb bar's
 *Mark #141 read*. Phone and desktop render the same badges from one component.
 
+**The spine hero carries the pointer too** (Oct 2026, spine v2; STYLE_GUIDE §9
+*Next-issue strip*; mockup `spine`). Above *Resume #141* sits a compact strip: a
+tonal `--raise` well with no ring, holding the next placement's cover thumb (4.3's
+row rules, text fallback until then), the kicker *NEXT · 42 / 381*, the full
+label and the placement's `run_issues.notes` as its `.inote`. It is one link to
+the issue sheet (3.5), named *Next: 42 of 381, Uncanny X-Men #141, Days of
+Future Past, part one*. The only `--brand` in the hero is the *Resume* button.
+The thumb bar verb is unchanged. A fully read run renders the existing
+fully-read treatment instead (ARCHITECTURE §4 *Fully read*). On desktop the
+strip is in the sticky `dk-rail` hero.
+
 **Check:** test with a run where issues 1-5 and 7 are read; assert the pointer
 returns issue 6. Mark issue 6 read in a different run holding it and assert the
-pointer still returns 6.
+pointer still returns 6. Render the spine hero for that run and assert that the
+strip names issue 6 with its ordinal and its placement note, that its link's
+accessible name starts *Next: 6 of*, and that it contains no element styled
+`--brand` other than the Resume button. Mark every placement read and assert
+that the strip is gone and the fully-read badge is rendered.
 
 ### ☐ 1.3 Bulk issue entry — parser and validation · M
 The single highest-risk feature: if adding a run is slower than Sheets you will
@@ -1769,7 +1784,11 @@ count, sum, x, w }`.
 - Text is HTML or CSS-px (11px minimum), colours are classes, the `<svg>` has a
   `<desc>`, the ladder is `role="list"`. Each cell is an `<a href>` with a
   `<title>`; each rail is a `role="slider"` that scrubs by drag and arrow keys
-  and navigates to `/comics/[runId]#p-[ordinal]` on release.
+  and navigates to `/comics/[runId]#p-[ordinal]` on release. The ordinal is the
+  one `run_read_segments` numbers by (`ROW_NUMBER` over live placements by
+  `sequence`), and the spine row with `id="p-[ordinal]"` shows the same number
+  in its ordinal gutter (3.6b), so the reader lands on the number they scrubbed
+  to.
 - Variants: `data-rails="2"` (no block), `data-state="empty"` (no run in flight),
   the fully-read run, and the 641-issue Krakoa density. Their rules are in
   ARCHITECTURE §4 *Rail count and fallbacks*.
@@ -1849,7 +1868,9 @@ that cell is at least 14px wide at 390px and carries the floored dot. A 60-run
 block renders two stubs whose accessible names state their run and issue
 counts. Screenshot at 360px. A run with a gap in its reads renders two green
 segments and a grey dashed one at the read-elsewhere placement. A fully read run
-renders a solid green run rail, no head marker and a grey `✓ read` badge. With
+renders a solid green run rail, no head marker and a grey `✓ read` badge.
+Releasing a scrub on the run rail at 200 navigates to `#p-200`, and once 3.6b
+has landed, the target row's gutter reads 200. With
 no run in flight the telescope renders the track rail only, no brackets and one
 primary button. Tabbing through the phone frame reaches track, block and run
 cells in order, each with the `--focus-ring`, and no text renders below 11px at
@@ -2204,6 +2225,18 @@ only). Check: an issue whose cover artist is its penciller renders no Cover
 row; one with a different cover artist renders it; an issue with no inker
 credit renders no Inker row; colorist and letterer are inside the disclosure.
 
+**Dates on the issue sheet** (Oct 2026, spine v2; mockup `issuedetail`). The
+phone spine row does not carry a release date (3.6b), so the sheet is where a
+phone reader finds it. A *Dates* group lists **Cover date** (`issues.cover_date`,
+`Mon YYYY`) and, when it differs, **Published**, the on-sale date. Both are grey
+catalogue facts. The cover date exists today. **The publication date does not:**
+it needs `issues.store_date` plus a `store_date_source` (`metron | hand`, the same
+CHECK pair as `cover_date`), filled from Metron's `store_date` by
+`enrich_comics.py` into `cover_dates.csv`, and it is a schema change. **Stop and
+ask the owner before adding it.** Until it is approved, only the cover date row
+renders. Links to reading sources, if they ever arrive, go on this sheet and
+nowhere else (STYLE_GUIDE §12, *Considered, not adopted*).
+
 **Check:** test that the back button dismisses the sheet and restores list
 scroll position; that a direct visit to `/books/{id}` renders the full page;
 that a book with no summary renders without a layout shift; and that the sheet
@@ -2211,7 +2244,9 @@ and the master list's inline editor write status through the same code path.
 Test that an issue placed in three runs, read in one, lists three runs with one
 read, and that marking a second from the sheet writes exactly one
 `issue_progress` row. Opening *Why blocked?* from inside an issue sheet leaves
-exactly one sheet in the DOM, and Back returns to the issue sheet.
+exactly one sheet in the DOM, and Back returns to the issue sheet. An issue
+with a `cover_date` renders *Cover date* in `Mon YYYY`. An undated issue
+renders no *Dates* group and no `—`.
 
 ### ☐ 3.4 Book ratings and top-books reorder · S
 Rating, notes, and the top-books rank reorder. **Status and finish date moved to
@@ -2256,6 +2291,112 @@ that `era_progress` returns 4 of 22 for a seeded era with 22 issues and 4 read;
 and that a run with zero eras renders every issue in document order with no
 band. Screenshot the run detail at 360px with and without eras. On the phone,
 scrolled 400px, the era chips are fully visible below `.bar`.
+
+### ☐ 3.6b Spine rows — ordinal gutter and release dates · S
+Oct 2026, spine v2. Depends on 0.8b (the row markup) and 3.6 (eras). The specs
+are in STYLE_GUIDE §5.1 (row anatomy, the gutter, the truncation budget and the
+date column), and the mockups are `spine` and `krakoa`.
+
+**The ordinal gutter.** Each spine row leads with its placement's ordinal: a
+24px column on a phone and 32px from the 900px step (`--ord-w`), 11/14 mono
+`--muted`, tabular and right-aligned, before the `.chk`. The `data-next` row's
+ordinal is `--brand-ink` 600. The number is the `ROW_NUMBER() OVER (ORDER BY
+sequence)` over the run's live placements, which is what `run_read_segments`
+uses and what the head pill `42 / 381 · #141` shows. Compute it in
+`src/db/queries.ts` and never store it. It is **not** the raw `sequence` that
+0.8b's row prints in its trailing column today: that column becomes the cover
+(4.3), and its number moves here (SG-D14).
+
+- The gutter is `aria-hidden`. The ordinal joins the row's accessible name
+  through a visually hidden prefix on the label: *42 of 381, Uncanny X-Men
+  #141*. The `.chk` keeps *Mark Uncanny X-Men #141 read in this run*: the
+  mark verb names the label, never the ordinal (M-10).
+- Each row carries `id="p-[ordinal]"`, the target of 2.5's scrub release and
+  1.10's links.
+- Era headers carry no ordinal. Compact density (6.11) keeps the gutter.
+- A run of 1,000 or more placements sets `data-ord-digits="4"`, which widens
+  the phone gutter to 32px.
+
+**The release date** (`issues.cover_date`, as `Mon YYYY`, grey, never a
+progress signal; blank when undated):
+
+| Width and density | Shown |
+|---|---|
+| Under 1024px, comfortable | Not on the row; in the issue sheet (3.5) only |
+| 1024px and up, comfortable or compact | A right-aligned 56px column before the cover (`--rdate-w`), 11/14 mono `--muted`, one line |
+| Any width, with the run's *Show release dates* on | An `.inote`-style caption (12/16 `--muted`, date in mono) after the note, or on its own line |
+
+*Show release dates* is off by default and is meant for runs whose reading order
+is not publication order. **Open question; stop and ask before building it.** It
+is a per-user choice about one run, so it cannot be a column on `runs`
+(CLAUDE.md: never add a per-user boolean to a catalog table). The options are
+a per-user per-run table, which 3.6c's *Hide read* could share (a schema change,
+and it joins `src/db/export-tables.ts`), or no setting at all: show the caption
+automatically when the run's cover dates are not monotonic in `sequence`, which
+a view can derive.
+
+**Check:** render test on a fixture run of five placements where the second is
+soft-deleted. The gutter reads 1–4 contiguously, matches `run_read_segments`'
+ordinals, and each row's `id` is `p-` plus that number. The head row's ordinal
+has the `--brand-ink` class and no other row's does. Each row's accessible name
+starts *N of 4,*, and no `.chk` name contains the ordinal. Era headers render no
+`.ord`. At 1280px every row with a `cover_date` has an `.rdate` reading `Mon
+YYYY`, and an undated one has an empty cell. At 390px no row renders `.rdate`.
+Screenshot the spine at 360px with `Marvel Graphic Novel (1982) #5` and
+`Astonishing X-Men (2004) Annual #1` as labels. Both truncate the series with
+an ellipsis and keep `#5` and `#1`, no row is taller than 48px when it has one
+line of text, and the page has no horizontal overflow. Record the label width
+measured at 360px in the PR; STYLE_GUIDE §5.1 estimates 196px.
+
+### ☐ 3.6c Hide read in this run · S
+Oct 2026, spine v2. Depends on 0.8a (read state per placement, done), 3.6 (era
+collapse) and 3.6b (the gutter). The spec is in STYLE_GUIDE §9 *Hide read*, and
+the mockups are `spine`, `krakoa` and `states`.
+
+A *Hide read* chip sits in the spine's sticky toolbar beside the era chips, never
+in the thumb bar. It is a real `<button aria-pressed>`, and when on it is D4's
+neutral inverse (`--ink` / `--page`), never a `--brand` fill.
+
+- It hides rows whose **placement in this run** is read. A row whose issue is
+  read only in another run stays visible, with its grey hint (ARCHITECTURE
+  2.14).
+- Finished eras still collapse. Inside a partly read era, each contiguous
+  stretch of hidden rows becomes one stub row in its place: a 44px dashed
+  `--faint-deco` row on `--surface`, reading *+3 read · Show*. It is a `<button
+  aria-expanded>` named *3 read issues hidden, 39 to 41. Show*, and it reveals
+  that stretch only (SG-D15). The stretches are `run_read_segments`' read
+  segments clipped to the era, so the app does no counting of its own.
+- The gutter keeps the real ordinals, so the gap shows what is hidden.
+- A row ticked while the toggle is on stays visible until the undo toast closes
+  or the page is left, then folds into its stub. Range marks (1.1) behave the
+  same way.
+- When no issue row is visible, the list is the empty slate: *All 381 read in
+  this run*, *Hide read is on.*, and one primary action, *Show all 381*, which
+  turns the toggle off. Collapsed era headers stay under it.
+- The minimap and the telescope keep drawing the whole run.
+
+**Persisted per run, per user. Open question; stop and ask before building
+it.** The spine is server-rendered, so the first paint must already be
+filtered, which rules out `localStorage` (it would flash every hidden row and
+shift the page). The options:
+
+- a per-user per-run preferences table, which 3.6b's *Show release dates*
+  could share. It is a schema change, it goes into `src/db/export-tables.ts`'
+  `USER_TABLES`, and it is never a column on `runs`.
+- a cookie listing the run ids with the toggle on: no schema change, but it is
+  per device, not per user, and it has a size ceiling.
+
+**Check:** fixture run with an era of 22 placements: ordinals 1–3 and 7 read
+here, ordinal 5 read only in another run. With the toggle on, the era renders
+two stubs (*+3 read* before ordinal 4, *+1 read* between 6 and 8), row 5
+with its `read in …` hint, and rows 4, 6 and 8 onward. The gutter reads 4, 5, 6,
+8. Activating the first stub reveals 1–3 and leaves the second stub closed. The
+toggle's `aria-pressed` is `true`. Reloading the page keeps the toggle on for
+that run and off for a second run that never had it turned on. Ticking row 4
+leaves it visible until the toast closes, then it joins the first stub, which
+reads *+4 read*. A fully read run with the toggle on renders the slate with
+exactly one primary button, and pressing it sets `aria-pressed="false"` and
+renders every row. No element in the toolbar has a `--brand` background.
 
 ### ☐ 3.7 Archive and restore · S
 FEATURES Part 3 §3, *archive, don't delete*; Review N UX-N15. Depends on 0.4
@@ -2324,9 +2465,49 @@ with mono initials in `--muted` and a faint ring (dark: white at 10%); the
 mockup's `.k1`–`.k8` gradient covers, including the red `.k2`, go. A row carries
 its track or genre hue once — the `.edge` stripe or the tag, not both.
 
+**Spine rows get real covers** (Oct 2026, spine v2; STYLE_GUIDE §9 *Cover in a
+row*; mockups `spine`, `krakoa` and `states` → *Covers in a row*). The source is
+`issues.cover_url`, which already exists. Metron's issue-list `image` goes to
+`etl/data/issue_details.csv` through `enrich_comics.py` and is loaded by extract;
+it is never hand-entered, and nothing new is stored.
+
+- The box is fixed at 28×42, and 20×30 in compact (`--cv-row-w` /
+  `--cv-row-h`, SG-D13). That keeps the 48px row: `.cv.s` at 36×54 made spine
+  rows 54px tall. It has radius `--r-cell` and a 1px inset `--rule` ring.
+- The `<img>` has `loading="lazy"`, `decoding="async"`, explicit `width` and
+  `height`, and `alt=""`, because the label beside it carries the name.
+- A cover never glows and is never tinted: covers are data, shown as they are.
+- States: loading is a `--sunk` skeleton of the same box. No `cover_url` gives
+  the neutral text placeholder (the issue number, `141`, `GN5`: SG-D14 moved
+  the ordinal to the gutter). A freeform row gets `data-enrich="pending"`.
+  Under `prefers-reduced-data: reduce`, or with **Settings → Appearance → Show
+  covers** off (default on, beside 6.11's density toggle), it is always the
+  placeholder and no image is requested.
+- The next-issue strip (1.6) uses the same rules.
+
+**Open questions; stop and ask:**
+
+- **Hotlink or cache.** `cover_url` points at Metron's image host. An `<img>`
+  is not an API call, but a page render would then depend on a third party's
+  image server. The options are hotlinking, or `next/image` with a
+  `remotePatterns` entry so Vercel caches small resized copies. The second
+  needs a config change and has a cost. Read
+  `node_modules/next/dist/docs/` for the version-16 image API first.
+- **Where *Show covers* is stored.** A `reading_settings` column is a schema
+  change; a cookie is per device. Turning covers off to save data is arguably a
+  per-device choice.
+
+Glass is unchanged. Covers scrolling under the header are the worst case D12
+was already sized for (STYLE_GUIDE §8).
+
 **Check:** Lighthouse CLS under 0.1 on the books page. No cover placeholder
 renders a gradient or an identity hue, and no row renders both an `.edge` and a
-`.tag .sq`.
+`.tag .sq`. On the spine, a row whose issue has a `cover_url` renders one
+`<img loading="lazy" alt="">` inside a 28×42 box, and a row without one renders
+the issue number in the same box. Swapping one for the other changes no row's
+height (CLS under 0.1 on a 381-row spine). With `prefers-reduced-data: reduce`
+emulated, or *Show covers* off, the spine makes zero image requests. No cover
+element carries a `box-shadow` that resolves to `--halo`.
 
 ---
 

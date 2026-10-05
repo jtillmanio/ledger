@@ -239,6 +239,48 @@ Families are kept: **Inter Tight** (UI) and **JetBrains Mono** (labels, counts, 
 - There is no zebra striping: the green ticks are the rhythm.
 - Sticky era chips sit under the header at `top: var(--bar-h)`.
 
+### 5.1 Spine row anatomy (Oct 2026, spine v2)
+
+A spine row (`.iss`) has up to five columns, left to right. None of them changes the 48px comfortable row: a row with one line of text is `--row-h` tall, and the cover fits inside it.
+
+| Column | Phone and tablet (comfortable) | Desktop 1024px+ | Compact (desktop only) |
+|---|---|---|---|
+| Ordinal gutter `.ord` | `--ord-w` 24px (three digits), 11/14 mono `--muted`, tabular, right-aligned | 32px (four digits) | 32px, same type |
+| Tick `.chk` | 44px column, 20px ring | same | 32px, 16px ring |
+| Label `.ib` | `minmax(0, 1fr)` | same | 13/18 mono label |
+| Release date `.rdate` | **not on the row** (in `issuedetail` only) | `--rdate-w` 56px, 11/14 mono `--muted`, right-aligned, `Jul 2019` | same, one line |
+| Cover `.cv` | `--cv-row-w × --cv-row-h`, 28×42 (D13) | 28×42 | 20×30 |
+
+The column gap is 8px. The row keeps its 14px right padding and has no left padding, because the gutter supplies the inset.
+
+**The ordinal gutter.**
+
+- It is the row's position among the run's live placements. That is the same `ROW_NUMBER() OVER (… ORDER BY sequence)` that `run_read_segments` numbers by, so the rows, the head pill `42 / 381 · #141` and the rail all agree. It is not the raw `run_issues.sequence`, which can have gaps.
+- A run of 1,000 or more placements widens the phone gutter to 32px. The row group sets `data-ord-digits="4"`, so nothing has to measure text.
+- The `data-next` row's ordinal is `--brand-ink` 600. That colour means position, the same as the head pill. Every other ordinal stays `--muted`, read or not: the tick carries read state, and the gutter never turns green.
+- It is `aria-hidden` and is not a control. The ordinal joins the row's accessible name instead, through a visually hidden prefix on the label: *42 of 381, Uncanny X-Men #141*. The `.chk` keeps its own name, *Mark Uncanny X-Men #141 read in this run*, because the mark verb names the label and never the ordinal (M-10).
+- Era headers get no ordinal. A collapsed era keeps its count where it is (*38 / 38 · all read · Show*).
+- Releasing a telescope scrub navigates to `#p-[ordinal]` (TASKS 2.5). The gutter shows the number you land on, and the row carries `id="p-42"`.
+- Under *Hide read* the gutter keeps the real ordinals, so the row after a *+3 read* stub is numbered 42, not 39, and the gap shows what is hidden (§9).
+
+**Truncation budget at 360px.** 360px, minus a 14px page gutter on each side and a 1px group border on each side, leaves a 330px row. The fixed columns take 24 + 44 + 28px, and three 8px gaps plus the 14px right padding add 38px, for 134px in all. **That leaves 196px for the label.** It was 220px with no gutter and the 36px cover. At Inter Tight 14/600, about 7.4px a character, that is about 26 characters before the series ellipsis:
+
+| Label | Chars | At 196px |
+|---|---|---|
+| `Uncanny X-Men #141` | 18 | fits |
+| `X-Men (2019) #8` | 15 | fits |
+| `Marvel Graphic Novel (1982) #5` | 30 | `Marvel Graphic Novel (… #5` |
+| `Astonishing X-Men (2004) Annual #1` | 34 | `Astonishing X-Men (2… #1` |
+
+The number is `flex:none`, so it is never lost. At 390px the label gets 226px, about 30 characters. These figures are estimates from the average glyph width. The 360px screenshot in TASKS 3.6b is the real check.
+
+**The release date.**
+
+- It is the issue's cover date, `issues.cover_date`, formatted `Mon YYYY`. It is a catalogue fact, so it is grey and never a progress signal. An undated issue leaves the column blank, not `—`.
+- **Phone and tablet, comfortable:** it is not on the row. It appears in `issuedetail` only, so a single-line row stays 48px.
+- **Desktop 1024px+:** a right-aligned column before the cover, at both comfortable and compact density, always on one line.
+- **Any width, by choice:** a run whose reading order is not publication order can turn on *Show release dates*, which is off by default. The date then joins the row as an `.inote`-style caption: 12/16 `--muted` with the date in mono, after the note and a ` · `, or on its own line when the row has no note. A row with a caption is two lines tall, the same as any row with a note today. Where that choice is stored is an open question (TASKS 3.6b).
+
 ---
 
 ## 6. Contrast and ΔE2000 (computed from the proposed values)
@@ -278,6 +320,7 @@ Families are kept: **Inter Tight** (UI) and **JetBrains Mono** (labels, counts, 
 | `--brand-ink` on `--brand-soft` | 8.25 | 8.90 |
 | `--reading` on `--reading-soft` | 6.34 | 6.73 |
 | `--muted` on `--sunk` | 5.05 | 6.55 |
+| `--page` on `--ink` (chip on, D4; *Hide read* pressed) | 16.72 | 16.38 |
 | `--on-brand` on `--brand` | 7.41 | 8.17 |
 | `--on-ready` on `--ready` | 5.36 | 9.04 |
 | `--on-danger` on `--danger` | 6.62 | 7.51 |
@@ -341,8 +384,11 @@ Glass is `--surface` at α 0.90 composited over the worst content that can scrol
 |---|---|---|---|---|
 | `group` | 1px inset `--rule` | 12 | 0; rows carry padding | `--sh-1` / inner highlight |
 | `row` | `--line` bottom divider | — | 12 × 14, min-height 48 | none; hover `--raise` (100ms) |
+| `row` (spine, `.iss`) | `--line` bottom divider; no zebra | — | 0 left (the gutter is the inset), 14 right; columns per §5.1 | min-height `--row-h`; hover `--raise` (100ms). The 28×42 cover sits inside the 48px row (D13) |
+| `row` (hidden-read stub) | 1px dashed `--faint-deco` | 8 | 0 × 14, min-height 44, 8px inset from the group edge | `--surface`; text 13/18 `--muted`, count in mono (§9) |
 | `telecard` | 1px inset `--rule`; 3px identity stripe | 16 | 16 phone / 20 desk | `--sh-1` (was `--sh-2`) |
 | `hero` | as telecard | 16 | 16 / 20 | `--sh-1` |
+| `hero` next-issue strip | none: a **tonal** well (§4.1) in `--raise` | 8 (`--r-md`) | 8 | none. In the spine hero above *Resume*, and in the sticky `dk-rail` hero on desktop (§9) |
 | `sheet` | 1px inset `--rule-2`; grab 36×4 `--rule-2` | 16 (top) | 6 / 14 / 14 | `--overlay` + `--sh-3` over `--scrim` |
 | `chip` | 1px inset `--rule-2`; on: `--ink` fill, `--page` text | full | 0 × 12, 32 tall (44 hit) | none |
 | `badge` | per state (§2.9); `blocked`, `ready_hard` and `read` get a 1px ring | 6 | 4 × 8 | none |
@@ -362,6 +408,8 @@ Glass is `--surface` at α 0.90 composited over the worst content that can scrol
 | Rows, telescope, plan rail, badges, meters, toast | **never** | — |
 
 **Worst case.** Text on glass is measured against glass composited over pure white (dark theme, where cover art can scroll beneath) and pure black (light theme). At α .90: `--ink` 10.9:1 / 13.8:1, `--muted` 4.5:1 / 4.6:1, `--brand` 5.5:1 / 5.6:1 (§6). α .72–.85 failed `--muted`, which is why the glass is near-opaque. The frost is a texture, not a window.
+
+**Real covers change nothing (Oct 2026).** Spine rows now show real cover art (§9), and covers scrolling under the header are the case D12 was sized for. The worst case was already pure white and pure black, which bounds any cover. So α stays .90 and no figure in §6 moves.
 
 **Fallback.** Under `@supports not (backdrop-filter)` or `prefers-reduced-transparency: reduce`, `--glass-bg` becomes `--surface` (solid). Both versions are drawn side by side in the Specimen B4 panel.
 
@@ -387,6 +435,40 @@ Glass is `--surface` at α 0.90 composited over the worst content that can scrol
 - **API error status line.** Neutral surface with a grey × glyph. It is not red: nothing destructive happened.
 - **Empty slate.** `--raise` panel, a 15/20 title, a 13/18 reason, and exactly one primary action.
 - **Metadata pending.** A dashed `--muted` cover outline plus an italic *metadata pending* line.
+- **Hide read** (spine and krakoa, Oct 2026).
+  - It is a chip in the spine toolbar, after the era chips and pinned to the right of their scrolling strip, so it sits in the same sticky band at `top: var(--bar-h)`. It is never in the thumb bar.
+  - Off is the plain chip. On is the D4 neutral inverse (`--ink` / `--page`), never a `--brand` fill. It is a real `<button aria-pressed>` named *Hide read*, 32px tall with a 44px hit area.
+  - It hides rows **read in this run**. A row read only in another run stays, because it is unread here (ARCHITECTURE 2.14), and its grey hint stays with it.
+  - It is remembered per run. Where that is stored is an open question (TASKS 3.6c).
+  - A row you tick while it is on stays visible, ticked, until the undo toast closes (8s) or you leave the page. Then it folds into a stub. Nothing moves under your thumb, and *Undo* still has a row to point at.
+  - Finished eras still collapse. A partly read era hides its read rows and puts a **hidden-read stub** where each hidden stretch was. The stub is one 44px row in the stub vocabulary (§2.5: dashed `--faint-deco` on `--surface`) reading *+3 read · Show*, in 13/18 `--muted` with the count in mono. It is a `<button aria-expanded>` that reveals that stretch only, named *3 read issues hidden, 39 to 41. Show*. There is one stub per contiguous stretch, not one per era (D15).
+  - The gutter keeps the real ordinals: the row after a *+3 read* stub is 42, not 39.
+  - If every row is hidden, the spine shows the empty slate: *All 381 read in this run*, the reason line *Hide read is on.*, and one primary action, *Show all 381*, which turns the toggle off. On a run with eras, the collapsed era headers stay under the slate, each still a way in. The hero shows the fully-read treatment, not the next-issue strip. Drawn in `states`.
+  - The minimap and the telescope always draw the whole run. Hide read filters the list, not the picture.
+- **Cover in a row** (spine and krakoa, Oct 2026).
+  - It shows the real cover when `issues.cover_url` has one, and today's text placeholder (`141`, `GN5`) when it does not.
+  - The box is fixed at 28×42 (20×30 compact), so a cover arriving never shifts the row.
+  - Radius `--r-cell` and a 1px inset `--rule` ring. The ring is a decorative edge, not a control boundary, so the 3:1 floor does not apply.
+  - `loading="lazy"`, `decoding="async"`, an explicit `width` and `height`, and `alt=""`, because the label beside it carries the name.
+  - Covers are data, not decoration. They never get `--halo`, never a hue tint or overlay, and never the `.cv::after` spine shading.
+  - States:
+    - **Loaded:** the image.
+    - **Loading:** a `--sunk` skeleton of the same box, with the shimmer off under reduced motion.
+    - **No cover:** the neutral placeholder (TASKS 4.3: `--sunk`, mono `--muted` text).
+    - **Metadata pending:** the dashed `--muted` outline.
+    - **Reduced data:** under `prefers-reduced-data: reduce`, or with Settings → *Show covers* off, always the text placeholder and no image request.
+- **Next-issue strip** (spine hero, Oct 2026).
+  - It is a tonal `--raise` well inside the hero, with no ring, radius 8 and padding 8, directly above *Resume #141*.
+  - It holds:
+    - the next issue's cover thumb, under the row rules above (28×42);
+    - a kicker, *NEXT · 42 / 381* (mono 11 caps `--faint`, D7);
+    - the full label (13/18 600, truncated as in §5);
+    - the placement's `.inote` (*Days of Future Past, part one*, 12/16 `--muted`, at most two lines).
+  - It is one link to the issue sheet, named *Next: 42 of 381, Uncanny X-Men #141, Days of Future Past, part one*.
+  - Brand appears only on the *Resume* button. The strip has no blue, no green and no glow.
+  - The thumb bar verb is unchanged: *Mark #141 read*.
+  - On a fully read run the strip is replaced by the existing fully-read treatment (ARCHITECTURE §4, *Fully read*): a grey `✓ read · date` badge and a secondary action.
+  - On desktop it lives in the sticky `dk-rail` hero.
 
 ---
 
@@ -411,6 +493,9 @@ Glass is `--surface` at α 0.90 composited over the worst content that can scrol
 | `--fs-*` | §5 | same | Type scale | all |
 | `--tele-min/gap/rail/run/bracket/gutter` | 14 / 2 / 18 / 24 / 16 / 44 | same | Desktop 16 / 2 / 20 / 28 / 20 / 72 | home, telescope, krakoa, watchlist |
 | `--row-h` | 48 | same | Compact on desktop: 32 | spine, krakoa, runs, blist, settings (density) |
+| `--ord-w` | 24 | same | Spine ordinal gutter; 32 from the 900px size step, and on a phone for runs of 1,000+ placements | spine, krakoa |
+| `--rdate-w` | 56 | same | Release-date column (`Jul 2019`), shown at 1024px+ only | spine (desk) |
+| `--cv-row-w` / `--cv-row-h` | 28 / 42 | same | Spine-row cover box; compact 20 / 30 (D13) | spine, krakoa, states |
 | `--dur-1…4`, `--ease-out`, `--ease-in` | 100 / 150 / 200 / 300 | same | Motion | all |
 | `--glass-blur`, `--glass-sat` | 20px, 1.4 | same | Glass | same as `--glass-bg` |
 
@@ -475,8 +560,21 @@ theme: { extend: {
 | **D10** | New *floored* dot on cells shown larger than scale, with a legend. | A short run must look intact without pretending to be proportional. | telescope, home, krakoa |
 | **D11** | Phone plan-rail footers drop the grey *Nk room* badge and show only the amber overage. Desktop keeps both (M-06). | "56k room" wraps to two lines in a 62px column. | bdash, plan, planmonth |
 | **D12** | Glass α is .90, not the typical .6–.8. `--ready` text is barred from glass. | Worst-case contrast (§8). | all chrome |
+| **D13** | A spine-row cover is **28×42** (compact 20×30), not `.cv.s` 36×54. The hero, the dashboard rows and the §9 skeleton keep 36×54. | At 54px, `.cv.s` made every spine row 54px tall, but §5 and ARCHITECTURE §4 say 48 (3rem), and spine v2 keeps 48. A 2:3 cover at 42px leaves 3px above and below. | spine, krakoa, states |
+| **D14** | The reading-order position moves from the cover tile to the ordinal gutter. `krakoa` drew it on the tile (*the 119 on the cover tile*), and the shipped row (task 0.8b) puts `sequence` in the trailing column. The text fallback now shows the issue number. | One number in one place. The gutter matches the head pill, and the cover column holds a cover. | spine, krakoa |
+| **D15** | Hide read leaves one stub **per contiguous hidden stretch**, not one per era. | Reads are not always a prefix of the era. With 39–41 and 47 read, a single stub per era cannot sit where its rows were. In the common case, reading from the top, it is one per era anyway. | spine, krakoa |
 | **Conflict** | ARCHITECTURE §4 says the run-list switch is "Show N hard-blocked; N is around 180 on the current graph, not 27", but the mockup copy is *Show 27 hard-blocked*. The specimen uses the mockup copy (the mockup wins on copy); the figure is illustrative (D-7). | Flagged, not resolved. | runs, specimen |
+| **Conflict** | The spine hero badge reads `◐ 42 / 381` (42 read). But the head pill, `issuedetail` (*#142 is issue 43*) and §2.6 all put #141, the first unread issue, at ordinal 42, which means 41 read. `krakoa` has the same split: its tile says #8 is 119, and its head pill says 118. Spine v2 numbers the gutter from the head pill (#141 = 42) and leaves the badge alone. The figures are illustrative (D-7). | Flagged, not resolved. | spine, krakoa, issuedetail |
 | **Conflict** | The brief says the thumb bar is "fixed at the bottom of dashboards". M DN-2 (a) chose header buttons on *desktop* dashboards. The frames follow DN-2: bottom bar on phone, none on the desktop telecard frames. | Flagged for the owner. | home, bdash, watchlist (desk) |
+
+### Considered, not adopted (Oct 2026, spine v2)
+
+These ideas came out of a comparison with another reading-order app. One line each, with the reason.
+
+| Idea | Why not |
+|---|---|
+| A per-row outbound **Read** button that links to a reading source | `--brand` means position or the primary action, and a blue button on every row is the problem D4 and D6 fixed. If links to reading sources ever arrive, they go in `issuedetail` only. |
+| A **condensed display face** for run and issue titles | One type system covers comics, books and watch. Inter Tight and JetBrains Mono stay (§5). |
 
 ---
 
@@ -485,17 +583,17 @@ theme: { extend: {
 | Rule | Satisfied by |
 |---|---|
 | `--ready` = read or done; every meter fills `--ready` | Read segments, cell fills, `.meter` and `.emeter` (§7, specimen B3); nothing else is green except `ready` badges |
-| `--brand` = position and primary action | Head cell, halo, bracket, head pill, primary buttons, focus ring. Kickers (D7), chips and segments (D4) and "All N" pills (D6) are removed from blue. |
+| `--brand` = position and primary action | Head cell, halo, bracket, head pill, the head row's ordinal (`--brand-ink`, §5.1), primary buttons, focus ring. The next-issue strip is tonal, and only *Resume* is blue (§9). Kickers (D7), chips and segments (D4) and "All N" pills (D6) are removed from blue. |
 | `--blocked` amber = held; clears on decision | Blocked badge, plan hatch, fifth lane, `.decide`, offline strip, rate-limit line. Settled → grey `--hatch-settled` + `.decide.settled` (A4.2) |
 | `--danger` only destructive or validation; never on a dashboard | Only the *Drop* buttons in the specimen (sheet and review context). The API error line is neutral (§9). No telescope or plan frame uses `--danger`. |
 | `--t*` / `--g*` ≥ ΔE 15 from ready, blocked, danger | §6 ΔE table, both themes, all pass |
-| Anything without meaning is grey | Cover placeholders `--sunk`, stubs, ticks, rules, empty cells, room badges |
+| Anything without meaning is grey | Cover placeholders `--sunk`, stubs, ticks, rules, empty cells, room badges, the ordinal gutter (except the head's), the release-date column, the hidden-read stub, the *Hide read* chip (D4 neutral) |
 | `--on-*`, never literal `#fff` | Every filled control in the frames uses `--on-brand`, `--on-ready` or `--on-danger`; the dark values are `#0a0c10` (§6 pairs) |
 | `--faint` text-safe; `--faint-deco` rules only | `--faint` ≥ 4.5 on all five surfaces (§6). `--faint-deco` used for rules, ticks and outlines only, now ≥ 3:1 (D8) |
 | 44px thumb bar and icon buttons; nothing under 24×24 | Thumb bar 44, search 44×44, sheet close 44, tabs 44, chips and segments 32 with 44 hit, Name it 24, plan blocks ≥ 24 hit (stack rule), telescope cells ≥ 14/16 wide × 18–28 tall inside a 44px slider row |
-| Real buttons or links with names; glyph + text | Cells `<a>` with `aria-label`; rails `role="slider"`; badges glyph + text + `aria-label`; switch `role="switch"`; stepper `role="group"` |
-| Hue identifies data, never navigation | Tab underline and `h1` unit badge use `--m-*` only (as decided). Sidebar icons are neutral; telescope and plan hues come from `--t*` / `--g*` data. |
-| Read-elsewhere hint grey and dashed, never green | Dashed `--muted` segment and `.seen` hint (specimen B3) |
+| Real buttons or links with names; glyph + text | *Hide read* is a `<button aria-pressed>`; the hidden-read stub is a `<button aria-expanded>` with its count in its name; the ordinal gutter is `aria-hidden` and the ordinal is in the row's name (*42 of 381, Uncanny X-Men #141*); covers are `alt=""` beside a named label; cells `<a>` with `aria-label`; rails `role="slider"`; badges glyph + text + `aria-label`; switch `role="switch"`; stepper `role="group"` |
+| Hue identifies data, never navigation | Tab underline and `h1` unit badge use `--m-*` only (as decided). Sidebar icons are neutral; telescope and plan hues come from `--t*` / `--g*` data. Real covers are shown as they are: never tinted, never glowing. |
+| Read-elsewhere hint grey and dashed, never green | Dashed `--muted` segment and `.seen` hint (specimen B3). *Hide read* hides only rows read here, so a row read elsewhere stays visible with its hint |
 | Plain CSS custom properties | `tokens.css`; Tailwind appears in §11 as reference only |
 | Thumb bar fixed at the bottom with the mark verb primary | Phone frames A1.1 and A1.4; the verb names the label |
 | No progress against the catalogue | Track rail cells fill by their own block's share; the catalogue appears only as grey provenance text |
