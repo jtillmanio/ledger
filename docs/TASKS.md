@@ -26,7 +26,8 @@ ship.
 
 **The feel pass** (D-40, 2026-10-05): `design/STYLE_GUIDE.md` §14 (screens and
 behaviour), §15 (copy) and §16 (departures FP-D1…FP-D14), drawn in
-`design/Ledger Feel Review.dc.html`. **It beats `design/mockups.html` on layout
+`design/Ledger Feel Review.dc.html`, with every frame as a PNG in `design/feel/`
+(read those to see a screen; `design/feel/README.md` maps them to tasks). **It beats `design/mockups.html` on layout
 and copy** for what it draws: the three dashboards, the mark sequence, empty and
 caught-up states, run and block completion, and the 768px tablet. The task that
 builds one of those surfaces builds it from the feel pass and redraws the

@@ -27,6 +27,7 @@ imported by `src/` and are kept as they were delivered.
 | `design/Ledger Feel Review.dc.html` | The feel pass's review page: diagnosis, palette decision aid, and phone mockups in dark and light of comics, the mark storyboard, books (reading and between books), watch, run detail, run complete, all caught up, block complete, and the 768px tablet. Its §9 lists the departures D1–D14 (FP- in the style guide) | What a feel-pass screen or state looks like |
 | `design/LedgerComics.dc.html` | The comics dashboard component the review page imports. Mark-read is live in it | The mark sequence, frame by frame (1.8b) |
 | `design/ledger-feel-tokens.css` | All three palettes (1a, 1b, 1c) in oklch, imported by the two pages above | The oklch source of a hex |
+| `design/feel/` | PNGs of every phone and tablet frame of the review page, in palette 1c, dark and light, at full length, plus `capture.mjs` to regenerate them | **Looking at** a feel-pass screen: the review page's source is templates, the PNGs are pictures |
 | `design/handoff/` | The feel pass as delivered: the prompt, the implementation checklist (each step names its task), the D-40 draft, the 1a and 1b colour blocks (`palette-swaps.css`), and the contrast report for all three palettes | Where a feel-pass step went |
 | `design/archive/` | The 2026-09-30 `STYLE_GUIDE.md` and `tokens.css`, as they were before the feel pass | History only |
 | `design/Style Guide.dc.html` | The hub page, and the **B specimen**: type, numbers, elevation, containers, badges, chips, buttons, tabs, glass, feedback states and the cell vocabulary, in dark and light at 390 and 1000px | Seeing a component in all its states |
@@ -348,6 +349,9 @@ hours**. What it is, in one line each:
   §16 (departures FP-D1…FP-D14), with §4.2, §5, §7 and §9 updated in place.
 - **Drawings:** `design/Ledger Feel Review.dc.html` (sections 2–7 and 10), with
   `design/LedgerComics.dc.html` live. Covers in them are striped placeholders.
+  **`design/feel/*.png` are the same frames as images** (palette 1c, both
+  themes, full length): read those to see a screen, because the page's source
+  is templates. `design/feel/README.md` maps each to its task.
 - **Precedence:** where it draws a surface, it beats `design/mockups.html` on
   layout and copy (D-40 amends D-31). Where it is silent, the mockup and the
   task stand.

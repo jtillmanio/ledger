@@ -171,7 +171,7 @@ Five additions to the run detail, from a comparison with another reading-order a
 
 ## Oct 2026, feel pass (D-40)
 
-The feel pass is drawn in `design/Ledger Feel Review.dc.html`, not here. Where it draws a surface it beats this file on layout and copy (D-40 amends D-31), so these frames are **superseded until their task redraws them** from the feel pass, in the same PR (standing rule 6). Its covers are striped placeholders; the redrawn frames use the neutral placeholder until 4.3.
+The feel pass is drawn in `design/Ledger Feel Review.dc.html`, not here, and every frame is also a PNG in `design/feel/` (palette 1c, dark and light, full length). Where it draws a surface it beats this file on layout and copy (D-40 amends D-31), so these frames are **superseded until their task redraws them** from the feel pass, in the same PR (standing rule 6). Its covers are striped placeholders; the redrawn frames use the neutral placeholder until 4.3.
 
 | Frame here | Superseded by (Feel Review) | Redrawn by |
 |---|---|---|

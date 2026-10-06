@@ -61,8 +61,8 @@ rail, local icons), 1.8a (values already landed), 1.8b (the mark answers back),
 (`run_opens`), 2.9 (the frontier moves here), 4.2, 4.3 (`--art`), 5.2, 5.4, 6.2
 (provenance), 8.7, and the new **2.12** (completion), which has no section here:
 use the 2.4 prompt's shape with TASKS 2.12. For every one, read the task, then
-`docs/DESIGN.md` §9 and `design/STYLE_GUIDE.md` §14–§16, and open
-`design/Ledger Feel Review.dc.html` for the screen. Where the feel pass draws a
+`docs/DESIGN.md` §9 and `design/STYLE_GUIDE.md` §14–§16, and look at the
+screen's PNGs in `design/feel/` (the review page's source is templates). Where the feel pass draws a
 surface it beats `design/mockups.html` on layout and copy.
 
 ---
