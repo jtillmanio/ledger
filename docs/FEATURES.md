@@ -493,8 +493,8 @@ plan as curation rather than a checklist.
 - **Comparison to other readers.** Single-user app, and it's not a competition.
 - **A catalog completion percentage for comics.** 76 of 10,138 is 0.75%, it will
   still be under 5% in 2031, and drawn as a bar it is a lie told with a
-  rectangle. The figure survives once, in grey, at the foot of the comics
-  dashboard as provenance for the numbers above it. Progress is measured against
+  rectangle. The figure survives once, in grey, on the Stats page as
+  provenance (D-40 moved it off the comics dashboard). Progress is measured against
   the run and the block, where it is real.
 - **Pace on the comics screen.** Any issues-per-week figure computed from 76
   issues is noise wearing a metric's clothes. The comics equivalent of pace is
@@ -862,6 +862,13 @@ compute that a list, a status, and a season count don't already answer.
 ## Part 2h — The dashboards (v4)
 
 `design/mockups.html` is authoritative for layout; this is the scope behind it.
+**Since the feel pass (D-40, 2026-10-05)** the dashboards follow
+`design/STYLE_GUIDE.md` §14–§15 and `design/Ledger Feel Review.dc.html` instead,
+where those draw them: the Now slot is the one hero, led by a cover; Up next is a
+cover shelf with *Reorder*; the telescope is its own Position card; the
+situation slot is at most three rows; and the rollup is three this-year counts,
+never the catalogue. The slot order below is unchanged. TASKS 2.2, 2.4 and 8.7
+carry the detail.
 
 ### One per medium, five slots, same order
 
@@ -896,14 +903,16 @@ order** and the watch one **FRANCHISE · release order**.
 
 | Region | Answers | Source |
 |---|---|---|
-| The telescope | Where am I in this run, its block, and the track — at once | `run_progress`, `block_position`, `block_progress` (all exist) |
-| Also in flight | What else is open, so I don't abandon it by accident | runs with state `reading` |
-| Up next | What I've decided to read next, in my order | `run_queue_state` — first five unstarted (Part 2i) |
-| Unlocked and waiting | What could I start tonight with nothing to read first | `run_readiness`, plus `run_unlock_cost` and `run_leverage` on the row |
-| Rest of this block | What finishes what I'm inside | `block_position` |
-| The frontier | Is there something reachable and cheap I'm not seeing | ready / soft-blocked / cold tracks / owned-and-ready, plus cheapest closeable block and next event on the path |
+| Now (*Up now*) | What am I reading, and how far into this stretch of it | the resume pointer, `run_progress`, `issues.story_title`, `run_credit_line`; the *This stretch* lens is 24 issues around the head, run-relative |
+| … *Since Tuesday* | What have I read since I last looked | the marks since the last visit, as up to four covers and a count |
+| … *Also reading* | What else is open, so I don't abandon it by accident | runs with state `reading`, as one row |
+| Up next | What I've decided to read next, in my order | `run_queue_state` — unstarted runs as a cover shelf, *Reorder* opens the list (Part 2i) |
+| Where you are | Where am I in this run, its block, and the track — at once | the telescope: `run_progress`, `block_position`, `block_progress` (all exist) |
+| Ready when you are | What could I start tonight with nothing to read first | `run_readiness`, plus `run_unlock_cost` and `run_opens` on the row; at most three |
+| 2026 so far | What has this year been | three this-year counts |
 
-The frontier replaces a progress bar. Ready runs, runs one soft prereq short,
+*Rest of this block* is now the ladder's BLOCK row, and *The frontier* moved to
+the run list (D-40, FP-D4). The frontier replaces a progress bar. Ready runs, runs one soft prereq short,
 tracks never opened, and trades already on your shelf that cover a ready run are
 the four numbers that change what you open.
 
@@ -961,6 +970,11 @@ The frontier's *one soft prereq short* tile takes the `ready_hard` outline. Each
 badge carries an `aria-label` with the full sentence.
 
 ### Books dashboard
+
+Since D-40 the dashboard shows the book in hand (or *Between books*), the
+current quarter's shelf, a single-quarter strip against the 760k rule, On deck
+and *2026 so far*; the full rail below is `/books/plan`'s, and where Rebalance
+and *Place them* now surface is open (TASKS 2.2). The regions as first scoped:
 
 | Region | Answers | Source |
 |---|---|---|

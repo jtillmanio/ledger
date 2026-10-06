@@ -24,6 +24,20 @@ redraws the mockup to match in the same PR (standing rule 6). Tailwind names in
 those files and in `NEW_UI_AUDIT_REPORT.md` are vocabulary, never classes to
 ship.
 
+**The feel pass** (D-40, 2026-10-05): `design/STYLE_GUIDE.md` §14 (screens and
+behaviour), §15 (copy) and §16 (departures FP-D1…FP-D14), drawn in
+`design/Ledger Feel Review.dc.html`. **It beats `design/mockups.html` on layout
+and copy** for what it draws: the three dashboards, the mark sequence, empty and
+caught-up states, run and block completion, and the 768px tablet. The task that
+builds one of those surfaces builds it from the feel pass and redraws the
+matching `mockups.html` frame in the same PR (standing rule 6); where the feel
+pass is silent, the mockup and the task stand. Its covers are striped
+placeholders: build with real cover images. It rules out streaks, confetti and
+progress against the whole catalogue as firmly as before, and red on a
+dashboard. `--art`, the cover's ambient tone, is content colour: it never
+carries state and can be switched off. `design/handoff/IMPLEMENTATION_CHECKLIST.md`
+maps each of its steps to the task below that now carries it.
+
 **Four colour meanings, and only four.** `--ready` green is read. `--brand` blue
 is where you are, and the primary action. `--blocked` amber is *held* — a hard
 prerequisite unread, or a decision not yet made. `--danger` red is destructive
@@ -50,8 +64,19 @@ neutral line with a grey `×`, never red, because nothing destructive happened;
 *metadata pending* is a dashed `--muted` cover outline and an italic line. An
 unavailable action is `aria-disabled="true"` with a visible reason under it
 (*Resolve 2 lines to add*), never a bare `disabled` that hides why (UX-N18).
-Motion confirms, never celebrates: durations come from `--dur-1`…`--dur-4`,
-and `prefers-reduced-motion` makes every one of them 0.
+Motion confirms, never celebrates: durations come from `--dur-1`…`--dur-4`
+(and `--dur-fill` for a completion rail), and `prefers-reduced-motion` makes
+every one of them 0. `--dur-hold` is the one exception: it holds a colour, not a
+movement, so the mark's green confirm is still seen (D-40, STYLE_GUIDE §14.3).
+
+**A feel-pass surface is checked more widely** (D-40, the checklist's step 11).
+A dashboard, the mark sequence, an empty or caught-up state, or a completion
+screen is screenshotted in every state it has at 360, 390, 412 and 768px, light
+and dark, plus once with `prefers-reduced-motion` and once with
+`prefers-reduced-transparency`; an axe pass over it reports no new violations;
+nothing on it resolves to `--danger`, and nothing on it measures against the
+catalogue. Counts stay mono (Plex Mono, D-32); Newsreader appears only in screen
+titles, hero names, story titles and completion lines.
 
 **Focus returns where it came from** (R1-11). A sheet or dialog returns focus to
 the control that opened it when it closes, by any route — confirm, Cancel, Esc
@@ -584,9 +609,17 @@ rewriting it twice.
 the acceptance row. The toast stack is in memory and lasts 8 seconds. Two
 different affordances; do not share a component between them.
 
+**The toast says what happened** (D-40; STYLE_GUIDE §14.3, §15). Not *Marked
+read · Undo*: two lines, the label on the first (`#141 read`, the full label on a
+multi-series run) and the run count on the second in `--toast-muted` mono 12/16
+(*46 of 381 in Uncanny X-Men*), then **Undo**. `role="status"`. Undo reverses
+every visible step of the mark, not only the write: the count, the head, and on
+the dashboard (2.4) the lens cell and the *Since Tuesday* stack. 1.8b draws it.
+
 **Check:** test asserts mark → undo restores exact prior state, including
 `completed_at`. Test that an entry pushed with an arbitrary inverse closure runs
-it on undo, so the stack is not coupled to progress rows.
+it on undo, so the stack is not coupled to progress rows. A mark's toast reads
+the label, then the run's new read count *of* its total *in* the run's title.
 
 ### ☐ 1.1 Range marking · M
 Depends on 0.8a and **1.2** — build undo first (R3-10); 1.1 pushes its range mark
@@ -659,11 +692,14 @@ is unread — never stored. An issue read only in another run is still unread
 here, so the pointer stops on it; the row's `read in …` hint lets you tick it
 and move on.
 
-The pointer's home is the comics **telecard**, kicker *PICK UP WHERE YOU LEFT
-OFF*: run name, credit line, a state badge (`◐ 42 / 381`, with no prerequisite
-badge beside it — the five-state rules are in 2.4), the telescope (2.5) and the
-ladder. Its primary button, **Resume #141**, is the same verb as the thumb bar's
-*Mark #141 read*. Phone and desktop render the same badges from one component.
+The pointer's home on the dashboard is the comics **Now hero** (slot 1; D-40,
+STYLE_GUIDE §14.1, built in 2.4), kicker *Up now* (§15; it was *PICK UP WHERE
+YOU LEFT OFF*): the pointer's issue number large, its story title, the run and
+credit line, and a state badge (`◐ 42 / 381`, with no prerequisite badge beside
+it — the five-state rules are in 2.4). The telescope and ladder are no longer in
+this card: they are slot 3 (FP-D1). On the run hero its primary button,
+**Resume #141**, is the same verb as the thumb bar's *Mark #141 read*. Phone and
+desktop render the same badges from one component.
 
 **The spine hero carries the pointer too** (Oct 2026, spine v2; STYLE_GUIDE §9
 *Next-issue strip*; mockup `spine`). Above *Resume #141* sits a compact strip: a
@@ -1050,6 +1086,21 @@ N20). **Build before 1.8**: every later UI task inherits these values, and a
 screen built on the old set is rework. `design/tokens.css` is the source; STYLE_GUIDE
 §4–§6 and §10 are the reasons and the measured contrast.
 
+**The values have landed** (D-40, PR `chore/feel-pass-d40`). The feel pass's
+tokens — palette 1c, the new `--display`, `--art`, `--sh-cover`, `--r-cover`,
+`--r-hero`, `--dur-hold`, `--dur-fill`, `--toast-muted`, `--fs-hero-*` and
+`--cover-*` — are in `globals.css` and the mockup's `.app` blocks, translated as
+below, and the fonts are self-hosted (IBM Plex Sans, Plex Mono, Newsreader).
+`test:tokens` already checks the toast pairs on `--toast-bg`, every text, fill,
+boundary and glass figure against `contrast-metrics.json` for palette 1c, text on
+the `--art` clamp extremes, and that `globals.css` matches `design/tokens.css`.
+So this task no longer moves values. **What it still owes:** the control-state
+matrix, the 11px floor, the three elevation tiers in the component rules, the
+remaining checks below as explicit floors (elevation order, text tokens on every
+surface, outlines, glass worst case, no sub-11px text), the radius grep, and the
+mockup re-render captures. The doc hexes are done (CLAUDE.md, `ui.md`,
+ARCHITECTURE §4 carry 1c's `--faint`).
+
 **Move the tokens, don't reinvent them.** `tokens.css` goes into
 `src/app/globals.css` **and** into `design/mockups.html`'s `.app` token blocks in
 the same PR, because `npm run test:tokens` fails when the two differ. The
@@ -1086,8 +1137,8 @@ the `--mark` / `--held` aliases stay (SG §13).
   hover rule under `@media (hover:hover)`, a pressed rule (1px down, `--dur-1`),
   a `:focus-visible` rule using `--focus-ring`, and an `[aria-disabled="true"]`
   rule. The reduced-motion block also stops `animation` on everything but `.spin`.
-- **The docs follow the values.** The `--faint` and `--faint-deco` hexes in
-  CLAUDE.md, `.claude/rules/ui.md` and ARCHITECTURE §4 change to `tokens.css`'s.
+- **The docs follow the values.** Done with D-40: the `--faint` hexes in
+  CLAUDE.md, `.claude/rules/ui.md` and ARCHITECTURE §4 are 1c's.
 - **The mockup re-renders.** Every frame picks up the new values. Capture the
   dark phone and desktop frames of `telescope`, `queue` (lift), `planmonth`,
   `rebalance`, `path`, `session` and `palette`, list them in
@@ -1114,8 +1165,8 @@ the `--mark` / `--held` aliases stay (SG §13).
   `font-size` and `font` shorthand resolves to 11px or more.
 
 **Check:** `npm run test:tokens` passes, and is proven to fail three ways: dark
-`--sunk` set back to `#232935` (elevation), `--faint-deco` set back to `#98a1b0`
-(outline contrast), and a `font-size:10px` rule added to `globals.css`. A test
+`--sunk` set back to `#232935` (elevation), light `--faint-deco` set to `#98a1b0`
+(outline contrast; 1c's is `#878b9c`), and a `font-size:10px` rule added to `globals.css`. A test
 parses `globals.css` and asserts every class in the state-matrix list above has a
 `(hover:hover)` hover rule, an `:active` rule, a `:focus-visible` rule and an
 `[aria-disabled="true"]` rule. `grep -oE 'border-radius:[^;]+' src/app/globals.css
@@ -1130,9 +1181,9 @@ the token contrast checks. Tab bar at the top on phone, a navigation rail on a
 tablet, the sidebar on desktop (breakpoints below, D-33). `/` redirects
 to the medium you last touched; `/comics`, `/books` and `/watch` are the
 dashboards; the list screens move to `/comics/runs` and `/books/list`.
-Tokens and classes are already in `src/app/globals.css`, and the token drift
-(R0-08) is fixed there: `--faint #606979`, `--faint-deco`, `--blocked #8a560c`,
-`--rule-2`.
+Tokens and classes are already in `src/app/globals.css`: palette 1c and the feel
+pass's additions (D-40), with the fonts self-hosted. Screen titles are Newsreader
+500 at 32/36, 40/44 from 768px (FP-D5).
 
 **A stale session goes to `/login`, not a 500** (R2-11). Landed: `requireUserId()`
 redirects and route handlers answer 401 through `apiUserId()`. This task keeps it
@@ -1210,18 +1261,32 @@ From the style guide (D-31; STYLE_GUIDE §7–§9, Review N):
   is a quiet `--brand` text link, not a filled pill; card kickers are mono
   `--faint` caps. Section heads `h3.s` are 12/16 600 caps `--ink-2`, count in
   mono 11 `--muted` (SG-D5).
-- **Drawn icons** (UX-N09). One outline set at 1.5px stroke (Lucide or
-  Heroicons), as an inline SVG `<symbol>` sprite, neutral `--muted`. The search
-  control is a drawn magnifier, never U+26B2. The readiness glyphs `⊘ ○ ● ◐ ✓`
-  stay text, pinned with `font-variant-emoji: text`.
+- **Drawn icons** (UX-N09; D-40 step 3). One outline set at 1.5px stroke
+  (Lucide, ISC: keep its notice in the repo), as an inline SVG `<symbol>` sprite
+  rendered by the layout, neutral `--muted`. Inline, not `public/icons.svg`: the
+  passcode gate (`src/proxy.ts`) covers `public/`, and inline costs no request.
+  The set: search, check, chevron-left, ellipsis, book-open, book, tv, calendar,
+  activity, settings, plus anything else the shell draws. Every icon is
+  `aria-hidden`, and the button around it keeps its `aria-label`. Nothing is
+  loaded from a CDN. The search control is a drawn magnifier, never U+26B2. The
+  readiness glyphs `⊘ ○ ● ◐ ✓` stay text, pinned with `font-variant-emoji: text`.
 - **Widths** (UX-N07, UX-N08, D-33). Four layouts, three breakpoints:
 
   | Width | Navigation | Content | Dashboard verbs |
   |---|---|---|---|
   | under 768px (phone) | top media bar + 44px search | one column | bottom thumb bar |
-  | 768–1023px (tablet) | 72px navigation rail: the media switch, then the medium's items, each an icon over an 11px label (touch has no tooltips); no top media bar | one column; what the desktop puts in its side rail stacks below | bottom thumb bar |
+  | 768–1023px (tablet) | 72px navigation rail: the media switch, then the medium's items, each an icon over an 11px label (touch has no tooltips); no top media bar | one column; what the desktop puts in its side rail stacks below | bottom thumb bar, 48px |
   | 1024–1279px | sidebar collapsed to a 64px icon rail, a tooltip and `aria-label` on each | main column plus the side rail | page header, primary last |
   | 1280px and up | 224px sidebar | main column plus the side rail | page header, primary last |
+
+  **The tablet as drawn** (D-40; STYLE_GUIDE §14.5; Feel Review §10c, at
+  768×1024, the narrowest case). The rail is 72px on `--surface` with a right
+  `--rule`. Each item is a 56px target: a 20px icon in a 48×28 pill over an 11px
+  label. The current item has a `--raise` pill and a 3px `--m-*` bar, the same
+  hue rule as the tab underline. Search and Settings sit at the rail's foot. The
+  content is one column with 32px padding and the 40/44 `h1`. The desktop side
+  rail stacks below the main column as two columns, 1.5 : 1. The thumb bar spans
+  the content column at 48px. Hover reveals stay pointer-gated.
 
   The run detail keeps the bottom thumb bar at every width (D-25). The width
   sets the default sidebar state; 6.14 adds the toggle that overrides it. 360px
@@ -1230,10 +1295,12 @@ From the style guide (D-31; STYLE_GUIDE §7–§9, Review N):
   gains an 834px tablet frame for `home`, `spine`, `bdash` and `status`, and a
   360px frame for the same four.
 
-**Check:** screenshot at 360px, 834px and 1280px; assert no horizontal scroll
-exists at any of them. At 834px the page renders the navigation rail, no top
+**Check:** screenshot at 360px, 768px, 834px and 1280px; assert no horizontal scroll
+exists at any of them. At 768px and 834px the page renders the navigation rail, no top
 media bar and no sidebar; each rail item shows a visible text label and is at
-least 44px tall; every dashboard renders `.actionbar`. At 1100px the sidebar is
+least 56px tall; every dashboard renders `.actionbar`, 48px tall. The rendered
+HTML references no external host for an icon, font or script, and every `<svg>`
+inside a button is `aria-hidden` while the button has a name. At 1100px the sidebar is
 64px wide and each item has an accessible name. At 360px *Watch* renders untruncated in the media bar, and the
 phone `/comics` has at most one solid `--brand` fill above the fold. No computed
 `color` inside `.bar` or `.side` equals `--ready`. With the page scrolled 400px,
@@ -1276,22 +1343,38 @@ rule applies to *Resume* on the run hero.
 
 From the style guide (D-31; STYLE_GUIDE §9, Review N):
 
-- **The bar.** Glass, like the header (1.8). The primary slot is `flex:1`, 44px,
-  `--brand` / `--on-brand`, and truncates with an ellipsis; `+ batch` is 44px
+- **The bar.** Glass, like the header (1.8). The primary slot is `flex:1`, 44px
+  (48 on a tablet), radius `--r-lg` 12 (FP-D10), `--brand` / `--on-brand`, and
+  truncates with an ellipsis; `+ batch` is 44px
   with a 1px `--rule-2` ring; search is 44×44 with the drawn magnifier.
   `padding-bottom: max(12px, env(safe-area-inset-bottom))`, so the Android
   gesture bar never covers the verb (F2).
 - **The toast sits above the bar, one at a time** (UX-N05, F3). It is pinned at
   `bottom: calc(var(--actionbar-h) + 8px + env(safe-area-inset-bottom))`. A new
   toast replaces the old one and commits the old one's action. It uses
-  `--toast-bg` / `--toast-ink` with Undo in `--toast-link` 700 (SG-D3), and a 2px
+  `--toast-bg` / `--toast-ink` with Undo in `--toast-link` 700 (SG-D3), its
+  second line in `--toast-muted` (1.2's copy), and a 2px
   `--brand` countdown bar runs along its bottom edge over the 8 seconds and
-  pauses with the timer.
-- **The mark sequence** (UX-N21). The `.chk` scales .92→1 as `--ready` fills
-  (`--dur-2`), the ✓ draws in, then the spine `.emeter` and the telecard's run
-  segment grow (`--dur-4`, `--ease-out`) and the `n / N` count ticks in
-  tabular numerals with no layout shift. No bounce, no confetti. Under reduced
-  motion every step is instant.
+  pauses with the timer. It enters with a 12px rise over `--dur-4`.
+- **The mark answers back** (P2; D-40, FP-D7; STYLE_GUIDE §14.3; Feel Review §3,
+  and `design/LedgerComics.dc.html`, where it is live). One small client
+  component wraps the thumb bar's mark button and owns four states, calling the
+  existing optimistic mark action — it adds no second write path:
+
+  | t | State |
+  |---|---|
+  | 0 | **Press.** Scale .97, brightness .88, `--dur-1`. The write goes out optimistically. |
+  | 120ms | **Confirm.** The button turns `--ready` / `--on-ready` and reads *✓ #141 read*. The counts on screen tick (each number rises 70% with a fade, `--dur-4`), the run rail's segment grows and its head pill slides (`--dur-4`), and the toast enters. On the dashboard (2.4) the lens cell fills (scale .5 → 1.12 → 1, `--dur-4`) and a `✓ read` stamp lands on the hero cover. |
+  | + `--dur-hold` | **Hold.** The green stays for 600ms. This is kept under reduced motion. |
+  | 1.3s | **Next.** The next issue slides in from 20px right; if it is read elsewhere it carries the dashed grey hint, never green. The button returns to `--brand` with the next label. On the dashboard the marked cover joins the *Since Tuesday* stack. |
+
+  Keyframes for the cell fill, count tick, cover slide, toast enter and toast
+  countdown live in `globals.css`, all on `--dur-*` and `--ease-out`. Under
+  reduced motion every state still appears, in the same order, with no movement.
+  A failed write reverts the tick and raises the error toast (1.8, R1-07): the
+  green never holds over a failure. It replaces UX-N21's `.chk` sequence on the
+  thumb bar; a spine `.chk` tap keeps the `.chk` fill (`--dur-2`). The component
+  is used on the dashboards and the run detail.
 
 **Check:** screenshot at 360px; assert the primary action button is within the
 bottom 96px. At 360px the toast's bounding box does not intersect the primary
@@ -1305,13 +1388,20 @@ for the unchecked control ring, in both themes; `npm run test:tokens` passes. At
 1280px no dashboard renders `.actionbar` and the header holds the primary verb; at
 834px every dashboard renders it, with the primary action inside the bottom
 96px; the run detail renders it at all three widths. On a fixture run spanning two series the
-thumb bar's verb contains the series name.
+thumb bar's verb contains the series name. **The mark storyboard:** with a
+fake clock, a mark shows press at 0, the `--ready` button reading *✓ {label}
+read* at 120ms and still at 700ms, and the next label in `--brand` after 1.3s;
+under emulated `prefers-reduced-motion` the same four states appear at the same
+times with every `animation-duration` and `transition-duration` at `0s`; a
+mark whose write fails never shows the confirm state for longer than the
+revert. Each `.actionbar .btn`'s computed `border-radius` is 12px.
 
 ### ☐ 1.10 Comics Up next queue · M
 Requirement change, Sept 2026. ARCHITECTURE 2.16, FEATURES Part 2i. One
 ordered list of runs per user, open-ended: add, reorder, remove. No years,
-quarters or capacity — do not add them. Mockups: "Comics — v4" (the Up next
-section) and "Status — in flight, up next, done". Depends on 0.8.
+quarters or capacity — do not add them. Mockups: the feel pass's comics
+dashboard (Feel Review §2) for the shelf, and "Status — in flight, up next, done"
+for the list. Depends on 0.8.
 
 - `run_queue(user_id, run_id, ordinal, added_at)`, with primary key
   `(user_id, run_id)` and `UNIQUE (user_id, ordinal) DEFERRABLE INITIALLY
@@ -1322,17 +1412,24 @@ section) and "Status — in flight, up next, done". Depends on 0.8.
   readiness and the blocked-by count. The dashboard and the status screen both
   read it.
 - **Add** from the run detail (*+ Up next*, which appends, and *Read next*,
-  which goes to the top), run-list rows, the dashboard's *Unlocked and waiting*
-  rows, and the status screen's *Ready, not queued*. A run that's already
+  which goes to the top), run-list rows, the dashboard's *Ready when you are*
+  rows (§15; it was *Unlocked and waiting*), and the status screen's *Ready, not queued*. A run that's already
   queued shows *In Up next · #3* rather than the button. Placeholder and
   soft-deleted runs can't be queued.
 - **Reorder** by drag handle (long press on the phone) and *Move to top*.
   **Remove** from the row menu, with the 1.2 undo toast.
-- **Dashboard:** an *Up next* section between *Also in flight* and *Unlocked
-  and waiting*, showing the first five unstarted queued runs, *Start* on the
-  first and *All N* to the tab. Each row is **the same queue row** as the
-  status tab (M-08): the named `button.drag` reorder handle and the `⋯` row
-  menu, so the dashboard's queue is keyboard-operable too. When the queue is empty: "Nothing queued —
+- **Dashboard: a cover shelf** (slot 2; D-40, FP-D2; STYLE_GUIDE §7 `shelf`,
+  §14.1; Feel Review §2). The unstarted queued runs face out as covers
+  (`--cover-shelf` 112, 2:3, `--sh-cover`, `--r-cover`) in queue order, each
+  with its position number in a chip on `--overlay`, a two-line title, mono
+  meta and its readiness badge, unchanged. **Start** is on the first card. The
+  shelf scrolls horizontally (`scroll-snap-type: x mandatory`) and bleeds to
+  the frame edge; a tablet shows five covers with a 16px gap. The slot head
+  carries the count and **Reorder**, which opens the existing reorderable
+  queue list — **the same queue row** as the status tab (M-08): the named
+  `button.drag` handle and the `⋯` row menu — so drag and the keyboard
+  sequence live there and never on a cover. Until 4.3 a card shows the
+  neutral cover placeholder. When the queue is empty: "Nothing queued —
   pick from N ready runs" (N computed, see 2.4), which links to *Ready, not
   queued*.
 - ***Start* navigates, it never writes** (R1-08). It goes to
@@ -1359,7 +1456,10 @@ flight while its `run_queue` row is unchanged. Queuing a blocked run succeeds
 and `run_queue_state` reports its blocked-by count. Queuing a placeholder is
 rejected. Two concurrent reorders never leave duplicate ordinals. The documented
 keyboard sequence (Space, Down, Down, Space) moves a row from position 2 to 4
-with contiguous ordinals, and Esc mid-lift leaves the order unchanged.
+with contiguous ordinals, and Esc mid-lift leaves the order unchanged. The
+dashboard shelf renders the queue's unstarted runs in ordinal order with
+**Start** on the first card only and no drag handle on any card, and
+**Reorder** reaches a list where that keyboard sequence works.
 
 ### ☐ 1.9 Status screens: In flight · Up next · Done · M
 Requirement change, Sept 2026. ARCHITECTURE §4. `/comics/status` and
@@ -1385,8 +1485,8 @@ Quarter · Year · On deck · Someday* — read from 1.7's `to_read_level`, with
 Each tab label carries its count. Apart from the queue's order and each
 quarter's order, nothing is stored; every row comes from `run_queue_state`,
 `run_progress`, `run_readiness`, `plan_period`, `to_read_level` and
-`book_status`. The dashboard headers *Also
-in flight*, *Up next* and *Unlocked and waiting → All N* link to the matching
+`book_status`. The dashboard's *Also reading* row (in the hero, D-40), the
+*Up next* shelf's head and *Ready when you are → All N* link to the matching
 tab, N computed.
 
 **The bare-year lane is neutral until 2.8** (R1-10). Amber means a decision you
@@ -1534,35 +1634,60 @@ with implausible minutes still saves but is shown, not hidden, in the
 *Measured from sessions* list.
 
 ### ☐ 2.2 Books dashboard · M
-Five slots in this order, per `design/mockups.html` → "Books — v4": reading now;
-the plan rail; the unplaced-entries card; capacity; the year so far. Depends on
-1.7, 1.8 and 2.1. Split (R3-12): **the plan rail is its own task, 2.2b**; here it
-is a placeholder slot in the right position, so the five-slot order is real.
+Five slots in this order, per the feel pass (D-40; STYLE_GUIDE §14.1–§14.2,
+Feel Review §4), which replaces "Books — v4" in `design/mockups.html` on layout
+and copy: **Now** (the book in hand, or *Between books*); **Up next in Qn**, a
+cover shelf of the current quarter's books in `ordinal` order with **Reorder**
+(1.9's quarter list); **This quarter**, the single-quarter strip (FP-D8);
+**On deck**; and **2026 so far**. Depends on 1.7, 1.8, 2.1 and, for the
+sittings line, 2.1b.
 
-- **Reading now** — cover, word count, words left, and time left expressed in
-  evenings at the user's own session length. Never a date. **Before any sessions
-  exist** the evenings figure comes from the 2.0 setting (45 min/day at 185 wpm)
-  and says so in the `.prov` line — *at your set pace*; once 2.1b has sessions it
-  reads *at your measured pace*. It is never blank and never hidden.
-- **The plan rail** — slot in position two; built in 2.2b.
-- **Unplaced entries** — a `.decide` card, amber, with "Place them" (task 2.8).
-- **Capacity** — the 118% figure, its assumptions stated underneath, genre
-  breakdown, and the overage segment hatched rather than red. Rebalance and
-  Accept are buttons here (task 2.7).
-- **The year so far** — four figures and one link to stats. Nothing else.
+- **Now** is the only large thing (`--r-hero`, the art band on `--art` once
+  4.2 stores it): the cover (`--cover-hero`), the title in Newsreader
+  (`--fs-hero-name`), the author, `p. 212 of 468` in mono, a 6px `--ready`
+  meter, and *Started 21 Sep · about 30 pages a sitting · 7 sittings* once 2.1b
+  has sessions. Time left is still evenings at your own session length, never a
+  date: *at your set pace* before sessions exist and *at your measured pace*
+  after. It is never blank and never hidden.
+- **Between books** (§14.2; §15) replaces the old empty state. A 72px cover of
+  the last finished book with a `--ready` check, a `✓ finished · Sun` badge,
+  *Between books.*, a line saying what you finished and how long it took
+  (*You finished Piranesi on Sunday, 245 pages in nine days. Nothing's on the
+  go, and that's fine.*, from 1.5's dated reads; an undated finish says what,
+  not when), the top of the current quarter's plan (the lowest-ordinal
+  `to_read` book, D-37), and *Pick something else*. The thumb bar's verb starts
+  the top of the plan, named.
+- **This quarter** (FP-D8) is one strip for the current quarter against the
+  760k rule: *Q4 2026 · 3 of 7 read · 615k planned · 760k a quarter*. The full
+  plan rail stays on `/books/plan` (2.10); 2.2b's rail component draws this
+  strip as a one-quarter rail.
+- **2026 so far** is three this-year counts on `--raise` (books, pages, new
+  authors), one line, linking to Stats (6.2). Never the backlog.
+
+**Open, stop and ask before building** (the feel pass is silent): the old
+dashboard had a capacity card with **Rebalance** and **Accept** (2.7) and an
+amber unplaced-entries card with **Place them** (2.8). The feel pass draws
+neither. Where those decisions surface now — an amber card in slot 4 when one
+is open, the strip's own badge, or `/books/plan` only — is the owner's call.
 
 **The capacity number is amber past 100%, never red**, and the word "behind"
 does not appear anywhere on this screen.
 
-**Check:** screenshot at 360px and 412px — no horizontal scroll, the capacity
-rule and every quarter label legible, the primary action inside the bottom 96px.
-The plan-rail assertions live in 2.2b. Nothing on the screen resolves to `--danger`.
-Empty state: with nothing reading, the hero offers *Start the first Q-current book*:
-the current quarter's lowest-ordinal book that is still `to_read` (D-37), named
-on the button.
+**Check:** the feel-pass screenshots (the header's widths, themes and
+reduced-motion and reduced-transparency passes) of reading and *Between books* —
+no horizontal scroll, the capacity rule legible, the primary action inside the
+bottom 96px. The five slots render in the order above. Nothing on the screen
+resolves to `--danger`. With nothing reading, Now renders *Between books* naming
+the last finished book, and its offer is the current quarter's lowest-ordinal
+book that is still `to_read` (D-37), named on the button; with nothing ever
+finished it omits the finished line. The strip's planned total equals 2.1's
+figure for that quarter. *2026 so far* has three counts, all this year.
 
 ### ☐ 2.2b The plan rail · M
-Depends on 2.2 (the slot) and 1.7. Split out of 2.2 (R3-12).
+Depends on 2.2 (the slot) and 1.7. Split out of 2.2 (R3-12). Since D-40 the
+dashboard shows one quarter of it (FP-D8, 2.2's *This quarter* strip); the
+four-column rail is `/books/plan`'s (2.10). The component and its rules below
+are the same for both.
 
 A quarter is a column, a book is a block sized by its word
   count, and a dashed rule across all four columns is the quarterly capacity
@@ -1654,16 +1779,41 @@ or quarter writes its `book_status` and `reading_plan` rows in one transaction;
 1.9's empty Books *Up next* action becomes *Plan a book*.
 
 ### ☐ 2.4 Comics dashboard · L
-Five slots in this order, per `design/mockups.html` → "Comics — v4": the
-telescope (2.5); also in flight; **up next** (the queue from 1.10, first five);
-unlocked and waiting, each row with **+ Up next**; rest of this block; the
-frontier (2.6). Depends on 1.6, 1.8, 1.10, 2.5b and 2.6.
+Five slots in this order, per the feel pass (D-40; STYLE_GUIDE §14.1, §15, §16;
+Feel Review §2, with `design/LedgerComics.dc.html` as the live component), which
+replaces "Comics — v4" in `design/mockups.html` on layout and copy. Depends on
+1.6, 1.8, 1.8b, 1.10, 2.5b and 2.6.
 
-Candidate run rows carry **cost and leverage**, not tier: "costs 44 · opens 2",
+| Slot | Content |
+|---|---|
+| 1 Now | **The hero** (P1, P3; FP-D3, FP-D4). The only large thing on the page, radius `--r-hero` 20, on the `--art` band once 4.3 stores it (`--surface` until then). The cover at `--cover-hero` (112, 2:3, `--sh-cover`), the kicker *Up now*, the issue number in mono `--fs-hero-num` 44/48, the story title in Newsreader italic 19/23 (`issues.story_title`; omitted when null), and the run · credit line. Then the **This stretch** lens: 24 cells, one per issue around the resume pointer (fewer on a shorter run), run-relative and never catalogue-relative, read-here cells `--ready`, read-elsewhere cells dashed grey, the head cell ringed with `--halo`, ends labelled (`#130 … #153`) and the count *45 of 381 read*. Then the **Since Tuesday** stack: up to four covers of the issues marked since your last visit, with the count. Then **Also reading**: the other runs in flight as one row with a 32px secondary verb (*Astonishing X-Men 11 / 25 · Read #12*). |
+| 2 Next | The Up next cover shelf (1.10), **Start** on the first card, **Reorder** on the slot head. |
+| 3 Position | The telescope card (2.5b), unchanged: horizontal, 14px minimum cell, plus the ladder (FP-D1). |
+| 4 Situation | **Ready when you are** (§15; it was *Unlocked and waiting*): at most three rows, each with **+ Up next**, then an *All N* text link. |
+| 5 Rollup | **2026 so far**: three this-year counts on `--raise`, in one line of numbers. Never the catalogue. |
+
+The lede is a sentence, not a tally (§15): *14 issues since Tuesday. Next up:
+Days of Future Past.*, not *2 runs in flight · 12 up next · 41 ready to start*.
+**Removed from the dashboard** (FP-D4): *Rest of this block* (the ladder carries
+it), *The frontier* (it moves to the run list, 2.9) and the provenance line (it
+moves to Stats, 6.2). So **no catalogue total appears on this screen at all**,
+not even as provenance.
+
+Candidate run rows carry **cost and leverage**, not tier: "4,173 to unlock ·
+opens 2" (§15; it was *costs 4,173*), with *opens N* from 2.6's `run_opens`,
 and an owned-edition tag where one exists. Blocked runs keep the amber badge
-stating what is missing. There is no progress bar against the catalog anywhere
-on this screen; the 76-of-10,285 figure appears once, in `.prov` grey, at the
-foot — at every width, never in the lede (M-12).
+stating what is missing.
+
+**Tablet** (§14.5; Feel Review §10c): the hero turns horizontal around a 150px
+cover (`--cover-hero` at 768px), with the number at 56/60, the story, the run
+and the lens to its right; *Since Tuesday* and *Also reading* share one row,
+split in two; the shelf shows five covers; the telescope keeps its phone sizing
+with `W` = column − 2 × 20 − 44 (548 at 768) and the ladder in three columns;
+*Ready when you are* and *2026 so far* stack below as two columns, 1.5 : 1.
+
+**The mark lands here** (1.8b): the lens cell fills, the stamp lands on the
+cover, the three counts tick, the next issue slides in, and the marked cover
+joins the stack. Undo (1.2) reverses all of it.
 
 **`<RunStateBadge state hardLeft softLeft>`** (`src/components/RunStateBadge.tsx`)
 renders the five states of the `run_state` view (already in `etl/views.sql`)
@@ -1684,38 +1834,56 @@ Badges are mono 11/14 600, radius 6 (`--r-sm`), 4×8 padding; `blocked`,
 ring, a 3px identity stripe and `--sh-1`, no longer `--sh-2` (UX-N04); its kicker
 is mono `--faint` caps (SG-D7, UX-X06).
 
-The frontier tile *one soft prereq short* takes the `ready_hard` outline. The
-telecard's foot row, when the next block has no name, shows *Block 3 has no name
-yet* with a **Name it** button. Empty state: with no queue, *Pick from N ready
-runs*; with no run in flight, the telecard shows the track rail and *Start the
-top of Up next*; with neither a run in flight nor a queue, the telecard's one
-action is *Pick from N ready runs*, linking to *Ready, not queued* (M-11, mockup
-`states`). Also on the dashboard: a "Since Tuesday: 14 issues marked, 1
-book finished" line and the inbox chip.
+The telescope card's foot row, when the next block has no name, shows *Block 3
+has no name yet* with a **Name it** button. The inbox chip stays beside the `h1`.
 
-**Every readiness count is computed** (R1-02, D-7). *Unlocked and waiting → All
-N*, *Pick from N ready runs* and the frontier tiles take their numbers from
+**All caught up** (FP-D13; §14.2, §15; Feel Review §10a) is the empty state with
+no run in flight. The Now slot keeps its shape: a 72px cover of the last
+finished run with a `--ready` check, the badge `✓ caught up · 1 Oct`, *All
+caught up.*, a line saying what you finished (*You finished Uncanny X-Men on
+Sunday… Nothing's on the go, and that's fine.*), the top of Up next with its
+readiness badge, and *Pick something else*. Position is the telescope's empty
+variant (track rail only, no head, no brackets) **without its own Start
+button**, because the thumb bar's verb is *Start {top of Up next}*. The lede is
+*All caught up.* With the queue empty too, the offer and the verb are *Pick from
+N ready runs*, linking to *Ready, not queued* (M-11). **The *Coming out* list
+waits for 5.8**: it lists the next release of each run you follow, with the date
+in mono `--ink-2` and a grey *in N days* chip (a date has no colour meaning), and
+it needs 5.8's follows and release cache. Until 5.8, the caught-up state has no
+*Coming out* list and no release in its lede.
+
+**Every readiness count is computed** (R1-02, D-7). *Ready when you are → All
+N* and *Pick from N ready runs* take their numbers from
 `run_state`; no literal appears in copy. The reviewed mockups say 41, but in the
 current extract **most runs carry a hard prerequisite** (172 of 258 were
 `blocked` on 2026-09-23 — a snapshot, not a number to test against), so
-*Unlocked and waiting* is a much shorter list than the mockup draws. That is a
+*Ready when you are* is a much shorter list than the mockup draws. That is a
 data fact, not a layout change — the slot keeps its position and its design, and
 the list should grow once the prerequisite audit (2.11a + OWNER-CHECKLIST, D-20)
 reclassifies over-hard edges.
 
-**Check:** screenshot at 360px. Test that a run whose readiness is
+**Check:** the feel-pass screenshots (the header's widths, themes and
+reduced-motion and reduced-transparency passes) of rest, the mark storyboard,
+*All caught up*, offline and loading. The five slots render in the order above.
+Test that a run whose readiness is
 `ready_hard` renders the green-outline `○ ready · 1 soft unread` badge and still
-appears in Unlocked and waiting; that a blocked run appears only in the dimmed
+appears in *Ready when you are*; that the slot never renders more than three rows;
+that a blocked run appears only in the dimmed
 state with its true cost; and that no element on the page renders `--danger`.
+On a 381-issue fixture run with 45 read the lens renders 24 cells, every one an
+issue of that run, the head cell at the resume pointer, and its count reads *45
+of 381*; on a 10-issue run it renders 10. The *Since Tuesday* stack holds at most
+four covers and its count equals the marks since the fixture's last visit.
 Snapshot test of `<RunStateBadge>` for all five states, driven by a fixture
 that puts one run in each state (never by naming a real run — the seed moves
 under the audit, S-11): the `ready_hard` run renders outlined green, the
 `blocked` one amber, an undated `read` run `✓ read` with no date, and no
 `reading` row carries a prerequisite badge, and the telecard's `reading` badge is
 `◐ n / N` like every other (M-04). The phone and desktop telecard badge
-markup is identical. At 1280px the page text contains the catalogue total once.
-With no run in flight and an empty queue, the telecard's button links to *Ready,
-not queued*.
+markup is identical. At no width does the page text contain the catalogue
+total. With no run in flight the page renders *All caught up.*, the telescope's
+empty variant with no button inside it, and the thumb bar's verb names the top
+of Up next; with an empty queue as well, the offer links to *Ready, not queued*.
 
 ### ☐ 2.5 The telescope · M
 Split (R3-12): **2.5 is `layout.ts` and its unit tests** (pure geometry, no DOM);
@@ -1852,6 +2020,14 @@ output, with the head marker, read-state segments and the variants listed in
   mark. On a mark the new segment grows over `--dur-4`. Under reduced motion the
   ghost jumps and nothing eases.
 - **Keys.** Arrow keys step one cell (run rail: one issue; Shift+arrow: one tick).
+- **Where it sits** (D-40, FP-D1). On the comics dashboard the telescope is its
+  own card in slot 3, *Where you are*, not part of the Now card, and the
+  component is otherwise unchanged. It also leads the run detail, under the
+  run's art band and above the spine (Feel Review §6). The ladder's BLOCK row
+  carries what the dashboard's removed *Rest of this block* slot said (*run 2 of
+  5 · 3 runs left in the block*). **On a dashboard the empty variant has no
+  button** (FP-D13): the thumb bar carries *Start {top of Up next}*. Elsewhere
+  it keeps its one primary action.
 - **The mockup follows** (standing rule 6): `design/mockups.html`'s telescope
   frames on `home`, `telescope`, `krakoa`, `watchlist`, `dashextras` and `states`
   are redrawn horizontal in this PR, from the same geometry, and the vertical
@@ -1871,8 +2047,8 @@ segments and a grey dashed one at the read-elsewhere placement. A fully read run
 renders a solid green run rail, no head marker and a grey `✓ read` badge.
 Releasing a scrub on the run rail at 200 navigates to `#p-200`, and once 3.6b
 has landed, the target row's gutter reads 200. With
-no run in flight the telescope renders the track rail only, no brackets and one
-primary button. Tabbing through the phone frame reaches track, block and run
+no run in flight the telescope renders the track rail only and no brackets,
+with one primary button off a dashboard and none on one (FP-D13). Tabbing through the phone frame reaches track, block and run
 cells in order, each with the `--focus-ring`, and no text renders below 11px at
 390px. At 360px the telescope's rails fit without horizontal overflow.
 
@@ -1902,12 +2078,25 @@ is a property of a broken graph, not of the view.
   block to close (fewest issues remaining to finish an entire block) and the next
   event on the path with its distance in issues.
 
+- `run_opens` — **what a run opens** (D-40; the checklist's step 8). For run
+  R, the runs that name R as a direct prerequisite and whose readiness, from
+  the existing readiness view and counting R as read, is `ready_hard` or
+  `ready_all`. For a finished run that is simply their readiness now: *What this
+  opened* (2.12). Ordered **same block as R first, then by queue position
+  (1.10), then track order**. It answers the count and the rows, so a screen
+  takes the count plus the first three. **The `opens N` figure on every run row
+  comes from this view** (2.4, 2.9), not from `run_leverage`'s direct count,
+  which can include dependents still blocked by something else. Derived, never
+  stored, in `etl/views.sql` (a view, or a function taking the run if a view
+  cannot express "counting R as read").
+
 Two surfaces read them. **Why blocked?**: the amber `⊘ N runs first` badge is a
 button that opens `/comics/[runId]/path` (an intercepted sheet) listing the
 cheapest ordered chain — run, own cost, running total, hard/soft — with *+ Up
 next all*, computed from `run_ancestors()`. **Unlock preview**: the `opens N`
-tag is an `aria-expanded` button that expands the runs it opens, marking which
-become `ready_all` and which stay `ready_hard`. Mockup: `path`.
+tag is an `aria-expanded` button that expands `run_opens`' rows, marking which
+become `ready_all` and which `ready_hard`. Copy is *N to unlock*, never *costs
+N* (D-40, §15). Mockup: `path`.
 
 **Check:** relational, not literal (D-7). On a purpose-built fixture — A ← B ← C
 plus one soft edge — `run_unlock_cost(A)` equals A's unread placements plus B's
@@ -1920,8 +2109,11 @@ run. Each run's direct `run_leverage` equals its count of `prereqs` rows.
 `frontier` counts change correctly when the last issue of a prerequisite run is
 marked read. The path for `ewing-defenders` ends at the run itself, its running
 total equals that run's `run_unlock_cost`, and soft links are marked skippable;
-the unlock preview for `claremont-xmen` lists as many runs as its direct
-leverage, split by resulting state.
+the unlock preview for `claremont-xmen` lists exactly its `run_opens` rows,
+split by resulting state, and never more than its direct leverage. On a fixture
+where R is the hard prerequisite of A (nothing else), B (also hard-blocked by
+an unread S) and C (soft only), `run_opens(R)` is A and C and not B; reading S
+adds B; with A in R's block and C queued, A comes before C.
 
 ### ☐ 2.7 Rebalance, and accepting an overage · M
 The catch-up affordance, one tap from the books dashboard. A sheet with four
@@ -1988,8 +2180,8 @@ headers carry the hue and the runs-read count; block bands inside carry the
 block's issue count and read count and reuse the spine's era-band component.
 Depends on 2.6.
 
-Every row carries `costs N` and `opens N` from `run_unlock_cost` and
-`run_leverage` instead of a tier badge; tier moves to the sort control alongside
+Every row carries *N to unlock* and *opens N* (D-40, §15) from `run_unlock_cost` and
+`run_opens` instead of a tier badge; tier moves to the sort control alongside
 unlock cost, leverage, issue count and start year. Cost badges are amber, never
 red. Blocked rows keep the dimming and gain the count of runs in the way. Runs
 with `block_id IS NULL` (none in the 2026-09-23 extract, but the schema allows
@@ -2010,6 +2202,12 @@ the master list's *Fits Q2* chip and *Pick one* and does not rebuild them.
 Block bands use the `.emeter` meter, which must render at 5px on desktop. Rows
 carry the five-state badge from 2.4.
 
+**The frontier lives here now** (D-40, FP-D4; it left the dashboard). Above
+the first track, a compact *Frontier* group shows 2.6's `frontier` tiles —
+runs fully ready, runs one soft prereq short (the `ready_hard` outline), tracks
+never started, owned editions covering a ready run, the cheapest block to close
+and the next event on the path — each a link into this list, filtered.
+
 **Long lists keep their bearings** (UX-N16). The track header is sticky at
 `top: var(--bar-h)` (1.8's sticky stack), so the track you are scrolling through
 stays named. A partly read row says what is left (*108 left*), not a fraction
@@ -2026,6 +2224,8 @@ that no element renders `--danger`. Screenshot at 360px. On the
 desktop frame every block band shows a 5px-high `.emeter`, and hiding
 hard-blocked runs leaves every `ready_hard` row in place. On the phone, scrolled
 to the middle of a track, that track's header is fully visible below `.bar`.
+The frontier group's counts equal 2.6's `frontier` view, and a row's *opens N*
+equals its `run_opens` count.
 
 ### ☐ 2.10 Plan page as the full-size rail · M
 Same geometry as the books dashboard, taller, with each block's title and word
@@ -2091,6 +2291,61 @@ the data.
 
 **2.4, 2.6 and 2.9 render numbers that are wrong until the owner's checklist is
 done.** They are buildable without it (D-7: their checks are relational).
+
+### ☐ 2.12 Run and block completion · M
+D-40 (P6; FP-D11, FP-D14; STYLE_GUIDE §14.4, §15; Feel Review §7 and §10b).
+Finished things stay visible: the run page after its last mark says what you
+finished and what it opened. Depends on 1.8b, 2.5b and 2.6 (`run_opens`); 4.3
+brings the key art and the `--art` band, and until then both are the neutral
+placeholder on `--surface`. Nothing here is stored: *finished* is `run_state =
+'read'`, its date is `run_state.finished_at`, and *opened* is `run_opens`.
+
+**Run complete** (FP-D11), on `/comics/[runId]` when every placement is read
+here:
+
+- A centred band: the key art at 120 × 180, a grey `✓ read · Oct 2026` badge
+  (the five-state `read` badge, unchanged: grey, never green), *Finished.* in
+  Newsreader 44/46, *Uncanny X-Men, all 381 issues.*, and the date span with its
+  duration (*Mar 2025 – Oct 2026 · 19 months*, from the first and last dated
+  reads; undated reads give no span, S-14).
+- A card holding the run rail fully green and the block rail. **The run rail
+  fills once, left to right, over `--dur-fill`** when you arrive from the last
+  mark; any later visit draws it already full, and reduced motion draws it full
+  at once.
+- **What this opened**: `run_opens`' count and first three rows, each with its
+  readiness badge, then *All N newly ready*.
+- One closing `line` (Newsreader italic 18/26). It may name a record (*The
+  longest run you've finished so far.*), computed, never a goal, and is omitted
+  when no record applies.
+- Verbs: *Start {next in block}* (the block's next unread run; navigates, never
+  writes, R1-08) and *Not now*.
+
+**Block complete** (FP-D14) steps the same screen up a level when the run you
+just finished was the block's last unread run: the block's covers fanned out
+(60 × 90, overlapping by 16), a grey badge, `X-Men · block 1 of 7`, *Foundations,
+done.* (an unnamed block reads *Block 3, done.*), the run count, issue count and
+span. The track rail is the record: its cell fills over `--dur-fill`, then the
+head ring moves to the next block over `--dur-4`. Then *The block* (its runs,
+each with a `--ready` check), *What this opened* across the block, a closing
+line, and *Start block 2* · *Not now*.
+
+Copy is STYLE_GUIDE §15's: *Finished. Uncanny X-Men, all 381 issues. Mar 2025 –
+Oct 2026.*; *Foundations, done. Five runs and 664 issues, ending with
+Excalibur.* No confetti, no streak, no exclamation mark. 5.4's rating and note
+sit at the foot of this screen when 5.4 lands.
+
+**Open, stop and ask:** on a later visit to a run that closed its block, does
+the page show the block state or the run state? The feel pass draws only the
+moment after the mark.
+
+**Check:** on a fixture block of three runs, marking the last placement of the
+first renders *Finished.*, the grey `✓ read` badge with no green fill, the full
+run rail, and *What this opened* whose count equals `run_opens` and whose rows
+are its first three in order. Under emulated reduced motion the rail is full on
+first paint. A run with undated reads renders no date span. Marking the last
+placement of the block's last unread run renders *done.* with every run of the
+block listed and checked. Nothing on either screen resolves to `--danger`, and
+neither contains a catalogue total. The feel-pass screenshots of both states.
 
 ---
 
@@ -2449,8 +2704,16 @@ Then a real run of 200 with the cache warm.
 ### ☐ 4.2 Open Library and Hardcover backfill · M
 Page counts, covers, ISBNs from Open Library; series position from Hardcover.
 
+**Book covers get an art tone too** (D-40, FP-D6), for the books Now hero
+(2.2) and *Between books*: the same extraction and clamp as 4.3, run at ingest
+on the Open Library cover. Storing it (for example `books.art_d` / `art_l`) is a
+schema change, deferred by the owner on 2026-10-05: **stop and ask** before
+adding the columns, with 4.3's answer in hand so books and comics match.
+
 **Check:** dry run over 100 books; report match rate and conflicts against
-existing `series_position`.
+existing `series_position`. Once the columns are approved: every book with a
+cover has both tone strings or neither, and 4.3's clamp tests cover the
+shared extractor.
 
 ### ☐ 4.3 Covers in the UI · S
 Lazy-loaded, aspect-locked, graceful when null. Do not let a missing cover
@@ -2500,6 +2763,50 @@ it is never hand-entered, and nothing new is stored.
 Glass is unchanged. Covers scrolling under the header are the worst case D12
 was already sized for (STYLE_GUIDE §8).
 
+**Covers lead the feel pass** (D-40, P1; STYLE_GUIDE §4.2, §7). Outside the
+spine row (which stays 28×42, SG-D13), a cover is 2:3 at the `--cover-*` widths
+— hero 112 (150 from 768px), shelf 112, dashboard row 36, stack 30 — with
+`--r-cover` 4 and `--sh-cover`, whose 1px edge stops a dark cover merging into
+a dark card. The same lazy, aspect-locked, neutral-placeholder rules apply. The
+run detail leads with the run's key art on a full-bleed `--art` band, above the
+telescope and the spine (Feel Review §6); the comics hero (2.4) and completion
+(2.12) use the same art.
+
+**Cover art tone, `--art`** (FP-D6; the checklist's step 4). Deferred by the
+owner on 2026-10-05: it is a schema change, so **stop and ask before adding the
+columns**, with the open questions below.
+
+- **At ingest, never at render** (no page render calls out, CLAUDE.md). In
+  `enrich_comics.py`, after the cover URL is known: downsample the cover to
+  about 32 × 48, average in OKLab while skipping near-black (L < .12) and
+  near-white (L > .95) pixels, and convert to oklch. A cover with nothing left
+  after the skip gives no tone.
+- **Clamp to two strings**, exactly: dark `oklch(min(L,.30) min(C,.06) h)` and
+  light `oklch(max(L,.92) min(C,.035) h)`. The bounds are why every text token
+  keeps 4.5:1 on it; `test:tokens` already proves that at every 30° of hue.
+- **Stored with the cover**, both or neither (for example `art_d`, `art_l`
+  beside `issues.cover_url`, paired like `cover_date`/`cover_date_source`, and
+  carried through `issue_details.csv` so a re-extract keeps them). Rendered
+  inline as `--art-d` / `--art-l` on a `[data-art]` element; `globals.css`
+  already resolves `--art` from them per theme and falls back to `--surface`
+  when either is missing.
+- **A one-off backfill** for covers already stored (an `enrich_comics.py` mode,
+  `--dry-run` first, cached like every other Metron fetch).
+- **It carries no state** and can be switched off: **Settings → Appearance →
+  Ambient colour** sets `data-ambient="off"` on the root (`globals.css` already
+  honours it), stored wherever *Show covers* is.
+
+Open questions for that conversation: which cover is a run's **key art** (the
+first placement's? the head's? a chosen one?), and so where a run's tone lives;
+and whether the setting is per device (a cookie, like *Show covers* may be) or
+per user.
+
+**Done when** (once approved) every run with a cover has both strings, and unit
+tests over the clamp pass: a saturated dark cover clamps to L .30 and C .06; a
+pale one to L .92 and C .035; a greyscale cover keeps C 0 and some hue; an
+all-black or all-white cover, and a missing cover, give no tone and render
+`--surface`.
+
 **Check:** Lighthouse CLS under 0.1 on the books page. No cover placeholder
 renders a gradient or an identity hue, and no row renders both an `.edge` and a
 `.tag .sq`. On the spine, a row whose issue has a `cover_url` renders one
@@ -2522,14 +2829,17 @@ element carries a `box-shadow` that resolves to `--halo`.
   14px floor, each filled by its own share read, `read / total` as text, counting
   `DISTINCT issue_id`), a *never opened · 24* group,
   and a link to the run list pre-filtered by track. The sidebar's Tracks link
-  targets it. Mockup: `tracks`.
+  targets it. **Read runs stay visible** (D-40, P6): each track ends with a
+  cover shelf of its finished runs, latest first, so finishing a run adds to
+  something rather than removing a row. Mockup: `tracks`.
 - 5.3 — removed 2026-09-24 (review M-O3): it duplicated 3.6, which builds add,
   remove, rename, reorder and boundary drag for eras. The number is not reused.
 - ☐ 5.4 Ratings and post-read notes on runs · S. **The finish moment**
   (UX-N13, FEATURES #8/#11): marking a run's last placement, or setting a book
-  to *Read* (3.4 owns the book rating), shows a calm closing card in place of
-  the toast — rating (five 44px targets), a one-line note, *Skip*. The rating
-  control never fills `--ready`; it is an opinion, not progress. No celebration.
+  to *Read* (3.4 owns the book rating), offers a rating (five 44px targets), a
+  one-line note and *Skip*. For a run it sits at the foot of 2.12's completion
+  screen (D-40), and the mark's undo toast stays, because it carries Undo. The
+  rating control never fills `--ready`; it is an opinion, not progress. No celebration.
 - ☐ 5.5 DNF with a reason field · S. DNF opens the same closing card as 5.4
   with a reason field instead of a rating; DNF stays grey (UX-N13).
 - ☐ 5.6 `edition_issues` parser: `"Avengers #500-503 and Avengers Finale"` into join rows · M
@@ -2615,7 +2925,10 @@ element carries a `box-shadow` that resolves to `--halo`.
 - ☐ 6.2 Stats and year in review — depends on 1.5 and 2.1b · L
   Five charts per FEATURES.md Part 2d: books/year with plan overlaid, genre mix
   planned vs read, track completion (block rows, D-29), reading velocity, publication-decade
-  coverage. No streaks.
+  coverage. No streaks. **The provenance line lives here** (D-40, FP-D4): *73 of
+  10,834 issues logged…*, small and grey, is the one place the catalogue total
+  appears; the dashboards no longer carry it. The dashboards' *2026 so far*
+  rollups link here.
 - ☑ 6.2b **True unlock cost** — moved to 2.4/2.6, where the comics dashboard
   needs it. What remains here is the run-list *sort* by unlock cost and by
   leverage, once the views from 2.6 exist · S
@@ -2679,11 +2992,14 @@ element carries a `box-shadow` that resolves to `--halo`.
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M
 
-  **Partly done by Step 3 (D-31, 2026-09-30):** the style guide retuned the
-  neutrals and rebuilt dark depth (task 1.8a), keeping the four meanings and the
-  identity hues. What this task still owes is the lived-with pass, the CVD check
-  on the eight identity hues and `--brand` distance (M-O2). Run the prompt below
-  against `globals.css` as it then stands.
+  **Partly done by Step 3 (D-31, 2026-09-30) and the feel pass (D-40,
+  2026-10-05):** the style guide retuned the neutrals and rebuilt dark depth,
+  and the owner chose palette 1c *After hours* from three measured candidates,
+  keeping the four meanings and the identity hues. What this task still owes is
+  the lived-with pass, the CVD check on the eight identity hues and `--brand`
+  distance (M-O2). That last one is sharper with 1c: its teal `--brand` sits
+  ΔE 6.8 from light `--t6` / `--m-books` and 8.2 dark (`test:tokens` prints it).
+  Run the prompt below against `globals.css` as it then stands.
 
   The v4 palette was inherited from v3 and reconciled rather than designed. It
   works, and it has never been tested against a full app. Once the surfaces are
@@ -2896,6 +3212,21 @@ slots as comics and books. Depends on 8.3.
   franchise in progress, title waiting longest.
 - **2026 so far** — films, seasons, series finished, ranked.
 
+**The feel pass** (D-40; STYLE_GUIDE §14.1; Feel Review §5) recasts the slots
+as comics' are: Now is the only large thing (`--r-hero`), led by a 16:9 still;
+Up next is a shelf of posters; Position is the 2-rail telescope card; **Paused**
+(FP-D12) lists shows untouched for more than four weeks as grey rows with no
+nudge (*Still here when you want them.*), grey because paused has no colour
+meaning; and **2026 so far** is three this-year counts (films, seasons, shows
+finished). **Open, stop and ask before building**, because the drawing
+conflicts with rules that stand: (1) its Now has a one-cell-per-episode strip,
+*S4 E3* and *Mark S4 E3 watched*, but the watchlist tracks seasons and never
+episodes (CLAUDE.md, this phase's header); (2) its shelf has **Reorder**, but
+watch has no stored order (no queue table, and no period control by design);
+(3) its Position rails read show → season, where this task's are franchise →
+series. Until the owner settles them, build the season-level reading: the
+current season as the unit, the verb *Mark S4 watched*, and the rails below.
+
 The telecard stripe is the franchise hue (8.1), the coarse rail is headed
 **FRANCHISE · release order**, and the unit badge reads *seasons*. The up-next
 button says **Start S1** (or `Start S{next_season}`), not a bare *Watch*; a
@@ -2909,7 +3240,8 @@ is mid-show (S1 watched, S2 up next) on both.
 once in Now and not in Up next; that a show with every season watched appears in
 neither; that the genre filter narrows the queue without changing its order; and
 that the franchise rail renders 7 of 14 for a seeded Star Wars franchise.
-Screenshot at 360px.
+A show untouched for 29 days renders under *Paused* in grey, and one touched
+yesterday does not. The feel-pass screenshots.
 
 ### ☐ 8.8 Watch status: In flight · Up next · Done · S
 `/watch/status`, the 1.9 component with film and TV rows. Depends on 1.9 and

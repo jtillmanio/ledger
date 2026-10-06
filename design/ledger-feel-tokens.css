@@ -1,0 +1,125 @@
+/* ══ Ledger — feel pass tokens (proposal, 2026-10-05) ═════════════════════
+   Same names as design/tokens.css, so every value maps 1:1. Measured 5 Oct
+   (WCAG 2.x contrast, ΔE2000 vs --t1…--t8, gamut-mapped to sRGB): see
+   design/handoff/contrast-report.md. Fixes from that pass are marked "~ …". Three palettes
+   (data-pal a | b | c) × two themes (data-theme dark | light). The four colour
+   meanings are unchanged: --ready read/done · --brand position + primary ·
+   --blocked held · --danger destructive. What changes is chroma and surface
+   separation. + NEW marks tokens that tokens.css does not have yet.        */
+
+[data-pal]{
+  --sans:"IBM Plex Sans",system-ui,sans-serif;          /* ~ was Inter Tight */
+  --mono:"IBM Plex Mono",ui-monospace,monospace;        /* ~ was JetBrains Mono */
+  --display:"Newsreader",Georgia,serif;                 /* + NEW names and moments only */
+  --r-cell:3px; --r-sm:6px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-full:999px;
+  --r-cover:4px;                                        /* + NEW cover art corner */
+  --r-hero:20px;                                        /* + NEW the Now slot only */
+  --dur-1:100ms; --dur-2:150ms; --dur-3:200ms; --dur-4:300ms;
+  --dur-hold:600ms;                                     /* + NEW how long the mark button holds "✓ read" */
+  --ease-out:cubic-bezier(.2,.8,.2,1); --ease-in:cubic-bezier(.4,0,1,1);
+  --glass-bg:color-mix(in oklch,var(--surface) 90%,transparent);
+}
+/* --art: + NEW per-run ambient tone, derived from the cover at ingest and
+   clamped (dark L ≤ .30 C ≤ .06 · light L ≥ .92 C ≤ .035) so every text token
+   keeps 4.5:1 on it. Set inline as --art-d / --art-l on [data-art].        */
+[data-theme="dark"] [data-art]{--art:var(--art-d,var(--surface))}
+[data-theme="light"] [data-art]{--art:var(--art-l,var(--surface))}
+[data-ambient="off"] [data-art]{--art:var(--surface)}
+
+/* identity hues — unchanged from tokens.css */
+[data-theme="dark"]{
+  --t1:#6f9bff; --t2:#e879f9; --t3:#a3e635; --t4:#fde047; --t5:#a98aee; --t6:#4fb3cc; --t7:#e878ab; --t8:#8a96a6;
+  --m-comics:#a98aee; --m-books:#4fb3cc; --m-watch:#e878ab;
+  --halo:0 0 0 3px color-mix(in oklch,var(--brand) 26%,transparent),0 0 14px color-mix(in oklch,var(--brand) 32%,transparent);
+  --sh-1:inset 0 1px 0 rgba(255,255,255,.04);
+  --sh-2:inset 0 1px 0 rgba(255,255,255,.06),0 10px 28px -12px rgba(0,0,0,.75);
+  --sh-cover:0 12px 24px -12px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.06); /* + NEW */
+  --glass-edge:rgba(255,255,255,.07);
+  color-scheme:dark;
+}
+[data-theme="light"]{
+  --t1:#2563eb; --t2:#a21caf; --t3:#4d7c0f; --t4:#857700; --t5:#7c3aed; --t6:#0e7490; --t7:#be185d; --t8:#52606d;
+  --m-comics:#7c3aed; --m-books:#0e7490; --m-watch:#be185d;
+  --halo:0 0 0 3px color-mix(in oklch,var(--brand) 18%,transparent);
+  --sh-1:0 1px 2px rgba(20,16,10,.05);
+  --sh-2:0 1px 2px rgba(20,16,10,.06),0 10px 28px -12px rgba(20,16,10,.22);
+  --sh-cover:0 10px 20px -10px rgba(30,20,10,.45),0 0 0 1px rgba(0,0,0,.08);
+  --glass-edge:rgba(20,16,10,.08);
+}
+
+/* ── A · Signal — cool neutral, closest to the CFB reference ── */
+[data-pal="a"][data-theme="dark"]{
+  --page:oklch(.16 .008 255); --surface:oklch(.205 .01 255); --raise:oklch(.245 .011 255); --sunk:oklch(.135 .008 255); --overlay:oklch(.26 .012 255);
+  --ink:oklch(.955 .004 255); --ink-2:oklch(.83 .01 255); --muted:oklch(.71 .014 255); --faint:oklch(.70 .014 255); --faint-deco:oklch(.56 .012 255);
+  --rule:oklch(.29 .01 255); --rule-2:oklch(.36 .012 255); --line:oklch(.245 .01 255);
+  --brand:oklch(.74 .15 258); --brand-soft:oklch(.30 .075 260); --brand-ink:oklch(.85 .09 258);
+  --ready:oklch(.80 .17 158); --ready-soft:oklch(.29 .06 160);
+  --blocked:oklch(.82 .14 72); --blocked-soft:oklch(.30 .05 70);
+  --danger:oklch(.70 .17 25);
+  --on-brand:oklch(.16 .008 255); --on-ready:oklch(.16 .008 255);
+  --toast-bg:oklch(.31 .012 255); --toast-ink:oklch(.955 .004 255); --toast-muted:oklch(.80 .01 255); --toast-link:oklch(.85 .09 258);
+}
+[data-pal="a"][data-theme="light"]{
+  --page:oklch(.972 .004 255); --surface:oklch(1 0 0); --raise:oklch(.985 .003 255); --sunk:oklch(.945 .006 255); --overlay:oklch(1 0 0);
+  --ink:oklch(.20 .012 255); --ink-2:oklch(.38 .014 255); --muted:oklch(.50 .016 255); --faint:oklch(.50 .016 255); --faint-deco:oklch(.64 .014 255);
+  --rule:oklch(.91 .006 255); --rule-2:oklch(.85 .008 255); --line:oklch(.94 .005 255);
+  --brand:oklch(.50 .20 263); --brand-soft:oklch(.95 .03 263); --brand-ink:oklch(.42 .18 263);
+  --ready:oklch(.50 .14 160); --ready-soft:oklch(.955 .04 158);  /* ~ L .52→.50 H 158→160: ΔE vs --t3 and text on --sunk */
+  --blocked:oklch(.52 .12 62); --blocked-soft:oklch(.96 .035 75);
+  --danger:oklch(.52 .19 27);
+  --on-brand:#fff; --on-ready:#fff;
+  --toast-bg:oklch(.22 .012 255); --toast-ink:oklch(.97 .003 255); --toast-muted:oklch(.82 .01 255); --toast-link:oklch(.80 .1 258);
+}
+
+/* ── B · Lamplight — warm paper and ink, the recommended pick ── */
+[data-pal="b"][data-theme="dark"]{
+  --page:oklch(.165 .009 70); --surface:oklch(.21 .011 70); --raise:oklch(.25 .012 70); --sunk:oklch(.14 .008 70); --overlay:oklch(.265 .013 70);
+  --ink:oklch(.95 .01 85); --ink-2:oklch(.84 .014 80); --muted:oklch(.72 .018 75); --faint:oklch(.71 .018 75); --faint-deco:oklch(.57 .016 75);
+  --rule:oklch(.30 .012 70); --rule-2:oklch(.37 .014 70); --line:oklch(.25 .011 70);
+  --brand:oklch(.75 .15 262); --brand-soft:oklch(.31 .07 262); --brand-ink:oklch(.86 .085 262);
+  --ready:oklch(.81 .16 162); --ready-soft:oklch(.30 .055 162);
+  --blocked:oklch(.83 .14 74); --blocked-soft:oklch(.31 .05 72);  /* ~ H 78→74: ΔE vs --t4 */
+  --danger:oklch(.71 .16 28);
+  --on-brand:oklch(.165 .009 70); --on-ready:oklch(.165 .009 70);
+  --toast-bg:oklch(.31 .013 70); --toast-ink:oklch(.95 .01 85); --toast-muted:oklch(.81 .014 80); --toast-link:oklch(.86 .085 262);
+}
+[data-pal="b"][data-theme="light"]{
+  --page:oklch(.968 .01 85); --surface:oklch(.995 .004 85); --raise:oklch(.982 .007 85); --sunk:oklch(.935 .013 80); --overlay:oklch(.995 .004 85);
+  --ink:oklch(.22 .014 60); --ink-2:oklch(.39 .016 60); --muted:oklch(.50 .018 60); --faint:oklch(.50 .018 60); --faint-deco:oklch(.64 .018 70);
+  --rule:oklch(.90 .012 80); --rule-2:oklch(.84 .014 75); --line:oklch(.935 .01 80);
+  --brand:oklch(.49 .19 264); --brand-soft:oklch(.945 .03 264); --brand-ink:oklch(.41 .17 264);
+  --ready:oklch(.50 .13 160); --ready-soft:oklch(.95 .04 160);  /* ~ L .51→.50: ΔE vs --t3 and text on --sunk */
+  --blocked:oklch(.52 .12 60); --blocked-soft:oklch(.955 .035 78);
+  --danger:oklch(.52 .18 28);
+  --on-brand:#fff; --on-ready:#fff;
+  --toast-bg:oklch(.24 .014 60); --toast-ink:oklch(.97 .008 85); --toast-muted:oklch(.83 .012 80); --toast-link:oklch(.80 .1 262);
+}
+
+/* ── C · After hours — indigo-tinted night, azure brand ── */
+[data-pal="c"][data-theme="dark"]{
+  --page:oklch(.15 .022 275); --surface:oklch(.195 .027 275); --raise:oklch(.235 .03 275); --sunk:oklch(.125 .02 275); --overlay:oklch(.255 .032 275);
+  --ink:oklch(.96 .008 275); --ink-2:oklch(.85 .02 275); --muted:oklch(.73 .03 275); --faint:oklch(.72 .03 275); --faint-deco:oklch(.57 .03 275);
+  --rule:oklch(.28 .03 275); --rule-2:oklch(.35 .034 275); --line:oklch(.235 .028 275);
+  --brand:oklch(.79 .13 225); --brand-soft:oklch(.31 .06 230); --brand-ink:oklch(.88 .08 225);
+  --ready:oklch(.84 .17 152); --ready-soft:oklch(.30 .06 155);
+  --blocked:oklch(.84 .15 72); --blocked-soft:oklch(.31 .05 72);  /* ~ H 80→72: ΔE vs --t4 */
+  --danger:oklch(.72 .16 25);
+  --on-brand:oklch(.15 .022 275); --on-ready:oklch(.15 .022 275);
+  --toast-bg:oklch(.30 .03 275); --toast-ink:oklch(.96 .008 275); --toast-muted:oklch(.82 .02 275); --toast-link:oklch(.88 .08 225);
+}
+[data-pal="c"][data-theme="light"]{
+  --page:oklch(.968 .008 275); --surface:oklch(1 0 0); --raise:oklch(.982 .005 275); --sunk:oklch(.935 .014 275); --overlay:oklch(1 0 0);
+  --ink:oklch(.21 .03 275); --ink-2:oklch(.38 .035 275); --muted:oklch(.50 .03 275); --faint:oklch(.50 .03 275); --faint-deco:oklch(.64 .025 275);
+  --rule:oklch(.905 .012 275); --rule-2:oklch(.845 .016 275); --line:oklch(.94 .01 275);
+  --brand:oklch(.49 .14 235); --brand-soft:oklch(.95 .025 230); --brand-ink:oklch(.42 .12 235);  /* ~ L .52→.49: text on --sunk and glass */
+  --ready:oklch(.50 .13 160); --ready-soft:oklch(.95 .04 155);  /* ~ L .51→.50 H 152→160: ΔE vs --t3 */
+  --blocked:oklch(.52 .12 62); --blocked-soft:oklch(.955 .035 78);
+  --danger:oklch(.52 .18 27);
+  --on-brand:#fff; --on-ready:#fff;
+  --toast-bg:oklch(.23 .03 275); --toast-ink:oklch(.97 .006 275); --toast-muted:oklch(.83 .02 275); --toast-link:oklch(.82 .09 225);
+}
+
+@media (prefers-reduced-motion:reduce){
+  [data-pal]{--dur-1:0ms;--dur-2:0ms;--dur-3:0ms;--dur-4:0ms}  /* --dur-hold kept: a colour hold is not motion */
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ [data-pal]{--glass-bg:var(--surface)} }

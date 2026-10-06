@@ -1,6 +1,6 @@
 # Ledger — Style Guide & Data Presentation (Step 3)
 
-**Status:** design proposal, 2026-09-30. Nothing here touches `src/`.
+**Status:** design proposal, 2026-09-30. **Updated 2026-10-05 by the feel pass** (decision D-40): palette 1c *After hours* (the owner's pick), IBM Plex Sans, Plex Mono and Newsreader, cover-led dashboards, mark-read feedback, and completion screens. The changes are folded into each section and listed in §10, with the new material in §14–§16. Nothing here touches `src/`. The 2026-09-30 text is kept at `design/archive/STYLE_GUIDE-2026-09-30.md`.
 
 **Files in `design/`:**
 
@@ -9,10 +9,14 @@
 | `tokens.css` | Light and dark tokens, drop-in for `src/app/globals.css`. Same names; additions are marked `+ NEW` and changed values `~`. |
 | `Style Guide.dc.html` | Hub page, plus the **B specimen** in dark and light at 390 and 1000px. |
 | `Telescope Spec.dc.html` | Workstream A1–A3: 7 variants × 390/1000 × dark/light, plus hover, focus and scrub. |
-| `Plan Rail Spec.dc.html` | Workstream A4: quarter, settled and drag (the month frame is retired, D-38). |
+| `Plan Rail Spec.dc.html` | Workstream A4: quarter, settled, month and drag. |
 | `Telescope.dc.html`, `PlanRail.dc.html`, `Specimen.dc.html` | The components the pages import. Geometry is computed by the real `allocate()` rule. |
+| `Ledger Feel Review.dc.html` | **Feel pass (2026-10-05).** Diagnosis, palette decision aid, and phone mockups in dark and light: comics, mark-read storyboard, books (reading and between books), watch, run detail, run complete, comics all caught up, block complete, and the 768px tablet. |
+| `LedgerComics.dc.html` | The comics dashboard component the review imports. Mark-read is live. |
+| `ledger-feel-tokens.css` | All three palettes (1a, 1b, 1c) × dark and light, in oklch. These are the reference values; `tokens.css` carries 1c as hex; 1a and 1b are in `handoff/palette-swaps.css`. |
+| `handoff/` | The Claude Code package: prompt, checklist, D-40 draft, palette swaps, and the contrast report. |
 
-**Precedence.** `design/mockups.html` wins on layout and copy, and `globals.css` wins on token values. Every place this guide departs from either is listed in §12 *Proposed deviations*.
+**Precedence.** `design/mockups.html` wins on layout and copy, and `globals.css` wins on token values. Every place this guide departs from either is listed in §12 *Proposed deviations*. The feel-pass departures FP-D1…FP-D14 (§16) were accepted by the owner on 2026-10-05, so where they touch layout or copy they override `mockups.html`.
 
 ---
 
@@ -26,6 +30,8 @@
    - **Same algorithm.** `allocate()` is unchanged; only the axis changes (H becomes W).
 2. **Phone portrait is the same component, not a strip variant.** The only differences are `--tele-min` 14 vs 16, rail heights 18/24 vs 20/28, the gutter 44 vs 72, and fewer inline labels (§2.4). The ladder is a 3-row list on phone and a 3-column row on desktop.
 3. **Dark is the hero theme.** It uses a near-black page and tonal elevation. `--sunk` moves *below* `--surface`, so empty cells and tracks read as recessed. The only glow in the system is `--halo` on the head cell, and it means position.
+4. **Cover art is a run's identity** (feel pass P1). Covers lead the Now slot, the Up next shelf, the spine rows, run detail and completion. The art is content, not colour meaning: no state is ever carried by a cover or its ambient tone.
+5. **The Now slot is the one hero** (P3). It is the only large thing on a dashboard, with `--r-hero` corners. Slots 2–5 get quieter in order, and the slot order is unchanged.
 
 ---
 
@@ -159,8 +165,8 @@ The five-state partial, unchanged:
 | Property | Phone | Desktop |
 |---|---|---|
 | Rail height (column) | 230 | 300 |
-| Scale | 1000k = H (quarter) | same |
-| Capacity rule | 1.5px dashed `--ink-2`, label `760k` on `--surface` | same |
+| Scale | 1000k = H (quarter); 450k = H (month) | same |
+| Capacity rule | 1.5px dashed `--ink-2`, label `760k` / `253k / month` on `--surface` | same |
 | Column gap | 6 | 10 |
 | Fifth lane | 52px, 1px dashed `--blocked` left border, `.un` blocks (`--blocked-soft`, 1px dashed `--blocked`) | 150px, labelled *2027 · no quarter* |
 | Block | `button.qb`, radius 3, `--reading-soft`, 1px `--rule` ring, 3px `--hue` left edge, gap 2 | same, with inline title (≥ 18px tall) and words (≥ 32px) |
@@ -169,7 +175,9 @@ The five-state partial, unchanged:
 | Settled (stretch year) | Hatch turns `--hatch-settled` (grey). The decision card becomes `.decide.settled`: *2027 accepted as a stretch year on 14 Sep.* plus **Undo**. | same |
 | Stack | Two or more adjacent sub-24px blocks merge into one button: `--raise`, dashed `--faint-deco` (the telescope stub's vocabulary), `+N` over `Nk`, height = the sum or 24, whichever is larger. A single sub-24px block keeps its drawn height with a 24px `::after` hit area. | same |
 | Footer | `Q1`, `892k` and an overage badge only (`+132k`, amber). Room is implied by the rule. | `Q1`, `892k / 760k`, and either `over 132k` (amber) or `56k room` (grey, M-06) |
+| Month | 12 columns, 64px each, horizontal scroll-snap **inside the card** (`scroll-snap-type:x mandatory`), 253k rule | 12 columns plus the no-month lane, no scroll |
 | Drag (desktop) | — | The ghost is rotated −1.5° on `--sh-2` with a 2px dashed `--brand` outline. The source keeps a dashed placeholder. `output.dropdelta` (`aria-live`) reads *Q3 +99k → 514k / 760k*. The Move sheet stays the keyboard and phone route. |
+| Granularity control | Raised-pill segmented control on `--sunk` (`role="tablist"`) | same |
 
 **Shared with the telescope:** radius 3, gap 2, dashed = folded, dotted = estimated, hatch = held, `--focus-ring`, 11px floor, mono tabular numbers.
 
@@ -181,12 +189,16 @@ The full set is in `tokens.css`. The rules behind it follow.
 
 ### 4.1 Surfaces
 
+Palette 1c, measured 2026-10-05:
+
 | Order | Light (relative luminance) | Dark |
 |---|---|---|
-| Lowest | `--sunk` .83 | `--page` .0036 |
-| | `--page` .91 | `--sunk` .0051 |
-| | `--raise` .95 | `--surface` .0074 |
-| Highest | `--surface` = `--overlay` 1.0 (separated by shadow) | `--raise` .0122 → `--overlay` .0166 |
+| Lowest | `--sunk` 0.8165 | `--sunk` 0.0019 |
+| | `--page` 0.9065 | `--page` 0.0033 |
+| | `--raise` 0.9466 | `--surface` 0.0073 |
+| Highest | `--surface` = `--overlay` 1 (separated by shadow) | `--raise` 0.0128 → `--overlay` 0.0163 |
+
+In dark, `--sunk` now sits below `--page` as well as below `--surface`, and each step is about .04 L in oklch (it was about .01).
 
 Rules:
 
@@ -198,21 +210,23 @@ Rules:
 
 - **Light.** `--sh-1` is a hairline lift. `--sh-2` is for popovers and toasts. `--sh-3` is for sheets and dialogs.
 - **Dark.** Depth comes from tone plus a 1px inner top highlight (`inset 0 1px 0 rgba(255,255,255,.03–.06)`). A drop shadow appears only from `--sh-2` up.
-- **Glow.** `--halo` (a 3px ring plus a 14px bloom in dark) is used **only on the telescope head cell**. It is never decorative.
+- **Glow.** `--halo` (a 3px ring plus a 14px bloom in dark) is used **only on the telescope head cell**, and on the head cell of the hero's *This stretch* lens. It is never decorative.
+- **Covers.** `--sh-cover` lifts cover art off any surface. It carries a 1px edge, so a dark cover never merges into a dark card.
+- **Ambient art tone.** `--art` is the per-run tone behind the hero, the run-detail band and completion (FP-D6). It is extracted from the cover at ingest and clamped (dark L ≤ .30, C ≤ .06; light L ≥ .92, C ≤ .035), so every text token keeps 4.5:1 on it. It falls back to `--surface`, and `data-ambient="off"` turns it off.
 
 ### 4.3 Scales
 
 | Scale | Values |
 |---|---|
-| Radius | `--r-cell` 3 · `--r-sm` 6 (badges, tags) · `--r-md` 8 (buttons, inputs) · `--r-lg` 12 (groups, toasts) · `--r-xl` 16 (cards, sheets) · `--r-full` |
+| Radius | `--r-cell` 3 · `--r-cover` 4 (cover art) · `--r-sm` 6 (badges, tags) · `--r-md` 8 (buttons, inputs) · `--r-lg` 12 (groups, toasts, thumb-bar buttons) · `--r-xl` 16 (cards, sheets) · `--r-hero` 20 (the Now slot only) · `--r-full` |
 | Spacing | 4px base: 2 · 4 · 6 · 8 · 12 · 16 · 20 · 24 · 32 · 40 (`--sp-*`) |
-| Motion | `--dur-1` 100 (hover, press) · `--dur-2` 150 (check, chevron, tab indicator) · `--dur-3` 200 (menus, era expand, bracket) · `--dur-4` 300 (sheet enter, segment grow) · `--ease-out` `cubic-bezier(.2,.8,.2,1)` for enter · `--ease-in` `cubic-bezier(.4,0,1,1)` for exit at ~70% of the duration. `prefers-reduced-motion` sets every duration to 0. |
+| Motion | `--dur-1` 100 (hover, press) · `--dur-2` 150 (check, chevron, tab indicator) · `--dur-3` 200 (menus, era expand, bracket) · `--dur-4` 300 (sheet enter, segment grow) · `--ease-out` `cubic-bezier(.2,.8,.2,1)` for enter · `--ease-in` `cubic-bezier(.4,0,1,1)` for exit at ~70% of the duration. `--dur-hold` 600 (the mark button holds *✓ read*) · `--dur-fill` 900 (a completion rail fills once). `prefers-reduced-motion` sets every movement duration to 0. `--dur-hold` is kept, because holding a colour is not movement. |
 
 ---
 
 ## 5. B2 — Typography
 
-Families are kept: **Inter Tight** (UI) and **JetBrains Mono** (labels, counts, ranges, keys; `font-variant-numeric: tabular-nums`). They are already shipped, and the mono face's wide x-height suits dense issue labels.
+**Families (changed 2026-10-05, FP-D5):** **IBM Plex Sans** for the UI, **IBM Plex Mono** for labels, counts, ranges and keys (`font-variant-numeric: tabular-nums`; D-32 still holds, so counts stay mono), and **Newsreader** (`--display`) for names and moments only: screen titles, hero names, story titles, completion lines and empty-state headlines. All three are self-hosted, because rendering makes no external calls.
 
 | Style | Size / LH | Weight | Tracking | Use |
 |---|---|---|---|---|
@@ -222,7 +236,11 @@ Families are kept: **Inter Tight** (UI) and **JetBrains Mono** (labels, counts, 
 | `body` | 14/20 | 400 | −0.003em | UI body, buttons (600), menu items |
 | `row-title` | 15/20 (.9375rem) | 600 | −0.006em | `.rt`, run and book titles |
 | `h3.s` section | 12/16 | 600 | +0.06em, caps, `--ink-2`; count in mono 11 `--muted` | Section heads. They are distinguished from rows by treatment, not size. |
-| `h1.t` / `h2.t` screen title | 24/28 phone · 30/34 desk | 700 | −0.028em | One per page |
+| `h1.t` / `h2.t` screen title | 32/36 phone · 40/44 tablet and desk, **Newsreader** | 500 | −0.015em | One per page |
+| `hero-name` | 26/30 Newsreader (run detail h1 28/30, completion 40–44) | 500 | −0.01em | The run or book named in a hero |
+| `hero-num` | 44/48 mono (56/60 tablet) | 500 | −0.04em | The issue number in the Now slot |
+| `story` | 19/23 Newsreader italic | 400 | 0 | Story or arc title under the hero number |
+| `line` | 18/26 Newsreader italic | 400 | 0 | One closing line on completion and empty states |
 | `display` | 40/40 phone · 48/48 desk, mono | 500 | −0.04em | `.capnum`, `.pace .big`, `.timer-big` |
 
 **Numbers.**
@@ -263,7 +281,7 @@ The column gap is 8px. The row keeps its 14px right padding and has no left padd
 - Releasing a telescope scrub navigates to `#p-[ordinal]` (TASKS 2.5). The gutter shows the number you land on, and the row carries `id="p-42"`.
 - Under *Hide read* the gutter keeps the real ordinals, so the row after a *+3 read* stub is numbered 42, not 39, and the gap shows what is hidden (§9).
 
-**Truncation budget at 360px.** 360px, minus a 14px page gutter on each side and a 1px group border on each side, leaves a 330px row. The fixed columns take 24 + 44 + 28px, and three 8px gaps plus the 14px right padding add 38px, for 134px in all. **That leaves 196px for the label.** It was 220px with no gutter and the 36px cover. At Inter Tight 14/600, about 7.4px a character, that is about 26 characters before the series ellipsis:
+**Truncation budget at 360px.** 360px, minus a 14px page gutter on each side and a 1px group border on each side, leaves a 330px row. The fixed columns take 24 + 44 + 28px, and three 8px gaps plus the 14px right padding add 38px, for 134px in all. **That leaves 196px for the label.** It was 220px with no gutter and the 36px cover. At Inter Tight 14/600, about 7.4px a character, that is about 26 characters before the series ellipsis. (These were estimated before D-40 moved the UI to IBM Plex Sans, which sets a little wider; the 3.6b screenshot decides.)
 
 | Label | Chars | At 196px |
 |---|---|---|
@@ -283,98 +301,96 @@ The number is `flex:none`, so it is never lost. At 390px the label gets 226px, a
 
 ---
 
-## 6. Contrast and ΔE2000 (computed from the proposed values)
+## 6. Contrast and ΔE2000 (measured 2026-10-05, palette 1c)
 
-**Glass note.** `--ready` *text* on light glass over black reaches 4.29:1, so ready-coloured text is not allowed on glass chrome. The sync pill uses a green dot (non-text) plus `--ink-2` text. Every other pair passes.
+Measured from the oklch sources: gamut-mapped to sRGB, WCAG 2.x contrast, ΔE2000 in CIELAB. All three palettes pass, and their full tables are in `design/handoff/contrast-report.md`; the tables below are palette 1c, the one D-40 adopts. Fixes made by this pass: light `--ready` L .51 → .50 (ΔE against `--t3` was 11.8 in 1c, and text on `--sunk` was under 4.5); dark `--blocked` hue 80 → 72 (ΔE against `--t4` was 12.1); light `--brand` L .52 → .49 (text on `--sunk` was 4.29, and on glass 4.30).
+
+**Glass note.** `--ready` *text* on light glass over black reaches only 4.52:1, so ready-coloured text is still not allowed on glass chrome (SG-D12).
 
 ### Text tokens on every surface (floor 4.5:1)
 
 | Text token | Theme | page | surface | raise | sunk | overlay |
 |---|---|---|---|---|---|---|
-| `--ink` | light | 16.72 | 18.26 | 17.34 | 15.69 | 18.26 |
-| `--ink` | dark | 16.38 | 15.30 | 14.13 | 15.95 | 13.19 |
-| `--ink-2` | light | 9.27 | 10.12 | 9.61 | 8.70 | 10.12 |
-| `--ink-2` | dark | 10.69 | 9.99 | 9.23 | 10.41 | 8.61 |
-| `--muted` | light | 5.38 | 5.88 | 5.58 | 5.05 | 5.88 |
-| `--muted` | dark | 6.73 | 6.28 | 5.80 | 6.55 | 5.42 |
-| `--faint` | light | 5.14 | 5.62 | 5.33 | 4.83 | 5.62 |
-| `--faint` | dark | 6.32 | 5.90 | 5.45 | 6.15 | 5.09 |
-| `--brand` | light | 6.78 | 7.41 | 7.03 | 6.36 | 7.41 |
-| `--brand` | dark | 8.17 | 7.63 | 7.05 | 7.96 | 6.58 |
-| `--brand-ink` | light | 8.83 | 9.64 | 9.15 | 8.28 | 9.64 |
-| `--brand-ink` | dark | 10.80 | 10.08 | 9.31 | 10.51 | 8.70 |
-| `--ready` | light | 4.91 | 5.36 | 5.09 | 4.60 | 5.36 |
-| `--ready` | dark | 9.04 | 8.44 | 7.79 | 8.80 | 7.28 |
-| `--blocked` | light | 5.63 | 6.15 | 5.83 | 5.28 | 6.15 |
-| `--blocked` | dark | 9.28 | 8.67 | 8.01 | 9.04 | 7.48 |
-| `--danger` | light | 6.06 | 6.62 | 6.29 | 5.69 | 6.62 |
-| `--danger` | dark | 7.51 | 7.01 | 6.48 | 7.31 | 6.05 |
+| `--ink` | light | 16.18 | 17.77 | 16.86 | 14.66 | 17.77 |
+| `--ink` | dark | 17.52 | 16.31 | 14.88 | 18 | 14.08 |
+| `--ink-2` | light | 9.17 | 10.06 | 9.55 | 8.3 | 10.06 |
+| `--ink-2` | dark | 12.44 | 11.57 | 10.56 | 12.77 | 9.99 |
+| `--muted` | light | 5.49 | 6.02 | 5.72 | 4.97 | 6.02 |
+| `--muted` | dark | 8.21 | 7.64 | 6.97 | 8.43 | 6.6 |
+| `--faint` | light | 5.49 | 6.02 | 5.72 | 4.97 | 6.02 |
+| `--faint` | dark | 7.91 | 7.36 | 6.72 | 8.13 | 6.36 |
+| `--brand` | light | 5.6 | 6.14 | 5.83 | 5.07 | 6.14 |
+| `--brand` | dark | 10.51 | 9.78 | 8.92 | 10.79 | 8.44 |
+| `--brand-ink` | light | 7.58 | 8.32 | 7.9 | 6.87 | 8.32 |
+| `--brand-ink` | dark | 13.98 | 13.01 | 11.87 | 14.35 | 11.23 |
+| `--ready` | light | 5.16 | 5.67 | 5.38 | 4.68 | 5.67 |
+| `--ready` | dark | 12.83 | 11.94 | 10.9 | 13.18 | 10.31 |
+| `--blocked` | light | 5.19 | 5.7 | 5.41 | 4.7 | 5.7 |
+| `--blocked` | dark | 11.84 | 11.02 | 10.05 | 12.16 | 9.51 |
+| `--danger` | light | 5.5 | 6.04 | 5.73 | 4.98 | 6.04 |
+| `--danger` | dark | 7.41 | 6.89 | 6.29 | 7.61 | 5.95 |
 
 ### Paired fills (floor 4.5:1)
 
 | Pair | Light | Dark |
 |---|---|---|
-| `--ready` on `--ready-soft` | 4.70 | 7.60 |
-| `--blocked` on `--blocked-soft` | 5.42 | 7.93 |
-| `--danger` on `--danger-soft` | 5.65 | 6.63 |
-| `--brand-ink` on `--brand-soft` | 8.25 | 8.90 |
-| `--reading` on `--reading-soft` | 6.34 | 6.73 |
-| `--muted` on `--sunk` | 5.05 | 6.55 |
-| `--page` on `--ink` (chip on, D4; *Hide read* pressed) | 16.72 | 16.38 |
-| `--on-brand` on `--brand` | 7.41 | 8.17 |
-| `--on-ready` on `--ready` | 5.36 | 9.04 |
-| `--on-danger` on `--danger` | 6.62 | 7.51 |
-| `--on-muted` on `--muted` | 5.88 | 6.73 |
-| `--toast-ink` on `--toast-bg` | 16.72 | 13.19 |
-| `--toast-link` on `--toast-bg` | 9.05 | 8.70 |
+| `--ready` on `--ready-soft` | 4.97 | 8.67 |
+| `--blocked` on `--blocked-soft` | 4.99 | 7.97 |
+| `--danger` on `--danger-soft` | 5.26 | 5.77 |
+| `--brand-ink` on `--brand-soft` | 7.23 | 9.22 |
+| `--page` on `--ink` (chip on, D4; *Hide read* pressed) | 16.21 | 17.51 |
+| `--muted` on `--sunk` | 4.97 | 8.43 |
+| `--on-brand` on `--brand` | 6.14 | 10.51 |
+| `--on-ready` on `--ready` | 5.67 | 12.83 |
+| `--toast-ink` on `--toast-bg` | 15.53 | 12.18 |
+| `--toast-muted` on `--toast-bg` | 10.01 | 7.83 |
+| `--toast-link` on `--toast-bg` | 9.92 | 9.71 |
 
 ### UI component boundaries (floor 3:1)
 
-| Boundary | Against | Light | Dark |
-|---|---|---|---|
-| `.chk` unchecked ring (`--muted`) | `--surface` | 5.88 | 6.28 |
-| telescope cell edge, stub dash, rail outline (`--faint-deco`) | `--surface` | 3.35 | 3.49 |
-| cell edge on hover (`--raise`) (`--faint-deco`) | `--raise` | 3.18 | 3.22 |
-| stub edge inside a sheet (`--faint-deco`) | `--overlay` | 3.35 | 3.01 |
-| focus ring on page (`--brand`) | `--page` | 6.78 | 8.17 |
-| focus ring on surface (`--brand`) | `--surface` | 7.41 | 7.63 |
-| read segment vs unread track (`--ready`) | `--sunk` | 4.60 | 8.80 |
-| over-capacity hatch stroke (`--blocked`) | `--surface` | 6.15 | 8.67 |
-| head cell stroke vs cell (`--brand`) | `--sunk` | 6.36 | 7.96 |
+| Boundary | Light | Dark |
+|---|---|---|
+| faint-deco / surface | 3.37 | 4.09 |
+| faint-deco / raise | 3.2 | 3.73 |
+| faint-deco / overlay | 3.37 | 3.53 |
+| ready / sunk (segment) | 4.68 | 13.18 |
+| brand / sunk (head) | 5.07 | 10.79 |
+| brand / page (focus) | 5.6 | 10.51 |
 
 ### Glass chrome, worst case (floor 4.5:1)
 
-Glass is `--surface` at α 0.90 composited over the worst content that can scroll beneath it: pure white (dark theme; cover art) and pure black (light theme). Blur does not help the worst case, so it is not counted.
+Glass is `--surface` at α .90, composited in sRGB over pure white (dark) and pure black (light).
 
 | Text on glass | Light (over #000) | Dark (over #fff) |
 |---|---|---|
-| `--ink` | 14.63 | 11.68 |
-| `--ink-2` | 8.11 | 7.63 |
-| `--muted` | 4.71 | 4.80 |
-| `--brand` | 5.94 | 5.83 |
-| `--ready` | 4.29 | 6.44 |
-| `--blocked` | 4.92 | 6.62 |
+| `--ink` | 14.17 | 12.44 |
+| `--ink-2` | 8.03 | 8.83 |
+| `--muted` | 4.8 | 5.83 |
+| `--brand` | 4.9 | 7.46 |
+| `--ready` | 4.52 | 9.11 |
+| `--blocked` | 4.55 | 8.4 |
 
 ### Identity hues vs functional colours (ΔE2000, floor 15)
 
 | Hue | Light: ready · blocked · danger | Dark: ready · blocked · danger |
 |---|---|---|
-| `--t1` / `--g1` | 45.1 · 52.9 · 43.8 | 41.8 · 48.0 · 40.4 |
-| `--t2` / `--g2` | 47.4 · 52.2 · 34.6 | 47.9 · 50.7 · 31.8 |
-| `--t3` / `--g3` | 15.8 · 31.5 · 54.5 | 22.8 · 33.6 · 59.4 |
-| `--t4` / `--g4` | 27.6 · 17.5 · 39.0 | 33.9 · 20.0 · 43.3 |
-| `--t5` / `--g5` | 47.6 · 55.4 · 40.8 | 44.0 · 48.3 · 34.2 |
-| `--t6` / `--g6` | 27.5 · 42.1 · 52.2 | 25.5 · 40.6 · 54.7 |
-| `--t7` / `--g7` | 69.4 · 38.4 · 18.2 | 67.3 · 39.6 · 19.3 |
-| `--t8` / `--g8` | 26.4 · 31.5 · 33.8 | 28.6 · 31.7 · 31.1 |
+| `--t1` / `--g1` | 45.7 · 52.4 · 43.9 | 51.4 · 52.1 · 41.1 |
+| `--t2` / `--g2` | 47.5 · 51 · 34 | 53.7 · 55.4 · 30.8 |
+| `--t3` / `--g3` | 15.6 · 35 · 57.8 | 15.2 · 32.9 · 64 |
+| `--t4` / `--g4` | 27.5 · 19.8 · 41.4 | 29.9 · 16.1 · 47 |
+| `--t5` / `--g5` | 48 · 54.4 · 40.4 | 51.4 · 52.9 · 34 |
+| `--t6` / `--g6` | 28.2 · 43.1 · 54.3 | 35.7 · 43.8 · 57.8 |
+| `--t7` / `--g7` | 69.5 · 36.8 · 17 | 75.3 · 44.5 · 18.1 |
+| `--t8` / `--g8` | 26.5 · 32.7 · 35.1 | 36.8 · 36 · 32.3 |
+
+The tightest pairs are `--t3` against `--ready`: 15.6 light and 15.2 dark. Any later change to ready or blocked must re-run this check.
 
 ### Elevation order (relative luminance)
 
-| Theme | page | sunk | surface | raise | overlay |
+| Theme | page | surface | raise | sunk | overlay |
 |---|---|---|---|---|---|
-| light | 0.9114 | 0.8522 | 1.0000 | 0.9467 | 1.0000 |
-| dark | 0.0036 | 0.0051 | 0.0074 | 0.0122 | 0.0166 |
-
+| light | 0.9065 | 1 | 0.9466 | 0.8165 | 1 |
+| dark | 0.0033 | 0.0073 | 0.0128 | 0.0019 | 0.0163 |
 
 ---
 
@@ -387,8 +403,11 @@ Glass is `--surface` at α 0.90 composited over the worst content that can scrol
 | `row` (spine, `.iss`) | `--line` bottom divider; no zebra | — | 0 left (the gutter is the inset), 14 right; columns per §5.1 | min-height `--row-h`; hover `--raise` (100ms). The 28×42 cover sits inside the 48px row (D13) |
 | `row` (hidden-read stub) | 1px dashed `--faint-deco` | 8 | 0 × 14, min-height 44, 8px inset from the group edge | `--surface`; text 13/18 `--muted`, count in mono (§9) |
 | `telecard` | 1px inset `--rule`; 3px identity stripe | 16 | 16 phone / 20 desk | `--sh-1` (was `--sh-2`) |
-| `hero` | as telecard | 16 | 16 / 20 | `--sh-1` |
+| `hero` (Now slot) | 1px inset `--rule`; art band on `--art` | **20** (`--r-hero`) | 16 phone / 20 tablet | `--sh-1` |
 | `hero` next-issue strip | none: a **tonal** well (§4.1) in `--raise` | 8 (`--r-md`) | 8 | none. In the spine hero above *Resume*, and in the sticky `dk-rail` hero on desktop (§9) |
+| `cover` | none; `--sh-cover` | 4 (`--r-cover`) | — | 2:3. Hero 112 (150 from 768px) · shelf 112 · dashboard row 36 · stack 30. A spine row stays 28×42 (`--cv-row-*`, D13) |
+| `shelf` | none; horizontal scroll with `scroll-snap-type:x mandatory`, bleeding to the frame edge | — | 2 × 16 | Each card: cover, position chip on `--overlay`, 2-line title, mono meta, the readiness badge unchanged |
+| `lens` (*This stretch*) | cells as telescope cells | 3 | — | 24 cells, one per issue, around the head. Run-relative, never catalogue-relative (FP-D3) |
 | `sheet` | 1px inset `--rule-2`; grab 36×4 `--rule-2` | 16 (top) | 6 / 14 / 14 | `--overlay` + `--sh-3` over `--scrim` |
 | `chip` | 1px inset `--rule-2`; on: `--ink` fill, `--page` text | full | 0 × 12, 32 tall (44 hit) | none |
 | `badge` | per state (§2.9); `blocked`, `ready_hard` and `read` get a 1px ring | 6 | 4 × 8 | none |
@@ -420,7 +439,8 @@ Glass is `--surface` at α 0.90 composited over the worst content that can scrol
 - **Readiness badges.** Mono 11/14 600, radius 6, glyph plus text plus `aria-label`. `blocked` gains a 1px `--blocked` ring and is a button.
 - **Thumb bar.**
   - Glass.
-  - Primary slot `flex:1`, 44px, `--brand` / `--on-brand`, text truncates with ellipsis.
+  - Primary slot `flex:1`, 44px (48 on tablet), `--r-lg` 12 (FP-D10), `--brand` / `--on-brand`, text truncates with ellipsis.
+  - **The mark answers back** (P2, FP-D7). The full sequence is in §14.3.
   - `+ batch` secondary: 44px, 1px `--rule-2`.
   - Search: 44×44 with a drawn magnifier, replacing the U+26B2 glyph.
   - Desktop dashboards keep header buttons (DN-2 a). The spine and krakoa keep the bottom bar.
@@ -428,7 +448,7 @@ Glass is `--surface` at α 0.90 composited over the worst content that can scrol
 - **Segmented control.** A raised pill (`--surface` + `--sh-1`) on a `--sunk` track, 32px (44 hit). Proposed deviation D4.
 - **Chips.** Filter-on is neutral inverse (`--ink` / `--page`), filter-off is surface plus a ring, hover goes to `--raise` with a `--faint-deco` ring.
 - **Switch.** 36×20, on = `--brand` track with an `--on-brand` knob, off = `--sunk` with a `--faint-deco` ring and a `--muted` knob; `role="switch"`, 44px row. **Stepper:** `role="group"`, 32px buttons on `--sunk`, `<output>` mono.
-- **Toast.** `--toast-bg` / `--toast-ink`, with Undo in `--toast-link` 700. `role="status"`. A 2px `--brand` countdown bar runs along the bottom edge over 8s and pauses on hover or focus.
+- **Toast.** `--toast-bg` / `--toast-ink`, with Undo in `--toast-link` 700. A second line in `--toast-muted` mono 12/16 carries the run count (*46 of 381 in Uncanny X-Men*). `role="status"`. A 2px `--brand` countdown bar runs along the bottom edge over 8s and pauses on hover or focus.
 - **Skeletons.** The loaded geometry exactly (row 78px with a 36×54 cover, title 12px, meter 5px) in `--sunk`. The shimmer is off under reduced motion.
 - **Sync pill.** A 6px dot (`--ready` online; `--blocked` offline or queued) plus `--ink-2` text. The offline strip is `--blocked-soft` with a `--blocked` ring.
 - **Rate-limited status line.** Amber, because it is held: a countdown in mono and **Type it instead**.
@@ -473,6 +493,14 @@ Glass is `--surface` at α 0.90 composited over the worst content that can scrol
 ---
 
 ## 10. Changelog — additions and changed values
+
+### 2026-10-05 · feel pass (D-40)
+
+- **Added:** `--display`, `--art` (with `--art-d` / `--art-l` inputs), `--sh-cover`, `--r-cover` 4, `--r-hero` 20, `--dur-hold` 600, `--dur-fill` 900, `--toast-muted`, `--fs-hero-name` 26/30, `--fs-hero-num` 44/48, `--cover-hero` 112 (150 from 768px), `--cover-shelf` 112, `--cover-row` 36.
+- **Changed:** `--sans` Inter Tight → IBM Plex Sans; `--mono` JetBrains Mono → IBM Plex Mono; `--fs-title` 24/28 → 32/36 (desk 30/34 → 40/44, Newsreader 500); every neutral and semantic colour moves to palette 1c *After hours* (see §6 and `tokens.css`; D-40). Dark surfaces separate by about .04 L per step. `--glass-bg` and `--halo` follow the palette; the shadows are the feel pass's warm set.
+- **Unchanged:** every name, `--t1…--t8`, `--g*`, `--m-*`, the spacing, telescope and plan-rail geometry, and the four colour meanings.
+
+### 2026-09-30 · Step 3
 
 **Additions** (`+ NEW`):
 
@@ -532,7 +560,7 @@ theme: { extend: {
   borderRadius:{ cell:'3px', sm:'6px', md:'8px', lg:'12px', xl:'16px' },
   spacing:{ 0.5:'2px', 1:'4px', 1.5:'6px', 2:'8px', 3:'12px', 4:'16px', 5:'20px', 6:'24px', 8:'32px', 10:'40px' },
   fontSize:{ kicker:['11px','14px'], caption:['12px','16px'], 'body-sm':['13px','18px'], body:['14px','20px'],
-    'row-title':['15px','20px'], section:['12px','16px'], title:['24px','28px'], 'title-desk':['30px','34px'],
+    'row-title':['15px','20px'], section:['12px','16px'], title:['32px','36px'], 'title-desk':['40px','44px'],
     display:['40px','40px'], 'display-desk':['48px','48px'] },
   fontFamily:{ sans:'var(--sans)', mono:'var(--mono)' },
   boxShadow:{ 1:'var(--sh-1)', 2:'var(--sh-2)', 3:'var(--sh-3)', halo:'var(--halo)', focus:'var(--focus-ring)', 'glass-hi':'var(--glass-hi)' },
@@ -603,3 +631,102 @@ These ideas came out of a comparison with another reading-order app. One line ea
 | No `src/` code; design artefacts only | Everything is in `design/` |
 | No renamed or removed tokens or classes | §10: additions and value changes only |
 | No decorative gradients, no red on dashboards | Gradients are used only as hatch or tick textures that carry meaning; zero `--danger` on dashboard frames |
+| Ambient tone carries no state (feel pass) | `--art` is clamped content colour, never a meaning, and can be switched off; every badge and fill keeps its token |
+| No streaks, confetti or catalogue progress (feel pass) | The lens, the *Since Tuesday* stack and the rollup are run-relative or this-year counts. Completion is a record, not a celebration |
+| Reduced motion (feel pass) | Every feel-pass movement uses `--dur-*` and goes to 0. The colour hold (`--dur-hold`) stays so the confirm state is still seen |
+
+
+---
+
+## 14. Feel pass — screens and behaviour (2026-10-05)
+
+Drawn in `Ledger Feel Review.dc.html`, at 390 × 844 in dark and light, plus 768 × 1024 for the tablet.
+
+### 14.1 Dashboard slots (comics; books and watch follow the same pattern)
+
+| Slot | Content | Weight |
+|---|---|---|
+| 1 Now (hero) | Art band on `--art`: cover (`--cover-hero`), *Up now* kicker, `hero-num`, `story`, run · creator. Then the *This stretch* lens with a count (`45 of 381 read`), the *Since Tuesday* stack of up to 4 covers with a count, and *Also reading* as one row with a 32px secondary verb. | Only large element; `--r-hero` |
+| 2 Next | Up next shelf, numbered in queue order, readiness badges unchanged, **Start** on the first card, **Reorder** on the slot head | Shelf |
+| 3 Position | Telescope card, unchanged (horizontal, 14px min cell), plus the ladder | One card |
+| 4 Situation | *Ready when you are*: at most three rows, plus an *All N* text link | Group |
+| 5 Rollup | *2026 so far*: three this-year counts on `--raise`. Never the catalogue | One line of numbers |
+| Thumb bar | Primary mark verb naming the label, `+ batch`, search | Fixed, 44px |
+
+**Books:** Now is the book in hand (cover, title, author, `p. 212 of 468`, a 6px `--ready` meter, sittings). Position is the single-quarter strip (FP-D8). **Watch:** Now leads with a 16:9 still and a one-cell-per-episode strip. Position is the 2-rail telescope (show → season), and *Paused* rows are grey.
+
+### 14.2 Empty and caught-up states
+
+- **Between books** (books): a 72px cover of the last finished book with a `--ready` check, a `✓ finished · Sun` badge, *Between books.*, a line saying what you finished and how long it took, the top of the quarter's plan, and *Pick something else*.
+- **All caught up** (comics): the same shape. The badge reads `✓ caught up · date` and the headline *All caught up.* A *Coming out* list shows the next release of each monthly run, with the date in mono `--ink-2` and a grey `in N days` chip (a date has no colour meaning). Then the top of Up next with its readiness badge, and *Pick something else*. Position uses the telescope empty variant without its button (FP-D13). The thumb bar verb is *Start {top of Up next}*.
+
+### 14.3 The mark answers back (P2)
+
+| t | What happens |
+|---|---|
+| 0 | Press: scale .97, brightness .88, `--dur-1`. The write is optimistic. |
+| 120ms | Confirm: the button turns `--ready` / `--on-ready` and reads *✓ #141 read*. The lens cell fills (scale .5 → 1.12 → 1, `--dur-4`). A `✓ read` stamp lands on the hero cover. The counts tick (each number rises 70% with a fade, `--dur-4`): run read, *Since Tuesday*, this year. The run-rail segment grows and the head pill slides (`--dur-4`). The toast enters (12px rise, `--dur-4`). |
+| +`--dur-hold` | The green holds for 600ms. This hold is kept under reduced motion. |
+| 1.3s | Next: the next issue slides in from 20px right. A read-elsewhere issue shows the dashed grey hint, never green. The button returns to `--brand` with the next label, and the marked cover joins the stack. |
+| 8s | The toast's 2px `--brand` countdown ends (it pauses on hover or focus) and the toast leaves. **Undo** reverses every step. |
+
+Announced through the toast (`role="status"`). Under `prefers-reduced-motion`, every movement is instant and the states are the same.
+
+### 14.4 Completion
+
+- **Run complete** (FP-D11): a centred art band with the key art at 120 × 180, a grey `✓ read · month` badge, *Finished.* in display 44/46, the run and issue count, and the date span with its duration. Then a card with the run rail fully green (it fills once over `--dur-fill`) and the block rail. Then *What this opened* (readiness badges, *All N newly ready*), and one closing `line`. The verbs are *Start {next in block}* and *Not now*.
+- **Block complete** (FP-D14): the block's covers fanned out (60 × 90, overlapping by 16), a grey badge, `X-Men · block 1 of 7`, *Foundations, done.*, and the run count, issue count and span. The track rail is the record: cell 1 fills (`--dur-fill`), then the head ring moves to block 2 (`--dur-4`). Then *The block* (its runs, each with a `--ready` check), *What this opened*, and a closing line. The verbs are *Start block 2* and *Not now*.
+
+### 14.5 Tablet, 768–1023px (D-33)
+
+- **Rail.** A 72px rail on `--surface` with a right `--rule`. Each item is a 56px target, with a 20px icon in a 48 × 28 pill over an 11px label. The current item has a `--raise` pill and a 3px `--m-comics` bar, the same hue rule as the tab underline. Search and Settings sit at the foot. There are no tooltips.
+- **Column.** One content column with 32px padding, and h1 40/44.
+- **Hero.** Horizontal: a 150 × 225 cover, with the number (56/60), story, run and the lens to its right. *Since Tuesday* and *Also reading* share one row, split in two.
+- **Shelf.** 5 covers visible, with a 16px gap.
+- **Telescope.** Phone sizing (`--tele-*` changes only at 900px), with W = column − 2 × 20 − 44 (548 at 768). The ladder becomes three columns.
+- **Side rail.** The desktop side rail stacks below as two columns, 1.5 : 1 (*Ready when you are* | *2026 so far*).
+- **Thumb bar.** It spans the content column at 48px.
+
+Interaction follows the pointer, not the width (D-33).
+
+---
+
+## 15. Copy (P7, approved 2026-10-05)
+
+| Before | After |
+|---|---|
+| 2 runs in flight · 12 up next · 41 ready to start | 14 issues since Tuesday. Next up: Days of Future Past. |
+| PICK UP WHERE YOU LEFT OFF | Up now |
+| Unlocked and waiting | Ready when you are |
+| costs 4,173 | 4,173 to unlock |
+| Marked read · Undo | #141 read · 46 of 381 in Uncanny X-Men · Undo |
+| Nothing in progress (books) | Between books. Nothing's on the go, and that's fine. |
+| Nothing in progress (comics) | All caught up. *(lede: X-Men #9 is out Wed 22 Oct.)* |
+| 73 of 10,834 issues logged. Kept small and last… | (moved to Stats) |
+| ✓ read · Oct 2026 (badge only) | Finished. Uncanny X-Men, all 381 issues. Mar 2025 – Oct 2026. |
+| (none: block completion was not drawn) | Foundations, done. Five runs and 664 issues, ending with Excalibur. |
+
+Voice: sentences in place of tallies, plain verbs (*to unlock*, *ready when you are*), no exclamation marks, no streak or scoring language. A closing line may name a record (*The longest run you've finished so far.*), but never a goal.
+
+---
+
+## 16. Feel-pass departures (accepted 2026-10-05)
+
+These are numbered D1–D14 in `Ledger Feel Review.dc.html` §9 and prefixed FP- here, so they don't collide with SG-D1…SG-D12. FP-D1…FP-D12 were accepted by the owner. FP-D13 and FP-D14 came with the new states and are adopted unless the owner rejects them.
+
+| # | Departure |
+|---|---|
+| **FP-D1** | The telescope moves to slot 3 (Position), out of the Now telecard. The component is unchanged. |
+| **FP-D2** | Up next is a cover shelf. Drag and keyboard reorder move behind a **Reorder** button that opens the existing list. |
+| **FP-D3** | A *This stretch* lens in Now: 24 issue cells around the head, run-relative. |
+| **FP-D4** | Removed from the dashboard: *Rest of block 1* (now in the ladder), *The frontier* (now on the run list), the provenance line (now on Stats). *Also in flight* becomes one line in the hero. |
+| **FP-D5** | Fonts: IBM Plex Sans, Plex Mono and Newsreader. The phone h1 becomes 32/36 Newsreader 500. |
+| **FP-D6** | Ambient art tone (`--art`), clamped, carrying no state, and switchable off. |
+| **FP-D7** | The mark button turns `--ready` for `--dur-hold` and reads *✓ #141 read*. |
+| **FP-D8** | The books Position slot is a single-quarter strip against the 760k rule. The full plan rail stays on /books/plan. |
+| **FP-D9** | Copy changes per §15. |
+| **FP-D10** | Radii: hero 20 (new), thumb-bar buttons 12 (was 8). |
+| **FP-D11** | A run-completion state on the run page after the last mark: grey badge, green fills, *What this opened*. |
+| **FP-D12** | Watch *Paused*: grey rows for shows untouched for more than 4 weeks. No new colour. |
+| **FP-D13** | *(new, 2026-10-05)* On dashboards, the empty telescope (A2.2) drops its own Start button, because the thumb bar carries the same verb. |
+| **FP-D14** | *(new, 2026-10-05)* Finishing a block steps the completion screen up a level: the block's covers fanned out, the track rail as the record, the block's runs listed, and *Start block 2*. |

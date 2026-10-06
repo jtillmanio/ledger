@@ -54,6 +54,17 @@ happen before cutover (D-20); 1.5 drops `finished_year`, the year is derived
 from `finished_on` (D-21); unlock cost counts **unread** issues (D-22); login
 is a passphrase until task 6.13 (D-23).
 
+**The feel pass (D-40, 2026-10-05) changed these tasks after their prompts were
+written:** 1.2 (toast copy), 1.6 (the pointer lives in the Now hero), 1.8 (tablet
+rail, local icons), 1.8a (values already landed), 1.8b (the mark answers back),
+1.9, 1.10 (Up next is a cover shelf with *Reorder*), 2.2, 2.2b, 2.4, 2.5b, 2.6
+(`run_opens`), 2.9 (the frontier moves here), 4.2, 4.3 (`--art`), 5.2, 5.4, 6.2
+(provenance), 8.7, and the new **2.12** (completion), which has no section here:
+use the 2.4 prompt's shape with TASKS 2.12. For every one, read the task, then
+`docs/DESIGN.md` §9 and `design/STYLE_GUIDE.md` §14–§16, and open
+`design/Ledger Feel Review.dc.html` for the screen. Where the feel pass draws a
+surface it beats `design/mockups.html` on layout and copy.
+
 ---
 
 ## Changed by the R1 review (2026-09-20) — the prompts below predate it
@@ -1330,7 +1341,8 @@ not just planned.
 
 **Explore**
 ```
-read @docs/TASKS.md task 2.2 and the "Books — v4" screen in design/mockups.html.
+read @docs/TASKS.md task 2.2, design/STYLE_GUIDE.md §14 and section 4 of
+design/Ledger Feel Review.dc.html (it replaces "Books — v4" in mockups.html, D-40).
 confirm 1.7, 1.8, and 2.1 are landed — this task reads reading_plan.period,
 the app shell, and the capacity view directly. check which of 2.2b (the plan
 rail) and 2.1 are already ticked in TASKS.md so you don't rebuild a rail
@@ -1339,8 +1351,10 @@ component that exists.
 
 **Plan**
 ```
-write a plan for task 2.2: the five slots in order (reading now, plan rail,
-unplaced-entries card, capacity, year so far), matching "Books — v4" exactly.
+write a plan for task 2.2: the five slots in order (Now or Between books,
+the Up next shelf for the quarter, the single-quarter strip, On deck, 2026 so
+far), matching the feel pass's books screen. before planning, ask me where
+Rebalance/Accept and Place them surface now: TASKS 2.2 lists it as open.
 the capacity number is amber past 100%, never red, and the word "behind" does
 not appear anywhere on this screen — say where you're enforcing that as a
 rule, not just a convention. name the components for tasks 2.7 and 2.8
@@ -1420,7 +1434,9 @@ element on the page may render `--danger`.
 
 **Explore**
 ```
-read @docs/TASKS.md task 2.4 and the "Comics — v4" screen in design/mockups.html.
+read @docs/TASKS.md task 2.4, design/STYLE_GUIDE.md §14–§15 and sections 2, 3
+and 10 of design/Ledger Feel Review.dc.html (they replace "Comics — v4" in
+mockups.html, D-40); design/LedgerComics.dc.html has the mark live.
 confirm 1.6, 1.8, 2.5, and 2.6 are landed — this screen embeds the telescope
 component and reads run_unlock_cost/run_leverage/frontier directly. 2.4 is
 assembly: check TASKS.md for which of its dependencies are ticked before you
@@ -1429,19 +1445,20 @@ write anything new.
 
 **Plan**
 ```
-write a plan for task 2.4: the five slots in order (telescope, also in
-flight, unlocked and waiting, rest of this block, the frontier). candidate
-rows show "costs N · opens N", not a tier badge, plus an owned-edition tag
-where one exists. blocked runs keep the amber badge naming what's missing.
-the 76-of-10,285 catalog figure appears exactly once, in .prov grey, at the
-foot — nowhere else on the page.
+write a plan for task 2.4: the five slots in order (the Now hero with the
+This stretch lens, Since Tuesday and Also reading; the Up next shelf; the
+telescope card; Ready when you are, three rows at most; 2026 so far).
+candidate rows show "N to unlock · opens N" (opens from run_opens), not a tier
+badge, plus an owned-edition tag where one exists. blocked runs keep the amber
+badge naming what's missing. no catalogue total appears anywhere on the page:
+the provenance line moved to Stats. include All caught up and the tablet.
 ```
 
 **Implement**
 ```
 implement the plan. write the tests first: a run with readiness ready_hard
-renders the amber "1 soft prereq unread" badge and still appears in Unlocked
-and waiting; a blocked run appears only dimmed with its true cost; no element
+renders the green-outline "○ ready · 1 soft unread" badge and still appears in
+Ready when you are; a blocked run appears only dimmed with its true cost; no element
 on the page renders --danger. screenshot at 360px and check it yourself
 before showing me.
 

@@ -446,7 +446,7 @@ of book history) and they deserve different answers.
 | Route | What it is |
 |---|---|
 | `/` | Redirect to whichever medium you last touched |
-| `/comics` | Comics dashboard — the telescope, in-flight runs, ready runs, the frontier |
+| `/comics` | Comics dashboard — the Now hero, the Up next shelf, the telescope, ready runs, the year so far (D-40) |
 | `/comics/runs` | The run list, grouped track → block |
 | `/comics/tracks` | The tracks index: every track with completion counted in distinct issues, and a *never opened* group; each row links to the run list filtered by track |
 | `/comics/status` | In flight · Up next · Done, for runs |
@@ -491,13 +491,13 @@ the queue with what's reachable but not yet queued. Every tab reads from views
 `show_progress`). The queue's order and each quarter's order are the only stored
 things on this screen.
 
-The dashboards link in: *Also in flight → All*, *Up next → All*, *Unlocked
-and waiting → All N* (computed, D-7), and the books and watch equivalents go to the matching
-tab. **The comics dashboard shows the head of the queue** — the first five,
-with a *Start* button on the first — between *Also in flight* and *Unlocked
-and waiting*. That makes it the comics answer to the books plan rail and the
-watch up-next rows. Every *Unlocked and waiting* row gets **+ Up next** as its
-control.
+The dashboards link in: *Also reading → All*, *Up next → Reorder*, *Ready
+when you are → All N* (computed, D-7), and the books and watch equivalents go to the matching
+tab. **The comics dashboard shows the queue as a cover shelf** (D-40, FP-D2) —
+unstarted runs in your order, with a *Start* button on the first and *Reorder*
+opening the reorderable list — in slot 2. That makes it the comics answer to the
+books shelf and the watch up-next posters. Every *Ready when you are* row gets
+**+ Up next** as its control.
 
 **Adding is one pattern everywhere** (2.15): a segmented control at the top of
 every add surface, opening on Search, with the freeform path beside it —
@@ -516,8 +516,8 @@ dashboard a fill-in-the-blanks exercise rather than a design project.
 | Now | Run, issue position | Book, page position | Series, season position |
 | Next, with a period control | Your Up next queue (2.16), with + Up next on ready runs | Quarter chip | Five up next, filtered by film/TV and genre — see below |
 | Position | Issue → run → block → track | Quarters across the year | Season → series → franchise |
-| Situation | The frontier: what is reachable | Pace against capacity | What is reachable — seasons ready, shows unstarted, films waiting |
-| Rollup | Catalog provenance | The year so far | The year so far |
+| Situation | Ready when you are: at most three runs (the frontier moved to the run list, D-40) | On deck (where capacity decisions surface is open, TASKS 2.2) | Paused shows, in grey (D-40); what is reachable |
+| Rollup | The year so far (provenance moved to Stats, D-40) | The year so far | The year so far |
 
 **The telescope** is the comics "now" slot: three horizontal rails stacked top
 to bottom — the track's blocks, the block's runs, the run's issues — with
@@ -759,7 +759,9 @@ three elevation tiers.
 
 These rules keep the palette honest across three media and two themes:
 
-- **Contrast is a token property.** `--faint` (text) is `#606979` (dark
+- **Contrast is a token property.** *(D-40: the values are palette 1c's now,
+  `--faint` `#5e6275` light and `#9fa4b8` dark, `--faint-deco` `#878b9c` and
+  `#72768a`; the history below is why the rules exist.)* `--faint` (text) was `#606979` (dark
   `#8a93a2`), 4.5:1 or more on `--page`, `--surface`, `--raise` and `--sunk`
   (the audit's `#6f7888` measured 4.45:1 on white and 3.9:1 on the page, so it
   was darkened when the mockups were built); `--faint-deco` (`#98a1b0`) is for rules and

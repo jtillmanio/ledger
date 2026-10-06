@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./ledger-feel-tokens.css">
+<style>
+@keyframes lgTick{from{transform:translateY(70%);opacity:0}to{transform:none;opacity:1}}
+@keyframes lgIn{from{transform:translateX(20px);opacity:0}to{transform:none;opacity:1}}
+@keyframes lgFill{0%{transform:scale(.5)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes lgToast{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}}
+@keyframes lgCount{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" data-pal="{{ pal }}" data-ambient="{{ ambient }}" data-screen-label="Comics dashboard" style="position:relative;width:390px;height:844px;overflow:hidden;display:flex;flex-direction:column;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:20px;border-radius:32px;box-shadow:0 0 0 1px var(--rule-2),0 30px 60px -30px rgba(0,0,0,.5)">
+
+<header style="flex:none;position:relative;z-index:2;display:flex;align-items:center;height:52px;padding:0 4px 0 16px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--glass-edge)">
+<span style="font:italic 500 21px/1 var(--display);letter-spacing:-.01em;margin-right:10px">Ledger</span>
+<nav aria-label="Media" style="display:flex;flex:1">
+<a href="#" aria-current="page" style="display:flex;align-items:center;height:44px;padding:0 10px;font-weight:600;color:var(--ink);text-decoration:none;box-shadow:inset 0 -2px 0 var(--m-comics)">Comics</a>
+<a href="#" style="display:flex;align-items:center;height:44px;padding:0 10px;font-weight:500;color:var(--muted);text-decoration:none">Books</a>
+<a href="#" style="display:flex;align-items:center;height:44px;padding:0 10px;font-weight:500;color:var(--muted);text-decoration:none">Watch</a>
+</nav>
+<button aria-label="Search" style="width:44px;height:44px;border:0;background:transparent;color:var(--ink-2);display:grid;place-items:center;cursor:pointer"><span aria-hidden="true" style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat"></span></button>
+</header>
+
+<main style="flex:1;overflow-y:auto;scrollbar-width:none;padding:20px 16px 104px;display:flex;flex-direction:column;gap:28px">
+
+<div style="display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h1 style="margin:0;font:500 32px/36px var(--display);letter-spacing:-.015em">Comics</h1><a href="#" style="display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--rule-2);font:500 12px/16px var(--mono);color:var(--ink-2);text-decoration:none">6 in inbox</a></div>
+<p style="margin:0;color:var(--ink-2);text-wrap:pretty">14 issues since Tuesday. Next up: Days of Future Past.</p>
+</div>
+
+<section aria-labelledby="now-h" data-art="" style="--art-d:oklch(.29 .055 32);--art-l:oklch(.93 .03 45);display:flex;flex-direction:column;border-radius:var(--r-hero);overflow:hidden;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;gap:16px;padding:16px;background:var(--art)">
+<div aria-hidden="true" style="--cv:{{ heroCv }};position:relative;flex:none;width:112px;height:168px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover);overflow:hidden;animation:{{ heroAnim }}">
+<span style="position:absolute;left:8px;bottom:8px;font:500 11px/14px var(--mono);color:#fff">cover · {{ heroNum }}</span>
+<sc-if value="{{ heroStamp }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;top:8px;right:8px;display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;background:var(--ready);color:var(--on-ready);font:600 11px/1 var(--mono);animation:lgFill var(--dur-4) var(--ease-out)">✓ read</span></sc-if>
+</div>
+<div style="display:flex;flex-direction:column;min-width:0;padding-top:2px">
+<span id="now-h" style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)">Up now</span>
+<span style="font:500 44px/48px var(--mono);letter-spacing:-.04em;margin-top:8px">{{ heroNum }}</span>
+<span style="font:italic 400 19px/23px var(--display);text-wrap:pretty">{{ heroStory }}</span>
+<span style="font-size:13px;line-height:18px;color:var(--ink-2);margin-top:6px">Uncanny X-Men · Claremont</span>
+<sc-if value="{{ heroElse }}" hint-placeholder-val="{{ false }}"><span style="align-self:flex-start;margin-top:8px;display:inline-flex;align-items:center;gap:4px;min-height:22px;padding:2px 8px;border-radius:6px;border:1px dashed var(--muted);color:var(--ink-2);font:500 11px/14px var(--mono)">◌ read in another run · Mar 2025</span></sc-if>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;padding:14px 16px 16px">
+<div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">This stretch</span><span style="font-size:13px;color:var(--ink-2)"><b style="font-family:var(--mono);font-weight:600;color:var(--ink)">{{ readEl }}</b> of 381 read</span></div>
+<div role="img" aria-label="{{ lensLabel }}" style="display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:2px;height:22px">
+<sc-for list="{{ lens }}" as="c" hint-placeholder-count="24"><span style="box-sizing:border-box;border-radius:3px;background:{{ c.bg }};border:{{ c.bd }};box-shadow:{{ c.sh }};animation:{{ c.anim }}"></span></sc-for>
+</div>
+<div style="display:flex;justify-content:space-between;font:500 11px/14px var(--mono);color:var(--muted)"><span>#130</span><span>■ read  ◌ elsewhere</span><span>#153</span></div>
+</div>
+<div style="display:flex;align-items:center;gap:14px;padding:12px 16px;border-top:1px solid var(--line)">
+<div aria-hidden="true" style="display:flex;padding-left:8px">
+<sc-for list="{{ stack }}" as="s" hint-placeholder-count="4"><span style="--cv:{{ s.cv }};position:relative;width:30px;height:45px;margin-left:-8px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:0 0 0 2px var(--surface);animation:{{ s.anim }}"><span style="position:absolute;right:-5px;bottom:-5px;width:16px;height:16px;border-radius:50%;background:var(--ready);color:var(--on-ready);box-shadow:0 0 0 2px var(--surface);display:grid;place-items:center;font:700 11px/1 var(--sans)">✓</span></span></sc-for>
+</div>
+<div style="display:flex;flex-direction:column;min-width:0"><span style="font-size:13px;font-weight:600">Since Tuesday</span><span style="font:500 12px/16px var(--mono);color:var(--muted)">{{ stackCount }} issues · latest {{ stackLatest }}</span></div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;min-height:44px;padding:8px 16px;border-top:1px solid var(--line)">
+<span aria-hidden="true" style="--cv:oklch(.38 .09 200);flex:none;width:24px;height:36px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px)"></span>
+<a href="#" style="flex:1;min-width:0;font-size:13px;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="color:var(--muted)">Also reading · </span>Astonishing X-Men <span style="font-family:var(--mono);color:var(--muted)">11 / 25</span></a>
+<button style="flex:none;height:32px;padding:0 12px;border:0;border-radius:8px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 13px/1 var(--sans);cursor:pointer">Read #12</button>
+</div>
+</section>
+
+<section aria-labelledby="next-h" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:8px"><h2 id="next-h" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Up next</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">12</span><span style="flex:1"></span><button style="height:32px;padding:0 12px;border:0;border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:500 13px/1 var(--sans);cursor:pointer">Reorder</button></div>
+<div role="list" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 6px;scroll-snap-type:x mandatory">
+<sc-for list="{{ shelf }}" as="r" hint-placeholder-count="4">
+<div role="listitem" style="flex:none;width:112px;display:flex;flex-direction:column;gap:8px;scroll-snap-align:start">
+<a href="#" aria-label="Open {{ r.name }}" style="--cv:{{ r.cv }};position:relative;display:block;width:112px;height:168px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover)"><span style="position:absolute;top:6px;left:6px;min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;border-radius:6px;background:var(--overlay);color:var(--ink);font:600 11px/22px var(--mono);text-align:center">{{ r.pos }}</span></a>
+<div style="display:flex;flex-direction:column;gap:5px">
+<span style="font-size:13px;line-height:17px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ r.name }}</span>
+<span style="font:500 11px/14px var(--mono);color:var(--muted)">{{ r.meta }}</span>
+<sc-if value="{{ r.blocked }}" hint-placeholder-val="{{ false }}"><button aria-haspopup="dialog" aria-label="Why blocked? {{ r.badge }}" style="align-self:flex-start;min-height:24px;padding:3px 7px;border:0;border-radius:6px;background:var(--blocked-soft);box-shadow:inset 0 0 0 1px var(--blocked);color:var(--blocked);font:600 11px/14px var(--mono);text-align:left;cursor:pointer">{{ r.badge }}</button></sc-if>
+<sc-if value="{{ r.open }}" hint-placeholder-val="{{ true }}"><span style="align-self:flex-start;min-height:22px;padding:4px 7px;box-sizing:border-box;border-radius:6px;background:{{ r.bBg }};box-shadow:{{ r.bRing }};color:var(--ready);font:600 11px/14px var(--mono)">{{ r.badge }}</span></sc-if>
+<sc-if value="{{ r.first }}" hint-placeholder-val="{{ false }}"><button style="height:32px;margin-top:2px;border:0;border-radius:8px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 13px/1 var(--sans);cursor:pointer">Start</button></sc-if>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+
+<section aria-labelledby="pos-h" style="display:flex;flex-direction:column;gap:12px">
+<h2 id="pos-h" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Where you are</h2>
+<div style="display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:grid;grid-template-columns:44px 282px">
+<span style="font:500 11px/18px var(--mono);letter-spacing:.06em;color:var(--muted)">TRACK</span>
+<div role="slider" tabindex="0" aria-label="X-Men track" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1" aria-valuetext="block 1 of 7" style="display:flex;gap:2px;height:18px">
+<sc-for list="{{ track }}" as="c" hint-placeholder-count="7"><a href="#" aria-label="{{ c.aria }}" style="position:relative;flex:none;width:{{ c.w }}px;height:18px;border-radius:3px;background:var(--sunk);box-shadow:{{ c.ring }};overflow:hidden;color:{{ c.ink }};font:500 11px/18px var(--mono);text-decoration:none;white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ c.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:{{ c.pl }}px">{{ c.t }}</span></a></sc-for>
+</div>
+<span></span>
+<svg width="282" height="16" viewBox="0 0 282 16" aria-hidden="true" style="display:block"><polygon points="{{ br1 }}" style="fill:color-mix(in oklch,var(--brand) 10%,transparent)"></polygon><line x1="{{ br1a }}" y1="0" x2="0" y2="16" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line><line x1="{{ br1b }}" y1="0" x2="282" y2="16" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line></svg>
+<span style="font:500 11px/18px var(--mono);letter-spacing:.06em;color:var(--muted)">BLOCK</span>
+<div role="slider" tabindex="0" aria-label="Block 1, Foundations" aria-valuemin="1" aria-valuemax="5" aria-valuenow="2" aria-valuetext="run 2 of 5" style="display:flex;gap:2px;height:18px">
+<sc-for list="{{ block }}" as="c" hint-placeholder-count="5"><a href="#" aria-label="{{ c.aria }}" style="position:relative;flex:none;width:{{ c.w }}px;height:18px;border-radius:3px;background:var(--sunk);box-shadow:{{ c.ring }};overflow:hidden;color:{{ c.ink }};font:500 11px/18px var(--mono);text-decoration:none;white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ c.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:{{ c.pl }}px">{{ c.t }}</span></a></sc-for>
+</div>
+<span></span>
+<svg width="282" height="16" viewBox="0 0 282 16" aria-hidden="true" style="display:block"><polygon points="{{ br2 }}" style="fill:color-mix(in oklch,var(--brand) 10%,transparent)"></polygon><line x1="{{ br2a }}" y1="0" x2="0" y2="16" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line><line x1="{{ br2b }}" y1="0" x2="282" y2="16" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line></svg>
+<span style="font:500 11px/24px var(--mono);letter-spacing:.06em;color:var(--muted)">RUN</span>
+<div role="slider" tabindex="0" aria-label="Uncanny X-Men" aria-valuemin="1" aria-valuemax="381" aria-valuenow="{{ head }}" aria-valuetext="{{ pill }}" style="position:relative;height:24px;border-radius:3px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--faint-deco)">
+<sc-for list="{{ segs }}" as="s" hint-placeholder-count="2"><span style="position:absolute;top:0;bottom:0;left:{{ s.l }}%;width:{{ s.w }}%;background:var(--ready);border-radius:2px;transition:width var(--dur-4) var(--ease-out)"></span></sc-for>
+<span style="position:absolute;top:3px;bottom:3px;left:{{ elseL }}%;width:3px;box-sizing:border-box;border:1px dashed var(--muted)"></span>
+<span style="position:absolute;top:-4px;bottom:-4px;left:{{ headL }}%;width:2px;margin-left:-1px;background:var(--ink);box-shadow:0 0 0 2px var(--surface);transition:left var(--dur-4) var(--ease-out)"></span>
+</div>
+<span></span>
+<div aria-hidden="true" style="position:relative;height:9px"><sc-for list="{{ ticks }}" as="t" hint-placeholder-count="38"><span style="position:absolute;top:3px;left:{{ t.l }}%;width:1px;height:{{ t.h }}px;background:var(--faint-deco)"></span></sc-for></div>
+<span></span>
+<div style="position:relative;height:22px;margin-top:2px"><span style="position:absolute;left:{{ pillL }}px;top:0;height:20px;padding:0 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand-ink);box-shadow:inset 0 0 0 1px var(--brand);font:600 11px/20px var(--mono);white-space:nowrap;transition:left var(--dur-4) var(--ease-out)">{{ pill }}</span><span style="position:absolute;right:0;top:0;font:500 11px/20px var(--mono);color:var(--muted)">1 tick = 10</span></div>
+</div>
+<div role="list" style="display:flex;flex-direction:column;border-top:1px solid var(--line)">
+<div role="listitem" style="display:grid;grid-template-columns:56px 1fr;align-items:baseline;min-height:32px;padding-top:8px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">TRACK</span><span><b>X-Men</b> · block 1 of 7</span></div>
+<div role="listitem" style="display:grid;grid-template-columns:56px 1fr;align-items:baseline;min-height:28px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">BLOCK</span><span><b>1 · Foundations</b> · run 2 of 5</span></div>
+<div role="listitem" style="display:grid;grid-template-columns:56px 1fr;align-items:baseline;min-height:28px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">RUN</span><span><b>Uncanny X-Men</b> · <span style="font-family:var(--mono)">{{ pill }}</span></span></div>
+</div>
+</div>
+</section>
+
+<section aria-labelledby="sit-h" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><h2 id="sit-h" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Ready when you are</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">41</span></div>
+<div style="border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ ready }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)">
+<span aria-hidden="true" style="--cv:{{ r.cv }};flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px">
+<a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</a>
+<span style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:6px;background:var(--ready-soft);color:var(--ready);font:600 11px/1 var(--mono)">● ready</span><span style="font:500 12px/16px var(--mono);color:var(--muted)">{{ r.meta }}</span></span>
+</div>
+<button aria-label="Add {{ r.name }} to Up next" style="flex:none;height:32px;padding:0 10px;border:0;border-radius:8px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 13px/1 var(--sans);cursor:pointer">+ Up next</button>
+</div>
+</sc-for>
+<a href="#" style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:0 14px;color:var(--brand);text-decoration:none;font-size:13px;font-weight:500"><span>All 41 ready runs</span><span style="color:var(--muted);font-weight:400">62 more are one soft read away</span></a>
+</div>
+</section>
+
+<section aria-label="This year" style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:var(--r-xl);background:var(--raise);box-shadow:inset 0 0 0 1px var(--line)">
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">2026 so far</span>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
+<div style="display:flex;flex-direction:column"><span style="font:500 22px/28px var(--mono);letter-spacing:-.02em;overflow:hidden;height:28px">{{ yearEl }}</span><span style="font-size:12px;line-height:16px;color:var(--muted)">issues read</span></div>
+<div style="display:flex;flex-direction:column"><span style="font:500 22px/28px var(--mono);letter-spacing:-.02em">9</span><span style="font-size:12px;line-height:16px;color:var(--muted)">runs on the go</span></div>
+<div style="display:flex;flex-direction:column"><span style="font:500 22px/28px var(--mono);letter-spacing:-.02em">3</span><span style="font-size:12px;line-height:16px;color:var(--muted)">runs finished</span></div>
+</div>
+</section>
+</main>
+
+<sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+<div role="status" style="position:absolute;left:12px;right:12px;bottom:80px;z-index:3;display:flex;align-items:center;gap:12px;padding:8px 6px 8px 14px;border-radius:var(--r-lg);background:var(--toast-bg);color:var(--toast-ink);box-shadow:var(--sh-2);overflow:hidden;animation:lgToast var(--dur-4) var(--ease-out)">
+<span aria-hidden="true" style="flex:none;width:22px;height:22px;border-radius:50%;background:var(--ready);color:var(--on-ready);display:grid;place-items:center;font:700 12px/1 var(--sans)">✓</span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font-weight:600">#141 read</span><span style="font:500 12px/16px var(--mono);color:var(--toast-muted)">46 of 381 in Uncanny X-Men</span></div>
+<button onClick="{{ undo }}" style="height:44px;padding:0 12px;border:0;background:transparent;color:var(--toast-link);font:700 14px/1 var(--sans);cursor:pointer">Undo</button>
+<span aria-hidden="true" style="position:absolute;left:0;bottom:0;width:100%;height:2px;background:var(--brand);transform-origin:left;animation:lgCount 8s linear forwards"></span>
+</div>
+</sc-if>
+
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;gap:8px;padding:10px 12px 22px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-top:1px solid var(--glass-edge)">
+<button onClick="{{ mark }}" style="position:relative;flex:1;min-width:0;height:44px;border:0;border-radius:var(--r-lg);background:{{ btnBg }};color:{{ btnInk }};font:600 15px/1 var(--sans);display:flex;align-items:center;justify-content:center;gap:8px;transform:{{ btnScale }};filter:{{ btnFilter }};transition:background-color var(--dur-2) var(--ease-out),transform var(--dur-1) var(--ease-out);cursor:pointer;white-space:nowrap"><span aria-hidden="true" style="flex:none;width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/check.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/check.svg) center/contain no-repeat"></span>{{ btnLabel }}</button>
+<button style="flex:none;height:44px;padding:0 14px;border:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 14px/1 var(--sans);cursor:pointer">+ batch</button>
+<button aria-label="Search" style="flex:none;width:44px;height:44px;border:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);display:grid;place-items:center;cursor:pointer"><span aria-hidden="true" style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat"></span></button>
+<sc-if value="{{ isTap }}" hint-placeholder-val="{{ false }}"><span aria-hidden="true" style="position:absolute;left:120px;top:10px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.28);box-shadow:0 0 0 2px rgba(255,255,255,.55)"></span></sc-if>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:390,&quot;height&quot;:844},&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;pal&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;a&quot;,&quot;b&quot;,&quot;c&quot;],&quot;default&quot;:&quot;b&quot;,&quot;tsType&quot;:&quot;'a'|'b'|'c'&quot;},&quot;stage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;rest&quot;,&quot;tap&quot;,&quot;confirm&quot;,&quot;after&quot;],&quot;default&quot;:&quot;rest&quot;,&quot;tsType&quot;:&quot;'rest'|'tap'|'confirm'|'after'&quot;},&quot;live&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;ambient&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;on&quot;,&quot;off&quot;],&quot;default&quot;:&quot;on&quot;,&quot;tsType&quot;:&quot;'on'|'off'&quot;}}">
+class Component extends DCLogic {
+  state = { st: null };
+  componentWillUnmount() { clearTimeout(this.a); clearTimeout(this.b); }
+  mark = () => {
+    if (!(this.props.live ?? true)) return;
+    if ((this.state.st ?? this.props.stage ?? 'rest') !== 'rest') return;
+    this.setState({ st: 'tap' });
+    this.a = setTimeout(() => this.setState({ st: 'confirm' }), 120);
+    this.b = setTimeout(() => this.setState({ st: 'after' }), 1300);
+  };
+  undo = () => { clearTimeout(this.a); clearTimeout(this.b); this.setState({ st: 'rest' }); };
+  alloc(c, W, min = 14, gap = 2) {
+    const T = c.reduce((a, b) => a + b, 0), free = W - gap * (c.length - 1) - c.length * min;
+    return c.map(x => +(min + x / T * free).toFixed(1));
+  }
+  tick(v, animate) {
+    return React.createElement('span', { key: String(v), style: { display: 'inline-block', animation: animate ? 'lgTick var(--dur-4) var(--ease-out)' : 'none' } }, v);
+  }
+  renderVals() {
+    const P = this.props;
+    const st = this.state.st ?? P.stage ?? 'rest';
+    const marked = st === 'confirm' || st === 'after', after = st === 'after';
+    const head = marked ? 43 : 42, read = marked ? 46 : 45;
+    const cv = (h, c, l) => `oklch(${l} ${c} ${h})`;
+    const lens = [];
+    for (let o = 31; o <= 54; o++) {
+      const isRead = o <= 41 || (o >= 44 && o <= 47) || (marked && o === 42);
+      const isHead = o === head, isElse = o === 43 && !isHead;
+      lens.push({
+        bg: isRead ? 'var(--ready)' : isElse ? 'transparent' : 'var(--sunk)',
+        bd: isRead ? '1px solid var(--ready)' : isHead ? '1.5px solid var(--brand)' : isElse ? '1px dashed var(--muted)' : '1px solid var(--faint-deco)',
+        sh: isHead ? 'var(--halo)' : 'none',
+        anim: marked && o === 42 && st === 'confirm' ? 'lgFill var(--dur-4) var(--ease-out)' : 'none'
+      });
+    }
+    const stackIss = marked ? [138, 139, 140, 141] : [137, 138, 139, 140];
+    const hues = { 137: [200, .09, .40], 138: [300, .08, .36], 139: [70, .1, .45], 140: [250, .09, .38], 141: [32, .11, .42] };
+    const stack = stackIss.map((n, i) => ({ cv: cv(...hues[n]), anim: marked && i === 3 && st === 'confirm' ? 'lgIn var(--dur-4) var(--ease-out)' : 'none' }));
+    const tw = this.alloc([664, 214, 301, 268, 352, 211, 170], 282);
+    const bw = this.alloc([66, 381, 100, 70, 47], 282);
+    const blockRead = 66 + read;
+    const ring = h => h ? 'inset 0 0 0 1.5px var(--brand), var(--halo)' : 'inset 0 0 0 1px var(--faint-deco)';
+    const track = tw.map((w, i) => {
+      const fill = i === 0 ? blockRead / 664 * 100 : 0;
+      return { w, fill, ring: ring(i === 0), ink: i === 0 ? 'var(--ink)' : 'var(--muted)', t: String(i + 1), pl: fill ? +(w * fill / 100 + 6).toFixed(1) : 6, aria: `Block ${i + 1}${i === 0 ? ' · Foundations · ' + Math.round(fill) + '% read' : ''}` };
+    });
+    const bNames = ['Lee/Kirby — X-Men', 'Claremont — Uncanny X-Men', 'Claremont — New Mutants', 'Simonson — X-Factor', 'Claremont/Davis — Excalibur'];
+    const bLabels = ['66', 'Claremont · 381', '100', '70', '47'];
+    const block = bw.map((w, i) => {
+      const fill = i === 0 ? 100 : i === 1 ? read / 381 * 100 : 0;
+      return { w, fill, ring: ring(i === 1), ink: i === 0 ? 'var(--on-ready)' : i === 1 ? 'var(--ink)' : 'var(--muted)', t: bLabels[i], pl: fill > 0 && fill < 100 ? +(w * fill / 100 + 6).toFixed(1) : 6, aria: `${bNames[i]} · ${Math.round(fill)}% read` };
+    });
+    const x1 = tw[0], bx = bw[0] + 2, bx2 = bx + bw[1];
+    const pct = n => +(n / 381 * 100).toFixed(3);
+    const segs = [{ l: 0, w: pct(marked ? 42 : 41) }, { l: pct(43), w: pct(4) }];
+    const ticks = []; for (let i = 10; i <= 380; i += 10) ticks.push({ l: pct(i), h: i % 50 === 0 ? 6 : 3 });
+    const pill = `${head} / 381 · #${head + 99}`;
+    const pillW = pill.length * 6.7 + 16, headX = (head - .5) / 381 * 282;
+    const pillL = Math.max(0, Math.min(282 - pillW, headX - pillW / 2));
+    const kind = { ready: ['var(--ready-soft)', 'none'], hard: ['transparent', 'inset 0 0 0 1px var(--ready)'] };
+    const shelfRaw = [
+      { name: 'Claremont — New Mutants', meta: '100 iss · opens 3', cv: cv(50, .12, .45), k: 'ready', badge: '● ready', first: true },
+      { name: 'Simonson — Thor', meta: '44 iss · on your shelf', cv: cv(240, .1, .40), k: 'ready', badge: '● ready' },
+      { name: 'Ewing — Immortal Hulk', meta: '64 iss · 4,173 to unlock', cv: cv(150, .1, .38), k: 'blocked', badge: '⊘ 82 runs first' },
+      { name: 'Hickman — Fantastic Four', meta: '76 iss', cv: cv(265, .11, .42), k: 'hard', badge: '○ ready · 1 soft unread' },
+      { name: 'Priest — Black Panther', meta: '62 iss', cv: cv(300, .08, .32), k: 'ready', badge: '● ready' }
+    ];
+    const shelf = shelfRaw.map((r, i) => Object.assign({}, r, { pos: String(i + 1), blocked: r.k === 'blocked', open: r.k !== 'blocked', first: !!r.first, bBg: (kind[r.k] || kind.ready)[0], bRing: (kind[r.k] || kind.ready)[1] }));
+    return {
+      theme: P.theme ?? 'dark', pal: P.pal ?? 'b', ambient: P.ambient ?? 'on',
+      heroNum: after ? '#142' : '#141', heroStory: after ? 'Days of Future Past, part 2' : 'Days of Future Past, part 1',
+      heroCv: after ? cv(250, .09, .36) : cv(32, .11, .42), heroAnim: after ? 'lgIn var(--dur-4) var(--ease-out)' : 'none',
+      heroStamp: st === 'confirm', heroElse: after,
+      readEl: this.tick(read, marked), lens, lensLabel: `Issues #130 to #153. ${read} of 381 read in this run. Next is #${head + 99}.`,
+      stack, stackCount: this.tick(marked ? 15 : 14, marked), stackLatest: marked ? '#141' : '#140',
+      shelf, track, block, head, pill, pillL: +pillL.toFixed(1), segs, ticks, elseL: pct(42), headL: +((head - .5) / 381 * 100).toFixed(3),
+      br1: `0,0 ${x1},0 282,16 0,16`, br1a: 0, br1b: x1, br2: `${bx},0 ${bx2.toFixed(1)},0 282,16 0,16`, br2a: bx, br2b: +bx2.toFixed(1),
+      ready: [
+        { name: 'Miller — Daredevil', meta: '31 iss · opens 4', cv: cv(25, .13, .40) },
+        { name: 'Peter David — Hulk', meta: '137 iss · opens 6', cv: cv(145, .1, .40) },
+        { name: 'Gillen — Journey into Mystery', meta: '31 iss · opens 2', cv: cv(85, .09, .42) }
+      ],
+      yearEl: this.tick(marked ? 213 : 212, marked),
+      toast: marked,
+      isTap: st === 'tap',
+      btnBg: st === 'confirm' ? 'var(--ready)' : 'var(--brand)', btnInk: st === 'confirm' ? 'var(--on-ready)' : 'var(--on-brand)',
+      btnScale: st === 'tap' ? 'scale(.97)' : 'none', btnFilter: st === 'tap' ? 'brightness(.88)' : 'none',
+      btnLabel: st === 'confirm' ? '#141 read' : `Mark #${head + 99} read`,
+      mark: this.mark, undo: this.undo
+    };
+  }
+}
+</script>
+</body>
+</html>

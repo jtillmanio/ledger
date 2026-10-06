@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./ledger-feel-tokens.css">
+<style>
+body{margin:0;background:#ebe8e2}
+a{color:#3546b8}
+a:hover{color:#1f2d8a}
+</style>
+</helmet>
+<div style="min-height:100vh;background:#ebe8e2;color:#1f1c18;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:24px;padding:64px 72px 160px;display:flex;flex-direction:column;gap:112px">
+
+<header style="display:flex;flex-direction:column;gap:20px;max-width:880px">
+<span style="font:500 12px/16px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f594f">Ledger · design review · 5 Oct 2026</span>
+<h1 style="margin:0;font:500 72px/74px 'Newsreader',Georgia,serif;letter-spacing:-.025em;text-wrap:pretty">It works. Now make it somewhere you want to be.</h1>
+<p style="margin:0;font-size:19px;line-height:29px;color:#3d3830;text-wrap:pretty">Ledger is correct, tidy and flat. Below: why it feels flat (ranked), three palettes that keep the four colour meanings, phone mockups of the moments that matter in dark and light, seven proposed changes, and every token change and departure listed so you can accept or reject each one.</p>
+<nav aria-label="Sections" style="display:flex;flex-wrap:wrap;gap:8px 18px;font-size:15px"><a href="#diagnosis">1 · Diagnosis</a><a href="#colour">2 · Colour options</a><a href="#mark">3 · The mark</a><a href="#books">4 · Books</a><a href="#watch">5 · Watch</a><a href="#run">6 · Run detail</a><a href="#complete">7 · Finishing a run</a><a href="#proposals">8 · Proposals</a><a href="#tokens">9 · Tokens and departures</a><a href="#states">10 · New states</a></nav>
+<p style="margin:0;font-size:14px;line-height:21px;color:#5f594f">Every phone is 390 × 844 and scrolls inside. On the comics dashboards, <b>Mark #141 read</b> works: tap it to see the feedback, and Undo resets it. Covers are striped placeholders for real art. The Tweaks panel switches the palette used in sections 3–7 and 10 and turns ambient art tone on or off.</p>
+<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px;line-height:20px"><span style="font:600 11px/14px 'IBM Plex Mono',monospace;padding:4px 8px;border-radius:6px;background:#1f1c18;color:#f6f4f0">RULINGS · 5 OCT</span><span>D1–D12 accepted · copy approved · folded into <code>tokens.css</code> and <code>STYLE_GUIDE.md</code> · palette still open (see <a href="#choose">How to choose</a>) · new states in <a href="#states">section 10</a></span></div>
+</header>
+
+<section id="diagnosis" style="display:flex;flex-direction:column;gap:28px;max-width:1080px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font:500 12px/16px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f594f">1 · Diagnosis, ranked by how much each one hurts</span><h2 style="margin:0;font:500 44px/48px 'Newsreader',Georgia,serif;letter-spacing:-.02em">Why it feels flat</h2></div>
+<div style="display:flex;flex-direction:column;border-top:1px solid #d3cdc3">
+<div style="display:grid;grid-template-columns:72px 200px minmax(0,1fr);gap:24px;padding:22px 0;border-bottom:1px solid #d3cdc3"><span style="font:500 40px/40px 'Newsreader',serif">1</span><div style="display:flex;flex-direction:column;gap:6px"><b style="font-size:18px">The art is missing</b><span style="align-self:flex-start;font:600 11px/14px 'IBM Plex Mono',monospace;padding:3px 8px;border-radius:6px;background:#1f1c18;color:#f6f4f0">HURTS MOST</span></div><p style="margin:0;color:#3d3830;text-wrap:pretty">Comics and books are visual things, and every cover in <code>mockups.html</code> is a 36 × 54 tile of initials (“NM”, “THR”). The thing that makes a run recognisable at a glance is absent, so every screen is text on grey and every run looks like every other. The style guide's October note says spine rows already have real covers, but the dashboards don't use them. Fixed by <a href="#p1">P1</a>.</p></div>
+<div style="display:grid;grid-template-columns:72px 200px minmax(0,1fr);gap:24px;padding:22px 0;border-bottom:1px solid #d3cdc3"><span style="font:500 40px/40px 'Newsreader',serif">2</span><div style="display:flex;flex-direction:column;gap:6px"><b style="font-size:18px">The mark gets no answer</b><span style="align-self:flex-start;font:600 11px/14px 'IBM Plex Mono',monospace;padding:3px 8px;border-radius:6px;background:#5f594f;color:#f6f4f0">HIGH</span></div><p style="margin:0;color:#3d3830;text-wrap:pretty"><b>Mark #141 read</b> is the action you repeat most, and the only response specced is a 300 ms segment growth on a run rail where one issue is about 0.7 px wide, usually below the fold. The button doesn't change, no count moves, and nothing tells you you're now at 46. The finish moment is a toast. Fixed by <a href="#p2">P2</a>.</p></div>
+<div style="display:grid;grid-template-columns:72px 200px minmax(0,1fr);gap:24px;padding:22px 0;border-bottom:1px solid #d3cdc3"><span style="font:500 40px/40px 'Newsreader',serif">3</span><div style="display:flex;flex-direction:column;gap:6px"><b style="font-size:18px">Nothing is the hero</b><span style="align-self:flex-start;font:600 11px/14px 'IBM Plex Mono',monospace;padding:3px 8px;border-radius:6px;background:#5f594f;color:#f6f4f0">HIGH</span></div><p style="margin:0;color:#3d3830;text-wrap:pretty">The comics dashboard is eight groups with the same ring, radius and 48 px rows. The telecard competes with “Rest of block 1”, and “The frontier” is four equal stat tiles. With no single focal point the page reads as a report, not a place you arrive at. The five-slot order is right; the slots just all carry the same visual weight. Fixed by <a href="#p3">P3</a>.</p></div>
+<div style="display:grid;grid-template-columns:72px 200px minmax(0,1fr);gap:24px;padding:22px 0;border-bottom:1px solid #d3cdc3"><span style="font:500 40px/40px 'Newsreader',serif">4</span><div style="display:flex;flex-direction:column;gap:6px"><b style="font-size:18px">Colour only shows at badge size</b><span style="align-self:flex-start;font:600 11px/14px 'IBM Plex Mono',monospace;padding:3px 8px;border-radius:6px;background:#8a8378;color:#1f1c18">MEDIUM</span></div><p style="margin:0;color:#3d3830;text-wrap:pretty">The four-meaning rule is not the cause, and I'd keep it. The trouble is where those meanings appear: on 11 px badges, at low chroma, against a cold blue-grey. In dark mode the page (luminance .0036) and surface (.0074) are almost the same, so cards barely separate and the screen reads as dim rather than designed. Green and blue need to fill larger areas wherever they are true, at higher chroma, on a ground with more character. Fixed by <a href="#p4">P4</a>.</p></div>
+<div style="display:grid;grid-template-columns:72px 200px minmax(0,1fr);gap:24px;padding:22px 0;border-bottom:1px solid #d3cdc3"><span style="font:500 40px/40px 'Newsreader',serif">5</span><div style="display:flex;flex-direction:column;gap:6px"><b style="font-size:18px">Finished things disappear</b><span style="align-self:flex-start;font:600 11px/14px 'IBM Plex Mono',monospace;padding:3px 8px;border-radius:6px;background:#8a8378;color:#1f1c18">MEDIUM</span></div><p style="margin:0;color:#3d3830;text-wrap:pretty">The library exists only as numbers, and the one library-wide figure is deliberately played down (“73 of 10,834 issues logged… not progress”). That's right for a progress bar, but it leaves nothing in its place. What you've read leaves the dashboard and nothing builds up where you can see it, so you never feel pride in the collection. Fixed by <a href="#p6">P6</a>.</p></div>
+<div style="display:grid;grid-template-columns:72px 200px minmax(0,1fr);gap:24px;padding:22px 0;border-bottom:1px solid #d3cdc3"><span style="font:500 40px/40px 'Newsreader',serif">6</span><div style="display:flex;flex-direction:column;gap:6px"><b style="font-size:18px">It talks like a database</b><span style="align-self:flex-start;font:600 11px/14px 'IBM Plex Mono',monospace;padding:3px 8px;border-radius:6px;background:#d3cdc3;color:#1f1c18">LOWER · CHEAP</span></div><p style="margin:0;color:#3d3830;text-wrap:pretty">“costs 4,173”, “The frontier”, “PICK UP WHERE YOU LEFT OFF”, “Kept small and last: it is provenance…”. The type has no voice either: one sans at 600 for every title and mono for every number, so names and moments look the same as metadata. Fixed by <a href="#p5">P5</a> and <a href="#p7">P7</a>.</p></div>
+</div>
+</section>
+
+<section id="colour" style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:10px;max-width:960px"><span style="font:500 12px/16px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f594f">2 · Colour options: the comics dashboard in each</span><h2 style="margin:0;font:500 44px/48px 'Newsreader',Georgia,serif;letter-spacing:-.02em">More pop, same four meanings</h2><p style="margin:0;color:#3d3830;text-wrap:pretty">All three keep green for read, blue for here and primary, amber for held, and red only for destructive actions, which never appear on a dashboard. Each raises chroma by about .03 to .05, separates dark surfaces by three to four L steps instead of one, and lets the content add colour: cover art, and an ambient tone taken from the cover (see departure D6). They differ in the ground. A is cool like your CFB project, B is warm paper and lamplight, C is a tinted night. <b>I recommend B</b>: it adds the warmth you asked for without competing with the blue that marks your position.</p></div>
+<div id="choose" style="display:flex;flex-direction:column;gap:28px;padding:32px;border-radius:24px;background:#f4f2ee;box-shadow:inset 0 0 0 1px #d8d2c8;max-width:1240px;box-sizing:border-box">
+<div style="display:flex;flex-direction:column;gap:8px;max-width:860px"><span style="font:500 12px/16px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f594f">How to choose · measured 5 Oct</span><h3 style="margin:0;font:500 34px/38px 'Newsreader',Georgia,serif;letter-spacing:-.015em">It's a taste call now, not a safety call</h3><p style="margin:0;color:#3d3830;text-wrap:pretty">Today I measured all three properly: WCAG contrast and ΔE2000, after mapping each colour into the sRGB gamut. With four small fixes, every palette clears every floor, including the identity-hue check that hadn't been re-run. None of them is wrong. Judge the ground and the four colours in the samples below. Real covers will supply most of the other colour.</p></div>
+<div style="display:grid;grid-template-columns:220px repeat(3,minmax(200px,1fr));gap:14px 16px">
+<span></span><sc-for list="{{ aidHead }}" as="h" hint-placeholder-count="3"><span style="font:600 13px/16px 'IBM Plex Mono',monospace;align-self:end">{{ h.label }}</span></sc-for>
+<div style="display:flex;flex-direction:column;gap:4px"><b>1 · Can you find your place?</b><span style="font-size:14px;line-height:20px;color:#3d3830;text-wrap:pretty">Blue is the one colour that means “you are here”. Your eye should land on the head line and the button before anything else.</span></div>
+<sc-for list="{{ aid1 }}" as="c" hint-placeholder-count="3"><div data-theme="dark" data-pal="{{ c.key }}" style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:14px;background:var(--page);color:var(--ink);font-family:var(--sans);box-shadow:inset 0 0 0 1px var(--rule)"><div style="position:relative;height:24px;border-radius:3px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--faint-deco)"><span style="position:absolute;top:0;bottom:0;left:0;width:38%;background:var(--ready);border-radius:2px"></span><span style="position:absolute;top:-4px;bottom:-4px;left:40%;width:2px;background:var(--ink);box-shadow:0 0 0 2px var(--page)"></span></div><span style="align-self:flex-start;height:20px;padding:0 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand-ink);box-shadow:inset 0 0 0 1px var(--brand);font:600 11px/20px var(--mono)">42 / 381 · #141</span><span style="display:flex;align-items:center;justify-content:center;height:40px;border-radius:12px;background:var(--brand);color:var(--on-brand);font:600 14px/1 var(--sans)">Mark #141 read</span><span style="font:500 11px/15px var(--mono);color:var(--muted)">{{ c.m }}</span></div></sc-for>
+<div style="display:flex;flex-direction:column;gap:4px"><b>2 · Does green feel like a reward?</b><span style="font-size:14px;line-height:20px;color:#3d3830;text-wrap:pretty">Green only ever means read. It should feel earned and warm, not clinical, and fill a cell visibly.</span></div>
+<sc-for list="{{ aid2 }}" as="c" hint-placeholder-count="3"><div data-theme="dark" data-pal="{{ c.key }}" style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:14px;background:var(--page);color:var(--ink);font-family:var(--sans);box-shadow:inset 0 0 0 1px var(--rule)"><div style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:2px;height:22px"><sc-for list="{{ aidLens }}" as="l" hint-placeholder-count="12"><span style="box-sizing:border-box;border-radius:3px;background:{{ l.bg }};border:{{ l.bd }};box-shadow:{{ l.sh }}"></span></sc-for></div><div style="display:flex;flex-wrap:wrap;gap:6px"><span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;background:var(--ready);color:var(--on-ready);font:600 11px/1 var(--mono)">✓ read</span><span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;background:var(--ready-soft);color:var(--ready);font:600 11px/1 var(--mono)">● ready</span></div><span style="font:500 11px/15px var(--mono);color:var(--muted)">{{ c.m }}</span></div></sc-for>
+<div style="display:flex;flex-direction:column;gap:4px"><b>3 · Does amber still say “held”?</b><span style="font-size:14px;line-height:20px;color:#3d3830;text-wrap:pretty">It should read as a stop sign beside green, never as a decorative warm accent.</span></div>
+<sc-for list="{{ aid3 }}" as="c" hint-placeholder-count="3"><div data-theme="dark" data-pal="{{ c.key }}" style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:14px;background:var(--page);color:var(--ink);font-family:var(--sans);box-shadow:inset 0 0 0 1px var(--rule)"><span style="font-size:13px;line-height:18px;font-weight:600">Ewing — Immortal Hulk</span><div style="display:flex;flex-wrap:wrap;gap:6px"><span style="display:inline-flex;align-items:center;min-height:24px;padding:0 7px;border-radius:6px;background:var(--blocked-soft);box-shadow:inset 0 0 0 1px var(--blocked);color:var(--blocked);font:600 11px/14px var(--mono)">⊘ 82 runs first</span><span style="display:inline-flex;align-items:center;min-height:24px;padding:0 7px;border-radius:6px;background:var(--ready-soft);color:var(--ready);font:600 11px/14px var(--mono)">● ready</span></div><span style="font:500 11px/15px var(--mono);color:var(--muted)">{{ c.m }}</span></div></sc-for>
+<div style="display:flex;flex-direction:column;gap:4px"><b>4 · Do cards lift off the page?</b><span style="font-size:14px;line-height:20px;color:#3d3830;text-wrap:pretty">Measured, the step is identical in all three. What differs is whether the tint feels like paper, steel or night.</span></div>
+<sc-for list="{{ aid4 }}" as="c" hint-placeholder-count="3"><div data-theme="dark" data-pal="{{ c.key }}" style="display:flex;flex-direction:column;gap:10px;padding:14px;border-radius:14px;background:var(--page);color:var(--ink);font-family:var(--sans);box-shadow:inset 0 0 0 1px var(--rule)"><div style="display:flex;flex-direction:column;border-radius:12px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden"><span style="padding:8px 10px;background:var(--raise);border-bottom:1px solid var(--line);font:600 11px/14px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Up next</span><span style="padding:10px 10px 2px;font-size:13px;font-weight:600">Claremont — New Mutants</span><span style="padding:0 10px 10px;font:500 11px/14px var(--mono);color:var(--muted)">100 iss · opens 3</span></div><span style="font:500 11px/15px var(--mono);color:var(--muted)">{{ c.m }}</span></div></sc-for>
+<div style="display:flex;flex-direction:column;gap:4px"><b>5 · Does light mode survive daylight?</b><span style="font-size:14px;line-height:20px;color:#3d3830;text-wrap:pretty">Check this one outdoors or by a window. The blue and the grey text should still look deliberate.</span></div>
+<sc-for list="{{ aid5 }}" as="c" hint-placeholder-count="3"><div data-theme="light" data-pal="{{ c.key }}" style="display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:14px;background:var(--page);color:var(--ink);font-family:var(--sans);box-shadow:inset 0 0 0 1px var(--rule)"><span style="font:500 24px/28px var(--display);letter-spacing:-.015em">Comics</span><span style="font-size:13px;line-height:18px;color:var(--muted)">14 issues since Tuesday</span><div style="display:flex;gap:6px;align-items:center"><span style="flex:1;display:flex;align-items:center;justify-content:center;height:40px;border-radius:12px;background:var(--brand);color:var(--on-brand);font:600 14px/1 var(--sans)">Mark #141 read</span><span style="display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:6px;background:var(--ready-soft);color:var(--ready);font:600 11px/1 var(--mono)">● ready</span></div><span style="font:500 11px/15px var(--mono);color:var(--muted)">{{ c.m }}</span></div></sc-for>
+<div style="display:flex;flex-direction:column;gap:4px;padding-top:6px;border-top:1px solid #d3cdc3"><b>My read</b><span style="font-size:14px;line-height:20px;color:#3d3830">Pick it if…</span></div>
+<sc-for list="{{ aidVerdict }}" as="v" hint-placeholder-count="3"><p style="margin:0;padding-top:6px;border-top:1px solid #d3cdc3;font-size:14px;line-height:21px;color:#2c2823;text-wrap:pretty">{{ v.t }}</p></sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;max-width:860px"><b>The ten-minute test</b><ol style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-size:15px;line-height:22px;color:#2c2823"><li>Tonight, at your normal reading brightness, open this page on your phone. Use Tweaks to switch the palette and look at section 3 for ten seconds in each.</li><li>Ask the five questions above. Don't count the numbers; they only tell you none of the three fails.</li><li>Tomorrow in daylight, look at the light frames once.</li><li>If two still tie, choose the one you'd rather open. That is what this pass is for.</li><li>Tell me the letter. Swapping is two blocks in <code>tokens.css</code>, already written in <code>handoff/palette-swaps.css</code>.</li></ol></div>
+</div>
+<sc-for list="{{ palettes }}" as="p" hint-placeholder-count="3">
+<div id="{{ p.id }}" style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start;padding:32px;border-radius:24px;background:#f4f2ee;box-shadow:inset 0 0 0 1px #d8d2c8">
+<div style="width:300px;display:flex;flex-direction:column;gap:16px">
+<div style="display:flex;align-items:center;gap:10px"><span style="font:600 13px/1 'IBM Plex Mono',monospace;padding:6px 9px;border-radius:6px;background:#1f1c18;color:#f6f4f0">{{ p.id }}</span><b style="font:500 30px/34px 'Newsreader',serif">{{ p.name }}</b></div>
+<sc-if value="{{ p.rec }}" hint-placeholder-val="{{ false }}"><span style="align-self:flex-start;font:600 11px/14px 'IBM Plex Mono',monospace;padding:4px 8px;border-radius:6px;box-shadow:inset 0 0 0 1px #1f1c18">RECOMMENDED</span></sc-if>
+<p style="margin:0;font-size:15px;line-height:23px;color:#3d3830;text-wrap:pretty">{{ p.why }}</p>
+<sc-for list="{{ p.sw }}" as="t" hint-placeholder-count="2">
+<div data-theme="{{ t.theme }}" data-pal="{{ p.key }}" style="display:flex;flex-direction:column;gap:8px;padding:12px;border-radius:12px;background:var(--page);color:var(--ink);box-shadow:inset 0 0 0 1px var(--rule)">
+<span style="font:500 11px/14px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:var(--muted)">{{ t.label }}</span>
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+<span style="height:28px;border-radius:6px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule)"></span><span style="height:28px;border-radius:6px;background:var(--raise)"></span><span style="height:28px;border-radius:6px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--rule)"></span><span style="height:28px;border-radius:6px;background:var(--ink)"></span>
+<span style="height:28px;border-radius:6px;background:var(--ready)"></span><span style="height:28px;border-radius:6px;background:var(--brand)"></span><span style="height:28px;border-radius:6px;background:var(--blocked)"></span><span style="height:28px;border-radius:6px;background:var(--danger)"></span>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:6px;font:600 11px/14px 'IBM Plex Mono',monospace"><span style="padding:4px 7px;border-radius:6px;background:var(--ready-soft);color:var(--ready)">● ready</span><span style="padding:4px 7px;border-radius:6px;background:var(--brand-soft);color:var(--brand-ink);box-shadow:inset 0 0 0 1px var(--brand)">42 / 381</span><span style="padding:4px 7px;border-radius:6px;background:var(--blocked-soft);color:var(--blocked);box-shadow:inset 0 0 0 1px var(--blocked)">⊘ 82 first</span></div>
+</div>
+</sc-for>
+</div>
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">{{ p.id }} · /comics · dark</figcaption><dc-import name="LedgerComics" theme="dark" pal="{{ p.key }}" ambient="{{ amb }}" hint-size="390px,844px"></dc-import></figure>
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">{{ p.id }} · /comics · light</figcaption><dc-import name="LedgerComics" theme="light" pal="{{ p.key }}" ambient="{{ amb }}" hint-size="390px,844px"></dc-import></figure>
+</div>
+</sc-for>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;max-width:1240px">
+<div style="display:flex;flex-direction:column;gap:6px"><b>Now: a hero, not a telecard</b><span style="font-size:15px;line-height:23px;color:#3d3830;text-wrap:pretty">The next issue's cover at 112 × 168, its number set big, and the story title in the display face. “This stretch” shows 24 issues around your position at one cell per issue, so a mark visibly fills a cell above the fold.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><b>Next: a shelf with a control</b><span style="font-size:15px;line-height:23px;color:#3d3830;text-wrap:pretty">Up next as covers facing out, numbered in queue order, with readiness badges unchanged. <b>Start</b> on the first card, <b>Reorder</b> on the slot (it opens the existing drag list, with keyboard support).</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><b>Position, situation, rollup: quieter</b><span style="font-size:15px;line-height:23px;color:#3d3830;text-wrap:pretty">The telescope is untouched and moves into its own card. Situation is three rows at most. The rollup is one line of this-year counts and never mentions the catalogue.</span></div>
+</div>
+</section>
+
+<section id="mark" style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:10px;max-width:960px"><span style="font:500 12px/16px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f594f">3 · The mark-read moment</span><h2 style="margin:0;font:500 44px/48px 'Newsreader',Georgia,serif;letter-spacing:-.02em">Tap, answer, move on</h2><p style="margin:0;color:#3d3830;text-wrap:pretty">This all happens in about 1.3 seconds, and it is calm: nothing bounces, loops or celebrates. The motion confirms the mark; the reward is seeing the stack and the counts grow. Every step works under <code>prefers-reduced-motion</code>, where all durations go to 0 and you get the same states without movement.</p></div>
+<div style="display:grid;grid-template-columns:120px minmax(0,1fr);max-width:960px;font-size:15px;line-height:22px;border-top:1px solid #d3cdc3">
+<span style="padding:10px 0;border-bottom:1px solid #d3cdc3;font:500 13px/22px 'IBM Plex Mono',monospace">0 ms</span><span style="padding:10px 0;border-bottom:1px solid #d3cdc3">Press. The button scales to .97 and darkens (<code>--dur-1</code>). The write is optimistic.</span>
+<span style="padding:10px 0;border-bottom:1px solid #d3cdc3;font:500 13px/22px 'IBM Plex Mono',monospace">120 ms</span><span style="padding:10px 0;border-bottom:1px solid #d3cdc3">Confirm. The button turns <code>--ready</code> and reads “✓ #141 read”. Cell 42 in “This stretch” fills (<code>--dur-4</code>, a 12% settle). A green “✓ read” stamp lands on the cover. The counts tick: 45 → 46 read, 14 → 15 since Tuesday, 212 → 213 this year. The run rail segment grows and the head pill slides to 43. The toast enters: “#141 read · 46 of 381 in Uncanny X-Men · Undo”.</span>
+<span style="padding:10px 0;border-bottom:1px solid #d3cdc3;font:500 13px/22px 'IBM Plex Mono',monospace">+600 ms hold</span><span style="padding:10px 0;border-bottom:1px solid #d3cdc3">The green holds for <code>--dur-hold</code> so the confirmation actually registers.</span>
+<span style="padding:10px 0;border-bottom:1px solid #d3cdc3;font:500 13px/22px 'IBM Plex Mono',monospace">1.3 s</span><span style="padding:10px 0;border-bottom:1px solid #d3cdc3">Next. #142 slides in from the right. It's dashed and grey, read in another run, so the hint is grey, never green. The button returns to blue as <b>Mark #142 read</b>. #141 joins the “Since Tuesday” stack.</span>
+<span style="padding:10px 0;border-bottom:1px solid #d3cdc3;font:500 13px/22px 'IBM Plex Mono',monospace">8 s</span><span style="padding:10px 0;border-bottom:1px solid #d3cdc3">The toast's 2 px countdown runs out and the toast leaves. Undo reverses every step.</span>
+</div>
+<sc-for list="{{ storyRows }}" as="row" hint-placeholder-count="2">
+<div style="display:flex;flex-wrap:wrap;gap:32px">
+<sc-for list="{{ row.items }}" as="s" hint-placeholder-count="3">
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="display:flex;flex-direction:column;gap:2px"><b style="font-size:15px">{{ s.cap }}</b><span style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">{{ s.sub }}</span></figcaption><dc-import name="LedgerComics" theme="{{ row.theme }}" pal="{{ pal }}" ambient="{{ amb }}" stage="{{ s.stage }}" live="{{ false }}" hint-size="390px,844px"></dc-import></figure>
+</sc-for>
+</div>
+</sc-for>
+</section>
+
+<section id="books" style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:10px;max-width:960px"><span style="font:500 12px/16px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f594f">4 · /books, reading and between books (the empty state)</span><h2 style="margin:0;font:500 44px/48px 'Newsreader',Georgia,serif;letter-spacing:-.02em">A book in hand, or a pause that feels fine</h2><p style="margin:0;color:#3d3830;text-wrap:pretty">Same five slots as comics. Position is measured against the quarter, never the backlog. When nothing is in progress, the Now slot remembers what you just finished and offers the top of the plan, without nagging.</p></div>
+<div style="display:flex;flex-wrap:wrap;gap:32px">
+<sc-for list="{{ booksFrames }}" as="f" hint-placeholder-count="4">
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">{{ f.cap }}</figcaption>
+<div data-theme="{{ f.theme }}" data-pal="{{ f.pal }}" data-ambient="{{ f.amb }}" data-screen-label="{{ f.cap }}" style="position:relative;width:390px;height:844px;overflow:hidden;display:flex;flex-direction:column;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:20px;border-radius:32px;box-shadow:0 0 0 1px var(--rule-2),0 30px 60px -30px rgba(0,0,0,.5)">
+<header style="flex:none;position:relative;z-index:2;display:flex;align-items:center;height:52px;padding:0 4px 0 16px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--glass-edge)"><span style="font:italic 500 21px/1 var(--display);margin-right:10px">Ledger</span><nav aria-label="Media" style="display:flex;flex:1"><a href="#" style="display:flex;align-items:center;height:44px;padding:0 10px;font-weight:500;color:var(--muted);text-decoration:none">Comics</a><a href="#" aria-current="page" style="display:flex;align-items:center;height:44px;padding:0 10px;font-weight:600;color:var(--ink);text-decoration:none;box-shadow:inset 0 -2px 0 var(--m-books)">Books</a><a href="#" style="display:flex;align-items:center;height:44px;padding:0 10px;font-weight:500;color:var(--muted);text-decoration:none">Watch</a></nav><button aria-label="Search" style="width:44px;height:44px;border:0;background:transparent;color:var(--ink-2);display:grid;place-items:center"><span aria-hidden="true" style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat"></span></button></header>
+<main style="flex:1;overflow-y:auto;scrollbar-width:none;padding:20px 16px 104px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:6px"><h1 style="margin:0;font:500 32px/36px var(--display);letter-spacing:-.015em">Books</h1><p style="margin:0;color:var(--ink-2);text-wrap:pretty">{{ f.lede }}</p></div>
+<sc-if value="{{ f.reading }}" hint-placeholder-val="{{ true }}">
+<section aria-label="Now" data-art="" style="--art-d:oklch(.28 .05 45);--art-l:oklch(.93 .03 55);border-radius:var(--r-hero);overflow:hidden;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;gap:16px;padding:16px;background:var(--art)">
+<div aria-hidden="true" style="--cv:oklch(.42 .1 40);position:relative;flex:none;width:112px;height:168px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover)"><span style="position:absolute;left:8px;bottom:8px;font:500 11px/14px var(--mono);color:#fff">cover</span></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)">Reading now</span>
+<span style="font:500 26px/29px var(--display);letter-spacing:-.01em;margin-top:8px;text-wrap:pretty">The Fifth Season</span>
+<span style="font-size:13px;line-height:18px;color:var(--ink-2);margin-top:4px">N. K. Jemisin</span>
+<span style="flex:1"></span>
+<span style="font:500 13px/18px var(--mono);color:var(--ink-2)"><b style="font:500 26px/30px var(--mono);color:var(--ink);letter-spacing:-.02em">p. 212</b> of 468</span>
+<span role="img" aria-label="212 of 468 pages read" style="display:block;height:6px;margin-top:8px;border-radius:999px;background:var(--sunk);overflow:hidden"><span style="display:block;width:45%;height:100%;background:var(--ready)"></span></span>
+</div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;padding:8px 16px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-2)"><span>Started 21 Sep · about 30 pages a sitting</span><span style="font-family:var(--mono);color:var(--muted)">7 sittings</span></div>
+</section>
+</sc-if>
+<sc-if value="{{ f.between }}" hint-placeholder-val="{{ false }}">
+<section aria-label="Now" data-art="" style="--art-d:oklch(.27 .04 220);--art-l:oklch(.93 .025 220);border-radius:var(--r-hero);overflow:hidden;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;flex-direction:column;gap:14px;padding:20px 16px;background:var(--art)">
+<div style="display:flex;align-items:flex-end;gap:16px">
+<div aria-hidden="true" style="--cv:oklch(.45 .07 220);position:relative;flex:none;width:72px;height:108px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 6px,color-mix(in oklch,var(--cv),#000 16%) 6px 12px);box-shadow:var(--sh-cover)"><span style="position:absolute;right:-6px;bottom:-6px;width:22px;height:22px;border-radius:50%;background:var(--ready);color:var(--on-ready);box-shadow:0 0 0 2px var(--art);display:grid;place-items:center;font:700 12px/1 var(--sans)">✓</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="align-self:flex-start;display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;background:var(--ready-soft);color:var(--ready);font:600 11px/1 var(--mono)">✓ finished · Sun</span><span style="font:500 30px/32px var(--display);letter-spacing:-.015em">Between books.</span></div>
+</div>
+<p style="margin:0;color:var(--ink-2);text-wrap:pretty">You finished <i>Piranesi</i> on Sunday, 245 pages in nine days. Nothing's on the go, and that's fine.</p>
+</div>
+<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--line)">
+<span aria-hidden="true" style="--cv:oklch(.38 .1 15);flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Top of your Q4 plan</span><a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none">The Left Hand of Darkness</a><span style="font-size:12px;line-height:16px;color:var(--muted)">Ursula K. Le Guin · 304 pp</span></div>
+</div>
+<a href="#" style="display:flex;align-items:center;min-height:44px;padding:0 16px;border-top:1px solid var(--line);color:var(--brand);font-size:13px;font-weight:500;text-decoration:none">Pick something else</a>
+</section>
+</sc-if>
+<section aria-labelledby="bn-h" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:8px"><h2 id="bn-h" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Up next in Q4</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">3</span><span style="flex:1"></span><button style="height:32px;padding:0 12px;border:0;border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:500 13px/1 var(--sans)">Reorder</button></div>
+<div role="list" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 6px">
+<sc-for list="{{ bookShelf }}" as="r" hint-placeholder-count="3">
+<div role="listitem" style="flex:none;width:112px;display:flex;flex-direction:column;gap:8px">
+<a href="#" aria-label="Open {{ r.name }}" style="--cv:{{ r.cv }};position:relative;display:block;width:112px;height:168px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover)"><span style="position:absolute;top:6px;left:6px;min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;border-radius:6px;background:var(--overlay);color:var(--ink);font:600 11px/22px var(--mono);text-align:center">{{ r.pos }}</span></a>
+<span style="font-size:13px;line-height:17px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ r.name }}</span>
+<span style="font:500 11px/14px var(--mono);color:var(--muted)">{{ r.meta }}</span>
+</div>
+</sc-for>
+</div>
+</section>
+<section aria-labelledby="bq-h" style="display:flex;flex-direction:column;gap:12px">
+<h2 id="bq-h" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">This quarter</h2>
+<div style="display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font-size:15px;font-weight:600">Q4 2026</span><span style="font:500 12px/16px var(--mono);color:var(--muted)">{{ f.qRead }} of 7 read</span></div>
+<div role="img" aria-label="{{ f.qAria }}" style="position:relative;display:flex;gap:2px;height:28px;padding-right:2px;border-radius:3px;box-shadow:inset 0 0 0 1px var(--line)">
+<sc-for list="{{ f.q }}" as="b" hint-placeholder-count="7"><span style="position:relative;flex:0 0 calc({{ b.p }}% - 2px);border-radius:3px;background:var(--sunk);box-shadow:{{ b.ring }};overflow:hidden;font:500 11px/28px var(--mono);color:{{ b.ink }};white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ b.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:5px">{{ b.t }}</span></span></sc-for>
+<span style="position:absolute;right:0;top:-4px;bottom:-4px;border-left:1.5px dashed var(--ink-2)"></span>
+</div>
+<div style="display:flex;justify-content:space-between;font:500 12px/16px var(--mono);color:var(--muted)"><span>615k planned</span><span>760k a quarter</span></div>
+</div>
+</section>
+<section aria-labelledby="bd-h" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><h2 id="bd-h" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">On deck</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">4</span></div>
+<div style="border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ onDeck }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)"><span aria-hidden="true" style="--cv:{{ r.cv }};flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none">{{ r.name }}</a><span style="font-size:12px;line-height:16px;color:var(--muted)">{{ r.meta }}</span></div><button aria-label="Plan {{ r.name }}" style="flex:none;height:32px;padding:0 10px;border:0;border-radius:8px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 13px/1 var(--sans)">Plan</button></div>
+</sc-for>
+<p style="margin:0;padding:12px 14px;font-size:13px;line-height:18px;color:var(--muted)">No year yet. First in line when a quarter has room.</p>
+</div>
+</section>
+<section aria-label="This year" style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:var(--r-xl);background:var(--raise);box-shadow:inset 0 0 0 1px var(--line)">
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">2026 so far</span>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px"><div style="display:flex;flex-direction:column"><span style="font:500 22px/28px var(--mono)">{{ f.yBooks }}</span><span style="font-size:12px;line-height:16px;color:var(--muted)">books</span></div><div style="display:flex;flex-direction:column"><span style="font:500 22px/28px var(--mono)">{{ f.yPages }}</span><span style="font-size:12px;line-height:16px;color:var(--muted)">pages</span></div><div style="display:flex;flex-direction:column"><span style="font:500 22px/28px var(--mono)">6</span><span style="font-size:12px;line-height:16px;color:var(--muted)">new authors</span></div></div>
+</section>
+</main>
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;gap:8px;padding:10px 12px 22px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-top:1px solid var(--glass-edge)">
+<button style="flex:1;min-width:0;height:44px;border:0;border-radius:var(--r-lg);background:var(--brand);color:var(--on-brand);font:600 15px/1 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 12px">{{ f.verb }}</button>
+<sc-if value="{{ f.reading }}" hint-placeholder-val="{{ true }}"><button style="flex:none;height:44px;padding:0 14px;border:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 14px/1 var(--sans)">Finished it</button></sc-if>
+<button aria-label="Search" style="flex:none;width:44px;height:44px;border:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);display:grid;place-items:center"><span aria-hidden="true" style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat"></span></button>
+</div>
+</div>
+</figure>
+</sc-for>
+</div>
+</section>
+
+<section id="watch" style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:10px;max-width:960px"><span style="font:500 12px/16px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f594f">5 · /watch</span><h2 style="margin:0;font:500 44px/48px 'Newsreader',Georgia,serif;letter-spacing:-.02em">A still, a season, a shelf of posters</h2><p style="margin:0;color:#3d3830;text-wrap:pretty">Now leads with a 16:9 still and a one-cell-per-episode strip for the current season. Position is the 2-rail telescope from the spec (show → season). Paused shows sit in grey with no nudges: grey because paused has no colour meaning.</p></div>
+<div style="display:flex;flex-wrap:wrap;gap:32px">
+<sc-for list="{{ two }}" as="f" hint-placeholder-count="2">
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">/watch · {{ f.theme }}</figcaption>
+<div data-theme="{{ f.theme }}" data-pal="{{ f.pal }}" data-ambient="{{ f.amb }}" data-screen-label="Watch dashboard" style="position:relative;width:390px;height:844px;overflow:hidden;display:flex;flex-direction:column;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:20px;border-radius:32px;box-shadow:0 0 0 1px var(--rule-2),0 30px 60px -30px rgba(0,0,0,.5)">
+<header style="flex:none;position:relative;z-index:2;display:flex;align-items:center;height:52px;padding:0 4px 0 16px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--glass-edge)"><span style="font:italic 500 21px/1 var(--display);margin-right:10px">Ledger</span><nav aria-label="Media" style="display:flex;flex:1"><a href="#" style="display:flex;align-items:center;height:44px;padding:0 10px;font-weight:500;color:var(--muted);text-decoration:none">Comics</a><a href="#" style="display:flex;align-items:center;height:44px;padding:0 10px;font-weight:500;color:var(--muted);text-decoration:none">Books</a><a href="#" aria-current="page" style="display:flex;align-items:center;height:44px;padding:0 10px;font-weight:600;color:var(--ink);text-decoration:none;box-shadow:inset 0 -2px 0 var(--m-watch)">Watch</a></nav><button aria-label="Search" style="width:44px;height:44px;border:0;background:transparent;color:var(--ink-2);display:grid;place-items:center"><span aria-hidden="true" style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat"></span></button></header>
+<main style="flex:1;overflow-y:auto;scrollbar-width:none;padding:20px 16px 104px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:6px"><h1 style="margin:0;font:500 32px/36px var(--display);letter-spacing:-.015em">Watch</h1><p style="margin:0;color:var(--ink-2)">Two episodes into season 4 of Slow Horses.</p></div>
+<section aria-label="Now" data-art="" style="--art-d:oklch(.27 .035 140);--art-l:oklch(.93 .025 140);border-radius:var(--r-hero);overflow:hidden;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div aria-hidden="true" style="--cv:oklch(.36 .05 150);position:relative;height:200px;background:repeating-linear-gradient(135deg,var(--cv) 0 8px,color-mix(in oklch,var(--cv),#000 16%) 8px 16px)"><span style="position:absolute;left:12px;bottom:10px;font:500 11px/14px var(--mono);color:#fff">still · Slow Horses S4</span></div>
+<div style="display:flex;flex-direction:column;gap:12px;padding:14px 16px 16px;background:var(--art)">
+<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:12px"><div style="display:flex;flex-direction:column"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)">Up now</span><span style="font:500 26px/30px var(--display);letter-spacing:-.01em;margin-top:6px">Slow Horses</span></div><span style="font:500 26px/30px var(--mono);letter-spacing:-.02em">S4 E3</span></div>
+<div role="img" aria-label="Season 4: episodes 1 and 2 watched, episode 3 next, 6 episodes" style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;height:28px">
+<sc-for list="{{ eps }}" as="e" hint-placeholder-count="6"><span style="box-sizing:border-box;display:grid;place-items:center;border-radius:3px;background:{{ e.bg }};border:{{ e.bd }};box-shadow:{{ e.sh }};color:{{ e.ink }};font:600 11px/1 var(--mono)">{{ e.t }}</span></sc-for>
+</div>
+<span style="font-size:13px;color:var(--ink-2)"><b style="font-family:var(--mono)">2</b> of 6 watched this season</span>
+</div>
+</section>
+<section aria-labelledby="wn-h" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:8px"><h2 id="wn-h" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Up next</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">9</span><span style="flex:1"></span><button style="height:32px;padding:0 12px;border:0;border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:500 13px/1 var(--sans)">Reorder</button></div>
+<div role="list" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 6px">
+<sc-for list="{{ watchShelf }}" as="r" hint-placeholder-count="4">
+<div role="listitem" style="flex:none;width:112px;display:flex;flex-direction:column;gap:6px">
+<a href="#" aria-label="Open {{ r.name }}" style="--cv:{{ r.cv }};position:relative;display:block;width:112px;height:168px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover)"><span style="position:absolute;top:6px;left:6px;min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;border-radius:6px;background:var(--overlay);color:var(--ink);font:600 11px/22px var(--mono);text-align:center">{{ r.pos }}</span></a>
+<span style="font-size:13px;line-height:17px;font-weight:600">{{ r.name }}</span>
+<span style="font:500 11px/14px var(--mono);color:var(--muted)">{{ r.meta }}</span>
+<sc-if value="{{ r.blocked }}" hint-placeholder-val="{{ false }}"><button aria-haspopup="dialog" aria-label="Why held? {{ r.badge }}" style="align-self:flex-start;min-height:24px;padding:3px 7px;border:0;border-radius:6px;background:var(--blocked-soft);box-shadow:inset 0 0 0 1px var(--blocked);color:var(--blocked);font:600 11px/14px var(--mono);text-align:left">{{ r.badge }}</button></sc-if>
+<sc-if value="{{ r.open }}" hint-placeholder-val="{{ true }}"><span style="align-self:flex-start;min-height:22px;padding:4px 7px;box-sizing:border-box;border-radius:6px;background:var(--ready-soft);color:var(--ready);font:600 11px/14px var(--mono)">● ready</span></sc-if>
+</div>
+</sc-for>
+</div>
+</section>
+<section aria-labelledby="wp-h" style="display:flex;flex-direction:column;gap:12px">
+<h2 id="wp-h" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Where you are</h2>
+<div style="display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:grid;grid-template-columns:44px 282px">
+<span style="font:500 11px/18px var(--mono);letter-spacing:.06em;color:var(--muted)">SHOW</span>
+<div role="slider" tabindex="0" aria-label="Slow Horses seasons" aria-valuemin="1" aria-valuemax="5" aria-valuenow="4" style="display:flex;gap:2px;height:18px">
+<sc-for list="{{ wShow }}" as="c" hint-placeholder-count="5"><a href="#" aria-label="{{ c.aria }}" style="position:relative;flex:none;width:{{ c.w }}px;height:18px;border-radius:3px;background:var(--sunk);box-shadow:{{ c.ring }};overflow:hidden;color:{{ c.ink }};font:500 11px/18px var(--mono);text-decoration:none"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ c.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:{{ c.pl }}px">{{ c.t }}</span></a></sc-for>
+</div>
+<span></span>
+<svg width="282" height="16" viewBox="0 0 282 16" aria-hidden="true" style="display:block"><polygon points="{{ wBr }}" style="fill:color-mix(in oklch,var(--brand) 10%,transparent)"></polygon><line x1="{{ wBrA }}" y1="0" x2="0" y2="16" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line><line x1="{{ wBrB }}" y1="0" x2="282" y2="16" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line></svg>
+<span style="font:500 11px/24px var(--mono);letter-spacing:.06em;color:var(--muted)">S4</span>
+<div role="slider" tabindex="0" aria-label="Season 4 episodes" aria-valuemin="1" aria-valuemax="6" aria-valuenow="3" style="display:flex;gap:2px;height:24px">
+<sc-for list="{{ wEps }}" as="c" hint-placeholder-count="6"><a href="#" aria-label="{{ c.aria }}" style="flex:none;width:{{ c.w }}px;height:24px;border-radius:3px;background:{{ c.bg }};box-shadow:{{ c.ring }};color:{{ c.ink }};font:500 11px/24px var(--mono);text-align:center;text-decoration:none">{{ c.t }}</a></sc-for>
+</div>
+</div>
+<div role="list" style="display:flex;flex-direction:column;border-top:1px solid var(--line)">
+<div role="listitem" style="display:grid;grid-template-columns:56px 1fr;align-items:baseline;min-height:32px;padding-top:8px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">SHOW</span><span><b>Slow Horses</b> · season 4 of 5</span></div>
+<div role="listitem" style="display:grid;grid-template-columns:56px 1fr;align-items:baseline;min-height:28px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">SEASON</span><span><b>S4</b> · <span style="font-family:var(--mono)">episode 3 of 6</span></span></div>
+</div>
+</div>
+</section>
+<section aria-labelledby="wq-h" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><h2 id="wq-h" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Paused</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">2</span></div>
+<div style="border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ paused }}" as="r" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)"><span aria-hidden="true" style="--cv:{{ r.cv }};flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none">{{ r.name }}</a><span style="font:500 12px/16px var(--mono);color:var(--muted)">{{ r.meta }}</span></div><button style="flex:none;height:32px;padding:0 10px;border:0;border-radius:8px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 13px/1 var(--sans)">{{ r.act }}</button></div>
+</sc-for>
+<p style="margin:0;padding:12px 14px;font-size:13px;line-height:18px;color:var(--muted)">Still here when you want them.</p>
+</div>
+</section>
+<section aria-label="This year" style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:var(--r-xl);background:var(--raise);box-shadow:inset 0 0 0 1px var(--line)">
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">2026 so far</span>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px"><div style="display:flex;flex-direction:column"><span style="font:500 22px/28px var(--mono)">31</span><span style="font-size:12px;line-height:16px;color:var(--muted)">films</span></div><div style="display:flex;flex-direction:column"><span style="font:500 22px/28px var(--mono)">9</span><span style="font-size:12px;line-height:16px;color:var(--muted)">seasons</span></div><div style="display:flex;flex-direction:column"><span style="font:500 22px/28px var(--mono)">4</span><span style="font-size:12px;line-height:16px;color:var(--muted)">shows finished</span></div></div>
+</section>
+</main>
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;gap:8px;padding:10px 12px 22px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-top:1px solid var(--glass-edge)">
+<button style="flex:1;min-width:0;height:44px;border:0;border-radius:var(--r-lg);background:var(--brand);color:var(--on-brand);font:600 15px/1 var(--sans);display:flex;align-items:center;justify-content:center;gap:8px"><span aria-hidden="true" style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/check.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/check.svg) center/contain no-repeat"></span>Mark S4 E3 watched</button>
+<button style="flex:none;height:44px;padding:0 14px;border:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 14px/1 var(--sans)">+ batch</button>
+<button aria-label="Search" style="flex:none;width:44px;height:44px;border:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);display:grid;place-items:center"><span aria-hidden="true" style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat"></span></button>
+</div>
+</div>
+</figure>
+</sc-for>
+</div>
+</section>
+
+<section id="run" style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:10px;max-width:960px"><span style="font:500 12px/16px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f594f">6 · Run detail, with the telescope</span><h2 style="margin:0;font:500 44px/48px 'Newsreader',Georgia,serif;letter-spacing:-.02em">The run as an object, not a table</h2><p style="margin:0;color:#3d3830;text-wrap:pretty">A full-bleed band in the run's own tone with its key art, then the telescope exactly as specced (horizontal, 14 px minimum cell, read state as segments), then the spine. Every issue row has its cover. The check ring is the state glyph: filled ✓ for read, a blue ring for next, a dashed grey ring for read elsewhere.</p></div>
+<div style="display:flex;flex-wrap:wrap;gap:32px">
+<sc-for list="{{ two }}" as="f" hint-placeholder-count="2">
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">/comics/runs/claremont-uxm · {{ f.theme }}</figcaption>
+<div data-theme="{{ f.theme }}" data-pal="{{ f.pal }}" data-ambient="{{ f.amb }}" data-screen-label="Run detail" style="position:relative;width:390px;height:844px;overflow:hidden;display:flex;flex-direction:column;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:20px;border-radius:32px;box-shadow:0 0 0 1px var(--rule-2),0 30px 60px -30px rgba(0,0,0,.5)">
+<header style="flex:none;position:relative;z-index:2;display:flex;align-items:center;height:52px;padding:0 4px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--glass-edge)"><a href="#" style="display:flex;align-items:center;gap:2px;height:44px;padding:0 10px 0 6px;color:var(--ink);text-decoration:none;font-weight:500"><span aria-hidden="true" style="width:20px;height:20px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/chevron-left.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/chevron-left.svg) center/contain no-repeat"></span>Comics</a><span style="flex:1"></span><button aria-label="Run actions" aria-haspopup="menu" style="width:44px;height:44px;border:0;background:transparent;color:var(--ink-2);display:grid;place-items:center"><span aria-hidden="true" style="width:20px;height:20px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/ellipsis.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/ellipsis.svg) center/contain no-repeat"></span></button></header>
+<main style="flex:1;overflow-y:auto;scrollbar-width:none;padding:0 0 104px;display:flex;flex-direction:column">
+<div data-art="" style="--art-d:oklch(.29 .055 32);--art-l:oklch(.93 .03 45);display:flex;gap:16px;padding:20px 16px;background:var(--art)">
+<div aria-hidden="true" style="--cv:oklch(.40 .11 30);position:relative;flex:none;width:104px;height:156px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover)"><span style="position:absolute;left:8px;bottom:8px;font:500 11px/14px var(--mono);color:#fff">key art</span></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)">Block 1 · run 2 of 5</span>
+<h1 style="margin:8px 0 0;font:500 28px/30px var(--display);letter-spacing:-.015em">Uncanny X-Men</h1>
+<span style="font-size:13px;line-height:18px;color:var(--ink-2);margin-top:4px">Chris Claremont · 1975–91</span>
+<span style="flex:1"></span>
+<div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px"><span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;background:var(--brand-soft);color:var(--brand-ink);font:600 11px/1 var(--mono)">◐ 42 / 381</span><span style="font:500 12px/16px var(--mono);color:var(--ink-2)">45 read · opens 13</span></div>
+</div>
+</div>
+<div style="padding:16px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:grid;grid-template-columns:44px 282px">
+<span style="font:500 11px/18px var(--mono);letter-spacing:.06em;color:var(--muted)">TRACK</span>
+<div role="slider" tabindex="0" aria-label="X-Men track" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1" style="display:flex;gap:2px;height:18px">
+<sc-for list="{{ tTrack }}" as="c" hint-placeholder-count="7"><a href="#" aria-label="{{ c.aria }}" style="position:relative;flex:none;width:{{ c.w }}px;height:18px;border-radius:3px;background:var(--sunk);box-shadow:{{ c.ring }};overflow:hidden;color:{{ c.ink }};font:500 11px/18px var(--mono);text-decoration:none;white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ c.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:{{ c.pl }}px">{{ c.t }}</span></a></sc-for>
+</div>
+<span></span>
+<svg width="282" height="16" viewBox="0 0 282 16" aria-hidden="true" style="display:block"><polygon points="{{ tBr1 }}" style="fill:color-mix(in oklch,var(--brand) 10%,transparent)"></polygon><line x1="0" y1="0" x2="0" y2="16" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line><line x1="{{ tBr1b }}" y1="0" x2="282" y2="16" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line></svg>
+<span style="font:500 11px/18px var(--mono);letter-spacing:.06em;color:var(--muted)">BLOCK</span>
+<div role="slider" tabindex="0" aria-label="Block 1, Foundations" aria-valuemin="1" aria-valuemax="5" aria-valuenow="2" style="display:flex;gap:2px;height:18px">
+<sc-for list="{{ tBlock }}" as="c" hint-placeholder-count="5"><a href="#" aria-label="{{ c.aria }}" style="position:relative;flex:none;width:{{ c.w }}px;height:18px;border-radius:3px;background:var(--sunk);box-shadow:{{ c.ring }};overflow:hidden;color:{{ c.ink }};font:500 11px/18px var(--mono);text-decoration:none;white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ c.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:{{ c.pl }}px">{{ c.t }}</span></a></sc-for>
+</div>
+<span></span>
+<svg width="282" height="16" viewBox="0 0 282 16" aria-hidden="true" style="display:block"><polygon points="{{ tBr2 }}" style="fill:color-mix(in oklch,var(--brand) 10%,transparent)"></polygon><line x1="{{ tBr2a }}" y1="0" x2="0" y2="16" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line><line x1="{{ tBr2b }}" y1="0" x2="282" y2="16" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line></svg>
+<span style="font:500 11px/24px var(--mono);letter-spacing:.06em;color:var(--muted)">RUN</span>
+<div role="slider" tabindex="0" aria-label="Uncanny X-Men" aria-valuemin="1" aria-valuemax="381" aria-valuenow="42" aria-valuetext="42 / 381 · #141" style="position:relative;height:24px;border-radius:3px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--faint-deco)">
+<sc-for list="{{ tSegs }}" as="s" hint-placeholder-count="2"><span style="position:absolute;top:0;bottom:0;left:{{ s.l }}%;width:{{ s.w }}%;background:var(--ready);border-radius:2px"></span></sc-for>
+<span style="position:absolute;top:3px;bottom:3px;left:{{ tElse }}%;width:3px;box-sizing:border-box;border:1px dashed var(--muted)"></span>
+<span style="position:absolute;top:-4px;bottom:-4px;left:{{ tHead }}%;width:2px;margin-left:-1px;background:var(--ink);box-shadow:0 0 0 2px var(--surface)"></span>
+</div>
+<span></span>
+<div aria-hidden="true" style="position:relative;height:9px"><sc-for list="{{ tTicks }}" as="t" hint-placeholder-count="38"><span style="position:absolute;top:3px;left:{{ t.l }}%;width:1px;height:{{ t.h }}px;background:var(--faint-deco)"></span></sc-for></div>
+<span></span>
+<div style="position:relative;height:22px;margin-top:2px"><span style="position:absolute;left:0;top:0;height:20px;padding:0 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand-ink);box-shadow:inset 0 0 0 1px var(--brand);font:600 11px/20px var(--mono);white-space:nowrap">42 / 381 · #141</span><span style="position:absolute;right:0;top:0;font:500 11px/20px var(--mono);color:var(--muted)">1 tick = 10</span></div>
+</div>
+<p style="margin:0;display:flex;gap:14px;font-size:12px;line-height:16px;color:var(--muted)"><span><span style="color:var(--ready)">■</span> read here</span><span>◌ read in another run</span></p>
+</div>
+<div style="display:flex;flex-direction:column;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ spine }}" as="g" hint-placeholder-count="4">
+<button aria-expanded="{{ g.open }}" style="display:flex;align-items:center;gap:10px;min-height:44px;padding:8px 14px;border:0;border-bottom:1px solid var(--line);background:var(--raise);color:var(--ink);font:inherit;text-align:left;cursor:pointer"><span style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font-size:14px;font-weight:600;font-style:{{ g.style }}">{{ g.name }}</span><span style="font:500 11px/14px var(--mono);color:var(--muted)">{{ g.range }}</span></span><span aria-hidden="true" style="width:52px;height:5px;border-radius:999px;background:var(--sunk);overflow:hidden"><span style="display:block;width:{{ g.pct }}%;height:100%;background:var(--ready)"></span></span><span style="font:500 12px/16px var(--mono);color:var(--ink-2);white-space:nowrap">{{ g.count }}</span><span style="font-size:12px;color:var(--muted)">{{ g.act }}</span></button>
+<sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="2">
+<div style="display:flex;align-items:center;gap:12px;padding:8px 6px 8px 14px;border-bottom:1px solid var(--line);background:{{ r.bg }}">
+<span aria-hidden="true" style="--cv:{{ r.cv }};flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><a href="#" style="display:flex;gap:4px;font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none;min-width:0"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Uncanny X-Men</span><span style="flex:none;font-family:var(--mono);font-weight:500">{{ r.n }}</span></a><span style="font:500 12px/16px var(--mono);color:{{ r.metaInk }}">{{ r.meta }}</span></div>
+<button aria-pressed="{{ r.pressed }}" aria-label="{{ r.aria }}" style="flex:none;width:44px;height:44px;border:0;background:transparent;display:grid;place-items:center;cursor:pointer"><span style="box-sizing:border-box;width:28px;height:28px;border-radius:50%;background:{{ r.dotBg }};border:{{ r.dotBd }};box-shadow:{{ r.dotSh }};color:var(--on-ready);display:grid;place-items:center;font:700 14px/1 var(--sans)">{{ r.glyph }}</span></button>
+</div>
+</sc-for>
+</sc-for>
+</div>
+</div>
+</main>
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;gap:8px;padding:10px 12px 22px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-top:1px solid var(--glass-edge)">
+<button style="flex:1;min-width:0;height:44px;border:0;border-radius:var(--r-lg);background:var(--brand);color:var(--on-brand);font:600 15px/1 var(--sans);display:flex;align-items:center;justify-content:center;gap:8px"><span aria-hidden="true" style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/check.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/check.svg) center/contain no-repeat"></span>Mark #141 read</button>
+<button style="flex:none;height:44px;padding:0 12px;border:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 14px/1 var(--sans)">Mark through…</button>
+<button aria-label="Search" style="flex:none;width:44px;height:44px;border:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);display:grid;place-items:center"><span aria-hidden="true" style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat"></span></button>
+</div>
+</div>
+</figure>
+</sc-for>
+</div>
+</section>
+
+<section id="complete" style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:10px;max-width:960px"><span style="font:500 12px/16px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f594f">7 · Completion: finishing a run</span><h2 style="margin:0;font:500 44px/48px 'Newsreader',Georgia,serif;letter-spacing:-.02em">Finished, and what it opened</h2><p style="margin:0;color:#3d3830;text-wrap:pretty">Shown on the run page after the last mark. There's no confetti. On arrival the run rail fills left to right once, over 900 ms (instantly under reduced motion). The reward is the record: how long it took, where it leaves the block, and what is now unlocked. The status badge stays grey “✓ read”, as specced, and green is used for the fills.</p></div>
+<div style="display:flex;flex-wrap:wrap;gap:32px">
+<sc-for list="{{ two }}" as="f" hint-placeholder-count="2">
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">run complete · {{ f.theme }}</figcaption>
+<div data-theme="{{ f.theme }}" data-pal="{{ f.pal }}" data-ambient="{{ f.amb }}" data-screen-label="Run complete" style="position:relative;width:390px;height:844px;overflow:hidden;display:flex;flex-direction:column;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:20px;border-radius:32px;box-shadow:0 0 0 1px var(--rule-2),0 30px 60px -30px rgba(0,0,0,.5)">
+<header style="flex:none;position:relative;z-index:2;display:flex;align-items:center;height:52px;padding:0 4px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--glass-edge)"><a href="#" style="display:flex;align-items:center;gap:2px;height:44px;padding:0 10px 0 6px;color:var(--ink);text-decoration:none;font-weight:500"><span aria-hidden="true" style="width:20px;height:20px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/chevron-left.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/chevron-left.svg) center/contain no-repeat"></span>Comics</a></header>
+<main style="flex:1;overflow-y:auto;scrollbar-width:none;padding:0 0 104px;display:flex;flex-direction:column">
+<div data-art="" style="--art-d:oklch(.29 .055 32);--art-l:oklch(.93 .03 45);display:flex;flex-direction:column;align-items:center;gap:14px;padding:28px 20px 24px;background:var(--art);text-align:center">
+<div aria-hidden="true" style="--cv:oklch(.40 .11 30);position:relative;width:120px;height:180px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover)"><span style="position:absolute;left:8px;bottom:8px;font:500 11px/14px var(--mono);color:#fff">key art</span></div>
+<span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink-2);font:600 11px/1 var(--mono)">✓ read · Oct 2026</span>
+<h1 style="margin:0;font:500 44px/46px var(--display);letter-spacing:-.02em">Finished.</h1>
+<p style="margin:0;font-size:16px;line-height:22px;color:var(--ink-2)">Uncanny X-Men, all 381 issues.</p>
+<span style="font:500 12px/16px var(--mono);color:var(--ink-2)">Mar 2025 – Oct 2026 · 19 months</span>
+</div>
+<div style="padding:16px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">The run</span><span style="font:600 13px/16px var(--mono)">381 / 381</span></div>
+<span role="img" aria-label="All 381 issues read" style="display:block;height:24px;border-radius:3px;background:var(--ready)"></span>
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:10px"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Block 1 · Foundations</span><span style="font:500 12px/16px var(--mono);color:var(--ink-2)">2 of 5 runs</span></div>
+<div role="img" aria-label="Block 1: runs 1 and 2 read, runs 3 to 5 unread" style="display:flex;gap:2px;height:18px"><sc-for list="{{ cBlock }}" as="c" hint-placeholder-count="5"><span style="flex:none;width:{{ c.w }}px;height:18px;border-radius:3px;background:{{ c.bg }};box-shadow:{{ c.ring }};color:{{ c.ink }};font:500 11px/18px var(--mono);padding-left:6px;box-sizing:border-box;white-space:nowrap;overflow:hidden">{{ c.t }}</span></sc-for></div>
+<span style="font:500 12px/16px var(--mono);color:var(--muted)">447 of 664 issues in this block</span>
+</div>
+<section aria-labelledby="op-h" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><h2 id="op-h" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">What this opened</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">13</span></div>
+<div style="border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ opened }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)"><span aria-hidden="true" style="--cv:{{ r.cv }};flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px"><a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none">{{ r.name }}</a><span style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:6px;background:{{ r.bBg }};box-shadow:{{ r.bRing }};color:var(--ready);font:600 11px/1 var(--mono)">{{ r.badge }}</span><span style="font-size:12px;color:var(--muted)">{{ r.meta }}</span></span></div></div>
+</sc-for>
+<a href="#" style="display:flex;align-items:center;min-height:44px;padding:0 14px;color:var(--brand);font-size:13px;font-weight:500;text-decoration:none">All 13 newly ready</a>
+</div>
+</section>
+<p style="margin:4px 0 0;text-align:center;font:italic 400 18px/26px var(--display);color:var(--ink-2)">The longest run you've finished so far.</p>
+</div>
+</main>
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;gap:8px;padding:10px 12px 22px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-top:1px solid var(--glass-edge)">
+<button style="flex:1;min-width:0;height:44px;border:0;border-radius:var(--r-lg);background:var(--brand);color:var(--on-brand);font:600 15px/1 var(--sans)">Start New Mutants</button>
+<button style="flex:none;height:44px;padding:0 14px;border:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 14px/1 var(--sans)">Not now</button>
+</div>
+</div>
+</figure>
+</sc-for>
+</div>
+</section>
+
+<section id="proposals" style="display:flex;flex-direction:column;gap:28px;max-width:1240px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font:500 12px/16px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f594f">8 · Proposals</span><h2 style="margin:0;font:500 44px/48px 'Newsreader',Georgia,serif;letter-spacing:-.02em">Seven changes, no padding</h2></div>
+<div style="display:flex;flex-direction:column;gap:8px;padding:24px 28px;border-radius:20px;background:#1f1c18;color:#f4f2ee;max-width:900px"><span style="font:500 12px/16px 'IBM Plex Mono',monospace;letter-spacing:.08em;color:#cfc8bc">IF YOU ONLY DO ONE</span><p style="margin:0;font:400 22px/31px 'Newsreader',serif;text-wrap:pretty">Build the cover-led Now hero on /comics: <a href="#p1" style="color:#c9d2ff">P1</a> and <a href="#p3" style="color:#c9d2ff">P3</a> together, as drawn. It's the first thing you see every time you open the app, the covers already exist on the spine, and it gives the mark feedback (P2) somewhere visible to land.</p></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:20px">
+<sc-for list="{{ proposals }}" as="p" hint-placeholder-count="7">
+<article id="{{ p.id }}" style="display:flex;flex-direction:column;gap:12px;padding:22px 24px;border-radius:18px;background:#f4f2ee;box-shadow:inset 0 0 0 1px #d8d2c8">
+<div style="display:flex;align-items:center;gap:10px"><span style="font:600 13px/1 'IBM Plex Mono',monospace;padding:6px 9px;border-radius:6px;background:#1f1c18;color:#f6f4f0">{{ p.n }}</span><span style="font:600 11px/14px 'IBM Plex Mono',monospace;padding:4px 8px;border-radius:6px;box-shadow:inset 0 0 0 1px #8a8378;color:#3d3830">{{ p.cost }}</span></div>
+<b style="font:500 24px/28px 'Newsreader',serif;text-wrap:pretty">{{ p.title }}</b>
+<div style="display:flex;flex-direction:column;gap:2px"><span style="font:500 11px/14px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#5f594f">CHANGES</span><span style="font-size:15px;line-height:22px;color:#2c2823;text-wrap:pretty">{{ p.what }}</span></div>
+<div style="display:flex;flex-direction:column;gap:2px"><span style="font:500 11px/14px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#5f594f">WHY IT HELPS</span><span style="font-size:15px;line-height:22px;color:#2c2823;text-wrap:pretty">{{ p.why }}</span></div>
+<div style="display:flex;flex-direction:column;gap:2px"><span style="font:500 11px/14px 'IBM Plex Mono',monospace;letter-spacing:.06em;color:#5f594f">TOUCHES</span><span style="font:500 13px/19px 'IBM Plex Mono',monospace;color:#2c2823">{{ p.touch }}</span></div>
+</article>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:10px;max-width:900px"><b>Copy, before → after (P7) · approved 5 Oct</b>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-top:1px solid #d3cdc3;font-size:15px;line-height:22px">
+<sc-for list="{{ copy }}" as="c" hint-placeholder-count="6"><span style="padding:9px 16px 9px 0;border-bottom:1px solid #d3cdc3;color:#5f594f">{{ c.a }}</span><span style="padding:9px 0;border-bottom:1px solid #d3cdc3">{{ c.b }}</span></sc-for>
+</div>
+</div>
+</section>
+
+<section id="tokens" style="display:flex;flex-direction:column;gap:28px;max-width:1240px">
+<div style="display:flex;flex-direction:column;gap:6px"><span style="font:500 12px/16px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f594f">9 · Tokens and departures</span><h2 style="margin:0;font:500 44px/48px 'Newsreader',Georgia,serif;letter-spacing:-.02em">Everything I changed, listed</h2><p style="margin:0;color:#3d3830;max-width:900px;text-wrap:pretty">Folded in on 5 Oct: <code>design/tokens.css</code> now carries palette 1b as hex (oklch sources in comments), with the other two palettes in <code>design/handoff/palette-swaps.css</code>. All three were measured (contrast and the ΔE ≥ 15 check of <code>--t1…--t8</code>) and pass after the fixes listed below. The full tables are in <code>design/handoff/contrast-report.md</code>. <code>npm run test:tokens</code> remains the gate. D1–D12 were accepted on 5 Oct. D13 and D14 are new, for the states in section 10.</p></div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(520px,1fr));gap:32px">
+<div style="display:flex;flex-direction:column;gap:10px"><b style="font-size:18px">Token additions and changes</b>
+<div style="display:grid;grid-template-columns:150px minmax(0,1fr);border-top:1px solid #d3cdc3;font-size:14px;line-height:21px">
+<sc-for list="{{ tokens }}" as="t" hint-placeholder-count="10"><code style="padding:9px 12px 9px 0;border-bottom:1px solid #d3cdc3;font:500 13px/21px 'IBM Plex Mono',monospace">{{ t.k }}</code><span style="padding:9px 0;border-bottom:1px solid #d3cdc3;color:#2c2823;text-wrap:pretty">{{ t.v }}</span></sc-for>
+</div></div>
+<div style="display:flex;flex-direction:column;gap:10px"><b style="font-size:18px">Departures from mockups.html and the style guide</b>
+<div style="display:grid;grid-template-columns:84px minmax(0,1fr);border-top:1px solid #d3cdc3;font-size:14px;line-height:21px">
+<sc-for list="{{ departures }}" as="d" hint-placeholder-count="12"><span style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:9px 0;border-bottom:1px solid #d3cdc3;font:600 12px/21px 'IBM Plex Mono',monospace">{{ d.id }}<sc-if value="{{ d.ok }}" hint-placeholder-val="{{ true }}"><span style="font:600 10px/12px 'IBM Plex Mono',monospace;padding:2px 5px;border-radius:4px;background:#1f1c18;color:#f6f4f0">ACCEPTED</span></sc-if><sc-if value="{{ d.isNew }}" hint-placeholder-val="{{ false }}"><span style="font:600 10px/12px 'IBM Plex Mono',monospace;padding:2px 5px;border-radius:4px;box-shadow:inset 0 0 0 1px #1f1c18">NEW</span></sc-if></span><span style="padding:9px 0;border-bottom:1px solid #d3cdc3;color:#2c2823;text-wrap:pretty"><b>{{ d.t }}</b> {{ d.v }}</span></sc-for>
+</div></div>
+</div>
+<p style="margin:0;font-size:14px;line-height:21px;color:#5f594f;max-width:900px;text-wrap:pretty">Kept deliberately: no streaks, no confetti, no global progress bar, no red on any dashboard, read-elsewhere always grey and dashed, the telescope horizontal with a 14 px minimum cell, the thumb bar fixed with 44 px targets, the five slots in order, and counts in mono (D-32).</p>
+</section>
+
+<section id="states" style="display:flex;flex-direction:column;gap:64px">
+<div style="display:flex;flex-direction:column;gap:10px;max-width:960px"><span style="font:500 12px/16px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f594f">10 · Gaps filled · 5 Oct</span><h2 style="margin:0;font:500 44px/48px 'Newsreader',Georgia,serif;letter-spacing:-.02em">Caught up, a block done, and the tablet</h2><p style="margin:0;color:#3d3830;text-wrap:pretty">Three states that weren't drawn before. They follow on from section 7: you've just finished Uncanny X-Men. Each uses the accepted departures and the same tokens. The two new decisions they need are D13 and D14 in section 9.</p></div>
+
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:880px"><b style="font:500 28px/32px 'Newsreader',serif">10a · /comics, all caught up</b><p style="margin:0;color:#3d3830;text-wrap:pretty">Nothing is in progress, and both monthly runs are read to the latest issue. The Now slot says so plainly and lists what's coming out. Release dates are grey, because a date has no colour meaning. It offers the top of Up next once. Position uses the telescope's empty variant (A2.2): the track rail only, with no head and no brackets. The variant's own Start button is dropped, since the thumb bar already carries that verb (D13).</p></div>
+<div style="display:flex;flex-wrap:wrap;gap:32px">
+<sc-for list="{{ two }}" as="f" hint-placeholder-count="2">
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">/comics · all caught up · {{ f.theme }}</figcaption>
+<div data-theme="{{ f.theme }}" data-pal="{{ f.pal }}" data-ambient="{{ f.amb }}" data-screen-label="Comics caught up" style="position:relative;width:390px;height:844px;overflow:hidden;display:flex;flex-direction:column;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:20px;border-radius:32px;box-shadow:0 0 0 1px var(--rule-2),0 30px 60px -30px rgba(0,0,0,.5)">
+<header style="flex:none;position:relative;z-index:2;display:flex;align-items:center;height:52px;padding:0 4px 0 16px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--glass-edge)"><span style="font:italic 500 21px/1 var(--display);margin-right:10px">Ledger</span><nav aria-label="Media" style="display:flex;flex:1"><a href="#" aria-current="page" style="display:flex;align-items:center;height:44px;padding:0 10px;font-weight:600;color:var(--ink);text-decoration:none;box-shadow:inset 0 -2px 0 var(--m-comics)">Comics</a><a href="#" style="display:flex;align-items:center;height:44px;padding:0 10px;font-weight:500;color:var(--muted);text-decoration:none">Books</a><a href="#" style="display:flex;align-items:center;height:44px;padding:0 10px;font-weight:500;color:var(--muted);text-decoration:none">Watch</a></nav><button aria-label="Search" style="width:44px;height:44px;border:0;background:transparent;color:var(--ink-2);display:grid;place-items:center"><span aria-hidden="true" style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat"></span></button></header>
+<main style="flex:1;overflow-y:auto;scrollbar-width:none;padding:20px 16px 104px;display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:column;gap:6px"><h1 style="margin:0;font:500 32px/36px var(--display);letter-spacing:-.015em">Comics</h1><p style="margin:0;color:var(--ink-2);text-wrap:pretty">All caught up. X-Men #9 is out Wed 22 Oct.</p></div>
+<section aria-label="Now" data-art="" style="--art-d:oklch(.29 .055 32);--art-l:oklch(.93 .03 45);border-radius:var(--r-hero);overflow:hidden;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;flex-direction:column;gap:14px;padding:20px 16px;background:var(--art)">
+<div style="display:flex;align-items:flex-end;gap:16px">
+<div aria-hidden="true" style="--cv:oklch(.40 .11 30);position:relative;flex:none;width:72px;height:108px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 6px,color-mix(in oklch,var(--cv),#000 16%) 6px 12px);box-shadow:var(--sh-cover)"><span style="position:absolute;right:-6px;bottom:-6px;width:22px;height:22px;border-radius:50%;background:var(--ready);color:var(--on-ready);box-shadow:0 0 0 2px var(--art);display:grid;place-items:center;font:700 12px/1 var(--sans)">✓</span></div>
+<div style="display:flex;flex-direction:column;gap:6px"><span style="align-self:flex-start;display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;background:var(--ready-soft);color:var(--ready);font:600 11px/1 var(--mono)">✓ caught up · 1 Oct</span><span style="font:500 30px/32px var(--display);letter-spacing:-.015em">All caught up.</span></div>
+</div>
+<p style="margin:0;color:var(--ink-2);text-wrap:pretty">You finished <i>Uncanny X-Men</i> on Sunday, and both monthly runs are read to the latest issue. Nothing's on the go, and that's fine.</p>
+</div>
+<div style="display:flex;flex-direction:column;padding:6px 0;border-top:1px solid var(--line)">
+<span style="padding:8px 16px 2px;font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Coming out</span>
+<sc-for list="{{ coming }}" as="r" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:10px;min-height:44px;padding:0 16px"><span style="flex:1;min-width:0;display:flex;gap:4px;font-size:14px;font-weight:600"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</span><span style="flex:none;font-family:var(--mono);font-weight:500">{{ r.n }}</span></span><span style="flex:none;font:500 12px/16px var(--mono);color:var(--ink-2)">{{ r.when }}</span><span style="flex:none;display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:6px;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--muted);font:600 11px/1 var(--mono)">{{ r.in }}</span></div></sc-for>
+</div>
+<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--line)">
+<span aria-hidden="true" style="--cv:oklch(.45 .12 50);flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Top of Up next</span><a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none">Claremont — New Mutants</a><span style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:6px;background:var(--ready-soft);color:var(--ready);font:600 11px/1 var(--mono)">● ready</span><span style="font:500 12px/16px var(--mono);color:var(--muted)">100 iss · opens 3</span></span></div>
+</div>
+<a href="#" style="display:flex;align-items:center;min-height:44px;padding:0 16px;border-top:1px solid var(--line);color:var(--brand);font-size:13px;font-weight:500;text-decoration:none">Pick something else</a>
+</section>
+<section aria-labelledby="cu-next" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:8px"><h2 id="cu-next" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Up next</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">12</span><span style="flex:1"></span><button style="height:32px;padding:0 12px;border:0;border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:500 13px/1 var(--sans)">Reorder</button></div>
+<div role="list" style="display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:2px 16px 6px">
+<sc-for list="{{ shelf }}" as="r" hint-placeholder-count="4">
+<div role="listitem" style="flex:none;width:112px;display:flex;flex-direction:column;gap:6px">
+<a href="#" aria-label="Open {{ r.name }}" style="--cv:{{ r.cv }};position:relative;display:block;width:112px;height:168px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover)"><span style="position:absolute;top:6px;left:6px;min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;border-radius:6px;background:var(--overlay);color:var(--ink);font:600 11px/22px var(--mono);text-align:center">{{ r.pos }}</span></a>
+<span style="font-size:13px;line-height:17px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ r.name }}</span>
+<span style="font:500 11px/14px var(--mono);color:var(--muted)">{{ r.meta }}</span>
+<sc-if value="{{ r.blocked }}" hint-placeholder-val="{{ false }}"><button aria-haspopup="dialog" aria-label="Why held? {{ r.badge }}" style="align-self:flex-start;min-height:24px;padding:3px 7px;border:0;border-radius:6px;background:var(--blocked-soft);box-shadow:inset 0 0 0 1px var(--blocked);color:var(--blocked);font:600 11px/14px var(--mono);text-align:left">{{ r.badge }}</button></sc-if>
+<sc-if value="{{ r.open }}" hint-placeholder-val="{{ true }}"><span style="align-self:flex-start;min-height:22px;padding:4px 7px;box-sizing:border-box;border-radius:6px;background:{{ r.bBg }};box-shadow:{{ r.bRing }};color:var(--ready);font:600 11px/14px var(--mono)">{{ r.badge }}</span></sc-if>
+</div>
+</sc-for>
+</div>
+</section>
+<section aria-labelledby="cu-pos" style="display:flex;flex-direction:column;gap:12px">
+<h2 id="cu-pos" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Where you are</h2>
+<div style="display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:grid;grid-template-columns:44px 282px"><span style="font:500 11px/18px var(--mono);letter-spacing:.06em;color:var(--muted)">TRACK</span>
+<div role="slider" tabindex="0" aria-label="X-Men track" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1" aria-valuetext="no run in progress" style="display:flex;gap:2px;height:18px"><sc-for list="{{ cuTrack }}" as="c" hint-placeholder-count="7"><a href="#" aria-label="{{ c.aria }}" style="position:relative;flex:none;width:{{ c.w }}px;height:18px;border-radius:3px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--faint-deco);overflow:hidden;color:{{ c.ink }};font:500 11px/18px var(--mono);text-decoration:none;white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ c.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:{{ c.pl }}px">{{ c.t }}</span></a></sc-for></div></div>
+<div role="list" style="display:flex;flex-direction:column;border-top:1px solid var(--line)">
+<div role="listitem" style="display:grid;grid-template-columns:56px 1fr;align-items:baseline;min-height:32px;padding-top:8px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">TRACK</span><span><b>X-Men</b> · <span style="font-family:var(--mono)">458 / 2,180</span> read</span></div>
+<div role="listitem" style="display:grid;grid-template-columns:56px 1fr;align-items:baseline;min-height:28px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">NEXT</span><span><b>New Mutants</b> · run 3 of 5 in block 1</span></div>
+</div>
+</div>
+</section>
+<section aria-label="This year" style="display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-radius:var(--r-xl);background:var(--raise);box-shadow:inset 0 0 0 1px var(--line)">
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">2026 so far</span>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px"><div style="display:flex;flex-direction:column"><span style="font:500 22px/28px var(--mono)">548</span><span style="font-size:12px;line-height:16px;color:var(--muted)">issues read</span></div><div style="display:flex;flex-direction:column"><span style="font:500 22px/28px var(--mono)">4</span><span style="font-size:12px;line-height:16px;color:var(--muted)">runs finished</span></div><div style="display:flex;flex-direction:column"><span style="font:500 22px/28px var(--mono)">2</span><span style="font-size:12px;line-height:16px;color:var(--muted)">monthly runs</span></div></div>
+</section>
+</main>
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;gap:8px;padding:10px 12px 22px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-top:1px solid var(--glass-edge)">
+<button style="flex:1;min-width:0;height:44px;border:0;border-radius:var(--r-lg);background:var(--brand);color:var(--on-brand);font:600 15px/1 var(--sans)">Start New Mutants</button>
+<button aria-label="Search" style="flex:none;width:44px;height:44px;border:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);display:grid;place-items:center"><span aria-hidden="true" style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat"></span></button>
+</div>
+</div>
+</figure>
+</sc-for>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:880px"><b style="font:500 28px/32px 'Newsreader',serif">10b · Finishing a block</b><p style="margin:0;color:#3d3830;text-wrap:pretty">When the run you just finished is also the last unread run in its block, the completion screen steps up a level (D14). The art band fans out all the block's covers. The record moves from the run rail to the track rail: cell 1 fills once over <code>--dur-fill</code>, then the head ring moves to block 2 over <code>--dur-4</code>. Both happen instantly under reduced motion. The badge stays grey “✓ read”, and there is still no confetti.</p></div>
+<div style="display:flex;flex-wrap:wrap;gap:32px">
+<sc-for list="{{ two }}" as="f" hint-placeholder-count="2">
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">block complete · {{ f.theme }}</figcaption>
+<div data-theme="{{ f.theme }}" data-pal="{{ f.pal }}" data-ambient="{{ f.amb }}" data-screen-label="Block complete" style="position:relative;width:390px;height:844px;overflow:hidden;display:flex;flex-direction:column;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:20px;border-radius:32px;box-shadow:0 0 0 1px var(--rule-2),0 30px 60px -30px rgba(0,0,0,.5)">
+<header style="flex:none;position:relative;z-index:2;display:flex;align-items:center;height:52px;padding:0 4px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--glass-edge)"><a href="#" style="display:flex;align-items:center;gap:2px;height:44px;padding:0 10px 0 6px;color:var(--ink);text-decoration:none;font-weight:500"><span aria-hidden="true" style="width:20px;height:20px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/chevron-left.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/chevron-left.svg) center/contain no-repeat"></span>Comics</a></header>
+<main style="flex:1;overflow-y:auto;scrollbar-width:none;padding:0 0 104px;display:flex;flex-direction:column">
+<div data-art="" style="--art-d:oklch(.28 .05 300);--art-l:oklch(.93 .025 300);display:flex;flex-direction:column;align-items:center;gap:14px;padding:28px 20px 24px;background:var(--art);text-align:center">
+<div aria-hidden="true" style="display:flex;padding-left:16px"><sc-for list="{{ bdFan }}" as="c" hint-placeholder-count="5"><span style="--cv:{{ c.cv }};flex:none;width:60px;height:90px;margin-left:-16px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 6px,color-mix(in oklch,var(--cv),#000 16%) 6px 12px);box-shadow:var(--sh-cover),0 0 0 2px var(--art)"></span></sc-for></div>
+<span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink-2);font:600 11px/1 var(--mono)">✓ read · Feb 2027</span>
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)">X-Men · block 1 of 7</span>
+<h1 style="margin:0;font:500 40px/44px var(--display);letter-spacing:-.02em">Foundations, done.</h1>
+<p style="margin:0;font-size:16px;line-height:22px;color:var(--ink-2)">Five runs and 664 issues, ending with <i>Excalibur</i>.</p>
+<span style="font:500 12px/16px var(--mono);color:var(--ink-2)">Mar 2025 – Feb 2027 · 23 months</span>
+</div>
+<div style="padding:16px;display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:8px;padding:16px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">The track · X-Men</span><span style="font:600 13px/16px var(--mono)">1 of 7 blocks</span></div>
+<div role="img" aria-label="X-Men track: block 1 read, block 2 next, blocks 3 to 7 unread" style="display:flex;gap:2px;height:18px"><sc-for list="{{ bdTrack }}" as="c" hint-placeholder-count="7"><span style="flex:none;width:{{ c.w }}px;height:18px;border-radius:3px;background:{{ c.bg }};box-shadow:{{ c.ring }};color:{{ c.ink }};font:500 11px/18px var(--mono);padding-left:6px;box-sizing:border-box;white-space:nowrap;overflow:hidden">{{ c.t }}</span></sc-for></div>
+<span style="font:500 12px/16px var(--mono);color:var(--muted)">664 of 2,180 issues in this track</span>
+</div>
+<section aria-labelledby="bd-runs" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><h2 id="bd-runs" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">The block</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">5</span></div>
+<div style="border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ bdRuns }}" as="r" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:12px;min-height:44px;padding:8px 14px;border-bottom:1px solid var(--line)"><span aria-hidden="true" style="flex:none;width:22px;height:22px;border-radius:50%;background:var(--ready);color:var(--on-ready);display:grid;place-items:center;font:700 12px/1 var(--sans)">✓</span><a href="#" style="flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</a><span style="flex:none;font:500 12px/16px var(--mono);color:var(--muted)">{{ r.meta }}</span></div></sc-for>
+</div>
+</section>
+<section aria-labelledby="bd-op" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><h2 id="bd-op" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">What this opened</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">9</span></div>
+<div style="border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ bdOpened }}" as="r" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)"><span aria-hidden="true" style="--cv:{{ r.cv }};flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px"><a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none">{{ r.name }}</a><span style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:6px;background:{{ r.bBg }};box-shadow:{{ r.bRing }};color:var(--ready);font:600 11px/1 var(--mono)">{{ r.badge }}</span><span style="font-size:12px;color:var(--muted)">{{ r.meta }}</span></span></div></div></sc-for>
+<a href="#" style="display:flex;align-items:center;min-height:44px;padding:0 14px;color:var(--brand);font-size:13px;font-weight:500;text-decoration:none">All 9 newly ready</a>
+</div>
+</section>
+<p style="margin:4px 0 0;text-align:center;font:italic 400 18px/26px var(--display);color:var(--ink-2)">One block of seven. Next stop, the nineties.</p>
+</div>
+</main>
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;gap:8px;padding:10px 12px 22px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-top:1px solid var(--glass-edge)">
+<button style="flex:1;min-width:0;height:44px;border:0;border-radius:var(--r-lg);background:var(--brand);color:var(--on-brand);font:600 15px/1 var(--sans)">Start block 2</button>
+<button style="flex:none;height:44px;padding:0 14px;border:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 14px/1 var(--sans)">Not now</button>
+</div>
+</div>
+</figure>
+</sc-for>
+</div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:880px"><b style="font:500 28px/32px 'Newsreader',serif">10c · Tablet, 768–1023px (D-33)</b><p style="margin:0;color:#3d3830;text-wrap:pretty">Drawn at 768 × 1024, the narrowest case. There's a 72px navigation rail with each icon over an 11px label and no tooltips. The content sits in one column, with the desktop side rail (Ready, This year) stacked below it as two columns. The thumb bar stays at the bottom. The hero turns horizontal around a 150px cover, and the lens moves up beside it. The telescope keeps its phone sizing (<code>--tele-*</code> only changes at 900px) and fills the wider card, here W = 548. Interaction follows the pointer, so there are no hover reveals.</p></div>
+<div style="display:flex;flex-wrap:wrap;gap:40px">
+<sc-for list="{{ two }}" as="f" hint-placeholder-count="2">
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">/comics · tablet 768 · {{ f.theme }}</figcaption>
+<div data-theme="{{ f.theme }}" data-pal="{{ f.pal }}" data-ambient="{{ f.amb }}" data-screen-label="Comics tablet" style="position:relative;width:768px;height:1024px;overflow:hidden;display:flex;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:20px;border-radius:28px;box-shadow:0 0 0 1px var(--rule-2),0 30px 60px -30px rgba(0,0,0,.5)">
+<nav aria-label="Main" style="flex:none;width:72px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px 0 20px;background:var(--surface);box-shadow:inset -1px 0 0 var(--rule)">
+<span style="height:44px;display:grid;place-items:center;font:italic 500 24px/1 var(--display)">L</span>
+<sc-for list="{{ tbNav }}" as="n" hint-placeholder-count="5"><a href="#" aria-current="{{ n.cur }}" style="position:relative;width:72px;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:{{ n.ink }};text-decoration:none;font:{{ n.weight }} 11px/14px var(--sans)"><span style="width:48px;height:28px;border-radius:999px;display:grid;place-items:center;background:{{ n.bg }}"><span aria-hidden="true" style="width:20px;height:20px;background:currentColor;-webkit-mask:url({{ n.url }}) center/contain no-repeat;mask:url({{ n.url }}) center/contain no-repeat"></span></span>{{ n.label }}<span style="position:absolute;left:0;top:14px;width:3px;height:28px;border-radius:0 3px 3px 0;background:{{ n.bar }}"></span></a></sc-for>
+<span style="flex:1"></span>
+<a href="#" style="width:72px;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--muted);text-decoration:none;font:500 11px/14px var(--sans)"><span aria-hidden="true" style="width:20px;height:20px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/search.svg) center/contain no-repeat"></span>Search</a>
+<a href="#" style="width:72px;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--muted);text-decoration:none;font:500 11px/14px var(--sans)"><span aria-hidden="true" style="width:20px;height:20px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/settings.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/settings.svg) center/contain no-repeat"></span>Settings</a>
+</nav>
+<div style="position:relative;flex:1;min-width:0;display:flex;flex-direction:column">
+<main style="flex:1;overflow-y:auto;scrollbar-width:none;padding:32px 32px 112px;display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:8px"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px"><h1 style="margin:0;font:500 40px/44px var(--display);letter-spacing:-.02em">Comics</h1><a href="#" style="display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--rule-2);font:500 12px/16px var(--mono);color:var(--ink-2);text-decoration:none">6 in inbox</a></div><p style="margin:0;font-size:15px;line-height:22px;color:var(--ink-2)">14 issues since Tuesday. Next up: Days of Future Past.</p></div>
+<section aria-labelledby="tb-now" data-art="" style="--art-d:oklch(.29 .055 32);--art-l:oklch(.93 .03 45);display:flex;flex-direction:column;border-radius:var(--r-hero);overflow:hidden;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;gap:24px;padding:20px;background:var(--art)">
+<div aria-hidden="true" style="--cv:oklch(.42 .11 32);position:relative;flex:none;width:150px;height:225px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 8px,color-mix(in oklch,var(--cv),#000 16%) 8px 16px);box-shadow:var(--sh-cover)"><span style="position:absolute;left:8px;bottom:8px;font:500 11px/14px var(--mono);color:#fff">cover · #141</span></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+<span id="tb-now" style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)">Up now</span>
+<span style="font:500 56px/60px var(--mono);letter-spacing:-.04em;margin-top:8px">#141</span>
+<span style="font:italic 400 22px/27px var(--display)">Days of Future Past, part 1</span>
+<span style="font-size:14px;line-height:20px;color:var(--ink-2);margin-top:6px">Uncanny X-Men · Claremont</span>
+<span style="flex:1"></span>
+<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">This stretch</span><span style="font-size:13px;color:var(--ink-2)"><b style="font-family:var(--mono);font-weight:600;color:var(--ink)">45</b> of 381 read</span></div>
+<div role="img" aria-label="Issues #130 to #153. 45 of 381 read in this run. Next is #141." style="display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:2px;height:24px"><sc-for list="{{ tbLens }}" as="c" hint-placeholder-count="24"><span style="box-sizing:border-box;border-radius:3px;background:{{ c.bg }};border:{{ c.bd }};box-shadow:{{ c.sh }}"></span></sc-for></div>
+<div style="display:flex;justify-content:space-between;margin-top:6px;font:500 11px/14px var(--mono);color:var(--muted)"><span>#130</span><span>■ read  ◌ elsewhere</span><span>#153</span></div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+<div style="display:flex;align-items:center;gap:14px;padding:12px 20px;border-top:1px solid var(--line);box-shadow:inset -1px 0 0 var(--line)"><div aria-hidden="true" style="display:flex;padding-left:8px"><sc-for list="{{ tbStack }}" as="s" hint-placeholder-count="4"><span style="--cv:{{ s.cv }};position:relative;width:30px;height:45px;margin-left:-8px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:0 0 0 2px var(--surface)"><span style="position:absolute;right:-5px;bottom:-5px;width:16px;height:16px;border-radius:50%;background:var(--ready);color:var(--on-ready);box-shadow:0 0 0 2px var(--surface);display:grid;place-items:center;font:700 11px/1 var(--sans)">✓</span></span></sc-for></div><div style="display:flex;flex-direction:column;min-width:0"><span style="font-size:13px;font-weight:600">Since Tuesday</span><span style="font:500 12px/16px var(--mono);color:var(--muted)">14 issues · latest #140</span></div></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:44px;padding:8px 20px;border-top:1px solid var(--line)"><span aria-hidden="true" style="--cv:oklch(.38 .09 200);flex:none;width:24px;height:36px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px)"></span><a href="#" style="flex:1;min-width:0;font-size:13px;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><span style="color:var(--muted)">Also reading · </span>Astonishing X-Men <span style="font-family:var(--mono);color:var(--muted)">11 / 25</span></a><button style="flex:none;height:32px;padding:0 12px;border:0;border-radius:8px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 13px/1 var(--sans)">Read #12</button></div>
+</div>
+</section>
+<section aria-labelledby="tb-next" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:8px"><h2 id="tb-next" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Up next</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">12</span><span style="flex:1"></span><button style="height:32px;padding:0 12px;border:0;border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:500 13px/1 var(--sans)">Reorder</button></div>
+<div role="list" style="display:flex;gap:16px;overflow-x:auto;scrollbar-width:none;margin:0 -32px;padding:2px 32px 6px">
+<sc-for list="{{ shelf }}" as="r" hint-placeholder-count="5">
+<div role="listitem" style="flex:none;width:112px;display:flex;flex-direction:column;gap:6px">
+<a href="#" aria-label="Open {{ r.name }}" style="--cv:{{ r.cv }};position:relative;display:block;width:112px;height:168px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover)"><span style="position:absolute;top:6px;left:6px;min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;border-radius:6px;background:var(--overlay);color:var(--ink);font:600 11px/22px var(--mono);text-align:center">{{ r.pos }}</span></a>
+<span style="font-size:13px;line-height:17px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ r.name }}</span>
+<span style="font:500 11px/14px var(--mono);color:var(--muted)">{{ r.meta }}</span>
+<sc-if value="{{ r.blocked }}" hint-placeholder-val="{{ false }}"><button aria-haspopup="dialog" aria-label="Why held? {{ r.badge }}" style="align-self:flex-start;min-height:24px;padding:3px 7px;border:0;border-radius:6px;background:var(--blocked-soft);box-shadow:inset 0 0 0 1px var(--blocked);color:var(--blocked);font:600 11px/14px var(--mono);text-align:left">{{ r.badge }}</button></sc-if>
+<sc-if value="{{ r.open }}" hint-placeholder-val="{{ true }}"><span style="align-self:flex-start;min-height:22px;padding:4px 7px;box-sizing:border-box;border-radius:6px;background:{{ r.bBg }};box-shadow:{{ r.bRing }};color:var(--ready);font:600 11px/14px var(--mono)">{{ r.badge }}</span></sc-if>
+</div>
+</sc-for>
+</div>
+</section>
+<section aria-labelledby="tb-pos" style="display:flex;flex-direction:column;gap:12px">
+<h2 id="tb-pos" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Where you are</h2>
+<div style="display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:grid;grid-template-columns:44px 548px">
+<span style="font:500 11px/18px var(--mono);letter-spacing:.06em;color:var(--muted)">TRACK</span>
+<div role="slider" tabindex="0" aria-label="X-Men track" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1" style="display:flex;gap:2px;height:18px"><sc-for list="{{ tbTrack }}" as="c" hint-placeholder-count="7"><a href="#" aria-label="{{ c.aria }}" style="position:relative;flex:none;width:{{ c.w }}px;height:18px;border-radius:3px;background:var(--sunk);box-shadow:{{ c.ring }};overflow:hidden;color:{{ c.ink }};font:500 11px/18px var(--mono);text-decoration:none;white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ c.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:{{ c.pl }}px">{{ c.t }}</span></a></sc-for></div>
+<span></span>
+<svg width="548" height="16" viewBox="0 0 548 16" aria-hidden="true" style="display:block"><polygon points="{{ tbBr1 }}" style="fill:color-mix(in oklch,var(--brand) 10%,transparent)"></polygon><line x1="0" y1="0" x2="0" y2="16" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line><line x1="{{ tbBr1b }}" y1="0" x2="548" y2="16" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line></svg>
+<span style="font:500 11px/18px var(--mono);letter-spacing:.06em;color:var(--muted)">BLOCK</span>
+<div role="slider" tabindex="0" aria-label="Block 1, Foundations" aria-valuemin="1" aria-valuemax="5" aria-valuenow="2" style="display:flex;gap:2px;height:18px"><sc-for list="{{ tbBlock }}" as="c" hint-placeholder-count="5"><a href="#" aria-label="{{ c.aria }}" style="position:relative;flex:none;width:{{ c.w }}px;height:18px;border-radius:3px;background:var(--sunk);box-shadow:{{ c.ring }};overflow:hidden;color:{{ c.ink }};font:500 11px/18px var(--mono);text-decoration:none;white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ c.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:{{ c.pl }}px">{{ c.t }}</span></a></sc-for></div>
+<span></span>
+<svg width="548" height="16" viewBox="0 0 548 16" aria-hidden="true" style="display:block"><polygon points="{{ tbBr2 }}" style="fill:color-mix(in oklch,var(--brand) 10%,transparent)"></polygon><line x1="{{ tbBr2a }}" y1="0" x2="0" y2="16" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line><line x1="{{ tbBr2b }}" y1="0" x2="548" y2="16" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line></svg>
+<span style="font:500 11px/24px var(--mono);letter-spacing:.06em;color:var(--muted)">RUN</span>
+<div role="slider" tabindex="0" aria-label="Uncanny X-Men" aria-valuemin="1" aria-valuemax="381" aria-valuenow="42" aria-valuetext="42 / 381 · #141" style="position:relative;height:24px;border-radius:3px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--faint-deco)"><sc-for list="{{ tSegs }}" as="s" hint-placeholder-count="2"><span style="position:absolute;top:0;bottom:0;left:{{ s.l }}%;width:{{ s.w }}%;background:var(--ready);border-radius:2px"></span></sc-for><span style="position:absolute;top:3px;bottom:3px;left:{{ tElse }}%;width:3px;box-sizing:border-box;border:1px dashed var(--muted)"></span><span style="position:absolute;top:-4px;bottom:-4px;left:{{ tHead }}%;width:2px;margin-left:-1px;background:var(--ink);box-shadow:0 0 0 2px var(--surface)"></span></div>
+<span></span>
+<div aria-hidden="true" style="position:relative;height:9px"><sc-for list="{{ tTicks }}" as="t" hint-placeholder-count="38"><span style="position:absolute;top:3px;left:{{ t.l }}%;width:1px;height:{{ t.h }}px;background:var(--faint-deco)"></span></sc-for></div>
+<span></span>
+<div style="position:relative;height:22px;margin-top:2px"><span style="position:absolute;left:{{ tbPillL }}px;top:0;height:20px;padding:0 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand-ink);box-shadow:inset 0 0 0 1px var(--brand);font:600 11px/20px var(--mono);white-space:nowrap">42 / 381 · #141</span><span style="position:absolute;right:0;top:0;font:500 11px/20px var(--mono);color:var(--muted)">1 tick = 10</span></div>
+</div>
+<div role="list" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding-top:12px;border-top:1px solid var(--line)">
+<div role="listitem" style="display:flex;flex-direction:column;gap:2px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">TRACK</span><span><b>X-Men</b> · block 1 of 7</span></div>
+<div role="listitem" style="display:flex;flex-direction:column;gap:2px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">BLOCK</span><span><b>1 · Foundations</b> · run 2 of 5</span></div>
+<div role="listitem" style="display:flex;flex-direction:column;gap:2px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">RUN</span><span><b>Uncanny X-Men</b> · <span style="font-family:var(--mono)">42 / 381 · #141</span></span></div>
+</div>
+</div>
+</section>
+<div style="display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start">
+<section aria-labelledby="tb-ready" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><h2 id="tb-ready" style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Ready when you are</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">41</span></div>
+<div style="border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ tbReady }}" as="r" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)"><span aria-hidden="true" style="--cv:{{ r.cv }};flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px"><a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</a><span style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:6px;background:var(--ready-soft);color:var(--ready);font:600 11px/1 var(--mono)">● ready</span><span style="font:500 12px/16px var(--mono);color:var(--muted)">{{ r.meta }}</span></span></div><button aria-label="Add {{ r.name }} to Up next" style="flex:none;height:32px;padding:0 10px;border:0;border-radius:8px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 13px/1 var(--sans)">+ Up next</button></div></sc-for>
+<a href="#" style="display:flex;align-items:center;min-height:44px;padding:0 14px;color:var(--brand);text-decoration:none;font-size:13px;font-weight:500">All 41 ready runs</a>
+</div>
+</section>
+<section aria-label="This year" style="display:flex;flex-direction:column;gap:14px;margin-top:28px;padding:16px;border-radius:var(--r-xl);background:var(--raise);box-shadow:inset 0 0 0 1px var(--line)">
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">2026 so far</span>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">212</span><span style="font-size:12px;line-height:16px;color:var(--muted)">issues read</span></div>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">9</span><span style="font-size:12px;line-height:16px;color:var(--muted)">runs on the go</span></div>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">3</span><span style="font-size:12px;line-height:16px;color:var(--muted)">runs finished</span></div>
+</section>
+</div>
+</main>
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;gap:10px;padding:12px 32px 24px;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-top:1px solid var(--glass-edge)">
+<button style="flex:1;min-width:0;height:48px;border:0;border-radius:var(--r-lg);background:var(--brand);color:var(--on-brand);font:600 16px/1 var(--sans);display:flex;align-items:center;justify-content:center;gap:8px"><span aria-hidden="true" style="width:18px;height:18px;background:currentColor;-webkit-mask:url(https://unpkg.com/lucide-static/icons/check.svg) center/contain no-repeat;mask:url(https://unpkg.com/lucide-static/icons/check.svg) center/contain no-repeat"></span>Mark #141 read</button>
+<button style="flex:none;height:48px;padding:0 18px;border:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 15px/1 var(--sans)">+ batch</button>
+</div>
+</div>
+</div>
+</figure>
+</sc-for>
+</div>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;a&quot;,&quot;b&quot;,&quot;c&quot;],&quot;default&quot;:&quot;b&quot;,&quot;tsType&quot;:&quot;'a'|'b'|'c'&quot;,&quot;section&quot;:&quot;Look&quot;},&quot;ambient&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Look&quot;}}">
+class Component extends DCLogic {
+  alloc(c, W, min = 14, gap = 2) {
+    const T = c.reduce((a, b) => a + b, 0), free = W - gap * (c.length - 1) - c.length * min;
+    return c.map(x => +(min + x / T * free).toFixed(1));
+  }
+  renderVals() {
+    const v = this.baseVals();
+    v.departures = v.departures.map(d => Object.assign({ ok: true, isNew: false }, d)).concat([
+      { id: 'D13', ok: false, isNew: true, t: 'The empty telescope drops its button on dashboards.', v: 'A2.2 draws a primary “Start the top of Up next” inside the card. On a dashboard the thumb bar already carries that verb, so the card shows the track rail and the ladder (TRACK, NEXT) only. Elsewhere the button stays.' },
+      { id: 'D14', ok: false, isNew: true, t: 'Finishing a block steps the completion screen up a level.', v: 'Same screen as D11, with the block’s covers fanned out, the track rail as the record (it fills once, then the head moves to the next block), the block’s runs listed, and “Start block 2” as the verb. No new colour or motion tokens beyond --dur-fill.' }
+    ]);
+    v.tokens = v.tokens.concat([
+      { k: '~ measured fixes', v: 'Light --ready L → .50 at hue 160 (ΔE vs --t3, and text on --sunk). Dark --blocked hue 78 → 74 (ΔE vs --t4). For 1c only, light --brand L → .49. Every palette now passes every floor.' },
+      { k: '~ --fs-title', v: '24/28 sans 700 → 32/36 Newsreader 500 (40/44 on desktop and tablet).' },
+      { k: '+ --fs-hero-name, -num', v: '26/30 display and 44/48 mono, for the Now slot.' },
+      { k: '+ --cover-hero, -shelf, -row', v: '112, 112 and 36px wide at 2:3. The hero cover is 150 from 768px.' },
+      { k: '+ --dur-fill', v: '900ms. The completion rail fills once. Set to 0 under reduced motion.' }
+    ]);
+    return Object.assign(v, this.extraVals(v));
+  }
+  extraVals(v) {
+    const cv = (h, c, l) => `oklch(${l} ${c} ${h})`;
+    const ring = h => h ? 'inset 0 0 0 1.5px var(--brand), var(--halo)' : 'inset 0 0 0 1px var(--faint-deco)';
+    const lensCell = (isRead, isHead, isElse) => ({ bg: isRead ? 'var(--ready)' : isElse ? 'transparent' : 'var(--sunk)', bd: isRead ? '1px solid var(--ready)' : isHead ? '1.5px solid var(--brand)' : isElse ? '1px dashed var(--muted)' : '1px solid var(--faint-deco)', sh: isHead ? 'var(--halo)' : 'none' });
+    const aidLens = []; for (let o = 1; o <= 12; o++) aidLens.push(lensCell(o <= 7 || o === 10 || o === 11, o === 8, o === 9));
+    const tbLens = []; for (let o = 31; o <= 54; o++) tbLens.push(lensCell(o <= 41 || (o >= 44 && o <= 47), o === 42, o === 43));
+    const keys = ['a', 'b', 'c'];
+    const mk = arr => arr.map((m, i) => ({ key: keys[i], m }));
+    const tw = this.alloc([664, 214, 301, 268, 352, 211, 170], 282);
+    const cuFill = [447 / 664 * 100, 0, 0, 0, 0, 0, 11 / 170 * 100];
+    const cuTrack = tw.map((w, i) => ({ w, fill: +cuFill[i].toFixed(1), ink: cuFill[i] ? 'var(--ink)' : 'var(--muted)', t: String(i + 1), pl: cuFill[i] ? +(w * cuFill[i] / 100 + 6).toFixed(1) : 6, aria: `Block ${i + 1}${cuFill[i] ? ' · ' + Math.round(cuFill[i]) + '% read' : ''}` }));
+    const bdTrack = tw.map((w, i) => ({ w, t: String(i + 1), bg: i === 0 ? 'var(--ready)' : 'var(--sunk)', ring: i === 0 ? 'none' : ring(i === 1), ink: i === 0 ? 'var(--on-ready)' : i === 1 ? 'var(--ink)' : 'var(--muted)' }));
+    const W = 548, tw2 = this.alloc([664, 214, 301, 268, 352, 211, 170], W), bw2 = this.alloc([66, 381, 100, 70, 47], W);
+    const tbTrack = tw2.map((w, i) => { const fill = i === 0 ? 111 / 664 * 100 : 0; return { w, fill, ring: ring(i === 0), ink: i === 0 ? 'var(--ink)' : 'var(--muted)', t: i === 0 ? '1 · Foundations' : String(i + 1), pl: fill ? +(w * fill / 100 + 6).toFixed(1) : 6, aria: `Block ${i + 1}` }; });
+    const bl = ['Lee/Kirby · 66', 'Claremont · 381', 'New Mutants · 100', '70', '47'];
+    const tbBlock = bw2.map((w, i) => { const fill = i === 0 ? 100 : i === 1 ? 45 / 381 * 100 : 0; return { w, fill, ring: ring(i === 1), ink: i === 0 ? 'var(--on-ready)' : i === 1 ? 'var(--ink)' : 'var(--muted)', t: bl[i], pl: i === 1 ? +(w * fill / 100 + 6).toFixed(1) : 6, aria: `Run ${i + 1} of 5` }; });
+    const bx = bw2[0] + 2, bx2 = +(bx + bw2[1]).toFixed(1);
+    const pillW = 15 * 6.7 + 16, headX = 41.5 / 381 * W;
+    const kind = { ready: ['var(--ready-soft)', 'none'], hard: ['transparent', 'inset 0 0 0 1px var(--ready)'] };
+    const shelf = [
+      { name: 'Claremont — New Mutants', meta: '100 iss · opens 3', cv: cv(50, .12, .45), k: 'ready', badge: '● ready' },
+      { name: 'Simonson — Thor', meta: '44 iss · on your shelf', cv: cv(240, .1, .40), k: 'ready', badge: '● ready' },
+      { name: 'Ewing — Immortal Hulk', meta: '64 iss · 4,173 to unlock', cv: cv(150, .1, .38), k: 'blocked', badge: '⊘ 82 runs first' },
+      { name: 'Hickman — Fantastic Four', meta: '76 iss', cv: cv(265, .11, .42), k: 'hard', badge: '○ ready · 1 soft unread' },
+      { name: 'Priest — Black Panther', meta: '62 iss', cv: cv(300, .08, .32), k: 'ready', badge: '● ready' }
+    ].map((r, i) => Object.assign({}, r, { pos: String(i + 1), blocked: r.k === 'blocked', open: r.k !== 'blocked', bBg: (kind[r.k] || kind.ready)[0], bRing: (kind[r.k] || kind.ready)[1] }));
+    const nav = [['Comics', 'book-open', true], ['Books', 'book', false], ['Watch', 'tv', false], ['Plan', 'calendar', false], ['Stats', 'activity', false]];
+    return {
+      aidHead: [{ label: '1a · Signal' }, { label: '1b · Lamplight' }, { label: '1c · After hours' }],
+      aid1: mk(['blue vs ground ΔE 59 · text ≥ 6.7:1', 'blue vs ground ΔE 62 · text ≥ 6.8:1', 'blue vs ground ΔE 69 · text ≥ 8.4:1 · strongest']),
+      aid2: mk(['green vs ground ΔE 73', 'green vs ground ΔE 74', 'green vs ground ΔE 81 · strongest']),
+      aid3: mk(['amber vs ground ΔE 72 · vs green 43', 'amber vs ground ΔE 73 · vs green 42', 'amber vs ground ΔE 76 · vs green 40']),
+      aid4: mk(['surface vs page 1.08:1 · same in all three', 'surface vs page 1.09:1 · same in all three', 'surface vs page 1.08:1 · same in all three']),
+      aid5: mk(['blue ΔE 50 · ≥ 5.4:1 · grey ≥ 5.1:1', 'blue ΔE 55 · ≥ 5.4:1 · strongest blue', 'blue ΔE 47 · ≥ 5.1:1 · weakest blue']),
+      aidVerdict: [
+        { t: '…you mostly use light mode, or want it to match the CFB project. It\'s the safest and closest to today, with the best grey-text margin in light. It\'s also the coolest of the three, so you lose the warmth you asked for.' },
+        { t: '…you read at night and want a reading room rather than a dashboard. It has the strongest light-mode blue and is a close second in dark. The amber worry didn\'t hold up when measured: held sits as far from the ground as in the others. Still my pick.' },
+        { t: '…you live in dark mode and want the most atmosphere. Measured, my earlier worry was wrong for dark: its azure has the most contrast of the three. The cost moves to light mode, which turns plain and has the weakest blue. Choose it only if you rarely use light.' }
+      ],
+      aidLens, tbLens, shelf, cuTrack, bdTrack, tbTrack, tbBlock,
+      coming: [{ name: 'X-Men (2024)', n: '#9', when: 'Wed 22 Oct', in: 'in 17 days' }, { name: 'Uncanny X-Men (2024)', n: '#4', when: 'Wed 29 Oct', in: 'in 24 days' }],
+      bdFan: [cv(240, .09, .40), cv(32, .11, .42), cv(50, .12, .45), cv(10, .1, .40), cv(230, .1, .40)].map(c => ({ cv: c })),
+      bdRuns: [
+        { name: 'Lee/Kirby — X-Men', meta: '66 · 2025' }, { name: 'Claremont — Uncanny X-Men', meta: '381 · 19 mo' },
+        { name: 'Claremont — New Mutants', meta: '100 · 2026' }, { name: 'Simonson — X-Factor', meta: '70 · 2026' }, { name: 'Claremont/Davis — Excalibur', meta: '47 · Feb' }
+      ],
+      bdOpened: [
+        { name: 'Claremont/Lee — X-Men (1991)', meta: 'starts block 2', cv: cv(220, .1, .40), badge: '● ready', bBg: 'var(--ready-soft)', bRing: 'none' },
+        { name: 'Nicieza — X-Force', meta: 'block 2', cv: cv(20, .11, .38), badge: '● ready', bBg: 'var(--ready-soft)', bRing: 'none' },
+        { name: 'Lobdell — Generation X', meta: 'block 2', cv: cv(130, .09, .42), badge: '○ ready · 1 soft unread', bBg: 'transparent', bRing: 'inset 0 0 0 1px var(--ready)' }
+      ],
+      tbBr1: `0,0 ${tw2[0]},0 ${W},16 0,16`, tbBr1b: tw2[0], tbBr2: `${bx},0 ${bx2},0 ${W},16 0,16`, tbBr2a: bx, tbBr2b: bx2,
+      tbPillL: +Math.max(0, Math.min(W - pillW, headX - pillW / 2)).toFixed(1),
+      tbStack: [[200, .09, .40], [300, .08, .36], [70, .1, .45], [250, .09, .38]].map(a => ({ cv: cv(...a) })),
+      tbReady: [
+        { name: 'Miller — Daredevil', meta: '31 iss · opens 4', cv: cv(25, .13, .40) },
+        { name: 'Peter David — Hulk', meta: '137 iss · opens 6', cv: cv(145, .1, .40) },
+        { name: 'Gillen — Journey into Mystery', meta: '31 iss · opens 2', cv: cv(85, .09, .42) }
+      ],
+      tbNav: nav.map(([label, icon, on]) => ({ label, url: `https://unpkg.com/lucide-static/icons/${icon}.svg`, cur: on ? 'page' : 'false', ink: on ? 'var(--ink)' : 'var(--muted)', weight: on ? 600 : 500, bg: on ? 'var(--raise)' : 'transparent', bar: on ? 'var(--m-comics)' : 'transparent' }))
+    };
+  }
+  baseVals() {
+    const pal = this.props.palette ?? 'b';
+    const amb = (this.props.ambient ?? true) ? 'on' : 'off';
+    const cv = (h, c, l) => `oklch(${l} ${c} ${h})`;
+    const two = ['dark', 'light'].map(theme => ({ theme, pal, amb }));
+    const ring = h => h ? 'inset 0 0 0 1.5px var(--brand), var(--halo)' : 'inset 0 0 0 1px var(--faint-deco)';
+
+    const palettes = [
+      { id: '1a', key: 'a', name: 'Signal', why: 'Cool neutral at hue 255, like your CFB project. Brand and ready rise to chroma .15–.17, and dark surfaces step clearly apart. The most conservative option and the closest to today.' },
+      { id: '1b', key: 'b', name: 'Lamplight', rec: true, why: 'Warm paper in light mode and lamp-lit brown-black in dark (hue 70, chroma ≤ .012). The cobalt brand and mint-green ready stand out more against a warm ground than a cool one, and it feels like a reading room, not a dashboard.' },
+      { id: '1c', key: 'c', name: 'After hours', why: 'An indigo-tinted night with an azure brand, moved to hue 225 so it separates from the tinted neutrals. The most atmospheric option. The risk: tinting the ground blue lowers the contrast of the one colour that means "you are here".' }
+    ].map(p => Object.assign({ rec: false }, p, { sw: [{ theme: 'dark', label: 'DARK' }, { theme: 'light', label: 'LIGHT' }] }));
+
+    const storyRows = ['dark', 'light'].map(theme => ({ theme, items: [
+      { stage: 'tap', cap: '1 · Tap', sub: `0 ms · ${theme}` },
+      { stage: 'confirm', cap: '2 · Answer', sub: `120–720 ms · ${theme}` },
+      { stage: 'after', cap: '3 · Next', sub: `1.3 s and after · ${theme}` }
+    ] }));
+
+    const qBooks = (between) => {
+      const list = [
+        ['Klara and the Sun', 92, 'r'], ['A Psalm for the Wild-Built', 30, 'r'],
+        ['The Fifth Season', 144, between ? 'r' : 'c'], ['Piranesi', 85, 'r'],
+        ['The Left Hand of Darkness', 92, 'p'], ['The Remains of the Day', 72, 'p'], ['Hamnet', 100, 'p']
+      ];
+      return list.map(([n, k, s]) => ({
+        p: +(k / 760 * 100).toFixed(2), t: k >= 60 ? k + 'k' : '',
+        fill: s === 'r' ? 100 : s === 'c' ? 45 : 0,
+        ring: s === 'c' ? ring(true) : s === 'r' ? 'none' : 'inset 0 0 0 1px var(--faint-deco)',
+        ink: s === 'r' ? 'var(--on-ready)' : 'var(--ink-2)'
+      }));
+    };
+    const booksFrames = [];
+    [false, true].forEach(between => ['dark', 'light'].forEach(theme => booksFrames.push({
+      theme, pal, amb, between, reading: !between,
+      cap: `/books · ${between ? 'between books' : 'reading'} · ${theme}`,
+      lede: between ? 'Nothing on the go right now.' : 'Two weeks into The Fifth Season.',
+      verb: between ? 'Start The Left Hand of Darkness' : 'Log pages',
+      q: qBooks(between), qRead: between ? 4 : 3,
+      qAria: `Q4 2026: ${between ? 4 : 3} of 7 books read, 615k of 760k words planned`,
+      yBooks: between ? 19 : 18, yPages: between ? '6,157' : '5,912'
+    })));
+
+    const eps = [1, 2, 3, 4, 5, 6].map(e => {
+      const w = e <= 2, h = e === 3;
+      return { t: w ? '✓' : 'E' + e, bg: w ? 'var(--ready)' : 'var(--sunk)', bd: h ? '1.5px solid var(--brand)' : w ? '1px solid var(--ready)' : '1px solid var(--faint-deco)', sh: h ? 'var(--halo)' : 'none', ink: w ? 'var(--on-ready)' : h ? 'var(--ink)' : 'var(--muted)' };
+    });
+    const sw = this.alloc([6, 6, 6, 6, 6], 282);
+    const wShow = sw.map((w, i) => ({ w, t: 'S' + (i + 1), fill: i < 3 ? 100 : i === 3 ? 33.3 : 0, ring: ring(i === 3), ink: i < 3 ? 'var(--on-ready)' : i === 3 ? 'var(--ink)' : 'var(--muted)', pl: i === 3 ? +(w / 3 + 6).toFixed(1) : 6, aria: `Season ${i + 1}${i < 3 ? ', watched' : i === 3 ? ', 2 of 6 watched' : ''}` }));
+    const ew = this.alloc([1, 1, 1, 1, 1, 1], 282);
+    const wEps = ew.map((w, i) => ({ w, t: i < 2 ? '✓ E' + (i + 1) : 'E' + (i + 1), bg: i < 2 ? 'var(--ready)' : 'var(--sunk)', ring: i === 2 ? ring(true) : i < 2 ? 'none' : ring(false), ink: i < 2 ? 'var(--on-ready)' : i === 2 ? 'var(--ink)' : 'var(--muted)', aria: `Episode ${i + 1}${i < 2 ? ', watched' : i === 2 ? ', next' : ''}` }));
+    const s4x = sw[0] * 3 + 6, s4x2 = s4x + sw[3];
+
+    const tw = this.alloc([664, 214, 301, 268, 352, 211, 170], 282);
+    const bw = this.alloc([66, 381, 100, 70, 47], 282);
+    const tTrack = tw.map((w, i) => { const fill = i === 0 ? 111 / 664 * 100 : 0; return { w, fill, ring: ring(i === 0), ink: i === 0 ? 'var(--ink)' : 'var(--muted)', t: String(i + 1), pl: fill ? +(w * fill / 100 + 6).toFixed(1) : 6, aria: `Block ${i + 1}` }; });
+    const bl = ['66', 'Claremont · 381', '100', '70', '47'];
+    const tBlock = bw.map((w, i) => { const fill = i === 0 ? 100 : i === 1 ? 45 / 381 * 100 : 0; return { w, fill, ring: ring(i === 1), ink: i === 0 ? 'var(--on-ready)' : i === 1 ? 'var(--ink)' : 'var(--muted)', t: bl[i], pl: i === 1 ? +(w * fill / 100 + 6).toFixed(1) : 6, aria: `Run ${i + 1} of 5` }; });
+    const pct = n => +(n / 381 * 100).toFixed(3);
+    const tTicks = []; for (let i = 10; i <= 380; i += 10) tTicks.push({ l: pct(i), h: i % 50 === 0 ? 6 : 3 });
+    const bx = bw[0] + 2, bx2 = +(bx + bw[1]).toFixed(1);
+
+    const row = (n, cvv, state, meta) => {
+      const S = {
+        read: { bg: 'transparent', dotBg: 'var(--ready)', dotBd: '0', dotSh: 'none', glyph: '✓', pressed: 'true', aria: `Unmark ${n}`, metaInk: 'var(--muted)' },
+        head: { bg: 'var(--brand-soft)', dotBg: 'transparent', dotBd: '2px solid var(--brand)', dotSh: 'var(--halo)', glyph: '', pressed: 'false', aria: `Mark ${n} read`, metaInk: 'var(--brand-ink)' },
+        else: { bg: 'transparent', dotBg: 'transparent', dotBd: '1.5px dashed var(--muted)', dotSh: 'none', glyph: '', pressed: 'false', aria: `Mark ${n} read here`, metaInk: 'var(--muted)' }
+      }[state];
+      return Object.assign({ n, cv: cvv, meta }, S);
+    };
+    const spine = [
+      { name: 'The Dark Phoenix Saga', range: '#129–138', pct: 100, count: '10 / 10', act: 'Show', open: 'false', style: 'normal', rows: [] },
+      { name: 'Aftermath', range: '#139–140', pct: 100, count: '2 / 2', act: 'Hide', open: 'true', style: 'normal', rows: [row('#139', cv(70, .1, .45), 'read', 'read 28 Sep'), row('#140', cv(250, .09, .38), 'read', 'read 30 Sep')] },
+      { name: 'Days of Future Past', range: '#141–142', pct: 0, count: '0 / 2', act: 'Hide', open: 'true', style: 'normal', rows: [row('#141', cv(32, .11, .42), 'head', 'next · Jan 1981'), row('#142', cv(250, .09, .36), 'else', '◌ read in another run · Mar 2025')] },
+      { name: 'unnamed era', range: '#143–150', pct: 50, count: '4 / 8', act: 'Hide', open: 'true', style: 'italic', rows: [row('#143', cv(140, .08, .4), 'read', 'read 2 Oct'), row('#144', cv(300, .08, .36), 'read', 'read 2 Oct')] }
+    ];
+
+    const cBlock = bw.map((w, i) => ({ w, t: bl[i], bg: i < 2 ? 'var(--ready)' : 'var(--sunk)', ring: i < 2 ? 'none' : 'inset 0 0 0 1px var(--faint-deco)', ink: i < 2 ? 'var(--on-ready)' : 'var(--muted)' }));
+
+    return {
+      pal, amb, two, palettes, storyRows, booksFrames,
+      bookShelf: [
+        { name: 'The Left Hand of Darkness', meta: '304 pp · 92k', cv: cv(15, .1, .38), pos: '1' },
+        { name: 'The Remains of the Day', meta: '258 pp · 72k', cv: cv(60, .07, .45), pos: '2' },
+        { name: 'Hamnet', meta: '372 pp · 100k', cv: cv(140, .06, .38), pos: '3' }
+      ],
+      onDeck: [
+        { name: 'Gideon the Ninth', meta: 'Tamsyn Muir', cv: cv(320, .06, .30) },
+        { name: 'The Overstory', meta: 'Richard Powers', cv: cv(135, .08, .40) },
+        { name: 'Dune Messiah', meta: 'Frank Herbert', cv: cv(65, .1, .50) }
+      ],
+      eps, wShow, wEps, wBr: `${s4x},0 ${s4x2.toFixed(1)},0 282,16 0,16`, wBrA: s4x, wBrB: +s4x2.toFixed(1),
+      watchShelf: [
+        { name: 'Andor', meta: 'S2 · 12 eps', cv: cv(40, .06, .36), pos: '1', open: true, blocked: false },
+        { name: 'Perfect Days', meta: 'film · 2h 4m', cv: cv(200, .06, .45), pos: '2', open: true, blocked: false },
+        { name: 'Dune: Part Two', meta: 'film · 2h 46m', cv: cv(70, .09, .48), pos: '3', open: false, blocked: true, badge: '⊘ Part One first' },
+        { name: 'Severance', meta: 'S2 · 10 eps', cv: cv(230, .05, .40), pos: '4', open: true, blocked: false }
+      ],
+      paused: [
+        { name: 'Shōgun', meta: 'stopped after E6 · 5 weeks ago', cv: cv(25, .08, .34), act: 'Play E7' },
+        { name: 'The Bear', meta: 'S3 · stopped after E4 · 2 months', cv: cv(80, .05, .40), act: 'Play E5' }
+      ],
+      tTrack, tBlock, tBr1: `0,0 ${tw[0]},0 282,16 0,16`, tBr1b: tw[0], tBr2: `${bx},0 ${bx2},0 282,16 0,16`, tBr2a: bx, tBr2b: bx2,
+      tSegs: [{ l: 0, w: pct(41) }, { l: pct(43), w: pct(4) }], tElse: pct(42), tHead: pct(41.5), tTicks, spine, cBlock,
+      opened: [
+        { name: 'Claremont — New Mutants', meta: 'next in block', cv: cv(50, .12, .45), badge: '● ready', bBg: 'var(--ready-soft)', bRing: 'none' },
+        { name: 'Simonson — X-Factor', meta: 'was waiting on this', cv: cv(10, .1, .40), badge: '● ready', bBg: 'var(--ready-soft)', bRing: 'none' },
+        { name: 'Claremont/Davis — Excalibur', meta: '', cv: cv(230, .1, .40), badge: '○ ready · 1 soft unread', bBg: 'transparent', bRing: 'inset 0 0 0 1px var(--ready)' }
+      ],
+      proposals: [
+        { id: 'p1', n: 'P1', cost: 'STRUCTURAL · LAYOUT', title: 'Cover art becomes the identity of a run or book', what: 'The Now slot leads with a 112 × 168 cover. Up next becomes a shelf of covers facing out. Spine rows get 36 × 54 covers. Run detail and completion lead with the run\'s key art. Covers are already fetched for the spine, so this is mostly layout.', why: 'It\'s the strongest visual material you own and the fastest way to recognise "this is my thing". Today it\'s initials on grey.', touch: '/comics · /books · /watch · run detail · book detail · completion' },
+        { id: 'p2', n: 'P2', cost: 'SMALL CLIENT ISLAND + CSS', title: 'The mark answers back', what: 'Press, then a green confirm that names the issue (held 600 ms), a lens cell that fills, three counts that tick, the cover dropping onto "Since Tuesday", a toast with the run count and Undo, and the next issue sliding in. Same states with no movement under reduced motion. About 40 lines of JS, plus keyframes.', why: 'It\'s the most repeated interaction in the app. Right now the only response is a sub-pixel segment growth below the fold.', touch: 'thumb bar · Now slot · telescope · toast (dashboard and run detail)' },
+        { id: 'p3', n: 'P3', cost: 'STRUCTURAL · WITHIN SLOTS', title: 'Give Now a hero; quiet the rest', what: 'Slot 1 is the only large thing on the page. Slot 2 is a shelf, slot 3 one card, slot 4 at most three rows, slot 5 one line of three numbers. "Also in flight" folds into the hero. "Rest of block 1" and "The frontier" fold into the ladder and the run list.', why: 'Eight equal groups read as a list. One focal point with quieter slots after it reads as a place you arrive at. The slot order is unchanged.', touch: '/comics · /books · /watch' },
+        { id: 'p4', n: 'P4', cost: 'CHEAP · TOKENS', title: 'Lift the palette, keep the four meanings', what: 'Pick 1a, 1b or 1c (I recommend 1b). Chroma rises for brand, ready and blocked, dark surfaces separate by three to four L steps, and light becomes warm paper. Identity hues are unchanged. Re-run test:tokens.', why: 'The meanings are right, but they appear small, dull and on a cold ground, so the whole app reads as dim. This is the cheapest visible win.', touch: 'tokens.css only' },
+        { id: 'p5', n: 'P5', cost: 'CHEAP · FONTS + CSS', title: 'A voice for names and moments', what: 'Newsreader, a book serif, for screen titles, run and book names in heroes, and completion lines. IBM Plex Sans and Plex Mono, from your CFB project, for the UI and counts. Counts stay mono (D-32).', why: 'With one sans at 600 everywhere, nothing is ranked. A literary display face makes the library feel like a library, and only appears where something is named or finished.', touch: 'all titles · heroes · completion · empty states' },
+        { id: 'p6', n: 'P6', cost: 'STRUCTURAL · SMALL', title: 'Let finished things stay visible', what: 'A "Since Tuesday" stack of covers in the hero. A completion screen that names what the run opened. Read runs stay on the track page as a shelf. A this-year rollup. No streaks and no catalogue bar.', why: 'The reward of a backlog is watching it turn into a library. Today finished runs disappear into a tab.', touch: 'Now slot · completion · tracks · stats' },
+        { id: 'p7', n: 'P7', cost: 'CHEAP · COPY', title: 'Copy that sounds like you', what: 'Sentences in place of tallies on the lede, toasts and empty states. Plain verbs ("to unlock", "ready when you are"). The provenance paragraph moves to Stats. See the table below.', why: 'It\'s a personal app, and the database voice is the last thing keeping it feeling like a tool.', touch: 'all dashboards · toasts · empty states · completion' }
+      ],
+      copy: [
+        { a: '2 runs in flight · 12 up next · 41 ready to start', b: '14 issues since Tuesday. Next up: Days of Future Past.' },
+        { a: 'PICK UP WHERE YOU LEFT OFF', b: 'Up now' },
+        { a: 'Unlocked and waiting', b: 'Ready when you are' },
+        { a: 'costs 4,173', b: '4,173 to unlock' },
+        { a: 'Marked read · Undo', b: '#141 read · 46 of 381 in Uncanny X-Men · Undo' },
+        { a: 'Nothing in progress', b: 'Between books. Nothing\'s on the go, and that\'s fine.' },
+        { a: '73 of 10,834 issues logged. Kept small and last…', b: '(moved to Stats)' },
+        { a: '✓ read · Oct 2026 (badge only)', b: 'Finished. Uncanny X-Men, all 381 issues. Mar 2025 – Oct 2026.' }
+      ],
+      tokens: [
+        { k: '+ --display', v: 'Newsreader, then Georgia and serif. Used only for screen titles, hero names and completion lines.' },
+        { k: '+ --art', v: 'The per-run ambient tone (inputs --art-d and --art-l). Extracted from the cover at ingest, never on render. Clamped to dark L ≤ .30 C ≤ .06 and light L ≥ .92 C ≤ .035, so every text token keeps 4.5:1. Falls back to --surface.' },
+        { k: '+ --sh-cover', v: 'The drop shadow that lifts covers off the surface, with a 1px edge so dark covers don\'t merge into a dark surface (fixes audit D5).' },
+        { k: '+ --r-cover', v: '4px corner for cover art.' },
+        { k: '+ --r-hero', v: '20px. The Now slot only, so it reads as the one hero.' },
+        { k: '+ --dur-hold', v: '600ms. How long the mark button holds "✓ read". Kept under reduced motion: holding a colour is not movement, and at 0 the confirm state would never be seen.' },
+        { k: '+ --toast-muted', v: 'The toast\'s second line (the run count). Text-safe on --toast-bg.' },
+        { k: '~ --sans, --mono', v: 'Inter Tight and JetBrains Mono → IBM Plex Sans and IBM Plex Mono.' },
+        { k: '~ neutrals', v: '--page, --surface, --raise, --sunk, --overlay, --ink, --ink-2, --muted, --faint, --faint-deco, --rule, --rule-2 and --line move to palette 1b (oklch). Dark separation is now about .04 L per step.' },
+        { k: '~ semantic', v: '--brand, --ready, --blocked and --danger, with their -soft, -ink and --on-* pairs, rise in chroma. Same hues and same meanings.' },
+        { k: '~ --glass-bg', v: 'Now color-mix(--surface 90%), the same α .90, so it follows any palette.' },
+        { k: '= --t1…--t8, --m-*', v: 'Unchanged. Needs a ΔE re-check against the new semantic values.' }
+      ],
+      departures: [
+        { id: 'D1', t: 'Telescope moves to slot 3.', v: 'In mockups.html it sits inside the Now telecard. It is now the Position slot after Up next, which keeps the slot order exact. The component itself is unchanged.' },
+        { id: 'D2', t: 'Up next is a cover shelf.', v: 'The drag rows become covers facing out. Drag and keyboard reorder move behind a Reorder button (the existing list).' },
+        { id: 'D3', t: 'A "This stretch" lens in Now.', v: '24 issue cells around the head, one cell per issue. It repeats part of the run rail on purpose, so a mark is visible above the fold. It is run-relative, never catalogue-relative.' },
+        { id: 'D4', t: 'Dashboard sections removed.', v: '"Rest of block 1" (now in the ladder), "The frontier" stat grid and rows (now on the run list), and the provenance line (now on Stats). "Also in flight" becomes one line in the hero.' },
+        { id: 'D5', t: 'Fonts.', v: 'IBM Plex Sans, Plex Mono and Newsreader. The phone h1 goes from 24/28 sans 700 to 32/36 Newsreader 500.' },
+        { id: 'D6', t: 'Ambient art tone.', v: 'Strictly, this is colour without a token meaning. I argue it is content, like the cover it comes from: clamped for contrast, never carrying state, and switchable off (Tweaks → ambient). Your call.' },
+        { id: 'D7', t: 'The mark button turns green for 600 ms.', v: 'Brand changes to ready inside one control. Green still means read, and the label says so.' },
+        { id: 'D8', t: 'Books Position slot.', v: 'A single-quarter horizontal strip against the 760k rule, instead of the plan-rail columns. The full plan rail stays on /books/plan.' },
+        { id: 'D9', t: 'Copy changes.', v: 'Kickers, section names, "costs N" → "N to unlock", the toast and empty-state copy (P7 table). mockups.html wins on copy, so each one needs your accept.' },
+        { id: 'D10', t: 'Radii.', v: 'Hero 20 (new), thumb-bar buttons 12 (was 8 / --r-md). Targets stay 44.' },
+        { id: 'D11', t: 'Completion screen.', v: 'A new state on the run page after the last mark (not drawn in mockups.html). Uses a grey badge and green fills, as the spec requires.' },
+        { id: 'D12', t: 'Watch "Paused" situation.', v: 'Grey rows for shows untouched for more than 4 weeks. New derived state, no new colour.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

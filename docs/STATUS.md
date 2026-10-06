@@ -1,6 +1,6 @@
 # Status
 
-**Last regenerated:** 2026-10-04
+**Last regenerated:** 2026-10-06
 
 This is a rollup of `docs/TASKS.md`, not a second source of truth. Every count
 here comes from counting ☑ vs ☐ task markers in that file. If this page and
@@ -9,7 +9,7 @@ argue from it.
 
 ## Where we are
 
-**11 of 89 tasks done (12%).** Still in Phase 0 — nothing in Phase 1 or later has
+**11 of 93 tasks done (12%).** Still in Phase 0 — nothing in Phase 1 or later has
 started. The private GitHub repo exists and CI runs on every PR, and is proven
 to go red on a broken view (task 0.2, done 2026-09-30). The Release
 workflow has deployed `main` to Vercel (last run 2026-10-02). `LEDGER_LIVE` is
@@ -18,9 +18,9 @@ workflow has deployed `main` to Vercel (last run 2026-10-02). `LEDGER_LIVE` is
 | Phase | Done / total | Status |
 |---|---|---|
 | 0 — Foundation | 10 / 11 | **In progress** |
-| 1 — Daily use | 0 / 17 | Not started |
-| 2 — The pace engine | 0 / 15 | Not started |
-| 3 — Editing | 0 / 7 | Not started |
+| 1 — Daily use | 0 / 18 | Not started |
+| 2 — The pace engine | 0 / 16 | Not started |
+| 3 — Editing | 0 / 9 | Not started |
 | 4 — Enrichment | 0 / 3 | Not started |
 | 5 — Remaining surfaces | 0 / 7 | Not started |
 | 6 — Polish | 1 / 15 | Not started† |
@@ -71,6 +71,18 @@ warning: cutting over from Sheets before then defeats the migration. Reading dat
 is why 0.8a reaches live through a rebuild, which reloads every read from the
 workbook.
 
+**The feel pass is adopted (D-40, 2026-10-05), palette 1c After hours.** Its
+token values and the self-hosted fonts (IBM Plex Sans, Plex Mono, Newsreader)
+are in `globals.css` now, and `test:tokens` checks the shipped hex against the
+measured palette and the `--art` clamp. Every screen it draws — the cover-led
+dashboards, the mark that answers back, *All caught up*, *Between books*, run
+and block completion, the tablet — is folded into the task that builds it (new
+task **2.12** for completion), and it beats `mockups.html` on layout and copy
+where it draws. `docs/DESIGN.md` §9 maps each step to its task and lists the
+open questions (watch episodes, where the books capacity decisions go, a run's
+key art). The `--art` columns wait for 4.3 and 4.2, where the owner is asked
+again.
+
 **Design blueprint adopted (D-31, 2026-09-30).** The Step 3 style guide and
 Review N are folded into the backlog: a new **1.8a — Design tokens and control
 states** comes before 1.8 (the first UI task), the telescope in 2.5/2.5b is now
@@ -96,6 +108,9 @@ upcoming releases are in scope for books and comics (D-35).
   `test/placement-progress-migration.test.ts`
 - The spine's read-elsewhere hint (task 0.8b): `src/components/IssueRow.tsx`
   on the mockup's `.iss`/`.chk`/`.seen` markup, `test/spine.test.tsx`
+- The feel pass's tokens (palette 1c, D-40) in `src/app/globals.css`, the fonts
+  self-hosted in `src/app/fonts/`, `test:tokens`' palette and `--art` checks, and
+  `test/self-hosted-fonts.test.ts`
 - `.claude/` — `/verify` skill, `schema-reviewer` subagent
 - `.github/workflows/` — CI config and nightly backup
 - `volume_map.csv` — 67 approved rules, fully reviewed

@@ -1,0 +1,95 @@
+/* ══ Palette swaps — colour blocks only (2026-10-05) ════════════════════
+   tokens.css ships palette 1c After hours (D-40). To adopt 1a or 1b, replace the
+   "colour · light" block in .app,:root and the "colour · dark" block in
+   .app[data-theme="dark"] with the pair below, and replace --halo and
+   --glass-bg with the values given. Identity hues, shadows and everything
+   theme-independent stay as they are. All pairs measured in
+   contrast-report.md.                                                   */
+
+/* ── 1a Signal ── */
+/* light → .app,:root */
+  /* surfaces — elevation by luminance: sunk < page < raise < surface < overlay */
+  --page:#f4f6f8; --surface:#ffffff; --raise:#f9fafc; --sunk:#eaedf1; --overlay:#ffffff;
+  /* ink */
+  --ink:#12161b; --ink-2:#3d434a; --muted:#5d646c; --faint:#5d646c;
+  --faint-deco:#878d95;  /* ≥ 3:1 on surface, raise, overlay — outlines only */
+  /* hairlines */
+  --rule:#dfe1e5; --rule-2:#caced3; --line:#e9ebee;
+  /* semantic — four meanings, unchanged */
+  --brand:#1f57d3; --brand-soft:#e6efff; --brand-ink:#1141ad;
+  --ready:#00764c; --ready-soft:#dbf9e6;
+  --blocked:#975709; --blocked-soft:#ffefdb;
+  --reading:#1f57d3; --reading-soft:#e6efff;
+  --danger:#be2323; --danger-soft:#ffebe8;
+  --on-brand:#fff; --on-ready:#fff; --on-danger:#fff; --on-muted:#fff;
+  --toast-bg:#171b20; --toast-ink:#f4f5f7;
+  --toast-muted:#c0c4cb;  /* + NEW toast second line */
+  --toast-link:#96c0fe;
+  /* oklch sources: page (.972 .004 255) · surface (1 0 0) · raise (.985 .003 255) · sunk (.945 .006 255) · overlay (1 0 0) · ink (.20 .012 255) · ink-2 (.38 .014 255) · muted (.50 .016 255) · faint (.50 .016 255) · faint-deco (.64 .014 255) · rule (.91 .006 255) · rule-2 (.85 .008 255) · line (.94 .005 255) · brand (.50 .20 263) · brand-soft (.95 .03 263) · brand-ink (.42 .18 263) · ready (.50 .14 160) · ready-soft (.955 .04 158) · blocked (.52 .12 62) · blocked-soft (.96 .035 75) · danger (.52 .19 27) · danger-soft (.955 .03 28) · toast-bg (.22 .012 255) · toast-ink (.97 .003 255) · toast-muted (.82 .01 255) · toast-link (.80 .1 258) */
+  --halo:0 0 0 3px rgba(31,87,211,0.18);
+  --glass-bg:rgba(255,255,255,0.9);
+/* dark → .app[data-theme="dark"] */
+  /* surfaces — elevation by luminance: sunk < page < surface < raise < overlay */
+  --page:#0b0d11; --surface:#14171c; --raise:#1d2126; --sunk:#06080b; --overlay:#20242a;
+  /* ink */
+  --ink:#eef0f3; --ink-2:#c3c8ce; --muted:#9ca2aa; --faint:#999fa7;
+  --faint-deco:#70757c;  /* ≥ 3:1 on surface, raise, overlay — outlines only */
+  /* hairlines */
+  --rule:#282c30; --rule-2:#393e43; --line:#1d2125;
+  /* semantic — four meanings, unchanged */
+  --brand:#75acfe; --brand-soft:#162d53; --brand-ink:#b1d0fe;
+  --ready:#3cde93; --ready-soft:#073421;
+  --blocked:#fcb452; --blocked-soft:#3e290f;
+  --reading:#75acfe; --reading-soft:#162d53;
+  --danger:#f66d67; --danger-soft:#3b1c18;
+  --on-brand:#0b0d11; --on-ready:#0b0d11; --on-danger:#0b0d11; --on-muted:#0b0d11;
+  --toast-bg:#2c3136; --toast-ink:#eef0f3;
+  --toast-muted:#b9bec4;  /* + NEW toast second line */
+  --toast-link:#b1d0fe;
+  /* oklch sources: page (.16 .008 255) · surface (.205 .01 255) · raise (.245 .011 255) · sunk (.135 .008 255) · overlay (.26 .012 255) · ink (.955 .004 255) · ink-2 (.83 .01 255) · muted (.71 .014 255) · faint (.70 .014 255) · faint-deco (.56 .012 255) · rule (.29 .01 255) · rule-2 (.36 .012 255) · line (.245 .01 255) · brand (.74 .15 258) · brand-soft (.30 .075 260) · brand-ink (.85 .09 258) · ready (.80 .17 158) · ready-soft (.29 .06 160) · blocked (.82 .14 72) · blocked-soft (.30 .05 70) · danger (.70 .17 25) · danger-soft (.27 .05 28) · toast-bg (.31 .012 255) · toast-ink (.955 .004 255) · toast-muted (.80 .01 255) · toast-link (.85 .09 258) */
+  --halo:0 0 0 3px rgba(117,172,254,0.26),0 0 14px rgba(117,172,254,0.32);
+  --glass-bg:rgba(20,23,28,0.9);
+
+/* ── 1b Lamplight ── */
+/* light → .app,:root */
+  /* surfaces — elevation by luminance: sunk < page < raise < surface = overlay (separated by shadow) */
+  --page:#f7f4ed; --surface:#fffdfa; --raise:#fbf9f4; --sunk:#eee9e0; --overlay:#fffdfa;
+  /* ink */
+  --ink:#201914; --ink-2:#4c433d; --muted:#6b6159; --faint:#6b6159;
+  --faint-deco:#938a81;  /* ≥ 3:1 on surface, raise, overlay — outlines only */
+  /* hairlines */
+  --rule:#e2ddd5; --rule-2:#d0c9c1; --line:#ede9e2;
+  /* semantic — four meanings, unchanged */
+  --brand:#2554ca; --brand-soft:#e4edff; --brand-ink:#173fa4;
+  --ready:#05764d; --ready-soft:#d9f7e5;
+  --blocked:#9a5505; --blocked-soft:#fdeed7;
+  --reading:#2554ca; --reading-soft:#e4edff;
+  --danger:#ba2c25; --danger-soft:#ffebe8;
+  --on-brand:#fff; --on-ready:#fff; --on-danger:#fff; --on-muted:#fff;
+  --toast-bg:#241e19; --toast-ink:#f8f5ef;
+  --toast-muted:#cbc7bf;  /* + NEW toast second line */
+  --toast-link:#9bbeff;
+  /* oklch sources: page (.968 .01 85) · surface (.995 .004 85) · raise (.982 .007 85) · sunk (.935 .013 80) · overlay (.995 .004 85) · ink (.22 .014 60) · ink-2 (.39 .016 60) · muted (.50 .018 60) · faint (.50 .018 60) · faint-deco (.64 .018 70) · rule (.90 .012 80) · rule-2 (.84 .014 75) · line (.935 .01 80) · brand (.49 .19 264) · brand-soft (.945 .03 264) · brand-ink (.41 .17 264) · ready (.50 .13 160) · ready-soft (.95 .04 160) · blocked (.52 .12 60) · blocked-soft (.955 .035 78) · danger (.52 .18 28) · danger-soft (.955 .03 28) · toast-bg (.24 .014 60) · toast-ink (.97 .008 85) · toast-muted (.83 .012 80) · toast-link (.80 .1 262) */
+  --halo:0 0 0 3px rgba(37,84,202,0.18);
+  --glass-bg:rgba(255,253,250,0.9);
+/* dark → .app[data-theme="dark"] */
+  /* surfaces — elevation by luminance: sunk < page < surface < raise < overlay */
+  --page:#110e0a; --surface:#1c1713; --raise:#25211b; --sunk:#0b0906; --overlay:#29241e;
+  /* ink */
+  --ink:#f1eee7; --ink-2:#cfcac1; --muted:#aba398; --faint:#a8a095;
+  --faint-deco:#7d766d;  /* ≥ 3:1 on surface, raise, overlay — outlines only */
+  /* hairlines */
+  --rule:#322d27; --rule-2:#453f38; --line:#25211c;
+  /* semantic — four meanings, unchanged */
+  --brand:#82adfd; --brand-soft:#1c2f53; --brand-ink:#b9d2ff;
+  --ready:#3fe0a1; --ready-soft:#0e3625;
+  --blocked:#fdb854; --blocked-soft:#402c11;
+  --reading:#82adfd; --reading-soft:#1c2f53;
+  --danger:#f57567; --danger-soft:#3b1c18;
+  --on-brand:#110e0a; --on-ready:#110e0a; --on-danger:#110e0a; --on-muted:#110e0a;
+  --toast-bg:#352f29; --toast-ink:#f1eee7;
+  --toast-muted:#c6c0b7;  /* + NEW toast second line */
+  --toast-link:#b9d2ff;
+  /* oklch sources: page (.165 .009 70) · surface (.21 .011 70) · raise (.25 .012 70) · sunk (.14 .008 70) · overlay (.265 .013 70) · ink (.95 .01 85) · ink-2 (.84 .014 80) · muted (.72 .018 75) · faint (.71 .018 75) · faint-deco (.57 .016 75) · rule (.30 .012 70) · rule-2 (.37 .014 70) · line (.25 .011 70) · brand (.75 .15 262) · brand-soft (.31 .07 262) · brand-ink (.86 .085 262) · ready (.81 .16 162) · ready-soft (.30 .055 162) · blocked (.83 .14 74) · blocked-soft (.31 .05 72) · danger (.71 .16 28) · danger-soft (.27 .05 28) · toast-bg (.31 .013 70) · toast-ink (.95 .01 85) · toast-muted (.81 .014 80) · toast-link (.86 .085 262) */
+  --halo:0 0 0 3px rgba(130,173,253,0.26),0 0 14px rgba(130,173,253,0.32);
+  --glass-bg:rgba(28,23,19,0.9);
