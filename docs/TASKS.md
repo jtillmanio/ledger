@@ -72,11 +72,13 @@ Motion confirms, never celebrates: durations come from `--dur-1`…`--dur-4`
 every one of them 0. `--dur-hold` is the one exception: it holds a colour, not a
 movement, so the mark's green confirm is still seen (D-40, STYLE_GUIDE §14.3).
 
-**A feel-pass surface is checked more widely** (D-40, the checklist's step 11).
+**A feel-pass surface is checked more widely** (D-40, the checklist's step 12).
 A dashboard, the mark sequence, an empty or caught-up state, or a completion
-screen is screenshotted in every state it has at 360, 390, 412 and 768px, light
-and dark, plus once with `prefers-reduced-motion` and once with
-`prefers-reduced-transparency`; an axe pass over it reports no new violations;
+screen is screenshotted in every state it has at 360, 390, 412, 768, 1024 and
+1280px, light and dark, plus once with `prefers-reduced-motion` and once with
+`prefers-reduced-transparency`; at 1440px its content box stays 1056px wide and
+centred; at 1280px every hover reveal is hidden at rest with a fine pointer and
+shown at rest with touch emulated; an axe pass over it reports no new violations;
 nothing on it resolves to `--danger`, and nothing on it measures against the
 catalogue. Counts stay mono (Plex Mono, D-32); Newsreader appears only in screen
 titles, hero names, story titles and completion lines.
@@ -883,7 +885,8 @@ into bulk add or New Run. FEATURES.md #21.
 
 The kind control is **Books · Comics · Watch · Unsure**; resolving a Watch note
 opens `/watch/add` pre-filled. The inbox count shows as a chip on every
-dashboard's lede and as `Inbox (N)` in the desktop sidebar.
+dashboard's lede below 1024px and as `Inbox (N)` in the desktop sidebar, which
+replaces the chip from 1024px (FP-D16).
 
 **Check:** test that an inbox row saves with only `raw_text` set, and that
 resolving it links `book_id` or `run_id` and stamps `resolved_at`. A note tagged
@@ -1224,7 +1227,8 @@ Chrome details, from the audit:
   `aria-current="page"`, on every screen. No Home tab.
 - **Desktop sidebar**, per medium: *Dashboard · Status · list · Add*, plus Runs
   and Tracks (comics), Plan · Shelves · Top (books) and Franchises (watch); a
-  global `Inbox (N)`; neutral 16px line icons, never track hues.
+  global `Inbox (N)`; neutral 20px line icons (STYLE_GUIDE §14.6), never track
+  hues.
 - **Sync pill** (`online · offline · queued`, `role="status"`) in the header and
   sidebar footer; queued writes are shown, never silent (6.4 builds the queue).
 - **Skeletons** at the exact dimensions of the telecard, run rows, plan rail
@@ -1291,6 +1295,38 @@ From the style guide (D-31; STYLE_GUIDE §7–§9, Review N):
   rail stacks below the main column as two columns, 1.5 : 1. The thumb bar spans
   the content column at 48px. Hover reveals stay pointer-gated.
 
+  **The desktop as drawn** (D-40; STYLE_GUIDE §14.6; Feel Review §11,
+  `design/LedgerDesktop.dc.html` and `design/LedgerNav.dc.html`; PNGs in
+  `design/screenshots/desktop/`). From 1280px the sidebar is 224px
+  (`--side-w`) on glass over `--page` with a right `--rule`: the wordmark
+  (display italic 24), the media switch (a three-way segmented well on
+  `--sunk`, the current segment `--surface` + `--sh-1`), the medium's items
+  (comics *Dashboard · Status · Runs · Tracks · Add*; books *Dashboard · Status
+  · Plan · Shelves · Top · Add*), a `--line` rule, the global **Inbox** with a
+  mono count, and the sync pill in the footer. Items are 40px tall, a 20px icon
+  and a 14px label; the current item gets `--raise` and the 3px `--m-*` bar, as
+  on the tablet rail. From 1024 to 1279px it is the 64px icon rail
+  (`--rail-w`) in the same order: the media switch as a vertical well of three
+  icons, 44×40 items, the Inbox count as a badge on its icon, and sync as its
+  dot, named by its label. Each rail item has an `aria-label` and a tooltip
+  (`--overlay`, `--sh-2`, a `--rule-2` ring, 12px to its right) that shows on
+  hover after `--dur-4` and at once on `:focus-visible`.
+
+  The content box is at most 1056px (`--content-max`) with 32px padding,
+  centred in the space beside the nav and never pinned to it; past 1280px it
+  keeps its width. Inside it, main is `minmax(0,1fr)` beside a side rail of
+  304px with a 32px gap from 1280px (main 656), or 280px with a 24px gap from
+  1024px (main 592) (`--aside-w`). On desktop the page header is the `.bar`: a
+  sticky glass band, about 80px (`--bar-h`), holding the 40/44 `h1` and the
+  dashboard verbs (1.8b); the lede scrolls under it. The side rail sticks at
+  `calc(var(--bar-h) + 24px)` (104px as drawn), inside the sticky stack below.
+  No dashboard renders the *N in inbox* chip at 1024px and up: the sidebar's
+  Inbox carries the count (FP-D16). The run detail has no side rail: a centred
+  column of at most 784px (`--run-col-max`, 720 of content), its back link at
+  the top of the column, out of the glass and not sticky, with *Runs* as the
+  current sidebar item. /watch gets this shell and nothing more at desktop
+  until it is drawn (8.7).
+
   The run detail keeps the bottom thumb bar at every width (D-25). The width
   sets the default sidebar state; 6.14 adds the toggle that overrides it. 360px
   is drawn, not assumed: the media bar fits without truncating *Watch*. The
@@ -1304,7 +1340,11 @@ media bar and no sidebar; each rail item shows a visible text label and is at
 least 56px tall; every dashboard renders `.actionbar`, 48px tall. The rendered
 HTML references no external host for an icon, font or script, and every `<svg>`
 inside a button is `aria-hidden` while the button has a name. At 1100px the sidebar is
-64px wide and each item has an accessible name. At 360px *Watch* renders untruncated in the media bar, and the
+64px wide, each item has an accessible name, and focusing an item from the
+keyboard shows its tooltip at once. At 1280px the sidebar is 224px wide; at
+1440px the content box is 1056px wide and centred in the space beside it. At
+1024px and up no dashboard renders the *in inbox* chip and the sidebar's Inbox
+shows the count. At 360px *Watch* renders untruncated in the media bar, and the
 phone `/comics` has at most one solid `--brand` fill above the fold. No computed
 `color` inside `.bar` or `.side` equals `--ready`. With the page scrolled 400px,
 every sticky element other than `.bar` has a computed `top` of at least
@@ -1335,7 +1375,14 @@ verb (`+ batch` comics, `✓ finished` books, `+ Add` watch; `Mark through…` o
 run detail); 3 is search (`aria-label="Search (Ctrl K)"`) on dashboards and the
 status screen, `+` *Add issues* on the run detail. **At 1024px and wider the
 three dashboards move the same verbs into the page header, primary last, and
-render no bottom bar; the run detail keeps the bottom bar at every width.** A
+render no bottom bar; the run detail keeps the bottom bar at every width.**
+The header's buttons are 44px with `--r-md`, in DOM and visual order *Search ·
++ batch · Mark #141 read* (books *Search · Finished it · Log pages*; an empty
+state *Search · Start {next}*, with no batch or finish verb because nothing is
+in hand). A primary label that does not fit truncates with an ellipsis and
+keeps the full text in its accessible name. On the run detail at 1024px and up
+the bar is glass across the content area with its buttons held to the 720px
+column, 48px, primary first (STYLE_GUIDE §14.6). A
 tablet (768–1023px) keeps the bottom bar on the dashboards too: it is a touch
 device held in two hands (D-33, amending D-25's 900px).
 
@@ -1359,6 +1406,9 @@ From the style guide (D-31; STYLE_GUIDE §9, Review N):
   second line in `--toast-muted` (1.2's copy), and a 2px
   `--brand` countdown bar runs along its bottom edge over the 8 seconds and
   pauses with the timer. It enters with a 12px rise over `--dur-4`.
+  At 1024px and up a dashboard has no bar to clear, so the toast sits at the
+  bottom centre of the content box, 24px up; on the run detail it stays above
+  the bar (STYLE_GUIDE §14.6).
 - **The mark answers back** (P2; D-40, FP-D7; STYLE_GUIDE §14.3; Feel Review §3,
   and `design/LedgerComics.dc.html`, where it is live). One small client
   component wraps the thumb bar's mark button and owns four states, calling the
@@ -1390,7 +1440,10 @@ of token pairs: a literal `#fff` on `--brand` is 2.51:1 in dark mode, M-02) and 
 for the unchecked control ring, in both themes; `npm run test:tokens` passes. At
 1280px no dashboard renders `.actionbar` and the header holds the primary verb; at
 834px every dashboard renders it, with the primary action inside the bottom
-96px; the run detail renders it at all three widths. On a fixture run spanning two series the
+96px; the run detail renders it at all three widths. At 1280px a dashboard's toast is
+centred on the content box with its bottom edge 24px above the viewport's, and
+at 1100px a primary verb whose label is truncated keeps the full label as its
+accessible name. On a fixture run spanning two series the
 thumb bar's verb contains the series name. **The mark storyboard:** with a
 fake clock, a mark shows press at 0, the `--ready` button reading *✓ {label}
 read* at 120ms and still at 700ms, and the next label in `--brand` after 1.3s;
@@ -1427,7 +1480,12 @@ for the list. Depends on 0.8.
   with its position number in a chip on `--overlay`, a two-line title, mono
   meta and its readiness badge, unchanged. **Start** is on the first card. The
   shelf scrolls horizontally (`scroll-snap-type: x mandatory`) and bleeds to
-  the frame edge; a tablet shows five covers with a 16px gap. The slot head
+  the frame edge; a tablet shows five covers with a 16px gap. At 1024px and
+  up it stops at main's edge instead, because a bleed would run under the side
+  rail (FP-D18): four full covers and 80px of a fifth at 1024, five and a 16px
+  sliver at 1280. There, under `(hover:hover) and (pointer:fine)` and only
+  while the row overflows, ‹ › buttons page it by the number of visible
+  covers; ‹ is disabled at the start. Touch scrolls it. The slot head
   carries the count and **Reorder**, which opens the existing reorderable
   queue list — **the same queue row** as the status tab (M-08): the named
   `button.drag` handle and the `⋯` row menu — so drag and the keyboard
@@ -1462,7 +1520,10 @@ keyboard sequence (Space, Down, Down, Space) moves a row from position 2 to 4
 with contiguous ordinals, and Esc mid-lift leaves the order unchanged. The
 dashboard shelf renders the queue's unstarted runs in ordinal order with
 **Start** on the first card only and no drag handle on any card, and
-**Reorder** reaches a list where that keyboard sequence works.
+**Reorder** reaches a list where that keyboard sequence works. At 1280px the
+shelf ends at main's edge, not the viewport's; with a fine pointer and twelve
+queued runs ‹ › render and › moves it by five covers, and with three queued
+runs they do not render.
 
 ### ☐ 1.9 Status screens: In flight · Up next · Done · M
 Requirement change, Sept 2026. ARCHITECTURE §4. `/comics/status` and
@@ -1667,6 +1728,19 @@ sittings line, 2.1b.
 - **2026 so far** is three this-year counts on `--raise` (books, pages, new
   authors), one line, linking to Stats (6.2). Never the backlog.
 
+**Desktop** (§14.6; Feel Review §11d; `design/screenshots/desktop/07…10`): Now,
+*Up next in Qn* and *This quarter* in main; *On deck* (Situation) and *2026 so
+far* in 1.8's side rail. The hero has 2.4's geometry with a 168×252 cover, the
+title at 32/36 (`--fs-hero-name-desk`), the page count at 32/36 mono, and the
+meter under the lens's 480px cap. The shelf gets ‹ › only when it overflows
+(1.10). *This quarter*'s strip fills its card's inner width, each block k / 760
+of it, with the 760k rule at the right edge. *On deck* rows hide **Plan** at
+rest and reveal it on row hover or `:focus-within` with a fine pointer, as
+2.4's *+ Up next* (FP-D15). *Between books* drops *Finished it* from the header
+and names the top of the plan in full on the primary; below about 1100px it
+truncates and keeps the full title in its accessible name. No capacity card and
+no *Place them* at any width until the question below is answered.
+
 **Open, stop and ask before building** (the feel pass is silent): the old
 dashboard had a capacity card with **Rebalance** and **Accept** (2.7) and an
 amber unplaced-entries card with **Place them** (2.8). The feel pass draws
@@ -1685,6 +1759,8 @@ the last finished book, and its offer is the current quarter's lowest-ordinal
 book that is still `to_read` (D-37), named on the button; with nothing ever
 finished it omits the finished line. The strip's planned total equals 2.1's
 figure for that quarter. *2026 so far* has three counts, all this year.
+At 1280px *On deck* and *2026 so far* are in the side rail, and **Plan** follows
+2.4's hover rule for *+ Up next*.
 
 ### ☐ 2.2b The plan rail · M
 Depends on 2.2 (the slot) and 1.7. Split out of 2.2 (R3-12). Since D-40 the
@@ -1814,6 +1890,24 @@ split in two; the shelf shows five covers; the telescope keeps its phone sizing
 with `W` = column − 2 × 20 − 44 (548 at 768) and the ladder in three columns;
 *Ready when you are* and *2026 so far* stack below as two columns, 1.5 : 1.
 
+**Desktop** (§14.6; Feel Review §11a–c; `design/screenshots/desktop/01…06`):
+the five slots keep their DOM order, with Now, Next and Position in main and
+Situation and Rollup in 1.8's sticky side rail. The hero is horizontal and
+never wider than main: a 168×252 cover from 1280px (`--cover-hero`) and
+150×225 from 1024px, padding and gap 24/28 at 1280 and 20/24 at 1024, the
+number at 56/60 (`--fs-hero-num-desk`), and the lens in the text column,
+capped at 480px (`--lens-max`, about 18px a cell). *Since Tuesday* and *Also
+reading* split the footer 1 : 1, and Also reading stays in Now. The telescope
+takes its desktop sizes with `W` = main − 2 × 20 − 72 (544 at 1280, 480 at
+1024) and the ladder in three columns. *Ready when you are* rows hide
+**+ Up next** at rest and reveal it on row hover or `:focus-within`, the row
+turning `--raise` over `--dur-1` (FP-D15); with a coarse pointer it always
+shows. The meta truncates while the verb shows, the row's accessible name
+carries the full text, and *N more are one soft read away* sits under the
+*All N* link. The mark (1.8b) plays on the header button. *All caught up*
+keeps Situation in the side rail, and the shelf's first card has no **Start**,
+because the header carries that verb.
+
 **The mark lands here** (1.8b): the lens cell fills, the stamp lands on the
 cover, the three counts tick, the next issue slides in, and the marked cover
 joins the stack. Undo (1.2) reverses all of it.
@@ -1838,7 +1932,8 @@ ring, a 3px identity stripe and `--sh-1`, no longer `--sh-2` (UX-N04); its kicke
 is mono `--faint` caps (SG-D7, UX-X06).
 
 The telescope card's foot row, when the next block has no name, shows *Block 3
-has no name yet* with a **Name it** button. The inbox chip stays beside the `h1`.
+has no name yet* with a **Name it** button. The inbox chip stays beside the `h1`
+below 1024px; from 1024px the sidebar's Inbox carries the count (FP-D16).
 
 **All caught up** (FP-D13; §14.2, §15; Feel Review §10a) is the empty state with
 no run in flight. The Now slot keeps its shape: a 72px cover of the last
@@ -1887,6 +1982,11 @@ markup is identical. At no width does the page text contain the catalogue
 total. With no run in flight the page renders *All caught up.*, the telescope's
 empty variant with no button inside it, and the thumb bar's verb names the top
 of Up next; with an empty queue as well, the offer links to *Ready, not queued*.
+At 1280px Now, Next and Position are in main and Situation and Rollup in the
+side rail, in that DOM order; the hero is no wider than main and the lens no
+wider than 480px; with a fine pointer *+ Up next* is hidden at rest and shows on
+row hover and on keyboard focus inside the row, and with touch emulated it shows
+at rest.
 
 ### ☐ 2.5 The telescope · M
 Split (R3-12): **2.5 is `layout.ts` and its unit tests** (pure geometry, no DOM);
@@ -2332,6 +2432,15 @@ head ring moves to the next block over `--dur-4`. Then *The block* (its runs,
 each with a `--ready` check), *What this opened* across the block, a closing
 line, and *Start block 2* · *Not now*.
 
+**Desktop** (§14.6; Feel Review §11e–f; `design/screenshots/desktop/11…14`):
+both states sit in the run detail's centred 720px column (1.8). The band is
+inside the column with `--r-xl` corners, not full-bleed (FP-D17); phone and
+tablet stay full-bleed. The key art is 160×240, and the block fan 80×120
+overlapping by 20. Block complete puts *The block* and *What this opened* side
+by side. The thumb bar stays (D-25): glass across the content area, its buttons
+held to the 720 column, 48px, primary first (*Start {next}* · *Not now*), with
+120px of bottom padding on main to clear it.
+
 Copy is STYLE_GUIDE §15's: *Finished. Uncanny X-Men, all 381 issues. Mar 2025 –
 Oct 2026.*; *Foundations, done. Five runs and 664 issues, ending with
 Excalibur.* No confetti, no streak, no exclamation mark. 5.4's rating and note
@@ -2348,7 +2457,9 @@ are its first three in order. Under emulated reduced motion the rail is full on
 first paint. A run with undated reads renders no date span. Marking the last
 placement of the block's last unread run renders *done.* with every run of the
 block listed and checked. Nothing on either screen resolves to `--danger`, and
-neither contains a catalogue total. The feel-pass screenshots of both states.
+neither contains a catalogue total. At 1280px the band's box lies inside the
+720px column with rounded corners, and the thumb bar renders with *Start* first.
+The feel-pass screenshots of both states.
 
 ---
 
