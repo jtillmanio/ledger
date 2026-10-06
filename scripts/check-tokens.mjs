@@ -7,8 +7,14 @@
 //      or --danger, in either theme. Distance from --brand is printed, not enforced
 //      (the 6.9 palette pass owns it).
 //   3. Text on filled controls clears 4.5:1 in both themes (--on-* on its fill, the
-//      toast link on the toast), and no app rule in globals.css hard-codes #fff/#ffffff
-//      as a text colour.
+//      toast's ink, second line and link on --toast-bg), and no app rule in globals.css
+//      hard-codes #fff/#ffffff as a text colour.
+//   4. The shipped hex reproduces the measured palette (D-40): every text-on-surface,
+//      paired-fill and UI-boundary figure in design/handoff/contrast-metrics.json for
+//      the adopted palette is within ±0.05 (±1.2% at high ratios) of what globals.css gives.
+//   5. --art cannot break text (D-40, FP-D6): --ink, --ink-2 and --muted clear 4.5:1
+//      on the clamp's extremes — dark oklch(.30 .06 h), light oklch(.92 .035 h) —
+//      at every 30° of hue.
 import { readFileSync } from "node:fs";
 
 const MIN_DE = 15;
@@ -52,6 +58,7 @@ for (const [k, v] of Object.entries(g.dark)) {
 
 // ---- colour maths ------------------------------------------------------------
 const hex = (h) => {
+  if (Array.isArray(h)) return h; // already sRGB channels in 0..1
   h = h.replace("#", "");
   if (h.length === 3) h = [...h].map((c) => c + c).join("");
   return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
@@ -128,8 +135,9 @@ const PAIRS = [
   ["--on-ready", "--ready"],
   ["--on-danger", "--danger"],
   ["--on-muted", "--muted"],
-  ["--toast-link", "--ink"], // .toast background is --ink
-  ["--page", "--ink"], // .toast text
+  ["--toast-ink", "--toast-bg"],
+  ["--toast-muted", "--toast-bg"], // the toast's second line (STYLE_GUIDE §14.3)
+  ["--toast-link", "--toast-bg"],
 ];
 for (const theme of ["light", "dark"]) {
   const tokens = { ...g.light, ...(theme === "dark" ? g.dark : {}) };
@@ -144,8 +152,75 @@ for (const r of rules) {
   if (/(^|[;{\s])color:\s*#fff(fff)?\b/i.test(r)) fail(`globals.css hard-codes a white text colour: ${r.trim().slice(0, 80)}…`);
 }
 
+// ---- 4. the measured palette ------------------------------------------------------
+const PALETTE = "c"; // D-40: 1c After hours. 1a and 1b live in design/handoff/palette-swaps.css
+// contrast-report.md measured the oklch sources; the app ships them rounded to 8-bit
+// hex, which moves a high ratio by up to about 1% (dark ready on ready-soft: 8.76 vs
+// 8.67). So the tolerance is ±0.05, widening to ±1.2% above about 4:1 — still far
+// tighter than any real change of value, and exact where it matters, at the floor.
+const tolerance = (want) => Math.max(0.05, want * 0.012);
+const metrics = JSON.parse(readFileSync("design/handoff/contrast-metrics.json", "utf8")).R;
+const SURFACES = ["--page", "--surface", "--raise", "--sunk", "--overlay"];
+for (const theme of ["light", "dark"]) {
+  const tokens = { ...g.light, ...(theme === "dark" ? g.dark : {}) };
+  const m = metrics[PALETTE + theme];
+  const expect = (label, fg, bg, want) => {
+    const got = contrast(tokens[fg], tokens[bg]);
+    if (Math.abs(got - want) > tolerance(want)) {
+      fail(`${theme}: ${label} is ${got.toFixed(2)}:1, contrast-report.md measured ${want} (±${tolerance(want).toFixed(2)})`);
+    }
+  };
+  // Glass worst case: --glass-bg composited in sRGB over black (light) or white (dark).
+  const [r, gg, b, alpha] = tokens["--glass-bg"].match(/[\d.]+/g).map(Number);
+  const under = theme === "light" ? 0 : 255;
+  tokens["glass"] = [r, gg, b].map((c) => (alpha * c + (1 - alpha) * under) / 255);
+  for (const [name, row] of Object.entries(m.T)) {
+    if (name === "glass") {
+      for (const [fg, want] of Object.entries(row)) expect(`--${fg} on glass`, `--${fg}`, "glass", want);
+    } else {
+      row.forEach((want, i) => expect(`--${name} on ${SURFACES[i]}`, `--${name}`, SURFACES[i], want));
+    }
+  }
+  for (const [pair, want] of Object.entries(m.PR)) {
+    const [fg, bg] = pair.split(" on ");
+    expect(pair, `--${fg}`, `--${bg}`, want);
+  }
+  for (const [pair, want] of Object.entries(m.UI)) {
+    const [fg, bg] = pair.replace(/\s*\(.*\)$/, "").split(" / ");
+    expect(pair, `--${fg}`, `--${bg}`, want);
+  }
+}
+
+// ---- 5. text on the --art clamp extremes ---------------------------------------------
+// OKLCH → sRGB (Björn Ottosson's matrices), clipped to the gamut, as #rrggbb.
+const oklchHex = (L, C, h) => {
+  const a = C * Math.cos(rad(h)), b = C * Math.sin(rad(h));
+  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const mm = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const linear = [
+    4.0767416621 * l - 3.3077115913 * mm + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * mm - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * mm + 1.707614701 * s,
+  ];
+  const enc = (c) => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
+  return "#" + linear.map((c) => Math.round(Math.min(1, Math.max(0, enc(c))) * 255).toString(16).padStart(2, "0")).join("");
+};
+const ART = { dark: [0.3, 0.06], light: [0.92, 0.035] };
+for (const theme of ["light", "dark"]) {
+  const tokens = { ...g.light, ...(theme === "dark" ? g.dark : {}) };
+  const [L, C] = ART[theme];
+  for (let h = 0; h < 360; h += 30) {
+    const art = oklchHex(L, C, h);
+    for (const fg of ["--ink", "--ink-2", "--muted"]) {
+      const c = contrast(tokens[fg], art);
+      if (c < MIN_TEXT) fail(`${theme}: ${fg} ${tokens[fg]} on --art oklch(${L} ${C} ${h}) ${art} is ${c.toFixed(2)}:1 (min ${MIN_TEXT})`);
+    }
+  }
+}
+
 if (failures.length) {
   console.error(`test:tokens — ${failures.length} failure(s):\n  ` + failures.join("\n  "));
   process.exit(1);
 }
-console.log("test:tokens — parity, identity-hue distance and on-fill contrast all pass");
+console.log("test:tokens — parity, identity-hue distance, on-fill contrast, the measured palette and the --art clamp all pass");

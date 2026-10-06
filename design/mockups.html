@@ -6,7 +6,7 @@
 <title>Ledger — UX mockups v4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
 <style>
 /* ══ TOKENS ══════════════════════════════════════════════════
    Colour is functional here, never decorative:
@@ -15,43 +15,109 @@
    · status hues mean ready / blocked / reading / done
    Anything without meaning stays grey. */
 .app{
-  --page:#eceff4; --surface:#fff; --raise:#f7f8fa; --sunk:#e6eaf0;
-  --ink:#141720; --ink-2:#3d4655; --muted:#626b7b; --faint:#606979; --faint-deco:#98a1b0;
-  --rule:#dde2ea; --rule-2:#c9d0db; --line:#eaeef4;
-  --brand:#2148c9; --brand-soft:#e7ecfd; --brand-ink:#1a3aa3;
-  --ready:#0b7a52; --ready-soft:#e2f4ec;
-  --blocked:#8a560c; --blocked-soft:#fbeedd;
-  --reading:#2148c9; --reading-soft:#e7ecfd;
-  --danger:#a93226; --danger-soft:#fbe9e7;
-  --on-brand:#fff; --on-ready:#fff; --on-danger:#fff; --on-muted:#fff; --toast-link:#9db4ff;
+  /* ── colour · light · palette 1c ── */
+  /* surfaces — elevation by luminance: sunk < page < raise < surface < overlay */
+  --page:#f3f4fa; --surface:#ffffff; --raise:#f8f9fd; --sunk:#e6e9f3; --overlay:#ffffff;
+  /* ink */
+  --ink:#141726; --ink-2:#3d4155; --muted:#5e6275; --faint:#5e6275;
+  --faint-deco:#878b9c;  /* ≥ 3:1 on surface, raise, overlay — outlines only */
+  /* hairlines */
+  --rule:#dddfe8; --rule-2:#c9ccd7; --line:#e9ebf2;
+  /* semantic — four meanings, unchanged */
+  --brand:#026892; --brand-soft:#def2fc; --brand-ink:#015476;
+  --ready:#05764d; --ready-soft:#daf7e3;
+  --blocked:#975709; --blocked-soft:#fdeed7;
+  --reading:#026892; --reading-soft:#def2fc;
+  --danger:#ba2b28; --danger-soft:#ffebe8;
+  --on-brand:#fff; --on-ready:#fff; --on-danger:#fff; --on-muted:#fff;
+  --toast-bg:#191c2b; --toast-ink:#f4f5f9;
+  --toast-muted:#c3c7d5;  /* + NEW toast second line */
+  --toast-link:#81d1f0;
+  /* oklch sources: page (.968 .008 275) · surface (1 0 0) · raise (.982 .005 275) · sunk (.935 .014 275) · overlay (1 0 0) · ink (.21 .03 275) · ink-2 (.38 .035 275) · muted (.50 .03 275) · faint (.50 .03 275) · faint-deco (.64 .025 275) · rule (.905 .012 275) · rule-2 (.845 .016 275) · line (.94 .01 275) · brand (.49 .14 235) · brand-soft (.95 .025 230) · brand-ink (.42 .12 235) · ready (.50 .13 160) · ready-soft (.95 .04 155) · blocked (.52 .12 62) · blocked-soft (.955 .035 78) · danger (.52 .18 27) · danger-soft (.955 .03 28) · toast-bg (.23 .03 275) · toast-ink (.97 .006 275) · toast-muted (.83 .02 275) · toast-link (.82 .09 225) */
+  /* identity — tracks and genres; ΔE2000 ≥ 15 from ready / blocked / danger (min 15.6, t3 vs ready) */
   --t1:#2563eb; --t2:#a21caf; --t3:#4d7c0f; --t4:#857700;
   --t5:#7c3aed; --t6:#0e7490; --t7:#be185d; --t8:#52606d;
+  --g1:var(--t1); --g2:var(--t2); --g3:var(--t3); --g4:var(--t4);
+  --g5:var(--t5); --g6:var(--t6); --g7:var(--t7); --g8:var(--t8);
   --m-comics:#7c3aed; --m-books:#0e7490; --m-watch:#be185d;
-  --g1:var(--t1); --g2:var(--t2); --g3:var(--t3); --g4:var(--t4); --g5:var(--t5); --g6:var(--t6); --g7:var(--t7); --g8:var(--t8);
-  --sh-1:0 1px 2px rgba(20,23,32,.05);
-  --sh-2:0 1px 3px rgba(20,23,32,.07),0 10px 26px -14px rgba(20,23,32,.28);
-  --sh-3:0 8px 32px -10px rgba(20,23,32,.3);
-  --sans:"Inter Tight",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,monospace;
+  /* elevation — light: soft warm drop shadows */
+  --sh-1:0 1px 2px rgba(20,16,10,.05);
+  --sh-2:0 1px 2px rgba(20,16,10,.06),0 10px 28px -12px rgba(20,16,10,.22);
+  --sh-3:0 2px 6px rgba(20,16,10,.06),0 24px 48px -16px rgba(20,16,10,.30);
+  --sh-cover:0 10px 20px -10px rgba(30,20,10,.45),0 0 0 1px rgba(0,0,0,.08);  /* + NEW lifts cover art */
+  --halo:0 0 0 3px rgba(2,104,146,0.18);
+  --glass-bg:rgba(255,255,255,0.9);
+  --focus-ring:0 0 0 2px var(--surface),0 0 0 4px var(--brand);
+  --glass-edge:rgba(20,16,10,.08);
+  --glass-hi:inset 0 1px 0 rgba(255,255,255,.6);
+  --scrim:rgba(14,10,6,.4);
+  --hatch:repeating-linear-gradient(135deg,var(--blocked) 0 1.5px,transparent 1.5px 6px);
+  --hatch-settled:repeating-linear-gradient(135deg,var(--muted) 0 1px,transparent 1px 6px);
+
+  /* ── theme-independent ── */
+  --sans:"IBM Plex Sans",system-ui,sans-serif;           /* ~ was Inter Tight */
+  --mono:"IBM Plex Mono",ui-monospace,monospace;         /* ~ was JetBrains Mono (D-32: counts stay mono) */
+  --display:"Newsreader",Georgia,serif;                  /* + NEW titles, hero names, completion lines only */
+  --r-cell:3px; --r-sm:6px; --r-md:8px; --r-lg:12px; --r-xl:16px; --r-full:999px;
+  --r-cover:4px;                                         /* + NEW cover art */
+  --r-hero:20px;                                         /* + NEW the Now slot only */
+  --sp-0-5:2px; --sp-1:4px; --sp-1-5:6px; --sp-2:8px; --sp-3:12px; --sp-4:16px;
+  --sp-5:20px; --sp-6:24px; --sp-8:32px; --sp-10:40px;
+  --fs-kicker:11px/14px; --fs-caption:12px/16px; --fs-body-sm:13px/18px; --fs-body:14px/20px;
+  --fs-row-title:15px/20px; --fs-section:12px/16px;
+  --fs-title:32px/36px;                                  /* ~ was 24/28 sans 700 → Newsreader 500 */
+  --fs-title-desk:40px/44px;                             /* ~ was 30/34 */
+  --fs-hero-name:26px/30px;                              /* + NEW hero run / book name (display) */
+  --fs-hero-num:44px/48px;                               /* + NEW hero issue number (mono) */
+  --fs-display:40px/40px; --fs-display-desk:48px/48px;
+  --tele-min:14px; --tele-gap:2px; --tele-rail:18px; --tele-run:24px; --tele-bracket:16px; --tele-gutter:44px;
+  --row-h:48px;
+  --cover-hero:112px;                                    /* + NEW hero cover width (2:3) · 150 on tablet */
+  --cover-shelf:112px;                                   /* + NEW Up next shelf cover width (2:3) */
+  --cover-row:36px;                                      /* + NEW row thumbnail width (2:3) */
+  --dur-1:100ms; --dur-2:150ms; --dur-3:200ms; --dur-4:300ms;
+  --dur-hold:600ms;                                      /* + NEW mark button holds "✓ read" (kept under reduced motion) */
+  --dur-fill:900ms;                                      /* + NEW completion rail fills once */
+  --ease-out:cubic-bezier(.2,.8,.2,1); --ease-in:cubic-bezier(.4,0,1,1);
+  --glass-blur:20px; --glass-sat:1.4;
 }
 .app[data-theme="dark"]{
-  --page:#0d0f14; --surface:#171b23; --raise:#1e232d; --sunk:#232935;
-  --ink:#eaedf2; --ink-2:#bcc4d1; --muted:#8b94a4; --faint:#8a93a2; --faint-deco:#69727f;
-  --rule:#262d38; --rule-2:#323a48; --line:#222833;
-  --brand:#7fa0ff; --brand-soft:#1b2440; --brand-ink:#9db6ff;
-  --ready:#4dbf90; --ready-soft:#12291f;
-  --blocked:#d7a161; --blocked-soft:#2c2114;
-  --reading:#7fa0ff; --reading-soft:#1b2440;
-  --danger:#e5786a; --danger-soft:#2d1815;
-  --on-brand:#0d0f14; --on-ready:#0d0f14; --on-danger:#0d0f14; --on-muted:#0d0f14; --toast-link:#1a3aa3;
+  /* ── colour · dark · palette 1c ── */
+  /* surfaces — elevation by luminance: sunk < page < surface < raise < overlay */
+  --page:#080a14; --surface:#111421; --raise:#1a1d2c; --sunk:#05060e; --overlay:#1e2232;
+  /* ink */
+  --ink:#f0f1f7; --ink-2:#cacddb; --muted:#a2a7bb; --faint:#9fa4b8;
+  --faint-deco:#72768a;  /* ≥ 3:1 on surface, raise, overlay — outlines only */
+  /* hairlines */
+  --rule:#242838; --rule-2:#35394c; --line:#1a1d2b;
+  /* semantic — four meanings, unchanged */
+  --brand:#45cbf9; --brand-soft:#033549; --brand-ink:#9fe3fe;
+  --ready:#65ea92; --ready-soft:#0f3620;
+  --blocked:#febc65; --blocked-soft:#402c11;
+  --reading:#45cbf9; --reading-soft:#033549;
+  --danger:#f97770; --danger-soft:#3b1c18;
+  --on-brand:#080a14; --on-ready:#080a14; --on-danger:#080a14; --on-muted:#080a14;
+  --toast-bg:#292d3d; --toast-ink:#f0f1f7;
+  --toast-muted:#c0c3d1;  /* + NEW toast second line */
+  --toast-link:#9fe3fe;
+  /* oklch sources: page (.15 .022 275) · surface (.195 .027 275) · raise (.235 .03 275) · sunk (.125 .02 275) · overlay (.255 .032 275) · ink (.96 .008 275) · ink-2 (.85 .02 275) · muted (.73 .03 275) · faint (.72 .03 275) · faint-deco (.57 .03 275) · rule (.28 .03 275) · rule-2 (.35 .034 275) · line (.235 .028 275) · brand (.79 .13 225) · brand-soft (.31 .06 230) · brand-ink (.88 .08 225) · ready (.84 .17 152) · ready-soft (.30 .06 155) · blocked (.84 .15 72) · blocked-soft (.31 .05 72) · danger (.72 .16 25) · danger-soft (.27 .05 28) · toast-bg (.30 .03 275) · toast-ink (.96 .008 275) · toast-muted (.82 .02 275) · toast-link (.88 .08 225) */
+  /* identity (min ΔE 15.2, t3 vs ready) */
   --t1:#6f9bff; --t2:#e879f9; --t3:#a3e635; --t4:#fde047;
   --t5:#a98aee; --t6:#4fb3cc; --t7:#e878ab; --t8:#8a96a6;
   --m-comics:#a98aee; --m-books:#4fb3cc; --m-watch:#e878ab;
-  --sh-1:0 1px 2px rgba(0,0,0,.4);
-  --sh-2:0 1px 3px rgba(0,0,0,.5),0 10px 26px -14px rgba(0,0,0,.8);
-  --sh-3:0 8px 32px -10px rgba(0,0,0,.8);
+  --sh-1:inset 0 1px 0 rgba(255,255,255,.04);
+  --sh-2:inset 0 1px 0 rgba(255,255,255,.06),0 10px 28px -12px rgba(0,0,0,.75);
+  --sh-3:inset 0 1px 0 rgba(255,255,255,.06),0 24px 56px -12px rgba(0,0,0,.85);
+  --sh-cover:0 12px 24px -12px rgba(0,0,0,.85),0 0 0 1px rgba(255,255,255,.06);  /* + NEW 1px edge so dark covers don't merge */
+  --halo:0 0 0 3px rgba(69,203,249,0.26),0 0 14px rgba(69,203,249,0.32);
+  --glass-bg:rgba(17,20,33,0.9);
+  --glass-edge:rgba(255,255,255,.07);
+  --glass-hi:inset 0 1px 0 rgba(255,255,255,.05);
+  --scrim:rgba(0,0,0,.6);
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
-body{margin:0;background:#2b2e35;color:#e6e8ec;font-family:"Inter Tight",system-ui,sans-serif;font-size:16px;line-height:1.5}
+body{margin:0;background:#2b2e35;color:#e6e8ec;font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:16px;line-height:1.5}
 
 /* ══ mockup chrome ══ */
 .shell{display:grid;grid-template-columns:246px 1fr;min-height:100vh}
