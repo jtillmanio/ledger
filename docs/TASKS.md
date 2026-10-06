@@ -24,11 +24,14 @@ redraws the mockup to match in the same PR (standing rule 6). Tailwind names in
 those files and in `NEW_UI_AUDIT_REPORT.md` are vocabulary, never classes to
 ship.
 
-**The feel pass** (D-40, 2026-10-05): `design/STYLE_GUIDE.md` §14 (screens and
-behaviour), §15 (copy) and §16 (departures FP-D1…FP-D14), drawn in
-`design/Ledger Feel Review.dc.html`. **It beats `design/mockups.html` on layout
+**The feel pass** (D-40, 2026-10-05; desktop 2026-10-06): `design/STYLE_GUIDE.md`
+§14 (screens and behaviour; §14.6 desktop), §15 (copy) and §16 (departures
+FP-D1…FP-D18), drawn in `design/Ledger Feel Review.dc.html` (desktop in
+`design/LedgerDesktop.dc.html`), with every frame as a PNG in
+`design/screenshots/` (read those to see a screen; its README maps them to tasks). **It beats `design/mockups.html` on layout
 and copy** for what it draws: the three dashboards, the mark sequence, empty and
-caught-up states, run and block completion, and the 768px tablet. The task that
+caught-up states, run and block completion, the 768px tablet, and desktop at
+1024px and up (not /watch, which is not drawn there). The task that
 builds one of those surfaces builds it from the feel pass and redraws the
 matching `mockups.html` frame in the same PR (standing rule 6); where the feel
 pass is silent, the mockup and the task stand. Its covers are striped

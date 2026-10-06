@@ -89,6 +89,14 @@
   --dur-fill:900ms;                                      /* + NEW completion rail fills once */
   --ease-out:cubic-bezier(.2,.8,.2,1); --ease-in:cubic-bezier(.4,0,1,1);
   --glass-blur:20px; --glass-sat:1.4;
+  --side-w:224px;                                        /* + NEW desktop sidebar, 1280+ (D-33) */
+  --rail-w:64px;                                         /* + NEW desktop icon rail, 1024–1279 (D-33) */
+  --content-max:1056px;                                  /* + NEW desktop content box incl. 32px padding, centred */
+  --aside-w:304px;                                       /* + NEW desktop side rail · 280 at 1024–1279 */
+  --run-col-max:784px;                                   /* + NEW run page column incl. padding (720 content) */
+  --lens-max:480px;                                      /* + NEW cap on the This stretch lens and books meter */
+  --fs-hero-num-desk:56px/60px;                          /* + NEW hero issue number, 768+ */
+  --fs-hero-name-desk:32px/36px;                         /* + NEW hero book name, 1024+ */
 
   /* pre-v4 names kept as aliases so IssueRow.tsx and the first three routes
      keep rendering. New code uses the names above. */
@@ -103,6 +111,8 @@
     --ord-w:32px}                                         /* spine v2: four digits */
   :root[data-density="compact"]{--row-h:32px;--cv-row-w:20px;--cv-row-h:30px}   /* spine v2 compact cover */
 }
+@media (min-width:1024px){ :root{--aside-w:280px} }      /* desktop, icon rail (D-33) */
+@media (min-width:1280px){ :root{--aside-w:304px;--cover-hero:168px} }   /* desktop, sidebar (D-33) */
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     /* ── colour · dark · palette 1c ── */

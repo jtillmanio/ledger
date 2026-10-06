@@ -22,12 +22,15 @@ imported by `src/` and are kept as they were delivered.
 
 | File | What it is | Open it for |
 |---|---|---|
-| `design/STYLE_GUIDE.md` | The written spec: decisions, telescope geometry sheet and state matrix, plan rail, tokens, type, contrast and ΔE tables (palette 1c), containers, glass, component polish, changelog, the Tailwind appendix, the proposed deviations SG-D1…SG-D12, and the feel pass: **§14 screens and behaviour, §15 copy, §16 departures FP-D1…FP-D14** | The rule and the reason behind a value |
+| `design/STYLE_GUIDE.md` | The written spec: decisions, telescope geometry sheet and state matrix, plan rail, tokens, type, contrast and ΔE tables (palette 1c), containers, glass, component polish, changelog, the Tailwind appendix, the proposed deviations SG-D1…SG-D12, and the feel pass: **§14 screens and behaviour (§14.6 desktop), §15 copy, §16 departures FP-D1…FP-D18** | The rule and the reason behind a value |
 | `design/tokens.css` | Every token in light and dark (palette 1c, D-40), plus the breakpoint, glass, `--art`, reduced-transparency and reduced-motion blocks. Existing names kept; additions marked `+ NEW`, changed values `~` | The values. They are in `globals.css` (D-40) |
-| `design/Ledger Feel Review.dc.html` | The feel pass's review page: diagnosis, palette decision aid, and phone mockups in dark and light of comics, the mark storyboard, books (reading and between books), watch, run detail, run complete, all caught up, block complete, and the 768px tablet. Its §9 lists the departures D1–D14 (FP- in the style guide) | What a feel-pass screen or state looks like |
+| `design/Ledger Feel Review.dc.html` | The feel pass's review page: diagnosis, palette decision aid, and phone mockups in dark and light of comics, the mark storyboard, books (reading and between books), watch, run detail, run complete, all caught up, block complete, and the 768px tablet; its §11 imports the desktop frames. Its §9 lists the departures D1–D14 (FP- in the style guide) | What a feel-pass screen or state looks like |
 | `design/LedgerComics.dc.html` | The comics dashboard component the review page imports. Mark-read is live in it | The mark sequence, frame by frame (1.8b) |
-| `design/ledger-feel-tokens.css` | All three palettes (1a, 1b, 1c) in oklch, imported by the two pages above | The oklch source of a hex |
-| `design/handoff/` | The feel pass as delivered: the prompt, the implementation checklist (each step names its task), the D-40 draft, the 1a and 1b colour blocks (`palette-swaps.css`), and the contrast report for all three palettes | Where a feel-pass step went |
+| `design/LedgerDesktop.dc.html` | The desktop frames (review §11, 2026-10-06): /comics at rest at 1280 and 1024, all caught up, /books reading and between books, run complete and block complete, dark and light, with builder notes and the desktop contrast table. FP-D15…FP-D18 come from here | A screen at 1024px and up (1.8, 2.4, 2.2, 2.12) |
+| `design/LedgerNav.dc.html` | The desktop sidebar (224px, 1280 and up) and icon rail (64px, 1024–1279) the desktop frames import | The desktop navigation (1.8) |
+| `design/ledger-feel-tokens.css` | All three palettes (1a, 1b, 1c) in oklch, imported by the pages above | The oklch source of a hex |
+| `design/screenshots/` | PNGs of every frame of the review page, exported by Claude Design in palette 1c, dark and light: `phone/`, `tablet/` and `desktop/`. Its README maps each to its task | **Looking at** a feel-pass screen: the review page's source is templates, the PNGs are pictures |
+| `design/handoff/` | The feel pass as delivered: the prompt, the implementation checklist (each step names its task), the D-40 draft, the 1a and 1b colour blocks (`palette-swaps.css`), and the contrast report for all three palettes plus the desktop pairs | Where a feel-pass step went |
 | `design/archive/` | The 2026-09-30 `STYLE_GUIDE.md` and `tokens.css`, as they were before the feel pass | History only |
 | `design/Style Guide.dc.html` | The hub page, and the **B specimen**: type, numbers, elevation, containers, badges, chips, buttons, tabs, glass, feedback states and the cell vocabulary, in dark and light at 390 and 1000px | Seeing a component in all its states |
 | `design/Telescope Spec.dc.html` | Workstream A1–A3: seven telescope variants and three interaction states, each in dark and light at 390 and 1000px | The telescope, variant by variant |
@@ -53,7 +56,7 @@ v4 absorbed.
 
 | Question | Wins | Loses to it |
 |---|---|---|
-| Layout and copy of a surface the feel pass drew (dashboards, the mark, completion, empty and caught-up states, the tablet) | `STYLE_GUIDE.md` §14–§15 and `Ledger Feel Review.dc.html` (D-40) | `design/mockups.html` |
+| Layout and copy of a surface the feel pass drew (dashboards, the mark, completion, empty and caught-up states, the tablet, desktop at 1024px and up) | `STYLE_GUIDE.md` §14–§15 and `Ledger Feel Review.dc.html` (D-40) | `design/mockups.html` |
 | Layout of any other screen, its copy, what sits in which slot | `design/mockups.html` | a task description (CLAUDE.md) |
 | A token's value | `design/tokens.css`, which `globals.css` and the mockup's `.app` blocks match (`test:tokens`) | the mockup's one-off values |
 | Type, spacing, radius, elevation, glass, motion | `design/STYLE_GUIDE.md` §4–§9 | the mockup's one-off values |
@@ -342,17 +345,24 @@ STYLE_GUIDE §2.1's height sum (see §5.2 above).
 ## 9. The feel pass (D-40, 2026-10-05)
 
 The owner approved the feel pass on 5 October and picked palette **1c After
-hours**. What it is, in one line each:
+hours**. On 6 October it gained the desktop layout (1024px and up) and
+screenshots of every frame. What it is, in one line each:
 
-- **Spec:** `design/STYLE_GUIDE.md` §14 (screens and behaviour), §15 (copy),
-  §16 (departures FP-D1…FP-D14), with §4.2, §5, §7 and §9 updated in place.
-- **Drawings:** `design/Ledger Feel Review.dc.html` (sections 2–7 and 10), with
-  `design/LedgerComics.dc.html` live. Covers in them are striped placeholders.
+- **Spec:** `design/STYLE_GUIDE.md` §14 (screens and behaviour; §14.6 desktop),
+  §15 (copy), §16 (departures FP-D1…FP-D18), with §4.2, §5, §7 and §9 updated in place.
+- **Drawings:** `design/Ledger Feel Review.dc.html` (sections 2–7, 10 and 11),
+  with `design/LedgerComics.dc.html` live and the desktop in
+  `design/LedgerDesktop.dc.html` and `design/LedgerNav.dc.html`. Covers in them
+  are striped placeholders. **`design/screenshots/` has the same frames as
+  images** (palette 1c, both themes; `phone/`, `tablet/`, `desktop/`): read
+  those to see a screen, because the page's source is templates.
+  `design/screenshots/README.md` maps each to its task.
 - **Precedence:** where it draws a surface, it beats `design/mockups.html` on
   layout and copy (D-40 amends D-31). Where it is silent, the mockup and the
   task stand.
 - **Delivery record:** `design/handoff/` (the prompt, the checklist, the 1a
-  and 1b colour blocks, and the contrast report for all three palettes).
+  and 1b colour blocks, and the contrast report for all three palettes and the
+  desktop pairs).
 
 **Built through the backlog, not as one pass** (the owner's call when it was
 recorded). The tokens, the token checks and the fonts landed at once, because
@@ -362,7 +372,7 @@ task that builds the surface:
 | Checklist step | Where it is |
 |---|---|
 | 0 Record | Done: D-40, this section, the files in `design/` |
-| 1 Tokens | Done: `globals.css`, the mockup's `.app` blocks, `test:tokens` |
+| 1 Tokens | Done: `globals.css`, the mockup's `.app` blocks, `test:tokens`. The desktop layout tokens landed with the 6 Oct package |
 | 2 Fonts | Done: `src/app/fonts/`, `@font-face` in `globals.css`, `test/self-hosted-fonts.test.ts` |
 | 3 Icons | 1.8 (there are no icons in `src/` yet, so there was nothing to replace) |
 | 4 `--art` | 4.3 for issue covers and 4.2 for book covers. A schema change, so the owner is asked again there |
@@ -372,7 +382,8 @@ task that builds the surface:
 | 8 Completion | 2.12, with `run_opens` in 2.6 and read runs on the tracks page in 5.2 |
 | 9 Copy | The task that owns each string: 1.2, 1.6, 1.9, 1.10, 2.2, 2.4, 2.6, 2.9, 2.12, 6.2 |
 | 10 Tablet | 1.8 (rail, column, 48px thumb bar), 2.4 (hero and side rail) |
-| 11 Verify | The TASKS header's *feel-pass surface* rule, which every one of those tasks inherits |
+| 11 Desktop | 1.8 (nav, column, header verbs, toast), 2.4 (/comics), 2.2 (/books), 2.12 (run and block complete). /watch is not drawn at desktop (8.7) |
+| 12 Verify | The TASKS header's *feel-pass surface* rule, which every one of those tasks inherits |
 
 **Open questions the feel pass raised**, each written into its task as *stop
 and ask*:
@@ -387,6 +398,9 @@ and ask*:
 - **Completion (2.12).** Whether a later visit to a block-closing run shows the
   block state or the run state.
 - **Caught up (2.4).** *Coming out* needs 5.8's follows, so it waits for 5.8.
+- **Watch on desktop (8.7).** The 6 Oct frames stop at /comics and /books:
+  /watch at 1024px and up gets the shared shell and nothing more until it is
+  drawn.
 
 Two things the handoff got wrong, fixed when it was recorded: its style guide
 and tokens predated spine v2, so spine v2's sections and its three tokens were

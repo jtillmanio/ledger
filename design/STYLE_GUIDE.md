@@ -1,6 +1,6 @@
 # Ledger — Style Guide & Data Presentation (Step 3)
 
-**Status:** design proposal, 2026-09-30. **Updated 2026-10-05 by the feel pass** (decision D-40): palette 1c *After hours* (the owner's pick), IBM Plex Sans, Plex Mono and Newsreader, cover-led dashboards, mark-read feedback, and completion screens. The changes are folded into each section and listed in §10, with the new material in §14–§16. Nothing here touches `src/`. The 2026-09-30 text is kept at `design/archive/STYLE_GUIDE-2026-09-30.md`.
+**Status:** design proposal, 2026-09-30. **Updated 2026-10-05 by the feel pass** (decision D-40): palette 1c *After hours* (the owner's pick), IBM Plex Sans, Plex Mono and Newsreader, cover-led dashboards, mark-read feedback, and completion screens. The changes are folded into each section and listed in §10, with the new material in §14–§16. **Updated 2026-10-06:** desktop layouts at 1024px and up (§14.6, FP-D15…FP-D18, new layout tokens in §10). Nothing here touches `src/`. The 2026-09-30 text is kept at `design/archive/STYLE_GUIDE-2026-09-30.md`.
 
 **Files in `design/`:**
 
@@ -11,12 +11,15 @@
 | `Telescope Spec.dc.html` | Workstream A1–A3: 7 variants × 390/1000 × dark/light, plus hover, focus and scrub. |
 | `Plan Rail Spec.dc.html` | Workstream A4: quarter, settled, month and drag. |
 | `Telescope.dc.html`, `PlanRail.dc.html`, `Specimen.dc.html` | The components the pages import. Geometry is computed by the real `allocate()` rule. |
-| `Ledger Feel Review.dc.html` | **Feel pass (2026-10-05).** Diagnosis, palette decision aid, and phone mockups in dark and light: comics, mark-read storyboard, books (reading and between books), watch, run detail, run complete, comics all caught up, block complete, and the 768px tablet. |
+| `Ledger Feel Review.dc.html` | **Feel pass (2026-10-05).** Diagnosis, palette decision aid, and phone mockups in dark and light: comics, mark-read storyboard, books (reading and between books), watch, run detail, run complete, comics all caught up, block complete, and the 768px tablet. §11 *Desktop* (2026-10-06) imports `LedgerDesktop.dc.html`. |
 | `LedgerComics.dc.html` | The comics dashboard component the review imports. Mark-read is live. |
+| `LedgerDesktop.dc.html` | **Desktop (2026-10-06).** 14 frames: /comics at rest at 1280 and 1024, /comics all caught up, /books reading and between books, run complete and block complete, each in dark and light, with builder notes and the desktop contrast table. |
+| `LedgerNav.dc.html` | The desktop sidebar (224px, 1280+) and icon rail (64px, 1024–1279) that the desktop frames import. |
 | `ledger-feel-tokens.css` | All three palettes (1a, 1b, 1c) × dark and light, in oklch. These are the reference values; `tokens.css` carries 1c as hex; 1a and 1b are in `handoff/palette-swaps.css`. |
-| `handoff/` | The Claude Code package: prompt, checklist, D-40 draft, palette swaps, and the contrast report. |
+| `handoff/` | The Claude Code package as delivered: prompt, checklist, D-40 draft, palette swaps (1a, 1b) and the contrast report. |
+| `screenshots/` | PNG screenshots of every palette 1c frame: `phone/` (22 at 390 × 844, 2×), `tablet/` (2 at 768 × 1024) and `desktop/` (14 at 1280 × 900 and 1024 × 768). Its README maps each to its task. |
 
-**Precedence.** `design/mockups.html` wins on layout and copy, and `globals.css` wins on token values. Every place this guide departs from either is listed in §12 *Proposed deviations*. The feel-pass departures FP-D1…FP-D14 (§16) were accepted by the owner on 2026-10-05, so where they touch layout or copy they override `mockups.html`.
+**Precedence.** `design/mockups.html` wins on layout and copy, and `globals.css` wins on token values. Every place this guide departs from either is listed in §12 *Proposed deviations*. The feel-pass departures FP-D1…FP-D14 (§16) were accepted by the owner on 2026-10-05, and FP-D15…FP-D18 (desktop, 2026-10-06) are adopted unless rejected; where any of them touch layout or copy they override `mockups.html`.
 
 ---
 
@@ -307,6 +310,8 @@ Measured from the oklch sources: gamut-mapped to sRGB, WCAG 2.x contrast, ΔE200
 
 **Glass note.** `--ready` *text* on light glass over black reaches only 4.52:1, so ready-coloured text is still not allowed on glass chrome (SG-D12).
 
+**Desktop pairs (2026-10-06).** The sidebar and icon rail add pairs on glass composited over `--page`, plus the rail tooltip and the hovered side-rail row. All pass. The lowest are `--muted` on `--sunk` (media switch, 4.98 light) and the disabled ‹ glyph `--faint-deco` on `--page` (3.08 light). The full table is in `handoff/contrast-report.md` § *Desktop pairs* and `LedgerDesktop.dc.html`.
+
 ### Text tokens on every surface (floor 4.5:1)
 
 | Text token | Theme | page | surface | raise | sunk | overlay |
@@ -405,8 +410,8 @@ The tightest pairs are `--t3` against `--ready`: 15.6 light and 15.2 dark. Any l
 | `telecard` | 1px inset `--rule`; 3px identity stripe | 16 | 16 phone / 20 desk | `--sh-1` (was `--sh-2`) |
 | `hero` (Now slot) | 1px inset `--rule`; art band on `--art` | **20** (`--r-hero`) | 16 phone / 20 tablet | `--sh-1` |
 | `hero` next-issue strip | none: a **tonal** well (§4.1) in `--raise` | 8 (`--r-md`) | 8 | none. In the spine hero above *Resume*, and in the sticky `dk-rail` hero on desktop (§9) |
-| `cover` | none; `--sh-cover` | 4 (`--r-cover`) | — | 2:3. Hero 112 (150 from 768px) · shelf 112 · dashboard row 36 · stack 30. A spine row stays 28×42 (`--cv-row-*`, D13) |
-| `shelf` | none; horizontal scroll with `scroll-snap-type:x mandatory`, bleeding to the frame edge | — | 2 × 16 | Each card: cover, position chip on `--overlay`, 2-line title, mono meta, the readiness badge unchanged |
+| `cover` | none; `--sh-cover` | 4 (`--r-cover`) | — | 2:3. Hero 112 (150 from 768px, 168 from 1280px) · shelf 112 · dashboard row 36 · stack 30. A spine row stays 28×42 (`--cv-row-*`, D13) |
+| `shelf` | none; horizontal scroll with `scroll-snap-type:x mandatory`, bleeding to the frame edge (at 1024px and up it stops at main's edge and gains ‹ › paging for fine pointers, FP-D18) | — | 2 × 16 | Each card: cover, position chip on `--overlay`, 2-line title, mono meta, the readiness badge unchanged |
 | `lens` (*This stretch*) | cells as telescope cells | 3 | — | 24 cells, one per issue, around the head. Run-relative, never catalogue-relative (FP-D3) |
 | `sheet` | 1px inset `--rule-2`; grab 36×4 `--rule-2` | 16 (top) | 6 / 14 / 14 | `--overlay` + `--sh-3` over `--scrim` |
 | `chip` | 1px inset `--rule-2`; on: `--ink` fill, `--page` text | full | 0 × 12, 32 tall (44 hit) | none |
@@ -493,6 +498,14 @@ The tightest pairs are `--t3` against `--ready`: 15.6 light and 15.2 dark. Any l
 ---
 
 ## 10. Changelog — additions and changed values
+
+### 2026-10-06 · desktop, 1024px and up (§14.6)
+
+- **Added** (`+ NEW`, layout only, no colour changes): `--side-w` 224, `--rail-w` 64, `--content-max` 1056, `--aside-w` 304 (280 at 1024–1279), `--run-col-max` 784, `--lens-max` 480, `--fs-hero-num-desk` 56/60, `--fs-hero-name-desk` 32/36, and `--cover-hero` 168 from 1280px.
+- **Departures:** FP-D15…FP-D18 (§16).
+- **Mockup fix:** the phone and tablet scroll columns are now grids (`grid-auto-rows:max-content`), so the Now hero no longer collapses to 0px in Chrome. See checklist step 5.
+- **Mockup icons:** the mockups now draw Lucide icons as inline SVG (24 viewBox, 2px stroke in `currentColor`) instead of CSS masks over remote files. They render the same and survive screenshot export. The app keeps its own icon component; size and colour rules are unchanged.
+- **Screenshots:** `screenshots/` holds PNGs of every 1c frame (phone, tablet, desktop).
 
 ### 2026-10-05 · feel pass (D-40)
 
@@ -640,7 +653,7 @@ These ideas came out of a comparison with another reading-order app. One line ea
 
 ## 14. Feel pass — screens and behaviour (2026-10-05)
 
-Drawn in `Ledger Feel Review.dc.html`, at 390 × 844 in dark and light, plus 768 × 1024 for the tablet.
+Drawn in `Ledger Feel Review.dc.html`, at 390 × 844 in dark and light, plus 768 × 1024 for the tablet and, from 2026-10-06, 1280 × 900 and 1024 × 768 for desktop (§14.6).
 
 ### 14.1 Dashboard slots (comics; books and watch follow the same pattern)
 
@@ -689,6 +702,24 @@ Announced through the toast (`role="status"`). Under `prefers-reduced-motion`, e
 
 Interaction follows the pointer, not the width (D-33).
 
+### 14.6 Desktop, 1024px and up (D-33)
+
+Drawn in `Ledger Feel Review.dc.html` §11, at 1280 × 900 and 1024 × 768, palette 1c, dark and light. /watch is not drawn yet.
+
+- **Sidebar.** 1280px and up: 224px (`--side-w`) on glass over `--page`, with a right `--rule`. From the top: the wordmark (display italic 24), the media switch (a three-way segmented well on `--sunk`, current segment `--surface` + `--sh-1`), the medium's items (comics: Dashboard · Status · Runs · Tracks · Add; books: Dashboard · Status · Plan · Shelves · Top · Add), a `--line` rule, the global **Inbox** with a mono count, and the sync pill in the footer. Items are 40px tall, with a neutral 20px icon and a 14px label. The current item gets `--raise` and the 3px `--m-*` bar (the same hue rule as the tablet rail). Icons are never track hues.
+- **Icon rail.** 1024–1279px: 64px (`--rail-w`), the same order. The media switch becomes a vertical well of three icons, items are 44 × 40, the Inbox count becomes a badge on its icon, and sync shrinks to its dot. Every item has an `aria-label` and a tooltip (`--overlay`, `--sh-2`, `--rule-2` ring, 12px to the right) that shows on hover after `--dur-4` and straight away on focus-visible.
+- **Column.** A content box of max 1056px (`--content-max`) with 32px padding, centred in the space beside the nav, never pinned to it. Inside: main `minmax(0,1fr)` plus the side rail, 304px with a 32px gap at 1280+ (main = 656) and 280px with a 24px gap at 1024–1279 (main = 592). h1 40/44 (`--fs-title-desk`).
+- **Header.** A sticky glass band holding the h1 and the dashboard verbs, primary last (D-25): comics *Search · + batch · Mark #141 read*; books *Search · Finished it · Log pages*; empty states *Search · Start {next}*. 44px, `--r-md`. The primary names the issue or book. A long title truncates and keeps the full text in its accessible name. The lede scrolls under the band. The *N in inbox* chip goes (FP-D16).
+- **Hero.** Horizontal, as on the tablet. Cover 168 × 252 at 1280+ (`--cover-hero`), 150 × 225 at 1024–1279. Padding and gap 24/28 at 1280, 20/24 at 1024. Number 56/60 (`--fs-hero-num-desk`), and the books title 32/36 (`--fs-hero-name-desk`). The hero is never wider than main. The lens and the books meter are capped at 480px (`--lens-max`), about 18px per cell. *Since Tuesday* and *Also reading* split the footer 1 : 1; Also reading stays in Now.
+- **Shelf.** One scrolling row, contained in main (FP-D18). Four full covers plus 80px at 1024, five plus 16px at 1280. ‹ › buttons page by the visible count, only under `(hover:hover) and (pointer:fine)` and only when the row overflows.
+- **Telescope.** Desktop sizes (from 900px). W = main − 2 × 20 − 72 = 544 at 1280 and 480 at 1024. `allocate()` is unchanged. Ticks use niceStep: 5 here, with a major tick every 25. The ladder is three columns.
+- **Side rail.** *Ready when you are* then *2026 so far* (books: *On deck* then *2026 so far*), `position:sticky; top:104px`. Slot order is unchanged in the DOM: Now → Next → Position in main, then Situation → Rollup in the side rail.
+- **Hover reveals.** Behind `(hover:hover) and (pointer:fine)`: side-rail row verbs (*+ Up next*, *Plan*) show on row hover or `:focus-within`, and the row turns `--raise` over `--dur-1` (FP-D15). On coarse pointers they are always shown.
+- **Run page and completion.** A centred column of max 784 (720 content), no side rail. The art band sits inside the column with `--r-xl` corners (FP-D17). Key art 160 × 240; the block fan is 80 × 120, overlapping by 20. Block complete puts *The block* and *What this opened* side by side. The thumb bar stays (D-25): glass across the content area, buttons held to the 720 column, 48px, primary first.
+- **Toast.** Bottom centre of the content box, 24px up on dashboards (there's no thumb bar to clear), and above the thumb bar on the run page.
+
+Interaction follows the pointer, not the width (D-33).
+
 ---
 
 ## 15. Copy (P7, approved 2026-10-05)
@@ -712,7 +743,7 @@ Voice: sentences in place of tallies, plain verbs (*to unlock*, *ready when you 
 
 ## 16. Feel-pass departures (accepted 2026-10-05)
 
-These are numbered D1–D14 in `Ledger Feel Review.dc.html` §9 and prefixed FP- here, so they don't collide with SG-D1…SG-D12. FP-D1…FP-D12 were accepted by the owner. FP-D13 and FP-D14 came with the new states and are adopted unless the owner rejects them.
+These are numbered D1–D14 in `Ledger Feel Review.dc.html` §9 and prefixed FP- here, so they don't collide with SG-D1…SG-D12. FP-D1…FP-D12 were accepted by the owner. FP-D13 and FP-D14 came with the new states and are adopted unless the owner rejects them. FP-D15…FP-D18 came with the desktop frames (review §11, 2026-10-06) and are adopted on the same terms.
 
 | # | Departure |
 |---|---|
@@ -730,3 +761,7 @@ These are numbered D1–D14 in `Ledger Feel Review.dc.html` §9 and prefixed FP-
 | **FP-D12** | Watch *Paused*: grey rows for shows untouched for more than 4 weeks. No new colour. |
 | **FP-D13** | *(new, 2026-10-05)* On dashboards, the empty telescope (A2.2) drops its own Start button, because the thumb bar carries the same verb. |
 | **FP-D14** | *(new, 2026-10-05)* Finishing a block steps the completion screen up a level: the block's covers fanned out, the track rail as the record, the block's runs listed, and *Start block 2*. |
+| **FP-D15** | *(new, 2026-10-06, desktop)* Side-rail row verbs (*+ Up next* on Ready rows, *Plan* on On deck rows) are hidden at rest and revealed on hover or `:focus-within`, behind `(hover:hover) and (pointer:fine)`. Reason: at 280–304px a persistent button truncates every row name. On touch they stay visible. |
+| **FP-D16** | *(new, 2026-10-06, desktop)* The *6 in inbox* chip next to the h1 is dropped at 1024px and up. Reason: D-33 puts a global Inbox (N) in the sidebar, and two counts for the same thing would compete with the header verbs. Phone and tablet keep the chip. |
+| **FP-D17** | *(new, 2026-10-06, desktop)* The completion art band (FP-D11, FP-D14) is contained in the 720px run column with `--r-xl` corners, instead of running full-bleed. Reason: across 1056px or more, a full-bleed band is a wall of tone around a small cover, and the sidebar clips one side of it. Phone and tablet stay full-bleed. |
+| **FP-D18** | *(new, 2026-10-06, desktop)* The Up next shelf stops at main's edge instead of bleeding (FP-D2). Reason: a bleed would run under the side rail. The partial last cover still shows that the row scrolls, and ‹ › paging is added for fine pointers. |

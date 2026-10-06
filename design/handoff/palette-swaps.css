@@ -1,9 +1,10 @@
-/* ══ Palette swaps — colour blocks only (2026-10-05) ════════════════════
-   tokens.css ships palette 1c After hours (D-40). To adopt 1a or 1b, replace the
-   "colour · light" block in .app,:root and the "colour · dark" block in
-   .app[data-theme="dark"] with the pair below, and replace --halo and
-   --glass-bg with the values given. Identity hues, shadows and everything
-   theme-independent stay as they are. All pairs measured in
+/* ══ Palette swaps — colour blocks only (2026-10-05, header updated 2026-10-06) ══
+   tokens.css ships palette 1c After hours, the owner's pick (D-40). These
+   blocks are kept only in case the owner revisits the choice. To swap,
+   replace the "colour · light" block in .app,:root and the "colour · dark"
+   block in .app[data-theme="dark"] with the pair below, and replace --halo
+   and --glass-bg with the values given. Identity hues, shadows and
+   everything theme-independent stay as they are. All pairs measured in
    contrast-report.md.                                                   */
 
 /* ── 1a Signal ── */
@@ -50,6 +51,7 @@
   --halo:0 0 0 3px rgba(117,172,254,0.26),0 0 14px rgba(117,172,254,0.32);
   --glass-bg:rgba(20,23,28,0.9);
 
+
 /* ── 1b Lamplight ── */
 /* light → .app,:root */
   /* surfaces — elevation by luminance: sunk < page < raise < surface = overlay (separated by shadow) */
@@ -70,6 +72,13 @@
   --toast-muted:#cbc7bf;  /* + NEW toast second line */
   --toast-link:#9bbeff;
   /* oklch sources: page (.968 .01 85) · surface (.995 .004 85) · raise (.982 .007 85) · sunk (.935 .013 80) · overlay (.995 .004 85) · ink (.22 .014 60) · ink-2 (.39 .016 60) · muted (.50 .018 60) · faint (.50 .018 60) · faint-deco (.64 .018 70) · rule (.90 .012 80) · rule-2 (.84 .014 75) · line (.935 .01 80) · brand (.49 .19 264) · brand-soft (.945 .03 264) · brand-ink (.41 .17 264) · ready (.50 .13 160) · ready-soft (.95 .04 160) · blocked (.52 .12 60) · blocked-soft (.955 .035 78) · danger (.52 .18 28) · danger-soft (.955 .03 28) · toast-bg (.24 .014 60) · toast-ink (.97 .008 85) · toast-muted (.83 .012 80) · toast-link (.80 .1 262) */
+  /* identity — tracks and genres; ΔE2000 ≥ 15 from ready / blocked / danger (min 15.6, t3 vs ready) */
+  --t1:#2563eb; --t2:#a21caf; --t3:#4d7c0f; --t4:#857700;
+  --t5:#7c3aed; --t6:#0e7490; --t7:#be185d; --t8:#52606d;
+  --g1:var(--t1); --g2:var(--t2); --g3:var(--t3); --g4:var(--t4);
+  --g5:var(--t5); --g6:var(--t6); --g7:var(--t7); --g8:var(--t8);
+  --m-comics:#7c3aed; --m-books:#0e7490; --m-watch:#be185d;
+  /* elevation — light: soft warm drop shadows */
   --halo:0 0 0 3px rgba(37,84,202,0.18);
   --glass-bg:rgba(255,253,250,0.9);
 /* dark → .app[data-theme="dark"] */
@@ -91,5 +100,9 @@
   --toast-muted:#c6c0b7;  /* + NEW toast second line */
   --toast-link:#b9d2ff;
   /* oklch sources: page (.165 .009 70) · surface (.21 .011 70) · raise (.25 .012 70) · sunk (.14 .008 70) · overlay (.265 .013 70) · ink (.95 .01 85) · ink-2 (.84 .014 80) · muted (.72 .018 75) · faint (.71 .018 75) · faint-deco (.57 .016 75) · rule (.30 .012 70) · rule-2 (.37 .014 70) · line (.25 .011 70) · brand (.75 .15 262) · brand-soft (.31 .07 262) · brand-ink (.86 .085 262) · ready (.81 .16 162) · ready-soft (.30 .055 162) · blocked (.83 .14 74) · blocked-soft (.31 .05 72) · danger (.71 .16 28) · danger-soft (.27 .05 28) · toast-bg (.31 .013 70) · toast-ink (.95 .01 85) · toast-muted (.81 .014 80) · toast-link (.86 .085 262) */
+  /* identity (min ΔE 15.5, t4 vs blocked) */
+  --t1:#6f9bff; --t2:#e879f9; --t3:#a3e635; --t4:#fde047;
+  --t5:#a98aee; --t6:#4fb3cc; --t7:#e878ab; --t8:#8a96a6;
+  --m-comics:#a98aee; --m-books:#4fb3cc; --m-watch:#e878ab;
   --halo:0 0 0 3px rgba(130,173,253,0.26),0 0 14px rgba(130,173,253,0.32);
   --glass-bg:rgba(28,23,19,0.9);

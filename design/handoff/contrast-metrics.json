@@ -1124,5 +1124,37 @@
     "overlay": 1
    }
   }
+ },
+ "desktop_1c": {
+  "measured": "2026-10-06",
+  "glass": "surface α.90 over page",
+  "light": {
+   "ink-2/glass": 9.98,
+   "muted/glass": 5.98,
+   "ink/raise": 16.91,
+   "muted/sunk": 4.98,
+   "ink-2/raise": 9.57,
+   "ink/overlay": 17.79,
+   "muted/raise": 5.74,
+   "m-comics/glass": 5.65,
+   "m-books/glass": 5.31,
+   "brand/glass": 6.12,
+   "ready/glass": 5.62,
+   "faint-deco/page": 3.08
+  },
+  "dark": {
+   "ink-2/glass": 11.68,
+   "muted/glass": 7.73,
+   "ink/raise": 14.83,
+   "muted/sunk": 8.45,
+   "ink-2/raise": 10.56,
+   "ink/overlay": 14.01,
+   "muted/raise": 6.99,
+   "m-comics/glass": 6.65,
+   "m-books/glass": 7.62,
+   "brand/glass": 9.83,
+   "ready/glass": 12.09,
+   "faint-deco/page": 4.39
+  }
  }
 }
