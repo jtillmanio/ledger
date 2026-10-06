@@ -253,7 +253,8 @@ review-and-resolve flow as bulk add.
 
 The kind control reads **Books · Comics · Watch · Unsure**; resolving a Watch
 note opens `/watch/add` pre-filled. The inbox count (*6 in inbox*) shows as a
-chip on each dashboard's lede and as `Inbox` in the sidebar, so a note you jotted
+chip on each dashboard's lede below 1024px and as `Inbox (N)` in the desktop
+sidebar, which replaces the chip from 1024px (FP-D16), so a note you jotted
 on the phone is visible somewhere you will actually look.
 
 **22. Re-read history.** `issue_progress` and `book_status` are one row per
