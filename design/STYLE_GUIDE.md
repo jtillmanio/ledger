@@ -560,7 +560,7 @@ theme: { extend: {
   borderRadius:{ cell:'3px', sm:'6px', md:'8px', lg:'12px', xl:'16px' },
   spacing:{ 0.5:'2px', 1:'4px', 1.5:'6px', 2:'8px', 3:'12px', 4:'16px', 5:'20px', 6:'24px', 8:'32px', 10:'40px' },
   fontSize:{ kicker:['11px','14px'], caption:['12px','16px'], 'body-sm':['13px','18px'], body:['14px','20px'],
-    'row-title':['15px','20px'], section:['12px','16px'], title:['24px','28px'], 'title-desk':['30px','34px'],
+    'row-title':['15px','20px'], section:['12px','16px'], title:['32px','36px'], 'title-desk':['40px','44px'],
     display:['40px','40px'], 'display-desk':['48px','48px'] },
   fontFamily:{ sans:'var(--sans)', mono:'var(--mono)' },
   boxShadow:{ 1:'var(--sh-1)', 2:'var(--sh-2)', 3:'var(--sh-3)', halo:'var(--halo)', focus:'var(--focus-ring)', 'glass-hi':'var(--glass-hi)' },

@@ -9,9 +9,11 @@ adopted them as the blueprint in **D-31** (`docs/review/decisions.md`). The
 feedback, completion screens and the tablet layout. The owner adopted it as
 **D-40**, with palette **1c After hours**; §9 below is its index.
 
-**Nothing here is built yet.** The values reach `src/app/globals.css` in task
-1.8a, and the telescope in 2.5 and 2.5b. Until each task lands, the code is
-what runs (D-1). The `design/` files are reference specs: they are never
+**The token values and the fonts are built** (D-40): `src/app/globals.css`
+carries `tokens.css` (palette 1c) and self-hosts IBM Plex Sans, Plex Mono and
+Newsreader. Everything else — control states (1.8a), the shell (1.8), the
+telescope (2.5, 2.5b), the dashboards and the feel-pass screens (§9) — lands
+with its task. Until each task lands, the code is what runs (D-1). The `design/` files are reference specs: they are never
 imported by `src/` and are kept as they were delivered.
 
 ---
@@ -79,19 +81,22 @@ its values are the ones measured in its §6 tables.
 | Hairlines | `--rule`, `--rule-2`, `--line`, `--faint-deco` | `--faint-deco` outlines controls and clears 3:1 (SG-D8); it is never text |
 | Meaning | `--brand`, `--ready`, `--blocked`, `--danger`, `--reading`, each with `-soft`; `--brand-ink` | The four meanings (CLAUDE.md *Style*) |
 | Text on a fill | `--on-brand`, `--on-ready`, `--on-danger`, `--on-muted` | Never a literal `#fff` |
-| Toast | `--toast-bg`, `--toast-ink`, `--toast-link` | Dark toast is tonal, not a light slab (SG-D3) |
+| Toast | `--toast-bg`, `--toast-ink`, `--toast-muted`, `--toast-link` | Dark toast is tonal, not a light slab (SG-D3); `--toast-muted` is its second line (D-40) |
+| Art tone | `--art`, from inline `--art-d` / `--art-l` on `[data-art]` | A cover's clamped ambient tone (FP-D6): content colour, never state; `--surface` when missing or `data-ambient="off"` |
+| Covers | `--cover-hero` 112 (150 from 768px) · `--cover-shelf` 112 · `--cover-row` 36 · `--sh-cover` · `--r-cover` 4 | 2:3. A spine row stays `--cv-row-*` 28×42 (SG-D13) |
 | Identity | `--t1…--t8`, `--g1…--g8`, `--m-comics/books/watch` | Unchanged; ΔE2000 ≥ 15 from ready, blocked, danger (D-24) |
-| Elevation | `--sh-1`, `--sh-2`, `--sh-3`, `--halo`, `--focus-ring` | Three tiers; `--halo` is the telescope head only |
+| Elevation | `--sh-1`, `--sh-2`, `--sh-3`, `--halo`, `--focus-ring` | Three tiers; `--halo` is the telescope head and the lens head only |
 | Glass | `--glass-bg`, `--glass-edge`, `--glass-hi`, `--glass-blur`, `--glass-sat`, `--scrim` | Chrome only; α .90 (SG-D12) |
 | Texture | `--hatch`, `--hatch-settled` | Held, and accepted |
-| Radius | `--r-cell` 3 · `--r-sm` 6 · `--r-md` 8 · `--r-lg` 12 · `--r-xl` 16 · `--r-full` | Badges `sm`, buttons `md`, groups `lg`, cards and sheets `xl` |
+| Radius | `--r-cell` 3 · `--r-cover` 4 · `--r-sm` 6 · `--r-md` 8 · `--r-lg` 12 · `--r-xl` 16 · `--r-hero` 20 · `--r-full` | Badges `sm`, buttons `md`, groups and thumb-bar buttons `lg` (FP-D10), cards and sheets `xl`, the Now slot `hero` |
 | Spacing | `--sp-0-5` 2 · `--sp-1` 4 · `--sp-1-5` 6 · `--sp-2` 8 · `--sp-3` 12 · `--sp-4` 16 · `--sp-5` 20 · `--sp-6` 24 · `--sp-8` 32 · `--sp-10` 40 | A 4px grid |
-| Type | `--fs-kicker` 11/14 · `--fs-caption` 12/16 · `--fs-body-sm` 13/18 · `--fs-body` 14/20 · `--fs-row-title` 15/20 · `--fs-section` 12/16 · `--fs-title` 24/28 (desk 30/34) · `--fs-display` 40/40 (desk 48/48) | Size/line-height only; weight and tracking per STYLE_GUIDE §5. Nothing under 11px |
+| Type | `--fs-kicker` 11/14 · `--fs-caption` 12/16 · `--fs-body-sm` 13/18 · `--fs-body` 14/20 · `--fs-row-title` 15/20 · `--fs-section` 12/16 · `--fs-title` 32/36 (desk 40/44, Newsreader) · `--fs-hero-name` 26/30 · `--fs-hero-num` 44/48 · `--fs-display` 40/40 (desk 48/48) | Size/line-height only; weight and tracking per STYLE_GUIDE §5. Nothing under 11px |
+| Families | `--sans` IBM Plex Sans · `--mono` IBM Plex Mono · `--display` Newsreader | Self-hosted (D-40). Newsreader only for titles, hero names, story titles and completion lines; counts stay mono (D-32) |
 | Telescope | `--tele-min`, `--tele-gap`, `--tele-rail`, `--tele-run`, `--tele-bracket`, `--tele-gutter` | Phone 14/2/18/24/16/44, desktop 16/2/20/28/20/72 |
 | Density | `--row-h` | 48px; 32px under desktop `data-density="compact"` (6.11) |
-| Motion | `--dur-1` 100 · `--dur-2` 150 · `--dur-3` 200 · `--dur-4` 300 · `--ease-out` · `--ease-in` | Zero under `prefers-reduced-motion` |
+| Motion | `--dur-1` 100 · `--dur-2` 150 · `--dur-3` 200 · `--dur-4` 300 · `--dur-fill` 900 · `--dur-hold` 600 · `--ease-out` · `--ease-in` | Zero under `prefers-reduced-motion`, except `--dur-hold`: it holds a colour, not a movement |
 
-### 3.2 Moving `tokens.css` into `globals.css` (task 1.8a)
+### 3.2 Moving `tokens.css` into `globals.css` (done with D-40)
 
 `npm run test:tokens` (`scripts/check-tokens.mjs`) reads `globals.css` through
 three selectors and requires every token there to have the same value in
@@ -111,8 +116,11 @@ same values, or `test:tokens` fails on parity. The `--mark`, `--held`, `--paper`
 `--paper-sunk`, `--col` and `--step` aliases stay. No token or class is renamed
 or removed (SG §13).
 
-1.8a also extends `check-tokens.mjs` with the checks that make these values
-stay true: the elevation order, every text token on every surface, the paired
+With D-40, `check-tokens.mjs` also checks the toast pairs on `--toast-bg`,
+every figure in `design/handoff/contrast-metrics.json` for palette 1c, text on
+the `--art` clamp extremes, and that `globals.css` carries every token in
+`tokens.css` unchanged. 1.8a adds the checks that make the rest
+stay true as explicit floors: the elevation order, every text token on every surface, the paired
 fills, `--faint-deco` at 3:1, text on glass at its worst case, and an 11px
 floor. The exact list is in TASKS 1.8a.
 
@@ -131,7 +139,7 @@ add a Tailwind dependency, a `tailwind.config.js` or a utility class to `src/`.
 | `rounded-md` · `rounded-lg` · `rounded-xl` · `rounded-2xl` · `rounded-full` | `--r-sm` · `--r-md` · `--r-lg` · `--r-xl` · `--r-full` | 6 · 8 · 12 · 16 · 999px |
 | `p-1` · `p-2` · `p-3` · `p-4` · `p-5` · `p-6` · `p-8` | `--sp-1` · `--sp-2` · `--sp-3` · `--sp-4` · `--sp-5` · `--sp-6` · `--sp-8` | 4 · 8 · 12 · 16 · 20 · 24 · 32px |
 | `text-2xs` · `text-xs` · `text-sm` · `text-base` · `text-md` | `--fs-kicker` · `--fs-caption` · `--fs-body-sm` · `--fs-body` · `--fs-row-title` | 11/14 · 12/16 · 13/18 · 14/20 · 15/20 |
-| `text-2xl` · `text-3xl` · `text-display` | `--fs-title` · `--fs-title-desk` · `--fs-display` | 24/28 · 30/34 · 40/40 |
+| `text-2xl` · `text-3xl` · `text-display` | `--fs-title` · `--fs-title-desk` · `--fs-display` | 32/36 · 40/44 · 40/40 |
 | `shadow-sm` · `shadow-lg` · `shadow-2xl` | `--sh-1` · `--sh-2` · `--sh-3` | the three tiers |
 | `duration-100` · `-150` · `-200` · `-300` | `--dur-1` · `--dur-2` · `--dur-3` · `--dur-4` | ms |
 | `ease-out` · `ease-in` | `--ease-out` · `--ease-in` | `cubic-bezier(.2,.8,.2,1)` · `cubic-bezier(.4,0,1,1)` |
@@ -178,7 +186,7 @@ theme: { extend: {
   borderRadius:{ cell:'3px', sm:'6px', md:'8px', lg:'12px', xl:'16px' },
   spacing:{ 0.5:'2px', 1:'4px', 1.5:'6px', 2:'8px', 3:'12px', 4:'16px', 5:'20px', 6:'24px', 8:'32px', 10:'40px' },
   fontSize:{ kicker:['11px','14px'], caption:['12px','16px'], 'body-sm':['13px','18px'], body:['14px','20px'],
-    'row-title':['15px','20px'], section:['12px','16px'], title:['24px','28px'], 'title-desk':['30px','34px'],
+    'row-title':['15px','20px'], section:['12px','16px'], title:['32px','36px'], 'title-desk':['40px','44px'],
     display:['40px','40px'], 'display-desk':['48px','48px'] },
   fontFamily:{ sans:'var(--sans)', mono:'var(--mono)' },
   boxShadow:{ 1:'var(--sh-1)', 2:'var(--sh-2)', 3:'var(--sh-3)', halo:'var(--halo)', focus:'var(--focus-ring)', 'glass-hi':'var(--glass-hi)' },
@@ -298,12 +306,20 @@ merge into a `+N · Nk` stack; a lone one keeps its height and gets a 24px
 | Sidebar toggle | 6.14 |
 | Books coming out | 5.7 |
 | Comic issues coming out | 5.8 |
+| Feel pass: the mark answers back, toast copy | 1.8b, 1.2 |
+| Feel pass: Up next cover shelf and *Reorder* | 1.10 |
+| Feel pass: comics Now hero, lens, *Since Tuesday*, *All caught up* | 2.4 |
+| Feel pass: books Now, *Between books*, single-quarter strip | 2.2, 2.2b |
+| Feel pass: `run_opens` (*What this opened*, *opens N*) | 2.6 |
+| Feel pass: run and block completion | 2.12 |
+| Feel pass: cover sizes, run-detail art band, `--art` | 4.3 (books: 4.2) |
+| Feel pass: tablet rail, local icons | 1.8 |
 
 The item-by-item map from Review N to tasks is in `docs/review/LEDGER.md`, *N*.
 
 ## 8. Decided after the review (2026-09-30)
 
-- **Counts stay mono (D-32).** Every count, range and label is JetBrains Mono
+- **Counts stay mono (D-32).** Every count, range and label is IBM Plex Mono (D-40; it was JetBrains Mono)
   with tabular numerals, inline row counts included.
 - **Tablets get a touch layout (D-33).** Breakpoints 768, 1024 and 1280px: a
   phone layout under 768; a 72px navigation rail (icon over label) with the
@@ -322,3 +338,58 @@ The item-by-item map from Review N to tasks is in `docs/review/LEDGER.md`, *N*.
 Small errors in the delivered files, left as delivered: `tokens.css` points at
 STYLE_GUIDE "§7 changelog" and "§3" for type (they are §10 and §5), and
 STYLE_GUIDE §2.1's height sum (see §5.2 above).
+
+## 9. The feel pass (D-40, 2026-10-05)
+
+The owner approved the feel pass on 5 October and picked palette **1c After
+hours**. What it is, in one line each:
+
+- **Spec:** `design/STYLE_GUIDE.md` §14 (screens and behaviour), §15 (copy),
+  §16 (departures FP-D1…FP-D14), with §4.2, §5, §7 and §9 updated in place.
+- **Drawings:** `design/Ledger Feel Review.dc.html` (sections 2–7 and 10), with
+  `design/LedgerComics.dc.html` live. Covers in them are striped placeholders.
+- **Precedence:** where it draws a surface, it beats `design/mockups.html` on
+  layout and copy (D-40 amends D-31). Where it is silent, the mockup and the
+  task stand.
+- **Delivery record:** `design/handoff/` (the prompt, the checklist, the 1a
+  and 1b colour blocks, and the contrast report for all three palettes).
+
+**Built through the backlog, not as one pass** (the owner's call when it was
+recorded). The tokens, the token checks and the fonts landed at once, because
+`globals.css` and the layout already existed. Everything else went into the
+task that builds the surface:
+
+| Checklist step | Where it is |
+|---|---|
+| 0 Record | Done: D-40, this section, the files in `design/` |
+| 1 Tokens | Done: `globals.css`, the mockup's `.app` blocks, `test:tokens` |
+| 2 Fonts | Done: `src/app/fonts/`, `@font-face` in `globals.css`, `test/self-hosted-fonts.test.ts` |
+| 3 Icons | 1.8 (there are no icons in `src/` yet, so there was nothing to replace) |
+| 4 `--art` | 4.3 for issue covers and 4.2 for book covers. A schema change, so the owner is asked again there |
+| 5 /comics | 2.4, with 1.6 and 1.10 |
+| 6 /books and /watch | 2.2 (and 2.2b), 8.7 |
+| 7 The mark | 1.8b, with 1.2's toast copy |
+| 8 Completion | 2.12, with `run_opens` in 2.6 and read runs on the tracks page in 5.2 |
+| 9 Copy | The task that owns each string: 1.2, 1.6, 1.9, 1.10, 2.2, 2.4, 2.6, 2.9, 2.12, 6.2 |
+| 10 Tablet | 1.8 (rail, column, 48px thumb bar), 2.4 (hero and side rail) |
+| 11 Verify | The TASKS header's *feel-pass surface* rule, which every one of those tasks inherits |
+
+**Open questions the feel pass raised**, each written into its task as *stop
+and ask*:
+
+- **Watch (8.7).** The drawing tracks episodes (*S4 E3*), offers *Reorder* on a
+  list with no stored order, and draws show → season rails. The app tracks
+  seasons only and 8.7 specifies franchise → series.
+- **Books (2.2).** Where Rebalance, Accept (2.7) and *Place them* (2.8) surface
+  once the capacity and unplaced cards leave the dashboard.
+- **Covers (4.3).** Which cover is a run's key art, and where a run's tone is
+  stored.
+- **Completion (2.12).** Whether a later visit to a block-closing run shows the
+  block state or the run state.
+- **Caught up (2.4).** *Coming out* needs 5.8's follows, so it waits for 5.8.
+
+Two things the handoff got wrong, fixed when it was recorded: its style guide
+and tokens predated spine v2, so spine v2's sections and its three tokens were
+restored (a spine row stays 28×42); and P1's *spine rows get 36 × 54 covers*
+was not adopted, because no FP departure changes SG-D13.
+

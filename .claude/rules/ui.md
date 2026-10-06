@@ -21,7 +21,9 @@ disagree, the mockup wins. Pull up one screen with `scripts/screen.sh <id>`
 The styling blueprint (D-31) is `design/STYLE_GUIDE.md`, `design/tokens.css`
 and the `design/*.dc.html` spec pages, indexed by `docs/DESIGN.md`. It wins on
 tokens, type, elevation, motion, telescope and plan-rail geometry and component
-states; the mockup wins on layout and copy. Read `docs/DESIGN.md` before
+states; the mockup wins on layout and copy, except where the feel pass (D-40,
+STYLE_GUIDE §14–§16 and `design/Ledger Feel Review.dc.html`) draws a surface:
+there the feel pass wins on layout and copy too. Read `docs/DESIGN.md` before
 building a component.
 
 Phone at 360–412px is the primary device and every screen is designed there
@@ -70,18 +72,28 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
   block rail and keeps everything else (2-rail). The geometry will be
   `src/components/telescope/layout.ts` (task 2.5), not a hand-drawn SVG.
 - **Contrast and targets are tokens, not taste.** `--faint` is text-safe
-  (4.5:1 or more on every surface, `#606979`); `--faint-deco` is for rules; thumb bar and icon buttons are 44px,
+  (4.5:1 or more on every surface; `#5e6275` light, `#9fa4b8` dark, palette 1c,
+  D-40); `--faint-deco` is for rules; thumb bar and icon buttons are 44px,
   nothing interactive under 24px; every control is a real button or link with a
   name. `.bar` is the app header only; era and block meters are `.emeter`.
 - **Hue identifies data, never navigation.** Sidebar icons are neutral; one
   franchise keeps one hue on every screen; watch genre chips are grey with text.
   DNF and *Skip* are grey — only *Remove* and *Drop* may be red.
+- **The feel pass (D-40)** beats `design/mockups.html` on layout and copy for
+  what it draws: the dashboards, the mark sequence, empty and caught-up states,
+  completion and the 768px tablet (`design/STYLE_GUIDE.md` §14–§16, `design/Ledger
+  Feel Review.dc.html`). Each dashboard's Now slot is the one hero; `--art`, a
+  cover's clamped ambient tone, is content colour, never state, and can be
+  switched off. Fonts are self-hosted: IBM Plex Sans for the UI, Plex Mono for
+  counts, Newsreader only for titles, hero names, story titles and completion
+  lines. No streaks, no confetti.
 - **Every screen has its states drawn**: empty (one primary action), loading
   (skeletons at the loaded size), offline (sync pill), rate-limited, error,
   metadata pending. See docs/TASKS.md's *UX floor*.
 - **Never draw progress against the catalog.** 76 of ~10,100 as a bar is a lie
   told with a rectangle. Comics measure against the run and the block; the
-  catalog total appears once, small, as provenance. A track is drawn as a row
+  catalog total appears once, small, as provenance, on Stats and not on a
+  dashboard (D-40). A track is drawn as a row
   of its blocks, each filled by its own share read, with `read / total` as
   text — never one bar against the whole track (D-29).
 - **Detail views are intercepted routes, not modal components:** a sheet from a

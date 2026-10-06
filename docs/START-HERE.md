@@ -1373,7 +1373,7 @@ two weeks without opening the sheet.
 
 | Phase | Contents                                                                                    | Why this order                                                                                                          |
 | ----- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| 2     | Settings, pace engine, sessions, books dashboard, plan editor, comics dashboard, true unlock cost | Highest remaining value. Answers "is 2027 overcommitted" and "what does this run really cost". (2.11a was already built in Step 12) |
+| 2     | Settings, pace engine, sessions, books dashboard, plan editor, comics dashboard, true unlock cost, run and block completion (2.12, D-40) | Highest remaining value. Answers "is 2027 overcommitted" and "what does this run really cost". (2.11a was already built in Step 12) |
 | 3     | Editing: inline fields, runs, prereqs, ratings, detail sheets, eras (book status moved to 1.5) | Lets you maintain the catalog in the app                                                                                |
 | 4     | Metron and Open Library enrichment, covers                                                  | Makes it feel like a product. Prerequisite for Phase 7                                                                  |
 | 5     | Shelves, tracks page, eras, ratings, DNF, `edition_issues`                                  | Fills in remaining surfaces                                                                                             |
