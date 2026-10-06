@@ -69,6 +69,9 @@
   --fs-display:40px/40px; --fs-display-desk:48px/48px;
   --tele-min:14px; --tele-gap:2px; --tele-rail:18px; --tele-run:24px; --tele-bracket:16px; --tele-gutter:44px;
   --row-h:48px;
+  --ord-w:24px;                                          /* spine v2 ordinal gutter: three tabular digits at 11px mono */
+  --rdate-w:56px;                                        /* spine v2 release-date column, `Jul 2019`; 1024px+ only */
+  --cv-row-w:28px; --cv-row-h:42px;                      /* spine v2 row cover, 2:3, inside the 48px row (SG-D13) */
   --cover-hero:112px;                                    /* + NEW hero cover width (2:3) · 150 on tablet */
   --cover-shelf:112px;                                   /* + NEW Up next shelf cover width (2:3) */
   --cover-row:36px;                                      /* + NEW row thumbnail width (2:3) */
@@ -80,8 +83,9 @@
 }
 @media (min-width:768px){ .app,:root{--cover-hero:150px} }   /* + NEW tablet (D-33) */
 @media (min-width:900px){
-  .app,:root{--tele-min:16px;--tele-rail:20px;--tele-run:28px;--tele-bracket:20px;--tele-gutter:72px}
-  .app[data-density="compact"]{--row-h:32px}
+  .app,:root{--tele-min:16px;--tele-rail:20px;--tele-run:28px;--tele-bracket:20px;--tele-gutter:72px;
+    --ord-w:32px}                                         /* spine v2: four digits */
+  .app[data-density="compact"]{--row-h:32px;--cv-row-w:20px;--cv-row-h:30px}   /* spine v2 compact cover */
 }
 
 .app[data-theme="dark"]{

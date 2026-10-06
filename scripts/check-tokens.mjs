@@ -2,7 +2,8 @@
 // No database: runs anywhere, and is part of `npm run test:all`.
 //
 //   1. Every token in src/app/globals.css has the same value in design/mockups.html,
-//      light and dark, and the prefers-color-scheme dark block equals [data-theme=dark].
+//      light and dark, and the prefers-color-scheme dark block equals [data-theme=dark];
+//      every token in design/tokens.css is in globals.css with the same value.
 //   2. No identity hue (--t*, --g*, --m-*) is within ΔE2000 15 of --ready, --blocked
 //      or --danger, in either theme. Distance from --brand is printed, not enforced
 //      (the 6.9 palette pass owns it).
@@ -54,6 +55,20 @@ for (const theme of ["light", "dark"]) {
 }
 for (const [k, v] of Object.entries(g.dark)) {
   if (gMedia[k] !== v) fail(`dark: ${k} differs between the @media block (${gMedia[k]}) and [data-theme=dark] (${v})`);
+}
+
+// design/tokens.css is the source (D-31, D-40): every token it defines is in globals.css
+// with the same value, so a design file that drops or changes one is caught here.
+const design = readFileSync("design/tokens.css", "utf8");
+const d = {
+  light: block(design, /\n\.app,:root\{([^}]*)\}/, "tokens.css .app,:root"),
+  dark: block(design, /\n\.app\[data-theme="dark"\]\{([^}]*)\}/, "tokens.css dark"),
+};
+for (const theme of ["light", "dark"]) {
+  for (const [k, v] of Object.entries(d[theme])) {
+    if (!(k in g[theme])) fail(`${theme}: ${k} is in design/tokens.css but not in globals.css`);
+    else if (g[theme][k] !== v) fail(`${theme}: ${k} is ${v} in design/tokens.css, ${g[theme][k]} in globals.css`);
+  }
 }
 
 // ---- colour maths ------------------------------------------------------------
