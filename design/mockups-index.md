@@ -171,16 +171,16 @@ Five additions to the run detail, from a comparison with another reading-order a
 
 ## Oct 2026, feel pass (D-40)
 
-The feel pass is drawn in `design/Ledger Feel Review.dc.html`, not here, and every frame is also a PNG in `design/feel/` (palette 1c, dark and light, full length). Where it draws a surface it beats this file on layout and copy (D-40 amends D-31), so these frames are **superseded until their task redraws them** from the feel pass, in the same PR (standing rule 6). Its covers are striped placeholders; the redrawn frames use the neutral placeholder until 4.3.
+The feel pass is drawn in `design/Ledger Feel Review.dc.html`, not here, and every frame is also a PNG in `design/screenshots/` (palette 1c, dark and light; phone, tablet and desktop). Where it draws a surface it beats this file on layout and copy (D-40 amends D-31), so these frames are **superseded until their task redraws them** from the feel pass, in the same PR (standing rule 6). Its covers are striped placeholders; the redrawn frames use the neutral placeholder until 4.3.
 
 | Frame here | Superseded by (Feel Review) | Redrawn by |
 |---|---|---|
-| `home` | §2 comics, §3 the mark, §10c tablet | 2.4 (with 1.10's shelf and 1.8b's mark) |
+| `home` | §2 comics, §3 the mark, §10c tablet, §11 desktop | 2.4 (with 1.10's shelf and 1.8b's mark; 1.8 for the desktop shell) |
 | `states` (empty dashboard) | §10a *All caught up* | 2.4 |
-| `bdash` | §4 books, reading and *Between books* | 2.2 |
+| `bdash` | §4 books, reading and *Between books*, §11 desktop | 2.2 |
 | `watchlist` | §5 watch (open questions: TASKS 8.7) | 8.7 |
 | `spine`, `krakoa` (hero only) | §6 run detail (art band, telescope above the spine) | 4.3 (band), 2.5b (telescope) |
-| — (new) | §7 run complete, §10b block complete | 2.12 |
+| — (new) | §7 run complete, §10b block complete, §11 desktop | 2.12 |
 | `dashextras` (*Since Tuesday* line) | §2 (*Since Tuesday* is a cover stack in the hero) | 2.4 |
 
 Unchanged: every other frame, the spine rows (28×42 covers, SG-D13), and the five-slot order. The token blocks in this file already carry palette 1c, and its font link loads IBM Plex Sans, Plex Mono and Newsreader.

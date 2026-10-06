@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400;1,6..72,500&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./ledger-feel-tokens.css">
+<style>
+body{margin:0;background:#ebe8e2}
+a{color:#3546b8}
+a:hover{color:#1f2d8a}
+</style>
+</helmet>
+<div style="display:flex;flex-direction:column;gap:64px;padding:48px 56px 96px;background:#ebe8e2;color:#1f1c18;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:16px;line-height:24px">
+<div style="display:flex;flex-direction:column;gap:10px;max-width:960px"><span style="font:500 12px/16px 'IBM Plex Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:#5f594f">11 · Desktop, 1024px and up · palette 1c · 6 Oct</span><h2 style="margin:0;font:500 44px/48px 'Newsreader',Georgia,serif;letter-spacing:-.02em">A main column and a side rail</h2><p style="margin:0;color:#3d3830;text-wrap:pretty">Seven screens, each in dark and light, drawn at 1280 × 900 (the 224px sidebar) and, for /comics, at 1024 × 768 (the 64px icon rail, D-33). Same components and tokens as sections 2–10, palette 1c only, whatever the Tweaks panel says. Dashboards have no thumb bar: the verbs move into the page header, primary last (D-25). The run page keeps its thumb bar. The new departures are FP-D15 to FP-D18 in <code>STYLE_GUIDE.md</code> §16; the new tokens are marked + NEW in <code>tokens.css</code>. Frames scroll inside; covers are placeholders.</p></div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:20px 40px;max-width:1240px">
+<div style="display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid #d3cdc3"><b>Does the Now hero go horizontal, or larger?</b><span style="font-size:15px;line-height:23px;color:#3d3830;text-wrap:pretty">Horizontal, as on the tablet, and one step larger at 1280: the cover goes to 168 × 252 (150 × 225 from 1024 to 1279). The number stays 56/60. A bigger number would compete with the 40/44 title and push the lens below the cover. The hero is the main column's width and never wider: 592 at 1024, 656 at 1280 and above, because the column stops growing. The lens is comfortable up to about 480px, where each of its 24 cells is about 18px wide, close to the telescope's 20px rail. Past that the cells read as bars instead of issues, so the lens has a 480px <code>max-width</code>. Here it is 378 and 412.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid #d3cdc3"><b>How many Up next covers? Scroll, or wrap?</b><span style="font-size:15px;line-height:23px;color:#3d3830;text-wrap:pretty">At 1024 you see four full covers and 80px of the fifth. At 1280 you see five and a 16px sliver of the sixth. Either way it is still one row that scrolls. Wrapping twelve covers would make slot 2 heavier than slot 1. The shelf no longer bleeds to the frame edge, because it would run under the side rail (FP-D18). On a fine pointer, ‹ › buttons page it by the number of visible covers.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid #d3cdc3"><b>Where does Also reading sit?</b><span style="font-size:15px;line-height:23px;color:#3d3830;text-wrap:pretty">It stays in the hero, in the right half of the footer strip next to <i>Since Tuesday</i>, as on the tablet. It is part of Now (slot 1). Moving it to the side rail would put slot-1 content after slot 4.</span></div>
+<div style="display:flex;flex-direction:column;gap:6px;padding-top:12px;border-top:1px solid #d3cdc3"><b>Is the completion art band still full-bleed?</b><span style="font-size:15px;line-height:23px;color:#3d3830;text-wrap:pretty">No, it sits inside the column (FP-D17). On desktop the run page is a centred 720px column. Across 1056px or more, a full-bleed band would be a wall of tone with a small cover in the middle, and the sidebar would cut off one side of it. Inside the column, with <code>--r-xl</code> corners, it lines up with the record card and the thumb bar below it.</span></div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:880px"><b style="font:500 28px/32px 'Newsreader',serif">11a · /comics at rest, 1280 and 1024</b><p style="margin:0;color:#3d3830;text-wrap:pretty">The desktop version of section 2. The 1024 frames show two hover-and-focus states: the rail's <b>Runs</b> item has keyboard focus, so its tooltip is showing, and Ready row 2 is hovered, so <b>+ Up next</b> is showing.</p></div>
+<div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+<sc-for list="{{ comicsDesk }}" as="f" hint-placeholder-count="4">
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">{{ f.cap }}</figcaption>
+<div data-theme="{{ f.theme }}" data-pal="c" data-ambient="{{ f.amb }}" data-screen-label="{{ f.cap }}" style="position:relative;width:{{ f.w }}px;height:{{ f.h }}px;overflow:hidden;display:flex;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:20px;border-radius:16px;box-shadow:0 0 0 1px var(--rule-2),0 30px 60px -30px rgba(0,0,0,.5)">
+<dc-import name="LedgerNav" medium="comics" current="dash" collapsed="{{ f.collapsed }}" tip="{{ f.tip }}" style="flex:none;height:100%;position:relative;z-index:3" hint-size="64px,100%"></dc-import>
+<div style="position:relative;flex:1;min-width:0;display:flex;flex-direction:column">
+<main style="flex:1;overflow-y:auto;scrollbar-width:none;display:grid;grid-template-columns:minmax(0,1fr);align-content:start;grid-auto-rows:max-content">
+<header style="position:sticky;top:0;z-index:2;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--glass-edge)">
+<div style="box-sizing:border-box;max-width:1056px;margin:0 auto;padding:20px 32px 16px;display:flex;align-items:center;gap:8px">
+<h1 style="margin:0;font:500 40px/44px var(--display);letter-spacing:-.02em">Comics</h1><span style="flex:1"></span>
+<button aria-label="Search" style="flex:none;width:44px;height:44px;border:0;border-radius:var(--r-md);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);display:grid;place-items:center"><svg aria-hidden="true" viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg></button>
+<button style="flex:none;height:44px;padding:0 16px;border:0;border-radius:var(--r-md);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 14px/1 var(--sans)">+ batch</button>
+<button style="flex:none;height:44px;padding:0 18px;border:0;border-radius:var(--r-md);background:var(--brand);color:var(--on-brand);font:600 15px/1 var(--sans);display:flex;align-items:center;gap:8px"><svg aria-hidden="true" viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="M20 6 9 17l-5-5"></path></svg>Mark #141 read</button>
+</div>
+</header>
+<div style="box-sizing:border-box;width:100%;max-width:1056px;margin:0 auto;justify-self:center;padding:16px 32px 48px;display:grid;grid-template-columns:minmax(0,1fr) {{ f.asideW }}px;column-gap:{{ f.gap }}px;row-gap:24px;align-items:start">
+<p style="grid-column:1/-1;margin:0;font-size:15px;line-height:22px;color:var(--ink-2)">14 issues since Tuesday. Next up: Days of Future Past.</p>
+<div style="min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:32px">
+<section aria-label="Now" data-art="" style="--art-d:oklch(.29 .055 32);--art-l:oklch(.93 .03 45);display:flex;flex-direction:column;border-radius:var(--r-hero);overflow:hidden;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;gap:{{ f.heroGap }}px;padding:{{ f.heroPad }}px;background:var(--art)">
+<div aria-hidden="true" style="--cv:oklch(.42 .11 32);position:relative;flex:none;width:{{ f.cover }}px;height:{{ f.coverH }}px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 8px,color-mix(in oklch,var(--cv),#000 16%) 8px 16px);box-shadow:var(--sh-cover)"><span style="position:absolute;left:8px;bottom:8px;font:500 11px/14px var(--mono);color:#fff">cover · #141</span></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)">Up now</span>
+<span style="font:500 56px/60px var(--mono);letter-spacing:-.04em;margin-top:8px">#141</span>
+<span style="font:italic 400 22px/27px var(--display)">Days of Future Past, part 1</span>
+<span style="font-size:14px;line-height:20px;color:var(--ink-2);margin-top:6px">Uncanny X-Men · Claremont</span>
+<span style="flex:1;min-height:16px"></span>
+<div style="max-width:480px;display:flex;flex-direction:column">
+<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">This stretch</span><span style="font-size:13px;color:var(--ink-2)"><b style="font-family:var(--mono);font-weight:600;color:var(--ink)">45</b> of 381 read</span></div>
+<div role="img" aria-label="Issues #130 to #153. 45 of 381 read in this run. Next is #141." style="display:grid;grid-template-columns:repeat(24,minmax(0,1fr));gap:2px;height:24px"><sc-for list="{{ tbLens }}" as="c" hint-placeholder-count="24"><span style="box-sizing:border-box;border-radius:3px;background:{{ c.bg }};border:{{ c.bd }};box-shadow:{{ c.sh }}"></span></sc-for></div>
+<div style="display:flex;justify-content:space-between;margin-top:6px;font:500 11px/14px var(--mono);color:var(--muted)"><span>#130</span><span>■ read  ◌ elsewhere</span><span>#153</span></div>
+</div>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+<div style="display:flex;align-items:center;gap:14px;padding:12px 20px;border-top:1px solid var(--line);box-shadow:inset -1px 0 0 var(--line)"><div aria-hidden="true" style="display:flex;padding-left:8px"><sc-for list="{{ tbStack }}" as="s" hint-placeholder-count="4"><span style="--cv:{{ s.cv }};position:relative;width:30px;height:45px;margin-left:-8px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:0 0 0 2px var(--surface)"><span style="position:absolute;right:-5px;bottom:-5px;width:16px;height:16px;border-radius:50%;background:var(--ready);color:var(--on-ready);box-shadow:0 0 0 2px var(--surface);display:grid;place-items:center;font:700 11px/1 var(--sans)">✓</span></span></sc-for></div><div style="display:flex;flex-direction:column;min-width:0"><span style="font-size:13px;font-weight:600">Since Tuesday</span><span style="font:500 12px/16px var(--mono);color:var(--muted)">14 issues · latest #140</span></div></div>
+<div style="display:flex;align-items:center;gap:12px;min-height:44px;padding:8px 20px;border-top:1px solid var(--line)"><span aria-hidden="true" style="--cv:oklch(.38 .09 200);flex:none;width:24px;height:36px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px)"></span><a href="#" style="flex:1;min-width:0;display:flex;flex-direction:column;color:var(--ink);text-decoration:none"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Also reading</span><span style="display:flex;gap:6px;min-width:0;font-size:13px;line-height:18px;font-weight:600"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Astonishing X-Men</span><span style="flex:none;font-family:var(--mono);font-weight:500;color:var(--muted)">11 / 25</span></span></a><button style="flex:none;height:32px;padding:0 12px;border:0;border-radius:8px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 13px/1 var(--sans)">Read #12</button></div>
+</div>
+</section>
+<section aria-label="Up next" style="min-width:0;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:8px"><h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Up next</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">12</span><span style="flex:1"></span>
+<button aria-label="Show previous covers" aria-disabled="true" style="width:32px;height:32px;border:0;border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--faint-deco);display:grid;place-items:center"><svg aria-hidden="true" viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="m15 18-6-6 6-6"></path></svg></button>
+<button aria-label="Show next covers" style="width:32px;height:32px;border:0;border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);display:grid;place-items:center"><svg aria-hidden="true" viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="m9 18 6-6-6-6"></path></svg></button>
+<button style="height:32px;padding:0 12px;border:0;border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:500 13px/1 var(--sans)">Reorder</button></div>
+<div role="list" style="display:flex;gap:16px;overflow-x:auto;scrollbar-width:none;padding:2px 0 6px;scroll-snap-type:x mandatory">
+<sc-for list="{{ f.shelf }}" as="r" hint-placeholder-count="6">
+<div role="listitem" style="flex:none;width:112px;display:flex;flex-direction:column;gap:8px;scroll-snap-align:start">
+<a href="#" aria-label="Open {{ r.name }}" style="--cv:{{ r.cv }};position:relative;display:block;width:112px;height:168px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover)"><span style="position:absolute;top:6px;left:6px;min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;border-radius:6px;background:var(--overlay);color:var(--ink);font:600 11px/22px var(--mono);text-align:center">{{ r.pos }}</span></a>
+<div style="display:flex;flex-direction:column;gap:5px">
+<span style="font-size:13px;line-height:17px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ r.name }}</span>
+<span style="font:500 11px/14px var(--mono);color:var(--muted)">{{ r.meta }}</span>
+<sc-if value="{{ r.blocked }}" hint-placeholder-val="{{ false }}"><button aria-haspopup="dialog" aria-label="Why held? {{ r.badge }}" style="align-self:flex-start;min-height:24px;padding:3px 7px;border:0;border-radius:6px;background:var(--blocked-soft);box-shadow:inset 0 0 0 1px var(--blocked);color:var(--blocked);font:600 11px/14px var(--mono);text-align:left">{{ r.badge }}</button></sc-if>
+<sc-if value="{{ r.open }}" hint-placeholder-val="{{ true }}"><span style="align-self:flex-start;min-height:22px;padding:4px 7px;box-sizing:border-box;border-radius:6px;background:{{ r.bBg }};box-shadow:{{ r.bRing }};color:var(--ready);font:600 11px/14px var(--mono)">{{ r.badge }}</span></sc-if>
+<sc-if value="{{ r.first }}" hint-placeholder-val="{{ false }}"><button style="height:32px;margin-top:2px;border:0;border-radius:8px;background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 13px/1 var(--sans)">Start</button></sc-if>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+<section aria-label="Where you are" style="display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Where you are</h2>
+<div style="display:flex;flex-direction:column;gap:16px;padding:20px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:grid;grid-template-columns:72px minmax(0,1fr)">
+<span style="font:500 11px/20px var(--mono);letter-spacing:.06em;color:var(--muted)">TRACK</span>
+<div role="slider" tabindex="0" aria-label="X-Men track" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1" aria-valuetext="block 1 of 7" style="display:flex;gap:2px;height:20px"><sc-for list="{{ f.t.track }}" as="c" hint-placeholder-count="7"><a href="#" aria-label="{{ c.aria }}" style="position:relative;flex:none;width:{{ c.w }}px;height:20px;border-radius:3px;background:var(--sunk);box-shadow:{{ c.ring }};overflow:hidden;color:{{ c.ink }};font:500 11px/20px var(--mono);text-decoration:none;white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ c.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:{{ c.pl }}px">{{ c.t }}</span></a></sc-for></div>
+<span></span>
+<svg width="100%" height="20" viewBox="0 0 {{ f.t.W }} 20" preserveAspectRatio="none" aria-hidden="true" style="display:block"><polygon points="{{ f.t.br1 }}" style="fill:color-mix(in oklch,var(--brand) 10%,transparent)"></polygon><line x1="0" y1="0" x2="0" y2="20" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line><line x1="{{ f.t.br1b }}" y1="0" x2="{{ f.t.W }}" y2="20" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line></svg>
+<span style="font:500 11px/20px var(--mono);letter-spacing:.06em;color:var(--muted)">BLOCK</span>
+<div role="slider" tabindex="0" aria-label="Block 1, Foundations" aria-valuemin="1" aria-valuemax="5" aria-valuenow="2" aria-valuetext="run 2 of 5" style="display:flex;gap:2px;height:20px"><sc-for list="{{ f.t.block }}" as="c" hint-placeholder-count="5"><a href="#" aria-label="{{ c.aria }}" style="position:relative;flex:none;width:{{ c.w }}px;height:20px;border-radius:3px;background:var(--sunk);box-shadow:{{ c.ring }};overflow:hidden;color:{{ c.ink }};font:500 11px/20px var(--mono);text-decoration:none;white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ c.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:{{ c.pl }}px">{{ c.t }}</span></a></sc-for></div>
+<span></span>
+<svg width="100%" height="20" viewBox="0 0 {{ f.t.W }} 20" preserveAspectRatio="none" aria-hidden="true" style="display:block"><polygon points="{{ f.t.br2 }}" style="fill:color-mix(in oklch,var(--brand) 10%,transparent)"></polygon><line x1="{{ f.t.br2a }}" y1="0" x2="0" y2="20" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line><line x1="{{ f.t.br2b }}" y1="0" x2="{{ f.t.W }}" y2="20" style="stroke:color-mix(in oklch,var(--brand) 50%,transparent)"></line></svg>
+<span style="font:500 11px/28px var(--mono);letter-spacing:.06em;color:var(--muted)">RUN</span>
+<div role="slider" tabindex="0" aria-label="Uncanny X-Men" aria-valuemin="1" aria-valuemax="381" aria-valuenow="42" aria-valuetext="42 / 381 · #141" style="position:relative;height:28px;border-radius:3px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--faint-deco)"><sc-for list="{{ tSegs }}" as="s" hint-placeholder-count="2"><span style="position:absolute;top:0;bottom:0;left:{{ s.l }}%;width:{{ s.w }}%;background:var(--ready);border-radius:2px"></span></sc-for><span style="position:absolute;top:3px;bottom:3px;left:{{ tElse }}%;width:3px;box-sizing:border-box;border:1px dashed var(--muted)"></span><span style="position:absolute;top:-4px;bottom:-4px;left:{{ tHead }}%;width:2px;margin-left:-1px;background:var(--ink);box-shadow:0 0 0 2px var(--surface)"></span></div>
+<span></span>
+<div aria-hidden="true" style="position:relative;height:9px"><sc-for list="{{ f.t.ticks }}" as="t" hint-placeholder-count="76"><span style="position:absolute;top:3px;left:{{ t.l }}%;width:1px;height:{{ t.h }}px;background:var(--faint-deco)"></span></sc-for></div>
+<span></span>
+<div style="position:relative;height:22px;margin-top:2px"><span style="position:absolute;left:{{ f.t.pillL }}px;top:0;height:20px;padding:0 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand-ink);box-shadow:inset 0 0 0 1px var(--brand);font:600 11px/20px var(--mono);white-space:nowrap">42 / 381 · #141</span><span style="position:absolute;right:0;top:0;font:500 11px/20px var(--mono);color:var(--muted)">1 tick = 5</span></div>
+</div>
+<div role="list" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding-top:12px;border-top:1px solid var(--line)">
+<div role="listitem" style="display:flex;flex-direction:column;gap:2px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">TRACK</span><span><b>X-Men</b> · block 1 of 7</span></div>
+<div role="listitem" style="display:flex;flex-direction:column;gap:2px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">BLOCK</span><span><b>1 · Foundations</b> · run 2 of 5</span></div>
+<div role="listitem" style="display:flex;flex-direction:column;gap:2px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">RUN</span><span><b>Uncanny X-Men</b> · <span style="font-family:var(--mono)">42 / 381 · #141</span></span></div>
+</div>
+</div>
+</section>
+</div>
+<aside aria-label="Ready and this year" style="position:sticky;top:104px;min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:28px">
+<section aria-label="Ready when you are" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Ready when you are</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">41</span></div>
+<div style="border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ f.ready }}" as="r" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line);background:{{ r.bg }}"><span aria-hidden="true" style="--cv:{{ r.cv }};flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px"><a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</a><span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="flex:none;display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:6px;background:var(--ready-soft);color:var(--ready);font:600 11px/1 var(--mono)">● ready</span><span style="min-width:0;font:500 12px/16px var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.meta }}</span></span></div><sc-if value="{{ r.hover }}" hint-placeholder-val="{{ false }}"><button aria-label="Add {{ r.name }} to Up next" style="flex:none;height:32px;padding:0 10px;border:0;border-radius:8px;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 13px/1 var(--sans)">+ Up next</button></sc-if></div></sc-for>
+<a href="#" style="display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:56px;padding:8px 14px;box-sizing:border-box;color:var(--brand);text-decoration:none;font-size:13px;font-weight:500"><span>All 41 ready runs</span><span style="font-size:12px;line-height:16px;color:var(--muted);font-weight:400">62 more are one soft read away</span></a>
+</div>
+</section>
+<section aria-label="This year" style="display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:var(--r-xl);background:var(--raise);box-shadow:inset 0 0 0 1px var(--line)">
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">2026 so far</span>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">212</span><span style="font-size:12px;line-height:16px;color:var(--muted)">issues read</span></div>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">9</span><span style="font-size:12px;line-height:16px;color:var(--muted)">runs on the go</span></div>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">3</span><span style="font-size:12px;line-height:16px;color:var(--muted)">runs finished</span></div>
+</section>
+</aside>
+</div>
+</main>
+</div>
+</div>
+</figure>
+</sc-for>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px 32px;max-width:1240px;font-size:14px;line-height:21px;color:#2c2823">
+<div style="display:flex;flex-direction:column;gap:6px"><b>/comics · 1280 · notes for the builder</b><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;text-wrap:pretty">
+<li>Grid: sidebar 224, then a content box with a 1056px max width (32px padding), centred in what's left. Inside it: main <code>minmax(0,1fr)</code> = 656, a 32px gap, and a 304px side rail. Past 1280 the box keeps its width and centres. It never pins to the sidebar.</li>
+<li>Page header: a sticky glass band with the h1 (40/44) on the left. The verbs sit on the right in DOM and visual order: Search, + batch, <b>Mark #141 read</b>, primary last. They are 44px tall with <code>--r-md</code> corners. The lede scrolls with the page; the band stays. There is no "6 in inbox" chip, because Inbox lives in the sidebar (FP-D16).</li>
+<li>Hero: a 168 × 252 cover (<code>--cover-hero</code> at 1280), 24px padding and a 28px gap. The lens sits in the text column (412px, so each cell is about 15.4px) with a 480px max width. The footer strip is split 1 : 1.</li>
+<li>Shelf: contained in the column, not bleeding (FP-D18). Covers are 112 with a 16px gap: five full and a 16px sliver of the sixth. ‹ › scroll by the number of visible covers, and ‹ is <code>aria-disabled</code> at the start. The buttons appear only under <code>(hover:hover) and (pointer:fine)</code>.</li>
+<li>Telescope: desktop sizes. W = 656 − 2 × 20 − 72 = 544, and <code>allocate()</code> is unchanged. Ticks use niceStep(381 / (544 / 6)) = 5, with a major tick every 25. Inline labels re-run §2.4 at the new widths. The ladder is three columns.</li>
+<li>Side rail: <code>position:sticky; top:104px</code> (the 81px header plus a 23px gap), so Ready and 2026 so far stay level with the hero while the main column scrolls. The row verb <b>+ Up next</b> is hidden at rest (FP-D15). The “one soft read away” line goes under the link, because the two don't fit on one line at 304px.</li>
+<li>The mark: §14.3 is unchanged and plays on the header button. The toast sits at the bottom centre of the content box, 24px up, because there's no thumb bar to clear.</li>
+</ul></div>
+<div style="display:flex;flex-direction:column;gap:6px"><b>/comics · 1024 · notes for the builder</b><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;text-wrap:pretty">
+<li>Nav: a 64px icon rail. Each item is 44 × 40, its <code>aria-label</code> is its label, and its tooltip (on <code>--overlay</code> with <code>--sh-2</code> and a <code>--rule-2</code> ring, 12px to the right) shows on hover after <code>--dur-4</code> and straight away on focus-visible. Drawn here: <b>Runs</b> with focus. The media switch becomes a vertical well of three icons. The Inbox count becomes a badge on its icon. Sync shrinks to its dot, named by its label.</li>
+<li>Grid: 960 − 2 × 32 = 896. Main is 592, the gap 24 and the side rail 280.</li>
+<li>Hero: a 150 × 225 cover, 20px padding and a 24px gap. The lens is 378px. Since Tuesday and Also reading still split the footer.</li>
+<li>Shelf: four full covers and 80px of the fifth.</li>
+<li>Telescope: W = 592 − 40 − 72 = 480, still at desktop sizes, because <code>--tele-*</code> switches at 900. Same tick step, 5.</li>
+<li>Hover: Ready row 2 is shown hovered. It turns <code>--raise</code> over 100ms and <b>+ Up next</b> appears. The meta truncates while the button shows; the full text is in the row's accessible name. On <code>:focus-within</code> the button shows the same way. Under <code>(hover:none)</code> or <code>(pointer:coarse)</code> it is always shown, as on tablet.</li>
+</ul></div>
+</div>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:880px"><b style="font:500 28px/32px 'Newsreader',serif">11b · /comics, all caught up, 1280</b><p style="margin:0;color:#3d3830;text-wrap:pretty">The desktop version of 10a. The Now footer splits into <i>Coming out</i> and <i>Top of Up next</i>, side by side. Position is the empty telescope (FP-D13). The side rail carries Ready when you are and 2026 so far.</p></div>
+<div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+<sc-for list="{{ cuDesk }}" as="f" hint-placeholder-count="2">
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">{{ f.cap }}</figcaption>
+<div data-theme="{{ f.theme }}" data-pal="c" data-ambient="{{ f.amb }}" data-screen-label="{{ f.cap }}" style="position:relative;width:1280px;height:900px;overflow:hidden;display:flex;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:20px;border-radius:16px;box-shadow:0 0 0 1px var(--rule-2),0 30px 60px -30px rgba(0,0,0,.5)">
+<dc-import name="LedgerNav" medium="comics" current="dash" style="flex:none;height:100%;position:relative;z-index:3" hint-size="224px,100%"></dc-import>
+<div style="position:relative;flex:1;min-width:0;display:flex;flex-direction:column">
+<main style="flex:1;overflow-y:auto;scrollbar-width:none;display:grid;grid-template-columns:minmax(0,1fr);align-content:start;grid-auto-rows:max-content">
+<header style="position:sticky;top:0;z-index:2;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--glass-edge)">
+<div style="box-sizing:border-box;max-width:1056px;margin:0 auto;padding:20px 32px 16px;display:flex;align-items:center;gap:8px">
+<h1 style="margin:0;font:500 40px/44px var(--display);letter-spacing:-.02em">Comics</h1><span style="flex:1"></span>
+<button aria-label="Search" style="flex:none;width:44px;height:44px;border:0;border-radius:var(--r-md);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);display:grid;place-items:center"><svg aria-hidden="true" viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg></button>
+<button style="flex:none;height:44px;padding:0 18px;border:0;border-radius:var(--r-md);background:var(--brand);color:var(--on-brand);font:600 15px/1 var(--sans)">Start New Mutants</button>
+</div>
+</header>
+<div style="box-sizing:border-box;width:100%;max-width:1056px;margin:0 auto;justify-self:center;padding:16px 32px 48px;display:grid;grid-template-columns:minmax(0,1fr) 304px;column-gap:32px;row-gap:24px;align-items:start">
+<p style="grid-column:1/-1;margin:0;font-size:15px;line-height:22px;color:var(--ink-2)">All caught up. X-Men #9 is out Wed 22 Oct.</p>
+<div style="min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:32px">
+<section aria-label="Now" data-art="" style="--art-d:oklch(.29 .055 32);--art-l:oklch(.93 .03 45);display:flex;flex-direction:column;border-radius:var(--r-hero);overflow:hidden;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;align-items:flex-end;gap:28px;padding:24px;background:var(--art)">
+<div aria-hidden="true" style="--cv:oklch(.40 .11 30);position:relative;flex:none;width:112px;height:168px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover)"><span style="position:absolute;right:-8px;bottom:-8px;width:28px;height:28px;border-radius:50%;background:var(--ready);color:var(--on-ready);box-shadow:0 0 0 3px var(--art);display:grid;place-items:center;font:700 14px/1 var(--sans)">✓</span></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px">
+<span style="align-self:flex-start;display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;background:var(--ready-soft);color:var(--ready);font:600 11px/1 var(--mono)">✓ caught up · 1 Oct</span>
+<span style="font:500 40px/44px var(--display);letter-spacing:-.02em">All caught up.</span>
+<p style="margin:0;max-width:52ch;font-size:15px;line-height:22px;color:var(--ink-2);text-wrap:pretty">You finished <i>Uncanny X-Men</i> on Sunday, and both monthly runs are read to the latest issue. Nothing's on the go, and that's fine.</p>
+</div>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-top:1px solid var(--line)">
+<div style="display:flex;flex-direction:column;padding:6px 0 8px;box-shadow:inset -1px 0 0 var(--line)">
+<span style="padding:8px 20px 2px;font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Coming out</span>
+<sc-for list="{{ coming }}" as="r" hint-placeholder-count="2"><div style="display:flex;align-items:center;gap:10px;min-height:40px;padding:0 20px"><span style="flex:1;min-width:0;display:flex;gap:4px;font-size:14px;font-weight:600"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</span><span style="flex:none;font-family:var(--mono);font-weight:500">{{ r.n }}</span></span><span style="flex:none;font:500 12px/16px var(--mono);color:var(--ink-2)">{{ r.when }}</span><span style="flex:none;display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:6px;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--muted);font:600 11px/1 var(--mono)">{{ r.in }}</span></div></sc-for>
+</div>
+<div style="display:flex;align-items:center;gap:12px;padding:12px 20px">
+<span aria-hidden="true" style="--cv:oklch(.45 .12 50);flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Top of Up next</span><a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Claremont — New Mutants</a><span style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:6px;background:var(--ready-soft);color:var(--ready);font:600 11px/1 var(--mono)">● ready</span><span style="font:500 12px/16px var(--mono);color:var(--muted)">100 iss · opens 3</span></span></div>
+</div>
+</div>
+<a href="#" style="display:flex;align-items:center;min-height:44px;padding:0 20px;border-top:1px solid var(--line);color:var(--brand);font-size:13px;font-weight:500;text-decoration:none">Pick something else</a>
+</section>
+<section aria-label="Up next" style="min-width:0;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:8px"><h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Up next</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">12</span><span style="flex:1"></span>
+<button aria-label="Show previous covers" aria-disabled="true" style="width:32px;height:32px;border:0;border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--faint-deco);display:grid;place-items:center"><svg aria-hidden="true" viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="m15 18-6-6 6-6"></path></svg></button>
+<button aria-label="Show next covers" style="width:32px;height:32px;border:0;border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);display:grid;place-items:center"><svg aria-hidden="true" viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="m9 18 6-6-6-6"></path></svg></button>
+<button style="height:32px;padding:0 12px;border:0;border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:500 13px/1 var(--sans)">Reorder</button></div>
+<div role="list" style="display:flex;gap:16px;overflow-x:auto;scrollbar-width:none;padding:2px 0 6px;scroll-snap-type:x mandatory">
+<sc-for list="{{ shelfCU }}" as="r" hint-placeholder-count="6">
+<div role="listitem" style="flex:none;width:112px;display:flex;flex-direction:column;gap:8px;scroll-snap-align:start">
+<a href="#" aria-label="Open {{ r.name }}" style="--cv:{{ r.cv }};position:relative;display:block;width:112px;height:168px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover)"><span style="position:absolute;top:6px;left:6px;min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;border-radius:6px;background:var(--overlay);color:var(--ink);font:600 11px/22px var(--mono);text-align:center">{{ r.pos }}</span></a>
+<div style="display:flex;flex-direction:column;gap:5px">
+<span style="font-size:13px;line-height:17px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ r.name }}</span>
+<span style="font:500 11px/14px var(--mono);color:var(--muted)">{{ r.meta }}</span>
+<sc-if value="{{ r.blocked }}" hint-placeholder-val="{{ false }}"><button aria-haspopup="dialog" aria-label="Why held? {{ r.badge }}" style="align-self:flex-start;min-height:24px;padding:3px 7px;border:0;border-radius:6px;background:var(--blocked-soft);box-shadow:inset 0 0 0 1px var(--blocked);color:var(--blocked);font:600 11px/14px var(--mono);text-align:left">{{ r.badge }}</button></sc-if>
+<sc-if value="{{ r.open }}" hint-placeholder-val="{{ true }}"><span style="align-self:flex-start;min-height:22px;padding:4px 7px;box-sizing:border-box;border-radius:6px;background:{{ r.bBg }};box-shadow:{{ r.bRing }};color:var(--ready);font:600 11px/14px var(--mono)">{{ r.badge }}</span></sc-if>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+<section aria-label="Where you are" style="display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Where you are</h2>
+<div style="display:flex;flex-direction:column;gap:16px;padding:20px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:grid;grid-template-columns:72px minmax(0,1fr)"><span style="font:500 11px/20px var(--mono);letter-spacing:.06em;color:var(--muted)">TRACK</span>
+<div role="slider" tabindex="0" aria-label="X-Men track" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1" aria-valuetext="no run in progress" style="display:flex;gap:2px;height:20px"><sc-for list="{{ cuTrackD }}" as="c" hint-placeholder-count="7"><a href="#" aria-label="{{ c.aria }}" style="position:relative;flex:none;width:{{ c.w }}px;height:20px;border-radius:3px;background:var(--sunk);box-shadow:{{ c.ring }};overflow:hidden;color:{{ c.ink }};font:500 11px/20px var(--mono);text-decoration:none;white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ c.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:{{ c.pl }}px">{{ c.t }}</span></a></sc-for></div></div>
+<div role="list" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding-top:12px;border-top:1px solid var(--line)">
+<div role="listitem" style="display:flex;flex-direction:column;gap:2px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">TRACK</span><span><b>X-Men</b> · <span style="font-family:var(--mono)">458 / 2,180</span> read</span></div>
+<div role="listitem" style="display:flex;flex-direction:column;gap:2px;font-size:13px"><span style="font:500 11px/14px var(--mono);letter-spacing:.06em;color:var(--muted)">NEXT</span><span><b>New Mutants</b> · run 3 of 5 in block 1</span></div>
+</div>
+</div>
+</section>
+</div>
+<aside aria-label="Ready and this year" style="position:sticky;top:104px;min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:28px">
+<section aria-label="Ready when you are" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Ready when you are</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">41</span></div>
+<div style="border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ readyRest }}" as="r" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)"><span aria-hidden="true" style="--cv:{{ r.cv }};flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px"><a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</a><span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="flex:none;display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:6px;background:var(--ready-soft);color:var(--ready);font:600 11px/1 var(--mono)">● ready</span><span style="min-width:0;font:500 12px/16px var(--mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.meta }}</span></span></div></div></sc-for>
+<a href="#" style="display:flex;flex-direction:column;justify-content:center;gap:2px;min-height:56px;padding:8px 14px;box-sizing:border-box;color:var(--brand);text-decoration:none;font-size:13px;font-weight:500"><span>All 41 ready runs</span><span style="font-size:12px;line-height:16px;color:var(--muted);font-weight:400">62 more are one soft read away</span></a>
+</div>
+</section>
+<section aria-label="This year" style="display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:var(--r-xl);background:var(--raise);box-shadow:inset 0 0 0 1px var(--line)">
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">2026 so far</span>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">548</span><span style="font-size:12px;line-height:16px;color:var(--muted)">issues read</span></div>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">4</span><span style="font-size:12px;line-height:16px;color:var(--muted)">runs finished</span></div>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">2</span><span style="font-size:12px;line-height:16px;color:var(--muted)">monthly runs</span></div>
+</section>
+</aside>
+</div>
+</main>
+</div>
+</div>
+</figure>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;max-width:900px;font-size:14px;line-height:21px;color:#2c2823"><b>/comics · all caught up · notes for the builder</b><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;text-wrap:pretty">
+<li>Header verbs: Search, then <b>Start New Mutants</b> (primary, last). There is no + batch, because nothing is in progress to batch. That matches the phone thumb bar.</li>
+<li>Now: the 112 × 168 cover with a 28px <code>--ready</code> check, the headline <i>All caught up.</i> at 40/44 Newsreader (the desktop step of the phone's 30/32), and a 52ch line. The footer is two halves split by a <code>--line</code> rule: <i>Coming out</i>, whose rows are 40px on a fine pointer, and <i>Top of Up next</i>. <i>Pick something else</i> runs across the full width under both.</li>
+<li>Shelf: no Start on card 1, because the header carries that verb (the same reasoning as FP-D13).</li>
+<li>Position: the empty telescope, track rail only at W = 544. The ladder keeps the three-column grid, with TRACK and NEXT filling two columns and the third left empty, so the rhythm matches the at-rest frame.</li>
+<li>The side rail shows Situation as well, unlike the phone 10a frame, which left it out for length. Slot 4 still exists when you're caught up.</li>
+</ul></div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:880px"><b style="font:500 28px/32px 'Newsreader',serif">11c · /books, reading, 1280</b><p style="margin:0;color:#3d3830;text-wrap:pretty">The desktop version of section 4. Now, Up next in Q4 and This quarter are in the main column; On deck (Situation) and 2026 so far are in the side rail. No capacity card and no <i>Place them</i>: where Rebalance, Accept and Place them live is still open, so they are left out.</p></div>
+<div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+<sc-for list="{{ booksDeskR }}" as="f" hint-placeholder-count="2">
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">{{ f.cap }}</figcaption>
+<div data-theme="{{ f.theme }}" data-pal="c" data-ambient="{{ f.amb }}" data-screen-label="{{ f.cap }}" style="position:relative;width:1280px;height:900px;overflow:hidden;display:flex;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:20px;border-radius:16px;box-shadow:0 0 0 1px var(--rule-2),0 30px 60px -30px rgba(0,0,0,.5)">
+<dc-import name="LedgerNav" medium="books" current="dash" style="flex:none;height:100%;position:relative;z-index:3" hint-size="224px,100%"></dc-import>
+<div style="position:relative;flex:1;min-width:0;display:flex;flex-direction:column">
+<main style="flex:1;overflow-y:auto;scrollbar-width:none;display:grid;grid-template-columns:minmax(0,1fr);align-content:start;grid-auto-rows:max-content">
+<header style="position:sticky;top:0;z-index:2;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--glass-edge)">
+<div style="box-sizing:border-box;max-width:1056px;margin:0 auto;padding:20px 32px 16px;display:flex;align-items:center;gap:8px">
+<h1 style="margin:0;font:500 40px/44px var(--display);letter-spacing:-.02em">Books</h1><span style="flex:1"></span>
+<button aria-label="Search" style="flex:none;width:44px;height:44px;border:0;border-radius:var(--r-md);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);display:grid;place-items:center"><svg aria-hidden="true" viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg></button>
+<button style="flex:none;height:44px;padding:0 16px;border:0;border-radius:var(--r-md);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 14px/1 var(--sans)">Finished it</button>
+<button style="flex:none;height:44px;padding:0 18px;border:0;border-radius:var(--r-md);background:var(--brand);color:var(--on-brand);font:600 15px/1 var(--sans)">Log pages</button>
+</div>
+</header>
+<div style="box-sizing:border-box;width:100%;max-width:1056px;margin:0 auto;justify-self:center;padding:16px 32px 48px;display:grid;grid-template-columns:minmax(0,1fr) 304px;column-gap:32px;row-gap:24px;align-items:start">
+<p style="grid-column:1/-1;margin:0;font-size:15px;line-height:22px;color:var(--ink-2)">Two weeks into The Fifth Season.</p>
+<div style="min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:32px">
+<section aria-label="Now" data-art="" style="--art-d:oklch(.28 .05 45);--art-l:oklch(.93 .03 55);display:flex;flex-direction:column;border-radius:var(--r-hero);overflow:hidden;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;gap:28px;padding:24px;background:var(--art)">
+<div aria-hidden="true" style="--cv:oklch(.42 .1 40);position:relative;flex:none;width:168px;height:252px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 8px,color-mix(in oklch,var(--cv),#000 16%) 8px 16px);box-shadow:var(--sh-cover)"><span style="position:absolute;left:8px;bottom:8px;font:500 11px/14px var(--mono);color:#fff">cover</span></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column">
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)">Reading now</span>
+<span style="font:500 32px/36px var(--display);letter-spacing:-.015em;margin-top:10px;text-wrap:pretty">The Fifth Season</span>
+<span style="font-size:15px;line-height:22px;color:var(--ink-2);margin-top:4px">N. K. Jemisin</span>
+<span style="flex:1;min-height:16px"></span>
+<div style="max-width:480px;display:flex;flex-direction:column">
+<span style="font:500 14px/20px var(--mono);color:var(--ink-2)"><b style="font:500 32px/36px var(--mono);color:var(--ink);letter-spacing:-.02em">p. 212</b> of 468</span>
+<span role="img" aria-label="212 of 468 pages read" style="display:block;height:6px;margin-top:10px;border-radius:999px;background:var(--sunk);overflow:hidden"><span style="display:block;width:45%;height:100%;background:var(--ready)"></span></span>
+</div>
+</div>
+</div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;padding:8px 24px;border-top:1px solid var(--line);font-size:13px;color:var(--ink-2)"><span>Started 21 Sep · about 30 pages a sitting</span><span style="font-family:var(--mono);color:var(--muted)">7 sittings</span></div>
+</section>
+<section aria-label="Up next in Q4" style="min-width:0;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:8px"><h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Up next in Q4</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">3</span><span style="flex:1"></span><button style="height:32px;padding:0 12px;border:0;border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:500 13px/1 var(--sans)">Reorder</button></div>
+<div role="list" style="display:flex;gap:16px;padding:2px 0 6px">
+<sc-for list="{{ bookShelf }}" as="r" hint-placeholder-count="3">
+<div role="listitem" style="flex:none;width:112px;display:flex;flex-direction:column;gap:8px">
+<a href="#" aria-label="Open {{ r.name }}" style="--cv:{{ r.cv }};position:relative;display:block;width:112px;height:168px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover)"><span style="position:absolute;top:6px;left:6px;min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;border-radius:6px;background:var(--overlay);color:var(--ink);font:600 11px/22px var(--mono);text-align:center">{{ r.pos }}</span></a>
+<span style="font-size:13px;line-height:17px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ r.name }}</span>
+<span style="font:500 11px/14px var(--mono);color:var(--muted)">{{ r.meta }}</span>
+</div>
+</sc-for>
+</div>
+</section>
+<section aria-label="This quarter" style="display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">This quarter</h2>
+<div style="display:flex;flex-direction:column;gap:10px;padding:20px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font-size:15px;font-weight:600">Q4 2026</span><span style="font:500 12px/16px var(--mono);color:var(--muted)">{{ f.qRead }} of 7 read</span></div>
+<div role="img" aria-label="{{ f.qAria }}" style="position:relative;display:flex;gap:2px;height:28px;padding-right:2px;border-radius:3px;box-shadow:inset 0 0 0 1px var(--line)">
+<sc-for list="{{ f.q }}" as="b" hint-placeholder-count="7"><span style="position:relative;flex:0 0 calc({{ b.p }}% - 2px);border-radius:3px;background:var(--sunk);box-shadow:{{ b.ring }};overflow:hidden;font:500 11px/28px var(--mono);color:{{ b.ink }};white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ b.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:6px">{{ b.t }}</span></span></sc-for>
+<span style="position:absolute;right:0;top:-4px;bottom:-4px;border-left:1.5px dashed var(--ink-2)"></span>
+</div>
+<div style="display:flex;justify-content:space-between;font:500 12px/16px var(--mono);color:var(--muted)"><span>615k planned</span><span>760k a quarter</span></div>
+</div>
+</section>
+</div>
+<aside aria-label="On deck and this year" style="position:sticky;top:104px;min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:28px">
+<section aria-label="On deck" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">On deck</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">4</span></div>
+<div style="border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ onDeck }}" as="r" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)"><span aria-hidden="true" style="--cv:{{ r.cv }};flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</a><span style="font-size:12px;line-height:16px;color:var(--muted)">{{ r.meta }}</span></div></div></sc-for>
+<p style="margin:0;padding:12px 14px;font-size:13px;line-height:18px;color:var(--muted)">No year yet. First in line when a quarter has room.</p>
+</div>
+</section>
+<section aria-label="This year" style="display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:var(--r-xl);background:var(--raise);box-shadow:inset 0 0 0 1px var(--line)">
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">2026 so far</span>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">{{ f.yBooks }}</span><span style="font-size:12px;line-height:16px;color:var(--muted)">books</span></div>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">{{ f.yPages }}</span><span style="font-size:12px;line-height:16px;color:var(--muted)">pages</span></div>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">6</span><span style="font-size:12px;line-height:16px;color:var(--muted)">new authors</span></div>
+</section>
+</aside>
+</div>
+</main>
+</div>
+</div>
+</figure>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;max-width:900px;font-size:14px;line-height:21px;color:#2c2823"><b>/books · reading · notes for the builder</b><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;text-wrap:pretty">
+<li>Sidebar: the Books medium, with Dashboard, Status, Plan, Shelves, Top and Add. The current bar is <code>--m-books</code>; the icons stay neutral.</li>
+<li>Header verbs: Search, Finished it, <b>Log pages</b> (primary, last).</li>
+<li>Hero: the same geometry as comics, with a 168 × 252 cover. The book title is <code>--fs-hero-name</code> 32/36 at 1024 and up (26/30 on phone) and the page count is 32/36 mono. The 6px meter shares the lens's 480px cap.</li>
+<li>Up next in Q4: three covers, so they all fit and the shelf gets no ‹ › buttons. The buttons appear only when the shelf overflows.</li>
+<li>This quarter: the strip fills the card's inner width (616). Each block stays k / 760 of the strip, and the 760k rule sits at the right edge as on phone (FP-D8).</li>
+<li>On deck: <b>Plan</b> is a row verb in the side rail, so it reveals on hover and focus-within, like + Up next (FP-D15). It is drawn at rest here.</li>
+</ul></div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:880px"><b style="font:500 28px/32px 'Newsreader',serif">11d · /books, between books, 1280</b><p style="margin:0;color:#3d3830;text-wrap:pretty">The empty state, the same shape as 11b. The Now footer is one row: the top of the Q4 plan on the left and <i>Pick something else</i> on the right.</p></div>
+<div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+<sc-for list="{{ booksDeskB }}" as="f" hint-placeholder-count="2">
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">{{ f.cap }}</figcaption>
+<div data-theme="{{ f.theme }}" data-pal="c" data-ambient="{{ f.amb }}" data-screen-label="{{ f.cap }}" style="position:relative;width:1280px;height:900px;overflow:hidden;display:flex;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:20px;border-radius:16px;box-shadow:0 0 0 1px var(--rule-2),0 30px 60px -30px rgba(0,0,0,.5)">
+<dc-import name="LedgerNav" medium="books" current="dash" style="flex:none;height:100%;position:relative;z-index:3" hint-size="224px,100%"></dc-import>
+<div style="position:relative;flex:1;min-width:0;display:flex;flex-direction:column">
+<main style="flex:1;overflow-y:auto;scrollbar-width:none;display:grid;grid-template-columns:minmax(0,1fr);align-content:start;grid-auto-rows:max-content">
+<header style="position:sticky;top:0;z-index:2;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-bottom:1px solid var(--glass-edge)">
+<div style="box-sizing:border-box;max-width:1056px;margin:0 auto;padding:20px 32px 16px;display:flex;align-items:center;gap:8px">
+<h1 style="margin:0;font:500 40px/44px var(--display);letter-spacing:-.02em">Books</h1><span style="flex:1"></span>
+<button aria-label="Search" style="flex:none;width:44px;height:44px;border:0;border-radius:var(--r-md);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);display:grid;place-items:center"><svg aria-hidden="true" viewBox="0 0 24 24" style="width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg></button>
+<button style="flex:none;height:44px;padding:0 18px;border:0;border-radius:var(--r-md);background:var(--brand);color:var(--on-brand);font:600 15px/1 var(--sans)">Start The Left Hand of Darkness</button>
+</div>
+</header>
+<div style="box-sizing:border-box;width:100%;max-width:1056px;margin:0 auto;justify-self:center;padding:16px 32px 48px;display:grid;grid-template-columns:minmax(0,1fr) 304px;column-gap:32px;row-gap:24px;align-items:start">
+<p style="grid-column:1/-1;margin:0;font-size:15px;line-height:22px;color:var(--ink-2)">Nothing on the go right now.</p>
+<div style="min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:32px">
+<section aria-label="Now" data-art="" style="--art-d:oklch(.27 .04 220);--art-l:oklch(.93 .025 220);display:flex;flex-direction:column;border-radius:var(--r-hero);overflow:hidden;background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;align-items:flex-end;gap:28px;padding:24px;background:var(--art)">
+<div aria-hidden="true" style="--cv:oklch(.45 .07 220);position:relative;flex:none;width:112px;height:168px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover)"><span style="position:absolute;right:-8px;bottom:-8px;width:28px;height:28px;border-radius:50%;background:var(--ready);color:var(--on-ready);box-shadow:0 0 0 3px var(--art);display:grid;place-items:center;font:700 14px/1 var(--sans)">✓</span></div>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px">
+<span style="align-self:flex-start;display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;background:var(--ready-soft);color:var(--ready);font:600 11px/1 var(--mono)">✓ finished · Sun</span>
+<span style="font:500 40px/44px var(--display);letter-spacing:-.02em">Between books.</span>
+<p style="margin:0;max-width:52ch;font-size:15px;line-height:22px;color:var(--ink-2);text-wrap:pretty">You finished <i>Piranesi</i> on Sunday, 245 pages in nine days. Nothing's on the go, and that's fine.</p>
+</div>
+</div>
+<div style="display:flex;align-items:center;gap:12px;padding:12px 8px 12px 24px;border-top:1px solid var(--line)">
+<span aria-hidden="true" style="--cv:oklch(.38 .1 15);flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span>
+<div style="flex:1;min-width:0;display:flex;flex-direction:column"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Top of your Q4 plan</span><a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none">The Left Hand of Darkness</a><span style="font-size:12px;line-height:16px;color:var(--muted)">Ursula K. Le Guin · 304 pp</span></div>
+<a href="#" style="flex:none;display:flex;align-items:center;min-height:44px;padding:0 16px;color:var(--brand);font-size:13px;font-weight:500;text-decoration:none">Pick something else</a>
+</div>
+</section>
+<section aria-label="Up next in Q4" style="min-width:0;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:center;gap:8px"><h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">Up next in Q4</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">3</span><span style="flex:1"></span><button style="height:32px;padding:0 12px;border:0;border-radius:8px;background:transparent;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:500 13px/1 var(--sans)">Reorder</button></div>
+<div role="list" style="display:flex;gap:16px;padding:2px 0 6px">
+<sc-for list="{{ bookShelf }}" as="r" hint-placeholder-count="3">
+<div role="listitem" style="flex:none;width:112px;display:flex;flex-direction:column;gap:8px">
+<a href="#" aria-label="Open {{ r.name }}" style="--cv:{{ r.cv }};position:relative;display:block;width:112px;height:168px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover)"><span style="position:absolute;top:6px;left:6px;min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;border-radius:6px;background:var(--overlay);color:var(--ink);font:600 11px/22px var(--mono);text-align:center">{{ r.pos }}</span></a>
+<span style="font-size:13px;line-height:17px;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">{{ r.name }}</span>
+<span style="font:500 11px/14px var(--mono);color:var(--muted)">{{ r.meta }}</span>
+</div>
+</sc-for>
+</div>
+</section>
+<section aria-label="This quarter" style="display:flex;flex-direction:column;gap:12px">
+<h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">This quarter</h2>
+<div style="display:flex;flex-direction:column;gap:10px;padding:20px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;align-items:baseline;justify-content:space-between"><span style="font-size:15px;font-weight:600">Q4 2026</span><span style="font:500 12px/16px var(--mono);color:var(--muted)">{{ f.qRead }} of 7 read</span></div>
+<div role="img" aria-label="{{ f.qAria }}" style="position:relative;display:flex;gap:2px;height:28px;padding-right:2px;border-radius:3px;box-shadow:inset 0 0 0 1px var(--line)">
+<sc-for list="{{ f.q }}" as="b" hint-placeholder-count="7"><span style="position:relative;flex:0 0 calc({{ b.p }}% - 2px);border-radius:3px;background:var(--sunk);box-shadow:{{ b.ring }};overflow:hidden;font:500 11px/28px var(--mono);color:{{ b.ink }};white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ b.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:6px">{{ b.t }}</span></span></sc-for>
+<span style="position:absolute;right:0;top:-4px;bottom:-4px;border-left:1.5px dashed var(--ink-2)"></span>
+</div>
+<div style="display:flex;justify-content:space-between;font:500 12px/16px var(--mono);color:var(--muted)"><span>615k planned</span><span>760k a quarter</span></div>
+</div>
+</section>
+</div>
+<aside aria-label="On deck and this year" style="position:sticky;top:104px;min-width:0;display:grid;grid-template-columns:minmax(0,1fr);gap:28px">
+<section aria-label="On deck" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">On deck</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">4</span></div>
+<div style="border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ onDeck }}" as="r" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)"><span aria-hidden="true" style="--cv:{{ r.cv }};flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px"><a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</a><span style="font-size:12px;line-height:16px;color:var(--muted)">{{ r.meta }}</span></div></div></sc-for>
+<p style="margin:0;padding:12px 14px;font-size:13px;line-height:18px;color:var(--muted)">No year yet. First in line when a quarter has room.</p>
+</div>
+</section>
+<section aria-label="This year" style="display:flex;flex-direction:column;gap:14px;padding:16px;border-radius:var(--r-xl);background:var(--raise);box-shadow:inset 0 0 0 1px var(--line)">
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">2026 so far</span>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">{{ f.yBooks }}</span><span style="font-size:12px;line-height:16px;color:var(--muted)">books</span></div>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">{{ f.yPages }}</span><span style="font-size:12px;line-height:16px;color:var(--muted)">pages</span></div>
+<div style="display:flex;flex-direction:column"><span style="font:500 28px/32px var(--mono);letter-spacing:-.02em">6</span><span style="font-size:12px;line-height:16px;color:var(--muted)">new authors</span></div>
+</section>
+</aside>
+</div>
+</main>
+</div>
+</div>
+</figure>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;max-width:900px;font-size:14px;line-height:21px;color:#2c2823"><b>/books · between books · notes for the builder</b><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;text-wrap:pretty">
+<li>Header verbs: Search, then <b>Start The Left Hand of Darkness</b> (primary, last). There is no Finished it, because nothing is in hand. The label is the book's full title; at 1280 it fits, and below about 1100 it truncates with an ellipsis and keeps the full title in its accessible name.</li>
+<li>Now: the last finished book's cover at 112 × 168 with the check, and <i>Between books.</i> at 40/44. The footer is a single row, so <i>Pick something else</i> sits at its right as a text link with a 44px target rather than taking a row of its own.</li>
+<li>This quarter: the Fifth Season cell is now solid <code>--ready</code> (4 of 7 read), and the head ring is gone because nothing is in progress.</li>
+</ul></div>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:880px"><b style="font:500 28px/32px 'Newsreader',serif">11e · Run complete, 1280</b><p style="margin:0;color:#3d3830;text-wrap:pretty">The desktop version of section 7, on the run page. The run page keeps its thumb bar at every width (D-25). The column is a centred 720px with the art band inside it (FP-D17).</p></div>
+<div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+<sc-for list="{{ rcDesk }}" as="f" hint-placeholder-count="2">
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">{{ f.cap }}</figcaption>
+<div data-theme="{{ f.theme }}" data-pal="c" data-ambient="{{ f.amb }}" data-screen-label="{{ f.cap }}" style="position:relative;width:1280px;height:900px;overflow:hidden;display:flex;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:20px;border-radius:16px;box-shadow:0 0 0 1px var(--rule-2),0 30px 60px -30px rgba(0,0,0,.5)">
+<dc-import name="LedgerNav" medium="comics" current="runs" style="flex:none;height:100%;position:relative;z-index:3" hint-size="224px,100%"></dc-import>
+<div style="position:relative;flex:1;min-width:0;display:flex;flex-direction:column">
+<main style="flex:1;overflow-y:auto;scrollbar-width:none;display:grid;grid-template-columns:minmax(0,1fr);align-content:start;grid-auto-rows:max-content">
+<div style="box-sizing:border-box;width:100%;max-width:784px;margin:0 auto;justify-self:center;padding:12px 32px 120px;display:grid;grid-template-columns:minmax(0,1fr);gap:24px">
+<a href="#" style="justify-self:start;display:flex;align-items:center;gap:2px;height:44px;padding:0 10px 0 2px;margin-bottom:-8px;color:var(--ink);text-decoration:none;font-weight:500"><svg aria-hidden="true" viewBox="0 0 24 24" style="width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="m15 18-6-6 6-6"></path></svg>Comics</a>
+<div data-art="" style="--art-d:oklch(.29 .055 32);--art-l:oklch(.93 .03 45);display:flex;flex-direction:column;align-items:center;gap:14px;padding:36px 24px 32px;border-radius:var(--r-xl);background:var(--art);box-shadow:inset 0 0 0 1px var(--rule);text-align:center">
+<div aria-hidden="true" style="--cv:oklch(.40 .11 30);position:relative;width:160px;height:240px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 8px,color-mix(in oklch,var(--cv),#000 16%) 8px 16px);box-shadow:var(--sh-cover)"><span style="position:absolute;left:8px;bottom:8px;font:500 11px/14px var(--mono);color:#fff">key art</span></div>
+<span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink-2);font:600 11px/1 var(--mono)">✓ read · Oct 2026</span>
+<h1 style="margin:0;font:500 44px/46px var(--display);letter-spacing:-.02em">Finished.</h1>
+<p style="margin:0;font-size:17px;line-height:24px;color:var(--ink-2)">Uncanny X-Men, all 381 issues.</p>
+<span style="font:500 12px/16px var(--mono);color:var(--ink-2)">Mar 2025 – Oct 2026 · 19 months</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;padding:20px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">The run</span><span style="font:600 13px/16px var(--mono)">381 / 381</span></div>
+<span role="img" aria-label="All 381 issues read" style="display:block;height:28px;border-radius:3px;background:var(--ready)"></span>
+<div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:12px"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Block 1 · Foundations</span><span style="font:500 12px/16px var(--mono);color:var(--ink-2)">2 of 5 runs</span></div>
+<div role="img" aria-label="Block 1: runs 1 and 2 read, runs 3 to 5 unread" style="display:flex;gap:2px;height:20px"><sc-for list="{{ cBlockD }}" as="c" hint-placeholder-count="5"><span style="position:relative;flex:none;width:{{ c.w }}px;height:20px;border-radius:3px;background:var(--sunk);box-shadow:{{ c.ring }};overflow:hidden;color:{{ c.ink }};font:500 11px/20px var(--mono);white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ c.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:{{ c.pl }}px">{{ c.t }}</span></span></sc-for></div>
+<span style="font:500 12px/16px var(--mono);color:var(--muted)">447 of 664 issues in this block</span>
+</div>
+<section aria-label="What this opened" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">What this opened</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">13</span></div>
+<div style="border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ opened }}" as="r" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)"><span aria-hidden="true" style="--cv:{{ r.cv }};flex:none;width:36px;height:54px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:5px"><a href="#" style="font-size:15px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none">{{ r.name }}</a><span style="display:flex;align-items:center;gap:8px"><span style="display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:6px;background:{{ r.bBg }};box-shadow:{{ r.bRing }};color:var(--ready);font:600 11px/1 var(--mono)">{{ r.badge }}</span><span style="font-size:12px;color:var(--muted)">{{ r.meta }}</span></span></div></div></sc-for>
+<a href="#" style="display:flex;align-items:center;min-height:44px;padding:0 16px;color:var(--brand);font-size:13px;font-weight:500;text-decoration:none">All 13 newly ready</a>
+</div>
+</section>
+<p style="margin:4px 0 0;text-align:center;font:italic 400 20px/28px var(--display);color:var(--ink-2)">The longest run you've finished so far.</p>
+</div>
+</main>
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:3;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-top:1px solid var(--glass-edge)">
+<div style="box-sizing:border-box;max-width:784px;margin:0 auto;padding:12px 32px 16px;display:flex;gap:10px">
+<button style="flex:1;min-width:0;height:48px;border:0;border-radius:var(--r-lg);background:var(--brand);color:var(--on-brand);font:600 16px/1 var(--sans)">Start New Mutants</button>
+<button style="flex:none;height:48px;padding:0 20px;border:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 15px/1 var(--sans)">Not now</button>
+</div>
+</div>
+</div>
+</div>
+</figure>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;max-width:900px;font-size:14px;line-height:21px;color:#2c2823"><b>Run complete · notes for the builder</b><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;text-wrap:pretty">
+<li>Sidebar: Comics, with <b>Runs</b> as the current item, because the run page belongs to Runs. The back link <i>‹ Comics</i> stays at the top of the column, out of the glass and not sticky; the sidebar already gives you a way back.</li>
+<li>Column: max 784 with 32px padding, so the content is 720, centred in the space beside the sidebar. The page uses no side rail.</li>
+<li>Art band: inside the column with <code>--r-xl</code> corners and a 1px <code>--rule</code> ring (FP-D17). Key art 160 × 240, <i>Finished.</i> 44/46, run line 17/24.</li>
+<li>Record card: the run rail is 28 tall (<code>--tele-run</code> desktop) and fills once over <code>--dur-fill</code>. The block rail is 20 tall, with <code>allocate()</code> at W = 720 − 40 = 680 and min 16.</li>
+<li>Thumb bar (D-25): glass across the content area, with its buttons held to the same 720 column: <b>Start New Mutants</b> (flex, 48px, <code>--r-lg</code>), then <b>Not now</b>. The primary comes first here, as on phone; "primary last" applies to the dashboard header only. Main has 120px of bottom padding to clear the bar.</li>
+</ul></div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:column;gap:6px;max-width:880px"><b style="font:500 28px/32px 'Newsreader',serif">11f · Block complete, 1280</b><p style="margin:0;color:#3d3830;text-wrap:pretty">The desktop version of 10b (FP-D14). It uses the same column and band as 11e. <i>The block</i> and <i>What this opened</i> sit side by side, so both are above the closing line.</p></div>
+<div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+<sc-for list="{{ bcDesk }}" as="f" hint-placeholder-count="2">
+<figure style="margin:0;display:flex;flex-direction:column;gap:10px"><figcaption style="font:500 12px/16px 'IBM Plex Mono',monospace;color:#5f594f">{{ f.cap }}</figcaption>
+<div data-theme="{{ f.theme }}" data-pal="c" data-ambient="{{ f.amb }}" data-screen-label="{{ f.cap }}" style="position:relative;width:1280px;height:900px;overflow:hidden;display:flex;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:20px;border-radius:16px;box-shadow:0 0 0 1px var(--rule-2),0 30px 60px -30px rgba(0,0,0,.5)">
+<dc-import name="LedgerNav" medium="comics" current="runs" style="flex:none;height:100%;position:relative;z-index:3" hint-size="224px,100%"></dc-import>
+<div style="position:relative;flex:1;min-width:0;display:flex;flex-direction:column">
+<main style="flex:1;overflow-y:auto;scrollbar-width:none;display:grid;grid-template-columns:minmax(0,1fr);align-content:start;grid-auto-rows:max-content">
+<div style="box-sizing:border-box;width:100%;max-width:784px;margin:0 auto;justify-self:center;padding:12px 32px 120px;display:grid;grid-template-columns:minmax(0,1fr);gap:24px">
+<a href="#" style="justify-self:start;display:flex;align-items:center;gap:2px;height:44px;padding:0 10px 0 2px;margin-bottom:-8px;color:var(--ink);text-decoration:none;font-weight:500"><svg aria-hidden="true" viewBox="0 0 24 24" style="width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none"><path d="m15 18-6-6 6-6"></path></svg>Comics</a>
+<div data-art="" style="--art-d:oklch(.28 .05 300);--art-l:oklch(.93 .025 300);display:flex;flex-direction:column;align-items:center;gap:14px;padding:36px 24px 32px;border-radius:var(--r-xl);background:var(--art);box-shadow:inset 0 0 0 1px var(--rule);text-align:center">
+<div aria-hidden="true" style="display:flex;padding-left:20px"><sc-for list="{{ bdFan }}" as="c" hint-placeholder-count="5"><span style="--cv:{{ c.cv }};flex:none;width:80px;height:120px;margin-left:-20px;border-radius:var(--r-cover);background:repeating-linear-gradient(135deg,var(--cv) 0 7px,color-mix(in oklch,var(--cv),#000 16%) 7px 14px);box-shadow:var(--sh-cover),0 0 0 2px var(--art)"></span></sc-for></div>
+<span style="display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink-2);font:600 11px/1 var(--mono)">✓ read · Feb 2027</span>
+<span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)">X-Men · block 1 of 7</span>
+<h1 style="margin:0;font:500 44px/46px var(--display);letter-spacing:-.02em">Foundations, done.</h1>
+<p style="margin:0;font-size:17px;line-height:24px;color:var(--ink-2)">Five runs and 664 issues, ending with <i>Excalibur</i>.</p>
+<span style="font:500 12px/16px var(--mono);color:var(--ink-2)">Mar 2025 – Feb 2027 · 23 months</span>
+</div>
+<div style="display:flex;flex-direction:column;gap:8px;padding:20px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">The track · X-Men</span><span style="font:600 13px/16px var(--mono)">1 of 7 blocks</span></div>
+<div role="img" aria-label="X-Men track: block 1 read, block 2 next, blocks 3 to 7 unread" style="display:flex;gap:2px;height:20px"><sc-for list="{{ bdTrackD }}" as="c" hint-placeholder-count="7"><span style="position:relative;flex:none;width:{{ c.w }}px;height:20px;border-radius:3px;background:var(--sunk);box-shadow:{{ c.ring }};overflow:hidden;color:{{ c.ink }};font:500 11px/20px var(--mono);white-space:nowrap"><span style="position:absolute;top:0;bottom:0;left:0;width:{{ c.fill }}%;background:var(--ready)"></span><span style="position:relative;padding-left:{{ c.pl }}px">{{ c.t }}</span></span></sc-for></div>
+<span style="font:500 12px/16px var(--mono);color:var(--muted)">664 of 2,180 issues in this track</span>
+</div>
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start">
+<section aria-label="The block" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">The block</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">5</span></div>
+<div style="border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ bdRuns }}" as="r" hint-placeholder-count="5"><div style="display:flex;align-items:center;gap:12px;min-height:44px;padding:8px 14px;border-bottom:1px solid var(--line)"><span aria-hidden="true" style="flex:none;width:22px;height:22px;border-radius:50%;background:var(--ready);color:var(--on-ready);display:grid;place-items:center;font:700 12px/1 var(--sans)">✓</span><a href="#" style="flex:1;min-width:0;font-size:14px;font-weight:600;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</a><span style="flex:none;font:500 12px/16px var(--mono);color:var(--muted)">{{ r.meta }}</span></div></sc-for>
+</div>
+</section>
+<section aria-label="What this opened" style="display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;align-items:baseline;gap:8px"><h2 style="margin:0;font:600 12px/16px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)">What this opened</h2><span style="font:500 11px/14px var(--mono);color:var(--muted)">9</span></div>
+<div style="border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden">
+<sc-for list="{{ bdOpened }}" as="r" hint-placeholder-count="3"><div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line)"><span aria-hidden="true" style="--cv:{{ r.cv }};flex:none;width:28px;height:42px;border-radius:3px;background:repeating-linear-gradient(135deg,var(--cv) 0 5px,color-mix(in oklch,var(--cv),#000 16%) 5px 10px);box-shadow:var(--sh-cover)"></span><div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px"><a href="#" style="font-size:14px;line-height:20px;font-weight:600;color:var(--ink);text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.name }}</a><span style="display:flex;align-items:center;gap:8px;min-width:0"><span style="flex:none;display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:6px;background:{{ r.bBg }};box-shadow:{{ r.bRing }};color:var(--ready);font:600 11px/1 var(--mono)">{{ r.badge }}</span><span style="min-width:0;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.meta }}</span></span></div></div></sc-for>
+<a href="#" style="display:flex;align-items:center;min-height:44px;padding:0 14px;color:var(--brand);font-size:13px;font-weight:500;text-decoration:none">All 9 newly ready</a>
+</div>
+</section>
+</div>
+<p style="margin:4px 0 0;text-align:center;font:italic 400 20px/28px var(--display);color:var(--ink-2)">One block of seven. Next stop, the nineties.</p>
+</div>
+</main>
+<div style="position:absolute;left:0;right:0;bottom:0;z-index:3;background:var(--glass-bg);backdrop-filter:blur(20px) saturate(1.4);border-top:1px solid var(--glass-edge)">
+<div style="box-sizing:border-box;max-width:784px;margin:0 auto;padding:12px 32px 16px;display:flex;gap:10px">
+<button style="flex:1;min-width:0;height:48px;border:0;border-radius:var(--r-lg);background:var(--brand);color:var(--on-brand);font:600 16px/1 var(--sans)">Start block 2</button>
+<button style="flex:none;height:48px;padding:0 20px;border:0;border-radius:var(--r-lg);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink);font:600 15px/1 var(--sans)">Not now</button>
+</div>
+</div>
+</div>
+</div>
+</figure>
+</sc-for>
+</div>
+<div style="display:flex;flex-direction:column;gap:6px;max-width:900px;font-size:14px;line-height:21px;color:#2c2823"><b>Block complete · notes for the builder</b><ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px;text-wrap:pretty">
+<li>The fan: five covers at 80 × 120, overlapping by 20, each with a 2px <code>--art</code> separation ring.</li>
+<li>Track rail: <code>allocate()</code> at W = 680, min 16, 20 tall. Cell 1 fills once (<code>--dur-fill</code>), then the head ring moves to block 2 (<code>--dur-4</code>). Both are instant under reduced motion.</li>
+<li>Two columns, 350 + 20 + 350. <i>What this opened</i> uses the 28 × 42 row cover (<code>--cv-row-*</code>) so its rows match <i>The block</i>'s 44px rhythm. Names and meta truncate, and each row's accessible name carries the full text.</li>
+<li>Thumb bar: <b>Start block 2</b> and <b>Not now</b>, the same bar as 11e.</li>
+</ul></div>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px;max-width:1000px">
+<b style="font:500 28px/32px 'Newsreader',serif">Contrast · new pairs on desktop</b>
+<p style="margin:0;font-size:14px;line-height:21px;color:#3d3830;text-wrap:pretty">Measured from the 1c hex values in <code>tokens.css</code>, using WCAG 2.x. The sidebar's glass sits over <code>--page</code>, not over scrolling art, so it is measured composited over page. The §8 worst case (glass over pure white or black) still applies wherever content scrolls underneath. Every other text pair on these screens is already in §6.</p>
+<div style="display:grid;grid-template-columns:minmax(0,2.4fr) repeat(2,minmax(0,1fr));border-top:1px solid #d3cdc3;font-size:14px;line-height:21px">
+<span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-weight:600">Pair</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-weight:600">Light</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-weight:600">Dark</span>
+<span style="padding:7px 0;border-bottom:1px solid #d3cdc3">Sidebar item <code>--ink-2</code> on glass over page</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">9.98</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">11.68</span>
+<span style="padding:7px 0;border-bottom:1px solid #d3cdc3">Inbox count, media off-labels: <code>--muted</code> on glass over page</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">5.98</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">7.73</span>
+<span style="padding:7px 0;border-bottom:1px solid #d3cdc3">Current item <code>--ink</code> on <code>--raise</code></span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">16.91</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">14.83</span>
+<span style="padding:7px 0;border-bottom:1px solid #d3cdc3">Media switch off: <code>--muted</code> on <code>--sunk</code></span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">4.98</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">8.45</span>
+<span style="padding:7px 0;border-bottom:1px solid #d3cdc3">Rail badge <code>--ink-2</code> on <code>--raise</code></span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">9.57</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">10.56</span>
+<span style="padding:7px 0;border-bottom:1px solid #d3cdc3">Tooltip <code>--ink</code> on <code>--overlay</code></span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">17.79</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">14.01</span>
+<span style="padding:7px 0;border-bottom:1px solid #d3cdc3">Hovered Ready row meta: <code>--muted</code> on <code>--raise</code></span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">5.74</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">6.99</span>
+<span style="padding:7px 0;border-bottom:1px solid #d3cdc3">UI · current bar <code>--m-comics</code> / <code>--m-books</code> against glass</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">5.65 / 5.31</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">6.65 / 7.62</span>
+<span style="padding:7px 0;border-bottom:1px solid #d3cdc3">UI · rail focus ring <code>--brand</code> against glass</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">6.12</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">9.83</span>
+<span style="padding:7px 0;border-bottom:1px solid #d3cdc3">UI · sync dot <code>--ready</code> against glass</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">5.62</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">12.09</span>
+<span style="padding:7px 0;border-bottom:1px solid #d3cdc3">UI · disabled ‹ glyph <code>--faint-deco</code> on <code>--page</code></span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">3.08</span><span style="padding:7px 0;border-bottom:1px solid #d3cdc3;font-family:'IBM Plex Mono',monospace">4.39</span>
+</div>
+<p style="margin:0;font-size:13px;line-height:19px;color:#5f594f;text-wrap:pretty">The disabled ‹ meets 3:1 even though WCAG exempts disabled controls. The tooltip's edge against <code>--page</code> is 1.10 in light, and it isn't a control boundary, so it gets a <code>--rule-2</code> ring and <code>--sh-2</code> for definition. The ‹ › and header buttons keep the existing <code>--rule-2</code> ring; the label or glyph is what identifies them, as with every existing secondary button.</p>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:2760,&quot;height&quot;:6000},&quot;ambient&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  alloc(c, W, min = 16, gap = 2) {
+    const T = c.reduce((a, b) => a + b, 0), free = W - gap * (c.length - 1) - c.length * min;
+    return c.map(x => +(min + x / T * free).toFixed(1));
+  }
+  renderVals() {
+    const amb = (this.props.ambient ?? true) ? 'on' : 'off';
+    const cv = (h, c, l) => `oklch(${l} ${c} ${h})`;
+    const ring = h => h ? 'inset 0 0 0 1.5px var(--brand), var(--halo)' : 'inset 0 0 0 1px var(--faint-deco)';
+    const fit = (cands, avail) => cands.find(s => s.length * 6.7 + 12 <= avail) ?? '';
+    const A = (c, W) => this.alloc(c, W, 16);
+    const TR = [664, 214, 301, 268, 352, 211, 170], BL = [66, 381, 100, 70, 47];
+    const blC = [['Lee/Kirby · 66', 'Lee/Kirby', '66'], ['Claremont · 381', 'Claremont', '381'], ['New Mutants · 100', 'New Mutants', '100'], ['X-Factor · 70', 'X-Factor', '70'], ['Excalibur · 47', 'Excalibur', '47']];
+    const bNames = ['Lee/Kirby — X-Men', 'Claremont — Uncanny X-Men', 'Claremont — New Mutants', 'Simonson — X-Factor', 'Claremont/Davis — Excalibur'];
+    const trC = i => i === 0 ? ['1 · Foundations', '1'] : [String(i + 1)];
+    const cell = (w, fill, head, cands, aria) => {
+      const fw = w * fill / 100, full = fill >= 100;
+      return { w, fill: +fill.toFixed(1), ring: full ? 'none' : ring(head), ink: full ? 'var(--on-ready)' : head ? 'var(--ink)' : 'var(--muted)', t: fit(cands, full || !fill ? w : w - fw), pl: full || !fill ? 6 : +(fw + 6).toFixed(1), aria };
+    };
+    const pct = n => +(n / 381 * 100).toFixed(3);
+    const tele = W => {
+      const tw = A(TR, W), bw = A(BL, W);
+      const track = tw.map((w, i) => cell(w, i === 0 ? 111 / 664 * 100 : 0, i === 0, trC(i), `Block ${i + 1}`));
+      const block = bw.map((w, i) => cell(w, i === 0 ? 100 : i === 1 ? 45 / 381 * 100 : 0, i === 1, blC[i], bNames[i]));
+      const bx = +(bw[0] + 2).toFixed(1), bx2 = +(bx + bw[1]).toFixed(1);
+      const ticks = []; for (let i = 5; i <= 380; i += 5) ticks.push({ l: pct(i), h: i % 25 === 0 ? 6 : 3 });
+      const pillW = 15 * 6.7 + 16, headX = 41.5 / 381 * W;
+      return { W, track, block, br1: `0,0 ${tw[0]},0 ${W},20 0,20`, br1b: tw[0], br2: `${bx},0 ${bx2},0 ${W},20 0,20`, br2a: bx, br2b: bx2, ticks, pillL: +Math.max(0, Math.min(W - pillW, headX - pillW / 2)).toFixed(1) };
+    };
+    const lensCell = (isRead, isHead, isElse) => ({ bg: isRead ? 'var(--ready)' : isElse ? 'transparent' : 'var(--sunk)', bd: isRead ? '1px solid var(--ready)' : isHead ? '1.5px solid var(--brand)' : isElse ? '1px dashed var(--muted)' : '1px solid var(--faint-deco)', sh: isHead ? 'var(--halo)' : 'none' });
+    const tbLens = []; for (let o = 31; o <= 54; o++) tbLens.push(lensCell(o <= 41 || (o >= 44 && o <= 47), o === 42, o === 43));
+    const readyBase = [
+      { name: 'Miller — Daredevil', meta: '31 iss · opens 4', cv: cv(25, .13, .40) },
+      { name: 'Peter David — Hulk', meta: '137 iss · opens 6', cv: cv(145, .1, .40) },
+      { name: 'Gillen — Journey into Mystery', meta: '31 iss · opens 2', cv: cv(85, .09, .42) }
+    ];
+    const ready = hi => readyBase.map((r, i) => Object.assign({}, r, { hover: i === hi, bg: i === hi ? 'var(--raise)' : 'transparent' }));
+    const kind = { ready: ['var(--ready-soft)', 'none'], hard: ['transparent', 'inset 0 0 0 1px var(--ready)'] };
+    const shelfRaw = [
+      { name: 'Claremont — New Mutants', meta: '100 iss · opens 3', cv: cv(50, .12, .45), k: 'ready', badge: '● ready' },
+      { name: 'Simonson — Thor', meta: '44 iss · on your shelf', cv: cv(240, .1, .40), k: 'ready', badge: '● ready' },
+      { name: 'Ewing — Immortal Hulk', meta: '64 iss · 4,173 to unlock', cv: cv(150, .1, .38), k: 'blocked', badge: '⊘ 82 runs first' },
+      { name: 'Hickman — Fantastic Four', meta: '76 iss', cv: cv(265, .11, .42), k: 'hard', badge: '○ ready · 1 soft unread' },
+      { name: 'Priest — Black Panther', meta: '62 iss', cv: cv(300, .08, .32), k: 'ready', badge: '● ready' },
+      { name: 'Bendis — Daredevil', meta: '56 iss', cv: cv(15, .12, .36), k: 'ready', badge: '● ready' }
+    ];
+    const shelfOf = withStart => shelfRaw.map((r, i) => Object.assign({}, r, { pos: String(i + 1), blocked: r.k === 'blocked', open: r.k !== 'blocked', first: withStart && i === 0, bBg: (kind[r.k] || kind.ready)[0], bRing: (kind[r.k] || kind.ready)[1] }));
+    const cuFill = [447 / 664 * 100, 0, 0, 0, 0, 0, 11 / 170 * 100];
+    const cuTrackD = A(TR, 544).map((w, i) => cell(w, cuFill[i], false, trC(i), `Block ${i + 1}${cuFill[i] ? ' · ' + Math.round(cuFill[i]) + '% read' : ''}`));
+    const cBlockD = A(BL, 680).map((w, i) => cell(w, i < 2 ? 100 : 0, false, blC[i], bNames[i]));
+    const bdTrackD = A(TR, 680).map((w, i) => cell(w, i === 0 ? 100 : 0, i === 1, trC(i), `Block ${i + 1}`));
+    const qBooks = between => [
+      ['Klara and the Sun', 92, 'r'], ['A Psalm for the Wild-Built', 30, 'r'], ['The Fifth Season', 144, between ? 'r' : 'c'], ['Piranesi', 85, 'r'],
+      ['The Left Hand of Darkness', 92, 'p'], ['The Remains of the Day', 72, 'p'], ['Hamnet', 100, 'p']
+    ].map(([n, k, s]) => ({ p: +(k / 760 * 100).toFixed(2), t: k >= 60 ? k + 'k' : '', fill: s === 'r' ? 100 : s === 'c' ? 45 : 0, ring: s === 'c' ? ring(true) : s === 'r' ? 'none' : 'inset 0 0 0 1px var(--faint-deco)', ink: s === 'r' ? 'var(--on-ready)' : 'var(--ink-2)' }));
+    const mkC = (w, theme) => {
+      const wide = w === 1280;
+      return { cap: `/comics · ${w} · ${theme}`, theme, amb, w, h: wide ? 900 : 768, collapsed: !wide, tip: wide ? '' : 'runs', asideW: wide ? 304 : 280, gap: wide ? 32 : 24, cover: wide ? 168 : 150, coverH: wide ? 252 : 225, heroPad: wide ? 24 : 20, heroGap: wide ? 28 : 24, t: tele(wide ? 544 : 480), ready: ready(wide ? -1 : 1), shelf: shelfOf(true) };
+    };
+    const th = ['dark', 'light'];
+    const mkB = (between, theme) => ({ cap: `/books · ${between ? 'between books' : 'reading'} · 1280 · ${theme}`, theme, amb, q: qBooks(between), qRead: between ? 4 : 3, qAria: `Q4 2026: ${between ? 4 : 3} of 7 books read, 615k of 760k words planned`, yBooks: between ? 19 : 18, yPages: between ? '6,157' : '5,912' });
+    const tSegs = [{ l: 0, w: pct(41) }, { l: pct(43), w: pct(4) }];
+    return {
+      comicsDesk: [mkC(1280, 'dark'), mkC(1280, 'light'), mkC(1024, 'dark'), mkC(1024, 'light')],
+      cuDesk: th.map(theme => ({ cap: `/comics · all caught up · 1280 · ${theme}`, theme, amb })),
+      booksDeskR: th.map(t => mkB(false, t)), booksDeskB: th.map(t => mkB(true, t)),
+      rcDesk: th.map(theme => ({ cap: `run complete · 1280 · ${theme}`, theme, amb })),
+      bcDesk: th.map(theme => ({ cap: `block complete · 1280 · ${theme}`, theme, amb })),
+      readyRest: ready(-1), shelfCU: shelfOf(false), cuTrackD, cBlockD, bdTrackD,
+      tbLens, tSegs, tElse: pct(42), tHead: pct(41.5),
+      tbStack: [[200, .09, .40], [300, .08, .36], [70, .1, .45], [250, .09, .38]].map(a => ({ cv: cv(...a) })),
+      coming: [{ name: 'X-Men (2024)', n: '#9', when: 'Wed 22 Oct', in: 'in 17 days' }, { name: 'Uncanny X-Men (2024)', n: '#4', when: 'Wed 29 Oct', in: 'in 24 days' }],
+      bookShelf: [
+        { name: 'The Left Hand of Darkness', meta: '304 pp · 92k', cv: cv(15, .1, .38), pos: '1' },
+        { name: 'The Remains of the Day', meta: '258 pp · 72k', cv: cv(60, .07, .45), pos: '2' },
+        { name: 'Hamnet', meta: '372 pp · 100k', cv: cv(140, .06, .38), pos: '3' }
+      ],
+      onDeck: [
+        { name: 'Gideon the Ninth', meta: 'Tamsyn Muir', cv: cv(320, .06, .30) },
+        { name: 'The Overstory', meta: 'Richard Powers', cv: cv(135, .08, .40) },
+        { name: 'Dune Messiah', meta: 'Frank Herbert', cv: cv(65, .1, .50) }
+      ],
+      opened: [
+        { name: 'Claremont — New Mutants', meta: 'next in block', cv: cv(50, .12, .45), badge: '● ready', bBg: 'var(--ready-soft)', bRing: 'none' },
+        { name: 'Simonson — X-Factor', meta: 'was waiting on this', cv: cv(10, .1, .40), badge: '● ready', bBg: 'var(--ready-soft)', bRing: 'none' },
+        { name: 'Claremont/Davis — Excalibur', meta: '', cv: cv(230, .1, .40), badge: '○ ready · 1 soft unread', bBg: 'transparent', bRing: 'inset 0 0 0 1px var(--ready)' }
+      ],
+      bdFan: [cv(240, .09, .40), cv(32, .11, .42), cv(50, .12, .45), cv(10, .1, .40), cv(230, .1, .40)].map(c => ({ cv: c })),
+      bdRuns: [
+        { name: 'Lee/Kirby — X-Men', meta: '66 · 2025' }, { name: 'Claremont — Uncanny X-Men', meta: '381 · 19 mo' },
+        { name: 'Claremont — New Mutants', meta: '100 · 2026' }, { name: 'Simonson — X-Factor', meta: '70 · 2026' }, { name: 'Claremont/Davis — Excalibur', meta: '47 · Feb' }
+      ],
+      bdOpened: [
+        { name: 'Claremont/Lee — X-Men (1991)', meta: 'starts block 2', cv: cv(220, .1, .40), badge: '● ready', bBg: 'var(--ready-soft)', bRing: 'none' },
+        { name: 'Nicieza — X-Force', meta: 'block 2', cv: cv(20, .11, .38), badge: '● ready', bBg: 'var(--ready-soft)', bRing: 'none' },
+        { name: 'Lobdell — Generation X', meta: 'block 2', cv: cv(130, .09, .42), badge: '○ ready · 1 soft unread', bBg: 'transparent', bRing: 'inset 0 0 0 1px var(--ready)' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

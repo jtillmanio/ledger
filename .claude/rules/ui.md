@@ -81,8 +81,9 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
   DNF and *Skip* are grey — only *Remove* and *Drop* may be red.
 - **The feel pass (D-40)** beats `design/mockups.html` on layout and copy for
   what it draws: the dashboards, the mark sequence, empty and caught-up states,
-  completion and the 768px tablet (`design/STYLE_GUIDE.md` §14–§16, `design/Ledger
-  Feel Review.dc.html`). Each dashboard's Now slot is the one hero; `--art`, a
+  completion, the 768px tablet and desktop at 1024px and up
+  (`design/STYLE_GUIDE.md` §14–§16, `design/Ledger Feel Review.dc.html`; PNGs
+  in `design/screenshots/`). Each dashboard's Now slot is the one hero; `--art`, a
   cover's clamped ambient tone, is content colour, never state, and can be
   switched off. Fonts are self-hosted: IBM Plex Sans for the UI, Plex Mono for
   counts, Newsreader only for titles, hero names, story titles and completion

@@ -1,4 +1,4 @@
-# Contrast and ΔE report — feel pass palettes (measured 2026-10-05)
+# Contrast and ΔE report — feel pass palettes (measured 2026-10-05; 1c adopted; desktop pairs added 2026-10-06)
 
 Computed from the values in `design/ledger-feel-tokens.css` after the fixes marked `~` there: oklch → sRGB with chroma-reduction gamut mapping, WCAG 2.x relative-luminance contrast, ΔE2000 in CIELAB (D65). Glass is `--surface` at α .90 composited in sRGB over pure white (dark) or pure black (light). `npm run test:tokens` is still the gate; these numbers should match it to ±0.05.
 
@@ -22,7 +22,7 @@ Fixes applied in this pass, all small:
 | Muted text, worst surface | 6.04 | 6.17 | 6.6 | 5.1 | 4.98 | 4.97 |
 | Identity headroom, min ΔE | 16.9 (t4 vs blocked) | 15.5 (t4 vs blocked) | 15.2 (t3 vs ready) | 15.6 (t3 vs ready) | 15.6 (t3 vs ready) | 15.6 (t3 vs ready) |
 
-## 1b Lamplight — dark
+## 1b Lamplight (alternative, in palette-swaps.css) — dark
 
 **Text on surfaces (floor 4.5)**
 
@@ -48,7 +48,7 @@ Fixes applied in this pass, all small:
 
 **Luminance:** page 0.0045 · surface 0.0092 · raise 0.0155 · sunk 0.0027 · overlay 0.0185
 
-## 1b Lamplight — light
+## 1b Lamplight (alternative, in palette-swaps.css) — light
 
 **Text on surfaces (floor 4.5)**
 
@@ -74,7 +74,7 @@ Fixes applied in this pass, all small:
 
 **Luminance:** page 0.9071 · surface 0.9851 · raise 0.947 · sunk 0.817 · overlay 0.9851
 
-## 1a Signal — dark
+## 1a Signal (alternative, in palette-swaps.css) — dark
 
 **Text on surfaces (floor 4.5)**
 
@@ -100,7 +100,7 @@ Fixes applied in this pass, all small:
 
 **Luminance:** page 0.0041 · surface 0.0086 · raise 0.0147 · sunk 0.0025 · overlay 0.0176
 
-## 1a Signal — light
+## 1a Signal (alternative, in palette-swaps.css) — light
 
 **Text on surfaces (floor 4.5)**
 
@@ -126,7 +126,7 @@ Fixes applied in this pass, all small:
 
 **Luminance:** page 0.9186 · surface 1 · raise 0.9558 · sunk 0.8442 · overlay 1
 
-## 1c After hours (adopted, D-40; `design/tokens.css`) — dark
+## 1c After hours (adopted, tokens.css) — dark
 
 **Text on surfaces (floor 4.5)**
 
@@ -152,7 +152,7 @@ Fixes applied in this pass, all small:
 
 **Luminance:** page 0.0033 · surface 0.0073 · raise 0.0128 · sunk 0.0019 · overlay 0.0163
 
-## 1c After hours (adopted, D-40; `design/tokens.css`) — light
+## 1c After hours (adopted, tokens.css) — light
 
 **Text on surfaces (floor 4.5)**
 
@@ -177,3 +177,23 @@ Fixes applied in this pass, all small:
 **ΔE2000 identity vs ready · blocked · danger:** t1 45.7/52.4/43.9 · t2 47.5/51/34 · t3 15.6/35/57.8 · t4 27.5/19.8/41.4 · t5 48/54.4/40.4 · t6 28.2/43.1/54.3 · t7 69.5/36.8/17 · t8 26.5/32.7/35.1
 
 **Luminance:** page 0.9065 · surface 1 · raise 0.9466 · sunk 0.8165 · overlay 1
+
+## Desktop pairs (measured 2026-10-06, palette 1c)
+
+These are the new pairs added by the desktop frames (STYLE_GUIDE §14.6, mockup §11). They use WCAG 2.x contrast from the 1c hex values in `tokens.css`. The sidebar's glass sits over `--page`, not over scrolling content, so it is measured as `--surface` at α .90 composited over `--page`. The glass worst case above still applies to the sticky header, which content scrolls under.
+
+| Pair | Light | Dark |
+|---|---|---|
+| Sidebar item `--ink-2` on glass over page | 9.98 | 11.68 |
+| Inbox count, media off-labels: `--muted` on glass over page | 5.98 | 7.73 |
+| Current item `--ink` on `--raise` | 16.91 | 14.83 |
+| Media switch off: `--muted` on `--sunk` | 4.98 | 8.45 |
+| Rail Inbox badge `--ink-2` on `--raise` | 9.57 | 10.56 |
+| Tooltip `--ink` on `--overlay` | 17.79 | 14.01 |
+| Hovered Ready row meta: `--muted` on `--raise` | 5.74 | 6.99 |
+| UI · current bar `--m-comics` / `--m-books` against glass | 5.65 / 5.31 | 6.65 / 7.62 |
+| UI · rail focus ring `--brand` against glass | 6.12 | 9.83 |
+| UI · sync dot `--ready` against glass | 5.62 | 12.09 |
+| UI · disabled ‹ glyph `--faint-deco` on `--page` | 3.08 | 4.39 |
+
+Every text pair is ≥ 4.5 and every UI boundary ≥ 3. The tooltip's edge against `--page` is 1.10 in light, so the tooltip gets a `--rule-2` ring and `--sh-2`; it isn't a control boundary.
