@@ -1,17 +1,23 @@
 import type { Metadata, Viewport } from "next";
-import { Inter_Tight, JetBrains_Mono } from "next/font/google";
 import Link from "next/link";
+import { preload } from "react-dom";
 import "./globals.css";
 
-const sans = Inter_Tight({ subsets: ["latin"], variable: "--font-sans", display: "swap" });
-const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
+// Fonts are self-hosted @font-face rules in globals.css (D-40): no request
+// leaves the app. Only the two Plex Sans weights every screen draws with are
+// preloaded; the rest load on first use (font-display: swap).
+const PRELOAD = [
+  new URL("./fonts/ibm-plex-sans-latin-400-normal.woff2", import.meta.url).href,
+  new URL("./fonts/ibm-plex-sans-latin-600-normal.woff2", import.meta.url).href,
+];
 
 export const metadata: Metadata = { title: "Ledger" };
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  for (const href of PRELOAD) preload(href, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable}`}>
+    <html lang="en">
       <body>
         <nav className="bar">
           <div className="bar-inner">
