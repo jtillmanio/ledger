@@ -174,6 +174,14 @@ describe("renderComment", () => {
     expect(md).toContain("**No budget recorded** for `comics`");
   });
 
+  it("names runs that did not finish, once each, instead of a silent dash", () => {
+    const r = aggregateRoute(route([load()], { taps: [{ error: "Navigation timeout" }, { error: "Navigation timeout" }] }));
+    const md = renderComment({ current: { ...current, routes: { login: r } }, baseline: null, budget: {}, problems: [] });
+    expect(md).toContain("**Runs that did not finish**");
+    expect(md.match(/- login: Navigation timeout/g)).toHaveLength(1);
+    expect(renderComment({ current, baseline: null, budget: BUDGET, problems: [] })).not.toContain("did not finish");
+  });
+
   it("finds its own earlier comment by the marker", () => {
     const comments = [{ id: 1, body: "looks good" }, { id: 2, body: `${MARKER}\n### Lighthouse` }];
     expect(findComment(comments)?.id).toBe(2);
@@ -274,6 +282,13 @@ describe("the route list (scripts/perf/routes.mjs)", () => {
     const ids = ROUTES.map((r) => r.id);
     expect(new Set(ids).size).toBe(ids.length);
     expect(Object.keys(budget).sort()).toEqual([...ids].sort());
+  });
+
+  it("holds a number for everything it gates on every route", () => {
+    const budget = JSON.parse(readFileSync("scripts/perf/budget.json", "utf8")).routes;
+    for (const r of ROUTES) {
+      for (const k of ["docRscBytes", "jsBytes", "requests", "a11y"]) expect(typeof budget[r.id][k], `${r.id}.${k}`).toBe("number");
+    }
   });
 
   it("is mirrored in ARCHITECTURE's Performance budget", () => {

@@ -143,7 +143,15 @@ async function taps(browser, route) {
   for (let n = 1; n <= RUNS; n++) {
     const { context, page } = await phoneTab(browser, !route.tap.login, api);
     try {
-      await page.goto(base + route.tap.from, { waitUntil: "networkidle0", timeout: 120_000 });
+      if (route.tap.login) {
+        // Signed out, /login's nav prefetches are redirected back to /login, and
+        // on Vercel those requests stay open, so the network is never idle.
+        await page.goto(base + route.tap.from, { waitUntil: "load", timeout: 120_000 });
+        await page.waitForSelector('input[name="passcode"]', { timeout: 120_000 });
+      } else {
+        // Idle: every prefetch the page makes is done before the tap.
+        await page.goto(base + route.tap.from, { waitUntil: "networkidle0", timeout: 120_000 });
+      }
       const at = new URL(page.url()).pathname;
       if (at !== route.tap.from) {
         results.push({ error: `the tap's page ${route.tap.from} landed on ${at}` });

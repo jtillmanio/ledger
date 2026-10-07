@@ -218,6 +218,8 @@ export function renderComment({ current, baseline, budget, problems, missingBudg
     cells.push(`${ms(r.tap.first)} / ${ms(r.tap.median)}${vsMain(id, (b) => b.tap?.median)}`);
     lines.push(`| \`${r.path}\` | ${cells.join(" | ")} |`);
   }
+  const failed = Object.entries(current.routes).flatMap(([id, r]) => [...new Set(r.errors)].map((e) => `- ${id}: ${e}`));
+  if (failed.length) lines.push("", "**Runs that did not finish** (left out of the medians above):", "", ...failed);
   lines.push("", baseline
     ? `Compared with main's last run: PR #${baseline.pr}'s preview, ${String(baseline.at).slice(0, 10)}.`
     : "No baseline: no run of the last merged PR is still kept (artifacts last 14 days).",
