@@ -183,7 +183,7 @@ export function renderComment({ current, baseline, budget, problems, missingBudg
     `### Lighthouse — ${problems.length ? `❌ ${problems.length} problem${problems.length > 1 ? "s" : ""}` : "✅ within budget"}`,
     "",
     `\`${current.url}\` at \`${(current.sha ?? "").slice(0, 7)}\` · Lighthouse ${current.lighthouse} mobile, ` +
-      "devtools throttling (Slow 4G, 4× CPU) · three runs per route, median",
+      `devtools throttling (Slow 4G, 4× CPU) · ${current.runs ?? 3} runs per route, median`,
     "",
   ];
   if (problems.length) lines.push("**Fails the job:**", "", ...problems.map((p) => `- ${p}`), "");

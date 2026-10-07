@@ -95,11 +95,18 @@ Before pushing, locally:
 - Migrations that drop or retype a column: the up → down → up test.
 - Anything else the change touches that has a test path: an ETL script's
   `--dry-run`, `npm run sidecars` after a sidecar change, and, once they
-  exist, the e2e, axe and Lighthouse runs a task names.
+  exist, the e2e and axe runs a task names. `test/perf.test.ts` (in `npm test`)
+  holds the Lighthouse job's gate, comment and route list to account (task 0.10).
 
 After pushing, on GitHub:
 
 - CI (`gh pr checks <n> --watch`) is green, and the Vercel preview deploys.
+- **Lighthouse** (`.github/workflows/lighthouse.yml`, task 0.10) runs on that
+  preview once it deploys and is green, and its PR comment shows nothing over
+  budget. It fails on a route handler requested during a load or prefetch,
+  bytes or requests over `scripts/perf/budget.json`, CLS of 0.1 or more, or an
+  accessibility score under the recorded one. A new top-level screen adds its
+  route to `scripts/perf/routes.mjs` and its budget in the same PR.
 - UI changes: open the Vercel preview at 360–412px and walk the changed screen
   and its states against `design/mockups.html`. Say what you looked at.
 - A changed workflow runs on the branch before merge:

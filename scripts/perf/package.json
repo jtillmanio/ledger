@@ -1,0 +1,13 @@
+{
+  "name": "ledger-perf",
+  "private": true,
+  "description": "Task 0.10: Lighthouse and the tap runner, installed only by .github/workflows/lighthouse.yml (npm ci --prefix scripts/perf), never by the app's build",
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "lighthouse": "13.5.0",
+    "puppeteer-core": "25.12.0"
+  }
+}

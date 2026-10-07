@@ -9,5 +9,7 @@ export default defineConfig([
   ...nextTs,
   // design/ holds reference specs, not app code; support.js there is the
   // generated Claude Design runtime and is kept exactly as delivered (D-31).
-  globalIgnores([".next/**", "node_modules/**", "drizzle/**", "seed/**", "design/**", "next-env.d.ts"]),
+  // scripts/perf has its own dependencies (task 0.10), installed only by the
+  // Lighthouse workflow.
+  globalIgnores([".next/**", "node_modules/**", "scripts/perf/node_modules/**","drizzle/**", "seed/**", "design/**", "next-env.d.ts"]),
 ]);

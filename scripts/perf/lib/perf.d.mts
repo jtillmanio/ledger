@@ -47,7 +47,7 @@ export function gateProblems(routes: Record<string, RouteResult>, budget: Record
 export function unbudgeted(routes: Record<string, RouteResult>, budget: Record<string, RouteBudget>): string[];
 export function fmt(v: number | null | undefined, unit: "bytes" | "ms" | "count"): string;
 export function renderComment(args: {
-  current: { url: string; sha?: string; lighthouse?: string; routes: Record<string, RouteResult> };
+  current: { url: string; sha?: string; lighthouse?: string; runs?: number; routes: Record<string, RouteResult> };
   baseline: {
     pr: number;
     at: string;
