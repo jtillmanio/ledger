@@ -594,8 +594,11 @@ that still holds a secret. The GitHub `APP_PASSCODE` secret is the Preview and
 Development passcode; production's stays its own, and `SESSION_SECRET`
 differs per environment, so the job's cookie never opens production. "Main's
 last run" is the last merged PR's run (squash merges, and main builds no
-preview). A `workflow_dispatch` run needs the file on `main`, so that part of
-the Check runs right after merge.
+preview). Each route is measured by its own job, side by side, and a newer
+push to the same PR cancels the older run: a run takes about 4 minutes, not 10,
+and an abandoned one stops spending the free plan's Actions minutes. A
+`workflow_dispatch` run needs the file on `main`, so that part of the Check
+runs right after merge.
 
 ---
 
