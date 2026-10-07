@@ -527,7 +527,7 @@ prerequisite side (14 ms). The owner's phone column was not taken (owner's
 call); the throttled profile stands in for it. `/` has no skeleton until 1.8
 makes it a redirect.
 
-### ☐ 0.10 Lighthouse on every preview · M
+### ☑ 0.10 Lighthouse on every preview · M
 Depends on 0.9: its routes, its measurement runner and the *Performance budget*
 it leaves in `docs/ARCHITECTURE.md`. It does not block Phase 1, but build it
 before 1.8, so the app shell is the first screen measured on its own PR rather
@@ -579,6 +579,23 @@ posts the table and attaches the reports as artifacts. On a throwaway branch, a
 `<Link href="/api/export">` put back in the nav fails the job with that request
 named, and removing it turns the job green. A `workflow_dispatch` run with a URL
 works. Neither secret appears in any log, and no report leaves GitHub.
+
+**Done 2026-10-07.** The workflow is `.github/workflows/lighthouse.yml`;
+`scripts/perf/` holds the runner, the route list (`routes.mjs`, the one place a
+new screen's URL goes; `test/perf.test.ts` fails on a top-level page missing
+from it) and `budget.json`. 0.9's runner had never been committed and was
+taken from its scratch copy. On Vercel, signed-out `/login`'s nav prefetches
+are redirected back to `/login` and held open, so the sign-in tap waits for the
+passcode field, not network idle. Budgets are the first preview's medians plus
+20% (bytes rounded up to the next 1,000) and accessibility 100 on every route;
+bytes moved under 1% between runs. Lighthouse keeps the headers it was given
+in its report, so reports are scrubbed and a guard step refuses to upload any
+that still holds a secret. The GitHub `APP_PASSCODE` secret is the Preview and
+Development passcode; production's stays its own, and `SESSION_SECRET`
+differs per environment, so the job's cookie never opens production. "Main's
+last run" is the last merged PR's run (squash merges, and main builds no
+preview). A `workflow_dispatch` run needs the file on `main`, so that part of
+the Check runs right after merge.
 
 ---
 
