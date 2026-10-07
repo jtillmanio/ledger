@@ -43,7 +43,8 @@ export function apiPath(url: string): string | null;
 export function summariseLhr(lhr: any): LoadSummary;
 export function median(values: (number | null | undefined)[]): number | null;
 export function aggregateRoute(measured: MeasuredRoute): RouteResult;
-export function gateProblems(routes: Record<string, RouteResult>, budget: Record<string, RouteBudget>): string[];
+export function gateProblems(
+  routes: Record<string, RouteResult>, budget: Record<string, RouteBudget>, expected?: string[]): string[];
 export function unbudgeted(routes: Record<string, RouteResult>, budget: Record<string, RouteBudget>): string[];
 export function fmt(v: number | null | undefined, unit: "bytes" | "ms" | "count"): string;
 export function renderComment(args: {
@@ -57,6 +58,16 @@ export function renderComment(args: {
   problems: string[];
   missingBudget?: string[];
 }): string;
+export interface Metrics {
+  url: string;
+  sha: string | null;
+  lighthouse: string;
+  chrome?: string;
+  measuredAt: string;
+  runs?: number;
+  routes: Record<string, MeasuredRoute>;
+}
+export function mergeMetrics(parts: Metrics[], order: string[]): Metrics;
 export function findComment<T extends { body?: string }>(comments: T[]): T | undefined;
 export function measurable(args: {
   eventName: string;

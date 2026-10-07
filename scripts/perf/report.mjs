@@ -1,15 +1,19 @@
 // The Lighthouse workflow's steps that need thinking (.github/workflows/lighthouse.yml).
-//   node scripts/perf/report.mjs target     which URL to measure, or why not (previews only)
+//   node scripts/perf/report.mjs plan       which URL to measure, or why not (previews only); the
+//                                           routes, one job each; the PR whose older runs this cancels
 //   node scripts/perf/report.mjs guard DIR  fail if any file in DIR holds a secret; names files, never values
+//   node scripts/perf/report.mjs merge DIR  the per-route jobs' metrics.json files under DIR, as one
 //   node scripts/perf/report.mjs baseline   main's last run: the newest merged PR's green run
 //   node scripts/perf/report.mjs report     job summary, the one PR comment, then the gate
 //
 // Uses only Node and the GitHub REST API; no dependency from scripts/perf/package.json.
-import { appendFileSync, existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { appendFileSync, existsSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  aggregateRoute, baselinePr, baselineRun, filesWithSecrets, findComment, gateProblems, measurable, renderComment, unbudgeted,
+  aggregateRoute, baselinePr, baselineRun, filesWithSecrets, findComment, gateProblems, measurable, mergeMetrics,
+  renderComment, unbudgeted,
 } from "./lib/perf.mjs";
+import { ROUTES } from "./routes.mjs";
 
 const env = process.env;
 const output = (key, value) => env.GITHUB_OUTPUT && appendFileSync(env.GITHUB_OUTPUT, `${key}=${value}\n`);
@@ -28,7 +32,7 @@ async function pullsFor(sha) {
   return (await github(`commits/${sha}/pulls`)).filter((p) => p.state === "open");
 }
 
-function target() {
+async function plan() {
   const result = measurable({
     eventName: env.EVENT_NAME,
     environment: env.DEPLOY_ENVIRONMENT,
@@ -43,20 +47,33 @@ function target() {
     console.log(`Not measuring: ${result.skip}.`);
     return;
   }
-  console.log(`Measuring ${result.url}`);
+  // A newer push to the same PR cancels this run (the jobs' concurrency group);
+  // a commit with no PR, or a hand run, is a group of its own.
+  const [pr] = env.EVENT_NAME === "deployment_status" ? await pullsFor(env.SHA) : [];
+  const group = pr ? `pr-${pr.number}` : `run-${env.GITHUB_RUN_ID}`;
+  console.log(`Measuring ${result.url}${pr ? ` for #${pr.number}` : ""}: ${ROUTES.map((r) => r.id).join(", ")}`);
   output("url", result.url);
+  output("group", group);
+  output("routes", JSON.stringify(ROUTES.map((r) => r.id)));
+}
+
+function walk(dir) {
+  return readdirSync(dir).flatMap((name) => {
+    const p = join(dir, name);
+    return statSync(p).isDirectory() ? walk(p) : [p];
+  });
+}
+
+function merge(dir) {
+  const out = join(dir, "metrics.json");
+  const parts = walk(dir).filter((f) => f.endsWith("metrics.json") && f !== out).map((f) => JSON.parse(readFileSync(f, "utf8")));
+  const merged = mergeMetrics(parts, ROUTES.map((r) => r.id));
+  writeFileSync(out, JSON.stringify(merged, null, 2));
+  console.log(`merge: ${Object.keys(merged.routes).join(", ")}`);
 }
 
 function guard(dir) {
-  const files = [];
-  const walk = (d) => {
-    for (const name of readdirSync(d)) {
-      const p = join(d, name);
-      if (statSync(p).isDirectory()) walk(p);
-      else files.push({ name: p, text: readFileSync(p, "utf8") });
-    }
-  };
-  walk(dir);
+  const files = walk(dir).map((p) => ({ name: p, text: readFileSync(p, "utf8") }));
   let cookie = null;
   try {
     cookie = JSON.parse(readFileSync(join(env.HEADERS_DIR, "signed-in.json"), "utf8")).Cookie;
@@ -90,7 +107,7 @@ async function report() {
   const budget = JSON.parse(readFileSync(new URL("./budget.json", import.meta.url), "utf8")).routes;
   const before = env.BASELINE_METRICS && existsSync(env.BASELINE_METRICS) ? load(env.BASELINE_METRICS) : null;
   const baseline = before ? { ...before, pr: env.BASELINE_PR, at: before.measuredAt } : null;
-  const problems = gateProblems(current.routes, budget);
+  const problems = gateProblems(current.routes, budget, ROUTES.map((r) => r.id));
   const body = renderComment({ current, baseline, budget, problems, missingBudget: unbudgeted(current.routes, budget) });
 
   if (env.GITHUB_STEP_SUMMARY) appendFileSync(env.GITHUB_STEP_SUMMARY, `${body}\n`);
@@ -113,9 +130,9 @@ async function report() {
 }
 
 const command = process.argv[2];
-const run = { target, guard: () => guard(process.argv[3]), baseline, report }[command];
+const run = { plan, guard: () => guard(process.argv[3]), merge: () => merge(process.argv[3]), baseline, report }[command];
 if (!run) {
-  console.error("usage: node scripts/perf/report.mjs <target|guard DIR|baseline|report>");
+  console.error("usage: node scripts/perf/report.mjs <plan|guard DIR|merge DIR|baseline|report>");
   process.exit(2);
 }
 try {

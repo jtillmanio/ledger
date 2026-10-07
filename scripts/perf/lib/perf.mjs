@@ -121,8 +121,9 @@ export function aggregateRoute(measured) {
  *   routes: { [id]: aggregateRoute(...) }
  *   budget: budget.json's `routes`: { [id]: { docRscBytes, jsBytes, requests, a11y } }
  */
-export function gateProblems(routes, budget) {
-  const problems = [];
+export function gateProblems(routes, budget, expected = []) {
+  // Each route is measured by its own job; one that died wrote no metrics.
+  const problems = expected.filter((id) => !routes[id]).map((id) => `${id}: not measured (its job wrote no metrics)`);
   for (const [id, r] of Object.entries(routes)) {
     for (const path of r.apiRequests) {
       problems.push(`${id}: requested the route handler ${path} during a page load or prefetch ` +
@@ -226,6 +227,21 @@ export function renderComment({ current, baseline, budget, problems, missingBudg
   "A preview's Neon branch is cold or warm by chance, so the first hit is reported, never gated. " +
     "Reports are this run's artifacts.");
   return lines.join("\n");
+}
+
+/**
+ * One metrics.json from the per-route jobs' parts (the workflow measures each
+ * route in its own job), routes in the order given: the route list's.
+ */
+export function mergeMetrics(parts, order) {
+  if (!parts.length) throw new Error("no route was measured: every measuring job failed before writing its metrics");
+  const routes = Object.assign({}, ...parts.map((p) => p.routes));
+  const sorted = Object.fromEntries([
+    ...order.filter((id) => routes[id]).map((id) => [id, routes[id]]),
+    ...Object.entries(routes).filter(([id]) => !order.includes(id)),
+  ]);
+  const [first] = [...parts].sort((a, b) => (a.measuredAt < b.measuredAt ? -1 : 1));
+  return { ...first, routes: sorted };
 }
 
 /** The comment this job posted before, by its marker, or undefined. */
