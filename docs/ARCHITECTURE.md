@@ -871,8 +871,33 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
     none yet: a root `loading.tsx` would be the first boundary for every route,
     and `/` becomes a redirect to a dashboard (1.8); the dashboards bring their
     own. A new data route ships with its `loading.tsx`.
-  - Byte and request budgets per route arrive with Lighthouse on every preview
-    (task 0.10).
+  - **Bytes, requests, layout shift and accessibility, on every preview** (task
+    0.10, `.github/workflows/lighthouse.yml`). Each Vercel preview is measured
+    once it deploys: Lighthouse mobile, devtools throttling, three runs per
+    route, median, plus 0.9's tap → next-paint runner on the same profile
+    (`scripts/perf/`). The job fails only on what holds still between runs: a
+    request to a route handler (`/api/*`) during a load or a prefetch, a page
+    over the numbers below, CLS of 0.1 or more, or an accessibility score below
+    the one recorded here. TTFB, response complete, FCP, LCP, TBT and tap → next
+    paint are reported in one PR comment against the last merged PR's run, and
+    never gated: a preview's Neon branch is cold or warm by chance. Document +
+    RSC counts the HTML and every RSC payload the load fetched (prefetches
+    included); Vercel's preview toolbar is left out, since production never
+    serves it. The numbers are `scripts/perf/budget.json`
+    (`test/perf.test.ts` holds this table to it); each is the median
+    measured on 0.10's own preview plus 20%, and the accessibility score is the
+    one measured. Raising one needs a reason here. A new top-level screen adds
+    its route to `scripts/perf/routes.mjs` and its row here.
+
+    <!-- perf-budget -->
+    | Route | Document + RSC bytes | JS bytes | Requests | Accessibility ≥ |
+    |---|---|---|---|---|
+    | `/login` | – | – | – | – |
+    | `/comics` | – | – | – | – |
+    | `/comics/bendis-disassembled` | – | – | – | – |
+    | `/comics/busiek-avengers` | – | – | – | – |
+    | `/books` | – | – | – | – |
+    <!-- /perf-budget -->
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 
