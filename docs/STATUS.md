@@ -1,6 +1,6 @@
 # Status
 
-**Last regenerated:** 2026-10-06
+**Last regenerated:** 2026-10-07
 
 This is a rollup of `docs/TASKS.md`, not a second source of truth. Every count
 here comes from counting ☑ vs ☐ task markers in that file. If this page and
@@ -9,7 +9,7 @@ argue from it.
 
 ## Where we are
 
-**11 of 93 tasks done (12%).** Still in Phase 0 — nothing in Phase 1 or later has
+**12 of 93 tasks done (13%).** Phase 0 is done — nothing in Phase 1 or later has
 started. The private GitHub repo exists and CI runs on every PR, and is proven
 to go red on a broken view (task 0.2, done 2026-09-30). The Release
 workflow has deployed `main` to Vercel (last run 2026-10-02). `LEDGER_LIVE` is
@@ -17,7 +17,7 @@ workflow has deployed `main` to Vercel (last run 2026-10-02). `LEDGER_LIVE` is
 
 | Phase | Done / total | Status |
 |---|---|---|
-| 0 — Foundation | 10 / 11 | **In progress** |
+| 0 — Foundation | 11 / 11 | Done |
 | 1 — Daily use | 0 / 18 | Not started |
 | 2 — The pace engine | 0 / 16 | Not started |
 | 3 — Editing | 0 / 9 | Not started |
@@ -33,12 +33,19 @@ doesn't exist until those tasks do.
 
 ## What's next
 
-Phase 0 has one task left:
+Phase 1, in the build order of TASKS.md's sitting table (START-HERE Step 12):
+**1.2 Undo → 1.1 → 1.6** first.
 
-1. **0.10 — Lighthouse on every preview.** Every preview measures itself and the
-   PR shows what changed; it fails only on what holds still (bytes, requests, a
-   prefetched route handler, CLS, accessibility). Doesn't block Phase 1; best
-   built before 1.8.
+**0.10 (2026-10-07): every preview measures itself.** When Vercel reports a
+preview ready, `.github/workflows/lighthouse.yml` signs in, runs Lighthouse
+(mobile, Slow 4G, 4× CPU, three runs per route) and 0.9's tap runner, and
+answers the PR with one comment. It fails only on what holds still: a route
+handler requested during a load or prefetch, bytes or requests over
+`scripts/perf/budget.json`, CLS of 0.1 or more, accessibility under the
+recorded 100. A new top-level screen adds its route to
+`scripts/perf/routes.mjs` and its budget in the same PR. The GitHub
+`APP_PASSCODE` secret is the Preview and Development passcode, never
+production's (START-HERE 10e).
 
 0.9 (2026-10-04) found the slowness in the database and the app, not the
 hosting. Two views computed the whole catalog to describe one run, the nav
@@ -112,7 +119,8 @@ upcoming releases are in scope for books and comics (D-35).
   self-hosted in `src/app/fonts/`, `test:tokens`' palette and `--art` checks, and
   `test/self-hosted-fonts.test.ts`
 - `.claude/` — `/verify` skill, `schema-reviewer` subagent
-- `.github/workflows/` — CI config and nightly backup
+- `.github/workflows/` — CI config, nightly backup, Release, and Lighthouse on
+  every preview (task 0.10: `scripts/perf/`, `test/perf.test.ts`)
 - `volume_map.csv` — 67 approved rules, fully reviewed
 
 ## Open (non-blocking) decisions

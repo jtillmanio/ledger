@@ -1008,7 +1008,20 @@ order (Step 13).
      production included, is behind Vercel Authentication, so the smoke test
      below would only ever reach Vercel's login page. In Vercel → project →
      **Settings → Deployment Protection → Protection Bypass for Automation**,
-     create the secret and paste it here.
+     create the secret and paste it here. The Lighthouse workflow (task 0.10)
+     uses it too, to reach every preview.
+     And `APP_PASSCODE`: the **Preview and Development** passcode, which the
+     Lighthouse workflow (task 0.10) posts to `/api/login` to measure the
+     signed-in pages. Vercel holds two `APP_PASSCODE` values: your real
+     passphrase, ticked for **Production** only, and a second passphrase,
+     ticked for **Preview** and **Development**. Paste the second one here,
+     never the production one, so nothing in Actions holds your production
+     login. A change to either reaches a deployment only when it is next built:
+     redeploy an open PR's preview after changing it.
+     `SESSION_SECRET` already has its own value in each of Production,
+     Preview and Development. Keep it that way: the session cookie is signed
+     with it and never expires, so the cookie the workflow gets from a preview
+     is accepted by previews only, never by production.
    - **Variables:** `VERCEL_SCOPE` = `justin-tillman` (the name in your
      `vercel.com/<name>/ledger` URL), `NEON_PROJECT_ID` = the ID from step 3,
      `LEDGER_LIVE` = `false` (Step 14 sets it to `true`), and `PRODUCTION_URL`
