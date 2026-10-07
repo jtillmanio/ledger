@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   aggregateRoute, apiPath, baselinePr, baselineRun, filesWithSecrets, findComment, gateProblems, MARKER,
-  measurable, median, renderComment, scrubLhr, sessionCookie, summariseLhr, unbudgeted,
+  measurable, median, mergeMetrics, renderComment, scrubLhr, sessionCookie, summariseLhr, unbudgeted,
   type LoadSummary, type MeasuredRoute, type RouteBudget,
 } from "../scripts/perf/lib/perf.mjs";
 import { ROUTES } from "../scripts/perf/routes.mjs";
@@ -139,6 +139,11 @@ describe("gateProblems", () => {
     expect(gate([{ error: "Lighthouse exited 1" } as unknown as LoadSummary])[0]).toMatch(/comics: not measured \(Lighthouse exited 1\)/);
   });
 
+  it("fails a route whose job wrote no metrics", () => {
+    expect(gateProblems({ comics: aggregateRoute(route([load()])) }, BUDGET, ["login", "comics"]))
+      .toEqual(["login: not measured (its job wrote no metrics)"]);
+  });
+
   it("does not gate a route with no budget yet, and lists it", () => {
     expect(gate([load({ jsBytes: 9e9 })], {}, {})).toEqual([]);
     expect(unbudgeted({ comics: aggregateRoute(route([load()])) }, {})).toEqual(["comics"]);
@@ -186,6 +191,26 @@ describe("renderComment", () => {
     const comments = [{ id: 1, body: "looks good" }, { id: 2, body: `${MARKER}\n### Lighthouse` }];
     expect(findComment(comments)?.id).toBe(2);
     expect(findComment([{ id: 1, body: "x" }])).toBeUndefined();
+  });
+});
+
+describe("mergeMetrics (one job per route)", () => {
+  const part = (id: string, at: string) => ({
+    url: BASE, sha: "abc", lighthouse: "13.5.0", measuredAt: at, runs: 3,
+    routes: { [id]: route([load()], { path: `/${id}` }) },
+  });
+
+  it("joins the routes in the route list's order and keeps the earliest start", () => {
+    const merged = mergeMetrics([part("books", "2026-10-07T05:02:00Z"), part("login", "2026-10-07T05:01:00Z"),
+      part("comics", "2026-10-07T05:03:00Z")], ["login", "comics", "books"]);
+    expect(Object.keys(merged.routes)).toEqual(["login", "comics", "books"]);
+    expect(merged.measuredAt).toBe("2026-10-07T05:01:00Z");
+    expect(merged.url).toBe(BASE);
+  });
+
+  it("keeps a route the list no longer names, last, and refuses nothing measured", () => {
+    expect(Object.keys(mergeMetrics([part("old", "a"), part("login", "b")], ["login"]).routes)).toEqual(["login", "old"]);
+    expect(() => mergeMetrics([], ["login"])).toThrow(/no route was measured/);
   });
 });
 
