@@ -87,6 +87,14 @@ describe("median and aggregateRoute", () => {
     expect(r.tap).toMatchObject({ first: 900, median: 500 });
   });
 
+  it("reports no first hit when the first run failed, rather than a warm second run", () => {
+    const r = aggregateRoute(route([{ error: "Lighthouse exited 1" } as unknown as LoadSummary, load({ ttfb: 100 })],
+      { taps: [{ error: "no link" }, { ms: 400 }] }));
+    expect(r.first).toBeNull();
+    expect(r.tap.first).toBeNull();
+    expect(r.median.ttfb).toBe(100);
+  });
+
   it("collects route handlers from any load or tap", () => {
     const r = aggregateRoute(route([load(), load({ apiRequests: ["/api/export"] })], { tapApiRequests: ["/api/progress"] }));
     expect(r.apiRequests).toEqual(["/api/export", "/api/progress"]);

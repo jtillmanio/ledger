@@ -97,14 +97,18 @@ export function aggregateRoute(measured) {
   const taps = measured.taps.filter((t) => !t.error);
   const keys = [...TIMINGS.map((t) => t.key), "cls", "a11y", ...BUDGETED.map((b) => b.key)];
   const med = Object.fromEntries(keys.map((k) => [k, median(loads.map((l) => l[k]))]));
+  // The first hit is the first run, or nothing when that run failed: the
+  // second run is warm and must not be reported as the first.
+  const firstLoad = measured.loads[0]?.error ? null : measured.loads[0] ?? null;
+  const firstTap = measured.taps[0]?.error ? null : measured.taps[0]?.ms ?? null;
   return {
     path: measured.path,
     runs: loads.length,
     errors: [...measured.loads, ...measured.taps].filter((r) => r.error).map((r) => r.error),
     landedOn: [...new Set(loads.map((l) => l.landedOn))],
-    first: loads[0] ?? null,
+    first: firstLoad,
     median: med,
-    tap: { first: taps[0]?.ms ?? null, median: median(taps.map((t) => t.ms)), rscBytes: median(taps.map((t) => t.rscBytes)) },
+    tap: { first: firstTap, median: median(taps.map((t) => t.ms)), rscBytes: median(taps.map((t) => t.rscBytes)) },
     apiRequests: [...new Set([...loads.flatMap((l) => l.apiRequests), ...(measured.tapApiRequests ?? [])])],
   };
 }
