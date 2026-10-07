@@ -1010,15 +1010,18 @@ order (Step 13).
      **Settings → Deployment Protection → Protection Bypass for Automation**,
      create the secret and paste it here. The Lighthouse workflow (task 0.10)
      uses it too, to reach every preview.
-     And `APP_PASSCODE`: the **preview's** passcode, which the Lighthouse
-     workflow posts to `/api/login` to measure the signed-in pages. Give
-     Vercel's Preview environment its own: Vercel → **Settings → Environment
-     Variables**, add `APP_PASSCODE` (a new passphrase) and `SESSION_SECRET`
-     (a new random value), each ticked for **Preview** only, and untick
-     Preview on the Production values. Then the secret here, and any session
-     cookie the workflow makes, opens previews and never production (the
-     cookie is signed with `SESSION_SECRET` and never expires). Redeploy an
-     open PR's preview after changing them.
+     And `APP_PASSCODE`: the **Preview and Development** passcode, which the
+     Lighthouse workflow (task 0.10) posts to `/api/login` to measure the
+     signed-in pages. Vercel holds two `APP_PASSCODE` values: your real
+     passphrase, ticked for **Production** only, and a second passphrase,
+     ticked for **Preview** and **Development**. Paste the second one here,
+     never the production one, so nothing in Actions holds your production
+     login. A change to either reaches a deployment only when it is next built:
+     redeploy an open PR's preview after changing it.
+     While `SESSION_SECRET` is one value for every environment, the session
+     cookie the workflow gets from a preview is also accepted by production
+     (it is signed with `SESSION_SECRET` and never expires). To close that
+     too, give Preview and Development their own `SESSION_SECRET` the same way.
    - **Variables:** `VERCEL_SCOPE` = `justin-tillman` (the name in your
      `vercel.com/<name>/ledger` URL), `NEON_PROJECT_ID` = the ID from step 3,
      `LEDGER_LIVE` = `false` (Step 14 sets it to `true`), and `PRODUCTION_URL`
