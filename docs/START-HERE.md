@@ -1018,10 +1018,10 @@ order (Step 13).
      never the production one, so nothing in Actions holds your production
      login. A change to either reaches a deployment only when it is next built:
      redeploy an open PR's preview after changing it.
-     While `SESSION_SECRET` is one value for every environment, the session
-     cookie the workflow gets from a preview is also accepted by production
-     (it is signed with `SESSION_SECRET` and never expires). To close that
-     too, give Preview and Development their own `SESSION_SECRET` the same way.
+     `SESSION_SECRET` already has its own value in each of Production,
+     Preview and Development. Keep it that way: the session cookie is signed
+     with it and never expires, so the cookie the workflow gets from a preview
+     is accepted by previews only, never by production.
    - **Variables:** `VERCEL_SCOPE` = `justin-tillman` (the name in your
      `vercel.com/<name>/ledger` URL), `NEON_PROJECT_ID` = the ID from step 3,
      `LEDGER_LIVE` = `false` (Step 14 sets it to `true`), and `PRODUCTION_URL`
