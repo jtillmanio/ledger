@@ -50,9 +50,12 @@ jobs:
       url: ${{ steps.target.outputs.url }}
     env:
       SHA: ${{ github.event.deployment.sha || github.sha }}
-      HEADERS_DIR: ${{ runner.temp }}/lh-session
-      OUT_DIR: ${{ runner.temp }}/lighthouse
     steps:
+      # The session lives outside the reports folder, and only for this job.
+      - name: Folders
+        run: |
+          echo "HEADERS_DIR=$RUNNER_TEMP/lh-session" >> "$GITHUB_ENV"
+          echo "OUT_DIR=$RUNNER_TEMP/lighthouse" >> "$GITHUB_ENV"
       - uses: actions/checkout@v7
         with: { ref: "${{ github.event.deployment.sha || github.sha }}" }
       - uses: actions/setup-node@v7
