@@ -320,3 +320,16 @@ migration, and confirm the existing tests still pass against the new shape.
 read @docs/HANDOFF.md for project context and @docs/START-HERE.md for where I am.
 I'm on step <n>. don't write anything until I confirm the plan.
 ```
+
+---
+
+## The kit's loop (from 2026-10-08)
+
+The Claude Code starter kit (2.3.1, adopted in `docs/kit-adoption.md`) now
+drives a build session: `/new-task` turns a TASKS.md task into
+`docs/tasks/TASK-###-*.md`, and `/implement-task` (or `/next-task`) runs the
+same four phases this file describes (plan gate, implement, verify, review)
+with the kit's agents (test-runner, test-auditor, spec-reviewer,
+schema-reviewer, ui-verifier). This file stays the technique reference
+behind that loop; where the two differ on *how* a session runs, the kit's
+skill wins, and on *what* the task must do, `docs/TASKS.md` still wins.

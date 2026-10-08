@@ -122,6 +122,11 @@ upcoming releases are in scope for books and comics (D-35).
 - `.github/workflows/` — CI config, nightly backup, Release, and Lighthouse on
   every preview (task 0.10: `scripts/perf/`, `test/perf.test.ts`)
 - `volume_map.csv` — 67 approved rules, fully reviewed
+- Claude Code starter kit 2.3.1 (PR #53, adopted 2026-10-08,
+  `docs/kit-adoption.md`): skills, the test-runner, test-auditor,
+  spec-reviewer and ui-verifier agents beside `schema-reviewer`, and the
+  protected-path and post-edit hooks; `.claude/kit.json` waits for
+  `/customize-kit`
 
 ## Open (non-blocking) decisions
 
