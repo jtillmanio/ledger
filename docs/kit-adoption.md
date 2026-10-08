@@ -376,6 +376,32 @@ deletion `attended`, and most of TASKS.md does.
   2. Convert the first sitting (1.2, 1.1, 1.6) with `/new-task`, after
      `/customize-kit`. (Owner decision: per sitting.)
 
+### Coverage check result (2026-10-08)
+
+`/milestones` ran in this mode. Its mode was narrowed by the owner from
+"writing nothing" to "no new file; gaps go into TASKS.md as numbered tasks
+with a **Check:**". Every screen (S-ID) and every planned table already had
+a task. What it found, and where each now lives in TASKS.md:
+
+| Gap | Resolution |
+|---|---|
+| No browser harness for 1.8's axe and computed-style check (G-6) | New 0.11, built in sitting 6 before 1.8 |
+| `volume_rules` exists but is never loaded, and nothing edits it | New 1.12 (load, before cutover) and 3.9 (editor; the 1.3 parser reads it) |
+| Nothing moves runs between blocks, orders them, or names a block | New 3.8 |
+| `series_progress` (FEATURES B6, the Series tab) has no screen | New 5.9 `/books/series` |
+| `editions` (the Master tab) has no page; nothing records a bought trade | New 5.10 `/comics/editions` |
+| 2.4, 2.6 and 2.9 show owned editions, which need 5.6 (a later phase) | Amended: hidden until 5.6 and 5.10 |
+| 6.7 and 7.6 duplicate the release digest | 6.7 removed; 5.7 and 5.8 now cite 7.6 |
+| Rewatch history (FEATURES Part 2e) has no writer | Amended 8.3 (appends `watch_events`) and 8.4 |
+| Master list sort by word count and series-completion filter (B3) | Amended 6.10 |
+| Shelves' *Next three unread* (FEATURES Part 2c) | Amended 5.1 |
+| `/inbox` route had no task | Amended 1.4b |
+
+Not changed: 17 open tasks in Phases 5–7 still have no **Check:**. Each one gets
+written when its sitting is converted with `/new-task`. Phases 1, 2 and 6 hold
+more than the kit's 8 tasks per milestone; the owner kept the phases as they
+are.
+
 ## Gap report
 
 Class: **BLOCKS TASKS** (acceptance criteria can't be written or checked),
@@ -419,7 +445,7 @@ tracked; the roadmap is phased with cutover risks early and Phase 0 excluded.
 | G-3 | Decided: accepted as is. No branch protection, no extra `PowerShell(...)` deny rules; `git.md` and the `Bash(...)` deny rules are the guard |
 | G-4 | Decided: keep both workflows; the owner runs `/install-github-app` (attached terminal) to set `CLAUDE_CODE_OAUTH_TOKEN`. Until then the review job fails when a PR leaves draft |
 | G-5 | Fixed: `CLAUDE.md` § Kit task loop, *Three status records, one owner each* |
-| G-6 | Open: task stub (Inputs for /milestones) |
+| G-6 | Scheduled: TASKS 0.11, built in sitting 6 before 1.8 (coverage check, 2026-10-08) |
 | G-7 | Fixed: note appended to `docs/review/decisions.md` (D-24a/b … D-27a/b; next is D-41) |
 | G-8 | Open: 2.12 adds the `data-id`s |
 | G-9 | Fixed: line appended to `docs/STATUS.md` *What's actually built* |

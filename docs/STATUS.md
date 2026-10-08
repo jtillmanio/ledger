@@ -1,6 +1,6 @@
 # Status
 
-**Last regenerated:** 2026-10-07
+**Last regenerated:** 2026-10-08
 
 This is a rollup of `docs/TASKS.md`, not a second source of truth. Every count
 here comes from counting ☑ vs ☐ task markers in that file. If this page and
@@ -9,21 +9,22 @@ argue from it.
 
 ## Where we are
 
-**12 of 93 tasks done (13%).** Phase 0 is done — nothing in Phase 1 or later has
-started. The private GitHub repo exists and CI runs on every PR, and is proven
+**12 of 98 tasks done (12%).** Phase 0 is done but for 0.11, a browser test
+harness added by the 2026-10-08 coverage check and built in sitting 6 —
+nothing in Phase 1 or later has started. The private GitHub repo exists and CI runs on every PR, and is proven
 to go red on a broken view (task 0.2, done 2026-09-30). The Release
 workflow has deployed `main` to Vercel (last run 2026-10-02). `LEDGER_LIVE` is
 `false`, so the database is still disposable: `npm run rebuild` can reload it.
 
 | Phase | Done / total | Status |
 |---|---|---|
-| 0 — Foundation | 11 / 11 | Done |
-| 1 — Daily use | 0 / 18 | Not started |
+| 0 — Foundation | 11 / 12 | Done but 0.11 (built in sitting 6) |
+| 1 — Daily use | 0 / 19 | Not started |
 | 2 — The pace engine | 0 / 16 | Not started |
-| 3 — Editing | 0 / 9 | Not started |
+| 3 — Editing | 0 / 11 | Not started |
 | 4 — Enrichment | 0 / 3 | Not started |
-| 5 — Remaining surfaces | 0 / 7 | Not started |
-| 6 — Polish | 1 / 15 | Not started† |
+| 5 — Remaining surfaces | 0 / 9 | Not started |
+| 6 — Polish | 1 / 14 | Not started† |
 | 7 — AI-assisted curation | 0 / 6 | Not started |
 | 8 — Watchlist (film/TV) | 0 / 8 | Not started |
 
@@ -35,6 +36,13 @@ doesn't exist until those tasks do.
 
 Phase 1, in the build order of TASKS.md's sitting table (START-HERE Step 12):
 **1.2 Undo → 1.1 → 1.6** first.
+
+**Coverage check (2026-10-08).** `/milestones` ran as a coverage check of
+TASKS.md against FEATURES, the screen inventory and the schema. It added
+0.11 (browser test harness, before 1.8), 1.12 (load the volume map, before
+cutover), 3.8 (blocks), 3.9 (volume map editor), 5.9 (series page) and 5.10
+(editions), removed 6.7 (a duplicate of 7.6), and amended 1.4b, 2.4, 2.6,
+2.9, 5.1, 6.10, 8.3 and 8.4.
 
 **0.10 (2026-10-07): every preview measures itself.** When Vercel reports a
 preview ready, `.github/workflows/lighthouse.yml` signs in, runs Lighthouse

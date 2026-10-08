@@ -13,10 +13,10 @@ section. Nothing here is built yet except where marked **shipped**.
 |---|---|---|---|
 | B1 | Dashboard | new | Currently-reading, pace-vs-plan for the year, next up, upcoming releases, genre mix. Design below |
 | B2 | To Read by year and quarter, with word-count budgeting | partial | `reading_plan.planned_quarter` exists; task 1.7 makes one period column with four to-read levels — quarter, year, On deck, Someday (D-37) — and no months (D-38); needs the pace engine |
-| B3 | To-Read master list, searchable | shipped | Search works; needs sort by word count, filter by series-completeness |
+| B3 | To-Read master list, searchable | shipped | Search works; needs sort by word count, filter by series-completeness. TASKS 6.10 |
 | B4 | Top books per year, editable | partial | `book_status.year_rank` holds the data; no edit UI, no reorder |
 | B5 | Coming out list | shipped | Needs "notify me" and a calendar view. Task 5.7 (D-35): *Out now* plus a month-grouped list, notified in the app; comics get the same in 5.8 |
-| B6 | Tracked series and authors with progress | partial | `series_progress` view exists; needs a `shelves` table so you can add arbitrary ones |
+| B6 | Tracked series and authors with progress | partial | `series_progress` view exists; TASKS 5.9 draws it as `/books/series`. Arbitrary groupings are shelves (5.1) |
 | — | BookTube top 10, Download, HP Fanfiction | migrated, unsurfaced | Data is in `external_lists` and `wishlist`. No pages. Leave `external_lists`; `wishlist` is promoted into Someday (task 1.4d, D-39) |
 
 ### Comics
@@ -31,10 +31,10 @@ section. Nothing here is built yet except where marked **shipped**.
 | C3c | Real covers on spine rows | planned | `issues.cover_url` (Metron) in a fixed 28×42 box, with the text fallback, lazy loading, and a reduced-data path and a *Show covers* setting. TASKS 4.3 |
 | C3d | Release date per row | planned | `issues.cover_date` as a grey desktop column; phone rows leave it to the issue sheet, which also gains the publication date (a new column, to be approved); an opt-in per-run caption for runs not in publication order. TASKS 3.6b, 3.5 |
 | C3e | Next issue in the run hero | planned | A tonal strip above *Resume #141*: cover, label and the placement's note. TASKS 1.6 |
-| C4 | Edit everything | not built | The largest single chunk of remaining work. See Part 3 |
+| C4 | Edit everything | not built | The largest single chunk of remaining work. See Part 3; blocks are TASKS 3.8, the volume map 3.9 |
 | C5 | To-read list | shipped | On the dashboard as "Start next" |
 | C6 | Events and tracks tracking | partial | Views exist, no pages |
-| — | Ultimate Order, Ultimate Collection, Master, Sheet8 | out | Not migrated. `Master` is loaded as `editions` but unsurfaced |
+| — | Ultimate Order, Ultimate Collection, Master, Sheet8 | out | Not migrated. `Master` is loaded as `editions`; TASKS 5.10 surfaces it (collected and read) |
 
 ---
 
