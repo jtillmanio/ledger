@@ -3001,3 +3001,14 @@ without reordering it.
 dropped shows and films sit in a Stopped details element with a grey
 "dropped" badge.
 ```
+
+---
+
+## With the kit (from 2026-10-08)
+
+Since the kit was adopted (`docs/kit-adoption.md`), a session starts with
+`/new-task` and `/implement-task` rather than by pasting the Explore, Plan and
+Implement prompts here. The per-task notes above (model, effort, what to read,
+what to watch for) still apply: give them to `/implement-task` at its plan gate
+or put them in the task file's Context. This file still ranks below
+`docs/TASKS.md`.

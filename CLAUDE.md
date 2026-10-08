@@ -49,6 +49,36 @@ Development happens on Windows in PowerShell. Prefer `py` over `python`, and
 `.\etl\load.ps1` over `etl/load.sh`. psql `\copy` paths need forward slashes
 even on Windows.
 
+## Project docs
+
+Every kit skill and agent reads this table to find project documents (mapped
+by `/adopt`, 2026-10-08; `docs/kit-adoption.md` has the inventories behind it).
+`—` means the project has no such document.
+
+| Role | Path |
+|---|---|
+| Product brief | `README.md` + `docs/HANDOFF.md` § 1. Who and what |
+| Features (IDs, MVP cut, outcomes) | `docs/FEATURES.md` (scope); the IDs, the cut and the outcomes are `docs/TASKS.md` task numbers, phases and **Check:** lines |
+| Screen inventory (S-IDs, states) | `design/mockups-index.md` (S-ID = the mockup `data-id`) + `design/screenshots/README.md` (feel-pass frames) |
+| Design brief / intent | `design/STYLE_GUIDE.md` § 14–§ 16 (the feel pass) |
+| Design source of truth | `design/mockups.html` (layout, copy); `design/Ledger Feel Review.dc.html` and `design/LedgerDesktop.dc.html` (what the feel pass draws); `design/*.dc.html` spec pages (geometry, states) |
+| Design tokens | `design/tokens.css` → `src/app/globals.css` |
+| Reference screenshots | `design/screenshots/` |
+| Design process notes | `docs/DESIGN.md`, `design/handoff/`, `docs/review/NEW_UI_AUDIT_REPORT.md`, `docs/review/UI_AUDIT_REPORT.md` |
+| Architecture | `docs/ARCHITECTURE.md` |
+| Data model | `src/db/schema.ts` + `etl/views.sql` (what runs); `docs/ARCHITECTURE.md` § 2. Decisions (why); `docs/DIAGRAMS.md` § 1 |
+| Domain specs (other) | `docs/ARCHITECTURE.md` § 4. Interface (readiness) and § 5. Operational posture (performance budget); `design/Telescope Spec.dc.html`; `design/Plan Rail Spec.dc.html`; `docs/FEATURES.md` § Part 2d (metrics) |
+| Deploy | `docs/START-HERE.md` Steps 13–14, `.github/workflows/release.yml`, `.claude/rules/git.md` § Merging |
+| Roadmap (source, if separate) | `docs/TASKS.md` (phases 0–8) |
+| Task list (milestones + stubs) | `docs/TASKS.md`; `/new-task` converts one sitting at a time into `docs/tasks/`, copying each **Check:** verbatim |
+| Tasks | `docs/tasks/` (fixed) |
+| Decisions | `docs/review/decisions.md` (D-n, the log of record); `docs/decisions.md` (fixed) points there and holds stack rows K-n |
+
+Precedence: § Which document wins (D-1) above, not the kit's default. A task
+file in `docs/tasks/` ranks below `docs/TASKS.md`; where they disagree, the
+task file is the bug. `.claude/rules/git.md` beats the kit's flow on branch
+names, commit and PR format, and when a PR is ready.
+
 ## Commands
 
 ```powershell
@@ -86,6 +116,11 @@ npm run test:tokens         # colour tokens: mockups = globals.css, hue distance
 npm run check:migrations    # journal = files, drop/retype has a drizzle/down file, schema.ts fully generated,
                             # no migration already on main edited (standing rule 3); no DB
 ```
+
+`.claude/kit.json` is the single source of truth for the kit's verification
+commands (`verify.fast` runs after every edit, `verify.full` is what the
+test-runner agent runs). Keep it in sync with the list above. Its commands run
+under `cmd.exe /c` because the hooks execute them that way.
 
 ## Non-obvious rules
 
@@ -405,3 +440,43 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
   changing its visibility; touching any database that is not `TEST_DATABASE_URL`;
   deleting or rewriting rows in `issue_progress`, `book_status` or `reading_plan`.
   An ambiguity in a task is a question, not a guess: write it down and stop.
+
+### Kit task loop
+
+- One task per session. Attended: `/clear`, then `/implement-task TASK-###`
+  or `/next-task`. Unattended sessions are started by
+  `.claude/scripts/dispatch-approved.ps1`.
+- No code before the plan is approved (`plan_status: approved` in the task
+  file). The plan lives in the task file's `## Plan` section.
+- If the spec is ambiguous or contradicts the code, ask. Never guess, never
+  silently widen scope, never rewrite acceptance criteria.
+- Change files outside the plan's file list only after explaining why.
+- Done = test-runner green, test-auditor PASS, every applicable reviewer
+  APPROVE, CI green, and the owner's manual check. Claude sets `Review`; only
+  the owner's "accepted" sets `Done`.
+- Never hand-edit `docs/tasks/INDEX.md`. Run `.claude/scripts/build-index.ps1`.
+- Post-edit check failures in the middle of a multi-file change are expected.
+  Finish the change, then fix whatever still fails.
+- PRs open as drafts and are marked ready only after CI passes. Branch names,
+  commit format and PR bodies stay as `.claude/rules/git.md` says.
+- **One task, two IDs.** A kit task file is `docs/tasks/TASK-###-<slug>.md`
+  (the kit's scripts need that), and its title starts with the TASKS.md number
+  (`title: 1.2 Undo`). Everything git sees uses the TASKS.md number: branch
+  `task/1.2-undo`, commit and PR subject `task 1.2: …`. `/new-task` converts
+  one sitting at a time and copies each **Check:** verbatim into the ACs.
+- **Three status records, one owner each.** The TASKS.md checkbox is ticked in
+  the task's PR, as before. The task file goes to `Review` when the PR is
+  ready and to `Done` only on the owner's "accepted". `docs/STATUS.md` is
+  regenerated from TASKS.md, never from the task files.
+
+## Hard rules
+
+Only rules a reviewer can check against a diff. The spec-reviewer agent
+enforces this list; `/customize-kit` adds 3–6 more from the rules above.
+
+1. Never edit files matched by `protectedPaths` in `.claude/kit.json`. If one
+   must change, stop and ask.
+
+## Gotchas
+
+Add a line every time the owner corrects the same mistake twice.
