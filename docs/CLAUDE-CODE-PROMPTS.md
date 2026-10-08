@@ -65,6 +65,13 @@ use the 2.4 prompt's shape with TASKS 2.12. For every one, read the task, then
 screen's PNGs in `design/screenshots/` (the review page's source is templates). Where the feel pass draws a
 surface it beats `design/mockups.html` on layout and copy.
 
+**The coverage check (2026-10-08) changed these tasks after their prompts were
+written:** 1.4b (the `/inbox` route), 2.4, 2.6 and 2.9 (the owned-editions
+tile stays hidden until 5.6 and 5.10), 5.1 (*Next three unread*), 6.10 (sort by
+word count, series-completion filter), 8.3 (appends `watch_events`) and 8.4
+(rewatch history). 6.7 is removed in favour of 7.6. It also added 0.11, 1.12,
+3.8, 3.9, 5.9 and 5.10, whose sections below carry notes only, no prompts.
+
 ---
 
 ## Changed by the R1 review (2026-09-20) — the prompts below predate it
@@ -108,6 +115,7 @@ they're not settled first.
    S" word for word. Do it once. Since Phase 7's framing ("after Phase 4, not
    before") fits a feature that emails you about *verified* releases, I'd keep
    it as **7.6** and delete the **6.7** line rather than the reverse.
+   *Done 2026-10-08 (coverage check): TASKS.md marks 6.7 removed.*
 2. **6.2b is checked done but its own text describes unfinished work** — "☑
    ... What remains here is the run-list *sort* by unlock cost and by
    leverage, once the views from 2.6 exist." Either it's done and that
@@ -178,6 +186,7 @@ alone is enough elsewhere.
 | 0.5 Volume-year normalization | S | Sonnet | low | medium | medium |
 | 0.8a Read state per run — schema, ETL, views | M | Opus | high | high | xhigh |
 | 0.8b Read state per run — the spine | S | Sonnet | medium | high | high |
+| 0.11 Browser test harness (built in sitting 6) | M | Sonnet | medium | high | high |
 | 1.2 Undo | S | Sonnet | medium | high | high |
 | 1.1 Range marking | M | Opus | high | high | xhigh |
 | 1.6 Resume pointer | S | Sonnet | low | medium | high |
@@ -196,6 +205,7 @@ alone is enough elsewhere.
 | 1.10 Comics Up next queue | M | Sonnet | medium | high | xhigh |
 | 1.9 Status screens | M | Sonnet | medium | high | high |
 | 1.11 Slow down failed sign-ins (D-36) | S | Sonnet | low | medium | high |
+| 1.12 Load the volume map into `volume_rules` | S | Sonnet | low | medium | high |
 | 2.0 Settings | S | Sonnet | low | medium | high |
 | 2.1 Capacity view | M | Opus | high | high | xhigh |
 | 2.1b Reading sessions — after-the-fact entry | S | Sonnet | medium | high | high |
@@ -217,6 +227,8 @@ alone is enough elsewhere.
 | 3.4 Book ratings and top-books reorder | S | Sonnet | low | medium | high |
 | 3.5 Detail sheets — books and issues | M | Opus | high | high | xhigh |
 | 3.6 Eras on the run detail | M | Opus | high | high | xhigh |
+| 3.8 Blocks: assign, order, name | M | Opus | high | high | xhigh |
+| 3.9 Volume map editor | S | Opus | medium | high | xhigh |
 | 4.1 Metron backfill (cover_url) | M | Sonnet | medium | high | high |
 | 4.2 Open Library / Hardcover backfill | M | Sonnet | medium | high | high |
 | 4.3 Covers in the UI | S | Sonnet | low | medium | medium |
@@ -225,6 +237,8 @@ alone is enough elsewhere.
 | 5.4 Ratings and post-read notes | S | Sonnet | low | medium | medium |
 | 5.5 DNF with a reason field | S | Sonnet | low | medium | medium |
 | 5.6 `edition_issues` parser | M | Opus | medium | high | xhigh |
+| 5.9 Series page | S | Sonnet | low | medium | medium |
+| 5.10 Editions: collected and read | M | Sonnet | medium | high | high |
 | 6.1 Global search | M | Sonnet | medium | high | high |
 | 6.2 Stats and year in review | L | Sonnet | medium | high | high |
 | 6.3 Prereq graph visualization | M | Opus | medium | high | xhigh |
@@ -563,6 +577,29 @@ on rows already read here; "+N" is a button that opens the issue sheet (3.5).
 write the render tests first: B's row carries "read in A"; a row read here
 shows no hint; every .chk has an accessible name and aria-pressed.
 ```
+
+---
+
+### 0.11 Browser test harness — Playwright and axe
+**Model:** Sonnet · **Effort:** explore medium / plan high / implement high
+**Why:** tooling, like 0.1, but every UI task from 1.8 on writes its checks in
+whatever shape this sets, so the helper API matters more than the install.
+Built in sitting 6, before 1.8.
+
+**Read first:** TASKS 0.11, the header's *UX floor* and *A feel-pass surface is
+checked more widely*, 1.8's **Check:** (the first consumer),
+`scripts/lib/testdb.mjs` (the refusal to copy), `scripts/perf/login.mjs` (the
+sign-in to copy) and `.claude/kit.json` `ui.viewports`.
+
+**Watch for:** it must refuse without `TEST_DATABASE_URL` and never fall back
+to `DATABASE_URL`. Don't start pixel-diff baselines. Prove the axe step can
+fail (the unnamed-button fixture) before trusting a pass. Adding it to
+`test:all` means `/verify` and CI now need a browser: install it in CI, and say
+the local cost in the PR. `git.md`'s *Test on the branch* and CLAUDE.md's
+command list change in the same PR.
+
+**Kit:** no paste-in prompts (see *With the kit* at the foot). Give these notes to
+`/implement-task` at its plan gate, or put them in the task file's Context.
 
 ---
 
@@ -1204,6 +1241,27 @@ advancing the timers and sets the cookie. then add the wait to the route
 handler: stateless, with no in-memory counter and no table. nothing waits on
 a real clock.
 ```
+
+---
+
+### 1.12 Load the volume map into `volume_rules`
+**Model:** Sonnet · **Effort:** explore low / plan medium / implement high
+**Why:** small, but it changes extract's output, and it has a deadline: after
+Step 14's final load nothing fills this table again.
+
+**Read first:** TASKS 1.12, `load_volume_map` and `apply_volume_year` in
+`etl/extract.py`, how `etl/load.ps1` and `etl/load.sh` order their copies, and
+`src/db/schema.ts` `volumeRules`.
+
+**Watch for:** standing rule 4. A new seed file is an output change: re-run
+extract against both workbooks and diff the CSVs (only `volume_rules.csv`
+should be new). Copy it after `runs`, because of the `run_id` foreign key. A
+flagged row (`approved with no year`) is not written. Running `rebuild` against
+development is the owner's call (CLAUDE.md: ask before touching any database
+but `TEST_DATABASE_URL`).
+
+**Kit:** no paste-in prompts (see *With the kit* at the foot). Give these notes to
+`/implement-task` at its plan gate, or put them in the task file's Context.
 
 ---
 
@@ -1944,6 +2002,50 @@ era chips and, on runs of 300+ rows, the minimap.
 
 ---
 
+### 3.8 Blocks: assign, order, name
+**Model:** Opus · **Effort:** explore high / plan high / implement xhigh
+**Why:** three orderings must stay contiguous at once (`runs.sequence` within
+a block, `blocks.number` within a track, and the `(track_id, number)`
+unique), and `block_position`, the telescope and the run list all read them.
+A gap or a duplicate there is wrong quietly. Phase 3, so the adversarial
+review (standing rule 5) runs.
+
+**Read first:** TASKS 3.8, ARCHITECTURE 2.8 (blocks), `block_position` and
+`block_progress` in `etl/views.sql`, 2.9's block bands, 1.10's keyboard
+reordering (the route to copy) and 1.2's undo stack.
+
+**Watch for:** renumbering under a unique constraint needs a deferred
+constraint or a two-step update; say which in the plan. Nothing derived is
+written. Removing a block is out of scope (no `deleted_at`, a schema change).
+A run in two tracks still has one `block_id`, so don't invent a per-track block.
+
+**Kit:** no paste-in prompts (see *With the kit* at the foot). Give these notes to
+`/implement-task` at its plan gate, or put them in the task file's Context.
+
+---
+
+### 3.9 Volume map editor
+**Model:** Opus · **Effort:** explore medium / plan high / implement xhigh
+**Why:** the editor is ordinary CRUD, but it changes 1.3's parser, the
+highest-risk feature in the app. A rule that silently picks the wrong volume
+writes a wrong label that looks right.
+
+**Read first:** TASKS 3.9, 1.3's *Ambiguous volume* rule and 1.3c's review
+table, `apply_volume_year` in `etl/extract.py` (the same precedence: run rule
+before any-run rule, inside its range), 2.0's Settings line, and CLAUDE.md on
+label changes (accepted label review only).
+
+**Watch for:** a rule only pre-selects; nothing is written without 1.3c's
+accept, and the row says *from the volume map*. Existing `issues` are never
+relabelled. Remove is a hard delete with undo because the table has no
+`deleted_at`; if that looks wrong, it's a schema question for the owner, not a
+column to add. The overlap check is per series and scope.
+
+**Kit:** no paste-in prompts (see *With the kit* at the foot). Give these notes to
+`/implement-task` at its plan gate, or put them in the task file's Context.
+
+---
+
 ## Phase 4 — Enrichment
 
 ### 4.1 Metron backfill (cover_url)
@@ -2178,6 +2280,45 @@ implement the plan. write the tests first against a fixture of real edition
 strings from the catalog covering: a plain range, a range plus one trailing
 named issue, and a fully freeform edition title with no issue numbers at all.
 ```
+
+---
+
+### 5.9 Series page from `series_progress`
+**Model:** Sonnet · **Effort:** explore low / plan medium / implement medium
+**Why:** a read-only screen over a view that already exists; the pattern is
+5.2's tracks page.
+
+**Read first:** TASKS 5.9, `series_progress` in `etl/views.sql`, 5.2 (the
+shape), 5.7 (the `NAV_ITEMS` flag) and R2's `pct > 1` finding.
+
+**Watch for:** the next-unread book is derived in the query, never stored.
+Counts come from the view, never recomputed in the component. Clamp the meter,
+not the counts. The screen gets a mockup frame and a route in
+`scripts/perf/routes.mjs` with its budget.
+
+**Kit:** no paste-in prompts (see *With the kit* at the foot). Give these notes to
+`/implement-task` at its plan gate, or put them in the task file's Context.
+
+---
+
+### 5.10 Editions: collected and read
+**Model:** Sonnet · **Effort:** explore medium / plan high / implement high
+**Why:** a list with two toggles over `edition_progress`, plus the one rule
+that matters: an edition's *Read* never touches issue read state. It also turns
+on the owned-editions tile that 2.4, 2.6 and 2.9 left hidden.
+
+**Read first:** TASKS 5.10 and 5.6, `editions` and `edition_progress` in
+`src/db/schema.ts`, ARCHITECTURE 2.6 (editions are separate from issues), 2.6's
+`frontier` view and 3.5's issue sheet.
+
+**Watch for:** per-user facts stay in `edition_progress` (no flag on
+`editions`). *Add edition* matches your own editions first (the add-flow rule)
+and its issue text goes through 5.6's parser. Check that the frontier tile
+appears only when `edition_issues` rows exist. New route, so add it to
+`scripts/perf/routes.mjs` with its budget.
+
+**Kit:** no paste-in prompts (see *With the kit* at the foot). Give these notes to
+`/implement-task` at its plan gate, or put them in the task file's Context.
 
 ---
 
@@ -3012,3 +3153,7 @@ Implement prompts here. The per-task notes above (model, effort, what to read,
 what to watch for) still apply: give them to `/implement-task` at its plan gate
 or put them in the task file's Context. This file still ranks below
 `docs/TASKS.md`.
+
+Sections for tasks added after adoption (0.11, 1.12, 3.8, 3.9, 5.9, 5.10)
+have the model, the effort, what to read and what to watch for, and no
+Explore, Plan or Implement blocks: `/implement-task` runs those phases itself.

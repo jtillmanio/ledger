@@ -455,13 +455,16 @@ of book history) and they deserve different answers.
 | `/comics/[runId]/[issueId]` | The issue sheet: every run that places the issue, with a read toggle per placement (intercepted route) |
 | `/comics/[runId]/path` | *Why blocked?*: the cheapest ordered chain of prerequisite runs (intercepted route) |
 | `/comics/releases` | New issues in the series you follow, each offered for adding to its run (task 5.8, D-35) |
+| `/comics/editions` | Trades and omnibuses, with *Collected* and *Read* per edition (task 5.10) |
 | `/books` | Books dashboard — reading now, the plan rail, capacity, the year so far |
 | `/books/status` | In flight · Up next · Done, for books |
 | `/books/list` | Master list: search, filter by status, to-read level, year or genre, series completion |
 | `/books/add` | Add books: search Open Library, paste a list, or by hand, with a destination (a quarter or year, On deck, Someday, or a shelf) |
 | `/books/plan` | Plan by quarter, full editor |
 | `/books/releases` | Books coming out that you want, *Out now* then by month (task 5.7, D-35) |
+| `/books/series` | Every series with `read / total` from `series_progress` and its next unread book (task 5.9) |
 | `/settings` | Minutes a day, words a minute — the inputs the capacity engine reads (task 2.0) |
+| `/settings/volumes` | The volume map: which volume year a bare series label means, per run or any run (task 3.9) |
 | `/watch` | Films and shows, mid-show progress computed from seasons |
 | `/watch/status` | In flight · Up next · Done, for films and shows |
 | `/watch/list` | Films and shows in one list, with mid-show progress computed from seasons |

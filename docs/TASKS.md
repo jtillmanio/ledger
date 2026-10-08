@@ -600,6 +600,41 @@ and an abandoned one stops spending the free plan's Actions minutes. A
 `workflow_dispatch` run needs the file on `main`, so that part of the Check
 runs right after merge.
 
+### ☐ 0.11 Browser test harness — Playwright and axe · M
+Gap G-6 (`docs/kit-adoption.md`, the 2026-10-08 coverage check). Numbered in
+Phase 0 because it is foundation, like 0.1 and 0.10, but **built in sitting 6,
+before 1.8**: 1.8's check needs an axe-core run over each dashboard and
+computed styles at set widths, and from 1.8 on the UX floor and *a feel-pass
+surface is checked more widely* (the header) ask the same of every UI task.
+Without a harness each task would invent its own browser setup, or skip the
+check.
+
+- **What.** `@playwright/test` and `@axe-core/playwright`, run by
+  `npm run test:e2e` against the app on `TEST_DATABASE_URL` only, refusing
+  without it the way `scripts/lib/testdb.mjs` does. It signs in with a test
+  `APP_PASSCODE` through `/api/login`, as `scripts/perf/login.mjs` does.
+  Playwright rather than `scripts/perf/`'s puppeteer-core because the kit's
+  ui-verifier already drives Playwright; `scripts/perf/` keeps its own package.
+- **Projects.** The six widths in `.claude/kit.json` `ui.viewports` (360, 390,
+  412, 768, 1024, 1280), light and dark through `colorScheme`, plus
+  `reducedMotion: 'reduce'` and `hasTouch` variants for the header's
+  reduced-motion and hover-at-rest checks.
+- **Helpers** in one module, so tasks share them: an axe call that fails on
+  any violation of the rules a check names; a computed-style reader; a
+  no-horizontal-scroll assertion; and a screenshot helper writing to a
+  gitignored folder. Screenshots are evidence for the PR, not baselines: no
+  pixel diffing while the design is still moving.
+- **Where it runs.** Into `npm run test:all` (so `/verify` and CI's `check`
+  run it) and into `.claude/rules/git.md`'s *Test on the branch* list, in this
+  PR. `CLAUDE.md`'s command list gains `npm run test:e2e`.
+
+**Check:** `npm run test:e2e` signs in with the test passcode and loads a seeded
+run's spine at 360, 390, 412, 768, 1024 and 1280px, light and dark, and passes.
+A fixture page with an unnamed `<button>` makes the axe step fail on
+`button-name`. The no-horizontal-scroll helper fails on a fixture that
+overflows at 360px. CI runs the suite on the PR against `TEST_DATABASE_URL`
+only, and `git.md`'s *Test on the branch* lists it.
+
 ---
 
 ## Phase 1 — Daily use (build before anything clever)
@@ -614,8 +649,8 @@ stay. START-HERE Step 12 groups them into sittings:
 | 3 | 1.2 → 1.1 → 1.6 | 1.1's check asserts undo, and 1.1 must not carry its own (R3-10) |
 | 4 | 1.3 → 1.3c → 1.3b | 1.3c's review table takes the parser's output; 1.3b's Metron results go through the same review and insert |
 | 5 | 1.4 → 1.4c → 1.4b → 1.5 | resolving an inbox note (1.4b) routes into the add flows; 1.5 must land before real rereads overwrite history |
-| 6 | 1.7 → 1.8a → 1.8 → 1.8b | 1.8a's tokens come before the first UI task; 1.8b was split out of 1.8 (R3-12) |
-| 7 | 1.10 → 1.9 → 2.11a → 1.11 | 1.9's Up next tab reads the queue; 2.11a is numbered in Phase 2 but built here, before cutover (D-20); so is 1.11 (D-36) |
+| 6 | 1.7 → 1.8a → 0.11 → 1.8 → 1.8b | 1.8a's tokens come before the first UI task; 0.11's harness runs 1.8's axe and computed-style check; 1.8b was split out of 1.8 (R3-12) |
+| 7 | 1.10 → 1.9 → 2.11a → 1.12 → 1.11 | 1.9's Up next tab reads the queue; 2.11a is numbered in Phase 2 but built here, before cutover (D-20); so is 1.11 (D-36); 1.12 must land before Step 14's final load, the last time `load` runs |
 
 ### ☐ 1.2 Undo · S
 **Build before 1.1** (R3-10): 1.1's check asserts undo, and 1.1 must not carry its
@@ -908,9 +943,15 @@ opens `/watch/add` pre-filled. The inbox count shows as a chip on every
 dashboard's lede below 1024px and as `Inbox (N)` in the desktop sidebar, which
 replaces the chip from 1024px (FP-D16).
 
+`/inbox` (ARCHITECTURE's route table) is where those counts lead: the
+unresolved notes, newest first, each with **Resolve**. The dashboard chip and
+the sidebar's `Inbox (N)` both link to it (coverage check, 2026-10-08).
+
 **Check:** test that an inbox row saves with only `raw_text` set, and that
 resolving it links `book_id` or `run_id` and stamps `resolved_at`. A note tagged
-Watch resolves into a `/watch/add` URL carrying its text.
+Watch resolves into a `/watch/add` URL carrying its text. `/inbox` lists only
+unresolved notes, newest first, and the dashboard chip and `Inbox (N)` link to
+it.
 
 ### ☐ 1.4d Promote the wishlist into Someday · S
 D-39. `wishlist` holds 497 lines from the workbook's old To-Read tab that never
@@ -1641,6 +1682,30 @@ passcode's response is still pending at 999 ms and resolves at 1000 ms, to
 one behave the same. A right passcode resolves without advancing the timers
 and sets the cookie. No test waits on a real clock.
 
+### ☐ 1.12 Load the volume map into `volume_rules` · S
+Coverage check, 2026-10-08; the load half of 3.9. **Built in Phase 1's last
+sitting, before cutover.** 0.3 created `volume_rules` ("`volume_map.csv`,
+editable in the app"), but nothing fills it: `etl/extract.py` applies the
+approved rules in `etl/data/volume_map.csv` to labels and never writes them
+to `seed/`, so `load` has nothing to copy and the table is empty. After Step
+14's final load, `load` never runs again, so a rule not in the table by then
+could only come back by hand through 3.9's editor.
+
+- `etl/extract.py` writes `seed/volume_rules.csv` from the same approved rows
+  `load_volume_map` reads: series text verbatim, `run_id` (NULL for an any-run
+  rule), `issue_from` / `issue_to` (NULL for any issue), `year`. A row the map
+  flags (`approved with no year`) is not written.
+- `etl/load.ps1` and `etl/load.sh` copy it, after `runs` (its `run_id` is a
+  foreign key), and `npm run rebuild`'s row counts list it.
+- No schema change, and nothing else moves: labels are already normalized by
+  extract, and nothing reads the table until 3.9.
+
+**Check:** `npm run test:etl` covers a fixture map holding a run-scoped rule,
+an any-run rule and an approved row with no year, and asserts that
+`seed/volume_rules.csv` holds exactly the first two, with `run_id` NULL on the
+second. `npm run rebuild` (development) reports a `volume_rules` count equal to
+the approved rows in `volume_map.csv`.
+
 ---
 
 ## Phase 2 — The pace engine
@@ -1900,8 +1965,10 @@ not even as provenance.
 
 Candidate run rows carry **cost and leverage**, not tier: "4,173 to unlock ·
 opens 2" (§15; it was *costs 4,173*), with *opens N* from 2.6's `run_opens`,
-and an owned-edition tag where one exists. Blocked runs keep the amber badge
-stating what is missing.
+and an owned-edition tag where one exists. (None does until 5.6 fills
+`edition_issues` and 5.10 records what is collected: until then the tag is
+absent, never a zero, and this task's check does not depend on it.) Blocked
+runs keep the amber badge stating what is missing.
 
 **Tablet** (§14.5; Feel Review §10c): the hero turns horizontal around a 150px
 cover (`--cover-hero` at 768px), with the number at 56/60, the story, the run
@@ -2199,7 +2266,10 @@ is a property of a broken graph, not of the view.
 - `frontier` — per user: runs fully ready, runs one soft prereq short, tracks
   never started, and editions owned that cover a ready run. Plus the cheapest
   block to close (fewest issues remaining to finish an entire block) and the next
-  event on the path with its distance in issues.
+  event on the path with its distance in issues. **Editions owned** needs
+  `edition_issues` (5.6) and collected flags (5.10), both later phases: until
+  those rows exist the tile is hidden, not drawn as zero, and 5.10's check
+  covers it.
 
 - `run_opens` — **what a run opens** (D-40; the checklist's step 8). For run
   R, the runs that name R as a direct prerequisite and whose readiness, from
@@ -2328,8 +2398,9 @@ carry the five-state badge from 2.4.
 **The frontier lives here now** (D-40, FP-D4; it left the dashboard). Above
 the first track, a compact *Frontier* group shows 2.6's `frontier` tiles —
 runs fully ready, runs one soft prereq short (the `ready_hard` outline), tracks
-never started, owned editions covering a ready run, the cheapest block to close
-and the next event on the path — each a link into this list, filtered.
+never started, owned editions covering a ready run (hidden until 5.6 and 5.10;
+see 2.6), the cheapest block to close and the next event on the path — each a
+link into this list, filtered.
 
 **Long lists keep their bearings** (UX-N16). The track header is sticky at
 `top: var(--bar-h)` (1.8's sticky stack), so the track you are scrolling through
@@ -2807,6 +2878,70 @@ every `issue_progress` row intact; that Undo on the toast restores it the same
 way; and that no archive or restore control renders
 `--danger`. Both lists show the switch with the right count.
 
+### ☐ 3.8 Blocks: assign, order, name · M
+Coverage check, 2026-10-08; FEATURES C4 and Part 3 (*edit everything*). The
+workbook placed every run in a block, and extract loaded `blocks(track_id,
+number, name?)`, `runs.block_id` and `runs.sequence` from it. 3.2 creates runs
+and assigns tracks, but no task moves a run between blocks, orders it within
+one, or names a block (`name` is nullable precisely so blocks "get named
+later"). After cutover the workbook cannot do it either. Depends on 2.9 (the
+block bands it edits), 3.1 (the inline-field pattern) and 1.2 (undo).
+
+- **On `/comics/runs`**, each block band's `⋯` menu offers **Rename** (3.1's
+  inline field; empty clears the name back to *Block N*) and **Add block
+  after**. Each run row's `⋯` menu offers **Move to block…** (a sheet listing
+  the track's blocks and *No block*) and **Move up · Move down** within its
+  block, the same keyboard route as 1.10's queue. Drag is a `(pointer:fine)`
+  extra, never the only route.
+- **What is written:** `runs.block_id`, and `runs.sequence` contiguous from 1
+  within the block; `blocks.number` contiguous from 1 within the track, so
+  `(track_id, number)` stays unique. A moved run joins the end of its new
+  block. Every write raises 1.2's undo toast.
+- Removing a block is not in this task: `blocks` has no `deleted_at`, and
+  adding one is a schema change (ask first).
+- Phase 3, so standing rule 5's adversarial review applies.
+
+**Check:** moving a run to another block sets its `block_id`, appends it at the
+end of that block, leaves both blocks' sequences contiguous from 1, and changes
+`block_position` for that run to match. *Move up* swaps two sequences and
+nothing else. Renaming a block shows the name on the run-list band and on the
+telescope's block rail; clearing it shows *Block N* again. *Add block after*
+block 2 renumbers the later blocks with `(track_id, number)` still unique.
+Undo restores the previous block and sequence. No derived count is written.
+
+### ☐ 3.9 Volume map editor · S
+Coverage check, 2026-10-08 (the owner chose an editor over cutting the
+table). Depends on 1.12 (which fills `volume_rules`), 1.3 and 1.3c (the parser
+and review table it feeds) and 2.0 (Settings). The volume map is the approved
+answer to "which volume does a bare `Captain America #1` mean in this run",
+and after cutover it can no longer be edited as a CSV.
+
+- **`/settings/volumes`**, linked from Settings' volume-map line (2.0, whose
+  counts are computed, D-7): the rules grouped by series, each showing its run
+  (or *any run*), its issue range (or *any issue*) and its year. **Add**,
+  **Edit** and **Remove**. Remove deletes the row and raises the undo toast:
+  `volume_rules` is configuration with no reading history and no
+  `deleted_at`; adding one is a schema change (ask first).
+- **A rule that overlaps** another for the same series and scope is refused,
+  `aria-disabled` with the reason shown (*Overlaps X-Men · any run · #1–200*).
+- **The parser reads it.** 1.3's *Ambiguous volume* rule gains a first step:
+  when a label without a year matches a rule for its series — the run's own
+  rule before an any-run rule, and only inside the rule's issue range — the
+  review row pre-selects that year and says *from the volume map*. The user can
+  still change it, and nothing is written without 1.3c's accept. With no
+  matching rule, the row is flagged for a pick as before.
+- **Nothing is relabelled.** Rules apply to labels entered after the edit;
+  existing `issues` rows change only through an accepted label review
+  (CLAUDE.md).
+- The mockup gains the screen (standing rule 6).
+
+**Check:** `Captain America #1` typed into a run with a run-scoped rule to 2018
+pre-selects `Captain America (2018) #1` marked *from the volume map*; the same
+label in another run, with only an any-run rule to 1998, pre-selects 1998; with
+no rule it is flagged for a pick as before. A rule overlapping an existing one
+for the same series and scope is refused with its reason shown. Editing a rule
+changes no existing `issues` row. The Settings line's counts equal the table's.
+
 ---
 
 ## Phase 4 — Enrichment
@@ -2957,7 +3092,8 @@ element carries a `box-shadow` that resolves to `--halo`.
 - ☐ 5.1 Shelves (books only): create, add items, reorder · M. **+ Add to
   shelf** opens the 1.4c sheet with the shelf preselected: search your library
   and Open Library, or add by hand. A book not yet in the catalog is created
-  first, then shelved.
+  first, then shelved. Each shelf shows its **next three unread** in shelf
+  order, not just the next one (FEATURES Part 2c → Shelves).
 - ☐ 5.2 Tracks page from `track_progress` · S. `/comics/tracks`: 37 tracks, each
   drawn as a row of its blocks (D-29: cells sized by each block's issue count,
   14px floor, each filled by its own share read, `read / total` as text, counting
@@ -2997,7 +3133,7 @@ element carries a `box-shadow` that resolves to `--halo`.
     reused as usual, then the `releases` row.
   - **Notify me is in the app, not a push:** the books dashboard's rollup slot
     gains a line, *2 out now · 3 coming this month →*, linking here, so the
-    five slots keep their order. The digest email stays 6.7.
+    five slots keep their order. The digest email stays 7.6.
   - The sidebar and navigation rail gain *Coming out* under Books (flip its
     `NAV_ITEMS` flag, R1-06); add `/books/releases` to ARCHITECTURE's route
     table. The mockup gains a `releases` screen, phone, tablet and desktop, with
@@ -3028,7 +3164,7 @@ element carries a `box-shadow` that resolves to `--halo`.
     3 days ago · Check now*; *Check now* asks Metron for each followed series'
     issues with a store date from 30 days ago onward, through 1.3b's
     server-side client, rate limit, cache and rate-limited state. A daily cron
-    is a later option, alongside 6.7, not this task.
+    is a later option, alongside 7.6, not this task.
   - **The list:** *Out now*, *This month*, *Later*. Each row: cover, the label in
     the bulk-entry grammar, the store date, the run it would join, and **Add to
     Claremont — Uncanny X-Men**, which opens 1.3b's staged review with the
@@ -3046,6 +3182,44 @@ element carries a `box-shadow` that resolves to `--halo`.
     the list; *Not for me* hides an issue for that user only; no page render
     calls Metron (the mocked client counts calls). A mocked 429 renders the
     rate-limited line and makes no second request before `Retry-After`.
+- ☐ 5.9 **Series page from `series_progress`** · S. Coverage check,
+  2026-10-08; FEATURES B6 (the workbook's Series tab). The view has existed
+  since the first load and nothing shows it. `/books/series`: every series
+  with its author, `books_read / total_books` in mono and an `.emeter` filled
+  with `--ready`, in progress first, then not started, then complete. Each row
+  names the **next unread** book, the lowest `series_position` not read
+  (derived in the query, never stored), and links to `/books/list?series=<id>`
+  (this task adds that filter if the list lacks it). A series whose read count
+  exceeds a stated `total_books` (the R2 `pct > 1` case) draws a full meter and
+  the true counts. The sidebar and navigation rail gain *Series* under Books
+  (flip its `NAV_ITEMS` flag, as 5.7); the mockup gains the screen with its
+  empty state (*No series yet · Add a book*).
+  - **Check:** a series with 3 of 5 books read renders `3 / 5` and a meter
+    filled with `--ready`; one with NULL `total_books` counts its listed books;
+    a soft-deleted book is not counted; the next-unread line names the
+    lowest-position unread book, and a complete series has none. The row's link
+    shows only that series' books. Screenshot at 360px, 834px and 1280px.
+- ☐ 5.10 **Editions: collected and read** · M. Coverage check, 2026-10-08;
+  FEATURES Part 1's *Master* row. Depends on 5.6. The workbook's Master tab (178
+  trades and omnibuses) was loaded as `editions`, with per-user
+  `edition_progress(collected, read)`, and has had no page since; after cutover,
+  buying a trade could not be recorded. `/comics/editions`: each edition's
+  title, type, year and issue text, with **Collected** and **Read** toggles
+  (`aria-pressed`) writing `edition_progress`, and a *Collected* filter. An
+  edition whose `issues_text` 5.6 could not parse is listed with a grey
+  *issues not parsed* flag. **Add edition** is by hand (no API covers
+  editions), matching your own editions first, with the issue text going
+  through 5.6's parser. An edition's *Read* never marks an issue read: issue
+  reads are per placement (CLAUDE.md), and nothing propagates. 3.5's issue sheet
+  links its collecting editions here. This is what turns on 2.6's *editions
+  owned* frontier tile and 2.4's owned-edition tag.
+  - **Check:** toggling *Collected* writes one `edition_progress` row for the
+    user and survives a reload; toggling *Read* writes no `issue_progress` row.
+    The frontier's owned-editions tile counts an edition only when it is
+    collected and its `edition_issues` cover a ready run, and is hidden while
+    no `edition_issues` rows exist. An unparsed edition is listed with the flag.
+    Adding an edition by hand creates one `editions` row and its
+    `edition_issues` through 5.6's parser.
 
 ---
 
@@ -3076,7 +3250,10 @@ element carries a `box-shadow` that resolves to `--halo`.
   frames: failed, retrying, undone while queued.
 - ☐ 6.8 Events page with your read-it/skip verdicts · S
 - ☐ 6.10 Master list: a *Fits Q2 · 56k* chip and a *Pick one* button (one
-  highlighted row with *Another* and *Plan for…*), plus saved views (as 2.9) · S
+  highlighted row with *Another* and *Plan for…*), plus saved views (as 2.9) · S.
+  Also FEATURES B3 and ARCHITECTURE's `/books/list` row: **sort by word
+  count**, and a **series-completion filter** (*complete · in progress · not
+  started*, read from `series_progress`, never computed in the app).
 - ☐ 6.11 Density toggle in Settings → Appearance: `.app[data-density="compact"]`,
   desktop only, 32px rows, `.chk` min-height 2rem · S. Compact sets `--row-h`
   to 32px (1.8a), a 16px check ring and 13/18 mono labels (STYLE_GUIDE §5).
@@ -3122,7 +3299,10 @@ element carries a `box-shadow` that resolves to `--halo`.
   row also reveals a small *Mark read* button on hover or focus, with `x` as its
   shortcut. Phone and tablet are unchanged: their check is already one tap.
 - ☐ 6.6 Goodreads and StoryGraph CSV import · M
-- ☐ 6.7 **Release digest email** — Vercel cron plus Resend free tier. Last, by your call · S
+- 6.7 — removed 2026-10-08 (coverage check; R0 had flagged it): it duplicated
+  7.6 word for word. 7.6 keeps the digest, because Phase 7's *after Phase 4*
+  framing fits an email about verified releases (CLAUDE-CODE-PROMPTS). The
+  number is not reused.
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M
 
@@ -3297,15 +3477,24 @@ To-watch, watching, watched, dropped. Show rows display derived progress from
 `show_progress` — "2 of 3 seasons" and the next unwatched season — never a
 stored status. Inline status, date, and rating at both title and season level.
 
+Every *watched* mark, of a film or a season, also appends a `watch_events` row:
+the log, as `read_events` is for books (FEATURES Part 2e, *rewatch history*).
+Marking something already watched as watched again appends a rewatch whose
+`rewatch_of` points at the previous event, and leaves the status row as it is.
+8.4's detail sheets show that history (coverage check, 2026-10-08).
+
 **Check:** test that marking every season watched flips the show's derived state
 to `watched` with nothing written to `title_status`; that marking one of three
 gives `watching` with `next_season = 2`; and that a film with no seasons still
-reports correctly from `title_status`.
+reports correctly from `title_status`. Marking a watched film watched again
+appends a second `watch_events` row with `rewatch_of` set to the first and
+leaves one `title_status` row.
 
 ### ☐ 8.4 Detail sheets — film, show, season · M
 `/watch/[id]` and `/watch/[id]/season/[n]` as intercepted routes: a sheet over
 the list when arrived at from the list, a full page on direct load or refresh.
-Show detail includes the season list with per-season status. FEATURES.md Part
+Show detail includes the season list with per-season status, and every sheet
+shows its rewatch history from 8.3's `watch_events`. FEATURES.md Part
 2f; mockups "Show detail — seasons".
 
 **Check:** test that the back button dismisses the sheet and restores list
