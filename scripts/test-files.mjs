@@ -17,7 +17,7 @@ const { commands, unknown } = planTestRun(files);
 if (unknown.length) {
   console.error(
     "test-files: no runner for " + unknown.join(", ") +
-      ". Expected test/**/*.test.ts(x), etl/test_*.py or etl/test_views.sql.",
+      ". Expected {test,src}/**/*.test.ts(x), etl/test_*.py or etl/test_views.sql.",
   );
   process.exit(2);
 }

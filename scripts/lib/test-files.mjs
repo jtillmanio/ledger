@@ -4,7 +4,8 @@
 // test files, a mix of vitest, unittest and SQL. test/test-files.test.ts holds
 // the routing to account.
 
-const VITEST = /^test\/(.+\/)?[^/]+\.test\.tsx?$/;
+// The same files vitest.config.ts includes.
+const VITEST = /^(test|src)\/(.+\/)?[^/]+\.test\.tsx?$/;
 const UNITTEST = /^etl\/test_[^/]+\.py$/;
 const VIEWS = "etl/test_views.sql";
 

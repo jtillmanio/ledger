@@ -52,6 +52,12 @@ describe("planTestRun: each file goes to its own runner", () => {
     expect(planTestRun(["test/ui/my run.test.tsx"]).commands[1]).toBe('npx vitest run "test/ui/my run.test.tsx"');
   });
 
+  it("takes vitest files under src/ too, as vitest.config.ts does", () => {
+    expect(planTestRun(["src/lib/plan.test.ts", "test/a.test.ts"]).commands[1]).toBe(
+      "npx vitest run src/lib/plan.test.ts test/a.test.ts",
+    );
+  });
+
   it("owns nothing else: helpers, other SQL, Python outside etl/ and non-test files are unknown", () => {
     expect(
       planTestRun(["test/db.ts", "etl/views.sql", "scripts/test_x.py", "etl/extract.py"]),

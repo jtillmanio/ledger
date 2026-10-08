@@ -26,14 +26,14 @@ Check, in priority order:
 1. Did derived data get stored in a column instead of computed in a view?
 2. Did a per-user fact land in a catalog table (`runs`, `issues`, `books`) rather
    than a progress table?
-3. From task 0.4 onward (0.3 added the columns, 0.4 adds the filtering): does every new read query filter `deleted_at IS NULL`?
+3. Does every new read query filter `deleted_at IS NULL`, and does removing a placement soft-delete it rather than `DELETE` it?
 4. Was `etl/views.sql` updated to match a schema change?
 5. Is the migration reversible? A migration that drops, retypes or merges columns
    needs `drizzle/down/<tag>.sql` and an up → down → up test. Does it edit an
    already-applied migration?
 6. Any query that will table-scan `issues` (~10,100 rows) or `run_issues` (~10,800) without an index?
 7. Any raw SQL built by string concatenation rather than parameterized?
-8. Once task 0.8 lands (until then progress is still issue-keyed): does anything treat an issue as belonging to one run? `issues` has no
+8. Does comics read state key on anything but the placement (`issue_progress.placement_id` → `run_issues.id`)? Does anything treat an issue as belonging to one run? `issues` has no
    `run_id`; placement, `type`, `notes` and `era_id` live on `run_issues`. A
    rollup above a single run must count `DISTINCT issue_id`, not sum run totals.
 9. Does anything store or accept a typed run writer/artist instead of reading
