@@ -23,7 +23,7 @@ If the task file path is missing, find the single task in `docs/tasks/` with `st
 ## Procedure
 
 1. Read the task file in full: Goal, Acceptance criteria, Out of scope, Files likely touched, Verification, Plan.
-2. Read the "Hard rules" section of `CLAUDE.md` and `docs/decisions.md`.
+2. Read the "Hard rules" section of `CLAUDE.md`, `docs/decisions.md` and the D-log it points to.
 3. Collect the full change set:
    - `git diff <base>...HEAD --stat` and `git diff <base>...HEAD`
    - `git diff` and `git diff --staged` (uncommitted work)
@@ -37,6 +37,18 @@ If the task file path is missing, find the single task in `docs/tasks/` with `st
 6. Plan check: if the task's `## Plan` lists files and steps, flag planned steps that were not done as **PLAN GAP** (a FAIL unless the plan was updated with a reason).
 7. Rule check: list every violation of a CLAUDE.md hard rule or a decision in `docs/decisions.md`, with `file:line` and the rule ID or text.
 8. Out-of-scope check: flag anything the task's "Out of scope" section excluded that was done anyway.
+9. Run the Project-specific checks below.
+
+## Project-specific checks (Ledger)
+
+The decisions log of record is `docs/review/decisions.md` (D-n); `docs/decisions.md` only points there and holds the K-n stack rows. A task file ranks below `docs/TASKS.md` (`CLAUDE.md` § Which document wins): where they disagree, report the task file as a SPEC GAP and judge against TASKS.md.
+
+1. **The TASKS.md Check.** The task's **Check:** line in `docs/TASKS.md` is met exactly as written, and the task's checkbox there is ticked in this diff.
+2. **Nothing derived is stored (rule 2), keyed progress (rule 3).** Any new column in `src/db/schema.ts` that is a count, percentage, rollup, status, span, credit line, or finish or plan year is a violation; it belongs in `etl/views.sql`. Any new comics read-state column or key on `issues.id` instead of `run_issues.id` is a violation, and so is a per-user boolean on a catalog table.
+3. **Soft delete (rule 4).** Every new read in `src/db/queries.ts`, `src/app/**` or `etl/views.sql` filters `deleted_at IS NULL`; removing a placement is an `UPDATE … SET deleted_at`, never a `DELETE`.
+4. **Test isolation (rule 5).** No new test, fixture or script that truncates reads `DATABASE_URL` or `.env.live`, or falls back to either when `TEST_DATABASE_URL` is unset.
+5. **Styling (rule 6).** In changed `.css` and `.tsx` files: no literal hex or `#fff` outside `src/app/globals.css`, no Tailwind class names, no `--danger` on a dashboard, every meter filled with `--ready`. For UI tasks also: the TASKS.md *UX floor* (states drawn, 4.5:1 text, 44px thumb bar and icon buttons, nothing interactive under 24px, real buttons and links, glyph plus text on badges); the feel-pass or mockup frame the task names was followed, and standing rule 6's mockup redraw is in the diff; no progress drawn against the catalog; the mark verb names the issue by its label.
+6. **Same-PR obligations (rule 7).** A new `pgTable` is in `src/db/export-tables.ts`; a migration that drops, retypes or merges a column has `drizzle/down/<tag>.sql` and an up → down → up test.
 
 ## What not to report
 

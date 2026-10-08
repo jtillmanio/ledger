@@ -23,11 +23,19 @@ The delegation message gives you:
 
 If no URL is given, read `ui.baseUrl` in `.claude/kit.json`. If it contains `{port}`, stop and return `NOT RUN: no resolved base URL provided.` Before any browser work, confirm the server responds (one request is enough). If it doesn't, return `NOT RUN: dev server not reachable at <url>.`
 
+## Ledger specifics
+
+- **Sign in first.** Every route but `/api/health` redirects to `/login?next=<path>` until the browser holds the `rt_session` cookie (`src/proxy.ts`). Get the passcode from `.env`, the development file, reading the `APP_PASSCODE` line only (`Select-String -Path .env -Pattern '^APP_PASSCODE='`). Never open `.env` whole, never read `.env.live`, and never put the passcode in your report or a screenshot name. Type it into the *Passcode* field on `/login` and press *Open ledger*; one sign-in lasts the session.
+- **The dev server reads the development database** (`.env` `DATABASE_URL`). Only the writes the steps themselves make are allowed; never mark or unmark in bulk.
+- **Design files.** `design/mockups.html` is too large to read whole. Print one screen with `powershell -NoProfile -File scripts/screen.ps1 <data-id>`; the ids are the S-IDs in `design/mockups-index.md`. For the dashboards, the mark sequence, empty and caught-up states, completion, the 768px tablet and desktop at 1024px and up, the feel pass beats the mockup: compare against the PNGs in `design/screenshots/{phone,tablet,desktop}/` (indexed by `design/screenshots/README.md`) and `design/Ledger Feel Review.dc.html`.
+- **Viewports** are `ui.viewports`: 360, 390 and 412 (phone, the primary device), 768 (tablet: bottom thumb bar plus a navigation rail), 1024 and 1280 (desktop: the dashboards move their verbs into the page header; the run detail keeps the bottom bar).
+- **Targets.** The thumb bar and icon buttons are 44px; nothing interactive is under 24px. Report an unnamed control (no accessible name) as a deviation. A read-elsewhere hint must be grey, never green; nothing on a dashboard is red.
+
 ## Procedure
 
 1. Read the task file: the acceptance criteria and the `Manual` lines under `## Verification`. Pick out every criterion with a visible or interactive outcome.
-2. Read the design file sections the task's Context cites (`ui.designFiles` in `.claude/kit.json` lists the design sources). Note the expected layout, components, and copy.
-3. For each viewport in `ui.viewports` (default phone 390×844 and desktop 1440×900):
+2. Sign in (Ledger specifics). Read the design file sections the task's Context cites (`ui.designFiles` in `.claude/kit.json` lists the design sources). Note the expected layout, components, and copy.
+3. For each viewport in `ui.viewports` (here six, from 360 to 1280; see Ledger specifics):
    1. Resize the browser.
    2. For each UI criterion and manual step, perform the steps exactly as written: navigate, click, type, submit.
    3. Check the expected result with an accessibility snapshot (text, roles, states, values), not only a screenshot.
