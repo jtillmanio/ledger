@@ -1,5 +1,30 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx tsc --noEmit *)",
+      "Bash(npx eslint *)",
+      "Bash(npm run lint)",
+      "Bash(npm run lint *)",
+      "Bash(npm run test:all)",
+      "Bash(npm run test:all *)",
+      "Bash(npm run build)",
+      "Bash(npm run build *)",
+      "Bash(node scripts/test-files.mjs *)",
+      "Bash(npm ci)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)",
+      "Bash(git branch -m *)",
+      "Bash(git push -u origin task/*)",
+      "Bash(git push -u origin fix/*)",
+      "Bash(git push -u origin docs/*)",
+      "Bash(git push -u origin chore/*)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr checks *)",
+      "Bash(gh pr ready *)",
+      "Bash(gh run view *)"
+    ],
     "deny": [
       "Bash(git push origin main)",
       "Bash(git push origin main *)",
@@ -9,7 +34,14 @@
       "Bash(git push -f *)",
       "Bash(gh pr merge *)",
       "Bash(git reset --hard *)",
-      "Bash(git clean -fdx *)"
+      "Bash(git clean -fdx *)",
+      "Bash(git add -A*)",
+      "Bash(git add --all*)",
+      "Bash(git add .)",
+      "Bash(git commit -a*)",
+      "Bash(git commit --all*)",
+      "Bash(gh workflow run release.yml*)",
+      "Bash(npm run rebuild -- -EnvFile .env.live*)"
     ]
   },
   "hooks": {

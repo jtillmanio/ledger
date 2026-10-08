@@ -10,6 +10,7 @@ export default defineConfig([
   // design/ holds reference specs, not app code; support.js there is the
   // generated Claude Design runtime and is kept exactly as delivered (D-31).
   // scripts/perf has its own dependencies (task 0.10), installed only by the
-  // Lighthouse workflow.
-  globalIgnores([".next/**", "node_modules/**", "scripts/perf/node_modules/**","drizzle/**", "seed/**", "design/**", "next-env.d.ts"]),
+  // Lighthouse workflow. .claude/ holds the kit, and task worktrees under
+  // .claude/worktrees/ are whole copies of the repo.
+  globalIgnores([".next/**", "node_modules/**", "scripts/perf/node_modules/**","drizzle/**", "seed/**", "design/**", "next-env.d.ts", ".claude/**"]),
 ]);

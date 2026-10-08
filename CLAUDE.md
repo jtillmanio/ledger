@@ -497,6 +497,19 @@ enforces this list; `/customize-kit` adds 3–6 more from the rules above.
 
 1. Never edit files matched by `protectedPaths` in `.claude/kit.json`. If one
    must change, stop and ask.
+2. Nothing derived is stored: no count, percentage, rollup, status, span,
+   credit line or finish/plan year column; it goes in `etl/views.sql`.
+3. Per-user facts live in progress tables keyed `(user_id, entity_id)`; comics
+   read state keys on the placement (`run_issues.id`), never on the issue.
+4. Soft delete only: every read filters `deleted_at IS NULL`; removing a
+   placement soft-deletes it.
+5. Tests and anything that truncates read `TEST_DATABASE_URL` only; nothing
+   aims at `DATABASE_URL` or `.env.live`.
+6. Styling uses the custom properties in `src/app/globals.css`: no literal hex
+   or `#fff`, no Tailwind classes, nothing red on a dashboard, every meter fills
+   with `--ready`.
+7. A new table is added to `src/db/export-tables.ts`, and a migration that
+   drops or retypes a column ships `drizzle/down/<tag>.sql`, in the same PR.
 
 ## Gotchas
 

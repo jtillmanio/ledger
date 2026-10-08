@@ -234,19 +234,36 @@ Counts: **built 11**, **partial 12**, **not built 69** (plus 6.2b moved), out of
 **`verify`**
 
 ```json
-"sourceExtensions": [".ts", ".tsx", ".mjs", ".css", ".sql", ".py"],
-"fast": ["npx tsc --noEmit --pretty false", "npx eslint {file} --max-warnings 0"],
+"sourceExtensions": [".ts", ".tsx", ".mjs"],
+"fast": ["npx tsc --noEmit --pretty false", "npx eslint {file} --max-warnings 0 --no-warn-ignored"],
 "full": ["npx tsc --noEmit", "npm run lint", "npm run test:all", "npm run build"]
 ```
 
 `full` equals `/verify` and CI `check`. `npm run test:all` needs
 `TEST_DATABASE_URL`; `npm run build` needs a `DATABASE_URL` set (any value; CI
-uses a dummy). `.sql` and `.py` edits should run only the typecheck part of
-`fast` or nothing (eslint does not lint them); decide in `/customize-kit`.
+uses a dummy).
+
+*Corrected by the owner before `/customize-kit` ran (#56).* This section first
+proposed `.css`, `.sql` and `.py` in `sourceExtensions` and `fast` without
+`--no-warn-ignored`. The post-edit hook runs every `fast` command on every file
+with a listed extension, and `npx eslint <file> --max-warnings 0` exits 1 on
+`.py`, `.css` and `.sql` files and on files under eslint's ignores (`design/**`,
+`drizzle/**`), so every such edit would have failed. Those edits get no fast
+check; `verify.full` covers them.
 
 **`testAudit`**: `testPathPatterns`: `test/*.test.ts`, `test/*.test.tsx`,
-`etl/test_*.py`, `etl/test_views.sql`. `run`: `npx vitest run {tests}` for
-Vitest files; Python tests go through `py -m unittest discover -s etl -p <file>`.
+`src/*.test.ts`, `src/*.test.tsx` (vitest's `include`), `etl/test_*.py`,
+`etl/test_views.sql`. `run`: `node scripts/test-files.mjs {tests}`.
+
+*Corrected (#56).* The first proposal was `npx vitest run {tests}`, with Python
+tests run separately, but the test-auditor passes one mixed list to one
+command. `scripts/test-files.mjs` sends vitest files to `npx vitest run`, each
+`etl/test_*.py` to `py -m unittest discover -s etl -p <file>` and
+`etl/test_views.sql` to `npm run test:views`. It runs `npm run test:db:reset`
+first when the list holds a vitest or SQL file, because the auditor tests
+against the pre-task schema. Because `sourceExtensions` no longer lists `.sql`
+or `.py`, the test-auditor agent also counts those files and `drizzle/meta/` as
+implementation, so it reverts them too.
 
 **`ui`**: `startCommand` `npm run dev -- --port {port}`; `baseUrl`
 `http://localhost:{port}`; viewports 360, 390, 412 (phone), 768 (tablet, D-33),
@@ -397,7 +414,7 @@ tracked; the roadmap is phased with cutover risks early and Phase 0 excluded.
 
 | Gap | Outcome |
 |---|---|
-| G-1 | Open: `/customize-kit`, next |
+| G-1 | Fixed: `/customize-kit`, #56 (with the corrected `verify` and `testAudit` inputs above) |
 | G-2 | Decided: `TASK-###` files titled with the TASKS.md number; branch, commit and PR names follow `git.md`. Rule appended to `CLAUDE.md` § Kit task loop |
 | G-3 | Decided: accepted as is. No branch protection, no extra `PowerShell(...)` deny rules; `git.md` and the `Bash(...)` deny rules are the guard |
 | G-4 | Decided: keep both workflows; the owner runs `/install-github-app` (attached terminal) to set `CLAUDE_CODE_OAUTH_TOKEN`. Until then the review job fails when a PR leaves draft |
@@ -422,5 +439,5 @@ repo's Vercel, CI and Neon setup after the gap report was written.
 | G-15 | Fixed: `CLAUDE.md` § Kit task loop (*Stage by path*, *Decisions are proposed, not written*, the readiness line) |
 | G-16 | Fixed: `CLAUDE.md` § Kit task loop (*A failed preview build is not an Actions run*, *A TASKS.md task is never split*, *Merged is not live*) |
 | G-17 | Decided: migrations left out of `protectedPaths` |
-| G-18 | Open: `/customize-kit` Phase 5 |
+| G-18 | Fixed: `/customize-kit` Phase 5, #56 |
 | G-19 | No fix needed |

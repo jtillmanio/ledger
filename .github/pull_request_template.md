@@ -1,40 +1,59 @@
-<!-- /implement-task fills this in. For PRs you open yourself, fill what applies. -->
+<!-- /implement-task fills this in. For PRs you open yourself, fill what applies.
+     Sections and title follow .claude/rules/git.md: the title is a commit subject
+     (`task 1.2: add undo`), and this body is what main keeps after the squash. -->
 
-## Task
+## What
 
-<!-- e.g. TASK-014: Show run progress (docs/tasks/TASK-014-run-progress.md) -->
+<!-- The change in a few bullets. Task work: "Task 1.2 Undo (docs/tasks/TASK-###-undo.md)". -->
+-
 
-## Summary
+## Why
 
-<!-- 2-4 lines: what changed and why -->
+<!-- The problem, with task, decision and review IDs (task 1.2, D-18, R2-03). -->
 
 ## Acceptance criteria
 
-<!-- Copied from the task file, ticked when verified -->
+<!-- The task's **Check:** from docs/TASKS.md, verbatim, then the task file's ACs; tick each when verified. -->
+- [ ] Check:
 - [ ] AC-1:
-- [ ] AC-2:
 
-## Automated evidence
+## How it was verified
 
-| Check | Result |
-|---|---|
-| test-runner (verify.full) | |
-| test-auditor | |
-| spec-reviewer | |
-| schema-reviewer | n/a |
-| ui-verifier | n/a |
-| CI | see checks below |
+| Check | Where | Result |
+|---|---|---|
+| `/verify` (tsc, lint, `test:all`, build) / test-runner | local | |
+| The task's **Check:**, as written | local | |
+| test-auditor | local | |
+| spec-reviewer | local | |
+| schema-reviewer | local | n/a |
+| Up → down → up (drop or retype migrations) | local | n/a |
+| ui-verifier | local dev server | n/a |
+| CI `check` | GitHub | see checks below |
+| Vercel preview deploys | Vercel | |
+| Lighthouse (no route over budget) | GitHub, on the preview | |
+| Preview walked at 360–412px against the mockup / feel pass | preview | n/a |
+| Changed workflow, `gh workflow run <file> --ref <branch>` | GitHub | n/a |
 
-<!-- Screenshots from ui-verifier, if any -->
+<!-- Say which suites ran locally and which only in CI. Anything that can only be
+     checked after merge: name it, why, and the exact check to run straight after.
+     Screenshots from ui-verifier, if any. -->
 
-## Manual verification (human)
+### Manual verification (owner)
 
 <!-- Steps from the task's Verification section, each with its expected result -->
 1.
 
-## Reviewer checklist (human)
+## Follow-ups
+
+<!-- Anything noticed and deliberately left out, and any decision worth keeping
+     (the owner adds it to docs/review/decisions.md as the next D-n). -->
+-
+
+## Reviewer checklist (owner)
 
 - [ ] Ran the manual steps above and got the expected results
 - [ ] Diff contains only what the task asked for (no surprise files)
-- [ ] No secrets, protected files, or production config touched
-- [ ] Task file set to `status: Done` (reply "accepted" to the session, or edit it in this PR) before merging
+- [ ] No secrets, `.env*`, `seed/`, `backups/`, protected files or production config touched
+- [ ] The task's checkbox in `docs/TASKS.md` is ticked in this PR
+- [ ] Task file set to `status: Done` (reply "accepted" to the session) before merging
+- [ ] After the squash merge, run Release (START-HERE Step 13) to put it live
