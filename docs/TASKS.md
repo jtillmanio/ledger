@@ -653,7 +653,7 @@ stay. START-HERE Step 12 groups them into sittings:
 | 7 | 1.10 → 1.9 → 2.11a → 1.12 → 1.11 | 1.9's Up next tab reads the queue; 2.11a is numbered in Phase 2 but built here, before cutover (D-20); so is 1.11 (D-36); 1.12 must land before Step 14's final load, the last time `load` runs |
 | 8 | 1.13 → 1.14 → 1.15 | the book ingest (2026-10-08 review): 1.14's proposals join 1.13's review file, and 1.15 seeds from series and author names 1.13's review fixed. All three change what `load` puts in, so they land before Step 14's final load. They don't depend on sittings 3–7 and can be built earlier, leaving the owner time to answer the review |
 
-### ☐ 1.2 Undo · S
+### ☑ 1.2 Undo · S
 **Build before 1.1** (R3-10): 1.1's check asserts undo, and 1.1 must not carry its
 own. Last-action stack in memory, `Ctrl+Z` and a toast with an undo button. Covers
 single marks, range marks, and status changes.

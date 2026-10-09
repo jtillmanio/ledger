@@ -17,7 +17,7 @@ line numbers below drift after an edit.
 | `spine` | Run detail — per-run "read in …" hints; spine v2 gutter, Hide read, covers, dates, next-issue strip; the two-line undo toast (desktop frame, TASKS 1.2) | 1219–1345 |
 | `range` | Range marking; its undo toast in the two-line form (TASKS 1.2) | 1348–1434 |
 | `addsearch` | Add issues — search (Metron) | 1437–1573 |
-| `bulk` | Add issues — type it (bulk) | 1438–1542 |
+| `bulk` | Add issues — type it (bulk) | 1576–1680 |
 | `newrun` | New run | 1545–1647 |
 | `ai` | AI review | 1650–1745 |
 | `bdash` | Books dashboard | 1748–1912 |
