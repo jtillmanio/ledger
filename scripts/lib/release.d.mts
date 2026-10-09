@@ -13,6 +13,7 @@ export function releaseProblems(input: {
   unknown: number[];
 }): string[];
 export function promoteProblem(deployment: { url: string; target?: string | null; readyState?: string }): string | null;
+export function alreadyProduction(status: number, body: { error?: { code?: string; message?: string } } | null): boolean;
 export function smokeProblem(input: {
   status: number;
   body: { ok?: boolean; failed?: string; commit?: string | null } | null;

@@ -11,7 +11,7 @@ import { spawnSync } from "node:child_process";
 import { appendFileSync } from "node:fs";
 import postgres from "postgres";
 import {
-  directUrl, pendingMigrations, promoteProblem, releaseProblems, smokeProblem, snapshotsToPrune,
+  alreadyProduction, directUrl, pendingMigrations, promoteProblem, releaseProblems, smokeProblem, snapshotsToPrune,
 } from "./lib/release.mjs";
 
 const env = process.env;
@@ -139,7 +139,8 @@ async function migrate() {
   if (r.status !== 0) throw new Error(`drizzle-kit migrate exited ${r.status}`);
 }
 
-async function vercel(path, init = {}) {
+/** `accept(status, body)` lets a caller take a known non-2xx answer instead of throwing. */
+async function vercel(path, init = {}, accept = () => false) {
   const sep = path.includes("?") ? "&" : "?";
   const scope = env.VERCEL_SCOPE ? `${sep}slug=${encodeURIComponent(env.VERCEL_SCOPE)}` : "";
   const res = await fetch(`https://api.vercel.com/${path}${scope}`, {
@@ -148,6 +149,9 @@ async function vercel(path, init = {}) {
   });
   const text = await res.text();
   if (!res.ok) {
+    let body = null;
+    try { body = JSON.parse(text); } catch { /* not JSON: never accepted */ }
+    if (accept(res.status, body)) return { status: res.status, body };
     const hint = res.status === 401 || res.status === 403
       ? " The VERCEL_TOKEN secret is invalid, expired, or has no access to this project's team."
       : res.status === 404
@@ -168,7 +172,14 @@ async function promote() {
   const { body: deployment } = await vercel(`v13/deployments/${host}`);
   const problem = promoteProblem(deployment);
   if (problem) throw new Error(problem);
-  const { status } = await vercel(`v10/projects/${deployment.projectId}/promote/${deployment.id}`, { method: "POST" });
+  const { status, body } = await vercel(
+    `v10/projects/${deployment.projectId}/promote/${deployment.id}`, { method: "POST" }, alreadyProduction,
+  );
+  if (alreadyProduction(status, body)) {
+    summary([`- Promoted: nothing new, ${env.RELEASE_URL} (${deployment.id}) already serves production. ` +
+      "Every merge since the last release was docs-only, so none has a build of its own; the smoke test still runs."]);
+    return;
+  }
   summary([`- Promoted: ${env.RELEASE_URL} (${deployment.id}, HTTP ${status}${status === 202 ? ", finishing in the background" : ""})`]);
 }
 
