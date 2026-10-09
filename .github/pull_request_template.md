@@ -45,13 +45,16 @@
 
 ## Follow-ups
 
-<!-- Anything noticed and deliberately left out, and any decision worth keeping
-     (the owner adds it to docs/review/decisions.md as the next D-n). -->
+<!-- Anything noticed and deliberately left out, as candidate tasks; candidate
+     decisions (workflow.decisions is "propose": the owner adds each to
+     docs/review/decisions.md as the next D-n); review-finding IDs this PR
+     addresses or opens. -->
 -
 
 ## Reviewer checklist (owner)
 
 - [ ] Ran the manual steps above and got the expected results
+- [ ] Every owner gate in the table above has passed
 - [ ] Diff contains only what the task asked for (no surprise files)
 - [ ] No secrets, `.env*`, `seed/`, `backups/`, protected files or production config touched
 - [ ] The task's checkbox in `docs/TASKS.md` is ticked in this PR

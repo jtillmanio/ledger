@@ -4,9 +4,16 @@ on:
   pull_request:
   push: { branches: [main] }
 
+# A newer push to a PR cancels its older run. Runs on main are never
+# cancelled: Release checks CI on the exact commit it promotes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         # Neon's major version (backup.yml's PG_MAJOR says the same). A view or
@@ -30,6 +37,11 @@ jobs:
       - uses: actions/checkout@v7
         # check:migrations diffs drizzle/ against main, so it needs main's history.
         with: { fetch-depth: 0 }
+      # Every docs/tasks/TASK-*.md front matter parses (the kit's dispatcher
+      # and skills read it); INDEX.md itself is git-ignored.
+      - name: Task files parse cleanly
+        run: ./.claude/scripts/build-index.ps1
+        shell: pwsh
       - uses: actions/setup-node@v7
         with: { node-version-file: .nvmrc, cache: npm }   # one Node version: .nvmrc = engines.node = Vercel
       - uses: actions/setup-python@v7

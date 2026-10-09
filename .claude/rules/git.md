@@ -4,6 +4,11 @@ Loaded for every session (no `paths`). The repo is private on a free plan, so
 `main` has no branch protection: these rules are the only thing keeping it
 clean. Follow them without being asked.
 
+The kit's skills follow these rules through the switches in
+`.claude/kit.json` (`workflow.staging`, `commitFormat`, `branchPrefixes`,
+`taskBranch`, `readyGates`, `afterMerge`, `allowForceWithLease`); that file is
+the one place they are set, and this one says what they mean here.
+
 ## Never commit to `main`
 
 Every change, including a one-line doc fix, goes on a branch and reaches `main`
@@ -79,7 +84,11 @@ Co-Authored-By: ...
 ## Test on the branch, before merge
 
 A PR is ready only when everything that can prove the change has run
-**against the branch** and passed. "It will show up on `main`" is not a test:
+**against the branch** and passed. `workflow.readyGates` is the enforced list,
+in order: `verify.full` on the branch head, CI `check`, the Vercel preview,
+Lighthouse, a changed workflow run on the branch, and the owner's preview walk
+for UI. Claude marks a PR ready only when every gate it can check has passed,
+and lists the owner's gates in its report. "It will show up on `main`" is not a test:
 a failure found after merge means reverting `main`. Run every suite that
 applies, not just the one nearest the change.
 
@@ -134,8 +143,11 @@ Tick the task's checkbox in `docs/TASKS.md` in the same PR.
 
 ```bash
 git push -u origin <branch>
-gh pr create --base main --title "<same form as a commit subject>" --body-file <file>
+gh pr create --draft --base main --title "<same form as a commit subject>" --body-file <file outside the repo>
 ```
+
+The PR opens as a draft and is marked ready (`gh pr ready <n>`) only after the
+gates in *Test on the branch*.
 
 The PR body has these sections:
 
@@ -165,3 +177,13 @@ reads and writes the live database.
 Rebase a branch on `main` only when it conflicts or is stale enough to matter;
 after a rebase, push with `--force-with-lease`, never `--force`, and only to
 your own branch.
+
+## Project notes
+
+- No branch protection is available on this repository (rulesets return 403
+  on a private free-plan repo): these rules and the `Bash(...)` and
+  `PowerShell(...)` deny rules in `.claude/settings.json` are the only guard.
+- Files never to commit are listed under *Staging*: `.env*`, `seed/`, the
+  Metron and Fandom caches, and `backups/`.
+- `--force-with-lease` after a rebase is allowed (`workflow.allowForceWithLease`
+  is `true`, G-19); plain `--force` is denied.

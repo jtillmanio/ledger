@@ -23,7 +23,36 @@
       "Bash(gh pr create *)",
       "Bash(gh pr checks *)",
       "Bash(gh pr ready *)",
-      "Bash(gh run view *)"
+      "Bash(gh run view *)",
+      "Bash(git switch *)",
+      "Bash(gh workflow run *)",
+      "Bash(gh run watch *)",
+      "PowerShell(npx tsc --noEmit)",
+      "PowerShell(npx tsc --noEmit *)",
+      "PowerShell(npx eslint *)",
+      "PowerShell(npm run lint)",
+      "PowerShell(npm run lint *)",
+      "PowerShell(npm run test:all)",
+      "PowerShell(npm run test:all *)",
+      "PowerShell(npm run build)",
+      "PowerShell(npm run build *)",
+      "PowerShell(node scripts/test-files.mjs *)",
+      "PowerShell(npm ci)",
+      "PowerShell(git add *)",
+      "PowerShell(git commit *)",
+      "PowerShell(git checkout *)",
+      "PowerShell(git branch -m *)",
+      "PowerShell(git push -u origin task/*)",
+      "PowerShell(git push -u origin fix/*)",
+      "PowerShell(git push -u origin docs/*)",
+      "PowerShell(git push -u origin chore/*)",
+      "PowerShell(gh pr create *)",
+      "PowerShell(gh pr checks *)",
+      "PowerShell(gh pr ready *)",
+      "PowerShell(gh run view *)",
+      "PowerShell(git switch *)",
+      "PowerShell(gh workflow run *)",
+      "PowerShell(gh run watch *)"
     ],
     "deny": [
       "Bash(git push origin main)",
@@ -41,7 +70,27 @@
       "Bash(git commit -a*)",
       "Bash(git commit --all*)",
       "Bash(gh workflow run release.yml*)",
-      "Bash(npm run rebuild -- -EnvFile .env.live*)"
+      "Bash(npm run rebuild -- -EnvFile .env.live*)",
+      "PowerShell(git push origin main)",
+      "PowerShell(git push origin main *)",
+      "PowerShell(git push origin master)",
+      "PowerShell(git push origin master *)",
+      "PowerShell(git push --force *)",
+      "PowerShell(git push -f *)",
+      "PowerShell(gh pr merge *)",
+      "PowerShell(git reset --hard *)",
+      "PowerShell(git clean -fdx *)",
+      "PowerShell(git add -A*)",
+      "PowerShell(git add --all*)",
+      "PowerShell(git add .)",
+      "PowerShell(git commit -a*)",
+      "PowerShell(git commit --all*)",
+      "PowerShell(gh workflow run release.yml*)",
+      "PowerShell(npm run rebuild -- -EnvFile .env.live*)",
+      "PowerShell(.\\etl\\load.ps1 -EnvFile .env.live*)",
+      "PowerShell(etl/load.ps1 -EnvFile .env.live*)",
+      "Bash(ENV_FILE=.env.live *)",
+      "Read(./.env.live)"
     ]
   },
   "hooks": {
@@ -51,7 +100,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-large-reads.js\""
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-large-reads.ps1\"",
+            "timeout": 15
           }
         ]
       },
