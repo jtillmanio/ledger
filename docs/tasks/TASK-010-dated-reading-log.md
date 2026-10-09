@@ -1,7 +1,7 @@
 ---
 id: TASK-010
 title: 1.5 Dated reading log
-status: Draft
+status: Ready
 depends_on: [TASK-009]
 size: L
 model: opus

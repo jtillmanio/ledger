@@ -1,7 +1,7 @@
 ---
 id: TASK-009
 title: 1.4b Quick-capture inbox
-status: Draft
+status: Ready
 depends_on: [TASK-008]
 size: L
 model: opus

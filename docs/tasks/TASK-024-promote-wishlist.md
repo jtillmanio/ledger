@@ -1,7 +1,7 @@
 ---
 id: TASK-024
 title: 1.4d Promote the wishlist into Someday
-status: Draft
+status: Ready
 depends_on: [TASK-007]
 size: M
 model: sonnet

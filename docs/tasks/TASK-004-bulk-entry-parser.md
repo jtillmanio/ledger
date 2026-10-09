@@ -1,7 +1,7 @@
 ---
 id: TASK-004
 title: 1.3 Bulk issue entry — parser and validation
-status: Draft
+status: Ready
 depends_on: [TASK-003]
 size: S
 model: opus

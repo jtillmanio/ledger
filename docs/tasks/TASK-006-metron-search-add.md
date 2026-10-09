@@ -1,7 +1,7 @@
 ---
 id: TASK-006
 title: 1.3b Add issues from a Metron search
-status: Draft
+status: Ready
 depends_on: [TASK-005]
 size: L
 model: opus

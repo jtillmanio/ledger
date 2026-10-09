@@ -1,7 +1,7 @@
 ---
 id: TASK-019
 title: 1.12 Load the volume map into volume_rules
-status: Draft
+status: Ready
 depends_on: [TASK-018]
 size: L
 model: sonnet

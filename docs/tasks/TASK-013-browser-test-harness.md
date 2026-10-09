@@ -1,7 +1,7 @@
 ---
 id: TASK-013
 title: 0.11 Browser test harness — Playwright and axe
-status: Draft
+status: Ready
 depends_on: [TASK-012]
 size: M
 model: sonnet

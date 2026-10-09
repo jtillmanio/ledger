@@ -1,7 +1,7 @@
 ---
 id: TASK-014
 title: 1.8 App shell
-status: Draft
+status: Ready
 depends_on: [TASK-013]
 size: L
 model: sonnet

@@ -1,7 +1,7 @@
 ---
 id: TASK-018
 title: 2.11a Prerequisite cycle check
-status: Draft
+status: Ready
 depends_on: [TASK-017]
 size: S
 model: sonnet

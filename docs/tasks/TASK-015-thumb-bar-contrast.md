@@ -1,7 +1,7 @@
 ---
 id: TASK-015
 title: 1.8b Thumb bar and contrast
-status: Draft
+status: Ready
 depends_on: [TASK-014]
 size: M
 model: sonnet

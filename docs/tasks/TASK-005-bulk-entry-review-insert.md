@@ -1,7 +1,7 @@
 ---
 id: TASK-005
 title: 1.3c Bulk issue entry — review table and insert
-status: Draft
+status: Ready
 depends_on: [TASK-004]
 size: L
 model: opus

@@ -1,7 +1,7 @@
 ---
 id: TASK-023
 title: 1.15 Track series, authors and universes
-status: Draft
+status: Ready
 depends_on: [TASK-022]
 size: L
 model: opus

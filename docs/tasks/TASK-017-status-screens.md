@@ -1,7 +1,7 @@
 ---
 id: TASK-017
 title: 1.9 Status screens: In flight · Up next · Done
-status: Draft
+status: Ready
 depends_on: [TASK-016]
 size: L
 model: sonnet
