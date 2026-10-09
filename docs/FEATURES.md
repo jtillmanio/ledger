@@ -14,9 +14,9 @@ section. Nothing here is built yet except where marked **shipped**.
 | B1 | Dashboard | new | Currently-reading, pace-vs-plan for the year, next up, upcoming releases, genre mix. Design below |
 | B2 | To Read by year and quarter, with word-count budgeting | partial | `reading_plan.planned_quarter` exists; task 1.7 makes one period column with four to-read levels — quarter, year, On deck, Someday (D-37) — and no months (D-38); needs the pace engine |
 | B3 | To-Read master list, searchable | shipped | Search works; needs sort by word count, filter by series-completeness. TASKS 6.10 |
-| B4 | Top books per year, editable | partial | `book_status.year_rank` holds the data; no edit UI, no reorder |
+| B4 | Top books per year, editable | partial | `book_status.year_rank` holds the data, but from TASKS 1.13 the workbook's ranks don't load (no workbook read state); re-entered through 3.4's reorder, with the ranks kept in `seed/workbook_reads.csv` |
 | B5 | Coming out list | shipped | Needs "notify me" and a calendar view. Task 5.7 (D-35): *Out now* plus a month-grouped list, notified in the app; comics get the same in 5.8 |
-| B6 | Tracked series and authors with progress | partial | `series_progress` view exists; TASKS 5.9 draws it as `/books/series`. Arbitrary groupings are shelves (5.1) |
+| B6 | Tracked series and authors with progress | partial | `series_progress` view exists; TASKS 5.9 draws it as `/books/series`. TASKS 1.15 adds universes (`book_universes`, a fact about the work), `author_progress` / `universe_progress`, and a stored `tracking` / `reading` follow per series, author or universe, seeded from the Series tab. Arbitrary groupings are shelves (5.1) |
 | — | BookTube top 10, Download, HP Fanfiction | migrated, unsurfaced | Data is in `external_lists` and `wishlist`. No pages. Leave `external_lists`; `wishlist` is promoted into Someday (task 1.4d, D-39) |
 
 ### Comics

@@ -329,6 +329,15 @@ of gates**. The items below are the ones only you can do.
       13 edges (11 soft, 2 hard) where a run "needs" something published after
       it. Deleting or reversing those 13 — any mix — removes every cycle
       (checked). Decide each in the sheet's PREREQS tab, then re-extract.
+- [ ] **Answer `etl/data/book_review.csv`** (from task 1.13). For each pair,
+      decide `merge` (and pick the `keep` spelling) or `separate`. An
+      undecided pair loads as two rows. On the 2026-10-08 workbook, expect
+      about 110 book, 40 author and 60 series pairs, a one-time pass: a
+      decision survives every re-extract. Fixing a typo in the sheet itself
+      works too.
+- [ ] **Run `npm run enrich:books -- --dry-run`, then without it** (from task
+      1.14). Then answer the `open library` rows it adds to `book_review.csv`
+      and re-extract.
 
 ## Before Step 14
 
@@ -338,6 +347,12 @@ of gates**. The items below are the ones only you can do.
       same without a new dump) and open one `/api/export` download.
 
 ## After Step 14's final load
+
+- [ ] **Enter your reads in the app** (task 1.13: no read state loads from
+      the workbook). `seed/workbook_reads.csv` lists each 2021–2025 Read-tab
+      title with its year and any Top Books rank. Mark each one read through
+      1.4c and 1.5; a book never on the master list is added by search. The
+      top-10 ranks wait for 3.4.
 
 - [ ] Promote the wishlist (START-HERE Step 14, *The switch* item 6; task 1.4d,
       D-39): work through `/books/add?from=wishlist` on production. When it
