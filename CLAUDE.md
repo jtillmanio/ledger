@@ -215,6 +215,12 @@ These hold everywhere, whatever you are touching.
   changing its visibility; touching any database that is not `TEST_DATABASE_URL`;
   deleting or rewriting rows in `issue_progress`, `book_status` or `reading_plan`.
   An ambiguity in a task is a question, not a guess: write it down and stop.
+  One exception, approved by the owner on 2026-10-09: the **development**
+  database (`.env` `DATABASE_URL`) may be written *through the running app*
+  without asking. `npm run dev` and a ui-verifier walk can tick, untick and
+  undo rows there, as long as they leave the data as they found it. A
+  `rebuild`, `load`, `db:push` or `db:views` against it still asks first, and
+  production (`.env.live`, the live Neon host) is never touched.
 - One task per session. Attended: `/clear`, then `/implement-task TASK-###`
   or `/next-task`. Unattended sessions are started by
   `.claude/scripts/dispatch-approved.ps1`.

@@ -146,6 +146,11 @@ git push -u origin <branch>
 gh pr create --draft --base main --title "<same form as a commit subject>" --body-file <file outside the repo>
 ```
 
+Once the local gates in *Test on the branch* pass, push and open the draft PR
+without asking first, attended or not (owner, 2026-10-09). The owner reviews
+the PR, not a prompt before it exists. Pushing to `main`, force-pushing and
+merging still never happen without the owner.
+
 The PR opens as a draft and is marked ready (`gh pr ready <n>`) only after the
 gates in *Test on the branch*.
 
