@@ -348,7 +348,7 @@ of gates**. The items below are the ones only you can do.
 
 ## After Step 14's final load
 
-- [ ] **Enter your reads in the app** (task 1.13: no read state loads from
+- [ ] **Enter your reads in the app** (task 1.13, D-41: no read state loads from
       the workbook). `seed/workbook_reads.csv` lists each 2021–2025 Read-tab
       title with its year and any Top Books rank. Mark each one read through
       1.4c and 1.5; a book never on the master list is added by search. The

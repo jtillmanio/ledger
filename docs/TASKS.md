@@ -1719,7 +1719,7 @@ tab's count row and its series and authors summary load as 32 books marked
 `read`. None of this reached `unresolved.csv`. The workbook is still being
 edited, so the fix has to survive re-extracts.
 
-- **The same book means the same title and author** (D-25, the rule 1.4
+- **The same book means the same title and author** (D-25a, the rule 1.4
   uses). Both are compared after `clean()` and the loose `key()`. A sighting
   with no author (a To-Read year tab) joins the one authored book with that
   title. If two or more authored books share it, nothing is joined and the
@@ -1733,7 +1733,7 @@ edited, so the fix has to survive re-extracts.
   undecided).
   - It proposes the same title under two authors (`same title`). For books,
     it also proposes two titles by one author, or where one side has no
-    author, with `pg_trgm`-style similarity ≥ 0.4 (D-25's threshold;
+    author, with `pg_trgm`-style similarity ≥ 0.4 (D-25a's threshold;
     `similar`). For author names and series names, it proposes any pair at
     ≥ 0.4.
   - Two names that differ only by a number are never proposed (*Vol 1* /
@@ -1749,8 +1749,8 @@ edited, so the fix has to survive re-extracts.
     It is the first sidecar extract writes, because only extract sees the
     workbook rows. A decided row whose names no longer appear is kept and
     reported as `stale review`. Extract prints `N book pairs await review`.
-- **No read state comes from the workbook** (owner, 2026-10-08; a D-n to
-  record). Every read is entered in the app (1.4c, 1.5), so the Read tabs, Top
+- **No read state comes from the workbook** (D-41).
+  Every read is entered in the app (1.4c, 1.5), so the Read tabs, Top
   Books, the author tabs' `Completed` ticks and bold in the To-Read tabs load
   nothing.
   - A book seen only in those places is not created. 1.4's search brings it in
@@ -1793,7 +1793,7 @@ reports the counts of books, `book_status` rows and review rows by `kind` and
 `book_status`.
 
 ### ☐ 1.14 Open Library details for the workbook's books · M
-The Open Library half of 4.2, moved before cutover (owner, 2026-10-08), the
+The Open Library half of 4.2, moved before cutover (D-44), the
 way 0.6 and 0.7 moved Metron. **Built in sitting 8, after 1.13.** The
 workbook's books load with only what was typed: no cover, page count or Open
 Library id on any of them, and a published year on 202. The pre-cutover shape
@@ -1848,7 +1848,7 @@ follows, and it mixes three kinds:
 - authors (*Michael Crichton*, *Blake Crouch*).
 
 Only series have a home (`book_series`, `series_progress`). A universe is a
-fact about the work, like a film franchise, not a shelf (owner, 2026-10-08).
+fact about the work, like a film franchise, not a shelf (D-42).
 Shelves stay the owner's free-form lists.
 
 - **Schema.**
@@ -1856,7 +1856,7 @@ Shelves stay the owner's free-form lists.
   - Three narrow follow tables, `series_follows`, `author_follows` and
     `universe_follows`. Each is keyed `(user_id, <entity>_id)` with
     `state IN ('tracking', 'reading')`.
-  - The state is authored and stored (owner, 2026-10-08): it stays `reading`
+  - The state is authored and stored (D-43): it stays `reading`
     between books until the owner changes it. A follow row is per-user, so it
     is never a column on the catalog table.
   - All four tables go in `src/db/export-tables.ts` (the follows in
@@ -3161,8 +3161,8 @@ Then a real run of 200 with the cache warm.
 ### ☐ 4.2 Open Library and Hardcover backfill · M
 Page counts, covers, ISBNs from Open Library; series position from Hardcover.
 
-**The Open Library pass for the workbook's books moved to 1.14** (owner,
-2026-10-08) and runs before cutover into `book_details.csv`. What remains is
+**The Open Library pass for the workbook's books moved to 1.14** (D-44)
+and runs before cutover into `book_details.csv`. What remains is
 the after-cutover shape, like 4.1's: once the database is the source of truth
 there is no re-extract, so a book added in the app without Open Library data
 (by hand, or before an outage cleared) is backfilled straight into `books`, with

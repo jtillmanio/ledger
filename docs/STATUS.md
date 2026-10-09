@@ -47,11 +47,11 @@ cutover), 3.8 (blocks), 3.9 (volume map editor), 5.9 (series page) and 5.10
 **Book ingest (2026-10-08).** A review of how `Books.xlsx` loads added
 sitting 8, before cutover:
 - **1.13:** one book per title and author, a merge review in
-  `etl/data/book_review.csv`, and no read state from the workbook. Reads are
-  entered in the app.
-- **1.14:** Open Library details for the workbook's books, moved here from 4.2.
+  `etl/data/book_review.csv`, and no read state from the workbook (D-41). Reads
+  are entered in the app.
+- **1.14:** Open Library details for the workbook's books, moved here from 4.2 (D-44).
 - **1.15:** follows for series, authors and the new `book_universes`, with
-  progress views.
+  progress views (D-42, D-43).
 
 **0.10 (2026-10-07): every preview measures itself.** When Vercel reports a
 preview ready, `.github/workflows/lighthouse.yml` signs in, runs Lighthouse
