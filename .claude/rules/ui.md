@@ -8,22 +8,19 @@ paths:
 # Design and UI rules
 
 Loads automatically when you're touching a screen, component, or the mockups
-— not on every session. See `CLAUDE.md` for what's true everywhere else.
+— not on every session. This file is the only home of these rules; `CLAUDE.md`
+holds what's true everywhere else and the Hard rules a reviewer checks. Which
+design source wins over which (mockup, styling blueprint, feel pass, task) is
+`CLAUDE.md` § Which document wins (D-1).
 
 ## Design
 
 `design/mockups.html` (v4) is the reviewed layout and copy for every screen.
 Match it. It is annotated with the reasoning behind each decision; read the
-notes column before changing a layout. Where a task description and the mockup
-disagree, the mockup wins. Pull up one screen with `scripts/screen.sh <id>`
-(ids in `design/mockups-index.md`) rather than reading the whole file.
-
-The styling blueprint (D-31) is `design/STYLE_GUIDE.md`, `design/tokens.css`
-and the `design/*.dc.html` spec pages, indexed by `docs/DESIGN.md`. It wins on
-tokens, type, elevation, motion, telescope and plan-rail geometry and component
-states; the mockup wins on layout and copy, except where the feel pass (D-40,
-STYLE_GUIDE §14–§16 and `design/Ledger Feel Review.dc.html`) draws a surface:
-there the feel pass wins on layout and copy too. Read `docs/DESIGN.md` before
+notes column before changing a layout. Pull up one screen with
+`powershell -NoProfile -File scripts/screen.ps1 <id>` (`scripts/screen.sh` is
+the bash twin; ids in `design/mockups-index.md`) rather than reading the whole
+file. Read `docs/DESIGN.md`, the index to the styling blueprint (D-31), before
 building a component.
 
 Phone at 360–412px is the primary device and every screen is designed there
@@ -99,6 +96,11 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
   text — never one bar against the whole track (D-29).
 - **Detail views are intercepted routes, not modal components:** a sheet from a
   list, a full page on direct load. The back button must dismiss.
+- **No page render calls an external API.** The one live path is an **add
+  flow**: TMDB, Metron and Open Library are searched when the user submits a
+  search in Add, and results are cached. Hardcover is backfill-only. TMDB
+  attribution belongs in the footer. (What an add flow writes is
+  `.claude/rules/schema.md`.)
 
 ## Style
 
@@ -123,6 +125,4 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
 - `--mark` and `--held` survive as aliases for `--ready` and `--blocked` so the
   first three routes keep rendering. New code uses the real names.
 - Server components by default. Client components only where there is state.
-- Raw SQL in `src/db/queries.ts` for anything joining views; Drizzle builder for
-  writes. (This one crosses into `src/db/` — see `.claude/rules/schema.md` too
-  if the query itself is what you're changing.)
+  A query a screen needs goes in `src/db/queries.ts` (`.claude/rules/schema.md`).

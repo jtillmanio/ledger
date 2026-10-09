@@ -121,149 +121,24 @@ commands (`verify.fast` runs after every edit, `verify.full` is what the
 test-runner agent runs). Keep it in sync with the list above. Its commands run
 under `cmd.exe /c` because the hooks execute them that way.
 
+## Where the domain rules live
+
+Each rule has one home. The data-model rules (derived data, issues and
+placements, read state, sidecars, plans, dates, soft delete, add-flow writes,
+shelves, the watchlist, `extract.py`) are in `.claude/rules/schema.md`, which
+loads when you touch `src/db/`, `etl/`, `drizzle/` or `seed/`. The design and
+UI rules (the mockup, dashboards, the thumb bar, the telescope, readiness
+badges, colour, tokens, states, detail views, live API calls) are in
+`.claude/rules/ui.md`, which loads when you touch `src/app/`, `src/components/`
+or `design/`. A rules file loads only when one of its files is opened with the
+Read tool, so **read the matching rules file yourself when planning or
+reviewing a task that will touch those paths**. The Hard rules below are the
+one-line checklist a reviewer enforces from them.
+
 ## Non-obvious rules
 
-- **Derived data is never stored.** Readiness, completion percentages, track
-  rollups, and capacity live in `etl/views.sql`. If you find yourself adding a
-  `completed_count` column, stop — it belongs in a view.
-- **A run's series text and years are derived, never stored.** `runs` has no
-  `series_issues`, `start_year` or `end_year`. The `run_span` view builds the
-  series text from the issue labels (grouped by series and volume, ranges
-  collapsed) and the years from the earliest and latest `issues.cover_date`.
-  Read them through `run_span`; never format them in the app and never add them
-  back as columns. `dated_issues < issue_count` means the span is incomplete.
-- **Issue metadata and whys come from sidecar files, not the workbook.** They sit
-  beside `etl/data/volume_map.csv` and survive every re-extract:
-  `cover_dates.csv` (label; `source` metron|hand), `issue_details.csv` (label;
-  story title with `story_title_source`, cover URL), `issue_credits.csv` (label,
-  creator, role; `source` metron|hand), `label_review.csv` (label → proposed
-  label; `decision` accept|reject), `why_review.csv` (run id; `decision`
-  accept|edit|keep) and `creator_aliases.csv` (alias → the creator name credits
-  use, hand-kept: `Walt Simonson,Walter Simonson`; extract resolves credits and
-  the sheet-writer check through it, and `sidecars:fix` gives an aliased hand
-  credit Metron's id and spelling). `npm run sidecars` also writes
-  `creator_review.csv`: hand credits and sheet writers whose name is close to a
-  Metron creator, `decision` accept|reject; an accepted row counts as an alias,
-  and nothing is matched on similarity alone. `etl/enrich_comics.py` writes the first four and never
-  overwrites a `hand` value; a `(label, role)` pair with any hand credit is left
-  alone entirely.
-- **A label changes only through an accepted label review.** Enrich proposes
-  Metron's canonical label; extract applies a rename only when `decision` is
-  `accept`, and enrich rekeys every sidecar to the new label on its next run.
-  Nothing ever writes back to the workbook.
-- **One issue row per comic.** `issues` is what exists — one row per label, id a
-  slug of the label, never a run position. `run_issues(id, run_id, sequence,
-  issue_id, type, notes)` is where it sits in a run; `type` and `notes` belong to
-  the placement. The same issue in four runs is one `issues` row and four
-  `run_issues` rows. Credits key on `issues.id`. Totals above a run count
-  `DISTINCT issue_id`; never SUM run totals across runs.
-- **Read state is per run.** `issue_progress` keys on the placement
-  (`user_id, placement_id` → `run_issues.id`), never on the issue. Reading an
-  issue in one run leaves it unread in every other run holding it. Nothing
-  propagates a mark. "Read before, in which runs" is derived from the
-  `issue_read_runs` view and shown as a hint on the row; it never checks a box.
-  Block/track rollups count an issue read when any placement of it in that
-  scope is read. ARCHITECTURE 2.14.
-- **A run's writers and artists are derived, never stored.** `runs` has no
-  `writer` or `artists`. Read them from `run_credit_line` (creators on ≥25% of
-  the run's credited issues, max three), built from `issue_credits` via
-  `run_creators`. There is no hand-typed fallback — to fix a credit line, fix
-  the issue credits.
-- **The comics Up next queue is an ordered list, not a plan** *(table arrives with task 1.10)*. `run_queue
-  (user_id, run_id, ordinal)` has no years, quarters or capacity, and never
-  gets them; that is `reading_plan`'s job for books. The order is authored and
-  stored. What a queued run's state is (unstarted, in flight, done) is derived
-  through `run_queue_state` and never written to the queue. Nothing removes a
-  queue row except the user. ARCHITECTURE 2.16.
-- **A why is authored, so it is stored.** `runs.why_source` is `hand` or
-  `claude`. `hand` means Justin wrote or edited it and nothing automated may
-  replace it. `claude` means a Claude draft accepted as-is; it may be
-  re-proposed for review, never silently rewritten.
-- **A plan entry's year is derived from its period, never stored beside it** *(from task 1.7; `reading_plan` still has `planned_year`/`planned_quarter`)*.
-  `reading_plan.period` is one text column — `2027-Q1`, `2027` or `on_deck`;
-  there are no months (D-38) — and the year is `left(period, 4)`. An entry with a bare year is
-  legitimately unscheduled; the plan starts empty and is built in the app (extract
-  skips the workbook's To-Read tabs unless `--with-plan`); an entry
-  whose year and quarter could disagree is a bug the schema should not allow.
-  Read year/quarter/level through the `plan_period` view, never by parsing in
-  the app.
-- **A to-read book sits at one of four levels** (D-37, from task 1.7): a quarter
-  (ordered), a bare year (unordered, counts against that year), On deck
-  (`on_deck`: no year, unordered) or Someday, which is every `to_read` book with
-  no plan row — derived, never stored. Read a book's level through
-  `to_read_level`. Only quarters are ordered: `reading_plan.ordinal` is
-  contiguous from 1 within a quarter and NULL everywhere else, authored and
-  stored like the queue's. A book joins the end of the quarter it is placed in;
-  write periods and ordinals only through 1.7's plan helpers.
-- **Blocks group runs inside a track; eras section issues inside a run.** Both
-  are tables, both are optional, and both are ordered — `blocks(track_id,
-  number, name?)` and `eras(run_id, ordinal, name)`. Era membership goes on the
-  placement (`run_issues.era_id`), not the issue. A block is a position, so
-  it is numbered and may be unnamed. An era is a story, so it is named. A run
-  with no block renders a two-rail telescope; a run with no eras renders a flat
-  spine. Neither is an error.
-- **A date is stored with its precision, and the two cannot disagree.**
-  `issue_progress.completed_at`, `book_status.finished_on` and (from 1.5)
-  `read_events.finished_on` are each paired with a `*_precision` of `exact`,
-  `approximate` or `none`, and the date is NULL exactly when the precision is
-  `none`. A read with no known date is `none`, never `now()`. A year-only finish
-  is `approximate` (its July 1st), never `exact`. Anything computing pace ignores
-  `none`, and anything sorting by a finish date puts NULLs last. ARCHITECTURE 2.17.
-- **A book's finish year is derived from `finished_on`** *(from task 1.5, D-21;
-  until then `book_status.finished_year` is still the stored column)*. 1.5 drops
-  `finished_year`; every reader takes `extract(year FROM finished_on)`, and a
-  `read` book with precision `none` is the *No year* group.
-- **One placement per (run, issue).** `run_issues` is UNIQUE on `(run_id,
-  issue_id)`; extract drops a repeated label in one run and reports it (`repeat
-  placement dropped`). Rereads inside a run do not come back (D-19): a planned
-  reread is a note on the placement, and a run's issue count is its distinct
-  issues. 0.8a keeps the UNIQUE.
-- **Every table is in the export.** `GET /api/export` reads its tables from
-  `src/db/export-tables.ts`. A task that creates a table adds it there in the
-  same PR (`USER_TABLES` if it has a `user_id`; `users` stays out, D-17);
-  `test/export-tables.test.ts` fails on any table left out.
-- **Catalog and progress are separate.** `issues` is what exists, `issue_progress`
-  is what Justin read. Every progress table is keyed `(user_id, entity_id)`.
-  Never add a per-user boolean to a catalog table.
-- **`postgres.js` needs `prepare: false`** — Neon runs a transaction-mode pooler.
-- Run IDs are hand-authored slugs (`hickman-ff`). Never regenerate them.
-- Runs with `placeholder = true` are forward-declared prereq targets. Hide them
-  from run lists; keep their edges.
-- Soft delete only. `deleted_at IS NULL` on every read. A hard delete on `runs`
-  cascades to issues and prereq edges. That includes `run_issues` (R3-06): removing an
-  issue from a run soft-deletes the placement, because a hard delete cascades to its
-  `issue_progress` row and drops reading history.
-- Enrichment scripts never overwrite a hand-entered value.
-- No page render calls an external API. The one live path is an **add flow**:
-  TMDB, Metron and Open Library are searched when the user submits a search in
-  Add, and results are cached. Hardcover is backfill-only. TMDB attribution
-  belongs in the footer.
-- **Every add flow offers search or freeform, and ends in a real row.** Match
-  the user's own catalog first, then the API, or let them type it. Either path
-  creates (or reuses) the `issues` / `books` / `titles` row, then writes the
-  placement, shelf, status or plan row that points at it. Freeform issue labels
-  go through the bulk-entry parser. ARCHITECTURE 2.15. Watch is the exception:
-  TMDB search only, and when TMDB fails or finds nothing the screen offers
-  **Save to inbox** (a Watch capture note) instead of a freeform path (D-28).
-- Shelves hold books or titles, never runs, and never both at once —
-  `shelves.kind` is `books` or `titles`, with `shelf_books` / `shelf_titles`
-  each carrying a real non-null foreign key. Don't reintroduce a polymorphic
-  `shelf_items` table: a nullable-FK row needs a `num_nonnulls` check to stay
-  honest, and every read needs a CASE. Two narrow tables cost one join and
-  nothing else.
-- The watchlist tracks seasons, never episodes. Show state is derived from
-  `season_status` via the `show_progress` view — never write a show-level status
-  to `title_status`, with one exception: `dropped` (`kind = 'tv'`, `status =
-  'dropped'`), which `show_progress` reads first. Films use `title_status`
-  directly.
-- Franchises are facts about the work (TMDB collections plus curation); shelves
-  are the user's opinion. Different tables, don't merge them.
-- Detail views are intercepted routes, not modal components: a sheet from a
-  list, a full page on direct load. The back button must dismiss.
-- IMPORTANT: AI-generated issue labels never reach the database without passing
-  the bulk-entry parser, a Metron existence check, and an explicit user accept.
-  Metron-proposed labels (`label_review.csv`) follow the same rule: explicit
-  accept only.
+These hold everywhere, whatever you are touching.
+
 - **Four databases, and `.env` is never production.** Production (Vercel
   production; the GitHub `DATABASE_URL` secret, for backup and Release), one
   Neon branch per PR preview, test (`TEST_DATABASE_URL`, locally and in CI), and
@@ -271,16 +146,18 @@ under `cmd.exe /c` because the hooks execute them that way.
   `db:push`, `db:views`). Production's local connection string lives only in
   the gitignored `.env.live`, which a command reads only when told to:
   `npm run rebuild -- -EnvFile .env.live` before cutover (START-HERE Step 13)
-  and Step 14's final `load.ps1 -EnvFile .env.live`. Never run or suggest
-  anything aimed at `.env.live` unless the owner asks for it.
+  and Step 14's final `load.ps1 -EnvFile .env.live` (`ENV_FILE=.env.live` for
+  the bash twins). Never run or suggest anything aimed at `.env.live` unless the
+  owner asks for it.
 - **Production is disposable until cutover; development always is.**
   `npm run rebuild` drops and reloads everything, and `load.ps1` / `load.sh`
   truncate every progress table **and, through `CASCADE`, every table that
   references a run, issue or book** (queue, shelves, eras, inbox, sessions).
   `.env.live` `LEDGER_LIVE=true` (set at START-HERE Step 14, right after the
   final load and *before* the month of running both — D-18) makes all four
-  refuse against production. Never suggest a rebuild or a load of production
-  once that is set. `.env` keeps `LEDGER_LIVE=false`.
+  (`load.ps1`, `load.sh`, `rebuild.ps1`, `rebuild.sh`) refuse against
+  production. Never suggest a rebuild or a load of production once that is set.
+  `.env` keeps `LEDGER_LIVE=false`.
 - **A merge is not a deploy; Release is** (START-HERE Step 13). Vercel stages
   every build of `main`, and `.github/workflows/release.yml`, run by hand after
   the merge, checks CI on that commit, snapshots Neon, migrates, re-applies
@@ -299,111 +176,10 @@ under `cmd.exe /c` because the hooks execute them that way.
   names the same host and database, and `npm test` fails at once. Never point a
   test, a fixture or a script that truncates at `DATABASE_URL`, and never add a
   fallback to it.
-- `etl/extract.py` is the migration from the workbooks. Changing its output
-  format means re-running against both `.xlsx` files and diffing the CSVs.
-
-## Design
-
-`design/mockups.html` (v4) is the reviewed layout and copy for every screen.
-Match it. It is annotated with the reasoning behind each decision; read the
-notes column before changing a layout. Where a task description and the mockup
-disagree, the mockup wins.
-
-Phone at 360–412px is the primary device and every screen is designed there
-first. A desktop layout that a phone layout degrades into is the wrong answer.
-
-- **One dashboard per medium**, not one dashboard for everything. `/comics`,
-  `/books`, `/watch`. `/` redirects to whichever you touched last. List screens
-  sit one level down (`/comics/runs`, `/books/list`).
-- **Every medium has a status screen with the same three tabs**:
-  `/comics/status`, `/books/status` and `/watch/status`, with *In flight · Up
-  next · Done*, in that order and under those names. Each tab reads from
-  existing views; nothing about them is stored.
-- **Every add surface opens on a segmented control with Search selected** and
-  the freeform path beside it — *Type it* for issues, *Paste a list · By hand*
-  for books. The user's own catalog is matched first, and an existing
-  row shows as theirs ("in 3 runs") rather than as a second copy. Watch opens
-  on Search alone; its fallback is *Save to inbox* (D-28).
-- **A read-elsewhere hint is grey, never green.** Green means read *here*. The
-  `read in Hickman — FF` note on a spine row must not look like a checkmark.
-- **Every dashboard has the same five slots in the same order**: now → next,
-  with a control on it → position → situation → a compact rollup → the thumb
-  bar. What differs between media is what fills a slot, not the order.
-- **The thumb bar is fixed at the bottom of every dashboard and the run
-  detail**, same position, same primary verb slot. Marking what you just read
-  is one tap and reachable with a thumb. Nothing displaces it. On desktop
-  (1024px+) the three dashboards carry the same verbs in the page header,
-  primary last; a tablet (768–1023px) keeps the bottom bar and gets a
-  navigation rail instead of the top media bar (D-33); the run detail keeps
-  the bottom bar at every width (D-25). Hover, drag and shift-click need
-  `(pointer:fine)` and always have a touch route. The
-  mark verb names the issue by its label, never by its reading-order position
-  (`Mark X-Men (2019) #8 read`; `#141` alone only on a single-series run).
-- **Position is drawn, not counted.** Three nested positions (issue in run, run
-  in block, block in track) render as the telescope, not as three percentages.
-  Books get the same instinct applied to time: the plan rail.
-- **Five readiness states, one badge partial.** `blocked` is the only amber
-  readiness badge (`⊘ N runs first`); `ready_hard` is outlined green (`○ ready ·
-  N soft unread`), `ready_all` `● ready`, `reading` `◐ n / N` with no
-  prerequisite badge beside it, `read` `✓`. Glyph plus text, never colour alone.
-  ARCHITECTURE §4.
-- **The telescope is horizontal at every width** (D-31) and **its cells have a
-  floor** — 14px phone, 16px desktop, overflow folded into `+N runs` stubs — and
-  read state is drawn as segments, not one fill. A run with no block drops the
-  block rail and keeps everything else (2-rail). The geometry will be
-  `src/components/telescope/layout.ts` (task 2.5), not a hand-drawn SVG.
-- **Contrast and targets are tokens, not taste.** `--faint` is text-safe
-  (4.5:1 or more on every surface; `#5e6275` light, `#9fa4b8` dark, palette 1c,
-  D-40); `--faint-deco` is for rules; thumb bar and icon buttons are 44px,
-  nothing interactive under 24px; every control is a real button or link with a
-  name. `.bar` is the app header only; era and block meters are `.emeter`.
-- **Hue identifies data, never navigation.** Sidebar icons are neutral; one
-  franchise keeps one hue on every screen; watch genre chips are grey with text.
-  DNF and *Skip* are grey — only *Remove* and *Drop* may be red.
-- **The feel pass (D-40)** beats `design/mockups.html` on layout and copy for
-  what it draws: the dashboards, the mark sequence, empty and caught-up states,
-  completion, the 768px tablet and desktop at 1024px and up
-  (`design/STYLE_GUIDE.md` §14–§16, `design/Ledger Feel Review.dc.html`; PNGs
-  in `design/screenshots/`). Each dashboard's Now slot is the one hero; `--art`, a
-  cover's clamped ambient tone, is content colour, never state, and can be
-  switched off. Fonts are self-hosted: IBM Plex Sans for the UI, Plex Mono for
-  counts, Newsreader only for titles, hero names, story titles and completion
-  lines. No streaks, no confetti.
-- **Every screen has its states drawn**: empty (one primary action), loading
-  (skeletons at the loaded size), offline (sync pill), rate-limited, error,
-  metadata pending. See docs/TASKS.md's *UX floor*.
-- **Never draw progress against the catalog.** 76 of ~10,100 as a bar is a lie
-  told with a rectangle. Comics measure against the run and the block; the
-  catalog total appears once, small, as provenance, on Stats and not on a
-  dashboard (D-40). A track is drawn as a row
-  of its blocks, each filled by its own share read, with `read / total` as
-  text — never one bar against the whole track (D-29).
-
-## Style
-
-- Plain CSS with the custom properties in `src/app/globals.css`. No Tailwind, no
-  CSS-in-JS. The token set there is the same one as `design/mockups.html`, and
-  from task 1.8a its values are `design/tokens.css`'s. Tailwind names in the
-  design files are vocabulary only (`docs/DESIGN.md` §4); never ship them.
-- **Colour is functional, and there are exactly four meanings.** `--ready`
-  green is read/done. `--brand` blue is where you are, and the primary action.
-  `--blocked` amber is *held* — either a hard prerequisite is unread or a
-  decision has not been made (over capacity, no quarter chosen). `--danger` red
-  is destructive actions and validation failures only. **Nothing on a dashboard
-  is ever red.** `--t1`–`--t8` carry track and genre identity and nothing else,
-  and never sit within ΔE2000 15 of `--ready`, `--blocked` or `--danger` (D-24,
-  `npm run test:tokens`). Every progress meter fills with `--ready` (D-26). Text
-  on a filled control uses `--on-*`, never a literal `#fff`.
-  Anything without a meaning stays grey.
-- **Amber clears when the user decides, including when they decide to keep the
-  overage.** Accepting an over-committed year is a first-class outcome that
-  persists. An indicator you cannot dismiss by choosing is one people stop
-  reading.
-- `--mark` and `--held` survive as aliases for `--ready` and `--blocked` so the
-  first three routes keep rendering. New code uses the real names.
-- Server components by default. Client components only where there is state.
-- Raw SQL in `src/db/queries.ts` for anything joining views; Drizzle builder for
-  writes.
+- IMPORTANT: AI-generated issue labels never reach the database without passing
+  the bulk-entry parser, a Metron existence check, and an explicit user accept.
+  Metron-proposed labels (`label_review.csv`) follow the same rule: explicit
+  accept only.
 - **This is Next.js 16**, which may be newer than what you know: the passcode
   gate is `src/proxy.ts` (not `middleware.ts`), request APIs (`cookies()`,
   `params`, `searchParams`) are async only, and `next build` uses Turbopack.
@@ -461,7 +237,8 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
 ## Hard rules
 
 Only rules a reviewer can check against a diff. The spec-reviewer agent
-enforces this list; `/customize-kit` adds 3–6 more from the rules above.
+enforces this list. Each one summarises a rule whose full text is above or in
+`.claude/rules/`.
 
 1. Never edit files matched by `protectedPaths` in `.claude/kit.json`. If one
    must change, stop and ask.
