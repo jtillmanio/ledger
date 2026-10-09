@@ -145,6 +145,19 @@ describe("POST /api/progress/issue", () => {
     expect((await sql`SELECT count(*)::int AS n FROM issue_progress`)[0].n).toBe(0);
   });
 
+  it("refuses a restore date Postgres can't read, and leaves the row alone", async () => {
+    const placementId = await markRead(sql, USER, "a", "x", { at: "2026-03-14", precision: "approximate" });
+    const before = await sql`SELECT completed_at::text AS at, completed_at_precision AS p FROM issue_progress`;
+    for (const restore of [
+      { completedAt: "2026-02-30", precision: "exact" },
+      { completedAt: "2026-03-14 25:00:00+00", precision: "approximate" },
+    ]) {
+      expect((await post({ placementId, completed: true, restore })).status).toBe(400);
+    }
+    expect(await sql`SELECT completed_at::text AS at, completed_at_precision AS p FROM issue_progress`)
+      .toEqual(before);
+  });
+
   it("will not mark a placement removed from its run", async () => {
     const id = await placement("a", "x");
     await w.removeIssueFromRun("a", "x");

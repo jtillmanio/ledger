@@ -22,7 +22,7 @@ export function issueName(label: string, single: boolean): string {
   return m ? `#${m[2]}` : label;
 }
 
-export type Precision ="exact" | "approximate" | "none";
+export type Precision = "exact" | "approximate" | "none";
 
 const monthYear = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
 

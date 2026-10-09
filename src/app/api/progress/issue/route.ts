@@ -55,18 +55,41 @@ export async function POST(req: Request) {
     .where(and(eq(runIssues.id, placementId), isNull(runIssues.deletedAt)));
   if (!live) return NextResponse.json({ error: "no such placement" }, { status: 404 });
 
-  const [prior] = await db.select(asPrior).from(issueProgress).where(mine);
-  if (restore) {
-    const values = {
-      completedAt: sql`${(restore as Prior).completedAt}::timestamptz`,
-      completedAtPrecision: (restore as Prior).precision,
-    };
-    await db.insert(issueProgress).values({ userId, placementId, ...values })
-      .onConflictDoUpdate({ target: [issueProgress.userId, issueProgress.placementId], set: values });
-  } else {
-    await db.insert(issueProgress).values({ userId, placementId }).onConflictDoNothing();
+  // One transaction, so the `prior` an undo will put back is the row this
+  // write replaced, not one read before another request got in between.
+  try {
+    const prior = await db.transaction(async (tx) => {
+      const [before] = await tx.select(asPrior).from(issueProgress).where(mine).for("update");
+      if (restore) {
+        const values = {
+          completedAt: sql`${(restore as Prior).completedAt}::timestamptz`,
+          completedAtPrecision: (restore as Prior).precision,
+        };
+        await tx.insert(issueProgress).values({ userId, placementId, ...values })
+          .onConflictDoUpdate({ target: [issueProgress.userId, issueProgress.placementId], set: values });
+      } else {
+        await tx.insert(issueProgress).values({ userId, placementId }).onConflictDoNothing();
+      }
+      return before ?? null;
+    });
+    return NextResponse.json({ ok: true, prior });
+  } catch (err) {
+    // A date the regex lets through but Postgres can't read (2026-02-30).
+    if (BAD_DATE.has(pgCode(err) ?? "")) {
+      return NextResponse.json({ error: "restore.completedAt is not a date" }, { status: 400 });
+    }
+    throw err;
   }
-  return NextResponse.json({ ok: true, prior: prior ?? null });
+}
+
+// invalid_datetime_format, datetime_field_overflow, invalid_time_zone_displacement_value
+const BAD_DATE = new Set(["22007", "22008", "22009"]);
+
+/** The SQLSTATE of a failed query; drizzle wraps the driver's error in `cause`. */
+function pgCode(err: unknown): string | undefined {
+  const e = err as { code?: unknown; cause?: { code?: unknown } } | null;
+  const code = e?.code ?? e?.cause?.code;
+  return typeof code === "string" ? code : undefined;
 }
 
 /** A date and its precision that the table's CHECK accepts: NULL exactly with `none`. */

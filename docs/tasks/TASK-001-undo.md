@@ -92,6 +92,11 @@ Approved by the owner 2026-10-09.
 - Size: about 11 files, UI and API together. `splitPolicy` is `never-split`, so the task stays whole and attended.
 - Candidate decision (proposed in the PR): the progress route returns `prior` and accepts `restore` as the way any inverse round-trips a stored date.
 
+**Revisions after approval**
+
+1. Step 8: the toast is drawn on the desktop `spine` frame only. The phone frame has Hide read on, so #140 has already folded into the *+3 read* stub there, and STYLE_GUIDE §9 says a ticked row folds only once its toast has closed: a `#140 read` toast on that frame would contradict it. The mockup note says so. (Spec review R1.)
+2. Step 3: reading `prior` and the write now share one transaction (`SELECT … FOR UPDATE`), and a restore date that passes the shape check but that Postgres can't read (`2026-02-30`) is a 400, not a 500. (Schema review R1.)
+
 ## Review log
 
 _Filled by /implement-task. One line per round._
