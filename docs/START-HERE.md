@@ -1206,9 +1206,9 @@ typecheck, lint, tests (vitest, SQL, Python) and build — and after 0.8a,
 private GitHub repo from Step 10a and `TEST_DATABASE_URL` first — see
 `docs/OWNER-CHECKLIST.md`.)
 
-## Step 12 — Sittings 3–7: Phase 1
+## Step 12 — Sittings 3–8: Phase 1
 
-**Claude Code · ~5 sittings over 3–5 weeks**
+**Claude Code · ~6 sittings over 3–6 weeks**
 
 | Sitting | Tasks (in this order) | Result |
 | ------- | --------------------- | ------ |
@@ -1217,6 +1217,7 @@ private GitHub repo from Step 10a and `TEST_DATABASE_URL` first — see
 | 5 | 1.4 books bulk entry, 1.4c add a book, 1.4b quick capture, 1.4d wishlist promotion screen, 1.5 dated log + `read_events` | Books work end to end |
 | 6 | 1.7 period column, 1.8a design tokens and control states, **0.11 browser test harness**, 1.8 app shell, 1.8b thumb bar and contrast | The real navigation |
 | 7 | 1.10 Up next queue, then 1.9 status screens, **2.11a prerequisite cycle check**, 1.12 volume map into `volume_rules`, and 1.11 failed sign-ins wait (D-36) | Phase 1 complete; extract lists the cycles for your audit |
+| 8 | 1.13 book extract and merge review, 1.14 Open Library details, 1.15 series, author and universe follows | Books load clean, with covers and page counts; answer `book_review.csv` between 1.13 and 1.14. Can be built any time before Step 14 |
 
 **Task 1.5 carries a deadline.** It adds `read_events`, the re-read log, and
 projects the existing status tables from it. This has to land before real
@@ -1228,9 +1229,12 @@ prerequisite cycles you break in `Comics.xlsx` before cutover, and Step 14's
 final extract uses its `--fail-on-cycle` switch.
 
 **0.11 is numbered in Phase 0 but built in sitting 6**, before 1.8, whose check
-runs axe and reads computed styles in a browser. **1.12 is the last load
-change before cutover**: it puts the volume map into the database, because
-after Step 14's final load nothing loads it again.
+runs axe and reads computed styles in a browser. **1.12 and sitting 8 are the
+last load changes before cutover.** 1.12 puts the volume map into the database,
+and 1.13–1.15 change what the books load holds, because after Step 14's final
+load nothing loads either again. Sitting 8 needs you between its tasks: answer
+`etl/data/book_review.csv` after 1.13, and again after 1.14's enrich run adds
+Open Library's spellings to it.
 
 **Done when:** every Phase 0 and Phase 1 task is ticked in `TASKS.md`, you can
 add a 24-issue run by pasting a block of labels, and marking a 100-issue range

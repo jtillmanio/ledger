@@ -651,6 +651,7 @@ stay. START-HERE Step 12 groups them into sittings:
 | 5 | 1.4 → 1.4c → 1.4b → 1.5 | resolving an inbox note (1.4b) routes into the add flows; 1.5 must land before real rereads overwrite history |
 | 6 | 1.7 → 1.8a → 0.11 → 1.8 → 1.8b | 1.8a's tokens come before the first UI task; 0.11's harness runs 1.8's axe and computed-style check; 1.8b was split out of 1.8 (R3-12) |
 | 7 | 1.10 → 1.9 → 2.11a → 1.12 → 1.11 | 1.9's Up next tab reads the queue; 2.11a is numbered in Phase 2 but built here, before cutover (D-20); so is 1.11 (D-36); 1.12 must land before Step 14's final load, the last time `load` runs |
+| 8 | 1.13 → 1.14 → 1.15 | the book ingest (2026-10-08 review): 1.14's proposals join 1.13's review file, and 1.15 seeds from series and author names 1.13's review fixed. All three change what `load` puts in, so they land before Step 14's final load. They don't depend on sittings 3–7 and can be built earlier, leaving the owner time to answer the review |
 
 ### ☐ 1.2 Undo · S
 **Build before 1.1** (R3-10): 1.1's check asserts undo, and 1.1 must not carry its
@@ -1705,6 +1706,193 @@ an any-run rule and an approved row with no year, and asserts that
 `seed/volume_rules.csv` holds exactly the first two, with `run_id` NULL on the
 second. `npm run rebuild` (development) reports a `volume_rules` count equal to
 the approved rows in `volume_map.csv`.
+
+### ☐ 1.13 Book extract — one book per title and author, a merge review, no workbook reads · M
+Book-ingest review, 2026-10-08. **Built before cutover (sitting 8).** The
+2026-10-08 review of `extract_books` found that it dedupes on the title
+alone, so different books that share a title become one row under whichever
+author it saw first (*Animal Farm*, Orwell and *Fables* vol 2; *Red Queen*;
+*The Truth*; two `Untitled` placeholders). It also found that misspellings
+split one book into two rows (*The Lightning Theif*, *Pet Semetary*,
+*J.R.R. Tolkein*, the series *The Dreden Files*). And it found that each Read
+tab's count row and its series and authors summary load as 32 books marked
+`read`. None of this reached `unresolved.csv`. The workbook is still being
+edited, so the fix has to survive re-extracts.
+
+- **The same book means the same title and author** (D-25a, the rule 1.4
+  uses). Both are compared after `clean()` and the loose `key()`. A sighting
+  with no author (a To-Read year tab) joins the one authored book with that
+  title. If two or more authored books share it, nothing is joined and the
+  sighting is reported. Book ids become `slug(title, author)`, so they no
+  longer depend on which tab was read first.
+- **A merge review, in `etl/data/book_review.csv`.** This works like
+  `label_review.csv`: extract proposes, the owner decides, and extract applies
+  only what was decided. Columns: `kind` (`book`, `author`, `series`), `a`,
+  `b`, each side's author and source tabs, `reason`, `similarity`, `keep` (the
+  spelling that survives), `decision` (`merge` or `separate`; blank is
+  undecided).
+  - It proposes the same title under two authors (`same title`). For books,
+    it also proposes two titles by one author, or where one side has no
+    author, with `pg_trgm`-style similarity ≥ 0.4 (D-25a's threshold;
+    `similar`). For author names and series names, it proposes any pair at
+    ≥ 0.4.
+  - Two names that differ only by a number are never proposed (*Vol 1* /
+    *Vol 2*, *Nevernight 2* / *3*, *Dreamsongs: Volume I* / *II*).
+    Cross-author pairs are proposed only on an identical title.
+  - **An undecided or `separate` pair stays two rows.** A wrong merge loses a
+    book silently; a wrong split is a visible duplicate.
+  - On `merge`, the `keep` spelling wins, and every reference follows it:
+    `books.author_id`, `series_id`, `book_status`, `releases`, and the Series
+    tab's totals.
+  - Extract takes the file as `--book-review` (added to `npm run extract`). It
+    rewrites the file in place, keeping every decision and adding new pairs.
+    It is the first sidecar extract writes, because only extract sees the
+    workbook rows. A decided row whose names no longer appear is kept and
+    reported as `stale review`. Extract prints `N book pairs await review`.
+- **No read state comes from the workbook** (D-41).
+  Every read is entered in the app (1.4c, 1.5), so the Read tabs, Top
+  Books, the author tabs' `Completed` ticks and bold in the To-Read tabs load
+  nothing.
+  - A book seen only in those places is not created. 1.4's search brings it in
+    from Open Library instead.
+  - `book_status.csv` holds only `to_read` rows: the master list and the
+    To-Read year tabs. Author-tab rows and Coming Out still create books, with
+    no status.
+  - For hand entry, extract writes `seed/workbook_reads.csv` (title, year,
+    genre, source tab, Top Books rank). It is not loaded, like
+    `workbook_run_fields.csv`. Each Read-tab column is read down to its count
+    row (the first numeric cell); the series and authors summary below it is
+    skipped.
+  - 1.5's extract bullet still applies, but every row it sees is `to_read`, so
+    `finished_on` is blank and its precision is `none`.
+- **The Stephen King tab's `Word Count` loads** (`stated`). Today
+  `extract.py` never reads it, so 64 of its 81 books have
+  no count.
+- **Year tabs are found by name**: `^Read \d{4}$` and `^To-Read \d{4}$`, not
+  the fixed 2021–2030 list in `GENRE_TABS`. A `Read 2026` or `To-Read 2031`
+  tab is no longer skipped silently.
+
+**Check:** `npm run test:etl` covers a fixture workbook in which:
+- two books share a title under different authors and load as two rows, with
+  one `same title` review row;
+- an authorless To-Read sighting joins its one authored match;
+- a one-letter typo by the same author is proposed and not merged, and after
+  `decision = merge` it loads as one book under the `keep` spelling with its
+  status;
+- `Vol 1` / `Vol 2` is not proposed;
+- a decision survives a second extract;
+- a Read tab with a count row and a summary block, a Top Books tab and a
+  `Completed` tick create no book and no `read` row, and `workbook_reads.csv`
+  lists the title block and nothing below the count row;
+- the King tab's word count loads;
+- a `Read 2031` tab is discovered.
+
+Then re-run against both workbooks and diff `seed/` (standing rule 4). The PR
+reports the counts of books, `book_status` rows and review rows by `kind` and
+`reason`, and `npm run rebuild` (development) loads with no `read` row in
+`book_status`.
+
+### ☐ 1.14 Open Library details for the workbook's books · M
+The Open Library half of 4.2, moved before cutover (D-44), the
+way 0.6 and 0.7 moved Metron. **Built in sitting 8, after 1.13.** The
+workbook's books load with only what was typed: no cover, page count or Open
+Library id on any of them, and a published year on 202. The pre-cutover shape
+is a sidecar that extract folds in, so the data survives every re-extract.
+
+- **`etl/enrich_books.py`**, modelled on `enrich_comics.py`:
+  - `--dry-run` first;
+  - a SQLite cache, `etl/.openlibrary-cache.sqlite` (gitignored; added to
+    git.md's never-commit list), that is resumable;
+  - Open Library's courtesy rate, with a real `User-Agent` naming the app
+    (FEATURES Part 4);
+  - `npm run enrich:books`.
+- **Matching.** It searches by title and author. A book is matched only when
+  exactly one work has that title and author after `clean()` / `key()`. When
+  the top result is a near spelling by the same author (similarity ≥ 0.4), it
+  is proposed, not matched: the script appends a `book` row with
+  `reason = open library` to 1.13's `book_review.csv`. Accepting it renames
+  the book in extract, and the next enrich run rekeys `book_details.csv`.
+  Anything else stays unmatched and is listed in the run's report with its
+  candidates.
+- **`etl/data/book_details.csv`**, keyed by title and author, holds
+  `open_library_id` (the work key), `page_count` (`number_of_pages_median`),
+  `cover_url` and `published_year`, plus `source` (`openlibrary` or `hand`).
+  A `hand` row is never overwritten. Extract folds it into `books`.
+  `published_year` fills only where the workbook has none.
+- **No word count is stored from pages.** 2.1 estimates a missing count as
+  `page_count × 275` and marks it `estimated` itself. ISBNs stay out, because
+  `books` has no column for one.
+- Covers are stored as URLs only. Whether to hotlink or cache them is 4.3's
+  question.
+
+**Check:** a dry run over 100 books reports the match rate and writes nothing.
+`npm run test:etl`, with recorded responses and no network, covers:
+- an exact match fills `page_count`, `cover_url` and `open_library_id`;
+- a `hand` row survives a rerun;
+- a near spelling writes a review row and no details;
+- two candidate works match nothing;
+- an accepted rename rekeys the details row;
+- a workbook `published_year` is not replaced.
+
+Then a real run over the catalog with the cache warm. The PR reports how many
+were matched, proposed and unmatched, and `npm run rebuild` (development)
+loads the details.
+
+### ☐ 1.15 Track series, authors and universes · M
+Book-ingest review, 2026-10-08 (FEATURES B6). **Schema; build attended in
+sitting 8, after 1.13.** The workbook's Series tab is a list of what the owner
+follows, and it mixes three kinds:
+- series (*A Song of Ice and Fire*, *Red Rising*);
+- universes that span series (*Cosmere*, *Grishaverse*; the Riordanverse is
+  its own tab);
+- authors (*Michael Crichton*, *Blake Crouch*).
+
+Only series have a home (`book_series`, `series_progress`). A universe is a
+fact about the work, like a film franchise, not a shelf (D-42).
+Shelves stay the owner's free-form lists.
+
+- **Schema.**
+  - `book_universes(id, name)` and a nullable `books.universe_id`.
+  - Three narrow follow tables, `series_follows`, `author_follows` and
+    `universe_follows`. Each is keyed `(user_id, <entity>_id)` with
+    `state IN ('tracking', 'reading')`.
+  - The state is authored and stored (D-43): it stays `reading`
+    between books until the owner changes it. A follow row is per-user, so it
+    is never a column on the catalog table.
+  - All four tables go in `src/db/export-tables.ts` (the follows in
+    `USER_TABLES`), and both loaders truncate and copy them. No column is
+    dropped or retyped, so no down file.
+- **Views (`etl/views.sql`).**
+  - `author_progress` takes the shape of `series_progress`: books listed and
+    read per author, live books only, and a book with no status counts as
+    unread.
+  - `universe_progress` is the same per universe.
+  - Each of the three progress views gains a `follow_state` column, NULL when
+    not followed. Whether it is done is derived (read = listed), never stored.
+- **Seed (extract).**
+  - The Cosmere and Riordanverse tabs become universes, every row a member.
+  - A Series-tab group that names neither a series nor an author (after
+    1.13's review) becomes a universe, and the books listed under it in the
+    Series tab are its members.
+  - Every Series-tab group and the four author tabs become a follow at
+    `tracking`. The tab's `Completed` column is not read.
+  - A group that matches nothing goes to `unresolved.csv`.
+- **Not here:** the control that changes a follow's state, and pages for
+  authors and universes. 5.9 draws series; the rest is a follow-up task.
+
+**Check:**
+- `etl/test_views.sql`:
+  - `author_progress` and `universe_progress` count read and listed books
+    and exclude a soft-deleted book;
+  - a book with no status counts as unread;
+  - the `state` CHECK rejects any other value;
+  - `follow_state` is NULL for an entity nobody follows.
+- `npm run test:etl`: a fixture Series tab with one series, one author, one
+  universe group and one unmatched name seeds exactly three follows at
+  `tracking` and one `unresolved` row, and the Cosmere tab's books carry
+  `universe_id = 'cosmere'`.
+- `test/export-tables.test.ts` passes with the four tables.
+- `npm run test:db:reset` migrates from zero.
 
 ---
 
@@ -2972,6 +3160,15 @@ Then a real run of 200 with the cache warm.
 
 ### ☐ 4.2 Open Library and Hardcover backfill · M
 Page counts, covers, ISBNs from Open Library; series position from Hardcover.
+
+**The Open Library pass for the workbook's books moved to 1.14** (D-44)
+and runs before cutover into `book_details.csv`. What remains is
+the after-cutover shape, like 4.1's: once the database is the source of truth
+there is no re-extract, so a book added in the app without Open Library data
+(by hand, or before an outage cleared) is backfilled straight into `books`, with
+the same rule that a `hand` value is never replaced. Hardcover's series position
+and the art tone below stay here. ISBNs need a column `books` doesn't have:
+stop and ask before adding one.
 
 **Book covers get an art tone too** (D-40, FP-D6), for the books Now hero
 (2.2) and *Between books*: the same extraction and clamp as 4.3, run at ingest
