@@ -82,7 +82,7 @@ its values are the ones measured in its §6 tables.
 | Surfaces | `--page`, `--surface`, `--raise`, `--sunk`, `--overlay` | `--sunk` is below `--surface` in both themes (SG-D2); `--overlay` is for sheets, menus, dialogs, tooltips |
 | Ink | `--ink`, `--ink-2`, `--muted`, `--faint` | All four clear 4.5:1 on all five surfaces, both themes |
 | Hairlines | `--rule`, `--rule-2`, `--line`, `--faint-deco` | `--faint-deco` outlines controls and clears 3:1 (SG-D8); it is never text |
-| Meaning | `--brand`, `--ready`, `--blocked`, `--danger`, `--reading`, each with `-soft`; `--brand-ink` | The four meanings (CLAUDE.md *Style*) |
+| Meaning | `--brand`, `--ready`, `--blocked`, `--danger`, `--reading`, each with `-soft`; `--brand-ink` | The four meanings (`.claude/rules/ui.md` *Style*) |
 | Text on a fill | `--on-brand`, `--on-ready`, `--on-danger`, `--on-muted` | Never a literal `#fff` |
 | Toast | `--toast-bg`, `--toast-ink`, `--toast-muted`, `--toast-link` | Dark toast is tonal, not a light slab (SG-D3); `--toast-muted` is its second line (D-40) |
 | Art tone | `--art`, from inline `--art-d` / `--art-l` on `[data-art]` | A cover's clamped ambient tone (FP-D6): content colour, never state; `--surface` when missing or `data-ambient="off"` |

@@ -109,7 +109,7 @@ R0–R3 kept meeting them under other IDs.
 | E01–E23 enhancements | out of horizon | E02 (`minimap`), E03 (`erachips`) and E12 (`dropdelta`) are already mocked; E06/E07/E23 are deferred by D-8 to task 6.12; E08 is TASKS 1.1's *Original dates* radio (R3-07). The rest are Phase 4+ and carry no HORIZON dependency |
 
 Nothing in the audit is open against a HORIZON task. Superseded as a working
-document: where it and CLAUDE.md's Design section disagree, CLAUDE.md wins.
+document: where it and the design rules disagree (CLAUDE.md's Design section, in `.claude/rules/ui.md` since 2026-10-09), the design rules win.
 
 ## S — cross-review coherence audit, 2026-09-23
 
