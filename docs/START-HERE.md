@@ -937,8 +937,9 @@ with a file in `backups/` is a backup that has been restored. If the run is red,
 read its log first: a Neon major-version upgrade past 18 makes the pinned client
 refuse, and the job says so in one line naming the fix. Neon never upgrades a
 project's major version by itself — if you do, change `PG_MAJOR` **and** the
-`scratch` service image (`postgres:18`) in `.github/workflows/backup.yml` the
-same day. The job checks that the two agree.
+`scratch` service image (`public.ecr.aws/docker/library/postgres:18`) in
+`.github/workflows/backup.yml`, and the `postgres` service image in
+`.github/workflows/ci.yml`, the same day. The backup job checks that its two agree.
 
 **Restore — every night, automatically** (R2-AR2, D-30). A backup you have
 never restored is a hope, not a backup, so the job restores each dump before it
