@@ -65,6 +65,7 @@ by `/adopt`, 2026-10-08; `docs/kit-adoption.md` has the inventories behind it).
 | Design tokens | `design/tokens.css` → `src/app/globals.css` |
 | Reference screenshots | `design/screenshots/` |
 | Design process notes | `docs/DESIGN.md`, `design/handoff/`, `docs/review/NEW_UI_AUDIT_REPORT.md`, `docs/review/UI_AUDIT_REPORT.md` |
+| UX floor | `docs/TASKS.md` § *The UX floor, for every UI task* (the header above Phase 0; standing rule 6) |
 | Architecture | `docs/ARCHITECTURE.md` |
 | Data model | `src/db/schema.ts` + `etl/views.sql` (what runs); `docs/ARCHITECTURE.md` § 2. Decisions (why); `docs/DIAGRAMS.md` § 1 |
 | Domain specs (other) | `docs/ARCHITECTURE.md` § 4. Interface (readiness) and § 5. Operational posture (performance budget); `design/Telescope Spec.dc.html`; `design/Plan Rail Spec.dc.html`; `docs/FEATURES.md` § Part 2d (metrics) |
@@ -72,12 +73,10 @@ by `/adopt`, 2026-10-08; `docs/kit-adoption.md` has the inventories behind it).
 | Roadmap (source, if separate) | `docs/TASKS.md` (phases 0–8) |
 | Task list (milestones + stubs) | `docs/TASKS.md`; `/new-task` converts one sitting at a time into `docs/tasks/`, copying each **Check:** verbatim |
 | Tasks | `docs/tasks/` (fixed) |
-| Decisions | `docs/review/decisions.md` (D-n, the log of record); `docs/decisions.md` (fixed) points there and holds stack rows K-n |
-
-Precedence: § Which document wins (D-1) above, not the kit's default. A task
-file in `docs/tasks/` ranks below `docs/TASKS.md`; where they disagree, the
-task file is the bug. `.claude/rules/git.md` beats the kit's flow on branch
-names, commit and PR format, and when a PR is ready.
+| Decisions | `docs/review/decisions.md` (IDs `D-n`) |
+| Review findings | `docs/review/PROTOCOL.md` (protocol), `docs/review/LEDGER.md` (ledger; IDs `R0-nn`…`R3-nn`, `S-nn`, `M-nn`) |
+| Owner runbook | `docs/START-HERE.md` |
+| Owner checklist | `docs/OWNER-CHECKLIST.md` |
 
 ## Commands
 
@@ -440,9 +439,6 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
   changing its visibility; touching any database that is not `TEST_DATABASE_URL`;
   deleting or rewriting rows in `issue_progress`, `book_status` or `reading_plan`.
   An ambiguity in a task is a question, not a guess: write it down and stop.
-
-### Kit task loop
-
 - One task per session. Attended: `/clear`, then `/implement-task TASK-###`
   or `/next-task`. Unattended sessions are started by
   `.claude/scripts/dispatch-approved.ps1`.
@@ -452,43 +448,15 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
   silently widen scope, never rewrite acceptance criteria.
 - Change files outside the plan's file list only after explaining why.
 - Done = test-runner green, test-auditor PASS, every applicable reviewer
-  APPROVE, CI green, and the owner's manual check. Claude sets `Review`; only
-  the owner's "accepted" sets `Done`.
+  APPROVE, the ready gates passed, and the owner's manual check. Claude sets
+  `Review`; only the owner's "accepted" sets `Done`. Done means merged and
+  accepted, not deployed.
 - Never hand-edit `docs/tasks/INDEX.md`. Run `.claude/scripts/build-index.ps1`.
 - Post-edit check failures in the middle of a multi-file change are expected.
   Finish the change, then fix whatever still fails.
-- PRs open as drafts and are marked ready (`gh pr ready`) only when git.md
-  § *Test on the branch* has passed, not CI alone: the Vercel preview has
-  deployed, Lighthouse is green, and a UI change has been walked on the
-  preview at 360–412px. Branch names, commit format and PR bodies stay as
-  `.claude/rules/git.md` says.
-- **Stage by path.** implement-task's checkpoint and close-out commits stage
-  `git add <file> …`, never `git add -A` (git.md § Staging), even though the
-  skill says `-A`: the tree holds `.env.live` and the owner's edits.
-- **A failed preview build is not an Actions run.** `gh run view --log-failed`
-  cannot see it; read the Vercel deployment log. A migration regenerated after
-  the branch's first preview fails there until the Neon branch
-  `preview/<git branch>` is deleted and the preview redeployed (START-HERE
-  10f) — that is the owner's step; say so and stop.
-- **Decisions are proposed, not written.** implement-task's close-out does not
-  append to `docs/decisions.md`. A decision worth keeping goes under
-  **Follow-ups** in the PR body; the owner adds it to `docs/review/decisions.md`
-  as the next D-n.
-- **A TASKS.md task is never split.** One TASKS.md number is one task file,
-  one branch, one PR. When `/new-task` or the plan's size check says split
-  (over 8 files, schema and UI together), keep it whole, mark it
-  `autonomy: attended`, and say in the plan why it is large.
-- **Merged is not live.** Every final report ends with: "After merge, run
-  Release (START-HERE Step 13) to put it live." Claude never starts Release.
-- **One task, two IDs.** A kit task file is `docs/tasks/TASK-###-<slug>.md`
-  (the kit's scripts need that), and its title starts with the TASKS.md number
-  (`title: 1.2 Undo`). Everything git sees uses the TASKS.md number: branch
-  `task/1.2-undo`, commit and PR subject `task 1.2: …`. `/new-task` converts
-  one sitting at a time and copies each **Check:** verbatim into the ACs.
-- **Three status records, one owner each.** The TASKS.md checkbox is ticked in
-  the task's PR, as before. The task file goes to `Review` when the PR is
-  ready and to `Done` only on the owner's "accepted". `docs/STATUS.md` is
-  regenerated from TASKS.md, never from the task files.
+- Kit behaviour is changed through the switches in `.claude/kit.json` and the
+  files in `.claude/project/`, never by editing the kit's skills, hooks or
+  scripts (`install-kit.ps1 -Upgrade` overwrites those).
 
 ## Hard rules
 

@@ -467,3 +467,23 @@ repo's Vercel, CI and Neon setup after the gap report was written.
 | G-17 | Decided: migrations left out of `protectedPaths` |
 | G-18 | Fixed: `/customize-kit` Phase 5, #56 |
 | G-19 | No fix needed |
+
+### Kit 2.4 upgrade (2026-10-09)
+
+The 2.4 upgrade (`chore/kit-2.4`) replaced the 2.3.1 workarounds above with
+kit switches and project files. The tables above are left as the record of
+the 2.3.1 adoption; where they name `CLAUDE.md` § Kit task loop or
+`docs/decisions.md`, read this table.
+
+| Gap | Now |
+|---|---|
+| G-2, G-5 | `workflow.roadmap` (`docs/TASKS.md`, `**Check:**`), `workflow.commitFormat: "area"`, `workflow.statusDoc: "docs/STATUS.md"` in `.claude/kit.json`. § Kit task loop is gone |
+| G-3 | **Reversed** (owner, 2026-10-09). Every `Bash(...)` deny rule has a `PowerShell(...)` twin: rulesets still return 403, so the deny rules are the only guard. `.claude/rules/git.md` § Project notes says so |
+| G-4 | The kit's 2.4 `claude-pr-review.yml` and `claude.yml` skip with a notice while `CLAUDE_CODE_OAUTH_TOKEN` is unset, so a PR leaving draft no longer fails. `/install-github-app` is still the owner's step |
+| G-14 | `workflow._wipLimitReason` names the shared test database |
+| G-15 | `workflow.staging: "by-path"`, `workflow.decisions: "propose"`, and `workflow.readyGates` (Vercel preview, Lighthouse, changed workflow, owner preview walk) |
+| G-16 | The preview gate's `failureLog` and `ownerFix`, `workflow.splitPolicy: "never-split"`, `workflow.afterMerge` |
+| G-19 | `workflow.allowForceWithLease: true` |
+| Decisions | K-1…K-8 moved to `docs/review/decisions.md` as D-45…D-52; `docs/decisions.md` is deleted. The Decisions row names the D-log and its prefix |
+| Agents | Each agent matches the kit's body (schema-reviewer keeps `sonnet`/`high`); the Ledger text is in `.claude/project/<agent>.md` |
+| Large reads | `.claude/hooks/guard-large-reads.js` replaced by the kit's `guard-large-reads.ps1` and `largeFiles` in `.claude/kit.json` |
