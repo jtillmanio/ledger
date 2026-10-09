@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  directUrl, needsBuild, pendingMigrations, promoteProblem, releaseProblems, smokeProblem, snapshotsToPrune,
+  alreadyProduction, directUrl, needsBuild, pendingMigrations, promoteProblem, releaseProblems, smokeProblem,
+  snapshotsToPrune,
 } from "../scripts/lib/release.mjs";
 
 describe("needsBuild (vercel.json ignoreCommand)", () => {
@@ -97,6 +98,28 @@ describe("promoteProblem", () => {
   it("refuses a preview, and a build that is not ready", () => {
     expect(promoteProblem({ url, target: null, readyState: "READY" })).toMatch(/preview build, not production/);
     expect(promoteProblem({ url, target: "production", readyState: "ERROR" })).toMatch(/is ERROR, not READY/);
+  });
+});
+
+describe("alreadyProduction", () => {
+  // Release run 37895800834, 2026-10-09: four docs-only merges after the last
+  // release had no builds, so plan picked the build already in production.
+  const live = {
+    error: {
+      code: "conflict",
+      message: "The provided deploymentId (dpl_ESCX1tspAkQMzvNgF8BRgSp2pWFV) is already the current production deployment.",
+    },
+  };
+
+  it("treats Vercel's 'already the current production deployment' 409 as nothing to promote", () => {
+    expect(alreadyProduction(409, live)).toBe(true);
+  });
+
+  it("still fails on any other conflict or error", () => {
+    expect(alreadyProduction(409, { error: { code: "conflict", message: "A promotion is already in progress." } })).toBe(false);
+    expect(alreadyProduction(409, null)).toBe(false);
+    expect(alreadyProduction(400, live)).toBe(false);
+    expect(alreadyProduction(403, { error: { code: "forbidden", message: "Not authorized" } })).toBe(false);
   });
 });
 

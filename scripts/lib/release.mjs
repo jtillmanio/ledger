@@ -92,6 +92,16 @@ export function promoteProblem(deployment) {
 }
 
 /**
+ * True when Vercel refused a promote (its POST /v10/projects/:id/promote/:id
+ * status and parsed body) because that build already serves production: every
+ * merge since the last release was docs-only, so none got a build of its own
+ * and plan picked the build already live. Nothing to promote, not a failure.
+ */
+export function alreadyProduction(status, body) {
+  return status === 409 && /already the current production deployment/i.test(body?.error?.message ?? "");
+}
+
+/**
  * Why production's /api/health is not yet the release it should be, or null.
  *   status, body: the response (body null when it was not JSON)
  *   sha:          the commit Release promoted
