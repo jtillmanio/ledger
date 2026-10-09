@@ -18,7 +18,9 @@ jobs:
       postgres:
         # Neon's major version (backup.yml's PG_MAJOR says the same). A view or
         # migration that works here then behaves the same on the live database.
-        image: postgres:18
+        # The official image through Amazon's public mirror: GitHub's runners share
+        # IPs, so Docker Hub's anonymous pull limit is spent by strangers first.
+        image: public.ecr.aws/docker/library/postgres:18
         env:
           POSTGRES_PASSWORD: test
           POSTGRES_DB: reading_test

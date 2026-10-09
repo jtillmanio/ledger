@@ -23,9 +23,11 @@ jobs:
       CHECK_ONLY: ${{ inputs.check_only == true }}
     services:
       # A throwaway server every dump is restored into before it is committed
-      # (R2-AR2, D-30). It lives only as long as the job.
+      # (R2-AR2, D-30). It lives only as long as the job. The official image
+      # through Amazon's public mirror, as in ci.yml: Docker Hub's anonymous
+      # pull limit is shared by every job on the runner's IP.
       scratch:
-        image: postgres:18
+        image: public.ecr.aws/docker/library/postgres:18
         env:
           POSTGRES_PASSWORD: scratch
         options: >-
@@ -103,7 +105,7 @@ jobs:
 
           scratch_major=$(( $(psql "$scratch/postgres" -tAc "SHOW server_version_num") / 10000 ))
           if [ "$scratch_major" -ne "$PG_MAJOR" ]; then
-            echo "::error::The scratch server is PostgreSQL $scratch_major but PG_MAJOR is $PG_MAJOR. Change the scratch service image in .github/workflows/backup.yml to postgres:$PG_MAJOR." >&2
+            echo "::error::The scratch server is PostgreSQL $scratch_major but PG_MAJOR is $PG_MAJOR. Change the scratch service image in .github/workflows/backup.yml to public.ecr.aws/docker/library/postgres:$PG_MAJOR." >&2
             exit 1
           fi
           psql "$scratch/postgres" -qc "CREATE DATABASE restore_check"
