@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  alreadyProduction, directUrl, needsBuild, pendingMigrations, promoteProblem, releaseProblems, smokeProblem,
+  alreadyProduction, deploymentNeedsBuild, directUrl, needsBuild, pendingMigrations, promoteProblem, releaseProblems, smokeProblem,
   snapshotsToPrune,
 } from "../scripts/lib/release.mjs";
 
@@ -16,6 +16,22 @@ describe("needsBuild (vercel.json ignoreCommand)", () => {
     expect(needsBuild(["drizzle/0005_a.sql"])).toBe(true);
     expect(needsBuild(["etl/views.sql"])).toBe(true);
     expect(needsBuild(["package-lock.json"])).toBe(true);
+  });
+
+});
+
+describe("deploymentNeedsBuild (scripts/vercel-ignore.mjs)", () => {
+  it("builds when nothing changed: a redeploy asked for on purpose", () => {
+    // A redeploy builds the commit it last deployed, so the diff is empty. It is
+    // how a changed environment variable reaches a preview (START-HERE 10e).
+    expect(deploymentNeedsBuild([])).toBe(true);
+    // Release reads the same empty list as "nothing unreleased".
+    expect(needsBuild([])).toBe(false);
+  });
+
+  it("otherwise follows needsBuild", () => {
+    expect(deploymentNeedsBuild(["docs/START-HERE.md", ".github/workflows/ci.yml"])).toBe(false);
+    expect(deploymentNeedsBuild(["docs/TASKS.md", "src/app/page.tsx"])).toBe(true);
   });
 });
 
