@@ -16,6 +16,17 @@ export function needsBuild(files) {
 }
 
 /**
+ * The Ignored Build Step's answer for the files changed since the branch's last
+ * deployment. Nothing changed means someone asked for this build on purpose:
+ * a redeploy builds the commit it last deployed, and it is how a changed
+ * environment variable reaches a preview (START-HERE 10e). needsBuild([]) stays
+ * false, because Release reads an empty list as nothing unreleased.
+ */
+export function deploymentNeedsBuild(files) {
+  return files.length === 0 || needsBuild(files);
+}
+
+/**
  * Which journal entries the database has not applied, by drizzle-kit migrate's
  * own rule: an entry runs when its `when` is later than the newest applied
  * `created_at`. `unknown` lists applied timestamps no journal entry has — the

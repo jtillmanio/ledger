@@ -1,4 +1,5 @@
 export function needsBuild(files: string[]): boolean;
+export function deploymentNeedsBuild(files: string[]): boolean;
 export function pendingMigrations(
   entries: { tag: string; when: number }[],
   appliedCreatedAt: (string | number)[],
