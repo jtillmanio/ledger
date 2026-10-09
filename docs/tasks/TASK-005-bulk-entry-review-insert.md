@@ -26,7 +26,7 @@ Pasted issue labels can be checked line by line, with each one accepted, fixed o
 - Design: mockup `bulk` (paste on the left and the review on the right on desktop; the sticky bar counts the real insert) and `addsearch` (the shared review). FEATURES Part 2c *Remember the last run* and UX-N27 (the *Adding to: … · Change* chip). STYLE_GUIDE §9 *states* for empty, loading and error.
 - Decisions: D-15, D-19 (no second placement per run), D-24a, R3-12, S-07, UX-N27. The CLAUDE.md AI-label rule: a freeform line is the user's own label, and the decision column is the explicit accept.
 - Undo: the insert pushes one entry onto TASK-001's stack. Its inverse soft-deletes the placements it inserted (Hard rule 4) and re-hides any it restored.
-- **Open question for the owner:** the mockup `bulk` shows an *always use 2004* switch that "writes back to your volume map". `volume_rules` gets its loader in 1.12 and its editor in 3.9. The draft leaves the switch out of this task and draws it as *Not shown* in `design/mockups-index.md`. Say if it belongs here instead.
+- **Settled by the owner, 2026-10-09:** the mockup `bulk`'s *Always use 2004 for Captain America* switch is built in 1.12 (TASK-019), on this task's review table and insert. Here, the review table leaves room on an *ambiguous volume* row for it, and the insert is structured so a staged rule can join its transaction.
 
 ## Acceptance criteria
 
@@ -40,7 +40,7 @@ Pasted issue labels can be checked line by line, with each one accepted, fixed o
 ## Out of scope
 
 - The parser itself (TASK-004) and Metron search (1.3b). The *Check* column shows *unverified* for typed lines until 1.3b supplies Metron's answer.
-- The *always use 2004* volume-map switch (see Context).
+- The *Always use 2004* volume-map switch (TASK-019, 1.12).
 - Adding books (1.4, 1.4c) and the quick-capture inbox (1.4b).
 - Editing type or notes on existing placements (3.1), and creating a new run (3.2).
 - Eras on new rows (3.6).
@@ -54,7 +54,6 @@ Pasted issue labels can be checked line by line, with each one accepted, fixed o
 - `src/db/writes.ts`: a transactional batch insert built on `addIssueToRun`, plus the TS twin of `slug()`.
 - `src/db/queries.ts`: known series and volumes for the parser, catalog matches (*in N runs*), and this run's live and removed placements.
 - `src/app/globals.css`: review table, preview, chip.
-- `design/mockups-index.md`: *Not shown* line for the volume-map switch (`ui.redrawFiles`).
 - `test/bulk-insert.test.ts` (new, DB), `test/review-table.test.tsx` (new, happy-dom), `etl/test_extract.py` or a shared fixture for the slug parity check.
 
 ## Verification

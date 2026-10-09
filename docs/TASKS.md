@@ -1698,8 +1698,14 @@ could only come back by hand through 3.9's editor.
   flags (`approved with no year`) is not written.
 - `etl/load.ps1` and `etl/load.sh` copy it, after `runs` (its `run_id` is a
   foreign key), and `npm run rebuild`'s row counts list it.
-- No schema change, and nothing else moves: labels are already normalized by
-  extract, and nothing reads the table until 3.9.
+- No schema change. Labels are already normalized by extract.
+- **The bulk-entry review's *Always use 2004 for Captain America* switch**
+  (mockup `bulk`; owner, 2026-10-09: built here, not in 1.3c). On a row
+  flagged *ambiguous volume* (1.3), the switch stages an any-run, any-issue
+  rule (`run_id` and `issue_from` / `issue_to` NULL) that 1.3c's confirm
+  writes in the same transaction as the insert. 1.3c's caller passes the
+  table's rules to the parser, so a series with a rule is no longer flagged.
+  3.9's editor is still the only way to change or remove a rule.
 
 **Check:** `npm run test:etl` covers a fixture map holding a run-scoped rule,
 an any-run rule and an approved row with no year, and asserts that

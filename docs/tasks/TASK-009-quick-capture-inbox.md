@@ -25,9 +25,9 @@ A half-formed thought ("someone mentioned the Waid FF run") can be saved in ten 
 - Architecture: `docs/ARCHITECTURE.md` § 4. Interface — the route table's `/inbox`. 2.15 (resolving routes into the existing add flows, not a third entry path), D-28 (*Save to inbox* is Watch's fallback, used by 8.2).
 - Design: mockup `capture` (capture on the left and the unresolved queue on the right on desktop; zero required fields; resolve carries the raw text through as a search term) and `dashextras` (the inbox chip on the lede). FP-D16: from 1024px the sidebar's `Inbox (N)` replaces the chip.
 - Decisions: D-28, D-40 (FP-D16), D-17.
-- **Open questions for the owner:**
-  1. Comics notes resolve into *New Run* in the mockup, but that is task 3.2. The draft routes a comics note to Add issues → Search (TASK-006) with the text pre-filled, against the last-touched run (the run chip lets you change it). *New Run* is added as a second choice in 3.2.
-  2. The sidebar that holds `Inbox (N)` is built in 1.8 (sitting 6), after this task. The draft builds the count and the chip here, and 1.8 places `Inbox (N)` in its sidebar and asserts that half of the check.
+- **Settled by the owner, 2026-10-09:**
+  1. Until *New Run* exists (3.2), a comics note resolves to Add issues → Search (TASK-006) with the text pre-filled, against the last-touched run (the run chip lets you change it). 3.2 adds *New Run* as a second choice.
+  2. This task builds the count and the dashboard chip. 1.8 (TASK-014) places `Inbox (N)` in its sidebar and asserts that half of the check.
 
 ## Acceptance criteria
 
@@ -40,7 +40,7 @@ A half-formed thought ("someone mentioned the Waid FF run") can be saved in ten 
 ## Out of scope
 
 - *New Run* (3.2) as a resolution target, and the `/watch/add` screen itself (8.2). The Watch resolve produces the URL only.
-- The sidebar's `Inbox (N)` placement (1.8). See open question 2.
+- The sidebar's `Inbox (N)` placement (1.8, TASK-014).
 - Editing or deleting notes beyond resolving them.
 - AI suggestions for what a note refers to (Phase 7).
 

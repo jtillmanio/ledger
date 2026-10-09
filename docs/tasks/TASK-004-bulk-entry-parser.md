@@ -38,7 +38,7 @@ A pasted block of issue labels, one per line, is turned into a checked list: eac
 
 - The review table, the decisions UI, the insertion preview and the insert (1.3c).
 - Metron lookup and the existence check (1.3b, and the review's *Check* column in 1.3c).
-- Writing to `volume_rules`, including the mockup's *always use 2004* switch (1.3c or 1.12).
+- Writing to `volume_rules`, including the mockup's *Always use 2004* switch (1.12, TASK-019). 1.12 then passes the rules to the parser as part of its known-volumes input, so the parser itself doesn't change.
 - Parsing fraction or suffixed designators into rows. They go through *Unparseable* and a manual accept.
 
 ## Files likely touched
