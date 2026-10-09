@@ -376,9 +376,11 @@ button.era{width:100%;font:inherit;color:inherit;text-align:left;border-left:0;b
 .stat .l{font-size:.75rem;color:var(--muted);margin-top:.125rem}
 .empty{padding:1.25rem .875rem;color:var(--muted);font-size:.8125rem}
 .empty b{display:block;color:var(--ink);font-weight:600;margin-bottom:.25rem;font-size:.875rem}
-.toast{margin:.75rem 0;padding:.6875rem .8125rem;background:var(--ink);color:var(--page);
+.toast{margin:.75rem 0;padding:.6875rem .8125rem;background:var(--toast-bg);color:var(--toast-ink);
   border-radius:11px;font-size:.8125rem;font-weight:500;display:flex;align-items:center;gap:.625rem;box-shadow:var(--sh-2)}
 .toast u{margin-left:auto;text-decoration:none;color:var(--toast-link);font-weight:700}
+.toast .tl{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.125rem}
+.toast .t2{font-family:var(--mono);font-size:.75rem;line-height:1rem;font-weight:400;color:var(--toast-muted)}
 .sheet{background:var(--surface);border:1px solid var(--rule);border-radius:16px;padding:.9375rem;box-shadow:var(--sh-3);margin:.75rem 0}
 .sheet h4{font-size:.9375rem;font-weight:700;margin:0 0 .1875rem}
 .opts{display:flex;gap:.375rem;flex-wrap:wrap;margin-top:.5rem}
@@ -1316,6 +1318,7 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
         <div class="btnrow"><button class="btn sm">Resume #141</button><button class="btn sec sm">Adopt 2 prior reads</button><button class="btn sec sm" style="flex:0 0 44px;padding:0" aria-haspopup="menu" aria-label="More: copy unread, copy all, copy as ranges">&#8943;</button></div></div></div>
     </div></div>
   </div>
+  <div class="toast" role="status" aria-live="polite" style="margin:0 .875rem .5rem"><span class="tl"><span>#140 read</span><span class="t2">41 of 381 in Claremont — Uncanny X-Men</span></span><u>Undo</u></div>
   <div class="actionbar"><button class="btn">Mark #141 read</button><button class="btn sec" style="flex:0 0 auto">Mark through&hellip;</button><button class="btn sec" style="flex:0 0 auto" aria-label="Add issues">+</button></div>
 </div>
 </div></div></div>
@@ -1337,6 +1340,7 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
         <li><b>Release date</b> on desktop only: a grey mono column, <i>Nov 1980</i>. GN5's <i>Dec 1982</i> between two 1981 issues is why it helps: reading order is not publication order. The phone row does not carry it (it is in the issue sheet). A run can opt in to a caption at every width; off by default.</li>
         <li><b>Next-issue strip</b> in the hero, above <b>Resume #141</b>: cover, <i>NEXT · 42 / 381</i>, the full label and its note. It is a tonal well with no ring and no blue; the only blue is the Resume button. On a fully read run it gives way to the fully-read treatment (drawn in <code>states</code>). The thumb bar verb is unchanged.</li>
       </ul></li>
+    <li><span class="chg">Oct 2026 — the toast says what happened</span> (TASKS 1.2, D-40, STYLE_GUIDE §14.3 and §15). Not <i>Marked read · Undo</i>: the first line is the issue, <b>#140 read</b> (the full label on a run that spans series, <i>X-Men (2019) #8 read</i>), the second is the run's new count in mono <code>--toast-muted</code>, <i>41 of 381 in</i> the run's title, then <b>Undo</b>. An untick says <i>#140 unread</i>. It is <code>role="status"</code> and lasts 8 seconds; <b>Undo</b> or <kbd>Ctrl</kbd>+<kbd>Z</kbd> puts back exactly what was there, a read's original date included. 1.8b places it above the thumb bar and adds the countdown bar. It is drawn in the desktop frame, where Hide read is off: on the phone frame #140 has folded into the <b>+3 read</b> stub, which happens only once its toast has closed.</li>
   </ul></div>
 </section>
 
@@ -1354,7 +1358,7 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
         <div class="frow"><span class="k">Finished on</span><span class="v mono">2026-09-12</span></div></div>
       <div class="btnrow"><button class="btn">Mark 96 read</button><button class="btn sec" style="flex:0 0 auto">Cancel</button></div>
     </div>
-    <div class="toast" role="status" aria-live="polite">96 issues marked read<u>Undo</u></div>
+    <div class="toast" role="status" aria-live="polite"><span class="tl"><span>96 issues read</span><span class="t2">121 of 641 in Hickman — Krakoa</span></span><u>Undo</u></div>
     <div class="group">
       <div class="iss" data-read><button class="chk" aria-pressed="true" aria-label="Mark Excalibur (2019) #9 read in this run"><i></i></button>
         <div class="ib"><div class="lbl">Excalibur (2019) #9</div></div><span class="cv s k5">09</span></div>
@@ -1414,7 +1418,7 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
       <div class="group" style="margin-top:.75rem">
         <div class="frow"><span class="k">Finished on</span><span class="v mono">2026-09-12</span></div></div>
       <div class="btnrow"><button class="btn">Mark 96 read</button><button class="btn sec" style="flex:0 0 auto">Cancel</button></div>
-    </div><div class="toast" role="status" aria-live="polite">96 issues marked read<u>Undo</u></div></div>
+    </div><div class="toast" role="status" aria-live="polite"><span class="tl"><span>96 issues read</span><span class="t2">121 of 641 in Hickman — Krakoa</span></span><u>Undo</u></div></div>
   </div>
 </div>
 </div></div></div>

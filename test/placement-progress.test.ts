@@ -128,11 +128,103 @@ describe("POST /api/progress/issue", () => {
     }
   });
 
+  it("refuses a restore that is not a dated read", async () => {
+    const placementId = await placement("a", "x");
+    for (const restore of [
+      { completedAt: null, precision: "exact" },
+      { completedAt: "2026-03-14 00:00:00+00", precision: "none" },
+      { completedAt: "2026-03-14 00:00:00+00", precision: "roughly" },
+      { completedAt: "last spring", precision: "approximate" },
+      "2026-03-14",
+    ]) {
+      expect((await post({ placementId, completed: true, restore })).status).toBe(400);
+    }
+    // A restore only ever puts a row back; it never comes with an untick.
+    const restore = { completedAt: "2026-03-14 00:00:00+00", precision: "approximate" };
+    expect((await post({ placementId, completed: false, restore })).status).toBe(400);
+    expect((await sql`SELECT count(*)::int AS n FROM issue_progress`)[0].n).toBe(0);
+  });
+
   it("will not mark a placement removed from its run", async () => {
     const id = await placement("a", "x");
     await w.removeIssueFromRun("a", "x");
     expect((await post({ placementId: id, completed: true })).status).toBe(404);
     expect((await post({ placementId: 999999, completed: true })).status).toBe(404);
     expect((await sql`SELECT count(*)::int AS n FROM issue_progress`)[0].n).toBe(0);
+  });
+});
+
+// Task 1.2: undo puts back exactly what was there. Every write answers with
+// `prior`, the row as it stood before, and the inverse sends it back as
+// `restore` (or unticks, when there was no row). The date travels as Postgres
+// text, so even a now() read's microseconds survive the round trip.
+describe("undo through POST /api/progress/issue", () => {
+  const row = async (placementId: number) =>
+    (await sql`SELECT completed_at::text AS at, completed_at_precision AS precision
+               FROM issue_progress WHERE user_id = ${USER} AND placement_id = ${placementId}`)[0];
+  const write = async (body: Record<string, unknown>) => {
+    const res = await post(body);
+    expect(res.status).toBe(200);
+    return (await res.json()).prior as { completedAt: string | null; precision: string } | null;
+  };
+  const undo = (placementId: number, prior: { completedAt: string | null; precision: string } | null) =>
+    write(prior ? { placementId, completed: true, restore: prior } : { placementId, completed: false });
+
+  it("mark then undo leaves no row for the placement", async () => {
+    const placementId = await placement("a", "x");
+    const prior = await write({ placementId, completed: true });
+    expect(prior).toBeNull();
+    expect(await row(placementId)).toBeDefined();
+    await undo(placementId, prior);
+    expect(await row(placementId)).toBeUndefined();
+    expect(await progress("a")).toBe("0/2");
+  });
+
+  it("marking a row that is already read reports it, so undo keeps it", async () => {
+    const placementId = await markRead(sql, USER, "a", "x", { at: "2026-03-14", precision: "approximate" });
+    const before = await row(placementId);
+    const prior = await write({ placementId, completed: true });
+    expect(prior).toEqual({ completedAt: before.at, precision: "approximate" });
+    await undo(placementId, prior);
+    expect(await row(placementId)).toEqual(before);
+  });
+
+  it("untick then undo restores an exact now() read to the microsecond", async () => {
+    const placementId = await placement("a", "x");
+    await sql`INSERT INTO issue_progress (user_id, placement_id) VALUES (${USER}, ${placementId})`;
+    const before = await row(placementId);
+    expect(before.precision).toBe("exact");
+    const prior = await write({ placementId, completed: false });
+    expect(await row(placementId)).toBeUndefined();
+    await undo(placementId, prior);
+    expect(await row(placementId)).toEqual(before);
+  });
+
+  it("untick then undo restores an approximate 2026-03-14, not now() / exact", async () => {
+    const placementId = await markRead(sql, USER, "a", "x", { at: "2026-03-14", precision: "approximate" });
+    const [{ day }] = await sql`SELECT completed_at::date::text AS day FROM issue_progress`;
+    expect(day).toBe("2026-03-14");
+    const before = await row(placementId);
+    await undo(placementId, await write({ placementId, completed: false }));
+    expect(await row(placementId)).toEqual(before);
+    const [after] = await sql`SELECT completed_at::date::text AS day, completed_at_precision AS precision
+                              FROM issue_progress WHERE placement_id = ${placementId}`;
+    expect(after).toEqual({ day: "2026-03-14", precision: "approximate" });
+  });
+
+  it("untick then undo restores an undated read as NULL / none", async () => {
+    const placementId = await markRead(sql, USER, "a", "x", { precision: "none" });
+    const prior = await write({ placementId, completed: false });
+    expect(prior).toEqual({ completedAt: null, precision: "none" });
+    await undo(placementId, prior);
+    expect(await row(placementId)).toEqual({ at: null, precision: "none" });
+  });
+
+  it("undo touches only its own placement", async () => {
+    const a = await markRead(sql, USER, "a", "x", { at: "2026-03-14", precision: "approximate" });
+    const b = await markRead(sql, USER, "b", "x", { precision: "none" });
+    await undo(a, await write({ placementId: a, completed: false }));
+    expect(await row(b)).toEqual({ at: null, precision: "none" });
+    expect([...(await readRuns("x"))].sort()).toEqual(["a", "b"]);
   });
 });
