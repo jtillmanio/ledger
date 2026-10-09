@@ -864,7 +864,9 @@ staged review and insert as 1.3. A new issue is created with `metron_id`,
 `cover_date` / `cover_url` (source `metron`), and Metron's label normalised to
 the bulk-entry grammar. Then the placement is appended, or inserted after a
 chosen issue. Metron is called server-side only, rate-limited to its 20/min, and
-cached with the same cache the enrichment script uses. When Metron is down or
+cached the same way the enrichment script caches, but in Postgres: a
+`metron_cache` table shared by every serverless instance, which also paces the
+20/min, and left out of the export (D-53). When Metron is down or
 returns nothing, the screen offers **Type it instead** with the query
 pre-filled.
 

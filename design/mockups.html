@@ -1560,7 +1560,7 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
   <ul>
     <li><b>Desktop:</b> results on the left, what is staged on the right, so what you picked and where it lands can be checked side by side before anything is written.</li>
     <li><b>Your catalog first.</b> Balder #1 already exists because another run places it. It shows as yours, with <b>in 1 run</b>, and adding it creates only a placement, never a second issue.</li>
-    <li><b>Then Metron, on Enter, not on each keystroke.</b> 20 requests a minute is plenty for one person adding issues and would not survive search-as-you-type. Responses are cached with the enrichment script's cache.</li>
+    <li><b>Then Metron, on Enter, not on each keystroke.</b> 20 requests a minute is plenty for one person adding issues and would not survive search-as-you-type. Responses are cached in Postgres (<code>metron_cache</code>, D-53), the way the enrichment script caches its own.</li>
     <li><b>Cover and cover date resolve the volume.</b> The ambiguity that bulk add makes you settle with year chips is settled here by looking at the cover. The volume year is in the label Metron hands back.</li>
     <li>A Metron result arrives as a real <code>issues</code> row with <code>metron_id</code>, cover date and cover, label normalised to the bulk-entry grammar. Tapping it is the explicit accept, so the rule that no label reaches the database without one still holds.</li>
     <li><b>The review step is shared with Type it.</b> Staged rows go through the same review and the same one-transaction insert. Placements append, or go after an issue you choose.</li>
