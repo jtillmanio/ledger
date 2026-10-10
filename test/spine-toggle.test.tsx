@@ -10,7 +10,7 @@ import RunSpine from "../src/components/IssueRow";
 import { UndoProvider } from "../src/components/Undo";
 
 const IssueList = ({ issues }: { issues: Parameters<typeof RunSpine>[0]["issues"] }) => (
-  <UndoProvider><RunSpine title="Run" issues={issues} /></UndoProvider>
+  <UndoProvider><RunSpine runId="r" title="Run" issues={issues} /></UndoProvider>
 );
 
 // React only flushes act() work when it is told it is under test.

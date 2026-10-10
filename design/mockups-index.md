@@ -15,7 +15,7 @@ line numbers below drift after an edit.
 | `home` | Comics dashboard — with the Up next queue | 655–1001 |
 | `runs` | Run list | 1004–1090 |
 | `spine` | Run detail — per-run "read in …" hints; spine v2 gutter, Hide read, covers, dates, next-issue strip; the two-line undo toast (desktop frame, TASKS 1.2) | 1219–1345 |
-| `range` | Range marking; its undo toast in the two-line form (TASKS 1.2) | 1348–1434 |
+| `range` | Range marking; its undo toast in the two-line form (TASKS 1.2); the count with its optionals, *Adopt*'s fifth option *Original dates*, and the desktop anchor and pill (TASKS 1.1) | 1348–1466 |
 | `addsearch` | Add issues — search (Metron) | 1437–1573 |
 | `bulk` | Add issues — type it (bulk) | 1576–1680 |
 | `newrun` | New run | 1545–1647 |

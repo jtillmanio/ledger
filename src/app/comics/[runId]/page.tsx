@@ -39,7 +39,8 @@ export default async function Run({ params }: { params: Promise<{ runId: string 
 
       {/* The read count is drawn by RunSpine, beside the rows it counts, so a
           mark and its undo move it (task 1.2). */}
-      <RunSpine title={run.title} issues={issues} blocked={run.readiness === "blocked"}>
+      <RunSpine runId={run.id} title={run.title} issues={issues} ranges={run.series_issues}
+        blocked={run.readiness === "blocked"}>
         {unread.length > 0 && (
           <>
             <h2>Read these first</h2>

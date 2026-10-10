@@ -47,7 +47,7 @@ async function spine(runId: string) {
   const detail = await q.runDetail(USER, runId);
   if (!detail) throw new Error(`no run ${runId}`);
   const html = renderToStaticMarkup(
-    <UndoProvider><RunSpine title={detail.run.title} issues={detail.issues} /></UndoProvider>,
+    <UndoProvider><RunSpine runId={detail.run.id} title={detail.run.title} issues={detail.issues} /></UndoProvider>,
   );
   const rows = html.split('<div class="iss"').slice(1);
   const row = (label: string) => {
