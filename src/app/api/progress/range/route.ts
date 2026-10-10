@@ -61,9 +61,10 @@ function validRange(runId: unknown, ids: unknown): ids is number[] {
     && ids.every((id) => Number.isInteger(id) && id > 0 && id <= 2147483647);
 }
 
-/** A real calendar day, `YYYY-MM-DD`: 2026-02-30 is not one. */
+/** A real calendar day, `YYYY-MM-DD`: 2026-02-30 is not one, and neither is
+ * year 0000, which JS accepts and Postgres doesn't. */
 function day(s: unknown): s is string {
-  if (typeof s !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  if (typeof s !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(s) || s.startsWith("0000")) return false;
   const d = new Date(`${s}T00:00:00Z`);
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
 }

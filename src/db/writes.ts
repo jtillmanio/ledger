@@ -62,6 +62,10 @@ export async function markRange(
   userId: string, runId: string, placementIds: number[], mode: RangeMode, dates: RangeDates = {},
 ): Promise<RangeResult> {
   const { date = null, from = null, to = null } = dates;
+  // The route checks these too; here a bad call fails loudly instead of
+  // tripping the precision CHECK or writing a decreasing spread.
+  if (mode === "date" && !date) throw new Error("markRange: Pick a date needs a date");
+  if (mode === "spread" && !(from && to && from <= to)) throw new Error("markRange: Spread needs from <= to");
   const [row] = await pg<{ is_foreign: boolean; no_prior: boolean; matched: number; inserted: number[] }[]>`
     WITH wanted AS (
       SELECT DISTINCT unnest(${placementIds}::int[]) AS id

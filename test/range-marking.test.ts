@@ -153,10 +153,25 @@ describe("POST /api/progress/range", () => {
     expect(await total()).toBe(0);
   });
 
+  it("rejects a placement whose issue is soft-deleted, and writes nothing", async () => {
+    await sql`UPDATE issues SET deleted_at = now() WHERE id = 'b3'`;
+    const res = await post({ runId: "big", placementIds: await ids("big", 1, 5), mode: "today" });
+    expect(res.status).toBe(400);
+    expect(await total()).toBe(0);
+  });
+
+  it("rejects every placement of a soft-deleted run, and writes nothing", async () => {
+    await sql`UPDATE runs SET deleted_at = now() WHERE id = 'big'`;
+    const res = await post({ runId: "big", placementIds: await ids("big", 1, 5), mode: "today" });
+    expect(res.status).toBe(400);
+    expect(await total()).toBe(0);
+  });
+
   it.each([
     ["an unknown mode", { mode: "yesterday" }],
     ["Pick a date with no date", { mode: "date" }],
     ["Pick a date that isn't a day", { mode: "date", date: "2026-02-30" }],
+    ["Pick a date in year 0000", { mode: "date", date: "0000-01-01" }],
     ["Spread with no from", { mode: "spread", to: "2026-01-31" }],
     ["Spread with no to", { mode: "spread", from: "2026-01-01" }],
     ["Spread with to before from", { mode: "spread", from: "2026-02-01", to: "2026-01-31" }],

@@ -142,7 +142,9 @@ function RangeForm({ rows, adopt, onConfirm }: {
       </div>
       {reason && <p id={reasonId} className="small muted sheet-reason">{reason}</p>}
       {failed && (
-        <p className="small sheet-reason" role="alert">That didn&apos;t save. Check your connection and try again.</p>
+        <p className="small sheet-reason sheet-error" role="alert">
+          <span aria-hidden="true">×</span> That didn&apos;t save. Check your connection and try again.
+        </p>
       )}
     </>
   );

@@ -80,8 +80,6 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
   const [hover, setHover] = useState<number | null>(null);
   const [range, setRange] = useState<Range | null>(null);
   const press = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number } | null>(null);
-  // A long-press ends in a click on whatever was pressed: that click is not a tick.
-  const swallowClick = useRef(false);
   const single = singleSeries(issues.map((i) => i.label));
   const read = state.filter((i) => i.completed).length;
   const adoptable = state.filter((i) => !i.completed && i.read_elsewhere.length > 0);
@@ -167,8 +165,10 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
     press.current = {
       x: e.clientX, y: e.clientY,
       timer: setTimeout(() => {
+        // The sheet opens with the finger still down. Lifting it clicks
+        // whatever is under it: the scrim, which ignores a click it didn't see
+        // start (Sheet), so the sheet stays open and nothing is ticked.
         press.current = null;
-        swallowClick.current = true;
         throughHere(at, opener);
       }, LONG_PRESS_MS),
     };
@@ -286,10 +286,6 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
               className="chk"
               onClick={(e) => {
                 e.stopPropagation();
-                if (swallowClick.current) {
-                  swallowClick.current = false;
-                  return;
-                }
                 // A shift-click on the box finishes a range, like one on the row.
                 if (fine && e.shiftKey && anchor !== null) {
                   openRange(anchor, at, e.currentTarget);

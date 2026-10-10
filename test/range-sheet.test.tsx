@@ -144,6 +144,29 @@ describe("selecting a range by touch", () => {
     expect(dialog()!.textContent).toContain("Run #4 through Run #8");
   });
 
+  it("lifting the finger that long-pressed leaves the sheet open, and the next tap still ticks", async () => {
+    pointer(false);
+    vi.useFakeTimers();
+    render(rows(12));
+    await act(async () => {
+      row(3).dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerType: "touch" }));
+      vi.advanceTimersByTime(500);
+    });
+    // The lift lands on the scrim, which now covers the pressed row.
+    const scrim = document.querySelector(".scrim")!;
+    await act(async () => {
+      scrim.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerType: "touch" }));
+      scrim.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    });
+    expect(heading()).toBe("Mark 3 issues read");
+
+    await key(document.activeElement!, "Escape");
+    expect(dialog()).toBeNull();
+    vi.useRealTimers();
+    await click(row(7).querySelector("button.chk")!);
+    expect(sent()).toEqual([{ url: "/api/progress/issue", method: "POST", body: { placementId: 107, completed: true } }]);
+  });
+
   it("a short tap is not a long-press", async () => {
     pointer(false);
     vi.useFakeTimers();
@@ -221,6 +244,11 @@ describe("the range sheet (UX floor, R1-11)", () => {
     ["Esc", async () => key(document.activeElement!, "Escape")],
     ["Cancel", async () => click(buttonNamed(dialog()!, "Cancel")!)],
     ["Back", async () => act(async () => { window.dispatchEvent(new PopStateEvent("popstate")); })],
+    ["A press on the scrim", async () => act(async () => {
+      const scrim = document.querySelector(".scrim")!;
+      scrim.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true }));
+      scrim.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    })],
   ])("%s closes it, wakes the page and returns focus to the control that opened it", async (_, dismiss) => {
     render(rows(10));
     const trigger = await openRowMenu(4);

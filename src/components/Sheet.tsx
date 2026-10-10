@@ -46,6 +46,7 @@ export default function Sheet({ heading, opener, onClose, children }: {
   // Refs survive StrictMode's remount, so the history entry is pushed once.
   const pushed = useRef(false);
   const closed = useRef(false);
+  const scrimDown = useRef(false);
   const onCloseRef = useRef(onClose);
   useLayoutEffect(() => {
     onCloseRef.current = onClose;
@@ -111,7 +112,18 @@ export default function Sheet({ heading, opener, onClose, children }: {
 
   return createPortal(
     <div ref={host} className="sheet-host">
-      <div className="scrim" aria-hidden="true" onClick={() => close()} />
+      {/* Only a press that starts on the scrim closes the sheet: a long-press
+          opens it with the finger still down, and that finger's lift must not
+          shut it again (task 1.1). */}
+      <div
+        className="scrim"
+        aria-hidden="true"
+        onPointerDown={() => { scrimDown.current = true; }}
+        onClick={() => {
+          if (scrimDown.current) close();
+          scrimDown.current = false;
+        }}
+      />
       <div
         ref={dialog}
         className="sheet"
