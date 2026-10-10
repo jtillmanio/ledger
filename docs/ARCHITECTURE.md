@@ -450,7 +450,8 @@ of book history) and they deserve different answers.
 | `/comics/runs` | The run list, grouped track → block |
 | `/comics/tracks` | The tracks index: every track with completion counted in distinct issues, and a *never opened* group; each row links to the run list filtered by track |
 | `/comics/status` | In flight · Up next · Done, for runs |
-| `/comics/[runId]` | The reading spine. One marker per placement, 3rem rows, optimistic `POST` to `/api/progress/issue` |
+| `/comics/[runId]` | The reading spine. One marker per placement, 3rem rows, optimistic `POST` to `/api/progress/issue`; a range (shift-click, long-press, *Mark everything through here*, *Adopt N prior reads*) goes through the range sheet to `/api/progress/range` (task 1.1) |
+| `POST /api/progress/range` | Mark a range of one run's placements read in one statement: `{ runId, placementIds, mode, date?, from?, to? }`, `mode` one of `today · date · spread · none · original`. Placement ids, never sequences (R3-10); every id must be a live placement of `runId` or nothing is written. `ON CONFLICT DO NOTHING`, so a date already recorded is kept and counted as skipped (R3-07). Answers `{ inserted, skipped }`; `DELETE` with `{ runId, placementIds: inserted }` is its undo (task 1.1) |
 | `/comics/[runId]/add` | Add issues: search Metron, or type/paste labels, with an insertion preview |
 | `/comics/[runId]/[issueId]` | The issue sheet: every run that places the issue, with a read toggle per placement (intercepted route) |
 | `/comics/[runId]/path` | *Why blocked?*: the cheapest ordered chain of prerequisite runs (intercepted route) |

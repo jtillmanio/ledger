@@ -23,7 +23,13 @@ export const UNDO_MS = 8000;
 type Live = UndoEntry & { id: number; expires: number };
 type Toast = { id: number; label: string; detail?: string; until: number; undoable: boolean };
 
-const UndoContext = createContext<{ push: (entry: UndoEntry) => void } | null>(null);
+type UndoApi = {
+  push: (entry: UndoEntry) => void;
+  /** A toast with nothing to take back: "Copied 523 unread issues" (task 1.1). */
+  notify: (label: string, detail?: string) => void;
+};
+
+const UndoContext = createContext<UndoApi | null>(null);
 
 export function useUndo() {
   const ctx = useContext(UndoContext);
@@ -62,6 +68,10 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
     showTop();
   }, [showTop]);
 
+  const notify = useCallback((label: string, detail?: string) => {
+    setToast({ id: ++ids.current, label, detail, until: Date.now() + UNDO_MS, undoable: false });
+  }, []);
+
   const undoTop = useCallback(async () => {
     const top = live().pop();
     if (!top) return;
@@ -92,8 +102,8 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [live, undoTop]);
 
-  // push is stable, so consumers don't re-render when the toast changes.
-  const ctx = useMemo(() => ({ push }), [push]);
+  // push and notify are stable, so consumers don't re-render when the toast changes.
+  const ctx = useMemo(() => ({ push, notify }), [push, notify]);
 
   return (
     <UndoContext.Provider value={ctx}>

@@ -682,7 +682,7 @@ the dashboard (2.4) the lens cell and the *Since Tuesday* stack. 1.8b draws it.
 it on undo, so the stack is not coupled to progress rows. A mark's toast reads
 the label, then the run's new read count *of* its total *in* the run's title.
 
-### ☐ 1.1 Range marking · M
+### ☑ 1.1 Range marking · M
 Depends on 0.8a and **1.2** — build undo first (R3-10); 1.1 pushes its range mark
 onto that stack and never ships a throwaway undo of its own.
 

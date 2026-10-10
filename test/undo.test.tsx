@@ -156,7 +156,7 @@ const krakoa = [
 ];
 
 const spine = (issues: Row[], title: string) => act(() => root.render(
-  <UndoProvider><RunSpine title={title} issues={issues} /></UndoProvider>,
+  <UndoProvider><RunSpine runId="r" title={title} issues={issues} /></UndoProvider>,
 ));
 const box = (label: string) =>
   container.querySelector<HTMLButtonElement>(`button.chk[aria-label="Mark ${label} read in this run"]`)!;
