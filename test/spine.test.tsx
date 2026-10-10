@@ -11,14 +11,16 @@ const USER = "test-user";
 
 const sql = testSql();
 let q: typeof import("../src/db/queries");
-let IssueList: typeof import("../src/components/IssueRow").default;
+let RunSpine: typeof import("../src/components/IssueRow").default;
+let UndoProvider: typeof import("../src/components/Undo").UndoProvider;
 let appSql: { end: () => Promise<void> };
 
 beforeAll(async () => {
   // src/db reads DATABASE_URL at import time: point it at the TEST database first.
   process.env.DATABASE_URL = requireTestUrl();
   q = await import("../src/db/queries");
-  IssueList = (await import("../src/components/IssueRow")).default;
+  RunSpine = (await import("../src/components/IssueRow")).default;
+  UndoProvider = (await import("../src/components/Undo")).UndoProvider;
   appSql = (await import("../src/db")).sql;
 });
 
@@ -44,7 +46,9 @@ beforeEach(async () => {
 async function spine(runId: string) {
   const detail = await q.runDetail(USER, runId);
   if (!detail) throw new Error(`no run ${runId}`);
-  const html = renderToStaticMarkup(<IssueList issues={detail.issues} />);
+  const html = renderToStaticMarkup(
+    <UndoProvider><RunSpine title={detail.run.title} issues={detail.issues} /></UndoProvider>,
+  );
   const rows = html.split('<div class="iss"').slice(1);
   const row = (label: string) => {
     const found = rows.find((r) => r.includes(`>${label}<`));

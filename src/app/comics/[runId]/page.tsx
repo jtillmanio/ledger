@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUserId } from "@/lib/auth";
 import { runDetail } from "@/db/queries";
-import IssueList from "@/components/IssueRow";
+import RunSpine from "@/components/IssueRow";
 import { yearSpan } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -37,35 +37,33 @@ export default async function Run({ params }: { params: Promise<{ runId: string 
       )}
       {run.why && <p>{run.why}</p>}
 
-      <p className="mono small muted">
-        {run.read_issues} of {run.total_issues} read
-        {run.readiness === "blocked" && " · blocked"}
-      </p>
-
-      {unread.length > 0 && (
-        <>
-          <h2>Read these first</h2>
-          <p className="muted small">
-            Including everything reachable through the prerequisite chain, not just
-            direct links.
-          </p>
-          <div className="rows">
-            {unread.map((p) => (
-              <Link key={p.id} href={`/comics/${p.id}`} className="row">
-                <span className="row-head">
-                  <span className="row-title">{p.title}</span>
-                  <span className={`row-meta mono ${p.type === "hard" ? "tag-held" : ""}`}>
-                    {p.type} · depth {p.depth}
+      {/* The read count is drawn by RunSpine, beside the rows it counts, so a
+          mark and its undo move it (task 1.2). */}
+      <RunSpine title={run.title} issues={issues} blocked={run.readiness === "blocked"}>
+        {unread.length > 0 && (
+          <>
+            <h2>Read these first</h2>
+            <p className="muted small">
+              Including everything reachable through the prerequisite chain, not just
+              direct links.
+            </p>
+            <div className="rows">
+              {unread.map((p) => (
+                <Link key={p.id} href={`/comics/${p.id}`} className="row">
+                  <span className="row-head">
+                    <span className="row-title">{p.title}</span>
+                    <span className={`row-meta mono ${p.type === "hard" ? "tag-held" : ""}`}>
+                      {p.type} · depth {p.depth}
+                    </span>
                   </span>
-                </span>
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
 
-      <h2>Issues</h2>
-      <IssueList issues={issues} />
+        <h2>Issues</h2>
+      </RunSpine>
     </main>
   );
 }

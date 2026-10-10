@@ -6,7 +6,12 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import IssueList from "../src/components/IssueRow";
+import RunSpine from "../src/components/IssueRow";
+import { UndoProvider } from "../src/components/Undo";
+
+const IssueList = ({ issues }: { issues: Parameters<typeof RunSpine>[0]["issues"] }) => (
+  <UndoProvider><RunSpine title="Run" issues={issues} /></UndoProvider>
+);
 
 // React only flushes act() work when it is told it is under test.
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;

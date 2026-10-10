@@ -1,14 +1,14 @@
 ---
 id: TASK-001
 title: 1.2 Undo
-status: Ready
+status: Done
 depends_on: []
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: e5abd2d
 ---
 
 # TASK-001 — 1.2 Undo
@@ -32,12 +32,12 @@ Any mark made in the app can be taken back for eight seconds, from a toast that 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): test asserts mark → undo restores exact prior state, including `completed_at`. Test that an entry pushed with an arbitrary inverse closure runs it on undo, so the stack is not coupled to progress rows. A mark's toast reads the label, then the run's new read count *of* its total *in* the run's title.
-- [ ] AC-2: Given an unread placement, when it is marked read and then undone, the `issue_progress` row for that placement no longer exists. Given a placement read with `completed_at = 2026-03-14` and precision `approximate`, when it is unticked and then undone, the row is back with `completed_at = 2026-03-14` and precision `approximate`, not `now()` / `exact`. Given a placement read with precision `none`, the restored row is NULL / `none`.
-- [ ] AC-3: Given an entry pushed as `{ label: "x", undo: fn }` where `fn` is a spy that touches no progress table, pressing the toast's **Undo** calls `fn` exactly once and pops the entry. A second press does nothing. `Ctrl+Z` (and `⌘Z` on macOS) undoes the newest entry the same way, except while focus is in a text input, textarea or contenteditable.
-- [ ] AC-4: In a fixture run titled *Uncanny X-Men* with 3 of 10 placements read, all from one series, marking the fourth (`Uncanny X-Men (1963) #141`) shows a toast whose first line is `#141 read` and whose second line is `4 of 10 in Uncanny X-Men`, with `role="status"`, then **Undo**. In a fixture run spanning two series, the first line is the full label (`X-Men (2019) #8 read`). After **Undo**, the row's `aria-pressed` and the page's read count are back to their pre-mark values.
-- [ ] AC-5: The toast leaves after 8 seconds (fake timers: still present at 7.9s, gone at 8.1s), and its **Undo** is unavailable from then on. A failed inverse request leaves the row in its pre-undo state on screen, matching the database, and says so. It is never silently reverted.
-- [ ] AC-6: The spine and its toast meet the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): **Undo** is a real `<button>` named *Undo* and at least 24px; toast text is at least 4.5:1 on `--toast-bg` in both themes; under `prefers-reduced-motion` the toast still appears and leaves, with no movement; screenshots of a toast on the spine at every `ui.viewports` width, light and dark.
+- [x] AC-1 (roadmap **Check:**, verbatim): test asserts mark → undo restores exact prior state, including `completed_at`. Test that an entry pushed with an arbitrary inverse closure runs it on undo, so the stack is not coupled to progress rows. A mark's toast reads the label, then the run's new read count *of* its total *in* the run's title.
+- [x] AC-2: Given an unread placement, when it is marked read and then undone, the `issue_progress` row for that placement no longer exists. Given a placement read with `completed_at = 2026-03-14` and precision `approximate`, when it is unticked and then undone, the row is back with `completed_at = 2026-03-14` and precision `approximate`, not `now()` / `exact`. Given a placement read with precision `none`, the restored row is NULL / `none`.
+- [x] AC-3: Given an entry pushed as `{ label: "x", undo: fn }` where `fn` is a spy that touches no progress table, pressing the toast's **Undo** calls `fn` exactly once and pops the entry. A second press does nothing. `Ctrl+Z` (and `⌘Z` on macOS) undoes the newest entry the same way, except while focus is in a text input, textarea or contenteditable.
+- [x] AC-4: In a fixture run titled *Uncanny X-Men* with 3 of 10 placements read, all from one series, marking the fourth (`Uncanny X-Men (1963) #141`) shows a toast whose first line is `#141 read` and whose second line is `4 of 10 in Uncanny X-Men`, with `role="status"`, then **Undo**. In a fixture run spanning two series, the first line is the full label (`X-Men (2019) #8 read`). After **Undo**, the row's `aria-pressed` and the page's read count are back to their pre-mark values.
+- [x] AC-5: The toast leaves after 8 seconds (fake timers: still present at 7.9s, gone at 8.1s), and its **Undo** is unavailable from then on. A failed inverse request leaves the row in its pre-undo state on screen, matching the database, and says so. It is never silently reverted.
+- [x] AC-6: The spine and its toast meet the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): **Undo** is a real `<button>` named *Undo* and at least 24px; toast text is at least 4.5:1 on `--toast-bg` in both themes; under `prefers-reduced-motion` the toast still appears and leaves, with no movement; screenshots of a toast on the spine at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -65,11 +65,43 @@ Any mark made in the app can be taken back for eight seconds, from a toast that 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-10-09.
+
+**Steps**
+
+1. `src/components/Undo.tsx` (new): `UndoProvider` + `useUndo().push({ label, detail?, undo })`. An in-memory closure stack; each entry expires 8s after its push. The toast shows the newest live entry: `role="status"`, line 1 the label, line 2 `detail` (mono, `--toast-muted`), a real `<button>Undo</button>`. Undo / `Ctrl+Z` / `⌘Z` (no Shift or Alt; not while focus is in an input, textarea or contenteditable) pops the newest entry before awaiting it, so a second press can't run it twice. A rejected `undo()` shows *Couldn't undo #141 read. Nothing changed.* and changes nothing on screen.
+2. `src/app/layout.tsx`: mount the provider app-wide (1.10 and 1.3c/1.4c push from other screens).
+3. `src/app/api/progress/issue/route.ts`: every response returns `prior`, the row as it was before the write (`{ completedAt: text, precision }`, or `null`), read with `DELETE … RETURNING completed_at::text` (or `INSERT … ON CONFLICT DO NOTHING` plus a select): text keeps the microseconds a JS `Date` drops. New optional `restore` (only with `completed: true`) upserts that exact pair back through `::timestamptz`; the precision must be one of the three, NULL exactly with `none`, otherwise 400. The owner-approved date write; no other write changes.
+4. `src/components/IssueRow.tsx`: a client `RunSpine` owns the rows and renders the `n of N read` line, the server-rendered prereqs (`children`), then the list, so the layout doesn't change. Each tick or untick pushes an entry: `#141 read` on a single-series run, otherwise the full label; an untick reads `#141 unread`. Line 2 is `4 of 10 in <run title>`. The inverse POSTs `prior` back, and the row and the count change only once it succeeds.
+5. `src/lib/format.ts` (not in "Files likely touched"): `issueNumber()` / `singleSeries()`, the same label regex as `run_span` in `etl/views.sql`. 1.8b's *Mark #141 read* verb reuses them.
+6. `src/app/comics/[runId]/page.tsx`: use `RunSpine`, pass the title.
+7. `src/app/globals.css`: `.toast` fixed to the bottom (safe area, the 720px column; 1.8b moves it above the thumb bar), `--toast-*` tokens only, Undo at least 44px, no animation (nothing for reduced motion to turn off).
+8. `design/mockups.html`: the two-line toast on the `spine` frames (phone and desktop), the `range` toast redrawn in two lines, the mockup's `.toast` on the `--toast-*` tokens; the `design/mockups-index.md` row updated.
+
+**Test strategy**
+
+- AC-1, AC-2 — `test/placement-progress.test.ts`, against `TEST_DATABASE_URL`: mark → undo leaves no row; untick → undo for `exact` (a `now()` read, microseconds included), `approximate` 2026-03-14 and NULL/`none` brings back an identical `completed_at::text` and precision; a bad `restore` is a 400.
+- AC-3, AC-4, AC-5 — `test/undo.test.tsx` (new, happy-dom): a closure-only entry with a spy that touches no progress table; one press calls it once, a second press or `Ctrl+Z` doesn't; `Ctrl+Z` and `⌘Z` work, but not from an input, a textarea or a contenteditable; the 10-issue *Uncanny X-Men* fixture shows `#141 read` / `4 of 10 in Uncanny X-Men`, and after Undo `aria-pressed` and the count are back; the multi-series fixture shows `X-Men (2019) #8 read`; after an untick, Undo sends `restore` equal to `prior`; with fake timers the toast is there at 7.9s and gone at 8.1s, and Undo does nothing afterwards; a failed inverse leaves the row as it was and says so.
+- AC-6 — `npm run test:tokens` (already checks the toast's ink, second line and link on `--toast-bg`); ui-verifier checks the button size, reduced motion and screenshots at every `ui.viewports` width, light and dark.
+- `test/spine-toggle.test.tsx` gets the provider wrapper.
+
+**Risks / open questions**
+
+- The Check says line 2 ends in the run's *title*. The real run is *Claremont — Uncanny X-Men*, so the toast reads `… in Claremont — Uncanny X-Men`, not the style guide's `in Uncanny X-Men`. Following the Check.
+- `Ctrl+Z` can undo older entries that are still live (a stack) until 1.8b's rule that a new toast commits the old one.
+- Size: about 11 files, UI and API together. `splitPolicy` is `never-split`, so the task stays whole and attended.
+- Candidate decision (proposed in the PR): the progress route returns `prior` and accepts `restore` as the way any inverse round-trips a stored date.
+
+**Revisions after approval**
+
+1. Step 8: the toast is drawn on the desktop `spine` frame only. The phone frame has Hide read on, so #140 has already folded into the *+3 read* stub there, and STYLE_GUIDE §9 says a ticked row folds only once its toast has closed: a `#140 read` toast on that frame would contradict it. The mockup note says so. (Spec review R1.)
+2. Step 3: reading `prior` and the write now share one transaction (`SELECT … FOR UPDATE`), and a restore date that passes the shape check but that Postgres can't read (`2026-02-30`) is a 400, not a 500. (Schema review R1.)
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 PASS | Audit R1 PASS (FAILS-TO-LOAD at base for the new Undo module; DB tests DISCRIMINATING)
+- Spec R1 CHANGES (plan gap: phone spine frame toast; stray whitespace in format.ts) | Schema R1 CHANGES (MAJOR: unreadable restore date gave 500; MINOR: prior read outside a transaction)
+- Verify R2 PASS | Spec R2 APPROVE | Schema R2 APPROVE | UI R1 PASS (8/8 at 360, 390, 412, 768, 1024, 1280, light and dark, against the development DB with the owner's approval)
 
 ## Blocked
 
@@ -77,7 +109,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 2
