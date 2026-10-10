@@ -1,7 +1,7 @@
 ---
 id: TASK-002
 title: 1.1 Range marking
-status: In progress
+status: Review
 depends_on: [TASK-001]
 size: L
 model: opus
@@ -34,12 +34,12 @@ Many issues of a run can be marked read in one go: select a stretch of the spine
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): test marks sequences 5 through 200 of a run in one call and asserts 196 `issue_progress` rows, one per placement, in one round trip. Marks go to this run's placements only (0.8a): an issue in the range also placed in another run stays unread there. A range containing four placements that already carry a March date leaves those four dates untouched (`DO NOTHING`). Spread over 10 placements writes non-decreasing dates from start to end with precision `approximate`; No date writes NULL and `none`. A request whose `placementIds` include an id from another run is rejected and writes nothing. Adopting 9 prior reads writes 9 placements with `completed_at` equal to their original read dates (NULL where those were undated) and the same precision (an `approximate` prior read stays `approximate`), in one request, and one undo removes exactly those 9. At 1280px, a click on the fifth row and a shift-click on the twenty-second opens the sheet counting 18 placements. Manually: open `hickman-krakoa` (641 issues), mark a 100-issue range, confirm no visible stall.
-- [ ] AC-2: `POST /api/progress/range` with `{ runId, placementIds, mode, date?, from?, to? }` returns 400 and writes nothing when: `mode` is not one of the five modes; *Pick a date* has no `date`; *Spread* lacks `from` or `to`, or has `to` before `from`; any id is not a live placement of `runId` (soft-deleted placements included). A valid request returns the ids it inserted and the count it skipped as already read. Today writes `exact`, *Pick a date* writes that date as `exact`, and in *Spread* the first placement gets `from` and the last gets `to`.
-- [ ] AC-3: Given a range of 12 placements, 2 of them optional and 3 already read here, the sheet reads *12 issues · 2 optional*. After confirming, the toast's first line reports 9 marked and *3 already read, kept their dates*, and its second line is 1.2's run count line. One **Undo** deletes exactly the 9 inserted rows, and the 3 earlier rows keep their `completed_at` and precision.
-- [ ] AC-4: Given a run with 9 unread placements whose issues are read in another run, the run hero shows *Adopt 9 prior reads*. It opens the same sheet pre-filled with those 9 and a fifth option, *Original dates*, which appears only from this entry point. Given a run with no such placements, no Adopt control renders. An issue with two prior reads adopts the earliest.
-- [ ] AC-5: With a fine pointer (`matchMedia('(hover:hover) and (pointer:fine)')` true), the first click sets an anchor row with a 1px `--brand` ring. Hovering another row tints the rows between in `--brand-soft` and shows a pill counting them (*Mark N read · Shift-click to finish*). `Esc` clears the anchor. With a coarse pointer, a long-press on a row selects from the run's first unread placement to that row and opens the same sheet, and each row's menu offers *Mark everything through here*. A single tap or click never opens the sheet or prompts for a date. The run hero's `⋯` menu offers *Copy unread · Copy all · Copy as ranges*: the first two copy the labels one per line in sequence order, and each copy is confirmed by a `role="status"` toast.
-- [ ] AC-6: The range sheet meets the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task* and § *Focus returns where it came from*). It is labelled by its heading, which takes focus on open (`tabindex="-1"`). It traps Tab, marks the page behind it `inert`, and is dismissed by `Esc`, Cancel and Back, each of which returns focus to the control that opened it. The date options are real radio inputs with names. A disabled confirm is `aria-disabled="true"` with its reason shown. Targets are at least 24px. Shift-click and hover tints sit behind `(hover:hover) and (pointer:fine)`. Screenshots at every `ui.viewports` width, light and dark, including the desktop anchor and pill at 1280px.
+- [x] AC-1 (roadmap **Check:**, verbatim): test marks sequences 5 through 200 of a run in one call and asserts 196 `issue_progress` rows, one per placement, in one round trip. Marks go to this run's placements only (0.8a): an issue in the range also placed in another run stays unread there. A range containing four placements that already carry a March date leaves those four dates untouched (`DO NOTHING`). Spread over 10 placements writes non-decreasing dates from start to end with precision `approximate`; No date writes NULL and `none`. A request whose `placementIds` include an id from another run is rejected and writes nothing. Adopting 9 prior reads writes 9 placements with `completed_at` equal to their original read dates (NULL where those were undated) and the same precision (an `approximate` prior read stays `approximate`), in one request, and one undo removes exactly those 9. At 1280px, a click on the fifth row and a shift-click on the twenty-second opens the sheet counting 18 placements. Manually: open `hickman-krakoa` (641 issues), mark a 100-issue range, confirm no visible stall.
+- [x] AC-2: `POST /api/progress/range` with `{ runId, placementIds, mode, date?, from?, to? }` returns 400 and writes nothing when: `mode` is not one of the five modes; *Pick a date* has no `date`; *Spread* lacks `from` or `to`, or has `to` before `from`; any id is not a live placement of `runId` (soft-deleted placements included). A valid request returns the ids it inserted and the count it skipped as already read. Today writes `exact`, *Pick a date* writes that date as `exact`, and in *Spread* the first placement gets `from` and the last gets `to`.
+- [x] AC-3: Given a range of 12 placements, 2 of them optional and 3 already read here, the sheet reads *12 issues · 2 optional*. After confirming, the toast's first line reports 9 marked and *3 already read, kept their dates*, and its second line is 1.2's run count line. One **Undo** deletes exactly the 9 inserted rows, and the 3 earlier rows keep their `completed_at` and precision.
+- [x] AC-4: Given a run with 9 unread placements whose issues are read in another run, the run hero shows *Adopt 9 prior reads*. It opens the same sheet pre-filled with those 9 and a fifth option, *Original dates*, which appears only from this entry point. Given a run with no such placements, no Adopt control renders. An issue with two prior reads adopts the earliest.
+- [x] AC-5: With a fine pointer (`matchMedia('(hover:hover) and (pointer:fine)')` true), the first click sets an anchor row with a 1px `--brand` ring. Hovering another row tints the rows between in `--brand-soft` and shows a pill counting them (*Mark N read · Shift-click to finish*). `Esc` clears the anchor. With a coarse pointer, a long-press on a row selects from the run's first unread placement to that row and opens the same sheet, and each row's menu offers *Mark everything through here*. A single tap or click never opens the sheet or prompts for a date. The run hero's `⋯` menu offers *Copy unread · Copy all · Copy as ranges*: the first two copy the labels one per line in sequence order, and each copy is confirmed by a `role="status"` toast.
+- [x] AC-6: The range sheet meets the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task* and § *Focus returns where it came from*). It is labelled by its heading, which takes focus on open (`tabindex="-1"`). It traps Tab, marks the page behind it `inert`, and is dismissed by `Esc`, Cancel and Back, each of which returns focus to the control that opened it. The date options are real radio inputs with names. A disabled confirm is `aria-disabled="true"` with its reason shown. Targets are at least 24px. Shift-click and hover tints sit behind `(hover:hover) and (pointer:fine)`. Screenshots at every `ui.viewports` width, light and dark, including the desktop anchor and pill at 1280px.
 
 ## Out of scope
 
@@ -104,7 +104,11 @@ Approved by the owner 2026-10-10.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 PASS (ae2ba81) → R2 PASS (65b48f2, after review fixes; 250 vitest tests)
+- Audit R1 PASS: tests fail on 344a0b6 (range-marking fails to load; range-sheet 17 of 21 fail, the other 4 guard negative rules). The auditor's static review was independent; its revert-and-run was refused by the permission system, so the run was done in a scratch worktree by the implementing session (not independent).
+- Schema R1 APPROVE (4 minor; year 0000, markRange guards and soft-deleted issue/run tests taken in R2)
+- Spec R1 CHANGES (AC-5 FAIL: stuck long-press click flag; D-48 departure to propose; grey × on the error line) → R2 APPROVE
+- UI R1 CHANGES (AC-5 FAIL: finger-lift closes the long-press sheet via the scrim; sheet buttons 41px) → R2 PASS (long-press high and low, tap after Cancel, scrim tap, 44px; axe 0 at six widths)
 
 ## Blocked
 
@@ -112,7 +116,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2
+- First-pass AC FAILs: 1 (AC-5)
+- Plan revisions after approval: 0
