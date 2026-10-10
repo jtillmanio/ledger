@@ -1,7 +1,7 @@
 ---
 id: TASK-001
 title: 1.2 Undo
-status: Review
+status: Done
 depends_on: []
 size: M
 model: opus
