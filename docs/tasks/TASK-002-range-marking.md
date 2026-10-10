@@ -1,7 +1,7 @@
 ---
 id: TASK-002
 title: 1.1 Range marking
-status: Review
+status: Done
 depends_on: [TASK-001]
 size: L
 model: opus
