@@ -72,7 +72,8 @@
     "afterMerge": "After merge, run Release (START-HERE Step 13) to put it live.",
     "allowForceWithLease": true,
     "roadmap": { "path": "docs/TASKS.md", "idPattern": "\\d+\\.\\d+[a-z]?", "checkLabel": "**Check:**" },
-    "statusDoc": "docs/STATUS.md"
+    "statusDoc": "docs/STATUS.md",
+    "archiveDone": true
   },
 
   "testAudit": {

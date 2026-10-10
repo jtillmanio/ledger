@@ -58,5 +58,5 @@
 - [ ] Diff contains only what the task asked for (no surprise files)
 - [ ] No secrets, `.env*`, `seed/`, `backups/`, protected files or production config touched
 - [ ] The task's checkbox in `docs/TASKS.md` is ticked in this PR
-- [ ] Task file set to `status: Done` (reply "accepted" to the session) before merging
+- [ ] Task file set to `status: Done` (reply "accepted" to the session) before merging. Accepting also moves it to `docs/tasks/archive/`; a hand edit leaves that to the next task's close-out
 - [ ] After the squash merge, run Release (START-HERE Step 13) to put it live
