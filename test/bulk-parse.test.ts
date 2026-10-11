@@ -250,6 +250,7 @@ describe("freeform and new series (AC-4)", () => {
   });
 
   it("flags a title missing from the known series as new, with ranked suggestions", () => {
+    expect(SUGGEST_THRESHOLD).toBe(0.3); // the plan's threshold: pg_trgm's default
     const l = one("Captian America #1");
     const s = flag(l, "new_series")!.suggestions;
     expect(s[0].title).toBe("Captain America");
