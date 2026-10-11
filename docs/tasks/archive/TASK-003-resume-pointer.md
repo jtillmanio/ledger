@@ -1,7 +1,7 @@
 ---
 id: TASK-003
 title: 1.6 Resume pointer
-status: Review
+status: Done
 depends_on: [TASK-002]
 size: M
 model: sonnet
