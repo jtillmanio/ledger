@@ -781,7 +781,7 @@ accessible name starts *Next: 6 of*, and that it contains no element styled
 `--brand` other than the Resume button. Mark every placement read and assert
 that the strip is gone and the fully-read badge is rendered.
 
-### ☐ 1.3 Bulk issue entry — parser and validation · M
+### ☑ 1.3 Bulk issue entry — parser and validation · M
 The single highest-risk feature: if adding a run is slower than Sheets you will
 drift back. Split in two (R3-12): this task is the pure parser and its validation
 rules, testable with no UI; **1.3c** is the review table and the insert. The

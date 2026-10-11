@@ -1,7 +1,7 @@
 ---
 id: TASK-004
 title: 1.3 Bulk issue entry — parser and validation
-status: In progress
+status: Review
 depends_on: [TASK-003]
 size: S
 model: opus
@@ -28,11 +28,11 @@ A pasted block of issue labels, one per line, is turned into a checked list: eac
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): unit tests for the parser against a fixture of 40 lines covering every rule above, including the 8-volume Captain America case; `#1-12` expands to 12 in order; a line already in the run is flagged *skip*. No database is touched.
-- [ ] AC-2: Normalisation is NFKC, then trim, then internal whitespace collapsed, then en and em dashes turned into `-`. The line `  Thor  (1966)  #337–340 ` parses to title `Thor`, year `1966`, and four rows `Thor (1966) #337` … `#340`, in that order. `Avengers (1998) #605.1` parses to one row, and so does a fixture line using the grammar's `Annual N` designator.
-- [ ] AC-3: Given known volumes in which `Captain America` has 8 distinct volume years, `Captain America #1` is flagged *ambiguous volume* and lists all 8 years as candidates. `Captain America (1968) #1` is not flagged. A series with exactly one known volume and no year in the input is not flagged *ambiguous*.
-- [ ] AC-4: `Dark Reign: The Cabal` and `Astonishing Tales #1 (Mojoworld)` are flagged *unparseable* with an offer to accept as typed, keeping the normalised text. A title missing from the known series is flagged *new series*, with suggestions from the known titles ranked by trigram similarity, highest first, and none below the threshold the plan names. Each flagged line's output carries its kind (`ok`, `choice`, `error`), so 1.3c renders it without re-deriving anything.
-- [ ] AC-5: The parser module imports nothing from `src/db` and makes no network call: a test asserts its import graph (or the module source) contains no `@/db`, `postgres` or `fetch`. A line that matches a label already in the run, as supplied by the caller, is flagged *duplicate* with the default decision *skip*.
+- [x] AC-1 (roadmap **Check:**, verbatim): unit tests for the parser against a fixture of 40 lines covering every rule above, including the 8-volume Captain America case; `#1-12` expands to 12 in order; a line already in the run is flagged *skip*. No database is touched.
+- [x] AC-2: Normalisation is NFKC, then trim, then internal whitespace collapsed, then en and em dashes turned into `-`. The line `  Thor  (1966)  #337–340 ` parses to title `Thor`, year `1966`, and four rows `Thor (1966) #337` … `#340`, in that order. `Avengers (1998) #605.1` parses to one row, and so does a fixture line using the grammar's `Annual N` designator.
+- [x] AC-3: Given known volumes in which `Captain America` has 8 distinct volume years, `Captain America #1` is flagged *ambiguous volume* and lists all 8 years as candidates. `Captain America (1968) #1` is not flagged. A series with exactly one known volume and no year in the input is not flagged *ambiguous*.
+- [x] AC-4: `Dark Reign: The Cabal` and `Astonishing Tales #1 (Mojoworld)` are flagged *unparseable* with an offer to accept as typed, keeping the normalised text. A title missing from the known series is flagged *new series*, with suggestions from the known titles ranked by trigram similarity, highest first, and none below the threshold the plan names. Each flagged line's output carries its kind (`ok`, `choice`, `error`), so 1.3c renders it without re-deriving anything.
+- [x] AC-5: The parser module imports nothing from `src/db` and makes no network call: a test asserts its import graph (or the module source) contains no `@/db`, `postgres` or `fetch`. A line that matches a label already in the run, as supplied by the caller, is flagged *duplicate* with the default decision *skip*.
 
 ## Out of scope
 
@@ -120,7 +120,7 @@ calls, named here so 1.3c can change them in one place.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | Audit R1 PASS (2 minor notes; threshold pinned in 2125a6e) | Spec R1 APPROVE | Schema n/a (pure module, no DB) | UI n/a (ui: false)
 
 ## Blocked
 
@@ -128,7 +128,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0
