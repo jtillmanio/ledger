@@ -1,14 +1,14 @@
 ---
 id: TASK-004
 title: 1.3 Bulk issue entry — parser and validation
-status: Ready
+status: In progress
 depends_on: [TASK-003]
 size: S
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: e2eb3fd
 ---
 
 # TASK-004 — 1.3 Bulk issue entry — parser and validation
@@ -54,7 +54,69 @@ A pasted block of issue labels, one per line, is turned into a checked list: eac
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-10-11.
+
+**Steps**
+
+1. `test/bulk-parse.test.ts` first, with the 40-line fixture inline (each line
+   paired with its expected kind, flags, expanded labels and skips); confirm it
+   fails.
+2. `src/lib/bulk-parse.ts`, a pure module with no imports:
+   `parseBulk(text, { knownSeries: {title, years: number[]}[], runLabels: string[] })`
+   returns one result per non-blank line:
+   `{ line, input, normalized, kind: ok|choice|error, title, year, rows[], flags[] }`,
+   a row being `{ label, designator, decision: add|skip }`.
+3. The rules, in the roadmap's order:
+   - Normalise: NFKC, trim, collapse internal whitespace, en/em dash to `-`.
+   - Unparseable → `error`, keeps the normalised text, offers accept as typed;
+     when adding the missing `#` makes the line parse, a suggestion too (the
+     mockup's "Did you mean…", `Thor Annual 13`).
+   - New series → `choice`, up to 5 known titles by trigram similarity
+     (pg_trgm-style word-padded trigrams, Jaccard), highest first, none below
+     **0.3** (pg_trgm's default).
+   - Ambiguous volume → `choice`: no year in the input and 2+ known years lists
+     them; exactly 1 known year fills it ("Volume year filled from your map");
+     0 leaves the label yearless.
+   - Range: `#1-12` → 12 rows in order; a reversed range or one over 500
+     issues → `error`.
+   - Duplicate: a row whose label is already in the run gets flag `duplicate`
+     and decision `skip`; a range with one duplicate stays `ok`.
+4. Export `labelFor(title, year, designator)` so 1.3c can rebuild labels after
+   a year is picked.
+
+**Owner's answers**
+
+1. Annual: accept both `Title (Year) #Annual N` (the roadmap grammar, probably
+   a typo there and never expected in practice) and `Title (Year) Annual #N`
+   (the mockup); output is always `Title (Year) Annual #N`.
+2. Series match case-insensitively and take the catalog's spelling; duplicate
+   checks are case-insensitive too (label slugs, D-15).
+3. An explicit year the series doesn't know (`Captain America (1969) #1`) stays
+   `ok`; 1.3c's Metron check catches it. A *new volume* flag is a follow-up.
+
+**Files**
+
+- `src/lib/bulk-parse.ts` (new): grammar, normalisation, range expansion, flags.
+- `test/bulk-parse.test.ts` (new): the 40-line fixture inline, and the AC cases.
+- `docs/tasks/TASK-004-bulk-entry-parser.md`, `docs/TASKS.md` (tick 1.3).
+
+**Test strategy**
+
+- AC-1: "40-line fixture", "8-volume Captain America", "#1-12 expands to 12 in
+  order", "line already in the run is skip".
+- AC-2: "normalises Thor (1966) #337–340", "decimal designator", "Annual
+  designator".
+- AC-3: "ambiguous lists 8 years", "explicit year not flagged", "single known
+  volume not ambiguous".
+- AC-4: "freeform lines are unparseable", "new series ranked suggestions ≥ 0.3",
+  "every line carries a kind".
+- AC-5: "module has no @/db, postgres or fetch" (reads the source) and the
+  duplicate → skip case.
+- Sanity, not committed: run the parser over `seed/issues.csv` labels; about
+  302 should be unparseable (roadmap).
+
+**Risks**: the trigram threshold and the 500-issue range cap are judgement
+calls, named here so 1.3c can change them in one place.
 
 ## Review log
 
