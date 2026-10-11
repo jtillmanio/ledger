@@ -135,7 +135,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds: 1
-- Review rounds: 1
+- Verify rounds: 2
+- Review rounds: 2
 - First-pass AC FAILs: 0
 - Plan revisions after approval: 1 (owner's follow-ups, after review)

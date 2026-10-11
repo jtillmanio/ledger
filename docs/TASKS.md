@@ -802,7 +802,7 @@ desig   := number | number "." number
 
 An annual is written `Thor (1966) Annual #13` (D-55); the parser also reads
 `Thor (1966) #Annual 13`, an older spelling of this grammar, and writes it the
-same way. A number has no leading zeros: `#01` is `#1`.
+same way. A designator's whole number has no leading zeros: `#01` is `#1`.
 
 Validation rules, in order:
 
