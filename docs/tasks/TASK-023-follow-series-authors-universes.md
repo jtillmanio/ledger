@@ -26,6 +26,8 @@ The series, authors and universes (Cosmere, the Riordanverse) the owner follows 
 - Views (`etl/views.sql`): `author_progress` and `universe_progress` in the shape of `series_progress` (live books only; a book with no status counts as unread). All three gain `follow_state`, NULL when not followed. Done is derived (read = listed), never stored.
 - Seed (`etl/extract.py`): the Cosmere and Riordanverse tabs become universes with every row a member. A Series-tab group naming neither a series nor an author (after TASK-021's review) becomes a universe with its listed books as members. Every Series-tab group and the four author tabs become a follow at `tracking`. The tab's `Completed` column is not read. A group matching nothing goes to `unresolved.csv`.
 - Decisions: D-42 (a universe is a fact about the work, not a shelf; amends FEATURES §9), D-43 (following is a stored choice; `reading` stays set until changed), D-41, D-17. Standing rule 4 applies to extract.
+- **Not here** (follow-ups from PR #58): the control that changes a follow's state, and the author and universe pages, are task 5.11 in `docs/TASKS.md`.
+- **Open question for the plan** (follow-up from PR #58): the Series tab lists a word count for each member book, and nothing reads it. This task already reads the tab. Should extract fill a book's missing `word_count` from it, with source `stated`? Ask the owner at plan time; if the answer is no, record that here.
 
 ## Acceptance criteria
 

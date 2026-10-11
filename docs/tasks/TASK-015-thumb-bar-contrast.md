@@ -26,6 +26,7 @@ Marking what you just read is one thumb tap at the bottom of every dashboard and
 - Decisions: D-25b and D-33 (the dashboards move verbs into the header at 1024px; the run detail keeps the bottom bar at every width; a tablet keeps the bar), D-40 (FP-D7 the green hold, FP-D10 radius 12), M-02 (no literal `#fff`; text on fills uses `--on-*`), M-10 (the verb names the issue), UX-N05 and F1–F3, R1-07.
 - Builds on TASK-001 (the toast's content and undo stack: this task places it, adds the countdown bar and the one-at-a-time rule, where a new toast commits the old one), TASK-002 (*Mark through…* opens its range sheet), TASK-003 (the next label comes from the resume pointer) and TASK-014 (the shell, `--bar-h`, the error toast).
 - The batch sheet's *Log a session* is 2.1b, so here it is `aria-disabled="true"` with its reason.
+- **Redraw the `batch` frame's toast** (follow-up from PR #63, task 1.2). Both frames in `design/mockups.html` (around lines 4934 and 4966) still draw 1.2's old one-line toast, `Marked #141–145 read · Undo`. This task places the toast, so it redraws those frames to 1.2's two-line toast with this task's countdown bar, in the same PR (`ui.redrawFiles`).
 
 ## Acceptance criteria
 

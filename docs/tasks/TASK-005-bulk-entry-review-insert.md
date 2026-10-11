@@ -26,6 +26,11 @@ Pasted issue labels can be checked line by line, with each one accepted, fixed o
 - Design: mockup `bulk` (paste on the left and the review on the right on desktop; the sticky bar counts the real insert) and `addsearch` (the shared review). FEATURES Part 2c *Remember the last run* and UX-N27 (the *Adding to: … · Change* chip). STYLE_GUIDE §9 *states* for empty, loading and error.
 - Decisions: D-15, D-19 (no second placement per run), D-24a, R3-12, S-07, UX-N27. The CLAUDE.md AI-label rule: a freeform line is the user's own label, and the decision column is the explicit accept.
 - Undo: the insert pushes one entry onto TASK-001's stack. Its inverse soft-deletes the placements it inserted (Hard rule 4) and re-hides any it restored.
+- **From 1.3 (TASK-004, PR #70).** The parser is `src/lib/bulk-parse.ts`: `parseBulk(text, { knownSeries, runLabels })` gives one `BulkLine` per pasted line with its `kind`, `flags` and `rows` (decision `add` or `skip`), and `labelFor` rebuilds a label once a year is picked. D-54 (suggestion threshold) and D-55 (annual form, no leading zeros) apply. Points for this task's plan:
+  - **A filled-in volume year is shown.** When a series has one known year and the line omitted it, the parser fills it in, and the mockup's why reads *Volume year filled from your map*. `BulkLine` doesn't yet say it filled one: add a `yearFilled` field in the parser, or derive it from `normalized`. Decide in the plan.
+  - **A `bad_range` row says why.** A reversed or single-issue range (`#340-337`, `#5-5`) and one over `MAX_RANGE` (500) are errors with no rows. The why names which one it is.
+  - **A year the series has never used** (`Captain America (1969) #1`) parses as `ok` (owner, 2026-10-11). Decide in the plan whether this task's existence check covers it, or whether a *new volume* flag is its own task.
+
 - **Settled by the owner, 2026-10-09:** the mockup `bulk`'s *Always use 2004 for Captain America* switch is built in 1.12 (TASK-019), on this task's review table and insert. Here, the review table leaves room on an *ambiguous volume* row for it, and the insert is structured so a staged rule can join its transaction.
 
 ## Acceptance criteria
