@@ -781,7 +781,7 @@ accessible name starts *Next: 6 of*, and that it contains no element styled
 `--brand` other than the Resume button. Mark every placement read and assert
 that the strip is gone and the fully-read badge is rendered.
 
-### ☐ 1.3 Bulk issue entry — parser and validation · M
+### ☑ 1.3 Bulk issue entry — parser and validation · M
 The single highest-risk feature: if adding a run is slower than Sheets you will
 drift back. Split in two (R3-12): this task is the pure parser and its validation
 rules, testable with no UI; **1.3c** is the review table and the insert. The
@@ -793,12 +793,16 @@ Pipeline is in DIAGRAMS.md §6. The grammar, derived from the 10,834 existing
 labels:
 
 ```
-label   := title [ " (" year ")" ] " #" designator
+label   := title [ " (" year ")" ] ( " #" designator | " Annual #" number )
 title   := printable text, no leading/trailing space
 year    := 4 digits, the volume year
-desig   := number | number "." number | "Annual " number
+desig   := number | number "." number
           | range: number "-" number   (expanded on insert)
 ```
+
+An annual is written `Thor (1966) Annual #13` (D-55); the parser also reads
+`Thor (1966) #Annual 13`, an older spelling of this grammar, and writes it the
+same way. A designator's whole number has no leading zeros: `#01` is `#1`.
 
 Validation rules, in order:
 
