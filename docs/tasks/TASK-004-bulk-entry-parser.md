@@ -118,9 +118,16 @@ Approved by the owner 2026-10-11.
 **Risks**: the trigram threshold and the 500-issue range cap are judgement
 calls, named here so 1.3c can change them in one place.
 
+**Revision 1 (owner, 2026-10-11, after review)**: fold in the PR's follow-ups
+that belong to this task. Designators lose leading zeros (`#01` is `#1`, so a
+duplicate isn't missed); the TASKS 1.3 grammar drops the `#Annual N` typo; the
+threshold and the annual form are recorded as D-54 and D-55. The 1.3c notes go
+to TASK-005 on a separate docs branch.
+
 ## Review log
 
 Verify R1 PASS | Audit R1 PASS (2 minor notes; threshold pinned in 2125a6e) | Spec R1 APPROVE | Schema n/a (pure module, no DB) | UI n/a (ui: false)
+Revision 1 (owner's follow-ups): Verify R2 PASS | Spec R2 APPROVE
 
 ## Blocked
 
@@ -131,4 +138,4 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Verify rounds: 1
 - Review rounds: 1
 - First-pass AC FAILs: 0
-- Plan revisions after approval: 0
+- Plan revisions after approval: 1 (owner's follow-ups, after review)

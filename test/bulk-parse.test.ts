@@ -153,6 +153,16 @@ describe("ranges and duplicates (AC-1, AC-5)", () => {
     expect(l.rows[0].decision).toBe("skip");
   });
 
+  it("drops leading zeros, so #01 is caught as the #1 already in the run", () => {
+    const l = one("Thor #01", [thor(1)]);
+    expect(l.rows).toEqual([{ label: thor(1), designator: "1", decision: "skip" }]);
+    expect(one("Thor (1966) #007.05").rows[0].label).toBe("Thor (1966) #7.05");
+    expect(one("Thor (1966) #08-010").rows.map((r) => r.designator)).toEqual(["8", "9", "10"]);
+    expect(one("Thor (1966) Annual #03").rows[0].label).toBe("Thor (1966) Annual #3");
+    expect(one("Thor (1966) #0").rows[0].label).toBe(thor(0));
+    expect(one("Thor (1966) #00").rows[0].label).toBe(thor(0));
+  });
+
   it("refuses a reversed range and one over the cap", () => {
     expect(one("Thor (1966) #340-337").kind).toBe("error");
     expect(one(`Thor (1966) #1-${MAX_RANGE}`).rows).toHaveLength(MAX_RANGE);

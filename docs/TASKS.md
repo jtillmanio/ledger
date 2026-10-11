@@ -793,12 +793,16 @@ Pipeline is in DIAGRAMS.md §6. The grammar, derived from the 10,834 existing
 labels:
 
 ```
-label   := title [ " (" year ")" ] " #" designator
+label   := title [ " (" year ")" ] ( " #" designator | " Annual #" number )
 title   := printable text, no leading/trailing space
 year    := 4 digits, the volume year
-desig   := number | number "." number | "Annual " number
+desig   := number | number "." number
           | range: number "-" number   (expanded on insert)
 ```
+
+An annual is written `Thor (1966) Annual #13` (D-55); the parser also reads
+`Thor (1966) #Annual 13`, an older spelling of this grammar, and writes it the
+same way. A number has no leading zeros: `#01` is `#1`.
 
 Validation rules, in order:
 

@@ -5,15 +5,17 @@
  * pure: the caller hands it the known series and the run's labels, so it reads
  * no database and calls nothing (R3-12).
  *
- *   label   := title [ " (" year ")" ] " #" designator
+ *   label   := title [ " (" year ")" ] ( " #" designator | " Annual #" number )
  *   desig   := number | number "." number | number "-" number (a range)
- *            | "Annual " number, written `Title (Year) Annual #N`
+ *
+ * An annual is written `Thor (1966) Annual #13` (D-55); `Thor (1966) #Annual 13`
+ * is read too and written the same way. Numbers lose leading zeros.
  *
  * Fraction (`#1⁄2`, D-24a) and suffixed (`#16.HU`) designators are outside the
  * grammar on purpose: they fall to *unparseable* and a manual accept.
  */
 
-/** pg_trgm's default `similarity_threshold`: no new-series suggestion below it. */
+/** pg_trgm's default `similarity_threshold`: no new-series suggestion below it (D-54). */
 export const SUGGEST_THRESHOLD = 0.3;
 /** At most this many suggestions for a new series. */
 export const MAX_SUGGESTIONS = 5;
@@ -116,7 +118,8 @@ function matchGrammar(text: string, known: Map<string, KnownSeries>): Parsed | n
   }
 
   if (!/^(\d+(\.\d+)?|\d+-\d+|Annual \d+)$/.test(designator)) return null;
-  return { title, year, designator };
+  // `#01` is `#1`: no catalog label has a leading zero, and the duplicate check compares labels.
+  return { title, year, designator: designator.replace(/(^|[ -])0+(?=\d)/g, "$1") };
 }
 
 function suggestTitles(title: string, known: KnownSeries[]) {
