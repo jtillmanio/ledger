@@ -123,6 +123,23 @@ describe("the resume pointer moves with a mark (task 1.6)", () => {
     expect(refresh).toHaveBeenCalledOnce();
   });
 
+  it("opened at #p-n, scrolls that row into view once its rows exist", () => {
+    // A client-side navigation from the dashboard's Continue lands before the
+    // spine has streamed in, so the router has no row to scroll to.
+    const scrolled: string[] = [];
+    vi.spyOn(HTMLElement.prototype, "scrollIntoView").mockImplementation(function (this: HTMLElement) {
+      scrolled.push(this.id);
+    });
+    window.location.hash = "#p-2";
+    try {
+      act(() => root.render(<IssueList issues={two()} />));
+      expect(scrolled).toEqual(["p-2"]);
+    } finally {
+      window.location.hash = "";
+      vi.restoreAllMocks();
+    }
+  });
+
   it("a run read when it loaded shows the server's date and asks for nothing", () => {
     act(() => root.render(<IssueList issues={[row(true)]} lastRead="Mar 2025" />));
     expect(container.querySelector(".bdg")!.textContent).toBe("✓ read · Mar 2025");

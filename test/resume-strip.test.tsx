@@ -157,6 +157,17 @@ describe("the next-issue strip (AC-1, AC-5)", () => {
     expect(resume).toBeUndefined();
     expect(doc.querySelectorAll("[data-next]")).toHaveLength(0);
     expect(badge!.textContent).toBe("✓ read · Mar 2025");
+    expect(badge!.getAttribute("aria-label")).toBe("Read, finished Mar 2025");
+  });
+
+  it("takes an exact read over a guessed one at the same moment", async () => {
+    await sql`DELETE FROM issue_progress`;
+    for (let n = 1; n <= 9; n++) {
+      await markRead(sql, USER, "a", `a-${n}`,
+        { at: "2025-07-01T00:00:00Z", precision: n % 2 ? "approximate" : "exact" });
+    }
+    const { badge } = await hero("a");
+    expect(badge!.textContent).toBe("✓ read · Jul 2025");
   });
 
   it("says ✓ read with no date when every read in the run is undated", async () => {
@@ -164,6 +175,7 @@ describe("the next-issue strip (AC-1, AC-5)", () => {
     for (let n = 1; n <= 9; n++) await markRead(sql, USER, "a", `a-${n}`, { precision: "none" });
     const { badge } = await hero("a");
     expect(badge!.textContent).toBe("✓ read");
+    expect(badge!.getAttribute("aria-label")).toBe("Read");
   });
 
   it("shows neither strip nor badge on a run with no live placements", async () => {

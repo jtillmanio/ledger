@@ -99,6 +99,14 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
   // A mark this visit finished the run: `lastRead` predates it.
   const finishedHere = saved !== fromServer && saved.length > 0 && saved.every((i) => i.completed);
 
+  // The dashboard's Continue opens the run at `#p-n` (task 1.6). A client-side
+  // navigation commits before the spine streams in, so the router finds no row
+  // to scroll to; the spine scrolls there itself once its rows exist.
+  useEffect(() => {
+    const { hash } = window.location;
+    if (/^#p-\d+$/.test(hash)) document.getElementById(hash.slice(1))?.scrollIntoView();
+  }, []);
+
   // Esc drops the anchor; with the sheet open, Esc is the sheet's.
   useEffect(() => {
     if (anchor === null || range) return;
@@ -263,9 +271,11 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
         )}
         {allRead && (
           <p className="runhero-done">
-            <span className="bdg dn">
-              {lastRead && saved === fromServer ? `✓ read · ${lastRead}` : "✓ read"}
-            </span>
+            {lastRead && saved === fromServer ? (
+              <span className="bdg dn" role="img" aria-label={`Read, finished ${lastRead}`}>{`✓ read · ${lastRead}`}</span>
+            ) : (
+              <span className="bdg dn" role="img" aria-label="Read">✓ read</span>
+            )}
           </p>
         )}
         {finishedHere && <RefreshOnce />}

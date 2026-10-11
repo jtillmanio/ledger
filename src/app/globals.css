@@ -401,7 +401,8 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
 .run-actions .more{min-width:44px;min-height:32px;padding:0}
 /* The spine hero (task 1.6, STYLE_GUIDE §9 Next-issue strip): a tonal --raise
    well with no ring and no blue, then Resume, the hero's only --brand. A fully
-   read run shows the grey badge instead. A jump to #p-n clears the sticky bar. */
+   read run shows the grey badge instead. A jump to #p-n clears the sticky bar
+   (about 70px tall). */
 .runhero{margin:.75rem 0 .5rem}
 .nextis{display:flex;gap:.625rem;align-items:center;padding:.5rem;border-radius:8px;
   background:var(--raise);color:var(--ink)}
@@ -417,7 +418,7 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
 .runhero .run-actions{margin:.5rem 0 0}
 .runhero .resume{min-height:44px}
 .runhero-done{margin:0}
-.iss{scroll-margin-top:4rem}
+.iss{scroll-margin-top:5rem}
 @media (hover:hover) and (pointer:fine){
   .rowmenu-btn{opacity:0}
   .iss:hover .rowmenu-btn,.iss:focus-within .rowmenu-btn,.rowmenu-btn[aria-expanded="true"]{opacity:1}

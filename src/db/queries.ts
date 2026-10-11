@@ -164,7 +164,8 @@ function runHeader(userId: string, runId: string) {
       FROM live_run_issues ri
       JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
       WHERE ri.run_id = r.id AND p.completed_at_precision <> 'none'
-      ORDER BY p.completed_at DESC
+      -- On a tie, an exact read wins over a guessed one.
+      ORDER BY p.completed_at DESC, (p.completed_at_precision = 'exact') DESC
       LIMIT 1
     ) lr ON true
     WHERE r.id = ${runId} AND r.deleted_at IS NULL
