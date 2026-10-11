@@ -33,14 +33,16 @@ export default async function Home() {
         <>
           <h2>Mid-run</h2>
           <div className="rows">
+            {/* Each row opens its run at the resume pointer's row (task 1.6). */}
             {reading.map((r) => (
-              <Link key={r.id} href={`/comics/${r.id}`} className="row">
+              <Link key={r.id} href={`/comics/${r.id}#p-${r.next_ordinal}`} className="row">
                 <span className="row-head">
                   <span className="row-title">{r.title}</span>
                   <span className="row-meta mono">
                     {r.read_issues}/{r.total_issues}
                   </span>
                 </span>
+                <span className="row-sub">{`Continue: ${r.next_label}`}</span>
                 <span className="measure"><span style={{ width: pct(r.pct) }} /></span>
               </Link>
             ))}

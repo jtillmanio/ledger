@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useId, useOptimistic, useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Menu from "@/components/Menu";
+import NextStrip from "@/components/NextStrip";
 import RangeSheet, { type RangeChoice } from "@/components/RangeSheet";
 import { useUndo } from "@/components/Undo";
 import { issueName, singleSeries } from "@/lib/format";
@@ -53,6 +55,14 @@ function useFinePointer() {
  * the rows it counts, so it moves with every mark and every undo; `children`
  * is what the page draws between the count and the list.
  *
+ * The hero (task 1.6) names the resume pointer: the first unread row in reading
+ * order, which is the rule inProgressRuns applies in SQL (the lowest sequence
+ * whose placement is unread). It is derived here from the rows, not taken from
+ * the server, so a mark or an undo moves it the way it moves the count. Rows
+ * are anchored `#p-<ordinal>`. A fully read run shows the grey `✓ read · date`
+ * badge instead; `lastRead` is the server's latest dated read, so a run finished
+ * during the visit asks the server once for the date of the read that did it.
+ *
  * Ranges (task 1.1). A single tap or click never prompts for a date; only a
  * range does, through the range sheet, and a range is one request of placement
  * ids (R3-10) and one undo entry. With a fine pointer the first click on a row
@@ -62,9 +72,9 @@ function useFinePointer() {
  * *Mark everything through here*, which is also the keyboard's way in. *Adopt
  * N prior reads* opens the sheet on the unread placements read in another run.
  */
-export default function RunSpine({ runId, title, issues, ranges = null, blocked = false, children }: {
+export default function RunSpine({ runId, title, issues, ranges = null, blocked = false, lastRead = null, children }: {
   runId: string; title: string; issues: Issue[]; ranges?: string | null; blocked?: boolean;
-  children?: React.ReactNode;
+  lastRead?: string | null; children?: React.ReactNode;
 }) {
   const [saved, setSaved] = useState(issues);
   const [fromServer, setFromServer] = useState(issues);
@@ -83,6 +93,11 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
   const single = singleSeries(issues.map((i) => i.label));
   const read = state.filter((i) => i.completed).length;
   const adoptable = state.filter((i) => !i.completed && i.read_elsewhere.length > 0);
+  const nextAt = state.findIndex((i) => !i.completed);
+  const next = nextAt === -1 ? null : state[nextAt];
+  const allRead = state.length > 0 && nextAt === -1;
+  // A mark this visit finished the run: `lastRead` predates it.
+  const finishedHere = saved !== fromServer && saved.length > 0 && saved.every((i) => i.completed);
 
   // Esc drops the anchor; with the sheet open, Esc is the sheet's.
   useEffect(() => {
@@ -241,19 +256,36 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
 
   return (
     <>
-      <div className="btnrow run-actions">
-        {adoptable.length > 0 && (
-          <button
-            type="button"
-            className="btn sec sm"
-            onClick={(e) => setRange({ ids: adoptable.map((i) => i.placement_id), adopt: true, opener: e.currentTarget })}
-          >
-            {`Adopt ${adoptable.length} prior ${adoptable.length === 1 ? "read" : "reads"}`}
-          </button>
+      <div className="runhero">
+        {next && (
+          <NextStrip label={next.label} notes={next.notes} ordinal={nextAt + 1} total={state.length}
+            href={`#p-${nextAt + 1}`} />
         )}
-        <Menu label="More: copy unread, copy all, copy as ranges" className="btn sec sm more" items={copyItems}>
-          <span aria-hidden="true">⋯</span>
-        </Menu>
+        {allRead && (
+          <p className="runhero-done">
+            <span className="bdg dn">
+              {lastRead && saved === fromServer ? `✓ read · ${lastRead}` : "✓ read"}
+            </span>
+          </p>
+        )}
+        {finishedHere && <RefreshOnce />}
+        <div className="btnrow run-actions">
+          {next && (
+            <a className="btn sm resume" href={`#p-${nextAt + 1}`}>{`Resume ${issueName(next.label, single)}`}</a>
+          )}
+          {adoptable.length > 0 && (
+            <button
+              type="button"
+              className="btn sec sm"
+              onClick={(e) => setRange({ ids: adoptable.map((i) => i.placement_id), adopt: true, opener: e.currentTarget })}
+            >
+              {`Adopt ${adoptable.length} prior ${adoptable.length === 1 ? "read" : "reads"}`}
+            </button>
+          )}
+          <Menu label="More: copy unread, copy all, copy as ranges" className="btn sec sm more" items={copyItems}>
+            <span aria-hidden="true">⋯</span>
+          </Menu>
+        </div>
       </div>
       <p className="mono small muted run-count">
         {read} of {state.length} read
@@ -265,6 +297,8 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
           <div
             key={issue.placement_id}
             className="iss"
+            id={`p-${at + 1}`}
+            data-next={at === nextAt || undefined}
             data-read={issue.completed}
             data-type={issue.type}
             data-pending={pending || undefined}
@@ -332,6 +366,13 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
       )}
     </>
   );
+}
+
+/** Fetches the page again once, for the date of the read that finished the run. */
+function RefreshOnce() {
+  const router = useRouter();
+  useEffect(() => { router.refresh(); }, [router]);
+  return null;
 }
 
 function mark(rows: Issue[], next: { placementId: number; completed: boolean }) {

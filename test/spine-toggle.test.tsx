@@ -9,8 +9,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import RunSpine from "../src/components/IssueRow";
 import { UndoProvider } from "../src/components/Undo";
 
-const IssueList = ({ issues }: { issues: Parameters<typeof RunSpine>[0]["issues"] }) => (
-  <UndoProvider><RunSpine runId="r" title="Run" issues={issues} /></UndoProvider>
+// A mark that finishes the run asks the server for the badge's date (task 1.6).
+// The app router's instance is stable across renders, and so is this one.
+const { refresh, router } = vi.hoisted(() => {
+  const refresh = vi.fn();
+  return { refresh, router: { refresh } };
+});
+vi.mock("next/navigation", () => ({ useRouter: () => router }));
+
+const IssueList = ({ issues, lastRead }: {
+  issues: Parameters<typeof RunSpine>[0]["issues"]; lastRead?: string;
+}) => (
+  <UndoProvider><RunSpine runId="r" title="Run" issues={issues} lastRead={lastRead} /></UndoProvider>
 );
 
 // React only flushes act() work when it is told it is under test.
@@ -31,6 +41,7 @@ beforeEach(() => {
   root = createRoot(container);
   fetchMock = vi.fn(async () => new Response(JSON.stringify({ ok: true })));
   vi.stubGlobal("fetch", fetchMock);
+  refresh.mockClear();
 });
 
 afterEach(() => {
@@ -80,5 +91,41 @@ describe("ticking a spine row", () => {
     await click();
     act(() => root.render(<IssueList issues={[row(false)]} />));
     expect(ticked()).toBe("false");
+  });
+});
+
+describe("the resume pointer moves with a mark (task 1.6)", () => {
+  const two = () => [
+    { ...row(false), id: "a", placement_id: 1, sequence: 1, label: "Uncanny X-Men (1963) #141" },
+    { ...row(false), id: "b", placement_id: 2, sequence: 2, label: "Uncanny X-Men (1963) #142" },
+  ];
+  const strip = () => container.querySelector(".nextis");
+  const resume = () => container.querySelector("a.resume");
+
+  it("ticking the pointer's row moves the strip, Resume and data-next to the next row", async () => {
+    act(() => root.render(<IssueList issues={two()} />));
+    expect(strip()!.getAttribute("aria-label")).toBe("Next: 1 of 2, Uncanny X-Men (1963) #141");
+    await click();
+    expect(strip()!.getAttribute("aria-label")).toBe("Next: 2 of 2, Uncanny X-Men (1963) #142");
+    expect(resume()!.textContent).toBe("Resume #142");
+    expect(resume()!.getAttribute("href")).toBe("#p-2");
+    expect(container.querySelector("[data-next]")!.id).toBe("p-2");
+    expect(refresh).not.toHaveBeenCalled();
+  });
+
+  it("finishing the run swaps in the badge and asks the server once for its date", async () => {
+    act(() => root.render(<IssueList issues={[row(false)]} lastRead="Jan 2020" />));
+    await click();
+    expect(strip()).toBeNull();
+    expect(resume()).toBeNull();
+    // Jan 2020 predates the read that just finished the run: no date until the server says.
+    expect(container.querySelector(".bdg")!.textContent).toBe("✓ read");
+    expect(refresh).toHaveBeenCalledOnce();
+  });
+
+  it("a run read when it loaded shows the server's date and asks for nothing", () => {
+    act(() => root.render(<IssueList issues={[row(true)]} lastRead="Mar 2025" />));
+    expect(container.querySelector(".bdg")!.textContent).toBe("✓ read · Mar 2025");
+    expect(refresh).not.toHaveBeenCalled();
   });
 });
