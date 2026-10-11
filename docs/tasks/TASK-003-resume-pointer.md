@@ -1,7 +1,7 @@
 ---
 id: TASK-003
 title: 1.6 Resume pointer
-status: In progress
+status: Review
 depends_on: [TASK-002]
 size: M
 model: sonnet
@@ -31,11 +31,11 @@ Every run in progress says which issue is next, on the dashboard and at the top 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): test with a run where issues 1-5 and 7 are read; assert the pointer returns issue 6. Mark issue 6 read in a different run holding it and assert the pointer still returns 6. Render the spine hero for that run and assert that the strip names issue 6 with its ordinal and its placement note, that its link's accessible name starts *Next: 6 of*, and that it contains no element styled `--brand` other than the Resume button. Mark every placement read and assert that the strip is gone and the fully-read badge is rendered.
-- [ ] AC-2: The pointer skips soft-deleted placements and placements whose issue is soft-deleted (read through `live_run_issues`). It returns nothing for a run with no live placements. No column, table or migration is added: `git diff` touches nothing under `drizzle/` or `src/db/schema.ts`.
-- [ ] AC-3: Given two runs with `run_progress.state = 'reading'`, the dashboard's in-progress list shows *Continue: <pointer label>* for each. Each links to `/comics/<runId>`, with a fragment equal to the `id` of the pointer's row on that run's spine. Neither page sends more queries or waves than before: the `BUDGET` entries for `/` and the run page in `test/query-budget.test.ts` are unchanged and still pass.
-- [ ] AC-4: In a single-series fixture run whose pointer is `Uncanny X-Men (1963) #141`, the run hero's primary button reads *Resume #141*. In a fixture run spanning two series it reads the full label (*Resume X-Men (2019) #8*). In both, the button is the only element in the hero whose computed colour or background resolves to `--brand`, and it targets the pointer's row.
-- [ ] AC-5: The spine hero meets the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*). The strip is one `<a href>` whose accessible name follows *Next: n of N, <label>, <note>*, with the note omitted when the placement has none. The kicker and label are at least 4.5:1 on `--raise` in both themes. *Resume* is a real control at least 44px tall. The fully-read badge carries the `✓` glyph and the text *read*. Screenshots of a reading run and a fully read run at every `ui.viewports` width, light and dark.
+- [x] AC-1 (roadmap **Check:**, verbatim): test with a run where issues 1-5 and 7 are read; assert the pointer returns issue 6. Mark issue 6 read in a different run holding it and assert the pointer still returns 6. Render the spine hero for that run and assert that the strip names issue 6 with its ordinal and its placement note, that its link's accessible name starts *Next: 6 of*, and that it contains no element styled `--brand` other than the Resume button. Mark every placement read and assert that the strip is gone and the fully-read badge is rendered.
+- [x] AC-2: The pointer skips soft-deleted placements and placements whose issue is soft-deleted (read through `live_run_issues`). It returns nothing for a run with no live placements. No column, table or migration is added: `git diff` touches nothing under `drizzle/` or `src/db/schema.ts`.
+- [x] AC-3: Given two runs with `run_progress.state = 'reading'`, the dashboard's in-progress list shows *Continue: <pointer label>* for each. Each links to `/comics/<runId>`, with a fragment equal to the `id` of the pointer's row on that run's spine. Neither page sends more queries or waves than before: the `BUDGET` entries for `/` and the run page in `test/query-budget.test.ts` are unchanged and still pass.
+- [x] AC-4: In a single-series fixture run whose pointer is `Uncanny X-Men (1963) #141`, the run hero's primary button reads *Resume #141*. In a fixture run spanning two series it reads the full label (*Resume X-Men (2019) #8*). In both, the button is the only element in the hero whose computed colour or background resolves to `--brand`, and it targets the pointer's row.
+- [x] AC-5: The spine hero meets the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*). The strip is one `<a href>` whose accessible name follows *Next: n of N, <label>, <note>*, with the note omitted when the placement has none. The kicker and label are at least 4.5:1 on `--raise` in both themes. *Resume* is a real control at least 44px tall. The fully-read badge carries the `✓` glyph and the text *read*. Screenshots of a reading run and a fully read run at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -100,7 +100,11 @@ Approved by the owner 2026-10-11.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 PASS (fef0d3d) → R2 PASS after review fixes (09ddcec)
+- Audit R1 PASS (24 of the new tests fail against main; 2 AC-2 complements pass there by design)
+- Spec R1 CHANGES (roadmap 1.6 unticked) → R2 APPROVE
+- Schema R1 APPROVE (MINOR: tie-break on the latest read, applied)
+- UI R1 FAIL (dashboard Continue did not scroll after a client-side jump; landing row 5px under the sticky bar; badge lacked the mockup's name) → R2 PASS at 390 and 1280. Screenshots: TASK-003-reading-* and TASK-003-read-* at 360/390/412/768/1024/1280, light and dark, plus TASK-003-dashboard-360-light
 
 ## Blocked
 
@@ -108,7 +112,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2
+- First-pass AC FAILs: 1 (AC-3, manual: Continue did not land on the row)
+- Plan revisions after approval: 0
