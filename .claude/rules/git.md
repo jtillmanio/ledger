@@ -43,6 +43,10 @@ not live until Release runs.
 
 One task per branch, one branch per PR. A problem you notice that belongs to
 another task goes in the PR description as a follow-up, not in this diff.
+The one exception is archiving: with `workflow.archiveDone` on (the
+default), a task's close-out or accept commit, or a plans PR, also carries
+`git mv` renames of other Done task files into `docs/tasks/archive/`
+(`.claude/scripts/archive-done.ps1`). Never move them on `main`.
 
 ## Staging
 

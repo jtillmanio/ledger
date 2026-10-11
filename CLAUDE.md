@@ -72,7 +72,7 @@ by `/adopt`, 2026-10-08; `docs/kit-adoption.md` has the inventories behind it).
 | Deploy | `docs/START-HERE.md` Steps 13–14, `.github/workflows/release.yml`, `.claude/rules/git.md` § Merging |
 | Roadmap (source, if separate) | `docs/TASKS.md` (phases 0–8) |
 | Task list (milestones + stubs) | `docs/TASKS.md`; `/new-task` converts one sitting at a time into `docs/tasks/`, copying each **Check:** verbatim |
-| Tasks | `docs/tasks/` (fixed) |
+| Tasks | `docs/tasks/` (fixed; Done tasks in `docs/tasks/archive/`) |
 | Decisions | `docs/review/decisions.md` (IDs `D-n`) |
 | Review findings | `docs/review/PROTOCOL.md` (protocol), `docs/review/LEDGER.md` (ledger; IDs `R0-nn`…`R3-nn`, `S-nn`, `M-nn`) |
 | Owner runbook | `docs/START-HERE.md` |
@@ -234,6 +234,9 @@ These hold everywhere, whatever you are touching.
   `Review`; only the owner's "accepted" sets `Done`. Done means merged and
   accepted, not deployed.
 - Never hand-edit `docs/tasks/INDEX.md`. Run `.claude/scripts/build-index.ps1`.
+- Done task files move to `docs/tasks/archive/` (`workflow.archiveDone`).
+  `.claude/scripts/archive-done.ps1` moves every Done task, not only the
+  current one, at each task's close-out and accept. It never runs on `main`.
 - Post-edit check failures in the middle of a multi-file change are expected.
   Finish the change, then fix whatever still fails.
 - Kit behaviour is changed through the switches in `.claude/kit.json` and the
