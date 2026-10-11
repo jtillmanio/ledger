@@ -8,6 +8,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import RunSpine from "../src/components/IssueRow";
 import { UndoProvider } from "../src/components/Undo";
 
+// A range that finishes the run asks the server for the badge's date (task 1.6).
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }));
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 type Row = Parameters<typeof RunSpine>[0]["issues"][number];

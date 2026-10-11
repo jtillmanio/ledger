@@ -87,16 +87,34 @@ export async function readyToRead(userId: string, limit = 20) {
   `;
 }
 
+/** The resume pointer (task 1.6): the lowest sequence whose *placement* is
+ * unread, so an issue read only in another run still stops it (ARCHITECTURE
+ * 2.14). Derived, never stored. `next_ordinal` is its position among the run's
+ * live placements, the n of the spine row's `#p-n`. RunSpine applies the same
+ * rule to its rows so a mark moves it; test/resume-pointer.test.ts holds the two
+ * to one answer. */
 export async function inProgressRuns(userId: string) {
-  return sql<RunRow[]>`
+  return sql<(RunRow & { next_label: string; next_notes: string | null; next_ordinal: number })[]>`
     SELECT r.id, r.title, cl.writers, rs.series_issues, rs.start_year, rs.end_year,
            rs.dated_issues, r.tier, r.why, r.spine, '{}'::text[] AS tracks,
            rp.total_issues, rp.read_issues, rp.pct, rp.state,
-           'ready_all' AS readiness, 0 AS hard_left, 0 AS soft_left
+           'ready_all' AS readiness, 0 AS hard_left, 0 AS soft_left,
+           nx.label AS next_label, nx.notes AS next_notes, nx.ordinal AS next_ordinal
     FROM runs r
     JOIN run_progress rp ON rp.run_id = r.id AND rp.user_id = ${userId}
     JOIN run_span     rs ON rs.run_id = r.id
     JOIN run_credit_line cl ON cl.run_id = r.id
+    JOIN LATERAL (
+      SELECT i.label, ri.notes,
+             (SELECT COUNT(*)::int FROM live_run_issues o
+              WHERE o.run_id = ri.run_id AND o.sequence <= ri.sequence) AS ordinal
+      FROM live_run_issues ri
+      JOIN issues i ON i.id = ri.issue_id
+      LEFT JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
+      WHERE ri.run_id = r.id AND p.placement_id IS NULL
+      ORDER BY ri.sequence
+      LIMIT 1
+    ) nx ON true
     WHERE r.deleted_at IS NULL AND rp.state = 'reading'
     ORDER BY rp.pct DESC
   `;
@@ -113,7 +131,8 @@ export async function runDetail(userId: string, runId: string) {
   const issues = rows.map(({ first_read_at, first_read_precision, ...r }) => ({
     ...r, read_elsewhere_when: readWhen(first_read_at, first_read_precision),
   }));
-  return { run, issues, prereqs };
+  const { last_read_at, last_read_precision, ...header } = run;
+  return { run: { ...header, last_read_when: readWhen(last_read_at, last_read_precision) }, issues, prereqs };
 }
 
 function runHeader(userId: string, runId: string) {
@@ -121,13 +140,16 @@ function runHeader(userId: string, runId: string) {
     (RunRow & {
       notes: string | null; artists: string | null; why_source: "hand" | "claude";
       credited_issues: number; distinct_issues: number;
+      last_read_at: Date | null; last_read_precision: Precision;
     })[]
   >`
     SELECT r.*, cl.writers, cl.artists, cl.credited_issues, cl.issue_count AS distinct_issues,
            rs.series_issues, rs.start_year, rs.end_year, rs.dated_issues,
            rp.total_issues, rp.read_issues, rp.pct, rp.state, rd.readiness,
            COALESCE(ARRAY_AGG(t.name ORDER BY t.name)
-                    FILTER (WHERE t.name IS NOT NULL), '{}') AS tracks
+                    FILTER (WHERE t.name IS NOT NULL), '{}') AS tracks,
+           lr.completed_at AS last_read_at,
+           COALESCE(lr.completed_at_precision, 'none') AS last_read_precision
     FROM runs r
     JOIN run_progress  rp ON rp.run_id = r.id AND rp.user_id = ${userId}
     JOIN run_readiness rd ON rd.run_id = r.id AND rd.user_id = ${userId}
@@ -135,10 +157,22 @@ function runHeader(userId: string, runId: string) {
     JOIN run_credit_line cl ON cl.run_id = r.id
     LEFT JOIN run_tracks rt ON rt.run_id = r.id
     LEFT JOIN tracks t      ON t.id = rt.track_id
+    -- The fully-read badge's date (task 1.6): the latest dated read here. An
+    -- undated read has no date to show, so a run read only that way has none.
+    LEFT JOIN LATERAL (
+      SELECT p.completed_at, p.completed_at_precision
+      FROM live_run_issues ri
+      JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
+      WHERE ri.run_id = r.id AND p.completed_at_precision <> 'none'
+      -- On a tie, an exact read wins over a guessed one.
+      ORDER BY p.completed_at DESC, (p.completed_at_precision = 'exact') DESC
+      LIMIT 1
+    ) lr ON true
     WHERE r.id = ${runId} AND r.deleted_at IS NULL
     GROUP BY r.id, rp.total_issues, rp.read_issues, rp.pct, rp.state, rd.readiness,
              rs.series_issues, rs.start_year, rs.end_year, rs.dated_issues,
-             cl.writers, cl.artists, cl.credited_issues, cl.issue_count
+             cl.writers, cl.artists, cl.credited_issues, cl.issue_count,
+             lr.completed_at, lr.completed_at_precision
   `;
 }
 

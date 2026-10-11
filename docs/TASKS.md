@@ -746,7 +746,7 @@ those 9. At 1280px, a click on the fifth row and a shift-click on the
 twenty-second opens the sheet counting 18 placements. Manually: open
 `hickman-krakoa` (641 issues), mark a 100-issue range, confirm no visible stall.
 
-### ☐ 1.6 Resume pointer · S
+### ☑ 1.6 Resume pointer · S
 Dashboard shows "Continue: Fantastic Four #583" per in-progress run, linking to
 that row in the spine. Derived — lowest `run_issues.sequence` whose *placement*
 is unread — never stored. An issue read only in another run is still unread
