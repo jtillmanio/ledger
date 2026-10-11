@@ -648,7 +648,7 @@ stay. START-HERE Step 12 groups them into sittings:
 |---|---|---|
 | 3 | 1.2 → 1.1 → 1.6 | 1.1's check asserts undo, and 1.1 must not carry its own (R3-10) |
 | 4 | 1.3 → 1.3c → 1.3b | 1.3c's review table takes the parser's output; 1.3b's Metron results go through the same review and insert |
-| 5 | 1.4 → 1.4c → 1.4b → 1.5 | resolving an inbox note (1.4b) routes into the add flows; 1.5 must land before real rereads overwrite history |
+| 5 | 1.4 → 1.4c → 1.4b → 1.5 → 1.16 | resolving an inbox note (1.4b) routes into the add flows; 1.5 must land before real rereads overwrite history; 1.16 reinterprets the dates 1.5 finishes adding, and lands before the final load |
 | 6 | 1.7 → 1.8a → 0.11 → 1.8 → 1.8b | 1.8a's tokens come before the first UI task; 0.11's harness runs 1.8's axe and computed-style check; 1.8b was split out of 1.8 (R3-12) |
 | 7 | 1.10 → 1.9 → 2.11a → 1.12 → 1.11 | 1.9's Up next tab reads the queue; 2.11a is numbered in Phase 2 but built here, before cutover (D-20); so is 1.11 (D-36); 1.12 must land before Step 14's final load, the last time `load` runs |
 | 8 | 1.13 → 1.14 → 1.15 | the book ingest (2026-10-08 review): 1.14's proposals join 1.13's review file, and 1.15 seeds from series and author names 1.13's review fixed. All three change what `load` puts in, so they land before Step 14's final load. They don't depend on sittings 3–7 and can be built earlier, leaving the owner time to answer the review |
@@ -1886,7 +1886,7 @@ Shelves stay the owner's free-form lists.
     `tracking`. The tab's `Completed` column is not read.
   - A group that matches nothing goes to `unresolved.csv`.
 - **Not here:** the control that changes a follow's state, and pages for
-  authors and universes. 5.9 draws series; the rest is a follow-up task.
+  authors and universes. 5.9 draws series; the rest is 5.11.
 
 **Check:**
 - `etl/test_views.sql`:
@@ -1901,6 +1901,32 @@ Shelves stay the owner's free-form lists.
   `universe_id = 'cosmere'`.
 - `test/export-tables.test.ts` passes with the four tables.
 - `npm run test:db:reset` migrates from zero.
+
+### ☐ 1.16 Dates in `America/New_York` · M
+Owner, 2026-10-10 (follow-up from PR #67, task 1.1). A calendar day is stored
+as UTC midnight and shown in UTC through `readWhen`, so a *Today* mark made
+after 8pm Eastern on the last day of a month shows as the next month. Two
+changes have to land together:
+
+- store a calendar day as Eastern midnight, not UTC midnight;
+- format every date in Eastern, including existing and imported rows.
+
+"Today" means today in Eastern everywhere the app decides it: the *Today*
+choice, a picker's `max`, and 1.5's refusal of a future day.
+
+**Stop and ask at plan time** (CLAUDE.md: this changes how a stored date is
+written and read). The plan names every column it reinterprets
+(`issue_progress.completed_at`, and 1.5's `read_events.finished_on` and
+`book_status.finished_on` if they are timestamps rather than dates). It also
+says whether existing rows are converted by a migration with a lossless down
+file or by re-extract before cutover. It lands after 1.5, which adds the last
+of the dated columns, and before Step 14's final load.
+
+**Check:** a vitest at `2026-10-31T21:30-04:00` marks *Today* and the row
+reads October 31 in the spine and the toast. A row stored before the change
+reads the same calendar day after it. A `none`-precision row is still `none`
+with a NULL date. The up → down → up test asserts row values, if a migration
+is used.
 
 ---
 
@@ -2414,6 +2440,12 @@ output, with the head marker, read-state segments and the variants listed in
   5 · 3 runs left in the block*). **On a dashboard the empty variant has no
   button** (FP-D13): the thumb bar carries *Start {top of Up next}*. Elsewhere
   it keeps its one primary action.
+- **Fully read keeps a way on** (ARCHITECTURE §4 *Fully read*, A2.3; follow-up
+  from PR #69, task 1.6). Its action is secondary: *Next in block · {run}*,
+  the block's next unread run (the same run 2.12's *Start {next in block}*
+  names). It navigates and never writes (R1-08). If no run in the block is
+  unread, the action is left out. 1.6 drew the run page's fully-read badge
+  without this action, because it needs the block logic built here.
 - **The mockup follows** (standing rule 6): `design/mockups.html`'s telescope
   frames on `home`, `telescope`, `krakoa`, `watchlist`, `dashextras` and `states`
   are redrawn horizontal in this PR, from the same geometry, and the vertical
@@ -3294,6 +3326,11 @@ element carries a `box-shadow` that resolves to `--halo`.
 
 ## Phase 5 — Remaining surfaces
 
+Not every item in Phases 5–7 has a **Check:** yet (follow-up from PR #57).
+`/new-task` copies an item's Check as its first acceptance criterion, so an
+item without one gets a Check written and agreed with the owner, here, before
+it is converted.
+
 - ☐ 5.1 Shelves (books only): create, add items, reorder · M. **+ Add to
   shelf** opens the 1.4c sheet with the shelf preselected: search your library
   and Open Library, or add by hand. A book not yet in the catalog is created
@@ -3425,6 +3462,20 @@ element carries a `box-shadow` that resolves to `--halo`.
     no `edition_issues` rows exist. An unparsed edition is listed with the flag.
     Adding an edition by hand creates one `editions` row and its
     `edition_issues` through 5.6's parser.
+- ☐ 5.11 **Author and universe pages, and the follow control** · M. Follow-up
+  from PR #58 (1.15's *Not here*); D-42, D-43; FEATURES B6. Depends on 1.15
+  and 5.9. 1.15 adds `author_progress`, `universe_progress` and the three
+  follow tables, and 5.9 draws series. This task draws an author page and a
+  universe page in 5.9's shape: `read / total` in mono, an `.emeter` filled
+  with `--ready`, and the next unread book (derived in the query, never
+  stored). It also adds the control that sets a follow's state on all three
+  kinds of page: *Tracking · Reading · Not following*, a `role="radiogroup"`
+  writing `series_follows`, `author_follows` or `universe_follows` for the
+  user. *Reading* stays set until it is changed (D-43). Done is never stored.
+  - **Check:** an author page and a universe page list their books with the
+    counts from their views. Setting *Reading* writes one follow row for the
+    user, survives a reload, and shows in the view's `follow_state`. *Not
+    following* deletes the row. No count or state column is added.
 
 ---
 
@@ -3495,6 +3546,21 @@ element carries a `box-shadow` that resolves to `--halo`.
   with an `aria-label`. The tablet's navigation rail (768–1023px) has no toggle.
   **Check:** `/comics` at 1280px renders in both states with no horizontal
   overflow, and the choice survives a reload.
+- ☐ 6.15 **A favicon** · S. Follow-up from PRs #67 and #69: `/favicon.ico`
+  returns 404 on every page load, which shows as a console error in every
+  ui-verifier run. Add the icon through the App Router's `app/icon` file
+  convention. It stays behind the passcode gate: `/api/health` is the only
+  route outside it (CLAUDE.md), and nothing joins it. 6.4's manifest reuses
+  the same art.
+  **Check:** signed in, the icon route Next emits returns 200, and loading
+  `/comics` logs no 404.
+- ☐ 6.16 **A malformed request body is a 400, not a 500** · S. Follow-up from
+  PR #63, task 1.2: `POST /api/progress/issue` returns 500 on a body that
+  isn't JSON, because `req.json()` throws. Every route handler that reads a
+  body answers non-JSON, or JSON of the wrong shape, with a 400 and writes
+  nothing.
+  **Check:** a vitest sends each body-reading route a non-JSON body and gets a
+  400, and the row counts of the tables it writes are unchanged.
 - ☐ 6.5 Keyboard shortcuts: `j`/`k`/`x`/`/` · S. The keyboard layer (UX-N23):
   a focused-row state on desktop (2px `--brand` ring at half strength on
   `--raise`), a `?` sheet listing `j/k`, `x`, `Shift-x` (range), `/`, `Ctrl K`

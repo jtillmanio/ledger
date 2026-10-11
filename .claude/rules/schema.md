@@ -125,7 +125,8 @@ Release, test isolation) and the Hard rules a reviewer checks.
   hard delete cascades to its `issue_progress` row and drops reading history.
 - **`postgres.js` needs `prepare: false`** — Neon runs a transaction-mode pooler.
 - Raw SQL in `src/db/queries.ts` for anything joining views; Drizzle builder for
-  writes.
+  writes, except a write that must be one round trip and all-or-nothing (the
+  range mark), which may be one raw SQL statement in `src/db/writes.ts` (D-57).
 - Run IDs are hand-authored slugs (`hickman-ff`). Never regenerate them.
 - Runs with `placeholder = true` are forward-declared prereq targets. Hide them
   from run lists; keep their edges.
