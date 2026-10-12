@@ -747,5 +747,10 @@ input.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .picker-run[aria-current="true"]{color:var(--brand);font-weight:600}
 .picker-more{margin:.5rem 0 0;min-height:1rem}
 
+/* Add books, Paste a list (task 1.4; mockup `add`): Check under the box, the lede under that. */
+.paste-check{margin-top:.75rem;min-height:44px}
+.paste-check[aria-disabled="true"]{cursor:progress}
+.paste-lede{margin-top:.5rem}
+
 .add-sk-text{height:9rem}
 .add-sk-slate{display:block;height:6rem;border-radius:14px;margin-top:.5rem}

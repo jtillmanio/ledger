@@ -1,0 +1,16 @@
+{
+  "$comment": "Task 1.4: one title and author, one book id, in the app and in extract. Cases run in order, each id taken once minted, so a slug clash gets extract's -x. etl/test_extract.py runs them through BookIndex.upsert; test/book-parse.test.ts through bookId(). Add a case to both by adding it here.",
+  "cases": [
+    { "title": "Harry Potter and the Sorcerer's Stone", "author": "J.K. Rowling", "id": "harry-potter-and-the-sorcerer-s-stone-j-k-rowling" },
+    { "title": "Les Misérables", "author": "Victor Hugo", "id": "les-miserables-victor-hugo" },
+    { "title": "11.22.63", "author": "Stephen King", "id": "11-22-63-stephen-king" },
+    { "title": "Untitled Sanderson Novel", "author": null, "id": "untitled-sanderson-novel" },
+    { "title": "Dune", "author": "Frank Herbert", "id": "dune-frank-herbert" },
+    { "title": "Dune Frank", "author": "Herbert", "id": "dune-frank-herbert-x" },
+    {
+      "title": "The Extraordinarily Long and Winding Title of a Book That Goes On and On Past Any Sensible Length",
+      "author": "Somebody Verbose",
+      "id": "the-extraordinarily-long-and-winding-title-of-a-book-that-goes-on-and-on-past-any-sensible-length-so"
+    }
+  ]
+}

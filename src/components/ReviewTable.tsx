@@ -6,15 +6,19 @@ const GLYPH = { ok: "✓", choice: "!", error: "×" } as const;
 const NAME = { ok: "OK", choice: "Needs a choice", error: "Error" } as const;
 const TONE = { ok: "ok", choice: "wn", error: "er" } as const;
 
+/** What the table draws of a row: the issue review's rows, and the book review's (task 1.4). */
+export type ReviewTableRow = Pick<ReviewRow, "key" | "line" | "kind" | "text" | "why" | "check" | "groups" | "invalid">;
+
 /**
  * The review table (ARCHITECTURE §4, *Review tables*), shared by both halves of
- * Add issues (1.3c, 1.3b): per line, the kind glyph, the parsed line, one line
- * of why, the check, and the decision as a radiogroup. Stacked, as the mockup
- * draws it at every width. Glyph and text, never colour alone; a line that
- * failed its check marks its decision `aria-invalid` and points at the why.
+ * Add issues (1.3c, 1.3b) and by Add books' *Paste a list* (1.4): per line, the
+ * kind glyph, the parsed line, one line of why, the check, and the decision as
+ * a radiogroup. Stacked, as the mockup draws it at every width. Glyph and text,
+ * never colour alone; a line that failed its check marks its decision
+ * `aria-invalid` and points at the why.
  */
 export default function ReviewTable({ rows, checking, onChoose }: {
-  rows: ReviewRow[];
+  rows: ReviewTableRow[];
   /** The catalog check is out: an unverified check may still change. */
   checking: boolean;
   onChoose: (group: string, option: string) => void;

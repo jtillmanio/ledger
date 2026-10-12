@@ -900,7 +900,7 @@ A mocked 429 with `Retry-After: 40` renders the rate-limited status line with
 the countdown and a working *Type it instead*, and makes no second request
 before it elapses.
 
-### ☐ 1.4 Books bulk entry · M
+### ☑ 1.4 Books bulk entry · M
 Same shape: paste `Title — Author` or `Title (Series #N)`, match against the
 catalog, create what's missing, flag near-duplicates by trigram. This is the
 *Paste a list* path of 1.4c.

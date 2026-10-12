@@ -35,6 +35,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
   return (
     <main>
       <h1>Books</h1>
+      <p><Link prefetch={false} href="/books/add" className="btn sec sm">Add books</Link></p>
       <p className="muted small mono">
         {books.length === matched
           ? `${matched.toLocaleString()} shown`

@@ -1,14 +1,14 @@
 ---
 id: TASK-007
 title: 1.4 Books bulk entry
-status: Ready
+status: In progress
 depends_on: [TASK-006]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: b407a1e
 ---
 
 # TASK-007 — 1.4 Books bulk entry
@@ -58,7 +58,39 @@ A pasted list of books (`Title — Author`, or `Title (Series #N)`) is matched a
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-10-12, with every recommendation below.
+
+**Steps**
+
+1. `src/lib/book-parse.ts` (pure): `Title — Author`, `Title – Author`, `Title - Author` (split on the last spaced separator), `Title (Series #N)` with or without an author. Strips bullets and list numbers; blank lines skipped. No author → flagged; no title → error.
+2. `bookId()` in `src/lib/issue-slug.ts`, the twin of extract's `slug(title, author)[:100]` with `-x` while taken; `test/fixtures/book-ids.json` checked by vitest and `etl/test_extract.py` (as D-59).
+3. `src/lib/book-review.ts` (pure): an exact title + author match (case-insensitive) is *Skip* when it has a status, *Add* to Someday when it has none; a near-duplicate shows its closest title and `similar 0.91`, *Create new · Use that · Drop*, default *Create new*; a new line *Add · Drop*; no author needs a choice (*Use that* when there is a near match, else *Drop*) or a fixed line; a repeat is skipped (*Also on line N*).
+4. `src/db/queries.ts` `bookMatches()`: exact matches among live books, plus the closest title with `title % t AND similarity(...) >= 0.4` (uses `books_title_gin_trgm`). `src/db/writes.ts` `addBooks()`: one transaction under an advisory lock; re-checks the exact match at confirm, creates or reuses `authors` / `book_series` / `books`, `book_status = to_read` `ON CONFLICT DO NOTHING`; no plan row.
+5. `src/app/api/books/bulk/route.ts`: POST `dryRun` (writes nothing) or the confirm; validated, at most 500 lines.
+6. `src/components/PasteBooks.tsx`: textarea → **Check N lines** (mockup copy) → shared `ReviewTable` → **Add N books**, `aria-disabled` with its reason (*Check 2 new lines first*, *Resolve 1 line to add*); empty slate, checking, neutral error with *Try again*, done line linking *To read*. `/books/add` page and skeleton; *Add books* link on `/books`. `ReviewTable` takes only the row fields it draws.
+
+**Resolved at the gate**
+
+- No *Search · Paste a list · By hand* control or *Add to* chips yet: 1.4c's `AddBookSheet` wraps this component.
+- An explicit **Check N lines** button (the mockup), not the comics screen's check-on-pause.
+- A matched book with no status gets `to_read` and counts in *Add N books*.
+- Exact match folds case only (curly vs straight apostrophes surface as near-duplicates ~0.9); a soft-deleted book is never revived (1.13's merge soft-deletes the loser).
+
+**Files**: the above, plus `src/app/books/add/loading.tsx`, `src/app/books/page.tsx` (link), maybe `src/app/globals.css`, `test/book-parse.test.ts`, `test/book-review.test.ts`, `test/books-bulk.test.ts`, `test/paste-books.test.tsx`, `test/fixtures/book-ids.json`, `etl/test_extract.py`, `docs/TASKS.md` (tick). Outside *Files likely touched*: `book-review.ts`, `PasteBooks.tsx`, `issue-slug.ts`, `loading.tsx`, `books/page.tsx`, `globals.css`, the fixture. More than 8 files, DB and UI together; `splitPolicy` is `never-split`, so the task stays whole and attended.
+
+**Test strategy**
+
+- AC-1: `test/books-bulk.test.ts`: 15 lines → 9 matches, 6 inserts; a second confirm inserts 0; the one-letter-off title is flagged with the right book and similarity ≥ 0.4 and stays a separate book.
+- AC-2: `test/book-parse.test.ts` (forms, missing author); DB: series created or reused, position N.
+- AC-3: `test/book-review.test.ts` (default *Create new*, *Use that*); DB: *Use that* creates nothing, the dry run writes nothing, a forced failure (test-only trigger) leaves all three tables unchanged.
+- AC-4: DB: new books `to_read` with no plan row; a matched `read` book stays `read`.
+- AC-5: `test/paste-books.test.tsx` (states, radiogroup names, `aria-disabled` + reason) and ui-verifier screenshots at every `ui.viewports` width, light and dark.
+
+## Follow-ups
+
+- TASK-008's Context: *Paste a list* ships as `PasteBooks` on `/books/add` with no undo; open question for 1.4c's plan whether its AC-5 undo covers the paste. (approved at plan)
+- TASK-021's Context: extract's book id rule now has an app twin (`bookId()`) and a shared fixture, `test/fixtures/book-ids.json`; a change to the rule changes both. (approved at plan)
+- Candidate decision: the app mints a book id exactly as extract does, matches a book on title + author (case-insensitive) among live books, and never revives a soft-deleted one. (approved at plan)
 
 ## Review log
 
