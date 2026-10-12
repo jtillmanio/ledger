@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
-  boolean, check, date, doublePrecision, foreignKey, index, integer, pgTable, primaryKey,
+  boolean, check, date, doublePrecision, foreignKey, index, integer, jsonb, pgTable, primaryKey,
   real, serial, text, timestamp, unique,
 } from "drizzle-orm/pg-core";
 
@@ -386,3 +386,17 @@ export const shelfBooks = pgTable("shelf_books", {
   bookId: text("book_id").notNull().references(() => books.id, { onDelete: "cascade" }),
   ordinal: integer("ordinal").notNull(),    // position on the shelf
 }, (t) => ({ pk: primaryKey({ columns: [t.shelfId, t.bookId] }) }));
+
+/* ------------------------------------------------------------------ *
+ * Live API cache
+ * ------------------------------------------------------------------ */
+
+// Metron's answers to the add flow's searches (task 1.3b, D-53), one row per
+// request. Shared by every serverless instance, so it also paces Metron's 20
+// requests a minute: the rows fetched in the last 60 seconds are the count. A
+// rebuildable copy of a third-party API, not the owner's data: not exported.
+export const metronCache = pgTable("metron_cache", {
+  key: text("key").primaryKey(),            // "issue/?number=337&series_name=thor"
+  body: jsonb("body").notNull(),
+  fetchedAt: timestamp("fetched_at", { withTimezone: true }).defaultNow().notNull(),
+});

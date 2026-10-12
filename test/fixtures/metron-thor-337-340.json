@@ -1,0 +1,97 @@
+{
+  "_about": "Metron's answers to `issue/?number=N&series_name=thor` for Thor #337-340 (task 1.3b). Real Metron issue-list entries, recorded by etl/enrich_comics.py into etl/.metron-cache.sqlite (series/1375/issue_list/, fetched 2026-09-21), reshaped into the issue search's paged response. Keys are src/lib/metron.ts cache keys.",
+  "responses": {
+    "issue/?number=337&series_name=thor": {
+      "count": 1,
+      "next": null,
+      "previous": null,
+      "results": [
+        {
+          "id": 14525,
+          "series": {
+            "id": 1375,
+            "name": "Thor",
+            "volume": 1,
+            "year_began": 1966
+          },
+          "number": "337",
+          "issue": "Thor (1966) #337",
+          "cover_date": "1983-11-01",
+          "store_date": null,
+          "image": "https://static.metron.cloud/media/issue/2020/06/27/thor-v1-337.jpg",
+          "cover_hash": "853b5ec80f9439e3",
+          "modified": "2025-01-12T22:42:37.440013-05:00"
+        }
+      ]
+    },
+    "issue/?number=338&series_name=thor": {
+      "count": 1,
+      "next": null,
+      "previous": null,
+      "results": [
+        {
+          "id": 14526,
+          "series": {
+            "id": 1375,
+            "name": "Thor",
+            "volume": 1,
+            "year_began": 1966
+          },
+          "number": "338",
+          "issue": "Thor (1966) #338",
+          "cover_date": "1983-12-01",
+          "store_date": null,
+          "image": "https://static.metron.cloud/media/issue/2020/06/27/thor-v1-338.jpg",
+          "cover_hash": "81e03ee0365ff0dc",
+          "modified": "2025-01-12T22:42:40.597150-05:00"
+        }
+      ]
+    },
+    "issue/?number=339&series_name=thor": {
+      "count": 1,
+      "next": null,
+      "previous": null,
+      "results": [
+        {
+          "id": 14527,
+          "series": {
+            "id": 1375,
+            "name": "Thor",
+            "volume": 1,
+            "year_began": 1966
+          },
+          "number": "339",
+          "issue": "Thor (1966) #339",
+          "cover_date": "1984-01-01",
+          "store_date": null,
+          "image": "https://static.metron.cloud/media/issue/2020/06/27/thor-v1-339.jpg",
+          "cover_hash": "c5d03f644a8f78d4",
+          "modified": "2025-01-12T22:42:44.255888-05:00"
+        }
+      ]
+    },
+    "issue/?number=340&series_name=thor": {
+      "count": 1,
+      "next": null,
+      "previous": null,
+      "results": [
+        {
+          "id": 14528,
+          "series": {
+            "id": 1375,
+            "name": "Thor",
+            "volume": 1,
+            "year_began": 1966
+          },
+          "number": "340",
+          "issue": "Thor (1966) #340",
+          "cover_date": "1984-02-01",
+          "store_date": null,
+          "image": "https://static.metron.cloud/media/issue/2020/06/27/thor-v1-340.jpg",
+          "cover_hash": "84c81f3269a77a3d",
+          "modified": "2025-01-12T22:42:47.855364-05:00"
+        }
+      ]
+    }
+  }
+}

@@ -186,6 +186,9 @@ export async function addIssueToRun(
   });
 }
 
+/** What a Metron search said about one label (task 1.3b). */
+export type MetronFacts = { metronId: number; coverDate: string | null; coverUrl: string | null };
+
 /** A transaction handle: what `insertIssuesIntoRun`'s `within` is given. */
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -222,6 +225,11 @@ export type InsertResult =
  * - Later placements, removed ones too, shift up once by the batch's size; their
  *   ids don't change, so no progress row moves (task 0.8a).
  *
+ * `metron` is what Metron said about the labels that came from a search (task
+ * 1.3b, 2.15), keyed by `lower(label)`: an issue this insert creates gets its
+ * `metron_id`, cover and cover date, source `metron`. A reused row is left as it
+ * is: backfill is 4.1's, and never overwrites.
+ *
  * `within` runs inside the same transaction, after the placements: task 1.12's
  * *Always use 2004* writes its volume rule there, so a rule and the insert it
  * came with stand or fall together.
@@ -230,7 +238,7 @@ export async function insertIssuesIntoRun(
   runId: string,
   after: number | null,
   labels: string[],
-  { within }: { within?: (tx: Tx) => Promise<void> } = {},
+  { within, metron }: { within?: (tx: Tx) => Promise<void>; metron?: Map<string, MetronFacts> } = {},
 ): Promise<InsertResult> {
   return db.transaction(async (tx) => {
     // The run row is the lock: two inserts into one run take turns. NO KEY
@@ -268,7 +276,7 @@ export async function insertIssuesIntoRun(
     }
 
     const fresh = keys.filter((k) => !byKey.has(k)).map((k) => wanted.get(k)!);
-    const newIssues: { id: string; label: string }[] = [];
+    const newIssues: (typeof issues.$inferInsert)[] = [];
     if (fresh.length) {
       const bases = fresh.map(issueSlug);
       const taken = new Set((await tx.select({ id: issues.id }).from(issues)
@@ -278,7 +286,11 @@ export async function insertIssuesIntoRun(
         let id = bases[i];
         for (let n = 2; taken.has(id); n++) id = `${bases[i]}-${n}`;
         taken.add(id);
-        newIssues.push({ id, label });
+        const facts = metron?.get(label.toLowerCase());
+        newIssues.push(facts ? {
+          id, label, metronId: facts.metronId, coverUrl: facts.coverUrl,
+          coverDate: facts.coverDate, coverDateSource: facts.coverDate ? "metron" : null,
+        } : { id, label });
         byKey.set(label.toLowerCase(), id);
       });
       await tx.insert(issues).values(newIssues);

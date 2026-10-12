@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { normalizeLine } from "@/lib/bulk-parse";
-import { addContext, catalogMatches } from "@/db/queries";
-import { insertIssuesIntoRun, undoInsert } from "@/db/writes";
+import { addContext, catalogMatches, metronFacts, takenIds } from "@/db/queries";
+import { insertIssuesIntoRun, undoInsert, type MetronFacts } from "@/db/writes";
+import { issueSlug } from "@/lib/issue-slug";
 
 export const runtime = "nodejs";
 
@@ -45,14 +46,28 @@ export async function POST(req: Request, { params }: Params) {
 
   if (body.dryRun === true) {
     const matches = await catalogMatches(labels);
-    return NextResponse.json({ matches });
+    return NextResponse.json({ matches, taken: await takenLabels(labels, matches.map((m) => m.key)) });
   }
 
   const after = body.after ?? null;
   if (after !== null && !id(after, true)) return bad("after is a placement id, 0 for the start, or null for the end");
+  const metronIds = body.metronIds ?? [];
+  if (!Array.isArray(metronIds) || metronIds.length > labels.length
+    || !metronIds.every((m: unknown) => m === null || id(m))) {
+    return bad("metronIds lines up with labels: a Metron issue id, or null for a typed label");
+  }
+  // What Metron said comes from its own cached answer, never from the browser (2.15).
+  const facts = await metronFacts(metronIds.filter((m: number | null): m is number => m !== null));
+  const metron = new Map<string, MetronFacts>();
+  for (const [i, metronId] of (metronIds as (number | null)[]).entries()) {
+    if (metronId === null) continue;
+    const fact = facts.get(metronId);
+    if (!fact) return NextResponse.json({ error: "That Metron result is no longer cached. Search again." }, { status: 409 });
+    metron.set(labels[i].toLowerCase(), { metronId, ...fact });
+  }
   let result: Awaited<ReturnType<typeof insertIssuesIntoRun>>;
   try {
-    result = await insertIssuesIntoRun(runId, after, labels);
+    result = await insertIssuesIntoRun(runId, after, labels, { metron });
   } catch (e) {
     // Another tab added the same new label first: the transaction rolled back.
     if (uniqueViolation(e)) {
@@ -84,6 +99,19 @@ export async function DELETE(req: Request, { params }: Params) {
     return NextResponse.json({ error: "the run changed since the insert; nothing was undone" }, { status: 409 });
   }
   return NextResponse.json({ ok: true, context: await addContext(runId) });
+}
+
+/**
+ * The new labels (keys) whose id another label already holds: the insert would
+ * give them extract's `-2`, and D-15 makes such a clash a cutover blocker in
+ * extract, so the review says so (D-59, task 1.3b).
+ */
+async function takenLabels(labels: string[], matched: string[]): Promise<string[]> {
+  const known = new Set(matched);
+  const fresh = [...new Set(labels.map((l) => l.toLowerCase()))].filter((k) => !known.has(k));
+  const slugs = new Map(fresh.map((k) => [k, issueSlug(labels.find((l) => l.toLowerCase() === k)!)]));
+  const taken = await takenIds([...slugs.values()]);
+  return fresh.filter((k) => taken.has(slugs.get(k)!));
 }
 
 /** The labels, normalised as the parser normalises them, or null if the list is no good. */

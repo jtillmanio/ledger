@@ -36,7 +36,11 @@ export type ReviewRow = {
   kind: BulkLine["kind"];
   text: string;
   why: string;
-  /** The check column: `in catalog`, `new series`, `new volume` or `unverified` until Metron (1.3b). */
+  /**
+   * The check column: `in catalog`, `new series`, `new volume`, `on Metron`
+   * for a line a Metron search staged, `id taken` for a new label whose id
+   * another label holds (D-15, D-59), or `unverified` for a typed line.
+   */
   check: string;
   groups: Group[];
   /** The line failed its check: `aria-invalid` on its decision. */
@@ -207,8 +211,13 @@ function listed(labels: string[]): string {
  */
 export function buildReview(
   lines: BulkLine[],
-  { knownSeries, placements, catalog, choices }:
-    { knownSeries: KnownSeries[]; placements: Placement[]; catalog: Catalog; choices: Choices },
+  { knownSeries, placements, catalog, choices, metron = new Set(), taken = new Set() }: {
+    knownSeries: KnownSeries[]; placements: Placement[]; catalog: Catalog; choices: Choices;
+    /** Label keys a Metron search answered with (task 1.3b): Metron says they exist. */
+    metron?: Set<string>;
+    /** Label keys whose id another label already holds: the insert would give them `-2`. */
+    taken?: Set<string>;
+  },
 ): Review {
   const runLabels = placements.filter((p) => !p.removed).map((p) => p.label);
   const here = new Map(placements.map((p) => [labelKey(p.label), p]));
@@ -264,11 +273,21 @@ export function buildReview(
       writes.push(...rowWrites);
     }
 
-    const allKnown = d.labels.length > 0 && d.labels.every((l) => here.has(labelKey(l)) || catalog.get(labelKey(l)));
+    const known = (l: string) => here.has(labelKey(l)) || !!catalog.get(labelKey(l));
+    const allKnown = d.labels.length > 0 && d.labels.every(known);
+    const clash = d.labels.filter((l) => !known(l) && taken.has(labelKey(l)));
+    if (clash.length) {
+      why.push(`Another label already has the id ${clash.length === 1 ? "this one" : listed(clash)} would get, `
+        + "so it would be saved with -2. Two comics can't share a label's id (D-15): rename one.");
+    }
+    // A line a search staged is Metron's word, even while it waits for a choice (a new series).
+    const vouched = metron.has(labelKey(line.normalized))
+      || (d.labels.length > 0 && d.labels.every((l) => known(l) || metron.has(labelKey(l))));
+    if (vouched && !allKnown && rowWrites.length && why.length === 0) why.push("New from Metron, with its cover date and cover.");
     return {
       key, line: line.line, kind: line.kind, text: line.normalized,
       why: why.join(" "),
-      check: d.check ?? (allKnown ? "in catalog" : "unverified"),
+      check: clash.length ? "id taken" : d.check ?? (allKnown ? "in catalog" : vouched ? "on Metron" : "unverified"),
       groups: d.groups,
       invalid: line.kind === "error",
       needsChoice: d.pending,

@@ -132,6 +132,7 @@ One line each. None is silently dropped.
 11. **The dark theme of the new screens** was not reviewed; the tokens are defined for both themes but only the light frames were checked.
 12. **Batch and rebalance for other media.** Batch on books reads *Log pages*; watch has no batch. Described in the notes, not drawn.
 13. **Figures on the tracks, path and session screens** are illustrative, not the seed.
+14. **The credits line on `addsearch` result rows** (*Walter Simonson · Sal Buscema*). Search results carry no credits: they arrive with enrichment (0.7, 4.1), so task 1.3b draws each row with its label, cover date and *in N runs* only.
 
 ## Review M pass, 2026-09-24 (`docs/review/M-findings.md`)
 

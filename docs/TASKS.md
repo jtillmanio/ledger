@@ -865,7 +865,7 @@ the new sequences after it and renumbers later ones without touching their
 progress rows. Pasting a label whose placement in this run was soft-deleted
 restores the original row (same id, progress intact) and inserts nothing.
 
-### ☐ 1.3b Add issues from a Metron search · M
+### ☑ 1.3b Add issues from a Metron search · M
 Requirement change, Sept 2026. ARCHITECTURE 2.15. The **Search** half of
 `/comics/[runId]/add`, and the default tab. Type `thor 337-340` or `balder the
 brave 1`. Your own catalog is matched first, then Metron is searched when you
@@ -3752,6 +3752,9 @@ is added with its seasons marked; loading, rate-limited and error states match
 1.3b, except that the error and empty-result states offer **Save to inbox**, not
 *Type it instead*: watch has no freeform path (D-28). The note is a 1.4b capture
 row of kind Watch carrying the query. Neutral grey genre chips carry a text label.
+The error line is a grey `×` (UX floor), as 1.3b built it; the TMDB error frame
+in `design/mockups.html` still draws `⚠` and is redrawn with this task (from
+TASK-006, 1.3b, PR #75).
 
 **Check:** test that adding a show with 2 seasons creates 1 `titles` row and 2
 `seasons` rows from a single TMDB call, and that re-adding updates rather than
