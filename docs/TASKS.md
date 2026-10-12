@@ -830,7 +830,7 @@ Validation rules, in order:
 every rule above, including the 8-volume Captain America case; `#1-12` expands to
 12 in order; a line already in the run is flagged *skip*. No database is touched.
 
-### ☐ 1.3c Bulk issue entry — review table and insert · M
+### ☑ 1.3c Bulk issue entry — review table and insert · M
 Depends on 1.3. Everything the parser produces lands in a review table (accept /
 fix / drop) before insert. Nothing writes until the user confirms. Sequence
 appends after the run's current max.

@@ -28,6 +28,8 @@ Every screen sits in the same chrome: a media bar on the phone, a navigation rai
 - Icons: Lucide outline at 1.5px, as an inline SVG `<symbol>` sprite in the layout (keep its ISC notice). Not under `public/`, because the passcode gate covers it. Nothing from a CDN.
 - **Settled by the owner, 2026-10-09:** today `/books` *is* the master list, but the route table makes it the books dashboard, which 2.2 builds. Between this task and 2.2, `/books` redirects to `/books/list`, and the books nav *Dashboard* item is `enabled: false`. 2.2 removes the redirect and flips the flag.
 - Next.js 16: the gate is `src/proxy.ts`, and `cookies()` is async. Read `node_modules/next/dist/docs/` before writing the redirect.
+- *From TASK-005 (1.3c, PR #74):* The app-wide *Add* (sidebar, rail) should land on the run last added to (FEATURES 2c *Remember the last run*). 1.3c's Add issues screen covers consecutive adds with its *Adding to: … · Change* chip (`src/components/RunChip.tsx`), but nothing remembers the run between visits.
+- *From TASK-005 (1.3c, PR #74):* The top bar's *Ledger* link is 46×23px at 360–768px, under the 24px target floor (ui-verifier on 1.3c's screen; the bar is `src/app/layout.tsx`).
 
 ## Acceptance criteria
 

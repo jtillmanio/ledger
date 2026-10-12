@@ -25,6 +25,7 @@ Every button, chip, tab and row responds the same way to hover, press, keyboard 
 - The state-matrix classes: `.btn` and its variants, `.iconbtn`, `.chip`, `.seg`, `.bar .tab`, `.side a`, `.row`, `.switch`, `.stepper button`. Each gets a hover rule under `@media (hover:hover)`, a pressed rule (1px down, `--dur-1`), a `:focus-visible` rule on `--focus-ring`, and an `[aria-disabled="true"]` rule. The reduced-motion block stops `animation` on everything but `.spin`.
 - Decisions: D-31 (the styling blueprint; SG-D2, SG-D8, SG-D12), D-40 (palette 1c), D-24b (identity hues vs state colours), UX-N01–N04, UX-X01, UX-X04.
 - No renames or removals: additions and rule changes only. The `--mark` / `--held` aliases stay (SG §13).
+- *From TASK-005 (1.3c, PR #74):* The range sheet's option chips (`.opts .opt`) and fields (`.sheet-fields .frow input`) outline with `--rule-2`, about 1.5:1 against their surface, under the 3:1 control floor. 1.3c's Add issues controls use `--faint-deco`, the 3:1 token (STYLE_GUIDE D8). Settle one control-outline token for every control.
 
 ## Acceptance criteria
 

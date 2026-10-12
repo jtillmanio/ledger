@@ -313,3 +313,21 @@ describe("no database, no network (AC-5)", () => {
     expect(src).not.toMatch(/^\s*import\s/m);
   });
 });
+
+describe("task 1.3c additions", () => {
+  it("says when it filled in the series' one known volume year", () => {
+    expect(one("Thor #344").yearFilled).toBe(true);
+    expect(one("Thor (1966) #344").yearFilled).toBe(false);
+    expect(one("Captain America #1").yearFilled).toBe(false); // ambiguous: nothing filled
+    expect(one("Captain America: Sam Wilson #1").yearFilled).toBe(false); // never has a year
+    expect(one("Balder the Brave #1").yearFilled).toBe(false); // unknown series
+    expect(one("Dark Reign: The Cabal").yearFilled).toBe(false);
+  });
+
+  it("keeps fraction glyphs as extract's clean() does (D-24a)", () => {
+    expect(normalizeLine("Ultimate Spider-Man (2000) #1⁄2")).toBe("Ultimate Spider-Man (2000) #½");
+    expect(normalizeLine("Avengers (1998) #1½")).toBe("Avengers (1998) #1½");
+    expect(normalizeLine("Avengers (1998) #11⁄2")).toBe("Avengers (1998) #1½");
+    expect(normalizeLine("Wizard #¾")).toBe("Wizard #¾");
+  });
+});

@@ -1,0 +1,128 @@
+---
+id: TASK-005
+title: 1.3c Bulk issue entry — review table and insert
+status: Done
+depends_on: [TASK-004]
+size: L
+model: opus
+autonomy: attended
+ui: true
+plan_status: approved
+planned_at_commit: a5a96c6
+---
+
+# TASK-005 — 1.3c Bulk issue entry — review table and insert
+
+## Goal
+
+Pasted issue labels can be checked line by line, with each one accepted, fixed or dropped, and then added to a run in one step at the place you choose. An issue the catalog already has is reused, and one that was removed from the run comes back with its read mark.
+
+## Context
+
+- Roadmap: `docs/TASKS.md` § 1.3c Bulk issue entry — review table and insert (sitting 4, after 1.3). The roadmap entry and its **Check:** are the contract.
+- **Why this is one large task** (`workflow.splitPolicy: never-split`): the add page, the review table, the insertion preview, the run chip and the transactional insert are one user flow. The count in the header is only right when the review and the insert agree.
+- Architecture: `docs/ARCHITECTURE.md` § 2. Decisions — 2.15 (adding ends in a real row: reuse an existing `issues` row, else create it, then the placement) and 2.14. § 4. Interface — the `/comics/[runId]/add` route and *Review tables* (five columns: kind glyph, line, why, check, decision; `role="radiogroup"` decisions).
+- Data model: `src/db/schema.ts` `issues` (the id is a slug of the label, D-15; fractions per D-24a) and `runIssues` (UNIQUE `(run_id, issue_id)`, and `(run_id, sequence)` DEFERRABLE). `src/db/writes.ts` `addIssueToRun` already restores a soft-deleted placement and shifts later sequences (S-07, R0-15), and the insert builds on it. The id builder must match `etl/extract.py` `slug()` exactly, or a label added in the app and the same label loaded by extract become two issues.
+- Design: mockup `bulk` (paste on the left and the review on the right on desktop; the sticky bar counts the real insert) and `addsearch` (the shared review). FEATURES Part 2c *Remember the last run* and UX-N27 (the *Adding to: … · Change* chip). STYLE_GUIDE §9 *states* for empty, loading and error.
+- Decisions: D-15, D-19 (no second placement per run), D-24a, R3-12, S-07, UX-N27. The CLAUDE.md AI-label rule: a freeform line is the user's own label, and the decision column is the explicit accept.
+- Undo: the insert pushes one entry onto TASK-001's stack. Its inverse soft-deletes the placements it inserted (Hard rule 4) and re-hides any it restored.
+- **From 1.3 (TASK-004, PR #70).** The parser is `src/lib/bulk-parse.ts`: `parseBulk(text, { knownSeries, runLabels })` gives one `BulkLine` per pasted line with its `kind`, `flags` and `rows` (decision `add` or `skip`), and `labelFor` rebuilds a label once a year is picked. D-54 (suggestion threshold) and D-55 (annual form, no leading zeros) apply. Points for this task's plan:
+  - **A filled-in volume year is shown.** When a series has one known year and the line omitted it, the parser fills it in, and the mockup's why reads *Volume year filled from your map*. `BulkLine` doesn't yet say it filled one: add a `yearFilled` field in the parser, or derive it from `normalized`. Decide in the plan.
+  - **A `bad_range` row says why.** A reversed or single-issue range (`#340-337`, `#5-5`) and one over `MAX_RANGE` (500) are errors with no rows. The why names which one it is.
+  - **A year the series has never used** (`Captain America (1969) #1`) parses as `ok` (owner, 2026-10-11). Decide in the plan whether this task's existence check covers it, or whether a *new volume* flag is its own task.
+
+- **Settled by the owner, 2026-10-09:** the mockup `bulk`'s *Always use 2004 for Captain America* switch is built in 1.12 (TASK-019), on this task's review table and insert. Here, the review table leaves room on an *ambiguous volume* row for it, and the insert is structured so a staged rule can join its transaction.
+
+## Acceptance criteria
+
+- [x] AC-1 (roadmap **Check:**, verbatim): integration test that pastes 24 lines into an empty run and asserts 24 issues in order, and that a line matching an existing label adds a placement without a second `issues` row. Test that the count in the header equals expanded lines minus duplicates for the fixture paste (10 − 1 = 9), and that choosing *Insert after #336* places the new sequences after it and renumbers later ones without touching their progress rows. Pasting a label whose placement in this run was soft-deleted restores the original row (same id, progress intact) and inserts nothing.
+- [x] AC-2: Nothing is written until the user confirms: after parsing and changing decisions, the `issues` and `run_issues` row counts are unchanged. On confirm, the whole insert runs in one transaction. A fixture that makes the third row fail (a forced constraint violation) leaves both tables exactly as before. The id of every new `issues` row equals `etl/extract.py`'s `slug()` for the same label, checked on a fixture list that includes a fraction label (D-24a).
+- [x] AC-3: Each review row shows the kind glyph (`✓`, `!`, `×`, never colour alone), the parsed line, a one-line why (*already in 3 runs*, *restore — was removed*, *already in this run*), and a `role="radiogroup"` decision whose options fit the row (*Use that · Keep as typed · Drop*). A failed row carries `aria-invalid="true"`. The header and the confirm button both state the number that will actually be written, and confirm is `aria-disabled="true"`, with its reason shown, while any row still needs a choice.
+- [x] AC-4: The insertion preview shows three existing rows above and three below the insertion point, with the new rows highlighted. *Insert after* defaults to the end of the run. A chip at the top reads *Adding to: <run title> · Change*. *Change* picks another run without leaving the screen, and the review re-runs against that run (its duplicates and restores).
+- [x] AC-5: After the insert, an undo toast appears. **Undo** soft-deletes exactly the placements this insert created, re-hides any it restored, and leaves the new `issues` rows and every other placement's sequence and progress as they were before the insert.
+- [x] AC-6: The Add issues *Type it* screen meets the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): empty (no lines yet), parsing and error states are drawn; the textarea and every decision are real controls with names; text is 4.5:1 and outlines 3:1 in both themes; targets are at least 24px; screenshots at every `ui.viewports` width, light and dark.
+
+## Out of scope
+
+- The parser itself (TASK-004) and Metron search (1.3b). The *Check* column shows *unverified* for typed lines until 1.3b supplies Metron's answer.
+- The *Always use 2004* volume-map switch (TASK-019, 1.12).
+- Adding books (1.4, 1.4c) and the quick-capture inbox (1.4b).
+- Editing type or notes on existing placements (3.1), and creating a new run (3.2).
+- Eras on new rows (3.6).
+
+## Files likely touched
+
+- `src/app/comics/[runId]/add/page.tsx` (new): the Add issues screen and its *Type it* tab.
+- `src/components/ReviewTable.tsx` (new): the five-column table, shared with 1.3b.
+- `src/components/InsertPreview.tsx` (new), `src/components/RunChip.tsx` (new).
+- `src/app/api/runs/[runId]/issues/route.ts` (new): review (dry run) and confirm (insert).
+- `src/db/writes.ts`: a transactional batch insert built on `addIssueToRun`, plus the TS twin of `slug()`.
+- `src/db/queries.ts`: known series and volumes for the parser, catalog matches (*in N runs*), and this run's live and removed placements.
+- `src/app/globals.css`: review table, preview, chip.
+- `test/bulk-insert.test.ts` (new, DB), `test/review-table.test.tsx` (new, happy-dom), `etl/test_extract.py` or a shared fixture for the slug parity check.
+
+## Verification
+
+- Automated: `test/bulk-insert.test.ts` against `TEST_DATABASE_URL` covers 24 lines in order, label reuse, the 10 − 1 = 9 count, *Insert after #336* renumbering with progress intact, restoring a soft-deleted placement, the all-or-nothing transaction, slug parity and undo (AC-1, AC-2, AC-5). `test/review-table.test.tsx` covers the glyphs, the radiogroups, `aria-invalid`, the disabled confirm with its reason, and the chip's *Change* (AC-3, AC-4).
+- Manual: `npm run dev`, open a run's *Add issues → Type it*, paste ten lines that include a duplicate and a removed issue → expected: the header says 9 (or the right number), and the removed row reads *restore — was removed*. Confirm, then Undo → expected: the run is as it was.
+
+## Plan
+
+Approved by the owner, 2026-10-12.
+
+**Steps**
+
+1. Parser (`src/lib/bulk-parse.ts`): `BulkLine.yearFilled` says the volume year came from the series' one known year; `normalizeLine` puts fraction glyphs back the way extract's `clean()` does (`#1⁄2` → `#½`), so a typed fraction gets extract's label and id.
+2. Id builder: `src/lib/issue-slug.ts` (new), the TS twin of `etl/extract.py` `issue_slug()`. `test/fixtures/issue-slugs.json` (new, includes a fraction) is asserted by both vitest and `etl/test_extract.py`, so the twins cannot drift.
+3. Review logic: `src/lib/bulk-review.ts` (new, pure): parsed lines + per-line decisions + catalog matches → review rows (glyph, line, why, check, options), the real count, the lines still needing a choice, and the labels to write. A label repeated inside the paste counts once.
+4. Queries (`src/db/queries.ts`): known series and volume years from issue labels; the run's add context (title, every placement with label, sequence and whether removed); catalog matches for labels (issue id, live runs it is in); the run list for the chip.
+5. Writes (`src/db/writes.ts`): `insertIssuesIntoRun(runId, after, labels, { within })` in one transaction — reuse an issue by label or create it with the extract id (`-2` on a slug collision, as extract does), restore a soft-deleted placement (same id), skip one already live, shift later placements (deleted too) once, place the batch after `after`. `within` lets 1.12's staged volume rule join the transaction. `undoInsert` soft-deletes the created placements, re-hides the restored ones at their old sequence, and returns every other placement to its old sequence; it refuses, changing nothing, if the run moved in between.
+6. Route `src/app/api/runs/[runId]/issues/route.ts` (new): GET the add context (only on *Change*, never on load), POST `dryRun` for catalog matches, POST to insert, DELETE to undo.
+7. Screen: `src/app/comics/[runId]/add/page.tsx` + `loading.tsx` (new); `src/components/AddIssues.tsx` (new, the client screen), `ReviewTable.tsx`, `InsertPreview.tsx`, `RunChip.tsx` (new); styles in `src/app/globals.css`; an *Add issues* link in the run detail's actions (`src/components/IssueRow.tsx`).
+
+**Files outside "Files likely touched"**: `src/lib/issue-slug.ts`, `src/lib/bulk-review.ts`, `src/components/AddIssues.tsx`, `src/app/comics/[runId]/add/loading.tsx`, `src/components/IssueRow.tsx`, `src/lib/bulk-parse.ts` + `test/bulk-parse.test.ts`, `test/fixtures/issue-slugs.json`. More than 8 files; `never-split`, so the task stays whole and attended. No schema change.
+
+**Owner's answers at the gate**
+
+1. Every review row has a radiogroup (AC-3): ✓ rows get *Add · Drop*, Add checked.
+2. The *Search · Type it* control is drawn; the page opens on *Type it*, and Search is `aria-disabled` with the reason *Metron search is coming*. 1.3b enables it and makes it the default.
+3. A volume year the series has never used keeps its ✓ (owner, 2026-10-11); its check reads *new volume* and its why *No Captain America (1969) in your catalog yet*. Metron confirmation is 1.3b's.
+4. The count includes restored placements: a restore is one of the *N will be added*.
+5. Undo returns every other placement to its old sequence, so undone new placements are soft-deleted past the end of the run.
+
+**Test strategy**
+
+- AC-1, AC-2, AC-5: `test/bulk-insert.test.ts` (TEST_DATABASE_URL) — 24 lines into an empty run in order; an existing label adds a placement and no `issues` row; the fixture paste counts 10 − 1 = 9; *Insert after #336* renumbers later placements, progress untouched; a removed placement is restored (same id, progress intact, nothing inserted); a dry run and decisions write nothing; a temporary CHECK constraint failing the third row leaves both tables as they were; slug parity on the shared fixture; undo.
+- AC-3, AC-4: `test/review-table.test.tsx` (happy-dom) — glyphs, whys, radiogroups, `aria-invalid`, header and button counts, `aria-disabled` confirm with its reason, preview three above and three below with the new rows highlighted, default end of run, the chip and *Change* re-running the review (fetch mocked).
+- AC-6: ui-verifier screenshots at every `ui.viewports` width, light and dark; empty, checking and error states.
+
+**Risks**: `history.replaceState` on *Change* under Next 16; the known-series payload on the page; a stale tab between review and confirm (the insert re-checks and skips what is already live, and says so).
+
+## Follow-ups
+
+- The app-wide *Add* (sidebar, rail) remembers the last run added to (FEATURES 2c *Remember the last run*); here the chip's *Change* covers consecutive adds → docs/tasks/TASK-014-app-shell.md § Context (approved at plan)
+- Search becomes the default half; the Check column fills from Metron, *new volume* included → docs/tasks/TASK-006-metron-search-add.md § Context (approved at plan)
+- The ambiguous-volume row's place for the *Always use 2004* switch, and the insert's `within` transaction hook → docs/tasks/TASK-019-load-volume-rules.md § Context (approved at plan)
+- Candidate decision: the app mints a new issue id exactly as extract does (`issue_slug`, `-N` on a clash), held to it by one fixture both test suites check → docs/review/decisions.md § D-59 (approved at plan)
+- Open question: should the Check column flag a new label whose slug another label holds (D-15 makes it a cutover blocker in extract)? → docs/tasks/TASK-006-metron-search-add.md § Context
+- The range sheet's option chips and fields outline with `--rule-2` (about 1.5:1), under the 3:1 control floor; this screen's controls use `--faint-deco` → docs/tasks/TASK-012-tokens-control-states.md § Context
+- The top bar's *Ledger* link is 23px tall at 360–768px, under the 24px target floor → docs/tasks/TASK-014-app-shell.md § Context
+- `addIssueToRun`, `removeIssueFromRun` and the range mark take no run lock, so one could race this insert's snapshot of the run (schema review) → not tracked: one person on one device at a time; cross-device races are D-9's accepted risk
+- A placement re-hidden by the undo gets the undo's `deleted_at`, not its first removal's (schema review) → not tracked: nothing reads when a placement was removed, only whether; said in `undoInsert`'s comment
+- Labels match case-insensitively with JS `toLowerCase()` against Postgres `lower()`, which can fold non-ASCII differently (schema review) → not tracked: the row spelled exactly as typed is preferred, and catalog labels are ASCII titles
+
+## Review log
+
+- Verify R1 PASS (914bb14) | Audit R1 PASS (every AC proven; the new test files fail to load on base, the parser additions discriminate) | Spec R1 CHANGES (catalog read without the soft-delete filter; four plan items untested; stale-tab skip unreported; close-out tick and follow-up placements) | Schema R1 APPROVE (5 minor) | UI R1 CHANGES (textarea and select outlines about 1.5:1; heading-order)
+- Verify R2 PASS (fd5b980) | Spec R2 APPROVE | Schema R2 APPROVE (1 minor: the undo trusted `revived`, fixed in 899fd36) | UI R2 PASS (outlines 3.08 to 4.39:1, axe clean)
+
+## Blocked
+
+_Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
+
+## Metrics
+
+- Verify rounds: 1 (re-run green after each review round)
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0

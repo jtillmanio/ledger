@@ -334,3 +334,64 @@ export async function upcomingReleases() {
     LIMIT 12
   `;
 }
+
+/* ------------------------------------------------------------ add issues */
+
+/** What the bulk-entry parser knows (task 1.3c): every series title in the
+ * catalog with the volume years it is written with. Read from the labels, the
+ * same grammar the parser speaks: `Title (Year) #N` and `Title (Year) Annual #N`.
+ * The title is what is left when the volume, an annual marker and the number
+ * are cut from the end; a freeform label (`Dark Reign: The Cabal`) names no series. */
+export async function knownSeries() {
+  return sql<{ title: string; years: number[] }[]>`
+    SELECT title, COALESCE(array_agg(DISTINCT year ORDER BY year) FILTER (WHERE year IS NOT NULL), '{}') AS years
+    FROM (
+      SELECT regexp_replace(label, '( [(][0-9]{4}[)])?( Annual)? #[0-9]+([.][0-9]+)?$', '') AS title,
+             substring(label from ' [(]([0-9]{4})[)](?: Annual)? #[0-9]+(?:[.][0-9]+)?$')::int AS year
+      FROM issues
+      WHERE deleted_at IS NULL AND label ~ ' #[0-9]+([.][0-9]+)?$'
+    ) s
+    WHERE title <> ''
+    GROUP BY title
+    ORDER BY title
+  `;
+}
+
+/** A run as Add issues sees it: its title and every placement, removed ones
+ * too, in reading order. A removed placement is what a re-add restores (S-07). */
+export async function addContext(runId: string) {
+  const [[run], placements] = await Promise.all([
+    sql<{ id: string; title: string }[]>`
+      SELECT id, title FROM runs WHERE id = ${runId} AND deleted_at IS NULL AND NOT placeholder`,
+    sql<{ id: number; sequence: number; label: string; removed: boolean }[]>`
+      SELECT ri.id, ri.sequence, i.label, ri.deleted_at IS NOT NULL AS removed
+      FROM run_issues ri
+      JOIN issues i ON i.id = ri.issue_id
+      WHERE ri.run_id = ${runId}
+      ORDER BY ri.sequence`,
+  ]);
+  return run ? { run, placements } : null;
+}
+
+export type AddContext = NonNullable<Awaited<ReturnType<typeof addContext>>>;
+
+/** The catalog rows these labels name, matched case-insensitively (D-54), and
+ * how many live runs place each: the review's *already in 3 runs*. A label the
+ * catalog doesn't have, or removed from it, is simply absent. */
+export async function catalogMatches(labels: string[]) {
+  return sql<{ key: string; issue_id: string; label: string; runs: number }[]>`
+    SELECT lower(i.label) AS key, i.id AS issue_id, i.label,
+           COUNT(DISTINCT r.id)::int AS runs
+    FROM issues i
+    LEFT JOIN run_issues ri ON ri.issue_id = i.id AND ri.deleted_at IS NULL
+    LEFT JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL AND NOT r.placeholder
+    WHERE i.deleted_at IS NULL AND lower(i.label) = ANY(${labels.map((l) => l.toLowerCase())}::text[])
+    GROUP BY i.id
+  `;
+}
+
+/** The runs Add issues can add to, for the *Change* picker. */
+export async function runChoices() {
+  return sql<{ id: string; title: string }[]>`
+    SELECT id, title FROM runs WHERE deleted_at IS NULL AND NOT placeholder ORDER BY title`;
+}

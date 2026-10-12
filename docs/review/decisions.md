@@ -64,6 +64,7 @@
 | D-56 | 2026-10-09 | (Task 1.2, PR #63; recorded 2026-10-11 from the PR's candidate decision) **An undo puts the stored date back from a round trip, never from a fresh `now()`.** The progress route returns `prior`, the row as it was before the write (its date as Postgres text, and its precision), and accepts it back as `restore`. Any inverse that has to restore a stored date uses the same round trip, so an undone *unmark* gets back its original `completed_at` and precision, `none` included. |
 | D-57 | 2026-10-10 | (Task 1.1, PR #67; recorded 2026-10-11 from the PR's candidate decision; **amends D-48**) **A write that must be one round trip and all-or-nothing may be raw SQL in `src/db/writes.ts`**, through the postgres.js client. The range mark is the model: one statement whose CTEs check ownership, compute the dates and `INSERT … ON CONFLICT DO NOTHING RETURNING`, joining `issue_read_runs`. Drizzle's builder stays the default for every other write. The spec reviewer had flagged it as an unrecorded departure from D-48. |
 | D-58 | 2026-10-11 | (Task 1.6, PR #69; recorded 2026-10-11 from the PR's candidate decision) **Spine rows are anchored by ordinal, not placement id**: `#p-<n>`, where `n` counts live placements in run order, the same address ARCHITECTURE §4's telescope scrub uses. An anchor therefore moves when an earlier placement is removed. That is accepted, because the anchor names a position in the run (*Resume #141*), not a row. |
+| D-59 | 2026-10-12 | (Owner, at TASK-005's plan gate; task 1.3c) **The app mints a new issue's id exactly as extract does.** `src/lib/issue-slug.ts` is a line-for-line twin of `etl/extract.py` `slug()` and `issue_slug()`, and the parser's `normalizeLine` of its `clean()`, fraction glyphs included (D-24a), so a label added in the app and the same label loaded by extract are one `issues` row (D-15). `test/fixtures/issue-slugs.json` is checked by both vitest and `etl/test_extract.py`; a change to either twin adds a case there. A new label whose slug another label already holds gets extract's `-2`, `-3` suffix. The review doesn't flag that clash yet, although D-15 makes one a cutover blocker in extract: an open question for 1.3b (TASK-006). |
 
 ## Note: D-24 to D-27 are each used twice (2026-10-08)
 
@@ -79,4 +80,4 @@ the repo. Tell them apart by subject; where it matters in new text, write
 | D-26 | *Dark Reign: The Cabal* is 0.8a's named fixture (TASKS 0.8a) | An in-progress fill is green (`CLAUDE.md`, mockups, STYLE_GUIDE) |
 | D-27 | Task 0.3's CHECK constraints (TASKS 0.3) | Accepted risk: most screens' empty/loading/error states are specified in text, not drawn |
 
-The next new decision is **D-59**.
+The next new decision is **D-60**.
