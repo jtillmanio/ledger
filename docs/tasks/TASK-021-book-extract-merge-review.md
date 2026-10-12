@@ -30,6 +30,8 @@ The workbook's books load as one row per real book. Two books that share a title
   - `npm run extract` passes `--book-review`.
 - Decisions: D-25a (≥ 0.4 similarity; only title plus author is the same book), D-41, D-15 (the parallel for issue labels), D-13. Standing rule 4: re-run against both workbooks and diff `seed/`. The CLAUDE.md AI-label rule's spirit applies: nothing merges without an explicit decision.
 - Interacts with TASK-010 (1.5's extract change sees only `to_read` rows, so `finished_on` is blank and `none`).
+- *From TASK-007 (1.4, task/1.4-books-bulk-entry):* extract's book id rule (`slug(title, author)[:100]`, `-x` while taken) now has an app twin, `bookId()` in `src/lib/issue-slug.ts`, held to one answer by `test/fixtures/book-ids.json` (vitest and `etl/test_extract.py`, D-61). A change to the rule here changes both, and adds a case there. The app matches a pasted book on title and author among live books and never revives a removed one, so a merged-away duplicate stays merged.
+- *From TASK-007 (1.4, task/1.4-books-bulk-entry), open question for the plan:* Add books' confirm (`addBooks()`) checks a book it reuses is live under the advisory lock `hashtext('ledger:add-books')`. A merge that soft-deletes a book in the app (rather than through extract and a reload) should take the same lock, or a paste confirming at that moment can give the removed book a `to_read` row.
 
 ## Acceptance criteria
 

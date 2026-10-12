@@ -1,7 +1,7 @@
 ---
 id: TASK-007
 title: 1.4 Books bulk entry
-status: In progress
+status: Review
 depends_on: [TASK-006]
 size: M
 model: sonnet
@@ -28,11 +28,11 @@ A pasted list of books (`Title — Author`, or `Title (Series #N)`) is matched a
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): paste a fixture of 15 lines where 9 exist and 6 don't; assert 6 inserts and 9 matches, zero duplicates. A line one letter off an existing title (similarity ≥ 0.4) is flagged with that match and is not merged.
-- [ ] AC-2: `Title — Author`, `Title - Author` and `Title (Series #N) — Author` all parse. The series form creates or reuses a `book_series` row and sets `books.series_position` to N. A line with no author is flagged as needing one and can't be accepted until it has one.
-- [ ] AC-3: A flagged near-duplicate shows its closest match and its similarity, and defaults to *create new*. Choosing *use that* creates nothing and points the line at the existing book. Nothing is written until the user confirms, and the confirm runs in one transaction: a forced failure on one line leaves `books`, `authors` and `book_series` unchanged.
-- [ ] AC-4: Every created book lands at Someday (`book_status = to_read`, no `reading_plan` row). A matched book that already has a status keeps it.
-- [ ] AC-5: The *Paste a list* review meets the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): empty, parsing and error states drawn; kind glyphs carry text, not colour alone; decisions are `role="radiogroup"` with names; confirm is `aria-disabled="true"` with its reason while a line needs a choice; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-1 (roadmap **Check:**, verbatim): paste a fixture of 15 lines where 9 exist and 6 don't; assert 6 inserts and 9 matches, zero duplicates. A line one letter off an existing title (similarity ≥ 0.4) is flagged with that match and is not merged.
+- [x] AC-2: `Title — Author`, `Title - Author` and `Title (Series #N) — Author` all parse. The series form creates or reuses a `book_series` row and sets `books.series_position` to N. A line with no author is flagged as needing one and can't be accepted until it has one.
+- [x] AC-3: A flagged near-duplicate shows its closest match and its similarity, and defaults to *create new*. Choosing *use that* creates nothing and points the line at the existing book. Nothing is written until the user confirms, and the confirm runs in one transaction: a forced failure on one line leaves `books`, `authors` and `book_series` unchanged.
+- [x] AC-4: Every created book lands at Someday (`book_status = to_read`, no `reading_plan` row). A matched book that already has a status keeps it.
+- [x] AC-5: The *Paste a list* review meets the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): empty, parsing and error states drawn; kind glyphs carry text, not colour alone; decisions are `role="radiogroup"` with names; confirm is `aria-disabled="true"` with its reason while a line needs a choice; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -88,13 +88,19 @@ Approved by the owner 2026-10-12, with every recommendation below.
 
 ## Follow-ups
 
-- TASK-008's Context: *Paste a list* ships as `PasteBooks` on `/books/add` with no undo; open question for 1.4c's plan whether its AC-5 undo covers the paste. (approved at plan)
-- TASK-021's Context: extract's book id rule now has an app twin (`bookId()`) and a shared fixture, `test/fixtures/book-ids.json`; a change to the rule changes both. (approved at plan)
-- Candidate decision: the app mints a book id exactly as extract does, matches a book on title + author (case-insensitive) among live books, and never revives a soft-deleted one. (approved at plan)
+- *Paste a list* ships alone on `/books/add` with no undo; 1.4c wraps it, restores the drawn copy, and decides whether its undo covers the paste (open question). (approved at plan) → docs/tasks/TASK-008-add-book-search-hand.md § Context
+- Extract's book id rule now has an app twin, `bookId()`, and a shared fixture, `test/fixtures/book-ids.json`. (approved at plan) → docs/tasks/TASK-021-book-extract-merge-review.md § Context
+- Candidate decision: the app mints a book id exactly as extract does, matches a book on title + author (case-insensitive, in Postgres) among live books, and never revives a soft-deleted one. (approved at plan) → docs/review/decisions.md § D-61
+- Schema review: a book soft-deleted by something that doesn't take `addBooks()`'s advisory lock, between its live check and the status insert, could get a `to_read` row; only 1.13's merge could do that. → docs/tasks/TASK-021-book-extract-merge-review.md § Context
+- Schema review: the exact-match lateral in `bookMatches()` can't use `books_title_gin_trgm` and scans `books` per line (≈1.5k rows × at most 500 lines). → not tracked: fine at this size; the reviewer recommended no change now
+- The Add books screen differs from mockup `add` until 1.4c (no segmented control or *Add to*, books review after *Check*). → design/mockups-index.md § Not shown, and why (15, fixed in this PR)
+- The confirm's reason reads *Check N lines first*, not the plan's *Check N new lines first*: on a first paste no line is "new" to the check. → not tracked: copy choice, explained here and in the PR for the owner to overrule
+- UI check: a no-author line whose title is exactly a library book's shows `similar 1.00`; accurate. Review decision radios are 24–30px tall (floor is 24px); the shell's *Ledger* link is 23px (task 1.8). → not tracked: accurate as is; the nav link belongs to 1.8's shell work
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 PASS | Audit R1 PASS (AC-1–AC-4 proven; AC-5 component proven, screenshots by ui-verifier) | Schema R1 APPROVE (4 minor; 2 fixed: confirm matches in Postgres, position capped) | Spec R1 CHANGES (redraw entry, Follow-ups format) | UI R1 PASS (6 widths, light and dark; confirm never pressed on dev)
+- Verify R2 PASS (after the round-1 fixes) | Spec R2 APPROVE (round-1 findings resolved; follow-ups check clean)
 
 ## Blocked
 
@@ -102,7 +108,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (both green; R2 re-ran after review fixes)
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0
