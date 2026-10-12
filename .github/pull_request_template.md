@@ -45,17 +45,23 @@
 
 ## Follow-ups
 
-<!-- Anything noticed and deliberately left out, as candidate tasks; candidate
-     decisions (workflow.decisions is "propose": the owner adds each to
-     docs/review/decisions.md as the next D-n); review-finding IDs this PR
-     addresses or opens. -->
+<!-- Work noticed and deliberately left out (copied from the task file's ## Follow-ups). Each bullet ends with
+     where it was placed, per workflow.followUps (.claude/skills/track-follow-ups/classify.md), or why not:
+       - A range like #5-5 should say why it is rejected → docs/TASKS.md § 1.3c
+       - Candidate decision: suggestions use pg_trgm's 0.3 threshold → docs/review/decisions.md § D-59 (approved at close-out)
+       - Set the RESEND_API_KEY secret in production → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+       - Leading zeros aren't canonicalised → not tracked: done in this PR (plan revision)
+     workflow.decisions is "propose": a candidate decision is recorded only once the owner approves it;
+     until then it waits under Approvals from follow-ups, and the bullet says so.
+     Review-finding IDs this PR addresses or opens. -->
 -
 
 ## Reviewer checklist (owner)
 
 - [ ] Ran the manual steps above and got the expected results
 - [ ] Every owner gate in the table above has passed
-- [ ] Diff contains only what the task asked for (no surprise files)
+- [ ] Diff contains only what the task asked for (no surprise files), plus the follow-up placements listed above
+- [ ] Each follow-up went where the work that will do it will read it (move or drop any you disagree with)
 - [ ] No secrets, `.env*`, `seed/`, `backups/`, protected files or production config touched
 - [ ] The task's checkbox in `docs/TASKS.md` is ticked in this PR
 - [ ] Task file set to `status: Done` (reply "accepted" to the session) before merging. Accepting also moves it to `docs/tasks/archive/`; a hand edit leaves that to the next task's close-out

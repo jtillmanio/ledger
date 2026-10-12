@@ -73,7 +73,8 @@
     "allowForceWithLease": true,
     "roadmap": { "path": "docs/TASKS.md", "idPattern": "\\d+\\.\\d+[a-z]?", "checkLabel": "**Check:**" },
     "statusDoc": "docs/STATUS.md",
-    "archiveDone": true
+    "archiveDone": true,
+    "followUps": "apply"
   },
 
   "testAudit": {
