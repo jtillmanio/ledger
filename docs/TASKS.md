@@ -100,6 +100,17 @@ check asserts a figure copied out of a mockup or out of prose. Where a check
 needs to be exact, it asserts a relationship ("the switch hides exactly the rows
 whose `run_state = 'blocked'`") or builds its own fixture.
 
+**Loose "(CLAUDE.md)" citations** (follow-up from PR #60, tracked 2026-10-12).
+Since #60 gave each domain rule one home, several places here cite
+"(CLAUDE.md)" for a rule whose full text is now in `.claude/rules/schema.md` or
+`.claude/rules/ui.md`: for example 0.8b (the grey hint), 0.9 (derived data),
+1.5 (the shelves rule), 3.6b, 3.9, 4.3 (at ingest, never at render), 5.8, 5.10
+and 8.7. They still lead somewhere, since `CLAUDE.md` § *Where the domain rules
+live* says which file holds each kind of rule. The next PR that edits this file
+for another reason points each one at its rules file, and the ones that really
+are in `CLAUDE.md` (stop and ask, migrations, `/api/health`) stay as they are.
+Never inside a **Check:** line; none of them is in one today.
+
 ## Phase 0 — Foundation (prerequisites for everything else)
 
 ### ☑ 0.1 Test harness · S
