@@ -646,6 +646,29 @@ A fixture page with an unnamed `<button>` makes the axe step fail on
 overflows at 360px. CI runs the suite on the PR against `TEST_DATABASE_URL`
 only, and `git.md`'s *Test on the branch* lists it.
 
+### ☐ 0.12 A redeploy of a skipped preview builds · S
+Found on PR #76 (task 1.4, 2026-10-12). Not in a sitting: a `chore/` branch
+whenever it bites next. `scripts/vercel-ignore.mjs` says *a redeploy changes
+nothing, so it always builds*, but Vercel's `VERCEL_GIT_PREVIOUS_SHA` is the
+branch's last **successful** deployment, not the commit being redeployed. A
+commit whose own build was skipped (docs-only since the last build) is skipped
+again on **Redeploy**, because the diff against that older deployment is still
+docs-only. On PR #76 the owner's Redeploy of `1726706` was cancelled exactly so,
+against `dfefc67`. Harmless while the earlier deployment holds the same app
+code, as it did there; it leaves no way to force a build, such as one that picks
+up a changed environment variable.
+
+- **What.** Give a redeploy a route to build. That might be an environment
+  variable or a deployment property the script reads, if Vercel exposes one, or
+  a documented way to force a build (START-HERE). Fix the header comment to say
+  what the script actually compares against.
+
+**Check:** a redeploy, or the documented force route, of a commit whose own
+build was skipped builds it. A docs-only push after a build is still skipped.
+`scripts/vercel-ignore.mjs`'s header says what `VERCEL_GIT_PREVIOUS_SHA` is.
+*(Check proposed by task 1.4's close-out; the owner agrees it by merging PR #76
+or edits it first.)*
+
 ---
 
 ## Phase 1 — Daily use (build before anything clever)
@@ -900,7 +923,7 @@ A mocked 429 with `Retry-After: 40` renders the rate-limited status line with
 the countdown and a working *Type it instead*, and makes no second request
 before it elapses.
 
-### ☐ 1.4 Books bulk entry · M
+### ☑ 1.4 Books bulk entry · M
 Same shape: paste `Title — Author` or `Title (Series #N)`, match against the
 catalog, create what's missing, flag near-duplicates by trigram. This is the
 *Paste a list* path of 1.4c.

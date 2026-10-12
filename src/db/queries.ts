@@ -481,3 +481,61 @@ export async function runChoices() {
   return sql<{ id: string; title: string }[]>`
     SELECT id, title FROM runs WHERE deleted_at IS NULL AND NOT placeholder ORDER BY title`;
 }
+
+type BookMatchRow = {
+  i: number;
+  match_id: string | null; match_title: string | null; match_author: string | null; match_status: string | null;
+  near_id: string | null; near_title: string | null; near_author: string | null; near_status: string | null;
+  near_similarity: number | null;
+};
+
+/**
+ * Add books, *Paste a list* (task 1.4): for each pasted title and author, the
+ * live book with the same title and author (case-insensitive, D-25), else the
+ * live book whose title is closest at `pg_trgm` similarity ≥ 0.4, each with
+ * your status for it. `%` (pg_trgm's default 0.3) lets `books_title_gin_trgm`
+ * find the candidates; the 0.4 is applied to them. Answers come back in the
+ * order asked.
+ */
+export async function bookMatches(userId: string, lines: { title: string; author: string | null }[]) {
+  if (lines.length === 0) return [];
+  const rows = await sql<BookMatchRow[]>`
+    WITH q AS (
+      SELECT q.title, q.author, q.i::int AS i
+      FROM unnest(${lines.map((l) => l.title)}::text[], ${lines.map((l) => l.author)}::text[])
+           WITH ORDINALITY AS q(title, author, i)
+    )
+    SELECT q.i,
+           m.id AS match_id, m.title AS match_title, m.author AS match_author, m.status AS match_status,
+           n.id AS near_id, n.title AS near_title, n.author AS near_author, n.status AS near_status,
+           n.similarity AS near_similarity
+    FROM q
+    LEFT JOIN LATERAL (
+      SELECT b.id, b.title, a.name AS author, st.status
+      FROM books b
+      JOIN authors a ON a.id = b.author_id
+      LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+      WHERE b.deleted_at IS NULL AND q.author IS NOT NULL
+        AND lower(b.title) = lower(q.title) AND lower(a.name) = lower(q.author)
+      ORDER BY b.id
+      LIMIT 1
+    ) m ON true
+    LEFT JOIN LATERAL (
+      SELECT b.id, b.title, a.name AS author, st.status, similarity(b.title, q.title)::float8 AS similarity
+      FROM books b
+      LEFT JOIN authors a ON a.id = b.author_id
+      LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+      WHERE m.id IS NULL AND b.deleted_at IS NULL
+        AND b.title % q.title AND similarity(b.title, q.title) >= 0.4
+      ORDER BY similarity(b.title, q.title) DESC, b.title, b.id
+      LIMIT 1
+    ) n ON true
+    ORDER BY q.i
+  `;
+  return rows.map((r) => ({
+    match: r.match_id === null ? null
+      : { bookId: r.match_id, title: r.match_title!, author: r.match_author, status: r.match_status },
+    near: r.near_id === null ? null
+      : { bookId: r.near_id, title: r.near_title!, author: r.near_author, status: r.near_status, similarity: r.near_similarity! },
+  }));
+}

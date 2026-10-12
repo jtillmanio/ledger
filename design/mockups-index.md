@@ -133,6 +133,7 @@ One line each. None is silently dropped.
 12. **Batch and rebalance for other media.** Batch on books reads *Log pages*; watch has no batch. Described in the notes, not drawn.
 13. **Figures on the tracks, path and session screens** are illustrative, not the seed.
 14. **The credits line on `addsearch` result rows** (*Walter Simonson · Sal Buscema*). Search results carry no credits: they arrive with enrichment (0.7, 4.1), so task 1.3b draws each row with its label, cover date and *in N runs* only.
+15. **The books review after *Check N lines* on `add`, and `add` before 1.4c.** The mockup ends the paste half at *Check 3 lines*; the review that follows is the `bulk` screen's, unchanged: the same five-column rows, with books' checks (*in library*, *new*, *similar 0.78*) and decisions (*Skip*, *Add · Drop*, *Create new · Use that · Drop*), and *Add N books* in the sticky bar. Task 1.4 ships *Paste a list* alone at `/books/add`: no *Search · Paste a list · By hand* control and no *Add to* chips, so the heading is *Paste a list*, not *Or paste a list*; on desktop the paste sits left and the review right, as on `bulk`; and the lede reads *Matched against your library first. You confirm anything ambiguous. New books land in Someday.*, since Open Library and *Add to* arrive with 1.4c (TASK-008), which puts the drawn layout back. *Add N books* then goes to the master list's *To read* with a toast (*6 books added to Someday*; owner, PR #76).
 
 ## Review M pass, 2026-09-24 (`docs/review/M-findings.md`)
 

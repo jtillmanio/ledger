@@ -24,6 +24,18 @@ export function slug(...parts: (string | null | undefined)[]): string {
 }
 
 /**
+ * A book's id, as extract's `BookIndex.upsert` builds it (task 1.4): the slug of
+ * title and author, cut at 100, with `-x` added for as long as another book
+ * holds it. `taken` is every id in `books`, removed rows too (the primary key).
+ * `test/fixtures/book-ids.json` holds this and extract to one answer.
+ */
+export function bookId(title: string, author: string | null, taken: ReadonlySet<string> = new Set()): string {
+  let id = slug(title, author ?? "").slice(0, 100);
+  while (taken.has(id)) id += "-x";
+  return id;
+}
+
+/**
  * extract's `issue_slug()`: a negative number stays distinct (`#-1` is
  * `minus-1`), and so does a fraction (`#½` is `1-2`, `#1½` is `11-2`).
  */

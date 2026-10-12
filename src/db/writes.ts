@@ -1,6 +1,7 @@
 import { and, eq, gt, gte, inArray, isNull, like, or, sql } from "drizzle-orm";
-import { db, bookStatus, issues, runIssues, runs, sql as pg } from "./index";
-import { issueSlug } from "@/lib/issue-slug";
+import { db, authors, books, bookSeries, bookStatus, issues, runIssues, runs, sql as pg } from "./index";
+import { bookKey } from "@/lib/book-parse";
+import { bookId, issueSlug, slug } from "@/lib/issue-slug";
 
 export type BookStatusInput = {
   bookId: string;
@@ -404,5 +405,126 @@ export async function undoInsert(
         .where(and(inArray(issues.id, rehide), isNull(issues.deletedAt)));
     }
     return true;
+  });
+}
+
+/** A pasted line to create, unless the library has the same title and author by now. */
+export type NewBook = { title: string; author: string; series: string | null; position: number | null };
+/** A pasted line, or a library book a line was pointed at (*Use that*, or a match with no status). */
+export type BookItem = NewBook | { use: string };
+
+export type AddBooksResult =
+  | {
+    ok: true;
+    /** `books` rows this add created, in paste order. */
+    created: string[];
+    /** Library books a line named by its exact title and author, reused. */
+    matched: string[];
+    /** Books that got a `to_read` status here: they joined Someday. */
+    added: string[];
+  }
+  | { ok: false; reason: "gone"; missing: string[] };
+
+/**
+ * Add books, *Paste a list* (task 1.4, 2.15): all of it or none of it, in one
+ * transaction. A line whose title and author the library has (case-insensitive,
+ * D-25) reuses that book; otherwise the book is created with extract's id for
+ * it, and its author and series too when they are new, by slug, as extract keys
+ * them. A series line sets `series_position`. Every book the add names then
+ * gets `book_status = to_read` unless it has a status already, which it keeps;
+ * no plan row is written, so a new book sits at Someday (D-37).
+ *
+ * Refuses, writing nothing, when a book a line was pointed at is gone.
+ */
+export async function addBooks(userId: string, items: BookItem[]): Promise<AddBooksResult> {
+  return db.transaction(async (tx) => {
+    // One add at a time: two tabs pasting the same new book would both create it.
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('ledger:add-books'))`);
+
+    const uses = [...new Set(items.flatMap((i) => ("use" in i ? [i.use] : [])))];
+    if (uses.length) {
+      const live = new Set((await tx.select({ id: books.id }).from(books)
+        .where(and(inArray(books.id, uses), isNull(books.deletedAt)))).map((r) => r.id));
+      const missing = uses.filter((id) => !live.has(id));
+      if (missing.length) return { ok: false, reason: "gone", missing } as const;
+    }
+
+    const fresh = items.filter((i): i is NewBook => !("use" in i));
+    // The same title and author the library holds now, compared as bookMatches
+    // compares them (lower() on both sides, in Postgres), so the confirm never
+    // disagrees with the check it follows.
+    const exact = new Map<number, string>();
+    if (fresh.length) {
+      const list = (values: string[]) => sql`ARRAY[${sql.join(values.map((v) => sql`${v}`), sql`, `)}]::text[]`;
+      const rows = await tx.execute<{ i: number; id: string }>(sql`
+        SELECT q.i::int AS i, m.id
+        FROM unnest(${list(fresh.map((f) => f.title))}, ${list(fresh.map((f) => f.author))}) WITH ORDINALITY AS q(title, author, i)
+        CROSS JOIN LATERAL (
+          SELECT b.id FROM books b JOIN authors a ON a.id = b.author_id
+          WHERE b.deleted_at IS NULL AND lower(b.title) = lower(q.title) AND lower(a.name) = lower(q.author)
+          ORDER BY b.id LIMIT 1
+        ) m`);
+      for (const r of rows) exact.set(Number(r.i) - 1, r.id);
+    }
+
+    const matched = new Set<string>();
+    const toCreate: NewBook[] = [];
+    const creating = new Set<string>(); // a book named twice is created once
+    for (const [i, item] of fresh.entries()) {
+      const k = bookKey(item.title, item.author);
+      const id = exact.get(i);
+      if (id) matched.add(id);
+      else if (!creating.has(k)) {
+        creating.add(k);
+        toCreate.push(item);
+      }
+    }
+
+    const created: string[] = [];
+    if (toCreate.length) {
+      const authorIds = [...new Set(toCreate.map((b) => slug(b.author)))];
+      const knownAuthors = new Set((await tx.select({ id: authors.id }).from(authors)
+        .where(inArray(authors.id, authorIds))).map((r) => r.id));
+      const newAuthors = new Map<string, string>();
+      for (const b of toCreate) {
+        const id = slug(b.author);
+        if (!knownAuthors.has(id) && !newAuthors.has(id)) newAuthors.set(id, b.author);
+      }
+      if (newAuthors.size) {
+        await tx.insert(authors).values([...newAuthors].map(([id, name]) => ({ id, name }))).onConflictDoNothing();
+      }
+
+      const seriesIds = [...new Set(toCreate.flatMap((b) => (b.series ? [slug(b.series)] : [])))];
+      const knownSeries = new Set(seriesIds.length === 0 ? [] : (await tx.select({ id: bookSeries.id })
+        .from(bookSeries).where(inArray(bookSeries.id, seriesIds))).map((r) => r.id));
+      const newSeries = new Map<string, typeof bookSeries.$inferInsert>();
+      for (const b of toCreate) {
+        if (!b.series) continue;
+        const id = slug(b.series);
+        if (!knownSeries.has(id) && !newSeries.has(id)) newSeries.set(id, { id, name: b.series, authorId: slug(b.author) });
+      }
+      if (newSeries.size) await tx.insert(bookSeries).values([...newSeries.values()]).onConflictDoNothing();
+
+      const bases = [...new Set(toCreate.map((b) => bookId(b.title, b.author)))];
+      const taken = new Set((await tx.select({ id: books.id }).from(books)
+        .where(or(...bases.map((b) => or(eq(books.id, b), like(books.id, `${b}-x%`)))))).map((r) => r.id));
+      const rows = toCreate.map((b) => {
+        const id = bookId(b.title, b.author, taken);
+        taken.add(id);
+        created.push(id);
+        return {
+          id, title: b.title, authorId: slug(b.author),
+          seriesId: b.series ? slug(b.series) : null, seriesPosition: b.series ? b.position : null,
+        };
+      });
+      await tx.insert(books).values(rows);
+    }
+
+    const named = [...new Set([...uses, ...matched, ...created])];
+    const added = named.length === 0 ? [] : (await tx.insert(bookStatus)
+      .values(named.map((bookId) => ({ userId, bookId, status: "to_read" })))
+      .onConflictDoNothing()
+      .returning({ bookId: bookStatus.bookId })).map((r) => r.bookId);
+    return { ok: true, created, matched: [...matched], added } as const;
   });
 }

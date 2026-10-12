@@ -258,6 +258,17 @@ class SlugParity(unittest.TestCase):
                 self.assertEqual(ex.clean(c["typed"]), c["label"])
                 self.assertEqual(ex.issue_slug(c["label"]), c["id"])
 
+    def test_book_ids_match_the_shared_fixture(self):
+        """Task 1.4: a book pasted in the app and the same book loaded by extract
+        get one id; a slug another book holds gets `-x`, on both sides."""
+        path = Path(__file__).parent.parent / "test" / "fixtures" / "book-ids.json"
+        cases = json.loads(path.read_text(encoding="utf-8"))["cases"]
+        self.assertTrue(any(c["id"].endswith("-x") for c in cases))
+        idx = ex.BookIndex()
+        for c in cases:
+            with self.subTest(title=c["title"]):
+                self.assertEqual(idx.upsert(c["title"], c["author"]), c["id"])
+
 
 class OrphanedSidecarRows(WorkbookCase):
     def test_sidecar_rows_for_labels_gone_from_the_sheet_are_reported_not_used(self):
