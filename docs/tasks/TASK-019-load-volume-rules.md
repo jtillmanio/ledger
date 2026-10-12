@@ -27,7 +27,7 @@ The approved volume rules (which year a bare series name means) are in the datab
 - No schema change. Labels are already normalised by extract.
 - Decisions: D-16, D-18 (load first, then run in parallel; no load after Step 14). Standing rule 4: a new seed file, other outputs unchanged. Re-run against both workbooks and diff. psql `\copy` paths need forward slashes on Windows (CLAUDE.md).
 - `depends_on` TASK-018 records the sitting's build order. The switch also needs TASK-004 and TASK-005, which come earlier in the chain.
-- *From TASK-005 (1.3c, task/1.3c-bulk-entry-review-insert):* The *Always use 2004* switch goes on the ambiguous-volume row: `ReviewTable` draws a row's decision groups in order, so the switch follows the *Volume year* group (`src/lib/bulk-review.ts`, `decide`, the `ambiguous_volume` branch). The insert is `insertIssuesIntoRun(runId, after, labels, { within })` in `src/db/writes.ts`: write the staged volume rule inside `within` and it stands or falls with the insert (`test/bulk-insert.test.ts`, *a throw inside `within` … rolls the whole insert back*).
+- *From TASK-005 (1.3c, PR #74):* The *Always use 2004* switch goes on the ambiguous-volume row: `ReviewTable` draws a row's decision groups in order, so the switch follows the *Volume year* group (`src/lib/bulk-review.ts`, `decide`, the `ambiguous_volume` branch). The insert is `insertIssuesIntoRun(runId, after, labels, { within })` in `src/db/writes.ts`: write the staged volume rule inside `within` and it stands or falls with the insert (`test/bulk-insert.test.ts`, *a throw inside `within` … rolls the whole insert back*).
 
 ## Acceptance criteria
 
