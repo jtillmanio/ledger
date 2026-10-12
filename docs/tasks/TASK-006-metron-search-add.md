@@ -1,7 +1,7 @@
 ---
 id: TASK-006
 title: 1.3b Add issues from a Metron search
-status: In progress
+status: Review
 depends_on: [TASK-005]
 size: L
 model: opus
@@ -32,12 +32,12 @@ Issues can be added to a run by searching (`thor 337-340`). Results come from yo
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): with a recorded Metron fixture: a search for `thor 337-340` returns 4 results in order; adding them creates 4 `issues` rows carrying `metron_id` and `cover_date_source = 'metron'`, plus 4 placements; re-searching shows all 4 as "already in this run"; an issue already in another run is reused, not duplicated. A Metron failure renders the freeform fallback and writes nothing. No page render calls Metron (assert through a mocked client that counts calls). A mocked 429 with `Retry-After: 40` renders the rate-limited status line with the countdown and a working *Type it instead*, and makes no second request before it elapses.
-- [ ] AC-2: Search runs on submit, never per keystroke: typing ten characters without submitting makes zero client calls. Matches from your catalog are listed before Metron results. A catalog hit shows *in N runs* with N equal to its live placements, and adding it creates only a placement. Search is the default tab of Add issues, and *Type it* is the other half of the segmented control.
-- [ ] AC-3: A Metron result's label is normalised through TASK-004's parser before it is staged. A result whose normalised label parses as *unparseable* is staged with that flag, never inserted silently. Every staged row goes through TASK-005's review table and its one-transaction insert, *Insert after* included.
-- [ ] AC-4: The loading, rate-limited and error states each render as a `role="status"` line. Rate-limited is amber, with a mono countdown that reaches 0 and then re-enables search. Error is a neutral line with a grey `×`, and no element in it resolves to `--danger`. *Type it instead* switches to the *Type it* tab with the query in the textarea.
-- [ ] AC-5 (D-53): a second identical search within 7 days makes no Metron call and is served from `metron_cache`. One older than 7 days calls Metron and refreshes `fetched_at`. With 20 rows fetched in the last 60 seconds, a new uncached search makes no Metron call and shows the rate-limited state, counting down to when the oldest of those rows turns 60 seconds old. `metron_cache` is in `NOT_EXPORTED`, and `test/export-tables.test.ts` passes.
-- [ ] AC-6: The Add issues *Search* screen meets the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): empty (no search yet), loading, rate-limited and error states drawn; result covers carry alt text or are marked decorative beside a text label; **Add** and **Add N** are real buttons at least 24px; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-1 (roadmap **Check:**, verbatim): with a recorded Metron fixture: a search for `thor 337-340` returns 4 results in order; adding them creates 4 `issues` rows carrying `metron_id` and `cover_date_source = 'metron'`, plus 4 placements; re-searching shows all 4 as "already in this run"; an issue already in another run is reused, not duplicated. A Metron failure renders the freeform fallback and writes nothing. No page render calls Metron (assert through a mocked client that counts calls). A mocked 429 with `Retry-After: 40` renders the rate-limited status line with the countdown and a working *Type it instead*, and makes no second request before it elapses.
+- [x] AC-2: Search runs on submit, never per keystroke: typing ten characters without submitting makes zero client calls. Matches from your catalog are listed before Metron results. A catalog hit shows *in N runs* with N equal to its live placements, and adding it creates only a placement. Search is the default tab of Add issues, and *Type it* is the other half of the segmented control.
+- [x] AC-3: A Metron result's label is normalised through TASK-004's parser before it is staged. A result whose normalised label parses as *unparseable* is staged with that flag, never inserted silently. Every staged row goes through TASK-005's review table and its one-transaction insert, *Insert after* included.
+- [x] AC-4: The loading, rate-limited and error states each render as a `role="status"` line. Rate-limited is amber, with a mono countdown that reaches 0 and then re-enables search. Error is a neutral line with a grey `×`, and no element in it resolves to `--danger`. *Type it instead* switches to the *Type it* tab with the query in the textarea.
+- [x] AC-5 (D-53): a second identical search within 7 days makes no Metron call and is served from `metron_cache`. One older than 7 days calls Metron and refreshes `fetched_at`. With 20 rows fetched in the last 60 seconds, a new uncached search makes no Metron call and shows the rate-limited state, counting down to when the oldest of those rows turns 60 seconds old. `metron_cache` is in `NOT_EXPORTED`, and `test/export-tables.test.ts` passes.
+- [x] AC-6: The Add issues *Search* screen meets the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): empty (no search yet), loading, rate-limited and error states drawn; result covers carry alt text or are marked decorative beside a text label; **Add** and **Add N** are real buttons at least 24px; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -67,12 +67,14 @@ Issues can be added to a run by searching (`thor 337-340`). Results come from yo
 
 ## Follow-ups
 
-- Owner action: `METRON_API_TOKEN` (or `METRON_USERNAME` and `METRON_PASSWORD`) set in Vercel preview and production before the preview can search (approved at plan)
-- The mockup's credits line on result rows isn't built (credits from search results are Out of scope) → not tracked: the task's Out of scope covers it (enrichment, 4.1); listed under *Not shown* in `design/mockups-index.md`
-- The TMDB error line in the watch add mockup also draws `⚠`, where the UX floor says a grey `×`
-- Schema review R1 (minor, accepted): the pace count is read before the requests, not reserved, so two simultaneous searches can pass 20 by a few; Metron's 429 and the hold row catch it (comment in `src/lib/metron.ts`)
-- Schema review R1 (minor): `metron_cache` is never pruned; one row per distinct search request
-- Spec review R1 (non-blocking): the insert trusts the browser's pairing of a label with a Metron id; the facts come from the cache, so a mispaired id gives a label another issue's cover
+- Owner action: `METRON_API_TOKEN` (or `METRON_USERNAME` and `METRON_PASSWORD`) set in Vercel preview and production before the preview can search (approved at plan) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- The mockup's credits line on result rows isn't built (credits from search results are Out of scope) → design/mockups-index.md § Not shown, and why (fixed in this PR, item 14)
+- The TMDB error frame in `design/mockups.html` also draws `⚠`, where the UX floor says a grey `×`; it belongs to the watch add flow → docs/TASKS.md § 8.2
+- Candidate decision: how Add issues searches Metron (one request per number, at most 10; results filtered by `name_key`; annuals keep their series; *id taken* answers D-59's question) → docs/review/decisions.md § D-60 (approved at close-out)
+- Schema review R1 (minor): the pace count is read before the requests, not reserved, so two simultaneous searches can pass 20 by a few → not tracked: within D-53, which names Metron's 429 as the real guard; the hold row catches it, and `src/lib/metron.ts` says so
+- Schema review R1 (minor): `metron_cache` is never pruned, one row per distinct search request → not tracked: a single reader's searches; D-53 sets expiry, not pruning, and the table rebuilds from Metron if dropped
+- Spec review R1 (non-blocking): the insert trusts the browser's pairing of a label with a Metron id; the facts come from the cache, so a mispaired id gives a label another issue's cover → not tracked: one reader, behind the passcode; nothing reaches the catalog unless Metron answered with that id
+- ui-verifier's walk left development-database residue the undo keeps by design (one `issues` row, two soft-deleted placements in `leekirby-thor`, cache rows) → not tracked: owner said leave them; the next rebuild clears development
 
 ## Plan
 
@@ -106,7 +108,7 @@ Approved by the owner, 2026-10-12. Answers at the gate: the API error is a grey 
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | Audit R1 PASS | Spec R1 CHANGES (AC-1 UNTESTED: rate-limited *Type it instead*; D-55 annual rewrite; mockup redraw; follow-up destination; plan file list) → R2 CHANGES (NULL sort key in the 100-row cut) → R3 APPROVE (owner-approved confirm round) | Schema R1 APPROVE (4 minor) → R2 CHANGES (same NULL sort key) → R3 APPROVE | UI R1 PASS (3 notes: auto-retry intended; unknown-series row read *unverified*, fixed; loose series matching, plan revision 2) | Verify re-run green after each round (376, then 379 tests)
 
 ## Blocked
 
@@ -114,7 +116,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1 (re-run green after each review round)
+- Review rounds: 3 (the third an owner-approved confirm of two fixes)
+- First-pass AC FAILs: 1 (AC-1 UNTESTED: the rate-limited line's *Type it instead*)
+- Plan revisions after approval: 2 (1: `.env.example` and the mockup files; 2: Metron results filtered to the typed series)

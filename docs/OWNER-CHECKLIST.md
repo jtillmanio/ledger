@@ -71,6 +71,12 @@ Things only you can do that a PR left behind: secrets, dashboard and hosting
 settings, production data. Claude adds each with where it came from; only you
 tick them.
 
+- [ ] Set `METRON_API_TOKEN` (or `METRON_USERNAME` and `METRON_PASSWORD`, as
+      in `.env.example`) in Vercel for Preview and Production. Without them Add
+      issues' Search answers from your catalog only and says *Metron isn't set up
+      here*. Needed before the 1.3b preview can search Metron (from TASK-006,
+      task/1.3b-metron-search-add).
+
 ## Approvals from follow-ups
 
 Planning-doc edits and candidate decisions waiting for your yes
