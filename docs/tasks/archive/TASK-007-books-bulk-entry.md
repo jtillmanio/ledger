@@ -1,7 +1,7 @@
 ---
 id: TASK-007
 title: 1.4 Books bulk entry
-status: Review
+status: Done
 depends_on: [TASK-006]
 size: M
 model: sonnet
