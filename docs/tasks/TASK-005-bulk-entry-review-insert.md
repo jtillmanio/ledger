@@ -1,14 +1,14 @@
 ---
 id: TASK-005
 title: 1.3c Bulk issue entry — review table and insert
-status: Ready
+status: In progress
 depends_on: [TASK-004]
 size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: a5a96c6
 ---
 
 # TASK-005 — 1.3c Bulk issue entry — review table and insert
@@ -68,7 +68,42 @@ Pasted issue labels can be checked line by line, with each one accepted, fixed o
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner, 2026-10-12.
+
+**Steps**
+
+1. Parser (`src/lib/bulk-parse.ts`): `BulkLine.yearFilled` says the volume year came from the series' one known year; `normalizeLine` puts fraction glyphs back the way extract's `clean()` does (`#1⁄2` → `#½`), so a typed fraction gets extract's label and id.
+2. Id builder: `src/lib/issue-slug.ts` (new), the TS twin of `etl/extract.py` `issue_slug()`. `test/fixtures/issue-slugs.json` (new, includes a fraction) is asserted by both vitest and `etl/test_extract.py`, so the twins cannot drift.
+3. Review logic: `src/lib/bulk-review.ts` (new, pure): parsed lines + per-line decisions + catalog matches → review rows (glyph, line, why, check, options), the real count, the lines still needing a choice, and the labels to write. A label repeated inside the paste counts once.
+4. Queries (`src/db/queries.ts`): known series and volume years from issue labels; the run's add context (title, every placement with label, sequence and whether removed); catalog matches for labels (issue id, live runs it is in); the run list for the chip.
+5. Writes (`src/db/writes.ts`): `insertIssuesIntoRun(runId, after, labels, { within })` in one transaction — reuse an issue by label or create it with the extract id (`-2` on a slug collision, as extract does), restore a soft-deleted placement (same id), skip one already live, shift later placements (deleted too) once, place the batch after `after`. `within` lets 1.12's staged volume rule join the transaction. `undoInsert` soft-deletes the created placements, re-hides the restored ones at their old sequence, and returns every other placement to its old sequence; it refuses, changing nothing, if the run moved in between.
+6. Route `src/app/api/runs/[runId]/issues/route.ts` (new): GET the add context (only on *Change*, never on load), POST `dryRun` for catalog matches, POST to insert, DELETE to undo.
+7. Screen: `src/app/comics/[runId]/add/page.tsx` + `loading.tsx` (new); `src/components/AddIssues.tsx` (new, the client screen), `ReviewTable.tsx`, `InsertPreview.tsx`, `RunChip.tsx` (new); styles in `src/app/globals.css`; an *Add issues* link in the run detail's actions (`src/components/IssueRow.tsx`).
+
+**Files outside "Files likely touched"**: `src/lib/issue-slug.ts`, `src/lib/bulk-review.ts`, `src/components/AddIssues.tsx`, `src/app/comics/[runId]/add/loading.tsx`, `src/components/IssueRow.tsx`, `src/lib/bulk-parse.ts` + `test/bulk-parse.test.ts`, `test/fixtures/issue-slugs.json`. More than 8 files; `never-split`, so the task stays whole and attended. No schema change.
+
+**Owner's answers at the gate**
+
+1. Every review row has a radiogroup (AC-3): ✓ rows get *Add · Drop*, Add checked.
+2. The *Search · Type it* control is drawn; the page opens on *Type it*, and Search is `aria-disabled` with the reason *Metron search is coming*. 1.3b enables it and makes it the default.
+3. A volume year the series has never used keeps its ✓ (owner, 2026-10-11); its check reads *new volume* and its why *No Captain America (1969) in your catalog yet*. Metron confirmation is 1.3b's.
+4. The count includes restored placements: a restore is one of the *N will be added*.
+5. Undo returns every other placement to its old sequence, so undone new placements are soft-deleted past the end of the run.
+
+**Test strategy**
+
+- AC-1, AC-2, AC-5: `test/bulk-insert.test.ts` (TEST_DATABASE_URL) — 24 lines into an empty run in order; an existing label adds a placement and no `issues` row; the fixture paste counts 10 − 1 = 9; *Insert after #336* renumbers later placements, progress untouched; a removed placement is restored (same id, progress intact, nothing inserted); a dry run and decisions write nothing; a temporary CHECK constraint failing the third row leaves both tables as they were; slug parity on the shared fixture; undo.
+- AC-3, AC-4: `test/review-table.test.tsx` (happy-dom) — glyphs, whys, radiogroups, `aria-invalid`, header and button counts, `aria-disabled` confirm with its reason, preview three above and three below with the new rows highlighted, default end of run, the chip and *Change* re-running the review (fetch mocked).
+- AC-6: ui-verifier screenshots at every `ui.viewports` width, light and dark; empty, checking and error states.
+
+**Risks**: `history.replaceState` on *Change* under Next 16; the known-series payload on the page; a stale tab between review and confirm (the insert re-checks and skips what is already live, and says so).
+
+## Follow-ups
+
+- The app-wide *Add* (sidebar, rail) remembers the last run added to (FEATURES 2c *Remember the last run*); here the chip's *Change* covers consecutive adds. → TASK-014 Context (approved at plan)
+- Search becomes the default half; the Check column fills from Metron, *new volume* included. → TASK-006 Context (approved at plan)
+- The ambiguous-volume row's reserved switch slot and the insert's `within` transaction hook. → TASK-019 Context (approved at plan)
+- Candidate decision: the app mints a new issue id exactly as extract does (`issue_slug`, `-N` on collision), held to it by one fixture both test suites check. → decisions log (approved at plan)
 
 ## Review log
 

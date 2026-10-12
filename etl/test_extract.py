@@ -4,6 +4,7 @@
 """
 
 import csv
+import json
 import sys
 import tempfile
 import unittest
@@ -241,6 +242,21 @@ class FractionIssueNumbers(WorkbookCase):
         self.assertEqual(ex.clean("Wizard #¾"), "Wizard #¾")
         self.assertEqual(ex.clean("X #1/2"), "X #1/2")          # ASCII is a label_review matter
         self.assertNotEqual(ex.issue_slug("Wizard #¾"), ex.issue_slug("Wizard #34"))
+
+
+class SlugParity(unittest.TestCase):
+    """Task 1.3c: the app mints an issue's id with a TypeScript twin of
+    issue_slug (src/lib/issue-slug.ts). Both sides check this one fixture, so a
+    label added in the app and the same label loaded by extract are one issue."""
+
+    def test_clean_and_issue_slug_match_the_shared_fixture(self):
+        path = Path(__file__).parent.parent / "test" / "fixtures" / "issue-slugs.json"
+        cases = json.loads(path.read_text(encoding="utf-8"))["cases"]
+        self.assertTrue(any("½" in c["label"] for c in cases))
+        for c in cases:
+            with self.subTest(typed=c["typed"]):
+                self.assertEqual(ex.clean(c["typed"]), c["label"])
+                self.assertEqual(ex.issue_slug(c["label"]), c["id"])
 
 
 class OrphanedSidecarRows(WorkbookCase):

@@ -1,0 +1,85 @@
+{
+  "$comment": "Task 1.3c (AC-2): one label, one id, in the app and in extract. etl/test_extract.py asserts clean(typed) == label and issue_slug(label) == id; test/bulk-insert.test.ts asserts the TS twins give the same. Add a case to both by adding it here.",
+  "cases": [
+    {
+      "typed": "Fantastic Four (1961) #570",
+      "label": "Fantastic Four (1961) #570",
+      "id": "fantastic-four-1961-570"
+    },
+    {
+      "typed": "Thor (1966) Annual #13",
+      "label": "Thor (1966) Annual #13",
+      "id": "thor-1966-annual-13"
+    },
+    {
+      "typed": "Fantastic Four Annual (1963) #19",
+      "label": "Fantastic Four Annual (1963) #19",
+      "id": "fantastic-four-annual-1963-19"
+    },
+    {
+      "typed": "Ultimate Spider-Man (2000) #1⁄2",
+      "label": "Ultimate Spider-Man (2000) #½",
+      "id": "ultimate-spider-man-2000-1-2"
+    },
+    {
+      "typed": "Avengers (1998) #1½",
+      "label": "Avengers (1998) #1½",
+      "id": "avengers-1998-11-2"
+    },
+    {
+      "typed": "Avengers (1998) #11⁄2",
+      "label": "Avengers (1998) #1½",
+      "id": "avengers-1998-11-2"
+    },
+    {
+      "typed": "Wizard (1991) #¾",
+      "label": "Wizard (1991) #¾",
+      "id": "wizard-1991-3-4"
+    },
+    {
+      "typed": "Deadpool (1997) #-1",
+      "label": "Deadpool (1997) #-1",
+      "id": "deadpool-1997-minus-1"
+    },
+    {
+      "typed": "Iron Man (1968) #128.1",
+      "label": "Iron Man (1968) #128.1",
+      "id": "iron-man-1968-128-1"
+    },
+    {
+      "typed": "X-Men: Gold (2017) #1",
+      "label": "X-Men: Gold (2017) #1",
+      "id": "x-men-gold-2017-1"
+    },
+    {
+      "typed": "Dark Reign: The Cabal",
+      "label": "Dark Reign: The Cabal",
+      "id": "dark-reign-the-cabal"
+    },
+    {
+      "typed": "Astonishing Tales #1 (Mojoworld)",
+      "label": "Astonishing Tales #1 (Mojoworld)",
+      "id": "astonishing-tales-1-mojoworld"
+    },
+    {
+      "typed": "  Les  Misérables — Cosette #2 ",
+      "label": "Les Misérables - Cosette #2",
+      "id": "les-miserables-cosette-2"
+    },
+    {
+      "typed": "Marvel Comics Presents (1988) #1½",
+      "label": "Marvel Comics Presents (1988) #1½",
+      "id": "marvel-comics-presents-1988-11-2"
+    },
+    {
+      "typed": "The Amazing Spider-Man (1963) #-1 – Flashback",
+      "label": "The Amazing Spider-Man (1963) #-1 - Flashback",
+      "id": "the-amazing-spider-man-1963-minus-1-flashback"
+    },
+    {
+      "typed": "A Very Long Series Title That Goes On And On And On And On And On And On And On And On And On And On And On And On (2020) #1",
+      "label": "A Very Long Series Title That Goes On And On And On And On And On And On And On And On And On And On And On And On (2020) #1",
+      "id": "a-very-long-series-title-that-goes-on-and-on-and-on-and-on-and-on-and-on-and-on-and-on-and-on-and-on-and-on-and-on-2020-"
+    }
+  ]
+}

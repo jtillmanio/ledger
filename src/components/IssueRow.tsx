@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useOptimistic, useRef, useState, useSyncExternalStore, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Menu from "@/components/Menu";
 import NextStrip from "@/components/NextStrip";
@@ -292,6 +293,10 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
               {`Adopt ${adoptable.length} prior ${adoptable.length === 1 ? "read" : "reads"}`}
             </button>
           )}
+          {/* No prefetch: the add screen's queries wait for the tap (task 1.3c). */}
+          <Link prefetch={false} className="btn sec sm" href={`/comics/${encodeURIComponent(runId)}/add`}>
+            Add issues
+          </Link>
           <Menu label="More: copy unread, copy all, copy as ranges" className="btn sec sm more" items={copyItems}>
             <span aria-hidden="true">⋯</span>
           </Menu>

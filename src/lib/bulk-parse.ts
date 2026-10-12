@@ -51,13 +51,29 @@ export type BulkLine = {
   kind: "ok" | "choice" | "error";
   title: string | null;
   year: number | null;
+  /** The input left the year out and the series has one known year, so it was filled in. */
+  yearFilled: boolean;
   rows: BulkRow[];
   flags: BulkFlag[];
 };
 
-/** NFKC, trim, collapse internal whitespace, en and em dash to a hyphen. */
+// NFKC spells `½` as `1⁄2` (with the fraction slash), so `#1½` would read as
+// eleven halves. extract's clean() puts the glyph back, and so does this (D-24a).
+const FRACTION_RE = /(?:1⁄2|1⁄4|3⁄4)(?![0-9])/g;
+export const FRACTION_GLYPHS: Record<string, string> = { "1⁄2": "½", "1⁄4": "¼", "3⁄4": "¾" };
+
+/** extract's FRACTION_RE substitution: `#1⁄2` → `#½`, `#11⁄2` → `#1½`. */
+export function restoreFractions(s: string): string {
+  return s.replace(FRACTION_RE, (m) => FRACTION_GLYPHS[m]);
+}
+
+/**
+ * NFKC, trim, collapse internal whitespace, en and em dash to a hyphen: extract's
+ * `clean()`, fraction glyphs included (`#1⁄2` is `#½`, D-24a), so a typed label
+ * is the label extract would load (task 1.3c).
+ */
 export function normalizeLine(s: string): string {
-  return s.normalize("NFKC").trim().replace(/\s+/g, " ").replace(/[–—]/g, "-");
+  return restoreFractions(s.normalize("NFKC")).trim().replace(/\s+/g, " ").replace(/[–—]/g, "-");
 }
 
 /** The label for one designator, in the catalog's form. */
@@ -135,15 +151,15 @@ function resolve(p: Parsed, known: Map<string, KnownSeries>, flags: BulkFlag[], 
   const series = known.get(key(p.title));
   if (!series) {
     flags.push({ type: "new_series", suggestions: suggestTitles(p.title, all) });
-    return { title: p.title, year: p.year };
+    return { title: p.title, year: p.year, yearFilled: false };
   }
-  if (p.year !== null) return { title: series.title, year: p.year };
+  if (p.year !== null) return { title: series.title, year: p.year, yearFilled: false };
   const years = [...new Set(series.years)].sort((a, b) => a - b);
   if (years.length > 1) {
     flags.push({ type: "ambiguous_volume", years });
-    return { title: series.title, year: null };
+    return { title: series.title, year: null, yearFilled: false };
   }
-  return { title: series.title, year: years[0] ?? null };
+  return { title: series.title, year: years[0] ?? null, yearFilled: years.length === 1 };
 }
 
 /** Parse one normalised line into its flags and rows. */
@@ -152,15 +168,15 @@ function parseOne(
   known: Map<string, KnownSeries>,
   all: KnownSeries[],
   inRun: Set<string>,
-): Pick<BulkLine, "title" | "year" | "rows" | "flags"> {
+): Pick<BulkLine, "title" | "year" | "yearFilled" | "rows" | "flags"> {
   const flags: BulkFlag[] = [];
   const parsed = matchGrammar(text, known);
   if (!parsed) {
     flags.push({ type: "unparseable", text, suggestion: missingHash(text, known, all) });
-    return { title: null, year: null, rows: [], flags };
+    return { title: null, year: null, yearFilled: false, rows: [], flags };
   }
 
-  const { title, year } = resolve(parsed, known, flags, all);
+  const { title, year, yearFilled } = resolve(parsed, known, flags, all);
 
   let designators = [parsed.designator];
   const range = /^(\d+)-(\d+)$/.exec(parsed.designator);
@@ -169,7 +185,7 @@ function parseOne(
     const to = Number(range[2]);
     if (to <= from || to - from + 1 > MAX_RANGE) {
       flags.push({ type: "bad_range", from, to });
-      return { title, year, rows: [], flags };
+      return { title, year, yearFilled, rows: [], flags };
     }
     designators = Array.from({ length: to - from + 1 }, (_, i) => String(from + i));
   }
@@ -180,7 +196,7 @@ function parseOne(
   });
   const dupes = rows.filter((r) => r.decision === "skip").map((r) => r.label);
   if (dupes.length) flags.push({ type: "duplicate", labels: dupes });
-  return { title, year, rows, flags };
+  return { title, year, yearFilled, rows, flags };
 }
 
 /** `Thor Annual 13` → `Thor (1966) Annual #13`: the label a missing `#` would make, if any. */
