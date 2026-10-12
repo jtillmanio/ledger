@@ -229,6 +229,10 @@ These hold everywhere, whatever you are touching.
 - If the spec is ambiguous or contradicts the code, ask. Never guess, never
   silently widen scope, never rewrite acceptance criteria.
 - Change files outside the plan's file list only after explaining why.
+- Work noticed and left out is a follow-up: it is written where the work that
+  will do it will read it (another task's Context, a `docs/TASKS.md` item, the
+  decisions log, an approved doc edit, `docs/OWNER-CHECKLIST.md`), per
+  `workflow.followUps`, and the PR lists where each went.
 - Done = test-runner green, test-auditor PASS, every applicable reviewer
   APPROVE, the ready gates passed, and the owner's manual check. Claude sets
   `Review`; only the owner's "accepted" sets `Done`. Done means merged and

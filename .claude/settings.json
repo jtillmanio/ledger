@@ -27,6 +27,9 @@
       "Bash(git switch *)",
       "Bash(gh workflow run *)",
       "Bash(gh run watch *)",
+      "Bash(gh pr list *)",
+      "Bash(gh pr view *)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/*)",
       "PowerShell(npx tsc --noEmit)",
       "PowerShell(npx tsc --noEmit *)",
       "PowerShell(npx eslint *)",
@@ -52,7 +55,10 @@
       "PowerShell(gh run view *)",
       "PowerShell(git switch *)",
       "PowerShell(gh workflow run *)",
-      "PowerShell(gh run watch *)"
+      "PowerShell(gh run watch *)",
+      "PowerShell(gh pr list *)",
+      "PowerShell(gh pr view *)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File .claude/scripts/*)"
     ],
     "deny": [
       "Bash(git push origin main)",

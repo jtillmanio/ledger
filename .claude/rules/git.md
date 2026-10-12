@@ -41,12 +41,21 @@ Dependabot's own branches (`dependabot/...`, `.github/dependabot.yml`) are the
 one exception to these names. Its PRs pass the same CI, and a merged bump is
 not live until Release runs.
 
-One task per branch, one branch per PR. A problem you notice that belongs to
-another task goes in the PR description as a follow-up, not in this diff.
-The one exception is archiving: with `workflow.archiveDone` on (the
-default), a task's close-out or accept commit, or a plans PR, also carries
-`git mv` renames of other Done task files into `docs/tasks/archive/`
-(`.claude/scripts/archive-done.ps1`). Never move them on `main`.
+One task per branch, one branch per PR. A problem that belongs to another
+task isn't fixed in this diff: it goes in the PR's Follow-ups, and is also
+tracked where the work that will do it will read it, per
+`workflow.followUps` (`.claude/skills/track-follow-ups/classify.md`). Two
+kinds of change to other files are allowed on a task branch:
+
+- **Follow-up placements**, in the close-out commit (or a plans PR): a note
+  in another task's Context, a `docs/TASKS.md` item, a decisions-log row, an
+  approved planning-doc edit, an Owner checklist item. Each traces to a
+  Follow-ups bullet; none changes another task's acceptance criteria or a
+  **Check:** line.
+- **Archiving**, with `workflow.archiveDone` on (the default): a task's
+  close-out or accept commit, or a plans PR, also carries `git mv` renames
+  of other Done task files into `docs/tasks/archive/`
+  (`.claude/scripts/archive-done.ps1`). Never move them on `main`.
 
 ## Staging
 
@@ -165,7 +174,8 @@ The PR body has these sections:
 - **How it was verified**: each suite and check from *Test on the branch*, run
   where (locally, CI, a workflow run on the branch with its link, the preview),
   and what it returned. Anything that could only be checked after merge, and why.
-- **Follow-ups**: anything noticed and deliberately left out.
+- **Follow-ups**: anything noticed and deliberately left out. Every bullet
+  ends `→ <path> § <section>` or `→ not tracked: <reason>`.
 
 End it with the attribution line the session gives you. Then watch CI with
 `gh pr checks <n> --watch` and fix a red check on the same branch with a new

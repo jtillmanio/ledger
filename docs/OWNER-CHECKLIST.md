@@ -65,6 +65,19 @@ blocked on it: 2.4, 2.6 and 2.9 assert relationships, not counts.
       cutover.* A passphrase of four or more words in `APP_PASSCODE` is still a
       Step 14 gate.
 
+## Actions from follow-ups
+
+Things only you can do that a PR left behind: secrets, dashboard and hosting
+settings, production data. Claude adds each with where it came from; only you
+tick them.
+
+## Approvals from follow-ups
+
+Planning-doc edits and candidate decisions waiting for your yes
+(`workflow.decisions` is `propose`). Tick one, or say "approve <item>" in a
+session, and that session or the next `/track-follow-ups` run makes the change
+and notes where it went.
+
 ---
 
 # Closure sweep, 2026-09-20
