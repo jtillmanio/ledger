@@ -105,7 +105,7 @@ Approved by the owner 2026-10-12, with every recommendation below.
 - Verify R1 PASS | Audit R1 PASS (AC-1–AC-4 proven; AC-5 component proven, screenshots by ui-verifier) | Schema R1 APPROVE (4 minor; 2 fixed: confirm matches in Postgres, position capped) | Spec R1 CHANGES (redraw entry, Follow-ups format) | UI R1 PASS (6 widths, light and dark; confirm never pressed on dev)
 - Verify R2 PASS (after the round-1 fixes) | Spec R2 APPROVE (round-1 findings resolved; follow-ups check clean)
 - Ready gates: CI PASS; Vercel preview PASS at `dfefc67` (its status arrived late; an empty retrigger commit was skipped by the ignore step, finding 0.12); Lighthouse PASS within budget
-- Owner feedback on PR #76 → plan revision 1 (Add goes to To read with a toast) | Verify R3 and Spec R3: see below
+- Owner feedback on PR #76 → plan revision 1 (Add goes to To read with a toast) | Verify R3 PASS (421 vitest) | Spec R3 APPROVE
 
 ## Blocked
 
@@ -113,7 +113,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds: 2 (both green; R2 re-ran after review fixes)
-- Review rounds: 2
+- Verify rounds: 3 (all green; R2 after the review fixes, R3 after plan revision 1)
+- Review rounds: 3 (the third a confirm of plan revision 1)
 - First-pass AC FAILs: 0
 - Plan revisions after approval: 1 (owner, on PR #76: Add goes to To read)
