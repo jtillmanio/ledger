@@ -394,6 +394,8 @@ export async function catalogMatches(labels: string[]) {
 export type CatalogHit = {
   key: string; issue_id: string; label: string; metron_id: number | null;
   cover_date: string | null; cover_url: string | null; runs: number; in_this_run: boolean;
+  /** The live runs placing it, by title: *in 1 run · Thor Tales*. */
+  run_titles: string[];
 };
 
 /**
@@ -401,13 +403,15 @@ export type CatalogHit = {
  * Metron's. A row matches by series title (case-insensitive), volume year when
  * the query names one, and number when it names any; or because it is one of
  * the comics Metron answered with, by Metron id or by label. Each carries how
- * many live runs place it and whether this run does.
+ * many live runs place it, which, and whether this run does. A broad search is
+ * cut at 100 rows, Metron's matches kept first, so none is listed as only Metron's.
  */
 export async function catalogSearch(
   runId: string,
   { title, year, numbers }: { title: string; year: number | null; numbers: string[] },
   also: { metronIds: number[]; labels: string[] },
 ) {
+  const labels = also.labels.map((l) => l.toLowerCase());
   return sql<CatalogHit[]>`
     WITH hit AS (
       SELECT i.id, i.label, i.metron_id, i.cover_date, i.cover_url,
@@ -420,13 +424,15 @@ export async function catalogSearch(
           AND (${year}::int IS NULL OR i.label ~ (' [(]' || ${year}::int || '[)] #[^#]+$'))
           AND (cardinality(${numbers}::text[]) = 0 OR substring(i.label from '#([^#]+)$') = ANY(${numbers}::text[])))
         OR i.metron_id = ANY(${also.metronIds}::int[])
-        OR lower(i.label) = ANY(${also.labels.map((l) => l.toLowerCase())}::text[]))
+        OR lower(i.label) = ANY(${labels}::text[]))
+      ORDER BY (i.metron_id = ANY(${also.metronIds}::int[]) OR lower(i.label) = ANY(${labels}::text[])) DESC, i.label
       LIMIT 100
     )
     SELECT lower(h.label) AS key, h.id AS issue_id, h.label, h.metron_id,
            h.cover_date::text AS cover_date, h.cover_url,
            COUNT(DISTINCT r.id)::int AS runs,
-           COALESCE(bool_or(r.id = ${runId}), false) AS in_this_run
+           COALESCE(bool_or(r.id = ${runId}), false) AS in_this_run,
+           COALESCE(array_agg(DISTINCT r.title ORDER BY r.title) FILTER (WHERE r.id IS NOT NULL), '{}') AS run_titles
     FROM hit h
     LEFT JOIN run_issues ri ON ri.issue_id = h.id AND ri.deleted_at IS NULL
     LEFT JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL AND NOT r.placeholder
@@ -441,6 +447,13 @@ export async function takenIds(ids: string[]) {
   if (ids.length === 0) return new Set<string>();
   const rows = await sql<{ id: string }[]>`SELECT id FROM issues WHERE id = ANY(${ids}::text[])`;
   return new Set(rows.map((r) => r.id));
+}
+
+/** A real calendar date as `YYYY-MM-DD`: a `1983-02-30` from Metron would fail the insert. */
+function isDate(s: string | null): s is string {
+  if (!s || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
 }
 
 /**
@@ -458,7 +471,7 @@ export async function metronFacts(metronIds: number[]) {
       AND (e->>'id')::int = ANY(${metronIds}::int[])
     ORDER BY (e->>'id')::int, c.fetched_at DESC`;
   return new Map(rows.map((r) => [r.id, {
-    coverDate: /^\d{4}-\d{2}-\d{2}$/.test(r.cover_date ?? "") ? r.cover_date : null,
+    coverDate: isDate(r.cover_date) ? r.cover_date : null,
     coverUrl: r.image || null,
   }]));
 }

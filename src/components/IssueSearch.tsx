@@ -16,7 +16,9 @@ export type IssueSearchHandle = {
   rerun: () => void;
 };
 
-const runCount = (n: number) => `in ${n} ${n === 1 ? "run" : "runs"}`;
+/** `in 1 run · Thor Tales`, as the mockup has it; `in 3 runs` past one. */
+const runCount = (n: number, titles: string[]) =>
+  n === 1 && titles[0] ? `in 1 run · ${titles[0]}` : `in ${n} ${n === 1 ? "run" : "runs"}`;
 
 /**
  * Add issues, the *Search* half (task 1.3b). A search runs when it is
@@ -204,7 +206,7 @@ function Results({ title, more, rows, staged, onToggle }: {
                 <span className="rh"><span className="rt">{r.label}</span>{when && <span className="rm mono">{when}</span>}</span>
                 <div className="res-tags">
                   {r.inThisRun ? <span className="tag">already in this run</span>
-                    : r.issueId !== null ? <span className="tag">{runCount(r.runs)}</span> : null}
+                    : r.issueId !== null ? <span className="tag">{runCount(r.runs, r.runTitles)}</span> : null}
                   {r.unparseable && <span className="tag">not in the label grammar</span>}
                   {r.idTaken && <span className="tag">id taken</span>}
                 </div>

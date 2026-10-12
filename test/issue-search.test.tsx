@@ -27,7 +27,7 @@ const thorRun = (): AddContext => ({
 const result = (n: number, over: Partial<SearchResult> = {}): SearchResult => ({
   key: thor(n).toLowerCase(), label: thor(n), issueId: null, metronId: 14525 + n - 337,
   coverDate: "1983-11-01", coverUrl: `https://static.metron.cloud/media/issue/2020/06/27/thor-v1-${n}.jpg`,
-  runs: 0, inThisRun: false, unparseable: false, idTaken: false, ...over,
+  runs: 0, runTitles: [], inThisRun: false, unparseable: false, idTaken: false, ...over,
 });
 const OK: SearchAnswer = {
   query: "thor 336-340", status: "ok",
@@ -159,6 +159,15 @@ describe("results (AC-2, AC-3, AC-6)", () => {
     expect(metron.querySelector(".rm")!.textContent).toBe("Nov 1983");
   });
 
+  it("a catalog row in one run names it, as the mockup does", async () => {
+    answer = async () => Response.json({ ...OK, metron: [], catalog: [
+      result(1, { label: "Balder the Brave (1985) #1", key: "balder the brave (1985) #1", issueId: "bb-1", runs: 1, runTitles: ["Thor Tales"] }),
+    ] });
+    render();
+    await submit("balder the brave 1");
+    expect(groups()[0].querySelector(".tag")!.textContent).toBe("in 1 run · Thor Tales");
+  });
+
   it("covers are decorative beside a text label; Add is a real, named button", async () => {
     render();
     await submit("thor 336-340");
@@ -233,6 +242,20 @@ describe("the API states (AC-4, AC-6)", () => {
     await act(async () => release());
     await flush();
     expect(status().textContent).toBe("");
+  });
+
+  it("rate-limited by Retry-After: 40 reads 40s, and its Type it instead carries the query to Type it", async () => {
+    answer = async () => Response.json({ ...OK, status: "rate_limited", retryIn: 40, metron: [] });
+    render();
+    await submit("thor 336-340");
+    const line = status().querySelector(".statusline.wait")!;
+    expect(line.textContent).toContain("Metron is busy. Retrying in 40s.");
+    expect(line.querySelector("b.mono")!.textContent).toBe("40s");
+    const typeIt = [...line.querySelectorAll("button")].find((b) => b.textContent === "Type it instead")!;
+    await act(async () => typeIt.click());
+    expect(segButton("Type it").getAttribute("aria-pressed")).toBe("true");
+    expect(container.querySelector("textarea")!.value).toBe("thor 336-340");
+    expect(searches()).toHaveLength(1);
   });
 
   it("rate-limited: amber, a mono countdown to 0, Type it instead, then search works again and retries once", async () => {

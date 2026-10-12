@@ -63,6 +63,8 @@ export type SearchResult = {
   coverUrl: string | null;
   /** Live runs placing it; 0 for a comic only Metron has. */
   runs: number;
+  /** Their titles: *in 1 run · Thor Tales*. */
+  runTitles: string[];
   inThisRun: boolean;
   /** Metron's label fell outside the grammar: staged with that flag, never inserted silently (AC-3). */
   unparseable: boolean;
@@ -71,20 +73,16 @@ export type SearchResult = {
 };
 
 /**
- * Metron writes an annual `Thor Annual (1966) #13`; the catalog writes
- * `Thor (1966) Annual #13` (D-55).
- */
-function ledgerForm(label: string): string {
-  return label.replace(/^(.+) Annual \((\d{4})\) #(\S+)$/, "$1 ($2) Annual #$3");
-}
-
-/**
  * Metron's label in the bulk-entry grammar (ARCHITECTURE 2.15): normalised as a
  * typed line is, and spelled with the catalog's series title when the parser
  * knows it. A label the grammar can't read comes back as Metron wrote it, flagged.
+ *
+ * An annual stays as Metron writes it, `Thor Annual (1966) #13`: its own series,
+ * which is how every annual in the catalog is labelled, and D-55 lets the known
+ * series win. Rewriting it as an annual of `Thor` would add a second copy.
  */
 export function normalizeMetronLabel(issue: string, knownSeries: KnownSeries[]): { label: string; unparseable: boolean } {
-  const text = ledgerForm(normalizeLine(issue));
+  const text = normalizeLine(issue);
   const [line] = parseBulk(text, { knownSeries, runLabels: [] });
   if (!line || line.flags.some((f) => f.type === "unparseable" || f.type === "bad_range") || line.rows.length !== 1) {
     return { label: text, unparseable: true };

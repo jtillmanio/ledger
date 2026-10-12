@@ -131,7 +131,7 @@ describe("search thor 337-340 (AC-1)", () => {
     await sql`INSERT INTO issues (id, label) VALUES ('thor-1966-338', ${thor(338)})`;
     await sql`INSERT INTO run_issues (run_id, sequence, issue_id) VALUES ('other', 1, 'thor-1966-338')`;
     const answer = await find("thor 337-340");
-    expect(answer.catalog.map((r) => [r.label, r.runs, r.inThisRun])).toEqual([[thor(338), 1, false]]);
+    expect(answer.catalog.map((r) => [r.label, r.runs, r.runTitles, r.inThisRun])).toEqual([[thor(338), 1, ["Other"], false]]);
     expect(answer.metron.map((r) => r.label)).toEqual([thor(337), thor(339), thor(340)]);
 
     const done = await insert("thor", { ...staged(answer), after: null });
@@ -223,10 +223,24 @@ describe("Metron's labels are staged through the parser (AC-3)", () => {
     expect(review.writes).toEqual([]);
   });
 
-  it("normalises Metron's spelling to the catalog's: its series title, and an annual as D-55 writes it", () => {
-    const known = [{ title: "Thor", years: [1966] }];
+  it("normalises Metron's spelling to the catalog's series title, and keeps an annual in its own series (D-55)", () => {
+    const known = [{ title: "Thor", years: [1966] }, { title: "Thor Annual", years: [1966] }];
     expect(normalizeMetronLabel("thor (1966) #337", known)).toEqual({ label: thor(337), unparseable: false });
-    expect(normalizeMetronLabel("Thor Annual (1966) #13", known)).toEqual({ label: "Thor (1966) Annual #13", unparseable: false });
+    expect(normalizeMetronLabel("Thor Annual (1966) #13", known)).toEqual({ label: "Thor Annual (1966) #13", unparseable: false });
+    // Not yet in the catalog: still its own series, never an annual of Thor.
+    expect(normalizeMetronLabel("Thor Annual (1966) #13", known.slice(0, 1)).label).toBe("Thor Annual (1966) #13");
+  });
+
+  it("an annual the catalog holds without a Metron id is the catalog's row, not a second copy", async () => {
+    await sql`INSERT INTO issues (id, label) VALUES ('thor-annual-1966-13', 'Thor Annual (1966) #13')`;
+    await sql`INSERT INTO run_issues (run_id, sequence, issue_id) VALUES ('other', 1, 'thor-annual-1966-13')`;
+    metron = () => Response.json({ count: 1, next: null, results: [
+      { id: 8906013, series: { id: 8906, name: "Thor Annual", year_began: 1966 }, number: "13",
+        issue: "Thor Annual (1966) #13", cover_date: "1985-01-01", image: null },
+    ] });
+    const answer = await find("thor annual 13");
+    expect(answer.metron).toEqual([]);
+    expect(answer.catalog.map((r) => [r.label, r.issueId, r.runs])).toEqual([["Thor Annual (1966) #13", "thor-annual-1966-13", 1]]);
   });
 
   it("staged rows go through the one-transaction insert, Insert after included", async () => {

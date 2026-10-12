@@ -77,7 +77,7 @@ export async function POST(req: Request) {
       r: {
         key: f.label.toLowerCase(), label: f.label, issueId: null, metronId: f.issue.id,
         coverDate: f.issue.cover_date ?? null, coverUrl: f.issue.image || null,
-        runs: 0, inThisRun: false, unparseable: f.unparseable, idTaken: false,
+        runs: 0, runTitles: [], inThisRun: false, unparseable: f.unparseable, idTaken: false,
       },
     });
   }
@@ -100,6 +100,6 @@ function fromCatalog(h: CatalogHit, metronId: number | null): SearchResult {
   return {
     key: h.key, label: h.label, issueId: h.issue_id, metronId: h.metron_id ?? metronId,
     coverDate: h.cover_date, coverUrl: h.cover_url,
-    runs: h.runs, inThisRun: h.in_this_run, unparseable: false, idTaken: false,
+    runs: h.runs, runTitles: h.run_titles, inThisRun: h.in_this_run, unparseable: false, idTaken: false,
   };
 }

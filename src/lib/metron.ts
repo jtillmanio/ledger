@@ -11,6 +11,10 @@
  * limit is per account, and `etl/enrich_comics.py` spends it too): its
  * `Retry-After` is written as the `hold` row, and nothing calls until it ends.
  * A failure writes nothing.
+ *
+ * The count is read before the requests go out, not reserved, so two searches
+ * at the same moment can together pass 20 by a few. That is accepted (one
+ * reader, at most 10 numbers a search): the 429 and its hold catch the overshoot.
  */
 import { and, eq, gt, inArray, sql } from "drizzle-orm";
 import { db, metronCache } from "@/db";
