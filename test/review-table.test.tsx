@@ -71,10 +71,13 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/** The screen on its *Type it* half: Search is the default since 1.3b (test/issue-search.test.tsx). */
 function render(ctx = thorRun()) {
   act(() => root.render(
     <UndoProvider><AddIssues initial={ctx} knownSeries={knownSeries} runs={runs} /></UndoProvider>,
   ));
+  act(() => [...container.querySelectorAll<HTMLButtonElement>(".seg button")]
+    .find((b) => b.textContent === "Type it")!.click());
 }
 
 /** Let the debounced catalog check go out and come back. */
@@ -242,7 +245,7 @@ describe("after the insert (AC-5)", () => {
 });
 
 describe("the screen's states (AC-6)", () => {
-  it("empty: one primary action, Search drawn but not yet available, confirm held with its reason", () => {
+  it("empty: one primary action, confirm held with its reason", () => {
     render();
     const slate = container.querySelector(".slate")!;
     expect(slate.querySelectorAll("button")).toHaveLength(1);
@@ -250,9 +253,6 @@ describe("the screen's states (AC-6)", () => {
     expect(header()).toBe("0 will be added");
     expect(confirmButton().getAttribute("aria-disabled")).toBe("true");
     expect(container.querySelector("#add-reason")!.textContent).toBe("Type or paste issues to add");
-    const search = [...container.querySelectorAll(".seg button")].find((b) => b.textContent === "Search")!;
-    expect(search.getAttribute("aria-disabled")).toBe("true");
-    expect(document.getElementById(search.getAttribute("aria-describedby")!)!.textContent).toBe("Metron search is coming.");
     expect(container.querySelector(`label[for="${container.querySelector("textarea")!.id}"]`)!.textContent)
       .toBe("One per line, ranges allowed");
   });

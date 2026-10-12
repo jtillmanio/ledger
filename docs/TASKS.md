@@ -865,7 +865,7 @@ the new sequences after it and renumbers later ones without touching their
 progress rows. Pasting a label whose placement in this run was soft-deleted
 restores the original row (same id, progress intact) and inserts nothing.
 
-### ☐ 1.3b Add issues from a Metron search · M
+### ☑ 1.3b Add issues from a Metron search · M
 Requirement change, Sept 2026. ARCHITECTURE 2.15. The **Search** half of
 `/comics/[runId]/add`, and the default tab. Type `thor 337-340` or `balder the
 brave 1`. Your own catalog is matched first, then Metron is searched when you

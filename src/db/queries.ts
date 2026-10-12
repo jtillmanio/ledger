@@ -1,5 +1,6 @@
 import { sql } from "./index";
 import { readWhen, type Precision } from "@/lib/format";
+import { FRESH_DAYS } from "@/lib/metron";
 
 /* Raw SQL against the views in etl/views.sql. Drizzle's query builder is used
  * for writes; reads that join three or four views are clearer as SQL. */
@@ -388,6 +389,78 @@ export async function catalogMatches(labels: string[]) {
     WHERE i.deleted_at IS NULL AND lower(i.label) = ANY(${labels.map((l) => l.toLowerCase())}::text[])
     GROUP BY i.id
   `;
+}
+
+export type CatalogHit = {
+  key: string; issue_id: string; label: string; metron_id: number | null;
+  cover_date: string | null; cover_url: string | null; runs: number; in_this_run: boolean;
+};
+
+/**
+ * Add issues, *Search* (task 1.3b): the catalog's own rows for a search, before
+ * Metron's. A row matches by series title (case-insensitive), volume year when
+ * the query names one, and number when it names any; or because it is one of
+ * the comics Metron answered with, by Metron id or by label. Each carries how
+ * many live runs place it and whether this run does.
+ */
+export async function catalogSearch(
+  runId: string,
+  { title, year, numbers }: { title: string; year: number | null; numbers: string[] },
+  also: { metronIds: number[]; labels: string[] },
+) {
+  return sql<CatalogHit[]>`
+    WITH hit AS (
+      SELECT i.id, i.label, i.metron_id, i.cover_date, i.cover_url,
+             substring(i.label from '#([^#]+)$') AS number,
+             substring(i.label from ' [(]([0-9]{4})[)] #[^#]+$')::int AS year
+      FROM issues i
+      WHERE i.deleted_at IS NULL AND (
+        (lower(regexp_replace(i.label, '( [(][0-9]{4}[)])? #[^#]+$', '')) = lower(${title})
+          AND i.label !~ ' Annual #'
+          AND (${year}::int IS NULL OR i.label ~ (' [(]' || ${year}::int || '[)] #[^#]+$'))
+          AND (cardinality(${numbers}::text[]) = 0 OR substring(i.label from '#([^#]+)$') = ANY(${numbers}::text[])))
+        OR i.metron_id = ANY(${also.metronIds}::int[])
+        OR lower(i.label) = ANY(${also.labels.map((l) => l.toLowerCase())}::text[]))
+      LIMIT 100
+    )
+    SELECT lower(h.label) AS key, h.id AS issue_id, h.label, h.metron_id,
+           h.cover_date::text AS cover_date, h.cover_url,
+           COUNT(DISTINCT r.id)::int AS runs,
+           COALESCE(bool_or(r.id = ${runId}), false) AS in_this_run
+    FROM hit h
+    LEFT JOIN run_issues ri ON ri.issue_id = h.id AND ri.deleted_at IS NULL
+    LEFT JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL AND NOT r.placeholder
+    GROUP BY h.id, h.label, h.metron_id, h.cover_date, h.cover_url, h.number, h.year
+    ORDER BY array_position(${numbers}::text[], h.number) NULLS LAST, h.year NULLS FIRST, h.label
+  `;
+}
+
+/** Which of these ids `issues` already holds, removed rows included: the id is
+ * the primary key either way (D-15). */
+export async function takenIds(ids: string[]) {
+  if (ids.length === 0) return new Set<string>();
+  const rows = await sql<{ id: string }[]>`SELECT id FROM issues WHERE id = ANY(${ids}::text[])`;
+  return new Set(rows.map((r) => r.id));
+}
+
+/**
+ * What Metron said about these issues, from the search answers the add flow
+ * cached (D-53), younger than 7 days: the insert writes a Metron result's
+ * `metron_id`, cover date and cover from Metron's own answer, never from what the
+ * browser sends back. An id with no fresh answer is absent.
+ */
+export async function metronFacts(metronIds: number[]) {
+  if (metronIds.length === 0) return new Map<number, { coverDate: string | null; coverUrl: string | null }>();
+  const rows = await sql<{ id: number; cover_date: string | null; image: string | null }[]>`
+    SELECT DISTINCT ON ((e->>'id')::int) (e->>'id')::int AS id, e->>'cover_date' AS cover_date, e->>'image' AS image
+    FROM metron_cache c, jsonb_array_elements(c.body->'results') e
+    WHERE c.key LIKE 'issue/%' AND c.fetched_at > now() - make_interval(days => ${FRESH_DAYS})
+      AND (e->>'id')::int = ANY(${metronIds}::int[])
+    ORDER BY (e->>'id')::int, c.fetched_at DESC`;
+  return new Map(rows.map((r) => [r.id, {
+    coverDate: /^\d{4}-\d{2}-\d{2}$/.test(r.cover_date ?? "") ? r.cover_date : null,
+    coverUrl: r.image || null,
+  }]));
 }
 
 /** The runs Add issues can add to, for the *Change* picker. */

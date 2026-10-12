@@ -704,6 +704,42 @@ textarea.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .add-reason:focus{outline:none}
 .add-reason:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 
+/* Add issues, Search (task 1.3b; mockups addsearch, apistates). */
+.isearch-row{display:flex;gap:.5rem}
+input.txt{flex:1;min-width:0;min-height:44px;background:var(--surface);border:1px solid var(--faint-deco);
+  border-radius:11px;padding:.5rem .75rem;font:inherit;font-size:.9375rem;color:var(--ink);box-shadow:var(--sh-1)}
+input.txt::placeholder{color:var(--faint)}
+input.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.isearch-row .btn{flex:0 0 auto;min-height:44px}
+.isearch-row .btn[aria-disabled="true"]{background:var(--sunk);color:var(--muted);box-shadow:none;cursor:not-allowed}
+/* One line per API state (UX floor): loading neutral, rate-limited amber (held, a wait),
+   error grey with a grey ×, never red: nothing destructive happened. */
+.statusline{display:flex;flex-wrap:wrap;align-items:center;gap:.375rem .5rem;margin:.625rem 0 0;
+  padding:.5rem .75rem;border-radius:10px;background:var(--raise);border:1px solid var(--rule);
+  font-size:.8125rem;color:var(--ink-2)}
+.statusline>.btn{margin-left:auto}
+.statusline.wait{background:var(--blocked-soft);border-color:var(--blocked);color:var(--blocked)}
+.statusline.wait .btn{color:var(--ink)}
+.statusline.err .x{color:var(--muted);font-weight:700}
+.spin{width:12px;height:12px;border-radius:50%;border:2px solid var(--faint-deco);border-top-color:var(--brand);
+  animation:spin 800ms linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.results{list-style:none;margin:0;padding:0}
+.row.res{background:var(--raise)}
+.row.res[data-staged]{background:var(--brand-soft)}
+.row.res .cv{flex:0 0 40px;width:40px;height:60px;border-radius:var(--r-cover);background:var(--sunk);object-fit:cover}
+.row.res .cv.none{border:1px dashed var(--muted);background:none}
+.row.res .rh{display:flex;gap:.5rem;align-items:baseline}
+.row.res .rt{overflow-wrap:anywhere}
+.row.res .sk.l1{height:14px;width:70%}
+.row.res .sk.l2{height:12px;width:45%;margin-top:.375rem}
+.res-tags{display:flex;gap:.3125rem;flex-wrap:wrap;margin-top:.375rem}
+.res-tags:empty{display:none}
+.res-add{flex:0 0 auto;min-width:44px;min-height:32px}
+.res-add[aria-pressed="true"]{background:var(--surface);color:var(--brand-ink);border-color:var(--brand)}
+.fallback{margin:.75rem 0 0;display:flex;flex-wrap:wrap;align-items:center;gap:.375rem}
+
 .picker-filter{margin:.5rem 0;border-color:var(--faint-deco)}
 .picker-list{list-style:none;margin:0;padding:0;max-height:50vh;overflow:auto}
 .picker-run{display:block;width:100%;text-align:left;font:inherit;font-size:.875rem;color:var(--ink);background:none;

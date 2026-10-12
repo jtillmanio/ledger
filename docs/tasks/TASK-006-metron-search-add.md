@@ -1,14 +1,14 @@
 ---
 id: TASK-006
 title: 1.3b Add issues from a Metron search
-status: Ready
+status: In progress
 depends_on: [TASK-005]
 size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: b34f36b
 ---
 
 # TASK-006 — 1.3b Add issues from a Metron search
@@ -65,9 +65,38 @@ Issues can be added to a run by searching (`thor 337-340`). Results come from yo
 - Automated: `test/metron-search.test.ts` with a mocked Metron client that counts calls and replays the recorded fixture: the 4 results in order, the 4 rows with `metron_id` and `cover_date_source = 'metron'`, the re-search showing *already in this run*, reuse across runs, the failure fallback writing nothing, zero calls from page renders, and the 429 path with `Retry-After: 40` (AC-1 to AC-4). The same file covers the cache hit, the 7-day refresh and the 60-second pacing count against `TEST_DATABASE_URL` (AC-5), and `test/export-tables.test.ts` covers the export list. The component states are rendered in happy-dom (AC-4, AC-6). `npm run check:migrations` passes.
 - Manual: with Metron credentials in `.env`, search `thor 337-340` on a run's Add issues → expected: four results with covers, staged into the review, and inserted. Search again → expected: *already in this run* on all four.
 
+## Follow-ups
+
+- Owner action: `METRON_API_TOKEN` (or `METRON_USERNAME` and `METRON_PASSWORD`) set in Vercel preview and production before the preview can search (approved at plan)
+- The mockup's credits line on result rows isn't built (credits from search results are Out of scope) → not tracked: the task's Out of scope covers it (enrichment, 4.1)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner, 2026-10-12. Answers at the gate: the API error is a grey `×` (AC-4 and the UX floor over the mockup's `⚠`); the Check column fills from Metron's answer for rows staged from Search (*on Metron*, *new volume*), and typed lines stay *unverified*, since nothing calls Metron while you type (from PR #74's follow-up); the fixture is real Metron responses from `etl/.metron-cache.sqlite` (fetched 2026-09-21, issue ids 14525–14528) reshaped into `issue/?…` responses; a new label whose slug another label already holds is flagged in the Check column (`id taken`, D-15, D-59), and the insert still gives it `-2`; at most 10 numbers per search.
+
+**Steps**
+
+1. `metron_cache(key text PK, body jsonb NOT NULL, fetched_at timestamptz NOT NULL DEFAULT now())` in `src/db/schema.ts`; `npm run db:generate` writes migration 0008 (forward-only, no down file, D-53); `NOT_EXPORTED` gets it; `test/db.ts` `truncateAll` truncates it.
+2. `src/lib/metron.ts` (new, server-only): auth header from `METRON_API_TOKEN` or `METRON_USERNAME`/`METRON_PASSWORD`. Metron has no number-range filter, so a search is one `issue/?series_name=<title>&number=<n>[&series_year_began=<y>]` request per number (one series-only request when no number is given), each its own cache key. A row younger than 7 days is served without a call. Pacing: when the rows fetched in the last 60 s plus the calls this search needs exceed 20, nothing is called and the answer is rate-limited until enough of those rows turn 60 s old. A 429 writes a `hold` row carrying `Retry-After`, read first by every instance, so nothing calls before it ends. A failure writes nothing. More than 10 numbers is `too_many`, with no call.
+3. `src/lib/issue-search.ts` (new, pure): parse `thor 337-340`, `thor (1966) #337`, `balder the brave` into title, year and numbers; normalise each Metron result's label through `parseBulk` (an unparseable one keeps its flag, AC-3); order results by the numbers asked.
+4. `src/db/queries.ts`: catalog search by title, year and number, plus any issue whose `metron_id` matches a result, each with its live run count and whether it is live in this run; and which new labels' base slug is already taken (for `id taken`).
+5. `src/app/api/metron/search/route.ts` (new): `POST {q, runId}`: catalog first, then Metron; a Metron result the catalog holds moves to the catalog group. Status `ok`, `rate_limited` (with `retryAt`), `error` or `too_many`.
+6. `src/db/writes.ts`: `insertIssuesIntoRun` takes optional Metron metadata, applied only to issues it creates (`metron_id`, `cover_date`, `cover_url`, `cover_date_source = 'metron'`); a reused row is never touched. `src/app/api/runs/[runId]/issues/route.ts` takes `metronIds` and reads the metadata from the cached Metron answer, never from the client; an expired answer is a 409 (*search again*). Its dry run also answers which labels' ids are taken.
+7. `src/lib/bulk-review.ts`: rows staged from Search read *on Metron* in the Check column instead of *unverified*; *new volume* as before; `id taken` for a slug clash.
+8. `src/components/IssueSearch.tsx` (new) and `src/components/AddIssues.tsx`: a real segmented control with Search the default; search on submit only; *In your catalog* then *From Metron*, each row a decorative cover (`alt=""`) beside its label and cover date, *in N runs* / *already in this run*, and an **Add** toggle (`aria-pressed`); staged rows go through the shared review table, insert preview and **Add N issues**. States, each `role="status"`: empty slate, loading with skeletons, rate-limited (amber, mono countdown, *Type it instead*), error (grey `×`, *Try again*, *Type it instead*), no results. *Type it instead* switches to *Type it* with the query in the textarea. Styles in `src/app/globals.css`.
+
+**Files**: `src/db/schema.ts`, `drizzle/0008_*.sql` + `drizzle/meta/*` (generated), `src/db/export-tables.ts`, `src/lib/metron.ts` (new), `src/lib/issue-search.ts` (new, not in the likely list), `src/app/api/metron/search/route.ts` (new), `src/db/queries.ts`, `src/db/writes.ts`, `src/app/api/runs/[runId]/issues/route.ts` (not in the list: takes `metronIds`, answers `id taken`), `src/lib/bulk-review.ts` (not in the list: the Check column), `src/components/IssueSearch.tsx` (new), `src/components/AddIssues.tsx` (not in the list: the segmented control lives here, not in `page.tsx`), `src/app/globals.css`, `test/metron-search.test.ts` (new), `test/fixtures/metron-thor-337-340.json` (new), `test/issue-search.test.tsx` (new), `test/review-table.test.tsx` (opens on Search now), `test/db.ts` (truncate), `docs/TASKS.md` (tick). About 16 files, schema and UI together: kept whole under `never-split`, attended.
+
+**Test strategy**
+
+- AC-1: `test/metron-search.test.ts` with `fetch` stubbed, counting Metron calls and replaying the fixture: 4 results in order; the insert writes 4 `issues` with `metron_id` and `cover_date_source = 'metron'` and 4 placements; re-search shows all 4 *already in this run*; an issue in another run is reused; a failure answers `error` and writes nothing; `renderToString` of the Add issues page makes 0 calls; a 429 with `Retry-After: 40` answers rate-limited with `retryAt` 40 s out, and a second search before then makes no call.
+- AC-2: `test/issue-search.test.tsx` (happy-dom): ten keystrokes, 0 fetches; catalog group before Metron; *in N runs* from live placements (DB side in `metron-search.test.ts`); adding a catalog hit creates only a placement; Search is the default tab.
+- AC-3: `metron-search.test.ts`: an unparseable Metron label is staged with its flag; the insert goes through `insertIssuesIntoRun` with *Insert after*.
+- AC-4: `issue-search.test.tsx`: each state is `role="status"`; rate-limited is amber with a mono countdown that reaches 0 and re-enables search; the error line resolves to no `--danger`; *Type it instead* lands on *Type it* with the query.
+- AC-5: `metron-search.test.ts`: a repeat within 7 days makes no call; one older than 7 days calls and refreshes `fetched_at`; 20 rows in the last 60 s gives no call and a countdown to the oldest row's 60 s; `test/export-tables.test.ts` passes.
+- AC-6: `issue-search.test.tsx` for the states, the decorative covers and the button names; ui-verifier screenshots at every `ui.viewports` width, light and dark; Add and Add N sizes measured there.
+
+**Risks**: Metron's `series_name` matches words (`thor` also matches *Thor Annual*, *Mighty Thor*), so a number another volume shares shows both, which is the point (the cover resolves it). The fixture is reshaped from cached responses, not a live recording.
 
 ## Review log
 

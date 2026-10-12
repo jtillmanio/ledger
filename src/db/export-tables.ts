@@ -19,5 +19,6 @@ export const USER_TABLES = [
   "reading_settings", "shelves",
 ] as const;
 
-/** Deliberately left out: the export is the owner's data, not the account. */
-export const NOT_EXPORTED = ["users"] as const;
+/** Deliberately left out: the export is the owner's data, not the account (D-17), nor a
+ * rebuildable copy of a third-party API (D-53). */
+export const NOT_EXPORTED = ["users", "metron_cache"] as const;
