@@ -289,8 +289,11 @@ describe("the transaction's edges", () => {
     // Ghost #2 was only skipped, so it stays removed.
     expect(await live()).toEqual({ "ghost-1": true, "ghost-2": false });
 
-    await undo("empty", { after: body.after, created: body.created, restored: body.restored, revived: body.revived });
+    // A body naming an issue this batch didn't place can't remove it.
+    await undo("empty", { after: body.after, created: body.created, restored: body.restored,
+      revived: [...body.revived, "thor-1966-330"] });
     expect(await live()).toEqual({ "ghost-1": false, "ghost-2": false });
+    expect((await sql`SELECT deleted_at FROM issues WHERE id = 'thor-1966-330'`)[0].deleted_at).toBeNull();
   });
 
   it("reuses the catalog row spelled exactly as typed when two differ only in case", async () => {

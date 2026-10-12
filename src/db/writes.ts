@@ -354,7 +354,8 @@ export async function undoInsert(
     const [run] = await tx.select({ id: runs.id }).from(runs).where(eq(runs.id, runId)).for("no key update");
     if (!run) return false;
 
-    const rows = await tx.select({ id: runIssues.id, sequence: runIssues.sequence, deletedAt: runIssues.deletedAt })
+    const rows = await tx
+      .select({ id: runIssues.id, sequence: runIssues.sequence, deletedAt: runIssues.deletedAt, issueId: runIssues.issueId })
       .from(runIssues).where(eq(runIssues.runId, runId));
     const mine = new Set([...created, ...restored.map((r) => r.id)]);
     const k = mine.size;
@@ -383,9 +384,12 @@ export async function undoInsert(
         })
         .where(and(eq(runIssues.runId, runId), inArray(runIssues.id, order)));
     }
-    if (revived.length) {
+    // Only issues this batch placed: a body can't remove any other catalog row.
+    const placedIssues = new Set(block.map((r) => r.issueId));
+    const rehide = revived.filter((id) => placedIssues.has(id));
+    if (rehide.length) {
       await tx.update(issues).set({ deletedAt: sql`now()` })
-        .where(and(inArray(issues.id, revived), isNull(issues.deletedAt)));
+        .where(and(inArray(issues.id, rehide), isNull(issues.deletedAt)));
     }
     return true;
   });
