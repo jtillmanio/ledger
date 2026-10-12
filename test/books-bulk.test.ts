@@ -199,6 +199,9 @@ describe("series lines (AC-2)", () => {
   it("refuses to create a line with no author", async () => {
     expect((await post({ items: [{ title: "Dune Messiah", author: null }] })).status).toBe(400);
     expect((await post({ items: [{ title: "Dune Messiah" }] })).status).toBe(400);
+    // A position past any series (and past a real's range) is a 400, not a failed insert.
+    expect((await post({ items: [{ title: "Dune Messiah", author: "Frank Herbert", series: "Dune", position: 1e40 }] })).status)
+      .toBe(400);
     const r = await review("Dune Messiah");
     expect(r.writes).toEqual([]);
     expect(r.unresolved).toBe(1);

@@ -450,21 +450,29 @@ export async function addBooks(userId: string, items: BookItem[]): Promise<AddBo
     }
 
     const fresh = items.filter((i): i is NewBook => !("use" in i));
-    const titles = [...new Set(fresh.map((i) => i.title.toLowerCase()))];
-    const existing = titles.length === 0 ? [] : await tx
-      .select({ id: books.id, title: books.title, author: authors.name })
-      .from(books).innerJoin(authors, eq(authors.id, books.authorId))
-      .where(and(isNull(books.deletedAt), inArray(sql`lower(${books.title})`, titles)))
-      .orderBy(books.id);
-    const byKey = new Map<string, string>();
-    for (const b of existing) if (!byKey.has(bookKey(b.title, b.author))) byKey.set(bookKey(b.title, b.author), b.id);
+    // The same title and author the library holds now, compared as bookMatches
+    // compares them (lower() on both sides, in Postgres), so the confirm never
+    // disagrees with the check it follows.
+    const exact = new Map<number, string>();
+    if (fresh.length) {
+      const list = (values: string[]) => sql`ARRAY[${sql.join(values.map((v) => sql`${v}`), sql`, `)}]::text[]`;
+      const rows = await tx.execute<{ i: number; id: string }>(sql`
+        SELECT q.i::int AS i, m.id
+        FROM unnest(${list(fresh.map((f) => f.title))}, ${list(fresh.map((f) => f.author))}) WITH ORDINALITY AS q(title, author, i)
+        CROSS JOIN LATERAL (
+          SELECT b.id FROM books b JOIN authors a ON a.id = b.author_id
+          WHERE b.deleted_at IS NULL AND lower(b.title) = lower(q.title) AND lower(a.name) = lower(q.author)
+          ORDER BY b.id LIMIT 1
+        ) m`);
+      for (const r of rows) exact.set(Number(r.i) - 1, r.id);
+    }
 
     const matched = new Set<string>();
     const toCreate: NewBook[] = [];
     const creating = new Set<string>(); // a book named twice is created once
-    for (const item of fresh) {
+    for (const [i, item] of fresh.entries()) {
       const k = bookKey(item.title, item.author);
-      const id = byKey.get(k);
+      const id = exact.get(i);
       if (id) matched.add(id);
       else if (!creating.has(k)) {
         creating.add(k);

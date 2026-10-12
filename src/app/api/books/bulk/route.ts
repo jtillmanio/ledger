@@ -7,6 +7,8 @@ import { addBooks, type BookItem } from "@/db/writes";
 
 export const runtime = "nodejs";
 
+const MAX_POSITION = 100000;
+
 /**
  * Add books, *Paste a list* (task 1.4). Called only from a tap on Add books,
  * never while a page loads (task 0.9):
@@ -41,7 +43,8 @@ export async function POST(req: Request) {
     const author = text(i?.author);
     const series = i?.series == null ? null : text(i.series);
     const position = i?.position == null ? null : i.position;
-    const okPosition = position === null || (typeof position === "number" && Number.isFinite(position) && position >= 0);
+    // series_position is a real: a number past any series' length is a mistake, and past a real's range a 500.
+    const okPosition = position === null || (typeof position === "number" && position >= 0 && position <= MAX_POSITION);
     if (!title || !author || series === undefined || !okPosition) return undefined;
     return { title, author, series, position: series ? position : null };
   });
