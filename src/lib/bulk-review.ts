@@ -280,7 +280,9 @@ export function buildReview(
       why.push(`Another label already has the id ${clash.length === 1 ? "this one" : listed(clash)} would get, `
         + "so it would be saved with -2. Two comics can't share a label's id (D-15): rename one.");
     }
-    const vouched = d.labels.length > 0 && d.labels.every((l) => known(l) || metron.has(labelKey(l)));
+    // A line a search staged is Metron's word, even while it waits for a choice (a new series).
+    const vouched = metron.has(labelKey(line.normalized))
+      || (d.labels.length > 0 && d.labels.every((l) => known(l) || metron.has(labelKey(l))));
     if (vouched && !allKnown && rowWrites.length && why.length === 0) why.push("New from Metron, with its cover date and cover.");
     return {
       key, line: line.line, kind: line.kind, text: line.normalized,

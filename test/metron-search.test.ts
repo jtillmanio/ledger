@@ -144,6 +144,31 @@ describe("search thor 337-340 (AC-1)", () => {
       .toEqual([{ n: 2 }]);
   });
 
+  it("keeps only series named what you typed: Metron's word match finds Thorn and Lex Luthor too", async () => {
+    const issue = (id: number, name: string, year: number) =>
+      ({ id, series: { id, name, year_began: year }, number: "1", issue: `${name} (${year}) #1`, cover_date: `${year}-01-01`, image: null });
+    metron = () => Response.json({ count: 5, next: null, results: [
+      issue(1, "Thorn: Tales From The Lantern", 2020), issue(2, "Thor", 1998), issue(3, "Supergirl / Lex Luthor Special", 1993),
+      issue(4, "Thor", 2007), issue(5, "The Mighty Thor", 2011),
+    ] });
+    expect((await find("thor 1")).metron.map((r) => r.label)).toEqual(["Thor (1998) #1", "Thor (2007) #1"]);
+    await sql`DELETE FROM metron_cache`;
+    expect((await find("mighty thor 1")).metron.map((r) => r.label)).toEqual(["The Mighty Thor (2011) #1"]);
+  });
+
+  it("a broad search keeps the comic Metron answered with inside the catalog's 100-row cut", async () => {
+    // 150 more Thor rows with no metron_id, all sorting before the one Metron names.
+    await sql`INSERT INTO issues (id, label) SELECT 'thor-1998-' || n, 'Thor (1998) #' || n FROM generate_series(1, 150) n`;
+    await sql`INSERT INTO issues (id, label, metron_id) VALUES ('thor-2020-1', 'Thor (2020) #1', 777)`;
+    metron = () => Response.json({ count: 1, next: null, results: [
+      { id: 777, series: { id: 5, name: "Thor", year_began: 2020 }, number: "1", issue: "Thor: Lord of Asgard (2020) #1",
+        cover_date: "2020-01-01", image: null },
+    ] });
+    const answer = await find("thor");
+    expect(answer.metron).toEqual([]);
+    expect(answer.catalog[0]).toMatchObject({ label: "Thor (2020) #1", metronId: 777 });
+  });
+
   it("a Metron failure answers error, keeps the catalog's rows, and writes nothing", async () => {
     metron = () => new Response("bad gateway", { status: 502 });
     const answer = await find("thor 336-337");

@@ -100,7 +100,9 @@ Approved by the owner, 2026-10-12. Answers at the gate: the API error is a grey 
 - AC-5: `metron-search.test.ts`: a repeat within 7 days makes no call; one older than 7 days calls and refreshes `fetched_at`; 20 rows in the last 60 s gives no call and a countdown to the oldest row's 60 s; `test/export-tables.test.ts` passes.
 - AC-6: `issue-search.test.tsx` for the states, the decorative covers and the button names; ui-verifier screenshots at every `ui.viewports` width, light and dark; Add and Add N sizes measured there.
 
-**Risks**: Metron's `series_name` matches words (`thor` also matches *Thor Annual*, *Mighty Thor*), so a number another volume shares shows both, which is the point (the cover resolves it). The fixture is reshaped from cached responses, not a live recording.
+**Plan revision 2** (owner, 2026-10-12, after the ui-verifier walk: `thor 1-2` listed 116 Metron rows, *Thorn* and *Supergirl / Lex Luthor Special* among them): Metron's results are kept only when their series is named what you typed, compared with `etl/enrich_comics.py`'s loose `name_key` (case, accents, punctuation, `&`, a leading *The*, a trailing year), so `thor` lists every *Thor* volume and `thor annual`, `mighty thor` reach those series. In `src/lib/issue-search.ts` `metronIssues`, tested in `test/metron-search.test.ts`.
+
+**Risks**: Metron's `series_name` matches words, so the filter above does the narrowing; a number several *Thor* volumes share still shows each, which is the point (the cover resolves it). The fixture is reshaped from cached responses, not a live recording.
 
 ## Review log
 

@@ -90,13 +90,32 @@ export function normalizeMetronLabel(issue: string, knownSeries: KnownSeries[]):
   return { label: line.rows[0].label, unparseable: false };
 }
 
-/** Every issue on these pages once, in the order the numbers were asked, then by volume year. */
-export function metronIssues(pages: MetronPage[], numbers: string[]): MetronIssue[] {
+/**
+ * A loose series-name key, `etl/enrich_comics.py`'s `name_key`: case, accents,
+ * punctuation, `&`, a leading *The* and a trailing `(1998)` don't count.
+ */
+export function nameKey(name: string): string {
+  return name.normalize("NFKD").replace(/[^\x00-\x7f]/g, "").toLowerCase()
+    .replace(/\s*\(\d{4}\)\s*$/, "")
+    .replaceAll("&", " and ")
+    .replace(/^the\s+/, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+/**
+ * Every issue on these pages once, in the order the numbers were asked, then by
+ * volume year. Metron matches `series_name` word by word (`thor` finds *Thorn*
+ * and *Lex Luthor*), so only series named what you typed are kept (owner,
+ * 2026-10-12): `thor` is every *Thor* volume, `thor annual` its annuals.
+ */
+export function metronIssues(pages: MetronPage[], title: string, numbers: string[]): MetronIssue[] {
+  const want = nameKey(title);
   const seen = new Set<number>();
   const all: MetronIssue[] = [];
   for (const page of pages) {
     for (const r of page.results ?? []) {
       if (typeof r?.id !== "number" || seen.has(r.id) || !r.issue) continue;
+      if (nameKey(r.series?.name ?? r.issue.replace(/ #[^#]*$/, "")) !== want) continue;
       seen.add(r.id);
       all.push(r);
     }

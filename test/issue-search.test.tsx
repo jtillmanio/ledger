@@ -212,6 +212,19 @@ describe("results (AC-2, AC-3, AC-6)", () => {
     expect(container.querySelectorAll(".review .vrow")).toHaveLength(0);
   });
 
+  it("a Metron result in a series the catalog doesn't have reads on Metron, and waits for its series choice", async () => {
+    answer = async () => Response.json({ ...OK, catalog: [], metron: [
+      result(1, { key: "journey into mystery (1952) #1", label: "Journey into Mystery (1952) #1" }),
+    ] });
+    render();
+    await submit("journey into mystery 1");
+    await act(async () => container.querySelector<HTMLButtonElement>(".res-add")!.click());
+    const row = container.querySelector<HTMLElement>(".review .vrow")!;
+    expect(row.querySelector(".vcheck")!.textContent).toBe("on Metron");
+    expect(row.querySelector(".vm")!.textContent).toContain("No series called Journey into Mystery");
+    expect(confirmButton().getAttribute("aria-disabled")).toBe("true");
+  });
+
   it("a Metron label outside the grammar is staged with its flag and waits for a choice", async () => {
     answer = async () => Response.json({ ...OK, catalog: [], metron: [
       result(337, { key: "thor (1966) #337.bu", label: "Thor (1966) #337.BU", unparseable: true }),

@@ -425,7 +425,7 @@ export async function catalogSearch(
           AND (cardinality(${numbers}::text[]) = 0 OR substring(i.label from '#([^#]+)$') = ANY(${numbers}::text[])))
         OR i.metron_id = ANY(${also.metronIds}::int[])
         OR lower(i.label) = ANY(${labels}::text[]))
-      ORDER BY (i.metron_id = ANY(${also.metronIds}::int[]) OR lower(i.label) = ANY(${labels}::text[])) DESC, i.label
+      ORDER BY (COALESCE(i.metron_id = ANY(${also.metronIds}::int[]), false) OR lower(i.label) = ANY(${labels}::text[])) DESC, i.label
       LIMIT 100
     )
     SELECT lower(h.label) AS key, h.id AS issue_id, h.label, h.metron_id,

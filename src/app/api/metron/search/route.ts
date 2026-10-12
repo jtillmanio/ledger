@@ -53,7 +53,7 @@ export async function POST(req: Request) {
 
   const [metron, series] = await Promise.all([metronPages(searchKeys(query)), knownSeries()]);
   const found = metron.status === "ok"
-    ? metronIssues(metron.pages, query.numbers).map((issue) => ({ issue, ...normalizeMetronLabel(issue.issue!, series) }))
+    ? metronIssues(metron.pages, query.title, query.numbers).map((issue) => ({ issue, ...normalizeMetronLabel(issue.issue!, series) }))
     : [];
   const hits = await catalogSearch(runId, query, {
     metronIds: found.map((f) => f.issue.id), labels: found.map((f) => f.label),
