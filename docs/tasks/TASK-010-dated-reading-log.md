@@ -28,6 +28,7 @@ Finishing a book records when you finished it: today, a picked date, just the ye
 - Decisions: D-10 and D-21 (precision; the finish year is derived), D-41 (no read state from the workbook), R1-03 (the status control moves here from 3.4), R0-C1 (a status change must not null `rating`), R3-05 (don't retype the 0004 columns), S-05, S-10.
 - **Settled by the owner, 2026-10-09:** `issue_progress.completed_at` is edited from *Change date…* in the spine row's menu (from TASK-002), using the same four-option finish-date control. The write path is shared, and 3.5's issue sheet reuses it.
 - **A future day is refused by the server, not just the picker** (follow-up from PR #67, task 1.1). The range sheet's *Pick a date* caps its `max` at the reader's local today, but `POST /api/progress/range` accepts a future day and returns 200. This task makes every finish date editable, so the shared write path rejects a day after today with a 400, the range route included. "Today" is UTC until 1.16 (dates in `America/New_York`) changes it.
+- *From #71 (docs backfill):* **1.16 has no task file yet.** It follows this task in sitting 5 (`docs/TASKS.md` § Phase 1, the sittings table), but it was added to the roadmap after Phase 1 was converted (#61), so `/next-task` can't pick it up. Run `/new-task 1.16` before this task closes out, so sitting 5 doesn't end at 1.5.
 
 ## Acceptance criteria
 
