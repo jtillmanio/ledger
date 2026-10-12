@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import ReviewTable from "@/components/ReviewTable";
+import { useUndo } from "@/components/Undo";
 import { bookKey, parseBooks } from "@/lib/book-parse";
 import { buildBookReview, type BookAnswer, type BookAnswers, type Choices } from "@/lib/book-review";
 
@@ -10,16 +12,17 @@ const API = "/api/books/bulk";
 const books = (n: number) => `${n} ${n === 1 ? "book" : "books"}`;
 const lineCount = (n: number) => `${n} ${n === 1 ? "line" : "lines"}`;
 
-/** What the last add wrote: books that joined Someday, and how many of them were already yours. */
-type Done = { added: number; known: number };
+/** Where an add lands you: the books it added are on the To read list, which plain /books may cut. */
+export const AFTER_ADD = "/books?status=to_read";
 
 /**
  * Add books, *Paste a list* (task 1.4; mockup `add`). One book per line;
  * **Check N lines** asks your library about the lines it hasn't answered (a
  * dry run that writes nothing), and the shared review table says what each
  * will do. Nothing is written until **Add N books**, which writes exactly what
- * it counts, in one transaction. New books land at Someday (D-37). 1.4c puts
- * this beside *Search* and *By hand* in the add sheet.
+ * it counts, in one transaction, then takes you to *To read* with a toast
+ * saying what it added (owner, PR #76). New books land at Someday (D-37).
+ * 1.4c puts this beside *Search* and *By hand* in the add sheet.
  */
 export default function PasteBooks() {
   const [text, setText] = useState("");
@@ -29,9 +32,10 @@ export default function PasteBooks() {
   const [checkFailed, setCheckFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
-  const [done, setDone] = useState<Done | null>(null);
   const textarea = useRef<HTMLTextAreaElement>(null);
   const reasonRef = useRef<HTMLParagraphElement>(null);
+  const router = useRouter();
+  const { notify } = useUndo();
 
   const lines = useMemo(() => parseBooks(text), [text]);
   const review = useMemo(() => buildBookReview(lines, { answers, choices }), [lines, answers, choices]);
@@ -86,15 +90,15 @@ export default function PasteBooks() {
       }
       if (!res.ok) throw new Error(String(res.status));
       const { created, added } = await res.json() as { created: string[]; added: string[] };
-      setDone({ added: added.length, known: added.length - created.length });
-      setText("");
-      setAnswers(new Map());
-      setChoices({});
+      const known = added.length - created.length;
+      notify(`${books(added.length)} added to Someday`, known > 0 ? `${known} already in your library` : undefined);
+      router.push(AFTER_ADD);
     } catch (e) {
       setFailed(e instanceof Error && e.message === "gone"
         ? "A book you picked is gone from your library. Nothing was written; check your lines again."
         : "Couldn't add them. Nothing was written; your lines are still here.");
-    } finally {
+      // Only a failure gives the button back: after an add it stays *Adding…*
+      // until To read replaces the page, so a second tap can't add again.
       setSaving(false);
     }
   }
@@ -119,7 +123,7 @@ export default function PasteBooks() {
           <textarea id="books-text" ref={textarea} className="txt" rows={8} spellCheck={false}
             autoCapitalize="off" autoComplete="off"
             placeholder={"The Blade Itself - Joe Abercrombie\nGolden Son (Red Rising #2) - Pierce Brown"}
-            value={text} onChange={(e) => { setText(e.target.value); setDone(null); }} />
+            value={text} onChange={(e) => setText(e.target.value)} />
           {toCheck > 0 && (
             <button type="button" className="btn wide paste-check" aria-disabled={checking || undefined} onClick={check}>
               {checking ? `Checking ${lineCount(toCheck)}…` : `Check ${lineCount(toCheck)}`}
@@ -132,9 +136,7 @@ export default function PasteBooks() {
         <div>
           <h2 className="s">Review<span className="more">{`${review.count} will be added`}</span></h2>
           <p className="small muted review-status" role="status">
-            {checking ? `Checking ${lineCount(toCheck)} against your library…`
-              : done ? `Added ${books(done.added)} to Someday${done.known > 0 ? ` (${done.known} already in your library)` : ""}.` : ""}
-            {!checking && done && <> <Link prefetch={false} href="/books?status=to_read">See To read</Link></>}
+            {checking ? `Checking ${lineCount(toCheck)} against your library…` : ""}
           </p>
           {checkFailed && (
             <p className="neutral-error">

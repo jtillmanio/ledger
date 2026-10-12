@@ -76,6 +76,8 @@ Approved by the owner 2026-10-12, with every recommendation below.
 - A matched book with no status gets `to_read` and counts in *Add N books*.
 - Exact match folds case only (curly vs straight apostrophes surface as near-duplicates ~0.9); a soft-deleted book is never revived (1.13's merge soft-deletes the loser).
 
+**Plan revision 1** (owner, on PR #76): after **Add N books** the screen goes to `/books?status=to_read`, with the app's toast saying what was added (*6 books added to Someday*, *1 already in your library*), instead of staying put with a done line. *To read*, not plain `/books`: the *Everything* list stops at 500 rows ordered by series, so new books can fall off it. The button stays *Adding…* until the page changes. `test/paste-books.test.tsx` asserts the route, the toast and the held button.
+
 **Files**: the above, plus `src/app/books/add/loading.tsx`, `src/app/books/page.tsx` (link), maybe `src/app/globals.css`, `test/book-parse.test.ts`, `test/book-review.test.ts`, `test/books-bulk.test.ts`, `test/paste-books.test.tsx`, `test/fixtures/book-ids.json`, `etl/test_extract.py`, `docs/TASKS.md` (tick). Outside *Files likely touched*: `book-review.ts`, `PasteBooks.tsx`, `issue-slug.ts`, `loading.tsx`, `books/page.tsx`, `globals.css`, the fixture. More than 8 files, DB and UI together; `splitPolicy` is `never-split`, so the task stays whole and attended.
 
 **Test strategy**
@@ -95,12 +97,15 @@ Approved by the owner 2026-10-12, with every recommendation below.
 - Schema review: the exact-match lateral in `bookMatches()` can't use `books_title_gin_trgm` and scans `books` per line (≈1.5k rows × at most 500 lines). → not tracked: fine at this size; the reviewer recommended no change now
 - The Add books screen differs from mockup `add` until 1.4c (no segmented control or *Add to*, books review after *Check*). → design/mockups-index.md § Not shown, and why (15, fixed in this PR)
 - The confirm's reason reads *Check N lines first*, not the plan's *Check N new lines first*: on a first paste no line is "new" to the check. → not tracked: copy choice, explained here and in the PR for the owner to overrule
+- `scripts/vercel-ignore.mjs`: a **Redeploy** of a commit whose own build was skipped is skipped again, since `VERCEL_GIT_PREVIOUS_SHA` is the last successful deployment, not the redeployed commit; the header comment says otherwise. Found when PR #76's preview status arrived late. → docs/TASKS.md § 0.12 (new; Check proposed)
 - UI check: a no-author line whose title is exactly a library book's shows `similar 1.00`; accurate. Review decision radios are 24–30px tall (floor is 24px); the shell's *Ledger* link is 23px (task 1.8). → not tracked: accurate as is; the nav link belongs to 1.8's shell work
 
 ## Review log
 
 - Verify R1 PASS | Audit R1 PASS (AC-1–AC-4 proven; AC-5 component proven, screenshots by ui-verifier) | Schema R1 APPROVE (4 minor; 2 fixed: confirm matches in Postgres, position capped) | Spec R1 CHANGES (redraw entry, Follow-ups format) | UI R1 PASS (6 widths, light and dark; confirm never pressed on dev)
 - Verify R2 PASS (after the round-1 fixes) | Spec R2 APPROVE (round-1 findings resolved; follow-ups check clean)
+- Ready gates: CI PASS; Vercel preview PASS at `dfefc67` (its status arrived late; an empty retrigger commit was skipped by the ignore step, finding 0.12); Lighthouse PASS within budget
+- Owner feedback on PR #76 → plan revision 1 (Add goes to To read with a toast) | Verify R3 and Spec R3: see below
 
 ## Blocked
 
@@ -111,4 +116,4 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Verify rounds: 2 (both green; R2 re-ran after review fixes)
 - Review rounds: 2
 - First-pass AC FAILs: 0
-- Plan revisions after approval: 0
+- Plan revisions after approval: 1 (owner, on PR #76: Add goes to To read)

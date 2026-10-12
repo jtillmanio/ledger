@@ -3,12 +3,17 @@
 // The empty, checking and error states; each line's glyph carries text; each
 // decision is a named radiogroup; *Add N books* is aria-disabled with its
 // reason until every line is checked and decided; the confirm sends what it
-// counts. The writes, against the database, are test/books-bulk.test.ts.
+// counts, then lands on To read with a toast (owner, PR #76). The writes,
+// against the database, are test/books-bulk.test.ts.
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PasteBooks from "../src/components/PasteBooks";
+import { UndoProvider } from "../src/components/Undo";
 import type { BookAnswer } from "../src/lib/book-review";
+
+const router = { push: vi.fn() };
+vi.mock("next/navigation", () => ({ useRouter: () => router }));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -41,7 +46,8 @@ beforeEach(() => {
     return Response.json({ ok: true, created: ["golden-son-pierce-brown"], matched: [], added: ["golden-son-pierce-brown"] });
   });
   vi.stubGlobal("fetch", fetchMock);
-  act(() => root.render(<PasteBooks />));
+  router.push.mockReset();
+  act(() => root.render(<UndoProvider><PasteBooks /></UndoProvider>));
 });
 
 afterEach(() => {
@@ -104,7 +110,7 @@ describe("the states (AC-5)", () => {
     await click(checkButton()!);
     expect(checkButton()!.textContent).toBe("Checking 2 lines…");
     expect(checkButton()!.getAttribute("aria-disabled")).toBe("true");
-    expect(container.querySelector('[role="status"]')!.textContent).toBe("Checking 2 lines against your library…");
+    expect(container.querySelector(".review-status")!.textContent).toBe("Checking 2 lines against your library…");
     expect(rows().map((r) => r.querySelector(".vcheck")!.textContent)).toEqual(["checking…", "checking…"]);
     await act(async () => answer());
     expect(checkButton()).toBeNull();
@@ -165,8 +171,27 @@ describe("the review (AC-3, AC-5)", () => {
       { line: 2, use: WIND.bookId },
       { line: 3, title: "Golden Son", author: "Pierce Brown", series: "Red Rising", position: 2 },
     ] }]);
-    expect(container.querySelector('[role="status"]')!.textContent).toBe("Added 1 book to Someday. See To read");
-    expect(container.querySelector("textarea")!.value).toBe("");
+    // Then To read, where the new book is, with a toast saying what was added.
+    expect(router.push).toHaveBeenCalledWith("/books?status=to_read");
+    expect(container.querySelector(".toast-region .toast-label")!.textContent).toBe("1 book added to Someday");
+    expect(container.querySelector(".toast-region .toast-detail")).toBeNull();
+    // Held until the page changes: a second tap can't add again.
+    expect(confirmButton().textContent).toBe("Add 1 book");
+    expect(reason()).toBe("Adding…");
+    await click(confirmButton());
+    expect(confirms()).toHaveLength(1);
+  });
+
+  it("the toast counts books you already had apart", async () => {
+    library["the name of the wind"] = { match: { ...WIND, status: null }, near: null };
+    await type("The Name of the Wind - Patrick Rothfuss\nGolden Son - Pierce Brown");
+    await click(checkButton()!);
+    fetchMock.mockImplementationOnce(async () => Response.json({
+      ok: true, created: ["golden-son-pierce-brown"], matched: [], added: ["golden-son-pierce-brown", WIND.bookId],
+    }));
+    await click(confirmButton());
+    expect(container.querySelector(".toast-region .toast-label")!.textContent).toBe("2 books added to Someday");
+    expect(container.querySelector(".toast-region .toast-detail")!.textContent).toBe("1 already in your library");
   });
 
   it("a failed add writes nothing and keeps your lines", async () => {
@@ -177,5 +202,7 @@ describe("the review (AC-3, AC-5)", () => {
     expect(container.querySelector('[role="alert"]')!.textContent)
       .toBe("× Couldn't add them. Nothing was written; your lines are still here.");
     expect(container.querySelector("textarea")!.value).toBe("Golden Son - Pierce Brown");
+    expect(router.push).not.toHaveBeenCalled();
+    expect(reason()).toBeNull();
   });
 });
