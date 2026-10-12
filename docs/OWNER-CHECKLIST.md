@@ -75,7 +75,7 @@ tick them.
       in `.env.example`) in Vercel for Preview and Production. Without them Add
       issues' Search answers from your catalog only and says *Metron isn't set up
       here*. Needed before the 1.3b preview can search Metron (from TASK-006,
-      task/1.3b-metron-search-add).
+      PR #75).
 
 ## Approvals from follow-ups
 

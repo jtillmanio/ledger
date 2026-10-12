@@ -3754,7 +3754,7 @@ is added with its seasons marked; loading, rate-limited and error states match
 row of kind Watch carrying the query. Neutral grey genre chips carry a text label.
 The error line is a grey `×` (UX floor), as 1.3b built it; the TMDB error frame
 in `design/mockups.html` still draws `⚠` and is redrawn with this task (from
-TASK-006, 1.3b, task/1.3b-metron-search-add).
+TASK-006, 1.3b, PR #75).
 
 **Check:** test that adding a show with 2 seasons creates 1 `titles` row and 2
 `seasons` rows from a single TMDB call, and that re-adding updates rather than
