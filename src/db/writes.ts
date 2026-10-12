@@ -202,6 +202,8 @@ export type InsertResult =
     skipped: string[];
     /** `issues` rows this insert created. */
     newIssues: string[];
+    /** Removed `issues` rows this insert brought back to place them; the undo removes them again. */
+    revived: string[];
   }
   | { ok: false; reason: "no-run" | "foreign-after" };
 
@@ -210,8 +212,9 @@ export type InsertResult =
  * `after` is a live placement's id, 0 for the start of the run, or null for its
  * end. All of it or none of it: one transaction.
  *
- * - A label the catalog has (matched case-insensitively, D-54) reuses that
- *   `issues` row; a new one is created with extract's id for it (D-15), `-2`
+ * - A label the catalog has (matched case-insensitively, D-54, the row spelled
+ *   exactly as typed first) reuses that `issues` row, bringing it back if it was
+ *   removed from the catalog, since the label is UNIQUE; a new one is created with extract's id for it (D-15), `-2`
  *   and up when another label already holds that slug, exactly as extract does.
  * - A label whose placement here was removed restores that row: same id, so its
  *   read mark comes back (S-07). One still live is skipped, never placed twice
@@ -230,10 +233,11 @@ export async function insertIssuesIntoRun(
   { within }: { within?: (tx: Tx) => Promise<void> } = {},
 ): Promise<InsertResult> {
   return db.transaction(async (tx) => {
-    // The run row is the lock: two inserts into one run take turns.
+    // The run row is the lock: two inserts into one run take turns. NO KEY
+    // UPDATE, so rows that only reference the run aren't held up.
     const [run] = await tx.select({ id: runs.id }).from(runs)
       .where(and(eq(runs.id, runId), isNull(runs.deletedAt), eq(runs.placeholder, false)))
-      .for("update");
+      .for("no key update");
     if (!run) return { ok: false, reason: "no-run" } as const;
 
     const placed = await tx
@@ -255,11 +259,13 @@ export async function insertIssuesIntoRun(
     const found = keys.length === 0 ? [] : await tx
       .select({ id: issues.id, label: issues.label, deletedAt: issues.deletedAt })
       .from(issues).where(inArray(sql`lower(${issues.label})`, keys));
-    const byKey = new Map(found.map((i) => [i.label.toLowerCase(), i.id]));
-    // A catalog row soft-deleted elsewhere is the same comic: bring it back
-    // rather than trip the label's UNIQUE with a second one.
-    const revive = found.filter((i) => i.deletedAt !== null).map((i) => i.id);
-    if (revive.length) await tx.update(issues).set({ deletedAt: null }).where(inArray(issues.id, revive));
+    // Two catalog rows can differ only in case: the one spelled as typed wins.
+    const byKey = new Map<string, string>();
+    const removed = new Set(found.filter((i) => i.deletedAt !== null).map((i) => i.id));
+    for (const i of found) {
+      const k = i.label.toLowerCase();
+      if (!byKey.has(k) || i.label === wanted.get(k)) byKey.set(k, i.id);
+    }
 
     const fresh = keys.filter((k) => !byKey.has(k)).map((k) => wanted.get(k)!);
     const newIssues: { id: string; label: string }[] = [];
@@ -289,6 +295,13 @@ export async function insertIssuesIntoRun(
       else batch.push({ issueId });
     }
 
+    // A catalog row removed elsewhere is the same comic: bring it back to place
+    // it, rather than trip the label's UNIQUE with a second one. Only if it is
+    // placed: a skipped label leaves it as it was.
+    const revived = batch.map((b) => ("issueId" in b ? b.issueId : placed.find((r) => r.id === b.restore)!.issueId))
+      .filter((id) => removed.has(id));
+    if (revived.length) await tx.update(issues).set({ deletedAt: null }).where(inArray(issues.id, revived));
+
     const restored: { id: number; sequence: number }[] = [];
     let created: number[] = [];
     if (batch.length) {
@@ -315,7 +328,7 @@ export async function insertIssuesIntoRun(
     }
 
     await within?.(tx);
-    return { ok: true, after: p, created, restored, skipped, newIssues: newIssues.map((i) => i.id) } as const;
+    return { ok: true, after: p, created, restored, skipped, newIssues: newIssues.map((i) => i.id), revived } as const;
   });
 }
 
@@ -323,8 +336,10 @@ export async function insertIssuesIntoRun(
  * An insert's undo (task 1.3c, AC-5): every placement it created is
  * soft-deleted (Hard rule 4), every one it restored is removed again at the
  * sequence it had, and every other placement goes back to its old sequence. The
- * `issues` rows it created stay: they are catalog, and harmless. No progress
- * row is touched.
+ * `issues` rows it created stay: they are catalog, and harmless; the ones it
+ * brought back are removed again. No progress row is touched. A re-hidden
+ * placement's `deleted_at` is the undo's time, not its first removal's: nothing
+ * reads when a placement was removed, only whether.
  *
  * The created placements give up their slots, so they move past the end of the
  * run. Refuses, changing nothing, unless the batch still sits exactly where the
@@ -332,11 +347,11 @@ export async function insertIssuesIntoRun(
  */
 export async function undoInsert(
   runId: string,
-  insert: { after: number; created: number[]; restored: { id: number; sequence: number }[] },
+  insert: { after: number; created: number[]; restored: { id: number; sequence: number }[]; revived?: string[] },
 ): Promise<boolean> {
   return db.transaction(async (tx) => {
-    const { after, created, restored } = insert;
-    const [run] = await tx.select({ id: runs.id }).from(runs).where(eq(runs.id, runId)).for("update");
+    const { after, created, restored, revived = [] } = insert;
+    const [run] = await tx.select({ id: runs.id }).from(runs).where(eq(runs.id, runId)).for("no key update");
     if (!run) return false;
 
     const rows = await tx.select({ id: runIssues.id, sequence: runIssues.sequence, deletedAt: runIssues.deletedAt })
@@ -367,6 +382,10 @@ export async function undoInsert(
           sequence: sql`${top} + array_position(ARRAY[${sql.join(order.map((id) => sql`${id}`), sql`, `)}]::int[], ${runIssues.id})`,
         })
         .where(and(eq(runIssues.runId, runId), inArray(runIssues.id, order)));
+    }
+    if (revived.length) {
+      await tx.update(issues).set({ deletedAt: sql`now()` })
+        .where(and(inArray(issues.id, revived), isNull(issues.deletedAt)));
     }
     return true;
   });

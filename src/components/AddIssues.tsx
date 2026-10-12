@@ -11,7 +11,7 @@ import { buildReview, labelKey, type Catalog, type Choices, type Placement } fro
 
 export type AddContext = { run: { id: string; title: string }; placements: Placement[] };
 
-type Insert = { after: number; created: number[]; restored: { id: number; sequence: number }[] };
+type Insert = { after: number; created: number[]; restored: { id: number; sequence: number }[]; revived: string[] };
 
 const api = (runId: string) => `/api/runs/${encodeURIComponent(runId)}/issues`;
 const issues = (n: number) => `${n} ${n === 1 ? "issue" : "issues"}`;
@@ -102,7 +102,7 @@ export default function AddIssues({ initial, knownSeries, runs }: {
         body: JSON.stringify({ labels: review.writes.map((w) => w.label), after }),
       });
       if (!res.ok) throw new Error(String(res.status));
-      const done = await res.json() as Insert & { context: AddContext };
+      const done = await res.json() as Insert & { skipped: string[]; context: AddContext };
       setCtx(done.context);
       setText("");
       setChoices({});
@@ -112,10 +112,12 @@ export default function AddIssues({ initial, knownSeries, runs }: {
         notify("Nothing added: they were already in this run", title);
         return;
       }
-      const insert: Insert = { after: done.after, created: done.created, restored: done.restored };
+      const insert: Insert = { after: done.after, created: done.created, restored: done.restored, revived: done.revived };
+      // A stale tab (D-9): what another tab had already placed is left alone, and said so.
+      const skipped = done.skipped.length ? ` · ${done.skipped.length} already there` : "";
       push({
         label: `${issues(n)} added`,
-        detail: `to ${title}`,
+        detail: `to ${title}${skipped}`,
         undo: async () => {
           const r = await fetch(api(runId), {
             method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify(insert),
@@ -177,7 +179,7 @@ export default function AddIssues({ initial, knownSeries, runs }: {
             value={text} onChange={(e) => setText(e.target.value)} />
         </div>
         <div>
-          <h3 className="s">Review<span className="more">{`${count} will be added`}</span></h3>
+          <h2 className="s">Review<span className="more">{`${count} will be added`}</span></h2>
           {lines.length === 0 ? (
             <div className="slate">
               <p>Nothing to review yet. Type or paste labels, one per line: <span className="mono">Thor #337-340</span>.</p>

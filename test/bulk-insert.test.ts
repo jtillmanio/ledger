@@ -265,6 +265,58 @@ describe("nothing is written until confirm, and then all or nothing (AC-2)", () 
   });
 });
 
+describe("the transaction's edges", () => {
+  it("a throw inside `within` (1.12's volume rule) rolls the whole insert back", async () => {
+    const writes = await import("../src/db/writes");
+    const before = await tables();
+    await expect(writes.insertIssuesIntoRun("thor", null, [thor(400), thor(339)], {
+      within: async () => { throw new Error("rule refused"); },
+    })).rejects.toThrow("rule refused");
+    expect(await tables()).toEqual(before);
+  });
+
+  it("a catalog row removed elsewhere is not offered as a match, is revived only when placed, and the undo hides it again", async () => {
+    await sql`INSERT INTO issues (id, label, deleted_at) VALUES ('ghost-1', 'Ghost #1', now()), ('ghost-2', 'Ghost #2', now())`;
+    await sql`INSERT INTO run_issues (run_id, sequence, issue_id) VALUES ('empty', 1, 'ghost-2')`;
+    expect(await queries.catalogMatches(["Ghost #1", "Ghost #2"])).toEqual([]);
+
+    const { body } = await post("empty", { labels: ["Ghost #1", "Ghost #2"], after: null });
+    expect(body.newIssues).toEqual([]);
+    expect(body.revived).toEqual(["ghost-1"]);
+    expect(body.skipped).toEqual(["Ghost #2"]);
+    const live = async () => Object.fromEntries((await sql`SELECT id, deleted_at IS NULL AS live FROM issues
+      WHERE id LIKE 'ghost-%'`).map((r) => [r.id, r.live]));
+    // Ghost #2 was only skipped, so it stays removed.
+    expect(await live()).toEqual({ "ghost-1": true, "ghost-2": false });
+
+    await undo("empty", { after: body.after, created: body.created, restored: body.restored, revived: body.revived });
+    expect(await live()).toEqual({ "ghost-1": false, "ghost-2": false });
+  });
+
+  it("reuses the catalog row spelled exactly as typed when two differ only in case", async () => {
+    await sql`INSERT INTO issues (id, label) VALUES ('shout-1', 'THOR (1966) #335')`;
+    await post("empty", { labels: ["THOR (1966) #335", thor(336)], after: null });
+    expect((await placementsOf("empty")).map((p) => p.issue_id)).toEqual(["shout-1", "thor-1966-336"]);
+  });
+
+  it("answers a unique clash (another tab's insert won) with 409, not 500, and writes nothing", async () => {
+    const before = await tables();
+    await sql`CREATE UNIQUE INDEX boom_idx ON issues ((replace(label, '400', '330')))`;
+    try {
+      const { status, body } = await post("empty", { labels: [thor(400)], after: null });
+      expect(status).toBe(409);
+      expect(body.error).toMatch(/try again/i);
+    } finally {
+      await sql`DROP INDEX boom_idx`;
+    }
+    expect(await tables()).toEqual(before);
+  });
+
+  it("answers a run id that isn't valid percent-encoding with 400", async () => {
+    expect((await route.GET(new Request("http://test/api"), params("%E0%A4%A"))).status).toBe(400);
+  });
+});
+
 describe("the undo (AC-5)", () => {
   it("soft-deletes what the insert created, re-hides what it restored, and puts the run back", async () => {
     await markRead(sql, USER, "thor", "thor-1966-338");

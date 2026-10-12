@@ -32,7 +32,7 @@ export default function InsertPreview({ placements, after, adding, onAfter }: {
 
   return (
     <>
-      <h3 className="s">Where they land<span className="more">{where}</span></h3>
+      <h2 className="s">Where they land<span className="more">{where}</span></h2>
       <div className="insertprev" role="region" aria-label="Where these land">
         <div className="group">
           {above.map((p) => <div key={p.id} className="ip">{p.label}</div>)}

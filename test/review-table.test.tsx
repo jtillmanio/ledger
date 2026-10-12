@@ -8,6 +8,8 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AddIssues, { type AddContext } from "../src/components/AddIssues";
 import { UndoProvider } from "../src/components/Undo";
+import { parseBulk } from "../src/lib/bulk-parse";
+import { buildReview } from "../src/lib/bulk-review";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -54,7 +56,7 @@ beforeEach(() => {
     }
     if (method === "POST") {
       return Response.json({ ok: true, after: 13, created: [5001, 5002], restored: [{ id: 1009, sequence: 10 }],
-        skipped: [], newIssues: [], context: thorRun() });
+        skipped: [], newIssues: [], revived: [], context: thorRun() });
     }
     return Response.json({ ok: true, context: thorRun() });
   });
@@ -92,7 +94,7 @@ const glyphs = () => rows().map((r) => r.querySelector(".vd")!.textContent);
 const whys = () => rows().map((r) => r.querySelector(".vm")?.textContent ?? "");
 const groupsOf = (row: HTMLElement) => [...row.querySelectorAll<HTMLElement>('[role="radiogroup"]')];
 const optionsOf = (group: HTMLElement) => [...group.querySelectorAll("label")].map((l) => l.textContent);
-const header = () => container.querySelector("h3.s .more")!.textContent;
+const header = () => container.querySelector("h2.s .more")!.textContent;
 const confirmButton = () => [...container.querySelectorAll<HTMLButtonElement>(".add-buttons button")].at(-1)!;
 const pick = (row: HTMLElement, option: string) => act(async () => {
   const label = [...row.querySelectorAll("label")].find((l) => l.textContent === option)!;
@@ -177,9 +179,12 @@ describe("the insertion preview and the run chip (AC-4)", () => {
   it("shows three rows either side of the insertion point, the new rows highlighted, at the end by default", async () => {
     render();
     await type("Thor #400\nThor #401");
+    // A row reads as its label; the new row as its summary, then its count in mono.
     const preview = () => [...container.querySelectorAll<HTMLElement>(".insertprev .ip")];
-    expect(container.querySelectorAll("h3.s .more")[1].textContent).toBe("at the end");
-    expect(preview().map((p) => p.textContent)).toEqual([thor(340), thor(341), thor(342), "+ Thor (1966) #400–4012"]);
+    const text = (p: HTMLElement) => p.classList.contains("new")
+      ? [...p.children].map((c) => c.textContent).join(" | ") : p.textContent;
+    expect(container.querySelectorAll("h2.s .more")[1].textContent).toBe("at the end");
+    expect(preview().map(text)).toEqual([thor(340), thor(341), thor(342), "+ Thor (1966) #400–401 | 2"]);
     expect(preview()[3].classList.contains("new")).toBe(true);
 
     const select = container.querySelector<HTMLSelectElement>(".ip-after")!;
@@ -188,9 +193,9 @@ describe("the insertion preview and the run chip (AC-4)", () => {
       select.value = "1007"; // Thor #336
       select.dispatchEvent(new Event("change", { bubbles: true }));
     });
-    expect(container.querySelectorAll("h3.s .more")[1].textContent).toBe(`after ${thor(336)}`);
-    expect(preview().map((p) => p.textContent)).toEqual([
-      thor(334), thor(335), thor(336), "+ Thor (1966) #400–4012", thor(337), thor(338), thor(340),
+    expect(container.querySelectorAll("h2.s .more")[1].textContent).toBe(`after ${thor(336)}`);
+    expect(preview().map(text)).toEqual([
+      thor(334), thor(335), thor(336), "+ Thor (1966) #400–401 | 2", thor(337), thor(338), thor(340),
     ]);
     expect(preview().filter((p) => p.classList.contains("new"))).toHaveLength(1);
 
@@ -232,7 +237,7 @@ describe("after the insert (AC-5)", () => {
     await click(container.querySelector(".toast-undo")!);
     const del = fetchMock.mock.calls.find(([, init]) => init?.method === "DELETE")!;
     expect(del[0]).toBe("/api/runs/thor/issues");
-    expect(JSON.parse(del[1].body)).toEqual({ after: 13, created: [5001, 5002], restored: [{ id: 1009, sequence: 10 }] });
+    expect(JSON.parse(del[1].body)).toEqual({ after: 13, created: [5001, 5002], restored: [{ id: 1009, sequence: 10 }], revived: [] });
   });
 });
 
@@ -277,5 +282,47 @@ describe("the screen's states (AC-6)", () => {
     await settle();
     expect(container.querySelector(".neutral-error")).toBeNull();
     expect(whys()[0]).toMatch(/^Already in 3 runs\./);
+  });
+});
+
+describe("the review's rules (task 1.3c plan)", () => {
+  const review = (text: string, placements = thorRun().placements, choices = {}) => buildReview(
+    parseBulk(text, { knownSeries, runLabels: placements.filter((p) => !p.removed).map((p) => p.label) }),
+    { knownSeries, placements, catalog: new Map(), choices });
+
+  it("keeps a volume year the series never used, checked as a new volume (owner's answer 3)", () => {
+    const [row] = review("Captain America (1969) #1").rows;
+    expect(row.kind).toBe("ok");
+    expect(row.check).toBe("new volume");
+    expect(row.why).toBe("No Captain America (1969) in your catalog yet.");
+  });
+
+  it("counts a label repeated inside the paste once, and says where it already is", () => {
+    const r = review("Thor #400\nThor #398-401");
+    expect(r.writes.map((w) => w.label)).toEqual([thor(400), thor(398), thor(399), thor(401)]);
+    expect(r.rows[1].why).toMatch(/^4 issues, 3 to add: #400 is also on line 1\./);
+    expect(review("Thor #400\nthor (1966) #400").rows[1].why).toMatch(/^Also on line 1\./);
+  });
+
+  it("names which way a range is broken", () => {
+    expect(review("Thor #5-5").rows[0].why).toBe("#5-5 is one issue. Write it #5.");
+    expect(review("Thor #1-501").rows[0].why).toBe("#1-501 is 501 issues; a range stops at 500. Check it.");
+    expect(review("Thor #340-337").rows[0].why).toBe("#340-337 runs backwards. Write it #337-340.");
+  });
+});
+
+describe("a stale tab (the run changed since the review)", () => {
+  it("says in the toast how many it skipped as already there", async () => {
+    fetchMock.mockImplementation(async (_url: string, init?: RequestInit) => {
+      const body = init?.body ? JSON.parse(init.body as string) : null;
+      if (body?.dryRun) return Response.json({ matches: [] });
+      return Response.json({ ok: true, after: 13, created: [5001], restored: [], skipped: [thor(401)],
+        newIssues: [], revived: [], context: thorRun() });
+    });
+    render();
+    await type("Thor #400\nThor #401");
+    await click(confirmButton());
+    expect(container.querySelector(".toast-label")!.textContent).toBe("1 issue added");
+    expect(container.querySelector(".toast-detail")!.textContent).toBe("to Simonson — Thor · 1 already there");
   });
 });

@@ -377,7 +377,7 @@ export type AddContext = NonNullable<Awaited<ReturnType<typeof addContext>>>;
 
 /** The catalog rows these labels name, matched case-insensitively (D-54), and
  * how many live runs place each: the review's *already in 3 runs*. A label the
- * catalog doesn't have is simply absent. */
+ * catalog doesn't have, or removed from it, is simply absent. */
 export async function catalogMatches(labels: string[]) {
   return sql<{ key: string; issue_id: string; label: string; runs: number }[]>`
     SELECT lower(i.label) AS key, i.id AS issue_id, i.label,
@@ -385,7 +385,7 @@ export async function catalogMatches(labels: string[]) {
     FROM issues i
     LEFT JOIN run_issues ri ON ri.issue_id = i.id AND ri.deleted_at IS NULL
     LEFT JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL AND NOT r.placeholder
-    WHERE lower(i.label) = ANY(${labels.map((l) => l.toLowerCase())}::text[])
+    WHERE i.deleted_at IS NULL AND lower(i.label) = ANY(${labels.map((l) => l.toLowerCase())}::text[])
     GROUP BY i.id
   `;
 }

@@ -22,20 +22,23 @@ type Params = { params: Promise<{ runId: string }> };
  * - POST `{ labels, dryRun: true }`: the review's catalog check, writing nothing.
  * - POST `{ labels, after }`: the insert, in one transaction; `after` is a live
  *   placement id, 0 for the start, null for the end.
- * - DELETE `{ after, created, restored }`: the insert's undo, from its answer.
+ * - DELETE `{ after, created, restored, revived }`: the insert's undo, from its answer.
  *
  * The insert and its undo answer with the run's placements as they now are, so
  * the screen redraws without a second request.
  */
 export async function GET(_req: Request, { params }: Params) {
   if (!(await apiUserId())) return unauthorized();
-  const context = await addContext(decodeURIComponent((await params).runId));
+  const runId = await runOf(params);
+  if (runId === null) return bad("the run id is not valid");
+  const context = await addContext(runId);
   return context ? NextResponse.json(context) : notFound();
 }
 
 export async function POST(req: Request, { params }: Params) {
   if (!(await apiUserId())) return unauthorized();
-  const runId = decodeURIComponent((await params).runId);
+  const runId = await runOf(params);
+  if (runId === null) return bad("the run id is not valid");
   const body = await req.json().catch(() => null);
   const labels = cleanLabels(body?.labels);
   if (!labels) return bad(`labels is a list of 1 to ${MAX_LABELS} labels`);
@@ -47,7 +50,16 @@ export async function POST(req: Request, { params }: Params) {
 
   const after = body.after ?? null;
   if (after !== null && !id(after, true)) return bad("after is a placement id, 0 for the start, or null for the end");
-  const result = await insertIssuesIntoRun(runId, after, labels);
+  let result: Awaited<ReturnType<typeof insertIssuesIntoRun>>;
+  try {
+    result = await insertIssuesIntoRun(runId, after, labels);
+  } catch (e) {
+    // Another tab added the same new label first: the transaction rolled back.
+    if (uniqueViolation(e)) {
+      return NextResponse.json({ error: "Another add got there first. Nothing was written; try again." }, { status: 409 });
+    }
+    throw e;
+  }
   if (!result.ok) {
     return result.reason === "no-run" ? notFound() : bad(`after must be a live placement of ${runId}`);
   }
@@ -56,16 +68,19 @@ export async function POST(req: Request, { params }: Params) {
 
 export async function DELETE(req: Request, { params }: Params) {
   if (!(await apiUserId())) return unauthorized();
-  const runId = decodeURIComponent((await params).runId);
+  const runId = await runOf(params);
+  if (runId === null) return bad("the run id is not valid");
   const body = await req.json().catch(() => null);
-  const { after, created, restored } = body ?? {};
+  const { after, created, restored, revived = [] } = body ?? {};
   const valid = Number.isInteger(after) && after >= 0
     && Array.isArray(created) && created.every((c: unknown) => id(c))
     && Array.isArray(restored) && restored.every((r: { id?: unknown; sequence?: unknown }) =>
       id(r?.id) && Number.isInteger(r?.sequence) && (r.sequence as number) > 0)
-    && created.length + restored.length > 0 && created.length + restored.length <= MAX_LABELS;
-  if (!valid) return bad("after, created and restored are the insert's own answer");
-  if (!(await undoInsert(runId, { after, created, restored }))) {
+    && created.length + restored.length > 0 && created.length + restored.length <= MAX_LABELS
+    && Array.isArray(revived) && revived.length <= MAX_LABELS
+    && revived.every((r: unknown) => typeof r === "string" && r !== "" && r.length <= MAX_LABEL);
+  if (!valid) return bad("after, created, restored and revived are the insert's own answer");
+  if (!(await undoInsert(runId, { after, created, restored, revived }))) {
     return NextResponse.json({ error: "the run changed since the insert; nothing was undone" }, { status: 409 });
   }
   return NextResponse.json({ ok: true, context: await addContext(runId) });
@@ -76,6 +91,21 @@ function cleanLabels(raw: unknown): string[] | null {
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_LABELS) return null;
   const out = raw.map((l) => (typeof l === "string" ? normalizeLine(l) : ""));
   return out.every((l) => l !== "" && l.length <= MAX_LABEL) ? out : null;
+}
+
+/** The run id from the path, or null when it isn't valid percent-encoding. */
+async function runOf(params: Params["params"]): Promise<string | null> {
+  try {
+    return decodeURIComponent((await params).runId);
+  } catch {
+    return null;
+  }
+}
+
+/** Postgres's unique_violation, through Drizzle's wrapper. */
+function uniqueViolation(e: unknown): boolean {
+  const err = e as { code?: string; cause?: { code?: string } };
+  return err?.code === "23505" || err?.cause?.code === "23505";
 }
 
 function id(v: unknown, zero = false): v is number {

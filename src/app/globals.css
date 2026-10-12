@@ -635,28 +635,33 @@ button.primary{font:inherit;padding:.625rem 1rem;cursor:pointer;background:var(-
    be red (it is destructive); a check that failed is red because it is a
    validation failure; an API error is neutral. */
 main.add{padding-bottom:0}
-.add-2up>div>h3.s:first-child{margin-top:1.5rem}
+/* The section heads are h2 (no level skipped after the h1), drawn as h3.s. */
+main.add h2.s{font-family:inherit;font-size:.8125rem;font-weight:600;color:var(--muted);margin:1.5rem 0 .5rem;
+  display:flex;align-items:center;gap:.5rem}
+main.add h2.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand);
+  background:var(--brand-soft);padding:.1875rem .5rem;border-radius:6px}
 @media (min-width:1024px){
   main.add{max-width:var(--content-max)}
   .add-2up{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.5rem;align-items:start}
-  .add-2up>div>h3.s:first-child{margin-top:.5rem}
+  .add-2up>div>h2.s:first-child{margin-top:.5rem}
 }
 .runchip{display:flex;flex-wrap:wrap;align-items:baseline;gap:.25rem;font-size:.8125rem;color:var(--muted);margin:.25rem 0 .75rem}
 .runchip-t{color:var(--ink);font-weight:600}
 .linkbtn{font:inherit;font-weight:600;color:var(--brand);background:none;border:0;padding:0 .25rem;
   min-height:24px;min-width:24px;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .linkbtn[aria-disabled="true"]{color:var(--muted);cursor:progress}
-.seg{display:inline-flex;border:1px solid var(--rule-2);border-radius:9px;overflow:hidden;
+/* Control outlines are --faint-deco, the 3:1 token (STYLE_GUIDE D8, WCAG 1.4.11). */
+.seg{display:inline-flex;border:1px solid var(--faint-deco);border-radius:9px;overflow:hidden;
   background:var(--surface);box-shadow:var(--sh-1)}
 .seg button{font:inherit;font-size:.8125rem;font-weight:500;padding:.4375rem .6875rem;min-height:32px;
-  color:var(--muted);background:none;border:0;border-right:1px solid var(--rule-2);cursor:pointer}
+  color:var(--muted);background:none;border:0;border-right:1px solid var(--faint-deco);cursor:pointer}
 .seg button:last-child{border-right:0}
 .seg button[aria-pressed="true"]{background:var(--brand);color:var(--on-brand);font-weight:600}
 .seg button[aria-disabled="true"]{cursor:not-allowed}
 .seg-note{margin:.375rem 0 0}
 .add-label{display:block;font-size:.8125rem;font-weight:600;color:var(--ink-2);margin:1rem 0 .375rem}
 textarea.txt{display:block;width:100%;resize:vertical;min-height:9rem;background:var(--surface);
-  border:1px solid var(--rule-2);border-radius:11px;padding:.75rem;font-family:var(--mono);
+  border:1px solid var(--faint-deco);border-radius:11px;padding:.75rem;font-family:var(--mono);
   font-size:.8125rem;line-height:1.8;color:var(--ink);box-shadow:var(--sh-1)}
 textarea.txt::placeholder{color:var(--faint)}
 textarea.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
@@ -680,6 +685,7 @@ textarea.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .vcheck{margin-left:auto;font-size:.6875rem;color:var(--muted);white-space:nowrap}
 .vm{font-size:.75rem;color:var(--muted);margin-top:.1875rem;line-height:1.45}
 .review .opts{margin-top:.5rem}
+.review .opts .opt{border-color:var(--faint-deco)}
 .opts .opt.no:has(input:checked){background:var(--danger);border-color:var(--danger);color:var(--on-danger)}
 
 .insertprev .ip{display:flex;gap:.5rem;padding:.5rem .875rem;font-size:.8125rem;color:var(--muted);border-bottom:1px solid var(--line)}
@@ -688,7 +694,7 @@ textarea.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .insertprev .ip.none{font-style:italic}
 .insertprev .frow .k{flex:0 0 auto}
 .ip-after{margin-left:auto;min-width:0;max-width:60%;min-height:32px;font:inherit;font-size:.8125rem;color:var(--ink);
-  background:var(--surface);border:1px solid var(--rule-2);border-radius:var(--r-md);padding:.25rem .5rem}
+  background:var(--surface);border:1px solid var(--faint-deco);border-radius:var(--r-md);padding:.25rem .5rem}
 
 .add-bar{flex-direction:column;align-items:stretch;gap:.375rem;margin:1.5rem -1.25rem 0}
 .add-buttons{display:flex;gap:.5rem}
@@ -698,7 +704,7 @@ textarea.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .add-reason:focus{outline:none}
 .add-reason:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 
-.picker-filter{margin:.5rem 0}
+.picker-filter{margin:.5rem 0;border-color:var(--faint-deco)}
 .picker-list{list-style:none;margin:0;padding:0;max-height:50vh;overflow:auto}
 .picker-run{display:block;width:100%;text-align:left;font:inherit;font-size:.875rem;color:var(--ink);background:none;
   border:0;border-bottom:1px solid var(--line);padding:.625rem .25rem;min-height:44px;cursor:pointer}
