@@ -19,6 +19,8 @@
 
 ## How it was verified
 
+<!-- One row per reviewer, then one row per ready gate (workflow.readyGates), in order. Owner gates say "owner". -->
+
 | Check | Where | Result |
 |---|---|---|
 | `/verify` (tsc, lint, `test:all`, build) / test-runner | local | |

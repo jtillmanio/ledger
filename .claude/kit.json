@@ -44,6 +44,16 @@
     { "pattern": "*.metron-cache.sqlite", "hint": "Metron response cache (binary). etl/enrich_comics.py reads it; query it with sqlite if you must.", "always": true }
   ],
 
+  "destructiveGuard": {
+    "allowPaths": [".kit-incoming"],
+    "commands": [
+      { "pattern": "(-EnvFile\\s+\\S*|ENV_FILE=\\S*)\\.env\\.live", "decision": "deny", "reason": "Aimed at production; only the owner runs commands against .env.live" },
+      { "pattern": "gh\\s+workflow\\s+run\\s+\\S*release", "decision": "deny", "reason": "Release migrates and promotes the live database; the owner starts it" },
+      { "pattern": "npm\\s+run\\s+(rebuild|seed)\\b|(rebuild|load)\\.(ps1|sh)", "decision": "ask", "reason": "Drops or truncates the development database; CLAUDE.md says ask first" },
+      { "pattern": "npm\\s+run\\s+db:(push|migrate|views)|drizzle-kit\\s+(push|migrate)", "decision": "ask", "reason": "Writes the database in DATABASE_URL (development); CLAUDE.md says ask first" }
+    ]
+  },
+
   "workflow": {
     "baseBranch": "main",
     "wipLimit": 1,
@@ -151,6 +161,61 @@
         ],
         "implementationExtensions": [".ts", ".tsx", ".sql", ".py"],
         "implementationPaths": ["migrations/meta/*"]
+      }
+    },
+    "monorepo_typed_branches": {
+      "workflow": {
+        "branchPrefixes": ["feat/", "fix/", "chore/", "docs/", "model/"],
+        "taskBranch": "{type}/{id}-{slug}"
+      },
+      "testAudit": {
+        "testPathPatterns": ["web/*.test.ts", "web/*.test.tsx", "web/e2e/*.spec.ts", "python/*/tests/*.py"],
+        "setup": "pnpm db:migrate:test && pnpm db:seed",
+        "runners": [
+          { "pattern": "python/*/tests/*.py", "dir": "python", "run": "uv run pytest {tests}" },
+          { "pattern": "web/e2e/*.spec.ts", "dir": "web", "run": "pnpm exec playwright test {tests}" },
+          { "pattern": "web/*.test.ts*", "dir": "web", "run": "pnpm exec vitest run {tests}" }
+        ]
+      }
+    },
+    "ready_gates_with_preview": {
+      "workflow": {
+        "readyGates": [
+          "verify.full",
+          "ci",
+          { "name": "Preview deployed", "check": "gh pr checks <n> shows the hosting provider's preview status as pass", "by": "claude", "failureLog": "the hosting provider's deployment log (its dashboard, not gh run view)", "ownerFix": "A preview that fails after a regenerated migration needs its preview database reset by the owner" },
+          { "name": "Changed workflow run on the branch", "check": "gh workflow run <file> --ref <branch>, then gh run watch <id> --exit-status", "by": "claude", "when": [".github/workflows/*"] },
+          { "name": "UI walked on the preview at phone width", "check": "Open the preview at 390px and walk the changed screen and its states", "by": "owner", "when": "ui" }
+        ],
+        "afterMerge": "After merge, run the Release workflow to put it live."
+      }
+    },
+    "roadmap_mode": {
+      "workflow": {
+        "roadmap": { "path": "docs/roadmap.md", "idPattern": "\\d+\\.\\d+[a-z]?", "checkLabel": "**Check:**" },
+        "statusDoc": "docs/STATUS.md",
+        "splitPolicy": "never-split",
+        "commitFormat": "area",
+        "decisions": "propose"
+      }
+    },
+    "destructive_guard": {
+      "destructiveGuard": {
+        "allowPaths": [".kit-incoming", "D:/scratch"],
+        "commands": [
+          { "pattern": "prisma\\s+migrate\\s+reset", "decision": "deny", "reason": "Drops and recreates the development database" },
+          { "pattern": "supabase\\s+db\\s+reset", "decision": "ask", "reason": "Wipes the local database" }
+        ]
+      }
+    },
+    "large_file_and_auth": {
+      "largeFiles": [
+        { "pattern": "design/mockups.html", "hint": "Print one screen with: powershell -NoProfile -File scripts/screen.ps1 <screen-id>" },
+        { "pattern": "seed/*.csv", "hint": "Generated data. Query it, or use Select-String / head on the file.", "always": true }
+      ],
+      "ui": {
+        "auth": { "loginPath": "/login", "envFile": ".env", "secretVar": "APP_PASSCODE", "steps": ["Type the secret into the Passcode field", "Press the sign-in button", "Wait for the redirect away from /login"] },
+        "redrawFiles": ["design/mockups.html"]
       }
     }
   }
