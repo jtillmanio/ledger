@@ -90,13 +90,15 @@ export function WriteNote() {
 
 /**
  * **Resolve** on an *Unsure* note (task 1.4b; owner, 2026-10-09): it asks what
- * the note is first, as three links into the add flows.
+ * the note is first, as three links into the add flows. A choice with nowhere
+ * to go is a held button with its reason under it (UX floor).
  */
 export function ResolvePick({ id, text, links }: {
-  id: number; text: string; links: { label: string; href: string | null }[];
+  id: number; text: string; links: { label: string; href: string | null; reason?: string }[];
 }) {
   const [open, setOpen] = useState(false);
   const menu = `resolve-${id}`;
+  const held = links.filter((l) => !l.href && l.reason);
   return (
     <div className="resolve">
       <button type="button" className="btn sec sm" aria-expanded={open} aria-controls={menu}
@@ -107,9 +109,13 @@ export function ResolvePick({ id, text, links }: {
         <div id={menu} className="resolve-pick" role="group" aria-label="Resolve as">
           {links.map((l) => (l.href
             ? <Link key={l.label} prefetch={false} href={l.href} className="chip">{l.label}</Link>
-            : <span key={l.label} className="chip" aria-disabled="true">{l.label}</span>))}
+            : <button key={l.label} type="button" className="chip" aria-disabled="true"
+                aria-describedby={`${menu}-${l.label}`}>{l.label}</button>))}
         </div>
       )}
+      {open && held.map((l) => (
+        <span key={l.label} id={`${menu}-${l.label}`} className="small muted">{l.reason}</span>
+      ))}
     </div>
   );
 }

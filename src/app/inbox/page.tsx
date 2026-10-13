@@ -52,7 +52,7 @@ export default async function Inbox() {
                     {n.kind === null ? (
                       <ResolvePick id={n.id} text={n.raw_text} links={[
                         { label: "Books", href: resolveHref(note, "books", lastRun) },
-                        { label: "Comics", href: resolveHref(note, "comics", lastRun) },
+                        { label: "Comics", href: resolveHref(note, "comics", lastRun), reason: noRun },
                         { label: "Watch", href: resolveHref(note, "watch", lastRun) },
                       ]} />
                     ) : href ? (

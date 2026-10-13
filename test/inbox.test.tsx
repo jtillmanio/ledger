@@ -202,6 +202,21 @@ describe("/inbox (AC-1, AC-3, AC-5)", () => {
     expect(container.querySelector(`#${button.getAttribute("aria-describedby")}`)!.textContent).toBe("No run to add issues to yet");
   });
 
+  it("an Unsure note with no run to add to holds Comics as a button with its reason", async () => {
+    lastRun = null;
+    notes = [{ id: 6, raw_text: "Iron Fist", kind: null, created_at: at(0) }];
+    await renderInbox();
+    const row = rowFor("Iron Fist");
+    await act(async () => row.querySelector<HTMLButtonElement>("button.btn")!.click());
+    expect([...row.querySelectorAll(".resolve-pick a")].map((a) => a.textContent)).toEqual(["Books", "Watch"]);
+    const comics = row.querySelector<HTMLButtonElement>(".resolve-pick button")!;
+    expect(comics.textContent).toBe("Comics");
+    expect(comics.type).toBe("button");
+    expect(comics.getAttribute("aria-disabled")).toBe("true");
+    expect(container.querySelector(`[id="${comics.getAttribute("aria-describedby")}"]`)!.textContent)
+      .toBe("No run to add issues to yet");
+  });
+
   it("Resolve keeps a 24px floor", () => {
     const css = readFileSync("src/app/globals.css", "utf8");
     expect(css).toMatch(/\.row\.note \.btn\{[^}]*min-height:32px/);

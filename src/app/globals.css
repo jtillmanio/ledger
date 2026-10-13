@@ -599,6 +599,8 @@ main{max-width:var(--col);margin:0 auto;padding:1.5rem 1.25rem 6rem}
 .small{font-size:.8125rem}
 .bar-inner{max-width:var(--col);margin:0 auto;display:flex;align-items:baseline;
   gap:1.25rem;padding:.75rem 1.25rem}
+/* Five links (Inbox joined in task 1.4b) fit 360px only a little closer together. */
+@media (max-width:389px){.bar-inner{gap:.875rem}}
 /* Screen titles are Newsreader 500, 32/36 on a phone and 40/44 from the
    tablet up (D-40, FP-D5; STYLE_GUIDE §5). */
 h1{font:500 var(--fs-title) var(--display);letter-spacing:-.015em;margin:0 0 .25rem}
