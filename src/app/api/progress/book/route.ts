@@ -59,8 +59,8 @@ const asFinish = (o: Record<string, unknown>) => ({ on: o.finishedOn, precision:
 
 function validChange(c: unknown): c is BookStatusChange {
   if (typeof c !== "object" || c === null) return false;
-  const { bookId, prior, appended, edited } = c as Record<string, unknown>;
-  if (typeof bookId !== "string") return false;
+  const { bookId, status, prior, appended, edited } = c as Record<string, unknown>;
+  if (typeof bookId !== "string" || !ALLOWED.includes(status as string)) return false;
   if (appended !== null && !isId(appended)) return false;
   if (prior !== null) {
     if (typeof prior !== "object") return false;

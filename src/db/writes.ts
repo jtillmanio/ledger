@@ -26,6 +26,8 @@ export type BookStatusInput = {
  * re-dated. Enough for the undo to put exactly that back (task 1.2). */
 export type BookStatusChange = {
   bookId: string;
+  /** The status this write set. */
+  status: string;
   /** The row before, or null when the book had none. */
   prior: { status: string; finishedOn: string | null; precision: Precision } | null;
   /** The read_events row this write appended. */
@@ -101,7 +103,7 @@ export async function saveBookStatus(userId: string, input: BookStatusInput): Pr
     await tx.insert(bookStatus).values({ userId, bookId, ...set })
       .onConflictDoUpdate({ target: [bookStatus.userId, bookStatus.bookId], set });
     return {
-      bookId,
+      bookId, status,
       prior: before ? { ...before, precision: before.precision as Precision } : null,
       appended, edited,
     };
@@ -115,13 +117,17 @@ export async function saveBookStatus(userId: string, input: BookStatusInput): Pr
  * A book that had no row loses the one the write made, unless something has
  * been added to it since, when it goes back to a bare `to_read`.
  *
- * Refuses, changing nothing, when the log moved on in between: the read this
- * write logged or re-dated is no longer the book's latest.
+ * Refuses, changing nothing, when anything moved on in between: the book's
+ * status is no longer the one this write set, or the read it logged or
+ * re-dated is no longer the book's latest.
  */
 export async function undoBookStatus(userId: string, change: BookStatusChange): Promise<boolean> {
-  const { bookId, prior, appended, edited } = change;
+  const { bookId, status, prior, appended, edited } = change;
   return db.transaction(async (tx) => {
     if (!(await lockBook(tx, bookId))) return false;
+    const [now] = await tx.select({ status: bookStatus.status }).from(bookStatus)
+      .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId)));
+    if (now?.status !== status) return false;
     const touched = appended ?? edited?.id ?? null;
     if (touched !== null && (await latestRead(tx, userId, bookId))?.id !== touched) return false;
 
@@ -156,8 +162,8 @@ export type IssuePrior = { completedAt: string | null; precision: string };
  * placement that is read here. A day is stored as its UTC midnight, like the
  * range mark's (until 1.16); Today is now(). Only this placement's row is
  * written; the same issue in another run keeps its own date (ARCHITECTURE 2.14).
- * Answers the row as it was, or null when the placement isn't read here or has
- * been removed. The date travels as Postgres text, as the issue route's does.
+ * Answers the row as it was, or null when the placement isn't read here, or
+ * it, its issue or its run has been removed. The date travels as Postgres text, as the issue route's does.
  */
 export async function redateIssue(
   userId: string, placementId: number, finish: Finish, { today = false } = {},
@@ -168,7 +174,10 @@ export async function redateIssue(
     const [before] = await tx
       .select({ completedAt: sql<string | null>`${issueProgress.completedAt}::text`, precision: issueProgress.completedAtPrecision })
       .from(issueProgress)
+      // Only a placement the app still shows, as the mark's POST checks (task 0.4).
       .innerJoin(runIssues, and(eq(runIssues.id, issueProgress.placementId), isNull(runIssues.deletedAt)))
+      .innerJoin(issues, and(eq(issues.id, runIssues.issueId), isNull(issues.deletedAt)))
+      .innerJoin(runs, and(eq(runs.id, runIssues.runId), isNull(runs.deletedAt)))
       .where(mine).for("update", { of: issueProgress });
     if (!before) return null;
     await tx.update(issueProgress).set({ completedAt: at, completedAtPrecision: finish.precision }).where(mine);

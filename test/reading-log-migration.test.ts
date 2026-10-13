@@ -49,8 +49,10 @@ describe("migration 0011 (dated reading log)", () => {
           ["undated", null, null, "none"],
           ["y2019", 2019, "2019-07-01", "approximate"],
         ]);
-        const [{ gone }] = await tx`SELECT to_regclass('read_events') IS NULL AS gone`;
+        const [{ gone, index }] = await tx`
+          SELECT to_regclass('read_events') IS NULL AS gone, to_regclass('status_user_year') IS NULL AS index`;
         expect(gone).toBe(true);
+        expect(index).toBe(true);
 
         // A row as it stood before 1.5: a year and no date.
         await tx`INSERT INTO book_status (user_id, book_id, status, finished_year) VALUES (${USER}, 'old', 'read', 2018)`;

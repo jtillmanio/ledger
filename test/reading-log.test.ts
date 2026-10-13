@@ -207,6 +207,13 @@ describe("undoing a status change (task 1.2)", () => {
     expect(await status("wok")).toMatchObject({ on: "2024-03-11", precision: "exact" });
   });
 
+  it("a bare status change's undo is refused once the status has moved on", async () => {
+    const { change } = await (await setStatus({ bookId: "wok", status: "reading" })).json();
+    await setStatus({ bookId: "wok", status: "dnf" });
+    expect((await undoStatus(change)).status).toBe(409);
+    expect(await status("wok")).toMatchObject({ status: "dnf" });
+  });
+
   it("refuses once the log has moved on, changing nothing", async () => {
     const { change } = await (await setStatus({
       bookId: "wok", status: "read", finish: { mode: "date", date: "2024-03-11" } })).json();
@@ -297,6 +304,16 @@ describe("Change date… on a spine row (AC-5)", () => {
     const { prior } = await res.json();
     expect(prior).toEqual({ completedAt: "2026-03-14 20:15:00+00", precision: "exact" });
     await issue.POST(req("/api/progress/issue", "POST", { placementId: a, completed: true, restore: prior }));
+    const [row] = (await progress()).filter((r) => r.key === "ra:x1");
+    expect([row.completed_at.toISOString(), row.precision]).toEqual(["2026-03-14T20:15:00.000Z", "exact"]);
+  });
+
+  it("404 on a read placement whose run or issue has been removed, nothing written", async () => {
+    await sql`UPDATE runs SET deleted_at = now() WHERE id = 'ra'`;
+    expect((await redate({ placementId: a, finish: { mode: "none" } })).status).toBe(404);
+    await sql`UPDATE runs SET deleted_at = NULL WHERE id = 'ra'`;
+    await sql`UPDATE issues SET deleted_at = now() WHERE id = 'x1'`;
+    expect((await redate({ placementId: a, finish: { mode: "none" } })).status).toBe(404);
     const [row] = (await progress()).filter((r) => r.key === "ra:x1");
     expect([row.completed_at.toISOString(), row.precision]).toEqual(["2026-03-14T20:15:00.000Z", "exact"]);
   });
