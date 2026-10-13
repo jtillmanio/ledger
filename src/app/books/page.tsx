@@ -1,6 +1,8 @@
 import { requireUserId } from "@/lib/auth";
 import { listBooks, readWithoutYear, seriesProgress, yearSummary } from "@/db/queries";
 import Link from "next/link";
+import AddBooksButton from "@/components/AddBooksButton";
+import Cover, { Pending } from "@/components/Cover";
 import { seriesAllHref, seriesView } from "@/lib/series-list";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +37,8 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
   return (
     <main>
       <h1>Books</h1>
-      <p><Link prefetch={false} href="/books/add" className="btn sec sm">Add books</Link></p>
+      {/* A sheet over the list, Someday chosen, as from the To read filter (task 1.4c). */}
+      <p><AddBooksButton /></p>
       <p className="muted small mono">
         {books.length === matched
           ? `${matched.toLocaleString()} shown`
@@ -79,17 +82,21 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
       <div className="rows">
         {books.length === 0 && <div className="empty">Nothing matches. Try a broader filter.</div>}
         {books.map((b) => (
-          <div key={b.id} className="row">
-            <span className="row-head">
-              <span className="row-title">{b.title}</span>
-              <span className="row-meta mono">
-                {b.finished_year ?? b.planned_year ?? ""}
-                {b.word_count ? ` · ${Math.round(b.word_count / 1000)}k` : ""}
+          <div key={b.id} className="row book-row">
+            <Cover url={b.cover_url} pending={b.pending} />
+            <span className="rb">
+              <span className="row-head">
+                <span className="row-title">{b.title}</span>
+                <span className="row-meta mono">
+                  {b.finished_year ?? b.planned_year ?? ""}
+                  {b.word_count ? ` · ${Math.round(b.word_count / 1000)}k` : ""}
+                </span>
               </span>
-            </span>
-            <span className="row-sub">
-              {[b.author, b.series && `${b.series}${b.series_position ? ` #${b.series_position}` : ""}`,
-                b.genre].filter(Boolean).join(" · ")}
+              <span className="row-sub">
+                {[b.author, b.series && `${b.series}${b.series_position ? ` #${b.series_position}` : ""}`,
+                  b.genre].filter(Boolean).join(" · ")}
+              </span>
+              {b.pending && <Pending />}
             </span>
           </div>
         ))}

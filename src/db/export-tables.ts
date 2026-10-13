@@ -20,5 +20,5 @@ export const USER_TABLES = [
 ] as const;
 
 /** Deliberately left out: the export is the owner's data, not the account (D-17), nor a
- * rebuildable copy of a third-party API (D-53). */
-export const NOT_EXPORTED = ["users", "metron_cache"] as const;
+ * rebuildable copy of a third-party API (D-53, D-62). */
+export const NOT_EXPORTED = ["users", "metron_cache", "open_library_cache"] as const;

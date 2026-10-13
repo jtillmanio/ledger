@@ -1,23 +1,23 @@
 import { NextResponse } from "next/server";
 import { apiUserId, unauthorized } from "@/lib/auth";
-import { MAX_FIELD, MAX_LINES } from "@/lib/book-parse";
-import { normalizeLine } from "@/lib/bulk-parse";
+import { MAX_POSITION, parseDestination, text } from "@/lib/book-add";
+import { MAX_LINES } from "@/lib/book-parse";
 import { bookMatches } from "@/db/queries";
 import { addBooks, type BookItem } from "@/db/writes";
 
 export const runtime = "nodejs";
 
-const MAX_POSITION = 100000;
-
 /**
- * Add books, *Paste a list* (task 1.4). Called only from a tap on Add books,
- * never while a page loads (task 0.9):
+ * Add books, *Paste a list* (tasks 1.4, 1.4c). Called only from a tap on Add
+ * books, never while a page loads (task 0.9):
  *
  * - POST `{ lines: [{ title, author }], dryRun: true }`: the review's library
  *   check, writing nothing. One answer per line, in order: the same title and
  *   author, or the closest title at similarity ≥ 0.4.
- * - POST `{ items }`: the confirm, in one transaction. An item is a line to
- *   create, `{ title, author, series, position }`, or `{ use: bookId }`.
+ * - POST `{ items, destination? }`: the confirm, in one transaction. An item is
+ *   a line to create, `{ title, author, series, position }`, or `{ use: bookId }`.
+ *   The destination is *Add to*'s (Someday when absent). The answer is what the
+ *   undo sends back to `DELETE /api/books`.
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -48,23 +48,20 @@ export async function POST(req: Request) {
     if (!title || !author || series === undefined || !okPosition) return undefined;
     return { title, author, series, position: series ? position : null };
   });
-  if (!items) {
-    return bad(`items is a list of 1 to ${MAX_LINES}: { title, author, series, position } or { use }`);
+  const destination = parseDestination(body?.destination);
+  if (!items || !destination) {
+    return bad(`items is a list of 1 to ${MAX_LINES}: { title, author, series, position } or { use }; `
+      + "destination is { kind: 'someday' } or { kind: 'shelf', shelfId }");
   }
-  const result = await addBooks(userId, items);
+  const result = await addBooks(userId, items, destination);
   if (!result.ok) {
-    return NextResponse.json(
-      { error: "A book a line was pointed at is gone from your library. Nothing was written; check again.", missing: result.missing },
-      { status: 409 });
+    return result.reason === "gone"
+      ? NextResponse.json(
+        { error: "A book a line was pointed at is gone from your library. Nothing was written; check again.", missing: result.missing },
+        { status: 409 })
+      : NextResponse.json({ error: "That shelf is gone. Nothing was written." }, { status: 409 });
   }
   return NextResponse.json(result);
-}
-
-/** A trimmed, normalised string of 1 to MAX_FIELD characters, or undefined. */
-function text(v: unknown): string | undefined {
-  if (typeof v !== "string") return undefined;
-  const s = normalizeLine(v);
-  return s && s.length <= MAX_FIELD ? s : undefined;
 }
 
 /** Every element through `each`, or null if the list or any element is no good. */

@@ -1,5 +1,9 @@
-import { and, eq, gt, gte, inArray, isNull, like, or, sql } from "drizzle-orm";
-import { db, authors, books, bookSeries, bookStatus, issues, runIssues, runs, sql as pg } from "./index";
+import { and, eq, gt, gte, inArray, isNull, like, ne, or, sql } from "drizzle-orm";
+import {
+  db, authors, books, bookSeries, bookStatus, issues, readingPlan, readingSettings, runIssues, runs, shelfBooks, shelves,
+  sql as pg,
+} from "./index";
+import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
 import { bookKey } from "@/lib/book-parse";
 import { bookId, issueSlug, slug } from "@/lib/issue-slug";
 
@@ -413,33 +417,142 @@ export type NewBook = { title: string; author: string; series: string | null; po
 /** A pasted line, or a library book a line was pointed at (*Use that*, or a match with no status). */
 export type BookItem = NewBook | { use: string };
 
+/**
+ * Where an add puts a book (task 1.4c, D-37). Someday is a `to_read` status
+ * with no plan row; a shelf is a `shelf_books` row. On deck (1.7) and a year
+ * or quarter (2.3) join later.
+ */
+export type Destination = { kind: "someday" } | { kind: "shelf"; shelfId: string };
+export const SOMEDAY: Destination = { kind: "someday" };
+
+/** What an add wrote, and all its undo needs. */
+export type AddedEntry = {
+  destination: Destination;
+  /** `books` rows this add created. */
+  created: string[];
+  /** Books whose destination row this add wrote: a status, or a place on the shelf. */
+  added: string[];
+};
+
 export type AddBooksResult =
-  | {
+  | ({
     ok: true;
-    /** `books` rows this add created, in paste order. */
-    created: string[];
     /** Library books a line named by its exact title and author, reused. */
     matched: string[];
-    /** Books that got a `to_read` status here: they joined Someday. */
-    added: string[];
-  }
-  | { ok: false; reason: "gone"; missing: string[] };
+  } & AddedEntry)
+  | { ok: false; reason: "gone"; missing: string[] }
+  | { ok: false; reason: "no-shelf" };
+
+/** A book to create, with what Open Library or the typist said about it. */
+type BookRow = NewBook & {
+  openLibraryId?: string | null; coverUrl?: string | null; year?: number | null; pages?: number | null;
+  wordCount?: number | null; wordCountSource?: "stated" | "estimated" | null;
+};
+
+/** One add at a time: two tabs adding the same new book would both create it. */
+async function addLock(tx: Tx) {
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('ledger:add-books'))`);
+}
+
+/** The shelf, when it is this user's and holds books. */
+async function ownShelf(tx: Tx, userId: string, shelfId: string) {
+  const [shelf] = await tx.select({ id: shelves.id }).from(shelves)
+    .where(and(eq(shelves.id, shelfId), eq(shelves.userId, userId), eq(shelves.kind, "books")));
+  return shelf ?? null;
+}
 
 /**
- * Add books, *Paste a list* (task 1.4, 2.15): all of it or none of it, in one
- * transaction. A line whose title and author the library has (case-insensitive,
- * D-25) reuses that book; otherwise the book is created with extract's id for
- * it, and its author and series too when they are new, by slug, as extract keys
- * them. A series line sets `series_position`. Every book the add names then
- * gets `book_status = to_read` unless it has a status already, which it keeps;
- * no plan row is written, so a new book sits at Someday (D-37).
- *
- * Refuses, writing nothing, when a book a line was pointed at is gone.
+ * Create these books, in order, with extract's id for each (D-61), and their
+ * authors and series too when they are new, by slug, as extract keys them. A
+ * series sets `series_position`. Returns the ids.
  */
-export async function addBooks(userId: string, items: BookItem[]): Promise<AddBooksResult> {
+async function createBooks(tx: Tx, toCreate: BookRow[]): Promise<string[]> {
+  if (toCreate.length === 0) return [];
+  const authorIds = [...new Set(toCreate.map((b) => slug(b.author)))];
+  const knownAuthors = new Set((await tx.select({ id: authors.id }).from(authors)
+    .where(inArray(authors.id, authorIds))).map((r) => r.id));
+  const newAuthors = new Map<string, string>();
+  for (const b of toCreate) {
+    const id = slug(b.author);
+    if (!knownAuthors.has(id) && !newAuthors.has(id)) newAuthors.set(id, b.author);
+  }
+  if (newAuthors.size) {
+    await tx.insert(authors).values([...newAuthors].map(([id, name]) => ({ id, name }))).onConflictDoNothing();
+  }
+
+  const seriesIds = [...new Set(toCreate.flatMap((b) => (b.series ? [slug(b.series)] : [])))];
+  const knownSeries = new Set(seriesIds.length === 0 ? [] : (await tx.select({ id: bookSeries.id })
+    .from(bookSeries).where(inArray(bookSeries.id, seriesIds))).map((r) => r.id));
+  const newSeries = new Map<string, typeof bookSeries.$inferInsert>();
+  for (const b of toCreate) {
+    if (!b.series) continue;
+    const id = slug(b.series);
+    if (!knownSeries.has(id) && !newSeries.has(id)) newSeries.set(id, { id, name: b.series, authorId: slug(b.author) });
+  }
+  if (newSeries.size) await tx.insert(bookSeries).values([...newSeries.values()]).onConflictDoNothing();
+
+  const bases = [...new Set(toCreate.map((b) => bookId(b.title, b.author)))];
+  const taken = new Set((await tx.select({ id: books.id }).from(books)
+    .where(or(...bases.map((b) => or(eq(books.id, b), like(books.id, `${b}-x%`)))))).map((r) => r.id));
+  const created: string[] = [];
+  const rows = toCreate.map((b) => {
+    const id = bookId(b.title, b.author, taken);
+    taken.add(id);
+    created.push(id);
+    return {
+      id, title: b.title, authorId: slug(b.author),
+      seriesId: b.series ? slug(b.series) : null, seriesPosition: b.series ? b.position : null,
+      openLibraryId: b.openLibraryId ?? null, coverUrl: b.coverUrl ?? null,
+      publishedYear: b.year ?? null, pageCount: b.pages ?? null,
+      wordCount: b.wordCount ?? null, wordCountSource: b.wordCount == null ? null : b.wordCountSource ?? null,
+    };
+  });
+  await tx.insert(books).values(rows);
+  return created;
+}
+
+/**
+ * Write the destination row for each book, unless it is there already: Someday
+ * is `book_status = to_read`, and a status the book has is kept (no plan row,
+ * D-37); a shelf is a `shelf_books` row at the end of the shelf. Returns the
+ * books it wrote a row for.
+ */
+async function writeDestination(tx: Tx, userId: string, destination: Destination, ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return [];
+  if (destination.kind === "someday") {
+    return (await tx.insert(bookStatus)
+      .values(ids.map((bookId) => ({ userId, bookId, status: "to_read" })))
+      .onConflictDoNothing()
+      .returning({ bookId: bookStatus.bookId })).map((r) => r.bookId);
+  }
+  const { shelfId } = destination;
+  const there = new Set((await tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks)
+    .where(and(eq(shelfBooks.shelfId, shelfId), inArray(shelfBooks.bookId, ids)))).map((r) => r.bookId));
+  const [{ top }] = await tx.select({ top: sql<number>`COALESCE(MAX(${shelfBooks.ordinal}), 0)::int` })
+    .from(shelfBooks).where(eq(shelfBooks.shelfId, shelfId));
+  const fresh = ids.filter((id) => !there.has(id));
+  if (fresh.length) {
+    await tx.insert(shelfBooks).values(fresh.map((bookId, i) => ({ shelfId, bookId, ordinal: top + 1 + i })));
+  }
+  return fresh;
+}
+
+/**
+ * Add books, *Paste a list* (tasks 1.4, 1.4c; 2.15): all of it or none of it,
+ * in one transaction. A line whose title and author the library has
+ * (case-insensitive, D-61) reuses that book; otherwise the book is created
+ * (`createBooks`). Every book the add names then goes to `destination`
+ * (`writeDestination`; Someday by default).
+ *
+ * Refuses, writing nothing, when a book a line was pointed at is gone, or the
+ * shelf isn't one of this user's book shelves.
+ */
+export async function addBooks(userId: string, items: BookItem[], destination: Destination = SOMEDAY): Promise<AddBooksResult> {
   return db.transaction(async (tx) => {
-    // One add at a time: two tabs pasting the same new book would both create it.
-    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('ledger:add-books'))`);
+    await addLock(tx);
+    if (destination.kind === "shelf" && !(await ownShelf(tx, userId, destination.shelfId))) {
+      return { ok: false, reason: "no-shelf" } as const;
+    }
 
     const uses = [...new Set(items.flatMap((i) => ("use" in i ? [i.use] : [])))];
     if (uses.length) {
@@ -450,22 +563,7 @@ export async function addBooks(userId: string, items: BookItem[]): Promise<AddBo
     }
 
     const fresh = items.filter((i): i is NewBook => !("use" in i));
-    // The same title and author the library holds now, compared as bookMatches
-    // compares them (lower() on both sides, in Postgres), so the confirm never
-    // disagrees with the check it follows.
-    const exact = new Map<number, string>();
-    if (fresh.length) {
-      const list = (values: string[]) => sql`ARRAY[${sql.join(values.map((v) => sql`${v}`), sql`, `)}]::text[]`;
-      const rows = await tx.execute<{ i: number; id: string }>(sql`
-        SELECT q.i::int AS i, m.id
-        FROM unnest(${list(fresh.map((f) => f.title))}, ${list(fresh.map((f) => f.author))}) WITH ORDINALITY AS q(title, author, i)
-        CROSS JOIN LATERAL (
-          SELECT b.id FROM books b JOIN authors a ON a.id = b.author_id
-          WHERE b.deleted_at IS NULL AND lower(b.title) = lower(q.title) AND lower(a.name) = lower(q.author)
-          ORDER BY b.id LIMIT 1
-        ) m`);
-      for (const r of rows) exact.set(Number(r.i) - 1, r.id);
-    }
+    const exact = await sameBooks(tx, fresh);
 
     const matched = new Set<string>();
     const toCreate: NewBook[] = [];
@@ -480,51 +578,221 @@ export async function addBooks(userId: string, items: BookItem[]): Promise<AddBo
       }
     }
 
-    const created: string[] = [];
-    if (toCreate.length) {
-      const authorIds = [...new Set(toCreate.map((b) => slug(b.author)))];
-      const knownAuthors = new Set((await tx.select({ id: authors.id }).from(authors)
-        .where(inArray(authors.id, authorIds))).map((r) => r.id));
-      const newAuthors = new Map<string, string>();
-      for (const b of toCreate) {
-        const id = slug(b.author);
-        if (!knownAuthors.has(id) && !newAuthors.has(id)) newAuthors.set(id, b.author);
-      }
-      if (newAuthors.size) {
-        await tx.insert(authors).values([...newAuthors].map(([id, name]) => ({ id, name }))).onConflictDoNothing();
-      }
+    const created = await createBooks(tx, toCreate);
+    const createdAs = new Map(toCreate.map((b, i) => [bookKey(b.title, b.author), created[i]]));
+    // In paste order, so a shelf holds them as they were listed.
+    let f = 0;
+    const named = [...new Set(items.map((item) => {
+      if ("use" in item) return item.use;
+      const i = f++;
+      return exact.get(i) ?? createdAs.get(bookKey(item.title, item.author))!;
+    }))];
+    const added = await writeDestination(tx, userId, destination, named);
+    return { ok: true, destination, created, matched: [...matched], added } as const;
+  });
+}
 
-      const seriesIds = [...new Set(toCreate.flatMap((b) => (b.series ? [slug(b.series)] : [])))];
-      const knownSeries = new Set(seriesIds.length === 0 ? [] : (await tx.select({ id: bookSeries.id })
-        .from(bookSeries).where(inArray(bookSeries.id, seriesIds))).map((r) => r.id));
-      const newSeries = new Map<string, typeof bookSeries.$inferInsert>();
-      for (const b of toCreate) {
-        if (!b.series) continue;
-        const id = slug(b.series);
-        if (!knownSeries.has(id) && !newSeries.has(id)) newSeries.set(id, { id, name: b.series, authorId: slug(b.author) });
-      }
-      if (newSeries.size) await tx.insert(bookSeries).values([...newSeries.values()]).onConflictDoNothing();
+/**
+ * The live book with each line's title and author, by position, compared as
+ * bookMatches compares them (lower() on both sides, in Postgres), so a confirm
+ * never disagrees with the check it follows (D-61).
+ */
+async function sameBooks(tx: Tx, lines: { title: string; author: string }[]): Promise<Map<number, string>> {
+  const exact = new Map<number, string>();
+  if (lines.length === 0) return exact;
+  const list = (values: string[]) => sql`ARRAY[${sql.join(values.map((v) => sql`${v}`), sql`, `)}]::text[]`;
+  const rows = await tx.execute<{ i: number; id: string }>(sql`
+    SELECT q.i::int AS i, m.id
+    FROM unnest(${list(lines.map((f) => f.title))}, ${list(lines.map((f) => f.author))}) WITH ORDINALITY AS q(title, author, i)
+    CROSS JOIN LATERAL (
+      SELECT b.id FROM books b JOIN authors a ON a.id = b.author_id
+      WHERE b.deleted_at IS NULL AND lower(b.title) = lower(q.title) AND lower(a.name) = lower(q.author)
+      ORDER BY b.id LIMIT 1
+    ) m`);
+  for (const r of rows) exact.set(Number(r.i) - 1, r.id);
+  return exact;
+}
 
-      const bases = [...new Set(toCreate.map((b) => bookId(b.title, b.author)))];
-      const taken = new Set((await tx.select({ id: books.id }).from(books)
-        .where(or(...bases.map((b) => or(eq(books.id, b), like(books.id, `${b}-x%`)))))).map((r) => r.id));
-      const rows = toCreate.map((b) => {
-        const id = bookId(b.title, b.author, taken);
-        taken.add(id);
-        created.push(id);
-        return {
-          id, title: b.title, authorId: slug(b.author),
-          seriesId: b.series ? slug(b.series) : null, seriesPosition: b.series ? b.position : null,
-        };
-      });
-      await tx.insert(books).values(rows);
+/** An Open Library result to add (task 1.4c): what the search showed. */
+export type OpenLibraryItem = {
+  openLibraryId: string; title: string; author: string;
+  year: number | null; pages: number | null; coverUrl: string | null;
+};
+/** A book typed by hand: title and author, the rest optional. */
+export type HandItem = NewBook & { pages: number | null; words: number | null };
+/** One book to add: a library row the search listed, an Open Library result, or one typed by hand. */
+export type AddBookItem = { use: string } | { openLibrary: OpenLibraryItem } | { hand: HandItem };
+
+export type AddBookResult =
+  | ({
+    ok: true;
+    bookId: string;
+    title: string;
+    /** The library already had it, so it was reused, not created. */
+    reused: boolean;
+    /** A reused book's status after the add: one it had is kept. */
+    status: string | null;
+  } & AddedEntry)
+  | { ok: false; reason: "gone" | "no-shelf" };
+
+/**
+ * Add one book to a destination (task 1.4c; ARCHITECTURE 2.15): your library's
+ * row when you have it, else a new `books` row, then the destination row, in
+ * one transaction.
+ *
+ * - An Open Library result is your book when a live one has its work id, or
+ *   its title and author (D-61); otherwise it is created with the work id,
+ *   cover, year and pages, and an estimated word count, pages × your words per
+ *   page (ARCHITECTURE 6), when it has pages.
+ * - A book typed by hand is yours when a live one has its title and author;
+ *   otherwise it is created with what you typed: a word count as `stated`,
+ *   pages alone estimated as above, neither as no count.
+ * - A reused book is left as it is: backfill is 4.2's, and never overwrites.
+ *
+ * Refuses, writing nothing, when the library row is gone or the shelf isn't
+ * one of this user's book shelves.
+ */
+export async function addBook(userId: string, item: AddBookItem, destination: Destination): Promise<AddBookResult> {
+  return db.transaction(async (tx) => {
+    await addLock(tx);
+    if (destination.kind === "shelf" && !(await ownShelf(tx, userId, destination.shelfId))) {
+      return { ok: false, reason: "no-shelf" } as const;
     }
 
-    const named = [...new Set([...uses, ...matched, ...created])];
-    const added = named.length === 0 ? [] : (await tx.insert(bookStatus)
-      .values(named.map((bookId) => ({ userId, bookId, status: "to_read" })))
-      .onConflictDoNothing()
-      .returning({ bookId: bookStatus.bookId })).map((r) => r.bookId);
-    return { ok: true, created, matched: [...matched], added } as const;
+    let id: string | null = null;
+    let title: string;
+    let row: BookRow | null = null;
+    if ("use" in item) {
+      const [live] = await tx.select({ id: books.id, title: books.title }).from(books)
+        .where(and(eq(books.id, item.use), isNull(books.deletedAt)));
+      if (!live) return { ok: false, reason: "gone" } as const;
+      ({ id, title } = live);
+    } else {
+      const fields = "openLibrary" in item ? item.openLibrary : item.hand;
+      title = fields.title;
+      if ("openLibrary" in item) {
+        const [byWork] = await tx.select({ id: books.id, title: books.title }).from(books)
+          .where(and(eq(books.openLibraryId, item.openLibrary.openLibraryId), isNull(books.deletedAt)))
+          .orderBy(books.id).limit(1);
+        if (byWork) ({ id, title } = byWork);
+      }
+      if (!id) id = (await sameBooks(tx, [fields])).get(0) ?? null;
+      if (!id) row = await newBookRow(tx, userId, item);
+    }
+
+    const created = row ? await createBooks(tx, [row]) : [];
+    const bookIdNow = created[0] ?? id!;
+    const added = await writeDestination(tx, userId, destination, [bookIdNow]);
+    // A reused book's status, so the toast can say what it kept (*Already in your library · read*).
+    const [had] = row ? [] : await tx.select({ status: bookStatus.status }).from(bookStatus)
+      .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookIdNow)));
+    return {
+      ok: true, destination, bookId: bookIdNow, title, reused: !row, status: had?.status ?? null, created, added,
+    } as const;
   });
+}
+
+/** The `books` row an Open Library result or a typed book becomes. */
+async function newBookRow(tx: Tx, userId: string, item: Exclude<AddBookItem, { use: string }>): Promise<BookRow> {
+  const estimate = async (pages: number | null) => {
+    if (pages === null) return null;
+    // reading_settings' own default when the user has no row yet (2.0 owns the screen).
+    const [s] = await tx.select({ wpp: readingSettings.wordsPerPage }).from(readingSettings)
+      .where(eq(readingSettings.userId, userId));
+    return pages * (s?.wpp ?? DEFAULT_WORDS_PER_PAGE);
+  };
+  if ("openLibrary" in item) {
+    const { openLibraryId, title, author, year, pages, coverUrl } = item.openLibrary;
+    const words = await estimate(pages);
+    return {
+      title, author, series: null, position: null, openLibraryId, coverUrl, year, pages,
+      wordCount: words, wordCountSource: words === null ? null : "estimated",
+    };
+  }
+  const { pages, words, ...book } = item.hand;
+  const guess = words === null ? await estimate(pages) : null;
+  return {
+    ...book, pages,
+    wordCount: words ?? guess,
+    wordCountSource: words !== null ? "stated" : guess !== null ? "estimated" : null,
+  };
+}
+
+/**
+ * An add's undo (task 1.4c, AC-5; R1-09): the destination rows it wrote are
+ * removed, and the books it created are soft-deleted (Hard rule 4). A book it
+ * reused, and any status or shelf it had before, are left exactly as they
+ * were, because only rows the add wrote are named. The authors and series it
+ * created stay: catalog, and harmless.
+ *
+ * Refuses, changing nothing, when anything moved in between: a status it wrote
+ * is no longer a bare `to_read` (it gained a rating, a note, a finish, or a
+ * plan row), a shelf row is gone, or a book it created has gained another
+ * status, shelf or plan row. A `created` book the add didn't also place is not
+ * one it made, and is refused too.
+ */
+export async function undoAddBooks(userId: string, entry: AddedEntry): Promise<boolean> {
+  const refused = Symbol("refused");
+  try {
+    return await db.transaction(async (tx) => undoInside(tx, userId, entry, refused));
+  } catch (e) {
+    if (e === refused) return false;
+    throw e;
+  }
+}
+
+async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: symbol): Promise<boolean> {
+  await addLock(tx);
+  const { destination, created, added } = entry;
+  if (added.length === 0 && created.length === 0) return false;
+  const placed = new Set(added);
+  if (created.some((id) => !placed.has(id))) return false;
+  const isShelf = destination.kind === "shelf";
+  if (isShelf && !(await ownShelf(tx, userId, destination.shelfId))) return false;
+
+  // The rows this add wrote, exactly as it wrote them: a status that has since
+  // gained anything is the user's now. The same conditions guard the delete.
+  const shelfRows = isShelf
+    ? and(eq(shelfBooks.shelfId, destination.shelfId), inArray(shelfBooks.bookId, added)) : undefined;
+  const bareStatus = and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, added), eq(bookStatus.status, "to_read"),
+    isNull(bookStatus.rating), isNull(bookStatus.notes), isNull(bookStatus.finishedOn), isNull(bookStatus.finishedYear),
+    isNull(bookStatus.yearRank));
+  const ours = added.length === 0 ? [] : isShelf
+    ? await tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(shelfRows)
+    : await tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(bareStatus);
+  if (ours.length !== placed.size) return false;
+  // Taking a status away from a book that has been planned since would leave a plan row with no to-read book.
+  if (!isShelf && added.length) {
+    const planned = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
+      .where(and(eq(readingPlan.userId, userId), inArray(readingPlan.bookId, added))).limit(1);
+    if (planned.length) return false;
+  }
+
+  if (created.length) {
+    const live = await tx.select({ id: books.id }).from(books)
+      .where(and(inArray(books.id, created), isNull(books.deletedAt)));
+    if (live.length !== new Set(created).size) return false;
+    // A new book has nothing but the row this add wrote: its own status for
+    // Someday, or its place on this shelf. Anything else came later.
+    const [statuses, shelved, planned] = await Promise.all([
+      tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(and(inArray(bookStatus.bookId, created),
+        isShelf ? undefined : ne(bookStatus.userId, userId))).limit(1),
+      tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(and(inArray(shelfBooks.bookId, created),
+        isShelf ? ne(shelfBooks.shelfId, destination.shelfId) : undefined)).limit(1),
+      tx.select({ bookId: readingPlan.bookId }).from(readingPlan).where(inArray(readingPlan.bookId, created)).limit(1),
+    ]);
+    if (statuses.length + shelved.length + planned.length > 0) return false;
+  }
+
+  if (added.length) {
+    const gone = isShelf
+      ? await tx.delete(shelfBooks).where(shelfRows).returning({ bookId: shelfBooks.bookId })
+      : await tx.delete(bookStatus).where(bareStatus).returning({ bookId: bookStatus.bookId });
+    // Something else wrote between the check and the delete: roll it all back.
+    if (gone.length !== placed.size) throw refused;
+  }
+  if (created.length) {
+    await tx.update(books).set({ deletedAt: sql`now()` }).where(and(inArray(books.id, created), isNull(books.deletedAt)));
+  }
+  return true;
 }

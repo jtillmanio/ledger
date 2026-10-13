@@ -109,7 +109,8 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
     <UndoContext.Provider value={ctx}>
       {children}
       {/* Always mounted, so a screen reader hears each new toast (role="status"). */}
-      <div className="toast-region" role="status" aria-live="polite">
+      {/* data-over-sheet: a sheet leaves it live, so an add made in a sheet can be undone there (task 1.4c). */}
+      <div className="toast-region" role="status" aria-live="polite" data-over-sheet="">
         {toast && (
           <div className="toast" key={toast.id}>
             <div className="toast-text">

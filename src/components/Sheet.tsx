@@ -12,7 +12,21 @@ export function useSheetClose() {
   return close;
 }
 
-const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
+/**
+ * What a sheet makes inert: everything outside it, except what is already
+ * inert and the undo toast (`data-over-sheet`), which stays live above a sheet
+ * so an add made in one is undone from its toast without closing it (task
+ * 1.4c, AC-5). An element holding the toast is not made inert itself, since
+ * inert reaches every descendant: its other children are, one level down.
+ */
+function quietOutside(root: Element, keep: Element | null): Element[] {
+  return [...root.children].flatMap((el) => {
+    if (el === keep || el.hasAttribute("inert") || el.hasAttribute("data-over-sheet")) return [];
+    return el.querySelector("[data-over-sheet]") ? quietOutside(el, keep) : [el];
+  });
+}
+
+const FOCUSABLE ='a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 /**
  * The one sheet behaviour every sheet shares (docs/TASKS.md § *Focus returns
@@ -21,7 +35,8 @@ const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]:not([tab
  *
  * - It is a dialog labelled by its own heading, which takes focus on open
  *   (`tabindex="-1"`).
- * - Everything else on the page is `inert` while it is open, and Tab stays inside.
+ * - Everything else on the page is `inert` while it is open, but for the undo
+ *   toast (`quietOutside`), and Tab stays inside.
  * - Esc, the back button and the caller's own Cancel or confirm close it, and
  *   focus goes back to `opener`, the control that opened it.
  * - Back works through a history entry pushed on open (Next 16 keeps native
@@ -62,9 +77,7 @@ export default function Sheet({ heading, opener, onClose, children }: {
   // The page behind goes inert, and the heading takes focus; on the way out
   // the page comes back and focus returns to the opener.
   useLayoutEffect(() => {
-    const quiet = [...document.body.children].filter(
-      (el) => el !== host.current && !el.hasAttribute("inert"),
-    );
+    const quiet = quietOutside(document.body, host.current);
     for (const el of quiet) el.setAttribute("inert", "");
     title.current?.focus();
     return () => {
