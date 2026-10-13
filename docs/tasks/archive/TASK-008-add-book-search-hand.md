@@ -1,7 +1,7 @@
 ---
 id: TASK-008
 title: 1.4c Add a book by search or by hand, to a destination
-status: Review
+status: Done
 depends_on: [TASK-007]
 size: L
 model: sonnet
