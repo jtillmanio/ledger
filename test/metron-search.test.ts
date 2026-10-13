@@ -229,6 +229,14 @@ describe("search thor 337-340 (AC-1)", () => {
   });
 });
 
+describe("metadata pending (task 1.4c, AC-4)", () => {
+  it("a catalog row with no Metron id comes back pending, one with an id does not", async () => {
+    await sql`UPDATE issues SET metron_id = 14000 WHERE id = 'thor-1966-331'`;
+    const answer = await find("thor 330-331");
+    expect(answer.catalog.map((r) => [r.label, r.pending])).toEqual([[thor(330), true], [thor(331), false]]);
+  });
+});
+
 describe("Metron's labels are staged through the parser (AC-3)", () => {
   it("a label the grammar can't read is flagged, and the review won't insert it without a choice", async () => {
     metron = () => Response.json({ count: 1, next: null, results: [

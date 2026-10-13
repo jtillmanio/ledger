@@ -285,10 +285,36 @@ describe("undo (AC-5)", () => {
     expect(await statuses()).toContainEqual({ book_id: "fresh-hand-author", status: "reading" });
     expect((await bookRows()).find((b) => b.id === "fresh-hand-author")!.removed).toBe(false);
 
+    // Still to_read, but rated since: the row is the user's now, not the add's.
+    const rated = await add(hand({ title: "Rated", author: "Hand Author" }));
+    await sql`UPDATE book_status SET rating = 4 WHERE book_id = 'rated-hand-author'`;
+    expect(await undo(rated.body)).toBe(409);
+    expect(await sql`SELECT rating FROM book_status WHERE book_id = 'rated-hand-author'`).toEqual([{ rating: 4 }]);
+
+    // A reused book planned since keeps its status.
+    const reused = await add({ use: "the-blade-itself-joe-abercrombie" }, COSMERE);
+    await sql`DELETE FROM book_status WHERE book_id = 'the-blade-itself-joe-abercrombie'`;
+    const someday = await add({ use: "the-blade-itself-joe-abercrombie" });
+    expect(someday.body).toMatchObject({ added: ["the-blade-itself-joe-abercrombie"], created: [] });
+    await sql`INSERT INTO reading_plan (user_id, book_id, planned_year) VALUES (${USER}, 'the-blade-itself-joe-abercrombie', 2027)`;
+    expect(await undo(someday.body)).toBe(409);
+    expect(await statuses()).toContainEqual({ book_id: "the-blade-itself-joe-abercrombie", status: "to_read" });
+    expect(await undo(reused.body)).toBe(200);
+
     const onShelf = await add(hand({ title: "Shelved", author: "Hand Author" }), COSMERE);
     await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'shelved-hand-author', 'reading')`;
     expect(await undo(onShelf.body)).toBe(409);
     expect(await shelved()).toHaveLength(1);
+  });
+});
+
+describe("undo names only what an add wrote", () => {
+  it("refuses a created book the add didn't also place, changing nothing", async () => {
+    const done = await add(hand({ title: "Fresh", author: "Hand Author" }));
+    const forged = { ...done.body, created: [...done.body.created, "the-blade-itself-joe-abercrombie"] };
+    expect(await undo(forged)).toBe(409);
+    expect((await bookRows()).filter((b) => b.removed)).toEqual([]);
+    expect(await statuses()).toContainEqual({ book_id: "fresh-hand-author", status: "to_read" });
   });
 });
 

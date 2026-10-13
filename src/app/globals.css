@@ -477,7 +477,8 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
    bar and the enter motion; nothing here moves, so reduced motion has nothing
    to turn off. */
 .toast-region{position:fixed;left:0;right:0;bottom:calc(1rem + env(safe-area-inset-bottom));
-  z-index:30;display:flex;justify-content:center;padding:0 1rem;pointer-events:none}
+  z-index:45;display:flex;justify-content:center;padding:0 1rem;pointer-events:none}
+/* 45: above a sheet (40), whose adds it undoes (task 1.4c); Sheet leaves it out of inert. */
 .toast{pointer-events:auto;width:100%;max-width:calc(var(--col) - 2.5rem);display:flex;
   align-items:center;gap:.75rem;padding:.5rem .5rem .5rem .875rem;border-radius:var(--r-lg);
   background:var(--toast-bg);color:var(--toast-ink);box-shadow:var(--sh-2)}
@@ -765,13 +766,15 @@ input.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .addto .chip[aria-disabled="true"]{background:none;color:var(--muted);border-style:dashed;cursor:not-allowed}
 .addto-later{margin:.375rem 0 0}
 .addto-pick{margin:.5rem 0 0}
-.addb .seg{margin-top:1rem}
+.addb .seg{margin-top:.75rem}
 .addb .add-failed{margin:.75rem 0 0}
 .sheet .addb .add-2up{display:block}
 .sheet .addb .add-bar{margin:1.25rem -.875rem 0}
 @media (min-width:1024px){
   main.add .addb .pane-paste[hidden]{display:block}
   main.add .addb[data-mode="paste"] .pane-search[hidden]{display:block}
+  /* Each column's bar stays in its column. */
+  main.add .addb .add-bar{margin:1.5rem 0 0;border:1px solid var(--rule);border-radius:12px}
 }
 .res-btns{margin-top:.5rem}
 .res-btns .btn{flex:0 0 auto}
@@ -801,5 +804,3 @@ input.txt[aria-invalid="true"]{border-color:var(--danger)}
 
 .add-sk-text{height:9rem}
 .add-sk-slate{display:block;height:6rem;border-radius:14px;margin-top:.5rem}
-/* Paste is a tab of its own below 1024px (task 1.4c), so its skeleton is too. */
-@media (max-width:1023.98px){.add-sk-paste{display:none}}

@@ -726,50 +726,73 @@ async function newBookRow(tx: Tx, userId: string, item: Exclude<AddBookItem, { u
  * created stay: catalog, and harmless.
  *
  * Refuses, changing nothing, when anything moved in between: a status it wrote
- * is no longer `to_read`, a shelf row is gone, or a book it created has gained
- * another status, shelf or plan row.
+ * is no longer a bare `to_read` (it gained a rating, a note, a finish, or a
+ * plan row), a shelf row is gone, or a book it created has gained another
+ * status, shelf or plan row. A `created` book the add didn't also place is not
+ * one it made, and is refused too.
  */
 export async function undoAddBooks(userId: string, entry: AddedEntry): Promise<boolean> {
-  return db.transaction(async (tx) => {
-    await addLock(tx);
-    const { destination, created, added } = entry;
-    if (added.length === 0 && created.length === 0) return false;
-    const isShelf = destination.kind === "shelf";
-    if (isShelf && !(await ownShelf(tx, userId, destination.shelfId))) return false;
+  const refused = Symbol("refused");
+  try {
+    return await db.transaction(async (tx) => undoInside(tx, userId, entry, refused));
+  } catch (e) {
+    if (e === refused) return false;
+    throw e;
+  }
+}
 
-    const ours = added.length === 0 ? [] : isShelf
-      ? await tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks)
-        .where(and(eq(shelfBooks.shelfId, destination.shelfId), inArray(shelfBooks.bookId, added)))
-      : await tx.select({ bookId: bookStatus.bookId }).from(bookStatus)
-        .where(and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, added), eq(bookStatus.status, "to_read")));
-    if (ours.length !== new Set(added).size) return false;
+async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: symbol): Promise<boolean> {
+  await addLock(tx);
+  const { destination, created, added } = entry;
+  if (added.length === 0 && created.length === 0) return false;
+  const placed = new Set(added);
+  if (created.some((id) => !placed.has(id))) return false;
+  const isShelf = destination.kind === "shelf";
+  if (isShelf && !(await ownShelf(tx, userId, destination.shelfId))) return false;
 
-    if (created.length) {
-      const live = await tx.select({ id: books.id }).from(books)
-        .where(and(inArray(books.id, created), isNull(books.deletedAt)));
-      if (live.length !== new Set(created).size) return false;
-      // A new book has nothing but the row this add wrote: its own status for
-      // Someday, or its place on this shelf. Anything else came later.
-      const [statuses, shelved, planned] = await Promise.all([
-        tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(and(inArray(bookStatus.bookId, created),
-          isShelf ? undefined : ne(bookStatus.userId, userId))).limit(1),
-        tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(and(inArray(shelfBooks.bookId, created),
-          isShelf ? ne(shelfBooks.shelfId, destination.shelfId) : undefined)).limit(1),
-        tx.select({ bookId: readingPlan.bookId }).from(readingPlan).where(inArray(readingPlan.bookId, created)).limit(1),
-      ]);
-      if (statuses.length + shelved.length + planned.length > 0) return false;
-    }
+  // The rows this add wrote, exactly as it wrote them: a status that has since
+  // gained anything is the user's now. The same conditions guard the delete.
+  const shelfRows = isShelf
+    ? and(eq(shelfBooks.shelfId, destination.shelfId), inArray(shelfBooks.bookId, added)) : undefined;
+  const bareStatus = and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, added), eq(bookStatus.status, "to_read"),
+    isNull(bookStatus.rating), isNull(bookStatus.notes), isNull(bookStatus.finishedOn), isNull(bookStatus.finishedYear),
+    isNull(bookStatus.yearRank));
+  const ours = added.length === 0 ? [] : isShelf
+    ? await tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(shelfRows)
+    : await tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(bareStatus);
+  if (ours.length !== placed.size) return false;
+  // Taking a status away from a book that has been planned since would leave a plan row with no to-read book.
+  if (!isShelf && added.length) {
+    const planned = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
+      .where(and(eq(readingPlan.userId, userId), inArray(readingPlan.bookId, added))).limit(1);
+    if (planned.length) return false;
+  }
 
-    if (added.length) {
-      if (isShelf) {
-        await tx.delete(shelfBooks).where(and(eq(shelfBooks.shelfId, destination.shelfId), inArray(shelfBooks.bookId, added)));
-      } else {
-        await tx.delete(bookStatus).where(and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, added)));
-      }
-    }
-    if (created.length) {
-      await tx.update(books).set({ deletedAt: sql`now()` }).where(and(inArray(books.id, created), isNull(books.deletedAt)));
-    }
-    return true;
-  });
+  if (created.length) {
+    const live = await tx.select({ id: books.id }).from(books)
+      .where(and(inArray(books.id, created), isNull(books.deletedAt)));
+    if (live.length !== new Set(created).size) return false;
+    // A new book has nothing but the row this add wrote: its own status for
+    // Someday, or its place on this shelf. Anything else came later.
+    const [statuses, shelved, planned] = await Promise.all([
+      tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(and(inArray(bookStatus.bookId, created),
+        isShelf ? undefined : ne(bookStatus.userId, userId))).limit(1),
+      tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(and(inArray(shelfBooks.bookId, created),
+        isShelf ? ne(shelfBooks.shelfId, destination.shelfId) : undefined)).limit(1),
+      tx.select({ bookId: readingPlan.bookId }).from(readingPlan).where(inArray(readingPlan.bookId, created)).limit(1),
+    ]);
+    if (statuses.length + shelved.length + planned.length > 0) return false;
+  }
+
+  if (added.length) {
+    const gone = isShelf
+      ? await tx.delete(shelfBooks).where(shelfRows).returning({ bookId: shelfBooks.bookId })
+      : await tx.delete(bookStatus).where(bareStatus).returning({ bookId: bookStatus.bookId });
+    // Something else wrote between the check and the delete: roll it all back.
+    if (gone.length !== placed.size) throw refused;
+  }
+  if (created.length) {
+    await tx.update(books).set({ deletedAt: sql`now()` }).where(and(inArray(books.id, created), isNull(books.deletedAt)));
+  }
+  return true;
 }

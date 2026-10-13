@@ -23,9 +23,9 @@ type Added = Extract<AddBookResult, { ok: true }>;
 const STATUS: Record<string, string> = { to_read: "on your to-read list", reading: "reading", read: "read", dnf: "did not finish" };
 
 /**
- * Add books (task 1.4c; mockups `add`, `shelves`, `apistates`): **Add to**
- * names where a book goes before you look for it, then *Search · Paste a list ·
- * By hand*, Search first. Someday is the default; a shelf is chosen through
+ * Add books (task 1.4c; mockups `add`, `shelves`, `apistates`): *Search ·
+ * Paste a list · By hand*, Search first, then **Add to**, which names where a
+ * book goes before you look for it. Someday is the default; a shelf is chosen through
  * *Shelf…*, or arrives chosen from a shelf's *+ Add to shelf*. *On deck* (1.7)
  * and *Year or quarter…* (2.3) are drawn, unavailable, with the reason under
  * them.
@@ -154,6 +154,12 @@ export default function AddBooks({ initial, close }: {
   return (
     <div className="addb" data-mode={mode}>
       {!close && <h1 className="t">Add books</h1>}
+      {/* The add surface opens on its segmented control (ui.md, mockup `add`); Add to comes next. */}
+      <div className="seg" role="group" aria-label="Add by">
+        <button type="button" aria-pressed={mode === "search"} onClick={() => setMode("search")}>Search</button>
+        <button type="button" aria-pressed={mode === "paste"} onClick={() => setMode("paste")}>Paste a list</button>
+        <button type="button" aria-pressed={mode === "hand"} onClick={() => setMode("hand")}>By hand</button>
+      </div>
       <div className="addto" role="group" aria-labelledby="addto-label">
         <span id="addto-label" className="addto-k">Add to</span>
         <button type="button" className="chip" aria-pressed={target.kind === "someday"}
@@ -187,25 +193,21 @@ export default function AddBooks({ initial, close }: {
         ))}
       </div>
 
-      <div className="seg" role="group" aria-label="Add by">
-        <button type="button" aria-pressed={mode === "search"} onClick={() => setMode("search")}>Search</button>
-        <button type="button" aria-pressed={mode === "paste"} onClick={() => setMode("paste")}>Paste a list</button>
-        <button type="button" aria-pressed={mode === "hand"} onClick={() => setMode("hand")}>By hand</button>
-      </div>
       {failed && <p className="neutral-error add-failed" role="alert"><span aria-hidden="true">×</span> {failed}</p>}
 
+      {/* Search shows *Or paste a list* under its results, as the mockup draws it (beside them on the
+          full page from 1024px); Paste a list is the paste alone, By hand the form alone. Search and
+          Paste stay mounted, so what you found or pasted is still there when you come back. */}
       <div className="add-2up">
         <div>
-          {/* Search and Paste stay mounted, so what you found or pasted is still there when you come back. */}
           <div className="pane pane-search" hidden={mode !== "search"}>
             <BookSearch level={level} target={target} outcomes={outcomes} busy={busy} onAdd={addPick} onByHand={byHand} />
-            <div className="actionbar add-bar"><div className="add-buttons">{cancel("Done")}</div></div>
           </div>
           <div className="pane pane-hand" hidden={mode !== "hand"}>
             <ByHand key={hand.key} target={target} title={hand.title} onSubmit={addByHand} cancel={cancel("Cancel")} />
           </div>
         </div>
-        <div className="pane pane-paste" hidden={mode !== "paste"}>
+        <div className="pane pane-paste" hidden={mode === "hand"}>
           <PasteBooks level={level} target={target} cancel={cancel("Cancel")} onAdded={pasted} />
         </div>
       </div>

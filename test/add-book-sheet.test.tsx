@@ -119,6 +119,12 @@ async function search(q = "blade") {
 describe("Add to (AC-3)", () => {
   it("opened from Add books, it is Someday; On deck and Year or quarter… are unavailable, with the reason shown", async () => {
     await open();
+    // It opens on its segmented control, Search selected, and Add to follows (ui.md; mockup `add`).
+    const control = dialog()!.querySelector(".seg")!;
+    expect(control.compareDocumentPosition(dialog()!.querySelector(".addto")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(seg("Search").getAttribute("aria-pressed")).toBe("true");
+    // Search shows Or paste a list under it, as drawn; By hand is the form alone.
+    expect(dialog()!.querySelector(".pane-paste")!.hasAttribute("hidden")).toBe(false);
     expect(chips().map((c) => [c.textContent, c.getAttribute("aria-pressed"), c.getAttribute("aria-disabled")])).toEqual([
       ["Someday", "true", null], ["On deck", null, "true"], ["Year or quarter…", null, "true"], ["Shelf…", "false", null],
     ]);
@@ -229,6 +235,9 @@ describe("Search (AC-2, AC-6)", () => {
     expect(resultButtons()[1].textContent).toBe("✓ Added to Someday");
     expect(resultButtons()[1].getAttribute("aria-disabled")).toBe("true");
     expect(document.querySelector(".toast-label")!.textContent).toBe("Added to Someday");
+    // The sheet is still open, and its toast is not inert behind it: Undo is right there.
+    expect(dialog()).not.toBeNull();
+    expect(document.querySelector(".toast-region")!.closest("[inert]")).toBeNull();
     await click(document.querySelector(".toast-undo")!);
     const [, init] = fetchMock.mock.calls.at(-1)!;
     expect([init.method, JSON.parse(init.body)]).toEqual(["DELETE",
@@ -311,7 +320,11 @@ describe("the sheet (AC-6)", () => {
     expect(h.textContent).toBe("Add books");
     expect(dialog()!.getAttribute("aria-labelledby")).toBe(h.id);
     expect(document.activeElement).toBe(h);
-    expect(container.hasAttribute("inert")).toBe(true);
+    // Everything behind it but the undo toast, which stays live above a sheet.
+    const behind = [...container.children].filter((el) => !el.classList.contains("toast-region"));
+    expect(behind.length).toBeGreaterThan(0);
+    expect(behind.every((el) => el.hasAttribute("inert"))).toBe(true);
+    expect(container.querySelector(".toast-region")!.closest("[inert]")).toBeNull();
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -328,7 +341,7 @@ describe("the sheet (AC-6)", () => {
   const routes: [string, () => Promise<void>][] = [
     ["Esc", async () => key(document.activeElement!, "Escape")],
     ["Back", async () => act(async () => { window.dispatchEvent(new PopStateEvent("popstate")); })],
-    ["Done", async () => click(button("Done")!)],
+    ["Cancel under Search", async () => click(button("Cancel")!)],
     ["By hand's Cancel", async () => { await click(seg("By hand")); await click(button("Cancel")!); }],
     ["Paste's confirm", async () => {
       await click(seg("Paste a list"));
@@ -343,7 +356,7 @@ describe("the sheet (AC-6)", () => {
       await close();
       expect(dialog()).toBeNull();
       expect(document.activeElement).toBe(opener());
-      expect(container.hasAttribute("inert")).toBe(false);
+      expect(container.querySelector("[inert]")).toBeNull();
     });
   }
 

@@ -204,7 +204,10 @@ describe("the range sheet (UX floor, R1-11)", () => {
     expect(dialog()!.getAttribute("aria-labelledby")).toBe(h.id);
     expect(h.getAttribute("tabindex")).toBe("-1");
     expect(document.activeElement).toBe(h);
-    expect(container.hasAttribute("inert")).toBe(true);
+    // Everything behind it but the undo toast, which stays live above a sheet (task 1.4c).
+    const behind = [...container.children].filter((el) => !el.classList.contains("toast-region"));
+    expect(behind.length).toBeGreaterThan(0);
+    expect(behind.every((el) => el.hasAttribute("inert"))).toBe(true);
   });
 
   it("offers four dates as real, named radio inputs, and no Original dates", async () => {
@@ -259,7 +262,7 @@ describe("the range sheet (UX floor, R1-11)", () => {
     expect(dialog()).not.toBeNull();
     await dismiss();
     expect(dialog()).toBeNull();
-    expect(container.hasAttribute("inert")).toBe(false);
+    expect(container.querySelector("[inert]")).toBeNull();
     expect(document.activeElement).toBe(trigger);
     expect(fetchMock).not.toHaveBeenCalled();
   });

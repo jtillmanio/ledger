@@ -94,6 +94,16 @@ Approved 2026-10-12 at `1f3160f`. Owner answers at the gate: cache in a new `ope
 - AC-2 (UI), AC-3, AC-4, AC-6: `test/add-book-sheet.test.tsx` (happy-dom) — submit-only search, library before OL, required-field errors writing nothing, destination preselection and button labels, disabled destinations with reason, pending cover on book and issue rows, empty/loading/rate-limited/error states, focus on heading at open and back on the opener by Cancel, Esc, Back and confirm, `inert` behind.
 - AC-6 screenshots: ui-verifier at every `ui.viewports` width, light and dark.
 
+**Revision 1** (2026-10-13, after review round 1):
+
+- (a) The layout follows mockup `add` (spec review, D-1): the segmented control first, then *Add to*. Search shows *Or paste a list* under its results (beside them on the full page from 1024px). The search pane's *Done* bar is dropped, since the paste bar's *Cancel* serves. Each column's bar stays in its column on desktop.
+- (b) Owner-approved: `src/components/Sheet.tsx` leaves the undo toast out of `inert`. `src/components/Undo.tsx` marks it `data-over-sheet`, and the toast's z-index goes above the sheet's, so an add made in the sheet is undone without closing it (ui-verifier R1). `test/range-sheet.test.tsx`'s inert assertions now exclude the toast.
+- (c) The undo is tightened (schema review):
+  - it deletes only a bare `to_read` row, with the check repeated in the delete;
+  - `created` must be part of `added`;
+  - a plan row on a reused book refuses the undo.
+- (d) `test/metron-search.test.ts` asserts the Add issues `pending` flag.
+
 **Risks**: `/books` query budget (4) — the sheet asks for nothing on load, shelves only on tap. Twelve-plus files with schema and UI together: kept whole by `never-split`, attended.
 
 ## Review log
