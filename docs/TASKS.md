@@ -90,7 +90,7 @@ to it. This is one behaviour in the shared sheet component, not eight
 per-screen fixes: 1.1, 1.3c, 1.3b, 1.4c, 1.8b, 2.1b, 2.3, 2.6 and 2.7 all open
 one. A sheet also traps Tab while open and is labelled by its own heading.
 Opening one puts focus on that heading (`tabindex="-1"`) and marks the page
-behind it `inert`; Esc and Back both dismiss (UX-N11). Sheets are solid
+behind it `inert`, except the undo toast, which stays live above it (D-63); Esc and Back both dismiss (UX-N11). Sheets are solid
 `--overlay` over `--scrim`, never glass (SG §8).
 
 **Figures in the mockups are sample data** (D-7). `design/mockups.html` wins on
@@ -938,7 +938,7 @@ nothing is merged without the owner's accept. The trigram index is
 inserts and 9 matches, zero duplicates. A line one letter off an existing title
 (similarity ≥ 0.4) is flagged with that match and is not merged.
 
-### ☐ 1.4c Add a book by search or by hand, to a destination · M
+### ☑ 1.4c Add a book by search or by hand, to a destination · M
 Requirement change, Sept 2026. ARCHITECTURE 2.15. One add sheet, reached from
 Add books, a shelf's **+ Add to shelf**, the plan, and the master list's *To
 read* filter, opened with that destination preselected. Mockups: "Add books"
@@ -2168,6 +2168,14 @@ for…** in the master list, and **Year or quarter…** when adding a new book (
 sheet, minus the "currently planned" badge). Mockup: `design/mockups.html`,
 "Move / add to plan".
 
+*From 1.4c (TASK-008, task/1.4c-add-book-search-hand):* the Add books sheet
+draws *Year or quarter…* in its *Add to* row `aria-disabled`, with the reason
+*On deck and Year or quarter… arrive with the reading plan.*
+(`src/components/AddBooks.tsx`), and leaves out the mockup's secondary *Year
+or quarter…* button on a search result row. This task enables the chip and
+adds that button; the add itself is `POST /api/books`, whose `destination`
+gains the plan level.
+
 Sheet contents: the four to-read levels (D-37). One row of chips: the next five
 years, then **On deck** and **Someday**. Choosing a year opens a second row:
 **No quarter yet** (a bare-year entry) and **Q1–Q4**. There is no month step
@@ -3266,6 +3274,15 @@ shift layout.
 Rows created freeform and not yet enriched render `data-enrich="pending"`: a
 dashed cover outline and a *metadata pending* line, on the spine, the master
 list and book detail.
+
+*From 1.4c (TASK-008, task/1.4c-add-book-search-hand):* that much is built.
+`src/components/Cover.tsx` draws `data-enrich="pending"` and its line on the
+spine (an issue with no `metron_id`), the master list (a book with no
+`open_library_id` or `hardcover_id`, which is every workbook book until 1.14),
+and the Add books and Add issues search results. A spine row only gets a
+cover box when it is pending, and a master-list row with no cover draws none.
+This task makes every row's box the same: real covers, the neutral
+placeholder, and the 28×42 size.
 
 **A missing cover is neutral** (UX-X05, M-01, L-01). The placeholder is `--sunk`
 with mono initials in `--muted` and a faint ring (dark: white at 10%); the

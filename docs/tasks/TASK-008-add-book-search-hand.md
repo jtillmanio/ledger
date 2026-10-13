@@ -1,7 +1,7 @@
 ---
 id: TASK-008
 title: 1.4c Add a book by search or by hand, to a destination
-status: In progress
+status: Review
 depends_on: [TASK-007]
 size: L
 model: sonnet
@@ -32,12 +32,12 @@ A book can be added from an Open Library search or typed by hand, straight into 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): adding an Open Library result to the Cosmere shelf creates one `books` row with `open_library_id` and one `shelf_books` row; adding the same book again, from search or by hand with the same title and author, reuses it and says so; a by-hand book with no pages saves with null word count and still lands in Someday (`to_read`, no plan row); an Open Library failure leaves By hand working and writes nothing. (*On deck* is asserted in 1.7 and *Year or quarter…* in 2.3, not here.)
-- [ ] AC-2: Search runs on submit, not per keystroke, and lists your library's matches before Open Library's. An Open Library result with a page count saves `word_count = pages × words_per_page` and `word_count_source = 'estimated'`. A by-hand word count is saved as `stated`. By hand requires title and author, and submitting without them shows *Title is required* / *Author is required* under the field, writing nothing.
-- [ ] AC-3: Opened from a shelf's *+ Add to shelf*, the sheet's *Add to* shows that shelf, and every result's primary button reads *Add to <shelf name>*. Opened from Add books, it defaults to *Someday*. *On deck* and *Year or quarter…* are `aria-disabled="true"` with a visible reason.
-- [ ] AC-4: A by-hand book with no Open Library record renders with the dashed cover outline and *metadata pending* (`data-enrich="pending"`) wherever its row appears. The same treatment applies to an issue created by TASK-005 without Metron data.
-- [ ] AC-5: An add pushes one entry onto TASK-001's undo stack (R1-09). **Undo** removes the destination row it wrote (the `shelf_books` row, or the `to_read` status it created) and soft-deletes a book this add created. A reused book, and any status it already had, stay exactly as they were.
-- [ ] AC-6: The Add books sheet meets the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task* and § *Focus returns where it came from*): empty, loading, rate-limited and error states for search; labelled inputs; focus on the heading at open and back on the opener at close, by every route; `inert` behind it; targets at least 24px; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-1 (roadmap **Check:**, verbatim): adding an Open Library result to the Cosmere shelf creates one `books` row with `open_library_id` and one `shelf_books` row; adding the same book again, from search or by hand with the same title and author, reuses it and says so; a by-hand book with no pages saves with null word count and still lands in Someday (`to_read`, no plan row); an Open Library failure leaves By hand working and writes nothing. (*On deck* is asserted in 1.7 and *Year or quarter…* in 2.3, not here.)
+- [x] AC-2: Search runs on submit, not per keystroke, and lists your library's matches before Open Library's. An Open Library result with a page count saves `word_count = pages × words_per_page` and `word_count_source = 'estimated'`. A by-hand word count is saved as `stated`. By hand requires title and author, and submitting without them shows *Title is required* / *Author is required* under the field, writing nothing.
+- [x] AC-3: Opened from a shelf's *+ Add to shelf*, the sheet's *Add to* shows that shelf, and every result's primary button reads *Add to <shelf name>*. Opened from Add books, it defaults to *Someday*. *On deck* and *Year or quarter…* are `aria-disabled="true"` with a visible reason.
+- [x] AC-4: A by-hand book with no Open Library record renders with the dashed cover outline and *metadata pending* (`data-enrich="pending"`) wherever its row appears. The same treatment applies to an issue created by TASK-005 without Metron data.
+- [x] AC-5: An add pushes one entry onto TASK-001's undo stack (R1-09). **Undo** removes the destination row it wrote (the `shelf_books` row, or the `to_read` status it created) and soft-deletes a book this add created. A reused book, and any status it already had, stay exactly as they were.
+- [x] AC-6: The Add books sheet meets the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task* and § *Focus returns where it came from*): empty, loading, rate-limited and error states for search; labelled inputs; focus on the heading at open and back on the opener at close, by every route; `inert` behind it; targets at least 24px; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -64,10 +64,20 @@ A book can be added from an Open Library search or typed by hand, straight into 
 
 ## Follow-ups
 
-- `design/mockups-index.md` § Not shown 15 still describes `add` before 1.4c; rewrite it for the drawn layout, noting the paste lede drops *then Open Library* (the paste check never asks it; owner, plan gate) (approved at plan)
-- The mockup's secondary *Year or quarter…* button on a result row is left for 2.3, with the chip (approved at plan)
-- 4.3 should know that 1.4c already renders `data-enrich="pending"` on spine rows, the master list and the add sheet's results (approved at plan)
-- Candidate decision D-62: Open Library responses are cached in Postgres like Metron's (D-53), `open_library_cache`, not exported (approved at plan)
+- `design/mockups-index.md` § Not shown 15 still described `add` before 1.4c. It is rewritten for the layout as built, noting:
+  - the paste lede drops *then Open Library* (owner, plan gate);
+  - on the full page the header spans both columns (spec review R2).
+
+  → design/mockups-index.md § Not shown, and why (approved at plan)
+- The mockup's secondary *Year or quarter…* button on a result row is left for 2.3, with the chip → docs/TASKS.md § 2.3 (approved at plan)
+- 4.3 should know that 1.4c already renders `data-enrich="pending"` on spine rows, the master list and the add sheets' results → docs/TASKS.md § 4.3 (approved at plan)
+- Decision: Open Library responses are cached in Postgres like Metron's (D-53), in `open_library_cache`, which is not exported. It amends D-61 (a work id also matches) → docs/review/decisions.md § D-62 (approved at plan)
+- Decision: a sheet leaves the undo toast live above it (D-63). This changes the standing *Focus returns* rule → docs/review/decisions.md § D-63, plus the docs/TASKS.md § *Focus returns where it came from* edit (approved at close-out)
+- The toast's Undo leaves focus on `<body>` when it unmounts. 1.8b places the toast, and must keep it live over sheets (ui-verifier R2) → docs/tasks/TASK-015-thumb-bar-contrast.md § Context
+- `open_library_cache` keeps old search rows forever (schema review) → not tracked: the same as `metron_cache`, the rows are small, and one person searches
+- `DELETE /api/books` trusted the ids the client sent (spec review, schema review) → not tracked: done in this PR (plan revision 1: `created` ⊆ `added`, bare `to_read` only, plan rows refuse)
+- A React hydration warning on `/books/add` in the first browser walk → not tracked: none in 20 loads in the second walk
+- The segmented control (34px) and the *Add to* chips (32px) are under 44px on a phone → not tracked: they meet the UX floor's 24px; the 44px rule is for thumb-bar and icon buttons
 
 ## Plan
 
@@ -108,7 +118,10 @@ Approved 2026-10-12 at `1f3160f`. Owner answers at the gate: cache in a new `ope
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 PASS | Audit R1 PASS (AC-1 to AC-5 proven; AC-6's screenshots and targets left to the UI walk)
+- Review R1: Spec CHANGES (the control must precede *Add to*, per mockup `add`; the Add issues `pending` flag UNTESTED) | Schema APPROVE (5 minor: undo hardening ×3, record D-62, cache pruning) | UI CHANGES (the toast's Undo was inert over the sheet; desktop bars floated; a flaky hydration warning)
+- Plan revision 1, then Verify R2 PASS
+- Review R2: Spec APPROVE (stale `Sheet` docstring fixed) | UI PASS at 6 viewports, light and dark (the focus after Undo goes to TASK-015)
 
 ## Blocked
 
@@ -116,7 +129,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (both green: R1 after the build, R2 after review round 1's fixes)
+- Review rounds: 2
+- First-pass AC FAILs: 2 (AC-5: the toast's Undo couldn't be pressed with the sheet open; AC-4: the Add issues `pending` flag was UNTESTED)
+- Plan revisions after approval: 1

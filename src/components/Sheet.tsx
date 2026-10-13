@@ -35,7 +35,8 @@ const FOCUSABLE ='a[href], button, input, select, textarea, [tabindex]:not([tabi
  *
  * - It is a dialog labelled by its own heading, which takes focus on open
  *   (`tabindex="-1"`).
- * - Everything else on the page is `inert` while it is open, and Tab stays inside.
+ * - Everything else on the page is `inert` while it is open, but for the undo
+ *   toast (`quietOutside`), and Tab stays inside.
  * - Esc, the back button and the caller's own Cancel or confirm close it, and
  *   focus goes back to `opener`, the control that opened it.
  * - Back works through a history entry pushed on open (Next 16 keeps native
