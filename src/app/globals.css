@@ -461,8 +461,8 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
 /* --- A book's status and the finish-date control (task 1.5; mockup `blist`,
    M-13). The status is a button group, current value aria-pressed; DNF is a
    grey stop, not a warning, so nothing here resolves to --danger (ui.md). */
-.book-status{margin-top:.375rem}
-.status-toggle{border:0;cursor:pointer;font-family:inherit;min-height:24px;background:var(--sunk);color:var(--ink-2)}
+.status-toggle{display:flex;width:fit-content;margin-top:.375rem;border:0;cursor:pointer;font-family:inherit;
+  min-height:24px;background:var(--sunk);color:var(--ink-2)}
 .status-toggle[aria-expanded="true"]{outline:1px solid var(--rule-2)}
 .status-toggle:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .rows .row.book-row:has(.status-toggle[aria-expanded="true"]){background:var(--raise)}

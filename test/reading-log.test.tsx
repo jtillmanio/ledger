@@ -114,7 +114,7 @@ const pressed = () => [...container.querySelectorAll(".status-group button[aria-
 function renderBook(row: { status: string; on?: string | null; precision?: "exact" | "approximate" | "none" }) {
   act(() => root.render(
     <UndoProvider>
-      <BookStatus bookId="wok" title="The Way of Kings" status={row.status}
+      <BookStatus bookId="wok" status={row.status}
         finishedOn={row.on ?? null} precision={row.precision ?? "none"} />
     </UndoProvider>,
   ));

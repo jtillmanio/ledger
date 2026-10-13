@@ -115,6 +115,7 @@ Approved 2026-10-13. Size: ~24 files, schema and UI together; kept whole (`split
 - Schema R1 APPROVE (minors: down file left the `status_user_year` index; a status-only undo didn't check the status — both fixed, plan revision 1)
 - Spec R1 CHANGES (roadmap checkbox; follow-ups with no destination; the `undoAddBooks` guard unplanned and untested; `redateIssue` didn't check issue/run soft delete; AC-4's grep wording, read as `-- src etl` by the owner) → R2 APPROVE (with the follow-ups check)
 - UI R1 PASS (360–1280, light and dark; DNF grey, never `--danger`; focus returns; no console errors; dev data restored)
+- Ready gate Lighthouse R1 FAIL (`/books` document + RSC 56,009 B over the 48,000 B budget: every row rendered its hidden panel and sent its title again) → the controls render only when the row is open, props default to a bare to-read row, the title is read from the row; locally 55,191 → 45,334 B gzip (41,532 B without the control); verify R4 PASS
 
 ## Blocked
 
@@ -122,7 +123,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds: 3 (R1 FAIL, R2 and R3 PASS)
+- Verify rounds: 4 (R1 FAIL, R2–R4 PASS)
 - Review rounds: 2
 - First-pass AC FAILs: 0 (AC-4's wording was a spec gap, not a failure)
 - Plan revisions after approval: 1

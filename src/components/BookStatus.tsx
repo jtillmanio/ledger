@@ -40,9 +40,15 @@ function badge({ status, finish }: Saved) {
  * own account of what it changed, so a second read's undo removes that read and
  * nothing else. The page is refreshed after a save and an undo, so the year
  * chips and counts move with it.
+ *
+ * The list holds up to 500 of these, so a row costs as little as it can
+ * (Performance budget, task 0.10): the controls render only once the row is
+ * open, the props default to a bare *to read* with no finish, and the book's
+ * title, which the row already shows, is read from the row rather than sent
+ * again: `.row-title` in the `.book-row` around the badge.
  */
-export default function BookStatus({ bookId, title, status, finishedOn, precision }: {
-  bookId: string; title: string; status: string; finishedOn: string | null; precision: Precision;
+export default function BookStatus({ bookId, status = "to_read", finishedOn = null, precision = "none" }: {
+  bookId: string; status?: string; finishedOn?: string | null; precision?: Precision;
 }) {
   const router = useRouter();
   const { push } = useUndo();
@@ -52,6 +58,8 @@ export default function BookStatus({ bookId, title, status, finishedOn, precisio
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
   const readButton = useRef<HTMLButtonElement>(null);
+  const toggle = useRef<HTMLButtonElement>(null);
+  const [title, setTitle] = useState("this book");
   const panelId = useId();
   const reasonId = useId();
 
@@ -135,12 +143,16 @@ export default function BookStatus({ bookId, title, status, finishedOn, precisio
   const reason = finishing ? finishReason(finishing) : null;
 
   return (
-    <div className="book-status">
-      <button type="button" className={`bdg status-toggle${saved.status === "read" ? " dn" : ""}`}
-        aria-expanded={open} aria-controls={panelId} onClick={() => setOpen((o) => !o)}>
+    <>
+      <button type="button" ref={toggle} className={`bdg status-toggle${saved.status === "read" ? " dn" : ""}`}
+        aria-expanded={open} aria-controls={open ? panelId : undefined} onClick={() => {
+          const shown = toggle.current?.closest(".book-row")?.querySelector(".row-title")?.textContent;
+          if (shown) setTitle(shown);
+          setOpen((o) => !o);
+        }}>
         <span className="sr-only">Status: </span>{badge(saved)}
       </button>
-      <div id={panelId} hidden={!open}>
+      {open && <div id={panelId}>
         <div className="opts status-group" role="group" aria-label={`Status of ${title}`}>
           {STATUSES.map((s) => (
             <button key={s.status} type="button" ref={s.status === "read" ? readButton : undefined}
@@ -170,7 +182,7 @@ export default function BookStatus({ bookId, title, status, finishedOn, precisio
             <span aria-hidden="true">×</span> That didn&apos;t save. Check your connection and try again.
           </p>
         )}
-      </div>
-    </div>
+      </div>}
+    </>
   );
 }

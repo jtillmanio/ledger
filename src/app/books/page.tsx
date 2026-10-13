@@ -106,8 +106,10 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
               </span>
               {b.pending && <Pending />}
               {/* Status and finish date (task 1.5): the badge expands the row's controls. */}
-              <BookStatus bookId={b.id} title={b.title} status={b.status}
-                finishedOn={b.finished_on} precision={b.finished_on_precision} />
+              {/* Only what differs from a bare to-read row: 500 rows travel in the RSC payload. */}
+              <BookStatus bookId={b.id}
+                {...(b.status !== "to_read" && { status: b.status })}
+                {...(b.finished_on !== null && { finishedOn: b.finished_on, precision: b.finished_on_precision })} />
             </span>
           </div>
         ))}
