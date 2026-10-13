@@ -72,7 +72,7 @@ Finishing a book records when you finished it: today, a picked date, just the ye
 - `docs/FEATURES.md` #4 still described `finished_year` as current (approved at plan) → docs/FEATURES.md § Part 2 — What you didn't list and probably want (#4)
 - `.claude/rules/schema.md` said `finished_year` was still stored "until 1.5", and had no rule for the log (approved at plan) → .claude/rules/schema.md § A book's finish year is derived
 - 1.16 had no task file, so `/next-task` couldn't reach it (approved at plan) → docs/tasks/TASK-025-dates-in-new-york.md (new, Draft)
-- Candidate decision: `read_events` is the books' log, a reread is Reading → Read, and comic reads don't write it yet (approved at plan) → docs/review/decisions.md § D-65
+- Candidate decision: `read_events` is the books' log, a reread is Reading → Read, and comic reads don't write it yet (approved at plan; amended in revision 2: every read counts in its year, owner after the preview walk) → docs/review/decisions.md § D-65
 - ui-verifier: *Change date…* opens on today's date, not the stored one, so reopening it after a save looks unchanged → not tracked: by design (plan step 11); showing the stored date needs the spine rows to carry `completed_at`, and 3.5's issue sheet lists each placement with its date
 - ui-verifier: the top bar's *Ledger* link is 46×23px at phone and tablet widths → not tracked: already tracked in docs/tasks/TASK-014-app-shell.md § Context
 - ui-verifier: *Show all 181* (`/books`) and *All runs* (run page) are 17px tall → not tracked: inline text links in a sentence, which WCAG 2.5.8's inline exception exempts from the 24px target; neither changed here
@@ -108,6 +108,8 @@ Approved 2026-10-13. Size: ~24 files, schema and UI together; kept whole (`split
 
 **Revision 2 (owner, after the first preview walk, 2026-10-13).** Every read counts in its year: a new `book_reads` view in `etl/views.sql` (every `read_events` book row, plus a `read` status with no log row) feeds `books_by_year` and `listBooks`' year filter, so a Year only 2019 read followed by Reading → Read today is under 2019 and 2026; leaving `read` no longer takes a read out of its year. The down file drops `book_reads` before `read_events`. The year chips' counts get the mockup's count style (`.chip .n`: smaller mono, muted, set apart) instead of sitting flush against the year. D-65, `.claude/rules/schema.md`, `docs/ARCHITECTURE.md` § 1 and `docs/HANDOFF.md` § 4 say so.
 
+**Revision 2, review (schema R2, spec R3).** A read the status held with no log row (the workbook's) is logged with its own date when the book first leaves `read`, so it keeps its year; the undo removes it (`BookStatusChange.backfilled`). *No year* counts undated reads from `book_reads` too, so an undated read stays there once the book moves on.
+
 **Risks.** Postgres client under happy-dom (fallback: the UI test asserts requests, the DB test the handler). `extract(year …)` index must be immutable on `date` (it is). The manual step's "mark it read again" is done as Reading → Read (decision C).
 
 ## Review log
@@ -117,6 +119,7 @@ Approved 2026-10-13. Size: ~24 files, schema and UI together; kept whole (`split
 - Schema R1 APPROVE (minors: down file left the `status_user_year` index; a status-only undo didn't check the status — both fixed, plan revision 1)
 - Spec R1 CHANGES (roadmap checkbox; follow-ups with no destination; the `undoAddBooks` guard unplanned and untested; `redateIssue` didn't check issue/run soft delete; AC-4's grep wording, read as `-- src etl` by the owner) → R2 APPROVE (with the follow-ups check)
 - UI R1 PASS (360–1280, light and dark; DNF grey, never `--danger`; focus returns; no console errors; dev data restored)
+- Owner preview walk R1: the year chips' counts sat flush against the year; a Year only 2019 read left the 2019 chip after Reading → Read today → plan revision 2 (every read counts in its year; chip counts styled) → verify R5 PASS → Schema R2 CHANGES (a workbook read left its year when the book left `read`) → fixed, *No year* on `book_reads` too (spec R3 note) → Spec R3 APPROVE
 - Ready gate Lighthouse R1 FAIL (`/books` document + RSC 56,009 B over the 48,000 B budget: every row rendered its hidden panel and sent its title again) → the controls render only when the row is open, props default to a bare to-read row, the title is read from the row; locally 55,191 → 45,334 B gzip (41,532 B without the control); verify R4 PASS
 
 ## Blocked
@@ -125,7 +128,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds: 4 (R1 FAIL, R2–R4 PASS)
-- Review rounds: 2
+- Verify rounds: 6 (R1 FAIL, R2–R6 PASS)
+- Review rounds: 3
 - First-pass AC FAILs: 0 (AC-4's wording was a spec gap, not a failure)
 - Plan revisions after approval: 2

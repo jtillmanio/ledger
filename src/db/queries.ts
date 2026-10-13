@@ -265,7 +265,8 @@ export type BookRow = {
 };
 
 /** `year` is a finished or planned year; `noYear` is the read books that have
- * no finish date at all (R2-08). A book is under every year it was read in,
+ * an undated read (R2-08). A book is under every year it was read in, and under
+ * No year if one of its reads has no date,
  * from book_reads, as books_by_year counts it (D-65): a reread doesn't move it
  * out of its first year. */
 export async function listBooks(
@@ -303,7 +304,9 @@ export async function listBooks(
            OR EXISTS (SELECT 1 FROM reading_plan p2
                       WHERE p2.book_id = b.id AND p2.user_id = ${userId}
                         AND p2.planned_year = ${year}))
-      AND (NOT ${noYear}::boolean OR (st.status = 'read' AND st.finished_on IS NULL))
+      AND (NOT ${noYear}::boolean
+           OR EXISTS (SELECT 1 FROM book_reads r
+                      WHERE r.user_id = ${userId} AND r.book_id = b.id AND r.finished_on IS NULL))
       AND (${q}::text      IS NULL OR b.title ILIKE '%' || ${q} || '%'
                                    OR a.name  ILIKE '%' || ${q} || '%')
     ORDER BY s.name NULLS LAST, b.series_position NULLS LAST, b.title
@@ -318,13 +321,14 @@ export async function yearSummary(userId: string) {
   `;
 }
 
-/** Read books with no finish date (precision `none`): the ones no year chip can reach. */
+/** Undated reads (precision `none`), from book_reads as the year chips count
+ * theirs (D-65): the ones no year chip can reach. */
 export async function readWithoutYear(userId: string): Promise<number> {
   const [row] = await sql<{ n: number }[]>`
     SELECT COUNT(*)::int AS n
-    FROM book_status s
-    JOIN books b ON b.id = s.book_id AND b.deleted_at IS NULL
-    WHERE s.user_id = ${userId} AND s.status = 'read' AND s.finished_on IS NULL
+    FROM book_reads r
+    JOIN books b ON b.id = r.book_id AND b.deleted_at IS NULL
+    WHERE r.user_id = ${userId} AND r.finished_on IS NULL
   `;
   return row.n;
 }

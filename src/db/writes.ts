@@ -34,6 +34,8 @@ export type BookStatusChange = {
   appended: number | null;
   /** The read_events row this write re-dated, with the date it had. */
   edited: { id: number; finishedOn: string | null; precision: Precision } | null;
+  /** The read_events row this write logged for a read the status held alone. */
+  backfilled: number | null;
 };
 
 /** Serialises writes to one book's status and reading log, and checks the book
@@ -65,7 +67,8 @@ async function latestRead(tx: Tx, userId: string, bookId: string) {
  *   another read. One read before the log existed gets its first row instead.
  * - `book_status.finished_on` follows the read; the year is derived from it (D-21).
  * - Leaving `read` keeps the finish date, and any field the input leaves out is
- *   kept: a bare status change never wipes a rating or a finish (R0-C1).
+ *   kept: a bare status change never wipes a rating or a finish (R0-C1). A read
+ *   the status held with no log row is logged first, so it keeps its year (D-65).
  *
  * Answers null for a book that is missing or removed.
  */
@@ -81,6 +84,16 @@ export async function saveBookStatus(userId: string, input: BookStatusInput): Pr
 
     let appended: number | null = null;
     let edited: BookStatusChange["edited"] = null;
+    let backfilled: number | null = null;
+    // A read loaded before the log existed (the workbook's) lives only in the
+    // status, and book_reads counts it only while the status is `read`. Leaving
+    // `read` would unread it, so it goes into the log first, with its own date.
+    if (before?.status === "read" && status !== "read" && !(await latestRead(tx, userId, bookId))) {
+      const [row] = await tx.insert(readEvents)
+        .values({ userId, bookId, finishedOn: before.finishedOn, finishedOnPrecision: before.precision })
+        .returning({ id: readEvents.id });
+      backfilled = row.id;
+    }
     if (status === "read" && finish) {
       const latest = await latestRead(tx, userId, bookId);
       const dated = { finishedOn: finish.on, finishedOnPrecision: finish.precision };
@@ -105,14 +118,14 @@ export async function saveBookStatus(userId: string, input: BookStatusInput): Pr
     return {
       bookId, status,
       prior: before ? { ...before, precision: before.precision as Precision } : null,
-      appended, edited,
+      appended, edited, backfilled,
     };
   });
 }
 
 /**
  * Undo one status write: put back exactly what `saveBookStatus` changed. The
- * read it appended is deleted, the read it re-dated gets its date back, and the
+ * read it appended or backfilled is deleted, the read it re-dated gets its date back, and the
  * status row returns to its prior status and finish (a rating is never touched).
  * A book that had no row loses the one the write made, unless something has
  * been added to it since, when it goes back to a bare `to_read`.
@@ -122,16 +135,18 @@ export async function saveBookStatus(userId: string, input: BookStatusInput): Pr
  * re-dated is no longer the book's latest.
  */
 export async function undoBookStatus(userId: string, change: BookStatusChange): Promise<boolean> {
-  const { bookId, status, prior, appended, edited } = change;
+  const { bookId, status, prior, appended, edited, backfilled } = change;
   return db.transaction(async (tx) => {
     if (!(await lockBook(tx, bookId))) return false;
     const [now] = await tx.select({ status: bookStatus.status }).from(bookStatus)
       .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId)));
     if (now?.status !== status) return false;
-    const touched = appended ?? edited?.id ?? null;
+    const touched = appended ?? edited?.id ?? backfilled ?? null;
     if (touched !== null && (await latestRead(tx, userId, bookId))?.id !== touched) return false;
 
-    if (appended !== null) await tx.delete(readEvents).where(eq(readEvents.id, appended));
+    for (const id of [appended, backfilled]) {
+      if (id !== null) await tx.delete(readEvents).where(eq(readEvents.id, id));
+    }
     if (edited) {
       await tx.update(readEvents).set({ finishedOn: edited.finishedOn, finishedOnPrecision: edited.precision })
         .where(eq(readEvents.id, edited.id));
