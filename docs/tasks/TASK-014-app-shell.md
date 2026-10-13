@@ -30,6 +30,7 @@ Every screen sits in the same chrome: a media bar on the phone, a navigation rai
 - Next.js 16: the gate is `src/proxy.ts`, and `cookies()` is async. Read `node_modules/next/dist/docs/` before writing the redirect.
 - *From TASK-005 (1.3c, PR #74):* The app-wide *Add* (sidebar, rail) should land on the run last added to (FEATURES 2c *Remember the last run*). 1.3c's Add issues screen covers consecutive adds with its *Adding to: … · Change* chip (`src/components/RunChip.tsx`), but nothing remembers the run between visits.
 - *From TASK-005 (1.3c, PR #74):* The top bar's *Ledger* link is 46×23px at 360–768px, under the 24px target floor (ui-verifier on 1.3c's screen; the bar is `src/app/layout.tsx`).
+- *From TASK-009 (1.4b, task/1.4b-quick-capture-inbox):* The lede's `N in inbox` chip on `/` and `/books` (`.inbox-chip`, `src/app/globals.css`) shows at every width for now; hide it from 1024px once the sidebar's `Inbox (N)` lands (FP-D16). 1.4b also put an `Inbox` link in the pre-shell nav bar (`src/app/layout.tsx`) and narrowed `.bar-inner`'s gap below 390px so its five links fit 360px; the shell's nav replaces both.
 
 ## Acceptance criteria
 

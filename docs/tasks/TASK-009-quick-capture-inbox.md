@@ -1,7 +1,7 @@
 ---
 id: TASK-009
 title: 1.4b Quick-capture inbox
-status: In progress
+status: Review
 depends_on: [TASK-008]
 size: L
 model: opus
@@ -31,11 +31,11 @@ A half-formed thought ("someone mentioned the Waid FF run") can be saved in ten 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): test that an inbox row saves with only `raw_text` set, and that resolving it links `book_id` or `run_id` and stamps `resolved_at`. A note tagged Watch resolves into a `/watch/add` URL carrying its text. `/inbox` lists only unresolved notes, newest first, and the dashboard chip and `Inbox (N)` link to it.
-- [ ] AC-2: The capture field saves with an empty kind. The kind control is **Books · Comics · Watch · Unsure**, with Unsure stored as NULL. Saving an empty or whitespace-only note is refused with *Write something first* under the field and writes nothing. The migration's `kind` CHECK rejects any other value.
-- [ ] AC-3: **Resolve** on a books note opens Add books (TASK-008) with the text as the search. On a comics note it opens Add issues → Search (TASK-006) with the text pre-filled. Completing that add links the note's `book_id` or `run_id` and stamps `resolved_at`, and the note leaves `/inbox`. Cancelling the add leaves the note unresolved.
-- [ ] AC-4: Given 3 unresolved and 2 resolved notes, the comics and books dashboards show an inbox chip reading 3 on the lede below 1024px, linking to `/inbox`. With 0 unresolved, no chip renders. `inbox` is in `USER_TABLES`, and `test/export-tables.test.ts` passes.
-- [ ] AC-5: The capture field and `/inbox` meet the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): `/inbox`'s empty state is a `--raise` panel with one primary action; loading is a skeleton at the loaded size; the field and the kind control have names; **Resolve** is a real button at least 24px; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-1 (roadmap **Check:**, verbatim): test that an inbox row saves with only `raw_text` set, and that resolving it links `book_id` or `run_id` and stamps `resolved_at`. A note tagged Watch resolves into a `/watch/add` URL carrying its text. `/inbox` lists only unresolved notes, newest first, and the dashboard chip and `Inbox (N)` link to it.
+- [x] AC-2: The capture field saves with an empty kind. The kind control is **Books · Comics · Watch · Unsure**, with Unsure stored as NULL. Saving an empty or whitespace-only note is refused with *Write something first* under the field and writes nothing. The migration's `kind` CHECK rejects any other value.
+- [x] AC-3: **Resolve** on a books note opens Add books (TASK-008) with the text as the search. On a comics note it opens Add issues → Search (TASK-006) with the text pre-filled. Completing that add links the note's `book_id` or `run_id` and stamps `resolved_at`, and the note leaves `/inbox`. Cancelling the add leaves the note unresolved.
+- [x] AC-4: Given 3 unresolved and 2 resolved notes, the comics and books dashboards show an inbox chip reading 3 on the lede below 1024px, linking to `/inbox`. With 0 unresolved, no chip renders. `inbox` is in `USER_TABLES`, and `test/export-tables.test.ts` passes.
+- [x] AC-5: The capture field and `/inbox` meet the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): `/inbox`'s empty state is a `--raise` panel with one primary action; loading is a skeleton at the loaded size; the field and the kind control have names; **Resolve** is a real button at least 24px; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -61,10 +61,17 @@ A half-formed thought ("someone mentioned the Waid FF run") can be saved in ten 
 
 ## Follow-ups
 
-- 1.8 (TASK-014): hide the lede's inbox chip from 1024px once the sidebar's `Inbox (N)` lands (FP-D16), and replace the `Inbox` link this task adds to the pre-shell nav bar (approved at plan)
-- 3.2: when *New Run* lands, the capture screen's footnote goes back to the mockup's "Resolving a comics note opens New Run" (approved at plan)
-- 8.2: `/watch/add` reads `?q=` (pre-fills the search) and `?note=`, and the add resolves that note in its transaction (approved at plan)
-- Candidate decision: an add that carries `note` resolves that inbox note in the add's own transaction, and the add's undo reopens it (approved at plan)
+- 1.8 (TASK-014): hide the lede's inbox chip from 1024px once the sidebar's `Inbox (N)` lands (FP-D16), and replace the `Inbox` link this task adds to the pre-shell nav bar (and its narrower gap below 390px) → docs/tasks/TASK-014-app-shell.md § Context (approved at plan)
+- 3.2: *New Run* becomes a second Resolve choice for a comics note, and the capture screen's footnote goes back to the mockup's "Resolving a comics note opens New Run" → docs/TASKS.md § 3.2 (approved at plan)
+- 8.2: `/watch/add` reads `?q=` (pre-fills the search) and `?note=`, and the add resolves that note in its transaction; `inbox` needs a title column to link it → docs/TASKS.md § 8.2 (approved at plan)
+- Decision: an add that carries `note` resolves that inbox note in the add's own transaction, and the add's undo reopens it → docs/review/decisions.md § D-64 (approved at plan)
+- Schema review: the ER diagrams didn't show `inbox` → docs/DIAGRAMS.md § 1. Comics data model (approved at close-out; § 2 gets the books link)
+- Schema review: ARCHITECTURE's decisions didn't say how a capture note enters the add flows → docs/ARCHITECTURE.md § 2.15 (approved at close-out)
+- Schema review: `load` / `rebuild` truncate `inbox` through `CASCADE`, so a pre-cutover load drops notes → not tracked: already stated in CLAUDE.md (*Production is disposable until cutover* lists the inbox among the cascaded tables)
+- Schema review: a run note's undo reopens it by note id and `run_id`, not by when it was resolved → not tracked: accepted as is (scoped to the user and to the note the add resolved; reviewer's MINOR)
+- `/inbox`'s Lighthouse budget (20,000 / 174,000 / 32 / 100) is an estimate until the preview measures it → not tracked: done in this PR at the Lighthouse ready gate (budget.json and ARCHITECTURE's table set from the measured median + 20%)
+- The top bar's *Ledger* link is 22.5–23px, under the 24px floor (seen again by this task's UI check) → not tracked: already tracked in docs/tasks/TASK-014-app-shell.md § Context (from TASK-005)
+- The `/inbox` skeleton couldn't be made to paint in headless Chromium → not tracked: its shape is asserted by test/loading-states.test.tsx
 
 ## Plan
 
@@ -95,7 +102,7 @@ Approved 2026-10-13 at 1c3921b. `workflow.splitPolicy: never-split`: kept whole 
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 FAIL(4: older screen tests mock add answers with no `note`, read as resolved) → R2 PASS (501 tests) | Audit R1 PASS | Spec R1 CHANGES (AC-5: an Unsure note's held Comics choice was a bare span) · Schema R1 APPROVE (3 MINOR) · UI R1 FAIL (6px horizontal scroll at 360px from the new Inbox nav link) → fixes b06b180 → Verify R3 PASS (502) · Spec R2 APPROVE · UI R2 PASS (360/390/412, light and dark)
 
 ## Blocked
 
@@ -103,7 +110,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (R1 FAIL, R2 and R3 green; R3 after the review fixes)
+- Review rounds: 2
+- First-pass AC FAILs: 1 (AC-5: Unsure's held Comics choice had no reason, and the nav overflowed 360px)
+- Plan revisions after approval: 0

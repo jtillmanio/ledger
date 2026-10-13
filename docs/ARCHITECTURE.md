@@ -355,6 +355,16 @@ The AI rule is unaffected: tapping *Add* on a Metron result is an explicit
 accept of a label Metron says exists, and a freeform line is your own label,
 not a model's.
 
+**A quick-capture note is the way into these paths, not a third one** (task
+1.4b, D-64). `inbox(id, user_id, raw_text, kind, created_at, resolved_at,
+book_id, run_id)` holds a thought with nothing required but its text; `kind`
+is `books`, `comics`, `watch`, or NULL for *Unsure*. **Resolve** opens the add
+flow the kind names with the text in its search (`?q=`) and the note in tow
+(`?note=`); the add that completes links the `books` or `runs` row it wrote and
+stamps `resolved_at` in its own transaction, and its undo reopens the note. A
+Watch note resolves into `/watch/add` (8.2) and links nothing yet. A note links
+at most one row, and only once resolved (CHECKs in migration 0010).
+
 **2.16 Comics get an Up next queue: one ordered list, no dates.** *Sept 2026.*
 Books have a plan with periods because word counts make time budgeting
 meaningful. Comics need something looser: runs you want to read next, in the
