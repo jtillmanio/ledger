@@ -2879,8 +2879,7 @@ presents as new. 7.1 owns the table and the client; 7.5 adds the button.
 *New Run* becomes a second **Resolve** choice for a comics inbox note, beside
 Add issues, and `/inbox`'s footnote goes back to the mockup's "Resolving a
 comics note opens New Run"; a run created from a note resolves it in the same
-transaction, as the add flows do (D-64; from TASK-009, 1.4b,
-task/1.4b-quick-capture-inbox).
+transaction, as the add flows do (D-64; from TASK-009, 1.4b, PR #80).
 
 **Check:** create a run, assign two tracks, assert it appears under both filters;
 assert saving a why stores `hand`, and that nothing in this task calls Anthropic.
@@ -3807,7 +3806,7 @@ This screen reads `?q=` as Search's starting text (searched only when
 submitted) and `?note=`, and the add resolves that note in its own transaction
 (D-64). `inbox` has no title column yet, so linking the note to the `titles`
 row needs one (a schema question for this task's plan) (from TASK-009, 1.4b,
-task/1.4b-quick-capture-inbox).
+PR #80).
 
 **Check:** test that adding a show with 2 seasons creates 1 `titles` row and 2
 `seasons` rows from a single TMDB call, and that re-adding updates rather than
