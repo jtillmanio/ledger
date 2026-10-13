@@ -441,13 +441,16 @@ LEFT JOIN (
 ) ci ON ci.run_id = r.id
 WHERE r.deleted_at IS NULL;
 
--- Books read per year per genre. Replaces the Read 20XX tabs.
+-- Books read per year per genre. Replaces the Read 20XX tabs. The year is
+-- derived from the finish date (D-21, task 1.5): a year-only finish is its July
+-- 1st, 'approximate', so it lands in its year; a read with no date ('none') is
+-- in no year, and the books page's *No year* chip counts it instead.
 CREATE OR REPLACE VIEW books_by_year AS
-SELECT s.user_id, s.finished_year AS year, b.genre,
+SELECT s.user_id, extract(year FROM s.finished_on)::int AS year, b.genre,
        COUNT(*) AS books, SUM(b.word_count) AS words
 FROM book_status s JOIN books b ON b.id = s.book_id
-WHERE s.status = 'read' AND s.finished_year IS NOT NULL AND b.deleted_at IS NULL
-GROUP BY s.user_id, s.finished_year, b.genre;
+WHERE s.status = 'read' AND s.finished_on IS NOT NULL AND b.deleted_at IS NULL
+GROUP BY s.user_id, extract(year FROM s.finished_on)::int, b.genre;
 
 -- Series completion. Replaces the Series tab.
 CREATE OR REPLACE VIEW series_progress AS
@@ -486,7 +489,7 @@ DO $$ BEGIN
   END IF;
 END $$;
 CREATE INDEX IF NOT EXISTS books_title_gin_trgm ON books USING gin (title gin_trgm_ops);
-CREATE INDEX IF NOT EXISTS status_user_year ON book_status (user_id, finished_year);
+CREATE INDEX IF NOT EXISTS status_user_year ON book_status (user_id, (extract(year FROM finished_on)));
 
 -- Planner statistics, last. Every view filters deleted_at (task 0.4), and a
 -- column added by a migration has no statistics until something ANALYZEs it;

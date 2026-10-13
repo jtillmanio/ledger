@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { db, issueProgress, issues, runIssues, runs } from "@/db";
+import { redateIssue } from "@/db/writes";
 import { apiUserId, unauthorized } from "@/lib/auth";
+import { resolveFinish } from "@/lib/finish-date";
 
 export const runtime = "nodejs";
 
@@ -80,6 +82,27 @@ export async function POST(req: Request) {
     }
     throw err;
   }
+}
+
+/**
+ * *Change date…* (task 1.5): `{ placementId, finish }` re-dates a placement
+ * that is read here, with the finish-date control's choice. A day after today
+ * is refused. 404 when it isn't read here. Answers `prior`, the date and
+ * precision it had, which the undo sends back to POST as `restore`.
+ */
+export async function PATCH(req: Request) {
+  const userId = await apiUserId();
+  if (!userId) return unauthorized();
+  const { placementId, finish: choice } = await req.json();
+  if (!(Number.isInteger(placementId) && placementId > 0 && placementId <= 2147483647)) {
+    return NextResponse.json({ error: "placementId is required" }, { status: 400 });
+  }
+  const resolved = resolveFinish(choice);
+  if (!resolved.ok) return NextResponse.json({ error: resolved.error }, { status: 400 });
+  const today = (choice as { mode: string }).mode === "today";
+  const prior = await redateIssue(userId, placementId, resolved.finish, { today });
+  if (!prior) return NextResponse.json({ error: "not read in this run" }, { status: 404 });
+  return NextResponse.json({ ok: true, prior });
 }
 
 // invalid_datetime_format, datetime_field_overflow, invalid_time_zone_displacement_value

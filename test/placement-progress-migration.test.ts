@@ -11,7 +11,12 @@ import { testSql, truncateAll } from "./db";
 const sql = testSql();
 const USER = "test-user";
 const UP = readFileSync("drizzle/0007_placement_progress.sql", "utf8");
-const DOWN = readFileSync("drizzle/down/0007_placement_progress.sql", "utf8");
+// Down files run newest first: the test database is at head, and 0011's
+// read_events references run_issues.id, which 0007's down drops (task 1.5).
+const DOWN = [
+  readFileSync("drizzle/down/0011_dated_reading_log.sql", "utf8"),
+  readFileSync("drizzle/down/0007_placement_progress.sql", "utf8"),
+].join("\n");
 
 afterAll(async () => {
   await sql.end();

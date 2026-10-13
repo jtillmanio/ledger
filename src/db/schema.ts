@@ -325,20 +325,50 @@ export const bookStatus = pgTable("book_status", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   bookId: text("book_id").notNull().references(() => books.id, { onDelete: "cascade" }),
   status: text("status").notNull().default("to_read"), // to_read | reading | read | dnf
-  finishedYear: integer("finished_year"),
   yearRank: integer("year_rank"),           // your top-10 position for that year
   rating: doublePrecision("rating"),
   // A real date since migration 0004 (it was text and 100% NULL). Same rule as
   // issue_progress: precision 'none' exactly when the date is NULL. A finish
   // known only by its year is stored as that year's July 1st with precision
-  // 'approximate', never 'exact' (ARCHITECTURE 2.17). finishedYear goes in task
-  // 1.5 and the year is derived from finishedOn (D-21).
+  // 'approximate', never 'exact' (ARCHITECTURE 2.17). There is no year column:
+  // the year is extract(year FROM finished_on), so the two can't disagree (D-21).
+  // This is the latest read's date; every read is a read_events row (task 1.5).
   finishedOn: date("finished_on", { mode: "string" }),
   finishedOnPrecision: text("finished_on_precision").notNull().default("none"), // exact | approximate | none
   notes: text("notes"),
 }, (t) => ({
   pk: primaryKey({ columns: [t.userId, t.bookId] }),
   precision: check("book_status_finished_on_precision_check", sql`
+    ${t.finishedOnPrecision} IN ('exact', 'approximate', 'none')
+    AND (${t.finishedOn} IS NULL) = (${t.finishedOnPrecision} = 'none')`),
+}));
+
+// The reading log (task 1.5, FEATURES #22): one row per finished read, so a
+// second read appends rather than overwrites. book_status is the current-status
+// projection over it, kept in step by saveBookStatus. One log for both media,
+// kept honest by the CHECK: a book read has book_id, a comic read has the
+// placement (run_issues.id), never the issue (ARCHITECTURE 2.14). reread_of is
+// the same item's previous read. Comic reads aren't logged yet: only books
+// write here so far (task 1.5).
+export const readEvents = pgTable("read_events", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  bookId: text("book_id").references(() => books.id, { onDelete: "cascade" }),
+  placementId: integer("placement_id").references(() => runIssues.id, { onDelete: "cascade" }),
+  // Same rule as book_status and issue_progress: 'none' exactly when NULL (D-10).
+  finishedOn: date("finished_on", { mode: "string" }),
+  finishedOnPrecision: text("finished_on_precision").notNull().default("exact"), // exact | approximate | none
+  rereadOf: integer("reread_of"),
+}, (t) => ({
+  byBook: index("read_events_user_book_idx").on(t.userId, t.bookId),
+  byPlacement: index("read_events_user_placement_idx").on(t.userId, t.placementId),
+  rereadOf: foreignKey({
+    name: "read_events_reread_of_read_events_id_fk",
+    columns: [t.rereadOf],
+    foreignColumns: [t.id],
+  }).onDelete("set null"),
+  oneItem: check("read_events_one_item_check", sql`num_nonnulls(${t.bookId}, ${t.placementId}) = 1`),
+  precision: check("read_events_finished_on_precision_check", sql`
     ${t.finishedOnPrecision} IN ('exact', 'approximate', 'none')
     AND (${t.finishedOn} IS NULL) = (${t.finishedOnPrecision} = 'none')`),
 }));

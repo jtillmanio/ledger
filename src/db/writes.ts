@@ -1,38 +1,179 @@
-import { and, eq, gt, gte, inArray, isNull, like, ne, or, sql } from "drizzle-orm";
+import { and, desc, eq, gt, gte, inArray, isNull, like, ne, or, sql } from "drizzle-orm";
 import {
-  db, authors, books, bookSeries, bookStatus, inbox, issues, readingPlan, readingSettings, runIssues, runs, shelfBooks,
+  db, authors, books, bookSeries, bookStatus, inbox, issueProgress, issues, readEvents, readingPlan, readingSettings, runIssues,
+  runs, shelfBooks,
   shelves, sql as pg,
 } from "./index";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
 import { bookKey } from "@/lib/book-parse";
+import type { Finish } from "@/lib/finish-date";
+import type { Precision } from "@/lib/format";
 import type { Kind } from "@/lib/inbox";
 import { bookId, issueSlug, slug } from "@/lib/issue-slug";
+
+export const BOOK_STATUSES = ["to_read", "reading", "read", "dnf"] as const;
 
 export type BookStatusInput = {
   bookId: string;
   status: string;
+  /** When it was finished: required for `read`, ignored otherwise. */
+  finish?: Finish;
   /** undefined = leave as is; null = clear it. */
-  finishedYear?: number | null;
   rating?: number | null;
 };
 
+/** A book's status row as a status write found it; the read it logged or
+ * re-dated. Enough for the undo to put exactly that back (task 1.2). */
+export type BookStatusChange = {
+  bookId: string;
+  /** The row before, or null when the book had none. */
+  prior: { status: string; finishedOn: string | null; precision: Precision } | null;
+  /** The read_events row this write appended. */
+  appended: number | null;
+  /** The read_events row this write re-dated, with the date it had. */
+  edited: { id: number; finishedOn: string | null; precision: Precision } | null;
+};
+
+/** Serialises writes to one book's status and reading log, and checks the book
+ * is live: a status for a removed book is refused, not written. */
+async function lockBook(tx: Tx, bookId: string) {
+  const [live] = await tx.select({ id: books.id }).from(books)
+    .where(and(eq(books.id, bookId), isNull(books.deletedAt))).for("no key update");
+  return Boolean(live);
+}
+
+async function latestRead(tx: Tx, userId: string, bookId: string) {
+  const [row] = await tx
+    .select({ id: readEvents.id, finishedOn: readEvents.finishedOn, precision: readEvents.finishedOnPrecision })
+    .from(readEvents)
+    .where(and(eq(readEvents.userId, userId), eq(readEvents.bookId, bookId)))
+    .orderBy(desc(readEvents.id)).limit(1);
+  return row ? { ...row, precision: row.precision as Precision } : null;
+}
+
 /**
- * Upsert a book's status. Only fields present in the input are written: a bare
- * status change must not wipe an existing rating or finish year (R0-C1).
+ * Set a book's status (task 1.5, R1-03). `read_events` is the log and
+ * `book_status` the current-status projection over it, both written here in
+ * one transaction:
+ *
+ * - Entering `read` from any other status appends a read, its `reread_of` the
+ *   book's previous one, so reading a book again (Reading, then Read) adds to
+ *   its history and never overwrites it (FEATURES #22).
+ * - `read` on a book already read re-dates its latest read: a correction, not
+ *   another read. One read before the log existed gets its first row instead.
+ * - `book_status.finished_on` follows the read; the year is derived from it (D-21).
+ * - Leaving `read` keeps the finish date, and any field the input leaves out is
+ *   kept: a bare status change never wipes a rating or a finish (R0-C1).
+ *
+ * Answers null for a book that is missing or removed.
  */
-export async function saveBookStatus(userId: string, input: BookStatusInput) {
-  const { bookId, status, finishedYear, rating } = input;
-  const optional = {
-    ...(finishedYear !== undefined && { finishedYear }),
-    ...(rating !== undefined && { rating }),
-  };
-  await db
-    .insert(bookStatus)
-    .values({ userId, bookId, status, ...optional })
-    .onConflictDoUpdate({
-      target: [bookStatus.userId, bookStatus.bookId],
-      set: { status, ...optional },
-    });
+export async function saveBookStatus(userId: string, input: BookStatusInput): Promise<BookStatusChange | null> {
+  const { bookId, status, finish, rating } = input;
+  if (status === "read" && !finish) throw new Error("saveBookStatus: read needs a finish date");
+  return db.transaction(async (tx) => {
+    if (!(await lockBook(tx, bookId))) return null;
+    const mine = and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId));
+    const [before] = await tx
+      .select({ status: bookStatus.status, finishedOn: bookStatus.finishedOn, precision: bookStatus.finishedOnPrecision })
+      .from(bookStatus).where(mine);
+
+    let appended: number | null = null;
+    let edited: BookStatusChange["edited"] = null;
+    if (status === "read" && finish) {
+      const latest = await latestRead(tx, userId, bookId);
+      const dated = { finishedOn: finish.on, finishedOnPrecision: finish.precision };
+      if (before?.status === "read" && latest) {
+        await tx.update(readEvents).set(dated).where(eq(readEvents.id, latest.id));
+        edited = latest;
+      } else {
+        const [row] = await tx.insert(readEvents)
+          .values({ userId, bookId, ...dated, rereadOf: latest?.id ?? null })
+          .returning({ id: readEvents.id });
+        appended = row.id;
+      }
+    }
+
+    const set = {
+      status,
+      ...(status === "read" && finish && { finishedOn: finish.on, finishedOnPrecision: finish.precision }),
+      ...(rating !== undefined && { rating }),
+    };
+    await tx.insert(bookStatus).values({ userId, bookId, ...set })
+      .onConflictDoUpdate({ target: [bookStatus.userId, bookStatus.bookId], set });
+    return {
+      bookId,
+      prior: before ? { ...before, precision: before.precision as Precision } : null,
+      appended, edited,
+    };
+  });
+}
+
+/**
+ * Undo one status write: put back exactly what `saveBookStatus` changed. The
+ * read it appended is deleted, the read it re-dated gets its date back, and the
+ * status row returns to its prior status and finish (a rating is never touched).
+ * A book that had no row loses the one the write made, unless something has
+ * been added to it since, when it goes back to a bare `to_read`.
+ *
+ * Refuses, changing nothing, when the log moved on in between: the read this
+ * write logged or re-dated is no longer the book's latest.
+ */
+export async function undoBookStatus(userId: string, change: BookStatusChange): Promise<boolean> {
+  const { bookId, prior, appended, edited } = change;
+  return db.transaction(async (tx) => {
+    if (!(await lockBook(tx, bookId))) return false;
+    const touched = appended ?? edited?.id ?? null;
+    if (touched !== null && (await latestRead(tx, userId, bookId))?.id !== touched) return false;
+
+    if (appended !== null) await tx.delete(readEvents).where(eq(readEvents.id, appended));
+    if (edited) {
+      await tx.update(readEvents).set({ finishedOn: edited.finishedOn, finishedOnPrecision: edited.precision })
+        .where(eq(readEvents.id, edited.id));
+    }
+    const mine = and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId));
+    if (prior) {
+      await tx.update(bookStatus)
+        .set({ status: prior.status, finishedOn: prior.finishedOn, finishedOnPrecision: prior.precision })
+        .where(mine);
+    } else {
+      const gone = await tx.delete(bookStatus)
+        .where(and(mine, isNull(bookStatus.rating), isNull(bookStatus.notes), isNull(bookStatus.yearRank)))
+        .returning({ bookId: bookStatus.bookId });
+      if (gone.length === 0) {
+        await tx.update(bookStatus).set({ status: "to_read", finishedOn: null, finishedOnPrecision: "none" })
+          .where(mine);
+      }
+    }
+    return true;
+  });
+}
+
+/** A read placement's date as it stood before a re-date: what its undo puts back. */
+export type IssuePrior = { completedAt: string | null; precision: string };
+
+/**
+ * *Change date…* on a spine row (task 1.5, owner 2026-10-09): re-date one
+ * placement that is read here. A day is stored as its UTC midnight, like the
+ * range mark's (until 1.16); Today is now(). Only this placement's row is
+ * written; the same issue in another run keeps its own date (ARCHITECTURE 2.14).
+ * Answers the row as it was, or null when the placement isn't read here or has
+ * been removed. The date travels as Postgres text, as the issue route's does.
+ */
+export async function redateIssue(
+  userId: string, placementId: number, finish: Finish, { today = false } = {},
+): Promise<IssuePrior | null> {
+  const at = today ? sql`now()` : finish.on === null ? null : sql`${`${finish.on}T00:00:00Z`}::timestamptz`;
+  return db.transaction(async (tx) => {
+    const mine = and(eq(issueProgress.userId, userId), eq(issueProgress.placementId, placementId));
+    const [before] = await tx
+      .select({ completedAt: sql<string | null>`${issueProgress.completedAt}::text`, precision: issueProgress.completedAtPrecision })
+      .from(issueProgress)
+      .innerJoin(runIssues, and(eq(runIssues.id, issueProgress.placementId), isNull(runIssues.deletedAt)))
+      .where(mine).for("update", { of: issueProgress });
+    if (!before) return null;
+    await tx.update(issueProgress).set({ completedAt: at, completedAtPrecision: finish.precision }).where(mine);
+    return before;
+  });
 }
 
 /** How a range is dated (task 1.1, R3-07). `original` is Adopt's alone. */
@@ -818,8 +959,7 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
   const shelfRows = isShelf
     ? and(eq(shelfBooks.shelfId, destination.shelfId), inArray(shelfBooks.bookId, added)) : undefined;
   const bareStatus = and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, added), eq(bookStatus.status, "to_read"),
-    isNull(bookStatus.rating), isNull(bookStatus.notes), isNull(bookStatus.finishedOn), isNull(bookStatus.finishedYear),
-    isNull(bookStatus.yearRank));
+    isNull(bookStatus.rating), isNull(bookStatus.notes), isNull(bookStatus.finishedOn), isNull(bookStatus.yearRank));
   const ours = added.length === 0 ? [] : isShelf
     ? await tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(shelfRows)
     : await tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(bareStatus);
@@ -829,6 +969,10 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
     const planned = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
       .where(and(eq(readingPlan.userId, userId), inArray(readingPlan.bookId, added))).limit(1);
     if (planned.length) return false;
+    // Nor from one read since and set back to To read: it has history now (task 1.5).
+    const read = await tx.select({ id: readEvents.id }).from(readEvents)
+      .where(and(eq(readEvents.userId, userId), inArray(readEvents.bookId, added))).limit(1);
+    if (read.length) return false;
   }
 
   if (created.length) {

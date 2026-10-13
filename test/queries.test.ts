@@ -56,10 +56,11 @@ describe("listBooks (R2-06, R2-08)", () => {
     expect((await q.listBooks(USER, { year: 2026 })).map((r) => r.id)).toEqual(["lb"]);
   });
 
-  it("can reach the read books that have no finished year", async () => {
+  it("can reach the read books that have no finish date", async () => {
     await book("dated");
     await book("undated");
-    await sql`INSERT INTO book_status (user_id, book_id, status, finished_year) VALUES (${USER}, 'dated', 'read', 2024)`;
+    await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+              VALUES (${USER}, 'dated', 'read', '2024-07-01', 'approximate')`;
     await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'undated', 'read')`;
     expect(await q.readWithoutYear(USER)).toBe(1);
     expect((await q.listBooks(USER, { noYear: true })).map((r) => r.id)).toEqual(["undated"]);
@@ -67,16 +68,17 @@ describe("listBooks (R2-06, R2-08)", () => {
 });
 
 describe("saveBookStatus (R0-C1)", () => {
-  it("a bare status change keeps an existing rating and finish year; an explicit null clears", async () => {
+  it("a bare status change keeps an existing rating and finish date; an explicit null clears", async () => {
     await sql`INSERT INTO books (id, title) VALUES ('b1', 'Book 1')`;
     const { saveBookStatus } = await import("../src/db/writes");
-    await saveBookStatus(USER, { bookId: "b1", status: "read", finishedYear: 2024, rating: 4.5 });
+    const finish = { on: "2024-03-11", precision: "exact" as const };
+    await saveBookStatus(USER, { bookId: "b1", status: "read", finish, rating: 4.5 });
     await saveBookStatus(USER, { bookId: "b1", status: "dnf" });
-    const [kept] = await sql`SELECT status, finished_year, rating FROM book_status WHERE book_id = 'b1'`;
-    expect(kept).toMatchObject({ status: "dnf", finished_year: 2024, rating: 4.5 });
+    const [kept] = await sql`SELECT status, finished_on::text, finished_on_precision, rating FROM book_status WHERE book_id = 'b1'`;
+    expect(kept).toMatchObject({ status: "dnf", finished_on: "2024-03-11", finished_on_precision: "exact", rating: 4.5 });
 
     await saveBookStatus(USER, { bookId: "b1", status: "reading", rating: null });
-    const [cleared] = await sql`SELECT finished_year, rating FROM book_status WHERE book_id = 'b1'`;
-    expect(cleared).toMatchObject({ finished_year: 2024, rating: null });
+    const [cleared] = await sql`SELECT finished_on::text, rating FROM book_status WHERE book_id = 'b1'`;
+    expect(cleared).toMatchObject({ finished_on: "2024-03-11", rating: null });
   });
 });

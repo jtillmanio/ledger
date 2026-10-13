@@ -1,14 +1,14 @@
 ---
 id: TASK-010
 title: 1.5 Dated reading log
-status: Ready
+status: In progress
 depends_on: [TASK-009]
 size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 99f72e3
 ---
 
 # TASK-010 — 1.5 Dated reading log
@@ -64,9 +64,40 @@ Finishing a book records when you finished it: today, a picked date, just the ye
 - Automated: `test/reading-log.test.ts` covers the 2024-03-11 queries, the reread with `reread_of`, one current status, the R0-C1 rating survival, the UI round trip, *Year only* and *No date*, *No year*, and *Change date…* (AC-1, AC-5). `test/reading-log-migration.test.ts` covers up → down → up with exact, approximate and none rows (AC-2). The CHECKs and the export list are covered in AC-3. `etl/test_extract.py` and `etl/test_views.sql` cover AC-4. `npm run check:migrations`.
 - Manual: `npm run rebuild` on the development database, then mark a book *Read → Year only → 2019* on the master list → expected: it shows under 2019 and the database has `2019-07-01` / `approximate`. Mark it read again today → expected: two events, and the status is still *read*.
 
+## Follow-ups
+
+- `finished_year` is still described as a stored column in `docs/ARCHITECTURE.md` (§ 1 table, 2.17), `docs/DIAGRAMS.md` § 1, `docs/HANDOFF.md` (the tabs table), `docs/FEATURES.md` #4, and `.claude/rules/schema.md` ("until then … still the stored column"): bring them up to date (approved at plan)
+- 1.16 has no task file: run `/new-task 1.16` on this branch before close-out, as Context asks (approved at plan)
+- Candidate decision: comic reads do not write `read_events` yet; the table takes `placement_id` events, and logging ticks, ranges, Adopt, undo and the loaded reads is left to the work that first reads comic events (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-10-13. Size: ~24 files, schema and UI together; kept whole (`splitPolicy: never-split`, autonomy attended), because the readers of `finished_year` and its drop must land together.
+
+**Owner decisions at the plan gate.** (A) `read_events` as below, and `finished_year` dropped. (B) Comic reads write no `read_events` in this task: the column, FK and CHECK exist; the comics mark paths are unchanged except *Change date…*, which writes `issue_progress` only. (C) A reread is `read → reading → read`: entering `read` from any other status appends an event with `reread_of` = the book's latest event; saving *Read* on a book already read edits the latest event's date and appends nothing. Leaving `read` keeps `finished_on` (R0-C1), and every year reader requires `status = 'read'`.
+
+**Steps**
+1. `src/db/schema.ts`: `readEvents` — `id serial`, `user_id → users` (cascade), `book_id → books` (cascade), `placement_id → run_issues` (cascade), `finished_on date`, `finished_on_precision text NOT NULL DEFAULT 'exact'`, `reread_of → read_events` (set null); CHECKs `num_nonnulls(book_id, placement_id) = 1` and the date/precision pairing; indexes `(user_id, book_id)`, `(user_id, placement_id)`. Drop `bookStatus.finishedYear`.
+2. `npm run db:generate -- --name dated_reading_log` → `drizzle/0011_dated_reading_log.sql`, hand-edited: `DROP VIEW IF EXISTS books_by_year` (it reads the column), backfill `finished_on = make_date(finished_year, 7, 1)`, `approximate` where `finished_year IS NOT NULL AND finished_on IS NULL`, then the drop. No `read_events` backfill (AC-2: the second up recreates it empty; D-41: no workbook reads).
+3. `drizzle/down/0011_dated_reading_log.sql`: lossless — drop `books_by_year` and `read_events`, add `finished_year`, set it to `extract(year FROM finished_on)`; precision and date untouched.
+4. `etl/views.sql`: `books_by_year` on `extract(year FROM finished_on)::int`; `status_user_year` on `(user_id, (extract(year FROM finished_on)))`.
+5. `src/db/queries.ts`: `listBooks` returns `read_year` (derived, only for `read`), `finished_on`, `finished_on_precision`; year filter `status = 'read' AND extract(year …) = y` or planned; *No year* = `read` with NULL `finished_on`; `readWithoutYear` likewise. `src/db/writes.ts` `undoAddBooks` drops its `finishedYear` guard.
+6. `src/db/export-tables.ts` adds `read_events` to `USER_TABLES`; `test/db.ts` truncates it.
+7. `etl/extract.py` writes `finished_on` (`YYYY-07-01`) / `finished_on_precision` (`approximate`, or blank / `none`); `etl/load.ps1` and `etl/load.sh` `\copy` those columns. Extract both workbooks to the scratchpad before and after and diff (standing rule 4).
+8. `src/lib/finish-date.ts` (new): the four choices (`today | date | year | none`) → a date and precision; `day()` moves here; a day after today (UTC until 1.16) or a year after this one is refused. Used by the book, issue and range routes (the range route's future-day 400, PR #67's follow-up).
+9. `src/db/writes.ts` `saveBookStatus(userId, { bookId, status, finish?, rating? })`: one transaction, row locked; decision C; returns `{ prior, appended?, edited? }`. `undoBookStatus` puts exactly that back (deletes the appended event only if it is still the latest, restores an edited event's date, restores status / date / precision or removes a row the write created) and refuses when anything moved.
+10. `src/app/api/progress/book/route.ts`: POST validates status and finish (finish required for `read`); DELETE is the undo. `src/app/api/progress/issue/route.ts`: PATCH `{ placementId, finish }` re-dates a placement read here (404 otherwise), answers `prior`; undo reuses POST `restore`. `src/app/api/progress/range/route.ts`: future days → 400.
+11. UI: `src/components/FinishDate.tsx` (fieldset *Finished*, named radios Today · Pick a date · Year only · No date, date input with `max` today, year stepper, the *Saved as 1 July 2022, approximate* line). `src/components/BookStatus.tsx` (row disclosure; status button group `aria-pressed`, DNF grey; *Read* opens *Finished* with Save / Cancel; focus back to the opener; undo toast). `src/app/books/page.tsx` renders it and the derived year. `src/components/IssueRow.tsx` row menu *Change date…* on rows read here → a `Sheet` with `FinishDate`. `src/app/globals.css` for the status group, DNF and stepper. `design/mockups.html` spine notes gain *Change date…* (the row menu is described there, not drawn).
+
+**Files** (beyond *Files likely touched*, flagged): `etl/load.ps1`, `etl/load.sh` (the `\copy` names the column; AC-4), `src/lib/finish-date.ts` (shared validation), `src/app/api/progress/range/route.ts` (future-day 400, Context), `src/app/globals.css`, `design/mockups.html` (`ui.redrawFiles`), `test/db.ts`, `test/queries.test.ts` (R0-C1 test on `finished_on`), `test/reading-log.test.tsx` (UI).
+
+**Test strategy**
+- AC-1, AC-3, AC-5 server side: `test/reading-log.test.ts` — 2024-03-11 in a March 2024 and a 2024 query; reread appends with `reread_of`, first intact, one `book_status`; read from the list keeps rating; 2026-10-02 in the 2026 chip and `books_by_year`; `read` with no date under *No year*; *Year only* 2019 → `2019-07-01` / `approximate`; *No date* → NULL / `none`; wrong-precision and both/neither CHECK violations; comic event on `run_issues.id`; `finished_year` absent from `information_schema`; PATCH dates and other placements untouched; future days 400 on all three routes; undo restores exactly.
+- AC-2: `test/reading-log-migration.test.ts` — down → up inside a rolled-back transaction with 2019 / exact 2024-03-11 / none rows and a `read_events` row.
+- AC-1 UI, AC-5 UI, AC-6: `test/reading-log.test.tsx` (happy-dom; `fetch` routed into the real route handlers on the test database) — `to_read → reading → read` round trip, *Year only* / *No date*, *Change date…* sheet, `aria-pressed`, named radios, focus return. Screenshots: ui-verifier at every `ui.viewports` width, light and dark.
+- AC-4: `etl/test_extract.py` (header and values), `etl/test_views.sql` (`books_by_year` derives the year), `npm run test:db:reset`, `git grep finished_year`.
+
+**Risks.** Postgres client under happy-dom (fallback: the UI test asserts requests, the DB test the handler). `extract(year …)` index must be immutable on `date` (it is). The manual step's "mark it read again" is done as Reading → Read (decision C).
 
 ## Review log
 

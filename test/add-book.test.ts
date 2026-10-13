@@ -14,6 +14,8 @@ import { testSql, truncateAll } from "./db";
 const USER = "test-user";
 const OL = "https://openlibrary.org/";
 
+// The master list's rows hold the status control (task 1.5), which refreshes the page after a save.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, refresh: () => {} }) }));
 vi.mock("@/lib/auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../src/lib/auth")>()),
   apiUserId: async () => USER,
@@ -357,7 +359,10 @@ describe("metadata pending wherever the row appears (AC-4)", () => {
     await add(hand({ title: "A Small Book of Something", author: "New Author" }));
     await add({ openLibrary: (await find("the way of kings")).openLibrary[0] });
     const Books = (await import("../src/app/books/page")).default;
-    const html = renderToStaticMarkup(await Books({ searchParams: Promise.resolve({}) }));
+    const { UndoProvider } = await import("../src/components/Undo");
+    // The layout's UndoProvider: each row's status control pushes its undo there (task 1.5).
+    const html = renderToStaticMarkup(createElement(UndoProvider, null,
+      await Books({ searchParams: Promise.resolve({}) })));
     const thin = rowOf(html, 'class="row book-row"', "A Small Book of Something");
     expect(thin).toContain('data-enrich="pending"');
     expect(thin).toContain(">metadata pending<");

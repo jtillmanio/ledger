@@ -597,6 +597,33 @@ BEGIN
   END IF;
 END $$;
 
+-- books_by_year derives the year from finished_on (task 1.5, D-21): an exact
+-- day and a year-only July 1st land in their years, a read with no date is in
+-- no year, and a book that isn't `read` counts nowhere, finish date or not.
+INSERT INTO books (id, title, genre, word_count, word_count_source) VALUES
+  ('zz-b-exact', 'Zz Exact', 'Zz Genre', 100000, 'stated'),
+  ('zz-b-year',  'Zz Year',  'Zz Genre', 50000, 'stated'),
+  ('zz-b-none',  'Zz None',  'Zz Genre', 10000, 'stated'),
+  ('zz-b-dnf',   'Zz Dnf',   'Zz Genre', 10000, 'stated');
+INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision) VALUES
+  ('zz-user', 'zz-b-exact', 'read', '2024-03-11', 'exact'),
+  ('zz-user', 'zz-b-year',  'read', '2019-07-01', 'approximate'),
+  ('zz-user', 'zz-b-none',  'read', NULL, 'none'),
+  ('zz-user', 'zz-b-dnf',   'dnf',  '2024-05-01', 'exact');
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT string_agg(year || ':' || books || ':' || words, ', ' ORDER BY year) INTO got
+  FROM books_by_year WHERE user_id = 'zz-user' AND genre = 'Zz Genre';
+  IF got IS DISTINCT FROM '2019:1:50000, 2024:1:100000' THEN
+    RAISE EXCEPTION 'books_by_year wrong: %', got;
+  END IF;
+  IF (SELECT data_type FROM information_schema.columns
+      WHERE table_name = 'books_by_year' AND column_name = 'year') <> 'integer' THEN
+    RAISE EXCEPTION 'books_by_year.year should stay an integer';
+  END IF;
+END $$;
+
 -- Applying views.sql leaves every table analyzed. A table the planner has no
 -- statistics for gets nested-loop plans that ran for minutes on a preview of
 -- live (2026-10-02).

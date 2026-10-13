@@ -254,14 +254,19 @@ export async function trackSummary(userId: string) {
 export type BookRow = {
   id: string; title: string; author: string | null; series: string | null;
   series_position: number | null; genre: string | null; word_count: number | null;
-  status: string; finished_year: number | null; planned_year: number | null;
+  status: string; planned_year: number | null;
+  /** The year a `read` book was finished, from `finished_on` (D-21); null otherwise. */
+  read_year: number | null;
+  /** The latest read's date and precision, for the finish-date control (task 1.5). */
+  finished_on: string | null; finished_on_precision: "exact" | "approximate" | "none";
   rating: number | null; cover_url: string | null;
   /** No external record yet (no Open Library or Hardcover id): *metadata pending* (task 1.4c). */
   pending: boolean;
 };
 
 /** `year` is a finished or planned year; `noYear` is the read books that have
- * no finished year at all (R2-08), so the year chips and the Read chip add up. */
+ * no finish date at all (R2-08), so the year chips and the Read chip add up.
+ * A finish year counts only for a book that is `read`, as books_by_year's do. */
 export async function listBooks(
   userId: string,
   opts: { status?: string; genre?: string; year?: number; noYear?: boolean; q?: string } = {},
@@ -272,7 +277,9 @@ export async function listBooks(
            b.genre, b.word_count, b.cover_url,
            (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
            COALESCE(st.status, 'to_read') AS status,
-           st.finished_year, st.rating,
+           CASE WHEN st.status = 'read' THEN extract(year FROM st.finished_on)::int END AS read_year,
+           st.finished_on::text AS finished_on, COALESCE(st.finished_on_precision, 'none') AS finished_on_precision,
+           st.rating,
            pl.planned_year,
            COUNT(*) OVER ()::int AS total
     FROM books b
@@ -288,11 +295,12 @@ export async function listBooks(
     WHERE b.deleted_at IS NULL
       AND (${status}::text IS NULL OR COALESCE(st.status,'to_read') = ${status})
       AND (${genre}::text  IS NULL OR b.genre = ${genre})
-      AND (${year}::int    IS NULL OR st.finished_year = ${year}
+      AND (${year}::int    IS NULL
+           OR (st.status = 'read' AND extract(year FROM st.finished_on) = ${year})
            OR EXISTS (SELECT 1 FROM reading_plan p2
                       WHERE p2.book_id = b.id AND p2.user_id = ${userId}
                         AND p2.planned_year = ${year}))
-      AND (NOT ${noYear}::boolean OR (st.status = 'read' AND st.finished_year IS NULL))
+      AND (NOT ${noYear}::boolean OR (st.status = 'read' AND st.finished_on IS NULL))
       AND (${q}::text      IS NULL OR b.title ILIKE '%' || ${q} || '%'
                                    OR a.name  ILIKE '%' || ${q} || '%')
     ORDER BY s.name NULLS LAST, b.series_position NULLS LAST, b.title
@@ -307,13 +315,13 @@ export async function yearSummary(userId: string) {
   `;
 }
 
-/** Read books with no finished year: the ones no year chip can reach. */
+/** Read books with no finish date (precision `none`): the ones no year chip can reach. */
 export async function readWithoutYear(userId: string): Promise<number> {
   const [row] = await sql<{ n: number }[]>`
     SELECT COUNT(*)::int AS n
     FROM book_status s
     JOIN books b ON b.id = s.book_id AND b.deleted_at IS NULL
-    WHERE s.user_id = ${userId} AND s.status = 'read' AND s.finished_year IS NULL
+    WHERE s.user_id = ${userId} AND s.status = 'read' AND s.finished_on IS NULL
   `;
   return row.n;
 }
