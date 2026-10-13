@@ -914,7 +914,7 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
     | `/comics/bendis-disassembled` | 25,000 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 21,000 | 171,000 | 29 | 100 |
     | `/books` | 48,000 | 170,000 | 29 | 100 |
-    | `/inbox` | 20,000 | 174,000 | 32 | 100 |
+    | `/inbox` | 11,000 | 173,000 | 28 | 100 |
     <!-- /perf-budget -->
 
     Measured on 0.10's preview (2026-10-07, Lighthouse 13.5.0, Chrome 154),
@@ -923,7 +923,8 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
     route (the shared framework chunks), 24–31 requests, accessibility 100 everywhere,
     CLS at most 0.04. The bytes barely move between runs (under 1%), so 20%
     is room for a real change, not noise. `/inbox` (task 1.4b) is set the
-    same way from its PR's first preview.
+    same way from PR #80's preview (2026-10-13, Lighthouse 13.5.0): document +
+    RSC 8.7 KB, JS 140.7 KB, 23 requests, accessibility 100, CLS 0.003.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 
