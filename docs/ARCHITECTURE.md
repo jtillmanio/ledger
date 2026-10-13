@@ -855,10 +855,13 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
   (Lighthouse mobile, devtools throttling: Slow 4G, 4× CPU): any tap paints a
   skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
   page within 1 s. What holds that, and the test that fails if it slips:
-  - **Queries per page, in one wave.** `/` 4 queries, `/comics` 2, a run 3,
-    `/books` 4, `/login` none, each page's queries started together
+  - **Queries per page, in one wave.** `/` 5 queries, `/comics` 2, a run 3,
+    `/books` 5, `/inbox` 2, `/login` none, each page's queries started together
     (`test/query-budget.test.ts`, which counts them). A query that must wait on
     another raises a page's waves; raising either number needs a reason here.
+    `/` and `/books` went from 4 to 5 with the inbox chip's count (task 1.4b):
+    a separate one-row count in the same wave, rather than a join into a list
+    query it has nothing to do with.
   - **A view read for one run filters by that run before it aggregates.** No
     catalog-wide CTE, no scan of every issue to describe one run
     (`test/view-plans.test.ts`, which reads the planner's plan). Catalog-wide
@@ -901,6 +904,7 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
     | `/comics/bendis-disassembled` | 25,000 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 21,000 | 171,000 | 29 | 100 |
     | `/books` | 48,000 | 170,000 | 29 | 100 |
+    | `/inbox` | 20,000 | 174,000 | 32 | 100 |
     <!-- /perf-budget -->
 
     Measured on 0.10's preview (2026-10-07, Lighthouse 13.5.0, Chrome 154),
@@ -908,7 +912,8 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
     39,279 bytes in the row order above, JS 141,241–142,506 bytes on every
     route (the shared framework chunks), 24–31 requests, accessibility 100 everywhere,
     CLS at most 0.04. The bytes barely move between runs (under 1%), so 20%
-    is room for a real change, not noise.
+    is room for a real change, not noise. `/inbox` (task 1.4b) is set the
+    same way from its PR's first preview.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 

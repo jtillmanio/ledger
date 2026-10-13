@@ -34,14 +34,23 @@ const STATUS: Record<string, string> = { to_read: "on your to-read list", readin
  * app's stack (task 1.2, R1-09). A book you already have is reused, and the
  * toast says so. In a sheet (`close` given) the page behind refreshes after
  * each add; on the full page, *Paste a list* goes on to To read as before.
+ *
+ * Opened from an inbox note's **Resolve** (task 1.4b), Search starts with the
+ * note's text in it, and the first Search or By hand add that goes through
+ * resolves the note in its own transaction; undoing that add reopens it.
  */
-export default function AddBooks({ initial, close }: {
+export default function AddBooks({ initial, close, query = "", note = null }: {
   initial: Target;
   /** Closes the sheet this is in; absent on the full page. */
   close?: () => void;
+  /** Search's starting text. */
+  query?: string;
+  /** The inbox note this add resolves. */
+  note?: number | null;
 }) {
   const level = close ? 3 : 2;
   const [target, setTarget] = useState<Target>(initial);
+  const [noteId, setNoteId] = useState(note);
   const [mode, setMode] = useState<Mode>("search");
   const [picker, setPicker] = useState<Picker>({ phase: "closed" });
   const [outcomes, setOutcomes] = useState<Record<string, Outcome>>({});
@@ -78,16 +87,19 @@ export default function AddBooks({ initial, close }: {
 
   /** The add's toast: one undo entry when it wrote anything, else what it found. */
   function tell(result: Added) {
-    const { title, reused, status, created, added } = result;
+    const { title, reused, status, created, added, bookId, note: resolved } = result;
+    const fromNote = resolved == null ? "" : " · inbox note resolved";
     if (created.length + added.length === 0) {
-      notify("Already in your library", `${title} · ${target.kind === "shelf" ? `already on ${where}` : STATUS[status ?? ""] ?? "kept as it was"}`);
+      notify("Already in your library",
+        `${title} · ${target.kind === "shelf" ? `already on ${where}` : STATUS[status ?? ""] ?? "kept as it was"}${fromNote}`);
       return;
     }
     const entry: AddedEntry = { destination: result.destination, created, added };
+    const reopen = resolved == null ? undefined : { id: resolved, bookId };
     push({
       label: `Added to ${where}`,
-      detail: reused ? `${title} · already in your library` : title,
-      undo: async () => { await undoAdd(entry); router.refresh(); },
+      detail: `${reused ? `${title} · already in your library` : title}${fromNote}`,
+      undo: async () => { await undoAdd(entry, reopen); router.refresh(); },
     });
   }
 
@@ -96,7 +108,7 @@ export default function AddBooks({ initial, close }: {
     try {
       const res = await fetch("/api/books", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ item, destination: destinationOf(target) }),
+        body: JSON.stringify({ item, destination: destinationOf(target), ...(noteId !== null && { note: noteId }) }),
       });
       if (res.status === 409) {
         setFailed("That book or shelf is gone. Nothing was written; search again.");
@@ -104,6 +116,8 @@ export default function AddBooks({ initial, close }: {
       }
       if (!res.ok) throw new Error(String(res.status));
       const result = await res.json() as Added;
+      // A note is resolved once: later adds here are plain adds.
+      setNoteId(null);
       tell(result);
       router.refresh();
       return result;
@@ -201,7 +215,8 @@ export default function AddBooks({ initial, close }: {
       <div className="add-2up">
         <div>
           <div className="pane pane-search" hidden={mode !== "search"}>
-            <BookSearch level={level} target={target} outcomes={outcomes} busy={busy} onAdd={addPick} onByHand={byHand} />
+            <BookSearch level={level} target={target} outcomes={outcomes} busy={busy} onAdd={addPick} onByHand={byHand}
+              initialQuery={query} />
           </div>
           <div className="pane pane-hand" hidden={mode !== "hand"}>
             <ByHand key={hand.key} target={target} title={hand.title} onSubmit={addByHand} cancel={cancel("Cancel")} />

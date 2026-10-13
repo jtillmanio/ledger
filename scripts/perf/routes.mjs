@@ -23,4 +23,5 @@ export const ROUTES = [
     tap: { from: "/comics", selector: 'a[href="/comics/busiek-avengers"]' },
   },
   { id: "books", path: "/books", signedIn: true, tap: { from: "/comics", selector: 'nav a[href="/books"]' } },
+  { id: "inbox", path: "/inbox", signedIn: true, tap: { from: "/books", selector: 'nav a[href="/inbox"]' } },
 ];

@@ -26,12 +26,15 @@ export const addTo = (t: Target) => `Add to ${t.kind === "someday" ? "Someday" :
 export const destinationOf = (t: Target): Destination =>
   (t.kind === "someday" ? { kind: "someday" } : { kind: "shelf", shelfId: t.shelfId });
 
-/** An add's undo, from the screen (task 1.4c, AC-5): rejects when it couldn't, and then nothing changed. */
-export async function undoAdd(entry: AddedEntry) {
+/**
+ * An add's undo, from the screen (task 1.4c, AC-5): rejects when it couldn't,
+ * and then nothing changed. `note` reopens the inbox note the add resolved (task 1.4b).
+ */
+export async function undoAdd(entry: AddedEntry, note?: { id: number; bookId: string }) {
   const { destination, created, added } = entry;
   const res = await fetch("/api/books", {
     method: "DELETE", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ destination, created, added }),
+    body: JSON.stringify({ destination, created, added, ...(note && { note }) }),
   });
   if (!res.ok) throw new Error(String(res.status));
 }

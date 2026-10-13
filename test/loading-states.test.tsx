@@ -10,6 +10,7 @@ const routes: [string, string][] = [
   ["/comics", "../src/app/comics/(list)/loading"],
   ["/comics/[runId]", "../src/app/comics/[runId]/loading"],
   ["/books", "../src/app/books/loading"],
+  ["/inbox", "../src/app/inbox/loading"],
 ];
 
 describe("loading states (task 0.9)", () => {

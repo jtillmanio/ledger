@@ -387,6 +387,31 @@ export const shelfBooks = pgTable("shelf_books", {
   ordinal: integer("ordinal").notNull(),    // position on the shelf
 }, (t) => ({ pk: primaryKey({ columns: [t.shelfId, t.bookId] }) }));
 
+// Quick capture (task 1.4b, FEATURES #21): a note with nothing required but its
+// text, waiting until an add turns it into a real book or run. Resolving links
+// the row the add wrote and stamps resolved_at in the add's own transaction;
+// the add's undo reopens it. NULL kind is *Unsure*. A Watch note resolves into
+// /watch/add (8.2) and links nothing yet. Books and runs are soft-deleted, so
+// SET NULL only ever fires on a hard delete, and keeps the note.
+export const inbox = pgTable("inbox", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  rawText: text("raw_text").notNull(),
+  kind: text("kind"),                       // books | comics | watch; null = Unsure
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  bookId: text("book_id").references(() => books.id, { onDelete: "set null" }),
+  runId: text("run_id").references(() => runs.id, { onDelete: "set null" }),
+}, (t) => ({
+  open: index("inbox_open_idx").on(t.userId, t.createdAt.desc()).where(sql`${t.resolvedAt} IS NULL`),
+  kind: check("inbox_kind_check", sql`${t.kind} IS NULL OR ${t.kind} IN ('books', 'comics', 'watch')`),
+  rawText: check("inbox_raw_text_check", sql`btrim(${t.rawText}) <> ''`),
+  // A note becomes one thing, and a link means it was resolved.
+  oneLink: check("inbox_one_link_check", sql`num_nonnulls(${t.bookId}, ${t.runId}) <= 1`),
+  linkedResolved: check("inbox_linked_resolved_check",
+    sql`(${t.bookId} IS NULL AND ${t.runId} IS NULL) OR ${t.resolvedAt} IS NOT NULL`),
+}));
+
 /* ------------------------------------------------------------------ *
  * Live API cache
  * ------------------------------------------------------------------ */

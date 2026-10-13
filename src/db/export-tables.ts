@@ -16,7 +16,7 @@ export const CATALOG_TABLES = [
 /** Tables with a `user_id` column: exported for the signed-in user only. */
 export const USER_TABLES = [
   "issue_progress", "edition_progress", "book_status", "reading_plan",
-  "reading_settings", "shelves",
+  "reading_settings", "shelves", "inbox",
 ] as const;
 
 /** Deliberately left out: the export is the owner's data, not the account (D-17), nor a

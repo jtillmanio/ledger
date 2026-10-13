@@ -1,14 +1,14 @@
 ---
 id: TASK-009
 title: 1.4b Quick-capture inbox
-status: Ready
+status: In progress
 depends_on: [TASK-008]
 size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 1c3921b
 ---
 
 # TASK-009 — 1.4b Quick-capture inbox
@@ -59,9 +59,39 @@ A half-formed thought ("someone mentioned the Waid FF run") can be saved in ten 
 - Automated: `test/inbox.test.ts` against `TEST_DATABASE_URL` covers a `raw_text`-only save, resolving to a book and to a run, the Watch URL, the newest-first unresolved list, the `kind` CHECK and the count (AC-1 to AC-4). `test/inbox.test.tsx` covers the empty-note error, the chip's presence and absence and its link (AC-2, AC-4, AC-5). `npm run check:migrations` passes (no column dropped or retyped, so no down file).
 - Manual: `npm run dev`, capture *Waid FF* with no kind → expected: it saves and the dashboard chip shows 1. Tag it Comics, Resolve, add the issue → expected: the chip disappears and `/inbox` is empty.
 
+## Follow-ups
+
+- 1.8 (TASK-014): hide the lede's inbox chip from 1024px once the sidebar's `Inbox (N)` lands (FP-D16), and replace the `Inbox` link this task adds to the pre-shell nav bar (approved at plan)
+- 3.2: when *New Run* lands, the capture screen's footnote goes back to the mockup's "Resolving a comics note opens New Run" (approved at plan)
+- 8.2: `/watch/add` reads `?q=` (pre-fills the search) and `?note=`, and the add resolves that note in its transaction (approved at plan)
+- Candidate decision: an add that carries `note` resolves that inbox note in the add's own transaction, and the add's undo reopens it (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-10-13 at 1c3921b. `workflow.splitPolicy: never-split`: kept whole (schema + two UI surfaces, ~28 files), autonomy attended.
+
+**Owner answers at the plan gate:** (1) the schema below; (2) Resolve on an Unsure note shows three links, Books · Comics · Watch; (3) undoing the add that resolved a note reopens it; (4) an `Inbox` link goes in the pre-shell nav bar, and the chip shows at every width until 1.8; (5) the last-touched run is the run of the most recent dated read, else the first live run by title.
+
+**Steps**
+
+1. Schema: `inbox(id serial PK, user_id → users ON DELETE CASCADE, raw_text text NOT NULL, kind text, created_at timestamptz NOT NULL DEFAULT now(), resolved_at timestamptz, book_id → books ON DELETE SET NULL, run_id → runs ON DELETE SET NULL)`; CHECKs `kind IS NULL OR kind IN ('books','comics','watch')`, `btrim(raw_text) <> ''`, `num_nonnulls(book_id, run_id) <= 1`, `(book_id IS NULL AND run_id IS NULL) OR resolved_at IS NOT NULL`; partial index `(user_id, created_at DESC) WHERE resolved_at IS NULL`. `npm run db:generate`. `inbox` into `USER_TABLES`; `test/db.ts` `truncateAll` gains it.
+2. `src/db/writes.ts`: `saveNote`, `resolveNote(tx, …)` (only an unresolved note of this user), `reopenNote`; `addBook` takes `{ note }` and resolves inside its transaction; the issues route passes it through `insertIssuesIntoRun`'s `within`. `src/db/queries.ts`: `inboxCount`, `unresolvedNotes` (newest first), `lastTouchedRun`.
+3. `POST /api/inbox` (`{ text, kind }`; blank → 400, nothing written). `POST /api/books` and `POST /api/runs/[runId]/issues` accept `note`; their `DELETE` undo accepts `note` and reopens it.
+4. `src/lib/inbox.ts` (pure): kinds, validation, and `resolveHref` — books `/books/add?q=…&note=…`, comics `/comics/<run>/add?q=…&note=…`, watch `/watch/add?q=…&note=…`.
+5. Add books and Add issues pages read `?q=` (pre-fills Search, never runs it) and `?note=` (sent with the first successful add, then dropped).
+6. `/inbox` (`page.tsx`, `loading.tsx`) and `src/components/Capture.tsx`: mockup `capture` (2-up from 1024px), kind control *Books · Comics · Watch · Unsure*, *Write something first* under the field, rows with a `.btn sec sm` link **Resolve** (Unsure: three links), `--raise` empty slate with one primary action.
+7. Lede chip `N in inbox` → `/inbox` on `/` and `/books`, absent at 0; count in the same wave (5 queries, 1 wave each; reason in ARCHITECTURE's Performance budget).
+8. `/inbox` into `scripts/perf/routes.mjs`, `budget.json`, ARCHITECTURE's perf table, `test/loading-states.test.tsx`, `test/query-budget.test.ts`; `Inbox` link in `src/app/layout.tsx`'s bar.
+
+**Files:** `src/db/schema.ts`, `drizzle/0010_*.sql` + `drizzle/meta/*` (generated), `src/db/export-tables.ts`, `src/db/queries.ts`, `src/db/writes.ts`, `src/lib/inbox.ts` (new, not in list), `src/app/api/inbox/route.ts` (new), `src/app/api/books/route.ts`, `src/app/api/runs/[runId]/issues/route.ts`, `src/lib/book-add.ts` (undo carries the note), `src/app/inbox/page.tsx`, `src/app/inbox/loading.tsx` (new), `src/components/Capture.tsx` (new), `src/app/page.tsx`, `src/app/books/page.tsx`, `src/app/books/add/page.tsx`, `src/components/AddBooks.tsx`, `src/components/BookSearch.tsx`, `src/app/comics/[runId]/add/page.tsx`, `src/components/AddIssues.tsx`, `src/components/IssueSearch.tsx`, `src/app/layout.tsx`, `src/app/globals.css`, `scripts/perf/routes.mjs`, `scripts/perf/budget.json`, `docs/ARCHITECTURE.md` (perf budget, required by `test/perf.test.ts`), `test/db.ts`, `test/loading-states.test.tsx`, `test/query-budget.test.ts`, `test/inbox.test.ts` (new), `test/inbox.test.tsx` (new).
+
+**Test strategy**
+
+- AC-1: `test/inbox.test.ts` — raw_text-only save; resolve through `POST /api/books` with `note` links `book_id` + stamps `resolved_at`; through `POST /api/runs/[runId]/issues` links `run_id`; `resolveHref` for Watch is `/watch/add?q=…`; `unresolvedNotes` is unresolved only, newest first. Chip link: `test/inbox.test.tsx`. `Inbox (N)` is TASK-014's.
+- AC-2: `test/inbox.test.ts` — Unsure stores NULL; `kind = 'films'` violates the CHECK; blank/whitespace POST is 400 and writes nothing. `test/inbox.test.tsx` — Capture shows *Write something first* and sends nothing; the kind control's four labels.
+- AC-3: `test/inbox.test.tsx` — Resolve hrefs per kind (and Unsure's three); Add books and Add issues render the search pre-filled from `q`. `test/inbox.test.ts` — no add leaves the note unresolved; the add resolves it and it leaves the list; undo reopens it.
+- AC-4: `test/inbox.test.ts` — `inboxCount` is 3 with 3 unresolved + 2 resolved. `test/inbox.test.tsx` — chip `3 in inbox` links `/inbox`; none at 0. `test/export-tables.test.ts` passes.
+- AC-5: `test/inbox.test.tsx` — empty slate with one primary action, named field and kind group, Resolve is a link with a name; `test/loading-states.test.tsx` covers `/inbox`; ui-verifier for the 24px target and screenshots at every `ui.viewports` width, light and dark.
 
 ## Review log
 

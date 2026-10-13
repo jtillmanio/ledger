@@ -1,5 +1,5 @@
 import { requireUserId } from "@/lib/auth";
-import { listBooks, readWithoutYear, seriesProgress, yearSummary } from "@/db/queries";
+import { inboxCount, listBooks, readWithoutYear, seriesProgress, yearSummary } from "@/db/queries";
 import Link from "next/link";
 import AddBooksButton from "@/components/AddBooksButton";
 import Cover, { Pending } from "@/components/Cover";
@@ -17,7 +17,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
   const userId = await requireUserId();
 
   const noYear = year === "none";
-  const [books, years, series, unyeared] = await Promise.all([
+  const [books, years, series, unyeared, inbox] = await Promise.all([
     listBooks(userId, {
       status, genre, q, noYear,
       year: year && !noYear ? Number(year) : undefined,
@@ -25,6 +25,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
     yearSummary(userId),
     seriesProgress(userId),
     readWithoutYear(userId),
+    inboxCount(userId),
   ]);
   // listBooks caps its page; the count is the whole match (R2-06).
   const matched = books[0]?.total ?? 0;
@@ -37,6 +38,12 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
   return (
     <main>
       <h1>Books</h1>
+      {/* Notes jotted and not yet resolved (task 1.4b, mockup `dashextras`); none, no chip. */}
+      {inbox > 0 && (
+        <p className="inbox-line">
+          <Link href="/inbox" className="chip inbox-chip"><span className="mono">{inbox}</span> in inbox</Link>
+        </p>
+      )}
       {/* A sheet over the list, Someday chosen, as from the To read filter (task 1.4c). */}
       <p><AddBooksButton /></p>
       <p className="muted small mono">

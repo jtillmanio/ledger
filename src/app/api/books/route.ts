@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { count, MAX_ID, MAX_PAGES, MAX_POSITION, MAX_WORDS, parseDestination, text } from "@/lib/book-add";
 import { MAX_LINES } from "@/lib/book-parse";
+import { noteId } from "@/lib/inbox";
 import { COVERS } from "@/lib/openlibrary";
 import { addBook, undoAddBooks, type AddBookItem } from "@/db/writes";
 
@@ -18,10 +19,12 @@ const YEAR_MAX = 3000;
  *   year, pages, coverUrl } }` or `{ hand: { title, author, series, position,
  *   pages, words } }`. The destination is *Add to*'s, Someday when absent. One
  *   transaction; the answer says whether the book was reused, and is what the
- *   undo sends back.
- * - DELETE `{ destination, created, added }`: that add's undo, from an add here
- *   or a paste (`/api/books/bulk`). 409 when something changed since, and then
- *   nothing is changed.
+ *   undo sends back. `note`, an inbox note's id, resolves that note into the
+ *   book in the same transaction (task 1.4b); the answer's `note` says it did.
+ * - DELETE `{ destination, created, added, note? }`: that add's undo, from an
+ *   add here or a paste (`/api/books/bulk`). 409 when something changed since,
+ *   and then nothing is changed. `note: { id, bookId }` reopens the note the
+ *   add resolved.
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -29,6 +32,8 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const item = parseItem(body?.item);
   const destination = parseDestination(body?.destination);
+  const note = body?.note == null ? null : noteId(body.note);
+  if (note === undefined) return NextResponse.json({ error: "note is an inbox note's id" }, { status: 400 });
   if (!item || !destination) {
     return NextResponse.json({
       error: "item is { use }, { openLibrary: { openLibraryId, title, author, year, pages, coverUrl } } or "
@@ -36,7 +41,7 @@ export async function POST(req: Request) {
         + "destination is { kind: 'someday' } or { kind: 'shelf', shelfId }",
     }, { status: 400 });
   }
-  const result = await addBook(userId, item, destination);
+  const result = await addBook(userId, item, destination, note === null ? {} : { note });
   if (!result.ok) {
     return NextResponse.json({
       error: result.reason === "gone"
@@ -54,10 +59,13 @@ export async function DELETE(req: Request) {
   const destination = parseDestination(body?.destination);
   const created = ids(body?.created);
   const added = ids(body?.added);
-  if (!destination || !created || !added || created.length + added.length === 0) {
-    return NextResponse.json({ error: "destination, and created and added: lists of book ids" }, { status: 400 });
+  const note = reopen(body?.note);
+  if (!destination || !created || !added || created.length + added.length === 0 || note === undefined) {
+    return NextResponse.json({
+      error: "destination, and created and added: lists of book ids; note, if any, is { id, bookId }",
+    }, { status: 400 });
   }
-  if (!(await undoAddBooks(userId, { destination, created, added }))) {
+  if (!(await undoAddBooks(userId, { destination, created, added }, note ? { note } : {}))) {
     return NextResponse.json({ error: "Something changed since that add. Nothing was undone." }, { status: 409 });
   }
   return NextResponse.json({ ok: true });
@@ -96,6 +104,15 @@ function parseItem(raw: unknown): AddBookItem | undefined {
     return { hand: { title, author, series, position: series ? position as number | null : null, pages, words } };
   }
   return undefined;
+}
+
+/** The note an undo reopens: `{ id, bookId }`, null when none, or undefined when malformed. */
+function reopen(raw: unknown): { id: number; bookId: string } | null | undefined {
+  if (raw == null) return null;
+  const n = raw as Record<string, unknown>;
+  const id = noteId(n.id);
+  const bookId = typeof n.bookId === "string" && n.bookId && n.bookId.length <= MAX_ID ? n.bookId : undefined;
+  return id && bookId ? { id, bookId } : undefined;
 }
 
 /** A list of book ids, possibly empty, or undefined. */

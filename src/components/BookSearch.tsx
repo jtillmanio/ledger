@@ -31,10 +31,13 @@ export const pickKey = (p: Pick) => (p.kind === "library" ? `lib:${p.book.id}` :
  * already is. Loading, rate-limited and error are each a `role="status"` line;
  * rate-limited counts Open Library's wait down and retries once at 0. *Add it
  * by hand* always works, with the query carried over as the title.
+ * `initialQuery` pre-fills the field (an inbox note's text, task 1.4b) and
+ * searches nothing until it is submitted.
  */
-export default function BookSearch({ level, target, outcomes, busy, onAdd, onByHand }: {
+export default function BookSearch({ level, target, outcomes, busy, onAdd, onByHand, initialQuery = "" }: {
   /** The section heading level: 2 under the page's h1, 3 under the sheet's h2. */
   level: 2 | 3;
+  initialQuery?: string;
   target: Target;
   outcomes: Record<string, Outcome>;
   /** The key of the result being added. */
@@ -43,7 +46,7 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
   onByHand: (title: string) => void;
 }) {
   const H = level === 2 ? "h2" : "h3";
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQuery);
   const [state, setState] = useState<State>({ phase: "idle" });
   const [left, setLeft] = useState(0);
   const retried = useRef(false);

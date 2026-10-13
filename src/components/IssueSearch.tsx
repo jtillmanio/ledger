@@ -29,17 +29,20 @@ const runCount = (n: number, titles: string[]) =>
  * already in this run has no Add. Loading, rate-limited and error are each a
  * `role="status"` line; rate-limited counts Metron's wait down and retries once
  * at 0. *Type it instead* always works, with the query carried over.
+ * `initialQuery` pre-fills the field (an inbox note's text, task 1.4b) and
+ * searches nothing until it is submitted.
  */
-export default function IssueSearch({ ref, runId, staged, onToggle, onAnswer, onTypeInstead }: {
+export default function IssueSearch({ ref, runId, staged, onToggle, onAnswer, onTypeInstead, initialQuery = "" }: {
   ref?: Ref<IssueSearchHandle>;
   runId: string;
+  initialQuery?: string;
   /** Keys of the staged results. */
   staged: Set<string>;
   onToggle: (result: SearchResult) => void;
   onAnswer: (answer: SearchAnswer) => void;
   onTypeInstead: (query: string) => void;
 }) {
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQuery);
   const [state, setState] = useState<State>({ phase: "idle" });
   const [left, setLeft] = useState(0);
   const retried = useRef(false);
