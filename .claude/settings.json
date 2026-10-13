@@ -77,6 +77,7 @@
       "Bash(git commit --all*)",
       "Bash(gh workflow run release.yml*)",
       "Bash(npm run rebuild -- -EnvFile .env.live*)",
+      "Bash(gh repo delete*)",
       "PowerShell(git push origin main)",
       "PowerShell(git push origin main *)",
       "PowerShell(git push origin master)",
@@ -96,7 +97,8 @@
       "PowerShell(.\\etl\\load.ps1 -EnvFile .env.live*)",
       "PowerShell(etl/load.ps1 -EnvFile .env.live*)",
       "Bash(ENV_FILE=.env.live *)",
-      "Read(./.env.live)"
+      "Read(./.env.live)",
+      "PowerShell(gh repo delete*)"
     ]
   },
   "hooks": {
@@ -106,7 +108,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-large-reads.ps1\"",
+            "command": "powershell",
+            "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-large-reads.ps1"],
             "timeout": 15
           }
         ]
@@ -116,8 +119,22 @@
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/guard-protected-paths.ps1\"",
-            "timeout": 15
+            "command": "powershell",
+            "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-protected-paths.ps1"],
+            "timeout": 15,
+            "onFailure": "block"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell",
+            "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-destructive.ps1"],
+            "timeout": 30,
+            "onFailure": "block"
           }
         ]
       }
@@ -128,7 +145,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/post-edit-verify.ps1\"",
+            "command": "powershell",
+            "args": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${CLAUDE_PROJECT_DIR}/.claude/hooks/post-edit-verify.ps1"],
             "timeout": 180
           }
         ]

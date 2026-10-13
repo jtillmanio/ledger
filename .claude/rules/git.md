@@ -59,8 +59,8 @@ kinds of change to other files are allowed on a task branch:
 
 ## Staging
 
-Stage by path: `git add <file> <file>`. Never `git add -A`, `git add .` or
-`git commit -a`: they sweep in the owner's unrelated edits, `.env` variants and
+Stage by path: `git add <file> <file>`. Never `git add -A`, `git add --all`,
+`git add .` or `git commit -a`: they sweep in the owner's unrelated edits, `.env` variants and
 scratch files. Run `git status` and `git diff --staged` before every commit and
 read what is actually staged. If a file holds both your change and the owner's
 uncommitted edits, stage only your hunks (build a patch and

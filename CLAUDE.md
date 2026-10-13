@@ -212,8 +212,14 @@ These hold everywhere, whatever you are touching.
   `npm run test:db:reset`, which runs `drizzle-kit migrate`, not `db:push`.
 - **Stop and ask before** adding or changing a schema column; changing how any
   stored date is written or interpreted; creating a git repo or remote, or
-  changing its visibility; touching any database that is not `TEST_DATABASE_URL`;
-  deleting or rewriting rows in `issue_progress`, `book_status` or `reading_plan`.
+  changing its visibility, or deleting or archiving one; touching any database
+  that is not `TEST_DATABASE_URL`; deleting or rewriting rows in
+  `issue_progress`, `book_status` or `reading_plan`; deleting anything outside
+  the project and the temp folder, the project itself, its `.git`, or a
+  worktree (use `git worktree remove`); deleting a folder that holds files git
+  doesn't ignore (remove tracked files with `git rm -r`), or discarding
+  uncommitted work: `git clean -f`, `git reset --hard`, `git checkout -- .`,
+  `git restore .`, `git stash drop`.
   An ambiguity in a task is a question, not a guess: write it down and stop.
   One exception, approved by the owner on 2026-10-09: the **development**
   database (`.env` `DATABASE_URL`) may be written *through the running app*
@@ -221,6 +227,9 @@ These hold everywhere, whatever you are touching.
   undo rows there, as long as they leave the data as they found it. A
   `rebuild`, `load`, `db:push` or `db:views` against it still asks first, and
   production (`.env.live`, the live Neon host) is never touched.
+- `.claude/hooks/guard-destructive.ps1` denies or asks about the common forms
+  of these deletes. It is a net, not permission: never route around a block
+  with another command, tool, script, or path spelling. Stop and ask.
 - One task per session. Attended: `/clear`, then `/implement-task TASK-###`
   or `/next-task`. Unattended sessions are started by
   `.claude/scripts/dispatch-approved.ps1`.
