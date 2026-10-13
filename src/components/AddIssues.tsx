@@ -34,11 +34,20 @@ type Staged = { key: string; label: string; metronId: number | null };
  * dry run that writes nothing), and nothing is written until the confirm,
  * which writes exactly what the header counts, in one transaction. Its undo
  * goes on the app's one stack (task 1.2).
+ *
+ * Opened from an inbox note's **Resolve** (task 1.4b), Search starts with the
+ * note's text in it, and the first insert that goes through resolves the note
+ * into the run it went to, in its own transaction; its undo reopens the note.
  */
-export default function AddIssues({ initial, knownSeries, runs }: {
+export default function AddIssues({ initial, knownSeries, runs, query = "", note = null }: {
   initial: AddContext; knownSeries: KnownSeries[]; runs: { id: string; title: string }[];
+  /** Search's starting text. */
+  query?: string;
+  /** The inbox note this add resolves. */
+  note?: number | null;
 }) {
   const [ctx, setCtx] = useState(initial);
+  const [noteId, setNoteId] = useState(note);
   const [mode, setMode] = useState<"search" | "type">("search");
   const [text, setText] = useState("");
   const [staged, setStaged] = useState<Staged[]>([]);
@@ -151,11 +160,15 @@ export default function AddIssues({ initial, knownSeries, runs }: {
         body: JSON.stringify({
           labels: review.writes.map((w) => w.label), after,
           ...(metronIds.some((m) => m !== null) && { metronIds }),
+          ...(noteId !== null && { note: noteId }),
         }),
       });
       if (!res.ok) throw new Error(String(res.status));
-      const done = await res.json() as Insert & { skipped: string[]; context: AddContext };
+      const done = await res.json() as Insert & { skipped: string[]; context: AddContext; note: number | null };
       setCtx(done.context);
+      // A note is resolved once: later adds here are plain adds.
+      setNoteId(null);
+      const fromNote = done.note == null ? "" : " · inbox note resolved";
       if (mode === "search") {
         setStaged([]);
         searchRef.current?.rerun();
@@ -166,7 +179,7 @@ export default function AddIssues({ initial, knownSeries, runs }: {
       setAfter(null);
       const n = done.created.length + done.restored.length;
       if (n === 0) {
-        notify("Nothing added: they were already in this run", title);
+        notify("Nothing added: they were already in this run", `${title}${fromNote}`);
         return;
       }
       const insert: Insert = { after: done.after, created: done.created, restored: done.restored, revived: done.revived };
@@ -174,10 +187,11 @@ export default function AddIssues({ initial, knownSeries, runs }: {
       const skipped = done.skipped.length ? ` · ${done.skipped.length} already there` : "";
       push({
         label: `${issues(n)} added`,
-        detail: `to ${title}${skipped}`,
+        detail: `to ${title}${skipped}${fromNote}`,
         undo: async () => {
           const r = await fetch(api(runId), {
-            method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify(insert),
+            method: "DELETE", headers: { "content-type": "application/json" },
+            body: JSON.stringify({ ...insert, ...(done.note != null && { note: done.note }) }),
           });
           if (!r.ok) throw new Error(String(r.status));
           const { context } = await r.json() as { context: AddContext };
@@ -231,7 +245,7 @@ export default function AddIssues({ initial, knownSeries, runs }: {
           </div>
           {/* Search stays mounted on Type it, so its results are still there when you come back. */}
           <div hidden={mode !== "search"}>
-            <IssueSearch ref={searchRef} runId={ctx.run.id} staged={stagedKeys}
+            <IssueSearch ref={searchRef} runId={ctx.run.id} staged={stagedKeys} initialQuery={query}
               onToggle={toggle} onAnswer={answered} onTypeInstead={typeInstead} />
           </div>
           {mode === "type" && (

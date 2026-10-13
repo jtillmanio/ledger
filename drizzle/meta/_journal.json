@@ -71,6 +71,13 @@
       "when": 1791838265329,
       "tag": "0009_open_library_cache",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791899276257,
+      "tag": "0010_quick_capture_inbox",
+      "breakpoints": true
     }
   ]
 }

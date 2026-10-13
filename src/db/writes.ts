@@ -1,10 +1,11 @@
 import { and, eq, gt, gte, inArray, isNull, like, ne, or, sql } from "drizzle-orm";
 import {
-  db, authors, books, bookSeries, bookStatus, issues, readingPlan, readingSettings, runIssues, runs, shelfBooks, shelves,
-  sql as pg,
+  db, authors, books, bookSeries, bookStatus, inbox, issues, readingPlan, readingSettings, runIssues, runs, shelfBooks,
+  shelves, sql as pg,
 } from "./index";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
 import { bookKey } from "@/lib/book-parse";
+import type { Kind } from "@/lib/inbox";
 import { bookId, issueSlug, slug } from "@/lib/issue-slug";
 
 export type BookStatusInput = {
@@ -361,10 +362,14 @@ export async function insertIssuesIntoRun(
  * The created placements give up their slots, so they move past the end of the
  * run. Refuses, changing nothing, unless the batch still sits exactly where the
  * insert put it: something else changed the run in between.
+ *
+ * `within` runs inside the same transaction once the undo has gone through:
+ * the issues route reopens the inbox note the insert resolved there (task 1.4b).
  */
 export async function undoInsert(
   runId: string,
   insert: { after: number; created: number[]; restored: { id: number; sequence: number }[]; revived?: string[] },
+  { within }: { within?: (tx: Tx) => Promise<void> } = {},
 ): Promise<boolean> {
   return db.transaction(async (tx) => {
     const { after, created, restored, revived = [] } = insert;
@@ -408,8 +413,50 @@ export async function undoInsert(
       await tx.update(issues).set({ deletedAt: sql`now()` })
         .where(and(inArray(issues.id, rehide), isNull(issues.deletedAt)));
     }
+    await within?.(tx);
     return true;
   });
+}
+
+/* ------------------------------------------------------------------ *
+ * Quick capture (task 1.4b)
+ * ------------------------------------------------------------------ */
+
+/** Save a note: its text, and a kind or none (*Unsure*). Nothing else is asked. */
+export async function saveNote(userId: string, text: string, kind: Kind | null) {
+  const [row] = await db.insert(inbox).values({ userId, rawText: text, kind })
+    .returning({ id: inbox.id, createdAt: inbox.createdAt });
+  return row;
+}
+
+/** What a resolved note now points at: the book or the run its add wrote to. */
+export type NoteLink = { bookId: string } | { runId: string };
+
+/**
+ * Resolve an open note of this user's into what an add wrote, inside that
+ * add's transaction (task 1.4b, AC-3), so the two stand or fall together.
+ * Returns the note's id when it resolved it, null when there was nothing to
+ * resolve: not this user's, gone, or resolved already (an add only claims a
+ * note once).
+ */
+export async function resolveNote(tx: Tx, userId: string, noteId: number, link: NoteLink): Promise<number | null> {
+  const [row] = await tx.update(inbox)
+    .set({ resolvedAt: sql`now()`, bookId: "bookId" in link ? link.bookId : null, runId: "runId" in link ? link.runId : null })
+    .where(and(eq(inbox.id, noteId), eq(inbox.userId, userId), isNull(inbox.resolvedAt)))
+    .returning({ id: inbox.id });
+  return row?.id ?? null;
+}
+
+/**
+ * An add's undo puts back the note that add resolved (task 1.4b): unresolved,
+ * linked to nothing. Only while it still points where the add pointed it, so
+ * an undo never reopens a note something else resolved.
+ */
+export async function reopenNote(tx: Tx, userId: string, noteId: number, link: NoteLink) {
+  await tx.update(inbox)
+    .set({ resolvedAt: null, bookId: null, runId: null })
+    .where(and(eq(inbox.id, noteId), eq(inbox.userId, userId),
+      "bookId" in link ? eq(inbox.bookId, link.bookId) : eq(inbox.runId, link.runId)));
 }
 
 /** A pasted line to create, unless the library has the same title and author by now. */
@@ -632,6 +679,8 @@ export type AddBookResult =
     reused: boolean;
     /** A reused book's status after the add: one it had is kept. */
     status: string | null;
+    /** The inbox note this add resolved (task 1.4b), or null. */
+    note: number | null;
   } & AddedEntry)
   | { ok: false; reason: "gone" | "no-shelf" };
 
@@ -651,8 +700,13 @@ export type AddBookResult =
  *
  * Refuses, writing nothing, when the library row is gone or the shelf isn't
  * one of this user's book shelves.
+ *
+ * `note` is the inbox note the add came from (task 1.4b): it is resolved into
+ * the book in the same transaction, the book reused or not.
  */
-export async function addBook(userId: string, item: AddBookItem, destination: Destination): Promise<AddBookResult> {
+export async function addBook(
+  userId: string, item: AddBookItem, destination: Destination, { note }: { note?: number } = {},
+): Promise<AddBookResult> {
   return db.transaction(async (tx) => {
     await addLock(tx);
     if (destination.kind === "shelf" && !(await ownShelf(tx, userId, destination.shelfId))) {
@@ -686,8 +740,10 @@ export async function addBook(userId: string, item: AddBookItem, destination: De
     // A reused book's status, so the toast can say what it kept (*Already in your library · read*).
     const [had] = row ? [] : await tx.select({ status: bookStatus.status }).from(bookStatus)
       .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookIdNow)));
+    const resolved = note === undefined ? null : await resolveNote(tx, userId, note, { bookId: bookIdNow });
     return {
       ok: true, destination, bookId: bookIdNow, title, reused: !row, status: had?.status ?? null, created, added,
+      note: resolved,
     } as const;
   });
 }
@@ -731,10 +787,17 @@ async function newBookRow(tx: Tx, userId: string, item: Exclude<AddBookItem, { u
  * status, shelf or plan row. A `created` book the add didn't also place is not
  * one it made, and is refused too.
  */
-export async function undoAddBooks(userId: string, entry: AddedEntry): Promise<boolean> {
+export async function undoAddBooks(
+  userId: string, entry: AddedEntry, { note }: { note?: { id: number; bookId: string } } = {},
+): Promise<boolean> {
   const refused = Symbol("refused");
   try {
-    return await db.transaction(async (tx) => undoInside(tx, userId, entry, refused));
+    return await db.transaction(async (tx) => {
+      if (!(await undoInside(tx, userId, entry, refused))) return false;
+      // The note the add resolved goes back in the inbox with it (task 1.4b).
+      if (note) await reopenNote(tx, userId, note.id, { bookId: note.bookId });
+      return true;
+    });
   } catch (e) {
     if (e === refused) return false;
     throw e;

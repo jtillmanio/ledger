@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUserId } from "@/lib/auth";
-import { catalogTotals, inProgressRuns, readyToRead, upcomingReleases } from "@/db/queries";
+import { catalogTotals, inboxCount, inProgressRuns, readyToRead, upcomingReleases } from "@/db/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -8,11 +8,12 @@ function pct(n: number) { return `${Math.round(n * 100)}%`; }
 
 export default async function Home() {
   const userId = await requireUserId();
-  const [reading, ready, catalog, releases] = await Promise.all([
+  const [reading, ready, catalog, releases, inbox] = await Promise.all([
     inProgressRuns(userId),
     readyToRead(userId, 12),
     catalogTotals(userId),
     upcomingReleases(),
+    inboxCount(userId),
   ]);
 
   // Distinct issues: summing tracks would count a crossover once per track.
@@ -28,6 +29,12 @@ export default async function Home() {
         {issuesRead.toLocaleString()} of {issuesTotal.toLocaleString()} issues read
         {" · "}{readyTotal} runs unlocked and waiting
       </p>
+      {/* Notes jotted and not yet resolved (task 1.4b, mockup `dashextras`); none, no chip. */}
+      {inbox > 0 && (
+        <p className="inbox-line">
+          <Link href="/inbox" className="chip inbox-chip"><span className="mono">{inbox}</span> in inbox</Link>
+        </p>
+      )}
 
       {reading.length > 0 && (
         <>

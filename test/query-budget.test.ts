@@ -12,10 +12,11 @@ const USER = "test-user";
 // The budget per route: raise it only with a reason in docs/ARCHITECTURE.md's
 // Performance budget; lower it when a fix lands.
 const BUDGET: Record<string, { queries: number; waves: number }> = {
-  "/": { queries: 4, waves: 1 },
+  "/": { queries: 5, waves: 1 },
   "/comics": { queries: 2, waves: 1 },
   "/comics/[runId]": { queries: 3, waves: 1 },
-  "/books": { queries: 4, waves: 1 },
+  "/books": { queries: 5, waves: 1 },
+  "/inbox": { queries: 2, waves: 1 },
   "/login": { queries: 0, waves: 0 },
 };
 
@@ -88,6 +89,7 @@ const pages: [string, () => Promise<unknown>][] = [
     (await import("../src/app/comics/[runId]/page")).default({ params: Promise.resolve({ runId: "a" }) })],
   ["/books", async () =>
     (await import("../src/app/books/page")).default({ searchParams: Promise.resolve({}) })],
+  ["/inbox", async () => (await import("../src/app/inbox/page")).default()],
   ["/login", async () =>
     (await import("../src/app/login/page")).default({ searchParams: Promise.resolve({}) })],
 ];

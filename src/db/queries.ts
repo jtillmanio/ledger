@@ -482,6 +482,42 @@ export async function metronFacts(metronIds: number[]) {
   }]));
 }
 
+/** An open quick-capture note (task 1.4b). `kind` null is *Unsure*. */
+export type InboxNote = { id: number; raw_text: string; kind: "books" | "comics" | "watch" | null; created_at: Date };
+
+/** Your notes still waiting to be resolved, newest first (task 1.4b, `/inbox`). */
+export async function unresolvedNotes(userId: string) {
+  return sql<InboxNote[]>`
+    SELECT id, raw_text, kind, created_at FROM inbox
+    WHERE user_id = ${userId} AND resolved_at IS NULL
+    ORDER BY created_at DESC, id DESC`;
+}
+
+/** How many notes are waiting: the dashboards' *N in inbox* chip (task 1.4b). */
+export async function inboxCount(userId: string): Promise<number> {
+  const [row] = await sql<{ n: number }[]>`
+    SELECT COUNT(*)::int AS n FROM inbox WHERE user_id = ${userId} AND resolved_at IS NULL`;
+  return row.n;
+}
+
+/**
+ * The run a comics note resolves against (task 1.4b; owner, 2026-10-09): the
+ * one holding your most recent dated read, else the first live run by title.
+ * Null with no runs at all. The run chip on Add issues changes it.
+ */
+export async function lastTouchedRun(userId: string): Promise<string | null> {
+  const [row] = await sql<{ id: string | null }[]>`
+    SELECT COALESCE(
+      (SELECT r.id FROM issue_progress p
+       JOIN run_issues ri ON ri.id = p.placement_id AND ri.deleted_at IS NULL
+       JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL AND NOT r.placeholder
+       WHERE p.user_id = ${userId} AND p.completed_at IS NOT NULL
+       ORDER BY p.completed_at DESC, r.id LIMIT 1),
+      (SELECT id FROM runs WHERE deleted_at IS NULL AND NOT placeholder ORDER BY title, id LIMIT 1)
+    ) AS id`;
+  return row.id;
+}
+
 /** The runs Add issues can add to, for the *Change* picker. */
 export async function runChoices() {
   return sql<{ id: string; title: string }[]>`

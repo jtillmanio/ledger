@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { normalizeLine } from "@/lib/bulk-parse";
 import { addContext, catalogMatches, metronFacts, takenIds } from "@/db/queries";
-import { insertIssuesIntoRun, undoInsert, type MetronFacts } from "@/db/writes";
+import { insertIssuesIntoRun, reopenNote, resolveNote, undoInsert, type MetronFacts, type Tx } from "@/db/writes";
+import { noteId } from "@/lib/inbox";
 import { issueSlug } from "@/lib/issue-slug";
 
 export const runtime = "nodejs";
@@ -22,8 +23,11 @@ type Params = { params: Promise<{ runId: string }> };
  * - GET: the run as the screen needs it, when *Change* picks another run.
  * - POST `{ labels, dryRun: true }`: the review's catalog check, writing nothing.
  * - POST `{ labels, after }`: the insert, in one transaction; `after` is a live
- *   placement id, 0 for the start, null for the end.
- * - DELETE `{ after, created, restored, revived }`: the insert's undo, from its answer.
+ *   placement id, 0 for the start, null for the end. `note`, an inbox note's
+ *   id, resolves that note into this run in the same transaction (task 1.4b);
+ *   the answer's `note` says it did.
+ * - DELETE `{ after, created, restored, revived, note? }`: the insert's undo,
+ *   from its answer; `note` reopens the note the insert resolved.
  *
  * The insert and its undo answer with the run's placements as they now are, so
  * the screen redraws without a second request.
@@ -37,7 +41,8 @@ export async function GET(_req: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  if (!(await apiUserId())) return unauthorized();
+  const userId = await apiUserId();
+  if (!userId) return unauthorized();
   const runId = await runOf(params);
   if (runId === null) return bad("the run id is not valid");
   const body = await req.json().catch(() => null);
@@ -51,6 +56,8 @@ export async function POST(req: Request, { params }: Params) {
 
   const after = body.after ?? null;
   if (after !== null && !id(after, true)) return bad("after is a placement id, 0 for the start, or null for the end");
+  const note = body.note == null ? null : noteId(body.note);
+  if (note === undefined) return bad("note is an inbox note's id");
   const metronIds = body.metronIds ?? [];
   if (!Array.isArray(metronIds) || metronIds.length > labels.length
     || !metronIds.every((m: unknown) => m === null || id(m))) {
@@ -66,8 +73,11 @@ export async function POST(req: Request, { params }: Params) {
     metron.set(labels[i].toLowerCase(), { metronId, ...fact });
   }
   let result: Awaited<ReturnType<typeof insertIssuesIntoRun>>;
+  let resolved: number | null = null;
+  const within = note === null ? undefined
+    : async (tx: Tx) => { resolved = await resolveNote(tx, userId, note, { runId }); };
   try {
-    result = await insertIssuesIntoRun(runId, after, labels, { metron });
+    result = await insertIssuesIntoRun(runId, after, labels, { metron, within });
   } catch (e) {
     // Another tab added the same new label first: the transaction rolled back.
     if (uniqueViolation(e)) {
@@ -78,15 +88,18 @@ export async function POST(req: Request, { params }: Params) {
   if (!result.ok) {
     return result.reason === "no-run" ? notFound() : bad(`after must be a live placement of ${runId}`);
   }
-  return NextResponse.json({ ...result, context: await addContext(runId) });
+  return NextResponse.json({ ...result, note: resolved, context: await addContext(runId) });
 }
 
 export async function DELETE(req: Request, { params }: Params) {
-  if (!(await apiUserId())) return unauthorized();
+  const userId = await apiUserId();
+  if (!userId) return unauthorized();
   const runId = await runOf(params);
   if (runId === null) return bad("the run id is not valid");
   const body = await req.json().catch(() => null);
   const { after, created, restored, revived = [] } = body ?? {};
+  const note = body?.note == null ? null : noteId(body.note);
+  if (note === undefined) return bad("note is the inbox note the insert resolved");
   const valid = Number.isInteger(after) && after >= 0
     && Array.isArray(created) && created.every((c: unknown) => id(c))
     && Array.isArray(restored) && restored.every((r: { id?: unknown; sequence?: unknown }) =>
@@ -95,7 +108,8 @@ export async function DELETE(req: Request, { params }: Params) {
     && Array.isArray(revived) && revived.length <= MAX_LABELS
     && revived.every((r: unknown) => typeof r === "string" && r !== "" && r.length <= MAX_LABEL);
   if (!valid) return bad("after, created, restored and revived are the insert's own answer");
-  if (!(await undoInsert(runId, { after, created, restored, revived }))) {
+  const within = note === null ? undefined : (tx: Tx) => reopenNote(tx, userId, note, { runId });
+  if (!(await undoInsert(runId, { after, created, restored, revived }, { within }))) {
     return NextResponse.json({ error: "the run changed since the insert; nothing was undone" }, { status: 409 });
   }
   return NextResponse.json({ ok: true, context: await addContext(runId) });

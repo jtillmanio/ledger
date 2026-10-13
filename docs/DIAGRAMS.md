@@ -13,6 +13,8 @@ erDiagram
     USERS ||--o{ EDITION_PROGRESS : owns
     USERS ||--o{ RUN_QUEUE : "queues, in order"
     RUNS  ||--o{ RUN_QUEUE : "queued as up next"
+    USERS ||--o{ INBOX : jots
+    RUNS  ||--o{ INBOX : "resolves a comics note"
 
     TRACKS ||--o{ RUN_TRACKS : groups
     RUNS   ||--o{ RUN_TRACKS : "belongs to"
@@ -131,6 +133,16 @@ erDiagram
         text verdict
         text home_run_id FK
     }
+    INBOX {
+        int  id PK "quick capture, task 1.4b"
+        text user_id FK
+        text raw_text "the only thing required"
+        text kind "books|comics|watch, NULL = Unsure"
+        ts   created_at
+        ts   resolved_at "stamped by the add that resolves it"
+        text book_id FK "set null; see section 2"
+        text run_id FK "set null; at most one link"
+    }
 ```
 
 ## 2. Books data model
@@ -152,6 +164,8 @@ erDiagram
     SHELVES     ||--o{ SHELF_BOOKS : holds
     BOOKS       ||--o{ EXTERNAL_LISTS : "named by"
     BOOKS       ||--o{ WISHLIST : "resolved from"
+    USERS       ||--o{ INBOX : jots
+    BOOKS       ||--o{ INBOX : "resolves a books note"
 
     READING_SETTINGS {
         text user_id PK
@@ -215,6 +229,11 @@ erDiagram
         int  rank
         text raw_title
         text book_id FK
+    }
+    INBOX {
+        int  id PK "drawn whole in section 1"
+        text book_id FK
+        ts   resolved_at
     }
 ```
 

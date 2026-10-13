@@ -974,7 +974,7 @@ lands in Someday (`to_read`, no plan row); an Open Library failure leaves By
 hand working and writes nothing. (*On deck* is asserted in 1.7 and *Year or
 quarter…* in 2.3, not here.)
 
-### ☐ 1.4b Quick-capture inbox · S
+### ☑ 1.4b Quick-capture inbox · S
 One text field, zero required fields, optional books/comics tag. Reachable from
 anywhere. Unresolved items list on the dashboard with a count; resolving routes
 into bulk add or New Run. FEATURES.md #21.
@@ -2876,6 +2876,11 @@ credits" row.
 pulling them forward would have this task build a half of 7.1 that 7.1 then
 presents as new. 7.1 owns the table and the client; 7.5 adds the button.
 
+*New Run* becomes a second **Resolve** choice for a comics inbox note, beside
+Add issues, and `/inbox`'s footnote goes back to the mockup's "Resolving a
+comics note opens New Run"; a run created from a note resolves it in the same
+transaction, as the add flows do (D-64; from TASK-009, 1.4b, PR #80).
+
 **Check:** create a run, assign two tracks, assert it appears under both filters;
 assert saving a why stores `hand`, and that nothing in this task calls Anthropic.
 
@@ -3795,6 +3800,13 @@ row of kind Watch carrying the query. Neutral grey genre chips carry a text labe
 The error line is a grey `×` (UX floor), as 1.3b built it; the TMDB error frame
 in `design/mockups.html` still draws `⚠` and is redrawn with this task (from
 TASK-006, 1.3b, PR #75).
+
+A Watch note's **Resolve** already leads to `/watch/add?q=…&note=…` (1.4b).
+This screen reads `?q=` as Search's starting text (searched only when
+submitted) and `?note=`, and the add resolves that note in its own transaction
+(D-64). `inbox` has no title column yet, so linking the note to the `titles`
+row needs one (a schema question for this task's plan) (from TASK-009, 1.4b,
+PR #80).
 
 **Check:** test that adding a show with 2 seasons creates 1 `titles` row and 2
 `seasons` rows from a single TMDB call, and that re-adding updates rather than

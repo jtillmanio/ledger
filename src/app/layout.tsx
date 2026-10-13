@@ -25,6 +25,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/" className="home">Ledger</Link>
             <Link href="/comics">Comics</Link>
             <Link href="/books">Books</Link>
+            {/* Capture from anywhere (task 1.4b) until 1.8's shell puts Inbox (N) in its sidebar. */}
+            <Link href="/inbox">Inbox</Link>
             {/* A plain link: <Link> prefetches, and a prefetch of a route handler
                 runs it, so every page view built the whole export (task 0.9). */}
             <a href="/api/export">Export</a>
