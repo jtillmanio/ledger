@@ -2168,7 +2168,7 @@ for…** in the master list, and **Year or quarter…** when adding a new book (
 sheet, minus the "currently planned" badge). Mockup: `design/mockups.html`,
 "Move / add to plan".
 
-*From 1.4c (TASK-008, task/1.4c-add-book-search-hand):* the Add books sheet
+*From 1.4c (TASK-008, PR #77):* the Add books sheet
 draws *Year or quarter…* in its *Add to* row `aria-disabled`, with the reason
 *On deck and Year or quarter… arrive with the reading plan.*
 (`src/components/AddBooks.tsx`), and leaves out the mockup's secondary *Year
@@ -3275,7 +3275,7 @@ Rows created freeform and not yet enriched render `data-enrich="pending"`: a
 dashed cover outline and a *metadata pending* line, on the spine, the master
 list and book detail.
 
-*From 1.4c (TASK-008, task/1.4c-add-book-search-hand):* that much is built.
+*From 1.4c (TASK-008, PR #77):* that much is built.
 `src/components/Cover.tsx` draws `data-enrich="pending"` and its line on the
 spine (an issue with no `metron_id`), the master list (a book with no
 `open_library_id` or `hardcover_id`, which is every workbook book until 1.14),
