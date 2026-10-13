@@ -110,11 +110,19 @@ Release, test isolation) and the Hard rules a reviewer checks.
   `none`. A read with no known date is `none`, never `now()`. A year-only finish
   is `approximate` (its July 1st), never `exact`. Anything computing pace ignores
   `none`, and anything sorting by a finish date puts NULLs last. ARCHITECTURE 2.17.
-- **A book's finish year is derived from `finished_on`** *(from task 1.5, D-21;
-  until then `book_status.finished_year` is still the stored column)*. 1.5 drops
-  `finished_year`, and it never comes back; every reader takes
+- **A book's finish year is derived from `finished_on`** (task 1.5, D-21). 1.5
+  dropped `finished_year`, and it never comes back; every reader takes
   `extract(year FROM finished_on)`, and a `read` book with precision `none` is
-  the *No year* group.
+  the *No year* group. **Years count reads, not books** (D-65): read the year
+  through the `book_reads` view (every `read_events` row, plus a `read` status
+  with no log row), so a reread counts in its own year and the first keeps its.
+- **Reads are a log** (task 1.5, FEATURES #22). `read_events` holds one row per
+  finished read, a book (`book_id`) or a placement (`placement_id`, never the
+  issue), exactly one (`num_nonnulls` CHECK); `reread_of` is the same item's
+  previous read. `book_status` is the current-status projection over it, written
+  only through `saveBookStatus`: entering `read` appends a read, `read` on a book
+  already read re-dates its latest one, and leaving `read` keeps the finish date.
+  Comic reads don't write `read_events` yet; `issue_progress` is their record.
 - **Every table is in the export.** `GET /api/export` reads its tables from
   `src/db/export-tables.ts`. A task that creates a table adds it there in the
   same PR (`USER_TABLES` if it has a `user_id`; `users` stays out, D-17);

@@ -45,7 +45,7 @@ milliseconds, so there is no cache to invalidate and no state to drift.
 | `TRACKS` tab | `track_progress` view (distinct issues via `track_issue_counts`) |
 | `DASHBOARD` ready-to-read query | `readyToRead()` in `src/db/queries.ts` |
 | `CLOSURE` tab + Apps Script (removed July 2026) | `run_ancestors(run_id)` — a recursive CTE, cycle-safe, 48-level depth cap |
-| `Read 20XX` tabs | `books_by_year` view over `book_status.finished_year` |
+| `Read 20XX` tabs | `books_by_year` view: reads per year, from `book_reads` (`read_events`, plus workbook reads with no log row) by `extract(year FROM finished_on)` (D-21, D-65) |
 | `To-Read 20XX` tabs | `reading_plan.planned_year` |
 | `Series!Percent Read` | `series_progress` view |
 | `Reading Orders!Track`, `Run Title` | dropped — they were lookups; the join replaces them |
@@ -428,11 +428,12 @@ read_events.finished_on            date        NULL, finished_on_precision   tex
 - The ETL writes `none` and a blank date for every workbook read, and never lets
   a column default stamp the load time. Anything that computes pace or "read ·
   Sep 2026" filters `precision <> 'none'` or reads a NULL as unknown.
-- Landed in migration 0004 for `issue_progress` and `book_status`; 1.5 adds it to
-  `read_events`.
-- A book's finish **year** is not a second column. 1.5 drops
-  `book_status.finished_year` and every reader derives the year from
-  `finished_on` (D-21), so a year and a date can never disagree.
+- Landed in migration 0004 for `issue_progress` and `book_status`, and in 0011
+  (task 1.5) for `read_events`.
+- A book's finish **year** is not a second column. Migration 0011 (task 1.5)
+  dropped `book_status.finished_year`, after backfilling each year to its July
+  1st, `approximate`; every reader derives the year from `finished_on` (D-21),
+  so a year and a date can never disagree.
 
 ## 3. Stack
 
@@ -969,9 +970,10 @@ Responses are cached, and detail pages never re-call.
    as `editions` but has no page.
 4. `edition_issues` is declared conceptually but not built, so "which trade
    collects this issue" isn't answerable yet.
-5. `book_status.finished_year` is year-granular. Promoting it to a real date
-   unlocks streaks, pace-vs-plan, and an accurate year in review, and it is far
-   cheaper to do before you accumulate entries than after.
+5. ~~`book_status.finished_year` is year-granular.~~ Done in task 1.5: a book's
+   finish is a date with its precision (`finished_on`), every read is a
+   `read_events` row, and the year is derived (D-21). Comic reads are not logged
+   in `read_events` yet.
 6. `external_lists` entries are unresolved text until you link them to
    `books.id`. `wishlist` is promoted into Someday by task 1.4d (D-39).
 7. No editing UI. Reads are complete; writes are limited to issue check-off and

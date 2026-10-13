@@ -432,5 +432,37 @@ class BookWordCountSource(unittest.TestCase):
         self.assertEqual((book["word_count"], book["word_count_source"]), (85000, "stated"))
 
 
+class BookStatusFinishDate(unittest.TestCase):
+    """Task 1.5 (D-21): book_status.csv carries a finish date and its precision,
+    never a year column. A year-only finish is its July 1st, approximate."""
+
+    def test_a_read_tab_year_is_july_first_approximate_and_no_year_is_none(self):
+        import pandas as pd
+        from unittest import mock
+        path = Path(tempfile.mkdtemp()) / "Books.xlsx"
+        with pd.ExcelWriter(path) as xw:
+            pd.DataFrame([("Piranesi", "Susanna Clarke", None, "Fantasy", None),
+                          ("The Way of Kings", "Brandon Sanderson", None, "Fantasy", None)],
+                         columns=["Book", "Author", "Series", "Genre", "Words"]) \
+                .to_excel(xw, sheet_name="To-Read Master List", index=False)
+            pd.DataFrame({"Fantasy": ["Piranesi"]}).to_excel(xw, sheet_name="Read 2024", index=False)
+            pd.DataFrame(columns=["Title", "Author", "Series", "Date"]) \
+                .to_excel(xw, sheet_name="Coming Out", index=False)
+            pd.DataFrame(columns=["Series", "Total Books"]).to_excel(xw, sheet_name="Series", index=False)
+        out = Path(tempfile.mkdtemp())
+        with mock.patch("sys.stdout"):
+            ex.extract_books(path, out)
+
+        with (out / "book_status.csv").open(newline="", encoding="utf-8") as fh:
+            header = next(csv.reader(fh))
+        self.assertEqual(header, ["user_id", "book_id", "status", "finished_on", "finished_on_precision",
+                                  "year_rank", "rating"])
+        rows = {r["book_id"].split("-")[0]: r for r in read(out, "book_status")}
+        self.assertEqual((rows["piranesi"]["status"], rows["piranesi"]["finished_on"],
+                          rows["piranesi"]["finished_on_precision"]), ("read", "2024-07-01", "approximate"))
+        self.assertEqual((rows["the"]["status"], rows["the"]["finished_on"],
+                          rows["the"]["finished_on_precision"]), ("to_read", "", "none"))
+
+
 if __name__ == "__main__":
     unittest.main()

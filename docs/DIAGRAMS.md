@@ -166,6 +166,9 @@ erDiagram
     BOOKS       ||--o{ WISHLIST : "resolved from"
     USERS       ||--o{ INBOX : jots
     BOOKS       ||--o{ INBOX : "resolves a books note"
+    USERS       ||--o{ READ_EVENTS : "reading log"
+    BOOKS       ||--o{ READ_EVENTS : "each read"
+    READ_EVENTS |o--o{ READ_EVENTS : "reread_of"
 
     READING_SETTINGS {
         text user_id PK
@@ -199,8 +202,8 @@ erDiagram
         text user_id FK
         text book_id FK
         text status "to_read|reading|read|dnf"
-        date finished_on
-        int  finished_year
+        date finished_on "latest read; the year is derived (D-21)"
+        text finished_on_precision "exact|approximate|none"
         int  year_rank "top-10 position"
         real rating
         text notes
@@ -234,6 +237,15 @@ erDiagram
         int  id PK "drawn whole in section 1"
         text book_id FK
         ts   resolved_at
+    }
+    READ_EVENTS {
+        int  id PK
+        text user_id FK
+        text book_id FK "or placement_id, exactly one"
+        int  placement_id FK "run_issues.id; comics not logged yet"
+        date finished_on
+        text finished_on_precision "exact|approximate|none"
+        int  reread_of FK "the item's previous read"
     }
 ```
 

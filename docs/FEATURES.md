@@ -73,8 +73,10 @@ legitimately freeform (`Dark Reign: The Cabal`, `Astonishing Tales #1
 **3. Mark a range read.** Krakoa is 641 issues. Checking them one at a time is
 absurd. Shift-click for a range, plus "mark everything through here" on a row.
 
-**4. A dated reading log.** Right now `book_status.finished_year` is year-only and
-`issue_progress.completed_at` defaults to now. Make the date first-class and
+**4. A dated reading log.** *(Built in task 1.5: a finish date with its precision,
+`read_events` for books, and *Change date…* on a comic read.)* Before it,
+`book_status.finished_year` was year-only and `issue_progress.completed_at`
+defaulted to now. Make the date first-class and
 editable, and you get: what did I read in July, current streak, pace against plan,
 and an accurate year-in-review. Almost every stat you'd want later depends on
 having this, and it's nearly free to add now versus painful to backfill.

@@ -4,9 +4,11 @@ import { useEffect, useId, useOptimistic, useRef, useState, useSyncExternalStore
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Cover, { Pending } from "@/components/Cover";
+import FinishDate, { finishReason, finishWords, initialFinish, toChoice, type FinishValue } from "@/components/FinishDate";
 import Menu from "@/components/Menu";
 import NextStrip from "@/components/NextStrip";
 import RangeSheet, { type RangeChoice } from "@/components/RangeSheet";
+import Sheet, { useSheetClose } from "@/components/Sheet";
 import { useUndo } from "@/components/Undo";
 import { issueName, singleSeries } from "@/lib/format";
 
@@ -75,6 +77,10 @@ function useFinePointer() {
  * first unread placement to the pressed row. Every row's `⋯` offers the same as
  * *Mark everything through here*, which is also the keyboard's way in. *Adopt
  * N prior reads* opens the sheet on the unread placements read in another run.
+ *
+ * *Change date…* (task 1.5) sits in the `⋯` of a row read here: a sheet with
+ * the finish-date control, which re-dates this placement and nothing else. Its
+ * undo puts the date it had back, through the same `restore` a mark's undo uses.
  */
 export default function RunSpine({ runId, title, issues, ranges = null, blocked = false, lastRead = null, children }: {
   runId: string; title: string; issues: Issue[]; ranges?: string | null; blocked?: boolean;
@@ -93,6 +99,7 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
   const [anchor, setAnchor] = useState<number | null>(null);
   const [hover, setHover] = useState<number | null>(null);
   const [range, setRange] = useState<Range | null>(null);
+  const [redate, setRedate] = useState<{ issue: Issue; opener: HTMLElement } | null>(null);
   const press = useRef<{ timer: ReturnType<typeof setTimeout>; x: number; y: number } | null>(null);
   const single = singleSeries(issues.map((i) => i.label));
   const read = state.filter((i) => i.completed).length;
@@ -244,6 +251,26 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
     });
   }
 
+  /** *Change date…*: re-date one placement read here; resolves once it landed. */
+  async function changeDate(issue: Issue, value: FinishValue) {
+    const res = await fetch("/api/progress/issue", {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ placementId: issue.placement_id, finish: toChoice(value) }),
+    });
+    if (!res.ok) throw new Error("change date failed");
+    const { prior } = await res.json();
+    push({
+      label: `${issueName(issue.label, single)} read · ${finishWords(value)}`,
+      detail: `${read} of ${state.length} in ${title}`,
+      undo: async () => {
+        if (!(await post({ placementId: issue.placement_id, completed: true, restore: prior })).ok) {
+          throw new Error("undo failed");
+        }
+      },
+    });
+  }
+
   async function copy(text: string, done: string) {
     try {
       await navigator.clipboard.writeText(text);
@@ -363,7 +390,12 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
             {/* stopPropagation: opening the menu is not a click on the row. */}
             <span className="rowmenu" onClick={(e) => e.stopPropagation()}>
               <Menu label={`More for ${issue.label}`} className="rowmenu-btn"
-                items={[{ label: "Mark everything through here", onSelect: (t) => throughHere(at, t) }]}>
+                items={[
+                  { label: "Mark everything through here", onSelect: (t) => throughHere(at, t) },
+                  ...(issue.completed
+                    ? [{ label: "Change date…", onSelect: (t: HTMLButtonElement) => setRedate({ issue, opener: t }) }]
+                    : []),
+                ]}>
                 <span aria-hidden="true">⋯</span>
               </Menu>
             </span>
@@ -383,6 +415,56 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
           onClose={() => setRange(null)}
           onConfirm={(choice) => markRange(range.ids, choice)}
         />
+      )}
+      {redate && (
+        <Sheet heading="Change date" opener={redate.opener} onClose={() => setRedate(null)}>
+          <ChangeDate label={redate.issue.label} onSave={(value) => changeDate(redate.issue, value)} />
+        </Sheet>
+      )}
+    </>
+  );
+}
+
+/** The *Change date…* sheet's body: the finish-date control, Save and Cancel.
+ * It opens on Pick a date, today: the read has a date already, and the point
+ * is a different one. The sheet stays open on a failure and says so. */
+function ChangeDate({ label, onSave }: { label: string; onSave: (value: FinishValue) => Promise<void> }) {
+  const close = useSheetClose();
+  const [value, setValue] = useState(() => initialFinish(null, "date"));
+  const [saving, setSaving] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const reasonId = useId();
+  const reason = finishReason(value);
+
+  async function save() {
+    if (reason || saving) return;
+    setSaving(true);
+    setFailed(false);
+    try {
+      await onSave(value);
+      close();
+    } catch {
+      setFailed(true);
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <p className="lede">{label}</p>
+      <FinishDate value={value} onChange={setValue} name="change-date" />
+      <div className="btnrow">
+        <button type="button" className="btn" aria-disabled={Boolean(reason) || saving || undefined}
+          aria-describedby={reason ? reasonId : undefined} onClick={save}>
+          {saving ? "Saving…" : "Save"}
+        </button>
+        <button type="button" className="btn sec sheet-cancel" onClick={close}>Cancel</button>
+      </div>
+      {reason && <p id={reasonId} className="small muted sheet-reason">{reason}</p>}
+      {failed && (
+        <p className="small sheet-reason sheet-error" role="alert">
+          <span aria-hidden="true">×</span> That didn&apos;t save. Check your connection and try again.
+        </p>
       )}
     </>
   );

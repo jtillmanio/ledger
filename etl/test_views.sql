@@ -597,6 +597,41 @@ BEGIN
   END IF;
 END $$;
 
+-- books_by_year counts reads by the year of their finish date (task 1.5, D-21,
+-- D-65): an exact day and a year-only July 1st land in their years, a read with
+-- no date is in no year, a status with no log row counts only while `read`, and
+-- a book read twice counts in both years.
+INSERT INTO books (id, title, genre, word_count, word_count_source) VALUES
+  ('zz-b-exact', 'Zz Exact', 'Zz Genre', 100000, 'stated'),
+  ('zz-b-year',  'Zz Year',  'Zz Genre', 50000, 'stated'),
+  ('zz-b-none',  'Zz None',  'Zz Genre', 10000, 'stated'),
+  ('zz-b-dnf',   'Zz Dnf',   'Zz Genre', 10000, 'stated'),
+  ('zz-b-again', 'Zz Again', 'Zz Genre', 20000, 'stated');
+INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision) VALUES
+  ('zz-user', 'zz-b-exact', 'read', '2024-03-11', 'exact'),
+  ('zz-user', 'zz-b-year',  'read', '2019-07-01', 'approximate'),
+  ('zz-user', 'zz-b-none',  'read', NULL, 'none'),
+  ('zz-user', 'zz-b-dnf',   'dnf',  '2024-05-01', 'exact'),
+  ('zz-user', 'zz-b-again', 'reading', '2024-02-01', 'exact');
+-- Read in 2018 and again in 2024, reading it a third time now: one read in each
+-- year, from the log (D-65), whatever its status says.
+INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision) VALUES
+  ('zz-user', 'zz-b-again', '2018-05-01', 'exact'),
+  ('zz-user', 'zz-b-again', '2024-02-01', 'exact');
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT string_agg(year || ':' || books || ':' || words, ', ' ORDER BY year) INTO got
+  FROM books_by_year WHERE user_id = 'zz-user' AND genre = 'Zz Genre';
+  IF got IS DISTINCT FROM '2018:1:20000, 2019:1:50000, 2024:2:120000' THEN
+    RAISE EXCEPTION 'books_by_year wrong: %', got;
+  END IF;
+  IF (SELECT data_type FROM information_schema.columns
+      WHERE table_name = 'books_by_year' AND column_name = 'year') <> 'integer' THEN
+    RAISE EXCEPTION 'books_by_year.year should stay an integer';
+  END IF;
+END $$;
+
 -- Applying views.sql leaves every table analyzed. A table the planner has no
 -- statistics for gets nested-loop plans that ran for minutes on a preview of
 -- live (2026-10-02).

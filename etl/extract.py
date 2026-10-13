@@ -938,9 +938,17 @@ def extract_books(path: Path, out: Path, with_plan: bool = False) -> None:
 
     def set_status(bid, **kw):
         row = status.setdefault(bid, {"user_id": "$OWNER", "book_id": bid,
-                                      "status": "to_read", "finished_year": None,
+                                      "status": "to_read", "finished_on": None,
+                                      "finished_on_precision": "none",
                                       "year_rank": None, "rating": None})
         row.update({k: v for k, v in kw.items() if v is not None})
+
+    def year_only(year):
+        """A finish known only by its year: that year's July 1st, approximate,
+        never exact (D-21, ARCHITECTURE 2.17). No year leaves the row undated."""
+        if year is None:
+            return {}
+        return {"finished_on": f"{year:04d}-07-01", "finished_on_precision": "approximate"}
 
     # ---- master to-read list --------------------------------------------
     raw = sheet(xl, "To-Read Master List")
@@ -984,7 +992,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False) -> None:
                     if not bid:
                         continue
                     if mode == "read":
-                        set_status(bid, status="read", finished_year=year)
+                        set_status(bid, status="read", **year_only(year))
                     else:
                         # The reading plan starts empty and is built in the app
                         # (R0-04). The sheet's To-Read tabs still create the books;
@@ -1014,7 +1022,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False) -> None:
                 if year and title:
                     bid = idx.upsert(title)
                     if bid:
-                        set_status(bid, status="read", finished_year=year, year_rank=rank)
+                        set_status(bid, status="read", year_rank=rank, **year_only(year))
 
     # ---- upcoming releases ----------------------------------------------
     raw = sheet(xl, "Coming Out")
@@ -1078,7 +1086,8 @@ def extract_books(path: Path, out: Path, with_plan: bool = False) -> None:
                                 "genre", "book_type", "word_count", "word_count_source",
                                 "published_year"])
     write(out, "book_status", list(status.values()),
-          ["user_id", "book_id", "status", "finished_year", "year_rank", "rating"])
+          ["user_id", "book_id", "status", "finished_on", "finished_on_precision",
+           "year_rank", "rating"])
     write(out, "reading_plan", plan, ["user_id", "book_id", "planned_year", "planned_quarter"])
     write(out, "releases", releases, ["book_id", "release_date"])
     write(out, "wishlist", wishlist, ["genre", "raw_entry", "book_id"])

@@ -14,6 +14,8 @@ import { testSql, truncateAll } from "./db";
 const USER = "test-user";
 const OL = "https://openlibrary.org/";
 
+// The master list's rows hold the status control (task 1.5), which refreshes the page after a save.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, refresh: () => {} }) }));
 vi.mock("@/lib/auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../src/lib/auth")>()),
   apiUserId: async () => USER,
@@ -278,6 +280,16 @@ describe("undo (AC-5)", () => {
     expect(await statuses()).toEqual([{ book_id: "the-blade-itself-joe-abercrombie", status: "read" }]);
   });
 
+  it("refuses once the book has been read since, even when it is back to a bare To read (task 1.5)", async () => {
+    const done = await add(hand({ title: "Fresh", author: "Hand Author" }));
+    const { saveBookStatus } = await import("../src/db/writes");
+    await saveBookStatus(USER, { bookId: "fresh-hand-author", status: "read", finish: { on: null, precision: "none" } });
+    await saveBookStatus(USER, { bookId: "fresh-hand-author", status: "to_read" });
+    expect(await undo(done.body)).toBe(409);
+    expect(await sql`SELECT 1 FROM read_events WHERE book_id = 'fresh-hand-author'`).toHaveLength(1);
+    expect((await bookRows()).find((b) => b.id === "fresh-hand-author")!.removed).toBe(false);
+  });
+
   it("refuses, changing nothing, once the book has moved on", async () => {
     const done = await add(hand({ title: "Fresh", author: "Hand Author" }));
     await sql`UPDATE book_status SET status = 'reading' WHERE book_id = 'fresh-hand-author'`;
@@ -357,7 +369,10 @@ describe("metadata pending wherever the row appears (AC-4)", () => {
     await add(hand({ title: "A Small Book of Something", author: "New Author" }));
     await add({ openLibrary: (await find("the way of kings")).openLibrary[0] });
     const Books = (await import("../src/app/books/page")).default;
-    const html = renderToStaticMarkup(await Books({ searchParams: Promise.resolve({}) }));
+    const { UndoProvider } = await import("../src/components/Undo");
+    // The layout's UndoProvider: each row's status control pushes its undo there (task 1.5).
+    const html = renderToStaticMarkup(createElement(UndoProvider, null,
+      await Books({ searchParams: Promise.resolve({}) })));
     const thin = rowOf(html, 'class="row book-row"', "A Small Book of Something");
     expect(thin).toContain('data-enrich="pending"');
     expect(thin).toContain(">metadata pending<");

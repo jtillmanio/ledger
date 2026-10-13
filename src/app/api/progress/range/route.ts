@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { markRange, RANGE_MODES, unmarkRange, type RangeMode } from "@/db/writes";
+import { isDay as day, isFuture } from "@/lib/finish-date";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,10 @@ export async function POST(req: Request) {
   if (mode === "date" && !day(date)) return bad("Pick a date needs date, YYYY-MM-DD");
   if (mode === "spread" && !(day(from) && day(to))) return bad("Spread needs from and to, YYYY-MM-DD");
   if (mode === "spread" && to < from) return bad("Spread's to is before its from");
+  // The picker caps its max at today; the server holds the line too (task 1.5).
+  if ((mode === "date" && isFuture(date)) || (mode === "spread" && isFuture(to))) {
+    return bad("a finish date is after today");
+  }
 
   const result = await markRange(userId, runId, placementIds, mode as RangeMode, { date, from, to });
   if (!result.ok) {
@@ -59,12 +64,4 @@ function validRange(runId: unknown, ids: unknown): ids is number[] {
   return typeof runId === "string" && runId !== "" && Array.isArray(ids)
     && ids.length > 0 && ids.length <= MAX_IDS
     && ids.every((id) => Number.isInteger(id) && id > 0 && id <= 2147483647);
-}
-
-/** A real calendar day, `YYYY-MM-DD`: 2026-02-30 is not one, and neither is
- * year 0000, which JS accepts and Postgres doesn't. */
-function day(s: unknown): s is string {
-  if (typeof s !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(s) || s.startsWith("0000")) return false;
-  const d = new Date(`${s}T00:00:00Z`);
-  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
 }

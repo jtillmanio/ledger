@@ -2,6 +2,7 @@ import { requireUserId } from "@/lib/auth";
 import { inboxCount, listBooks, readWithoutYear, seriesProgress, yearSummary } from "@/db/queries";
 import Link from "next/link";
 import AddBooksButton from "@/components/AddBooksButton";
+import BookStatus from "@/components/BookStatus";
 import Cover, { Pending } from "@/components/Cover";
 import { seriesAllHref, seriesView } from "@/lib/series-list";
 
@@ -67,14 +68,14 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
       <div className="filters">
         {yearList.map(([y, n]) => (
           <Link key={y} href={`/books?year=${y}`} className="chip" aria-current={year === String(y)}>
-            {y} <span className="mono">{n}</span>
+            {y} <span className="n">{n}</span>
           </Link>
         ))}
-        {/* Read books with no finished year: without this the chips sum to fewer
+        {/* Read books with no finish date: without this the chips sum to fewer
             than the Read chip and nothing on the page reaches the rest (R2-08). */}
         {unyeared > 0 && (
           <Link href="/books?year=none" className="chip" aria-current={noYear}>
-            No year <span className="mono">{unyeared}</span>
+            No year <span className="n">{unyeared}</span>
           </Link>
         )}
       </div>
@@ -95,7 +96,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
               <span className="row-head">
                 <span className="row-title">{b.title}</span>
                 <span className="row-meta mono">
-                  {b.finished_year ?? b.planned_year ?? ""}
+                  {b.read_year ?? b.planned_year ?? ""}
                   {b.word_count ? ` · ${Math.round(b.word_count / 1000)}k` : ""}
                 </span>
               </span>
@@ -104,6 +105,11 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
                   b.genre].filter(Boolean).join(" · ")}
               </span>
               {b.pending && <Pending />}
+              {/* Status and finish date (task 1.5): the badge expands the row's controls. */}
+              {/* Only what differs from a bare to-read row: 500 rows travel in the RSC payload. */}
+              <BookStatus bookId={b.id}
+                {...(b.status !== "to_read" && { status: b.status })}
+                {...(b.finished_on !== null && { finishedOn: b.finished_on, precision: b.finished_on_precision })} />
             </span>
           </div>
         ))}
