@@ -113,7 +113,7 @@ book between years is a cut-and-paste across sheets.
 | `TRACKS` tab | `track_progress` view |
 | `DASHBOARD` ready-to-read query | `readyToRead()` in `src/db/queries.ts` |
 | `CLOSURE` tab + Apps Script (removed July 2026) | `run_ancestors(run_id)`, recursive, cycle-safe, depth-capped at 48 |
-| `Read 20XX` tabs | `books_by_year` view over `book_status.finished_year` |
+| `Read 20XX` tabs | `books_by_year` view over `extract(year FROM book_status.finished_on)` (D-21) |
 | `To-Read 20XX` tabs | `reading_plan.planned_year` |
 | `Series!Percent Read` | `series_progress` view |
 | `Reading Orders!Track`, `Run Title` | Dropped — they were lookups; the join replaces them |

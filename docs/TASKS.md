@@ -1030,7 +1030,7 @@ values, and leaves an existing book's status untouched. `Title - Author` and
 `Title — Author` parse the same. A dismissed line is gone from the screen and
 from the table.
 
-### ☐ 1.5 Dated reading log · M
+### ☑ 1.5 Dated reading log · M
 **Precision is already in the schema** (migration `0004`, ARCHITECTURE 2.17):
 `book_status.finished_on` is a `date` and `finished_on_precision` exists, and
 `issue_progress.completed_at` is nullable with `completed_at_precision`. This task

@@ -1,7 +1,7 @@
 ---
 id: TASK-010
 title: 1.5 Dated reading log
-status: In progress
+status: Review
 depends_on: [TASK-009]
 size: L
 model: opus
@@ -32,12 +32,12 @@ Finishing a book records when you finished it: today, a picked date, just the ye
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): test asserts a book finished 2024-03-11 appears in both a March 2024 query and a 2024 query; that reading it again creates a second `read_events` row with `reread_of` set and leaves the first intact; and that `book_status` still reports one current status. A backfilled year lands as `YYYY-07-01` with precision `approximate`, and a date with the wrong precision violates the CHECK. Test that marking a book `read` from the master list writes the event and leaves an existing rating intact (R0-C1), and that `to_read → reading → read` round-trips through the UI. A book marked read through the UI on 2026-10-02 appears under the 2026 year chip and in `books_by_year` for 2026; a `read` book with no date appears under *No year*. Choosing *Year only* for 2019 in the finish-date control stores `2019-07-01` / `approximate`, never `exact`, and *No date* stores NULL / `none`. `finished_year` no longer exists. Up → down → up preserves the rows, including their precision.
-- [ ] AC-2: The up → down → up test asserts row values, not just that it ran. It covers a `book_status` row with `finished_year = 2019` (back as `2019-07-01` / `approximate`, then `2019` after down), an `exact` 2024-03-11 row (`finished_year = 2024` after down), and a `none` row (NULL date and `none` after both trips). `read_events` rows written before the down are gone after it and recreated empty by the second up. `npm run check:migrations` passes with the down file present.
-- [ ] AC-3: A `read_events` row with both `book_id` and `placement_id` set, or neither, violates its CHECK. A comic event references `run_issues.id`. `read_events` is in `USER_TABLES`, and `test/export-tables.test.ts` passes.
-- [ ] AC-4: `etl/extract.py` writes `finished_on` / `finished_on_precision` columns and no `finished_year` to `book_status.csv`. `etl/test_extract.py` asserts the header, and `npm run test:db:reset` (migrate, then views) succeeds. No `finished_year` reference is left in `etl/`, `src/` or `etl/views.sql`: `git grep finished_year` returns only `drizzle/` migrations and the down file.
-- [ ] AC-5: On a spine row that is read here, *Change date…* opens the four-option finish-date control. Saving *Pick a date* writes that `completed_at` as `exact`, *Year only* writes July 1st as `approximate`, and *No date* writes NULL / `none`. No other placement's row changes.
-- [ ] AC-6: The status control and the finish-date control meet the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): the status group is a real button group with the current value `aria-pressed`; DNF is grey and nothing in it resolves to `--danger`; the finish-date options are named radio inputs; focus returns to the opener when the control closes; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-1 (roadmap **Check:**, verbatim): test asserts a book finished 2024-03-11 appears in both a March 2024 query and a 2024 query; that reading it again creates a second `read_events` row with `reread_of` set and leaves the first intact; and that `book_status` still reports one current status. A backfilled year lands as `YYYY-07-01` with precision `approximate`, and a date with the wrong precision violates the CHECK. Test that marking a book `read` from the master list writes the event and leaves an existing rating intact (R0-C1), and that `to_read → reading → read` round-trips through the UI. A book marked read through the UI on 2026-10-02 appears under the 2026 year chip and in `books_by_year` for 2026; a `read` book with no date appears under *No year*. Choosing *Year only* for 2019 in the finish-date control stores `2019-07-01` / `approximate`, never `exact`, and *No date* stores NULL / `none`. `finished_year` no longer exists. Up → down → up preserves the rows, including their precision.
+- [x] AC-2: The up → down → up test asserts row values, not just that it ran. It covers a `book_status` row with `finished_year = 2019` (back as `2019-07-01` / `approximate`, then `2019` after down), an `exact` 2024-03-11 row (`finished_year = 2024` after down), and a `none` row (NULL date and `none` after both trips). `read_events` rows written before the down are gone after it and recreated empty by the second up. `npm run check:migrations` passes with the down file present.
+- [x] AC-3: A `read_events` row with both `book_id` and `placement_id` set, or neither, violates its CHECK. A comic event references `run_issues.id`. `read_events` is in `USER_TABLES`, and `test/export-tables.test.ts` passes.
+- [x] AC-4: `etl/extract.py` writes `finished_on` / `finished_on_precision` columns and no `finished_year` to `book_status.csv`. `etl/test_extract.py` asserts the header, and `npm run test:db:reset` (migrate, then views) succeeds. No `finished_year` reference is left in `etl/`, `src/` or `etl/views.sql`: `git grep finished_year` returns only `drizzle/` migrations and the down file.
+- [x] AC-5: On a spine row that is read here, *Change date…* opens the four-option finish-date control. Saving *Pick a date* writes that `completed_at` as `exact`, *Year only* writes July 1st as `approximate`, and *No date* writes NULL / `none`. No other placement's row changes.
+- [x] AC-6: The status control and the finish-date control meet the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): the status group is a real button group with the current value `aria-pressed`; DNF is grey and nothing in it resolves to `--danger`; the finish-date options are named radio inputs; focus returns to the opener when the control closes; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -66,9 +66,16 @@ Finishing a book records when you finished it: today, a picked date, just the ye
 
 ## Follow-ups
 
-- `finished_year` is still described as a stored column in `docs/ARCHITECTURE.md` (§ 1 table, 2.17), `docs/DIAGRAMS.md` § 1, `docs/HANDOFF.md` (the tabs table), `docs/FEATURES.md` #4, and `.claude/rules/schema.md` ("until then … still the stored column"): bring them up to date (approved at plan)
-- 1.16 has no task file: run `/new-task 1.16` on this branch before close-out, as Context asks (approved at plan)
-- Candidate decision: comic reads do not write `read_events` yet; the table takes `placement_id` events, and logging ticks, ranges, Adopt, undo and the loaded reads is left to the work that first reads comic events (approved at plan)
+- `docs/ARCHITECTURE.md` still called `book_status.finished_year` the stored column (§ 1 tabs table, 2.17, the known-gaps list) (approved at plan) → docs/ARCHITECTURE.md § 2.17
+- `docs/DIAGRAMS.md`'s books ERD still drew `finished_year` and had no `read_events` (approved at plan) → docs/DIAGRAMS.md § 2. Books data model
+- `docs/HANDOFF.md`'s tabs table still read `books_by_year` over `finished_year` (approved at plan) → docs/HANDOFF.md § 4. Architecture decisions
+- `docs/FEATURES.md` #4 still described `finished_year` as current (approved at plan) → docs/FEATURES.md § Part 2 — What you didn't list and probably want (#4)
+- `.claude/rules/schema.md` said `finished_year` was still stored "until 1.5", and had no rule for the log (approved at plan) → .claude/rules/schema.md § A book's finish year is derived
+- 1.16 had no task file, so `/next-task` couldn't reach it (approved at plan) → docs/tasks/TASK-025-dates-in-new-york.md (new, Draft)
+- Candidate decision: `read_events` is the books' log, a reread is Reading → Read, and comic reads don't write it yet (approved at plan) → docs/review/decisions.md § D-65
+- ui-verifier: *Change date…* opens on today's date, not the stored one, so reopening it after a save looks unchanged → not tracked: by design (plan step 11); showing the stored date needs the spine rows to carry `completed_at`, and 3.5's issue sheet lists each placement with its date
+- ui-verifier: the top bar's *Ledger* link is 46×23px at phone and tablet widths → not tracked: already tracked in docs/tasks/TASK-014-app-shell.md § Context
+- ui-verifier: *Show all 181* (`/books`) and *All runs* (run page) are 17px tall → not tracked: inline text links in a sentence, which WCAG 2.5.8's inline exception exempts from the 24px target; neither changed here
 
 ## Plan
 
@@ -97,11 +104,17 @@ Approved 2026-10-13. Size: ~24 files, schema and UI together; kept whole (`split
 - AC-1 UI, AC-5 UI, AC-6: `test/reading-log.test.tsx` (happy-dom; `fetch` routed into the real route handlers on the test database) — `to_read → reading → read` round trip, *Year only* / *No date*, *Change date…* sheet, `aria-pressed`, named radios, focus return. Screenshots: ui-verifier at every `ui.viewports` width, light and dark.
 - AC-4: `etl/test_extract.py` (header and values), `etl/test_views.sql` (`books_by_year` derives the year), `npm run test:db:reset`, `git grep finished_year`.
 
+**Revision 1 (review round 1, owner approved 2026-10-13).** Four safety fixes, each with a test: `undoAddBooks` refuses once the book has `read_events` (`test/add-book.test.ts`); `undoBookStatus` refuses once the status is no longer the one the write set (`BookStatusChange.status`); `redateIssue` refuses a placement whose issue or run is removed, as the mark's POST does; the down file drops the `status_user_year` expression index. Also changed, as consequences of the plan: `test/add-book.test.ts` (the books page's rows need `UndoProvider` and the router) and `test/placement-progress-migration.test.ts` (0011's down runs before 0007's). AC-4's grep is read as `git grep finished_year -- src etl` (owner, 2026-10-13): tests that prove the column is gone, and docs, still name it.
+
 **Risks.** Postgres client under happy-dom (fallback: the UI test asserts requests, the DB test the handler). `extract(year …)` index must be immutable on `date` (it is). The manual step's "mark it read again" is done as Reading → Read (decision C).
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 FAIL(2: `add-book` page render without the router and undo stack; the 0007 round trip blocked by `read_events`' FK) → R2 PASS → R3 PASS (after review round 1's fixes)
+- Audit R1 PASS (every AC PROVEN; nothing non-discriminating)
+- Schema R1 APPROVE (minors: down file left the `status_user_year` index; a status-only undo didn't check the status — both fixed, plan revision 1)
+- Spec R1 CHANGES (roadmap checkbox; follow-ups with no destination; the `undoAddBooks` guard unplanned and untested; `redateIssue` didn't check issue/run soft delete; AC-4's grep wording, read as `-- src etl` by the owner) → R2 APPROVE (with the follow-ups check)
+- UI R1 PASS (360–1280, light and dark; DNF grey, never `--danger`; focus returns; no console errors; dev data restored)
 
 ## Blocked
 
@@ -109,7 +122,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (R1 FAIL, R2 and R3 PASS)
+- Review rounds: 2
+- First-pass AC FAILs: 0 (AC-4's wording was a spec gap, not a failure)
+- Plan revisions after approval: 1
