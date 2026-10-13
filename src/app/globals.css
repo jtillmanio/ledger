@@ -831,7 +831,7 @@ textarea.txt.capture-field[aria-invalid="true"]{border-color:var(--danger)}
 .row.note .btn{flex:0 0 auto;min-height:32px;text-decoration:none}
 .resolve{display:flex;flex-direction:column;align-items:flex-end;gap:.375rem;flex:0 0 auto}
 .resolve-pick{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:.375rem}
-.resolve-pick .chip{display:inline-flex;align-items:center;min-height:32px;color:var(--ink)}
+.resolve-pick .chip{display:inline-flex;align-items:center;min-height:32px;color:var(--ink);font:inherit;font-size:.8125rem}
 .resolve-pick .chip[aria-disabled="true"]{color:var(--muted);border-style:dashed}
 .inbox-foot{margin-top:.75rem}
 /* The dashboards' *N in inbox* (mockup `dashextras`): grey, like every chip
