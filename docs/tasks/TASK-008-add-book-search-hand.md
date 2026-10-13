@@ -1,14 +1,14 @@
 ---
 id: TASK-008
 title: 1.4c Add a book by search or by hand, to a destination
-status: Ready
+status: In progress
 depends_on: [TASK-007]
 size: L
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 1f3160f
 ---
 
 # TASK-008 — 1.4c Add a book by search or by hand, to a destination
@@ -62,9 +62,39 @@ A book can be added from an Open Library search or typed by hand, straight into 
 - Automated: `test/add-book.test.ts` with a mocked Open Library client: the Cosmere shelf add, reuse from both paths, the by-hand book with no pages, the failure path writing nothing, estimated vs stated word counts, undo of a created and of a reused book (AC-1, AC-2, AC-5). `test/add-book-sheet.test.tsx`: destination preselection, button labels, the disabled destinations with reasons, required-field errors, *metadata pending*, focus return (AC-2, AC-3, AC-4, AC-6).
 - Manual: `npm run dev`, *Add books*, search for a known title → expected: results with covers and page counts. Add it to Someday → expected: it shows under *To read*. Add the same title by hand → expected: *already in your library*, nothing new created.
 
+## Follow-ups
+
+- `design/mockups-index.md` § Not shown 15 still describes `add` before 1.4c; rewrite it for the drawn layout, noting the paste lede drops *then Open Library* (the paste check never asks it; owner, plan gate) (approved at plan)
+- The mockup's secondary *Year or quarter…* button on a result row is left for 2.3, with the chip (approved at plan)
+- 4.3 should know that 1.4c already renders `data-enrich="pending"` on spine rows, the master list and the add sheet's results (approved at plan)
+- Candidate decision D-62: Open Library responses are cached in Postgres like Metron's (D-53), `open_library_cache`, not exported (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-10-12 at `1f3160f`. Owner answers at the gate: cache in a new `open_library_cache` table (D-62); Paste a list gets undo and honours *Add to*; *metadata pending* = no external record (books: `open_library_id` and `hardcover_id` null; issues: `metron_id` null); the paste lede stays truthful (*Matched against your library first. You confirm anything ambiguous.*).
+
+**Steps**
+
+0. Schema: `open_library_cache(key text PK, body jsonb NOT NULL, fetched_at timestamptz NOT NULL DEFAULT now())` in `src/db/schema.ts`, generated migration (create only, no down file), `NOT_EXPORTED` in `src/db/export-tables.ts`.
+1. `src/lib/openlibrary.ts` (server-only): `search.json` with title, author, first year, `number_of_pages_median`, `cover_i`; answers `ok | rate_limited(retryIn) | error`. Each search cached 7 days; a 429's Retry-After written as the `hold` row and nothing calls while it lasts; a failure writes nothing; User-Agent, 10 s timeout.
+2. `src/db/writes.ts`: factor `createBooks(tx, …)` out of `addBooks()` (D-61 ids, authors and series by slug, optional OL facts). `addBook(userId, item, destination)`: one transaction under the add-books lock; reuse a live book with the same `open_library_id` or the same title and author (D-61), else create it (OL: id, cover, year, pages, `word_count = pages × words_per_page` `estimated`; by hand: typed words `stated`, pages-only `estimated`, neither null). Then the destination row: Someday = `book_status to_read` ON CONFLICT DO NOTHING (existing status kept); Shelf = `shelf_books` at max ordinal + 1 (shelf must be the user's, `kind = books`). `addBooks()` takes the destination too. `undoAddBooks(userId, entry)`: delete the destination rows the add wrote (a status only while still `to_read`), soft-delete the books it created; refuses and changes nothing if any of them changed.
+3. `src/db/queries.ts`: `librarySearch(userId, q)` (title or author, with status and shelf count), `bookShelves(userId)`, `listBooks` + `open_library_id`/`hardcover_id`/`cover_url`, `runSpine` and `catalogSearch` + `metron_id` for the pending flag.
+4. Routes: `POST /api/books/search {q}` (library first, then OL; an OL hit you already have is listed once, as yours); `POST /api/books` (the add) and `DELETE /api/books` (its undo); `/api/books/bulk` passes a destination through and returns what undo needs; `GET /api/shelves` (fetched on tapping *Shelf…*, never on load).
+5. UI: `AddBooks.tsx` (*Add to* chips, then *Search · Paste a list · By hand*, real buttons; *On deck* and *Year or quarter…* `aria-disabled` with one visible reason); `BookSearch.tsx` (submit only; loading, rate-limited amber countdown + *Add it by hand*, error grey ×, empty; each result's button *Add to <dest>*); `ByHand.tsx` (title, author required with *Title is required* / *Author is required*; series, position, pages, words optional); `PasteBooks.tsx` loses its h1, heading *Or paste a list*, takes destination and `onDone`, pushes undo. Desktop ≥1024: Search/By hand left, Paste right.
+6. Hosts: `/books` *Add books* becomes a button opening `AddBooks` in `Sheet` (focus, inert, Esc, Back); router refresh after an add. `/books/add` is the full page on direct load; `?shelf=<id>` preselects that shelf (the *+ Add to shelf* route until Phase 5).
+7. Undo: each add pushes one entry; a reuse that wrote nothing notifies instead (*Already in your library*).
+8. *Metadata pending*: `Cover` component, `data-enrich="pending"`, dashed `--muted` outline + italic line, on `/books` rows, sheet results, spine rows and Add issues catalog rows.
+9. `src/app/globals.css`: result rows, chip row, cover and pending state (tokens only).
+
+**Files**: `src/db/schema.ts`, `drizzle/00xx_*.sql` + meta *(not in Files likely touched: the cache table)*, `src/db/export-tables.ts` *(new table)*, `src/lib/openlibrary.ts`, `src/db/writes.ts`, `src/db/queries.ts`, `src/app/api/books/search/route.ts`, `src/app/api/books/route.ts`, `src/app/api/books/bulk/route.ts` *(destination + undo)*, `src/app/api/shelves/route.ts` *(new: shelf picker)*, `src/components/AddBooks.tsx` (the task's `AddBookSheet.tsx`), `src/components/BookSearch.tsx`, `src/components/ByHand.tsx`, `src/components/Cover.tsx` *(new)*, `src/components/AddBooksButton.tsx` *(new: the sheet opener)*, `src/components/PasteBooks.tsx`, `src/components/IssueRow.tsx` + `src/components/IssueSearch.tsx` + `src/lib/issue-search.ts` *(AC-4 issues)*, `src/app/books/page.tsx`, `src/app/books/add/page.tsx`, `src/app/globals.css`, `design/mockups-index.md` (follow-up), tests below.
+
+**Test strategy**
+
+- AC-1, AC-2 (word counts), AC-5, cache: `test/add-book.test.ts` (TEST database, `fetch` mocked) — Cosmere shelf add from an OL result; reuse from search and by hand; by hand with no pages lands in Someday with null words; an OL failure writes nothing (no book, no cache row) and by hand still adds; estimated vs stated; undo of a created and of a reused book; Paste a list undo and shelf destination; cache row on success, a 429 hold stops the next call.
+- AC-2 (UI), AC-3, AC-4, AC-6: `test/add-book-sheet.test.tsx` (happy-dom) — submit-only search, library before OL, required-field errors writing nothing, destination preselection and button labels, disabled destinations with reason, pending cover on book and issue rows, empty/loading/rate-limited/error states, focus on heading at open and back on the opener by Cancel, Esc, Back and confirm, `inert` behind.
+- AC-6 screenshots: ui-verifier at every `ui.viewports` width, light and dark.
+
+**Risks**: `/books` query budget (4) — the sheet asks for nothing on load, shelves only on tap. Twelve-plus files with schema and UI together: kept whole by `never-split`, attended.
 
 ## Review log
 

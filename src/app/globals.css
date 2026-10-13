@@ -752,5 +752,54 @@ input.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .paste-check[aria-disabled="true"]{cursor:progress}
 .paste-lede{margin-top:.5rem}
 
+/* --- Add books (task 1.4c; mockups `add`, `shelves`, `apistates`) ---------
+   Add to first, then Search · Paste a list · By hand. On the full page from
+   1024px, Paste sits on the right beside Search or By hand; in the sheet it is
+   one column at every width. The chips are real buttons (mockups-index, Not
+   shown 4): pressed is the brand fill, unavailable is grey with its reason. */
+.addto{display:flex;flex-wrap:wrap;align-items:center;gap:.375rem;margin:.75rem 0 0}
+.addto-k{font-size:.8125rem;color:var(--muted);margin-right:.25rem}
+.addto .chip{font:inherit;font-size:.8125rem;min-height:32px;padding:.25rem .75rem;cursor:pointer;
+  background:var(--surface);border:1px solid var(--faint-deco);color:var(--ink-2)}
+.addto .chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--on-brand);font-weight:600}
+.addto .chip[aria-disabled="true"]{background:none;color:var(--muted);border-style:dashed;cursor:not-allowed}
+.addto-later{margin:.375rem 0 0}
+.addto-pick{margin:.5rem 0 0}
+.addb .seg{margin-top:1rem}
+.addb .add-failed{margin:.75rem 0 0}
+.sheet .addb .add-2up{display:block}
+.sheet .addb .add-bar{margin:1.25rem -.875rem 0}
+@media (min-width:1024px){
+  main.add .addb .pane-paste[hidden]{display:block}
+  main.add .addb[data-mode="paste"] .pane-search[hidden]{display:block}
+}
+.res-btns{margin-top:.5rem}
+.res-btns .btn{flex:0 0 auto}
+
+.byhand .hrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 .75rem}
+.byhand .hrow:has(.hf-position){grid-template-columns:minmax(0,1fr) 5.5rem}
+.hfield input.txt{display:block;width:100%}
+.add-label .opt{font-weight:400;color:var(--muted)}
+/* A missing title is a validation failure, so it may be red (UX floor). */
+.field-err{margin:.375rem 0 0;font-size:.8125rem;color:var(--danger)}
+.field-err span{font-weight:700}
+input.txt[aria-invalid="true"]{border-color:var(--danger)}
+.hand-note{margin:.75rem 0 0}
+
+/* Covers in rows, and *metadata pending* (UX floor; STYLE_GUIDE § 9): a dashed
+   --muted outline and an italic line. A missing cover is neutral. Real covers
+   on every row, their sizes and Show covers are 4.3's. */
+.cv[data-enrich="pending"]{background:var(--sunk);border:1px dashed var(--muted);box-shadow:none}
+.row.res .cv.none{border:0;background:var(--sunk)}
+.enrich{display:block;font-size:.6875rem;color:var(--muted);font-style:italic;margin-top:.125rem}
+.res-tags .enrich{margin-top:0;align-self:center}
+.rows .row.book-row{display:flex;gap:.75rem;align-items:flex-start}
+.book-row .cv,.iss .cv{flex:0 0 var(--cv-row-w);width:var(--cv-row-w);height:var(--cv-row-h);
+  border-radius:var(--r-cell);object-fit:cover;background:var(--sunk)}
+.book-row .cv.none{display:none}
+.iss:has(> .cv){grid-template-columns:2.75rem 1fr auto auto auto}
+
 .add-sk-text{height:9rem}
 .add-sk-slate{display:block;height:6rem;border-radius:14px;margin-top:.5rem}
+/* Paste is a tab of its own below 1024px (task 1.4c), so its skeleton is too. */
+@media (max-width:1023.98px){.add-sk-paste{display:none}}

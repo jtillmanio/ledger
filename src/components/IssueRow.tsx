@@ -3,6 +3,7 @@
 import { useEffect, useId, useOptimistic, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import Cover, { Pending } from "@/components/Cover";
 import Menu from "@/components/Menu";
 import NextStrip from "@/components/NextStrip";
 import RangeSheet, { type RangeChoice } from "@/components/RangeSheet";
@@ -13,6 +14,8 @@ type Issue = {
   id: string; placement_id: number; sequence: number; label: string;
   type: string; notes: string | null; completed: boolean;
   read_elsewhere: string[]; read_elsewhere_when: string | null;
+  /** No Metron record yet: *metadata pending* (task 1.4c). Real covers on every row are 4.3's. */
+  pending?: boolean;
 };
 
 /** The range sheet's subject: placement ids in reading order, and where focus goes back to. */
@@ -353,7 +356,9 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
               {!issue.completed && issue.read_elsewhere.length > 0 && (
                 <Seen runs={issue.read_elsewhere} when={issue.read_elsewhere_when} />
               )}
+              {issue.pending && <Pending />}
             </div>
+            {issue.pending && <Cover url={null} pending />}
             <span className="iseq mono">{issue.sequence}</span>
             {/* stopPropagation: opening the menu is not a click on the row. */}
             <span className="rowmenu" onClick={(e) => e.stopPropagation()}>

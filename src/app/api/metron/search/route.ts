@@ -101,5 +101,6 @@ function fromCatalog(h: CatalogHit, metronId: number | null): SearchResult {
     key: h.key, label: h.label, issueId: h.issue_id, metronId: h.metron_id ?? metronId,
     coverDate: h.cover_date, coverUrl: h.cover_url,
     runs: h.runs, runTitles: h.run_titles, inThisRun: h.in_this_run, unparseable: false, idTaken: false,
+    pending: h.metron_id === null,
   };
 }

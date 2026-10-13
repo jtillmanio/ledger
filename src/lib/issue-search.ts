@@ -70,6 +70,8 @@ export type SearchResult = {
   unparseable: boolean;
   /** A new label whose id another label already holds (D-15, D-59): it would get `-2`. */
   idTaken: boolean;
+  /** A catalog row with no Metron record yet: *metadata pending* until 4.1 fills it (task 1.4c). */
+  pending?: boolean;
 };
 
 /**

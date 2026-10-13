@@ -2,6 +2,7 @@
 
 import { useEffect,useImperativeHandle, useRef, useState, type Ref } from "react";
 import type { SearchAnswer } from "@/app/api/metron/search/route";
+import Cover, { Pending } from "@/components/Cover";
 import { coverMonth, type SearchResult } from "@/lib/issue-search";
 
 type State =
@@ -197,11 +198,7 @@ function Results({ title, more, rows, staged, onToggle }: {
           const when = coverMonth(r.coverDate);
           return (
             <li key={r.key} className="row res" data-staged={on || undefined}>
-              {r.coverUrl
-                // A Metron CDN thumbnail, drawn as it comes: decorative beside the label.
-                // eslint-disable-next-line @next/next/no-img-element
-                ? <img className="cv" src={r.coverUrl} alt="" width={40} height={60} loading="lazy" decoding="async" />
-                : <span className="cv none" aria-hidden="true" />}
+              <Cover url={r.coverUrl} pending={r.pending === true} />
               <div className="rb">
                 <span className="rh"><span className="rt">{r.label}</span>{when && <span className="rm mono">{when}</span>}</span>
                 <div className="res-tags">
@@ -209,6 +206,7 @@ function Results({ title, more, rows, staged, onToggle }: {
                     : r.issueId !== null ? <span className="tag">{runCount(r.runs, r.runTitles)}</span> : null}
                   {r.unparseable && <span className="tag">not in the label grammar</span>}
                   {r.idTaken && <span className="tag">id taken</span>}
+                  {r.pending && <Pending />}
                 </div>
               </div>
               {!r.inThisRun && (

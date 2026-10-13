@@ -1,6 +1,7 @@
 import { sql } from "./index";
 import { readWhen, type Precision } from "@/lib/format";
 import { FRESH_DAYS } from "@/lib/metron";
+import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
 
 /* Raw SQL against the views in etl/views.sql. Drizzle's query builder is used
  * for writes; reads that join three or four views are clearer as SQL. */
@@ -185,12 +186,14 @@ function runSpine(userId: string, runId: string) {
   // issue_read_runs: the spine's grey hint (0.8b). It never includes this run, so
   // the hint can return after an untick. The date is only that of a read
   // elsewhere, so it is withheld while the row is read here.
+  // `pending`: no Metron record yet, so *metadata pending* (task 1.4c) until 4.1 fills it.
   return sql<{
     id: string; placement_id: number; sequence: number; label: string; type: string;
     notes: string | null; completed: boolean; read_elsewhere: string[];
-    first_read_at: Date | null; first_read_precision: Precision;
+    first_read_at: Date | null; first_read_precision: Precision; pending: boolean;
   }[]>`
     SELECT ri.issue_id AS id, ri.id AS placement_id, ri.sequence, i.label, ri.type, ri.notes,
+           (i.metron_id IS NULL) AS pending,
            (p.placement_id IS NOT NULL) AS completed,
            COALESCE(rr.titles, '{}') AS read_elsewhere,
            CASE WHEN p.placement_id IS NULL THEN irr.first_read_at END AS first_read_at,
@@ -252,7 +255,9 @@ export type BookRow = {
   id: string; title: string; author: string | null; series: string | null;
   series_position: number | null; genre: string | null; word_count: number | null;
   status: string; finished_year: number | null; planned_year: number | null;
-  rating: number | null;
+  rating: number | null; cover_url: string | null;
+  /** No external record yet (no Open Library or Hardcover id): *metadata pending* (task 1.4c). */
+  pending: boolean;
 };
 
 /** `year` is a finished or planned year; `noYear` is the read books that have
@@ -264,7 +269,8 @@ export async function listBooks(
   const { status = null, genre = null, year = null, noYear = false, q = null } = opts;
   return sql<WithTotal<BookRow>[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position,
-           b.genre, b.word_count,
+           b.genre, b.word_count, b.cover_url,
+           (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
            COALESCE(st.status, 'to_read') AS status,
            st.finished_year, st.rating,
            pl.planned_year,
@@ -480,6 +486,73 @@ export async function metronFacts(metronIds: number[]) {
 export async function runChoices() {
   return sql<{ id: string; title: string }[]>`
     SELECT id, title FROM runs WHERE deleted_at IS NULL AND NOT placeholder ORDER BY title`;
+}
+
+/** A library book Add books' *Search* lists (task 1.4c). */
+export type LibraryHit = {
+  id: string; title: string; author: string | null; series: string | null; series_position: number | null;
+  published_year: number | null; page_count: number | null; word_count: number | null;
+  word_count_source: "stated" | "estimated" | null; cover_url: string | null; open_library_id: string | null;
+  /** No external record yet: *metadata pending*. */
+  pending: boolean;
+  /** Your status for it, if any. */
+  status: string | null;
+  /** How many of your shelves hold it: *on 2 shelves*. */
+  shelves: number;
+};
+
+/**
+ * Add books, *Search* (task 1.4c): your library's books for a query, before
+ * Open Library's. A book matches when every word of the query is in its title
+ * and author, or because it is one of the books Open Library answered with,
+ * by work id or by the same title and author (D-61). Exact titles first; at
+ * most 20.
+ */
+export async function librarySearch(
+  userId: string, q: string, also: { openLibraryIds: string[]; titles: string[]; authors: string[] },
+) {
+  // Each word, its LIKE wildcards escaped, must appear somewhere in title and author.
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean).map((w) => `%${w.replace(/[\\%_]/g, "\\$&")}%`);
+  return sql<LibraryHit[]>`
+    SELECT b.id, b.title, a.name AS author, bs.name AS series, b.series_position,
+           b.published_year, b.page_count, b.word_count, b.word_count_source, b.cover_url, b.open_library_id,
+           (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
+           st.status,
+           (SELECT COUNT(*) FROM shelf_books sb JOIN shelves sh ON sh.id = sb.shelf_id
+            WHERE sb.book_id = b.id AND sh.user_id = ${userId})::int AS shelves
+    FROM books b
+    LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_series bs ON bs.id = b.series_id
+    LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+    WHERE b.deleted_at IS NULL AND (
+      (cardinality(${words}::text[]) > 0
+        AND lower(b.title || ' ' || COALESCE(a.name, '')) LIKE ALL (${words}::text[]))
+      OR b.open_library_id = ANY(${also.openLibraryIds}::text[])
+      OR (lower(b.title), lower(a.name)) IN (
+        SELECT lower(t), lower(au) FROM unnest(${also.titles}::text[], ${also.authors}::text[]) AS o(t, au)))
+    ORDER BY (lower(b.title) = lower(${q.trim()})) DESC, b.title, a.name, b.id
+    LIMIT 20
+  `;
+}
+
+/** Your words per page (ARCHITECTURE 6), or the column's default when you have no settings yet. */
+export async function wordsPerPage(userId: string): Promise<number> {
+  const [row] = await sql<{ wpp: number }[]>`
+    SELECT words_per_page AS wpp FROM reading_settings WHERE user_id = ${userId}`;
+  return row?.wpp ?? DEFAULT_WORDS_PER_PAGE;
+}
+
+/** One of your book shelves, for Add books opened from it (task 1.4c), or null. */
+export async function shelfFor(userId: string, shelfId: string) {
+  const [row] = await sql<{ id: string; name: string }[]>`
+    SELECT id, name FROM shelves WHERE id = ${shelfId} AND user_id = ${userId} AND kind = 'books'`;
+  return row ?? null;
+}
+
+/** Your book shelves, for *Add to*'s *Shelf…* (task 1.4c). */
+export async function bookShelves(userId: string) {
+  return sql<{ id: string; name: string }[]>`
+    SELECT id, name FROM shelves WHERE user_id = ${userId} AND kind = 'books' ORDER BY lower(name), id`;
 }
 
 type BookMatchRow = {

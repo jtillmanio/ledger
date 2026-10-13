@@ -47,8 +47,15 @@ beforeEach(() => {
   });
   vi.stubGlobal("fetch", fetchMock);
   router.push.mockReset();
-  act(() => root.render(<UndoProvider><PasteBooks /></UndoProvider>));
+  onAdded.mockReset();
+  act(() => root.render(
+    <UndoProvider>
+      <PasteBooks level={2} target={{ kind: "someday" }} cancel={<a href="/books" className="btn sec">Cancel</a>} onAdded={onAdded} />
+    </UndoProvider>));
 });
+
+/** What Add books does once a paste is added: the sheet closes, or the page goes to To read (task 1.4c). */
+const onAdded = vi.fn();
 
 afterEach(() => {
   act(() => root.unmount());
@@ -86,7 +93,10 @@ const PASTE = [
 
 describe("the states (AC-5)", () => {
   it("is empty with one action, and the confirm says why it can't add", () => {
-    expect(container.querySelector("h1")!.textContent).toBe("Add books");
+    // Beside Search and By hand now (task 1.4c), under Add books' own heading.
+    expect(container.querySelector("h2")!.textContent).toBe("Or paste a list");
+    expect(container.querySelector(".paste-lede")!.textContent)
+      .toBe("Matched against your library first. You confirm anything ambiguous.");
     expect(container.querySelector(".slate")!.textContent).toContain("Nothing to review yet.");
     expect(container.querySelectorAll(".slate button")).toHaveLength(1);
     expect(checkButton()).toBeNull();
@@ -170,11 +180,12 @@ describe("the review (AC-3, AC-5)", () => {
     expect(confirms()).toEqual([{ items: [
       { line: 2, use: WIND.bookId },
       { line: 3, title: "Golden Son", author: "Pierce Brown", series: "Red Rising", position: 2 },
-    ] }]);
-    // Then To read, where the new book is, with a toast saying what was added.
-    expect(router.push).toHaveBeenCalledWith("/books?status=to_read");
+    ], destination: { kind: "someday" } }]);
+    // Then on (To read, or the sheet closes), with a toast saying what was added, and its Undo (task 1.4c).
+    expect(onAdded).toHaveBeenCalledTimes(1);
     expect(container.querySelector(".toast-region .toast-label")!.textContent).toBe("1 book added to Someday");
     expect(container.querySelector(".toast-region .toast-detail")).toBeNull();
+    expect(container.querySelector(".toast-region .toast-undo")!.textContent).toBe("Undo");
     // Held until the page changes: a second tap can't add again.
     expect(confirmButton().textContent).toBe("Add 1 book");
     expect(reason()).toBe("Adding…");
@@ -202,7 +213,30 @@ describe("the review (AC-3, AC-5)", () => {
     expect(container.querySelector('[role="alert"]')!.textContent)
       .toBe("× Couldn't add them. Nothing was written; your lines are still here.");
     expect(container.querySelector("textarea")!.value).toBe("Golden Son - Pierce Brown");
-    expect(router.push).not.toHaveBeenCalled();
+    expect(onAdded).not.toHaveBeenCalled();
     expect(reason()).toBeNull();
+  });
+});
+
+describe("Add to and undo (task 1.4c)", () => {
+  it("sends Add to's shelf, says it in the toast, and its Undo sends back exactly what the add wrote", async () => {
+    act(() => root.render(
+      <UndoProvider>
+        <PasteBooks level={3} target={{ kind: "shelf", shelfId: "cosmere", name: "Cosmere" }}
+          cancel={<button type="button" className="btn sec">Cancel</button>} onAdded={onAdded} />
+      </UndoProvider>));
+    expect(container.querySelector("h3")!.textContent).toBe("Or paste a list");
+    await type("Golden Son - Pierce Brown");
+    await click(checkButton()!);
+    await click(confirmButton());
+    expect(confirms()).toEqual([{ items: [{ line: 1, title: "Golden Son", author: "Pierce Brown", series: null, position: null }],
+      destination: { kind: "shelf", shelfId: "cosmere" } }]);
+    expect(container.querySelector(".toast-region .toast-label")!.textContent).toBe("1 book added to Cosmere");
+
+    fetchMock.mockImplementationOnce(async () => Response.json({ ok: true }));
+    await click(container.querySelector(".toast-region .toast-undo")!);
+    const [url, init] = fetchMock.mock.calls.at(-1)!;
+    expect([url, init.method, JSON.parse(init.body)]).toEqual(["/api/books", "DELETE",
+      { destination: { kind: "shelf", shelfId: "cosmere" }, created: ["golden-son-pierce-brown"], added: ["golden-son-pierce-brown"] }]);
   });
 });
