@@ -89,6 +89,22 @@ describe("a book finished 2024-03-11 (roadmap 1.5 check)", () => {
     const rows = await sql`SELECT status FROM book_status WHERE user_id = ${USER} AND book_id = 'wok'`;
     expect(rows).toHaveLength(1);
     expect(await status("wok")).toMatchObject({ status: "read", on: "2026-01-05" });
+    // Each read counts in its own year: the reread doesn't move the book out of 2024 (D-65).
+    expect(await year(2024)).toEqual(["wok"]);
+    expect(await year(2026)).toEqual(["wok"]);
+    expect([await byYear(2024), await byYear(2026)]).toEqual([1, 1]);
+  });
+
+  it("a Year only read, then Reading, then Read today, is under both years", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-13T15:00:00Z"));
+    await setStatus({ bookId: "wok", status: "read", finish: { mode: "year", year: 2019 } });
+    await setStatus({ bookId: "wok", status: "reading" });
+    await setStatus({ bookId: "wok", status: "read", finish: { mode: "today" } });
+    expect((await events("wok")).map((e) => [e.on, e.precision])).toEqual([
+      ["2019-07-01", "approximate"], ["2026-10-13", "exact"]]);
+    expect((await q.yearSummary(USER)).map((r) => [r.year, Number(r.books)])).toEqual([[2026, 1], [2019, 1]]);
+    expect(await year(2019)).toEqual(["wok"]);
   });
 
   it("saving Read on a book already read corrects the date and appends nothing", async () => {
@@ -165,12 +181,24 @@ describe("the master list's status control (R0-C1, R1-03)", () => {
     expect(await events("wok")).toHaveLength(1);
   });
 
-  it("DNF and a status off read keep the finish date, and leave the year chips", async () => {
+  it("DNF and a status off read keep the finish date, and the read stays counted in its year", async () => {
     await setStatus({ bookId: "wok", status: "read", finish: { mode: "date", date: "2024-03-11" } });
     await setStatus({ bookId: "wok", status: "dnf" });
     expect(await status("wok")).toMatchObject({ status: "dnf", on: "2024-03-11" });
-    expect(await year(2024)).toEqual([]);
-    expect(await byYear(2024)).toBe(0);
+    // The 2024 read happened; stopping a later attempt doesn't unread it (D-65).
+    expect(await year(2024)).toEqual(["wok"]);
+    expect(await byYear(2024)).toBe(1);
+  });
+
+  it("a read status with no log row, as the workbook loads it, counts once in its year", async () => {
+    await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+              VALUES (${USER}, 'mst', 'read', '2022-07-01', 'approximate'), (${USER}, 'wok', 'dnf', '2021-07-01', 'approximate')`;
+    expect((await q.yearSummary(USER)).map((r) => [r.year, Number(r.books)])).toEqual([[2022, 1]]);
+    expect(await year(2022)).toEqual(["mst"]);
+    expect(await year(2021)).toEqual([]);
+    // Its first read in the app takes over: the log row, not the status, is counted.
+    await setStatus({ bookId: "mst", status: "read", finish: { mode: "year", year: 2023 } });
+    expect((await q.yearSummary(USER)).map((r) => [r.year, Number(r.books)])).toEqual([[2023, 1]]);
   });
 
   it("refuses a removed book and an unknown status", async () => {

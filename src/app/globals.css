@@ -653,6 +653,9 @@ p{margin:0 0 .75rem;max-width:66ch}
 .chip{font-size:.8125rem;padding:.25rem .625rem;text-decoration:none;
   border:1px solid var(--rule);color:var(--muted);background:none;border-radius:999px}
 .chip[aria-current="true"]{border-color:var(--ink);color:var(--ink)}
+/* A chip's count, set apart from its label as the mockup's tab counts are
+   (`.seg span .n`): smaller mono, muted, a gap before it (task 1.5). */
+.chip .n{margin-left:.375rem;font-family:var(--mono);font-size:.6875rem;font-variant-numeric:tabular-nums;color:var(--muted)}
 input[type="search"],input[type="password"]{width:100%;padding:.625rem .75rem;font:inherit;
   background:var(--sunk);color:var(--ink);border:1px solid var(--rule);border-radius:9px}
 button.primary{font:inherit;padding:.625rem 1rem;cursor:pointer;background:var(--brand);

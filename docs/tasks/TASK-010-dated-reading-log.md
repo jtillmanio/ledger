@@ -106,6 +106,8 @@ Approved 2026-10-13. Size: ~24 files, schema and UI together; kept whole (`split
 
 **Revision 1 (review round 1, owner approved 2026-10-13).** Four safety fixes, each with a test: `undoAddBooks` refuses once the book has `read_events` (`test/add-book.test.ts`); `undoBookStatus` refuses once the status is no longer the one the write set (`BookStatusChange.status`); `redateIssue` refuses a placement whose issue or run is removed, as the mark's POST does; the down file drops the `status_user_year` expression index. Also changed, as consequences of the plan: `test/add-book.test.ts` (the books page's rows need `UndoProvider` and the router) and `test/placement-progress-migration.test.ts` (0011's down runs before 0007's). AC-4's grep is read as `git grep finished_year -- src etl` (owner, 2026-10-13): tests that prove the column is gone, and docs, still name it.
 
+**Revision 2 (owner, after the first preview walk, 2026-10-13).** Every read counts in its year: a new `book_reads` view in `etl/views.sql` (every `read_events` book row, plus a `read` status with no log row) feeds `books_by_year` and `listBooks`' year filter, so a Year only 2019 read followed by Reading → Read today is under 2019 and 2026; leaving `read` no longer takes a read out of its year. The down file drops `book_reads` before `read_events`. The year chips' counts get the mockup's count style (`.chip .n`: smaller mono, muted, set apart) instead of sitting flush against the year. D-65, `.claude/rules/schema.md`, `docs/ARCHITECTURE.md` § 1 and `docs/HANDOFF.md` § 4 say so.
+
 **Risks.** Postgres client under happy-dom (fallback: the UI test asserts requests, the DB test the handler). `extract(year …)` index must be immutable on `date` (it is). The manual step's "mark it read again" is done as Reading → Read (decision C).
 
 ## Review log
@@ -126,4 +128,4 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Verify rounds: 4 (R1 FAIL, R2–R4 PASS)
 - Review rounds: 2
 - First-pass AC FAILs: 0 (AC-4's wording was a spec gap, not a failure)
-- Plan revisions after approval: 1
+- Plan revisions after approval: 2

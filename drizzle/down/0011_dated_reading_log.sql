@@ -14,6 +14,7 @@
 -- The reading log itself has no home before 0011: read_events is dropped, and
 -- its rows with it. book_status still holds each book's latest read.
 DROP VIEW IF EXISTS "books_by_year";
+DROP VIEW IF EXISTS "book_reads";
 -- etl/views.sql's index on extract(year FROM finished_on): an older views.sql
 -- creates its own status_user_year only IF NOT EXISTS, so it has to go too.
 DROP INDEX IF EXISTS "status_user_year";

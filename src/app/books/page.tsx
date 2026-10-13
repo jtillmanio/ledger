@@ -68,14 +68,14 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
       <div className="filters">
         {yearList.map(([y, n]) => (
           <Link key={y} href={`/books?year=${y}`} className="chip" aria-current={year === String(y)}>
-            {y} <span className="mono">{n}</span>
+            {y} <span className="n">{n}</span>
           </Link>
         ))}
         {/* Read books with no finish date: without this the chips sum to fewer
             than the Read chip and nothing on the page reaches the rest (R2-08). */}
         {unyeared > 0 && (
           <Link href="/books?year=none" className="chip" aria-current={noYear}>
-            No year <span className="mono">{unyeared}</span>
+            No year <span className="n">{unyeared}</span>
           </Link>
         )}
       </div>

@@ -112,8 +112,10 @@ Release, test isolation) and the Hard rules a reviewer checks.
   `none`, and anything sorting by a finish date puts NULLs last. ARCHITECTURE 2.17.
 - **A book's finish year is derived from `finished_on`** (task 1.5, D-21). 1.5
   dropped `finished_year`, and it never comes back; every reader takes
-  `extract(year FROM finished_on)` and counts only `read` books, and a `read`
-  book with precision `none` is the *No year* group.
+  `extract(year FROM finished_on)`, and a `read` book with precision `none` is
+  the *No year* group. **Years count reads, not books** (D-65): read the year
+  through the `book_reads` view (every `read_events` row, plus a `read` status
+  with no log row), so a reread counts in its own year and the first keeps its.
 - **Reads are a log** (task 1.5, FEATURES #22). `read_events` holds one row per
   finished read, a book (`book_id`) or a placement (`placement_id`, never the
   issue), exactly one (`num_nonnulls` CHECK); `reread_of` is the same item's

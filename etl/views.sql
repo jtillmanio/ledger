@@ -441,16 +441,32 @@ LEFT JOIN (
 ) ci ON ci.run_id = r.id
 WHERE r.deleted_at IS NULL;
 
--- Books read per year per genre. Replaces the Read 20XX tabs. The year is
--- derived from the finish date (D-21, task 1.5): a year-only finish is its July
--- 1st, 'approximate', so it lands in its year; a read with no date ('none') is
--- in no year, and the books page's *No year* chip counts it instead.
+-- Every finished read of a book (task 1.5, D-65): each read_events row, plus a
+-- `read` status that has no log row yet (one loaded from the workbook before
+-- the log existed), which stands for its single read. A book read twice is two
+-- rows, so a reread counts in the year it happened and the first read keeps
+-- its year. A read with no date ('none') has a NULL finished_on and is in no year.
+CREATE OR REPLACE VIEW book_reads AS
+SELECT e.user_id, e.book_id, e.finished_on, e.finished_on_precision
+FROM read_events e
+WHERE e.book_id IS NOT NULL
+UNION ALL
+SELECT s.user_id, s.book_id, s.finished_on, s.finished_on_precision
+FROM book_status s
+WHERE s.status = 'read'
+  AND NOT EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = s.user_id AND e.book_id = s.book_id);
+
+-- Reads per year per genre. Replaces the Read 20XX tabs. The year is derived
+-- from the finish date (D-21): a year-only finish is its July 1st, 'approximate',
+-- so it lands in its year; an undated read is in no year, and the books page's
+-- *No year* chip counts it instead. `books` counts reads: a book read in 2019
+-- and again in 2026 is one in each.
 CREATE OR REPLACE VIEW books_by_year AS
-SELECT s.user_id, extract(year FROM s.finished_on)::int AS year, b.genre,
+SELECT r.user_id, extract(year FROM r.finished_on)::int AS year, b.genre,
        COUNT(*) AS books, SUM(b.word_count) AS words
-FROM book_status s JOIN books b ON b.id = s.book_id
-WHERE s.status = 'read' AND s.finished_on IS NOT NULL AND b.deleted_at IS NULL
-GROUP BY s.user_id, extract(year FROM s.finished_on)::int, b.genre;
+FROM book_reads r JOIN books b ON b.id = r.book_id
+WHERE r.finished_on IS NOT NULL AND b.deleted_at IS NULL
+GROUP BY r.user_id, extract(year FROM r.finished_on)::int, b.genre;
 
 -- Series completion. Replaces the Series tab.
 CREATE OR REPLACE VIEW series_progress AS

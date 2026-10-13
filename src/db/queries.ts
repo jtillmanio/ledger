@@ -265,8 +265,9 @@ export type BookRow = {
 };
 
 /** `year` is a finished or planned year; `noYear` is the read books that have
- * no finish date at all (R2-08), so the year chips and the Read chip add up.
- * A finish year counts only for a book that is `read`, as books_by_year's do. */
+ * no finish date at all (R2-08). A book is under every year it was read in,
+ * from book_reads, as books_by_year counts it (D-65): a reread doesn't move it
+ * out of its first year. */
 export async function listBooks(
   userId: string,
   opts: { status?: string; genre?: string; year?: number; noYear?: boolean; q?: string } = {},
@@ -296,7 +297,9 @@ export async function listBooks(
       AND (${status}::text IS NULL OR COALESCE(st.status,'to_read') = ${status})
       AND (${genre}::text  IS NULL OR b.genre = ${genre})
       AND (${year}::int    IS NULL
-           OR (st.status = 'read' AND extract(year FROM st.finished_on) = ${year})
+           OR EXISTS (SELECT 1 FROM book_reads r
+                      WHERE r.user_id = ${userId} AND r.book_id = b.id
+                        AND extract(year FROM r.finished_on) = ${year})
            OR EXISTS (SELECT 1 FROM reading_plan p2
                       WHERE p2.book_id = b.id AND p2.user_id = ${userId}
                         AND p2.planned_year = ${year}))

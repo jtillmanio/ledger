@@ -45,7 +45,7 @@ milliseconds, so there is no cache to invalidate and no state to drift.
 | `TRACKS` tab | `track_progress` view (distinct issues via `track_issue_counts`) |
 | `DASHBOARD` ready-to-read query | `readyToRead()` in `src/db/queries.ts` |
 | `CLOSURE` tab + Apps Script (removed July 2026) | `run_ancestors(run_id)` — a recursive CTE, cycle-safe, 48-level depth cap |
-| `Read 20XX` tabs | `books_by_year` view over `extract(year FROM book_status.finished_on)` (D-21) |
+| `Read 20XX` tabs | `books_by_year` view: reads per year, from `book_reads` (`read_events`, plus workbook reads with no log row) by `extract(year FROM finished_on)` (D-21, D-65) |
 | `To-Read 20XX` tabs | `reading_plan.planned_year` |
 | `Series!Percent Read` | `series_progress` view |
 | `Reading Orders!Track`, `Run Title` | dropped — they were lookups; the join replaces them |
