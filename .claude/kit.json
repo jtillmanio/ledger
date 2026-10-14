@@ -3,7 +3,7 @@
 
   "verify": {
     "sourceExtensions": [".ts", ".tsx", ".mjs"],
-    "fast": ["npx tsc --noEmit --pretty false", "npx eslint {file} --max-warnings 0 --no-warn-ignored"],
+    "fast": ["node scripts/tsc-brief.mjs", "npx eslint {file} --max-warnings 0 --no-warn-ignored"],
     "full": ["npx tsc --noEmit", "npm run lint", "npm run test:all", "npm run build"],
     "maxOutputLines": 60
   },
@@ -32,6 +32,17 @@
     { "pattern": "design/mockups.html", "hint": "Print one screen with: powershell -NoProfile -File scripts/screen.ps1 <data-id> (ids in design/mockups-index.md)" },
     { "pattern": "docs/TASKS.md", "hint": "Print one task with: powershell -NoProfile -File scripts/task.ps1 <id>" },
     { "pattern": "docs/CLAUDE-CODE-PROMPTS.md", "hint": "Grep for the heading you need, then Read with offset and limit." },
+    { "pattern": "docs/START-HERE.md", "hint": "~83 KB. Grep for the ^## headings (or the term you need), then Read that section with offset and limit." },
+    { "pattern": "docs/FEATURES.md", "hint": "~79 KB. Grep for the ^## headings (or the term you need), then Read that section with offset and limit." },
+    { "pattern": "design/STYLE_GUIDE.md", "hint": "~73 KB. Grep for the ^## headings (or the term you need), then Read that section with offset and limit." },
+    { "pattern": "docs/ARCHITECTURE.md", "hint": "~67 KB. Grep for the ^## headings (or the term you need), then Read that section with offset and limit." },
+    { "pattern": "docs/review/UI_AUDIT_REPORT.md", "hint": "~61 KB. Grep for the ^## headings (or the term you need), then Read that section with offset and limit." },
+    { "pattern": "docs/review/LEDGER.md", "hint": "~47 KB; grep the finding ID. Grep for the ^## headings (or the term you need), then Read that section with offset and limit." },
+    { "pattern": "docs/review/NEW_UI_AUDIT_REPORT.md", "hint": "~45 KB. Grep for the ^## headings (or the term you need), then Read that section with offset and limit." },
+    { "pattern": "docs/review/decisions.md", "hint": "~39 KB; grep the D-n you need. Grep for the ^## headings (or the term you need), then Read that section with offset and limit." },
+    { "pattern": "docs/kit-adoption.md", "hint": "~38 KB. Grep for the ^## headings (or the term you need), then Read that section with offset and limit." },
+    { "pattern": "docs/HANDOFF.md", "hint": "~32 KB. Grep for the ^## headings (or the term you need), then Read that section with offset and limit." },
+    { "pattern": "docs/review/S-findings.md", "hint": "~32 KB; grep the S-nn. Grep for the ^## headings (or the term you need), then Read that section with offset and limit." },
     { "pattern": "etl/data/issue_credits.csv", "hint": "Sidecar, ~4.9 MB. Grep it for the label or creator, or Read with offset and limit." },
     { "pattern": "etl/data/issue_details.csv", "hint": "Sidecar, ~1.5 MB. Grep it for the label, or Read with offset and limit." },
     { "pattern": "etl/data/label_review.csv", "hint": "Sidecar. Grep it for the label, or Read with offset and limit." },
