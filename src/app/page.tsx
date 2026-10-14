@@ -69,7 +69,7 @@ export default async function Home() {
         {ready.length === 0 && (
           <div className="empty">
             Nothing is fully unlocked. Finish a run in progress, or open{" "}
-            <Link href="/comics?readiness=ready_hard">the hard-prereqs-only list</Link>.
+            <Link prefetch={false} href="/comics?readiness=ready_hard">the hard-prereqs-only list</Link>.
           </div>
         )}
         {ready.map((r) => (
