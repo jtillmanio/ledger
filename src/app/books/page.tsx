@@ -58,23 +58,25 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
                placeholder="Search title or author" aria-label="Search books" />
       </form>
 
+      {/* A query-string chip is not prefetched: Next 16.4 fetches each one on
+          load, and a tap re-renders this same route. */}
       <div className="filters">
         <Link href="/books" className="chip" aria-current={!status && !genre && !year}>Everything</Link>
-        <Link href="/books?status=reading" className="chip" aria-current={status === "reading"}>Reading</Link>
-        <Link href="/books?status=to_read" className="chip" aria-current={status === "to_read"}>To read</Link>
-        <Link href="/books?status=read" className="chip" aria-current={status === "read"}>Read</Link>
+        <Link prefetch={false} href="/books?status=reading" className="chip" aria-current={status === "reading"}>Reading</Link>
+        <Link prefetch={false} href="/books?status=to_read" className="chip" aria-current={status === "to_read"}>To read</Link>
+        <Link prefetch={false} href="/books?status=read" className="chip" aria-current={status === "read"}>Read</Link>
       </div>
 
       <div className="filters">
         {yearList.map(([y, n]) => (
-          <Link key={y} href={`/books?year=${y}`} className="chip" aria-current={year === String(y)}>
+          <Link key={y} prefetch={false} href={`/books?year=${y}`} className="chip" aria-current={year === String(y)}>
             {y} <span className="n">{n}</span>
           </Link>
         ))}
         {/* Read books with no finish date: without this the chips sum to fewer
             than the Read chip and nothing on the page reaches the rest (R2-08). */}
         {unyeared > 0 && (
-          <Link href="/books?year=none" className="chip" aria-current={noYear}>
+          <Link prefetch={false} href="/books?year=none" className="chip" aria-current={noYear}>
             No year <span className="n">{unyeared}</span>
           </Link>
         )}
@@ -82,7 +84,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
 
       <div className="filters">
         {GENRES.map((g) => (
-          <Link key={g} href={`/books?genre=${encodeURIComponent(g)}`} className="chip"
+          <Link key={g} prefetch={false} href={`/books?genre=${encodeURIComponent(g)}`} className="chip"
                 aria-current={genre === g}>{g}</Link>
         ))}
       </div>
@@ -133,7 +135,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
       {seriesList.cut && (
         <p className="muted small mono">
           {seriesList.shown.length} of {seriesList.total} series ·{" "}
-          <Link href={seriesAllHref({ status, genre, year, q })}>Show all {seriesList.total}</Link>
+          <Link prefetch={false} href={seriesAllHref({ status, genre, year, q })}>Show all {seriesList.total}</Link>
         </p>
       )}
     </main>
