@@ -161,3 +161,13 @@ Release, test isolation) and the Hard rules a reviewer checks.
   are the user's opinion. Different tables, don't merge them.
 - `etl/extract.py` is the migration from the workbooks. Changing its output
   format means re-running against both `.xlsx` files and diffing the CSVs.
+- **Migrations that drop or retype a column ship a down file.** `drizzle-kit`
+  writes forward-only SQL. A migration that drops, retypes or merges columns also
+  adds `drizzle/down/<tag>.sql` by hand, and its task test runs up → down → up
+  asserting row values, not just that it ran — including that a precision-`none`
+  row is still `none` with a NULL date afterwards. `drizzle/down/0004_date_precision.sql`
+  shows the file shape but is **not** the standard: it is lossy by design (undated
+  reads come back as `exact` `now()`), which was acceptable only because the
+  database was disposable. Do not copy that part.
+  Hand-edit the generated file when a retype needs `USING`. Verify with
+  `npm run test:db:reset`, which runs `drizzle-kit migrate`, not `db:push`.
