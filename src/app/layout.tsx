@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import Link from "next/link";
 import { preload } from "react-dom";
 import "./globals.css";
+import AppNav from "@/components/AppNav";
 import { UndoProvider } from "@/components/Undo";
 
 // Fonts are self-hosted @font-face rules in globals.css (D-40): no request
@@ -20,18 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <nav className="bar">
-          <div className="bar-inner">
-            <Link href="/" className="home">Ledger</Link>
-            <Link href="/comics">Comics</Link>
-            <Link href="/books">Books</Link>
-            {/* Capture from anywhere (task 1.4b) until 1.8's shell puts Inbox (N) in its sidebar. */}
-            <Link href="/inbox">Inbox</Link>
-            {/* A plain link: <Link> prefetches, and a prefetch of a route handler
-                runs it, so every page view built the whole export (task 0.9). */}
-            <a href="/api/export">Export</a>
-          </div>
-        </nav>
+        <AppNav />
         {/* App-wide: the spine, the queue (1.10) and the add flows (1.3c, 1.4c)
             all push onto the one undo stack (task 1.2). */}
         <UndoProvider>{children}</UndoProvider>
