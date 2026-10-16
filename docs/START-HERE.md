@@ -1107,10 +1107,18 @@ Open the preview: it shows your data.
 | `This preview's DATABASE_URL is the live database`    | Step 1: `DATABASE_URL` is still in Preview                                                    |
 | `migrate failed` after regenerating the PR's migration | The branch already ran the old one. Delete `preview/<branch>` in Neon and redeploy           |
 | `migrate failed` on a migration not written for existing rows (0.8a) | Expected before cutover. Test that PR locally against `TEST_DATABASE_URL` instead |
+| A reopened PR's preview can't reach its database      | Closing deleted `preview/<branch>`. Push a commit or redeploy: the branch is re-copied from live |
 
 Neon Free allows 10 branches per project. Main, `test`, one per open PR and
-Release's two snapshots fit. Merged branches' previews are deleted by step 3's
-option the next time any preview deploys.
+Release's two snapshots fit. Step 3's option misses some closed PRs' branches,
+so the **Neon preview cleanup** workflow
+(`.github/workflows/neon-preview-cleanup.yml`) deletes `preview/<git branch>`
+whenever a PR closes, merged or not. It needs nothing new: it uses Release's
+`NEON_API_KEY` secret and `NEON_PROJECT_ID` variable. It deletes nothing but
+that one branch, never live, `test` or a snapshot. A PR Dependabot closes
+itself runs without secrets and only warns. Delete a leftover by hand with
+`gh workflow run neon-preview-cleanup.yml -f branch=<git branch>`, or in the
+Neon console.
 
 **Done with Part 2 when:** you can mark an issue read from your phone, and the
 Actions tab shows one successful backup.
