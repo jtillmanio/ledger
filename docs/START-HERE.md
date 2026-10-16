@@ -921,25 +921,43 @@ wrong, so check the spine view on the actual device.
 Until this runs once, your Google Sheet is the only copy of eight years of
 curation.
 
-1. Repo → **Settings → Secrets and variables → Actions** → **New repository
-   secret** → name `DATABASE_URL`, value the Neon pooled string.
-2. Repo → **Actions** tab → **Nightly backup** → **Run workflow**.
+Dumps go to a Cloudflare R2 bucket of their own, not the repo (D-66).
 
-The job asks for push access itself (`permissions: contents: write` in
-`backup.yml`), so leave **Settings → Actions → General → Workflow permissions**
-on the read-only default.
+1. Cloudflare dashboard → **R2** → **Create bucket** → name `ledger-backups`,
+   location automatic. The account ID is on the R2 overview page.
+2. R2 → **Manage API tokens** → **Create API token** → permission **Object
+   Read & Write**, applied to **`ledger-backups` only** → **Create**. Copy the
+   **Access Key ID** and **Secret Access Key**; Cloudflare shows the secret once.
+3. Repo → **Settings → Secrets and variables → Actions**. Secrets:
+   `DATABASE_URL` (the Neon pooled string), `R2_BACKUPS_ACCESS_KEY_ID`,
+   `R2_BACKUPS_SECRET_ACCESS_KEY`. Variables: `R2_ACCOUNT_ID`, `R2_BUCKET`
+   (`ledger-backups`). The job also reads `PRODUCTION_URL` and
+   `VERCEL_AUTOMATION_BYPASS_SECRET`, which Release already set (10e). Or:
 
-**Verify:** the run is green, `backups/reading-YYYY-MM-DD.sql.gz` is committed
-and is roughly 400 KB, and the run's summary page shows a **Restore check**
-table. The job fails (red X, no commit) when `pg_dump` fails, when the dump is
-nearly empty, or when the dump does not restore cleanly (below), so a green run
-with a file in `backups/` is a backup that has been restored. If the run is red,
-read its log first: a Neon major-version upgrade past 18 makes the pinned client
-refuse, and the job says so in one line naming the fix. Neon never upgrades a
-project's major version by itself — if you do, change `PG_MAJOR` **and** the
-`scratch` service image (`public.ecr.aws/docker/library/postgres:18`) in
-`.github/workflows/backup.yml`, and the `postgres` service image in
-`.github/workflows/ci.yml`, the same day. The backup job checks that its two agree.
+   ```powershell
+   gh secret set R2_BACKUPS_ACCESS_KEY_ID
+   gh secret set R2_BACKUPS_SECRET_ACCESS_KEY
+   gh variable set R2_ACCOUNT_ID --body <account id>
+   gh variable set R2_BUCKET --body ledger-backups
+   ```
+4. Repo → **Actions** tab → **Nightly backup** → **Run workflow**.
+
+The job is read-only to GitHub (`permissions: contents: read`); the token from
+step 2 can write only the backup bucket.
+
+**Verify:** the run is green, `ledger-backups` holds
+`reading-YYYY-MM-DD.sql.gz` of roughly 1 MB, and the run's summary page shows a
+**Restore check** table and an *Uploaded* line. The job fails (red X, nothing
+uploaded) when `pg_dump` fails, when the dump is nearly empty, or when the dump
+does not restore cleanly (below), so a green run with a file in the bucket is a
+backup that has been restored. The newest 90 dumps are kept; older ones are
+deleted only after a new one uploads, so a job that stops running deletes
+nothing. If the run is red, read its log first: a Neon major-version upgrade
+past 18 makes the pinned client refuse, and the job says so in one line naming
+the fix. Neon never upgrades a project's major version by itself — if you do,
+change `PG_MAJOR` in `.github/workflows/backup.yml` and the `postgres` service
+image in `.github/workflows/ci.yml` the same day. The backup's restore server
+is installed from `PG_MAJOR`, so the two in `backup.yml` always agree.
 
 **Restore — every night, automatically** (R2-AR2, D-30). A backup you have
 never restored is a hope, not a backup, so the job restores each dump before it
@@ -947,9 +965,12 @@ keeps it. Straight after `pg_dump` it loads the dump into a throwaway
 PostgreSQL 18 server that lives only as long as the job (never Neon), re-applies
 `etl/views.sql`, runs `etl/test_views.sql` (the same SQL tests CI runs), and
 counts the rows of every table on both the restore and live Neon, which it only
-reads. The counts must match, and so must the number of labels with characters
-a bad decode mangles (*Marvel’s Voices*, —, ½). If any of that fails, the dump
-is not committed. Nothing to install, nothing to run by hand.
+reads. The views and tests come from the commit production serves (its
+`/api/health`), not from `main`: `main` can hold views for a migration that
+Release has not applied yet. The counts must match, and so must the number of
+labels with characters a bad decode mangles (*Marvel’s Voices*, —, ½). If any
+of that fails, the dump is not uploaded. Nothing to install, nothing to run by
+hand.
 
 **Run the drill on demand** (once now, and whenever you want to see it pass):
 **Actions → Nightly backup → Run workflow**, tick **check only**, **Run**. Or
@@ -960,10 +981,10 @@ gh workflow run backup.yml -f check_only=true
 gh run watch (gh run list --workflow backup.yml --limit 1 --json databaseId --jq '.[0].databaseId') --exit-status
 ```
 
-That restores and checks the newest dump already in `backups/`, and takes no
-new dump and commits nothing. Its row counts will trail live by whatever you
-marked since 04:00; the summary flags those rows as *differs* and the run
-stays green.
+That restores and checks the newest dump in R2, with the views of the commit
+production served when it was taken, and takes no new dump and uploads nothing.
+Its row counts will trail live by whatever you marked since 04:00; the summary
+flags those rows as *differs* and the run stays green.
 
 **If it fails:** the restore stopping on an error, `test_views.sql` raising, or
 (on the nightly run) a count differing from live each means **that night's
@@ -971,8 +992,13 @@ backup is not trustworthy**. Read the first error in the *Restore check* step.
 One count off by a row or two on the nightly run means a write landed between
 the dump and the check; re-run the job. Do not cut over until a run is green.
 
-Backups live in the same private repo as the code (R2-AR1): losing the repo
-loses both, which `GET /api/export` is the second copy for.
+**Restoring by hand:** download a dump from the bucket in the Cloudflare
+dashboard, then `gzip -dc reading-YYYY-MM-DD.sql.gz | psql <empty database>`
+and `psql <that database> -f etl/views.sql`. The dumps from before D-66 are in
+the repo's `backups/` folder and its git history.
+
+Backups live apart from the code (D-66): losing the repo or the Cloudflare
+account loses one copy, and `GET /api/export` is a third.
 
 The workflow keeps 30 days and runs at 08:00 UTC (04:00 Eastern). Your second
 exit ramp is `GET /api/export`, which returns every table as JSON on demand.

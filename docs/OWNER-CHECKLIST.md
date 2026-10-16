@@ -76,6 +76,15 @@ tick them.
       issues' Search answers from your catalog only and says *Metron isn't set up
       here*. Needed before the 1.3b preview can search Metron (from TASK-006,
       PR #75).
+- [ ] Create the `ledger-backups` R2 bucket and its bucket-scoped token, and
+      add `R2_BACKUPS_ACCESS_KEY_ID`, `R2_BACKUPS_SECRET_ACCESS_KEY` (secrets)
+      and `R2_ACCOUNT_ID`, `R2_BUCKET` (variables), as in START-HERE 10d.
+      Until then every nightly backup fails at its upload (from D-66,
+      `fix/backup-r2`).
+- [ ] Once a nightly backup is green in R2, decide whether to `git rm -r
+      backups/` (it is a protected path, so only on your word). Removing it
+      empties the folder, not the history: the old dumps stay restorable from
+      git either way (from D-66, `fix/backup-r2`).
 
 ## Approvals from follow-ups
 
