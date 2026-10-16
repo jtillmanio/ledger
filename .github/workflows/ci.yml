@@ -14,20 +14,6 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    services:
-      postgres:
-        # Neon's major version (backup.yml's PG_MAJOR says the same). A view or
-        # migration that works here then behaves the same on the live database.
-        # The official image through Amazon's public mirror: GitHub's runners share
-        # IPs, so Docker Hub's anonymous pull limit is spent by strangers first.
-        image: public.ecr.aws/docker/library/postgres:18
-        env:
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: reading_test
-        options: >-
-          --health-cmd pg_isready --health-interval 10s
-          --health-timeout 5s --health-retries 5
-        ports: ["5432:5432"]
     env:
       # Tests only ever see TEST_DATABASE_URL (R3-02). There is deliberately no
       # DATABASE_URL here, so nothing in this job can mistake one for the other.
@@ -44,6 +30,13 @@ jobs:
       - name: Task files parse cleanly
         run: ./.claude/scripts/build-index.ps1
         shell: pwsh
+      # Neon's major version, installed on the runner rather than pulled as an
+      # image (D-66). A view or migration that works here then behaves the same
+      # on the live database.
+      - name: Start PostgreSQL
+        uses: ./.github/actions/start-postgres
+        with:
+          database: reading_test
       - uses: actions/setup-node@v7
         with: { node-version-file: .nvmrc, cache: npm }   # one Node version: .nvmrc = engines.node = Vercel
       - uses: actions/setup-python@v7
