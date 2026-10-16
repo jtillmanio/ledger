@@ -52,3 +52,15 @@ export function buildSteps(env) {
   if (problem) throw new Error(problem);
   return ["migrate", "views", "next build"];
 }
+
+/**
+ * The Neon branch to delete when a PR closes: exactly preview/<git branch>, as
+ * the Neon integration names it, never the default (live) branch or a
+ * protected one. null when there is none. scripts/neon-preview-cleanup.mjs
+ * deletes it.
+ */
+export function previewBranchToDelete(branches, gitBranch) {
+  if (!gitBranch?.trim()) return null;
+  const name = `preview/${gitBranch}`;
+  return branches.find((b) => b.name === name && !b.default && !b.protected) ?? null;
+}
