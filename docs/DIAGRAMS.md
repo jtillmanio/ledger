@@ -435,7 +435,7 @@ flowchart LR
     subgraph gh [GitHub]
         REPO[repo]
         CI["Actions: typecheck<br/>lint · build"]
-        BAK["Actions: nightly<br/>pg_dump to backups/"]
+        BAK["Actions: nightly<br/>pg_dump to R2"]
         REL["Actions: Release, by hand<br/>CI check · snapshot · migrate · promote"]
     end
 

@@ -1,53 +1,73 @@
 name: Nightly backup
 
+# Dump production, restore the dump into a throwaway PostgreSQL on the runner,
+# check it, and only then upload it to Cloudflare R2 (D-66). A failure anywhere
+# ends the job before the upload, so a dump that cannot be restored is never kept.
 on:
   schedule: [{ cron: "0 8 * * *" }]   # 04:00 ET
   workflow_dispatch:
     inputs:
       check_only:
-        description: "Restore-check the newest committed dump; take no new dump, commit nothing"
+        description: "Restore-check the newest dump in R2; take no new dump, upload nothing"
         type: boolean
         default: false
+
+# One backup at a time; a second one waits rather than cancelling a dump half done.
+concurrency: { group: backup, cancel-in-progress: false }
+
+# Read-only to GitHub. R2 is written with its own token, scoped to the backup bucket.
+permissions:
+  contents: read
 
 jobs:
   dump:
     runs-on: ubuntu-latest
-    # The repo's default token is read-only; the Commit step pushes the dump.
-    permissions:
-      contents: write
+    timeout-minutes: 20
     env:
-      # Must be at least Neon's major version: pg_dump refuses a newer server.
-      # The scratch service below must be the same major (the check says so).
-      PG_MAJOR: "18"
       # "true" only on a manual run with the box ticked; a scheduled run has no inputs.
       CHECK_ONLY: ${{ inputs.check_only == true }}
-    services:
-      # A throwaway server every dump is restored into before it is committed
-      # (R2-AR2, D-30). It lives only as long as the job. The official image
-      # through Amazon's public mirror, as in ci.yml: Docker Hub's anonymous
-      # pull limit is shared by every job on the runner's IP.
-      scratch:
-        image: public.ecr.aws/docker/library/postgres:18
-        env:
-          POSTGRES_PASSWORD: scratch
-        options: >-
-          --health-cmd pg_isready --health-interval 10s
-          --health-timeout 5s --health-retries 5
-        ports: ["5432:5432"]
+      # The newest KEEP dumps stay in R2; older ones are deleted after a good upload.
+      KEEP: "90"
+      SCRATCH: postgresql://postgres@localhost:5432
+      R2_BUCKET: ${{ vars.R2_BUCKET }}
+      R2_ENDPOINT: https://${{ vars.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      # R2 is S3-compatible. Its region is "auto", and it rejects the CLI's default
+      # checksum headers, so checksums are sent only when an operation requires them.
+      AWS_DEFAULT_REGION: auto
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
     steps:
       - uses: actions/checkout@v7
 
-      - name: Install postgres client
+      # A throwaway server every dump is restored into before it is uploaded
+      # (R2-AR2, D-30). It lives only as long as the job. Also sets PG_MAJOR and
+      # puts that major's pg_dump and psql first on PATH.
+      - name: Start the restore server
+        uses: ./.github/actions/start-postgres
+        with:
+          database: restore_check
+
+      # The views to re-apply are production's, not this ref's: main may hold a
+      # view for a migration that is not released yet, which production's schema
+      # cannot run ("relation read_events does not exist", 2026-10-14). Only a
+      # release moves PRODUCTION_URL, and /api/health names the commit it serves.
+      - name: Find the commit production serves
+        if: env.CHECK_ONLY != 'true'
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: |
-          # Ubuntu's own archive carries only its release's default client (16 on
-          # 24.04); the PGDG repo carries every supported major on any release.
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-common
-          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-          sudo apt-get install -y -qq "postgresql-client-$PG_MAJOR"
-          # The runner image ships its own PostgreSQL, and /usr/bin/pg_dump is a
-          # wrapper that can pick that one; put this major's binaries first.
-          echo "/usr/lib/postgresql/$PG_MAJOR/bin" >> "$GITHUB_PATH"
+          set -euo pipefail
+          # Not -f: a 503 (views missing) still names the commit, and the restore check says the rest.
+          commit=$(curl -sS --retry 5 --retry-all-errors --max-time 20 \
+            -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" \
+            "${PRODUCTION_URL%/}/api/health" | jq -r '.commit // empty' 2>/dev/null || true)
+          if ! [[ "$commit" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::${PRODUCTION_URL%/}/api/health named no commit (got '$commit'), so production's views are unknown." >&2
+            exit 1
+          fi
+          echo "Production serves $commit"
+          echo "VIEWS_COMMIT=$commit" >> "$GITHUB_ENV"
 
       - name: Dump
         if: env.CHECK_ONLY != 'true'
@@ -55,7 +75,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           # Actions runs bash -e without pipefail, so `pg_dump | gzip` used to
-          # exit 0 when pg_dump failed and commit an empty dump (R2-03).
+          # exit 0 when pg_dump failed and keep an empty dump (R2-03).
           set -euo pipefail
           # pg_dump refuses a server newer than itself. Neon never changes major
           # version on its own, so a mismatch means the project was upgraded: say
@@ -64,62 +84,75 @@ jobs:
           server_major=$(( server / 10000 ))
           client_major=$(pg_dump --version | grep -oE '[0-9]+' | head -n 1)
           if [ "$server_major" -gt "$client_major" ]; then
-            echo "::error::Neon is on PostgreSQL $server_major but this job installs postgresql-client-$client_major. Change PG_MAJOR from $client_major to $server_major in .github/workflows/backup.yml." >&2
+            echo "::error::Neon is on PostgreSQL $server_major but this job installs PostgreSQL $client_major. Change PG_MAJOR from $client_major to $server_major in .github/actions/start-postgres/action.yml." >&2
             exit 1
           fi
-          mkdir -p backups
-          f="backups/reading-$(date -u +%Y-%m-%d).sql.gz"
+          key="reading-$(date -u +%Y-%m-%d).sql.gz"
+          f="$RUNNER_TEMP/$key"
           pg_dump --no-owner --no-privileges "$DATABASE_URL" | gzip > "$f"
           # A real dump of this schema is far larger than an empty gzip stream.
           test "$(gzip -dc "$f" | head -c 4000 | wc -c)" -ge 1000 \
-            || { echo "backup is empty or truncated: $f" >&2; rm -f "$f"; exit 1; }
-          # Keep 30 days of dumps in the repo; anything older is dropped.
-          ls -1t backups/*.sql.gz | tail -n +31 | xargs -r rm --
+            || { echo "backup is empty or truncated: $key" >&2; exit 1; }
+          echo "KEY=$key" >> "$GITHUB_ENV"
           echo "DUMP=$f" >> "$GITHUB_ENV"
 
-      - name: Pick the newest committed dump
+      - name: Fetch the newest dump in R2
         if: env.CHECK_ONLY == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_BACKUPS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUPS_SECRET_ACCESS_KEY }}
         run: |
           set -euo pipefail
-          shopt -s nullglob
-          dumps=(backups/reading-*.sql.gz)   # dated names, so the glob sorts oldest first
-          if [ ${#dumps[@]} -eq 0 ]; then
-            echo "::error::There is no dump in backups/ to check. Run the workflow without check only first." >&2
+          # Dated names, so a plain sort is oldest first.
+          key=$(aws s3api list-objects-v2 --bucket "$R2_BUCKET" --prefix reading- --endpoint-url "$R2_ENDPOINT" \
+                  --query 'Contents[].Key' --output text | tr '\t' '\n' \
+                | { grep -E '^reading-[0-9]{4}-[0-9]{2}-[0-9]{2}\.sql\.gz$' || true; } | sort | tail -n 1)
+          if [ -z "$key" ]; then
+            echo "::error::There is no dump in R2 bucket $R2_BUCKET to check. Run the workflow without check only first." >&2
             exit 1
           fi
-          echo "DUMP=${dumps[-1]}" >> "$GITHUB_ENV"
+          aws s3 cp "s3://$R2_BUCKET/$key" "$RUNNER_TEMP/$key" --no-progress --endpoint-url "$R2_ENDPOINT"
+          # The views of the commit production served when this dump was taken,
+          # so a release since then does not fail the check.
+          commit=$(aws s3api head-object --bucket "$R2_BUCKET" --key "$key" --endpoint-url "$R2_ENDPOINT" \
+                     --query 'Metadata.commit' --output text)
+          if ! [[ "$commit" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::$key carries no commit in its metadata, so its views are unknown." >&2
+            exit 1
+          fi
+          echo "KEY=$key" >> "$GITHUB_ENV"
+          echo "DUMP=$RUNNER_TEMP/$key" >> "$GITHUB_ENV"
+          echo "VIEWS_COMMIT=$commit" >> "$GITHUB_ENV"
 
-      # The restore drill (START-HERE 10d): load the dump into the scratch server,
-      # re-apply the views, run the same SQL tests CI runs, and compare every
-      # table's row count with live Neon, which is only read. A failure here stops
-      # the job before Commit, so a dump that cannot be restored is never kept.
+      - name: Fetch that commit's views
+        run: |
+          set -euo pipefail
+          git fetch --quiet --no-tags --depth 1 origin "$VIEWS_COMMIT"
+          git show "$VIEWS_COMMIT:etl/views.sql" > "$RUNNER_TEMP/views.sql"
+          git show "$VIEWS_COMMIT:etl/test_views.sql" > "$RUNNER_TEMP/test_views.sql"
+
+      # The restore drill (START-HERE 10d): load the dump into the restore server,
+      # re-apply production's views, run the SQL tests CI ran on that commit, and
+      # compare every table's row count with live Neon, which is only read.
       - name: Restore check
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           set -euo pipefail
-          scratch="postgresql://postgres:scratch@localhost:5432"
-          db="$scratch/restore_check"
-          # Only the scratch server gets this; Neon's pooler rejects startup options.
+          db="$SCRATCH/restore_check"
+          # Only the restore server gets this; Neon's pooler rejects startup options.
           quiet="-c client_min_messages=warning"
 
-          scratch_major=$(( $(psql "$scratch/postgres" -tAc "SHOW server_version_num") / 10000 ))
-          if [ "$scratch_major" -ne "$PG_MAJOR" ]; then
-            echo "::error::The scratch server is PostgreSQL $scratch_major but PG_MAJOR is $PG_MAJOR. Change the scratch service image in .github/workflows/backup.yml to public.ecr.aws/docker/library/postgres:$PG_MAJOR." >&2
-            exit 1
-          fi
-          psql "$scratch/postgres" -qc "CREATE DATABASE restore_check"
-
-          echo "Restoring $DUMP"
+          echo "Restoring $KEY"
           # stdout is only the dump's setval() results; errors still reach the log.
           gzip -dc "$DUMP" | PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q > /dev/null
-          # A dump taken between a schema change and db:views carries the old views.
-          PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q -f etl/views.sql
-          PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q -f etl/test_views.sql
+          # A dump taken between a schema change and its views carries the old views.
+          PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q -f "$RUNNER_TEMP/views.sql"
+          PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q -f "$RUNNER_TEMP/test_views.sql"
 
           # Every table the dump holds, plus the labels with characters a bad
           # decode would mangle (Marvel’s, —, ½). Sorted in the shell, because
-          # Neon and the scratch server need not share a collation.
+          # Neon and the restore server need not share a collation.
           count=$(psql "$db" -tAc "
             SELECT string_agg(format('SELECT %L, count(*) FROM %I', table_name, table_name), ' UNION ALL ')
               FROM information_schema.tables
@@ -131,9 +164,9 @@ jobs:
           psql "$DATABASE_URL" -tA -c "$count" | LC_ALL=C sort > "$live"
 
           {
-            echo "### Restore check: \`$DUMP\`"
+            echo "### Restore check: \`$KEY\`"
             echo
-            echo "Restored cleanly, views re-applied, \`test_views.sql\` passed."
+            echo "Restored cleanly, views of \`${VIEWS_COMMIT:0:7}\` re-applied, \`test_views.sql\` passed."
             echo
             echo "| table | restored | live now |"
             echo "| ----- | -------: | -------: |"
@@ -144,7 +177,7 @@ jobs:
           if cmp -s "$restored" "$live"; then
             echo "Row counts match live."
           elif [ "$CHECK_ONLY" = true ]; then
-            # An older dump trails live by whatever changed since 04:00.
+            # An older dump trails live by whatever changed since it was taken.
             echo "::warning::Row counts differ from live; the job summary lists which. Expected only for rows added since this dump was taken."
           else
             paste -d '|' "$restored" "$live" | awk -F'|' '$2 != $4 { print "  " $1 ": restored " $2 ", live " $4 }' >&2
@@ -152,13 +185,24 @@ jobs:
             exit 1
           fi
 
-      - name: Commit
+      - name: Upload to R2 and prune
         if: env.CHECK_ONLY != 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_BACKUPS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUPS_SECRET_ACCESS_KEY }}
         run: |
-          git config user.name  "backup bot"
-          git config user.email "actions@github.com"
-          git add backups
-          git diff --staged --quiet || git commit -m "backup $(date -u +%F)"
-          # A concurrent push would otherwise fail the job (R2 L-10).
-          git pull --rebase
-          git push
+          set -euo pipefail
+          # The commit rides along so a later check-only run re-applies the right views.
+          aws s3 cp "$DUMP" "s3://$R2_BUCKET/$KEY" --no-progress --endpoint-url "$R2_ENDPOINT" \
+            --metadata "commit=$VIEWS_COMMIT"
+          echo "Uploaded \`$KEY\` to \`$R2_BUCKET\` (production at \`${VIEWS_COMMIT:0:7}\`)." >> "$GITHUB_STEP_SUMMARY"
+
+          # Pruning runs only after a good upload, so a job that stops running
+          # (or keeps failing) never deletes the dumps it has.
+          aws s3api list-objects-v2 --bucket "$R2_BUCKET" --prefix reading- --endpoint-url "$R2_ENDPOINT" \
+              --query 'Contents[].Key' --output text | tr '\t' '\n' \
+            | { grep -E '^reading-[0-9]{4}-[0-9]{2}-[0-9]{2}\.sql\.gz$' || true; } | sort | head -n "-$KEEP" \
+            | while read -r old; do
+                aws s3 rm "s3://$R2_BUCKET/$old" --endpoint-url "$R2_ENDPOINT"
+                echo "Pruned \`$old\`." >> "$GITHUB_STEP_SUMMARY"
+              done

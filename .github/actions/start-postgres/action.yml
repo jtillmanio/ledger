@@ -1,0 +1,51 @@
+# Starts PostgreSQL on the runner for CI's tests and the backup's restore check,
+# and sets PG_MAJOR for the rest of the job. This is the one place PG_MAJOR is
+# set: Neon's major, so a view or migration that works here behaves the same on
+# the live database, and pg_dump (which refuses a newer server) can dump Neon.
+#
+# Installed from the PGDG apt repo, not pulled as a container: anonymous image
+# pulls from GitHub's shared runner IPs hit rate limits on Docker Hub and on
+# Amazon's mirror ("toomanyrequests: Data limit exceeded", 2026-10-15, D-66).
+name: Start PostgreSQL
+description: Install postgresql-$PG_MAJOR from PGDG and run it on localhost:5432 (user postgres, trust auth)
+
+inputs:
+  database:
+    description: The database to create
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set PG_MAJOR
+      shell: bash
+      run: echo "PG_MAJOR=18" >> "$GITHUB_ENV"
+
+    - name: Install PostgreSQL
+      shell: bash
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq postgresql-common
+        # Binaries only: the next step starts its own server, so apt creates none.
+        echo "create_main_cluster = false" | sudo tee -a /etc/postgresql-common/createcluster.conf > /dev/null
+        sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+        sudo apt-get install -y -qq "postgresql-$PG_MAJOR"
+        # The runner image ships its own PostgreSQL, and /usr/bin/pg_dump is a
+        # wrapper that can pick that one; put this major's binaries first.
+        echo "/usr/lib/postgresql/$PG_MAJOR/bin" >> "$GITHUB_PATH"
+
+    # Neon's collation (builtin C.UTF-8), so ORDER BY sorts here as it does there.
+    # Trust auth: the server lives only as long as the job, on localhost.
+    - name: Start PostgreSQL
+      shell: bash
+      env:
+        DATABASE: ${{ inputs.database }}
+      run: |
+        set -euo pipefail
+        bin="/usr/lib/postgresql/$PG_MAJOR/bin"
+        "$bin/initdb" -D "$RUNNER_TEMP/pgdata" -U postgres --auth=trust -E UTF8 \
+          --locale=C.UTF-8 --locale-provider=builtin --builtin-locale=C.UTF-8 > /dev/null
+        "$bin/pg_ctl" -D "$RUNNER_TEMP/pgdata" -l "$RUNNER_TEMP/postgres.log" \
+          -o "-p 5432 -k $RUNNER_TEMP" -w start
+        "$bin/createdb" -h localhost -U postgres "$DATABASE"
+        "$bin/psql" -h localhost -U postgres -d "$DATABASE" -tAc "SELECT version()"

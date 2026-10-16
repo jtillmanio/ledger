@@ -851,9 +851,10 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
 
 ## 5. Operational posture
 
-- **Backups.** Nightly `pg_dump` to the repo via GitHub Actions, 30-day
-  retention, each dump restored into a scratch Postgres and checked before it
-  is committed (D-30), plus `GET /api/export` for a full JSON dump on demand.
+- **Backups.** Nightly `pg_dump` to a Cloudflare R2 bucket via GitHub Actions
+  (D-66), the newest 90 kept, each dump restored into a scratch Postgres and
+  checked before it is uploaded (D-30), plus `GET /api/export` for a full JSON
+  dump on demand.
   Both exist because the workbook is currently your only copy and it shouldn't
   stay that way.
 - **Cold starts.** Neon's free tier suspends compute after 5 idle minutes.
