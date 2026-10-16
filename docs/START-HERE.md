@@ -955,9 +955,9 @@ deleted only after a new one uploads, so a job that stops running deletes
 nothing. If the run is red, read its log first: a Neon major-version upgrade
 past 18 makes the pinned client refuse, and the job says so in one line naming
 the fix. Neon never upgrades a project's major version by itself — if you do,
-change `PG_MAJOR` in `.github/workflows/backup.yml` and the `postgres` service
-image in `.github/workflows/ci.yml` the same day. The backup's restore server
-is installed from `PG_MAJOR`, so the two in `backup.yml` always agree.
+change `PG_MAJOR` in `.github/actions/start-postgres/action.yml` the same day.
+That one line sets the backup's `pg_dump`, its restore server and CI's test
+database, so they always agree.
 
 **Restore — every night, automatically** (R2-AR2, D-30). A backup you have
 never restored is a hope, not a backup, so the job restores each dump before it

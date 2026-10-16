@@ -24,9 +24,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      # Must be at least Neon's major version: pg_dump refuses a newer server.
-      # The restore server is installed from the same major, so the two agree.
-      PG_MAJOR: "18"
       # "true" only on a manual run with the box ticked; a scheduled run has no inputs.
       CHECK_ONLY: ${{ inputs.check_only == true }}
       # The newest KEEP dumps stay in R2; older ones are deleted after a good upload.
@@ -42,29 +39,13 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # PostgreSQL from the PGDG apt repo, not a container: anonymous image pulls
-      # from GitHub's shared runner IPs hit rate limits on Docker Hub and on
-      # Amazon's mirror ("toomanyrequests: Data limit exceeded", 2026-10-15).
-      - name: Install PostgreSQL
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq postgresql-common
-          # Binaries only: the next step starts its own server, so apt creates none.
-          echo "create_main_cluster = false" | sudo tee -a /etc/postgresql-common/createcluster.conf > /dev/null
-          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-          sudo apt-get install -y -qq "postgresql-$PG_MAJOR"
-          # The runner image ships its own PostgreSQL, and /usr/bin/pg_dump is a
-          # wrapper that can pick that one; put this major's binaries first.
-          echo "/usr/lib/postgresql/$PG_MAJOR/bin" >> "$GITHUB_PATH"
-
       # A throwaway server every dump is restored into before it is uploaded
-      # (R2-AR2, D-30). It lives only as long as the job.
+      # (R2-AR2, D-30). It lives only as long as the job. Also sets PG_MAJOR and
+      # puts that major's pg_dump and psql first on PATH.
       - name: Start the restore server
-        run: |
-          set -euo pipefail
-          initdb -D "$RUNNER_TEMP/pgdata" -U postgres --auth=trust -E UTF8 --locale=C.UTF-8 > /dev/null
-          pg_ctl -D "$RUNNER_TEMP/pgdata" -l "$RUNNER_TEMP/postgres.log" -o "-p 5432 -k $RUNNER_TEMP" -w start
-          psql "$SCRATCH/postgres" -tAc "SELECT version()"
+        uses: ./.github/actions/start-postgres
+        with:
+          database: restore_check
 
       # The views to re-apply are production's, not this ref's: main may hold a
       # view for a migration that is not released yet, which production's schema
@@ -103,7 +84,7 @@ jobs:
           server_major=$(( server / 10000 ))
           client_major=$(pg_dump --version | grep -oE '[0-9]+' | head -n 1)
           if [ "$server_major" -gt "$client_major" ]; then
-            echo "::error::Neon is on PostgreSQL $server_major but this job installs PostgreSQL $client_major. Change PG_MAJOR from $client_major to $server_major in .github/workflows/backup.yml." >&2
+            echo "::error::Neon is on PostgreSQL $server_major but this job installs PostgreSQL $client_major. Change PG_MAJOR from $client_major to $server_major in .github/actions/start-postgres/action.yml." >&2
             exit 1
           fi
           key="reading-$(date -u +%Y-%m-%d).sql.gz"
@@ -161,7 +142,6 @@ jobs:
           db="$SCRATCH/restore_check"
           # Only the restore server gets this; Neon's pooler rejects startup options.
           quiet="-c client_min_messages=warning"
-          psql "$SCRATCH/postgres" -qc "CREATE DATABASE restore_check"
 
           echo "Restoring $KEY"
           # stdout is only the dump's setval() results; errors still reach the log.
