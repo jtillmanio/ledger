@@ -90,7 +90,7 @@ tick them.
       then one dated the 1st reads a month early). When Release applies 0012 to
       production, don't save a picked date (range sheet, *Change date…*) until
       it has promoted the new build: the old build still writes a UTC midnight,
-      which 0012 has already passed (from TASK-025, task/1.16-dates-in-new-york).
+      which 0012 has already passed (from TASK-025, PR #94).
 
 ## Approvals from follow-ups
 
