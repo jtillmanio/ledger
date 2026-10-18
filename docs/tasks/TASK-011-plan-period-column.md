@@ -26,7 +26,7 @@ A to-read book sits at exactly one plan level: a quarter (in order), a year, On 
 - Data model: `src/db/schema.ts` `readingPlan`, `readingSettings`. New views in `etl/views.sql`: `plan_period` (`year`, `quarter`, `level`, `ordinal`) and `to_read_level` (one row per `to_read` book; with several plan rows it takes the earliest: quarters and years by date, then `on_deck`). `src/db/queries.ts` `listBooks` reads the period through `plan_period`. Every reader of `planned_year` / `planned_quarter` moves.
 - Design: mockup `add` (*On deck* becomes enabled on the Add books sheet from TASK-008). Mockup `planmonth`'s month frame was retired by D-38. Nothing in this task draws it.
 - Decisions: D-13 (the plan starts empty; `--with-plan` restores the To-Read tabs), D-37 (four levels; only quarters are ordered), D-38 (no months), R0-04.
-- *From TASK-021 (1.13, docs/plans-2026-10-18):* if 1.13 lands before 1.7, 1.7's `--with-plan` change starts from the year tabs found by name (`^To-Read \d{4}$`) and BookIndex's authorless-sighting fold (plan rows follow its id remap), not `GENRE_TABS["plan"]`. Both approved plans name this; it is not a stale-plan note.
+- *From TASK-021 (1.13, PR #93):* if 1.13 lands before 1.7, 1.7's `--with-plan` change starts from the year tabs found by name (`^To-Read \d{4}$`) and BookIndex's authorless-sighting fold (plan rows follow its id remap), not `GENRE_TABS["plan"]`. Both approved plans name this; it is not a stale-plan note.
 
 ## Acceptance criteria
 
