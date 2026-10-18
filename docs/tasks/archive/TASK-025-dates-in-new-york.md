@@ -1,7 +1,7 @@
 ---
 id: TASK-025
 title: 1.16 Dates in America/New_York
-status: Review
+status: Done
 depends_on: [TASK-010]
 size: L
 model: opus
