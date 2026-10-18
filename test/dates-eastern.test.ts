@@ -210,8 +210,6 @@ describe("the client's today is the Eastern day (AC-4)", () => {
     it(`at 23:30 Eastern on October 31 the picker's max is 2026-10-31, the runner in ${zone}`, async () => {
       process.env.TZ = zone;
       at(LATE);
-      const { today } = await import("../src/lib/finish-date");
-      expect(today()).toBe("2026-10-31");
       const FinishDate = (await import("../src/components/FinishDate")).default;
       const { finishWords, initialFinish } = await import("../src/components/FinishDate");
       const html = renderToStaticMarkup(createElement(FinishDate, {
@@ -223,6 +221,9 @@ describe("the client's today is the Eastern day (AC-4)", () => {
       }));
       expect(saved).toContain("Saved as <b>31 October 2026</b>");
       expect(finishWords({ mode: "today", date: "", year: 2026 })).toBe("31 October 2026");
+      // The one today the server and the pickers share.
+      const { today } = await import("../src/lib/finish-date");
+      expect(today()).toBe("2026-10-31");
     });
   }
 });
