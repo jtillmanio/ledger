@@ -43,6 +43,13 @@ runs:
     # from auto_explain, plus lock waits and autovacuum runs. auto_explain
     # doesn't ANALYZE, so the other statements pay nothing. Checkpoints are
     # logged by default. PGLOG names the file for the job's later steps.
+    #
+    # JIT is off, as it is on Neon, which has no JIT provider
+    # (pg_jit_available() is false there). PGDG's package installs one here,
+    # and on freshly truncated test tables the planner's default row guesses
+    # put run_readiness at cost 1.6M: JIT then spent over 5s compiling 100
+    # functions for a six-row query (PR #95's first run).
+    # test/test-db-jit.test.ts holds the test database to it.
     - name: Start PostgreSQL
       shell: bash
       env:
@@ -53,7 +60,7 @@ runs:
         "$bin/initdb" -D "$RUNNER_TEMP/pgdata" -U postgres --auth=trust -E UTF8 \
           --locale=C.UTF-8 --locale-provider=builtin --builtin-locale=C.UTF-8 > /dev/null
         "$bin/pg_ctl" -D "$RUNNER_TEMP/pgdata" -l "$RUNNER_TEMP/postgres.log" \
-          -o "-p 5432 -k $RUNNER_TEMP \
+          -o "-p 5432 -k $RUNNER_TEMP -c jit=off \
               -c log_min_duration_statement=1000 -c log_lock_waits=on \
               -c log_autovacuum_min_duration=0 \
               -c shared_preload_libraries=auto_explain \
