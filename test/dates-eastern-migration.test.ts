@@ -28,10 +28,14 @@ describe("migration 0012 (dates in New York)", () => {
 
     await expect(
       sql.begin(async (tx) => {
+        // Every conversion names its zone: a session in another one changes nothing.
+        await tx`SET LOCAL TimeZone = 'Asia/Tokyo'`;
         await tx`INSERT INTO runs (id, title) VALUES ('r', 'R')`;
-        await tx`INSERT INTO issues (id, label) VALUES ('day', 'X #1'), ('year', 'X #2'), ('moment', 'X #3'), ('undated', 'X #4')`;
+        await tx`INSERT INTO issues (id, label) VALUES ('day', 'X #1'), ('year', 'X #2'), ('moment', 'X #3'),
+                 ('undated', 'X #4'), ('spring', 'X #5'), ('fall', 'X #6')`;
         await tx`INSERT INTO run_issues (run_id, sequence, issue_id)
-                 VALUES ('r', 1, 'day'), ('r', 2, 'year'), ('r', 3, 'moment'), ('r', 4, 'undated')`;
+                 VALUES ('r', 1, 'day'), ('r', 2, 'year'), ('r', 3, 'moment'), ('r', 4, 'undated'),
+                        ('r', 5, 'spring'), ('r', 6, 'fall')`;
         const rows = async () => (await tx`
           SELECT ri.issue_id AS id, to_char(p.completed_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US') AS at,
                  p.completed_at, p.completed_at_precision AS p
@@ -41,20 +45,25 @@ describe("migration 0012 (dates in New York)", () => {
         // down first: the database is back where it stood before 1.16.
         await tx.unsafe(DOWN).simple();
         // Rows as 1.1 and 1.5 wrote them: a picked day and a Year only at UTC
-        // midnight, a Today at now(), and a read with no date.
+        // midnight, a Today at now(), a read with no date, and the two days the
+        // clocks change (2026-03-08 springs forward, 2026-11-01 falls back at 02:00).
         await tx`INSERT INTO issue_progress (user_id, placement_id, completed_at, completed_at_precision)
                  SELECT ${USER}, ri.id, v.at::timestamptz, v.p
                  FROM run_issues ri JOIN (VALUES
                    ('day', '2026-03-01T00:00:00Z', 'exact'),
                    ('year', '2019-07-01T00:00:00Z', 'approximate'),
                    ('moment', '2026-11-01T01:30:00.123456Z', 'exact'),
-                   ('undated', NULL, 'none')) v(issue, at, p) ON v.issue = ri.issue_id`;
+                   ('undated', NULL, 'none'),
+                   ('spring', '2026-03-08T00:00:00Z', 'exact'),
+                   ('fall', '2026-11-01T00:00:00Z', 'exact')) v(issue, at, p) ON v.issue = ri.issue_id`;
 
         const upped = [
           ["day", "2026-03-01T05:00:00.000000", "exact", "Mar 2026"],
           ["year", "2019-07-01T04:00:00.000000", "approximate", "~Jul 2019"],
           ["moment", "2026-11-01T01:30:00.123456", "exact", "Oct 2026"],
           ["undated", null, "none", null],
+          ["spring", "2026-03-08T05:00:00.000000", "exact", "Mar 2026"],
+          ["fall", "2026-11-01T04:00:00.000000", "exact", "Nov 2026"],
         ];
         for (const statement of UP.split("--> statement-breakpoint")) await tx.unsafe(statement);
         expect(await rows()).toEqual(upped);
@@ -66,6 +75,8 @@ describe("migration 0012 (dates in New York)", () => {
           ["year", "2019-07-01T00:00:00.000000", "approximate"],
           ["moment", "2026-11-01T01:30:00.123456", "exact"],
           ["undated", null, "none"],
+          ["spring", "2026-03-08T00:00:00.000000", "exact"],
+          ["fall", "2026-11-01T00:00:00.000000", "exact"],
         ]);
 
         // up again: the same as the first up.
