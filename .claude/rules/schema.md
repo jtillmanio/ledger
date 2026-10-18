@@ -109,7 +109,9 @@ Release, test isolation) and the Hard rules a reviewer checks.
   `approximate` or `none`, and the date is NULL exactly when the precision is
   `none`. A read with no known date is `none`, never `now()`. A year-only finish
   is `approximate` (its July 1st), never `exact`. Anything computing pace ignores
-  `none`, and anything sorting by a finish date puts NULLs last. ARCHITECTURE 2.17.
+  `none`, and anything sorting by a finish date puts NULLs last. A calendar day
+  in `completed_at` is stored as its `America/New_York` midnight, *today* is the
+  Eastern day, and every date is shown in Eastern (1.16, D-67). ARCHITECTURE 2.17.
 - **A book's finish year is derived from `finished_on`** (task 1.5, D-21). 1.5
   dropped `finished_year`, and it never comes back; every reader takes
   `extract(year FROM finished_on)`, and a `read` book with precision `none` is

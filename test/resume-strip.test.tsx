@@ -162,9 +162,10 @@ describe("the next-issue strip (AC-1, AC-5)", () => {
 
   it("takes an exact read over a guessed one at the same moment", async () => {
     await sql`DELETE FROM issue_progress`;
+    // July 1st stored as a day: its Eastern midnight since 1.16.
     for (let n = 1; n <= 9; n++) {
       await markRead(sql, USER, "a", `a-${n}`,
-        { at: "2025-07-01T00:00:00Z", precision: n % 2 ? "approximate" : "exact" });
+        { at: "2025-07-01T04:00:00Z", precision: n % 2 ? "approximate" : "exact" });
     }
     const { badge } = await hero("a");
     expect(badge!.textContent).toBe("✓ read · Jul 2025");

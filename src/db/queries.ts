@@ -351,7 +351,8 @@ export async function upcomingReleases() {
     FROM releases rl
     JOIN books b        ON b.id = rl.book_id
     LEFT JOIN authors a ON a.id = b.author_id
-    WHERE b.deleted_at IS NULL AND rl.release_date >= CURRENT_DATE::text
+    -- Today is the Eastern day (task 1.16), not the database's UTC one.
+    WHERE b.deleted_at IS NULL AND rl.release_date >= (now() AT TIME ZONE 'America/New_York')::date::text
     ORDER BY rl.release_date
     LIMIT 12
   `;

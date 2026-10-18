@@ -1,7 +1,7 @@
 ---
 id: TASK-025
 title: 1.16 Dates in America/New_York
-status: Ready
+status: In progress
 depends_on: [TASK-010]
 size: L
 model: opus
@@ -94,6 +94,10 @@ Risks / open questions:
 - A `now()` mark at exactly 00:00:00.000000 UTC (or Eastern) would be taken for a day. Microsecond timestamps make that negligible; the down file says so.
 - Migration number: 0012 assumes this lands before TASK-011, whose migration becomes 0013. The second one to land regenerates its number (the staleness check forces a re-plan).
 - DST: `AT TIME ZONE` handles both offsets, and the tests cover a March (EST) day and a July (EDT) day.
+
+Plan revision 1 (implementation): `test/reading-log.test.tsx` joins the Files. Its *Change date… → Year only* case (line 302) asserts the UTC midnight the app wrote, `2019-07-01T00:00:00.000Z`; step 3 makes it `…T04:00:00.000Z`. It is the same kind of edit as `test/reading-log.test.ts:341`.
+
+Plan revision 2 (verify R1): `test/resume-strip.test.tsx` joins the Files. Its *exact over guessed* case inserts a stored July 1st as `2025-07-01T00:00:00Z`, which now reads `Jun 2025` in Eastern. The fixture stores the day as 1.16 does, `2025-07-01T04:00:00Z`; the assertion (`Jul 2025`) is unchanged.
 
 Size check: L by `never-split` (task Context says why: the write and the read must land together). About 19 files, one data-only migration with its down file, attended.
 

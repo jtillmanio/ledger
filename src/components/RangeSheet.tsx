@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import Sheet, { useSheetClose } from "@/components/Sheet";
 import type { RangeMode } from "@/db/writes";
+import { today } from "@/lib/finish-date";
 
 export type RangeRow = { placement_id: number; label: string; type: string };
 export type RangeChoice = { mode: RangeMode; date?: string; from?: string; to?: string };
@@ -15,11 +16,6 @@ const OPTIONS: { mode: RangeMode; label: string }[] = [
 ];
 // The fifth option exists only from Adopt (docs/TASKS.md 1.1).
 const ORIGINAL = { mode: "original" as const, label: "Original dates" };
-
-/** Today as a calendar day where the reader is, `YYYY-MM-DD`. */
-function today() {
-  return new Date().toLocaleDateString("en-CA");
-}
 
 /**
  * The range sheet (task 1.1, mockup `range`): how a range of placements is

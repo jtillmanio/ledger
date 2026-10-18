@@ -1,6 +1,6 @@
 "use client";
 
-import type { FinishChoice, FinishMode } from "@/lib/finish-date";
+import { today as easternToday, type FinishChoice, type FinishMode } from "@/lib/finish-date";
 import type { Precision } from "@/lib/format";
 
 /** The control's state: the chosen mode, and the day and year it holds for
@@ -15,11 +15,13 @@ const OPTIONS: { mode: FinishMode; label: string }[] = [
 ];
 const EARLIEST_YEAR = 1900;
 
-/** Today as a calendar day where the reader is, `YYYY-MM-DD`: the picker's max. */
+/** Today as the Eastern calendar day, `YYYY-MM-DD`, wherever the reader is
+ * (task 1.16): the picker's max, and what Today saves. */
 export function localToday() {
-  return new Date().toLocaleDateString("en-CA");
+  return easternToday();
 }
 
+// A day string is a calendar day: formatted zone-free, at its UTC midnight.
 const longDay = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 /** "11 March 2024". */
 export function dayName(day: string) {

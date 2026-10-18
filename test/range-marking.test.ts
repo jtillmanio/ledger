@@ -114,8 +114,8 @@ describe("POST /api/progress/range", () => {
     expect(marked).toHaveLength(10);
     const times = marked.map((r) => new Date(r.at).getTime());
     for (let k = 1; k < times.length; k++) expect(times[k]).toBeGreaterThanOrEqual(times[k - 1]);
-    expect(new Date(marked[0].at).toISOString()).toBe("2026-01-01T00:00:00.000Z");
-    expect(new Date(marked.at(-1)!.at).toISOString()).toBe("2026-01-31T00:00:00.000Z");
+    expect(new Date(marked[0].at).toISOString()).toBe("2026-01-01T05:00:00.000Z");
+    expect(new Date(marked.at(-1)!.at).toISOString()).toBe("2026-01-31T05:00:00.000Z");
     expect(marked.every((r) => r.precision === "approximate")).toBe(true);
   });
 
@@ -134,8 +134,8 @@ describe("POST /api/progress/range", () => {
     expect(today.precision).toBe("exact");
     expect(Math.abs(new Date(today.at).getTime() - start)).toBeLessThan(60_000);
     expect(picked.precision).toBe("exact");
-    // A calendar day is stored as its UTC midnight (owner, 2026-10-10).
-    expect(new Date(picked.at).toISOString()).toBe("2025-11-03T00:00:00.000Z");
+    // A calendar day is stored as its Eastern midnight (task 1.16, D-67).
+    expect(new Date(picked.at).toISOString()).toBe("2025-11-03T05:00:00.000Z");
   });
 
   it("rejects a request whose ids include another run's placement, and writes nothing", async () => {

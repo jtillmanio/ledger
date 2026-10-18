@@ -174,8 +174,8 @@ export type IssuePrior = { completedAt: string | null; precision: string };
 
 /**
  * *Change date…* on a spine row (task 1.5, owner 2026-10-09): re-date one
- * placement that is read here. A day is stored as its UTC midnight, like the
- * range mark's (until 1.16); Today is now(). Only this placement's row is
+ * placement that is read here. A day is stored as its Eastern midnight, like
+ * the range mark's (task 1.16, D-67); Today is now(). Only this placement's row is
  * written; the same issue in another run keeps its own date (ARCHITECTURE 2.14).
  * Answers the row as it was, or null when the placement isn't read here, or
  * it, its issue or its run has been removed. The date travels as Postgres text, as the issue route's does.
@@ -183,7 +183,8 @@ export type IssuePrior = { completedAt: string | null; precision: string };
 export async function redateIssue(
   userId: string, placementId: number, finish: Finish, { today = false } = {},
 ): Promise<IssuePrior | null> {
-  const at = today ? sql`now()` : finish.on === null ? null : sql`${`${finish.on}T00:00:00Z`}::timestamptz`;
+  const at = today ? sql`now()`
+    : finish.on === null ? null : sql`${finish.on}::date::timestamp AT TIME ZONE 'America/New_York'`;
   return db.transaction(async (tx) => {
     const mine = and(eq(issueProgress.userId, userId), eq(issueProgress.placementId, placementId));
     const [before] = await tx
@@ -204,7 +205,8 @@ export async function redateIssue(
 export const RANGE_MODES = ["today", "date", "spread", "none", "original"] as const;
 export type RangeMode = (typeof RANGE_MODES)[number];
 
-/** Calendar days, `YYYY-MM-DD`, each stored as its UTC midnight (owner, 2026-10-10). */
+/** Calendar days, `YYYY-MM-DD`, each stored as its `America/New_York` midnight
+ * (task 1.16, D-67; until then its UTC midnight, owner 2026-10-10). */
 export type RangeDates = { date?: string; from?: string; to?: string };
 
 export type RangeResult =
@@ -252,10 +254,10 @@ export async function markRange(
       SELECT p.id, irr.issue_id IS NULL AS no_prior,
         CASE ${mode}::text
           WHEN 'today'    THEN now()
-          WHEN 'date'     THEN ${date}::date::timestamp AT TIME ZONE 'UTC'
+          WHEN 'date'     THEN ${date}::date::timestamp AT TIME ZONE 'America/New_York'
           WHEN 'spread'   THEN (${from}::date + CASE WHEN p.n = 1 THEN ${to}::date - ${from}::date
                                  ELSE round(p.k * (${to}::date - ${from}::date)::numeric / (p.n - 1))::int
-                                 END)::timestamp AT TIME ZONE 'UTC'
+                                 END)::timestamp AT TIME ZONE 'America/New_York'
           WHEN 'original' THEN irr.first_read_at
         END AS at,
         CASE ${mode}::text

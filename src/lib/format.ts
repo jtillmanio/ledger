@@ -1,3 +1,5 @@
+import { ZONE } from "@/lib/finish-date";
+
 /** "1997-2002", "2019", or null when the run has no dated issues yet. */
 export function yearSpan(start: number | null, end: number | null): string | null {
   if (start == null) return null;
@@ -24,13 +26,19 @@ export function issueName(label: string, single: boolean): string {
 
 export type Precision = "exact" | "approximate" | "none";
 
-const monthYear = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+const monthYear = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric", timeZone: ZONE });
+const monthOfDay = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** "Mar 2025", "~Mar 2025" for a guessed date, or null for a read with no known
- * date: `none` never renders a date (ARCHITECTURE 2.17). Formatted on the server
- * so the client never re-formats it in another time zone. */
+ * date: `none` never renders a date (ARCHITECTURE 2.17). A moment (a comic's
+ * `completed_at`) is shown in Eastern (task 1.16); a bare calendar day (a book's
+ * `finished_on`) is that day, whatever the zone. Formatted on the server so the
+ * client never re-formats it in another time zone. */
 export function readWhen(at: Date | string | null, precision: Precision): string | null {
   if (at == null || precision === "none") return null;
-  const text = monthYear.format(new Date(at));
+  const text = typeof at === "string" && DAY.test(at)
+    ? monthOfDay.format(new Date(`${at}T00:00:00Z`))
+    : monthYear.format(new Date(at));
   return precision === "approximate" ? `~${text}` : text;
 }
