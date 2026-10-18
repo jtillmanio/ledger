@@ -1,7 +1,7 @@
 ---
 id: TASK-025
 title: 1.16 Dates in America/New_York
-status: In progress
+status: Review
 depends_on: [TASK-010]
 size: L
 model: opus
@@ -32,11 +32,11 @@ A read marked *Today* late on the last evening of a month shows the day it was a
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): a vitest at `2026-10-31T21:30-04:00` marks *Today* and the row reads October 31 in the spine and the toast. A row stored before the change reads the same calendar day after it. A `none`-precision row is still `none` with a NULL date. The up → down → up test asserts row values, if a migration is used.
-- [ ] AC-2: With the clock at `2026-10-31T23:30-04:00` (`2026-11-01T03:30Z`), a *Pick a date* of `2026-10-31` is accepted by `/api/progress/range`, `PATCH /api/progress/issue` and `/api/progress/book`, and `2026-11-01` is refused by each with 400. A book marked read with *Today* at that moment stores `finished_on = 2026-10-31`.
-- [ ] AC-3: A picked day written by the range sheet or *Change date…* reads back as that same calendar day in `readWhen` and in the spine. Given *Pick a date* `2026-03-01`, the row's month reads `Mar 2026`, not `Feb 2026`, with the formatter's zone set to `America/New_York`.
-- [ ] AC-4: Every client *today* (the pickers' `max`, the *Today* choice's *Saved as …* line) is the Eastern calendar day. At `2026-10-31T23:30-04:00`, the finish-date control's date input has `max="2026-10-31"`, whatever time zone the test runner is in.
-- [ ] AC-5: The spine, the range sheet and the finish-date control still meet the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): nothing changes but the day they name. Screenshots at each `ui.viewports` width, light and dark.
+- [x] AC-1 (roadmap **Check:**, verbatim): a vitest at `2026-10-31T21:30-04:00` marks *Today* and the row reads October 31 in the spine and the toast. A row stored before the change reads the same calendar day after it. A `none`-precision row is still `none` with a NULL date. The up → down → up test asserts row values, if a migration is used.
+- [x] AC-2: With the clock at `2026-10-31T23:30-04:00` (`2026-11-01T03:30Z`), a *Pick a date* of `2026-10-31` is accepted by `/api/progress/range`, `PATCH /api/progress/issue` and `/api/progress/book`, and `2026-11-01` is refused by each with 400. A book marked read with *Today* at that moment stores `finished_on = 2026-10-31`.
+- [x] AC-3: A picked day written by the range sheet or *Change date…* reads back as that same calendar day in `readWhen` and in the spine. Given *Pick a date* `2026-03-01`, the row's month reads `Mar 2026`, not `Feb 2026`, with the formatter's zone set to `America/New_York`.
+- [x] AC-4: Every client *today* (the pickers' `max`, the *Today* choice's *Saved as …* line) is the Eastern calendar day. At `2026-10-31T23:30-04:00`, the finish-date control's date input has `max="2026-10-31"`, whatever time zone the test runner is in.
+- [x] AC-5: The spine, the range sheet and the finish-date control still meet the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): nothing changes but the day they name. Screenshots at each `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -64,7 +64,11 @@ A read marked *Today* late on the last evening of a month shows the day it was a
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Candidate decision: a calendar day in `issue_progress.completed_at` is stored as its `America/New_York` midnight, every date is shown in Eastern, and migration 0012 moves existing UTC-midnight rows to Eastern midnight (amends the owner's 2026-10-10 "stored as its UTC midnight") → docs/review/decisions.md § D-67 (approved at plan)
+- Candidate decision: a calendar day in `issue_progress.completed_at` is stored as its `America/New_York` midnight, every date is shown in Eastern, and migration 0012 moves existing UTC-midnight rows to Eastern midnight (amends the owner's 2026-10-10 "stored as its UTC midnight") → docs/review/decisions.md § D-67 (approved at plan; recorded by the plans PR #93)
+- The development database needs 0012 (`npm run db:migrate`, `.env`), and a picked date saved while Release sits between migrating production and promoting the build would still be a UTC midnight (schema review) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- `upcomingReleases`' Eastern cut-off has no test of its own (spec review) → not tracked: Postgres's `now()` can't be faked, and the change is one expression the schema review read
+- The finish-date and range-sheet option pills and date inputs are about 32px tall, under the 44px phone target (ui-verifier) → not tracked: above the 24px floor, untouched by 1.16, and 44px is the floor for the thumb bar and icon buttons
+- Older fixtures still insert a stored day at UTC midnight (`test/bulk-insert.test.ts`, `test/inbox.test.ts`, `test/range-marking.test.ts`'s Original dates, `test/reading-log.test.ts(x)`'s read-elsewhere rows) → not tracked: none of them asserts a day or month, so the instant doesn't change what they prove
 
 ## Plan
 
@@ -105,13 +109,17 @@ Size check: L by `never-split` (task Context says why: the write and the read mu
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 FAIL(1: resume-strip fixture at UTC midnight) → R2 PASS → R3 PASS (after the two test-only commits)
+- Audit R1 PASS (AC-4 reordered so the base fails on `max`, not on a missing export)
+- Spec R1 APPROVE | Schema R1 APPROVE (2 minor: migration test under a non-UTC session and on DST days, done; Release window, Owner checklist) | UI R1 PASS (6 viewports × light/dark; `Etc/GMT+12` browser still shows the Eastern day)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 2 (test fixtures only)
