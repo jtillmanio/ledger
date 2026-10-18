@@ -337,8 +337,8 @@ describe("Change date… on a spine row (AC-5)", () => {
   it("Pick a date writes that day exact, Year only July 1st approximate, No date NULL / none; nothing else moves", async () => {
     const before = await others();
     const cases: [object, string | null, string][] = [
-      [{ mode: "date", date: "2025-11-03" }, "2025-11-03T00:00:00.000Z", "exact"],
-      [{ mode: "year", year: 2019 }, "2019-07-01T00:00:00.000Z", "approximate"],
+      [{ mode: "date", date: "2025-11-03" }, "2025-11-03T05:00:00.000Z", "exact"],
+      [{ mode: "year", year: 2019 }, "2019-07-01T04:00:00.000Z", "approximate"],
       [{ mode: "none" }, null, "none"],
     ];
     for (const [finish, at, precision] of cases) {

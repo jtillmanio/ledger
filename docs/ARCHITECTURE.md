@@ -434,6 +434,11 @@ read_events.finished_on            date        NULL, finished_on_precision   tex
   dropped `book_status.finished_year`, after backfilling each year to its July
   1st, `approximate`; every reader derives the year from `finished_on` (D-21),
   so a year and a date can never disagree.
+- Dates live in `America/New_York` (task 1.16, D-67). A calendar day in
+  `completed_at` is stored as its Eastern midnight (migration 0012 moved the
+  older UTC midnights), *today* is the Eastern day on the server and in the
+  browser (`src/lib/finish-date.ts`), and every date is shown in Eastern. The
+  two `date` columns carry no zone; only the *today* that writes them moved.
 
 ## 3. Stack
 

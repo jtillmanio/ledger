@@ -85,6 +85,12 @@ tick them.
       backups/` (it is a protected path, so only on your word). Removing it
       empties the folder, not the history: the old dumps stay restorable from
       git either way (from D-66, `fix/backup-r2`).
+- [ ] After 1.16 merges, run `npm run db:migrate` against the development
+      database (`.env`) so its picked-day reads move to Eastern midnight (until
+      then one dated the 1st reads a month early). When Release applies 0012 to
+      production, don't save a picked date (range sheet, *Change date…*) until
+      it has promoted the new build: the old build still writes a UTC midnight,
+      which 0012 has already passed (from TASK-025, PR #94).
 
 ## Approvals from follow-ups
 

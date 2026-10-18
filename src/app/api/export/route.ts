@@ -1,6 +1,7 @@
 import { sql } from "@/db";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { CATALOG_TABLES, USER_TABLES } from "@/db/export-tables";
+import { today } from "@/lib/finish-date";
 
 export const runtime = "nodejs";
 
@@ -16,7 +17,7 @@ export async function GET() {
   for (const t of CATALOG_TABLES) out[t] = [...(await sql`SELECT * FROM ${sql(t)}`)];
   for (const t of USER_TABLES) out[t] = [...(await sql`SELECT * FROM ${sql(t)} WHERE user_id = ${userId}`)];
 
-  const stamp = new Date().toISOString().slice(0, 10);
+  const stamp = today();
   return new Response(JSON.stringify(out, null, 2), {
     headers: {
       "content-type": "application/json",

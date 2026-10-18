@@ -1,3 +1,5 @@
+import { ZONE } from "@/lib/finish-date";
+
 /**
  * Quick capture (task 1.4b, FEATURES #21): what a note may hold, and where its
  * **Resolve** leads. No database: safe in the browser.
@@ -51,7 +53,8 @@ export function queryParam(v: string | string[] | undefined): string {
 }
 
 const DAY = 86_400_000;
-const monthYear = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric", timeZone: "UTC" });
+// The month a note was jotted, in Eastern like every date the app shows (task 1.16).
+const monthYear = new Intl.DateTimeFormat("en-US", { month: "short", year: "numeric", timeZone: ZONE });
 
 /** When a note was jotted, as the mockup says it: *today*, *2 days ago*, *last week*, then *Mar 2026*. */
 export function jotted(at: Date | string, now: Date = new Date()): string {

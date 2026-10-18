@@ -1940,7 +1940,7 @@ Shelves stay the owner's free-form lists.
 - `test/export-tables.test.ts` passes with the four tables.
 - `npm run test:db:reset` migrates from zero.
 
-### ☐ 1.16 Dates in `America/New_York` · M
+### ☑ 1.16 Dates in `America/New_York` · M
 Owner, 2026-10-10 (follow-up from PR #67, task 1.1). A calendar day is stored
 as UTC midnight and shown in UTC through `readWhen`, so a *Today* mark made
 after 8pm Eastern on the last day of a month shows as the next month. Two

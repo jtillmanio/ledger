@@ -8,8 +8,9 @@ import type { Precision } from "@/lib/format";
  * No date is NULL and `none`. There is no Spread: that is for ranges of issues.
  *
  * Every finish date is checked on the server, not only by the picker's `max`:
- * a day after today is refused (PR #67's follow-up). "Today" is UTC until task
- * 1.16 moves dates to `America/New_York`.
+ * a day after today is refused (PR #67's follow-up). "Today" is the calendar
+ * day in `America/New_York` (task 1.16, D-67), on the server and in the
+ * browser alike: this module has no database, so the client imports it too.
  */
 export const FINISH_MODES = ["today", "date", "year", "none"] as const;
 export type FinishMode = (typeof FINISH_MODES)[number];
@@ -30,14 +31,24 @@ export function isDay(s: unknown): s is string {
   return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
 }
 
-/** Today as the server decides it: the UTC calendar day (until 1.16). */
-export function serverToday(now = new Date()): string {
-  return now.toISOString().slice(0, 10);
+/** The one time zone the app decides and shows dates in (task 1.16, D-67). */
+export const ZONE = "America/New_York";
+
+const dayIn = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: ZONE });
+
+/** The Eastern calendar day a moment falls on, `YYYY-MM-DD`. */
+export function easternDay(at: Date): string {
+  return dayIn.format(at);
+}
+
+/** Today: the Eastern calendar day, wherever the server or the reader is. */
+export function today(now = new Date()): string {
+  return easternDay(now);
 }
 
 /** A day after today: refused wherever a finish date is written. */
 export function isFuture(day: string, now = new Date()): boolean {
-  return day > serverToday(now);
+  return day > today(now);
 }
 
 /** A stored date and precision the pairing CHECK accepts. */
@@ -55,7 +66,7 @@ export function resolveFinish(
   const { mode, date, year } = (typeof choice === "object" && choice !== null ? choice : {}) as Record<string, unknown>;
   switch (mode) {
     case "today":
-      return { ok: true, finish: { on: serverToday(now), precision: "exact" } };
+      return { ok: true, finish: { on: today(now), precision: "exact" } };
     case "date":
       if (!isDay(date)) return { ok: false, error: "Pick a date needs date, YYYY-MM-DD" };
       if (isFuture(date, now)) return { ok: false, error: "the finish date is after today" };
@@ -65,7 +76,7 @@ export function resolveFinish(
       if (!Number.isInteger(year) || (year as number) < 1000) {
         return { ok: false, error: "Year only needs year, four digits" };
       }
-      if ((year as number) > now.getUTCFullYear()) return { ok: false, error: "the finish year is after this year" };
+      if ((year as number) > Number(today(now).slice(0, 4))) return { ok: false, error: "the finish year is after this year" };
       return { ok: true, finish: { on: `${year}-07-01`, precision: "approximate" } };
     }
     case "none":

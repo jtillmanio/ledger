@@ -299,7 +299,7 @@ describe("Change date… on a spine row", () => {
     await click(button("Save", dialog));
 
     expect(await progress()).toEqual([
-      [placements[0], "2019-07-01T00:00:00.000Z", "approximate"],
+      [placements[0], "2019-07-01T04:00:00.000Z", "approximate"],
       [placements[1], "2020-07-01T00:00:00.000Z", "approximate"],
     ]);
     expect(document.querySelector('[role="dialog"]')).toBeNull();
