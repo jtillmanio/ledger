@@ -7,8 +7,8 @@ size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 2ccb788
 ---
 
 # TASK-025 — 1.16 Dates in America/New_York
@@ -64,9 +64,38 @@ A read marked *Today* late on the last evening of a month shows the day it was a
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Candidate decision: a calendar day in `issue_progress.completed_at` is stored as its `America/New_York` midnight, every date is shown in Eastern, and migration 0012 moves existing UTC-midnight rows to Eastern midnight (amends the owner's 2026-10-10 "stored as its UTC midnight") → docs/review/decisions.md § D-67 (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+**Owner decision at the gate (CLAUDE.md, a stored date's meaning changes).** One column is reinterpreted: `issue_progress.completed_at` (`timestamptz`). `book_status.finished_on` and `read_events.finished_on` are `date`: their values don't change; only the *today* that writes them moves to Eastern. Existing rows convert **by migration** `drizzle/0012_dates_in_new_york.sql` (data only, `npx drizzle-kit generate --custom --name dates_in_new_york`) with a lossless `drizzle/down/0012_dates_in_new_york.sql`. Up: a row whose `completed_at` is exactly a UTC midnight (a picked day, Spread, Year only, Original copies of those) becomes the same calendar day's Eastern midnight: `((completed_at AT TIME ZONE 'UTC')::date::timestamp AT TIME ZONE 'America/New_York')`. A `now()` row is a moment and is left alone; `none` rows (NULL) are untouched. Down: a row exactly at an Eastern midnight goes back to that day's UTC midnight. Rejected: no migration and rely on Step 14's final load (workbook reads are all `none`), because development and preview rows would then read a day early and the **Check:** requires they don't.
+
+Steps:
+1. `src/lib/finish-date.ts`: `ZONE = "America/New_York"`; `easternDay(at: Date)` (`Intl` `en-CA`, `timeZone: ZONE`) and `today(now = new Date())` replace `serverToday`; `isFuture` and `resolveFinish` (Today, and Year only's cap, now the Eastern year rather than `getUTCFullYear`) use it. The module stays pure so the client imports it.
+2. `src/lib/format.ts` `readWhen`: a bare `YYYY-MM-DD` (the books' `date` columns, `BookStatus.tsx`) formats as that calendar day, zone-free; a timestamp formats in `ZONE`. `src/lib/inbox.ts` month formatter: `timeZone: ZONE`.
+3. `src/db/writes.ts`: `markRange` `date` and `spread` use `AT TIME ZONE 'America/New_York'`; `redateIssue` writes `${on}::date::timestamp AT TIME ZONE 'America/New_York'`; Today stays `now()`; doc comments updated.
+4. `src/components/FinishDate.tsx` `localToday()` and `src/components/RangeSheet.tsx` `today()` return `today()` from step 1. `dayName` already formats a day string zone-free; its input is now Eastern.
+5. Today decided in UTC elsewhere (inside the roadmap's "everywhere the app decides it"; strike at the gate if not): `src/db/queries.ts` upcoming releases `CURRENT_DATE` → `(now() AT TIME ZONE 'America/New_York')::date`; `src/app/api/export/route.ts` file stamp → `today()`.
+6. The migration and down file above; `src/app/api/progress/issue/route.ts` `restore` unchanged.
+7. Docs: `docs/ARCHITECTURE.md` § 2. Decisions 2.17 and `.claude/rules/schema.md` (the date bullet) gain one line: a calendar day is stored as its Eastern midnight and every date is shown in Eastern (1.16). Tick 1.16 in `docs/TASKS.md`.
+
+Files: `src/lib/finish-date.ts`, `src/lib/format.ts`, `src/lib/inbox.ts`, `src/db/writes.ts`, `src/db/queries.ts`, `src/app/api/export/route.ts`, `src/components/FinishDate.tsx`, `src/components/RangeSheet.tsx`, `drizzle/0012_dates_in_new_york.sql`, `drizzle/meta/_journal.json`, `drizzle/meta/0012_snapshot.json`, `drizzle/down/0012_dates_in_new_york.sql`, `test/dates-eastern.test.ts` (new), `test/dates-eastern-migration.test.ts` (new), `test/range-marking.test.ts`, `test/reading-log.test.ts`, `docs/ARCHITECTURE.md`, `.claude/rules/schema.md`, `docs/TASKS.md`.
+
+Test strategy (fake timers `toFake: ["Date"]`):
+- AC-1 → `test/dates-eastern.test.ts` "Today at 21:30 Eastern on Oct 31": clock `2026-11-01T01:30Z`; a placement read at that moment (Postgres `now()` can't be faked, so the row is stamped with it) reads `Oct 2026` through `getRun`'s `last_read_when` and `read_elsewhere_when`, and the toast's `finishWords({ mode: "today" })` is `31 October 2026`. `test/dates-eastern-migration.test.ts` (0011's pattern, one rolled-back transaction): down, then legacy rows: exact `2026-03-01T00:00Z`, approximate `2019-07-01T00:00Z`, a moment `2026-11-01T01:30:00.123456Z`, a `none`; up → `2026-03-01T05:00Z`, `2019-07-01T04:00Z`, the moment unchanged, `none` with NULL, and `readWhen` gives `Mar 2026`, `~Jul 2019`, `Oct 2026`; down → the UTC values exactly; up again → same as the first up.
+- AC-2 → same file, clock `2026-11-01T03:30Z`, through the route handlers: `2026-10-31` gets 200 and `2026-11-01` gets 400 from `/api/progress/range`, `PATCH /api/progress/issue` and `/api/progress/book`; a book's Today stores `finished_on = 2026-10-31`.
+- AC-3 → same file: `markRange` and `redateIssue` with `2026-03-01` store `2026-03-01T05:00:00Z`, and `readWhen` and `getRun` read `Mar 2026`; `readWhen("2026-03-01", "exact")` is `Mar 2026` too.
+- AC-4 → same file: with `process.env.TZ` set to `Pacific/Kiritimati` and then `Pacific/Honolulu`, at `2026-11-01T03:30Z` `today()` is `2026-10-31`, and `renderToStaticMarkup(createElement(FinishDate, …))` has `max="2026-10-31"`.
+- AC-5 → ui-verifier: the spine, the range sheet and the finish-date control at every `ui.viewports` width, light and dark, copy unchanged.
+- Existing: `test/range-marking.test.ts` (lines 117–118, 137–138) and `test/reading-log.test.ts` (340–341) expect Eastern midnights (`…T05:00:00.000Z` in winter, `…T04:00:00.000Z` in summer).
+
+Risks / open questions:
+- Approve the migration route above, or choose re-extract-only (then AC-1's "row stored before" sentence can't hold on development).
+- A `now()` mark at exactly 00:00:00.000000 UTC (or Eastern) would be taken for a day. Microsecond timestamps make that negligible; the down file says so.
+- Migration number: 0012 assumes this lands before TASK-011, whose migration becomes 0013. The second one to land regenerates its number (the staleness check forces a re-plan).
+- DST: `AT TIME ZONE` handles both offsets, and the tests cover a March (EST) day and a July (EDT) day.
+
+Size check: L by `never-split` (task Context says why: the write and the read must land together). About 19 files, one data-only migration with its down file, attended.
 
 ## Review log
 
