@@ -36,6 +36,13 @@ runs:
 
     # Neon's collation (builtin C.UTF-8), so ORDER BY sorts here as it does there.
     # Trust auth: the server lives only as long as the job, on localhost.
+    #
+    # The server log records what is slow, so a test that times out on the
+    # runner says why (run_readiness's R0-12 test, #91 and #94): any statement
+    # over a second, with its plan (estimated cost, and whether JIT was planned)
+    # from auto_explain, plus lock waits and autovacuum runs. auto_explain
+    # doesn't ANALYZE, so the other statements pay nothing. Checkpoints are
+    # logged by default. PGLOG names the file for the job's later steps.
     - name: Start PostgreSQL
       shell: bash
       env:
@@ -46,6 +53,12 @@ runs:
         "$bin/initdb" -D "$RUNNER_TEMP/pgdata" -U postgres --auth=trust -E UTF8 \
           --locale=C.UTF-8 --locale-provider=builtin --builtin-locale=C.UTF-8 > /dev/null
         "$bin/pg_ctl" -D "$RUNNER_TEMP/pgdata" -l "$RUNNER_TEMP/postgres.log" \
-          -o "-p 5432 -k $RUNNER_TEMP" -w start
+          -o "-p 5432 -k $RUNNER_TEMP \
+              -c log_min_duration_statement=1000 -c log_lock_waits=on \
+              -c log_autovacuum_min_duration=0 \
+              -c shared_preload_libraries=auto_explain \
+              -c auto_explain.log_min_duration=1000 -c auto_explain.log_format=text" \
+          -w start
+        echo "PGLOG=$RUNNER_TEMP/postgres.log" >> "$GITHUB_ENV"
         "$bin/createdb" -h localhost -U postgres "$DATABASE"
         "$bin/psql" -h localhost -U postgres -d "$DATABASE" -tAc "SELECT version()"

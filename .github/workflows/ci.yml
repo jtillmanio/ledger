@@ -53,6 +53,18 @@ jobs:
       # the same path a rebuild takes, so a broken migration cannot ship green.
       - run: npm run test:db:reset
       - run: npm test
+      # What the server found slow while the tests ran (start-postgres logs any
+      # statement over a second, with its plan, and lock waits). Printed even
+      # when the tests pass, so a near miss shows before it becomes a timeout.
+      - name: Slow statements and lock waits
+        if: always() && env.PGLOG != ''
+        run: |
+          echo "::group::PostgreSQL log ($PGLOG)"
+          cat "$PGLOG"
+          echo "::endgroup::"
+          if grep -qE "duration: |still waiting for|JIT:" "$PGLOG"; then
+            echo "::warning::PostgreSQL logged a slow statement or a lock wait during the tests; see the log above."
+          fi
       - run: npm run test:views
       - run: python -m unittest discover -s etl -p "test_*.py"
       - run: npm run build
