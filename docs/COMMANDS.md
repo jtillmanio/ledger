@@ -19,14 +19,19 @@ npm run db:generate         # after editing src/db/schema.ts
 npm run db:push             # apply schema.ts to DATABASE_URL with no migration — pre-cutover only, by hand
 npm run db:views            # re-apply etl/views.sql to DATABASE_URL (node, not psql); rebuild and Release do it for you
 npm run extract             # etl/extract.py with every sidecar CSV (see below); clears seed/ first;
-                            # add --with-plan to also load the workbook's To-Read tabs (off by default)
+                            # add --with-plan to also load the workbook's To-Read tabs (off by default);
+                            # --book-review etl/data/book_review.csv proposes book, author and series
+                            # pairs that may be one (merge / separate / blank), applies only `merge`,
+                            # and prints `N book pairs await review`. Workbook reads aren't loaded (D-41):
+                            # seed/workbook_reads.csv lists them for hand entry
 py etl/enrich_comics.py     # Metron: dates, cover URLs, label proposals (--dry-run first)
 py etl/enrich_comics.py --details  # Metron: story titles + credits, ~8,100 requests (--dry-run first)
 npm run enrich:refresh      # --details --refresh: re-ask Metron about issues it credited nobody on (cache never expires)
 npm run sidecars            # etl/check_sidecars.py: validate the issue sidecars, write etl/data/metadata_todo.md
                             # and etl/data/creator_review.csv (close creator names to accept or reject);
                             # an issue fandom_skipped.csv says has a blank Fandom title isn't listed as
-                            # missing one (--keep-fandom-untitled lists them)
+                            # missing one (--keep-fandom-untitled lists them); checks book_review.csv's
+                            # columns, decisions and merge keeps first, with or without seed/
 npm run sidecars:fix        # same, and apply the safe fixes (shifted columns, role spellings, label keys, creator ids)
 npm run sidecars:prune-orphans  # same, plus archive-then-remove sidecar rows for labels gone from the workbook
 npm run check:role-outliers # etl/check_role_outliers.py: flag Metron credits whose role looks mistagged (report only)

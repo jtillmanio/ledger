@@ -428,15 +428,17 @@ class BookWordCountSource(unittest.TestCase):
         idx = ex.BookIndex()
         bid = idx.upsert("Piranesi", "Susanna Clarke")
         idx.upsert("Piranesi", word_count=85000)
+        idx.finish()  # task 1.13: an authorless sighting joins its book here
         book = next(b for b in idx.by_key.values() if b["id"] == bid)
         self.assertEqual((book["word_count"], book["word_count_source"]), (85000, "stated"))
 
 
 class BookStatusFinishDate(unittest.TestCase):
     """Task 1.5 (D-21): book_status.csv carries a finish date and its precision,
-    never a year column. A year-only finish is its July 1st, approximate."""
+    never a year column. Task 1.13 (D-41): a Read tab loads no read state, so
+    every workbook row is an undated to_read; the read is listed for hand entry."""
 
-    def test_a_read_tab_year_is_july_first_approximate_and_no_year_is_none(self):
+    def test_a_read_tab_loads_no_read_and_every_row_is_undated(self):
         import pandas as pd
         from unittest import mock
         path = Path(tempfile.mkdtemp()) / "Books.xlsx"
@@ -459,9 +461,11 @@ class BookStatusFinishDate(unittest.TestCase):
                                   "year_rank", "rating"])
         rows = {r["book_id"].split("-")[0]: r for r in read(out, "book_status")}
         self.assertEqual((rows["piranesi"]["status"], rows["piranesi"]["finished_on"],
-                          rows["piranesi"]["finished_on_precision"]), ("read", "2024-07-01", "approximate"))
+                          rows["piranesi"]["finished_on_precision"]), ("to_read", "", "none"))
         self.assertEqual((rows["the"]["status"], rows["the"]["finished_on"],
                           rows["the"]["finished_on_precision"]), ("to_read", "", "none"))
+        self.assertEqual([(r["title"], r["year"], r["tab"]) for r in read(out, "workbook_reads")],
+                         [("Piranesi", "2024", "Read 2024")])
 
 
 class ReadingPlanPeriod(unittest.TestCase):
@@ -509,6 +513,249 @@ class ReadingPlanPeriod(unittest.TestCase):
         out = self.extract(with_plan=False)
         self.assertEqual(self.header(out), ["user_id", "book_id", "period", "ordinal"])
         self.assertEqual(read(out, "reading_plan"), [])
+
+
+MASTER_COLUMNS = ["Book", "Author", "Series", "Genre", "Words"]
+
+
+def build_books(master: list[tuple], tabs: dict | None = None,
+                coming_out: list[tuple] = (), series: list[tuple] = ()) -> Path:
+    """A minimal Books.xlsx: the master list, Coming Out and Series, plus `tabs`
+    (sheet name -> DataFrame)."""
+    import pandas as pd
+    path = Path(tempfile.mkdtemp()) / "Books.xlsx"
+    with pd.ExcelWriter(path) as xw:
+        pd.DataFrame(list(master), columns=MASTER_COLUMNS) \
+            .to_excel(xw, sheet_name="To-Read Master List", index=False)
+        for name, df in (tabs or {}).items():
+            df.to_excel(xw, sheet_name=name, index=False)
+        pd.DataFrame(list(coming_out), columns=["Title", "Author", "Series", "Date"]) \
+            .to_excel(xw, sheet_name="Coming Out", index=False)
+        pd.DataFrame(list(series), columns=["Series", "Total Books"]) \
+            .to_excel(xw, sheet_name="Series", index=False)
+    return path
+
+
+class BookCase(unittest.TestCase):
+    def setUp(self):
+        ex.UNRESOLVED.clear()
+        self.out = Path(tempfile.mkdtemp())
+        self.review = Path(tempfile.mkdtemp()) / "book_review.csv"
+        self.printed = ""
+
+    def extract(self, path: Path, with_plan: bool = False) -> None:
+        import io
+        from contextlib import redirect_stdout
+        ex.UNRESOLVED.clear()
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            ex.extract_books(path, self.out, with_plan=with_plan, book_review=self.review)
+        self.printed = buf.getvalue()
+
+    def books(self) -> dict[str, dict]:
+        return {b["id"]: b for b in read(self.out, "books")}
+
+    def status(self) -> dict[str, str]:
+        return {r["book_id"]: r["status"] for r in read(self.out, "book_status")}
+
+    def review_rows(self) -> list[dict]:
+        with self.review.open(newline="", encoding="utf-8") as fh:
+            return list(csv.DictReader(fh))
+
+    def decide(self, match, decision: str, keep: str = "") -> None:
+        """Decide every review row `match` picks, as the owner would in Excel."""
+        rows = self.review_rows()
+        hit = [r for r in rows if match(r)]
+        self.assertEqual(len(hit), 1, rows)
+        hit[0].update(decision=decision, keep=keep)
+        with self.review.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=ex.BOOK_REVIEW_COLUMNS)
+            w.writeheader()
+            w.writerows(rows)
+
+    def reasons(self) -> list[str]:
+        return [u["reason"] for u in ex.UNRESOLVED]
+
+
+def df(columns: dict):
+    """A tab of ragged columns, padded with blanks."""
+    import pandas as pd
+    n = max(len(v) for v in columns.values())
+    return pd.DataFrame({k: list(v) + [None] * (n - len(v)) for k, v in columns.items()})
+
+
+class BookReview(BookCase):
+    """Task 1.13 (D-25a, D-41, D-68): one book per title and author, a merge
+    review extract proposes and the owner decides, and no reads from the workbook."""
+
+    def test_two_books_sharing_a_title_load_as_two_rows_with_one_same_title_row(self):
+        self.extract(build_books([("Red Queen", "Victoria Aveyard", None, "Fantasy", None),
+                                  ("Red Queen", "Christina Henry", None, "Fantasy", None)]))
+        self.assertEqual(set(self.books()), {"red-queen-victoria-aveyard", "red-queen-christina-henry"})
+        same = [r for r in self.review_rows() if r["reason"] == "same title"]
+        self.assertEqual(len(same), 1)
+        self.assertEqual((same[0]["kind"], same[0]["a"], same[0]["b"], same[0]["decision"]),
+                         ("book", "Red Queen", "Red Queen", ""))
+        self.assertEqual({same[0]["a_author"], same[0]["b_author"]}, {"Victoria Aveyard", "Christina Henry"})
+        self.assertIn("1 book pairs await review", self.printed)
+
+    def test_an_authorless_to_read_sighting_joins_its_one_authored_match(self):
+        self.extract(build_books([("Piranesi", "Susanna Clarke", None, None, None)],
+                                 {"To-Read 2027": df({"Fantasy": ["Piranesi"]})}), with_plan=True)
+        self.assertEqual(list(self.books()), ["piranesi-susanna-clarke"])
+        self.assertEqual(self.books()["piranesi-susanna-clarke"]["genre"], "Fantasy")
+        self.assertEqual(self.status(), {"piranesi-susanna-clarke": "to_read"})
+        self.assertEqual([r["book_id"] for r in read(self.out, "reading_plan")], ["piranesi-susanna-clarke"])
+        self.assertEqual(self.review_rows(), [])
+
+    def test_a_one_letter_typo_is_proposed_not_merged_then_merged_under_keep(self):
+        path = build_books([("The Lightning Theif", "Rick Riordan", None, "Fantasy", None)],
+                           {"Riordanverse": df({"Book": ["The Lightning Thief", "The Sea of Monsters"]})})
+        self.extract(path)
+        self.assertEqual(set(self.books()), {"the-lightning-theif-rick-riordan",
+                                             "the-lightning-thief-rick-riordan",
+                                             "the-sea-of-monsters-rick-riordan"})
+        typo = [r for r in self.review_rows() if r["kind"] == "book"]
+        self.assertEqual(len(typo), 1, typo)
+        self.assertEqual(({typo[0]["a"], typo[0]["b"]}, typo[0]["reason"]),
+                         ({"The Lightning Theif", "The Lightning Thief"}, "similar"))
+        self.assertGreaterEqual(float(typo[0]["similarity"]), 0.4)
+
+        self.decide(lambda r: r["kind"] == "book", "merge", keep="The Lightning Thief")
+        self.extract(path)
+        self.assertEqual(set(self.books()), {"the-lightning-thief-rick-riordan",
+                                             "the-sea-of-monsters-rick-riordan"})
+        self.assertEqual(self.books()["the-lightning-thief-rick-riordan"]["title"], "The Lightning Thief")
+        self.assertEqual(self.status(), {"the-lightning-thief-rick-riordan": "to_read"})
+
+    def test_names_that_differ_only_by_a_number_are_not_proposed(self):
+        self.extract(build_books([("Saga Vol 1", "Brian K. Vaughan", None, None, None),
+                                  ("Saga Vol 2", "Brian K. Vaughan", None, None, None),
+                                  ("The Dark Tower II", "Stephen King", None, None, None),
+                                  ("The Dark Tower III", "Stephen King", None, None, None)]))
+        self.assertEqual(len(self.books()), 4)
+        self.assertEqual(self.review_rows(), [])
+
+    def test_a_decision_survives_a_second_extract(self):
+        path = build_books([("Red Queen", "Victoria Aveyard", None, None, None),
+                            ("Red Queen", "Christina Henry", None, None, None)])
+        self.extract(path)
+        self.decide(lambda r: r["reason"] == "same title", "separate")
+        self.extract(path)
+        rows = self.review_rows()
+        self.assertEqual([(r["reason"], r["decision"]) for r in rows], [("same title", "separate")])
+        self.assertIn("0 book pairs await review", self.printed)
+        self.assertEqual(len(self.books()), 2)
+
+    def test_reads_in_the_workbook_create_no_book_and_no_read_row(self):
+        read_tab = df({"Fantasy": ["The Way of Kings", "Words of Radiance", None, 2, None, "Cosmere"],
+                       "Horror": [None, None, None, 0, None, "Brom"],
+                       "Unnamed: 2": [None, None, "Books", 2, None, None]})
+        top = df({"Unnamed: 0": [1, 2], "2024": ["The Way of Kings", "Dune"]})
+        king = df({"Completed": [True, False], "Type": ["Novel", "Novel"], "Book": ["Carrie", "It"],
+                   "Series": [None, None], "Word Count": [64000, 444000], "Published": [1974, 1986]})
+        self.extract(build_books([("Piranesi", "Susanna Clarke", None, None, None)],
+                                 {"Read 2024": read_tab, "Top Books": top, "Stephen King": king}))
+        self.assertEqual(set(self.books()), {"piranesi-susanna-clarke", "carrie-stephen-king", "it-stephen-king"})
+        self.assertEqual(self.status(), {"piranesi-susanna-clarke": "to_read"})
+        reads = [(r["title"], r["year"], r["genre"], r["tab"], r["rank"]) for r in read(self.out, "workbook_reads")]
+        self.assertEqual(sorted(reads), sorted([
+            ("The Way of Kings", "2024", "Fantasy", "Read 2024", ""),
+            ("Words of Radiance", "2024", "Fantasy", "Read 2024", ""),
+            ("The Way of Kings", "2024", "", "Top Books", "1"),
+            ("Dune", "2024", "", "Top Books", "2"),
+            ("Carrie", "", "", "Stephen King", ""),
+        ]))
+
+    def test_the_king_tabs_word_count_loads_as_stated(self):
+        king = df({"Completed": [False], "Type": ["Novel"], "Book": ["Carrie"], "Series": [None],
+                   "Word Count": [64000], "Published": [1974]})
+        self.extract(build_books([], {"Stephen King": king}))
+        carrie = self.books()["carrie-stephen-king"]
+        self.assertEqual((carrie["word_count"], carrie["word_count_source"]), ("64000", "stated"))
+
+    def test_year_tabs_are_found_by_name(self):
+        self.extract(build_books([], {"Read 2031": df({"Fantasy": ["Dune", 1]}),
+                                      "To-Read 2031": df({"Fantasy": ["Mort"]})}), with_plan=True)
+        self.assertEqual([(r["title"], r["year"]) for r in read(self.out, "workbook_reads")], [("Dune", "2031")])
+        self.assertEqual(self.status(), {"mort": "to_read"})
+        self.assertEqual([(r["book_id"], r["period"]) for r in read(self.out, "reading_plan")], [("mort", "2031")])
+
+    def test_a_merged_and_a_folded_sighting_of_one_book_in_one_tab_are_one_plan_row(self):
+        """1.7's duplicate check runs on the final id: `Piranisi` reaches the
+        book through a merge, `Piranesi` through the authorless fold."""
+        path = build_books([("Piranesi", "Susanna Clarke", None, None, None)],
+                           {"To-Read 2027": df({"Fantasy": ["Piranesi", "Piranisi"]})})
+        self.extract(path, with_plan=True)
+        self.decide(lambda r: r["kind"] == "book", "merge", keep="Piranesi")
+        self.extract(path, with_plan=True)
+        self.assertEqual(list(self.books()), ["piranesi-susanna-clarke"])
+        self.assertEqual([(r["book_id"], r["period"]) for r in read(self.out, "reading_plan")],
+                         [("piranesi-susanna-clarke", "2027")])
+        self.assertIn("duplicate book/period", self.reasons())
+
+    def test_trigram_similarity_is_pg_trgms(self):
+        self.assertAlmostEqual(ex.trgm_similarity("word", "words"), 4 / 7)
+        self.assertAlmostEqual(ex.trgm_similarity("word", "two words"), 4 / 11)
+
+
+class BookReviewMerge(BookCase):
+    """Task 1.13 AC-2: a merge moves every reference to the kept spelling."""
+
+    def test_merging_two_author_and_series_spellings_moves_every_reference(self):
+        path = build_books(
+            [("The Hobbit", "J.R.R. Tolkien", "Middle-earth #1", None, None),
+             ("The Children of Hurin", "J.R.R. Tolkein", "Middle-earh #3", None, None)],
+            coming_out=[("The Silmarillion", "J.R.R. Tolkein", "Middle-earh #2", "2027-09-01")],
+            series=[("Middle-earh", 5)])
+        self.extract(path)
+        self.assertEqual(len(read(self.out, "authors")), 2)
+        self.decide(lambda r: r["kind"] == "author", "merge", keep="J.R.R. Tolkien")
+        self.decide(lambda r: r["kind"] == "series", "merge", keep="Middle-earth")
+        self.extract(path)
+
+        self.assertEqual(read(self.out, "authors"), [{"id": "j-r-r-tolkien", "name": "J.R.R. Tolkien"}])
+        books = self.books()
+        self.assertEqual(set(books), {"the-hobbit-j-r-r-tolkien", "the-children-of-hurin-j-r-r-tolkien",
+                                      "the-silmarillion-j-r-r-tolkien"})
+        self.assertEqual({b["author_id"] for b in books.values()}, {"j-r-r-tolkien"})
+        self.assertEqual({b["series_id"] for b in books.values()}, {"middle-earth"})
+        self.assertEqual([(s["id"], s["name"], s["author_id"], s["total_books"])
+                          for s in read(self.out, "book_series")],
+                         [("middle-earth", "Middle-earth", "j-r-r-tolkien", "5")])
+        self.assertEqual(self.status(), {"the-hobbit-j-r-r-tolkien": "to_read",
+                                         "the-children-of-hurin-j-r-r-tolkien": "to_read"})
+        self.assertEqual([r["book_id"] for r in read(self.out, "releases")], ["the-silmarillion-j-r-r-tolkien"])
+
+
+class BookReviewLeftovers(BookCase):
+    """Task 1.13 AC-3: a stale decision is kept and reported; an authorless
+    title that matches two books joins neither and is reported."""
+
+    def test_a_decided_row_whose_names_are_gone_stays_and_is_reported_stale(self):
+        gone = {"kind": "book", "a": "Pet Semetary", "b": "Pet Sematary", "a_author": "Stephen King",
+                "b_author": "Stephen King", "a_tabs": "Stephen King", "b_tabs": "To-Read Master List",
+                "reason": "similar", "similarity": "0.6", "keep": "Pet Sematary", "decision": "merge"}
+        undecided = {**gone, "a": "Gone Titel", "b": "Gone Title", "keep": "", "decision": ""}
+        with self.review.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=ex.BOOK_REVIEW_COLUMNS)
+            w.writeheader()
+            w.writerows([gone, undecided])
+        self.extract(build_books([("Carrie", "Stephen King", None, None, None)]))
+        self.assertEqual([(r["a"], r["decision"]) for r in self.review_rows()], [("Pet Semetary", "merge")])
+        self.assertIn("stale review", self.reasons())
+
+    def test_an_authorless_title_matching_two_books_joins_neither(self):
+        self.extract(build_books([("Red Queen", "Victoria Aveyard", None, None, None),
+                                  ("Red Queen", "Christina Henry", None, None, None)],
+                                 {"To-Read 2027": df({"Fantasy": ["Red Queen"]})}), with_plan=True)
+        self.assertEqual(set(self.books()), {"red-queen-victoria-aveyard", "red-queen-christina-henry"})
+        # UNRESOLVED is what main writes to unresolved.csv.
+        flagged = [u for u in ex.UNRESOLVED if u["reason"] == "authorless title matches several books"]
+        self.assertEqual(len(flagged), 1)
+        self.assertIn("Red Queen", flagged[0]["detail"])
+        self.assertEqual(read(self.out, "reading_plan"), [])
+        self.assertEqual(set(self.status()), {"red-queen-victoria-aveyard", "red-queen-christina-henry"})
 
 
 if __name__ == "__main__":
