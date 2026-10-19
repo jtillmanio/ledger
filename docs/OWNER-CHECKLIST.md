@@ -99,6 +99,11 @@ Planning-doc edits and candidate decisions waiting for your yes
 session, and that session or the next `/track-follow-ups` run makes the change
 and notes where it went.
 
+- [ ] Update `docs/ARCHITECTURE.md` § 2. Decisions and `docs/HANDOFF.md`
+      § What each spreadsheet artifact became: the `To-Read 20XX` tabs row
+      becomes "tabs before 2028; later tabs load nothing (D-70)" (from
+      TASK-021, PR #97)
+
 ---
 
 # Closure sweep, 2026-09-20

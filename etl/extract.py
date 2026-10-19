@@ -1457,7 +1457,7 @@ def main(argv=None) -> int:
                     help="creator_aliases.csv, or creator_review.csv (accepted rows only): "
                          "other spellings of a creator's name; repeatable")
     ap.add_argument("--with-plan", action="store_true",
-                    help="also write the workbook's To-Read tabs as reading_plan rows "
+                    help="also write the workbook's To-Read tabs before 2028 as reading_plan rows "
                          "(off by default: the plan is built in the app)")
     ap.add_argument("--book-review", type=Path, default=None,
                     help="book_review.csv: proposes book, author and series pairs that may be "

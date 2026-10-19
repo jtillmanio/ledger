@@ -74,6 +74,9 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - `BookIndex.taken` keeps the id of an authorless book `finish()` folds away, so a later book whose slug equals it gets `-x` in extract but not in the app's `bookId()` (schema review, minor) → not tracked: needs a title that ends in its own author's name; none in the workbook
 - A folded or dropped authorless sighting keeps any `book_series` row it created (schema review, minor) → not tracked: only a `Coming Out` row with a series and no author can do it; none orphaned in the real output
 - `npm run sidecars` reports `book_review.csv` problems with exit code 0 (schema review, minor) → not tracked: accepted as is; every sidecar problem it reports exits 0
+- Candidate decision, amending D-41: a To-Read tab for 2028 or later is speculative and loads nothing (no book, status or plan row, even with `--with-plan`); its titles go to `seed/workbook_plans.csv`, not loaded; the cutoff is a fixed year → docs/review/decisions.md § D-70 (approved at close-out)
+- The 1.13 roadmap prose said `to_read` comes from "the master list and the To-Read year tabs" (not the **Check:** line) → docs/TASKS.md § 1.13 (fixed in this PR)
+- `docs/ARCHITECTURE.md` § 2 (the workbook-to-schema table) and `docs/HANDOFF.md` map every `To-Read 20XX` tab to `reading_plan.period` with `--with-plan`; now only tabs before 2028 → docs/OWNER-CHECKLIST.md § Approvals from follow-ups (queued: no answer at close-out)
 
 ## Plan
 
@@ -113,7 +116,7 @@ Size check: M, about 9 files, ETL only, no schema or app change, attended.
 
 _Filled by /implement-task. One line per round._
 
-Plan stale at preflight (1.7 landed, PR #96) → re-planned at 503da4e, owner approved 2026-10-19 | Verify R1 PASS | Audit R1 PASS | Spec R1 APPROVE (recommended a release-dedupe test: added) | Schema R1 APPROVE (5 MINOR: rule text completed, rest tracked or accepted) | Verify R2 (ETL suite) PASS, 151 | Manual: real-workbook diff and dev `npm run rebuild` done, 0 `read` rows | Plan revision (2028+ To-Read tabs load nothing) → Verify R3, Audit R2, Spec R2
+Plan stale at preflight (1.7 landed, PR #96) → re-planned at 503da4e, owner approved 2026-10-19 | Verify R1 PASS | Audit R1 PASS | Spec R1 APPROVE (recommended a release-dedupe test: added) | Schema R1 APPROVE (5 MINOR: rule text completed, rest tracked or accepted) | Verify R2 (ETL suite) PASS, 151 | Manual: real-workbook diff and dev `npm run rebuild` done, 0 `read` rows | Plan revision (2028+ To-Read tabs load nothing) → Verify R3 PASS, Audit R2 PASS, Spec R2 CHANGES (D-41 amendment, stale help text and docs) → D-70 approved and recorded, fixed | Manual: dev `npm run rebuild` again, 1148 `to_read`, 0 `read`
 
 ## Blocked
 
