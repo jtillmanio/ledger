@@ -676,10 +676,27 @@ class BookReview(BookCase):
 
     def test_year_tabs_are_found_by_name(self):
         self.extract(build_books([], {"Read 2031": df({"Fantasy": ["Dune", 1]}),
-                                      "To-Read 2031": df({"Fantasy": ["Mort"]})}), with_plan=True)
+                                      "To-Read 2025": df({"Fantasy": ["Mort"]}),
+                                      "To-Read 2031": df({"Fantasy": ["Sourcery"]})}), with_plan=True)
         self.assertEqual([(r["title"], r["year"]) for r in read(self.out, "workbook_reads")], [("Dune", "2031")])
         self.assertEqual(self.status(), {"mort": "to_read"})
-        self.assertEqual([(r["book_id"], r["period"]) for r in read(self.out, "reading_plan")], [("mort", "2031")])
+        self.assertEqual([(r["book_id"], r["period"]) for r in read(self.out, "reading_plan")], [("mort", "2025")])
+        self.assertEqual([(r["title"], r["year"]) for r in read(self.out, "workbook_plans")], [("Sourcery", "2031")])
+
+    def test_a_to_read_tab_from_2028_on_loads_nothing_and_is_listed(self):
+        """Owner, 2026-10-19: plans from 2028 on are speculative. Their tabs make
+        no book, status or plan row; a title also on the master list still loads
+        from there, with no plan (Someday)."""
+        self.extract(build_books([("Piranesi", "Susanna Clarke", None, "Fantasy", None)],
+                                 {"To-Read 2027": df({"Fantasy": ["Mort"]}),
+                                  "To-Read 2028": df({"Fantasy": ["Piranesi", "Sourcery"],
+                                                      "Horror": ["The Troop"]})}), with_plan=True)
+        self.assertEqual(set(self.books()), {"piranesi-susanna-clarke", "mort"})
+        self.assertEqual(self.status(), {"piranesi-susanna-clarke": "to_read", "mort": "to_read"})
+        self.assertEqual([(r["book_id"], r["period"]) for r in read(self.out, "reading_plan")], [("mort", "2027")])
+        self.assertEqual(sorted((r["title"], r["year"], r["genre"], r["tab"]) for r in read(self.out, "workbook_plans")),
+                         [("Piranesi", "2028", "Fantasy", "To-Read 2028"), ("Sourcery", "2028", "Fantasy", "To-Read 2028"),
+                          ("The Troop", "2028", "Horror", "To-Read 2028")])
 
     def test_a_merged_and_a_folded_sighting_of_one_book_in_one_tab_are_one_plan_row(self):
         """1.7's duplicate check runs on the final id: `Piranisi` reaches the

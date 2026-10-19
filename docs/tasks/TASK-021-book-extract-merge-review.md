@@ -88,6 +88,8 @@ Steps (all `etl/extract.py` unless named):
 6. `etl/check_sidecars.py` `check_book_review(path, report)`: the exact columns, `decision` in `merge | separate | blank`, and a `merge` needs a valid `keep`. It runs from `main` before the seed-dependent checks.
 7. `package.json` `extract` adds `--book-review etl/data/book_review.csv`. `docs/COMMANDS.md` gets the flag, and the `.claude/rules/schema.md` sidecar bullet gets `book_review.csv`. The PR commits the first `etl/data/book_review.csv` from the real workbook. Tick 1.13 in `docs/TASKS.md`.
 
+8. *Plan revision, owner 2026-10-19 (after review):* a To-Read tab for 2028 or later is speculative and loads nothing: no book, no status, no plan row (`SPECULATIVE_FROM = 2028`, fixed, not relative to today). A title also on the master list still loads from there, with no plan. Those tabs' titles go to `seed/workbook_plans.csv` (`title, year, genre, tab`), which is not loaded. Test: `BookReview.test_a_to_read_tab_from_2028_on_loads_nothing_and_is_listed`; `test_year_tabs_are_found_by_name` shows `To-Read 2025` loading and `To-Read 2031` listed.
+
 Files: `etl/extract.py`, `etl/test_extract.py`, `etl/check_sidecars.py`, `etl/test_check_sidecars.py`, `etl/data/book_review.csv` (new), `package.json`, `docs/COMMANDS.md`, `.claude/rules/schema.md`, `docs/TASKS.md`.
 
 Test strategy (`etl/test_extract.py`, workbooks built in the test with `pd.ExcelWriter` as `BookStatusFinishDate` does; no binary fixture):
@@ -111,7 +113,7 @@ Size check: M, about 9 files, ETL only, no schema or app change, attended.
 
 _Filled by /implement-task. One line per round._
 
-Plan stale at preflight (1.7 landed, PR #96) → re-planned at 503da4e, owner approved 2026-10-19 | Verify R1 PASS | Audit R1 PASS | Spec R1 APPROVE (recommended a release-dedupe test: added) | Schema R1 APPROVE (5 MINOR: rule text completed, rest tracked or accepted) | Verify R2 (ETL suite) PASS, 151 | Manual: real-workbook diff and dev `npm run rebuild` done, 0 `read` rows
+Plan stale at preflight (1.7 landed, PR #96) → re-planned at 503da4e, owner approved 2026-10-19 | Verify R1 PASS | Audit R1 PASS | Spec R1 APPROVE (recommended a release-dedupe test: added) | Schema R1 APPROVE (5 MINOR: rule text completed, rest tracked or accepted) | Verify R2 (ETL suite) PASS, 151 | Manual: real-workbook diff and dev `npm run rebuild` done, 0 `read` rows | Plan revision (2028+ To-Read tabs load nothing) → Verify R3, Audit R2, Spec R2
 
 ## Blocked
 
@@ -122,4 +124,4 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Verify rounds: 1 (plus an ETL re-run after the review fix)
 - Review rounds: 1
 - First-pass AC FAILs: 0
-- Plan revisions after approval: 1 (re-plan at 503da4e for 1.7's `add_plan`, before any code)
+- Plan revisions after approval: 2 (re-plan at 503da4e for 1.7's `add_plan`, before any code; 2028+ To-Read tabs load nothing, owner after review)

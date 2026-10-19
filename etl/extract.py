@@ -865,6 +865,10 @@ SERIES_RE = re.compile(r"^(?P<name>.+?)\s*#\s*(?P<pos>[\d.]+)\s*$")
 # Year tabs are found by name, so a new year's tab needs no code change (task 1.13).
 READ_TAB_RE = re.compile(r"^Read (\d{4})$")
 TO_READ_TAB_RE = re.compile(r"^To-Read (\d{4})$")
+# A To-Read tab for this year or later is speculative (owner, 2026-10-19): it
+# loads nothing, and its titles are listed in workbook_plans.csv instead.
+SPECULATIVE_FROM = 2028
+WORKBOOK_PLANS_COLUMNS = ["title", "year", "genre", "tab"]
 # Author and series completion tabs, and the author every book on them has.
 AUTHOR_TABS = {"Stephen King": "Stephen King", "Dresden": "Jim Butcher",
                "Cosmere": "Brandon Sanderson", "Riordanverse": "Rick Riordan"}
@@ -1227,7 +1231,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
     review = load_book_review(book_review)
     idx = BookIndex(review)
     status: dict[str, dict] = {}
-    plan, releases, external, wishlist, reads = [], [], [], [], []
+    plan, releases, external, wishlist, reads, speculative = [], [], [], [], [], []
     plan_sightings: list[tuple[str, int, str]] = []
     release_sightings: list[tuple[str, str, str]] = []
     seen_plan: set[tuple[str, str]] = set()
@@ -1301,6 +1305,11 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
             if str(genre).startswith("Unnamed"):
                 continue
             for title in raw[genre].dropna():
+                if year >= SPECULATIVE_FROM:
+                    if clean(title):
+                        speculative.append({"title": clean(title), "year": year,
+                                            "genre": str(genre), "tab": tab})
+                    continue
                 bid = idx.upsert(title, genre=genre, tab=tab)
                 if bid:
                     to_read(bid)
@@ -1421,6 +1430,8 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
     write(out, "external_lists", external, ["source", "year", "rank", "raw_title", "book_id"])
     # Not loaded (D-41): the workbook's reads, for the owner to enter by hand.
     write(out, "workbook_reads", reads, WORKBOOK_READS_COLUMNS)
+    # Not loaded either: To-Read titles from SPECULATIVE_FROM on, for reference.
+    write(out, "workbook_plans", speculative, WORKBOOK_PLANS_COLUMNS)
 
 
 # --------------------------------------------------------------------------

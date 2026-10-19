@@ -23,7 +23,8 @@ npm run extract             # etl/extract.py with every sidecar CSV (see below);
                             # --book-review etl/data/book_review.csv proposes book, author and series
                             # pairs that may be one (merge / separate / blank), applies only `merge`,
                             # and prints `N book pairs await review`. Workbook reads aren't loaded (D-41):
-                            # seed/workbook_reads.csv lists them for hand entry
+                            # seed/workbook_reads.csv lists them for hand entry. A To-Read tab for 2028
+                            # or later loads nothing either; seed/workbook_plans.csv lists its titles
 py etl/enrich_comics.py     # Metron: dates, cover URLs, label proposals (--dry-run first)
 py etl/enrich_comics.py --details  # Metron: story titles + credits, ~8,100 requests (--dry-run first)
 npm run enrich:refresh      # --details --refresh: re-ask Metron about issues it credited nobody on (cache never expires)

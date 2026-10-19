@@ -57,7 +57,9 @@ Release, test isolation) and the Hard rules a reviewer checks.
   when there is none, and is reported in `unresolved.csv` when there are
   several. The workbook loads no
   read state (D-41): `seed/workbook_reads.csv` lists its reads for hand entry
-  and is not loaded.
+  and is not loaded. A To-Read tab for 2028 or later is speculative and loads
+  nothing (`SPECULATIVE_FROM`, owner 2026-10-19): no book, status or plan row;
+  `seed/workbook_plans.csv` lists its titles and is not loaded.
 - **One issue row per comic.** `issues` is what exists — one row per label, id a
   slug of the label, never a run position. `run_issues(id, run_id, sequence,
   issue_id, type, notes)` is where it sits in a run; `type` and `notes` belong to
