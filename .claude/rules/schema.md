@@ -41,6 +41,25 @@ Release, test isolation) and the Hard rules a reviewer checks.
   Metron's canonical label; extract applies a rename only when `decision` is
   `accept`, and enrich rekeys every sidecar to the new label on its next run.
   Nothing ever writes back to the workbook.
+- **A book is its title and author; two merge only through a merge decision**
+  (task 1.13, D-25a, D-68). Extract compares both after `clean()` and `key()`,
+  so one title under two authors is two books. `etl/data/book_review.csv`
+  (`kind` book|author|series, `a`, `b`, authors, tabs, `reason` same title|
+  similar, `similarity`, `keep`, `decision` merge|separate) is written by
+  `npm run extract`: it proposes pairs (≥ 0.4 trigram similarity, never names
+  that differ only by a number), keeps every decision, and applies only `merge`,
+  before the load, so the merged-away spelling never becomes a row. Books by
+  two authors pair only on an identical title (`same title`), where `keep`
+  names the surviving author. `keep` counts only with a `decision`: an
+  undecided row is rebuilt each run, and a decided row whose names have left
+  the workbook stays and is reported as `stale review`. A title seen with no
+  author joins the one authored book with that title, stays a book of its own
+  when there is none, and is reported in `unresolved.csv` when there are
+  several. The workbook loads no
+  read state (D-41): `seed/workbook_reads.csv` lists its reads for hand entry
+  and is not loaded. A To-Read tab for 2028 or later is speculative and loads
+  nothing (`SPECULATIVE_FROM`, owner 2026-10-19): no book, status or plan row;
+  `seed/workbook_plans.csv` lists its titles and is not loaded.
 - **One issue row per comic.** `issues` is what exists — one row per label, id a
   slug of the label, never a run position. `run_issues(id, run_id, sequence,
   issue_id, type, notes)` is where it sits in a run; `type` and `notes` belong to

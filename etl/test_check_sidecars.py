@@ -313,6 +313,77 @@ class ArchiveOrphans(unittest.TestCase):
             self.assertEqual([r["label"] for r in rows], ["A #1", "B #1"])
 
 
+class BookReviewFile(unittest.TestCase):
+    """Task 1.13: book_review.csv has extract's columns, a decision of merge,
+    separate or blank, and a merge names the spelling it keeps."""
+
+    ROW = {"kind": "book", "a": "The Lightning Theif", "b": "The Lightning Thief",
+           "a_author": "Rick Riordan", "b_author": "Rick Riordan", "a_tabs": "To-Read Master List",
+           "b_tabs": "Riordanverse", "reason": "similar", "similarity": "0.62",
+           "keep": "The Lightning Thief", "decision": "merge"}
+
+    def check(self, rows, columns=None):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "book_review.csv"
+            with path.open("w", newline="", encoding="utf-8") as fh:
+                w = csv.DictWriter(fh, fieldnames=columns or list(self.ROW))
+                w.writeheader()
+                w.writerows(rows)
+            report = cs.Report()
+            cs.check_book_review(path, report)
+            return report.problems
+
+    def test_a_valid_file_reports_nothing(self):
+        same_title = {**self.ROW, "a": "Red Queen", "b": "Red Queen", "a_author": "Christina Henry",
+                      "b_author": "Victoria Aveyard", "reason": "same title", "keep": "", "decision": "separate"}
+        self.assertEqual(self.check([self.ROW, same_title, {**self.ROW, "keep": "", "decision": ""}]), {})
+
+    def test_the_columns_must_be_extracts(self):
+        cols = [c for c in self.ROW if c != "similarity"]
+        problems = self.check([{k: v for k, v in self.ROW.items() if k in cols}], columns=cols)
+        self.assertIn(("book_review.csv", "wrong columns"), problems)
+
+    def test_an_unknown_decision_is_reported(self):
+        problems = self.check([{**self.ROW, "decision": "maybe"}])
+        self.assertIn(("book_review.csv", "decision is not merge, separate or blank"), problems)
+
+    def test_a_merge_with_no_keep_or_a_keep_that_names_neither_side_is_reported(self):
+        for keep in ("", "The Lightning Thing"):
+            with self.subTest(keep=keep):
+                problems = self.check([{**self.ROW, "keep": keep}])
+                self.assertIn(("book_review.csv", "merge with no valid keep"), problems)
+
+    def test_a_same_title_merge_keeps_an_author(self):
+        row = {**self.ROW, "a": "Red Queen", "b": "Red Queen", "a_author": "Christina Henry",
+               "b_author": "Victoria Aveyard", "reason": "same title"}
+        self.assertIn(("book_review.csv", "merge with no valid keep"),
+                      self.check([{**row, "keep": "Red Queen"}]))
+        self.assertEqual(self.check([{**row, "keep": "Victoria Aveyard"}]), {})
+
+    def test_no_file_is_not_a_problem(self):
+        report = cs.Report()
+        cs.check_book_review(Path(tempfile.mkdtemp()) / "book_review.csv", report)
+        self.assertEqual(report.problems, {})
+
+    def test_npm_run_sidecars_reports_it_before_needing_seed(self):
+        """AC-4: `npm run sidecars` (main) checks book_review.csv, and does so
+        before it stops for a missing seed/."""
+        import io
+        from contextlib import redirect_stdout
+        with tempfile.TemporaryDirectory() as tmp:
+            data = Path(tmp) / "data"
+            data.mkdir()
+            with (data / "book_review.csv").open("w", newline="", encoding="utf-8") as fh:
+                w = csv.DictWriter(fh, fieldnames=list(self.ROW))
+                w.writeheader()
+                w.writerow({**self.ROW, "keep": ""})
+            buf = io.StringIO()
+            with redirect_stdout(buf), self.assertRaises(SystemExit):
+                cs.main(["--data", str(data), "--seed", str(Path(tmp) / "seed"),
+                         "--todo", str(data / "todo.md")])
+            self.assertIn("book_review.csv: merge with no valid keep", buf.getvalue())
+
+
 class CoverDates(unittest.TestCase):
     def test_shifted_row_moves_back(self):
         report = cs.Report()

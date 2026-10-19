@@ -1753,7 +1753,7 @@ an any-run rule and an approved row with no year, and asserts that
 second. `npm run rebuild` (development) reports a `volume_rules` count equal to
 the approved rows in `volume_map.csv`.
 
-### ☐ 1.13 Book extract — one book per title and author, a merge review, no workbook reads · M
+### ☑ 1.13 Book extract — one book per title and author, a merge review, no workbook reads · M
 Book-ingest review, 2026-10-08. **Built before cutover (sitting 8).** The
 2026-10-08 review of `extract_books` found that it dedupes on the title
 alone, so different books that share a title become one row under whichever
@@ -1802,8 +1802,10 @@ edited, so the fix has to survive re-extracts.
   - A book seen only in those places is not created. 1.4's search brings it in
     from Open Library instead.
   - `book_status.csv` holds only `to_read` rows: the master list and the
-    To-Read year tabs. Author-tab rows and Coming Out still create books, with
-    no status.
+    To-Read year tabs before 2028. Author-tab rows and Coming Out still create
+    books, with no status. A To-Read tab for 2028 or later is speculative and
+    loads nothing; `seed/workbook_plans.csv` lists its titles (owner,
+    2026-10-19, after the review of TASK-021).
   - For hand entry, extract writes `seed/workbook_reads.csv` (title, year,
     genre, source tab, Top Books rank). It is not loaded, like
     `workbook_run_fields.csv`. Each Read-tab column is read down to its count

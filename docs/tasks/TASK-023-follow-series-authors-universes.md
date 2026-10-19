@@ -28,6 +28,7 @@ The series, authors and universes (Cosmere, the Riordanverse) the owner follows 
 - Decisions: D-42 (a universe is a fact about the work, not a shelf; amends FEATURES §9), D-43 (following is a stored choice; `reading` stays set until changed), D-41, D-17. Standing rule 4 applies to extract.
 - **Not here** (follow-ups from PR #58): the control that changes a follow's state, and the author and universe pages, are task 5.11 in `docs/TASKS.md`.
 - **Open question for the plan** (follow-up from PR #58): the Series tab lists a word count for each member book, and nothing reads it. This task already reads the tab. Should extract fill a book's missing `word_count` from it, with source `stated`? Ask the owner at plan time; if the answer is no, record that here.
+- *From TASK-021 (1.13, PR #97):* extract keys `authors` and `book_series` rows on `slug()` but compares names with `key()`, and `book_review.csv` never pairs two names with one `key()`. So spellings like `J.R.R. Tolkien` / `JRR Tolkien` (different slugs, one key) would load as two author rows that are never proposed for review, and a follow seeded from either would see only half the books. Today's workbook has no such pair (376 authors, 215 series); this task seeds follows from those names, so it should key them one way.
 
 ## Acceptance criteria
 

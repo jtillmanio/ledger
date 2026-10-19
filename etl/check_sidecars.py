@@ -556,6 +556,35 @@ def dedupe_credits(rows: list[dict], report: Report) -> list[dict]:
     return out
 
 
+def check_book_review(path: Path, report: Report) -> None:
+    """book_review.csv (task 1.13): extract's columns, a decision of merge,
+    separate or blank, and a merge whose keep names one side. Extract writes the
+    file; this catches what an edit in Excel can break."""
+    f = "book_review.csv"
+    if not path.exists():
+        return
+    try:
+        with path.open(newline="", encoding="utf-8-sig") as fh:
+            reader = csv.DictReader(fh)
+            rows = list(reader)
+            columns = list(reader.fieldnames or [])
+    except UnicodeDecodeError:
+        raise SystemExit(f"{path} is not UTF-8 — in Excel, Save As → CSV UTF-8")
+    if columns != ex.BOOK_REVIEW_COLUMNS:
+        report.problem(f, "wrong columns", f"{', '.join(columns)} — expected "
+                       f"{', '.join(ex.BOOK_REVIEW_COLUMNS)}")
+    for r in rows:
+        r = {k: (v or "").strip() for k, v in r.items() if k is not None}
+        pair = f"{r.get('kind', '')}: {r.get('a', '')} / {r.get('b', '')}"
+        decision = r.get("decision", "").lower()
+        if decision not in ex.BOOK_REVIEW_DECISIONS:
+            report.problem(f, "decision is not merge, separate or blank", f"{pair}: {decision!r}")
+        elif decision == "merge" and ex.review_keep_side(r) is None:
+            report.problem(f, "merge with no valid keep",
+                           f"{pair}: keep {r.get('keep', '')!r} — copy one side's spelling "
+                           "(on a same-title pair, its author)")
+
+
 ARCHIVE_COLUMNS = ["removed_at", "file", "label", "fields"]
 
 
@@ -832,6 +861,11 @@ def main(argv=None) -> int:
     data, seed = Path(args.data), Path(args.seed)
     paths = {"dates": data / "cover_dates.csv", "details": data / "issue_details.csv",
              "credits": data / "issue_credits.csv"}
+    # book_review.csv needs no seed/, so it is checked even when seed/ is missing.
+    books_report = Report()
+    check_book_review(data / "book_review.csv", books_report)
+    if books_report.problems:
+        books_report.print(applied=False)
     warn_if_stale(seed / "issues.csv", data / "Comics.xlsx", data / "label_review.csv")
 
     renames = accepted_renames(data / "label_review.csv")
