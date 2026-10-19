@@ -7,8 +7,8 @@ size: M
 model: sonnet
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 4bba78a
 ---
 
 # TASK-013 — 0.11 Browser test harness — Playwright and axe
@@ -55,9 +55,44 @@ UI checks run in a real browser at every target width and theme, with accessibil
 - Automated: `npm run test:e2e` locally, green, then red on the unnamed-button and overflow fixtures, with the output quoted in the PR (AC-1, AC-3). Run with `TEST_DATABASE_URL` unset → non-zero before launch (AC-2). CI `check` green on the PR, with the e2e step in its log (AC-4).
 - Manual: open the screenshot folder after a run → expected: one spine image per width and theme. It is ignored by git.
 
+## Follow-ups
+
+_Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- The owner's machine needs the browser once: `npx playwright install chromium` after the first `npm ci` on this branch, or `npm run test:all` fails at the e2e step → docs/OWNER-CHECKLIST.md § Actions from follow-ups (approved at plan)
+- Candidate decision: browser tests are Playwright on Chromium only, against `next dev` on the test database, signed in with a fixed test passcode the wrapper sets, never the owner's `APP_PASSCODE` → docs/review/decisions.md § D-72 (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Provisional: depends on TASK-012 (not Done). It changes CSS only, so this plan's files shouldn't move.
+
+Steps:
+1. `npm i -D @playwright/test @axe-core/playwright` at exact current versions; `npx playwright install chromium` locally. Chromium only, which is what the ui-verifier drives.
+2. `scripts/lib/e2e.mjs` (new): `planE2e(env)` calls `checkTestUrl(env.TEST_DATABASE_URL, env.DATABASE_URL)` and returns `{ error }` with that exact message, or `{ env }` for the child: `DATABASE_URL = TEST_DATABASE_URL`, `APP_PASSCODE = "e2e-passcode"`, `SESSION_SECRET = "e2e-only-secret"`, `OWNER_ID = "e2e-user"`, `E2E_PORT = 3199` (below `ui.portBase` 3100's range). `scripts/e2e.mjs` (new): `loadDotEnv()`, `planE2e`; on error print it and exit 1 before spawning anything; else spawn `npx playwright test <args>` with that env.
+3. `playwright.config.ts` (new): refuses unless `process.env.DATABASE_URL === requireTestUrl()` ("run it with npm run test:e2e"), so a bare `npx playwright test` can't start a server on the dev database. `testDir: test/e2e`, `workers: 1` (one shared database), `webServer: npx next dev --port 3199`, waiting on `/api/health`, `reuseExistingServer: false`, timeout 180 s. `globalSetup: test/e2e/global-setup.ts`: `truncateAll` and seed user `e2e-user`, run `e2e-run` (*E2E Run*) with 12 placements, 3 read (`test/db.ts` helpers). Projects: `setup` signs in through `/login`'s form (types the passcode, presses *Open ledger*, so the form posts `/api/login`) and saves `storageState` to `test/e2e/.auth/state.json`. Then 12 width × theme projects (`w360-light` … `w1280-dark`, the `ui.viewports` sizes and `colorScheme`), plus `w390-reduced-motion` (`reducedMotion: 'reduce'`) and `w390-touch` (`hasTouch`, `isMobile`). All depend on `setup`.
+4. `test/e2e/helpers.ts` (new): `expectNoAxeViolations(page, rules)` (AxeBuilder `.withRules(rules)`; throws listing each violation's id and target); `computedStyle(locator, props)`; `expectNoHorizontalScroll(page)` (`scrollWidth <= clientWidth` on the root); `screenshot(page, testInfo, name)` → `test-results/screens/<project>/<name>.png`.
+5. `test/e2e/fixtures/unnamed-button.html` and `overflow-360.html` (new), loaded with `page.setContent`, so nothing ships in the app. `test/e2e/harness.spec.ts` (new) and `test/e2e/spine.spec.ts` (new).
+6. `.gitignore`: `/test-results/`, `/playwright-report/`, `test/e2e/.auth/`.
+7. `package.json`: `"test:e2e": "node scripts/e2e.mjs"`; `test:all` ends `&& npm run test:e2e`.
+8. `.github/workflows/ci.yml`: after `test:etl`, `npx playwright install --with-deps chromium`, then `npm run test:e2e` (the job has no `DATABASE_URL`, so the wrapper's child gets the test URL).
+9. `scripts/lib/test-files.mjs` routes `test/e2e/*.spec.ts` to `node scripts/e2e.mjs <files>`; `.claude/kit.json` `testAudit.testPathPatterns` adds `test/e2e/*.spec.ts`, so the test-auditor sees later tasks' specs (both not in the list).
+10. `CLAUDE.md` commands, `.claude/rules/git.md` *Test on the branch*, and `docs/COMMANDS.md` name `npm run test:e2e`. Tick 0.11 in `docs/TASKS.md`.
+
+Files: `package.json`, `package-lock.json`, `playwright.config.ts`, `scripts/e2e.mjs`, `scripts/lib/e2e.mjs` (+ `.d.mts`), `scripts/lib/test-files.mjs`, `test/e2e/{global-setup.ts,helpers.ts,harness.spec.ts,spine.spec.ts,fixtures/*}`, `test/e2e-guard.test.ts`, `test/test-files.test.ts`, `.gitignore`, `.github/workflows/ci.yml`, `.claude/kit.json`, `CLAUDE.md`, `.claude/rules/git.md`, `docs/COMMANDS.md`, `docs/TASKS.md`.
+
+Test strategy:
+- AC-1 → `spine.spec.ts` `signs in and loads the seeded spine` in each of the 12 projects: the h1 reads *E2E Run*, 12 `.iss` rows, `expectNoHorizontalScroll`. `harness.spec.ts` `axe fails on button-name for an unnamed button` (the helper rejects, naming `button-name`) and `no-scroll fails on a page that overflows at 360px` (`w360-*` only). CI: the e2e step in the PR's `check` log.
+- AC-2 → `test/e2e-guard.test.ts`: `planE2e` returns the exact `checkTestUrl` message for unset, and for same host and database; `node scripts/e2e.mjs` with `TEST_DATABASE_URL` unset exits 1 with that message and launches nothing (a `PLAYWRIGHT_BIN` stub that writes a marker file is never run).
+- AC-3 → `harness.spec.ts` `the helpers work together` uses each helper once, an axe rule list, a computed `background-color` equal to `--page`, and a screenshot that exists afterwards; `e2e-guard.test.ts` `git check-ignore` exits 0 for `test-results/screens/probe.png`.
+- AC-4 → `e2e-guard.test.ts` `test:all runs test:e2e, and CLAUDE.md and git.md name it`; manual: CI `check` green on the PR, the e2e step visible.
+
+Risks / open questions:
+- `next dev` alongside the owner's own `npm run dev` in the same folder may fight over `.next/`. If it does, stop the dev server before `test:all`, and `docs/COMMANDS.md` says so.
+- The login cookie is `secure`; Chromium treats `http://localhost` as secure, which is why sign-in goes through the page and not `request.post`.
+- `test:all` gets about 2–3 minutes longer (a cold `next dev` compile plus 14 projects).
+- If the real spine overflows at 360px, AC-1 fails on a real bug. That gets fixed here, as the UX floor, or the owner splits it out.
+
+Size check: M in code (two layers: test tooling and CI), about 18 files mostly small, no schema or UI; attended.
 
 ## Review log
 

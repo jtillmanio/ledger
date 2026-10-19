@@ -683,7 +683,7 @@ stay. START-HERE Step 12 groups them into sittings:
 | 3 | 1.2 → 1.1 → 1.6 | 1.1's check asserts undo, and 1.1 must not carry its own (R3-10) |
 | 4 | 1.3 → 1.3c → 1.3b | 1.3c's review table takes the parser's output; 1.3b's Metron results go through the same review and insert |
 | 5 | 1.4 → 1.4c → 1.4b → 1.5 → 1.16 | resolving an inbox note (1.4b) routes into the add flows; 1.5 must land before real rereads overwrite history; 1.16 reinterprets the dates 1.5 finishes adding, and lands before the final load |
-| 6 | 1.7 → 1.8a → 0.11 → 1.8 → 1.8b | 1.8a's tokens come before the first UI task; 0.11's harness runs 1.8's axe and computed-style check; 1.8b was split out of 1.8 (R3-12) |
+| 6 | 1.7 → 1.8a → 0.11 → 1.8c → 1.8 → 1.8d → 1.8b | 1.8a's tokens come before the first UI task; 0.11's harness runs 1.8's computed-style check and 1.8d's axe run; 1.8c moves the routes the nav links to; 1.8d's axe run covers the finished chrome; 1.8b was split out of 1.8 (R3-12) |
 | 7 | 1.10 → 1.9 → 2.11a → 1.12 → 1.11 | 1.9's Up next tab reads the queue; 2.11a is numbered in Phase 2 but built here, before cutover (D-20); so is 1.11 (D-36); 1.12 must land before Step 14's final load, the last time `load` runs |
 | 8 | 1.13 → 1.14 → 1.15 | the book ingest (2026-10-08 review): 1.14's proposals join 1.13's review file, and 1.15 seeds from series and author names 1.13's review fixed. All three change what `load` puts in, so they land before Step 14's final load. They don't depend on sittings 3–7 and can be built earlier, leaving the owner time to answer the review |
 
@@ -1254,8 +1254,8 @@ the `--mark` / `--held` aliases stay (SG §13).
 
 **Extend `scripts/check-tokens.mjs`** (it stays one script inside `test:tokens`):
 
-- **Elevation order** by relative luminance: dark `page < sunk < surface < raise
-  < overlay`; light `sunk < page < raise < surface`, with `overlay = surface`
+- **Elevation order** by relative luminance: dark `sunk < page < surface < raise
+  < overlay` (STYLE_GUIDE §4.1, SG-D2; owner, 2026-10-19); light `sunk < page < raise < surface`, with `overlay = surface`
   (STYLE_GUIDE §6). The audit's N03 check wanted one order for both themes; the
   light values do not follow it, and the style guide's is the measured one.
 - **Text tokens on every surface.** `--ink`, `--ink-2`, `--muted`, `--faint`,
@@ -1281,11 +1281,14 @@ parses `globals.css` and asserts every class in the state-matrix list above has 
 | sort -u` returns only `var(--r-*)` values and `50%` (circles). Screenshot `/comics` at 360px in both
 themes before and after: the layout is unchanged, only the values move.
 
-### ☐ 1.8 App shell · M
-Depends on 1.8a (tokens and control states).
-The chrome every dashboard sits in. Split in two (R3-12): this task is the shell
-(nav, redirect, sync pill, skeletons, markup rules); **1.8b** is the thumb bar and
-the token contrast checks. Tab bar at the top on phone, a navigation rail on a
+### ☐ 1.8 App shell · L
+Depends on 1.8a (tokens and control states) and 1.8c (the routes the nav links to).
+The chrome every dashboard sits in. R3-12 split out **1.8b**, the thumb bar and
+the token contrast checks. The owner then split the rest in three (2026-10-19).
+**1.8c**, built first, owns the routes, the `/` redirect and its cookie, stale
+sessions and the honest counts. This task owns the navigation, the sync pill,
+glass, the widths and the mockup frames. **1.8d** owns failed writes, skeletons
+and the markup rules. A paragraph below that belongs to 1.8c or 1.8d says so. Tab bar at the top on phone, a navigation rail on a
 tablet, the sidebar on desktop (breakpoints below, D-33). `/` redirects
 to the medium you last touched; `/comics`, `/books` and `/watch` are the
 dashboards; the list screens move to `/comics/runs` and `/books/list`.
@@ -1293,19 +1296,20 @@ Tokens and classes are already in `src/app/globals.css`: palette 1c and the feel
 pass's additions (D-40), with the fonts self-hosted. Screen titles are Newsreader
 500 at 32/36, 40/44 from 768px (FP-D5).
 
-**A stale session goes to `/login`, not a 500** (R2-11). Landed: `requireUserId()`
+**A stale session goes to `/login`, not a 500** (R2-11; 1.8c). Landed: `requireUserId()`
 redirects and route handlers answer 401 through `apiUserId()`. This task keeps it
 true for every new page and route it adds.
 
-**The list screens keep R2's honest counts when they move** (S-L6). `/books`
+**The list screens keep R2's honest counts when they move** (S-L6; 1.8c). `/books`
 becomes `/books/list` here and keeps what R2-06 and R2-08 fixed: one row per
 book, the printed *500 of 1,478* total (never `books.length` alone), and the
 *No year* chip. The comics run list keeps printing the real total beside any
 limited list (R2-05). The query tests exist; this task adds a render test that
 the printed total is the query's total, not the row count.
 
-**Last-touched medium is a cookie** (R1-13), written by the three dashboard
-routes and read in `/`'s route handler, so the redirect runs on the server with
+**Last-touched medium is a cookie** (R1-13; 1.8c). `src/proxy.ts` writes it on any
+`/comics`, `/books` or `/watch` request, because a Next 16 server component
+can't set a cookie (owner, 2026-10-19). `/`'s route handler reads it, so the redirect runs on the server with
 no flash. Not `localStorage` (the server cannot read it) and not a column on
 `users` (a write on every page view). No schema change.
 
@@ -1316,7 +1320,8 @@ the phone header dead-ends for two phases. Drive both bars from one
 `NAV_ITEMS` list with an `enabled` flag; a disabled item is not rendered at all,
 and its task turns the flag on. Include the flip in each of those tasks' checks.
 
-**A failed write is never silent** (R1-07). The offline queue is 6.4, so until
+**A failed write is never silent** (R1-07; the revert and the toast are 1.8d's,
+the sync pill this task's). The offline queue is 6.4, so until
 then an optimistic mark that fails **reverts the tick** and raises the error
 toast with *Retry* — it does not stay green. The sync pill renders `online` and
 `offline` only; the `queued` state and its per-row `queued` tag arrive with 6.4
@@ -1333,7 +1338,7 @@ Chrome details, from the audit:
   hues.
 - **Sync pill** (`online · offline · queued`, `role="status"`) in the header and
   sidebar footer; queued writes are shown, never silent (6.4 builds the queue).
-- **Skeletons** at the exact dimensions of the telecard, run rows, plan rail
+- **Skeletons** (1.8d) at the exact dimensions of the telecard, run rows, plan rail
   and season rows, with the shimmer off under `prefers-reduced-motion`, for the
   Neon cold start.
 - **Tokens**: the colour tokens landed (above), including the D-24 identity
@@ -1346,7 +1351,7 @@ Chrome details, from the audit:
   Copy `--m-*` and `--g*` from `design/mockups.html` exactly; `test:tokens`
   checks every identity hue sits ΔE2000 15 or more from `--ready`, `--blocked`
   and `--danger` in both themes (D-24).
-- **Markup rules**: a navigable row is `<article class="row"><a class="row-link"
+- **Markup rules** (1.8d): a navigable row is `<article class="row"><a class="row-link"
   href>` with a stretched-link overlay and secondary buttons outside the anchor;
   segmented controls, chips and switches are real buttons; one `<h1>` per page;
   `.bar` is the app header only (meters are `.emeter`).
@@ -1450,15 +1455,50 @@ shows the count. At 360px *Watch* renders untruncated in the media bar, and the
 phone `/comics` has at most one solid `--brand` fill above the fold. No computed
 `color` inside `.bar` or `.side` equals `--ready`. With the page scrolled 400px,
 every sticky element other than `.bar` has a computed `top` of at least
-`--bar-h`. The rendered HTML contains no U+26B2. Test that `/` redirects to the last-touched medium and to
-`/comics` for a user with no history. Test that every phone route renders
-exactly the same media nav. Test that a request carrying a garbage `rt_session`
-cookie redirects a page to `/login` and answers a route handler 401 (R2-11). An
-axe-core run over each dashboard reports no `nested-interactive`, `button-name`
-or `link-name` violations.
+`--bar-h`. The rendered HTML contains no U+26B2. Test that every phone route renders
+exactly the same media nav.
+
+### ☐ 1.8c Dashboard routes and the `/` redirect · M
+Split out of 1.8 (owner, 2026-10-19) and **built before it**, so the nav only
+ever links to routes that exist. Depends on 0.11: the link crawl and the
+stale-session check run in its harness. The comics dashboard moves from `/` to
+`/comics` and the run list to `/comics/runs`. `/books` becomes `/books/list`,
+and until 2.2 builds the books dashboard, `/books` redirects there. `/watch`
+waits for 1.8, whose nav is the first thing to link to it. `/`
+becomes a route handler that reads the last-touched cookie. Three of 1.8's
+paragraphs are this task's contract: *A stale session goes to `/login`*, *The
+list screens keep R2's honest counts* and *Last-touched medium is a cookie*.
+The v1 home's *Coming out* section doesn't move to `/comics`, because books
+releases are 2.x's (`/books/releases`). The pre-shell nav bar follows the moves
+until 1.8 replaces it, and the comics dashboard links to *All runs*, since five
+links are all 360px holds. `scripts/perf/routes.mjs` follows the
+moves, and the run list keeps its own measurement as `/comics/runs`.
+
+**Check:** Test that `/` redirects to the last-touched medium and to `/comics`
+for a user with no history. Test that a request carrying a garbage `rt_session`
+cookie redirects a page to `/login` and answers a route handler 401 (R2-11). A
+render test asserts that `/books/list` and `/comics/runs` print the query's
+total, not the row count, for a fixture where the two differ, and no
+same-origin link on any page answers 404.
+
+### ☐ 1.8d Failed writes, skeletons and row markup · M
+Split out of 1.8 (owner, 2026-10-19). Depends on 1.8, because the axe run
+covers the finished chrome. From 1.8's text, this task owns *A failed write is
+never silent* (the revert and the error toast; the sync pill is 1.8's), the
+**Skeletons** bullet and the **Markup rules** bullet. The telecard, plan rail
+and season rows have no loaded component yet (2.5b, 2.2b, 8.7), so their
+skeletons are measured against fixtures built from the mockup's markup. 1.8b
+then places the error toast above the thumb bar.
+
+**Check:** A spine tick whose write fails (a mocked 500) reverts the tick and
+raises the error toast with *Retry*, and *Retry* re-sends the same request.
+Skeletons for the telecard, run rows, plan rail and season rows render within
+2px of the loaded geometry at 360px, and their shimmer stops under
+`prefers-reduced-motion`. An axe-core run over each dashboard reports no
+`nested-interactive`, `button-name` or `link-name` violations.
 
 ### ☐ 1.8b Thumb bar and contrast · S
-Depends on 1.8. Split out of it (R3-12).
+Depends on 1.8 and 1.8d (the error toast it places). Split out of 1.8 (R3-12).
 
 The **thumb bar**: on every dashboard **and on the run detail** (`Mark #141 read ·
 Mark through… · +`, FEATURES 2c → Run detail); this task owns the component
@@ -1526,7 +1566,7 @@ From the style guide (D-31; STYLE_GUIDE §9, Review N):
   Keyframes for the cell fill, count tick, cover slide, toast enter and toast
   countdown live in `globals.css`, all on `--dur-*` and `--ease-out`. Under
   reduced motion every state still appears, in the same order, with no movement.
-  A failed write reverts the tick and raises the error toast (1.8, R1-07): the
+  A failed write reverts the tick and raises the error toast (1.8d, R1-07): the
   green never holds over a failure. It replaces UX-N21's `.chk` sequence on the
   thumb bar; a spine `.chk` tap keeps the `.chk` fill (`--dur-2`). The component
   is used on the dashboards and the run detail.
@@ -1994,6 +2034,8 @@ sessions* and **Use these**, 6.11 adds the density toggle. (2.7's stretch-year
 acceptance is its own `plan_acceptance` table and banner, not a Settings field —
 R3-14.)
 
+*Export* moves here from the nav: 1.8's sidebar and rail carry it at their foot, and the phone has no *Export* until this screen does (owner, 2026-10-19; from TASK-014).
+
 **Check:** test that a user with no row gets the seeded defaults and that 2.1's
 capacity view reflects an edit — changing 45 to 60 min/day moves the 2027 figure
 — without a redeploy. The stepper is a button group with an accessible name, and
@@ -2149,6 +2191,8 @@ rule is 1.5px dashed `--ink-2`. Two or more adjacent sub-24px blocks merge into
 one stack button (`--raise`, dashed `--faint-deco`, `+N` over `Nk`, height the
 sum or 24px, whichever is larger); a lone sub-24px block keeps its drawn height
 and gets a 24px `::after` hit area.
+
+1.8d's `PlanRailSkeleton` was measured against a fixture of the mockup's markup; re-measure it against this component, within 2px at 360px (from TASK-027).
 
 **Check:** a quarter whose books total 892k against a 760k capacity renders
 exactly the blocks past 760k as hatched, and those are the quarter's highest
@@ -2511,6 +2555,8 @@ output, with the head marker, read-state segments and the variants listed in
   frames on `home`, `telescope`, `krakoa`, `watchlist`, `dashextras` and `states`
   are redrawn horizontal in this PR, from the same geometry, and the vertical
   drawings are removed.
+
+1.8d's `TelecardSkeleton` was measured against a fixture of the mockup's markup; re-measure it against the telecard drawn here, within 2px at 360px (from TASK-027).
 
 **Check:** on a fixture (not the seed, which changes under the audit — S-11): a
 track of 7 blocks whose block 1 holds 5 runs, the second of them 381 issues with
@@ -3434,7 +3480,7 @@ it is converted.
   Depends on 1.4c and 1.8. `/books/releases`: the books you want when they
   come out, read from the `releases` table (`book_id`, `release_date`; the
   workbook's *Coming Out* tab, 44 rows on the 2026-09-23 extract) that only the
-  v1 home page ever showed, and that page goes when 1.8 makes `/` a redirect.
+  v1 home page ever showed, and that page goes when 1.8c makes `/` a redirect.
   - **What counts as wanted, with no new column:** a `releases` row whose book
     has no `book_status` row for you. **Got it** writes `book_status = to_read`
     (the book moves to Someday and off this one) and raises the undo
@@ -3914,6 +3960,8 @@ show's next season or the film's detail — and never write; marking is the thum
 bar's job. A show
 in Now and the same show's detail must agree on its state — the mockup's Andor
 is mid-show (S1 watched, S2 up next) on both.
+
+1.8d's `SeasonRowsSkeleton` was measured against a fixture of the mockup's markup; re-measure it against the season rows drawn here, within 2px at 360px (from TASK-027).
 
 **Check:** test that a show with season 1 watched and season 2 watching appears
 once in Now and not in Up next; that a show with every season watched appears in
