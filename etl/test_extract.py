@@ -727,6 +727,18 @@ class BookReviewMerge(BookCase):
                                          "the-children-of-hurin-j-r-r-tolkien": "to_read"})
         self.assertEqual([r["book_id"] for r in read(self.out, "releases")], ["the-silmarillion-j-r-r-tolkien"])
 
+    def test_two_release_dates_that_become_one_book_keep_the_first(self):
+        """releases.book_id is the table's key: a merge that joins two dated
+        releases keeps the first date and reports the other."""
+        path = build_books([], coming_out=[("Wind and Truth", "Brandon Sanderson", None, "2024-12-06"),
+                                           ("Wind and Truht", "Brandon Sanderson", None, "2024-12-10")])
+        self.extract(path)
+        self.decide(lambda r: r["kind"] == "book", "merge", keep="Wind and Truth")
+        self.extract(path)
+        self.assertEqual(read(self.out, "releases"),
+                         [{"book_id": "wind-and-truth-brandon-sanderson", "release_date": "2024-12-06"}])
+        self.assertIn("two release dates for one book", self.reasons())
+
 
 class BookReviewLeftovers(BookCase):
     """Task 1.13 AC-3: a stale decision is kept and reported; an authorless

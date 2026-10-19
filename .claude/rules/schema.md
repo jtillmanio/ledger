@@ -48,9 +48,14 @@ Release, test isolation) and the Hard rules a reviewer checks.
   similar, `similarity`, `keep`, `decision` merge|separate) is written by
   `npm run extract`: it proposes pairs (≥ 0.4 trigram similarity, never names
   that differ only by a number), keeps every decision, and applies only `merge`,
-  before the load, so the merged-away spelling never becomes a row. A title
-  seen with no author joins the one authored book with that title, or is
-  reported in `unresolved.csv` when there are several. The workbook loads no
+  before the load, so the merged-away spelling never becomes a row. Books by
+  two authors pair only on an identical title (`same title`), where `keep`
+  names the surviving author. `keep` counts only with a `decision`: an
+  undecided row is rebuilt each run, and a decided row whose names have left
+  the workbook stays and is reported as `stale review`. A title seen with no
+  author joins the one authored book with that title, stays a book of its own
+  when there is none, and is reported in `unresolved.csv` when there are
+  several. The workbook loads no
   read state (D-41): `seed/workbook_reads.csv` lists its reads for hand entry
   and is not loaded.
 - **One issue row per comic.** `issues` is what exists — one row per label, id a
