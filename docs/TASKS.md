@@ -2170,11 +2170,24 @@ sheet, minus the "currently planned" badge). Mockup: `design/mockups.html`,
 
 *From 1.4c (TASK-008, PR #77):* the Add books sheet
 draws *Year or quarter…* in its *Add to* row `aria-disabled`, with the reason
-*On deck and Year or quarter… arrive with the reading plan.*
-(`src/components/AddBooks.tsx`), and leaves out the mockup's secondary *Year
-or quarter…* button on a search result row. This task enables the chip and
+*Year or quarter… arrives with the plan editor.* (the copy since 1.7, which
+enabled *On deck*; `src/components/AddBooks.tsx`), and leaves out the mockup's
+secondary *Year or quarter…* button on a search result row. This task enables the chip and
 adds that button; the add itself is `POST /api/books`, whose `destination`
 gains the plan level.
+
+*From 1.7 (TASK-011, task/1.7-plan-period-column):* a quarter's ordinals count
+every `reading_plan` row, a soft-deleted book's included, while `plan_period`
+hides that book, so a planned book removed from the library would leave a
+visible gap (1, 3). Nothing soft-deletes a planned book yet; whatever first
+does should take its plan rows out through `takeOutOfPlan` / `moveToSomeday`
+(`src/db/writes.ts`), or this task's lists re-rank.
+
+*From 1.7 (TASK-011, task/1.7-plan-period-column):* undoing an add from a
+search result clears the toast but leaves that row reading *✓ Added to …*
+(disabled), so it can't be re-added without searching again (1.4c's
+behaviour, seen at every destination). This task reworks those result-row
+buttons; reset the row when its add is undone.
 
 Sheet contents: the four to-read levels (D-37). One row of chips: the next five
 years, then **On deck** and **Someday**. Choosing a year opens a second row:

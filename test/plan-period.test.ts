@@ -168,6 +168,17 @@ describe("the plan helpers keep every quarter 1…N (roadmap 1.7 check)", () => 
     expect(await quarter("2027-Q1")).toEqual([["a", 1], ["b", 2]]);
   });
 
+  it("taking a book out of a quarter closes the gap, and taking out one that isn't there writes nothing", async () => {
+    for (const id of ["a", "b", "c"]) await w.placeInPlan(USER, id, "2027-Q1");
+    await w.placeInPlan(USER, "b", "on_deck");
+    expect(await w.takeOutOfPlan(USER, "b", "2027-Q1")).toBe(true);
+    expect(await quarter("2027-Q1")).toEqual([["a", 1], ["c", 2]]);
+    expect(await rowOf("b")).toEqual([["on_deck", null]]);
+    expect(await w.takeOutOfPlan(USER, "b", "2027-Q1")).toBe(false);
+    expect(await w.takeOutOfPlan(USER, "d", "2027-Q1")).toBe(false);
+    expect(await quarter("2027-Q1")).toEqual([["a", 1], ["c", 2]]);
+  });
+
   it("move to top on Q1's #2 gives a contiguous 1–2 with it first", async () => {
     for (const id of ["a", "b"]) await w.placeInPlan(USER, id, "2027-Q1");
     expect(await w.moveToTop(USER, "b", "2027-Q1")).toBe(true);

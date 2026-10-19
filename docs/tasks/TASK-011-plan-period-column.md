@@ -1,7 +1,7 @@
 ---
 id: TASK-011
 title: 1.7 One period column on reading_plan
-status: In progress
+status: Review
 depends_on: [TASK-010]
 size: L
 model: opus
@@ -30,11 +30,11 @@ A to-read book sits at exactly one plan level: a quarter (in order), a year, On 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): test that `2027-Q1` reads back as year 2027, quarter 1, level `quarter`; `2027` with a null quarter and level `year`; `on_deck` with a null year and level `on_deck`; that `2027-Q5`, `2027-03` and `someday` are rejected by the constraint, and so are a quarter row with a null ordinal and a year row with one. `to_read_level` puts a `to_read` book with no plan row at `someday`, and a book planned both `2027` and `on_deck` at `year`. The migration composes the legacy columns without losing a row (a fixture with a two-year book keeps both rows), and up → down → up restores them, asserting row values; the down raises while an `on_deck` row exists. Ordinals: adding three books to `2027-Q1` gives 1–3; adding one to `2027-Q2` gives it 1 there; moving Q1's #2 to Q2 leaves Q1 at 1–2 and makes it Q2's 2; moving a quarter book to `2027` or `on_deck` gives it a null ordinal and closes the gap; *move to top* on Q1's #2 gives a contiguous 1–2 with it first. Two concurrent reorders of one quarter never leave duplicate ordinals, and after up → down → up every quarter is 1…N again. `plan_granularity` no longer exists. Adding a book *On deck* from the add sheet writes the book and its plan row in one transaction.
-- [ ] AC-2: The migration numbers existing quarter rows by `books.title`, then `book_id`. `etl/extract.py --with-plan` writes `period` and `ordinal` (quarter rows in workbook row order), and without the flag writes no plan rows. `etl/test_extract.py` asserts both, and standing rule 4's diff of the CSVs against both workbooks is in the PR.
-- [ ] AC-3: Every plan write goes through the helpers in `src/db/writes.ts` (append, take out and close the gap, reorder, move to top, move to Someday). A test asserts that moving a book to Someday deletes its plan row and leaves its `book_status` row unchanged. No file outside `src/db/writes.ts` and the migration writes `reading_plan.period` or `ordinal` (`git grep`).
-- [ ] AC-4: On the Add books sheet, *On deck* is enabled and no longer `aria-disabled`. Choosing it and adding a book shows *Add to On deck* on the primary button, and `to_read_level` reports the book at `on_deck`. *Year or quarter…* stays `aria-disabled="true"` with its reason until 2.3.
-- [ ] AC-5: No app code parses a period string: `git grep -nE "period.*(split|slice|substring|match)\\(" src/` returns nothing, and every reader of year, quarter or level goes through `plan_period` or `to_read_level`.
+- [x] AC-1 (roadmap **Check:**, verbatim): test that `2027-Q1` reads back as year 2027, quarter 1, level `quarter`; `2027` with a null quarter and level `year`; `on_deck` with a null year and level `on_deck`; that `2027-Q5`, `2027-03` and `someday` are rejected by the constraint, and so are a quarter row with a null ordinal and a year row with one. `to_read_level` puts a `to_read` book with no plan row at `someday`, and a book planned both `2027` and `on_deck` at `year`. The migration composes the legacy columns without losing a row (a fixture with a two-year book keeps both rows), and up → down → up restores them, asserting row values; the down raises while an `on_deck` row exists. Ordinals: adding three books to `2027-Q1` gives 1–3; adding one to `2027-Q2` gives it 1 there; moving Q1's #2 to Q2 leaves Q1 at 1–2 and makes it Q2's 2; moving a quarter book to `2027` or `on_deck` gives it a null ordinal and closes the gap; *move to top* on Q1's #2 gives a contiguous 1–2 with it first. Two concurrent reorders of one quarter never leave duplicate ordinals, and after up → down → up every quarter is 1…N again. `plan_granularity` no longer exists. Adding a book *On deck* from the add sheet writes the book and its plan row in one transaction.
+- [x] AC-2: The migration numbers existing quarter rows by `books.title`, then `book_id`. `etl/extract.py --with-plan` writes `period` and `ordinal` (quarter rows in workbook row order), and without the flag writes no plan rows. `etl/test_extract.py` asserts both, and standing rule 4's diff of the CSVs against both workbooks is in the PR.
+- [x] AC-3: Every plan write goes through the helpers in `src/db/writes.ts` (append, take out and close the gap, reorder, move to top, move to Someday). A test asserts that moving a book to Someday deletes its plan row and leaves its `book_status` row unchanged. No file outside `src/db/writes.ts` and the migration writes `reading_plan.period` or `ordinal` (`git grep`).
+- [x] AC-4: On the Add books sheet, *On deck* is enabled and no longer `aria-disabled`. Choosing it and adding a book shows *Add to On deck* on the primary button, and `to_read_level` reports the book at `on_deck`. *Year or quarter…* stays `aria-disabled="true"` with its reason until 2.3.
+- [x] AC-5: No app code parses a period string: `git grep -nE "period.*(split|slice|substring|match)\\(" src/` returns nothing, and every reader of year, quarter or level goes through `plan_period` or `to_read_level`.
 
 ## Out of scope
 
@@ -63,9 +63,18 @@ A to-read book sits at exactly one plan level: a quarter (in order), a year, On 
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- 1.13 rewrites the same `--with-plan` block in `extract_books` (year tabs found by name): whichever of 1.7 and 1.13 lands second keeps the other's change, so 1.13's year tabs write `period`, not `planned_year` → docs/tasks/TASK-021-book-extract-merge-review.md § Context (approved at plan)
+- 1.13 rewrites the same `--with-plan` block in `extract_books` (year tabs found by name): whichever of 1.7 and 1.13 lands second keeps the other's change, so 1.13's year tabs write `period`, not `planned_year` → docs/tasks/TASK-021-book-extract-merge-review.md § Context (approved at plan; placed in PR #93)
 - Files likely touched names `src/components/AddBookSheet.tsx`; the add sheet is `src/components/AddBooks.tsx`, with `src/lib/book-add.ts` and both books routes → not tracked: the plan names the real files
 - `Books.xlsx`'s To-Read tabs carry a year and no quarter, so `--with-plan` never writes a quarter row, and AC-2's "quarter rows in workbook row order" has nothing to number today → not tracked: informational, the plan numbers them in row order if one ever appears
+- `takeOutOfPlan` had no test of its own closing a quarter's gap (spec-reviewer) → not tracked: done in this PR (plan revision, approved at close-out)
+- `docs/ARCHITECTURE.md` mapped the To-Read tabs to `reading_plan.planned_year` → docs/ARCHITECTURE.md § 2. Decisions (2.2 Nothing derived is stored) (approved at close-out)
+- `docs/HANDOFF.md` mapped the To-Read tabs to `reading_plan.planned_year` → docs/HANDOFF.md § What each spreadsheet artifact became (approved at close-out)
+- Candidate decision: plan writes only through the helpers, one user at a time behind an advisory lock, the quarter order's UNIQUE deferred and never an `ON CONFLICT` arbiter → docs/review/decisions.md § D-69 (approved at close-out)
+- 2.3's *From 1.4c* note quoted the old reason copy (*On deck and Year or quarter… arrive with the reading plan.*) → docs/TASKS.md § 2.3 (fixed in this PR)
+- A soft-deleted book keeps its quarter ordinal while `plan_period` hides it, so a removed planned book would leave a visible gap; nothing soft-deletes a planned book yet (schema-reviewer, MINOR) → docs/TASKS.md § 2.3
+- Undoing an add from a search result leaves the row reading *✓ Added to …*, disabled (1.4c's behaviour, seen by ui-verifier at On deck) → docs/TASKS.md § 2.3
+- An On deck paste places its books one `placeInPlan` at a time, about two round trips a book (schema-reviewer, MINOR) → not tracked: correct, and a paste is capped at `MAX_LINES`; batch it if a paste is ever slow
+- The UI walk's By hand book (*Zz UI Check On Deck*, author *Zz Tester*) is soft-deleted in the development database by its undo, as every add's undo leaves a created book → not tracked: development data, left as the undo designs it
 
 ## Plan
 
@@ -76,7 +85,7 @@ Steps:
 2. `npm run db:generate` (answer "create column" to any rename prompt), then hand-edit the SQL: add `period`/`ordinal` nullable; `UPDATE … SET period = planned_year::text || COALESCE('-Q' || planned_quarter, '')`; number quarter rows `row_number() OVER (PARTITION BY user_id, period ORDER BY books.title, book_id)`; `SET NOT NULL`; swap the PK; drop `planned_year`, `planned_quarter`; add the CHECKs; the UNIQUE gets `DEFERRABLE INITIALLY DEFERRED` (drizzle can't express it; the snapshot still matches `schema.ts`, so `check:migrations` passes); drop `plan_granularity` with its check.
 3. `drizzle/down/<tag>.sql` (by hand, 0011's header shape): `RAISE` while an `on_deck` row exists, and also while a book holds a year and a quarter of that year (`2027` and `2027-Q1`), since the legacy PK `(user_id, book_id, planned_year)` can't hold both; drop `to_read_level` and `plan_period`; restore `planned_year = left(period, 4)::int` and `planned_quarter` from the `-Qn`; swap the PK back; drop `period` and `ordinal`; re-add `plan_granularity text NOT NULL DEFAULT 'quarter'` with its check.
 4. `etl/views.sql`: `plan_period` (`user_id, book_id, period, year, quarter, level, ordinal`; year and quarter NULL for `on_deck`) and `to_read_level` (one row per live `to_read` book: `level` `quarter | year | on_deck | someday`, with `period, year, quarter, ordinal`; earliest by `level = 'on_deck'`, `year`, `quarter NULLS LAST`, so a book in `2027` and `2027-Q1` sits at the quarter). `etl/test_views.sql`: their cases.
-5. `src/db/writes.ts` plan helpers. Each runs in a transaction behind `pg_advisory_xact_lock(hashtext('ledger:plan:' || userId))` and accepts an outer `tx`. Quarter-ness is decided in SQL (`period ~ '-Q'`), never by parsing in TS. The helpers: `placeInPlan(userId, bookId, period)` (a quarter appends at max + 1), `movePlan(userId, bookId, from, to)` (closes `from`'s gap, appends in `to`), `reorderQuarter(userId, period, bookIds)` (must be exactly that quarter's books; rewrites 1…N), `moveToTop(userId, bookId, period)`, `moveToSomeday(userId, bookId)` (deletes every plan row of the book, closes each gap, leaves `book_status` alone). The private `closeGap(tx, userId, period)` backs them.
+5. `src/db/writes.ts` plan helpers. Each runs in a transaction behind `pg_advisory_xact_lock(hashtext('ledger:plan:' || userId))` and accepts an outer `tx`. Quarter-ness is decided in SQL (`period ~ '-Q'`), never by parsing in TS. The helpers: `placeInPlan(userId, bookId, period)` (a quarter appends at max + 1), `movePlan(userId, bookId, from, to)` (closes `from`'s gap, appends in `to`), `reorderQuarter(userId, period, bookIds)` (must be exactly that quarter's books; rewrites 1…N), `moveToTop(userId, bookId, period)`, `moveToSomeday(userId, bookId)` (deletes every plan row of the book, closes each gap, leaves `book_status` alone), and (revision after approval: AC-3 lists "take out and close the gap", and the On deck undo needs it) `takeOutOfPlan(userId, bookId, period)` (deletes the book's row in `period`, closes that gap). The private `closeGap(tx, userId, period)` backs them.
 6. On deck in the add flow: `Destination` gains `{ kind: "on_deck" }`. `writeDestination` writes a `to_read` status where the book has none (listed as `statused` on `AddedEntry`), then `placeInPlan(…, "on_deck")` for books that are `to_read`. `undoAddBooks` deletes exactly those `on_deck` rows and bare statuses, and refuses as today when anything has moved. `src/lib/book-add.ts`: `parseDestination` and `addTo` (*Add to On deck*). `src/app/api/books/route.ts` (DELETE accepts `statused`) and `src/app/api/books/bulk/route.ts`.
 7. `src/components/AddBooks.tsx`: *On deck* is a real `aria-pressed` chip. The reason line now covers *Year or quarter…* alone: "Year or quarter… arrives with the plan editor." (new copy; confirm at the gate). `src/components/PasteBooks.tsx`'s `where`.
 8. `src/db/queries.ts` `listBooks`: `plan_year` is `MIN(pp.year)` from `plan_period`, and the year filter uses `pp.year`. `BookRow.planned_year` becomes `plan_year`; `src/app/books/page.tsx` follows.
@@ -103,7 +112,8 @@ Size check: L by `never-split` (task Context says why). About 30 files, one migr
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Preflight: plan stale by the letter (1.16 touched schema.md, queries.ts, writes.ts, drizzle/); owner said carry on.
+Verify R1 PASS | Audit R1 PASS | Spec R1 APPROVE | Schema R1 APPROVE (2 MINOR → Follow-ups) | UI R1 PASS (6 viewports; dev DB migrated to 0013 with the owner's OK, left as found) | Close-out: takeOutOfPlan test added (plan revision) → Verify R2
 
 ## Blocked
 
@@ -111,7 +121,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R2 after the close-out test)
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 2 (`takeOutOfPlan`; its own test)
