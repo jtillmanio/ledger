@@ -1,7 +1,7 @@
 ---
 id: TASK-011
 title: 1.7 One period column on reading_plan
-status: Review
+status: Done
 depends_on: [TASK-010]
 size: L
 model: opus
