@@ -1,7 +1,7 @@
 ---
 id: TASK-021
 title: 1.13 Book extract — one book per title and author, a merge review, no workbook reads
-status: Review
+status: Done
 depends_on: []
 size: M
 model: opus
