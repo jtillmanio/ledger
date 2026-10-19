@@ -73,7 +73,7 @@ tick them.
 
 - [ ] Once 0.11 (TASK-013) merges, run `npx playwright install chromium` in the
       repo after your next `npm ci`. Without the browser, `npm run test:all`
-      fails at the e2e step; CI installs its own (from TASK-013, docs/plans-2026-10-19).
+      fails at the e2e step; CI installs its own (from TASK-013, PR #98).
 - [ ] Set `METRON_API_TOKEN` (or `METRON_USERNAME` and `METRON_PASSWORD`, as
       in `.env.example`) in Vercel for Preview and Production. Without them Add
       issues' Search answers from your catalog only and says *Metron isn't set up
