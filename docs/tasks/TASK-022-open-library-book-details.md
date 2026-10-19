@@ -28,6 +28,7 @@ The workbook's books arrive at cutover with covers, page counts and Open Library
   - No word count is stored from pages (2.1 estimates it). There are no ISBNs, because `books` has no column for one. Covers are URLs only (4.3 decides on caching).
 - Data model: `src/db/schema.ts` `books` (`open_library_id`, `page_count`, `cover_url`, `published_year`), unchanged.
 - Decisions: D-44, D-25a, D-51 (Open Library for books), D-41. `.claude/rules/schema.md`: enrichment never overwrites a hand value. Standing rule 4 applies to extract's fold-in.
+- *From TASK-021 (1.13, task/1.13-book-extract-merge-review):* the Stephen King tab's *11/22/63* is stored as a date, so extract loads its title as `1963-11-22 00:00:00` (it did before 1.13 too). Matching on title and author will never find it on Open Library; extract should read a date-typed title cell back as the title the owner typed, or the owner fixes the cell.
 
 ## Acceptance criteria
 

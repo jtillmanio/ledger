@@ -1,7 +1,7 @@
 ---
 id: TASK-021
 title: 1.13 Book extract — one book per title and author, a merge review, no workbook reads
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: opus
@@ -36,10 +36,10 @@ The workbook's books load as one row per real book. Two books that share a title
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm run test:etl` covers a fixture workbook in which: two books share a title under different authors and load as two rows, with one `same title` review row; an authorless To-Read sighting joins its one authored match; a one-letter typo by the same author is proposed and not merged, and after `decision = merge` it loads as one book under the `keep` spelling with its status; `Vol 1` / `Vol 2` is not proposed; a decision survives a second extract; a Read tab with a count row and a summary block, a Top Books tab and a `Completed` tick create no book and no `read` row, and `workbook_reads.csv` lists the title block and nothing below the count row; the King tab's word count loads; a `Read 2031` tab is discovered. Then re-run against both workbooks and diff `seed/` (standing rule 4). The PR reports the counts of books, `book_status` rows and review rows by `kind` and `reason`, and `npm run rebuild` (development) loads with no `read` row in `book_status`.
-- [ ] AC-2: On `merge`, every reference follows the `keep` spelling: `books.author_id`, `series_id`, `book_status`, `releases` and the Series tab's totals. A fixture merge of two author spellings leaves one `authors` row, with both authors' books pointing at it.
-- [ ] AC-3: A decided row whose names no longer appear in the workbook stays in `book_review.csv` and is reported as `stale review`. An authorless sighting whose title matches two authored books joins neither and is reported in `unresolved.csv`.
-- [ ] AC-4: `npm run sidecars` (or the plan's equivalent check) validates `book_review.csv`'s columns and `decision` values (`merge`, `separate`, blank), and rejects a `merge` row with no `keep`.
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm run test:etl` covers a fixture workbook in which: two books share a title under different authors and load as two rows, with one `same title` review row; an authorless To-Read sighting joins its one authored match; a one-letter typo by the same author is proposed and not merged, and after `decision = merge` it loads as one book under the `keep` spelling with its status; `Vol 1` / `Vol 2` is not proposed; a decision survives a second extract; a Read tab with a count row and a summary block, a Top Books tab and a `Completed` tick create no book and no `read` row, and `workbook_reads.csv` lists the title block and nothing below the count row; the King tab's word count loads; a `Read 2031` tab is discovered. Then re-run against both workbooks and diff `seed/` (standing rule 4). The PR reports the counts of books, `book_status` rows and review rows by `kind` and `reason`, and `npm run rebuild` (development) loads with no `read` row in `book_status`.
+- [x] AC-2: On `merge`, every reference follows the `keep` spelling: `books.author_id`, `series_id`, `book_status`, `releases` and the Series tab's totals. A fixture merge of two author spellings leaves one `authors` row, with both authors' books pointing at it.
+- [x] AC-3: A decided row whose names no longer appear in the workbook stays in `book_review.csv` and is reported as `stale review`. An authorless sighting whose title matches two authored books joins neither and is reported in `unresolved.csv`.
+- [x] AC-4: `npm run sidecars` (or the plan's equivalent check) validates `book_review.csv`'s columns and `decision` values (`merge`, `separate`, blank), and rejects a `merge` row with no `keep`.
 
 ## Out of scope
 
@@ -69,6 +69,11 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - Candidate decision, amending D-61: a merge is applied by extract before the load, so the merged-away spelling is never written as a `books` row. Nothing is soft-deleted, and no app-side merge (so no `ledger:add-books` lock) exists; D-61's "1.13's merge review soft-deletes the duplicate it merges away" no longer holds → docs/review/decisions.md § D-68 (approved at plan; written with the plans PR #93)
 - If 1.13 lands before 1.7, 1.7's `--with-plan` change starts from the year tabs found by name (`^To-Read \d{4}$`) and the authorless-sighting fold, not `GENRE_TABS["plan"]` → not tracked: 1.7 landed first (PR #96), and this task builds on its `add_plan`
 - Files likely touched says `CLAUDE.md` for the command list and sidecar description; the sidecar descriptions live in `.claude/rules/schema.md` and the flags in `docs/COMMANDS.md` (CLAUDE.md's `npm run extract` line stays true) → not tracked: the plan names the real files
+- The Stephen King tab's *11/22/63* is a date cell, so its title loads as `1963-11-22 00:00:00` (before 1.13 too); 1.14's title-and-author match will never find it → docs/tasks/TASK-022-open-library-book-details.md § Context
+- `authors` and `book_series` are keyed by `slug()` while names compare by `key()`, so two spellings with one key (`J.R.R.` / `JRR`) would load as two rows that are never proposed; none in today's workbook, and 1.15 seeds follows from these names → docs/tasks/TASK-023-follow-series-authors-universes.md § Context
+- `BookIndex.taken` keeps the id of an authorless book `finish()` folds away, so a later book whose slug equals it gets `-x` in extract but not in the app's `bookId()` (schema review, minor) → not tracked: needs a title that ends in its own author's name; none in the workbook
+- A folded or dropped authorless sighting keeps any `book_series` row it created (schema review, minor) → not tracked: only a `Coming Out` row with a series and no author can do it; none orphaned in the real output
+- `npm run sidecars` reports `book_review.csv` problems with exit code 0 (schema review, minor) → not tracked: accepted as is; every sidecar problem it reports exits 0
 
 ## Plan
 
@@ -106,13 +111,15 @@ Size check: M, about 9 files, ETL only, no schema or app change, attended.
 
 _Filled by /implement-task. One line per round._
 
+Plan stale at preflight (1.7 landed, PR #96) → re-planned at 503da4e, owner approved 2026-10-19 | Verify R1 PASS | Audit R1 PASS | Spec R1 APPROVE (recommended a release-dedupe test: added) | Schema R1 APPROVE (5 MINOR: rule text completed, rest tracked or accepted) | Verify R2 (ETL suite) PASS, 151 | Manual: real-workbook diff and dev `npm run rebuild` done, 0 `read` rows
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1 (plus an ETL re-run after the review fix)
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1 (re-plan at 503da4e for 1.7's `add_plan`, before any code)

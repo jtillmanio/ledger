@@ -1753,7 +1753,7 @@ an any-run rule and an approved row with no year, and asserts that
 second. `npm run rebuild` (development) reports a `volume_rules` count equal to
 the approved rows in `volume_map.csv`.
 
-### ☐ 1.13 Book extract — one book per title and author, a merge review, no workbook reads · M
+### ☑ 1.13 Book extract — one book per title and author, a merge review, no workbook reads · M
 Book-ingest review, 2026-10-08. **Built before cutover (sitting 8).** The
 2026-10-08 review of `extract_books` found that it dedupes on the title
 alone, so different books that share a title become one row under whichever
