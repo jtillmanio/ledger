@@ -63,6 +63,7 @@ The comics dashboard lives at `/comics` and the lists sit one level down (`/comi
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
 - The roadmap said the three dashboard routes write the last-medium cookie; the proxy writes it instead (owner, 2026-10-19). ARCHITECTURE § 4's route table says only *Redirect to whichever medium you last touched*, which still holds → docs/TASKS.md § 1.8 (fixed in this PR)
+- The review ledger records R1-13 as resolved by a cookie the three dashboards write; the proxy writes it now → docs/review/LEDGER.md § R1-13 (fixed in this PR)
 
 ## Plan
 

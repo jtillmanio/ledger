@@ -23,7 +23,7 @@ A mark that fails to save never looks saved, and it can be retried in one tap. A
 - Design: STYLE_GUIDE §9 (skeletons, toast), §14.3 (the toast's lines), §15 (copy); mockups `states` (loading frames), `home` (the telecard), `bdash` (the plan rail), `watchlist` (season rows).
 - Decisions: R1-07 (a failed write reverts and raises the error toast with *Retry*; the offline queue is 6.4), D-63 (the toast stays live over a sheet), UX-N05.
 - Builds on TASK-001 (the undo stack and its toast region, `src/components/Undo.tsx`), TASK-026 (the routes and their `loading.tsx`) and TASK-014 (the chrome the axe run covers). 1.8b then places the error toast above the thumb bar.
-- The telecard (2.5), the plan rail (2.3) and season rows (8.x) have no loaded component yet. Their skeletons are measured against fixtures built from the mockup's markup on `globals.css`, and each task that builds the real component re-measures it.
+- The telecard (2.5b), the plan rail (2.2b) and season rows (8.7) have no loaded component yet. Their skeletons are measured against fixtures built from the mockup's markup on `globals.css`, and each task that builds the real component re-measures it.
 - Today a failed tick calls `alert()` (`src/components/IssueRow.tsx` `toggle`), and a thrown fetch isn't caught.
 
 ## Acceptance criteria
@@ -39,7 +39,7 @@ A mark that fails to save never looks saved, and it can be retried in one tap. A
 - The toast's place above the thumb bar, its countdown bar and the enter motion (1.8b).
 - The offline queue and *queued* writes (6.4).
 - The range and date writes' failure paths (`openRange`, the date change): they already throw into their own sheets' error lines.
-- The real telecard, plan rail and season rows (2.5, 2.3, 8.x).
+- The real telecard, plan rail and season rows (2.5b, 2.2b, 8.7).
 
 ## Files likely touched
 
@@ -62,6 +62,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - The telecard skeleton is re-measured against the real telecard → docs/TASKS.md § 2.5b (approved at plan)
 - The plan-rail skeleton is re-measured against the real rail → docs/TASKS.md § 2.2b (approved at plan)
 - The season-rows skeleton is re-measured against the real rows → docs/TASKS.md § 8.7 (approved at plan)
+- The error toast with *Retry* moves from TASK-014 to this task, and 1.8b places it above the thumb bar → docs/tasks/TASK-015-thumb-bar-contrast.md § Context (approved at plan)
 
 ## Plan
 
