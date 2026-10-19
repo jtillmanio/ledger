@@ -308,7 +308,7 @@ describe("undo (AC-5)", () => {
     await sql`DELETE FROM book_status WHERE book_id = 'the-blade-itself-joe-abercrombie'`;
     const someday = await add({ use: "the-blade-itself-joe-abercrombie" });
     expect(someday.body).toMatchObject({ added: ["the-blade-itself-joe-abercrombie"], created: [] });
-    await sql`INSERT INTO reading_plan (user_id, book_id, planned_year) VALUES (${USER}, 'the-blade-itself-joe-abercrombie', 2027)`;
+    await sql`INSERT INTO reading_plan (user_id, book_id, period) VALUES (${USER}, 'the-blade-itself-joe-abercrombie', '2027')`;
     expect(await undo(someday.body)).toBe(409);
     expect(await statuses()).toContainEqual({ book_id: "the-blade-itself-joe-abercrombie", status: "to_read" });
     expect(await undo(reused.body)).toBe(200);

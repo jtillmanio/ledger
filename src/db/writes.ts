@@ -626,6 +626,136 @@ export async function reopenNote(tx: Tx, userId: string, noteId: number, link: N
       "bookId" in link ? eq(inbox.bookId, link.bookId) : eq(inbox.runId, link.runId)));
 }
 
+/* ---------------------------------------------------------------- the plan */
+
+/**
+ * A plan period (task 1.7, D-37, D-38): `2027-Q1`, `2027` or `on_deck`. Only
+ * the database reads one (`reading_plan`'s CHECKs, `plan_period`); nothing
+ * here parses it.
+ */
+export type Period = string;
+
+/**
+ * Every plan write goes through the helpers below (task 1.7): they keep each
+ * quarter's `ordinal` contiguous from 1 and every other level's NULL. Each
+ * runs in a transaction, `outer` when the caller has one, behind one lock per
+ * user, so two moves of one plan never interleave (the quarter order's UNIQUE
+ * is deferred to commit, so a renumber may pass through a duplicate).
+ */
+async function inPlan<T>(userId: string, outer: Tx | undefined, fn: (tx: Tx) => Promise<T>): Promise<T> {
+  const run = async (tx: Tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`ledger:plan:${userId}`}))`);
+    return fn(tx);
+  };
+  return outer ? run(outer) : db.transaction(run);
+}
+
+const planRow = (userId: string, bookId: string, period: Period) =>
+  and(eq(readingPlan.userId, userId), eq(readingPlan.bookId, bookId), eq(readingPlan.period, period));
+
+/** The ordinal a book joining `period` takes: the end of a quarter, NULL anywhere else. */
+const nextOrdinal = (userId: string, period: Period) => sql`CASE WHEN ${period} ~ '-Q' THEN (
+  SELECT COALESCE(MAX(q.ordinal), 0) + 1 FROM reading_plan q WHERE q.user_id = ${userId} AND q.period = ${period}
+) END`;
+
+/** Renumber `period` 1…N in its current order; a level with no ordinals is left alone. */
+async function closeGap(tx: Tx, userId: string, period: Period) {
+  await tx.update(readingPlan)
+    .set({
+      ordinal: sql`(SELECT count(*)::int FROM reading_plan q
+        WHERE q.user_id = ${userId} AND q.period = ${period} AND q.ordinal IS NOT NULL
+          AND (q.ordinal, q.book_id) <= (${readingPlan.ordinal}, ${readingPlan.bookId}))`,
+    })
+    .where(and(eq(readingPlan.userId, userId), eq(readingPlan.period, period), sql`${readingPlan.ordinal} IS NOT NULL`));
+}
+
+/**
+ * Place a book in `period`: a quarter appends it at the end. False, writing
+ * nothing, when it is there already.
+ */
+export async function placeInPlan(userId: string, bookId: string, period: Period, outer?: Tx): Promise<boolean> {
+  return inPlan(userId, outer, async (tx) => (await tx.insert(readingPlan)
+    .values({ userId, bookId, period, ordinal: nextOrdinal(userId, period) })
+    .onConflictDoNothing({ target: [readingPlan.userId, readingPlan.bookId, readingPlan.period] })
+    .returning({ bookId: readingPlan.bookId })).length > 0);
+}
+
+/**
+ * Move a book from `from` to `to`: `from` closes its gap, and a quarter `to`
+ * takes it at the end. A book already in `to` just leaves `from`. False,
+ * writing nothing, when the book isn't in `from`.
+ */
+export async function movePlan(userId: string, bookId: string, from: Period, to: Period, outer?: Tx): Promise<boolean> {
+  if (from === to) return false;
+  return inPlan(userId, outer, async (tx) => {
+    const [there] = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan).where(planRow(userId, bookId, to));
+    const moved = there
+      ? await tx.delete(readingPlan).where(planRow(userId, bookId, from)).returning({ bookId: readingPlan.bookId })
+      : await tx.update(readingPlan).set({ period: to, ordinal: nextOrdinal(userId, to) })
+        .where(planRow(userId, bookId, from)).returning({ bookId: readingPlan.bookId });
+    if (moved.length === 0) return false;
+    await closeGap(tx, userId, from);
+    return true;
+  });
+}
+
+/** Take a book out of `period` and close the gap it leaves. False when it isn't there. */
+export async function takeOutOfPlan(userId: string, bookId: string, period: Period, outer?: Tx): Promise<boolean> {
+  return inPlan(userId, outer, async (tx) => {
+    const gone = await tx.delete(readingPlan).where(planRow(userId, bookId, period)).returning({ bookId: readingPlan.bookId });
+    if (gone.length === 0) return false;
+    await closeGap(tx, userId, period);
+    return true;
+  });
+}
+
+/**
+ * Put a quarter in this order, 1…N. False, writing nothing, unless `bookIds`
+ * is exactly the quarter's books, each once.
+ */
+export async function reorderQuarter(userId: string, period: Period, bookIds: string[], outer?: Tx): Promise<boolean> {
+  return inPlan(userId, outer, async (tx) => {
+    const now = (await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
+      .where(and(eq(readingPlan.userId, userId), eq(readingPlan.period, period), sql`${readingPlan.ordinal} IS NOT NULL`)))
+      .map((r) => r.bookId);
+    const asked = new Set(bookIds);
+    if (now.length === 0 || asked.size !== bookIds.length || now.length !== asked.size || now.some((id) => !asked.has(id))) {
+      return false;
+    }
+    const list = sql`ARRAY[${sql.join(bookIds.map((id) => sql`${id}`), sql`, `)}]::text[]`;
+    await tx.update(readingPlan).set({ ordinal: sql`array_position(${list}, ${readingPlan.bookId})` })
+      .where(and(eq(readingPlan.userId, userId), eq(readingPlan.period, period)));
+    return true;
+  });
+}
+
+/** *Move to top*: the book becomes its quarter's 1 and the rest follow in order. False when it isn't in that quarter. */
+export async function moveToTop(userId: string, bookId: string, period: Period, outer?: Tx): Promise<boolean> {
+  return inPlan(userId, outer, async (tx) => {
+    const top = await tx.update(readingPlan).set({ ordinal: 0 })
+      .where(and(planRow(userId, bookId, period), sql`${readingPlan.ordinal} IS NOT NULL`))
+      .returning({ bookId: readingPlan.bookId });
+    if (top.length === 0) return false;
+    await closeGap(tx, userId, period);
+    return true;
+  });
+}
+
+/**
+ * *Move to Someday*: every plan row of the book goes, and each quarter it left
+ * closes its gap. Its `book_status` row is left exactly as it is: Someday is a
+ * `to_read` book with no plan row (D-37). Answers the periods it left.
+ */
+export async function moveToSomeday(userId: string, bookId: string, outer?: Tx): Promise<Period[]> {
+  return inPlan(userId, outer, async (tx) => {
+    const left = (await tx.delete(readingPlan)
+      .where(and(eq(readingPlan.userId, userId), eq(readingPlan.bookId, bookId)))
+      .returning({ period: readingPlan.period })).map((r) => r.period);
+    for (const period of left) await closeGap(tx, userId, period);
+    return left;
+  });
+}
+
 /** A pasted line to create, unless the library has the same title and author by now. */
 export type NewBook = { title: string; author: string; series: string | null; position: number | null };
 /** A pasted line, or a library book a line was pointed at (*Use that*, or a match with no status). */
@@ -633,10 +763,10 @@ export type BookItem = NewBook | { use: string };
 
 /**
  * Where an add puts a book (task 1.4c, D-37). Someday is a `to_read` status
- * with no plan row; a shelf is a `shelf_books` row. On deck (1.7) and a year
- * or quarter (2.3) join later.
+ * with no plan row; On deck (task 1.7) is a `to_read` book with an `on_deck`
+ * plan row; a shelf is a `shelf_books` row. A year or quarter (2.3) joins later.
  */
-export type Destination = { kind: "someday" } | { kind: "shelf"; shelfId: string };
+export type Destination = { kind: "someday" } | { kind: "on_deck" } | { kind: "shelf"; shelfId: string };
 export const SOMEDAY: Destination = { kind: "someday" };
 
 /** What an add wrote, and all its undo needs. */
@@ -644,8 +774,10 @@ export type AddedEntry = {
   destination: Destination;
   /** `books` rows this add created. */
   created: string[];
-  /** Books whose destination row this add wrote: a status, or a place on the shelf. */
+  /** Books whose destination row this add wrote: a status, a plan row, or a place on the shelf. */
   added: string[];
+  /** On deck only: books this add also gave a `to_read` status, because they had none. */
+  statused: string[];
 };
 
 export type AddBooksResult =
@@ -725,19 +857,38 @@ async function createBooks(tx: Tx, toCreate: BookRow[]): Promise<string[]> {
   return created;
 }
 
+/** Give each book a `to_read` status unless it has one; returns the books it wrote one for. */
+async function toRead(tx: Tx, userId: string, ids: string[]): Promise<string[]> {
+  return (await tx.insert(bookStatus)
+    .values(ids.map((bookId) => ({ userId, bookId, status: "to_read" })))
+    .onConflictDoNothing()
+    .returning({ bookId: bookStatus.bookId })).map((r) => r.bookId);
+}
+
 /**
  * Write the destination row for each book, unless it is there already: Someday
  * is `book_status = to_read`, and a status the book has is kept (no plan row,
- * D-37); a shelf is a `shelf_books` row at the end of the shelf. Returns the
- * books it wrote a row for.
+ * D-37); On deck gives a book with no status `to_read` too, then an `on_deck`
+ * plan row to each book that is `to_read` (one read, reading or set aside
+ * keeps its status and gets none); a shelf is a `shelf_books` row at the end
+ * of the shelf. Returns the books it wrote a destination row for, and the
+ * statuses On deck wrote.
  */
-async function writeDestination(tx: Tx, userId: string, destination: Destination, ids: string[]): Promise<string[]> {
-  if (ids.length === 0) return [];
-  if (destination.kind === "someday") {
-    return (await tx.insert(bookStatus)
-      .values(ids.map((bookId) => ({ userId, bookId, status: "to_read" })))
-      .onConflictDoNothing()
-      .returning({ bookId: bookStatus.bookId })).map((r) => r.bookId);
+async function writeDestination(
+  tx: Tx, userId: string, destination: Destination, ids: string[],
+): Promise<Pick<AddedEntry, "added" | "statused">> {
+  if (ids.length === 0) return { added: [], statused: [] };
+  if (destination.kind === "someday") return { added: await toRead(tx, userId, ids), statused: [] };
+  if (destination.kind === "on_deck") {
+    const statused = await toRead(tx, userId, ids);
+    const waiting = new Set((await tx.select({ bookId: bookStatus.bookId }).from(bookStatus)
+      .where(and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, ids), eq(bookStatus.status, "to_read"))))
+      .map((r) => r.bookId));
+    const added: string[] = [];
+    for (const id of ids) {
+      if (waiting.has(id) && await placeInPlan(userId, id, "on_deck", tx)) added.push(id);
+    }
+    return { added, statused };
   }
   const { shelfId } = destination;
   const there = new Set((await tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks)
@@ -748,7 +899,7 @@ async function writeDestination(tx: Tx, userId: string, destination: Destination
   if (fresh.length) {
     await tx.insert(shelfBooks).values(fresh.map((bookId, i) => ({ shelfId, bookId, ordinal: top + 1 + i })));
   }
-  return fresh;
+  return { added: fresh, statused: [] };
 }
 
 /**
@@ -801,8 +952,8 @@ export async function addBooks(userId: string, items: BookItem[], destination: D
       const i = f++;
       return exact.get(i) ?? createdAs.get(bookKey(item.title, item.author))!;
     }))];
-    const added = await writeDestination(tx, userId, destination, named);
-    return { ok: true, destination, created, matched: [...matched], added } as const;
+    const { added, statused } = await writeDestination(tx, userId, destination, named);
+    return { ok: true, destination, created, matched: [...matched], added, statused } as const;
   });
 }
 
@@ -903,14 +1054,14 @@ export async function addBook(
 
     const created = row ? await createBooks(tx, [row]) : [];
     const bookIdNow = created[0] ?? id!;
-    const added = await writeDestination(tx, userId, destination, [bookIdNow]);
+    const { added, statused } = await writeDestination(tx, userId, destination, [bookIdNow]);
     // A reused book's status, so the toast can say what it kept (*Already in your library · read*).
     const [had] = row ? [] : await tx.select({ status: bookStatus.status }).from(bookStatus)
       .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookIdNow)));
     const resolved = note === undefined ? null : await resolveNote(tx, userId, note, { bookId: bookIdNow });
     return {
       ok: true, destination, bookId: bookIdNow, title, reused: !row, status: had?.status ?? null, created, added,
-      note: resolved,
+      statused, note: resolved,
     } as const;
   });
 }
@@ -946,13 +1097,15 @@ async function newBookRow(tx: Tx, userId: string, item: Exclude<AddBookItem, { u
  * removed, and the books it created are soft-deleted (Hard rule 4). A book it
  * reused, and any status or shelf it had before, are left exactly as they
  * were, because only rows the add wrote are named. The authors and series it
- * created stay: catalog, and harmless.
+ * created stay: catalog, and harmless. On deck (task 1.7) takes out its
+ * `on_deck` rows through the plan helpers, and the statuses it wrote with them.
  *
  * Refuses, changing nothing, when anything moved in between: a status it wrote
  * is no longer a bare `to_read` (it gained a rating, a note, a finish, or a
- * plan row), a shelf row is gone, or a book it created has gained another
- * status, shelf or plan row. A `created` book the add didn't also place is not
- * one it made, and is refused too.
+ * plan row it didn't write), a shelf or `on_deck` row is gone, or a book it
+ * created has gained another status, shelf or plan row. A `created` book the
+ * add didn't also place (and, On deck, give its status) is not one it made,
+ * and is refused too.
  */
 export async function undoAddBooks(
   userId: string, entry: AddedEntry, { note }: { note?: { id: number; bookId: string } } = {},
@@ -973,31 +1126,44 @@ export async function undoAddBooks(
 
 async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: symbol): Promise<boolean> {
   await addLock(tx);
-  const { destination, created, added } = entry;
+  const { destination, created, added, statused } = entry;
   if (added.length === 0 && created.length === 0) return false;
   const placed = new Set(added);
   if (created.some((id) => !placed.has(id))) return false;
   const isShelf = destination.kind === "shelf";
+  const onDeck = destination.kind === "on_deck";
+  if (onDeck && created.some((id) => !statused.includes(id))) return false;
   if (isShelf && !(await ownShelf(tx, userId, destination.shelfId))) return false;
 
+  // The statuses this add wrote: Someday's are its destination rows; On deck names its own.
+  const statuses = new Set(destination.kind === "someday" ? added : onDeck ? statused : []);
   // The rows this add wrote, exactly as it wrote them: a status that has since
   // gained anything is the user's now. The same conditions guard the delete.
   const shelfRows = isShelf
     ? and(eq(shelfBooks.shelfId, destination.shelfId), inArray(shelfBooks.bookId, added)) : undefined;
-  const bareStatus = and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, added), eq(bookStatus.status, "to_read"),
+  const bareStatus = and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, [...statuses]), eq(bookStatus.status, "to_read"),
     isNull(bookStatus.rating), isNull(bookStatus.notes), isNull(bookStatus.finishedOn), isNull(bookStatus.yearRank));
-  const ours = added.length === 0 ? [] : isShelf
-    ? await tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(shelfRows)
-    : await tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(bareStatus);
-  if (ours.length !== placed.size) return false;
-  // Taking a status away from a book that has been planned since would leave a plan row with no to-read book.
-  if (!isShelf && added.length) {
+  // A plan row this add didn't write: any, except On deck's own.
+  const notOurs = onDeck ? ne(readingPlan.period, "on_deck") : undefined;
+  if (isShelf && added.length) {
+    const ours = await tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(shelfRows);
+    if (ours.length !== placed.size) return false;
+  }
+  if (onDeck && added.length) {
+    const ours = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan).where(and(
+      eq(readingPlan.userId, userId), eq(readingPlan.period, "on_deck"), inArray(readingPlan.bookId, added)));
+    if (ours.length !== placed.size) return false;
+  }
+  if (statuses.size) {
+    const ours = await tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(bareStatus);
+    if (ours.length !== statuses.size) return false;
+    // Taking a status away from a book that has been planned since would leave a plan row with no to-read book.
     const planned = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
-      .where(and(eq(readingPlan.userId, userId), inArray(readingPlan.bookId, added))).limit(1);
+      .where(and(eq(readingPlan.userId, userId), inArray(readingPlan.bookId, [...statuses]), notOurs)).limit(1);
     if (planned.length) return false;
     // Nor from one read since and set back to To read: it has history now (task 1.5).
     const read = await tx.select({ id: readEvents.id }).from(readEvents)
-      .where(and(eq(readEvents.userId, userId), inArray(readEvents.bookId, added))).limit(1);
+      .where(and(eq(readEvents.userId, userId), inArray(readEvents.bookId, [...statuses]))).limit(1);
     if (read.length) return false;
   }
 
@@ -1005,24 +1171,31 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
     const live = await tx.select({ id: books.id }).from(books)
       .where(and(inArray(books.id, created), isNull(books.deletedAt)));
     if (live.length !== new Set(created).size) return false;
-    // A new book has nothing but the row this add wrote: its own status for
-    // Someday, or its place on this shelf. Anything else came later.
-    const [statuses, shelved, planned] = await Promise.all([
+    // A new book has nothing but the rows this add wrote: its own status for
+    // Someday, that and its On deck row, or its place on this shelf. Anything
+    // else came later.
+    const [others, shelved, planned] = await Promise.all([
       tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(and(inArray(bookStatus.bookId, created),
         isShelf ? undefined : ne(bookStatus.userId, userId))).limit(1),
       tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(and(inArray(shelfBooks.bookId, created),
         isShelf ? ne(shelfBooks.shelfId, destination.shelfId) : undefined)).limit(1),
-      tx.select({ bookId: readingPlan.bookId }).from(readingPlan).where(inArray(readingPlan.bookId, created)).limit(1),
+      tx.select({ bookId: readingPlan.bookId }).from(readingPlan).where(and(inArray(readingPlan.bookId, created),
+        onDeck ? or(ne(readingPlan.userId, userId), notOurs) : undefined)).limit(1),
     ]);
-    if (statuses.length + shelved.length + planned.length > 0) return false;
+    if (others.length + shelved.length + planned.length > 0) return false;
   }
 
-  if (added.length) {
-    const gone = isShelf
-      ? await tx.delete(shelfBooks).where(shelfRows).returning({ bookId: shelfBooks.bookId })
-      : await tx.delete(bookStatus).where(bareStatus).returning({ bookId: bookStatus.bookId });
-    // Something else wrote between the check and the delete: roll it all back.
+  // Something else wrote between a check and its delete: roll it all back.
+  if (isShelf && added.length) {
+    const gone = await tx.delete(shelfBooks).where(shelfRows).returning({ bookId: shelfBooks.bookId });
     if (gone.length !== placed.size) throw refused;
+  }
+  if (onDeck) {
+    for (const id of placed) if (!(await takeOutOfPlan(userId, id, "on_deck", tx))) throw refused;
+  }
+  if (statuses.size) {
+    const gone = await tx.delete(bookStatus).where(bareStatus).returning({ bookId: bookStatus.bookId });
+    if (gone.length !== statuses.size) throw refused;
   }
   if (created.length) {
     await tx.update(books).set({ deletedAt: sql`now()` }).where(and(inArray(books.id, created), isNull(books.deletedAt)));

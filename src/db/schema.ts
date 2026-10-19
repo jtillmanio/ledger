@@ -376,9 +376,14 @@ export const readEvents = pgTable("read_events", {
 export const readingPlan = pgTable("reading_plan", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   bookId: text("book_id").notNull().references(() => books.id, { onDelete: "cascade" }),
-  plannedYear: integer("planned_year").notNull(),
-  plannedQuarter: integer("planned_quarter"),
-}, (t) => ({ pk: primaryKey({ columns: [t.userId, t.bookId, t.plannedYear] }) }));
+  period: text("period").notNull(),
+  ordinal: integer("ordinal"),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.userId, t.bookId, t.period] }),
+  period: check("reading_plan_period_check", sql`${t.period} ~ '^[0-9]{4}(-Q[1-4])?$' OR ${t.period} = 'on_deck'`),
+  ordinal: check("reading_plan_ordinal_check", sql`(${t.ordinal} IS NULL) = (${t.period} !~ '-Q')`),
+  quarterOrder: unique("reading_plan_quarter_order").on(t.userId, t.period, t.ordinal),
+}));
 
 /* ------------------------------------------------------------------ *
  * Per-user settings and curation
@@ -390,12 +395,9 @@ export const readingSettings = pgTable("reading_settings", {
   minutesPerDay: integer("minutes_per_day").notNull().default(45),
   wordsPerMinute: integer("words_per_minute").notNull().default(185),
   wordsPerPage: integer("words_per_page").notNull().default(275),
-  planGranularity: text("plan_granularity").notNull().default("quarter"), // quarter | month
   theme: text("theme").notNull().default("system"),                       // system | light | dark
   showCovers: boolean("show_covers").notNull().default(true),
 }, (t) => ({
-  planGranularity: check("reading_settings_plan_granularity_check",
-    sql`${t.planGranularity} IN ('quarter', 'month')`),
   theme: check("reading_settings_theme_check", sql`${t.theme} IN ('system', 'light', 'dark')`),
 }));
 

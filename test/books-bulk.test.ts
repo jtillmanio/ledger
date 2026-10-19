@@ -62,8 +62,8 @@ beforeEach(async () => {
     if (status) await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, ${id}, ${status})`;
   }
   await sql`UPDATE books SET series_id = 'stormlight-archive', series_position = 1 WHERE id = 'the-way-of-kings-brandon-sanderson'`;
-  await sql`INSERT INTO reading_plan (user_id, book_id, planned_year, planned_quarter)
-            VALUES (${USER}, 'hyperion-dan-simmons', 2027, 1)`;
+  await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal)
+            VALUES (${USER}, 'hyperion-dan-simmons', '2027-Q1', 1)`;
 });
 
 const req = (body: unknown) =>
@@ -280,7 +280,7 @@ describe("where the books land (AC-4)", () => {
       SELECT book_id, status FROM book_status WHERE book_id = ANY(${LIBRARY.map((b) => b[0])}::text[])`)
       .map((s) => [s.book_id, s.status]));
     for (const [id, , , status] of LIBRARY) expect(statuses[id]).toBe(status ?? "to_read");
-    expect(await sql`SELECT planned_year, planned_quarter FROM reading_plan WHERE book_id = 'hyperion-dan-simmons'`)
-      .toEqual([{ planned_year: 2027, planned_quarter: 1 }]);
+    expect(await sql`SELECT period, ordinal FROM reading_plan WHERE book_id = 'hyperion-dan-simmons'`)
+      .toEqual([{ period: "2027-Q1", ordinal: 1 }]);
   });
 });

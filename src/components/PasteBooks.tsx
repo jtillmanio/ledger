@@ -5,7 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import ReviewTable from "@/components/ReviewTable";
 import { useUndo } from "@/components/Undo";
 import type { AddedEntry } from "@/db/writes";
-import { destinationOf, undoAdd, type Target } from "@/lib/book-add";
+import { destinationOf, targetName, undoAdd, type Target } from "@/lib/book-add";
 import { bookKey, parseBooks } from "@/lib/book-parse";
 import { buildBookReview, type BookAnswer, type BookAnswers, type Choices } from "@/lib/book-review";
 
@@ -13,7 +13,7 @@ const API = "/api/books/bulk";
 const books = (n: number) => `${n} ${n === 1 ? "book" : "books"}`;
 const lineCount = (n: number) => `${n} ${n === 1 ? "line" : "lines"}`;
 
-/** Where an add to Someday lands you: the books it added are on the To read list, which plain /books may cut. */
+/** Where an add to Someday or On deck lands you: the books it added are on the To read list, which plain /books may cut. */
 export const AFTER_ADD = "/books?status=to_read";
 
 /**
@@ -50,7 +50,7 @@ export default function PasteBooks({ level, target, cancel, onAdded }: {
   const lines = useMemo(() => parseBooks(text), [text]);
   const review = useMemo(() => buildBookReview(lines, { answers, choices }), [lines, answers, choices]);
   const toCheck = review.unchecked.length;
-  const where = target.kind === "someday" ? "Someday" : target.name;
+  const where = targetName(target);
 
   const reason = saving ? "Adding…"
     : lines.length === 0 ? "Paste a list of books to add"
@@ -100,8 +100,8 @@ export default function PasteBooks({ level, target, cancel, onAdded }: {
         throw new Error("gone");
       }
       if (!res.ok) throw new Error(String(res.status));
-      const { created, added } = await res.json() as AddedEntry;
-      const entry: AddedEntry = { destination: destinationOf(target), created, added };
+      const { created, added, statused } = await res.json() as AddedEntry;
+      const entry: AddedEntry = { destination: destinationOf(target), created, added, statused };
       const known = added.filter((id) => !created.includes(id)).length;
       const label = `${books(added.length)} added to ${where}`;
       const detail = known > 0 ? `${known} already in your library` : undefined;

@@ -47,13 +47,21 @@ describe("listBooks (R2-06, R2-08)", () => {
   it("returns one row per book even when it is planned in two years, with the true total", async () => {
     await book("lb");
     await book("other");
-    await sql`INSERT INTO reading_plan (user_id, book_id, planned_year) VALUES (${USER}, 'lb', 2026), (${USER}, 'lb', 2027)`;
+    await book("quarter");
+    await book("deck");
+    await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES
+              (${USER}, 'lb', '2027', NULL), (${USER}, 'lb', '2026-Q4', 1),
+              (${USER}, 'quarter', '2028-Q2', 1), (${USER}, 'deck', 'on_deck', NULL)`;
     const rows = await q.listBooks(USER);
-    expect(rows.map((r) => r.id).sort()).toEqual(["lb", "other"]);
-    expect(rows[0].total).toBe(2);
+    expect(rows.map((r) => r.id).sort()).toEqual(["deck", "lb", "other", "quarter"]);
+    expect(rows[0].total).toBe(4);
+    // Its year is the earliest, from plan_period (task 1.7): a quarter's year, none On deck.
+    expect(Object.fromEntries(rows.map((r) => [r.id, r.plan_year])))
+      .toEqual({ lb: 2026, other: null, quarter: 2028, deck: null });
     // and it is findable under either year
     expect((await q.listBooks(USER, { year: 2027 })).map((r) => r.id)).toEqual(["lb"]);
     expect((await q.listBooks(USER, { year: 2026 })).map((r) => r.id)).toEqual(["lb"]);
+    expect((await q.listBooks(USER, { year: 2028 })).map((r) => r.id)).toEqual(["quarter"]);
   });
 
   it("can reach the read books that have no finish date", async () => {

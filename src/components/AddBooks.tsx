@@ -8,7 +8,7 @@ import ByHand from "@/components/ByHand";
 import PasteBooks, { AFTER_ADD } from "@/components/PasteBooks";
 import { useUndo } from "@/components/Undo";
 import type { AddBookResult, AddedEntry, HandItem } from "@/db/writes";
-import { destinationOf, undoAdd, type Target } from "@/lib/book-add";
+import { destinationOf, targetName, undoAdd, type Target } from "@/lib/book-add";
 
 type Mode = "search" | "paste" | "hand";
 type Shelf = { id: string; name: string };
@@ -25,10 +25,10 @@ const STATUS: Record<string, string> = { to_read: "on your to-read list", readin
 /**
  * Add books (task 1.4c; mockups `add`, `shelves`, `apistates`): *Search ·
  * Paste a list · By hand*, Search first, then **Add to**, which names where a
- * book goes before you look for it. Someday is the default; a shelf is chosen through
- * *Shelf…*, or arrives chosen from a shelf's *+ Add to shelf*. *On deck* (1.7)
- * and *Year or quarter…* (2.3) are drawn, unavailable, with the reason under
- * them.
+ * book goes before you look for it. Someday is the default; *On deck* (task
+ * 1.7) puts a to-read book next in line, with no year; a shelf is chosen
+ * through *Shelf…*, or arrives chosen from a shelf's *+ Add to shelf*.
+ * *Year or quarter…* (2.3) is drawn, unavailable, with the reason under it.
  *
  * Every add is one transaction on the server and pushes one undo onto the
  * app's stack (task 1.2, R1-09). A book you already have is reused, and the
@@ -60,7 +60,7 @@ export default function AddBooks({ initial, close, query = "", note = null }: {
   const [hand, setHand] = useState({ key: 0, title: "" });
   const router = useRouter();
   const { push, notify } = useUndo();
-  const where = target.kind === "someday" ? "Someday" : target.name;
+  const where = targetName(target);
 
   function choose(next: Target) {
     setTarget(next);
@@ -94,7 +94,7 @@ export default function AddBooks({ initial, close, query = "", note = null }: {
         `${title} · ${target.kind === "shelf" ? `already on ${where}` : STATUS[status ?? ""] ?? "kept as it was"}${fromNote}`);
       return;
     }
-    const entry: AddedEntry = { destination: result.destination, created, added };
+    const entry: AddedEntry = { destination: result.destination, created, added, statused: result.statused };
     const reopen = resolved == null ? undefined : { id: resolved, bookId };
     push({
       label: `Added to ${where}`,
@@ -157,7 +157,7 @@ export default function AddBooks({ initial, close, query = "", note = null }: {
       close();
       router.refresh();
     } else {
-      router.push(target.kind === "someday" ? AFTER_ADD : "/books");
+      router.push(target.kind === "shelf" ? "/books" : AFTER_ADD);
     }
   }
 
@@ -178,14 +178,15 @@ export default function AddBooks({ initial, close, query = "", note = null }: {
         <span id="addto-label" className="addto-k">Add to</span>
         <button type="button" className="chip" aria-pressed={target.kind === "someday"}
           onClick={() => choose({ kind: "someday" })}>Someday</button>
-        <button type="button" className="chip" aria-disabled="true" aria-describedby="addto-later">On deck</button>
+        <button type="button" className="chip" aria-pressed={target.kind === "on_deck"}
+          onClick={() => choose({ kind: "on_deck" })}>On deck</button>
         <button type="button" className="chip" aria-disabled="true" aria-describedby="addto-later">Year or quarter…</button>
         <button type="button" className="chip" aria-pressed={target.kind === "shelf"}
           aria-expanded={picker.phase !== "closed"} aria-controls="addto-shelves" onClick={openPicker}>
           {target.kind === "shelf" ? target.name : "Shelf…"}
         </button>
       </div>
-      <p id="addto-later" className="small muted addto-later">On deck and Year or quarter… arrive with the reading plan.</p>
+      <p id="addto-later" className="small muted addto-later">Year or quarter… arrives with the plan editor.</p>
       <div id="addto-shelves" role="status" aria-live="polite">
         {picker.phase === "loading" && <p className="small muted addto-pick">Loading your shelves…</p>}
         {picker.phase === "failed" && (

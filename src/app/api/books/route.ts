@@ -21,10 +21,11 @@ const YEAR_MAX = 3000;
  *   transaction; the answer says whether the book was reused, and is what the
  *   undo sends back. `note`, an inbox note's id, resolves that note into the
  *   book in the same transaction (task 1.4b); the answer's `note` says it did.
- * - DELETE `{ destination, created, added, note? }`: that add's undo, from an
- *   add here or a paste (`/api/books/bulk`). 409 when something changed since,
- *   and then nothing is changed. `note: { id, bookId }` reopens the note the
- *   add resolved.
+ * - DELETE `{ destination, created, added, statused?, note? }`: that add's
+ *   undo, from an add here or a paste (`/api/books/bulk`); `statused` is the
+ *   statuses an On deck add wrote (task 1.7). 409 when something changed
+ *   since, and then nothing is changed. `note: { id, bookId }` reopens the
+ *   note the add resolved.
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       error: "item is { use }, { openLibrary: { openLibraryId, title, author, year, pages, coverUrl } } or "
         + "{ hand: { title, author, series, position, pages, words } }; "
-        + "destination is { kind: 'someday' } or { kind: 'shelf', shelfId }",
+        + "destination is { kind: 'someday' }, { kind: 'on_deck' } or { kind: 'shelf', shelfId }",
     }, { status: 400 });
   }
   const result = await addBook(userId, item, destination, note === null ? {} : { note });
@@ -59,13 +60,14 @@ export async function DELETE(req: Request) {
   const destination = parseDestination(body?.destination);
   const created = ids(body?.created);
   const added = ids(body?.added);
+  const statused = body?.statused === undefined ? [] : ids(body.statused);
   const note = reopen(body?.note);
-  if (!destination || !created || !added || created.length + added.length === 0 || note === undefined) {
+  if (!destination || !created || !added || !statused || created.length + added.length === 0 || note === undefined) {
     return NextResponse.json({
-      error: "destination, and created and added: lists of book ids; note, if any, is { id, bookId }",
+      error: "destination, and created, added and (if any) statused: lists of book ids; note, if any, is { id, bookId }",
     }, { status: 400 });
   }
-  if (!(await undoAddBooks(userId, { destination, created, added }, note ? { note } : {}))) {
+  if (!(await undoAddBooks(userId, { destination, created, added, statused }, note ? { note } : {}))) {
     return NextResponse.json({ error: "Something changed since that add. Nothing was undone." }, { status: 409 });
   }
   return NextResponse.json({ ok: true });

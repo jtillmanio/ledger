@@ -51,7 +51,7 @@ export async function POST(req: Request) {
   const destination = parseDestination(body?.destination);
   if (!items || !destination) {
     return bad(`items is a list of 1 to ${MAX_LINES}: { title, author, series, position } or { use }; `
-      + "destination is { kind: 'someday' } or { kind: 'shelf', shelfId }");
+      + "destination is { kind: 'someday' }, { kind: 'on_deck' } or { kind: 'shelf', shelfId }");
   }
   const result = await addBooks(userId, items, destination);
   if (!result.ok) {

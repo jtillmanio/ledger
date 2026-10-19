@@ -632,6 +632,45 @@ BEGIN
   END IF;
 END $$;
 
+-- plan_period reads a period's year, quarter and level, and to_read_level puts
+-- each to_read book at one level (task 1.7, D-37): no plan row is Someday; with
+-- several, the earliest by date wins (a quarter before its own bare year), and
+-- On deck only when there is nothing dated. A removed book is in neither.
+INSERT INTO books (id, title) VALUES
+  ('zz-p-someday', 'Zz Someday'), ('zz-p-deck', 'Zz Deck'), ('zz-p-year', 'Zz Year Plan'),
+  ('zz-p-quarter', 'Zz Quarter'), ('zz-p-both', 'Zz Both'), ('zz-p-gone', 'Zz Gone');
+UPDATE books SET deleted_at = now() WHERE id = 'zz-p-gone';
+INSERT INTO book_status (user_id, book_id, status) VALUES
+  ('zz-user', 'zz-p-someday', 'to_read'), ('zz-user', 'zz-p-deck', 'to_read'),
+  ('zz-user', 'zz-p-year', 'to_read'), ('zz-user', 'zz-p-quarter', 'to_read'),
+  ('zz-user', 'zz-p-both', 'to_read'), ('zz-user', 'zz-p-gone', 'to_read');
+INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES
+  ('zz-user', 'zz-p-deck', 'on_deck', NULL),
+  ('zz-user', 'zz-p-year', '2027', NULL), ('zz-user', 'zz-p-year', 'on_deck', NULL),
+  ('zz-user', 'zz-p-quarter', '2028', NULL), ('zz-user', 'zz-p-quarter', '2027-Q4', 1),
+  ('zz-user', 'zz-p-both', '2027', NULL), ('zz-user', 'zz-p-both', '2027-Q1', 1),
+  ('zz-user', 'zz-p-gone', '2027-Q1', 2);
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT string_agg(book_id || ':' || period || ':' || coalesce(year::text, '-') || ':'
+                    || coalesce(quarter::text, '-') || ':' || level || ':' || coalesce(ordinal::text, '-'),
+                    ', ' ORDER BY book_id, period) INTO got
+  FROM plan_period WHERE user_id = 'zz-user' AND book_id LIKE 'zz-p-%';
+  IF got IS DISTINCT FROM 'zz-p-both:2027:2027:-:year:-, zz-p-both:2027-Q1:2027:1:quarter:1, '
+                       || 'zz-p-deck:on_deck:-:-:on_deck:-, '
+                       || 'zz-p-quarter:2027-Q4:2027:4:quarter:1, zz-p-quarter:2028:2028:-:year:-, '
+                       || 'zz-p-year:2027:2027:-:year:-, zz-p-year:on_deck:-:-:on_deck:-' THEN
+    RAISE EXCEPTION 'plan_period wrong: %', got;
+  END IF;
+  SELECT string_agg(book_id || ':' || level || ':' || coalesce(period, '-'), ', ' ORDER BY book_id) INTO got
+  FROM to_read_level WHERE user_id = 'zz-user' AND book_id LIKE 'zz-p-%';
+  IF got IS DISTINCT FROM 'zz-p-both:quarter:2027-Q1, zz-p-deck:on_deck:on_deck, '
+                       || 'zz-p-quarter:quarter:2027-Q4, zz-p-someday:someday:-, zz-p-year:year:2027' THEN
+    RAISE EXCEPTION 'to_read_level wrong: %', got;
+  END IF;
+END $$;
+
 -- Applying views.sql leaves every table analyzed. A table the planner has no
 -- statistics for gets nested-loop plans that ran for minutes on a preview of
 -- live (2026-10-02).

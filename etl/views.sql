@@ -468,6 +468,40 @@ FROM book_reads r JOIN books b ON b.id = r.book_id
 WHERE r.finished_on IS NOT NULL AND b.deleted_at IS NULL
 GROUP BY r.user_id, extract(year FROM r.finished_on)::int, b.genre;
 
+-- A plan row's period, read (task 1.7, D-37, D-38): '2027-Q1' is year 2027,
+-- quarter 1, level 'quarter'; '2027' is year 2027 with no quarter, level 'year';
+-- 'on_deck' has neither, level 'on_deck'. The year is never stored beside the
+-- period, so the two can't disagree; nothing in the app parses a period.
+-- ordinal is the place in a quarter (1…N) and NULL at every other level.
+CREATE OR REPLACE VIEW plan_period AS
+SELECT p.user_id, p.book_id, p.period,
+       CASE WHEN p.period = 'on_deck' THEN NULL ELSE left(p.period, 4)::int END AS year,
+       CASE WHEN p.period ~ '-Q' THEN right(p.period, 1)::int END              AS quarter,
+       CASE WHEN p.period = 'on_deck' THEN 'on_deck'
+            WHEN p.period ~ '-Q'       THEN 'quarter'
+            ELSE 'year' END                                                  AS level,
+       p.ordinal
+FROM reading_plan p
+JOIN books b ON b.id = p.book_id AND b.deleted_at IS NULL;
+
+-- The level each to_read book sits at (task 1.7, D-37): a quarter, a year, On
+-- deck, or Someday, which is a to_read book with no plan row and is never
+-- stored. One row per book: with several plan rows it takes the earliest,
+-- quarters and years by date (a quarter before its own bare year), then On deck.
+CREATE OR REPLACE VIEW to_read_level AS
+SELECT s.user_id, s.book_id,
+       COALESCE(pp.level, 'someday') AS level,
+       pp.period, pp.year, pp.quarter, pp.ordinal
+FROM book_status s
+JOIN books b ON b.id = s.book_id AND b.deleted_at IS NULL
+LEFT JOIN LATERAL (
+  SELECT pp.* FROM plan_period pp
+  WHERE pp.user_id = s.user_id AND pp.book_id = s.book_id
+  ORDER BY pp.level = 'on_deck', pp.year, pp.quarter NULLS LAST
+  LIMIT 1
+) pp ON true
+WHERE s.status = 'to_read';
+
 -- Series completion. Replaces the Series tab.
 CREATE OR REPLACE VIEW series_progress AS
 SELECT
