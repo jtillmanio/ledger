@@ -934,7 +934,21 @@ def extract_books(path: Path, out: Path, with_plan: bool = False) -> None:
     idx = BookIndex()
     status: dict[str, dict] = {}
     plan, releases, external, wishlist = [], [], [], []
-    seen_plan: set[tuple[str, int]] = set()
+    seen_plan: set[tuple[str, str]] = set()
+    plan_ordinals: dict[str, int] = {}
+
+    def add_plan(bid, period, title):
+        """One reading_plan row (task 1.7): a period of '2027', '2027-Q1' or
+        'on_deck'. A quarter numbers its books in workbook row order; every
+        other level has no ordinal."""
+        if (bid, period) in seen_plan:
+            flag("reading_plan", "duplicate book/period", f"{clean(title)} ({period})")
+            return
+        seen_plan.add((bid, period))
+        ordinal = None
+        if "-Q" in period:
+            ordinal = plan_ordinals[period] = plan_ordinals.get(period, 0) + 1
+        plan.append({"user_id": "$OWNER", "book_id": bid, "period": period, "ordinal": ordinal})
 
     def set_status(bid, **kw):
         row = status.setdefault(bid, {"user_id": "$OWNER", "book_id": bid,
@@ -997,16 +1011,9 @@ def extract_books(path: Path, out: Path, with_plan: bool = False) -> None:
                         # The reading plan starts empty and is built in the app
                         # (R0-04). The sheet's To-Read tabs still create the books;
                         # only the plan rows are skipped unless --with-plan.
-                        if not with_plan:
-                            continue
-                        pkey = (bid, year)
-                        if pkey in seen_plan:
-                            flag("reading_plan", "duplicate book/year",
-                                 f"{clean(title)} ({year})")
-                            continue
-                        seen_plan.add(pkey)
-                        plan.append({"user_id": "$OWNER", "book_id": bid,
-                                     "planned_year": year, "planned_quarter": None})
+                        # A To-Read tab is a year with no quarter: a bare-year row.
+                        if with_plan:
+                            add_plan(bid, str(year), title)
 
     # ---- top books per year ---------------------------------------------
     raw = sheet(xl, "Top Books")
@@ -1088,7 +1095,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False) -> None:
     write(out, "book_status", list(status.values()),
           ["user_id", "book_id", "status", "finished_on", "finished_on_precision",
            "year_rank", "rating"])
-    write(out, "reading_plan", plan, ["user_id", "book_id", "planned_year", "planned_quarter"])
+    write(out, "reading_plan", plan, ["user_id", "book_id", "period", "ordinal"])
     write(out, "releases", releases, ["book_id", "release_date"])
     write(out, "wishlist", wishlist, ["genre", "raw_entry", "book_id"])
     write(out, "external_lists", external, ["source", "year", "rank", "raw_title", "book_id"])

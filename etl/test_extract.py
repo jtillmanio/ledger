@@ -464,5 +464,52 @@ class BookStatusFinishDate(unittest.TestCase):
                           rows["the"]["finished_on_precision"]), ("to_read", "", "none"))
 
 
+class ReadingPlanPeriod(unittest.TestCase):
+    """Task 1.7 (D-13, D-37): --with-plan writes the To-Read tabs as reading_plan
+    rows with one period column and an ordinal; a To-Read tab is a bare year, so
+    the ordinal is blank. Without the flag the plan starts empty."""
+
+    def extract(self, with_plan: bool) -> Path:
+        import pandas as pd
+        from unittest import mock
+        path = Path(tempfile.mkdtemp()) / "Books.xlsx"
+        with pd.ExcelWriter(path) as xw:
+            pd.DataFrame([("Piranesi", "Susanna Clarke", None, "Fantasy", None),
+                          ("Light Bringer", "Pierce Brown", None, "Sci-Fi", None)],
+                         columns=["Book", "Author", "Series", "Genre", "Words"]) \
+                .to_excel(xw, sheet_name="To-Read Master List", index=False)
+            # Light Bringer is planned in two years; Piranesi is listed twice in 2027.
+            pd.DataFrame({"Fantasy": ["Light Bringer"]}).to_excel(xw, sheet_name="To-Read 2026", index=False)
+            pd.DataFrame({"Fantasy": ["Piranesi", "Piranesi"], "Sci-Fi": ["Light Bringer", None]}) \
+                .to_excel(xw, sheet_name="To-Read 2027", index=False)
+            pd.DataFrame(columns=["Title", "Author", "Series", "Date"]) \
+                .to_excel(xw, sheet_name="Coming Out", index=False)
+            pd.DataFrame(columns=["Series", "Total Books"]).to_excel(xw, sheet_name="Series", index=False)
+        out = Path(tempfile.mkdtemp())
+        ex.UNRESOLVED.clear()
+        with mock.patch("sys.stdout"):
+            ex.extract_books(path, out, with_plan=with_plan)
+        return out
+
+    def header(self, out: Path) -> list[str]:
+        with (out / "reading_plan.csv").open(newline="", encoding="utf-8") as fh:
+            return next(csv.reader(fh))
+
+    def test_with_plan_writes_a_period_and_a_blank_ordinal_per_year(self):
+        out = self.extract(with_plan=True)
+        self.assertEqual(self.header(out), ["user_id", "book_id", "period", "ordinal"])
+        rows = sorted((r["book_id"], r["period"], r["ordinal"]) for r in read(out, "reading_plan"))
+        self.assertEqual(rows, [("light-bringer-pierce-brown", "2026", ""),
+                                ("light-bringer-pierce-brown", "2027", ""),
+                                ("piranesi-susanna-clarke", "2027", "")])
+        self.assertTrue(all(r["user_id"] == "$OWNER" for r in read(out, "reading_plan")))
+        self.assertIn("duplicate book/period", [u["reason"] for u in ex.UNRESOLVED])
+
+    def test_without_the_flag_no_plan_rows_are_written(self):
+        out = self.extract(with_plan=False)
+        self.assertEqual(self.header(out), ["user_id", "book_id", "period", "ordinal"])
+        self.assertEqual(read(out, "reading_plan"), [])
+
+
 if __name__ == "__main__":
     unittest.main()

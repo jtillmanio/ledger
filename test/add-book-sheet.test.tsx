@@ -4,8 +4,9 @@
 // before Open Library (AC-2); By hand needs a title and an author and says so
 // under the field (AC-2); a record with no external one is *metadata pending*
 // (AC-4); the search's states, labelled inputs, and the sheet's focus, inert
-// and every way it closes (AC-6). The writes, against the database, are
-// test/add-book.test.ts.
+// and every way it closes (AC-6). *On deck* is a real choice from task 1.7
+// (its AC-4); *Year or quarter…* waits for 2.3. The writes, against the
+// database, are test/add-book.test.ts and test/plan-period.test.ts.
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -50,6 +51,7 @@ beforeEach(() => {
   added = {
     ok: true, destination: { kind: "someday" }, bookId: "the-blade-itself-marcus-sakey", title: "The Blade Itself",
     reused: false, status: null, created: ["the-blade-itself-marcus-sakey"], added: ["the-blade-itself-marcus-sakey"],
+    statused: [],
   };
   fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const body = init?.body ? JSON.parse(init.body as string) : null;
@@ -117,7 +119,7 @@ async function search(q = "blade") {
 }
 
 describe("Add to (AC-3)", () => {
-  it("opened from Add books, it is Someday; On deck and Year or quarter… are unavailable, with the reason shown", async () => {
+  it("opened from Add books, it is Someday; Year or quarter… is unavailable, with the reason shown", async () => {
     await open();
     // It opens on its segmented control, Search selected, and Add to follows (ui.md; mockup `add`).
     const control = dialog()!.querySelector(".seg")!;
@@ -126,15 +128,37 @@ describe("Add to (AC-3)", () => {
     // Search shows Or paste a list under it, as drawn; By hand is the form alone.
     expect(dialog()!.querySelector(".pane-paste")!.hasAttribute("hidden")).toBe(false);
     expect(chips().map((c) => [c.textContent, c.getAttribute("aria-pressed"), c.getAttribute("aria-disabled")])).toEqual([
-      ["Someday", "true", null], ["On deck", null, "true"], ["Year or quarter…", null, "true"], ["Shelf…", "false", null],
+      ["Someday", "true", null], ["On deck", "false", null], ["Year or quarter…", null, "true"], ["Shelf…", "false", null],
     ]);
-    for (const name of ["On deck", "Year or quarter…"]) {
-      const reason = document.getElementById(chip(name).getAttribute("aria-describedby")!)!;
-      expect(reason.textContent).toBe("On deck and Year or quarter… arrive with the reading plan.");
-      expect(reason.hidden).toBe(false);
-    }
+    expect(chip("On deck").hasAttribute("aria-describedby")).toBe(false);
+    const reason = document.getElementById(chip("Year or quarter…").getAttribute("aria-describedby")!)!;
+    expect(reason.textContent).toBe("Year or quarter… arrives with the plan editor.");
+    expect(reason.hidden).toBe(false);
     await search();
     expect(resultButtons().map((b) => b.textContent)).toEqual(["Add to Someday", "Add to Someday"]);
+  });
+
+  it("On deck (task 1.7) is a real choice: every button says Add to On deck, and the add and its undo send it", async () => {
+    added = { ...added, destination: { kind: "on_deck" }, statused: ["the-blade-itself-marcus-sakey"] };
+    await open();
+    await click(chip("On deck"));
+    expect(chip("On deck").getAttribute("aria-pressed")).toBe("true");
+    expect(chip("Someday").getAttribute("aria-pressed")).toBe("false");
+    expect(chip("Year or quarter…").getAttribute("aria-disabled")).toBe("true");
+    await search();
+    expect(resultButtons().map((b) => b.textContent)).toEqual(["Add to On deck", "Add to On deck"]);
+    await click(resultButtons()[1]);
+    expect(adds()).toEqual([{ item: { openLibrary: SAKEY }, destination: { kind: "on_deck" } }]);
+    expect(resultButtons()[1].textContent).toBe("✓ Added to On deck");
+    expect(document.querySelector(".toast-label")!.textContent).toBe("Added to On deck");
+    await click(document.querySelector(".toast-undo")!);
+    const [, init] = fetchMock.mock.calls.at(-1)!;
+    expect([init.method, JSON.parse(init.body)]).toEqual(["DELETE", {
+      destination: { kind: "on_deck" }, created: ["the-blade-itself-marcus-sakey"],
+      added: ["the-blade-itself-marcus-sakey"], statused: ["the-blade-itself-marcus-sakey"],
+    }]);
+    await click(seg("By hand"));
+    expect(dialog()!.querySelector<HTMLButtonElement>('.byhand button[type="submit"]')!.textContent).toBe("Add to On deck");
   });
 
   it("opened from a shelf's + Add to shelf, Add to shows that shelf and every result says Add to <shelf>", async () => {
@@ -241,7 +265,8 @@ describe("Search (AC-2, AC-6)", () => {
     await click(document.querySelector(".toast-undo")!);
     const [, init] = fetchMock.mock.calls.at(-1)!;
     expect([init.method, JSON.parse(init.body)]).toEqual(["DELETE",
-      { destination: { kind: "someday" }, created: ["the-blade-itself-marcus-sakey"], added: ["the-blade-itself-marcus-sakey"] }]);
+      { destination: { kind: "someday" }, created: ["the-blade-itself-marcus-sakey"], added: ["the-blade-itself-marcus-sakey"],
+        statused: [] }]);
   });
 
   it("a book you already have says so, and with nothing written there is nothing to undo", async () => {

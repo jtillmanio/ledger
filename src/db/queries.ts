@@ -254,7 +254,9 @@ export async function trackSummary(userId: string) {
 export type BookRow = {
   id: string; title: string; author: string | null; series: string | null;
   series_position: number | null; genre: string | null; word_count: number | null;
-  status: string; planned_year: number | null;
+  status: string;
+  /** The earliest year the book is planned in, from `plan_period` (task 1.7); null when none (On deck, Someday). */
+  plan_year: number | null;
   /** The year a `read` book was finished, from `finished_on` (D-21); null otherwise. */
   read_year: number | null;
   /** The latest read's date and precision, for the finish-date control (task 1.5). */
@@ -282,17 +284,18 @@ export async function listBooks(
            CASE WHEN st.status = 'read' THEN extract(year FROM st.finished_on)::int END AS read_year,
            st.finished_on::text AS finished_on, COALESCE(st.finished_on_precision, 'none') AS finished_on_precision,
            st.rating,
-           pl.planned_year,
+           pl.plan_year,
            COUNT(*) OVER ()::int AS total
     FROM books b
     LEFT JOIN authors a      ON a.id = b.author_id
     LEFT JOIN book_series s  ON s.id = b.series_id
     LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
-    -- reading_plan's PK allows one book in two years (Light Bringer: 2026 and 2027),
-    -- so collapse to the earliest year to keep one row per book (R2-06).
+    -- A book can be planned in two years (Light Bringer: 2026 and 2027), so
+    -- collapse to the earliest to keep one row per book (R2-06). The year is
+    -- plan_period's, never parsed from the period here (task 1.7).
     LEFT JOIN LATERAL (
-      SELECT MIN(p.planned_year) AS planned_year FROM reading_plan p
-      WHERE p.book_id = b.id AND p.user_id = ${userId}
+      SELECT MIN(pp.year) AS plan_year FROM plan_period pp
+      WHERE pp.book_id = b.id AND pp.user_id = ${userId}
     ) pl ON true
     WHERE b.deleted_at IS NULL
       AND (${status}::text IS NULL OR COALESCE(st.status,'to_read') = ${status})
@@ -301,9 +304,9 @@ export async function listBooks(
            OR EXISTS (SELECT 1 FROM book_reads r
                       WHERE r.user_id = ${userId} AND r.book_id = b.id
                         AND extract(year FROM r.finished_on) = ${year})
-           OR EXISTS (SELECT 1 FROM reading_plan p2
+           OR EXISTS (SELECT 1 FROM plan_period p2
                       WHERE p2.book_id = b.id AND p2.user_id = ${userId}
-                        AND p2.planned_year = ${year}))
+                        AND p2.year = ${year}))
       AND (NOT ${noYear}::boolean
            OR EXISTS (SELECT 1 FROM book_reads r
                       WHERE r.user_id = ${userId} AND r.book_id = b.id AND r.finished_on IS NULL))

@@ -1106,7 +1106,7 @@ finish-date control stores `2019-07-01` / `approximate`, never `exact`, and
 *No date* stores NULL / `none`. `finished_year` no longer exists. Up →
 down → up preserves the rows, including their precision.
 
-### ☐ 1.7 One period column on `reading_plan` · M
+### ☑ 1.7 One period column on `reading_plan` · M
 Replace `planned_year` / `planned_quarter` with a single `period text NOT NULL`,
 checked against `^[0-9]{4}(-Q[1-4])?$` or the literal `on_deck`. The year is
 `left(period, 4)`, so a year is what its quarters roll up to and cannot

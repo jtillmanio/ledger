@@ -98,7 +98,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
               <span className="row-head">
                 <span className="row-title">{b.title}</span>
                 <span className="row-meta mono">
-                  {b.read_year ?? b.planned_year ?? ""}
+                  {b.read_year ?? b.plan_year ?? ""}
                   {b.word_count ? ` · ${Math.round(b.word_count / 1000)}k` : ""}
                 </span>
               </span>

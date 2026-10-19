@@ -77,7 +77,7 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
 \\copy issue_progress(user_id,placement_id,completed_at,completed_at_precision) FROM '$tmp/issue_progress.csv' CSV HEADER
 \\copy edition_progress FROM '$tmp/edition_progress.csv' CSV HEADER
 \\copy book_status(user_id,book_id,status,finished_on,finished_on_precision,year_rank,rating) FROM '$tmp/book_status.csv' CSV HEADER
-\\copy reading_plan     FROM '$tmp/reading_plan.csv'     CSV HEADER
+\\copy reading_plan(user_id,book_id,period,ordinal) FROM '$tmp/reading_plan.csv' CSV HEADER
 
 -- run_issues.id came from the CSV (extract numbers placements in sheet order,
 -- D-16), so the serial never advanced: move it past them, or the first

@@ -16,25 +16,28 @@ export const MAX_PAGES = 20_000;
 export const MAX_WORDS = 10_000_000;
 export const MAX_POSITION = 100_000;
 
-/** Where the screen says an add is going: Someday, or a shelf by id and name. */
-export type Target = { kind: "someday" } | { kind: "shelf"; shelfId: string; name: string };
+/** Where the screen says an add is going: Someday, On deck (task 1.7), or a shelf by id and name. */
+export type Target = { kind: "someday" } | { kind: "on_deck" } | { kind: "shelf"; shelfId: string; name: string };
 
-/** *Add to Someday*, *Add to Cosmere*: what every result's primary button says. */
-export const addTo = (t: Target) => `Add to ${t.kind === "someday" ? "Someday" : t.name}`;
+/** *Someday*, *On deck*, *Cosmere*: the target's name on the screen. */
+export const targetName = (t: Target) => (t.kind === "someday" ? "Someday" : t.kind === "on_deck" ? "On deck" : t.name);
+
+/** *Add to Someday*, *Add to On deck*, *Add to Cosmere*: what every result's primary button says. */
+export const addTo = (t: Target) => `Add to ${targetName(t)}`;
 
 /** What a request sends for the screen's target. */
 export const destinationOf = (t: Target): Destination =>
-  (t.kind === "someday" ? { kind: "someday" } : { kind: "shelf", shelfId: t.shelfId });
+  (t.kind === "shelf" ? { kind: "shelf", shelfId: t.shelfId } : { kind: t.kind });
 
 /**
  * An add's undo, from the screen (task 1.4c, AC-5): rejects when it couldn't,
  * and then nothing changed. `note` reopens the inbox note the add resolved (task 1.4b).
  */
 export async function undoAdd(entry: AddedEntry, note?: { id: number; bookId: string }) {
-  const { destination, created, added } = entry;
+  const { destination, created, added, statused } = entry;
   const res = await fetch("/api/books", {
     method: "DELETE", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ destination, created, added, ...(note && { note }) }),
+    body: JSON.stringify({ destination, created, added, statused, ...(note && { note }) }),
   });
   if (!res.ok) throw new Error(String(res.status));
 }
@@ -45,6 +48,7 @@ export function parseDestination(raw: unknown): Destination | undefined {
   if (typeof raw !== "object") return undefined;
   const d = raw as Record<string, unknown>;
   if (d.kind === "someday") return { kind: "someday" };
+  if (d.kind === "on_deck") return { kind: "on_deck" };
   if (d.kind === "shelf" && typeof d.shelfId === "string" && d.shelfId && d.shelfId.length <= MAX_ID) {
     return { kind: "shelf", shelfId: d.shelfId };
   }

@@ -48,7 +48,6 @@ describe("columns", () => {
     ["reading_settings", "minutes_per_day", "integer", "NO"],
     ["reading_settings", "words_per_minute", "integer", "NO"],
     ["reading_settings", "words_per_page", "integer", "NO"],
-    ["reading_settings", "plan_granularity", "text", "NO"],
     ["reading_settings", "theme", "text", "NO"],
     ["reading_settings", "show_covers", "boolean", "NO"],
     ["eras", "id", "integer", "NO"],
@@ -180,15 +179,13 @@ describe("shelves", () => {
 });
 
 describe("reading_settings", () => {
-  it("defaults every input and refuses an unknown granularity or theme", async () => {
+  it("defaults every input and refuses an unknown theme; plan_granularity is gone (task 1.7)", async () => {
     await sql`INSERT INTO reading_settings (user_id) VALUES (${USER})`;
     const [row] = await sql`SELECT * FROM reading_settings WHERE user_id = ${USER}`;
     expect(row).toEqual({
       user_id: USER, minutes_per_day: 45, words_per_minute: 185, words_per_page: 275,
-      plan_granularity: "quarter", theme: "system", show_covers: true,
+      theme: "system", show_covers: true,
     });
-    expect(await sqlstate(() => sql`
-      UPDATE reading_settings SET plan_granularity = 'week' WHERE user_id = ${USER}`)).toBe(CHECK);
     expect(await sqlstate(() => sql`
       UPDATE reading_settings SET theme = 'sepia' WHERE user_id = ${USER}`)).toBe(CHECK);
   });
