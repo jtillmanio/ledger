@@ -2176,14 +2176,14 @@ secondary *Year or quarter…* button on a search result row. This task enables 
 adds that button; the add itself is `POST /api/books`, whose `destination`
 gains the plan level.
 
-*From 1.7 (TASK-011, task/1.7-plan-period-column):* a quarter's ordinals count
+*From 1.7 (TASK-011, PR #96):* a quarter's ordinals count
 every `reading_plan` row, a soft-deleted book's included, while `plan_period`
 hides that book, so a planned book removed from the library would leave a
 visible gap (1, 3). Nothing soft-deletes a planned book yet; whatever first
 does should take its plan rows out through `takeOutOfPlan` / `moveToSomeday`
 (`src/db/writes.ts`), or this task's lists re-rank.
 
-*From 1.7 (TASK-011, task/1.7-plan-period-column):* undoing an add from a
+*From 1.7 (TASK-011, PR #96):* undoing an add from a
 search result clears the toast but leaves that row reading *✓ Added to …*
 (disabled), so it can't be re-added without searching again (1.4c's
 behaviour, seen at every destination). This task reworks those result-row
