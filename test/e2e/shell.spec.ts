@@ -174,6 +174,9 @@ test("from 1024 no dashboard draws the in-inbox chip, and the sidebar's Inbox sh
   for (const width of [1024, 1280]) {
     await size(page, width);
     await page.goto("/comics");
+    // Attached (the page has streamed in) and hidden, not merely not there yet.
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.locator(".inbox-chip")).toBeAttached();
     await expect(page.locator(".inbox-chip")).toBeHidden();
     const inbox = page.locator('.side a[href="/inbox"]');
     await expect(inbox).toContainText(`${E2E_INBOX_COUNT}`);
@@ -210,6 +213,7 @@ test("no colour inside .bar or .side is --ready", async ({ page }, testInfo) => 
   expect(hits).toEqual([]);
 });
 
+// The page gets a min-height on `.app`, the shell's root, so it can scroll at all: a new class, so this has nothing to run against before the shell.
 test("scrolled 400px, everything that sticks but .bar sits at or below --bar-h", async ({ page }, testInfo) => {
   runsOnce(testInfo.project.name);
   for (const width of [390, 1280]) {

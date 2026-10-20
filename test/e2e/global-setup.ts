@@ -20,8 +20,9 @@ export default async function globalSetup() {
     await sql`INSERT INTO run_issues (run_id, sequence, issue_id)
               SELECT ${E2E_RUN_ID}, n, 'e2e-comic-' || n FROM generate_series(1, ${E2E_ISSUE_COUNT}::int) n`;
     await sql`INSERT INTO runs (id, title) VALUES (${E2E_LONG_RUN_ID}, 'E2E Long Run')`;
-    await sql`INSERT INTO issues (id, label) VALUES ('e2e-long-1', ${E2E_LONG_LABEL})`;
-    await sql`INSERT INTO run_issues (run_id, sequence, issue_id) VALUES (${E2E_LONG_RUN_ID}, 1, 'e2e-long-1')`;
+    // An unnumbered second label makes the run multi-series, so Resume names the whole first label (M-10).
+    await sql`INSERT INTO issues (id, label) VALUES ('e2e-long-1', ${E2E_LONG_LABEL}), ('e2e-long-2', 'Dark Reign: The Cabal')`;
+    await sql`INSERT INTO run_issues (run_id, sequence, issue_id) VALUES (${E2E_LONG_RUN_ID}, 1, 'e2e-long-1'), (${E2E_LONG_RUN_ID}, 2, 'e2e-long-2')`;
     await sql`INSERT INTO inbox (user_id, raw_text)
               SELECT ${E2E_USER}, 'E2E note ' || n FROM generate_series(1, ${E2E_INBOX_COUNT}::int) n`;
     for (let n = 1; n <= E2E_READ_COUNT; n++) await markRead(sql, E2E_USER, E2E_RUN_ID, `e2e-comic-${n}`);
