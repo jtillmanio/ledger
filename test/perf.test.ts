@@ -302,6 +302,16 @@ describe("the route list (scripts/perf/routes.mjs)", () => {
     expect(screens.filter((s) => !measured.has(s))).toEqual([]);
   });
 
+  it("follows the 1.8c moves: the dashboard, the run list, and run taps that start from the list", () => {
+    const by = Object.fromEntries(ROUTES.map((r) => [r.id, r]));
+    expect(by.comics.path).toBe("/comics");
+    expect(by.runs).toMatchObject({ path: "/comics/runs", tap: { from: "/comics", selector: 'a[href="/comics/runs"]' } });
+    expect(by["run-small"].tap).toMatchObject({ from: "/comics/runs" });
+    expect(by["run-large"].tap).toMatchObject({ from: "/comics/runs" });
+    // /books redirects to /books/list until 2.2; the load follows it.
+    expect(by.books.path).toBe("/books");
+  });
+
   it("matches budget.json one for one, with unique ids", () => {
     const budget = JSON.parse(readFileSync("scripts/perf/budget.json", "utf8")).routes;
     const ids = ROUTES.map((r) => r.id);
