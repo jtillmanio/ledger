@@ -16,15 +16,29 @@
 //   5. --art cannot break text (D-40, FP-D6): --ink, --ink-2 and --muted clear 4.5:1
 //      on the clamp's extremes — dark oklch(.30 .06 h), light oklch(.92 .035 h) —
 //      at every 30° of hue.
+//   6. Explicit floors (task 1.8a, STYLE_GUIDE §4.1 and §6, D-31), each failure line
+//      starting with its check: elevation (relative-luminance order, both themes),
+//      text (the nine text tokens on the five surfaces), fill (the §6 paired fills),
+//      outline (--faint-deco at 3:1), glass (worst-case composite, and no --ready text
+//      on glass, SG-D12), and 11px (no font-size or font shorthand under 11px in
+//      globals.css or the mockup's <style> block).
+//
+// `--globals <path>` and `--mockups <path>` aim the script at other copies of the two
+// files (test/check-tokens.test.ts breaks a copy on purpose); the defaults are the app's.
 import { readFileSync } from "node:fs";
+import { parseCss, splitTop, styleBlocks } from "./lib/css-rules.mjs";
 
 const MIN_DE = 15;
 const MIN_TEXT = 4.5;
 const failures = [];
 const fail = (msg) => failures.push(msg);
 
-const globals = readFileSync("src/app/globals.css", "utf8");
-const mockups = readFileSync("design/mockups.html", "utf8");
+const arg = (flag, fallback) => {
+  const i = process.argv.indexOf(flag);
+  return i > 0 && process.argv[i + 1] ? process.argv[i + 1] : fallback;
+};
+const globals = readFileSync(arg("--globals", "src/app/globals.css"), "utf8");
+const mockups = readFileSync(arg("--mockups", "design/mockups.html"), "utf8");
 
 const props = (body) =>
   Object.fromEntries([...body.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)].map((m) => [m[1], m[2].trim()]));
@@ -234,8 +248,132 @@ for (const theme of ["light", "dark"]) {
   }
 }
 
+// ---- 6. explicit floors (task 1.8a) ----------------------------------------------------
+const themeTokens = (theme) => ({ ...g.light, ...(theme === "dark" ? g.dark : {}) });
+const ratio = (a, b) => contrast(a, b).toFixed(2);
+
+// elevation: relative luminance order (STYLE_GUIDE §4.1; owner, 2026-10-19).
+const ORDER = {
+  light: [["--sunk"], ["--page"], ["--raise"], ["--surface", "--overlay"]], // overlay = surface
+  dark: [["--sunk"], ["--page"], ["--surface"], ["--raise"], ["--overlay"]],
+};
+for (const theme of ["light", "dark"]) {
+  const t = themeTokens(theme);
+  const steps = ORDER[theme];
+  const label = steps.map((s) => s.join(" = ")).join(" < ");
+  for (let i = 1; i < steps.length; i++) {
+    const [lo, hi] = [steps[i - 1][0], steps[i][0]];
+    if (!(luminance(t[lo]) < luminance(t[hi]))) {
+      fail(`elevation: ${theme} ${lo} ${t[lo]} (L ${luminance(t[lo]).toFixed(4)}) must be darker than ${hi} ${t[hi]} (L ${luminance(t[hi]).toFixed(4)}); order ${label}`);
+    }
+  }
+  for (const [a, b] of steps.filter((s) => s.length > 1)) {
+    if (Math.abs(luminance(t[a]) - luminance(t[b])) > 1e-6) fail(`elevation: ${theme} ${b} ${t[b]} must equal ${a} ${t[a]}`);
+  }
+}
+
+// text: nine text tokens on the five surfaces, both themes, 4.5:1.
+const TEXT = ["--ink", "--ink-2", "--muted", "--faint", "--brand", "--brand-ink", "--ready", "--blocked", "--danger"];
+for (const theme of ["light", "dark"]) {
+  const t = themeTokens(theme);
+  for (const fg of TEXT) {
+    for (const bg of SURFACES) {
+      if (contrast(t[fg], t[bg]) < MIN_TEXT) fail(`text: ${theme} ${fg} ${t[fg]} on ${bg} ${t[bg]} is ${ratio(t[fg], t[bg])}:1 (min ${MIN_TEXT})`);
+    }
+  }
+}
+
+// fill: the STYLE_GUIDE §6 paired fills, 4.5:1.
+const FILLS = [
+  ["--ready", "--ready-soft"], ["--blocked", "--blocked-soft"], ["--danger", "--danger-soft"],
+  ["--brand-ink", "--brand-soft"], ["--page", "--ink"], ["--muted", "--sunk"],
+  ["--on-brand", "--brand"], ["--on-ready", "--ready"],
+  ["--toast-ink", "--toast-bg"], ["--toast-muted", "--toast-bg"], ["--toast-link", "--toast-bg"],
+];
+for (const theme of ["light", "dark"]) {
+  const t = themeTokens(theme);
+  for (const [fg, bg] of FILLS) {
+    if (contrast(t[fg], t[bg]) < MIN_TEXT) fail(`fill: ${theme} ${fg} on ${bg} is ${ratio(t[fg], t[bg])}:1 (min ${MIN_TEXT})`);
+  }
+}
+
+// outline: --faint-deco outlines controls (WCAG 1.4.11, SG-D8), 3:1.
+for (const theme of ["light", "dark"]) {
+  const t = themeTokens(theme);
+  for (const bg of ["--surface", "--raise", "--overlay"]) {
+    if (contrast(t["--faint-deco"], t[bg]) < 3) fail(`outline: ${theme} --faint-deco ${t["--faint-deco"]} on ${bg} ${t[bg]} is ${ratio(t["--faint-deco"], t[bg])}:1 (min 3)`);
+  }
+}
+
+// glass: --glass-bg at its own alpha over #000 (light) or #fff (dark), the worst case.
+for (const theme of ["light", "dark"]) {
+  const t = themeTokens(theme);
+  const [r, gg, b, alpha] = t["--glass-bg"].match(/[\d.]+/g).map(Number);
+  const under = theme === "light" ? 0 : 255;
+  const glass = [r, gg, b].map((c) => (alpha * c + (1 - alpha) * under) / 255);
+  for (const fg of ["--ink", "--ink-2", "--muted", "--brand"]) {
+    if (contrast(t[fg], glass) < MIN_TEXT) fail(`glass: ${theme} ${fg} ${t[fg]} on glass is ${ratio(t[fg], glass)}:1 (min ${MIN_TEXT}, ${t["--glass-bg"]} over ${theme === "light" ? "#000" : "#fff"})`);
+  }
+}
+
+const globalsRules = parseCss(globals);
+const mockupRules = parseCss(styleBlocks(mockups));
+const RULE_SETS = [["globals.css", globalsRules], ["mockups.html", mockupRules]];
+
+// glass: no --ready text on glass (SG-D12). A glass surface is a rule whose background
+// is --glass-bg; the rule itself and anything beneath its selector must not set
+// color:var(--ready).
+for (const [label, rs] of RULE_SETS) {
+  const onGlassBg = (r) => ["background", "background-color"].some((p) => (r.decls[p] ?? "").includes("var(--glass-bg)"));
+  const glassSelectors = rs.filter(onGlassBg).flatMap((r) => r.selectors);
+  for (const r of rs) {
+    if (!/var\(--ready\)/.test(r.decls.color ?? "")) continue;
+    for (const sel of r.selectors) {
+      const beneath = glassSelectors.some((gs) => sel === gs || sel.startsWith(gs + " ") || sel.startsWith(gs + ">"));
+      if (onGlassBg(r) || beneath) fail(`glass: ${label} ${sel} sets color:var(--ready) on a --glass-bg surface (SG-D12)`);
+    }
+  }
+}
+
+// 11px: nothing under 11px, font shorthands included (UX-X01). A label too long for
+// its box is truncated, never shrunk.
+const KEYWORD = /^(inherit|initial|unset|revert)$/;
+const fsTokens = Object.fromEntries(
+  Object.entries(g.light).filter(([k]) => k.startsWith("--fs-")).map(([k, v]) => [k, v.split("/")[0].trim()]),
+);
+const sizePx = (v) => {
+  let m;
+  if ((m = /^(-?[\d.]+)px$/.exec(v))) return Number(m[1]);
+  if ((m = /^(-?[\d.]+)rem$/.exec(v))) return Number(m[1]) * 16;
+  if ((m = /^var\((--fs-[\w-]+)\)$/.exec(v)) && fsTokens[m[1]]) return sizePx(fsTokens[m[1]]);
+  return null; // em, %, calc(), other keywords: not resolvable from a stylesheet alone
+};
+const SIZE = /^(-?[\d.]+(?:px|rem|em|%)|var\(--fs-[\w-]+\))(?:\/\S+)?$/;
+const fontSizes = (r) => {
+  const out = [];
+  const bare = (v) => v.replace(/\s*!important$/, "").trim();
+  if (r.decls["font-size"] !== undefined) out.push(["font-size", bare(r.decls["font-size"])]);
+  const f = r.decls.font === undefined ? "" : bare(r.decls.font);
+  if (f && !KEYWORD.test(f)) {
+    const tok = splitTop(f.replace(/\s+/g, ","), ",").find((t) => SIZE.test(t));
+    if (tok) out.push(["font", tok.split("/")[0]]);
+  }
+  return out;
+};
+for (const [label, rs] of RULE_SETS) {
+  for (const r of rs) {
+    for (const [prop, raw] of fontSizes(r)) {
+      if (KEYWORD.test(raw)) continue;
+      const px = sizePx(raw);
+      const sel = r.selectors.join(", ");
+      if (px === null) fail(`11px: ${label} ${sel} ${prop} ${raw} is unresolvable (use px, rem or var(--fs-*))`);
+      else if (px < 11) fail(`11px: ${label} ${sel} ${prop} ${raw} is ${px}px (min 11px)`);
+    }
+  }
+}
+
 if (failures.length) {
   console.error(`test:tokens — ${failures.length} failure(s):\n  ` + failures.join("\n  "));
   process.exit(1);
 }
-console.log("test:tokens — parity, identity-hue distance, on-fill contrast, the measured palette and the --art clamp all pass");
+console.log("test:tokens — parity, identity-hue distance, on-fill contrast, the measured palette, the --art clamp, the elevation, text, fill, outline and glass floors and the 11px floor all pass");

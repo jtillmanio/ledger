@@ -1188,7 +1188,7 @@ ordinals, and after up → down → up every quarter is 1…N again.
 `plan_granularity` no longer exists. Adding a book *On deck* from the add sheet
 writes the book and its plan row in one transaction.
 
-### ☐ 1.8a Design tokens and control states · M
+### ☑ 1.8a Design tokens and control states · M
 D-31; Review N P0 (UX-N01, N02, N03, N04, UX-X01, and the token half of N19 and
 N20). **Build before 1.8**: every later UI task inherits these values, and a
 screen built on the old set is rework. `design/tokens.css` is the source; STYLE_GUIDE
@@ -1282,6 +1282,7 @@ parses `globals.css` and asserts every class in the state-matrix list above has 
 themes before and after: the layout is unchanged, only the values move.
 
 ### ☐ 1.8 App shell · L
+
 Depends on 1.8a (tokens and control states) and 1.8c (the routes the nav links to).
 The chrome every dashboard sits in. R3-12 split out **1.8b**, the thumb bar and
 the token contrast checks. The owner then split the rest in three (2026-10-19).
@@ -2403,6 +2404,9 @@ row hover and on keyboard focus inside the row, and with touch emulated it shows
 at rest.
 
 ### ☐ 2.5 The telescope · M
+
+*From 1.8a (task/1.8a-tokens-control-states):* in `design/mockups.html` the telescope frame's stub label overlaps the run-rail end label (`+10 runs · 244` over `244`, `+11 runs · 238` over `641`), phone and desktop. It predates 1.8a's 11px floor; the real geometry (`layout.ts`) should fold or drop the label, never overlap it.
+
 Split (R3-12): **2.5 is `layout.ts` and its unit tests** (pure geometry, no DOM);
 **2.5b** draws the rails and the ladder from it. The comics "now" slot: three
 **horizontal** rails stacked top to bottom — the track's blocks, the block's runs,
