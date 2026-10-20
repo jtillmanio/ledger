@@ -29,6 +29,7 @@ The workbook's books arrive at cutover with covers, page counts and Open Library
 - Data model: `src/db/schema.ts` `books` (`open_library_id`, `page_count`, `cover_url`, `published_year`), unchanged.
 - Decisions: D-44, D-25a, D-51 (Open Library for books), D-41. `.claude/rules/schema.md`: enrichment never overwrites a hand value. Standing rule 4 applies to extract's fold-in.
 - *From TASK-021 (1.13, PR #97):* the Stephen King tab's *11/22/63* is stored as a date, so extract loads its title as `1963-11-22 00:00:00` (it did before 1.13 too). Matching on title and author will never find it on Open Library; extract should read a date-typed title cell back as the title the owner typed, or the owner fixes the cell.
+- *From the 2026-10-20 backlog intake (1.18, D-73):* 1.18 reuses this task's Open Library cache to check Calibre's series and ISBN against Open Library. Nothing in this task's scope changes, but cache each whole response rather than trimming it to the four columns stored here, so 1.18 needs no second request per book.
 
 ## Acceptance criteria
 
