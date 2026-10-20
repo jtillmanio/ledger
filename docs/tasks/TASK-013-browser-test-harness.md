@@ -1,7 +1,7 @@
 ---
 id: TASK-013
 title: 0.11 Browser test harness — Playwright and axe
-status: In progress
+status: Review
 depends_on: [TASK-012]
 size: M
 model: sonnet
@@ -30,8 +30,8 @@ UI checks run in a real browser at every target width and theme, with accessibil
 ## Acceptance criteria
 
 - [ ] AC-1 (roadmap **Check:**, verbatim): `npm run test:e2e` signs in with the test passcode and loads a seeded run's spine at 360, 390, 412, 768, 1024 and 1280px, light and dark, and passes. A fixture page with an unnamed `<button>` makes the axe step fail on `button-name`. The no-horizontal-scroll helper fails on a fixture that overflows at 360px. CI runs the suite on the PR against `TEST_DATABASE_URL` only, and `git.md`'s *Test on the branch* lists it.
-- [ ] AC-2: With `TEST_DATABASE_URL` unset, or naming the same host and database as `DATABASE_URL`, `npm run test:e2e` exits non-zero before starting a browser or a server, with the same message as `scripts/lib/testdb.mjs`.
-- [ ] AC-3: The helpers are importable from one module (`test/e2e/helpers.ts` or the plan's path). A sample spec uses each one: axe with a named rule list, a computed-style read, the no-scroll assertion, and a screenshot written under a gitignored folder (`git check-ignore` confirms it).
+- [x] AC-2: With `TEST_DATABASE_URL` unset, or naming the same host and database as `DATABASE_URL`, `npm run test:e2e` exits non-zero before starting a browser or a server, with the same message as `scripts/lib/testdb.mjs`.
+- [x] AC-3: The helpers are importable from one module (`test/e2e/helpers.ts` or the plan's path). A sample spec uses each one: axe with a named rule list, a computed-style read, the no-scroll assertion, and a screenshot written under a gitignored folder (`git check-ignore` confirms it).
 - [ ] AC-4: `npm run test:all` runs `test:e2e`. The CI `check` job is green on this PR with the e2e step visible in its log. `CLAUDE.md`'s command list and `.claude/rules/git.md` both name `npm run test:e2e`.
 
 ## Out of scope
@@ -59,8 +59,8 @@ UI checks run in a real browser at every target width and theme, with accessibil
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The owner's machine needs the browser once: `npx playwright install chromium` after the first `npm ci` on this branch, or `npm run test:all` fails at the e2e step → docs/OWNER-CHECKLIST.md § Actions from follow-ups (approved at plan)
-- Candidate decision: browser tests are Playwright on Chromium only, against `next dev` on the test database, signed in with a fixed test passcode the wrapper sets, never the owner's `APP_PASSCODE` → docs/review/decisions.md § D-72 (approved at plan)
+- The owner's machine needs the browser once: `npx playwright install chromium` after the first `npm ci` on this branch, or `npm run test:all` fails at the e2e step → docs/OWNER-CHECKLIST.md § Actions from follow-ups (placed by the plans PR #98)
+- Candidate decision: browser tests are Playwright on Chromium only, against `next dev` on the test database, signed in with a fixed test passcode the wrapper sets, never the owner's `APP_PASSCODE` → docs/review/decisions.md § D-72 (placed by the plans PR #98)
 
 ## Plan
 
@@ -92,18 +92,18 @@ Risks / open questions:
 - `test:all` gets about 2–3 minutes longer (a cold `next dev` compile plus 14 projects).
 - If the real spine overflows at 360px, AC-1 fails on a real bug. That gets fixed here, as the UX floor, or the owner splits it out.
 
-Revisions during implementation (2026-10-20), all inside the planned files except the first:
+Revisions during implementation (2026-10-20). Two files are outside the Files list: `test/e2e/auth.setup.ts` and `scripts/test-files.mjs`.
 - Step 2/3: the wrapper does not overwrite `DATABASE_URL` for the Playwright process. `requireTestUrl` refuses when `DATABASE_URL` names the test database, so global-setup would have refused. `planE2e` returns `serverEnv` and `playwright.config.ts` sets it on the `next dev` webServer only; the config also calls `planE2e`, so a bare `npx playwright test` is guarded too, and no "run it with npm" check is needed.
 - Step 3: the sign-in project's file is `test/e2e/auth.setup.ts` (new, not in the list); the seed constants live in `helpers.ts`.
 - Step 8: `ci.yml` also uploads `test-results/` and `playwright-report/` as a 7-day artifact, so the screenshots are PR evidence from CI too (new step, same file).
-- Step 9: `planTestRun` resets the test database before an e2e spec, as it does for vitest.
+- Step 9: `planTestRun` resets the test database before an e2e spec, as it does for vitest. `scripts/test-files.mjs` (the runner, not in the Files list) only has its "no runner for" message extended to name e2e specs.
 - `expectNoAxeViolations` has no "rule never ran" check: axe throws on an unknown rule id itself.
 
 Size check: M in code (two layers: test tooling and CI), about 18 files mostly small, no schema or UI; attended.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | Audit R1 NOT RUN (guard denied the base-run's deletes; owner approved) → R2 PASS | Spec R1 CHANGES (plan revision list incomplete) → fixed | Spec R2 APPROVE | UI n/a (`ui: false`) | Schema n/a
 
 ## Blocked
 
@@ -111,7 +111,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
+- Verify rounds: 1
+- Review rounds: 1 (+1 confirm)
+- First-pass AC FAILs: 0 (CI-on-PR part of AC-1/AC-4 is checked by the ready gates)
 - Plan revisions after approval: 1 (the `DATABASE_URL` handling and four small additions, listed under Plan)
