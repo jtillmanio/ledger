@@ -72,6 +72,7 @@ describe("npm run test:tokens", () => {
   it("accepts 11px and larger, and var(--fs-*) sizes", () => {
     const r = run(globals + "\n.ok1{font-size:11px}.ok2{font-size:.6875rem}.ok3{font:500 var(--fs-title) var(--display)}\n");
     expect(r.out).not.toMatch(/11px:/);
+    expect(r.status).toBe(0);
   });
 
   it("fails on text when light --muted drops under 4.5:1 on --sunk", () => {
