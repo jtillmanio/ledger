@@ -683,7 +683,7 @@ stay. START-HERE Step 12 groups them into sittings:
 | 3 | 1.2 → 1.1 → 1.6 | 1.1's check asserts undo, and 1.1 must not carry its own (R3-10) |
 | 4 | 1.3 → 1.3c → 1.3b | 1.3c's review table takes the parser's output; 1.3b's Metron results go through the same review and insert |
 | 5 | 1.4 → 1.4c → 1.4b → 1.5 → 1.16 | resolving an inbox note (1.4b) routes into the add flows; 1.5 must land before real rereads overwrite history; 1.16 reinterprets the dates 1.5 finishes adding, and lands before the final load |
-| 6 | 1.7 → 1.8a → 0.11 → 1.8c → 1.8 → 1.8d → 1.8b | 1.8a's tokens come before the first UI task; 0.11's harness runs 1.8's computed-style check and 1.8d's axe run; 1.8c moves the routes the nav links to; 1.8d's axe run covers the finished chrome; 1.8b was split out of 1.8 (R3-12) |
+| 6 | 1.7 → 1.8a → 0.11 → 1.8c → 1.8 → 1.8e → 1.8d → 1.8b | 1.8a's tokens come before the first UI task; 0.11's harness runs 1.8's computed-style check and 1.8d's axe run; 1.8c moves the routes the nav links to; 1.8d's axe run covers the finished chrome; 1.8b was split out of 1.8 (R3-12); 1.8e redraws the tablet frames 1.8 drew in outline, and needs only 1.8 |
 | 7 | 1.10 → 1.9 → 2.11a → 1.12 → 1.11 | 1.9's Up next tab reads the queue; 2.11a is numbered in Phase 2 but built here, before cutover (D-20); so is 1.11 (D-36); 1.12 must land before Step 14's final load, the last time `load` runs |
 | 8 | 1.13 → 1.14 → 1.15 → 1.18 | the book ingest (2026-10-08 review): 1.14's proposals join 1.13's review file, and 1.15 seeds from series and author names 1.13's review fixed; 1.18 (2026-10-20) checks Calibre against 1.14's Open Library answers (D-73). All four change what `load` puts in, so they land before Step 14's final load. They don't depend on sittings 3–7 and can be built earlier, leaving the owner time to answer the reviews |
 | 9 | 1.4e → 1.17 | the 2026-10-20 intake's Phase 1 items: a small fix to a screen already in daily use, then start dates, which like 1.5 must land before real reading accumulates and before cutover. The intake's year-chip bug is a fix outside the task list (`fix/year-chip-count`) |
@@ -1484,6 +1484,30 @@ cookie redirects a page to `/login` and answers a route handler 401 (R2-11). A
 render test asserts that `/books/list` and `/comics/runs` print the query's
 total, not the row count, for a fixture where the two differ, and no
 same-origin link on any page answers 404.
+
+### ☐ 1.8e Tablet frames to the feel pass · S
+Depends on 1.8. Added at 1.8's close-out (owner, 2026-10-20), to be built next.
+1.8's four 834px frames (`home`, `spine`, `bdash` and `status` in
+`design/mockups.html`) draw the shell's geometry (the 72px rail, 32px padding,
+the 40/44 title, the 48px thumb bar) around the phone's content reflowed into
+one column. This task redraws their bodies to the feel pass: STYLE_GUIDE 14.5 and
+Feel Review 10c, with `design/screenshots/tablet/01-comics-768-dark.png` and
+`02-comics-768-light.png` as the picture for `home` (the Now hero, the Up next
+shelf, the position telescope). `spine`, `bdash` and `status` have no tablet
+PNG, so they follow 14.5's text. The mockup and its index only: no app code, and
+the dashboards themselves are built by their own tasks (2.x). 1.8 capped the
+telescope's width in the 834 frame's CSS (`svg.tele`) for the old drawing; the
+redraw removes the cap.
+
+**Check:** At `data-vp="tab"`, each of the four 834px frames' `.frame-in` has
+`scrollWidth` equal to `clientWidth`. `home`'s frame draws the hero with its
+cover 150px wide and 225px tall beside the number, run and lens (not stacked
+above them); the Up next shelf shows five covers with a 16px gap; *Since
+Tuesday* and *Also reading* share one row; the telescope is horizontal, with its
+ladder in three columns. In `home` and `bdash` the side-rail blocks sit below
+the main column as two columns in a 1.5 : 1 ratio. Each frame's thumb bar is
+48px tall and its rail 72px wide. `design/mockups-index.md` still lists the four
+frames, and its *Viewport frames* note no longer says the body is not redrawn.
 
 ### ☐ 1.8d Failed writes, skeletons and row markup · M
 Split out of 1.8 (owner, 2026-10-19). Depends on 1.8, because the axe run
