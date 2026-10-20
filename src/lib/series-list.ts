@@ -19,5 +19,5 @@ export function seriesAllHref(params: Record<string, string | undefined>): strin
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v) qs.set(k, v);
   qs.set("series", "all");
-  return `/books?${qs}`;
+  return `/books/list?${qs}`;
 }

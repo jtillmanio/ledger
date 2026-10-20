@@ -33,6 +33,7 @@ Every screen sits in the same chrome: a media bar on the phone, a navigation rai
 - *From TASK-005 (1.3c, PR #74):* The top bar's *Ledger* link is 46×23px at 360–768px, under the 24px target floor (ui-verifier on 1.3c's screen; the bar is `src/app/layout.tsx`).
 - *From TASK-009 (1.4b, PR #80):* The lede's `N in inbox` chip on `/` and `/books` (`.inbox-chip`, `src/app/globals.css`) shows at every width for now; hide it from 1024px once the sidebar's `Inbox (N)` lands (FP-D16). 1.4b also put an `Inbox` link in the pre-shell nav bar (`src/app/layout.tsx`) and narrowed `.bar-inner`'s gap below 390px so its five links fit 360px; the shell's nav replaces both.
 - *From TASK-012 (1.8a, task/1.8a-tokens-control-states):* The run page (`/comics/<run>`) at 360px is 29px wider than the viewport, so the Resume, Add issues and ⋯ row clips the ⋯ button. It is on `main` too (measured with main's `globals.css`); the shell should fit the row at 360px. (arrived after the plan was approved)
+- *From TASK-026 (1.8c, PR #108):* the nav must not prefetch a redirect. `/` (a route handler) and `/books` (a redirect to `/books/list` until 2.2) both redirect, and with the old nav prefetching them, four tap runs from `/comics` and `/comics/runs` never reached network idle on the preview (`AppNav` now links `/books/list` and gives `/` `prefetch={false}`; `test/app-nav.test.tsx` pins both). The new `NAV_ITEMS` should link Books at `/books/list` until 2.2 builds the dashboard, and keep the home link unprefetched (arrived after the plan was approved).
 
 ## Acceptance criteria
 

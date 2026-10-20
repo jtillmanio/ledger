@@ -102,7 +102,7 @@ function parse(html: string) {
 describe("the dashboard's in-progress list (AC-3)", () => {
   it("says Continue: <label> for each reading run, linking to the pointer's spine row", async () => {
     await markRead(sql, USER, "b", "a6");
-    const Home = (await import("../src/app/page")).default;
+    const Home = (await import("../src/app/comics/(dash)/page")).default;
     const home = parse(renderToStaticMarkup(await Home()));
 
     for (const [runId, label] of [["a", "A #6"], ["b", "B #1"]]) {

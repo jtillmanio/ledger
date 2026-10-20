@@ -13,15 +13,20 @@
 //            and submits instead
 export const ROUTES = [
   { id: "login", path: "/login", signedIn: false, tap: { from: "/login", login: true } },
-  { id: "comics", path: "/comics", signedIn: true, tap: { from: "/books", selector: 'nav a[href="/comics"]' } },
+  // The comics dashboard (task 1.8c); `/` redirects to it or to the medium last touched.
+  { id: "comics", path: "/comics", signedIn: true, tap: { from: "/books/list", selector: 'nav a[href="/comics"]' } },
+  // The run list, one level down: the screen "comics" measured before 1.8c.
+  { id: "runs", path: "/comics/runs", signedIn: true, tap: { from: "/comics", selector: 'a[href="/comics/runs"]' } },
   {
     id: "run-small", path: "/comics/bendis-disassembled", signedIn: true, // 5 issues
-    tap: { from: "/comics", selector: 'a[href="/comics/bendis-disassembled"]' },
+    tap: { from: "/comics/runs", selector: 'a[href="/comics/bendis-disassembled"]' },
   },
   {
     id: "run-large", path: "/comics/busiek-avengers", signedIn: true, // 154 issues
-    tap: { from: "/comics", selector: 'a[href="/comics/busiek-avengers"]' },
+    tap: { from: "/comics/runs", selector: 'a[href="/comics/busiek-avengers"]' },
   },
-  { id: "books", path: "/books", signedIn: true, tap: { from: "/comics", selector: 'nav a[href="/books"]' } },
-  { id: "inbox", path: "/inbox", signedIn: true, tap: { from: "/books", selector: 'nav a[href="/inbox"]' } },
+  // The books list, until 2.2 builds the books dashboard at /books. Not /books itself:
+  // Lighthouse sends the session as a Cookie header, which a redirect drops.
+  { id: "books", path: "/books/list", signedIn: true, tap: { from: "/comics", selector: 'nav a[href="/books/list"]' } },
+  { id: "inbox", path: "/inbox", signedIn: true, tap: { from: "/books/list", selector: 'nav a[href="/inbox"]' } },
 ];

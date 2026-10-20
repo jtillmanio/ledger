@@ -368,7 +368,7 @@ describe("metadata pending wherever the row appears (AC-4)", () => {
   it("on the master list, a by-hand book has the dashed cover and the line; an Open Library one has its cover", async () => {
     await add(hand({ title: "A Small Book of Something", author: "New Author" }));
     await add({ openLibrary: (await find("the way of kings")).openLibrary[0] });
-    const Books = (await import("../src/app/books/page")).default;
+    const Books = (await import("../src/app/books/list/page")).default;
     const { UndoProvider } = await import("../src/components/Undo");
     // The layout's UndoProvider: each row's status control pushes its undo there (task 1.5).
     const html = renderToStaticMarkup(createElement(UndoProvider, null,

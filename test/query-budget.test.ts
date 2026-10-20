@@ -12,10 +12,10 @@ const USER = "test-user";
 // The budget per route: raise it only with a reason in docs/ARCHITECTURE.md's
 // Performance budget; lower it when a fix lands.
 const BUDGET: Record<string, { queries: number; waves: number }> = {
-  "/": { queries: 5, waves: 1 },
-  "/comics": { queries: 2, waves: 1 },
+  "/comics": { queries: 4, waves: 1 },
+  "/comics/runs": { queries: 2, waves: 1 },
   "/comics/[runId]": { queries: 3, waves: 1 },
-  "/books": { queries: 5, waves: 1 },
+  "/books/list": { queries: 5, waves: 1 },
   "/inbox": { queries: 2, waves: 1 },
   "/login": { queries: 0, waves: 0 },
 };
@@ -82,13 +82,13 @@ async function measure(render: () => Promise<unknown>) {
 }
 
 const pages: [string, () => Promise<unknown>][] = [
-  ["/", async () => (await import("../src/app/page")).default()],
-  ["/comics", async () =>
-    (await import("../src/app/comics/(list)/page")).default({ searchParams: Promise.resolve({}) })],
+  ["/comics", async () => (await import("../src/app/comics/(dash)/page")).default()],
+  ["/comics/runs", async () =>
+    (await import("../src/app/comics/runs/page")).default({ searchParams: Promise.resolve({}) })],
   ["/comics/[runId]", async () =>
     (await import("../src/app/comics/[runId]/page")).default({ params: Promise.resolve({ runId: "a" }) })],
-  ["/books", async () =>
-    (await import("../src/app/books/page")).default({ searchParams: Promise.resolve({}) })],
+  ["/books/list", async () =>
+    (await import("../src/app/books/list/page")).default({ searchParams: Promise.resolve({}) })],
   ["/inbox", async () => (await import("../src/app/inbox/page")).default()],
   ["/login", async () =>
     (await import("../src/app/login/page")).default({ searchParams: Promise.resolve({}) })],
@@ -104,7 +104,7 @@ describe("query budget per route (task 0.9)", () => {
   it("counts what it claims to: a page's queries are seen, in order", async () => {
     // Guards the guard: if the mock stopped wrapping the app's client, every
     // budget above would pass at zero.
-    const used = await measure(pages[2][1]);
+    const used = await measure(pages.find(([route]) => route === "/comics/[runId]")![1]);
     expect(used.queries).toBeGreaterThan(0);
     expect(used.waves).toBeGreaterThan(0);
   });

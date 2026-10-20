@@ -298,8 +298,20 @@ describe("the route list (scripts/perf/routes.mjs)", () => {
       .filter((e) => hasPage(join("src/app", e.name)))
       .map((e) => `/${e.name}`);
     expect(screens.length).toBeGreaterThan(0);
-    const measured = new Set(ROUTES.map((r) => r.path));
-    expect(screens.filter((s) => !measured.has(s))).toEqual([]);
+    // A screen is measured by a route at it or under it: /books is measured at /books/list
+    // until 2.2 builds its dashboard (Lighthouse's Cookie header does not survive a redirect).
+    const measured = ROUTES.map((r) => r.path);
+    expect(screens.filter((s) => !measured.some((p) => p === s || p.startsWith(`${s}/`)))).toEqual([]);
+  });
+
+  it("follows the 1.8c moves: the dashboard, the run list, and run taps that start from the list", () => {
+    const by = Object.fromEntries(ROUTES.map((r) => [r.id, r]));
+    expect(by.comics.path).toBe("/comics");
+    expect(by.runs).toMatchObject({ path: "/comics/runs", tap: { from: "/comics", selector: 'a[href="/comics/runs"]' } });
+    expect(by["run-small"].tap).toMatchObject({ from: "/comics/runs" });
+    expect(by["run-large"].tap).toMatchObject({ from: "/comics/runs" });
+    // /books redirects to /books/list until 2.2, and a redirect drops Lighthouse's Cookie header.
+    expect(by.books.path).toBe("/books/list");
   });
 
   it("matches budget.json one for one, with unique ids", () => {

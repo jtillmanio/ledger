@@ -57,7 +57,7 @@ describe("proxy (the passcode gate)", () => {
 
   it("lets /api/health past the passcode gate and nothing else new", async () => {
     const { config } = await import("../src/proxy");
-    const gated = new RegExp(`^${config.matcher[0]}$`);
+    const gated = new RegExp(`^${config.matcher[0].source}$`);
     expect(gated.test("/api/health")).toBe(false);
     expect(gated.test("/login")).toBe(false);
     expect(gated.test("/api/export")).toBe(true);

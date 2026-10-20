@@ -23,12 +23,12 @@ vi.mock("@/db/queries", () => ({
   inboxCount: async () => 0,
 }));
 
-const { default: Books } = await import("../src/app/books/page");
+const { default: Books } = await import("../src/app/books/list/page");
 
 async function chips(): Promise<HTMLAnchorElement[]> {
   const html = renderToStaticMarkup(await Books({ searchParams: Promise.resolve({}) }));
   const doc = new DOMParser().parseFromString(html, "text/html");
-  return [...doc.querySelectorAll<HTMLAnchorElement>('a.chip[href^="/books?year="]')];
+  return [...doc.querySelectorAll<HTMLAnchorElement>('a.chip[href^="/books/list?year="]')];
 }
 
 describe("year chips", () => {

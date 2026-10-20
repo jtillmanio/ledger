@@ -522,8 +522,8 @@ of book history) and they deserve different answers.
 
 | Route | What it is |
 |---|---|
-| `/` | Redirect to whichever medium you last touched |
-| `/comics` | Comics dashboard — the Now hero, the Up next shelf, the telescope, ready runs, the year so far (D-40) |
+| `/` | Redirect to whichever medium you last touched: the `ledger_medium` cookie, which `src/proxy.ts` writes on a signed-in request under `/comics` or `/books`, never on a `<Link>` prefetch (R1-13, task 1.8c). Comics for a first visit |
+| `/comics` | Comics dashboard — the Now hero, the Up next shelf, the telescope, ready runs, the year so far (D-40). Today (task 1.8c): the mid-run and *Start next* lists, with a link to *All runs* |
 | `/comics/runs` | The run list, grouped track → block |
 | `/comics/tracks` | The tracks index: every track with completion counted in distinct issues, and a *never opened* group; each row links to the run list filtered by track |
 | `/comics/status` | In flight · Up next · Done, for runs |
@@ -535,7 +535,7 @@ of book history) and they deserve different answers.
 | `/comics/releases` | New issues in the series you follow, each offered for adding to its run (task 5.8, D-35) |
 | `/comics/editions` | Trades and omnibuses, with *Collected* and *Read* per edition (task 5.10) |
 | `/comics/series/[key]` | One volume: every catalog issue of it, the runs that place each with its read state there, and gap stubs (task 5.13) |
-| `/books` | Books dashboard — reading now, the plan rail, capacity, the year so far |
+| `/books` | Books dashboard — reading now, the plan rail, capacity, the year so far. Until task 2.2 builds it, a redirect to `/books/list` (task 1.8c) |
 | `/books/status` | In flight · Up next · Done, for books |
 | `/books/list` | Master list: search, filter by status, to-read level, year or genre, series completion |
 | `/books/add` | Add books: search Open Library, paste a list, or by hand, with a destination (a quarter or year, On deck, Someday, or a shelf) |
@@ -940,13 +940,15 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
   (Lighthouse mobile, devtools throttling: Slow 4G, 4× CPU): any tap paints a
   skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
   page within 1 s. What holds that, and the test that fails if it slips:
-  - **Queries per page, in one wave.** `/` 5 queries, `/comics` 2, a run 3,
-    `/books` 5, `/inbox` 2, `/login` none, each page's queries started together
+  - **Queries per page, in one wave.** `/comics` 4, `/comics/runs` 2, a run 3,
+    `/books/list` 5, `/inbox` 2, `/login` none, `/` and `/books` none (redirects), each page's queries started together
     (`test/query-budget.test.ts`, which counts them). A query that must wait on
     another raises a page's waves; raising either number needs a reason here.
-    `/` and `/books` went from 4 to 5 with the inbox chip's count (task 1.4b):
-    a separate one-row count in the same wave, rather than a join into a list
-    query it has nothing to do with.
+    The dashboard (then `/`) and `/books/list` went from 4 to 5 with the inbox
+    chip's count (task 1.4b): a separate one-row count in the same wave, rather
+    than a join into a list query it has nothing to do with. The dashboard is
+    back to 4 since task 1.8c moved *Coming out* (books releases) off it: that
+    list is 2.x's `/books/releases`.
   - **A view read for one run filters by that run before it aggregates.** No
     catalog-wide CTE, no scan of every issue to describe one run
     (`test/view-plans.test.ts`, which reads the planner's plan). Catalog-wide
@@ -957,12 +959,13 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
   - **No `<Link>` to a route handler** (`test/no-prefetched-handlers.test.ts`).
     A prefetch runs the handler; the nav's Export link built the 20 MB export
     on every page view until 0.9.
-  - **`/comics`, a run and `/books` each have a `loading.tsx`**
-    (`test/loading-states.test.tsx`). Without one, Next does not prefetch a
-    dynamic route and a tap shows nothing until the server finishes. `/` has
-    none yet: a root `loading.tsx` would be the first boundary for every route,
-    and `/` becomes a redirect to a dashboard (1.8); the dashboards bring their
-    own. A new data route ships with its `loading.tsx`.
+  - **`/comics`, `/comics/runs`, a run and `/books/list` each have a
+    `loading.tsx`** (`test/loading-states.test.tsx`). Without one, Next does not
+    prefetch a dynamic route and a tap shows nothing until the server finishes.
+    `/` has none and needs none: it is a route handler that redirects (task
+    1.8c), so nothing renders there. The dashboard sits in a `(dash)` group so
+    its boundary stops short of `/comics/[runId]`. A new data route ships with
+    its `loading.tsx`.
   - **Bytes, requests, layout shift and accessibility, on every preview** (task
     0.10, `.github/workflows/lighthouse.yml`). Each Vercel preview is measured
     once it deploys: Lighthouse mobile, devtools throttling, three runs per
@@ -985,10 +988,11 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
     | Route | Document + RSC bytes | JS bytes | Requests | Accessibility ≥ |
     |---|---|---|---|---|
     | `/login` | 8,000 | 170,000 | 30 | 100 |
-    | `/comics` | 47,000 | 170,000 | 35 | 100 |
+    | `/comics` | 28,000 | 170,000 | 35 | 100 |
+    | `/comics/runs` | 47,000 | 170,000 | 35 | 100 |
     | `/comics/bendis-disassembled` | 25,000 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 21,000 | 171,000 | 29 | 100 |
-    | `/books` | 48,000 | 170,000 | 29 | 100 |
+    | `/books/list` | 48,000 | 170,000 | 29 | 100 |
     | `/inbox` | 11,000 | 173,000 | 28 | 100 |
     <!-- /perf-budget -->
 
@@ -1000,6 +1004,15 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
     is room for a real change, not noise. `/inbox` (task 1.4b) is set the
     same way from PR #80's preview (2026-10-13, Lighthouse 13.5.0): document +
     RSC 8.7 KB, JS 140.7 KB, 23 requests, accessibility 100, CLS 0.003.
+    Task 1.8c moved the run list to `/comics/runs`, which keeps the 47,000 that
+    `/comics` was set to (it is the same screen). `/comics` is now the
+    dashboard: 28,000 is the median of its first preview's Lighthouse run
+    (23,046 bytes, PR #108) plus 20%. `/books` is measured at `/books/list`,
+    since Lighthouse sends the session as a `Cookie` header and a redirect
+    drops it; it keeps the 48,000 `/books` had. The nav's Books link points at
+    `/books/list`, and its Ledger link (`/`, a redirect) is not prefetched: a
+    page that prefetched a redirect never reached network idle in the tap
+    runner, and made 55 requests against a budget of 35.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 

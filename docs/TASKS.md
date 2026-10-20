@@ -1312,7 +1312,9 @@ the printed total is the query's total, not the row count.
 **Last-touched medium is a cookie** (R1-13; 1.8c). `src/proxy.ts` writes it on any
 `/comics`, `/books` or `/watch` request, because a Next 16 server component
 can't set a cookie (owner, 2026-10-19). `/`'s route handler reads it, so the redirect runs on the server with
-no flash. Not `localStorage` (the server cannot read it) and not a column on
+no flash. A `<Link>` prefetch is not a visit: the proxy's matcher skips requests
+carrying `next-router-prefetch`, because Next hides that header from `proxy()`
+(owner, 2026-10-20). Not `localStorage` (the server cannot read it) and not a column on
 `users` (a write on every page view). No schema change.
 
 **Nav renders only routes that exist** (R1-06). The phone search icon is 6.1,
@@ -1460,7 +1462,7 @@ every sticky element other than `.bar` has a computed `top` of at least
 `--bar-h`. The rendered HTML contains no U+26B2. Test that every phone route renders
 exactly the same media nav.
 
-### ☐ 1.8c Dashboard routes and the `/` redirect · M
+### ☑ 1.8c Dashboard routes and the `/` redirect · M
 Split out of 1.8 (owner, 2026-10-19) and **built before it**, so the nav only
 ever links to routes that exist. Depends on 0.11: the link crawl and the
 stale-session check run in its harness. The comics dashboard moves from `/` to

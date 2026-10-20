@@ -14,7 +14,7 @@ const books = (n: number) => `${n} ${n === 1 ? "book" : "books"}`;
 const lineCount = (n: number) => `${n} ${n === 1 ? "line" : "lines"}`;
 
 /** Where an add to Someday or On deck lands you: the books it added are on the To read list, which plain /books may cut. */
-export const AFTER_ADD = "/books?status=to_read";
+export const AFTER_ADD = "/books/list?status=to_read";
 
 /**
  * Add books, *Paste a list* (tasks 1.4, 1.4c; mockup `add`). One book per

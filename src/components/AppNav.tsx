@@ -12,9 +12,11 @@ export default function AppNav() {
   return (
     <nav className="bar">
       <div className="bar-inner">
-        <Link href="/" className="home">Ledger</Link>
+        {/* / is a redirect now (task 1.8c): a prefetch of it only fetches the page you are on or the other medium. */}
+        <Link href="/" prefetch={false} className="home">Ledger</Link>
         <Link href="/comics">Comics</Link>
-        <Link href="/books">Books</Link>
+        {/* Straight to the list: /books redirects there until 2.2, and a prefetch of a redirect is a wasted hop (task 1.8c). */}
+        <Link href="/books/list">Books</Link>
         {/* Capture from anywhere (task 1.4b) until 1.8's shell puts Inbox (N) in its sidebar. */}
         <Link href="/inbox">Inbox</Link>
         {/* A plain link: <Link> prefetches, and a prefetch of a route handler
