@@ -1241,9 +1241,9 @@ typecheck, lint, tests (vitest, SQL, Python) and build — and after 0.8a,
 private GitHub repo from Step 10a and `TEST_DATABASE_URL` first — see
 `docs/OWNER-CHECKLIST.md`.)
 
-## Step 12 — Sittings 3–8: Phase 1
+## Step 12 — Sittings 3–9: Phase 1
 
-**Claude Code · ~6 sittings over 3–6 weeks**
+**Claude Code · ~7 sittings over 3–6 weeks**
 
 | Sitting | Tasks (in this order) | Result |
 | ------- | --------------------- | ------ |
@@ -1252,7 +1252,8 @@ private GitHub repo from Step 10a and `TEST_DATABASE_URL` first — see
 | 5 | 1.4 books bulk entry, 1.4c add a book, 1.4b quick capture, 1.4d wishlist promotion screen, 1.5 dated log + `read_events` | Books work end to end |
 | 6 | 1.7 period column, 1.8a design tokens and control states, **0.11 browser test harness**, 1.8 app shell, 1.8b thumb bar and contrast | The real navigation |
 | 7 | 1.10 Up next queue, then 1.9 status screens, **2.11a prerequisite cycle check**, 1.12 volume map into `volume_rules`, and 1.11 failed sign-ins wait (D-36) | Phase 1 complete; extract lists the cycles for your audit |
-| 8 | 1.13 book extract and merge review, 1.14 Open Library details, 1.15 series, author and universe follows | Books load clean, with covers and page counts; answer `book_review.csv` between 1.13 and 1.14. Can be built any time before Step 14 |
+| 8 | 1.13 book extract and merge review, 1.14 Open Library details, 1.15 series, author and universe follows, 1.18 Calibre word counts, series, tags and reads | Books load clean, with covers, page counts and real word counts; answer `book_review.csv` between 1.13 and 1.14, and `calibre_review.csv` and `calibre_reads.csv` after 1.18. Can be built any time before Step 14 |
+| 9 | 1.4e paste a list as two fields, 1.5b year chip spacing, 1.17 start dates | Small fixes to screens in daily use, and start dates captured from cutover on |
 
 **Task 1.5 carries a deadline.** It adds `read_events`, the re-read log, and
 projects the existing status tables from it. This has to land before real
@@ -1269,7 +1270,11 @@ last load changes before cutover.** 1.12 puts the volume map into the database,
 and 1.13–1.15 change what the books load holds, because after Step 14's final
 load nothing loads either again. Sitting 8 needs you between its tasks: answer
 `etl/data/book_review.csv` after 1.13, and again after 1.14's enrich run adds
-Open Library's spellings to it.
+Open Library's spellings to it. 1.18 reads your Calibre library (give it the
+folder) and asks you to settle `etl/data/calibre_review.csv`, where Calibre and
+the APIs disagree on a series or ISBN, and `etl/data/calibre_reads.csv`, the
+Calibre reads to accept (D-73). **1.17 also lands before cutover**, for 1.5's
+reason: a start date not captured from the first day is lost.
 
 **Done when:** every Phase 0 and Phase 1 task is ticked in `TASKS.md`, you can
 add a 24-issue run by pasting a block of labels, and marking a 100-issue range

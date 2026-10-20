@@ -685,7 +685,8 @@ stay. START-HERE Step 12 groups them into sittings:
 | 5 | 1.4 → 1.4c → 1.4b → 1.5 → 1.16 | resolving an inbox note (1.4b) routes into the add flows; 1.5 must land before real rereads overwrite history; 1.16 reinterprets the dates 1.5 finishes adding, and lands before the final load |
 | 6 | 1.7 → 1.8a → 0.11 → 1.8c → 1.8 → 1.8d → 1.8b | 1.8a's tokens come before the first UI task; 0.11's harness runs 1.8's computed-style check and 1.8d's axe run; 1.8c moves the routes the nav links to; 1.8d's axe run covers the finished chrome; 1.8b was split out of 1.8 (R3-12) |
 | 7 | 1.10 → 1.9 → 2.11a → 1.12 → 1.11 | 1.9's Up next tab reads the queue; 2.11a is numbered in Phase 2 but built here, before cutover (D-20); so is 1.11 (D-36); 1.12 must land before Step 14's final load, the last time `load` runs |
-| 8 | 1.13 → 1.14 → 1.15 | the book ingest (2026-10-08 review): 1.14's proposals join 1.13's review file, and 1.15 seeds from series and author names 1.13's review fixed. All three change what `load` puts in, so they land before Step 14's final load. They don't depend on sittings 3–7 and can be built earlier, leaving the owner time to answer the review |
+| 8 | 1.13 → 1.14 → 1.15 → 1.18 | the book ingest (2026-10-08 review): 1.14's proposals join 1.13's review file, and 1.15 seeds from series and author names 1.13's review fixed; 1.18 (2026-10-20) checks Calibre against 1.14's Open Library answers (D-73). All four change what `load` puts in, so they land before Step 14's final load. They don't depend on sittings 3–7 and can be built earlier, leaving the owner time to answer the reviews |
+| 9 | 1.4e → 1.5b → 1.17 | the 2026-10-20 intake's Phase 1 items: two small fixes to screens already in daily use, then start dates, which like 1.5 must land before real reading accumulates and before cutover |
 
 ### ☑ 1.2 Undo · S
 **Build before 1.1** (R3-10): 1.1's check asserts undo, and 1.1 must not carry its
@@ -2009,6 +2010,149 @@ reads the same calendar day after it. A `none`-precision row is still `none`
 with a NULL date. The up → down → up test asserts row values, if a migration
 is used.
 
+### ☐ 1.18 Calibre: word counts, series, tags and reads for the books · M
+Backlog intake, 2026-10-20; D-73. **Built in sitting 8, after 1.14** (and
+after 1.15, which does not need it): it checks Calibre against 1.14's Open
+Library answers and reuses that task's cache. The owner's Calibre library has
+what no API does, real word counts from the Count Pages plugin, plus series,
+tags, summaries, ISBNs and read dates.
+
+- **`etl/calibre.py`** (`npm run calibre`):
+  - It is given the library folder (`--library "C:/Users/…/Calibre Library"`,
+    or `CALIBRE_LIBRARY` in `.env`).
+  - It copies `metadata.db` to a temp file and opens the copy read-only
+    (`mode=ro`), so a running Calibre is never locked or written.
+  - It finds custom columns by lookup name (`#words`, `#read` and `#date_read`
+    by default, each overridable by a flag), never by `custom_column_N`.
+  - `--dry-run` reports the match rate and writes nothing.
+- **Matching is 1.13's.** A Calibre book is a workbook book when title and
+  author match after `clean()` / `key()`. A near spelling (≥ 0.4) appends a
+  `book_review.csv` row with `reason = calibre`, as 1.14 does. Anything else is
+  reported as unmatched, with its candidates. A Calibre book that isn't in the
+  workbook is not created: it comes in through 1.4c.
+- **`etl/data/calibre_books.csv`** is keyed by title and author, with `source`
+  `calibre` or `hand`. A `hand` row is never overwritten. Extract folds it in:
+  - `word_count`, as `stated`, only where the workbook has none. A workbook
+    count that differs by more than 10% is reported, never replaced.
+  - `series`, `series_index` and `isbn` fill **only where Open Library or
+    Hardcover agree** (owner). A disagreement, or no API answer, goes to
+    `etl/data/calibre_review.csv` (`field`, Calibre's value, the API's,
+    `decision` calibre|api|neither) and fills nothing until it is decided.
+  - `tags` and `comments` are for `books.subjects` and `books.summary`
+    (FEATURES Part 2f), and the ISBN needs a `books.isbn`. **Stop and ask**
+    before adding any of the three columns (CLAUDE.md). Until then the values
+    stay in the CSV and do not load.
+- **Reads go through a review** (D-73). `etl/data/calibre_reads.csv` lists
+  each Calibre read: title, author, the read flag, and the date read, which
+  becomes `finished_on` (`exact`, or `approximate` for a year-only value). Its
+  `decision` is accept|reject, blank until the owner decides. Only `accept`
+  rows load, as `read_events` plus the `book_status` projection 1.5 defines. A
+  book already read in the app keeps its read, and the Calibre row is reported,
+  not merged.
+- Nothing ever writes to Calibre. The CSVs are committed like the other
+  sidecars; `metadata.db` and its temp copy never are.
+- After cutover there is no re-extract: a book added in the app gets Calibre's
+  values through 4.2's after-cutover path (noted there).
+
+**Check:** `npm run test:etl`, with a fixture `metadata.db` built by the test
+(two books, `#words` and `#date_read` custom columns) and recorded API answers,
+shows:
+- an exact match fills a `stated` word count where the workbook had none, and
+  leaves a workbook count alone;
+- a series Open Library agrees with fills; one it contradicts writes a
+  `calibre_review.csv` row and fills nothing;
+- a near spelling writes a `book_review.csv` row;
+- an undecided `calibre_reads.csv` row loads nothing, an `accept` row loads one
+  `read_events` row with its date and precision, and a `reject` row loads
+  nothing;
+- the fixture file's bytes and modified time are unchanged after the run.
+
+Then a dry run over the real library, with the matched, proposed and unmatched
+counts reported in the PR.
+
+### ☐ 1.4e Paste a list: title and author in their own cells · S
+Backlog intake, 2026-10-20 (owner: *adding books isn't "title - author", it's
+two fields*). *By hand* already has two fields. *Paste a list* still wants
+`Title - Author` on one line, and its review shows the line as typed.
+
+- The paste also takes two columns copied from a spreadsheet: a line with a
+  tab splits at its first tab, title then author (`src/lib/book-parse.ts`). The
+  dash grammar still works.
+- The review table (1.4's `ReviewTable`) shows **Title** and **Author** as
+  separate cells, each editable in place. Editing either re-runs that line's
+  match (your library, then the near-duplicate check, D-25) before *Add*. A line
+  with no author shows an empty Author cell with its reason under it, instead
+  of *Add one after a dash*.
+- The label and empty-state copy become *One book per line: Title - Author, or
+  paste two columns (title, author)*, and the mockup's `add` frame follows
+  (standing rule 6).
+
+**Check:** a vitest parses `Piranesi\tSusanna Clarke` and `Piranesi - Susanna
+Clarke` to the same title and author, and a tab-split line whose title has a
+dash in it keeps the dash in the title. In the browser (0.11), editing the
+Author cell of a line with no author clears its reason, and the line adds with
+that author. Each cell has an accessible name (*Title, line 3*). Screenshots at
+360px and 1280px.
+
+### ☐ 1.5b Year chips: the count reads apart from the year · S
+Backlog intake, 2026-10-20 (owner: *the year is too close on the chip*).
+`/books`' year chips render `2024 12`. The count sits 6px from the year
+(`.chip .n` in `globals.css`), in the same grey, so the two read as one
+number. The fix belongs to the chip, so every chip with a count gets it: the
+years, *No year*, and 1.9's tab counts.
+
+- Set the count apart as a count, not a second word: a `·` separator or a
+  `--sunk` count pill, chosen at plan time against the mockup's
+  `.seg span .n` and STYLE_GUIDE §9, in tokens only (D-71 for outlines).
+- The chip's accessible name says what the number is: *2024, 12 read* (years
+  count reads, D-65).
+
+**Check:** at 360px, every year chip's year and count are at least 8px apart or
+split by a separator glyph (measured in 0.11's harness). The chip's
+accessible name is *2024, 12 read*, and the axe pass reports nothing new.
+Screenshots light and dark.
+
+### ☐ 1.17 Started and finished: a start date for books, a derived span for runs · M
+Backlog intake, 2026-10-20 (owner: *books: date started and ended; comics: a
+run's date started and ended*). **Before cutover, in sitting 9**, for 1.5's
+reason: a start date that isn't captured from the first day can't be
+recovered later. Finish dates exist already (1.5). What's missing is when a
+read began.
+
+- **Books: a stored start, with its precision.** Proposed:
+  `book_status.started_on` with `started_on_precision`, and the same pair on
+  `read_events`, under ARCHITECTURE 2.17's rule (NULL exactly when `none`).
+  The start of a read in progress lives on `book_status`. Finishing copies it
+  onto the new `read_events` row, so a reread keeps its own start (ARCHITECTURE
+  2.18). **Stop and ask at plan time** (new columns, CLAUDE.md). No column is
+  dropped or retyped, so there is no down file.
+- **Writes go through `saveBookStatus`.** Entering *Reading* stamps today's
+  Eastern day (1.16) as `exact`, unless a start already exists. The status
+  control's date line gains *Started …* beside *Finished …*, both editable with
+  1.5's picker (*Today · Pick a day · Year only · No date*). A start after the
+  finish is refused, with the reason under the control.
+- **Runs: derived, never stored.** `run_state` gains `started_at`, beside
+  `finished_at`: the earliest dated read of the run's own placements. Undated
+  reads (`none`) don't count, so a run with only undated reads has no start.
+- **Where it shows:** the book row's meta, the run hero's span line (*Started
+  Mar 2026*, or *Mar–Sep 2026* once finished) and 1.9's Done rows. Days taken
+  (*16 days*) is computed in the query, never stored. 3.5's book sheet shows
+  both dates (noted there).
+- Extract loads no start dates (D-41). Calibre's come only through 1.18's
+  review.
+
+**Check:**
+- Setting a book to Reading writes `started_on` as today in Eastern, `exact`.
+- Finishing it appends a `read_events` row carrying the same start.
+- Rereading it sets a fresh `started_on` and leaves the first read's row as it
+  was.
+- A start after the finish is refused and writes nothing; a `none` start has a
+  NULL date.
+- `etl/test_views.sql`: `run_state.started_at` is the earliest dated read of the
+  run's own placements, ignores a read of the same issue in another run and a
+  `none` read, and is NULL for a run with no dated read.
+- `npm run test:db:reset` migrates from zero.
+
 ---
 
 ## Phase 2 — The pace engine
@@ -2946,8 +3090,18 @@ Add issues, and `/inbox`'s footnote goes back to the mockup's "Resolving a
 comics note opens New Run"; a run created from a note resolves it in the same
 transaction, as the add flows do (D-64; from TASK-009, 1.4b, PR #80).
 
+**Other publishers** (2026-10-20 intake: *add DC and other publishers' comics,
+like Walking Dead and Invincible*). Nothing in the catalog is Marvel-specific:
+labels, the parser, Metron and the volume map all take any publisher. The one
+Marvel default is `tracks.publisher` (`DEFAULT 'Marvel'`). So the track
+assignment here can also **create a track**, with a name and a publisher
+(*Marvel · DC · Image · Other…*), and the run list's track filter shows a
+non-Marvel track like any other.
+
 **Check:** create a run, assign two tracks, assert it appears under both filters;
 assert saving a why stores `hand`, and that nothing in this task calls Anthropic.
+A track created here with publisher *Image* stores it, and a run assigned to it
+appears under that track's filter.
 
 ### ☐ 3.3 Prereq editor · M
 Add and remove edges, hard or soft, with **cycle detection**. After cutover this
@@ -2977,6 +3131,12 @@ mockups "Book detail sheet".
 Content: summary, genre, year, page and word count with the
 `stated`/`estimated` flag, notes, shelf membership, plan placement, reread
 history. The run page stays a full page — too dense for a sheet.
+
+From the 2026-10-20 intake: *Your record* shows the start date beside the
+finish (1.17), and each read in *History* shows both, with the days taken
+derived. The series name is a link to its series page (5.9). If 1.18 already
+added `books.summary` and `books.subjects`, this task reads them and adds
+neither.
 
 **How the sheet moves and stacks** (UX-N10, N12, N25; STYLE_GUIDE §7):
 
@@ -3286,6 +3446,108 @@ no rule it is flagged for a pick as before. A rule overlapping an existing one
 for the same series and scope is refused with its reason shown. Editing a rule
 changes no existing `issues` row. The Settings line's counts equal the table's.
 
+### ☐ 3.10 Add from a series' issue list · M
+Backlog intake, 2026-10-20 (owner: *when creating or changing a run, add many
+issues from one series at once: show every issue, then check them*). Today
+*Search* in Add issues asks Metron one number at a time, ten a search at most
+(D-60), and a longer stretch is *Type it*'s range (`#1-60`). This adds a third
+way in: browse a series. Depends on 1.3b, 1.3c and 3.2.
+
+- **Pick a series, then a volume.** The search box takes a series name. The
+  results are series (name, volume year, publisher, issue count): your own
+  catalog's first (*in 3 runs*), then Metron's `series/?name=`. Every publisher
+  Metron carries is offered (DC, Image, Skybound), not only Marvel.
+- **See the whole volume and check what you want.** One list in issue-number
+  order, from your catalog and Metron's `series/{id}/issue_list`. That is pages
+  of 100, so a 300-issue volume is three requests, cached in `metron_cache`
+  (D-53) and paced by its 20 a minute. Each row has the number, the cover date,
+  the story title when known, and its state: *in this run* (checked and
+  locked), *in 2 other runs*, or new. **Select a range:** tap the first, then
+  *Through here* on the last, or shift-click with a fine pointer. *Select all*
+  and *None* sit above the list.
+- **This amends D-60's rejection** of walking an issue list. That was the wrong
+  tool for a typed number range, and it is the right one for browsing one
+  volume. Record the amendment in the decisions log at the plan gate.
+- **Then the existing path.** *Review N issues* hands the checked issues to
+  1.3c's review table and insert, at the add flow's insertion point. Labels
+  are in the bulk-entry grammar and carry their Metron ids. The label rule is
+  unchanged: nothing is written without the accept. 3.11 arranges them.
+- Loading, rate-limited and error states are 1.3b's, and *Type it instead*
+  stays the escape.
+
+**Check:** with a recorded Metron fixture for a 120-issue volume:
+- opening it makes two `issue_list` requests, and opening it again makes none;
+- issues already in the run render checked and locked;
+- selecting #10 through #24 checks fifteen rows, and *Review 15 issues* makes
+  fifteen review rows and writes nothing until accepted;
+- accepting inserts fifteen placements in order, with one undo;
+- a non-Marvel volume (Image's *Invincible (2003)*, in the fixture) goes the
+  same way and its labels parse;
+- no page render calls Metron.
+
+### ☐ 3.11 Arrange issues in the reading order · M
+Backlog intake, 2026-10-20 (owner: *when adding issues, drag them into order,
+not all landing in one place*). Today every staged issue lands at the add
+flow's one insertion point, in staged order. Real reading orders interleave,
+with tie-ins between main-series issues. No task reorders existing
+placements either. Depends on 1.3c and 3.10.
+
+- **The review shows the issues in place.** Before the insert, 1.3c's review
+  gains an *Arrange* step: the run's spine around the insertion point, with the
+  staged rows, marked *new*, among the existing ones.
+- **Moving a row.** With a fine pointer, drag by a named handle (`button.drag`,
+  as in 1.10's queue). On every device, the row's `⋯` menu offers *Move up ·
+  Move down · Place after…* (a picker over the run's placements by label), and
+  the keyboard takes Space, arrows, Space (1.10's pattern). A staged row can go
+  anywhere in the run. An existing placement can move too, which makes this the
+  run's reorder (FEATURES Part 3).
+- **One write.** *Insert* writes every new placement at its own sequence, and
+  every moved one at its new sequence, in one transaction. Sequences stay
+  contiguous (the deferred unique, R0-15), and one undo puts every sequence
+  back. Read state is untouched, because it keys on the placement, not the
+  position (ARCHITECTURE 2.14). Proposed, to confirm at plan time: a row moved
+  across an era boundary takes the era it lands in, and the row says so before
+  the write.
+- Outside an add, the run's `⋯` menu offers *Reorder issues*, the same step
+  with nothing staged.
+
+**Check:**
+- Staging three issues and placing them after #3, #7 and #12 inserts each
+  there, in one transaction, with contiguous sequences.
+- Undo restores the prior order and removes the three.
+- Moving an existing read placement keeps its `issue_progress` row and its read
+  state.
+- The keyboard sequence moves a row one place; the drag handle and the menu
+  reach the same result.
+- Screenshots at 360px and 1280px.
+
+### ☐ 3.12 Issue previews in Add issues · S
+Backlog intake, 2026-10-20 (owner: *when searching for an issue to add, hover
+shows its summary, writer and so on*). A search result shows a label and a
+date. What the issue is about takes Metron's detail page. Depends on 1.3b.
+
+- **Expand, not only hover.** Each result has a *Details* disclosure
+  (`aria-expanded`). It opens on a tap. With a fine pointer it also opens on a
+  300ms hover. Hover is never the only route (UX floor). Expanded, it shows the
+  cover, story title, writer and artist (the roles 3.5 shows), Metron's summary
+  and the series' publisher.
+- **One request, on demand.** Expanding asks Metron's `issue/{id}` once,
+  through 1.3b's client and `metron_cache`. Expanding the same issue again
+  makes no request. A hover that ends before the answer arrives leaves the
+  cache filled and shows nothing stale. The rate-limited and error states are
+  1.3b's, inside the disclosure.
+- Expanding writes nothing to the catalog. The issue's details arrive with it
+  on add, as 1.3b's insert does today, and its summary through 4.1's
+  `issues.summary` once that column exists.
+
+**Check:** with a mocked client:
+- expanding a result makes one detail request and shows the story title,
+  credits and summary;
+- expanding it again makes none;
+- with touch emulated, the disclosure opens on a tap;
+- a mocked 429 renders the rate-limited line inside the disclosure;
+- expanding writes no row.
+
 ---
 
 ## Phase 4 — Enrichment
@@ -3311,6 +3573,15 @@ every row that references the old id (`run_issues.issue_id`, `issue_credits`,
 and anything added since). Progress keys on the placement from 0.8a, so it does
 not move. A rename whose new slug already exists is refused, never suffixed.
 
+**An issue's summary** (2026-10-20 intake: *more context for the important
+issues in a run*). Metron's issue detail carries a `desc`, already in every
+detail page `--details` cached, so it costs no requests. Store it as
+`issues.summary` with `summary_source` (`metron | hand`, the same CHECK pair as
+`cover_date`), shown on 3.5's issue sheet and in 3.12's preview, and never
+replacing a `hand` one. This is a schema change: **stop and ask** before adding
+it. It is the factual half of an issue's context. Why the issue sits in *this*
+run is the placement's note, which 7.8 drafts.
+
 **Check:** dry run against 50 issues reports match rate and writes nothing.
 Then a real run of 200 with the cache warm.
 
@@ -3325,6 +3596,12 @@ there is no re-extract, so a book added in the app without Open Library data
 the same rule that a `hand` value is never replaced. Hardcover's series position
 and the art tone below stay here. ISBNs need a column `books` doesn't have:
 stop and ask before adding one.
+
+**Calibre after cutover** (D-73, from 1.18). 1.18 reads Calibre only into
+extract's sidecars. A book added in the app later gets Calibre's word count,
+tags and summary by the same after-cutover path: matched on title and author,
+straight into `books`, with series, index and ISBN still checked against Open
+Library and Hardcover, and Calibre reads still going through a review.
 
 **Book covers get an art tone too** (D-40, FP-D6), for the books Now hero
 (2.2) and *Between books*: the same extraction and clamp as 4.3, run at ingest
@@ -3461,6 +3738,17 @@ it is converted.
   and Open Library, or add by hand. A book not yet in the catalog is created
   first, then shelved. Each shelf shows its **next three unread** in shelf
   order, not just the next one (FEATURES Part 2c → Shelves).
+  - **Context on a shelf** (2026-10-20 intake: *a context field, why a book is
+    on it, like the Dark Tower reading order*). Proposed: `shelves.description`
+    and `shelf_books.note`, and `shelf_titles.note` in 8.6. **Stop and ask**
+    before adding them. The shelf page shows its description under its name,
+    and each book's note under its row (*After Wizard and Glass: sets up the
+    Wolves*), edited in place with 3.1's pattern. A shelf's order makes it a
+    reading order across series and authors, the Dark Tower with its tie-ins,
+    and a part-read shelf counts as *in the middle of* (5.12).
+  - **Check (the context part):** a note saves, survives a reload and renders
+    under its row; a shelf with no description renders no empty line; a note
+    on one shelf does not appear on another shelf holding the same book.
 - ☐ 5.2 Tracks page from `track_progress` · S. `/comics/tracks`: 37 tracks, each
   drawn as a row of its blocks (D-29: cells sized by each block's issue count,
   14px floor, each filled by its own share read, `read / total` as text, counting
@@ -3549,7 +3837,7 @@ it is converted.
     the list; *Not for me* hides an issue for that user only; no page render
     calls Metron (the mocked client counts calls). A mocked 429 renders the
     rate-limited line and makes no second request before `Retry-After`.
-- ☐ 5.9 **Series page from `series_progress`** · S. Coverage check,
+- ☐ 5.9 **Series page from `series_progress`** · M. Coverage check,
   2026-10-08; FEATURES B6 (the workbook's Series tab). The view has existed
   since the first load and nothing shows it. `/books/series`: every series
   with its author, `books_read / total_books` in mono and an `.emeter` filled
@@ -3561,11 +3849,22 @@ it is converted.
   the true counts. The sidebar and navigation rail gain *Series* under Books
   (flip its `NAV_ITEMS` flag, as 5.7); the mockup gains the screen with its
   empty state (*No series yet · Add a book*).
+  - **Every series is a link, to a page of its own** (2026-10-20 intake:
+    *series are clickable*; this makes 5.9 an M). Each row links to
+    `/books/series/[id]`, not to the list filter. The page lists the series'
+    books in `series_position` order, each with its status and dates, and
+    marks the next unread. A position between 1 and `total_books` with no book
+    in the catalog is a grey gap row (*#4 not in your library · Add*), which
+    opens 1.4c with the series named. Wherever the app prints a series name (a
+    list row, 3.5's sheet, the books dashboard) it links here. 5.11 adds the
+    follow control to this page.
   - **Check:** a series with 3 of 5 books read renders `3 / 5` and a meter
     filled with `--ready`; one with NULL `total_books` counts its listed books;
     a soft-deleted book is not counted; the next-unread line names the
     lowest-position unread book, and a complete series has none. The row's link
-    shows only that series' books. Screenshot at 360px, 834px and 1280px.
+    shows only that series' books. A series holding positions 1, 2 and 4 of 4
+    renders a gap row for #3, and a series name in a list row links to its
+    page. Screenshot at 360px, 834px and 1280px.
 - ☐ 5.10 **Editions: collected and read** · M. Coverage check, 2026-10-08;
   FEATURES Part 1's *Master* row. Depends on 5.6. The workbook's Master tab (178
   trades and omnibuses) was loaded as `editions`, with per-user
@@ -3580,13 +3879,23 @@ it is converted.
   reads are per placement (CLAUDE.md), and nothing propagates. 3.5's issue sheet
   links its collecting editions here. This is what turns on 2.6's *editions
   owned* frontier tile and 2.4's owned-edition tag.
+  - **Collected in, on the run page** (2026-10-20 intake: *collected in:
+    omnibus or TPB?*). The run page gains a *Collected in* group: each edition
+    whose `edition_issues` cover any of the run's placements, with its type
+    (`editions.book_type`: *Omnibus*, *Trade Paperback*, *Epic Collection*),
+    how much of this run it covers (*#1–24 of 60*, derived in a view), and
+    *Collected*. A stretch no edition covers reads *#25–60 not in an edition
+    you've listed*. Editions you have never listed are not discovered here
+    (Later § L-3).
   - **Check:** toggling *Collected* writes one `edition_progress` row for the
     user and survives a reload; toggling *Read* writes no `issue_progress` row.
     The frontier's owned-editions tile counts an edition only when it is
     collected and its `edition_issues` cover a ready run, and is hidden while
     no `edition_issues` rows exist. An unparsed edition is listed with the flag.
     Adding an edition by hand creates one `editions` row and its
-    `edition_issues` through 5.6's parser.
+    `edition_issues` through 5.6's parser. A run whose #1–24 one collected
+    omnibus covers shows it under *Collected in* as *#1–24 of 60*, and the
+    uncovered stretch as *#25–60*.
 - ☐ 5.11 **Author and universe pages, and the follow control** · M. Follow-up
   from PR #58 (1.15's *Not here*); D-42, D-43; FEATURES B6. Depends on 1.15
   and 5.9. 1.15 adds `author_progress`, `universe_progress` and the three
@@ -3601,6 +3910,51 @@ it is converted.
     counts from their views. Setting *Reading* writes one follow row for the
     user, survives a reload, and shows in the view's `follow_state`. *Not
     following* deletes the row. No count or state column is added.
+- ☐ 5.12 **In the middle of: series, authors, universes and reading-order
+  shelves** · S. Backlog intake, 2026-10-20 (owner: *series, authors and
+  tracks I'm in the middle of*, where "tracks" means both universes and
+  ordered shelves). Depends on 1.9, 1.15, 5.1 and 5.11.
+  - **What counts is derived, never stored.** A series, universe or books
+    shelf with at least one read and at least one unread live book, or one the
+    owner follows as `reading` (D-43). An author counts only when followed:
+    376 authors would otherwise list everyone you have read once with a book
+    left. Read from `series_progress`, `author_progress`, `universe_progress`
+    and a new `shelf_progress` view (books listed and read per shelf, live
+    books only).
+  - **Where it shows.** 1.9's books *In flight* tab gains a second group under
+    the books being read, *In the middle of*. Each group gets one row: its kind,
+    name, `read / total` in mono, an `.emeter` filled with `--ready`, and the
+    next unread named. Most recently read first. The books dashboard's rollup
+    links to it.
+  - **Check:** a series with 2 of 5 read appears and one with 5 of 5 does not;
+    a series with none read appears only when followed `reading`; an author
+    appears only when followed; a shelf with 1 of 3 read appears; nothing is
+    written; each row's counts equal its view's.
+- ☐ 5.13 **Comic series page: every issue of a volume, its runs and its gaps**
+  · M. Backlog intake, 2026-10-20 (owner: *a series view: every issue in my
+  collection and to-read lists, the runs it's in, other metadata, with gaps*).
+  Depends on 3.5, and is better after 4.1. `/comics/series/[key]`, one volume
+  (`X-Men (2019)`):
+  - Every catalog issue of the volume, in number order, with cover, cover date
+    and story title. Beside each, the runs that place it and its read state in
+    each, as 3.5's *Your record* draws them.
+  - **Gaps.** A number between the volume's first and last in the catalog that
+    no issue has is a grey stub (*#13–15 not in any run*). Once 4.1 has
+    Metron's issue count for the volume, the numbers after your last are too.
+    Coverage is text (*48 of 61 issues in your runs*), never a bar: you measure
+    against what you chose, not the catalog (ui.md).
+  - The volume's facts: publisher, years (from cover dates), and the runs that
+    draw on it.
+  - **The series key is open: stop and ask at plan time.** Either parse series
+    and volume from the label in a view (the bulk-entry grammar, `Title (Year)
+    #N`, where the 302 freeform labels fall out), or store Metron's series id
+    per issue from 4.1 (`issues.metron_series_id`, a fact, not derived). Prefer
+    the Metron id if 4.1 has landed.
+  - The issue sheet's series line and a spine row's label link here.
+  - **Check:** a fixture volume with #1–12 and #16–20, placed across two runs,
+    renders 17 rows and one gap stub, `#13–15`, each row with its runs and
+    their read state. A soft-deleted placement is not listed, freeform labels do
+    not appear, and no page render calls Metron.
 
 ---
 
@@ -3695,6 +4049,24 @@ it is converted.
   row also reveals a small *Mark read* button on hover or focus, with `x` as its
   shortcut. Phone and tablet are unchanged: their check is already one tap.
 - ☐ 6.6 Goodreads and StoryGraph CSV import · M
+- ☐ 6.17 **Activity: the reading log as a page** · M. Backlog intake,
+  2026-10-20 (owner: *total books read each year, and a past list of read books
+  and activity*). The yearly totals exist (`books_by_year`, `/books`' year
+  chips) and 6.2 charts them. What has no page is the log itself. Depends on
+  1.5 and 1.17.
+  - `/activity`: every finished read, latest first, grouped by month under year
+    headings, each year with its totals (*2026 · 31 books · 412 issues*).
+  - Book rows come from `read_events`, with start, finish and days taken
+    (1.17).
+  - Comic reads come from `issue_progress`, grouped per run per day: *6 issues
+    of Claremont — Uncanny X-Men, #141–146*.
+  - Watch events join once Phase 8 exists, and music listens after Phase 9.
+  - Filters by medium and year. Undated reads sit at the foot, under *No date*.
+  - The sidebar gains *Activity*. Rows come from an `activity_log` view;
+    nothing is stored.
+  - **Check:** a book read in two different years appears in both (D-65); six
+    marks in one run on one day render as one row with the range; undated reads
+    come last; each year's book total equals `books_by_year`'s.
 - 6.7 — removed 2026-10-08 (coverage check; R0 had flagged it): it duplicated
   7.6 word for word. 7.6 keeps the digest, because Phase 7's *after Phase 4*
   framing fits an email about verified releases (CLAUDE-CODE-PROMPTS). The
@@ -3818,6 +4190,72 @@ replaces a `hand` why.
 ### ☐ 7.6 Release digest email · S
 Vercel cron plus Resend free tier. Last thing in the backlog, by your call.
 
+### ☐ 7.7 Catch me up: a recap before a later book in a series · M
+Backlog intake, 2026-10-20 (owner: *a summary of the earlier books when I come
+back to a series after a while; AI, in real time?*). Depends on 7.1 (the
+`proposals` table and the Anthropic client) and 1.17. It writes nothing to the
+catalog, so unlike 7.3–7.5 it needs no Metron gate, and it can be pulled
+forward once 7.1 lands.
+
+- **When it is offered.** Starting book N of a series (status → Reading, 1.17)
+  when the previous book's latest read finished more than six months ago
+  (derived) makes the status control and the book sheet offer *Catch me up on
+  books 1–3*. The series page (5.9) always offers *Recap so far*.
+- **On demand, never on a render.** It is a call the user starts, like an add
+  flow's search (ui.md). The answer streams into the sheet as it arrives. It is
+  stored in `proposals` with its prompt and response, so reopening costs
+  nothing and reads *Recap from 3 Oct · Regenerate*.
+- **The spoiler boundary.** The prompt includes only the books before N. It
+  asks for the threads that matter going into book N and for nothing from N or
+  later.
+- **Grounded, and labelled.** The prompt carries each earlier book's title,
+  year, Open Library summary (if any) and the owner's own notes. The sheet
+  labels the text as Claude's recap, which can be wrong about less-known books,
+  and offers *This is wrong*, which marks the proposal rejected. Whether to add
+  the API's web search tool for grounding is a plan-time question, cost against
+  accuracy.
+
+**Check:** with a mocked client, starting book 4 seven months after book 3
+offers the recap, and starting it two weeks after does not. The prompt
+includes books 1–3 and no summary or text from book 4 or later. A second open
+makes no API call, no page render calls Anthropic, and *This is wrong* sets
+the proposal's decision.
+
+### ☐ 7.8 Issue context: draft notes for a run's important issues · M
+Backlog intake, 2026-10-20 (owner: *more context for the important issues in a
+run*, and *retrieve an issue's context on add or when it has none: if it is
+special, or why it is in the run*). Depends on 7.1, 7.2 and 4.1
+(`issues.summary`). The context is the placement's note
+(`run_issues.notes`), because why an issue matters depends on the run: a
+tie-in essential to one reading order is skippable in another. What the issue
+*is* (Metron's summary) is 4.1's.
+
+- **Drafting.** The run's `⋯` menu offers *Draft issue notes*, and an add can
+  offer *Draft notes for the 12 new issues*. Claude proposes a one- or
+  two-sentence note for each placement that warrants one (a first appearance;
+  an event tie-in and what to know going in; why an optional issue is here)
+  and none for the rest. The prompt is grounded in the run's why, its eras, each
+  issue's story title, credits and Metron summary, and the run's prerequisites.
+- **Provenance, like a why.** Proposed: `run_issues.notes_source`
+  (`hand | claude`, the `why_source` rule). A `hand` note is never replaced or
+  re-proposed. A `claude` note may be re-proposed for review, never silently.
+  **Stop and ask** before adding the column.
+- **Review, then write.** The drafts render as 7.3's diff, and each row is
+  accepted, edited (which makes it `hand`) or rejected. Nothing is written until
+  accepted. A note may name other issues: those labels pass 7.2's
+  verification gate before they show as links (CLAUDE.md).
+- **Where notes show:** a marker on the spine row with the note on expand
+  (3.6b's row), the issue sheet's placement table (3.5), and the run hero's
+  next-issue strip, which already reads the placement note (1.6).
+- Whether an important issue also needs a visible *key* marker beyond having a
+  note is a plan-time question.
+
+**Check:** a golden test against a fixture run parses the response into
+per-placement drafts. Accepting one writes its note with `notes_source =
+'claude'`, and editing one writes `hand`. A placement with a `hand` note is
+not sent for drafting. A draft naming a fabricated issue renders that label
+unverified and unlinked.
+
 ---
 
 ## Phase 8 — Watchlist: film and television
@@ -3843,11 +4281,45 @@ franchise page and detail; and dropped-show storage — `title_status` accepts
 `unknown | to_watch | watching | watched | dropped`, reading `title_status` first
 (DIAGRAMS §8b, ARCHITECTURE 2.5b). Update `etl/views.sql` in the same PR.
 
+**From the 2026-10-20 intake** (owner: *streaming host, original network or
+streaming original, director, studio, length, episodes and seasons, genre,
+lead actors, filterable and obvious when browsing*; D-74). These amend
+FEATURES Part 2g's draft before anything is built (ARCHITECTURE 2.20):
+
+- **Networks and studios.** `titles.networks text[]` (TMDB `networks`: the
+  original network or streamer, *HBO*, or *Netflix* for a Netflix original)
+  and `titles.studios text[]` (`production_companies`), handled like `genres`:
+  short vocabularies filtered by containment, with a GIN index.
+- **Credits are rows**, as comics' are (ARCHITECTURE 2.12). `people(id,
+  tmdb_id UNIQUE, name)` and `title_credits(title_id, person_id, role IN
+  ('director', 'creator', 'cast'), ordinal)`, cast capped at the top ten
+  billed. They replace the draft's `creators` and `cast_top` arrays, so a
+  director page (8.10) and a cast filter are joins.
+- **Lengths.** `titles.runtime` is a film's length, or a show's typical episode
+  (`episode_run_time`, else the last episode's runtime). `seasons.episode_count`
+  comes from the same `/tv/{id}` call. A show's season and episode totals are
+  `show_progress` columns, never stored (hard rule 2), so the draft's
+  `titles.season_count` is dropped.
+- **Waiting for a new season.** `titles.tmdb_status` (*Returning Series ·
+  Ended · Canceled · In Production*) is a fact from TMDB. `show_progress.state`
+  gains `caught_up`: every known season watched, and the show returning.
+- **A show's own rating and note.** For a show, `title_status.status` is NULL
+  or `dropped`, and the row may carry `rating` and `notes`. For a film, status
+  stays required. This replaces *accepts `kind = 'tv'` only with `status =
+  'dropped'`*.
+
+**Stop and ask** at plan time for these, as for every column in this task.
+
 **Check:** test that a `/search/multi` response parses into `titles` rows for
 both a film and a show; that `/tv/{id}` populates the full `seasons` array in
 one call; and that no code path returns the API key to a client component. A
 show with a `dropped` row reports `dropped` even with seasons watched, and a
-`watching` `title_status` row for a show is rejected.
+`watching` `title_status` row for a show is rejected. A `/tv/{id}` fixture
+fills `networks`, `studios` and `tmdb_status`, plus `title_credits` rows for
+its creator and cast. `show_progress` counts the show's seasons and sums their
+episodes. A returning show with every season watched is `caught_up`, and an
+ended one is `watched`. A show's `title_status` row with a rating and a NULL
+status is accepted.
 
 ### ☐ 8.2 Search and add · M
 One search box across films and shows. Results show poster, year, and kind so
@@ -3889,12 +4361,25 @@ Marking something already watched as watched again appends a rewatch whose
 `rewatch_of` points at the previous event, and leaves the status row as it is.
 8.4's detail sheets show that history (coverage check, 2026-10-08).
 
+**Browsing shows the facts, and filters by them** (2026-10-20 intake). Each
+row carries, in grey, its year, its network or studio, and its length: a
+film's runtime (*2h 49m*), or a show's seasons and episodes (*3 seasons · 28
+episodes*, from `show_progress`). A director or creator name sits on the
+second line. Filters: film or TV, genre, network, studio, person (a
+director, creator or one of the top-billed cast, through `title_credits`),
+and length band (*under 2h · 2–3h · over 3h* for films, *one season · 2–4 ·
+5+* for shows). Where to watch joins them with 8.9. A show's rating is set at
+show level (8.1), and each season keeps its own.
+
 **Check:** test that marking every season watched flips the show's derived state
 to `watched` with nothing written to `title_status`; that marking one of three
 gives `watching` with `next_season = 2`; and that a film with no seasons still
 reports correctly from `title_status`. Marking a watched film watched again
 appends a second `watch_events` row with `rewatch_of` set to the first and
-leaves one `title_status` row.
+leaves one `title_status` row. The person filter for a director narrows the
+list to titles crediting them as director, and the network filter *HBO* to
+titles listing HBO. A show row shows its season and episode totals from
+`show_progress`.
 
 ### ☐ 8.4 Detail sheets — film, show, season · M
 `/watch/[id]` and `/watch/[id]/season/[n]` as intercepted routes: a sheet over
@@ -3946,7 +4431,8 @@ as comics' are: Now is the only large thing (`--r-hero`), led by a 16:9 still;
 Up next is a shelf of posters; Position is the 2-rail telescope card; **Paused**
 (FP-D12) lists shows untouched for more than four weeks as grey rows with no
 nudge (*Still here when you want them.*), grey because paused has no colour
-meaning; and **2026 so far** is three this-year counts (films, seasons, shows
+meaning. A `caught_up` show (8.1) is never *Paused*, because it has nothing to
+watch until 8.9 finds a new season. And **2026 so far** is three this-year counts (films, seasons, shows
 finished). **Open, stop and ask before building**, because the drawing
 conflicts with rules that stand: (1) its Now has a one-cell-per-episode strip,
 *S4 E3* and *Mark S4 E3 watched*, but the watchlist tracks seasons and never
@@ -3979,7 +4465,10 @@ yesterday does not. The feel-pass screenshots.
 8.3.
 
 - **In flight**: shows whose `show_progress.state` is `watching`, with next
-  season, and films with `title_status = watching`.
+  season, and films with `title_status = watching`. Below them, *Waiting for
+  a new season*: `caught_up` shows (8.1), grey, each with its last season
+  watched (*Severance · S2 watched · returning*). They are in flight but have
+  nothing to start.
 - **Up next**: `to_watch` films and shows, oldest added first, with the
   dashboard's film/TV toggle and genre chips.
 - **Done**: `watched`, with show state derived, most recent first. `dropped`
@@ -3993,14 +4482,230 @@ see 1.9).
 **Check:** a show with 1 of 3 seasons watched is in In flight only; a show with
 all seasons watched is in Done with nothing written to `title_status`; a
 dropped film appears only under Stopped; the genre filter narrows Up next
-without reordering it.
+without reordering it. A returning show with every season watched is under
+*Waiting for a new season*, not in Done.
 
 ### ☐ 8.6 Title shelves · S
 `shelves.kind = 'titles'` with `shelf_titles`. Same UI as book shelves.
 Distinct from franchises: a franchise is a fact about the work, a shelf is your
 opinion.
 
+**Custom shelves** (2026-10-20 intake: *Christopher Nolan, Spielberg, Disney
+Animated, DCOM, a loosely connected group of films and shows*). A shelf holds
+films and shows together, in your order, with 5.1's description and per-title
+note (`shelf_titles.note`). It is the right home for a loose group (DCOM, a
+set of films you think belong together). Two of the examples are facts, so
+they need no upkeep. A director's films are 8.10's person page. *Disney
+Animated* is 8.3's studio filter (*Walt Disney Animation Studios*), which a
+shelf can still copy from when you want your own order.
+
 **Check:** test that a book cannot be added to a title shelf, and vice versa.
+A shelf holding a film and a show renders both, in shelf order, each with its
+note.
+
+### ☐ 8.9 Refresh shows: new seasons and where to watch · M
+Backlog intake, 2026-10-20; D-74. Depends on 8.1 and 8.3. Two TMDB facts change
+after a title is added: a returning show gains seasons, and where a title
+streams moves. Both refresh only when you ask, because no page render calls
+TMDB (ui.md). The pattern is 5.8's *Checked 3 days ago · Check now*.
+
+- **New seasons.** *Check for new seasons*, on the watch dashboard and on a
+  show's sheet, re-reads `/tv/{id}` for each show that hasn't ended or been
+  cancelled. It adds the new `seasons` rows and updates `tmdb_status`. A new
+  season turns a `caught_up` show back to `watching` (derived), and the toast
+  names it (*Severance S3 is listed*). Existing season rows and every status
+  row stay as they are.
+- **Where to watch.** `title_providers(title_id, region, provider, kind IN
+  ('flatrate', 'free', 'ads', 'rent', 'buy'), fetched_at)`, from
+  `/{movie|tv}/{id}/watch/providers`, region US.
+  - It is refreshed per title from its sheet (*Check where to watch*), or in
+    bulk from the list (*Refresh where to watch · 40 titles*), within TMDB's
+    rate. The table goes in `export-tables.ts` (standing rule 7).
+  - It shows as provider names with their date (*Netflix · as of 3 Oct*),
+    greyed when older than 30 days. The list's *Where to watch* filter uses the
+    latest snapshot.
+  - JustWatch's attribution sits beside TMDB's in the footer: the data comes
+    from JustWatch, and attribution is its condition.
+- A daily cron for either refresh is a later option, with 7.6.
+
+**Check:** with recorded fixtures:
+- a show TMDB now lists with 3 seasons, where 2 were stored, gains one
+  `seasons` row, keeps its season statuses, and goes from `caught_up` to
+  `watching`;
+- a provider refresh replaces that title's rows and stamps `fetched_at`;
+- the *Netflix* filter shows only titles whose latest snapshot lists Netflix;
+- no page render calls TMDB, and the JustWatch attribution renders.
+
+### ☐ 8.10 People: director and cast pages · S
+Backlog intake, 2026-10-20 (the owner's shelf ideas *Christopher Nolan* and
+*Spielberg*). Depends on 8.1 and 8.3. A director's films are a fact about the
+work, so they get a page that keeps itself up to date, not a shelf you
+maintain by hand (ARCHITECTURE 2.5d).
+
+- `/watch/person/[id]` lists the titles in your watchlist that credit the
+  person, grouped by role, in release order, each with its status, and
+  `watched / listed` in mono.
+- Every director, creator and cast name on a row or a sheet links here.
+- *Their other work* is a TMDB search you start
+  (`/person/{id}/combined_credits`), each result with *Add*. Opening the page
+  never calls TMDB.
+- Studios and networks get 8.3's filters, not pages.
+
+**Check:** a person credited as director on two listed films and as cast on
+one show renders three rows under two roles. A name on a film's sheet links to
+the page. Opening the page makes no TMDB call, and *Their other work* makes
+one.
+
+---
+
+## Phase 9 — Music
+
+Backlog intake, 2026-10-20; D-75. **After Phase 8, last.** A fourth medium,
+shaped like the watchlist: **artist → album → track**, as franchise → title →
+season. The catalog comes from MusicBrainz (free, CC0 core data, one request a
+second, a real User-Agent): its release groups are albums and its recordings
+are songs. Covers come from the Cover Art Archive. It starts empty, like
+watch. No playback, scrobbling or streaming-service sync.
+
+The owner asked for three things: artists to listen to, those artists' albums
+to listen to, and a ranking of each song for some artists, with which albums
+are the favourites read off the ranking.
+
+### ☐ 9.0 Music in the shell, designed · M
+The feel pass and the mockups draw no music, and a fourth medium changes rules
+that every dashboard shares, so the design comes first (standing rule 6). The
+phone media bar is `Comics · Books · Watch` (a UX-floor rule). Settle with the
+owner how four fit at 360px, as four tabs or with Music under *More*, along
+with the tablet rail, the sidebar and `/`'s redirect.
+
+The screens, phone, tablet and desktop, in the mockup:
+- the `/music` dashboard in the five slots: Now (the album you are on), Up
+  next (albums from artists you follow), position (the album in its artist's
+  discography), situation (artists you want to listen to), and this year;
+- `/music/artist/[id]`, the album sheet, and the song ranker (9.4);
+- the empty first screen, a search, as watch's is.
+
+**Check:** the mockup gains each screen at phone, tablet and desktop widths,
+`design/mockups-index.md` lists them, and the media-bar decision is in the
+decisions log.
+
+### ☐ 9.1 Schema and MusicBrainz client · M
+Depends on 9.0. **Stop and ask at plan time** (new tables).
+- **Catalog:** `artists(id, mbid UNIQUE, name, sort_name, disambiguation)`,
+  `albums(id, mbid UNIQUE, artist_id, title, primary_type, secondary_types
+  text[], first_release_year, cover_url)` and `tracks(id, recording_mbid,
+  album_id, position, title, length_ms)`. An album's tracks come from one
+  canonical release of its release group, the earliest official one, chosen
+  at add. So a song is a recording, and a recording on several albums is
+  still one song for ranking (9.4).
+- **Per user:** `artist_follows(user_id, artist_id, state IN ('want',
+  'listening'))` (D-43's pattern); `album_status(user_id, album_id, status IN
+  ('to_listen', 'listened', 'skipped'), rating, notes)`; and `listen_events`,
+  the log, as `read_events` is.
+- **Views:** `artist_progress` and `album_progress` (`etl/views.sql`).
+- **Client:** server-side, paced at one request a second, with a real
+  User-Agent and a cache table like `metron_cache` (D-53).
+- Every table goes in `src/db/export-tables.ts`.
+
+**Check:** a recorded release-group fixture parses into albums with their
+types, and a release fixture into tracks in position order. The client never
+sends two requests within a second, and the export test passes with the new
+tables.
+
+### ☐ 9.2 Search and add an artist, with the discography · M
+Depends on 9.1.
+- Search MusicBrainz artists, with the disambiguation shown (*Genesis (UK rock
+  band)*).
+- Adding an artist follows them at `want` and adds their release groups.
+  Studio albums are on by default; *EPs · Singles · Live · Compilations* are
+  toggles. The albums become a to-listen list you can trim, where *Not for me*
+  hides one.
+- Tracks load when an album is first opened or ranked, never for the whole
+  discography at once, to stay inside the request budget.
+- Loading, rate-limited and error states are 1.3b's. There is no freeform
+  path, as with watch (D-28): when MusicBrainz fails or finds nothing, the
+  screen offers *Save to inbox*. The inbox has no Music kind yet: that is a
+  schema question for this task's plan.
+
+**Check:** adding an artist with 12 release groups creates 12 albums and makes
+no recording requests; adding them again updates without duplicating; a
+mocked failure offers *Save to inbox*.
+
+### ☐ 9.3 Albums: listened, rated, logged · S
+Depends on 9.2. Each album is to listen, listened or skipped, with a date and
+a rating. Every listen appends a `listen_events` row, and a relisten links to
+the previous one, as 8.3's rewatch does. The artist page lists the
+discography by year with each album's status, and `listened / listed` derived.
+
+**Check:** marking an album listened twice appends two events and leaves one
+status row, and `artist_progress` counts the album once.
+
+### ☐ 9.4 Rank an artist's songs · M
+Depends on 9.2 (owner: *for specific artists, rank each song*).
+- **A ranking is authored, so it is stored:** `song_rankings(user_id,
+  artist_id, track_id, ordinal)`, contiguous from 1, like 1.10's queue. It goes
+  in the export. Songs can stay unranked.
+- **Two ways to build it.**
+  - A pairwise *This or that* sorter: pick one of two songs. Binary insertion
+    places each new song in about log₂ n picks, so 150 songs is roughly 1,100
+    picks over many sittings. Each placed song is written at once, so
+    stopping loses only the song in progress.
+  - Direct reorder: drag by a handle with a fine pointer, or *Move to…* on
+    touch and keyboard.
+- A recording on several albums is one song, ranked once (dedupe by recording
+  MBID).
+
+**Check:** ranking five songs through the sorter, with scripted answers, gives
+the expected order in at most 8 picks. Stopping and reopening resumes with the
+placed songs kept. Ordinals stay contiguous after a song is unranked.
+
+### ☐ 9.5 Which albums you favour · S
+Depends on 9.4. Derived from the ranking in an `album_rank` view, never
+stored. Per album: its ranked songs' median rank, how many of them are in your
+top 10 and top 25, and how many of its songs are ranked. The artist page can
+sort its albums by it.
+
+**Check:** a fixture ranking in which album A holds ranks 1–3 and album B
+ranks 4–8 orders A first. An album with unranked songs counts only its ranked
+ones, and says *4 of 11 ranked*.
+
+### ☐ 9.6 Music dashboard and status · M
+Depends on 9.0, 9.3 and 1.9. `/music`, in 9.0's design, and `/music/status`
+with *In flight · Up next · Done* (ui.md's rule for every medium):
+- **In flight:** albums you have started, and artists followed as
+  `listening`.
+- **Up next:** to-listen albums from followed artists, oldest added first.
+- **Done:** listened albums, by year.
+
+Nothing is stored beyond what 9.1 defines.
+
+**Check:** an album with one listen is in Done, not Up next; an artist
+followed as `listening` with two albums to listen shows in In flight and both
+albums in Up next; tab counts equal row counts; the feel-pass screenshots.
+
+---
+
+## Later — noted, not scheduled
+
+From the 2026-10-20 intake: ideas worth keeping, not worth a task yet. Each
+becomes a task once its open question is answered. None has a **Check:**, and
+`/new-task` does not convert them.
+
+- **L-1 Open in Marvel Unlimited.** A link from an issue to read it in the
+  Marvel Unlimited app or site. Marvel publishes no reading API, and Metron
+  cross-references Comic Vine and the GCD, not Marvel's digital ids. The open
+  question is whether an issue's Marvel id can be found, or only a search link
+  built from the label. Where the link goes is settled: links to reading
+  sources live on the issue sheet and nowhere else (3.5; STYLE_GUIDE §12).
+- **L-2 League of Comic Geeks ratings.** The owner's issue ratings live there
+  (owner: far future). It has no public API. The open questions are whether
+  its export carries per-issue ratings that can be matched to labels through
+  the bulk-entry parser, and where a per-user issue rating would live (a
+  schema question).
+- **L-3 Collected editions you haven't listed.** Metron lists collected
+  editions (trades, omnibuses) as series of their own, with the issues they
+  reprint. That could suggest editions for 5.10's *Collected in* that you
+  don't own yet. Research how complete the reprint data is first.
 
 ---
 

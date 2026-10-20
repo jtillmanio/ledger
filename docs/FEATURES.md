@@ -18,6 +18,15 @@ section. Nothing here is built yet except where marked **shipped**.
 | B5 | Coming out list | shipped | Needs "notify me" and a calendar view. Task 5.7 (D-35): *Out now* plus a month-grouped list, notified in the app; comics get the same in 5.8 |
 | B6 | Tracked series and authors with progress | partial | `series_progress` view exists; TASKS 5.9 draws it as `/books/series`. TASKS 1.15 adds universes (`book_universes`, a fact about the work, D-42), `author_progress` / `universe_progress`, and a stored `tracking` / `reading` follow per series, author or universe (D-43), seeded from the Series tab. Arbitrary groupings are shelves (5.1) |
 | — | BookTube top 10, Download, HP Fanfiction | migrated, unsurfaced | Data is in `external_lists` and `wishlist`. No pages. Leave `external_lists`; `wishlist` is promoted into Someday (task 1.4d, D-39) |
+| B7 | Series, authors, universes and reading-order shelves I'm in the middle of | planned | Derived from the progress views plus a `shelf_progress` view; authors only when followed. A group on 1.9's In flight tab. TASKS 5.12 (Part 2j) |
+| B8 | Date started and finished | partial | The finish is a date since 1.5. The start is new: `started_on` with its precision on `book_status` and `read_events`. TASKS 1.17, before cutover |
+| B9 | Import metadata from Calibre | planned | Word counts (Count Pages, `stated`), series and index and ISBN checked against Open Library and Hardcover, tags and summary, reads through a review (D-73). TASKS 1.18, before cutover |
+| B10 | Books read each year, and a log of what I read | partial | Year totals ship (`books_by_year`, the year chips); 6.2 charts them; `/activity` is the log. TASKS 6.17 |
+| B11 | Add books: title and author as two fields | partial | *By hand* has them. *Paste a list* gains a tab-separated form and a review with separate cells. TASKS 1.4e |
+| B12 | Series are links | planned | Every series name links to `/books/series/[id]`, which lists the books in order, with gaps. TASKS 5.9 |
+| B13 | Year chip: the count reads apart from the year | bug | TASKS 1.5b |
+| B14 | *Catch me up*: a recap of the earlier books before a later one | planned | Claude, on demand, spoiler-bounded, stored in `proposals`. TASKS 7.7 |
+| B15 | A shelf's context: why each book is on it | planned | `shelves.description`, `shelf_books.note`; ordered shelves are reading orders (the Dark Tower). TASKS 5.1 |
 
 ### Comics
 
@@ -35,6 +44,32 @@ section. Nothing here is built yet except where marked **shipped**.
 | C5 | To-read list | shipped | On the dashboard as "Start next" |
 | C6 | Events and tracks tracking | partial | Views exist, no pages |
 | — | Ultimate Order, Ultimate Collection, Master, Sheet8 | out | Not migrated. `Master` is loaded as `editions`; TASKS 5.10 surfaces it (collected and read) |
+| C7 | A run's date started and finished | planned | Derived: `run_state.started_at` beside `finished_at`, from the run's own dated reads. TASKS 1.17 |
+| C8 | Collected in: omnibus or trade? | planned | *Collected in* on the run page, from `edition_issues` and `editions.book_type`. TASKS 5.6, 5.10; discovering editions you haven't listed is Later § L-3 |
+| C9 | Series view, with gaps | planned | `/comics/series/[key]`: every issue of a volume, the runs that place it, read state per run, gap stubs. TASKS 5.13 |
+| C10 | Add many issues of one series at once | planned | A series browser in Add issues: the whole volume from Metron's issue list, check a range, then 1.3c's review. TASKS 3.10 |
+| C11 | Other publishers (DC, Image: Walking Dead, Invincible) | ready | Nothing is Marvel-specific except `tracks.publisher`'s default. 3.2 creates a track with a publisher; 3.10's check runs a non-Marvel volume |
+| C12 | Other providers: Marvel Unlimited, League of Comic Geeks ratings | later | No public APIs. TASKS *Later* § L-1, L-2 |
+| C13 | Context for a run's important issues | planned | The fact is Metron's summary (`issues.summary`, 4.1). Why it is in *this* run is the placement note, which Claude drafts and you accept (7.8) |
+| C14 | Search results preview an issue | planned | A *Details* disclosure: tap, or hover with a fine pointer. One Metron detail request, cached. TASKS 3.12 |
+| C15 | Arrange issues as you add them | planned | An *Arrange* step in the review: drag, menu or keyboard. It doubles as the run's reorder. TASKS 3.11 |
+
+### Watch (2026-10-20 additions)
+
+| # | Feature | Status | What it needs |
+|---|---|---|---|
+| W1 | Metadata that shows and filters: network or streamer, studio, director, cast, length, seasons and episodes, genre | planned | `titles.networks`, `titles.studios`, `people` + `title_credits` rows, totals derived in `show_progress`. TASKS 8.1, 8.3 |
+| W2 | Where to watch | planned | Reverses Part 2e's *Out* (D-74). A dated TMDB/JustWatch snapshot, refreshed when you ask. TASKS 8.9 |
+| W3 | Which show I'm on, what I've finished, a rating; waiting for a new season | partial | Season tracking was already designed. Adds a show-level rating and the derived `caught_up` state. TASKS 8.1, 8.8, 8.9 |
+| W4 | Custom shelves (Nolan, Spielberg, Disney Animated, DCOM, loose groups) | planned | Title shelves (8.6) with notes, for loose groups; person pages (8.10) and the studio filter (8.3), for the ones that are facts |
+
+### Music (2026-10-20 additions)
+
+| # | Feature | Status | What it needs |
+|---|---|---|---|
+| M1 | Artists I want to listen to | planned | `artist_follows` (*want · listening*). TASKS 9.1, 9.2 |
+| M2 | Albums to listen to, from those artists | planned | The discography from MusicBrainz, studio albums by default; `album_status`, `listen_events`. TASKS 9.2, 9.3 |
+| M3 | Rank each song for some artists, and see which albums I favour | planned | A stored order built with a *This or that* sorter; album favourites derived. TASKS 9.4, 9.5 |
 
 ---
 
@@ -204,6 +239,9 @@ Implementation notes:
 - **Social features, comments, follows.** No.
 - **Mobile native app.** The PWA gets you the home-screen icon without an app
   store.
+- **Music playback, scrobbling or streaming-service sync** (D-75). Music is a
+  list of what to listen to and what you think of it, not a player or a
+  listening history fed by another service.
 
 
 ---
@@ -566,12 +604,16 @@ knows, let the user build the rest.
 | In | Out |
 |---|---|
 | Search TMDB, add a film or show | Episode-level tracking |
-| Season-level status and progress | Where-to-stream availability |
+| Season-level status and progress | ~~Where-to-stream availability~~ (in, D-74) |
 | Franchise and series grouping, nested one level | Runtime budgeting or a capacity engine |
 | To-watch, watching, watched, dropped | Trakt sync or scrobbling |
 | Date and rating per film, show, or season | Recommendations |
 | Shelves, same concept as books | Air-date calendars or reminders |
 | Rewatch history at title or season level | |
+| Network or streamer, studio, director, cast, length; filter by each (8.1, 8.3) | |
+| Where to watch, as a dated snapshot refreshed when you ask (D-74, 8.9) | |
+| *Waiting for a new season* (`caught_up`), and a new season found when you ask (8.9) | |
+| Person pages for directors and cast (8.10) | |
 
 ### Derived, not stored
 
@@ -672,11 +714,11 @@ deliberately.
 
 | Media | Content |
 |---|---|
-| **Book** | Cover, summary, author, series and position, genre, year, page count, word count with `stated`/`estimated` flag, status, finish date, rating, notes, shelves, plan placement, reread history |
-| **Issue** | Cover, series, cover date, story title, credits by role, story arc, every run that places it with its position **and its read state in that run** (Part 2i), which editions collect it |
+| **Book** | Cover, summary, author, series and position (a link to the series page), genre, year, page count, word count with `stated`/`estimated` flag, status, start and finish date (1.17), rating, notes, shelves with each shelf's note, plan placement, reread history |
+| **Issue** | Cover, series (a link to the series page, 5.13), cover date, story title, summary (4.1), credits by role, story arc, every run that places it with its position, **its read state in that run** (Part 2i) and the placement's note (7.8), which editions collect it |
 | **Run** | Full page. Era list, writers and artists derived from issue credits (`run_credit_line`), `why`, true unlock cost, prerequisite chain, collecting editions |
-| **Film** | Poster, overview, genres, year, runtime, director, top cast, status, watch date, rating, notes, franchise, shelves, rewatch history |
-| **Show** | The above, plus **a season list with per-season status**, derived show progress, and next unwatched season |
+| **Film** | Poster, overview, genres, year, runtime, studio, director, top cast (each a link to the person page), where to watch with its date, status, watch date, rating, notes, franchise, shelves, rewatch history |
+| **Show** | The above with network or streamer in place of studio and creator in place of director, plus **a season list with per-season status**, season and episode totals, derived show progress (with *waiting for a new season*), the next unwatched season, and a show-level rating |
 | **Season** | Poster, overview, episode count, air year, status, watch date, rating, notes |
 | **Franchise** | Every film and show in it, in release or chronological order, with combined progress |
 
@@ -705,6 +747,14 @@ curation; shelves are purely yours.
 
 ## Part 2g — Schema additions for watchlist and detail
 
+*Amended 2026-10-20 (Part 2j; ARCHITECTURE 2.20; D-74), before 8.1 builds
+any of it:* credits are rows (`people`, `title_credits`), not arrays; season
+and episode totals are derived, so `season_count` is gone; `networks`,
+`studios` and `tmdb_status` are added; a show's `title_status` row holds a
+rating and notes with a NULL or `dropped` status; `title_providers` (8.9)
+holds where to watch; shelves gain a description and per-item notes (5.1).
+Each column is still asked about at its task's plan gate.
+
 ```sql
 -- Films and shows. One row per title; seasons live below.
 CREATE TABLE titles (
@@ -714,11 +764,11 @@ CREATE TABLE titles (
   name          text NOT NULL,
   overview      text,
   release_year  int,
-  runtime       int,                       -- minutes, films only
-  season_count  int,                       -- shows only, from TMDB
+  runtime       int,                       -- minutes: a film, or a show's typical episode
+  tmdb_status   text,                      -- Returning Series | Ended | Canceled | In Production
   genres        text[],
-  creators      text[],                    -- director(s) or show creator(s)
-  cast_top      text[],
+  networks      text[],                    -- TV: original network or streamer (HBO, Netflix)
+  studios       text[],                    -- production companies
   poster_url    text,
   backdrop_url  text,
   imdb_id       text,
@@ -726,6 +776,31 @@ CREATE TABLE titles (
   fetched_at    timestamptz,
   deleted_at    timestamptz,
   UNIQUE (tmdb_id, kind)
+);
+
+-- People and credits, as comics' creators and issue_credits (ARCHITECTURE 2.12).
+CREATE TABLE people (
+  id       text PRIMARY KEY,               -- 'person-525'
+  tmdb_id  int  NOT NULL UNIQUE,
+  name     text NOT NULL
+);
+CREATE TABLE title_credits (
+  title_id  text NOT NULL REFERENCES titles(id) ON DELETE CASCADE,
+  person_id text NOT NULL REFERENCES people(id) ON DELETE CASCADE,
+  role      text NOT NULL CHECK (role IN ('director', 'creator', 'cast')),
+  ordinal   int,                           -- billing order; cast capped at ten
+  PRIMARY KEY (title_id, person_id, role)
+);
+
+-- Where to watch: a dated snapshot, refreshed only when asked (8.9, D-74).
+-- Rebuildable third-party data with a date on it.
+CREATE TABLE title_providers (
+  title_id   text NOT NULL REFERENCES titles(id) ON DELETE CASCADE,
+  region     text NOT NULL DEFAULT 'US',
+  provider   text NOT NULL,
+  kind       text NOT NULL CHECK (kind IN ('flatrate', 'free', 'ads', 'rent', 'buy')),
+  fetched_at timestamptz NOT NULL,
+  PRIMARY KEY (title_id, region, provider, kind)
 );
 
 -- Seasons. Populated from the /tv/{id} seasons array in one call.
@@ -761,11 +836,12 @@ CREATE TABLE franchise_titles (
 );
 
 -- Status at whichever level you track. A film gets a title row; a show
--- usually gets season rows and derives its own state from them.
+-- usually gets season rows and derives its own state from them. A show's
+-- row holds only its rating and notes, with status NULL or 'dropped'.
 CREATE TABLE title_status (
   user_id    text NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   title_id   text NOT NULL REFERENCES titles(id) ON DELETE CASCADE,
-  status     text NOT NULL DEFAULT 'to_watch',  -- to_watch|watching|watched|dropped
+  status     text,                       -- film: to_watch|watching|watched|dropped; show: NULL|dropped
   watched_on date,
   rating     double precision,
   notes      text,
@@ -800,8 +876,11 @@ CREATE TABLE shelf_titles (
   shelf_id text REFERENCES shelves(id) ON DELETE CASCADE,
   title_id text REFERENCES titles(id) ON DELETE CASCADE,
   ordinal  int,
+  note     text,                         -- why it is on the shelf (5.1, 8.6)
   PRIMARY KEY (shelf_id, title_id)
 );
+-- Shelf context (5.1): ALTER TABLE shelves ADD COLUMN description text;
+--                      ALTER TABLE shelf_books ADD COLUMN note text;
 
 -- Detail fields the APIs already return and we currently discard.
 ALTER TABLE books  ADD COLUMN summary text;
@@ -823,12 +902,16 @@ SELECT
   u.id AS user_id,
   t.id AS title_id,
   COUNT(s.id)                                          AS total_seasons,
+  SUM(s.episode_count)                                 AS total_episodes,
   COUNT(*) FILTER (WHERE ss.status = 'watched')        AS watched_seasons,
   MIN(s.season_number) FILTER (
     WHERE ss.status IS DISTINCT FROM 'watched'
   )                                                    AS next_season,
+  -- 8.1 also reads a 'dropped' title_status row first (ARCHITECTURE 2.5b).
   CASE WHEN COUNT(s.id) = 0                            THEN 'unknown'
        WHEN COUNT(*) FILTER (WHERE ss.status='watched') = 0 THEN 'to_watch'
+       WHEN COUNT(*) FILTER (WHERE ss.status='watched') = COUNT(s.id)
+            AND t.tmdb_status = 'Returning Series'     THEN 'caught_up'
        WHEN COUNT(*) FILTER (WHERE ss.status='watched') = COUNT(s.id) THEN 'watched'
        ELSE 'watching' END                             AS state
 FROM titles t
@@ -844,7 +927,7 @@ SELECT
   u.id AS user_id, f.id AS franchise_id, f.name,
   COUNT(ft.title_id) AS total_titles,
   COUNT(*) FILTER (
-    WHERE COALESCE(sp.state, ts.status) = 'watched'
+    WHERE COALESCE(sp.state, ts.status) IN ('watched', 'caught_up')
   ) AS watched_titles
 FROM franchises f
 CROSS JOIN users u
@@ -1187,6 +1270,103 @@ word counts make them honest (FEATURES Part 2d). ARCHITECTURE 2.16, TASKS 1.10.
 
 ---
 
+## Part 2j — Owner additions (Oct 2026)
+
+On 2026-10-20 the owner listed 25 additions and corrections across books,
+comics, watch and a new medium, music. Each was judged for value and fit and
+then placed: amended into a task that already does that work, given a new
+task where it fits the build order, or parked under TASKS *Later*. Part 1's
+tables carry the short form (B7–B15, C7–C15, W1–W4, M1–M3). This part records
+the calls that shaped them.
+
+**Placed before cutover, because the data can't be recovered later.** A
+book's start date (1.17) has the same deadline 1.5 had: a start that isn't
+captured from the first day is gone. The Calibre import (1.18) runs through
+extract's sidecars like 1.14, and extract stops running at cutover. The two
+small fixes (1.4e, the paste; 1.5b, the year chip) are to screens already in
+daily use.
+
+**Calibre is the best word-count source available** (Part 4's honest answer
+had only estimates and manual lookups). The Count Pages plugin's counts load
+as `stated`. The owner asked that series, index and ISBN still be checked
+against an API, so they fill only where Open Library or Hardcover agree, and
+disagreements go to a review. Calibre's reads may load where the workbook's
+may not (D-41), because they are typed fields rather than tabs that parse
+badly, but only those the owner accepts (D-73).
+
+**A run's dates are derived, not stored.** A run starts at its earliest dated
+read and finishes at its last, so `run_state` carries both. Storing them would
+be a second copy of `issue_progress` that drifts.
+
+**"In the middle of" counts authors only when followed.** A series, universe
+or reading-order shelf with some read and some unread is genuinely in
+progress. An author with one book read and one unread on the list is not, and
+there are 376 of them. A follow (D-43) is the owner saying it matters.
+
+**An issue's context is two things.** What the issue *is* (Metron's summary)
+is a catalog fact, backfilled in 4.1. Why it is in *this* run, a first
+appearance, a tie-in you need going in, is the placement's note, because the
+same issue can be essential to one reading order and skippable in another.
+Claude drafts those notes and you accept them (7.8). Notes carry provenance
+like a why, and any issue a note names passes the verification gate.
+
+**Hover is never the only way in.** The search preview (3.12) is a disclosure
+that hover also opens on a desktop. That keeps the UX floor and Part 2f's
+point: Android, the main device, has no hover.
+
+**Browsing one series amends D-60.** Walking Metron's issue list was rejected
+for typed number ranges. For "show me the whole volume and let me check what
+I want", it is the right call: a 300-issue volume is three cached requests.
+
+**Other publishers need almost nothing.** The parser, Metron and the volume
+map are publisher-agnostic. The one Marvel default is `tracks.publisher`, so
+3.2 lets a new track name its publisher.
+
+**Watch: credits become rows, and counts become derived.** The Part 2g draft
+had `creators` and `cast_top` arrays and a stored `season_count`. Filtering by
+director and a *Christopher Nolan* page are joins, as comics' credits are
+(ARCHITECTURE 2.12), and a season total is a count of `seasons` rows (hard
+rule 2). Corrected before 8.1 builds it (ARCHITECTURE 2.20).
+
+**Where to watch is in, as a dated snapshot** (D-74, reversing Part 2e's
+*Out*). Availability moves monthly, so every value shows its date and
+refreshes only when you ask. The original network or streamer, and the
+studio, don't move, so they are columns.
+
+**"Waiting for the next season" is a state of its own, `caught_up`.**
+Without it, a show you are current on reads as *watched* and drops into Done,
+or reads as *watching* when there is nothing to watch. It is derived from the
+seasons and TMDB's *Returning Series*, never stored.
+
+**Not every "shelf" is a shelf.** *Christopher Nolan* and *Disney Animated*
+are facts about the work, so they are a person page (8.10) and a studio
+filter (8.3) that keep themselves current. DCOM and a loose group of films
+are shelves (8.6), now with notes.
+
+**The recap (7.7) is worth building, with guard rails.** A model recapping a
+popular series is good. For a less-known book it will confabulate with
+confidence, and it can spoil the book you are starting. So the recap is
+offered only when a gap of six months makes it useful, it covers only the
+earlier books, it is grounded in their summaries and your notes, it is labelled
+as Claude's, and it is stored so reopening it costs nothing. "Real time" means
+it streams when you ask, never on a page render.
+
+**Music is worth building, last** (D-75). The want-to-listen list and album
+completion fit the ledger's shape: artist → album → track is the watch
+hierarchy again. The song ranking is the novel part. Ranking 150 songs by
+dragging is miserable, so the main tool is a *This or that* sorter, about
+log₂ n picks per song, resumable. Which albums you favour falls out of the
+ranking as a view. It comes after Watch, and it starts with design (9.0),
+because a fourth medium changes the phone media bar every screen shares. Out:
+playback, scrobbling, streaming-service sync.
+
+**Parked under *Later*, because no API exists.** Marvel Unlimited (L-1) and
+League of Comic Geeks ratings (L-2) have no public APIs. Each has an open
+question that decides whether it can be built at all. Discovering editions
+you don't own from Metron's reprint data (L-3) needs research first.
+
+---
+
 ## Part 3 — Editing, since "edit everything" is most of the work
 
 Full CRUD across 36 tables is a lot of forms. Three principles keep it small:
@@ -1255,15 +1435,17 @@ the series and issue range" and the app resolves 23 issue records for you.
 | **Hardcover** | free account, GraphQL | 5,000 req/day free | Series ordering and community tags — the best single source for "book 4 of 7" |
 | Google Books | key optional | ~1,000/day per project by default, raisable on request | Descriptions and categories; good fallback |
 | ISBNdb | paid | — | Skip |
+| **Calibre** (the owner's library) | none: a local `metadata.db`, read from a copy | none | Word counts from the Count Pages plugin, series and index, tags, comments, ISBN, read dates. TASKS 1.18, D-73 |
 
 Use Open Library for the spine and Hardcover for series position, which is data
-you currently maintain by hand as `Harry Potter #1`.
+you currently maintain by hand as `Harry Potter #1`. Calibre's series, index
+and ISBN fill only where one of them agrees (D-73).
 
 ### Word counts — the honest answer
 
 No general book API exposes word counts. Goodreads never had it, Open Library
 and Google Books give page counts, and publishers largely don't publish the
-figure. Three options:
+figure. The options:
 
 1. **Estimate from page count.** `pages × 275` is the conventional figure.
    Cheap, automatic, roughly ±15%. Good enough for "is 2027 overcommitted",
@@ -1278,6 +1460,19 @@ figure. Three options:
 
 Recommend 3, falling back to 1. Never silently overwrite a hand-entered count
 with an estimate.
+
+4. **Calibre's Count Pages column** (2026-10-20). For every book the owner has
+   as an ebook, the plugin counts the words in the file itself: a real count,
+   loaded as `stated` where the workbook has none (TASKS 1.18). It moves the
+   order to 3, then 4, then 1.
+
+### Music
+
+| Source | Auth | Limits | Verdict |
+|---|---|---|---|
+| **MusicBrainz** | none; a real User-Agent | 1 request a second | **Use this** (D-75). CC0 core data. Release groups are albums, recordings are songs |
+| Cover Art Archive | none | generous | Album covers by MusicBrainz release id |
+| Spotify Web API | app registration | restricted for new apps | Not a catalog source. Links out, if ever, are a later question |
 
 ---
 
@@ -1456,7 +1651,12 @@ ALTER TABLE run_issues ADD COLUMN deleted_at timestamptz;
 | 5 | Shelves, tracks page, eras, ratings, DNF, `edition_issues` | a weekend |
 | 6 | Stats, true unlock cost, global search, PWA, shortcuts, events | as you feel like it |
 | 7 | AI review and drafting (19–22), then the release digest email | last. Needs phase 4 |
-| 8 | **Watchlist**: TMDB, seasons, franchises, detail sheets | self-contained — needs only phase 0, pull it forward any time |
+| 8 | **Watchlist**: TMDB, seasons, franchises, detail sheets, where to watch, person pages | self-contained — needs only phase 0, pull it forward any time |
+| 9 | **Music**: MusicBrainz, artists, albums, song ranking (D-75) | last; starts with its design (9.0) |
+| Later | Marvel Unlimited, League of Comic Geeks, editions you haven't listed | not scheduled: each has an open question first (TASKS *Later*) |
+
+The 2026-10-20 additions (Part 2j) also put three tasks before cutover: 1.18
+(Calibre, in sitting 8), and 1.4e, 1.5b and 1.17 (sitting 9).
 
 **Phase 1 before phase 2.** The pace engine is more interesting, but if adding
 data is painful you'll stop using the app before you ever see a projection.

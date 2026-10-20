@@ -5,11 +5,11 @@ two readers' worth of data model with one reader in it.
 
 ## 1. The shape of the problem
 
-| | Comics | Books | Watch |
-|---|---|---|---|
-| Rows migrated | 10,138 issues in 10,761 run placements, 258 runs, 438 prereq edges, 178 editions (2026-09-23 extract) | 1,478 books, 376 authors, 214 series | none — starts empty |
-| Natural model | Directed acyclic graph over runs, ordered list of issues per run | Flat catalog plus per-year status | Three-level hierarchy: franchise → title → season |
-| What the sheet couldn't do | Transitive prerequisites, fast mobile check-off, per-user progress | Move a title between years without cut-and-paste | Didn't exist. Added Sept 2026 |
+| | Comics | Books | Watch | Music (Phase 9) |
+|---|---|---|---|---|
+| Rows migrated | 10,138 issues in 10,761 run placements, 258 runs, 438 prereq edges, 178 editions (2026-09-23 extract) | 1,478 books, 376 authors, 214 series | none — starts empty | none — starts empty |
+| Natural model | Directed acyclic graph over runs, ordered list of issues per run | Flat catalog plus per-year status | Three-level hierarchy: franchise → title → season | Three-level hierarchy: artist → album → track |
+| What the sheet couldn't do | Transitive prerequisites, fast mobile check-off, per-user progress | Move a title between years without cut-and-paste | Didn't exist. Added Sept 2026 | Didn't exist. Added Oct 2026 (D-75) |
 
 The watchlist was added last and deliberately reuses the comics shape one level
 shallower: **franchise → title → season** is **track → run → issue** without the
@@ -77,7 +77,9 @@ is a decision, not a consequence of seasons, so a `title_status` row with
 `kind = 'tv'` and `status = 'dropped'` is allowed and `show_progress` reads it
 first. `show_progress.state` is therefore
 `unknown | to_watch | watching | watched | dropped`, and no other show-level
-status is ever written.
+status is ever written. *(2.20 adds a derived `caught_up` for a returning show
+with every season watched, and lets a show's row carry a rating with a NULL
+status. Music, Phase 9, is a fourth medium on the same pattern: 2.21.)*
 
 **2.5c Seasons are tracked; episodes are not.** A show has 2–10 seasons. Episode
 tracking would add roughly two orders of magnitude of rows to buy granularity
@@ -440,6 +442,65 @@ read_events.finished_on            date        NULL, finished_on_precision   tex
   browser (`src/lib/finish-date.ts`), and every date is shown in Eastern. The
   two `date` columns carry no zone; only the *today* that writes them moved.
 
+**2.18 A read has a start, stored for books and derived for runs.** *Oct 2026,
+backlog intake; task 1.17; proposed, settled at its plan gate.* A book's start
+is a fact nothing else records: setting *Reading* is the only moment it is
+known. So it is stored with its precision under 2.17's rule, on `book_status`
+(the read in progress) and on `read_events` (each finished read, so a reread
+keeps its own start):
+
+```
+book_status.started_on   date NULL, started_on_precision  text NOT NULL DEFAULT 'none'
+read_events.started_on   date NULL, started_on_precision  text NOT NULL DEFAULT 'none'
+  same CHECK pair as the finish; a start after the finish is refused by the write path
+```
+
+A run's start is not a new fact. It is the earliest dated read of its own
+placements, so `run_state.started_at` sits beside `finished_at` as a view
+column. Days taken, for either, is computed in the query. Undated (`none`)
+reads count toward neither.
+
+**2.19 Calibre is a metadata source, read the way the workbook is.** *Oct
+2026, D-73; task 1.18.* The owner's Calibre library has word counts no API
+offers (FEATURES Part 4). It is read like the workbook: `etl/calibre.py`
+opens a copy of `metadata.db` read-only, matches on title and author (1.13's
+rule), and writes sidecars that extract folds in, so the data survives every
+re-extract and nothing writes to Calibre. Two limits keep it honest. Its series,
+index and ISBN fill only where Open Library or Hardcover agree (the owner's
+rule), and its reads load only as rows the owner accepted. A `hand` value always
+wins. After cutover, 4.2's after-cutover path carries the same rules into the
+database.
+
+**2.20 Watch metadata: credits are rows, counts are derived, availability is
+dated.** *Oct 2026, backlog intake; D-74; tasks 8.1, 8.9, 8.10; amends the
+FEATURES Part 2g draft before anything is built.*
+- People are rows (`people`, `title_credits`), for 2.12's reason: a director's
+  page and a cast filter are joins, and one person is one row however many
+  titles credit them.
+- A show's season and episode totals are counts over `seasons`, in
+  `show_progress`. The draft's `titles.season_count` is gone (2.2).
+- Network or streamer and studio are short vocabularies, so they are `text[]`
+  columns like `genres`.
+- Where to watch changes monthly, so it is a dated snapshot (`title_providers`
+  with `fetched_at`). It is refreshed only when asked, never on a page render
+  (2.15), and always shown with its date.
+- *Waiting for a new season* is `show_progress.state = 'caught_up'`, derived
+  from the seasons and `titles.tmdb_status`. It is a sixth state beside
+  2.5b's five, and is never written.
+- A show's `title_status` row may hold a rating and notes with a NULL status.
+  The only show-level status written stays `dropped` (2.5b).
+
+**2.21 Music is the watch shape again.** *Oct 2026, D-75; Phase 9.* Artist →
+album → track mirrors franchise → title → season, which mirrors track → run →
+issue. It reuses each pattern: a catalog table per level from one API
+(MusicBrainz), per-user status keyed `(user_id, entity_id)`, an append-only
+`listen_events` log, follows per artist on D-43's model, and progress in
+views. The one authored order is the song ranking (`song_rankings`,
+contiguous ordinals, like 2.16's queue). Album favourites are a view over it.
+A song is a MusicBrainz recording, ranked once however many albums carry it.
+An album's tracklist comes from one canonical release, the earliest official
+one, so editions and remasters don't multiply songs.
+
 ## 3. Stack
 
 | Layer | Choice | Rationale |
@@ -473,6 +534,7 @@ of book history) and they deserve different answers.
 | `/comics/[runId]/path` | *Why blocked?*: the cheapest ordered chain of prerequisite runs (intercepted route) |
 | `/comics/releases` | New issues in the series you follow, each offered for adding to its run (task 5.8, D-35) |
 | `/comics/editions` | Trades and omnibuses, with *Collected* and *Read* per edition (task 5.10) |
+| `/comics/series/[key]` | One volume: every catalog issue of it, the runs that place each with its read state there, and gap stubs (task 5.13) |
 | `/books` | Books dashboard — reading now, the plan rail, capacity, the year so far |
 | `/books/status` | In flight · Up next · Done, for books |
 | `/books/list` | Master list: search, filter by status, to-read level, year or genre, series completion |
@@ -480,12 +542,18 @@ of book history) and they deserve different answers.
 | `/books/plan` | Plan by quarter, full editor |
 | `/books/releases` | Books coming out that you want, *Out now* then by month (task 5.7, D-35) |
 | `/books/series` | Every series with `read / total` from `series_progress` and its next unread book (task 5.9) |
+| `/books/series/[id]` | One series: its books in position order with status and dates, the next unread, gap rows (task 5.9) |
+| `/activity` | The reading log: every finished read, by month under year totals, across media (task 6.17) |
 | `/settings` | Minutes a day, words a minute — the inputs the capacity engine reads (task 2.0) |
 | `/settings/volumes` | The volume map: which volume year a bare series label means, per run or any run (task 3.9) |
 | `/watch` | Films and shows, mid-show progress computed from seasons |
 | `/watch/status` | In flight · Up next · Done, for films and shows |
 | `/watch/list` | Films and shows in one list, with mid-show progress computed from seasons |
 | `/watch/franchise/[id]` | Franchises |
+| `/watch/person/[id]` | A director's or actor's titles in your watchlist, by role (task 8.10) |
+| `/music` | Music dashboard (Phase 9; its layout is 9.0's design) |
+| `/music/status` | In flight · Up next · Done, for albums (task 9.6) |
+| `/music/artist/[id]` | An artist's discography with status, the song ranking and album favourites (tasks 9.3–9.5) |
 | `/inbox` | Quick-capture inbox: book, comic, watch or unsure notes to resolve |
 | `/session` | Reading sessions: after-the-fact minutes entry, attach to a book or run; feeds Settings → *Measured from sessions* (the timer is 6.12, D-8) |
 
@@ -949,8 +1017,11 @@ the asset.
 | Comics gap-fill | Comic Vine | 1 req/sec, 200/hour — fallback only |
 | Book bibliographic data, page counts, covers | Open Library | no key, CC0 |
 | Series position | Hardcover GraphQL | 5,000 req/day free |
-| Word counts | none exist | Keep hand-entered values; estimate the rest at `pages x 275` and record which is which in `books.word_count_source` |
+| Word counts | Calibre's Count Pages column (2.19, task 1.18); no API | Keep hand-entered values; take Calibre's as `stated` where none is typed; estimate the rest at `pages x 275` and record which is which in `books.word_count_source` |
+| Book tags, summaries, series cross-check, read dates | Calibre, the owner's library (2.19, D-73) | Read from a copy of `metadata.db`, never written. Series, index and ISBN fill only where Open Library or Hardcover agree; reads load only once accepted |
 | Films and TV shows | TMDB (`titles.tmdb_id`) | Free for non-commercial use, ~40-50 req/sec, covers both media in one API. Requires attribution in the UI |
+| Where to watch | TMDB `/watch/providers`, from JustWatch (2.20, D-74) | US only, a dated snapshot refreshed on request. JustWatch's attribution sits beside TMDB's |
+| Music: artists, albums, tracks | MusicBrainz, covers from the Cover Art Archive (2.21, D-75) | CC0 core data, 1 req/sec with a real User-Agent. Phase 9 |
 
 Enrichment runs as a background backfill and never overwrites a hand-entered
 value. Before cutover it writes the sidecar CSVs in 2.13; after cutover (task
@@ -991,6 +1062,12 @@ Responses are cached, and detail pages never re-call.
 9. Cross-media franchises are hand-curated. TMDB collections cover film series
    only; nothing in any public API links a film franchise to its television
    entries.
+10. Music is unbuilt (Phase 9, D-75), and like the watchlist it starts empty.
+    Its design (9.0) comes before its schema, because a fourth medium changes
+    the phone media bar every screen shares.
+11. Reading sources and outside ratings (Marvel Unlimited, League of Comic
+    Geeks) have no public API. They are parked in TASKS *Later*, each behind an
+    open question.
 
 ## 8. Roadmap
 
