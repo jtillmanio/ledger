@@ -34,8 +34,12 @@ these. Tick them here; START-HERE has the commands.
       Until then, previews of branches that include this change fail to build.
       *Done, verified 2026-10-02: the previews for #37 and #38 built.
       `scripts/vercel-build.mjs` refuses a preview with no integration database,
-      with `LEDGER_LIVE_DB_HOST` unset, or with the live host. The integration's
-      "delete obsolete branches" option can't be seen from here.*
+      with `LEDGER_LIVE_DB_HOST` unset, or with the live host.* *The
+      integration does delete a preview's branch when its PR closes, seen
+      2026-10-20 on #106: merged 15:09:00 UTC, and from 15:09:12 the still-running
+      preview answered every page with `28P01 password authentication failed`
+      while Lighthouse was still measuring. So a Lighthouse run that finishes
+      after the merge fails for that reason alone; wait for it before merging.*
 
 ## Prerequisite audit (data work in `Comics.xlsx`, PREREQS tab)
 
