@@ -80,6 +80,7 @@ suites) is in `docs/COMMANDS.md`.
 npm run dev                 # local, needs .env
 npm test                    # vitest; needs TEST_DATABASE_URL (never DATABASE_URL), refuses without it
 npm run test:all            # everything CI runs
+npm run test:e2e            # Playwright + axe in Chromium on the TEST database; stop npm run dev first; needs `npx playwright install chromium` once
 npm run test:db:reset       # rebuild the TEST database: drizzle-kit migrate, then etl/views.sql
 npm run lint                # eslint, zero warnings
 npx tsc --noEmit            # typecheck

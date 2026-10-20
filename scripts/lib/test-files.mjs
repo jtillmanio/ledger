@@ -7,6 +7,8 @@
 // The same files vitest.config.ts includes.
 const VITEST = /^(test|src)\/(.+\/)?[^/]+\.test\.tsx?$/;
 const UNITTEST = /^etl\/test_[^/]+\.py$/;
+// The browser suite (task 0.11): Playwright specs, run by scripts/e2e.mjs.
+const E2E = /^test\/e2e\/(.+\/)?[^/]+\.spec\.ts$/;
 const VIEWS = "etl/test_views.sql";
 
 /** A path as the patterns expect it: forward slashes, no leading `./`. */
@@ -18,26 +20,29 @@ const quote = (s) => (/\s/.test(s) ? `"${s}"` : s);
 
 /**
  * The commands for these test files, in run order, and any file no runner
- * owns. The test database is rebuilt first whenever a vitest or SQL file is in
- * the list: the auditor runs the tests against the pre-task schema.ts,
+ * owns. The test database is rebuilt first whenever a vitest, e2e or SQL file
+ * is in the list: the auditor runs the tests against the pre-task schema.ts,
  * migrations and views.sql, and the test database still holds the task's.
  */
 export function planTestRun(files) {
   const vitest = [];
+  const e2e = [];
   const unittest = [];
   const unknown = [];
   let views = false;
   for (const f of [...new Set(files.map(normalize).filter(Boolean))]) {
     if (VITEST.test(f)) vitest.push(f);
+    else if (E2E.test(f)) e2e.push(f);
     else if (UNITTEST.test(f)) unittest.push(f.slice("etl/".length));
     else if (f === VIEWS) views = true;
     else unknown.push(f);
   }
 
   const commands = [];
-  if (vitest.length || views) commands.push("npm run test:db:reset");
+  if (vitest.length || e2e.length || views) commands.push("npm run test:db:reset");
   if (vitest.length) commands.push(`npx vitest run ${vitest.map(quote).join(" ")}`);
   if (views) commands.push("npm run test:views");
   for (const p of unittest) commands.push(`py -m unittest discover -s etl -p ${quote(p)}`);
+  if (e2e.length) commands.push(`node scripts/e2e.mjs ${e2e.map(quote).join(" ")}`);
   return { commands, unknown };
 }

@@ -102,7 +102,8 @@ in order: `verify.full` on the branch head, CI `check`, the Vercel preview,
 Lighthouse, a changed workflow run on the branch, and the owner's preview walk
 for UI. "It will show up on `main`" is not a test: a failure found after merge
 means reverting `main`. Run every suite that applies, not just the one nearest
-the change.
+the change. A UI change includes `npm run test:e2e` (the browser suite: every
+width, light and dark, axe); `npm run test:all` runs it, and so does CI's `check`.
 
 Before pushing: `/verify` and the task's own **Check:** exactly as written.
 After pushing: CI green, the preview deployed, Lighthouse green. **Read

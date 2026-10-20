@@ -1,7 +1,7 @@
 ---
 id: TASK-013
 title: 0.11 Browser test harness — Playwright and axe
-status: Ready
+status: In progress
 depends_on: [TASK-012]
 size: M
 model: sonnet
@@ -64,7 +64,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-Provisional: depends on TASK-012 (not Done). It changes CSS only, so this plan's files shouldn't move.
+TASK-012 is Done, so this plan is no longer provisional. Re-checked at start (2026-10-20): `package.json`, `package-lock.json` and `docs/TASKS.md` moved since the plan (Dependabot bumps and other tasks' roadmap text); the 0.11 entry and its **Check:** are unchanged, so the plan stands.
 
 Steps:
 1. `npm i -D @playwright/test @axe-core/playwright` at exact current versions; `npx playwright install chromium` locally. Chromium only, which is what the ui-verifier drives.
@@ -92,6 +92,13 @@ Risks / open questions:
 - `test:all` gets about 2–3 minutes longer (a cold `next dev` compile plus 14 projects).
 - If the real spine overflows at 360px, AC-1 fails on a real bug. That gets fixed here, as the UX floor, or the owner splits it out.
 
+Revisions during implementation (2026-10-20), all inside the planned files except the first:
+- Step 2/3: the wrapper does not overwrite `DATABASE_URL` for the Playwright process. `requireTestUrl` refuses when `DATABASE_URL` names the test database, so global-setup would have refused. `planE2e` returns `serverEnv` and `playwright.config.ts` sets it on the `next dev` webServer only; the config also calls `planE2e`, so a bare `npx playwright test` is guarded too, and no "run it with npm" check is needed.
+- Step 3: the sign-in project's file is `test/e2e/auth.setup.ts` (new, not in the list); the seed constants live in `helpers.ts`.
+- Step 8: `ci.yml` also uploads `test-results/` and `playwright-report/` as a 7-day artifact, so the screenshots are PR evidence from CI too (new step, same file).
+- Step 9: `planTestRun` resets the test database before an e2e spec, as it does for vitest.
+- `expectNoAxeViolations` has no "rule never ran" check: axe throws on an unknown rule id itself.
+
 Size check: M in code (two layers: test tooling and CI), about 18 files mostly small, no schema or UI; attended.
 
 ## Review log
@@ -107,4 +114,4 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Verify rounds:
 - Review rounds:
 - First-pass AC FAILs:
-- Plan revisions after approval:
+- Plan revisions after approval: 1 (the `DATABASE_URL` handling and four small additions, listed under Plan)
