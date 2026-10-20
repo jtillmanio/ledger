@@ -69,14 +69,17 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
 
       <div className="filters">
         {yearList.map(([y, n]) => (
-          <Link key={y} prefetch={false} href={`/books?year=${y}`} className="chip" aria-current={year === String(y)}>
+          // The name says what the number is: a year counts reads, not books (D-65).
+          <Link key={y} prefetch={false} href={`/books?year=${y}`} className="chip" aria-current={year === String(y)}
+                aria-label={`${y}, ${n} read`}>
             {y} <span className="n">{n}</span>
           </Link>
         ))}
         {/* Read books with no finish date: without this the chips sum to fewer
             than the Read chip and nothing on the page reaches the rest (R2-08). */}
         {unyeared > 0 && (
-          <Link prefetch={false} href="/books?year=none" className="chip" aria-current={noYear}>
+          <Link prefetch={false} href="/books?year=none" className="chip" aria-current={noYear}
+                aria-label={`No year, ${unyeared} read`}>
             No year <span className="n">{unyeared}</span>
           </Link>
         )}
