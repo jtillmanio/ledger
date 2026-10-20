@@ -58,12 +58,30 @@ describe("planTestRun: each file goes to its own runner", () => {
     );
   });
 
+  it("runs Playwright specs through scripts/e2e.mjs, last, as test:all does", () => {
+    expect(
+      planTestRun(["test/e2e/spine.spec.ts", "etl/test_views.sql", "test/queries.test.ts", "etl/test_extract.py"]).commands,
+    ).toEqual([
+      "npm run test:db:reset",
+      "npx vitest run test/queries.test.ts",
+      "npm run test:views",
+      "py -m unittest discover -s etl -p test_extract.py",
+      "node scripts/e2e.mjs test/e2e/spine.spec.ts",
+    ]);
+  });
+
   it("owns nothing else: helpers, other SQL, Python outside etl/ and non-test files are unknown", () => {
     expect(
-      planTestRun(["test/db.ts", "etl/views.sql", "scripts/test_x.py", "etl/extract.py"]),
+      planTestRun([
+        "test/db.ts", "etl/views.sql", "scripts/test_x.py", "etl/extract.py",
+        "test/e2e/helpers.ts", "test/e2e/global-setup.ts", "test/e2e/fixtures/unnamed-button.html",
+      ]),
     ).toEqual({
       commands: [],
-      unknown: ["test/db.ts", "etl/views.sql", "scripts/test_x.py", "etl/extract.py"],
+      unknown: [
+        "test/db.ts", "etl/views.sql", "scripts/test_x.py", "etl/extract.py",
+        "test/e2e/helpers.ts", "test/e2e/global-setup.ts", "test/e2e/fixtures/unnamed-button.html",
+      ],
     });
   });
 });

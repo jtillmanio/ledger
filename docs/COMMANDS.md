@@ -10,7 +10,7 @@ that way.
 ```powershell
 npm run dev                 # local, needs .env
 npm test                    # vitest; needs TEST_DATABASE_URL (never DATABASE_URL), refuses without it
-npm run test:all            # test:tokens + check:migrations + test:db:reset + vitest + test:views + test:etl, what CI runs
+npm run test:all            # test:tokens + check:migrations + test:db:reset + vitest + test:views + test:etl + test:e2e, what CI runs
 npm run test:db:reset       # rebuild the TEST database: drizzle-kit migrate, then etl/views.sql
 npm run lint                # eslint, zero warnings
 npx tsc --noEmit            # typecheck
@@ -45,6 +45,11 @@ npm run rebuild             # drop, migrate from zero, extract, load, test_views
                             # etl/rebuild.ps1; refuses when LEDGER_LIVE=true; twin etl/rebuild.sh
 npm run test:views          # etl/test_views.sql against TEST_DATABASE_URL; rolls back
 npm run test:etl            # py -m unittest over etl/test_*.py, no network
+npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in Chromium, 360-1280px, light and dark,
+                            # against `next dev` on TEST_DATABASE_URL (port 3199, passcode `e2e-passcode`); refuses
+                            # without it. Stop `npm run dev` first (both use .next). Once per machine, and after a
+                            # Playwright bump: `npx playwright install chromium`. Screenshots: test-results/screens/
+                            # (ignored). Pass arguments after --, e.g. `-- --project=w360-light`
 npm run test:tokens         # colour tokens: mockups = globals.css, hue distance, on-fill contrast; no DB
 npm run check:migrations    # journal = files, drop/retype has a drizzle/down file, schema.ts fully generated,
                             # no migration already on main edited (standing rule 3); no DB

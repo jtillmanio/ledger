@@ -611,7 +611,7 @@ and an abandoned one stops spending the free plan's Actions minutes. A
 `workflow_dispatch` run needs the file on `main`, so that part of the Check
 runs right after merge.
 
-### ☐ 0.11 Browser test harness — Playwright and axe · M
+### ☑ 0.11 Browser test harness — Playwright and axe · M
 Gap G-6 (`docs/kit-adoption.md`, the 2026-10-08 coverage check). Numbered in
 Phase 0 because it is foundation, like 0.1 and 0.10, but **built in sitting 6,
 before 1.8**: 1.8's check needs an axe-core run over each dashboard and

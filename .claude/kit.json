@@ -100,7 +100,7 @@
   },
 
   "testAudit": {
-    "testPathPatterns": ["test/*.test.ts", "test/*.test.tsx", "src/*.test.ts", "src/*.test.tsx", "etl/test_*.py", "etl/test_views.sql"],
+    "testPathPatterns": ["test/*.test.ts", "test/*.test.tsx", "src/*.test.ts", "src/*.test.tsx", "test/e2e/*.spec.ts", "etl/test_*.py", "etl/test_views.sql"],
     "run": "node scripts/test-files.mjs {tests}",
     "runners": [],
     "setup": "",

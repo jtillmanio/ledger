@@ -11,3 +11,7 @@ etl/.fandom-cache.json
 __pycache__/
 next-env.d.ts
 *.tsbuildinfo
+# browser suite (task 0.11): screenshots are PR evidence, the report and the saved sign-in are local
+/test-results/
+/playwright-report/
+test/e2e/.auth/

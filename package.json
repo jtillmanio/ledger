@@ -33,7 +33,8 @@
     "seed:bash": "bash etl/load.sh",
     "rebuild": "powershell -ExecutionPolicy Bypass -File etl/rebuild.ps1",
     "rebuild:bash": "bash etl/rebuild.sh",
-    "test:all": "npm run test:tokens && npm run check:migrations && npm run test:db:reset && npm test && npm run test:views && npm run test:etl"
+    "test:e2e": "node scripts/e2e.mjs",
+    "test:all": "npm run test:tokens && npm run check:migrations && npm run test:db:reset && npm test && npm run test:views && npm run test:etl && npm run test:e2e"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.4",
@@ -43,6 +44,8 @@
     "react-dom": "^19.3.1"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.64.1",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.3.0",
