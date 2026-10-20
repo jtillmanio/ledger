@@ -95,7 +95,9 @@ test("a <Link> prefetch of a medium does not change the medium you last touched"
 test("no same-origin link on any page answers 404", async ({ page }, testInfo) => {
   runsOnce(testInfo.project.name);
   test.setTimeout(120_000);
-  const pages = ["/comics", "/comics/runs", `/comics/${E2E_RUN_ID}`, "/books/list", "/inbox"];
+  const pages = [
+    "/comics", "/comics/runs", `/comics/${E2E_RUN_ID}`, `/comics/${E2E_RUN_ID}/add`, "/books/list", "/books/add", "/inbox", "/login",
+  ];
   const checked = new Set<string>();
   for (const path of pages) {
     await page.goto(path);
@@ -108,7 +110,7 @@ test("no same-origin link on any page answers 404", async ({ page }, testInfo) =
     }
   }
   // The nav is on every page, so at least these were followed.
-  for (const href of ["/", "/comics", "/books", "/inbox", "/comics/runs", "/books/list"]) {
+  for (const href of ["/", "/comics", "/books", "/inbox", "/comics/runs", "/books/list", `/comics/${E2E_RUN_ID}/add`, "/books/list?status=to_read"]) {
     expect(checked, href).toContain(href);
   }
 });

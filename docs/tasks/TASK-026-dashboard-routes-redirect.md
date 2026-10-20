@@ -1,7 +1,7 @@
 ---
 id: TASK-026
 title: 1.8c Dashboard routes and the / redirect
-status: In progress
+status: Review
 depends_on: [TASK-013]
 size: M
 model: sonnet
@@ -31,11 +31,11 @@ The comics dashboard lives at `/comics` and the lists sit one level down (`/comi
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): Test that `/` redirects to the last-touched medium and to `/comics` for a user with no history. Test that a request carrying a garbage `rt_session` cookie redirects a page to `/login` and answers a route handler 401 (R2-11). A render test asserts that `/books/list` and `/comics/runs` print the query's total, not the row count, for a fixture where the two differ, and no same-origin link on any page answers 404.
-- [ ] AC-2: The comics dashboard renders at `/comics` and links to *All runs* (`/comics/runs`). The run list renders at `/comics/runs` with its filter chips pointing there. `/books/list` is the master list with its *No year* chip. `/books` answers a redirect to `/books/list`. A run page's back link goes to `/comics/runs`.
-- [ ] AC-3: A signed-in request to any `/comics` or `/books` path sets the `ledger_medium` cookie (`httpOnly`, `SameSite=Lax`, path `/`, one year). A request elsewhere (`/inbox`) and a signed-out request leave it alone. An unknown value redirects `/` to `/comics`. Nothing is written to `localStorage`, and there is no schema change.
+- [x] AC-1 (roadmap **Check:**, verbatim): Test that `/` redirects to the last-touched medium and to `/comics` for a user with no history. Test that a request carrying a garbage `rt_session` cookie redirects a page to `/login` and answers a route handler 401 (R2-11). A render test asserts that `/books/list` and `/comics/runs` print the query's total, not the row count, for a fixture where the two differ, and no same-origin link on any page answers 404.
+- [x] AC-2: The comics dashboard renders at `/comics` and links to *All runs* (`/comics/runs`). The run list renders at `/comics/runs` with its filter chips pointing there. `/books/list` is the master list with its *No year* chip. `/books` answers a redirect to `/books/list`. A run page's back link goes to `/comics/runs`.
+- [x] AC-3: A signed-in request to any `/comics` or `/books` path sets the `ledger_medium` cookie (`httpOnly`, `SameSite=Lax`, path `/`, one year), except a `<Link>` prefetch (a request carrying `next-router-prefetch` or `next-router-segment-prefetch`), which leaves it alone (D-76; owner, 2026-10-20). A request elsewhere (`/inbox`) and a signed-out request leave it alone. An unknown value redirects `/` to `/comics`. Nothing is written to `localStorage`, and there is no schema change.
 - [ ] AC-4: `scripts/perf/routes.mjs` follows the moves. `comics` measures the dashboard, `books` measures `/books` through its redirect, the run taps start from `/comics/runs`, and a new `runs` route measures `/comics/runs`. Each has a budget in `scripts/perf/budget.json`, mirrored in `docs/ARCHITECTURE.md`'s Performance budget. `test/perf.test.ts` passes, and Lighthouse is green on the preview.
-- [ ] AC-5: The moved screens meet the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): each keeps a loading skeleton at its new path, and no skeleton wraps a run page. Screenshots of `/comics`, `/comics/runs` and `/books/list` at each `ui.viewports` width, light and dark.
+- [x] AC-5: The moved screens meet the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): each keeps a loading skeleton at its new path, and no skeleton wraps a run page. Screenshots of `/comics`, `/comics/runs` and `/books/list` at each `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -64,12 +64,13 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 - The roadmap and the review ledger already said the proxy writes the cookie (main, 2026-10-19). Neither said a `<Link>` prefetch must not: Next hides `next-router-prefetch` from `proxy()`, so the matcher skips prefetches (owner, 2026-10-20) → docs/TASKS.md § 1.8 (fixed in this PR)
 - Same prefetch rule in the ledger's R1-13 row → docs/review/LEDGER.md § R1-13 (fixed in this PR)
-- ARCHITECTURE § 4's route table and Performance budget follow the moves: `/`'s cookie, `/comics` today, `/books` redirecting until 2.2, query counts, `loading.tsx` list, `/comics` and `/comics/runs` budget rows → docs/ARCHITECTURE.md § 4. Interface (fixed in this PR)
+- ARCHITECTURE § 4's route table and Performance budget follow the moves: `/`'s cookie, `/comics` today, `/books` redirecting until 2.2, query counts, `loading.tsx` list, `/comics` and `/comics/runs` budget rows → docs/ARCHITECTURE.md § 4. Interface and § 5. Operational posture (approved at close-out)
 - The comics dashboard's perf budget (20,000 document + RSC bytes) is provisional until its first preview's Lighthouse run → not tracked: done in this PR (plan revision), set from the PR's Lighthouse comment before the PR is marked ready
 - The dashboard's *All runs* link is a plain `<p class="small">` link, not the `h3.s .more` quiet link: the section heads are `h2` today and an `h3` would skip a level → not tracked: 1.8 draws the quiet links (SG-D6, LEDGER UX-N19)
 - `upcomingReleases()` is no longer called by any page; the query stays for `/books/releases` → not tracked: already tracked in docs/TASKS.md (the item that says the page goes when 1.8c makes `/` a redirect)
 - `MEDIA` in `src/lib/last-medium.ts` needs `watch`, and `test/redirect.test.ts` pins it to `["comics", "books"]` → not tracked: already in docs/tasks/TASK-014-*.md § Context and its plan (it edits that test)
-- Candidate decision: the proxy's matcher skips `<Link>` prefetches so they never write `ledger_medium` (owner chose this over `prefetch={false}` on the nav, 2026-10-20) → docs/review/decisions.md § D-?? (proposed)
+- Candidate decision: the proxy's matcher skips `<Link>` prefetches so they never write `ledger_medium` (owner chose this over `prefetch={false}` on the nav, 2026-10-20) → docs/review/decisions.md § D-76 (approved at close-out)
+- The run page `/comics/cap-origin` scrolls sideways at 360, 390 and 412px on the dev data (`scrollWidth` 450; a row's `a.btn.sec.sm` + `.menu-wrap` + `button.more` run past the edge); this diff only changed the back link's href, and it was not checked on `main` → docs/tasks/TASK-027-failed-writes-skeletons-markup.md § Context
 
 ## Plan
 
@@ -99,7 +100,7 @@ Size check: M. About 20 files, most of them `git mv` renames and link edits. Two
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | Audit R1 PASS (AC-4 specifics unpinned → pinned in `perf.test.ts`) | Spec R1 CHANGES (link crawl skipped the add pages and /login; ARCHITECTURE route-table edit needed approval) → fixed, approved at close-out | UI R1 PASS (the run page's phone-width overflow is not this diff's: follow-up to TASK-027) | Schema: not run (no migration, schema, view, query or ETL change)
 
 ## Blocked
 
@@ -107,7 +108,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
+- Verify rounds: 1
+- Review rounds: 1 (spec-reviewer CHANGES, fixed in place)
+- First-pass AC FAILs: 0 (one UNTESTED part of AC-1's link crawl)
 - Plan revisions after approval: 1 (the proxy's matcher skips prefetches, owner-approved; the tests that import the moved pages also gained `year-chips`, `health` and `series-list`)
