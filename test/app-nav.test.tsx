@@ -2,6 +2,7 @@
 // passcode gate answers a signed-out prefetch with a redirect to /login, and
 // the sign-in page went over its Lighthouse document + RSC budget fetching
 // four pages it could not show. Every other page keeps the header.
+import { readFileSync } from "node:fs";
 import { renderToString } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import RootLayout from "../src/app/layout";
@@ -30,5 +31,13 @@ describe("the app header", () => {
     const html = page();
     expect(html).toContain('class="bar"');
     for (const href of ["/", "/comics", "/books/list", "/inbox", "/api/export"]) expect(html).toContain(`href="${href}"`);
+  });
+
+  it("never prefetches a redirect: / is not prefetched, and Books links the list, not /books (task 1.8c)", () => {
+    // Both redirect (`/` to the last medium, `/books` to its list until 2.2). A prefetch of one
+    // fetched the page already on screen, and held the tap runner's network from going idle.
+    const nav = readFileSync("src/components/AppNav.tsx", "utf8");
+    expect(nav).toMatch(/<Link href="\/" prefetch=\{false\}/);
+    expect(nav).not.toMatch(/href="\/books"/);
   });
 });

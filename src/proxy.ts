@@ -24,13 +24,20 @@ export function proxy(req: NextRequest) {
 }
 
 // api/health is Release's smoke test and returns no data (app/api/health).
-// EXPERIMENT (task 1.8c): no prefetch exclusion. `missing` names a header nothing sends,
-// so every request matches, and the type of config.matcher still has `missing`.
+//
+// A <Link> prefetch is not a visit, and Next hides its headers from proxy(), so
+// the matcher is the only place to tell them apart. Without this, the nav's
+// prefetch of /books from /comics would write ledger_medium=books for someone
+// who never went there. The pages still verify the session (lib/auth), so a
+// prefetch skips only the presence check, never the signature check.
 export const config = {
   matcher: [
     {
       source: "/((?!login|api/login|api/health|_next|favicon.ico).*)",
-      missing: [{ type: "header", key: "x-ledger-experiment-never-sent" }],
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "next-router-segment-prefetch" },
+      ],
     },
   ],
 };
