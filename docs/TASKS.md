@@ -1283,8 +1283,6 @@ themes before and after: the layout is unchanged, only the values move.
 
 ### ☐ 1.8 App shell · L
 
-*From 1.8a (task/1.8a-tokens-control-states):* the run page (`/comics/<run>`) at 360px is 29px wider than the viewport, so the Resume, Add issues and ⋯ row clips the ⋯ button. It is on `main` too (measured with main's `globals.css`); the shell work should fit the row at 360px.
-
 Depends on 1.8a (tokens and control states) and 1.8c (the routes the nav links to).
 The chrome every dashboard sits in. R3-12 split out **1.8b**, the thumb bar and
 the token contrast checks. The owner then split the rest in three (2026-10-19).

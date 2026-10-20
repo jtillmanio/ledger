@@ -61,7 +61,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - The roadmap and AC-2 gave the dark elevation order as `page < sunk < …`, but the shipped values (`--sunk` #05060e below `--page` #080a14) and STYLE_GUIDE §4.1 / SG-D2 put `sunk < page`. Owner, 2026-10-19: follow the style guide. AC-2 corrected in this file → docs/TASKS.md § 1.8a (approved at plan; already on main, PR #98)
 - Candidate decision: every control outline (chips, `.opts .opt`, inputs, `.btn.sec`, `.iconbtn`, `.seg`, `.stepper`) is `--faint-deco`, not `--rule-2` or `--rule`. This departs from STYLE_GUIDE §7's chip row and Specimen B5's resting *Batch* (`--rule-2`, about 1.5:1), for the style guide's own reason: SG-D8 darkened `--faint-deco` to 3:1 so it can outline controls (WCAG 1.4.11), and TASK-005 asked for one control-outline token. Both design files are protected → docs/review/decisions.md § D-71 (approved at plan; already on main, PR #98)
 
-- The run page at 360px is 29px wider than the viewport (Resume, Add issues and ⋯ row clips ⋯), on `main` too → docs/TASKS.md § 1.8
+- The run page at 360px is 29px wider than the viewport (Resume, Add issues and ⋯ row clips ⋯), on `main` too → docs/tasks/TASK-014-app-shell.md § Context
 - The mockup's telescope stub label overlaps the run-rail end label, phone and desktop, from before 1.8a → docs/TASKS.md § 2.5
 - The `.row:has(.row-link)` selector targets a class no app code uses yet (the mockup's overlay link); link rows in use are `a.row` → not tracked: harmless, plan-specified, and 1.8's shell will use or drop it
 - The range sheet was not reached by the scripted walk; the owner's preview walk covers it → not tracked: an owner gate already (Preview walked at 360–412px)

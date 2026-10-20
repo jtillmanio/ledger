@@ -282,22 +282,22 @@ button.era{width:100%;font:inherit;color:inherit;text-align:left;border-left:0;b
 /* controls */
 .ctl{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin:.875rem 0}
 .select{display:flex;align-items:center;gap:.5rem;padding:.5rem .6875rem;background:var(--surface);
-  border:1px solid var(--rule);border-radius:9px;font-size:.8125rem;font-weight:500;
+  border:1px solid var(--faint-deco);border-radius:9px;font-size:.8125rem;font-weight:500;
   color:var(--ink);box-shadow:var(--sh-1)}
 .select .cnt{font-family:var(--mono);font-size:.6875rem;color:var(--on-brand);background:var(--brand);border-radius:99px;padding:0 .375rem;font-weight:600}
 .select .car{color:var(--faint);font-size:.6875rem;margin-left:.125rem}
-.seg{display:inline-flex;border:1px solid var(--rule);border-radius:9px;overflow:hidden;
+.seg{display:inline-flex;border:1px solid var(--faint-deco);border-radius:9px;overflow:hidden;
   background:var(--surface);box-shadow:var(--sh-1)}
-.seg span{font-size:.8125rem;font-weight:500;padding:.4375rem .6875rem;color:var(--muted);border-right:1px solid var(--rule)}
+.seg span{font-size:.8125rem;font-weight:500;padding:.4375rem .6875rem;color:var(--muted);border-right:1px solid var(--faint-deco)}
 .seg span:last-child{border-right:0}
 .seg span[data-on]{background:var(--brand);color:var(--on-brand);font-weight:600}
 .switch{display:inline-flex;align-items:center;gap:.5rem;font-size:.8125rem;color:var(--ink-2);font-weight:500}
-.switch b{width:34px;height:20px;border-radius:99px;background:var(--sunk);position:relative;display:block;flex:0 0 auto;border:1px solid var(--rule)}
+.switch b{width:34px;height:20px;border-radius:99px;background:var(--sunk);position:relative;display:block;flex:0 0 auto;border:1px solid var(--faint-deco)}
 .switch b::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--surface);box-shadow:var(--sh-1)}
 .switch[data-on] b{background:var(--brand);border-color:var(--brand)}
 .switch[data-on] b::after{left:17px;background:var(--on-brand)}
 .search{display:flex;align-items:center;gap:.5rem;padding:.625rem .75rem;background:var(--surface);
-  border:1px solid var(--rule);border-radius:11px;color:var(--muted);font-size:.875rem;box-shadow:var(--sh-1)}
+  border:1px solid var(--faint-deco);border-radius:11px;color:var(--muted);font-size:.875rem;box-shadow:var(--sh-1)}
 .menu{background:var(--surface);border:1px solid var(--rule);border-radius:12px;box-shadow:var(--sh-2);
   padding:.375rem;max-height:214px;overflow:auto}
 .menu .opt{display:flex;align-items:center;gap:.5625rem;padding:.4375rem .5rem;border-radius:8px;font-size:.8125rem;font-weight:500}
@@ -384,7 +384,7 @@ button.era{width:100%;font:inherit;color:inherit;text-align:left;border-left:0;b
 .sheet{background:var(--surface);border:1px solid var(--rule);border-radius:16px;padding:.9375rem;box-shadow:var(--sh-3);margin:.75rem 0}
 .sheet h4{font-size:.9375rem;font-weight:700;margin:0 0 .1875rem}
 .opts{display:flex;gap:.375rem;flex-wrap:wrap;margin-top:.5rem}
-.opts b{font:inherit;font-size:.8125rem;font-weight:500;padding:.375rem .625rem;border:1px solid var(--rule);
+.opts b{font:inherit;font-size:.8125rem;font-weight:500;padding:.375rem .625rem;border:1px solid var(--faint-deco);
   border-radius:8px;color:var(--ink-2);background:var(--surface)}
 .opts b[data-on]{border-color:var(--brand);color:var(--on-brand);background:var(--brand);font-weight:600}
 .opts b.no[data-on]{background:var(--danger);border-color:var(--danger);color:var(--on-danger)}
@@ -413,7 +413,7 @@ button.era{width:100%;font:inherit;color:inherit;text-align:left;border-left:0;b
 .stepper{display:flex;align-items:center;gap:.25rem;background:var(--raise);border:1px solid var(--faint-deco);border-radius:9px;padding:.1875rem}
 .stepper b{width:28px;height:28px;border-radius:6px;display:grid;place-items:center;font-weight:600;color:var(--ink);background:var(--surface);box-shadow:var(--sh-1)}
 .stepper .val{min-width:3rem;text-align:center;font-family:var(--mono);font-size:.875rem;font-weight:500}
-.txt{background:var(--surface);border:1px solid var(--rule);border-radius:11px;padding:.75rem;
+.txt{background:var(--surface);border:1px solid var(--faint-deco);border-radius:11px;padding:.75rem;
   font-family:var(--mono);font-size:.75rem;line-height:1.8;color:var(--ink-2);box-shadow:var(--sh-1)}
 /* detail sheet — intercepted route */
 .scrim{position:absolute;inset:0;background:rgba(10,12,16,.5);z-index:18}
@@ -422,7 +422,7 @@ button.era{width:100%;font:inherit;color:inherit;text-align:left;border-left:0;b
   overflow-y:auto;border-top:1px solid var(--rule)}
 .grab{width:40px;height:4px;border-radius:99px;background:var(--rule-2);margin:.5rem auto .25rem}
 .sheetbar{display:flex;align-items:center;gap:.5rem;padding:.25rem .875rem .625rem}
-.sheetbar .x{margin-left:auto;width:44px;height:44px;border-radius:8px;border:1px solid var(--rule);
+.sheetbar .x{margin-left:auto;width:44px;height:44px;border-radius:8px;border:1px solid var(--faint-deco);
   display:grid;place-items:center;color:var(--muted);background:var(--surface);font-size:.8125rem}
 
 /* season rows */
@@ -737,13 +737,13 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
 .app .btn:not([aria-disabled="true"]):active,.app .iconbtn:not([aria-disabled="true"]):active,
 .app .chip:not([aria-disabled="true"]):active,.app .seg span:not([aria-disabled="true"]):active,
 .app .bar .tab:not([aria-disabled="true"]):active,.app .side a:not([aria-disabled="true"]):active,
-.app .row:not([aria-disabled="true"]):active,.app .switch:not([aria-disabled="true"]):active,
+.app .row:has(.row-link):not([aria-disabled="true"]):active,.app .switch:not([aria-disabled="true"]):active,
 .app .stepper b:not([aria-disabled="true"]):active{transform:translateY(1px)}
 .app .btn:not(.sec):not([aria-disabled="true"]):active{box-shadow:inset 0 2px 4px rgba(0,0,0,.25)}
 .app .btn.sec:not([aria-disabled="true"]):active,.app .iconbtn:not([aria-disabled="true"]):active,
 .app .stepper b:not([aria-disabled="true"]):active{background:var(--sunk);box-shadow:none}
 .app .btn:focus-visible,.app .iconbtn:focus-visible,.app .chip:focus-visible,.app .seg span:focus-visible,
-.app .bar .tab:focus-visible,.app .side a:focus-visible,.app .row:focus-visible,.app .switch:focus-visible,
+.app .bar .tab:focus-visible,.app .side a:focus-visible,.app .row:has(.row-link:focus-visible),.app .switch:focus-visible,
 .app .stepper b:focus-visible{outline:2px solid transparent;outline-offset:2px;box-shadow:var(--focus-ring)}
 .app .btn[aria-disabled="true"],.app .iconbtn[aria-disabled="true"],.app .chip[aria-disabled="true"],
 .app .seg span[aria-disabled="true"],.app .bar .tab[aria-disabled="true"],.app .side a[aria-disabled="true"],
