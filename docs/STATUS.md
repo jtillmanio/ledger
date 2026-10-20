@@ -1,6 +1,6 @@
 # Status
 
-**Last regenerated:** 2026-10-08
+**Last regenerated:** 2026-10-20
 
 This is a rollup of `docs/TASKS.md`, not a second source of truth. Every count
 here comes from counting ☑ vs ☐ task markers in that file. If this page and
@@ -9,141 +9,113 @@ argue from it.
 
 ## Where we are
 
-**12 of 101 tasks done (12%).** Phase 0 is done but for 0.11, a browser test
-harness added by the 2026-10-08 coverage check and built in sitting 6 —
-nothing in Phase 1 or later has started. The private GitHub repo exists and CI runs on every PR, and is proven
-to go red on a broken view (task 0.2, done 2026-09-30). The Release
-workflow has deployed `main` to Vercel (last run 2026-10-02). `LEDGER_LIVE` is
-`false`, so the database is still disposable: `npm run rebuild` can reload it.
+**26 of 128 tasks done (20%).** Phase 1 is half built: undo, range marking,
+the resume pointer, bulk issue entry with Metron search, adding books by
+search, paste or hand, the inbox, the dated reading log, the period column,
+design tokens, the book extract and Eastern dates have all shipped. What
+remains in Phase 1 is the app shell and its routes, the Up next queue and
+status screens, the book enrichment, and the two pre-cutover tasks the
+2026-10-20 intake added. `LEDGER_LIVE` is `false`, so the database is still
+disposable: `npm run rebuild` can reload it.
 
 | Phase | Done / total | Status |
 |---|---|---|
-| 0 — Foundation | 11 / 12 | Done but 0.11 (built in sitting 6) |
-| 1 — Daily use | 0 / 22 | Not started |
-| 2 — The pace engine | 0 / 16 | Not started |
-| 3 — Editing | 0 / 11 | Not started |
+| 0 — Foundation | 11 / 13 | Done but 0.11 (plan approved, built in sitting 6) and 0.12 |
+| 1 — Daily use | 14 / 28 | In progress: sittings 3–5 done; 6 is half done (1.7, 1.8a); 1.13 and 1.16 done |
+| 2 — The pace engine | 0 / 16 | Not started (2.11a is built in sitting 7) |
+| 3 — Editing | 0 / 14 | Not started |
 | 4 — Enrichment | 0 / 3 | Not started |
-| 5 — Remaining surfaces | 0 / 9 | Not started |
-| 6 — Polish | 1 / 14 | Not started† |
-| 7 — AI-assisted curation | 0 / 6 | Not started |
-| 8 — Watchlist (film/TV) | 0 / 8 | Not started |
+| 5 — Remaining surfaces | 0 / 12 | Not started |
+| 6 — Polish | 1 / 17 | Not started† |
+| 7 — AI-assisted curation | 0 / 8 | Not started |
+| 8 — Watchlist (film/TV) | 0 / 10 | Not started |
+| 9 — Music | 0 / 7 | Not started; added 2026-10-20 (D-75) |
 
 † The one Phase 6 item checked (6.2b) is a scope note, not a shipped feature —
 its work was absorbed into 2.4/2.6; what's left of it is a sort order that
 doesn't exist until those tasks do.
 
+The *Later* section of TASKS.md (L-1…L-3) holds ideas with no **Check:** and
+is not counted.
+
 ## What's next
 
-Phase 1, in the build order of TASKS.md's sitting table (START-HERE Step 12):
-**1.2 Undo → 1.1 → 1.6** first.
+The rest of sitting 6, in order: **0.11 → 1.8c → 1.8 → 1.8d → 1.8b**. 0.11,
+1.8c, 1.8 and 1.8d have approved plans (#98). Then sitting 7 (1.10 → 1.9 →
+2.11a → 1.12 → 1.11), the rest of sitting 8 (1.14 → 1.15 → 1.18), and
+sitting 9 (1.4e → 1.17). 1.4d (wishlist promotion) is also Ready. Cutover
+(START-HERE Step 14) waits for all of Phase 1.
 
-**Coverage check (2026-10-08).** `/milestones` ran as a coverage check of
-TASKS.md against FEATURES, the screen inventory and the schema. It added
-0.11 (browser test harness, before 1.8), 1.12 (load the volume map, before
-cutover), 3.8 (blocks), 3.9 (volume map editor), 5.9 (series page) and 5.10
-(editions), removed 6.7 (a duplicate of 7.6), and amended 1.4b, 2.4, 2.6,
-2.9, 5.1, 6.10, 8.3 and 8.4.
+**Backlog intake (2026-10-20).** The owner's 25 additions are in TASKS.md,
+FEATURES Part 2j (each verdict and its reasoning) and ARCHITECTURE 2.18–2.21:
+- **Before cutover:** 1.17 (book start dates; a run's span derived) and 1.18
+  (Calibre word counts, series, tags and reads, D-73), plus 1.4e (Paste a list
+  as two fields).
+- **Later phases:** 3.10–3.12 (add a series' issues, arrange them, preview
+  them), 5.12 (in the middle of), 5.13 (comic series page), 6.17 (activity
+  log), 7.7 (*Catch me up*), 7.8 (drafted issue context), 8.9 (new seasons,
+  where to watch, D-74), 8.10 (person pages), and Phase 9, music (D-75).
+- **Amended:** 3.2 (a track with a publisher), 4.1 (`issues.summary`), 5.1
+  (shelf notes), 5.9 (every series a link), 5.10 (*Collected in*), 8.1 (the
+  watch schema draft corrected), 8.3 (metadata filters and saved views), 8.6
+  (shelves from a filter), 8.8 (*Waiting for a new season*).
+- The year chip's spacing was a plain bug, fixed outside the task list on
+  `fix/year-chip-count`.
 
-**Book ingest (2026-10-08).** A review of how `Books.xlsx` loads added
-sitting 8, before cutover:
-- **1.13:** one book per title and author, a merge review in
-  `etl/data/book_review.csv`, and no read state from the workbook (D-41). Reads
-  are entered in the app.
-- **1.14:** Open Library details for the workbook's books, moved here from 4.2 (D-44).
-- **1.15:** follows for series, authors and the new `book_universes`, with
-  progress views (D-42, D-43).
+**Book ingest (2026-10-08)**, sitting 8, before cutover: 1.13 (done: one book
+per title and author, a merge review in `etl/data/book_review.csv`, no read
+state from the workbook, D-41), 1.14 (Open Library details, D-44), 1.15
+(follows for series, authors and universes, D-42, D-43), and now 1.18
+(Calibre).
 
-**0.10 (2026-10-07): every preview measures itself.** When Vercel reports a
-preview ready, `.github/workflows/lighthouse.yml` signs in, runs Lighthouse
-(mobile, Slow 4G, 4× CPU, three runs per route) and 0.9's tap runner, and
-answers the PR with one comment. It fails only on what holds still: a route
-handler requested during a load or prefetch, bytes or requests over
-`scripts/perf/budget.json`, CLS of 0.1 or more, accessibility under the
+**Every preview measures itself** (0.10). When Vercel reports a preview ready,
+`.github/workflows/lighthouse.yml` signs in, runs Lighthouse and 0.9's tap
+runner, and answers the PR with one comment. It fails only on what holds
+still: a route handler requested during a load or prefetch, bytes or requests
+over `scripts/perf/budget.json`, CLS of 0.1 or more, accessibility under the
 recorded 100. A new top-level screen adds its route to
-`scripts/perf/routes.mjs` and its budget in the same PR. The GitHub
-`APP_PASSCODE` secret is the Preview and Development passcode, never
-production's (START-HERE 10e).
+`scripts/perf/routes.mjs` and its budget in the same PR. ARCHITECTURE §5 holds
+the budget and the tests that guard it.
 
-0.9 (2026-10-04) found the slowness in the database and the app, not the
-hosting. Two views computed the whole catalog to describe one run, the nav
-prefetched the 20 MB export on every page view, and no route had a loading
-boundary, so a tap froze the screen until every query answered. On the
-throttled preview, tap → page went from 7.2 s to 1.2 s warm on `/comics`, and
-a tap now paints its skeleton within about 100 ms. ARCHITECTURE §5 holds the
-budget and the tests that guard it.
+Build order and the cutover gates are in START-HERE Steps 11–14. **2.11a**,
+though numbered in Phase 2, is built at the end of Phase 1, before cutover
+(D-20), and so is 1.11 (D-36). Phase 1 must finish before cutover, per the
+HANDOFF §10 warning: cutting over from Sheets before then defeats the
+migration.
 
-0.8b (2026-10-02) draws the grey `↺ read in …` hint on the spine from
-`issue_read_runs`, on the mockup's row markup. If the live database has not
-been rebuilt since 0.8a (migration 0007), `npm run rebuild -- -EnvFile .env.live`
-on `main` puts
-the per-run reads there, then Release promotes the build (START-HERE Step 13:
-before cutover Release refuses to migrate).
-
-Build order and the cutover gates are in START-HERE Steps 11–14 (rewritten
-2026-09-23 after the S audit). **2.11a**, though numbered in Phase 2, is built at
-the end of Phase 1, before cutover (D-20). Decisions D-18…D-23 (2026-09-23):
-cut over by loading first, then run both for a month; no rereads inside a run;
-prerequisite audit before cutover; finish year derived from the finish date;
-unlock cost counts unread issues; passphrase login until task 6.13. D-36
-(2026-10-02) amends D-23: new task 1.11 makes a failed sign-in wait one second,
-built with 2.11a before cutover.
-
-With 0.8b in, Phase 1 (bulk entry, range marking, the app shell) is
-unblocked. Cutover still waits for Phase 1 to finish, per the HANDOFF §10
-warning: cutting over from Sheets before then defeats the migration. Reading data recorded before
-0.8a reached the live database could not say which run it was read in; that
-is why 0.8a reaches live through a rebuild, which reloads every read from the
-workbook.
-
-**The feel pass is adopted (D-40, 2026-10-05), palette 1c After hours.** Its
-token values and the self-hosted fonts (IBM Plex Sans, Plex Mono, Newsreader)
-are in `globals.css` now, and `test:tokens` checks the shipped hex against the
-measured palette and the `--art` clamp. Every screen it draws — the cover-led
-dashboards, the mark that answers back, *All caught up*, *Between books*, run
-and block completion, the tablet — is folded into the task that builds it (new
-task **2.12** for completion), and it beats `mockups.html` on layout and copy
-where it draws. `docs/DESIGN.md` §9 maps each step to its task and lists the
-open questions (watch episodes, where the books capacity decisions go, a run's
-key art). The `--art` columns wait for 4.3 and 4.2, where the owner is asked
-again.
-
-**Design blueprint adopted (D-31, 2026-09-30).** The Step 3 style guide and
-Review N are folded into the backlog: a new **1.8a — Design tokens and control
-states** comes before 1.8 (the first UI task), the telescope in 2.5/2.5b is now
-horizontal, and new tasks 3.7 (archive and restore), 5.7 and 5.8 (books and
-comic issues coming out) and 6.14 (sidebar toggle) were added. `docs/DESIGN.md` is the index;
-`docs/review/LEDGER.md` *N* maps every audit item to its task. Decided the same
-day: counts stay mono (D-32); tablets get a navigation rail and keep the bottom
-thumb bar, with header verbs from 1024px (D-33); one sheet at a time (D-34);
-upcoming releases are in scope for books and comics (D-35).
+**The feel pass is adopted (D-40, palette 1c After hours)** and its tokens
+shipped with 1.8a: `globals.css` carries the measured palette, the
+self-hosted fonts (IBM Plex Sans, Plex Mono, Newsreader) and D-71's control
+outlines, and `test:tokens` checks them. Every screen it draws is folded into
+the task that builds it, and it beats `mockups.html` on layout and copy where
+it draws. `docs/DESIGN.md` §9 maps each step to its task. Music (Phase 9) is
+not drawn anywhere yet; 9.0 designs it first.
 
 ## What's actually built
 
 - `etl/extract.py`, `etl/enrich_comics.py`, `etl/volumes.py`,
-  `etl/rebuild.ps1`/`.sh`, `etl/load.ps1`/`.sh`, `etl/views.sql`
-- `src/db/schema.ts` (23 tables), `src/db/queries.ts`
-- v1 app routes: `/` (page.tsx), `/comics`, `/comics/[runId]`, `/books`,
-  `/login`, `/api/export`, `/api/login`, `/api/progress`
-- Test harness (task 0.1): `test/db.ts`, `test/global-setup.ts`,
-  `test/queries.test.ts`, `test/run-readiness.test.ts`,
-  `test/testdb-guard.test.ts`
-- Placement-keyed read state (task 0.8a): migration 0007 and its down file,
-  `issue_read_runs`, `test/placement-progress.test.ts` and
-  `test/placement-progress-migration.test.ts`
-- The spine's read-elsewhere hint (task 0.8b): `src/components/IssueRow.tsx`
-  on the mockup's `.iss`/`.chk`/`.seen` markup, `test/spine.test.tsx`
-- The feel pass's tokens (palette 1c, D-40) in `src/app/globals.css`, the fonts
-  self-hosted in `src/app/fonts/`, `test:tokens`' palette and `--art` checks, and
-  `test/self-hosted-fonts.test.ts`
-- `.claude/` — `/verify` skill, `schema-reviewer` subagent
-- `.github/workflows/` — CI config, nightly backup, Release, and Lighthouse on
-  every preview (task 0.10: `scripts/perf/`, `test/perf.test.ts`)
-- `volume_map.csv` — 67 approved rules, fully reviewed
-- Claude Code starter kit 2.3.1 (PR #53, adopted 2026-10-08,
-  `docs/kit-adoption.md`): skills, the test-runner, test-auditor,
-  spec-reviewer and ui-verifier agents beside `schema-reviewer`, and the
-  protected-path and post-edit hooks; `.claude/kit.json` waits for
-  `/customize-kit`
+  `etl/rebuild.ps1`/`.sh`, `etl/load.ps1`/`.sh`, `etl/views.sql`; the book
+  merge review (1.13)
+- `src/db/schema.ts` (32 tables, migrations through `0013_plan_period`),
+  `src/db/queries.ts`, `src/db/writes.ts`
+- App routes: `/` (page.tsx), `/comics`, `/comics/[runId]`,
+  `/comics/[runId]/add`, `/books`, `/books/add`, `/inbox`, `/login`
+- Route handlers: `/api/progress/{issue,range,book}`, `/api/runs/[runId]/issues`,
+  `/api/metron/search`, `/api/books`, `/api/books/bulk`, `/api/books/search`,
+  `/api/shelves`, `/api/inbox`, `/api/export`, `/api/login`, `/api/health`
+- Phase 1 so far: undo (1.2), range marking (1.1), the resume pointer (1.6),
+  bulk issue entry with its review and Metron search (1.3, 1.3c, 1.3b), books
+  by paste, search or hand to a destination (1.4, 1.4c), the quick-capture
+  inbox (1.4b), the dated reading log and `read_events` (1.5), the plan's one
+  period column (1.7), design tokens and control states (1.8a), and dates in
+  `America/New_York` (1.16)
+- Placement-keyed read state (0.8a) and the spine's read-elsewhere hint (0.8b)
+- `.github/workflows/` — CI, nightly backup to Cloudflare R2 (D-66), Release,
+  Lighthouse on every preview, Neon preview-branch cleanup
+- `volume_map.csv` — 67 approved rules, fully reviewed (1.12 loads it)
+- Claude Code starter kit 2.7.0, customized: `.claude/kit.json`, the skills,
+  the test-runner, test-auditor, spec-reviewer, ui-verifier and
+  `schema-reviewer` agents, and the protected-path and post-edit hooks
 
 ## Open (non-blocking) decisions
 
@@ -155,6 +127,10 @@ want to reconsider the default:
 - Collapse finished eras on runs over 100 issues — default: yes, with a count
 - Top-books list cap — default: capped at 10
 - Franchise ordering — default: release order
+
+Asked at a plan gate when the task arrives (2026-10-20 intake): the schema
+columns 1.17, 1.18, 4.1, 5.1, 7.8 and 8.1 propose; 5.13's series key; 9.0's
+media bar with a fourth medium.
 
 ## Where the detail lives
 

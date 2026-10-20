@@ -24,7 +24,7 @@ section. Nothing here is built yet except where marked **shipped**.
 | B10 | Books read each year, and a log of what I read | partial | Year totals ship (`books_by_year`, the year chips); 6.2 charts them; `/activity` is the log. TASKS 6.17 |
 | B11 | Add books: title and author as two fields | partial | *By hand* has them. *Paste a list* gains a tab-separated form and a review with separate cells. TASKS 1.4e |
 | B12 | Series are links | planned | Every series name links to `/books/series/[id]`, which lists the books in order, with gaps. TASKS 5.9 |
-| B13 | Year chip: the count reads apart from the year | bug | TASKS 1.5b |
+| B13 | Year chip: the count reads apart from the year | bug | Fixed outside the task list, on `fix/year-chip-count` |
 | B14 | *Catch me up*: a recap of the earlier books before a later one | planned | Claude, on demand, spoiler-bounded, stored in `proposals`. TASKS 7.7 |
 | B15 | A shelf's context: why each book is on it | planned | `shelves.description`, `shelf_books.note`; ordered shelves are reading orders (the Dark Tower). TASKS 5.1 |
 
@@ -61,7 +61,7 @@ section. Nothing here is built yet except where marked **shipped**.
 | W1 | Metadata that shows and filters: network or streamer, studio, director, cast, length, seasons and episodes, genre | planned | `titles.networks`, `titles.studios`, `people` + `title_credits` rows, totals derived in `show_progress`. TASKS 8.1, 8.3 |
 | W2 | Where to watch | planned | Reverses Part 2e's *Out* (D-74). A dated TMDB/JustWatch snapshot, refreshed when you ask. TASKS 8.9 |
 | W3 | Which show I'm on, what I've finished, a rating; waiting for a new season | partial | Season tracking was already designed. Adds a show-level rating and the derived `caught_up` state. TASKS 8.1, 8.8, 8.9 |
-| W4 | Custom shelves (Nolan, Spielberg, Disney Animated, DCOM, loose groups) | planned | Title shelves (8.6) with notes, for loose groups; person pages (8.10) and the studio filter (8.3), for the ones that are facts |
+| W4 | Custom groupings, made in the app (examples: Nolan, Spielberg, Disney Animated, DCOM, loose groups) | planned | Two kinds, both created by you. A title shelf (8.6, with notes) is hand-picked and ordered. A saved view (8.3) is a named filter (person, studio, network, genre and so on) that keeps itself current. *Add these to a shelf…* turns a filter into a shelf. Every credited person also has a page (8.10) |
 
 ### Music (2026-10-20 additions)
 
@@ -1282,9 +1282,10 @@ the calls that shaped them.
 **Placed before cutover, because the data can't be recovered later.** A
 book's start date (1.17) has the same deadline 1.5 had: a start that isn't
 captured from the first day is gone. The Calibre import (1.18) runs through
-extract's sidecars like 1.14, and extract stops running at cutover. The two
-small fixes (1.4e, the paste; 1.5b, the year chip) are to screens already in
-daily use.
+extract's sidecars like 1.14, and extract stops running at cutover. The paste
+fix (1.4e) is to a screen already in daily use. The year chip's spacing is a
+plain bug, so it was fixed on its own branch (`fix/year-chip-count`) rather
+than made a task.
 
 **Calibre is the best word-count source available** (Part 4's honest answer
 had only estimates and manual lookups). The Count Pages plugin's counts load
@@ -1338,10 +1339,15 @@ Without it, a show you are current on reads as *watched* and drops into Done,
 or reads as *watching* when there is nothing to watch. It is derived from the
 seasons and TMDB's *Returning Series*, never stored.
 
-**Not every "shelf" is a shelf.** *Christopher Nolan* and *Disney Animated*
-are facts about the work, so they are a person page (8.10) and a studio
-filter (8.3) that keep themselves current. DCOM and a loose group of films
-are shelves (8.6), now with notes.
+**Not every "shelf" is a shelf, and you make both kinds.** The owner's
+examples are illustrations of groupings to create in the app, and they come in
+two kinds. A group that is a fact about the work (a director's films, a
+studio's, a network's: *Nolan*, *Disney Animated*, *DCOM*) is a **saved view**
+(8.3), a named filter that keeps itself current. A group that is your opinion
+(a loosely connected set, or anything in your own order) is a **shelf** (8.6),
+now with notes. *Add these to a shelf…* copies a filter's titles onto a shelf
+when you want the membership but your own order. Person pages (8.10) need no
+creating.
 
 **The recap (7.7) is worth building, with guard rails.** A model recapping a
 popular series is good. For a less-known book it will confabulate with
@@ -1656,7 +1662,7 @@ ALTER TABLE run_issues ADD COLUMN deleted_at timestamptz;
 | Later | Marvel Unlimited, League of Comic Geeks, editions you haven't listed | not scheduled: each has an open question first (TASKS *Later*) |
 
 The 2026-10-20 additions (Part 2j) also put three tasks before cutover: 1.18
-(Calibre, in sitting 8), and 1.4e, 1.5b and 1.17 (sitting 9).
+(Calibre, in sitting 8), and 1.4e and 1.17 (sitting 9).
 
 **Phase 1 before phase 2.** The pace engine is more interesting, but if adding
 data is painful you'll stop using the app before you ever see a projection.

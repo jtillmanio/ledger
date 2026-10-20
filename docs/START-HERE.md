@@ -1253,7 +1253,7 @@ private GitHub repo from Step 10a and `TEST_DATABASE_URL` first — see
 | 6 | 1.7 period column, 1.8a design tokens and control states, **0.11 browser test harness**, 1.8 app shell, 1.8b thumb bar and contrast | The real navigation |
 | 7 | 1.10 Up next queue, then 1.9 status screens, **2.11a prerequisite cycle check**, 1.12 volume map into `volume_rules`, and 1.11 failed sign-ins wait (D-36) | Phase 1 complete; extract lists the cycles for your audit |
 | 8 | 1.13 book extract and merge review, 1.14 Open Library details, 1.15 series, author and universe follows, 1.18 Calibre word counts, series, tags and reads | Books load clean, with covers, page counts and real word counts; answer `book_review.csv` between 1.13 and 1.14, and `calibre_review.csv` and `calibre_reads.csv` after 1.18. Can be built any time before Step 14 |
-| 9 | 1.4e paste a list as two fields, 1.5b year chip spacing, 1.17 start dates | Small fixes to screens in daily use, and start dates captured from cutover on |
+| 9 | 1.4e paste a list as two fields, 1.17 start dates | A small fix to a screen in daily use, and start dates captured from cutover on |
 
 **Task 1.5 carries a deadline.** It adds `read_events`, the re-read log, and
 projects the existing status tables from it. This has to land before real

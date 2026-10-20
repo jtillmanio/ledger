@@ -686,7 +686,7 @@ stay. START-HERE Step 12 groups them into sittings:
 | 6 | 1.7 → 1.8a → 0.11 → 1.8c → 1.8 → 1.8d → 1.8b | 1.8a's tokens come before the first UI task; 0.11's harness runs 1.8's computed-style check and 1.8d's axe run; 1.8c moves the routes the nav links to; 1.8d's axe run covers the finished chrome; 1.8b was split out of 1.8 (R3-12) |
 | 7 | 1.10 → 1.9 → 2.11a → 1.12 → 1.11 | 1.9's Up next tab reads the queue; 2.11a is numbered in Phase 2 but built here, before cutover (D-20); so is 1.11 (D-36); 1.12 must land before Step 14's final load, the last time `load` runs |
 | 8 | 1.13 → 1.14 → 1.15 → 1.18 | the book ingest (2026-10-08 review): 1.14's proposals join 1.13's review file, and 1.15 seeds from series and author names 1.13's review fixed; 1.18 (2026-10-20) checks Calibre against 1.14's Open Library answers (D-73). All four change what `load` puts in, so they land before Step 14's final load. They don't depend on sittings 3–7 and can be built earlier, leaving the owner time to answer the reviews |
-| 9 | 1.4e → 1.5b → 1.17 | the 2026-10-20 intake's Phase 1 items: two small fixes to screens already in daily use, then start dates, which like 1.5 must land before real reading accumulates and before cutover |
+| 9 | 1.4e → 1.17 | the 2026-10-20 intake's Phase 1 items: a small fix to a screen already in daily use, then start dates, which like 1.5 must land before real reading accumulates and before cutover. The intake's year-chip bug is a fix outside the task list (`fix/year-chip-count`) |
 
 ### ☑ 1.2 Undo · S
 **Build before 1.1** (R3-10): 1.1's check asserts undo, and 1.1 must not carry its
@@ -2093,24 +2093,6 @@ dash in it keeps the dash in the title. In the browser (0.11), editing the
 Author cell of a line with no author clears its reason, and the line adds with
 that author. Each cell has an accessible name (*Title, line 3*). Screenshots at
 360px and 1280px.
-
-### ☐ 1.5b Year chips: the count reads apart from the year · S
-Backlog intake, 2026-10-20 (owner: *the year is too close on the chip*).
-`/books`' year chips render `2024 12`. The count sits 6px from the year
-(`.chip .n` in `globals.css`), in the same grey, so the two read as one
-number. The fix belongs to the chip, so every chip with a count gets it: the
-years, *No year*, and 1.9's tab counts.
-
-- Set the count apart as a count, not a second word: a `·` separator or a
-  `--sunk` count pill, chosen at plan time against the mockup's
-  `.seg span .n` and STYLE_GUIDE §9, in tokens only (D-71 for outlines).
-- The chip's accessible name says what the number is: *2024, 12 read* (years
-  count reads, D-65).
-
-**Check:** at 360px, every year chip's year and count are at least 8px apart or
-split by a separator glyph (measured in 0.11's harness). The chip's
-accessible name is *2024, 12 read*, and the axe pass reports nothing new.
-Screenshots light and dark.
 
 ### ☐ 1.17 Started and finished: a start date for books, a derived span for runs · M
 Backlog intake, 2026-10-20 (owner: *books: date started and ended; comics: a
@@ -4373,6 +4355,16 @@ and length band (*under 2h · 2–3h · over 3h* for films, *one season · 2–4
 5+* for shows). Where to watch joins them with 8.9. A show's rating is set at
 show level (8.1), and each season keeps its own.
 
+**Saved views, so a filter becomes a collection you name.** The watch list gets
+2.9's saved views, the same component and storage, as a third list beside the
+run list and the master list. *Save view* names the current filters: *Disney
+Animated* is studio *Walt Disney Animation Studios* and film; *DCOM* is network
+*Disney Channel* and film; *Nolan* is person *Christopher Nolan*, director.
+Views sit in the toolbar row above the controls, and each can be renamed or
+deleted. A view stores only its filters, never its titles, so a title added
+later that matches joins it on its own. The examples are the owner's; any
+combination of 8.3's filters can be saved.
+
 **Check:** test that marking every season watched flips the show's derived state
 to `watched` with nothing written to `title_status`; that marking one of three
 gives `watching` with `next_season = 2`; and that a film with no seasons still
@@ -4381,7 +4373,9 @@ appends a second `watch_events` row with `rewatch_of` set to the first and
 leaves one `title_status` row. The person filter for a director narrows the
 list to titles crediting them as director, and the network filter *HBO* to
 titles listing HBO. A show row shows its season and episode totals from
-`show_progress`.
+`show_progress`. A view saved as studio + film reopens with both filters set,
+survives a reload, and includes a matching film added after it was saved;
+deleting the view changes no title.
 
 ### ☐ 8.4 Detail sheets — film, show, season · M
 `/watch/[id]` and `/watch/[id]/season/[n]` as intercepted routes: a sheet over
@@ -4495,15 +4489,26 @@ opinion.
 **Custom shelves** (2026-10-20 intake: *Christopher Nolan, Spielberg, Disney
 Animated, DCOM, a loosely connected group of films and shows*). A shelf holds
 films and shows together, in your order, with 5.1's description and per-title
-note (`shelf_titles.note`). It is the right home for a loose group (DCOM, a
-set of films you think belong together). Two of the examples are facts, so
-they need no upkeep. A director's films are 8.10's person page. *Disney
-Animated* is 8.3's studio filter (*Walt Disney Animation Studios*), which a
-shelf can still copy from when you want your own order.
+note (`shelf_titles.note`). The owner's examples are illustrations; any
+grouping can be made in the app, in one of two ways:
+
+- **A shelf** (this task): you choose its members and its order, and it changes
+  only when you change it. It suits a loose group (a set of films you think
+  belong together) and any list in an order of your own.
+- **A saved view** (8.3): a named filter that keeps itself current, for a
+  group that is a fact (a director's films, a studio's, a network's).
+
+**From a filter to a shelf.** When a saved view's membership is right but you
+want your own order or notes, *Add these to a shelf…* on the filtered list (and
+on a person page, once 8.10 lands) adds every shown title to a new or existing title
+shelf, in the list's order. It is one write with one undo. After that, the
+shelf is yours and doesn't follow the filter.
 
 **Check:** test that a book cannot be added to a title shelf, and vice versa.
 A shelf holding a film and a show renders both, in shelf order, each with its
-note.
+note. *Add these to a shelf…* on a list filtered to three titles adds three
+`shelf_titles` rows in list order, Undo removes all three, and a title added
+to the catalog afterwards does not join the shelf.
 
 ### ☐ 8.9 Refresh shows: new seasons and where to watch · M
 Backlog intake, 2026-10-20; D-74. Depends on 8.1 and 8.3. Two TMDB facts change
@@ -4551,7 +4556,10 @@ maintain by hand (ARCHITECTURE 2.5d).
 - *Their other work* is a TMDB search you start
   (`/person/{id}/combined_credits`), each result with *Add*. Opening the page
   never calls TMDB.
-- Studios and networks get 8.3's filters, not pages.
+- Nothing creates a person page: every credited person has one. To keep a
+  person on hand, save 8.3's person filter as a view (*Nolan*), or copy the
+  page into a shelf (8.6).
+- Studios and networks get 8.3's filters and saved views, not pages.
 
 **Check:** a person credited as director on two listed films and as cast on
 one show renders three rows under two roles. A name on a film's sheet links to
