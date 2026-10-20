@@ -74,26 +74,32 @@ tick them.
 - [x] Once 0.11 (TASK-013) merges, run `npx playwright install chromium` in the
       repo after your next `npm ci`. Without the browser, `npm run test:all`
       fails at the e2e step; CI installs its own (from TASK-013, PR #98).
-- [ ] Set `METRON_API_TOKEN` (or `METRON_USERNAME` and `METRON_PASSWORD`, as
+- [x] Set `METRON_API_TOKEN` (or `METRON_USERNAME` and `METRON_PASSWORD`, as
       in `.env.example`) in Vercel for Preview and Production. Without them Add
       issues' Search answers from your catalog only and says *Metron isn't set up
       here*. Needed before the 1.3b preview can search Metron (from TASK-006,
-      PR #75).
-- [ ] Create the `ledger-backups` R2 bucket and its bucket-scoped token, and
+      PR #75). *Done: `METRON_USERNAME` and `METRON_PASSWORD`, confirmed by the
+      owner, 2026-10-20.*
+- [x] Create the `ledger-backups` R2 bucket and its bucket-scoped token, and
       add `R2_BACKUPS_ACCESS_KEY_ID`, `R2_BACKUPS_SECRET_ACCESS_KEY` (secrets)
       and `R2_ACCOUNT_ID`, `R2_BUCKET` (variables), as in START-HERE 10d.
       Until then every nightly backup fails at its upload (from D-66,
-      `fix/backup-r2`).
-- [ ] Once a nightly backup is green in R2, decide whether to `git rm -r
+      `fix/backup-r2`). *Done: confirmed by the owner, 2026-10-20; nightly run
+      39428179799 passed "Upload to R2 and prune" and "Restore check".*
+- [x] Once a nightly backup is green in R2, decide whether to `git rm -r
       backups/` (it is a protected path, so only on your word). Removing it
       empties the folder, not the history: the old dumps stay restorable from
-      git either way (from D-66, `fix/backup-r2`).
-- [ ] After 1.16 merges, run `npm run db:migrate` against the development
+      git either way (from D-66, `fix/backup-r2`). *Done on the owner's word,
+      2026-10-20, in `chore/owner-checklist-backups`; START-HERE 10d's
+      "Restoring by hand" now says how to get one back from history.*
+- [x] After 1.16 merges, run `npm run db:migrate` against the development
       database (`.env`) so its picked-day reads move to Eastern midnight (until
       then one dated the 1st reads a month early). When Release applies 0012 to
       production, don't save a picked date (range sheet, *Change date…*) until
       it has promoted the new build: the old build still writes a UTC midnight,
-      which 0012 has already passed (from TASK-025, PR #94).
+      which 0012 has already passed (from TASK-025, PR #94). *Done on
+      development, 2026-10-20: all 14 migrations applied, through
+      `0013_plan_period`. The production caution stands for the next Release.*
 
 ## Approvals from follow-ups
 
@@ -102,10 +108,11 @@ Planning-doc edits and candidate decisions waiting for your yes
 session, and that session or the next `/track-follow-ups` run makes the change
 and notes where it went.
 
-- [ ] Update `docs/ARCHITECTURE.md` § 2. Decisions and `docs/HANDOFF.md`
+- [x] Update `docs/ARCHITECTURE.md` § 2. Decisions and `docs/HANDOFF.md`
       § What each spreadsheet artifact became: the `To-Read 20XX` tabs row
       becomes "tabs before 2028; later tabs load nothing (D-70)" (from
-      TASK-021, PR #97)
+      TASK-021, PR #97). *Approved by the owner 2026-10-20; done in
+      `chore/owner-checklist-backups` (PR #106), both rows.*
 
 ---
 

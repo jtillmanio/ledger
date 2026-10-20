@@ -46,7 +46,7 @@ milliseconds, so there is no cache to invalidate and no state to drift.
 | `DASHBOARD` ready-to-read query | `readyToRead()` in `src/db/queries.ts` |
 | `CLOSURE` tab + Apps Script (removed July 2026) | `run_ancestors(run_id)` — a recursive CTE, cycle-safe, 48-level depth cap |
 | `Read 20XX` tabs | `books_by_year` view: reads per year, from `book_reads` (`read_events`, plus workbook reads with no log row) by `extract(year FROM finished_on)` (D-21, D-65) |
-| `To-Read 20XX` tabs | `reading_plan.period`, a bare year (`'2027'`), written only with `extract.py --with-plan`: the plan starts empty (D-13, task 1.7) |
+| `To-Read 20XX` tabs | Tabs before 2028: `reading_plan.period`, a bare year (`'2027'`), written only with `extract.py --with-plan`: the plan starts empty (D-13, task 1.7). Later tabs load nothing; their titles go to `seed/workbook_plans.csv`, which is not loaded (D-70) |
 | `Series!Percent Read` | `series_progress` view |
 | `Reading Orders!Track`, `Run Title` | dropped — they were lookups; the join replaces them |
 
