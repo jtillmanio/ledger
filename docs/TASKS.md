@@ -1282,7 +1282,7 @@ parses `globals.css` and asserts every class in the state-matrix list above has 
 | sort -u` returns only `var(--r-*)` values and `50%` (circles). Screenshot `/comics` at 360px in both
 themes before and after: the layout is unchanged, only the values move.
 
-### ☐ 1.8 App shell · L
+### ☑ 1.8 App shell · L
 
 Depends on 1.8a (tokens and control states) and 1.8c (the routes the nav links to).
 The chrome every dashboard sits in. R3-12 split out **1.8b**, the thumb bar and

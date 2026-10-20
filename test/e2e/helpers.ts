@@ -15,6 +15,11 @@ export const E2E_RUN_ID = "e2e-run";
 export const E2E_RUN_TITLE = "E2E Run";
 export const E2E_ISSUE_COUNT = 12;
 export const E2E_READ_COUNT = 3;
+// A run whose Resume label is long, so the run page's action row is checked where it is tightest.
+export const E2E_LONG_RUN_ID = "e2e-long-run";
+export const E2E_LONG_LABEL = "The Amazing Spider-Man: Renew Your Vows Annual (2026) #112";
+// Notes waiting in the inbox, for the shell's Inbox (N) to count.
+export const E2E_INBOX_COUNT = 2;
 
 /**
  * Fails when axe finds a violation of any rule in `rules`, naming each rule and

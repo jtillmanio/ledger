@@ -749,6 +749,38 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
 .app .seg span[aria-disabled="true"],.app .bar .tab[aria-disabled="true"],.app .side a[aria-disabled="true"],
 .app .row[aria-disabled="true"],.app .switch[aria-disabled="true"],.app .stepper b[aria-disabled="true"]{
   opacity:.45;cursor:not-allowed}
+
+/* ══ Task 1.8 — the 360px and 834px frames, and the tablet rail (STYLE_GUIDE §14.5) ══ */
+.frame[data-w="p360"]{width:360px;display:none}
+.frame[data-w="tab"]{width:834px;display:none;border-radius:14px}
+body[data-vp="p360"] .frame[data-w="p360"],body[data-vp="tab"] .frame[data-w="tab"]{display:block}
+body[data-vp="p360"] .frame[data-w="phone"],body[data-vp="p360"] .frame[data-w="desk"],
+body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="desk"]{display:none}
+.frame[data-w="tab"] .frame-in{height:1024px}
+.frame[data-w="tab"] .app{display:grid;grid-template-columns:72px minmax(0,1fr);align-items:start;min-height:1024px}
+.rail{position:sticky;top:0;align-self:start;height:1024px;display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:12px 0;background:var(--surface);box-shadow:inset -1px 0 0 var(--rule)}
+.rail .rg{display:flex;flex-direction:column;align-items:center;gap:2px}
+.rail .rail-word{font:italic 500 24px/28px var(--display);margin-bottom:4px}
+.rail .rrule{width:32px;height:1px;background:var(--line)}
+.rail .grow{flex:1}
+.ri{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;width:64px;min-height:56px;padding:4px 0;
+  border-radius:8px;color:var(--ink-2);font-size:11px;line-height:14px;font-weight:500}
+.ri svg{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.ri .pill{position:relative;display:grid;place-items:center;width:48px;height:28px;border-radius:999px}
+.ri[aria-current]{color:var(--ink);font-weight:600}
+.ri[aria-current] .pill{background:var(--raise)}
+.ri[aria-current]::before{content:"";position:absolute;left:-4px;top:8px;width:3px;height:40px;border-radius:3px;background:var(--m,var(--brand))}
+.rcount{position:absolute;top:-4px;right:-2px;min-width:18px;height:16px;padding:0 4px;border-radius:999px;background:var(--raise);
+  box-shadow:inset 0 0 0 1px var(--rule-2);color:var(--ink-2);font:600 11px/16px var(--mono);text-align:center}
+.tabmain{min-width:0;display:flex;flex-direction:column;min-height:1024px}
+.frame[data-w="tab"] .wrap{flex:1;padding:1.5rem 2rem 3rem;max-width:none}
+.frame[data-w="tab"] h1.t{font:500 40px/44px var(--display);letter-spacing:-.015em}
+.frame[data-w="tab"] .actionbar{height:48px;padding:0 2rem;align-items:stretch;border-radius:0}
+.frame[data-w="tab"] .actionbar .btn{min-height:0}
+/* A phone-sized drawing stays phone-sized: the tablet column does not stretch the telescope. */
+.frame[data-w="tab"] svg.tele{display:block;max-width:344px;margin:0 auto}
+.frame[data-w="p360"] .bar .iconbtn svg,.frame[data-w="tab"] .actionbar svg{display:block}
 </style>
 </head>
 <body data-vp="phone">
@@ -756,7 +788,7 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
 <nav class="nav">
   <h1>Ledger</h1>
   <p>Mockups v4 — one dashboard per medium, position drawn rather than counted, amber for decisions you have not made.</p>
-  <div class="toggles"><button id="vp-phone" aria-current="true">Phone</button><button id="vp-desk">Desktop</button></div>
+  <div class="toggles"><button id="vp-phone" aria-current="true">Phone</button><button id="vp-360">360</button><button id="vp-tab">834</button><button id="vp-desk">Desktop</button></div>
   <div class="toggles"><button id="th-light" aria-current="true">Light</button><button id="th-dark">Dark</button></div>
   <h2>Dashboards</h2>
   <button data-s="home" aria-current="true">Comics — v4</button>
@@ -968,6 +1000,313 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
   </div>
   <div class="actionbar"><button class="btn">Mark #141 read</button><button class="btn sec" style="flex:0 0 auto">+ batch</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)">&#9906;</button></div>
 </div></div></div>
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="comics">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab" aria-current="page">Comics</a><a class="tab">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <div class="wrap">
+    <h1 class="t">Comics<span class="unit">sequence · issues</span></h1>
+    <p class="lede">2 runs in flight · 12 up next · 41 ready to start</p><p class="since">Since Tuesday: 14 issues marked · 1 book finished <a class="chip" href="#">6 in inbox</a></p>
+
+    <div class="telecard"><span class="stripe" style="background:var(--t5)"></span>
+      <div class="kick">PICK UP WHERE YOU LEFT OFF</div>
+      <div class="rh" style="margin-top:.125rem"><span class="name">Claremont — Uncanny X-Men</span></div>
+      <div class="by">Chris Claremont · 1975–91 <span class="bdg rg" style="margin-left:.25rem">&#9680; 42 / 381</span></div>
+      <svg class="tele" viewBox="0 0 344 354" width="100%" role="group" aria-labelledby="tH1-t">
+<title id="tH1-t">X-Men track</title><desc>Position: issue 42 of 381 in Claremont's Uncanny X-Men, run 2 of 5 in X-Men block 1, block 1 of 7 in the X-Men track. Issues 1 to 41 and 44 to 47 are read here; issue 43 is read in another run.</desc>
+<text class="tt" x="20" y="18">TRACK</text>
+<a href="#" tabindex="0"><title>Block 1 · Foundations · 664 issues · 11% read</title><rect class="cell head" x="20" y="30" width="16" height="71.9" rx="2"/>
+<rect class="fill" x="20" y="30" width="16" height="7.9" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Block 2 · The Outback Years · 214 issues · 0% read</title><rect class="cell" x="20" y="103.9" width="16" height="32.7" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Block 3 · 301 issues · 0% read</title><rect class="cell" x="20" y="138.5" width="16" height="40.2" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Block 4 · Morrison &amp; Revolution · 268 issues · 0% read</title><rect class="cell" x="20" y="180.8" width="16" height="37.4" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Block 5 · Whedon &amp; Decimation · 352 issues · 2% read</title><rect class="cell" x="20" y="220.1" width="16" height="44.7" rx="2"/>
+<rect class="fill" x="20" y="220.1" width="16" height="2" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Block 6 · 211 issues · 0% read</title><rect class="cell" x="20" y="266.8" width="16" height="32.4" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Block 7 · 170 issues · 0% read</title><rect class="cell" x="20" y="301.2" width="16" height="28.8" rx="2"/>
+</a>
+<text class="tt" x="100" y="18">BLOCK</text>
+<a href="#" tabindex="0"><title>Lee/Kirby — X-Men · 66 issues · 30% read</title><rect class="cell" x="100" y="30" width="16" height="36.1" rx="2"/>
+<rect class="fill" x="100" y="30" width="16" height="10.8" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Claremont — Uncanny X-Men · 381 issues · 11% read</title><rect class="cell head" x="100" y="68.1" width="16" height="141.4" rx="2"/>
+<rect class="fill" x="100" y="68.1" width="16" height="15.6" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Claremont — Excalibur · 47 issues · 0% read</title><rect class="cell" x="100" y="211.4" width="16" height="29.7" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Byrne — X-Men · 90 issues · 0% read</title><rect class="cell" x="100" y="243.2" width="16" height="44.1" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Simonson — X-Factor · 80 issues · 0% read</title><rect class="cell" x="100" y="289.3" width="16" height="40.7" rx="2"/>
+</a>
+<text class="tt" x="176" y="18">RUN</text>
+<a href="#" tabindex="0"><title>Claremont — Uncanny X-Men · 381 issues</title><rect class="cell head" x="176" y="30" width="18" height="300" rx="2"/></a>
+<path class="tick" d="M194 37.1 h6M194 45 h6M194 52.8 h6M194 60.7 h6M194 68.6 h6M194 76.5 h6M194 84.3 h6M194 92.2 h6M194 100.1 h6M194 108 h6M194 115.8 h6M194 123.7 h6M194 131.6 h6M194 139.4 h6M194 147.3 h6M194 155.2 h6M194 163.1 h6M194 170.9 h6M194 178.8 h6M194 186.7 h6M194 194.6 h6M194 202.4 h6M194 210.3 h6M194 218.2 h6M194 226.1 h6M194 233.9 h6M194 241.8 h6M194 249.7 h6M194 257.6 h6M194 265.4 h6M194 273.3 h6M194 281.2 h6M194 289.1 h6M194 296.9 h6M194 304.8 h6M194 312.7 h6M194 320.6 h6M194 328.4 h6"/>
+<rect class="fill" x="176" y="30" width="18" height="32.3"/>
+<rect class="fill" x="176" y="63.9" width="18" height="3.1"/>
+<rect class="else" x="177" y="63.1" width="16" height="3"/>
+<path class="headline" d="M171 62.3 h28"/>
+<text class="tl h" x="204" y="66.3">42 / 381 · #141</text>
+<text class="tl" x="204" y="39">1</text>
+<text class="tl" x="204" y="330">381</text>
+<text class="tl" x="176" y="348">1 tick = 10 issues</text>
+<path class="brk" d="M36 30 L100 30 L100 330 L36 101.9 Z"/>
+<path class="brkl" d="M36 30 L100 30 M36 101.9 L100 330"/>
+<path class="brk" d="M116 68.1 L176 30 L176 330 L116 209.4 Z"/>
+<path class="brkl" d="M116 68.1 L176 30 M116 209.4 L176 330"/>
+</svg><p class="telecap">Track rail · prerequisite order. Green is read here; grey dashed is read in another run.</p>
+      <div class="ladder" role="list">
+        <div role="listitem"><span class="k">TRACK</span><span class="v"><b>X-Men</b> · block 1 of 7</span></div>
+        <div role="listitem"><span class="k">BLOCK</span><span class="v"><b>1 · Foundations</b> · run 2 of 5</span></div>
+        <div role="listitem"><span class="k">RUN</span><span class="v"><b>Uncanny X-Men</b> · issue <b>42 / 381 · #141</b></span></div>
+      </div>
+    </div>
+
+    <h3 class="s">Also in flight</h3>
+    <div class="group">
+      <div class="row"><span class="edge" style="background:var(--t5)"></span><span class="cv m k5">AXM</span>
+        <div class="rb"><span class="rh"><span class="rt">Whedon — Astonishing X-Men</span><span class="rm">11 / 25</span></span>
+          <div class="rs">Joss Whedon · 2004–08</div>
+          <div class="meter rd"><i style="width:44%"></i></div></div>
+        <button class="btn sec sm">Read #12</button></div>
+    </div>
+
+    <h3 class="s">Up next<a class="more" href="#">All 12</a></h3>
+    <div class="group">
+      <div class="row"><span class="edge" style="background:var(--t5)"></span><button class="drag" aria-label="Reorder Claremont — New Mutants, position 1 of 12" aria-describedby="dnd-help-home">&#8942;&#8942;</button><span class="cv s k5">NM</span>
+        <div class="rb"><span class="rh"><span class="rt">Claremont — New Mutants</span><span class="rm">100 iss</span></span>
+          <div class="cost"><span class="bdg rd">&#9679; ready</span><span class="tag">costs 100</span><span class="tag">opens 3</span></div></div>
+        <button class="btn sm">Start</button><button class="menubtn" aria-haspopup="menu" aria-label="Actions for Claremont — New Mutants">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--t4)"></span><button class="drag" aria-label="Reorder Simonson — Thor, position 2 of 12" aria-describedby="dnd-help-home">&#8942;&#8942;</button><span class="cv s k4">THR</span>
+        <div class="rb"><span class="rh"><span class="rt">Simonson — Thor</span><span class="rm">44 iss</span></span>
+          <div class="cost"><span class="bdg rd">&#9679; ready</span><span class="tag">costs 44</span><span class="tag own">on your shelf</span></div></div>
+        <button class="menubtn" aria-haspopup="menu" aria-label="Actions for Simonson — Thor">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--t3)"></span><button class="drag" aria-label="Reorder Ewing — Immortal Hulk, position 3 of 12" aria-describedby="dnd-help-home">&#8942;&#8942;</button><span class="cv s k3">IMH</span>
+        <div class="rb"><span class="rh"><span class="rt">Ewing — Immortal Hulk</span><span class="rm">64 iss</span></span>
+          <div class="cost"><button class="bdg bl" aria-haspopup="dialog" aria-label="Why blocked? &#8856; 82 runs first">&#8856; 82 runs first</button><span class="tag warncost">costs 4,173</span></div></div>
+        <button class="menubtn" aria-haspopup="menu" aria-label="Actions for Ewing — Immortal Hulk">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--t1)"></span><button class="drag" aria-label="Reorder Hickman — Fantastic Four, position 4 of 12" aria-describedby="dnd-help-home">&#8942;&#8942;</button><span class="cv s k1">FF</span>
+        <div class="rb"><span class="rh"><span class="rt">Hickman — Fantastic Four</span><span class="rm">76 iss</span></span>
+          <div class="cost"><span class="bdg rdh">&#9675; ready · 1 soft unread</span><span class="tag">costs 112</span></div></div>
+        <button class="menubtn" aria-haspopup="menu" aria-label="Actions for Hickman — Fantastic Four">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--t2)"></span><button class="drag" aria-label="Reorder Priest — Black Panther, position 5 of 12" aria-describedby="dnd-help-home">&#8942;&#8942;</button><span class="cv s k2">BP</span>
+        <div class="rb"><span class="rh"><span class="rt">Priest — Black Panther</span><span class="rm">62 iss</span></span>
+          <div class="cost"><span class="bdg rd">&#9679; ready</span><span class="tag">costs 62</span></div></div>
+        <button class="menubtn" aria-haspopup="menu" aria-label="Actions for Priest — Black Panther">&#8943;</button></div>
+    </div>
+
+    <p id="dnd-help-home" class="sr-only">Space lifts a row, arrows move it, Space drops it, Esc cancels.</p>
+    <h3 class="s">Unlocked and waiting<a class="more" href="#">All 41</a></h3>
+    <div class="group">
+      <article class="row"><a class="row-link" href="#" aria-label="Open Simonson — Thor"></a><span class="edge" style="background:var(--t4)"></span><span class="cv m k4">THR</span>
+        <div class="rb"><span class="rh"><span class="rt">Simonson — Thor</span><span class="rm">44 iss</span></span>
+          <div class="rs"><span class="w">Walter Simonson</span> · 1983–87</div>
+          <div class="cost"><span class="bdg rd">&#9679; ready</span><span class="tag"><i class="sq" style="background:var(--t4)"></i>Thor</span><span class="tag">costs 44</span><span class="tag">opens 2</span><span class="tag own">on your shelf</span><span class="tag">in Up next · #2</span></div></div>
+        <span class="chev">&#8250;</span></article>
+      <article class="row"><a class="row-link" href="#" aria-label="Open Miller — Daredevil"></a><span class="edge" style="background:var(--t2)"></span><span class="cv m k2">DD</span>
+        <div class="rb"><span class="rh"><span class="rt">Miller — Daredevil</span><span class="rm">31 iss</span></span>
+          <div class="rs"><span class="w">Frank Miller</span> · 1979–83</div>
+          <div class="cost"><span class="bdg rd">&#9679; ready</span><span class="tag"><i class="sq" style="background:var(--t2)"></i>Street</span><span class="tag">costs 31</span><span class="tag">opens 4</span><button class="btn sec sm" style="margin-left:auto;padding:.1875rem .5rem;font-size:.75rem">+ Up next</button></div></div>
+        <span class="chev">&#8250;</span></article>
+      <article class="row"><a class="row-link" href="#" aria-label="Open Peter David — Hulk"></a><span class="edge" style="background:var(--t3)"></span><span class="cv m k3">HLK</span>
+        <div class="rb"><span class="rh"><span class="rt">Peter David — Hulk</span><span class="rm">137 iss</span></span>
+          <div class="rs"><span class="w">Peter David</span> · 1987–98</div>
+          <div class="cost"><span class="bdg rd">&#9679; ready</span><span class="tag"><i class="sq" style="background:var(--t3)"></i>Hulk</span><span class="tag">costs 137</span><span class="tag">opens 6</span><button class="btn sec sm" style="margin-left:auto;padding:.1875rem .5rem;font-size:.75rem">+ Up next</button></div></div>
+        <span class="chev">&#8250;</span></article>
+      <div class="row dim"><span class="edge" style="background:var(--t6)"></span><span class="cv m k8">DEF</span>
+        <div class="rb"><span class="rh"><span class="rt">Ewing — Defenders</span><span class="rm">13 iss</span></span>
+          <div class="rs"><span class="w">Al Ewing</span> · 2021–22</div>
+          <div class="cost"><button class="bdg bl" aria-haspopup="dialog" aria-label="Why blocked? &#8856; 98 runs first">&#8856; 98 runs first</button><span class="tag warncost">costs 4,642</span></div></div>
+        <span class="chev">&#8250;</span></div>
+    </div>
+
+    <h3 class="s">Rest of block 1</h3>
+    <div class="group">
+      <article class="row"><a class="row-link" href="#" aria-label="Open Claremont — New Mutants"></a><span class="cv s k5">NM</span>
+        <div class="rb"><span class="rh"><span class="rt">Claremont — New Mutants</span><span class="rm">100</span></span>
+          <div class="rs">run 3 of 5</div></div><span class="chev">&#8250;</span></article>
+      <article class="row"><a class="row-link" href="#" aria-label="Open Simonson — X-Factor"></a><span class="cv s k5">XF</span>
+        <div class="rb"><span class="rh"><span class="rt">Simonson — X-Factor</span><span class="rm">70</span></span>
+          <div class="rs">run 4 of 5</div></div><span class="chev">&#8250;</span></article>
+      <article class="row"><a class="row-link" href="#" aria-label="Open Claremont/Davis — Excalibur"></a><span class="cv s k5">EXC</span>
+        <div class="rb"><span class="rh"><span class="rt">Claremont/Davis — Excalibur</span><span class="rm">47</span></span>
+          <div class="rs">run 5 of 5</div></div><span class="chev">&#8250;</span></article>
+      <div class="row" style="background:var(--raise)"><div class="rb"><span class="rh"><span class="rt muted" style="font-weight:500">Then block 2 · The Outback Years</span><span class="rm">214</span></span>
+        <div class="rs">X-Men block 3 has no name yet — it shows as <b>“Block 3”</b> until you give it one. <button class="btn sec sm">Name it</button></div></div></div>
+    </div>
+
+    <h3 class="s">The frontier</h3>
+    <div class="stats">
+      <div class="stat"><div class="n" style="color:var(--ready)">41</div><div class="l">ready to start</div></div>
+      <div class="stat rdh"><div class="n" style="color:var(--ready)">62</div><div class="l">one soft prereq short</div></div>
+      <div class="stat"><div class="n">24</div><div class="l">tracks never opened</div></div>
+      <div class="stat"><div class="n" style="color:var(--brand)">11</div><div class="l">owned and ready</div></div>
+    </div>
+    <div class="group" style="margin-top:.75rem">
+      <div class="frow"><span class="k">Cheapest block to finish</span><span class="v">Thor · block 1</span><span class="rm mono">84 issues</span></div>
+      <div class="frow"><span class="k">Highest leverage</span><span class="v">this run</span><span class="rm mono">opens 13</span></div>
+      <div class="frow"><span class="k">Next event on your path</span><span class="v">Days of Future Past</span><span class="rm mono">7 away</span></div>
+    </div>
+    <p class="lede prov">73 of 10,834 issues logged. Kept small and last: it is provenance for the numbers above, not progress, and it will not change what you read tonight.</p>
+  </div>
+  <div class="actionbar"><button class="btn">Mark #141 read</button><button class="btn sec" style="flex:0 0 auto">+ batch</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
+</div></div></div>
+<div class="frame" data-w="tab"><div class="frame-in"><div class="app" data-theme="light" data-medium="comics"><nav class="rail" aria-label="Main"><span class="rail-word" aria-hidden="true">L</span><div class="rg" role="group" aria-label="Medium"><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/></svg></span><span class="rl">Comics</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg></span><span class="rl">Books</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m17 2-5 5-5-5"/><rect width="20" height="15" x="2" y="7" rx="2"/></svg></span><span class="rl">Watch</span></a></div><div class="rg"><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="rl">Dashboard</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="rl">Status</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></span><span class="rl">Runs</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg></span><span class="rl">Tracks</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span><span class="rl">Add</span></a></div><span class="rrule"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span class="rcount">6</span></span><span class="rl">Inbox</span></a><span class="grow"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><span class="rl">Search</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="rl">Settings</span></a></nav><div class="tabmain">
+  <div class="wrap">
+    <h1 class="t">Comics<span class="unit">sequence · issues</span></h1>
+    <p class="lede">2 runs in flight · 12 up next · 41 ready to start</p><p class="since">Since Tuesday: 14 issues marked · 1 book finished <a class="chip" href="#">6 in inbox</a></p>
+
+    <div class="telecard"><span class="stripe" style="background:var(--t5)"></span>
+      <div class="kick">PICK UP WHERE YOU LEFT OFF</div>
+      <div class="rh" style="margin-top:.125rem"><span class="name">Claremont — Uncanny X-Men</span></div>
+      <div class="by">Chris Claremont · 1975–91 <span class="bdg rg" style="margin-left:.25rem">&#9680; 42 / 381</span></div>
+      <svg class="tele" viewBox="0 0 344 354" width="100%" role="group" aria-labelledby="tH1-t">
+<title id="tH1-t">X-Men track</title><desc>Position: issue 42 of 381 in Claremont's Uncanny X-Men, run 2 of 5 in X-Men block 1, block 1 of 7 in the X-Men track. Issues 1 to 41 and 44 to 47 are read here; issue 43 is read in another run.</desc>
+<text class="tt" x="20" y="18">TRACK</text>
+<a href="#" tabindex="0"><title>Block 1 · Foundations · 664 issues · 11% read</title><rect class="cell head" x="20" y="30" width="16" height="71.9" rx="2"/>
+<rect class="fill" x="20" y="30" width="16" height="7.9" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Block 2 · The Outback Years · 214 issues · 0% read</title><rect class="cell" x="20" y="103.9" width="16" height="32.7" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Block 3 · 301 issues · 0% read</title><rect class="cell" x="20" y="138.5" width="16" height="40.2" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Block 4 · Morrison &amp; Revolution · 268 issues · 0% read</title><rect class="cell" x="20" y="180.8" width="16" height="37.4" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Block 5 · Whedon &amp; Decimation · 352 issues · 2% read</title><rect class="cell" x="20" y="220.1" width="16" height="44.7" rx="2"/>
+<rect class="fill" x="20" y="220.1" width="16" height="2" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Block 6 · 211 issues · 0% read</title><rect class="cell" x="20" y="266.8" width="16" height="32.4" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Block 7 · 170 issues · 0% read</title><rect class="cell" x="20" y="301.2" width="16" height="28.8" rx="2"/>
+</a>
+<text class="tt" x="100" y="18">BLOCK</text>
+<a href="#" tabindex="0"><title>Lee/Kirby — X-Men · 66 issues · 30% read</title><rect class="cell" x="100" y="30" width="16" height="36.1" rx="2"/>
+<rect class="fill" x="100" y="30" width="16" height="10.8" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Claremont — Uncanny X-Men · 381 issues · 11% read</title><rect class="cell head" x="100" y="68.1" width="16" height="141.4" rx="2"/>
+<rect class="fill" x="100" y="68.1" width="16" height="15.6" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Claremont — Excalibur · 47 issues · 0% read</title><rect class="cell" x="100" y="211.4" width="16" height="29.7" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Byrne — X-Men · 90 issues · 0% read</title><rect class="cell" x="100" y="243.2" width="16" height="44.1" rx="2"/>
+</a>
+<a href="#" tabindex="0"><title>Simonson — X-Factor · 80 issues · 0% read</title><rect class="cell" x="100" y="289.3" width="16" height="40.7" rx="2"/>
+</a>
+<text class="tt" x="176" y="18">RUN</text>
+<a href="#" tabindex="0"><title>Claremont — Uncanny X-Men · 381 issues</title><rect class="cell head" x="176" y="30" width="18" height="300" rx="2"/></a>
+<path class="tick" d="M194 37.1 h6M194 45 h6M194 52.8 h6M194 60.7 h6M194 68.6 h6M194 76.5 h6M194 84.3 h6M194 92.2 h6M194 100.1 h6M194 108 h6M194 115.8 h6M194 123.7 h6M194 131.6 h6M194 139.4 h6M194 147.3 h6M194 155.2 h6M194 163.1 h6M194 170.9 h6M194 178.8 h6M194 186.7 h6M194 194.6 h6M194 202.4 h6M194 210.3 h6M194 218.2 h6M194 226.1 h6M194 233.9 h6M194 241.8 h6M194 249.7 h6M194 257.6 h6M194 265.4 h6M194 273.3 h6M194 281.2 h6M194 289.1 h6M194 296.9 h6M194 304.8 h6M194 312.7 h6M194 320.6 h6M194 328.4 h6"/>
+<rect class="fill" x="176" y="30" width="18" height="32.3"/>
+<rect class="fill" x="176" y="63.9" width="18" height="3.1"/>
+<rect class="else" x="177" y="63.1" width="16" height="3"/>
+<path class="headline" d="M171 62.3 h28"/>
+<text class="tl h" x="204" y="66.3">42 / 381 · #141</text>
+<text class="tl" x="204" y="39">1</text>
+<text class="tl" x="204" y="330">381</text>
+<text class="tl" x="176" y="348">1 tick = 10 issues</text>
+<path class="brk" d="M36 30 L100 30 L100 330 L36 101.9 Z"/>
+<path class="brkl" d="M36 30 L100 30 M36 101.9 L100 330"/>
+<path class="brk" d="M116 68.1 L176 30 L176 330 L116 209.4 Z"/>
+<path class="brkl" d="M116 68.1 L176 30 M116 209.4 L176 330"/>
+</svg><p class="telecap">Track rail · prerequisite order. Green is read here; grey dashed is read in another run.</p>
+      <div class="ladder" role="list">
+        <div role="listitem"><span class="k">TRACK</span><span class="v"><b>X-Men</b> · block 1 of 7</span></div>
+        <div role="listitem"><span class="k">BLOCK</span><span class="v"><b>1 · Foundations</b> · run 2 of 5</span></div>
+        <div role="listitem"><span class="k">RUN</span><span class="v"><b>Uncanny X-Men</b> · issue <b>42 / 381 · #141</b></span></div>
+      </div>
+    </div>
+
+    <h3 class="s">Also in flight</h3>
+    <div class="group">
+      <div class="row"><span class="edge" style="background:var(--t5)"></span><span class="cv m k5">AXM</span>
+        <div class="rb"><span class="rh"><span class="rt">Whedon — Astonishing X-Men</span><span class="rm">11 / 25</span></span>
+          <div class="rs">Joss Whedon · 2004–08</div>
+          <div class="meter rd"><i style="width:44%"></i></div></div>
+        <button class="btn sec sm">Read #12</button></div>
+    </div>
+
+    <h3 class="s">Up next<a class="more" href="#">All 12</a></h3>
+    <div class="group">
+      <div class="row"><span class="edge" style="background:var(--t5)"></span><button class="drag" aria-label="Reorder Claremont — New Mutants, position 1 of 12" aria-describedby="dnd-help-home">&#8942;&#8942;</button><span class="cv s k5">NM</span>
+        <div class="rb"><span class="rh"><span class="rt">Claremont — New Mutants</span><span class="rm">100 iss</span></span>
+          <div class="cost"><span class="bdg rd">&#9679; ready</span><span class="tag">costs 100</span><span class="tag">opens 3</span></div></div>
+        <button class="btn sm">Start</button><button class="menubtn" aria-haspopup="menu" aria-label="Actions for Claremont — New Mutants">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--t4)"></span><button class="drag" aria-label="Reorder Simonson — Thor, position 2 of 12" aria-describedby="dnd-help-home">&#8942;&#8942;</button><span class="cv s k4">THR</span>
+        <div class="rb"><span class="rh"><span class="rt">Simonson — Thor</span><span class="rm">44 iss</span></span>
+          <div class="cost"><span class="bdg rd">&#9679; ready</span><span class="tag">costs 44</span><span class="tag own">on your shelf</span></div></div>
+        <button class="menubtn" aria-haspopup="menu" aria-label="Actions for Simonson — Thor">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--t3)"></span><button class="drag" aria-label="Reorder Ewing — Immortal Hulk, position 3 of 12" aria-describedby="dnd-help-home">&#8942;&#8942;</button><span class="cv s k3">IMH</span>
+        <div class="rb"><span class="rh"><span class="rt">Ewing — Immortal Hulk</span><span class="rm">64 iss</span></span>
+          <div class="cost"><button class="bdg bl" aria-haspopup="dialog" aria-label="Why blocked? &#8856; 82 runs first">&#8856; 82 runs first</button><span class="tag warncost">costs 4,173</span></div></div>
+        <button class="menubtn" aria-haspopup="menu" aria-label="Actions for Ewing — Immortal Hulk">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--t1)"></span><button class="drag" aria-label="Reorder Hickman — Fantastic Four, position 4 of 12" aria-describedby="dnd-help-home">&#8942;&#8942;</button><span class="cv s k1">FF</span>
+        <div class="rb"><span class="rh"><span class="rt">Hickman — Fantastic Four</span><span class="rm">76 iss</span></span>
+          <div class="cost"><span class="bdg rdh">&#9675; ready · 1 soft unread</span><span class="tag">costs 112</span></div></div>
+        <button class="menubtn" aria-haspopup="menu" aria-label="Actions for Hickman — Fantastic Four">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--t2)"></span><button class="drag" aria-label="Reorder Priest — Black Panther, position 5 of 12" aria-describedby="dnd-help-home">&#8942;&#8942;</button><span class="cv s k2">BP</span>
+        <div class="rb"><span class="rh"><span class="rt">Priest — Black Panther</span><span class="rm">62 iss</span></span>
+          <div class="cost"><span class="bdg rd">&#9679; ready</span><span class="tag">costs 62</span></div></div>
+        <button class="menubtn" aria-haspopup="menu" aria-label="Actions for Priest — Black Panther">&#8943;</button></div>
+    </div>
+
+    <p id="dnd-help-home" class="sr-only">Space lifts a row, arrows move it, Space drops it, Esc cancels.</p>
+    <h3 class="s">Unlocked and waiting<a class="more" href="#">All 41</a></h3>
+    <div class="group">
+      <article class="row"><a class="row-link" href="#" aria-label="Open Simonson — Thor"></a><span class="edge" style="background:var(--t4)"></span><span class="cv m k4">THR</span>
+        <div class="rb"><span class="rh"><span class="rt">Simonson — Thor</span><span class="rm">44 iss</span></span>
+          <div class="rs"><span class="w">Walter Simonson</span> · 1983–87</div>
+          <div class="cost"><span class="bdg rd">&#9679; ready</span><span class="tag"><i class="sq" style="background:var(--t4)"></i>Thor</span><span class="tag">costs 44</span><span class="tag">opens 2</span><span class="tag own">on your shelf</span><span class="tag">in Up next · #2</span></div></div>
+        <span class="chev">&#8250;</span></article>
+      <article class="row"><a class="row-link" href="#" aria-label="Open Miller — Daredevil"></a><span class="edge" style="background:var(--t2)"></span><span class="cv m k2">DD</span>
+        <div class="rb"><span class="rh"><span class="rt">Miller — Daredevil</span><span class="rm">31 iss</span></span>
+          <div class="rs"><span class="w">Frank Miller</span> · 1979–83</div>
+          <div class="cost"><span class="bdg rd">&#9679; ready</span><span class="tag"><i class="sq" style="background:var(--t2)"></i>Street</span><span class="tag">costs 31</span><span class="tag">opens 4</span><button class="btn sec sm" style="margin-left:auto;padding:.1875rem .5rem;font-size:.75rem">+ Up next</button></div></div>
+        <span class="chev">&#8250;</span></article>
+      <article class="row"><a class="row-link" href="#" aria-label="Open Peter David — Hulk"></a><span class="edge" style="background:var(--t3)"></span><span class="cv m k3">HLK</span>
+        <div class="rb"><span class="rh"><span class="rt">Peter David — Hulk</span><span class="rm">137 iss</span></span>
+          <div class="rs"><span class="w">Peter David</span> · 1987–98</div>
+          <div class="cost"><span class="bdg rd">&#9679; ready</span><span class="tag"><i class="sq" style="background:var(--t3)"></i>Hulk</span><span class="tag">costs 137</span><span class="tag">opens 6</span><button class="btn sec sm" style="margin-left:auto;padding:.1875rem .5rem;font-size:.75rem">+ Up next</button></div></div>
+        <span class="chev">&#8250;</span></article>
+      <div class="row dim"><span class="edge" style="background:var(--t6)"></span><span class="cv m k8">DEF</span>
+        <div class="rb"><span class="rh"><span class="rt">Ewing — Defenders</span><span class="rm">13 iss</span></span>
+          <div class="rs"><span class="w">Al Ewing</span> · 2021–22</div>
+          <div class="cost"><button class="bdg bl" aria-haspopup="dialog" aria-label="Why blocked? &#8856; 98 runs first">&#8856; 98 runs first</button><span class="tag warncost">costs 4,642</span></div></div>
+        <span class="chev">&#8250;</span></div>
+    </div>
+
+    <h3 class="s">Rest of block 1</h3>
+    <div class="group">
+      <article class="row"><a class="row-link" href="#" aria-label="Open Claremont — New Mutants"></a><span class="cv s k5">NM</span>
+        <div class="rb"><span class="rh"><span class="rt">Claremont — New Mutants</span><span class="rm">100</span></span>
+          <div class="rs">run 3 of 5</div></div><span class="chev">&#8250;</span></article>
+      <article class="row"><a class="row-link" href="#" aria-label="Open Simonson — X-Factor"></a><span class="cv s k5">XF</span>
+        <div class="rb"><span class="rh"><span class="rt">Simonson — X-Factor</span><span class="rm">70</span></span>
+          <div class="rs">run 4 of 5</div></div><span class="chev">&#8250;</span></article>
+      <article class="row"><a class="row-link" href="#" aria-label="Open Claremont/Davis — Excalibur"></a><span class="cv s k5">EXC</span>
+        <div class="rb"><span class="rh"><span class="rt">Claremont/Davis — Excalibur</span><span class="rm">47</span></span>
+          <div class="rs">run 5 of 5</div></div><span class="chev">&#8250;</span></article>
+      <div class="row" style="background:var(--raise)"><div class="rb"><span class="rh"><span class="rt muted" style="font-weight:500">Then block 2 · The Outback Years</span><span class="rm">214</span></span>
+        <div class="rs">X-Men block 3 has no name yet — it shows as <b>“Block 3”</b> until you give it one. <button class="btn sec sm">Name it</button></div></div></div>
+    </div>
+
+    <h3 class="s">The frontier</h3>
+    <div class="stats">
+      <div class="stat"><div class="n" style="color:var(--ready)">41</div><div class="l">ready to start</div></div>
+      <div class="stat rdh"><div class="n" style="color:var(--ready)">62</div><div class="l">one soft prereq short</div></div>
+      <div class="stat"><div class="n">24</div><div class="l">tracks never opened</div></div>
+      <div class="stat"><div class="n" style="color:var(--brand)">11</div><div class="l">owned and ready</div></div>
+    </div>
+    <div class="group" style="margin-top:.75rem">
+      <div class="frow"><span class="k">Cheapest block to finish</span><span class="v">Thor · block 1</span><span class="rm mono">84 issues</span></div>
+      <div class="frow"><span class="k">Highest leverage</span><span class="v">this run</span><span class="rm mono">opens 13</span></div>
+      <div class="frow"><span class="k">Next event on your path</span><span class="v">Days of Future Past</span><span class="rm mono">7 away</span></div>
+    </div>
+    <p class="lede prov">73 of 10,834 issues logged. Kept small and last: it is provenance for the numbers above, not progress, and it will not change what you read tonight.</p>
+  </div>
+  <div class="actionbar"><button class="btn">Mark #141 read</button><button class="btn sec" style="flex:0 0 auto">+ batch</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
+</div></div></div></div>
 
 <div class="frame" data-w="desk"><div class="frame-in"><div class="app" data-theme="light" data-medium="comics">
   <aside class="side"><div class="brand">Ledger</div>
@@ -1149,7 +1488,8 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
   </div></div>
 </div></div></div>
 
-<div class="notes"><h3>Comics dashboard</h3>
+<div class="notes">
+<p><b>834px and 360px frames (task 1.8).</b> The 834 frame is a tablet: the 72px navigation rail replaces the top bar (each item a 56px target, an icon over an 11px label, the current one a <code>--raise</code> pill with the 3px medium bar), one column with 32px padding, the 40/44 title and a 48px thumb bar spanning the column. The 360 frame shows the media bar fitting <i>Watch</i> untruncated. The dashboard body at tablet width (hero, shelf, ladder) is drawn by its own task; the feel-pass PNGs in <code>design/screenshots/tablet/</code> are its reference.</p><h3>Comics dashboard</h3>
   <p><span class="chg">v4 changes:</span> this screen used to be a mixed-media “Saturday” home — a books pace card sitting above a comics hero. It is now the comics dashboard at <code>/comics</code>, and the run list moved to <code>/comics/runs</code>. Books and Watch get the same shape.</p>
   <ul>
     <li><b>The telescope replaces the hero cover.</b> Three rails — the track’s 7 blocks, the block’s 5 runs, the run’s 381 issues — with brackets carrying the eye from coarse to fine. All three positions read at once, as geometry, which is the thing the spreadsheet column did well and a percentage cannot do. The ladder underneath names what the picture shows.</li>
@@ -1289,6 +1629,75 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
   </div>
   <div class="actionbar"><button class="btn">Mark #141 read</button><button class="btn sec" style="flex:0 0 auto">Mark through&hellip;</button><button class="btn sec" style="flex:0 0 auto" aria-label="Add issues">+</button></div>
 </div></div></div>
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="comics">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab" aria-current="page">Comics</a><a class="tab">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <div class="wrap">
+    <div class="hero"><span class="stripe" style="background:var(--t5)"></span>
+      <div class="cv l k5">UXM</div>
+      <div class="meta"><div class="name">Claremont — Uncanny X-Men</div>
+        <div class="by">Chris Claremont · 1975–91</div>
+        <div style="margin-top:.4375rem;display:flex;gap:.3125rem;flex-wrap:wrap">
+          <span class="bdg rg">&#9680; 42 / 381</span><span class="tag"><i class="sq" style="background:var(--t5)"></i>X-Men</span><span class="tag">8 eras</span></div>
+        <div class="meter"><i style="width:11%"></i></div>
+        <div class="rs">About 6 weeks at your pace · 339 issues left</div>
+        <a class="nextis" href="#" aria-label="Next: 42 of 381, Uncanny X-Men #141, Days of Future Past, part one"><span class="cv s cvimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 84'%3E%3Crect width='56' height='84' fill='%23394049'/%3E%3Crect width='56' height='15' fill='%23e4e6ea'/%3E%3Crect x='5' y='4' width='26' height='7' fill='%23394049'/%3E%3Ccircle cx='31' cy='47' r='15' fill='%23a3a9b3'/%3E%3Cpath d='M0 84 22 52 44 84Z' fill='%23656c77'/%3E%3C/svg%3E" alt="" width="28" height="42" loading="lazy" decoding="async"></span><span class="nb"><span class="nk">Next · 42 / 381</span><span class="lbl"><span class="ser">Uncanny X-Men</span><span class="no">#141</span></span><span class="inote">Days of Future Past, part one</span></span></a>
+        <div class="btnrow"><button class="btn sm">Resume #141</button><button class="btn sec sm">Adopt 2 prior reads</button><button class="btn sec sm" style="flex:0 0 44px;padding:0" aria-haspopup="menu" aria-label="More: copy unread, copy all, copy as ranges">&#8943;</button></div></div></div>
+
+    <div class="spinebar"><nav class="erachips" aria-label="Eras"><span class="chip" role="button" tabindex="0">Phoenix &#10003;</span><span class="chip" role="button" tabindex="0" data-on>DoFP 4/22</span><span class="chip" role="button" tabindex="0">Brood 0/19</span><span class="chip" role="button" tabindex="0">+5 more</span></nav><button class="chip tog" aria-pressed="true">Hide read</button></div>
+    <h3 class="s">Reading order<span class="n">42 / 381</span></h3>
+    <div class="group">
+      <button class="era" aria-expanded="false"><span class="echev" aria-hidden="true">&#9656;</span><span class="nm">Second Genesis &amp; Phoenix</span><span class="emeter"><i style="width:100%"></i></span><span class="ct">38 / 38 · all read · Show</span></button>
+      <button class="era" aria-expanded="true"><span class="echev" aria-hidden="true">&#9662;</span><span class="nm">Days of Future Past</span><span class="emeter"><i style="width:18%"></i></span><span class="ct">4/22</span></button>
+      <button class="hstub" aria-expanded="false" aria-label="3 read issues hidden, 39 to 41. Show">+<b>3</b> read · Show</button>
+      <div class="iss" data-next id="p-42"><span class="ord" aria-hidden="true">42</span><button class="chk" aria-pressed="false" aria-label="Mark Uncanny X-Men #141 read in this run"><i></i></button>
+        <div class="ib"><div class="lbl"><span class="sr-only">42 of 381, </span><span class="ser">Uncanny X-Men</span><span class="no">#141</span></div><div class="inote">Days of Future Past, part one</div></div><span class="cv s cvimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 84'%3E%3Crect width='56' height='84' fill='%23394049'/%3E%3Crect width='56' height='15' fill='%23e4e6ea'/%3E%3Crect x='5' y='4' width='26' height='7' fill='%23394049'/%3E%3Ccircle cx='31' cy='47' r='15' fill='%23a3a9b3'/%3E%3Cpath d='M0 84 22 52 44 84Z' fill='%23656c77'/%3E%3C/svg%3E" alt="" width="28" height="42" loading="lazy" decoding="async"></span></div>
+      <div class="iss" id="p-43"><span class="ord" aria-hidden="true">43</span><button class="chk" aria-pressed="false" aria-label="Mark Uncanny X-Men #142 read in this run"><i></i></button>
+        <div class="ib"><div class="lbl"><span class="sr-only">43 of 381, </span><span class="ser">Uncanny X-Men</span><span class="no">#142</span></div><span class="seen"><span class="sr-only">Previously </span>read in Days of Future Past · Mar 2025</span></div><span class="cv s k2">142</span></div>
+      <div class="iss" data-type="optional" id="p-44"><span class="ord" aria-hidden="true">44</span><button class="chk" aria-pressed="false" aria-label="Mark Marvel Graphic Novel (1982) #5 read in this run"><i></i></button>
+        <div class="ib"><div class="lbl"><span class="sr-only">44 of 381, </span><span class="ser">Marvel Graphic Novel (1982)</span><span class="no">#5</span></div>
+          <div class="inote"><span class="bdg dn">optional</span> God Loves, Man Kills</div><span class="seen"><span class="sr-only">Previously </span>read in X-Men Graphic Novels <button class="seen-more" aria-label="Show the other run">+1</button></span></div><span class="cv s k8">GN5</span></div>
+      <div class="iss" id="p-45"><span class="ord" aria-hidden="true">45</span><button class="chk" aria-pressed="false" aria-label="Mark Uncanny X-Men #143 read in this run"><i></i></button>
+        <div class="ib"><div class="lbl"><span class="sr-only">45 of 381, </span><span class="ser">Uncanny X-Men</span><span class="no">#143</span></div></div><span class="cv s cvload skel" aria-hidden="true"></span></div>
+      <div class="iss" id="p-46"><span class="ord" aria-hidden="true">46</span><button class="chk" aria-pressed="false" aria-label="Mark Uncanny X-Men #144 read in this run"><i></i></button>
+        <div class="ib"><div class="lbl"><span class="sr-only">46 of 381, </span><span class="ser">Uncanny X-Men</span><span class="no">#144</span></div></div><span class="cv s cvimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 84'%3E%3Crect width='56' height='84' fill='%23cfd3d9'/%3E%3Crect width='56' height='15' fill='%23262a30'/%3E%3Crect x='5' y='4' width='30' height='7' fill='%23cfd3d9'/%3E%3Cpath d='M0 70 56 30 56 84 0 84Z' fill='%23767d88'/%3E%3Ccircle cx='20' cy='42' r='10' fill='%23474d57'/%3E%3C/svg%3E" alt="" width="28" height="42" loading="lazy" decoding="async"></span></div>
+    </div>
+  </div>
+  <div class="actionbar"><button class="btn">Mark #141 read</button><button class="btn sec" style="flex:0 0 auto">Mark through&hellip;</button><button class="btn sec" style="flex:0 0 auto" aria-label="Add issues">+</button></div>
+</div></div></div>
+<div class="frame" data-w="tab"><div class="frame-in"><div class="app" data-theme="light" data-medium="comics"><nav class="rail" aria-label="Main"><span class="rail-word" aria-hidden="true">L</span><div class="rg" role="group" aria-label="Medium"><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/></svg></span><span class="rl">Comics</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg></span><span class="rl">Books</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m17 2-5 5-5-5"/><rect width="20" height="15" x="2" y="7" rx="2"/></svg></span><span class="rl">Watch</span></a></div><div class="rg"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="rl">Dashboard</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="rl">Status</span></a><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></span><span class="rl">Runs</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg></span><span class="rl">Tracks</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span><span class="rl">Add</span></a></div><span class="rrule"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span class="rcount">6</span></span><span class="rl">Inbox</span></a><span class="grow"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><span class="rl">Search</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="rl">Settings</span></a></nav><div class="tabmain">
+  <div class="wrap">
+    <div class="hero"><span class="stripe" style="background:var(--t5)"></span>
+      <div class="cv l k5">UXM</div>
+      <div class="meta"><div class="name">Claremont — Uncanny X-Men</div>
+        <div class="by">Chris Claremont · 1975–91</div>
+        <div style="margin-top:.4375rem;display:flex;gap:.3125rem;flex-wrap:wrap">
+          <span class="bdg rg">&#9680; 42 / 381</span><span class="tag"><i class="sq" style="background:var(--t5)"></i>X-Men</span><span class="tag">8 eras</span></div>
+        <div class="meter"><i style="width:11%"></i></div>
+        <div class="rs">About 6 weeks at your pace · 339 issues left</div>
+        <a class="nextis" href="#" aria-label="Next: 42 of 381, Uncanny X-Men #141, Days of Future Past, part one"><span class="cv s cvimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 84'%3E%3Crect width='56' height='84' fill='%23394049'/%3E%3Crect width='56' height='15' fill='%23e4e6ea'/%3E%3Crect x='5' y='4' width='26' height='7' fill='%23394049'/%3E%3Ccircle cx='31' cy='47' r='15' fill='%23a3a9b3'/%3E%3Cpath d='M0 84 22 52 44 84Z' fill='%23656c77'/%3E%3C/svg%3E" alt="" width="28" height="42" loading="lazy" decoding="async"></span><span class="nb"><span class="nk">Next · 42 / 381</span><span class="lbl"><span class="ser">Uncanny X-Men</span><span class="no">#141</span></span><span class="inote">Days of Future Past, part one</span></span></a>
+        <div class="btnrow"><button class="btn sm">Resume #141</button><button class="btn sec sm">Adopt 2 prior reads</button><button class="btn sec sm" style="flex:0 0 44px;padding:0" aria-haspopup="menu" aria-label="More: copy unread, copy all, copy as ranges">&#8943;</button></div></div></div>
+
+    <div class="spinebar"><nav class="erachips" aria-label="Eras"><span class="chip" role="button" tabindex="0">Phoenix &#10003;</span><span class="chip" role="button" tabindex="0" data-on>DoFP 4/22</span><span class="chip" role="button" tabindex="0">Brood 0/19</span><span class="chip" role="button" tabindex="0">+5 more</span></nav><button class="chip tog" aria-pressed="true">Hide read</button></div>
+    <h3 class="s">Reading order<span class="n">42 / 381</span></h3>
+    <div class="group">
+      <button class="era" aria-expanded="false"><span class="echev" aria-hidden="true">&#9656;</span><span class="nm">Second Genesis &amp; Phoenix</span><span class="emeter"><i style="width:100%"></i></span><span class="ct">38 / 38 · all read · Show</span></button>
+      <button class="era" aria-expanded="true"><span class="echev" aria-hidden="true">&#9662;</span><span class="nm">Days of Future Past</span><span class="emeter"><i style="width:18%"></i></span><span class="ct">4/22</span></button>
+      <button class="hstub" aria-expanded="false" aria-label="3 read issues hidden, 39 to 41. Show">+<b>3</b> read · Show</button>
+      <div class="iss" data-next id="p-42"><span class="ord" aria-hidden="true">42</span><button class="chk" aria-pressed="false" aria-label="Mark Uncanny X-Men #141 read in this run"><i></i></button>
+        <div class="ib"><div class="lbl"><span class="sr-only">42 of 381, </span><span class="ser">Uncanny X-Men</span><span class="no">#141</span></div><div class="inote">Days of Future Past, part one</div></div><span class="cv s cvimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 84'%3E%3Crect width='56' height='84' fill='%23394049'/%3E%3Crect width='56' height='15' fill='%23e4e6ea'/%3E%3Crect x='5' y='4' width='26' height='7' fill='%23394049'/%3E%3Ccircle cx='31' cy='47' r='15' fill='%23a3a9b3'/%3E%3Cpath d='M0 84 22 52 44 84Z' fill='%23656c77'/%3E%3C/svg%3E" alt="" width="28" height="42" loading="lazy" decoding="async"></span></div>
+      <div class="iss" id="p-43"><span class="ord" aria-hidden="true">43</span><button class="chk" aria-pressed="false" aria-label="Mark Uncanny X-Men #142 read in this run"><i></i></button>
+        <div class="ib"><div class="lbl"><span class="sr-only">43 of 381, </span><span class="ser">Uncanny X-Men</span><span class="no">#142</span></div><span class="seen"><span class="sr-only">Previously </span>read in Days of Future Past · Mar 2025</span></div><span class="cv s k2">142</span></div>
+      <div class="iss" data-type="optional" id="p-44"><span class="ord" aria-hidden="true">44</span><button class="chk" aria-pressed="false" aria-label="Mark Marvel Graphic Novel (1982) #5 read in this run"><i></i></button>
+        <div class="ib"><div class="lbl"><span class="sr-only">44 of 381, </span><span class="ser">Marvel Graphic Novel (1982)</span><span class="no">#5</span></div>
+          <div class="inote"><span class="bdg dn">optional</span> God Loves, Man Kills</div><span class="seen"><span class="sr-only">Previously </span>read in X-Men Graphic Novels <button class="seen-more" aria-label="Show the other run">+1</button></span></div><span class="cv s k8">GN5</span></div>
+      <div class="iss" id="p-45"><span class="ord" aria-hidden="true">45</span><button class="chk" aria-pressed="false" aria-label="Mark Uncanny X-Men #143 read in this run"><i></i></button>
+        <div class="ib"><div class="lbl"><span class="sr-only">45 of 381, </span><span class="ser">Uncanny X-Men</span><span class="no">#143</span></div></div><span class="cv s cvload skel" aria-hidden="true"></span></div>
+      <div class="iss" id="p-46"><span class="ord" aria-hidden="true">46</span><button class="chk" aria-pressed="false" aria-label="Mark Uncanny X-Men #144 read in this run"><i></i></button>
+        <div class="ib"><div class="lbl"><span class="sr-only">46 of 381, </span><span class="ser">Uncanny X-Men</span><span class="no">#144</span></div></div><span class="cv s cvimg"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 56 84'%3E%3Crect width='56' height='84' fill='%23cfd3d9'/%3E%3Crect width='56' height='15' fill='%23262a30'/%3E%3Crect x='5' y='4' width='30' height='7' fill='%23cfd3d9'/%3E%3Cpath d='M0 70 56 30 56 84 0 84Z' fill='%23767d88'/%3E%3Ccircle cx='20' cy='42' r='10' fill='%23474d57'/%3E%3C/svg%3E" alt="" width="28" height="42" loading="lazy" decoding="async"></span></div>
+    </div>
+  </div>
+  <div class="actionbar"><button class="btn">Mark #141 read</button><button class="btn sec" style="flex:0 0 auto">Mark through&hellip;</button><button class="btn sec" style="flex:0 0 auto" aria-label="Add issues">+</button></div>
+</div></div></div></div>
 <div class="frame" data-w="desk"><div class="frame-in"><div class="app" data-theme="light" data-medium="comics" style="position:relative">
     <aside class="side"><div class="brand">Ledger</div>
     <a>Search<span class="kbd">Ctrl K</span></a>
@@ -1360,7 +1769,8 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
 </div>
 </div></div></div>
 
-<div class="notes"><h3>Run detail</h3>
+<div class="notes">
+<p><b>834px and 360px frames (task 1.8).</b> The 834 frame is a tablet: the 72px navigation rail replaces the top bar (each item a 56px target, an icon over an 11px label, the current one a <code>--raise</code> pill with the 3px medium bar), one column with 32px padding, the 40/44 title and a 48px thumb bar spanning the column. The 360 frame shows the media bar fitting <i>Watch</i> untruncated. The dashboard body at tablet width (hero, shelf, ladder) is drawn by its own task; the feel-pass PNGs in <code>design/screenshots/tablet/</code> are its reference.</p><h3>Run detail</h3>
   <p><span class="chg">v3 changes:</span> the checkbox is a real 20px control with a tick; era headers are filled bands; a sticky action bar at the bottom.</p>
   <ul>
     <li><b>Desktop:</b> The run summary moves to a sticky rail so it stays with you down 381 issues, and the spine keeps one column — it is an ordered list and two columns would break the order.</li>
@@ -2024,6 +2434,149 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
   </div>
   <div class="actionbar"><button class="btn">Log progress</button><button class="btn sec" style="flex:0 0 auto">&#10003; finished</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)">&#9906;</button></div>
 </div></div></div>
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <div class="wrap">
+    <h1 class="t">Books<span class="unit">time · words</span></h1>
+    <p class="lede">2026 · 22 of 35 read · 3 put down</p><p class="since">Since Tuesday: 1 book finished · 212 pages <a class="chip" href="#">6 in inbox</a></p>
+
+    <div class="hero" style="margin-top:.75rem"><span class="stripe" style="background:var(--g5)"></span>
+      <div class="cv l k5">BUT</div>
+      <div class="meta"><div class="kick">READING NOW</div>
+        <div class="name">The Butcher of the Forest</div>
+        <div class="by">Premee Mohamed · <span class="mono">38k words</span></div>
+        <div class="meter rd" style="margin-top:.5rem"><i style="width:62%"></i></div>
+        <div class="rs mono" style="margin-top:.375rem">14k left · about one evening</div>
+      </div></div>
+
+    <h3 class="s">The plan, in quarters<span class="more">Open plan</span></h3>
+    <div class="pacecard" style="margin-top:0">
+      <div class="ctl" style="margin:0 0 .5rem"><span class="select">2027 <span class="car">&#9662;</span></span>
+        
+        <span class="rm mono" style="margin-left:auto">31 books · 3.58M</span></div>
+      <div class="planrail" style="--stack:192px"><span class="caprule" style="top:46px"></span><div class="qcol"><div class="qstack" style="height:192px"><button class="qb over" style="height:11px;--hue:var(--g5)" aria-label="Nettle &amp; Bone, 68k words, stated"></button><button class="qb over" style="height:11px;--hue:var(--g5)" aria-label="Piranesi, 65k words, stated"></button><button class="qb" style="height:21px;--hue:var(--g5)" aria-label="Tress of the Emerald Sea, 118k words, stated"></button><button class="qb" style="height:19px;--hue:var(--g1)" aria-label="Project Hail Mary, 108k words, stated"></button><button class="qb" style="height:27px;--hue:var(--g5)" aria-label="The Fifth Season, 146k words, stated"></button><button class="qb" style="height:74px;--hue:var(--g5)" aria-label="The Way of Kings, 387k words, stated"></button></div>
+<div class="qfoot"><b>Q1</b><span class="mono">892k</span><span class="bdg bl">over 132k</span></div></div><div class="qcol"><div class="qstack" style="height:192px"><button class="qb" style="height:22px;--hue:var(--g5)" aria-label="The Spear Cuts Through Water, 120k words, stated"></button><button class="qb" style="height:22px;--hue:var(--g1)" aria-label="Some Desperate Glory, 123k words, stated"></button><button class="qb" style="height:21px;--hue:var(--g5)" aria-label="The Tainted Cup, 119k words, stated"></button><button class="qb" style="height:31px;--hue:var(--g1)" aria-label="A Memory Called Empire, 168k words, stated"></button><button class="qb" style="height:32px;--hue:var(--g5)" aria-label="The Blade Itself, 174k words, stated"></button></div>
+<div class="qfoot"><b>Q2</b><span class="mono">704k</span><span class="bdg dn">56k room</span></div></div><div class="qcol"><div class="qstack" style="height:192px"><button class="qb" style="height:12px;--hue:var(--g1)" aria-label="Chain-Gang All-Stars, 70k words, stated"></button><button class="qb" style="height:7px;--hue:var(--g1)" aria-label="The Tusks of Extinction, 45k words, stated"></button><button class="qb" style="height:16px;--hue:var(--g5)" aria-label="Legends &amp; Lattes, 90k words, stated"></button><button class="qb" style="height:39px;--hue:var(--g5)" aria-label="Babel, 210k words, stated"></button></div>
+<div class="qfoot"><b>Q3</b><span class="mono">415k</span><span class="bdg dn">345k room</span></div></div><div class="qcol"><div class="qstack" style="height:192px"><button class="qb" style="height:27px;--hue:var(--g1)" aria-label="Empire of Silence, 145k words, stated"></button><button class="qb" style="height:22px;--hue:var(--g1)" aria-label="The Blighted Stars, 123k words, stated"></button></div>
+<div class="qfoot"><b>Q4</b><span class="mono">268k</span><span class="bdg dn">492k room</span></div></div><div class="qcol nq"><div class="qstack" style="height:192px"><span class="qmore">+11 more</span><button class="qb un" style="height:36px" aria-label="A Fire Upon the Deep, 191k words, unplaced in a quarter"></button><button class="qb un" style="height:39px" aria-label="The Sword of Kaigen, 204k words, unplaced in a quarter"></button><button class="qb un" style="height:88px" aria-label="Wind and Truth, 455k words, unplaced in a quarter"></button></div>
+<div class="qfoot"><b>no&nbsp;qtr</b><span class="mono">1.30M</span><span class="bdg bl">14 books</span></div></div></div>
+      <div class="leg">
+        <span class="tag"><i class="sq" style="background:var(--reading-soft);box-shadow:inset 0 0 0 1px var(--rule)"></i>planned</span>
+        <span class="tag"><i class="sq" style="border-top:1.5px dashed var(--ink-2);border-radius:0;height:0"></i>capacity 760k a quarter</span>
+        <span class="tag"><i class="sq" style="background-color:var(--blocked-soft);background-image:repeating-linear-gradient(135deg,var(--blocked) 0 1.5px,transparent 1.5px 5px)"></i>past capacity</span>
+        <span class="tag"><i class="sq" style="border:1px dashed var(--blocked)"></i>year only, no quarter</span>
+        <span class="legend-est"><i></i> ~ estimated</span>
+      </div>
+      <p class="lede" style="margin-top:.5rem">Tap a block to move that book. Q1 is 132k over; Q2–Q4 have 893k of room between them and the unplaced pile is 1.30M, so placing everything still leaves you over.</p>
+    </div>
+
+    <div class="decide"><span class="g">?</span>
+      <div class="dt"><b>14 of 2027’s 31 books have a year but no quarter.</b>
+        A year is what its quarters add up to, so these are 2027 books only by assertion.
+        <div class="btnrow" style="margin-top:.5rem"><button class="btn sm">Place them</button><button class="btn sec sm">Leave for now</button></div>
+        <div class="rs" style="margin-top:.375rem">175 like this across 2026–2030.</div></div></div>
+
+    <h3 class="s">Against capacity</h3>
+    <div class="pacecard" style="margin-top:0">
+      <div style="display:flex;align-items:flex-end;gap:.75rem">
+        <span class="capnum held">118%</span>
+        <span class="lede" style="padding-bottom:.3125rem">of 2027 capacity<br><b style="color:var(--ink)">45 min a day</b> at <span class="mono">185 wpm</span></span>
+        <button class="btn sec sm" style="margin-left:auto">Adjust</button></div>
+      <div class="capbar">
+        <i style="width:29%;background:var(--g5)"></i><i style="width:19%;background:var(--g1)"></i>
+        <i style="width:16%;background:var(--g6)"></i><i style="width:21%;background:var(--g3)"></i>
+        <i class="hatch" style="width:15%"></i><span class="pin" style="left:85%"></span></div>
+      <div class="leg">
+        <span class="tag"><i class="sq" style="background:var(--g5)"></i>Fantasy 1.4M</span>
+        <span class="tag"><i class="sq" style="background:var(--g1)"></i>Sci-fi 900k</span>
+        <span class="tag"><i class="sq" style="background:var(--g6)"></i>Thriller 780k</span>
+        <span class="tag"><i class="sq" style="background:var(--g3)"></i>Nonfiction 410k</span>
+        <span class="bdg bl">540k past capacity</span></div>
+      <p class="lede" style="margin-top:.5rem">About 5 books too many — a decision you have not made yet, not a mistake. Exact word counts for 71% of the plan; the rest estimated at pages × 275.</p>
+      <div class="btnrow"><button class="btn">Rebalance 2027</button><button class="btn sec">Accept as a stretch year</button></div>
+    </div>
+
+    <h3 class="s">2026 so far<span class="more">Full stats</span></h3>
+    <div class="stats">
+      <div class="stat"><div class="n">22</div><div class="l">read</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">put down</div></div>
+      <div class="stat"><div class="n mono">6.05M</div><div class="l">words</div></div>
+      <div class="stat"><div class="n">7<span class="muted" style="font-size:.875rem">/10</span></div><div class="l">ranked</div></div>
+    </div>
+  </div>
+  <div class="actionbar"><button class="btn">Log progress</button><button class="btn sec" style="flex:0 0 auto">&#10003; finished</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
+</div></div></div>
+<div class="frame" data-w="tab"><div class="frame-in"><div class="app" data-theme="light" data-medium="books"><nav class="rail" aria-label="Main"><span class="rail-word" aria-hidden="true">L</span><div class="rg" role="group" aria-label="Medium"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/></svg></span><span class="rl">Comics</span></a><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg></span><span class="rl">Books</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m17 2-5 5-5-5"/><rect width="20" height="15" x="2" y="7" rx="2"/></svg></span><span class="rl">Watch</span></a></div><div class="rg"><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="rl">Dashboard</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="rl">Status</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M16 2v3"/><path d="M3 9h18"/><path d="M8 2v3"/><path d="M17 13h-6"/><path d="M13 17H7"/><path d="M7 13h.01"/><path d="M17 17h.01"/></svg></span><span class="rl">Plan</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg></span><span class="rl">Shelves</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg></span><span class="rl">Top</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span><span class="rl">Add</span></a></div><span class="rrule"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span class="rcount">6</span></span><span class="rl">Inbox</span></a><span class="grow"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><span class="rl">Search</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="rl">Settings</span></a></nav><div class="tabmain">
+  <div class="wrap">
+    <h1 class="t">Books<span class="unit">time · words</span></h1>
+    <p class="lede">2026 · 22 of 35 read · 3 put down</p><p class="since">Since Tuesday: 1 book finished · 212 pages <a class="chip" href="#">6 in inbox</a></p>
+
+    <div class="hero" style="margin-top:.75rem"><span class="stripe" style="background:var(--g5)"></span>
+      <div class="cv l k5">BUT</div>
+      <div class="meta"><div class="kick">READING NOW</div>
+        <div class="name">The Butcher of the Forest</div>
+        <div class="by">Premee Mohamed · <span class="mono">38k words</span></div>
+        <div class="meter rd" style="margin-top:.5rem"><i style="width:62%"></i></div>
+        <div class="rs mono" style="margin-top:.375rem">14k left · about one evening</div>
+      </div></div>
+
+    <h3 class="s">The plan, in quarters<span class="more">Open plan</span></h3>
+    <div class="pacecard" style="margin-top:0">
+      <div class="ctl" style="margin:0 0 .5rem"><span class="select">2027 <span class="car">&#9662;</span></span>
+        
+        <span class="rm mono" style="margin-left:auto">31 books · 3.58M</span></div>
+      <div class="planrail" style="--stack:192px"><span class="caprule" style="top:46px"></span><div class="qcol"><div class="qstack" style="height:192px"><button class="qb over" style="height:11px;--hue:var(--g5)" aria-label="Nettle &amp; Bone, 68k words, stated"></button><button class="qb over" style="height:11px;--hue:var(--g5)" aria-label="Piranesi, 65k words, stated"></button><button class="qb" style="height:21px;--hue:var(--g5)" aria-label="Tress of the Emerald Sea, 118k words, stated"></button><button class="qb" style="height:19px;--hue:var(--g1)" aria-label="Project Hail Mary, 108k words, stated"></button><button class="qb" style="height:27px;--hue:var(--g5)" aria-label="The Fifth Season, 146k words, stated"></button><button class="qb" style="height:74px;--hue:var(--g5)" aria-label="The Way of Kings, 387k words, stated"></button></div>
+<div class="qfoot"><b>Q1</b><span class="mono">892k</span><span class="bdg bl">over 132k</span></div></div><div class="qcol"><div class="qstack" style="height:192px"><button class="qb" style="height:22px;--hue:var(--g5)" aria-label="The Spear Cuts Through Water, 120k words, stated"></button><button class="qb" style="height:22px;--hue:var(--g1)" aria-label="Some Desperate Glory, 123k words, stated"></button><button class="qb" style="height:21px;--hue:var(--g5)" aria-label="The Tainted Cup, 119k words, stated"></button><button class="qb" style="height:31px;--hue:var(--g1)" aria-label="A Memory Called Empire, 168k words, stated"></button><button class="qb" style="height:32px;--hue:var(--g5)" aria-label="The Blade Itself, 174k words, stated"></button></div>
+<div class="qfoot"><b>Q2</b><span class="mono">704k</span><span class="bdg dn">56k room</span></div></div><div class="qcol"><div class="qstack" style="height:192px"><button class="qb" style="height:12px;--hue:var(--g1)" aria-label="Chain-Gang All-Stars, 70k words, stated"></button><button class="qb" style="height:7px;--hue:var(--g1)" aria-label="The Tusks of Extinction, 45k words, stated"></button><button class="qb" style="height:16px;--hue:var(--g5)" aria-label="Legends &amp; Lattes, 90k words, stated"></button><button class="qb" style="height:39px;--hue:var(--g5)" aria-label="Babel, 210k words, stated"></button></div>
+<div class="qfoot"><b>Q3</b><span class="mono">415k</span><span class="bdg dn">345k room</span></div></div><div class="qcol"><div class="qstack" style="height:192px"><button class="qb" style="height:27px;--hue:var(--g1)" aria-label="Empire of Silence, 145k words, stated"></button><button class="qb" style="height:22px;--hue:var(--g1)" aria-label="The Blighted Stars, 123k words, stated"></button></div>
+<div class="qfoot"><b>Q4</b><span class="mono">268k</span><span class="bdg dn">492k room</span></div></div><div class="qcol nq"><div class="qstack" style="height:192px"><span class="qmore">+11 more</span><button class="qb un" style="height:36px" aria-label="A Fire Upon the Deep, 191k words, unplaced in a quarter"></button><button class="qb un" style="height:39px" aria-label="The Sword of Kaigen, 204k words, unplaced in a quarter"></button><button class="qb un" style="height:88px" aria-label="Wind and Truth, 455k words, unplaced in a quarter"></button></div>
+<div class="qfoot"><b>no&nbsp;qtr</b><span class="mono">1.30M</span><span class="bdg bl">14 books</span></div></div></div>
+      <div class="leg">
+        <span class="tag"><i class="sq" style="background:var(--reading-soft);box-shadow:inset 0 0 0 1px var(--rule)"></i>planned</span>
+        <span class="tag"><i class="sq" style="border-top:1.5px dashed var(--ink-2);border-radius:0;height:0"></i>capacity 760k a quarter</span>
+        <span class="tag"><i class="sq" style="background-color:var(--blocked-soft);background-image:repeating-linear-gradient(135deg,var(--blocked) 0 1.5px,transparent 1.5px 5px)"></i>past capacity</span>
+        <span class="tag"><i class="sq" style="border:1px dashed var(--blocked)"></i>year only, no quarter</span>
+        <span class="legend-est"><i></i> ~ estimated</span>
+      </div>
+      <p class="lede" style="margin-top:.5rem">Tap a block to move that book. Q1 is 132k over; Q2–Q4 have 893k of room between them and the unplaced pile is 1.30M, so placing everything still leaves you over.</p>
+    </div>
+
+    <div class="decide"><span class="g">?</span>
+      <div class="dt"><b>14 of 2027’s 31 books have a year but no quarter.</b>
+        A year is what its quarters add up to, so these are 2027 books only by assertion.
+        <div class="btnrow" style="margin-top:.5rem"><button class="btn sm">Place them</button><button class="btn sec sm">Leave for now</button></div>
+        <div class="rs" style="margin-top:.375rem">175 like this across 2026–2030.</div></div></div>
+
+    <h3 class="s">Against capacity</h3>
+    <div class="pacecard" style="margin-top:0">
+      <div style="display:flex;align-items:flex-end;gap:.75rem">
+        <span class="capnum held">118%</span>
+        <span class="lede" style="padding-bottom:.3125rem">of 2027 capacity<br><b style="color:var(--ink)">45 min a day</b> at <span class="mono">185 wpm</span></span>
+        <button class="btn sec sm" style="margin-left:auto">Adjust</button></div>
+      <div class="capbar">
+        <i style="width:29%;background:var(--g5)"></i><i style="width:19%;background:var(--g1)"></i>
+        <i style="width:16%;background:var(--g6)"></i><i style="width:21%;background:var(--g3)"></i>
+        <i class="hatch" style="width:15%"></i><span class="pin" style="left:85%"></span></div>
+      <div class="leg">
+        <span class="tag"><i class="sq" style="background:var(--g5)"></i>Fantasy 1.4M</span>
+        <span class="tag"><i class="sq" style="background:var(--g1)"></i>Sci-fi 900k</span>
+        <span class="tag"><i class="sq" style="background:var(--g6)"></i>Thriller 780k</span>
+        <span class="tag"><i class="sq" style="background:var(--g3)"></i>Nonfiction 410k</span>
+        <span class="bdg bl">540k past capacity</span></div>
+      <p class="lede" style="margin-top:.5rem">About 5 books too many — a decision you have not made yet, not a mistake. Exact word counts for 71% of the plan; the rest estimated at pages × 275.</p>
+      <div class="btnrow"><button class="btn">Rebalance 2027</button><button class="btn sec">Accept as a stretch year</button></div>
+    </div>
+
+    <h3 class="s">2026 so far<span class="more">Full stats</span></h3>
+    <div class="stats">
+      <div class="stat"><div class="n">22</div><div class="l">read</div></div>
+      <div class="stat"><div class="n">3</div><div class="l">put down</div></div>
+      <div class="stat"><div class="n mono">6.05M</div><div class="l">words</div></div>
+      <div class="stat"><div class="n">7<span class="muted" style="font-size:.875rem">/10</span></div><div class="l">ranked</div></div>
+    </div>
+  </div>
+  <div class="actionbar"><button class="btn">Log progress</button><button class="btn sec" style="flex:0 0 auto">&#10003; finished</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
+</div></div></div></div>
 
 <div class="frame" data-w="desk"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
   <aside class="side"><div class="brand">Ledger</div>
@@ -2122,7 +2675,8 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
   </div></div>
 </div></div></div>
 
-<div class="notes"><h3>Books dashboard</h3>
+<div class="notes">
+<p><b>834px and 360px frames (task 1.8).</b> The 834 frame is a tablet: the 72px navigation rail replaces the top bar (each item a 56px target, an icon over an 11px label, the current one a <code>--raise</code> pill with the 3px medium bar), one column with 32px padding, the 40/44 title and a 48px thumb bar spanning the column. The 360 frame shows the media bar fitting <i>Watch</i> untruncated. The dashboard body at tablet width (hero, shelf, ladder) is drawn by its own task; the feel-pass PNGs in <code>design/screenshots/tablet/</code> are its reference.</p><h3>Books dashboard</h3>
   <p><span class="chg">v4 changes:</span> the capacity number is no longer the hero and no longer red. Reading now comes first, the plan rail is second, and the overage is amber with two real buttons under it.</p>
   <ul>
     <li><b>The plan rail is the same instinct as the telescope, applied to time.</b> Each block is one book, sized by its word count; each column is a quarter; the dashed rule across all four is 760k, a quarter of your 45-min-a-day capacity. Anything poking above the rule is hatched. You see which quarter is over and by how much before you read a number.</li>
@@ -2164,6 +2718,59 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
   </div>
   <div class="actionbar"><button class="btn">Mark #141 read</button><button class="btn sec" style="flex:0 0 auto">+ batch</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)">&#9906;</button></div>
 </div></div></div>
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="comics">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab" aria-current="page">Comics</a><a class="tab">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <div class="wrap">
+    <h1 class="t">Runs by status</h1>
+    <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="true" data-on>In flight<span class="n">3</span></span><span role="tab" aria-selected="false">Up next<span class="n">12</span></span><span role="tab" aria-selected="false">Done<span class="n">4</span></span></span></div>
+
+    <div class="group">
+      <div class="row"><span class="edge" style="background:var(--t5)"></span><span class="cv m k5">UXM</span>
+        <div class="rb"><span class="rh"><span class="rt">Claremont — Uncanny X-Men</span><span class="rm">42 / 381</span></span>
+          <div class="rs">Next <span class="w">#141</span> · last read Sep 12</div>
+          <div class="meter"><i style="width:11%"></i></div></div>
+        <button class="btn sec sm">Read #141</button></div>
+      <div class="row"><span class="edge" style="background:var(--t5)"></span><span class="cv m k5">AXM</span>
+        <div class="rb"><span class="rh"><span class="rt">Whedon — Astonishing X-Men</span><span class="rm">11 / 25</span></span>
+          <div class="rs">Next <span class="w">#12</span> · last read Aug 30</div>
+          <div class="meter"><i style="width:44%"></i></div></div>
+        <button class="btn sec sm">Read #12</button></div>
+      <div class="row"><span class="edge" style="background:var(--t5)"></span><span class="cv m k1">HOX</span>
+        <div class="rb"><span class="rh"><span class="rt">Hickman — Krakoa</span><span class="rm">25 / 641</span></span>
+          <div class="rs">Next <span class="w">New Mutants (2019) #9</span> · last read Jul 3</div>
+          <div class="meter"><i style="width:4%"></i></div></div>
+        <button class="btn sec sm">Read</button></div>
+    </div>
+    <p class="lede" style="margin-top:.75rem">Most recently touched first. <b>Up next</b> is your queue, then what's ready but not queued. <b>Done</b> is finished runs, newest first.</p>
+  </div>
+  <div class="actionbar"><button class="btn">Mark #141 read</button><button class="btn sec" style="flex:0 0 auto">+ batch</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
+</div></div></div>
+<div class="frame" data-w="tab"><div class="frame-in"><div class="app" data-theme="light" data-medium="comics"><nav class="rail" aria-label="Main"><span class="rail-word" aria-hidden="true">L</span><div class="rg" role="group" aria-label="Medium"><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/></svg></span><span class="rl">Comics</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg></span><span class="rl">Books</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m17 2-5 5-5-5"/><rect width="20" height="15" x="2" y="7" rx="2"/></svg></span><span class="rl">Watch</span></a></div><div class="rg"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="rl">Dashboard</span></a><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="rl">Status</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></svg></span><span class="rl">Runs</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg></span><span class="rl">Tracks</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span><span class="rl">Add</span></a></div><span class="rrule"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span class="rcount">6</span></span><span class="rl">Inbox</span></a><span class="grow"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><span class="rl">Search</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="rl">Settings</span></a></nav><div class="tabmain">
+  <div class="wrap">
+    <h1 class="t">Runs by status</h1>
+    <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="true" data-on>In flight<span class="n">3</span></span><span role="tab" aria-selected="false">Up next<span class="n">12</span></span><span role="tab" aria-selected="false">Done<span class="n">4</span></span></span></div>
+
+    <div class="group">
+      <div class="row"><span class="edge" style="background:var(--t5)"></span><span class="cv m k5">UXM</span>
+        <div class="rb"><span class="rh"><span class="rt">Claremont — Uncanny X-Men</span><span class="rm">42 / 381</span></span>
+          <div class="rs">Next <span class="w">#141</span> · last read Sep 12</div>
+          <div class="meter"><i style="width:11%"></i></div></div>
+        <button class="btn sec sm">Read #141</button></div>
+      <div class="row"><span class="edge" style="background:var(--t5)"></span><span class="cv m k5">AXM</span>
+        <div class="rb"><span class="rh"><span class="rt">Whedon — Astonishing X-Men</span><span class="rm">11 / 25</span></span>
+          <div class="rs">Next <span class="w">#12</span> · last read Aug 30</div>
+          <div class="meter"><i style="width:44%"></i></div></div>
+        <button class="btn sec sm">Read #12</button></div>
+      <div class="row"><span class="edge" style="background:var(--t5)"></span><span class="cv m k1">HOX</span>
+        <div class="rb"><span class="rh"><span class="rt">Hickman — Krakoa</span><span class="rm">25 / 641</span></span>
+          <div class="rs">Next <span class="w">New Mutants (2019) #9</span> · last read Jul 3</div>
+          <div class="meter"><i style="width:4%"></i></div></div>
+        <button class="btn sec sm">Read</button></div>
+    </div>
+    <p class="lede" style="margin-top:.75rem">Most recently touched first. <b>Up next</b> is your queue, then what's ready but not queued. <b>Done</b> is finished runs, newest first.</p>
+  </div>
+  <div class="actionbar"><button class="btn">Mark #141 read</button><button class="btn sec" style="flex:0 0 auto">+ batch</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
+</div></div></div></div>
 <div class="frame" data-w="desk"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
     <aside class="side"><div class="brand">Ledger</div>
     <a>Search<span class="kbd">Ctrl K</span></a>
@@ -2235,7 +2842,8 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
 </div>
 </div></div></div>
 
-<div class="notes"><h3>Status — in flight, up next, done</h3>
+<div class="notes">
+<p><b>834px and 360px frames (task 1.8).</b> The 834 frame is a tablet: the 72px navigation rail replaces the top bar (each item a 56px target, an icon over an 11px label, the current one a <code>--raise</code> pill with the 3px medium bar), one column with 32px padding, the 40/44 title and a 48px thumb bar spanning the column. The 360 frame shows the media bar fitting <i>Watch</i> untruncated. The dashboard body at tablet width (hero, shelf, ladder) is drawn by its own task; the feel-pass PNGs in <code>design/screenshots/tablet/</code> are its reference.</p><h3>Status — in flight, up next, done</h3>
   <p><span class="chg">New, Sept 2026:</span> each medium can show everything in flight, everything planned or next up, and everything finished. One component and three routes — <code>/comics/status</code>, <code>/books/status</code>, <code>/watch/status</code> — with the same three tabs in the same order under the same names. ARCHITECTURE §4, TASKS 1.9 and 8.8.</p>
   <ul>
     <li><b>Phone shows comics In flight; desktop shows books Up next.</b> Same component. What fills a row differs by medium, and the tabs never do.</li>
@@ -5492,7 +6100,11 @@ function pair(a,b,fn){
   [[A,B],[B,A]].forEach(([x,y])=>x.addEventListener('click',()=>{
     x.setAttribute('aria-current','true');y.removeAttribute('aria-current');fn(x===A);}));
 }
-pair('vp-phone','vp-desk',p=>body.dataset.vp=p?'phone':'desk');
+// Phone, 360, 834 and desktop. 360 and 834 are drawn for home, spine, bdash and status only (task 1.8).
+const VPS={phone:'vp-phone',p360:'vp-360',tab:'vp-tab',desk:'vp-desk'};
+Object.entries(VPS).forEach(([vp,id])=>document.getElementById(id).addEventListener('click',()=>{
+  Object.values(VPS).forEach(i=>document.getElementById(i).removeAttribute('aria-current'));
+  document.getElementById(id).setAttribute('aria-current','true');body.dataset.vp=vp;}));
 pair('th-light','th-dark',l=>document.querySelectorAll('.app').forEach(a=>a.dataset.theme=l?'light':'dark'));
 </script>
 </body>

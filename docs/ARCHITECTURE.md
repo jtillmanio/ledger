@@ -941,14 +941,19 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
   skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
   page within 1 s. What holds that, and the test that fails if it slips:
   - **Queries per page, in one wave.** `/comics` 4, `/comics/runs` 2, a run 3,
-    `/books/list` 5, `/inbox` 2, `/login` none, `/` and `/books` none (redirects), each page's queries started together
+    `/books/list` 5, `/inbox` 2, `/watch` none, `/login` none, `/` and `/books` none (redirects), each page's queries started together
     (`test/query-budget.test.ts`, which counts them). A query that must wait on
     another raises a page's waves; raising either number needs a reason here.
     The dashboard (then `/`) and `/books/list` went from 4 to 5 with the inbox
     chip's count (task 1.4b): a separate one-row count in the same wave, rather
     than a join into a list query it has nothing to do with. The dashboard is
     back to 4 since task 1.8c moved *Coming out* (books releases) off it: that
-    list is 2.x's `/books/releases`.
+    list is 2.x's `/books/releases`. The shell adds one more to every screen but
+    sign-in (task 1.8): the sidebar's and rail's `Inbox (N)` count, a one-row query
+    in a `<Suspense>` of its own (`InboxCount`, deduplicated with React's `cache`
+    so the rail and the sidebar share one). It is outside each page's budget
+    above because it streams: a cold Neon wake delays the number, never the
+    page's skeleton.
   - **A view read for one run filters by that run before it aggregates.** No
     catalog-wide CTE, no scan of every issue to describe one run
     (`test/view-plans.test.ts`, which reads the planner's plan). Catalog-wide
@@ -994,6 +999,7 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
     | `/comics/busiek-avengers` | 21,000 | 171,000 | 29 | 100 |
     | `/books/list` | 48,000 | 170,000 | 29 | 100 |
     | `/inbox` | 11,000 | 173,000 | 28 | 100 |
+    | `/watch` | 11,000 | 173,000 | 28 | 100 |
     <!-- /perf-budget -->
 
     Measured on 0.10's preview (2026-10-07, Lighthouse 13.5.0, Chrome 154),
@@ -1012,7 +1018,9 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
     drops it; it keeps the 48,000 `/books` had. The nav's Books link points at
     `/books/list`, and its Ledger link (`/`, a redirect) is not prefetched: a
     page that prefetched a redirect never reached network idle in the tap
-    runner, and made 55 requests against a budget of 35.
+    runner, and made 55 requests against a budget of 35. `/watch` (task 1.8) is
+    the shell and an empty slate, so it starts from `/inbox`'s numbers (the same
+    weight of page); it is tapped from `/comics` on the media bar's link.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 

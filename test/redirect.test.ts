@@ -39,9 +39,17 @@ describe("GET / (AC-1, AC-3)", () => {
   });
 });
 
+describe("GET / for watch (task 1.8, AC-5)", () => {
+  it("redirects to /watch once it is the last-touched medium", () => {
+    const res = GET(request("/", { ledger_medium: "watch" }));
+    expect(res.status).toBe(307);
+    expect(where(res)).toBe("/watch");
+  });
+});
+
 describe("the medium helpers", () => {
-  it("know comics and books until 1.8 adds watch", () => {
-    expect([...MEDIA]).toEqual(["comics", "books"]);
+  it("know comics, books and watch", () => {
+    expect([...MEDIA]).toEqual(["comics", "books", "watch"]);
   });
 
   it("read a medium off a path, and only off a path under one", () => {
@@ -49,6 +57,7 @@ describe("the medium helpers", () => {
     expect(mediumOf("/comics/runs")).toBe("comics");
     expect(mediumOf("/books/list")).toBe("books");
     expect(mediumOf("/books")).toBe("books");
+    expect(mediumOf("/watch")).toBe("watch");
     expect(mediumOf("/inbox")).toBeNull();
     expect(mediumOf("/")).toBeNull();
     // A prefix of the name is not the medium.
@@ -58,6 +67,7 @@ describe("the medium helpers", () => {
 
   it("pick comics for anything that is not a medium", () => {
     expect(pickMedium("books")).toBe("books");
+    expect(pickMedium("watch")).toBe("watch");
     expect(pickMedium("comics")).toBe("comics");
     expect(pickMedium(undefined)).toBe("comics");
     expect(pickMedium("")).toBe("comics");
@@ -79,6 +89,10 @@ describe("proxy() writes the cookie (AC-3)", () => {
   it("sets it for /comics and for a run page", () => {
     expect(proxy(request("/comics", session)).cookies.get(MEDIUM_COOKIE)?.value).toBe("comics");
     expect(proxy(request("/comics/some-run", session)).cookies.get(MEDIUM_COOKIE)?.value).toBe("comics");
+  });
+
+  it("sets watch for /watch, so a visit there is what / reopens", () => {
+    expect(proxy(request("/watch", session)).cookies.get(MEDIUM_COOKIE)?.value).toBe("watch");
   });
 
   it("leaves the cookie alone on a request elsewhere", () => {

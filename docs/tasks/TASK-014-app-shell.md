@@ -1,14 +1,14 @@
 ---
 id: TASK-014
 title: 1.8 App shell
-status: Ready
+status: In progress
 depends_on: [TASK-013, TASK-026]
 size: L
 model: sonnet
 autonomy: attended
 ui: true
 plan_status: approved
-planned_at_commit: 4bba78a
+planned_at_commit: b1252ce
 ---
 
 # TASK-014 — 1.8 App shell
@@ -78,34 +78,34 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-Provisional: depends on TASK-013 (the harness API: `test/e2e/helpers.ts`, the projects) and TASK-026 (the routes the nav links to). Re-plan if either changes those files.
+Re-planned 2026-10-20 at `b1252ce` (after 1.8a, 0.11 and TASK-026 merged); approved by the owner with the defaults below.
 
 Steps:
-1. `src/components/nav/items.ts`: `NAV_ITEMS` holds the media (Comics `/comics`, Books `/books`, Watch `/watch`), each medium's items as LedgerNav draws them, the global Inbox `/inbox`, and the footer Search and Settings. Each item is `{ id, label, href, icon, enabled }`, and `visibleItems()` filters on `enabled`. Enabled: comics Dashboard, Runs (`/comics/runs`); books Add (`/books/add`); watch Dashboard; Inbox. Every other item, books Dashboard included (until 2.2), is `false`.
-2. `src/components/nav/Icons.tsx`: an inline `<svg hidden>` `<symbol>` sprite (Lucide paths as LedgerNav draws them, stroke 1.5) plus `<Icon name>` (`<svg aria-hidden="true"><use href="#i-…"/>`). Lucide's ISC notice goes in `src/components/nav/LUCIDE-LICENSE.txt`.
-3. `MediaBar`, under 768px: `.bar` with the wordmark (at least 24×24) and `<nav aria-label="Media">` with `aria-current="page"`. `NavRail`, 768–1023px: 72px, 56px items, an icon over an 11px label, the current item a `--raise` pill with a 3px `--m-*` bar. `Sidebar`: from 1024px the 64px icon rail with `aria-label` and a `data-tip` tooltip; from 1280px 224px wide, holding the media well, the items, a `--line` rule, `Inbox (N)` and the `SyncPill` footer. All read `visibleItems()` and take an optional `items` prop for tests. Client components, for `usePathname`. CSS media queries alone show and hide them, so nothing flashes.
-4. `src/components/nav/Shell.tsx` (server) fetches `inboxCount` and lays out the bar, rail, sidebar, content box and children. `layout.tsx` renders it, and there is no shell on `/login`. `AppNav.tsx` is deleted; `test/app-nav.test.tsx` becomes `test/nav-items.test.tsx`.
-5. `SyncPill.tsx` (client): `useSyncExternalStore` on `online` and `offline`; `<span role="status" class="sync"><i/>online</span>`.
-6. `src/app/watch/page.tsx` (`requireUserId()`, `<h1>Watch</h1>`, an `.empty` slate reading *Nothing to watch yet* with a *Save to inbox* link to `/inbox`) and `watch/loading.tsx`. `last-medium.ts` `MEDIA` gains `watch`. `scripts/perf/routes.mjs` gains `watch`, with its budget copied from `inbox`'s and mirrored in ARCHITECTURE. `src/components/nav/DashboardBar.tsx` is the `.actionbar` with the owner's interim verb (Context), rendered by `comics/(dash)/page.tsx` and `watch/page.tsx`.
-7. `globals.css`: the shell grid; `--bar-h` (64px phone, 80px from 1024px); glass `.bar` and `.side` per STYLE_GUIDE §8, with the fallback; `.rail`; the sidebar widths from `--rail-w` and `--side-w`; the tooltips (`--overlay`, `--sh-2`, a `--rule-2` ring, 12px to the right; after `--dur-4` on hover and at once on `:focus-visible`); the `--content-max` box centred beside the nav; the sticky stack; `.inbox-chip{display:none}` from 1024px; the `--m-*` current-item bar and `.unit`; `.actionbar` 48px at 768–1023px. The pre-v4 `.bar-inner` rules go.
-8. `design/mockups.html`: an 834px and a 360px frame each for `home`, `spine`, `bdash`, `status` (new `data-w` widths), drawn from the feel pass and listed in `design/mockups-index.md`. Tick 1.8 in `docs/TASKS.md`.
+1. `src/components/nav/items.ts`: one `NAV_ITEMS` list of `{ id, label, href, icon, enabled, plain? }` and `visibleItems()`. Enabled: Comics `/comics`, Books `/books/list`, Watch `/watch`, comics Dashboard and Runs, books Add, watch Dashboard, Inbox `/inbox`, and Export (a plain `<a href="/api/export">` at the rail and sidebar foot). Every other item, books Dashboard included, is `false`. The home link is `prefetch={false}`.
+2. `Icons.tsx`: inline `<symbol>` sprite (Lucide paths as LedgerNav draws them, stroke 1.5) and `<Icon>` (`aria-hidden`); `LUCIDE-LICENSE.txt`.
+3. Three navs from `visibleItems()`, client components (`usePathname`), none rendered on `/login`: `MediaBar` (the phone `.bar`, under 768px; wordmark at least 24x24; `aria-current`; `--m-*` underline), `NavRail` (768-1023px, 72px, 56px items, icon over 11px label), `Sidebar` (one DOM from 1024px: 64px icon rail with `aria-label` and tooltip, 224px with labels from 1280px). Rail and sidebar are `position:fixed`, so nothing but `.bar` sticks near the top.
+4. `Shell.tsx` (server) lays out nav and a centred `.content` box. The Inbox count is an async server component inside `<Suspense>`, so a cold database never delays a skeleton. `layout.tsx` renders it; `AppNav.tsx` is deleted.
+5. `SyncPill.tsx` (client): `online`/`offline`, `role="status"`, 6px dot; a pill in the sidebar and rail foot, an offline strip at `top: var(--bar-h)` on the phone.
+6. `/watch` (`page.tsx`: one `h1`, *Nothing to watch yet* slate, *Save to inbox*; `loading.tsx`); `watch` joins `MEDIA`; perf route tapped from `/comics`, a budget row, and ARCHITECTURE's Performance budget. `DashboardBar.tsx` is the 48px `.actionbar` with the owner's interim verbs; the comics dashboard reuses `reading[0]` (no new query).
+7. `globals.css`: shell layout, `--bar-h` (64px phone, 80px from 1024px), glass `.bar`/`.side` with fallbacks, rail, sidebar, tooltips, `.content` (1056px, centred beside the nav), `.inbox-chip` hidden from 1024px, `--m-*` accents, `.unit`, 48px `.actionbar` at tablet width; fix the run page's 360px overflow; delete the pre-v4 `.bar-inner` and `.bar .tab` rules.
+8. `design/mockups.html` and `mockups-index.md`: 834px and 360px frames for `home`, `spine`, `bdash`, `status`. Tick 1.8 in `docs/TASKS.md`.
 
-Files: `src/app/layout.tsx`, `src/components/nav/{items.ts,Icons.tsx,MediaBar.tsx,NavRail.tsx,Sidebar.tsx,SyncPill.tsx,Shell.tsx,DashboardBar.tsx,LUCIDE-LICENSE.txt}`, `src/components/AppNav.tsx` (deleted), `src/app/comics/(dash)/page.tsx`, `src/app/watch/{page,loading}.tsx`, `src/lib/last-medium.ts`, `scripts/perf/{routes.mjs,budget.json}`, `docs/ARCHITECTURE.md`, `src/app/globals.css`, `design/mockups.html`, `design/mockups-index.md`, `test/e2e/shell.spec.ts`, `test/nav-items.test.tsx`, `test/app-nav.test.tsx` (deleted), `test/sync-pill.test.tsx`, `test/redirect.test.ts`, `docs/TASKS.md`.
+Files: `src/app/layout.tsx`, `src/components/nav/{items.ts,Icons.tsx,MediaBar.tsx,NavRail.tsx,Sidebar.tsx,SyncPill.tsx,Shell.tsx,DashboardBar.tsx,LUCIDE-LICENSE.txt}`, `src/components/AppNav.tsx` (deleted), `src/app/comics/(dash)/page.tsx`, `src/app/comics/[runId]/page.tsx` (360px row), `src/app/watch/{page,loading}.tsx`, `src/lib/last-medium.ts`, `scripts/perf/{routes.mjs,budget.json}`, `docs/ARCHITECTURE.md`, `src/app/globals.css`, `design/mockups.html`, `design/mockups-index.md`, `test/e2e/shell.spec.ts`, `test/nav-items.test.tsx`, `test/app-nav.test.tsx` (deleted), `test/sync-pill.test.tsx`, `test/redirect.test.ts`, `test/query-budget.test.ts` (if needed), `docs/TASKS.md`.
 
 Test strategy:
-- AC-1 → `test/e2e/shell.spec.ts`, one test per Check clause, run in the light and dark projects. The spec sets the 768, 834, 1100 and 1440 viewports itself. One test, `the media nav is identical on every phone route`, compares the nav's innerHTML with `aria-current` stripped.
-- AC-2 → `test/nav-items.test.tsx` `a disabled item renders in no bar` (flip one item, render all three bars) and `the books Dashboard item is not rendered`; `shell.spec.ts` `every enabled href answers 2xx or 3xx`.
-- AC-3 → `test/sync-pill.test.tsx` (happy-dom; dispatches `offline` and `online`): text, `role="status"`, the dot's class. `shell.spec.ts` `offline strip sits at --bar-h on the phone` uses `context.setOffline(true)`.
-- AC-4 → `shell.spec.ts` screenshots each dashboard in every project. For reduced transparency it goes through CDP `Emulation.setEmulatedMedia`, and the `.bar` background then computes to `--surface`. Tooltips have opacity 0 at rest at 1280px, and the wordmark's box is at least 24×24.
-- AC-5 → `shell.spec.ts` `/watch renders its h1 and slate`; `test/redirect.test.ts` gains `watch` (the proxy sets it on `/watch`, and `/` → `/watch`); `test/perf.test.ts`.
-- AC-6 → manual: the eight frames render, and the index lists them.
+- AC-1 -> `test/e2e/shell.spec.ts`, one test per Check clause (768, 834, 1100 and 1440 viewports set by the spec); `the media nav is identical on every phone route` compares the nav's innerHTML with `aria-current` stripped.
+- AC-2 -> `test/nav-items.test.tsx` `a disabled item renders in no bar` and `the books Dashboard item is not rendered`; `shell.spec.ts` `every enabled href answers 2xx or 3xx`.
+- AC-3 -> `test/sync-pill.test.tsx` (text, `role="status"`, dot); `shell.spec.ts` offline strip via `context.setOffline(true)`.
+- AC-4 -> `shell.spec.ts` screenshots each dashboard in every project; reduced transparency via CDP `Emulation.setEmulatedMedia`; tooltips at rest; wordmark box at least 24x24.
+- AC-5 -> `shell.spec.ts` `/watch renders its h1 and slate`; `test/redirect.test.ts` gains `watch`; `test/perf.test.ts`.
+- AC-6 -> manual: the eight frames render, and the index lists them.
 
-Risks / open questions:
-1. Settled (owner, 2026-10-19): *Export*, in today's nav and in no drawn one, becomes a plain, unprefetched link at the sidebar and rail foot. The phone loses it until Settings (2.0).
-2. The books set as drawn has no list item. Until 2.2, `/books/list` is reached through the media switch, since `/books` redirects there.
-3. Playwright can't emulate `prefers-reduced-transparency` directly. The CDP route is Chromium-only, which is all the harness runs.
+Risks / open questions (settled by the owner, 2026-10-20):
+1. `.bar` is the phone media bar only. The desktop page-header band (h1 plus verbs) is 1.8b's; `--bar-h` is still 80px from 1024px for the sticky stack.
+2. The shell's Inbox count adds one row-count query per page, in `Suspense`, outside the per-page budget; documented in ARCHITECTURE.
+3. *Export* leaves the phone nav (owner, 2026-10-19). Playwright can't emulate `prefers-reduced-transparency` directly; the CDP route is Chromium-only, which is all the harness runs.
 
-Size check: L, about 25 files: the layout and nav components, their CSS and the mockup frames. No schema. Attended.
+Size check: L, about 25 files, no schema. Attended.
 
 ## Review log
 
