@@ -25,7 +25,7 @@ A mark that fails to save never looks saved, and it can be retried in one tap. A
 - Builds on TASK-001 (the undo stack and its toast region, `src/components/Undo.tsx`), TASK-026 (the routes and their `loading.tsx`) and TASK-014 (the chrome the axe run covers). 1.8b then places the error toast above the thumb bar.
 - The telecard (2.5b), the plan rail (2.2b) and season rows (8.7) have no loaded component yet. Their skeletons are measured against fixtures built from the mockup's markup on `globals.css`, and each task that builds the real component re-measures it.
 - Today a failed tick calls `alert()` (`src/components/IssueRow.tsx` `toggle`), and a thrown fetch isn't caught.
-- *From TASK-026 (1.8c, task/1.8c-dashboard-routes-redirect):* the run page `/comics/cap-origin` scrolls sideways at 360, 390 and 412px on the dev data (`scrollWidth` 450): a row's `a.btn.sec.sm`, `.menu-wrap` and `button.more` run past the edge. Not checked on `main`; if it is the row markup, it is this task's (arrived after the plan was approved).
+- *From TASK-026 (1.8c, PR #108):* the run page `/comics/cap-origin` scrolls sideways at 360, 390 and 412px on the dev data (`scrollWidth` 450): a row's `a.btn.sec.sm`, `.menu-wrap` and `button.more` run past the edge. Not checked on `main`; if it is the row markup, it is this task's (arrived after the plan was approved).
 
 ## Acceptance criteria
 
