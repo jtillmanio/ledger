@@ -12,7 +12,7 @@ describe("needsBuild (vercel.json ignoreCommand)", () => {
   });
 
   it("builds for app code, migrations, views and dependencies", () => {
-    expect(needsBuild(["docs/TASKS.md", "src/app/page.tsx"])).toBe(true);
+    expect(needsBuild(["docs/TASKS.md", "src/app/comics/(dash)/page.tsx"])).toBe(true);
     expect(needsBuild(["drizzle/0005_a.sql"])).toBe(true);
     expect(needsBuild(["etl/views.sql"])).toBe(true);
     expect(needsBuild(["package-lock.json"])).toBe(true);
@@ -31,7 +31,7 @@ describe("deploymentNeedsBuild (scripts/vercel-ignore.mjs)", () => {
 
   it("otherwise follows needsBuild", () => {
     expect(deploymentNeedsBuild(["docs/START-HERE.md", ".github/workflows/ci.yml"])).toBe(false);
-    expect(deploymentNeedsBuild(["docs/TASKS.md", "src/app/page.tsx"])).toBe(true);
+    expect(deploymentNeedsBuild(["docs/TASKS.md", "src/app/comics/(dash)/page.tsx"])).toBe(true);
   });
 });
 

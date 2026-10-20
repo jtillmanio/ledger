@@ -1,7 +1,7 @@
 ---
 id: TASK-026
 title: 1.8c Dashboard routes and the / redirect
-status: Ready
+status: In progress
 depends_on: [TASK-013]
 size: M
 model: sonnet
@@ -62,8 +62,14 @@ The comics dashboard lives at `/comics` and the lists sit one level down (`/comi
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The roadmap said the three dashboard routes write the last-medium cookie; the proxy writes it instead (owner, 2026-10-19). ARCHITECTURE § 4's route table says only *Redirect to whichever medium you last touched*, which still holds → docs/TASKS.md § 1.8 (fixed in this PR)
-- The review ledger records R1-13 as resolved by a cookie the three dashboards write; the proxy writes it now → docs/review/LEDGER.md § R1-13 (fixed in this PR)
+- The roadmap and the review ledger already said the proxy writes the cookie (main, 2026-10-19). Neither said a `<Link>` prefetch must not: Next hides `next-router-prefetch` from `proxy()`, so the matcher skips prefetches (owner, 2026-10-20) → docs/TASKS.md § 1.8 (fixed in this PR)
+- Same prefetch rule in the ledger's R1-13 row → docs/review/LEDGER.md § R1-13 (fixed in this PR)
+- ARCHITECTURE § 4's route table and Performance budget follow the moves: `/`'s cookie, `/comics` today, `/books` redirecting until 2.2, query counts, `loading.tsx` list, `/comics` and `/comics/runs` budget rows → docs/ARCHITECTURE.md § 4. Interface (fixed in this PR)
+- The comics dashboard's perf budget (20,000 document + RSC bytes) is provisional until its first preview's Lighthouse run → not tracked: done in this PR (plan revision), set from the PR's Lighthouse comment before the PR is marked ready
+- The dashboard's *All runs* link is a plain `<p class="small">` link, not the `h3.s .more` quiet link: the section heads are `h2` today and an `h3` would skip a level → not tracked: 1.8 draws the quiet links (SG-D6, LEDGER UX-N19)
+- `upcomingReleases()` is no longer called by any page; the query stays for `/books/releases` → not tracked: already tracked in docs/TASKS.md (the item that says the page goes when 1.8c makes `/` a redirect)
+- `MEDIA` in `src/lib/last-medium.ts` needs `watch`, and `test/redirect.test.ts` pins it to `["comics", "books"]` → not tracked: already in docs/tasks/TASK-014-*.md § Context and its plan (it edits that test)
+- Candidate decision: the proxy's matcher skips `<Link>` prefetches so they never write `ledger_medium` (owner chose this over `prefetch={false}` on the nav, 2026-10-20) → docs/review/decisions.md § D-?? (proposed)
 
 ## Plan
 
@@ -75,7 +81,8 @@ Steps:
 3. `src/app/books/page.tsx`: `redirect("/books/list")`.
 4. `src/lib/last-medium.ts`: `MEDIUM_COOKIE = "ledger_medium"`, `MEDIA = ["comics", "books"]` (TASK-014 adds `watch`), `mediumOf(pathname)` (a medium or `null`) and `pickMedium(value)` (else `comics`). `src/proxy.ts`: when `rt_session` is present and `mediumOf` is set, set the cookie on the `NextResponse.next()` it already returns. `src/app/route.ts` `GET` answers 307 to `/${pickMedium(req.cookies.get(MEDIUM_COOKIE)?.value)}`; with no page at `/`, nothing renders there.
 5. `scripts/perf/routes.mjs`. `comics` keeps path `/comics`, now the dashboard. `books` keeps path `/books`, which `perf.test` needs for a top-level page; Lighthouse follows the redirect. The run taps start `from: "/comics/runs"`. A new `runs` route measures `/comics/runs`, tapped from `/comics` on its *All runs* link, and takes the old `comics` budget (it is the screen that budget was set on). `comics` gets the measured dashboard figure, with the reason given in ARCHITECTURE's Performance budget table, which mirrors `budget.json` row for row.
-6. Update the imports in `test/{add-book,inbox,query-budget,release,resume-pointer,loading-states}.test.*`. `loading-states` lists the new paths and keeps its *no `src/app/comics/loading.tsx`* test. Tick 1.8c in `docs/TASKS.md`.
+6. (Revision, owner-approved 2026-10-20) `src/proxy.ts`'s matcher gets `missing: next-router-prefetch, next-router-segment-prefetch`, so a `<Link>` prefetch never writes the cookie. `test/health.test.ts` reads `matcher[0].source`; `test/redirect.test.ts` and `routes.spec.ts` prove it.
+7. Update the imports in `test/{add-book,inbox,query-budget,release,resume-pointer,loading-states}.test.*`. `loading-states` lists the new paths and keeps its *no `src/app/comics/loading.tsx`* test. Tick 1.8c in `docs/TASKS.md`.
 
 Test strategy:
 - AC-1 → `test/redirect.test.ts`: `GET /` with `ledger_medium=books` answers 307 to `/books`; with no cookie, or with `bogus`, to `/comics`. `test/e2e/routes.spec.ts` `a garbage session goes to /login and gets 401` (`request.get` with `Cookie: rt_session=garbage`, `maxRedirects: 0`): `/comics` → 307 to `/login`, `/api/export` → 401. `test/list-totals.test.tsx` (queries mocked): `/books/list` with 2 rows of `total` 5 prints *2 of 5*, and `/comics/runs` with a filter that shows 2 of 5 prints *2 of 5 shown*. `routes.spec.ts` `no same-origin link answers 404` visits every page route and requests each `a[href^="/"]`.
@@ -103,4 +110,4 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Verify rounds:
 - Review rounds:
 - First-pass AC FAILs:
-- Plan revisions after approval:
+- Plan revisions after approval: 1 (the proxy's matcher skips prefetches, owner-approved; the tests that import the moved pages also gained `year-chips`, `health` and `series-list`)

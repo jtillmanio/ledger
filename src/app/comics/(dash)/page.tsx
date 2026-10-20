@@ -1,18 +1,18 @@
 import Link from "next/link";
 import { requireUserId } from "@/lib/auth";
-import { catalogTotals, inboxCount, inProgressRuns, readyToRead, upcomingReleases } from "@/db/queries";
+import { catalogTotals, inboxCount, inProgressRuns, readyToRead } from "@/db/queries";
 
 export const dynamic = "force-dynamic";
 
 function pct(n: number) { return `${Math.round(n * 100)}%`; }
 
-export default async function Home() {
+// The comics dashboard (ARCHITECTURE § 4): `/` redirects here or to the medium you last touched.
+export default async function Comics() {
   const userId = await requireUserId();
-  const [reading, ready, catalog, releases, inbox] = await Promise.all([
+  const [reading, ready, catalog, inbox] = await Promise.all([
     inProgressRuns(userId),
     readyToRead(userId, 12),
     catalogTotals(userId),
-    upcomingReleases(),
     inboxCount(userId),
   ]);
 
@@ -29,6 +29,7 @@ export default async function Home() {
         {issuesRead.toLocaleString()} of {issuesTotal.toLocaleString()} issues read
         {" · "}{readyTotal} runs unlocked and waiting
       </p>
+      <p className="small"><Link href="/comics/runs">All runs</Link></p>
       {/* Notes jotted and not yet resolved (task 1.4b, mockup `dashextras`); none, no chip. */}
       {inbox > 0 && (
         <p className="inbox-line">
@@ -69,7 +70,7 @@ export default async function Home() {
         {ready.length === 0 && (
           <div className="empty">
             Nothing is fully unlocked. Finish a run in progress, or open{" "}
-            <Link prefetch={false} href="/comics?readiness=ready_hard">the hard-prereqs-only list</Link>.
+            <Link prefetch={false} href="/comics/runs?readiness=ready_hard">the hard-prereqs-only list</Link>.
           </div>
         )}
         {ready.map((r) => (
@@ -87,23 +88,6 @@ export default async function Home() {
           </Link>
         ))}
       </div>
-
-      {releases.length > 0 && (
-        <>
-          <h2>Coming out</h2>
-          <div className="rows">
-            {releases.map((b) => (
-              <div key={b.id} className="row">
-                <span className="row-head">
-                  <span className="row-title">{b.title}</span>
-                  <span className="row-meta mono">{b.release_date}</span>
-                </span>
-                {b.author && <span className="row-sub">{b.author}</span>}
-              </div>
-            ))}
-          </div>
-        </>
-      )}
     </main>
   );
 }

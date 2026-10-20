@@ -25,6 +25,6 @@ describe("books page series list", () => {
 
   it("keeps the book filters on the show-all link", () => {
     expect(seriesAllHref({ status: "read", q: "stormlight", genre: undefined }))
-      .toBe("/books?status=read&q=stormlight&series=all");
+      .toBe("/books/list?status=read&q=stormlight&series=all");
   });
 });

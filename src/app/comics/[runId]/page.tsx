@@ -18,7 +18,7 @@ export default async function Run({ params }: { params: Promise<{ runId: string 
 
   return (
     <main>
-      <p className="small"><Link href="/comics">All runs</Link></p>
+      <p className="small"><Link href="/comics/runs">All runs</Link></p>
       <h1>{run.title}</h1>
       <p className="muted small">
         {[run.writers, run.artists, run.tracks.join(", "), yearSpan(run.start_year, run.end_year)]

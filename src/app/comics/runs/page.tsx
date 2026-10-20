@@ -26,24 +26,24 @@ export default async function Comics({
       {/* A query-string chip is not prefetched: Next 16.4 fetches each one on
           load, about 40 requests here, and a tap re-renders this same route. */}
       <div className="filters">
-        <Link href="/comics" className="chip" aria-current={!track && !readiness && !state}>
+        <Link href="/comics/runs" className="chip" aria-current={!track && !readiness && !state}>
           Everything
         </Link>
-        <Link prefetch={false} href="/comics?readiness=ready_all&state=unread" className="chip"
+        <Link prefetch={false} href="/comics/runs?readiness=ready_all&state=unread" className="chip"
               aria-current={readiness === "ready_all"}>
           Unlocked
         </Link>
-        <Link prefetch={false} href="/comics?state=reading" className="chip" aria-current={state === "reading"}>
+        <Link prefetch={false} href="/comics/runs?state=reading" className="chip" aria-current={state === "reading"}>
           In progress
         </Link>
-        <Link prefetch={false} href="/comics?state=read" className="chip" aria-current={state === "read"}>
+        <Link prefetch={false} href="/comics/runs?state=read" className="chip" aria-current={state === "read"}>
           Finished
         </Link>
       </div>
 
       <div className="filters">
         {tracks.map((t) => (
-          <Link key={t.track_id} prefetch={false} href={`/comics?track=${t.track_id}`} className="chip"
+          <Link key={t.track_id} prefetch={false} href={`/comics/runs?track=${t.track_id}`} className="chip"
                 aria-current={track === t.track_id}>
             {t.track_name} <span className="mono">{t.runs_read}/{t.total_runs}</span>
           </Link>

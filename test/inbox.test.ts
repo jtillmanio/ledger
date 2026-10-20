@@ -265,10 +265,10 @@ describe("the list and the count (AC-1, AC-4)", () => {
   });
 });
 
-/** The comics dashboard (`/`) and the books dashboard (`/books`), rendered against the TEST database. */
+/** The comics dashboard (`/comics`) and the books master list (`/books/list`; the books dashboard is 2.2's), rendered against the TEST database. */
 async function dashboards() {
-  const Home = (await import("../src/app/page")).default;
-  const Books = (await import("../src/app/books/page")).default;
+  const Home = (await import("../src/app/comics/(dash)/page")).default;
+  const Books = (await import("../src/app/books/list/page")).default;
   const render = (el: ReactElement) => renderToStaticMarkup(createElement(UndoProvider, null, el));
   return [render(await Home()), render(await Books({ searchParams: Promise.resolve({}) }))];
 }

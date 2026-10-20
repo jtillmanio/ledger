@@ -7,9 +7,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 const routes: [string, string][] = [
-  ["/comics", "../src/app/comics/(list)/loading"],
+  ["/comics", "../src/app/comics/(dash)/loading"],
+  ["/comics/runs", "../src/app/comics/runs/loading"],
   ["/comics/[runId]", "../src/app/comics/[runId]/loading"],
-  ["/books", "../src/app/books/loading"],
+  ["/books/list", "../src/app/books/list/loading"],
   ["/inbox", "../src/app/inbox/loading"],
 ];
 
@@ -23,9 +24,10 @@ describe("loading states (task 0.9)", () => {
     expect(html.match(/class="sk[ "]/g)?.length ?? 0).toBeGreaterThan(5);
   });
 
-  it("the run list's skeleton never stands in front of a run page", () => {
+  it("the dashboard's skeleton never stands in front of a run page", () => {
     // A loading.tsx at app/comics/ would wrap [runId] too and be the first
-    // boundary the router meets, so a run would open on the list's skeleton.
+    // boundary the router meets, so a run would open on the dashboard's skeleton.
+    // The dashboard sits in the (dash) group for that reason (task 1.8c).
     expect(existsSync("src/app/comics/loading.tsx")).toBe(false);
   });
 });

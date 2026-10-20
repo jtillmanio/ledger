@@ -157,13 +157,13 @@ export default function AddBooks({ initial, close, query = "", note = null }: {
       close();
       router.refresh();
     } else {
-      router.push(target.kind === "shelf" ? "/books" : AFTER_ADD);
+      router.push(target.kind === "shelf" ? "/books/list" : AFTER_ADD);
     }
   }
 
   const cancel = (label: string) => (close
     ? <button type="button" className="btn sec" onClick={close}>{label}</button>
-    : <Link prefetch={false} href="/books" className="btn sec">{label}</Link>);
+    : <Link prefetch={false} href="/books/list" className="btn sec">{label}</Link>);
 
   return (
     <div className="addb" data-mode={mode}>

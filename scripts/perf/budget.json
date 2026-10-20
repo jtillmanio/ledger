@@ -2,7 +2,8 @@
   "$comment": "Task 0.10. Per route (scripts/perf/routes.mjs): the most document + RSC bytes, JS bytes and requests a page load may take (Lighthouse's median of three, Vercel's preview toolbar left out), and the lowest accessibility score it may have. Mirrored in docs/ARCHITECTURE.md's Performance budget; raise a number only with a reason there.",
   "routes": {
     "login": { "docRscBytes": 8000, "jsBytes": 170000, "requests": 30, "a11y": 100 },
-    "comics": { "docRscBytes": 47000, "jsBytes": 170000, "requests": 35, "a11y": 100 },
+    "comics": { "docRscBytes": 20000, "jsBytes": 170000, "requests": 35, "a11y": 100 },
+    "runs": { "docRscBytes": 47000, "jsBytes": 170000, "requests": 35, "a11y": 100 },
     "run-small": { "docRscBytes": 25000, "jsBytes": 172000, "requests": 38, "a11y": 100 },
     "run-large": { "docRscBytes": 21000, "jsBytes": 171000, "requests": 29, "a11y": 100 },
     "books": { "docRscBytes": 48000, "jsBytes": 170000, "requests": 29, "a11y": 100 },
