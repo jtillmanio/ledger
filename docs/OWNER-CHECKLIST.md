@@ -71,7 +71,7 @@ Things only you can do that a PR left behind: secrets, dashboard and hosting
 settings, production data. Claude adds each with where it came from; only you
 tick them.
 
-- [ ] Once 0.11 (TASK-013) merges, run `npx playwright install chromium` in the
+- [x] Once 0.11 (TASK-013) merges, run `npx playwright install chromium` in the
       repo after your next `npm ci`. Without the browser, `npm run test:all`
       fails at the e2e step; CI installs its own (from TASK-013, PR #98).
 - [ ] Set `METRON_API_TOKEN` (or `METRON_USERNAME` and `METRON_PASSWORD`, as
