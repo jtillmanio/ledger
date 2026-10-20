@@ -29,10 +29,10 @@ UI checks run in a real browser at every target width and theme, with accessibil
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm run test:e2e` signs in with the test passcode and loads a seeded run's spine at 360, 390, 412, 768, 1024 and 1280px, light and dark, and passes. A fixture page with an unnamed `<button>` makes the axe step fail on `button-name`. The no-horizontal-scroll helper fails on a fixture that overflows at 360px. CI runs the suite on the PR against `TEST_DATABASE_URL` only, and `git.md`'s *Test on the branch* lists it.
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm run test:e2e` signs in with the test passcode and loads a seeded run's spine at 360, 390, 412, 768, 1024 and 1280px, light and dark, and passes. A fixture page with an unnamed `<button>` makes the axe step fail on `button-name`. The no-horizontal-scroll helper fails on a fixture that overflows at 360px. CI runs the suite on the PR against `TEST_DATABASE_URL` only, and `git.md`'s *Test on the branch* lists it.
 - [x] AC-2: With `TEST_DATABASE_URL` unset, or naming the same host and database as `DATABASE_URL`, `npm run test:e2e` exits non-zero before starting a browser or a server, with the same message as `scripts/lib/testdb.mjs`.
 - [x] AC-3: The helpers are importable from one module (`test/e2e/helpers.ts` or the plan's path). A sample spec uses each one: axe with a named rule list, a computed-style read, the no-scroll assertion, and a screenshot written under a gitignored folder (`git check-ignore` confirms it).
-- [ ] AC-4: `npm run test:all` runs `test:e2e`. The CI `check` job is green on this PR with the e2e step visible in its log. `CLAUDE.md`'s command list and `.claude/rules/git.md` both name `npm run test:e2e`.
+- [x] AC-4: `npm run test:all` runs `test:e2e`. The CI `check` job is green on this PR with the e2e step visible in its log. `CLAUDE.md`'s command list and `.claude/rules/git.md` both name `npm run test:e2e`.
 
 ## Out of scope
 
