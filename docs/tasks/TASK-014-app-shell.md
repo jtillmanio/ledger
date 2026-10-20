@@ -80,7 +80,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - Candidate decision: the shell sends all three navs and CSS chooses; the Inbox count streams in a `<Suspense>` outside the per-page query budget → docs/review/decisions.md § D-77 (approved at close-out)
 - AC-6's tablet frames carry the shell's geometry and reflow the phone body; whether to redraw the dashboard bodies to the feel-pass PNG now → not tracked: the owner's call at the manual check, and the mockups-index note says the body is not redrawn
 - The feel-pass tablet PNG draws an italic *L* at the top of the rail; this rail has none, since the Check wants no top bar and a link there would be a second 56px-rule exception → not tracked: the owner's call at the preview walk
-- Performance budgets for the routes whose HTML the shell grew (every row of `scripts/perf/budget.json`) are set from the preview's own Lighthouse numbers → not tracked: done in this PR (ready gate, Lighthouse)
+- The shell added no gated bytes over budget: on the preview `/comics` is 23.1 KB against 28 KB and `/watch` 9.8 KB against the 11 KB copied from `/inbox`, so no budget moved → not tracked: nothing to do, Lighthouse is within budget on the preview
 
 ## Plan
 
