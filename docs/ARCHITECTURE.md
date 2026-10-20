@@ -988,11 +988,11 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
     | Route | Document + RSC bytes | JS bytes | Requests | Accessibility ≥ |
     |---|---|---|---|---|
     | `/login` | 8,000 | 170,000 | 30 | 100 |
-    | `/comics` | 20,000 | 170,000 | 35 | 100 |
+    | `/comics` | 28,000 | 170,000 | 35 | 100 |
     | `/comics/runs` | 47,000 | 170,000 | 35 | 100 |
     | `/comics/bendis-disassembled` | 25,000 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 21,000 | 171,000 | 29 | 100 |
-    | `/books` | 48,000 | 170,000 | 29 | 100 |
+    | `/books/list` | 48,000 | 170,000 | 29 | 100 |
     | `/inbox` | 11,000 | 173,000 | 28 | 100 |
     <!-- /perf-budget -->
 
@@ -1006,10 +1006,11 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
     RSC 8.7 KB, JS 140.7 KB, 23 requests, accessibility 100, CLS 0.003.
     Task 1.8c moved the run list to `/comics/runs`, which keeps the 47,000 that
     `/comics` was set to (it is the same screen). `/comics` is now the
-    dashboard, a shorter page (a dozen rows, not 258): 20,000 is provisional,
-    to be replaced by the median of its first preview's Lighthouse run plus
-    20%. `/books` is measured through its redirect to `/books/list`, so it
-    keeps its 48,000.
+    dashboard: 28,000 is the median of its first preview's Lighthouse run
+    (23,046 bytes, PR #108) plus 20%. `/books` is measured at `/books/list`,
+    since Lighthouse sends the session as a `Cookie` header and a redirect
+    drops it; it keeps the 48,000 `/books` had. The nav's Books link points at
+    `/books/list` so no page prefetches a redirect.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 

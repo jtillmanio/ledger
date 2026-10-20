@@ -110,7 +110,7 @@ test("no same-origin link on any page answers 404", async ({ page }, testInfo) =
     }
   }
   // The nav is on every page, so at least these were followed.
-  for (const href of ["/", "/comics", "/books", "/inbox", "/comics/runs", "/books/list", `/comics/${E2E_RUN_ID}/add`, "/books/list?status=to_read"]) {
+  for (const href of ["/", "/comics", "/books/list", "/inbox", "/comics/runs", "/books/list", `/comics/${E2E_RUN_ID}/add`, "/books/list?status=to_read"]) {
     expect(checked, href).toContain(href);
   }
 });

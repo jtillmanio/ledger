@@ -14,7 +14,7 @@
 export const ROUTES = [
   { id: "login", path: "/login", signedIn: false, tap: { from: "/login", login: true } },
   // The comics dashboard (task 1.8c); `/` redirects to it or to the medium last touched.
-  { id: "comics", path: "/comics", signedIn: true, tap: { from: "/books", selector: 'nav a[href="/comics"]' } },
+  { id: "comics", path: "/comics", signedIn: true, tap: { from: "/books/list", selector: 'nav a[href="/comics"]' } },
   // The run list, one level down: the screen "comics" measured before 1.8c.
   { id: "runs", path: "/comics/runs", signedIn: true, tap: { from: "/comics", selector: 'a[href="/comics/runs"]' } },
   {
@@ -25,8 +25,8 @@ export const ROUTES = [
     id: "run-large", path: "/comics/busiek-avengers", signedIn: true, // 154 issues
     tap: { from: "/comics/runs", selector: 'a[href="/comics/busiek-avengers"]' },
   },
-  // /books redirects to /books/list until 2.2 builds the books dashboard; the
-  // load follows it, and test/perf.test.ts wants a measured path per top-level screen.
-  { id: "books", path: "/books", signedIn: true, tap: { from: "/comics", selector: 'nav a[href="/books"]' } },
-  { id: "inbox", path: "/inbox", signedIn: true, tap: { from: "/books", selector: 'nav a[href="/inbox"]' } },
+  // The books list, until 2.2 builds the books dashboard at /books. Not /books itself:
+  // Lighthouse sends the session as a Cookie header, which a redirect drops.
+  { id: "books", path: "/books/list", signedIn: true, tap: { from: "/comics", selector: 'nav a[href="/books/list"]' } },
+  { id: "inbox", path: "/inbox", signedIn: true, tap: { from: "/books/list", selector: 'nav a[href="/inbox"]' } },
 ];

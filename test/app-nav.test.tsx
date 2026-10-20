@@ -22,13 +22,13 @@ describe("the app header", () => {
     const html = page();
     expect(html).toContain("<main>page</main>");
     expect(html).not.toContain('class="bar"');
-    for (const href of ["/comics", "/books", "/inbox", "/api/export"]) expect(html).not.toContain(`href="${href}"`);
+    for (const href of ["/comics", "/books/list", "/inbox", "/api/export"]) expect(html).not.toContain(`href="${href}"`);
   });
 
   it("is drawn everywhere else, with every link", () => {
     nav.pathname = "/comics";
     const html = page();
     expect(html).toContain('class="bar"');
-    for (const href of ["/", "/comics", "/books", "/inbox", "/api/export"]) expect(html).toContain(`href="${href}"`);
+    for (const href of ["/", "/comics", "/books/list", "/inbox", "/api/export"]) expect(html).toContain(`href="${href}"`);
   });
 });
