@@ -1,7 +1,7 @@
 ---
 id: TASK-012
 title: 1.8a Design tokens and control states
-status: Ready
+status: Done
 depends_on: [TASK-011]
 size: M
 model: sonnet
@@ -29,11 +29,11 @@ Every button, chip, tab and row responds the same way to hover, press, keyboard 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm run test:tokens` passes, and is proven to fail three ways: dark `--sunk` set back to `#232935` (elevation), light `--faint-deco` set to `#98a1b0` (outline contrast; 1c's is `#878b9c`), and a `font-size:10px` rule added to `globals.css`. A test parses `globals.css` and asserts every class in the state-matrix list above has a `(hover:hover)` hover rule, an `:active` rule, a `:focus-visible` rule and an `[aria-disabled="true"]` rule. `grep -oE 'border-radius:[^;]+' src/app/globals.css | sort -u` returns only `var(--r-*)` values and `50%` (circles). Screenshot `/comics` at 360px in both themes before and after: the layout is unchanged, only the values move.
-- [ ] AC-2: `scripts/check-tokens.mjs` checks, as explicit floors in both themes: the elevation order by relative luminance (dark `sunk < page < surface < raise < overlay`, STYLE_GUIDE §4.1; light `sunk < page < raise < surface`, `overlay = surface`); `--ink`, `--ink-2`, `--muted`, `--faint`, `--brand`, `--brand-ink`, `--ready`, `--blocked` and `--danger` at 4.5:1 or more on `--page`, `--surface`, `--raise`, `--sunk` and `--overlay`; the STYLE_GUIDE §6 paired fills at 4.5:1 or more; `--faint-deco` at 3:1 or more on `--surface`, `--raise` and `--overlay`; and glass, worst case (`--glass-bg` at its alpha over `#000` light and `#fff` dark) with `--ink`, `--ink-2`, `--muted` and `--brand` at 4.5:1 or more.
-- [ ] AC-3: No rule in `globals.css` or the mockup's `<style>` block resolves to a font size under 11px, `font` shorthands included. No rule puts `--ready` text on glass. The reduced-motion block sets `animation: none` on everything except `.spin`.
-- [ ] AC-4: `design/mockups.html` re-renders on the current values. The dark phone and desktop frames of `telescope`, `queue`, `planmonth`, `rebalance`, `path`, `session` and `palette` are captured and listed in `design/mockups-index.md`, and *Not shown* #11 (UX-X04) is closed there.
-- [ ] AC-5: The control states meet the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): with keyboard focus, every state-matrix control on `/comics` and a run page shows a visible `--focus-ring`; an `aria-disabled="true"` control looks unavailable without relying on colour alone; screenshots of `/comics` and a run page at every `ui.viewports` width, light and dark.
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm run test:tokens` passes, and is proven to fail three ways: dark `--sunk` set back to `#232935` (elevation), light `--faint-deco` set to `#98a1b0` (outline contrast; 1c's is `#878b9c`), and a `font-size:10px` rule added to `globals.css`. A test parses `globals.css` and asserts every class in the state-matrix list above has a `(hover:hover)` hover rule, an `:active` rule, a `:focus-visible` rule and an `[aria-disabled="true"]` rule. `grep -oE 'border-radius:[^;]+' src/app/globals.css | sort -u` returns only `var(--r-*)` values and `50%` (circles). Screenshot `/comics` at 360px in both themes before and after: the layout is unchanged, only the values move.
+- [x] AC-2: `scripts/check-tokens.mjs` checks, as explicit floors in both themes: the elevation order by relative luminance (dark `sunk < page < surface < raise < overlay`, STYLE_GUIDE §4.1; light `sunk < page < raise < surface`, `overlay = surface`); `--ink`, `--ink-2`, `--muted`, `--faint`, `--brand`, `--brand-ink`, `--ready`, `--blocked` and `--danger` at 4.5:1 or more on `--page`, `--surface`, `--raise`, `--sunk` and `--overlay`; the STYLE_GUIDE §6 paired fills at 4.5:1 or more; `--faint-deco` at 3:1 or more on `--surface`, `--raise` and `--overlay`; and glass, worst case (`--glass-bg` at its alpha over `#000` light and `#fff` dark) with `--ink`, `--ink-2`, `--muted` and `--brand` at 4.5:1 or more.
+- [x] AC-3: No rule in `globals.css` or the mockup's `<style>` block resolves to a font size under 11px, `font` shorthands included. No rule puts `--ready` text on glass. The reduced-motion block sets `animation: none` on everything except `.spin`.
+- [x] AC-4: `design/mockups.html` re-renders on the current values. The dark phone and desktop frames of `telescope`, `queue`, `planmonth`, `rebalance`, `path`, `session` and `palette` are captured and listed in `design/mockups-index.md`, and *Not shown* #11 (UX-X04) is closed there.
+- [x] AC-5: The control states meet the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): with keyboard focus, every state-matrix control on `/comics` and a run page shows a visible `--focus-ring`; an `aria-disabled="true"` control looks unavailable without relying on colour alone; screenshots of `/comics` and a run page at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -58,8 +58,13 @@ Every button, chip, tab and row responds the same way to hover, press, keyboard 
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The roadmap and AC-2 gave the dark elevation order as `page < sunk < …`, but the shipped values (`--sunk` #05060e below `--page` #080a14) and STYLE_GUIDE §4.1 / SG-D2 put `sunk < page`. Owner, 2026-10-19: follow the style guide. AC-2 corrected in this file → docs/TASKS.md § 1.8a (approved at plan)
-- Candidate decision: every control outline (chips, `.opts .opt`, inputs, `.btn.sec`, `.iconbtn`, `.seg`, `.stepper`) is `--faint-deco`, not `--rule-2` or `--rule`. This departs from STYLE_GUIDE §7's chip row and Specimen B5's resting *Batch* (`--rule-2`, about 1.5:1), for the style guide's own reason: SG-D8 darkened `--faint-deco` to 3:1 so it can outline controls (WCAG 1.4.11), and TASK-005 asked for one control-outline token. Both design files are protected → docs/review/decisions.md § D-71 (approved at plan)
+- The roadmap and AC-2 gave the dark elevation order as `page < sunk < …`, but the shipped values (`--sunk` #05060e below `--page` #080a14) and STYLE_GUIDE §4.1 / SG-D2 put `sunk < page`. Owner, 2026-10-19: follow the style guide. AC-2 corrected in this file → docs/TASKS.md § 1.8a (approved at plan; already on main, PR #98)
+- Candidate decision: every control outline (chips, `.opts .opt`, inputs, `.btn.sec`, `.iconbtn`, `.seg`, `.stepper`) is `--faint-deco`, not `--rule-2` or `--rule`. This departs from STYLE_GUIDE §7's chip row and Specimen B5's resting *Batch* (`--rule-2`, about 1.5:1), for the style guide's own reason: SG-D8 darkened `--faint-deco` to 3:1 so it can outline controls (WCAG 1.4.11), and TASK-005 asked for one control-outline token. Both design files are protected → docs/review/decisions.md § D-71 (approved at plan; already on main, PR #98)
+
+- The run page at 360px is 29px wider than the viewport (Resume, Add issues and ⋯ row clips ⋯), on `main` too → docs/tasks/TASK-014-app-shell.md § Context
+- The mockup's telescope stub label overlaps the run-rail end label, phone and desktop, from before 1.8a → docs/TASKS.md § 2.5
+- The `.row:has(.row-link)` selector targets a class no app code uses yet (the mockup's overlay link); link rows in use are `a.row` → not tracked: harmless, plan-specified, and 1.8's shell will use or drop it
+- The range sheet was not reached by the scripted walk; the owner's preview walk covers it → not tracked: an owner gate already (Preview walked at 360–412px)
 
 ## Plan
 
@@ -93,7 +98,9 @@ Size check: M, 8 files plus the captures, CSS and a script, no schema; attended.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | Audit R1 PASS (one weak guard test strengthened) | Spec R1 CHANGES (mockup redraw of steps 5 and 6; plan notes) → R2 | UI R1 PASS (AC-5, 6 widths × 2 themes; captures made, then retaken after the mockup redraw)
+
+Plan revisions after approval (in-scope, no AC change): the matrix block sits at the end of globals.css, not after the buttons, so each rule outranks its base; `.switch` gets a base component (36px track, `aria-checked`, B5 geometry) because the matrix rules need one to land on and nothing in src uses it yet; `.seg` loses `overflow:hidden` (it clipped the focus ring) and its end buttons take `--r-sm` corners; `scripts/lib/css-rules.d.mts` (type shim for the tests); the mockup's `.app` blocks also take steps 5 and 6 (`--sh-1` telecard, `--faint-deco` outlines, dark rings), so the captured frames match the app (standing rule 6).
 
 ## Blocked
 
@@ -101,7 +108,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1
+- Review rounds: 2
+- First-pass AC FAILs: 0 (spec review: one redraw gap)
+- Plan revisions after approval: 5 (listed in the review log)

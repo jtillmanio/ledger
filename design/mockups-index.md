@@ -129,7 +129,7 @@ One line each. None is silently dropped.
 8. **A "read elsewhere" *segment kind* in the data (C04).** Drawn in the telescope. `etl/views.sql` cannot compute it until task 0.8 makes `issue_progress` per placement; `run_read_segments` documents the change.
 9. **`show_progress` with `dropped` (C28).** Documented in `ARCHITECTURE 2.5b`, `DIAGRAMS 8b` and TASKS 8.1, and stubbed as a comment in `etl/views.sql`, because the watch tables land with task 8.1.
 10. **The measured checks (C37, C18, C02).** Contrast, 24px targets and 14px cells are tests in TASKS 1.8, 2.2 and 2.5. Contrast was computed once while building the mockups: `--faint` as the audit specified it (`#6f7888`) was 4.45:1 on `--surface` and 3.9:1 on `--page`, so it is `#606979` here.
-11. **The dark theme of the new screens** was not reviewed; the tokens are defined for both themes but only the light frames were checked.
+11. ~~**The dark theme of the new screens** was not reviewed.~~ Closed by task 1.8a (UX-X04): the dark phone and desktop frames of `telescope`, `queue`, `planmonth`, `rebalance`, `path`, `session` and `palette` are captured in `design/captures/1.8a/`, listed under *Oct 2026, feel pass* below.
 12. **Batch and rebalance for other media.** Batch on books reads *Log pages*; watch has no batch. Described in the notes, not drawn.
 13. **Figures on the tracks, path and session screens** are illustrative, not the seed.
 14. **The credits line on `addsearch` result rows** (*Walter Simonson · Sal Buscema*). Search results carry no credits: they arrive with enrichment (0.7, 4.1), so task 1.3b draws each row with its label, cover date and *in N runs* only.
@@ -186,3 +186,17 @@ The feel pass is drawn in `design/Ledger Feel Review.dc.html`, not here, and eve
 | `dashextras` (*Since Tuesday* line) | §2 (*Since Tuesday* is a cover stack in the hero) | 2.4 |
 
 Unchanged: every other frame, the spine rows (28×42 covers, SG-D13), and the five-slot order. The token blocks in this file already carry palette 1c, and its font link loads IBM Plex Sans, Plex Mono and Newsreader.
+
+### Task 1.8a: dark captures and the redraw
+
+The mockup re-rendered on the current tokens (palette 1c), with the control-state matrix, the 11px floor, the `--faint-deco` control outlines (D-71), `--sh-1` on the telecard and the dark `--rule` rings (STYLE_GUIDE §4.1, §7). Captures of each whole screen section, dark theme, in `design/captures/1.8a/` (a phone file shows every phone frame of that screen side by side):
+
+| Screen | Phone | Desktop |
+|---|---|---|
+| `telescope` | `telescope-phone-dark.png` | `telescope-desk-dark.png` |
+| `queue` | `queue-phone-dark.png` | `queue-desk-dark.png` |
+| `planmonth` | `planmonth-phone-dark.png` | `planmonth-desk-dark.png` |
+| `rebalance` | `rebalance-phone-dark.png` | `rebalance-desk-dark.png` |
+| `path` | `path-phone-dark.png` | `path-desk-dark.png` |
+| `session` | `session-phone-dark.png` | `session-desk-dark.png` |
+| `palette` | `palette-phone-dark.png` | `palette-desk-dark.png` |
