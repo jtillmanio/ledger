@@ -1010,7 +1010,9 @@ tablet — or a touch laptop — gets. The telescope's size step at 900px
     (23,046 bytes, PR #108) plus 20%. `/books` is measured at `/books/list`,
     since Lighthouse sends the session as a `Cookie` header and a redirect
     drops it; it keeps the 48,000 `/books` had. The nav's Books link points at
-    `/books/list` so no page prefetches a redirect.
+    `/books/list`, and its Ledger link (`/`, a redirect) is not prefetched: a
+    page that prefetched a redirect never reached network idle in the tap
+    runner, and made 55 requests against a budget of 35.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 

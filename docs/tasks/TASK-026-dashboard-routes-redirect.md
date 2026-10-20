@@ -34,7 +34,7 @@ The comics dashboard lives at `/comics` and the lists sit one level down (`/comi
 - [x] AC-1 (roadmap **Check:**, verbatim): Test that `/` redirects to the last-touched medium and to `/comics` for a user with no history. Test that a request carrying a garbage `rt_session` cookie redirects a page to `/login` and answers a route handler 401 (R2-11). A render test asserts that `/books/list` and `/comics/runs` print the query's total, not the row count, for a fixture where the two differ, and no same-origin link on any page answers 404.
 - [x] AC-2: The comics dashboard renders at `/comics` and links to *All runs* (`/comics/runs`). The run list renders at `/comics/runs` with its filter chips pointing there. `/books/list` is the master list with its *No year* chip. `/books` answers a redirect to `/books/list`. A run page's back link goes to `/comics/runs`.
 - [x] AC-3: A signed-in request to any `/comics` or `/books` path sets the `ledger_medium` cookie (`httpOnly`, `SameSite=Lax`, path `/`, one year), except a `<Link>` prefetch (a request carrying `next-router-prefetch` or `next-router-segment-prefetch`), which leaves it alone (D-76; owner, 2026-10-20). A request elsewhere (`/inbox`) and a signed-out request leave it alone. An unknown value redirects `/` to `/comics`. Nothing is written to `localStorage`, and there is no schema change.
-- [ ] AC-4: `scripts/perf/routes.mjs` follows the moves. `comics` measures the dashboard, `books` measures `/books` through its redirect, the run taps start from `/comics/runs`, and a new `runs` route measures `/comics/runs`. Each has a budget in `scripts/perf/budget.json`, mirrored in `docs/ARCHITECTURE.md`'s Performance budget. `test/perf.test.ts` passes, and Lighthouse is green on the preview.
+- [x] AC-4: `scripts/perf/routes.mjs` follows the moves. `comics` measures the dashboard, `books` measures `/books` through its redirect, the run taps start from `/comics/runs`, and a new `runs` route measures `/comics/runs`. Each has a budget in `scripts/perf/budget.json`, mirrored in `docs/ARCHITECTURE.md`'s Performance budget. `test/perf.test.ts` passes, and Lighthouse is green on the preview.
 - [x] AC-5: The moved screens meet the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): each keeps a loading skeleton at its new path, and no skeleton wraps a run page. Screenshots of `/comics`, `/comics/runs` and `/books/list` at each `ui.viewports` width, light and dark.
 
 ## Out of scope
@@ -65,12 +65,13 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - The roadmap and the review ledger already said the proxy writes the cookie (main, 2026-10-19). Neither said a `<Link>` prefetch must not: Next hides `next-router-prefetch` from `proxy()`, so the matcher skips prefetches (owner, 2026-10-20) → docs/TASKS.md § 1.8 (fixed in this PR)
 - Same prefetch rule in the ledger's R1-13 row → docs/review/LEDGER.md § R1-13 (fixed in this PR)
 - ARCHITECTURE § 4's route table and Performance budget follow the moves: `/`'s cookie, `/comics` today, `/books` redirecting until 2.2, query counts, `loading.tsx` list, `/comics` and `/comics/runs` budget rows → docs/ARCHITECTURE.md § 4. Interface and § 5. Operational posture (approved at close-out)
-- The comics dashboard's perf budget (20,000 document + RSC bytes) is provisional until its first preview's Lighthouse run → not tracked: done in this PR (plan revision), set from the PR's Lighthouse comment before the PR is marked ready
+- The comics dashboard's perf budget (20,000 document + RSC bytes) is provisional until its first preview's Lighthouse run → not tracked: done in this PR (plan revision): set to 28,000 from the first preview's median (23,046 bytes) plus 20%
 - The dashboard's *All runs* link is a plain `<p class="small">` link, not the `h3.s .more` quiet link: the section heads are `h2` today and an `h3` would skip a level → not tracked: 1.8 draws the quiet links (SG-D6, LEDGER UX-N19)
 - `upcomingReleases()` is no longer called by any page; the query stays for `/books/releases` → not tracked: already tracked in docs/TASKS.md (the item that says the page goes when 1.8c makes `/` a redirect)
 - `MEDIA` in `src/lib/last-medium.ts` needs `watch`, and `test/redirect.test.ts` pins it to `["comics", "books"]` → not tracked: already in docs/tasks/TASK-014-*.md § Context and its plan (it edits that test)
 - Candidate decision: the proxy's matcher skips `<Link>` prefetches so they never write `ledger_medium` (owner chose this over `prefetch={false}` on the nav, 2026-10-20) → docs/review/decisions.md § D-76 (approved at close-out)
 - The run page `/comics/cap-origin` scrolls sideways at 360, 390 and 412px on the dev data (`scrollWidth` 450; a row's `a.btn.sec.sm` + `.menu-wrap` + `button.more` run past the edge); this diff only changed the back link's href, and it was not checked on `main` → docs/tasks/TASK-027-failed-writes-skeletons-markup.md § Context
+- The new nav (1.8) must not prefetch a redirect: `/` and `/books` both redirect (until 2.2 for `/books`), and prefetching them kept the tap runner's start pages from going idle → docs/tasks/TASK-014-app-shell.md § Context
 
 ## Plan
 
@@ -84,6 +85,7 @@ Steps:
 5. `scripts/perf/routes.mjs`. `comics` keeps path `/comics`, now the dashboard. `books` keeps path `/books`, which `perf.test` needs for a top-level page; Lighthouse follows the redirect. The run taps start `from: "/comics/runs"`. A new `runs` route measures `/comics/runs`, tapped from `/comics` on its *All runs* link, and takes the old `comics` budget (it is the screen that budget was set on). `comics` gets the measured dashboard figure, with the reason given in ARCHITECTURE's Performance budget table, which mirrors `budget.json` row for row.
 6. (Revision, owner-approved 2026-10-20) `src/proxy.ts`'s matcher gets `missing: next-router-prefetch, next-router-segment-prefetch`, so a `<Link>` prefetch never writes the cookie. `test/health.test.ts` reads `matcher[0].source`; `test/redirect.test.ts` and `routes.spec.ts` prove it.
 7. Update the imports in `test/{add-book,inbox,query-budget,release,resume-pointer,loading-states}.test.*`. `loading-states` lists the new paths and keeps its *no `src/app/comics/loading.tsx`* test. Tick 1.8c in `docs/TASKS.md`.
+8. (Revision, after the first preview's Lighthouse run) Lighthouse sends the session as a `Cookie` header, which a redirect drops, so `books` measures `/books/list` (`perf.test` accepts a route under the screen), and the tap runs that started from `/books` start from `/books/list`. `AppNav`'s Books link goes to `/books/list`, and its Ledger link (`/`, a redirect) has `prefetch={false}`: with the redirect prefetched, four taps never reached network idle. `/comics` budget 28,000 (23,046 + 20%).
 
 Test strategy:
 - AC-1 → `test/redirect.test.ts`: `GET /` with `ledger_medium=books` answers 307 to `/books`; with no cookie, or with `bogus`, to `/comics`. `test/e2e/routes.spec.ts` `a garbage session goes to /login and gets 401` (`request.get` with `Cookie: rt_session=garbage`, `maxRedirects: 0`): `/comics` → 307 to `/login`, `/api/export` → 401. `test/list-totals.test.tsx` (queries mocked): `/books/list` with 2 rows of `total` 5 prints *2 of 5*, and `/comics/runs` with a filter that shows 2 of 5 prints *2 of 5 shown*. `routes.spec.ts` `no same-origin link answers 404` visits every page route and requests each `a[href^="/"]`.
@@ -100,7 +102,7 @@ Size check: M. About 20 files, most of them `git mv` renames and link edits. Two
 
 ## Review log
 
-Verify R1 PASS | Audit R1 PASS (AC-4 specifics unpinned → pinned in `perf.test.ts`) | Spec R1 CHANGES (link crawl skipped the add pages and /login; ARCHITECTURE route-table edit needed approval) → fixed, approved at close-out | UI R1 PASS (the run page's phone-width overflow is not this diff's: follow-up to TASK-027) | Schema: not run (no migration, schema, view, query or ETL change)
+Verify R1 PASS | Audit R1 PASS (AC-4 specifics unpinned → pinned in `perf.test.ts`) | Spec R1 CHANGES (link crawl skipped the add pages and /login; ARCHITECTURE route-table edit needed approval) → fixed, approved at close-out | UI R1 PASS (the run page's phone-width overflow is not this diff's: follow-up to TASK-027) | Lighthouse on the preview (R1 over: /comics budget, /books landed on /login, four taps never idle → measure /books/list, nav links skip the redirects, budget set from the median) → R2 within budget, every tap finishes | Schema: not run (no migration, schema, view, query or ETL change)
 
 ## Blocked
 
@@ -109,6 +111,6 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 ## Metrics
 
 - Verify rounds: 1
-- Review rounds: 1 (spec-reviewer CHANGES, fixed in place)
+- Review rounds: 1 (spec-reviewer CHANGES, fixed in place); Lighthouse rounds: 2
 - First-pass AC FAILs: 0 (one UNTESTED part of AC-1's link crawl)
-- Plan revisions after approval: 1 (the proxy's matcher skips prefetches, owner-approved; the tests that import the moved pages also gained `year-chips`, `health` and `series-list`)
+- Plan revisions after approval: 2 (the proxy's matcher skips prefetches, owner-approved; the nav's Books link goes to /books/list and its Ledger link stops prefetching, and the perf `books` route measures /books/list, after the first preview's Lighthouse run; the tests that import the moved pages also gained `year-chips`, `health` and `series-list`)
