@@ -1,7 +1,7 @@
 ---
 id: TASK-026
 title: 1.8c Dashboard routes and the / redirect
-status: Review
+status: Done
 depends_on: [TASK-013]
 size: M
 model: sonnet
