@@ -1,7 +1,7 @@
 ---
 id: TASK-012
 title: 1.8a Design tokens and control states
-status: Review
+status: Done
 depends_on: [TASK-011]
 size: M
 model: sonnet
