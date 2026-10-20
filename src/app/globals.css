@@ -655,8 +655,11 @@ p{margin:0 0 .75rem;max-width:66ch}
   border:1px solid var(--faint-deco);color:var(--muted);background:none;border-radius:var(--r-full)}
 .chip[aria-current="true"]{border-color:var(--ink);color:var(--ink)}
 /* A chip's count, set apart from its label as the mockup's tab counts are
-   (`.seg span .n`): smaller mono, muted, a gap before it (task 1.5). */
-.chip .n{margin-left:.375rem;font-family:var(--mono);font-size:.6875rem;font-variant-numeric:tabular-nums;color:var(--muted)}
+   (`.seg span .n`): smaller mono, muted (task 1.5). A gap alone read `2024 12`
+   as one number, so a rule in the outline token splits label and count
+   (D-71); a --sunk pill would vanish on the dark page. */
+.chip .n{margin-left:.5rem;padding-left:.5rem;border-left:1px solid var(--faint-deco);
+  font-family:var(--mono);font-size:.6875rem;font-variant-numeric:tabular-nums;color:var(--muted)}
 input[type="search"],input[type="password"]{width:100%;padding:.625rem .75rem;font:inherit;
   background:var(--sunk);color:var(--ink);border:1px solid var(--faint-deco);border-radius:var(--r-md)}
 button.primary{font:inherit;padding:.625rem 1rem;cursor:pointer;background:var(--brand);
