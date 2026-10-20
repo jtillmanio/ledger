@@ -995,7 +995,9 @@ the dump and the check; re-run the job. Do not cut over until a run is green.
 **Restoring by hand:** download a dump from the bucket in the Cloudflare
 dashboard, then `gzip -dc reading-YYYY-MM-DD.sql.gz | psql <empty database>`
 and `psql <that database> -f etl/views.sql`. The dumps from before D-66 are in
-the repo's `backups/` folder and its git history.
+git history only (the `backups/` folder was emptied on 2026-10-20):
+`git log --name-only -- backups/` lists them, and
+`git show <commit>:backups/<file> > <file>` gets one back.
 
 Backups live apart from the code (D-66): losing the repo or the Cloudflare
 account loses one copy, and `GET /api/export` is a third.
