@@ -4309,6 +4309,8 @@ FEATURES Part 2g's draft before anything is built (ARCHITECTURE 2.20):
   'dropped'`*.
 
 **Stop and ask** at plan time for these, as for every column in this task.
+DIAGRAMS §8b's watch ERD still draws the arrays and `season_count`, so it is
+redrawn in the same PR.
 
 **Check:** test that a `/search/multi` response parses into `titles` rows for
 both a film and a show; that `/tv/{id}` populates the full `seasons` array in
