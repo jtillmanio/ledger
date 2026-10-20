@@ -24,7 +24,13 @@ export function proxy(req: NextRequest) {
 }
 
 // api/health is Release's smoke test and returns no data (app/api/health).
-// EXPERIMENT (task 1.8c): the matcher without the prefetch exclusion.
+// EXPERIMENT (task 1.8c): no prefetch exclusion. `missing` names a header nothing sends,
+// so every request matches, and the type of config.matcher still has `missing`.
 export const config = {
-  matcher: ["/((?!login|api/login|api/health|_next|favicon.ico).*)"],
+  matcher: [
+    {
+      source: "/((?!login|api/login|api/health|_next|favicon.ico).*)",
+      missing: [{ type: "header", key: "x-ledger-experiment-never-sent" }],
+    },
+  ],
 };
