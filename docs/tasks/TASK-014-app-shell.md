@@ -1,7 +1,7 @@
 ---
 id: TASK-014
 title: 1.8 App shell
-status: In progress
+status: Review
 depends_on: [TASK-013, TASK-026]
 size: L
 model: sonnet
@@ -37,12 +37,12 @@ Every screen sits in the same chrome: a media bar on the phone, a navigation rai
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): screenshot at 360px, 768px, 834px and 1280px; assert no horizontal scroll exists at any of them. At 768px and 834px the page renders the navigation rail, no top media bar and no sidebar; each rail item shows a visible text label and is at least 56px tall; every dashboard renders `.actionbar`, 48px tall. The rendered HTML references no external host for an icon, font or script, and every `<svg>` inside a button is `aria-hidden` while the button has a name. At 1100px the sidebar is 64px wide, each item has an accessible name, and focusing an item from the keyboard shows its tooltip at once. At 1280px the sidebar is 224px wide; at 1440px the content box is 1056px wide and centred in the space beside it. At 1024px and up no dashboard renders the *in inbox* chip and the sidebar's Inbox shows the count. At 360px *Watch* renders untruncated in the media bar, and the phone `/comics` has at most one solid `--brand` fill above the fold. No computed `color` inside `.bar` or `.side` equals `--ready`. With the page scrolled 400px, every sticky element other than `.bar` has a computed `top` of at least `--bar-h`. The rendered HTML contains no U+26B2. Test that every phone route renders exactly the same media nav.
-- [ ] AC-2: Both bars render from one `NAV_ITEMS` list. An item with `enabled: false` renders nowhere: a test flips one item and asserts it disappears from the phone bar, the rail and the sidebar. Every enabled item's `href` resolves to an existing route (a test requests each and gets neither a 404 nor a 500). The books *Dashboard* item is not rendered.
-- [ ] AC-3: The sync pill renders `online` and `offline` only, as a 6px dot (`--ready` online, `--blocked` offline) plus `--ink-2` text, with `role="status"`: in the sidebar footer and at the rail's foot, and on the phone as the offline strip under `.bar` (mockups-index *Not shown* #7).
-- [ ] AC-4: The shell meets the UX floor and the feel-pass check (`docs/TASKS.md` § *The UX floor, for every UI task* and § *A feel-pass surface is checked more widely*): screenshots of each dashboard at 360, 390, 412, 768, 1024 and 1280px, light and dark, plus `prefers-reduced-motion` and `prefers-reduced-transparency` (glass falls back to solid `--surface`); the sidebar tooltips are hidden at rest; the `.bar` wordmark is a link of at least 24×24px.
-- [ ] AC-5: `/watch` renders in the shell with one `<h1>` and an empty slate whose one action is *Save to inbox*. Visiting it sets the last-medium cookie to `watch`, and `/` then redirects to `/watch`. `scripts/perf/routes.mjs` measures it (tapped from `/comics` on `nav a[href="/watch"]`), with a budget in `budget.json` and ARCHITECTURE's Performance budget.
-- [ ] AC-6: `design/mockups.html` gains an 834px and a 360px frame each for `home`, `spine`, `bdash` and `status`, drawn to the feel pass, and `design/mockups-index.md` lists them.
+- [x] AC-1 (roadmap **Check:**, verbatim): screenshot at 360px, 768px, 834px and 1280px; assert no horizontal scroll exists at any of them. At 768px and 834px the page renders the navigation rail, no top media bar and no sidebar; each rail item shows a visible text label and is at least 56px tall; every dashboard renders `.actionbar`, 48px tall. The rendered HTML references no external host for an icon, font or script, and every `<svg>` inside a button is `aria-hidden` while the button has a name. At 1100px the sidebar is 64px wide, each item has an accessible name, and focusing an item from the keyboard shows its tooltip at once. At 1280px the sidebar is 224px wide; at 1440px the content box is 1056px wide and centred in the space beside it. At 1024px and up no dashboard renders the *in inbox* chip and the sidebar's Inbox shows the count. At 360px *Watch* renders untruncated in the media bar, and the phone `/comics` has at most one solid `--brand` fill above the fold. No computed `color` inside `.bar` or `.side` equals `--ready`. With the page scrolled 400px, every sticky element other than `.bar` has a computed `top` of at least `--bar-h`. The rendered HTML contains no U+26B2. Test that every phone route renders exactly the same media nav.
+- [x] AC-2: Both bars render from one `NAV_ITEMS` list. An item with `enabled: false` renders nowhere: a test flips one item and asserts it disappears from the phone bar, the rail and the sidebar. Every enabled item's `href` resolves to an existing route (a test requests each and gets neither a 404 nor a 500). The books *Dashboard* item is not rendered.
+- [x] AC-3: The sync pill renders `online` and `offline` only, as a 6px dot (`--ready` online, `--blocked` offline) plus `--ink-2` text, with `role="status"`: in the sidebar footer and at the rail's foot, and on the phone as the offline strip under `.bar` (mockups-index *Not shown* #7).
+- [x] AC-4: The shell meets the UX floor and the feel-pass check (`docs/TASKS.md` § *The UX floor, for every UI task* and § *A feel-pass surface is checked more widely*): screenshots of each dashboard at 360, 390, 412, 768, 1024 and 1280px, light and dark, plus `prefers-reduced-motion` and `prefers-reduced-transparency` (glass falls back to solid `--surface`); the sidebar tooltips are hidden at rest; the `.bar` wordmark is a link of at least 24×24px.
+- [x] AC-5: `/watch` renders in the shell with one `<h1>` and an empty slate whose one action is *Save to inbox*. Visiting it sets the last-medium cookie to `watch`, and `/` then redirects to `/watch`. `scripts/perf/routes.mjs` measures it (tapped from `/comics` on `nav a[href="/watch"]`), with a budget in `budget.json` and ARCHITECTURE's Performance budget.
+- [x] AC-6: `design/mockups.html` gains an 834px and a 360px frame each for `home`, `spine`, `bdash` and `status`, drawn to the feel pass, and `design/mockups-index.md` lists them.
 
 ## Out of scope
 
@@ -75,6 +75,12 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 - TASK-005's *Remember the last run* for the app-wide *Add*: no comics route adds without a run, so comics *Add* ships `enabled: false`, and the item that builds the remembered run turns it on → docs/tasks/TASK-015-thumb-bar-contrast.md § Context (approved at plan)
 - *Export* leaves the phone nav until Settings carries it (owner, 2026-10-19) → docs/TASKS.md § 2.0 (approved at plan)
+- The dashboards' interim `.actionbar` verb repeats the slate's own *Save to inbox* on `/watch`; 1.8b replaces the bar's contents → docs/tasks/TASK-015-thumb-bar-contrast.md § Context
+- The desktop page-header band (the `h1` and the dashboard verbs, sticky glass at `--bar-h`) is left to 1.8b; `.bar` is the phone media bar only → docs/tasks/TASK-015-thumb-bar-contrast.md § Context
+- Candidate decision: the shell sends all three navs and CSS chooses; the Inbox count streams in a `<Suspense>` outside the per-page query budget → docs/review/decisions.md § D-77 (approved at close-out)
+- AC-6's tablet frames carry the shell's geometry and reflow the phone body; whether to redraw the dashboard bodies to the feel-pass PNG now → not tracked: the owner's call at the manual check, and the mockups-index note says the body is not redrawn
+- The feel-pass tablet PNG draws an italic *L* at the top of the rail; this rail has none, since the Check wants no top bar and a link there would be a second 56px-rule exception → not tracked: the owner's call at the preview walk
+- Performance budgets for the routes whose HTML the shell grew (every row of `scripts/perf/budget.json`) are set from the preview's own Lighthouse numbers → not tracked: done in this PR (ready gate, Lighthouse)
 
 ## Plan
 
@@ -109,7 +115,7 @@ Size check: L, about 25 files, no schema. Attended.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL(1: the scroll check ran on a page too short to scroll) → R2 PASS | Audit R1 CHANGES(2: the long-label fixture rendered `Resume #112`; the in-inbox check could pass before the page streamed in) → R2 PASS | Spec R1 CHANGES(3: AC-3 sidebar pill, AC-4 reduced-transparency screenshots, `/watch` missing from the query budget) → R2 APPROVE | UI R1 PASS (7 low-severity notes; the 14px sidebar wordmark link and the rail's `0 Inbox` name order fixed)
 
 ## Blocked
 
@@ -117,7 +123,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2 (spec), 1 (UI)
+- First-pass AC FAILs: 2 (AC-3 and AC-4 each partly untested)
+- Plan revisions after approval: 1, not asked in advance: `ShellFrame.tsx` (the `/login` check needs a client wrapper), `NavLink.tsx` and `InboxCount.tsx` were split out of the files the plan named; reported at close-out

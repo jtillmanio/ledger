@@ -67,8 +67,8 @@ desktop frame only, so the 360 and 834 views of those are empty.
   and Settings at the foot; each item a 56px target, an icon over an 11px
   label), one column with 32px padding, the 40/44 Newsreader title and a 48px
   thumb bar spanning the column. The dashboard body is the phone's, reflowed:
-  the hero, shelf and three-column ladder at tablet width are drawn by the
-  dashboards' own tasks, from `design/screenshots/tablet/`.
+  the hero, shelf and three-column ladder at tablet width are not redrawn in
+  this frame; `design/screenshots/tablet/` is their reference.
 
 Average screen is ~120 lines / ~12KB — reading one instead of the whole file
 is a ~20x cut for the single most common lookup in this repo (every task in
