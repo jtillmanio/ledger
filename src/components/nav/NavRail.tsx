@@ -21,8 +21,9 @@ export default function NavRail({ items = NAV_ITEMS, inbox }: { items?: NavItem[
   const now = currentItem(set, pathname);
   const item = (i: NavItem, current: boolean) => (
     <NavLink key={i.id} item={i} current={current} className="ri">
-      <span className="pill"><Icon name={i.icon} />{i.id === "inbox" && inbox ? <span className="count">{inbox}</span> : null}</span>
+      <span className="pill"><Icon name={i.icon} /></span>
       <span className="rl">{i.label}</span>
+      {i.id === "inbox" && inbox ? <span className="count">{inbox}</span> : null}
     </NavLink>
   );
   return (

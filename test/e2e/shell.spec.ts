@@ -294,6 +294,28 @@ test("the sync pill: an offline strip under the phone bar, a pill at the rail's 
   await context.setOffline(true);
   await expect(page.locator(".rail .sync")).toHaveText("offline");
   await context.setOffline(false);
+
+  // The sidebar footer: a 6px dot (--ready online, --blocked offline) and --ink-2 text, as a status.
+  await size(page, 1280);
+  const pill = page.locator(".side .sync");
+  const dot = pill.locator("i");
+  const ready = await colourOf(page, "--ready");
+  const blocked = await colourOf(page, "--blocked");
+  const ink2 = await colourOf(page, "--ink-2");
+  const look = () => dot.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    return { w: r.width, h: r.height, bg: getComputedStyle(el).backgroundColor };
+  });
+  await expect(pill).toBeVisible();
+  await expect(pill).toHaveText("online");
+  await expect(pill).toHaveAttribute("role", "status");
+  expect(await look()).toEqual({ w: 6, h: 6, bg: ready });
+  expect(await pill.evaluate((el) => getComputedStyle(el).color)).toBe(ink2);
+  await context.setOffline(true);
+  await expect(pill).toHaveText("offline");
+  expect(await look()).toEqual({ w: 6, h: 6, bg: blocked });
+  expect(await pill.evaluate((el) => getComputedStyle(el).color)).toBe(ink2);
+  await context.setOffline(false);
 });
 
 test("the .bar wordmark is a link of at least 24 by 24", async ({ page }, testInfo) => {
@@ -330,6 +352,15 @@ test.describe("reduced transparency", () => {
     await size(page, 1280);
     expect(await page.locator(".side").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(surface);
     expect(await page.locator(".side").evaluate((el) => getComputedStyle(el).backdropFilter)).toBe("none");
+    // PR evidence: each dashboard with the glass solid, at the phone and the desktop width.
+    for (const width of [390, 1280]) {
+      await size(page, width);
+      for (const path of DASHBOARDS) {
+        await page.goto(path);
+        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+        await screenshot(page, testInfo, `reduced-transparency-${width}${path.replace("/", "-")}`);
+      }
+    }
   });
 });
 
