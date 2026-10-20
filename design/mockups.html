@@ -173,7 +173,7 @@ body[data-vp="desk"] .frame[data-w="desk"]{display:block}
 .bar .tab{color:var(--muted);font-size:.8125rem;font-weight:500;padding:.3125rem .5625rem;border-radius:7px}
 .bar .tab[aria-current]{color:var(--brand);background:var(--brand-soft);font-weight:600}
 .iconbtn{width:44px;height:44px;flex:0 0 auto;display:grid;place-items:center;border-radius:9px;
-  border:1px solid var(--rule);background:var(--raise);color:var(--ink-2);font-size:.875rem;margin-left:.375rem}
+  border:1px solid var(--faint-deco);background:var(--raise);color:var(--ink-2);font-size:.875rem;margin-left:.375rem}
 
 .side{display:none}
 .frame[data-w="desk"] .bar{display:none}
@@ -266,7 +266,7 @@ button.era{width:100%;font:inherit;color:inherit;text-align:left;border-left:0;b
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:.375rem;font:inherit;
   font-size:.875rem;font-weight:600;padding:.5625rem .875rem;border-radius:9px;border:1px solid transparent;
   background:var(--brand);color:var(--on-brand);cursor:pointer;box-shadow:var(--sh-1)}
-.btn.sec{background:var(--surface);color:var(--ink);border-color:var(--rule)}
+.btn.sec{background:var(--surface);color:var(--ink);border-color:var(--faint-deco)}
 .btn.dg{background:var(--danger-soft);color:var(--danger);border-color:transparent}
 .btn.sm{min-height:32px;font-size:.8125rem;padding:.375rem .625rem;border-radius:7px}
 .btn.wide{width:100%}
@@ -308,7 +308,7 @@ button.era{width:100%;font:inherit;color:inherit;text-align:left;border-left:0;b
 .menu .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;color:var(--faint);font-weight:400}
 .chips{display:flex;gap:.375rem;flex-wrap:wrap}
 .chip{display:inline-flex;align-items:center;gap:.375rem;font-size:.8125rem;font-weight:500;
-  padding:.3125rem .625rem;border-radius:99px;border:1px solid var(--rule);background:var(--surface);color:var(--ink-2)}
+  padding:.3125rem .625rem;border-radius:99px;border:1px solid var(--faint-deco);background:var(--surface);color:var(--ink-2)}
 .chip[data-on]{background:var(--brand);border-color:var(--brand);color:var(--on-brand);font-weight:600}
 
 /* hero */
@@ -410,7 +410,7 @@ button.era{width:100%;font:inherit;color:inherit;text-align:left;border-left:0;b
 .frow .k{font-size:.8125rem;color:var(--muted);width:9rem;flex:0 0 auto}
 .frow .v{font-size:.875rem;font-weight:600;flex:1}
 .frow .v.mono{font-weight:500}
-.stepper{display:flex;align-items:center;gap:.25rem;background:var(--raise);border:1px solid var(--rule);border-radius:9px;padding:.1875rem}
+.stepper{display:flex;align-items:center;gap:.25rem;background:var(--raise);border:1px solid var(--faint-deco);border-radius:9px;padding:.1875rem}
 .stepper b{width:28px;height:28px;border-radius:6px;display:grid;place-items:center;font-weight:600;color:var(--ink);background:var(--surface);box-shadow:var(--sh-1)}
 .stepper .val{min-width:3rem;text-align:center;font-family:var(--mono);font-size:.875rem;font-weight:500}
 .txt{background:var(--surface);border:1px solid var(--rule);border-radius:11px;padding:.75rem;
@@ -491,7 +491,7 @@ button.era{width:100%;font:inherit;color:inherit;text-align:left;border-left:0;b
    Read is green, position is blue, held is amber. Red is for
    destructive actions and validation failures only. */
 .telecard{background:var(--surface);border:1px solid var(--rule);border-radius:16px;padding:.875rem;
-  box-shadow:var(--sh-2);margin-top:.875rem;position:relative;overflow:hidden}
+  box-shadow:var(--sh-1);margin-top:.875rem;position:relative;overflow:hidden}
 .telecard .stripe{position:absolute;inset:0 auto 0 0;width:4px}
 .telecard .kick{font-size:.6875rem;color:var(--brand);font-weight:700}
 .telecard .name{font-size:1.0625rem;font-weight:700;letter-spacing:-.018em;line-height:1.22}
@@ -714,6 +714,8 @@ h3.s .n{margin-left:auto;font-family:var(--mono);font-size:.6875rem;font-weight:
 .nextis .lbl{font-size:.8125rem}
 .nextis .inote{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 
+/* Elevation, dark (STYLE_GUIDE §4.1, §7, SG-D2): a 1px --rule ring as well as tone. */
+.app[data-theme="dark"] .tag,.app[data-theme="dark"] .bdg.dn,.app[data-theme="dark"] .stepper{box-shadow:inset 0 0 0 1px var(--rule)}
 /* --- the control-state matrix (task 1.8a, UX-N01; Specimen B5), as globals.css has it ---
    hover (fine pointers, 100ms), pressed (1px down), keyboard focus (--focus-ring),
    unavailable (aria-disabled: dimmed, not-allowed; the reason is written beneath). */
