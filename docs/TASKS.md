@@ -4361,9 +4361,29 @@ run list and the master list. *Save view* names the current filters: *Disney
 Animated* is studio *Walt Disney Animation Studios* and film; *DCOM* is network
 *Disney Channel* and film; *Nolan* is person *Christopher Nolan*, director.
 Views sit in the toolbar row above the controls, and each can be renamed or
-deleted. A view stores only its filters, never its titles, so a title added
-later that matches joins it on its own. The examples are the owner's; any
+deleted. A view stores its filters, never the titles they match, so a title
+added later that matches joins it on its own. The examples are the owner's; any
 combination of 8.3's filters can be saved.
+
+**When filters don't get it all** (owner, 2026-10-20). A view also holds titles
+you add and remove by hand. Its members are the filter's matches, plus its
+**additions**, minus its **removals**, so its contents are always *filter ∪
+added − removed*:
+- *Add to view…* on any title's row or sheet adds it to a view even if no
+  filter would match it. That covers a Pixar short in *Disney Animated*, or a
+  film Nolan only produced in *Nolan*.
+- *Remove from this view* on a matching row hides it there only.
+- A view with no filters is entirely hand-picked: *New view* starts empty and
+  takes additions. Unlike a shelf, it has no order of its own and no notes; it
+  sorts like the list.
+- Rows that are there by hand carry a grey *added* tag. Removed titles are
+  listed under a collapsed *Removed · 2*, each with *Put back*.
+
+Storage is a plan-gate question (**stop and ask**), because 2.9's views are
+stored URLs and a URL is the wrong place for a list of title ids. Proposed:
+`watch_views(id, user_id, name, filters jsonb)` and
+`watch_view_titles(view_id, title_id, kind IN ('added', 'removed'))`, both in
+the export. Membership is computed in the query, never stored.
 
 **Check:** test that marking every season watched flips the show's derived state
 to `watched` with nothing written to `title_status`; that marking one of three
@@ -4375,7 +4395,11 @@ list to titles crediting them as director, and the network filter *HBO* to
 titles listing HBO. A show row shows its season and episode totals from
 `show_progress`. A view saved as studio + film reopens with both filters set,
 survives a reload, and includes a matching film added after it was saved;
-deleting the view changes no title.
+deleting the view changes no title. A film added to that view by hand appears
+in it with an *added* tag, though no filter matches it. A matching film
+removed from the view is absent there, still appears on the unfiltered list,
+and *Put back* restores it. A view with no filters shows exactly its
+additions.
 
 ### ☐ 8.4 Detail sheets — film, show, season · M
 `/watch/[id]` and `/watch/[id]/season/[n]` as intercepted routes: a sheet over
@@ -4496,7 +4520,8 @@ grouping can be made in the app, in one of two ways:
   only when you change it. It suits a loose group (a set of films you think
   belong together) and any list in an order of your own.
 - **A saved view** (8.3): a named filter that keeps itself current, for a
-  group that is a fact (a director's films, a studio's, a network's).
+  group that is a fact (a director's films, a studio's, a network's), with
+  titles added or removed by hand where the filter misses or overreaches.
 
 **From a filter to a shelf.** When a saved view's membership is right but you
 want your own order or notes, *Add these to a shelf…* on the filtered list (and

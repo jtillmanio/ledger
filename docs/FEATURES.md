@@ -61,7 +61,7 @@ section. Nothing here is built yet except where marked **shipped**.
 | W1 | Metadata that shows and filters: network or streamer, studio, director, cast, length, seasons and episodes, genre | planned | `titles.networks`, `titles.studios`, `people` + `title_credits` rows, totals derived in `show_progress`. TASKS 8.1, 8.3 |
 | W2 | Where to watch | planned | Reverses Part 2e's *Out* (D-74). A dated TMDB/JustWatch snapshot, refreshed when you ask. TASKS 8.9 |
 | W3 | Which show I'm on, what I've finished, a rating; waiting for a new season | partial | Season tracking was already designed. Adds a show-level rating and the derived `caught_up` state. TASKS 8.1, 8.8, 8.9 |
-| W4 | Custom groupings, made in the app (examples: Nolan, Spielberg, Disney Animated, DCOM, loose groups) | planned | Two kinds, both created by you. A title shelf (8.6, with notes) is hand-picked and ordered. A saved view (8.3) is a named filter (person, studio, network, genre and so on) that keeps itself current. *Add these to a shelf…* turns a filter into a shelf. Every credited person also has a page (8.10) |
+| W4 | Custom groupings, made in the app (examples: Nolan, Spielberg, Disney Animated, DCOM, loose groups) | planned | Two kinds, both created by you. A title shelf (8.6, with notes) is hand-picked and ordered. A saved view (8.3) is a named filter (person, studio, network, genre and so on) that keeps itself current, plus titles you add and minus titles you remove by hand; with no filter, a view is entirely hand-picked. *Add these to a shelf…* turns a filter into a shelf. Every credited person also has a page (8.10) |
 
 ### Music (2026-10-20 additions)
 
@@ -1343,7 +1343,10 @@ seasons and TMDB's *Returning Series*, never stored.
 examples are illustrations of groupings to create in the app, and they come in
 two kinds. A group that is a fact about the work (a director's films, a
 studio's, a network's: *Nolan*, *Disney Animated*, *DCOM*) is a **saved view**
-(8.3), a named filter that keeps itself current. A group that is your opinion
+(8.3), a named filter that keeps itself current. Where the filter misses a
+title or catches one too many, you add or remove it by hand on that view, and
+a view with no filter at all is simply a hand-picked list (owner: *in case
+filters don't get what I want*). A group that is your opinion
 (a loosely connected set, or anything in your own order) is a **shelf** (8.6),
 now with notes. *Add these to a shelf…* copies a filter's titles onto a shelf
 when you want the membership but your own order. Person pages (8.10) need no

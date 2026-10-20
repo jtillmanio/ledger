@@ -129,8 +129,9 @@ want to reconsider the default:
 - Franchise ordering — default: release order
 
 Asked at a plan gate when the task arrives (2026-10-20 intake): the schema
-columns 1.17, 1.18, 4.1, 5.1, 7.8 and 8.1 propose; 5.13's series key; 9.0's
-media bar with a fourth medium.
+columns 1.17, 1.18, 4.1, 5.1, 7.8 and 8.1 propose; where 8.3's saved views
+keep their hand-added and removed titles; 5.13's series key; 9.0's media bar
+with a fourth medium.
 
 ## Where the detail lives
 
