@@ -434,7 +434,7 @@ render test asserts that `/books/list` and `/comics/runs` print the query's
 total, not the row count, for a fixture where the two differ, and no
 same-origin link on any page answers 404.
 
-### ☐ 1.8e Tablet frames to the feel pass · S
+### ☑ 1.8e Tablet frames to the feel pass · S
 Depends on 1.8. Added at 1.8's close-out (owner, 2026-10-20), to be built next.
 1.8's four 834px frames (`home`, `spine`, `bdash` and `status` in
 `design/mockups.html`) draw the shell's geometry (the 72px rail, 32px padding,

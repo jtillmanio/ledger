@@ -1,14 +1,14 @@
 ---
 id: TASK-028
 title: 1.8e Tablet frames to the feel pass
-status: Ready
+status: In progress
 depends_on: [TASK-014]
 size: S
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 1b67b2b
 ---
 
 # TASK-028 — 1.8e Tablet frames to the feel pass
@@ -67,9 +67,26 @@ The mockup's 834px tablet frames show what the feel pass actually draws at table
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- 2.4 and 2.2 build the tablet layout from the 834 `home` and `bdash` frames this task draws from the feel pass (approved at plan)
+- The mockup's `.seg span .n` (`opacity:.8`) fails 4.5:1 in light under axe; the status screens should not copy the opacity (approved at revision 1)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner, 2026-10-21, with the `spine` and `status` conclusion (step 5): the run detail's own feel-pass redraw is roadmap 4.3 (the `--art` key-art band) and 2.5b (the telescope above the spine), per Feel Review § 6.
+
+Geometry at 834: column 696 (832 − 72 rail − 2 × 32); telescope W = 696 − 40 − 44 = 612; shelf 5 × 112 + 4 × 16 = 624; side rail 676 split 405.6 : 270.4.
+
+1. **Test first.** `test/e2e/mockup-tablet.spec.ts`, run in `w1280-light` only, viewport 1400, `setContent` of `design/mockups.html`, `body[data-vp="tab"]`. One test per AC-1 clause, the AC-2 and AC-3 geometry, AC-4 as a read of `mockups-index.md`, and AC-5: no hex literal (`(?<![&%\w])#[0-9a-f]{3,8}`) and no `--danger` in the four tab frames' markup or the tablet CSS block; nothing computed resolves to `--danger`; Newsreader only on `h1.t` and the hero name or story; counts in Plex Mono; screenshots of the four frames light and dark. Confirm it fails on `main`.
+2. **Tablet CSS.** Drop the `svg.tele` 344px cap and its comment. Add `.frame[data-w="tab"]` rules, tokens only: hero (150 × 225 cover, 20 padding, 24 gap, 56/60 mono number, two-cell footer), shelf (5 × 112, 16 gap), horizontal telescope (44 + 612 grid), three-column ladder, side rail 1.5fr : 1fr. Covers use a neutral placeholder (`--sunk`, `--rule` ring, mono label), not a hex data URI.
+3. **`home` body** from § 10c and its copy: header with *6 in inbox* and the *14 issues since Tuesday…* lede; Now hero with the lens; *Since Tuesday* | *Also reading*; *Up next 12* with Reorder and five cards with readiness badges; *Where you are* (TRACK, BLOCK, RUN rails, cells from `alloc()` at W = 612, three-column ladder); *Ready when you are* | *2026 so far*. The thumb bar stays as 1.8 drew it.
+4. **`bdash` body** from the books feel pass (§ 4, desktop § 11c, named by § 14.6): horizontal hero (*Reading now*, *The Fifth Season*, p. 212 of 468, 6px `--ready` meter, sittings footer); *Up next in Q4* (three covers); *This quarter* (Q4 strip, FP-D8); *On deck* | *2026 so far* below as 1.5 : 1. The capacity card and *Place them* go, as 11c leaves them out. Thumb bar copy: *Log pages · Finished it* + search.
+5. **`spine` and `status`**: body unchanged, plus two tab-scoped UX-floor rules (revision 1, approved 2026-10-21): `.seen-more` min 24 × 24 (as `globals.css` draws it) and `.seg span .n` at full opacity (axe: 4.5:1 in light). § 14.5 names nothing for them beyond the rail, column and thumb bar, which 1.8 draws. The spec still checks their scroll, rail and bar.
+6. **`design/mockups-index.md`**: *Viewport frames* says the 834 bodies follow § 14.5 / § 10c (and the `spine`/`status` conclusion); the feel-pass table's `home` row drops § 10c; the four screens' rows keep their 834px frames.
+7. Tick 1.8e in `docs/05-roadmap.md`. Verify, test audit, spec-reviewer, ui-verifier on the mockup.
+
+**Files:** `design/mockups.html`, `design/mockups-index.md`, `test/e2e/mockup-tablet.spec.ts` (new), `docs/05-roadmap.md`, this task file. All in *Files likely touched*.
+
+**Risks:** `spine`'s tab frame keeps its percent-encoded data-URI cover images (`%23394049`); the hex check skips `%23…` as image data, not styling. The telescope is hand-drawn, not from `layout.ts` (2.5).
 
 ## Review log
 
@@ -84,4 +101,4 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Verify rounds:
 - Review rounds:
 - First-pass AC FAILs:
-- Plan revisions after approval:
+- Plan revisions after approval: 1 (two tab-scoped UX-floor rules for the kept spine and status bodies)

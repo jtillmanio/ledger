@@ -66,9 +66,19 @@ desktop frame only, so the 360 and 834 views of those are empty.
   top bar (the media switch, the medium's items, Inbox with its count, Search
   and Settings at the foot; each item a 56px target, an icon over an 11px
   label), one column with 32px padding, the 40/44 Newsreader title and a 48px
-  thumb bar spanning the column. The dashboard body is the phone's, reflowed:
-  the hero, shelf and three-column ladder at tablet width are not redrawn in
-  this frame; `design/screenshots/tablet/` is their reference.
+  thumb bar spanning the column. The bodies follow the feel pass (STYLE_GUIDE
+  § 14.5, Feel Review § 10c; roadmap 1.8e). `home` matches
+  `design/screenshots/tablet/` in arrangement at the wider 834 column: the
+  horizontal hero around a 150 × 225 cover, *Since Tuesday* | *Also reading*
+  in one row, a five-cover shelf with a 16px gap, the horizontal telescope at
+  W = 612 with its ladder in three columns, and *Ready when you are* | *2026 so
+  far* below it as two columns, 1.5 : 1. `bdash` follows the books feel pass
+  (§ 4, desktop § 11c) the same way: the horizontal hero, *Up next in Q4*, the
+  *This quarter* strip, and *On deck* | *2026 so far* below. `spine` and
+  `status` keep their bodies, because § 14.5 names nothing for them beyond the
+  rail, column and thumb bar; the run detail's own redraw is 4.3 (the art band)
+  and 2.5b (the telescope above the spine). Covers are the neutral placeholder
+  until 4.3.
 
 Average screen is ~120 lines / ~12KB — reading one instead of the whole file
 is a ~20x cut for the single most common lookup in this repo (every task in
@@ -194,9 +204,9 @@ The feel pass is drawn in `design/Ledger Feel Review.dc.html`, not here, and eve
 
 | Frame here | Superseded by (Feel Review) | Redrawn by |
 |---|---|---|
-| `home` | §2 comics, §3 the mark, §10c tablet, §11 desktop | 2.4 (with 1.10's shelf and 1.8b's mark; 1.8 for the desktop shell) |
+| `home` | §2 comics, §3 the mark, §11 desktop (the 834 frame is already redrawn, roadmap 1.8e) | 2.4 (with 1.10's shelf and 1.8b's mark; 1.8 for the desktop shell) |
 | `states` (empty dashboard) | §10a *All caught up* | 2.4 |
-| `bdash` | §4 books, reading and *Between books*, §11 desktop | 2.2 |
+| `bdash` | §4 books, reading and *Between books*, §11 desktop (the 834 frame is already redrawn, roadmap 1.8e) | 2.2 |
 | `watchlist` | §5 watch (open questions: roadmap 8.7) | 8.7 |
 | `spine`, `krakoa` (hero only) | §6 run detail (art band, telescope above the spine) | 4.3 (band), 2.5b (telescope) |
 | — (new) | §7 run complete, §10b block complete, §11 desktop | 2.12 |
