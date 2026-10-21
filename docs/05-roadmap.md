@@ -1589,7 +1589,7 @@ output, with the head marker, read-state segments and the variants listed in
   are redrawn horizontal in this PR, from the same geometry, and the vertical
   drawings are removed.
 
-1.8d's `TelecardSkeleton` was measured against a fixture of the mockup's markup; re-measure it against the telecard drawn here, within 2px at 360px (from TASK-027).
+1.8d's `TelecardSkeleton` was measured against a fixture of the mockup's markup; re-measure it against the telecard drawn here, within 2px at 360px (from TASK-027). The `/comics` loading screen also ends in `RunRowsSkeleton`, whose rows have no `.measure` meter: a Mid-run row is about 10px taller once loaded, so the page shifts as it arrives. Give the skeleton that row's geometry too (from TASK-027).
 
 **Check:** on a fixture (not the seed, which changes under the audit — S-11): a
 track of 7 blocks whose block 1 holds 5 runs, the second of them 381 issues with
@@ -2518,6 +2518,8 @@ and the Add books and Add issues search results. A spine row only gets a
 cover box when it is pending, and a master-list row with no cover draws none.
 This task makes every row's box the same: real covers, the neutral
 placeholder, and the 28×42 size.
+
+1.8d's `/books/list` loading screen draws run rows (a title and a sub-line), not a book row's cover and status controls. When the master list's rows get their covers here, draw that geometry in the screen's skeleton so it holds the layout (from TASK-027).
 
 **A missing cover is neutral** (UX-X05, M-01, L-01). The placeholder is `--sunk`
 with mono initials in `--muted` and a faint ring (dark: white at 10%); the

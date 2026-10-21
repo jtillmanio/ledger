@@ -1,7 +1,7 @@
 ---
 id: TASK-027
 title: 1.8d Failed writes, skeletons and row markup
-status: In progress
+status: Review
 depends_on: [TASK-014]
 size: M
 model: sonnet
@@ -29,11 +29,11 @@ A mark that fails to save never looks saved, and it can be retried in one tap. A
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): A spine tick whose write fails (a mocked 500) reverts the tick and raises the error toast with *Retry*, and *Retry* re-sends the same request. Skeletons for the telecard, run rows, plan rail and season rows render within 2px of the loaded geometry at 360px, and their shimmer stops under `prefers-reduced-motion`. An axe-core run over each dashboard reports no `nested-interactive`, `button-name` or `link-name` violations.
-- [ ] AC-2: A tick whose write fails, by a non-2xx answer or a network error, leaves the row unticked and raises the toast *That didn't save* with a *Retry* button, in the always-mounted `role="status"` region. *Retry* re-sends the same body. A success then ticks the row and offers *Undo* as a normal tick does. No `alert()` remains in `src/components/`.
-- [ ] AC-3: `TelecardSkeleton`, `RunRowsSkeleton`, `PlanRailSkeleton` and `SeasonRowsSkeleton` exist in `src/components/Skeleton.tsx`. `/comics` loads on the telecard and run rows, `/comics/runs` and `/books/list` on run rows, and `/watch` on season rows. Each is busy for assistive tech and announces itself once.
-- [ ] AC-4: On `/comics`, `/comics/runs` and `/books/list`, a navigable row is `<article class="row"><a class="row-link">` with a stretched-link overlay, and secondary buttons sit outside the anchor (no `a button`, no `a a`). Segmented controls, chips and switches are real buttons. Each page has exactly one `<h1>`.
-- [ ] AC-5: The changed screens meet the UX floor (`docs/04-design.md` § 10. The UX floor): the error toast's text clears 4.5:1 on `--toast-bg`, hover reveals are hidden at rest with a fine pointer at 1280px, and there are screenshots of `/comics`, `/comics/runs` and `/books/list` at each `ui.viewports` width, light and dark, plus reduced motion.
+- [x] AC-1 (roadmap **Check:**, verbatim): A spine tick whose write fails (a mocked 500) reverts the tick and raises the error toast with *Retry*, and *Retry* re-sends the same request. Skeletons for the telecard, run rows, plan rail and season rows render within 2px of the loaded geometry at 360px, and their shimmer stops under `prefers-reduced-motion`. An axe-core run over each dashboard reports no `nested-interactive`, `button-name` or `link-name` violations.
+- [x] AC-2: A tick whose write fails, by a non-2xx answer or a network error, leaves the row unticked and raises the toast *That didn't save* with a *Retry* button, in the always-mounted `role="status"` region. *Retry* re-sends the same body. A success then ticks the row and offers *Undo* as a normal tick does. No `alert()` remains in `src/components/`.
+- [x] AC-3: `TelecardSkeleton`, `RunRowsSkeleton`, `PlanRailSkeleton` and `SeasonRowsSkeleton` exist in `src/components/Skeleton.tsx`. `/comics` loads on the telecard and run rows, `/comics/runs` and `/books/list` on run rows, and `/watch` on season rows. Each is busy for assistive tech and announces itself once.
+- [x] AC-4: On `/comics`, `/comics/runs` and `/books/list`, a navigable row is `<article class="row"><a class="row-link">` with a stretched-link overlay, and secondary buttons sit outside the anchor (no `a button`, no `a a`). Segmented controls, chips and switches are real buttons. Each page has exactly one `<h1>`.
+- [x] AC-5: The changed screens meet the UX floor (`docs/04-design.md` § 10. The UX floor): the error toast's text clears 4.5:1 on `--toast-bg`, hover reveals are hidden at rest with a fine pointer at 1280px, and there are screenshots of `/comics`, `/comics/runs` and `/books/list` at each `ui.viewports` width, light and dark, plus reduced motion.
 
 ## Out of scope
 
@@ -60,10 +60,14 @@ A mark that fails to save never looks saved, and it can be retried in one tap. A
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The telecard skeleton is re-measured against the real telecard → docs/05-roadmap.md § 2.5b (approved at plan)
-- The plan-rail skeleton is re-measured against the real rail → docs/05-roadmap.md § 2.2b (approved at plan)
-- The season-rows skeleton is re-measured against the real rows → docs/05-roadmap.md § 8.7 (approved at plan)
-- The error toast with *Retry* moves from TASK-014 to this task, and 1.8b places it above the thumb bar → docs/tasks/TASK-015-thumb-bar-contrast.md § Context (approved at plan)
+- The telecard skeleton is re-measured against the real telecard; its `/comics` loading screen also lacks the Mid-run rows' 10px `.measure` meter → docs/05-roadmap.md § 2.5b (approved at plan; the re-measure note was already on main, the meter sentence is new)
+- The plan-rail skeleton is re-measured against the real rail → docs/05-roadmap.md § 2.2b (approved at plan; already on main)
+- The season-rows skeleton is re-measured against the real rows → docs/05-roadmap.md § 8.7 (approved at plan; already on main)
+- The error toast with *Retry* moves from TASK-014 to this task, and 1.8b places it above the thumb bar → docs/tasks/TASK-015-thumb-bar-contrast.md § Context (approved at plan; the move note was already on main, the built-API bullet is new)
+- `/books/list`'s loading screen draws run rows (70px) where a loaded book row is 139px, with a cover and status controls → docs/05-roadmap.md § 4.3
+- `/comics/runs`'s skeleton filter chips take less room than the loaded chips on real data (first row about 111px lower once loaded): `ListSkeleton`'s chip lines are task 0.9's guess, and the 1.8d Check measures rows only → not tracked: pre-existing from 0.9, the chip block's height follows the data (37 tracks with counts wrap more); promote it if the jump bothers the owner
+- AC-4 says chips are "real buttons", and the filter chips are navigation links (`<a href aria-current>`), which the UX floor accepts as "a real `<button>` or `<a href>`" → not tracked: accepted as is, a link is the right semantics for a chip that navigates
+- The browser suite's sign-in step looped on `/login` locally while `.next` held a stale cache (`next dev` logging "Compiled in 1ms"); deleting `.next` fixed it three runs in a row → not tracked: not reproduced on a clean tree, and CI starts clean; delete `.next` if it recurs
 
 ## Plan
 
@@ -95,7 +99,7 @@ Size check: M, about 21 files, one layer (components, their CSS and tests). No s
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (tsc, lint, 707 unit tests, build; the browser suite flaked at sign-in on a stale `.next`, then passed 434) | Audit R1 CHANGES (3 vacuous guards in markup.spec, no AC unproven) → R2 PASS | Spec R1 APPROVE | UI R1 PASS (screenshots `t027-*` in the session scratchpad; 1.8c sideways scroll does not reproduce).
 
 ## Blocked
 
@@ -103,7 +107,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1 (plus a re-run of the browser suite after clearing `.next`)
+- Review rounds: 1 (spec and UI), 2 (test audit)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1 (the e2e seed gains two books, in `test/e2e/global-setup.ts` and `helpers.ts`, so `/books/list` has rows to check; outside the plan's file list, reported at close-out)
