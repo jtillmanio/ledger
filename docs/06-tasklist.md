@@ -233,7 +233,7 @@ with the task that first reads it.
 | 0.11 | Browser test harness — Playwright and axe | M | TASK-013 | — |
 | 1.8c | Dashboard routes and the `/` redirect | M | TASK-026 | 0.11 |
 | 1.8 | App shell | L | TASK-014 | 1.8a |
-| 1.8e | Tablet frames to the feel pass | S | — | 1.8 |
+| 1.8e | Tablet frames to the feel pass | S | TASK-028 | 1.8 |
 | 1.8d | Failed writes, skeletons and row markup | M | TASK-027 | 1.8 |
 | 1.8b | Thumb bar and contrast | S | TASK-015 | 1.8, 1.8d |
 
