@@ -676,7 +676,7 @@ def extract_comics(path: Path, out: Path) -> None:
 
     # Completed is per-user progress, not catalog data, and it belongs to the
     # placement: each Reading Orders row carries its own, so an issue ticked in
-    # one run and not another is read in one and unread in the other (ARCHITECTURE
+    # one run and not another is read in one and unread in the other (data model
     # 2.14). The sheet never recorded a date, so these load with precision 'none'
     # and a NULL completed_at (D-R3-1). Letting the column default fire would stamp
     # every pre-cutover read with the load time (R2-10).

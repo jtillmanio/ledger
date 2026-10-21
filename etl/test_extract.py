@@ -132,7 +132,7 @@ class IssuesAndPlacements(WorkbookCase):
         self.assertEqual([(p["id"], p["run_id"], p["sequence"], p["issue_id"], p["type"]) for p in placements],
                          [("1", "a", "1", "avengers-1998-1", "core"), ("2", "a", "2", "avengers-1998-2", "core"),
                           ("3", "b", "1", "avengers-1998-1", "optional")])
-        # Read in run a, unread in run b (ARCHITECTURE 2.14): one progress row, on
+        # Read in run a, unread in run b (data model 2.14): one progress row, on
         # run a's placement, and no longer a disagreement to report (task 0.8a).
         self.assertEqual([p["placement_id"] for p in read(self.out, "issue_progress")], ["1"])
         self.assertNotIn("completed in one run, not another", self.reasons())

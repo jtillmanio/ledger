@@ -69,7 +69,7 @@ export function checkMigrationFiles({ journalTags, sql, downTags }) {
 
 /**
  * Problems with how a branch changed migrations that already exist on its base
- * (TASKS.md standing rule 3: never edit a migration that has been applied).
+ * (standing rule 3, docs/06-tasklist.md: never edit a migration that has been applied).
  *   nameStatus:  `git diff --name-status <base> HEAD -- drizzle` output lines
  *   baseJournal: the base's journal entries; headJournal: this branch's
  */

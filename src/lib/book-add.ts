@@ -6,7 +6,7 @@ import { MAX_FIELD } from "@/lib/book-parse";
 import { normalizeLine } from "@/lib/bulk-parse";
 import type { AddedEntry, Destination } from "@/db/writes";
 
-/** `reading_settings.words_per_page`'s column default, for a user with no settings row (ARCHITECTURE 6: pages × 275). */
+/** `reading_settings.words_per_page`'s column default, for a user with no settings row (architecture § Metadata sources: pages × 275). */
 export const DEFAULT_WORDS_PER_PAGE = 275;
 
 /** A shelf id is a slug; past this it is not one. */

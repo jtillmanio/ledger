@@ -9,11 +9,11 @@ Everything else is reference you open when this file sends you there:
 | --------------------- | ------------------------------------------------------------------------------------ |
 | `HANDOFF.md`          | Starting a new Claude conversation, or you forgot why a decision was made            |
 | `CLAUDE-CODE.md`      | You're in Part 3 and want the technique — prompts, session hygiene, review standards |
-| `TASKS.md`            | Every build session. One task at a time                                              |
-| `FEATURES.md`         | Deciding scope, or looking up a schema addition                                      |
+| `05-roadmap.md`       | Every build session. One task at a time; `06-tasklist.md` for the order            |
+| `01-product.md`       | Deciding scope                                                                       |
 | `design/mockups.html` | Building any screen. Authoritative for layout and copy                               |
 | `DIAGRAMS.md`         | You want the schema or data flow visually                                            |
-| `ARCHITECTURE.md`     | You want the reasoning behind the schema                                             |
+| `03-data-model.md`    | You want the reasoning behind the schema (`02-architecture.md`: the system)          |
 
 **No command appears in two documents.** If it's sequential, it's here.
 
@@ -164,12 +164,13 @@ now makes steps 6 and 10 faster.
 Changing a task description costs nothing. Changing shipped code costs a
 sitting. Changing a schema decision after data accumulates costs a migration.
 
-1. Read `FEATURES.md` end to end. Parts 1 and 2 are scope, Part 2d is the
-   metrics pass, Part 5 is the schema those imply.
+1. Read `docs/01-product.md` end to end: the brief, the feature index and its
+   rationale, and § Metrics. `docs/03-data-model.md` § 4 is the schema still
+   proposed.
 2. Open `design/mockups.html` in a browser — double-click it, no server needed.
    Click through all 40 screens in the left nav. Toggle **Phone/Desktop** and
    **Light/Dark** on at least the run detail and books dashboard.
-3. Skim `TASKS.md` for ordering. You don't need every acceptance check, but
+3. Skim `docs/06-tasklist.md` for ordering. You don't need every acceptance check, but
    confirm the phase order matches your priorities.
 
 ### Decisions
@@ -1204,7 +1205,7 @@ four databases:
 
 ## Step 11 — Sittings 1–2: Phase 0
 
-**Claude Code · ~2 sittings · `TASKS.md` phase 0**
+**Claude Code · ~2 sittings · `05-roadmap.md` phase 0 (milestones M1–M2)**
 
 ```powershell
 cd C:\dev\reading-tracker
@@ -1245,14 +1246,16 @@ private GitHub repo from Step 10a and `TEST_DATABASE_URL` first — see
 
 ## Step 12 — Sittings 3–9: Phase 1
 
-**Claude Code · ~7 sittings over 3–6 weeks**
+**Claude Code · ~7 sittings over 3–6 weeks · milestones M3–M9**
+
+The sittings are `docs/06-tasklist.md`'s milestones under the same numbers (sitting 7 is M7); where this table and the tasklist differ, the tasklist wins.
 
 | Sitting | Tasks (in this order) | Result |
 | ------- | --------------------- | ------ |
 | 3 | 1.2 undo, then 1.1 range marking, 1.6 resume pointer | The app becomes pleasant to use |
 | 4 | 1.3 bulk-entry parser, 1.3c review table and insert, 1.3b add from a Metron search | Adding a run is faster than the sheet. The long one |
-| 5 | 1.4 books bulk entry, 1.4c add a book, 1.4b quick capture, 1.4d wishlist promotion screen, 1.5 dated log + `read_events` | Books work end to end |
-| 6 | 1.7 period column, 1.8a design tokens and control states, **0.11 browser test harness**, 1.8 app shell, 1.8b thumb bar and contrast | The real navigation |
+| 5 | 1.4 books bulk entry, 1.4c add a book, 1.4b quick capture, 1.4d wishlist promotion screen, 1.5 dated log + `read_events`, 1.16 dates in `America/New_York` | Books work end to end |
+| 6 | 1.7 period column, 1.8a design tokens and control states, **0.11 browser test harness**, 1.8c dashboard routes, 1.8 app shell, 1.8e tablet frames, 1.8d failed writes and skeletons, 1.8b thumb bar and contrast | The real navigation |
 | 7 | 1.10 Up next queue, then 1.9 status screens, **2.11a prerequisite cycle check**, 1.12 volume map into `volume_rules`, and 1.11 failed sign-ins wait (D-36) | Phase 1 complete; extract lists the cycles for your audit |
 | 8 | 1.13 book extract and merge review, 1.14 Open Library details, 1.15 series, author and universe follows, 1.18 Calibre word counts, series, tags and reads | Books load clean, with covers, page counts and real word counts; answer `book_review.csv` between 1.13 and 1.14, and `calibre_review.csv` and `calibre_reads.csv` after 1.18. Can be built any time before Step 14 |
 | 9 | 1.4e paste a list as two fields, 1.17 start dates | A small fix to a screen in daily use, and start dates captured from cutover on |
@@ -1278,7 +1281,7 @@ the APIs disagree on a series or ISBN, and `etl/data/calibre_reads.csv`, the
 Calibre reads to accept (D-73). **1.17 also lands before cutover**, for 1.5's
 reason: a start date not captured from the first day is lost.
 
-**Done when:** every Phase 0 and Phase 1 task is ticked in `TASKS.md`, you can
+**Done when:** every Phase 0 and Phase 1 task is ticked in `05-roadmap.md`, you can
 add a 24-issue run by pasting a block of labels, and marking a 100-issue range
 doesn't stall.
 
@@ -1364,7 +1367,7 @@ frozen and kept only to compare numbers during the month.
 
 ### Before the switch — every box ticked
 
-- [ ] **Step 12 is finished**, and 0.8a / 0.8b are ticked in `TASKS.md` (read
+- [ ] **Step 12 is finished**, and 0.8a / 0.8b are ticked in `05-roadmap.md` (read
       state is per run). Not negotiable: after this step it cannot be done
       without guessing.
 - [ ] **The prerequisite audit is done** (D-20, `OWNER-CHECKLIST.md`): after a
@@ -1433,7 +1436,7 @@ two weeks without opening the sheet.
 
 ## Step 15 — Phases 2 through 7
 
-**Claude Code · open-ended · `TASKS.md`**
+**Claude Code · open-ended · `05-roadmap.md` (milestones M10–M25)**
 
 | Phase | Contents                                                                                    | Why this order                                                                                                          |
 | ----- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
@@ -1474,4 +1477,4 @@ Comics cover dates, cover URLs, story titles and credits were backfilled in
 Step 8c. Issues you add in the app after cutover need task 4.1, which writes to
 the database directly instead of the sidecar CSVs. Enrichment never
 overwrites a hand-entered value, and **word counts are never fetched** — no API
-exposes them. See `FEATURES.md` Part 4.
+exposes them. See `architecture § Metadata sources.

@@ -45,7 +45,7 @@ export function checkHand(v: Values): { item: HandItem } | { errors: Partial<Rec
 const ORDER: Field[] = ["title", "author", "series", "position", "pages", "words"];
 
 /**
- * Add books, *By hand* (task 1.4c; ARCHITECTURE 2.15). Title and author are
+ * Add books, *By hand* (task 1.4c; data model 2.15). Title and author are
  * required; series, position, pages and words are optional. A word count you
  * type is saved as `stated`; pages alone are estimated. Nothing is sent until
  * every field is right: a missing title or author says so under the field,

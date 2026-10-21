@@ -10,7 +10,7 @@ const TONE = { ok: "ok", choice: "wn", error: "er" } as const;
 export type ReviewTableRow = Pick<ReviewRow, "key" | "line" | "kind" | "text" | "why" | "check" | "groups" | "invalid">;
 
 /**
- * The review table (ARCHITECTURE §4, *Review tables*), shared by both halves of
+ * The review table (design §11, *Review tables*), shared by both halves of
  * Add issues (1.3c, 1.3b) and by Add books' *Paste a list* (1.4): per line, the
  * kind glyph, the parsed line, one line of why, the check, and the decision as
  * a radiogroup. Stacked, as the mockup draws it at every width. Glyph and text,

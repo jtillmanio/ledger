@@ -1,7 +1,7 @@
 import { ZONE } from "@/lib/finish-date";
 
 /**
- * Quick capture (task 1.4b, FEATURES #21): what a note may hold, and where its
+ * Quick capture (task 1.4b, product #21): what a note may hold, and where its
  * **Resolve** leads. No database: safe in the browser.
  */
 

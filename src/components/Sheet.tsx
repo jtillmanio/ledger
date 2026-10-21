@@ -29,7 +29,7 @@ function quietOutside(root: Element, keep: Element | null): Element[] {
 const FOCUSABLE ='a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 /**
- * The one sheet behaviour every sheet shares (docs/TASKS.md § *Focus returns
+ * The one sheet behaviour every sheet shares (docs/04-design.md § 10, *Focus returns
  * where it came from*, R1-11; UX-N11). Task 1.1 opens the first one; 1.3c, 1.3b,
  * 1.4c, 1.8b and the rest reuse it rather than fixing focus eight times.
  *

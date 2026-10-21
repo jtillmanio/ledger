@@ -19,7 +19,7 @@ A wrong passcode takes a second to be refused, so guessing it one try at a time 
 
 ## Context
 
-- Roadmap: `docs/TASKS.md` § 1.11 Slow down failed sign-ins (sitting 7, last; built before cutover, because from Step 14 the database is the only record). The roadmap entry and its **Check:** are the contract.
+- Roadmap: `docs/05-roadmap.md` § 1.11 Slow down failed sign-ins (sitting 7, last; built before cutover, because from Step 14 the database is the only record). The roadmap entry and its **Check:** are the contract.
 - Code: `src/app/api/login/route.ts` compares the passcode and answers at once. `src/lib/auth.ts` holds the session helpers. `src/proxy.ts` is the passcode gate. It is Next.js 16, so read `node_modules/next/dist/docs/` before changing the route handler.
 - Behaviour: a failed sign-in waits one second before its `303` to `/login?error=1`. The wait is the same for a wrong, an empty and a wrong-length passcode. A correct one is never delayed. **Stateless**: the wait lives in the route handler, never in an in-memory counter, which a serverless instance doesn't keep and another instance never sees.
 - Decisions: D-23 (a four-or-more-word passphrase is the defence against parallel guesses, and stays a Step 14 gate), D-36 (the owner asked for this delay; a per-client lockout would need a table, so it is not part of this task), R2-12. 6.13 replaces the passcode later and keeps the delay.

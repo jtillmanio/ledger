@@ -58,6 +58,6 @@ npm run check:migrations    # journal = files, drop/retype has a drizzle/down fi
 To print one part of a large doc without reading all of it:
 
 ```powershell
-powershell -NoProfile -File scripts/task.ps1 <id>        # one task from docs/TASKS.md
+powershell -NoProfile -File scripts/task.ps1 <id>        # one task from docs/05-roadmap.md
 powershell -NoProfile -File scripts/screen.ps1 <data-id> # one screen from design/mockups.html
 ```

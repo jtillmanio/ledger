@@ -42,7 +42,7 @@ function useFinePointer() {
 /**
  * Rows are placements in one run's reading order; `id` is the issue and
  * `placement_id` is where it sits in this run. Read state belongs to the
- * placement (ARCHITECTURE 2.14), so ticking a row marks the issue read in this
+ * placement (data model 2.14), so ticking a row marks the issue read in this
  * run only; the same issue in another run stays as it was.
  *
  * Marking an issue read is the highest-frequency action in the app, so it is

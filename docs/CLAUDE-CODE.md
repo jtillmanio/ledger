@@ -35,7 +35,7 @@ passes. That is the difference between supervising and reviewing.
 Three consequences:
 
 1. **Tasks 0.1 and 0.2 come first**, even though they build nothing visible.
-   Every task in `TASKS.md` carries an acceptance check; they're worthless until
+   Every task in `docs/05-roadmap.md` carries an acceptance check; they're worthless until
    there's a test runner and a CI job.
 2. **Ask for evidence, not assertions.** "Show me the test output and the
    command you ran" is faster to review than re-running it yourself, and it
@@ -99,7 +99,7 @@ Per task. Do not skip to phase 3.
 `claude --permission-mode plan`. Claude reads and answers without writing.
 
 ```
-read @docs/TASKS.md task 1.3, @src/db/schema.ts, @src/components/IssueRow.tsx,
+read @docs/05-roadmap.md task 1.3, @src/db/schema.ts, @src/components/IssueRow.tsx,
 and the "Bulk add" section of @design/mockups.html.
 
 how does the existing optimistic-update pattern work, and where would the
@@ -147,7 +147,7 @@ acceptance criteria. report gaps affecting correctness, not style.
 Then `/verify`, then:
 
 ```
-tick task 1.3 in TASKS.md, commit with a descriptive message, and open a PR
+tick task 1.3 in docs/05-roadmap.md, commit with a descriptive message, and open a PR
 ```
 
 ### When to skip plan mode
@@ -277,7 +277,7 @@ Reusable shapes. Adjust the specifics.
 **Starting a task**
 
 ```
-read @docs/TASKS.md task <id> and the <screen name> section of
+read @docs/05-roadmap.md task <id> and the <screen name> section of
 @design/mockups.html. explain what this task needs to touch and what's
 already in place. don't write anything yet.
 ```
@@ -299,7 +299,7 @@ show me the commands you ran and their output. don't summarize.
 
 ```
 summarize what changed in this branch, which acceptance criteria from
-TASKS.md are met, and which aren't. be specific about what's missing.
+docs/05-roadmap.md are met, and which aren't. be specific about what's missing.
 ```
 
 **After a failed approach**
@@ -327,10 +327,10 @@ I'm on step <n>. don't write anything until I confirm the plan.
 ## The kit's loop (from 2026-10-08)
 
 The Claude Code starter kit (2.3.1, adopted in `docs/kit-adoption.md`) now
-drives a build session: `/new-task` turns a TASKS.md task into
+drives a build session: `/new-task` turns a docs/05-roadmap.md task into
 `docs/tasks/TASK-###-*.md`, and `/implement-task` (or `/next-task`) runs the
 same four phases this file describes (plan gate, implement, verify, review)
 with the kit's agents (test-runner, test-auditor, spec-reviewer,
 schema-reviewer, ui-verifier). This file stays the technique reference
 behind that loop; where the two differ on *how* a session runs, the kit's
-skill wins, and on *what* the task must do, `docs/TASKS.md` still wins.
+skill wins, and on *what* the task must do, `docs/05-roadmap.md` still wins.

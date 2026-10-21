@@ -12,16 +12,16 @@ line numbers below drift after an edit.
 
 | id | Screen | Approx. lines (v4 + Sept 2026, may drift) |
 |---|---|---|
-| `home` | Comics dashboard — with the Up next queue; 360px and 834px frames (TASKS 1.8) | 655–1001 |
+| `home` | Comics dashboard — with the Up next queue; 360px and 834px frames (roadmap 1.8) | 655–1001 |
 | `runs` | Run list | 1004–1090 |
-| `spine` | Run detail — per-run "read in …" hints; spine v2 gutter, Hide read, covers, dates, next-issue strip; the two-line undo toast (desktop frame, TASKS 1.2); 360px and 834px frames (TASKS 1.8) | 1219–1345 |
-| `range` | Range marking; its undo toast in the two-line form (TASKS 1.2); the count with its optionals, *Adopt*'s fifth option *Original dates*, and the desktop anchor and pill (TASKS 1.1) | 1348–1466 |
+| `spine` | Run detail — per-run "read in …" hints; spine v2 gutter, Hide read, covers, dates, next-issue strip; the two-line undo toast (desktop frame, roadmap 1.2); 360px and 834px frames (roadmap 1.8) | 1219–1345 |
+| `range` | Range marking; its undo toast in the two-line form (roadmap 1.2); the count with its optionals, *Adopt*'s fifth option *Original dates*, and the desktop anchor and pill (roadmap 1.1) | 1348–1466 |
 | `addsearch` | Add issues — search (Metron) | 1437–1573 |
 | `bulk` | Add issues — type it (bulk) | 1576–1680 |
 | `newrun` | New run | 1545–1647 |
 | `ai` | AI review | 1650–1745 |
-| `bdash` | Books dashboard; 360px and 834px frames (TASKS 1.8) | 1748–1912 |
-| `status` | Status — in flight, up next, done (all media); 360px and 834px frames (TASKS 1.8) | 1915–2020 |
+| `bdash` | Books dashboard; 360px and 834px frames (roadmap 1.8) | 1748–1912 |
+| `status` | Status — in flight, up next, done (all media); 360px and 834px frames (roadmap 1.8) | 1915–2020 |
 | `plan` | Plan by quarter | 2023–2166 |
 | `moveplan` | Move / add to a quarter | 2169–2326 |
 | `blist` | Master list | 2329–2431 |
@@ -53,7 +53,7 @@ line numbers below drift after an edit.
 | `watchempty` | Watch — first run | 5107–5152 |
 | `palette` | Ctrl K — search and verbs | 5153–5203 |
 
-### Viewport frames (TASKS 1.8)
+### Viewport frames (roadmap 1.8)
 
 The sidebar's **Phone · 360 · 834 · Desktop** toggle picks the frame. `home`, `spine`,
 `bdash` and `status` carry all four; every other screen has a phone and a
@@ -72,7 +72,7 @@ desktop frame only, so the 360 and 834 views of those are empty.
 
 Average screen is ~120 lines / ~12KB — reading one instead of the whole file
 is a ~20x cut for the single most common lookup in this repo (every task in
-`docs/TASKS.md` that touches a screen references this file).
+`docs/05-roadmap.md` that touches a screen references this file).
 
 If you add a 41st screen, give its `<section>` a `data-id="..."` like the
 others and add a row here — the id is all `scripts/screen.*` needs; the line
@@ -82,7 +82,7 @@ numbers are decoration.
 
 Every audit item is either in `mockups.html`, in the docs, or listed under
 *Not shown* below with the reason. IDs are the audit's `UX-C##` / `UX-E##`; each
-is folded into the `docs/TASKS.md` task it belongs to.
+is folded into the `docs/05-roadmap.md` task it belongs to.
 
 ### Drawn in `mockups.html`
 
@@ -104,7 +104,7 @@ is folded into the `docs/TASKS.md` task it belongs to.
 | C25 | Status tablist; comics Up next queue, keyboard-operable handle, row menu, Ready-not-queued, Stopped (`queue`) |
 | C26 | Andor is mid-show everywhere; one hue per franchise; neutral genre chips |
 | C27 | `watchempty` |
-| C28–C29 | `DIAGRAMS §8b`, `ARCHITECTURE 2.5b`, `etl/views.sql` (`run_state`, `run_read_segments`); `show_progress.dropped` is specified in TASKS 8.1 because the tables do not exist yet |
+| C28–C29 | `DIAGRAMS §8b`, `data model 2.5b`, `etl/views.sql` (`run_state`, `run_read_segments`); `show_progress.dropped` is specified in roadmap 8.1 because the tables do not exist yet |
 | C30–C31 | Bulk count fixed (9, not 42); insertion preview on `bulk` and `addsearch` |
 | C32 | `apistates` |
 | C33 | Sync pill in the desktop sidebar; offline strip on the phone (`states`) |
@@ -136,16 +136,16 @@ Decision) as a real grid on the desktop frame.
 
 One line each. None is silently dropped.
 
-1. **Rail scrubbing (E01).** Drag or arrow-key movement along a telescope rail is an interaction; a static file cannot show it. Specified in TASKS 2.5 (`role="slider"`, release navigates to `#p-[ordinal]`).
-2. **Drag-and-drop reorder, keyboard lift/move/drop (C25, E12).** Same reason. The lifted row, announcer text and open menu are drawn as states; the sequence is a TASKS 1.10 test.
+1. **Rail scrubbing (E01).** Drag or arrow-key movement along a telescope rail is an interaction; a static file cannot show it. Specified in roadmap 2.5 (`role="slider"`, release navigates to `#p-[ordinal]`).
+2. **Drag-and-drop reorder, keyboard lift/move/drop (C25, E12).** Same reason. The lifted row, announcer text and open menu are drawn as states; the sequence is a roadmap 1.10 test.
 3. ~~Scroll-snap behaviour of the month view (C20).~~ Retired with the month view (D-38).
-4. **Real `<button>` elements for chips, segmented controls, `.opts` and switches (C38).** The mockup's CSS targets `span` and `b`, so they carry `role`, `aria-pressed`/`aria-checked` and `tabindex` instead. Production must use real buttons (TASKS 1.8); the axe check will fail otherwise.
+4. **Real `<button>` elements for chips, segmented controls, `.opts` and switches (C38).** The mockup's CSS targets `span` and `b`, so they carry `role`, `aria-pressed`/`aria-checked` and `tabindex` instead. Production must use real buttons (roadmap 1.8); the axe check will fail otherwise.
 5. **The estimated-count `~` on plan *rows* and the master-list `.rm` value (C19).** Drawn on rail blocks, the legend, the Words field and the metadata-pending frame; rows reuse the same prefix but the existing row markup was not regenerated.
-6. **Empty slates for the books and watch status tabs.** Only comics is drawn; the copy for all nine is in FEATURES Part 2c and differs by wording, not layout.
+6. **Empty slates for the books and watch status tabs.** Only comics is drawn; the copy for all nine is in design §14 and differs by wording, not layout.
 7. **Phone sync pill inside the media bar (C33).** The bar is at its width limit, so the offline state is a strip beneath it. Decision recorded in `states`.
 8. **A "read elsewhere" *segment kind* in the data (C04).** Drawn in the telescope. `etl/views.sql` cannot compute it until task 0.8 makes `issue_progress` per placement; `run_read_segments` documents the change.
-9. **`show_progress` with `dropped` (C28).** Documented in `ARCHITECTURE 2.5b`, `DIAGRAMS 8b` and TASKS 8.1, and stubbed as a comment in `etl/views.sql`, because the watch tables land with task 8.1.
-10. **The measured checks (C37, C18, C02).** Contrast, 24px targets and 14px cells are tests in TASKS 1.8, 2.2 and 2.5. Contrast was computed once while building the mockups: `--faint` as the audit specified it (`#6f7888`) was 4.45:1 on `--surface` and 3.9:1 on `--page`, so it is `#606979` here.
+9. **`show_progress` with `dropped` (C28).** Documented in `data model 2.5b`, `DIAGRAMS 8b` and roadmap 8.1, and stubbed as a comment in `etl/views.sql`, because the watch tables land with task 8.1.
+10. **The measured checks (C37, C18, C02).** Contrast, 24px targets and 14px cells are tests in roadmap 1.8, 2.2 and 2.5. Contrast was computed once while building the mockups: `--faint` as the audit specified it (`#6f7888`) was 4.45:1 on `--surface` and 3.9:1 on `--page`, so it is `#606979` here.
 11. ~~**The dark theme of the new screens** was not reviewed.~~ Closed by task 1.8a (UX-X04): the dark phone and desktop frames of `telescope`, `queue`, `planmonth`, `rebalance`, `path`, `session` and `palette` are captured in `design/captures/1.8a/`, listed under *Oct 2026, feel pass* below.
 12. **Batch and rebalance for other media.** Batch on books reads *Log pages*; watch has no batch. Described in the notes, not drawn.
 13. **Figures on the tracks, path and session screens** are illustrative, not the seed.
@@ -177,15 +177,15 @@ Item 11 above is now partly covered: `test:tokens` checks dark-mode token contra
 
 ## Oct 2026, spine v2
 
-Five additions to the run detail, from a comparison with another reading-order app. The specs are in `STYLE_GUIDE.md` §5.1 and §9, and the departures are D13–D15. The tasks are in `docs/TASKS.md`.
+Five additions to the run detail, from a comparison with another reading-order app. The specs are in `STYLE_GUIDE.md` §5.1 and §9, and the departures are D13–D15. The tasks are in `docs/05-roadmap.md`.
 
 | Addition | What changed | Where |
 |---|---|---|
-| Ordinal gutter | A leading mono column with the placement's ordinal (`42`), in `--brand-ink` on the next row; `aria-hidden`, with the ordinal in the row's name; rows carry `id="p-42"` | `spine` (both frames), `krakoa`, `states`; TASKS 3.6b, 2.5 |
-| Hide read | A neutral chip beside the era chips (on: phone `spine`, both `krakoa` frames; off: desktop `spine`); a dashed `+3 read · Show` stub per hidden stretch; the *All 381 read in this run* slate | `spine`, `krakoa`, `states`; TASKS 3.6c |
-| Real covers | 28×42 row covers (D13) mixed with the text fallback; a loading skeleton; a cover-states frame (loading, loaded, none, pending, reduced data); `krakoa`'s tile now shows the issue number (D14) | `spine`, `krakoa`, `states`; TASKS 4.3 |
-| Release date | A grey mono `Mon YYYY` column on the desktop rows only; *Dates* (cover date, publication date) in the issue sheet | `spine` (desk), `issuedetail`; TASKS 3.6b, 3.5 |
-| Next-issue strip | A tonal well in the hero above *Resume #141*: cover, *NEXT · 42 / 381*, the label and its note; the fully read hero in `states` | `spine` (both frames), `states`; TASKS 1.6 |
+| Ordinal gutter | A leading mono column with the placement's ordinal (`42`), in `--brand-ink` on the next row; `aria-hidden`, with the ordinal in the row's name; rows carry `id="p-42"` | `spine` (both frames), `krakoa`, `states`; roadmap 3.6b, 2.5 |
+| Hide read | A neutral chip beside the era chips (on: phone `spine`, both `krakoa` frames; off: desktop `spine`); a dashed `+3 read · Show` stub per hidden stretch; the *All 381 read in this run* slate | `spine`, `krakoa`, `states`; roadmap 3.6c |
+| Real covers | 28×42 row covers (D13) mixed with the text fallback; a loading skeleton; a cover-states frame (loading, loaded, none, pending, reduced data); `krakoa`'s tile now shows the issue number (D14) | `spine`, `krakoa`, `states`; roadmap 4.3 |
+| Release date | A grey mono `Mon YYYY` column on the desktop rows only; *Dates* (cover date, publication date) in the issue sheet | `spine` (desk), `issuedetail`; roadmap 3.6b, 3.5 |
+| Next-issue strip | A tonal well in the hero above *Resume #141*: cover, *NEXT · 42 / 381*, the label and its note; the fully read hero in `states` | `spine` (both frames), `states`; roadmap 1.6 |
 | Considered, not adopted | A per-row outbound *Read* button and a condensed display face | `STYLE_GUIDE.md` §12 |
 
 ## Oct 2026, feel pass (D-40)
@@ -197,7 +197,7 @@ The feel pass is drawn in `design/Ledger Feel Review.dc.html`, not here, and eve
 | `home` | §2 comics, §3 the mark, §10c tablet, §11 desktop | 2.4 (with 1.10's shelf and 1.8b's mark; 1.8 for the desktop shell) |
 | `states` (empty dashboard) | §10a *All caught up* | 2.4 |
 | `bdash` | §4 books, reading and *Between books*, §11 desktop | 2.2 |
-| `watchlist` | §5 watch (open questions: TASKS 8.7) | 8.7 |
+| `watchlist` | §5 watch (open questions: roadmap 8.7) | 8.7 |
 | `spine`, `krakoa` (hero only) | §6 run detail (art band, telescope above the spine) | 4.3 (band), 2.5b (telescope) |
 | — (new) | §7 run complete, §10b block complete, §11 desktop | 2.12 |
 | `dashextras` (*Since Tuesday* line) | §2 (*Since Tuesday* is a cover stack in the hero) | 2.4 |

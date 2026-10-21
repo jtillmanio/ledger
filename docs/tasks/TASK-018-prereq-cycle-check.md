@@ -19,9 +19,9 @@ Extract names every loop in the prerequisite graph so the owner can untangle the
 
 ## Context
 
-- Roadmap: `docs/TASKS.md` § 2.11a Prerequisite cycle check. It is numbered in Phase 2 but **built in Phase 1's last sitting, before cutover (D-20)**, because the owner needs its output for the audit in `Comics.xlsx` before the sheet is frozen at Step 14. The roadmap entry and its **Check:** are the contract.
+- Roadmap: `docs/05-roadmap.md` § 2.11a Prerequisite cycle check. It is numbered in Phase 2 but **built in Phase 1's last sitting, before cutover (D-20)**, because the owner needs its output for the audit in `Comics.xlsx` before the sheet is frozen at Step 14. The roadmap entry and its **Check:** are the contract.
 - Split from the old 2.11 (R3-15). This task is the loader check. The judgement calls about the 230 hard edges are the owner's, in `docs/OWNER-CHECKLIST.md`, and no task waits on them.
-- Architecture: `docs/ARCHITECTURE.md` § 2. Decisions (the prereq graph). `etl/views.sql` `run_ancestors()` (depth cap 48, D-6; a run is never its own ancestor, R2-04).
+- Architecture: `docs/03-data-model.md` § 2. Decisions (the prereq graph). `etl/views.sql` `run_ancestors()` (depth cap 48, D-6; a run is never its own ancestor, R2-04).
 - Data model: `etl/extract.py` writes `prereqs.csv` and `unresolved.csv`. Rows go `prereqs,prereq cycle`, one per component.
 - Behaviour: a Tarjan pass over all extracted edges, hard and soft. Every strongly connected component larger than one is reported with its runs named, hard edges first. By default extract reports and carries on (a console count, the rows in `unresolved.csv`), so `npm run rebuild` keeps working through the weeks-long audit. `--fail-on-cycle` exits non-zero instead. START-HERE Step 14's final extract uses it.
 - Decisions: D-2, D-6, D-7, D-20, R0-01, R2-04, R3-15. Standing rule 4: `unresolved.csv` gains rows but the other CSVs' formats don't change. Re-run against both workbooks and diff.

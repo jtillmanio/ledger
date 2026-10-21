@@ -21,10 +21,10 @@ Before pushing, locally:
 - `/verify`: typecheck, lint, `npm run test:all` (tokens, migration checks,
   test-db reset, vitest, SQL view tests, ETL unittests) and `next build`. It is
   the same set CI runs.
-- The task's own **Check:** from `docs/TASKS.md`, exactly as written.
+- The task's own **Check:** from `docs/05-roadmap.md`, exactly as written.
 - Schema or query changes: the `schema-reviewer` subagent (CLAUDE-CODE.md §3,
-  phase 4). Phases 1 and 3 also get the adversarial review pass (TASKS.md
-  standing rule 5).
+  phase 4). Phases 1 and 3 also get the adversarial review pass (standing
+  rule 5, `docs/06-tasklist.md`).
 - Migrations that drop or retype a column: the up → down → up test.
 - Anything else the change touches that has a test path: an ETL script's
   `--dry-run`, `npm run sidecars` after a sidecar change, and, once they
@@ -61,7 +61,7 @@ reason.
 A test suite added by a task goes into `npm run test:all` (or CI) and into the
 list in the same PR, so the next branch runs it too.
 
-Tick the task's checkbox in `docs/TASKS.md` in the same PR.
+Tick the task's checkbox in `docs/05-roadmap.md` in the same PR.
 
 ## Push and open the PR
 

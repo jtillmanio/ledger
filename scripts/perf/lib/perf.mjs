@@ -145,7 +145,7 @@ export function gateProblems(routes, budget, expected = []) {
       if (typeof b[key] === "number" && v != null && v > b[key]) {
         const n = (x) => (unit === "bytes" ? `${x.toLocaleString("en-US")} bytes` : String(Math.round(x)));
         problems.push(`${id}: ${label} ${n(v)} is over the budget of ${n(b[key])} ` +
-          "(docs/ARCHITECTURE.md, Performance budget)");
+          "(docs/02-architecture.md, Performance budget)");
       }
     }
     if (r.median.cls != null && r.median.cls >= CLS_LIMIT) {
@@ -194,7 +194,7 @@ export function renderComment({ current, baseline, budget, problems, missingBudg
   if (problems.length) lines.push("**Fails the job:**", "", ...problems.map((p) => `- ${p}`), "");
   if (missingBudget.length) {
     lines.push(`**No budget recorded** for ${missingBudget.map((id) => `\`${id}\``).join(", ")}: ` +
-      "add it to scripts/perf/budget.json and ARCHITECTURE's Performance budget.", "");
+      "add it to scripts/perf/budget.json and architecture § Operational posture, *Performance budget*.", "");
   }
   lines.push(
     "**Gated** (median, against budget)", "",

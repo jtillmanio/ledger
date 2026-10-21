@@ -112,7 +112,7 @@ Planning-doc edits and candidate decisions waiting for your yes
 session, and that session or the next `/track-follow-ups` run makes the change
 and notes where it went.
 
-- [x] Update `docs/ARCHITECTURE.md` § 2. Decisions and `docs/HANDOFF.md`
+- [x] Update `docs/03-data-model.md` § 2. Decisions and `docs/HANDOFF.md`
       § What each spreadsheet artifact became: the `To-Read 20XX` tabs row
       becomes "tabs before 2028; later tabs load nothing (D-70)" (from
       TASK-021, PR #97). *Approved by the owner 2026-10-20; done in
@@ -158,7 +158,7 @@ designed, and the reason the SQL and vitest suites could not be re-run here.
 
 - [x] **The authority hierarchy was decided but never written down (R0 pass
       criterion, unmet).** D-1 settled it on 2026-09-20; `grep -i authority
-      CLAUDE.md docs/TASKS.md` returns nothing. R0's third pass criterion is
+      CLAUDE.md docs/05-roadmap.md` returns nothing. R0's third pass criterion is
       literally "the authority hierarchy is written into CLAUDE.md", and it is
       the rule that stops an agent believing FEATURES over `schema.ts`. Paste
       D-1 into CLAUDE.md as its own short section.
@@ -176,7 +176,7 @@ designed, and the reason the SQL and vitest suites could not be re-run here.
 
 - [x] **Confirm the three remaining one-way doors in `decisions.md` (R2 pass
       criterion, unmet).** R2's register has ten doors; `reading_plan`'s PK and
-      date precision were since settled in TASKS 1.7 and D-10, and read-state
+      date precision were since settled in roadmap 1.7 and D-10, and read-state
       grain is settled by 0.8a. Three are still unconfirmed: `issues.id`
       (the item above), **placement-id stability** — 0.8a assigns
       `run_issues.id` as a serial in sheet order, which is only safe because
@@ -214,7 +214,7 @@ designed, and the reason the SQL and vitest suites could not be re-run here.
       review file mentions either, yet they are what you will drive Claude Code
       with. Two stale spots found by spot-check: PROMPTS:834 and :1338 still say
       the plan holds **175 real rows** (D-13 made the plan start empty, and
-      TASKS 2.8 was corrected); CLAUDE-CODE.md:2 calls `ci.yml` "the same four
+      roadmap 2.8 was corrected); CLAUDE-CODE.md:2 calls `ci.yml` "the same four
       checks" when the file is one job of eight steps. PROMPTS also still points
       at the absent `claude/*.md` files (R0-13). A read-through of the HORIZON
       prompts against current TASKS is worth one sitting.
@@ -415,7 +415,7 @@ of gates**. The items below are the ones only you can do.
 ## Small questions for later, when their task starts
 
 - [x] **1.4:** how similar must two titles be to flag a near-duplicate book?
-      (`pg_trgm` similarity; 0.4 is a common starting point.) **0.4 (D-25), in TASKS 1.4.**
+      (`pg_trgm` similarity; 0.4 is a common starting point.) **0.4 (D-25), in roadmap 1.4.**
 - [x] **0.8a:** add *Dark Reign: The Cabal* (read in `hickman-ff`, unread in
       `bendis-dark-reign`) to its check, as suggested in the second pass? **Yes (D-26), in 0.8a's check.**
 - [x] **Fraction issue numbers in ids:** should extract slug `#1⁄2` as

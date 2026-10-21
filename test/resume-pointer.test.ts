@@ -1,5 +1,5 @@
 // Task 1.6: the resume pointer. Derived, never stored: the lowest sequence whose
-// *placement* is unread (ARCHITECTURE 2.14), so an issue read only in another
+// *placement* is unread (data model 2.14), so an issue read only in another
 // run still stops it here. The dashboard's in-progress list names it and links
 // to its row on the spine, `#p-<ordinal>`.
 import { createElement } from "react";

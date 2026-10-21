@@ -15,7 +15,7 @@ WHERE ri.deleted_at IS NULL;
 
 -- Per-run, per-user completion. Replaces RUNS!Completed / Left / % Done / Status.
 -- Counts this run's own placements: an issue read in another run is unread here
--- (ARCHITECTURE 2.14, task 0.8a). run_issues is UNIQUE (run_id, issue_id), so
+-- (data model 2.14, task 0.8a). run_issues is UNIQUE (run_id, issue_id), so
 -- placements and distinct issues are the same number and this agrees with
 -- run_credit_line.issue_count (D-R2-1).
 CREATE OR REPLACE VIEW run_progress AS
@@ -128,7 +128,7 @@ WHERE r.deleted_at IS NULL;
 
 -- Direct-prereq readiness. Replaces RUNS!Readiness / Hard Left / Soft Left / Unlocks.
 -- A prerequisite is finished when its own placements are read: reading the same
--- issues inside some other run does not finish it (ARCHITECTURE 2.14).
+-- issues inside some other run does not finish it (data model 2.14).
 CREATE OR REPLACE VIEW run_readiness AS
 SELECT
   rp.user_id,
@@ -151,7 +151,7 @@ LEFT JOIN prereqs pr      ON pr.run_id = rp.run_id
 LEFT JOIN run_progress pp ON pp.run_id = pr.prereq_run_id AND pp.user_id = rp.user_id
 GROUP BY rp.user_id, rp.run_id;
 
--- The five run states the UI draws (DIAGRAMS §4, ARCHITECTURE §4): blocked,
+-- The five run states the UI draws (DIAGRAMS §4, design §11): blocked,
 -- ready_hard, ready_all, reading, read. run_readiness only knows about
 -- prerequisites, so a run you have started is still 'blocked' there; the badge
 -- must say 'reading' and suppress the prerequisite badge, so progress wins
@@ -263,7 +263,7 @@ JOIN run_tracks rt ON rt.run_id = er.run_id;
 -- A crossover issue placed in three runs of one track counts once, which is
 -- why these don't SUM run_progress. An issue is read in a scope when any of its
 -- placements inside that scope is read; a read in a run outside it does not
--- count (ARCHITECTURE 2.14).
+-- count (data model 2.14).
 CREATE OR REPLACE VIEW track_issue_counts AS
 SELECT u.id AS user_id, rt.track_id,
        COUNT(DISTINCT ri.issue_id)                                           AS total_issues,
@@ -288,7 +288,7 @@ GROUP BY u.id, r.block_id;
 
 -- "You've read this before": per user and issue, the runs in which a live
 -- placement of it is read, earliest read first. A hint for the spine (0.8b) and
--- the telescope (2.5); it never checks a box (ARCHITECTURE 2.14).
+-- the telescope (2.5); it never checks a box (data model 2.14).
 -- first_read_at ignores undated reads (precision 'none') and is NULL when every
 -- read is undated; first_read_precision is that read's precision, 'none' when
 -- first_read_at is NULL, so the range sheet's *Original dates* can copy it (S-15).
@@ -524,7 +524,7 @@ GROUP BY u.id, bs.id, bs.name, a.name, bs.total_books;
 --   unknown | to_watch | watching | watched | dropped
 -- and must read a title_status row (kind 'tv', status 'dropped') FIRST, before
 -- deriving from season_status. `dropped` is the one show-level status that is
--- stored; watching and watched never are (ARCHITECTURE 2.5b, DIAGRAMS 8b).
+-- stored; watching and watched never are (data model 2.5b, DIAGRAMS 8b).
 
 -- Indexes that matter at 10k issues.
 CREATE INDEX IF NOT EXISTS runs_block_seq   ON runs (block_id, sequence);

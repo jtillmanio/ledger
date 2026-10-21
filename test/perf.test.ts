@@ -328,9 +328,9 @@ describe("the route list (scripts/perf/routes.mjs)", () => {
     }
   });
 
-  it("is mirrored in ARCHITECTURE's Performance budget", () => {
+  it("is mirrored in the architecture's Performance budget", () => {
     const budget = JSON.parse(readFileSync("scripts/perf/budget.json", "utf8")).routes;
-    const doc = readFileSync("docs/ARCHITECTURE.md", "utf8");
+    const doc = readFileSync("docs/02-architecture.md", "utf8");
     const table = doc.slice(doc.indexOf("<!-- perf-budget -->"), doc.indexOf("<!-- /perf-budget -->"));
     expect(table.length).toBeGreaterThan(0);
     const n = (v: unknown) => (typeof v === "number" ? v.toLocaleString("en-US") : "–");

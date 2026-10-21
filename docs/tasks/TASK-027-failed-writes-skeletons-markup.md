@@ -19,7 +19,7 @@ A mark that fails to save never looks saved, and it can be retried in one tap. A
 
 ## Context
 
-- Roadmap: `docs/TASKS.md` § 1.8d Failed writes, skeletons and row markup, plus three parts of § 1.8 that are this task's contract: *A failed write is never silent* (the revert and the toast; the sync pill is 1.8's), the **Skeletons** bullet and the **Markup rules** bullet. Split out of TASK-014 (1.8) by the owner, 2026-10-19. Sitting 6: 0.11 → 1.8c → 1.8 → **1.8d** → 1.8b.
+- Roadmap: `docs/05-roadmap.md` § 1.8d Failed writes, skeletons and row markup, plus three parts of § 1.8 that are this task's contract: *A failed write is never silent* (the revert and the toast; the sync pill is 1.8's), the **Skeletons** bullet and the **Markup rules** bullet. Split out of TASK-014 (1.8) by the owner, 2026-10-19. Sitting 6: 0.11 → 1.8c → 1.8 → **1.8d** → 1.8b.
 - Design: STYLE_GUIDE §9 (skeletons, toast), §14.3 (the toast's lines), §15 (copy); mockups `states` (loading frames), `home` (the telecard), `bdash` (the plan rail), `watchlist` (season rows).
 - Decisions: R1-07 (a failed write reverts and raises the error toast with *Retry*; the offline queue is 6.4), D-63 (the toast stays live over a sheet), UX-N05.
 - Builds on TASK-001 (the undo stack and its toast region, `src/components/Undo.tsx`), TASK-026 (the routes and their `loading.tsx`) and TASK-014 (the chrome the axe run covers). 1.8b then places the error toast above the thumb bar.
@@ -33,7 +33,7 @@ A mark that fails to save never looks saved, and it can be retried in one tap. A
 - [ ] AC-2: A tick whose write fails, by a non-2xx answer or a network error, leaves the row unticked and raises the toast *That didn't save* with a *Retry* button, in the always-mounted `role="status"` region. *Retry* re-sends the same body. A success then ticks the row and offers *Undo* as a normal tick does. No `alert()` remains in `src/components/`.
 - [ ] AC-3: `TelecardSkeleton`, `RunRowsSkeleton`, `PlanRailSkeleton` and `SeasonRowsSkeleton` exist in `src/components/Skeleton.tsx`. `/comics` loads on the telecard and run rows, `/comics/runs` and `/books/list` on run rows, and `/watch` on season rows. Each is busy for assistive tech and announces itself once.
 - [ ] AC-4: On `/comics`, `/comics/runs` and `/books/list`, a navigable row is `<article class="row"><a class="row-link">` with a stretched-link overlay, and secondary buttons sit outside the anchor (no `a button`, no `a a`). Segmented controls, chips and switches are real buttons. Each page has exactly one `<h1>`.
-- [ ] AC-5: The changed screens meet the UX floor (`docs/TASKS.md` § *The UX floor, for every UI task*): the error toast's text clears 4.5:1 on `--toast-bg`, hover reveals are hidden at rest with a fine pointer at 1280px, and there are screenshots of `/comics`, `/comics/runs` and `/books/list` at each `ui.viewports` width, light and dark, plus reduced motion.
+- [ ] AC-5: The changed screens meet the UX floor (`docs/04-design.md` § 10. The UX floor): the error toast's text clears 4.5:1 on `--toast-bg`, hover reveals are hidden at rest with a fine pointer at 1280px, and there are screenshots of `/comics`, `/comics/runs` and `/books/list` at each `ui.viewports` width, light and dark, plus reduced motion.
 
 ## Out of scope
 
@@ -60,9 +60,9 @@ A mark that fails to save never looks saved, and it can be retried in one tap. A
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The telecard skeleton is re-measured against the real telecard → docs/TASKS.md § 2.5b (approved at plan)
-- The plan-rail skeleton is re-measured against the real rail → docs/TASKS.md § 2.2b (approved at plan)
-- The season-rows skeleton is re-measured against the real rows → docs/TASKS.md § 8.7 (approved at plan)
+- The telecard skeleton is re-measured against the real telecard → docs/05-roadmap.md § 2.5b (approved at plan)
+- The plan-rail skeleton is re-measured against the real rail → docs/05-roadmap.md § 2.2b (approved at plan)
+- The season-rows skeleton is re-measured against the real rows → docs/05-roadmap.md § 8.7 (approved at plan)
 - The error toast with *Retry* moves from TASK-014 to this task, and 1.8b places it above the thumb bar → docs/tasks/TASK-015-thumb-bar-contrast.md § Context (approved at plan)
 
 ## Plan
@@ -75,7 +75,7 @@ Steps:
 3. `Skeleton.tsx`: the four skeletons on `.sk`, sized from the mockup's classes (`.telecard` 16px padding and its rails, `.row` 48px, `.planrail` columns, the season `.row`). 1.8a's reduced-motion block already stops the shimmer. Wire them into the four `loading.tsx` files.
 4. Row markup on the three pages: `<article class="row"><a class="row-link" href>…</a></article>`, the link stretched over the row with `::after{inset:0}`, any secondary control after the anchor. `.rows .row` keeps its spacing. Chips that are links stay `<a>`; chips that toggle state are `<button aria-pressed>`.
 5. Fixtures `test/e2e/fixtures/{telecard,plan-rail,season-rows}.html`: the loaded markup copied from the mockup frames (`scripts/screen.ps1 home|bdash|watchlist`), rendered on `src/app/globals.css`.
-6. Tick 1.8d in `docs/TASKS.md`.
+6. Tick 1.8d in `docs/05-roadmap.md`.
 
 Test strategy:
 - AC-1 → `test/spine-toggle.test.tsx` `a failed tick reverts and offers Retry` (fetch mocked to 500: the row's `data-read` is back to `false`, the toast reads *That didn't save*) and `Retry re-sends the same body and ticks` (the second fetch's body equals the first; `data-read` is `true`; *Undo* is offered). `test/e2e/skeletons.spec.ts` at 360px: each skeleton's `getBoundingClientRect` against its loaded counterpart, within 2px. Run rows are measured against `/comics/runs`, the other three against their fixtures. In `w390-reduced-motion`, `.sk` computes `animation-name: none`. `test/e2e/markup.spec.ts` runs `expectNoAxeViolations(page, ["nested-interactive", "button-name", "link-name"])` on `/comics` and `/watch` in every width × theme project.

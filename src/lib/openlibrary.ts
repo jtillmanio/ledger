@@ -1,5 +1,5 @@
 /**
- * Open Library, live, for Add books only (task 1.4c, ARCHITECTURE 2.15, D-51,
+ * Open Library, live, for Add books only (task 1.4c, data model 2.15, D-51,
  * D-62). Called from `POST /api/books/search` when the user submits a search,
  * never from a page render. Server-only: it reads and writes the database.
  *

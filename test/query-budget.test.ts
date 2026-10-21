@@ -9,7 +9,7 @@ import { testSql, truncateAll } from "./db";
 
 const USER = "test-user";
 
-// The budget per route: raise it only with a reason in docs/ARCHITECTURE.md's
+// The budget per route: raise it only with a reason in docs/02-architecture.md's
 // Performance budget; lower it when a fix lands.
 const BUDGET: Record<string, { queries: number; waves: number }> = {
   "/comics": { queries: 4, waves: 1 },

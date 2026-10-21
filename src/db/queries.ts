@@ -90,7 +90,7 @@ export async function readyToRead(userId: string, limit = 20) {
 }
 
 /** The resume pointer (task 1.6): the lowest sequence whose *placement* is
- * unread, so an issue read only in another run still stops it (ARCHITECTURE
+ * unread, so an issue read only in another run still stops it (data model
  * 2.14). Derived, never stored. `next_ordinal` is its position among the run's
  * live placements, the n of the spine row's `#p-n`. RunSpine applies the same
  * rule to its rows so a mark moves it; test/resume-pointer.test.ts holds the two
@@ -180,7 +180,7 @@ function runHeader(userId: string, runId: string) {
 
 function runSpine(userId: string, runId: string) {
   // Placements, not issues: type, notes and read state belong to where the issue
-  // sits in this run (ARCHITECTURE 2.14). `completed` is read *here*; a read in
+  // sits in this run (data model 2.14). `completed` is read *here*; a read in
   // another run does not tick it. An issue appears at most once per run (D-R2-1).
   // `read_elsewhere` is the other runs it is read in, earliest read first, from
   // issue_read_runs: the spine's grey hint (0.8b). It never includes this run, so
@@ -228,7 +228,7 @@ function runPrereqs(userId: string, runId: string) {
 
 /** Distinct issues in the catalog and how many are read. A crossover placed in
  * three runs counts once, so this is not a sum of runs or tracks; it is read
- * once any of its live placements is (ARCHITECTURE 2.14). */
+ * once any of its live placements is (data model 2.14). */
 export async function catalogTotals(userId: string) {
   const [row] = await sql<{ total: number; read: number }[]>`
     SELECT COUNT(DISTINCT ri.issue_id)::int AS total,
@@ -590,7 +590,7 @@ export async function librarySearch(
   `;
 }
 
-/** Your words per page (ARCHITECTURE 6), or the column's default when you have no settings yet. */
+/** Your words per page (architecture § Metadata sources), or the column's default when you have no settings yet. */
 export async function wordsPerPage(userId: string): Promise<number> {
   const [row] = await sql<{ wpp: number }[]>`
     SELECT words_per_page AS wpp FROM reading_settings WHERE user_id = ${userId}`;

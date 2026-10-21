@@ -13,7 +13,7 @@
 
 ## Acceptance criteria
 
-<!-- The task's **Check:** from docs/TASKS.md, verbatim, then the task file's ACs; tick each when verified. -->
+<!-- The task's **Check:** from docs/05-roadmap.md, verbatim, then the task file's ACs; tick each when verified. -->
 - [ ] Check:
 - [ ] AC-1:
 
@@ -49,7 +49,7 @@
 
 <!-- Work noticed and deliberately left out (copied from the task file's ## Follow-ups). Each bullet ends with
      where it was placed, per workflow.followUps (.claude/skills/track-follow-ups/classify.md), or why not:
-       - A range like #5-5 should say why it is rejected → docs/TASKS.md § 1.3c
+       - A range like #5-5 should say why it is rejected → docs/05-roadmap.md § 1.3c
        - Candidate decision: suggestions use pg_trgm's 0.3 threshold → docs/review/decisions.md § D-59 (approved at close-out)
        - Set the RESEND_API_KEY secret in production → docs/OWNER-CHECKLIST.md § Actions from follow-ups
        - Leading zeros aren't canonicalised → not tracked: done in this PR (plan revision)
@@ -65,6 +65,6 @@
 - [ ] Diff contains only what the task asked for (no surprise files), plus the follow-up placements listed above
 - [ ] Each follow-up went where the work that will do it will read it (move or drop any you disagree with)
 - [ ] No secrets, `.env*`, `seed/`, `backups/`, protected files or production config touched
-- [ ] The task's checkbox in `docs/TASKS.md` is ticked in this PR
+- [ ] The task's checkbox in `docs/05-roadmap.md` is ticked in this PR
 - [ ] Task file set to `status: Done` (reply "accepted" to the session) before merging. Accepting also moves it to `docs/tasks/archive/`; a hand edit leaves that to the next task's close-out
 - [ ] After the squash merge, run Release (START-HERE Step 13) to put it live
