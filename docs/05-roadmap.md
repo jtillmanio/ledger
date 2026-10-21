@@ -459,7 +459,7 @@ the main column as two columns in a 1.5 : 1 ratio. Each frame's thumb bar is
 frames, and its *Viewport frames* note no longer says the body is not redrawn.
 
 ### ☑ 1.8d Failed writes, skeletons and row markup · M
-Task file: [TASK-027-failed-writes-skeletons-markup.md](tasks/TASK-027-failed-writes-skeletons-markup.md). Split out of 1.8 (owner, 2026-10-19). Depends on 1.8, because the axe run
+Task file: [TASK-027-failed-writes-skeletons-markup.md](tasks/archive/TASK-027-failed-writes-skeletons-markup.md). Split out of 1.8 (owner, 2026-10-19). Depends on 1.8, because the axe run
 covers the finished chrome. From 1.8's text, this task owns *A failed write is
 never silent* (the revert and the error toast; the sync pill is 1.8's), the
 **Skeletons** bullet and the **Markup rules** bullet. The telecard, plan rail

@@ -1,7 +1,7 @@
 ---
 id: TASK-027
 title: 1.8d Failed writes, skeletons and row markup
-status: Review
+status: Done
 depends_on: [TASK-014]
 size: M
 model: sonnet
