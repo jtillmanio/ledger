@@ -13,6 +13,8 @@ const AXE_RULES = ["nested-interactive", "button-name", "link-name"];
 // The dashboards (the books one is a redirect to its list until 2.2) and the two list pages.
 const PAGES = ["/comics", "/comics/runs", "/books/list", "/watch"];
 const NAVIGABLE = ["/comics", "/comics/runs"];
+// Pages that draw chips or segmented controls, so the check below has something to find.
+const HAS_CONTROLS = ["/comics/runs", "/books/list"];
 
 for (const path of PAGES) {
   test.describe(path, () => {
@@ -34,6 +36,7 @@ for (const path of PAGES) {
       expect(await page.locator("a a, a button, a input, a [role='button']").count(), "an anchor holds a control").toBe(0);
       // A chip, a segmented control's item and a switch are a link or a button, never a span or a div.
       const tags = await page.locator(".chip, .seg > *, .switch").evaluateAll((els) => els.map((el) => el.tagName));
+      if (HAS_CONTROLS.includes(path)) expect(tags.length, "the page draws chips or segments").toBeGreaterThan(0);
       expect(tags.filter((t) => t !== "A" && t !== "BUTTON"), "chips, segments and switches").toEqual([]);
     });
   });
@@ -59,6 +62,7 @@ for (const path of NAVIGABLE) {
     await page.goto(path);
     const row = page.locator(".rows > .row").first();
     const link = row.locator("a.row-link");
+    await expect(link).toHaveCount(1);
     // ::after covers the row: a click in its corner, outside any text, follows the link.
     const after = await link.evaluate((el) => {
       const cs = getComputedStyle(el, "::after");
@@ -77,7 +81,9 @@ test("/books/list: its rows are articles with no link, and the status controls h
     els.map((el) => ({ tag: el.tagName, links: el.querySelectorAll("a").length })));
   expect(rows.length).toBe(E2E_BOOK_COUNT);
   for (const r of rows) expect(r).toEqual({ tag: "ARTICLE", links: 0 });
-  for (const b of await page.locator(".book-row button").all()) {
+  const buttons = await page.locator(".book-row button").all();
+  expect(buttons.length, "each book row has status controls").toBeGreaterThan(0);
+  for (const b of buttons) {
     expect((await b.getAttribute("aria-label")) || (await b.textContent())?.trim(), "a button with no name").toBeTruthy();
   }
 });
