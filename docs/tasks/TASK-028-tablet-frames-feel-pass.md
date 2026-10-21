@@ -1,7 +1,7 @@
 ---
 id: TASK-028
 title: 1.8e Tablet frames to the feel pass
-status: In progress
+status: Review
 depends_on: [TASK-014]
 size: S
 model: opus
@@ -36,11 +36,11 @@ The mockup's 834px tablet frames show what the feel pass actually draws at table
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): At `data-vp="tab"`, each of the four 834px frames' `.frame-in` has `scrollWidth` equal to `clientWidth`. `home`'s frame draws the hero with its cover 150px wide and 225px tall beside the number, run and lens (not stacked above them); the Up next shelf shows five covers with a 16px gap; *Since Tuesday* and *Also reading* share one row; the telescope is horizontal, with its ladder in three columns. In `home` and `bdash` the side-rail blocks sit below the main column as two columns in a 1.5 : 1 ratio. Each frame's thumb bar is 48px tall and its rail 72px wide. `design/mockups-index.md` still lists the four frames, and its *Viewport frames* note no longer says the body is not redrawn.
-- [ ] AC-2: With `body[data-vp="tab"]`, in `home`'s 834 frame the hero cover's right edge is left of the number's left edge, and their vertical extents overlap. The five shelf covers sit on one row (equal `top`), each pair 16px apart (±1px). *Since Tuesday* and *Also reading* have equal `top`. The ladder's three columns have three distinct `left` values on one row. The two side-rail blocks have equal `top`, and their widths are 1.5 : 1 (±2%).
-- [ ] AC-3: The `.frame[data-w="tab"] svg.tele` `max-width:344px` rule is gone. In `home`'s 834 frame the telescope is wider than 344px and no wider than its card.
-- [ ] AC-4: `design/mockups-index.md`'s *Viewport frames* note says the 834 bodies follow the feel pass (§ 14.5, § 10c). The § Oct 2026, feel pass table no longer lists § 10c tablet as superseding `home`. The four screens' rows still name their 834px frames.
-- [ ] AC-5: The four redrawn frames meet the UX floor (`docs/04-design.md` § 10. The UX floor) where it applies to a mockup frame. Colours are the mockup's custom properties, with no literal hex in the new markup or rules. Nothing in them resolves to `--danger`. Counts are Plex Mono, and Newsreader is used only for the title and hero names. Screenshots of the four 834 frames exist in light and in dark.
+- [x] AC-1 (roadmap **Check:**, verbatim): At `data-vp="tab"`, each of the four 834px frames' `.frame-in` has `scrollWidth` equal to `clientWidth`. `home`'s frame draws the hero with its cover 150px wide and 225px tall beside the number, run and lens (not stacked above them); the Up next shelf shows five covers with a 16px gap; *Since Tuesday* and *Also reading* share one row; the telescope is horizontal, with its ladder in three columns. In `home` and `bdash` the side-rail blocks sit below the main column as two columns in a 1.5 : 1 ratio. Each frame's thumb bar is 48px tall and its rail 72px wide. `design/mockups-index.md` still lists the four frames, and its *Viewport frames* note no longer says the body is not redrawn.
+- [x] AC-2: With `body[data-vp="tab"]`, in `home`'s 834 frame the hero cover's right edge is left of the number's left edge, and their vertical extents overlap. The five shelf covers sit on one row (equal `top`), each pair 16px apart (±1px). *Since Tuesday* and *Also reading* have equal `top`. The ladder's three columns have three distinct `left` values on one row. The two side-rail blocks have equal `top`, and their widths are 1.5 : 1 (±2%).
+- [x] AC-3: The `.frame[data-w="tab"] svg.tele` `max-width:344px` rule is gone. In `home`'s 834 frame the telescope is wider than 344px and no wider than its card.
+- [x] AC-4: `design/mockups-index.md`'s *Viewport frames* note says the 834 bodies follow the feel pass (§ 14.5, § 10c). The § Oct 2026, feel pass table no longer lists § 10c tablet as superseding `home`. The four screens' rows still name their 834px frames.
+- [x] AC-5: The four redrawn frames meet the UX floor (`docs/04-design.md` § 10. The UX floor) where it applies to a mockup frame. Colours are the mockup's custom properties, with no literal hex in the new markup or rules. Nothing in them resolves to `--danger`. Counts are Plex Mono, and Newsreader is used only for the title and hero names. Screenshots of the four 834 frames exist in light and in dark.
 
 ## Out of scope
 
@@ -67,8 +67,14 @@ The mockup's 834px tablet frames show what the feel pass actually draws at table
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- 2.4 and 2.2 build the tablet layout from the 834 `home` and `bdash` frames this task draws from the feel pass (approved at plan)
-- The mockup's `.seg span .n` (`opacity:.8`) fails 4.5:1 in light under axe; the status screens should not copy the opacity (approved at revision 1)
+- 2.4 builds the tablet layout from the 834 `home` frame this task draws from Feel Review §10c (approved at plan) → docs/05-roadmap.md § 2.4
+- 2.2 builds the tablet layout from the 834 `bdash` frame this task draws from the books feel pass (approved at plan) → docs/05-roadmap.md § 2.2
+- The mockup's status tab counts fail 4.5:1: `.seg span .n` is at `opacity:.8`, and the selected tab's count is `--faint` on `--brand`. The status screens must not copy either (approved at revision 1) → docs/tasks/TASK-017-status-screens.md § Context
+- `spine`'s `.seen-more` (*+1*) is 15 × 17 in the mockup's phone and desktop frames → not tracked: the app already draws it at 24px (`globals.css` `.seen .seen-more`); only the 834 frame is in scope
+- ui-verifier: the covers are flat grey and near-black placeholders, with no stripes or `--art` tint → not tracked: the neutral placeholder is required until 4.3 (`mockups-index.md` § Oct 2026, feel pass)
+- ui-verifier: at 834 the five-cover shelf ends about 70px short of the column → not tracked: § 14.5's 112px covers and 16px gap are fixed sizes and apply as written (task Context)
+- ui-verifier: the thumb bar has a search icon that the 768 PNG doesn't → not tracked: 1.8's shell, and § 14.1 lists search in the thumb bar
+- ui-verifier: `spine`'s empty `button.chk` computes to Arial → not tracked: the button has no text and the body is out of scope
 
 ## Plan
 
@@ -80,7 +86,7 @@ Geometry at 834: column 696 (832 − 72 rail − 2 × 32); telescope W = 696 −
 2. **Tablet CSS.** Drop the `svg.tele` 344px cap and its comment. Add `.frame[data-w="tab"]` rules, tokens only: hero (150 × 225 cover, 20 padding, 24 gap, 56/60 mono number, two-cell footer), shelf (5 × 112, 16 gap), horizontal telescope (44 + 612 grid), three-column ladder, side rail 1.5fr : 1fr. Covers use a neutral placeholder (`--sunk`, `--rule` ring, mono label), not a hex data URI.
 3. **`home` body** from § 10c and its copy: header with *6 in inbox* and the *14 issues since Tuesday…* lede; Now hero with the lens; *Since Tuesday* | *Also reading*; *Up next 12* with Reorder and five cards with readiness badges; *Where you are* (TRACK, BLOCK, RUN rails, cells from `alloc()` at W = 612, three-column ladder); *Ready when you are* | *2026 so far*. The thumb bar stays as 1.8 drew it.
 4. **`bdash` body** from the books feel pass (§ 4, desktop § 11c, named by § 14.6): horizontal hero (*Reading now*, *The Fifth Season*, p. 212 of 468, 6px `--ready` meter, sittings footer); *Up next in Q4* (three covers); *This quarter* (Q4 strip, FP-D8); *On deck* | *2026 so far* below as 1.5 : 1. The capacity card and *Place them* go, as 11c leaves them out. Thumb bar copy: *Log pages · Finished it* + search.
-5. **`spine` and `status`**: body unchanged, plus two tab-scoped UX-floor rules (revision 1, approved 2026-10-21): `.seen-more` min 24 × 24 (as `globals.css` draws it) and `.seg span .n` at full opacity (axe: 4.5:1 in light). § 14.5 names nothing for them beyond the rail, column and thumb bar, which 1.8 draws. The spec still checks their scroll, rail and bar.
+5. **`spine` and `status`**: body unchanged, plus two tab-scoped UX-floor rules (revision 1, approved 2026-10-21): `.seen-more` min 24 × 24 (as `globals.css` draws it) and `.seg span .n` at full opacity (axe: 4.5:1 in light), plus, from UI review round 1, the selected tab's count in `--on-brand`. § 14.5 names nothing for them beyond the rail, column and thumb bar, which 1.8 draws. The spec still checks their scroll, rail and bar.
 6. **`design/mockups-index.md`**: *Viewport frames* says the 834 bodies follow § 14.5 / § 10c (and the `spine`/`status` conclusion); the feel-pass table's `home` row drops § 10c; the four screens' rows keep their 834px frames.
 7. Tick 1.8e in `docs/05-roadmap.md`. Verify, test audit, spec-reviewer, ui-verifier on the mockup.
 
@@ -90,7 +96,7 @@ Geometry at 834: column 696 (832 − 72 rail − 2 × 32); telescope W = 696 −
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | Audit R1 PASS | Spec R1 APPROVE (note: `.wrap.tb` padding-top overridden, fixed) | UI R1 CHANGES (status: selected tab count `--faint` on `--brand`, ~1:1) → fix + spec assertion → Verify R2 PASS | UI R2 PASS
 
 ## Blocked
 
@@ -98,7 +104,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval: 1 (two tab-scoped UX-floor rules for the kept spine and status bodies)
+- Verify rounds: 2
+- Review rounds: 2
+- First-pass AC FAILs: 1 (AC-5, ui-verifier: status tab count contrast)
+- Plan revisions after approval: 1 (tab-scoped UX-floor rules for the kept spine and status bodies)
