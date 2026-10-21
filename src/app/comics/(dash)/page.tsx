@@ -1,4 +1,5 @@
 import Link from "next/link";
+import DashboardBar from "@/components/nav/DashboardBar";
 import { requireUserId } from "@/lib/auth";
 import { catalogTotals, inboxCount, inProgressRuns, readyToRead } from "@/db/queries";
 
@@ -22,9 +23,19 @@ export default async function Comics() {
   // The query is LIMITed for the list; the count is the whole list (R2-05).
   const readyTotal = ready[0]?.total ?? 0;
 
+  // The thumb bar's one verb until 1.8b: the resume pointer of the run furthest along, else a run to pick.
+  const resume = reading[0];
+  const verb = resume
+    ? { label: `Resume ${resume.next_label}`, href: `/comics/${resume.id}#p-${resume.next_ordinal}` }
+    : { label: "Pick a run", href: "/comics/runs" };
+
   return (
+    <>
     <main>
-      <h1>Where you are</h1>
+      <div className="titlerow">
+        <h1>Where you are</h1>
+        <span className="unit">sequence · issues</span>
+      </div>
       <p className="muted small mono">
         {issuesRead.toLocaleString()} of {issuesTotal.toLocaleString()} issues read
         {" · "}{readyTotal} runs unlocked and waiting
@@ -89,5 +100,7 @@ export default async function Comics() {
         ))}
       </div>
     </main>
+    <DashboardBar verb={verb} />
+    </>
   );
 }

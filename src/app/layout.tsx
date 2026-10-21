@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { preload } from "react-dom";
 import "./globals.css";
-import AppNav from "@/components/AppNav";
+import Shell from "@/components/nav/Shell";
 import { UndoProvider } from "@/components/Undo";
 
 // Fonts are self-hosted @font-face rules in globals.css (D-40): no request
@@ -20,10 +20,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <AppNav />
         {/* App-wide: the spine, the queue (1.10) and the add flows (1.3c, 1.4c)
             all push onto the one undo stack (task 1.2). */}
-        <UndoProvider>{children}</UndoProvider>
+        <UndoProvider><Shell>{children}</Shell></UndoProvider>
       </body>
     </html>
   );

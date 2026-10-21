@@ -17,6 +17,7 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   "/comics/[runId]": { queries: 3, waves: 1 },
   "/books/list": { queries: 5, waves: 1 },
   "/inbox": { queries: 2, waves: 1 },
+  "/watch": { queries: 0, waves: 0 },
   "/login": { queries: 0, waves: 0 },
 };
 
@@ -90,6 +91,7 @@ const pages: [string, () => Promise<unknown>][] = [
   ["/books/list", async () =>
     (await import("../src/app/books/list/page")).default({ searchParams: Promise.resolve({}) })],
   ["/inbox", async () => (await import("../src/app/inbox/page")).default()],
+  ["/watch", async () => (await import("../src/app/watch/page")).default()],
   ["/login", async () =>
     (await import("../src/app/login/page")).default({ searchParams: Promise.resolve({}) })],
 ];

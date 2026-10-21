@@ -198,8 +198,9 @@
 :root[data-theme="dark"] [data-art]{--art:var(--art-d,var(--surface))}
 :root[data-ambient="off"] [data-art]{--art:var(--surface)}
 
-@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ :root{--glass-bg:var(--surface)} }
-@media (prefers-reduced-transparency:reduce){ :root{--glass-bg:var(--surface)} }
+/* Tripled so it outranks the dark blocks above, which set --glass-bg on :root:not([data-theme]) and :root[data-theme]. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){ :root:root:root{--glass-bg:var(--surface)} }
+@media (prefers-reduced-transparency:reduce){ :root:root:root{--glass-bg:var(--surface)} }
 @media (prefers-reduced-motion:reduce){
   :root{--dur-1:0ms;--dur-2:0ms;--dur-3:0ms;--dur-4:0ms;--dur-fill:0ms}
   /* --dur-hold is NOT zeroed: holding a colour is not motion, and without it
@@ -249,34 +250,149 @@ a{color:inherit;text-decoration:none}
   *:not(.spin),*::before,*::after{animation:none!important}
 }
 
-/* --- chrome -------------------------------------------------------------
-   Phone is the primary device. The tab bar is at the top; the one action
-   you repeat is at the bottom, in .actionbar, in the same place on every
-   dashboard. Desktop swaps the tab bar for .side. */
+/* --- chrome (task 1.8; STYLE_GUIDE §8, §14.5, §14.6; D-33) ------------------
+   Phone is the primary device. Three navigation forms, one list (NAV_ITEMS):
+   under 768px the media bar across the top; 768–1023px a 72px rail; from 1024px
+   the sidebar, a 64px icon rail that becomes 224px at 1280px. All three are in
+   the markup and CSS alone chooses, so nothing flashes at hydration; the hidden
+   ones are display:none, out of the accessibility tree and never prefetched.
+   The one action you repeat is at the bottom, in .actionbar, in the same place
+   on every dashboard. Glass is chrome only: .bar and .side (SG-D12).
+   The sticky stack (UX-N05): nothing but .bar is sticky at top:0. Anything else
+   that sticks sits at top:var(--bar-h) or below, and the rail and sidebar are
+   position:fixed, so they never join it. */
+:root{--bar-h:64px;--nav-tab-w:72px}                  /* the phone header; 44px targets included */
+@media (min-width:1024px){ :root{--bar-h:80px} }       /* the desktop page header band (1.8b fills it) */
 
-.bar{position:sticky;top:0;z-index:20;display:flex;gap:.25rem;align-items:center;
-  padding:.625rem .875rem;background:var(--surface);border-bottom:1px solid var(--rule)}
-.bar .home{font-weight:700;letter-spacing:-.02em;margin-right:auto;font-size:.9375rem}
-.bar .tab{color:var(--muted);font-size:.8125rem;font-weight:500;padding:.3125rem .5625rem;border-radius:var(--r-sm)}
-.bar .tab[aria-current]{color:var(--brand);background:var(--brand-soft);font-weight:600}
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+.app{--m:var(--brand)}
+.app[data-medium="comics"]{--m:var(--m-comics)}
+.app[data-medium="books"]{--m:var(--m-books)}
+.app[data-medium="watch"]{--m:var(--m-watch)}
+.ico{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5;
+  stroke-linecap:round;stroke-linejoin:round}
+.grow{flex:1}
+
+.bar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:.5rem;height:var(--bar-h);
+  padding:0 .875rem;background:var(--glass-bg);
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+  border-bottom:1px solid var(--glass-edge);box-shadow:var(--glass-hi)}
+.bar .home{display:inline-flex;align-items:center;min-height:44px;margin-right:auto;
+  font:italic 500 22px/28px var(--display);letter-spacing:-.01em}
+.bar nav{display:flex;gap:.125rem}
+.bar nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 .625rem;
+  border-radius:var(--r-sm);color:var(--muted);font-size:.875rem;font-weight:500;white-space:nowrap}
+.bar nav a[aria-current]{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--m)}
 .iconbtn{width:34px;height:34px;flex:0 0 auto;display:grid;place-items:center;border-radius:var(--r-md);
   border:1px solid var(--faint-deco);background:var(--raise);color:var(--ink-2);font-size:.875rem}
 
-.side{display:none}
-.main{min-width:0;background:var(--page)}
-.wrap{padding:1rem .875rem 5.5rem}
-@media (min-width:900px){
-  .shell{display:grid;grid-template-columns:224px 1fr}
-  .bar{display:none}
-  .side{display:block;border-right:1px solid var(--rule);padding:1.125rem .875rem;
-    background:var(--surface);min-height:100vh;position:sticky;top:0}
-  .side .brand{font-weight:700;letter-spacing:-.02em;font-size:1rem;margin:0 .5rem 1.125rem}
-  .side .grp{font-size:.6875rem;color:var(--faint);margin:1.125rem .5rem .375rem;font-weight:600}
-  .side a{display:flex;align-items:center;gap:.5rem;padding:.4375rem .5rem;border-radius:var(--r-md);
-    font-size:.875rem;color:var(--ink-2);font-weight:500}
-  .side a[aria-current]{background:var(--brand-soft);color:var(--brand-ink);font-weight:600}
-  .side .dot{width:8px;height:8px;border-radius:var(--r-cell);flex:0 0 auto}
-  .wrap{padding:1.5rem 1.75rem 3rem;max-width:1000px}
+/* Sync: a 6px dot (--ready online, --blocked offline) and --ink-2 text. Never green text on glass. */
+.sync,.sync-strip{color:var(--ink-2);font-size:.75rem;font-weight:500}
+.sync i,.sync-strip i{width:6px;height:6px;border-radius:50%;background:var(--ready);flex:none}
+.sync[data-state="offline"] i,.sync-strip[data-state="offline"] i{background:var(--blocked)}
+.sync{display:inline-flex;align-items:center;gap:.5rem;height:28px;padding:0 .625rem;
+  border-radius:var(--r-full);box-shadow:inset 0 0 0 1px var(--rule-2)}
+/* The phone's offline strip, under the bar (mockups-index "Not shown" #7); empty while online. */
+.sync-strip{position:sticky;top:var(--bar-h);z-index:19;display:flex;align-items:center;justify-content:center;
+  gap:.5rem;height:28px;background:var(--blocked-soft)}
+.sync-strip:empty{display:none}
+
+.rail,.side{display:none}
+/* The page is a column at least as tall as the window, so the thumb bar lands at the bottom of a short page too. */
+.app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh}
+.content{flex:1 0 auto;display:flex;flex-direction:column;width:100%;max-width:var(--content-max);margin:0 auto}
+.content>main{flex:1 0 auto;width:100%}
+.count{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.count:empty{display:none}                              /* the count streams in after the page */
+/* A name kept for assistive tech and the 64px sidebar, where the tooltip shows it. */
+.side .nl,.sync .nl{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+
+/* The tablet rail: 72px on --surface, each item a 56px target, an icon in a
+   48 × 28 pill over an 11px label (touch has no tooltips). */
+.rail{position:fixed;inset:0 auto 0 0;z-index:20;width:var(--nav-tab-w);flex-direction:column;align-items:center;
+  gap:8px;padding:12px 0;overflow-y:auto;background:var(--surface);box-shadow:inset -1px 0 0 var(--rule)}
+.rail-group{display:flex;flex-direction:column;align-items:center;gap:2px}
+.rail-rule{width:32px;height:1px;background:var(--line)}
+.ri{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;width:64px;min-height:56px;
+  padding:4px 0;border-radius:var(--r-md);color:var(--ink-2);font-size:11px;line-height:14px;font-weight:500}
+.ri .pill{position:relative;display:grid;place-items:center;width:48px;height:28px;border-radius:var(--r-full)}
+.ri[aria-current]{color:var(--ink);font-weight:600}
+.ri[aria-current] .pill{background:var(--raise)}
+.ri[aria-current]::before,.side .si[aria-current]::before{content:"";position:absolute;left:-4px;top:8px;width:3px;
+  height:40px;border-radius:var(--r-cell);background:var(--m)}
+.rail .count,.side .count{position:absolute;top:-4px;right:-2px;min-width:18px;height:16px;padding:0 4px;
+  border-radius:var(--r-full);background:var(--raise);box-shadow:inset 0 0 0 1px var(--rule-2);
+  color:var(--ink-2);font-size:11px;font-weight:600;line-height:16px;text-align:center}
+.rail .count{top:0;right:6px}                              /* after the label in the DOM, so the name reads Inbox, 6 */
+.rail .sync{flex-direction:column;gap:4px;height:auto;padding:4px 0;box-shadow:none;font-size:11px}
+.rail .sync .nl{position:static;width:auto;height:auto;overflow:visible;clip-path:none}
+
+/* The sidebar: a 64px icon rail from 1024px, 224px from 1280px, on glass. */
+.side{position:fixed;inset:0 auto 0 0;z-index:20;width:var(--rail-w);flex-direction:column;align-items:center;
+  gap:8px;padding:16px 0;background:var(--glass-bg);
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+  box-shadow:inset -1px 0 0 var(--rule),var(--glass-hi);color:var(--ink)}
+.side .brand{display:grid;place-items:center;width:44px;height:36px;margin-bottom:8px;font:italic 500 24px/1 var(--display)}
+.side .brand .full{display:none}
+.side .seg{display:flex;flex-direction:column;gap:2px;padding:2px;margin-bottom:8px;
+  border-radius:var(--r-md);background:var(--sunk);box-shadow:inset 0 0 0 1px var(--rule)}
+.side .sm{position:relative;display:grid;place-items:center;width:40px;height:36px;border-radius:var(--r-md);
+  color:var(--muted);font-size:13px;font-weight:500}
+.side .sm[aria-current]{background:var(--surface);box-shadow:var(--sh-1);color:var(--ink);font-weight:600}
+.side-items{display:flex;flex-direction:column;align-items:center;gap:2px}
+.side-rule{width:28px;height:1px;background:var(--line)}
+.side .si{position:relative;display:grid;place-items:center;width:44px;height:40px;border-radius:var(--r-md);
+  color:var(--ink-2);font-size:14px;font-weight:500}
+.side .si[aria-current]{background:var(--raise);color:var(--ink);font-weight:600}
+.side .si[aria-current]::before{left:-10px;top:6px;height:28px}
+.side .sync{justify-content:center;width:44px;height:40px;padding:0;box-shadow:none}
+/* Tooltips (--overlay, --sh-2, a --rule-2 ring, 12px to the right): hover after --dur-4, focus at once. */
+.side [data-tip]::after{content:attr(data-tip);position:absolute;left:calc(100% + 12px);top:50%;
+  transform:translateY(-50%);z-index:5;padding:6px 10px;border-radius:var(--r-sm);background:var(--overlay);
+  box-shadow:inset 0 0 0 1px var(--rule-2),var(--sh-2);color:var(--ink);font-size:13px;font-weight:500;
+  line-height:16px;white-space:nowrap;opacity:0;pointer-events:none}
+.side [data-tip]:focus-visible::after{opacity:1}
+@media (hover:hover) and (pointer:fine){
+  .side [data-tip]:hover::after{opacity:1;transition:opacity var(--dur-2) var(--ease-out) var(--dur-4)}
+}
+
+@media (min-width:768px){
+  .bar,.sync-strip{display:none}
+  .rail{display:flex}
+  .app{padding-left:var(--nav-tab-w)}
+  /* One column with 32px padding: the content box is the width, not the pre-v4 72ch. */
+  .content>main{max-width:none;padding-left:2rem;padding-right:2rem}
+}
+@media (min-width:1024px){
+  .rail{display:none}
+  .side{display:flex}
+  .app{padding-left:var(--rail-w)}
+  .inbox-line{display:none}                             /* the sidebar's Inbox (N) carries the count (FP-D16) */
+}
+@media (min-width:1280px){
+  .app{padding-left:var(--side-w)}
+  .side{width:var(--side-w);align-items:stretch;padding:22px 16px 16px}
+  .side .brand{display:block;width:auto;height:auto;padding:0 8px;margin-bottom:12px;line-height:28px}
+  .side .brand .full{display:inline}
+  .side .brand .short{display:none}
+  .side .seg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:12px}
+  .side .sm{width:auto;height:32px}
+  .side .sm .ico{display:none}
+  .side-items{align-items:stretch}
+  .side .si{display:flex;align-items:center;justify-content:flex-start;gap:12px;width:auto;padding:0 12px}
+  .side .si[aria-current]::before{left:-16px}
+  .side .nl,.side .sync .nl{position:static;width:auto;height:auto;overflow:visible;clip-path:none}
+  .side .count{position:static;min-width:0;height:auto;padding:0;margin-left:auto;background:none;
+    box-shadow:none;color:var(--muted);line-height:14px}
+  .side .sync{justify-content:flex-start;align-self:flex-start;width:auto;height:28px;padding:0 10px;
+    box-shadow:inset 0 0 0 1px var(--rule-2)}
+  .side [data-tip]::after{display:none}
+}
+@media (prefers-reduced-transparency:reduce){ .bar,.side{-webkit-backdrop-filter:none;backdrop-filter:none} }
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .bar,.side{-webkit-backdrop-filter:none;backdrop-filter:none}
 }
 
 h1,h2,h3{margin:0}
@@ -344,6 +460,11 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
   box-shadow:0 -6px 20px -12px rgba(20,23,32,.4);z-index:15}
 .actionbar .btn{flex:1;min-height:44px}
 .actionbar .btn.icon{flex:0 0 auto;width:44px;padding:0}
+/* The tablet's thumb bar spans the content column at 48px (STYLE_GUIDE §14.5). */
+@media (min-width:768px) and (max-width:1023px){
+  .actionbar.dash{height:48px;padding:0;align-items:stretch}
+  .actionbar.dash .btn{min-height:0}
+}
 
 /* --- the reading spine (run detail) --- */
 .era{display:flex;align-items:center;gap:.625rem;padding:.6875rem .875rem;background:var(--raise);
@@ -351,8 +472,8 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
 .era:first-child{border-top:0}
 .era .nm{font-size:.8125rem;font-weight:700}
 .era .ct{font-size:.6875rem;color:var(--muted);margin-left:auto}
-.era .bar{height:5px;width:52px;border-radius:var(--r-full);background:var(--sunk);overflow:hidden}
-.era .bar i{display:block;height:100%;background:var(--ready)}
+.era .emeter{height:5px;width:52px;border-radius:var(--r-full);background:var(--sunk);overflow:hidden}
+.era .emeter i{display:block;height:100%;background:var(--ready)}
 .iss{display:grid;grid-template-columns:2.75rem 1fr auto auto;align-items:center;
   border-bottom:1px solid var(--line);gap:.5rem;padding-right:.375rem}
 .iss:last-child{border-bottom:0}
@@ -401,8 +522,9 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
 .menu .opt{display:flex;align-items:center;min-height:36px;padding:.4375rem .5rem;border:0;border-radius:var(--r-md);
   background:none;color:var(--ink);font:inherit;font-size:.8125rem;font-weight:500;text-align:left;cursor:pointer}
 .menu .opt:hover,.menu .opt:focus-visible{background:var(--raise)}
-.run-actions{margin:.5rem 0}
+.run-actions{margin:.5rem 0;flex-wrap:wrap}   /* a row that wraps, not one that clips the ⋯ at 360px */
 .run-actions .btn{flex:0 0 auto}
+.run-actions .resume{flex:0 1 auto;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .run-actions .more{min-width:44px;min-height:32px;padding:0}
 /* The spine hero (task 1.6, STYLE_GUIDE §9 Next-issue strip): a tonal --raise
    well with no ring and no blue, then Resume, the hero's only --brand. A fully
@@ -626,14 +748,15 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
 
 main{max-width:var(--col);margin:0 auto;padding:1.5rem 1.25rem 6rem}
 .small{font-size:.8125rem}
-.bar-inner{max-width:var(--col);margin:0 auto;display:flex;align-items:baseline;
-  gap:1.25rem;padding:.75rem 1.25rem}
-/* Five links (Inbox joined in task 1.4b) fit 360px only a little closer together. */
-@media (max-width:389px){.bar-inner{gap:.875rem}}
 /* Screen titles are Newsreader 500, 32/36 on a phone and 40/44 from the
    tablet up (D-40, FP-D5; STYLE_GUIDE §5). */
 h1{font:500 var(--fs-title) var(--display);letter-spacing:-.015em;margin:0 0 .25rem}
 @media (min-width:768px){h1{font:500 var(--fs-title-desk) var(--display)}}
+/* The dashboard title and its unit badge (mockup .unit): the medium's accent says what the page measures. */
+.titlerow{display:flex;align-items:baseline;flex-wrap:wrap;column-gap:.625rem}
+.titlerow h1{margin:0 0 .25rem}
+.unit{font-size:.6875rem;font-weight:600;color:var(--m,var(--muted));border:1px solid var(--m,var(--rule));
+  border-radius:var(--r-full);padding:.0625rem .5rem;letter-spacing:0;white-space:nowrap}
 h2:not(.t){font-size:1rem;font-weight:600;margin:2.25rem 0 .5rem}
 p{margin:0 0 .75rem;max-width:66ch}
 
@@ -888,7 +1011,7 @@ textarea.txt.capture-field[aria-invalid="true"]{border-color:var(--danger)}
      is not drawn: forced-colors mode drops box-shadows and shows it instead;
    · unavailable: aria-disabled, dimmed, not-allowed. Colour alone never says it:
      each screen writes the reason beneath the control (B5: "Resolve 2 lines to add"). */
-.btn,.iconbtn,.chip,.seg button,.bar .tab,.side a,.row,.switch,.stepper button{
+.btn,.iconbtn,.chip,.seg button,.bar a,.rail a,.side a,.row,.switch,.stepper button{
   transition:background-color var(--dur-1) var(--ease-out),border-color var(--dur-1) var(--ease-out),
     box-shadow var(--dur-1) var(--ease-out),transform var(--dur-1) var(--ease-out),color var(--dur-1) var(--ease-out)}
 .switch{display:inline-flex;align-items:center;gap:.5rem;min-height:44px;padding:0;border:0;background:none;
@@ -907,7 +1030,8 @@ textarea.txt.capture-field[aria-invalid="true"]{border-color:var(--danger)}
   .iconbtn:not([aria-disabled="true"]):hover{background:var(--sunk);color:var(--ink)}
   .chip:not([aria-disabled="true"]):not([aria-pressed="true"]):not([aria-current="true"]):hover{background:var(--raise);color:var(--ink)}
   .seg button:not([aria-disabled="true"]):not([aria-pressed="true"]):hover{background:var(--raise);color:var(--ink)}
-  .bar .tab:not([aria-disabled="true"]):not([aria-current]):hover{background:var(--raise);color:var(--ink)}
+  .bar a:not([aria-disabled="true"]):not([aria-current]):hover{background:var(--raise);color:var(--ink)}
+  .rail a:not([aria-disabled="true"]):not([aria-current]):hover{background:var(--raise);color:var(--ink)}
   .side a:not([aria-disabled="true"]):not([aria-current]):hover{background:var(--raise);color:var(--ink)}
   a.row:not([aria-disabled="true"]):hover,.row:has(.row-link):not([aria-disabled="true"]):hover{background:var(--raise)}
   .switch:not([aria-disabled="true"]):hover{color:var(--ink)}
@@ -917,7 +1041,7 @@ textarea.txt.capture-field[aria-invalid="true"]{border-color:var(--danger)}
 
 .btn:not([aria-disabled="true"]):active,.iconbtn:not([aria-disabled="true"]):active,
 .chip:not([aria-disabled="true"]):active,.seg button:not([aria-disabled="true"]):active,
-.bar .tab:not([aria-disabled="true"]):active,.side a:not([aria-disabled="true"]):active,
+.bar a:not([aria-disabled="true"]):active,.rail a:not([aria-disabled="true"]):active,.side a:not([aria-disabled="true"]):active,
 a.row:not([aria-disabled="true"]):active,.row:has(.row-link):not([aria-disabled="true"]):active,
 .switch:not([aria-disabled="true"]):active,.stepper button:not([aria-disabled="true"]):active{
   transform:translateY(1px)}
@@ -926,7 +1050,7 @@ a.row:not([aria-disabled="true"]):active,.row:has(.row-link):not([aria-disabled=
 .stepper button:not([aria-disabled="true"]):active{background:var(--sunk);box-shadow:none}
 
 .btn:focus-visible,.iconbtn:focus-visible,.chip:focus-visible,.seg button:focus-visible,
-.bar .tab:focus-visible,.side a:focus-visible,a.row:focus-visible,.row:has(.row-link:focus-visible),
+.bar a:focus-visible,.rail a:focus-visible,.side a:focus-visible,a.row:focus-visible,.row:has(.row-link:focus-visible),
 .switch:focus-visible,.stepper button:focus-visible{
   outline:2px solid transparent;outline-offset:2px;box-shadow:var(--focus-ring)}
 .seg button:focus-visible{position:relative;z-index:1}
@@ -935,7 +1059,7 @@ a.row:focus-visible,.row:has(.row-link:focus-visible){box-shadow:var(--focus-rin
 .switch:focus-visible{border-radius:var(--r-md)}
 
 .btn[aria-disabled="true"],.iconbtn[aria-disabled="true"],.chip[aria-disabled="true"],
-.seg button[aria-disabled="true"],.bar .tab[aria-disabled="true"],.side a[aria-disabled="true"],
+.seg button[aria-disabled="true"],.bar a[aria-disabled="true"],.rail a[aria-disabled="true"],.side a[aria-disabled="true"],
 .row[aria-disabled="true"],.switch[aria-disabled="true"],.stepper button[aria-disabled="true"]{
   opacity:.45;cursor:not-allowed}
 

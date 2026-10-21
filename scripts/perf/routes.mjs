@@ -28,5 +28,8 @@ export const ROUTES = [
   // The books list, until 2.2 builds the books dashboard at /books. Not /books itself:
   // Lighthouse sends the session as a Cookie header, which a redirect drops.
   { id: "books", path: "/books/list", signedIn: true, tap: { from: "/comics", selector: 'nav a[href="/books/list"]' } },
+  // Inbox is in the rail and the sidebar and not on the phone bar: the tap clicks the first match, hidden or not.
   { id: "inbox", path: "/inbox", signedIn: true, tap: { from: "/books/list", selector: 'nav a[href="/inbox"]' } },
+  // The watch shell (task 1.8): the nav's link, with the slate and nothing more until 8.x.
+  { id: "watch", path: "/watch", signedIn: true, tap: { from: "/comics", selector: 'nav a[href="/watch"]' } },
 ];

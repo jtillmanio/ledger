@@ -5,8 +5,7 @@
 export const MEDIUM_COOKIE = "ledger_medium";
 export const MEDIUM_MAX_AGE = 60 * 60 * 24 * 365;
 
-// Task 1.8 adds "watch" with its nav.
-export const MEDIA = ["comics", "books"] as const;
+export const MEDIA = ["comics", "books", "watch"] as const;
 export type Medium = (typeof MEDIA)[number];
 
 const isMedium = (v: string | undefined): v is Medium => MEDIA.some((m) => m === v);

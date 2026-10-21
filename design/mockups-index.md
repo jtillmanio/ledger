@@ -12,16 +12,16 @@ line numbers below drift after an edit.
 
 | id | Screen | Approx. lines (v4 + Sept 2026, may drift) |
 |---|---|---|
-| `home` | Comics dashboard — with the Up next queue | 655–1001 |
+| `home` | Comics dashboard — with the Up next queue; 360px and 834px frames (TASKS 1.8) | 655–1001 |
 | `runs` | Run list | 1004–1090 |
-| `spine` | Run detail — per-run "read in …" hints; spine v2 gutter, Hide read, covers, dates, next-issue strip; the two-line undo toast (desktop frame, TASKS 1.2) | 1219–1345 |
+| `spine` | Run detail — per-run "read in …" hints; spine v2 gutter, Hide read, covers, dates, next-issue strip; the two-line undo toast (desktop frame, TASKS 1.2); 360px and 834px frames (TASKS 1.8) | 1219–1345 |
 | `range` | Range marking; its undo toast in the two-line form (TASKS 1.2); the count with its optionals, *Adopt*'s fifth option *Original dates*, and the desktop anchor and pill (TASKS 1.1) | 1348–1466 |
 | `addsearch` | Add issues — search (Metron) | 1437–1573 |
 | `bulk` | Add issues — type it (bulk) | 1576–1680 |
 | `newrun` | New run | 1545–1647 |
 | `ai` | AI review | 1650–1745 |
-| `bdash` | Books dashboard | 1748–1912 |
-| `status` | Status — in flight, up next, done (all media) | 1915–2020 |
+| `bdash` | Books dashboard; 360px and 834px frames (TASKS 1.8) | 1748–1912 |
+| `status` | Status — in flight, up next, done (all media); 360px and 834px frames (TASKS 1.8) | 1915–2020 |
 | `plan` | Plan by quarter | 2023–2166 |
 | `moveplan` | Move / add to a quarter | 2169–2326 |
 | `blist` | Master list | 2329–2431 |
@@ -52,6 +52,23 @@ line numbers below drift after an edit.
 | `planmonth` | Plan rail — estimates, stacks, drag (month retired, D-38) | 5053–5106 |
 | `watchempty` | Watch — first run | 5107–5152 |
 | `palette` | Ctrl K — search and verbs | 5153–5203 |
+
+### Viewport frames (TASKS 1.8)
+
+The sidebar's **Phone · 360 · 834 · Desktop** toggle picks the frame. `home`, `spine`,
+`bdash` and `status` carry all four; every other screen has a phone and a
+desktop frame only, so the 360 and 834 views of those are empty.
+
+- **360** (`data-w="p360"`): the phone frame at 360px. The media bar fits
+  *Ledger · Comics · Books · Watch* and the search icon with *Watch* untruncated.
+  The search icon is a drawn magnifier, never U+26B2.
+- **834** (`data-w="tab"`): the tablet. The 72px navigation rail replaces the
+  top bar (the media switch, the medium's items, Inbox with its count, Search
+  and Settings at the foot; each item a 56px target, an icon over an 11px
+  label), one column with 32px padding, the 40/44 Newsreader title and a 48px
+  thumb bar spanning the column. The dashboard body is the phone's, reflowed:
+  the hero, shelf and three-column ladder at tablet width are not redrawn in
+  this frame; `design/screenshots/tablet/` is their reference.
 
 Average screen is ~120 lines / ~12KB — reading one instead of the whole file
 is a ~20x cut for the single most common lookup in this repo (every task in
