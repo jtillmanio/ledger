@@ -19,10 +19,10 @@ The workbook's books arrive at cutover with covers, page counts and Open Library
 
 ## Context
 
-- Roadmap: `docs/TASKS.md` § 1.14 Open Library details for the workbook's books (sitting 8, after 1.13). The Open Library half of 4.2, moved before cutover by D-44, the way 0.6 and 0.7 moved Metron. The roadmap entry and its **Check:** are the contract.
+- Roadmap: `docs/05-roadmap.md` § 1.14 Open Library details for the workbook's books (sitting 8, after 1.13). The Open Library half of 4.2, moved before cutover by D-44, the way 0.6 and 0.7 moved Metron. The roadmap entry and its **Check:** are the contract.
 - Pattern to copy: `etl/enrich_comics.py` and `etl/test_enrich_comics.py`: `--dry-run`, a resumable SQLite cache, pacing, recorded responses in tests, no network in `npm run test:etl`.
 - What's new:
-  - `etl/enrich_books.py` with `npm run enrich:books`, a cache at `etl/.openlibrary-cache.sqlite` (gitignored, and added to `.claude/rules/git.md`'s never-commit list), Open Library's courtesy rate, and a real `User-Agent` naming the app (FEATURES Part 4).
+  - `etl/enrich_books.py` with `npm run enrich:books`, a cache at `etl/.openlibrary-cache.sqlite` (gitignored, and added to `.claude/rules/git.md`'s never-commit list), Open Library's courtesy rate, and a real `User-Agent` naming the app (architecture § Metadata sources).
   - Matching by title and author: matched only when exactly one work has both after `clean()` / `key()`. A near spelling by the same author (≥ 0.4) is appended to TASK-021's `book_review.csv` as `kind = book`, `reason = open library`, never matched. Everything else is listed as unmatched with its candidates.
   - `etl/data/book_details.csv`, keyed by title and author: `open_library_id` (the work key), `page_count` (`number_of_pages_median`), `cover_url`, `published_year`, and `source` (`openlibrary` | `hand`). A `hand` row is never overwritten. Extract folds it into `books`, and `published_year` fills only where the workbook has none.
   - No word count is stored from pages (2.1 estimates it). There are no ISBNs, because `books` has no column for one. Covers are URLs only (4.3 decides on caching).

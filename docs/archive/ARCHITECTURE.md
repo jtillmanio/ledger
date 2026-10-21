@@ -1,5 +1,7 @@
 # Ledger — architecture
 
+> **Archived 2026-10-21. Superseded; do not edit.** This is the file as it stood when the planning docs moved to the kit layout. Its content is now [02-architecture.md](../02-architecture.md) (§1, §3, the routes, §5–§7, §9), [03-data-model.md](../03-data-model.md) (§2 Decisions, 2.1–2.21, under the same numbers) and [04-design.md](../04-design.md) (the rest of §4 Interface: §5, §6, §11, §13). Where this file and those disagree, they win.
+
 Replaces `Comics.xlsx` and `Books.xlsx`. One Postgres database, one Next.js app,
 two readers' worth of data model with one reader in it.
 

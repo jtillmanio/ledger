@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Inbox · Ledger" };
 
 /**
- * The quick-capture inbox (task 1.4b; ARCHITECTURE §4 `/inbox`; mockup
+ * The quick-capture inbox (task 1.4b; architecture § Routes and data access, `/inbox`; mockup
  * `capture`): the capture field, then the notes still waiting, newest first,
  * each with **Resolve** into the add flow its kind names. Side by side from
  * 1024px, so jotting a note and clearing one are the same visit. Both queries

@@ -319,7 +319,7 @@ flowchart TD
     BS --> ST
 ```
 
-Read state is on the placement (ARCHITECTURE 2.14). `run_progress` and
+Read state is on the placement (data model 2.14). `run_progress` and
 `run_readiness` count a run's own placements. Block and track rollups count an
 issue once, and count it read when any placement of it in scope is read.
 `issue_read_runs` only drives a hint and never feeds a count.
@@ -353,14 +353,14 @@ flowchart LR
 
 The rails run left to right and stack top to bottom, at every width (D-31); the
 flowchart above shows their nesting, not their orientation. In the allocation
-below, `H` is the rail's length, which is its width `W` (ARCHITECTURE §4).
+below, `H` is the rail's length, which is its width `W` (design §11).
 
 The brackets are geometry, not data: each one connects the highlighted cell of
 a coarser rail to the full extent of the next finer one. Runs with a null
 `block_id` — nine of them — fall back to a two-rail view (`data-rails="2"`). The
 only real work is a minimum legible cell height, so a 6-issue run beside a
 381-issue one does not vanish. The allocation is one function, applied to every
-rail (ARCHITECTURE §4 has the code):
+rail (design §11 has the code):
 
 ```mermaid
 flowchart TD
@@ -670,7 +670,7 @@ flowchart LR
 
 ## 10. Add flow — search or type it, always a real row
 
-ARCHITECTURE 2.15. The same shape for an issue into a run and a book into a
+data model 2.15. The same shape for an issue into a run and a book into a
 shelf or a to-read level: a quarter or year, On deck, or Someday (D-37; Someday
 writes `book_status` only, no plan row).
 

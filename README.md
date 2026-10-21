@@ -26,11 +26,14 @@ Every other document is reference. None of them need reading front to back.
 | **[START-HERE.md](docs/START-HERE.md)** | **The linear runbook.** Unzip → install → migrate → deploy → build → cut over. Every command, in order | You're doing the work. This is the only doc you read top to bottom |
 | **[HANDOFF.md](docs/HANDOFF.md)** | **Full project context.** Objectives, every decision and why, data findings, what's open | Starting a new chat, or you forgot why something is the way it is |
 | **[CLAUDE-CODE.md](docs/CLAUDE-CODE.md)** | **Technique, not sequence.** How to drive Claude Code — the loop, hygiene, prompts, review standards | Before your first build session, then by section |
-| **[TASKS.md](docs/TASKS.md)** | **The backlog.** 51 tasks in 9 phases, each with a pass/fail check | Every build session. One task at a time |
-| **[FEATURES.md](docs/FEATURES.md)** | **Scope and rationale.** What's in, what's out, metadata APIs, metrics, schema additions | Deciding what to build, or looking up a schema addition |
+| **[01-product.md](docs/01-product.md)** | **Scope and rationale.** The brief, the feature index (F-nn) with its MVP cut, metrics, and what's deliberately out | Deciding what to build |
+| **[02-architecture.md](docs/02-architecture.md)** | **The system.** Stack, routes, environments, testing, metadata sources, the performance budget | Questioning a structural decision |
+| **[03-data-model.md](docs/03-data-model.md)** | **The reasoning.** Why the schema looks like this (decisions 2.1–2.21), the views, what's proposed | Touching a table or a view |
+| **[04-design.md](docs/04-design.md)** | **How it looks.** The styling blueprint index, the UX floor, the telescope, the plan rail, the interface rules | Building any screen |
+| **[05-roadmap.md](docs/05-roadmap.md)** | **The backlog.** Phases 0–9, every entry with a pass/fail check; the status source of truth | Every build session. One task at a time |
+| **[06-tasklist.md](docs/06-tasklist.md)** | **The build order.** Milestones M1–M25: which roadmap entries, in what order, and why | Picking the next sitting |
 | **[design/mockups.html](design/mockups.html)** | **40 annotated screens.** Authoritative for layout and copy | Building any screen. Open it in a browser |
 | **[DIAGRAMS.md](docs/DIAGRAMS.md)** | **Visual reference.** ERDs, derived layer, runtime, validation pipeline | Orienting to the schema or a data flow |
-| **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** | **The reasoning.** Why the schema looks like this, what each sheet artifact became | Questioning a structural decision |
 | **[CLAUDE.md](CLAUDE.md)** | **Session context.** Auto-loaded by Claude Code | Never directly — it loads itself |
 
 **No command appears in two documents.** Anything sequential lives in
@@ -47,11 +50,15 @@ docs/
   START-HERE.md    the runbook — start here to build
   HANDOFF.md       full project context — start here in a new chat
   CLAUDE-CODE.md   how to drive Claude Code (+ CLAUDE-CODE-PROMPTS.md)
-  TASKS.md         51 tasks, 9 phases, each with an acceptance check
-  FEATURES.md      scope, APIs, metrics, schema additions
-  DIAGRAMS.md      11 Mermaid diagrams
-  ARCHITECTURE.md  schema rationale and sheet-to-table mapping
-  review/          UI audit report
+  01-product.md      brief, feature index, metrics, cut list
+  02-architecture.md stack, routes, environments, testing, metadata sources
+  03-data-model.md   schema rationale, views, proposed additions
+  04-design.md       styling blueprint, UX floor, interface rules
+  05-roadmap.md      phases 0–9, every entry with an acceptance check
+  06-tasklist.md     milestones M1–M25 in build order, coverage
+  DIAGRAMS.md        11 Mermaid diagrams
+  archive/           the superseded TASKS, FEATURES, ARCHITECTURE, DESIGN
+  review/            audits, findings, the decisions log
 
 design/
   mockups.html     40 annotated screens, phone + desktop, light + dark

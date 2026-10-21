@@ -9,7 +9,7 @@ export function testSql() {
 export type TestSql = ReturnType<typeof testSql>;
 
 /** Mark an issue read in one run: one progress row on that run's placement of
- * it (ARCHITECTURE 2.14). Undated reads pass `{ at: null, precision: "none" }`. */
+ * it (data model 2.14). Undated reads pass `{ at: null, precision: "none" }`. */
 export async function markRead(
   sql: TestSql, userId: string, runId: string, issueId: string,
   when: { at?: string | null; precision?: "exact" | "approximate" | "none" } = {},

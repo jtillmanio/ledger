@@ -141,7 +141,7 @@ BEGIN
   END;
 END $$;
 
--- Read state belongs to the placement (ARCHITECTURE 2.14, task 0.8a). One
+-- Read state belongs to the placement (data model 2.14, task 0.8a). One
 -- issue in two runs of one track, read in A: unread in B, read once in the track.
 INSERT INTO users (id, name) VALUES ('zz-user', 'Fixture reader');
 INSERT INTO tracks (id, name) VALUES ('zz-track', 'Fixture track');
@@ -262,7 +262,7 @@ BEGIN
 END $$;
 
 -- A prerequisite whose issues are read only *elsewhere* is unfinished: the
--- dependent stays blocked (ARCHITECTURE 2.14).
+-- dependent stays blocked (data model 2.14).
 INSERT INTO runs (id, title) VALUES
   ('zz-pq-p', 'Prereq read elsewhere'), ('zz-pq-d', 'Depends on it'), ('zz-pq-e', 'Elsewhere');
 INSERT INTO issues (id, label) VALUES ('zz-pq1', 'Zz Prereq Elsewhere (2005) #1');

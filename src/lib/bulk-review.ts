@@ -5,7 +5,7 @@
  * placements, the catalog matches the dry run found and the choices made so far,
  * and gets back the rows to draw, the labels to write and the real count.
  *
- * A row's decisions are radiogroups (ARCHITECTURE §4, *Review tables*). The safe
+ * A row's decisions are radiogroups (design §11, *Review tables*). The safe
  * choice is the default: a line already in the run is skipped, a broken range is
  * dropped, and nothing that needs a choice (an ambiguous volume, a new series,
  * a freeform line the catalog doesn't know) is written until it gets one. A

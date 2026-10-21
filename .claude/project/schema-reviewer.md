@@ -14,7 +14,7 @@ You are reviewing a change to the Ledger's Postgres schema or query layer. Data-
 8. Does comics read state key on anything but the placement (`issue_progress.placement_id` → `run_issues.id`)? Does anything treat an issue as belonging to one run? `issues` has no `run_id`; placement, `type`, `notes` and `era_id` live on `run_issues`. A rollup above a single run must count `DISTINCT issue_id`, not sum run totals.
 9. Does anything store or accept a typed run writer/artist instead of reading `run_credit_line`?
 10. Can any enrichment or import path overwrite a value whose source is `hand` (`cover_date_source`, `story_title_source`, `issue_credits.source`), or rename a label without an accepted review?
-11. Does any write to `issue_progress`, `book_status` or `read_events` store a date without its `*_precision`, or stamp `now()` on a read with no known date? The date is NULL exactly when precision is `none` (ARCHITECTURE 2.17).
+11. Does any write to `issue_progress`, `book_status` or `read_events` store a date without its `*_precision`, or stamp `now()` on a read with no known date? The date is NULL exactly when precision is `none` (data model 2.17).
 12. Does any test, fixture or script that truncates read `DATABASE_URL`? Only `TEST_DATABASE_URL` is allowed.
 
 Report only gaps that affect correctness or the stated acceptance criteria. Do not report style preferences. Give file and line references.

@@ -32,7 +32,7 @@ Lowercase, hyphenated, one purpose per branch.
 
 | Work | Branch |
 |---|---|
-| A task in `docs/TASKS.md` | `task/<id>-<slug>`, e.g. `task/1.3-bulk-entry-parser` |
+| A task in `docs/05-roadmap.md` | `task/<id>-<slug>`, e.g. `task/1.3-bulk-entry-parser` |
 | A bug outside a task | `fix/<slug>`, e.g. `fix/backup-pg18` |
 | Docs only | `docs/<slug>` |
 | Tooling, CI, deps, config | `chore/<slug>` |
@@ -48,7 +48,7 @@ tracked where the work that will do it will read it, per
 kinds of change to other files are allowed on a task branch:
 
 - **Follow-up placements**, in the close-out commit (or a plans PR): a note
-  in another task's Context, a `docs/TASKS.md` item, a decisions-log row, an
+  in another task's Context, a `docs/05-roadmap.md` item, a decisions-log row, an
   approved planning-doc edit, an Owner checklist item. Each traces to a
   Follow-ups bullet; none changes another task's acceptance criteria or a
   **Check:** line.
@@ -110,7 +110,7 @@ After pushing: CI green, the preview deployed, Lighthouse green. **Read
 `docs/GIT-PR.md` before pushing** for the full checklist: reviewers, the
 up → down → up test, Lighthouse budgets, the UI preview walk, running a changed
 workflow with `--ref`, and what goes in the PR when something can only be
-checked after merge. Tick the task's checkbox in `docs/TASKS.md` in the same PR.
+checked after merge. Tick the task's checkbox in `docs/05-roadmap.md` in the same PR.
 
 ## Push and open the PR
 

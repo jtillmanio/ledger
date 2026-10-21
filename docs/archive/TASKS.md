@@ -1,5 +1,7 @@
 # Tasks
 
+> **Archived 2026-10-21. Superseded; do not edit.** This is the file as it stood when the planning docs moved to the kit layout. Its phases and every open entry, verbatim, are now [05-roadmap.md](../05-roadmap.md); a done entry there keeps its line and its **Check:**, and the full entry as built is here. The build order (the sittings) is [06-tasklist.md](../06-tasklist.md), the header's UX floor is [04-design.md](../04-design.md) §10, and the standing rules are in the tasklist. Where this file and those disagree, they win.
+
 One task per Claude Code session. Each is scoped to fit in a single context
 window and ends with a check that returns pass or fail — without that, "looks
 done" is the only signal available and you become the verification loop.

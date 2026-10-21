@@ -1,4 +1,4 @@
-// Task 0.8b: the spine row. Read state is per run (ARCHITECTURE 2.14), so a row
+// Task 0.8b: the spine row. Read state is per run (data model 2.14), so a row
 // whose issue is read in another run is unread here and says where it was read,
 // in grey: green means read *here* (CLAUDE.md, design/mockups.html "Run detail").
 import { readFileSync } from "node:fs";

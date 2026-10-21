@@ -1,5 +1,7 @@
 # Features
 
+> **Archived 2026-10-21. Superseded; do not edit.** This is the file as it stood when the planning docs moved to the kit layout. Its content is now [01-product.md](../01-product.md) (Part 1, Part 2, 2b, 2d, 2e, 2i, 2j, Part 3 and the cut list), [04-design.md](../04-design.md) (2c §14, 2f §13, 2h §12), [03-data-model.md](../03-data-model.md) (2g §4.2) and [02-architecture.md](../02-architecture.md) (Part 4, § Metadata sources). Part 5 (schema additions, now built) and Part 6 (the old build order) stay only here. Where this file and those disagree, they win.
+
 Your list, plus what it implies, plus what's missing. Priority order within each
 section. Nothing here is built yet except where marked **shipped**.
 

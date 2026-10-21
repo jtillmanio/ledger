@@ -4,7 +4,7 @@ import type { Precision } from "@/lib/format";
  * When a read finished (task 1.5, mockup `blist` M-13): the four choices of the
  * finish-date control, shared by a book's *Read* and a spine row's *Change
  * date…*, and what each stores. Today and Pick a date are `exact`; Year only is
- * that year's July 1st, `approximate`, never `exact` (D-21, ARCHITECTURE 2.17);
+ * that year's July 1st, `approximate`, never `exact` (D-21, data model 2.17);
  * No date is NULL and `none`. There is no Spread: that is for ranges of issues.
  *
  * Every finish date is checked on the server, not only by the picker's `max`:

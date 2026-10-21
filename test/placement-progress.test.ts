@@ -1,4 +1,4 @@
-// Task 0.8a: read state belongs to the placement (ARCHITECTURE 2.14). Reading an
+// Task 0.8a: read state belongs to the placement (data model 2.14). Reading an
 // issue in one run leaves it unread in every other run that places it; rollups
 // above a run count it once, read when any placement in scope is read.
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";

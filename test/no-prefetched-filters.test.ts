@@ -1,6 +1,6 @@
 // Next 16.4 prefetches each query-string variant of a link on its own, so
 // /comics fetched every track chip on load: 70 requests against a budget of
-// 35, and /books 43 against 29 (docs/ARCHITECTURE.md, Performance budget;
+// 35, and /books 43 against 29 (docs/02-architecture.md, Performance budget;
 // Dependabot PR #82). A filter link re-renders the route already on screen,
 // so a <Link> whose href carries a query string is not prefetched.
 import { readdirSync, readFileSync } from "node:fs";

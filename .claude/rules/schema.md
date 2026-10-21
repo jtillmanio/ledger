@@ -78,7 +78,7 @@ Release, test isolation) and the Hard rules a reviewer checks.
   propagates a mark. "Read before, in which runs" is derived from the
   `issue_read_runs` view and shown as a hint on the row; it never checks a box.
   Block/track rollups count an issue read when any placement of it in that
-  scope is read. ARCHITECTURE 2.14.
+  scope is read. data model 2.14.
 - **Catalog and progress are separate.** `issues` is what exists, `issue_progress`
   is what Justin read. Every progress table is keyed `(user_id, entity_id)`.
   Never add a per-user boolean to a catalog table.
@@ -93,7 +93,7 @@ Release, test isolation) and the Hard rules a reviewer checks.
   books. The order is authored and stored. What a queued run's state is
   (unstarted, in flight, done) is derived through `run_queue_state` and never
   written to the queue. Nothing removes a queue row except the user.
-  ARCHITECTURE 2.16.
+  data model 2.16.
 - **A why is authored, so it is stored.** `runs.why_source` is `hand` or
   `claude`. `hand` means Justin wrote or edited it and nothing automated may
   replace it. `claude` means a Claude draft accepted as-is; it may be
@@ -131,14 +131,14 @@ Release, test isolation) and the Hard rules a reviewer checks.
   is `approximate` (its July 1st), never `exact`. Anything computing pace ignores
   `none`, and anything sorting by a finish date puts NULLs last. A calendar day
   in `completed_at` is stored as its `America/New_York` midnight, *today* is the
-  Eastern day, and every date is shown in Eastern (1.16, D-67). ARCHITECTURE 2.17.
+  Eastern day, and every date is shown in Eastern (1.16, D-67). data model 2.17.
 - **A book's finish year is derived from `finished_on`** (task 1.5, D-21). 1.5
   dropped `finished_year`, and it never comes back; every reader takes
   `extract(year FROM finished_on)`, and a `read` book with precision `none` is
   the *No year* group. **Years count reads, not books** (D-65): read the year
   through the `book_reads` view (every `read_events` row, plus a `read` status
   with no log row), so a reread counts in its own year and the first keeps its.
-- **Reads are a log** (task 1.5, FEATURES #22). `read_events` holds one row per
+- **Reads are a log** (task 1.5, product #22). `read_events` holds one row per
   finished read, a book (`book_id`) or a placement (`placement_id`, never the
   issue), exactly one (`num_nonnulls` CHECK); `reread_of` is the same item's
   previous read. `book_status` is the current-status projection over it, written
@@ -165,7 +165,7 @@ Release, test isolation) and the Hard rules a reviewer checks.
   the user's own catalog first, then the API, or let them type it. Either path
   creates (or reuses) the `issues` / `books` / `titles` row, then writes the
   placement, shelf, status or plan row that points at it. Freeform issue labels
-  go through the bulk-entry parser. ARCHITECTURE 2.15. Watch is the exception:
+  go through the bulk-entry parser. data model 2.15. Watch is the exception:
   TMDB search only, and when TMDB fails or finds nothing the screen offers
   **Save to inbox** (a Watch capture note) instead of a freeform path (D-28).
 - Shelves hold books or titles, never runs, and never both at once —

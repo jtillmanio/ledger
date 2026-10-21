@@ -20,7 +20,7 @@ Match it. It is annotated with the reasoning behind each decision; read the
 notes column before changing a layout. Pull up one screen with
 `powershell -NoProfile -File scripts/screen.ps1 <id>` (`scripts/screen.sh` is
 the bash twin; ids in `design/mockups-index.md`) rather than reading the whole
-file. Read `docs/DESIGN.md`, the index to the styling blueprint (D-31), before
+file. Read `docs/04-design.md`, the index to the styling blueprint (D-31), before
 building a component.
 
 Phone at 360–412px is the primary device and every screen is designed there
@@ -62,7 +62,7 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
   readiness badge (`⊘ N runs first`); `ready_hard` is outlined green (`○ ready ·
   N soft unread`), `ready_all` `● ready`, `reading` `◐ n / N` with no
   prerequisite badge beside it, `read` `✓`. Glyph plus text, never colour alone.
-  ARCHITECTURE §4.
+  design §11.
 - **The telescope is horizontal at every width** (D-31) and **its cells have a
   floor** — 14px phone, 16px desktop, overflow folded into `+N runs` stubs — and
   read state is drawn as segments, not one fill. A run with no block drops the
@@ -87,7 +87,7 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
   lines. No streaks, no confetti.
 - **Every screen has its states drawn**: empty (one primary action), loading
   (skeletons at the loaded size), offline (sync pill), rate-limited, error,
-  metadata pending. See docs/TASKS.md's *UX floor*.
+  metadata pending. See docs/04-design.md § 10, the *UX floor*.
 - **Never draw progress against the catalog.** 76 of ~10,100 as a bar is a lie
   told with a rectangle. Comics measure against the run and the block; the
   catalog total appears once, small, as provenance, on Stats and not on a
@@ -107,7 +107,7 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
 - Plain CSS with the custom properties in `src/app/globals.css`. No Tailwind, no
   CSS-in-JS. The token set there is the same one as `design/mockups.html`, and
   from task 1.8a its values are `design/tokens.css`'s. Tailwind names in the
-  design files are vocabulary only (`docs/DESIGN.md` §4); never ship them.
+  design files are vocabulary only (`docs/04-design.md` §4); never ship them.
 - **Colour is functional, and there are exactly four meanings.** `--ready`
   green is read/done. `--brand` blue is where you are, and the primary action.
   `--blocked` amber is *held* — either a hard prerequisite is unread or a

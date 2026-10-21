@@ -16,7 +16,7 @@ type Prior = { completedAt: string | null; precision: string };
 
 /**
  * Mark one placement read or unread. Read state belongs to the placement, not
- * the issue (ARCHITECTURE 2.14): this writes one row for one run, and the same
+ * the issue (data model 2.14): this writes one row for one run, and the same
  * issue in any other run is untouched. Nothing propagates.
  *
  * Every answer carries `prior`, the row as it was before this write, or null

@@ -62,7 +62,7 @@ async function latestRead(tx: Tx, userId: string, bookId: string) {
  *
  * - Entering `read` from any other status appends a read, its `reread_of` the
  *   book's previous one, so reading a book again (Reading, then Read) adds to
- *   its history and never overwrites it (FEATURES #22).
+ *   its history and never overwrites it (product #22).
  * - `read` on a book already read re-dates its latest read: a correction, not
  *   another read. One read before the log existed gets its first row instead.
  * - `book_status.finished_on` follows the read; the year is derived from it (D-21).
@@ -176,7 +176,7 @@ export type IssuePrior = { completedAt: string | null; precision: string };
  * *Change date…* on a spine row (task 1.5, owner 2026-10-09): re-date one
  * placement that is read here. A day is stored as its Eastern midnight, like
  * the range mark's (task 1.16, D-67); Today is now(). Only this placement's row is
- * written; the same issue in another run keeps its own date (ARCHITECTURE 2.14).
+ * written; the same issue in another run keeps its own date (data model 2.14).
  * Answers the row as it was, or null when the placement isn't read here, or
  * it, its issue or its run has been removed. The date travels as Postgres text, as the issue route's does.
  */
@@ -222,8 +222,8 @@ export type RangeResult =
  *
  * ON CONFLICT DO NOTHING: a placement already read here keeps its date and is
  * counted as skipped. Overwriting a real date with today's is the failure this
- * exists for. The dates follow the roadmap's table row for row (docs/TASKS.md
- * 1.1): today is now() exact; a picked day is exact; Spread gives the k-th of n
+ * exists for. The dates follow the roadmap's table row for row (docs/archive/TASKS.md
+ * 1.1, as built): today is now() exact; a picked day is exact; Spread gives the k-th of n
  * placements, in reading order, from + round(k * (to - from) / (n - 1)) days,
  * approximate, so the first gets `from` and the last `to`; No date is NULL and
  * none; Original dates copy issue_read_runs' earliest dated read and its
@@ -1003,14 +1003,14 @@ export type AddBookResult =
   | { ok: false; reason: "gone" | "no-shelf" };
 
 /**
- * Add one book to a destination (task 1.4c; ARCHITECTURE 2.15): your library's
+ * Add one book to a destination (task 1.4c; data model 2.15): your library's
  * row when you have it, else a new `books` row, then the destination row, in
  * one transaction.
  *
  * - An Open Library result is your book when a live one has its work id, or
  *   its title and author (D-61); otherwise it is created with the work id,
  *   cover, year and pages, and an estimated word count, pages × your words per
- *   page (ARCHITECTURE 6), when it has pages.
+ *   page (architecture § Metadata sources), when it has pages.
  * - A book typed by hand is yours when a live one has its title and author;
  *   otherwise it is created with what you typed: a word count as `stated`,
  *   pages alone estimated as above, neither as no count.

@@ -5,21 +5,27 @@ Personal media ledger replacing two Google Sheets: about 10,138 comic issues in
 books (extract of 2026-09-23; re-count from a fresh extract, never trust these).
 Single user, multi-user schema.
 
-`docs/STATUS.md` is where we are now. `docs/HANDOFF.md` is full context,
-`docs/TASKS.md` the backlog, `docs/FEATURES.md` scope, `docs/ARCHITECTURE.md`
-why the schema looks like this, `docs/DIAGRAMS.md` visual, `docs/DESIGN.md` the
-styling blueprint index. `docs/START-HERE.md` is the human's runbook: don't run
-its commands unless asked. Large docs are guarded (`largeFiles` in
-`.claude/kit.json`): grep for the section, then read it with offset and limit.
+`docs/STATUS.md` is where we are now. The planning docs are in the kit's
+layout: `docs/01-product.md` (the brief and the feature index, F-nn),
+`docs/02-architecture.md`, `docs/03-data-model.md` (why the schema looks like
+this: decisions 2.1–2.21), `docs/04-design.md` (the styling blueprint, the UX
+floor, the interface rules), `docs/05-roadmap.md` (the backlog: every entry and
+its **Check:**) and `docs/06-tasklist.md` (milestones M1–M25, the entries in
+build order). `docs/HANDOFF.md` is full context, `docs/DIAGRAMS.md` visual;
+`docs/archive/` holds the superseded TASKS, FEATURES, ARCHITECTURE and DESIGN.
+`docs/START-HERE.md` is the human's runbook: don't run its commands unless
+asked. Large docs are guarded (`largeFiles` in `.claude/kit.json`): grep for
+the section, then read it with offset and limit.
 
 ## Which document wins (D-1)
 
 When two documents disagree, believe them in this order:
 
 1. `src/db/schema.ts` and `etl/views.sql` — the code is what actually runs.
-2. `docs/TASKS.md` — the acceptance check is the contract for the work.
-3. `docs/ARCHITECTURE.md` — why the schema looks the way it does.
-4. `docs/FEATURES.md`, `docs/DIAGRAMS.md`, `docs/HANDOFF.md` — scope and
+2. `docs/05-roadmap.md` — the acceptance check is the contract for the work.
+3. `docs/03-data-model.md`, `docs/02-architecture.md` and `docs/04-design.md`
+   — why the schema, the system and the interface look the way they do.
+4. `docs/01-product.md`, `docs/DIAGRAMS.md`, `docs/HANDOFF.md` — scope and
    narrative, the most likely to have drifted.
 
 A document describing something not yet built says so inline ("(task 2.5)"),
@@ -35,9 +41,11 @@ states. The feel pass (D-40: `design/STYLE_GUIDE.md` §14–§16 and
 for what it draws: dashboards, the mark sequence, empty and caught-up states,
 completion, the 768px tablet and desktop at 1024px and up.
 
-`docs/CLAUDE-CODE-PROMPTS.md`, `docs/START-HERE.md`, `docs/OWNER-CHECKLIST.md`
-and `docs/STATUS.md` rank **below** `docs/TASKS.md`: where they disagree with a
-task, the task wins and the disagreement is a bug to report.
+`docs/06-tasklist.md`, `docs/CLAUDE-CODE-PROMPTS.md`, `docs/START-HERE.md`,
+`docs/OWNER-CHECKLIST.md` and `docs/STATUS.md` rank **below**
+`docs/05-roadmap.md`: where they disagree with a roadmap entry, the entry wins
+and the disagreement is a bug to report. `docs/archive/` ranks below
+everything: it is history.
 
 Development is on Windows in PowerShell. Prefer `py` over `python` and
 `.\etl\load.ps1` over `etl/load.sh`. psql `\copy` paths need forward slashes.
@@ -45,26 +53,27 @@ Development is on Windows in PowerShell. Prefer `py` over `python` and
 ## Project docs
 
 Every kit skill and agent reads this table to find project documents (mapped
-by `/adopt`, 2026-10-08; `docs/kit-adoption.md` has the inventories behind it).
-`—` means the project has no such document.
+by `/adopt`, 2026-10-08, with `docs/kit-adoption.md` holding the inventories;
+moved to the kit's document layout 2026-10-21). `—` means the project has no
+such document.
 
 | Role | Path |
 |---|---|
-| Product brief | `README.md` + `docs/HANDOFF.md` § 1. Who and what |
-| Features (IDs, MVP cut, outcomes) | `docs/FEATURES.md` (scope); the IDs, the cut and the outcomes are `docs/TASKS.md` task numbers, phases and **Check:** lines |
+| Product brief | `docs/01-product.md` § Product brief |
+| Features (IDs, MVP cut, outcomes) | `docs/01-product.md` § Feature index (F-01…; MVP = cutover, milestones M1–M9) |
 | Screen inventory (S-IDs, states) | `design/mockups-index.md` (S-ID = the mockup `data-id`) + `design/screenshots/README.md` (feel-pass frames) |
 | Design brief / intent | `design/STYLE_GUIDE.md` § 14–§ 16 (the feel pass) |
 | Design source of truth | `design/mockups.html` (layout, copy); `design/Ledger Feel Review.dc.html` and `design/LedgerDesktop.dc.html` (what the feel pass draws); `design/*.dc.html` spec pages (geometry, states) |
 | Design tokens | `design/tokens.css` → `src/app/globals.css` |
 | Reference screenshots | `design/screenshots/` |
-| Design process notes | `docs/DESIGN.md`, `design/handoff/`, `docs/review/NEW_UI_AUDIT_REPORT.md`, `docs/review/UI_AUDIT_REPORT.md` |
-| UX floor | `docs/TASKS.md` § *The UX floor, for every UI task* (the header above Phase 0; standing rule 6) |
-| Architecture | `docs/ARCHITECTURE.md` |
-| Data model | `src/db/schema.ts` + `etl/views.sql` (what runs); `docs/ARCHITECTURE.md` § 2. Decisions (why); `docs/DIAGRAMS.md` § 1 |
-| Domain specs (other) | `docs/ARCHITECTURE.md` § 4. Interface (readiness) and § 5. Operational posture (performance budget); `design/Telescope Spec.dc.html`; `design/Plan Rail Spec.dc.html`; `docs/FEATURES.md` § Part 2d (metrics) |
+| Design process notes | `docs/04-design.md` § 1–§ 9 (the blueprint index), `design/handoff/`, `docs/review/NEW_UI_AUDIT_REPORT.md`, `docs/review/UI_AUDIT_REPORT.md` |
+| UX floor | `docs/04-design.md` § 10. The UX floor (standing rule 6) |
+| Architecture | `docs/02-architecture.md` |
+| Data model | `src/db/schema.ts` + `etl/views.sql` (what runs); `docs/03-data-model.md` (§ 2. Decisions, why; § 4. Proposed additions); `docs/DIAGRAMS.md` § 1 |
+| Domain specs (other) | `docs/04-design.md` § 5 (telescope), § 6 (plan rail) and § 11 (interface, readiness); `docs/02-architecture.md` § 7 (performance budget); `design/Telescope Spec.dc.html`; `design/Plan Rail Spec.dc.html`; `docs/01-product.md` § Metrics |
 | Deploy | `docs/START-HERE.md` Steps 13–14, `.github/workflows/release.yml`, `.claude/rules/git.md` § Merging |
-| Roadmap (source, if separate) | `docs/TASKS.md` (phases 0–8) |
-| Task list (milestones + stubs) | `docs/TASKS.md`; `/new-task` converts one sitting at a time into `docs/tasks/`, copying each **Check:** verbatim |
+| Roadmap (source, if separate) | `docs/05-roadmap.md` (phases 0–9; its checkboxes are the status source of truth) |
+| Task list (milestones + stubs) | `docs/06-tasklist.md` (M1–M25; M1–M9 are START-HERE's sittings); `/new-task <roadmap IDs>` converts one milestone at a time into `docs/tasks/`, copying each **Check:** verbatim |
 | Tasks | `docs/tasks/` (fixed; Done tasks in `docs/tasks/archive/`) |
 | Decisions | `docs/review/decisions.md` (IDs `D-n`) |
 | Review findings | `docs/review/PROTOCOL.md` (protocol), `docs/review/LEDGER.md` (ledger; IDs `R0-nn`…`R3-nn`, `S-nn`, `M-nn`) |
@@ -142,7 +151,7 @@ those paths**. The Hard rules below are the checklist a reviewer enforces.
 - IMPORTANT: never commit to `main`; a PR is ready only when everything that
   can test it has passed **on the branch**. Both are in `.claude/rules/git.md`.
 - IMPORTANT: no task merges without a test that would have failed before it.
-- Tick the task's checkbox in `docs/TASKS.md` in the same PR.
+- Tick the task's checkbox in `docs/05-roadmap.md` in the same PR.
 - Migrations that drop or retype a column ship `drizzle/down/<tag>.sql` and an
   up → down → up test (full rule in `.claude/rules/schema.md`).
 - **Stop and ask before** adding or changing a schema column; changing how any

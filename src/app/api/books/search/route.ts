@@ -26,7 +26,7 @@ export type BookSearchAnswer = {
 const pair = (title: string, author: string | null) => `${title.toLowerCase()}\n${(author ?? "").toLowerCase()}`;
 
 /**
- * Add books, *Search* (task 1.4c, ARCHITECTURE 2.15). POST `{ q }`, sent when
+ * Add books, *Search* (task 1.4c, data model 2.15). POST `{ q }`, sent when
  * the user submits a search, never while a page loads (task 0.9): your library
  * first, then Open Library (`src/lib/openlibrary.ts`, cached in
  * `open_library_cache`, D-62). An Open Library result your library already

@@ -9,7 +9,7 @@ import type { Target } from "@/lib/book-add";
  * Opens Add books as a sheet over the page (task 1.4c), with its destination
  * chosen: Someday from Books and its *To read* filter; a shelf from a shelf's
  * *+ Add to shelf* (Phase 5). The sheet asks for nothing until you use it, and
- * focus comes back here however it closes (docs/TASKS.md § *Focus returns
+ * focus comes back here however it closes (docs/04-design.md § 10, *Focus returns
  * where it came from*).
  */
 export default function AddBooksButton({ target = { kind: "someday" }, label = "Add books", className = "btn sec sm" }: {

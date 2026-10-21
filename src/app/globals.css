@@ -17,7 +17,7 @@
    Anything without meaning stays grey.
 
    The values are design/tokens.css (D-31, D-40: palette 1c After hours),
-   moved with the selectors translated (docs/DESIGN.md §3.2). Change a value
+   moved with the selectors translated (docs/04-design.md §3.2). Change a value
    there first, then here and in design/mockups.html. */
 
 :root{

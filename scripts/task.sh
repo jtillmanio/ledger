@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Print one task's block from TASKS.md instead of reading the whole file.
+# Print one roadmap entry (docs/05-roadmap.md) instead of reading the whole file.
 # The WSL/Git Bash/macOS/Linux twin of task.ps1.
 #
 # A task is either a heading (`### ☐ 1.3 …`, printed up to the next heading)
 # or a list item (`- ☐ 5.7 …` in Phases 5 and 6, printed with its indented
 # lines, blank lines inside it included).
 #
-# Usage: scripts/task.sh 1.3 [path/to/TASKS.md]
+# Usage: scripts/task.sh 1.3 [path/to/roadmap.md]
 set -euo pipefail
 
 id="${1:-}"
@@ -16,7 +16,7 @@ if [ -z "$id" ]; then
 fi
 
 dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-file="${2:-$dir/docs/TASKS.md}"
+file="${2:-$dir/docs/05-roadmap.md}"
 
 result="$(awk -v id="$id" '
   function stop() { mode = ""; pend = 0 }

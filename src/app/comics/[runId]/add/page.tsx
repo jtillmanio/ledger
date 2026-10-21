@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Add issues · Ledger" };
 
 /**
- * Add issues (task 1.3c; ARCHITECTURE §4, `/comics/[runId]/add`). Everything
+ * Add issues (task 1.3c; architecture § Routes and data access, `/comics/[runId]/add`). Everything
  * the screen needs on load comes from here, in one wave: the run and its
  * placements, the series the parser knows, and the runs *Change* can pick.
  * The route handler is called only by a tap (task 0.9). An inbox note's

@@ -14,7 +14,7 @@ const OPTIONS: { mode: RangeMode; label: string }[] = [
   { mode: "spread", label: "Spread over a range" },
   { mode: "none", label: "No date" },
 ];
-// The fifth option exists only from Adopt (docs/TASKS.md 1.1).
+// The fifth option exists only from Adopt (task 1.1, as built in docs/archive/TASKS.md).
 const ORIGINAL = { mode: "original" as const, label: "Original dates" };
 
 /**

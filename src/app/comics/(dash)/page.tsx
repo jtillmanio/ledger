@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 function pct(n: number) { return `${Math.round(n * 100)}%`; }
 
-// The comics dashboard (ARCHITECTURE § 4): `/` redirects here or to the medium you last touched.
+// The comics dashboard (design §11): `/` redirects here or to the medium you last touched.
 export default async function Comics() {
   const userId = await requireUserId();
   const [reading, ready, catalog, inbox] = await Promise.all([

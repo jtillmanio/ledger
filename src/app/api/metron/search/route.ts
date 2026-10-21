@@ -26,7 +26,7 @@ export type SearchAnswer = {
 };
 
 /**
- * Add issues, *Search* (task 1.3b, ARCHITECTURE 2.15). POST `{ q, runId }`, sent
+ * Add issues, *Search* (task 1.3b, data model 2.15). POST `{ q, runId }`, sent
  * when the user submits a search, never while a page loads (task 0.9): your
  * catalog first, then Metron (`src/lib/metron.ts`, cached and paced in
  * `metron_cache`, D-53). A Metron result the catalog already holds (by Metron

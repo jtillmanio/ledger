@@ -31,7 +31,7 @@ const monthOfDay = new Intl.DateTimeFormat("en-US", { month: "short", year: "num
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** "Mar 2025", "~Mar 2025" for a guessed date, or null for a read with no known
- * date: `none` never renders a date (ARCHITECTURE 2.17). A moment (a comic's
+ * date: `none` never renders a date (data model 2.17). A moment (a comic's
  * `completed_at`) is shown in Eastern (task 1.16); a bare calendar day (a book's
  * `finished_on`) is that day, whatever the zone. Formatted on the server so the
  * client never re-formats it in another time zone. */

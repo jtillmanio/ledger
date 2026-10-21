@@ -4,10 +4,12 @@ import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-// scripts/task.sh and scripts/task.ps1 print one task from TASKS.md. Phases 5
-// and 6 write tasks as list items (`- ☐ 5.7 …`), which the scripts used to miss.
-// Run against a fixture, never the live TASKS.md, so edits to the backlog can't
-// break the test.
+// scripts/task.sh and scripts/task.ps1 print one entry from the roadmap
+// (docs/05-roadmap.md). Phases 5 and 6 write tasks as list items (`- ☐ 5.7 …`),
+// which the scripts used to miss. Run against a fixture, never the live
+// roadmap, so edits to the backlog can't break the test; the one exception
+// checks only that the default path is the roadmap, through 0.1, whose ID and
+// title are permanent.
 const FIXTURE = `# Tasks
 
 ## Phase 1 — Daily use
@@ -47,7 +49,9 @@ function works(cmd: string, args: string[]) {
 
 const ps = ["pwsh", "powershell.exe"].find((c) => works(c, ["-NoProfile", "-Command", "exit 0"]));
 
-type Run = (id: string) => { status: number | null; out: string };
+// `path` defaults to the fixture; `null` runs the script without one, so it
+// reads its default file.
+type Run = (id: string, path?: string | null) => { status: number | null; out: string };
 const runners: [string, Run | null][] = [
   // On Windows, a bare `bash` may be the WSL launcher, which cannot read a Windows
   // temp path; CI's Linux runner covers the bash twin.
@@ -55,18 +59,18 @@ const runners: [string, Run | null][] = [
     "task.sh",
     process.platform === "win32"
       ? null
-      : (id) => {
-          const r = spawnSync("bash", ["scripts/task.sh", id, file], { encoding: "utf8" });
+      : (id, path = file) => {
+          const r = spawnSync("bash", ["scripts/task.sh", id, ...(path ? [path] : [])], { encoding: "utf8" });
           return { status: r.status, out: r.stdout };
         },
   ],
   [
     "task.ps1",
     ps
-      ? (id) => {
+      ? (id, path = file) => {
           const r = spawnSync(
             ps,
-            ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/task.ps1", id, file],
+            ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "scripts/task.ps1", id, ...(path ? [path] : [])],
             { encoding: "utf8" },
           );
           return { status: r.status, out: r.stdout };
@@ -112,5 +116,11 @@ describe.each(runners)("%s", (_name, run) => {
 
   it.skipIf(!run)("fails on an id that is not there", () => {
     expect(run!("9.9").status).not.toBe(0);
+  }, SPAWN_TIMEOUT);
+
+  it.skipIf(!run)("reads docs/05-roadmap.md when no file is given", () => {
+    const { status, out } = run!("0.1", null);
+    expect(status).toBe(0);
+    expect(out).toContain("0.1 Test harness");
   }, SPAWN_TIMEOUT);
 });

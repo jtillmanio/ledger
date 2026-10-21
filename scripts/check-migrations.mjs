@@ -8,7 +8,7 @@
 //    into a migration: drizzle-kit generate, run against a copy of drizzle/,
 //    must find nothing to write.
 // 3. Migrations already on the base branch are not edited, renamed or deleted
-//    (TASKS.md standing rule 3). Skipped, with a note, when the base is unknown.
+//    (standing rule 3, docs/06-tasklist.md). Skipped, with a note, when the base is unknown.
 //
 // Prints the migrations the branch adds, and writes them to the GitHub job
 // summary so a PR says whether merging it means a schema change to release.

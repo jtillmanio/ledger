@@ -1,11 +1,11 @@
-# Print one task's block from TASKS.md instead of reading the whole file.
+# Print one roadmap entry (docs/05-roadmap.md) instead of reading the whole file.
 # The native-PowerShell twin of task.sh.
 #
 # A task is either a heading (`### ☐ 1.3 …`, printed up to the next heading)
 # or a list item (`- ☐ 5.7 …` in Phases 5 and 6, printed with its indented
 # lines, blank lines inside it included).
 #
-# Usage: .\scripts\task.ps1 1.3 [path\to\TASKS.md]
+# Usage: .\scripts\task.ps1 1.3 [path\to\roadmap.md]
 
 param(
     [Parameter(Mandatory = $true, Position = 0)]
@@ -16,7 +16,7 @@ param(
 
 if (-not $Path) {
     $repoRoot = Split-Path -Parent $PSScriptRoot
-    $Path = Join-Path (Join-Path $repoRoot "docs") "TASKS.md"
+    $Path = Join-Path (Join-Path $repoRoot "docs") "05-roadmap.md"
 }
 
 $mode = ''       # '' not printing, 'h' a heading task, 'l' a list-item task

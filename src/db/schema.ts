@@ -74,7 +74,7 @@ export const runTracks = pgTable("run_tracks", {
 
 // One row per comic. The same issue in four runs is one row here and four in
 // run_issues; credits attach once, but read state belongs to each placement
-// (ARCHITECTURE 2.14). The id is a slug of the label ("fantastic-four-1961-570"),
+// (data model 2.14). The id is a slug of the label ("fantastic-four-1961-570"),
 // not a run position, so inserting an issue into a reading order renumbers nothing.
 export const issues = pgTable("issues", {
   id: text("id").primaryKey(),              // "fantastic-four-1961-570"
@@ -102,7 +102,7 @@ export const issues = pgTable("issues", {
 }));
 
 // A named stretch of one run's reading order: "Days of Future Past". An era is
-// to a run what a block is to a track (ARCHITECTURE 2.10), but named rather than
+// to a run what a block is to a track (data model 2.10), but named rather than
 // numbered, because the name is the fact. Typed by hand; nothing extracts them.
 export const eras = pgTable("eras", {
   id: serial("id").primaryKey(),
@@ -251,7 +251,7 @@ export const books = pgTable("books", {
   bookType: text("book_type").notNull().default("Novel"),
   wordCount: integer("word_count"),
   // stated    = a count someone published or typed
-  // estimated = pages x words_per_page (ARCHITECTURE 6). Null exactly when the count is.
+  // estimated = pages x words_per_page (architecture § Metadata sources). Null exactly when the count is.
   wordCountSource: text("word_count_source"),
   publishedYear: integer("published_year"),
   pageCount: integer("page_count"),
@@ -296,7 +296,7 @@ export const externalLists = pgTable("external_lists", {
  * Progress — the only tables that are per-user
  * ------------------------------------------------------------------ */
 
-// Read state belongs to the placement, not the issue (ARCHITECTURE 2.14): reading
+// Read state belongs to the placement, not the issue (data model 2.14): reading
 // an issue in one run leaves it unread in every other run that places it, and
 // nothing propagates a mark. "Read before, in which runs" is the issue_read_runs view.
 export const issueProgress = pgTable("issue_progress", {
@@ -330,7 +330,7 @@ export const bookStatus = pgTable("book_status", {
   // A real date since migration 0004 (it was text and 100% NULL). Same rule as
   // issue_progress: precision 'none' exactly when the date is NULL. A finish
   // known only by its year is stored as that year's July 1st with precision
-  // 'approximate', never 'exact' (ARCHITECTURE 2.17). There is no year column:
+  // 'approximate', never 'exact' (data model 2.17). There is no year column:
   // the year is extract(year FROM finished_on), so the two can't disagree (D-21).
   // This is the latest read's date; every read is a read_events row (task 1.5).
   finishedOn: date("finished_on", { mode: "string" }),
@@ -343,11 +343,11 @@ export const bookStatus = pgTable("book_status", {
     AND (${t.finishedOn} IS NULL) = (${t.finishedOnPrecision} = 'none')`),
 }));
 
-// The reading log (task 1.5, FEATURES #22): one row per finished read, so a
+// The reading log (task 1.5, product #22): one row per finished read, so a
 // second read appends rather than overwrites. book_status is the current-status
 // projection over it, kept in step by saveBookStatus. One log for both media,
 // kept honest by the CHECK: a book read has book_id, a comic read has the
-// placement (run_issues.id), never the issue (ARCHITECTURE 2.14). reread_of is
+// placement (run_issues.id), never the issue (data model 2.14). reread_of is
 // the same item's previous read. Comic reads aren't logged yet: only books
 // write here so far (task 1.5).
 export const readEvents = pgTable("read_events", {
@@ -402,7 +402,7 @@ export const readingSettings = pgTable("reading_settings", {
 }));
 
 // A shelf is the user's own grouping, typed rather than polymorphic
-// (ARCHITECTURE 2.5e): a books shelf holds shelf_books rows, a titles shelf
+// (data model 2.5e): a books shelf holds shelf_books rows, a titles shelf
 // will hold shelf_titles rows once titles exist (tasks 8.1/8.6, R3-04).
 export const shelves = pgTable("shelves", {
   id: text("id").primaryKey(),
@@ -419,7 +419,7 @@ export const shelfBooks = pgTable("shelf_books", {
   ordinal: integer("ordinal").notNull(),    // position on the shelf
 }, (t) => ({ pk: primaryKey({ columns: [t.shelfId, t.bookId] }) }));
 
-// Quick capture (task 1.4b, FEATURES #21): a note with nothing required but its
+// Quick capture (task 1.4b, product #21): a note with nothing required but its
 // text, waiting until an add turns it into a real book or run. Resolving links
 // the row the add wrote and stamps resolved_at in the add's own transaction;
 // the add's undo reopens it. NULL kind is *Unsure*. A Watch note resolves into

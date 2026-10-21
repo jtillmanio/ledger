@@ -9,7 +9,7 @@ type Run = { id: string; title: string };
 const SHOWN = 60;
 
 /**
- * *Adding to: Simonson — Thor · Change* (UX-N27, FEATURES 2c): the screen names
+ * *Adding to: Simonson — Thor · Change* (UX-N27, design §14): the screen names
  * the run it adds to, and *Change* picks another without leaving it, so
  * consecutive adds to different runs don't re-navigate.
  */

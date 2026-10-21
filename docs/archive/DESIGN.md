@@ -1,5 +1,7 @@
 # Design — the styling blueprint
 
+> **Archived 2026-10-21. Superseded; do not edit.** This is the file as it stood when the planning docs moved to the kit layout. Its content is now [04-design.md](../04-design.md) §1–§9, under the same numbers. Where this file and those disagree, they win.
+
 This is the index to how the Ledger looks: which design file answers which
 question, how the tokens get into the app, how to read the Tailwind names in the
 design files, and the telescope's 3-rail and 2-rail rules. The files it points

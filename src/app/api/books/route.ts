@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 const YEAR_MAX = 3000;
 
 /**
- * Add one book to a destination (task 1.4c, ARCHITECTURE 2.15), from a tap on
+ * Add one book to a destination (task 1.4c, data model 2.15), from a tap on
  * Add books, never while a page loads (task 0.9).
  *
  * - POST `{ item, destination? }`: an item is `{ use: bookId }` (a library

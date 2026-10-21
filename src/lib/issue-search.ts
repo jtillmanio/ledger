@@ -75,7 +75,7 @@ export type SearchResult = {
 };
 
 /**
- * Metron's label in the bulk-entry grammar (ARCHITECTURE 2.15): normalised as a
+ * Metron's label in the bulk-entry grammar (data model 2.15): normalised as a
  * typed line is, and spelled with the catalog's series title when the parser
  * knows it. A label the grammar can't read comes back as Metron wrote it, flagged.
  *

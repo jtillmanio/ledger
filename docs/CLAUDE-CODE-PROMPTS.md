@@ -1,6 +1,6 @@
 # Claude Code session plan — model, effort, and prompts per task
 
-Companion to `TASKS.md`. For every task it gives: which model to run Claude
+Companion to `docs/05-roadmap.md`. For every task it gives: which model to run Claude
 Code with, what effort level to set at each phase, and the Explore / Plan /
 Implement prompts to paste in, following the four-phase loop in
 `CLAUDE-CODE.md` §3. Review and commit (phase 4) uses one template for every
@@ -26,17 +26,17 @@ copies an established pattern gets Sonnet at a lower effort, even at size L.
 
 ---
 
-## Read this first — TASKS.md wins over every prompt here
+## Read this first — the roadmap wins over every prompt here
 
 These prompts were written before the R0–R3 reviews and the S coherence audit
-(2026-09-20 → 23) changed TASKS.md. The prompts below were corrected where the
-audit found them wrong, but **`TASKS.md` is authoritative** (CLAUDE.md, *Which
+(2026-09-20 → 23) changed the roadmap. The prompts below were corrected where the
+audit found them wrong, but **`docs/05-roadmap.md` is authoritative** (CLAUDE.md, *Which
 document wins*): paste the prompt, and if it disagrees with the task, the task
 wins and the difference is a bug in this file.
 
 **Split tasks and their prompts.** R3 split several tasks. Where a half has no
 section below, use the parent's prompt scoped to that half, and read the task's
-own text in TASKS.md first:
+own text in the roadmap first:
 
 | Task | Use |
 |---|---|
@@ -47,7 +47,7 @@ own text in TASKS.md first:
 | 2.5 `layout.ts` / **2.5b** SVG and ladder | the 2.5 prompt; 2.5 is the pure geometry and its unit tests only |
 | **2.0** Settings, **2.11a** cycle check | their own sections below |
 
-**Decided since (decisions.md D-18 … D-23), and already in TASKS:** cutover
+**Decided since (decisions.md D-18 … D-23), and already in the roadmap:** cutover
 loads first, then the month of running both (D-18); no rereads inside a run,
 `UNIQUE (run_id, issue_id)` stays (D-19); the prerequisite audit and 2.11a
 happen before cutover (D-20); 1.5 drops `finished_year`, the year is derived
@@ -60,8 +60,8 @@ rail, local icons), 1.8a (values already landed), 1.8b (the mark answers back),
 1.9, 1.10 (Up next is a cover shelf with *Reorder*), 2.2, 2.2b, 2.4, 2.5b, 2.6
 (`run_opens`), 2.9 (the frontier moves here), 4.2, 4.3 (`--art`), 5.2, 5.4, 6.2
 (provenance), 8.7, and the new **2.12** (completion), which has no section here:
-use the 2.4 prompt's shape with TASKS 2.12. For every one, read the task, then
-`docs/DESIGN.md` §9 and `design/STYLE_GUIDE.md` §14–§16, and look at the
+use the 2.4 prompt's shape with roadmap 2.12. For every one, read the task, then
+`docs/04-design.md` §9 and `design/STYLE_GUIDE.md` §14–§16, and look at the
 screen's PNGs in `design/screenshots/` (the review page's source is templates). Where the feel pass draws a
 surface it beats `design/mockups.html` on layout and copy.
 
@@ -77,7 +77,7 @@ word count, series-completion filter), 8.3 (appends `watch_events`) and 8.4
 ## Changed by the R1 review (2026-09-20) — the prompts below predate it
 
 Structural changes from `docs/review/R1-findings.md` and `decisions.md` D-7/D-8.
-`TASKS.md` is authoritative; where a prompt below disagrees, the task wins.
+`docs/05-roadmap.md` is authoritative; where a prompt below disagrees, the task wins.
 
 - **New 2.0 Settings · S**, before 2.1 — no prompt below yet. It owns
   `/settings` and `reading_settings`; without it every capacity figure is a
@@ -105,7 +105,7 @@ Structural changes from `docs/review/R1-findings.md` and `decisions.md` D-7/D-8.
 
 ---
 
-## Two things in TASKS.md worth fixing before you start
+## Two things in the roadmap worth fixing before you start
 
 Neither blocks starting Phase 0, but both will cause confusion mid-build if
 they're not settled first.
@@ -115,7 +115,7 @@ they're not settled first.
    S" word for word. Do it once. Since Phase 7's framing ("after Phase 4, not
    before") fits a feature that emails you about *verified* releases, I'd keep
    it as **7.6** and delete the **6.7** line rather than the reverse.
-   *Done 2026-10-08 (coverage check): TASKS.md marks 6.7 removed.*
+   *Done 2026-10-08 (coverage check): the roadmap marks 6.7 removed.*
 2. **6.2b is checked done but its own text describes unfinished work** — "☑
    ... What remains here is the run-list *sort* by unlock cost and by
    leverage, once the views from 2.6 exist." Either it's done and that
@@ -127,13 +127,13 @@ they're not settled first.
 
 ## UI tasks — the design constraints travel with the prompt (Sept 2026)
 
-`UI_AUDIT_REPORT.md` was folded into FEATURES.md, ARCHITECTURE §4, TASKS.md and
+`UI_AUDIT_REPORT.md` was folded into `docs/01-product.md`, design §11, the roadmap and
 `design/mockups.html`. So a UI task's prompt does not restate the audit; it
 points at three places, and every Explore prompt for a UI task should start with
 this line:
 
 ```
-read @docs/TASKS.md's "UX floor" paragraph and the task, then run
+read design §10 (the UX floor) and the task, then run
 scripts/screen.sh <id> for each screen it touches and read
 design/mockups-index.md's "Not shown, and why" list. tell me which parts of this
 task have a drawn mockup and which do not, before proposing anything.
@@ -143,7 +143,7 @@ Where the mockup and the task disagree, the mockup wins — except for the items
 in the index's *Not shown* list, where the task text wins and the gap is
 part of the task. Implement prompts below carry only what is specific to the
 task; the per-task metrics (14px cells, 24px hit areas, five badge states) are in
-its TASKS.md entry.
+its roadmap entry.
 
 ---
 
@@ -153,20 +153,20 @@ Model: whichever model you ran Implement with. Effort: **high**.
 
 ```
 use the schema-reviewer subagent to review this diff against task <id>'s
-acceptance criteria in TASKS.md. report gaps affecting correctness, not
+acceptance criteria in the roadmap. report gaps affecting correctness, not
 style.
 ```
 
 Then run `/verify`. If it's clean:
 
 ```
-tick task <id> in TASKS.md, commit with a descriptive message, and open a PR
+tick task <id> in the roadmap, commit with a descriptive message, and open a PR
 ```
 
 If `/verify` or the subagent finds something, fix it and re-run both before
 committing — don't tick the box on a task whose own check hasn't passed.
 
-For anything in Phase 1 or 3, TASKS.md's standing rule 5 also applies: run the
+For anything in Phase 1 or 3, standing rule 5 also applies: run the
 adversarial review pass (a subagent that sees only the diff and the task's
 acceptance criteria, told to report correctness gaps only) before the
 schema-reviewer pass. Both are in-scope for those two phases; schema-reviewer
@@ -294,7 +294,7 @@ write a plan to draw <screen id> as a new <section class="screen"
 data-id="<id>"> with a phone frame and a desktop frame, light theme, plus a
 notes block in the same style as its neighbours. list the states it must show
 (empty, loading, error where the audit names them), the touch-target and
-contrast floors from TASKS.md's UX floor, and which existing screens must link to
+contrast floors from the UX floor (design §10), and which existing screens must link to
 it. do not touch src/.
 ```
 
@@ -321,7 +321,7 @@ isn't algorithmically hard.
 
 **Explore**
 ```
-read @docs/TASKS.md task 0.1 and @docs/CLAUDE-CODE.md section 1. is there any existing
+read @docs/05-roadmap.md task 0.1 and @docs/CLAUDE-CODE.md section 1. is there any existing
 test config in the repo (vitest.config, a __tests__ folder, a test script in
 package.json)? how does the rest of the stack expect to reach Postgres — read
 @src/db and .env.example — so the test database can reuse the same
@@ -361,7 +361,7 @@ is "make it pass," not "build it," and the fixes are already specified.
 
 **Explore**
 ```
-read @docs/TASKS.md task 0.2, @.github/workflows/ci.yml, and @package.json.
+read @docs/05-roadmap.md task 0.2, @.github/workflows/ci.yml, and @package.json.
 confirm which of these are still true: no package-lock.json, no eslint
 config, eslint and vitest not in devDependencies, no test script, and
 db:views using CMD-only syntax that reads the process environment instead of
@@ -396,12 +396,12 @@ green — paste the run URL and its conclusion, don't just say it passed.
 `titles` target does not exist until 8.1 (R3-04) — plus `word_count_source`,
 `page_count`, `books.cover_url`, `book_status.notes`, and `deleted_at` on `runs`,
 `issues`, `books` **and `run_issues`** (R3-06). Get the shelves shape wrong
-(`shelf_items` instead of typed tables — `ARCHITECTURE.md` §2.5e) and you're
+(`shelf_items` instead of typed tables — data model 2.5e) and you're
 redoing a migration against a live database later.
 
 **Explore**
 ```
-read @docs/TASKS.md task 0.3, @docs/FEATURES.md Part 5, @docs/ARCHITECTURE.md section 2.5e
+read @docs/05-roadmap.md task 0.3, archive/archive/`docs/01-product.md` Part 5, data model 2.5e
 (shelves) and section 2.10 (eras), @src/db/schema.ts, and
 @docs/review/LEDGER.md rows R0-C1, R2-10, R3-04, R3-05 and R3-06. R0-C1 and
 R2-10 are fixed (saveBookStatus; completed_at already nullable in 0004), and
@@ -416,7 +416,7 @@ blocks, cover_date, cover_date_source, or metron_id, which already exist.
 **Plan**
 ```
 write a plan for task 0.3: one Drizzle migration for exactly the additions
-TASKS 0.3 lists. shelves(kind) plus shelf_books only — no shelf_titles, no
+roadmap 0.3 lists. shelves(kind) plus shelf_books only — no shelf_titles, no
 polymorphic shelf_items. run_issues.deleted_at is required. out of scope:
 reading_plan (task 1.7), book_status.finished_on (already done in 0004),
 issue_progress.completed_at (already nullable), the book-status route (fixed).
@@ -447,7 +447,7 @@ is dated correctly before you rely on the subagent here.
 
 **Explore**
 ```
-read @docs/TASKS.md task 0.4 and @CLAUDE.md's soft-delete rule, then
+read @docs/05-roadmap.md task 0.4 and @CLAUDE.md's soft-delete rule, then
 @.claude/agents/schema-reviewer.md check 3. the gate "from task 0.4
 onward" was added by ledger row R0-07 — confirm it is still there before you
 rely on the subagent here.
@@ -486,7 +486,7 @@ fixes.
 
 **Explore**
 ```
-read @docs/TASKS.md task 0.5 and HANDOFF.md section 5. confirm the two remaining
+read @docs/05-roadmap.md task 0.5 and HANDOFF.md section 5. confirm the two remaining
 items: normalizing leading "The" (137 vs 100 bare labels for
 Amazing Spider-Man) and converting the three "X-Men (vol. 2) #177-179" labels
 to "(1991)". show me the current etl/extract.py logic that would need to
@@ -520,7 +520,7 @@ and 1.6.
 
 **Explore**
 ```
-read @docs/TASKS.md task 0.8a, ARCHITECTURE.md 2.11 and 2.14, @src/db/schema.ts,
+read @docs/05-roadmap.md task 0.8a, data model 2.11 and 2.14, @src/db/schema.ts,
 @etl/views.sql and the progress section of @etl/extract.py. list every view,
 query, route and loader that joins issue_progress on issue_id today, and say
 how each one's meaning changes when progress keys on the placement.
@@ -564,7 +564,7 @@ accessibility rules are easy to get subtly wrong.
 
 **Explore**
 ```
-read @docs/TASKS.md task 0.8b, the "Run detail — eras" frame in
+read @docs/05-roadmap.md task 0.8b, the "Run detail — eras" frame in
 design/mockups.html, and how the spine renders rows today. 0.8a must be merged.
 ```
 
@@ -586,7 +586,7 @@ shows no hint; every .chk has an accessible name and aria-pressed.
 whatever shape this sets, so the helper API matters more than the install.
 Built in sitting 6, before 1.8.
 
-**Read first:** TASKS 0.11, the header's *UX floor* and *A feel-pass surface is
+**Read first:** roadmap 0.11, design §10's *UX floor* and *A feel-pass surface is
 checked more widely*, 1.8's **Check:** (the first consumer),
 `scripts/lib/testdb.mjs` (the refusal to copy), `scripts/perf/login.mjs` (the
 sign-in to copy) and `.claude/kit.json` `ui.viewports`.
@@ -605,7 +605,7 @@ command list change in the same PR.
 
 ## Phase 1 — Daily use
 
-In build order, which is not ID order (TASKS.md Phase 1, *Build order*).
+In build order, which is not ID order (`docs/06-tasklist.md`, milestones M3–M9).
 1.3c uses the 1.3 prompt and 1.8b the 1.8 prompt (see the split table above);
 2.11a, built at the end of this phase (D-20), has its prompt in Phase 2.
 
@@ -618,7 +618,7 @@ easy to get subtly wrong on the range case.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.2 and whatever task 1.1 built for range marking (read
+read @docs/05-roadmap.md task 1.2 and whatever task 1.1 built for range marking (read
 it even if you didn't build it this session — the undo stack has to cover
 range marks too). what does a mark/status-change request currently return
 that undo would need to restore prior state?
@@ -651,7 +651,7 @@ a correctness one.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.1, @src/components/IssueRow.tsx, and the spine/range
+read @docs/05-roadmap.md task 1.1, @src/components/IssueRow.tsx, and the spine/range
 interaction described in design/mockups.html for the run detail screen. how
 does the existing single-issue mark-as-read request work end to end, and
 where would a range-write request and its date-prompt UI live without
@@ -693,7 +693,7 @@ the task.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.6. where does run_progress or a sibling view already
+read @docs/05-roadmap.md task 1.6. where does run_progress or a sibling view already
 expose sequence and read state per issue, so the resume pointer can be a
 query rather than a column?
 ```
@@ -719,7 +719,7 @@ component. Resume and the thumb bar's "Mark #141 read" are the same verb.
 
 ### 1.3 Bulk issue entry with validation
 **Model:** Opus · **Effort:** explore high / plan high / implement xhigh
-**Why:** TASKS.md calls this "the single highest-risk feature" itself — six
+**Why:** the roadmap calls this "the single highest-risk feature" itself — six
 ordered validation rules, a grammar with real edge cases already identified
 in your data (302 freeform labels, 59 series with ambiguous volumes, an
 8-volume Captain America case), and nothing may write until the user
@@ -728,7 +728,7 @@ around — reuse its prompts nearly verbatim.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.3, @src/db/schema.ts, @src/components/IssueRow.tsx, and
+read @docs/05-roadmap.md task 1.3, @src/db/schema.ts, @src/components/IssueRow.tsx, and
 the "Bulk add" section of @design/mockups.html.
 
 how does the existing optimistic-update pattern work, and where would the
@@ -775,7 +775,7 @@ cleanly to *Type it*.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.3b, ARCHITECTURE.md 2.15, the "Add issues — search"
+read @docs/05-roadmap.md task 1.3b, data model 2.15, the "Add issues — search"
 screen in design/mockups.html (scripts/screen.ps1 addsearch), the Metron
 client and cache in @etl/enrich_comics.py, and whatever 1.3 built for the
 review table and insert. can the TypeScript side reuse the Python cache, or
@@ -817,7 +817,7 @@ thing that looks right on the happy path and wrong on real titles.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.4 and whatever 1.3 built for the parser/review-table
+read @docs/05-roadmap.md task 1.4 and whatever 1.3 built for the parser/review-table
 pattern. how does 1.3's "review table (accept / fix / drop) before insert"
 UI work, and can books bulk entry reuse that component rather than building a
 second one?
@@ -850,7 +850,7 @@ land on one row.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.4c, ARCHITECTURE.md 2.15, and the "Add books" and
+read @docs/05-roadmap.md task 1.4c, data model 2.15, and the "Add books" and
 "Shelves" screens in design/mockups.html. what did 1.4 build for matching and
 near-duplicate detection, and where do book_status, reading_plan and
 shelf_books get written today?
@@ -886,7 +886,7 @@ bulk-add or New Run flows rather than becoming a third entry path.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.4b and FEATURES.md #21. where on the dashboard should
+read @docs/05-roadmap.md task 1.4b and product #21. where on the dashboard should
 the unresolved-count badge live per design/mockups.html, and what does
 "resolving routes into bulk add or New Run" mean concretely — does it
 pre-fill the raw_text into those existing forms?
@@ -921,7 +921,7 @@ which would erase the result (D-39).
 
 **Plan / Implement**
 ```
-read @docs/TASKS.md task 1.4d and decision D-39. write a plan: a one-off
+read @docs/05-roadmap.md task 1.4d and decision D-39. write a plan: a one-off
 /books/add?from=wishlist that pre-fills 1.4's paste-a-list review with the
 unresolved wishlist lines (book_id IS NULL), workbook order, grouped by genre;
 plain-hyphen lines parse like em-dash ones; series-looking lines are flagged
@@ -943,7 +943,7 @@ kind of mistake the task's own deadline framing warns about.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.5, FEATURES.md #22, and decisions.md D-10 (a date
+read @docs/05-roadmap.md task 1.5, product #22, and decisions.md D-10 (a date
 is stored with its precision; `read_events.finished_on_precision` is this
 task's half of it). `completed_at` is already nullable — migration 0004 did it,
 ledger row R2-10.
@@ -998,7 +998,7 @@ you from having to redo.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.7 and ARCHITECTURE.md section 2.9. the plan starts
+read @docs/05-roadmap.md task 1.7 and data model 2.9. the plan starts
 empty (D-13), so the migration will usually have nothing to carry — the fixture
 is what matters. what does a two-year book (a 2026 row and a 2027 row for one
 book) have to become under the new (user_id, book_id, period) key, and does
@@ -1054,7 +1054,7 @@ inherits whatever this gets wrong, which is why it comes before 1.8.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.8a, @docs/DESIGN.md, design/STYLE_GUIDE.md §4–§7,
+read @docs/05-roadmap.md task 1.8a, @docs/04-design.md, design/STYLE_GUIDE.md §4–§7,
 §10 and §13, design/tokens.css, src/app/globals.css and
 scripts/check-tokens.mjs. list every token tokens.css adds or changes against
 globals.css, and every selector that is translated on the way in (.app,:root
@@ -1099,7 +1099,7 @@ plays to Sonnet's strengths at a solid effort level.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.8 and the token/class definitions 1.8a put in
+read @docs/05-roadmap.md task 1.8 and the token/class definitions 1.8a put in
 src/app/globals.css (use them; don't define new ones). how do the current /comics, /books, and /watch routes
 render today, and what's the smallest change that introduces the tab
 bar/sidebar shell and the fixed .actionbar around them without rewriting each
@@ -1145,7 +1145,7 @@ it.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.10, ARCHITECTURE.md 2.16, and the Up next section of
+read @docs/05-roadmap.md task 1.10, data model 2.16, and the Up next section of
 the comics dashboard in design/mockups.html (scripts/screen.ps1 home). how
 does the top-books reorder (task 3.4) or any existing ordinal column handle
 renumbering, and where would + Up next hook into the run detail, run list and
@@ -1189,7 +1189,7 @@ fill-in.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.9, ARCHITECTURE.md §4 (the status-screen table), and the
+read @docs/05-roadmap.md task 1.9, design §11 (the status-screen table), and the
 "Status" screen in design/mockups.html (scripts/screen.ps1 status). which
 existing queries in src/db/queries.ts already return in-flight, ready and
 finished runs, and which views give books by plan period and by year read?
@@ -1227,7 +1227,7 @@ prove the wait without ever waiting on a real clock.
 
 **Explore**
 ```
-read @docs/TASKS.md task 1.11, D-23 and D-36 in docs/review/decisions.md,
+read @docs/05-roadmap.md task 1.11, D-23 and D-36 in docs/review/decisions.md,
 src/app/api/login/route.ts and src/lib/auth.ts. use test/health.test.ts as the
 shape for importing a route handler in vitest.
 ```
@@ -1249,7 +1249,7 @@ a real clock.
 **Why:** small, but it changes extract's output, and it has a deadline: after
 Step 14's final load nothing fills this table again.
 
-**Read first:** TASKS 1.12, `load_volume_map` and `apply_volume_year` in
+**Read first:** roadmap 1.12, `load_volume_map` and `apply_volume_year` in
 `etl/extract.py`, how `etl/load.ps1` and `etl/load.sh` order their copies, and
 `src/db/schema.ts` `volumeRules`.
 
@@ -1274,7 +1274,7 @@ they are stuck on a seeded guess (R1-05).
 
 **Explore**
 ```
-read @docs/TASKS.md task 2.0 and the `settings` frame in design/mockups.html.
+read @docs/05-roadmap.md task 2.0 and the `settings` frame in design/mockups.html.
 reading_settings exists from 0.3. confirm nothing else writes it.
 ```
 
@@ -1296,7 +1296,7 @@ what lists them, and what stops a cyclic graph from being loaded at cutover.
 
 **Explore**
 ```
-read @docs/TASKS.md task 2.11a and how etl/extract.py writes prereqs.csv and
+read @docs/05-roadmap.md task 2.11a and how etl/extract.py writes prereqs.csv and
 unresolved.csv. do not change any other output.
 ```
 
@@ -1323,7 +1323,7 @@ easy to build without and hard to retrofit.
 
 **Explore**
 ```
-read @docs/TASKS.md task 2.1 and the reading_settings columns added in 0.3
+read @docs/05-roadmap.md task 2.1 and the reading_settings columns added in 0.3
 (minutes/day, words/minute). where does word_count_source
 (added in 0.3) get set today, and does anything already compute page_count ×
 275 as a fallback anywhere in the codebase?
@@ -1359,7 +1359,7 @@ care even though no single piece of it is architecturally hard.
 
 **Explore**
 ```
-read @docs/TASKS.md task 2.1b and FEATURES.md #20. how does reading_settings get
+read @docs/05-roadmap.md task 2.1b and product #20. how does reading_settings get
 read by the capacity view from 2.1, so "Recalculate from sessions" knows
 exactly what it's proposing to change?
 ```
@@ -1399,11 +1399,11 @@ not just planned.
 
 **Explore**
 ```
-read @docs/TASKS.md task 2.2, design/STYLE_GUIDE.md §14 and section 4 of
+read @docs/05-roadmap.md task 2.2, design/STYLE_GUIDE.md §14 and section 4 of
 design/Ledger Feel Review.dc.html (it replaces "Books — v4" in mockups.html, D-40).
 confirm 1.7, 1.8, and 2.1 are landed — this task reads reading_plan.period,
 the app shell, and the capacity view directly. check which of 2.2b (the plan
-rail) and 2.1 are already ticked in TASKS.md so you don't rebuild a rail
+rail) and 2.1 are already ticked in the roadmap so you don't rebuild a rail
 component that exists.
 ```
 
@@ -1412,7 +1412,7 @@ component that exists.
 write a plan for task 2.2: the five slots in order (Now or Between books,
 the Up next shelf for the quarter, the single-quarter strip, On deck, 2026 so
 far), matching the feel pass's books screen. before planning, ask me where
-Rebalance/Accept and Place them surface now: TASKS 2.2 lists it as open.
+Rebalance/Accept and Place them surface now: roadmap 2.2 lists it as open.
 the capacity number is amber past 100%, never red, and the word "behind" does
 not appear anywhere on this screen — say where you're enforcing that as a
 rule, not just a convention. name the components for tasks 2.7 and 2.8
@@ -1447,7 +1447,7 @@ even though the UI itself is standard.
 
 **Explore**
 ```
-read @docs/TASKS.md task 2.3 and the "Move / add to plan" sheet in
+read @docs/05-roadmap.md task 2.3 and the "Move / add to plan" sheet in
 design/mockups.html. where do the three entry points (Move on a plan row,
 Plan for... in the master list, Plan for... when adding a new book) currently
 live, and can they share one sheet component?
@@ -1492,12 +1492,12 @@ element on the page may render `--danger`.
 
 **Explore**
 ```
-read @docs/TASKS.md task 2.4, design/STYLE_GUIDE.md §14–§15 and sections 2, 3
+read @docs/05-roadmap.md task 2.4, design/STYLE_GUIDE.md §14–§15 and sections 2, 3
 and 10 of design/Ledger Feel Review.dc.html (they replace "Comics — v4" in
 mockups.html, D-40); design/LedgerComics.dc.html has the mark live.
 confirm 1.6, 1.8, 2.5, and 2.6 are landed — this screen embeds the telescope
 component and reads run_unlock_cost/run_leverage/frontier directly. 2.4 is
-assembly: check TASKS.md for which of its dependencies are ticked before you
+assembly: check the roadmap for which of its dependencies are ticked before you
 write anything new.
 ```
 
@@ -1541,8 +1541,8 @@ a rendered screenshot at real data scale reveals.
 
 **Explore**
 ```
-read @docs/TASKS.md tasks 2.5 and 2.5b, @docs/DESIGN.md section 5, the
-telescope part of ARCHITECTURE §4 and DIAGRAMS.md section 3b. open
+read @docs/05-roadmap.md tasks 2.5 and 2.5b, @docs/04-design.md section 5, the
+telescope rules in design §5 and DIAGRAMS.md section 3b. open
 design/Telescope.dc.html: its alloc(), niceStep() and fit() are the reference
 implementation. confirm block_progress,
 run_progress joined to block_position, and the resume pointer (from 1.6)
@@ -1559,7 +1559,7 @@ to the next rail's full extent, a head marker at the resume pointer, and a
 three-row ladder underneath. handle the two-rail fallback for a run with no
 block explicitly — don't let it be an afterthought in the implementation.
 the minimum cell width, tick rule and 2-rail rules are already decided in
-ARCHITECTURE §4: follow them rather than picking new ones.
+design §11: follow them rather than picking new ones.
 ```
 
 **Implement**
@@ -1594,7 +1594,7 @@ full seed.
 
 **Explore**
 ```
-read @docs/TASKS.md task 2.6 and ledger rows R0-02, R2-01 and R2-04.
+read @docs/05-roadmap.md task 2.6 and ledger rows R0-02, R2-01 and R2-04.
 run_ancestors has been rewritten: UNION rather than UNION ALL with a path
 array (it was exponential and timed out on 150 of 229 runs), the depth cap is
 48 (D-6), and it excludes the target run itself. every unlock-cost figure in
@@ -1646,7 +1646,7 @@ building something that looks done in a demo and resets on the next load.
 
 **Explore**
 ```
-read @docs/TASKS.md task 2.7. where would a plan_acceptance row naturally live —
+read @docs/05-roadmap.md task 2.7. where would a plan_acceptance row naturally live —
 a new small table keyed by user and year, per the task's own suggestion — and
 how does the capacity card (from 2.2) currently render the .decide state it
 needs to turn into .decide.settled?
@@ -1684,7 +1684,7 @@ is, not soften it. Straightforward once 2.1 exists.
 
 **Explore**
 ```
-read @docs/TASKS.md task 2.8. where does the books dashboard (2.2) render the
+read @docs/05-roadmap.md task 2.8. where does the books dashboard (2.2) render the
 unplaced-entries card, and what does "Place them" currently link to, if
 anything?
 ```
@@ -1718,7 +1718,7 @@ top of this document.
 
 **Explore**
 ```
-read @docs/TASKS.md tasks 2.9 and 6.2b, and the "Run list — v4" screen in
+read @docs/05-roadmap.md tasks 2.9 and 6.2b, and the "Run list — v4" screen in
 design/mockups.html. confirm 2.6's run_unlock_cost and run_leverage views
 exist and are queryable from here. how many of the 259 seeded runs have
 block_id IS NULL (expect nine) and where do they need to land in the
@@ -1762,7 +1762,7 @@ component itself already exists from 2.2.
 
 **Explore**
 ```
-read @docs/TASKS.md task 2.10 and the "Plan by quarter — v4" screen in
+read @docs/05-roadmap.md task 2.10 and the "Plan by quarter — v4" screen in
 design/mockups.html. confirm 1.7, 2.1, and 2.2 are landed, and how much of
 2.2's plan-rail component can be reused here versus needing a taller variant.
 ```
@@ -1801,7 +1801,7 @@ pattern, not designing a new one.
 
 **Explore**
 ```
-read @docs/TASKS.md task 3.1 and @src/components/IssueRow.tsx's optimistic-update
+read @docs/05-roadmap.md task 3.1 and @src/components/IssueRow.tsx's optimistic-update
 and rollback logic. which fields across the app still require a modal or a
 save button today, and can they all reuse this exact pattern?
 ```
@@ -1832,7 +1832,7 @@ calls Anthropic.
 
 **Explore**
 ```
-read @docs/TASKS.md task 3.2 and CLAUDE.md's why rule ("A why is authored, so
+read @docs/05-roadmap.md task 3.2 and CLAUDE.md's why rule ("A why is authored, so
 it is stored"; `hand` is never replaced automatically). how does run_span (task 0.6) expose the read-only
 series/year fields this form needs? confirm no run form field lets you type
 series or year directly — those come only from issues.
@@ -1865,7 +1865,7 @@ downstream unlock-cost and readiness calculation from Phase 2.
 
 **Explore**
 ```
-read @docs/TASKS.md task 3.3 and the run_ancestors() definition in etl/views.sql
+read @docs/05-roadmap.md task 3.3 and the run_ancestors() definition in etl/views.sql
 (post the depth-cap fix from 2.6, if that's landed). what's the cheapest
 correct way to detect a would-be cycle before insert — walk run_ancestors
 from the proposed target back to the proposed source, or something else?
@@ -1898,7 +1898,7 @@ rather than "should be fine."
 
 **Explore**
 ```
-read @docs/TASKS.md task 3.4 and ledger row R0-C1 (the POST that wiped unsent
+read @docs/05-roadmap.md task 3.4 and ledger row R0-C1 (the POST that wiped unsent
 fields). it is fixed in `saveBookStatus` — undefined keeps, null clears — so
 this task must not reintroduce it. status and finish date are NOT this task:
 they moved to 1.5 (R1-03).
@@ -1930,7 +1930,7 @@ shape from being re-derived in 8.4 later.
 
 **Explore**
 ```
-read @docs/TASKS.md task 3.5, FEATURES.md Part 2f, and the "Book detail sheet"
+read @docs/05-roadmap.md task 3.5, design §13, and the "Book detail sheet"
 mockup. how does Next.js's intercepting-routes convention
 ((.)folder / (..)folder) map onto /books/[id] and /comics/[runId]/[issueId]
 needing sheet-on-phone, modal-on-desktop, full-page-on-direct-load?
@@ -1972,7 +1972,7 @@ view mirroring `block_progress` is real interaction and derived-view work.
 
 **Explore**
 ```
-read @docs/TASKS.md task 3.6, the "Run detail — eras" mockup, and decisions.md
+read @docs/05-roadmap.md task 3.6, the "Run detail — eras" mockup, and decisions.md
 D-3 (finished eras collapse to a count). confirm the eras table from
 0.3 (ordinal, name, nullable issues.era_id) is landed. how does
 block_progress compute its bands today, so era_progress can mirror it exactly
@@ -2010,7 +2010,7 @@ unique), and `block_position`, the telescope and the run list all read them.
 A gap or a duplicate there is wrong quietly. Phase 3, so the adversarial
 review (standing rule 5) runs.
 
-**Read first:** TASKS 3.8, ARCHITECTURE 2.8 (blocks), `block_position` and
+**Read first:** roadmap 3.8, data model 2.8 (blocks), `block_position` and
 `block_progress` in `etl/views.sql`, 2.9's block bands, 1.10's keyboard
 reordering (the route to copy) and 1.2's undo stack.
 
@@ -2030,7 +2030,7 @@ A run in two tracks still has one `block_id`, so don't invent a per-track block.
 highest-risk feature in the app. A rule that silently picks the wrong volume
 writes a wrong label that looks right.
 
-**Read first:** TASKS 3.9, 1.3's *Ambiguous volume* rule and 1.3c's review
+**Read first:** roadmap 3.9, 1.3's *Ambiguous volume* rule and 1.3c's review
 table, `apply_volume_year` in `etl/extract.py` (the same precedence: run rule
 before any-run rule, inside its range), 2.0's Settings line, and CLAUDE.md on
 label changes (accepted label review only).
@@ -2057,7 +2057,7 @@ extending a working script, not writing one from scratch.
 
 **Explore**
 ```
-read @docs/TASKS.md task 4.1 and etl/enrich_comics.py. confirm the SQLite cache
+read @docs/05-roadmap.md task 4.1 and etl/enrich_comics.py. confirm the SQLite cache
 (etl/.metron-cache.sqlite) already stores each issue's image field from prior
 runs, so adding cover_url is a read from cache, not a new request. what's the
 schema change needed on issues for cover_url?
@@ -2090,7 +2090,7 @@ but for books, no existing script to extend.
 
 **Explore**
 ```
-read @docs/TASKS.md task 4.2 and how enrich_comics.py structures its dry-run,
+read @docs/05-roadmap.md task 4.2 and how enrich_comics.py structures its dry-run,
 caching, and resumability (etl/.metron-cache.sqlite) — reuse that shape for
 the new books enrichment script rather than inventing a different one.
 ```
@@ -2120,7 +2120,7 @@ against.
 
 **Explore**
 ```
-read @docs/TASKS.md task 4.3. where do book and issue covers currently render, if
+read @docs/05-roadmap.md task 4.3. where do book and issue covers currently render, if
 at all, and what's already using next/image elsewhere in the app (reuse that
 convention if it exists)?
 ```
@@ -2147,13 +2147,13 @@ list and book detail.
 ### 5.1 Shelves (books only)
 **Model:** Sonnet · **Effort:** explore medium / plan high / implement high
 **Why:** the schema decision is already settled — `shelf_books` and
-`shelf_titles`, never a polymorphic `shelf_items` (`ARCHITECTURE.md` §2.5e,
+`shelf_titles`, never a polymorphic `shelf_items` (data model 2.5e,
 confirmed landed in 0.3 per `dashboard-v4-status.md`). This task is CRUD and
 reordering on top of a shape that's already correct.
 
 **Explore**
 ```
-read @docs/TASKS.md task 5.1 and ARCHITECTURE.md section 2.5e. confirm
+read @docs/05-roadmap.md task 5.1 and data model 2.5e. confirm
 shelf_books exists from 0.3 and how it differs from shelf_titles (used later
 in 8.6) — they should be structurally identical tables for different
 mediums, not shared.
@@ -2181,7 +2181,7 @@ derivation, just a list page.
 
 **Explore**
 ```
-read @docs/TASKS.md task 5.2 and confirm track_progress already exposes
+read @docs/05-roadmap.md task 5.2 and confirm track_progress already exposes
 everything this page needs.
 ```
 
@@ -2209,7 +2209,7 @@ issue_id, a "never opened" group, and links to the run list filtered by track.
 
 **Explore**
 ```
-read @docs/TASKS.md task 5.4 and how 3.4 implemented rating/notes on books — reuse
+read @docs/05-roadmap.md task 5.4 and how 3.4 implemented rating/notes on books — reuse
 that same field pattern for runs.
 ```
 
@@ -2233,7 +2233,7 @@ fields.
 
 **Explore**
 ```
-read @docs/TASKS.md task 5.5 and how status is currently modeled on book_status
+read @docs/05-roadmap.md task 5.5 and how status is currently modeled on book_status
 and run progress, to confirm DNF fits as an existing status value rather than
 needing a new column.
 ```
@@ -2261,7 +2261,7 @@ architecture rather than writing a second one from nothing.
 
 **Explore**
 ```
-read @docs/TASKS.md task 5.6 and whatever 1.3 built for label parsing. can
+read @docs/05-roadmap.md task 5.6 and whatever 1.3 built for label parsing. can
 edition_issues reuse the same tokenizer/range-expansion logic, or does the
 "Title #N-M and Title Finale" shape need its own grammar?
 ```
@@ -2288,7 +2288,7 @@ named issue, and a fully freeform edition title with no issue numbers at all.
 **Why:** a read-only screen over a view that already exists; the pattern is
 5.2's tracks page.
 
-**Read first:** TASKS 5.9, `series_progress` in `etl/views.sql`, 5.2 (the
+**Read first:** roadmap 5.9, `series_progress` in `etl/views.sql`, 5.2 (the
 shape), 5.7 (the `NAV_ITEMS` flag) and R2's `pct > 1` finding.
 
 **Watch for:** the next-unread book is derived in the query, never stored.
@@ -2307,8 +2307,8 @@ not the counts. The screen gets a mockup frame and a route in
 that matters: an edition's *Read* never touches issue read state. It also turns
 on the owned-editions tile that 2.4, 2.6 and 2.9 left hidden.
 
-**Read first:** TASKS 5.10 and 5.6, `editions` and `edition_progress` in
-`src/db/schema.ts`, ARCHITECTURE 2.6 (editions are separate from issues), 2.6's
+**Read first:** roadmap 5.10 and 5.6, `editions` and `edition_progress` in
+`src/db/schema.ts`, data model 2.6 (editions are separate from issues), 2.6's
 `frontier` view and 3.5's issue sheet.
 
 **Watch for:** per-user facts stay in `edition_progress` (no flag on
@@ -2333,7 +2333,7 @@ algorithmic one.
 
 **Explore**
 ```
-read @docs/TASKS.md task 6.1. is there an existing search index or does this need
+read @docs/05-roadmap.md task 6.1. is there an existing search index or does this need
 a query hitting each table with ILIKE/trigram matching? check what 1.4 and
 1.4b already built for trigram-similarity matching and reuse it if it fits.
 ```
@@ -2366,7 +2366,7 @@ done, since it reads read_events and session data.
 
 **Explore**
 ```
-read @docs/TASKS.md task 6.2 and FEATURES.md Part 2d. confirm 1.5 (read_events)
+read @docs/05-roadmap.md task 6.2 and product § Metrics. confirm 1.5 (read_events)
 and 2.1b (reading sessions) are landed — this page reads both directly. what
 charting approach does the rest of the app already use, if any, so this
 doesn't introduce a second charting library?
@@ -2374,7 +2374,7 @@ doesn't introduce a second charting library?
 
 **Plan**
 ```
-write a plan for task 6.2: the five charts named in FEATURES.md Part 2d, each
+write a plan for task 6.2: the five charts named in product § Metrics, each
 reading from read_events/reading_plan/reading_sessions as appropriate.
 explicitly confirm no streak metric appears anywhere on the page.
 ```
@@ -2389,7 +2389,7 @@ with no streak metric present anywhere.
 
 ### 6.2b Run-list sort by unlock cost and leverage
 **Model:** Sonnet · **Effort:** explore low / plan medium / implement medium
-**Why:** per the note at the top of this document, TASKS.md's checkbox for
+**Why:** per the note at the top of this document, the roadmap's checkbox for
 this is inconsistent with its own text. This is folded into 2.9 above — treat
 this entry as a pointer, not a separate session, unless you confirm 2.9 left
 it out.
@@ -2414,13 +2414,13 @@ plan-mode pass if the diff is one sort-control addition.
 **Model:** Opus · **Effort:** explore medium / plan high / implement xhigh
 **Why:** graph layout (nodes and edges, presumably force-directed or
 hierarchical) is a different kind of rendering problem than the telescope's
-fixed three-rail geometry, and TASKS.md gives it no acceptance check at all —
+fixed three-rail geometry, and the roadmap gives it no acceptance check at all —
 you'll need to write one as part of planning, which is itself worth Opus's
 judgment.
 
 **Explore**
 ```
-read @docs/TASKS.md task 6.3. it has no acceptance check written — look at how
+read @docs/05-roadmap.md task 6.3. it has no acceptance check written — look at how
 prereq edges and run_ancestors are modeled and propose what a meaningful
 check would be (e.g., a seeded 24-edge chain renders with no overlapping
 nodes and the correct edge count) before planning the feature itself.
@@ -2429,7 +2429,7 @@ nodes and the correct edge count) before planning the feature itself.
 **Plan**
 ```
 write a plan for task 6.3, including the acceptance check you're proposing
-since TASKS.md doesn't specify one. name the layout library or algorithm
+since the roadmap doesn't specify one. name the layout library or algorithm
 you're using and why.
 ```
 
@@ -2451,7 +2451,7 @@ live — worth the extra planning care even though no single piece is large.
 
 **Explore**
 ```
-read @docs/TASKS.md task 6.4. which write paths (issue marking, status changes,
+read @docs/05-roadmap.md task 6.4. which write paths (issue marking, status changes,
 range marks from 1.1) need offline queueing, and how does 1.1's
 single-round-trip range write interact with a queue that might replay it out
 of order?
@@ -2506,7 +2506,7 @@ against the existing catalog the main correctness risk — similar shape to
 
 **Explore**
 ```
-read @docs/TASKS.md task 6.6. what do a real Goodreads export and a real
+read @docs/05-roadmap.md task 6.6. what do a real Goodreads export and a real
 StoryGraph export look like (column names, date formats) — get a sample of
 each rather than guessing the schema. how does 1.4's catalog-matching logic
 work, and can it be reused here?
@@ -2535,7 +2535,7 @@ new interaction (a verdict per event) — small and well-bounded.
 
 **Explore**
 ```
-read @docs/TASKS.md task 6.8 and how events/event_runs are modeled. does a verdict
+read @docs/05-roadmap.md task 6.8 and how events/event_runs are modeled. does a verdict
 need a new column on events, or a new small table if it should support
 per-user verdicts distinct from the shared event catalog?
 ```
@@ -2562,7 +2562,7 @@ from the 2.1 view, not a number computed in the component.
 
 **Explore**
 ```
-read @docs/TASKS.md task 6.10, run scripts/screen.sh blist, and read how the master
+read @docs/05-roadmap.md task 6.10, run scripts/screen.sh blist, and read how the master
 list keeps its filter state (URL params or component state). where does 2.1
 expose a period's remaining word capacity? which of the three controls needs a
 new query and which is just a filter?
@@ -2594,7 +2594,7 @@ letting compact leak onto the phone, where 48px rows are the point.
 
 **Explore**
 ```
-read @docs/TASKS.md task 6.11 and find where .iss, .row and .chk set their height and
+read @docs/05-roadmap.md task 6.11 and find where .iss, .row and .chk set their height and
 padding in src/app/globals.css. where does Settings store per-user
 preferences today?
 ```
@@ -2626,7 +2626,7 @@ it's summarizing is trustworthy.
 
 **Explore**
 ```
-read @docs/TASKS.md task 7.6 (and the identical 6.7 line — treat them as one).
+read @docs/05-roadmap.md task 7.6 (and the identical 6.7 line — treat them as one).
 what does Resend's free tier require (sender domain verification, rate
 limits), and what would the digest actually summarize — new releases against
 tracked series/franchises, verified through Phase 4/7's enrichment?
@@ -2649,7 +2649,7 @@ wiring it to the real schedule.
 
 ### 6.9 Revisit the theme
 **Model:** Opus · **Effort:** implement high (skip explore/plan — see below)
-**Why:** this task already contains a fully-written prompt in TASKS.md
+**Why:** this task already contains a fully-written prompt in the roadmap
 itself — copy it in verbatim rather than running it through explore/plan
 first. It's perceptual and quantitative reasoning (contrast ratios, CVD
 deltas across three deficiency types) more than software architecture, which
@@ -2659,7 +2659,7 @@ is why Opus is worth it here despite the task not touching much code yet.
 every screen exists and you have lived with it on a phone for a few weeks."
 
 **Run this prompt directly** (attach `design/mockups.html` and
-`src/app/globals.css`, exactly as TASKS.md specifies):
+`src/app/globals.css`, exactly as the roadmap specifies):
 ```
 I have a finished single-user reading tracker — comics, books, and a film
 and TV watchlist. Plain CSS custom properties, no Tailwind, no build step,
@@ -2703,7 +2703,7 @@ and applied it.
 
 ## Phase 7 — AI-assisted curation
 
-Every task in this phase shares one rule, restated from TASKS.md: the model
+Every task in this phase shares one rule, restated from the roadmap: the model
 proposes, Metron verifies, the user approves. No AI output reaches `issues`
 or `runs` without passing the bulk-entry parser, an existence check, and an
 explicit accept. That rule is why every task here is Opus at high/xhigh — the
@@ -2718,7 +2718,7 @@ which is a security property, not just a feature.
 
 **Explore**
 ```
-read @docs/TASKS.md task 7.1. this task creates the app's first and only
+read @docs/05-roadmap.md task 7.1. this task creates the app's first and only
 server-side Anthropic client (3.2 no longer has one — Draft why moved to 7.5,
 R3-17). confirm nothing in src/ imports an Anthropic SDK yet.
 ```
@@ -2749,7 +2749,7 @@ never silently dropped.
 
 **Explore**
 ```
-read @docs/TASKS.md task 7.2 and how 1.3's parser and etl/enrich_comics.py's
+read @docs/05-roadmap.md task 7.2 and how 1.3's parser and etl/enrich_comics.py's
 Metron client work. can both be called directly from a server route, or do
 they need extracting into shared modules first?
 ```
@@ -2780,7 +2780,7 @@ kind of no-op case that's easy to skip testing and important not to.
 
 **Explore**
 ```
-read @docs/TASKS.md task 7.3. what does 7.2's verification gate expect as input
+read @docs/05-roadmap.md task 7.3. what does 7.2's verification gate expect as input
 shape, so this task's prompt/response format is compatible with it from the
 start?
 ```
@@ -2814,7 +2814,7 @@ should be an extension of 7.3's plumbing, not a parallel implementation.
 
 **Explore**
 ```
-read @docs/TASKS.md task 7.4 and 7.3's implementation. how much of 7.3's
+read @docs/05-roadmap.md task 7.4 and 7.3's implementation. how much of 7.3's
 diff-and-accept UI can be reused directly for a block/track-scoped review
 rather than building a second review surface?
 ```
@@ -2843,7 +2843,7 @@ real job: verifying content that didn't come from a human paste.
 
 **Explore**
 ```
-read @docs/TASKS.md task 7.5. confirm the review table from 1.3 (accept / fix /
+read @docs/05-roadmap.md task 7.5. confirm the review table from 1.3 (accept / fix /
 drop) can accept a fully AI-drafted run and its issue list as input, not just
 pasted text — same shape, different source.
 ```
@@ -2880,7 +2880,7 @@ nice-to-have.
 
 **Explore**
 ```
-read @docs/TASKS.md task 8.1. how does 0.3's soft-delete and reading_settings
+read @docs/05-roadmap.md task 8.1. how does 0.3's soft-delete and reading_settings
 pattern translate to titles/seasons/franchises? what does TMDB's
 /configuration response look like, since it needs caching once for image
 base URLs?
@@ -2917,7 +2917,7 @@ API-consumption work on top of 8.1's client, not new architecture.
 
 **Explore**
 ```
-read @docs/TASKS.md task 8.2 and confirm 8.1's TMDB client and titles/seasons
+read @docs/05-roadmap.md task 8.2 and confirm 8.1's TMDB client and titles/seasons
 schema are landed. what does a /search/multi response look like for an
 ambiguous title like "Dune" so the UI can be designed against real data?
 ```
@@ -2953,7 +2953,7 @@ title_status.
 
 **Explore**
 ```
-read @docs/TASKS.md task 8.3. how does show_progress (from 8.1) compute derived
+read @docs/05-roadmap.md task 8.3. how does show_progress (from 8.1) compute derived
 status today, and confirm title_status only ever stores explicit user
 overrides (e.g., dropped), never a value that show_progress could compute
 instead.
@@ -2986,7 +2986,7 @@ convention rather than rederiving it.
 
 **Explore**
 ```
-read @docs/TASKS.md task 8.4 and how 3.5 implemented intercepted routes for
+read @docs/05-roadmap.md task 8.4 and how 3.5 implemented intercepted routes for
 book/issue detail sheets. reuse that exact convention for /watch/[id] and
 /watch/[id]/season/[n].
 ```
@@ -3019,7 +3019,7 @@ algorithmic difficulty.
 
 **Explore**
 ```
-read @docs/TASKS.md task 8.5. what does a TMDB /collection/{id} response look
+read @docs/05-roadmap.md task 8.5. what does a TMDB /collection/{id} response look
 like, and confirm there's genuinely no TMDB concept linking a film collection
 to a related TV show — so cross-media franchises have to be a fully separate,
 hand-curated path.
@@ -3054,7 +3054,7 @@ distinct: a franchise is a fact about the work, a shelf is your opinion.
 
 **Explore**
 ```
-read @docs/TASKS.md task 8.6 and how 5.1 built shelf_books. shelf_titles should be
+read @docs/05-roadmap.md task 8.6 and how 5.1 built shelf_books. shelf_titles should be
 the same shape for a different medium — confirm before building a second
 pattern.
 ```
@@ -3083,7 +3083,7 @@ missing. Depends on 8.3.
 
 **Explore**
 ```
-read @docs/TASKS.md task 8.7 and ARCHITECTURE.md section 4 on why /watch has no
+read @docs/05-roadmap.md task 8.7 and design §11 on why /watch has no
 period control. how does 2.5's telescope component generalize to two rails
 instead of three — can it be parameterized, or does it need a fork?
 ```
@@ -3094,7 +3094,7 @@ write a plan for task 8.7: the four slots (now with the two-rail telescope,
 up next with film/TV and genre filters and no period control, what's
 reachable, 2026 so far). state explicitly in the plan why there's no period
 control, so it's documented in the diff itself and not just in
-ARCHITECTURE.md.
+`docs/02-architecture.md`.
 ```
 
 **Implement**
@@ -3120,7 +3120,7 @@ written to `title_status`.
 
 **Explore**
 ```
-read @docs/TASKS.md task 8.8 and what 1.9 built. what does the StatusTabs
+read @docs/05-roadmap.md task 8.8 and what 1.9 built. what does the StatusTabs
 component expect per row, and which queries from 8.3 already give watching,
 to-watch and watched titles with show state derived?
 ```
@@ -3152,7 +3152,7 @@ Since the kit was adopted (`docs/kit-adoption.md`), a session starts with
 Implement prompts here. The per-task notes above (model, effort, what to read,
 what to watch for) still apply: give them to `/implement-task` at its plan gate
 or put them in the task file's Context. This file still ranks below
-`docs/TASKS.md`.
+`docs/05-roadmap.md`.
 
 Sections for tasks added after adoption (0.11, 1.12, 3.8, 3.9, 5.9, 5.10)
 have the model, the effort, what to read and what to watch for, and no

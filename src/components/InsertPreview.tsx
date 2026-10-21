@@ -9,7 +9,7 @@ export type After = number | null;
 const AROUND = 3;
 
 /**
- * The insertion preview (FEATURES 2c *Preview the resulting order*): three of
+ * The insertion preview (design §14 *Preview the resulting order*): three of
  * the run's rows above the insertion point and three below, the new ones
  * highlighted between them, and the *Insert after* picker, the end of the run
  * by default.

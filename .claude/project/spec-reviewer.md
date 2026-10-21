@@ -1,6 +1,6 @@
 # spec-reviewer: Ledger checks
 
-Roadmap mode (`workflow.roadmap` = `docs/TASKS.md`) already covers the task's **Check:** line, its checkbox, and the rule that a task file ranks below `docs/TASKS.md`. Run these on top of that. The numbered rules are `CLAUDE.md` § Hard rules.
+Roadmap mode (`workflow.roadmap` = `docs/05-roadmap.md`) already covers the task's **Check:** line, its checkbox, and the rule that a task file ranks below `docs/05-roadmap.md`. Run these on top of that. The numbered rules are `CLAUDE.md` § Hard rules.
 
 1. **Nothing derived is stored (rule 2), keyed progress (rule 3).** Any new column in `src/db/schema.ts` that is a count, percentage, rollup, status, span, credit line, or finish or plan year is a violation; it belongs in `etl/views.sql`. Any new comics read-state column or key on `issues.id` instead of `run_issues.id` is a violation, and so is a per-user boolean on a catalog table.
 2. **Soft delete (rule 4).** Every new read in `src/db/queries.ts`, `src/app/**` or `etl/views.sql` filters `deleted_at IS NULL`; removing a placement is an `UPDATE … SET deleted_at`, never a `DELETE`.
