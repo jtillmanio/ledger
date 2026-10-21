@@ -1,7 +1,7 @@
 ---
 id: TASK-028
 title: 1.8e Tablet frames to the feel pass
-status: Review
+status: Done
 depends_on: [TASK-014]
 size: S
 model: opus
