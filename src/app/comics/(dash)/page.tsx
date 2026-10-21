@@ -54,16 +54,18 @@ export default async function Comics() {
           <div className="rows">
             {/* Each row opens its run at the resume pointer's row (task 1.6). */}
             {reading.map((r) => (
-              <Link key={r.id} href={`/comics/${r.id}#p-${r.next_ordinal}`} className="row">
-                <span className="row-head">
-                  <span className="row-title">{r.title}</span>
-                  <span className="row-meta mono">
-                    {r.read_issues}/{r.total_issues}
+              <article key={r.id} className="row">
+                <Link href={`/comics/${r.id}#p-${r.next_ordinal}`} className="row-link">
+                  <span className="row-head">
+                    <span className="row-title">{r.title}</span>
+                    <span className="row-meta mono">
+                      {r.read_issues}/{r.total_issues}
+                    </span>
                   </span>
-                </span>
-                <span className="row-sub">{`Continue: ${r.next_label}`}</span>
-                <span className="measure"><span style={{ width: pct(r.pct) }} /></span>
-              </Link>
+                  <span className="row-sub">{`Continue: ${r.next_label}`}</span>
+                  <span className="measure"><span style={{ width: pct(r.pct) }} /></span>
+                </Link>
+              </article>
             ))}
           </div>
         </>
@@ -85,18 +87,20 @@ export default async function Comics() {
           </div>
         )}
         {ready.map((r) => (
-          <Link key={r.id} href={`/comics/${r.id}`} className="row">
-            <span className="row-head">
-              <span className="row-title">{r.title}</span>
-              <span className="row-meta mono">{r.total_issues} iss</span>
-            </span>
-            <span className="row-sub">
-              {[r.writers, r.tracks.join(", "), r.start_year].filter(Boolean).join(" · ")}
-            </span>
-            {/* Whys run 2-4 sentences; the first is written to stand alone, so a list
-                shows two lines and the run page shows the rest. */}
-            {r.why && <span className="row-sub clamp-2">{r.why}</span>}
-          </Link>
+          <article key={r.id} className="row">
+            <Link href={`/comics/${r.id}`} className="row-link">
+              <span className="row-head">
+                <span className="row-title">{r.title}</span>
+                <span className="row-meta mono">{r.total_issues} iss</span>
+              </span>
+              <span className="row-sub">
+                {[r.writers, r.tracks.join(", "), r.start_year].filter(Boolean).join(" · ")}
+              </span>
+              {/* Whys run 2-4 sentences; the first is written to stand alone, so a list
+                  shows two lines and the run page shows the rest. */}
+              {r.why && <span className="row-sub clamp-2">{r.why}</span>}
+            </Link>
+          </article>
         ))}
       </div>
     </main>

@@ -224,10 +224,11 @@ describe("a mark on the spine", () => {
 
   it("a failed mark pushes nothing to undo", async () => {
     fetchMock.mockResolvedValueOnce(new Response("{}", { status: 500 }));
-    vi.stubGlobal("alert", vi.fn());
     spine(uncanny, "Uncanny X-Men");
     await tick("Uncanny X-Men (1963) #141");
-    expect(toast()).toBeNull();
+    // The failure toast offers Retry, never Undo (task 1.8d).
+    expect(lines()).toEqual(["That didn't save"]);
+    expect(undoButton()).toBeUndefined();
     expect(count()).toBe("3 of 10 read");
   });
 });

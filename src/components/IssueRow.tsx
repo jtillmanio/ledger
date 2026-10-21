@@ -46,8 +46,9 @@ function useFinePointer() {
  * run only; the same issue in another run stays as it was.
  *
  * Marking an issue read is the highest-frequency action in the app, so it is
- * optimistic and never navigates. If the write fails the row snaps back and
- * says why, rather than silently diverging from the database.
+ * optimistic and never navigates. If the write fails, by a non-2xx answer or a
+ * network error, the row snaps back and the toast says so with *Retry*, rather
+ * than silently diverging from the database (task 1.8d, R1-07).
  *
  * useOptimistic shows its base again once the transition ends, so a saved mark
  * goes into `saved`; with the server's first render as the base, every tick
@@ -94,7 +95,7 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
   }
   const [state, apply] = useOptimistic(saved, mark);
   const [pending, start] = useTransition();
-  const { push, notify } = useUndo();
+  const { push, notify, fail } = useUndo();
   const fine = useFinePointer();
   const [anchor, setAnchor] = useState<number | null>(null);
   const [hover, setHover] = useState<number | null>(null);
@@ -142,28 +143,33 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
     const next = { placementId: issue.placement_id, completed: !issue.completed };
     const label = `${issueName(issue.label, single)} ${next.completed ? "read" : "unread"}`;
     const detail = `${read + (next.completed ? 1 : -1)} of ${state.length} in ${title}`;
-    start(async () => {
-      apply(next);
-      const res = await post(next);
-      // On failure, leaving `saved` alone is the snap back.
-      if (!res.ok) {
-        alert("That didn't save. Check your connection and try again.");
-        return;
-      }
-      setSaved((rows) => mark(rows, next));
-      const { prior = null } = await res.json();
-      // No row before: the inverse unticks. A row before: it goes back as it was.
-      const back = prior
-        ? { placementId: next.placementId, completed: true, restore: prior }
-        : { placementId: next.placementId, completed: false };
-      push({
-        label, detail,
-        undo: async () => {
-          if (!(await post(back)).ok) throw new Error("undo failed");
-          setSaved((rows) => mark(rows, back));
-        },
+    attempt();
+
+    // Retry re-enters the transition with the same body, so the row ticks again while it is sent.
+    function attempt() {
+      start(async () => {
+        apply(next);
+        const res = await post(next).catch(() => null);
+        // On failure, leaving `saved` alone is the snap back (R1-07).
+        if (!res?.ok) {
+          fail({ label: "That didn't save", retry: attempt });
+          return;
+        }
+        setSaved((rows) => mark(rows, next));
+        const { prior = null } = await res.json();
+        // No row before: the inverse unticks. A row before: it goes back as it was.
+        const back = prior
+          ? { placementId: next.placementId, completed: true, restore: prior }
+          : { placementId: next.placementId, completed: false };
+        push({
+          label, detail,
+          undo: async () => {
+            if (!(await post(back)).ok) throw new Error("undo failed");
+            setSaved((rows) => mark(rows, back));
+          },
+        });
       });
-    });
+    }
   }
 
   /** Rows `a` through `b` in reading order, whichever way round they came. */

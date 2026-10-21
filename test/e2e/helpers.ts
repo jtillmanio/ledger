@@ -20,6 +20,8 @@ export const E2E_LONG_RUN_ID = "e2e-long-run";
 export const E2E_LONG_LABEL = "The Amazing Spider-Man: Renew Your Vows Annual (2026) #112";
 // Notes waiting in the inbox, for the shell's Inbox (N) to count.
 export const E2E_INBOX_COUNT = 2;
+// Books on /books/list, so its rows and their status controls are in the page a check reads (task 1.8d).
+export const E2E_BOOK_COUNT = 2;
 
 /**
  * Fails when axe finds a violation of any rule in `rules`, naming each rule and

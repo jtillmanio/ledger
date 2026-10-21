@@ -1,14 +1,14 @@
 ---
 id: TASK-027
 title: 1.8d Failed writes, skeletons and row markup
-status: Ready
+status: In progress
 depends_on: [TASK-014]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
 plan_status: approved
-planned_at_commit: 4bba78a
+planned_at_commit: efb218b
 ---
 
 # TASK-027 — 1.8d Failed writes, skeletons and row markup
@@ -67,20 +67,20 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-Provisional: depends on TASK-014 (not Done), and through it on TASK-026 and TASK-013 (the routes, their `loading.tsx` and the harness).
+Re-planned 2026-10-21 at `efb218b` (the first plan predated 1.8c and 1.8; TASK-014 is Done). Approved by the owner, with the two open points agreed.
 
 Steps:
-1. `Undo.tsx`: `UndoApi.fail({ label, retry })` shows a toast with a *Retry* button in the same region, styled with `--toast-*` (`--toast-link` for *Retry*). *Retry* takes the entry off and awaits `retry()`. A rejection shows the failure again. It never sits on the undo stack, so Ctrl+Z skips it.
-2. `IssueRow.toggle`: wrap the post in `try`. On `!res.ok` or a throw, leave `saved` as it is (the optimistic row snaps back) and call `fail({ label: "That didn't save", retry: () => send(next) })`, where `send` is the success path factored out of `toggle` (setSaved, then push the undo). `alert()` goes.
-3. `Skeleton.tsx`: the four skeletons on `.sk`, sized from the mockup's classes (`.telecard` 16px padding and its rails, `.row` 48px, `.planrail` columns, the season `.row`). 1.8a's reduced-motion block already stops the shimmer. Wire them into the four `loading.tsx` files.
-4. Row markup on the three pages: `<article class="row"><a class="row-link" href>…</a></article>`, the link stretched over the row with `::after{inset:0}`, any secondary control after the anchor. `.rows .row` keeps its spacing. Chips that are links stay `<a>`; chips that toggle state are `<button aria-pressed>`.
-5. Fixtures `test/e2e/fixtures/{telecard,plan-rail,season-rows}.html`: the loaded markup copied from the mockup frames (`scripts/screen.ps1 home|bdash|watchlist`), rendered on `src/app/globals.css`.
-6. Tick 1.8d in `docs/05-roadmap.md`.
+1. `Undo.tsx`: `UndoApi.fail({ label, retry })` shows a toast with a *Retry* button in the same `role="status"` region, styled with `--toast-*` (`--toast-link` for *Retry*). It lasts `UNDO_MS` like any toast (1.8b revisits timing with its countdown bar). It never sits on the undo stack, so Ctrl+Z skips it.
+2. `IssueRow.tsx` (`RunSpine.toggle`): factor into `attempt(next)`, which wraps the post in `try`. On `!res.ok` or a throw the optimistic row snaps back (`saved` is untouched) and it calls `fail({ label: "That didn't save", retry: () => attempt(next) })`. *Retry* re-enters the transition, re-sends the same body, and a success sets `saved` and pushes *Undo* as a normal tick does. `alert()` goes.
+3. `Skeleton.tsx`: add `TelecardSkeleton` (svg block on `aspect-ratio: 344/354`, not the mockup's fixed 354px), `RunRowsSkeleton` (`ListSkeleton` reuses it), `PlanRailSkeleton` and `SeasonRowsSkeleton`, as aria-hidden pieces on `.sk`. Each `loading.tsx` supplies the one `<main aria-busy="true">` and the one `role="status"`. `/comics` = title row, telecard, run rows; `/comics/runs` and `/books/list` = run rows; `/watch` = season rows. 1.8a's reduced-motion block already stops the shimmer.
+4. Row markup: on `/comics` and `/comics/runs`, a row is `<article class="row"><a class="row-link" href>…</a></article>`, the link stretched with `.row-link::after{inset:0}` and any secondary control after the anchor, above the overlay. `/books/list` rows are not navigable, so they become plain `<article class="row">` with no link. Audit `.seg`, chips and switches for real buttons, and one `<h1>` per page.
+5. Fixtures `test/e2e/fixtures/{telecard,plan-rail,season-rows}.html`: the loaded markup copied from the `home`, `bdash` and `watchlist` frames (`scripts/screen.ps1`), rendered on `src/app/globals.css`.
+6. Tick 1.8d in `docs/05-roadmap.md`. No mockup redraw: D-27 says the error toast is undrawn.
 
 Test strategy:
-- AC-1 → `test/spine-toggle.test.tsx` `a failed tick reverts and offers Retry` (fetch mocked to 500: the row's `data-read` is back to `false`, the toast reads *That didn't save*) and `Retry re-sends the same body and ticks` (the second fetch's body equals the first; `data-read` is `true`; *Undo* is offered). `test/e2e/skeletons.spec.ts` at 360px: each skeleton's `getBoundingClientRect` against its loaded counterpart, within 2px. Run rows are measured against `/comics/runs`, the other three against their fixtures. In `w390-reduced-motion`, `.sk` computes `animation-name: none`. `test/e2e/markup.spec.ts` runs `expectNoAxeViolations(page, ["nested-interactive", "button-name", "link-name"])` on `/comics` and `/watch` in every width × theme project.
+- AC-1 → `test/spine-toggle.test.tsx` `a failed tick reverts and offers Retry` (fetch mocked to 500: the row's `data-read` is back to `false`, the toast reads *That didn't save*) and `Retry re-sends the same body and ticks` (the second fetch's body equals the first; `data-read` is `true`; *Undo* is offered). `test/e2e/skeletons.spec.ts` at 360px: each skeleton's `getBoundingClientRect` against its loaded counterpart, within 2px. Run rows are measured against `/comics/runs`, the other three against their fixtures. In `w390-reduced-motion`, `.sk` computes `animation-name: none`. `test/e2e/markup.spec.ts` runs `expectNoAxeViolations(page, ["nested-interactive", "button-name", "link-name"])` on `/comics`, `/watch`, `/comics/runs` and `/books/list` (`/books` redirects until 2.2) in every width × theme project.
 - AC-2 → `spine-toggle.test.tsx` `a network error reverts too` (fetch rejects), plus a grep test: `no alert() in src/components`.
-- AC-3 → `test/loading-states.test.tsx` lists the four routes and their skeleton's `aria-busy` and single `role="status"`.
+- AC-3 → `test/loading-states.test.tsx` lists the routes (`/watch` added) with their `aria-busy` and single `role="status"`, and checks the four components are exported.
 - AC-4 → `markup.spec.ts` `rows are article > a.row-link with nothing interactive inside the link` and `one h1 per page`, on the three pages.
 - AC-5 → `markup.spec.ts` `hover reveals are hidden at rest` (`.rowmenu-btn` opacity 0 at 1280, fine pointer); `npm run test:tokens` already checks the toast pairs; manual: screenshots via ui-verifier.
 
@@ -88,7 +88,10 @@ Risks / open questions:
 - Settled (owner, 2026-10-19): *That didn't save*, today's `alert()` copy shortened (STYLE_GUIDE §15 has no error-toast line).
 - The fixtures copy mockup markup, so they drift if the mockup changes. They're replaced when 2.5b, 2.2b and 8.7 build the real components (Follow-ups).
 
-Size check: M, about 15 files, one layer (components, their CSS and tests). No schema. Attended.
+- Settled (owner, 2026-10-21): the failure toast lasts `UNDO_MS` like the others, and the error toast is not redrawn in the mockup.
+- The 1.8c sideways-scroll note on the run page: TASK-014 wrapped `.run-actions` and `shell.spec.ts` covers it. Re-check in the UI walk; change nothing unless it still reproduces.
+
+Size check: M, about 21 files, one layer (components, their CSS and tests). No schema. `splitPolicy` is `never-split`, so it stays whole and attended.
 
 ## Review log
 

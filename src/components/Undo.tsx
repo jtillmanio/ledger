@@ -21,12 +21,22 @@ export type UndoEntry = {
 export const UNDO_MS = 8000;
 
 type Live = UndoEntry & { id: number; expires: number };
-type Toast = { id: number; label: string; detail?: string; until: number; undoable: boolean };
+type Toast = {
+  id: number; label: string; detail?: string; until: number; undoable: boolean;
+  /** A failed write's way to send it again; only a failure toast has one. */
+  retry?: () => void;
+};
 
 type UndoApi = {
   push: (entry: UndoEntry) => void;
   /** A toast with nothing to take back: "Copied 523 unread issues" (task 1.1). */
   notify: (label: string, detail?: string) => void;
+  /**
+   * A write that didn't save (R1-07): the toast says so and offers *Retry*,
+   * which sends it again. Nothing was done, so nothing goes on the undo stack
+   * and Ctrl+Z skips it. The offline queue is 6.4.
+   */
+  fail: (failure: { label: string; retry: () => void }) => void;
 };
 
 const UndoContext = createContext<UndoApi | null>(null);
@@ -72,6 +82,10 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
     setToast({ id: ++ids.current, label, detail, until: Date.now() + UNDO_MS, undoable: false });
   }, []);
 
+  const fail = useCallback(({ label, retry }: { label: string; retry: () => void }) => {
+    setToast({ id: ++ids.current, label, until: Date.now() + UNDO_MS, undoable: false, retry });
+  }, []);
+
   const undoTop = useCallback(async () => {
     const top = live().pop();
     if (!top) return;
@@ -102,8 +116,14 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [live, undoTop]);
 
-  // push and notify are stable, so consumers don't re-render when the toast changes.
-  const ctx = useMemo(() => ({ push, notify }), [push, notify]);
+  // The toast comes off before the retry runs: it raises its own, Undo or a new failure.
+  const retryTop = useCallback((retry: () => void) => {
+    showTop();
+    retry();
+  }, [showTop]);
+
+  // push, notify and fail are stable, so consumers don't re-render when the toast changes.
+  const ctx = useMemo(() => ({ push, notify, fail }), [push, notify, fail]);
 
   return (
     <UndoContext.Provider value={ctx}>
@@ -119,6 +139,9 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
             </div>
             {toast.undoable && (
               <button type="button" className="toast-undo" onClick={() => void undoTop()}>Undo</button>
+            )}
+            {toast.retry && (
+              <button type="button" className="toast-undo" onClick={() => retryTop(toast.retry!)}>Retry</button>
             )}
           </div>
         )}
