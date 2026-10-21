@@ -434,7 +434,7 @@ render test asserts that `/books/list` and `/comics/runs` print the query's
 total, not the row count, for a fixture where the two differ, and no
 same-origin link on any page answers 404.
 
-### ☐ 1.8e Tablet frames to the feel pass · S
+### ☑ 1.8e Tablet frames to the feel pass · S
 Depends on 1.8. Added at 1.8's close-out (owner, 2026-10-20), to be built next.
 1.8's four 834px frames (`home`, `spine`, `bdash` and `status` in
 `design/mockups.html`) draw the shell's geometry (the 72px rail, 32px padding,
@@ -1112,6 +1112,12 @@ cover shelf of the current quarter's books in `ordinal` order with **Reorder**
 **On deck**; and **2026 so far**. Depends on 1.7, 1.8, 2.1 and, for the
 sittings line, 2.1b.
 
+*From 1.8e (TASK-028, PR #111):* the 834px `bdash`
+frame in `design/mockups.html` is drawn from this feel pass at tablet width
+(STYLE_GUIDE §14.5): the horizontal hero around a 150 × 225 cover, *Up next in
+Q4*, *This quarter*, and *On deck* | *2026 so far* stacked below as two columns,
+1.5 : 1. Build the 768–1023px layout from it.
+
 - **Now** is the only large thing (`--r-hero`, the art band on `--art` once
   4.2 stores it): the cover (`--cover-hero`), the title in Newsreader
   (`--fs-hero-name`), the author, `p. 212 of 468` in mono, a 6px `--ready`
@@ -1291,6 +1297,13 @@ Five slots in this order, per the feel pass (D-40; STYLE_GUIDE §14.1, §15, §1
 Feel Review §2, with `design/LedgerComics.dc.html` as the live component), which
 replaces "Comics — v4" in `design/mockups.html` on layout and copy. Depends on
 1.6, 1.8, 1.8b, 1.10, 2.5b and 2.6.
+
+*From 1.8e (TASK-028, PR #111):* the 834px `home`
+frame in `design/mockups.html` is drawn from Feel Review §10c (STYLE_GUIDE
+§14.5): the horizontal hero, *Since Tuesday* | *Also reading* in one row, a
+five-cover shelf, the telescope at W = column − 84 with a three-column ladder,
+and *Ready when you are* | *2026 so far* below, 1.5 : 1. Build the 768–1023px
+layout from it.
 
 | Slot | Content |
 |---|---|
