@@ -782,7 +782,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
    The column is 696 (832 − 72 rail − 2 × 32). Hero cover 150 × 225; shelf 5 × 112 with a 16px gap;
    telescope W = 696 − 2 × 20 − 44 = 612, phone sizing (--tele-* changes only at 900px); side rail 1.5 : 1.
    Covers are the neutral placeholder until 4.3, and the hero band is --surface until 4.3 stores --art. */
-.wrap.tb{display:flex;flex-direction:column;gap:32px;padding-top:2rem}
+.frame[data-w="tab"] .wrap.tb{display:flex;flex-direction:column;gap:32px;padding-top:2rem}
 .tb .grow{flex:1}
 .tb .tb-n{font-family:var(--mono)}
 .tb .tb-mu{color:var(--muted)}
@@ -902,6 +902,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
 /* The UX floor in the kept spine and status bodies: a 24px target (as globals.css draws it) and 4.5:1 tab counts. */
 .frame[data-w="tab"] .seen-more{min-width:24px;min-height:24px}
 .frame[data-w="tab"] .seg span .n{opacity:1}
+.frame[data-w="tab"] .seg span[data-on] .n{color:var(--on-brand)}
 .frame[data-w="p360"] .bar .iconbtn svg,.frame[data-w="tab"] .actionbar svg{display:block}
 </style>
 </head>

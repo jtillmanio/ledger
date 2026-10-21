@@ -247,8 +247,12 @@ test.describe("AC-5 · the UX floor in the four frames", () => {
           }
           const counts = [...frame.querySelectorAll(".tb-n, .tabmain .rm, .tabmain .seg .n, .tabmain .ct")]
             .filter((el) => !getComputedStyle(el).fontFamily.startsWith('"IBM Plex Mono"')).map(name);
-          return { danger, red, display, small, counts, nCounts: frame.querySelectorAll(".tb-n").length };
+          // Text on a filled control is its --on-* colour, the count included (axe misses this one).
+          const onFill = [...frame.querySelectorAll(".tabmain .seg span[data-on] *")]
+            .filter((el) => getComputedStyle(el).color !== getComputedStyle(el.closest("[data-on]")!).color).map(name);
+          return { danger, red, display, small, counts, onFill, nCounts: frame.querySelectorAll(".tb-n").length };
         });
+        expect.soft(report.onFill, `${id}: text on a filled tab not in its --on-* colour`).toEqual([]);
         expect.soft(report.red, `${id}: resolves to --danger ${report.danger}`).toEqual([]);
         expect.soft(report.display, `${id}: Newsreader outside the title and hero names`).toEqual([]);
         expect.soft(report.small, `${id}: interactive under 24px`).toEqual([]);
