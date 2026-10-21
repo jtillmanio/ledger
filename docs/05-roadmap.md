@@ -1112,7 +1112,7 @@ cover shelf of the current quarter's books in `ordinal` order with **Reorder**
 **On deck**; and **2026 so far**. Depends on 1.7, 1.8, 2.1 and, for the
 sittings line, 2.1b.
 
-*From 1.8e (TASK-028, task/1.8e-tablet-frames-feel-pass):* the 834px `bdash`
+*From 1.8e (TASK-028, PR #111):* the 834px `bdash`
 frame in `design/mockups.html` is drawn from this feel pass at tablet width
 (STYLE_GUIDE §14.5): the horizontal hero around a 150 × 225 cover, *Up next in
 Q4*, *This quarter*, and *On deck* | *2026 so far* stacked below as two columns,
@@ -1298,7 +1298,7 @@ Feel Review §2, with `design/LedgerComics.dc.html` as the live component), whic
 replaces "Comics — v4" in `design/mockups.html` on layout and copy. Depends on
 1.6, 1.8, 1.8b, 1.10, 2.5b and 2.6.
 
-*From 1.8e (TASK-028, task/1.8e-tablet-frames-feel-pass):* the 834px `home`
+*From 1.8e (TASK-028, PR #111):* the 834px `home`
 frame in `design/mockups.html` is drawn from Feel Review §10c (STYLE_GUIDE
 §14.5): the horizontal hero, *Since Tuesday* | *Also reading* in one row, a
 five-cover shelf, the telescope at W = column − 84 with a three-column ladder,

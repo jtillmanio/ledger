@@ -26,7 +26,7 @@ For comics and for books, one screen answers three questions: what am I in the m
 - Design: mockup `status` (comics' three tabs and their empty slates) and `queue`. STYLE_GUIDE §9 *tab strip* (UX-N22: 44px tabs, mono 11 counts, a 2px `--m-*` underline that is one element sliding between tabs over `--dur-2`). design §14 (empty-slate copy). This task draws books' three empty slates in `design/mockups.html` and closes *Not shown* #6 for comics and books (`ui.redrawFiles`).
 - Decisions: D-26b (every meter fills with `--ready`; one `.meter` style), D-37 (the levels), D-13 (the plan starts empty, so books Up next's empty action is *Add a book*), R1-10 (the bare-year lane is grey with no button until 2.8), S-14 (undated finishes sort last), S-L5, M-08, UX-X07.
 - Builds on TASK-003 (the resume pointer: *Read <label>* in In flight), TASK-008 (the *Add a book* sheet), TASK-010 (`read` and DNF), TASK-014 (shell, nav `enabled` flips for *Status*).
-- *From TASK-028 (1.8e, task/1.8e-tablet-frames-feel-pass):* the mockup's tab counts fail 4.5:1. `.seg span .n` is at `opacity:.8` (axe, light), and the count on the selected, `--brand`-filled tab resolves to `--faint` (about 1:1) instead of `--on-brand`. 1.8e fixes both in the 834 frame only. Don't copy either: a count takes its tab's text colour, `--on-brand` when selected.
+- *From TASK-028 (1.8e, PR #111):* the mockup's tab counts fail 4.5:1. `.seg span .n` is at `opacity:.8` (axe, light), and the count on the selected, `--brand`-filled tab resolves to `--faint` (about 1:1) instead of `--on-brand`. 1.8e fixes both in the 834 frame only. Don't copy either: a count takes its tab's text colour, `--on-brand` when selected.
 
 ## Acceptance criteria
 
