@@ -55,7 +55,7 @@ Three consequences:
 | `.claude/agents/schema-reviewer.md` | Subagent that reviews schema and query diffs in a fresh context |
 | `.claude/rules/schema.md`, `ui.md` | Rule sheets the subagent and the UI work read |
 | `.claude/hooks/guard-large-reads.js` | PreToolUse hook on `Read`, so a huge file can't flood the context |
-| `.github/workflows/ci.yml` | One job on every PR: `tsc`, lint, `test:tokens`, `check:migrations`, `test:db:reset`, vitest, `test:views`, the Python ETL tests, `build` — against Postgres 18 (Neon's major) installed on the runner by `.github/actions/start-postgres` with `TEST_DATABASE_URL` and deliberately no `DATABASE_URL` |
+| `.github/workflows/ci.yml` | One job on every PR: `tsc`, lint, `test:tokens`, `check:migrations`, `test:db:reset`, vitest, `test:views`, the Python ETL tests, the browser suite, `build` (the last two skipped when a PR changes only `backups/`, `docs/`, `.claude/` or root markdown: `scripts/ci-scope.mjs`) — against Postgres 18 (Neon's major) installed on the runner by `.github/actions/start-postgres` with `TEST_DATABASE_URL` and deliberately no `DATABASE_URL` |
 | `.github/workflows/backup.yml` | Nightly `pg_dump`, restore-checked, then uploaded to Cloudflare R2 (D-66) |
 | `.github/workflows/neon-preview-cleanup.yml` | When a PR closes, deletes its Neon preview database `preview/<git branch>` (START-HERE 10f) |
 | `design/mockups.html` | 40 annotated screens. Authoritative for layout and copy |
