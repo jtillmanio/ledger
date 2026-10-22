@@ -164,17 +164,18 @@ for (const where of ["dash", "run"] as const) {
       expect(await readHere()).toContain(NEXT);
     });
 
-    test("under prefers-reduced-motion nothing transitions or animates; otherwise it does (AC-1)", async ({ page }) => {
+    test("under prefers-reduced-motion nothing transitions or animates; otherwise the task's own durations apply (AC-1)", async ({ page }) => {
       await open(page, where);
-      const motion = await page.locator(".btn.mark, .chk i, .toast").evaluateAll((els) =>
-        els.map((el) => ({ cls: el.className, transition: getComputedStyle(el).transitionDuration })));
       const quiet = await reduced(page);
-      for (const m of motion) {
-        if (quiet) expect(parseFloat(m.transition.split(",")[0]), `${m.cls} transition-duration`).toBe(0);
-      }
+      const first = (selector: string) => page.locator(selector).first().evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return parseFloat(cs.transitionDuration.split(",")[0]);
+      });
+      // The mark button's press and confirm are --dur-1 (100ms) at rest, instant when motion is reduced.
+      expect(await first(".btn.mark"), ".btn.mark transition-duration").toBe(quiet ? 0 : 0.1);
       if (where === "run") {
-        const chk = await page.locator(".chk i").first().evaluate((el) => getComputedStyle(el).transitionDuration);
-        expect(chk === "0s", "the .chk fill is instant exactly when motion is reduced").toBe(quiet);
+        // The spine's .chk fill moved from 90ms linear to --dur-2 (150ms) with this task.
+        expect(await first(".chk i"), ".chk transition-duration").toBe(quiet ? 0 : 0.15);
       }
     });
   });
@@ -240,6 +241,11 @@ test("the toast: pinned above the bar, a 12px rise, a 2px brand countdown over 8
     return { bottom: parseFloat(cs.bottom), bar };
   });
   expect(region.bottom, "bottom = --actionbar-h + 8px + safe area").toBe(region.bar + 8);
+  // And that is clear of the bar as drawn, not just of a variable: the bar's top edge is ~8px under the toast's foot.
+  const barTop = (await page.locator(".actionbar").boundingBox())!.y;
+  const toastFoot = (await toast.boundingBox())!;
+  await expect.poll(async () => barTop - ((await toast.boundingBox())!.y + toastFoot.height), { message: "gap above the bar" })
+    .toBeGreaterThanOrEqual(6);
 
   const motion = await toast.evaluate((el) => {
     const bar = el.querySelector(".toast-count")!;
@@ -266,6 +272,36 @@ test("the toast: pinned above the bar, a 12px rise, a 2px brand countdown over 8
     await expect(toast).not.toHaveAttribute("data-held", "");
   }
   await screenshot(page, testInfo, "toast");
+});
+
+test("the bar and the toast respect the safe area in the stylesheet itself (AC-4, F2)", async ({ page }) => {
+  runsOnce(test.info().project.name);
+  await page.goto(RUN);
+  // A test browser has no inset to emulate, so read the rules it would apply to one.
+  const rules = await page.evaluate(() => {
+    const found: Record<string, string> = {};
+    for (const sheet of document.styleSheets) {
+      for (const rule of sheet.cssRules) {
+        if (!(rule instanceof CSSStyleRule)) continue;
+        if (rule.selectorText === ".actionbar.thumb") found.bar = rule.style.getPropertyValue("padding");
+        if (rule.selectorText === ".toast-region") found.toast = rule.style.getPropertyValue("bottom");
+      }
+    }
+    return found;
+  });
+  expect(rules.bar).toMatch(/max\(\s*12px,\s*env\(safe-area-inset-bottom/);
+  expect(rules.toast).toMatch(/var\(--actionbar-h\)\s*\+\s*8px\s*\+\s*env\(safe-area-inset-bottom/);
+});
+
+test("on a dashboard the toast clears the primary verb too, wherever the bar is drawn (AC-1)", async ({ page }) => {
+  await open(page, "dash");
+  test.skip(wide(page), "from 1024px a dashboard has no bar to clear");
+  await primary(page, "dash").click();
+  await expect(page.locator(".toast")).toBeVisible();
+  await toastSettled(page);
+  const toast = (await page.locator(".toast").boundingBox())!;
+  const verb = (await primary(page, "dash").boundingBox())!;
+  expect(toast.y + toast.height, "the toast ends above the verb").toBeLessThanOrEqual(verb.y);
 });
 
 test("Undo hands focus back to the bar's verb, not to the page (AC-4)", async ({ page }) => {
@@ -459,4 +495,38 @@ test("nothing on a dashboard resolves to --danger (AC-5)", async ({ page }) => {
     }, danger);
     expect(hits, path).toEqual([]);
   }
+});
+
+// The script must be able to fail: a pair it should flag, a pair it should pass, and a ring.
+test("the contrast script flags a 3:1 pair and a faint ring, and passes 7:1 (AC-1)", async ({ page }) => {
+  runsOnce(test.info().project.name);
+  await page.goto("/watch");
+  await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  const planted = async (html: string) => {
+    await page.evaluate((markup) => {
+      document.getElementById("planted")?.remove();
+      const host = document.createElement("div");
+      host.id = "planted";
+      host.innerHTML = markup;
+      document.body.append(host);
+    }, html);
+  };
+  const before = (await contrastFailures(page)).length;
+  expect(before, "the page itself is clean").toBe(0);
+
+  await planted('<p style="color:#8c8c8c;background:#fff">faint text on white</p>');
+  expect(await contrastFailures(page), "3.4:1 is flagged").toEqual([expect.stringContaining("faint text on white")]);
+
+  await planted('<p style="color:#595959;background:#fff">dark text on white</p>');
+  expect(await contrastFailures(page), "7:1 passes").toEqual([]);
+
+  // The shape of M-02: white text on a fill that is too light for it.
+  await planted('<p style="color:#fff;background:#9fe3fe">white on a pale fill</p>');
+  expect(await contrastFailures(page), "#fff on a pale fill is flagged").toHaveLength(1);
+
+  // The unchecked ring: one the colour of the page is 1:1 against it, in either theme.
+  await planted('<div class="iss"><button class="chk"><i style="border:2px solid var(--page)"></i></button></div>');
+  expect(await contrastFailures(page), "a faint ring is flagged").toEqual([expect.stringContaining("unchecked ring")]);
+  await page.evaluate(() => document.getElementById("planted")?.remove());
+  expect(await contrastFailures(page)).toEqual([]);
 });
