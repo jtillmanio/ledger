@@ -258,9 +258,11 @@ a{color:inherit;text-decoration:none}
    ones are display:none, out of the accessibility tree and never prefetched.
    The one action you repeat is at the bottom, in .actionbar, in the same place
    on every dashboard. Glass is chrome only: .bar and .side (SG-D12).
-   The sticky stack (UX-N05): nothing but .bar is sticky at top:0. Anything else
-   that sticks sits at top:var(--bar-h) or below, and the rail and sidebar are
-   position:fixed, so they never join it. */
+   The sticky stack (UX-N05): nothing but .bar is sticky at top:0, below 1024px.
+   Anything else that sticks sits at top:var(--bar-h) or below, and the rail and
+   sidebar are position:fixed, so they never join it. From 1024px .bar is gone
+   and the dashboard's page header (.pagehead, task 1.8b) is the band at top:0,
+   --bar-h tall; whatever sticks under it sits at --bar-h. */
 :root{--bar-h:64px;--nav-tab-w:72px}                  /* the phone header; 44px targets included */
 @media (min-width:1024px){ :root{--bar-h:80px} }       /* the desktop page header band (1.8b fills it) */
 
@@ -284,7 +286,7 @@ a{color:inherit;text-decoration:none}
 .bar nav a{display:inline-flex;align-items:center;min-height:44px;padding:0 .625rem;
   border-radius:var(--r-sm);color:var(--muted);font-size:.875rem;font-weight:500;white-space:nowrap}
 .bar nav a[aria-current]{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--m)}
-.iconbtn{width:34px;height:34px;flex:0 0 auto;display:grid;place-items:center;border-radius:var(--r-md);
+.iconbtn{width:44px;height:44px;flex:0 0 auto;display:grid;place-items:center;border-radius:var(--r-md);
   border:1px solid var(--faint-deco);background:var(--raise);color:var(--ink-2);font-size:.875rem}
 
 /* Sync: a 6px dot (--ready online, --blocked offline) and --ink-2 text. Never green text on glass. */
@@ -453,18 +455,88 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
 .btnrow .btn{flex:1}
 
 /* The thumb bar. Same position, same primary verb slot, on every dashboard
-   and on the run detail. It is the most repeated control in the app. */
+   and on the run detail. It is the most repeated control in the app.
+   .actionbar is also the Add screens' sticky save bar (.add-bar); the thumb bar
+   is .actionbar.thumb: fixed to the viewport, glass, inset from whichever nav
+   the width draws (task 1.8b, D-25, D-33). Its padding-bottom is at least 12px
+   and the safe area when that is more, so an Android gesture bar never covers
+   the verb (F2). --actionbar-h is what the bar occupies, for the toast to clear. */
 .actionbar{position:sticky;bottom:0;display:flex;gap:.5rem;
   padding:.75rem .875rem calc(.75rem + env(safe-area-inset-bottom,0px));
   background:var(--surface);border-top:1px solid var(--rule);
   box-shadow:0 -6px 20px -12px rgba(20,23,32,.4);z-index:15}
 .actionbar .btn{flex:1;min-height:44px}
 .actionbar .btn.icon{flex:0 0 auto;width:44px;padding:0}
-/* The tablet's thumb bar spans the content column at 48px (STYLE_GUIDE §14.5). */
-@media (min-width:768px) and (max-width:1023px){
-  .actionbar.dash{height:48px;padding:0;align-items:stretch}
-  .actionbar.dash .btn{min-height:0}
+.actionbar.thumb{--nav-now:0px;position:fixed;left:var(--nav-now);right:0;bottom:0;align-items:center;
+  padding:12px .875rem max(12px,env(safe-area-inset-bottom,0px));
+  background:var(--glass-bg);
+  -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+  backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+  border-top:1px solid var(--glass-edge);box-shadow:var(--glass-hi)}
+.actionbar.thumb .btn{min-width:0;min-height:44px;border-radius:var(--r-lg)}
+.actionbar.thumb .btn.sec{flex:0 0 auto;border-color:var(--rule-2)}
+.actionbar.thumb .iconbtn{border-radius:var(--r-lg);border-color:var(--rule-2)}
+:root{--actionbar-h:0px}
+body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
+/* The nav sits beside the bar from the tablet up. */
+@media (min-width:768px){
+  .actionbar.thumb{--nav-now:var(--nav-tab-w);padding-left:2rem;padding-right:2rem}
+  /* The tablet is held in two hands: 48px targets (STYLE_GUIDE §14.5). */
+  .actionbar.thumb .btn,.actionbar.thumb .iconbtn{min-height:48px}
+  .actionbar.thumb .iconbtn{width:48px;height:48px}
+  body:has(.actionbar.thumb){--actionbar-h:72px}        /* 12 + 48 + 12 */
 }
+@media (min-width:1024px){
+  .actionbar.thumb{--nav-now:var(--rail-w)}
+  /* The dashboards move their verbs into the page header; the bar is not rendered (D-25, D-77). */
+  .actionbar.thumb.dash{display:none}
+  body:has(.actionbar.thumb.dash){--actionbar-h:0px}
+  /* The run detail keeps the bar: glass across the content area, its buttons held to the 720px column. */
+  .actionbar.thumb.run{padding-inline:max(2rem,calc((100% - var(--nav-now) - 720px)/2))}
+}
+@media (min-width:1280px){ .actionbar.thumb{--nav-now:var(--side-w)} }
+/* A label that doesn't fit ends in an ellipsis; the button keeps the whole of it as its name. */
+.verb-text,.mark-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* The mark answers back (task 1.8b, STYLE_GUIDE §14.3, FP-D7). MarkButton sets
+   data-state: press (scale .97, brightness .88), confirm (--ready), next (the
+   new label slides in). The green is information and runs under reduced motion;
+   only the movement goes (the rules above zero every transition and animation). */
+.btn.mark{transition:transform var(--dur-1) var(--ease-out),filter var(--dur-1) var(--ease-out),
+  background-color var(--dur-1) var(--ease-out),color var(--dur-1) var(--ease-out)}
+.btn.mark[data-state="press"]{transform:scale(.97);filter:brightness(.88)}
+.btn.mark[data-state="confirm"]{background:var(--ready);color:var(--on-ready)}
+/* The long :hover selector outranks the hover rule at the end of this file, which would turn the green back to --brand-ink under a mouse. */
+@media (hover:hover) and (pointer:fine){
+  .btn.mark[data-state="confirm"]:not([aria-disabled="true"]):not([aria-pressed="true"]):hover{background:var(--ready);color:var(--on-ready)}
+}
+.btn.mark[data-state="next"] .mark-label{animation:cover-slide var(--dur-4) var(--ease-out)}
+
+/* The page header band (STYLE_GUIDE §14.6): the h1, and from 1024px the dashboard's verbs. */
+.pagehead{display:block}
+.headverbs{display:none}
+@media (min-width:1024px){
+  .pagehead{position:sticky;top:0;z-index:19;display:flex;align-items:center;justify-content:space-between;gap:1rem;
+    min-height:var(--bar-h);margin:-1.5rem -2rem 1rem;padding:0 2rem;background:var(--glass-bg);
+    -webkit-backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+    backdrop-filter:blur(var(--glass-blur)) saturate(var(--glass-sat));
+    border-bottom:1px solid var(--glass-edge);box-shadow:var(--glass-hi)}
+  .pagehead .titlerow{min-width:0}
+  .headverbs{display:flex;align-items:center;gap:.5rem;min-width:0}
+  .headverbs .btn{min-width:0;min-height:44px;border-radius:var(--r-md)}
+  .headverbs .btn.sec{flex:0 0 auto;border-color:var(--rule-2)}
+  .headverbs .mark,.headverbs .btn:not(.sec){max-width:22rem}
+  .headverbs .iconbtn{border-color:var(--rule-2)}
+}
+@media (prefers-reduced-transparency:reduce){ .actionbar.thumb,.pagehead{-webkit-backdrop-filter:none;backdrop-filter:none} }
+
+/* Motion, all on --dur-* and --ease-out (task 1.8b). The toast's and the cover slide's run today; the
+   lens cell fill and the count tick are the dashboard's (2.4) and wait here for it. */
+@keyframes toast-enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes toast-count{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@keyframes cover-slide{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+@keyframes cell-fill{0%{transform:scale(.5)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes count-tick{from{opacity:0;transform:translateY(70%)}to{opacity:1;transform:none}}
 
 /* --- the reading spine (run detail) --- */
 .era{display:flex;align-items:center;gap:.625rem;padding:.6875rem .875rem;background:var(--raise);
@@ -483,7 +555,8 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
   background:var(--line);transform:translateX(-50%)}
 .chk i{position:relative;width:20px;height:20px;border-radius:50%;border:2px solid var(--muted);
   background:var(--surface);display:grid;place-items:center;color:transparent;
-  font-size:.6875rem;font-weight:700;transition:background-color 90ms linear,border-color 90ms linear}
+  font-size:.6875rem;font-weight:700;
+  transition:background-color var(--dur-2) var(--ease-out),border-color var(--dur-2) var(--ease-out)}
 .iss[data-read="true"] .chk i{background:var(--ready);border-color:var(--ready);color:var(--on-ready)}
 .iss[data-read="true"] .chk i::after{content:"✓"}
 .iss[data-read="true"] .lbl{color:var(--muted)}
@@ -617,6 +690,17 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
 .sheet-fields p.frow{margin:0;font-size:.8125rem;color:var(--muted)}
 .sheet .btnrow .btn{min-height:44px}
 .sheet-cancel{flex:0 0 auto!important}
+/* The batch sheet (task 1.8b): three rows at equal weight, then the unread picker for Mark through…. */
+.batch-k{width:auto;flex:1;min-width:0;display:flex;flex-direction:column;color:var(--ink)}
+.batch-sub{font-size:.75rem}
+.frow .stepper{margin-left:0}
+.pick{list-style:none;margin:.75rem 0 0;padding:0;max-height:50vh;overflow:auto}
+.pick li+li{border-top:1px solid var(--line)}
+.pick-row{display:flex;flex-direction:column;align-items:flex-start;width:100%;min-height:44px;padding:.5rem .875rem;
+  border:0;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.pick-label{font-size:.875rem;font-weight:600}
+.pick-note{font-size:.75rem;color:var(--muted)}
+.pick-row:hover,.pick-row:focus-visible{background:var(--raise)}
 .sheet-reason{margin:.5rem 0 0}
 /* An API error is a neutral line with a grey ×, never red (UX floor). */
 .sheet-error{color:var(--ink-2)}
@@ -624,16 +708,24 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
 
 /* --- the undo toast (task 1.2; STYLE_GUIDE §9 Toast, §14.3, §15) ---------
    What just happened, the run count in mono, then Undo. The region is always
-   mounted, so each toast is announced (role="status"). It sits at the foot of
-   the column until 1.8b lifts it above the thumb bar and adds the countdown
-   bar and the enter motion; nothing here moves, so reduced motion has nothing
-   to turn off. */
-.toast-region{position:fixed;left:0;right:0;bottom:calc(1rem + env(safe-area-inset-bottom));
+   mounted, so each toast is announced (role="status"). One toast at a time
+   (task 1.8b): it is pinned above the thumb bar, enters with a 12px rise, and
+   a 2px --brand bar runs along its foot over the 8 seconds, stopping while the
+   toast is held. From 1024px a dashboard has no bar to clear and the toast sits
+   at the bottom centre of the content box, 24px up; the run detail keeps the bar. */
+.toast-region{position:fixed;left:0;right:0;bottom:calc(var(--actionbar-h) + 8px + env(safe-area-inset-bottom,0px));
   z-index:45;display:flex;justify-content:center;padding:0 1rem;pointer-events:none}
+@media (min-width:768px){ .toast-region{left:var(--nav-tab-w)} }
+@media (min-width:1024px){
+  .toast-region{left:var(--rail-w)}
+  body:has(.actionbar.thumb.dash) .toast-region{bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+}
+@media (min-width:1280px){ .toast-region{left:var(--side-w)} }
 /* 45: above a sheet (40), whose adds it undoes (task 1.4c); Sheet leaves it out of inert. */
-.toast{pointer-events:auto;width:100%;max-width:calc(var(--col) - 2.5rem);display:flex;
-  align-items:center;gap:.75rem;padding:.5rem .5rem .5rem .875rem;border-radius:var(--r-lg);
-  background:var(--toast-bg);color:var(--toast-ink);box-shadow:var(--sh-2)}
+.toast{position:relative;overflow:hidden;pointer-events:auto;width:100%;max-width:calc(var(--col) - 2.5rem);display:flex;
+  align-items:center;gap:.75rem;padding:.5rem .5rem calc(.5rem + 2px) .875rem;border-radius:var(--r-lg);
+  background:var(--toast-bg);color:var(--toast-ink);box-shadow:var(--sh-2);
+  animation:toast-enter var(--dur-4) var(--ease-out)}
 .toast-text{flex:1;min-width:0;display:flex;flex-direction:column}
 .toast-label{font-size:.8125rem;line-height:1.125rem;font-weight:500}
 .toast-detail{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.75rem;
@@ -643,6 +735,9 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
   font:inherit;font-size:.8125rem;font-weight:700;color:var(--toast-link);cursor:pointer;
   border-radius:var(--r-md)}
 .toast-undo:focus-visible{outline-color:var(--toast-link);outline-offset:-2px}
+.toast-count{position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--brand);
+  transform-origin:left center;animation:toast-count 8s linear forwards}   /* UNDO_MS */
+.toast[data-held] .toast-count{animation-play-state:paused}
 
 /* --- the telescope: issue in run, run in block, block in track ----------
    One SVG, three rails, driven by block_position + block_progress +

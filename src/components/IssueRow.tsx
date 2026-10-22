@@ -9,8 +9,10 @@ import Menu from "@/components/Menu";
 import NextStrip from "@/components/NextStrip";
 import RangeSheet, { type RangeChoice } from "@/components/RangeSheet";
 import Sheet, { useSheetClose } from "@/components/Sheet";
+import { ThumbBar, VerbsProvider, type BarConfig } from "@/components/ThumbBar";
 import { useUndo } from "@/components/Undo";
 import { issueName, singleSeries } from "@/lib/format";
+import { markPlacement, markRangeRead, postProgress } from "@/lib/mark";
 
 type Issue = {
   id: string; placement_id: number; sequence: number; label: string;
@@ -79,6 +81,11 @@ function useFinePointer() {
  * *Mark everything through here*, which is also the keyboard's way in. *Adopt
  * N prior reads* opens the sheet on the unread placements read in another run.
  *
+ * The thumb bar (task 1.8b) is drawn here, since the rows are here: its mark
+ * verb ticks the next unread row through the same `toggle` a tap on the box
+ * uses, *Mark through…* picks from the unread rows and dates the range as the
+ * range sheet does, and `+` goes to Add issues.
+ *
  * *Change date…* (task 1.5) sits in the `⋯` of a row read here: a sheet with
  * the finish-date control, which re-dates this placement and nothing else. Its
  * undo puts the date it had back, through the same `restore` a mark's undo uses.
@@ -131,43 +138,24 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
     return () => window.removeEventListener("keydown", onKey);
   }, [anchor, range]);
 
-  function post(body: object) {
-    return fetch("/api/progress/issue", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(body),
-    });
-  }
-
-  function toggle(issue: Issue) {
+  /** Resolves to whether the write saved: the thumb bar's mark button waits on it (task 1.8b). */
+  function toggle(issue: Issue): Promise<boolean> {
     const next = { placementId: issue.placement_id, completed: !issue.completed };
     const label = `${issueName(issue.label, single)} ${next.completed ? "read" : "unread"}`;
     const detail = `${read + (next.completed ? 1 : -1)} of ${state.length} in ${title}`;
-    attempt();
+    return new Promise((resolve) => attempt(resolve));
 
     // Retry re-enters the transition with the same body, so the row ticks again while it is sent.
-    function attempt() {
+    function attempt(done?: (saved: boolean) => void) {
       start(async () => {
         apply(next);
-        const res = await post(next).catch(() => null);
         // On failure, leaving `saved` alone is the snap back (R1-07).
-        if (!res?.ok) {
-          fail({ label: "That didn't save", retry: attempt });
-          return;
-        }
-        setSaved((rows) => mark(rows, next));
-        const { prior = null } = await res.json();
-        // No row before: the inverse unticks. A row before: it goes back as it was.
-        const back = prior
-          ? { placementId: next.placementId, completed: true, restore: prior }
-          : { placementId: next.placementId, completed: false };
-        push({
-          label, detail,
-          undo: async () => {
-            if (!(await post(back)).ok) throw new Error("undo failed");
-            setSaved((rows) => mark(rows, back));
-          },
-        });
+        const saved = await markPlacement({
+          ...next, label, detail, retry: () => attempt(),
+          onSaved: () => setSaved((rows) => mark(rows, next)),
+          onUndone: (back) => setSaved((rows) => mark(rows, back)),
+        }, { push, fail });
+        done?.(saved);
       });
     }
   }
@@ -224,37 +212,12 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
     if (press.current && Math.hypot(e.clientX - press.current.x, e.clientY - press.current.y) > 10) endPress();
   }
 
-  async function markRange(ids: number[], choice: RangeChoice) {
-    const res = await fetch("/api/progress/range", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ runId, placementIds: ids, ...choice }),
-    });
-    if (!res.ok) throw new Error("range failed");
-    const { inserted, skipped } = (await res.json()) as { inserted: number[]; skipped: number };
-    const marked = new Set(inserted);
-    setSaved((rows) => rows.map((r) => (marked.has(r.placement_id) ? { ...r, completed: true } : r)));
-
-    const label = `${inserted.length} ${inserted.length === 1 ? "issue" : "issues"} marked read`
-      + (skipped > 0 ? ` · ${skipped} already read, kept their dates` : "");
-    const detail = `${read + inserted.length} of ${state.length} in ${title}`;
-    if (inserted.length === 0) {
-      notify(label, detail);
-      return;
-    }
-    push({
-      label, detail,
-      // Exactly the rows this range inserted: the ones it skipped keep their dates.
-      undo: async () => {
-        const back = await fetch("/api/progress/range", {
-          method: "DELETE",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ runId, placementIds: inserted }),
-        });
-        if (!back.ok) throw new Error("undo failed");
-        setSaved((rows) => rows.map((r) => (marked.has(r.placement_id) ? { ...r, completed: false } : r)));
-      },
-    });
+  function markRange(ids: number[], choice: RangeChoice) {
+    return markRangeRead({
+      runId, ids, choice, title, read, total: state.length,
+      onChange: (changed, completed) =>
+        setSaved((rows) => rows.map((r) => (changed.has(r.placement_id) ? { ...r, completed } : r))),
+    }, { push, notify });
   }
 
   /** *Change date…*: re-date one placement read here; resolves once it landed. */
@@ -270,7 +233,7 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
       label: `${issueName(issue.label, single)} read · ${finishWords(value)}`,
       detail: `${read} of ${state.length} in ${title}`,
       undo: async () => {
-        if (!(await post({ placementId: issue.placement_id, completed: true, restore: prior })).ok) {
+        if (!(await postProgress({ placementId: issue.placement_id, completed: true, restore: prior })).ok) {
           throw new Error("undo failed");
         }
       },
@@ -295,12 +258,20 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
     ...(ranges ? [{ label: "Copy as ranges", onSelect: () => copy(ranges, "Copied as ranges") }] : []),
   ];
 
+  // The thumb bar marks the next unread row (task 1.8b); its write is the spine's own.
+  const bar: BarConfig = {
+    kind: "run", runId, title, single,
+    upcoming: unread.map(({ placement_id, label, type, notes }) => ({ placement_id, label, type, notes })),
+    onMark: () => (next ? toggle(next) : Promise.resolve(false)),
+    onRange: markRange,
+  };
+
   const lo = anchor !== null && hover !== null ? Math.min(anchor, hover) : null;
   const hi = anchor !== null && hover !== null ? Math.max(anchor, hover) : null;
   const byId = new Map(state.map((i) => [i.placement_id, i]));
 
   return (
-    <>
+    <VerbsProvider config={bar}>
       <div className="runhero">
         {next && (
           <NextStrip label={next.label} notes={next.notes} ordinal={nextAt + 1} total={state.length}
@@ -427,7 +398,8 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
           <ChangeDate label={redate.issue.label} onSave={(value) => changeDate(redate.issue, value)} />
         </Sheet>
       )}
-    </>
+      <ThumbBar variant="run" />
+    </VerbsProvider>
   );
 }
 

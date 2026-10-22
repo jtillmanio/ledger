@@ -43,7 +43,7 @@ line numbers below drift after an edit.
 | `path` | Why blocked? and unlock preview | 4556–4608 |
 | `issuedetail` | Issue detail — sheet | 4609–4655 |
 | `krakoa` | Run detail — 641 issues, minimap, copy menu | 4656–4703 |
-| `batch` | Batch sheet | 4704–4749 |
+| `batch` | Batch sheet; its undo toast in the two-line form with the 2px countdown bar (roadmap 1.2, 1.8b) | 4704–4749 |
 | `session` | Reading sessions | 4750–4802 |
 | `dashextras` | Dashboard extras — tonight, since, inbox, timer chip | 4803–4850 |
 | `states` | Offline, loading, empty, metadata pending, all read here, covers in a row | 4851–4942 |

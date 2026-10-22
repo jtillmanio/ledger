@@ -1,7 +1,7 @@
 import Link from "next/link";
-import DashboardBar from "@/components/nav/DashboardBar";
+import { DashboardVerbs, HeaderVerbs, ThumbBar, type BarConfig } from "@/components/ThumbBar";
 import { requireUserId } from "@/lib/auth";
-import { catalogTotals, inboxCount, inProgressRuns, readyToRead } from "@/db/queries";
+import { catalogTotals, inboxCount, inProgressRuns, nextUnread, readyToRead } from "@/db/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -10,11 +10,14 @@ function pct(n: number) { return `${Math.round(n * 100)}%`; }
 // The comics dashboard (design §11): `/` redirects here or to the medium you last touched.
 export default async function Comics() {
   const userId = await requireUserId();
-  const [reading, ready, catalog, inbox] = await Promise.all([
+  const [reading, ready, catalog, inbox, ahead] = await Promise.all([
     inProgressRuns(userId),
     readyToRead(userId, 12),
     catalogTotals(userId),
     inboxCount(userId),
+    // The hero run's unread placements, for the thumb bar. Asked for in the
+    // same wave as the run it belongs to (nextUnread with no run is that run).
+    nextUnread(userId),
   ]);
 
   // Distinct issues: summing tracks would count a crossover once per track.
@@ -23,19 +26,33 @@ export default async function Comics() {
   // The query is LIMITed for the list; the count is the whole list (R2-05).
   const readyTotal = ready[0]?.total ?? 0;
 
-  // The thumb bar's one verb until 1.8b: the resume pointer of the run furthest along, else a run to pick.
-  const resume = reading[0];
-  const verb = resume
-    ? { label: `Resume ${resume.next_label}`, href: `/comics/${resume.id}#p-${resume.next_ordinal}` }
-    : { label: "Pick a run", href: "/comics/runs" };
+  // The thumb bar (task 1.8b): mark the hero run's next issue, else start the top of Up next, else pick a run.
+  const hero = reading[0];
+  const config: BarConfig = hero && ahead.run_id === hero.id && ahead.issues.length > 0
+    ? {
+      kind: "comics", runId: hero.id, title: hero.title,
+      // COUNT() comes back from the database as a string; the toast adds one to it.
+      read: Number(hero.read_issues), total: Number(hero.total_issues),
+      upcoming: ahead.issues, single: ahead.single_series,
+    }
+    : {
+      kind: "empty",
+      verb: ready[0]
+        ? { label: `Start ${ready[0].title}`, href: `/comics/${ready[0].id}` }
+        : { label: "Pick a run", href: "/comics/runs" },
+    };
 
   return (
-    <>
+    <DashboardVerbs config={config}>
     <main>
-      <div className="titlerow">
-        <h1>Where you are</h1>
-        <span className="unit">sequence · issues</span>
-      </div>
+      {/* From 1024px this is the sticky glass band that holds the verbs (STYLE_GUIDE §14.6). */}
+      <header className="pagehead">
+        <div className="titlerow">
+          <h1>Where you are</h1>
+          <span className="unit">sequence · issues</span>
+        </div>
+        <HeaderVerbs />
+      </header>
       <p className="muted small mono">
         {issuesRead.toLocaleString()} of {issuesTotal.toLocaleString()} issues read
         {" · "}{readyTotal} runs unlocked and waiting
@@ -104,7 +121,7 @@ export default async function Comics() {
         ))}
       </div>
     </main>
-    <DashboardBar verb={verb} />
-    </>
+    <ThumbBar variant="dash" />
+    </DashboardVerbs>
   );
 }

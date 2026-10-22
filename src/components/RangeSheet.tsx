@@ -38,7 +38,7 @@ export default function RangeSheet({ rows, adopt, opener, onClose, onConfirm }: 
   );
 }
 
-function RangeForm({ rows, adopt, onConfirm }: {
+export function RangeForm({ rows, adopt, onConfirm }: {
   rows: RangeRow[]; adopt: boolean; onConfirm: (choice: RangeChoice) => Promise<void>;
 }) {
   const close = useSheetClose();

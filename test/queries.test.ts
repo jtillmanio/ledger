@@ -1,7 +1,7 @@
 // Numbers on screen must be the truth, not the page size (R2-05, R2-06, R2-08).
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { requireTestUrl } from "../scripts/lib/testdb.mjs";
-import { testSql, truncateAll } from "./db";
+import { markRead, testSql, truncateAll } from "./db";
 
 const sql = testSql();
 const USER = "test-user";
@@ -88,5 +88,81 @@ describe("saveBookStatus (R0-C1)", () => {
     await saveBookStatus(USER, { bookId: "b1", status: "reading", rating: null });
     const [cleared] = await sql`SELECT finished_on::text, rating FROM book_status WHERE book_id = 'b1'`;
     expect(cleared).toMatchObject({ finished_on: "2024-03-11", rating: null });
+  });
+});
+
+// The thumb bar's reach (task 1.8b, AC-2): which issue its verb marks, and how it names it.
+describe("nextUnread (task 1.8b)", () => {
+  async function run(id: string, labels: string[]) {
+    await sql`INSERT INTO runs (id, title) VALUES (${id}, ${"Run " + id})`;
+    for (const [n, label] of labels.entries()) {
+      await sql`INSERT INTO issues (id, label) VALUES (${`${id}-${n + 1}`}, ${label})`;
+      await sql`INSERT INTO run_issues (run_id, sequence, issue_id, type, notes)
+                VALUES (${id}, ${n + 1}, ${`${id}-${n + 1}`}, ${n === 2 ? "optional" : "core"}, ${n === 1 ? "part two" : null})`;
+    }
+  }
+
+  it("lists the unread placements in reading order, skipping what is read here, up to the limit", async () => {
+    await run("u", ["Uncanny X-Men (1963) #138", "Uncanny X-Men (1963) #139", "Uncanny X-Men (1963) #140",
+      "Uncanny X-Men (1963) #141", "Uncanny X-Men (1963) #142"]);
+    await markRead(sql, USER, "u", "u-1");
+    await markRead(sql, USER, "u", "u-3");
+    const { issues } = await q.nextUnread(USER, "u");
+    expect(issues.map((i) => i.label)).toEqual([
+      "Uncanny X-Men (1963) #139", "Uncanny X-Men (1963) #141", "Uncanny X-Men (1963) #142"]);
+    expect(issues[0]).toMatchObject({ type: "core", notes: "part two" });
+    expect(typeof issues[0].placement_id).toBe("number");
+    expect((await q.nextUnread(USER, "u", 2)).issues).toHaveLength(2);
+    // The same first row as the dashboard's resume pointer.
+    const [resume] = await q.inProgressRuns(USER);
+    expect(resume.next_label).toBe(issues[0].label);
+  });
+
+  it("says the run is one series exactly when singleSeries() does", async () => {
+    const { singleSeries } = await import("../src/lib/format");
+    const cases: Record<string, string[]> = {
+      one: ["Alpha (1963) #1", "Alpha (1963) #2"],
+      two: ["X-Men (2019) #7", "Marauders (2019) #1", "X-Men (2019) #8"],
+      unnumbered: ["Beta (1963) #1", "Dark Reign: The Cabal"],
+      decimal: ["Gamma (1963) #1", "Gamma (1963) #1.5"],
+    };
+    for (const [id, labels] of Object.entries(cases)) {
+      await run(id, labels);
+      const { single_series } = await q.nextUnread(USER, id);
+      expect(single_series, id).toBe(singleSeries(labels));
+    }
+    // Read issues still count towards what the run spans.
+    await markRead(sql, USER, "two", "two-1");
+    expect((await q.nextUnread(USER, "two")).single_series).toBe(false);
+  });
+
+  it("with no run named, is the dashboard's hero: the reading run furthest along, the lower id on a tie", async () => {
+    await run("a-short", ["Short (2000) #1", "Short (2000) #2", "Short (2000) #3", "Short (2000) #4"]);
+    await run("b-long", ["Long (2000) #1", "Long (2000) #2", "Long (2000) #3", "Long (2000) #4"]);
+    await run("c-tie", ["Tie (2000) #1", "Tie (2000) #2", "Tie (2000) #3", "Tie (2000) #4"]);
+    expect((await q.nextUnread(USER)).issues).toEqual([]);
+    await markRead(sql, USER, "a-short", "a-short-1");
+    await markRead(sql, USER, "b-long", "b-long-1");
+    await markRead(sql, USER, "b-long", "b-long-2");
+    await markRead(sql, USER, "c-tie", "c-tie-1");
+    await markRead(sql, USER, "c-tie", "c-tie-2");
+    const hero = await q.nextUnread(USER);
+    // b-long and c-tie are both half read: the lower id wins, as it does in inProgressRuns.
+    expect(hero.run_id).toBe("b-long");
+    expect(hero.issues[0].label).toBe("Long (2000) #3");
+    const [first] = await q.inProgressRuns(USER);
+    expect(first.id).toBe(hero.run_id);
+    expect(first.next_label).toBe(hero.issues[0].label);
+  });
+
+  it("is empty for a run read through, and ignores another user's reads and a removed placement", async () => {
+    await run("d", ["X #1", "X #2"]);
+    await sql`INSERT INTO users (id, name) VALUES ('other', 'Other')`;
+    await markRead(sql, "other", "d", "d-1");
+    expect((await q.nextUnread(USER, "d")).issues).toHaveLength(2);
+    await sql`UPDATE run_issues SET deleted_at = now() WHERE issue_id = 'd-2'`;
+    expect((await q.nextUnread(USER, "d")).issues.map((i) => i.label)).toEqual(["X #1"]);
+    await markRead(sql, USER, "d", "d-1");
+    expect((await q.nextUnread(USER, "d")).issues).toEqual([]);
   });
 });

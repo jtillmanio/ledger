@@ -38,7 +38,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "comics-status", label: "Status", href: "/comics/status", icon: "list-checks", enabled: false, group: "medium", medium: "comics" },
   { id: "comics-runs", label: "Runs", href: "/comics/runs", icon: "layers", enabled: true, group: "medium", medium: "comics", holdsDetail: true },
   { id: "comics-tracks", label: "Tracks", href: "/comics/tracks", icon: "route", enabled: false, group: "medium", medium: "comics" },
-  // No comics route adds without a run, so this waits for the remembered run (TASK-015).
+  // No comics route adds without a run, so this waits for the remembered run (roadmap 1.19).
   { id: "comics-add", label: "Add", href: "/comics/add", icon: "plus", enabled: false, group: "medium", medium: "comics" },
 
   // Until 2.2 builds the books dashboard, /books redirects to the list.

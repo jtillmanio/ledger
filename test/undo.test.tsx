@@ -75,7 +75,26 @@ describe("the undo stack takes any inverse", () => {
     expect(fn).toHaveBeenCalledOnce();
   });
 
-  it("Ctrl+Z and ⌘Z undo the newest entry", async () => {
+  it("Ctrl+Z and ⌘Z undo the toast's entry", async () => {
+    const first = vi.fn(async () => {});
+    const second = vi.fn(async () => {});
+    let entry: UndoEntry = { label: "first", undo: first };
+    const App = () => <UndoProvider><Pusher entry={entry} /></UndoProvider>;
+    act(() => root.render(<App />));
+    await push();
+    await ctrlZ(document.body, { metaKey: true });
+    expect(first).toHaveBeenCalledOnce();
+    expect(toast()).toBeNull();
+    entry = { label: "second", undo: second };
+    act(() => root.render(<App />));
+    await push();
+    await ctrlZ();
+    expect(second).toHaveBeenCalledOnce();
+    expect(first).toHaveBeenCalledOnce();
+  });
+
+  // One toast at a time (task 1.8b, UX-N05, F3): the newer action commits the older one.
+  it("a second push replaces the toast and commits the first: Undo and Ctrl+Z reach only the newest", async () => {
     const first = vi.fn(async () => {});
     const second = vi.fn(async () => {});
     let entry: UndoEntry = { label: "first", undo: first };
@@ -85,14 +104,37 @@ describe("the undo stack takes any inverse", () => {
     entry = { label: "second", undo: second };
     act(() => root.render(<App />));
     await push();
+    expect(container.querySelectorAll(".toast")).toHaveLength(1);
     expect(lines()).toEqual(["second"]);
     await ctrlZ();
     expect(second).toHaveBeenCalledOnce();
-    expect(first).not.toHaveBeenCalled();
-    expect(lines()).toEqual(["first"]);
-    await ctrlZ(document.body, { metaKey: true });
-    expect(first).toHaveBeenCalledOnce();
+    // The first is committed: after the second is undone, nothing is left to undo.
     expect(toast()).toBeNull();
+    await ctrlZ();
+    expect(first).not.toHaveBeenCalled();
+  });
+
+  it("a notice or a failure also commits the entry before it", async () => {
+    const fn = vi.fn(async () => {});
+    function Both() {
+      const { push, notify, fail } = useUndo();
+      return (
+        <>
+          <button type="button" id="push" onClick={() => push({ label: "x", undo: fn })}>push</button>
+          <button type="button" id="notify" onClick={() => notify("Copied")}>notify</button>
+          <button type="button" id="fail" onClick={() => fail({ label: "That didn't save", retry: () => {} })}>fail</button>
+        </>
+      );
+    }
+    act(() => root.render(<UndoProvider><Both /></UndoProvider>));
+    for (const id of ["notify", "fail"]) {
+      await push();
+      await act(async () => container.querySelector<HTMLButtonElement>(`#${id}`)!.click());
+      expect(container.querySelectorAll(".toast")).toHaveLength(1);
+      expect(undoButton()).toBeUndefined();
+      await ctrlZ();
+    }
+    expect(fn).not.toHaveBeenCalled();
   });
 
   it("leaves Ctrl+Z alone while focus is in a text field", async () => {
@@ -139,6 +181,101 @@ describe("the toast's lifetime", () => {
     expect(undoButton()).toBeUndefined();
     await ctrlZ();
     expect(fn).not.toHaveBeenCalled();
+  });
+});
+
+// The countdown, the hold and focus (task 1.8b, AC-4).
+describe("the toast's countdown and hold", () => {
+  const hover = (on: boolean) => act(() => {
+    toast()!.dispatchEvent(new MouseEvent(on ? "mouseover" : "mouseout", { bubbles: true }));
+  });
+
+  it("draws a countdown bar, and a new toast starts a fresh one", async () => {
+    act(() => root.render(<UndoProvider><Pusher entry={{ label: "x", undo: async () => {} }} /></UndoProvider>));
+    await push();
+    const bar = toast()!.querySelector(".toast-count");
+    expect(bar).not.toBeNull();
+    expect(bar!.getAttribute("aria-hidden")).toBe("true");
+    await push();
+    expect(toast()!.querySelector(".toast-count")).not.toBe(bar);
+  });
+
+  it("hovering holds the toast: it stays past 8s while held and then has the time it had left", async () => {
+    vi.useFakeTimers();
+    const fn = vi.fn(async () => {});
+    act(() => root.render(<UndoProvider><Pusher entry={{ label: "x", undo: fn }} /></UndoProvider>));
+    await push();
+    act(() => vi.advanceTimersByTime(5000));
+    hover(true);
+    expect(toast()!.hasAttribute("data-held")).toBe(true);
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(toast()).not.toBeNull();
+    // Undo still works after a long hold: the hold does not count against the 8s.
+    hover(false);
+    expect(toast()!.hasAttribute("data-held")).toBe(false);
+    act(() => vi.advanceTimersByTime(2900));
+    expect(toast()).not.toBeNull();
+    act(() => vi.advanceTimersByTime(200));
+    expect(toast()).toBeNull();
+    await ctrlZ();
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it("focus inside the toast holds it too", async () => {
+    vi.useFakeTimers();
+    act(() => root.render(<UndoProvider><Pusher entry={{ label: "x", undo: async () => {} }} /></UndoProvider>));
+    await push();
+    act(() => undoButton()!.focus());
+    act(() => vi.advanceTimersByTime(20_000));
+    expect(toast()).not.toBeNull();
+    act(() => undoButton()!.blur());
+    act(() => vi.advanceTimersByTime(8100));
+    expect(toast()).toBeNull();
+  });
+});
+
+describe("focus after the toast goes", () => {
+  it("Undo hands focus back to the control that had it before the toast", async () => {
+    act(() => root.render(
+      <UndoProvider><Pusher entry={{ label: "x", undo: async () => {} }} /><button type="button" id="before">before</button></UndoProvider>,
+    ));
+    await push();
+    const before = container.querySelector<HTMLButtonElement>("#before")!;
+    act(() => before.focus());
+    act(() => undoButton()!.focus());
+    expect(document.activeElement).toBe(undoButton());
+    await pressUndo();
+    expect(toast()).toBeNull();
+    expect(document.activeElement).toBe(before);
+  });
+
+  it("falls back to the thumb bar's button when that control is gone", async () => {
+    act(() => root.render(
+      <UndoProvider>
+        <Pusher entry={{ label: "x", undo: async () => {} }} />
+        <div className="actionbar"><button type="button" className="btn" id="bar">Mark</button></div>
+      </UndoProvider>,
+    ));
+    await push();
+    // Outside React, so the test can take it away.
+    const gone = document.createElement("button");
+    container.append(gone);
+    act(() => gone.focus());
+    act(() => undoButton()!.focus());
+    gone.remove();
+    await pressUndo();
+    expect(document.activeElement).toBe(container.querySelector("#bar"));
+  });
+
+  it("leaves focus alone when the toast never had it", async () => {
+    act(() => root.render(
+      <UndoProvider><Pusher entry={{ label: "x", undo: async () => {} }} /><button type="button" id="other">o</button></UndoProvider>,
+    ));
+    await push();
+    const other = container.querySelector<HTMLButtonElement>("#other")!;
+    act(() => other.focus());
+    await ctrlZ();
+    expect(document.activeElement).toBe(other);
   });
 });
 
