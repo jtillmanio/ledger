@@ -474,7 +474,7 @@ Skeletons for the telecard, run rows, plan rail and season rows render within
 `prefers-reduced-motion`. An axe-core run over each dashboard reports no
 `nested-interactive`, `button-name` or `link-name` violations.
 
-### ☐ 1.8b Thumb bar and contrast · S
+### ☑ 1.8b Thumb bar and contrast · S
 Depends on 1.8 and 1.8d (the error toast it places). Split out of 1.8 (R3-12).
 
 The **thumb bar**: on every dashboard **and on the run detail** (`Mark #141 read ·
