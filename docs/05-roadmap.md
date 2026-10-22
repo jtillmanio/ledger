@@ -1023,6 +1023,22 @@ read began.
   `none` read, and is NULL for a run with no dated read.
 - `npm run test:db:reset` migrates from zero.
 
+### ☐ 1.19 Comics Add remembers the last run · S
+*From 1.8b (TASK-015, task/1.8b-thumb-bar-contrast):* design §14 *Bulk add*,
+**Remember the last run** you added to, so consecutive adds don't re-navigate.
+1.8 ships the comics *Add* nav item `enabled: false` (`src/components/nav/items.ts`),
+because no comics route adds without a run (TASK-014's open question; TASK-005's
+note). This item remembers the run that last got an issue (per user, through
+the existing add flow; where it is kept is the plan's to propose, and a new
+column means stop and ask), and turns the item on so it lands on that run's
+`/comics/{runId}/add`. With no run added to yet, it lands on `/comics/runs`.
+Depends on 1.8 and 1.3c. **The Check below is proposed** (1.8b's plan, 2026-10-22).
+
+**Check:** after adding an issue to run A from `/comics/A/add`, the comics *Add*
+nav item is enabled in all three navs and links to `/comics/A/add`; after a
+later add to run B it links to `/comics/B/add`; for a user who has added
+nothing it links to `/comics/runs`. A soft-deleted run is never the target.
+
 ---
 
 ## Phase 2 — The pace engine
@@ -1089,6 +1105,11 @@ minutes/day with observed values behind an explicit **Use these**, and the
 capacity card flags when the setting has drifted from reality. Mockup:
 `session` — build the right-hand entry path, not the timer. product #20.
 
+*From 1.8b (TASK-015, task/1.8b-thumb-bar-contrast):* the batch sheet
+(`src/components/BatchSheet.tsx`) ships *Log a session · Log* as
+`aria-disabled="true"`, with the reason *Sessions aren't here yet.* Enable it
+here to open the session sheet, and drop the reason.
+
 Out of scope, deferred to 6.12: the start/stop timer and its persistence, the
 **timer chip** in the thumb bars and sidebar footer, the **Tonight** fit card,
 and *Estimated time to finish* on the run hero and in-flight rows. Those last
@@ -1152,6 +1173,12 @@ rest and reveal it on row hover or `:focus-within` with a fine pointer, as
 and names the top of the plan in full on the primary; below about 1100px it
 truncates and keeps the full title in its accessible name. No capacity card and
 no *Place them* at any width until the question below is answered.
+
+*From 1.8b (TASK-015, task/1.8b-thumb-bar-contrast):* 1.8b builds and
+unit-tests `ThumbBar`'s books configuration (`src/components/ThumbBar.tsx`):
+the bar *Log progress · ✓ finished · search*, and the header *Search · Finished
+it · Log pages*. Since `/books` was still a redirect, nothing renders it yet.
+Render it here, wrapped in `VerbsProvider`, as the comics dashboard is.
 
 **Open, stop and ask before building** (the feel pass is silent): the old
 dashboard had a capacity card with **Rebalance** and **Accept** (2.7) and an
@@ -3416,6 +3443,12 @@ in Now and the same show's detail must agree on its state — the mockup's Andor
 is mid-show (S1 watched, S2 up next) on both.
 
 1.8d's `SeasonRowsSkeleton` was measured against a fixture of the mockup's markup; re-measure it against the season rows drawn here, within 2px at 360px (from TASK-027).
+
+*From 1.8b (TASK-015, task/1.8b-thumb-bar-contrast):* until this task, `/watch`
+shows 1.8b's empty-state verbs, *Search · Save to inbox*, in the thumb bar and
+the desktop header. Give `ThumbBar` (`src/components/ThumbBar.tsx`) its watch
+configuration here: slot 1 *Mark S2 watched* (the season-level verb above),
+slot 2 *+ Add*, slot 3 search.
 
 **Check:** test that a show with season 1 watched and season 2 watching appears
 once in Now and not in Up next; that a show with every season watched appears in
