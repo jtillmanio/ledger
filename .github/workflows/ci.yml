@@ -39,6 +39,13 @@ jobs:
           database: reading_test
       - uses: actions/setup-node@v7
         with: { node-version-file: .nvmrc, cache: npm }   # one Node version: .nvmrc = engines.node = Vercel
+      # Whether the slow steps (the browser suite and the build) have anything to
+      # check: a PR that only changes backups, docs, .claude or root markdown skips
+      # them. Everything else still runs, so `check` always reports for Release.
+      # A push to main gets no --base and runs the full gate.
+      - name: Decide whether the browser suite and the build run
+        id: scope
+        run: node scripts/ci-scope.mjs ${{ github.event_name == 'pull_request' && '--base origin/main' || '' }}
       - uses: actions/setup-python@v7
         with: { python-version: "3.12" }
       - run: npm ci
@@ -71,9 +78,11 @@ jobs:
       # database, every width, light and dark, with axe. scripts/e2e.mjs refuses without
       # TEST_DATABASE_URL; this job has no DATABASE_URL.
       - run: npx playwright install --with-deps chromium
+        if: steps.scope.outputs.full == 'true'
       - run: npm run test:e2e
+        if: steps.scope.outputs.full == 'true'
       - name: Upload the browser suite's screenshots and report
-        if: always()
+        if: always() && steps.scope.outputs.full == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: e2e-screens
@@ -83,5 +92,6 @@ jobs:
           retention-days: 7
           if-no-files-found: ignore
       - run: npm run build
+        if: steps.scope.outputs.full == 'true'
         env:
           DATABASE_URL: postgresql://build:unused@localhost:5432/build_unused
