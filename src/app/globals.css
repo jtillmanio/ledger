@@ -638,6 +638,7 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
 .toast-label{font-size:.8125rem;line-height:1.125rem;font-weight:500}
 .toast-detail{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.75rem;
   line-height:1rem;color:var(--toast-muted)}
+/* Undo and, on a write that failed (task 1.8d), Retry: one button style, --toast-link on --toast-bg. */
 .toast-undo{flex:none;min-width:44px;min-height:44px;padding:0 .75rem;border:0;background:none;
   font:inherit;font-size:.8125rem;font-weight:700;color:var(--toast-link);cursor:pointer;
   border-radius:var(--r-md)}
@@ -735,6 +736,34 @@ h3.s .more{margin-left:auto;font-size:.8125rem;font-weight:600;color:var(--brand
 .iss .sk-title{height:.875rem;margin:.22rem 0}
 .iss .sk-sub{margin:0}
 .chk i.sk-dot{border-color:var(--sunk);background:var(--sunk)}
+/* The dashboard pieces (task 1.8d): each bar is its text's size, with margins
+   making up the line box it stands in for. The cards are flex columns so those
+   margins add instead of collapsing. Measured against the loaded markup at
+   360px by test/e2e/skeletons.spec.ts. */
+.rows .row.sk-row{display:flex;flex-direction:column;gap:0;align-items:stretch}
+.sk-row .sk-sub{margin:.328rem 0 .203rem}
+.sk-telecard{display:flex;flex-direction:column;pointer-events:none}
+.sk-kick{height:.6875rem;margin:.1719rem 0}
+.sk-name{height:1.0625rem;margin:.242rem 0 .116rem}
+.sk-by{height:.8125rem;margin:.391rem 0 1.253rem}
+.sk-tele{width:100%;aspect-ratio:344/354;margin:0 0 .25rem;border-radius:var(--r-md)}
+.sk-telecap{display:flex;flex-direction:column;margin-bottom:.75rem}
+.sk-telecard .ladder{margin-top:0}
+.sk-ladder{height:.8125rem;margin:.203rem 0}
+.sk-ladder.two{height:2.031rem}
+.sk-planrail .qfoot .sk{flex:none}
+.sk-qb{height:.75rem;margin:.1875rem 0}
+.sk-qm{height:.6875rem;margin:.1719rem 0}
+.sk-qd{height:.75rem;margin:.197rem 0;border-radius:var(--r-sm)}
+/* The no-quarter column's footer wraps to a second line in the loaded rail, and the tallest column sets the rail's height. */
+.sk-planrail .qfoot{padding-bottom:.893rem}
+.sk-cover{flex:0 0 50px;width:50px;height:75px;border-radius:var(--r-cover)}
+.sk-rb{display:flex;flex-direction:column;align-items:flex-start}
+.sk-rt{height:.9375rem;margin:.234rem 0}
+.sk-rs{height:.8125rem;margin:.203rem 0}
+.sk-rs.first{margin-top:.328rem}
+.sk-tag{height:.6875rem;margin:.734rem 0 .359rem}
+.sk-verb{flex:0 0 auto;width:4.43rem;height:2.094rem;border-radius:var(--r-sm)}
 @keyframes sk-pulse{50%{opacity:.55}}
 .empty{padding:1.25rem .875rem;color:var(--muted);font-size:.8125rem}
 .empty b{display:block;color:var(--ink);font-weight:600;margin-bottom:.25rem;font-size:.875rem}
@@ -770,6 +799,13 @@ p{margin:0 0 .75rem;max-width:66ch}
 .clamp-2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
 .state-blocked .row-title{color:var(--muted)}
 .tag-held{color:var(--blocked)}
+/* A navigable row (task 1.8d): the anchor holds the text and its ::after covers the
+   row, so a tap anywhere follows it. A secondary control goes after the anchor and
+   above the overlay (position:relative, z-index:1), never inside it. */
+.row-link{display:block;color:inherit;text-decoration:none}
+.row-link::after{content:"";position:absolute;inset:0}
+.row-link:focus-visible{outline:none}
+.row > :is(button,a):not(.row-link){position:relative;z-index:1}
 .measure{display:block;height:2px;background:var(--rule);margin-top:.5rem}
 .measure span{display:block;height:100%;background:var(--ready)}
 

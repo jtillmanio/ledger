@@ -3,6 +3,8 @@
 // write lands. useOptimistic falls back to its base state when the transition
 // ends, so a base that never learns about the save snaps the row back to the
 // server's first render until the page is reloaded.
+import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -77,13 +79,64 @@ describe("ticking a spine row", () => {
     expect(sent()).toEqual([true, false, true]);
   });
 
-  it("snaps back when the write fails", async () => {
-    fetchMock.mockResolvedValue(new Response("{}", { status: 500 }));
-    vi.stubGlobal("alert", vi.fn());
-    act(() => root.render(<IssueList issues={[row(false)]} />));
-    await click();
-    expect(ticked()).toBe("false");
-    expect(alert).toHaveBeenCalledOnce();
+  describe("a write that fails (task 1.8d, R1-07)", () => {
+    const toast = () => container.querySelector(".toast-region")!;
+    const retry = () => [...toast().querySelectorAll("button")].find((b) => b.textContent === "Retry");
+    const undo = () => [...toast().querySelectorAll("button")].find((b) => b.textContent === "Undo");
+    const bodies = () => fetchMock.mock.calls.map(([, init]) => (init as RequestInit).body);
+
+    it("a non-2xx answer reverts the tick and offers Retry in the status region", async () => {
+      fetchMock.mockResolvedValue(new Response("{}", { status: 500 }));
+      act(() => root.render(<IssueList issues={[row(false)]} />));
+      await click();
+      expect(ticked()).toBe("false");
+      expect(toast().getAttribute("role")).toBe("status");
+      expect(toast().textContent).toContain("That didn't save");
+      expect(retry()).toBeDefined();
+      expect(undo()).toBeUndefined();
+    });
+
+    it("a network error reverts the tick too", async () => {
+      fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+      act(() => root.render(<IssueList issues={[row(false)]} />));
+      await click();
+      expect(ticked()).toBe("false");
+      expect(toast().textContent).toContain("That didn't save");
+      expect(retry()).toBeDefined();
+    });
+
+    it("Retry re-sends the same body, ticks the row and offers Undo", async () => {
+      fetchMock.mockResolvedValueOnce(new Response("{}", { status: 500 }));
+      act(() => root.render(<IssueList issues={[row(false)]} />));
+      await click();
+      await act(async () => retry()!.click());
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(bodies()[1]).toBe(bodies()[0]);
+      expect(ticked()).toBe("true");
+      expect(retry()).toBeUndefined();
+      expect(undo()).toBeDefined();
+    });
+
+    it("a Retry that fails too leaves the row unticked and offers Retry again", async () => {
+      fetchMock.mockResolvedValue(new Response("{}", { status: 500 }));
+      act(() => root.render(<IssueList issues={[row(false)]} />));
+      await click();
+      await act(async () => retry()!.click());
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(ticked()).toBe("false");
+      expect(retry()).toBeDefined();
+    });
+
+    it("Ctrl+Z skips a failure: there is nothing to take back", async () => {
+      fetchMock.mockResolvedValue(new Response("{}", { status: 500 }));
+      act(() => root.render(<IssueList issues={[row(false)]} />));
+      await click();
+      await act(async () => {
+        window.dispatchEvent(new KeyboardEvent("keydown", { key: "z", ctrlKey: true, cancelable: true }));
+      });
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(toast().textContent).toContain("That didn't save");
+    });
   });
 
   it("takes fresh rows from the server over its own", async () => {
@@ -144,5 +197,14 @@ describe("the resume pointer moves with a mark (task 1.6)", () => {
     act(() => root.render(<IssueList issues={[row(true)]} lastRead="Mar 2025" />));
     expect(container.querySelector(".bdg")!.textContent).toBe("✓ read · Mar 2025");
     expect(refresh).not.toHaveBeenCalled();
+  });
+});
+
+describe("no blocking dialogs (task 1.8d)", () => {
+  it("no alert() remains in src/components", () => {
+    const hits = readdirSync("src/components", { recursive: true, encoding: "utf8" })
+      .filter((f) => /\.tsx?$/.test(f))
+      .filter((f) => /\balert\s*\(/.test(readFileSync(join("src/components", f), "utf8")));
+    expect(hits).toEqual([]);
   });
 });

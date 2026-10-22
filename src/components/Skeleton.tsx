@@ -4,9 +4,27 @@
  * screen until every query has answered; a cold Neon wake shows the skeleton,
  * not a frozen page. Each is the loaded geometry in --sunk (STYLE_GUIDE §9),
  * so nothing jumps when the content arrives. Server components, no state.
+ *
+ * Task 1.8d adds the pieces a dashboard is drawn from: `TelecardSkeleton`,
+ * `RunRowsSkeleton`, `PlanRailSkeleton` and `SeasonRowsSkeleton`. They are
+ * aria-hidden; the route's `loading.tsx` wraps them in `LoadingMain`, which is
+ * busy for assistive tech and announces once. The telecard, plan rail and
+ * season rows have no loaded component yet (2.5b, 2.2b, 8.7), so these are
+ * measured against test/e2e/fixtures/*.html; the task that builds each one
+ * re-measures its skeleton.
  */
 
-function Bar({ w, className = "" }: { w: string; className?: string }) {
+/** The page a `loading.tsx` paints: busy, and one "Loading" for a screen reader. */
+export function LoadingMain({ children }: { children: React.ReactNode }) {
+  return (
+    <main aria-busy="true">
+      <span className="sr-only" role="status">Loading</span>
+      {children}
+    </main>
+  );
+}
+
+export function Bar({ w, className = "" }: { w: string; className?: string }) {
   return <span className={`sk ${className}`} style={{ width: w }} />;
 }
 
@@ -16,8 +34,7 @@ function Bar({ w, className = "" }: { w: string; className?: string }) {
 export function ListSkeleton({ rows = 8, filters = [1], search = false }:
   { rows?: number; filters?: number[]; search?: boolean }) {
   return (
-    <main aria-busy="true">
-      <span className="sr-only" role="status">Loading</span>
+    <LoadingMain>
       <Bar w="9rem" className="sk-h1" />
       <Bar w="7rem" className="sk-line" />
       {search && <span className="sk sk-input" />}
@@ -28,15 +45,86 @@ export function ListSkeleton({ rows = 8, filters = [1], search = false }:
           ))}
         </div>
       ))}
-      <div className="rows" aria-hidden="true">
-        {Array.from({ length: rows }, (_, n) => (
-          <div key={n} className="row">
-            <Bar w={`${55 + ((n * 17) % 35)}%`} className="sk-title" />
-            <Bar w={`${35 + ((n * 23) % 30)}%`} className="sk-sub" />
-          </div>
+      <RunRowsSkeleton rows={rows} />
+    </LoadingMain>
+  );
+}
+
+/** Run rows: a title and a sub-line, as /comics/runs and the dashboard's lists draw them. */
+export function RunRowsSkeleton({ rows = 8 }: { rows?: number }) {
+  return (
+    <div className="rows" aria-hidden="true">
+      {Array.from({ length: rows }, (_, n) => (
+        <div key={n} className="row sk-row">
+          <Bar w={`${55 + ((n * 17) % 35)}%`} className="sk-title" />
+          <Bar w={`${35 + ((n * 23) % 30)}%`} className="sk-sub" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** The dashboard's telecard: kicker, name, byline, the telescope's svg box, its
+ * caption and the three-line ladder. The svg keeps the telescope's 344:354
+ * ratio, so it scales with the card instead of holding one width's pixels. */
+export function TelecardSkeleton() {
+  return (
+    <div className="telecard sk-telecard" aria-hidden="true">
+      <Bar w="40%" className="sk-kick" />
+      <Bar w="70%" className="sk-name" />
+      <Bar w="50%" className="sk-by" />
+      <span className="sk sk-tele" />
+      <div className="sk-telecap">
+        {["100%", "96%", "62%"].map((w, n) => <Bar key={n} w={w} className="sk-text" />)}
+      </div>
+      <div className="ladder">
+        {[["60%", ""], ["75%", ""], ["85%", " two"]].map(([w, two], n) => (
+          <div key={n}><Bar w={w} className={`sk-ladder${two}`} /></div>
         ))}
       </div>
-    </main>
+    </div>
+  );
+}
+
+/** The books plan rail: four quarter columns and the no-quarter column, each a
+ * stack of blocks over its footer. The stack is 192px tall, as the rail draws it. */
+export function PlanRailSkeleton() {
+  const stacks = [[11, 11, 21, 19, 27, 74], [22, 22, 21, 31, 32], [12, 7, 16, 39], [27, 22], [36, 39, 88]];
+  return (
+    <div className="planrail sk-planrail" aria-hidden="true">
+      {stacks.map((blocks, q) => (
+        <div key={q} className={q === stacks.length - 1 ? "qcol nq" : "qcol"}>
+          <div className="qstack" style={{ height: 192 }}>
+            {blocks.map((h, n) => <i key={n} className="sk" style={{ height: h }} />)}
+          </div>
+          <div className="qfoot">
+            <Bar w="1.5rem" className="sk-qb" />
+            <Bar w="2rem" className="sk-qm" />
+            <Bar w="2.5rem" className="sk-qd" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Watch season rows: a 50×75 cover, a title, its line and a tag, and the verb. */
+export function SeasonRowsSkeleton({ rows = 3 }: { rows?: number }) {
+  return (
+    <div className="group" aria-hidden="true">
+      {Array.from({ length: rows }, (_, n) => (
+        <div key={n} className="row">
+          <span className="sk sk-cover" />
+          <div className="rb sk-rb">
+            <Bar w={`${45 + ((n * 19) % 30)}%`} className="sk-rt" />
+            <Bar w="90%" className="sk-rs first" />
+            <Bar w={`${40 + ((n * 13) % 25)}%`} className="sk-rs" />
+            <Bar w="4rem" className="sk-tag" />
+          </div>
+          <span className="sk sk-verb" />
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -47,8 +135,7 @@ export function ListSkeleton({ rows = 8, filters = [1], search = false }:
  * screen: four lines of series text and nine of why. */
 export function RunSkeleton({ rows = 10 }: { rows?: number }) {
   return (
-    <main aria-busy="true">
-      <span className="sr-only" role="status">Loading</span>
+    <LoadingMain>
       <Bar w="4.5rem" className="sk-line" />
       <Bar w="14rem" className="sk-h1" />
       <Bar w="70%" className="sk-line" />
@@ -69,6 +156,6 @@ export function RunSkeleton({ rows = 10 }: { rows?: number }) {
           </div>
         ))}
       </div>
-    </main>
+    </LoadingMain>
   );
 }

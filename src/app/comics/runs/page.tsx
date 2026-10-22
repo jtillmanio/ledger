@@ -53,27 +53,28 @@ export default async function Comics({
       <div className="rows">
         {runs.length === 0 && <div className="empty">No runs match that filter.</div>}
         {runs.map((r) => (
-          <Link key={r.id} href={`/comics/${r.id}`}
-                className={`row state-${r.readiness === "blocked" ? "blocked" : "open"}`}>
-            <span className="row-head">
-              <span className="row-title">{r.title}</span>
-              <span className="row-meta mono">
-                {r.read_issues > 0 ? `${r.read_issues}/${r.total_issues}` : `${r.total_issues} iss`}
+          <article key={r.id} className={`row state-${r.readiness === "blocked" ? "blocked" : "open"}`}>
+            <Link href={`/comics/${r.id}`} className="row-link">
+              <span className="row-head">
+                <span className="row-title">{r.title}</span>
+                <span className="row-meta mono">
+                  {r.read_issues > 0 ? `${r.read_issues}/${r.total_issues}` : `${r.total_issues} iss`}
+                </span>
               </span>
-            </span>
-            <span className="row-sub">
-              {[r.writers, r.tracks.join(", "), yearSpan(r.start_year, r.end_year)]
-                .filter(Boolean).join(" · ")}
-            </span>
-            {r.readiness === "blocked" && (
-              <span className="row-sub tag-held">
-                {r.hard_left} required {r.hard_left === 1 ? "run" : "runs"} still unread
+              <span className="row-sub">
+                {[r.writers, r.tracks.join(", "), yearSpan(r.start_year, r.end_year)]
+                  .filter(Boolean).join(" · ")}
               </span>
-            )}
-            {r.read_issues > 0 && r.pct < 1 && (
-              <span className="measure"><span style={{ width: `${Math.round(r.pct * 100)}%` }} /></span>
-            )}
-          </Link>
+              {r.readiness === "blocked" && (
+                <span className="row-sub tag-held">
+                  {r.hard_left} required {r.hard_left === 1 ? "run" : "runs"} still unread
+                </span>
+              )}
+              {r.read_issues > 0 && r.pct < 1 && (
+                <span className="measure"><span style={{ width: `${Math.round(r.pct * 100)}%` }} /></span>
+              )}
+            </Link>
+          </article>
         ))}
       </div>
     </main>

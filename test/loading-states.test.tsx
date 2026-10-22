@@ -12,6 +12,20 @@ const routes: [string, string][] = [
   ["/comics/[runId]", "../src/app/comics/[runId]/loading"],
   ["/books/list", "../src/app/books/list/loading"],
   ["/inbox", "../src/app/inbox/loading"],
+  ["/watch", "../src/app/watch/loading"],
+];
+
+// What each dashboard route paints, by the piece's own markup (task 1.8d).
+const pieces = {
+  telecard: 'class="telecard sk-telecard"',
+  runRows: 'class="row sk-row"',
+  seasonRows: 'class="sk sk-cover"',
+};
+const holds: [string, string, string[], string[]][] = [
+  ["/comics", "../src/app/comics/(dash)/loading", [pieces.telecard, pieces.runRows], [pieces.seasonRows]],
+  ["/comics/runs", "../src/app/comics/runs/loading", [pieces.runRows], [pieces.telecard, pieces.seasonRows]],
+  ["/books/list", "../src/app/books/list/loading", [pieces.runRows], [pieces.telecard, pieces.seasonRows]],
+  ["/watch", "../src/app/watch/loading", [pieces.seasonRows], [pieces.telecard, pieces.runRows]],
 ];
 
 describe("loading states (task 0.9)", () => {
@@ -22,6 +36,25 @@ describe("loading states (task 0.9)", () => {
     expect(html.match(/role="status"/g)).toHaveLength(1);
     expect(html).toContain(">Loading<");
     expect(html.match(/class="sk[ "]/g)?.length ?? 0).toBeGreaterThan(5);
+  });
+
+  it.each(holds)("%s paints its own pieces, and only those (task 1.8d)", async (_route, path, has, hasNot) => {
+    const Loading = (await import(path)).default as () => React.ReactElement;
+    const html = renderToStaticMarkup(<Loading />);
+    for (const piece of has) expect(html).toContain(piece);
+    for (const piece of hasNot) expect(html).not.toContain(piece);
+  });
+
+  it("the four dashboard skeletons are exported, aria-hidden, and announce nothing themselves", async () => {
+    const sk = await import("../src/components/Skeleton");
+    const four = [sk.TelecardSkeleton, sk.RunRowsSkeleton, sk.PlanRailSkeleton, sk.SeasonRowsSkeleton];
+    for (const Piece of four) {
+      const html = renderToStaticMarkup(<Piece />);
+      expect(html).toMatch(/^<div [^>]*aria-hidden="true"/);
+      // The route's <main> is busy and says "Loading" once; a piece never adds a second.
+      expect(html).not.toContain("role=\"status\"");
+      expect(html).not.toContain("aria-busy");
+    }
   });
 
   it("the dashboard's skeleton never stands in front of a run page", () => {

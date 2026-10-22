@@ -95,7 +95,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
       <div className="rows">
         {books.length === 0 && <div className="empty">Nothing matches. Try a broader filter.</div>}
         {books.map((b) => (
-          <div key={b.id} className="row book-row">
+          <article key={b.id} className="row book-row">
             <Cover url={b.cover_url} pending={b.pending} />
             <span className="rb">
               <span className="row-head">
@@ -116,14 +116,14 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
                 {...(b.status !== "to_read" && { status: b.status })}
                 {...(b.finished_on !== null && { finishedOn: b.finished_on, precision: b.finished_on_precision })} />
             </span>
-          </div>
+          </article>
         ))}
       </div>
 
       <h2>Series <span className="muted small mono">{seriesList.total}</span></h2>
       <div className="rows">
         {seriesList.shown.map((s) => (
-          <div key={s.series_id} className="row">
+          <article key={s.series_id} className="row">
             <span className="row-head">
               <span className="row-title">{s.name}</span>
               <span className="row-meta mono">{s.books_read}/{s.total_books}</span>
@@ -132,7 +132,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
             <span className="measure">
               <span style={{ width: `${Math.round((s.pct ?? 0) * 100)}%` }} />
             </span>
-          </div>
+          </article>
         ))}
       </div>
       {seriesList.cut && (

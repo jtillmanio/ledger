@@ -1,13 +1,13 @@
-// Painted the moment a tap lands (task 0.9): the title and the slate's geometry in --sunk.
+import { Bar, LoadingMain, SeasonRowsSkeleton } from "@/components/Skeleton";
+
+// Painted the moment a tap lands (task 0.9). Season rows are Watch's list
+// geometry (task 1.8d); 8.7 builds the real ones and re-measures this.
 export default function Loading() {
   return (
-    <main aria-busy="true">
-      <span className="sr-only" role="status">Loading</span>
-      <span className="sk sk-h1" style={{ width: "6rem" }} />
-      <div className="slate" aria-hidden="true">
-        <span className="sk sk-line" style={{ width: "80%" }} />
-        <span className="sk sk-line" style={{ width: "55%" }} />
-      </div>
-    </main>
+    <LoadingMain>
+      <Bar w="6rem" className="sk-h1" />
+      <Bar w="55%" className="sk-line" />
+      <SeasonRowsSkeleton />
+    </LoadingMain>
   );
 }
