@@ -2898,6 +2898,10 @@ it is converted.
   (`> mark through #160`, `> move Piranesi Q3`, `> queue Priest BP top`) above
   *Results*, and results are grouped Comics · Books · Watch. The shortcut shows
   in the sidebar; on the phone the trigger is the 44px search icon.
+  *From 1.8b (TASK-015, task/1.8b-thumb-bar-contrast):* the thumb bar's and the
+  dashboard header's *Search (Ctrl K)* slot is drawn, `aria-disabled`, until this
+  lands. Turn on the `search` item in `NAV_ITEMS` and the slot becomes a link
+  to it (`SearchVerb` in `ThumbBar.tsx`).
 
 - ☐ 6.2 Stats and year in review — depends on 1.5 and 2.1b · L
   Five charts per product § Metrics: books/year with plan overlaid, genre mix

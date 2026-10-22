@@ -69,6 +69,11 @@ Marking what you just read is one thumb tap at the bottom of every dashboard and
 - The books slots (`Log progress` · `✓ finished`; header *Search · Finished it · Log pages*) are built in `ThumbBar`'s books config but rendered nowhere until the books dashboard exists → docs/05-roadmap.md § 2.2 (approved at plan)
 - Watch's `Mark S2 watched` · `+ Add` replaces the empty-state *Search · Save to inbox* verbs → docs/05-roadmap.md § 8.7 (approved at plan)
 - The batch sheet's *Log a session* ships `aria-disabled` with a reason → docs/05-roadmap.md § 2.1b (approved at plan)
+- The Search slot (`Search (Ctrl K)`) is drawn but `aria-disabled` until the search page exists; enabling the `search` nav item turns it into a link → docs/05-roadmap.md § 6.1
+- `/comics` went from 4 queries to 5 (`nextUnread`, the hero run's unread placements, in the same wave) → docs/02-architecture.md § Performance budget (fixed in this PR)
+- The tablet bar is 48px buttons with 12px around them (73px with the glass edge), not the 48px total task 1.8 drew; the 834px frames in `design/mockups.html` still draw 48px → not tracked: surfaced in the PR for the owner's preview walk
+- `RunRow`'s `read_issues` / `total_issues` are typed `number` but Postgres returns `COUNT()` as a string; the dashboard coerces them where the toast adds one → not tracked: coerced where this task uses them, the other uses only print them
+- A stale `.next` makes the e2e login setup loop forever on this machine (`rm -rf .next` before `npm run test:e2e`) → not tracked: environment quirk, noted in the PR
 
 ## Plan
 
@@ -111,7 +116,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
+- Verify rounds: 2
 - Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- First-pass AC FAILs: 0 (the e2e run caught the hover colour and the string count before the first full verify)
+- Plan revisions after approval: 4 (the `/comics` query budget in `test/query-budget.test.ts` and `docs/02-architecture.md`; the range write shared in `src/lib/mark.ts`; the batch sheet's steps swap inside one `Sheet`, so no exported `ThroughPicker`; the tablet bar is 73px, not 48)
