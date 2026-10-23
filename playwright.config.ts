@@ -1,10 +1,11 @@
-// The browser suite (task 0.11, D-72): Chromium against `next dev` on the TEST
-// database, at every target width (D-33), light and dark. Run it with
+// The browser suite (task 0.11, D-72): Chromium against `next dev` (CI's shards:
+// `next start`, E2E_SERVER) on the TEST database, at every target width (D-33),
+// light and dark. Run it with
 // `npm run test:e2e`, which refuses first when TEST_DATABASE_URL is unsafe;
 // this file checks again, so a bare `npx playwright test` is no way round it.
 import { defineConfig, type Project } from "@playwright/test";
 import { loadDotEnv } from "./scripts/lib/testdb.mjs";
-import { E2E_PORT, planE2e } from "./scripts/lib/e2e.mjs";
+import { planE2e } from "./scripts/lib/e2e.mjs";
 
 loadDotEnv();
 const plan = planE2e(process.env);
@@ -59,7 +60,7 @@ export default defineConfig({
   use: { baseURL: plan.baseUrl, trace: "retain-on-failure" },
   projects,
   webServer: {
-    command: `npx next dev --port ${E2E_PORT}`,
+    command: plan.serverCommand,
     url: `${plan.baseUrl}/api/health`,
     // Never someone else's server: it would be on whichever database it was started with.
     reuseExistingServer: false,

@@ -10,17 +10,40 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Tests only ever see TEST_DATABASE_URL (R3-02). There is deliberately no
+# DATABASE_URL here, so nothing in these jobs can mistake one for the other.
+env:
+  TEST_DATABASE_URL: postgresql://postgres:test@localhost:5432/reading_test
+  OWNER_ID: test
+  SESSION_SECRET: ci-only-not-a-real-secret
+  APP_PASSCODE: ci
+
+# The work runs in parallel jobs and `check` gathers them. Release reads the
+# check run named `check` on the commit it promotes (scripts/release.mjs), so
+# that job's verdict is the whole of CI's: it fails unless every job it needs
+# passed, or the browser suite was skipped because `scope` said so.
 jobs:
-  check:
+  # Whether the slow jobs (the browser suite and the build) have anything to
+  # check: a PR that only changes backups, docs, .claude or root markdown skips
+  # them. Everything else still runs, so `check` always reports for Release.
+  # A push to main gets no --base and runs the full gate.
+  scope:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
-    env:
-      # Tests only ever see TEST_DATABASE_URL (R3-02). There is deliberately no
-      # DATABASE_URL here, so nothing in this job can mistake one for the other.
-      TEST_DATABASE_URL: postgresql://postgres:test@localhost:5432/reading_test
-      OWNER_ID: test
-      SESSION_SECRET: ci-only-not-a-real-secret
-      APP_PASSCODE: ci
+    timeout-minutes: 5
+    outputs:
+      full: ${{ steps.scope.outputs.full }}
+    steps:
+      - uses: actions/checkout@v7
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v7
+        with: { node-version-file: .nvmrc }
+      - name: Decide whether the browser suite and the build run
+        id: scope
+        run: node scripts/ci-scope.mjs ${{ github.event_name == 'pull_request' && '--base origin/main' || '' }}
+
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
         # check:migrations diffs drizzle/ against main, so it needs main's history.
@@ -39,13 +62,6 @@ jobs:
           database: reading_test
       - uses: actions/setup-node@v7
         with: { node-version-file: .nvmrc, cache: npm }   # one Node version: .nvmrc = engines.node = Vercel
-      # Whether the slow steps (the browser suite and the build) have anything to
-      # check: a PR that only changes backups, docs, .claude or root markdown skips
-      # them. Everything else still runs, so `check` always reports for Release.
-      # A push to main gets no --base and runs the full gate.
-      - name: Decide whether the browser suite and the build run
-        id: scope
-        run: node scripts/ci-scope.mjs ${{ github.event_name == 'pull_request' && '--base origin/main' || '' }}
       - uses: actions/setup-python@v7
         with: { python-version: "3.12" }
       - run: npm ci
@@ -74,24 +90,101 @@ jobs:
           fi
       - run: npm run test:views
       - run: python -m unittest discover -s etl -p "test_*.py"
-      # The browser suite (task 0.11, D-72): Chromium against `next dev` on the test
-      # database, every width, light and dark, with axe. scripts/e2e.mjs refuses without
-      # TEST_DATABASE_URL; this job has no DATABASE_URL.
-      - run: npx playwright install --with-deps chromium
-        if: steps.scope.outputs.full == 'true'
-      - run: npm run test:e2e
-        if: steps.scope.outputs.full == 'true'
-      - name: Upload the browser suite's screenshots and report
-        if: always() && steps.scope.outputs.full == 'true'
-        uses: actions/upload-artifact@v7
+
+  # The browser suite (task 0.11, D-72): Chromium on the test database, every
+  # width, light and dark, with axe, split across shards that each have a
+  # PostgreSQL of their own, so the suite's one-database rule (workers: 1)
+  # holds inside each. Every shard builds first: the build is CI's build gate,
+  # and the shard serves it with `next start` (E2E_SERVER), so no route is
+  # compiled on its first request. scripts/e2e.mjs refuses without
+  # TEST_DATABASE_URL; DATABASE_URL exists only for the build, and names nothing.
+  e2e:
+    needs: scope
+    if: needs.scope.outputs.full == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    env:
+      E2E_SERVER: start
+    steps:
+      - uses: actions/checkout@v7
+      - name: Start PostgreSQL
+        uses: ./.github/actions/start-postgres
         with:
-          name: e2e-screens
-          path: |
-            test-results/
-            playwright-report/
-          retention-days: 7
-          if-no-files-found: ignore
+          database: reading_test
+      - uses: actions/setup-node@v7
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci
+      - run: npm run test:db:reset
       - run: npm run build
-        if: steps.scope.outputs.full == 'true'
         env:
           DATABASE_URL: postgresql://build:unused@localhost:5432/build_unused
+      # The browser only: the runner image already has the libraries Chromium
+      # needs (it ships Google Chrome), and --with-deps fetches 25 MB of fonts
+      # from an apt mirror that has taken 13 minutes for one shard.
+      - run: npx playwright install chromium
+      - run: npm run test:e2e -- --shard=${{ matrix.shard }}/${{ strategy.job-total }} --reporter=list,blob
+      - name: Upload this shard's report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-blob-${{ matrix.shard }}
+          path: blob-report/
+          retention-days: 1
+          if-no-files-found: ignore
+      - name: Upload this shard's screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-screens-${{ matrix.shard }}
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # One HTML report for the whole suite, from the shards' blob reports.
+  e2e-report:
+    needs: e2e
+    if: always() && needs.e2e.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci
+      - uses: actions/download-artifact@v7
+        with:
+          pattern: e2e-blob-*
+          path: all-blob-reports
+          merge-multiple: true
+      - run: npx playwright merge-reports --reporter html ./all-blob-reports
+      - uses: actions/upload-artifact@v7
+        with:
+          name: e2e-report
+          path: playwright-report/
+          retention-days: 7
+
+  check:
+    needs: [scope, tests, e2e]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every job passed
+        env:
+          SCOPE: ${{ needs.scope.result }}
+          FULL: ${{ needs.scope.outputs.full }}
+          TESTS: ${{ needs.tests.result }}
+          E2E: ${{ needs.e2e.result }}
+        run: |
+          echo "scope=$SCOPE (full=$FULL) tests=$TESTS e2e=$E2E"
+          [ "$SCOPE" = success ] || { echo "::error::scope: $SCOPE"; exit 1; }
+          [ "$TESTS" = success ] || { echo "::error::tests: $TESTS"; exit 1; }
+          if [ "$FULL" = true ]; then
+            [ "$E2E" = success ] || { echo "::error::e2e (and the build): $E2E"; exit 1; }
+          else
+            [ "$E2E" = skipped ] || { echo "::error::e2e ran or failed on a docs-only change: $E2E"; exit 1; }
+          fi

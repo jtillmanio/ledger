@@ -1,6 +1,7 @@
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { needsBrowserAndBuild } from "../scripts/lib/ci-scope.mjs";
+import { checkScript, ciJob, ciJobs } from "./ci-yml";
 
 describe("needsBrowserAndBuild (scripts/ci-scope.mjs)", () => {
   it("skips the slow steps for backups, docs, Claude config and root markdown", () => {
@@ -36,28 +37,56 @@ describe("needsBrowserAndBuild (scripts/ci-scope.mjs)", () => {
 });
 
 describe("ci.yml gates only the browser suite and the build", () => {
-  const ci = readFileSync(".github/workflows/ci.yml", "utf8");
-  const step = (needle: string) => {
-    const at = ci.indexOf(needle);
-    expect(at, needle).toBeGreaterThan(-1);
-    const next = ci.indexOf("\n      - ", at);
-    return ci.slice(ci.lastIndexOf("\n      - ", at), next === -1 ? undefined : next);
-  };
-
   it("decides the scope on pull requests only, against origin/main", () => {
-    expect(step("scripts/ci-scope.mjs")).toMatch(/id: scope/);
-    expect(ci).toMatch(/github\.event_name == 'pull_request' && '--base origin\/main'/);
+    const scope = ciJob("scope");
+    expect(scope).toContain("node scripts/ci-scope.mjs");
+    expect(scope).toMatch(/id: scope/);
+    expect(scope).toMatch(/github\.event_name == 'pull_request' && '--base origin\/main'/);
   });
 
-  it("skips the browser install, the browser suite and the build on a docs-only change", () => {
-    for (const s of ["npx playwright install --with-deps chromium", "npm run test:e2e", "npm run build"]) {
-      expect(step(s), s).toContain("steps.scope.outputs.full == 'true'");
+  it("builds and runs the browser suite only in the e2e job, which waits on the scope", () => {
+    const e2e = ciJob("e2e");
+    expect(e2e).toContain("needs: scope");
+    expect(e2e).toContain("if: needs.scope.outputs.full == 'true'");
+    for (const s of ["npx playwright install chromium", "npm run test:e2e", "npm run build"]) {
+      expect(e2e, s).toContain(s);
+      for (const other of ciJobs().filter((j) => j !== "e2e")) expect(ciJob(other), `${other}: ${s}`).not.toContain(s);
     }
   });
 
   it("leaves the checks that guard docs and config ungated", () => {
+    const tests = ciJob("tests");
+    expect(tests).not.toMatch(/needs:|\n {4}if:|scope/);
     for (const s of ["build-index.ps1", "npx tsc --noEmit", "npm run lint", "npm run test:tokens", "npm run check:migrations", "npm run test:db:reset", "npm test", "npm run test:views", "unittest discover"]) {
-      expect(step(s), s).not.toContain("steps.scope");
+      expect(tests, s).toContain(s);
     }
+  });
+});
+
+// Release reads only the check run named `check` (scripts/release.mjs), so the
+// job of that name has to answer for every job that does the work.
+describe("ci.yml's check job is CI's verdict", () => {
+  const verdict = (env: Record<string, string>) =>
+    spawnSync("bash", ["-c", checkScript()], { env: { ...process.env, ...env }, encoding: "utf8" }).status;
+  const green = { SCOPE: "success", FULL: "true", TESTS: "success", E2E: "success" };
+
+  it("runs whatever happened, after every job except the report", () => {
+    const check = ciJob("check");
+    expect(check).toContain("if: always()");
+    const needs = check.match(/needs: \[([^\]]*)\]/)![1].split(",").map((s) => s.trim());
+    expect(needs.sort()).toEqual(ciJobs().filter((j) => j !== "check" && j !== "e2e-report").sort());
+  });
+
+  it("passes when every job passed, or the browser suite was skipped on a docs-only change", () => {
+    expect(verdict(green)).toBe(0);
+    expect(verdict({ ...green, FULL: "false", E2E: "skipped" })).toBe(0);
+  });
+
+  it("fails when any job failed, was cancelled, or the browser suite was skipped when it should run", () => {
+    expect(verdict({ ...green, TESTS: "failure" })).toBe(1);
+    expect(verdict({ ...green, E2E: "failure" })).toBe(1);
+    expect(verdict({ ...green, E2E: "cancelled" })).toBe(1);
+    expect(verdict({ ...green, E2E: "skipped" })).toBe(1);
+    expect(verdict({ ...green, SCOPE: "failure", FULL: "", E2E: "skipped" })).toBe(1);
   });
 });
