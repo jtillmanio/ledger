@@ -45,12 +45,15 @@ npm run rebuild             # drop, migrate from zero, extract, load, test_views
                             # etl/rebuild.ps1; refuses when LEDGER_LIVE=true; twin etl/rebuild.sh
 npm run test:views          # etl/test_views.sql against TEST_DATABASE_URL; rolls back
 npm run test:etl            # py -m unittest over etl/test_*.py, no network
-npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in Chromium, 360-1280px, light and dark,
-                            # against `next dev` on TEST_DATABASE_URL (port 3199, passcode `e2e-passcode`); refuses
-                            # without it. Stop `npm run dev` first (both use .next). Once per machine, and after a
-                            # Playwright bump: `npx playwright install chromium`. Screenshots: test-results/screens/
-                            # (ignored). Pass arguments after --, e.g. `-- --project=w360-light`. E2E_SERVER=start
+npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in Chromium, the core projects (D-80:
+                            # w390 light and dark, w768, w1280, reduced motion, touch), against `next dev` on
+                            # TEST_DATABASE_URL (port 3199, passcode `e2e-passcode`); refuses without it. Stop
+                            # `npm run dev` first (both use .next). Once per machine, and after a Playwright bump:
+                            # `npx playwright install chromium`. Screenshots: test-results/screens/ (ignored). Pass
+                            # arguments after --, e.g. `-- --project=w390-light`. A check that needs one project is
+                            # tagged `{ tag: "@at-<project>" }`, never skipped on testInfo.project.name. E2E_SERVER=start
                             # serves an existing `npm run build` with `next start` instead (CI's shards do)
+npm run test:e2e:full       # the same at every project, 360-1280px light and dark (E2E_SCOPE=full): what CI runs
 npm run test:tokens         # colour tokens: mockups = globals.css, hue distance, on-fill contrast; no DB
 npm run check:migrations    # journal = files, drop/retype has a drizzle/down file, schema.ts fully generated,
                             # no migration already on main edited (standing rule 3); no DB

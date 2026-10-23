@@ -10,8 +10,8 @@ import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
 import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
 
-const ONCE = "w390-light";
-const runsOnce = (name: string) => test.skip(name !== ONCE, `writes or sets its own viewport: runs once, in ${ONCE}`);
+// Writes or sets its own viewport: runs once, in w390-light.
+const ONCE = { tag: "@at-w390-light" };
 const LIST = "/comics/status?tab=next";
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-prohibited-attr",
@@ -142,8 +142,7 @@ test.describe("the dashboard shelf", () => {
     await screenshot(page, info, "shelf-overflowing");
   });
 
-  test("Start follows the link and sends no POST", async ({ page }, info) => {
-    runsOnce(info.project.name);
+  test("Start follows the link and sends no POST", ONCE, async ({ page }) => {
     await queue([ids[3]]);
     await openDashboard(page);
     const posts: string[] = [];
@@ -157,8 +156,7 @@ test.describe("the dashboard shelf", () => {
     expect(await stored()).toEqual([`${ids[3]}:1`]);
   });
 
-  test("Reorder reaches the list where the keyboard sequence works", async ({ page }, info) => {
-    runsOnce(info.project.name);
+  test("Reorder reaches the list where the keyboard sequence works", ONCE, async ({ page }) => {
     await queue(ids.slice(0, 3));
     await openDashboard(page);
     await page.getByRole("link", { name: "Reorder" }).click();
@@ -168,8 +166,8 @@ test.describe("the dashboard shelf", () => {
 });
 
 test.describe("the shelf from 1024px (FP-D18)", () => {
-  test("at 1280 the shelf ends at main's edge; with twelve queued ‹ › render and › moves five covers", async ({ page }, info) => {
-    test.skip(info.project.name !== "w1280-light", "the 1280px check runs once, at w1280-light");
+  test("at 1280 the shelf ends at main's edge; with twelve queued ‹ › render and › moves five covers", { tag: "@at-w1280-light" }, async ({ page }, info) => {
+    // the 1280px check runs once, at w1280-light.
     await queue(ids);
     await openDashboard(page);
     const main = await page.locator(".dash-main").boundingBox();
@@ -189,8 +187,8 @@ test.describe("the shelf from 1024px (FP-D18)", () => {
     await screenshot(page, info, "shelf-paged-1280");
   });
 
-  test("at 1024 › moves four covers", async ({ page }, info) => {
-    test.skip(info.project.name !== "w1024-light", "the 1024px check runs once, at w1024-light");
+  test("at 1024 › moves four covers", { tag: "@at-w1024-light" }, async ({ page }) => {
+    // the 1024px check runs once, at w1024-light.
     await queue(ids);
     await openDashboard(page);
     const later = page.getByRole("button", { name: "Later in Up next" });
@@ -201,16 +199,16 @@ test.describe("the shelf from 1024px (FP-D18)", () => {
     await expect.poll(() => shelf(page).evaluate((el) => el.scrollLeft)).toBeCloseTo(4 * step, 0);
   });
 
-  test("with three queued the ‹ › do not render", async ({ page }, info) => {
-    test.skip(info.project.name !== "w1280-light", "the 1280px check runs once, at w1280-light");
+  test("with three queued the ‹ › do not render", { tag: "@at-w1280-light" }, async ({ page }) => {
+    // the 1280px check runs once, at w1280-light.
     await queue(ids.slice(0, 3));
     await openDashboard(page);
     await hydrated(page.getByRole("link", { name: "Reorder" }));
     await expect(page.locator(".pager")).toHaveCount(0);
   });
 
-  test("with touch the ‹ › never render, however many are queued", async ({ page }, info) => {
-    test.skip(info.project.name !== "w390-touch", "runs once, in w390-touch");
+  test("with touch the ‹ › never render, however many are queued", { tag: "@at-w390-touch" }, async ({ page }) => {
+    // runs once, in w390-touch.
     await queue(ids);
     await openDashboard(page);
     await hydrated(page.getByRole("link", { name: "Reorder" }));
@@ -263,8 +261,7 @@ test.describe("the queue list", () => {
     expect(await stored()).toEqual(ids.slice(0, 5).map((id, i) => `${id}:${i + 1}`));
   });
 
-  test("the row menu offers Move to top · Move up · Move down · Remove; Remove's undo restores the exact order", async ({ page }, info) => {
-    runsOnce(info.project.name);
+  test("the row menu offers Move to top · Move up · Move down · Remove; Remove's undo restores the exact order", ONCE, async ({ page }) => {
     const four = ids.slice(0, 4);
     await queue(four);
     await openList(page);
@@ -281,8 +278,7 @@ test.describe("the queue list", () => {
     await expect(page.locator(".qtitle")).toHaveText(four.map(titleOf));
   });
 
-  test("Move to top from the menu writes a contiguous order", async ({ page }, info) => {
-    runsOnce(info.project.name);
+  test("Move to top from the menu writes a contiguous order", ONCE, async ({ page }) => {
     await queue(ids.slice(0, 4));
     await openList(page);
     const more = page.getByRole("button", { name: `More for ${titleOf(ids[2])}` });
@@ -292,8 +288,8 @@ test.describe("the queue list", () => {
     await expect.poll(stored).toEqual([ids[2], ids[0], ids[1], ids[3]].map((id, i) => `${id}:${i + 1}`));
   });
 
-  test("a fine pointer drags the handle from 1 to 3", async ({ page }, info) => {
-    test.skip(info.project.name !== "w1280-light", "a mouse drag runs once, at w1280-light");
+  test("a fine pointer drags the handle from 1 to 3", { tag: "@at-w1280-light" }, async ({ page }) => {
+    // a mouse drag runs once, at w1280-light.
     await queue(ids.slice(0, 4));
     await openList(page);
     const handle = page.getByRole("button", { name: `Reorder ${titleOf(ids[0])}, position 1 of 4` });
@@ -307,8 +303,8 @@ test.describe("the queue list", () => {
     await expect.poll(stored).toEqual([ids[1], ids[2], ids[0], ids[3]].map((id, i) => `${id}:${i + 1}`));
   });
 
-  test("touch long-presses the handle to lift it, drags, and drops (1 → 3)", async ({ page }, info) => {
-    test.skip(info.project.name !== "w390-touch", "the touch route runs once, in w390-touch");
+  test("touch long-presses the handle to lift it, drags, and drops (1 → 3)", { tag: "@at-w390-touch" }, async ({ page }) => {
+    // the touch route runs once, in w390-touch.
     await queue(ids.slice(0, 4));
     await openList(page);
     const handle = page.getByRole("button", { name: `Reorder ${titleOf(ids[0])}, position 1 of 4` });
@@ -331,8 +327,8 @@ test.describe("the queue list", () => {
     await expect.poll(stored).toEqual([ids[1], ids[2], ids[0], ids[3]].map((id, i) => `${id}:${i + 1}`));
   });
 
-  test("a touch that lets go before the long press lifts nothing", async ({ page }, info) => {
-    test.skip(info.project.name !== "w390-touch", "the touch route runs once, in w390-touch");
+  test("a touch that lets go before the long press lifts nothing", { tag: "@at-w390-touch" }, async ({ page }) => {
+    // the touch route runs once, in w390-touch.
     await queue(ids.slice(0, 3));
     await openList(page);
     const handle = page.getByRole("button", { name: `Reorder ${titleOf(ids[0])}, position 1 of 3` });
@@ -356,8 +352,7 @@ test.describe("the queue list", () => {
 });
 
 test.describe("adding (AC-3)", () => {
-  test("+ Up next appends, Read next goes to the top, and a queued run shows In Up next · #N everywhere", async ({ page }, info) => {
-    runsOnce(info.project.name);
+  test("+ Up next appends, Read next goes to the top, and a queued run shows In Up next · #N everywhere", ONCE, async ({ page }) => {
     await page.goto(`/comics/${ids[4]}`);
     const add = page.getByRole("button", { name: `Add ${titleOf(ids[4])} to Up next` });
     await hydrated(add);
