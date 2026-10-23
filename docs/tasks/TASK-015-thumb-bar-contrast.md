@@ -71,7 +71,9 @@ Marking what you just read is one thumb tap at the bottom of every dashboard and
 - The batch sheet's *Log a session* ships `aria-disabled` with a reason → docs/05-roadmap.md § 2.1b (approved at plan)
 - The Search slot (`Search (Ctrl K)`) is drawn but `aria-disabled` until the search page exists; enabling the `search` nav item turns it into a link → docs/05-roadmap.md § 6.1
 - `/comics` went from 4 queries to 5 (`nextUnread`, the hero run's unread placements, in the same wave) → docs/02-architecture.md § Performance budget (fixed in this PR)
-- The tablet bar is 48px buttons with 12px around them (73px with the glass edge), not the 48px total task 1.8 drew; the 834px frames in `design/mockups.html` still draw 48px → not tracked: surfaced in the PR for the owner's preview walk
+- The tablet bar is 48px controls with 12px around them (73px with the glass edge), not the 48px total task 1.8 drew; the owner amended 1.8's Check, and the 834px frames in `design/mockups.html` are redrawn → docs/05-roadmap.md § 1.8 (Check amended, owner-approved, D-78; fixed in this PR)
+- From 1024px the dashboard's `.pagehead` band is sticky at `top:0` and 1.8's sticky-stack Check now names it; the contrast Check now leaves inactive controls out (WCAG 1.4.3) → docs/review/decisions.md § D-78 (owner-approved)
+- The mark toast in `design/screenshots/phone/04-mark-2-answer-dark.png` has a green ✓ circle that STYLE_GUIDE §9 and the `batch` frame do not draw, so the toast has none → not tracked: the guide and the mockup agree with what is built, and the reference screenshot is the outlier
 - `RunRow`'s `read_issues` / `total_issues` are typed `number` but Postgres returns `COUNT()` as a string; the dashboard coerces them where the toast adds one → not tracked: coerced where this task uses them, the other uses only print them
 - A stale `.next` makes the e2e login setup loop forever on this machine (`rm -rf .next` before `npm run test:e2e`) → not tracked: environment quirk, noted in the PR
 
@@ -117,6 +119,6 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 ## Metrics
 
 - Verify rounds: 2
-- Review rounds:
+- Review rounds: 2
 - First-pass AC FAILs: 0 (the e2e run caught the hover colour and the string count before the first full verify)
 - Plan revisions after approval: 4 (the `/comics` query budget in `test/query-budget.test.ts` and `docs/02-architecture.md`; the range write shared in `src/lib/mark.ts`; the batch sheet's steps swap inside one `Sheet`, so no exported `ThroughPicker`; the tablet bar is 73px, not 48)
