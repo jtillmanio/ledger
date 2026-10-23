@@ -118,7 +118,7 @@ describe("wiring: test:all runs it, the docs name it, its output is ignored", ()
   it("CI's e2e job builds, installs the browser, then runs its shard against next start", () => {
     const e2e = ciJob("e2e");
     const build = e2e.indexOf("npm run build");
-    const install = e2e.indexOf("npx playwright install --with-deps chromium");
+    const install = e2e.indexOf("npx playwright install chromium");
     const run = e2e.indexOf("npm run test:e2e -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}");
     expect(build).toBeGreaterThan(-1);
     expect(install).toBeGreaterThan(build);

@@ -48,7 +48,7 @@ describe("ci.yml gates only the browser suite and the build", () => {
     const e2e = ciJob("e2e");
     expect(e2e).toContain("needs: scope");
     expect(e2e).toContain("if: needs.scope.outputs.full == 'true'");
-    for (const s of ["npx playwright install --with-deps chromium", "npm run test:e2e", "npm run build"]) {
+    for (const s of ["npx playwright install chromium", "npm run test:e2e", "npm run build"]) {
       expect(e2e, s).toContain(s);
       for (const other of ciJobs().filter((j) => j !== "e2e")) expect(ciJob(other), `${other}: ${s}`).not.toContain(s);
     }
