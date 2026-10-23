@@ -150,6 +150,7 @@ export async function nextUnread(userId: string, runId: string | null = null, li
              regexp_match(i.label, '^(.+?)[[:space:]]*#[[:space:]]*(-?[0-9]+([.][0-9]+)?)[[:space:]]*$') AS m
       FROM live_run_issues ri
       JOIN target t ON t.id = ri.run_id
+      JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL
       JOIN issues i ON i.id = ri.issue_id
       LEFT JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
     )

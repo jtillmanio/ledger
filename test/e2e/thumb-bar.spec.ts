@@ -420,6 +420,13 @@ test("the batch sheet marks the next N in one request, and its Log a session say
   await expect(sheet).toBeVisible();
   await expect(sheet.getByRole("button", { name: "Log" })).toHaveAttribute("aria-disabled", "true");
   await expect(sheet).toContainText("Sessions aren't here yet.");
+  // Every control in the sheet is a 44px target, the stepper's included (the UX floor).
+  for (const control of await sheet.locator("button").all()) {
+    const box = (await control.boundingBox())!;
+    expect(box.height, await control.innerText()).toBeGreaterThanOrEqual(44);
+    expect(box.width, await control.innerText()).toBeGreaterThanOrEqual(44);
+  }
+  await expectNoHorizontalScroll(page);
   await sheet.getByRole("button", { name: "Fewer" }).click();
   await sheet.getByRole("button", { name: /^Mark \d+ read$/ }).click();
   await expect(sheet).toBeHidden();

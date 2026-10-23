@@ -155,6 +155,13 @@ describe("nextUnread (task 1.8b)", () => {
     expect(first.next_label).toBe(hero.issues[0].label);
   });
 
+  it("names no issues for a removed run", async () => {
+    await run("gone", ["Gone (2000) #1", "Gone (2000) #2"]);
+    expect((await q.nextUnread(USER, "gone")).issues).toHaveLength(2);
+    await sql`UPDATE runs SET deleted_at = now() WHERE id = 'gone'`;
+    expect((await q.nextUnread(USER, "gone")).issues).toEqual([]);
+  });
+
   it("is empty for a run read through, and ignores another user's reads and a removed placement", async () => {
     await run("d", ["X #1", "X #2"]);
     await sql`INSERT INTO users (id, name) VALUES ('other', 'Other')`;

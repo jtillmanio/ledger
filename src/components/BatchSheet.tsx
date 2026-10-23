@@ -108,7 +108,7 @@ function BatchBody({ title, upcoming, single, onNext, onChoose }: {
         {upcoming[0] ? `${title} · next unread is ${issueName(upcoming[0].label, single)}` : `${title} · nothing unread`}
       </p>
       <div className="group sheet-fields">
-        <div className="frow">
+        <div className="frow batch-row">
           <span className="k batch-k">
             Mark the next
             <span className="lede batch-sub">{rangeText(next, single)}</span>

@@ -97,5 +97,5 @@ the repo. Tell them apart by subject; where it matters in new text, write
 | D-25 | Near-duplicate book at `pg_trgm` similarity ≥ 0.4 (TASKS 1.4, 1.4d) | The desktop thumb bar as drawn (`CLAUDE.md`, STYLE_GUIDE, the feel pass; amended by D-33) |
 | D-26 | *Dark Reign: The Cabal* is 0.8a's named fixture (TASKS 0.8a) | An in-progress fill is green (`CLAUDE.md`, mockups, STYLE_GUIDE) |
 | D-27 | Task 0.3's CHECK constraints (TASKS 0.3) | Accepted risk: most screens' empty/loading/error states are specified in text, not drawn |
-
-The next new decision is **D-78**.
+| D-78 | 2026-10-23 | (Owner, at TASK-015's review; task 1.8b) **Three amendments to ticked Checks, so the thumb bar fits.** (1) The tablet's `.actionbar` is 48px controls with 12px of padding above and below them (73px with the glass edge), not 48px in all: 1.8b's `padding-bottom: max(12px, env(safe-area-inset-bottom))` and the 44px target floor cannot fit in a 48px bar; 1.8's Check and the 834px frames in `design/mockups.html` follow. (2) From 1024px `.bar` is gone and the dashboard's `.pagehead` band, `--bar-h` tall, is sticky at `top:0`; 1.8's sticky-stack Check now names it. (3) The contrast script measures every rendered text node outside an inactive control (`aria-disabled` or `:disabled`), as WCAG 1.4.3 leaves those out; disabled styling stays the one app-wide state (UX-N01). Rejected: a 48px total tablet bar (36px controls), and a disabled style that keeps 4.5:1. |
+The next new decision is **D-79**.

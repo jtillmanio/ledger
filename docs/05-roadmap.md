@@ -410,7 +410,7 @@ The app shell: the phone media bar, the tablet rail, the desktop sidebar, local 
 **Check:** screenshot at 360px, 768px, 834px and 1280px; assert no horizontal scroll
 exists at any of them. At 768px and 834px the page renders the navigation rail, no top
 media bar and no sidebar; each rail item shows a visible text label and is at
-least 56px tall; every dashboard renders `.actionbar`, 48px tall. The rendered
+least 56px tall; every dashboard renders `.actionbar` with 48px controls and 12px of padding above and below them (amended by D-78). The rendered
 HTML references no external host for an icon, font or script, and every `<svg>`
 inside a button is `aria-hidden` while the button has a name. At 1100px the sidebar is
 64px wide, each item has an accessible name, and focusing an item from the
@@ -420,8 +420,8 @@ keyboard shows its tooltip at once. At 1280px the sidebar is 224px wide; at
 shows the count. At 360px *Watch* renders untruncated in the media bar, and the
 phone `/comics` has at most one solid `--brand` fill above the fold. No computed
 `color` inside `.bar` or `.side` equals `--ready`. With the page scrolled 400px,
-every sticky element other than `.bar` has a computed `top` of at least
-`--bar-h`. The rendered HTML contains no U+26B2. Test that every phone route renders
+every sticky element other than `.bar` and, from 1024px, the dashboard's `.pagehead` band has a computed `top` of at least
+`--bar-h` (amended by D-78). The rendered HTML contains no U+26B2. Test that every phone route renders
 exactly the same media nav.
 
 ### ☑ 1.8c Dashboard routes and the `/` redirect · M
@@ -554,7 +554,7 @@ bottom 96px. At 360px the toast's bounding box does not intersect the primary
 first mark committed. Under emulated `prefers-reduced-motion` the `.chk`'s
 computed `transition-duration` is `0s`. `getComputedStyle` reports at least
 44px for every `.actionbar .btn` and `.iconbtn`, and a contrast script reports at least 4.5:1 for every
-rendered text node's computed colour against its computed background (not a list
+rendered text node outside an inactive control (`aria-disabled` or `:disabled`, WCAG 1.4.3) by its computed colour against its computed background (not a list
 of token pairs: a literal `#fff` on `--brand` is 2.51:1 in dark mode, M-02) and 3:1
 for the unchecked control ring, in both themes; `npm run test:tokens` passes. At
 1280px no dashboard renders `.actionbar` and the header holds the primary verb; at

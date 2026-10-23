@@ -56,13 +56,15 @@ const TAB_CSS = (() => {
 
 test.describe("AC-1 · every 834 frame", () => {
   for (const id of SCREENS) {
-    test(`${id}: no sideways scroll, a 72px rail and a 48px thumb bar`, async ({ page }) => {
+    test(`${id}: no sideways scroll, a 72px rail and a thumb bar of 48px controls`, async ({ page }) => {
       const f = await openTab(page, id);
       const m = await f.locator(".frame-in").evaluate((e) => ({ sw: e.scrollWidth, cw: e.clientWidth }));
       expect(m.cw).toBeGreaterThan(800);
       expect(m.sw).toBe(m.cw);
       expect((await box(f.locator(".rail"))).width).toBe(72);
-      expect((await box(f.locator(".actionbar"))).height).toBe(48);
+      // 48px controls with 12px above and below (task 1.8b, D-78), as the real bar is.
+      expect((await box(f.locator(".actionbar .btn").first())).height).toBe(48);
+      expect((await box(f.locator(".actionbar"))).height).toBeGreaterThanOrEqual(72);
     });
   }
 });
