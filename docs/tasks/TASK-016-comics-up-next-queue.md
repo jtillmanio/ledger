@@ -1,7 +1,7 @@
 ---
 id: TASK-016
 title: 1.10 Comics Up next queue
-status: In progress
+status: Review
 depends_on: [TASK-015]
 size: L
 model: opus
@@ -30,12 +30,12 @@ Runs you want to read next sit in one ordered list you control: add, reorder and
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): adding three runs gives ordinals 1–3; *Read next* on a fourth puts it at 1 and shifts the rest; moving #3 to the top gives a contiguous 1–4; removing #2 leaves 1–3 with no gap, and undo restores the exact prior order. Marking one placement of a queued run moves it out of the dashboard's Up next and into In flight while its `run_queue` row is unchanged. Queuing a blocked run succeeds and `run_queue_state` reports its blocked-by count. Queuing a placeholder is rejected. Two concurrent reorders never leave duplicate ordinals. The documented keyboard sequence (Space, Down, Down, Space) moves a row from position 2 to 4 with contiguous ordinals, and Esc mid-lift leaves the order unchanged. The dashboard shelf renders the queue's unstarted runs in ordinal order with **Start** on the first card only and no drag handle on any card, and **Reorder** reaches a list where that keyboard sequence works. At 1280px the shelf ends at main's edge, not the viewport's; with a fine pointer and twelve queued runs ‹ › render and › moves it by five covers, and with three queued runs they do not render.
-- [ ] AC-2: **Start** is a link to `/comics/<runId>#p-…` (the first unread placement's row) and sends no write: a test asserts zero `POST` requests when it is followed. Unmarking a started run back to zero read placements returns it to the shelf at its old ordinal.
-- [ ] AC-3: The run detail offers *+ Up next* (appends) and *Read next* (to the top). Run-list rows and the dashboard's *Ready when you are* rows offer *+ Up next*. A run that's already queued shows *In Up next · #N* with its current ordinal instead of a button. Queuing a soft-deleted run is rejected with 400.
-- [ ] AC-4: The drag handle is `<button class="drag">` named *Reorder <run title>, position n of N*, described by a help text, with lift, move, drop and cancel announced in an `aria-live` region. The row menu offers *Move to top · Move up · Move down · Remove*. **Remove** pushes a TASK-001 undo entry whose inverse restores the row at its old ordinal. With the queue empty, the shelf reads *Nothing queued — pick from N ready runs* (N computed) and links to *Ready, not queued*.
-- [ ] AC-5: `run_queue` is in `USER_TABLES`, `test/export-tables.test.ts` passes, and `npm run check:migrations` passes.
-- [ ] AC-6: The shelf and the queue list meet the UX floor and the feel-pass check (`docs/04-design.md` § 10. The UX floor and § *A feel-pass surface is checked more widely*): every state (populated, one card, empty, overflowing) at 360, 390, 412, 768, 1024 and 1280px, light and dark, plus `prefers-reduced-motion`; ‹ › only under `(hover:hover) and (pointer:fine)`, with ‹ `aria-disabled` at the start; covers fall back to the neutral placeholder; drag is behind a fine pointer and long-press on touch; axe reports no new violations.
+- [x] AC-1 (roadmap **Check:**, verbatim): adding three runs gives ordinals 1–3; *Read next* on a fourth puts it at 1 and shifts the rest; moving #3 to the top gives a contiguous 1–4; removing #2 leaves 1–3 with no gap, and undo restores the exact prior order. Marking one placement of a queued run moves it out of the dashboard's Up next and into In flight while its `run_queue` row is unchanged. Queuing a blocked run succeeds and `run_queue_state` reports its blocked-by count. Queuing a placeholder is rejected. Two concurrent reorders never leave duplicate ordinals. The documented keyboard sequence (Space, Down, Down, Space) moves a row from position 2 to 4 with contiguous ordinals, and Esc mid-lift leaves the order unchanged. The dashboard shelf renders the queue's unstarted runs in ordinal order with **Start** on the first card only and no drag handle on any card, and **Reorder** reaches a list where that keyboard sequence works. At 1280px the shelf ends at main's edge, not the viewport's; with a fine pointer and twelve queued runs ‹ › render and › moves it by five covers, and with three queued runs they do not render.
+- [x] AC-2: **Start** is a link to `/comics/<runId>#p-…` (the first unread placement's row) and sends no write: a test asserts zero `POST` requests when it is followed. Unmarking a started run back to zero read placements returns it to the shelf at its old ordinal.
+- [x] AC-3: The run detail offers *+ Up next* (appends) and *Read next* (to the top). Run-list rows and the dashboard's *Ready when you are* rows offer *+ Up next*. A run that's already queued shows *In Up next · #N* with its current ordinal instead of a button. Queuing a soft-deleted run is rejected with 400.
+- [x] AC-4: The drag handle is `<button class="drag">` named *Reorder <run title>, position n of N*, described by a help text, with lift, move, drop and cancel announced in an `aria-live` region. The row menu offers *Move to top · Move up · Move down · Remove*. **Remove** pushes a TASK-001 undo entry whose inverse restores the row at its old ordinal. With the queue empty, the shelf reads *Nothing queued — pick from N ready runs* (N computed) and links to *Ready, not queued*.
+- [x] AC-5: `run_queue` is in `USER_TABLES`, `test/export-tables.test.ts` passes, and `npm run check:migrations` passes.
+- [x] AC-6: The shelf and the queue list meet the UX floor and the feel-pass check (`docs/04-design.md` § 10. The UX floor and § *A feel-pass surface is checked more widely*): every state (populated, one card, empty, overflowing) at 360, 390, 412, 768, 1024 and 1280px, light and dark, plus `prefers-reduced-motion`; ‹ › only under `(hover:hover) and (pointer:fine)`, with ‹ `aria-disabled` at the start; covers fall back to the neutral placeholder; drag is behind a fine pointer and long-press on touch; axe reports no new violations.
 
 ## Out of scope
 
@@ -63,8 +63,14 @@ Runs you want to read next sit in one ordered list you control: add, reorder and
 
 ## Follow-ups
 
-- (approved at plan) `docs/03-data-model.md` § 2.16: *Table count* 32 → 33 (`run_queue`, migration 0014).
-- (approved at plan) `docs/02-architecture.md` § Performance budget: `/comics` 5 → 6 queries, one wave (the queue shelf).
+- Table count 32 → 33 (`run_queue`, migration 0014) → docs/03-data-model.md § 2.16 (approved at plan)
+- `/comics` 5 → 6 queries in one wave (the shelf), `/comics/status` 2 → docs/02-architecture.md § Performance budget (approved at plan)
+- `/comics/status` holds the Up next content only; 1.9 adds the tablist, the *Status* h1, the nav flip, and `ready_hard` in *Ready, not queued* → docs/tasks/TASK-017-status-screens.md § Context
+- The shelf, the side rail and `QueueBadge` are in place; `<RunStateBadge>`, the FP-D15 hover reveal on the rail's **+ Up next**, and the shelf's skeleton geometry are 2.4's → docs/05-roadmap.md § 2.4
+- The blocked badge counts direct hard prerequisites (`blocked_by`); the transitive count and the shelf's *Why held?* button wait for `run_ancestors` → docs/05-roadmap.md § 2.6
+- *+ Up next*'s accessible name is "Add <title> to Up next", which doesn't contain the visible "+" verbatim (ui-verifier) → not tracked: accepted as is; "Up next" is in the name, and the default axe rules pass
+- `playwright-report/` (git-ignored, written by every browser run) isn't in eslint's `globalIgnores`, so `npm run lint` after a local e2e run lints the minified report → not tracked: a one-line tooling fix outside this task, offered to the owner in the PR
+- *Ready, not queued* counted 29 with 12 queued of 40 ready (ui-verifier): a queued `ready_hard` run is in neither count → not tracked: correct by design (the list is `ready_all`)
 
 ## Plan
 
@@ -100,7 +106,7 @@ Approved by the owner 2026-10-23, with three decisions: the schema change as dat
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL(1: list-totals needed the UndoProvider) → R2 PASS → R3 PASS (after round-1 review fixes; lint first tripped on a generated `playwright-report/`, clean once it was removed) | Audit R1 NOT RUN (owner's uncommitted settings file) → R2 PASS | Spec R1 CHANGES (roadmap tick, `home` redraw, Follow-ups format, AC-6 long-press UNTESTED, AC-3 read rows) → R2 APPROVE | Schema R1 APPROVE (2 minor, both fixed) | UI R1 PASS (Start 44px and title-link 24px fixed)
 
 ## Blocked
 
@@ -108,7 +114,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
+- Verify rounds: 3 (R1 FAIL, R2 and R3 PASS)
+- Review rounds: 2
+- First-pass AC FAILs: 1 (AC-6: long-press UNTESTED)
 - Plan revisions after approval: 1 (the side rail, owner-approved)

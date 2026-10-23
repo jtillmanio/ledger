@@ -571,7 +571,7 @@ times with every `animation-duration` and `transition-duration` at `0s`; a
 mark whose write fails never shows the confirm state for longer than the
 revert. Each `.actionbar .btn`'s computed `border-radius` is 12px.
 
-### ☐ 1.10 Comics Up next queue · M
+### ☑ 1.10 Comics Up next queue · M
 Requirement change, Sept 2026. data model 2.16, product § Requirement changes. One
 ordered list of runs per user, open-ended: add, reorder, remove. No years,
 quarters or capacity — do not add them. Mockups: the feel pass's comics
@@ -1431,6 +1431,14 @@ data fact, not a layout change — the slot keeps its position and its design, a
 the list should grow once the prerequisite audit (2.11a + OWNER-CHECKLIST, D-20)
 reclassifies over-hard edges.
 
+*From 1.10 (TASK-016, task/1.10-comics-up-next-queue):* slot 2's shelf is built
+(`src/components/QueueShelf.tsx`), and from 1024px the dashboard already has
+main + side rail (`.dash-cols`, `--aside-w`) with *Ready when you are* in the
+rail, so the shelf stops at main's edge. 2.4 builds the rest around it: its
+`<RunStateBadge>` replaces `QueueBadge` on the shelf and the queue row, the rail
+rows' **+ Up next** becomes the FP-D15 hover reveal, and
+`src/app/comics/(dash)/loading.tsx` gains the shelf's geometry (it has none yet).
+
 **Check:** the feel-pass screenshots (the header's widths, themes and
 reduced-motion and reduced-transparency passes) of rest, the mark storyboard,
 *All caught up*, offline and loading. The five slots render in the order above.
@@ -1685,6 +1693,12 @@ next all*, computed from `run_ancestors()`. **Unlock preview**: the `opens N`
 tag is an `aria-expanded` button that expands `run_opens`' rows, marking which
 become `ready_all` and which `ready_hard`. Copy is *N to unlock*, never *costs
 N* (D-40, §15). Mockup: `path`.
+
+*From 1.10 (TASK-016, task/1.10-comics-up-next-queue):* the Up next shelf and the
+queue list draw a blocked run's badge from `run_queue_state.blocked_by`, the
+*direct* hard prerequisites still unread (`src/components/QueueBadge.tsx`). Once
+`run_ancestors` gives the transitive count, the badge reads that, and on the
+shelf it becomes the *Why held?* button the feel pass draws.
 
 **Check:** relational, not literal (D-7). On a purpose-built fixture — A ← B ← C
 plus one soft edge — `run_unlock_cost(A)` equals A's unread placements plus B's
