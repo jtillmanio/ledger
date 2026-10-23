@@ -9,9 +9,13 @@ two disagree, `git.md` wins and the disagreement is a bug to fix.
 
 A PR is ready only when everything that can prove the change has run
 **against the branch** and passed. `workflow.readyGates` is the enforced list,
-in order: `verify.full` on the branch head, CI `check`, the Vercel preview,
-Lighthouse, a changed workflow run on the branch, and the owner's preview walk
-for UI. Claude marks a PR ready only when every gate it can check has passed,
+in order: `verify.full` on the branch head, CI `check`, the full browser suite,
+the Vercel preview, Lighthouse, a changed workflow run on the branch, and the
+owner's preview walk for UI. A draft's CI checks the browser suite's core
+projects; adding the `e2e:full` label reruns it on every project (D-80), and
+Claude watches that run in the background rather than waiting on it. A PR
+marked ready, and every push to `main`, always gets the full suite.
+Claude marks a PR ready only when every gate it can check has passed,
 and lists the owner's gates in its report. "It will show up on `main`" is not a test:
 a failure found after merge means reverting `main`. Run every suite that
 applies, not just the one nearest the change.

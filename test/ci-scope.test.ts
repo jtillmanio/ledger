@@ -1,7 +1,10 @@
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
-import { needsBrowserAndBuild } from "../scripts/lib/ci-scope.mjs";
-import { checkScript, ciJob, ciJobs } from "./ci-yml";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { FULL_E2E_LABEL, e2eScope, needsBrowserAndBuild } from "../scripts/lib/ci-scope.mjs";
+import { checkScript, ci, ciJob, ciJobs } from "./ci-yml";
 
 describe("needsBrowserAndBuild (scripts/ci-scope.mjs)", () => {
   it("skips the slow steps for backups, docs, Claude config and root markdown", () => {
@@ -88,5 +91,52 @@ describe("ci.yml's check job is CI's verdict", () => {
     expect(verdict({ ...green, E2E: "cancelled" })).toBe(1);
     expect(verdict({ ...green, E2E: "skipped" })).toBe(1);
     expect(verdict({ ...green, SCOPE: "failure", FULL: "", E2E: "skipped" })).toBe(1);
+  });
+});
+
+describe("e2eScope: how much of the browser suite a run checks (D-80)", () => {
+  const pr = (draft: boolean, labels: string[] = []) => ({ pull_request: { draft, labels: labels.map((name) => ({ name })) } });
+
+  it("checks the core projects on a draft PR", () => {
+    expect(e2eScope("pull_request", pr(true))).toBe("core");
+    expect(e2eScope("pull_request", pr(true, ["dependencies"]))).toBe("core");
+  });
+
+  it("checks every project on a draft labelled e2e:full, a PR marked ready, and a push to main", () => {
+    expect(FULL_E2E_LABEL).toBe("e2e:full");
+    expect(e2eScope("pull_request", pr(true, ["dependencies", "e2e:full"]))).toBe("full");
+    expect(e2eScope("pull_request", pr(false))).toBe("full");
+    expect(e2eScope("push", null)).toBe("full");
+  });
+
+  it("checks every project when it cannot read the event", () => {
+    expect(e2eScope(undefined, null)).toBe("full");
+    expect(e2eScope("pull_request", {})).toBe("full");
+  });
+
+  it("scripts/ci-scope.mjs writes the scope from the event payload to $GITHUB_OUTPUT", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ci-scope-"));
+    try {
+      const event = join(dir, "event.json");
+      const out = join(dir, "output");
+      writeFileSync(event, JSON.stringify(pr(true)));
+      writeFileSync(out, "");
+      const r = spawnSync(process.execPath, ["scripts/ci-scope.mjs"], {
+        encoding: "utf8",
+        env: { ...process.env, GITHUB_EVENT_NAME: "pull_request", GITHUB_EVENT_PATH: event, GITHUB_OUTPUT: out },
+      });
+      expect(r.status, r.stderr).toBe(0);
+      expect(readFileSync(out, "utf8")).toBe("full=true\ne2e_scope=core\n");
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it("ci.yml reruns on the label, and the shards take the scope and show it in their name", () => {
+    expect(ci).toMatch(/pull_request:\n(?: {4}#.*\n)* {4}types: \[opened, synchronize, reopened, labeled\]/);
+    expect(ciJob("scope")).toContain("e2e_scope: ${{ steps.scope.outputs.e2e_scope }}");
+    const e2e = ciJob("e2e");
+    expect(e2e).toContain("E2E_SCOPE: ${{ needs.scope.outputs.e2e_scope }}");
+    expect(e2e).toContain("name: e2e ${{ needs.scope.outputs.e2e_scope }} ${{ matrix.shard }}/4");
   });
 });

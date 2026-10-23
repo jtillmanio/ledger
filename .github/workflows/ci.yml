@@ -2,10 +2,12 @@ name: CI
 
 on:
   pull_request:
+    # `labeled` so adding e2e:full starts the full browser suite on the same commit.
+    types: [opened, synchronize, reopened, labeled]
   push: { branches: [main] }
 
-# A newer push to a PR cancels its older run. Runs on main are never
-# cancelled: Release checks CI on the exact commit it promotes.
+# A newer push (or the e2e:full label) cancels a PR's older run. Runs on main
+# are never cancelled: Release checks CI on the exact commit it promotes.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -27,17 +29,23 @@ jobs:
   # check: a PR that only changes backups, docs, .claude or root markdown skips
   # them. Everything else still runs, so `check` always reports for Release.
   # A push to main gets no --base and runs the full gate.
+  #
+  # And how much of the browser suite runs (D-80): a draft PR checks the core
+  # projects; a PR marked ready, one labelled e2e:full, and every push to main
+  # check every project. Claude adds the label once the draft is green, watches
+  # that run, and only then marks the PR ready (the ready gate in .claude/kit.json).
   scope:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
       full: ${{ steps.scope.outputs.full }}
+      e2e_scope: ${{ steps.scope.outputs.e2e_scope }}
     steps:
       - uses: actions/checkout@v7
         with: { fetch-depth: 0 }
       - uses: actions/setup-node@v7
         with: { node-version-file: .nvmrc }
-      - name: Decide whether the browser suite and the build run
+      - name: Decide whether the browser suite and the build run, and its scope
         id: scope
         run: node scripts/ci-scope.mjs ${{ github.event_name == 'pull_request' && '--base origin/main' || '' }}
 
@@ -99,6 +107,7 @@ jobs:
   # compiled on its first request. scripts/e2e.mjs refuses without
   # TEST_DATABASE_URL; DATABASE_URL exists only for the build, and names nothing.
   e2e:
+    name: e2e ${{ needs.scope.outputs.e2e_scope }} ${{ matrix.shard }}/4
     needs: scope
     if: needs.scope.outputs.full == 'true'
     runs-on: ubuntu-latest
@@ -109,7 +118,7 @@ jobs:
         shard: [1, 2, 3, 4]
     env:
       E2E_SERVER: start
-      E2E_SCOPE: full   # every project; a local run checks the core ones
+      E2E_SCOPE: ${{ needs.scope.outputs.e2e_scope }}
     steps:
       - uses: actions/checkout@v7
       - name: Start PostgreSQL
@@ -178,13 +187,15 @@ jobs:
         env:
           SCOPE: ${{ needs.scope.result }}
           FULL: ${{ needs.scope.outputs.full }}
+          E2E_SCOPE: ${{ needs.scope.outputs.e2e_scope }}
           TESTS: ${{ needs.tests.result }}
           E2E: ${{ needs.e2e.result }}
         run: |
-          echo "scope=$SCOPE (full=$FULL) tests=$TESTS e2e=$E2E"
+          echo "scope=$SCOPE (full=$FULL, browser suite: $E2E_SCOPE) tests=$TESTS e2e=$E2E"
           [ "$SCOPE" = success ] || { echo "::error::scope: $SCOPE"; exit 1; }
           [ "$TESTS" = success ] || { echo "::error::tests: $TESTS"; exit 1; }
           if [ "$FULL" = true ]; then
+            echo "Browser suite: the **$E2E_SCOPE** scope ($E2E)." >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
             [ "$E2E" = success ] || { echo "::error::e2e (and the build): $E2E"; exit 1; }
           else
             [ "$E2E" = skipped ] || { echo "::error::e2e ran or failed on a docs-only change: $E2E"; exit 1; }

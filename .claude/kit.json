@@ -89,6 +89,7 @@
     "readyGates": [
       "verify.full",
       "ci",
+      { "name": "Full browser suite on the branch", "check": "Skip when the PR's CI skipped e2e (docs-only). Otherwise gh label create e2e:full once per repo if it is missing, then gh pr edit <n> --add-label e2e:full: CI reruns on the same commit with every project (its shards read 'e2e full n/4'). Watch that run in the background (gh run watch <id> --exit-status, run_in_background) instead of waiting on it, and mark the PR ready when it is green (D-80)", "by": "claude", "failureLog": "gh run view <id> --log-failed; the merged HTML report is the run's e2e-report artifact" },
       { "name": "Vercel preview deployed", "check": "gh pr checks <n> shows the Vercel status as pass", "by": "claude", "failureLog": "the Vercel deployment log (gh run view cannot see it)", "ownerFix": "A migration regenerated after the branch's first preview needs the Neon branch preview/<git branch> deleted and the preview redeployed (START-HERE 10f)" },
       { "name": "Lighthouse green", "check": "gh pr checks <n> shows Lighthouse as pass and its PR comment shows nothing over budget", "by": "claude" },
       { "name": "Changed workflow run on the branch", "check": "gh workflow run <file> --ref <branch>; gh run watch <id> --exit-status", "by": "claude", "when": [".github/workflows/*"] },
