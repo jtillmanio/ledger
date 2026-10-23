@@ -42,7 +42,8 @@ describe("list totals (AC-1)", () => {
 
   it("/comics/runs prints the whole list as its denominator when a filter narrows it", async () => {
     const { default: Runs } = await import("../src/app/comics/runs/page");
-    const html = renderToStaticMarkup(await Runs({ searchParams: Promise.resolve({ state: "reading" }) }));
+    // The run list's rows carry + Up next (task 1.10), which pushes onto the undo stack.
+    const html = renderToStaticMarkup(createElement(UndoProvider, null, await Runs({ searchParams: Promise.resolve({ state: "reading" }) })));
     expect(html).toContain("2 of 5 shown");
   });
 });

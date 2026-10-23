@@ -213,8 +213,8 @@ tables.
   (Lighthouse mobile, devtools throttling: Slow 4G, 4× CPU): any tap paints a
   skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
   page within 1 s. What holds that, and the test that fails if it slips:
-  - **Queries per page, in one wave.** `/comics` 5, `/comics/runs` 2, a run 3,
-    `/books/list` 5, `/inbox` 2, `/watch` none, `/login` none, `/` and `/books` none (redirects), each page's queries started together
+  - **Queries per page, in one wave.** `/comics` 6, `/comics/runs` 2, a run 3,
+    `/comics/status` 2, `/books/list` 5, `/inbox` 2, `/watch` none, `/login` none, `/` and `/books` none (redirects), each page's queries started together
     (`test/query-budget.test.ts`, which counts them). A query that must wait on
     another raises a page's waves; raising either number needs a reason here.
     The dashboard (then `/`) and `/books/list` went from 4 to 5 with the inbox
@@ -224,7 +224,10 @@ tables.
     list is 2.x's `/books/releases`. It is 5 again with the thumb bar (task
     1.8b): `nextUnread`, the hero run's next unread placements, which the mark
     verb and the batch sheet need. It names no run, so it starts in the same wave
-    as `inProgressRuns` instead of waiting on it. The shell adds one more to every screen but
+    as `inProgressRuns` instead of waiting on it. It is 6 with the Up next shelf
+    (task 1.10): `upNext`, the queue's unstarted runs from `run_queue_state`, in
+    the same wave; *In Up next · #N* rides on the existing run reads as a join, not
+    a query of its own. The shell adds one more to every screen but
     sign-in (task 1.8): the sidebar's and rail's `Inbox (N)` count, a one-row query
     in a `<Suspense>` of its own (`InboxCount`, deduplicated with React's `cache`
     so the rail and the sidebar share one). It is outside each page's budget
@@ -270,7 +273,7 @@ tables.
     |---|---|---|---|---|
     | `/login` | 8,000 | 170,000 | 30 | 100 |
     | `/comics` | 28,000 | 170,000 | 35 | 100 |
-    | `/comics/runs` | 47,000 | 170,000 | 35 | 100 |
+    | `/comics/runs` | 57,000 | 170,000 | 35 | 100 |
     | `/comics/bendis-disassembled` | 25,000 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 21,000 | 171,000 | 29 | 100 |
     | `/books/list` | 48,000 | 170,000 | 29 | 100 |
@@ -287,7 +290,10 @@ tables.
     same way from PR #80's preview (2026-10-13, Lighthouse 13.5.0): document +
     RSC 8.7 KB, JS 140.7 KB, 23 requests, accessibility 100, CLS 0.003.
     Task 1.8c moved the run list to `/comics/runs`, which keeps the 47,000 that
-    `/comics` was set to (it is the same screen). `/comics` is now the
+    `/comics` was set to (it is the same screen); task 1.10 raised it to 57,000:
+    every run row gained **+ Up next** (a client button named for its run, AC-3),
+    and the list measured 47,740 bytes on PR #115's preview, so the budget is that
+    median plus 20%, the rule above. `/comics` is now the
     dashboard: 28,000 is the median of its first preview's Lighthouse run
     (23,046 bytes, PR #108) plus 20%. `/books` is measured at `/books/list`,
     since Lighthouse sends the session as a `Cookie` header and a redirect

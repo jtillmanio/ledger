@@ -1210,3 +1210,90 @@ a.row:focus-visible,.row:has(.row-link:focus-visible){box-shadow:var(--focus-rin
 :root[data-theme="dark"] .tag,
 :root[data-theme="dark"] .bdg.dn,
 :root[data-theme="dark"] .stepper{box-shadow:inset 0 0 0 1px var(--rule)}
+
+/* --- the comics Up next queue (task 1.10; D-40, FP-D2, FP-D18; STYLE_GUIDE §7
+   `shelf`, §14.1; mockup `queue`) ---------------------------------------------
+   The dashboard's slot 2 is a shelf of covers in queue order; from 1024px main
+   and the side rail sit side by side (§14.6: main 656 at 1280, 592 at 1024),
+   so the shelf stops at main's edge instead of running under the rail. */
+@media (min-width:1024px){
+  .dash-cols{display:grid;grid-template-columns:minmax(0,1fr) var(--aside-w);column-gap:24px;align-items:start}
+  .dash-side{position:sticky;top:104px}
+}
+@media (min-width:1280px){ .dash-cols{column-gap:32px} }
+
+.slot-head{display:flex;align-items:center;gap:.5rem;margin:2.25rem 0 .75rem}
+.slot-head h2,h2.group-head{margin:0;font-size:.75rem;line-height:1rem;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-2)}
+h2.group-head{margin:2.25rem 0 .75rem}
+.slot-head .n,h2.group-head .n{font-size:.6875rem;font-weight:500;letter-spacing:0;color:var(--muted)}
+.slot-head .grow{flex:1}
+.slot-head .btn{min-height:32px;padding:0 .75rem;font-size:.8125rem;font-weight:500;box-shadow:none;border-color:var(--rule-2)}
+.slot-head .pager{display:inline-flex;gap:.5rem;margin-right:.25rem}
+.slot-head .pg{width:32px;padding:0;font-size:1rem;line-height:1}
+.slate,.shelf-slot .empty,#queue-head + .empty{padding:1rem;border-radius:var(--r-lg);background:var(--raise);color:var(--ink-2)}
+
+/* The row bleeds to the frame edge below 1024px (the column's padding), and
+   snaps a cover to its start. No scrollbar: the partial last cover says it scrolls. */
+.shelf{display:flex;gap:12px;overflow-x:auto;scrollbar-width:none;list-style:none;
+  margin:0 -1.25rem;padding:2px 1.25rem 6px;scroll-padding-inline:1.25rem;
+  scroll-snap-type:x mandatory;overscroll-behavior-x:contain}
+.shelf::-webkit-scrollbar{display:none}
+@media (min-width:768px){ .shelf{gap:16px;margin:0 -2rem;padding:2px 2rem 6px;scroll-padding-inline:2rem} }
+@media (min-width:1024px){ .shelf{margin:0;padding:2px 0 6px;scroll-padding-inline:0} }
+@media (prefers-reduced-motion:no-preference){ .shelf{scroll-behavior:smooth} }
+.shelf .card{flex:none;width:var(--cover-shelf);display:flex;flex-direction:column;gap:6px;scroll-snap-align:start}
+.shelf .cover{position:relative;display:block;width:var(--cover-shelf);aspect-ratio:2/3;border-radius:var(--r-cover);
+  box-shadow:var(--sh-cover);overflow:hidden}
+.shelf .cover:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring)}
+.shelf .cover .cv{display:block;width:100%;height:100%;background:var(--sunk)}
+.shelf .pos{position:absolute;top:6px;left:6px;min-width:22px;height:22px;padding:0 6px;box-sizing:border-box;
+  border-radius:var(--r-sm);background:var(--overlay);color:var(--ink);font-size:.6875rem;font-weight:600;
+  line-height:22px;text-align:center}
+.shelf .card-title{font-size:.8125rem;line-height:1.0625rem;font-weight:600;color:var(--ink);
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+.shelf .card-meta{font-size:.6875rem;line-height:.875rem;color:var(--muted);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shelf .bdg,.qmeta .bdg,.row-verbs .bdg{align-self:flex-start;font-family:var(--mono)}
+.shelf .start{min-height:44px;margin-top:2px;box-shadow:none;border-color:var(--rule-2)}   /* the shelf's primary verb: a 44px target */
+.bdg.out{background:var(--surface);box-shadow:inset 0 0 0 1px var(--ready)}
+
+/* *+ Up next* / *Read next*, or *In Up next · #N* once queued. */
+.queue-verbs{display:inline-flex;gap:.5rem;flex-wrap:wrap}
+.queue-verbs .btn{min-height:32px;box-shadow:none}
+.queued{display:inline-flex;align-items:center;min-height:32px;font-size:.8125rem;color:var(--ink-2)}
+.queue-line{margin:.5rem 0 .75rem}
+/* A row's verb sits at its right, above the link's overlay, so the row keeps its
+   height (and its skeleton's) and a row is never a control nested in a link (mockup `queue`). */
+.rows .row:has(> .queue-verbs,> .queued,> .row-verbs){display:flex;align-items:center;gap:.75rem}
+.rows .row > .row-link{flex:1;min-width:0}
+.rows .row > :is(.queue-verbs,.queued,.row-verbs){position:relative;z-index:1;flex:0 0 auto}
+.row-verbs{display:flex;align-items:center;gap:.5rem}
+.queued{white-space:nowrap}
+
+/* The queue row, the one the dashboard's Reorder and the status tab share (M-08). */
+.queue{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+.qrow{display:flex;align-items:center;gap:.5rem;min-height:56px;padding:.5rem 0;border-bottom:1px solid var(--rule);
+  background:var(--page)}
+.qrow .cv{flex:0 0 var(--cover-row);width:var(--cover-row);aspect-ratio:2/3;border-radius:var(--r-cover);background:var(--sunk)}
+.qbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:.25rem}
+.qtitle{display:block;min-height:24px;line-height:24px;font-weight:600;font-size:.9375rem;color:var(--ink);text-decoration:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qmeta{display:flex;align-items:center;gap:.5rem;min-width:0;font-size:.75rem;color:var(--muted)}
+.qmeta .mono{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qrow .btn.sm{flex:0 0 auto;min-height:32px;box-shadow:none}
+.drag{flex:0 0 auto;width:44px;min-height:44px;display:grid;place-items:center;border:0;border-radius:var(--r-md);
+  background:none;color:var(--muted);font:inherit;font-size:1rem;letter-spacing:-.15em;cursor:grab;
+  touch-action:none;-webkit-touch-callout:none;user-select:none}
+.drag:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring)}
+.qrow[data-lifted]{position:relative;z-index:2;background:var(--surface);border-radius:var(--r-md);
+  box-shadow:var(--sh-2),inset 0 0 0 1px var(--brand)}
+.qrow[data-lifted] .drag{color:var(--brand);cursor:grabbing}
+@media (prefers-reduced-motion:no-preference){ .qrow{transition:box-shadow var(--dur-1) var(--ease-out)} }
+@media (hover:hover) and (pointer:fine){
+  .drag:hover{background:var(--raise);color:var(--ink)}
+  /* The ⋯ is a hover reveal like a spine row's: shown on row hover or focus, always shown on touch. */
+  .qrow:hover .rowmenu-btn,.qrow:focus-within .rowmenu-btn{opacity:1}
+}
+#dnd-help{margin:.5rem 0 0}
+.menu .opt.danger{color:var(--danger)}

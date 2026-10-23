@@ -1,7 +1,7 @@
-import { and, desc, eq, gt, gte, inArray, isNull, like, ne, or, sql } from "drizzle-orm";
+import { and, between, desc, eq, gt, gte, inArray, isNull, like, ne, or, sql } from "drizzle-orm";
 import {
   db, authors, books, bookSeries, bookStatus, inbox, issueProgress, issues, readEvents, readingPlan, readingSettings, runIssues,
-  runs, shelfBooks,
+  runQueue, runs, shelfBooks,
   shelves, sql as pg,
 } from "./index";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
@@ -754,6 +754,119 @@ export async function moveToSomeday(userId: string, bookId: string, outer?: Tx):
     for (const period of left) await closeGap(tx, userId, period);
     return left;
   });
+}
+
+/**
+ * The comics Up next queue (task 1.10, data model 2.16). Every queue write goes
+ * through the helpers below: they keep `ordinal` contiguous from 1. Each is one
+ * transaction behind one lock per user, so two reorders of one queue never
+ * interleave (the order's UNIQUE is deferred to commit, so a renumber may pass
+ * through a duplicate). Nothing here reads or writes a run's progress: a queued
+ * run's state is `run_queue_state`'s.
+ */
+async function inQueue<T>(userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`ledger:queue:${userId}`}))`);
+    return fn(tx);
+  });
+}
+
+const queueRow = (userId: string, runId: string) => and(eq(runQueue.userId, userId), eq(runQueue.runId, runId));
+
+/** A run that can be queued: real and not soft-deleted. A placeholder is a forward-declared prereq target. */
+async function queueable(tx: Tx, runId: string) {
+  const [run] = await tx.select({ id: runs.id }).from(runs)
+    .where(and(eq(runs.id, runId), eq(runs.placeholder, false), isNull(runs.deletedAt)));
+  return Boolean(run);
+}
+
+async function queueLength(tx: Tx, userId: string) {
+  const [row] = await tx.select({ n: sql<number>`count(*)::int` }).from(runQueue).where(eq(runQueue.userId, userId));
+  return row.n;
+}
+
+/** Shift the ordinals in `from…to` by `by`. */
+function shift(tx: Tx, userId: string, from: number, to: number, by: 1 | -1) {
+  return tx.update(runQueue).set({ ordinal: sql`${runQueue.ordinal} + ${by}` })
+    .where(and(eq(runQueue.userId, userId), between(runQueue.ordinal, from, to)));
+}
+
+export type Queued = { ordinal: number; added: boolean };
+
+/**
+ * *+ Up next* (`end`) or *Read next* (`top`, everything else moves down one).
+ * A run already queued stays where it is and answers its ordinal. Null,
+ * writing nothing, for a placeholder, a soft-deleted or a missing run.
+ *
+ * The queue's length counts every row, a soft-deleted run's included: that row
+ * keeps its ordinal (hidden by the views) so a restored run comes back at its
+ * place, which is why the visible list may skip a number. Don't filter it here.
+ */
+export async function queueRun(userId: string, runId: string, at: "end" | "top"): Promise<Queued | null> {
+  return inQueue(userId, async (tx) => {
+    if (!(await queueable(tx, runId))) return null;
+    const [there] = await tx.select({ ordinal: runQueue.ordinal }).from(runQueue).where(queueRow(userId, runId));
+    if (there) return { ordinal: there.ordinal, added: false };
+    const n = await queueLength(tx, userId);
+    if (at === "top") await shift(tx, userId, 1, n, 1);
+    const ordinal = at === "top" ? 1 : n + 1;
+    await tx.insert(runQueue).values({ userId, runId, ordinal });
+    return { ordinal, added: true };
+  });
+}
+
+/**
+ * Move a queued run to `to` (clamped to 1…N), the runs between closing up
+ * behind it: *Move to top*, *Move up*, *Move down* and a drop. Answers its new
+ * ordinal; null when it isn't queued.
+ */
+export async function moveQueued(userId: string, runId: string, to: number): Promise<number | null> {
+  return inQueue(userId, async (tx) => {
+    const [there] = await tx.select({ ordinal: runQueue.ordinal }).from(runQueue).where(queueRow(userId, runId));
+    if (!there) return null;
+    const target = Math.min(Math.max(1, Math.trunc(to)), await queueLength(tx, userId));
+    const from = there.ordinal;
+    if (target === from) return from;
+    if (target < from) await shift(tx, userId, target, from - 1, 1);
+    else await shift(tx, userId, from + 1, target, -1);
+    await tx.update(runQueue).set({ ordinal: target }).where(queueRow(userId, runId));
+    return target;
+  });
+}
+
+/**
+ * *Remove*: a hard delete of the queue row (data model 2.16; a queue row is a
+ * note to yourself), and the runs after it close the gap. Answers the ordinal
+ * it had, which its undo sends back; null when it wasn't queued.
+ */
+export async function removeQueued(userId: string, runId: string): Promise<number | null> {
+  return inQueue(userId, async (tx) => {
+    const [gone] = await tx.delete(runQueue).where(queueRow(userId, runId)).returning({ ordinal: runQueue.ordinal });
+    if (!gone) return null;
+    const n = await queueLength(tx, userId);
+    await shift(tx, userId, gone.ordinal + 1, n + 1, -1);
+    return gone.ordinal;
+  });
+}
+
+/**
+ * *Remove*'s undo: the run comes back at `ordinal` (clamped to 1…N+1) and the
+ * runs from there move down one, so the order is exactly what it was. A run
+ * queued again in the meantime is moved there instead. Null for a run that
+ * can't be queued.
+ */
+export async function restoreQueued(userId: string, runId: string, ordinal: number): Promise<number | null> {
+  const back = await inQueue(userId, async (tx) => {
+    if (!(await queueable(tx, runId))) return null;
+    const [there] = await tx.select({ ordinal: runQueue.ordinal }).from(runQueue).where(queueRow(userId, runId));
+    if (there) return "queued" as const;
+    const n = await queueLength(tx, userId);
+    const at = Math.min(Math.max(1, Math.trunc(ordinal)), n + 1);
+    await shift(tx, userId, at, n, 1);
+    await tx.insert(runQueue).values({ userId, runId, ordinal: at });
+    return at;
+  });
+  return back === "queued" ? moveQueued(userId, runId, ordinal) : back;
 }
 
 /** A pasted line to create, unless the library has the same title and author by now. */
