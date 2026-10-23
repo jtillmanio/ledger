@@ -7,8 +7,8 @@ size: L
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: ae64628
 ---
 
 # TASK-017 — 1.9 Status screens: In flight · Up next · Done
@@ -62,9 +62,84 @@ For comics and for books, one screen answers three questions: what am I in the m
 - Automated: `test/status.test.ts` against `TEST_DATABASE_URL` covers every placement rule in AC-1, the level filter and the counts (AC-1, AC-3). `test/e2e/status.spec.ts` covers the keyboard reorder within a quarter, the URL tab, arrow keys, one underline, the empty slates, the links from the dashboard, and screenshots (AC-1, AC-2, AC-4, AC-5, AC-6). Lighthouse on the preview, with the new routes in `scripts/perf/routes.mjs`.
 - Manual: on the Vercel preview at 360px, open each tab for comics and books → expected: the right rows, counts that match, and an empty slate with one action where a tab is empty.
 
+## Follow-ups
+
+Found while planning; placed in PR #117 (approved at plan, 2026-10-23).
+
+- AC-5's *Also reading* row is part of 2.4's hero, which is not built yet. This task links the dashboard's *Mid-run* head to `?tab=inflight`, and 2.4 links *Also reading* there → docs/05-roadmap.md § 2.4 Comics dashboard (approved at plan)
+- *with words left* (books In flight) has no data: `book_status` stores no reading position, so this task shows the word count → docs/05-roadmap.md § 1.9 Status screens (approved at plan)
+- Where a book's reading position would be stored, and which task builds it, is the owner's question (a schema column) → docs/OWNER-CHECKLIST.md § Decisions waiting on you (approved at plan)
+- *track → block order* for *Ready, not queued*: `tracks` has no order column, so it is track name, then `block_ordinal`, then `run_ordinal`, unblocked runs last → docs/review/decisions.md § D-79 (approved at plan)
+- Books' three empty status slates had no source copy; the copy in Risks 1 is the owner's → docs/04-design.md § 14. Per-screen refinements (approved at plan)
+- Context says "the *Status* h1", but the mockup has *Runs by status* / *Books by status*, and the mockup wins on copy (D-1) → not tracked: resolved in this plan
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Provisional: no (TASK-016 is Done). Large by policy (`never-split`, attended): two media × three tabs, a shared reorder engine, the books list filter and the mockup redraw.
+
+**Steps**
+
+1. **Queries** (`src/db/queries.ts`):
+   - `inFlightRuns(userId)`: the `inProgressRuns` columns plus a `last_read_at` lateral (MAX `completed_at`), ordered `last_read_at DESC NULLS LAST, r.id`. `inProgressRuns` keeps its order for the dashboard hero.
+   - `readyNotQueued` gets its own SQL: unqueued, `rp.state='unread'`, readiness `ready_all` then `ready_hard`, then track name → `block_ordinal` → `run_ordinal`, runs with no block last; still `LIMIT 50` with `total`.
+   - `doneRuns(userId)`: `run_state` `state='read'`, ordered `finished_at DESC NULLS LAST, title`.
+   - `booksInFlight` (`reading`, with `word_count`).
+   - `booksUpNext`: `plan_period` ⨝ `book_status='to_read'`, with level, year, quarter and ordinal, ordered year → quarter → ordinal / title, then On deck by title. It also returns `someday` = the count of `to_read_level` rows at level `someday`.
+   - `booksDone`: `read` with `extract(year FROM finished_on)`, newest first and *No year* last, plus `dnf` rows.
+   - `listBooks` gains `level?: 'quarter'|'year'|'on_deck'|'someday'`, filtered through `to_read_level`.
+2. **The quarter move** (`src/db/writes.ts`, not in Files likely touched): `moveInQuarter(userId, period, bookId, to)` runs inside `inPlan`. It reads the full quarter order, moves the book to ordinal `to` and calls `reorderQuarter`. Hidden rows (books in the quarter that are not `to_read`) keep their places, like the queue's started runs. New `src/app/api/plan/route.ts` takes PATCH `{ bookId, period, to }` (404 when the book isn't in that quarter) and MOVE_TOP through `moveToTop`.
+3. **ReorderList**: extract QueueList's engine (keyboard lift, pointer drag, live region, menu, undo) into a generic `src/components/ReorderList.tsx` that takes `rows`, `move(id, toOrdinal)`, an optional `remove`, `renderBody`, `scopeLabel` ("in Q1 2027") and `helpId`. `QueueList` becomes a thin comics wrapper with no behaviour change (`test/e2e/queue.spec.ts` must stay green). `PlanQuarter.tsx` wraps it for one quarter: *Move to top · Move up · Move down*, no Remove. One instance per quarter, so a lift can't cross quarters.
+4. **StatusTabs** (`src/components/StatusTabs.tsx`, client):
+   - A `role="tablist"` of three `<a role="tab" aria-selected aria-controls>` links: *In flight · Up next · Done*, each with a mono count. ←/→/Home/End move focus and navigate with `router.replace`.
+   - One `<span class="tab-ink">` per tablist, placed by `--i`.
+   - Children are the selected tab's `role="tabpanel"`.
+   - `?tab` is parsed and anything unknown falls back to `inflight`. QUEUE_HREF stays `?tab=next`.
+5. **EmptySlate** (`src/components/EmptySlate.tsx`): `<div class="empty"><b>title</b> body + one primary action</div>`.
+6. **Pages**:
+   - `src/app/comics/status/page.tsx` is rewritten: h1 *Runs by status*, the three tabs, In flight rows with `.meter` and `Read <next_label>` (a link to `#p-n`, `title` = the full label, CSS truncation), and Up next = today's queue and *Ready, not queued* sections.
+   - New `src/app/books/status/page.tsx` + `loading.tsx`: h1 *Books by status*. Up next shows quarter groups (`PlanQuarter`), then each year's bare-year lane after its quarters (a grey `ghead` with its count, rows by title, no handle, no button), then On deck, then a `Someday · N books` row linking to `/books/list?status=to_read&level=someday`. Done is grouped by year, *No year* last, then `<details class="stopped"><summary>Stopped · N</summary>`.
+   - Counts = rows rendered (comics Up next = queue + `readyTotal`; books Up next = plan rows; Done includes Stopped).
+7. **Empty slates** use the comics copy from mockup `states` (line 5706). Books' copy is the owner-approved copy (see Risks), with *Add a book* via `AddBooksButton` (TASK-008's sheet).
+8. **`/books/list`**: when `status=to_read`, a chip row *All · Quarter · Year · On deck · Someday* with `?level=` (`prefetch={false}`).
+9. **Nav**: `comics-status` and `books-status` get `enabled: true`.
+10. **Dashboard**: the *Mid-run* head links to `?tab=inflight`; *Ready when you are* gains `All {readyTotal}` → `/comics/status?tab=next#ready`; the shelf's `Up next` h2 gets a link to the tab (*Reorder* already goes there).
+11. **CSS** (`globals.css`, tokens only):
+    - `.tabs`: 44px tabs; the selected tab is `--ink` 600 and the rest `--muted` 500; counts take their tab's colour, never opacity (TASK-028 note).
+    - `.tab-ink`: 2px `--m-*`, `transform var(--dur-2)`, no transition under reduced motion.
+    - `.lane-year` uses `--surface-2`/`--muted` and never `--blocked`; plus `.stopped` and the one `.meter` fill `--ready`.
+12. **Mockup**: draw books' three empty slates in `design/mockups.html` beside comics', and strike *Not shown* #6 for comics and books in `design/mockups-index.md`.
+13. **Budgets**: `scripts/perf/routes.mjs` + `budget.json` gain `comics-status` and `books-status`. `test/query-budget.test.ts` updates `/comics/status` (6 queries, 1 wave) and adds `/books/status`. `test/loading-states.test.tsx` adds books.
+
+**Files**: the steps' files; the ones not in Files likely touched are `src/db/writes.ts`, `src/app/api/plan/route.ts`, `src/components/ReorderList.tsx`, `src/components/PlanQuarter.tsx`, `src/app/books/status/loading.tsx`, the dashboard page, `QueueShelf.tsx`, `test/query-budget.test.ts` and `test/loading-states.test.tsx`.
+
+**Test strategy**
+
+- AC-1 data rules: `test/status.test.ts`, one `it` per Check clause: the 3/10 queued run, queue order, *Ready, not queued*, the blocked queued run and the blocked unqueued run, all read, read-elsewhere, undated last, 2027 bare-year position, `someday` count + `listBooks({status:'to_read',level:'someday'})`, DNF only in Stopped. Plus `moveInQuarter` keeps the quarter contiguous 1–3 and rejects another quarter.
+- AC-1 UI and AC-2, AC-4, AC-5, AC-6: `test/e2e/status.spec.ts`:
+  - the Space, Down, Space keyboard reorder in 2027-Q1;
+  - tab counts = `[role=tabpanel]` rows;
+  - `.tab-ink` count = 1;
+  - `?tab=done` survives a reload; arrow keys;
+  - the six slates, each with one `.btn`; *Add a book* opens the sheet;
+  - the bare-year lane's computed colour ≠ `--blocked`;
+  - the dashboard links; the `Read …` name and `title`;
+  - `<details class=stopped>`;
+  - 44px tabs; axe; screenshots at 360px for every tab, populated and empty.
+  - `test/nav-items.test.tsx` checks that Status is enabled.
+- AC-3: `test/status.test.ts`: each level equals `to_read_level`'s set.
+- AC-6 (every viewport, light and dark): the existing `markup.spec.ts`/`routes.spec.ts` route lists gain the two routes.
+
+**Risks / open questions**
+
+1. **Books slate copy, for owner approval:**
+   - In flight: *Nothing in flight. Books you start land here.* → **Open To read**
+   - Up next: *Nothing planned. The plan starts empty; nothing is added for you.* → **Add a book**
+   - Done: *Nothing finished yet. Finished books land here, by year.* → **Go to In flight**
+2. Dragging a book that is in two quarters moves it only in the quarter dragged.
+3. The ReorderList extraction risks a regression in the queue; the queue e2e suite guards it.
+4. Running all three tabs' queries per load costs about 6 queries in 1 wave. A Lighthouse budget squeeze is possible.
+
+**Size check**: about 20 files across UI, API and query layers, with no schema change. It stays whole by `never-split`; it is already `autonomy: attended`.
 
 ## Review log
 
