@@ -40,6 +40,12 @@ After pushing, on GitHub:
   bytes or requests over `scripts/perf/budget.json`, CLS of 0.1 or more, or an
   accessibility score under the recorded one. A new top-level screen adds its
   route to `scripts/perf/routes.mjs` and its budget in the same PR.
+- **A docs-only PR has neither gate.** A PR that changes only backups, docs,
+  design, CI or Claude config (`needsBuild` in `scripts/lib/release.mjs`) gets
+  no Vercel build, from its first push (the ignore step compares with `main`'s
+  tip), and Lighthouse's `plan` measures nothing on it. Its `check` still runs,
+  without the browser suite and the build. A PR that changes
+  `lighthouse.yml` is always measured.
 - UI changes: open the Vercel preview at 360–412px and walk the changed screen
   and its states against `design/mockups.html`. Say what you looked at.
 - A changed workflow runs on the branch before merge:

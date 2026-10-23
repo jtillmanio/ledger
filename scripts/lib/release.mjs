@@ -27,6 +27,38 @@ export function deploymentNeedsBuild(files) {
 }
 
 /**
+ * The Ignored Build Step, start to finish: `{ build, why }`. It compares with
+ * the branch's last deployment, or, on a branch's first push (Vercel gives no
+ * previous SHA), with main's tip, so a docs-only branch skips from its first
+ * commit. Against main the diff is tree to tree: a branch behind a main that
+ * changed app code builds, which is the safe side. `git(args)` runs git and
+ * answers `{ status, stdout }`. When it cannot tell, it builds.
+ */
+export function ignoredBuildStep(previousSha, git) {
+  let base = previousSha;
+  const label = previousSha ? previousSha.slice(0, 7) : "main";
+  if (!base) {
+    // Vercel's clone is shallow and holds only this branch.
+    if (git(["fetch", "--no-tags", "--depth=1", "origin", "main"]).status !== 0) {
+      return { build: true, why: "no previous deployment, and main could not be fetched to compare with" };
+    }
+    base = "FETCH_HEAD";
+  }
+  const diff = git(["diff", "--name-only", base, "HEAD"]);
+  if (diff.status !== 0) return { build: true, why: `${label} is not in the clone, so nothing to compare with` };
+  const files = diff.stdout.split("\n").filter(Boolean);
+  if (deploymentNeedsBuild(files)) {
+    return {
+      build: true,
+      why: files.length
+        ? `${files.length} file(s) changed since ${label}`
+        : `nothing changed since ${label}, so this is a redeploy`,
+    };
+  }
+  return { build: false, why: `only backups, docs, design, CI or Claude config changed since ${label}` };
+}
+
+/**
  * Which journal entries the database has not applied, by drizzle-kit migrate's
  * own rule: an entry runs when its `when` is later than the newest applied
  * `created_at`. `unknown` lists applied timestamps no journal entry has — the

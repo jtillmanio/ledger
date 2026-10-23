@@ -69,6 +69,7 @@ export interface Metrics {
 }
 export function mergeMetrics(parts: Metrics[], order: string[]): Metrics;
 export function findComment<T extends { body?: string }>(comments: T[]): T | undefined;
+export function unchangedApp(files: string[] | null): string | null;
 export function measurable(args: {
   eventName: string;
   environment?: string;
