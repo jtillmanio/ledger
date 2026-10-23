@@ -1,13 +1,14 @@
 // Tells CI whether this change needs its slow steps: the browser suite and the
-// production build. Writes `full=true|false` to $GITHUB_OUTPUT and says why.
+// production build. Writes `full=true|false` to $GITHUB_OUTPUT and says why,
+// and `e2e_scope=core|full`: how much of the browser suite runs (D-80).
 //   node scripts/ci-scope.mjs --base origin/main
 //
 // Runs everything when it cannot tell: no --base (a push to main, which Release
 // checks), a base the clone does not have, or a diff that fails. Everything else
 // in CI runs either way, so the `check` job always reports.
 import { spawnSync } from "node:child_process";
-import { appendFileSync } from "node:fs";
-import { needsBrowserAndBuild } from "./lib/ci-scope.mjs";
+import { appendFileSync, readFileSync } from "node:fs";
+import { e2eScope, needsBrowserAndBuild } from "./lib/ci-scope.mjs";
 
 const argBase = process.argv.indexOf("--base");
 const base = argBase > 0 ? process.argv[argBase + 1] : null;
@@ -25,4 +26,7 @@ function decide() {
 
 const { full, why } = decide();
 console.log(`${full ? "full" : "skip"}: ${why}`);
-if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `full=${full}\n`);
+const event = process.env.GITHUB_EVENT_PATH ? JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, "utf8")) : null;
+const scope = e2eScope(process.env.GITHUB_EVENT_NAME, event);
+console.log(`e2e scope: ${scope}`);
+if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `full=${full}\ne2e_scope=${scope}\n`);

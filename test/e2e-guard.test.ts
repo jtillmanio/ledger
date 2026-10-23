@@ -163,10 +163,10 @@ describe("node scripts/e2e.mjs", () => {
     expect(runWrapper({ TEST_DATABASE_URL: TEST, DATABASE_URL: LIVE }).launched.scope).toBeNull();
   });
 
-  it("test:e2e:full is the wrapper with --full, and CI's shards run the full scope", () => {
+  it("test:e2e:full is the wrapper with --full, and CI's shards run the scope CI picks", () => {
     const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
     expect(pkg.scripts["test:e2e:full"]).toBe("node scripts/e2e.mjs --full");
-    expect(ciJob("e2e")).toContain("E2E_SCOPE: full");
+    expect(ciJob("e2e")).toContain("E2E_SCOPE: ${{ needs.scope.outputs.e2e_scope }}");
   });
 });
 
