@@ -17,7 +17,11 @@ concurrency:
 
 jobs:
   claude:
-    if: contains(github.event.comment.body, '@claude')
+    # The repo is public: anyone can comment, and only the owner and
+    # collaborators may start a run with the token (the action also checks).
+    if: >-
+      contains(github.event.comment.body, '@claude') &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
