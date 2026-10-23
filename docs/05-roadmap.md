@@ -1024,7 +1024,7 @@ read began.
 - `npm run test:db:reset` migrates from zero.
 
 ### ☐ 1.19 Comics Add remembers the last run · S
-*From 1.8b (TASK-015, task/1.8b-thumb-bar-contrast):* design §14 *Bulk add*,
+*From 1.8b (TASK-015, PR #114):* design §14 *Bulk add*,
 **Remember the last run** you added to, so consecutive adds don't re-navigate.
 1.8 ships the comics *Add* nav item `enabled: false` (`src/components/nav/items.ts`),
 because no comics route adds without a run (TASK-014's open question; TASK-005's
@@ -1105,7 +1105,7 @@ minutes/day with observed values behind an explicit **Use these**, and the
 capacity card flags when the setting has drifted from reality. Mockup:
 `session` — build the right-hand entry path, not the timer. product #20.
 
-*From 1.8b (TASK-015, task/1.8b-thumb-bar-contrast):* the batch sheet
+*From 1.8b (TASK-015, PR #114):* the batch sheet
 (`src/components/BatchSheet.tsx`) ships *Log a session · Log* as
 `aria-disabled="true"`, with the reason *Sessions aren't here yet.* Enable it
 here to open the session sheet, and drop the reason.
@@ -1174,7 +1174,7 @@ and names the top of the plan in full on the primary; below about 1100px it
 truncates and keeps the full title in its accessible name. No capacity card and
 no *Place them* at any width until the question below is answered.
 
-*From 1.8b (TASK-015, task/1.8b-thumb-bar-contrast):* 1.8b builds and
+*From 1.8b (TASK-015, PR #114):* 1.8b builds and
 unit-tests `ThumbBar`'s books configuration (`src/components/ThumbBar.tsx`):
 the bar *Log progress · ✓ finished · search*, and the header *Search · Finished
 it · Log pages*. Since `/books` was still a redirect, nothing renders it yet.
@@ -2898,7 +2898,7 @@ it is converted.
   (`> mark through #160`, `> move Piranesi Q3`, `> queue Priest BP top`) above
   *Results*, and results are grouped Comics · Books · Watch. The shortcut shows
   in the sidebar; on the phone the trigger is the 44px search icon.
-  *From 1.8b (TASK-015, task/1.8b-thumb-bar-contrast):* the thumb bar's and the
+  *From 1.8b (TASK-015, PR #114):* the thumb bar's and the
   dashboard header's *Search (Ctrl K)* slot is drawn, `aria-disabled`, until this
   lands. Turn on the `search` item in `NAV_ITEMS` and the slot becomes a link
   to it (`SearchVerb` in `ThumbBar.tsx`).
@@ -3448,7 +3448,7 @@ is mid-show (S1 watched, S2 up next) on both.
 
 1.8d's `SeasonRowsSkeleton` was measured against a fixture of the mockup's markup; re-measure it against the season rows drawn here, within 2px at 360px (from TASK-027).
 
-*From 1.8b (TASK-015, task/1.8b-thumb-bar-contrast):* until this task, `/watch`
+*From 1.8b (TASK-015, PR #114):* until this task, `/watch`
 shows 1.8b's empty-state verbs, *Search · Save to inbox*, in the thumb bar and
 the desktop header. Give `ThumbBar` (`src/components/ThumbBar.tsx`) its watch
 configuration here: slot 1 *Mark S2 watched* (the season-level verb above),
