@@ -6,6 +6,7 @@ import { join, resolve } from "node:path";
 import { checkTestUrl } from "../scripts/lib/testdb.mjs";
 import { E2E_PASSCODE, E2E_PORT, planE2e } from "../scripts/lib/e2e.mjs";
 import { planTestRun } from "../scripts/lib/test-files.mjs";
+import { ciJob } from "./ci-yml";
 
 // The browser suite (task 0.11) drives a real `next dev` and signs in, so the
 // rule from R3-02 holds here too: TEST_DATABASE_URL and nothing else, refusing
@@ -41,6 +42,15 @@ describe("planE2e: the test database, or a refusal with testdb.mjs's own message
     });
     expect(E2E_PASSCODE).not.toBe("owners-real-one");
     expect(plan.baseUrl).toBe(`http://localhost:${E2E_PORT}`);
+  });
+
+  it("runs next dev by default, next start when E2E_SERVER is start, and refuses anything else", () => {
+    const env = { TEST_DATABASE_URL: TEST, DATABASE_URL: LIVE };
+    expect(planE2e(env).serverCommand).toBe(`npx next dev --port ${E2E_PORT}`);
+    expect(planE2e({ ...env, E2E_SERVER: "start" }).serverCommand).toBe(`npx next start --port ${E2E_PORT}`);
+    const bad = planE2e({ ...env, E2E_SERVER: "prod" });
+    expect(bad.serverCommand).toBeUndefined();
+    expect(bad.error).toMatch(/E2E_SERVER is "prod": use dev or start/);
   });
 });
 
@@ -105,13 +115,16 @@ describe("wiring: test:all runs it, the docs name it, its output is ignored", ()
     }
   });
 
-  it("CI installs the browser, then runs the suite in the check job", () => {
-    const ci = read(".github/workflows/ci.yml");
-    const install = ci.indexOf("npx playwright install --with-deps chromium");
-    const run = ci.indexOf("npm run test:e2e");
-    expect(install).toBeGreaterThan(-1);
+  it("CI's e2e job builds, installs the browser, then runs its shard against next start", () => {
+    const e2e = ciJob("e2e");
+    const build = e2e.indexOf("npm run build");
+    const install = e2e.indexOf("npx playwright install --with-deps chromium");
+    const run = e2e.indexOf("npm run test:e2e -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}");
+    expect(build).toBeGreaterThan(-1);
+    expect(install).toBeGreaterThan(build);
     expect(run).toBeGreaterThan(install);
-    expect(ci.indexOf("npm run build")).toBeGreaterThan(run);
+    expect(e2e).toContain("E2E_SERVER: start");
+    expect(e2e).toContain("fail-fast: false");
   });
 
   it("git ignores the screenshots, the report and the saved sign-in", () => {

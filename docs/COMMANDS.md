@@ -49,7 +49,8 @@ npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in
                             # against `next dev` on TEST_DATABASE_URL (port 3199, passcode `e2e-passcode`); refuses
                             # without it. Stop `npm run dev` first (both use .next). Once per machine, and after a
                             # Playwright bump: `npx playwright install chromium`. Screenshots: test-results/screens/
-                            # (ignored). Pass arguments after --, e.g. `-- --project=w360-light`
+                            # (ignored). Pass arguments after --, e.g. `-- --project=w360-light`. E2E_SERVER=start
+                            # serves an existing `npm run build` with `next start` instead (CI's shards do)
 npm run test:tokens         # colour tokens: mockups = globals.css, hue distance, on-fill contrast; no DB
 npm run check:migrations    # journal = files, drop/retype has a drizzle/down file, schema.ts fully generated,
                             # no migration already on main edited (standing rule 3); no DB
