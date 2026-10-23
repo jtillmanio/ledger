@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   aggregateRoute, apiPath, baselinePr, baselineRun, filesWithSecrets, findComment, gateProblems, MARKER,
-  measurable, median, mergeMetrics, renderComment, scrubLhr, sessionCookie, summariseLhr, unbudgeted,
+  measurable, median, mergeMetrics, renderComment, scrubLhr, sessionCookie, summariseLhr, unbudgeted, unchangedApp,
   type LoadSummary, type MeasuredRoute, type RouteBudget,
 } from "../scripts/perf/lib/perf.mjs";
 import { ROUTES } from "../scripts/perf/routes.mjs";
@@ -235,6 +235,38 @@ describe("measurable", () => {
       .toEqual({ url: "https://ledger-justin-tillman.vercel.app" });
     expect(measurable({ ...hand, inputUrl: "http://example.com" })).toHaveProperty("problem");
     expect(measurable({ ...hand, inputUrl: "nope" })).toHaveProperty("problem");
+  });
+});
+
+describe("unchangedApp (a docs-only PR is not measured)", () => {
+  it("skips a PR that changes only what Vercel never builds", () => {
+    // PR #117: a plan and its follow-ups. Vercel deployed its first push anyway.
+    expect(unchangedApp(["docs/tasks/TASK-017-status-screens.md", "docs/05-roadmap.md", "docs/review/decisions.md"]))
+      .toMatch(/only backups, docs, design, CI or Claude config \(3 file\(s\)\)/);
+    expect(unchangedApp(["design/mockups-index.md", ".claude/rules/git.md", "CLAUDE.md"])).not.toBeNull();
+  });
+
+  it("measures a PR that changes the app anywhere", () => {
+    expect(unchangedApp(["docs/05-roadmap.md", "src/app/comics/status/page.tsx"])).toBeNull();
+    expect(unchangedApp(["scripts/perf/budget.json"])).toBeNull();
+    expect(unchangedApp(["etl/views.sql"])).toBeNull();
+  });
+
+  it("measures a PR that changes this workflow, so it exercises itself", () => {
+    expect(unchangedApp([".github/workflows/lighthouse.yml"])).toBeNull();
+  });
+
+  it("measures when the file list is empty or unknown", () => {
+    expect(unchangedApp([])).toBeNull();
+    expect(unchangedApp(null)).toBeNull();
+  });
+
+  it("is what plan() asks before it hands the measuring jobs a URL", () => {
+    const src = readFileSync("scripts/perf/report.mjs", "utf8");
+    const body = src.slice(src.indexOf("async function plan()"), src.indexOf("function walk("));
+    const asked = body.indexOf("unchangedApp(await prFiles(pr.number))");
+    expect(asked).toBeGreaterThan(-1);
+    expect(asked).toBeLessThan(body.indexOf('output("url"'));
   });
 });
 

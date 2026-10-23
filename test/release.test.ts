@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  alreadyProduction, deploymentNeedsBuild, directUrl, needsBuild, pendingMigrations, promoteProblem, releaseProblems, smokeProblem,
+  alreadyProduction, deploymentNeedsBuild, directUrl, ignoredBuildStep, needsBuild, pendingMigrations, promoteProblem, releaseProblems, smokeProblem,
   snapshotsToPrune,
 } from "../scripts/lib/release.mjs";
 
@@ -32,6 +32,50 @@ describe("deploymentNeedsBuild (scripts/vercel-ignore.mjs)", () => {
   it("otherwise follows needsBuild", () => {
     expect(deploymentNeedsBuild(["docs/START-HERE.md", ".github/workflows/ci.yml"])).toBe(false);
     expect(deploymentNeedsBuild(["docs/05-roadmap.md", "src/app/comics/(dash)/page.tsx"])).toBe(true);
+  });
+});
+
+describe("ignoredBuildStep (scripts/vercel-ignore.mjs)", () => {
+  /** A fake git: `fetch` answers fetchStatus; `diff` answers the files changed against each base. */
+  function git({ fetchStatus = 0, diffs = {} as Record<string, string[] | null> } = {}) {
+    const calls: string[][] = [];
+    const run = (args: string[]) => {
+      calls.push(args);
+      if (args[0] === "fetch") return { status: fetchStatus, stdout: "" };
+      const files = diffs[args[2]];
+      return files ? { status: 0, stdout: files.join("\n") + "\n" } : { status: 128, stdout: "" };
+    };
+    return { run, calls };
+  }
+
+  it("skips a docs-only commit by comparing with the branch's last deployment", () => {
+    const g = git({ diffs: { abc1234def: ["docs/05-roadmap.md"] } });
+    expect(ignoredBuildStep("abc1234def", g.run)).toEqual({
+      build: false, why: "only backups, docs, design, CI or Claude config changed since abc1234",
+    });
+    expect(g.calls.some((c) => c[0] === "fetch")).toBe(false);
+  });
+
+  it("skips a docs-only branch on its first push, compared with main's tip", () => {
+    const g = git({ diffs: { FETCH_HEAD: ["docs/tasks/TASK-017-status-screens.md", "docs/05-roadmap.md"] } });
+    expect(ignoredBuildStep(undefined, g.run)).toEqual({
+      build: false, why: "only backups, docs, design, CI or Claude config changed since main",
+    });
+    expect(g.calls[0]).toEqual(["fetch", "--no-tags", "--depth=1", "origin", "main"]);
+  });
+
+  it("builds a first push that changes app code", () => {
+    const g = git({ diffs: { FETCH_HEAD: ["docs/05-roadmap.md", "src/app/books/status/page.tsx"] } });
+    expect(ignoredBuildStep("", g.run)).toMatchObject({ build: true, why: "2 file(s) changed since main" });
+  });
+
+  it("builds when it cannot tell: main can't be fetched, or the last deployment isn't in the clone", () => {
+    expect(ignoredBuildStep(undefined, git({ fetchStatus: 128 }).run).build).toBe(true);
+    expect(ignoredBuildStep("abc1234def", git().run)).toMatchObject({ build: true, why: "abc1234 is not in the clone, so nothing to compare with" });
+  });
+
+  it("builds a redeploy, where nothing changed", () => {
+    expect(ignoredBuildStep("abc1234def", git({ diffs: { abc1234def: [] } }).run).build).toBe(true);
   });
 });
 

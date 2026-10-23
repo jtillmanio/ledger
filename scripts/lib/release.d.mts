@@ -1,5 +1,9 @@
 export function needsBuild(files: string[]): boolean;
 export function deploymentNeedsBuild(files: string[]): boolean;
+export function ignoredBuildStep(
+  previousSha: string | undefined,
+  git: (args: string[]) => { status: number | null; stdout: string },
+): { build: boolean; why: string };
 export function pendingMigrations(
   entries: { tag: string; when: number }[],
   appliedCreatedAt: (string | number)[],

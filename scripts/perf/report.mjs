@@ -1,5 +1,6 @@
 // The Lighthouse workflow's steps that need thinking (.github/workflows/lighthouse.yml).
-//   node scripts/perf/report.mjs plan       which URL to measure, or why not (previews only); the
+//   node scripts/perf/report.mjs plan       which URL to measure, or why not (previews only, and not a
+//                                           PR that changes only what Vercel never builds); the
 //                                           routes, one job each; the PR whose older runs this cancels
 //   node scripts/perf/report.mjs guard DIR  fail if any file in DIR holds a secret; names files, never values
 //   node scripts/perf/report.mjs merge DIR  the per-route jobs' metrics.json files under DIR, as one
@@ -11,7 +12,7 @@ import { appendFileSync, existsSync, readdirSync, readFileSync, statSync, writeF
 import { join } from "node:path";
 import {
   aggregateRoute, baselinePr, baselineRun, filesWithSecrets, findComment, gateProblems, measurable, mergeMetrics,
-  renderComment, unbudgeted,
+  renderComment, unbudgeted, unchangedApp,
 } from "./lib/perf.mjs";
 import { ROUTES } from "./routes.mjs";
 
@@ -32,6 +33,25 @@ async function pullsFor(sha) {
   return (await github(`commits/${sha}/pulls`)).filter((p) => p.state === "open");
 }
 
+/**
+ * Every path a pull request changes, a rename's old path included (moving a
+ * file out of src/ changes the app). Null when GitHub can't say: it lists at
+ * most 3,000 files, and a failed request is no answer either.
+ */
+async function prFiles(number) {
+  const files = [];
+  try {
+    for (let page = 1; page <= 30; page++) {
+      const batch = await github(`pulls/${number}/files?per_page=100&page=${page}`);
+      for (const f of batch) files.push(f.filename, ...(f.previous_filename ? [f.previous_filename] : []));
+      if (batch.length < 100) return files;
+    }
+  } catch (err) {
+    console.log(`Could not list #${number}'s files, so measuring: ${err.message}`);
+  }
+  return null;
+}
+
 async function plan() {
   const result = measurable({
     eventName: env.EVENT_NAME,
@@ -50,6 +70,13 @@ async function plan() {
   // A newer push to the same PR cancels this run (the jobs' concurrency group);
   // a commit with no PR, or a hand run, is a group of its own.
   const [pr] = env.EVENT_NAME === "deployment_status" ? await pullsFor(env.SHA) : [];
+  // A docs-only PR's preview is main's app: Vercel deploys a branch's first
+  // push, and a redeploy, whatever changed. A hand run always measures.
+  const unchanged = pr ? unchangedApp(await prFiles(pr.number)) : null;
+  if (unchanged) {
+    console.log(`Not measuring #${pr.number}: ${unchanged}.`);
+    return;
+  }
   const group = pr ? `pr-${pr.number}` : `run-${env.GITHUB_RUN_ID}`;
   console.log(`Measuring ${result.url}${pr ? ` for #${pr.number}` : ""}: ${ROUTES.map((r) => r.id).join(", ")}`);
   output("url", result.url);
