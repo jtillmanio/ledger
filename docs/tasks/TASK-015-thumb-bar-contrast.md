@@ -110,7 +110,7 @@ Marking what you just read is one thumb tap at the bottom of every dashboard and
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL(2) → R2 FAIL(1, bar height 73 not 72) → R3 PASS | Audit R1 CHANGES(5) → R2 PASS | Schema R1 APPROVE (1 minor fixed) | Spec R1 CHANGES (3 SPEC GAPs, owner ruled, D-78) | UI R1 CHANGES (sheet targets, fixed)
 
 ## Blocked
 
