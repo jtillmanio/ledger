@@ -435,7 +435,7 @@ run_queue(user_id → users, run_id → runs, ordinal int NOT NULL,
 the dashboard and the status screen read one ordered row set with state and
 badges, and nothing is computed in the app.
 
-**Table count:** 32 in `src/db/schema.ts` today (migrations through `0013`); the proposed tables are in §4.
+**Table count:** 33 in `src/db/schema.ts` today (migrations through `0014`, which added `run_queue`); the proposed tables are in §4.
 
 **2.17 A date is stored with its precision.** *Sept 2026, D-R3-1 (closes
 R1-04, R3-03, R2-10).* The range sheet draws *No date*, 1.5 promises

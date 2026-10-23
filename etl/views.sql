@@ -502,6 +502,31 @@ LEFT JOIN LATERAL (
 ) pp ON true
 WHERE s.status = 'to_read';
 
+-- The comics Up next queue with each run's state (task 1.10, data model 2.16).
+-- The order is the only thing stored; whether a queued run is still up next is
+-- derived here, so starting a run moves it to In flight and finishing it to
+-- Done without touching run_queue, and unmarking it back to zero puts it back
+-- at its old ordinal. state: unstarted (nothing read, an empty run included),
+-- reading or read. blocked_by is the direct hard prerequisites still unread,
+-- soft_left the soft ones (the ○ badge's count);
+-- the transitive "N runs first" is run_ancestors' (task 2.6). A run soft-deleted
+-- after it was queued drops out through run_progress.
+CREATE OR REPLACE VIEW run_queue_state AS
+SELECT
+  q.user_id,
+  q.run_id,
+  q.ordinal,
+  q.added_at,
+  CASE WHEN rp.state IN ('reading', 'read') THEN rp.state ELSE 'unstarted' END AS state,
+  rr.readiness,
+  (rr.hard_total - rr.hard_done)::int                            AS blocked_by,
+  rp.read_issues::int                                            AS read_issues,
+  rp.total_issues::int                                           AS total_issues,
+  (rr.soft_total - rr.soft_done)::int                            AS soft_left
+FROM run_queue q
+JOIN run_progress  rp ON rp.run_id = q.run_id AND rp.user_id = q.user_id
+JOIN run_readiness rr ON rr.run_id = q.run_id AND rr.user_id = q.user_id;
+
 -- Series completion. Replaces the Series tab.
 CREATE OR REPLACE VIEW series_progress AS
 SELECT

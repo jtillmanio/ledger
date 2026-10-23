@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { DashboardVerbs, HeaderVerbs, ThumbBar, type BarConfig } from "@/components/ThumbBar";
+import QueueButton from "@/components/QueueButton";
+import QueueShelf from "@/components/QueueShelf";
 import { requireUserId } from "@/lib/auth";
-import { catalogTotals, inboxCount, inProgressRuns, nextUnread, readyToRead } from "@/db/queries";
+import { catalogTotals, inboxCount, inProgressRuns, nextUnread, readyToRead, upNext } from "@/db/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +12,7 @@ function pct(n: number) { return `${Math.round(n * 100)}%`; }
 // The comics dashboard (design §11): `/` redirects here or to the medium you last touched.
 export default async function Comics() {
   const userId = await requireUserId();
-  const [reading, ready, catalog, inbox, ahead] = await Promise.all([
+  const [reading, ready, catalog, inbox, ahead, queue] = await Promise.all([
     inProgressRuns(userId),
     readyToRead(userId, 12),
     catalogTotals(userId),
@@ -18,6 +20,8 @@ export default async function Comics() {
     // The hero run's unread placements, for the thumb bar. Asked for in the
     // same wave as the run it belongs to (nextUnread with no run is that run).
     nextUnread(userId),
+    // Slot 2, the Up next shelf (task 1.10): the queue's unstarted runs, in queue order.
+    upNext(userId),
   ]);
 
   // Distinct issues: summing tracks would count a crossover once per track.
@@ -26,8 +30,12 @@ export default async function Comics() {
   // The query is LIMITed for the list; the count is the whole list (R2-05).
   const readyTotal = ready[0]?.total ?? 0;
 
-  // The thumb bar (task 1.8b): mark the hero run's next issue, else start the top of Up next, else pick a run.
+  // The thumb bar (task 1.8b): mark the hero run's next issue, else start the top of Up next
+  // (STYLE_GUIDE §14.2), else the first ready run, else pick a run. Start navigates (R1-08).
   const hero = reading[0];
+  const start = queue[0] ? { label: `Start ${queue[0].title}`, href: `/comics/${queue[0].id}#p-1` }
+    : ready[0] ? { label: `Start ${ready[0].title}`, href: `/comics/${ready[0].id}` }
+    : { label: "Pick a run", href: "/comics/runs" };
   const config: BarConfig = hero && ahead.run_id === hero.id && ahead.issues.length > 0
     ? {
       kind: "comics", runId: hero.id, title: hero.title,
@@ -35,12 +43,7 @@ export default async function Comics() {
       read: Number(hero.read_issues), total: Number(hero.total_issues),
       upcoming: ahead.issues, single: ahead.single_series,
     }
-    : {
-      kind: "empty",
-      verb: ready[0]
-        ? { label: `Start ${ready[0].title}`, href: `/comics/${ready[0].id}` }
-        : { label: "Pick a run", href: "/comics/runs" },
-    };
+    : { kind: "empty", verb: start };
 
   return (
     <DashboardVerbs config={config}>
@@ -65,6 +68,10 @@ export default async function Comics() {
         </p>
       )}
 
+      {/* From 1024px main and the side rail sit side by side (STYLE_GUIDE §14.6), so the
+          shelf stops at main's edge (FP-D18); the slots keep their DOM order. */}
+      <div className="dash-cols">
+      <div className="dash-main">
       {reading.length > 0 && (
         <>
           <h2>Mid-run</h2>
@@ -88,7 +95,11 @@ export default async function Comics() {
         </>
       )}
 
-      <h2>Start next</h2>
+      <QueueShelf rows={queue} readyCount={readyTotal} />
+      </div>
+
+      <aside className="dash-side" aria-labelledby="ready-head">
+      <h2 id="ready-head">Ready when you are</h2>
       <p className="muted small">
         Every hard and soft prerequisite for these is finished. Ordered by your tier,
         shortest first.
@@ -117,8 +128,12 @@ export default async function Comics() {
                   shows two lines and the run page shows the rest. */}
               {r.why && <span className="row-sub clamp-2">{r.why}</span>}
             </Link>
+            {/* Outside the row's link, so a row is never a control nested in a link (mockup `queue`). */}
+            <QueueButton runId={r.id} title={r.title} ordinal={r.queued_ordinal} />
           </article>
         ))}
+      </div>
+      </aside>
       </div>
     </main>
     <ThumbBar variant="dash" />

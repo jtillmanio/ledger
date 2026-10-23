@@ -7,6 +7,8 @@ export type MenuItem = {
   /** Called after the menu closes; `trigger` is the button that opened it, so
    * a sheet opened from an item can hand focus back to it (R1-11). */
   onSelect: (trigger: HTMLButtonElement) => void;
+  /** A destructive item: the only red one in the menu (*Remove from Up next*, task 1.10). */
+  danger?: boolean;
 };
 
 /**
@@ -78,7 +80,7 @@ export default function Menu({ label, className, items, children }: {
               key={item.label}
               type="button"
               role="menuitem"
-              className="opt"
+              className={item.danger ? "opt danger" : "opt"}
               tabIndex={-1}
               onClick={() => {
                 close();

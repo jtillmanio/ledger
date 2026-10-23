@@ -27,6 +27,7 @@ For comics and for books, one screen answers three questions: what am I in the m
 - Decisions: D-26b (every meter fills with `--ready`; one `.meter` style), D-37 (the levels), D-13 (the plan starts empty, so books Up next's empty action is *Add a book*), R1-10 (the bare-year lane is grey with no button until 2.8), S-14 (undated finishes sort last), S-L5, M-08, UX-X07.
 - Builds on TASK-003 (the resume pointer: *Read <label>* in In flight), TASK-008 (the *Add a book* sheet), TASK-010 (`read` and DNF), TASK-014 (shell, nav `enabled` flips for *Status*).
 - *From TASK-028 (1.8e, PR #111):* the mockup's tab counts fail 4.5:1. `.seg span .n` is at `opacity:.8` (axe, light), and the count on the selected, `--brand`-filled tab resolves to `--faint` (about 1:1) instead of `--on-brand`. 1.8e fixes both in the 834 frame only. Don't copy either: a count takes its tab's text colour, `--on-brand` when selected.
+- *From TASK-016 (1.10, PR #115):* `/comics/status` exists with the Up next content only: `<h1>Up next</h1>`, *Your queue* (`QueueList`, the shared queue row, M-08) and *Ready, not queued* (`readyNotQueued`, `ready_all` only, by tier and size). The dashboard's *Reorder* and *In Up next · #N* link to `/comics/status?tab=next`, so keep that URL. This task adds the tablist around it, the *Status* h1 and the nav flip; *Ready, not queued* still needs `ready_hard` after `ready_all`, in track → block order (design §11.2). `src/app/comics/status/loading.tsx` and its budget row (2 queries) exist.
 
 ## Acceptance criteria
 
