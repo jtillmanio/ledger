@@ -65,6 +65,7 @@ Runs you want to read next sit in one ordered list you control: add, reorder and
 
 - Table count 32 → 33 (`run_queue`, migration 0014) → docs/03-data-model.md § 2.16 (approved at plan)
 - `/comics` 5 → 6 queries in one wave (the shelf), `/comics/status` 2 → docs/02-architecture.md § Performance budget (approved at plan)
+- `/comics/runs` document + RSC budget 47,000 → 57,000: the run rows' **+ Up next** measured 47,740 on PR #115's preview (median + 20%) → docs/02-architecture.md § Performance budget (approved at close-out)
 - `/comics/status` holds the Up next content only; 1.9 adds the tablist, the *Status* h1, the nav flip, and `ready_hard` in *Ready, not queued* → docs/tasks/TASK-017-status-screens.md § Context
 - The shelf, the side rail and `QueueBadge` are in place; `<RunStateBadge>`, the FP-D15 hover reveal on the rail's **+ Up next**, and the shelf's skeleton geometry are 2.4's → docs/05-roadmap.md § 2.4
 - The blocked badge counts direct hard prerequisites (`blocked_by`); the transitive count and the shelf's *Why held?* button wait for `run_ancestors` → docs/05-roadmap.md § 2.6
@@ -106,7 +107,7 @@ Approved by the owner 2026-10-23, with three decisions: the schema change as dat
 
 ## Review log
 
-Verify R1 FAIL(1: list-totals needed the UndoProvider) → R2 PASS → R3 PASS (after round-1 review fixes; lint first tripped on a generated `playwright-report/`, clean once it was removed) | Audit R1 NOT RUN (owner's uncommitted settings file) → R2 PASS | Spec R1 CHANGES (roadmap tick, `home` redraw, Follow-ups format, AC-6 long-press UNTESTED, AC-3 read rows) → R2 APPROVE | Schema R1 APPROVE (2 minor, both fixed) | UI R1 PASS (Start 44px and title-link 24px fixed)
+Verify R1 FAIL(1: list-totals needed the UndoProvider) → R2 PASS → R3 PASS (after round-1 review fixes; lint first tripped on a generated `playwright-report/`, clean once it was removed) | Audit R1 NOT RUN (owner's uncommitted settings file) → R2 PASS | Spec R1 CHANGES (roadmap tick, `home` redraw, Follow-ups format, AC-6 long-press UNTESTED, AC-3 read rows) → R2 APPROVE | Schema R1 APPROVE (2 minor, both fixed) | UI R1 PASS (Start 44px and title-link 24px fixed) | Ready gates: CI check PASS; Lighthouse R1 FAIL (/comics/runs 47,740 > 47,000 bytes) → budget raised with the owner's OK
 
 ## Blocked
 

@@ -3,7 +3,7 @@
   "routes": {
     "login": { "docRscBytes": 8000, "jsBytes": 170000, "requests": 30, "a11y": 100 },
     "comics": { "docRscBytes": 28000, "jsBytes": 170000, "requests": 35, "a11y": 100 },
-    "runs": { "docRscBytes": 47000, "jsBytes": 170000, "requests": 35, "a11y": 100 },
+    "runs": { "docRscBytes": 57000, "jsBytes": 170000, "requests": 35, "a11y": 100 },
     "run-small": { "docRscBytes": 25000, "jsBytes": 172000, "requests": 38, "a11y": 100 },
     "run-large": { "docRscBytes": 21000, "jsBytes": 171000, "requests": 29, "a11y": 100 },
     "books": { "docRscBytes": 48000, "jsBytes": 170000, "requests": 29, "a11y": 100 },

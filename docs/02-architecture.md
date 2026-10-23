@@ -273,7 +273,7 @@ tables.
     |---|---|---|---|---|
     | `/login` | 8,000 | 170,000 | 30 | 100 |
     | `/comics` | 28,000 | 170,000 | 35 | 100 |
-    | `/comics/runs` | 47,000 | 170,000 | 35 | 100 |
+    | `/comics/runs` | 57,000 | 170,000 | 35 | 100 |
     | `/comics/bendis-disassembled` | 25,000 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 21,000 | 171,000 | 29 | 100 |
     | `/books/list` | 48,000 | 170,000 | 29 | 100 |
@@ -290,7 +290,10 @@ tables.
     same way from PR #80's preview (2026-10-13, Lighthouse 13.5.0): document +
     RSC 8.7 KB, JS 140.7 KB, 23 requests, accessibility 100, CLS 0.003.
     Task 1.8c moved the run list to `/comics/runs`, which keeps the 47,000 that
-    `/comics` was set to (it is the same screen). `/comics` is now the
+    `/comics` was set to (it is the same screen); task 1.10 raised it to 57,000:
+    every run row gained **+ Up next** (a client button named for its run, AC-3),
+    and the list measured 47,740 bytes on PR #115's preview, so the budget is that
+    median plus 20%, the rule above. `/comics` is now the
     dashboard: 28,000 is the median of its first preview's Lighthouse run
     (23,046 bytes, PR #108) plus 20%. `/books` is measured at `/books/list`,
     since Lighthouse sends the session as a `Cookie` header and a redirect
