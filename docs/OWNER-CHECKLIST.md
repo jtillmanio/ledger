@@ -68,6 +68,12 @@ blocked on it: 2.4, 2.6 and 2.9 assert relationships, not counts.
       2026-10-02 (D-36): task 1.11 adds the one-second failure delay before
       cutover.* A passphrase of four or more words in `APP_PASSCODE` is still a
       Step 14 gate.
+- [ ] **Books' reading position (from TASK-017, 1.9, docs/plans-2026-10-23).**
+      Roadmap 1.9 asks for books In flight *with words left*, but nothing
+      stores how far into a book you are, so 1.9 shows the word count. If
+      you want words left, where should the position live (a page or percent
+      on `book_status`, or a log of sessions), and which task builds it? It
+      is a schema column, so it waits for your yes.
 
 ## Actions from follow-ups
 

@@ -672,6 +672,13 @@ quarter's order, nothing is stored; every row comes from `run_queue_state`,
 *Up next* shelf's head and *Ready when you are → All N* link to the matching
 tab, N computed.
 
+*From TASK-017 (1.9, docs/plans-2026-10-23):* `book_status` holds no reading
+position, so *with words left* has nothing to subtract from: until one is
+stored, books In flight shows the book's word count. Where a position would
+live is an open question in the Owner checklist (Decisions waiting on you).
+The *Also reading* row is 2.4's; until then 1.9 links the dashboard's
+*Mid-run* head to `?tab=inflight`.
+
 **The bare-year lane is neutral until 2.8** (R1-10). Amber means a decision you
 have not made, and it must clear when you make one — but nothing in Phase 1 can
 give a plan row a quarter (2.3 is the picker, 2.8 is the bulk flow). So in this
@@ -1324,6 +1331,10 @@ Five slots in this order, per the feel pass (D-40; STYLE_GUIDE §14.1, §15, §1
 Feel Review §2, with `design/LedgerComics.dc.html` as the live component), which
 replaces "Comics — v4" in `design/mockups.html` on layout and copy. Depends on
 1.6, 1.8, 1.8b, 1.10, 2.5b and 2.6.
+
+*From TASK-017 (1.9, docs/plans-2026-10-23):* the hero's *Also reading* row
+links to `/comics/status?tab=inflight` (*Also reading → All*, design §11.2).
+1.9 links the *Mid-run* head there in the meantime; the hero replaces it.
 
 *From 1.8e (TASK-028, PR #111):* the 834px `home`
 frame in `design/mockups.html` is drawn from Feel Review §10c (STYLE_GUIDE

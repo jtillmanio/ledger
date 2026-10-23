@@ -1097,6 +1097,9 @@ Small things, ordered by how often you'd feel their absence.
   | Comics Up next, queue empty | **Pick from N ready runs** (computed, D-7), top three rows each with **+ Up next** |
   | Books *Reading now*, nothing reading | **Start the first Q-current book** |
   | Status tabs | One primary action per medium and tab |
+  | Books status, *In flight* empty | *Nothing in flight. Books you start land here.* **Open To read** (roadmap 1.9) |
+  | Books status, *Up next* empty | *Nothing planned. The plan starts empty; nothing is added for you.* **Add a book** until 2.3, then **Plan a book** (roadmap 1.9, S-L5) |
+  | Books status, *Done* empty | *Nothing finished yet. Finished books land here, by year.* **Go to In flight** (roadmap 1.9) |
   | Watch, first run | A full-width TMDB search with three example queries and attribution — never "no items" (product § Watch) |
 - **Offline indicator.** You read on a tablet and phone; a silently failed
   write is the worst outcome. Queue and show it: a sync pill
