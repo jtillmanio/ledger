@@ -1431,7 +1431,7 @@ data fact, not a layout change — the slot keeps its position and its design, a
 the list should grow once the prerequisite audit (2.11a + OWNER-CHECKLIST, D-20)
 reclassifies over-hard edges.
 
-*From 1.10 (TASK-016, task/1.10-comics-up-next-queue):* slot 2's shelf is built
+*From 1.10 (TASK-016, PR #115):* slot 2's shelf is built
 (`src/components/QueueShelf.tsx`), and from 1024px the dashboard already has
 main + side rail (`.dash-cols`, `--aside-w`) with *Ready when you are* in the
 rail, so the shelf stops at main's edge. 2.4 builds the rest around it: its
@@ -1694,7 +1694,7 @@ tag is an `aria-expanded` button that expands `run_opens`' rows, marking which
 become `ready_all` and which `ready_hard`. Copy is *N to unlock*, never *costs
 N* (D-40, §15). Mockup: `path`.
 
-*From 1.10 (TASK-016, task/1.10-comics-up-next-queue):* the Up next shelf and the
+*From 1.10 (TASK-016, PR #115):* the Up next shelf and the
 queue list draw a blocked run's badge from `run_queue_state.blocked_by`, the
 *direct* hard prerequisites still unread (`src/components/QueueBadge.tsx`). Once
 `run_ancestors` gives the transitive count, the badge reads that, and on the
