@@ -1,7 +1,7 @@
 ---
 id: TASK-016
 title: 1.10 Comics Up next queue
-status: Review
+status: Done
 depends_on: [TASK-015]
 size: L
 model: opus
