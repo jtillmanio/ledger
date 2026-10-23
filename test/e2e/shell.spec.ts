@@ -89,8 +89,12 @@ test("at 768 and 834 the rail shows with its labels, and no media bar or sidebar
         expect((await item.textContent())?.trim().length, "a visible text label").toBeGreaterThan(0);
         await expect(item.locator(".rl")).toBeVisible();
       }
+      // 48px targets with 12px above and below, and the glass edge's 1px (task 1.8b, STYLE_GUIDE §14.5).
       const bar = (await page.locator(".actionbar").boundingBox())!;
-      expect(bar.height, `${path} .actionbar at ${width}`).toBe(48);
+      expect(bar.height, `${path} .actionbar at ${width}`).toBe(73);
+      for (const control of await page.locator(".actionbar .btn, .actionbar .iconbtn").all()) {
+        expect((await control.boundingBox())!.height, `${path} control at ${width}`).toBe(48);
+      }
     }
   }
 });
@@ -229,6 +233,8 @@ test("scrolled 400px, everything that sticks but .bar sits at or below --bar-h",
       [...document.querySelectorAll("body *")].flatMap((el) => {
         const cs = getComputedStyle(el);
         if (cs.position !== "sticky" || el.classList.contains("bar") || cs.top === "auto") return [];
+        // From 1024px .bar is gone and the dashboard's page header is the band at the top (task 1.8b).
+        if (el.classList.contains("pagehead")) return [];
         return parseFloat(cs.top) < min ? [`${el.className} top ${cs.top}`] : [];
       }), barH);
     expect(bad, `at ${width}`).toEqual([]);
@@ -365,16 +371,18 @@ test.describe("reduced transparency", () => {
 });
 
 test.describe("/watch (AC-5)", () => {
-  test("renders in the shell with one h1 and a slate whose one action is Save to inbox", async ({ page }, testInfo) => {
+  test("renders in the shell with one h1 and a slate whose one action, Save to inbox, is the thumb bar's", async ({ page }, testInfo) => {
     runsOnce(testInfo.project.name);
     await page.goto("/watch");
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Watch");
     const slate = page.locator(".slate");
     await expect(slate).toContainText("Nothing to watch yet");
-    await expect(slate.getByRole("link")).toHaveCount(1);
-    await expect(slate.getByRole("link", { name: "Save to inbox" })).toHaveAttribute("href", "/inbox");
-    await expect(page.locator(".actionbar")).toBeVisible();
+    // The bar carries the verb, so the slate does not repeat it (task 1.8b).
+    await expect(slate.getByRole("link")).toHaveCount(0);
+    const bar = page.locator(".actionbar");
+    await expect(bar).toBeVisible();
+    await expect(bar.getByRole("link", { name: "Save to inbox" })).toHaveAttribute("href", "/inbox");
   });
 
   test("visiting it sets the last-medium cookie, and / then redirects to it", async ({ page }, testInfo) => {

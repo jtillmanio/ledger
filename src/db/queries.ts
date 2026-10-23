@@ -118,8 +118,56 @@ export async function inProgressRuns(userId: string) {
       LIMIT 1
     ) nx ON true
     WHERE r.deleted_at IS NULL AND rp.state = 'reading'
-    ORDER BY rp.pct DESC
+    ORDER BY rp.pct DESC, r.id
   `;
+}
+
+/** The thumb bar's reach (task 1.8b): a run's unread placements in reading order,
+ * the first `limit` of them, with whether the whole run spans one series so the
+ * mark verb can say `#141` alone (M-10). The first unread placement is the
+ * resume pointer (`inProgressRuns`), by the same rule. With no `runId` it is the
+ * dashboard's hero, the reading run furthest along (`inProgressRuns()[0]`), so
+ * the dashboard asks for it in the same wave as the list instead of after it;
+ * `run_id` says which run that was. The label parse is run_span's, written with
+ * POSIX classes since a backslash does not survive the template, and
+ * `singleSeries()` in src/lib/format.ts agrees with it. */
+export async function nextUnread(userId: string, runId: string | null = null, limit = 50) {
+  const rows = await sql<{
+    run_id: string; placement_id: number; label: string; type: string; notes: string | null; single_series: boolean;
+  }[]>`
+    WITH target AS (
+      SELECT COALESCE(${runId}::text, (
+        SELECT r.id FROM runs r
+        JOIN run_progress rp ON rp.run_id = r.id AND rp.user_id = ${userId}
+        WHERE r.deleted_at IS NULL AND rp.state = 'reading'
+        ORDER BY rp.pct DESC, r.id
+        LIMIT 1
+      )) AS id
+    ),
+    parsed AS (
+      SELECT ri.run_id, ri.id, ri.sequence, ri.type, ri.notes, i.label,
+             (p.placement_id IS NULL) AS unread,
+             regexp_match(i.label, '^(.+?)[[:space:]]*#[[:space:]]*(-?[0-9]+([.][0-9]+)?)[[:space:]]*$') AS m
+      FROM live_run_issues ri
+      JOIN target t ON t.id = ri.run_id
+      JOIN runs r ON r.id = ri.run_id AND r.deleted_at IS NULL
+      JOIN issues i ON i.id = ri.issue_id
+      LEFT JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
+    )
+    SELECT run_id, id AS placement_id, label, type, notes,
+           (SELECT bool_and(m IS NOT NULL) AND COUNT(DISTINCT btrim(m[1])) = 1 FROM parsed) AS single_series
+    FROM parsed
+    WHERE unread
+    ORDER BY sequence
+    LIMIT ${limit}
+  `;
+  return {
+    // With nothing unread there are no rows to say which run it was.
+    run_id: rows[0]?.run_id ?? runId,
+    issues: rows.map((r) => ({ placement_id: r.placement_id, label: r.label, type: r.type, notes: r.notes })),
+    // With nothing unread there is nothing to name.
+    single_series: rows[0]?.single_series ?? false,
+  };
 }
 
 /** One wave, not three: the header, the spine and the prerequisites don't

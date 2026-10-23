@@ -213,7 +213,7 @@ tables.
   (Lighthouse mobile, devtools throttling: Slow 4G, 4× CPU): any tap paints a
   skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
   page within 1 s. What holds that, and the test that fails if it slips:
-  - **Queries per page, in one wave.** `/comics` 4, `/comics/runs` 2, a run 3,
+  - **Queries per page, in one wave.** `/comics` 5, `/comics/runs` 2, a run 3,
     `/books/list` 5, `/inbox` 2, `/watch` none, `/login` none, `/` and `/books` none (redirects), each page's queries started together
     (`test/query-budget.test.ts`, which counts them). A query that must wait on
     another raises a page's waves; raising either number needs a reason here.
@@ -221,7 +221,10 @@ tables.
     chip's count (task 1.4b): a separate one-row count in the same wave, rather
     than a join into a list query it has nothing to do with. The dashboard is
     back to 4 since task 1.8c moved *Coming out* (books releases) off it: that
-    list is 2.x's `/books/releases`. The shell adds one more to every screen but
+    list is 2.x's `/books/releases`. It is 5 again with the thumb bar (task
+    1.8b): `nextUnread`, the hero run's next unread placements, which the mark
+    verb and the batch sheet need. It names no run, so it starts in the same wave
+    as `inProgressRuns` instead of waiting on it. The shell adds one more to every screen but
     sign-in (task 1.8): the sidebar's and rail's `Inbox (N)` count, a one-row query
     in a `<Suspense>` of its own (`InboxCount`, deduplicated with React's `cache`
     so the rail and the sidebar share one). It is outside each page's budget

@@ -410,7 +410,7 @@ The app shell: the phone media bar, the tablet rail, the desktop sidebar, local 
 **Check:** screenshot at 360px, 768px, 834px and 1280px; assert no horizontal scroll
 exists at any of them. At 768px and 834px the page renders the navigation rail, no top
 media bar and no sidebar; each rail item shows a visible text label and is at
-least 56px tall; every dashboard renders `.actionbar`, 48px tall. The rendered
+least 56px tall; every dashboard renders `.actionbar` with 48px controls and 12px of padding above and below them (amended by D-78). The rendered
 HTML references no external host for an icon, font or script, and every `<svg>`
 inside a button is `aria-hidden` while the button has a name. At 1100px the sidebar is
 64px wide, each item has an accessible name, and focusing an item from the
@@ -420,8 +420,8 @@ keyboard shows its tooltip at once. At 1280px the sidebar is 224px wide; at
 shows the count. At 360px *Watch* renders untruncated in the media bar, and the
 phone `/comics` has at most one solid `--brand` fill above the fold. No computed
 `color` inside `.bar` or `.side` equals `--ready`. With the page scrolled 400px,
-every sticky element other than `.bar` has a computed `top` of at least
-`--bar-h`. The rendered HTML contains no U+26B2. Test that every phone route renders
+every sticky element other than `.bar` and, from 1024px, the dashboard's `.pagehead` band has a computed `top` of at least
+`--bar-h` (amended by D-78). The rendered HTML contains no U+26B2. Test that every phone route renders
 exactly the same media nav.
 
 ### ☑ 1.8c Dashboard routes and the `/` redirect · M
@@ -474,7 +474,7 @@ Skeletons for the telecard, run rows, plan rail and season rows render within
 `prefers-reduced-motion`. An axe-core run over each dashboard reports no
 `nested-interactive`, `button-name` or `link-name` violations.
 
-### ☐ 1.8b Thumb bar and contrast · S
+### ☑ 1.8b Thumb bar and contrast · S
 Depends on 1.8 and 1.8d (the error toast it places). Split out of 1.8 (R3-12).
 
 The **thumb bar**: on every dashboard **and on the run detail** (`Mark #141 read ·
@@ -554,7 +554,7 @@ bottom 96px. At 360px the toast's bounding box does not intersect the primary
 first mark committed. Under emulated `prefers-reduced-motion` the `.chk`'s
 computed `transition-duration` is `0s`. `getComputedStyle` reports at least
 44px for every `.actionbar .btn` and `.iconbtn`, and a contrast script reports at least 4.5:1 for every
-rendered text node's computed colour against its computed background (not a list
+rendered text node outside an inactive control (`aria-disabled` or `:disabled`, WCAG 1.4.3) by its computed colour against its computed background (not a list
 of token pairs: a literal `#fff` on `--brand` is 2.51:1 in dark mode, M-02) and 3:1
 for the unchecked control ring, in both themes; `npm run test:tokens` passes. At
 1280px no dashboard renders `.actionbar` and the header holds the primary verb; at
@@ -1023,6 +1023,22 @@ read began.
   `none` read, and is NULL for a run with no dated read.
 - `npm run test:db:reset` migrates from zero.
 
+### ☐ 1.19 Comics Add remembers the last run · S
+*From 1.8b (TASK-015, PR #114):* design §14 *Bulk add*,
+**Remember the last run** you added to, so consecutive adds don't re-navigate.
+1.8 ships the comics *Add* nav item `enabled: false` (`src/components/nav/items.ts`),
+because no comics route adds without a run (TASK-014's open question; TASK-005's
+note). This item remembers the run that last got an issue (per user, through
+the existing add flow; where it is kept is the plan's to propose, and a new
+column means stop and ask), and turns the item on so it lands on that run's
+`/comics/{runId}/add`. With no run added to yet, it lands on `/comics/runs`.
+Depends on 1.8 and 1.3c. **The Check below is proposed** (1.8b's plan, 2026-10-22).
+
+**Check:** after adding an issue to run A from `/comics/A/add`, the comics *Add*
+nav item is enabled in all three navs and links to `/comics/A/add`; after a
+later add to run B it links to `/comics/B/add`; for a user who has added
+nothing it links to `/comics/runs`. A soft-deleted run is never the target.
+
 ---
 
 ## Phase 2 — The pace engine
@@ -1089,6 +1105,11 @@ minutes/day with observed values behind an explicit **Use these**, and the
 capacity card flags when the setting has drifted from reality. Mockup:
 `session` — build the right-hand entry path, not the timer. product #20.
 
+*From 1.8b (TASK-015, PR #114):* the batch sheet
+(`src/components/BatchSheet.tsx`) ships *Log a session · Log* as
+`aria-disabled="true"`, with the reason *Sessions aren't here yet.* Enable it
+here to open the session sheet, and drop the reason.
+
 Out of scope, deferred to 6.12: the start/stop timer and its persistence, the
 **timer chip** in the thumb bars and sidebar footer, the **Tonight** fit card,
 and *Estimated time to finish* on the run hero and in-flight rows. Those last
@@ -1152,6 +1173,12 @@ rest and reveal it on row hover or `:focus-within` with a fine pointer, as
 and names the top of the plan in full on the primary; below about 1100px it
 truncates and keeps the full title in its accessible name. No capacity card and
 no *Place them* at any width until the question below is answered.
+
+*From 1.8b (TASK-015, PR #114):* 1.8b builds and
+unit-tests `ThumbBar`'s books configuration (`src/components/ThumbBar.tsx`):
+the bar *Log progress · ✓ finished · search*, and the header *Search · Finished
+it · Log pages*. Since `/books` was still a redirect, nothing renders it yet.
+Render it here, wrapped in `VerbsProvider`, as the comics dashboard is.
 
 **Open, stop and ask before building** (the feel pass is silent): the old
 dashboard had a capacity card with **Rebalance** and **Accept** (2.7) and an
@@ -2871,6 +2898,10 @@ it is converted.
   (`> mark through #160`, `> move Piranesi Q3`, `> queue Priest BP top`) above
   *Results*, and results are grouped Comics · Books · Watch. The shortcut shows
   in the sidebar; on the phone the trigger is the 44px search icon.
+  *From 1.8b (TASK-015, PR #114):* the thumb bar's and the
+  dashboard header's *Search (Ctrl K)* slot is drawn, `aria-disabled`, until this
+  lands. Turn on the `search` item in `NAV_ITEMS` and the slot becomes a link
+  to it (`SearchVerb` in `ThumbBar.tsx`).
 
 - ☐ 6.2 Stats and year in review — depends on 1.5 and 2.1b · L
   Five charts per product § Metrics: books/year with plan overlaid, genre mix
@@ -3416,6 +3447,12 @@ in Now and the same show's detail must agree on its state — the mockup's Andor
 is mid-show (S1 watched, S2 up next) on both.
 
 1.8d's `SeasonRowsSkeleton` was measured against a fixture of the mockup's markup; re-measure it against the season rows drawn here, within 2px at 360px (from TASK-027).
+
+*From 1.8b (TASK-015, PR #114):* until this task, `/watch`
+shows 1.8b's empty-state verbs, *Search · Save to inbox*, in the thumb bar and
+the desktop header. Give `ThumbBar` (`src/components/ThumbBar.tsx`) its watch
+configuration here: slot 1 *Mark S2 watched* (the season-level verb above),
+slot 2 *+ Add*, slot 3 search.
 
 **Check:** test that a show with season 1 watched and season 2 watching appears
 once in Now and not in Up next; that a show with every season watched appears in

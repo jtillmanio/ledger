@@ -61,7 +61,7 @@ roadmap, and `docs/STATUS.md` rolls them up by milestone._
 | F-06 Mark an issue read, in this run | MVP | 0.8a, 0.8b, 1.2 | M2, M3 |
 | F-07 Mark a range, adopt prior reads | MVP | 1.1 | M3 |
 | F-08 Resume where I stopped | MVP | 1.6 | M3 |
-| F-09 Add issues by typing them | MVP | 1.3, 1.3c | M4 |
+| F-09 Add issues by typing them | MVP | 1.3, 1.3c, 1.19 | M4, M9 |
 | F-10 Add issues from a Metron search | MVP | 1.3b | M4 |
 | F-11 An Up next queue for comics | MVP | 1.10 | M7 |
 | F-12 In flight · Up next · Done | MVP (then Later) | 1.9, 8.8 | M7, M24 |
@@ -272,13 +272,14 @@ with the task that first reads it.
 
 **Goal:** Captured from cutover on.  
 **Demo at exit:** Paste a list as title and author in their own cells; set a book to *Reading* and its start date is kept.  
-**Features:** F-15, F-17  
+**Features:** F-09, F-15, F-17  
 **Depends on:** M5  
-**Order:** Sitting 9: 1.4e → 1.17. A small fix to a screen already in daily use, then start dates, which like 1.5 must land before real reading accumulates and before cutover.
+**Order:** Sitting 9: 1.4e → 1.19 → 1.17. Two small fixes to screens already in daily use (1.19 turns on 1.8's comics *Add*; from 1.8b's plan), then start dates, which like 1.5 must land before real reading accumulates and before cutover.
 
 | # | Task | Size | Task file | Depends on |
 |---|---|---|---|---|
 | 1.4e | Paste a list: title and author in their own cells | S | — | — |
+| 1.19 | Comics Add remembers the last run | S | — | 1.8, 1.3c |
 | 1.17 | Started and finished: a start date for books, a derived span for runs | M | — | — |
 
 # Next

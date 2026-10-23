@@ -16,6 +16,9 @@ vi.mock("@/lib/auth", async (importOriginal) => ({
   requireUserId: async () => USER,
 }));
 
+// The dashboard draws the thumb bar (task 1.8b): a client tree that needs the app router and the undo stack.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {} }) }));
+
 const sql = testSql();
 let q: typeof import("../src/db/queries");
 let appSql: { end: () => Promise<void> };
@@ -103,7 +106,8 @@ describe("the dashboard's in-progress list (AC-3)", () => {
   it("says Continue: <label> for each reading run, linking to the pointer's spine row", async () => {
     await markRead(sql, USER, "b", "a6");
     const Home = (await import("../src/app/comics/(dash)/page")).default;
-    const home = parse(renderToStaticMarkup(await Home()));
+    const { UndoProvider: Undo } = await import("../src/components/Undo");
+    const home = parse(renderToStaticMarkup(createElement(Undo, null, await Home())));
 
     for (const [runId, label] of [["a", "A #6"], ["b", "B #1"]]) {
       const link = [...home.querySelectorAll("a")].find((a) =>
