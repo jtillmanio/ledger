@@ -11,8 +11,8 @@ import {
   expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour, toastSettled,
 } from "./helpers";
 
-const ONCE = "w390-light";
-const runsOnce = (name: string) => test.skip(name !== ONCE, `sets its own viewport: runs once, in ${ONCE}`);
+// Sets its own viewport: runs once, in w390-light.
+const ONCE = { tag: "@at-w390-light" };
 const RUN = `/comics/${E2E_RUN_ID}`;
 const NEXT = E2E_READ_COUNT + 1; // the seeded run has its first three read, so #4 is next
 
@@ -274,8 +274,7 @@ test("the toast: pinned above the bar, a 12px rise, a 2px brand countdown over 8
   await screenshot(page, testInfo, "toast");
 });
 
-test("the bar and the toast respect the safe area in the stylesheet itself (AC-4, F2)", async ({ page }) => {
-  runsOnce(test.info().project.name);
+test("the bar and the toast respect the safe area in the stylesheet itself (AC-4, F2)", ONCE, async ({ page }) => {
   await page.goto(RUN);
   // A test browser has no inset to emulate, so read the rules it would apply to one.
   const rules = await page.evaluate(() => {
@@ -315,8 +314,7 @@ test("Undo hands focus back to the bar's verb, not to the page (AC-4)", async ({
   await expect(page.locator(".actionbar .btn").first()).toBeFocused();
 });
 
-test("a dashboard's toast at 1280px is centred on the content box, 24px above the viewport's edge (AC-1)", async ({ page }) => {
-  runsOnce(test.info().project.name);
+test("a dashboard's toast at 1280px is centred on the content box, 24px above the viewport's edge (AC-1)", ONCE, async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   await open(page, "dash");
   await primary(page, "dash").click();
@@ -331,8 +329,7 @@ test("a dashboard's toast at 1280px is centred on the content box, 24px above th
   expect(Math.abs(t.x + t.width / 2 - (content.x + content.width / 2))).toBeLessThanOrEqual(1);
 });
 
-test("at 834px every dashboard draws the bar with the primary in the bottom 96px, and so does the run detail (AC-1)", async ({ page }) => {
-  runsOnce(test.info().project.name);
+test("at 834px every dashboard draws the bar with the primary in the bottom 96px, and so does the run detail (AC-1)", ONCE, async ({ page }) => {
   await page.setViewportSize({ width: 834, height: 1112 });
   for (const path of ["/comics", "/watch", RUN]) {
     await page.goto(path);
@@ -344,8 +341,7 @@ test("at 834px every dashboard draws the bar with the primary in the bottom 96px
   }
 });
 
-test("at 1280px no dashboard draws the bar and the header holds the primary; the run detail keeps the bar (AC-1, AC-2)", async ({ page }) => {
-  runsOnce(test.info().project.name);
+test("at 1280px no dashboard draws the bar and the header holds the primary; the run detail keeps the bar (AC-1, AC-2)", ONCE, async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   for (const path of ["/comics", "/watch"]) {
     await page.goto(path);
@@ -373,8 +369,7 @@ test("at 1280px no dashboard draws the bar and the header holds the primary; the
   expect(row.right - row.left).toBeLessThanOrEqual(720);
 });
 
-test("at 1100px a truncated primary keeps its full label as its accessible name (AC-1)", async ({ page }) => {
-  runsOnce(test.info().project.name);
+test("at 1100px a truncated primary keeps its full label as its accessible name (AC-1)", ONCE, async ({ page }) => {
   await db((sql) => markRead(sql, E2E_USER, E2E_LONG_RUN_ID, "e2e-long-2"));
   await page.setViewportSize({ width: 1100, height: 800 });
   await page.goto("/comics");
@@ -394,8 +389,7 @@ test("on a run spanning two series the verb names the issue in full (AC-1, M-10)
   expect(E2E_LONG_LABEL).toContain("Amazing Spider-Man");
 });
 
-test("an empty dashboard is Search · Start {next} and nothing else (AC-2)", async ({ page }) => {
-  runsOnce(test.info().project.name);
+test("an empty dashboard is Search · Start {next} and nothing else (AC-2)", ONCE, async ({ page }) => {
   await db((sql) => sql`DELETE FROM issue_progress WHERE user_id = ${E2E_USER}`);
   try {
     await page.goto("/comics");
@@ -505,8 +499,7 @@ test("nothing on a dashboard resolves to --danger (AC-5)", async ({ page }) => {
 });
 
 // The script must be able to fail: a pair it should flag, a pair it should pass, and a ring.
-test("the contrast script flags a 3:1 pair and a faint ring, and passes 7:1 (AC-1)", async ({ page }) => {
-  runsOnce(test.info().project.name);
+test("the contrast script flags a 3:1 pair and a faint ring, and passes 7:1 (AC-1)", ONCE, async ({ page }) => {
   await page.goto("/watch");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   const planted = async (html: string) => {

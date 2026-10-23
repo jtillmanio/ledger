@@ -34,6 +34,7 @@
     "rebuild": "powershell -ExecutionPolicy Bypass -File etl/rebuild.ps1",
     "rebuild:bash": "bash etl/rebuild.sh",
     "test:e2e": "node scripts/e2e.mjs",
+    "test:e2e:full": "node scripts/e2e.mjs --full",
     "test:all": "npm run test:tokens && npm run check:migrations && npm run test:db:reset && npm test && npm run test:views && npm run test:etl && npm run test:e2e"
   },
   "dependencies": {

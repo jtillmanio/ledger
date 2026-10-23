@@ -26,8 +26,8 @@ test("axe refuses an empty rule list and a rule id axe does not know", async ({ 
   await expect(expectNoAxeViolations(page, ["buton-name"])).rejects.toThrow(/unknown rule `buton-name`/);
 });
 
-test("no-scroll fails on a page that overflows at 360px", async ({ page }) => {
-  test.skip(page.viewportSize()?.width !== 360, "the fixture is built to overflow at 360px");
+// The fixture is built to overflow at 360px.
+test("no-scroll fails on a page that overflows at 360px", { tag: ["@at-w360-light", "@at-w360-dark"] }, async ({ page }) => {
   await page.setContent(fixture("overflow-360.html"));
   await expect(expectNoHorizontalScroll(page)).rejects.toThrow(/horizontal scroll[\s\S]*viewport 360px/);
 

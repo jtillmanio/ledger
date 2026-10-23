@@ -8,8 +8,8 @@ import {
   E2E_INBOX_COUNT, E2E_LONG_RUN_ID, E2E_RUN_ID, expectNoAxeViolations, expectNoHorizontalScroll, screenshot,
 } from "./helpers";
 
-const ONCE = "w390-light";
-const runsOnce = (name: string) => test.skip(name !== ONCE, `sets its own viewport: runs once, in ${ONCE}`);
+// Sets its own viewport: runs once, in w390-light.
+const ONCE = { tag: "@at-w390-light" };
 const DASHBOARDS = ["/comics", "/watch"];
 
 const size = (page: Page, width: number, height = 900) => page.setViewportSize({ width, height });
@@ -57,8 +57,7 @@ test.describe("every width", () => {
   });
 });
 
-test("no horizontal scroll at 360, 768, 834 and 1280, with a screenshot of each", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("no horizontal scroll at 360, 768, 834 and 1280, with a screenshot of each", ONCE, async ({ page }, testInfo) => {
   for (const width of [360, 768, 834, 1280]) {
     await size(page, width);
     for (const path of DASHBOARDS) {
@@ -70,8 +69,7 @@ test("no horizontal scroll at 360, 768, 834 and 1280, with a screenshot of each"
   }
 });
 
-test("at 768 and 834 the rail shows with its labels, and no media bar or sidebar", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("at 768 and 834 the rail shows with its labels, and no media bar or sidebar", ONCE, async ({ page }) => {
   for (const width of [768, 834]) {
     await size(page, width);
     for (const path of DASHBOARDS) {
@@ -99,8 +97,7 @@ test("at 768 and 834 the rail shows with its labels, and no media bar or sidebar
   }
 });
 
-test("the page names no external host for an icon, a font or a script, and icons in buttons are hidden", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("the page names no external host for an icon, a font or a script, and icons in buttons are hidden", ONCE, async ({ page }) => {
   for (const path of ["/comics", "/watch", "/inbox", `/comics/${E2E_RUN_ID}`]) {
     await page.goto(path);
     const external = await page.evaluate(() => {
@@ -122,8 +119,7 @@ test("the page names no external host for an icon, a font or a script, and icons
   }
 });
 
-test("at 1100 the sidebar is a 64px icon rail: every item named, its tooltip hidden until focus", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("at 1100 the sidebar is a 64px icon rail: every item named, its tooltip hidden until focus", ONCE, async ({ page }) => {
   await size(page, 1100);
   await page.goto("/comics");
   await expect(page.locator(".side")).toBeVisible();
@@ -147,8 +143,7 @@ test("at 1100 the sidebar is a 64px icon rail: every item named, its tooltip hid
   await expect.poll(() => tipOpacity('.side a[href="/comics/runs"]'), { timeout: 500 }).toBe("1");
 });
 
-test("at 1280 the sidebar is 224px with labels, and no tooltip", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("at 1280 the sidebar is 224px with labels, and no tooltip", ONCE, async ({ page }) => {
   await size(page, 1280);
   await page.goto("/comics");
   expect((await page.locator(".side").boundingBox())!.width).toBe(224);
@@ -157,8 +152,7 @@ test("at 1280 the sidebar is 224px with labels, and no tooltip", async ({ page }
   expect(tip, "tooltips are hidden at rest").toBe("none");
 });
 
-test("at 1440 the content box is 1056px, centred in the space beside the sidebar", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("at 1440 the content box is 1056px, centred in the space beside the sidebar", ONCE, async ({ page }) => {
   await size(page, 1440);
   await page.goto("/comics");
   const side = (await page.locator(".side").boundingBox())!;
@@ -168,8 +162,7 @@ test("at 1440 the content box is 1056px, centred in the space beside the sidebar
   expect(box.x - side.width).toBeCloseTo((space - 1056) / 2, 0);
 });
 
-test("from 1024 no dashboard draws the in-inbox chip, and the sidebar's Inbox shows the count", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("from 1024 no dashboard draws the in-inbox chip, and the sidebar's Inbox shows the count", ONCE, async ({ page }) => {
   await size(page, 390);
   await page.goto("/comics");
   await expect(page.locator(".inbox-chip")).toBeVisible();
@@ -187,8 +180,7 @@ test("from 1024 no dashboard draws the in-inbox chip, and the sidebar's Inbox sh
   }
 });
 
-test("at 360 Watch is untruncated in the media bar, and /comics has at most one solid brand fill above the fold", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("at 360 Watch is untruncated in the media bar, and /comics has at most one solid brand fill above the fold", ONCE, async ({ page }) => {
   await size(page, 360, 780);
   await page.goto("/comics");
   const watch = page.locator('.bar nav a[href="/watch"]');
@@ -207,8 +199,7 @@ test("at 360 Watch is untruncated in the media bar, and /comics has at most one 
   expect(fills).toBeLessThanOrEqual(1);
 });
 
-test("no colour inside .bar or .side is --ready", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("no colour inside .bar or .side is --ready", ONCE, async ({ page }) => {
   await page.goto("/comics");
   const ready = await colourOf(page, "--ready");
   const hits = await page.evaluate((target) =>
@@ -218,8 +209,7 @@ test("no colour inside .bar or .side is --ready", async ({ page }, testInfo) => 
 });
 
 // The page gets a min-height on `.app`, the shell's root, so it can scroll at all: a new class, so this has nothing to run against before the shell.
-test("scrolled 400px, everything that sticks but .bar sits at or below --bar-h", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("scrolled 400px, everything that sticks but .bar sits at or below --bar-h", ONCE, async ({ page }) => {
   for (const width of [390, 1280]) {
     await size(page, width, 700);
     await page.goto("/comics/runs");
@@ -244,8 +234,7 @@ test("scrolled 400px, everything that sticks but .bar sits at or below --bar-h",
   }
 });
 
-test("every phone route renders exactly the same media nav", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("every phone route renders exactly the same media nav", ONCE, async ({ page }) => {
   await size(page, 390);
   const seen = new Set<string>();
   for (const path of ["/comics", "/comics/runs", `/comics/${E2E_RUN_ID}`, "/books/list", "/books/add", "/watch", "/inbox"]) {
@@ -255,8 +244,7 @@ test("every phone route renders exactly the same media nav", async ({ page }, te
   expect(seen.size).toBe(1);
 });
 
-test("every enabled nav href answers: no 404, no 500", async ({ page, request }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("every enabled nav href answers: no 404, no 500", ONCE, async ({ page, request }) => {
   // Each medium draws its own set, so the union is read from one page of each.
   const found = new Set<string>();
   for (const path of ["/comics", "/books/list", "/watch"]) {
@@ -273,8 +261,7 @@ test("every enabled nav href answers: no 404, no 500", async ({ page, request },
   }
 });
 
-test("the shell's landmarks, links and names pass axe at each navigation form", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("the shell's landmarks, links and names pass axe at each navigation form", ONCE, async ({ page }) => {
   for (const width of [390, 834, 1100, 1280]) {
     await size(page, width);
     await page.goto("/comics");
@@ -282,8 +269,7 @@ test("the shell's landmarks, links and names pass axe at each navigation form", 
   }
 });
 
-test("the sync pill: an offline strip under the phone bar, a pill at the rail's foot", async ({ page, context }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("the sync pill: an offline strip under the phone bar, a pill at the rail's foot", ONCE, async ({ page, context }) => {
   await size(page, 390);
   await page.goto("/comics");
   const strip = page.locator(".sync-strip");
@@ -324,8 +310,7 @@ test("the sync pill: an offline strip under the phone bar, a pill at the rail's 
   await context.setOffline(false);
 });
 
-test("the .bar wordmark is a link of at least 24 by 24", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("the .bar wordmark is a link of at least 24 by 24", ONCE, async ({ page }) => {
   await size(page, 360);
   await page.goto("/comics");
   const home = page.locator(".bar a.home");
@@ -337,8 +322,8 @@ test("the .bar wordmark is a link of at least 24 by 24", async ({ page }, testIn
 
 test.describe("reduced transparency", () => {
   // Playwright has no option for it; the DevTools protocol does, in Chromium (the only browser here).
-  test("glass falls back to solid --surface", async ({ page, context }, testInfo) => {
-    test.skip(!["w390-light", "w390-dark"].includes(testInfo.project.name), "once per theme");
+  // Once per theme.
+  test("glass falls back to solid --surface", { tag: ["@at-w390-light", "@at-w390-dark"] }, async ({ page, context }, testInfo) => {
     await size(page, 390);
     await page.goto("/comics");
     const surface = await page.evaluate(() => {
@@ -371,8 +356,7 @@ test.describe("reduced transparency", () => {
 });
 
 test.describe("/watch (AC-5)", () => {
-  test("renders in the shell with one h1 and a slate whose one action, Save to inbox, is the thumb bar's", async ({ page }, testInfo) => {
-    runsOnce(testInfo.project.name);
+  test("renders in the shell with one h1 and a slate whose one action, Save to inbox, is the thumb bar's", ONCE, async ({ page }) => {
     await page.goto("/watch");
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Watch");
@@ -385,8 +369,7 @@ test.describe("/watch (AC-5)", () => {
     await expect(bar.getByRole("link", { name: "Save to inbox" })).toHaveAttribute("href", "/inbox");
   });
 
-  test("visiting it sets the last-medium cookie, and / then redirects to it", async ({ page }, testInfo) => {
-    runsOnce(testInfo.project.name);
+  test("visiting it sets the last-medium cookie, and / then redirects to it", ONCE, async ({ page }) => {
     await page.goto("/watch");
     await page.goto("/");
     expect(new URL(page.url()).pathname).toBe("/watch");
@@ -394,8 +377,7 @@ test.describe("/watch (AC-5)", () => {
     await page.goto("/comics");
   });
 
-  test("the media bar's Watch link goes there", async ({ page }, testInfo) => {
-    runsOnce(testInfo.project.name);
+  test("the media bar's Watch link goes there", ONCE, async ({ page }) => {
     await size(page, 390);
     await page.goto("/comics");
     await page.locator('.bar nav a[href="/watch"]').click();
