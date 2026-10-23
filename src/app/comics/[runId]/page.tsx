@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requireUserId } from "@/lib/auth";
 import { runDetail } from "@/db/queries";
 import RunSpine from "@/components/IssueRow";
+import QueueButton from "@/components/QueueButton";
 import { yearSpan } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -36,6 +37,12 @@ export default async function Run({ params }: { params: Promise<{ runId: string 
         </p>
       )}
       {run.why && <p>{run.why}</p>}
+      {/* *+ Up next* appends, *Read next* goes to the top (task 1.10). A placeholder can't be queued. */}
+      {!run.placeholder && (
+        <p className="queue-line">
+          <QueueButton runId={run.id} title={run.title} ordinal={run.queued_ordinal} top />
+        </p>
+      )}
 
       {/* The read count is drawn by RunSpine, beside the rows it counts, so a
           mark and its undo move it (task 1.2). */}

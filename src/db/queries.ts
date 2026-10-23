@@ -18,6 +18,8 @@ export type RunRow = {
   state: "empty" | "unread" | "reading" | "read";
   readiness: "blocked" | "ready_hard" | "ready_all";
   hard_left: number; soft_left: number;
+  /** Its place in the Up next queue (task 1.10), or null when it isn't queued. */
+  queued_ordinal: number | null;
 };
 
 /** A page of rows plus the size of the whole list, so a screen never prints its
@@ -41,12 +43,14 @@ export async function listRuns(userId: string, track?: string): Promise<RunRow[]
            rp.total_issues, rp.read_issues, rp.pct, rp.state,
            rd.readiness,
            rd.hard_total - rd.hard_done AS hard_left,
-           rd.soft_total - rd.soft_done AS soft_left
+           rd.soft_total - rd.soft_done AS soft_left,
+           q.ordinal AS queued_ordinal
     FROM runs r
     JOIN run_progress  rp ON rp.run_id = r.id AND rp.user_id = ${userId}
     JOIN run_readiness rd ON rd.run_id = r.id AND rd.user_id = ${userId}
     JOIN run_span      rs ON rs.run_id = r.id
     JOIN run_credit_line cl ON cl.run_id = r.id
+    LEFT JOIN run_queue q   ON q.run_id = r.id AND q.user_id = ${userId}
     LEFT JOIN run_tracks rt ON rt.run_id = r.id
     LEFT JOIN tracks t      ON t.id = rt.track_id
     LEFT JOIN blocks b      ON b.id = r.block_id
@@ -54,13 +58,14 @@ export async function listRuns(userId: string, track?: string): Promise<RunRow[]
       AND (${track ?? null}::text IS NULL OR t.id = ${track ?? null})
     GROUP BY r.id, b.number, rp.total_issues, rp.read_issues, rp.pct, rp.state,
              rd.readiness, rd.hard_total, rd.hard_done, rd.soft_total, rd.soft_done,
-             rs.series_issues, rs.start_year, rs.end_year, rs.dated_issues, cl.writers
+             rs.series_issues, rs.start_year, rs.end_year, rs.dated_issues, cl.writers, q.ordinal
     ORDER BY b.number NULLS LAST, r.sequence NULLS LAST, rs.start_year NULLS LAST
   `;
 }
 
-/** The "what can I start tonight" list. Replaces the DASHBOARD tab. */
-export async function readyToRead(userId: string, limit = 20) {
+/** The "what can I start tonight" list. Replaces the DASHBOARD tab. With
+ * `unqueued`, only the runs that aren't in the Up next queue (task 1.10). */
+export async function readyToRead(userId: string, limit = 20, { unqueued = false } = {}) {
   return sql<WithTotal<RunRow>[]>`
     SELECT r.id, r.title, cl.writers, rs.series_issues, rs.start_year, rs.end_year,
            rs.dated_issues, r.tier, r.why, r.spine,
@@ -69,24 +74,61 @@ export async function readyToRead(userId: string, limit = 20) {
            rp.total_issues, rp.read_issues, rp.pct, rp.state, rd.readiness,
            rd.hard_total - rd.hard_done AS hard_left,
            rd.soft_total - rd.soft_done AS soft_left,
+           q.ordinal AS queued_ordinal,
            COUNT(*) OVER ()::int AS total
     FROM runs r
     JOIN run_progress  rp ON rp.run_id = r.id AND rp.user_id = ${userId}
     JOIN run_readiness rd ON rd.run_id = r.id AND rd.user_id = ${userId}
     JOIN run_span      rs ON rs.run_id = r.id
     JOIN run_credit_line cl ON cl.run_id = r.id
+    LEFT JOIN run_queue q   ON q.run_id = r.id AND q.user_id = ${userId}
     LEFT JOIN run_tracks rt ON rt.run_id = r.id
     LEFT JOIN tracks t      ON t.id = rt.track_id
     WHERE NOT r.placeholder AND r.deleted_at IS NULL
       AND rp.state = 'unread'
       AND rd.readiness = 'ready_all'
       AND rp.total_issues > 0
+      AND (NOT ${unqueued} OR q.run_id IS NULL)
     GROUP BY r.id, rp.total_issues, rp.read_issues, rp.pct, rp.state,
              rd.readiness, rd.hard_total, rd.hard_done, rd.soft_total, rd.soft_done,
-             rs.series_issues, rs.start_year, rs.end_year, rs.dated_issues, cl.writers
+             rs.series_issues, rs.start_year, rs.end_year, rs.dated_issues, cl.writers, q.ordinal
     ORDER BY r.tier NULLS LAST, rp.total_issues ASC
     LIMIT ${limit}
   `;
+}
+
+/** A row of the Up next queue (task 1.10): a queued run nothing of which is read. */
+export type QueueRow = {
+  id: string; title: string; writers: string | null;
+  start_year: number | null; end_year: number | null; total_issues: number;
+  ordinal: number; readiness: "blocked" | "ready_hard" | "ready_all";
+  blocked_by: number; soft_left: number;
+};
+
+/**
+ * The queue's unstarted runs, in queue order: the dashboard's shelf and the
+ * status screen's Up next. Their state comes from run_queue_state, so a run
+ * you start leaves this list with its row (and ordinal) intact, and comes back
+ * to the same place when it is unmarked to zero (data model 2.16).
+ */
+export async function upNext(userId: string) {
+  return sql<QueueRow[]>`
+    SELECT r.id, r.title, cl.writers, rs.start_year, rs.end_year, qs.total_issues,
+           qs.ordinal, qs.readiness, qs.blocked_by,
+           (rd.soft_total - rd.soft_done)::int AS soft_left
+    FROM run_queue_state qs
+    JOIN runs r            ON r.id = qs.run_id
+    JOIN run_readiness rd  ON rd.run_id = qs.run_id AND rd.user_id = qs.user_id
+    JOIN run_span      rs  ON rs.run_id = qs.run_id
+    JOIN run_credit_line cl ON cl.run_id = qs.run_id
+    WHERE qs.user_id = ${userId} AND qs.state = 'unstarted'
+    ORDER BY qs.ordinal
+  `;
+}
+
+/** *Ready, not queued* (task 1.10): the ready runs the queue doesn't hold, with the count of all of them. */
+export function readyNotQueued(userId: string, limit = 50) {
+  return readyToRead(userId, limit, { unqueued: true });
 }
 
 /** The resume pointer (task 1.6): the lowest sequence whose *placement* is
@@ -100,7 +142,7 @@ export async function inProgressRuns(userId: string) {
     SELECT r.id, r.title, cl.writers, rs.series_issues, rs.start_year, rs.end_year,
            rs.dated_issues, r.tier, r.why, r.spine, '{}'::text[] AS tracks,
            rp.total_issues, rp.read_issues, rp.pct, rp.state,
-           'ready_all' AS readiness, 0 AS hard_left, 0 AS soft_left,
+           'ready_all' AS readiness, 0 AS hard_left, 0 AS soft_left, NULL::int AS queued_ordinal,
            nx.label AS next_label, nx.notes AS next_notes, nx.ordinal AS next_ordinal
     FROM runs r
     JOIN run_progress rp ON rp.run_id = r.id AND rp.user_id = ${userId}
@@ -188,7 +230,7 @@ export async function runDetail(userId: string, runId: string) {
 function runHeader(userId: string, runId: string) {
   return sql<
     (RunRow & {
-      notes: string | null; artists: string | null; why_source: "hand" | "claude";
+      notes: string | null; artists: string | null; why_source: "hand" | "claude"; placeholder: boolean;
       credited_issues: number; distinct_issues: number;
       last_read_at: Date | null; last_read_precision: Precision;
     })[]
@@ -199,12 +241,14 @@ function runHeader(userId: string, runId: string) {
            COALESCE(ARRAY_AGG(t.name ORDER BY t.name)
                     FILTER (WHERE t.name IS NOT NULL), '{}') AS tracks,
            lr.completed_at AS last_read_at,
-           COALESCE(lr.completed_at_precision, 'none') AS last_read_precision
+           COALESCE(lr.completed_at_precision, 'none') AS last_read_precision,
+           q.ordinal AS queued_ordinal
     FROM runs r
     JOIN run_progress  rp ON rp.run_id = r.id AND rp.user_id = ${userId}
     JOIN run_readiness rd ON rd.run_id = r.id AND rd.user_id = ${userId}
     JOIN run_span      rs ON rs.run_id = r.id
     JOIN run_credit_line cl ON cl.run_id = r.id
+    LEFT JOIN run_queue q   ON q.run_id = r.id AND q.user_id = ${userId}
     LEFT JOIN run_tracks rt ON rt.run_id = r.id
     LEFT JOIN tracks t      ON t.id = rt.track_id
     -- The fully-read badge's date (task 1.6): the latest dated read here. An
@@ -222,7 +266,7 @@ function runHeader(userId: string, runId: string) {
     GROUP BY r.id, rp.total_issues, rp.read_issues, rp.pct, rp.state, rd.readiness,
              rs.series_issues, rs.start_year, rs.end_year, rs.dated_issues,
              cl.writers, cl.artists, cl.credited_issues, cl.issue_count,
-             lr.completed_at, lr.completed_at_precision
+             lr.completed_at, lr.completed_at_precision, q.ordinal
   `;
 }
 

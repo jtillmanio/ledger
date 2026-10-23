@@ -385,6 +385,21 @@ export const readingPlan = pgTable("reading_plan", {
   quarterOrder: unique("reading_plan_quarter_order").on(t.userId, t.period, t.ordinal),
 }));
 
+// The comics Up next queue (task 1.10, data model 2.16): one ordered list per
+// user, no dates. The order is authored, so it is stored, contiguous from 1;
+// a queued run's state is derived (run_queue_state) and never written here.
+// The order's UNIQUE is DEFERRABLE INITIALLY DEFERRED in the migration, which
+// drizzle can't express, so a renumber may pass through a duplicate.
+export const runQueue = pgTable("run_queue", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  runId: text("run_id").notNull().references(() => runs.id, { onDelete: "cascade" }),
+  ordinal: integer("ordinal").notNull(),
+  addedAt: timestamp("added_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.userId, t.runId] }),
+  order: unique("run_queue_order").on(t.userId, t.ordinal),
+}));
+
 /* ------------------------------------------------------------------ *
  * Per-user settings and curation
  * ------------------------------------------------------------------ */

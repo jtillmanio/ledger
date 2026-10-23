@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireUserId } from "@/lib/auth";
 import { listRuns, trackSummary } from "@/db/queries";
+import QueueButton from "@/components/QueueButton";
 import { yearSpan } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -74,6 +75,8 @@ export default async function Comics({
                 <span className="measure"><span style={{ width: `${Math.round(r.pct * 100)}%` }} /></span>
               )}
             </Link>
+            {/* Anything real can be queued, blocked runs included (data model 2.16); a finished run has nothing next. */}
+            {r.state !== "read" && <QueueButton runId={r.id} title={r.title} ordinal={r.queued_ordinal} />}
           </article>
         ))}
       </div>

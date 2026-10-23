@@ -671,6 +671,42 @@ BEGIN
   END IF;
 END $$;
 
+-- The Up next queue (task 1.10): state and the blocked-by count are derived;
+-- the stored ordinal is read back as it was written, whatever the run's state.
+INSERT INTO users (id, name) VALUES ('zz-q-user', 'Queue fixture') ON CONFLICT DO NOTHING;
+INSERT INTO runs (id, title) VALUES
+  ('zz-q-fresh', 'Queue fresh'), ('zz-q-going', 'Queue going'), ('zz-q-done', 'Queue done'),
+  ('zz-q-held', 'Queue held'), ('zz-q-pre1', 'Queue prereq 1'), ('zz-q-pre2', 'Queue prereq 2');
+INSERT INTO issues (id, label) VALUES ('zz-q-i1', 'Zz Queue #1'), ('zz-q-i2', 'Zz Queue #2');
+INSERT INTO run_issues (run_id, sequence, issue_id) VALUES
+  ('zz-q-fresh', 1, 'zz-q-i1'), ('zz-q-going', 1, 'zz-q-i1'), ('zz-q-going', 2, 'zz-q-i2'),
+  ('zz-q-done', 1, 'zz-q-i1'), ('zz-q-held', 1, 'zz-q-i1'),
+  ('zz-q-pre1', 1, 'zz-q-i2'), ('zz-q-pre2', 1, 'zz-q-i2');
+INSERT INTO issue_progress (user_id, placement_id, completed_at, completed_at_precision)
+SELECT 'zz-q-user', id, NULL, 'none' FROM run_issues
+WHERE (run_id = 'zz-q-going' AND sequence = 1) OR run_id = 'zz-q-done';
+INSERT INTO prereqs (run_id, prereq_run_id, type) VALUES
+  ('zz-q-held', 'zz-q-pre1', 'hard'), ('zz-q-held', 'zz-q-pre2', 'hard');
+INSERT INTO run_queue (user_id, run_id, ordinal) VALUES
+  ('zz-q-user', 'zz-q-held', 1), ('zz-q-user', 'zz-q-going', 2),
+  ('zz-q-user', 'zz-q-fresh', 3), ('zz-q-user', 'zz-q-done', 4);
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT string_agg(run_id || ':' || ordinal || ':' || state || ':' || readiness || ':' || blocked_by,
+                    ', ' ORDER BY ordinal) INTO got
+  FROM run_queue_state WHERE user_id = 'zz-q-user';
+  IF got IS DISTINCT FROM 'zz-q-held:1:unstarted:blocked:2, zz-q-going:2:reading:ready_all:0, '
+                       || 'zz-q-fresh:3:unstarted:ready_all:0, zz-q-done:4:read:ready_all:0' THEN
+    RAISE EXCEPTION 'run_queue_state wrong: %', got;
+  END IF;
+  -- A soft-deleted run leaves the view; its row stays in run_queue.
+  UPDATE runs SET deleted_at = now() WHERE id = 'zz-q-fresh';
+  IF EXISTS (SELECT 1 FROM run_queue_state WHERE run_id = 'zz-q-fresh') THEN
+    RAISE EXCEPTION 'run_queue_state shows a soft-deleted run';
+  END IF;
+END $$;
+
 -- Applying views.sql leaves every table analyzed. A table the planner has no
 -- statistics for gets nested-loop plans that ran for minutes on a preview of
 -- live (2026-10-02).
