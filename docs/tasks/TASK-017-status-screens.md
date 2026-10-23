@@ -64,7 +64,7 @@ For comics and for books, one screen answers three questions: what am I in the m
 
 ## Follow-ups
 
-Found while planning; placed on `docs/plans-2026-10-23` (approved at plan, 2026-10-23).
+Found while planning; placed in PR #117 (approved at plan, 2026-10-23).
 
 - AC-5's *Also reading* row is part of 2.4's hero, which is not built yet. This task links the dashboard's *Mid-run* head to `?tab=inflight`, and 2.4 links *Also reading* there → docs/05-roadmap.md § 2.4 Comics dashboard (approved at plan)
 - *with words left* (books In flight) has no data: `book_status` stores no reading position, so this task shows the word count → docs/05-roadmap.md § 1.9 Status screens (approved at plan)

@@ -672,7 +672,7 @@ quarter's order, nothing is stored; every row comes from `run_queue_state`,
 *Up next* shelf's head and *Ready when you are → All N* link to the matching
 tab, N computed.
 
-*From TASK-017 (1.9, docs/plans-2026-10-23):* `book_status` holds no reading
+*From TASK-017 (1.9, PR #117):* `book_status` holds no reading
 position, so *with words left* has nothing to subtract from: until one is
 stored, books In flight shows the book's word count. Where a position would
 live is an open question in the Owner checklist (Decisions waiting on you).
@@ -1332,7 +1332,7 @@ Feel Review §2, with `design/LedgerComics.dc.html` as the live component), whic
 replaces "Comics — v4" in `design/mockups.html` on layout and copy. Depends on
 1.6, 1.8, 1.8b, 1.10, 2.5b and 2.6.
 
-*From TASK-017 (1.9, docs/plans-2026-10-23):* the hero's *Also reading* row
+*From TASK-017 (1.9, PR #117):* the hero's *Also reading* row
 links to `/comics/status?tab=inflight` (*Also reading → All*, design §11.2).
 1.9 links the *Mid-run* head there in the meantime; the hero replaces it.
 
