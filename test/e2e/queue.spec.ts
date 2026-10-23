@@ -307,6 +307,45 @@ test.describe("the queue list", () => {
     await expect.poll(stored).toEqual([ids[1], ids[2], ids[0], ids[3]].map((id, i) => `${id}:${i + 1}`));
   });
 
+  test("touch long-presses the handle to lift it, drags, and drops (1 → 3)", async ({ page }, info) => {
+    test.skip(info.project.name !== "w390-touch", "the touch route runs once, in w390-touch");
+    await queue(ids.slice(0, 4));
+    await openList(page);
+    const handle = page.getByRole("button", { name: `Reorder ${titleOf(ids[0])}, position 1 of 4` });
+    await hydrated(handle);
+    const from = (await handle.boundingBox())!;
+    const target = (await page.locator(".qrow").nth(2).boundingBox())!;
+    const x = from.x + from.width / 2;
+    const touch = (type: string, y: number, on: "handle" | "window") => (on === "handle" ? handle : page.locator("body"))
+      .evaluate((el, a) => {
+        const ev = new PointerEvent(a.type, { bubbles: true, pointerId: 7, pointerType: "touch", isPrimary: true, clientX: a.x, clientY: a.y });
+        (a.on === "window" ? window : el).dispatchEvent(ev);
+      }, { type, x, y, on });
+
+    // A short touch does nothing: the row only lifts once the press is held.
+    await touch("pointerdown", from.y + from.height / 2, "handle");
+    await expect(page.locator("#dnd-live")).toHaveText(`${titleOf(ids[0])} grabbed. Position 1 of 4. Arrow keys move it, Space drops it, Esc cancels.`);
+    await expect(page.locator(".qrow[data-lifted]")).toHaveCount(1);
+    await touch("pointermove", target.y + target.height * 0.75, "window");
+    await touch("pointerup", target.y + target.height * 0.75, "window");
+    await expect.poll(stored).toEqual([ids[1], ids[2], ids[0], ids[3]].map((id, i) => `${id}:${i + 1}`));
+  });
+
+  test("a touch that lets go before the long press lifts nothing", async ({ page }, info) => {
+    test.skip(info.project.name !== "w390-touch", "the touch route runs once, in w390-touch");
+    await queue(ids.slice(0, 3));
+    await openList(page);
+    const handle = page.getByRole("button", { name: `Reorder ${titleOf(ids[0])}, position 1 of 3` });
+    await hydrated(handle);
+    await handle.evaluate((el) => {
+      el.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 8, pointerType: "touch", isPrimary: true }));
+      window.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 8, pointerType: "touch", isPrimary: true }));
+    });
+    await page.waitForTimeout(800);
+    await expect(page.locator(".qrow[data-lifted]")).toHaveCount(0);
+    expect(await stored()).toEqual(ids.slice(0, 3).map((id, i) => `${id}:${i + 1}`));
+  });
+
   test("an empty queue is one slate with one action", async ({ page }, info) => {
     await openList(page);
     await expect(page.locator("#queue-head + .empty")).toContainText("Nothing queued.");

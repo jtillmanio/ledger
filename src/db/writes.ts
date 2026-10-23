@@ -797,6 +797,10 @@ export type Queued = { ordinal: number; added: boolean };
  * *+ Up next* (`end`) or *Read next* (`top`, everything else moves down one).
  * A run already queued stays where it is and answers its ordinal. Null,
  * writing nothing, for a placeholder, a soft-deleted or a missing run.
+ *
+ * The queue's length counts every row, a soft-deleted run's included: that row
+ * keeps its ordinal (hidden by the views) so a restored run comes back at its
+ * place, which is why the visible list may skip a number. Don't filter it here.
  */
 export async function queueRun(userId: string, runId: string, at: "end" | "top"): Promise<Queued | null> {
   return inQueue(userId, async (tx) => {

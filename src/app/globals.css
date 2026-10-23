@@ -1255,7 +1255,7 @@ h2.group-head{margin:2.25rem 0 .75rem}
 .shelf .card-meta{font-size:.6875rem;line-height:.875rem;color:var(--muted);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .shelf .bdg,.qmeta .bdg,.row-verbs .bdg{align-self:flex-start;font-family:var(--mono)}
-.shelf .start{min-height:36px;margin-top:2px;box-shadow:none;border-color:var(--rule-2)}
+.shelf .start{min-height:44px;margin-top:2px;box-shadow:none;border-color:var(--rule-2)}   /* the shelf's primary verb: a 44px target */
 .bdg.out{background:var(--surface);box-shadow:inset 0 0 0 1px var(--ready)}
 
 /* *+ Up next* / *Read next*, or *In Up next · #N* once queued. */
@@ -1277,7 +1277,7 @@ h2.group-head{margin:2.25rem 0 .75rem}
   background:var(--page)}
 .qrow .cv{flex:0 0 var(--cover-row);width:var(--cover-row);aspect-ratio:2/3;border-radius:var(--r-cover);background:var(--sunk)}
 .qbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:.25rem}
-.qtitle{font-weight:600;font-size:.9375rem;color:var(--ink);text-decoration:none;
+.qtitle{display:block;min-height:24px;line-height:24px;font-weight:600;font-size:.9375rem;color:var(--ink);text-decoration:none;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .qmeta{display:flex;align-items:center;gap:.5rem;min-width:0;font-size:.75rem;color:var(--muted)}
 .qmeta .mono{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

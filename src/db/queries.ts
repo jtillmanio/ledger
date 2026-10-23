@@ -114,11 +114,9 @@ export type QueueRow = {
 export async function upNext(userId: string) {
   return sql<QueueRow[]>`
     SELECT r.id, r.title, cl.writers, rs.start_year, rs.end_year, qs.total_issues,
-           qs.ordinal, qs.readiness, qs.blocked_by,
-           (rd.soft_total - rd.soft_done)::int AS soft_left
+           qs.ordinal, qs.readiness, qs.blocked_by, qs.soft_left
     FROM run_queue_state qs
     JOIN runs r            ON r.id = qs.run_id
-    JOIN run_readiness rd  ON rd.run_id = qs.run_id AND rd.user_id = qs.user_id
     JOIN run_span      rs  ON rs.run_id = qs.run_id
     JOIN run_credit_line cl ON cl.run_id = qs.run_id
     WHERE qs.user_id = ${userId} AND qs.state = 'unstarted'

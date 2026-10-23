@@ -507,7 +507,8 @@ WHERE s.status = 'to_read';
 -- derived here, so starting a run moves it to In flight and finishing it to
 -- Done without touching run_queue, and unmarking it back to zero puts it back
 -- at its old ordinal. state: unstarted (nothing read, an empty run included),
--- reading or read. blocked_by is the direct hard prerequisites still unread;
+-- reading or read. blocked_by is the direct hard prerequisites still unread,
+-- soft_left the soft ones (the ○ badge's count);
 -- the transitive "N runs first" is run_ancestors' (task 2.6). A run soft-deleted
 -- after it was queued drops out through run_progress.
 CREATE OR REPLACE VIEW run_queue_state AS
@@ -520,7 +521,8 @@ SELECT
   rr.readiness,
   (rr.hard_total - rr.hard_done)::int                            AS blocked_by,
   rp.read_issues::int                                            AS read_issues,
-  rp.total_issues::int                                           AS total_issues
+  rp.total_issues::int                                           AS total_issues,
+  (rr.soft_total - rr.soft_done)::int                            AS soft_left
 FROM run_queue q
 JOIN run_progress  rp ON rp.run_id = q.run_id AND rp.user_id = q.user_id
 JOIN run_readiness rr ON rr.run_id = q.run_id AND rr.user_id = q.user_id;

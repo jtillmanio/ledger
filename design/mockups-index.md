@@ -12,7 +12,7 @@ line numbers below drift after an edit.
 
 | id | Screen | Approx. lines (v4 + Sept 2026, may drift) |
 |---|---|---|
-| `home` | Comics dashboard — with the Up next queue; 360px and 834px frames (roadmap 1.8) | 655–1001 |
+| `home` | Comics dashboard — the Up next cover shelf and *Ready when you are* (roadmap 1.10); 360px and 834px frames (roadmap 1.8) | 655–1001 |
 | `runs` | Run list | 1004–1090 |
 | `spine` | Run detail — per-run "read in …" hints; spine v2 gutter, Hide read, covers, dates, next-issue strip; the two-line undo toast (desktop frame, roadmap 1.2); 360px and 834px frames (roadmap 1.8) | 1219–1345 |
 | `range` | Range marking; its undo toast in the two-line form (roadmap 1.2); the count with its optionals, *Adopt*'s fifth option *Original dates*, and the desktop anchor and pill (roadmap 1.1) | 1348–1466 |
