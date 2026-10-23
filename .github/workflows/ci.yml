@@ -109,6 +109,7 @@ jobs:
         shard: [1, 2, 3, 4]
     env:
       E2E_SERVER: start
+      E2E_SCOPE: full   # every project; a local run checks the core ones
     steps:
       - uses: actions/checkout@v7
       - name: Start PostgreSQL

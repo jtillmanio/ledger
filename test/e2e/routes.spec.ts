@@ -6,11 +6,10 @@
 import { expect, test } from "@playwright/test";
 import { E2E_RUN_ID, E2E_RUN_TITLE, expectNoHorizontalScroll, screenshot } from "./helpers";
 
-const ONCE = "w390-light";
-const runsOnce = (name: string) => test.skip(name !== ONCE, `a check with no layout in it: runs once, in ${ONCE}`);
+// A check with no layout in it: runs once, in w390-light.
+const ONCE = { tag: "@at-w390-light" };
 
-test("a garbage session goes to /login for a page and gets 401 from a route handler", async ({ browser, baseURL }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("a garbage session goes to /login for a page and gets 401 from a route handler", ONCE, async ({ browser, baseURL }) => {
   // No stored sign-in: the only credential is a cookie that is present and wrong,
   // which gets past the proxy's presence check and meets the signature check.
   const garbage = { name: "rt_session", value: "garbage", domain: "localhost", path: "/", httpOnly: true, secure: false, sameSite: "Lax" as const, expires: -1 };
@@ -31,8 +30,7 @@ test("a garbage session goes to /login for a page and gets 401 from a route hand
   }
 });
 
-test("each route answers with its own screen", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("each route answers with its own screen", ONCE, async ({ page }) => {
   const h1 = page.getByRole("heading", { level: 1 });
 
   await page.goto("/comics");
@@ -54,16 +52,14 @@ test("each route answers with its own screen", async ({ page }, testInfo) => {
   expect(new URL(page.url()).pathname).toBe("/books/list");
 });
 
-test("a run page's back link goes to /comics/runs", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("a run page's back link goes to /comics/runs", ONCE, async ({ page }) => {
   await page.goto(`/comics/${E2E_RUN_ID}`);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(E2E_RUN_TITLE);
   await page.getByRole("link", { name: "All runs" }).click();
   await page.waitForURL("**/comics/runs");
 });
 
-test("/ opens the medium you last touched, and comics for a fresh profile", async ({ page, context }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("/ opens the medium you last touched, and comics for a fresh profile", ONCE, async ({ page, context }) => {
   await page.goto("/books/list");
   await page.goto("/");
   expect(new URL(page.url()).pathname).toBe("/books/list"); // /books, redirected on
@@ -78,8 +74,7 @@ test("/ opens the medium you last touched, and comics for a fresh profile", asyn
   expect(new URL(page.url()).pathname).toBe("/comics");
 });
 
-test("a <Link> prefetch of a medium does not change the medium you last touched", async ({ request }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("a <Link> prefetch of a medium does not change the medium you last touched", ONCE, async ({ request }) => {
   const prefetch = { rsc: "1", "next-router-prefetch": "1" };
   const prefetched = await request.get("/books/list", { headers: prefetch, maxRedirects: 0 });
   expect(prefetched.headers()["set-cookie"]).toBeUndefined();
@@ -92,8 +87,7 @@ test("a <Link> prefetch of a medium does not change the medium you last touched"
   expect(visited.headers()["set-cookie"]).toMatch(/^ledger_medium=books;.*HttpOnly;.*SameSite=lax/i);
 });
 
-test("no same-origin link on any page answers 404", async ({ page }, testInfo) => {
-  runsOnce(testInfo.project.name);
+test("no same-origin link on any page answers 404", ONCE, async ({ page }) => {
   test.setTimeout(120_000);
   const pages = [
     "/comics", "/comics/runs", `/comics/${E2E_RUN_ID}`, `/comics/${E2E_RUN_ID}/add`, "/books/list", "/books/add", "/inbox", "/login",

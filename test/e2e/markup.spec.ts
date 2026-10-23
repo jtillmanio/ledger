@@ -88,11 +88,8 @@ test("/books/list: its rows are articles with no link, and the status controls h
   }
 });
 
-test.describe("hover reveals (AC-5)", () => {
-  test.beforeEach(({}, testInfo) => {
-    test.skip(!["w1280-light", "w390-touch"].includes(testInfo.project.name),
-      "two projects tell it apart: a fine pointer at 1280px hides them at rest, touch shows them");
-  });
+// Two projects tell it apart: a fine pointer at 1280px hides them at rest, touch shows them.
+test.describe("hover reveals (AC-5)", { tag: ["@at-w1280-light", "@at-w390-touch"] }, () => {
 
   test("a row's ⋯ is hidden at rest with a fine pointer, shown on hover and focus, and always shown on touch", async ({ page, hasTouch }) => {
     await page.goto(`/comics/${E2E_RUN_ID}`);

@@ -58,9 +58,9 @@ function expectClose(skeleton: Box[], loaded: Box[], what: string) {
   });
 }
 
-test.describe("at 360px", () => {
-  test.beforeEach(async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== "w390-light", "sets its own viewport: runs once, in w390-light");
+// Sets its own viewport: runs once, in w390-light.
+test.describe("at 360px", { tag: "@at-w390-light" }, () => {
+  test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 780 });
   });
 
@@ -106,11 +106,8 @@ test.describe("at 360px", () => {
   });
 });
 
-test.describe("the shimmer", () => {
-  test.beforeEach(({}, testInfo) => {
-    test.skip(!["w390-light", "w390-reduced-motion"].includes(testInfo.project.name),
-      "two projects tell it apart: the shimmer runs in one and stops in the other");
-  });
+// Two projects tell it apart: the shimmer runs in one and stops in the other.
+test.describe("the shimmer", { tag: ["@at-w390-light", "@at-w390-reduced-motion"] }, () => {
 
   test("runs normally and stops under prefers-reduced-motion (AC-1)", async ({ page }) => {
     await open(page, "/watch", ".slate");

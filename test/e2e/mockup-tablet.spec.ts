@@ -14,9 +14,8 @@ const INDEX = readFileSync("design/mockups-index.md", "utf8");
 const SCREENS = ["home", "spine", "bdash", "status"] as const;
 type Screen = (typeof SCREENS)[number];
 
-test.beforeEach(({}, testInfo) => {
-  test.skip(testInfo.project.name !== "w1280-light", "the mockup is checked once");
-});
+// The mockup is checked once.
+const ONCE = { tag: "@at-w1280-light" };
 
 async function openTab(page: Page, id: Screen, theme: "light" | "dark" = "light") {
   await page.setViewportSize({ width: 1400, height: 1100 });
@@ -54,7 +53,7 @@ const TAB_CSS = (() => {
   return MOCKUP.slice(start, MOCKUP.indexOf("</style>", start));
 })();
 
-test.describe("AC-1 · every 834 frame", () => {
+test.describe("AC-1 · every 834 frame", ONCE, () => {
   for (const id of SCREENS) {
     test(`${id}: no sideways scroll, a 72px rail and a thumb bar of 48px controls`, async ({ page }) => {
       const f = await openTab(page, id);
@@ -69,7 +68,7 @@ test.describe("AC-1 · every 834 frame", () => {
   }
 });
 
-test.describe("AC-1, AC-2 · home", () => {
+test.describe("AC-1, AC-2 · home", ONCE, () => {
   test("the hero's 150 × 225 cover sits beside the number, run and lens", async ({ page }) => {
     const f = await openTab(page, "home");
     const cover = await box(f.locator(".tb-hero .tb-cv.hero"));
@@ -130,7 +129,7 @@ test.describe("AC-1, AC-2 · home", () => {
   });
 });
 
-test.describe("AC-1, AC-2 · the side rail", () => {
+test.describe("AC-1, AC-2 · the side rail", ONCE, () => {
   for (const [id, main, names] of [
     ["home", ".tb-telecard", ["Ready when you are", "2026 so far"]],
     ["bdash", ".tb-quarter", ["On deck", "2026 so far"]],
@@ -151,7 +150,7 @@ test.describe("AC-1, AC-2 · the side rail", () => {
   }
 });
 
-test.describe("AC-3 · the telescope is no longer capped", () => {
+test.describe("AC-3 · the telescope is no longer capped", ONCE, () => {
   test("no tablet rule caps svg.tele at 344px", () => {
     expect(TAB_CSS).not.toMatch(/svg\.tele\{[^}]*max-width:344px/);
     expect(TAB_CSS).not.toContain("A phone-sized drawing stays phone-sized");
@@ -167,7 +166,7 @@ test.describe("AC-3 · the telescope is no longer capped", () => {
   });
 });
 
-test.describe("AC-1, AC-4 · design/mockups-index.md", () => {
+test.describe("AC-1, AC-4 · design/mockups-index.md", ONCE, () => {
   const section = (heading: string) => {
     const start = INDEX.indexOf(heading);
     expect(start, heading).toBeGreaterThan(-1);
@@ -199,7 +198,7 @@ test.describe("AC-1, AC-4 · design/mockups-index.md", () => {
   });
 });
 
-test.describe("AC-5 · the UX floor in the four frames", () => {
+test.describe("AC-5 · the UX floor in the four frames", ONCE, () => {
   // Colour lives in style attributes, presentation attributes and CSS rules;
   // a label like #141 in text is not a colour. Percent-encoded image data
   // (%23394049) is the spine's cover art, not styling.
