@@ -11,7 +11,8 @@ import {
 
 const AXE_RULES = ["nested-interactive", "button-name", "link-name"];
 // The dashboards (the books one is a redirect to its list until 2.2) and the two list pages.
-const PAGES = ["/comics", "/comics/runs", "/books/list", "/watch"];
+// The status screens (task 1.9) are rows, tabs and links of their own.
+const PAGES = ["/comics", "/comics/runs", "/books/list", "/watch", "/comics/status", "/books/status"];
 const NAVIGABLE = ["/comics", "/comics/runs"];
 // Pages that draw chips or segmented controls, so the check below has something to find.
 const HAS_CONTROLS = ["/comics/runs", "/books/list"];

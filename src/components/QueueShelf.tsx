@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import QueueBadge from "@/components/QueueBadge";
-import { QUEUE_HREF } from "@/components/QueueButton";
+import { QUEUE_HREF } from "@/lib/status-tabs";
 import type { QueueRow } from "@/db/queries";
 
 const FINE = "(hover:hover) and (pointer:fine)";
@@ -24,7 +24,7 @@ export default function QueueShelf({ rows, readyCount }: { rows: QueueRow[]; rea
   if (rows.length === 0) {
     return (
       <section className="shelf-slot" aria-labelledby="up-next">
-        <div className="slot-head"><h2 id="up-next">Up next</h2></div>
+        <div className="slot-head"><h2 id="up-next"><Link href={QUEUE_HREF} prefetch={false} className="head-link">Up next</Link></h2></div>
         <div className="empty">
           Nothing queued — <Link href={`${QUEUE_HREF}#ready`}>pick from {readyCount} ready {readyCount === 1 ? "run" : "runs"}</Link>
         </div>
@@ -81,7 +81,7 @@ function Shelf({ rows }: { rows: QueueRow[] }) {
   return (
     <section className="shelf-slot" aria-labelledby="up-next">
       <div className="slot-head">
-        <h2 id="up-next">Up next</h2>
+        <h2 id="up-next"><Link href={QUEUE_HREF} prefetch={false} className="head-link">Up next</Link></h2>
         <span className="mono n">{rows.length}</span>
         <span className="grow" />
         {pager && (

@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useUndo } from "@/components/Undo";
+import { QUEUE_HREF } from "@/lib/status-tabs";
 
-/** Where *Reorder* and *In Up next · #N* lead (task 1.10): the queue list, 1.9's Up next tab. */
-export const QUEUE_HREF = "/comics/status?tab=next";
 
 /**
  * One call to `/api/queue` (task 1.10). Resolves with the run's ordinal, and

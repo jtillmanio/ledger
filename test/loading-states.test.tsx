@@ -11,6 +11,7 @@ const routes: [string, string][] = [
   ["/comics/runs", "../src/app/comics/runs/loading"],
   ["/comics/[runId]", "../src/app/comics/[runId]/loading"],
   ["/comics/status", "../src/app/comics/status/loading"],
+  ["/books/status", "../src/app/books/status/loading"],
   ["/books/list", "../src/app/books/list/loading"],
   ["/inbox", "../src/app/inbox/loading"],
   ["/watch", "../src/app/watch/loading"],

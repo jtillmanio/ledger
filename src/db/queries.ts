@@ -124,9 +124,41 @@ export async function upNext(userId: string) {
   `;
 }
 
-/** *Ready, not queued* (task 1.10): the ready runs the queue doesn't hold, with the count of all of them. */
-export function readyNotQueued(userId: string, limit = 50) {
-  return readyToRead(userId, limit, { unqueued: true });
+/**
+ * *Ready, not queued* (task 1.10, 1.9): the unread runs the queue doesn't hold
+ * that can be started, `ready_all` first and then `ready_hard`, each in track →
+ * block → run order (design §11.2, D-79), with the count of all of them. `tracks`
+ * has no order column, so a run sorts under the first of its tracks by name (its
+ * block's track when it has no `run_tracks` row); a run in no block comes last.
+ * A blocked run is in neither this list nor above it. The limit is far above the
+ * catalog's 258 runs: the status tab's count is its rows (task 1.9).
+ */
+export function readyNotQueued(userId: string, limit = 500) {
+  return sql<WithTotal<RunRow>[]>`
+    SELECT r.id, r.title, cl.writers, rs.series_issues, rs.start_year, rs.end_year,
+           rs.dated_issues, r.tier, r.why, r.spine, '{}'::text[] AS tracks,
+           rp.total_issues, rp.read_issues, rp.pct, rp.state, rd.readiness,
+           rd.hard_total - rd.hard_done AS hard_left,
+           rd.soft_total - rd.soft_done AS soft_left,
+           NULL::int AS queued_ordinal,
+           COUNT(*) OVER ()::int AS total
+    FROM runs r
+    JOIN run_progress  rp ON rp.run_id = r.id AND rp.user_id = ${userId}
+    JOIN run_readiness rd ON rd.run_id = r.id AND rd.user_id = ${userId}
+    JOIN run_span      rs ON rs.run_id = r.id
+    JOIN run_credit_line cl ON cl.run_id = r.id
+    LEFT JOIN blocks b  ON b.id = r.block_id
+    LEFT JOIN tracks bt ON bt.id = b.track_id
+    WHERE NOT r.placeholder AND r.deleted_at IS NULL
+      AND rp.state = 'unread'
+      AND rd.readiness IN ('ready_all', 'ready_hard')
+      AND rp.total_issues > 0
+      AND NOT EXISTS (SELECT 1 FROM run_queue q WHERE q.run_id = r.id AND q.user_id = ${userId})
+    ORDER BY (rd.readiness = 'ready_hard'), (b.id IS NULL),
+             COALESCE((SELECT MIN(t.name) FROM run_tracks rt JOIN tracks t ON t.id = rt.track_id WHERE rt.run_id = r.id), bt.name),
+             b.number, r.sequence, r.title, r.id
+    LIMIT ${limit}
+  `;
 }
 
 /** The resume pointer (task 1.6): the lowest sequence whose *placement* is
@@ -159,6 +191,88 @@ export async function inProgressRuns(userId: string) {
     ) nx ON true
     WHERE r.deleted_at IS NULL AND rp.state = 'reading'
     ORDER BY rp.pct DESC, r.id
+  `;
+}
+
+/** A row of the status screen's *In flight* tab (task 1.9): a started run and its resume pointer. */
+export type InFlightRun = RunRow & {
+  next_label: string; next_notes: string | null; next_ordinal: number;
+  last_read_at: Date | null; last_read_precision: Precision;
+};
+
+/**
+ * Comics *In flight* (task 1.9): the runs with some placements read and some
+ * not, most recently touched first (the latest dated read, an undated one last),
+ * each with its resume pointer, by the rule `inProgressRuns` uses. Queued or
+ * not: a started run leaves Up next through `run_queue_state`, never this list.
+ */
+export async function inFlightRuns(userId: string) {
+  return sql<InFlightRun[]>`
+    SELECT r.id, r.title, cl.writers, rs.series_issues, rs.start_year, rs.end_year,
+           rs.dated_issues, r.tier, r.why, r.spine, '{}'::text[] AS tracks,
+           rp.total_issues, rp.read_issues, rp.pct, rp.state,
+           'ready_all' AS readiness, 0 AS hard_left, 0 AS soft_left, NULL::int AS queued_ordinal,
+           nx.label AS next_label, nx.notes AS next_notes, nx.ordinal AS next_ordinal,
+           lr.completed_at AS last_read_at, COALESCE(lr.completed_at_precision, 'none') AS last_read_precision
+    FROM runs r
+    JOIN run_progress rp ON rp.run_id = r.id AND rp.user_id = ${userId}
+    JOIN run_span     rs ON rs.run_id = r.id
+    JOIN run_credit_line cl ON cl.run_id = r.id
+    JOIN LATERAL (
+      SELECT i.label, ri.notes,
+             (SELECT COUNT(*)::int FROM live_run_issues o
+              WHERE o.run_id = ri.run_id AND o.sequence <= ri.sequence) AS ordinal
+      FROM live_run_issues ri
+      JOIN issues i ON i.id = ri.issue_id
+      LEFT JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
+      WHERE ri.run_id = r.id AND p.placement_id IS NULL
+      ORDER BY ri.sequence
+      LIMIT 1
+    ) nx ON true
+    LEFT JOIN LATERAL (
+      SELECT p.completed_at, p.completed_at_precision
+      FROM live_run_issues ri
+      JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
+      WHERE ri.run_id = r.id AND p.completed_at_precision <> 'none'
+      ORDER BY p.completed_at DESC, (p.completed_at_precision = 'exact') DESC
+      LIMIT 1
+    ) lr ON true
+    WHERE r.deleted_at IS NULL AND NOT r.placeholder AND rp.state = 'reading'
+    ORDER BY lr.completed_at DESC NULLS LAST, r.id
+  `;
+}
+
+/** A row of the status screen's *Done* tab (task 1.9): a run with every placement read. */
+export type DoneRun = {
+  id: string; title: string; writers: string | null;
+  start_year: number | null; end_year: number | null; total_issues: number;
+  finished_at: Date | null; finished_precision: Precision;
+};
+
+/**
+ * Comics *Done* (task 1.9): the runs whose own placements are all read, from
+ * `run_state` (read elsewhere does not count, data model 2.14), the latest
+ * finish first. A run read only with undated marks has no finish date and sorts
+ * after every dated one.
+ */
+export async function doneRuns(userId: string) {
+  return sql<DoneRun[]>`
+    SELECT r.id, r.title, cl.writers, rs.start_year, rs.end_year, st.total_issues::int AS total_issues,
+           st.finished_at, COALESCE(fp.completed_at_precision, 'none') AS finished_precision
+    FROM run_state st
+    JOIN runs r ON r.id = st.run_id AND r.deleted_at IS NULL AND NOT r.placeholder
+    JOIN run_span rs ON rs.run_id = r.id
+    JOIN run_credit_line cl ON cl.run_id = r.id
+    LEFT JOIN LATERAL (
+      SELECT p.completed_at_precision
+      FROM live_run_issues ri
+      JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
+      WHERE ri.run_id = r.id AND p.completed_at = st.finished_at
+      ORDER BY (p.completed_at_precision = 'exact') DESC
+      LIMIT 1
+    ) fp ON true
+    WHERE st.user_id = ${userId} AND st.state = 'read'
+    ORDER BY st.finished_at DESC NULLS LAST, r.title, r.id
   `;
 }
 
@@ -363,9 +477,9 @@ export type BookRow = {
  * out of its first year. */
 export async function listBooks(
   userId: string,
-  opts: { status?: string; genre?: string; year?: number; noYear?: boolean; q?: string } = {},
+  opts: { status?: string; genre?: string; year?: number; noYear?: boolean; q?: string; level?: ToReadLevel } = {},
 ): Promise<WithTotal<BookRow>[]> {
-  const { status = null, genre = null, year = null, noYear = false, q = null } = opts;
+  const { status = null, genre = null, year = null, noYear = false, q = null, level = null } = opts;
   return sql<WithTotal<BookRow>[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position,
            b.genre, b.word_count, b.cover_url,
@@ -402,8 +516,89 @@ export async function listBooks(
                       WHERE r.user_id = ${userId} AND r.book_id = b.id AND r.finished_on IS NULL))
       AND (${q}::text      IS NULL OR b.title ILIKE '%' || ${q} || '%'
                                    OR a.name  ILIKE '%' || ${q} || '%')
+      -- The To read filter's level (task 1.9): the level to_read_level assigns, Someday included.
+      AND (${level}::text  IS NULL
+           OR EXISTS (SELECT 1 FROM to_read_level l
+                      WHERE l.user_id = ${userId} AND l.book_id = b.id AND l.level = ${level}))
     ORDER BY s.name NULLS LAST, b.series_position NULLS LAST, b.title
     LIMIT 500
+  `;
+}
+
+/** The four places a to-read book sits (D-37): `to_read_level`'s `level`, Someday being no plan row. */
+export const TO_READ_LEVELS = ["quarter", "year", "on_deck", "someday"] as const;
+export type ToReadLevel = (typeof TO_READ_LEVELS)[number];
+
+/** A book on a status tab (task 1.9). */
+export type StatusBook = {
+  id: string; title: string; author: string | null; series: string | null;
+  series_position: number | null; word_count: number | null;
+};
+
+/** *In flight* for books (task 1.9): what you are reading. No reading position is stored, so the row shows the word count. */
+export async function booksInFlight(userId: string) {
+  return sql<StatusBook[]>`
+    SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, b.word_count
+    FROM book_status st
+    JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
+    LEFT JOIN authors a     ON a.id = b.author_id
+    LEFT JOIN book_series s ON s.id = b.series_id
+    WHERE st.user_id = ${userId} AND st.status = 'reading'
+    ORDER BY b.title, b.id
+  `;
+}
+
+/** A planned book on *Up next* (task 1.9). `ordinal` is its place in its quarter and null at every other level. */
+export type PlannedBook = StatusBook & {
+  period: string; level: "quarter" | "year" | "on_deck";
+  year: number | null; quarter: number | null; ordinal: number | null;
+};
+
+/**
+ * *Up next* for books (task 1.9): the plan by level, every `to_read` book with a
+ * plan row. Quarters first by year and quarter, in the order you gave them; each
+ * year's bare-year entries after its quarters, by title; On deck last, by title.
+ * A book planned in two periods is in both. `someday` is how many `to_read` books
+ * have no plan row: the closing row, never listed here (D-37). Hidden from the
+ * tab, and not in either count: a planned book that is reading, read or DNF.
+ */
+export async function booksUpNext(userId: string) {
+  const [planned, [someday]] = await Promise.all([
+    sql<PlannedBook[]>`
+      SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, b.word_count,
+             pp.period, pp.level, pp.year, pp.quarter, pp.ordinal
+      FROM plan_period pp
+      JOIN book_status st ON st.book_id = pp.book_id AND st.user_id = pp.user_id AND st.status = 'to_read'
+      JOIN books b ON b.id = pp.book_id AND b.deleted_at IS NULL
+      LEFT JOIN authors a     ON a.id = b.author_id
+      LEFT JOIN book_series s ON s.id = b.series_id
+      WHERE pp.user_id = ${userId}
+      ORDER BY (pp.level = 'on_deck'), pp.year, pp.quarter NULLS LAST, pp.ordinal, b.title, b.id
+    `,
+    sql<{ n: number }[]>`
+      SELECT COUNT(*)::int AS n FROM to_read_level WHERE user_id = ${userId} AND level = 'someday'`,
+  ]);
+  return { planned, someday: someday.n };
+}
+
+/** A finished or stopped book on *Done* (task 1.9). `year` is the finish year; null is *No year*. */
+export type DoneBook = StatusBook & { status: "read" | "dnf"; year: number | null };
+
+/**
+ * *Done* for books (task 1.9): `read` books, newest finish first and the undated
+ * last (S-14), plus the `dnf` ones the screen folds under *Stopped*. The year is
+ * the finish year, `extract(year FROM finished_on)`, never a stored column (D-21).
+ */
+export async function booksDone(userId: string) {
+  return sql<DoneBook[]>`
+    SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, b.word_count,
+           st.status, extract(year FROM st.finished_on)::int AS year
+    FROM book_status st
+    JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
+    LEFT JOIN authors a     ON a.id = b.author_id
+    LEFT JOIN book_series s ON s.id = b.series_id
+    WHERE st.user_id = ${userId} AND st.status IN ('read', 'dnf')
+    ORDER BY (st.status = 'dnf'), st.finished_on DESC NULLS LAST, b.title, b.id
   `;
 }
 

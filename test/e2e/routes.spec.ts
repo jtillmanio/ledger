@@ -91,6 +91,7 @@ test("no same-origin link on any page answers 404", ONCE, async ({ page }) => {
   test.setTimeout(120_000);
   const pages = [
     "/comics", "/comics/runs", `/comics/${E2E_RUN_ID}`, `/comics/${E2E_RUN_ID}/add`, "/books/list", "/books/add", "/inbox", "/login",
+    "/comics/status", "/comics/status?tab=next", "/books/status", "/books/status?tab=next", "/books/list?status=to_read&level=someday",
   ];
   const checked = new Set<string>();
   for (const path of pages) {
@@ -115,5 +116,15 @@ for (const [name, path] of [["comics-dashboard", "/comics"], ["comics-runs", "/c
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expectNoHorizontalScroll(page);
     await screenshot(page, testInfo, name);
+  });
+}
+
+// The status screens exist (task 1.9): each answers 200 and names itself, in the tab the URL asks for.
+for (const [path, h1] of [["/comics/status", "Runs by status"], ["/books/status", "Books by status"]]) {
+  test(`${path} answers with its h1 and a tab strip`, async ({ page }) => {
+    const res = await page.goto(path);
+    expect(res?.status()).toBe(200);
+    await expect(page.getByRole("heading", { level: 1, name: h1 })).toBeVisible();
+    await expect(page.getByRole("tablist", { name: "Status" }).getByRole("tab")).toHaveCount(3);
   });
 }

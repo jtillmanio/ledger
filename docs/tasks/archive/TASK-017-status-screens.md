@@ -1,7 +1,7 @@
 ---
 id: TASK-017
 title: 1.9 Status screens: In flight · Up next · Done
-status: Ready
+status: Done
 depends_on: [TASK-016]
 size: L
 model: sonnet
@@ -31,12 +31,12 @@ For comics and for books, one screen answers three questions: what am I in the m
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): seeded test: a run with 3 of 10 placements read is in In flight and not in Up next, even if it is queued; queued unstarted runs appear first, in queue order; a ready run that isn't queued appears under *Ready, not queued* and not above it; a queued blocked run appears in the queue with its amber badge; an unqueued blocked run appears in neither section; a run with all placements read is in Done; a run whose issues are all read *in other runs* is not in Done (0.8); a run finished with undated reads sorts below one finished last week. A book planned `2027` appears after 2027's quarters and before On deck, with no drag handle. Three books planned `2027-Q1` render in ordinal order, and the keyboard sequence (Space, Down, Space) on the first leaves that quarter at a contiguous 1–3 with it second; a lift never carries a row into another quarter. A `to_read` book with no plan row is not on the tab, is counted in *Someday · N books*, and appears when that row opens the master list at `?status=to_read&level=someday`. A DNF book appears only under Stopped. Tab counts equal row counts. Each tablist contains exactly one underline element. Screenshot at 360px, including every empty tab.
-- [ ] AC-2: `/comics/status` and `/books/status` render one shared component. The tab is in the URL (`?tab=inflight|next|done`) and survives a reload. The tabs are `<a role="tab" aria-selected>` links in a `role="tablist"` with arrow-key navigation. The *Status* items in TASK-014's `NAV_ITEMS` are enabled in this PR.
-- [ ] AC-3: `/books/list`'s *To read* filter gains *All · Quarter · Year · On deck · Someday*, read from `to_read_level`, with `?level=` in the URL. Each level shows exactly the books `to_read_level` assigns to it.
-- [ ] AC-4: The bare-year lane renders grey with its count and no button. Nothing on it resolves to `--blocked`. Each of the six empty slates (three per medium) has the design §14 copy and exactly one primary action, and books *Up next*'s action is **Add a book**, opening TASK-008's sheet.
-- [ ] AC-5: The dashboard's *Also reading* row, the Up next shelf's head and *Ready when you are → All N* each link to the matching tab, with N computed. In flight's resume button is named for its target (*Read <full label>*), truncated with a `title`.
-- [ ] AC-6: Both status screens meet the UX floor (`docs/04-design.md` § 10. The UX floor): every tab, populated and empty, at every `ui.viewports` width, light and dark; loading skeletons at the loaded size; 44px tabs; the underline moves without easing under reduced motion; DNF's *Stopped* is a `<details>` with a `<summary>` count; axe reports no new violations.
+- [x] AC-1 (roadmap **Check:**, verbatim): seeded test: a run with 3 of 10 placements read is in In flight and not in Up next, even if it is queued; queued unstarted runs appear first, in queue order; a ready run that isn't queued appears under *Ready, not queued* and not above it; a queued blocked run appears in the queue with its amber badge; an unqueued blocked run appears in neither section; a run with all placements read is in Done; a run whose issues are all read *in other runs* is not in Done (0.8); a run finished with undated reads sorts below one finished last week. A book planned `2027` appears after 2027's quarters and before On deck, with no drag handle. Three books planned `2027-Q1` render in ordinal order, and the keyboard sequence (Space, Down, Space) on the first leaves that quarter at a contiguous 1–3 with it second; a lift never carries a row into another quarter. A `to_read` book with no plan row is not on the tab, is counted in *Someday · N books*, and appears when that row opens the master list at `?status=to_read&level=someday`. A DNF book appears only under Stopped. Tab counts equal row counts. Each tablist contains exactly one underline element. Screenshot at 360px, including every empty tab.
+- [x] AC-2: `/comics/status` and `/books/status` render one shared component. The tab is in the URL (`?tab=inflight|next|done`) and survives a reload. The tabs are `<a role="tab" aria-selected>` links in a `role="tablist"` with arrow-key navigation. The *Status* items in TASK-014's `NAV_ITEMS` are enabled in this PR.
+- [x] AC-3: `/books/list`'s *To read* filter gains *All · Quarter · Year · On deck · Someday*, read from `to_read_level`, with `?level=` in the URL. Each level shows exactly the books `to_read_level` assigns to it.
+- [x] AC-4: The bare-year lane renders grey with its count and no button. Nothing on it resolves to `--blocked`. Each of the six empty slates (three per medium) has the design §14 copy and exactly one primary action, and books *Up next*'s action is **Add a book**, opening TASK-008's sheet.
+- [x] AC-5: The dashboard's *Also reading* row, the Up next shelf's head and *Ready when you are → All N* each link to the matching tab, with N computed. In flight's resume button is named for its target (*Read <full label>*), truncated with a `title`.
+- [x] AC-6: Both status screens meet the UX floor (`docs/04-design.md` § 10. The UX floor): every tab, populated and empty, at every `ui.viewports` width, light and dark; loading skeletons at the loaded size; 44px tabs; the underline moves without easing under reduced motion; DNF's *Stopped* is a `<details>` with a `<summary>` count; axe reports no new violations.
 
 ## Out of scope
 
@@ -71,6 +71,9 @@ Found while planning; placed in PR #117 (approved at plan, 2026-10-23).
 - Where a book's reading position would be stored, and which task builds it, is the owner's question (a schema column) → docs/OWNER-CHECKLIST.md § Decisions waiting on you (approved at plan)
 - *track → block order* for *Ready, not queued*: `tracks` has no order column, so it is track name, then `block_ordinal`, then `run_ordinal`, unblocked runs last → docs/review/decisions.md § D-79 (approved at plan)
 - Books' three empty status slates had no source copy; the copy in Risks 1 is the owner's → docs/04-design.md § 14. Per-screen refinements (approved at plan)
+- The dashboard's *Ready when you are → All N* counted its own ready total, not the tab's; the owner ruled N should match the tab, so the dashboard now reads `readyNotQueued(userId, 1)` for it (and the shelf's *pick from N*) → not tracked: done in this PR (owner, 2026-10-24)
+- A book with no `book_status` row is listed by the master list's *To read* but is in no `to_read_level` level and not in *Someday · N*; seen only on the e2e seed, since the dev data's to-read books all have a status row → not tracked: older than this task (1.7) and absent from real data
+- The mockup's In flight row shows a *Next #N* sub-line, cover chip and lede paragraph; the row here names the target on its *Read <label>* button instead, and adds no cover until 4.3 → not tracked: the button carries the target (AC-5)
 - Context says "the *Status* h1", but the mockup has *Runs by status* / *Books by status*, and the mockup wins on copy (D-1) → not tracked: resolved in this plan
 
 ## Plan
@@ -139,11 +142,21 @@ Provisional: no (TASK-016 is Done). Large by policy (`never-split`, attended): t
 3. The ReorderList extraction risks a regression in the queue; the queue e2e suite guards it.
 4. Running all three tabs' queries per load costs about 6 queries in 1 wave. A Lighthouse budget squeeze is possible.
 
+**Revisions after approval** (counted in Metrics):
+
+1. `PATCH /api/plan` takes `{ bookId, period, to }` only. No separate MOVE_TOP verb: `to: 1` is *Move to top*, and `moveToTop` stays unused by the app.
+2. `QUEUE_HREF` moved from `QueueButton.tsx` (a client module, so a server component read a stub) to `src/lib/status-tabs.ts`.
+3. `docs/02-architecture.md` changed: the query budget text and the perf-budget table (`test/perf.test.ts` requires the table to mirror `budget.json`).
+4. Books Up next's *Add a book* opens the sheet with the On deck target, so the book lands on the tab (1.4c's default, Someday, would leave it empty).
+5. *Ready when you are → All N* and the shelf's *pick from N* take N from `readyNotQueued(userId, 1)`, the tab's own count (owner's ruling at the preview walk); the dashboard is 7 queries in one wave, and the lede keeps its ready_all total.
+6. `readyNotQueued` has a 500-row cap, not 50, so the Up next count is its rows; a run in several tracks sorts under the first by name (D-79), its block's track when it has none.
+7. `src/app/comics/status/loading.tsx` gains the tab strip; `test/e2e/status.spec.ts` measures both skeletons and the reduced-motion underline.
+
 **Size check**: about 20 files across UI, API and query layers, with no schema change. It stays whole by `never-split`; it is already `autonomy: attended`.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (827 unit, 535 e2e) | Audit R1 NOT RUN (tree edited mid-run) → R2 NOT RUN (session ended) → R3 CHANGES (routes.spec had no discriminating assertion; added) | Spec R1 CHANGES (roadmap tick, comics skeleton, 50-row cap, reduced-motion test, D-79 order, revisions recorded) → R2 APPROVE | Schema R1 APPROVE | UI R1 PASS (AC-5's N mismatch left for the owner; books plan, Stopped and queue states proven by e2e only, the dev data has none)
 
 ## Blocked
 
@@ -151,7 +164,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1 (PASS)
+- Review rounds: 2 (spec), 1 (schema), 1 (UI), 3 (test audit)
+- First-pass AC FAILs: 1 (AC-6, comics skeleton)
+- Plan revisions after approval: 7

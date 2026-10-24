@@ -3,7 +3,8 @@ import { DashboardVerbs, HeaderVerbs, ThumbBar, type BarConfig } from "@/compone
 import QueueButton from "@/components/QueueButton";
 import QueueShelf from "@/components/QueueShelf";
 import { requireUserId } from "@/lib/auth";
-import { catalogTotals, inboxCount, inProgressRuns, nextUnread, readyToRead, upNext } from "@/db/queries";
+import { QUEUE_HREF } from "@/lib/status-tabs";
+import { catalogTotals, inboxCount, inProgressRuns, nextUnread, readyNotQueued, readyToRead, upNext } from "@/db/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,7 @@ function pct(n: number) { return `${Math.round(n * 100)}%`; }
 // The comics dashboard (design §11): `/` redirects here or to the medium you last touched.
 export default async function Comics() {
   const userId = await requireUserId();
-  const [reading, ready, catalog, inbox, ahead, queue] = await Promise.all([
+  const [reading, ready, catalog, inbox, ahead, queue, unqueued] = await Promise.all([
     inProgressRuns(userId),
     readyToRead(userId, 12),
     catalogTotals(userId),
@@ -22,6 +23,8 @@ export default async function Comics() {
     nextUnread(userId),
     // Slot 2, the Up next shelf (task 1.10): the queue's unstarted runs, in queue order.
     upNext(userId),
+    // *Ready, not queued*'s size, the N of *All N* and *pick from N*: the status tab they open counts the same rows (task 1.9).
+    readyNotQueued(userId, 1),
   ]);
 
   // Distinct issues: summing tracks would count a crossover once per track.
@@ -29,6 +32,7 @@ export default async function Comics() {
   const issuesTotal = catalog.total;
   // The query is LIMITed for the list; the count is the whole list (R2-05).
   const readyTotal = ready[0]?.total ?? 0;
+  const notQueued = unqueued[0]?.total ?? 0;
 
   // The thumb bar (task 1.8b): mark the hero run's next issue, else start the top of Up next
   // (STYLE_GUIDE §14.2), else the first ready run, else pick a run. Start navigates (R1-08).
@@ -74,7 +78,13 @@ export default async function Comics() {
       <div className="dash-main">
       {reading.length > 0 && (
         <>
-          <h2>Mid-run</h2>
+          {/* The status screen's In flight tab (task 1.9); the hero's Also reading row (2.4) links there too. */}
+          <div className="slot-head">
+            <h2>Mid-run</h2>
+            <span className="mono n">{reading.length}</span>
+            <span className="grow" />
+            <Link href="/comics/status?tab=inflight" prefetch={false} className="btn sec">All {reading.length}</Link>
+          </div>
           <div className="rows">
             {/* Each row opens its run at the resume pointer's row (task 1.6). */}
             {reading.map((r) => (
@@ -95,11 +105,16 @@ export default async function Comics() {
         </>
       )}
 
-      <QueueShelf rows={queue} readyCount={readyTotal} />
+      <QueueShelf rows={queue} readyCount={notQueued} />
       </div>
 
       <aside className="dash-side" aria-labelledby="ready-head">
-      <h2 id="ready-head">Ready when you are</h2>
+      <div className="slot-head">
+        <h2 id="ready-head">Ready when you are</h2>
+        <span className="grow" />
+        {/* N is computed (D-7): the whole list's size, not the page this shows. */}
+        {notQueued > 0 && <Link href={`${QUEUE_HREF}#ready`} prefetch={false} className="btn sec">All {notQueued}</Link>}
+      </div>
       <p className="muted small">
         Every hard and soft prerequisite for these is finished. Ordered by your tier,
         shortest first.

@@ -35,7 +35,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "watch", label: "Watch", href: "/watch", icon: "tv", enabled: true, group: "media", medium: "watch" },
 
   { id: "comics-dash", label: "Dashboard", href: "/comics", icon: "layout-dashboard", enabled: true, group: "medium", medium: "comics", dash: true },
-  { id: "comics-status", label: "Status", href: "/comics/status", icon: "list-checks", enabled: false, group: "medium", medium: "comics" },
+  { id: "comics-status", label: "Status", href: "/comics/status", icon: "list-checks", enabled: true, group: "medium", medium: "comics" },
   { id: "comics-runs", label: "Runs", href: "/comics/runs", icon: "layers", enabled: true, group: "medium", medium: "comics", holdsDetail: true },
   { id: "comics-tracks", label: "Tracks", href: "/comics/tracks", icon: "route", enabled: false, group: "medium", medium: "comics" },
   // No comics route adds without a run, so this waits for the remembered run (roadmap 1.19).
@@ -43,7 +43,7 @@ export const NAV_ITEMS: NavItem[] = [
 
   // Until 2.2 builds the books dashboard, /books redirects to the list.
   { id: "books-dash", label: "Dashboard", href: "/books", icon: "layout-dashboard", enabled: false, group: "medium", medium: "books", dash: true },
-  { id: "books-status", label: "Status", href: "/books/status", icon: "list-checks", enabled: false, group: "medium", medium: "books" },
+  { id: "books-status", label: "Status", href: "/books/status", icon: "list-checks", enabled: true, group: "medium", medium: "books" },
   { id: "books-plan", label: "Plan", href: "/books/plan", icon: "calendar-range", enabled: false, group: "medium", medium: "books" },
   { id: "books-shelves", label: "Shelves", href: "/books/shelves", icon: "library", enabled: false, group: "medium", medium: "books" },
   { id: "books-top", label: "Top", href: "/books/top", icon: "list-ordered", enabled: false, group: "medium", medium: "books" },
