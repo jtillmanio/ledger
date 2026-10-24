@@ -3,6 +3,7 @@ import { DashboardVerbs, HeaderVerbs, ThumbBar, type BarConfig } from "@/compone
 import QueueButton from "@/components/QueueButton";
 import QueueShelf from "@/components/QueueShelf";
 import { requireUserId } from "@/lib/auth";
+import { QUEUE_HREF } from "@/lib/status-tabs";
 import { catalogTotals, inboxCount, inProgressRuns, nextUnread, readyToRead, upNext } from "@/db/queries";
 
 export const dynamic = "force-dynamic";
@@ -74,7 +75,13 @@ export default async function Comics() {
       <div className="dash-main">
       {reading.length > 0 && (
         <>
-          <h2>Mid-run</h2>
+          {/* The status screen's In flight tab (task 1.9); the hero's Also reading row (2.4) links there too. */}
+          <div className="slot-head">
+            <h2>Mid-run</h2>
+            <span className="mono n">{reading.length}</span>
+            <span className="grow" />
+            <Link href="/comics/status?tab=inflight" prefetch={false} className="btn sec">All {reading.length}</Link>
+          </div>
           <div className="rows">
             {/* Each row opens its run at the resume pointer's row (task 1.6). */}
             {reading.map((r) => (
@@ -99,7 +106,12 @@ export default async function Comics() {
       </div>
 
       <aside className="dash-side" aria-labelledby="ready-head">
-      <h2 id="ready-head">Ready when you are</h2>
+      <div className="slot-head">
+        <h2 id="ready-head">Ready when you are</h2>
+        <span className="grow" />
+        {/* N is computed (D-7): the whole list's size, not the page this shows. */}
+        {readyTotal > 0 && <Link href={`${QUEUE_HREF}#ready`} prefetch={false} className="btn sec">All {readyTotal}</Link>}
+      </div>
       <p className="muted small">
         Every hard and soft prerequisite for these is finished. Ordered by your tier,
         shortest first.

@@ -57,8 +57,21 @@ describe("NAV_ITEMS (AC-2)", () => {
     }
   });
 
-  it("keeps the unbuilt screens out: Search, Settings, Status, Tracks, Plan, Shelves, Top", () => {
-    const off = ["search", "settings", "comics-status", "comics-tracks", "comics-add", "books-status", "books-plan", "books-shelves", "books-top"];
+  it("turns on Status for comics and books (task 1.9); Watch's waits for 8.8", () => {
+    for (const id of ["comics-status", "books-status"]) {
+      const item = NAV_ITEMS.find((i) => i.id === id)!;
+      expect(item.enabled, id).toBe(true);
+      expect(visibleItems(), id).toContain(item);
+    }
+    expect(NAV_ITEMS.find((i) => i.id === "watch-status")?.enabled).toBe(false);
+    const all = bars();
+    for (const name of ["the tablet rail", "the sidebar"] as const) {
+      expect(all[name], name).toContain('href="/comics/status"');
+    }
+  });
+
+  it("keeps the unbuilt screens out: Search, Settings, Tracks, Plan, Shelves, Top", () => {
+    const off = ["search", "settings", "comics-tracks", "comics-add", "books-plan", "books-shelves", "books-top"];
     for (const id of off) expect(NAV_ITEMS.find((i) => i.id === id)?.enabled, id).toBe(false);
     for (const [name, html] of Object.entries(bars())) {
       expect(html, name).not.toMatch(/Ctrl K|Settings|Shelves|Tracks/);

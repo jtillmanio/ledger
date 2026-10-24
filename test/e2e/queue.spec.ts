@@ -73,7 +73,8 @@ async function openDashboard(page: Page) {
 
 async function openList(page: Page) {
   await page.goto(LIST);
-  await expect(page.getByRole("heading", { level: 1, name: "Up next" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Runs by status" })).toBeVisible();
+  await expect(page.getByRole("tab", { name: /^Up next/ })).toHaveAttribute("aria-selected", "true");
 }
 
 async function floor(page: Page) {

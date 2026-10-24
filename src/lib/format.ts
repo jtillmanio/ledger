@@ -42,3 +42,19 @@ export function readWhen(at: Date | string | null, precision: Precision): string
     : monthYear.format(new Date(at));
   return precision === "approximate" ? `~${text}` : text;
 }
+
+/** A book's word count as the lists print it: `387k`; null when it has none (task 1.9). */
+export function wordsK(words: number | null): string | null {
+  return words ? `${Math.round(words / 1000)}k` : null;
+}
+
+/** A book's second line on a status tab: author, then its series and place (task 1.9). */
+export function bookSub(b: { author: string | null; series: string | null; series_position: number | null }): string {
+  return [b.author, b.series && `${b.series}${b.series_position ? ` #${b.series_position}` : ""}`].filter(Boolean).join(" · ");
+}
+
+/** A plan quarter as people say it: `2027-Q1` is `Q1 2027`. The period is the database's; this only reads it for display. */
+export function quarterName(period: string): string {
+  const [year, q] = period.split("-");
+  return q ? `${q} ${year}` : year;
+}

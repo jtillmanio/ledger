@@ -1,5 +1,5 @@
 import { requireUserId } from "@/lib/auth";
-import { inboxCount, listBooks, readWithoutYear, seriesProgress, yearSummary } from "@/db/queries";
+import { inboxCount, listBooks, readWithoutYear, seriesProgress, TO_READ_LEVELS, yearSummary, type ToReadLevel } from "@/db/queries";
 import Link from "next/link";
 import AddBooksButton from "@/components/AddBooksButton";
 import BookStatus from "@/components/BookStatus";
@@ -8,19 +8,26 @@ import { seriesAllHref, seriesView } from "@/lib/series-list";
 
 export const dynamic = "force-dynamic";
 
-type Search = { status?: string; genre?: string; year?: string; q?: string; series?: string };
+type Search = { status?: string; genre?: string; year?: string; q?: string; series?: string; level?: string };
+
+/** The To read filter's levels (task 1.9, D-37), in the order the plan reads. */
+const LEVELS: [ToReadLevel | undefined, string][] = [
+  [undefined, "All"], ["quarter", "Quarter"], ["year", "Year"], ["on_deck", "On deck"], ["someday", "Someday"],
+];
 
 const GENRES = ["Fantasy", "Science Fiction", "Thriller", "Nonfiction", "Horror",
   "Young Adult", "Contemporary", "Graphic Novel", "Classics", "Historical Fiction"];
 
 export default async function Books({ searchParams }: { searchParams: Promise<Search> }) {
-  const { status, genre, year, q, series: seriesParam } = await searchParams;
+  const { status, genre, year, q, series: seriesParam, level: levelParam } = await searchParams;
   const userId = await requireUserId();
 
   const noYear = year === "none";
+  // The level narrows To read only; with any other status it is ignored, as the chips are not drawn.
+  const level = status === "to_read" ? TO_READ_LEVELS.find((l) => l === levelParam) : undefined;
   const [books, years, series, unyeared, inbox] = await Promise.all([
     listBooks(userId, {
-      status, genre, q, noYear,
+      status, genre, q, noYear, level,
       year: year && !noYear ? Number(year) : undefined,
     }),
     yearSummary(userId),
@@ -66,6 +73,16 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
         <Link prefetch={false} href="/books/list?status=to_read" className="chip" aria-current={status === "to_read"}>To read</Link>
         <Link prefetch={false} href="/books/list?status=read" className="chip" aria-current={status === "read"}>Read</Link>
       </div>
+
+      {/* Where a to-read book sits (task 1.9): read from to_read_level, the same four levels the plan draws. */}
+      {status === "to_read" && (
+        <div className="filters" role="group" aria-label="To read level">
+          {LEVELS.map(([l, name]) => (
+            <Link key={name} prefetch={false} href={l ? `/books/list?status=to_read&level=${l}` : "/books/list?status=to_read"}
+                  className="chip" aria-current={level === l}>{name}</Link>
+          ))}
+        </div>
+      )}
 
       <div className="filters">
         {yearList.map(([y, n]) => (

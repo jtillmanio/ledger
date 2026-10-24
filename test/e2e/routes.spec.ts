@@ -91,6 +91,7 @@ test("no same-origin link on any page answers 404", ONCE, async ({ page }) => {
   test.setTimeout(120_000);
   const pages = [
     "/comics", "/comics/runs", `/comics/${E2E_RUN_ID}`, `/comics/${E2E_RUN_ID}/add`, "/books/list", "/books/add", "/inbox", "/login",
+    "/comics/status", "/comics/status?tab=next", "/books/status", "/books/status?tab=next", "/books/list?status=to_read&level=someday",
   ];
   const checked = new Set<string>();
   for (const path of pages) {

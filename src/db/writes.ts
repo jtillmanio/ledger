@@ -729,6 +729,28 @@ export async function reorderQuarter(userId: string, period: Period, bookIds: st
   });
 }
 
+/**
+ * Move a book within its quarter to place `to` (clamped to 1…N): the books
+ * between close up behind it, and every book keeps its quarter. *Move up*,
+ * *Move down* and a drop on the status screen's Up next (task 1.9). `to` is a
+ * place among all the quarter's books, hidden ones too (a book that is no longer
+ * `to_read` keeps its place, as a started run does in the queue). Answers the
+ * ordinal the book now has; null, writing nothing, when it isn't in that quarter.
+ */
+export async function moveInQuarter(userId: string, bookId: string, period: Period, to: number, outer?: Tx): Promise<number | null> {
+  return inPlan(userId, outer, async (tx) => {
+    const order = (await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
+      .where(and(eq(readingPlan.userId, userId), eq(readingPlan.period, period), sql`${readingPlan.ordinal} IS NOT NULL`))
+      .orderBy(readingPlan.ordinal)).map((r) => r.bookId);
+    if (!order.includes(bookId)) return null;
+    const target = Math.min(Math.max(1, Math.trunc(to)), order.length);
+    order.splice(order.indexOf(bookId), 1);
+    order.splice(target - 1, 0, bookId);
+    await reorderQuarter(userId, period, order, tx);
+    return target;
+  });
+}
+
 /** *Move to top*: the book becomes its quarter's 1 and the rest follow in order. False when it isn't in that quarter. */
 export async function moveToTop(userId: string, bookId: string, period: Period, outer?: Tx): Promise<boolean> {
   return inPlan(userId, outer, async (tx) => {

@@ -1295,5 +1295,44 @@ h2.group-head{margin:2.25rem 0 .75rem}
   /* The ⋯ is a hover reveal like a spine row's: shown on row hover or focus, always shown on touch. */
   .qrow:hover .rowmenu-btn,.qrow:focus-within .rowmenu-btn{opacity:1}
 }
-#dnd-help{margin:.5rem 0 0}
+p.muted[id^="dnd-help"]{margin:.5rem 0 0}
 .menu .opt.danger{color:var(--danger)}
+
+/* --- Status screens (task 1.9; STYLE_GUIDE §9 *Status tablist*, mockup `status`) ----
+   Three links in a tablist, 44px tall, each count in mono 11 and in its tab's own
+   colour (never an opacity, which failed 4.5:1: TASK-028). The selected tab is
+   --ink 600; the rest --muted 500. One 2px underline in the medium's hue is a
+   single element that slides to the selected tab by --i; --dur-2 is 0 under
+   reduced motion, so there it just moves. */
+.tabs{position:relative;display:flex;margin:.75rem 0 1rem;border-bottom:1px solid var(--rule)}
+.tabs [role="tab"]{flex:1 1 0;min-width:0;display:flex;align-items:center;justify-content:center;gap:.5rem;
+  min-height:44px;padding:0 .5rem;font-size:.9375rem;font-weight:500;color:var(--muted);text-decoration:none;
+  white-space:nowrap}
+.tabs [role="tab"][aria-selected="true"]{color:var(--ink);font-weight:600}
+.tabs [role="tab"] .n{font-size:.6875rem;font-weight:500;font-variant-numeric:tabular-nums;color:inherit}
+.tabs [role="tab"]:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring);border-radius:var(--r-sm)}
+.tab-ink{position:absolute;left:0;bottom:-1px;width:calc(100% / 3);height:2px;background:var(--m,var(--brand));
+  transform:translateX(calc(var(--i,0) * 100%));transition:transform var(--dur-2) var(--ease-out)}
+@media (hover:hover) and (pointer:fine){ .tabs [role="tab"][aria-selected="false"]:hover{color:var(--ink)} }
+.sk-tabs{height:45px;margin:.75rem 0 1rem}
+
+span.meter{display:block}
+/* *Read <full label>*: named in full, drawn to the width the row leaves it (its title keeps the rest). */
+.btn.resume{display:block;max-width:min(11rem,42vw);min-width:0;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;text-align:center}
+.head-link{color:inherit;text-decoration:none}
+@media (hover:hover) and (pointer:fine){ .head-link:hover{text-decoration:underline} }
+
+/* A year's bare-year lane (R1-10): grey, because nothing is decided yet that a colour could mean;
+   --blocked waits for 2.8's Place them. No handle and no button until then. */
+section[data-plan="year"] h2.group-head{color:var(--muted)}
+.lane-year{background:var(--raise);border-radius:var(--r-lg);padding:0 .875rem;border-top:0}
+.lane-year .row:last-child{border-bottom:0}
+.lane-year .row-title{color:var(--ink-2)}
+
+/* Stopped (DNF) sits collapsed at the foot of Done: finished, just not the way you meant it to be. */
+.stopped{margin-top:1.5rem;border-top:1px solid var(--rule)}
+.stopped summary{display:flex;align-items:center;gap:.5rem;min-height:44px;cursor:pointer;font-size:.75rem;
+  font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.stopped summary .n{font-size:.6875rem;font-weight:500;letter-spacing:0;color:var(--muted)}
+.stopped summary:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring);border-radius:var(--r-sm)}
