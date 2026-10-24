@@ -127,11 +127,13 @@ export async function upNext(userId: string) {
 /**
  * *Ready, not queued* (task 1.10, 1.9): the unread runs the queue doesn't hold
  * that can be started, `ready_all` first and then `ready_hard`, each in track →
- * block → run order (design §11.2), with the count of all of them. `tracks` has
- * no order column (D-79), so a run's track is its block's, by name; a run with no
- * block comes last. A blocked run is in neither this list nor above it.
+ * block → run order (design §11.2, D-79), with the count of all of them. `tracks`
+ * has no order column, so a run sorts under the first of its tracks by name (its
+ * block's track when it has no `run_tracks` row); a run in no block comes last.
+ * A blocked run is in neither this list nor above it. The limit is far above the
+ * catalog's 258 runs: the status tab's count is its rows (task 1.9).
  */
-export function readyNotQueued(userId: string, limit = 50) {
+export function readyNotQueued(userId: string, limit = 500) {
   return sql<WithTotal<RunRow>[]>`
     SELECT r.id, r.title, cl.writers, rs.series_issues, rs.start_year, rs.end_year,
            rs.dated_issues, r.tier, r.why, r.spine, '{}'::text[] AS tracks,
@@ -152,7 +154,9 @@ export function readyNotQueued(userId: string, limit = 50) {
       AND rd.readiness IN ('ready_all', 'ready_hard')
       AND rp.total_issues > 0
       AND NOT EXISTS (SELECT 1 FROM run_queue q WHERE q.run_id = r.id AND q.user_id = ${userId})
-    ORDER BY (rd.readiness = 'ready_hard'), (b.id IS NULL), bt.name, b.number, r.sequence, r.title, r.id
+    ORDER BY (rd.readiness = 'ready_hard'), (b.id IS NULL),
+             COALESCE((SELECT MIN(t.name) FROM run_tracks rt JOIN tracks t ON t.id = rt.track_id WHERE rt.run_id = r.id), bt.name),
+             b.number, r.sequence, r.title, r.id
     LIMIT ${limit}
   `;
 }

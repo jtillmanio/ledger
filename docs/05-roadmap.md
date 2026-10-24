@@ -644,7 +644,7 @@ shelf ends at main's edge, not the viewport's; with a fine pointer and twelve
 queued runs ‹ › render and › moves it by five covers, and with three queued
 runs they do not render.
 
-### ☐ 1.9 Status screens: In flight · Up next · Done · M
+### ☑ 1.9 Status screens: In flight · Up next · Done · M
 Requirement change, Sept 2026. design §11. `/comics/status` and
 `/books/status`, a single component with three tabs in this order and with these
 names. The tab is in the URL (`?tab=inflight|next|done`). Film and TV follow in

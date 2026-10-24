@@ -136,6 +136,15 @@ describe("comics In flight, Up next and Done (roadmap 1.9 check)", () => {
     expect(ready[0].total).toBe(7);
   });
 
+  it("a run in several tracks sorts under the first of them by name (D-79)", async () => {
+    await sql`INSERT INTO tracks (id, name) VALUES ('t-beta', 'Beta'), ('t-zeta', 'Zeta'), ('t-alpha', 'Alpha')`;
+    await sql`INSERT INTO blocks (id, track_id, number) VALUES ('zb', 't-zeta', 1), ('bb', 't-beta', 1)`;
+    await run("in-two", 1, { block: "zb", sequence: 1 });
+    await run("in-beta", 1, { block: "bb", sequence: 1 });
+    await sql`INSERT INTO run_tracks (run_id, track_id) VALUES ('in-two', 't-zeta'), ('in-two', 't-alpha'), ('in-beta', 't-beta')`;
+    expect(ids(await q.readyNotQueued(USER))).toEqual(["in-two", "in-beta"]);
+  });
+
   it("a run with all its placements read is in Done", async () => {
     await run("fin", 2);
     await read("fin", 1);

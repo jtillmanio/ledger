@@ -139,6 +139,16 @@ Provisional: no (TASK-016 is Done). Large by policy (`never-split`, attended): t
 3. The ReorderList extraction risks a regression in the queue; the queue e2e suite guards it.
 4. Running all three tabs' queries per load costs about 6 queries in 1 wave. A Lighthouse budget squeeze is possible.
 
+**Revisions after approval** (counted in Metrics):
+
+1. `PATCH /api/plan` takes `{ bookId, period, to }` only. No separate MOVE_TOP verb: `to: 1` is *Move to top*, and `moveToTop` stays unused by the app.
+2. `QUEUE_HREF` moved from `QueueButton.tsx` (a client module, so a server component read a stub) to `src/lib/status-tabs.ts`.
+3. `docs/02-architecture.md` changed: the query budget text and the perf-budget table (`test/perf.test.ts` requires the table to mirror `budget.json`).
+4. Books Up next's *Add a book* opens the sheet with the On deck target, so the book lands on the tab (1.4c's default, Someday, would leave it empty).
+5. The dashboard's *Ready when you are → All N* is the dashboard's own ready total (it lists queued runs too); *Ready, not queued* omits the queued ones.
+6. `readyNotQueued` has a 500-row cap, not 50, so the Up next count is its rows; a run in several tracks sorts under the first by name (D-79), its block's track when it has none.
+7. `src/app/comics/status/loading.tsx` gains the tab strip; `test/e2e/status.spec.ts` measures both skeletons and the reduced-motion underline.
+
 **Size check**: about 20 files across UI, API and query layers, with no schema change. It stays whole by `never-split`; it is already `autonomy: attended`.
 
 ## Review log

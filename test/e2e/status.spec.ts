@@ -7,6 +7,10 @@
 // set their own state run once. This file seeds its own runs and books and
 // removes them; the empty slates are checked first, on the seed alone.
 import { expect, test, type Page } from "@playwright/test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import BooksLoading from "../../src/app/books/status/loading";
+import ComicsLoading from "../../src/app/comics/status/loading";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
 import { computedStyle, contrastFailures, E2E_BOOK_COUNT, E2E_RUN_ID, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
@@ -151,6 +155,25 @@ test.describe("the tabs (AC-2)", () => {
       expect((await colour(n)).color).toBe((await own(n)).color);
     }
   });
+});
+
+// Sets its own viewport and the motion preference: runs once, in w390-light.
+test("the loading skeletons hold the tab strip's size; the underline's slide is off under reduced motion (AC-6)", ONCE, async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  const strip = async () => (await page.locator(".tabs, .sk-tabs").first().boundingBox())!;
+  for (const [path, loading] of [["/comics/status", ComicsLoading], ["/books/status", BooksLoading]] as const) {
+    await open(page, path);
+    const loaded = await strip();
+    await page.evaluate((h) => { document.querySelector("main")!.outerHTML = h; }, renderToStaticMarkup(createElement(loading)));
+    const skeleton = await strip();
+    expect(Math.abs(skeleton.height - loaded.height), `${path} height`).toBeLessThanOrEqual(2);
+    expect(Math.abs(skeleton.width - loaded.width), `${path} width`).toBeLessThanOrEqual(2);
+  }
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await open(page, "/comics/status");
+  await expect(page.locator(".tab-ink")).toHaveCSS("transition-duration", "0s");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect(page.locator(".tab-ink")).toHaveCSS("transition-duration", "0.15s");
 });
 
 test.describe("comics", () => {
