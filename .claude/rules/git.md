@@ -44,9 +44,13 @@ not live until Release runs.
 One task per branch, one branch per PR. A problem that belongs to another
 task isn't fixed in this diff: it goes in the PR's Follow-ups, and is also
 tracked where the work that will do it will read it, per
-`workflow.followUps` (`.claude/skills/track-follow-ups/classify.md`). Two
+`workflow.followUps` (`.claude/skills/track-follow-ups/classify.md`). Three
 kinds of change to other files are allowed on a task branch:
 
+- **Roadmap ticks**, in the close-out or accept commit: this task's items in
+  `docs/05-roadmap.md`, and items other Done tasks finished that are still
+  open (`.claude/skills/sync-roadmap/ticks.md`). Only the mark changes; never
+  an item's text or **Check:** line, never an untick.
 - **Follow-up placements**, in the close-out commit (or a plans PR): a note
   in another task's Context, a `docs/05-roadmap.md` item, a decisions-log row, an
   approved planning-doc edit, an Owner checklist item. Each traces to a
@@ -111,7 +115,7 @@ After pushing: CI green, the preview deployed, Lighthouse green. **Read
 `docs/GIT-PR.md` before pushing** for the full checklist: reviewers, the
 up → down → up test, Lighthouse budgets, the UI preview walk, running a changed
 workflow with `--ref`, and what goes in the PR when something can only be
-checked after merge. Tick the task's checkbox in `docs/05-roadmap.md` in the same PR.
+checked after merge.
 
 ## Push and open the PR
 

@@ -152,7 +152,6 @@ those paths**. The Hard rules below are the checklist a reviewer enforces.
 - IMPORTANT: never commit to `main`; a PR is ready only when everything that
   can test it has passed **on the branch**. Both are in `.claude/rules/git.md`.
 - IMPORTANT: no task merges without a test that would have failed before it.
-- Tick the task's checkbox in `docs/05-roadmap.md` in the same PR.
 - Migrations that drop or retype a column ship `drizzle/down/<tag>.sql` and an
   up → down → up test (full rule in `.claude/rules/schema.md`).
 - **Stop and ask before** adding or changing a schema column; changing how any
