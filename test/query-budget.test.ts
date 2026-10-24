@@ -12,7 +12,7 @@ const USER = "test-user";
 // The budget per route: raise it only with a reason in docs/02-architecture.md's
 // Performance budget; lower it when a fix lands.
 const BUDGET: Record<string, { queries: number; waves: number }> = {
-  "/comics": { queries: 6, waves: 1 },
+  "/comics": { queries: 7, waves: 1 },
   // Status (task 1.9): all three tabs' rows in one wave, so the counts on the strip are the rows.
   "/comics/status": { queries: 4, waves: 1 },
   "/books/status": { queries: 4, waves: 1 },

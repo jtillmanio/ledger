@@ -213,7 +213,7 @@ tables.
   (Lighthouse mobile, devtools throttling: Slow 4G, 4× CPU): any tap paints a
   skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
   page within 1 s. What holds that, and the test that fails if it slips:
-  - **Queries per page, in one wave.** `/comics` 6, `/comics/runs` 2, a run 3,
+  - **Queries per page, in one wave.** `/comics` 7, `/comics/runs` 2, a run 3,
     `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/inbox` 2, `/watch` none, `/login` none, `/` and `/books` none (redirects), each page's queries started together
     (`test/query-budget.test.ts`, which counts them). A query that must wait on
     another raises a page's waves; raising either number needs a reason here.
@@ -233,6 +233,7 @@ tables.
     so the rail and the sidebar share one). It is outside each page's budget
     above because it streams: a cold Neon wake delays the number, never the
     page's skeleton.
+    The dashboard is 7 with task 1.9: `readyNotQueued(userId, 1)`, one row for the total, so *Ready when you are → All N* and the shelf's *pick from N* count what the status tab they open counts, in the same wave.
     Each status screen is 4 (task 1.9): the three tabs' rows are read on every load so the strip's counts are the rows (comics: `inFlightRuns`, `upNext`, `readyNotQueued`, `doneRuns`; books: `booksInFlight`, `booksUpNext`'s plan read and its Someday count, `booksDone`), all in one wave.
   - **A view read for one run filters by that run before it aggregates.** No
     catalog-wide CTE, no scan of every issue to describe one run

@@ -259,10 +259,9 @@ test.describe("comics", () => {
     const n = Number((await ready.textContent())!.replace("All ", ""));
     await expect(page.getByRole("heading", { level: 2, name: "Up next" }).getByRole("link"))
       .toHaveAttribute("href", "/comics/status?tab=next");
-    // N is the dashboard's own ready total, the figure its lede prints; the list it opens leaves out the queued ones.
-    await expect(page.getByText(`${n} runs unlocked and waiting`)).toBeVisible();
+    // N is what the tab it opens counts under Ready, not queued.
     await page.goto("/comics/status?tab=next");
-    await expect(page.locator("#ready")).toBeVisible();
+    expect(Number(await page.locator("#ready-head .n").textContent())).toBe(n);
   });
 });
 

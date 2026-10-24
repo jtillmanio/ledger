@@ -1,7 +1,7 @@
 ---
 id: TASK-017
 title: 1.9 Status screens: In flight · Up next · Done
-status: Review
+status: Done
 depends_on: [TASK-016]
 size: L
 model: sonnet
@@ -71,7 +71,7 @@ Found while planning; placed in PR #117 (approved at plan, 2026-10-23).
 - Where a book's reading position would be stored, and which task builds it, is the owner's question (a schema column) → docs/OWNER-CHECKLIST.md § Decisions waiting on you (approved at plan)
 - *track → block order* for *Ready, not queued*: `tracks` has no order column, so it is track name, then `block_ordinal`, then `run_ordinal`, unblocked runs last → docs/review/decisions.md § D-79 (approved at plan)
 - Books' three empty status slates had no source copy; the copy in Risks 1 is the owner's → docs/04-design.md § 14. Per-screen refinements (approved at plan)
-- The dashboard's *Ready when you are → All N* counts the dashboard's own ready total (ready_all, queued runs included: 40 on the dev data) while the tab it opens counts ready_all and ready_hard that are not queued (82); whether N should match is the owner's call at the preview walk (revision 5) → not tracked: owner decides at the preview walk
+- The dashboard's *Ready when you are → All N* counted its own ready total, not the tab's; the owner ruled N should match the tab, so the dashboard now reads `readyNotQueued(userId, 1)` for it (and the shelf's *pick from N*) → not tracked: done in this PR (owner, 2026-10-24)
 - A book with no `book_status` row is listed by the master list's *To read* but is in no `to_read_level` level and not in *Someday · N*; seen only on the e2e seed, since the dev data's to-read books all have a status row → not tracked: older than this task (1.7) and absent from real data
 - The mockup's In flight row shows a *Next #N* sub-line, cover chip and lede paragraph; the row here names the target on its *Read <label>* button instead, and adds no cover until 4.3 → not tracked: the button carries the target (AC-5)
 - Context says "the *Status* h1", but the mockup has *Runs by status* / *Books by status*, and the mockup wins on copy (D-1) → not tracked: resolved in this plan
@@ -148,7 +148,7 @@ Provisional: no (TASK-016 is Done). Large by policy (`never-split`, attended): t
 2. `QUEUE_HREF` moved from `QueueButton.tsx` (a client module, so a server component read a stub) to `src/lib/status-tabs.ts`.
 3. `docs/02-architecture.md` changed: the query budget text and the perf-budget table (`test/perf.test.ts` requires the table to mirror `budget.json`).
 4. Books Up next's *Add a book* opens the sheet with the On deck target, so the book lands on the tab (1.4c's default, Someday, would leave it empty).
-5. The dashboard's *Ready when you are → All N* is the dashboard's own ready total (it lists queued runs too); *Ready, not queued* omits the queued ones.
+5. *Ready when you are → All N* and the shelf's *pick from N* take N from `readyNotQueued(userId, 1)`, the tab's own count (owner's ruling at the preview walk); the dashboard is 7 queries in one wave, and the lede keeps its ready_all total.
 6. `readyNotQueued` has a 500-row cap, not 50, so the Up next count is its rows; a run in several tracks sorts under the first by name (D-79), its block's track when it has none.
 7. `src/app/comics/status/loading.tsx` gains the tab strip; `test/e2e/status.spec.ts` measures both skeletons and the reduced-motion underline.
 
