@@ -118,3 +118,13 @@ for (const [name, path] of [["comics-dashboard", "/comics"], ["comics-runs", "/c
     await screenshot(page, testInfo, name);
   });
 }
+
+// The status screens exist (task 1.9): each answers 200 and names itself, in the tab the URL asks for.
+for (const [path, h1] of [["/comics/status", "Runs by status"], ["/books/status", "Books by status"]]) {
+  test(`${path} answers with its h1 and a tab strip`, async ({ page }) => {
+    const res = await page.goto(path);
+    expect(res?.status()).toBe(200);
+    await expect(page.getByRole("heading", { level: 1, name: h1 })).toBeVisible();
+    await expect(page.getByRole("tablist", { name: "Status" }).getByRole("tab")).toHaveCount(3);
+  });
+}
