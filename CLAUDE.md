@@ -95,7 +95,8 @@ npm run test:db:reset       # rebuild the TEST database: drizzle-kit migrate, th
 npm run lint                # eslint, zero warnings
 npx tsc --noEmit            # typecheck
 npm run db:generate         # after editing src/db/schema.ts
-npm run extract             # etl/extract.py with every sidecar CSV; clears seed/ first
+npm run extract             # etl/extract.py with every sidecar CSV; clears seed/ first;
+                            # reports prereq cycles, `-- --fail-on-cycle` exits non-zero on one
 npm run rebuild             # drop, migrate, extract, load (.env); asks first, refuses when LEDGER_LIVE=true
 ```
 

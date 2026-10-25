@@ -78,14 +78,15 @@ class WhyReview(unittest.TestCase):
 
 
 
-def build_workbook(reading_orders: list[tuple], runs: list[tuple]) -> Path:
+def build_workbook(reading_orders: list[tuple], runs: list[tuple],
+                   prereqs: list[tuple] = ()) -> Path:
     """A minimal Comics.xlsx: RUNS, PREREQS, Reading Orders, EVENTS, Master."""
     import pandas as pd
     path = Path(tempfile.mkdtemp()) / "Comics.xlsx"
     with pd.ExcelWriter(path) as xw:
         pd.DataFrame(runs, columns=["Run ID", "Title", "Track", "Writer", "Artists"]) \
             .to_excel(xw, sheet_name="RUNS", index=False)
-        pd.DataFrame(columns=["Run ID", "Prereq Run ID", "Type"]) \
+        pd.DataFrame(list(prereqs), columns=["Run ID", "Prereq Run ID", "Type"]) \
             .to_excel(xw, sheet_name="PREREQS", index=False)
         pd.DataFrame(reading_orders, columns=["Run ID", "Issue", "Completed", "Type", "Notes"]) \
             .to_excel(xw, sheet_name="Reading Orders", index=False)
@@ -785,6 +786,81 @@ class BookReviewLeftovers(BookCase):
         self.assertIn("Red Queen", flagged[0]["detail"])
         self.assertEqual(read(self.out, "reading_plan"), [])
         self.assertEqual(set(self.status()), {"red-queen-victoria-aveyard", "red-queen-christina-henry"})
+
+
+class PrereqCycles(WorkbookCase):
+    """Task 2.11a (D-2, D-7, R0-01): every loop in the prereq graph, hard and
+    soft edges alike, is one `prereqs,prereq cycle` row naming its runs, hard
+    edges first. Extract carries on by default; --fail-on-cycle exits non-zero."""
+
+    RUNS = [(r, f"Run {r}", "Avengers", None, None)
+            for r in ("x", "y", "z", "p", "q", "c1", "c2", "c3", "s")]
+    # x, y, z mix hard and soft; p, q are soft only; c1 -> c2 -> c3 is a chain.
+    PREREQS = [("x", "y", "hard"), ("y", "z", "soft"), ("z", "x", "hard"),
+               ("p", "q", "soft"), ("q", "p", "soft"),
+               ("c1", "c2", "hard"), ("c2", "c3", "soft")]
+    ORDERS = [("x", "Avengers (1998) #1", False, "Core", None)]
+
+    def extract_prereqs(self, prereqs):
+        from unittest import mock
+        with mock.patch("sys.stdout"):
+            ex.extract_comics(build_workbook(self.ORDERS, self.RUNS, prereqs), self.out)
+
+    def cycles(self) -> list[str]:
+        return [u["detail"] for u in ex.UNRESOLVED
+                if (u["table"], u["reason"]) == ("prereqs", "prereq cycle")]
+
+    def test_each_component_is_one_row_naming_its_runs_hard_edges_first(self):
+        self.extract_prereqs(self.PREREQS)
+        self.assertEqual(self.cycles(), [
+            "2 runs: p, q | soft: p -> q, q -> p",
+            "3 runs: x, y, z | hard: x -> y, z -> x | soft: y -> z",
+        ])
+        self.assertFalse(any("c1" in d or "c2" in d or "c3" in d for d in self.cycles()))
+        # The edges themselves still load: the check reports, it doesn't drop.
+        self.assertEqual(len(read(self.out, "prereqs")), len(self.PREREQS))
+
+    def test_a_run_listed_as_its_own_prereq_is_a_component(self):
+        self.extract_prereqs([("s", "s", "soft"), ("c1", "c2", "hard")])
+        self.assertEqual(self.cycles(), ["1 run: s | soft: s -> s"])
+
+    def test_an_acyclic_graph_has_no_cycle_rows(self):
+        self.extract_prereqs(self.PREREQS[5:])
+        self.assertEqual(self.cycles(), [])
+
+    def main(self, prereqs, *flags) -> tuple[int, str]:
+        import io
+        from contextlib import redirect_stderr
+        from unittest import mock
+        comics = build_workbook(self.ORDERS, self.RUNS, prereqs)
+        err = io.StringIO()
+        with mock.patch("sys.stdout"), redirect_stderr(err):
+            code = ex.main(["--comics", str(comics), "--books", str(build_books([])),
+                            "--out", str(self.out), *flags])
+        return code, err.getvalue()
+
+    def test_by_default_extract_writes_the_rows_and_exits_zero(self):
+        code, _ = self.main(self.PREREQS)
+        self.assertEqual(code, 0)
+        rows = [r for r in read(self.out, "unresolved")
+                if (r["table"], r["reason"]) == ("prereqs", "prereq cycle")]
+        self.assertEqual([r["detail"] for r in rows], self.cycles())
+        self.assertEqual(len(rows), 2)
+
+    def test_fail_on_cycle_exits_non_zero_naming_the_runs(self):
+        code, err = self.main(self.PREREQS, "--fail-on-cycle")
+        self.assertNotEqual(code, 0)
+        for run in ("x", "y", "z", "p", "q"):
+            self.assertRegex(err, rf"\b{run}\b")
+        self.assertNotIn("c1", err)
+        # Every CSV is still written, the cycle rows included.
+        self.assertEqual(len([r for r in read(self.out, "unresolved")
+                              if r["reason"] == "prereq cycle"]), 2)
+
+    def test_fail_on_cycle_passes_an_acyclic_graph(self):
+        code, err = self.main(self.PREREQS[5:], "--fail-on-cycle")
+        self.assertEqual(code, 0)
+        self.assertNotIn("--fail-on-cycle", err)
 
 
 if __name__ == "__main__":

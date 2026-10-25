@@ -477,6 +477,74 @@ def sheet(xl: pd.ExcelFile, name: str, header=0) -> pd.DataFrame:
     return xl.parse(name, header=header)
 
 
+def prereq_cycles(prereqs: list[dict]) -> list[list[dict]]:
+    """Every loop in the prereq graph (task 2.11a): each strongly connected
+    component of more than one run, and each run listed as its own prereq, as
+    its edges in sheet order. Hard and soft edges alike. Tarjan, iterative so a
+    long chain can't hit the recursion limit, visiting nodes and neighbours in
+    sorted order so every run reports the same thing; components are ordered
+    by their first run."""
+    graph: dict[str, list[str]] = {}
+    for e in prereqs:
+        graph.setdefault(e["run_id"], []).append(e["prereq_run_id"])
+        graph.setdefault(e["prereq_run_id"], [])
+    graph = {n: sorted(set(nexts)) for n, nexts in graph.items()}
+
+    index: dict[str, int] = {}
+    low: dict[str, int] = {}
+    stack: list[str] = []
+    on_stack: set[str] = set()
+    components: list[set[str]] = []
+    for root in sorted(graph):
+        if root in index:
+            continue
+        index[root] = low[root] = len(index)
+        stack.append(root)
+        on_stack.add(root)
+        work = [(root, iter(graph[root]))]
+        while work:
+            node, nexts = work[-1]
+            for nxt in nexts:
+                if nxt not in index:
+                    index[nxt] = low[nxt] = len(index)
+                    stack.append(nxt)
+                    on_stack.add(nxt)
+                    work.append((nxt, iter(graph[nxt])))
+                    break
+                if nxt in on_stack:
+                    low[node] = min(low[node], index[nxt])
+            else:
+                work.pop()
+                if work:
+                    parent = work[-1][0]
+                    low[parent] = min(low[parent], low[node])
+                if low[node] == index[node]:
+                    component = set()
+                    while True:
+                        n = stack.pop()
+                        on_stack.discard(n)
+                        component.add(n)
+                        if n == node:
+                            break
+                    components.append(component)
+
+    loops = [c for c in components if len(c) > 1 or next(iter(c)) in graph[next(iter(c))]]
+    return [[e for e in prereqs if e["run_id"] in c and e["prereq_run_id"] in c]
+            for c in sorted(loops, key=min)]
+
+
+def cycle_detail(edges: list[dict]) -> str:
+    """`3 runs: x, y, z | hard: x -> y, z -> x | soft: y -> z`: the runs sorted,
+    then the hard edges before the soft, each in sheet order."""
+    runs = sorted({e["run_id"] for e in edges} | {e["prereq_run_id"] for e in edges})
+    parts = [f"{len(runs)} run{'' if len(runs) == 1 else 's'}: {', '.join(runs)}"]
+    for ptype in ("hard", "soft"):
+        typed = [f"{e['run_id']} -> {e['prereq_run_id']}" for e in edges if e["type"] == ptype]
+        if typed:
+            parts.append(f"{ptype}: {', '.join(typed)}")
+    return " | ".join(parts)
+
+
 # --------------------------------------------------------------------------
 # comics
 # --------------------------------------------------------------------------
@@ -556,6 +624,10 @@ def extract_comics(path: Path, out: Path) -> None:
             flag("prereqs", "unknown type", f"{rid} -> {pid}: {ptype!r}, defaulted to soft")
             ptype = "soft"
         prereqs.append({"run_id": rid, "prereq_run_id": pid, "type": ptype})
+    # Task 2.11a (D-2, R0-01): report every loop and load the edges anyway; the
+    # owner untangles them in the workbook, and --fail-on-cycle stops cutover.
+    for edges in prereq_cycles(prereqs):
+        flag("prereqs", "prereq cycle", cycle_detail(edges))
 
     # ---- issues and placements ------------------------------------------
     # Track and Run Title in this tab are lookup formulas against RUNS.
@@ -1462,6 +1534,9 @@ def main(argv=None) -> int:
     ap.add_argument("--book-review", type=Path, default=None,
                     help="book_review.csv: proposes book, author and series pairs that may be "
                          "one, applies the merge rows, and rewrites the file keeping decisions")
+    ap.add_argument("--fail-on-cycle", action="store_true",
+                    help="exit non-zero when the prereq graph has a cycle, after writing every "
+                         "CSV (task 2.11a; START-HERE Step 14's final extract)")
     args = ap.parse_args(argv)
 
     load_volume_map(args.volume_map)
@@ -1481,6 +1556,15 @@ def main(argv=None) -> int:
 
     write(args.out, "unresolved", UNRESOLVED, ["table", "reason", "detail"])
     print(f"\n{len(UNRESOLVED)} rows need a human look — see {args.out}/unresolved.csv")
+    cycles = [u["detail"] for u in UNRESOLVED if (u["table"], u["reason"]) == ("prereqs", "prereq cycle")]
+    count = f"{len(cycles)} prereq cycle{'' if len(cycles) == 1 else 's'}"
+    on, off = ("\033[31m", "\033[0m") if cycles and sys.stdout.isatty() else ("", "")
+    print(f"{on}{count}{off} — see the prereq cycle rows in {args.out}/unresolved.csv")
+    if cycles and args.fail_on_cycle:
+        print(f"extract: --fail-on-cycle: {count}", file=sys.stderr)
+        for detail in cycles:
+            print(f"  {detail}", file=sys.stderr)
+        return 1
     return 0
 
 
