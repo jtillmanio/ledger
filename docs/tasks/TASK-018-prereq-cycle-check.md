@@ -56,7 +56,7 @@ Extract names every loop in the prerequisite graph so the owner can untangle the
 ## Follow-ups
 
 - `docs/OWNER-CHECKLIST.md`'s two cycle items (*Break the soft and mixed cycles*, *Soft and mixed prerequisite cycles*) say 2.11a "will list them by name once it lands": point them at the `prereq cycle` rows in `seed/unresolved.csv`, and at recording the ready / blocked counts in HANDOFF once `npm run extract -- --fail-on-cycle` passes (AC-1's second half) → docs/OWNER-CHECKLIST.md (approved at plan)
-- `etl/rebuild.sh`'s extract line lacks the `--book-review etl/data/book_review.csv` that `package.json`'s `extract` has carried since 1.13, so the bash twin's rebuild skips the book merge review → not tracked: owner asked for it on its own `fix/` branch (approved at plan)
+- `etl/rebuild.sh`'s extract line lacks the `--book-review etl/data/book_review.csv` that `package.json`'s `extract` has carried since 1.13, so the bash twin's rebuild skips the book merge review → not tracked: fixed separately in PR #125 (`fix/rebuild-sh-book-review`), at the owner's request
 
 ## Plan
 
