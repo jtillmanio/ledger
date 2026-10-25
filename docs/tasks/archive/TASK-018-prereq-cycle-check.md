@@ -1,7 +1,7 @@
 ---
 id: TASK-018
 title: 2.11a Prerequisite cycle check
-status: Review
+status: Done
 depends_on: [TASK-017]
 size: S
 model: sonnet
@@ -29,7 +29,7 @@ Extract names every loop in the prerequisite graph so the owner can untangle the
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; the unittest half passes, the real-workbook half is the owner's, see Review log): `py -m unittest` covers a fixture whose PREREQS contain a cycle and asserts that extract writes the `prereq cycle` rows and exits 0 by default, and exits non-zero naming the runs with `--fail-on-cycle`. Against the real workbook, once the owner has finished the checklist, `npm run extract -- --fail-on-cycle` passes: a Tarjan pass over `prereqs.csv` finds no component larger than one, and no run appears in its own `run_ancestors()` (the view already excludes it, R2-04, so a cycle can no longer hide behind that). Record the resulting ready / blocked counts in HANDOFF so the dashboards' prose matches the data.
+- [x] AC-1 (roadmap **Check:**, verbatim; the unittest half in this PR, the real-workbook half on the owner's 2026-10-25 extract, see Review log): `py -m unittest` covers a fixture whose PREREQS contain a cycle and asserts that extract writes the `prereq cycle` rows and exits 0 by default, and exits non-zero naming the runs with `--fail-on-cycle`. Against the real workbook, once the owner has finished the checklist, `npm run extract -- --fail-on-cycle` passes: a Tarjan pass over `prereqs.csv` finds no component larger than one, and no run appears in its own `run_ancestors()` (the view already excludes it, R2-04, so a cycle can no longer hide behind that). Record the resulting ready / blocked counts in HANDOFF so the dashboards' prose matches the data.
 - [x] AC-2: The fixture has two separate components (one of three runs mixing hard and soft edges, one of two runs with soft edges only) plus an acyclic chain. Extract writes exactly two `prereq cycle` rows, each naming every run in its component with the hard edges listed first, and nothing for the chain. A self-loop (a run listed as its own prereq) is reported as a component.
 - [x] AC-3: `npm run extract` accepts `--fail-on-cycle` and passes it through. `docs/START-HERE.md` Step 14's final extract command includes it. The `CLAUDE.md` command list mentions the flag.
 - [x] AC-4: Running extract on the current workbooks with and without the change produces identical CSVs apart from the new `unresolved.csv` rows, and the PR quotes the diff summary (standing rule 4).
@@ -106,6 +106,7 @@ S: four code/doc files plus the checklist placement; no schema, no UI.
 - Verify R1 PASS (tsc, lint, vitest 828, views, ETL 158, e2e 548, build) | Audit R1 PASS (5 of 6 discriminating; the acyclic guard passes on main by design) | Spec R1 APPROVE | Schema R1 APPROVE (Tarjan fuzzed against brute force, 3,000 graphs)
 - AC-4, 2026-10-25: main's and the branch's extract on the tracked workbooks (Comics.xlsx 2026-09-29, every `npm run extract` sidecar) wrote 26 byte-identical CSVs and an identical `book_review.csv`. The graph has no cycle (249 runs, 436 edges: 219 hard, 217 soft; a Kahn sort agrees), so `unresolved.csv` gains no rows and `--fail-on-cycle` exits 0.
 - AC-1 second half (owner, open): on a fresh download, `npm run extract -- --fail-on-cycle` passes, no run is its own `run_ancestors()`, and the ready / blocked counts go in HANDOFF. Roadmap 2.11a stays open until then (owner, 2026-10-25).
+- AC-1 second half PASS, 2026-10-25: the owner's fresh-download `npm run extract -- --fail-on-cycle` exited 0 with `0 prereq cycles`. That `seed/` was loaded into the TEST database: 258 runs, 436 edges (219 hard), and no run in its own `run_ancestors()`, even on a walk without R2-04's filter. `run_readiness` gave 173 blocked, 45 ready_hard and 40 ready_all; `run_state` gave 173 / 42 / 40 / 2 reading / 1 read. Recorded in `docs/HANDOFF.md` § Migrated data. Accepted by the owner; roadmap 2.11a ticked at their request.
 
 ## Blocked
 

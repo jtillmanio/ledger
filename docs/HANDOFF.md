@@ -34,7 +34,7 @@ metric-backed language over anything that reads as corporate or AI-generated.
 |---|---|---|---|
 | **Source** | `Comics (4).xlsx`, migrated | `Books (1).xlsx`, migrated | None — starts empty |
 | **Hierarchy** | Track → run → issue | Series → book | Franchise → title → season |
-| **Hard part** | A 438-edge prerequisite graph, 21 levels deep (a DAG once the audit breaks its cycles, D-20) | Word-count capacity planning | Nothing. It's deliberately the light one |
+| **Hard part** | A 436-edge prerequisite graph, 21 levels deep (a DAG since the audit broke its cycles, D-20; 2.11a) | Word-count capacity planning | Nothing. It's deliberately the light one |
 | **Metadata** | Metron (backfill, and live in Add issues) | Open Library (backfill, and live in Add books), Hardcover (backfill) | TMDB (live search) |
 
 The watchlist reuses the comics shape one level shallower. **Franchise → title →
@@ -48,11 +48,20 @@ new was invented for it.
 |---|---|---|---|
 | Issues (distinct) / run placements | 10,138 / 10,761 | Books | 1,478 |
 | Runs | 258 | Authors | 376 |
-| Prereq edges | 438 (220 hard) | Series | 214 |
+| Prereq edges | 436 (219 hard; 2026-10-25) | Series | 214 |
 | Tracks | 37 | Statuses | 1,289 |
 | Editions (trades) | 178 | Plan entries | 0 (the plan starts empty; R0-04) |
 | Events | 30 | Wishlist / external lists | 497 / 534 |
 | Issues already read | 76 | Releases | 44 |
+
+**Readiness after the prerequisite audit** (task 2.11a, the 2026-10-25
+extract). `npm run extract -- --fail-on-cycle` passes: 0 prereq cycles, and no
+run appears in its own `run_ancestors()`, even on a walk without R2-04's
+filter. Of the 258 runs (none placeholders), `run_readiness` has **173
+blocked**, **45 ready_hard** (hard prereqs read, a soft one not) and **40
+ready_all**. The five badges (`run_state`) are 173 blocked, 42 ready_hard,
+40 ready_all, 2 reading and 1 read. Blocked stays high until the checklist's
+hard → soft pass (`OWNER-CHECKLIST.md`): 219 of the 436 edges are still hard.
 
 **Not migrated, confirmed out of scope:** `Ultimate Order`, `Ultimate
 Collection`, `Sheet8`, `Reading Orders (old)`. `Master` is loaded as `editions`
@@ -405,7 +414,7 @@ changed; the other 21 are untouched.
 
 | Decision | Answer |
 |---|---|
-| Blocked runs | *Hard*-blocked runs behind a *Show N hard-blocked* switch, **shown by default until task 2.11** (N is around 180, not 27 — R1-02), muted + amber `⊘ N runs first` badge. A `ready_hard` run is never hidden |
+| Blocked runs | *Hard*-blocked runs behind a *Show N hard-blocked* switch, **shown by default until task 2.11** (N is 173 on the 2026-10-25 extract, not 27 — R1-02), muted + amber `⊘ N runs first` badge. A `ready_hard` run is never hidden |
 | Era headers | Break the spine into sections, each with its own progress bar and count |
 | Volume year picked in bulk-add | Saved as that series' default going forward, switch on by default |
 | Range marking | Prompts for a date: today / pick / spread across a range / no date. Single taps never prompt |

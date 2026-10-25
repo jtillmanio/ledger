@@ -1872,7 +1872,7 @@ capacity line renders hatched and the one below it does not; that expanding Q2
 collapses Q1; and that the rail and the dashboard render identical totals from
 the same query. Screenshot at 360px and 1280px.
 
-### ☐ 2.11a Prerequisite cycle check · S
+### ☑ 2.11a Prerequisite cycle check · S
 D-7, and the loader half of R0-01. Split from the old 2.11 (R3-15; every other mention of "2.11" in the docs means this task plus the owner checklist): what is left
 here is agent work with a pass/fail check; the judgement calls about 230 hard
 edges are the owner's, in `docs/OWNER-CHECKLIST.md`, and no task waits on an
