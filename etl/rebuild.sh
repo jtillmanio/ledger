@@ -56,7 +56,7 @@ else
     --volume-map etl/data/volume_map.csv --cover-dates etl/data/cover_dates.csv --why-review etl/data/why_review.csv \
     --label-review etl/data/label_review.csv --issue-details etl/data/issue_details.csv \
     --issue-credits etl/data/issue_credits.csv --creator-aliases etl/data/creator_aliases.csv \
-    --creator-aliases etl/data/creator_review.csv
+    --creator-aliases etl/data/creator_review.csv --book-review etl/data/book_review.csv
 fi
 
 echo "== 4/5 load"
