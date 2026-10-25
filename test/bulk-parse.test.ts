@@ -386,11 +386,17 @@ describe("approved volume rules (task 1.12, AC-3, AC-4)", () => {
   });
 
   it("an annual reads the rules for `<Title> Annual`", () => {
-    const rules = [rule("Thor Annual", 1966), rule("Thor", 1999)];
-    const l = withRules("Thor Annual #13", rules);
+    // Two known volumes, so only a rule can settle the year.
+    const two = [{ title: "Thor", years: [1966, 1999] }];
+    const annual = (rules: VolumeRule[]) =>
+      parseBulk("Thor Annual #13", { knownSeries: two, runLabels: [], rules, runId: "thor" })[0];
+    expect(annual([]).kind).toBe("choice");
+    const l = annual([rule("Thor Annual", 1966), rule("Thor", 1999)]);
+    expect(l.flags).toEqual([]);
     expect(l.rows[0].label).toBe("Thor (1966) Annual #13");
     expect(l.yearFilled).toBe(true);
-    expect(withRules("Thor Annual #13", [rule("Thor", 1999)]).rows[0].label).toBe("Thor (1966) Annual #13");
+    // The rule for the bare title is not the annual's.
+    expect(annual([rule("Thor", 1999)]).kind).toBe("choice");
   });
 
   it("matches the series case-insensitively and leaves an unknown series alone", () => {
