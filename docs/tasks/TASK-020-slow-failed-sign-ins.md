@@ -1,14 +1,14 @@
 ---
 id: TASK-020
 title: 1.11 Slow down failed sign-ins
-status: Ready
+status: In progress
 depends_on: [TASK-019]
 size: S
 model: sonnet
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: b642d6a
 ---
 
 # TASK-020 — 1.11 Slow down failed sign-ins
@@ -51,7 +51,37 @@ A wrong passcode takes a second to be refused, so guessing it one try at a time 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-10-25.
+
+### Steps
+
+1. Write `test/login-delay.test.ts` first; confirm it fails against today's route (every failure case answers at once, so it is not pending at 999 ms).
+2. `src/app/api/login/route.ts`: add a `refuse(req)` helper that waits `FAILED_SIGN_IN_DELAY_MS = 1000` (`setTimeout`), then returns the `303` to `/login?error=1`. Every failure path goes through it.
+3. Wrap `req.formData()` in try/catch: a malformed body (wrong content type, garbage) goes to `refuse`, never a 500.
+4. Keep `matches()` with `timingSafeEqual` unchanged; the delay runs after the comparison. The success path is untouched and never waits.
+
+### Files
+
+- `src/app/api/login/route.ts`: the wait on every failure path, the malformed-body catch.
+- `test/login-delay.test.ts` (new): the fake-timer tests.
+
+### Test strategy
+
+`vi.useFakeTimers({ toFake: ["setTimeout"] })`, so undici's body parsing still runs; no real-clock wait.
+
+- AC-1: wrong, empty and wrong-length passcodes, each its own case: unsettled after `advanceTimersByTimeAsync(999)`, resolved after 1 ms more, `303`, location `/login?error=1`, no `rt_session` in `set-cookie`. The right passcode resolves with no timer advance (`vi.getTimerCount() === 0`) and sets `rt_session`.
+- AC-2: a malformed body (JSON content type; no body) is pending at 999 ms, then `303` to `/login?error=1` at 1000 ms, never a throw. `timingSafeEqual` kept: diff review.
+- AC-3: two wrong attempts in a row each take exactly 1000 ms (no escalation or carry-over); diff review confirms no module-level state and no schema change.
+- Manual: `npm run dev`, wrong passcode → about 1 s pause; right one → immediate.
+
+### Risks
+
+- The test must wait for the handler to register its timer before advancing, because `formData()` resolves asynchronously: it yields with the real `setImmediate` until `vi.getTimerCount() === 1` (an event-loop yield, not a clock wait).
+- e2e `auth.setup.ts` only signs in with the right passcode, so it is not slowed.
+
+### Size
+
+2 files, S; no schema, no UI.
 
 ## Review log
 
