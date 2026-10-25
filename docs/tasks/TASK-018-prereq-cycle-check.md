@@ -1,7 +1,7 @@
 ---
 id: TASK-018
 title: 2.11a Prerequisite cycle check
-status: In progress
+status: Review
 depends_on: [TASK-017]
 size: S
 model: sonnet
@@ -29,10 +29,10 @@ Extract names every loop in the prerequisite graph so the owner can untangle the
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `py -m unittest` covers a fixture whose PREREQS contain a cycle and asserts that extract writes the `prereq cycle` rows and exits 0 by default, and exits non-zero naming the runs with `--fail-on-cycle`. Against the real workbook, once the owner has finished the checklist, `npm run extract -- --fail-on-cycle` passes: a Tarjan pass over `prereqs.csv` finds no component larger than one, and no run appears in its own `run_ancestors()` (the view already excludes it, R2-04, so a cycle can no longer hide behind that). Record the resulting ready / blocked counts in HANDOFF so the dashboards' prose matches the data.
-- [ ] AC-2: The fixture has two separate components (one of three runs mixing hard and soft edges, one of two runs with soft edges only) plus an acyclic chain. Extract writes exactly two `prereq cycle` rows, each naming every run in its component with the hard edges listed first, and nothing for the chain. A self-loop (a run listed as its own prereq) is reported as a component.
-- [ ] AC-3: `npm run extract` accepts `--fail-on-cycle` and passes it through. `docs/START-HERE.md` Step 14's final extract command includes it. The `CLAUDE.md` command list mentions the flag.
-- [ ] AC-4: Running extract on the current workbooks with and without the change produces identical CSVs apart from the new `unresolved.csv` rows, and the PR quotes the diff summary (standing rule 4).
+- [ ] AC-1 (roadmap **Check:**, verbatim; the unittest half passes, the real-workbook half is the owner's, see Review log): `py -m unittest` covers a fixture whose PREREQS contain a cycle and asserts that extract writes the `prereq cycle` rows and exits 0 by default, and exits non-zero naming the runs with `--fail-on-cycle`. Against the real workbook, once the owner has finished the checklist, `npm run extract -- --fail-on-cycle` passes: a Tarjan pass over `prereqs.csv` finds no component larger than one, and no run appears in its own `run_ancestors()` (the view already excludes it, R2-04, so a cycle can no longer hide behind that). Record the resulting ready / blocked counts in HANDOFF so the dashboards' prose matches the data.
+- [x] AC-2: The fixture has two separate components (one of three runs mixing hard and soft edges, one of two runs with soft edges only) plus an acyclic chain. Extract writes exactly two `prereq cycle` rows, each naming every run in its component with the hard edges listed first, and nothing for the chain. A self-loop (a run listed as its own prereq) is reported as a component.
+- [x] AC-3: `npm run extract` accepts `--fail-on-cycle` and passes it through. `docs/START-HERE.md` Step 14's final extract command includes it. The `CLAUDE.md` command list mentions the flag.
+- [x] AC-4: Running extract on the current workbooks with and without the change produces identical CSVs apart from the new `unresolved.csv` rows, and the PR quotes the diff summary (standing rule 4).
 
 ## Out of scope
 
@@ -55,7 +55,7 @@ Extract names every loop in the prerequisite graph so the owner can untangle the
 
 ## Follow-ups
 
-- `docs/OWNER-CHECKLIST.md`'s two cycle items (*Break the soft and mixed cycles*, *Soft and mixed prerequisite cycles*) say 2.11a "will list them by name once it lands": point them at the `prereq cycle` rows in `seed/unresolved.csv`, and at recording the ready / blocked counts in HANDOFF once `npm run extract -- --fail-on-cycle` passes (AC-1's second half) → docs/OWNER-CHECKLIST.md (approved at plan)
+- `docs/OWNER-CHECKLIST.md`'s two cycle items (*Break the soft and mixed cycles*, *Soft and mixed prerequisite cycles*) said 2.11a "will list them by name once it lands": now they point at the `prereq cycle` rows in `seed/unresolved.csv` and at recording the ready / blocked counts in HANDOFF once `npm run extract -- --fail-on-cycle` passes (AC-1's second half). They also note, with the owner's approval at close-out, that the tracked 2026-09-29 `Comics.xlsx` already reports 0 cycles (10 of the worksheet's 13 edges reversed or deleted), to be confirmed on a fresh download. Both boxes are left for the owner → docs/OWNER-CHECKLIST.md § Prerequisite audit (data work in `Comics.xlsx`, PREREQS tab) and § Workbook, before cutover
 - `etl/rebuild.sh`'s extract line lacks the `--book-review etl/data/book_review.csv` that `package.json`'s `extract` has carried since 1.13, so the bash twin's rebuild skips the book merge review → not tracked: fixed separately in PR #125 (`fix/rebuild-sh-book-review`), at the owner's request
 
 ## Plan
@@ -103,7 +103,9 @@ S: four code/doc files plus the checklist placement; no schema, no UI.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 PASS (tsc, lint, vitest 828, views, ETL 158, e2e 548, build) | Audit R1 PASS (5 of 6 discriminating; the acyclic guard passes on main by design) | Spec R1 APPROVE | Schema R1 APPROVE (Tarjan fuzzed against brute force, 3,000 graphs)
+- AC-4, 2026-10-25: main's and the branch's extract on the tracked workbooks (Comics.xlsx 2026-09-29, every `npm run extract` sidecar) wrote 26 byte-identical CSVs and an identical `book_review.csv`. The graph has no cycle (249 runs, 436 edges: 219 hard, 217 soft; a Kahn sort agrees), so `unresolved.csv` gains no rows and `--fail-on-cycle` exits 0.
+- AC-1 second half (owner, open): on a fresh download, `npm run extract -- --fail-on-cycle` passes, no run is its own `run_ancestors()`, and the ready / blocked counts go in HANDOFF. Roadmap 2.11a stays open until then (owner, 2026-10-25).
 
 ## Blocked
 
@@ -111,7 +113,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0
