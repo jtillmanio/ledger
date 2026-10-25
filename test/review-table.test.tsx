@@ -326,3 +326,77 @@ describe("a stale tab (the run changed since the review)", () => {
     expect(container.querySelector(".toast-detail")!.textContent).toBe("to Simonson — Thor · 1 already there");
   });
 });
+
+describe("the Always use switch (task 1.12, AC-3, AC-5)", () => {
+  const SWITCH = 'button[role="switch"]';
+  const switchOf = () => container.querySelector<HTMLButtonElement>(SWITCH);
+
+  it("appears on the ambiguous row once a year is picked, named for the year and series", async () => {
+    render();
+    await type("Captain America #1");
+    expect(switchOf()).toBeNull();
+    await pick(rows()[0], "2004");
+    const sw = switchOf()!;
+    expect(sw.textContent).toBe("Always use 2004 for Captain America");
+    expect(sw.getAttribute("aria-checked")).toBe("false");
+    expect(sw.getAttribute("type")).toBe("button");
+    expect(sw.className).toBe("switch");
+    // Only an ambiguous row has one.
+    await type("Thor #337\nCaptain America #1");
+    expect(container.querySelectorAll(SWITCH)).toHaveLength(0);
+  });
+
+  it("toggles on click, is a real button (Space and Enter are its own), and goes off when the year changes", async () => {
+    render();
+    await type("Captain America #1");
+    await pick(rows()[0], "2004");
+    await click(switchOf()!);
+    expect(switchOf()!.getAttribute("aria-checked")).toBe("true");
+    await click(switchOf()!);
+    expect(switchOf()!.getAttribute("aria-checked")).toBe("false");
+    // A real button: Space and Enter are its native click; happy-dom doesn't synthesise it, so check the element kind.
+    expect(switchOf()!.tagName).toBe("BUTTON");
+    await click(switchOf()!);
+    await pick(rows()[0], "1968");
+    expect(switchOf()!.textContent).toBe("Always use 1968 for Captain America");
+    expect(switchOf()!.getAttribute("aria-checked")).toBe("false");
+  });
+
+  it("sends the rule with the insert only when it is on, and remembers it for the next paste", async () => {
+    render();
+    await type("Captain America #1");
+    await pick(rows()[0], "2004");
+    await click(switchOf()!);
+    await click(confirmButton());
+    expect(posts()).toHaveLength(1);
+    expect(posts()[0].body.rules).toEqual([{ series: "Captain America", year: 2004 }]);
+  });
+
+  it("sends no rule when the switch is off", async () => {
+    render();
+    await type("Captain America #1");
+    await pick(rows()[0], "2004");
+    await click(confirmButton());
+    expect(posts()).toHaveLength(1);
+    expect(posts()[0].body).not.toHaveProperty("rules");
+  });
+
+  it("a rule the server wrote resolves the next paste without a reload", async () => {
+    fetchMock.mockImplementation(async (_url: string, init?: RequestInit) => {
+      const body = init?.body ? JSON.parse(init.body as string) : null;
+      if (body?.dryRun) return Response.json({ matches: [] });
+      return Response.json({ ok: true, after: 13, created: [5001], restored: [], skipped: [], newIssues: [],
+        revived: [], rules: [{ series: "Captain America", year: 2004 }], context: thorRun() });
+    });
+    render();
+    await type("Captain America #1");
+    await pick(rows()[0], "2004");
+    await click(switchOf()!);
+    await click(confirmButton());
+    await type("Captain America #2");
+    expect(glyphs()).toEqual(["✓"]);
+    expect(whys()[0]).toMatch(/^Volume year filled from your map\./);
+    expect(rows()[0].querySelector(".vl")!.textContent).toBe("Captain America #2");
+    expect(container.querySelectorAll(SWITCH)).toHaveLength(0);
+  });
+});

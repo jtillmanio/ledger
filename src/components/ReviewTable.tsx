@@ -7,7 +7,7 @@ const NAME = { ok: "OK", choice: "Needs a choice", error: "Error" } as const;
 const TONE = { ok: "ok", choice: "wn", error: "er" } as const;
 
 /** What the table draws of a row: the issue review's rows, and the book review's (task 1.4). */
-export type ReviewTableRow = Pick<ReviewRow, "key" | "line" | "kind" | "text" | "why" | "check" | "groups" | "invalid">;
+export type ReviewTableRow = Pick<ReviewRow, "key" | "line" | "kind" | "text" | "why" | "check" | "groups" | "invalid"> & Partial<Pick<ReviewRow, "rule">>;
 
 /**
  * The review table (design §11, *Review tables*), shared by both halves of
@@ -48,6 +48,13 @@ export default function ReviewTable({ rows, checking, onChoose }: {
                   ))}
                 </div>
               ))}
+              {row.rule && (
+                <button type="button" role="switch" aria-checked={row.rule.on} className="switch"
+                  onClick={() => onChoose(row.rule!.key, row.rule!.on ? "off" : `year:${row.rule!.year}`)}>
+                  <b aria-hidden="true" />
+                  Always use {row.rule.year} for {row.rule.series}
+                </button>
+              )}
             </div>
           </li>
         );

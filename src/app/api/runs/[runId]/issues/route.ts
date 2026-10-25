@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { normalizeLine } from "@/lib/bulk-parse";
 import { addContext, catalogMatches, metronFacts, takenIds } from "@/db/queries";
-import { insertIssuesIntoRun, reopenNote, resolveNote, undoInsert, type MetronFacts, type Tx } from "@/db/writes";
+import { addVolumeRules, insertIssuesIntoRun, reopenNote, resolveNote, undoInsert, type MetronFacts, type Tx } from "@/db/writes";
 import { noteId } from "@/lib/inbox";
 import { issueSlug } from "@/lib/issue-slug";
 
@@ -13,6 +13,8 @@ export const runtime = "nodejs";
 const MAX_LABELS = 1000;
 const MAX_LABEL = 300;
 const MAX_ID = 2147483647;
+// The "Always use" rules one paste can stage: one per ambiguous series.
+const MAX_RULES = 50;
 
 type Params = { params: Promise<{ runId: string }> };
 
@@ -25,7 +27,10 @@ type Params = { params: Promise<{ runId: string }> };
  * - POST `{ labels, after }`: the insert, in one transaction; `after` is a live
  *   placement id, 0 for the start, null for the end. `note`, an inbox note's
  *   id, resolves that note into this run in the same transaction (task 1.4b);
- *   the answer's `note` says it did.
+ *   the answer's `note` says it did. `rules`, `{ series, year }[]`, are the
+ *   *Always use <year> for <series>* volume rules the paste staged (task 1.12);
+ *   they are written in the same transaction, and the answer's `rules` lists
+ *   those that were new.
  * - DELETE `{ after, created, restored, revived, note? }`: the insert's undo,
  *   from its answer; `note` reopens the note the insert resolved.
  *
@@ -58,6 +63,10 @@ export async function POST(req: Request, { params }: Params) {
   if (after !== null && !id(after, true)) return bad("after is a placement id, 0 for the start, or null for the end");
   const note = body.note == null ? null : noteId(body.note);
   if (note === undefined) return bad("note is an inbox note's id");
+  const rules = cleanRules(body.rules);
+  if (!rules) {
+    return bad(`rules is a list of up to ${MAX_RULES} distinct series, each with a year from 1900 to 2100`);
+  }
   const metronIds = body.metronIds ?? [];
   if (!Array.isArray(metronIds) || metronIds.length > labels.length
     || !metronIds.every((m: unknown) => m === null || id(m))) {
@@ -74,8 +83,11 @@ export async function POST(req: Request, { params }: Params) {
   }
   let result: Awaited<ReturnType<typeof insertIssuesIntoRun>>;
   let resolved: number | null = null;
-  const within = note === null ? undefined
-    : async (tx: Tx) => { resolved = await resolveNote(tx, userId, note, { runId }); };
+  let ruled: { series: string; year: number }[] = [];
+  const within = note === null && rules.length === 0 ? undefined : async (tx: Tx) => {
+    if (note !== null) resolved = await resolveNote(tx, userId, note, { runId });
+    if (rules.length) ruled = await addVolumeRules(tx, rules);
+  };
   try {
     result = await insertIssuesIntoRun(runId, after, labels, { metron, within });
   } catch (e) {
@@ -88,7 +100,7 @@ export async function POST(req: Request, { params }: Params) {
   if (!result.ok) {
     return result.reason === "no-run" ? notFound() : bad(`after must be a live placement of ${runId}`);
   }
-  return NextResponse.json({ ...result, note: resolved, context: await addContext(runId) });
+  return NextResponse.json({ ...result, note: resolved, rules: ruled, context: await addContext(runId) });
 }
 
 export async function DELETE(req: Request, { params }: Params) {
@@ -133,6 +145,20 @@ function cleanLabels(raw: unknown): string[] | null {
   if (!Array.isArray(raw) || raw.length === 0 || raw.length > MAX_LABELS) return null;
   const out = raw.map((l) => (typeof l === "string" ? normalizeLine(l) : ""));
   return out.every((l) => l !== "" && l.length <= MAX_LABEL) ? out : null;
+}
+
+/** The staged volume rules, normalised like labels; none when absent, null if the list is no good. */
+function cleanRules(raw: unknown): { series: string; year: number }[] | null {
+  if (raw == null) return [];
+  if (!Array.isArray(raw) || raw.length > MAX_RULES) return null;
+  const out = raw.map((r: { series?: unknown; year?: unknown } | null) => ({
+    series: typeof r?.series === "string" ? normalizeLine(r.series) : "",
+    year: r?.year as number,
+  }));
+  const distinct = new Set(out.map((r) => r.series.toLowerCase()));
+  return distinct.size === out.length
+    && out.every((r) => r.series !== "" && r.series.length <= MAX_LABEL
+      && Number.isInteger(r.year) && r.year >= 1900 && r.year <= 2100) ? out : null;
 }
 
 /** The run id from the path, or null when it isn't valid percent-encoding. */

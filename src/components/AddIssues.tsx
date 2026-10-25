@@ -8,7 +8,7 @@ import IssueSearch, { type IssueSearchHandle } from "@/components/IssueSearch";
 import ReviewTable from "@/components/ReviewTable";
 import RunChip from "@/components/RunChip";
 import { useUndo } from "@/components/Undo";
-import { parseBulk, type KnownSeries } from "@/lib/bulk-parse";
+import { parseBulk, type KnownSeries, type VolumeRule } from "@/lib/bulk-parse";
 import { buildReview, labelKey, type Catalog, type Choices, type Placement } from "@/lib/bulk-review";
 import type { SearchResult } from "@/lib/issue-search";
 
@@ -39,14 +39,17 @@ type Staged = { key: string; label: string; metronId: number | null };
  * note's text in it, and the first insert that goes through resolves the note
  * into the run it went to, in its own transaction; its undo reopens the note.
  */
-export default function AddIssues({ initial, knownSeries, runs, query = "", note = null }: {
+export default function AddIssues({ initial, knownSeries, rules: initialRules = [], runs, query = "", note = null }: {
   initial: AddContext; knownSeries: KnownSeries[]; runs: { id: string; title: string }[];
+  /** The approved volume rules: a bare series one covers takes its year (task 1.12). */
+  rules?: VolumeRule[];
   /** Search's starting text. */
   query?: string;
   /** The inbox note this add resolves. */
   note?: number | null;
 }) {
   const [ctx, setCtx] = useState(initial);
+  const [rules, setRules] = useState(initialRules);
   const [noteId, setNoteId] = useState(note);
   const [mode, setMode] = useState<"search" | "type">("search");
   const [text, setText] = useState("");
@@ -70,10 +73,13 @@ export default function AddIssues({ initial, knownSeries, runs, query = "", note
   // The review reads the half you are on: what Search staged, one line each, or what you typed.
   const source = mode === "search" ? staged.map((s) => s.label).join("\n") : text;
   const lines = useMemo(
-    () => parseBulk(source, { knownSeries, runLabels: live.map((p) => p.label) }), [source, knownSeries, live]);
+    () => parseBulk(source, { knownSeries, runLabels: live.map((p) => p.label), rules, runId: ctx.run.id }),
+    [source, knownSeries, live, rules, ctx.run.id]);
   const review = useMemo(
-    () => buildReview(lines, { knownSeries, placements: ctx.placements, catalog, choices, metron, taken }),
-    [lines, knownSeries, ctx, catalog, choices, metron, taken]);
+    () => buildReview(lines, {
+      knownSeries, placements: ctx.placements, catalog, choices, metron, taken, rules, runId: ctx.run.id,
+    }),
+    [lines, knownSeries, ctx, catalog, choices, metron, taken, rules]);
   const stagedKeys = useMemo(() => new Set(staged.map((s) => s.key)), [staged]);
 
   // The catalog check: only labels it hasn't answered, once typing pauses.
@@ -161,11 +167,18 @@ export default function AddIssues({ initial, knownSeries, runs, query = "", note
           labels: review.writes.map((w) => w.label), after,
           ...(metronIds.some((m) => m !== null) && { metronIds }),
           ...(noteId !== null && { note: noteId }),
+          ...(review.rules.length && { rules: review.rules }),
         }),
       });
       if (!res.ok) throw new Error(String(res.status));
-      const done = await res.json() as Insert & { skipped: string[]; context: AddContext; note: number | null };
+      const done = await res.json() as Insert & {
+        skipped: string[]; context: AddContext; note: number | null; rules: { series: string; year: number }[];
+      };
       setCtx(done.context);
+      // What the insert wrote stands for the next paste without a reload. Undo leaves it (changing a rule is 3.9's).
+      if (done.rules?.length) {
+        setRules((r) => [...r, ...done.rules.map((w) => ({ ...w, runId: null, issueFrom: null, issueTo: null }))]);
+      }
       // A note is resolved once: later adds here are plain adds.
       setNoteId(null);
       const fromNote = done.note == null ? "" : " · inbox note resolved";

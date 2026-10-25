@@ -30,6 +30,8 @@ UNRESOLVED: list[dict] = []
 # series -> list of rules: (run_id, issue_from, issue_to, year).
 # None means "any". Rules are matched most-specific-first.
 VOLUME_MAP: dict[str, list[tuple[str | None, int | None, int | None, int]]] = {}
+# The same approved rows, in file order, for seed/volume_rules.csv.
+VOLUME_RULES: list[dict] = []
 
 LABEL_RE = re.compile(r"^(?P<title>.*?)(?:\s*\((?P<year>\d{4})\))?\s*#\s*(?P<rest>.+)$")
 
@@ -53,6 +55,8 @@ def load_volume_map(path) -> None:
             lo = as_int(row.get("issue_from"))
             hi = as_int(row.get("issue_to"))
             VOLUME_MAP.setdefault(row["series"].strip(), []).append((run, lo, hi, year))
+            VOLUME_RULES.append({"series": row["series"].strip(), "run_id": run,
+                                 "issue_from": lo, "issue_to": hi, "year": year})
     # Most specific first: run + range, then run, then range, then series-wide.
     for rules in VOLUME_MAP.values():
         rules.sort(key=lambda r: (r[0] is None, r[1] is None and r[2] is None))
@@ -910,6 +914,18 @@ def extract_comics(path: Path, out: Path) -> None:
                               "sequence", "spine", "rating", "why", "why_source",
                               "notes", "placeholder"])
     write(out, "run_tracks", run_tracks, ["run_id", "track_id"])
+    # The table's columns in order, without the serial id. A rule naming a run
+    # the workbook lacks is reported, not written: the load's foreign key would
+    # refuse it.
+    volume_rules = []
+    for rule in VOLUME_RULES:
+        if rule["run_id"] is not None and rule["run_id"] not in run_ids:
+            flag("volume_map", "rule for unknown run",
+                 f"{rule['series']} — run {rule['run_id']}")
+            continue
+        volume_rules.append(rule)
+    write(out, "volume_rules", volume_rules,
+          ["series", "run_id", "issue_from", "issue_to", "year"])
     write(out, "issues", list(issues.values()),
           ["id", "label", "cover_date", "cover_date_source", "story_title",
            "story_title_source", "cover_url", "metron_id"])

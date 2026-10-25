@@ -67,7 +67,7 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -f etl/test_views.sql
 
 failed=0
 printf "%-18s %8s %8s\n" table seed loaded
-for t in tracks blocks runs run_tracks issues run_issues creators issue_credits prereqs \
+for t in tracks blocks runs run_tracks volume_rules issues run_issues creators issue_credits prereqs \
          events event_runs editions issue_progress edition_progress authors book_series \
          books book_status reading_plan releases wishlist external_lists; do
   expected=$(${PYTHON:-python3} -c "import csv,sys; print(sum(1 for _ in csv.DictReader(open(sys.argv[1], encoding='utf-8'))))" "$SEED/$t.csv")

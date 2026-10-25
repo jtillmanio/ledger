@@ -50,7 +50,7 @@ INSERT INTO users (id, name) VALUES (:'owner_id', :'owner_name')
 
 TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
          run_tracks, event_runs, prereqs, issue_credits, creators,
-         run_issues, issues, events, editions,
+         run_issues, issues, events, editions, volume_rules,
          runs, blocks, tracks, releases, wishlist, external_lists,
          books, book_series, authors, shelves RESTART IDENTITY CASCADE;
 
@@ -58,6 +58,7 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
 \\copy blocks(id,track_id,number,name) FROM '$SEED/blocks.csv' CSV HEADER
 \\copy runs(id,title,tier,block_id,sequence,spine,rating,why,why_source,notes,placeholder) FROM '$SEED/runs.csv' CSV HEADER
 \\copy run_tracks    FROM '$SEED/run_tracks.csv'    CSV HEADER
+\\copy volume_rules(series,run_id,issue_from,issue_to,year) FROM '$SEED/volume_rules.csv' CSV HEADER
 \\copy issues(id,label,cover_date,cover_date_source,story_title,story_title_source,cover_url,metron_id) FROM '$SEED/issues.csv' CSV HEADER
 \\copy run_issues(id,run_id,sequence,issue_id,type,notes) FROM '$SEED/run_issues.csv' CSV HEADER
 \\copy creators(id,name,metron_id) FROM '$SEED/creators.csv' CSV HEADER

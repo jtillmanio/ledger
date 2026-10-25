@@ -107,7 +107,7 @@ class WorkbookCase(unittest.TestCase):
 
     def setUp(self):
         for table in (ex.UNRESOLVED, ex.COVER_DATES, ex.WHY_REVIEW, ex.LABEL_RENAMES,
-                      ex.ISSUE_DETAILS, ex.ISSUE_CREDITS, ex.VOLUME_MAP, ex.CREATOR_ALIASES):
+                      ex.ISSUE_DETAILS, ex.ISSUE_CREDITS, ex.VOLUME_MAP, ex.VOLUME_RULES, ex.CREATOR_ALIASES):
             table.clear()
         ex.USED_RENAMES.clear()
         self.out = Path(tempfile.mkdtemp())
@@ -119,6 +119,45 @@ class WorkbookCase(unittest.TestCase):
 
     def reasons(self):
         return [u["reason"] for u in ex.UNRESOLVED]
+
+
+class VolumeRules(WorkbookCase):
+    COLUMNS = ["series", "run_id", "issue_from", "issue_to", "proposed_year", "approved"]
+
+    def rules(self, *rows):
+        """Load a volume map of (series, run, from, to, year, approved) rows, extract, read the CSV."""
+        from unittest import mock
+        ex.load_volume_map(write_csv([dict(zip(self.COLUMNS, r)) for r in rows]))
+        self.extract([("a", "Avengers (1998) #1", False, "Core", None)])
+        with mock.patch("sys.stdout"):
+            return read(self.out, "volume_rules")
+
+    def test_writes_the_approved_rules_with_a_year(self):
+        # AC-1: a run-scoped rule, an any-run rule, and an approved row with no year.
+        rules = self.rules(("Avengers", "a", "", "", "1998", "yes"),
+                           ("Captain America", "", "", "", "1968", "yes"),
+                           ("Thor", "", "", "", "", "yes"),
+                           ("Hulk", "", "", "", "1999", "no"))
+        self.assertEqual([(r["series"], r["run_id"], r["year"]) for r in rules],
+                         [("Avengers", "a", "1998"), ("Captain America", "", "1968")])
+        self.assertIn("approved with no year", self.reasons())
+
+    def test_header_and_nulls(self):
+        # AC-2: the table's columns in order; a range keeps its bounds, any-issue is empty.
+        self.rules(("Avengers", "a", "10", "20", "1998", "yes"),
+                   ("Captain America", "", "", "", "1968", "yes"))
+        header = (self.out / "volume_rules.csv").read_text(encoding="utf-8").splitlines()[0]
+        self.assertEqual(header, "series,run_id,issue_from,issue_to,year")
+        ranged, anywhere = read(self.out, "volume_rules")
+        self.assertEqual((ranged["issue_from"], ranged["issue_to"]), ("10", "20"))
+        self.assertEqual((anywhere["run_id"], anywhere["issue_from"], anywhere["issue_to"]),
+                         ("", "", ""))
+
+    def test_rule_for_unknown_run_is_flagged_not_written(self):
+        rules = self.rules(("Avengers", "no-such-run", "", "", "1998", "yes"),
+                           ("Captain America", "", "", "", "1968", "yes"))
+        self.assertEqual([r["series"] for r in rules], ["Captain America"])
+        self.assertIn("rule for unknown run", self.reasons())
 
 
 class IssuesAndPlacements(WorkbookCase):

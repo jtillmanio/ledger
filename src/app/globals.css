@@ -983,6 +983,7 @@ textarea.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .vm{font-size:.75rem;color:var(--muted);margin-top:.1875rem;line-height:1.45}
 .review .opts{margin-top:.5rem}
 .review .opts .opt{border-color:var(--faint-deco)}
+.review .switch{margin-top:.6875rem}
 .opts .opt.no:has(input:checked){background:var(--danger);border-color:var(--danger);color:var(--on-danger)}
 
 .insertprev .ip{display:flex;gap:.5rem;padding:.5rem .875rem;font-size:.8125rem;color:var(--muted);border-bottom:1px solid var(--line)}
