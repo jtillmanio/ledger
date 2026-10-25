@@ -106,7 +106,7 @@ Step "4/5 load"
 Step "5/5 verify"
 Invoke-Checked "test_views.sql" { psql $dbUrl -v ON_ERROR_STOP=1 -q -f etl/test_views.sql }
 
-$tables = @("tracks", "blocks", "runs", "run_tracks", "issues", "run_issues", "creators",
+$tables = @("tracks", "blocks", "runs", "run_tracks", "volume_rules", "issues", "run_issues", "creators",
             "issue_credits", "prereqs", "events", "event_runs", "editions", "issue_progress",
             "edition_progress", "authors", "book_series", "books", "book_status",
             "reading_plan", "releases", "wishlist", "external_lists")

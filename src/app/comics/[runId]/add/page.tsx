@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import AddIssues from "@/components/AddIssues";
-import { addContext, knownSeries, runChoices } from "@/db/queries";
+import { addContext, knownSeries, runChoices, volumeRules } from "@/db/queries";
 import { requireUserId } from "@/lib/auth";
 import { noteParam, queryParam } from "@/lib/inbox";
 
@@ -23,13 +23,13 @@ export default async function AddIssuesPage({ params, searchParams }: {
   const { runId } = await params;
   const { q, note } = (await searchParams) ?? {};
   await requireUserId();
-  const [context, series, runs] = await Promise.all([
-    addContext(decodeURIComponent(runId)), knownSeries(), runChoices(),
+  const [context, series, runs, rules] = await Promise.all([
+    addContext(decodeURIComponent(runId)), knownSeries(), runChoices(), volumeRules(),
   ]);
   if (!context) notFound();
   return (
     <main className="add">
-      <AddIssues initial={context} knownSeries={series} runs={runs} query={queryParam(q)} note={noteParam(note)} />
+      <AddIssues initial={context} knownSeries={series} rules={rules} runs={runs} query={queryParam(q)} note={noteParam(note)} />
     </main>
   );
 }

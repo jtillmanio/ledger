@@ -668,6 +668,17 @@ export async function knownSeries() {
   `;
 }
 
+/**
+ * The approved volume rules (task 1.12): which year a bare series name means.
+ * The bulk-entry parser reads them with the known series. `run_id` null is any
+ * run, `issue_from` / `issue_to` null is any issue.
+ */
+export async function volumeRules() {
+  return sql<{ series: string; runId: string | null; issueFrom: number | null; issueTo: number | null; year: number }[]>`
+    SELECT series, run_id AS "runId", issue_from AS "issueFrom", issue_to AS "issueTo", year
+    FROM volume_rules ORDER BY id`;
+}
+
 /** A run as Add issues sees it: its title and every placement, removed ones
  * too, in reading order. A removed placement is what a re-add restores (S-07). */
 export async function addContext(runId: string) {

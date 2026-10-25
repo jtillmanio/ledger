@@ -2,7 +2,7 @@ import { and, between, desc, eq, gt, gte, inArray, isNull, like, ne, or, sql } f
 import {
   db, authors, books, bookSeries, bookStatus, inbox, issueProgress, issues, readEvents, readingPlan, readingSettings, runIssues,
   runQueue, runs, shelfBooks,
-  shelves, sql as pg,
+  shelves, sql as pg, volumeRules,
 } from "./index";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
 import { bookKey } from "@/lib/book-parse";
@@ -364,6 +364,24 @@ export type MetronFacts = { metronId: number; coverDate: string | null; coverUrl
 
 /** A transaction handle: what `insertIssuesIntoRun`'s `within` is given. */
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Write the *Always use <year> for <series>* rules an insert staged (task 1.12):
+ * an any-run, any-issue rule each. A series that already has one is left as it
+ * is (a stale tab; changing a rule is 3.9's), and what was written comes back.
+ */
+export async function addVolumeRules(tx: Tx, rules: { series: string; year: number }[]) {
+  const written: { series: string; year: number }[] = [];
+  for (const rule of rules) {
+    const [have] = await tx.select({ id: volumeRules.id }).from(volumeRules)
+      .where(and(eq(volumeRules.series, rule.series), isNull(volumeRules.runId),
+        isNull(volumeRules.issueFrom), isNull(volumeRules.issueTo)));
+    if (have) continue;
+    await tx.insert(volumeRules).values({ series: rule.series, year: rule.year });
+    written.push(rule);
+  }
+  return written;
+}
 
 export type InsertResult =
   | {

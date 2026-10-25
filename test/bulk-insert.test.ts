@@ -320,6 +320,100 @@ describe("the transaction's edges", () => {
   });
 });
 
+describe("the Always use switch (task 1.12, AC-3, AC-4)", () => {
+  const rules = () => sql`SELECT series, run_id, issue_from, issue_to, year FROM volume_rules ORDER BY id`;
+  const KEY = "1:Captain America #1";
+  const ALWAYS = "always:captain america";
+
+  /** What the screen sends: the review of one line with the choices made, then its rules. */
+  async function confirm(choices: Record<string, string>, runId = "empty") {
+    const r = await review(runId, "Captain America #1", choices);
+    return post(runId, { labels: r.writes.map((w) => w.label), after: null, ...(r.rules.length && { rules: r.rules }) });
+  }
+
+  it("the row offers the switch once a year is picked, and not before", async () => {
+    const before = await review("empty", "Captain America #1");
+    expect(before.rows[0].kind).toBe("choice");
+    expect(before.rows[0].rule).toBeUndefined();
+    const picked = await review("empty", "Captain America #1", { [KEY]: "year:2004" });
+    expect(picked.rows[0].rule).toEqual({ key: ALWAYS, series: "Captain America", year: 2004, on: false });
+    expect(picked.rules).toEqual([]);
+  });
+
+  it("on and confirmed writes one any-run, any-issue rule with the insert", async () => {
+    const { status, body } = await confirm({ [KEY]: "year:2004", [ALWAYS]: "year:2004" });
+    expect(status).toBe(200);
+    expect(body.rules).toEqual([{ series: "Captain America", year: 2004 }]);
+    expect(await rules()).toEqual([
+      { series: "Captain America", run_id: null, issue_from: null, issue_to: null, year: 2004 }]);
+    expect((await placementsOf("empty")).map((p) => p.label)).toEqual(["Captain America (2004) #1"]);
+  });
+
+  it("switched off writes the insert and no rule", async () => {
+    const { status } = await confirm({ [KEY]: "year:2004", [ALWAYS]: "off" });
+    expect(status).toBe(200);
+    expect(await rules()).toEqual([]);
+    expect(await placementsOf("empty")).toHaveLength(1);
+  });
+
+  it("a row dropped after the switch went on stages no rule", async () => {
+    const r = await review("empty", "Captain America #1", { [KEY]: "drop", [ALWAYS]: "year:2004" });
+    expect(r.rules).toEqual([]);
+  });
+
+  it("nothing is written before the confirm", async () => {
+    await review("empty", "Captain America #1", { [KEY]: "year:2004", [ALWAYS]: "year:2004" });
+    expect(await rules()).toEqual([]);
+  });
+
+  it("a rule already there is left alone, not doubled (a stale tab)", async () => {
+    await sql`INSERT INTO volume_rules (series, year) VALUES ('Captain America', 1968)`;
+    const { body } = await confirm({ [KEY]: "year:2004", [ALWAYS]: "year:2004" });
+    expect(body.rules).toEqual([]);
+    expect((await rules()).map((r) => r.year)).toEqual([1968]);
+  });
+
+  it("a forced failure in the insert's transaction leaves volume_rules unchanged", async () => {
+    await sql`ALTER TABLE run_issues ADD CONSTRAINT boom_check CHECK (issue_id <> 'captain-america-2004-1') NOT VALID`;
+    try {
+      await failsOn(confirm({ [KEY]: "year:2004", [ALWAYS]: "year:2004" }), "boom_check");
+    } finally {
+      await sql`ALTER TABLE run_issues DROP CONSTRAINT boom_check`;
+    }
+    expect(await rules()).toEqual([]);
+    expect(await placementsOf("empty")).toEqual([]);
+  });
+
+  it("refuses a bad rules list with 400 and writes nothing", async () => {
+    const before = await tables();
+    for (const bad of [
+      [{ series: "Captain America", year: 3000 }],
+      [{ series: "", year: 2004 }],
+      [{ series: "Captain America", year: 2004 }, { series: "captain america", year: 1968 }],
+      "Captain America",
+    ]) {
+      const { status } = await post("empty", { labels: [thor(400)], after: null, rules: bad });
+      expect(status).toBe(400);
+    }
+    expect(await tables()).toEqual(before);
+    expect(await rules()).toEqual([]);
+  });
+
+  it("the next paste resolves from the rule, in any run, and is not flagged", async () => {
+    await confirm({ [KEY]: "year:2004", [ALWAYS]: "year:2004" });
+    const knownSeries = await queries.knownSeries();
+    const stored = await queries.volumeRules();
+    expect(stored).toEqual([{ series: "Captain America", runId: null, issueFrom: null, issueTo: null, year: 2004 }]);
+    const [line] = parseBulk("Captain America #2", { knownSeries, runLabels: [], rules: stored, runId: "thor" });
+    expect(line.flags).toEqual([]);
+    expect(line.kind).toBe("ok");
+    expect(line.rows.map((r) => r.label)).toEqual(["Captain America (2004) #2"]);
+    // Without the rule the same line is still ambiguous.
+    const [bare] = parseBulk("Captain America #2", { knownSeries, runLabels: [] });
+    expect(bare.flags.map((f) => f.type)).toEqual(["ambiguous_volume"]);
+  });
+});
+
 describe("the undo (AC-5)", () => {
   it("soft-deletes what the insert created, re-hides what it restored, and puts the run back", async () => {
     await markRead(sql, USER, "thor", "thor-1966-338");

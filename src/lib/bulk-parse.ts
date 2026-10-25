@@ -28,6 +28,19 @@ export type KnownSeries = {
   years: number[];
 };
 
+/**
+ * One approved row of the volume map (`volume_rules`, task 1.12): which year a
+ * bare series name means. `runId` null is any run, `issueFrom` / `issueTo` null
+ * is no floor / no ceiling. An annual's series is `<Title> Annual`.
+ */
+export type VolumeRule = {
+  series: string;
+  runId: string | null;
+  issueFrom: number | null;
+  issueTo: number | null;
+  year: number;
+};
+
 export type BulkRow = {
   label: string;
   designator: string;
@@ -146,14 +159,51 @@ function suggestTitles(title: string, known: KnownSeries[]) {
     .slice(0, MAX_SUGGESTIONS);
 }
 
+type RuleContext = { rules: VolumeRule[]; runId: string | null };
+
+/**
+ * The year an approved rule gives a bare line, matched as extract's
+ * `apply_volume_year` matches: this run's rules and another run's are told
+ * apart, the most specific rule first (run + range, run, range, series-wide),
+ * and the range tested on the line's first number. A range line takes the
+ * rule only when it covers the last number too.
+ */
+function ruleYear(p: Parsed, { rules, runId }: RuleContext): number | null {
+  const annual = /^Annual (\d+)$/.test(p.designator);
+  const series = key(annual ? `${p.title} Annual` : p.title);
+  const nums = (annual ? p.designator.slice(7) : p.designator).split("-").map((n) => parseInt(n, 10));
+  const first = nums[0];
+  const last = nums[nums.length - 1];
+  const covers = (r: VolumeRule, n: number) =>
+    (r.issueFrom === null || n >= r.issueFrom) && (r.issueTo === null || n <= r.issueTo);
+  const mine = rules
+    .filter((r) => key(r.series) === series && (r.runId === null || r.runId === runId))
+    .sort(
+      (a, b) =>
+        Number(a.runId === null) - Number(b.runId === null) ||
+        Number(a.issueFrom === null && a.issueTo === null) -
+          Number(b.issueFrom === null && b.issueTo === null),
+    );
+  const hit = mine.find((r) => covers(r, first));
+  return hit && covers(hit, last) ? hit.year : null;
+}
+
 /** Resolve the series and its volume year against what the catalog knows. */
-function resolve(p: Parsed, known: Map<string, KnownSeries>, flags: BulkFlag[], all: KnownSeries[]) {
+function resolve(
+  p: Parsed,
+  known: Map<string, KnownSeries>,
+  flags: BulkFlag[],
+  all: KnownSeries[],
+  ctx: RuleContext,
+) {
   const series = known.get(key(p.title));
   if (!series) {
     flags.push({ type: "new_series", suggestions: suggestTitles(p.title, all) });
     return { title: p.title, year: p.year, yearFilled: false };
   }
   if (p.year !== null) return { title: series.title, year: p.year, yearFilled: false };
+  const ruled = ruleYear(p, ctx);
+  if (ruled !== null) return { title: series.title, year: ruled, yearFilled: true };
   const years = [...new Set(series.years)].sort((a, b) => a - b);
   if (years.length > 1) {
     flags.push({ type: "ambiguous_volume", years });
@@ -168,15 +218,16 @@ function parseOne(
   known: Map<string, KnownSeries>,
   all: KnownSeries[],
   inRun: Set<string>,
+  ctx: RuleContext,
 ): Pick<BulkLine, "title" | "year" | "yearFilled" | "rows" | "flags"> {
   const flags: BulkFlag[] = [];
   const parsed = matchGrammar(text, known);
   if (!parsed) {
-    flags.push({ type: "unparseable", text, suggestion: missingHash(text, known, all) });
+    flags.push({ type: "unparseable", text, suggestion: missingHash(text, known, all, ctx) });
     return { title: null, year: null, yearFilled: false, rows: [], flags };
   }
 
-  const { title, year, yearFilled } = resolve(parsed, known, flags, all);
+  const { title, year, yearFilled } = resolve(parsed, known, flags, all, ctx);
 
   let designators = [parsed.designator];
   const range = /^(\d+)-(\d+)$/.exec(parsed.designator);
@@ -200,12 +251,17 @@ function parseOne(
 }
 
 /** `Thor Annual 13` → `Thor (1966) Annual #13`: the label a missing `#` would make, if any. */
-function missingHash(text: string, known: Map<string, KnownSeries>, all: KnownSeries[]): string | null {
+function missingHash(
+  text: string,
+  known: Map<string, KnownSeries>,
+  all: KnownSeries[],
+  ctx: RuleContext,
+): string | null {
   const m = /^(.*\S) (\d+(?:-\d+)?)$/.exec(text);
   if (!m) return null;
   const parsed = matchGrammar(`${m[1]} #${m[2]}`, known);
   if (!parsed) return null;
-  const { title, year } = resolve(parsed, known, [], all);
+  const { title, year } = resolve(parsed, known, [], all, ctx);
   return labelFor(title, year, parsed.designator);
 }
 
@@ -218,19 +274,27 @@ function kindOf(flags: BulkFlag[]): BulkLine["kind"] {
 /**
  * Parse a pasted block. `knownSeries` is every series title in the catalog with
  * its volume years; `runLabels` the labels already placed in the target run.
- * Blank lines are skipped; every other line comes back, in order.
+ * Blank lines are skipped; every other line comes back, in order. `rules` are
+ * the approved volume rules, `runId` the target run (task 1.12): a bare series
+ * a rule covers takes its year and is not flagged.
  */
 export function parseBulk(
   text: string,
-  { knownSeries, runLabels }: { knownSeries: KnownSeries[]; runLabels: string[] },
+  {
+    knownSeries,
+    runLabels,
+    rules = [],
+    runId = null,
+  }: { knownSeries: KnownSeries[]; runLabels: string[]; rules?: VolumeRule[]; runId?: string | null },
 ): BulkLine[] {
   const known = new Map(knownSeries.map((s) => [key(s.title), s]));
   const inRun = new Set(runLabels.map(key));
+  const ctx = { rules, runId };
   const out: BulkLine[] = [];
   text.split(/\r?\n/).forEach((input, i) => {
     const normalized = normalizeLine(input);
     if (!normalized) return;
-    const parsed = parseOne(normalized, known, knownSeries, inRun);
+    const parsed = parseOne(normalized, known, knownSeries, inRun, ctx);
     out.push({ line: i + 1, input, normalized, kind: kindOf(parsed.flags), ...parsed });
   });
   return out;

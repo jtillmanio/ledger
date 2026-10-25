@@ -12,6 +12,7 @@ import {
   parseBulk,
   trigramSimilarity,
   type BulkLine,
+  type VolumeRule,
 } from "../src/lib/bulk-parse";
 
 const CAP_YEARS = [1968, 1996, 1998, 2004, 2011, 2012, 2018, 2023];
@@ -329,5 +330,79 @@ describe("task 1.3c additions", () => {
     expect(normalizeLine("Avengers (1998) #1½")).toBe("Avengers (1998) #1½");
     expect(normalizeLine("Avengers (1998) #11⁄2")).toBe("Avengers (1998) #1½");
     expect(normalizeLine("Wizard #¾")).toBe("Wizard #¾");
+  });
+});
+
+describe("approved volume rules (task 1.12, AC-3, AC-4)", () => {
+  const rule = (series: string, year: number, extra: Partial<VolumeRule> = {}): VolumeRule =>
+    ({ series, year, runId: null, issueFrom: null, issueTo: null, ...extra });
+  const withRules = (text: string, rules: VolumeRule[], runId: string | null = "thor") =>
+    parseBulk(text, { knownSeries, runLabels: [], rules, runId })[0];
+
+  it("flags a bare series with several volumes and no rule", () => {
+    const l = withRules("Captain America #1", []);
+    expect(l.kind).toBe("choice");
+    expect(flag(l, "ambiguous_volume")?.years).toEqual(CAP_YEARS);
+  });
+
+  it("a series-wide rule resolves the bare line, unflagged and filled from the map", () => {
+    const l = withRules("Captain America #2", [rule("Captain America", 2004)], "any-run");
+    expect(l.flags).toEqual([]);
+    expect(l.kind).toBe("ok");
+    expect(l.yearFilled).toBe(true);
+    expect(l.rows.map((r) => r.label)).toEqual(["Captain America (2004) #2"]);
+  });
+
+  it("a year the user typed beats a rule", () => {
+    const l = withRules("Captain America (1968) #2", [rule("Captain America", 2004)]);
+    expect(l.rows.map((r) => r.label)).toEqual(["Captain America (1968) #2"]);
+    expect(l.yearFilled).toBe(false);
+  });
+
+  it("the run's own rule beats an any-run rule, and another run's rule is ignored", () => {
+    const rules = [rule("Captain America", 2004), rule("Captain America", 1998, { runId: "thor" }),
+      rule("Captain America", 2011, { runId: "other" })];
+    expect(withRules("Captain America #2", rules, "thor").rows[0].label).toBe("Captain America (1998) #2");
+    expect(withRules("Captain America #2", rules, "empty").rows[0].label).toBe("Captain America (2004) #2");
+    expect(withRules("Captain America #2", [rules[2]], "thor").kind).toBe("choice");
+  });
+
+  it("a range rule applies only inside its issue range, and a range line only if it is all inside", () => {
+    const rules = [rule("Captain America", 1968, { issueFrom: 100, issueTo: 200 })];
+    expect(withRules("Captain America #150", rules).rows[0].label).toBe("Captain America (1968) #150");
+    expect(withRules("Captain America #99", rules).kind).toBe("choice");
+    expect(withRules("Captain America #201", rules).kind).toBe("choice");
+    expect(withRules("Captain America #150-152", rules).rows).toHaveLength(3);
+    expect(withRules("Captain America #198-202", rules).kind).toBe("choice");
+    // No floor and no ceiling are each open-ended.
+    expect(withRules("Captain America #1", [rule("Captain America", 1968, { issueTo: 50 })]).kind).toBe("ok");
+    expect(withRules("Captain America #999", [rule("Captain America", 1968, { issueFrom: 50 })]).kind).toBe("ok");
+  });
+
+  it("a ranged rule is tried before a series-wide one", () => {
+    const rules = [rule("Captain America", 2004), rule("Captain America", 1968, { issueFrom: 1, issueTo: 10 })];
+    expect(withRules("Captain America #5", rules).rows[0].label).toBe("Captain America (1968) #5");
+    expect(withRules("Captain America #50", rules).rows[0].label).toBe("Captain America (2004) #50");
+  });
+
+  it("an annual reads the rules for `<Title> Annual`", () => {
+    // Two known volumes, so only a rule can settle the year.
+    const two = [{ title: "Thor", years: [1966, 1999] }];
+    const annual = (rules: VolumeRule[]) =>
+      parseBulk("Thor Annual #13", { knownSeries: two, runLabels: [], rules, runId: "thor" })[0];
+    expect(annual([]).kind).toBe("choice");
+    const l = annual([rule("Thor Annual", 1966), rule("Thor", 1999)]);
+    expect(l.flags).toEqual([]);
+    expect(l.rows[0].label).toBe("Thor (1966) Annual #13");
+    expect(l.yearFilled).toBe(true);
+    // The rule for the bare title is not the annual's.
+    expect(annual([rule("Thor", 1999)]).kind).toBe("choice");
+  });
+
+  it("matches the series case-insensitively and leaves an unknown series alone", () => {
+    expect(withRules("captain america #2", [rule("Captain America", 2004)]).rows[0].label)
+      .toBe("Captain America (2004) #2");
+    const l = withRules("Balder the Brave #1", [rule("Balder the Brave", 1985)]);
+    expect(flag(l, "new_series")).toBeDefined();
   });
 });

@@ -12,7 +12,7 @@
  * freeform line is the user's own label; choosing *Keep as typed* is the
  * explicit accept (CLAUDE.md).
  */
-import { labelFor, parseBulk, type BulkLine, type KnownSeries } from "./bulk-parse";
+import { labelFor, parseBulk, type BulkLine, type KnownSeries, type VolumeRule } from "./bulk-parse";
 
 /** One of the run's placements, live or removed (soft-deleted). */
 export type Placement = { id: number; sequence: number; label: string; removed: boolean };
@@ -28,6 +28,13 @@ export type Group = { key: string; name: string; options: Option[]; choice: stri
 
 /** What one placement in the insert will be: a new or reused issue placed, or a removed placement restored. */
 export type Write = { label: string; restore: boolean };
+
+/**
+ * The *Always use <year> for <series>* switch on an ambiguous-volume row once a
+ * year is picked (task 1.12). `key` is its entry in the choices; `on` stages an
+ * any-run, any-issue volume rule that the insert writes with it.
+ */
+export type RowRule = { key: string; series: string; year: number; on: boolean };
 
 export type ReviewRow = {
   key: string;
@@ -48,10 +55,14 @@ export type ReviewRow = {
   /** A group still has no choice, so nothing can be added yet. */
   needsChoice: boolean;
   writes: Write[];
+  /** Only an ambiguous-volume row with a year picked has one. */
+  rule?: RowRule;
 };
 
 export type Review = {
   rows: ReviewRow[];
+  /** The volume rules the confirm writes: the switched-on rows that are neither pending nor dropped. */
+  rules: { series: string; year: number }[];
   /** The insert, in order: one per placement written, repeats in the paste counted once. */
   writes: Write[];
   /** How many rows still need a choice. */
@@ -85,6 +96,7 @@ type Decided = {
   dropped: boolean;
   /** Candidate labels in order, before the run and the paste are checked. */
   labels: string[];
+  rule?: RowRule;
 };
 
 type Ctx = {
@@ -160,7 +172,14 @@ function decide(line: BulkLine, key: string, ctx: Ctx, nested = false): Decided 
     out.why.push(`${count(flag.years.length)} volumes of ${line.title}. Pick one:`);
     const choice = settle(group(key, "Volume year",
       [...flag.years.map((y) => ({ id: `year:${y}`, label: String(y) })), DROP], ctx));
-    if (choice?.startsWith("year:")) follow(labelFor(line.title!, Number(choice.slice(5)), designator), `${key}>${choice}`);
+    if (choice?.startsWith("year:")) {
+      const year = Number(choice.slice(5));
+      follow(labelFor(line.title!, year, designator), `${key}>${choice}`);
+      // An annual's volume map series is `<Title> Annual`, as extract reads it.
+      const series = /^Annual \d+$/.test(designator) ? `${line.title} Annual` : line.title!;
+      const ruleKey = `always:${labelKey(series)}`;
+      out.rule = { key: ruleKey, series, year, on: ctx.choices[ruleKey] === choice };
+    }
     return out;
   }
 
@@ -211,8 +230,10 @@ function listed(labels: string[]): string {
  */
 export function buildReview(
   lines: BulkLine[],
-  { knownSeries, placements, catalog, choices, metron = new Set(), taken = new Set() }: {
+  { knownSeries, placements, catalog, choices, metron = new Set(), taken = new Set(), rules, runId }: {
     knownSeries: KnownSeries[]; placements: Placement[]; catalog: Catalog; choices: Choices;
+    /** The approved volume rules and the target run, as `parseBulk` reads them (task 1.12). */
+    rules?: VolumeRule[]; runId?: string | null;
     /** Label keys a Metron search answered with (task 1.3b): Metron says they exist. */
     metron?: Set<string>;
     /** Label keys whose id another label already holds: the insert would give them `-2`. */
@@ -222,13 +243,14 @@ export function buildReview(
   const runLabels = placements.filter((p) => !p.removed).map((p) => p.label);
   const here = new Map(placements.map((p) => [labelKey(p.label), p]));
   const ctx: Ctx = {
-    parse: (text) => parseBulk(text, { knownSeries, runLabels })[0],
+    parse: (text) => parseBulk(text, { knownSeries, runLabels, rules, runId })[0],
     choices, catalog, lookups: new Set(),
     known: new Map(knownSeries.map((s) => [labelKey(s.title), s.years])),
   };
 
   const seen = new Map<string, number>(); // label key → the line that writes it
   const writes: Write[] = [];
+  const staged = new Map<string, { series: string; year: number }>(); // rule key → the rule to write
   const rows: ReviewRow[] = lines.map((line) => {
     const key = `${line.line}:${line.normalized}`;
     const d = decide(line, key, ctx);
@@ -273,6 +295,8 @@ export function buildReview(
       writes.push(...rowWrites);
     }
 
+    if (d.rule?.on && !d.pending && !d.dropped) staged.set(d.rule.key, { series: d.rule.series, year: d.rule.year });
+
     const known = (l: string) => here.has(labelKey(l)) || !!catalog.get(labelKey(l));
     const allKnown = d.labels.length > 0 && d.labels.every(known);
     const clash = d.labels.filter((l) => !known(l) && taken.has(labelKey(l)));
@@ -292,11 +316,12 @@ export function buildReview(
       invalid: line.kind === "error",
       needsChoice: d.pending,
       writes: rowWrites,
+      ...(d.rule && { rule: d.rule }),
     };
   });
 
   return {
-    rows, writes,
+    rows, writes, rules: [...staged.values()],
     unresolved: rows.filter((r) => r.needsChoice).length,
     lookups: [...ctx.lookups],
   };
