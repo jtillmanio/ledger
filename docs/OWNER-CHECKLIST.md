@@ -48,8 +48,15 @@ blocked on it: 2.4, 2.6 and 2.9 assert relationships, not counts.
 
 - [x] **Break the hard-only cycle** of five runs: `gillen-uncanny`,
       `aaron-watxm`, `remender-xmen`, `axis`, `schism-regensis` (R0-01).
-- [ ] **Break the soft and mixed cycles** in the ~100-run component. Task 2.11a's
-      loader check will list them by name once it lands; until then
+- [x] **Break the soft and mixed cycles** in the ~100-run component. **Done
+      2026-10-25:** a fresh download passes `--fail-on-cycle` (0 cycles) and
+      HANDOFF § Migrated data has the counts. Task 2.11a's
+      loader check names each one as a `prereqs,prereq cycle` row in
+      `seed/unresolved.csv` (runs first, then hard edges, then soft) after
+      `npm run extract`. On the tracked 2026-09-29 `Comics.xlsx` it reports
+      **0 cycles** (10 of the worksheet's 13 edges are reversed or deleted
+      there): confirm on a fresh download with `npm run extract -- --fail-on-cycle`,
+      then record the ready / blocked counts in HANDOFF (2.11a's Check).
       `/comics/<run>` shows a run under "Read these first" only if it is a
       genuine ancestor (the self-listing bug is fixed, R2-04).
 - [ ] **Reclassify hard → soft where the dependency is taste, not comprehension.**
@@ -382,12 +389,18 @@ of gates**. The items below are the ones only you can do.
       collisions. `seed/` shows it after your next `npm run extract`.
 - [x] **Relabel `X-Men Annual (2023) #1`** — done in the sheet: `#1 (Feb)` and
       `#1 (Nov)`. `X-23 (2010) #1` likewise became `#1 (May)` and `#1 (Nov)`.
-- [ ] **Soft and mixed prerequisite cycles** (74 runs in one component; the
+- [x] **Soft and mixed prerequisite cycles** (74 runs in one component; the
       hard-only cycle is gone). A Step 14 gate (D-20). **You don't have to wait
       for 2.11a:** `docs/review/prereq-cycle-worksheet-2026-09-24.csv` lists the
       13 edges (11 soft, 2 hard) where a run "needs" something published after
       it. Deleting or reversing those 13 — any mix — removes every cycle
-      (checked). Decide each in the sheet's PREREQS tab, then re-extract.
+      (checked). Decide each in the sheet's PREREQS tab, then re-extract:
+      2.11a now names every cycle left as a `prereqs,prereq cycle` row in
+      `seed/unresolved.csv`. On the tracked 2026-09-29 `Comics.xlsx` there are
+      **0** (10 of the 13 reversed or deleted, the graph acyclic). Confirm on a
+      fresh download with `npm run extract -- --fail-on-cycle` (exit 0), then
+      record the ready / blocked counts in HANDOFF. **Done 2026-10-25:** the
+      fresh download passes, and the counts are in HANDOFF § Migrated data.
 - [ ] **Answer `etl/data/book_review.csv`** (from task 1.13). For each pair,
       decide `merge` (and pick the `keep` spelling) or `separate`. An
       undecided pair loads as two rows. On the 2026-10-08 workbook, expect

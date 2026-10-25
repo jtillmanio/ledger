@@ -1,8 +1,8 @@
 # Ledger
 
-Personal media ledger replacing two Google Sheets: about 10,138 comic issues in
-10,761 run placements across 258 runs with a prerequisite graph, plus 1,478
-books (extract of 2026-09-23; re-count from a fresh extract, never trust these).
+Personal media ledger replacing two Google Sheets: about 10,131 comic issues in
+10,754 run placements across 258 runs with a prerequisite graph, plus 1,381
+books (extract of 2026-10-25; re-count from a fresh extract, never trust these).
 Single user, multi-user schema.
 
 `docs/STATUS.md` is where we are now. The planning docs are in the kit's
@@ -95,7 +95,8 @@ npm run test:db:reset       # rebuild the TEST database: drizzle-kit migrate, th
 npm run lint                # eslint, zero warnings
 npx tsc --noEmit            # typecheck
 npm run db:generate         # after editing src/db/schema.ts
-npm run extract             # etl/extract.py with every sidecar CSV; clears seed/ first
+npm run extract             # etl/extract.py with every sidecar CSV; clears seed/ first;
+                            # reports prereq cycles, `-- --fail-on-cycle` exits non-zero on one
 npm run rebuild             # drop, migrate, extract, load (.env); asks first, refuses when LEDGER_LIVE=true
 ```
 
