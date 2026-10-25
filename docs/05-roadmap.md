@@ -721,7 +721,7 @@ A DNF book appears only under Stopped. Tab counts equal row counts.
 Each tablist contains exactly one underline element. Screenshot at 360px,
 including every empty tab.
 
-### ☐ 1.11 Slow down failed sign-ins · S
+### ☑ 1.11 Slow down failed sign-ins · S
 `POST /api/login` compares the passcode and answers at once, so nothing slows
 a guessing loop (R2-12). D-23 made a four-or-more-word `APP_PASSCODE` the
 defence and ruled out a throttle task. The owner reversed that half on

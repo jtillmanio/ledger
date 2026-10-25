@@ -1,7 +1,7 @@
 ---
 id: TASK-020
 title: 1.11 Slow down failed sign-ins
-status: In progress
+status: Review
 depends_on: [TASK-019]
 size: S
 model: sonnet
@@ -28,9 +28,9 @@ A wrong passcode takes a second to be refused, so guessing it one try at a time 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): a vitest drives the route handler with fake timers. A wrong passcode's response is still pending at 999 ms and resolves at 1000 ms, to `/login?error=1` with no `rt_session` cookie. An empty one and a wrong-length one behave the same. A right passcode resolves without advancing the timers and sets the cookie. No test waits on a real clock.
-- [ ] AC-2: The comparison stays constant-time (`timingSafeEqual`, as today). The delay is applied after the comparison and before the response for every failure path, including a malformed body. A malformed body still answers `303` to `/login?error=1`, never a 500.
-- [ ] AC-3: Nothing outside the request is kept: no module-level counter, map or timestamp is added (a test or review of the diff confirms the handler holds no state between requests), and no schema change is made.
+- [x] AC-1 (roadmap **Check:**, verbatim): a vitest drives the route handler with fake timers. A wrong passcode's response is still pending at 999 ms and resolves at 1000 ms, to `/login?error=1` with no `rt_session` cookie. An empty one and a wrong-length one behave the same. A right passcode resolves without advancing the timers and sets the cookie. No test waits on a real clock.
+- [x] AC-2: The comparison stays constant-time (`timingSafeEqual`, as today). The delay is applied after the comparison and before the response for every failure path, including a malformed body. A malformed body still answers `303` to `/login?error=1`, never a 500.
+- [x] AC-3: Nothing outside the request is kept: no module-level counter, map or timestamp is added (a test or review of the diff confirms the handler holds no state between requests), and no schema change is made.
 
 ## Out of scope
 
@@ -85,7 +85,11 @@ Approved 2026-10-25.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (an earlier run clashed with a concurrent run on port 3199 and the test DB; re-run alone passed, 548 passed) | Audit R1 PASS | Spec R1 APPROVE | Schema, UI: not applicable
+
+## Follow-ups
+
+None.
 
 ## Blocked
 
@@ -93,7 +97,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0
