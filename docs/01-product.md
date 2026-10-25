@@ -173,7 +173,7 @@ Each MVP feature's roadmap entries carry the exact **Check:**; these are the out
 - **F-10 Add issues from a Metron search.** My catalog is matched first; a Metron failure leaves *Type it* working; no page render calls Metron.
 - **F-11 An Up next queue for comics.** The order is stored and contiguous; a started run leaves *Up next* but keeps its place.
 - **F-12 In flight · Up next · Done.** The same three tabs, in the same order, on comics and books; each reads from views.
-- **F-13 The volume map.** The 67 approved rules load into `volume_rules` and the parser reads them.
+- **F-13 The volume map.** The approved rules load into `volume_rules` and the parser reads them.
 - **F-14 A prerequisite graph without cycles.** Extract lists every cycle for review; a cycle is never loaded silently.
 - **F-15 Add books by search, paste or hand.** An existing book is reused and says so; *By hand* works when Open Library fails.
 - **F-16 Quick-capture inbox.** A note saves with only its text; resolving it opens the add flow its kind names.

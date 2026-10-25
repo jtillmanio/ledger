@@ -747,7 +747,7 @@ passcode's response is still pending at 999 ms and resolves at 1000 ms, to
 one behave the same. A right passcode resolves without advancing the timers
 and sets the cookie. No test waits on a real clock.
 
-### ☐ 1.12 Load the volume map into `volume_rules` · S
+### ☑ 1.12 Load the volume map into `volume_rules` · S
 Coverage check, 2026-10-08; the load half of 3.9. **Built in Phase 1's last
 sitting, before cutover.** 0.3 created `volume_rules` ("`volume_map.csv`,
 editable in the app"), but nothing fills it: `etl/extract.py` applies the
@@ -2366,12 +2366,15 @@ and after cutover it can no longer be edited as a CSV.
   `deleted_at`; adding one is a schema change (ask first).
 - **A rule that overlaps** another for the same series and scope is refused,
   `aria-disabled` with the reason shown (*Overlaps X-Men · any run · #1–200*).
-- **The parser reads it.** 1.3's *Ambiguous volume* rule gains a first step:
-  when a label without a year matches a rule for its series — the run's own
-  rule before an any-run rule, and only inside the rule's issue range — the
-  review row pre-selects that year and says *from the volume map*. The user can
-  still change it, and nothing is written without 1.3c's accept. With no
-  matching rule, the row is flagged for a pick as before.
+  1.12 writes *Always use* rules by select-then-insert with no unique key
+  (case-sensitive on `series`), so a stale tab could write a duplicate: the
+  editor dedupes, or a unique expression index is added here.
+- **The parser reads it.** 1.12 already applies the rules in the parser (the
+  run's own rule before an any-run rule, only inside the rule's issue range,
+  annual rules under `<Title> Annual`), so a covered label is not flagged. This
+  entry is left with the review row pre-selecting that year and saying *from
+  the volume map*, and the user changing it; nothing is written without 1.3c's
+  accept. With no matching rule, the row is flagged for a pick as before.
 - **Nothing is relabelled.** Rules apply to labels entered after the edit;
   existing `issues` rows change only through an accepted label review
   (`.claude/rules/schema.md`).

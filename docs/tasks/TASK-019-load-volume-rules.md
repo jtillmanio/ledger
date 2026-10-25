@@ -1,7 +1,7 @@
 ---
 id: TASK-019
 title: 1.12 Load the volume map into volume_rules
-status: In progress
+status: Review
 depends_on: [TASK-018]
 size: L
 model: sonnet
@@ -32,11 +32,11 @@ The approved volume rules (which year a bare series name means) are in the datab
 ## Acceptance criteria
 
 - [ ] AC-1 (roadmap **Check:**, verbatim): `npm run test:etl` covers a fixture map holding a run-scoped rule, an any-run rule and an approved row with no year, and asserts that `seed/volume_rules.csv` holds exactly the first two, with `run_id` NULL on the second. `npm run rebuild` (development) reports a `volume_rules` count equal to the approved rows in `volume_map.csv`.
-- [ ] AC-2: The CSV's header matches `volume_rules`' column order. An issue-range rule keeps its `issue_from` and `issue_to`, and an any-issue rule writes them as NULL (empty in the CSV, loaded as NULL). `etl/load.ps1` and `etl/load.sh` both copy it after `runs` and still refuse when `LEDGER_LIVE=true` (the existing guard is untouched). `rebuild`'s row-count report includes `volume_rules`.
-- [ ] AC-3: Given known volumes in which `Captain America` has several years and no rule, the line `Captain America #1` is flagged *ambiguous volume* and its row offers *Always use <year> for Captain America* once a year is picked. Switching it on and confirming writes exactly one `volume_rules` row (`series = 'Captain America'`, `run_id` NULL, `issue_from` and `issue_to` NULL, the picked year) in the same transaction as the insert. Cancelling, or switching it off before confirm, writes no rule.
-- [ ] AC-4: With that rule in the table, pasting `Captain America #2` into any run is not flagged *ambiguous* and resolves to `Captain America (<year>) #2`. A forced failure in the insert's transaction leaves `volume_rules` unchanged.
-- [ ] AC-5: The switch meets the UX floor (`docs/04-design.md` § 10. The UX floor): it is a real switch (`role="switch"` or a checkbox) named *Always use <year> for <series>*, at least 24px, keyboard operable, readable in both themes; screenshots of an ambiguous row with the switch at every `ui.viewports` width, light and dark.
-- [ ] AC-6: Every other CSV extract writes is byte-identical before and after the change on the current workbooks, and the PR quotes the diff summary (standing rule 4).
+- [x] AC-2: The CSV's header matches `volume_rules`' column order. An issue-range rule keeps its `issue_from` and `issue_to`, and an any-issue rule writes them as NULL (empty in the CSV, loaded as NULL). `etl/load.ps1` and `etl/load.sh` both copy it after `runs` and still refuse when `LEDGER_LIVE=true` (the existing guard is untouched). `rebuild`'s row-count report includes `volume_rules`.
+- [x] AC-3: Given known volumes in which `Captain America` has several years and no rule, the line `Captain America #1` is flagged *ambiguous volume* and its row offers *Always use <year> for Captain America* once a year is picked. Switching it on and confirming writes exactly one `volume_rules` row (`series = 'Captain America'`, `run_id` NULL, `issue_from` and `issue_to` NULL, the picked year) in the same transaction as the insert. Cancelling, or switching it off before confirm, writes no rule.
+- [x] AC-4: With that rule in the table, pasting `Captain America #2` into any run is not flagged *ambiguous* and resolves to `Captain America (<year>) #2`. A forced failure in the insert's transaction leaves `volume_rules` unchanged.
+- [x] AC-5: The switch meets the UX floor (`docs/04-design.md` § 10. The UX floor): it is a real switch (`role="switch"` or a checkbox) named *Always use <year> for <series>*, at least 24px, keyboard operable, readable in both themes; screenshots of an ambiguous row with the switch at every `ui.viewports` width, light and dark.
+- [x] AC-6: Every other CSV extract writes is byte-identical before and after the change on the current workbooks, and the PR quotes the diff summary (standing rule 4).
 
 ## Out of scope
 
@@ -63,9 +63,12 @@ The approved volume rules (which year a bare series name means) are in the datab
 
 ## Follow-ups
 
-- `docs/01-product.md` F-13 says "The 67 approved rules"; today's `volume_map.csv` has 66 approved rows, all with a year. Correct the prose to the count (or drop the number) (approved at plan)
-- Roadmap 3.9's *The parser reads it*: 1.12's parser already applies the rules (the run's own first, inside the issue range, annual rules under `<Title> Annual`); 3.9 is left with pre-selecting the year, *from the volume map*, and letting the user change it (approved at plan)
-- Candidate decision: an insert's Undo leaves the volume rule it wrote; changing or removing a rule is 3.9's editor alone (owner, 2026-10-25, at the plan gate) (approved at plan)
+- `docs/01-product.md` F-13 says "The 67 approved rules"; today's `volume_map.csv` has 66 approved rows, all with a year. Correct the prose to the count (or drop the number) → `docs/01-product.md` § Feature index (F-13): dropped the number (approved at plan)
+- Roadmap 3.9's *The parser reads it*: 1.12's parser already applies the rules (the run's own first, inside the issue range, annual rules under `<Title> Annual`); 3.9 is left with pre-selecting the year, *from the volume map*, and letting the user change it → `docs/05-roadmap.md` § 3.9 (The parser reads it) (approved at plan)
+- Candidate decision: an insert's Undo leaves the volume rule it wrote; changing or removing a rule is 3.9's editor alone (owner, 2026-10-25, at the plan gate) → `docs/review/decisions.md` § D-81, which also records the parser applying run-scoped and issue-range rules (plan answer 2) (approved at plan)
+
+- AC-1's second half (`npm run rebuild` on development, expecting `volume_rules` = 66 and 62 with NULL `run_id`) has not run: it drops the development database, which CLAUDE.md says to ask first. The owner runs it → not tracked: owner's manual check (listed in the PR)
+- `addVolumeRules` checks "already has a rule" with select-then-insert and no unique key, case-sensitive on `series`; a stale tab could write a duplicate (harmless: the parser takes the first match). 3.9's editor adds the unique expression index or dedupes → `docs/05-roadmap.md` § 3.9 (An overlapping rule is refused)
 
 ## Plan
 
@@ -119,7 +122,7 @@ Approved by the owner 2026-10-25 at `a7ce1c2`, with both open questions answered
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL(test:e2e sign-in, dev-server reload loop; environmental) → R2 PASS (`E2E_SERVER=start`: 548 passed, 1 skipped) | Audit R1 NOT RUN (dirty tree: line-ending noise from running extract) → R2 CHANGES (annual-rule test non-discriminating) → fixed | Spec R1 APPROVE | Schema R1 APPROVE | UI R1 PASS (6 widths, light and dark; no console errors)
 
 ## Blocked
 
@@ -127,7 +130,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0
