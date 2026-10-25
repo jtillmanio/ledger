@@ -1,14 +1,14 @@
 ---
 id: TASK-018
 title: 2.11a Prerequisite cycle check
-status: Ready
+status: In progress
 depends_on: [TASK-017]
 size: S
 model: sonnet
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 6716e6b
 ---
 
 # TASK-018 — 2.11a Prerequisite cycle check
@@ -53,9 +53,53 @@ Extract names every loop in the prerequisite graph so the owner can untangle the
 - Automated: `npm run test:etl` covers the two components, the self-loop, the chain, exit 0 by default and non-zero with `--fail-on-cycle` naming the runs (AC-1, AC-2).
 - Manual: `npm run extract` on the current workbooks → expected: a console count of cycles and the matching `prereq cycle` rows in `seed/unresolved.csv`, with the other CSVs unchanged (AC-4). After the owner's checklist, `npm run extract -- --fail-on-cycle` → expected: exit 0, then record the ready and blocked counts in HANDOFF.
 
+## Follow-ups
+
+- `docs/OWNER-CHECKLIST.md`'s two cycle items (*Break the soft and mixed cycles*, *Soft and mixed prerequisite cycles*) say 2.11a "will list them by name once it lands": point them at the `prereq cycle` rows in `seed/unresolved.csv`, and at recording the ready / blocked counts in HANDOFF once `npm run extract -- --fail-on-cycle` passes (AC-1's second half) → docs/OWNER-CHECKLIST.md (approved at plan)
+- `etl/rebuild.sh`'s extract line lacks the `--book-review etl/data/book_review.csv` that `package.json`'s `extract` has carried since 1.13, so the bash twin's rebuild skips the book merge review → not tracked: owner asked for it on its own `fix/` branch (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-10-25 (attended, Opus 5.5 session; implementation on `model: sonnet`).
+
+### Steps
+
+1. **Tests first.** `etl/test_extract.py`: `build_workbook` takes an optional `prereqs` list (rows of `Run ID`, `Prereq Run ID`, `Type`). New `PrereqCycles(WorkbookCase)`:
+   - two components (x, y, z mixing hard and soft edges; p, q soft only) plus an acyclic chain c1 → c2 → c3: exactly two `prereq cycle` rows, each naming every run in its component, hard edges before soft, and nothing naming the chain (AC-2);
+   - a self-loop s → s is reported as a component of its own (AC-2);
+   - `ex.main([...])` against that fixture and a minimal Books.xlsx (`build_books([])`): returns 0 by default with the rows in `unresolved.csv`; returns non-zero with `--fail-on-cycle`, its stderr naming x, y, z, p and q; returns 0 with `--fail-on-cycle` on an acyclic graph (AC-1).
+   Run them and confirm they fail for the expected reason (no rows, unknown argument).
+2. **`etl/extract.py`, the pass.** `prereq_cycles(prereqs) -> list[list[dict]]`: an iterative Tarjan over every extracted edge, hard and soft (no recursion limit), visiting nodes and neighbours in sorted order so the output is deterministic. Returns each strongly connected component larger than one, plus each self-loop, as its edges. Called in `extract_comics` after the prereq rows are built; one `flag("prereqs", "prereq cycle", detail)` per component, components ordered by their first run. Detail: `3 runs: x, y, z | hard: x -> y, z -> x | soft: y -> z` (runs sorted; hard edges first; sheet order within a type; a type with no edges is left out).
+3. **`main()`, the flag.** `--fail-on-cycle` (help: exit non-zero when the prereq graph has a cycle; Step 14's final extract). After the unresolved line, a cycle count (`N prereq cycles — see …/unresolved.csv`), red (ANSI) only when stdout is a TTY. Every CSV is still written either way. Without the flag: return 0. With it and a cycle: print each component's runs to stderr and return 1.
+4. **Docs (AC-3).** `CLAUDE.md` § Commands and `docs/COMMANDS.md` (kept in sync, CLAUDE.md § Commands) mention `--fail-on-cycle`. `docs/START-HERE.md` Step 14 already runs `npm run extract -- --out seed-final --fail-on-cycle` (line 1393): no edit. `package.json` unchanged: npm passes arguments after `--` through.
+5. **AC-4 diff.** Run `main`'s `etl/extract.py` (`git show main:etl/extract.py` into the scratchpad) and the branch's against the real workbooks with `npm run extract`'s arguments, each to its own scratch `--out`, `--book-review` pointing at a scratch copy so the tracked `etl/data/book_review.csv` isn't rewritten. Diff every CSV; only `unresolved.csv` may differ, and only by `prereq cycle` rows. Quote the summary in the PR.
+
+### Files
+
+- `etl/extract.py`: `prereq_cycles()`, the rows, `--fail-on-cycle`.
+- `etl/test_extract.py`: the `prereqs` fixture argument and `PrereqCycles`.
+- `CLAUDE.md`: the command list mentions the flag (AC-3).
+- `docs/COMMANDS.md`: the same, kept in sync (not in "Files likely touched").
+- `docs/OWNER-CHECKLIST.md`: follow-up 1, at close-out (not in "Files likely touched").
+- `docs/HANDOFF.md`: not touched; the counts wait on the owner's checklist (Out of scope).
+
+### Test strategy
+
+| AC | Proof |
+| --- | --- |
+| AC-1 | `etl/test_extract.py` `PrereqCycles`: the three `main()` cases (exit 0 default, non-zero naming runs with the flag, 0 with the flag when acyclic). Real-workbook half: owner, after the checklist, recorded in the Review log |
+| AC-2 | `PrereqCycles`: the two-components-and-chain case and the self-loop case |
+| AC-3 | The `--fail-on-cycle` cases (argparse accepts it); grep of `CLAUDE.md`, `docs/COMMANDS.md`, `docs/START-HERE.md` Step 14 |
+| AC-4 | Manual: step 5's diff, quoted in the PR |
+
+### Risks
+
+- The ~74-run component is one long `detail` cell: correct, and the console count stays short.
+- With `--fail-on-cycle`, `seed/` is still written; Step 14 loads only after a passing extract, so a failed run loads nothing.
+
+### Size
+
+S: four code/doc files plus the checklist placement; no schema, no UI.
 
 ## Review log
 
