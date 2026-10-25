@@ -44,15 +44,18 @@ new was invented for it.
 
 ### Migrated data
 
+From the 2026-10-25 extract (`npm run extract -- --fail-on-cycle` on a fresh
+download of both workbooks). Re-count from a fresh extract; never trust these.
+
 | Comics | Count | Books | Count |
 |---|---|---|---|
-| Issues (distinct) / run placements | 10,138 / 10,761 | Books | 1,478 |
-| Runs | 258 | Authors | 376 |
-| Prereq edges | 436 (219 hard; 2026-10-25) | Series | 214 |
-| Tracks | 37 | Statuses | 1,289 |
+| Issues (distinct) / run placements | 10,131 / 10,754 | Books | 1,381 |
+| Runs | 258 | Authors | 371 |
+| Prereq edges | 436 (219 hard) | Series | 213 |
+| Tracks | 37 | Statuses | 1,168 |
 | Editions (trades) | 178 | Plan entries | 0 (the plan starts empty; R0-04) |
-| Events | 30 | Wishlist / external lists | 497 / 534 |
-| Issues already read | 76 | Releases | 44 |
+| Events | 29 | Wishlist / external lists | 497 / 534 |
+| Issues already read | 76 | Releases | 25 |
 
 **Readiness after the prerequisite audit** (task 2.11a, the 2026-10-25
 extract). `npm run extract -- --fail-on-cycle` passes: 0 prereq cycles, and no
