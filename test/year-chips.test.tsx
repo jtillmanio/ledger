@@ -19,7 +19,7 @@ vi.mock("@/db/queries", () => ({
     { year: 2023, genre: "Fantasy", books: 3, words: 0 },
   ],
   seriesProgress: async () => [],
-  readWithoutYear: async () => 4,
+  listCounts: async () => ({ unyeared: 4, unlisted: 0 }),
   inboxCount: async () => 0,
 }));
 

@@ -1,7 +1,7 @@
 ---
 id: TASK-029
 title: 1.21 Unlisted: the books you have but haven't put on your list
-status: Draft
+status: In progress
 depends_on: []
 size: L
 model: opus
@@ -87,8 +87,10 @@ _Approved by the owner 2026-10-26 at the plan gate; the answers are in Context a
 2. **Undo plumbing.** `promoted` travels with the add's answer and back on its undo: `src/app/api/books/route.ts` (DELETE parses it, optional like `statused`), `src/lib/book-add.ts` (`undoAdd`), `src/components/AddBooks.tsx` and `src/components/PasteBooks.tsx` (the entry). `/api/books/bulk` returns `addBooks`'s answer as it is. `src/app/api/progress/book/route.ts`: POST accepts `SETTABLE_STATUSES`; DELETE accepts `unlisted` as a change's `prior`.
 3. **Paste review** (`src/lib/book-review.ts`): a match whose status is `unlisted` reads *In your library, not on your list yet: adds it to Someday*, as one with no status does; a near match counts the same way.
 4. **Queries** (`src/db/queries.ts`): `listBooks` leaves `unlisted` out when neither `status` nor `q` is set (*Everything*, the genre and year chips); a search, and `status=unlisted`, include it. A new `unlistedCount(userId)` for the chip.
+   *Revision 2 (Phase 3, inside the planned files):* a sixth query broke `/books/list`'s budget of 5 (`test/query-budget.test.ts`), so the count is `listCounts(userId)`, one query returning `{ unyeared, unlisted }`; `readWithoutYear` reads it, and the page's two query mocks (`test/list-totals.test.tsx`, `test/year-chips.test.tsx`) name it.
 5. **List page** (`src/app/books/list/page.tsx`): *Unlisted · N* after *Read*, a link with `aria-label="Unlisted, N books"`, hidden at zero; the empty state stays *Nothing matches*.
 6. **`BookStatus.tsx`**: an Unlisted row's badge reads *unlisted*, grey (`.bdg.dn`, no new CSS). Beside it, on the collapsed row, *Add to Someday*: a `btn sec sm` `<button>` that writes `to_read` through the same `write()` with Undo (*Was unlisted*). Expanded, the four status buttons stay, none pressed. On the Unlisted list the row leaves after the add; the Undo marks the book for focus, and the row that comes back takes focus on mount.
+   *Revision 1 (owner, 2026-10-26, during Phase 2):* `src/app/globals.css` gains one layout rule, `.status-line` (flex, gap, no colour), which wraps every row's badge so *Add to Someday* sits beside it; the badge itself keeps `.bdg.dn` and no new colour.
 7. **Docs.** `src/db/schema.ts` comment and `.claude/rules/schema.md`'s levels rule name `unlisted`; `design/mockups.html` `blist`'s first phone frame gains *Unlisted · 41* after *Read* and an Unlisted row with its badge and *Add to Someday*; `design/mockups-index.md` notes it.
 
 **Test strategy**

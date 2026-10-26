@@ -94,7 +94,9 @@ export default function AddBooks({ initial, close, query = "", note = null }: {
         `${title} · ${target.kind === "shelf" ? `already on ${where}` : STATUS[status ?? ""] ?? "kept as it was"}${fromNote}`);
       return;
     }
-    const entry: AddedEntry = { destination: result.destination, created, added, statused: result.statused };
+    const entry: AddedEntry = {
+      destination: result.destination, created, added, statused: result.statused, promoted: result.promoted,
+    };
     const reopen = resolved == null ? undefined : { id: resolved, bookId };
     push({
       label: `Added to ${where}`,

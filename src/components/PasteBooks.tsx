@@ -100,8 +100,8 @@ export default function PasteBooks({ level, target, cancel, onAdded }: {
         throw new Error("gone");
       }
       if (!res.ok) throw new Error(String(res.status));
-      const { created, added, statused } = await res.json() as AddedEntry;
-      const entry: AddedEntry = { destination: destinationOf(target), created, added, statused };
+      const { created, added, statused, promoted } = await res.json() as AddedEntry;
+      const entry: AddedEntry = { destination: destinationOf(target), created, added, statused, promoted };
       const known = added.filter((id) => !created.includes(id)).length;
       const label = `${books(added.length)} added to ${where}`;
       const detail = known > 0 ? `${known} already in your library` : undefined;

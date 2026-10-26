@@ -22,6 +22,9 @@ export const E2E_LONG_LABEL = "The Amazing Spider-Man: Renew Your Vows Annual (2
 export const E2E_INBOX_COUNT = 2;
 // Books on /books/list, so its rows and their status controls are in the page a check reads (task 1.8d).
 export const E2E_BOOK_COUNT = 2;
+// One Unlisted book (task 1.21): off Everything, on its own chip, found by a search.
+export const E2E_UNLISTED_ID = "e2e-unlisted";
+export const E2E_UNLISTED_TITLE = "E2E Unlisted Book";
 
 /**
  * Fails when axe finds a violation of any rule in `rules`, naming each rule and
