@@ -827,6 +827,153 @@ class BookReviewLeftovers(BookCase):
         self.assertEqual(set(self.status()), {"red-queen-victoria-aveyard", "red-queen-christina-henry"})
 
 
+class BookDetails(BookCase):
+    """Task 1.14 (D-44): book_details.csv folds into books, the workbook's year
+    wins, no word count comes from pages, and the Open Library proposals enrich
+    appends to book_review.csv survive extract until they are decided."""
+
+    WOK = {"title": "The Way of Kings", "author": "Brandon Sanderson",
+           "open_library_id": "OL15358691W", "page_count": "1008",
+           "cover_url": "https://covers.openlibrary.org/b/id/14658316-L.jpg",
+           "published_year": "2010", "source": "openlibrary"}
+    PROPOSAL = {"kind": "book", "a": "Edgedancer Novella", "b": "Edgedancer",
+                "a_author": "Brandon Sanderson", "b_author": "Brandon Sanderson", "a_tabs": "",
+                "b_tabs": "Open Library", "reason": "open library", "similarity": "0.58",
+                "keep": "Edgedancer", "decision": ""}
+
+    def setUp(self):
+        super().setUp()
+        self.details = Path(tempfile.mkdtemp()) / "book_details.csv"
+
+    def extract(self, path: Path, with_plan: bool = False) -> None:
+        import io
+        from contextlib import redirect_stdout
+        ex.UNRESOLVED.clear()
+        with redirect_stdout(io.StringIO()):
+            ex.extract_books(path, self.out, book_review=self.review, book_details=self.details)
+
+    def write_details(self, rows):
+        with self.details.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=ex.BOOK_DETAILS_COLUMNS)
+            w.writeheader()
+            w.writerows(rows)
+
+    def write_review(self, rows):
+        with self.review.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=ex.BOOK_REVIEW_COLUMNS)
+            w.writeheader()
+            w.writerows(rows)
+
+    def test_details_fold_into_books(self):
+        self.write_details([self.WOK])
+        self.extract(build_books([("The Way of Kings", "Brandon Sanderson", None, "Fantasy", None),
+                                  ("Mistborn", "Brandon Sanderson", None, "Fantasy", 214000)]))
+        books = self.books()
+        wok = books["the-way-of-kings-brandon-sanderson"]
+        self.assertEqual({k: wok[k] for k in ("open_library_id", "page_count", "cover_url",
+                                              "published_year")},
+                         {"open_library_id": "OL15358691W", "page_count": "1008",
+                          "cover_url": "https://covers.openlibrary.org/b/id/14658316-L.jpg",
+                          "published_year": "2010"})
+        mistborn = books["mistborn-brandon-sanderson"]
+        self.assertEqual((mistborn["open_library_id"], mistborn["page_count"], mistborn["cover_url"]),
+                         ("", "", ""))
+
+    def test_no_word_count_from_page_count(self):
+        self.write_details([self.WOK])
+        self.extract(build_books([("The Way of Kings", "Brandon Sanderson", None, None, None)]))
+        wok = self.books()["the-way-of-kings-brandon-sanderson"]
+        self.assertEqual((wok["word_count"], wok["word_count_source"]), ("", ""))
+
+    def test_workbook_published_year_is_not_replaced(self):
+        cosmere = df({"Completed": [False, False], "Type": ["Novel", "Novel"],
+                      "Book": ["The Way of Kings", "Elantris"], "Series": [None, None],
+                      "Word Count": [None, None], "Published": [2011, None]})
+        self.write_details([self.WOK, {**self.WOK, "title": "Elantris", "open_library_id": "OL5738148W",
+                                       "published_year": "2005"}])
+        self.extract(build_books([], {"Cosmere": cosmere}))
+        books = self.books()
+        self.assertEqual(books["the-way-of-kings-brandon-sanderson"]["published_year"], "2011")
+        self.assertEqual(books["elantris-brandon-sanderson"]["published_year"], "2005")
+
+    def test_a_hand_row_folds_in_like_any_other(self):
+        self.write_details([{**self.WOK, "open_library_id": "", "page_count": "1001", "source": "hand"}])
+        self.extract(build_books([("The Way of Kings", "Brandon Sanderson", None, None, None)]))
+        self.assertEqual(self.books()["the-way-of-kings-brandon-sanderson"]["page_count"], "1001")
+
+    def test_a_details_row_matching_no_book_is_reported(self):
+        self.write_details([{**self.WOK, "title": "Words of Radiance"}])
+        self.extract(build_books([("The Way of Kings", "Brandon Sanderson", None, None, None)]))
+        flagged = [u for u in ex.UNRESOLVED if (u["table"], u["reason"]) == ("book_details", "no such book")]
+        self.assertEqual(len(flagged), 1)
+        self.assertIn("Words of Radiance", flagged[0]["detail"])
+
+    def test_open_library_row_survives_extract(self):
+        gone = {**self.PROPOSAL, "a": "Not In The Workbook", "b": "Not in the Workbook!"}
+        self.write_review([self.PROPOSAL, gone])
+        self.extract(build_books([("Edgedancer Novella", "Brandon Sanderson", None, None, None)]))
+        rows = self.review_rows()
+        self.assertEqual([(r["a"], r["reason"], r["decision"]) for r in rows],
+                         [("Edgedancer Novella", "open library", "")])
+        self.assertNotIn("stale review", self.reasons())
+
+    def test_accepted_open_library_row_renames_the_book_and_details_follow(self):
+        self.write_review([{**self.PROPOSAL, "decision": "merge"}])
+        self.write_details([{**self.WOK, "title": "Edgedancer", "open_library_id": "OL19356251W",
+                             "page_count": "272"}])
+        self.extract(build_books([("Edgedancer Novella", "Brandon Sanderson", None, None, None)]))
+        books = self.books()
+        self.assertEqual(list(books), ["edgedancer-brandon-sanderson"])
+        self.assertEqual((books["edgedancer-brandon-sanderson"]["title"],
+                          books["edgedancer-brandon-sanderson"]["open_library_id"]),
+                         ("Edgedancer", "OL19356251W"))
+        self.assertEqual([r["decision"] for r in self.review_rows()], ["merge"])
+        self.assertNotIn("stale review", self.reasons())
+
+
+class TitlesAreText(BookCase):
+    """Task 1.14 (owner, at the plan gate): a title cell is read as the text
+    the owner typed. Excel stores 11/22/63 as a date and 1984 as a number."""
+
+    def test_date_typed_title_reads_as_typed(self):
+        import datetime
+        king = df({"Completed": [False, False], "Type": ["Novel", "Novel"],
+                   "Book": [datetime.datetime(1963, 11, 22), "Carrie"], "Series": [None, None],
+                   "Word Count": [None, None], "Published": [2011, 1974]})
+        self.extract(build_books([], {"Stephen King": king}))
+        books = self.books()
+        self.assertIn("11-22-63-stephen-king", books)
+        self.assertEqual(books["11-22-63-stephen-king"]["title"], "11/22/63")
+
+    def test_a_to_read_column_stops_at_its_count_row(self):
+        """Each To-Read genre column ends in a count of the titles above it
+        (owner, task 1.14): it is not a book, and neither is anything below it.
+        A title Excel stored as a number is still a book."""
+        tabs = {"To-Read 2027": df({"Fantasy": ["Mistborn", 1984, "Dune", 3, None, "Notes"],
+                                   "Classics": [0.0]}),
+                "To-Read 2028": df({"Fantasy": ["Elantris", 1.0]})}
+        self.extract(build_books([], tabs))
+        self.assertEqual(sorted(b["title"] for b in self.books().values()), ["1984", "Dune", "Mistborn"])
+        self.assertEqual([r["title"] for r in read(self.out, "workbook_plans")], ["Elantris"])
+
+    def test_a_read_column_keeps_a_number_title_and_stops_at_its_count_row(self):
+        """The Read tabs too (owner, task 1.14): 1984 is a read, 3 is the count,
+        and the summary below it is not a read."""
+        tabs = {"Read 2025": df({"Classics": ["Dune", 1984, None, "Emma", 3, None, "Cosmere"]})}
+        self.extract(build_books([], tabs))
+        self.assertEqual([r["title"] for r in read(self.out, "workbook_reads")], ["Dune", "1984", "Emma"])
+
+    def test_title_text(self):
+        import datetime
+        import pandas as pd
+        self.assertEqual(ex.title_text(pd.Timestamp("1963-11-22")), "11/22/63")
+        self.assertEqual(ex.title_text(datetime.datetime(2001, 1, 5)), "1/5/01")
+        self.assertEqual(ex.title_text(1984.0), "1984")
+        self.assertEqual(ex.title_text(1984), "1984")
+        self.assertEqual(ex.title_text("  The   Stand "), "The Stand")
+        self.assertIsNone(ex.title_text(float("nan")))
+
+
 class PrereqCycles(WorkbookCase):
     """Task 2.11a (D-2, D-7, R0-01): every loop in the prereq graph, hard and
     soft edges alike, is one `prereqs,prereq cycle` row naming its runs, hard

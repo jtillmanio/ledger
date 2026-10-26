@@ -1,7 +1,7 @@
 # Ledger
 
 Personal media ledger replacing two Google Sheets: about 10,131 comic issues in
-10,754 run placements across 258 runs with a prerequisite graph, plus 1,381
+10,754 run placements across 258 runs with a prerequisite graph, plus 1,361
 books (extract of 2026-10-25; re-count from a fresh extract, never trust these).
 Single user, multi-user schema.
 
@@ -97,6 +97,8 @@ npx tsc --noEmit            # typecheck
 npm run db:generate         # after editing src/db/schema.ts
 npm run extract             # etl/extract.py with every sidecar CSV; clears seed/ first;
                             # reports prereq cycles, `-- --fail-on-cycle` exits non-zero on one
+npm run enrich:books        # Open Library details for the books into etl/data/book_details.csv;
+                            # `-- --dry-run` first (100 books, writes nothing), then extract
 npm run rebuild             # drop, migrate, extract, load (.env); asks first, refuses when LEDGER_LIVE=true
 ```
 

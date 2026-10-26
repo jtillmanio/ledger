@@ -55,7 +55,16 @@ Release, test isolation) and the Hard rules a reviewer checks.
   the workbook stays and is reported as `stale review`. A title seen with no
   author joins the one authored book with that title, stays a book of its own
   when there is none, and is reported in `unresolved.csv` when there are
-  several. The workbook loads no
+  several. A title cell is read as the text typed: a cell Excel stored as a
+  date is `m/d/yy` (*11/22/63*), a number has no `.0` (task 1.14).
+  `etl/data/book_details.csv` (title, author → `open_library_id`, `page_count`,
+  `cover_url`, `published_year`; `source` openlibrary|hand) is written by
+  `npm run enrich:books` (task 1.14, D-44) and folded in by extract:
+  `published_year` fills only where the workbook has none, and a page count
+  never becomes a word count. A near spelling Open Library finds is a `book`
+  row with `reason = open library` (`a` the workbook's spelling, `b` Open
+  Library's), kept undecided while the workbook has `a`; `merge` renames the
+  book, and the next enrich run rekeys `book_details.csv`. The workbook loads no
   read state (D-41): `seed/workbook_reads.csv` lists its reads for hand entry
   and is not loaded. A To-Read tab for 2028 or later is speculative and loads
   nothing (`SPECULATIVE_FROM`, owner 2026-10-19): no book, status or plan row;

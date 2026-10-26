@@ -795,7 +795,7 @@ Book extract: one book per title and author, the merge review in `book_review.cs
 - the King tab's word count loads;
 - a `Read 2031` tab is discovered.
 
-### ☐ 1.14 Open Library details for the workbook's books · M
+### ☑ 1.14 Open Library details for the workbook's books · M
 The Open Library half of 4.2, moved before cutover (D-44), the
 way 0.6 and 0.7 moved Metron. **Built in sitting 8, after 1.13.** The
 workbook's books load with only what was typed: no cover, page count or Open
@@ -1090,6 +1090,13 @@ its year and no quarter; On deck and Someday count against nothing (D-37). Word 
 missing a `stated` value fall back to `page_count × 275`, marked `estimated`.
 Annual capacity is minutes/day × words/minute × the days in the year (45 × 185
 × 365 = 3,038,625 words; a quarter is a quarter of that, ≈ 760k).
+
+*From TASK-022 (1.14, PR #130):* `page_count` comes
+from Open Library's `number_of_pages_median`, which can be far off: *Harry
+Potter and the Sorcerer's Stone* has 16 (a picture-book edition), and a few more
+sit under 100. At `× 275` that is a 4,400-word estimate, so the plan should say
+how 2.1 treats an implausible page count (a floor, a flag, or a `hand` row in
+`book_details.csv`, which enrich never overwrites).
 
 **Check:** test with 45 min/day at 185 wpm over 2027 and a fixture plan of
 3.58M words returns 118% ± 1% (3,585,000 / 3,038,625), and reports what share
@@ -2539,6 +2546,14 @@ there is no re-extract, so a book added in the app without Open Library data
 the same rule that a `hand` value is never replaced. Hardcover's series position
 and the art tone below stay here. ISBNs need a column `books` doesn't have:
 stop and ask before adding one.
+
+*From TASK-022 (1.14, PR #130):* 1.14's real run
+matched 549 of 1,354 books and left 314 **ambiguous**: Open Library often holds
+duplicate works with the identical title and author (*Peace Talks*, *Jade War*,
+each Harry Potter), and the 1.14 Check matches nothing when two do. Whether to
+pick one (the work with the most editions, say) is an owner decision this item
+should ask before reusing the rule; the candidates are in the run's report
+(`npm run enrich:books -- --offline`).
 
 **Calibre after cutover** (D-73, from 1.18). 1.18 reads Calibre only into
 extract's sidecars. A book added in the app later gets Calibre's word count,

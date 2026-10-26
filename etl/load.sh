@@ -70,7 +70,7 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
 
 \\copy authors        FROM '$SEED/authors.csv'        CSV HEADER
 \\copy book_series    FROM '$SEED/book_series.csv'    CSV HEADER
-\\copy books(id,title,author_id,series_id,series_position,genre,book_type,word_count,word_count_source,published_year) FROM '$SEED/books.csv' CSV HEADER
+\\copy books(id,title,author_id,series_id,series_position,genre,book_type,word_count,word_count_source,published_year,page_count,cover_url,open_library_id) FROM '$SEED/books.csv' CSV HEADER
 \\copy releases       FROM '$SEED/releases.csv'       CSV HEADER
 \\copy wishlist(genre,raw_entry,book_id) FROM '$SEED/wishlist.csv' CSV HEADER
 \\copy external_lists(source,year,rank,raw_title,book_id) FROM '$SEED/external_lists.csv' CSV HEADER

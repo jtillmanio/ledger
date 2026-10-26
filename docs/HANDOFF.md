@@ -49,7 +49,7 @@ download of both workbooks). Re-count from a fresh extract; never trust these.
 
 | Comics | Count | Books | Count |
 |---|---|---|---|
-| Issues (distinct) / run placements | 10,131 / 10,754 | Books | 1,381 |
+| Issues (distinct) / run placements | 10,131 / 10,754 | Books | 1,361 |
 | Runs | 258 | Authors | 371 |
 | Prereq edges | 436 (219 hard) | Series | 213 |
 | Tracks | 37 | Statuses | 1,168 |
