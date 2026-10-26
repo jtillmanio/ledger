@@ -116,7 +116,7 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | F-15 | **Add books by search, paste or hand** (Books) | As a reader, I want to add a book from Open Library, a pasted list or by hand, straight to where it belongs, with results as I type and each one's source shown | MVP | 1.4, 1.4c, 1.4e, 1.22 | `add`, `blist` |
 | F-16 | **Quick-capture inbox** (Every medium) | As the owner, I want to jot a title in two seconds with nothing required and resolve it later | MVP | 1.4b | `capture`, `dashextras` |
 | F-17 | **A dated reading log** (Books) | As a reader, I want when I started and finished each read kept, rereads included, in my time zone | MVP | 1.5, 1.16, 1.17 | `blist` |
-| F-18 | **To-read levels** (Books) | As a reader, I want each to-read book at a quarter, a year, On deck or Someday, with my old wishlist promoted into it, and the books I own but haven't listed kept at Owned, out of the way | MVP | 1.7, 1.4d, 1.21 | `blist`, `moveplan` |
+| F-18 | **To-read levels** (Books) | As a reader, I want each to-read book at a quarter, a year, On deck or Someday, with my old wishlist promoted into it, and the books I have but haven't listed kept at Unlisted, out of the way | MVP | 1.7, 1.4d, 1.21 | `blist`, `moveplan` |
 | F-19 | **A clean, enriched book catalog** (Books) | As a reader, I want one row per book, with Open Library details and Calibre's real word counts | MVP | 1.13, 1.14, 1.18 | `blist`, `bookdetail` |
 | F-20 | **Follow series, authors and universes** (Books) | As a reader, I want to follow the series, authors and universes I am tracking and see my progress through each | MVP (then Later) | 1.15, 5.11, 5.12 | `shelves` |
 | F-21 | **The pace engine** (Books) | As a reader, I want my real reading rate to say whether a year's plan fits | Next (then Later) | 2.0, 2.1, 2.1b, 6.12 | `settings`, `session`, `dashextras` |
@@ -210,7 +210,7 @@ B, C, W and M numbers are cited across the docs and stay.
 | B14 | *Catch me up*: a recap of the earlier books before a later one | planned | Claude, on demand, spoiler-bounded, stored in `proposals`. roadmap 7.7 |
 | B15 | A shelf's context: why each book is on it | planned | `shelves.description`, `shelf_books.note`; ordered shelves are reading orders (the Dark Tower). roadmap 5.1 |
 | B16 | Search as I type, and say where each result came from | planned | 2026-10-26. Every search box searches after 3 characters and a 500 ms pause; each result is tagged with its level or its source. roadmap 1.22, D-84 |
-| B17 | Every Calibre book in the Ledger, kept out of the way; Calibre re-synced | planned | 2026-10-26. A new *Owned* level below Someday, found by search and its own chip, on no list or dashboard. 1.18 re-runs until cutover; after it, an in-app upload sync; Google Drive later. roadmap 1.21, 1.18, 4.4, Later L-4, D-83 |
+| B17 | Every Calibre book in the Ledger, kept out of the way; Calibre re-synced | planned | 2026-10-26. A new *Unlisted* level below Someday, found by search and its own chip, on no list or dashboard. 1.18 re-runs until cutover; after it, an in-app upload sync; Google Drive later. roadmap 1.21, 1.18, 4.4, Later L-4, D-83, D-86 |
 | B18 | Audiobooks: listening, and listened | planned | 2026-10-26. A *Listening* status, a finished listen counts as a read, a headphones glyph, reads and listens counted apart. roadmap 1.23, D-85 |
 | B19 | Create a shelf while adding a book | planned | 2026-10-26. *New shelf…* in the add sheet's shelf picker. roadmap 5.1 |
 
@@ -765,7 +765,7 @@ already planned. A series view with each book's status and dates is 5.9
 add sheet. The other three are new. Search as you type (1.22) reaches the
 external APIs as well, so the add-flow rule changes from *on submit* to *on
 submit or a pause* (D-84), with answers still cached. Calibre's books all come
-in (D-83), at an *Owned* level below Someday that search finds and its own
+in (D-83), at an *Unlisted* level below Someday (D-86) that search finds and its own
 chip lists, and that dashboards and counts leave out (1.21). Calibre syncs by
 re-running 1.18 until cutover and by an in-app upload after (4.4), because
 after cutover nothing local writes the live database; fetching from Google
