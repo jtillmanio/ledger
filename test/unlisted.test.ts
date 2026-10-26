@@ -84,6 +84,14 @@ describe("the AC-1 fixture: lists, counts, search, levels, status tabs, series a
     expect(ids(await q.listBooks(USER, { q: "Sanderson" }))).toEqual([UNLISTED, SOMEDAY, READ].sort());
     // The genre chips are lists too: no Unlisted there.
     expect(ids(await q.listBooks(USER, { genre: "Fantasy" }))).toEqual([READ, SOMEDAY].sort());
+    // An empty search box is no search.
+    expect(ids(await q.listBooks(USER, { q: "  " }))).toEqual([READ, SOMEDAY].sort());
+  });
+
+  it("the chip counts only live books (Hard rule 4)", async () => {
+    await sql`UPDATE books SET deleted_at = now() WHERE id = ${UNLISTED}`;
+    expect((await q.listCounts(USER)).unlisted).toBe(0);
+    expect(ids(await q.listBooks(USER, { status: "unlisted" }))).toEqual([]);
   });
 
   it("To read and its Someday level list only the to_read book; the year chips only the read one", async () => {
@@ -97,9 +105,12 @@ describe("the AC-1 fixture: lists, counts, search, levels, status tabs, series a
     expect(await sql`SELECT book_id, level FROM to_read_level WHERE user_id = ${USER}`)
       .toEqual([{ book_id: SOMEDAY, level: "someday" }]);
     expect(ids(await q.booksInFlight(USER))).toEqual([]);
-    const upNext = await q.booksUpNext(USER);
-    expect(upNext.planned).toEqual([]);
-    expect(upNext.someday).toBe(1);
+    expect((await q.booksUpNext(USER)).someday).toBe(1);
+    // A plan row on each: the plan rail draws the to_read book and never the Unlisted one.
+    await sql`INSERT INTO reading_plan (user_id, book_id, period) VALUES
+      (${USER}, ${SOMEDAY}, '2027'), (${USER}, ${UNLISTED}, '2027')`;
+    expect(ids((await q.booksUpNext(USER)).planned)).toEqual([SOMEDAY]);
+    expect(await sql`SELECT book_id FROM to_read_level WHERE user_id = ${USER}`).toEqual([{ book_id: SOMEDAY }]);
     expect(ids(await q.booksDone(USER))).toEqual([READ]);
   });
 
