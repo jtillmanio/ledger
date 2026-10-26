@@ -2883,7 +2883,7 @@ it is converted.
   kinds of page: *Tracking · Reading · Not following*, a `role="radiogroup"`
   writing `series_follows`, `author_follows` or `universe_follows` for the
   user. *Reading* stays set until it is changed (D-43). Done is never stored.
-  *From TASK-023 (1.15, task/1.15-follow-series-authors-universes):* nothing
+  *From TASK-023 (1.15, PR #134):* nothing
   sets a book's `universe_id` after the load, and Grishaverse loads with no
   member books (the books its Series-tab group lists are reads, which D-41
   never loads), so its page would show 0/0 until a book can be put in a
