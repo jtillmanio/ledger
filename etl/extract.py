@@ -977,6 +977,11 @@ TO_READ_TAB_RE = re.compile(r"^To-Read (\d{4})$")
 # loads nothing, and its titles are listed in workbook_plans.csv instead.
 SPECULATIVE_FROM = 2028
 WORKBOOK_PLANS_COLUMNS = ["title", "year", "genre", "tab"]
+# A title that only holds a place (owner, 2026-10-26): `Untitled`, `Untitled 2`,
+# `TBA`, `TBD`. It is no book yet, so it loads nothing, and
+# workbook_placeholders.csv lists every sighting instead.
+PLACEHOLDER_RE = re.compile(r"^(?:untitled(?:\s*#?\s*\d+)?|tba|tbd)$", re.IGNORECASE)
+WORKBOOK_PLACEHOLDERS_COLUMNS = ["title", "author", "series", "tab"]
 # Author and series completion tabs, and the author every book on them has.
 AUTHOR_TABS = {"Stephen King": "Stephen King", "Dresden": "Jim Butcher",
                "Cosmere": "Brandon Sanderson", "Riordanverse": "Rick Riordan"}
@@ -1004,6 +1009,10 @@ OPEN_LIBRARY = "open library"
 BOOK_DETAILS_COLUMNS = ["title", "author", "open_library_id", "page_count", "cover_url",
                         "published_year", "source"]
 WORKBOOK_READS_COLUMNS = ["title", "year", "genre", "tab", "rank"]
+
+
+def is_placeholder(title: str | None) -> bool:
+    return bool(title) and bool(PLACEHOLDER_RE.match(title))
 
 
 def trigrams(s: str) -> set[str]:
@@ -1085,6 +1094,7 @@ class BookIndex:
         self.series_keys: dict[str, str] = {}
         self.universe_keys: dict[str, str] = {}
         self.taken: set[str] = set()
+        self.placeholders: list[dict] = []
         # What the workbook spells, before any merge: proposals pair these.
         self.seen_books: dict[tuple[str, str], dict] = {}
         self.seen_authors: dict[str, dict] = {}
@@ -1234,6 +1244,9 @@ class BookIndex:
                word_count=None, published_year=None, book_type=None, tab=None) -> str | None:
         title, author = title_text(title), clean(author)
         if not title or len(title) < 2:
+            return None
+        if is_placeholder(title):
+            self.placeholders.append({"title": title, "author": author, "series": clean(series), "tab": tab})
             return None
         self.sight(title, author, clean(series), tab)
         title, author = self.book_identity(title, author)
@@ -1738,6 +1751,8 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
     write(out, "workbook_reads", reads, WORKBOOK_READS_COLUMNS)
     # Not loaded either: To-Read titles from SPECULATIVE_FROM on, for reference.
     write(out, "workbook_plans", speculative, WORKBOOK_PLANS_COLUMNS)
+    # Not loaded either: placeholder titles, until the book has a name.
+    write(out, "workbook_placeholders", idx.placeholders, WORKBOOK_PLACEHOLDERS_COLUMNS)
 
 
 # --------------------------------------------------------------------------
