@@ -7,8 +7,8 @@ size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: proposed
-planned_at_commit:
+plan_status: approved
+planned_at_commit: af3aef9
 ---
 
 # TASK-029 — 1.21 Unlisted: the books you have but haven't put on your list
@@ -79,7 +79,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Proposed 2026-10-26 at the plan gate; the owner's answers are in Context and D-86. Set `plan_status: approved` and `planned_at_commit` when the owner approves it._
+_Approved by the owner 2026-10-26 at the plan gate; the answers are in Context and D-86. `planned_at_commit` is the main commit the plan was read against (af3aef9): none of the planned files has changed since._
 
 **Steps**
 
