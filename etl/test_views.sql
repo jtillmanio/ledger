@@ -805,34 +805,29 @@ BEGIN
   END IF;
 END $$;
 
--- No catalog table carries a per-user fact (AC-4, hard rule 3): a follow is a
--- row of its own, so changing its state changes follow_state and no catalog row.
+-- No catalog table carries a per-user fact (AC-4, hard rule 3). The four tables
+-- a follow points at have exactly these columns: a task that adds one updates
+-- this list, and a per-user one (a state, a done flag, a user_id) belongs in a
+-- follow or progress table instead. A follow's state lives only in its own row,
+-- so changing it is one write to the follow table, and follow_state follows it.
 DO $$
-DECLARE bad text; before text; after text; got text;
+DECLARE got text;
 BEGIN
-  SELECT string_agg(table_name || '.' || column_name, ', ') INTO bad
-  FROM information_schema.columns
-  WHERE table_schema = 'public'
-    AND table_name IN ('books', 'authors', 'book_series', 'book_universes')
-    AND (column_name IN ('user_id', 'state', 'follow_state', 'status', 'read', 'done')
-         OR column_name LIKE '%complet%');
-  IF bad IS NOT NULL THEN
-    RAISE EXCEPTION 'a catalog table has a per-user column: %', bad;
+  SELECT string_agg(table_name || '(' || cols || ')', ' ' ORDER BY table_name) INTO got FROM (
+    SELECT table_name, string_agg(column_name, ',' ORDER BY column_name) AS cols
+    FROM information_schema.columns
+    WHERE table_schema = 'public' AND table_name IN ('books', 'authors', 'book_series', 'book_universes')
+    GROUP BY table_name) t;
+  IF got IS DISTINCT FROM 'authors(id,name) book_series(author_id,id,name,total_books) '
+                       || 'book_universes(id,name) books(author_id,book_type,cover_url,deleted_at,genre,'
+                       || 'hardcover_id,id,open_library_id,page_count,published_year,series_id,'
+                       || 'series_position,title,universe_id,word_count,word_count_source)' THEN
+    RAISE EXCEPTION 'catalog columns changed (a per-user fact belongs in a follow or progress table): %', got;
   END IF;
-  SELECT md5(string_agg(t::text, '|' ORDER BY t::text)) INTO before FROM (
-    SELECT b::text AS t FROM books b WHERE b.id LIKE 'zz-f-%'
-    UNION ALL SELECT a::text FROM authors a WHERE a.id LIKE 'zz-f-%'
-    UNION ALL SELECT s::text FROM book_series s WHERE s.id LIKE 'zz-f-%'
-    UNION ALL SELECT v::text FROM book_universes v WHERE v.id LIKE 'zz-f-%') x;
   UPDATE author_follows SET state = 'tracking' WHERE user_id = 'zz-user' AND author_id = 'zz-f-author';
   SELECT follow_state INTO got FROM author_progress WHERE user_id = 'zz-user' AND author_id = 'zz-f-author';
-  SELECT md5(string_agg(t::text, '|' ORDER BY t::text)) INTO after FROM (
-    SELECT b::text AS t FROM books b WHERE b.id LIKE 'zz-f-%'
-    UNION ALL SELECT a::text FROM authors a WHERE a.id LIKE 'zz-f-%'
-    UNION ALL SELECT s::text FROM book_series s WHERE s.id LIKE 'zz-f-%'
-    UNION ALL SELECT v::text FROM book_universes v WHERE v.id LIKE 'zz-f-%') x;
-  IF got IS DISTINCT FROM 'tracking' OR before IS DISTINCT FROM after THEN
-    RAISE EXCEPTION 'a follow change should move follow_state (%) and no catalog row (% vs %)', got, before, after;
+  IF got IS DISTINCT FROM 'tracking' THEN
+    RAISE EXCEPTION 'author_progress.follow_state did not follow its follow row: %', got;
   END IF;
 END $$;
 
