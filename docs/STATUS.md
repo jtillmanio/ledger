@@ -1,6 +1,6 @@
 # Status
 
-**Last regenerated:** 2026-10-21
+**Last regenerated:** 2026-10-26
 
 This is a rollup of `docs/05-roadmap.md`, not a second source of truth. Every
 count here comes from counting ☑ vs ☐ entries in that file, and the milestones
@@ -9,15 +9,14 @@ wins (D-1): recount and fix this page, don't argue from it.
 
 ## Where we are
 
-**29 of 129 roadmap entries done (22%).** Phase 1 is more than half built:
-undo, range marking, the resume pointer, bulk issue entry with Metron search,
-adding books by search, paste or hand, the inbox, the dated reading log, the
-period column, design tokens, the app shell and its routes, the book extract
-and Eastern dates have all shipped. What remains in Phase 1 is the rest of
-the shell (1.8e, 1.8d, 1.8b), the Up next queue and status screens, the book
-enrichment, and the two pre-cutover tasks the 2026-10-20 intake added.
-`LEDGER_LIVE` is `false`, so the database is still disposable: `npm run
-rebuild` can reload it.
+**40 of 135 roadmap entries done (30%).** M1 and M3–M7 are done, and M2
+lacks only 0.12. Phase 1 is 26 of 34: the shell, the Up next queue, the status
+screens, the volume map, slowed sign-ins, the wishlist promotion, Open Library
+details and series, author and universe follows have all shipped since
+2026-10-21, along with 2.11a's cycle check. What remains before cutover is the
+rest of M8 (1.21, 1.18, 1.20: every task has a file) and M9 (1.4e, 1.19, 1.22,
+1.17, 1.23), most of it from the 2026-10-26 books intake. `LEDGER_LIVE` is
+`false`, so the database is still disposable: `npm run rebuild` can reload it.
 
 ### By milestone
 
@@ -30,23 +29,23 @@ under the same numbers (M7 is sitting 7).
 | M2 Read state per run, and a measured app | 4 / 5 | Done but 0.12 |
 | M3 Pleasant to use | 3 / 3 | Done |
 | M4 Adding a run beats the sheet | 3 / 3 | Done |
-| M5 Books end to end | 5 / 6 | Done but 1.4d (Ready) |
-| M6 The real navigation | 5 / 8 | In progress: 1.8e, 1.8d and 1.8b left |
-| M7 Phase 1 complete | 0 / 5 | Ready: every task has a file |
-| M8 Books load clean | 1 / 4 | 1.13 done; 1.14 and 1.15 Ready; 1.18 has no task file yet |
-| M9 Captured from cutover on | 0 / 2 | Not started |
+| M5 Books end to end | 6 / 6 | Done |
+| M6 The real navigation | 8 / 8 | Done |
+| M7 Phase 1 complete | 5 / 5 | Done |
+| M8 Books load clean | 3 / 6 | 1.13, 1.14 and 1.15 done; 1.21, 1.18 and 1.20 Draft (TASK-029–031) |
+| M9 Captured from cutover on | 0 / 5 | Not started: no task files yet |
 | M10–M15 Next | 1 / 30 | Not started† |
-| M16–M25 Later | 0 / 56 | Not started |
+| M16–M25 Later | 0 / 57 | Not started |
 
 ### By phase
 
 | Phase | Done / total | Status |
 |---|---|---|
 | 0 — Foundation | 12 / 13 | Done but 0.12 |
-| 1 — Daily use | 16 / 29 | In progress: M3–M5 done but 1.4d; M6 more than half; 1.13 and 1.16 done |
-| 2 — The pace engine | 0 / 16 | Not started (2.11a is built in M7) |
+| 1 — Daily use | 26 / 34 | In progress: M3–M7 done; the rest of M8, and M9 |
+| 2 — The pace engine | 1 / 16 | Not started but 2.11a, built in M7‡ |
 | 3 — Editing | 0 / 14 | Not started |
-| 4 — Enrichment | 0 / 3 | Not started |
+| 4 — Enrichment | 0 / 4 | Not started; 4.4 added 2026-10-26 (D-83) |
 | 5 — Remaining surfaces | 0 / 12 | Not started |
 | 6 — Polish | 1 / 17 | Not started† |
 | 7 — AI-assisted curation | 0 / 8 | Not started |
@@ -57,15 +56,28 @@ under the same numbers (M7 is sitting 7).
 feature: its work was absorbed into 2.4 and 2.6 (M12); what's left of it is a
 sort order that doesn't exist until those tasks do. It is listed in M12.
 
-The roadmap's *Later* section (L-1…L-3) holds ideas with no **Check:** and
+‡ The roadmap's *Phases* table still says 0 / 16 for Phase 2; its checkboxes
+tick 2.11a, so the count here is 1.
+
+The roadmap's *Later* section (L-1…L-4) holds ideas with no **Check:** and
 is not counted.
 
 ## What's next
 
-The rest of M6, in order: **1.8e → 1.8d → 1.8b**. Then M7 (1.10 → 1.9 →
-2.11a → 1.12 → 1.11), the rest of M8 (1.14 → 1.15 → 1.18), and M9 (1.4e →
-1.17). 1.4d (wishlist promotion) is also Ready. Cutover (START-HERE Step 14)
-waits for M1–M9: all of Phase 1, plus 2.11a and 1.11.
+The rest of M8, in order: **1.21 → 1.18 → 1.20** (TASK-029, TASK-030,
+TASK-031, all Draft: review them, then set Ready). Answer `book_review.csv`
+now, and `calibre_review.csv` and `calibre_reads.csv` after 1.18. Then M9
+(1.4e → 1.19 → 1.22 → 1.17 → 1.23), which has no task files yet: `/new-task
+docs/06-tasklist.md M9`. Cutover (START-HERE Step 14) waits for M1–M9: all of
+Phase 1, plus 2.11a and 1.11. 0.12 (a redeploy of a skipped preview) is in no
+sitting and can go on a `chore/` branch any time.
+
+**Books intake (2026-10-26).** 1.21 (*Owned*, below Someday, D-83), 1.22
+(search as you type, D-84) and 1.23 (audiobooks, D-85) are new before
+cutover; 1.18 now creates Calibre's other books at Owned and can be re-run
+until cutover; 4.4 moves the Calibre sync into the app after it, and L-4
+fetches it from Google Drive. 1.20 (hold books Open Library doesn't know) came
+from the owner the same day.
 
 **Backlog intake (2026-10-20).** The owner's 25 additions are in the roadmap,
 `docs/01-product.md` § Owner additions (each verdict and its reasoning) and
@@ -86,8 +98,9 @@ data model 2.18–2.21:
 
 **Book ingest (2026-10-08)**, M8, before cutover: 1.13 (done: one book per
 title and author, a merge review in `etl/data/book_review.csv`, no read state
-from the workbook, D-41), 1.14 (Open Library details, D-44), 1.15 (follows for
-series, authors and universes, D-42, D-43), and 1.18 (Calibre).
+from the workbook, D-41), 1.14 (done: Open Library details in
+`etl/data/book_details.csv`, D-44), 1.15 (done: follows for series, authors
+and universes, D-42, D-43), and 1.18 (Calibre, D-73).
 
 **Every preview measures itself** (0.10). When Vercel reports a preview ready,
 `.github/workflows/lighthouse.yml` signs in, runs Lighthouse and 0.9's tap
@@ -114,30 +127,40 @@ not drawn anywhere yet; 9.0 designs it first.
 
 ## What's actually built
 
-- `etl/extract.py`, `etl/enrich_comics.py`, `etl/volumes.py`,
-  `etl/rebuild.ps1`/`.sh`, `etl/load.ps1`/`.sh`, `etl/views.sql`; the book
-  merge review (1.13)
-- `src/db/schema.ts` (32 tables, migrations through `0013_plan_period`),
+- `etl/extract.py`, `etl/enrich_comics.py`, `etl/enrich_books.py`,
+  `etl/volumes.py`, `etl/rebuild.ps1`/`.sh`, `etl/load.ps1`/`.sh`,
+  `etl/views.sql`; the book merge review (1.13), Open Library details (1.14),
+  placeholder titles skipped, and the prerequisite cycle report
+  (`--fail-on-cycle`, 2.11a)
+- `src/db/schema.ts` (37 tables, migrations through `0015_book_follows`),
   `src/db/queries.ts`, `src/db/writes.ts`
 - App routes: `/` (a route handler redirecting to the last medium touched),
-  `/comics`, `/comics/runs`, `/comics/[runId]`, `/comics/[runId]/add`,
-  `/books` (a redirect to `/books/list` until 2.2), `/books/list`,
-  `/books/add`, `/watch` (the shell and an empty slate), `/inbox`, `/login`
+  `/comics`, `/comics/runs`, `/comics/status`, `/comics/[runId]`,
+  `/comics/[runId]/add`, `/books` (a redirect to `/books/list` until 2.2),
+  `/books/list`, `/books/status`, `/books/add` (with `?from=wishlist`),
+  `/watch` (the shell and an empty slate), `/inbox`, `/login`
 - Route handlers: `/api/progress/{issue,range,book}`, `/api/runs/[runId]/issues`,
   `/api/metron/search`, `/api/books`, `/api/books/bulk`, `/api/books/search`,
-  `/api/shelves`, `/api/inbox`, `/api/export`, `/api/login`, `/api/health`
+  `/api/books/wishlist`, `/api/plan`, `/api/queue`, `/api/shelves`,
+  `/api/inbox`, `/api/export`, `/api/login`, `/api/health`
 - Phase 1 so far: undo (1.2), range marking (1.1), the resume pointer (1.6),
   bulk issue entry with its review and Metron search (1.3, 1.3c, 1.3b), books
   by paste, search or hand to a destination (1.4, 1.4c), the quick-capture
-  inbox (1.4b), the dated reading log and `read_events` (1.5), the plan's one
-  period column (1.7), design tokens and control states (1.8a), the app shell
-  (1.8) and its routes (1.8c), and dates in `America/New_York` (1.16)
+  inbox (1.4b), the wishlist promotion (1.4d), the dated reading log and
+  `read_events` (1.5), the plan's one period column (1.7), design tokens and
+  control states (1.8a), the app shell (1.8), its routes (1.8c), failed-write
+  retry, skeletons and row markup (1.8d), the 834px frames (1.8e), the thumb
+  bar (1.8b), the comics Up next queue (1.10), the status screens (1.9),
+  slowed failed sign-ins (1.11), the volume map in `volume_rules` (1.12),
+  series, author and universe follows (1.15), and dates in `America/New_York`
+  (1.16)
 - Placement-keyed read state (0.8a), the spine's read-elsewhere hint (0.8b),
-  and the browser test harness (0.11)
+  and the browser test harness (0.11), with a core scope locally and the full
+  suite sharded four ways in CI (D-80)
 - `.github/workflows/` — CI, nightly backup to Cloudflare R2 (D-66), Release,
-  Lighthouse on every preview, Neon preview-branch cleanup
-- `volume_map.csv` — 67 approved rules, fully reviewed (1.12 loads it)
-- Claude Code starter kit 2.7.0, customized: `.claude/kit.json`, the skills,
+  Lighthouse on every preview, Neon preview-branch cleanup, and the `@claude`
+  and PR-review runs
+- Claude Code starter kit 2.8, customized: `.claude/kit.json`, the skills,
   the test-runner, test-auditor, spec-reviewer, ui-verifier and
   `schema-reviewer` agents, and the protected-path and post-edit hooks; the
   planning docs in the kit's layout (`docs/01`–`06`) since 2026-10-21
@@ -153,10 +176,12 @@ want to reconsider the default:
 - Top-books list cap — default: capped at 10
 - Franchise ordering — default: release order
 
-Asked at a plan gate when the task arrives (2026-10-20 intake): the schema
-columns 1.17, 1.18, 4.1, 5.1, 7.8 and 8.1 propose; where 8.3's saved views
-keep their hand-added and removed titles; 5.13's series key; 9.0's media bar
-with a fourth medium.
+Asked at a plan gate when the task arrives (2026-10-20 and 2026-10-26
+intakes; data model § 4.1): the schema columns 1.17, 1.18, 4.1, 5.1, 7.8 and
+8.1 propose; the `owned` status (1.21) and `listening` with
+`read_events.format` (1.23); `books.calibre_id` (1.22); where 4.4 remembers a
+decided Calibre review row; where 8.3's saved views keep their hand-added and
+removed titles; 5.13's series key; 9.0's media bar with a fourth medium.
 
 ## Where the detail lives
 
