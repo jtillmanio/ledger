@@ -1091,7 +1091,7 @@ missing a `stated` value fall back to `page_count × 275`, marked `estimated`.
 Annual capacity is minutes/day × words/minute × the days in the year (45 × 185
 × 365 = 3,038,625 words; a quarter is a quarter of that, ≈ 760k).
 
-*From TASK-022 (1.14, task/1.14-open-library-book-details):* `page_count` comes
+*From TASK-022 (1.14, PR #130):* `page_count` comes
 from Open Library's `number_of_pages_median`, which can be far off: *Harry
 Potter and the Sorcerer's Stone* has 16 (a picture-book edition), and a few more
 sit under 100. At `× 275` that is a 4,400-word estimate, so the plan should say
@@ -2547,7 +2547,7 @@ the same rule that a `hand` value is never replaced. Hardcover's series position
 and the art tone below stay here. ISBNs need a column `books` doesn't have:
 stop and ask before adding one.
 
-*From TASK-022 (1.14, task/1.14-open-library-book-details):* 1.14's real run
+*From TASK-022 (1.14, PR #130):* 1.14's real run
 matched 549 of 1,354 books and left 314 **ambiguous**: Open Library often holds
 duplicate works with the identical title and author (*Peace Talks*, *Jade War*,
 each Harry Potter), and the 1.14 Check matches nothing when two do. Whether to

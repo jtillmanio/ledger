@@ -125,7 +125,7 @@ tick them.
       Pratchet*, *Bernard Cornwall*, *James Ilsington*): fix the cell, or `merge`
       the author row extract proposes. Then `npm run enrich:books` (free from the
       cache except for changed names) and `npm run extract` (from TASK-022,
-      task/1.14-open-library-book-details).
+      PR #130).
 
 ## Approvals from follow-ups
 
