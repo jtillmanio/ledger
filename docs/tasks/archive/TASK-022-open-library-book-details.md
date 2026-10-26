@@ -1,7 +1,7 @@
 ---
 id: TASK-022
 title: 1.14 Open Library details for the workbook's books
-status: Review
+status: Done
 depends_on: [TASK-021]
 size: M
 model: opus
