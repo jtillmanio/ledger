@@ -28,7 +28,7 @@ A book Open Library has never heard of doesn't reach the Ledger until the owner 
 - For the plan gate (from the roadmap):
   - What is a held to-read book in the meantime? The roadmap proposes out of Someday until kept.
   - Does a `hand` row in `book_details.csv` count as a match?
-  - How do 1.18's Calibre matches count, and does the hold apply to a Calibre-created Owned book? TASK-030 proposes no.
+  - How do 1.18's Calibre matches count, and does the hold apply to a Calibre-created Unlisted book? TASK-030 proposes no.
   - The review file's name and columns. The roadmap gives title, author, tabs, the Open Library search tried and `decision`.
 - Decisions: D-44 (Open Library before cutover), D-68 (extract applies review decisions before the load), D-82 (titles read as typed), D-83. Standing rule 4 applies.
 
@@ -37,7 +37,7 @@ A book Open Library has never heard of doesn't reach the Ledger until the owner 
 - [ ] AC-1 (roadmap **Check:**, verbatim): `npm run test:etl`: a fixture book with no `book_details.csv` row is not in `books.csv` and is listed in the review file with an empty decision, and none of its status, plan or release rows load; `decision = keep` loads it on the next extract with its status; a book with a `book_details.csv` row loads unchanged; extract prints how many books are held.
 - [ ] AC-2: After an extract that holds a book, no file in `seed/` names the held book's id: `books`, `book_status`, `reading_plan` (with `--with-plan`), `releases`, `external_lists`, `wishlist`, and any other CSV with a `book_id` column. The plan settles whether an `external_lists` or `wishlist` row keeps its line with a null `book_id` or waits too.
 - [ ] AC-3: The review file keeps every decided row across runs, as `book_review.csv` does. An undecided row is rebuilt each run, so a book that has since gained a `book_details.csv` row drops off the list and loads. Each row names the title, author, the tabs it was seen on and the Open Library search it tried.
-- [ ] AC-4: Each plan-gate answer has a test with its own fixture: a book whose only details row is `hand`; a book Calibre matched (TASK-030); a Calibre-created Owned book; and a held to-read book, which appears in no `to_read_level` row after the load.
+- [ ] AC-4: Each plan-gate answer has a test with its own fixture: a book whose only details row is `hand`; a book Calibre matched (TASK-030); a Calibre-created Unlisted book; and a held to-read book, which appears in no `to_read_level` row after the load.
 - [ ] AC-5: Re-running extract against both workbooks on `main` and on the branch, the CSV diff shows only held books and their dependent rows leaving `seed/`, and their count equals the number extract prints (standing rule 4, summary in the PR). The review file is a committed sidecar in `etl/data/`, passed by `npm run extract`, and `.claude/rules/schema.md` states the hold rule.
 
 ## Out of scope

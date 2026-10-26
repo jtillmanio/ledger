@@ -574,7 +574,7 @@ the same PR (hard rule 7).
 |---|---|---|
 | 1.17 | `book_status.started_on`, `read_events.started_on`, each with its precision | 2.18 |
 | 1.18 | Calibre sidecars, and columns the plan gate settles | 2.19, D-73, D-83 |
-| 1.21 | A fifth `book_status.status` value, `owned` (no new column) | D-83 |
+| 1.21 | A fifth `book_status.status` value, `unlisted` (no new column, no CHECK) | D-83, D-86 |
 | 1.22 | Possibly `books.calibre_id`, so a result can say *Calibre* | Asked at 1.22's plan gate |
 | 1.23 | A `listening` value of `book_status.status`; `read_events.format` (`text` \| `audio`) | D-85 |
 | 4.4 | Where a decided Calibre review row is remembered between syncs | Asked at 4.4's plan gate |

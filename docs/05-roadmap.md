@@ -919,7 +919,7 @@ what no API does, real word counts from the Count Pages plugin, plus series,
 tags, summaries, ISBNs and read dates.
 
 *Amended 2026-10-26 (owner, D-83):* the command can be re-run until cutover, and
-a Calibre book the Ledger doesn't have is created at **Owned** (1.21) instead
+a Calibre book the Ledger doesn't have is created at **Unlisted** (1.21, D-86) instead
 of being left out. After cutover the sync moves into the app (4.4).
 
 - **`etl/calibre.py`** (`npm run calibre`):
@@ -936,10 +936,10 @@ of being left out. After cutover the sync moves into the app (4.4).
   reported as unmatched, with its candidates.
 - **A Calibre book that matches nothing is created** (D-83, amending D-73,
   which left it to 1.4c). Extract writes a `books.csv` row from Calibre's
-  title, author, series and word count, with a `book_status` row at `owned`
+  title, author, series and word count, with a `book_status` row at `unlisted`
   (1.21), or at `read` once an accepted `calibre_reads.csv` row says so. For
   the plan gate: whether 1.20's hold applies to it when Open Library doesn't
-  know it (proposed: no, since owning it is the owner's say-so).
+  know it (proposed: no, since having it is the owner's say-so).
 - **`etl/data/calibre_books.csv`** is keyed by title and author, with `source`
   `calibre` or `hand`. A `hand` row is never overwritten. Extract folds it in:
   - `word_count`, as `stated`, only where the workbook has none. A workbook
@@ -975,7 +975,7 @@ shows:
 - a series Open Library agrees with fills; one it contradicts writes a
   `calibre_review.csv` row and fills nothing;
 - a near spelling writes a `book_review.csv` row;
-- a Calibre book matching nothing becomes one `books.csv` row with an `owned`
+- a Calibre book matching nothing becomes one `books.csv` row with an `unlisted`
   status, and a second run over the same fixture leaves every sidecar
   byte-identical;
 - an undecided `calibre_reads.csv` row loads nothing, an `accept` row loads one
@@ -1088,44 +1088,44 @@ and none of its status, plan or release rows load; `decision = keep` loads it
 on the next extract with its status; a book with a `book_details.csv` row
 loads unchanged; extract prints how many books are held.
 
-### ☐ 1.21 Owned: the books you have but haven't put on your list · S
+### ☐ 1.21 Unlisted: the books you have but haven't put on your list · S
 Backlog intake, 2026-10-26 (owner: *give all [Calibre] books a default status
 below Someday … available during search, but not in my face on any list*).
-D-83. **Built in sitting 8, before 1.18**, which creates Calibre's other books
-at this level. The ladder becomes Quarter · Year · On deck · Someday ·
-**Owned**. Someday keeps its line, *on your to-read list, not planned*. Owned
-is *in your library, not on your list*.
+D-83; named *Unlisted*, stored `unlisted`, by D-86 (it was *Owned*). **Built
+in sitting 8, before 1.18**, which creates Calibre's other books at this
+level. The ladder becomes Quarter · Year · On deck · Someday · **Unlisted**.
+Someday keeps its line, *on your to-read list, not planned*. Unlisted is *in
+your library, not on your list*.
 
-- Proposed: a fifth `book_status.status` value, `owned`, beside `to_read`,
-  `reading`, `read` and `dnf` (no CHECK constrains the column today). **Stop and
-  ask at plan time**: it changes what a stored status means (CLAUDE.md). No
-  column is added, dropped or retyped.
-- **Out of the way.** `to_read_level` reads only `to_read`, so an Owned book has
-  no level and is on no plan rail, capacity sum, dashboard slot or status
+- A fifth `book_status.status` value, `unlisted`, beside `to_read`,
+  `reading`, `read` and `dnf`, with no CHECK on the column (owner, at
+  TASK-029's plan gate: no migration). No column is added, dropped or retyped.
+- **Out of the way.** `to_read_level` reads only `to_read`, so an Unlisted book
+  has no level and is on no plan rail, capacity sum, dashboard slot or status
   screen, and in no year total. The master list's *Everything* leaves it out,
-  and a fifth chip, *Owned · N*, shows only them. The progress views
+  and a fifth chip, *Unlisted · N*, shows only them. The progress views
   (`series_progress`, `author_progress`, 5.12's) count it as unread, as they
   count a book with no status today.
 - **Found by search.** The master list's search, the add sheets' library
-  search and 6.1 find it, tagged *Owned* (1.22).
-- **One verb to promote it.** An Owned row and its sheet offer *Add to Someday*
-  (writes `to_read`, with Undo) beside 1.4c's other destinations. Adding an
-  Owned book through 1.4c moves it to the chosen destination instead of
-  reporting it as already there.
+  search and 6.1 find it, tagged *Unlisted* (1.22).
+- **One verb to promote it.** An Unlisted row and its sheet offer *Add to
+  Someday* (writes `to_read`, with Undo) beside 1.4c's other destinations.
+  Adding an Unlisted book through 1.4c to Someday or On deck moves it there
+  instead of reporting it as already there; a shelf leaves it Unlisted.
 
-**Check:** with a fixture of one `owned`, one `to_read` and one `read` book,
-*Everything* lists two and the *Owned* chip lists one with the count 1; a
-master-list search for the Owned book's title finds it; `to_read_level`, the
+**Check:** with a fixture of one `unlisted`, one `to_read` and one `read` book,
+*Everything* lists two and the *Unlisted* chip lists one with the count 1; a
+master-list search for the Unlisted book's title finds it; `to_read_level`, the
 status screens and the plan rail never return it; *Add to Someday* writes one
-`to_read` row and Undo puts back `owned`; a series holding one read and one
-Owned book reads `1 / 2`.
+`to_read` row and Undo puts back `unlisted`; a series holding one read and one
+Unlisted book reads `1 / 2`.
 
 ### ☐ 1.22 Search as you type, and where each result comes from · M
 Backlog intake, 2026-10-26 (owner: *search on finish typing, not just Enter …
 any time there is a search (add books, filtering, etc), after a few characters
 and a delay in typing … make it clear in search results where the result came
 from (Open Library or Calibre/my list)*). D-84. Depends on 1.21 for the
-*Owned* tag.
+*Unlisted* tag.
 
 - **When it searches.** Every search box in the app (today the master list,
   Add books and Add issues) searches once the text is at least 3 characters
@@ -1145,12 +1145,12 @@ from (Open Library or Calibre/my list)*). D-84. Depends on 1.21 for the
 - The hint *Searches when you press Enter* becomes *Searches as you type*.
 - **Where each result comes from.** Every result row carries a source tag,
   in text and not colour alone: a library book shows where it sits (*Someday*,
-  *On deck*, *Q1 2027*, *Reading*, *Read*, *Owned*), an Open Library result
+  *On deck*, *Q1 2027*, *Reading*, *Read*, *Unlisted*), an Open Library result
   *Open Library*, a Metron result *Metron*. The group heads *In your library*
   and *From Open Library* stay. A *Calibre* tag on a book that is also on your
   list needs the Ledger to remember which books Calibre matched (for example
   `books.calibre_id`), a new column: **stop and ask** at plan time. Until then
-  a Calibre-only book shows as *Owned*.
+  a Calibre-only book shows as *Unlisted*.
 
 **Check:** in the browser (0.11), with recorded Open Library answers: typing
 `pir` and pausing lists results without Enter; typing `pi` and pausing makes no
@@ -2876,7 +2876,7 @@ This puts the same sync in the app.
   (D-59, D-61).
 - **A review, then writes.** One screen lists what the sync would do, each
   row accept or reject, and nothing is written until *Apply*: new books (to
-  be created at Owned), word counts to fill (only where none is stored, never
+  be created at Unlisted), word counts to fill (only where none is stored, never
   over a hand value), series and ISBN disagreements with Open Library, and new
   reads (D-73). A decided row is remembered, so the next sync doesn't ask
   again. Where that memory lives is the plan's to propose; a new table means
@@ -2887,9 +2887,9 @@ This puts the same sync in the app.
 
 **Check:** with a fixture `metadata.db` of three books (one matching a Ledger
 book with no word count, one the Ledger lacks, one with a read), the review
-lists one word count, one new Owned book and one read, and nothing is written
+lists one word count, one new Unlisted book and one read, and nothing is written
 before *Apply*; *Apply* with all three accepted writes one `stated` word count,
-one `books` row with an `owned` status and one `read_events` row; a second sync
+one `books` row with an `unlisted` status and one `read_events` row; a second sync
 of the same file lists nothing; a book with a hand-entered word count is never
 offered a fill.
 
