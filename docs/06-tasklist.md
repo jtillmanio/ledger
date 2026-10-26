@@ -267,9 +267,9 @@ with the task that first reads it.
 | 1.13 | Book extract — one book per title and author, a merge review, no workbook reads | M | TASK-021 | — |
 | 1.14 | Open Library details for the workbook's books | M | TASK-022 | 1.13 |
 | 1.15 | Track series, authors and universes | M | TASK-023 | 1.13 |
-| 1.21 | Owned: the books you have but haven't put on your list | S | — | — |
-| 1.18 | Calibre: word counts, series, tags and reads for the books | M | — | 1.14, 1.15, 1.21 |
-| 1.20 | Hold books with no Open Library match for review | M | — | 1.14 |
+| 1.21 | Owned: the books you have but haven't put on your list | S | TASK-029 | — |
+| 1.18 | Calibre: word counts, series, tags and reads for the books | M | TASK-030 | 1.14, 1.15, 1.21 |
+| 1.20 | Hold books with no Open Library match for review | M | TASK-031 | 1.14 |
 
 ## M9: Captured from cutover on — MVP
 
