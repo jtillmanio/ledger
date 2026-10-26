@@ -1,14 +1,14 @@
 ---
 id: TASK-023
 title: 1.15 Track series, authors and universes
-status: Ready
+status: In progress
 depends_on: [TASK-022]
 size: L
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: ce5356d
 ---
 
 # TASK-023 — 1.15 Track series, authors and universes
@@ -29,6 +29,7 @@ The series, authors and universes (Cosmere, the Riordanverse) the owner follows 
 - **Not here** (follow-ups from PR #58): the control that changes a follow's state, and the author and universe pages, are task 5.11 in `docs/05-roadmap.md`.
 - **Open question for the plan** (follow-up from PR #58): the Series tab lists a word count for each member book, and nothing reads it. This task already reads the tab. Should extract fill a book's missing `word_count` from it, with source `stated`? Ask the owner at plan time; if the answer is no, record that here.
 - *From TASK-021 (1.13, PR #97):* extract keys `authors` and `book_series` rows on `slug()` but compares names with `key()`, and `book_review.csv` never pairs two names with one `key()`. So spellings like `J.R.R. Tolkien` / `JRR Tolkien` (different slugs, one key) would load as two author rows that are never proposed for review, and a follow seeded from either would see only half the books. Today's workbook has no such pair (376 authors, 215 series); this task seeds follows from those names, so it should key them one way.
+- **Owner, at plan (2026-10-26):** (1) A Series-tab group that names no series, author or tab universe becomes a universe only when it is on a hand list in extract, `UNIVERSE_GROUPS` (today Grishaverse); every other one goes to `unresolved.csv`, and its name is offered in `book_review.csv` so a near spelling can be merged. The real tab's other five (Kingkiller Chronicles, His Dark Material, Robert Langdom, The Themis Files, Realm of the Elderlings) are series, not universes. (2) The word-count question: **yes**. Extract fills a book's missing `word_count` from the Series tab, source `stated`, never overwriting one; AC-5 is amended to allow it (owner).
 
 ## Acceptance criteria
 
@@ -36,7 +37,7 @@ The series, authors and universes (Cosmere, the Riordanverse) the owner follows 
 - [ ] AC-2: `series_progress` keeps every column and row it had before and gains only `follow_state`. A test compares its output on a fixture before and after the change.
 - [ ] AC-3: `etl/load.ps1` and `etl/load.sh` truncate and copy the four tables, in foreign-key order (`book_universes` before `books`, the follows after their targets), and still refuse when `LEDGER_LIVE=true`. `rebuild`'s row counts list them.
 - [ ] AC-4: No catalog table gains a per-user column: `books`, `authors`, `book_series` and `book_universes` have no `user_id`, `state` or completion column. A `follow_state` change requires no change to any catalog row.
-- [ ] AC-5: Re-running extract against both workbooks changes only the new seed files, `books.csv`'s `universe_id` column and `unresolved.csv`'s new rows. The diff summary is in the PR (standing rule 4).
+- [ ] AC-5: Re-running extract against both workbooks changes only the new seed files, `books.csv`'s `universe_id` column, `books.csv`'s `word_count` and `word_count_source` where they were empty (amended by the owner at plan, 2026-10-26) and `unresolved.csv`'s new rows. The diff summary is in the PR (standing rule 4).
 
 ## Out of scope
 
@@ -59,9 +60,44 @@ The series, authors and universes (Cosmere, the Riordanverse) the owner follows 
 - Automated: `npm run test:views` (`etl/test_views.sql`) covers the views, the CHECK and `follow_state` (AC-1, AC-2). `npm run test:etl` covers the seed (AC-1). `test/export-tables.test.ts` and `npm run test:db:reset` (AC-1). `npm run check:migrations` passes with no down file needed.
 - Manual: `npm run extract`, then `npm run rebuild` on the development database → expected: the Cosmere books carry `universe_id = 'cosmere'`, the follows are at `tracking`, and `unresolved.csv` names any group that matched nothing.
 
+## Follow-ups
+
+- The roadmap entry's seed rule says any unmatched group becomes a universe; the owner chose a hand list, and the word-count fill (plan gate) → `docs/05-roadmap.md` § 1.15 (approved at plan)
+- `docs/03-data-model.md` § 4.1 still lists 1.15 (and 1.10, built earlier) as not built → `docs/03-data-model.md` § 4.1 (approved at plan)
+- The schema rules have no line for universes and follows → `.claude/rules/schema.md` (approved at plan)
+- The plan's two open questions answered → `docs/tasks/TASK-023-follow-series-authors-universes.md` § Context (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-10-26 at `ce5356d`.
+
+**Steps**
+
+1. **Schema** (`src/db/schema.ts`): `book_universes(id, name)`; nullable `books.universe_id` → `book_universes.id`; `series_follows`, `author_follows`, `universe_follows`, each PK `(user_id, <entity>_id)`, both FKs `ON DELETE CASCADE`, `state text NOT NULL DEFAULT 'tracking'` with a CHECK `IN ('tracking', 'reading')`. `npm run db:generate -- --name book_follows` → `drizzle/0015_book_follows.sql` and meta. No down file (nothing dropped or retyped).
+2. **Export** (`src/db/export-tables.ts`): `book_universes` in `CATALOG_TABLES`; the three follows in `USER_TABLES`.
+3. **Views** (`etl/views.sql`): `author_progress` and `universe_progress` in `series_progress`'s shape (`books_listed`, `books_read`, `pct`; live books only; no status = unread) plus `follow_state`; `series_progress` gains only `follow_state`, appended last.
+4. **Extract** (`etl/extract.py`):
+   - The Cosmere and Riordanverse tabs set `universe_id` on every row's book; `book_universes` rows `cosmere`, `riordanverse`.
+   - `UNIVERSE_GROUPS = {"Grishaverse"}` beside `AUTHOR_TABS` (owner).
+   - Each Series-tab group matches, in order: a series by `key()` after merges, an author by `key()` after merges, a tab universe or a `UNIVERSE_GROUPS` name. A match is a follow at `tracking`; no match is an `unresolved.csv` row, and the name is sighted as a series so `book_review.csv` proposes a near spelling.
+   - The tabs follow what they are: Stephen King (author), Dresden (series *The Dresden Files*), Cosmere and Riordanverse (universes). Follows are deduplicated.
+   - A group's member rows resolve to a book by title and the group's author (else the one authored book with that title); an unmatched member is flagged. A resolved member fills a missing `word_count` (`stated`, never overwriting) and, in a universe group, sets `universe_id`. `Completed` is never read.
+   - `author_id` and `series_id` reuse the id of a name with the same `key()` before minting a `slug()` (TASK-021's note).
+   - Writes `book_universes.csv`, `series_follows.csv`, `author_follows.csv`, `universe_follows.csv` (`$OWNER` user), and `books.csv` gains `universe_id`.
+5. **Loaders**: `etl/load.ps1` and `etl/load.sh` truncate the four tables, bind `$OWNER` in the follow CSVs, copy `book_universes` before `books` and each follow after its target; `etl/rebuild.ps1` and `etl/rebuild.sh` count the four.
+6. **AC-5**: extract on `main` and on the branch into two scratch folders (never `seed/`); the diff summary goes in the PR.
+
+**Files**: `src/db/schema.ts`; `drizzle/0015_book_follows.sql`, `drizzle/meta/*` (generated); `src/db/export-tables.ts`; `etl/views.sql`; `etl/test_views.sql`; `etl/extract.py`; `etl/test_extract.py`; `etl/load.ps1`; `etl/load.sh`; `etl/rebuild.ps1`; `etl/rebuild.sh`; `test/load-scripts.test.ts` (not in Files likely touched: AC-3's test); `etl/data/book_review.csv` (not listed: extract rewrites it with the unmatched groups' proposals). Close-out: the follow-up placements above.
+
+**Test strategy**
+
+- AC-1: `etl/test_views.sql` (author/universe progress counts, soft-deleted book excluded, no status = unread, state CHECK rejects `'done'`, `follow_state` NULL unfollowed); `etl/test_extract.py` `SeriesFollows.test_roadmap_fixture_seeds_three_follows_and_one_unresolved` (one series, one author, a Cosmere group, one unmatched name; Cosmere books `universe_id = 'cosmere'`), plus a hand-list universe, the word-count fill and the one-key author; `test/export-tables.test.ts`; `npm run test:db:reset`.
+- AC-2: `etl/test_views.sql`: the pre-change `series_progress` SELECT inline, EXCEPT both ways against the view's old columns on a fixture; the column list is the old one plus `follow_state`.
+- AC-3: `test/load-scripts.test.ts`: truncate list, copy order, `$OWNER` binding, the LEDGER_LIVE guard before psql, rebuild counts.
+- AC-4: `etl/test_views.sql`: `information_schema` has no `user_id`, `state` or completion column on `books`, `authors`, `book_series`, `book_universes`; changing a follow's state changes `follow_state` with no catalog row changed.
+- AC-5: manual, the two-folder extract diff in the PR.
+
+**Risks**: the hand list departs from the roadmap's literal seed rule (owner's choice, follow-up 1). Size: schema + ETL + views together; `never-split`, so kept whole, attended.
 
 ## Review log
 

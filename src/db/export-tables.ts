@@ -9,7 +9,7 @@ export const CATALOG_TABLES = [
   "tracks", "blocks", "runs", "run_tracks", "issues", "run_issues", "creators",
   "issue_credits", "prereqs", "events", "event_runs",
   "eras", "volume_rules",
-  "editions", "authors", "book_series", "books", "releases", "wishlist",
+  "editions", "authors", "book_series", "book_universes", "books", "releases", "wishlist",
   "external_lists", "shelf_books",
 ] as const;
 
@@ -17,6 +17,7 @@ export const CATALOG_TABLES = [
 export const USER_TABLES = [
   "issue_progress", "edition_progress", "book_status", "reading_plan",
   "reading_settings", "shelves", "inbox", "read_events", "run_queue",
+  "series_follows", "author_follows", "universe_follows",
 ] as const;
 
 /** Deliberately left out: the export is the owner's data, not the account (D-17), nor a

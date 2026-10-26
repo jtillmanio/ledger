@@ -707,6 +707,135 @@ BEGIN
   END IF;
 END $$;
 
+-- Series, authors and universes (task 1.15, D-42, D-43). author_progress and
+-- universe_progress count live books only, a book with no status is unread,
+-- and follow_state is the stored choice, NULL when nobody follows.
+INSERT INTO authors (id, name) VALUES ('zz-f-author', 'Zz Author'), ('zz-f-nobody', 'Zz Nobody');
+INSERT INTO book_universes (id, name) VALUES ('zz-f-verse', 'Zz Verse'), ('zz-f-empty', 'Zz Empty');
+INSERT INTO book_series (id, name, author_id, total_books) VALUES
+  ('zz-f-series', 'Zz Series', 'zz-f-author', 5), ('zz-f-quiet', 'Zz Quiet', NULL, NULL);
+INSERT INTO books (id, title, author_id, series_id, universe_id) VALUES
+  ('zz-f-read',     'Zz F Read',      'zz-f-author', 'zz-f-series', 'zz-f-verse'),
+  ('zz-f-toread',   'Zz F To Read',   'zz-f-author', 'zz-f-series', 'zz-f-verse'),
+  ('zz-f-nostatus', 'Zz F No Status', 'zz-f-author', 'zz-f-quiet',  'zz-f-verse'),
+  ('zz-f-gone',     'Zz F Gone',      'zz-f-author', 'zz-f-series', 'zz-f-verse');
+UPDATE books SET deleted_at = now() WHERE id = 'zz-f-gone';
+INSERT INTO book_status (user_id, book_id, status) VALUES
+  ('zz-user', 'zz-f-read', 'read'), ('zz-user', 'zz-f-toread', 'to_read'), ('zz-user', 'zz-f-gone', 'read');
+INSERT INTO author_follows (user_id, author_id, state) VALUES ('zz-user', 'zz-f-author', 'reading');
+INSERT INTO universe_follows (user_id, universe_id) VALUES ('zz-user', 'zz-f-verse');
+INSERT INTO series_follows (user_id, series_id) VALUES ('zz-user', 'zz-f-quiet');
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT string_agg(author_id || ':' || books_listed || ':' || books_read || ':' || coalesce(round(pct::numeric, 3)::text, '-')
+                    || ':' || coalesce(follow_state, '-'), ', ' ORDER BY author_id) INTO got
+  FROM author_progress WHERE user_id = 'zz-user' AND author_id LIKE 'zz-f-%';
+  IF got IS DISTINCT FROM 'zz-f-author:3:1:0.333:reading, zz-f-nobody:0:0:-:-' THEN
+    RAISE EXCEPTION 'author_progress wrong: %', got;
+  END IF;
+  SELECT string_agg(universe_id || ':' || books_listed || ':' || books_read || ':' || coalesce(round(pct::numeric, 3)::text, '-')
+                    || ':' || coalesce(follow_state, '-'), ', ' ORDER BY universe_id) INTO got
+  FROM universe_progress WHERE user_id = 'zz-user' AND universe_id LIKE 'zz-f-%';
+  IF got IS DISTINCT FROM 'zz-f-empty:0:0:-:-, zz-f-verse:3:1:0.333:tracking' THEN
+    RAISE EXCEPTION 'universe_progress wrong: %', got;
+  END IF;
+  SELECT string_agg(series_id || ':' || books_listed || ':' || books_read || ':' || coalesce(follow_state, '-'),
+                    ', ' ORDER BY series_id) INTO got
+  FROM series_progress WHERE user_id = 'zz-user' AND series_id LIKE 'zz-f-%';
+  IF got IS DISTINCT FROM 'zz-f-quiet:1:0:tracking, zz-f-series:2:1:-' THEN
+    RAISE EXCEPTION 'series_progress follow_state wrong: %', got;
+  END IF;
+END $$;
+
+-- A follow's state is tracking or reading, nothing else, in each of the three.
+DO $$
+BEGIN
+  BEGIN
+    INSERT INTO series_follows (user_id, series_id, state) VALUES ('zz-user', 'zz-f-series', 'done');
+    RAISE EXCEPTION 'series_follows accepted state done';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+  BEGIN
+    INSERT INTO author_follows (user_id, author_id, state) VALUES ('zz-user', 'zz-f-nobody', 'done');
+    RAISE EXCEPTION 'author_follows accepted state done';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+  BEGIN
+    INSERT INTO universe_follows (user_id, universe_id, state) VALUES ('zz-user', 'zz-f-empty', 'done');
+    RAISE EXCEPTION 'universe_follows accepted state done';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+END $$;
+
+-- series_progress keeps every row and column it had before 1.15 and gains only
+-- follow_state, last (AC-2): its pre-1.15 SELECT, run here, matches the view's
+-- old columns row for row on every series, the followed fixture one included.
+DO $$
+DECLARE diff int; cols text;
+BEGIN
+  WITH before AS (
+    SELECT
+      u.id AS user_id, bs.id AS series_id, bs.name, a.name AS author,
+      COUNT(b.id)                                           AS books_listed,
+      COALESCE(bs.total_books, COUNT(b.id))                 AS total_books,
+      COUNT(*) FILTER (WHERE st.status = 'read')            AS books_read,
+      COUNT(*) FILTER (WHERE st.status = 'read')::float8
+        / NULLIF(COALESCE(bs.total_books, COUNT(b.id)), 0)  AS pct
+    FROM book_series bs
+    CROSS JOIN users u
+    LEFT JOIN authors a     ON a.id = bs.author_id
+    LEFT JOIN books b       ON b.series_id = bs.id AND b.deleted_at IS NULL
+    LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = u.id
+    GROUP BY u.id, bs.id, bs.name, a.name, bs.total_books
+  ), after AS (
+    SELECT user_id, series_id, name, author, books_listed, total_books, books_read, pct FROM series_progress
+  )
+  SELECT count(*) INTO diff FROM (
+    (SELECT * FROM before EXCEPT ALL SELECT * FROM after)
+    UNION ALL
+    (SELECT * FROM after EXCEPT ALL SELECT * FROM before)) d;
+  IF diff <> 0 OR NOT EXISTS (SELECT 1 FROM series_progress WHERE series_id = 'zz-f-quiet') THEN
+    RAISE EXCEPTION 'series_progress changed under 1.15: % rows differ', diff;
+  END IF;
+  SELECT string_agg(column_name, ',' ORDER BY ordinal_position) INTO cols
+  FROM information_schema.columns WHERE table_name = 'series_progress';
+  IF cols IS DISTINCT FROM 'user_id,series_id,name,author,books_listed,total_books,books_read,pct,follow_state' THEN
+    RAISE EXCEPTION 'series_progress columns wrong: %', cols;
+  END IF;
+END $$;
+
+-- No catalog table carries a per-user fact (AC-4, hard rule 3): a follow is a
+-- row of its own, so changing its state changes follow_state and no catalog row.
+DO $$
+DECLARE bad text; before text; after text; got text;
+BEGIN
+  SELECT string_agg(table_name || '.' || column_name, ', ') INTO bad
+  FROM information_schema.columns
+  WHERE table_schema = 'public'
+    AND table_name IN ('books', 'authors', 'book_series', 'book_universes')
+    AND (column_name IN ('user_id', 'state', 'follow_state', 'status', 'read', 'done')
+         OR column_name LIKE '%complet%');
+  IF bad IS NOT NULL THEN
+    RAISE EXCEPTION 'a catalog table has a per-user column: %', bad;
+  END IF;
+  SELECT md5(string_agg(t::text, '|' ORDER BY t::text)) INTO before FROM (
+    SELECT b::text AS t FROM books b WHERE b.id LIKE 'zz-f-%'
+    UNION ALL SELECT a::text FROM authors a WHERE a.id LIKE 'zz-f-%'
+    UNION ALL SELECT s::text FROM book_series s WHERE s.id LIKE 'zz-f-%'
+    UNION ALL SELECT v::text FROM book_universes v WHERE v.id LIKE 'zz-f-%') x;
+  UPDATE author_follows SET state = 'tracking' WHERE user_id = 'zz-user' AND author_id = 'zz-f-author';
+  SELECT follow_state INTO got FROM author_progress WHERE user_id = 'zz-user' AND author_id = 'zz-f-author';
+  SELECT md5(string_agg(t::text, '|' ORDER BY t::text)) INTO after FROM (
+    SELECT b::text AS t FROM books b WHERE b.id LIKE 'zz-f-%'
+    UNION ALL SELECT a::text FROM authors a WHERE a.id LIKE 'zz-f-%'
+    UNION ALL SELECT s::text FROM book_series s WHERE s.id LIKE 'zz-f-%'
+    UNION ALL SELECT v::text FROM book_universes v WHERE v.id LIKE 'zz-f-%') x;
+  IF got IS DISTINCT FROM 'tracking' OR before IS DISTINCT FROM after THEN
+    RAISE EXCEPTION 'a follow change should move follow_state (%) and no catalog row (% vs %)', got, before, after;
+  END IF;
+END $$;
+
 -- Applying views.sql leaves every table analyzed. A table the planner has no
 -- statistics for gets nested-loop plans that ran for minutes on a preview of
 -- live (2026-10-02).

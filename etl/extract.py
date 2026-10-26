@@ -980,6 +980,13 @@ WORKBOOK_PLANS_COLUMNS = ["title", "year", "genre", "tab"]
 # Author and series completion tabs, and the author every book on them has.
 AUTHOR_TABS = {"Stephen King": "Stephen King", "Dresden": "Jim Butcher",
                "Cosmere": "Brandon Sanderson", "Riordanverse": "Rick Riordan"}
+# What each of those tabs follows (task 1.15, D-43). A universe tab makes every
+# row a member of the universe (D-42).
+TAB_FOLLOWS = {"Stephen King": ("author", "Stephen King"), "Dresden": ("series", "The Dresden Files"),
+               "Cosmere": ("universe", "Cosmere"), "Riordanverse": ("universe", "Riordanverse")}
+# Series-tab groups that are universes (owner, 2026-10-26). Any other group that
+# names no series, author or universe is reported, never guessed into one.
+UNIVERSE_GROUPS = {"Grishaverse"}
 
 # etl/data/book_review.csv (task 1.13, D-25a, D-68): pairs of book, author and
 # series names that may be one thing. Extract proposes; the owner decides.
@@ -1071,6 +1078,12 @@ class BookIndex:
         self.by_key: dict[tuple[str, str], dict] = {}
         self.authors: dict[str, dict] = {}
         self.series: dict[str, dict] = {}
+        self.universes: dict[str, dict] = {}
+        # key() -> id: names are compared by key() but ids are slug()s, and two
+        # spellings can share a key with different slugs (J.R.R. / JRR).
+        self.author_keys: dict[str, str] = {}
+        self.series_keys: dict[str, str] = {}
+        self.universe_keys: dict[str, str] = {}
         self.taken: set[str] = set()
         # What the workbook spells, before any merge: proposals pair these.
         self.seen_books: dict[tuple[str, str], dict] = {}
@@ -1139,9 +1152,14 @@ class BookIndex:
         name = clean(name)
         if not name:
             return None
-        aid = slug(name)
+        aid = self.author_keys.setdefault(key(name) or name, slug(name))
         self.authors.setdefault(aid, {"id": aid, "name": name})
         return aid
+
+    def find_author(self, name: str | None) -> str | None:
+        """The loaded author a name means, after merges, or None."""
+        name = self.canonical_author(clean(name))
+        return self.author_keys.get(key(name) or name) if name else None
 
     def series_name(self, raw: str | None) -> str | None:
         return self.follow(self.merge_series, raw)
@@ -1153,10 +1171,51 @@ class BookIndex:
         m = SERIES_RE.match(raw)
         name, pos = (m.group("name"), float(m.group("pos"))) if m else (raw, None)
         name = self.series_name(name)
-        sid = slug(name)
+        sid = self.series_keys.setdefault(key(name) or name, slug(name))
         self.series.setdefault(sid, {"id": sid, "name": name, "author_id": author_id,
                                      "total_books": None})
         return sid, pos
+
+    def find_series(self, name: str | None) -> str | None:
+        """The loaded series a name means, after merges, or None."""
+        name = self.series_name(clean(name))
+        return self.series_keys.get(key(name) or name) if name else None
+
+    def universe_id(self, name: str) -> str:
+        uid = self.universe_keys.setdefault(key(name) or name, slug(name))
+        self.universes.setdefault(uid, {"id": uid, "name": name})
+        return uid
+
+    def find_universe(self, name: str | None) -> str | None:
+        name = clean(name)
+        return self.universe_keys.get(key(name) or name) if name else None
+
+    def set_universe(self, book: dict, uid: str, where: str) -> None:
+        """A book belongs to one universe: the first that claims it keeps it."""
+        if book["universe_id"] and book["universe_id"] != uid:
+            flag("books", "two universes for one book",
+                 f"{book['title']}: {book['universe_id']} kept, {uid} ({where}) dropped")
+            return
+        book["universe_id"] = uid
+
+    def find_book(self, title, author: str | None = None) -> dict | None:
+        """The loaded book a title and author name, after merges. With no
+        author, the one book with that title, if there is exactly one."""
+        title = title_text(title)
+        if not title:
+            return None
+        title, author = self.book_identity(title, clean(author))
+        if author:
+            return self.by_key.get((key(title), key(author)))
+        matches = [b for (t, _), b in self.by_key.items() if t == key(title)]
+        return matches[0] if len(matches) == 1 else None
+
+    def sight_series(self, name: str, tab: str) -> None:
+        """A series name seen with no book (a Series-tab group, task 1.15), so
+        the review proposes its near spellings."""
+        entry = self.seen_series.setdefault(key(name), {"name": name, "tabs": []})
+        if tab not in entry["tabs"]:
+            entry["tabs"].append(tab)
 
     def sight(self, title: str, author: str | None, series: str | None, tab: str | None) -> None:
         def note(table: dict, k, **fields):
@@ -1196,6 +1255,7 @@ class BookIndex:
             "title": title, "author_id": aid, "series_id": sid, "series_position": pos,
             "genre": clean(genre), "book_type": clean(book_type) or "Novel",
             "word_count": as_int(word_count), "published_year": as_int(published_year),
+            "universe_id": None,
         }
         # Every count in the workbook was typed, so it is stated; null with the
         # count (books_word_count_source_check).
@@ -1370,6 +1430,23 @@ def write_book_review(path: Path, rows: list[dict]) -> None:
     print(f"  {pending} book pairs await review — merge or separate each in {path}")
 
 
+def series_groups(raw: pd.DataFrame) -> list[dict]:
+    """The Series tab's groups (task 1.15): a row naming a series, an author or
+    a universe, then the rows under it listing a book in Books Read with its
+    Words. A tab with only Series and Total Books is groups with no books."""
+    groups: list[dict] = []
+    if raw.empty or "Series" not in raw.columns:
+        return groups
+    for _, r in raw.iterrows():
+        name = clean(r.get("Series"))
+        if name:
+            groups.append({"name": name, "author": clean(r.get("Author")),
+                           "total": r.get("Total Books"), "books": []})
+        elif groups and title_text(r.get("Books Read")):
+            groups[-1]["books"].append((r.get("Books Read"), r.get("Words")))
+    return groups
+
+
 def year_tabs(xl: pd.ExcelFile, pattern: re.Pattern) -> list[tuple[str, int]]:
     """(tab, year) for every tab whose name matches, oldest first."""
     found = [(name, int(m.group(1))) for name in xl.sheet_names if (m := pattern.match(name))]
@@ -1428,10 +1505,14 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
             to_read(bid)
 
     # ---- author / series completion tabs --------------------------------
+    tab_follows: list[tuple[str, str, str]] = []
     for tab, author in AUTHOR_TABS.items():
         raw = sheet(xl, tab)
         if raw.empty or "Book" not in raw.columns:
             continue
+        kind, name = TAB_FOLLOWS[tab]
+        tab_follows.append((tab, kind, name))
+        uid = idx.universe_id(name) if kind == "universe" else None
         for _, r in raw[raw["Book"].notna()].iterrows():
             pub = as_int(r.get("Published"))
             if pub and not (1800 < pub < 2100):
@@ -1439,6 +1520,8 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
                 pub = None
             bid = idx.upsert(r["Book"], author, r.get("Series"), word_count=r.get("Word Count"),
                              published_year=pub, book_type=r.get("Type"), tab=tab)
+            if bid and uid:
+                idx.set_universe(idx.find_book(r["Book"], author), uid, tab)
             # A Completed tick is a read: listed, never loaded (D-41).
             if bid and as_bool(r.get("Completed")):
                 listed_read(r["Book"], tab=tab)
@@ -1544,15 +1627,66 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
                     external.append({"source": str(source), "year": year,
                                      "rank": rank, "raw_title": text, "book_id": ""})
 
-    # ---- series totals ---------------------------------------------------
-    raw = sheet(xl, "Series")
-    for _, r in raw[raw["Series"].notna()].iterrows():
-        sid = slug(idx.series_name(clean(r["Series"])))
-        if sid in idx.series:
-            idx.series[sid]["total_books"] = as_int(r.get("Total Books"))
-
     # ---- authorless sightings join their book; references follow ---------
     remap = idx.finish()
+
+    # ---- what the owner follows (task 1.15, D-42, D-43) -------------------
+    # Each author tab follows what it is, and each Series-tab group follows the
+    # series, author or universe it names, all at `tracking`. A series group
+    # also gives its total. The tab's Completed column is never read (D-41).
+    follows: dict[str, dict[str, dict]] = {"series": {}, "author": {}, "universe": {}}
+    find = {"series": idx.find_series, "author": idx.find_author, "universe": idx.find_universe}
+
+    def follow(kind, eid):
+        follows[kind].setdefault(eid, {"user_id": "$OWNER", f"{kind}_id": eid, "state": "tracking"})
+
+    for tab, kind, name in tab_follows:
+        eid = find[kind](name)
+        if eid:
+            follow(kind, eid)
+        else:
+            flag("follows", "tab follows nothing", f"{tab}: no {kind} named {name}")
+
+    universe_groups = {key(n) for n in UNIVERSE_GROUPS}
+    for group in series_groups(sheet(xl, "Series")):
+        name = group["name"]
+        kind, eid = "series", idx.find_series(name)
+        if eid:
+            idx.series[eid]["total_books"] = as_int(group["total"])
+        else:
+            kind, eid = "author", idx.find_author(name)
+        if not eid:
+            kind, eid = "universe", idx.find_universe(name)
+            if not eid and key(name) in universe_groups:
+                eid = idx.universe_id(name)
+        # A name the workbook spells nowhere else is offered for review, so a
+        # near spelling of a series can be merged into it (Robert Langdom).
+        if not eid or (kind == "series" and key(name) not in idx.series_keys):
+            idx.sight_series(name, "Series")
+        if eid:
+            follow(kind, eid)
+        else:
+            kind = None
+            flag("follows", "Series-tab group matches nothing",
+                 f"{name}: names no series, author or universe; fix it in the workbook, "
+                 "merge it in book_review.csv, or add it to UNIVERSE_GROUPS")
+        # The books listed under a group: a count fills a missing word_count
+        # (owner, 2026-10-26), and a universe group's books are its members.
+        # Most that match nothing are reads, which load by hand (D-41).
+        author = group["author"] or (name if kind == "author" else None)
+        missing = []
+        for title, words in group["books"]:
+            book = idx.find_book(title, author)
+            if book is None:
+                missing.append(title_text(title))
+                continue
+            if book["word_count"] is None and as_int(words):
+                book["word_count"], book["word_count_source"] = as_int(words), "stated"
+            if kind == "universe":
+                idx.set_universe(book, eid, "Series tab")
+        if missing:
+            flag("books", "Series-tab book matches no book",
+                 f"{name}: {' | '.join(missing)} (a read loads by hand, D-41; else fix the title)")
     final = {}
     for bid, row in status.items():
         new = remap.get(bid, bid)
@@ -1586,13 +1720,17 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
     write(out, "authors", list(idx.authors.values()), ["id", "name"])
     write(out, "book_series", list(idx.series.values()),
           ["id", "name", "author_id", "total_books"])
+    write(out, "book_universes", list(idx.universes.values()), ["id", "name"])
     write(out, "books", books, ["id", "title", "author_id", "series_id", "series_position",
                                 "genre", "book_type", "word_count", "word_count_source",
-                                "published_year", "page_count", "cover_url", "open_library_id"])
+                                "published_year", "page_count", "cover_url", "open_library_id",
+                                "universe_id"])
     write(out, "book_status", list(status.values()),
           ["user_id", "book_id", "status", "finished_on", "finished_on_precision",
            "year_rank", "rating"])
     write(out, "reading_plan", plan, ["user_id", "book_id", "period", "ordinal"])
+    for kind in ("series", "author", "universe"):
+        write(out, f"{kind}_follows", list(follows[kind].values()), ["user_id", f"{kind}_id", "state"])
     write(out, "releases", releases, ["book_id", "release_date"])
     write(out, "wishlist", wishlist, ["genre", "raw_entry", "book_id"])
     write(out, "external_lists", external, ["source", "year", "rank", "raw_title", "book_id"])

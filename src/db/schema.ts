@@ -241,6 +241,14 @@ export const bookSeries = pgTable("book_series", {
   totalBooks: integer("total_books"),
 });
 
+// A universe spans series and sometimes authors: Cosmere, the Riordanverse
+// (task 1.15, D-42). It is a fact about the work, like a film franchise, so it
+// is catalog; shelves stay the owner's opinion.
+export const bookUniverses = pgTable("book_universes", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+});
+
 export const books = pgTable("books", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
@@ -260,6 +268,7 @@ export const books = pgTable("books", {
   // until someone merges them.
   openLibraryId: text("open_library_id"),
   hardcoverId: integer("hardcover_id"),
+  universeId: text("universe_id").references(() => bookUniverses.id),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (t) => ({
   liveSeries: index("books_live_series_idx").on(t.seriesId, t.seriesPosition)
@@ -371,6 +380,38 @@ export const readEvents = pgTable("read_events", {
   precision: check("read_events_finished_on_precision_check", sql`
     ${t.finishedOnPrecision} IN ('exact', 'approximate', 'none')
     AND (${t.finishedOn} IS NULL) = (${t.finishedOnPrecision} = 'none')`),
+}));
+
+// Following a series, an author or a universe is a stored choice (task 1.15,
+// D-43): 'reading' is set by the owner and stays set between books until it is
+// changed. How much is read, and whether it is done, stay derived in
+// series_progress, author_progress and universe_progress. Three narrow tables,
+// not one with a nullable key per kind (data model 2.5e).
+export const seriesFollows = pgTable("series_follows", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  seriesId: text("series_id").notNull().references(() => bookSeries.id, { onDelete: "cascade" }),
+  state: text("state").notNull().default("tracking"), // tracking | reading
+}, (t) => ({
+  pk: primaryKey({ columns: [t.userId, t.seriesId] }),
+  state: check("series_follows_state_check", sql`${t.state} IN ('tracking', 'reading')`),
+}));
+
+export const authorFollows = pgTable("author_follows", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  authorId: text("author_id").notNull().references(() => authors.id, { onDelete: "cascade" }),
+  state: text("state").notNull().default("tracking"), // tracking | reading
+}, (t) => ({
+  pk: primaryKey({ columns: [t.userId, t.authorId] }),
+  state: check("author_follows_state_check", sql`${t.state} IN ('tracking', 'reading')`),
+}));
+
+export const universeFollows = pgTable("universe_follows", {
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  universeId: text("universe_id").notNull().references(() => bookUniverses.id, { onDelete: "cascade" }),
+  state: text("state").notNull().default("tracking"), // tracking | reading
+}, (t) => ({
+  pk: primaryKey({ columns: [t.userId, t.universeId] }),
+  state: check("universe_follows_state_check", sql`${t.state} IN ('tracking', 'reading')`),
 }));
 
 export const readingPlan = pgTable("reading_plan", {

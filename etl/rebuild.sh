@@ -70,7 +70,8 @@ failed=0
 printf "%-18s %8s %8s\n" table seed loaded
 for t in tracks blocks runs run_tracks volume_rules issues run_issues creators issue_credits prereqs \
          events event_runs editions issue_progress edition_progress authors book_series \
-         books book_status reading_plan releases wishlist external_lists; do
+         book_universes books book_status reading_plan releases wishlist external_lists \
+         series_follows author_follows universe_follows; do
   expected=$(${PYTHON:-python3} -c "import csv,sys; print(sum(1 for _ in csv.DictReader(open(sys.argv[1], encoding='utf-8'))))" "$SEED/$t.csv")
   actual=$(psql "$DATABASE_URL" -At -c "SELECT count(*) FROM $t")
   flag=""; [ "$expected" = "$actual" ] || { flag="  <-- mismatch"; failed=$((failed + 1)); }

@@ -35,7 +35,8 @@ esac
 
 # The extract writes a literal $OWNER placeholder; bind it to your real user id.
 tmp=$(mktemp -d)
-for f in issue_progress edition_progress book_status reading_plan; do
+for f in issue_progress edition_progress book_status reading_plan \
+         series_follows author_follows universe_follows; do
   sed "s/\\\$OWNER/${OWNER_ID}/g" "$SEED/$f.csv" > "$tmp/$f.csv"
 done
 
@@ -52,7 +53,8 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
          run_tracks, event_runs, prereqs, issue_credits, creators,
          run_issues, issues, events, editions, volume_rules,
          runs, blocks, tracks, releases, wishlist, external_lists,
-         books, book_series, authors, shelves RESTART IDENTITY CASCADE;
+         series_follows, author_follows, universe_follows,
+         books, book_universes, book_series, authors, shelves RESTART IDENTITY CASCADE;
 
 \\copy tracks        FROM '$SEED/tracks.csv'        CSV HEADER
 \\copy blocks(id,track_id,number,name) FROM '$SEED/blocks.csv' CSV HEADER
@@ -70,7 +72,8 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
 
 \\copy authors        FROM '$SEED/authors.csv'        CSV HEADER
 \\copy book_series    FROM '$SEED/book_series.csv'    CSV HEADER
-\\copy books(id,title,author_id,series_id,series_position,genre,book_type,word_count,word_count_source,published_year,page_count,cover_url,open_library_id) FROM '$SEED/books.csv' CSV HEADER
+\\copy book_universes FROM '$SEED/book_universes.csv' CSV HEADER
+\\copy books(id,title,author_id,series_id,series_position,genre,book_type,word_count,word_count_source,published_year,page_count,cover_url,open_library_id,universe_id) FROM '$SEED/books.csv' CSV HEADER
 \\copy releases       FROM '$SEED/releases.csv'       CSV HEADER
 \\copy wishlist(genre,raw_entry,book_id) FROM '$SEED/wishlist.csv' CSV HEADER
 \\copy external_lists(source,year,rank,raw_title,book_id) FROM '$SEED/external_lists.csv' CSV HEADER
@@ -79,6 +82,9 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
 \\copy edition_progress FROM '$tmp/edition_progress.csv' CSV HEADER
 \\copy book_status(user_id,book_id,status,finished_on,finished_on_precision,year_rank,rating) FROM '$tmp/book_status.csv' CSV HEADER
 \\copy reading_plan(user_id,book_id,period,ordinal) FROM '$tmp/reading_plan.csv' CSV HEADER
+\\copy series_follows(user_id,series_id,state) FROM '$tmp/series_follows.csv' CSV HEADER
+\\copy author_follows(user_id,author_id,state) FROM '$tmp/author_follows.csv' CSV HEADER
+\\copy universe_follows(user_id,universe_id,state) FROM '$tmp/universe_follows.csv' CSV HEADER
 
 -- run_issues.id came from the CSV (extract numbers placements in sheet order,
 -- D-16), so the serial never advanced: move it past them, or the first
