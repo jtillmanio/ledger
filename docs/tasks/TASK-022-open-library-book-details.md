@@ -1,7 +1,7 @@
 ---
 id: TASK-022
 title: 1.14 Open Library details for the workbook's books
-status: In progress
+status: Review
 depends_on: [TASK-021]
 size: M
 model: opus
@@ -33,10 +33,10 @@ The workbook's books arrive at cutover with covers, page counts and Open Library
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): a dry run over 100 books reports the match rate and writes nothing. `npm run test:etl`, with recorded responses and no network, covers: an exact match fills `page_count`, `cover_url` and `open_library_id`; a `hand` row survives a rerun; a near spelling writes a review row and no details; two candidate works match nothing; an accepted rename rekeys the details row; a workbook `published_year` is not replaced. Then a real run over the catalog with the cache warm. The PR reports how many were matched, proposed and unmatched, and `npm run rebuild` (development) loads the details.
-- [ ] AC-2: A second run with the cache warm makes zero network requests for books already looked up (the test counts requests against a stub). An interrupted run resumes from the cache without repeating completed lookups. Every request carries the `User-Agent` naming the app.
-- [ ] AC-3: Extract folds `book_details.csv` into `seed/books.csv` without changing any other output: re-running against both workbooks shows only the new columns' values filled (standing rule 4, with the diff summary in the PR). No `word_count` is written from `page_count`.
-- [ ] AC-4: `etl/.openlibrary-cache.sqlite` is gitignored (`git check-ignore` confirms it) and named in `.claude/rules/git.md`'s never-commit list. `npm run enrich:books` and its `--dry-run` are in `CLAUDE.md`'s command list, and `.claude/kit.json` `largeFiles` gains a hint for the cache.
+- [x] AC-1 (roadmap **Check:**, verbatim): a dry run over 100 books reports the match rate and writes nothing. `npm run test:etl`, with recorded responses and no network, covers: an exact match fills `page_count`, `cover_url` and `open_library_id`; a `hand` row survives a rerun; a near spelling writes a review row and no details; two candidate works match nothing; an accepted rename rekeys the details row; a workbook `published_year` is not replaced. Then a real run over the catalog with the cache warm. The PR reports how many were matched, proposed and unmatched, and `npm run rebuild` (development) loads the details.
+- [x] AC-2: A second run with the cache warm makes zero network requests for books already looked up (the test counts requests against a stub). An interrupted run resumes from the cache without repeating completed lookups. Every request carries the `User-Agent` naming the app.
+- [x] AC-3: Extract folds `book_details.csv` into `seed/books.csv` without changing any other output: re-running against both workbooks shows only the new columns' values filled (standing rule 4, with the diff summary in the PR). No `word_count` is written from `page_count`.
+- [x] AC-4: `etl/.openlibrary-cache.sqlite` is gitignored (`git check-ignore` confirms it) and named in `.claude/rules/git.md`'s never-commit list. `npm run enrich:books` and its `--dry-run` are in `CLAUDE.md`'s command list, and `.claude/kit.json` `largeFiles` gains a hint for the cache.
 
 ## Out of scope
 
@@ -60,7 +60,14 @@ The workbook's books arrive at cutover with covers, page counts and Open Library
 
 ## Follow-ups
 
-_None yet._
+- Candidate decision: extract reads a workbook title as the text typed, and a year tab's genre column ends at its count row (owner) → docs/review/decisions.md § D-82 (approved at close-out)
+- 2.1 estimates words as `page_count × 275`, and Open Library's median page count can be far off (*Sorcerer's Stone*: 16) → docs/05-roadmap.md § 2.1
+- 314 books are ambiguous because Open Library holds duplicate works with the same title and author; whether to pick one is an owner decision for the after-cutover backfill → docs/05-roadmap.md § 4.2
+- Decide the 43 `open library` review rows, and fix the author typos that keep books unmatched (*Tolkein*, *Pratchet*, *Cornwall*, *Ilsington*) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- Read tabs stopped a column at any number, cutting off reads after a title stored as a number (spec review) → not tracked: done in this PR (plan revision 4)
+- Open Library years that look wrong (*11/22/63*: 1925; four books dated 2027) (schema review) → not tracked: a year fills only where the workbook has none, and the 2027 titles are plausibly unreleased; a `hand` row overrides one
+- After an accepted merge, extract reports `book_details` / `no such book` until the next `npm run enrich:books` rekeys the row (schema review) → not tracked: by design, stated in `.claude/rules/schema.md`
+- `npm run sidecars` does not validate `book_details.csv` (columns, `source`) → not tracked: every row so far is written by enrich; worth adding if hand rows become common
 
 ## Plan
 
@@ -166,7 +173,9 @@ never guessed). A 1,381-request run takes ~25 min at 1 req/s.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL(1: rebuild.sh lacked `--book-details`) → R2 PASS → R3 PASS (after plan revision 4) | Audit R1 PASS | Spec R1 APPROVE | Schema R1 APPROVE
+- AC-3 passes with the owner-directed exceptions in Plan step 3 and revisions 3–4: the CSV diff of `main`'s extract against the branch shows every non-book file identical, `books.csv` gaining the three columns (548 / 502 / 517 filled on shared ids) and 436 blank years filled, no other changed value, and the ids `0-0`, `10`, 18 summary names and `1963-11-22-00-00-00-stephen-king` replaced by `11-22-63-stephen-king`.
+- Real run: 549 matched, 47 proposed (43 new review rows), 314 ambiguous, 444 unmatched, 26 with no author; warm rerun 0 requests; `npm run rebuild` (development) loaded 1,361 books, 549 with an Open Library id, 503 page counts, 518 covers.
 
 ## Blocked
 
@@ -174,7 +183,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (R1 FAIL, R2 and R3 PASS)
+- Review rounds: 1 (spec and schema both APPROVE)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 4 (two from the real run, two owner-directed)

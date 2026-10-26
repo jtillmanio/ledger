@@ -117,6 +117,15 @@ tick them.
       which 0012 has already passed (from TASK-025, PR #94). *Done on
       development, 2026-10-20: all 14 migrations applied, through
       `0013_plan_period`. The production caution stands for the next Release.*
+- [ ] Decide the 43 `open library` rows in `etl/data/book_review.csv`: `merge`
+      takes Open Library's spelling (`keep` is filled in), `separate` keeps yours.
+      Some are real typos (*Inheritence*, *Seasons of Mists*), some are Open
+      Library's padded titles (*… CD*, *[Dramatized Adaptation]*). Several
+      unmatched books are author typos in `Books.xlsx` (*J.R.R. Tolkein*, *Terry
+      Pratchet*, *Bernard Cornwall*, *James Ilsington*): fix the cell, or `merge`
+      the author row extract proposes. Then `npm run enrich:books` (free from the
+      cache except for changed names) and `npm run extract` (from TASK-022,
+      task/1.14-open-library-book-details).
 
 ## Approvals from follow-ups
 
