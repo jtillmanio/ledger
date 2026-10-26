@@ -963,3 +963,19 @@ export async function bookMatches(userId: string, lines: { title: string; author
       : { bookId: r.near_id, title: r.near_title!, author: r.near_author, status: r.near_status, similarity: r.near_similarity! },
   }));
 }
+
+/**
+ * The wishlist lines that haven't become books (task 1.4d, D-39): `book_id IS
+ * NULL`, in workbook order. extract writes the sheet a column at a time, so id
+ * order is the sheet's order and each genre's lines sit together.
+ */
+export async function unresolvedWishlist() {
+  return sql<{ id: number; genre: string | null; text: string }[]>`
+    SELECT id, genre, raw_entry AS text FROM wishlist WHERE book_id IS NULL ORDER BY id`;
+}
+
+/** Every series name you have, lower-cased: a wishlist line that names one is a series, not a book (task 1.4d). */
+export async function seriesNames() {
+  const rows = await sql<{ name: string }[]>`SELECT DISTINCT lower(name) AS name FROM book_series ORDER BY 1`;
+  return rows.map((r) => r.name);
+}

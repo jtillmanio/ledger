@@ -1,14 +1,14 @@
 ---
 id: TASK-024
 title: 1.4d Promote the wishlist into Someday
-status: Ready
+status: In progress
 depends_on: [TASK-007]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 806b039
 ---
 
 # TASK-024 — 1.4d Promote the wishlist into Someday
@@ -56,7 +56,33 @@ The roughly 500 lines from the old To-Read tab, which never became books, can be
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+_Approved by the user at the plan gate, 2026-10-26._
+
+**Steps**
+
+1. `src/lib/book-parse.ts`: add `seriesLike(title)`, a keyword test (Saga, Trilogy, Cycle, Chronicles, Quartet, Series and the like). `Title - Author` and `Title — Author` already parse the same through `normalizeLine`; a test shows it.
+2. New `src/lib/wishlist-review.ts` (pure): one row per unresolved line, on 1.4's types. A line is *series?* when `seriesLike` matches or its title equals a `book_series` name: choices *Leave* (default) and *Dismiss*, never written. Match, near-duplicate (≥ 0.4) and new lines get *Link*, *Create new*, *Use that* or *Add*, plus *Dismiss* (not red). A matched book that already has a status is linked and its status left alone.
+3. `src/db/queries.ts`: `unresolvedWishlist()` (`book_id IS NULL`, workbook order, i.e. by id) and `seriesNames()`.
+4. `src/db/writes.ts`: `acceptWishlist(userId, items)`, one transaction per line (`addLock`, re-check the exact title and author, reuse or `createBooks`, `toRead` which never overwrites, set `wishlist.book_id`); a failing line returns `{ok:false}` and the others stay committed. `dismissWishlist(ids)` hard-deletes unresolved staging lines (D-39).
+5. New `src/app/api/books/wishlist/route.ts`: POST `{accept:[…]}` and POST `{dismiss:[ids]}`. The library check is the existing `/api/books/bulk` dry run.
+6. UI: `src/app/books/add/page.tsx` handles `?from=wishlist` and renders new `src/components/WishlistReview.tsx` (genre headings, per-row Edit that re-queues the line for Check, one action bar, empty slate with a link back to Add books, error state, the existing `loading.tsx`). `ReviewTable.tsx` gets an optional per-row `extra` slot. `globals.css` only if a style is missing, tokens only.
+7. Redraw the wishlist frame in `design/mockups.html` and `design/mockups-index.md` (`ui.redrawFiles`). Tick roadmap 1.4d at close-out.
+
+**Files:** the above, plus `test/wishlist.test.ts` (new, DB), `test/book-parse.test.ts`, `test/wishlist-review.test.ts` (new), a component test for `WishlistReview`. Not on "Files likely touched": `wishlist-review.ts`, `WishlistReview.tsx`, the mockup files.
+
+**Test strategy**
+
+- AC-1: `test/wishlist.test.ts` five-line fixture (one match, one near-duplicate, one series, two new): nothing written before accept; accepting all but the series line creates two `to_read` books with no plan row, links four `wishlist.book_id`, leaves the matched book's status; dismissal removes the line. `test/book-parse.test.ts`: both separators and `seriesLike`.
+- AC-2: `test/wishlist.test.ts` workbook order, only `book_id IS NULL`, an accepted line doesn't return; `test/wishlist-review.test.ts` an edited line's match is re-run before it can be accepted.
+- AC-3: `test/wishlist.test.ts` a forced failure on one line (a `use` for a missing book) leaves it unresolved and the others committed; the empty slate is in the component test.
+- AC-4: the component test (radiogroups, glyph and text, *Dismiss* not red, empty, loading and error); screenshots at every `ui.viewports` width, light and dark, by ui-verifier.
+
+**Risks / open questions**
+
+- `wishlist` has no `user_id`; the screen works on the whole table. No schema change.
+- Series detection is a heuristic and will miss some (*Osten Ard*, *Nevernight*): you decide those lines. Accepted at the plan gate.
+- Rows with no author (`Classic`, `Non-Euro`) can only be dismissed. Extract is not changed.
+- Edits to a line's text live in the browser and are written only on accept; `raw_entry` is never rewritten.
 
 ## Review log
 

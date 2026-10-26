@@ -26,6 +26,7 @@ line numbers below drift after an edit.
 | `moveplan` | Move / add to a quarter | 2169–2326 |
 | `blist` | Master list | 2329–2431 |
 | `add` | Add books | 2434–2525 |
+| `wishlist` | Your wishlist (`/books/add?from=wishlist`, task 1.4d) | — |
 | `shelves` | Shelves | 2528–2624 |
 | `top` | Top books | 2627–2713 |
 | `search` | Search | 2716–2826 |
