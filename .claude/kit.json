@@ -57,7 +57,8 @@
     { "pattern": "etl/data/why_review.csv", "hint": "Generated sidecar. Grep it for the run id, or Select-String the CSV.", "always": true },
     { "pattern": "etl/data/volume_map.csv", "hint": "Generated sidecar. Grep it for the series, or Select-String the CSV.", "always": true },
     { "pattern": "*.xlsx", "hint": "The owner's workbook (binary). Read it through etl/extract.py output in seed/, never directly.", "always": true },
-    { "pattern": "*.metron-cache.sqlite", "hint": "Metron response cache (binary). etl/enrich_comics.py reads it; query it with sqlite if you must.", "always": true }
+    { "pattern": "*.metron-cache.sqlite", "hint": "Metron response cache (binary). etl/enrich_comics.py reads it; query it with sqlite if you must.", "always": true },
+    { "pattern": "*.openlibrary-cache.sqlite", "hint": "Open Library search cache (binary, whole responses). etl/enrich_books.py reads it, and 1.18 will; rerun `npm run enrich:books -- --offline` for the report, or query it with sqlite if you must.", "always": true }
   ],
 
   "destructiveGuard": {

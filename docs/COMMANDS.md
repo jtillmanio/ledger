@@ -31,6 +31,10 @@ npm run extract             # etl/extract.py with every sidecar CSV (see below);
 py etl/enrich_comics.py     # Metron: dates, cover URLs, label proposals (--dry-run first)
 py etl/enrich_comics.py --details  # Metron: story titles + credits, ~8,100 requests (--dry-run first)
 npm run enrich:refresh      # --details --refresh: re-ask Metron about issues it credited nobody on (cache never expires)
+npm run enrich:books        # etl/enrich_books.py: Open Library id, page count, cover URL and first publish year
+                            # per book into etl/data/book_details.csv (task 1.14); a near spelling goes to
+                            # book_review.csv as `open library`. `-- --dry-run` first (100 books, writes
+                            # nothing); `-- --offline` reprints the report from the cache
 npm run sidecars            # etl/check_sidecars.py: validate the issue sidecars, write etl/data/metadata_todo.md
                             # and etl/data/creator_review.csv (close creator names to accept or reject);
                             # an issue fandom_skipped.csv says has a blank Fandom title isn't listed as

@@ -1,14 +1,14 @@
 ---
 id: TASK-022
 title: 1.14 Open Library details for the workbook's books
-status: Ready
+status: In progress
 depends_on: [TASK-021]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 6b1ccfe
 ---
 
 # TASK-022 — 1.14 Open Library details for the workbook's books
@@ -58,9 +58,106 @@ The workbook's books arrive at cutover with covers, page counts and Open Library
 - Automated: `npm run test:etl` covers the six cases in AC-1 and the cache and `User-Agent` cases in AC-2, with no network.
 - Manual: `npm run enrich:books -- --dry-run` over 100 books → expected: a match rate and no files written. A real run, then `npm run extract` and `npm run rebuild` on the development database → expected: books with covers and page counts, and the report's matched, proposed and unmatched counts quoted in the PR.
 
+## Follow-ups
+
+_None yet._
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-10-25 at the plan gate, with the owner's change to 11/22/63 (step 3).
+
+Findings that shape it: extract rebuilds `book_review.csv` each run and drops
+undecided rows it did not propose, so an `open library` proposal would vanish;
+Open Library's default search response has no `number_of_pages_median` and no
+ISBN, so the request asks for `fields=*` (the whole record, cached for 1.18);
+`load.ps1` / `load.sh` copy only today's `books` columns.
+
+**Steps**
+
+1. `etl/enrich_books.py` (new), modelled on `enrich_comics.py`. Reads
+   `seed/books.csv` + `seed/authors.csv`; one `search.json?title=&author=&limit=10&fields=*`
+   per book with an author (an authorless book is not looked up). SQLite cache
+   `etl/.openlibrary-cache.sqlite` keyed by URL, 1 s between requests,
+   `User-Agent: ledger-backfill/1.0 (personal media ledger; book metadata; https://github.com/jtillmanio/ledger)`,
+   `--max-requests`, `--offline`, `--limit`, `--dry-run` (default 100 books,
+   writes no CSV). Outcomes: **matched** = exactly one returned work whose
+   `key(clean(title))` and one `key(clean(author_name))` equal the book's;
+   **ambiguous** = two or more; **proposed** = no exact work, the top result is by
+   the same author at trigram similarity ≥ 0.4 and the titles don't differ only by
+   a number: appended once to `book_review.csv` (`kind = book`,
+   `reason = open library`, `b_tabs = Open Library`, `keep` pre-filled with Open
+   Library's spelling, `decision` blank), no details; **unmatched** = the rest,
+   printed with candidates. `book_details.csv` (title, author, open_library_id,
+   page_count, cover_url, published_year, source): a `hand` row is never looked
+   up or overwritten; a failed lookup never erases a row. Before looking up,
+   every row is rekeyed through extract's `BookIndex(review).book_identity` so an
+   accepted merge or rename moves it (hand wins a collision). Report: counts,
+   match rate, requests vs cache hits.
+2. `etl/extract.py`: `--book-details`; after `finish()` fill `open_library_id`,
+   `page_count`, `cover_url` on the book with that (title, author) key, and
+   `published_year` only where the workbook has none; never `word_count` from
+   pages. A details row matching no book → `unresolved.csv` (`book_details`,
+   `no such book`). `review_book_pairs` keeps undecided `open library` rows while
+   their workbook side is still seen, and checks only that side for `stale review`.
+3. (Owner, plan gate) Extract reads every book title cell as text: a cell Excel
+   stored as a date comes back as typed (`m/d/yy`, Excel's US short date, so
+   *11/22/63*), an integral number without `.0`. Applied to the master list, author
+   tabs, To-Read tabs, Read tabs, Top Books, Coming Out, the wishlist and the
+   Booktube lists. Expected AC-3 exception: that book's title and id change.
+4. `etl/load.ps1`, `etl/load.sh`: copy `page_count, cover_url, open_library_id`.
+   `package.json`: `enrich:books`; `extract` passes `--book-details`.
+5. `.gitignore`, `.claude/rules/git.md` never-commit list, `CLAUDE.md` +
+   `docs/COMMANDS.md` commands, `.claude/kit.json` `largeFiles` hint,
+   `.claude/rules/schema.md` (book_details sidecar, open library review rows).
+6. Real run: dry run over 100; full run in the background; warm rerun must show 0
+   requests; extract on `main` and on the branch into temp dirs and diff every
+   CSV (AC-3); `npm run rebuild` on development (owner approved at the gate).
+
+**Files**: new `etl/enrich_books.py`, `etl/test_enrich_books.py`,
+`etl/data/book_details.csv`; changed `etl/extract.py`, `etl/test_extract.py`,
+`etl/load.ps1`*, `etl/load.sh`*, `etl/data/book_review.csv`* (proposals the run
+appends), `package.json`, `.gitignore`, `.claude/rules/git.md`, `CLAUDE.md`,
+`.claude/kit.json`, `docs/COMMANDS.md`*, `.claude/rules/schema.md`*
+(* not in Files likely touched). 15 files; `splitPolicy` is `never-split`, so it
+stays whole and attended.
+
+**Test strategy**
+
+- AC-1 (`etl/test_enrich_books.py`, recorded responses, no network):
+  `test_exact_match_fills_page_count_cover_and_id`, `test_hand_row_survives_a_rerun`,
+  `test_near_spelling_writes_a_review_row_and_no_details`,
+  `test_two_candidate_works_match_nothing`, `test_accepted_rename_rekeys_the_details_row`,
+  `test_dry_run_reports_match_rate_and_writes_nothing`. (`etl/test_extract.py`
+  `BookDetails`): `test_workbook_published_year_is_not_replaced`,
+  `test_details_fold_into_books`, `test_open_library_row_survives_extract`,
+  `test_accepted_open_library_row_renames_the_book_and_details_follow`.
+  Manual: the dry run, the real run, rebuild, counts quoted in the PR.
+- AC-2: `test_warm_cache_makes_no_requests`, `test_interrupted_run_resumes_from_the_cache`,
+  `test_every_request_carries_the_user_agent` (stubbed at `urlopen`).
+- AC-3: `test_no_word_count_from_page_count`, plus
+  `test_date_typed_title_reads_as_typed` (step 3); manual CSV diff main vs branch.
+- AC-4: manual `git check-ignore etl/.openlibrary-cache.sqlite`; grep CLAUDE.md,
+  git.md, kit.json.
+
+**Revisions after approval**
+
+1. (Found in the dry run) Open Library's `author=` search finds nothing for
+   `S.A. Chakraborty` and the work for `S. A. Chakraborty`, so the query spaces
+   initials; matching still compares `key()`s. Test:
+   `test_initials_are_spaced_in_the_query_and_still_match`.
+2. (Found in the real run) The report crashed on a title a redirected cp1252
+   console can't print (U+02BB) before any CSV was written; stdout now replaces
+   what it can't encode. Test: `test_a_title_the_console_cannot_print_does_not_stop_the_run`.
+3. (Owner, 2026-10-25, after the AC-3 diff) Each To-Read genre column ends in
+   a count of its titles and then a series and author summary: extract loaded the
+   count `10`, and 18 summary names, as books. A column now stops at a number
+   equal to the titles above it (a title stored as a number, *1984*, is not the
+   count). Test: `test_a_to_read_column_stops_at_its_count_row`. Books 1,380 →
+   1,361, so the count in `CLAUDE.md` and `docs/HANDOFF.md` is corrected.
+
+**Risks**: Open Library returns at most 10 works per search, so a title with more
+same-author works than that could miss its exact work (reported as unmatched,
+never guessed). A 1,381-request run takes ~25 min at 1 req/s.
 
 ## Review log
 

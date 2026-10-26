@@ -13,6 +13,7 @@ is idempotent and writes nothing back to the source workbooks.
 
 import argparse
 import csv
+import datetime
 import numbers
 import re
 import sys
@@ -424,6 +425,25 @@ def clean(v) -> str | None:
     s = s.replace("\u2013", "-").replace("\u2014", "-")
     s = re.sub(r"\s+", " ", s).strip()
     return s or None
+
+
+def cell_text(v) -> str | None:
+    """A cell as the text the owner typed (task 1.14, owner). Excel stores a
+    title like 11/22/63 as a date and 1984 as a number, and pandas hands back a
+    datetime or a float: a date comes back in Excel's US short date (m/d/yy), a
+    whole number without its `.0`. Anything else is str() as before."""
+    if v is None or (isinstance(v, float) and pd.isna(v)) or v is pd.NaT:
+        return None
+    if isinstance(v, (datetime.datetime, datetime.date)):
+        return f"{v.month}/{v.day}/{v:%y}"
+    if isinstance(v, float) and v.is_integer():
+        return str(int(v))
+    return str(v)
+
+
+def title_text(v) -> str | None:
+    """A title cell, read as text and then cleaned."""
+    return clean(cell_text(v))
 
 
 def as_int(v) -> int | None:
@@ -969,6 +989,13 @@ BOOK_REVIEW_DECISIONS = ("merge", "separate", "")
 SIMILAR_AT = 0.4  # D-25a: pg_trgm similarity at or above this is worth a look
 # A standalone roman numeral from I to XX, or a run of digits.
 NUMBER_RE = re.compile(r"\b(?:\d+|xx|x?(?:ix|iv|v?i{1,3}|v)|x)\b")
+# A near spelling etl/enrich_books.py found on Open Library (task 1.14, D-44):
+# `a` is the workbook's spelling, `b` Open Library's. Extract never proposes one,
+# so it keeps the row, undecided, while the workbook still has `a`.
+OPEN_LIBRARY = "open library"
+# etl/data/book_details.csv (task 1.14, D-44), keyed by title and author.
+BOOK_DETAILS_COLUMNS = ["title", "author", "open_library_id", "page_count", "cover_url",
+                        "published_year", "source"]
 WORKBOOK_READS_COLUMNS = ["title", "year", "genre", "tab", "rank"]
 
 
@@ -1146,7 +1173,7 @@ class BookIndex:
 
     def upsert(self, title, author=None, series=None, genre=None,
                word_count=None, published_year=None, book_type=None, tab=None) -> str | None:
-        title, author = clean(title), clean(author)
+        title, author = title_text(title), clean(author)
         if not title or len(title) < 2:
             return None
         self.sight(title, author, clean(series), tab)
@@ -1277,6 +1304,18 @@ def review_book_pairs(idx: BookIndex, existing: list[dict]) -> list[dict]:
     rows = []
     for r in existing:
         pair = review_sides(r)
+        if r["reason"] == OPEN_LIBRARY:
+            # Only `a` is ever in the workbook, spelled with the author it loads under.
+            in_workbook = any(t == key(r["a"]) and key(idx.canonical_author(s["author"])) == key(r["a_author"])
+                              for (t, _), s in idx.seen_books.items())
+            if r["decision"] or in_workbook:
+                rows.append(r)
+                proposals.pop(pair, None)
+            if r["decision"] and not in_workbook:
+                flag("book_review", "stale review",
+                     f"{r['kind']}: {r['a']} / {r['b']} ({r['decision']}) — a name is no longer "
+                     "in the workbook; delete the row once it's done with")
+            continue
         if not r["decision"]:
             continue
         rows.append(r)
@@ -1290,6 +1329,36 @@ def review_book_pairs(idx: BookIndex, existing: list[dict]) -> list[dict]:
     rows.sort(key=lambda r: (r["decision"] != "", order.get(r["kind"], 3), r["reason"],
                              r["a"].lower(), r["b"].lower(), r["a_author"].lower()))
     return rows
+
+
+def load_book_details(path) -> list[dict]:
+    """book_details.csv's rows, or none when there is no file yet."""
+    if not path or not Path(path).exists():
+        return []
+    with open(path, newline="", encoding="utf-8-sig") as fh:
+        return [{c: (r.get(c) or "").strip() for c in BOOK_DETAILS_COLUMNS}
+                for r in csv.DictReader(fh) if (r.get("title") or "").strip()]
+
+
+def fold_book_details(idx: BookIndex, details: list[dict]) -> None:
+    """Fill each book's Open Library id, page count and cover from its
+    book_details.csv row, matched on title and author after clean() and key()
+    (task 1.14, D-44). The published year fills only where the workbook has
+    none. A page count never becomes a word count: 2.1 estimates that."""
+    for b in idx.by_key.values():
+        b.update(open_library_id=None, page_count=None, cover_url=None)
+    for row in details:
+        b = idx.by_key.get((key(clean(row["title"])), key(clean(row["author"]))))
+        if b is None:
+            flag("book_details", "no such book",
+                 f"{row['title']} / {row['author'] or '(no author)'} ({row['source']}) — "
+                 "renamed or gone from the workbook; enrich:books rekeys an accepted rename")
+            continue
+        b["open_library_id"] = clean(row["open_library_id"])
+        b["page_count"] = as_int(row["page_count"])
+        b["cover_url"] = clean(row["cover_url"])
+        if b["published_year"] is None:
+            b["published_year"] = as_int(row["published_year"])
 
 
 def write_book_review(path: Path, rows: list[dict]) -> None:
@@ -1313,7 +1382,7 @@ def is_number(v) -> bool:
 
 
 def extract_books(path: Path, out: Path, with_plan: bool = False,
-                  book_review: Path | None = None) -> None:
+                  book_review: Path | None = None, book_details: Path | None = None) -> None:
     xl = pd.ExcelFile(path)
     print(f"\nbooks <- {path.name}")
     review = load_book_review(book_review)
@@ -1346,7 +1415,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
                                 "year_rank": None, "rating": None})
 
     def listed_read(title, year=None, genre=None, tab=None, rank=None):
-        reads.append({"title": clean(title), "year": year, "genre": genre, "tab": tab, "rank": rank})
+        reads.append({"title": title_text(title), "year": year, "genre": genre, "tab": tab, "rank": rank})
 
     # ---- master to-read list --------------------------------------------
     raw = sheet(xl, "To-Read Master List")
@@ -1385,17 +1454,23 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
             for cell in raw[genre]:
                 if is_number(cell):
                     break
-                if clean(cell):
+                if title_text(cell):
                     listed_read(cell, year=year, genre=str(genre), tab=tab)
     for tab, year in year_tabs(xl, TO_READ_TAB_RE):
         raw = sheet(xl, tab)
         for genre in raw.columns:
             if str(genre).startswith("Unnamed"):
                 continue
+            # A column ends in a count of its titles (task 1.14): not a book. A
+            # title Excel stored as a number (1984) is a number that isn't the count.
+            titles = 0
             for title in raw[genre].dropna():
+                if is_number(title) and title == titles:
+                    break
+                titles += 1
                 if year >= SPECULATIVE_FROM:
-                    if clean(title):
-                        speculative.append({"title": clean(title), "year": year,
+                    if title_text(title):
+                        speculative.append({"title": title_text(title), "year": year,
                                             "genre": str(genre), "tab": tab})
                     continue
                 bid = idx.upsert(title, genre=genre, tab=tab)
@@ -1416,7 +1491,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
                 continue
             for col in raw.columns[1:]:
                 year = as_int(col)
-                if year and clean(r[col]):
+                if year and title_text(r[col]):
                     listed_read(r[col], year=year, tab="Top Books", rank=rank)
 
     # ---- upcoming releases ----------------------------------------------
@@ -1438,7 +1513,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
         if str(genre).startswith("Unnamed") or genre == "Goals":
             continue
         for entry in raw[genre].dropna():
-            e = clean(entry)
+            e = title_text(entry)
             if not e or e.lower() == "top":
                 continue
             wishlist.append({"genre": str(genre), "raw_entry": e, "book_id": ""})
@@ -1455,7 +1530,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
                 cell = r[source]
                 if pd.isna(cell):
                     continue
-                for line in str(cell).split("\n"):
+                for line in cell_text(cell).split("\n"):
                     line = clean(line)
                     if not line or line.endswith(":"):
                         continue
@@ -1501,6 +1576,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
 
     if book_review:
         write_book_review(book_review, review_book_pairs(idx, review))
+    fold_book_details(idx, load_book_details(book_details))
 
     books = list(idx.by_key.values())
     write(out, "authors", list(idx.authors.values()), ["id", "name"])
@@ -1508,7 +1584,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
           ["id", "name", "author_id", "total_books"])
     write(out, "books", books, ["id", "title", "author_id", "series_id", "series_position",
                                 "genre", "book_type", "word_count", "word_count_source",
-                                "published_year"])
+                                "published_year", "page_count", "cover_url", "open_library_id"])
     write(out, "book_status", list(status.values()),
           ["user_id", "book_id", "status", "finished_on", "finished_on_precision",
            "year_rank", "rating"])
@@ -1550,6 +1626,9 @@ def main(argv=None) -> int:
     ap.add_argument("--book-review", type=Path, default=None,
                     help="book_review.csv: proposes book, author and series pairs that may be "
                          "one, applies the merge rows, and rewrites the file keeping decisions")
+    ap.add_argument("--book-details", type=Path, default=None,
+                    help="book_details.csv from etl/enrich_books.py plus hand rows: Open Library "
+                         "id, page count, cover URL, and a published year where the workbook has none")
     ap.add_argument("--fail-on-cycle", action="store_true",
                     help="exit non-zero when the prereq graph has a cycle, after writing every "
                          "CSV (task 2.11a; START-HERE Step 14's final extract)")
@@ -1568,7 +1647,8 @@ def main(argv=None) -> int:
     for old in args.out.glob("*.csv"):
         old.unlink()
     extract_comics(args.comics, args.out)
-    extract_books(args.books, args.out, with_plan=args.with_plan, book_review=args.book_review)
+    extract_books(args.books, args.out, with_plan=args.with_plan, book_review=args.book_review,
+                  book_details=args.book_details)
 
     write(args.out, "unresolved", UNRESOLVED, ["table", "reason", "detail"])
     print(f"\n{len(UNRESOLVED)} rows need a human look — see {args.out}/unresolved.csv")
