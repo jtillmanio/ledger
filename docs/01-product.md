@@ -113,10 +113,10 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | F-12 | **In flight · Up next · Done** (Every medium) | As the owner, I want one screen per medium showing everything in flight, next and finished | MVP (then Later) | 1.9, 8.8 | `status`, `queue` |
 | F-13 | **The volume map** (Comics) | As the curator, I want a bare series label to resolve to the right volume year, by rules I can edit | MVP (then Next) | 1.12, 3.9 | `settings` |
 | F-14 | **A prerequisite graph without cycles** (Comics) | As the curator, I want the prerequisite graph checked for cycles and edited safely, so readiness means something | MVP (then Next) | 2.11a, 3.3 | `path` |
-| F-15 | **Add books by search, paste or hand** (Books) | As a reader, I want to add a book from Open Library, a pasted list or by hand, straight to where it belongs | MVP | 1.4, 1.4c, 1.4e | `add`, `blist` |
+| F-15 | **Add books by search, paste or hand** (Books) | As a reader, I want to add a book from Open Library, a pasted list or by hand, straight to where it belongs, with results as I type and each one's source shown | MVP | 1.4, 1.4c, 1.4e, 1.22 | `add`, `blist` |
 | F-16 | **Quick-capture inbox** (Every medium) | As the owner, I want to jot a title in two seconds with nothing required and resolve it later | MVP | 1.4b | `capture`, `dashextras` |
 | F-17 | **A dated reading log** (Books) | As a reader, I want when I started and finished each read kept, rereads included, in my time zone | MVP | 1.5, 1.16, 1.17 | `blist` |
-| F-18 | **To-read levels** (Books) | As a reader, I want each to-read book at a quarter, a year, On deck or Someday, with my old wishlist promoted into it | MVP | 1.7, 1.4d | `blist`, `moveplan` |
+| F-18 | **To-read levels** (Books) | As a reader, I want each to-read book at a quarter, a year, On deck or Someday, with my old wishlist promoted into it, and the books I own but haven't listed kept at Owned, out of the way | MVP | 1.7, 1.4d, 1.21 | `blist`, `moveplan` |
 | F-19 | **A clean, enriched book catalog** (Books) | As a reader, I want one row per book, with Open Library details and Calibre's real word counts | MVP | 1.13, 1.14, 1.18 | `blist`, `bookdetail` |
 | F-20 | **Follow series, authors and universes** (Books) | As a reader, I want to follow the series, authors and universes I am tracking and see my progress through each | MVP (then Later) | 1.15, 5.11, 5.12 | `shelves` |
 | F-21 | **The pace engine** (Books) | As a reader, I want my real reading rate to say whether a year's plan fits | Next (then Later) | 2.0, 2.1, 2.1b, 6.12 | `settings`, `session`, `dashextras` |
@@ -131,7 +131,7 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | F-30 | **Eras and spine v2** (Comics) | As a reader, I want a long run sectioned into eras, with ordinals, release dates and read rows hidden | Next | 3.6, 3.6b, 3.6c | `spine`, `krakoa` |
 | F-31 | **Ratings, notes and DNF** (Every medium) | As a reader, I want to rate and note what I finish, rank my top books, and stop a book without it reading as failure | Next (then Later) | 3.4, 5.4, 5.5 | `top` |
 | F-32 | **Adding at scale** (Comics) | As the curator, I want to add from a whole series' issue list, arrange as I add, and preview an issue before adding it | Next | 3.10, 3.11, 3.12 | `addsearch`, `bulk` |
-| F-33 | **Metadata backfill and covers** (Every medium) | As the owner, I want Metron, Open Library and Hardcover to fill in what sits below each label, with real covers | Later | 4.1, 4.2, 4.3 | `states` |
+| F-33 | **Metadata backfill and covers** (Every medium) | As the owner, I want Metron, Open Library and Hardcover to fill in what sits below each label, with real covers, and Calibre synced after cutover | Later | 4.1, 4.2, 4.3, 4.4 | `states` |
 | F-34 | **Shelves with context** (Every medium) | As a reader, I want my own ordered lists, with a note on why each item is on them | Later | 5.1, 8.6 | `shelves` |
 | F-35 | **Tracks page** (Comics) | As a reader, I want every track drawn as a row of its blocks | Later | 5.2 | `tracks` |
 | F-36 | **Editions: collected in** (Comics) | As a collector, I want to know which trade collects an issue and which I own and have read | Later | 5.6, 5.10 | — |
@@ -156,6 +156,7 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | F-55 | **Artists and albums** (Music) | As a listener, I want the artists I mean to listen to and their albums, from MusicBrainz | Later | 9.0, 9.1, 9.2, 9.3 | — |
 | F-56 | **Song ranking and favourite albums** (Music) | As a listener, I want to rank an artist's songs by picking between two, and see which albums I favour | Later | 9.4, 9.5 | — |
 | F-57 | **Music dashboard and status** (Music) | As a listener, I want the music dashboard and its status tabs | Later | 9.6 | — |
+| F-58 | **Audiobooks** (Books) | As a reader, I want to mark a book I'm listening to, have a finished listen count as a read, and see listens apart from reads, with an icon | MVP | 1.23 | `blist`, `status`, `bookdetail` |
 
 ### Observable outcomes for MVP features
 
@@ -208,6 +209,10 @@ B, C, W and M numbers are cited across the docs and stay.
 | B13 | Year chip: the count reads apart from the year | bug | Fixed outside the task list, on `fix/year-chip-count` |
 | B14 | *Catch me up*: a recap of the earlier books before a later one | planned | Claude, on demand, spoiler-bounded, stored in `proposals`. roadmap 7.7 |
 | B15 | A shelf's context: why each book is on it | planned | `shelves.description`, `shelf_books.note`; ordered shelves are reading orders (the Dark Tower). roadmap 5.1 |
+| B16 | Search as I type, and say where each result came from | planned | 2026-10-26. Every search box searches after 3 characters and a 500 ms pause; each result is tagged with its level or its source. roadmap 1.22, D-84 |
+| B17 | Every Calibre book in the Ledger, kept out of the way; Calibre re-synced | planned | 2026-10-26. A new *Owned* level below Someday, found by search and its own chip, on no list or dashboard. 1.18 re-runs until cutover; after it, an in-app upload sync; Google Drive later. roadmap 1.21, 1.18, 4.4, Later L-4, D-83 |
+| B18 | Audiobooks: listening, and listened | planned | 2026-10-26. A *Listening* status, a finished listen counts as a read, a headphones glyph, reads and listens counted apart. roadmap 1.23, D-85 |
+| B19 | Create a shelf while adding a book | planned | 2026-10-26. *New shelf…* in the add sheet's shelf picker. roadmap 5.1 |
 
 ### Comics
 
@@ -753,6 +758,21 @@ extract's sidecars like 1.14, and extract stops running at cutover. The paste
 fix (1.4e) is to a screen already in daily use. The year chip's spacing is a
 plain bug, so it was fixed on its own branch (`fix/year-chip-count`) rather
 than made a task.
+
+**The 2026-10-26 books intake** (B16–B19) asked for five things; two were
+already planned. A series view with each book's status and dates is 5.9
+(B12). Creating a shelf is 5.1, which now also offers *New shelf…* from the
+add sheet. The other three are new. Search as you type (1.22) reaches the
+external APIs as well, so the add-flow rule changes from *on submit* to *on
+submit or a pause* (D-84), with answers still cached. Calibre's books all come
+in (D-83), at an *Owned* level below Someday that search finds and its own
+chip lists, and that dashboards and counts leave out (1.21). Calibre syncs by
+re-running 1.18 until cutover and by an in-app upload after (4.4), because
+after cutover nothing local writes the live database; fetching from Google
+Drive is the later upgrade (L-4). Audiobooks (1.23) land before cutover for
+1.17's reason. A finished listen counts as a read, so progress and year totals
+include it, but the log records the format, so stats, the book's summary and a
+headphones glyph can tell them apart (D-85).
 
 **Calibre is the best word-count source available** (the *Word counts* answer in architecture § Metadata sources
 had only estimates and manual lookups). The Count Pages plugin's counts load
