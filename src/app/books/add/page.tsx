@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import AddBooks from "@/components/AddBooks";
+import WishlistLoading from "@/components/WishlistLoading";
 import WishlistReview from "@/components/WishlistReview";
 import { bookMatches, seriesNames, shelfFor, unresolvedWishlist } from "@/db/queries";
 import { requireUserId } from "@/lib/auth";
@@ -30,7 +32,7 @@ export async function generateMetadata({ searchParams }: { searchParams: Promise
 export default async function AddBooksPage({ searchParams }: { searchParams: Promise<Search> }) {
   const { shelf, q, note, from } = await searchParams;
   const userId = await requireUserId();
-  if (from === "wishlist") return <main className="add"><Wishlist userId={userId} /></main>;
+  if (from === "wishlist") return <main className="add"><Suspense fallback={<WishlistLoading />}><Wishlist userId={userId} /></Suspense></main>;
   const found = shelf ? await shelfFor(userId, shelf) : null;
   const initial: Target = found ? { kind: "shelf", shelfId: found.id, name: found.name } : { kind: "someday" };
   return (

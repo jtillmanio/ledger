@@ -276,3 +276,14 @@ describe("editing a line (AC-2)", () => {
     expect(rows()[4].querySelector(".vcheck")!.textContent).toBe("new");
   });
 });
+
+describe("loading (AC-4)", () => {
+  it("draws the loaded geometry in skeletons, announced once, nothing else to read", async () => {
+    const { default: Loading } = await import("../src/components/WishlistLoading");
+    act(() => root.render(<Loading />));
+    expect(container.querySelector(".wishlist")!.getAttribute("aria-busy")).toBe("true");
+    expect(container.querySelector('[role="status"]')!.textContent).toBe("Loading your wishlist");
+    expect(container.querySelector('[aria-hidden="true"]')!.querySelectorAll(".vrow")).toHaveLength(4);
+    expect(container.querySelectorAll("button, a, input")).toHaveLength(0);
+  });
+});
