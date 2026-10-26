@@ -67,10 +67,10 @@ roadmap, and `docs/STATUS.md` rolls them up by milestone._
 | F-12 In flight · Up next · Done | MVP (then Later) | 1.9, 8.8 | M7, M24 |
 | F-13 The volume map | MVP (then Next) | 1.12, 3.9 | M7, M13 |
 | F-14 A prerequisite graph without cycles | MVP (then Next) | 2.11a, 3.3 | M7, M13 |
-| F-15 Add books by search, paste or hand | MVP | 1.4, 1.4c, 1.4e | M5, M9 |
+| F-15 Add books by search, paste or hand | MVP | 1.4, 1.4c, 1.4e, 1.22 | M5, M9 |
 | F-16 Quick-capture inbox | MVP | 1.4b | M5 |
 | F-17 A dated reading log | MVP | 1.5, 1.16, 1.17 | M5, M9 |
-| F-18 To-read levels | MVP | 1.7, 1.4d | M6, M5 |
+| F-18 To-read levels | MVP | 1.7, 1.4d, 1.21 | M6, M5, M8 |
 | F-19 A clean, enriched book catalog | MVP | 1.13, 1.14, 1.18, 1.20 | M8 |
 | F-20 Follow series, authors and universes | MVP (then Later) | 1.15, 5.11, 5.12 | M8, M17 |
 | F-21 The pace engine | Next (then Later) | 2.0, 2.1, 2.1b, 6.12 | M10, M20 |
@@ -85,7 +85,7 @@ roadmap, and `docs/STATUS.md` rolls them up by milestone._
 | F-30 Eras and spine v2 | Next | 3.6, 3.6b, 3.6c | M14 |
 | F-31 Ratings, notes and DNF | Next (then Later) | 3.4, 5.4, 5.5 | M14, M18, M17 |
 | F-32 Adding at scale | Next | 3.10, 3.11, 3.12 | M15 |
-| F-33 Metadata backfill and covers | Later | 4.1, 4.2, 4.3 | M16 |
+| F-33 Metadata backfill and covers | Later | 4.1, 4.2, 4.3, 4.4 | M16 |
 | F-34 Shelves with context | Later | 5.1, 8.6 | M17, M24 |
 | F-35 Tracks page | Later | 5.2 | M18 |
 | F-36 Editions: collected in | Later | 5.6, 5.10 | M18 |
@@ -110,6 +110,7 @@ roadmap, and `docs/STATUS.md` rolls them up by milestone._
 | F-55 Artists and albums | Later | 9.0, 9.1, 9.2, 9.3 | M25 |
 | F-56 Song ranking and favourite albums | Later | 9.4, 9.5 | M25 |
 | F-57 Music dashboard and status | Later | 9.6 | M25 |
+| F-58 Audiobooks | MVP | 1.23 | M9 |
 
 ### Entities → tasks
 
@@ -256,32 +257,35 @@ with the task that first reads it.
 ## M8: Books load clean — MVP
 
 **Goal:** Books load clean.  
-**Demo at exit:** Books load with covers, page counts and real word counts. Answer `book_review.csv` between 1.13 and 1.14, and `calibre_review.csv` and `calibre_reads.csv` after 1.18.  
-**Features:** F-19, F-20  
+**Demo at exit:** Books load with covers, page counts and real word counts. Answer `book_review.csv` between 1.13 and 1.14, and `calibre_review.csv` and `calibre_reads.csv` after 1.18; Calibre's other books wait at *Owned*.  
+**Features:** F-18, F-19, F-20  
 **Depends on:** M1  
-**Order:** Sitting 8: 1.13 → 1.14 → 1.15 → 1.18 → 1.20 (the 2026-10-08 book-ingest review; 1.20 from the owner, 2026-10-26, holds books Open Library doesn't know for review). 1.14's proposals join 1.13's review file; 1.15 seeds from the series and author names 1.13's review fixed; 1.18 checks Calibre against 1.14's Open Library answers (D-73). All five change what `load` puts in, so they land before the final load. They don't depend on M3–M7 and can be built earlier, leaving time to answer the reviews.
+**Order:** Sitting 8: 1.13 → 1.14 → 1.15 → 1.21 → 1.18 → 1.20 (the 2026-10-08 book-ingest review; 1.20 from the owner, 2026-10-26, holds books Open Library doesn't know for review; 1.21 from the 2026-10-26 books intake). 1.14's proposals join 1.13's review file; 1.15 seeds from the series and author names 1.13's review fixed; 1.21 defines the *Owned* level that 1.18 creates Calibre's other books at (D-83); 1.18 checks Calibre against 1.14's Open Library answers (D-73) and can be re-run until cutover. All six change what `load` puts in, so they land before the final load. They don't depend on M3–M7 and can be built earlier, leaving time to answer the reviews.
 
 | # | Task | Size | Task file | Depends on |
 |---|---|---|---|---|
 | 1.13 | Book extract — one book per title and author, a merge review, no workbook reads | M | TASK-021 | — |
 | 1.14 | Open Library details for the workbook's books | M | TASK-022 | 1.13 |
 | 1.15 | Track series, authors and universes | M | TASK-023 | 1.13 |
-| 1.18 | Calibre: word counts, series, tags and reads for the books | M | — | 1.14, 1.15 |
+| 1.21 | Owned: the books you have but haven't put on your list | S | — | — |
+| 1.18 | Calibre: word counts, series, tags and reads for the books | M | — | 1.14, 1.15, 1.21 |
 | 1.20 | Hold books with no Open Library match for review | M | — | 1.14 |
 
 ## M9: Captured from cutover on — MVP
 
 **Goal:** Captured from cutover on.  
-**Demo at exit:** Paste a list as title and author in their own cells; set a book to *Reading* and its start date is kept.  
-**Features:** F-09, F-15, F-17  
-**Depends on:** M5  
-**Order:** Sitting 9: 1.4e → 1.19 → 1.17. Two small fixes to screens already in daily use (1.19 turns on 1.8's comics *Add*; from 1.8b's plan), then start dates, which like 1.5 must land before real reading accumulates and before cutover.
+**Demo at exit:** Paste a list as title and author in their own cells; search as you type, with each result's source; set a book to *Reading* and its start date is kept; listen to a book and finish it, and it counts as a read with the headphones glyph.  
+**Features:** F-09, F-15, F-17, F-58  
+**Depends on:** M5, M8 (1.21)  
+**Order:** Sitting 9: 1.4e → 1.19 → 1.22 → 1.17 → 1.23. Three fixes to screens already in daily use (1.19 turns on 1.8's comics *Add*, from 1.8b's plan; 1.22 from the 2026-10-26 books intake), then start dates and audiobooks, which like 1.5 must land before real reading accumulates and before cutover. 1.23 follows 1.17 because both change `book_status` and `read_events`.
 
 | # | Task | Size | Task file | Depends on |
 |---|---|---|---|---|
 | 1.4e | Paste a list: title and author in their own cells | S | — | — |
 | 1.19 | Comics Add remembers the last run | S | — | 1.8, 1.3c |
+| 1.22 | Search as you type, and where each result comes from | M | — | 1.21 |
 | 1.17 | Started and finished: a start date for books, a derived span for runs | M | — | — |
+| 1.23 | Audiobooks: listening, and a listen that counts as a read | M | — | 1.5, 1.17 |
 
 # Next
 
@@ -389,10 +393,11 @@ with the task that first reads it.
 **Demo at exit:** After cutover, Metron, Open Library and Hardcover fill the catalog without touching a hand value; covers show on spine rows and dashboards.  
 **Features:** F-33  
 **Depends on:** Cutover  
-**Order:** 4.1 → 4.2 → 4.3. A prerequisite for M22.
+**Order:** 4.4 → 4.1 → 4.2 → 4.3. A prerequisite for M22. 4.4 goes first (2026-10-26 books intake): after cutover it is the only way Calibre's new books and reads come in, and it needs nothing else in this milestone.
 
 | # | Task | Size | Task file | Depends on |
 |---|---|---|---|---|
+| 4.4 | Sync from Calibre after cutover: upload `metadata.db` | M | — | 1.18, 1.21 |
 | 4.1 | Metron backfill | M | — | — |
 | 4.2 | Open Library and Hardcover backfill | M | — | — |
 | 4.3 | Covers in the UI | S | — | — |

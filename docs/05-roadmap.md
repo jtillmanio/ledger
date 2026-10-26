@@ -42,17 +42,17 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 | Phase | Goal | Milestones | Done |
 |---|---|---|---|
 | [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6) | 12 / 13 |
-| [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover (START-HERE Step 14) waits for all of Phase 1, plus 2.11a and 1.11.** | M3–M9 | 16 / 29 |
+| [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover (START-HERE Step 14) waits for all of Phase 1, plus 2.11a and 1.11.** | M3–M9 | 26 / 34 |
 | [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 0 / 16 |
 | [3 Editing](#phase-3--editing) | Maintain the catalog in the app: inline edits, runs, prerequisites, eras, detail sheets and adding at scale. | M13–M15 | 0 / 14 |
-| [4 Enrichment](#phase-4--enrichment) | Metron, Open Library and Hardcover backfill, and real covers. A prerequisite for Phase 7. | M16 | 0 / 3 |
+| [4 Enrichment](#phase-4--enrichment) | Metron, Open Library and Hardcover backfill, and real covers. A prerequisite for Phase 7. | M16 | 0 / 4 |
 | [5 Remaining surfaces](#phase-5--remaining-surfaces) | The remaining list and detail surfaces: shelves, tracks, editions, releases and series pages. | M17, M18 | 0 / 12 |
 | [6 Polish, in any order](#phase-6--polish-in-any-order) | Polish, in any order. | M19–M21 (6.2b in M12) | 1 / 17 |
 | [7 AI-assisted curation (after Phase 4, not before)](#phase-7--ai-assisted-curation-after-phase-4-not-before) | Claude proposes, Metron verifies, you approve. Only after Phase 4. | M22 | 0 / 8 |
 | [8 Watchlist: film and television](#phase-8--watchlist-film-and-television) | Films, shows, seasons and franchises. Needs only Phase 0, so it can be pulled forward. | M23, M24 | 0 / 10 |
 | [9 Music](#phase-9--music) | A fourth medium, last (D-75). | M25 | 0 / 7 |
 
-Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases (product § Owner additions).
+Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions).
 
 ---
 
@@ -918,6 +918,10 @@ Library answers and reuses that task's cache. The owner's Calibre library has
 what no API does, real word counts from the Count Pages plugin, plus series,
 tags, summaries, ISBNs and read dates.
 
+*Amended 2026-10-26 (owner, D-83):* the command can be re-run until cutover, and
+a Calibre book the Ledger doesn't have is created at **Owned** (1.21) instead
+of being left out. After cutover the sync moves into the app (4.4).
+
 - **`etl/calibre.py`** (`npm run calibre`):
   - It is given the library folder (`--library "C:/Users/…/Calibre Library"`,
     or `CALIBRE_LIBRARY` in `.env`).
@@ -929,8 +933,13 @@ tags, summaries, ISBNs and read dates.
 - **Matching is 1.13's.** A Calibre book is a workbook book when title and
   author match after `clean()` / `key()`. A near spelling (≥ 0.4) appends a
   `book_review.csv` row with `reason = calibre`, as 1.14 does. Anything else is
-  reported as unmatched, with its candidates. A Calibre book that isn't in the
-  workbook is not created: it comes in through 1.4c.
+  reported as unmatched, with its candidates.
+- **A Calibre book that matches nothing is created** (D-83, amending D-73,
+  which left it to 1.4c). Extract writes a `books.csv` row from Calibre's
+  title, author, series and word count, with a `book_status` row at `owned`
+  (1.21), or at `read` once an accepted `calibre_reads.csv` row says so. For
+  the plan gate: whether 1.20's hold applies to it when Open Library doesn't
+  know it (proposed: no, since owning it is the owner's say-so).
 - **`etl/data/calibre_books.csv`** is keyed by title and author, with `source`
   `calibre` or `hand`. A `hand` row is never overwritten. Extract folds it in:
   - `word_count`, as `stated`, only where the workbook has none. A workbook
@@ -952,8 +961,11 @@ tags, summaries, ISBNs and read dates.
   not merged.
 - Nothing ever writes to Calibre. The CSVs are committed like the other
   sidecars; `metadata.db` and its temp copy never are.
-- After cutover there is no re-extract: a book added in the app gets Calibre's
-  values through 4.2's after-cutover path (noted there).
+- **Re-runnable until cutover** (owner, 2026-10-26). Run it after any change
+  to the library: new Calibre books and reads append rows, a `hand` row and a
+  decided review row are never rewritten, and a run over an unchanged library
+  changes no sidecar byte. After cutover extract stops, and nothing local may
+  write the live database (D-18), so the sync moves into the app: 4.4.
 
 **Check:** `npm run test:etl`, with a fixture `metadata.db` built by the test
 (two books, `#words` and `#date_read` custom columns) and recorded API answers,
@@ -963,6 +975,9 @@ shows:
 - a series Open Library agrees with fills; one it contradicts writes a
   `calibre_review.csv` row and fills nothing;
 - a near spelling writes a `book_review.csv` row;
+- a Calibre book matching nothing becomes one `books.csv` row with an `owned`
+  status, and a second run over the same fixture leaves every sidecar
+  byte-identical;
 - an undecided `calibre_reads.csv` row loads nothing, an `accept` row loads one
   `read_events` row with its date and precision, and a `reject` row loads
   nothing;
@@ -1073,6 +1088,128 @@ and none of its status, plan or release rows load; `decision = keep` loads it
 on the next extract with its status; a book with a `book_details.csv` row
 loads unchanged; extract prints how many books are held.
 
+### ☐ 1.21 Owned: the books you have but haven't put on your list · S
+Backlog intake, 2026-10-26 (owner: *give all [Calibre] books a default status
+below Someday … available during search, but not in my face on any list*).
+D-83. **Built in sitting 8, before 1.18**, which creates Calibre's other books
+at this level. The ladder becomes Quarter · Year · On deck · Someday ·
+**Owned**. Someday keeps its line, *on your to-read list, not planned*. Owned
+is *in your library, not on your list*.
+
+- Proposed: a fifth `book_status.status` value, `owned`, beside `to_read`,
+  `reading`, `read` and `dnf` (no CHECK constrains the column today). **Stop and
+  ask at plan time**: it changes what a stored status means (CLAUDE.md). No
+  column is added, dropped or retyped.
+- **Out of the way.** `to_read_level` reads only `to_read`, so an Owned book has
+  no level and is on no plan rail, capacity sum, dashboard slot or status
+  screen, and in no year total. The master list's *Everything* leaves it out,
+  and a fifth chip, *Owned · N*, shows only them. The progress views
+  (`series_progress`, `author_progress`, 5.12's) count it as unread, as they
+  count a book with no status today.
+- **Found by search.** The master list's search, the add sheets' library
+  search and 6.1 find it, tagged *Owned* (1.22).
+- **One verb to promote it.** An Owned row and its sheet offer *Add to Someday*
+  (writes `to_read`, with Undo) beside 1.4c's other destinations. Adding an
+  Owned book through 1.4c moves it to the chosen destination instead of
+  reporting it as already there.
+
+**Check:** with a fixture of one `owned`, one `to_read` and one `read` book,
+*Everything* lists two and the *Owned* chip lists one with the count 1; a
+master-list search for the Owned book's title finds it; `to_read_level`, the
+status screens and the plan rail never return it; *Add to Someday* writes one
+`to_read` row and Undo puts back `owned`; a series holding one read and one
+Owned book reads `1 / 2`.
+
+### ☐ 1.22 Search as you type, and where each result comes from · M
+Backlog intake, 2026-10-26 (owner: *search on finish typing, not just Enter …
+any time there is a search (add books, filtering, etc), after a few characters
+and a delay in typing … make it clear in search results where the result came
+from (Open Library or Calibre/my list)*). D-84. Depends on 1.21 for the
+*Owned* tag.
+
+- **When it searches.** Every search box in the app (today the master list,
+  Add books and Add issues) searches once the text is at least 3 characters
+  and typing has paused for 500 ms. Enter still searches at once. A newer
+  query aborts the older one's request, and a late answer to an old query is
+  dropped. Under 3 characters, the results clear instead of searching.
+- **The external APIs.** This amends `.claude/rules/ui.md`'s *searched when the
+  user submits a search in Add* to *when the user submits or pauses typing*
+  (D-84); this task edits the rule. Answers stay cached (D-53, D-62), so
+  retyping a query asks no API, and the rate-limited states of 1.3b and 1.4c
+  are unchanged. Add issues is the expensive case, because one search is up
+  to ten Metron calls (D-60). The plan proposes whether its Metron half waits
+  until the label parses as complete (`thor 337-340`, not `thor 33`), and the
+  PR says which.
+- **The master list** searches by replacing `?q=` without a history entry per
+  keystroke, so one Back leaves the list rather than taking letters off.
+- The hint *Searches when you press Enter* becomes *Searches as you type*.
+- **Where each result comes from.** Every result row carries a source tag,
+  in text and not colour alone: a library book shows where it sits (*Someday*,
+  *On deck*, *Q1 2027*, *Reading*, *Read*, *Owned*), an Open Library result
+  *Open Library*, a Metron result *Metron*. The group heads *In your library*
+  and *From Open Library* stay. A *Calibre* tag on a book that is also on your
+  list needs the Ledger to remember which books Calibre matched (for example
+  `books.calibre_id`), a new column: **stop and ask** at plan time. Until then
+  a Calibre-only book shows as *Owned*.
+
+**Check:** in the browser (0.11), with recorded Open Library answers: typing
+`pir` and pausing lists results without Enter; typing `pi` and pausing makes no
+request; typing `piranesi` quickly makes one request, not six; a library result
+shows its level tag and an Open Library result its source tag, each part of the
+row's accessible name; the master list narrows as you type, and one Back leaves
+it. A vitest with fake timers shows the older request aborted when a newer
+query starts.
+
+### ☐ 1.23 Audiobooks: listening, and a listen that counts as a read · M
+Backlog intake, 2026-10-26 (owner: *audiobook listening: a separate status
+under books, a separate column on a book if I've listened to it, shown only if
+I'm listening or have listened … it counts as completed, but I want separate
+stats and an icon to make it clear it was listened to or is being listened to;
+the book summary shows reads and listens as different things*). D-85. **Before
+cutover, in sitting 9**, for 1.5's and 1.17's reason: a finish logged without
+saying it was a listen can't be told apart later.
+
+- Proposed: a `listening` value of `book_status.status` (in progress, by ear),
+  and `read_events.format` (`text` | `audio`, NOT NULL, default `text`, with a
+  CHECK), so every read already logged is `text`. **Stop and ask at plan time**
+  (a new column, and a new status meaning, CLAUDE.md). No column is dropped or
+  retyped, so there is no down file.
+- **A listen is a read.** Finishing from *Listening* sets `read` and appends a
+  `read_events` row with `format = audio` through `saveBookStatus`, so series,
+  author and universe progress, the Read filter and year totals count it as
+  they count any read. A second listen is a reread (data model 2.18).
+- **Said with a glyph.** A drawn headphones glyph with an `aria-label`
+  (*Listened*, *Listening*) sits beside the status wherever a book's status
+  shows: the master list, the status screens, search results (1.22) and the
+  sheet. A book only ever read on the page shows none.
+- **Listening is its own group.** The status control offers *Listening* beside
+  *Reading*, and the books In flight screen (1.9) lists *Listening* as its own
+  group after *Reading*.
+- **The book's summary counts them apart:** *Read 2× · Listened 1×* on its
+  master-list row and its sheet (3.5, noted there). The *Listened* part appears
+  only when the book has a listen or is being listened to.
+- **Separate stats, derived.** `books_by_year` gains a listened count beside
+  its total (from `read_events.format`, never stored); the total still
+  includes listens. 2.2's *2026 so far* and 6.2's charts show the split (noted
+  there).
+- **For the plan gate:** whether a listen counts against the year's reading
+  capacity (2.1's word budget) or runs alongside it; whether a book can be
+  Reading and Listening at once when you switch format mid-book (proposed: no,
+  one in-progress state); whether a listen records its length.
+
+**Check:**
+- Setting a book to *Listening* and then finishing it writes `read` and one
+  `read_events` row with `format = audio`; every read logged before the
+  migration is `text`.
+- `series_progress` counts the listened book as read.
+- `books_by_year` returns a total that includes the listen, and a listened
+  count of 1.
+- In the browser (0.11), the row shows the headphones glyph with the accessible
+  name *Listened*; a book only read on the page shows none; a book with two
+  reads and one listen says *Read 2× · Listened 1×*.
+- In flight lists a Listening book under *Listening*, not *Reading*.
+- `npm run test:db:reset` migrates from zero.
+
 ---
 
 ## Phase 2 — The pace engine
@@ -1179,6 +1316,11 @@ frame in `design/mockups.html` is drawn from this feel pass at tablet width
 (STYLE_GUIDE §14.5): the horizontal hero around a 150 × 225 cover, *Up next in
 Q4*, *This quarter*, and *On deck* | *2026 so far* stacked below as two columns,
 1.5 : 1. Build the 768–1023px layout from it.
+
+*From 1.23 (2026-10-26 intake):* **Now** shows a book being listened to as it
+shows one being read, with the headphones glyph, and *2026 so far* gives
+listens beside reads (*31 finished · 6 listened*), from `books_by_year`'s
+listened count.
 
 - **Now** is the only large thing (`--r-hero`, the art band on `--art` once
   4.2 stores it): the cover (`--cover-hero`), the title in Newsreader
@@ -2105,6 +2247,11 @@ Content: summary, genre, year, page and word count with the
 `stated`/`estimated` flag, notes, shelf membership, plan placement, reread
 history. The run page stays a full page — too dense for a sheet.
 
+*From 1.23 (2026-10-26 intake):* the reread history counts reads and listens
+apart (*Read 2× · Listened 1×*), each listen marked with the headphones glyph.
+The *Listened* line appears only when there is a listen or the book is being
+listened to.
+
 From the 2026-10-20 intake: *Your record* shows the start date beside the
 finish (1.17), and each read in *History* shows both, with the days taken
 derived. The series name is a link to its series page (5.9). If 1.18 already
@@ -2582,11 +2729,9 @@ pick one (the work with the most editions, say) is an owner decision this item
 should ask before reusing the rule; the candidates are in the run's report
 (`npm run enrich:books -- --offline`).
 
-**Calibre after cutover** (D-73, from 1.18). 1.18 reads Calibre only into
-extract's sidecars. A book added in the app later gets Calibre's word count,
-tags and summary by the same after-cutover path: matched on title and author,
-straight into `books`, with series, index and ISBN still checked against Open
-Library and Hardcover, and Calibre reads still going through a review.
+**Calibre after cutover** is 4.4 (D-83, amending this paragraph's D-73 path):
+an in-app sync from an uploaded `metadata.db`, through a review. This task's
+backfill never fills a book from Calibre.
 
 **Book covers get an art tone too** (D-40, FP-D6), for the books Now hero
 (2.2) and *Between books*: the same extraction and clamp as 4.3, run at ingest
@@ -2711,6 +2856,43 @@ height (CLS under 0.1 on a 381-row spine). With `prefers-reduced-data: reduce`
 emulated, or *Show covers* off, the spine makes zero image requests. No cover
 element carries a `box-shadow` that resolves to `--halo`.
 
+### ☐ 4.4 Sync from Calibre after cutover: upload `metadata.db` · M
+Backlog intake, 2026-10-26 (owner: *Calibre link/import, recurring*). D-83.
+Depends on 1.18 and 1.21, and only on cutover otherwise, so it can be pulled
+ahead of 4.1–4.3. Extract stops at cutover and nothing local may write the
+live database (`LEDGER_LIVE`, D-18), so 1.18's re-runnable command ends there.
+This puts the same sync in the app.
+
+- **Choose the file.** A *Sync from Calibre* screen (where it lives, under
+  2.0's Settings or the books menu, is the plan's) takes `metadata.db` from the
+  Calibre library folder. A Vercel function accepts at most 4.5 MB in a
+  request and a library's `metadata.db` can be larger, so the proposal is that
+  the browser reads the file (sql.js, WebAssembly) and sends only the fields
+  1.18 reads: title, author, word count, series and index, ISBN, tags,
+  comments, the read flag and date. The plan checks the limit, and whether a
+  server-side read (`node:sqlite`) through Blob storage is simpler.
+- **Matching is 1.18's**, in a TypeScript twin of `etl/calibre.py`'s, tested
+  against the same fixtures, as `src/lib/issue-slug.ts` twins extract's ids
+  (D-59, D-61).
+- **A review, then writes.** One screen lists what the sync would do, each
+  row accept or reject, and nothing is written until *Apply*: new books (to
+  be created at Owned), word counts to fill (only where none is stored, never
+  over a hand value), series and ISBN disagreements with Open Library, and new
+  reads (D-73). A decided row is remembered, so the next sync doesn't ask
+  again. Where that memory lives is the plan's to propose; a new table means
+  stop and ask, and joins `src/db/export-tables.ts` (hard rule 7).
+- The file is read and discarded: nothing stores `metadata.db`, and nothing
+  writes to Calibre. Fetching it from Google Drive instead of an upload is
+  *Later* § L-4.
+
+**Check:** with a fixture `metadata.db` of three books (one matching a Ledger
+book with no word count, one the Ledger lacks, one with a read), the review
+lists one word count, one new Owned book and one read, and nothing is written
+before *Apply*; *Apply* with all three accepted writes one `stated` word count,
+one `books` row with an `owned` status and one `read_events` row; a second sync
+of the same file lists nothing; a book with a hand-entered word count is never
+offered a fill.
+
 ---
 
 ## Phase 5 — Remaining surfaces
@@ -2738,6 +2920,15 @@ it is converted.
   - **Check (the context part):** a note saves, survives a reload and renders
     under its row; a shelf with no description renders no empty line; a note
     on one shelf does not appear on another shelf holding the same book.
+  - **A new shelf from the add sheet** (2026-10-26 intake: *create a new
+    shelf; right now I can only add to an existing one*). 1.4c's *Shelf…*
+    picker ends with *New shelf…*: a name field, then the book goes on the new
+    shelf in the same write, and one Undo removes both. A name already in use
+    is refused, with the reason under the field. This part is small enough to
+    pull ahead of the rest of 5.1 if the owner asks.
+  - **Check (the new-shelf part):** *New shelf…* with a new name writes one
+    `shelves` row and one `shelf_books` row; Undo leaves neither; a name
+    already in use writes nothing and says why.
 
 - ☐ 5.2 Tracks page from `track_progress` · S. `/comics/tracks`: 37 tracks, each
   drawn as a row of its blocks (D-29: cells sized by each block's issue count,
@@ -2986,7 +3177,8 @@ it is converted.
   coverage. No streaks. **The provenance line lives here** (D-40, FP-D4): *73 of
   10,834 issues logged…*, small and grey, is the one place the catalogue total
   appears; the dashboards no longer carry it. The dashboards' *2026 so far*
-  rollups link here.
+  rollups link here. *From 1.23:* books per year splits read from listened,
+  and listens get their own count (books listened per year).
 
 - ☑ 6.2b **True unlock cost** — moved to 2.4/2.6, where the comics dashboard
   needs it. What remains here is the run-list *sort* by unlock cost and by
@@ -3800,5 +3992,14 @@ becomes a task once its open question is answered. None has a **Check:**, and
   editions (trades, omnibuses) as series of their own, with the issues they
   reprint. That could suggest editions for 5.10's *Collected in* that you
   don't own yet. Research how complete the reprint data is first.
+- **L-4 Calibre from Google Drive** (2026-10-26 intake). The owner's Calibre
+  library lives on Google Drive, so once 4.4 works by upload, the app could
+  fetch `metadata.db` itself, behind a *Sync now* button or a cron that stages
+  the same review. It needs the Drive API with the library folder shared
+  read-only to a service account (or an OAuth refresh token) and two Vercel
+  secrets. The open questions: service account or OAuth; whether Drive's copy
+  is current while Calibre is open (Calibre warns against libraries in synced
+  folders, so the review should show the file's modified time); and whether
+  the file fits a function's memory and time limits.
 
 ---
