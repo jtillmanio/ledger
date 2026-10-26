@@ -107,6 +107,7 @@ describe("editing a line (AC-2)", () => {
     // `The Blade Itself - Joe Abercrombie, again` is a different author string the library hasn't been asked about.
     const edited = row(r, 3);
     expect(edited.check).toBe("unverified");
+    expect(edited.kind).toBe("choice");
     expect(edited.edited).toBe(true);
     expect(edited.groups).toEqual([]);
     expect(r.accepts.some((a) => a.id === 3)).toBe(false);

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
+import EmptySlate from "@/components/EmptySlate";
 import ReviewTable from "@/components/ReviewTable";
 import type { WishlistResult } from "@/db/writes";
 import { bookKey } from "@/lib/book-parse";
@@ -198,10 +199,9 @@ export default function WishlistReview({ lines, answers: initial, seriesNames }:
         <h1 className="t">Your wishlist</h1>
         {done && <p className="small muted review-status" role="status">{done}</p>}
         {failed && <p className="neutral-error" role="alert"><span aria-hidden="true">×</span> {failed}</p>}
-        <div className="slate">
-          <p>Nothing is left on your wishlist. Every line is a book now, or was dismissed.</p>
-          <Link prefetch={false} href="/books/add" className="btn">Add books</Link>
-        </div>
+        <EmptySlate title="Nothing left." href="/books/add" label="Add books">
+          Nothing is left on your wishlist. Every line is a book now, or was dismissed.
+        </EmptySlate>
       </div>
     );
   }

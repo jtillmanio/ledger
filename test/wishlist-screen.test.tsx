@@ -134,6 +134,7 @@ describe("the states (AC-4)", () => {
 
   it("is an empty slate when nothing is left, with one action back to Add books", () => {
     show([], []);
+    expect(container.querySelector(".slate b")!.textContent).toBe("Nothing left.");
     expect(container.querySelector(".slate")!.textContent).toContain("Nothing is left on your wishlist.");
     const actions = container.querySelectorAll(".slate a, .slate button");
     expect(actions).toHaveLength(1);
@@ -235,6 +236,9 @@ describe("editing a line (AC-2)", () => {
     expect(container.querySelector("#wl-edit-3")).toBeNull();
     expect(rows()[2].querySelector(".vl")!.textContent).toBe("Before They Are Hanged - Joe Abercrombie");
     expect(rows()[2].querySelector(".vcheck")!.textContent).toBe("unverified");
+    // Not a green tick while it is unchecked.
+    expect(rows()[2].querySelector(".vd")!.textContent).toBe("!");
+    expect(rows()[2].querySelector(".vd")!.getAttribute("aria-label")).toBe("Needs a choice");
     expect(groupsOf(rows()[2])).toEqual([]);
     expect(reason()).toBe("Check 1 line first");
     expect(apply().getAttribute("aria-disabled")).toBe("true");

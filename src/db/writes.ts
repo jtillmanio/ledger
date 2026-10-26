@@ -1173,6 +1173,8 @@ async function acceptLine(tx: Tx, userId: string, item: WishlistItem): Promise<W
     book = item.use;
   } else {
     const same = (await sameBooks(tx, [item])).get(0);
+    // An undo of the add that made it can remove it between the read and the link.
+    if (same !== undefined && !(await lockBook(tx, same))) return { id: item.id, ok: false, reason: "gone" };
     created = same === undefined;
     book = same ?? (await createBooks(tx, [item]))[0];
   }

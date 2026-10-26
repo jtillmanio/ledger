@@ -115,10 +115,11 @@ export function buildWishlistReview(
 
     if (answer === undefined) {
       pending++;
+      // Not a green tick: it can't be accepted until the library has been asked.
+      row.kind = "choice";
       const k = bookKey(parsed.title, parsed.author);
       if (!unchecked.has(k)) unchecked.set(k, { title: parsed.title, author: parsed.author });
       if (parsed.flag === "no_author") {
-        row.kind = "choice";
         row.why = "No author. Add one after a dash: Title - Author.";
       } else {
         row.why = row.edited ? "Edited: check it against your library." : "Not checked against your library yet.";
