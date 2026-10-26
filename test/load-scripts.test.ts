@@ -32,10 +32,55 @@ describe.each(["load.ps1", "load.sh"])("%s", (name) => {
   });
 });
 
+// Task 1.15: universes and the three follow tables. A universe is a target of
+// books.universe_id, so it loads before books; each follow loads after its
+// target and after the owner's users row, with $OWNER bound like the other
+// per-user CSVs.
+const FOLLOWS = [
+  ["series_follows", "series_id", /\\+copy book_series\b/],
+  ["author_follows", "author_id", /\\+copy authors\b/],
+  ["universe_follows", "universe_id", /\\+copy book_universes\b/],
+] as const;
+
+describe.each(["load.ps1", "load.sh"])("%s, task 1.15", (name) => {
+  const text = read(name);
+  const at = (re: RegExp) => {
+    const i = text.search(re);
+    expect(i, String(re)).toBeGreaterThan(-1);
+    return i;
+  };
+
+  it("truncates the four tables with the others", () => {
+    const truncate = /TRUNCATE[\s\S]*?RESTART IDENTITY CASCADE;/.exec(text)![0];
+    for (const t of ["book_universes", "series_follows", "author_follows", "universe_follows"]) {
+      expect(truncate).toMatch(new RegExp(`\\b${t}\\b`));
+    }
+  });
+
+  it("copies book_universes before books, and books with universe_id", () => {
+    const universes = at(/\\+copy book_universes FROM '[^']*book_universes\.csv' CSV HEADER/);
+    expect(universes).toBeLessThan(at(/\\+copy books\(/));
+    expect(text).toMatch(/\\+copy books\([^)]*\buniverse_id\b[^)]*\) FROM '[^']*books\.csv'/);
+  });
+
+  it.each(FOLLOWS)("copies %s after its target from the bound CSV", (table, column, target) => {
+    const copy = at(new RegExp(`\\\\+copy ${table}\\(user_id,${column},state\\) FROM '[^']*(tmp|Path)[^']*/${table}\\.csv' CSV HEADER`));
+    expect(copy).toBeGreaterThan(at(target));
+    expect(copy).toBeGreaterThan(at(/INSERT INTO users/));
+    const bind = /(?:foreach \(\$f in @\(|for f in )([^);]*)/.exec(text)![1];
+    expect(bind).toContain(table);
+  });
+});
+
 describe.each(["rebuild.ps1", "rebuild.sh"])("%s", (name) => {
   it("counts volume_rules against the seed", () => {
     expect(read(name)).toMatch(/\bvolume_rules\b/);
   });
+
+  it.each(["book_universes", "series_follows", "author_follows", "universe_follows"])(
+    "counts %s against the seed", (table) => {
+      expect(read(name)).toMatch(new RegExp(`\\b${table}\\b`));
+    });
 });
 
 describe("the seed CSV header", () => {

@@ -68,7 +68,8 @@ $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("rt-" + [guid]::NewGuid())
 New-Item -ItemType Directory -Path $tmp | Out-Null
 
 try {
-    foreach ($f in @("issue_progress", "edition_progress", "book_status", "reading_plan")) {
+    foreach ($f in @("issue_progress", "edition_progress", "book_status", "reading_plan",
+                     "series_follows", "author_follows", "universe_follows")) {
         $src = Join-Path $Seed "$f.csv"
         if (-not (Test-Path $src)) { throw "missing $src - run etl/extract.py first" }
         (Get-Content $src -Raw).Replace('$OWNER', $ownerId) |
@@ -89,7 +90,8 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
          run_tracks, event_runs, prereqs, issue_credits, creators,
          run_issues, issues, events, editions, volume_rules,
          runs, blocks, tracks, releases, wishlist, external_lists,
-         books, book_series, authors, shelves RESTART IDENTITY CASCADE;
+         series_follows, author_follows, universe_follows,
+         books, book_universes, book_series, authors, shelves RESTART IDENTITY CASCADE;
 
 \copy tracks       FROM '$seedPath/tracks.csv'       CSV HEADER
 \copy blocks(id,track_id,number,name) FROM '$seedPath/blocks.csv' CSV HEADER
@@ -107,7 +109,8 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
 
 \copy authors     FROM '$seedPath/authors.csv'     CSV HEADER
 \copy book_series FROM '$seedPath/book_series.csv' CSV HEADER
-\copy books(id,title,author_id,series_id,series_position,genre,book_type,word_count,word_count_source,published_year,page_count,cover_url,open_library_id) FROM '$seedPath/books.csv' CSV HEADER
+\copy book_universes FROM '$seedPath/book_universes.csv' CSV HEADER
+\copy books(id,title,author_id,series_id,series_position,genre,book_type,word_count,word_count_source,published_year,page_count,cover_url,open_library_id,universe_id) FROM '$seedPath/books.csv' CSV HEADER
 \copy releases    FROM '$seedPath/releases.csv'    CSV HEADER
 \copy wishlist(genre,raw_entry,book_id) FROM '$seedPath/wishlist.csv' CSV HEADER
 \copy external_lists(source,year,rank,raw_title,book_id) FROM '$seedPath/external_lists.csv' CSV HEADER
@@ -116,6 +119,9 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
 \copy edition_progress FROM '$tmpPath/edition_progress.csv' CSV HEADER
 \copy book_status(user_id,book_id,status,finished_on,finished_on_precision,year_rank,rating) FROM '$tmpPath/book_status.csv' CSV HEADER
 \copy reading_plan(user_id,book_id,period,ordinal) FROM '$tmpPath/reading_plan.csv' CSV HEADER
+\copy series_follows(user_id,series_id,state) FROM '$tmpPath/series_follows.csv' CSV HEADER
+\copy author_follows(user_id,author_id,state) FROM '$tmpPath/author_follows.csv' CSV HEADER
+\copy universe_follows(user_id,universe_id,state) FROM '$tmpPath/universe_follows.csv' CSV HEADER
 
 -- run_issues.id came from the CSV (extract numbers placements in sheet order,
 -- D-16), so the serial never advanced: move it past them, or the first

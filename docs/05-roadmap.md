@@ -841,7 +841,7 @@ Then a real run over the catalog with the cache warm. The PR reports how many
 were matched, proposed and unmatched, and `npm run rebuild` (development)
 loads the details.
 
-### ☐ 1.15 Track series, authors and universes · M
+### ☑ 1.15 Track series, authors and universes · M
 Book-ingest review, 2026-10-08 (product B6). **Schema; build attended in
 sitting 8, after 1.13.** The workbook's Series tab is a list of what the owner
 follows, and it mixes three kinds:
@@ -875,11 +875,16 @@ Shelves stay the owner's free-form lists.
 - **Seed (extract).**
   - The Cosmere and Riordanverse tabs become universes, every row a member.
   - A Series-tab group that names neither a series nor an author (after
-    1.13's review) becomes a universe, and the books listed under it in the
-    Series tab are its members.
+    1.13's review) becomes a universe only when it is on extract's hand list,
+    `UNIVERSE_GROUPS` (Grishaverse; owner at 1.15's plan gate, 2026-10-26:
+    the tab's other unmatched groups are misspelled or unlisted series), and
+    the books listed under it in the Series tab are its members.
   - Every Series-tab group and the four author tabs become a follow at
     `tracking`. The tab's `Completed` column is not read.
-  - A group that matches nothing goes to `unresolved.csv`.
+  - A group that matches nothing goes to `unresolved.csv`, and its name is
+    offered in `book_review.csv` so a near spelling can be merged.
+  - A book listed under a group fills a missing `word_count` from the tab's
+    count, source `stated`, never replacing one (owner, 2026-10-26).
 - **Not here:** the control that changes a follow's state, and pages for
   authors and universes. 5.9 draws series; the rest is 5.11.
 
@@ -2878,6 +2883,13 @@ it is converted.
   kinds of page: *Tracking · Reading · Not following*, a `role="radiogroup"`
   writing `series_follows`, `author_follows` or `universe_follows` for the
   user. *Reading* stays set until it is changed (D-43). Done is never stored.
+  *From TASK-023 (1.15, PR #134):* nothing
+  sets a book's `universe_id` after the load, and Grishaverse loads with no
+  member books (the books its Series-tab group lists are reads, which D-41
+  never loads), so its page would show 0/0 until a book can be put in a
+  universe; settle where that happens at this task's plan gate. The first
+  vitest suite that writes `book_universes` adds it to `truncateAll` in
+  `test/db.ts`, which today clears it only through `books`' CASCADE.
   - **Check:** an author page and a universe page list their books with the
     counts from their views. Setting *Reading* writes one follow row for the
     user, survives a reload, and shows in the view's `follow_state`. *Not

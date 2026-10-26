@@ -527,7 +527,10 @@ FROM run_queue q
 JOIN run_progress  rp ON rp.run_id = q.run_id AND rp.user_id = q.user_id
 JOIN run_readiness rr ON rr.run_id = q.run_id AND rr.user_id = q.user_id;
 
--- Series completion. Replaces the Series tab.
+-- Series completion. Replaces the Series tab. follow_state is the owner's
+-- stored choice, tracking or reading, and NULL when the series isn't followed
+-- (task 1.15, D-43); whether it is done stays derived (books_read = total_books).
+-- follow_state is last, so CREATE OR REPLACE can add it to a live view.
 CREATE OR REPLACE VIEW series_progress AS
 SELECT
   u.id AS user_id, bs.id AS series_id, bs.name, a.name AS author,
@@ -535,13 +538,48 @@ SELECT
   COALESCE(bs.total_books, COUNT(b.id))                 AS total_books,
   COUNT(*) FILTER (WHERE st.status = 'read')            AS books_read,
   COUNT(*) FILTER (WHERE st.status = 'read')::float8
-    / NULLIF(COALESCE(bs.total_books, COUNT(b.id)), 0)  AS pct
+    / NULLIF(COALESCE(bs.total_books, COUNT(b.id)), 0)  AS pct,
+  f.state                                               AS follow_state
 FROM book_series bs
 CROSS JOIN users u
 LEFT JOIN authors a     ON a.id = bs.author_id
 LEFT JOIN books b       ON b.series_id = bs.id AND b.deleted_at IS NULL
 LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = u.id
-GROUP BY u.id, bs.id, bs.name, a.name, bs.total_books;
+LEFT JOIN series_follows f ON f.series_id = bs.id AND f.user_id = u.id
+GROUP BY u.id, bs.id, bs.name, a.name, bs.total_books, f.state;
+
+-- Author and universe completion (task 1.15, D-42), in series_progress's shape:
+-- live books only, and a book with no status counts as unread. Neither has a
+-- stated total, so the books listed are the whole. follow_state as above.
+CREATE OR REPLACE VIEW author_progress AS
+SELECT
+  u.id AS user_id, a.id AS author_id, a.name,
+  COUNT(b.id)                                           AS books_listed,
+  COUNT(*) FILTER (WHERE st.status = 'read')            AS books_read,
+  COUNT(*) FILTER (WHERE st.status = 'read')::float8
+    / NULLIF(COUNT(b.id), 0)                            AS pct,
+  f.state                                               AS follow_state
+FROM authors a
+CROSS JOIN users u
+LEFT JOIN books b       ON b.author_id = a.id AND b.deleted_at IS NULL
+LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = u.id
+LEFT JOIN author_follows f ON f.author_id = a.id AND f.user_id = u.id
+GROUP BY u.id, a.id, a.name, f.state;
+
+CREATE OR REPLACE VIEW universe_progress AS
+SELECT
+  u.id AS user_id, bu.id AS universe_id, bu.name,
+  COUNT(b.id)                                           AS books_listed,
+  COUNT(*) FILTER (WHERE st.status = 'read')            AS books_read,
+  COUNT(*) FILTER (WHERE st.status = 'read')::float8
+    / NULLIF(COUNT(b.id), 0)                            AS pct,
+  f.state                                               AS follow_state
+FROM book_universes bu
+CROSS JOIN users u
+LEFT JOIN books b       ON b.universe_id = bu.id AND b.deleted_at IS NULL
+LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = u.id
+LEFT JOIN universe_follows f ON f.universe_id = bu.id AND f.user_id = u.id
+GROUP BY u.id, bu.id, bu.name, f.state;
 
 -- Not here yet: show_progress and franchise_progress arrive with task 8.1,
 -- because titles, seasons and season_status do not exist until then. When they

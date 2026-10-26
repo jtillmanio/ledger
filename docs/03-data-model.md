@@ -572,8 +572,6 @@ the same PR (hard rule 7).
 
 | Task | Adds | Notes |
 |---|---|---|
-| 1.10 | `run_queue` | The comics Up next queue: an authored order, contiguous ordinals (2.16) |
-| 1.15 | `book_universes`, `books.universe_id`, `series_follows`, `author_follows`, `universe_follows` | A universe is a fact about the work (D-42); a follow is per user (D-43) |
 | 1.17 | `book_status.started_on`, `read_events.started_on`, each with its precision | 2.18 |
 | 1.18 | Calibre sidecars, and columns the plan gate settles | 2.19, D-73 |
 | 2.1b | `sessions` | §4.3 |

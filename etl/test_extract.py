@@ -571,9 +571,31 @@ def build_books(master: list[tuple], tabs: dict | None = None,
             df.to_excel(xw, sheet_name=name, index=False)
         pd.DataFrame(list(coming_out), columns=["Title", "Author", "Series", "Date"]) \
             .to_excel(xw, sheet_name="Coming Out", index=False)
-        pd.DataFrame(list(series), columns=["Series", "Total Books"]) \
-            .to_excel(xw, sheet_name="Series", index=False)
+        if "Series" not in (tabs or {}):
+            pd.DataFrame(list(series), columns=["Series", "Total Books"]) \
+                .to_excel(xw, sheet_name="Series", index=False)
     return path
+
+
+SERIES_COLUMNS = ["Series", "Author", "Percent Read", "Words", "Books Read", "Total Books", "Completed"]
+
+
+def series_tab(*groups):
+    """The workbook's Series tab (task 1.15): a group row (name, author, total
+    books, ticked Completed), then one row per listed book (title, words)."""
+    import pandas as pd
+    rows = []
+    for name, author, total, listed in groups:
+        rows.append([name, author, 1.0, None, len(listed), total, True])
+        rows += [[None, None, None, words, title, None, None] for title, words in listed]
+    return pd.DataFrame(rows, columns=SERIES_COLUMNS)
+
+
+def tab(*books, series=()):
+    """An author or universe tab: Completed, Type, Book, Series, Published."""
+    series = list(series) or [None] * len(books)
+    return df({"Completed": [True] * len(books), "Type": ["Novel"] * len(books), "Book": list(books),
+               "Series": series, "Published": [2010] * len(books)})
 
 
 class BookCase(unittest.TestCase):
@@ -929,6 +951,136 @@ class BookDetails(BookCase):
                          ("Edgedancer", "OL19356251W"))
         self.assertEqual([r["decision"] for r in self.review_rows()], ["merge"])
         self.assertNotIn("stale review", self.reasons())
+
+
+class SeriesFollows(BookCase):
+    """Task 1.15 (D-42, D-43): the Series tab and the author tabs become follows
+    at `tracking`; Cosmere, the Riordanverse and the UNIVERSE_GROUPS are
+    universes; a group that names nothing is reported, never guessed."""
+
+    def follows(self) -> list[tuple[str, str, str]]:
+        out = []
+        for kind, column in (("series", "series_id"), ("author", "author_id"), ("universe", "universe_id")):
+            for r in read(self.out, f"{kind}_follows"):
+                self.assertEqual((r["user_id"], r["state"]), ("$OWNER", "tracking"))
+                out.append((kind, r[column]))
+        return out
+
+    def unmatched(self) -> list[str]:
+        return [u["detail"] for u in ex.UNRESOLVED if u["table"] == "follows"]
+
+    def test_roadmap_fixture_seeds_three_follows_and_one_unresolved(self):
+        """The roadmap Check: one series, one author, one universe group and one
+        unmatched name; the Cosmere tab's books carry universe_id 'cosmere'."""
+        self.extract(build_books(
+            [("Red Rising", "Pierce Brown", "Red Rising #1", "Sci-fi", None),
+             ("Sphere", "Michael Crichton", None, "Sci-fi", None)],
+            {"Cosmere": tab("The Final Empire", "Warbreaker", series=["Mistborn #1", None]),
+             "Series": series_tab(("Red Rising", "Pierce Brown", 7, [("Red Rising", None)]),
+                                  ("Michael Crichton", "Michael Crichton", 19, [("Sphere", None)]),
+                                  ("Cosmere", "Brandon Sanderson", 27, [("Warbreaker", None)]),
+                                  ("Zz Nothing", "Nobody", 3, []))}))
+        self.assertEqual(self.follows(), [("series", "red-rising"), ("author", "michael-crichton"),
+                                          ("universe", "cosmere")])
+        self.assertEqual(len(self.unmatched()), 1)
+        self.assertIn("Zz Nothing", self.unmatched()[0])
+        self.assertEqual(read(self.out, "book_universes"), [{"id": "cosmere", "name": "Cosmere"}])
+        universe = {b["id"]: b["universe_id"] for b in self.books().values()}
+        self.assertEqual(universe, {"red-rising-pierce-brown": "", "sphere-michael-crichton": "",
+                                    "the-final-empire-brandon-sanderson": "cosmere",
+                                    "warbreaker-brandon-sanderson": "cosmere"})
+        self.assertNotIn("Series-tab book matches no book", self.reasons())
+        # The ticked Completed column is not read (D-41): no status but to_read.
+        self.assertEqual(set(self.status().values()), {"to_read"})
+        self.assertNotIn("Series", {r["tab"] for r in read(self.out, "workbook_reads")})
+
+    def test_seed_headers_are_the_tables_columns(self):
+        self.extract(build_books([]))
+        for name, header in (("book_universes", "id,name"), ("series_follows", "user_id,series_id,state"),
+                             ("author_follows", "user_id,author_id,state"),
+                             ("universe_follows", "user_id,universe_id,state")):
+            self.assertEqual((self.out / f"{name}.csv").read_text(encoding="utf-8").splitlines()[0], header)
+        self.assertTrue((self.out / "books.csv").read_text(encoding="utf-8").splitlines()[0]
+                        .endswith(",open_library_id,universe_id"))
+
+    def test_a_group_on_the_hand_list_is_a_universe_of_its_listed_books(self):
+        """Owner, 2026-10-26: Grishaverse is a universe because UNIVERSE_GROUPS
+        says so. A group named nowhere is reported, and moves no book."""
+        self.extract(build_books(
+            [("Shadow and Bone", "Leigh Bardugo", None, None, None),
+             ("Six of Crows", "Leigh Bardugo", "Six of Crows #1", None, None),
+             ("Ninth House", "Leigh Bardugo", None, None, None)],
+            {"Series": series_tab(("Grishaverse", "Leigh Bardugo", 8,
+                                   [("Shadow and Bone", None), ("Six of Crows", None)]),
+                                  ("The Themis Files", "Sylvain Neuvel", 3, [("Ninth House", None)]))}))
+        self.assertIn("Grishaverse", ex.UNIVERSE_GROUPS)
+        self.assertEqual(self.follows(), [("universe", "grishaverse")])
+        universe = {b["id"]: b["universe_id"] for b in self.books().values()}
+        self.assertEqual(universe, {"shadow-and-bone-leigh-bardugo": "grishaverse",
+                                    "six-of-crows-leigh-bardugo": "grishaverse",
+                                    "ninth-house-leigh-bardugo": ""})
+        self.assertEqual(len(self.unmatched()), 1)
+        self.assertIn("The Themis Files", self.unmatched()[0])
+
+    def test_an_unmatched_group_is_offered_for_review_and_a_merge_makes_it_a_follow(self):
+        path = build_books([("Origin", "Dan Brown", "Robert Langdon #5", None, None)],
+                           {"Series": series_tab(("Robert Langdom", "Dan Brown", 6, [("Origin", None)]))})
+        self.extract(path)
+        self.assertEqual(self.follows(), [])
+        self.assertEqual(len(self.unmatched()), 1)
+        pairs = [{r["a"], r["b"]} for r in self.review_rows() if r["kind"] == "series"]
+        self.assertEqual(pairs, [{"Robert Langdom", "Robert Langdon"}])
+        self.decide(lambda r: r["kind"] == "series", "merge", keep="Robert Langdon")
+        self.extract(path)
+        self.assertEqual(self.follows(), [("series", "robert-langdon")])
+        self.assertEqual(self.unmatched(), [])
+        self.assertNotIn("stale review", self.reasons())
+
+    def test_listed_word_counts_fill_only_empty_counts(self):
+        """Owner, 2026-10-26: a listed book's count fills a missing word_count,
+        stated, and never replaces one."""
+        self.extract(build_books(
+            [("Sphere", "Michael Crichton", None, None, None),
+             ("Congo", "Michael Crichton", None, None, 90000)],
+            {"Series": series_tab(("Michael Crichton", "Michael Crichton", 19,
+                                   [("Sphere", 120000), ("Congo", 95000)]))}))
+        books = self.books()
+        self.assertEqual((books["sphere-michael-crichton"]["word_count"],
+                          books["sphere-michael-crichton"]["word_count_source"]), ("120000", "stated"))
+        self.assertEqual(books["congo-michael-crichton"]["word_count"], "90000")
+
+    def test_a_listed_book_matching_nothing_is_reported_not_created(self):
+        self.extract(build_books([("Sphere", "Michael Crichton", None, None, None)],
+                                 {"Series": series_tab(("Michael Crichton", "Michael Crichton", 19,
+                                                        [("Sphere", None), ("Zz Missing", 1000)]))}))
+        self.assertEqual(list(self.books()), ["sphere-michael-crichton"])
+        details = [u["detail"] for u in ex.UNRESOLVED if u["reason"] == "Series-tab book matches no book"]
+        self.assertEqual(len(details), 1)
+        self.assertIn("Zz Missing", details[0])
+
+    def test_the_author_tabs_follow_what_they_are(self):
+        self.extract(build_books([], {
+            "Stephen King": tab("Carrie"),
+            "Dresden": tab("Storm Front", series=["The Dresden Files #1"]),
+            "Riordanverse": tab("The Lightning Thief", series=["Percy Jackson and the Olympians #1"])}))
+        self.assertEqual(self.follows(), [("series", "the-dresden-files"), ("author", "stephen-king"),
+                                          ("universe", "riordanverse")])
+        self.assertEqual(read(self.out, "book_universes"), [{"id": "riordanverse", "name": "Riordanverse"}])
+        self.assertEqual(self.books()["the-lightning-thief-rick-riordan"]["universe_id"], "riordanverse")
+        self.assertEqual(self.books()["carrie-stephen-king"]["universe_id"], "")
+
+    def test_two_spellings_with_one_key_are_one_author_and_one_series(self):
+        """TASK-021's note: `J.R.R. Tolkien` and `JRR Tolkien` slug apart but
+        share a key, so they are one author, and a follow sees both books."""
+        self.extract(build_books(
+            [("The Hobbit", "J.R.R. Tolkien", "D.C. Middle Earth #1", None, None),
+             ("The Silmarillion", "JRR Tolkien", "DC Middle Earth #2", None, None)],
+            {"Series": series_tab(("JRR Tolkien", "JRR Tolkien", 2, [("The Hobbit", None)]))}))
+        self.assertEqual(read(self.out, "authors"), [{"id": "j-r-r-tolkien", "name": "J.R.R. Tolkien"}])
+        self.assertEqual([s["id"] for s in read(self.out, "book_series")], ["d-c-middle-earth"])
+        self.assertEqual({(b["author_id"], b["series_id"]) for b in self.books().values()},
+                         {("j-r-r-tolkien", "d-c-middle-earth")})
+        self.assertEqual(self.follows(), [("author", "j-r-r-tolkien")])
 
 
 class TitlesAreText(BookCase):
