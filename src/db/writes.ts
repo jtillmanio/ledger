@@ -2,7 +2,7 @@ import { and, between, desc, eq, gt, gte, inArray, isNull, like, ne, or, sql } f
 import {
   db, authors, books, bookSeries, bookStatus, inbox, issueProgress, issues, readEvents, readingPlan, readingSettings, runIssues,
   runQueue, runs, shelfBooks,
-  shelves, sql as pg, volumeRules,
+  shelves, sql as pg, volumeRules, wishlist,
 } from "./index";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
 import { bookKey } from "@/lib/book-parse";
@@ -10,6 +10,7 @@ import type { Finish } from "@/lib/finish-date";
 import type { Precision } from "@/lib/format";
 import type { Kind } from "@/lib/inbox";
 import { bookId, issueSlug, slug } from "@/lib/issue-slug";
+import type { WishlistItem } from "@/lib/wishlist-review";
 
 export const BOOK_STATUSES = ["to_read", "reading", "read", "dnf"] as const;
 
@@ -1129,6 +1130,69 @@ async function sameBooks(tx: Tx, lines: { title: string; author: string }[]): Pr
     ) m`);
   for (const r of rows) exact.set(Number(r.i) - 1, r.id);
   return exact;
+}
+
+/** What accepting one wishlist line did: the book it now points at, or why it was left. */
+export type WishlistResult = { id: number } & (
+  | { ok: true; bookId: string; created: boolean }
+  /** `gone`: a book it was pointed at is gone. `resolved`: the line is already a book, or already dismissed. `failed`: the write itself failed. */
+  | { ok: false; reason: "gone" | "resolved" | "failed" }
+);
+
+/**
+ * Promote wishlist lines into books (task 1.4d, D-39), one transaction per
+ * line: a line that fails leaves itself unresolved and every other line as it
+ * was written. A line that creates a book reuses the library's by now when the
+ * same title and author is there (`sameBooks`, D-61); the book gets `to_read`
+ * unless you have a status for it (Someday, D-37: no plan row), and
+ * `wishlist.book_id` points at it.
+ */
+export async function acceptWishlist(userId: string, items: WishlistItem[]): Promise<WishlistResult[]> {
+  const results: WishlistResult[] = [];
+  for (const item of items) {
+    try {
+      results.push(await db.transaction((tx) => acceptLine(tx, userId, item)));
+    } catch (e) {
+      console.error(`wishlist line ${item.id} failed`, e);
+      results.push({ id: item.id, ok: false, reason: "failed" });
+    }
+  }
+  return results;
+}
+
+async function acceptLine(tx: Tx, userId: string, item: WishlistItem): Promise<WishlistResult> {
+  await addLock(tx);
+  const [line] = await tx.select({ id: wishlist.id }).from(wishlist)
+    .where(and(eq(wishlist.id, item.id), isNull(wishlist.bookId))).for("update");
+  if (!line) return { id: item.id, ok: false, reason: "resolved" };
+
+  let book: string;
+  let created = false;
+  if ("use" in item) {
+    if (!(await lockBook(tx, item.use))) return { id: item.id, ok: false, reason: "gone" };
+    book = item.use;
+  } else {
+    const same = (await sameBooks(tx, [item])).get(0);
+    // An undo of the add that made it can remove it between the read and the link.
+    if (same !== undefined && !(await lockBook(tx, same))) return { id: item.id, ok: false, reason: "gone" };
+    created = same === undefined;
+    book = same ?? (await createBooks(tx, [item]))[0];
+  }
+  await toRead(tx, userId, [book]);
+  await tx.update(wishlist).set({ bookId: book }).where(eq(wishlist.id, item.id));
+  return { id: item.id, ok: true, bookId: book, created };
+}
+
+/**
+ * Dismiss wishlist lines: a hard delete of a staging row the nightly backup
+ * still holds (D-39). A line that has become a book is never deleted. Returns
+ * the ids it removed.
+ */
+export async function dismissWishlist(ids: number[]): Promise<number[]> {
+  if (ids.length === 0) return [];
+  const gone = await db.delete(wishlist)
+    .where(and(inArray(wishlist.id, ids), isNull(wishlist.bookId))).returning({ id: wishlist.id });
+  return gone.map((r) => r.id).sort((a, b) => a - b);
 }
 
 /** An Open Library result to add (task 1.4c): what the search showed. */

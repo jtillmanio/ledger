@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import type { ReviewRow } from "@/lib/bulk-review";
 
 const GLYPH = { ok: "✓", choice: "!", error: "×" } as const;
@@ -16,15 +17,20 @@ export type ReviewTableRow = Pick<ReviewRow, "key" | "line" | "kind" | "text" | 
  * a radiogroup. Stacked, as the mockup draws it at every width. Glyph and text,
  * never colour alone; a line that failed its check marks its decision
  * `aria-invalid` and points at the why.
+ *
+ * The wishlist review (1.4d) draws one table per genre: `label` names each, and
+ * `extra` adds a control under a row's decision (its *Edit*).
  */
-export default function ReviewTable({ rows, checking, onChoose }: {
-  rows: ReviewTableRow[];
+export default function ReviewTable<R extends ReviewTableRow = ReviewTableRow>({ rows, checking, onChoose, label = "Review", extra }: {
+  rows: R[];
   /** The catalog check is out: an unverified check may still change. */
   checking: boolean;
   onChoose: (group: string, option: string) => void;
+  label?: string;
+  extra?: (row: R) => ReactNode;
 }) {
   return (
-    <ol className="group review" aria-label="Review">
+    <ol className="group review" aria-label={label}>
       {rows.map((row) => {
         const whyId = `why-${row.line}`;
         return (
@@ -55,6 +61,7 @@ export default function ReviewTable({ rows, checking, onChoose }: {
                   Always use {row.rule.year} for {row.rule.series}
                 </button>
               )}
+              {extra?.(row)}
             </div>
           </li>
         );

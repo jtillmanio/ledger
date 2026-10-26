@@ -1337,3 +1337,11 @@ section[data-plan="year"] h2.group-head{color:var(--muted)}
   font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
 .stopped summary .n{font-size:.6875rem;font-weight:500;letter-spacing:0;color:var(--muted)}
 .stopped summary:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring);border-radius:var(--r-sm)}
+
+/* The wishlist review (task 1.4d, D-39; /books/add?from=wishlist): one table per genre, an inline Edit under a line. */
+.wishlist section{margin:0}
+.wl-tools{display:flex;gap:.75rem;margin-top:.375rem}
+.wl-edit{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:.5rem}
+.wl-edit input.txt{flex:1 1 14rem}
+.wl-edit .btn{min-height:44px}
+.wl-sum{margin:0;font-family:var(--mono)}

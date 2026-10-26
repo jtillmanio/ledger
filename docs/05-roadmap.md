@@ -319,7 +319,7 @@ Watch resolves into a `/watch/add` URL carrying its text. `/inbox` lists only
 unresolved notes, newest first, and the dashboard chip and `Inbox (N)` link to
 it.
 
-### ☐ 1.4d Promote the wishlist into Someday · S
+### ☑ 1.4d Promote the wishlist into Someday · S
 D-39. `wishlist` holds 497 lines from the workbook's old To-Read tab that never
 became books (`First Law - Joe Abercrombie`, with a genre; none links a
 `book_id`). Nothing shows them. This task runs them once through 1.4's

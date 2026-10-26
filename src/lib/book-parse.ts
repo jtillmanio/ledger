@@ -76,3 +76,14 @@ export function parseBooks(text: string): BookLine[] {
 export function bookKey(title: string, author: string | null): string {
   return `${title.toLowerCase()}\u0000${(author ?? "").toLowerCase()}`;
 }
+
+// A name that ends in what a run of books is called, or holds *Chronicles*:
+// `The Licanius Trilogy`, `The Riftwar Cycle`, `The Chronicles of Narnia`. A
+// guess, never a rule: *Osten Ard* and *Nevernight* get through, and the person
+// decides those lines (task 1.4d).
+const SERIES_WORD = /(?:\b(?:trilogy|saga|quartet|quintet|duology|series|sequence|cycle)|\bchronicles\b.*)$/i;
+
+/** Whether a wishlist title names a series rather than one book (task 1.4d). */
+export function seriesLike(title: string): boolean {
+  return SERIES_WORD.test(title.trim());
+}
