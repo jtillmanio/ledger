@@ -190,6 +190,17 @@ Release, test isolation) and the Hard rules a reviewer checks.
   directly.
 - Franchises are facts about the work (TMDB collections plus curation); shelves
   are the user's opinion. Different tables, don't merge them.
+- **A universe is a fact about the work; following is the user's choice**
+  (task 1.15, D-42, D-43). `book_universes` and `books.universe_id` are
+  catalog, like franchises; a book is in one universe at most. Following a
+  series, an author or a universe is a row in `series_follows`,
+  `author_follows` or `universe_follows`, keyed `(user_id, <entity>_id)`,
+  `state` `tracking` or `reading`: authored and stored, never derived from
+  reads, and never a column on the catalog table. How much is read, and whether
+  it is done, come from `series_progress`, `author_progress` and
+  `universe_progress`, each with the follow's `follow_state`. Extract makes a
+  Series-tab group a universe only through `UNIVERSE_GROUPS` (owner,
+  2026-10-26); any other group naming nothing is reported, never guessed.
 - `etl/extract.py` is the migration from the workbooks. Changing its output
   format means re-running against both `.xlsx` files and diffing the CSVs.
 - **Migrations that drop or retype a column ship a down file.** `drizzle-kit`

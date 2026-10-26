@@ -1,7 +1,7 @@
 ---
 id: TASK-023
 title: 1.15 Track series, authors and universes
-status: In progress
+status: Review
 depends_on: [TASK-022]
 size: L
 model: opus
@@ -33,11 +33,11 @@ The series, authors and universes (Cosmere, the Riordanverse) the owner follows 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `etl/test_views.sql`: `author_progress` and `universe_progress` count read and listed books and exclude a soft-deleted book; a book with no status counts as unread; the `state` CHECK rejects any other value; `follow_state` is NULL for an entity nobody follows. `npm run test:etl`: a fixture Series tab with one series, one author, one universe group and one unmatched name seeds exactly three follows at `tracking` and one `unresolved` row, and the Cosmere tab's books carry `universe_id = 'cosmere'`. `test/export-tables.test.ts` passes with the four tables. `npm run test:db:reset` migrates from zero.
-- [ ] AC-2: `series_progress` keeps every column and row it had before and gains only `follow_state`. A test compares its output on a fixture before and after the change.
-- [ ] AC-3: `etl/load.ps1` and `etl/load.sh` truncate and copy the four tables, in foreign-key order (`book_universes` before `books`, the follows after their targets), and still refuse when `LEDGER_LIVE=true`. `rebuild`'s row counts list them.
-- [ ] AC-4: No catalog table gains a per-user column: `books`, `authors`, `book_series` and `book_universes` have no `user_id`, `state` or completion column. A `follow_state` change requires no change to any catalog row.
-- [ ] AC-5: Re-running extract against both workbooks changes only the new seed files, `books.csv`'s `universe_id` column, `books.csv`'s `word_count` and `word_count_source` where they were empty (amended by the owner at plan, 2026-10-26) and `unresolved.csv`'s new rows. The diff summary is in the PR (standing rule 4).
+- [x] AC-1 (roadmap **Check:**, verbatim): `etl/test_views.sql`: `author_progress` and `universe_progress` count read and listed books and exclude a soft-deleted book; a book with no status counts as unread; the `state` CHECK rejects any other value; `follow_state` is NULL for an entity nobody follows. `npm run test:etl`: a fixture Series tab with one series, one author, one universe group and one unmatched name seeds exactly three follows at `tracking` and one `unresolved` row, and the Cosmere tab's books carry `universe_id = 'cosmere'`. `test/export-tables.test.ts` passes with the four tables. `npm run test:db:reset` migrates from zero.
+- [x] AC-2: `series_progress` keeps every column and row it had before and gains only `follow_state`. A test compares its output on a fixture before and after the change.
+- [x] AC-3: `etl/load.ps1` and `etl/load.sh` truncate and copy the four tables, in foreign-key order (`book_universes` before `books`, the follows after their targets), and still refuse when `LEDGER_LIVE=true`. `rebuild`'s row counts list them.
+- [x] AC-4: No catalog table gains a per-user column: `books`, `authors`, `book_series` and `book_universes` have no `user_id`, `state` or completion column. A `follow_state` change requires no change to any catalog row.
+- [x] AC-5: Re-running extract against both workbooks changes only the new seed files, `books.csv`'s `universe_id` column, `books.csv`'s `word_count` and `word_count_source` where they were empty (amended by the owner at plan, 2026-10-26) and `unresolved.csv`'s new rows. The diff summary is in the PR (standing rule 4).
 
 ## Out of scope
 
@@ -64,8 +64,12 @@ The series, authors and universes (Cosmere, the Riordanverse) the owner follows 
 
 - The roadmap entry's seed rule says any unmatched group becomes a universe; the owner chose a hand list, and the word-count fill (plan gate) → `docs/05-roadmap.md` § 1.15 (approved at plan)
 - `docs/03-data-model.md` § 4.1 still lists 1.15 (and 1.10, built earlier) as not built → `docs/03-data-model.md` § 4.1 (approved at plan)
-- The schema rules have no line for universes and follows → `.claude/rules/schema.md` (approved at plan)
+- The schema rules have no line for universes and follows → `.claude/rules/schema.md` § Schema and data-model rules (approved at plan)
 - The plan's two open questions answered → `docs/tasks/TASK-023-follow-series-authors-universes.md` § Context (approved at plan)
+- Nothing sets a book's `universe_id` after the load, and Grishaverse loads with no member books (its Series-tab books are reads, which D-41 never loads), so `universe_progress` shows it 0/0 (spec review) → `docs/05-roadmap.md` § 5.11
+- `truncateAll` in `test/db.ts` clears `book_universes` only through `books`' CASCADE; add it when a vitest suite first writes one (schema review) → `docs/05-roadmap.md` § 5.11
+- `books.universe_id` and the follows' entity columns have no index of their own (schema review) → not tracked: about 1,400 books, the same as `author_id` and `series_id`; add one only if the universe views show in the performance budget
+- A `reading` follow set in the app is lost on a load or rebuild, since extract writes `tracking` (schema review) → not tracked: true of every progress table before cutover; `LEDGER_LIVE` blocks both after it
 
 ## Plan
 
@@ -101,7 +105,9 @@ Approved 2026-10-26 at `ce5356d`.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 FAIL (environment: a stale `.next` looped HMR reloads on `/login`, so the e2e sign-in setup timed out; every other step passed) → R2 PASS after clearing `.next` (browser suite 548 passed, 1 skipped; no code change between rounds)
+- Audit R1 CHANGES (AC-4: a column denylist and a tautological md5 check; AC-2 not reached at base) → AC-4 block pins the four catalog tables' exact columns; three mutations shown to fail (total_books ignored, follow_state not last, `books.following`) → R2 PASS
+- Spec R1 APPROVE (noted: unmatched listed books are reported one row per Series-tab group, every title named, not one row per book as the plan said; 49 rows became 19 on the real workbook) | Schema R1 APPROVE (three minors, placed in Follow-ups)
 
 ## Blocked
 
@@ -109,7 +115,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R1 FAIL on a stale `.next`, R2 PASS)
+- Review rounds: 1 (spec and schema both APPROVE); test audit 2
+- First-pass AC FAILs: 0 (audit R1 found AC-4's test weak, not the code)
+- Plan revisions after approval: 0 (the per-group unresolved row is within "an unmatched member is flagged")
