@@ -1445,16 +1445,20 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
 
     # ---- per-year genre-column tabs -------------------------------------
     # A Read tab is read down each genre column to its count row; the summary
-    # block below that names series and authors, not books.
+    # block below that names series and authors, not books. The count row is
+    # a number equal to the titles above it, so a title stored as a number
+    # (1984) is still a read (task 1.14).
     for tab, year in year_tabs(xl, READ_TAB_RE):
         raw = sheet(xl, tab)
         for genre in raw.columns:
             if str(genre).startswith("Unnamed"):
                 continue
+            titles = 0
             for cell in raw[genre]:
-                if is_number(cell):
+                if is_number(cell) and cell == titles:
                     break
                 if title_text(cell):
+                    titles += 1
                     listed_read(cell, year=year, genre=str(genre), tab=tab)
     for tab, year in year_tabs(xl, TO_READ_TAB_RE):
         raw = sheet(xl, tab)

@@ -956,6 +956,13 @@ class TitlesAreText(BookCase):
         self.assertEqual(sorted(b["title"] for b in self.books().values()), ["1984", "Dune", "Mistborn"])
         self.assertEqual([r["title"] for r in read(self.out, "workbook_plans")], ["Elantris"])
 
+    def test_a_read_column_keeps_a_number_title_and_stops_at_its_count_row(self):
+        """The Read tabs too (owner, task 1.14): 1984 is a read, 3 is the count,
+        and the summary below it is not a read."""
+        tabs = {"Read 2025": df({"Classics": ["Dune", 1984, None, "Emma", 3, None, "Cosmere"]})}
+        self.extract(build_books([], tabs))
+        self.assertEqual([r["title"] for r in read(self.out, "workbook_reads")], ["Dune", "1984", "Emma"])
+
     def test_title_text(self):
         import datetime
         import pandas as pd

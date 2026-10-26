@@ -154,6 +154,11 @@ stays whole and attended.
    equal to the titles above it (a title stored as a number, *1984*, is not the
    count). Test: `test_a_to_read_column_stops_at_its_count_row`. Books 1,380 →
    1,361, so the count in `CLAUDE.md` and `docs/HANDOFF.md` is corrected.
+4. (Owner, at close-out, from the spec review) The Read tabs stopped each
+   column at the first number, so a title stored as a number would cut off the
+   column's remaining reads in `workbook_reads.csv`; they now use revision 3's
+   count rule. Test: `test_a_read_column_keeps_a_number_title_and_stops_at_its_count_row`.
+   The real extract is unchanged by it.
 
 **Risks**: Open Library returns at most 10 works per search, so a title with more
 same-author works than that could miss its exact work (reported as unmatched,
