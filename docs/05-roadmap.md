@@ -1051,6 +1051,28 @@ nav item is enabled in all three navs and links to `/comics/A/add`; after a
 later add to run B it links to `/comics/B/add`; for a user who has added
 nothing it links to `/comics/runs`. A soft-deleted run is never the target.
 
+### ☐ 1.20 Hold books with no Open Library match for review · M
+*From fix/skip-placeholder-books (owner, 2026-10-26):* the owner doesn't want
+a book loaded that Open Library has never heard of until they have looked at
+it. On 2026-10-26, 804 of the 1,352 books extract loads had no
+`book_details.csv` row (678 of them on the to-read lists, 126 only on the
+author tabs or Coming Out).
+Extract holds such a book out of `books.csv` and lists it in a review file
+(title, author, tabs, the Open Library search it tried) with a blank
+`decision`; `keep` loads it on the next extract, and a held book's status,
+plan, release and universe rows wait with it. A book with an Open Library row
+loads as today. Placeholder titles are already skipped
+(`workbook_placeholders.csv`). For the plan gate: what a held to-read book is
+in the meantime (out of Someday until kept), whether `hand` rows in
+`book_details.csv` count as a match, and how 1.18's Calibre matches count.
+Depends on 1.14. **The Check below is proposed** (owner, 2026-10-26).
+
+**Check:** `npm run test:etl`: a fixture book with no `book_details.csv` row is
+not in `books.csv` and is listed in the review file with an empty decision,
+and none of its status, plan or release rows load; `decision = keep` loads it
+on the next extract with its status; a book with a `book_details.csv` row
+loads unchanged; extract prints how many books are held.
+
 ---
 
 ## Phase 2 — The pace engine

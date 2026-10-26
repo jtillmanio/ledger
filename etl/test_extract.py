@@ -1083,6 +1083,43 @@ class SeriesFollows(BookCase):
         self.assertEqual(self.follows(), [("author", "j-r-r-tolkien")])
 
 
+class PlaceholderTitles(BookCase):
+    """Owner, 2026-10-26: a placeholder title (Untitled, Untitled 2, TBA, TBD)
+    is not a book yet. It loads no book, status, plan, release or universe
+    row, and seed/workbook_placeholders.csv lists every sighting instead."""
+
+    def test_untitled_rows_load_no_book_and_are_each_listed(self):
+        self.extract(build_books(
+            [("TBA", "Brandon Sanderson", None, "Fantasy", None),
+             ("Untitled Book", "Brandon Sanderson", None, "Fantasy", None)],
+            {"Cosmere": tab("Warbreaker", "Untitled", "untitled", "Untitled #2",
+                            series=[None, "Mistborn: Ghostbloods #1", "Elantris #2", "Elantris #3"]),
+             "To-Read 2027": df({"Fantasy": ["TBD"]})},
+            coming_out=[("Untitled", "Jim Butcher", "The Dresden Files #19", "2027-03-01")]), with_plan=True)
+        # "Untitled Book" names something; only a bare placeholder is skipped.
+        self.assertEqual(set(self.books()), {"warbreaker-brandon-sanderson", "untitled-book-brandon-sanderson"})
+        self.assertEqual(self.status(), {"untitled-book-brandon-sanderson": "to_read"})
+        self.assertEqual(read(self.out, "reading_plan"), [])
+        self.assertEqual(read(self.out, "releases"), [])
+        # A series named only by placeholders is not made either.
+        self.assertEqual(read(self.out, "book_series"), [])
+        self.assertEqual(
+            sorted((r["title"], r["author"], r["series"], r["tab"]) for r in read(self.out, "workbook_placeholders")),
+            sorted([("TBA", "Brandon Sanderson", "", "To-Read Master List"),
+                    ("Untitled", "Brandon Sanderson", "Mistborn: Ghostbloods #1", "Cosmere"),
+                    ("untitled", "Brandon Sanderson", "Elantris #2", "Cosmere"),
+                    ("Untitled #2", "Brandon Sanderson", "Elantris #3", "Cosmere"),
+                    ("TBD", "", "", "To-Read 2027"),
+                    ("Untitled", "Jim Butcher", "The Dresden Files #19", "Coming Out")]))
+        self.assertEqual(self.review_rows(), [])
+
+    def test_is_placeholder(self):
+        for title in ("Untitled", "untitled", "UNTITLED", "Untitled 2", "Untitled #3", "TBA", "tbd"):
+            self.assertTrue(ex.is_placeholder(title), title)
+        for title in ("Untitled Book", "The Untitled", "TBA: A Novel", "Untold", None):
+            self.assertFalse(ex.is_placeholder(title), title)
+
+
 class TitlesAreText(BookCase):
     """Task 1.14 (owner, at the plan gate): a title cell is read as the text
     the owner typed. Excel stores 11/22/63 as a date and 1984 as a number."""

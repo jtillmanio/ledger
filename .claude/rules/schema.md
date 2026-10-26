@@ -68,7 +68,11 @@ Release, test isolation) and the Hard rules a reviewer checks.
   read state (D-41): `seed/workbook_reads.csv` lists its reads for hand entry
   and is not loaded. A To-Read tab for 2028 or later is speculative and loads
   nothing (`SPECULATIVE_FROM`, owner 2026-10-19): no book, status or plan row;
-  `seed/workbook_plans.csv` lists its titles and is not loaded.
+  `seed/workbook_plans.csv` lists its titles and is not loaded. A placeholder
+  title (`Untitled`, `Untitled 2`, `TBA`, `TBD`; `PLACEHOLDER_RE`, owner
+  2026-10-26) is no book either, wherever a book would load (the master list,
+  the author tabs, the To-Read tabs before 2028, Coming Out):
+  `seed/workbook_placeholders.csv` lists each such sighting and is not loaded.
 - **One issue row per comic.** `issues` is what exists — one row per label, id a
   slug of the label, never a run position. `run_issues(id, run_id, sequence,
   issue_id, type, notes)` is where it sits in a run; `type` and `notes` belong to

@@ -25,6 +25,8 @@ npm run extract             # etl/extract.py with every sidecar CSV (see below);
                             # and prints `N book pairs await review`. Workbook reads aren't loaded (D-41):
                             # seed/workbook_reads.csv lists them for hand entry. A To-Read tab for 2028
                             # or later loads nothing either; seed/workbook_plans.csv lists its titles.
+                            # Nor does a placeholder title (Untitled, TBA, TBD) where a book
+                            # would load: seed/workbook_placeholders.csv lists each one.
                             # Every prerequisite loop is a `prereqs,prereq cycle` row in unresolved.csv
                             # and a console count (2.11a); `-- --fail-on-cycle` exits non-zero on any,
                             # after writing every CSV (Step 14's final extract)
