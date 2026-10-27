@@ -1,6 +1,7 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  alreadyProduction, deploymentNeedsBuild, directUrl, ignoredBuildStep, needsBuild, pendingMigrations, promoteProblem, releaseProblems, smokeProblem,
+  alreadyProduction, deploymentNeedsBuild, directUrl, ignoredBuildStep, needsBuild, pendingMigrations, promoteProblem, refProblem, releaseProblems, smokeProblem,
   snapshotsToPrune,
 } from "../scripts/lib/release.mjs";
 
@@ -105,6 +106,28 @@ describe("directUrl", () => {
   it("leaves a direct URL alone", () => {
     const direct = "postgresql://u:p@ep-cool-bird-a1b2.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require";
     expect(directUrl(direct)).toBe(direct);
+  });
+});
+
+describe("refProblem (only main may release)", () => {
+  it("releases from main, dry run or not", () => {
+    expect(refProblem("refs/heads/main", false)).toBeNull();
+    expect(refProblem("refs/heads/main", true)).toBeNull();
+  });
+
+  it("lets any other ref dry-run but refuses a real release from it", () => {
+    expect(refProblem("refs/heads/chore/release-guards", true)).toBeNull();
+    expect(refProblem("refs/heads/chore/release-guards", false)).toMatch(/must run from main, not refs\/heads\/chore\/release-guards/);
+    expect(refProblem("refs/tags/v1", false)).toMatch(/must run from main/);
+    expect(refProblem(undefined, false)).toMatch(/must run from main, not an unknown ref/);
+  });
+});
+
+describe("release.yml", () => {
+  const release = readFileSync(".github/workflows/release.yml", "utf8");
+
+  it("dry-runs unless the dry_run box is unticked", () => {
+    expect(release).toMatch(/\n {6}dry_run:\n(?: {8}.*\n)*? {8}default: true\n/);
   });
 });
 
