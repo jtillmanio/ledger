@@ -11,6 +11,9 @@ export default defineConfig([
   // generated Claude Design runtime and is kept exactly as delivered (D-31).
   // scripts/perf has its own dependencies (task 0.10), installed only by the
   // Lighthouse workflow. .claude/ holds the kit, and task worktrees under
-  // .claude/worktrees/ are whole copies of the repo.
-  globalIgnores([".next/**", "node_modules/**", "scripts/perf/node_modules/**","drizzle/**", "seed/**", "design/**", "next-env.d.ts", ".claude/**"]),
+  // .claude/worktrees/ are whole copies of the repo. playwright-report/ and
+  // test-results/ are the e2e suite's output: after a failure they hold the
+  // trace viewer's minified bundle, which fails `eslint .` by the hundred.
+  globalIgnores([".next/**", "node_modules/**", "scripts/perf/node_modules/**","drizzle/**", "seed/**", "design/**", "next-env.d.ts", ".claude/**",
+    "playwright-report/**", "test-results/**"]),
 ]);
