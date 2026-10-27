@@ -138,6 +138,13 @@ describe("Add to Someday on an Unlisted row", () => {
     expect(await statusOf(UNLISTED)).toBe("unlisted");
   });
 
+  it("its Undo refuses, changing nothing, once the book has been planned since", async () => {
+    const { change } = await (await status.POST(json("POST", { bookId: UNLISTED, status: "to_read" }))).json();
+    await sql`INSERT INTO reading_plan (user_id, book_id, period) VALUES (${USER}, ${UNLISTED}, '2027')`;
+    expect((await status.DELETE(json("DELETE", { change }))).status).toBe(409);
+    expect(await statusOf(UNLISTED)).toBe("to_read");
+  });
+
   it("a status POST never sets unlisted: only an undo writes it", async () => {
     const res = await status.POST(json("POST", { bookId: SOMEDAY, status: "unlisted" }));
     expect(res.status).toBe(400);
@@ -202,6 +209,15 @@ describe("Add books promotes an Unlisted book to Someday or On deck (AC-3)", () 
     const res = await add({ kind: "someday" });
     const result = await res.json();
     await sql`INSERT INTO reading_plan (user_id, book_id, period) VALUES (${USER}, ${UNLISTED}, '2027')`;
+    expect((await undo(entryOf(result, { kind: "someday" }))).status).toBe(409);
+    expect(await statusOf(UNLISTED)).toBe("to_read");
+  });
+
+  it("an undo refuses, changing nothing, once the promoted book has a read logged since", async () => {
+    const res = await add({ kind: "someday" });
+    const result = await res.json();
+    await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision)
+              VALUES (${USER}, ${UNLISTED}, NULL, 'none')`;
     expect((await undo(entryOf(result, { kind: "someday" }))).status).toBe(409);
     expect(await statusOf(UNLISTED)).toBe("to_read");
   });

@@ -136,8 +136,9 @@ export async function saveBookStatus(userId: string, input: BookStatusInput): Pr
  * been added to it since, when it goes back to a bare `to_read`.
  *
  * Refuses, changing nothing, when anything moved on in between: the book's
- * status is no longer the one this write set, or the read it logged or
- * re-dated is no longer the book's latest.
+ * status is no longer the one this write set, the read it logged or
+ * re-dated is no longer the book's latest, or it would put an Unlisted book
+ * back under a plan row it has gained since (task 1.21).
  */
 export async function undoBookStatus(userId: string, change: BookStatusChange): Promise<boolean> {
   const { bookId, status, prior, appended, edited, backfilled } = change;
@@ -146,6 +147,12 @@ export async function undoBookStatus(userId: string, change: BookStatusChange): 
     const [now] = await tx.select({ status: bookStatus.status }).from(bookStatus)
       .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId)));
     if (now?.status !== status) return false;
+    // Back to Unlisted under a plan row would leave a planned book off your list (task 1.21).
+    if (prior?.status === "unlisted") {
+      const [planned] = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
+        .where(and(eq(readingPlan.userId, userId), eq(readingPlan.bookId, bookId))).limit(1);
+      if (planned) return false;
+    }
     const touched = appended ?? edited?.id ?? backfilled ?? null;
     if (touched !== null && (await latestRead(tx, userId, bookId))?.id !== touched) return false;
 

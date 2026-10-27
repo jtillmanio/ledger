@@ -81,6 +81,8 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 _Approved by the owner 2026-10-26 at the plan gate; the answers are in Context and D-86. `planned_at_commit` is the main commit the plan was read against (af3aef9): none of the planned files has changed since._
 
+**The owner's plan-gate answers (AC-4; D-86).** The stored value is `unlisted`. There is **no CHECK** on `book_status.status` and no migration. No status button sets Unlisted: only Calibre (1.18, 4.4) and an Undo write it. The *Unlisted · N* chip hides at zero. A shelf add leaves an Unlisted book Unlisted; only Someday and On deck promote it.
+
 **Steps**
 
 1. **Writes** (`src/db/writes.ts`). `BOOK_STATUSES` gains `unlisted` (every stored value); a new `SETTABLE_STATUSES` (the four) is what a status POST may set, so nothing but an Undo writes `unlisted`. `writeDestination` moves an Unlisted book to `to_read` for Someday and On deck (On deck then writes its plan row as today) and returns those books as a new `AddedEntry.promoted`; a shelf add leaves the status alone. `undoInside` puts `promoted` back to `unlisted`, by an update and never a delete, and only when the book is still `to_read`, has no plan row the add didn't write and no read; the other undo rules are unchanged. `toRead` and wishlist accept are unchanged (follow-up).
