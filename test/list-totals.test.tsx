@@ -28,7 +28,7 @@ vi.mock("@/db/queries", () => ({
   listBooks: async () => [book("x", 5), book("y", 5)],
   yearSummary: async () => [],
   seriesProgress: async () => [],
-  readWithoutYear: async () => 0,
+  listCounts: async () => ({ unyeared: 0, unlisted: 0 }),
   inboxCount: async () => 0,
 }));
 

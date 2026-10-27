@@ -6,6 +6,7 @@ import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { markRead, testSql, truncateAll } from "../db";
 import {
   E2E_BOOK_COUNT, E2E_INBOX_COUNT, E2E_ISSUE_COUNT, E2E_LONG_LABEL, E2E_LONG_RUN_ID, E2E_READ_COUNT, E2E_RUN_ID, E2E_RUN_TITLE,
+  E2E_UNLISTED_ID, E2E_UNLISTED_TITLE,
 } from "./helpers";
 
 export default async function globalSetup() {
@@ -27,6 +28,8 @@ export default async function globalSetup() {
               SELECT ${E2E_USER}, 'E2E note ' || n FROM generate_series(1, ${E2E_INBOX_COUNT}::int) n`;
     await sql`INSERT INTO books (id, title, genre)
               SELECT 'e2e-book-' || n, 'E2E Book ' || n, 'Fantasy' FROM generate_series(1, ${E2E_BOOK_COUNT}::int) n`;
+    await sql`INSERT INTO books (id, title, genre) VALUES (${E2E_UNLISTED_ID}, ${E2E_UNLISTED_TITLE}, 'Fantasy')`;
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${E2E_UNLISTED_ID}, 'unlisted')`;
     for (let n = 1; n <= E2E_READ_COUNT; n++) await markRead(sql, E2E_USER, E2E_RUN_ID, `e2e-comic-${n}`);
   } finally {
     await sql.end();

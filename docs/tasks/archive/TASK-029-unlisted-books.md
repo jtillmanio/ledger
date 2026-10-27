@@ -1,7 +1,7 @@
 ---
 id: TASK-029
 title: 1.21 Unlisted: the books you have but haven't put on your list
-status: Draft
+status: Done
 depends_on: []
 size: L
 model: opus
@@ -36,12 +36,12 @@ Books the owner has but hasn't put on the to-read list sit at *Unlisted*, below 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): with a fixture of one `unlisted`, one `to_read` and one `read` book, *Everything* lists two and the *Unlisted* chip lists one with the count 1; a master-list search for the Unlisted book's title finds it; `to_read_level`, the status screens and the plan rail never return it; *Add to Someday* writes one `to_read` row and Undo puts back `unlisted`; a series holding one read and one Unlisted book reads `1 / 2`.
-- [ ] AC-2: On the AC-1 fixture, the *To read* chip and its *Someday* level list only the `to_read` book. *Up next*'s Someday count is 1. The year chips and `books_by_year` count only the `read` book's read. The master list's `N shown` line under *Everything* says 2. `author_progress` for the series' author counts the Unlisted book in `books_listed` and not in `books_read`.
-- [ ] AC-3: Given an Unlisted book, when it is added through *Add books* (Search or *Paste a list*) to Someday, then its status is `to_read` with no plan row, and the add reports it as added, not already there. Added to On deck, it is `to_read` with one `on_deck` plan row. Undoing either add puts back `unlisted` and removes any plan row the add wrote. Added to a shelf, it stays `unlisted` with one `shelf_books` row. A `to_read`, `reading` or `read` book added to Someday keeps its status, as today.
-- [ ] AC-4: `src/db/schema.ts`'s `book_status.status` comment and `.claude/rules/schema.md`'s to-read-levels rule name `unlisted` as the level below Someday. The owner's plan-gate answer on the stored value (and on a CHECK) is recorded in `## Plan`.
-- [ ] AC-5: `design/mockups.html` `blist` draws the *Unlisted · N* chip after *Read*, and an Unlisted row with a grey *Unlisted* badge and *Add to Someday*. `design/mockups-index.md` notes the change.
-- [ ] AC-6: The master list with *Unlisted* selected meets the UX floor (`docs/04-design.md` § 10. The UX floor). An empty Unlisted list shows the empty state. The chip is a real link whose accessible name includes its count (as the year chips' `aria-label` does). *Add to Someday* is a real `<button>` at least 24px tall. The Unlisted badge resolves to no `--ready`, `--blocked` or `--danger` colour. Text is at 4.5:1 in both themes, and focus returns to the row after Undo. Screenshots at each `ui.viewports` width, light and dark.
+- [x] AC-1 (roadmap **Check:**, verbatim): with a fixture of one `unlisted`, one `to_read` and one `read` book, *Everything* lists two and the *Unlisted* chip lists one with the count 1; a master-list search for the Unlisted book's title finds it; `to_read_level`, the status screens and the plan rail never return it; *Add to Someday* writes one `to_read` row and Undo puts back `unlisted`; a series holding one read and one Unlisted book reads `1 / 2`.
+- [x] AC-2: On the AC-1 fixture, the *To read* chip and its *Someday* level list only the `to_read` book. *Up next*'s Someday count is 1. The year chips and `books_by_year` count only the `read` book's read. The master list's `N shown` line under *Everything* says 2. `author_progress` for the series' author counts the Unlisted book in `books_listed` and not in `books_read`.
+- [x] AC-3: Given an Unlisted book, when it is added through *Add books* (Search or *Paste a list*) to Someday, then its status is `to_read` with no plan row, and the add reports it as added, not already there. Added to On deck, it is `to_read` with one `on_deck` plan row. Undoing either add puts back `unlisted` and removes any plan row the add wrote. Added to a shelf, it stays `unlisted` with one `shelf_books` row. A `to_read`, `reading` or `read` book added to Someday keeps its status, as today.
+- [x] AC-4: `src/db/schema.ts`'s `book_status.status` comment and `.claude/rules/schema.md`'s to-read-levels rule name `unlisted` as the level below Someday. The owner's plan-gate answer on the stored value (and on a CHECK) is recorded in `## Plan`.
+- [x] AC-5: `design/mockups.html` `blist` draws the *Unlisted · N* chip after *Read*, and an Unlisted row with a grey *Unlisted* badge and *Add to Someday*. `design/mockups-index.md` notes the change.
+- [x] AC-6: The master list with *Unlisted* selected meets the UX floor (`docs/04-design.md` § 10. The UX floor). An empty Unlisted list shows the empty state. The chip is a real link whose accessible name includes its count (as the year chips' `aria-label` does). *Add to Someday* is a real `<button>` at least 24px tall. The Unlisted badge resolves to no `--ready`, `--blocked` or `--danger` colour. Text is at 4.5:1 in both themes, and focus returns to the row after Undo. Screenshots at each `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -74,12 +74,18 @@ Books the owner has but hasn't put on the to-read list sit at *Unlisted*, below 
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Wishlist accept (`acceptLine` → `toRead` in `src/db/writes.ts`) leaves an Unlisted book Unlisted, and `src/lib/wishlist-review.ts` tells the owner "your status stays". It matters only once 1.18 creates Unlisted books: decide there whether a wishlist line promotes one to Someday. (approved at plan) → `docs/tasks/TASK-030-calibre-import.md` § Context, at close-out
-- `BookSearch` and `wishlist-review` have no label for `unlisted` and show the raw value. 1.22's entry already requires the *Unlisted* tag on every library result. (approved at plan) → not tracked: covered by `docs/05-roadmap.md` § 1.22
+- Wishlist accept (`acceptLine` → `toRead` in `src/db/writes.ts`) leaves an Unlisted book Unlisted, and `src/lib/wishlist-review.ts` tells the owner "your status stays". It matters only once 1.18 creates Unlisted books: decide there whether a wishlist line promotes one to Someday. (approved at plan) → docs/tasks/TASK-030-calibre-import.md § Context
+- `BookSearch` and `wishlist-review` have no label for `unlisted` and show the raw value. (approved at plan) → not tracked: `BookSearch` is covered by `docs/05-roadmap.md` § 1.22 (the *Unlisted* tag on every library result); `wishlist-review` is raised in the TASK-030 § Context note above
+- Schema review: an add's undo trusts the client's `promoted` list (checked against `added`, `created` and `statused`), so a forged list could unlist an On deck book → not tracked: the same trust as `statused` today, in a single-user app behind the passcode
+- Schema review: a plan write takes only the plan advisory lock, not `lockBook`, so one interleaving with an undo by milliseconds could still leave `unlisted` under a plan row; the add's undo has the same exposure → not tracked: reviewer advised leaving it (one user, a millisecond window)
+- Schema review: `undoBookStatus` with no prior row deletes the status even if the book was planned since (task 1.5's undo, only reachable from a toast left open in another tab). This task closed the Unlisted case → not tracked: pre-existing and not made worse here; raised for the owner in the PR
+- UI review: the live master list draws its filters as chip rows in one column at every width, where `blist` draws a segmented control, a chevron and a desktop rail → not tracked: pre-existing layout, unchanged by 1.21; the Unlisted chip and row match the mockup's content and order
 
 ## Plan
 
 _Approved by the owner 2026-10-26 at the plan gate; the answers are in Context and D-86. `planned_at_commit` is the main commit the plan was read against (af3aef9): none of the planned files has changed since._
+
+**The owner's plan-gate answers (AC-4; D-86).** The stored value is `unlisted`. There is **no CHECK** on `book_status.status` and no migration. No status button sets Unlisted: only Calibre (1.18, 4.4) and an Undo write it. The *Unlisted · N* chip hides at zero. A shelf add leaves an Unlisted book Unlisted; only Someday and On deck promote it.
 
 **Steps**
 
@@ -87,8 +93,10 @@ _Approved by the owner 2026-10-26 at the plan gate; the answers are in Context a
 2. **Undo plumbing.** `promoted` travels with the add's answer and back on its undo: `src/app/api/books/route.ts` (DELETE parses it, optional like `statused`), `src/lib/book-add.ts` (`undoAdd`), `src/components/AddBooks.tsx` and `src/components/PasteBooks.tsx` (the entry). `/api/books/bulk` returns `addBooks`'s answer as it is. `src/app/api/progress/book/route.ts`: POST accepts `SETTABLE_STATUSES`; DELETE accepts `unlisted` as a change's `prior`.
 3. **Paste review** (`src/lib/book-review.ts`): a match whose status is `unlisted` reads *In your library, not on your list yet: adds it to Someday*, as one with no status does; a near match counts the same way.
 4. **Queries** (`src/db/queries.ts`): `listBooks` leaves `unlisted` out when neither `status` nor `q` is set (*Everything*, the genre and year chips); a search, and `status=unlisted`, include it. A new `unlistedCount(userId)` for the chip.
+   *Revision 2 (Phase 3, inside the planned files):* a sixth query broke `/books/list`'s budget of 5 (`test/query-budget.test.ts`), so the count is `listCounts(userId)`, one query returning `{ unyeared, unlisted }`; `readWithoutYear` reads it, and the page's two query mocks (`test/list-totals.test.tsx`, `test/year-chips.test.tsx`) name it.
 5. **List page** (`src/app/books/list/page.tsx`): *Unlisted · N* after *Read*, a link with `aria-label="Unlisted, N books"`, hidden at zero; the empty state stays *Nothing matches*.
 6. **`BookStatus.tsx`**: an Unlisted row's badge reads *unlisted*, grey (`.bdg.dn`, no new CSS). Beside it, on the collapsed row, *Add to Someday*: a `btn sec sm` `<button>` that writes `to_read` through the same `write()` with Undo (*Was unlisted*). Expanded, the four status buttons stay, none pressed. On the Unlisted list the row leaves after the add; the Undo marks the book for focus, and the row that comes back takes focus on mount.
+   *Revision 1 (owner, 2026-10-26, during Phase 2):* `src/app/globals.css` gains one layout rule, `.status-line` (flex, gap, no colour), which wraps every row's badge so *Add to Someday* sits beside it; the badge itself keeps `.bdg.dn` and no new colour.
 7. **Docs.** `src/db/schema.ts` comment and `.claude/rules/schema.md`'s levels rule name `unlisted`; `design/mockups.html` `blist`'s first phone frame gains *Unlisted · 41* after *Read* and an Unlisted row with its badge and *Add to Someday*; `design/mockups-index.md` notes it.
 
 **Test strategy**
@@ -105,13 +113,15 @@ _Approved by the owner 2026-10-26 at the plan gate; the answers are in Context a
 
 _Filled by /implement-task. One line per round._
 
+Verify R1 FAIL(4: two page mocks lacked the new query; /books/list over its 5-query budget) → R2 PASS → R3 PASS after the review fix (lint re-run once a stale gitignored playwright-report/ was replaced) | Audit R1 NOT RUN (restore blocked; static gaps closed) → R2 PASS (owner allowed the restore) | Spec R1 APPROVE | Schema R1 APPROVE (3 MINOR; the undo-under-a-plan-row case fixed) → R2 APPROVE | UI R1 PASS (6 widths, light and dark)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 2

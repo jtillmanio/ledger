@@ -3110,7 +3110,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
     <h1 class="t">Master list</h1>
     <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
     <div class="chips" role="toolbar" aria-label="Saved views" style="margin:.75rem 0 0"><span class="chip" role="button" aria-pressed="true" tabindex="0" data-on>Fantasy · under 150k</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Sanderson or Kingfisher</span><span class="chip" role="button" tabindex="0">+ Save view</span></div>
-    <div class="ctl"><span class="chip" role="button" aria-pressed="false" tabindex="0">Fits Q2 · 56k</span><button class="btn sec sm">Pick one</button><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>To read</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span>
+    <div class="ctl"><span class="chip" role="button" aria-pressed="false" tabindex="0">Fits Q2 · 56k</span><button class="btn sec sm">Pick one</button><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>To read</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">Read</span><span role="button" aria-pressed="false" tabindex="0" aria-label="Unlisted, 41 books">Unlisted &middot; 41</span></span>
       <span class="select">Shortest<span class="car">&#9662;</span></span></div>
 
     <div class="group">
@@ -3129,6 +3129,11 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
         <div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span>
           <div class="rs">Brandon Sanderson · Mistborn #1</div>
           <div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span> <span class="tag">#3 that year</span></div></div>
+        <span class="chev">&#8250;</span></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">ELN</span>
+        <div class="rb"><span class="rh"><span class="rt">Elantris</span><span class="rm">202k</span></span>
+          <div class="rs">Brandon Sanderson &middot; Cosmere</div>
+          <div style="margin-top:.375rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap"><span class="bdg dn">unlisted</span><button class="btn sec sm">Add to Someday</button></div></div>
         <span class="chev">&#8250;</span></div>
     </div>
     <p class="lede" style="margin-top:.75rem">Tap a row to set status, date, or rating.</p>
@@ -3207,7 +3212,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
     </div>
       <a class="fab">+ Add books</a>
     </div><div class="dk-rail">
-      <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>To read</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span>
+      <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>To read</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">Read</span><span role="button" aria-pressed="false" tabindex="0" aria-label="Unlisted, 41 books">Unlisted &middot; 41</span></span>
       <span class="select">Shortest<span class="car">&#9662;</span></span></div>
       <p class="lede" style="margin-top:.75rem">Tap a row to set status, date, or rating.</p>
     </div></div>
@@ -3223,6 +3228,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
     <li><b>Plan for…</b> opens the same picker as "Move" on the plan page — see <b>"Move / add to plan"</b> in the nav.</li>
     <li>Collapsed rows carry a status badge; expanded rows get the controls. The full record opens as a detail sheet from the row (FEATURES Part 2f): an intercepted route, a sheet from the list and a page on direct load.</li>
     <li><span class="chg">Marking a book read (TASKS 1.5, M-13):</span> choosing <b>Read</b> opens <b>Finished</b>: <i>Today</i> and <i>Pick a date</i> store an exact date; <i>Year only</i> stores 1 July of that year as <code>approximate</code>; <i>No date</i> stores NULL with precision <code>none</code>. The same control sits in the book detail sheet. There is no <i>Spread</i>: that is for ranges of issues.</li>
+    <li><span class="chg">Unlisted (task 1.21, D-83, D-86):</span> the books you have but haven't put on your list sit below Someday. <b>Unlisted &middot; N</b> follows <b>Read</b> and is the only chip that lists them (hidden at zero); <i>Everything</i>, the genre and year chips, the plan and every count leave them out, and a search finds them. The row's badge is grey (a level, not a state) with <b>Add to Someday</b> beside it, which writes <code>to_read</code> with Undo. No status button sets Unlisted.</li>
     <li><b>Still open:</b> is rating five stars, ten points, or just your top-10 ranking? Your sheet only ever used the ranking.</li>
   </ul></div>
 </section>

@@ -12,7 +12,11 @@ import type { Kind } from "@/lib/inbox";
 import { bookId, issueSlug, slug } from "@/lib/issue-slug";
 import type { WishlistItem } from "@/lib/wishlist-review";
 
-export const BOOK_STATUSES = ["to_read", "reading", "read", "dnf"] as const;
+/** Every `book_status.status` value. `unlisted` is the level below Someday (task 1.21, D-86): a
+ * book you have but haven't put on your list. */
+export const BOOK_STATUSES = ["to_read", "reading", "read", "dnf", "unlisted"] as const;
+/** What a status write may set: never `unlisted`, which only an undo puts back (D-86). */
+export const SETTABLE_STATUSES = ["to_read", "reading", "read", "dnf"] as const;
 
 export type BookStatusInput = {
   bookId: string;
@@ -132,8 +136,9 @@ export async function saveBookStatus(userId: string, input: BookStatusInput): Pr
  * been added to it since, when it goes back to a bare `to_read`.
  *
  * Refuses, changing nothing, when anything moved on in between: the book's
- * status is no longer the one this write set, or the read it logged or
- * re-dated is no longer the book's latest.
+ * status is no longer the one this write set, the read it logged or
+ * re-dated is no longer the book's latest, or it would put an Unlisted book
+ * back under a plan row it has gained since (task 1.21).
  */
 export async function undoBookStatus(userId: string, change: BookStatusChange): Promise<boolean> {
   const { bookId, status, prior, appended, edited, backfilled } = change;
@@ -142,6 +147,12 @@ export async function undoBookStatus(userId: string, change: BookStatusChange): 
     const [now] = await tx.select({ status: bookStatus.status }).from(bookStatus)
       .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId)));
     if (now?.status !== status) return false;
+    // Back to Unlisted under a plan row would leave a planned book off your list (task 1.21).
+    if (prior?.status === "unlisted") {
+      const [planned] = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
+        .where(and(eq(readingPlan.userId, userId), eq(readingPlan.bookId, bookId))).limit(1);
+      if (planned) return false;
+    }
     const touched = appended ?? edited?.id ?? backfilled ?? null;
     if (touched !== null && (await latestRead(tx, userId, bookId))?.id !== touched) return false;
 
@@ -932,6 +943,9 @@ export type AddedEntry = {
   added: string[];
   /** On deck only: books this add also gave a `to_read` status, because they had none. */
   statused: string[];
+  /** Someday and On deck: Unlisted books this add moved to `to_read` (task 1.21), which its undo
+   * puts back to `unlisted`. Absent from an entry that promoted none. */
+  promoted?: string[];
 };
 
 export type AddBooksResult =
@@ -1019,21 +1033,35 @@ async function toRead(tx: Tx, userId: string, ids: string[]): Promise<string[]> 
     .returning({ bookId: bookStatus.bookId })).map((r) => r.bookId);
 }
 
+/** Move each Unlisted book onto your list, `to_read` (task 1.21, D-86); returns the books it moved. */
+async function promote(tx: Tx, userId: string, ids: string[]): Promise<string[]> {
+  return (await tx.update(bookStatus).set({ status: "to_read" })
+    .where(and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, ids), eq(bookStatus.status, "unlisted")))
+    .returning({ bookId: bookStatus.bookId })).map((r) => r.bookId);
+}
+
 /**
  * Write the destination row for each book, unless it is there already: Someday
  * is `book_status = to_read`, and a status the book has is kept (no plan row,
- * D-37); On deck gives a book with no status `to_read` too, then an `on_deck`
- * plan row to each book that is `to_read` (one read, reading or set aside
- * keeps its status and gets none); a shelf is a `shelf_books` row at the end
- * of the shelf. Returns the books it wrote a destination row for, and the
- * statuses On deck wrote.
+ * D-37), except that an Unlisted book moves to `to_read` (task 1.21); On deck
+ * gives a book with no status, or an Unlisted one, `to_read` too, then an
+ * `on_deck` plan row to each book that is `to_read` (one read, reading or set
+ * aside keeps its status and gets none); a shelf is a `shelf_books` row at the
+ * end of the shelf, and leaves an Unlisted book Unlisted. Returns the books it
+ * wrote a destination row for, the statuses On deck wrote, and the Unlisted
+ * books it moved.
  */
 async function writeDestination(
   tx: Tx, userId: string, destination: Destination, ids: string[],
-): Promise<Pick<AddedEntry, "added" | "statused">> {
-  if (ids.length === 0) return { added: [], statused: [] };
-  if (destination.kind === "someday") return { added: await toRead(tx, userId, ids), statused: [] };
+): Promise<Pick<AddedEntry, "added" | "statused" | "promoted">> {
+  if (ids.length === 0) return { added: [], statused: [], promoted: [] };
+  if (destination.kind === "someday") {
+    const promoted = await promote(tx, userId, ids);
+    const wrote = new Set([...promoted, ...await toRead(tx, userId, ids)]);
+    return { added: ids.filter((id) => wrote.has(id)), statused: [], promoted };
+  }
   if (destination.kind === "on_deck") {
+    const promoted = await promote(tx, userId, ids);
     const statused = await toRead(tx, userId, ids);
     const waiting = new Set((await tx.select({ bookId: bookStatus.bookId }).from(bookStatus)
       .where(and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, ids), eq(bookStatus.status, "to_read"))))
@@ -1042,7 +1070,7 @@ async function writeDestination(
     for (const id of ids) {
       if (waiting.has(id) && await placeInPlan(userId, id, "on_deck", tx)) added.push(id);
     }
-    return { added, statused };
+    return { added, statused, promoted };
   }
   const { shelfId } = destination;
   const there = new Set((await tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks)
@@ -1053,7 +1081,7 @@ async function writeDestination(
   if (fresh.length) {
     await tx.insert(shelfBooks).values(fresh.map((bookId, i) => ({ shelfId, bookId, ordinal: top + 1 + i })));
   }
-  return { added: fresh, statused: [] };
+  return { added: fresh, statused: [], promoted: [] };
 }
 
 /**
@@ -1106,8 +1134,8 @@ export async function addBooks(userId: string, items: BookItem[], destination: D
       const i = f++;
       return exact.get(i) ?? createdAs.get(bookKey(item.title, item.author))!;
     }))];
-    const { added, statused } = await writeDestination(tx, userId, destination, named);
-    return { ok: true, destination, created, matched: [...matched], added, statused } as const;
+    const { added, statused, promoted } = await writeDestination(tx, userId, destination, named);
+    return { ok: true, destination, created, matched: [...matched], added, statused, promoted } as const;
   });
 }
 
@@ -1271,14 +1299,14 @@ export async function addBook(
 
     const created = row ? await createBooks(tx, [row]) : [];
     const bookIdNow = created[0] ?? id!;
-    const { added, statused } = await writeDestination(tx, userId, destination, [bookIdNow]);
+    const { added, statused, promoted } = await writeDestination(tx, userId, destination, [bookIdNow]);
     // A reused book's status, so the toast can say what it kept (*Already in your library · read*).
     const [had] = row ? [] : await tx.select({ status: bookStatus.status }).from(bookStatus)
       .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookIdNow)));
     const resolved = note === undefined ? null : await resolveNote(tx, userId, note, { bookId: bookIdNow });
     return {
       ok: true, destination, bookId: bookIdNow, title, reused: !row, status: had?.status ?? null, created, added,
-      statused, note: resolved,
+      statused, promoted, note: resolved,
     } as const;
   });
 }
@@ -1316,10 +1344,13 @@ async function newBookRow(tx: Tx, userId: string, item: Exclude<AddBookItem, { u
  * were, because only rows the add wrote are named. The authors and series it
  * created stay: catalog, and harmless. On deck (task 1.7) takes out its
  * `on_deck` rows through the plan helpers, and the statuses it wrote with them.
+ * An Unlisted book the add promoted (task 1.21) goes back to `unlisted`: an
+ * update, never a delete, so the row and anything on it stay.
  *
  * Refuses, changing nothing, when anything moved in between: a status it wrote
  * is no longer a bare `to_read` (it gained a rating, a note, a finish, or a
- * plan row it didn't write), a shelf or `on_deck` row is gone, or a book it
+ * plan row it didn't write), a book it promoted is no longer `to_read`, or has
+ * a read or a plan row it didn't write, a shelf or `on_deck` row is gone, or a book it
  * created has gained another status, shelf or plan row. A `created` book the
  * add didn't also place (and, On deck, give its status) is not one it made,
  * and is refused too.
@@ -1344,16 +1375,25 @@ export async function undoAddBooks(
 async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: symbol): Promise<boolean> {
   await addLock(tx);
   const { destination, created, added, statused } = entry;
+  const promoted = new Set(entry.promoted ?? []);
   if (added.length === 0 && created.length === 0) return false;
   const placed = new Set(added);
   if (created.some((id) => !placed.has(id))) return false;
   const isShelf = destination.kind === "shelf";
   const onDeck = destination.kind === "on_deck";
   if (onDeck && created.some((id) => !statused.includes(id))) return false;
+  // Only Someday and On deck promote, and only books they placed and didn't create (task 1.21).
+  if ([...promoted].some((id) => isShelf || !placed.has(id) || created.includes(id) || statused.includes(id))) return false;
   if (isShelf && !(await ownShelf(tx, userId, destination.shelfId))) return false;
 
   // The statuses this add wrote: Someday's are its destination rows; On deck names its own.
-  const statuses = new Set(destination.kind === "someday" ? added : onDeck ? statused : []);
+  // An Unlisted book it promoted had a status already: that goes back to `unlisted`, not away.
+  const statuses = new Set((destination.kind === "someday" ? added : onDeck ? statused : [])
+    .filter((id) => !promoted.has(id)));
+  const touched = [...statuses, ...promoted];
+  // A promoted book still on your list as the add left it; a rating or note it had stays with it.
+  const promotedRows = and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, [...promoted]),
+    eq(bookStatus.status, "to_read"), isNull(bookStatus.finishedOn));
   // The rows this add wrote, exactly as it wrote them: a status that has since
   // gained anything is the user's now. The same conditions guard the delete.
   const shelfRows = isShelf
@@ -1374,13 +1414,19 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
   if (statuses.size) {
     const ours = await tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(bareStatus);
     if (ours.length !== statuses.size) return false;
+  }
+  if (promoted.size) {
+    const ours = await tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(promotedRows);
+    if (ours.length !== promoted.size) return false;
+  }
+  if (touched.length) {
     // Taking a status away from a book that has been planned since would leave a plan row with no to-read book.
     const planned = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
-      .where(and(eq(readingPlan.userId, userId), inArray(readingPlan.bookId, [...statuses]), notOurs)).limit(1);
+      .where(and(eq(readingPlan.userId, userId), inArray(readingPlan.bookId, touched), notOurs)).limit(1);
     if (planned.length) return false;
     // Nor from one read since and set back to To read: it has history now (task 1.5).
     const read = await tx.select({ id: readEvents.id }).from(readEvents)
-      .where(and(eq(readEvents.userId, userId), inArray(readEvents.bookId, [...statuses]))).limit(1);
+      .where(and(eq(readEvents.userId, userId), inArray(readEvents.bookId, touched))).limit(1);
     if (read.length) return false;
   }
 
@@ -1413,6 +1459,11 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
   if (statuses.size) {
     const gone = await tx.delete(bookStatus).where(bareStatus).returning({ bookId: bookStatus.bookId });
     if (gone.length !== statuses.size) throw refused;
+  }
+  if (promoted.size) {
+    const back = await tx.update(bookStatus).set({ status: "unlisted" }).where(promotedRows)
+      .returning({ bookId: bookStatus.bookId });
+    if (back.length !== promoted.size) throw refused;
   }
   if (created.length) {
     await tx.update(books).set({ deletedAt: sql`now()` }).where(and(inArray(books.id, created), isNull(books.deletedAt)));

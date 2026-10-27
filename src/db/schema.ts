@@ -333,7 +333,7 @@ export const editionProgress = pgTable("edition_progress", {
 export const bookStatus = pgTable("book_status", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   bookId: text("book_id").notNull().references(() => books.id, { onDelete: "cascade" }),
-  status: text("status").notNull().default("to_read"), // to_read | reading | read | dnf
+  status: text("status").notNull().default("to_read"), // to_read | reading | read | dnf | unlisted (below Someday, task 1.21, D-86; no CHECK)
   yearRank: integer("year_rank"),           // your top-10 position for that year
   rating: doublePrecision("rating"),
   // A real date since migration 0004 (it was text and 100% NULL). Same rule as

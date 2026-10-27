@@ -34,10 +34,12 @@ export const destinationOf = (t: Target): Destination =>
  * and then nothing changed. `note` reopens the inbox note the add resolved (task 1.4b).
  */
 export async function undoAdd(entry: AddedEntry, note?: { id: number; bookId: string }) {
-  const { destination, created, added, statused } = entry;
+  const { destination, created, added, statused, promoted } = entry;
   const res = await fetch("/api/books", {
     method: "DELETE", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ destination, created, added, statused, ...(note && { note }) }),
+    body: JSON.stringify({
+      destination, created, added, statused, ...(promoted?.length ? { promoted } : {}), ...(note && { note }),
+    }),
   });
   if (!res.ok) throw new Error(String(res.status));
 }
