@@ -3,7 +3,7 @@
 Personal media ledger replacing two Google Sheets: about 10,131 comic issues in
 10,754 run placements across 258 runs with a prerequisite graph, plus 1,361
 books (extract of 2026-10-25; re-count from a fresh extract, never trust these).
-Single user, multi-user schema.
+Single user, single-user schema (D-91; the old `user_id` columns go in 6.18).
 
 `docs/STATUS.md` is where we are now. The planning docs are in the kit's
 layout: `docs/01-product.md` (the brief and the feature index, F-nn),
@@ -208,8 +208,9 @@ enforces this list. Each one summarises a rule whose full text is above or in
    must change, stop and ask.
 2. Nothing derived is stored: no count, percentage, rollup, status, span,
    credit line or finish/plan year column; it goes in `etl/views.sql`.
-3. Per-user facts live in progress tables keyed `(user_id, entity_id)`; comics
-   read state keys on the placement (`run_issues.id`), never on the issue.
+3. Read and plan state lives in progress tables, never on catalog rows; comics
+   read state keys on the placement (`run_issues.id`), never on the issue. A
+   new table or column carries no `user_id` (D-91).
 4. Soft delete only: every read filters `deleted_at IS NULL`; removing a
    placement soft-deletes it.
 5. Tests and anything that truncates read `TEST_DATABASE_URL` only; nothing

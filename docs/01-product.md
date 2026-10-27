@@ -59,7 +59,7 @@ completion date or progress bar against the whole catalog. Each is in the
 |---|---|
 | Budget | $0/month: Vercel Hobby, Neon free tier, Cloudflare R2 for backups (D-66) |
 | Platforms | Android phone first (360–412px); a touch tablet layout at 768–1023px (D-33); desktop from 1024px |
-| Users and data volume | One user, multi-user schema. About 10,138 comic issues in 10,761 placements across 258 runs, 438 prerequisite edges, 1,478 books (2026-09-23 extract) |
+| Users and data volume | One user, single-user schema (D-91; the old `user_id` columns go in 6.18). About 10,138 comic issues in 10,761 placements across 258 runs, 438 prerequisite edges, 1,478 books (2026-09-23 extract) |
 | Offline | None until 6.4 (PWA, queued writes); no cross-device staleness handling (D-9) |
 | Import | `Comics.xlsx` and `Books.xlsx` through `etl/extract.py` and sidecar CSVs until cutover; the owner's Calibre library, read-only (D-73) |
 | Metadata | Metron, Open Library, Hardcover, TMDB, MusicBrainz, on free tiers; called from add flows and backfill only, never to render a page |
@@ -117,7 +117,7 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | F-16 | **Quick-capture inbox** (Every medium) | As the owner, I want to jot a title in two seconds with nothing required and resolve it later | MVP | 1.4b | `capture`, `dashextras` |
 | F-17 | **A dated reading log** (Books) | As a reader, I want when I started and finished each read kept, rereads included, in my time zone | MVP | 1.5, 1.16, 1.17 | `blist` |
 | F-18 | **To-read levels** (Books) | As a reader, I want each to-read book at a quarter, a year, On deck or Someday, with my old wishlist promoted into it, and the books I have but haven't listed kept at Unlisted, out of the way | MVP | 1.7, 1.4d, 1.21 | `blist`, `moveplan` |
-| F-19 | **A clean, enriched book catalog** (Books) | As a reader, I want one row per book, with Open Library details and Calibre's real word counts | MVP | 1.13, 1.14, 1.18 | `blist`, `bookdetail` |
+| F-19 | **A clean, enriched book catalog** (Books) | As a reader, I want one row per book, with Open Library details and Calibre's real word counts | MVP | 1.13, 1.14, 1.18, 1.18b, 1.18c | `blist`, `bookdetail` |
 | F-20 | **Follow series, authors and universes** (Books) | As a reader, I want to follow the series, authors and universes I am tracking and see my progress through each | MVP (then Later) | 1.15, 5.11, 5.12 | `shelves` |
 | F-21 | **The pace engine** (Books) | As a reader, I want my real reading rate to say whether a year's plan fits | Next (then Later) | 2.0, 2.1, 2.1b, 6.12 | `settings`, `session`, `dashextras` |
 | F-22 | **Books dashboard and the plan rail** (Books) | As a reader, I want the book in hand, this quarter's shelf and the year against capacity on one screen | Next | 2.2, 2.2b | `bdash`, `planmonth` |

@@ -20,7 +20,7 @@ read filters `deleted_at IS NULL`, and removing a placement soft-deletes it.
 |---|---|---|
 | Comics catalog | `tracks`, `blocks`, `runs`, `run_tracks`, `prereqs`, `events`, `event_runs`, `editions`, `issues`, `run_issues`, `eras`, `creators`, `issue_credits`, `volume_rules` | Run ids are as the owner wrote them (2.5); an issue id is a slug of its label (2.11) |
 | Books catalog | `books`, `authors`, `book_series`, `releases`, `wishlist`, `external_lists` | `wishlist` and `external_lists` keep raw text until resolved (2.7) |
-| Per user | `issue_progress` (per placement), `edition_progress`, `book_status`, `reading_plan`, `reading_settings`, `shelves`, `shelf_books`, `inbox` | Keyed `(user_id, entity_id)` (2.1) |
+| Per user | `issue_progress` (per placement), `edition_progress`, `book_status`, `reading_plan`, `reading_settings`, `shelves`, `shelf_books`, `inbox` | Keyed `(user_id, entity_id)` (2.1) until 6.18; a new table has no `user_id` (D-91) |
 | Logs | `read_events` | Append-only; a reread is a new row with `reread_of` (1.5) |
 | Caches | `metron_cache`, `open_library_cache` | Rebuildable API responses |
 | Users | `users` | One row today (§ If you add a second reader, in the architecture) |
@@ -59,6 +59,11 @@ progress table carries `user_id` and is keyed on `(user_id, entity_id)` — for
 comics the entity is the placement, not the issue. You are the only row in `users` today.
 Adding your wife later is an `INSERT`, not a migration — this is the single most
 expensive thing to retrofit and the cheapest thing to build in up front.
+
+*Amended 2026-10-27 (owner, D-91):* the Ledger is single-user. A second user
+would be a lot of work whatever the schema, so a new table or column carries no
+`user_id`, and 6.18 drops the existing ones. What stays is the separation:
+read and plan state lives in progress tables, and comics key on the placement.
 
 **2.2 Nothing derived is stored.** Every formula column in `RUNS` — `Readiness`,
 `Hard Left`, `Soft Left`, `Unlocks`, `Completed`, `% Done`, `Status`, `In Sheet` —
@@ -578,7 +583,9 @@ the same PR (hard rule 7).
 | 1.17 | `book_status.started_on`, `read_events.started_on`, each with its precision | 2.18 |
 | 1.18 | Calibre sidecars (no column: the plan gate approved none) | 2.19, D-73, D-83, D-87, D-88 |
 | 1.21 | A fifth `book_status.status` value, `unlisted` (no new column, no CHECK) | D-83, D-86 |
-| 1.22 | Possibly `books.calibre_id`, so a result can say *Calibre* | Asked at 1.22's plan gate |
+| 1.18b | `books.calibre_id` (unique where set), `books.universe_position`, `book_subseries(id, name, series_id)`, `books.subseries_id`, `books.subseries_position` | Approved by the owner 2026-10-27; D-90, D-91 |
+| 1.18c | `book_genres(book_id, genre)` | Asked at 1.18c's plan gate; D-90 |
+| 1.22 | Nothing: the *Calibre* tag reads 1.18b's `books.calibre_id` | D-90 |
 | 1.23 | A `listening` value of `book_status.status`; `read_events.format` (`text` \| `audio`) | D-85 |
 | 4.4 | Where a decided near-spelling row is remembered between syncs (D-87 leaves no other decision) | Asked at 4.4's plan gate |
 | 2.1b | `sessions` | §4.3 |
@@ -592,6 +599,7 @@ the same PR (hard rule 7).
 | 8.1 | `titles`, `seasons`, `franchises`, `franchise_titles`, `title_status`, `season_status`, `watch_events`, `people`, `title_credits` | §4.2, amended by 2.20 |
 | 8.3 | Saved views, with their hand-added and removed titles | Where those live is asked at 8.3's plan gate |
 | 8.9 | `title_providers` | Where to watch, a dated snapshot (D-74) |
+| 6.18 | Drops `user_id` from the 12 tables that have it; each key becomes its entity id | D-91; ships `drizzle/down/<tag>.sql` |
 | 9.1, 9.4 | `artists`, `albums`, `tracks`, `artist_follows`, `album_status`, `listen_events`, the song ranking | 2.21, D-75 |
 
 ### 4.2 The watch schema draft
