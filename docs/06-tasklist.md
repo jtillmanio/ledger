@@ -257,10 +257,10 @@ with the task that first reads it.
 ## M8: Books load clean — MVP
 
 **Goal:** Books load clean.  
-**Demo at exit:** Books load with covers, page counts and real word counts. Answer `book_review.csv` between 1.13 and 1.14, and `calibre_review.csv` and `calibre_reads.csv` after 1.18; Calibre's other books wait at *Unlisted*.  
+**Demo at exit:** Books load with covers, page counts and real word counts. Answer `book_review.csv` between 1.13 and 1.14, and 1.18's `calibre` near spellings in the same file (Calibre is the source of truth for the rest, D-87); Calibre's other books wait at *Unlisted*.  
 **Features:** F-18, F-19, F-20  
 **Depends on:** M1  
-**Order:** Sitting 8: 1.13 → 1.14 → 1.15 → 1.21 → 1.18 → 1.20 (the 2026-10-08 book-ingest review; 1.20 from the owner, 2026-10-26, holds books Open Library doesn't know for review; 1.21 from the 2026-10-26 books intake). 1.14's proposals join 1.13's review file; 1.15 seeds from the series and author names 1.13's review fixed; 1.21 defines the *Unlisted* level that 1.18 creates Calibre's other books at (D-83, D-86); 1.18 checks Calibre against 1.14's Open Library answers (D-73) and can be re-run until cutover. All six change what `load` puts in, so they land before the final load. They don't depend on M3–M7 and can be built earlier, leaving time to answer the reviews.
+**Order:** Sitting 8: 1.13 → 1.14 → 1.15 → 1.21 → 1.18 → 1.20 (the 2026-10-08 book-ingest review; 1.20 from the owner, 2026-10-26, holds books Open Library doesn't know for review; 1.21 from the 2026-10-26 books intake). 1.14's proposals join 1.13's review file; 1.15 seeds from the series and author names 1.13's review fixed; 1.21 defines the *Unlisted* level that 1.18 creates Calibre's other books at (D-83, D-86); 1.18 reports where Calibre and 1.14's Open Library answers disagree (D-73, D-87) and can be re-run until cutover. All six change what `load` puts in, so they land before the final load. They don't depend on M3–M7 and can be built earlier, leaving time to answer the reviews.
 
 | # | Task | Size | Task file | Depends on |
 |---|---|---|---|---|

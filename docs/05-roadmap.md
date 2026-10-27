@@ -922,6 +922,14 @@ tags, summaries, ISBNs and read dates.
 a Calibre book the Ledger doesn't have is created at **Unlisted** (1.21, D-86) instead
 of being left out. After cutover the sync moves into the app (4.4).
 
+*Amended 2026-10-27 (owner, D-87, at TASK-030's review):* **Calibre is the
+source of truth for a book's data and its reads.** The owner edits Calibre and
+nothing else, so a Calibre value replaces the workbook's, an Open Library
+disagreement is reported rather than gating the fill, and every Calibre read
+loads. Nothing waits on a decision except a near spelling, since two near
+titles can be two books. Every disagreement is reported. The bullets and the
+**Check** below are the amended contract.
+
 - **`etl/calibre.py`** (`npm run calibre`):
   - It is given the library folder (`--library "C:/Users/…/Calibre Library"`,
     or `CALIBRE_LIBRARY` in `.env`).
@@ -931,56 +939,66 @@ of being left out. After cutover the sync moves into the app (4.4).
     by default, each overridable by a flag), never by `custom_column_N`.
   - `--dry-run` reports the match rate and writes nothing.
 - **Matching is 1.13's.** A Calibre book is a workbook book when title and
-  author match after `clean()` / `key()`. A near spelling (≥ 0.4) appends a
-  `book_review.csv` row with `reason = calibre`, as 1.14 does. Anything else is
-  reported as unmatched, with its candidates.
+  author match after `clean()` / `key()`; a Calibre book with several authors
+  matches on any of them. A near spelling (≥ 0.4), or one title under another
+  author, appends a `book_review.csv` row with `reason = calibre`, as 1.14
+  does, with `keep` pre-filled with Calibre's spelling (D-87): `merge` renames
+  the workbook's book to Calibre's, `separate` creates Calibre's. The Calibre
+  book is held until the row is decided. Anything else is reported as
+  unmatched, with its candidates.
 - **A Calibre book that matches nothing is created** (D-83, amending D-73,
   which left it to 1.4c). Extract writes a `books.csv` row from Calibre's
   title, author, series and word count, with a `book_status` row at `unlisted`
-  (1.21), or at `read` once an accepted `calibre_reads.csv` row says so. For
-  the plan gate: whether 1.20's hold applies to it when Open Library doesn't
-  know it (proposed: no, since having it is the owner's say-so).
-- **`etl/data/calibre_books.csv`** is keyed by title and author, with `source`
-  `calibre` or `hand`. A `hand` row is never overwritten. Extract folds it in:
-  - `word_count`, as `stated`, only where the workbook has none. A workbook
-    count that differs by more than 10% is reported, never replaced.
-  - `series`, `series_index` and `isbn` fill **only where Open Library or
-    Hardcover agree** (owner). A disagreement, or no API answer, goes to
-    `etl/data/calibre_review.csv` (`field`, Calibre's value, the API's,
-    `decision` calibre|api|neither) and fills nothing until it is decided.
+  (1.21), or at `read` when Calibre has it read. 1.20's hold does not apply
+  to it: having it is the owner's say-so (owner, at TASK-030's plan gate). A
+  Comic record is skipped and listed; a Fan Fiction record comes in with
+  `book_type` `Fan Fiction` (owner, at the plan gate).
+- **`etl/data/calibre_books.csv`** is keyed by Calibre's title and author: the
+  word count, series and index, ISBN, tags, type, the read flag and date, what
+  Open Library said of the series (`confirmed`, and its own series when it
+  differs). Calibre is the only source of its values (D-87). Extract folds it
+  in after every workbook value:
+  - `word_count`, as `stated`, replacing the workbook's. A workbook count that
+    differs by more than 10% is reported in `unresolved.csv`.
+  - `series` and `series_index` replace the workbook's, and a different
+    workbook series is reported. A series Open Library contradicts still
+    fills, and the disagreement is reported. Open Library is asked through
+    1.14's client and cache; Hardcover has no client yet (4.2).
   - `tags` and `comments` are for `books.subjects` and `books.summary`
     (design §13), and the ISBN needs a `books.isbn`. **Stop and ask**
-    before adding any of the three columns (CLAUDE.md). Until then the values
-    stay in the CSV and do not load.
-- **Reads go through a review** (D-73). `etl/data/calibre_reads.csv` lists
-  each Calibre read: title, author, the read flag, and the date read, which
-  becomes `finished_on` (`exact`, or `approximate` for a year-only value). Its
-  `decision` is accept|reject, blank until the owner decides. Only `accept`
-  rows load, as `read_events` plus the `book_status` projection 1.5 defines. A
-  book already read in the app keeps its read, and the Calibre row is reported,
-  not merged.
-- Nothing ever writes to Calibre. The CSVs are committed like the other
+    before adding any of the three columns (CLAUDE.md). Until then tags and
+    the ISBN stay in the CSV and do not load, and comments stay out of the
+    public repo (owner, at the plan gate).
+- **Reads load as Calibre has them** (D-87, amending D-73's review). A book
+  Calibre marks read, or gives a date read, is one `read_events` row plus the
+  `book_status` projection 1.5 defines; the date read becomes `finished_on`,
+  as its Eastern day (D-67): `exact`, `approximate` for a column shown
+  without its day, and July 1st `approximate` for a year-only one. A book
+  already read keeps its read, and the second Calibre read is reported, not
+  merged.
+- Nothing ever writes to Calibre. The CSV is committed like the other
   sidecars; `metadata.db` and its temp copy never are.
 - **Re-runnable until cutover** (owner, 2026-10-26). Run it after any change
-  to the library: new Calibre books and reads append rows, a `hand` row and a
-  decided review row are never rewritten, and a run over an unchanged library
-  changes no sidecar byte. After cutover extract stops, and nothing local may
-  write the live database (D-18), so the sync moves into the app: 4.4.
+  to the library: a new Calibre book appends its row, a changed one is
+  rewritten in place, a removed one goes, a run over an unchanged library
+  changes no sidecar byte, and the run prints what changed since the last
+  one. After cutover extract stops, and nothing local may write the live
+  database (D-18), so the sync moves into the app: 4.4.
 
 **Check:** `npm run test:etl`, with a fixture `metadata.db` built by the test
 (two books, `#words` and `#date_read` custom columns) and recorded API answers,
 shows:
 - an exact match fills a `stated` word count where the workbook had none, and
-  leaves a workbook count alone;
-- a series Open Library agrees with fills; one it contradicts writes a
-  `calibre_review.csv` row and fills nothing;
+  replaces a workbook count that differs, reporting it when it is more than
+  10% off;
+- a series Open Library agrees with fills; one it contradicts also fills, and
+  the disagreement is in `unresolved.csv`;
 - a near spelling writes a `book_review.csv` row;
 - a Calibre book matching nothing becomes one `books.csv` row with an `unlisted`
   status, and a second run over the same fixture leaves every sidecar
   byte-identical;
-- an undecided `calibre_reads.csv` row loads nothing, an `accept` row loads one
-  `read_events` row with its date and precision, and a `reject` row loads
-  nothing;
+- a book Calibre has read loads one `read_events` row with its date and
+  precision and a `read` status, and a book it hasn't read loads none;
 - the fixture file's bytes and modified time are unchanged after the run.
 
 Then a dry run over the real library, with the matched, proposed and unmatched
@@ -1035,8 +1053,8 @@ read began.
   Mar 2026*, or *Mar–Sep 2026* once finished) and 1.9's Done rows. Days taken
   (*16 days*) is computed in the query, never stored. 3.5's book sheet shows
   both dates (noted there).
-- Extract loads no start dates (D-41). Calibre's come only through 1.18's
-  review.
+- Extract loads no start dates (D-41). Calibre's come only through 1.18
+  (which loads Calibre's reads as Calibre has them, D-87).
 
 **Check:**
 - Setting a book to Reading writes `started_on` as today in Eastern, `exact`.
@@ -2890,6 +2908,13 @@ This puts the same sync in the app.
   reads (D-73). A decided row is remembered, so the next sync doesn't ask
   again. Where that memory lives is the plan's to propose; a new table means
   stop and ask, and joins `src/db/export-tables.ts` (hard rule 7).
+  *Amended 2026-10-27 (D-87):* Calibre is the source of truth for a book's
+  data and reads, so the review is a preview of replacements, not a gate on
+  each: a Calibre word count or series replaces the stored one, a book added
+  in the app from Open Library (1.4c) takes Calibre's data once it is in
+  Calibre, reads load as Calibre has them, and each replacement and Open
+  Library disagreement is listed before *Apply*. A near spelling still waits
+  for a merge or separate decision.
 - The file is read and discarded: nothing stores `metadata.db`, and nothing
   writes to Calibre. Fetching it from Google Drive instead of an upload is
   *Later* § L-4.
