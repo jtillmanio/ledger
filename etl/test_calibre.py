@@ -561,6 +561,55 @@ class Rerun(Case):
         self.assertEqual(self.status_of("The Way of Kings: Book One")["status"], "to_read")
         self.assertRegex(self.output, r"(?m)^\s*matched\s+2\b")
 
+    def write_review(self, *rows):
+        with self.book_review.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=ex.BOOK_REVIEW_COLUMNS)
+            w.writeheader()
+            w.writerows({c: "" for c in ex.BOOK_REVIEW_COLUMNS} | r for r in rows)
+
+    def test_a_calibre_book_under_a_merged_away_author_joins_the_kept_author(self):
+        """The owner merged `Brandon Sandersen` into `Brandon Sanderson`: a book
+        only Calibre has, spelled the old way, is created under the kept author,
+        so the merged-away spelling never becomes a row (D-68)."""
+        self.write_review({"kind": "author", "a": "Brandon Sanderson", "b": "Brandon Sandersen",
+                           "reason": "similar", "keep": "Brandon Sanderson", "decision": "merge"})
+        build_library(self.lib, [book("Warbreaker", "Brandon Sandersen"), book("Mistborn", "Brandon Sanderson")])
+        self.round()
+        self.assertEqual([a["name"] for a in self.seed_rows("authors")], ["Brandon Sanderson"])
+        names = {a["id"]: a["name"] for a in self.seed_rows("authors")}
+        self.assertEqual(names[self.book_by_title("Warbreaker")["author_id"]], "Brandon Sanderson")
+
+    def test_a_proposal_against_a_renamed_workbook_book_is_kept(self):
+        """An `open library` merge renamed the workbook's `Edgedancer Novella`
+        to `Edgedancer`; Calibre's `Edgedancers` is proposed against the new
+        spelling, and the row stays until it is decided, holding the book."""
+        self.workbook = build_books([("Edgedancer Novella", "Brandon Sanderson", None, "Fantasy", None)])
+        self.write_review({"kind": "book", "a": "Edgedancer Novella", "b": "Edgedancer",
+                           "a_author": "Brandon Sanderson", "b_author": "Brandon Sanderson",
+                           "b_tabs": "Open Library", "reason": "open library", "keep": "Edgedancer",
+                           "decision": "merge"})
+        build_library(self.lib, [book("Edgedancers", "Brandon Sanderson"), book("Mistborn", "Brandon Sanderson")])
+        self.round()
+        self.round()
+        calibre_rows = [r for r in self.rows(self.book_review) if r["reason"] == "calibre"]
+        self.assertEqual([(r["a"], r["b"]) for r in calibre_rows], [("Edgedancer", "Edgedancers")])
+        self.assertNotIn("Edgedancers", [b["title"] for b in self.seed_rows("books")])
+
+    def test_calibres_book_type_replaces_the_workbooks_and_is_reported(self):
+        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", kind="Fan Fiction"),
+                                 book("Warbreaker", "Brandon Sanderson")])
+        self.round()
+        self.assertEqual(self.book_by_title("Mistborn")["book_type"], "Fan Fiction")
+        self.assertEqual(self.reported("calibre replaced a book type"), ["Mistborn: Novel -> Calibre's Fan Fiction"])
+
+    def test_a_held_book_says_its_read_waits_too(self):
+        build_library(self.lib, [book("The Way of Kings: Book One", "Brandon Sanderson", read=1,
+                                      date="2023-08-02 04:00:00+00:00"),
+                                 book("Mistborn", "Brandon Sanderson")])
+        self.round()
+        [detail] = self.reported("calibre book held for review")
+        self.assertIn("its read of 2023-08-02 waits too", detail)
+
     def test_a_separate_decision_creates_the_calibre_book(self):
         build_library(self.lib, [book("The Way of Kings: Book One", "Brandon Sanderson"),
                                  book("Mistborn", "Brandon Sanderson")])

@@ -1411,6 +1411,10 @@ def review_book_pairs(idx: BookIndex, existing: list[dict]) -> list[dict]:
             # Only `a` is ever in the workbook, spelled with the author it loads under.
             in_workbook = any(t == key(r["a"]) and key(idx.canonical_author(s["author"])) == key(r["a_author"])
                               for (t, _), s in idx.seen_books.items())
+            # calibre.py takes `a` from the seed, after merges: a book an
+            # earlier merge renamed is in the workbook under its new spelling.
+            if r["reason"] == CALIBRE:
+                in_workbook = in_workbook or (key(r["a"]), key(r["a_author"])) in idx.by_key
             if r["decision"] or in_workbook:
                 rows.append(r)
                 proposals.pop(pair, None)
@@ -1520,16 +1524,27 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
         b = idx.by_key.get((key(title), key(author)))
         if b is None:
             if (key(row["title"]), key(row["author"])) in held:
+                waits = ""
+                if row["read"] == "true" or row["date_read"]:
+                    waits = f"; its read of {row['date_read'] or 'no date'} waits too"
                 flag("calibre_books", "calibre book held for review",
-                     f"{row['title']} / {row['author']}: decide its row in book_review.csv")
+                     f"{row['title']} / {row['author']}: decide its row in book_review.csv{waits}")
                 continue
-            b = idx.add(row["title"], row["author"], row["book_type"])
+            # Under its merged identity, so a spelling a merge took away never
+            # becomes an author or a book (D-68).
+            b = idx.add(title, author, row["book_type"])
             if b is None:
                 continue
             status[b["id"]] = {"user_id": "$OWNER", "book_id": b["id"], "status": "unlisted",
                                "finished_on": None, "finished_on_precision": "none",
                                "year_rank": None, "rating": None}
             created.append({"title": row["title"], "author": row["author"], "book_id": b["id"]})
+
+        kind = clean(row["book_type"])
+        if kind and kind != b["book_type"]:
+            flag("calibre_books", "calibre replaced a book type",
+                 f"{b['title']}: {b['book_type']} -> Calibre's {kind}")
+            b["book_type"] = kind
 
         words = as_int(row["words"])
         if words:
