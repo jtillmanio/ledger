@@ -8,7 +8,8 @@
  * Only the same title and author is the same book (D-25). A title within
  * `pg_trgm` similarity 0.4 of a book you have is flagged with that book and
  * defaults to *Create new*: nothing is merged without your *Use that*. A new
- * book lands at Someday (D-37); a book you have keeps the status it has.
+ * book lands at Someday (D-37); a book you have keeps the status it has, except
+ * an Unlisted one, which joins Someday as a book with no status does (task 1.21).
  */
 import { bookKey, type BookLine } from "./book-parse";
 import type { Group, Option } from "./bulk-review";
@@ -126,7 +127,8 @@ export function buildBookReview(
     if (match) {
       row.check = "in library";
       seen.set(bk, line.line);
-      if (match.status) {
+      // An Unlisted book (task 1.21) is in your library but not on your list: it joins Someday.
+      if (match.status && match.status !== "unlisted") {
         row.why = `Already in your library (${STATUS[match.status] ?? match.status}).`;
         decide([SKIP], "skip");
       } else {
@@ -162,7 +164,7 @@ export function buildBookReview(
       seen.set(bk, line.line);
     } else if (choice === "use" && near) {
       writes.push({ line: line.line, use: near.bookId });
-      if (!near.status && !used.has(near.bookId)) count++;
+      if ((!near.status || near.status === "unlisted") && !used.has(near.bookId)) count++;
       used.add(near.bookId);
       seen.set(bk, line.line);
     }

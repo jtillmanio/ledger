@@ -1,5 +1,7 @@
 import { requireUserId } from "@/lib/auth";
-import { inboxCount, listBooks, readWithoutYear, seriesProgress, TO_READ_LEVELS, yearSummary, type ToReadLevel } from "@/db/queries";
+import {
+  inboxCount, listBooks, listCounts, seriesProgress, TO_READ_LEVELS, yearSummary, type ToReadLevel,
+} from "@/db/queries";
 import Link from "next/link";
 import AddBooksButton from "@/components/AddBooksButton";
 import BookStatus from "@/components/BookStatus";
@@ -25,14 +27,14 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
   const noYear = year === "none";
   // The level narrows To read only; with any other status it is ignored, as the chips are not drawn.
   const level = status === "to_read" ? TO_READ_LEVELS.find((l) => l === levelParam) : undefined;
-  const [books, years, series, unyeared, inbox] = await Promise.all([
+  const [books, years, series, { unyeared, unlisted }, inbox] = await Promise.all([
     listBooks(userId, {
       status, genre, q, noYear, level,
       year: year && !noYear ? Number(year) : undefined,
     }),
     yearSummary(userId),
     seriesProgress(userId),
-    readWithoutYear(userId),
+    listCounts(userId),
     inboxCount(userId),
   ]);
   // listBooks caps its page; the count is the whole match (R2-06).
@@ -72,6 +74,14 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
         <Link prefetch={false} href="/books/list?status=reading" className="chip" aria-current={status === "reading"}>Reading</Link>
         <Link prefetch={false} href="/books/list?status=to_read" className="chip" aria-current={status === "to_read"}>To read</Link>
         <Link prefetch={false} href="/books/list?status=read" className="chip" aria-current={status === "read"}>Read</Link>
+        {/* The books you have but haven't put on your list (task 1.21, D-83): only
+            this chip and a search show them. None, no chip, as No year. */}
+        {unlisted > 0 && (
+          <Link prefetch={false} href="/books/list?status=unlisted" className="chip" aria-current={status === "unlisted"}
+                aria-label={`Unlisted, ${unlisted} ${unlisted === 1 ? "book" : "books"}`}>
+            Unlisted <span className="n">{unlisted}</span>
+          </Link>
+        )}
       </div>
 
       {/* Where a to-read book sits (task 1.9): read from to_read_level, the same four levels the plan draws. */}

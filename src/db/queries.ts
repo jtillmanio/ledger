@@ -474,12 +474,16 @@ export type BookRow = {
  * an undated read (R2-08). A book is under every year it was read in, and under
  * No year if one of its reads has no date,
  * from book_reads, as books_by_year counts it (D-65): a reread doesn't move it
- * out of its first year. */
+ * out of its first year. An Unlisted book (task 1.21, D-83) is listed only by a
+ * search or `status: "unlisted"`, its own chip: *Everything*, the genre and the
+ * year chips leave it out. */
 export async function listBooks(
   userId: string,
   opts: { status?: string; genre?: string; year?: number; noYear?: boolean; q?: string; level?: ToReadLevel } = {},
 ): Promise<WithTotal<BookRow>[]> {
-  const { status = null, genre = null, year = null, noYear = false, q = null, level = null } = opts;
+  const { status = null, genre = null, year = null, noYear = false, level = null } = opts;
+  // An empty search box is no search: it must not bring the Unlisted books in.
+  const q = opts.q?.trim() || null;
   return sql<WithTotal<BookRow>[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position,
            b.genre, b.word_count, b.cover_url,
@@ -503,6 +507,7 @@ export async function listBooks(
     ) pl ON true
     WHERE b.deleted_at IS NULL
       AND (${status}::text IS NULL OR COALESCE(st.status,'to_read') = ${status})
+      AND (${status}::text IS NOT NULL OR ${q}::text IS NOT NULL OR st.status IS DISTINCT FROM 'unlisted')
       AND (${genre}::text  IS NULL OR b.genre = ${genre})
       AND (${year}::int    IS NULL
            OR EXISTS (SELECT 1 FROM book_reads r
@@ -612,13 +617,27 @@ export async function yearSummary(userId: string) {
 /** Undated reads (precision `none`), from book_reads as the year chips count
  * theirs (D-65): the ones no year chip can reach. */
 export async function readWithoutYear(userId: string): Promise<number> {
-  const [row] = await sql<{ n: number }[]>`
-    SELECT COUNT(*)::int AS n
-    FROM book_reads r
-    JOIN books b ON b.id = r.book_id AND b.deleted_at IS NULL
-    WHERE r.user_id = ${userId} AND r.finished_on IS NULL
+  return (await listCounts(userId)).unyeared;
+}
+
+/**
+ * The master list's two chip counts, in one query (the page's budget, task 0.9):
+ * `unyeared`, as `readWithoutYear`; `unlisted`, the live books that are
+ * Unlisted (task 1.21), for the *Unlisted · N* chip, hidden at zero.
+ */
+export async function listCounts(userId: string): Promise<{ unyeared: number; unlisted: number }> {
+  const [row] = await sql<{ unyeared: number; unlisted: number }[]>`
+    SELECT
+      (SELECT COUNT(*)::int
+       FROM book_reads r
+       JOIN books b ON b.id = r.book_id AND b.deleted_at IS NULL
+       WHERE r.user_id = ${userId} AND r.finished_on IS NULL) AS unyeared,
+      (SELECT COUNT(*)::int
+       FROM book_status st
+       JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
+       WHERE st.user_id = ${userId} AND st.status = 'unlisted') AS unlisted
   `;
-  return row.n;
+  return row;
 }
 
 export async function seriesProgress(userId: string) {
