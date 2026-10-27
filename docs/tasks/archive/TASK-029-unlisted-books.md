@@ -1,7 +1,7 @@
 ---
 id: TASK-029
 title: 1.21 Unlisted: the books you have but haven't put on your list
-status: Review
+status: Done
 depends_on: []
 size: L
 model: opus
