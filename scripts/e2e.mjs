@@ -5,8 +5,10 @@
 // Refuses before a browser or a server starts unless TEST_DATABASE_URL is safe
 // (scripts/lib/testdb.mjs); playwright.config.ts checks again, so a bare
 // `npx playwright test` is no way round it. Stop `npm run dev` first: both run
-// from this folder's .next.
+// from this folder's .next, and a dev run deletes .next/dev before it starts
+// (DEV_CACHE in scripts/lib/e2e.mjs).
 import { spawnSync } from "node:child_process";
+import { rmSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { loadDotEnv } from "./lib/testdb.mjs";
 import { planE2e } from "./lib/e2e.mjs";
@@ -20,6 +22,10 @@ const plan = planE2e(process.env);
 if (plan.error) {
   console.error(`e2e: ${plan.error}`);
   process.exit(1);
+}
+if (plan.clear) {
+  rmSync(plan.clear, { recursive: true, force: true });
+  console.log(`e2e: cleared ${plan.clear}, so next dev starts from a cold cache`);
 }
 
 // PLAYWRIGHT_CLI stands in for the real one in test/e2e-guard.test.ts.

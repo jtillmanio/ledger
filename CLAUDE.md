@@ -87,6 +87,7 @@ suites) is in `docs/COMMANDS.md`.
 
 ```powershell
 npm run dev                 # local, needs .env
+npm run clean:dev           # delete .next/dev when next dev reloads in a loop (test:e2e does it itself)
 npm test                    # vitest; needs TEST_DATABASE_URL (never DATABASE_URL), refuses without it
 npm run test:all            # everything CI runs
 npm run test:e2e            # Playwright + axe in Chromium on the TEST database, the core projects (D-80); stop npm run dev first; needs `npx playwright install chromium` once
