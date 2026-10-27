@@ -940,8 +940,9 @@ titles can be two books. Every disagreement is reported. The bullets and the
   - `--dry-run` reports the match rate and writes nothing.
 - **Matching is 1.13's.** A Calibre book is a workbook book when title and
   author match after `clean()` / `key()`; a Calibre book with several authors
-  matches on any of them. A near spelling (≥ 0.4), or one title under another
-  author, appends a `book_review.csv` row with `reason = calibre`, as 1.14
+  matches on any of them. A near spelling (≥ 0.5, or one title the other plus
+  a `: subtitle`; D-89, amended 2026-10-27 from 1.13's 0.4), or one title
+  under another author, appends a `book_review.csv` row with `reason = calibre`, as 1.14
   does, with `keep` pre-filled with Calibre's spelling (D-87): `merge` renames
   the workbook's book to Calibre's, `separate` creates Calibre's. The Calibre
   book is held until the row is decided. Anything else is reported as

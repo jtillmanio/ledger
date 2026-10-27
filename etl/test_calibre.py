@@ -312,6 +312,55 @@ class Check(Case):
         self.assertEqual(sorted(b["title"] for b in self.seed_rows("books")), ["Mistborn", "The Way of Kings"])
         self.assertIn("calibre book held for review", self.reasons())
 
+    def test_a_different_book_under_half_similar_is_not_proposed(self):
+        """`A Court of Wings and Ruin` / `A Court of Thorns and Roses` scores
+        0.41: a series pattern, two books (owner, D-89). It comes in at Unlisted."""
+        self.workbook = build_books([("A Court of Thorns and Roses", "Sarah J. Maas", None, "Fantasy", None)])
+        self.library([book("A Court of Wings and Ruin", "Sarah J. Maas"), book("Mistborn", "Brandon Sanderson")])
+        self.round()
+        self.assertEqual([r for r in self.rows(self.book_review) if r["reason"] == "calibre"], [])
+        self.assertEqual(self.status_of("A Court of Wings and Ruin")["status"], "unlisted")
+
+    def test_a_subtitle_is_proposed_however_low_it_scores(self):
+        """`Arcanum Unbounded: The Cosmere Collection` scores 0.46 against the
+        workbook's `Arcanum Unbounded`, and is the same book with a subtitle (D-89)."""
+        self.workbook = build_books([("Arcanum Unbounded", "Brandon Sanderson", None, "Fantasy", None)])
+        self.library([book("Arcanum Unbounded: The Cosmere Collection", "Brandon Sanderson"),
+                      book("Mistborn", "Brandon Sanderson")])
+        self.round()
+        rows = [r for r in self.rows(self.book_review) if r["reason"] == "calibre"]
+        self.assertEqual([(r["a"], r["b"]) for r in rows],
+                         [("Arcanum Unbounded", "Arcanum Unbounded: The Cosmere Collection")])
+        self.assertLess(float(rows[0]["similarity"]), cal.SIMILAR_AT)
+
+    def test_a_proposal_calibre_no_longer_makes_is_dropped_unless_decided(self):
+        """The rule tightened, or the book changed in Calibre: an undecided
+        `calibre` row the run no longer proposes goes, as extract rebuilds its
+        own undecided rows. A decided one stays."""
+        self.library([book("The Way of Kings: Book One", "Brandon Sanderson"),
+                      book("Mistborn: The Final Empire", "Brandon Sanderson")])
+        self.round()
+        self.assertEqual(sorted(r["b"] for r in self.rows(self.book_review) if r["reason"] == "calibre"),
+                         ["Mistborn: The Final Empire", "The Way of Kings: Book One"])
+        rows = self.rows(self.book_review)
+        next(r for r in rows if r["b"] == "Mistborn: The Final Empire")["decision"] = "separate"
+        self.write_rows(self.book_review, rows)
+        self.library([book("Warbreaker", "Brandon Sanderson"), book("Elantris", "Brandon Sanderson")])
+        self.round()
+        self.assertEqual([(r["b"], r["decision"]) for r in self.rows(self.book_review) if r["reason"] == "calibre"],
+                         [("Mistborn: The Final Empire", "separate")])
+
+    def test_a_run_says_what_stage_it_is_at(self):
+        self.library([book("The Way of Kings", "Brandon Sanderson", series="The Stormlight Archive"),
+                      book("Mistborn", "Brandon Sanderson")])
+        self.extract()
+        self.assertEqual(self.calibre(), 0)
+        for stage in ("reading metadata.db", "read 2 records", "matching 2 records",
+                      "checking 1 series with Open Library", "writing"):
+            self.assertIn(stage, self.output)
+        # The fake replaces the fetch that counts requests, so only the shape is checked.
+        self.assertRegex(self.output, r"series 1/1 · \d+ requests, \d+ from cache")
+
     def test_an_unmatched_book_is_one_unlisted_book_and_a_second_run_changes_no_sidecar(self):
         self.library([book("Warbreaker", "Brandon Sanderson", words=190000, tags=("Fantasy",),
                            isbn="9780765320308"),

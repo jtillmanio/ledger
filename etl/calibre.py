@@ -21,9 +21,10 @@ Every Calibre book is matched to the books extract wrote (seed/books.csv), by
 1.13's rule: title and author compared after extract's clean() and key(), with
 book_review.csv's merges applied. A book with several authors matches on any.
 - matched    a workbook book with its title and one of its authors
-- proposed   a near spelling by the same author (trigram similarity >= 0.4, the
-             titles not differing only by a number), or the same title under
-             another author: appended to book_review.csv as reason `calibre`
+- proposed   a near spelling by the same author (trigram similarity >= 0.5, or
+             one title the other plus a `: subtitle`, D-89; the titles not
+             differing only by a number), or the same title under another
+             author: appended to book_review.csv as reason `calibre`
              with `keep` pre-filled with Calibre's spelling, and held until the
              owner decides (`merge` renames the workbook's book to Calibre's,
              `separate` creates Calibre's)
@@ -64,6 +65,7 @@ import shutil
 import sqlite3
 import sys
 import tempfile
+import time
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -77,6 +79,11 @@ EASTERN = ZoneInfo("America/New_York")
 SKIPPED_TYPES = {"comic"}
 STATUSES = ("matched", "proposed", "unmatched")
 MAX_FAILURES = 3        # failed lookups in a row before the run stops asking Open Library
+# A Calibre near spelling is proposed at this trigram similarity or more, or as
+# a subtitle (subtitled()). Higher than the workbook's own pairs (D-25a's 0.4):
+# under 0.5 Calibre's pairs were series patterns, two books (owner, D-89).
+SIMILAR_AT = 0.5
+PROGRESS_SECONDS = 5    # a progress line at most this often while Open Library is asked
 
 
 # --------------------------------------------------------------------------
@@ -251,7 +258,7 @@ class Seed:
                 if ex.differs_only_by_number(title, b["title"]):
                     continue
                 sim = ex.trgm_similarity(title, b["title"])
-                if sim >= ex.SIMILAR_AT and (best is None or sim > best[0]):
+                if (sim >= SIMILAR_AT or subtitled(title, b["title"])) and (best is None or sim > best[0]):
                     best = (sim, author, b)
         if best is None and self.by_title.get(ex.key(title)):
             best = (1.0, authors[0], self.by_title[ex.key(title)][0])
@@ -268,6 +275,16 @@ class Seed:
         scored = sorted(((ex.trgm_similarity(title, b["title"]), b["title"])
                          for a in authors for b in self.by_author.get(ex.key(a), [])), reverse=True)
         return " | ".join(f"{t} ({s:.2f})" for s, t in scored[:3] if s >= ex.SIMILAR_AT / 2)
+
+
+def subtitled(a: str, b: str) -> bool:
+    """One title is the other with a `: subtitle` added (`Arcanum Unbounded`,
+    `Arcanum Unbounded: The Cosmere Collection`): the same book, however low
+    the pair scores (D-89). Both subtitled never counts: `Mistborn: The Final
+    Empire` and `Mistborn: Secret History` are two books."""
+    def main(t):
+        return ex.key(t.split(":", 1)[0]) if ":" in t else None
+    return bool(a and b) and (main(a) == ex.key(b) or main(b) == ex.key(a))
 
 
 def proposal(workbook: dict, title: str, author: str, sim: float) -> dict:
@@ -318,7 +335,9 @@ def run(args) -> int:
     columns = {"words": args.words_column, "date": args.date_column,
                "read": args.read_column, "type": args.type_column}
     print(f"calibre <- {source.parent}" + (" (dry run: nothing is written)" if args.dry_run else ""))
+    print("reading metadata.db (from a temp copy) …")
     library = read_library(source, columns)
+    print(f"  read {len(library)} records")
 
     review = ex.load_book_review(args.book_review)
     idx = ex.BookIndex(review)
@@ -332,6 +351,19 @@ def run(args) -> int:
     unchecked: set[tuple] = set()
     failures = 0
     proposals, skipped, duplicates, missed = [], [], [], []
+    series_total = sum(1 for r in library if r["series"] and r["type"].lower() not in SKIPPED_TYPES)
+    print(f"matching {len(library)} records against {Path(args.seed) / 'books.csv'}"
+          + (f", checking {series_total} series with Open Library (about one a second when it isn't cached)"
+             if api else "") + " …")
+    asked, shown = 0, time.monotonic()
+
+    def progress(final=False):
+        nonlocal shown
+        if final or time.monotonic() - shown >= PROGRESS_SECONDS:
+            shown = time.monotonic()
+            print(f"  series {asked}/{series_total} · {api.network} requests, {api.cached} from cache"
+                  + (f", {len(unchecked)} not checked" if unchecked else ""))
+
     try:
         for rec in library:
             if not rec["title"]:
@@ -364,6 +396,9 @@ def run(args) -> int:
                 continue
             target = workbook if state == "matched" else seed.created.get(k)
             title, name = (target["title"], target["author"]) if target else (rec["title"], author)
+            asked += 1
+            if asked > 1:
+                progress()
             try:
                 works = api.search(title, name)
             except eb.StopRun:
@@ -386,6 +421,8 @@ def run(args) -> int:
             row["confirmed"] = ";".join(f for f in ex.CHECKED_FIELDS if f in confirmed)
     finally:
         if api:
+            if asked:
+                progress(final=True)
             api.db.close()
 
     # What Open Library couldn't be asked this run keeps what the last run knew.
@@ -397,16 +434,23 @@ def run(args) -> int:
     if args.dry_run:
         return 0
 
+    print(f"\nwriting {args.calibre_books} …")
     write_csv(Path(args.calibre_books), ex.CALIBRE_BOOKS_COLUMNS, fold(old_books, books))
-    known = {ex.review_sides(r) for r in review}
+    # Our own undecided rows follow this run's proposals, as extract rebuilds
+    # its own: one the rule no longer makes, or whose book left Calibre, goes.
+    proposed = {ex.review_sides(p) for p in proposals}
+    kept = [r for r in review
+            if r["reason"] != ex.CALIBRE or r["decision"] or ex.review_sides(r) in proposed]
+    known = {ex.review_sides(r) for r in kept}
     new = []
     for p in proposals:
         if ex.review_sides(p) not in known:
             known.add(ex.review_sides(p))
             new.append(p)
-    if new:
-        write_csv(Path(args.book_review), ex.BOOK_REVIEW_COLUMNS, review + new)
-        print(f"  {len(new)} Calibre spellings to review in {args.book_review}: "
+    if new or len(kept) < len(review):
+        write_csv(Path(args.book_review), ex.BOOK_REVIEW_COLUMNS, kept + new)
+        print(f"  {len(new)} new Calibre spellings to review in {args.book_review} "
+              f"({len(review) - len(kept)} no longer proposed, dropped): "
               "`merge` takes Calibre's, `separate` makes them two books")
     return 0
 
@@ -551,8 +595,10 @@ def main(argv=None) -> int:
     ap.add_argument("--max-requests", type=int, default=3000, help="stop asking after this many requests")
     args = ap.parse_args(argv)
     # A redirected Windows console is cp1252; print what it can't show as ?.
+    # Line-buffered, so the progress lines show while a long run is going,
+    # piped to a file or not.
     if isinstance(sys.stdout, io.TextIOWrapper):
-        sys.stdout.reconfigure(errors="replace")
+        sys.stdout.reconfigure(errors="replace", line_buffering=True)
     return run(args)
 
 
