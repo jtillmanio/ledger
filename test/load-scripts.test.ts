@@ -72,7 +72,36 @@ describe.each(["load.ps1", "load.sh"])("%s, task 1.15", (name) => {
   });
 });
 
+// Task 1.18: the reads the owner accepted from Calibre (D-73) are the first
+// read_events extract writes. Each loads after its book and the owner's users
+// row, from the bound CSV, without its id: the serial numbers them.
+describe.each(["load.ps1", "load.sh"])("%s, task 1.18", (name) => {
+  const text = read(name);
+  const at = (re: RegExp) => {
+    const i = text.search(re);
+    expect(i, String(re)).toBeGreaterThan(-1);
+    return i;
+  };
+
+  it("truncates read_events with the others", () => {
+    const truncate = /TRUNCATE[\s\S]*?RESTART IDENTITY CASCADE;/.exec(text)![0];
+    expect(truncate).toMatch(/\bread_events\b/);
+  });
+
+  it("copies read_events after books and the owner, from the bound CSV", () => {
+    const copy = at(/\\+copy read_events\(user_id,book_id,finished_on,finished_on_precision\) FROM '[^']*(tmp|Path)[^']*\/read_events\.csv' CSV HEADER/);
+    expect(copy).toBeGreaterThan(at(/\\+copy books\(/));
+    expect(copy).toBeGreaterThan(at(/INSERT INTO users/));
+    const bind = /(?:foreach \(\$f in @\(|for f in )([^);]*)/.exec(text)![1];
+    expect(bind).toContain("read_events");
+  });
+});
+
 describe.each(["rebuild.ps1", "rebuild.sh"])("%s", (name) => {
+  it("counts read_events against the seed", () => {
+    expect(read(name)).toMatch(/\bread_events\b/);
+  });
+
   it("counts volume_rules against the seed", () => {
     expect(read(name)).toMatch(/\bvolume_rules\b/);
   });

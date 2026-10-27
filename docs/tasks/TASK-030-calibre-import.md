@@ -1,14 +1,14 @@
 ---
 id: TASK-030
 title: 1.18 Calibre: word counts, series, tags and reads for the books
-status: Draft
+status: In progress
 depends_on: [TASK-022, TASK-023, TASK-029]
 size: L
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 932d3c7
 ---
 
 # TASK-030 — 1.18 Calibre: word counts, series, tags and reads for the books
@@ -76,9 +76,38 @@ Every book in the owner's Calibre library comes into the Ledger before cutover. 
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- 1.20's hold does not apply to a Calibre-created book Open Library doesn't know: having it is the owner's say-so (approved at plan) → docs/tasks/TASK-031-hold-unmatched-books.md § Context
+- Wishlist accept should promote an Unlisted book to Someday, as *Add books* does since 1.21 (TASK-029's open question; app code, out of this ETL task) (approved at plan) → docs/05-roadmap.md § new phase-1 item
+- Candidate decision: which Calibre types come in (Book and Fan Fiction, Fan Fiction as `book_type` `Fan Fiction`; Comic skipped and reported) (approved at plan) → docs/review/decisions.md
+- Candidate decision: a Calibre date column whose display format has no day loads the stored Eastern day as `approximate`; a year-only format loads July 1st `approximate` (approved at plan) → docs/review/decisions.md, with data model 2.17 if it needs the rule
+- Candidate decision: `calibre_books.csv` holds tags and ISBN but no comments until `books.summary` is approved (public repo, 5.7 MB of publisher text); ISBN review rows wait for `books.isbn` (approved at plan) → docs/review/decisions.md
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+_Approved 2026-10-27 at 932d3c7. Owner's answers at the gate: Book + Fan Fiction come in, Comic is skipped; a no-day date format loads the stored day `approximate`; `calibre_books.csv` holds tags and ISBN, no comments. Owner's question: books get their Open Library id and metadata from Open Library, not Calibre. Answer: yes. Calibre-created books are in `seed/books.csv`, so `npm run enrich:books` gives them id, cover, page count and published year like any other; Calibre's publisher and pubdate are never read. Run order in `docs/COMMANDS.md`: extract → calibre → extract → enrich:books → extract._
+
+**Steps**
+
+1. `etl/calibre.py` (`npm run calibre`): `--library` or `CALIBRE_LIBRARY` (`.env`), neither is an error naming both. Copies `metadata.db` to a temp folder outside the repo, opens it `mode=ro`, removes it in `finally`. Columns by lookup name: `--words-column` (`#words`), `--read-column` (`#read`), `--date-column` (`#date_read`); `npm run calibre` passes `--date-column "#read_date"` (this library). `--type-column` (`#type`): Comic is skipped and reported, Fan Fiction gets `book_type` `Fan Fiction`.
+2. Matching against `seed/books.csv` with 1.13's `key()`: a multi-author Calibre book matches on any of its authors (created under the first). A near spelling (≥ 0.4, same author, not differing only by a number) or the same title under another author appends a `book_review.csv` row, `reason = calibre` (`a` the workbook's spelling, `b` Calibre's). Books Calibre created on an earlier run are never matched, so a rerun is stable: extract lists them in `seed/calibre_created.csv` (title, author, book_id; not loaded). *(Revision 1, approved 2026-10-27: the plan first inferred them from a seed status of `unlisted` or `read`, which a workbook book with an accepted Calibre read also has.)*
+3. Sidecars, existing rows in place and new rows appended; a `hand` row and a decided row are never rewritten; a `calibre` row whose book left Calibre is dropped. `calibre_books.csv`: title, author, words, series, series_index, isbn, tags, book_type, confirmed, source. `calibre_review.csv`: title, author, field, calibre, api, decision (calibre|api|neither). `calibre_reads.csv`: title, author, read, date_read (Eastern day, or `YYYY`), precision, decision (accept|reject).
+4. Open Library check with 1.14's `OpenLibrary` client and cache (same search; a matched book searches under the seed's spelling): only where the seed book has no series or Calibre's. Series and index agreement → `confirmed`; contradiction or no answer → review row. ISBN compared only against an answer in hand, recorded in `confirmed`; no ISBN review rows until `books.isbn`. `--offline` cache only; `--dry-run` no lookups, writes nothing, prints matched / proposed / unmatched and the match rate.
+5. `etl/extract.py` (`--calibre-books`, `--calibre-review`, `--calibre-reads`; `npm run extract` passes them): word count `stated` only where the book has none, a > 10% difference reported in `unresolved.csv`; series fills where confirmed, hand, or decided calibre/api; unmatched books created `unlisted` (held and reported while their `calibre` review row is undecided); an accepted read writes `seed/read_events.csv` and sets `book_status` `read` with its date (a book already `read` is reported, no second read); `review_book_pairs` keeps `calibre` rows as it keeps `open library` ones.
+6. `etl/load.ps1`, `etl/load.sh`: truncate `read_events`, bind `$OWNER`, copy it after books. `etl/rebuild.ps1`, `etl/rebuild.sh`: count it.
+7. `.env.example`, `CLAUDE.md`, `docs/COMMANDS.md` (with the run order), `.claude/rules/schema.md` (the three sidecars), `.claude/kit.json` `largeFiles` for `calibre_books.csv`.
+
+**Files**: `etl/calibre.py` (new), `etl/test_calibre.py` (new), `etl/extract.py`, `etl/data/calibre_books.csv`, `calibre_review.csv`, `calibre_reads.csv` (new), `etl/data/book_review.csv`, `etl/load.ps1`, `etl/load.sh`, `etl/rebuild.ps1` and `etl/rebuild.sh` (not in Files likely touched: they count each table against the seed), `test/load-scripts.test.ts`, `package.json`, `.env.example`, `CLAUDE.md`, `docs/COMMANDS.md`, `.claude/rules/schema.md`, `.claude/kit.json`. 18 files: `never-split`, attended.
+
+**Test strategy** (`etl/test_calibre.py`, a fixture `metadata.db` of two books per case, recorded Open Library answers, no network)
+
+- AC-1: one test per Check bullet: stated count fills / workbook count kept; agreed series fills, contradicted series is a review row and fills nothing; near spelling → `book_review.csv`; unmatched → one `unlisted` book, second run byte-identical; reads undecided / accept / reject; fixture bytes and `st_mtime_ns` unchanged.
+- AC-2: library from flag, from env, neither → error naming both; `#wc` at another `custom_column_N`; `--dry-run` rate printed, sidecars and seed byte-identical.
+- AC-3: hand row, decided review and read rows kept; a new Calibre book appends only its rows; > 10% reported and kept; `decision = calibre` fills the series.
+- AC-4: already-read book → no second `read_events` row, reported; year-only → July 1st `approximate`; created book with accepted read → `read` with the date; without → `unlisted`.
+- AC-5: `books.csv` header unchanged (test); extract on `main` and on the branch, CSV diff (manual, summary in the PR).
+- AC-6: temp copy outside the repo and removed (test); `test/load-scripts.test.ts` read_events copy, truncate and bind in both loaders; docs by inspection.
+
+**Risks**: ~3,000 Unlisted books (4,462 in Calibre, 1,361 in the workbook); the first real run asks Open Library about each Calibre-only series book (~1 a second, cached after); the repo is public (no comments committed).
 
 ## Review log
 

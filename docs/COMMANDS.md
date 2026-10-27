@@ -29,6 +29,9 @@ npm run extract             # etl/extract.py with every sidecar CSV (see below);
                             # or later loads nothing either; seed/workbook_plans.csv lists its titles.
                             # Nor does a placeholder title (Untitled, TBA, TBD) where a book
                             # would load: seed/workbook_placeholders.csv lists each one.
+                            # --calibre-books / --calibre-review / --calibre-reads fold in npm run calibre's
+                            # sidecars: accepted reads are seed/read_events.csv, and seed/calibre_created.csv
+                            # (not loaded) lists the books only Calibre has.
                             # Every prerequisite loop is a `prereqs,prereq cycle` row in unresolved.csv
                             # and a console count (2.11a); `-- --fail-on-cycle` exits non-zero on any,
                             # after writing every CSV (Step 14's final extract)
@@ -39,6 +42,16 @@ npm run enrich:books        # etl/enrich_books.py: Open Library id, page count, 
                             # per book into etl/data/book_details.csv (task 1.14); a near spelling goes to
                             # book_review.csv as `open library`. `-- --dry-run` first (100 books, writes
                             # nothing); `-- --offline` reprints the report from the cache
+npm run calibre             # etl/calibre.py (task 1.18): the Calibre library (CALIBRE_LIBRARY in .env, or
+                            # `-- --library <folder>`) into etl/data/calibre_books.csv, calibre_review.csv and
+                            # calibre_reads.csv, read from a temp copy of metadata.db (never written). Word
+                            # counts, a series Open Library agrees with, and the books only Calibre has (at
+                            # Unlisted); a near spelling goes to book_review.csv as `calibre`. Decide
+                            # calibre_review.csv (calibre / api / neither) and calibre_reads.csv (accept /
+                            # reject); only accepted reads load. `-- --dry-run` first (the match rate, writes
+                            # nothing); `-- --offline` asks Open Library nothing new. Re-run after any library
+                            # change, in this order: extract, calibre, extract, enrich:books, extract (the
+                            # created books get their Open Library details like any other)
 npm run sidecars            # etl/check_sidecars.py: validate the issue sidecars, write etl/data/metadata_todo.md
                             # and etl/data/creator_review.csv (close creator names to accept or reject);
                             # an issue fandom_skipped.csv says has a blank Fandom title isn't listed as
