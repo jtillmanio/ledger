@@ -72,7 +72,7 @@ describe.each(["load.ps1", "load.sh"])("%s, task 1.15", (name) => {
   });
 });
 
-// Task 1.18: the reads the owner accepted from Calibre (D-73) are the first
+// Task 1.18: Calibre's reads (D-73, D-87) are the first
 // read_events extract writes. Each loads after its book and the owner's users
 // row, from the bound CSV, without its id: the serial numbers them.
 describe.each(["load.ps1", "load.sh"])("%s, task 1.18", (name) => {

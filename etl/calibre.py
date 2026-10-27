@@ -193,7 +193,8 @@ def read_date(value, date_format: str) -> tuple[str, str]:
     if when.tzinfo is None:
         when = when.replace(tzinfo=timezone.utc)
     day = when.astimezone(EASTERN).date()
-    if not date_format or "d" in date_format:
+    # `iso` is Calibre's name for a full ISO date, which has its day.
+    if not date_format or "d" in date_format or date_format.strip().lower() == "iso":
         return day.isoformat(), "exact"
     if "M" not in date_format:
         return str(day.year), "approximate"

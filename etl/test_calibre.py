@@ -612,6 +612,16 @@ class Reads(Case):
         event = self.seed_rows("read_events")[0]
         self.assertEqual((event["finished_on"], event["finished_on_precision"]), ("2022-05-08", "approximate"))
 
+    def test_calibres_iso_format_is_a_full_date(self):
+        """`iso` is Calibre's special format for a full ISO date: no `d` in it,
+        and still a day."""
+        build_library(self.lib, [book("Warbreaker", "Brandon Sanderson", read=1,
+                                      date="2022-05-08 04:00:00+00:00"),
+                                 book("Mistborn", "Brandon Sanderson")], date_format="iso")
+        self.round()
+        row = self.calibre_row("Warbreaker")
+        self.assertEqual((row["date_read"], row["precision"]), ("2022-05-08", "exact"))
+
     def test_a_date_is_its_eastern_day(self):
         """Calibre stores UTC; 03:00 UTC on the 9th is the evening of the 8th in New York (D-67)."""
         build_library(self.lib, [book("Warbreaker", "Brandon Sanderson", read=1,

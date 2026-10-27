@@ -1021,7 +1021,7 @@ CHECKED_FIELDS = ("series", "series_index", "isbn")
 # Not loaded: the books Calibre created, so calibre.py never matches its own.
 CALIBRE_CREATED_COLUMNS = ["title", "author", "book_id"]
 READ_EVENTS_COLUMNS = ["user_id", "book_id", "finished_on", "finished_on_precision"]
-# A workbook count further than this from Calibre's is reported, never replaced.
+# A workbook count further than this from Calibre's is reported as Calibre's replaces it (D-87).
 WORD_COUNT_TOLERANCE = 0.10
 YEAR_RE = re.compile(r"^\d{4}$")
 DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
@@ -1500,7 +1500,7 @@ def series_text(name: str | None, pos) -> str:
 
 
 def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
-                 books: list[dict]) -> tuple[list[dict], list[dict]]:
+                 books: list[dict]) -> tuple[list[dict], list[dict], set[str]]:
     """Fold etl/calibre.py's sidecar in (task 1.18, D-73, D-83). Calibre is the
     source of truth for a book's data and its reads (D-87). A Calibre book that
     is a workbook book (after book_review.csv's merges) takes Calibre's word
@@ -1890,7 +1890,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
     write(out, "book_status", list(status.values()),
           ["user_id", "book_id", "status", "finished_on", "finished_on_precision",
            "year_rank", "rating"])
-    # Only Calibre reads the owner accepted (D-73); the workbook's never load (D-41).
+    # Only Calibre's reads load (D-73, D-87); the workbook's never do (D-41).
     write(out, "read_events", read_events, READ_EVENTS_COLUMNS)
     # Not loaded: the books Calibre created, which calibre.py never matches.
     write(out, "calibre_created", calibre_created, CALIBRE_CREATED_COLUMNS)
