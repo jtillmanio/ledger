@@ -1063,9 +1063,9 @@ order (Step 13).
      the views are there, and it is the build just promoted. Without the
      variable that check is skipped, with a warning.
 
-**Verify:** **Actions → Release → Run workflow**, tick **Dry run**, **Run**. It
-is green, and its summary names the build it would promote, *CI on it:
-success*, and *Migrations to apply: none*.
+**Verify:** **Actions → Release → Run workflow**, leave **Dry run** ticked (it
+is by default), **Run**. It is green, and its summary names the build it
+would promote, *CI on it: success*, and *Migrations to apply: none*.
 
 A commit that only touches `backups/`, `docs/`, `design/`, `.github/`,
 `.claude/` or Markdown shows **Canceled** in Vercel's Deployments tab. That is
@@ -1302,10 +1302,11 @@ After each sitting:
    CI summary says whether it added one. Release refuses to migrate before
    cutover and says so. 0.8a *must* go this way: its migration re-keys progress
    and is not written to convert existing rows.
-3. **Actions → Release → Run workflow → Run.** Or from the project folder:
+3. **Actions → Release → Run workflow**, untick **Dry run**, **Run**. Or from
+   the project folder:
 
 ```powershell
-gh workflow run release.yml
+gh workflow run release.yml -f dry_run=false
 gh run watch (gh run list --workflow release.yml --limit 1 --json databaseId --jq '.[0].databaseId') --exit-status
 ```
 
@@ -1314,7 +1315,9 @@ refuses when CI has not passed on that exact commit, when something newer on
 `main` is still building, or (before cutover) when there is a migration to
 apply. Then it snapshots the live database if migrating, migrates, re-applies
 `etl/views.sql`, and promotes the build. Its run summary lists each step.
-**Dry run** reports all of that and changes nothing: use it when unsure.
+**Dry run** reports all of that and changes nothing. It is ticked by default,
+so a release has to be asked for. Release runs from `main` only: started from
+any other branch it may dry-run, and a real run refuses.
 
 **Why this order.** Release puts the schema change in first and the new code
 second. For the minute in between, the *old* code runs on the *new* schema.
