@@ -483,9 +483,10 @@ def report(status: dict, proposals: list[dict], skipped: list[dict], duplicates:
     if status:
         print(f"  match rate {counts.get('matched', 0) / len(status):.0%} of {len(status)}")
     reads = sum(1 for r in books.values() if r["read"] == "true" or r["date_read"])
-    differs = sum(1 for r in books.values() if r["open_library"])
     print(f"  reads      {reads:>6} (each loads, D-87)")
-    print(f"  series Open Library has differently: {differs} (reported by extract in unresolved.csv)")
+    if api:  # a dry run asks Open Library nothing, so it has no count to give
+        differs = sum(1 for r in books.values() if r["open_library"])
+        print(f"  series Open Library has differently: {differs} (reported by extract in unresolved.csv)")
     if skipped:
         print(f"\nskipped, {len(skipped)} comics (the Ledger keeps comics as issues):")
         for rec in skipped:

@@ -420,6 +420,8 @@ class Options(Case):
         self.assertRegex(self.output, r"(?m)^\s*unmatched\s+2\b")
         # What changed is shown too, and still nothing is written.
         self.assertIn("added    Elantris", self.output)
+        # Open Library isn't asked in a dry run, so no count of its differences is claimed.
+        self.assertNotIn("Open Library has differently", self.output)
 
     def test_dry_run_on_a_fresh_checkout_creates_no_sidecar(self):
         build_library(self.lib, self.TWO)
