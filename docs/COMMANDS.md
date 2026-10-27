@@ -9,6 +9,8 @@ that way.
 
 ```powershell
 npm run dev                 # local, needs .env
+npm run clean:dev           # delete .next/dev (next dev's output and Turbopack cache) with `npm run dev` stopped:
+                            # a stale one reloads a page in a Fast Refresh loop. test:e2e clears it before every dev run
 npm test                    # vitest; needs TEST_DATABASE_URL (never DATABASE_URL), refuses without it
 npm run test:all            # test:tokens + check:migrations + test:db:reset + vitest + test:views + test:etl + test:e2e, what CI runs
 npm run test:db:reset       # rebuild the TEST database: drizzle-kit migrate, then etl/views.sql
@@ -57,7 +59,7 @@ npm run test:etl            # py -m unittest over etl/test_*.py, no network
 npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in Chromium, the core projects (D-80:
                             # w390 light and dark, w768, w1280, reduced motion, touch), against `next dev` on
                             # TEST_DATABASE_URL (port 3199, passcode `e2e-passcode`); refuses without it. Stop
-                            # `npm run dev` first (both use .next). Once per machine, and after a Playwright bump:
+                            # `npm run dev` first (both use .next; a dev run deletes .next/dev before it starts). Once per machine, and after a Playwright bump:
                             # `npx playwright install chromium`. Screenshots: test-results/screens/ (ignored). Pass
                             # arguments after --, e.g. `-- --project=w390-light`. A check that needs one project is
                             # tagged `{ tag: "@at-<project>" }`, never skipped on testInfo.project.name. E2E_SERVER=start

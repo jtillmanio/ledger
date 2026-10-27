@@ -11,6 +11,12 @@ export const E2E_PORT = 3199;
 // Fixed and public: the suite's server, never the owner's APP_PASSCODE.
 export const E2E_PASSCODE = "e2e-passcode";
 export const E2E_USER = "e2e-user";
+// `next dev`'s output and Turbopack cache, relative to where the server runs.
+// A stale one makes the sign-in page reload in a Fast Refresh loop until the
+// setup project times out (TASK-015; again on 2026-10-27), so a dev run starts
+// without it. `next start` serves the `next build` output in .next and never
+// reads this folder.
+export const DEV_CACHE = ".next/dev";
 
 // The projects a screen is checked in: the six `ui.viewports` in
 // .claude/kit.json, light and dark (D-33), then the reduced-motion and touch
@@ -56,6 +62,9 @@ export function e2eProjects(scope) {
  *
  * E2E_SCOPE picks the projects: `core` (the default, E2E_CORE) or `full`,
  * every project, which CI runs.
+ *
+ * clear is the folder the wrapper deletes before Playwright starts: DEV_CACHE
+ * for a dev server, null for `next start`.
  */
 export function planE2e(env) {
   const error = checkTestUrl(env.TEST_DATABASE_URL, env.DATABASE_URL);
@@ -66,6 +75,7 @@ export function planE2e(env) {
   if (scope !== "core" && scope !== "full") return { error: `E2E_SCOPE is "${scope}": use core or full.` };
   return {
     scope,
+    clear: mode === "dev" ? DEV_CACHE : null,
     serverCommand: `npx next ${mode} --port ${E2E_PORT}`,
     serverEnv: {
       DATABASE_URL: env.TEST_DATABASE_URL,

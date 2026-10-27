@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { checkTestUrl } from "../scripts/lib/testdb.mjs";
-import { E2E_CORE, E2E_PASSCODE, E2E_PORT, E2E_PROJECTS, e2eProjects, planE2e } from "../scripts/lib/e2e.mjs";
+import { DEV_CACHE, E2E_CORE, E2E_PASSCODE, E2E_PORT, E2E_PROJECTS, e2eProjects, planE2e } from "../scripts/lib/e2e.mjs";
 import { planTestRun } from "../scripts/lib/test-files.mjs";
 import { ciJob } from "./ci-yml";
 
@@ -51,6 +51,13 @@ describe("planE2e: the test database, or a refusal with testdb.mjs's own message
     const bad = planE2e({ ...env, E2E_SERVER: "prod" });
     expect(bad.serverCommand).toBeUndefined();
     expect(bad.error).toMatch(/E2E_SERVER is "prod": use dev or start/);
+  });
+
+  it("clears next dev's cache before a dev run, and nothing before next start", () => {
+    const env = { TEST_DATABASE_URL: TEST, DATABASE_URL: LIVE };
+    expect(DEV_CACHE).toBe(".next/dev");
+    expect(planE2e(env).clear).toBe(DEV_CACHE);
+    expect(planE2e({ ...env, E2E_SERVER: "start" }).clear).toBeNull();
   });
 
   it("checks the core projects by default, every project when E2E_SCOPE is full, and refuses anything else", () => {
@@ -111,9 +118,13 @@ describe("e2eProjects: which project runs which test", () => {
 });
 
 // Runs the wrapper from an empty folder, so no .env there can supply a
-// TEST_DATABASE_URL the case means to leave out.
+// TEST_DATABASE_URL the case means to leave out. The folder holds a stale
+// next dev cache and a build, so a case can see what the wrapper cleared.
 function runWrapper(env: Record<string, string>, args: string[] = []) {
   const dir = mkdtempSync(join(tmpdir(), "e2e-guard-"));
+  mkdirSync(join(dir, DEV_CACHE, "cache"), { recursive: true });
+  writeFileSync(join(dir, DEV_CACHE, "cache", "stale"), "");
+  writeFileSync(join(dir, ".next", "BUILD_ID"), "build");
   const marker = join(dir, "launched.json");
   const stub = join(dir, "stub-playwright.mjs");
   writeFileSync(
@@ -127,8 +138,10 @@ function runWrapper(env: Record<string, string>, args: string[] = []) {
     env: { NODE_ENV: "test", PATH: process.env.PATH ?? "", SystemRoot: process.env.SystemRoot ?? "", PLAYWRIGHT_CLI: stub, ...env },
   });
   const launched = existsSync(marker) ? JSON.parse(readFileSync(marker, "utf8")) : null;
+  const devCacheLeft = existsSync(join(dir, DEV_CACHE));
+  const buildLeft = existsSync(join(dir, ".next", "BUILD_ID"));
   rmSync(dir, { recursive: true, force: true });
-  return { status: r.status, stderr: r.stderr, launched };
+  return { status: r.status, stderr: r.stderr, launched, devCacheLeft, buildLeft };
 }
 
 describe("node scripts/e2e.mjs", () => {
@@ -137,6 +150,7 @@ describe("node scripts/e2e.mjs", () => {
     expect(r.status).toBe(1);
     expect(r.stderr).toContain(checkTestUrl(undefined, LIVE)!);
     expect(r.launched).toBeNull();
+    expect(r.devCacheLeft).toBe(true);
   });
 
   it("exits 1 and launches nothing when TEST_DATABASE_URL is the same database as DATABASE_URL", () => {
@@ -144,6 +158,17 @@ describe("node scripts/e2e.mjs", () => {
     expect(r.status).toBe(1);
     expect(r.stderr).toContain(checkTestUrl(LIVE, LIVE)!);
     expect(r.launched).toBeNull();
+  });
+
+  it("deletes .next/dev before a dev run and keeps the build; leaves both alone for next start", () => {
+    const dev = runWrapper({ TEST_DATABASE_URL: TEST, DATABASE_URL: LIVE });
+    expect(dev.status).toBe(0);
+    expect(dev.devCacheLeft).toBe(false);
+    expect(dev.buildLeft).toBe(true);
+    const start = runWrapper({ TEST_DATABASE_URL: TEST, DATABASE_URL: LIVE, E2E_SERVER: "start" });
+    expect(start.status).toBe(0);
+    expect(start.devCacheLeft).toBe(true);
+    expect(start.buildLeft).toBe(true);
   });
 
   it("hands Playwright its arguments when the test database is safe, and DATABASE_URL stays the owner's", () => {
