@@ -1,7 +1,7 @@
 ---
 id: TASK-030
 title: 1.18 Calibre: word counts, series, tags and reads for the books
-status: In progress
+status: Review
 depends_on: [TASK-022, TASK-023, TASK-029]
 size: L
 model: opus
@@ -34,7 +34,7 @@ Every book in the owner's Calibre library comes into the Ledger before cutover. 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm run test:etl`, with a fixture `metadata.db` built by the test (two books, `#words` and `#date_read` custom columns) and recorded API answers, shows:
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm run test:etl`, with a fixture `metadata.db` built by the test (two books, `#words` and `#date_read` custom columns) and recorded API answers, shows:
   - an exact match fills a `stated` word count where the workbook had none, and replaces a workbook count that differs, reporting it when it is more than 10% off;
   - a series Open Library agrees with fills; one it contradicts also fills, and the disagreement is in `unresolved.csv`;
   - a near spelling writes a `book_review.csv` row;
@@ -43,11 +43,11 @@ Every book in the owner's Calibre library comes into the Ledger before cutover. 
   - the fixture file's bytes and modified time are unchanged after the run.
 
   Then a dry run over the real library, with the matched, proposed and unmatched counts reported in the PR.
-- [ ] AC-2: The library comes from `--library <folder>` or `CALIBRE_LIBRARY` in `.env`, and neither set is an error naming both. Given a fixture whose word-count column has the lookup name `#wc` at a different `custom_column_N`, `--words-column '#wc'` fills the same counts as `#words` did. `--dry-run` prints the match rate and leaves every sidecar and `seed/` file byte-identical.
-- [ ] AC-3: A Calibre book added between two runs appends exactly its own row to `calibre_books.csv`; a book changed in Calibre is rewritten in place, and a book removed from Calibre loses its row; the run prints each of the three. Calibre's word count and series load over the workbook's, and a workbook count more than 10% off, a different workbook series, and an Open Library series that differs are each a row in `unresolved.csv` (D-87, amended 2026-10-27).
-- [ ] AC-4: Given a book already `read` in the seed, a second Calibre read for it loads no second `read_events` row, and the run reports it. A year-only Calibre date loads as `approximate` on July 1st of that year. A Calibre-created book Calibre has read loads `book_status = read` with that finish date. Calibre-created books it hasn't read load `unlisted` (D-87, amended 2026-10-27).
-- [ ] AC-5: Unless the owner approved `books.subjects`, `books.summary` or `books.isbn` at the plan gate, no migration is in the PR and `seed/books.csv`'s header is unchanged. Re-running extract against both workbooks on `main` and on the branch, the CSV diff shows only Calibre-sourced values: stated word counts, filled series, the new Unlisted books and their status rows, Calibre's reads (`seed/read_events.csv`) with the `read` status rows they set, and the workbook series Calibre emptied, dropped (standing rule 4, summary in the PR; D-87, amended 2026-10-27).
-- [ ] AC-6: `metadata.db` and its temp copy are never in the repo: the copy is written outside it and removed after the run, and `git status` is clean of both. `npm run calibre` and its `--dry-run` are in `CLAUDE.md`'s commands and `docs/COMMANDS.md`. `npm run extract` passes the Calibre sidecars. `CALIBRE_LIBRARY` is in `.env.example`. `.claude/rules/schema.md` names `calibre_books.csv` and its rules (one sidecar since D-87). `etl/load.ps1` and `etl/load.sh` both copy `read_events`.
+- [x] AC-2: The library comes from `--library <folder>` or `CALIBRE_LIBRARY` in `.env`, and neither set is an error naming both. Given a fixture whose word-count column has the lookup name `#wc` at a different `custom_column_N`, `--words-column '#wc'` fills the same counts as `#words` did. `--dry-run` prints the match rate and leaves every sidecar and `seed/` file byte-identical.
+- [x] AC-3: A Calibre book added between two runs appends exactly its own row to `calibre_books.csv`; a book changed in Calibre is rewritten in place, and a book removed from Calibre loses its row; the run prints each of the three. Calibre's word count and series load over the workbook's, and a workbook count more than 10% off, a different workbook series, and an Open Library series that differs are each a row in `unresolved.csv` (D-87, amended 2026-10-27).
+- [x] AC-4: Given a book already `read` in the seed, a second Calibre read for it loads no second `read_events` row, and the run reports it. A year-only Calibre date loads as `approximate` on July 1st of that year. A Calibre-created book Calibre has read loads `book_status = read` with that finish date. Calibre-created books it hasn't read load `unlisted` (D-87, amended 2026-10-27).
+- [x] AC-5: Unless the owner approved `books.subjects`, `books.summary` or `books.isbn` at the plan gate, no migration is in the PR and `seed/books.csv`'s header is unchanged. Re-running extract against both workbooks on `main` and on the branch, the CSV diff shows only Calibre-sourced values: stated word counts, filled series, the new Unlisted books and their status rows, Calibre's reads (`seed/read_events.csv`) with the `read` status rows they set, and the workbook series Calibre emptied, dropped (standing rule 4, summary in the PR; D-87, amended 2026-10-27).
+- [x] AC-6: `metadata.db` and its temp copy are never in the repo: the copy is written outside it and removed after the run, and `git status` is clean of both. `npm run calibre` and its `--dry-run` are in `CLAUDE.md`'s commands and `docs/COMMANDS.md`. `npm run extract` passes the Calibre sidecars. `CALIBRE_LIBRARY` is in `.env.example`. `.claude/rules/schema.md` names `calibre_books.csv` and its rules (one sidecar since D-87). `etl/load.ps1` and `etl/load.sh` both copy `read_events`.
 
 ## Out of scope
 
@@ -76,11 +76,14 @@ Every book in the owner's Calibre library comes into the Ledger before cutover. 
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- 1.20's hold does not apply to a Calibre-created book Open Library doesn't know: having it is the owner's say-so (approved at plan) → docs/tasks/TASK-031-hold-unmatched-books.md § Context
-- Wishlist accept should promote an Unlisted book to Someday, as *Add books* does since 1.21 (TASK-029's open question; app code, out of this ETL task) (approved at plan) → docs/05-roadmap.md § new phase-1 item
-- Candidate decision: which Calibre types come in (Book and Fan Fiction, Fan Fiction as `book_type` `Fan Fiction`; Comic skipped and reported) (approved at plan) → docs/review/decisions.md
-- Candidate decision: a Calibre date column whose display format has no day loads the stored Eastern day as `approximate`; a year-only format loads July 1st `approximate` (approved at plan) → docs/review/decisions.md, with data model 2.17 if it needs the rule
-- Candidate decision: `calibre_books.csv` holds tags and ISBN but no comments until `books.summary` is approved (public repo, 5.7 MB of publisher text); ISBN review rows wait for `books.isbn` (approved at plan) → docs/review/decisions.md
+- 1.20's hold does not apply to a Calibre-created book Open Library doesn't know: having it is the owner's say-so (approved at plan); and, as a proposal for TASK-031's plan gate, a Calibre-matched workbook book counts like a `book_details.csv` match (proposed) → docs/tasks/TASK-031-hold-unmatched-books.md § Context
+- Wishlist accept should promote an Unlisted book to Someday, as *Add books* does since 1.21 (TASK-029's open question; app code, out of this ETL task) (approved at plan) → docs/05-roadmap.md § 1.24 (new; its Check is proposed), and docs/06-tasklist.md § M9
+- Candidate decisions from the plan gate: which Calibre types come in (Book and Fan Fiction, Comic skipped), a no-day date format loads the stored Eastern day `approximate` and a year-only one July 1st, and no comments in the public CSV (approved at plan) → docs/review/decisions.md § D-88. The ISBN half (ISBN review rows wait for `books.isbn`) became moot: D-87 removed the review file.
+- Calibre is the source of truth for a book's data and its reads (owner, at TASK-030's review, 2026-10-27): it amends D-73, 1.18's entry and **Check:**, TASK-030's ACs 1, 3–6, data model 2.19 and § 4.1, 4.4, and the architecture, product, task-list and runbook prose (owner-directed; `docs/1.18-calibre-source-of-truth`, merged into this branch) (approved at review) → docs/review/decisions.md § D-87
+- The first real run's leftovers for the owner: 246 `calibre` near spellings to decide, the `calibre_books` rows in `unresolved.csv` to read, 1,898 series Open Library hasn't answered yet, and `enrich:books` for the 3,210 new books → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- `docs/STATUS.md` still names `calibre_review.csv` and `calibre_reads.csv` → not tracked: it is `workflow.statusDoc`, regenerated from the roadmap, which carries D-87
+- Open Library knows few series (661 of the first run's 679 had no answer); Hardcover would → not tracked: since D-87 the API only reports, and Hardcover is 4.2's already
+- The test fixtures' temp folders aren't removed after each test → not tracked: the same as `etl/test_extract.py` and `etl/test_enrich_books.py`; nothing reads them
 
 ## Plan
 
@@ -115,13 +118,19 @@ _Approved 2026-10-27 at 932d3c7. Owner's answers at the gate: Book + Fan Fiction
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 FAIL(1: rebuild.sh lacked the extract arguments) → R2 PASS → R3 PASS (after revision 2, at 0bdd8cd)
+- Audit R1 CHANGES (one AC-6 item untested) → fixed in 3fca1c4 | Audit R2 PASS (Opus, at 84cac3b, after revision 2)
+- Spec R1 CHANGES (stale text after D-87) → R2 APPROVE → R3 APPROVE (84cac3b)
+- Schema R1 CHANGES (MAJOR: a Calibre-only book under a merged-away spelling; 3 MINOR) → R2 APPROVE (Opus, 84cac3b)
+- Real-library run: Open Library dropped most connections; the client's failure handling was added (1 drop skips a book, 3 in a row stop the lookups), and the sidecar was written from the cache
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (R1 FAIL, R2 and R3 PASS)
+- Review rounds: 3 spec, 2 schema, 2 test audit (the Sonnet reviewers ran on Opus at the owner's word: weekly limit)
+- First-pass AC FAILs: 1 (AC-6: the `npm run extract` arguments were untested)
+- Plan revisions after approval: 2 (1: `seed/calibre_created.csv`; 2: D-87, Calibre the source of truth)

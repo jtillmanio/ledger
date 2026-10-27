@@ -911,7 +911,7 @@ reads the same calendar day after it. A `none`-precision row is still `none`
 with a NULL date. The up → down → up test asserts row values, if a migration
 is used.
 
-### ☐ 1.18 Calibre: word counts, series, tags and reads for the books · M
+### ☑ 1.18 Calibre: word counts, series, tags and reads for the books · M
 Backlog intake, 2026-10-20; D-73. **Built in sitting 8, after 1.14** (and
 after 1.15, which does not need it): it checks Calibre against 1.14's Open
 Library answers and reuses that task's cache. The owner's Calibre library has
@@ -1227,6 +1227,23 @@ saying it was a listen can't be told apart later.
   reads and one listen says *Read 2× · Listened 1×*.
 - In flight lists a Listening book under *Listening*, not *Reading*.
 - `npm run test:db:reset` migrates from zero.
+
+### ☐ 1.24 Wishlist accept promotes an Unlisted book to Someday · S
+Follow-up from TASK-029 (1.21) and TASK-030 (1.18), 2026-10-27. Accepting a
+wishlist line (1.4d, `acceptLine` → `toRead` in `src/db/writes.ts`) leaves a
+book that is already in the Ledger at its status, and
+`src/lib/wishlist-review.ts` tells the owner *your status stays*. Since 1.18
+creates about 3,200 Calibre books at **Unlisted**, a wishlist line will often
+name one, and accepting it should put it on the list the way *Add books* does
+since 1.21: an Unlisted book moves to `to_read` (Someday), its undo puts it back
+to `unlisted`, and a book at any other status keeps it. The review screen's
+copy says which happens. Depends on 1.21 and 1.4d. **The Check below is
+proposed.**
+
+**Check:** `npm test`: accepting a wishlist line that names an Unlisted book
+writes `book_status = to_read` and no plan row, and its undo restores
+`unlisted`; a line naming a `read` or `to_read` book leaves the status as it
+was; the review row for the Unlisted book says it moves to Someday.
 
 ---
 
