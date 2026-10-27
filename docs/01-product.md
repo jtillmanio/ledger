@@ -202,7 +202,7 @@ B, C, W and M numbers are cited across the docs and stay.
 | — | BookTube top 10, Download, HP Fanfiction | migrated, unsurfaced | Data is in `external_lists` and `wishlist`. No pages. Leave `external_lists`; `wishlist` is promoted into Someday (task 1.4d, D-39) |
 | B7 | Series, authors, universes and reading-order shelves I'm in the middle of | planned | Derived from the progress views plus a `shelf_progress` view; authors only when followed. A group on 1.9's In flight tab. roadmap 5.12 (product § Owner additions) |
 | B8 | Date started and finished | partial | The finish is a date since 1.5. The start is new: `started_on` with its precision on `book_status` and `read_events`. roadmap 1.17, before cutover |
-| B9 | Import metadata from Calibre | planned | Word counts (Count Pages, `stated`), series and index and ISBN checked against Open Library and Hardcover, tags and summary, reads through a review (D-73). roadmap 1.18, before cutover |
+| B9 | Import metadata from Calibre | planned | Word counts (Count Pages, `stated`), series and index, reads and the books only Calibre has, with Calibre as the source of truth and every disagreement reported (D-73, D-87); tags, summary and ISBN once their columns are approved (D-88). roadmap 1.18, before cutover |
 | B10 | Books read each year, and a log of what I read | partial | Year totals ship (`books_by_year`, the year chips); 6.2 charts them; `/activity` is the log. roadmap 6.17 |
 | B11 | Add books: title and author as two fields | partial | *By hand* has them. *Paste a list* gains a tab-separated form and a review with separate cells. roadmap 1.4e |
 | B12 | Series are links | planned | Every series name links to `/books/series/[id]`, which lists the books in order, with gaps. roadmap 5.9 |
@@ -776,11 +776,12 @@ headphones glyph can tell them apart (D-85).
 
 **Calibre is the best word-count source available** (the *Word counts* answer in architecture § Metadata sources
 had only estimates and manual lookups). The Count Pages plugin's counts load
-as `stated`. The owner asked that series, index and ISBN still be checked
-against an API, so they fill only where Open Library or Hardcover agree, and
-disagreements go to a review. Calibre's reads may load where the workbook's
-may not (D-41), because they are typed fields rather than tabs that parse
-badly, but only those the owner accepts (D-73).
+as `stated`. Calibre is the source of truth for a book's data and its reads,
+because the owner edits nothing else (D-87, amending D-73's API check and read
+review): its series fill over the workbook's, an Open Library series that
+differs is reported, and every disagreement lands in `unresolved.csv`.
+Calibre's reads load where the workbook's may not (D-41), because they are
+typed fields rather than tabs that parse badly.
 
 **A run's dates are derived, not stored.** A run starts at its earliest dated
 read and finishes at its last, so `run_state` carries both. Storing them would

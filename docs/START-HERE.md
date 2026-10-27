@@ -1257,7 +1257,7 @@ The sittings are `docs/06-tasklist.md`'s milestones under the same numbers (sitt
 | 5 | 1.4 books bulk entry, 1.4c add a book, 1.4b quick capture, 1.4d wishlist promotion screen, 1.5 dated log + `read_events`, 1.16 dates in `America/New_York` | Books work end to end |
 | 6 | 1.7 period column, 1.8a design tokens and control states, **0.11 browser test harness**, 1.8c dashboard routes, 1.8 app shell, 1.8e tablet frames, 1.8d failed writes and skeletons, 1.8b thumb bar and contrast | The real navigation |
 | 7 | 1.10 Up next queue, then 1.9 status screens, **2.11a prerequisite cycle check**, 1.12 volume map into `volume_rules`, and 1.11 failed sign-ins wait (D-36) | Phase 1 complete; extract lists the cycles for your audit |
-| 8 | 1.13 book extract and merge review, 1.14 Open Library details, 1.15 series, author and universe follows, 1.18 Calibre word counts, series, tags and reads | Books load clean, with covers, page counts and real word counts; answer `book_review.csv` between 1.13 and 1.14, and `calibre_review.csv` and `calibre_reads.csv` after 1.18. Can be built any time before Step 14 |
+| 8 | 1.13 book extract and merge review, 1.14 Open Library details, 1.15 series, author and universe follows, 1.18 Calibre word counts, series, tags and reads | Books load clean, with covers, page counts and real word counts; answer `book_review.csv` between 1.13 and 1.14, and again after 1.18 for Calibre's near spellings. Can be built any time before Step 14 |
 | 9 | 1.4e paste a list as two fields, 1.17 start dates | A small fix to a screen in daily use, and start dates captured from cutover on |
 
 **Task 1.5 carries a deadline.** It adds `read_events`, the re-read log, and
@@ -1276,9 +1276,10 @@ and 1.13–1.15 change what the books load holds, because after Step 14's final
 load nothing loads either again. Sitting 8 needs you between its tasks: answer
 `etl/data/book_review.csv` after 1.13, and again after 1.14's enrich run adds
 Open Library's spellings to it. 1.18 reads your Calibre library (give it the
-folder) and asks you to settle `etl/data/calibre_review.csv`, where Calibre and
-the APIs disagree on a series or ISBN, and `etl/data/calibre_reads.csv`, the
-Calibre reads to accept (D-73). **1.17 also lands before cutover**, for 1.5's
+folder) as the source of truth for word counts, series and reads (D-87): it
+asks you only to settle its near spellings in `book_review.csv`, and lists in
+`seed/unresolved.csv` where Calibre disagrees with the workbook or Open
+Library, for you to fix in Calibre if Calibre is wrong. **1.17 also lands before cutover**, for 1.5's
 reason: a start date not captured from the first day is lost.
 
 **Done when:** every Phase 0 and Phase 1 task is ticked in `05-roadmap.md`, you can
