@@ -82,6 +82,18 @@ export function directUrl(url) {
 }
 
 /**
+ * Why this run may not release from the ref it started on, or null. A real
+ * release runs main's release code; any other ref (a branch testing a change
+ * to Release, GIT-PR.md's `--ref`) may only dry-run.
+ *   ref:     GITHUB_REF, e.g. "refs/heads/main"
+ *   dryRun:  the workflow's dry_run input
+ */
+export function refProblem(ref, dryRun) {
+  if (dryRun || ref === "refs/heads/main") return null;
+  return `A real release must run from main, not ${ref ?? "an unknown ref"}. Dry runs may run anywhere.`;
+}
+
+/**
  * Every reason not to release, or an empty list.
  *   live:             the repo variable LEDGER_LIVE is "true" (cutover done)
  *   target:           { sha, url } of the newest ready production deployment, or null
