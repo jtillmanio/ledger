@@ -127,7 +127,7 @@ tick them.
       cache except for changed names) and `npm run extract` (from TASK-022,
       PR #130).
 - [ ] After 1.18 merges, settle what the first Calibre run left (from TASK-030,
-      task/1.18-calibre-import):
+      PR #150):
       - Decide the 246 `calibre` rows in `etl/data/book_review.csv`. `merge`
         takes Calibre's spelling (`keep` is filled in), and `separate` makes
         them two books. Many are workbook typos (*Rexa Aslan*, *Hitchhikier*,
