@@ -72,7 +72,46 @@ describe.each(["load.ps1", "load.sh"])("%s, task 1.15", (name) => {
   });
 });
 
+// Task 1.18: Calibre's reads (D-73, D-87) are the first
+// read_events extract writes. Each loads after its book and the owner's users
+// row, from the bound CSV, without its id: the serial numbers them.
+describe.each(["load.ps1", "load.sh"])("%s, task 1.18", (name) => {
+  const text = read(name);
+  const at = (re: RegExp) => {
+    const i = text.search(re);
+    expect(i, String(re)).toBeGreaterThan(-1);
+    return i;
+  };
+
+  it("truncates read_events with the others", () => {
+    const truncate = /TRUNCATE[\s\S]*?RESTART IDENTITY CASCADE;/.exec(text)![0];
+    expect(truncate).toMatch(/\bread_events\b/);
+  });
+
+  it("copies read_events after books and the owner, from the bound CSV", () => {
+    const copy = at(/\\+copy read_events\(user_id,book_id,finished_on,finished_on_precision\) FROM '[^']*(tmp|Path)[^']*\/read_events\.csv' CSV HEADER/);
+    expect(copy).toBeGreaterThan(at(/\\+copy books\(/));
+    expect(copy).toBeGreaterThan(at(/INSERT INTO users/));
+    const bind = /(?:foreach \(\$f in @\(|for f in )([^);]*)/.exec(text)![1];
+    expect(bind).toContain("read_events");
+  });
+});
+
+// Task 1.18: every extract folds in the Calibre sidecar (one since D-87).
+// rebuild.ps1 runs `npm run extract`; rebuild.sh spells the arguments out.
+describe("the Calibre sidecar reaches extract", () => {
+  const extract = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts.extract as string;
+  it.each([["npm run extract", extract], ["rebuild.sh", read("rebuild.sh")]])("%s passes it", (_, text) => {
+    expect(text).toMatch(/--calibre-books etl\/data\/calibre_books\.csv/);
+    expect(text).not.toMatch(/--calibre-(review|reads)\b/);
+  });
+});
+
 describe.each(["rebuild.ps1", "rebuild.sh"])("%s", (name) => {
+  it("counts read_events against the seed", () => {
+    expect(read(name)).toMatch(/\bread_events\b/);
+  });
+
   it("counts volume_rules against the seed", () => {
     expect(read(name)).toMatch(/\bvolume_rules\b/);
   });

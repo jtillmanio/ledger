@@ -30,6 +30,7 @@ A book Open Library has never heard of doesn't reach the Ledger until the owner 
   - Does a `hand` row in `book_details.csv` count as a match?
   - How do 1.18's Calibre matches count, and does the hold apply to a Calibre-created Unlisted book? TASK-030 proposes no.
   - The review file's name and columns. The roadmap gives title, author, tabs, the Open Library search tried and `decision`.
+- *From TASK-030 (1.18, PR #150):* the owner answered at TASK-030's plan gate that 1.20's hold does **not** apply to a book Calibre created: having it in Calibre is the owner's say-so, so it loads at Unlisted whether Open Library knows it or not. Calibre-created books are listed in `seed/calibre_created.csv`. TASK-030 suggests, for this task's plan gate (proposed): a workbook book Calibre matched (its row is in `etl/data/calibre_books.csv`) counts like a `book_details.csv` match for the hold, since D-87 makes Calibre the source of truth for its data.
 - Decisions: D-44 (Open Library before cutover), D-68 (extract applies review decisions before the load), D-82 (titles read as typed), D-83. Standing rule 4 applies.
 
 ## Acceptance criteria

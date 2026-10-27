@@ -374,8 +374,8 @@ the asset.
 | Comics gap-fill | Comic Vine | 1 req/sec, 200/hour — fallback only |
 | Book bibliographic data, page counts, covers | Open Library | no key, CC0 |
 | Series position | Hardcover GraphQL | 5,000 req/day free |
-| Word counts | Calibre's Count Pages column (data model 2.19, task 1.18); no API | Keep hand-entered values; take Calibre's as `stated` where none is typed; estimate the rest at `pages x 275` and record which is which in `books.word_count_source` |
-| Book tags, summaries, series cross-check, read dates | Calibre, the owner's library (data model 2.19, D-73) | Read from a copy of `metadata.db`, never written. Series, index and ISBN fill only where Open Library or Hardcover agree; reads load only once accepted |
+| Word counts | Calibre's Count Pages column (data model 2.19, task 1.18); no API | Take Calibre's as `stated`, over a typed one (D-87; a typed count more than 10% off is reported); keep a typed count where Calibre has none; estimate the rest at `pages x 275` and record which is which in `books.word_count_source` |
+| Book tags, summaries, series cross-check, read dates | Calibre, the owner's library (data model 2.19, D-73) | Read from a copy of `metadata.db`, never written. Calibre is the source of truth (D-87): its series and index fill over the workbook's, and its reads load as it has them; an Open Library series that differs is reported, not a gate. Tags, comments and ISBN load nothing until their columns are approved (D-88) |
 | Films and TV shows | TMDB (`titles.tmdb_id`) | Free for non-commercial use, ~40-50 req/sec, covers both media in one API. Requires attribution in the UI |
 | Where to watch | TMDB `/watch/providers`, from JustWatch (data model 2.20, D-74) | US only, a dated snapshot refreshed on request. JustWatch's attribution sits beside TMDB's |
 | Music: artists, albums, tracks | MusicBrainz, covers from the Cover Art Archive (data model 2.21, D-75) | CC0 core data, 1 req/sec with a real User-Agent. Phase 9 |
@@ -430,8 +430,9 @@ the series and issue range" and the app resolves 23 issue records for you.
 | **Calibre** (the owner's library) | none: a local `metadata.db`, read from a copy | none | Word counts from the Count Pages plugin, series and index, tags, comments, ISBN, read dates. roadmap 1.18, D-73 |
 
 Use Open Library for the spine and Hardcover for series position, which is data
-you currently maintain by hand as `Harry Potter #1`. Calibre's series, index
-and ISBN fill only where one of them agrees (D-73).
+you currently maintain by hand as `Harry Potter #1`. Calibre's series and index
+fill as Calibre has them, and an API that disagrees is reported (D-87, amending
+D-73).
 
 ### Word counts — the honest answer
 
@@ -455,7 +456,7 @@ with an estimate.
 
 4. **Calibre's Count Pages column** (2026-10-20). For every book the owner has
    as an ebook, the plugin counts the words in the file itself: a real count,
-   loaded as `stated` where the workbook has none (roadmap 1.18). It moves the
+   loaded as `stated` over the workbook's (roadmap 1.18, D-87). It moves the
    order to 3, then 4, then 1.
 
 ### Film and television: TMDB

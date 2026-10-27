@@ -495,11 +495,14 @@ reads count toward neither.
 offers (architecture § Metadata sources). It is read like the workbook: `etl/calibre.py`
 opens a copy of `metadata.db` read-only, matches on title and author (1.13's
 rule), and writes sidecars that extract folds in, so the data survives every
-re-extract and nothing writes to Calibre. Two limits keep it honest. Its series,
-index and ISBN fill only where Open Library or Hardcover agree (the owner's
-rule), and its reads load only as rows the owner accepted. A `hand` value always
-wins. After cutover, 4.2's after-cutover path carries the same rules into the
-database.
+re-extract and nothing writes to Calibre. *Amended by D-87 (2026-10-27):*
+Calibre is the source of truth for a book's data and its reads, because the
+owner edits nothing else. Its word count, series and index replace the
+workbook's, a series Open Library contradicts still fills, and its reads load as
+it has them; what disagrees (the workbook's value, Open Library's series, a
+second read) is reported, never silently dropped. Only a near spelling waits on
+a decision. Tags, comments and the ISBN load nothing until their columns are
+approved (D-88). After cutover, 4.4 carries the same rules into the app.
 
 **2.20 Watch metadata: credits are rows, counts are derived, availability is
 dated.** *Oct 2026, backlog intake; D-74; tasks 8.1, 8.9, 8.10; amends the
@@ -573,11 +576,11 @@ the same PR (hard rule 7).
 | Task | Adds | Notes |
 |---|---|---|
 | 1.17 | `book_status.started_on`, `read_events.started_on`, each with its precision | 2.18 |
-| 1.18 | Calibre sidecars, and columns the plan gate settles | 2.19, D-73, D-83 |
+| 1.18 | Calibre sidecars (no column: the plan gate approved none) | 2.19, D-73, D-83, D-87, D-88 |
 | 1.21 | A fifth `book_status.status` value, `unlisted` (no new column, no CHECK) | D-83, D-86 |
 | 1.22 | Possibly `books.calibre_id`, so a result can say *Calibre* | Asked at 1.22's plan gate |
 | 1.23 | A `listening` value of `book_status.status`; `read_events.format` (`text` \| `audio`) | D-85 |
-| 4.4 | Where a decided Calibre review row is remembered between syncs | Asked at 4.4's plan gate |
+| 4.4 | Where a decided near-spelling row is remembered between syncs (D-87 leaves no other decision) | Asked at 4.4's plan gate |
 | 2.1b | `sessions` | §4.3 |
 | 3.5 | `issues.store_date` (the publication date) | Proposed in design §11, *Spine v2* |
 | 3.6b, 3.6c, 4.3 | A per-user, per-run preference for *Show release dates* and *Hide read*; where *Show covers* is kept | Never a column on `runs` (2.1) |

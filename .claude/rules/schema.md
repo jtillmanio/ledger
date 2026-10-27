@@ -73,6 +73,33 @@ Release, test isolation) and the Hard rules a reviewer checks.
   2026-10-26) is no book either, wherever a book would load (the master list,
   the author tabs, the To-Read tabs before 2028, Coming Out):
   `seed/workbook_placeholders.csv` lists each such sighting and is not loaded.
+- **Calibre is the source of truth for a book's data and its reads** (task
+  1.18, D-73, D-83, D-87, D-88). `npm run calibre` (`etl/calibre.py`) reads a
+  temp copy of the library's `metadata.db` read-only, finds custom columns by
+  lookup name, and writes one sidecar, `calibre_books.csv`, keyed by Calibre's
+  title and author: words, series, index, ISBN, tags, type, the read flag, the
+  date read (its Eastern day, or a year) and its precision, and what Open
+  Library said of the series (`confirmed`; `open_library` where it differs).
+  Calibre is its only source: no `hand` rows. A changed book is rewritten in
+  place, a removed one goes, a new one is appended, a run over an unchanged
+  library changes no byte, and each run prints what changed since the last. A
+  near spelling (≥ 0.5 trigram similarity, or one title the other plus a
+  `: subtitle`; D-89, above the workbook pairs' 0.4), or one title under
+  another author, is a `book_review.csv`
+  row with `reason = calibre` (`a` the workbook's, `b` Calibre's, `keep`
+  pre-filled with Calibre's), and the Calibre book is held until it is decided:
+  the only Calibre decision there is. Extract folds it in after every workbook
+  value, and Calibre wins: its `stated` word count and its series replace the
+  workbook's (a workbook series left with no book is dropped, or reported if
+  it is followed); a book only Calibre has is created at `unlisted` and listed in
+  `seed/calibre_created.csv` (not loaded); a book Calibre marks read or dates
+  is a `seed/read_events.csv` row and makes the status `read` (a year alone is
+  July 1st `approximate`, a date shown without its day `approximate`). What
+  disagrees is reported in `unresolved.csv`, never dropped: a workbook count
+  more than 10% off, a different workbook series, Open Library's different
+  series, a second read of one book. Comics are skipped; tags, comments and
+  ISBN load nothing until `books.subjects`, `books.summary` and `books.isbn`
+  are approved, and comments stay out of the CSV.
 - **One issue row per comic.** `issues` is what exists — one row per label, id a
   slug of the label, never a run position. `run_issues(id, run_id, sequence,
   issue_id, type, notes)` is where it sits in a run; `type` and `notes` belong to
@@ -133,8 +160,8 @@ Release, test isolation) and the Hard rules a reviewer checks.
   list. It is not a to-read level: `to_read_level` reads only `to_read`, so it has no level and
   is on no plan, status screen, dashboard or year total, and the master list's
   *Everything* leaves it out (its own chip and a search list it). The progress
-  views count it unread. Only an undo writes `unlisted` (and, later, the
-  Calibre import, 1.18): a status write never sets it (`SETTABLE_STATUSES`).
+  views count it unread. Only an undo writes `unlisted` (and the Calibre
+  import, 1.18): a status write never sets it (`SETTABLE_STATUSES`).
   *Add to Someday*, or an add to Someday or On deck, moves it to `to_read`;
   a shelf leaves it Unlisted. No CHECK constrains the column.
 - **Blocks group runs inside a track; eras section issues inside a run.** Both

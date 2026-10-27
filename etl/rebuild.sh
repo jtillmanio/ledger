@@ -57,7 +57,7 @@ else
     --label-review etl/data/label_review.csv --issue-details etl/data/issue_details.csv \
     --issue-credits etl/data/issue_credits.csv --creator-aliases etl/data/creator_aliases.csv \
     --creator-aliases etl/data/creator_review.csv --book-review etl/data/book_review.csv \
-    --book-details etl/data/book_details.csv
+    --book-details etl/data/book_details.csv --calibre-books etl/data/calibre_books.csv
 fi
 
 echo "== 4/5 load"
@@ -71,7 +71,7 @@ printf "%-18s %8s %8s\n" table seed loaded
 for t in tracks blocks runs run_tracks volume_rules issues run_issues creators issue_credits prereqs \
          events event_runs editions issue_progress edition_progress authors book_series \
          book_universes books book_status reading_plan releases wishlist external_lists \
-         series_follows author_follows universe_follows; do
+         series_follows author_follows universe_follows read_events; do
   expected=$(${PYTHON:-python3} -c "import csv,sys; print(sum(1 for _ in csv.DictReader(open(sys.argv[1], encoding='utf-8'))))" "$SEED/$t.csv")
   actual=$(psql "$DATABASE_URL" -At -c "SELECT count(*) FROM $t")
   flag=""; [ "$expected" = "$actual" ] || { flag="  <-- mismatch"; failed=$((failed + 1)); }

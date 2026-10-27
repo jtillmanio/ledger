@@ -69,7 +69,7 @@ New-Item -ItemType Directory -Path $tmp | Out-Null
 
 try {
     foreach ($f in @("issue_progress", "edition_progress", "book_status", "reading_plan",
-                     "series_follows", "author_follows", "universe_follows")) {
+                     "series_follows", "author_follows", "universe_follows", "read_events")) {
         $src = Join-Path $Seed "$f.csv"
         if (-not (Test-Path $src)) { throw "missing $src - run etl/extract.py first" }
         (Get-Content $src -Raw).Replace('$OWNER', $ownerId) |
@@ -86,7 +86,7 @@ BEGIN;
 INSERT INTO users (id, name) VALUES ('$ownerId', '$ownerName')
   ON CONFLICT (id) DO NOTHING;
 
-TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
+TRUNCATE issue_progress, edition_progress, book_status, reading_plan, read_events,
          run_tracks, event_runs, prereqs, issue_credits, creators,
          run_issues, issues, events, editions, volume_rules,
          runs, blocks, tracks, releases, wishlist, external_lists,
@@ -118,6 +118,7 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan,
 \copy issue_progress(user_id,placement_id,completed_at,completed_at_precision) FROM '$tmpPath/issue_progress.csv' CSV HEADER
 \copy edition_progress FROM '$tmpPath/edition_progress.csv' CSV HEADER
 \copy book_status(user_id,book_id,status,finished_on,finished_on_precision,year_rank,rating) FROM '$tmpPath/book_status.csv' CSV HEADER
+\copy read_events(user_id,book_id,finished_on,finished_on_precision) FROM '$tmpPath/read_events.csv' CSV HEADER
 \copy reading_plan(user_id,book_id,period,ordinal) FROM '$tmpPath/reading_plan.csv' CSV HEADER
 \copy series_follows(user_id,series_id,state) FROM '$tmpPath/series_follows.csv' CSV HEADER
 \copy author_follows(user_id,author_id,state) FROM '$tmpPath/author_follows.csv' CSV HEADER

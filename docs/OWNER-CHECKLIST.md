@@ -126,6 +126,24 @@ tick them.
       the author row extract proposes. Then `npm run enrich:books` (free from the
       cache except for changed names) and `npm run extract` (from TASK-022,
       PR #130).
+- [ ] After 1.18 merges, settle what the first Calibre run left (from TASK-030,
+      PR #150):
+      - Decide the 246 `calibre` rows in `etl/data/book_review.csv`. `merge`
+        takes Calibre's spelling (`keep` is filled in), and `separate` makes
+        them two books. Many are workbook typos (*Rexa Aslan*, *Hitchhikier*,
+        *Bernard Cornwall*). Until you decide a row, its Calibre book is held,
+        and 14 of them carry a read.
+      - Read the `calibre_books` rows in `seed/unresolved.csv` after
+        `npm run extract`. 98 series and 41 word counts were replaced by
+        Calibre's, and 21 series differ from Open Library's (Narnia's
+        chronological versus publication order, for one). Where Calibre is
+        wrong, fix it in Calibre.
+      - Re-run `npm run calibre` when Open Library answers again. 1,898 series
+        weren't checked yet (it dropped the connections). The run is free
+        from the cache for the rest.
+      - Then run `npm run extract`, `npm run enrich:books` and
+        `npm run extract`, so the 3,210 new books get their Open Library
+        details.
 
 ## Approvals from follow-ups
 

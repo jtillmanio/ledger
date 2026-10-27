@@ -110,7 +110,7 @@ $tables = @("tracks", "blocks", "runs", "run_tracks", "volume_rules", "issues", 
             "issue_credits", "prereqs", "events", "event_runs", "editions", "issue_progress",
             "edition_progress", "authors", "book_series", "book_universes", "books", "book_status",
             "reading_plan", "releases", "wishlist", "external_lists",
-            "series_follows", "author_follows", "universe_follows")
+            "series_follows", "author_follows", "universe_follows", "read_events")
 $query = ($tables | ForEach-Object { "SELECT '$_', count(*) FROM $_" }) -join " UNION ALL "
 $actual = @{}
 psql $dbUrl -At -F "," -c $query | ForEach-Object {

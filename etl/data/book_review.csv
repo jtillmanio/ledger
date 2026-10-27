@@ -1,234 +1,305 @@
 kind,a,b,a_author,b_author,a_tabs,b_tabs,reason,similarity,keep,decision
-book,Arabian Nights (and Days),Fables 7 Arabian Nights and Days,Bill Willingham,Bill Willingham,,Open Library,open library,0.72,Fables 7 Arabian Nights and Days,separate
-book,Battle for Hercules,Battle for Hercules (Deluxe Limited Edition),Jasmine Mas,Jasmine Mas,,Open Library,open library,0.47,Battle for Hercules (Deluxe Limited Edition),separate
-book,Dear Becky,The Boys - Dear Becky,Garth Ennis,Garth Ennis,,Open Library,open library,0.58,The Boys - Dear Becky,separate
-book,Everything's Eventual,Everything's Eventual. 14 Dark Tales,Stephen King,Stephen King,,Open Library,open library,0.58,Everything's Eventual. 14 Dark Tales,separate
-book,"Hotel Valhalla, Guide to the Norse Worlds",For Magnus Chase: Hotel Valhalla guide to the Norse worlds,Rick Riordan,Rick Riordan,,Open Library,open library,0.71,For Magnus Chase: Hotel Valhalla guide to the Norse worlds,separate
-book,Kitchen Confidential: Adventures in the Culinary Underbelly,Kitchen Confidential- Adventures in the Culinary Underbelly by Anthony Bourdain,Anthony Bourdain,Anthony Bourdain,,Open Library,open library,0.77,Kitchen Confidential- Adventures in the Culinary Underbelly by Anthony Bourdain,separate
-book,Merlin,Merlín,Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.40,Merlín,merge
-book,Over the Hill with the Swords of a Thousand Men,Boys - over the Hills with the Swords of a Thousand Men,Garth Ennis,Garth Ennis,,Open Library,open library,0.83,Boys - over the Hills with the Swords of a Thousand Men,separate
-book,Percy Jackson and the Greek Heroes,Percy Jackson and the Greek Gods / Percy Jackson and the Greek Heroes / The Demigod Diaries / Demigods & Magicians / Percy Jackson and the Singer of Apollo,Rick Riordan,Rick Riordan,,Open Library,open library,0.45,Percy Jackson and the Greek Gods / Percy Jackson and the Greek Heroes / The Demigod Diaries / Demigods & Magicians / Percy Jackson and the Singer of Apollo,separate
-book,The Atlantis Complex,Artemis Fowl and the Atlantis Complex,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.60,Artemis Fowl and the Atlantis Complex,separate
-book,The Bone House,The Bone House (Bright Empires #2),Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.48,The Bone House (Bright Empires #2),separate
-book,The Calm Before,The Walking Dead Volume 7 The Calm Before,Robert Kirkman,Robert Kirkman,,Open Library,open library,0.42,The Walking Dead Volume 7 The Calm Before,separate
-book,The Death of Dulgath,The Death of Dulgath (The Riyria Chronicles Book 3),Michael J. Sullivan,Michael J. Sullivan,,Open Library,open library,0.42,The Death of Dulgath (The Riyria Chronicles Book 3),separate
-book,The Eternity Code,Artemis Fowl and the Eternity Code,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.53,Artemis Fowl and the Eternity Code,separate
-book,The Fatal Tree,The Fatal Tree (Bright Empires),Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.48,The Fatal Tree (Bright Empires),separate
-book,The Golem and the Jinni,Golem and the Jinni,Helene Wecker,Helene Wecker,,Open Library,open library,1.00,Golem and the Jinni,separate
-book,The Great Hunt,The Great Hunt (The Wheel of Time Book 2),Robert Jordan,Robert Jordan,,Open Library,open library,0.43,The Great Hunt (The Wheel of Time Book 2),separate
-book,The Heart of What Was Lost,The Heart of What Was Lost (Osten Ard),Tad Williams,Tad Williams,,Open Library,open library,0.76,The Heart of What Was Lost (Osten Ard),separate
-book,The Hope of Elantris,The Hope of Elantris [Dramatized Adaptation],Brandon Sanderson,Brandon Sanderson,,Open Library,open library,0.50,The Hope of Elantris [Dramatized Adaptation],separate
-book,The House Across the Lake,House Across the Lake,Riley Sager,Riley Sager,,Open Library,open library,1.00,House Across the Lake,separate
-book,The Land of the Living and the Dead,Land of the Living and the Dead,Shauna Lawless,Shauna Lawless,,Open Library,open library,1.00,Land of the Living and the Dead,separate
-book,The Lost Colony,Artemis Fowl. The Lost Colony,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.55,Artemis Fowl. The Lost Colony,separate
-book,The Mean Seasons,Fables 5 the Mean Season,Bill Willingham,Bill Willingham,,Open Library,open library,0.56,Fables 5 the Mean Season,separate
-book,The Merchant of Death,The Merchant of Death (Pendragon #1),D.J. MacHale,D.J. MacHale,,Open Library,open library,0.65,The Merchant of Death (Pendragon #1),separate
-book,The Professor and the Madman,The Professor and the Madman CD,Simon Winchester,Simon Winchester,,Open Library,open library,0.89,The Professor and the Madman CD,separate
-book,The Shadow Lamp,The Shadow Lamp (Bright Empires #4),Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.48,The Shadow Lamp (Bright Empires #4),separate
-book,The Soldiers of Halla,The Soldiers of Halla (Pendragon #10),D.J. MacHale,D.J. MacHale,,Open Library,open library,0.63,The Soldiers of Halla (Pendragon #10),separate
-book,The Spirit Well,The spirit well - Bright Empires #3,Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.50,The spirit well - Bright Empires #3,separate
-book,The Winds of Winter,The Winds of Winter ~ Preview Collection,George R.R. Martin,George R.R. Martin,,Open Library,open library,0.47,The Winds of Winter ~ Preview Collection,separate
-book,The Witchwood Crown,The Witchwood Crown (Last King of Osten Ard Book 1),Tad Williams,Tad Williams,,Open Library,open library,0.41,The Witchwood Crown (Last King of Osten Ard Book 1),separate
-book,The Woman in the Window,The Woman in the Window: A Novel,A.J. Finn,A.J. Finn,,Open Library,open library,0.70,The Woman in the Window: A Novel,separate
-book,The Year of the Witching,Year of the Witching,Alexis Henderson,Alexis Henderson,,Open Library,open library,1.00,Year of the Witching,separate
-book,We Gotta Go Now,Boys We Gotta Go Now Vol. 4,Garth Ennis,Garth Ennis,,Open Library,open library,0.56,Boys We Gotta Go Now Vol. 4,separate
-book,White Sand,White Sand 1,Brandon Sanderson,Brandon Sanderson,,Open Library,open library,0.85,White Sand 1,separate
-book,Animal Farm,Animal Farm,Bill Willingham,George Orwell,To-Read Master List,To-Read Master List,same title,1.00,,separate
-book,Red Queen,Red Queen,Christina Henry,Victoria Aveyard,To-Read Master List,To-Read Master List,same title,1.00,,separate
-book,The Truth,The Truth,Ryan Cahill,Terry Pratchet,To-Read Master List,To-Read Master List,same title,1.00,,separate
-book,All Out War (Part One),All Out War (Part Two),Robert Kirkman,Robert Kirkman,To-Read Master List,To-Read Master List,similar,0.71,,separate
-book,Assassin's Fate,Assassin's Quest,Robin Hobb,Robin Hobb,To-Read Master List,To-Read Master List,similar,0.48,,separate
-book,Assassin's Fate,Fool's Assassin,Robin Hobb,Robin Hobb,To-Read Master List,To-Read Master List,similar,0.58,,separate
-book,Assassin's Quest,Fool's Assassin,Robin Hobb,Robin Hobb,To-Read Master List,To-Read Master List,similar,0.48,,separate
-book,Blood of Dragons,City of Dragons,Robin Hobb,Robin Hobb,To-Read Master List,To-Read Master List,similar,0.50,,separate
-book,Call of the Bone Ships,The Bone Ships,R.J. Barker,R.J. Barker,To-Read Master List,To-Read Master List,similar,0.65,,separate
-book,Call of the Bone Ships,The Bone Ships Wake,R.J. Barker,R.J. Barker,To-Read Master List,To-Read Master List,similar,0.54,,separate
-book,Children of Ruin,Children of Time,Adrian Tchaikovsky,Adrian Tchaikovsky,To-Read Master List,To-Read Master List,similar,0.55,,separate
-book,Daughter of the Empire,Mistress of the Empire,Raymond E. Feist,Raymond E. Feist,To-Read Master List,To-Read Master List,similar,0.44,,separate
-book,Daughter of the Empire,Servant of the Empire,Raymond E. Feist,Raymond E. Feist,To-Read Master List,To-Read Master List,similar,0.45,,separate
-book,Day Off,Day One,Jim Butcher,Jim Butcher,Dresden,Dresden,similar,0.45,,separate
-book,Dreams of Chaos,Dreams of Fire,Shauna Lawless,Shauna Lawless,To-Read Master List,To-Read Master List,similar,0.48,,separate
-book,Dreams of Chaos,Dreams of Sorrow,Shauna Lawless,Shauna Lawless,To-Read Master List,To-Read Master List,similar,0.43,,separate
-book,Dreams of Fire,Dreams of Sorrow,Shauna Lawless,Shauna Lawless,To-Read Master List,To-Read Master List,similar,0.45,,separate
-book,Empire of the Damned,Empire of the Vampire,Jay Kristoff,Jay Kristoff,To-Read Master List,To-Read Master List,similar,0.56,,separate
-book,Endymion,The Rise of Endymion,Dan Simmons,Dan Simmons,To-Read Master List,To-Read Master List,similar,0.43,,separate
-book,Fool's Fate,Fool's Quest,Robin Hobb,Robin Hobb,To-Read Master List,To-Read Master List,similar,0.41,,separate
-book,Gate of the Feral Gods,The Chalice of the Gods,,Rick Riordan,To-Read 2026,Riordanverse,similar,0.40,,separate
-book,Gate of the Feral Gods,The Fury of the Gods,,John Gwynne,To-Read 2026,To-Read Master List,similar,0.50,,separate
-book,Gate of the Feral Gods,The Gate of the Feral Gods,,Matt Dinniman,To-Read 2026,To-Read Master List,similar,1.00,,separate
-book,Gate of the Feral Gods,The Hunger of the Gods,,John Gwynne,To-Read 2026,To-Read Master List,similar,0.41,,separate
-book,Gate of the Feral Gods,The Kingdom of Gods,,N.K. Jemisin,To-Read 2026,To-Read Master List,similar,0.40,,separate
-book,Gate of the Feral Gods,The Shadow of the Gods,,John Gwynne,To-Read 2026,To-Read Master List,similar,0.41,,separate
-book,Gideon the Ninth,Harrow the Ninth,Tamsyn Muir,Tamsyn Muir,To-Read Master List,To-Read Master List,similar,0.42,,separate
-book,Gideon the Ninth,Nona the Ninth,Tamsyn Muir,Tamsyn Muir,To-Read Master List,To-Read Master List,similar,0.48,,separate
-book,Harrow the Ninth,Nona the Ninth,Tamsyn Muir,Tamsyn Muir,To-Read Master List,To-Read Master List,similar,0.48,,separate
-book,Harry Potter and the Chamber of Secrets,Harry Potter and the Goblet of Fire,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.47,,separate
-book,Harry Potter and the Chamber of Secrets,Harry Potter and the Order of the Phoenix,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.48,,separate
-book,Harry Potter and the Chamber of Secrets,Harry Potter and the Prisoner of Azkaban,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.45,,separate
-book,Harry Potter and the Chamber of Secrets,Harry Potter and the Sorcerer's Stone,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.42,,separate
-book,Harry Potter and the Deathly Hallows,Harry Potter and the Goblet of Fire,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.42,,separate
-book,Harry Potter and the Deathly Hallows,Harry Potter and the Half-Blood Prince,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.45,,separate
-book,Harry Potter and the Deathly Hallows,Harry Potter and the Order of the Phoenix,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.43,,separate
-book,Harry Potter and the Deathly Hallows,Harry Potter and the Prisoner of Azkaban,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.40,,separate
-book,Harry Potter and the Deathly Hallows,Harry Potter and the Sorcerer's Stone,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.43,,separate
-book,Harry Potter and the Goblet of Fire,Harry Potter and the Half-Blood Prince,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.41,,separate
-book,Harry Potter and the Goblet of Fire,Harry Potter and the Order of the Phoenix,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.51,,separate
-book,Harry Potter and the Goblet of Fire,Harry Potter and the Prisoner of Azkaban,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.48,,separate
-book,Harry Potter and the Goblet of Fire,Harry Potter and the Sorcerer's Stone,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.42,,separate
-book,Harry Potter and the Half-Blood Prince,Harry Potter and the Order of the Phoenix,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.42,,separate
-book,Harry Potter and the Half-Blood Prince,Harry Potter and the Prisoner of Azkaban,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.45,,separate
-book,Harry Potter and the Half-Blood Prince,Harry Potter and the Sorcerer's Stone,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.42,,separate
-book,Harry Potter and the Order of the Phoenix,Harry Potter and the Prisoner of Azkaban,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.49,,separate
-book,Harry Potter and the Order of the Phoenix,Harry Potter and the Sorcerer's Stone,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.43,,separate
-book,Harry Potter and the Prisoner of Azkaban,Harry Potter and the Sorcerer's Stone,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.43,,separate
-book,House of Earth and Blood,House of Sky and Breath,Sarah J. Maas,Sarah J. Maas,To-Read Master List,To-Read Master List,similar,0.44,,separate
-book,Hyperion,The Fall of Hyperion,Dan Simmons,Dan Simmons,To-Read Master List,To-Read Master List,similar,0.43,,separate
-book,Isles of the Emberdark,The Isles of Emberdark,Brandon Sanderson,Brandon Sanderson,Cosmere,To-Read Master List,similar,1.00,,separate
-book,Leviathan Falls,Leviathan Wakes,James S.A. Corey,James S.A. Corey,To-Read Master List,To-Read Master List,similar,0.45,,separate
-book,Mad Ship,Ship of Magic,Robin Hobb,Robin Hobb,To-Read Master List,To-Read Master List,similar,0.44,,separate
-book,Mistress of the Empire,Servant of the Empire,Raymond E. Feist,Raymond E. Feist,To-Read Master List,To-Read Master List,similar,0.45,,separate
-book,One of Us is Lying,One of Us is Next,Karen McManus,Karen McManus,To-Read Master List,To-Read Master List,similar,0.52,,separate
-book,One of Us is Lying,One of Us It Lying,Karen McManus,Karen McManus,To-Read Master List,To-Read Master List,similar,0.80,,separate
-book,One of Us is Next,One of Us It Lying,Karen McManus,Karen McManus,To-Read Master List,To-Read Master List,similar,0.40,,separate
-book,Percy Jackson and the Greek Heroes,Percy Jackson's Greek Gods,Rick Riordan,Rick Riordan,Riordanverse,Riordanverse,similar,0.49,,separate
-book,Pet Sematary,Pet Semetary,Stephen King,Stephen King,To-Read Master List,Stephen King,similar,0.62,,separate
-book,Quintessence,Quintessence Sky,Dave Walton,Dave Walton,To-Read Master List,To-Read Master List,similar,0.76,,separate
-book,Ready Player One,Ready Player Two,Ernest Cline,Ernest Cline,To-Read Master List,To-Read Master List,similar,0.62,,separate
-book,Rosewater,The Rosewater Redemption,Tade Thompson,Tade Thompson,To-Read Master List,To-Read Master List,similar,0.42,,separate
-book,The Atlas Paradox,The Atlas Six,Olivia Blake,Olivia Blake,To-Read Master List,To-Read Master List,similar,0.45,,separate
-book,The Bone Shard Daughter,The Bone Shard Emperor,Andrea Stewart,Andrea Stewart,To-Read Master List,To-Read Master List,similar,0.47,,separate
-book,The Bone Shard Daughter,The Bone Shard War,Andrea Stewart,Andrea Stewart,To-Read Master List,To-Read Master List,similar,0.54,,separate
-book,The Bone Shard Emperor,The Bone Shard War,Andrea Stewart,Andrea Stewart,To-Read Master List,To-Read Master List,similar,0.56,,separate
-book,The Bone Ships,The Bone Ships Wake,R.J. Barker,R.J. Barker,To-Read Master List,To-Read Master List,similar,0.75,,separate
-book,The Book of Koli,The Fall of Koli,M.R. Carey,M.R. Carey,To-Read Master List,To-Read Master List,similar,0.55,,separate
-book,The Book of Koli,The Trials of Koli,M.R. Carey,M.R. Carey,To-Read Master List,To-Read Master List,similar,0.52,,separate
-book,The Bruning Maze,The Burning Maze,Rick Riordan,Rick Riordan,Riordanverse,To-Read Master List,similar,0.62,,separate
-book,The Dark Half,The Dark Tower,Stephen King,Stephen King,Stephen King,To-Read Master List; Stephen King,similar,0.47,,separate
-book,The Demigod Diaries,The Demigod Files,Rick Riordan,Rick Riordan,Riordanverse,To-Read Master List; Riordanverse,similar,0.54,,separate
-book,The Eleventh Metal,The Lost Metal,Brandon Sanderson,Brandon Sanderson,Cosmere,Cosmere,similar,0.42,,separate
-book,The Fall of Koli,The Trials of Koli,M.R. Carey,M.R. Carey,To-Read Master List,To-Read Master List,similar,0.52,,separate
-book,The Fury of the Gods,The Hunger of the Gods,John Gwynne,John Gwynne,To-Read Master List,To-Read Master List,similar,0.50,,separate
-book,The Fury of the Gods,The Shadow of the Gods,John Gwynne,John Gwynne,To-Read Master List,To-Read Master List,similar,0.50,,separate
-book,The Gospel of Loki,The Testament of Loki,Joanne Harris,Joanne Harris,To-Read Master List,To-Read Master List,similar,0.43,,separate
-book,The Hunger of the Gods,The Shadow of the Gods,John Gwynne,John Gwynne,To-Read Master List,To-Read Master List,similar,0.46,,separate
-book,The Lightning Theif,The Lightning Thief,Rick Riordan,Rick Riordan,Riordanverse,To-Read Master List,similar,0.67,,separate
-book,The Long Cosmos,The Long Earth,Terry Pratchet & Stephen Baxter,Terry Pratchet & Stephen Baxter,To-Read Master List,To-Read Master List,similar,0.41,,separate
-book,The Long Cosmos,The Long Mars,Terry Pratchet & Stephen Baxter,Terry Pratchet & Stephen Baxter,To-Read Master List,To-Read Master List,similar,0.43,,separate
-book,The Long Cosmos,The Long War,Terry Pratchet & Stephen Baxter,Terry Pratchet & Stephen Baxter,To-Read Master List,To-Read Master List,similar,0.45,,separate
-book,The Long Earth,The Long Mars,Terry Pratchet & Stephen Baxter,Terry Pratchet & Stephen Baxter,To-Read Master List,To-Read Master List,similar,0.45,,separate
-book,The Long Earth,The Long Utopia,Terry Pratchet & Stephen Baxter,Terry Pratchet & Stephen Baxter,To-Read Master List,To-Read Master List,similar,0.41,,separate
-book,The Long Earth,The Long War,Terry Pratchet & Stephen Baxter,Terry Pratchet & Stephen Baxter,To-Read Master List,To-Read Master List,similar,0.47,,separate
-book,The Long Mars,The Long Utopia,Terry Pratchet & Stephen Baxter,Terry Pratchet & Stephen Baxter,To-Read Master List,To-Read Master List,similar,0.43,,separate
-book,The Long Mars,The Long War,Terry Pratchet & Stephen Baxter,Terry Pratchet & Stephen Baxter,To-Read Master List,To-Read Master List,similar,0.50,,separate
-book,The Long Utopia,The Long War,Terry Pratchet & Stephen Baxter,Terry Pratchet & Stephen Baxter,To-Read Master List,To-Read Master List,similar,0.45,,separate
-book,The Magician King,The Magician's Land,Lev Grossman,Lev Grossman,To-Read Master List,To-Read Master List,similar,0.52,,separate
-book,The Magician King,The Magicians,Lev Grossman,Lev Grossman,To-Read Master List,To-Read Master List,similar,0.60,,separate
-book,The Magicians,The Magician's Land,Lev Grossman,Lev Grossman,To-Read Master List,To-Read Master List,similar,0.55,,separate
-book,The Mongoliad: Book One,The Mongoliad: Book Three,Neal Stephenson,Neal Stephenson,To-Read Master List,To-Read Master List,similar,0.70,,separate
-book,The Mongoliad: Book One,The Mongoliad: Book Two,Neal Stephenson,Neal Stephenson,To-Read Master List,To-Read Master List,similar,0.73,,separate
-book,The Mongoliad: Book Three,The Mongoliad: Book Two,Neal Stephenson,Neal Stephenson,To-Read Master List,To-Read Master List,similar,0.73,,separate
-book,The Rosewater Insurrection,The Rosewater Redemption,Tade Thompson,Tade Thompson,To-Read Master List,To-Read Master List,similar,0.50,,separate
-book,The Son of Neptune,The Son of Sobek,Rick Riordan,Rick Riordan,To-Read Master List; Riordanverse,To-Read Master List,similar,0.48,,separate
-book,The Warrior,Warriorborn,Jim Butcher,Jim Butcher,Dresden,To-Read Master List,similar,0.41,,separate
-book,Welcome to Roshar,Welcome to Scadrial,,,Coming Out,Coming Out,similar,0.41,,separate
-book,White Sand,White Sand Vol. 1,Brandon Sanderson,Brandon Sanderson,Cosmere,Cosmere,similar,0.65,,separate
-book,White Sand,White Sand Vol. 2,Brandon Sanderson,Brandon Sanderson,Cosmere,Cosmere,similar,0.65,,separate
-book,White Sand,White Sand Vol. 3,Brandon Sanderson,Brandon Sanderson,Cosmere,Cosmere,similar,0.65,,separate
-book,Wolves of Calla,Wolves of the Calla,Stephen King,Stephen King,Stephen King,To-Read Master List,similar,0.80,,separate
-author,C.S. Lewis,Lewis Carrol,,,To-Read Master List,To-Read Master List,similar,0.44,,separate
-author,Christopher Buehlman,Christopher Paolini,,,To-Read Master List,To-Read Master List,similar,0.41,,separate
-author,Christopher Buehlman,Christopher Preist,,,To-Read Master List,To-Read Master List,similar,0.44,,separate
-author,Christopher Buehlman,Christopher Ruocchio,,,To-Read Master List,To-Read Master List; Coming Out,similar,0.40,,separate
-author,Christopher Farnsworth,Christopher Preist,,,To-Read Master List,To-Read Master List,similar,0.41,,separate
-author,Christopher Paolini,Christopher Preist,,,To-Read Master List,To-Read Master List,similar,0.52,,separate
-author,Christopher Paolini,Christopher Ruocchio,,,To-Read Master List,To-Read Master List; Coming Out,similar,0.41,,separate
-author,Christopher Preist,Christopher Ruocchio,,,To-Read Master List,To-Read Master List; Coming Out,similar,0.44,,separate
-author,Clive Barker,R.J. Barker,,,To-Read Master List,To-Read Master List,similar,0.41,,separate
-author,Elizabeth Kolbert,Elizabeth Kostova,,,To-Read Master List,To-Read Master List,similar,0.50,,separate
-author,Eric Cline,Ernest Cline,,,To-Read Master List,To-Read Master List,similar,0.50,,separate
-author,James Dashner,P.D. James,,,To-Read Master List,To-Read Master List,similar,0.41,,separate
-author,Jeremy Robinson,Joanna Robinson,,,To-Read Master List,To-Read Master List,similar,0.45,,separate
-author,Jim Butcher,Tim Butcher,,,To-Read Master List; Dresden; Coming Out,To-Read Master List,similar,0.60,,separate
-author,Lisa Jewell,Lisa Maxwell,,,To-Read Master List,To-Read Master List,similar,0.47,,separate
-author,Michael Craig,Michael Crichton,,,To-Read Master List,To-Read Master List,similar,0.50,,separate
-author,Michael Craig,Michael Lewis,,,To-Read Master List,To-Read Master List,similar,0.40,,separate
-author,Michael Craig,Michael Scott,,,To-Read Master List,To-Read Master List,similar,0.40,,separate
-author,Michael Lewis,Michael Scott,,,To-Read Master List,To-Read Master List,similar,0.40,,separate
-author,Michael Scott,Michael Shermer,,,To-Read Master List,To-Read Master List,similar,0.43,,separate
-author,Paula Hawkins,Scott Hawkins,,,To-Read Master List,To-Read Master List,similar,0.40,,separate
-author,Phillip K. Dick,Phillip Mudd,,,To-Read Master List,To-Read Master List,similar,0.40,,separate
-author,Phillip Mudd,Phillip Pullman,,,To-Read Master List,To-Read Master List,similar,0.40,,separate
-author,Richard K. Morgan,Richard Swan,,,To-Read Master List,To-Read Master List,similar,0.43,,separate
-author,S.A. Chakraborty,Shannon Chakraborty,,,To-Read Master List,To-Read Master List,similar,0.57,,separate
-author,Samantha Shannon,Sammantha Shannon,,,To-Read Master List,Coming Out,similar,0.83,,separate
-author,Stephen Baxter,Stephen Fry,,,To-Read Master List,To-Read Master List,similar,0.42,,separate
-author,Stephen Baxter,Stephen King,,,To-Read Master List,To-Read Master List; Stephen King,similar,0.40,,separate
-author,Stephen Baxter,Terry Pratchet & Stephen Baxter,,,To-Read Master List,To-Read Master List,similar,0.52,,separate
-author,Stephen Chbosky,Stephen Fry,,,To-Read Master List,To-Read Master List,similar,0.40,,separate
-author,Stephen Fry,Stephen King,,,To-Read Master List,To-Read Master List; Stephen King,similar,0.47,,separate
-author,Tamsyn Muir,Tasmyn Muir,,,To-Read Master List,Coming Out,similar,0.50,,separate
-author,Terry Pratchet,Terry Pratchet & Stephen Baxter,,,To-Read Master List,To-Read Master List,similar,0.52,,separate
-author,William Gibson,William Golding,,,To-Read Master List,To-Read Master List,similar,0.41,,separate
-series,Chronicles of Narnia,Kane Chronicles,,,To-Read Master List,Riordanverse,similar,0.42,,separate
-series,Chronicles of Narnia,The Chronicles of Alice,,,To-Read Master List,To-Read Master List,similar,0.45,,separate
-series,Chronicles of the Black Company,The Chronicles of Alice,,,Coming Out,To-Read Master List,similar,0.49,,separate
-series,Chronicles of the Black Company,The Kane Chronicles,,,Coming Out,To-Read Master List,similar,0.42,,separate
-series,Cinder Spires,The Cinder Spires,,,To-Read Master List,To-Read Master List,similar,0.78,,separate
-series,Empire of the Vampire,Empire of the Wolf,,,To-Read Master List,To-Read Master List,similar,0.61,,separate
-series,Empire of the Vampire,The Drowning Empire,,,To-Read Master List,To-Read Master List,similar,0.41,,separate
-series,Empire of the Vampire,The Empire Trilogy,,,To-Read Master List,To-Read Master List,similar,0.44,,separate
-series,Empire of the Wolf,The Empire Trilogy,,,To-Read Master List,To-Read Master List,similar,0.42,,separate
-series,Fables,Fractured Fables,,,To-Read Master List,To-Read Master List,similar,0.44,,separate
-series,Farseer Trilogy,Mars Trilogy,,,To-Read Master List,To-Read Master List,similar,0.45,,separate
-series,Founders Trilogy,Mars Trilogy,,,To-Read Master List,To-Read Master List,similar,0.43,,separate
-series,Girth With All the Gifts,The Girl with All the Gifts,,,To-Read Master List,To-Read Master List,similar,0.83,,separate
-series,Inheritance,The Inheritance Cycle,,,To-Read Master List,To-Read Master List,similar,0.55,,separate
-series,Inheritance,The Inheritance Games,,,To-Read Master List,To-Read Master List,similar,0.55,,separate
-series,Mistborn (Era One),Mistborn: Wax and Wayne (Era Two),,,Cosmere,Cosmere,similar,0.44,,separate
-series,Pendragon,The Pendragon Cycle,,,To-Read Master List,To-Read Master List,similar,0.50,,separate
-series,Tales of the Ketty Jay,The Tales of Witness,,,To-Read Master List,Coming Out,similar,0.40,,separate
-series,The Book of Dust,The Books of Babel,,,To-Read Master List,To-Read Master List,similar,0.46,,separate
-series,The Bound and the Broken,The Broken Earth,,,To-Read Master List; Coming Out,To-Read Master List,similar,0.44,,separate
-series,The Broken Earth,The Long Earth,,,To-Read Master List,To-Read Master List,similar,0.45,,separate
-series,The Burning,The Shining,,,To-Read Master List; Coming Out,Stephen King,similar,0.41,,separate
-series,The Chronicles of Alice,The Kane Chronicles,,,To-Read Master List,To-Read Master List,similar,0.52,,separate
-series,The Chronicles of Alice,The Kingkiller Chronicles,,,To-Read Master List,To-Read Master List,similar,0.43,,separate
-series,The Chronicles of Alice,The Riyira Chronicles,,,To-Read Master List,To-Read Master List,similar,0.48,,separate
-series,The Chronicles of Alice,The Riyria Chronicles,,,To-Read Master List,Coming Out,similar,0.48,,separate
-series,The Chronicles of Alice,The Three Kingdoms Chronicles,,,To-Read Master List,Coming Out,similar,0.41,,separate
-series,The Chronicles of Alice,The Warlord Chronicles,,,To-Read Master List,To-Read Master List,similar,0.47,,separate
-series,The Collector,The Witch Collector,,,To-Read Master List,Coming Out,similar,0.70,,separate
-series,The Daevabad Trilogy,The Dark Start Trilogy,,,To-Read Master List,Coming Out,similar,0.45,,separate
-series,The Daevabad Trilogy,The Empire Trilogy,,,To-Read Master List,To-Read Master List,similar,0.41,,separate
-series,The Dresden Files,The Themis Files,,,To-Read Master List; Dresden; Coming Out,Series,similar,0.45,,separate
-series,The Drowning Empire,The Empire Trilogy,,,To-Read Master List,To-Read Master List,similar,0.41,,separate
-series,The Empire Trilogy,The Eternal Path Trilogy,,,To-Read Master List,Coming Out,similar,0.40,,separate
-series,The Empire Trilogy,The Licanius Trilogy,,,To-Read Master List,To-Read Master List,similar,0.41,,separate
-series,The Empire Trilogy,The Wormwood Trilogy,,,To-Read Master List,To-Read Master List,similar,0.41,,separate
-series,The Illuminae Files,The Themis Files,,,To-Read Master List,Series,similar,0.42,,separate
-series,The Inheritance Cycle,The Inheritance Games,,,To-Read Master List,To-Read Master List,similar,0.57,,separate
-series,The Inheritance Games,The Inheritence Cycle,,,To-Read Master List,To-Read Master List,similar,0.42,,separate
-series,The Kane Chronicles,The Kingkiller Chronicle,,,To-Read Master List; Riordanverse,To-Read Master List,similar,0.45,,separate
-series,The Kane Chronicles,The Kingkiller Chronicles,,,To-Read Master List,To-Read Master List,similar,0.53,,separate
-series,The Kane Chronicles,The Riyira Chronicles,,,To-Read Master List,To-Read Master List,similar,0.56,,separate
-series,The Kane Chronicles,The Riyria Chronicles,,,To-Read Master List,Coming Out,similar,0.56,,separate
-series,The Kane Chronicles,The Three Kingdoms Chronicles,,,To-Read Master List,Coming Out,similar,0.50,,separate
-series,The Kane Chronicles,The Traveler's Gate Chronicles,,,To-Read Master List,To-Read Master List,similar,0.43,,separate
-series,The Kane Chronicles,The Warlord Chronicles,,,To-Read Master List,To-Read Master List,similar,0.54,,separate
-series,The Kingkiller Chronicle,The Three Kingdoms Chronicles,,,To-Read Master List,Coming Out,similar,0.47,,separate
-series,The Kingkiller Chronicles,The Riyira Chronicles,,,To-Read Master List,To-Read Master List,similar,0.45,,separate
-series,The Kingkiller Chronicles,The Riyria Chronicles,,,To-Read Master List,Coming Out,similar,0.45,,separate
-series,The Kingkiller Chronicles,The Three Kingdoms Chronicles,,,To-Read Master List,Coming Out,similar,0.54,,separate
-series,The Kingkiller Chronicles,The Traveler's Gate Chronicles,,,To-Read Master List,To-Read Master List,similar,0.44,,separate
-series,The Kingkiller Chronicles,The Warlord Chronicles,,,To-Read Master List,To-Read Master List,similar,0.44,,separate
-series,The Last Magician,The Magicians,,,To-Read Master List,To-Read Master List,similar,0.60,,separate
-series,The Riyira Chronicles,The Riyria Chronicles,,,To-Read Master List,Coming Out,similar,0.69,,separate
-series,The Riyira Chronicles,The Three Kingdoms Chronicles,,,To-Read Master List,Coming Out,similar,0.43,,separate
-series,The Riyira Chronicles,The Traveler's Gate Chronicles,,,To-Read Master List,To-Read Master List,similar,0.41,,separate
-series,The Riyira Chronicles,The Warlord Chronicles,,,To-Read Master List,To-Read Master List,similar,0.50,,separate
-series,The Riyria Chronicles,The Three Kingdoms Chronicles,,,Coming Out,Coming Out,similar,0.43,,separate
-series,The Riyria Chronicles,The Traveler's Gate Chronicles,,,Coming Out,To-Read Master List,similar,0.41,,separate
-series,The Riyria Chronicles,The Warlord Chronicles,,,Coming Out,To-Read Master List,similar,0.50,,separate
-series,The Three Kingdoms Chronicles,The Warlord Chronicles,,,Coming Out,To-Read Master List,similar,0.42,,separate
-series,The Traveler's Gate Chronicles,The Traveler's Gate Trilogy,,,To-Read Master List,To-Read Master List,similar,0.53,,separate
-series,Villains,Villains of Lore,,,To-Read Master List,Coming Out,similar,0.53,,separate
+book,A New Beginning,A New Beginning,Robert Kirkman,John Flanagan,,Calibre,calibre,1.00,John Flanagan,
+book,A Short History of Nearly Everything,A Really Short History of Nearly Everything. Bill Bryson,Bill Bryson,Bill Bryson,,Calibre,calibre,0.69,A Really Short History of Nearly Everything. Bill Bryson,
+book,Alex Ferguson: My Autobiography,Alex Ferguson: My Autobiography,Alex Ferguson: My Autobiography,Alex Ferguson,,Calibre,calibre,1.00,Alex Ferguson,
+book,American Kingpin,American Kingpin: The Epic Hunt for the Criminal Mastermind Behind the Silk Road,Nick Bilton,Nick Bilton,,Calibre,calibre,0.25,American Kingpin: The Epic Hunt for the Criminal Mastermind Behind the Silk Road,
+book,An Anonymous Girl,An Anonymous Girl,Grady Hendricks,Greer Hendricks,,Calibre,calibre,1.00,Greer Hendricks,
+book,Arabian Nights (and Days),Arabian Nights and Days,Bill Willingham,Naguib Mahfouz,,Calibre,calibre,1.00,Naguib Mahfouz,
+book,Artemis Fowl,Artemis Fowl: The Time Paradox,Eoin Colfer,Eoin Colfer,,Calibre,calibre,0.45,Artemis Fowl: The Time Paradox,
+book,Arthur,Arthur,Stephen R. Lawhead,Giles Kristian,,Calibre,calibre,1.00,Giles Kristian,
+book,Assholes Finish First,Assholes Finish First,,Tucker Max,,Calibre,calibre,1.00,Tucker Max,
+book,Beauty,Beauty: A Retelling of the Story of Beauty and the Beast,Robin McKinley,Robin McKinley,,Calibre,calibre,0.18,Beauty: A Retelling of the Story of Beauty and the Beast,
+book,Big Little Lies,Big Little Truths,Liane Moriarty,Liane Moriarty,,Calibre,calibre,0.52,Big Little Truths,
+book,Bloodline,Bloodline,Will Wight,James Rollins,,Calibre,calibre,1.00,James Rollins,
+book,Bloodline,Bloodline,Will Wight,Conn Iggulden,,Calibre,calibre,1.00,Conn Iggulden,
+book,Camelot,Camelot,Bill Willingham,Giles Kristian,,Calibre,calibre,1.00,Giles Kristian,
+book,Chasing the Scream,Chasing the Scream: The First and Last Days of the War on Drugs,Johann Hari,Johann Hari,,Calibre,calibre,0.37,Chasing the Scream: The First and Last Days of the War on Drugs,
+book,Children of Time,Children of Memory,Adrian Tchaikovsky,Adrian Tchaikovsky,,Calibre,calibre,0.50,Children of Memory,
+book,Children of Time,Children of Strife,Adrian Tchaikovsky,Adrian Tchaikovsky,,Calibre,calibre,0.50,Children of Strife,
+book,Chrismas Eve,Christmas Eve,Jim Butcher,Jim Butcher,,Calibre,calibre,0.69,Christmas Eve,
+book,Dead Beat,Dead Beat,Jim Butcher,Leigh Bardugo,,Calibre,calibre,1.00,Leigh Bardugo,
+book,Devolution,Devolution: A Firsthand Account of the Rainier Sasquatch Massacre,Max Brooks,Max Brooks,,Calibre,calibre,0.17,Devolution: A Firsthand Account of the Rainier Sasquatch Massacre,
+book,"Don't Put Me In, Coach","Don't Put Me In, Coach: My Incredible NCAA Journey From the End of the Bench to the End of the Bench",Mark Titus,Mark Titus,,Calibre,calibre,0.32,"Don't Put Me In, Coach: My Incredible NCAA Journey From the End of the Bench to the End of the Bench",
+book,Empire of the Damned,Empire of the Dawn,Jay Kristoff,Jay Kristoff,,Calibre,calibre,0.67,Empire of the Dawn,
+book,End of Days,End of Days,Susan Ee,Wendy Alec,,Calibre,calibre,1.00,Wendy Alec,
+book,Everything's Eventual,Everything's Eventual: 14 Dark Tales,Stephen King,Stephen King,,Calibre,calibre,0.58,Everything's Eventual: 14 Dark Tales,
+book,Excalibur,Excalibur,Bernard Cornwell,Bob Mayer,,Calibre,calibre,1.00,Bob Mayer,
+book,Flawless: Inside the Largest Diamond Heist in History,Flawless: Inside the Largest Diamond Heist in History,Scott Selby,Scott Andrew Selby,,Calibre,calibre,1.00,Scott Andrew Selby,
+book,Good Omens,"Good Omens: The Nice and Accurate Prophecies of Agnes Nutter, Witch",Neil Gaiman,Neil Gaiman,,Calibre,calibre,0.18,"Good Omens: The Nice and Accurate Prophecies of Agnes Nutter, Witch",
+book,Harry Potter and the Sorcerer's Stone,Harry Potter and the Philosopher's Stone,J.K. Rowling,J. K. Rowling,,Calibre,calibre,0.62,Harry Potter and the Philosopher's Stone,
+book,I Hope They Serve Beer in Hell,I Hope They Serve Beer in Hell: Bonus Stories,Tucker Max,Tucker Max,,Calibre,calibre,0.71,I Hope They Serve Beer in Hell: Bonus Stories,
+book,In the Kingdom of Ice,In the Kingdom of Ice: The Grand and Terrible Polar Voyage of the USS Jeannette,Hampton Sides,Hampton Sides,,Calibre,calibre,0.33,In the Kingdom of Ice: The Grand and Terrible Polar Voyage of the USS Jeannette,
+book,Inferno,Inferno,Dan Brown,Travis Bagwell,,Calibre,calibre,1.00,Travis Bagwell,
+book,Killing Lincoln,Killing Lincoln: The Shocking Assassination That Changed America Forever,Bill O'Reilly,Bill O'Reilly,,Calibre,calibre,0.23,Killing Lincoln: The Shocking Assassination That Changed America Forever,
+book,Legend,Legend,Marie Lu,Bob Mayer,,Calibre,calibre,1.00,Bob Mayer,
+book,Life as I Blow It,"Life as I Blow It: Tales of Love, Life & Sex . . . Not Necessarily in That Order",Sarah Colonna,Sarah Colonna,,Calibre,calibre,0.28,"Life as I Blow It: Tales of Love, Life & Sex . . . Not Necessarily in That Order",
+book,Magician,Magician's End,Raymond E. Feist,Raymond E. Feist,,Calibre,calibre,0.60,Magician's End,
+book,Meat Market,Meat Market: Inside the Smash-Mouth World of College Football Recruiting,Bruce Feldman,Bruce Feldman,,Calibre,calibre,0.16,Meat Market: Inside the Smash-Mouth World of College Football Recruiting,
+book,Memory's Legion,Memory's Legion: The Complete Expanse Story Collection,James S.A. Corey,James S. A. Corey,,Calibre,calibre,0.34,Memory's Legion: The Complete Expanse Story Collection,
+book,Mirror Mirror,"Mirror, Mirror",Jim Butcher,Jen Calonita,,Calibre,calibre,1.00,Jen Calonita,
+book,Nexus,Nexus,Ramez Naam,Scott Westerfeld,,Calibre,calibre,1.00,Scott Westerfeld,
+book,Odyssey,Odyssey,Jack McDevitt,Stephen Fry,,Calibre,calibre,1.00,Stephen Fry,
+book,Odyssey,Odyssey,Jack McDevitt,Alethea Faust,,Calibre,calibre,1.00,Alethea Faust,
+book,Origin,Origin,Dan Brown,Stephen Baxter,,Calibre,calibre,1.00,Stephen Baxter,
+book,Pendragon,Pendragon,Stephen R. Lawhead,James Wilde,,Calibre,calibre,1.00,James Wilde,
+book,Quicksilver,Quicksilver,Neal Stephenson,Callie Hart,,Calibre,calibre,1.00,Callie Hart,
+book,Sick in the Head,Sick in the Head: Conversations About Life and Comedy,Judd Apatow,Judd Apatow,,Calibre,calibre,0.34,Sick in the Head: Conversations About Life and Comedy,
+book,Sloppy Seconds,Sloppy Seconds: The Tucker Max Leftovers,Tucker Max,Tucker Max,,Calibre,calibre,0.37,Sloppy Seconds: The Tucker Max Leftovers,
+book,Snowing in Bali,Snowing in Bali: The Incredible Inside Account of Bali's Hidden Drug World,Kathryn Bonella,Kathryn Bonella,,Calibre,calibre,0.25,Snowing in Bali: The Incredible Inside Account of Bali's Hidden Drug World,
+book,The Devil in the White City,"The Devil in the White City: Murder, Magic, and Madness at the Fair That Changed America",Erik Larson,Erik Larson,,Calibre,calibre,0.35,"The Devil in the White City: Murder, Magic, and Madness at the Fair That Changed America",
+book,The Fall,The Fall,Ryan Cahill,Guillermo Del Toro,,Calibre,calibre,1.00,Guillermo Del Toro,
+book,The Fall,The Fall,Ryan Cahill,Garth Nix,,Calibre,calibre,1.00,Garth Nix,
+book,The Final Girl Support Group,The Final Girl Support Group,Grady Hendricks,Grady Hendrix,,Calibre,calibre,1.00,Grady Hendrix,
+book,The Gathering Storm,The Gathering Storm,Robert Jordan,Kate Elliott,,Calibre,calibre,1.00,Kate Elliott,
+book,The Girl Who Kicked the Hornet's Nest,The Girl Who Kicked the Hornet's Nest,Steig Larsson,Stieg Larsson,,Calibre,calibre,1.00,Stieg Larsson,
+book,The Girl Who Played With Fire,The Girl Who Played With Fire,Steig Larsson,Stieg Larsson,,Calibre,calibre,1.00,Stieg Larsson,
+book,The Girl With the Dragon Tattoo,The Girl With the Dragon Tattoo,Steig Larsson,Stieg Larsson,,Calibre,calibre,1.00,Stieg Larsson,
+book,The Great Gatsby,The Great Gatsby,F. Scott Fitzgerald,Francis Scott Fitzgerald,,Calibre,calibre,1.00,Francis Scott Fitzgerald,
+book,The Language of Thorns,The Language of Thorns: Midnight Tales and Dangerous Magic,Leigh Bardugo,Leigh Bardugo,,Calibre,calibre,0.40,The Language of Thorns: Midnight Tales and Dangerous Magic,
+book,The Last Hero,The Last Hero,Terry Pratchett,Linden A. Lewis,,Calibre,calibre,1.00,Linden A. Lewis,
+book,The Lost Colony,Artemis Fowl: The Lost Colony,Eoin Colfer,Eoin Colfer,,Calibre,calibre,0.55,Artemis Fowl: The Lost Colony,
+book,The Map That Changed the World,The Map That Changed the World: William Smith and the Birth of Modern Geology,Simon Winchester,Simon Winchester,,Calibre,calibre,0.39,The Map That Changed the World: William Smith and the Birth of Modern Geology,
+book,The Midnight Library,The Midnight Train,Matt Haig,Matt Haig,,Calibre,calibre,0.50,The Midnight Train,
+book,The Professor and the Madman,"The Professor and the Madman: A Tale of Murder, Insanity and the Making of the Oxford English Dictionary",Simon Winchester,Simon Winchester,,Calibre,calibre,0.32,"The Professor and the Madman: A Tale of Murder, Insanity and the Making of the Oxford English Dictionary",
+book,The Revolution Was Televised,"The Revolution Was Televised: The Cops, Crooks, Slingers and Slayers Who Changed TV Drama Forever",Alan Sepinwall,Alan Sepinwall,,Calibre,calibre,0.35,"The Revolution Was Televised: The Cops, Crooks, Slingers and Slayers Who Changed TV Drama Forever",
+book,The Right Side of History,The Right Side of History: How Reason and Moral Purpose Made the West Great,Ben Shapiro,Ben Shapiro,,Calibre,calibre,0.39,The Right Side of History: How Reason and Moral Purpose Made the West Great,
+book,The Road to Middle-Earth,The Road to Middle-Earth: How J.R.R. Tolkien Created a New Mythology,Tom Shippey,Tom Shippey,,Calibre,calibre,0.40,The Road to Middle-Earth: How J.R.R. Tolkien Created a New Mythology,
+book,The Ship of the Dead,The Court of the Dead,Rick Riordan,Rick Riordan,,Calibre,calibre,0.52,The Court of the Dead,
+book,The Truth,The Truth,Ryan Cahill,Bob Mayer,,Calibre,calibre,1.00,Bob Mayer,
+book,The Way of Kings,The Way of Kings Prime,Brandon Sanderson,Brandon Sanderson,,Calibre,calibre,0.74,The Way of Kings Prime,
+book,The Wife Between Us,The Wife Between Us,Grady Hendricks,Greer Hendricks,,Calibre,calibre,1.00,Greer Hendricks,
+book,Theft of Swords,Age of Swords,Michael J. Sullivan,Michael J. Sullivan,,Calibre,calibre,0.50,Age of Swords,
+book,UnSouled,UnSouled,Will Wight,Neal Shusterman,,Calibre,calibre,1.00,Neal Shusterman,
+book,White Sand,White Sand (prose),Brandon Sanderson,Brandon Sanderson,,Calibre,calibre,0.65,White Sand (prose),
+book,Why People Believe Weird Things,"Why People Believe Weird Things: Pseudoscience, Superstition, and Other Confusions of Our Time",Michael Shermer,Michael Shermer,,Calibre,calibre,0.36,"Why People Believe Weird Things: Pseudoscience, Superstition, and Other Confusions of Our Time",
+book,World War Z,World War Z: An Oral History of the Zombie War,Max Brooks,Max Brooks,,Calibre,calibre,0.28,World War Z: An Oral History of the Zombie War,
+book,World's End,World's End,Neil Gaiman,Mark Chadbourn,,Calibre,calibre,1.00,Mark Chadbourn,
+book,Arabian Nights (and Days),Fables 7 Arabian Nights and Days,Bill Willingham,Bill Willingham,,Open Library,open library,0.72,Fables 7 Arabian Nights and Days,
+book,Artemis Fowl: The Arctic Incident,Artemis Fowl and the Arctic Incident,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.91,Artemis Fowl and the Arctic Incident,
+book,Artemis Fowl: The Atlantis Complex,Artemis Fowl and the Atlantis Complex,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.91,Artemis Fowl and the Atlantis Complex,
+book,Artemis Fowl: The Eternity Code,Artemis Fowl and the Eternity Code,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.91,Artemis Fowl and the Eternity Code,
+book,Artemis Fowl: The Opal Deception,Artemis Fowl. The Opal Deception. The Graphic Novel,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.70,Artemis Fowl. The Opal Deception. The Graphic Novel,
+book,Battle for Hercules,Battle for Hercules (Deluxe Limited Edition),Jasmine Mas,Jasmine Mas,,Open Library,open library,0.47,Battle for Hercules (Deluxe Limited Edition),
+book,Children of Men,The Children of Men,P.D. James,P.D. James,,Open Library,open library,0.79,The Children of Men,
+book,Daughter of Smoke & Bone,Daughter of Smoke and Bone,Laini Taylor,Laini Taylor,,Open Library,open library,0.85,Daughter of Smoke and Bone,
+book,Days of Blood & Starlight,Days of Blood and Starlight,Laini Taylor,Laini Taylor,,Open Library,open library,0.86,Days of Blood and Starlight,
+book,Dear Becky,The Boys - Dear Becky,Garth Ennis,Garth Ennis,,Open Library,open library,0.58,The Boys - Dear Becky,
+book,Gate of the Feral Gods,The Gate of the Feral Gods,Matt Dinniman,Matt Dinniman,,Open Library,open library,1.00,The Gate of the Feral Gods,
+book,"Hotel Valhalla, Guide to the Norse Worlds",For Magnus Chase: Hotel Valhalla guide to the Norse worlds,Rick Riordan,Rick Riordan,,Open Library,open library,0.71,For Magnus Chase: Hotel Valhalla guide to the Norse worlds,
+book,Jonathan Strange & Mr Norrell,Jonathan Strange and Mr. Norrell,Susanna Clarke,Susanna Clarke,,Open Library,open library,0.88,Jonathan Strange and Mr. Norrell,
+book,Kitchen Confidential: Adventures in the Culinary Underbelly,Kitchen Confidential- Adventures in the Culinary Underbelly by Anthony Bourdain,Anthony Bourdain,Anthony Bourdain,,Open Library,open library,0.77,Kitchen Confidential- Adventures in the Culinary Underbelly by Anthony Bourdain,
+book,Merlin,Merlín,Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.40,Merlín,
+book,Over the Hill with the Swords of a Thousand Men,Boys - over the Hills with the Swords of a Thousand Men,Garth Ennis,Garth Ennis,,Open Library,open library,0.83,Boys - over the Hills with the Swords of a Thousand Men,
+book,Percy Jackson and the Greek Heroes,Percy Jackson and the Greek Gods / Percy Jackson and the Greek Heroes / The Demigod Diaries / Demigods & Magicians / Percy Jackson and the Singer of Apollo,Rick Riordan,Rick Riordan,,Open Library,open library,0.45,Percy Jackson and the Greek Gods / Percy Jackson and the Greek Heroes / The Demigod Diaries / Demigods & Magicians / Percy Jackson and the Singer of Apollo,
+book,Roses of May,The Roses of May,Dot Hutchison,Dot Hutchison,,Open Library,open library,0.76,The Roses of May,
+book,The Amazing Maurice & His Educated Rodents,The Amazing Maurice and His Educated Rodents,Terry Pratchett,Terry Pratchett,,Open Library,open library,0.93,The Amazing Maurice and His Educated Rodents,
+book,The Bone House,The Bone House (Bright Empires #2),Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.48,The Bone House (Bright Empires #2),
+book,The Calm Before,The Walking Dead Volume 7 The Calm Before,Robert Kirkman,Robert Kirkman,,Open Library,open library,0.42,The Walking Dead Volume 7 The Calm Before,
+book,The Death of Dulgath,The Death of Dulgath (The Riyria Chronicles Book 3),Michael J. Sullivan,Michael J. Sullivan,,Open Library,open library,0.42,The Death of Dulgath (The Riyria Chronicles Book 3),
+book,The Fatal Tree,The Fatal Tree (Bright Empires),Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.48,The Fatal Tree (Bright Empires),
+book,The Golden Compass,"The Golden Compass Graphic Novel, Volume 2",Philip Pullman,Philip Pullman,,Open Library,open library,0.46,"The Golden Compass Graphic Novel, Volume 2",
+book,The Golem and the Jinni,Golem and the Jinni,Helene Wecker,Helene Wecker,,Open Library,open library,1.00,Golem and the Jinni,
+book,The Great Hunt,The Great Hunt (The Wheel of Time Book 2),Robert Jordan,Robert Jordan,,Open Library,open library,0.43,The Great Hunt (The Wheel of Time Book 2),
+book,The Heart of What Was Lost,The Heart of What Was Lost (Osten Ard),Tad Williams,Tad Williams,,Open Library,open library,0.76,The Heart of What Was Lost (Osten Ard),
+book,The Hope of Elantris,The Hope of Elantris [Dramatized Adaptation],Brandon Sanderson,Brandon Sanderson,,Open Library,open library,0.50,The Hope of Elantris [Dramatized Adaptation],
+book,The House Across the Lake,House Across the Lake,Riley Sager,Riley Sager,,Open Library,open library,1.00,House Across the Lake,
+book,The Land of the Living and the Dead,Land of the Living and the Dead,Shauna Lawless,Shauna Lawless,,Open Library,open library,1.00,Land of the Living and the Dead,
+book,The Mean Seasons,Fables 5 the Mean Season,Bill Willingham,Bill Willingham,,Open Library,open library,0.56,Fables 5 the Mean Season,
+book,The Merchant of Death,The Merchant of Death (Pendragon #1),D.J. MacHale,D.J. MacHale,,Open Library,open library,0.65,The Merchant of Death (Pendragon #1),
+book,The Professor and the Madman,The Professor and the Madman CD,Simon Winchester,Simon Winchester,,Open Library,open library,0.89,The Professor and the Madman CD,
+book,The Shadow Lamp,The Shadow Lamp (Bright Empires #4),Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.48,The Shadow Lamp (Bright Empires #4),
+book,The Shadow of What Was Lost,The Shadow of What Was Lost (The Licanius Trilogy Book 1),James Islington,James Islington,,Open Library,open library,0.55,The Shadow of What Was Lost (The Licanius Trilogy Book 1),
+book,The Soldiers of Halla,The Soldiers of Halla (Pendragon #10),D.J. MacHale,D.J. MacHale,,Open Library,open library,0.63,The Soldiers of Halla (Pendragon #10),
+book,The Spirit Well,The spirit well - Bright Empires #3,Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.50,The spirit well - Bright Empires #3,
+book,The System of the World,System of the World,Neal Stephenson,Neal Stephenson,,Open Library,open library,1.00,System of the World,
+book,The Winds of Winter,The Winds of Winter ~ Preview Collection,George R .R. Martin,George R .R. Martin,,Open Library,open library,0.47,The Winds of Winter ~ Preview Collection,
+book,The Witchwood Crown,The Witchwood Crown (Last King of Osten Ard Book 1),Tad Williams,Tad Williams,,Open Library,open library,0.41,The Witchwood Crown (Last King of Osten Ard Book 1),
+book,The Woman in the Window,The Woman in the Window: A Novel,A.J. Finn,A.J. Finn,,Open Library,open library,0.70,The Woman in the Window: A Novel,
+book,The Year of the Witching,Year of the Witching,Alexis Henderson,Alexis Henderson,,Open Library,open library,1.00,Year of the Witching,
+book,We Gotta Go Now,Boys We Gotta Go Now Vol. 4,Garth Ennis,Garth Ennis,,Open Library,open library,0.56,Boys We Gotta Go Now Vol. 4,
+book,White Sand,White Sand 1,Brandon Sanderson,Brandon Sanderson,,Open Library,open library,0.85,White Sand 1,
+book,Animal Farm,Animal Farm,Bill Willingham,George Orwell,To-Read Master List,To-Read Master List,same title,1.00,,
+book,Red Queen,Red Queen,Christina Henry,Victoria Aveyard,To-Read Master List,To-Read Master List,same title,1.00,,
+book,The Truth,The Truth,Ryan Cahill,Terry Pratchett,To-Read Master List,To-Read Master List,same title,1.00,,
+book,All Out War (Part One),All Out War (Part Two),Robert Kirkman,Robert Kirkman,To-Read Master List,To-Read Master List,similar,0.71,,
+book,Artemis Fowl,Artemis Fowl: The Arctic Incident,Eoin Colfer,Eoin Colfer,To-Read Master List,To-Read Master List,similar,0.42,,
+book,Artemis Fowl,Artemis Fowl: The Atlantis Complex,Eoin Colfer,Eoin Colfer,To-Read Master List,To-Read Master List,similar,0.41,,
+book,Artemis Fowl,Artemis Fowl: The Eternity Code,Eoin Colfer,Eoin Colfer,To-Read Master List,To-Read Master List,similar,0.42,,
+book,Artemis Fowl,Artemis Fowl: The Last Guardian,Eoin Colfer,Eoin Colfer,To-Read Master List,To-Read Master List,similar,0.42,,
+book,Artemis Fowl,Artemis Fowl: The Opal Deception,Eoin Colfer,Eoin Colfer,To-Read Master List,To-Read Master List,similar,0.41,,
+book,Artemis Fowl: The Atlantis Complex,Artemis Fowl: The Eternity Code,Eoin Colfer,Eoin Colfer,To-Read Master List,To-Read Master List,similar,0.43,,
+book,Assassin's Fate,Assassin's Quest,Robin Hobb,Robin Hobb,To-Read Master List,To-Read Master List,similar,0.48,,
+book,Assassin's Fate,Fool's Assassin,Robin Hobb,Robin Hobb,To-Read Master List,To-Read Master List,similar,0.58,,
+book,Assassin's Quest,Fool's Assassin,Robin Hobb,Robin Hobb,To-Read Master List,To-Read Master List,similar,0.48,,
+book,Blood of Dragons,City of Dragons,Robin Hobb,Robin Hobb,To-Read Master List,To-Read Master List,similar,0.50,,
+book,Call of the Bone Ships,The Bone Ships,R.J. Barker,R.J. Barker,To-Read Master List,To-Read Master List,similar,0.65,,
+book,Call of the Bone Ships,The Bone Ships Wake,R.J. Barker,R.J. Barker,To-Read Master List,To-Read Master List,similar,0.54,,
+book,Children of Ruin,Children of Time,Adrian Tchaikovsky,Adrian Tchaikovsky,To-Read Master List,To-Read Master List,similar,0.55,,
+book,Daughter of the Empire,Mistress of the Empire,Raymond E. Feist,Raymond E. Feist,To-Read Master List,To-Read Master List,similar,0.44,,
+book,Daughter of the Empire,Servant of the Empire,Raymond E. Feist,Raymond E. Feist,To-Read Master List,To-Read Master List,similar,0.45,,
+book,Day Off,Day One,Jim Butcher,Jim Butcher,Dresden,Dresden,similar,0.45,,
+book,Dreams of Chaos,Dreams of Fire,Shauna Lawless,Shauna Lawless,To-Read Master List,To-Read Master List,similar,0.48,,
+book,Dreams of Chaos,Dreams of Sorrow,Shauna Lawless,Shauna Lawless,To-Read Master List,To-Read Master List,similar,0.43,,
+book,Dreams of Fire,Dreams of Sorrow,Shauna Lawless,Shauna Lawless,To-Read Master List,To-Read Master List,similar,0.45,,
+book,Elantris,The Hope of Elantris,Brandon Sanderson,Brandon Sanderson,Cosmere,Cosmere,similar,0.43,,
+book,Empire of the Damned,Empire of the Vampire,Jay Kristoff,Jay Kristoff,To-Read Master List,To-Read Master List,similar,0.56,,
+book,Endymion,The Rise of Endymion,Dan Simmons,Dan Simmons,To-Read Master List,To-Read Master List,similar,0.43,,
+book,Fool's Fate,Fool's Quest,Robin Hobb,Robin Hobb,To-Read Master List,To-Read Master List,similar,0.41,,
+book,Gideon the Ninth,Harrow the Ninth,Tamsyn Muir,Tamsyn Muir,To-Read Master List,To-Read Master List,similar,0.42,,
+book,Gideon the Ninth,Nona the Ninth,Tamsyn Muir,Tamsyn Muir,To-Read Master List,To-Read Master List,similar,0.48,,
+book,Harrow the Ninth,Nona the Ninth,Tamsyn Muir,Tamsyn Muir,To-Read Master List,To-Read Master List,similar,0.48,,
+book,Harry Potter and the Chamber of Secrets,Harry Potter and the Goblet of Fire,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.47,,
+book,Harry Potter and the Chamber of Secrets,Harry Potter and the Order of the Phoenix,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.48,,
+book,Harry Potter and the Chamber of Secrets,Harry Potter and the Prisoner of Azkaban,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.45,,
+book,Harry Potter and the Chamber of Secrets,Harry Potter and the Sorcerer's Stone,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.42,,
+book,Harry Potter and the Deathly Hallows,Harry Potter and the Goblet of Fire,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.42,,
+book,Harry Potter and the Deathly Hallows,Harry Potter and the Half-Blood Prince,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.45,,
+book,Harry Potter and the Deathly Hallows,Harry Potter and the Order of the Phoenix,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.43,,
+book,Harry Potter and the Deathly Hallows,Harry Potter and the Prisoner of Azkaban,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.40,,
+book,Harry Potter and the Deathly Hallows,Harry Potter and the Sorcerer's Stone,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.43,,
+book,Harry Potter and the Goblet of Fire,Harry Potter and the Half-Blood Prince,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.41,,
+book,Harry Potter and the Goblet of Fire,Harry Potter and the Order of the Phoenix,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.51,,
+book,Harry Potter and the Goblet of Fire,Harry Potter and the Prisoner of Azkaban,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.48,,
+book,Harry Potter and the Goblet of Fire,Harry Potter and the Sorcerer's Stone,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.42,,
+book,Harry Potter and the Half-Blood Prince,Harry Potter and the Order of the Phoenix,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.42,,
+book,Harry Potter and the Half-Blood Prince,Harry Potter and the Prisoner of Azkaban,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.45,,
+book,Harry Potter and the Half-Blood Prince,Harry Potter and the Sorcerer's Stone,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.42,,
+book,Harry Potter and the Order of the Phoenix,Harry Potter and the Prisoner of Azkaban,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.49,,
+book,Harry Potter and the Order of the Phoenix,Harry Potter and the Sorcerer's Stone,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.43,,
+book,Harry Potter and the Prisoner of Azkaban,Harry Potter and the Sorcerer's Stone,J.K. Rowling,J.K. Rowling,To-Read Master List,To-Read Master List,similar,0.43,,
+book,House of Earth and Blood,House of Sky and Breath,Sarah J. Maas,Sarah J. Maas,To-Read Master List,To-Read Master List,similar,0.44,,
+book,Hyperion,The Fall of Hyperion,Dan Simmons,Dan Simmons,To-Read Master List,To-Read Master List,similar,0.43,,
+book,Isles of the Emberdark,The Isles of Emberdark,Brandon Sanderson,Brandon Sanderson,Cosmere,To-Read Master List,similar,1.00,,
+book,Leviathan Falls,Leviathan Wakes,James S.A. Corey,James S.A. Corey,To-Read Master List,To-Read Master List,similar,0.45,,
+book,Mad Ship,Ship of Magic,Robin Hobb,Robin Hobb,To-Read Master List,To-Read Master List,similar,0.44,,
+book,Mistress of the Empire,Servant of the Empire,Raymond E. Feist,Raymond E. Feist,To-Read Master List,To-Read Master List,similar,0.45,,
+book,One of Us is Lying,One of Us is Next,Karen M. McManus,Karen M. McManus,To-Read Master List,To-Read Master List,similar,0.52,,
+book,Percy Jackson and the Greek Heroes,Percy Jackson's Greek Gods,Rick Riordan,Rick Riordan,Riordanverse,Riordanverse,similar,0.49,,
+book,Quintessence,Quintessence Sky,David Walton,David Walton,To-Read Master List,To-Read Master List,similar,0.76,,
+book,Ready Player One,Ready Player Two,Ernest Cline,Ernest Cline,To-Read Master List,To-Read Master List,similar,0.62,,
+book,Rosewater,The Rosewater Redemption,Tade Thompson,Tade Thompson,To-Read Master List,To-Read Master List,similar,0.42,,
+book,The Atlas Paradox,The Atlas Six,Olivie Blake,Olivie Blake,To-Read Master List,To-Read Master List,similar,0.45,,
+book,The Bone Shard Daughter,The Bone Shard Emperor,Andrea Stewart,Andrea Stewart,To-Read Master List,To-Read Master List,similar,0.47,,
+book,The Bone Shard Daughter,The Bone Shard War,Andrea Stewart,Andrea Stewart,To-Read Master List,To-Read Master List,similar,0.54,,
+book,The Bone Shard Emperor,The Bone Shard War,Andrea Stewart,Andrea Stewart,To-Read Master List,To-Read Master List,similar,0.56,,
+book,The Bone Ships,The Bone Ships Wake,R.J. Barker,R.J. Barker,To-Read Master List,To-Read Master List,similar,0.75,,
+book,The Book of Koli,The Fall of Koli,M.R. Carey,M.R. Carey,To-Read Master List,To-Read Master List,similar,0.55,,
+book,The Book of Koli,The Trials of Koli,M.R. Carey,M.R. Carey,To-Read Master List,To-Read Master List,similar,0.52,,
+book,The Bruning Maze,The Burning Maze,Rick Riordan,Rick Riordan,Riordanverse,To-Read Master List,similar,0.62,,
+book,The Dark Half,The Dark Tower,Stephen King,Stephen King,Stephen King,To-Read Master List; Stephen King,similar,0.47,,
+book,The Demigod Diaries,The Demigod Files,Rick Riordan,Rick Riordan,Riordanverse,To-Read Master List; Riordanverse,similar,0.54,,
+book,The Eleventh Metal,The Lost Metal,Brandon Sanderson,Brandon Sanderson,Cosmere,Cosmere,similar,0.42,,
+book,The Fall of Koli,The Trials of Koli,M.R. Carey,M.R. Carey,To-Read Master List,To-Read Master List,similar,0.52,,
+book,The Fury of the Gods,The Hunger of the Gods,John Gwynne,John Gwynne,To-Read Master List,To-Read Master List,similar,0.50,,
+book,The Fury of the Gods,The Shadow of the Gods,John Gwynne,John Gwynne,To-Read Master List,To-Read Master List,similar,0.50,,
+book,The Gospel of Loki,The Testament of Loki,Joanne Harris,Joanne Harris,To-Read Master List,To-Read Master List,similar,0.43,,
+book,The Hunger of the Gods,The Shadow of the Gods,John Gwynne,John Gwynne,To-Read Master List,To-Read Master List,similar,0.46,,
+book,The Lightning Theif,The Lightning Thief,Rick Riordan,Rick Riordan,Riordanverse,To-Read Master List,similar,0.67,,
+book,The Long Cosmos,The Long Earth,Terry Pratchett,Terry Pratchett,To-Read Master List,To-Read Master List,similar,0.41,,
+book,The Long Cosmos,The Long Mars,Terry Pratchett,Terry Pratchett,To-Read Master List,To-Read Master List,similar,0.43,,
+book,The Long Cosmos,The Long War,Terry Pratchett,Terry Pratchett,To-Read Master List,To-Read Master List,similar,0.45,,
+book,The Long Earth,The Long Mars,Terry Pratchett,Terry Pratchett,To-Read Master List,To-Read Master List,similar,0.45,,
+book,The Long Earth,The Long Utopia,Terry Pratchett,Terry Pratchett,To-Read Master List,To-Read Master List,similar,0.41,,
+book,The Long Earth,The Long War,Terry Pratchett,Terry Pratchett,To-Read Master List,To-Read Master List,similar,0.47,,
+book,The Long Mars,The Long Utopia,Terry Pratchett,Terry Pratchett,To-Read Master List,To-Read Master List,similar,0.43,,
+book,The Long Mars,The Long War,Terry Pratchett,Terry Pratchett,To-Read Master List,To-Read Master List,similar,0.50,,
+book,The Long Utopia,The Long War,Terry Pratchett,Terry Pratchett,To-Read Master List,To-Read Master List,similar,0.45,,
+book,The Magician King,The Magician's Land,Lev Grossman,Lev Grossman,To-Read Master List,To-Read Master List,similar,0.52,,
+book,The Magician King,The Magicians,Lev Grossman,Lev Grossman,To-Read Master List,To-Read Master List,similar,0.60,,
+book,The Magicians,The Magician's Land,Lev Grossman,Lev Grossman,To-Read Master List,To-Read Master List,similar,0.55,,
+book,The Mongoliad: Book One,The Mongoliad: Book Three,Neal Stephenson,Neal Stephenson,To-Read Master List,To-Read Master List,similar,0.70,,
+book,The Mongoliad: Book One,The Mongoliad: Book Two,Neal Stephenson,Neal Stephenson,To-Read Master List,To-Read Master List,similar,0.73,,
+book,The Mongoliad: Book Three,The Mongoliad: Book Two,Neal Stephenson,Neal Stephenson,To-Read Master List,To-Read Master List,similar,0.73,,
+book,The Rosewater Insurrection,The Rosewater Redemption,Tade Thompson,Tade Thompson,To-Read Master List,To-Read Master List,similar,0.50,,
+book,The Son of Neptune,The Son of Sobek,Rick Riordan,Rick Riordan,To-Read Master List; Riordanverse,To-Read Master List,similar,0.48,,
+book,The Warrior,Warriorborn,Jim Butcher,Jim Butcher,Dresden,To-Read Master List,similar,0.41,,
+book,Welcome to Roshar,Welcome to Scadrial,,,Coming Out,Coming Out,similar,0.41,,
+book,White Sand,White Sand Vol. 1,Brandon Sanderson,Brandon Sanderson,Cosmere,Cosmere,similar,0.65,,
+book,White Sand,White Sand Vol. 2,Brandon Sanderson,Brandon Sanderson,Cosmere,Cosmere,similar,0.65,,
+book,White Sand,White Sand Vol. 3,Brandon Sanderson,Brandon Sanderson,Cosmere,Cosmere,similar,0.65,,
+book,Wolves of Calla,Wolves of the Calla,Stephen King,Stephen King,Stephen King,To-Read Master List,similar,0.80,,
+author,C.S. Lewis,Lewis Carrol,,,To-Read Master List,To-Read Master List,similar,0.44,,
+author,Christopher Buehlman,Christopher Paolini,,,To-Read Master List,To-Read Master List,similar,0.41,,
+author,Christopher Buehlman,Christopher Priest,,,To-Read Master List,To-Read Master List,similar,0.43,,
+author,Christopher Buehlman,Christopher Ruocchio,,,To-Read Master List,To-Read Master List; Coming Out,similar,0.40,,
+author,Christopher Farnsworth,Christopher Priest,,,To-Read Master List,To-Read Master List,similar,0.40,,
+author,Christopher Paolini,Christopher Priest,,,To-Read Master List,To-Read Master List,similar,0.50,,
+author,Christopher Paolini,Christopher Ruocchio,,,To-Read Master List,To-Read Master List; Coming Out,similar,0.41,,
+author,Christopher Priest,Christopher Ruocchio,,,To-Read Master List,To-Read Master List; Coming Out,similar,0.43,,
+author,Clive Barker,R.J. Barker,,,To-Read Master List,To-Read Master List,similar,0.41,,
+author,David Walton,David Wong,,,To-Read Master List,To-Read Master List,similar,0.41,,
+author,Elizabeth Kolbert,Elizabeth Kostova,,,To-Read Master List,To-Read Master List,similar,0.50,,
+author,Eric Cline,Ernest Cline,,,To-Read Master List,To-Read Master List,similar,0.50,,
+author,James Dashner,P.D. James,,,To-Read Master List,To-Read Master List,similar,0.41,,
+author,Jeremy Robinson,Joanna Robinson,,,To-Read Master List,To-Read Master List,similar,0.45,,
+author,Jim Butcher,Tim Butcher,,,To-Read Master List; Dresden; Coming Out,To-Read Master List,similar,0.60,,
+author,Lisa Jewell,Lisa Maxwell,,,To-Read Master List,To-Read Master List,similar,0.47,,
+author,Michael Craig,Michael Crichton,,,To-Read Master List,To-Read Master List,similar,0.50,,
+author,Michael Craig,Michael Lewis,,,To-Read Master List,To-Read Master List,similar,0.40,,
+author,Michael Craig,Michael Scott,,,To-Read Master List,To-Read Master List,similar,0.40,,
+author,Michael Lewis,Michael Scott,,,To-Read Master List,To-Read Master List,similar,0.40,,
+author,Michael Scott,Michael Shermer,,,To-Read Master List,To-Read Master List,similar,0.43,,
+author,Paula Hawkins,Scott Hawkins,,,To-Read Master List,To-Read Master List,similar,0.40,,
+author,Richard K. Morgan,Richard Swan,,,To-Read Master List,To-Read Master List,similar,0.43,,
+author,S.A. Chakraborty,Shannon Chakraborty,,,To-Read Master List,To-Read Master List,similar,0.57,,
+author,Samantha Shannon,Sammantha Shannon,,,To-Read Master List,Coming Out,similar,0.83,,
+author,Stephen Baxter,Stephen Fry,,,To-Read Master List,To-Read Master List,similar,0.42,,
+author,Stephen Baxter,Stephen King,,,To-Read Master List,To-Read Master List; Stephen King,similar,0.40,,
+author,Stephen Chbosky,Stephen Fry,,,To-Read Master List,To-Read Master List,similar,0.40,,
+author,Stephen Fry,Stephen King,,,To-Read Master List,To-Read Master List; Stephen King,similar,0.47,,
+author,Tamsyn Muir,Tasmyn Muir,,,To-Read Master List,Coming Out,similar,0.50,,
+author,William Gibson,William Golding,,,To-Read Master List,To-Read Master List,similar,0.41,,
+series,Chronicles of Narnia,The Chronicles of Alice,,,To-Read Master List,To-Read Master List,similar,0.45,,
+series,Chronicles of the Black Company,The Chronicles of Alice,,,Coming Out,To-Read Master List,similar,0.49,,
+series,Chronicles of the Black Company,The Kane Chronicles,,,Coming Out,To-Read Master List; Riordanverse,similar,0.42,,
+series,Cinder Spires,The Cinder Spires,,,To-Read Master List,To-Read Master List,similar,0.78,,
+series,Empire of the Vampire,Empire of the Wolf,,,To-Read Master List,To-Read Master List,similar,0.61,,
+series,Empire of the Vampire,The Drowning Empire,,,To-Read Master List,To-Read Master List,similar,0.41,,
+series,Empire of the Vampire,The Empire Trilogy,,,To-Read Master List,To-Read Master List,similar,0.44,,
+series,Empire of the Wolf,The Empire Trilogy,,,To-Read Master List,To-Read Master List,similar,0.42,,
+series,Fables,Fractured Fables,,,To-Read Master List,To-Read Master List,similar,0.44,,
+series,Farseer Trilogy,Mars Trilogy,,,To-Read Master List,To-Read Master List,similar,0.45,,
+series,Founders Trilogy,Mars Trilogy,,,To-Read Master List,To-Read Master List,similar,0.43,,
+series,Girth With All the Gifts,The Girl with All the Gifts,,,To-Read Master List,To-Read Master List,similar,0.83,,
+series,Inheritance,The Inheritance Cycle,,,To-Read Master List,To-Read Master List,similar,0.55,,
+series,Inheritance,The Inheritance Games,,,To-Read Master List,To-Read Master List,similar,0.55,,
+series,Mistborn (Era One),Mistborn: Wax and Wayne (Era Two),,,Cosmere,Cosmere,similar,0.44,,
+series,Pendragon,The Pendragon Cycle,,,To-Read Master List,To-Read Master List,similar,0.50,,
+series,Tales of the Ketty Jay,The Tales of Witness,,,To-Read Master List,Coming Out,similar,0.40,,
+series,The Book of Dust,The Books of Babel,,,To-Read Master List,To-Read Master List,similar,0.46,,
+series,The Bound and the Broken,The Broken Earth,,,To-Read Master List; Coming Out,To-Read Master List,similar,0.44,,
+series,The Broken Earth,The Long Earth,,,To-Read Master List,To-Read Master List,similar,0.45,,
+series,The Burning,The Shining,,,To-Read Master List; Coming Out,Stephen King,similar,0.41,,
+series,The Chronicles of Alice,The Kane Chronicles,,,To-Read Master List,To-Read Master List; Riordanverse,similar,0.52,,
+series,The Chronicles of Alice,The Riyira Chronicles,,,To-Read Master List,To-Read Master List,similar,0.48,,
+series,The Chronicles of Alice,The Riyria Chronicles,,,To-Read Master List,Coming Out,similar,0.48,,
+series,The Chronicles of Alice,The Three Kingdoms Chronicles,,,To-Read Master List,Coming Out,similar,0.41,,
+series,The Chronicles of Alice,The Warlord Chronicles,,,To-Read Master List,To-Read Master List,similar,0.47,,
+series,The Collector,The Witch Collector,,,To-Read Master List,Coming Out,similar,0.70,,
+series,The Daevabad Trilogy,The Dark Start Trilogy,,,To-Read Master List,Coming Out,similar,0.45,,
+series,The Daevabad Trilogy,The Empire Trilogy,,,To-Read Master List,To-Read Master List,similar,0.41,,
+series,The Dresden Files,The Themis Files,,,To-Read Master List; Dresden; Coming Out,Series,similar,0.45,,
+series,The Drowning Empire,The Empire Trilogy,,,To-Read Master List,To-Read Master List,similar,0.41,,
+series,The Empire Trilogy,The Eternal Path Trilogy,,,To-Read Master List,Coming Out,similar,0.40,,
+series,The Empire Trilogy,The Licanius Trilogy,,,To-Read Master List,To-Read Master List,similar,0.41,,
+series,The Empire Trilogy,The Wormwood Trilogy,,,To-Read Master List,To-Read Master List,similar,0.41,,
+series,The Illuminae Files,The Themis Files,,,To-Read Master List,Series,similar,0.42,,
+series,The Inheritance Cycle,The Inheritance Games,,,To-Read Master List,To-Read Master List,similar,0.57,,
+series,The Kane Chronicles,The Kingkiller Chronicle,,,To-Read Master List; Riordanverse,To-Read Master List,similar,0.45,,
+series,The Kane Chronicles,The Riyira Chronicles,,,To-Read Master List; Riordanverse,To-Read Master List,similar,0.56,,
+series,The Kane Chronicles,The Riyria Chronicles,,,To-Read Master List; Riordanverse,Coming Out,similar,0.56,,
+series,The Kane Chronicles,The Three Kingdoms Chronicles,,,To-Read Master List; Riordanverse,Coming Out,similar,0.50,,
+series,The Kane Chronicles,The Traveler's Gate Chronicles,,,To-Read Master List; Riordanverse,To-Read Master List,similar,0.43,,
+series,The Kane Chronicles,The Warlord Chronicles,,,To-Read Master List; Riordanverse,To-Read Master List,similar,0.54,,
+series,The Kingkiller Chronicle,The Three Kingdoms Chronicles,,,To-Read Master List,Coming Out,similar,0.47,,
+series,The Last Magician,The Magicians,,,To-Read Master List,To-Read Master List,similar,0.60,,
+series,The Riyira Chronicles,The Riyria Chronicles,,,To-Read Master List,Coming Out,similar,0.69,,
+series,The Riyira Chronicles,The Three Kingdoms Chronicles,,,To-Read Master List,Coming Out,similar,0.43,,
+series,The Riyira Chronicles,The Traveler's Gate Chronicles,,,To-Read Master List,To-Read Master List,similar,0.41,,
+series,The Riyira Chronicles,The Warlord Chronicles,,,To-Read Master List,To-Read Master List,similar,0.50,,
+series,The Riyria Chronicles,The Three Kingdoms Chronicles,,,Coming Out,Coming Out,similar,0.43,,
+series,The Riyria Chronicles,The Traveler's Gate Chronicles,,,Coming Out,To-Read Master List,similar,0.41,,
+series,The Riyria Chronicles,The Warlord Chronicles,,,Coming Out,To-Read Master List,similar,0.50,,
+series,The Three Kingdoms Chronicles,The Warlord Chronicles,,,Coming Out,To-Read Master List,similar,0.42,,
+series,The Traveler's Gate Chronicles,The Traveler's Gate Trilogy,,,To-Read Master List,To-Read Master List,similar,0.53,,
+series,Villains,Villains of Lore,,,To-Read Master List,Coming Out,similar,0.53,,
