@@ -29,11 +29,47 @@ jobs:
         if: env.HAS_TOKEN == 'true'
         with:
           fetch-depth: 1
+      # The project's hooks (.claude/settings.json) run `powershell`, which ubuntu-latest lacks; it
+      # ships pwsh. From kit 2.7 (#78) guard-destructive.ps1 is registered with onFailure: block, so
+      # the missing command denied every Bash call: PRs #79-#148 ended in 2-5 turns, nothing posted.
+      - name: Give the hooks a powershell command
+        if: env.HAS_TOKEN == 'true'
+        run: sudo ln -sf "$(command -v pwsh)" /usr/local/bin/powershell
+      # Fails the job if the guard can't run on Linux, instead of letting the review pass green with
+      # every gh call denied, as PRs #79-#148 did. It must allow a gh read and deny a repo delete.
+      - name: Check the destructive-command guard works on Linux
+        if: env.HAS_TOKEN == 'true'
+        env:
+          CLAUDE_PROJECT_DIR: ${{ github.workspace }}
+        run: |
+          set +e
+          guard() {
+            printf '{"tool_name":"Bash","tool_input":{"command":"%s"},"cwd":"%s"}' "$1" "$PWD" |
+              powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/guard-destructive.ps1
+          }
+          out=$(guard 'gh pr view 1 --json state'); rc=$?
+          if [ "$rc" -ne 0 ] || [ -n "$out" ]; then
+            echo "::error::guard-destructive.ps1 should allow 'gh pr view 1 --json state' (exit 0, no output); got exit $rc: $out"
+            exit 1
+          fi
+          guard 'gh repo delete owner/repo --yes' > /dev/null; rc=$?
+          if [ "$rc" -ne 2 ]; then
+            echo "::error::guard-destructive.ps1 should deny 'gh repo delete owner/repo --yes' (exit 2); got exit $rc"
+            exit 1
+          fi
+          echo "guard-destructive.ps1 works on Linux: it allows gh pr view (exit 0) and denies gh repo delete (exit 2)."
+      # allowedTools: the plugin's command allows its gh calls for itself, not for the agents it
+      # starts. On PRs #57-#78 runs logged up to 5 permission denials each, and all 13 comments
+      # posted said "No issues found" after 6-44 seconds.
+      # CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: the review starts agents; in the background, the job
+      # can end while it waits on them, green with nothing reviewed.
       - uses: anthropics/claude-code-action@v1
         if: env.HAS_TOKEN == 'true'
+        env:
+          CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: "1"
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           plugin_marketplaces: "https://github.com/anthropics/claude-code.git"
           plugins: "code-review@claude-code-plugins"
           prompt: "/code-review:code-review --comment ${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
-          claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment"'
+          claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr list:*),Bash(gh pr comment:*),Bash(gh issue view:*),Bash(gh issue list:*),Bash(gh search:*)"'
