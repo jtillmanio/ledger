@@ -1468,6 +1468,15 @@ search result clears the toast but leaves that row reading *✓ Added to …*
 behaviour, seen at every destination). This task reworks those result-row
 buttons; reset the row when its add is undone.
 
+*From 1.21 (TASK-029, PR #143):* undoing a status change on a book that had no
+status row (`undoBookStatus`, `src/db/writes.ts`) deletes the row even when the
+book has been planned since, leaving a plan row with no `book_status`. Today
+only a status toast left open while the book is planned in another tab reaches
+it; this task makes planning a book an everyday action. 1.21 made the undo
+refuse when it would put an Unlisted book back under a plan row; make the
+no-prior case refuse the same way (or keep the row as a bare `to_read`, as the
+undo already does when the row has gained a rating or a note).
+
 Sheet contents: the four to-read levels (D-37). One row of chips: the next five
 years, then **On deck** and **Someday**. Choosing a year opens a second row:
 **No quarter yet** (a bare-year entry) and **Q1–Q4**. There is no month step
