@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
-import { BOOK_STATUSES, saveBookStatus, undoBookStatus, type BookStatusChange } from "@/db/writes";
+import { BOOK_STATUSES, SETTABLE_STATUSES, saveBookStatus, undoBookStatus, type BookStatusChange } from "@/db/writes";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { isFinish, resolveFinish } from "@/lib/finish-date";
 
 export const runtime = "nodejs";
 
-const ALLOWED: readonly string[] = BOOK_STATUSES;
+/** What a POST may set; `unlisted` comes back only as an undo's prior status (task 1.21, D-86). */
+const ALLOWED: readonly string[] = SETTABLE_STATUSES;
+const STORED: readonly string[] = BOOK_STATUSES;
 
 /**
  * Set a book's status (task 1.5): `{ bookId, status, finish?, rating? }`.
@@ -66,7 +68,7 @@ function validChange(c: unknown): c is BookStatusChange {
   if (prior !== null) {
     if (typeof prior !== "object") return false;
     const p = prior as Record<string, unknown>;
-    if (!ALLOWED.includes(p.status as string) || !isFinish(asFinish(p))) return false;
+    if (!STORED.includes(p.status as string) || !isFinish(asFinish(p))) return false;
   }
   if (edited !== null) {
     if (typeof edited !== "object" || appended !== null) return false;

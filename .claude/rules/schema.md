@@ -128,7 +128,15 @@ Release, test isolation) and the Hard rules a reviewer checks.
   stored like the queue's. A book joins the end of the quarter it is placed in;
   write periods and ordinals only through the plan helpers in `src/db/writes.ts`
   (`placeInPlan`, `movePlan`, `takeOutOfPlan`, `reorderQuarter`, `moveToTop`,
-  `moveToSomeday`).
+  `moveToSomeday`). **Below Someday sits Unlisted** (task 1.21, D-83, D-86):
+  `book_status.status = 'unlisted'`, a book you have but haven't put on your
+  list. It is not a to-read level: `to_read_level` reads only `to_read`, so it has no level and
+  is on no plan, status screen, dashboard or year total, and the master list's
+  *Everything* leaves it out (its own chip and a search list it). The progress
+  views count it unread. Only an undo writes `unlisted` (and, later, the
+  Calibre import, 1.18): a status write never sets it (`SETTABLE_STATUSES`).
+  *Add to Someday*, or an add to Someday or On deck, moves it to `to_read`;
+  a shelf leaves it Unlisted. No CHECK constrains the column.
 - **Blocks group runs inside a track; eras section issues inside a run.** Both
   are tables, both are optional, and both are ordered — `blocks(track_id,
   number, name?)` and `eras(run_id, ordinal, name)`. Era membership goes on the

@@ -635,15 +635,18 @@ END $$;
 -- plan_period reads a period's year, quarter and level, and to_read_level puts
 -- each to_read book at one level (task 1.7, D-37): no plan row is Someday; with
 -- several, the earliest by date wins (a quarter before its own bare year), and
--- On deck only when there is nothing dated. A removed book is in neither.
+-- On deck only when there is nothing dated. A removed book is in neither. An
+-- Unlisted book (task 1.21, D-86) has no level: it is not on the list.
 INSERT INTO books (id, title) VALUES
   ('zz-p-someday', 'Zz Someday'), ('zz-p-deck', 'Zz Deck'), ('zz-p-year', 'Zz Year Plan'),
-  ('zz-p-quarter', 'Zz Quarter'), ('zz-p-both', 'Zz Both'), ('zz-p-gone', 'Zz Gone');
+  ('zz-p-quarter', 'Zz Quarter'), ('zz-p-both', 'Zz Both'), ('zz-p-gone', 'Zz Gone'),
+  ('zz-p-unlisted', 'Zz Unlisted');
 UPDATE books SET deleted_at = now() WHERE id = 'zz-p-gone';
 INSERT INTO book_status (user_id, book_id, status) VALUES
   ('zz-user', 'zz-p-someday', 'to_read'), ('zz-user', 'zz-p-deck', 'to_read'),
   ('zz-user', 'zz-p-year', 'to_read'), ('zz-user', 'zz-p-quarter', 'to_read'),
-  ('zz-user', 'zz-p-both', 'to_read'), ('zz-user', 'zz-p-gone', 'to_read');
+  ('zz-user', 'zz-p-both', 'to_read'), ('zz-user', 'zz-p-gone', 'to_read'),
+  ('zz-user', 'zz-p-unlisted', 'unlisted');
 INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES
   ('zz-user', 'zz-p-deck', 'on_deck', NULL),
   ('zz-user', 'zz-p-year', '2027', NULL), ('zz-user', 'zz-p-year', 'on_deck', NULL),

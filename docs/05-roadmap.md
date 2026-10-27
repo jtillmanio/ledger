@@ -1088,7 +1088,7 @@ and none of its status, plan or release rows load; `decision = keep` loads it
 on the next extract with its status; a book with a `book_details.csv` row
 loads unchanged; extract prints how many books are held.
 
-### ☐ 1.21 Unlisted: the books you have but haven't put on your list · S
+### ☑ 1.21 Unlisted: the books you have but haven't put on your list · S
 Backlog intake, 2026-10-26 (owner: *give all [Calibre] books a default status
 below Someday … available during search, but not in my face on any list*).
 D-83; named *Unlisted*, stored `unlisted`, by D-86 (it was *Owned*). **Built

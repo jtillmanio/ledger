@@ -8,17 +8,23 @@ import FinishDate, {
 import { useUndo } from "@/components/Undo";
 import { readWhen, type Precision } from "@/lib/format";
 
-type Status = "to_read" | "reading" | "read" | "dnf";
+/** `unlisted` (task 1.21, D-86) is shown and undone to, never chosen: no button sets it. */
+type Status = "to_read" | "reading" | "read" | "dnf" | "unlisted";
 type Finish = { on: string | null; precision: Precision };
 type Saved = { status: Status; finish: Finish };
 
-const STATUSES: { status: Status; label: string }[] = [
+const STATUSES: { status: Exclude<Status, "unlisted">; label: string }[] = [
   { status: "to_read", label: "To read" },
   { status: "reading", label: "Reading" },
   { status: "read", label: "Read" },
   { status: "dnf", label: "DNF" },
 ];
-const NAMES: Record<Status, string> = { to_read: "to read", reading: "reading", read: "read", dnf: "DNF" };
+const NAMES: Record<Status, string> = {
+  to_read: "to read", reading: "reading", read: "read", dnf: "DNF", unlisted: "unlisted",
+};
+
+/** The book an undo has just put back to Unlisted: its row takes focus when it is drawn again. */
+let refocus: string | null = null;
 
 /** The collapsed row's badge: `read Jul 2022`, `read ~Jul 2022`, `read`, `reading`. */
 function badge({ status, finish }: Saved) {
@@ -35,6 +41,11 @@ function badge({ status, finish }: Saved) {
  * Reading and DNF save at once. *Read* opens *Finished*, the finish-date
  * control, with Save and Cancel; on a book already read it corrects the date.
  * Closing it, any way, puts focus back on *Read*.
+ *
+ * An Unlisted row (task 1.21, D-86) has a grey *unlisted* badge and, beside it,
+ * *Add to Someday*, which writes `to_read`; expanded, none of the four is
+ * pressed. On the Unlisted list the row leaves after the add; its Undo brings
+ * it back with focus on *Add to Someday*.
  *
  * Every saved change pushes an undo (task 1.2) whose inverse is the server's
  * own account of what it changed, so a second read's undo removes that read and
@@ -59,6 +70,7 @@ export default function BookStatus({ bookId, status = "to_read", finishedOn = nu
   const [failed, setFailed] = useState(false);
   const readButton = useRef<HTMLButtonElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
+  const addButton = useRef<HTMLButtonElement>(null);
   const [title, setTitle] = useState("this book");
   const panelId = useId();
   const reasonId = useId();
@@ -68,6 +80,21 @@ export default function BookStatus({ bookId, status = "to_read", finishedOn = nu
   if (fromServer.status !== status || fromServer.finishedOn !== finishedOn || fromServer.precision !== precision) {
     setFromServer({ status, finishedOn, precision });
     setSaved({ status: status as Status, finish: { on: finishedOn, precision } });
+  }
+
+  // After an undo put this book back to Unlisted, wherever its row is drawn again.
+  useEffect(() => {
+    if (refocus === bookId && addButton.current) {
+      refocus = null;
+      addButton.current.focus();
+    }
+  });
+
+  /** The title the row shows, for the toast. */
+  function readTitle() {
+    const shown = toggle.current?.closest(".book-row")?.querySelector(".row-title")?.textContent;
+    if (shown) setTitle(shown);
+    return shown || title;
   }
 
   function closeFinished() {
@@ -86,7 +113,7 @@ export default function BookStatus({ bookId, status = "to_read", finishedOn = nu
     return () => window.removeEventListener("keydown", onKey);
   }, [finishing]);
 
-  async function write(next: Status, finish?: FinishValue): Promise<boolean> {
+  async function write(next: Status, finish?: FinishValue, name = title): Promise<boolean> {
     setSaving(true);
     setFailed(false);
     try {
@@ -101,7 +128,7 @@ export default function BookStatus({ bookId, status = "to_read", finishedOn = nu
       setSaved({ status: next, finish: stored ?? before.finish });
       router.refresh();
       push({
-        label: `${title}: ${NAMES[next]}`,
+        label: `${name}: ${NAMES[next]}`,
         detail: next === "read" ? `Finished ${finishWords(finish!)}` : `Was ${NAMES[before.status]}`,
         undo: async () => {
           const back = await fetch("/api/progress/book", {
@@ -110,6 +137,7 @@ export default function BookStatus({ bookId, status = "to_read", finishedOn = nu
             body: JSON.stringify({ change }),
           });
           if (!back.ok) throw new Error("undo failed");
+          if (before.status === "unlisted") refocus = bookId;
           setSaved(before);
           router.refresh();
         },
@@ -140,18 +168,34 @@ export default function BookStatus({ bookId, status = "to_read", finishedOn = nu
     if (await write("read", finishing)) closeFinished();
   }
 
+  /** *Add to Someday* on an Unlisted row: `to_read`, with Undo. */
+  async function addToSomeday() {
+    if (saving) return;
+    if (await write("to_read", undefined, readTitle())) toggle.current?.focus();
+  }
+
   const reason = finishing ? finishReason(finishing) : null;
+  const unlisted = saved.status === "unlisted";
 
   return (
     <>
-      <button type="button" ref={toggle} className={`bdg status-toggle${saved.status === "read" ? " dn" : ""}`}
-        aria-expanded={open} aria-controls={open ? panelId : undefined} onClick={() => {
-          const shown = toggle.current?.closest(".book-row")?.querySelector(".row-title")?.textContent;
-          if (shown) setTitle(shown);
-          setOpen((o) => !o);
-        }}>
-        <span className="sr-only">Status: </span>{badge(saved)}
-      </button>
+      {/* One shape for every status, so the badge keeps its focus when *Add to Someday* goes. */}
+      <span className="status-line">
+        <button type="button" ref={toggle}
+          className={`bdg status-toggle${saved.status === "read" || unlisted ? " dn" : ""}`}
+          aria-expanded={open} aria-controls={open ? panelId : undefined} onClick={() => {
+            readTitle();
+            setOpen((o) => !o);
+          }}>
+          <span className="sr-only">Status: </span>{badge(saved)}
+        </button>
+        {unlisted && (
+          <button type="button" ref={addButton} className="btn sec sm" aria-disabled={saving || undefined}
+            onClick={() => void addToSomeday()}>
+            Add to Someday
+          </button>
+        )}
+      </span>
       {open && <div id={panelId}>
         <div className="opts status-group" role="group" aria-label={`Status of ${title}`}>
           {STATUSES.map((s) => (

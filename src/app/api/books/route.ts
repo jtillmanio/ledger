@@ -21,9 +21,10 @@ const YEAR_MAX = 3000;
  *   transaction; the answer says whether the book was reused, and is what the
  *   undo sends back. `note`, an inbox note's id, resolves that note into the
  *   book in the same transaction (task 1.4b); the answer's `note` says it did.
- * - DELETE `{ destination, created, added, statused?, note? }`: that add's
- *   undo, from an add here or a paste (`/api/books/bulk`); `statused` is the
- *   statuses an On deck add wrote (task 1.7). 409 when something changed
+ * - DELETE `{ destination, created, added, statused?, promoted?, note? }`: that
+ *   add's undo, from an add here or a paste (`/api/books/bulk`); `statused` is
+ *   the statuses an On deck add wrote (task 1.7), `promoted` the Unlisted books
+ *   it moved onto your list (task 1.21). 409 when something changed
  *   since, and then nothing is changed. `note: { id, bookId }` reopens the
  *   note the add resolved.
  */
@@ -61,13 +62,14 @@ export async function DELETE(req: Request) {
   const created = ids(body?.created);
   const added = ids(body?.added);
   const statused = body?.statused === undefined ? [] : ids(body.statused);
+  const promoted = body?.promoted === undefined ? [] : ids(body.promoted);
   const note = reopen(body?.note);
-  if (!destination || !created || !added || !statused || created.length + added.length === 0 || note === undefined) {
+  if (!destination || !created || !added || !statused || !promoted || created.length + added.length === 0 || note === undefined) {
     return NextResponse.json({
-      error: "destination, and created, added and (if any) statused: lists of book ids; note, if any, is { id, bookId }",
+      error: "destination, and created, added and (if any) statused and promoted: lists of book ids; note, if any, is { id, bookId }",
     }, { status: 400 });
   }
-  if (!(await undoAddBooks(userId, { destination, created, added, statused }, note ? { note } : {}))) {
+  if (!(await undoAddBooks(userId, { destination, created, added, statused, promoted }, note ? { note } : {}))) {
     return NextResponse.json({ error: "Something changed since that add. Nothing was undone." }, { status: 409 });
   }
   return NextResponse.json({ ok: true });

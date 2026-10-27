@@ -29,6 +29,7 @@ Every book in the owner's Calibre library comes into the Ledger before cutover. 
 - Hardcover has no client yet (4.2). Until it does, "Open Library or Hardcover agree" means Open Library agrees. With no Open Library answer, the value goes to `calibre_review.csv`.
 - **Stop and ask** (roadmap, CLAUDE.md): before adding `books.subjects`, `books.summary` or `books.isbn`. Until the owner approves, tags, comments and ISBN stay in `calibre_books.csv` and load nothing.
 - For the plan gate: does 1.20's hold apply to a Calibre-created book that Open Library doesn't know? The roadmap proposes no, since owning it is the owner's say-so. TASK-031 asks the same thing from its side.
+- *From TASK-029 (1.21, PR #143), open question for the plan:* wishlist accept (`acceptLine` → `toRead` in `src/db/writes.ts`) leaves an Unlisted book Unlisted, and `src/lib/wishlist-review.ts` tells the owner "your status stays". Once this task creates Unlisted books, should a wishlist line that names one promote it to Someday, as *Add books* does since 1.21?
 - Decisions: D-73 (Calibre is a metadata source; reads load only through a review), D-83 (every Calibre book comes in at Unlisted (D-86); re-runnable until cutover; 4.4 after), D-41 (the workbook loads no reads), D-44, D-18 (nothing local writes the live database), D-67. Standing rule 4 applies to extract's fold-in.
 
 ## Acceptance criteria
