@@ -97,6 +97,17 @@ describe.each(["load.ps1", "load.sh"])("%s, task 1.18", (name) => {
   });
 });
 
+// Task 1.18: every extract folds in the Calibre sidecars. rebuild.ps1 runs
+// `npm run extract`; rebuild.sh spells the arguments out.
+describe("the Calibre sidecars reach extract", () => {
+  const extract = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts.extract as string;
+  it.each([["npm run extract", extract], ["rebuild.sh", read("rebuild.sh")]])("%s passes all three", (_, text) => {
+    for (const name of ["books", "review", "reads"]) {
+      expect(text).toMatch(new RegExp(`--calibre-${name} etl/data/calibre_${name}\\.csv`));
+    }
+  });
+});
+
 describe.each(["rebuild.ps1", "rebuild.sh"])("%s", (name) => {
   it("counts read_events against the seed", () => {
     expect(read(name)).toMatch(/\bread_events\b/);
