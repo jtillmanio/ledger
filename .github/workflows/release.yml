@@ -7,8 +7,8 @@ name: Release
 #
 #   1. plan      the newest production build Vercel has ready for a commit on
 #                main; refuses unless CI passed on that exact commit, nothing
-#                newer on main is still building, and (before cutover) there
-#                is nothing to migrate
+#                newer on main is still building, (before cutover) there is
+#                nothing to migrate, and a real release was started from main
 #   2. snapshot  Neon branch of the live database, only when migrating
 #   3. migrate   drizzle-kit migrate, from that commit's drizzle/
 #   4. views     etl/views.sql, from that commit
@@ -21,10 +21,12 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
+      # On unless unticked: a release has to be asked for, and any ref but
+      # main may only dry-run (plan refuses otherwise).
       dry_run:
         description: "Dry run: report what would happen, change nothing"
         type: boolean
-        default: false
+        default: true
 
 concurrency: { group: release, cancel-in-progress: false }
 

@@ -280,7 +280,7 @@ tables.
     | `/books/status` | 24,000 | 175,000 | 35 | 100 |
     | `/comics/bendis-disassembled` | 25,000 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 21,000 | 171,000 | 29 | 100 |
-    | `/books/list` | 48,000 | 170,000 | 29 | 100 |
+    | `/books/list` | 60,000 | 170,000 | 53 | 100 |
     | `/inbox` | 11,000 | 173,000 | 28 | 100 |
     | `/watch` | 11,000 | 173,000 | 28 | 100 |
     <!-- /perf-budget -->
@@ -301,7 +301,14 @@ tables.
     dashboard: 28,000 is the median of its first preview's Lighthouse run
     (23,046 bytes, PR #108) plus 20%. `/books` is measured at `/books/list`,
     since Lighthouse sends the session as a `Cookie` header and a redirect
-    drops it; it keeps the 48,000 `/books` had. The nav's Books link points at
+    drops it; it kept the 48,000 `/books` had until the live ledger gained
+    book covers (task 1.14's Open Library details, loaded 2026-10-27). Seven
+    covers now load on its first screen, and each costs three requests
+    (covers.openlibrary.org redirects through archive.org to an image server):
+    PR #145's preview measured 50,248–50,320 bytes and 44 requests in three
+    runs, against 44.6 KB and 21 without covers, so the budget is that median
+    plus 20%, 60,000 bytes and 53 requests. Cover sizes and *Show covers* are
+    task 4.3's. The nav's Books link points at
     `/books/list`, and its Ledger link (`/`, a redirect) is not prefetched: a
     page that prefetched a redirect never reached network idle in the tap
     runner, and made 55 requests against a budget of 35. `/watch` (task 1.8) is

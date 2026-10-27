@@ -11,7 +11,7 @@ import { spawnSync } from "node:child_process";
 import { appendFileSync } from "node:fs";
 import postgres from "postgres";
 import {
-  alreadyProduction, directUrl, pendingMigrations, promoteProblem, releaseProblems, smokeProblem, snapshotsToPrune,
+  alreadyProduction, directUrl, pendingMigrations, promoteProblem, refProblem, releaseProblems, smokeProblem, snapshotsToPrune,
 } from "./lib/release.mjs";
 
 const env = process.env;
@@ -72,7 +72,10 @@ async function plan() {
   const unreleasedFiles = target ? (git("diff", "--name-only", target.sha, "origin/main") ?? "").split("\n").filter(Boolean) : [];
   const journal = target ? JSON.parse(git("show", `${target.sha}:drizzle/meta/_journal.json`)).entries : [];
   const { pending, unknown } = pendingMigrations(journal, await appliedMigrations());
-  const problems = releaseProblems({ live, target, ci, unreleasedFiles, pending, unknown });
+  const problems = [
+    refProblem(env.GITHUB_REF, env.DRY_RUN === "true"),
+    ...releaseProblems({ live, target, ci, unreleasedFiles, pending, unknown }),
+  ].filter(Boolean);
 
   summary([
     `### Release ${env.DRY_RUN === "true" ? "(dry run)" : ""}`,

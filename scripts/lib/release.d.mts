@@ -9,6 +9,7 @@ export function pendingMigrations(
   appliedCreatedAt: (string | number)[],
 ): { pending: string[]; unknown: number[] };
 export function directUrl(url: string): string;
+export function refProblem(ref: string | undefined, dryRun: boolean): string | null;
 export function releaseProblems(input: {
   live: boolean;
   target: { sha: string; url: string } | null;
