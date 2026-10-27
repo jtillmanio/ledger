@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-calibre.py — the owner's Calibre library, into sidecars extract folds in.
+calibre.py — the owner's Calibre library, into the sidecar extract folds in.
 
-    py etl/calibre.py --dry-run     # the match rate; writes nothing, asks Open Library nothing
-    py etl/calibre.py               # writes the sidecars; asks Open Library about series
+    py etl/calibre.py --dry-run     # the match rate and what changed; writes nothing, asks Open Library nothing
+    py etl/calibre.py               # writes the sidecar; asks Open Library about series
     py etl/calibre.py --offline     # Open Library from the cache only
 
 The library is `--library <folder>` or CALIBRE_LIBRARY in .env (task 1.18, D-73,
@@ -12,43 +12,44 @@ is opened read-only, so a running Calibre is never locked or written; the copy
 is removed after the run. Custom columns are found by lookup name (`#words`,
 `#read`, `#date_read`, `#type`, each overridable), never by custom_column_N.
 
+Calibre is the source of truth for a book's data and its reads (D-87): the owner
+edits Calibre and nothing else. So nothing here waits on a decision except a
+near spelling, and what disagrees is reported (extract's unresolved.csv), never
+silently dropped.
+
 Every Calibre book is matched to the books extract wrote (seed/books.csv), by
 1.13's rule: title and author compared after extract's clean() and key(), with
 book_review.csv's merges applied. A book with several authors matches on any.
 - matched    a workbook book with its title and one of its authors
 - proposed   a near spelling by the same author (trigram similarity >= 0.4, the
              titles not differing only by a number), or the same title under
-             another author: appended to book_review.csv as reason `calibre`,
-             and held until the owner decides (`merge` folds it into the
-             workbook's book, `separate` creates it)
+             another author: appended to book_review.csv as reason `calibre`
+             with `keep` pre-filled with Calibre's spelling, and held until the
+             owner decides (`merge` renames the workbook's book to Calibre's,
+             `separate` creates Calibre's)
 - unmatched  anything else: extract creates it at Unlisted (D-83, D-86)
 Books an earlier run created (seed/calibre_created.csv) are never matched.
-A Comic record is skipped and listed (owner, at 1.18's plan gate); a Fan
-Fiction record comes in with book_type `Fan Fiction`.
+A Comic record is skipped and listed; a Fan Fiction record comes in with
+book_type `Fan Fiction` (D-88).
 
-What it writes, all in etl/data/ and committed like the other sidecars:
+What it writes, in etl/data/ and committed like the other sidecars:
 - calibre_books.csv    title, author -> Calibre's words, series, index, ISBN,
-                       tags and type; `confirmed` lists what Open Library agreed
-                       with; `source` calibre or hand. A hand row is never
-                       rewritten. Comments stay out until books.summary exists.
-- calibre_review.csv   a series or index Open Library contradicts or doesn't
-                       know: Calibre's value, Open Library's, and the owner's
-                       `decision` (calibre | api | neither). Nothing fills until
-                       it is decided, and a decided row is never rewritten.
-- calibre_reads.csv    each Calibre read: the flag, the date as its Eastern day
-                       (D-67) or a year, its precision, and `decision`
-                       (accept | reject). Only accepted rows load.
+                       tags, type, read flag, date read (its Eastern day, D-67,
+                       or a year) and precision (D-88); `confirmed` lists what
+                       Open Library agreed with, and `open_library` is its
+                       series where it differs. Comments stay out until
+                       books.summary exists (D-88).
 - book_review.csv      the `calibre` proposals above.
 
-Open Library is asked only about a series, and only where the book has none of
-its own in the seed (or has Calibre's): with 1.14's client and cache
-(enrich_books.OpenLibrary), so a workbook book's answer is already cached. An
-ISBN is compared only against an answer in hand; it loads nothing until
-books.isbn exists, so it is never a review row.
+Open Library is asked about each Calibre series, with 1.14's client and cache
+(enrich_books.OpenLibrary), so a workbook book's answer is already cached. Its
+answer fills nothing: a different series is reported. An ISBN is compared only
+against an answer in hand.
 
-Re-runnable until cutover (D-83): existing rows keep their place, new books
-append theirs, an undecided row follows Calibre, and a run over an unchanged
-library changes no byte. A book gone from Calibre loses its calibre rows.
+Re-runnable until cutover (D-83): existing rows keep their place, a changed book
+is rewritten in place, a new one appends its row, a removed one goes, a run over
+an unchanged library changes no byte, and every run prints what changed in
+Calibre since the last.
 """
 
 from __future__ import annotations
@@ -269,40 +270,41 @@ class Seed:
 
 
 def proposal(workbook: dict, title: str, author: str, sim: float) -> dict:
+    """A `calibre` book_review.csv row. `keep` is Calibre's spelling (D-87): on
+    a same-title pair the titles are equal, so it names Calibre's author."""
     same_title = ex.key(workbook["title"]) == ex.key(title)
     return {"kind": "book", "a": workbook["title"], "b": title, "a_author": workbook["author"],
             "b_author": author, "a_tabs": "", "b_tabs": "Calibre", "reason": ex.CALIBRE,
-            "similarity": f"{sim:.2f}", "keep": workbook["author"] if same_title else workbook["title"],
-            "decision": ""}
+            "similarity": f"{sim:.2f}", "keep": author if same_title else title, "decision": ""}
 
 
 # --------------------------------------------------------------------------
 # Open Library
 # --------------------------------------------------------------------------
 
-def check(work: dict | None, series: str, index, isbn: str | None) -> tuple[set[str], list[tuple]]:
+def check(work: dict | None, series: str, index, isbn: str | None) -> tuple[set[str], str]:
     """What Open Library's work confirms of Calibre's series, index and ISBN,
-    and the (field, calibre, api) review rows for what it doesn't."""
-    confirmed, rows = set(), []
+    and its own series (`Name #index`) where that differs. No answer differs
+    from nothing, so it is "" (D-87: the series fills either way)."""
+    confirmed = set()
     names = (work or {}).get("series_name") or []
     positions = (work or {}).get("series_position") or []
     at = next((i for i, n in enumerate(names) if ex.key(ex.clean(n)) == ex.key(series)), None)
+    theirs = ""
     if at is None:
-        api = ""
         if names:
             pos = number(positions[0]) if positions else ""
-            api = f"{ex.clean(names[0])} #{pos}" if pos else ex.clean(names[0])
-        rows.append(("series", f"{series} #{number(index)}", api))
+            theirs = f"{ex.clean(names[0])} #{pos}" if pos else ex.clean(names[0])
     else:
         confirmed.add("series")
         pos = number(positions[at]) if at < len(positions) else ""
-        if pos and pos == number(index):
+        if pos == number(index):
             confirmed.add("series_index")
-        else:
-            rows.append(("series_index", number(index), pos))
+        elif pos:
+            theirs = f"{ex.clean(names[at])} #{pos}"
     if work and isbn and isbn in (work.get("isbn") or []):
         confirmed.add("isbn")
-    return confirmed, rows
+    return confirmed, theirs
 
 
 # --------------------------------------------------------------------------
@@ -321,16 +323,11 @@ def run(args) -> int:
     idx = ex.BookIndex(review)
     separate = {ex.review_sides(r) for r in review if r["decision"] == "separate"}
     old_books = read_csv(Path(args.calibre_books), ex.CALIBRE_BOOKS_COLUMNS)
-    old_review = read_csv(Path(args.calibre_review), ex.CALIBRE_REVIEW_COLUMNS)
-    old_reads = read_csv(Path(args.calibre_reads), ex.CALIBRE_READS_COLUMNS)
-    hand = {book_key(r) for r in old_books if r["source"] != ex.CALIBRE}
-    old_confirmed = {book_key(r): r["confirmed"] for r in old_books}
+    old = {book_key(r): r for r in old_books}
 
     api = None if args.dry_run else eb.OpenLibrary(Path(args.cache), args.max_requests, offline=args.offline)
     status: dict[tuple, str] = {}
     books: dict[tuple, dict] = {}
-    reviews: dict[tuple, dict] = {}
-    reads: dict[tuple, dict] = {}
     unchecked: set[tuple] = set()
     failures = 0
     proposals, skipped, duplicates, missed = [], [], [], []
@@ -356,19 +353,15 @@ def run(args) -> int:
                    "series": rec["series"] or "", "series_index": number(rec["index"]) if rec["series"] else "",
                    "isbn": rec["isbn"] or "", "tags": "; ".join(rec["tags"]),
                    "book_type": "" if rec["type"].lower() in ("", "book") else rec["type"],
-                   "confirmed": "", "source": ex.CALIBRE}
+                   "read": rec["read"], "date_read": rec["date_read"], "precision": rec["precision"],
+                   "confirmed": "", "open_library": ""}
             books[k] = row
-            if rec["read"] == "true" or rec["date_read"]:
-                reads[k] = {"title": rec["title"], "author": author, "read": rec["read"],
-                            "date_read": rec["date_read"], "precision": rec["precision"], "decision": ""}
 
-            # The series check: only where the seed's book has no series of its
-            # own, and never for a held book or a hand row.
-            target = workbook if state == "matched" else seed.created.get(k)
-            own = (target or {}).get("series")
-            if (api is None or not rec["series"] or state == "proposed" or k in hand
-                    or (own and ex.key(own) != ex.key(rec["series"]))):
+            # Open Library's word on the series, to report where it differs. A
+            # held book waits for its decision.
+            if api is None or not rec["series"] or state == "proposed":
                 continue
+            target = workbook if state == "matched" else seed.created.get(k)
             title, name = (target["title"], target["author"]) if target else (rec["title"], author)
             try:
                 works = api.search(title, name)
@@ -388,32 +381,22 @@ def run(args) -> int:
                 continue
             failures = 0
             _, work, _ = eb.decide(title, name, works)
-            confirmed, rows = check(work, rec["series"], rec["index"], rec["isbn"])
+            confirmed, row["open_library"] = check(work, rec["series"], rec["index"], rec["isbn"])
             row["confirmed"] = ";".join(f for f in ex.CHECKED_FIELDS if f in confirmed)
-            for field, mine, theirs in rows:
-                reviews[(*k, field)] = {"title": rec["title"], "author": author, "field": field,
-                                        "calibre": mine, "api": theirs, "decision": ""}
     finally:
         if api:
             api.db.close()
 
-    report(status, proposals, skipped, duplicates, missed, reads, api, unchecked)
+    # What Open Library couldn't be asked this run keeps what the last run knew.
+    for k in unchecked:
+        if k in old:
+            books[k]["confirmed"], books[k]["open_library"] = old[k]["confirmed"], old[k]["open_library"]
+    report(status, proposals, skipped, duplicates, missed, books, api, unchecked)
+    changes(old_books, books)
     if args.dry_run:
         return 0
 
-    # What Open Library couldn't be asked this run keeps what the last run knew.
-    for k in unchecked:
-        books[k]["confirmed"] = old_confirmed.get(k, "")
-        for r in old_review:
-            if book_key(r) == k and not r["decision"]:
-                reviews[review_key(r)] = r
-    write_csv(Path(args.calibre_books), ex.CALIBRE_BOOKS_COLUMNS,
-              fold(old_books, books, book_key, lambda r: r["source"] != ex.CALIBRE))
-    write_csv(Path(args.calibre_review), ex.CALIBRE_REVIEW_COLUMNS,
-              fold(old_review, reviews, review_key, lambda r: bool(r["decision"]), "calibre_review.csv"))
-    write_csv(Path(args.calibre_reads), ex.CALIBRE_READS_COLUMNS,
-              fold(old_reads, reads, book_key, lambda r: bool(r["decision"]), "calibre_reads.csv"))
-
+    write_csv(Path(args.calibre_books), ex.CALIBRE_BOOKS_COLUMNS, fold(old_books, books))
     known = {ex.review_sides(r) for r in review}
     new = []
     for p in proposals:
@@ -423,7 +406,7 @@ def run(args) -> int:
     if new:
         write_csv(Path(args.book_review), ex.BOOK_REVIEW_COLUMNS, review + new)
         print(f"  {len(new)} Calibre spellings to review in {args.book_review}: "
-              "`merge` makes them one book, `separate` creates Calibre's")
+              "`merge` takes Calibre's, `separate` makes them two books")
     return 0
 
 
@@ -431,40 +414,77 @@ def book_key(r: dict) -> tuple:
     return ex.key(r["title"]), ex.key(r["author"])
 
 
-def review_key(r: dict) -> tuple:
-    return ex.key(r["title"]), ex.key(r["author"]), r["field"]
-
-
-def fold(old: list[dict], fresh: dict[tuple, dict], keyed, locked, stale: str | None = None) -> list[dict]:
-    """A sidecar's next rows. A locked row (hand, or decided) stays as it is,
-    where it is; an unlocked one follows Calibre in place, or goes when Calibre
-    no longer has it; a row new to Calibre is appended in Calibre's order."""
+def fold(old: list[dict], fresh: dict[tuple, dict]) -> list[dict]:
+    """calibre_books.csv's next rows: a book still in Calibre keeps its place
+    with Calibre's values, a book gone from Calibre goes, and a new one is
+    appended in Calibre's order. An unchanged library gives the same rows."""
     rows, seen = [], set()
     for r in old:
-        k = keyed(r)
-        if locked(r):
-            rows.append(r)
-            if k not in fresh and stale:
-                print(f"  stale: {r['title']} / {r['author']} in {stale} is no longer in Calibre; "
-                      "delete the row once it's done with")
-        elif k in fresh and k not in seen:
+        k = book_key(r)
+        if k in fresh and k not in seen:
             rows.append(fresh[k])
-        else:
-            continue
-        seen.add(k)
-    rows += [r for k, r in fresh.items() if k not in seen]
-    return rows
+            seen.add(k)
+    return rows + [r for k, r in fresh.items() if k not in seen]
+
+
+# What a run reports as changed in Calibre: the fields Calibre owns.
+CHANGE_FIELDS = ("words", "series", "series_index", "isbn", "tags", "book_type", "read", "date_read", "precision")
+
+
+def changes(old_rows: list[dict], fresh: dict[tuple, dict]) -> None:
+    """What changed in Calibre since the last run's calibre_books.csv: books
+    added and removed (a removed and an added book by one author with near
+    titles is likely a rename), and each changed field, old -> new."""
+    if not old_rows:
+        return
+    old = {book_key(r): r for r in old_rows}
+    added = [r for k, r in fresh.items() if k not in old]
+    removed = [r for k, r in old.items() if k not in fresh]
+    renamed = []
+    for r in list(removed):
+        twin = next((a for a in added if ex.key(a["author"]) == ex.key(r["author"])
+                     and (ex.trgm_similarity(a["title"], r["title"]) >= ex.SIMILAR_AT
+                          or ex.key(r["title"]) in ex.key(a["title"]) or ex.key(a["title"]) in ex.key(r["title"]))),
+                    None)
+        if twin:
+            renamed.append((r, twin))
+            removed.remove(r)
+            added.remove(twin)
+    changed = []
+    for k, r in fresh.items():
+        if k in old:
+            diffs = [f"{f} {old[k][f] or '(none)'} -> {r[f] or '(none)'}" for f in CHANGE_FIELDS
+                     if str(old[k][f]) != str(r[f])]
+            if diffs:
+                changed.append(f"{r['title']} — {r['author']}: {'; '.join(diffs)}")
+    if not (added or removed or renamed or changed):
+        print("\nno change in Calibre since the last run")
+        return
+    print(f"\nchanged in Calibre since the last run: {len(added)} added, {len(removed)} removed, "
+          f"{len(renamed)} renamed, {len(changed)} changed")
+    for r in added:
+        print(f"  added    {r['title']} — {r['author']}")
+    for r in removed:
+        print(f"  removed  {r['title']} — {r['author']} (leaves the Ledger at the next extract "
+              "if only Calibre had it)")
+    for r, a in renamed:
+        print(f"  renamed? {r['title']} -> {a['title']} — {a['author']}")
+    for line in changed:
+        print(f"  changed  {line}")
 
 
 def report(status: dict, proposals: list[dict], skipped: list[dict], duplicates: list[str],
-           missed: list[tuple], reads: dict, api, unchecked: set) -> None:
+           missed: list[tuple], books: dict, api, unchecked: set) -> None:
     counts = Counter(status.values())
     print(f"\n  {len(status) + len(skipped) + len(duplicates)} Calibre records")
     for s in STATUSES:
         print(f"  {s:<10} {counts.get(s, 0):>6}")
     if status:
         print(f"  match rate {counts.get('matched', 0) / len(status):.0%} of {len(status)}")
-    print(f"  reads      {len(reads):>6} in calibre_reads.csv (only accepted rows load)")
+    reads = sum(1 for r in books.values() if r["read"] == "true" or r["date_read"])
+    differs = sum(1 for r in books.values() if r["open_library"])
+    print(f"  reads      {reads:>6} (each loads, D-87)")
+    print(f"  series Open Library has differently: {differs} (reported by extract in unresolved.csv)")
     if skipped:
         print(f"\nskipped, {len(skipped)} comics (the Ledger keeps comics as issues):")
         for rec in skipped:
@@ -480,7 +500,7 @@ def report(status: dict, proposals: list[dict], skipped: list[dict], duplicates:
     near = [m for m in missed if m[2]]
     if missed:
         print(f"\nunmatched, created at Unlisted: {len(missed)}; {len(missed) - len(near)} with no "
-              f"close title by the same author in the workbook. The rest, with candidates:")
+              "close title by the same author in the workbook" + (". The rest, with candidates:" if near else ""))
         for title, author, cands in near:
             print(f"  {title} — {author}: {cands}")
     if api:
@@ -518,8 +538,6 @@ def main(argv=None) -> int:
     ap.add_argument("--env", default=".env")
     ap.add_argument("--seed", default="seed")
     ap.add_argument("--calibre-books", default="etl/data/calibre_books.csv")
-    ap.add_argument("--calibre-review", default="etl/data/calibre_review.csv")
-    ap.add_argument("--calibre-reads", default="etl/data/calibre_reads.csv")
     ap.add_argument("--book-review", default="etl/data/book_review.csv")
     ap.add_argument("--cache", default="etl/.openlibrary-cache.sqlite")
     ap.add_argument("--words-column", default="#words", help="the word-count column's lookup name")

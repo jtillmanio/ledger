@@ -1009,18 +1009,15 @@ OPEN_LIBRARY = "open library"
 BOOK_DETAILS_COLUMNS = ["title", "author", "open_library_id", "page_count", "cover_url",
                         "published_year", "source"]
 WORKBOOK_READS_COLUMNS = ["title", "year", "genre", "tab", "rank"]
-# The Calibre sidecars etl/calibre.py writes (task 1.18, D-73, D-83), keyed by
-# Calibre's title and author. A near spelling it finds is a `book` row in
-# book_review.csv with this reason: `a` the workbook's spelling, `b` Calibre's.
+# The Calibre sidecar etl/calibre.py writes (task 1.18, D-73, D-83, D-87), keyed
+# by Calibre's title and author. Calibre is the source of truth for what it
+# holds. A near spelling it finds is a `book` row in book_review.csv with this
+# reason: `a` the workbook's spelling, `b` Calibre's.
 CALIBRE = "calibre"
 CALIBRE_BOOKS_COLUMNS = ["title", "author", "words", "series", "series_index", "isbn", "tags",
-                         "book_type", "confirmed", "source"]
-CALIBRE_REVIEW_COLUMNS = ["title", "author", "field", "calibre", "api", "decision"]
-CALIBRE_REVIEW_DECISIONS = ("calibre", "api", "neither", "")
+                         "book_type", "read", "date_read", "precision", "confirmed", "open_library"]
 # What Open Library can confirm of a Calibre book, in calibre_books.csv's `confirmed`.
 CHECKED_FIELDS = ("series", "series_index", "isbn")
-CALIBRE_READS_COLUMNS = ["title", "author", "read", "date_read", "precision", "decision"]
-CALIBRE_READS_DECISIONS = ("accept", "reject", "")
 # Not loaded: the books Calibre created, so calibre.py never matches its own.
 CALIBRE_CREATED_COLUMNS = ["title", "author", "book_id"]
 READ_EVENTS_COLUMNS = ["user_id", "book_id", "finished_on", "finished_on_precision"]
@@ -1483,68 +1480,44 @@ def as_float(v) -> float | None:
         return None
 
 
-def calibre_series(row: dict, decided: dict) -> tuple[str | None, float | None]:
-    """The series and index a calibre_books.csv row fills (task 1.18, D-73):
-    a hand row's own; else Calibre's where Open Library agreed (`confirmed`);
-    else what a decided calibre_review.csv row says. A `series` row's values
-    are `Name #index`, as the workbook writes a series."""
-    k = (key(row["title"]), key(row["author"]))
-    trusted = row["source"] != CALIBRE
-    confirmed = set(filter(None, row["confirmed"].split(";")))
-    d = decided.get((*k, "series"))
-    if d and not trusted:
-        text = clean(d.get(d["decision"]))  # neither: no value
-        m = SERIES_RE.match(text) if text else None
-        return (m.group("name"), float(m.group("pos"))) if m else (text, None)
-    name = clean(row["series"])
-    if not name or not (trusted or "series" in confirmed):
-        return None, None
-    if trusted or "series_index" in confirmed:
-        return name, as_float(row["series_index"])
-    d = decided.get((*k, "series_index"))
-    return name, as_float(d.get(d["decision"])) if d else None
-
-
 def read_finish(row: dict) -> tuple[str | None, str]:
-    """(finished_on, precision) for an accepted calibre_reads.csv row: a year
-    alone is its July 1st, approximate (data model 2.17); a day keeps the
-    precision calibre.py gave it; no date is `none`."""
+    """(finished_on, precision) for a Calibre read: a year alone is its July
+    1st, approximate (data model 2.17); a day keeps the precision calibre.py
+    gave it (D-88); no date is `none`."""
     date, precision = row["date_read"], row["precision"]
     if YEAR_RE.match(date):
         return f"{date}-07-01", "approximate"
     if DAY_RE.match(date):
         return date, precision if precision in ("exact", "approximate") else "exact"
     if date:
-        flag("calibre_reads", "unreadable date", f"{row['title']}: {date!r}, loaded with no date")
+        flag("calibre_books", "unreadable date", f"{row['title']}: {date!r}, loaded with no date")
     return None, "none"
 
 
-def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict], books: list[dict],
-                 decisions: list[dict], reads: list[dict]) -> tuple[list[dict], list[dict]]:
-    """Fold etl/calibre.py's sidecars in (task 1.18, D-73, D-83). A Calibre
-    book that is a workbook book (after book_review.csv's merges) fills a
-    `stated` word count where the workbook has none, and a series where it
-    has none and Calibre's is confirmed or decided. A book only Calibre has
+def series_text(name: str | None, pos) -> str:
+    """A series as the workbook writes one: `Name #2`, or the name alone."""
+    return f"{name} #{pos:g}" if name and pos is not None else (name or "")
+
+
+def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
+                 books: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Fold etl/calibre.py's sidecar in (task 1.18, D-73, D-83). Calibre is the
+    source of truth for a book's data and its reads (D-87). A Calibre book that
+    is a workbook book (after book_review.csv's merges) takes Calibre's word
+    count (`stated`) and series over the workbook's; a book only Calibre has
     is created at `unlisted` (D-86), unless its near spelling still awaits a
-    decision. An accepted read appends a read_events row and makes the status
-    `read` with its date (the projection 1.5 defines); a book already read
-    keeps its read. Returns (read events, the books created)."""
+    decision. A book Calibre has read appends a read_events row and makes the
+    status `read` with its date (the projection 1.5 defines). Each
+    disagreement is reported, never dropped: a workbook count more than 10%
+    off, a different workbook series, Open Library's different series, a
+    second read of one book. Returns (read events, the books created, the
+    series Calibre took a book from)."""
     held = {(key(r["b"]), key(r["b_author"])) for r in review
             if r["reason"] == CALIBRE and not r["decision"]}
-    decided = {}
-    for r in decisions:
-        if r["decision"] not in CALIBRE_REVIEW_DECISIONS:
-            flag("calibre_review", "unknown decision", f"{r['title']} {r['field']}: {r['decision']!r}, left undecided")
-        elif r["decision"]:
-            decided[(key(r["title"]), key(r["author"]), r["field"])] = r
-
-    def find(row) -> dict | None:
-        title, author = idx.book_identity(row["title"], clean(row["author"]))
-        return idx.by_key.get((key(title), key(author)))
-
-    created = []
+    created, events, replaced = [], [], set()
     for row in books:
-        b = find(row)
+        title, author = idx.book_identity(row["title"], clean(row["author"]))
+        b = idx.by_key.get((key(title), key(author)))
         if b is None:
             if (key(row["title"]), key(row["author"])) in held:
                 flag("calibre_books", "calibre book held for review",
@@ -1557,44 +1530,42 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict], bo
                                "finished_on": None, "finished_on_precision": "none",
                                "year_rank": None, "rating": None}
             created.append({"title": row["title"], "author": row["author"], "book_id": b["id"]})
+
         words = as_int(row["words"])
         if words:
-            if b["word_count"] is None:
-                b["word_count"], b["word_count_source"] = words, "stated"
-            elif abs(words - b["word_count"]) > WORD_COUNT_TOLERANCE * b["word_count"]:
-                flag("calibre_books", "calibre word count differs",
-                     f"{b['title']}: the workbook's {b['word_count']} kept, Calibre has {words}")
-        if b["series_id"] is None:
-            name, pos = calibre_series(row, decided)
-            if name:
-                b["series_id"], _ = idx.series_id(name, b["author_id"])
-                b["series_position"] = pos
+            if b["word_count"] and abs(words - b["word_count"]) > WORD_COUNT_TOLERANCE * b["word_count"]:
+                flag("calibre_books", "calibre replaced a word count",
+                     f"{b['title']}: {b['word_count']} -> Calibre's {words}")
+            b["word_count"], b["word_count_source"] = words, "stated"
 
-    events = []
-    for row in reads:
-        if row["decision"] not in CALIBRE_READS_DECISIONS:
-            flag("calibre_reads", "unknown decision", f"{row['title']}: {row['decision']!r}, not loaded")
-            continue
-        if row["decision"] != "accept":
-            continue
-        b = find(row)
-        if b is None:
-            flag("calibre_reads", "calibre read for no book",
-                 f"{row['title']} / {row['author']}: held for review or gone; not loaded")
-            continue
-        prior = status.get(b["id"]) or {}
-        if prior.get("status") == "read":
-            flag("calibre_reads", "calibre read for a book already read",
-                 f"{b['title']}: read {prior['finished_on'] or 'undated'} kept, "
-                 f"Calibre's {row['date_read'] or 'undated'} not loaded")
-            continue
-        on, precision = read_finish(row)
-        events.append({"user_id": "$OWNER", "book_id": b["id"], "finished_on": on,
-                       "finished_on_precision": precision})
-        status[b["id"]] = {"user_id": "$OWNER", "book_id": b["id"], "status": "read",
-                           "finished_on": on, "finished_on_precision": precision,
-                           "year_rank": prior.get("year_rank"), "rating": prior.get("rating")}
-    return events, created
+        name, pos = clean(row["series"]), as_float(row["series_index"])
+        if name:
+            if b["series_id"] and (idx.find_series(name) != b["series_id"] or b["series_position"] != pos):
+                flag("calibre_books", "calibre replaced a series",
+                     f"{b['title']}: {series_text(idx.series[b['series_id']]['name'], b['series_position'])}"
+                     f" -> Calibre's {series_text(name, pos)}")
+                replaced.add(b["series_id"])
+            b["series_id"], _ = idx.series_id(name, b["author_id"])
+            b["series_position"] = pos
+            if row["open_library"]:
+                flag("calibre_books", "open library series differs",
+                     f"{b['title']}: Calibre's {series_text(name, pos)} loaded, "
+                     f"Open Library has {row['open_library']}")
+
+        if row["read"] == "true" or row["date_read"]:
+            prior = status.get(b["id"]) or {}
+            if prior.get("status") == "read":
+                flag("calibre_books", "calibre read for a book already read",
+                     f"{b['title']}: read {prior['finished_on'] or 'undated'} kept, "
+                     f"{row['title']}'s {row['date_read'] or 'undated'} read not loaded")
+                continue
+            on, precision = read_finish(row)
+            events.append({"user_id": "$OWNER", "book_id": b["id"], "finished_on": on,
+                           "finished_on_precision": precision})
+            status[b["id"]] = {"user_id": "$OWNER", "book_id": b["id"], "status": "read",
+                               "finished_on": on, "finished_on_precision": precision,
+                               "year_rank": prior.get("year_rank"), "rating": prior.get("rating")}
+    return events, created, replaced
 
 
 def write_book_review(path: Path, rows: list[dict]) -> None:
@@ -1636,8 +1607,7 @@ def is_number(v) -> bool:
 
 def extract_books(path: Path, out: Path, with_plan: bool = False,
                   book_review: Path | None = None, book_details: Path | None = None,
-                  calibre_books: Path | None = None, calibre_review: Path | None = None,
-                  calibre_reads: Path | None = None) -> None:
+                  calibre_books: Path | None = None) -> None:
     xl = pd.ExcelFile(path)
     print(f"\nbooks <- {path.name}")
     review = load_book_review(book_review)
@@ -1891,9 +1861,18 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
         releases.append({"book_id": new, "release_date": date})
 
     # ---- the Calibre library, after every workbook value (task 1.18) -----
-    read_events, calibre_created = fold_calibre(
-        idx, status, review, read_sidecar(calibre_books, CALIBRE_BOOKS_COLUMNS),
-        read_sidecar(calibre_review, CALIBRE_REVIEW_COLUMNS), read_sidecar(calibre_reads, CALIBRE_READS_COLUMNS))
+    read_events, calibre_created, replaced = fold_calibre(
+        idx, status, review, read_sidecar(calibre_books, CALIBRE_BOOKS_COLUMNS))
+    # A workbook series Calibre took every book from (a misspelling, most
+    # often) is no series: dropped, unless it is followed, which is reported.
+    in_use = {b["series_id"] for b in idx.by_key.values()}
+    for sid in replaced - in_use:
+        if sid in follows["series"]:
+            flag("book_series", "followed series has no books",
+                 f"{idx.series[sid]['name']}: Calibre gave every book of it another series; "
+                 "fix the workbook's Series tab, or the series in Calibre")
+        else:
+            del idx.series[sid]
 
     if book_review:
         write_book_review(book_review, review_book_pairs(idx, review))
@@ -1961,12 +1940,9 @@ def main(argv=None) -> int:
                     help="book_details.csv from etl/enrich_books.py plus hand rows: Open Library "
                          "id, page count, cover URL, and a published year where the workbook has none")
     ap.add_argument("--calibre-books", type=Path, default=None,
-                    help="calibre_books.csv from etl/calibre.py plus hand rows: stated word counts, "
-                         "confirmed series, and the books only Calibre has (created at unlisted)")
-    ap.add_argument("--calibre-review", type=Path, default=None,
-                    help="calibre_review.csv: a decided row (calibre, api) fills that series or index")
-    ap.add_argument("--calibre-reads", type=Path, default=None,
-                    help="calibre_reads.csv: only accepted rows load, as read_events")
+                    help="calibre_books.csv from etl/calibre.py, the source of truth for what it holds "
+                         "(D-87): word counts, series and reads over the workbook's, and the books only "
+                         "Calibre has (created at unlisted); every disagreement goes to unresolved.csv")
     ap.add_argument("--fail-on-cycle", action="store_true",
                     help="exit non-zero when the prereq graph has a cycle, after writing every "
                          "CSV (task 2.11a; START-HERE Step 14's final extract)")
@@ -1986,8 +1962,7 @@ def main(argv=None) -> int:
         old.unlink()
     extract_comics(args.comics, args.out)
     extract_books(args.books, args.out, with_plan=args.with_plan, book_review=args.book_review,
-                  book_details=args.book_details, calibre_books=args.calibre_books,
-                  calibre_review=args.calibre_review, calibre_reads=args.calibre_reads)
+                  book_details=args.book_details, calibre_books=args.calibre_books)
 
     write(args.out, "unresolved", UNRESOLVED, ["table", "reason", "detail"])
     print(f"\n{len(UNRESOLVED)} rows need a human look — see {args.out}/unresolved.csv")

@@ -17,7 +17,7 @@
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "test:db:reset": "node scripts/test-db.mjs",
-    "extract": "py etl/extract.py --comics etl/data/Comics.xlsx --books etl/data/Books.xlsx --out seed --volume-map etl/data/volume_map.csv --cover-dates etl/data/cover_dates.csv --why-review etl/data/why_review.csv --label-review etl/data/label_review.csv --issue-details etl/data/issue_details.csv --issue-credits etl/data/issue_credits.csv --creator-aliases etl/data/creator_aliases.csv --creator-aliases etl/data/creator_review.csv --book-review etl/data/book_review.csv --book-details etl/data/book_details.csv --calibre-books etl/data/calibre_books.csv --calibre-review etl/data/calibre_review.csv --calibre-reads etl/data/calibre_reads.csv",
+    "extract": "py etl/extract.py --comics etl/data/Comics.xlsx --books etl/data/Books.xlsx --out seed --volume-map etl/data/volume_map.csv --cover-dates etl/data/cover_dates.csv --why-review etl/data/why_review.csv --label-review etl/data/label_review.csv --issue-details etl/data/issue_details.csv --issue-credits etl/data/issue_credits.csv --creator-aliases etl/data/creator_aliases.csv --creator-aliases etl/data/creator_review.csv --book-review etl/data/book_review.csv --book-details etl/data/book_details.csv --calibre-books etl/data/calibre_books.csv",
     "enrich": "py etl/enrich_comics.py",
     "enrich:details": "py etl/enrich_comics.py --details",
     "enrich:refresh": "py etl/enrich_comics.py --details --refresh",

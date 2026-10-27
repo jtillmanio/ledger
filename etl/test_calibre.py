@@ -165,8 +165,6 @@ class Case(unittest.TestCase):
         self.data.mkdir()
         self.seed.mkdir()
         self.books_csv = self.data / "calibre_books.csv"
-        self.review_csv = self.data / "calibre_review.csv"
-        self.reads_csv = self.data / "calibre_reads.csv"
         self.book_review = self.data / "book_review.csv"
         self.workbook = build_books(MASTER)
         self.fetched: list[str] = []
@@ -180,16 +178,16 @@ class Case(unittest.TestCase):
         title = dict(eb.urllib.parse.parse_qsl(url.split("?", 1)[1]))["title"]
         return json.dumps(RESPONSES.get(title, page()))
 
-    def calibre(self, *extra, library=True):
+    def argv(self, *extra, library=True) -> list[str]:
         argv = ["--env", str(self.dir / "absent.env"), "--seed", str(self.seed),
-                "--calibre-books", str(self.books_csv), "--calibre-review", str(self.review_csv),
-                "--calibre-reads", str(self.reads_csv), "--book-review", str(self.book_review),
+                "--calibre-books", str(self.books_csv), "--book-review", str(self.book_review),
                 "--cache", str(self.dir / "cache.sqlite"), *extra]
-        if library:
-            argv = ["--library", str(self.lib), *argv]
+        return ["--library", str(self.lib), *argv] if library else argv
+
+    def calibre(self, *extra, library=True):
         buf = io.StringIO()
         with mock.patch.object(eb.OpenLibrary, "_fetch", self.fake_fetch), redirect_stdout(buf):
-            code = cal.main(argv)
+            code = cal.main(self.argv(*extra, library=library))
         self.output = buf.getvalue()
         return code
 
@@ -197,8 +195,7 @@ class Case(unittest.TestCase):
         ex.UNRESOLVED.clear()
         with redirect_stdout(io.StringIO()):
             ex.extract_books(self.workbook, self.seed, book_review=self.book_review,
-                             calibre_books=self.books_csv, calibre_review=self.review_csv,
-                             calibre_reads=self.reads_csv)
+                             calibre_books=self.books_csv)
         self.unresolved = list(ex.UNRESOLVED)
 
     def round(self, *extra):
@@ -238,23 +235,30 @@ class Case(unittest.TestCase):
         names = {s["id"]: s["name"] for s in self.seed_rows("book_series")}
         return names.get(b["series_id"]), b["series_position"]
 
+    def calibre_row(self, title: str) -> dict:
+        return next(r for r in self.rows(self.books_csv) if r["title"] == title)
+
+    def reported(self, reason: str) -> list[str]:
+        return [u["detail"] for u in self.unresolved if u["reason"] == reason]
+
     def reasons(self) -> list[str]:
         return [u["reason"] for u in self.unresolved]
 
-    def decide(self, path: Path, decision: str, **match) -> None:
-        rows = self.rows(path)
-        hit = [r for r in rows if all(r[k] == v for k, v in match.items())]
+    def decide_calibre_pair(self, decision: str, keep: str | None = None) -> None:
+        rows = self.rows(self.book_review)
+        hit = [r for r in rows if r["reason"] == "calibre"]
         self.assertEqual(len(hit), 1, rows)
         hit[0]["decision"] = decision
-        self.write_rows(path, rows)
+        if keep is not None:
+            hit[0]["keep"] = keep
+        self.write_rows(self.book_review, rows)
 
     def sidecars(self) -> dict[str, bytes]:
-        return {p.name: p.read_bytes() for p in (self.books_csv, self.review_csv, self.reads_csv,
-                                                  self.book_review) if p.exists()}
+        return {p.name: p.read_bytes() for p in (self.books_csv, self.book_review) if p.exists()}
 
 
 # --------------------------------------------------------------------------
-# AC-1: the roadmap Check
+# AC-1: the roadmap Check (amended 2026-10-27, D-87)
 # --------------------------------------------------------------------------
 
 class Check(Case):
@@ -264,79 +268,69 @@ class Check(Case):
     def library(self, books):
         return build_library(self.lib, books, read=None, kind=None)
 
-    def test_exact_match_fills_a_stated_count_and_leaves_a_workbook_count_alone(self):
+    def test_an_exact_match_fills_a_count_and_replaces_a_workbook_count_reporting_it(self):
         self.library([book("The Way of Kings", "Brandon Sanderson", words=383389),
-                                 book("Mistborn", "Brandon Sanderson", words=220000)])
+                      book("Mistborn", "Brandon Sanderson", words=300000)])
         self.round()
         wok = self.book_by_title("The Way of Kings")
         self.assertEqual((wok["word_count"], wok["word_count_source"]), ("383389", "stated"))
         mistborn = self.book_by_title("Mistborn")
-        self.assertEqual((mistborn["word_count"], mistborn["word_count_source"]), ("214000", "stated"))
+        self.assertEqual((mistborn["word_count"], mistborn["word_count_source"]), ("300000", "stated"))
+        self.assertEqual(self.reported("calibre replaced a word count"),
+                         ["Mistborn: 214000 -> Calibre's 300000"])
 
     def test_a_series_open_library_agrees_with_fills(self):
-        self.library([book("The Way of Kings", "Brandon Sanderson",
-                                      series="The Stormlight Archive", index=1.0),
-                                 book("Mistborn", "Brandon Sanderson")])
+        self.library([book("The Way of Kings", "Brandon Sanderson", series="The Stormlight Archive", index=1.0),
+                      book("Mistborn", "Brandon Sanderson")])
         self.round()
         self.assertEqual(self.series_of("The Way of Kings"), ("The Stormlight Archive", "1.0"))
-        row = next(r for r in self.rows(self.books_csv) if r["title"] == "The Way of Kings")
-        self.assertEqual(row["confirmed"], "series;series_index")
-        self.assertEqual(self.rows(self.review_csv), [])
+        row = self.calibre_row("The Way of Kings")
+        self.assertEqual((row["confirmed"], row["open_library"]), ("series;series_index", ""))
+        self.assertEqual(self.reported("open library series differs"), [])
 
-    def test_a_series_open_library_contradicts_is_a_review_row_and_fills_nothing(self):
+    def test_a_series_open_library_contradicts_still_fills_and_is_reported(self):
         self.library([book("The Way of Kings", "Brandon Sanderson"),
-                                 book("Mistborn", "Brandon Sanderson",
-                                      series="The Final Empire Trilogy", index=1.0)])
+                      book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy", index=1.0)])
         self.round()
-        self.assertEqual(self.rows(self.review_csv), [
-            {"title": "Mistborn", "author": "Brandon Sanderson", "field": "series",
-             "calibre": "The Final Empire Trilogy #1", "api": "Mistborn Saga #1", "decision": ""}])
-        self.assertEqual(self.series_of("Mistborn"), (None, ""))
+        self.assertEqual(self.series_of("Mistborn"), ("The Final Empire Trilogy", "1.0"))
+        self.assertEqual(self.calibre_row("Mistborn")["open_library"], "Mistborn Saga #1")
+        self.assertEqual(self.reported("open library series differs"),
+                         ["Mistborn: Calibre's The Final Empire Trilogy #1 loaded, Open Library has Mistborn Saga #1"])
 
-    def test_a_near_spelling_writes_a_book_review_row(self):
+    def test_a_near_spelling_writes_a_book_review_row_keeping_calibres(self):
         self.library([book("The Way of Kings: Book One", "Brandon Sanderson"),
-                                 book("Mistborn", "Brandon Sanderson")])
+                      book("Mistborn", "Brandon Sanderson")])
         self.round()
         rows = [r for r in self.rows(self.book_review) if r["reason"] == "calibre"]
         self.assertEqual(len(rows), 1, rows)
-        self.assertEqual({k: rows[0][k] for k in ("kind", "a", "b", "a_author", "b_author", "decision")},
+        self.assertEqual({k: rows[0][k] for k in ("kind", "a", "b", "a_author", "b_author", "keep", "decision")},
                          {"kind": "book", "a": "The Way of Kings", "b": "The Way of Kings: Book One",
                           "a_author": "Brandon Sanderson", "b_author": "Brandon Sanderson",
-                          "decision": ""})
+                          "keep": "The Way of Kings: Book One", "decision": ""})
         self.assertGreaterEqual(float(rows[0]["similarity"]), ex.SIMILAR_AT)
         # Held until the owner decides: no second Way of Kings.
         self.assertEqual(sorted(b["title"] for b in self.seed_rows("books")), ["Mistborn", "The Way of Kings"])
         self.assertIn("calibre book held for review", self.reasons())
 
     def test_an_unmatched_book_is_one_unlisted_book_and_a_second_run_changes_no_sidecar(self):
-        self.library([
-            book("Warbreaker", "Brandon Sanderson", words=190000, read=1,
-                 date="2022-05-08 04:00:00+00:00", tags=("Fantasy",), isbn="9780765320308"),
-            book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy", index=1.0)])
+        self.library([book("Warbreaker", "Brandon Sanderson", words=190000, tags=("Fantasy",),
+                           isbn="9780765320308"),
+                      book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy", index=1.0)])
         self.round()
         self.assertEqual(self.book_by_title("Warbreaker")["word_count"], "190000")
         self.assertEqual(self.status_of("Warbreaker")["status"], "unlisted")
         before = self.sidecars()
-        self.assertEqual(set(before), {"calibre_books.csv", "calibre_review.csv", "calibre_reads.csv",
-                                       "book_review.csv"})
+        self.assertEqual(set(before), {"calibre_books.csv", "book_review.csv"})
         self.assertEqual(self.calibre(), 0)
         self.extract()
         self.assertEqual(self.sidecars(), before)
+        self.assertIn("no change in Calibre since the last run", self.output)
         self.assertEqual([b["title"] for b in self.seed_rows("books")].count("Warbreaker"), 1)
 
-    def test_only_an_accepted_read_loads(self):
-        self.library([book("The Way of Kings", "Brandon Sanderson", read=1,
-                                      date="2021-03-20 04:00:00+00:00"),
-                                 book("Mistborn", "Brandon Sanderson")])
+    def test_a_book_calibre_has_read_loads_one_read_and_one_it_hasnt_loads_none(self):
+        self.library([book("The Way of Kings", "Brandon Sanderson", date="2021-03-20 04:00:00+00:00"),
+                      book("Mistborn", "Brandon Sanderson")])
         self.round()
-        reads = self.rows(self.reads_csv)
-        self.assertEqual(reads, [{"title": "The Way of Kings", "author": "Brandon Sanderson", "read": "",
-                                  "date_read": "2021-03-20", "precision": "exact", "decision": ""}])
-        self.assertEqual(self.seed_rows("read_events"), [])
-        self.assertEqual(self.status_of("The Way of Kings")["status"], "to_read")
-
-        self.decide(self.reads_csv, "accept", title="The Way of Kings")
-        self.extract()
         bid = self.book_by_title("The Way of Kings")["id"]
         self.assertEqual(self.seed_rows("read_events"), [
             {"user_id": "$OWNER", "book_id": bid, "finished_on": "2021-03-20",
@@ -344,16 +338,11 @@ class Check(Case):
         status = self.status_of("The Way of Kings")
         self.assertEqual((status["status"], status["finished_on"], status["finished_on_precision"]),
                          ("read", "2021-03-20", "exact"))
-
-        self.decide(self.reads_csv, "reject", title="The Way of Kings")
-        self.extract()
-        self.assertEqual(self.seed_rows("read_events"), [])
-        self.assertEqual(self.status_of("The Way of Kings")["status"], "to_read")
+        self.assertEqual(self.status_of("Mistborn")["status"], "to_read")
 
     def test_the_library_file_is_never_changed(self):
         db = self.library([book("The Way of Kings", "Brandon Sanderson", words=383389),
-                                      book("Mistborn", "Brandon Sanderson", read=1,
-                                           date="2021-03-20 04:00:00+00:00")])
+                           book("Mistborn", "Brandon Sanderson", date="2021-03-20 04:00:00+00:00")])
         os.utime(db, ns=(1_600_000_000_000_000_000, 1_600_000_000_000_000_000))
         data, mtime = db.read_bytes(), db.stat().st_mtime_ns
         self.round()
@@ -379,8 +368,7 @@ class Options(Case):
     def test_the_library_comes_from_the_env_file(self):
         build_library(self.lib, self.TWO)
         self.extract()
-        env = self.dir / "absent.env"
-        env.write_text(f'CALIBRE_LIBRARY="{self.lib}"\n', encoding="utf-8")
+        (self.dir / "absent.env").write_text(f'CALIBRE_LIBRARY="{self.lib}"\n', encoding="utf-8")
         with mock.patch.dict(os.environ, {}, clear=False):
             os.environ.pop("CALIBRE_LIBRARY", None)
             self.assertEqual(self.calibre(library=False), 0)
@@ -419,6 +407,8 @@ class Options(Case):
     def test_dry_run_reports_the_match_rate_and_writes_nothing(self):
         build_library(self.lib, self.TWO + [book("The Way of Kings: Book One", "Brandon Sanderson")])
         self.round()
+        build_library(self.lib, self.TWO + [book("The Way of Kings: Book One", "Brandon Sanderson"),
+                                            book("Elantris", "Brandon Sanderson")])
         before = {p: p.read_bytes() for p in [*self.data.iterdir(), *self.seed.iterdir()]}
         self.fetched.clear()
         self.assertEqual(self.calibre("--dry-run"), 0)
@@ -427,168 +417,159 @@ class Options(Case):
         self.assertIn("match rate", self.output)
         self.assertRegex(self.output, r"(?m)^\s*matched\s+1\b")
         self.assertRegex(self.output, r"(?m)^\s*proposed\s+1\b")
-        self.assertRegex(self.output, r"(?m)^\s*unmatched\s+1\b")
+        self.assertRegex(self.output, r"(?m)^\s*unmatched\s+2\b")
+        # What changed is shown too, and still nothing is written.
+        self.assertIn("added    Elantris", self.output)
 
     def test_dry_run_on_a_fresh_checkout_creates_no_sidecar(self):
         build_library(self.lib, self.TWO)
         self.extract()
         self.assertEqual(self.calibre("--dry-run"), 0)
-        for path in (self.books_csv, self.review_csv, self.reads_csv):
-            self.assertFalse(path.exists(), path.name)
+        self.assertFalse(self.books_csv.exists())
 
 
 # --------------------------------------------------------------------------
-# AC-3: re-runnable
+# AC-3: re-runnable, Calibre the source of truth, every disagreement reported
 # --------------------------------------------------------------------------
 
 class Rerun(Case):
+    FIRST = [book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy", words=220000,
+                  read=1, date="2021-03-20 04:00:00+00:00"),
+             book("The Way of Kings", "Brandon Sanderson", words=383389)]
 
-    def test_a_hand_row_is_never_rewritten(self):
-        build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson", words=383389),
+    def test_a_book_added_between_runs_appends_exactly_its_own_row(self):
+        build_library(self.lib, self.FIRST)
+        self.round()
+        before = self.books_csv.read_text(encoding="utf-8")
+        build_library(self.lib, self.FIRST + [book("Elantris", "Brandon Sanderson", series="Elantris",
+                                                   words=200000, read=1, date="2020-01-05 05:00:00+00:00")])
+        self.round()
+        text = self.books_csv.read_text(encoding="utf-8")
+        self.assertTrue(text.startswith(before))
+        added = list(csv.reader(io.StringIO(text[len(before):])))
+        self.assertEqual([a[:2] for a in added], [["Elantris", "Brandon Sanderson"]])
+        self.assertIn("1 added, 0 removed, 0 renamed, 0 changed", self.output)
+        self.assertIn("added    Elantris — Brandon Sanderson", self.output)
+
+    def test_a_book_changed_in_calibre_is_rewritten_in_place_and_reported(self):
+        build_library(self.lib, self.FIRST)
+        self.round()
+        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="Mistborn Era One", words=230000,
+                                      read=1, date="2021-04-02 04:00:00+00:00"),
+                                 book("The Way of Kings", "Brandon Sanderson", words=383389)])
+        self.round()
+        self.assertEqual([r["title"] for r in self.rows(self.books_csv)], ["Mistborn", "The Way of Kings"])
+        row = self.calibre_row("Mistborn")
+        self.assertEqual((row["words"], row["series"], row["date_read"]), ("230000", "Mistborn Era One", "2021-04-02"))
+        self.assertIn("changed  Mistborn — Brandon Sanderson: words 220000 -> 230000; "
+                      "series The Final Empire Trilogy -> Mistborn Era One; "
+                      "date_read 2021-03-20 -> 2021-04-02", self.output)
+        # Calibre's new values load.
+        self.assertEqual(self.series_of("Mistborn"), ("Mistborn Era One", "1.0"))
+        self.assertEqual(self.book_by_title("Mistborn")["word_count"], "230000")
+        self.assertEqual(self.status_of("Mistborn")["finished_on"], "2021-04-02")
+
+    def test_a_book_removed_from_calibre_loses_its_row_and_is_reported(self):
+        build_library(self.lib, [book("Warbreaker", "Brandon Sanderson", read=1),
                                  book("Mistborn", "Brandon Sanderson")])
         self.round()
-        rows = self.rows(self.books_csv)
-        wok = next(r for r in rows if r["title"] == "The Way of Kings")
-        wok.update(words="400000", series="The Stormlight Archive", series_index="1", source="hand")
-        self.write_rows(self.books_csv, rows)
-        hand = dict(wok)
+        self.assertEqual(self.status_of("Warbreaker")["status"], "read")
+        build_library(self.lib, [book("Mistborn", "Brandon Sanderson")])
         self.round()
-        self.round()
-        self.assertEqual(next(r for r in self.rows(self.books_csv) if r["title"] == "The Way of Kings"), hand)
-        # A hand row is trusted whole: its series needs no Open Library answer.
-        self.assertEqual(self.book_by_title("The Way of Kings")["word_count"], "400000")
-        self.assertEqual(self.series_of("The Way of Kings"), ("The Stormlight Archive", "1.0"))
+        self.assertEqual([r["title"] for r in self.rows(self.books_csv)], ["Mistborn"])
+        self.assertIn("removed  Warbreaker — Brandon Sanderson", self.output)
+        self.assertNotIn("Warbreaker", [b["title"] for b in self.seed_rows("books")])
+        self.assertEqual(self.seed_rows("read_events"), [])
 
-    def test_decided_review_and_read_rows_are_never_rewritten(self):
-        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy",
-                                      read=1, date="2021-03-20 04:00:00+00:00"),
+    def test_a_rename_in_calibre_is_reported_as_one(self):
+        build_library(self.lib, [book("Warbreaker", "Brandon Sanderson"), book("Mistborn", "Brandon Sanderson")])
+        self.round()
+        build_library(self.lib, [book("Warbreaker (Tenth Anniversary)", "Brandon Sanderson"),
+                                 book("Mistborn", "Brandon Sanderson")])
+        self.round()
+        self.assertIn("renamed? Warbreaker -> Warbreaker (Tenth Anniversary) — Brandon Sanderson", self.output)
+        self.assertIn("0 added, 0 removed, 1 renamed, 0 changed", self.output)
+
+    def test_a_count_within_ten_percent_replaces_the_workbooks_quietly(self):
+        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", words=220000),
                                  book("The Way of Kings", "Brandon Sanderson")])
         self.round()
-        self.decide(self.review_csv, "neither", title="Mistborn")
-        reads = self.rows(self.reads_csv)
-        reads[0].update(date_read="2021-03-01", precision="approximate", decision="accept")
-        self.write_rows(self.reads_csv, reads)
-        decided = (self.review_csv.read_bytes(), self.reads_csv.read_bytes())
-        # Calibre changes under both decided rows.
-        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="Mistborn Era One",
-                                      read=1, date="2021-04-02 04:00:00+00:00"),
-                                 book("The Way of Kings", "Brandon Sanderson")])
-        self.round()
-        self.assertEqual((self.review_csv.read_bytes(), self.reads_csv.read_bytes()), decided)
-        self.assertEqual(self.series_of("Mistborn"), (None, ""))
-        self.assertEqual(self.status_of("Mistborn")["finished_on"], "2021-03-01")
+        self.assertEqual(self.book_by_title("Mistborn")["word_count"], "220000")
+        self.assertNotIn("calibre replaced a word count", self.reasons())
 
-    def test_a_book_added_between_runs_appends_exactly_its_own_rows(self):
-        first = [book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy", words=220000,
-                      read=1, date="2021-03-20 04:00:00+00:00"),
-                 book("The Way of Kings", "Brandon Sanderson", words=383389)]
-        build_library(self.lib, first)
+    def test_a_different_workbook_series_is_replaced_and_reported(self):
+        self.workbook = build_books([("Mistborn", "Brandon Sanderson", "Mistborn #1", "Fantasy", None)])
+        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy", index=1.0),
+                                 book("Warbreaker", "Brandon Sanderson")])
         self.round()
-        before = {p.name: p.read_text(encoding="utf-8") for p in (self.books_csv, self.review_csv, self.reads_csv)}
-        build_library(self.lib, first + [book("Elantris", "Brandon Sanderson", series="Elantris", words=200000,
-                                              read=1, date="2020-01-05 05:00:00+00:00")])
-        self.round()
-        for path in (self.books_csv, self.review_csv, self.reads_csv):
-            text = path.read_text(encoding="utf-8")
-            self.assertTrue(text.startswith(before[path.name]), path.name)
-            added = list(csv.reader(io.StringIO(text[len(before[path.name]):])))
-            self.assertEqual(len(added), 1, (path.name, added))
-            self.assertEqual(added[0][:2], ["Elantris", "Brandon Sanderson"])
-
-    def test_a_workbook_count_more_than_ten_percent_off_is_reported_and_kept(self):
-        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", words=300000),
-                                 book("The Way of Kings", "Brandon Sanderson")])
-        self.round()
-        self.assertEqual(self.book_by_title("Mistborn")["word_count"], "214000")
-        hits = [u for u in self.unresolved if u["reason"] == "calibre word count differs"]
-        self.assertEqual(len(hits), 1, self.unresolved)
-        self.assertIn("214000", hits[0]["detail"])
-        self.assertIn("300000", hits[0]["detail"])
-
-    def test_a_count_within_ten_percent_is_not_reported(self):
-        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", words=235000),
-                                 book("The Way of Kings", "Brandon Sanderson")])
-        self.round()
-        self.assertNotIn("calibre word count differs", self.reasons())
-
-    def test_decision_calibre_fills_the_series_from_calibre(self):
-        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy",
-                                      index=1.0),
-                                 book("The Way of Kings", "Brandon Sanderson")])
-        self.round()
-        self.decide(self.review_csv, "calibre", title="Mistborn", field="series")
-        self.extract()
         self.assertEqual(self.series_of("Mistborn"), ("The Final Empire Trilogy", "1.0"))
+        self.assertEqual(self.reported("calibre replaced a series"),
+                         ["Mistborn: Mistborn #1 -> Calibre's The Final Empire Trilogy #1"])
 
-    def test_decision_api_fills_the_series_from_open_library(self):
-        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy"),
-                                 book("The Way of Kings", "Brandon Sanderson")])
+    def test_a_series_calibre_emptied_is_dropped_unless_followed(self):
+        """Every book of the workbook's `Xelee Sequence` takes Calibre's
+        `Xeelee Sequence`: the misspelling leaves book_series. A followed one
+        stays, and is reported."""
+        self.workbook = build_books([("Raft", "Stephen Baxter", "Xelee Sequence #1", "SF", None)])
+        build_library(self.lib, [book("Raft", "Stephen Baxter", series="Xeelee Sequence", index=1.0),
+                                 book("Mistborn", "Brandon Sanderson")])
         self.round()
-        self.decide(self.review_csv, "api", title="Mistborn", field="series")
-        self.extract()
-        self.assertEqual(self.series_of("Mistborn"), ("Mistborn Saga", "1.0"))
+        self.assertEqual([s["name"] for s in self.seed_rows("book_series")], ["Xeelee Sequence"])
 
-    def test_an_index_open_library_disagrees_with_is_its_own_review_row(self):
+        self.workbook = build_books([("Raft", "Stephen Baxter", "Xelee Sequence #1", "SF", None)],
+                                    series=[("Xelee Sequence", 4)])
+        self.round()
+        self.assertEqual(sorted(s["name"] for s in self.seed_rows("book_series")),
+                         ["Xeelee Sequence", "Xelee Sequence"])
+        self.assertEqual(self.reported("followed series has no books"),
+                         ["Xelee Sequence: Calibre gave every book of it another series; fix the "
+                          "workbook's Series tab, or the series in Calibre"])
+
+    def test_the_same_workbook_series_is_not_reported(self):
+        self.workbook = build_books([("Mistborn", "Brandon Sanderson", "Mistborn Saga #1", "Fantasy", None)])
+        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="Mistborn Saga", index=1.0),
+                                 book("Warbreaker", "Brandon Sanderson")])
+        self.round()
+        self.assertEqual(self.series_of("Mistborn"), ("Mistborn Saga", "1.0"))
+        self.assertNotIn("calibre replaced a series", self.reasons())
+
+    def test_an_index_open_library_disagrees_with_fills_calibres_and_is_reported(self):
         build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson",
                                       series="The Stormlight Archive", index=2.0),
                                  book("Mistborn", "Brandon Sanderson")])
         self.round()
-        self.assertEqual([(r["field"], r["calibre"], r["api"]) for r in self.rows(self.review_csv)],
-                         [("series_index", "2", "1")])
-        # The name is confirmed, so it fills; the index waits.
-        self.assertEqual(self.series_of("The Way of Kings"), ("The Stormlight Archive", ""))
-        self.decide(self.review_csv, "calibre", field="series_index")
-        self.extract()
         self.assertEqual(self.series_of("The Way of Kings"), ("The Stormlight Archive", "2.0"))
+        self.assertEqual(self.calibre_row("The Way of Kings")["open_library"], "The Stormlight Archive #1")
+        self.assertEqual(len(self.reported("open library series differs")), 1)
 
-    def test_no_open_library_series_is_a_review_row_with_no_api_value(self):
+    def test_no_open_library_series_fills_and_reports_nothing(self):
         build_library(self.lib, [book("Warbreaker", "Brandon Sanderson", series="Nalthis"),
                                  book("Mistborn", "Brandon Sanderson")])
         self.round()
-        self.assertEqual([(r["title"], r["field"], r["calibre"], r["api"]) for r in self.rows(self.review_csv)],
-                         [("Warbreaker", "series", "Nalthis #1", "")])
-        self.assertEqual(self.series_of("Warbreaker"), (None, ""))
+        self.assertEqual(self.series_of("Warbreaker"), ("Nalthis", "1.0"))
+        self.assertEqual(self.calibre_row("Warbreaker")["open_library"], "")
+        self.assertNotIn("open library series differs", self.reasons())
 
-    def test_a_workbook_series_is_never_checked_or_replaced(self):
-        self.workbook = build_books([("Mistborn", "Brandon Sanderson", "Mistborn #1", "Fantasy", None)])
-        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy"),
-                                 book("Warbreaker", "Brandon Sanderson")])
-        self.round()
-        self.assertEqual(self.rows(self.review_csv), [])
-        self.assertEqual(self.series_of("Mistborn"), ("Mistborn", "1.0"))
-
-    def test_a_merge_decision_folds_the_near_spelling_into_the_workbook_book(self):
+    def test_a_merge_takes_calibres_spelling_and_folds_the_book_in(self):
         build_library(self.lib, [book("The Way of Kings: Book One", "Brandon Sanderson", words=383389),
                                  book("Mistborn", "Brandon Sanderson")])
         self.round()
-        rows = self.rows(self.book_review)
-        hit = next(r for r in rows if r["reason"] == "calibre")
-        hit.update(decision="merge", keep="The Way of Kings")
-        self.write_rows(self.book_review, rows)
+        self.decide_calibre_pair("merge")
         self.round()
-        self.assertEqual(self.book_by_title("The Way of Kings")["word_count"], "383389")
+        self.assertNotIn("The Way of Kings", [b["title"] for b in self.seed_rows("books")])
+        self.assertEqual(self.book_by_title("The Way of Kings: Book One")["word_count"], "383389")
+        self.assertEqual(self.status_of("The Way of Kings: Book One")["status"], "to_read")
         self.assertRegex(self.output, r"(?m)^\s*matched\s+2\b")
 
     def test_a_separate_decision_creates_the_calibre_book(self):
         build_library(self.lib, [book("The Way of Kings: Book One", "Brandon Sanderson"),
                                  book("Mistborn", "Brandon Sanderson")])
         self.round()
-        rows = self.rows(self.book_review)
-        next(r for r in rows if r["reason"] == "calibre")["decision"] = "separate"
-        self.write_rows(self.book_review, rows)
+        self.decide_calibre_pair("separate")
         self.round()
         self.assertEqual(self.status_of("The Way of Kings: Book One")["status"], "unlisted")
+        self.assertEqual(self.status_of("The Way of Kings")["status"], "to_read")
         self.assertEqual(len([r for r in self.rows(self.book_review) if r["reason"] == "calibre"]), 1)
-
-    def test_a_book_gone_from_calibre_loses_its_calibre_rows(self):
-        build_library(self.lib, [book("Warbreaker", "Brandon Sanderson", read=1),
-                                 book("Mistborn", "Brandon Sanderson")])
-        self.round()
-        build_library(self.lib, [book("Mistborn", "Brandon Sanderson")])
-        self.round()
-        self.assertEqual([r["title"] for r in self.rows(self.books_csv)], ["Mistborn"])
-        self.assertEqual(self.rows(self.reads_csv), [])
-        self.assertNotIn("Warbreaker", [b["title"] for b in self.seed_rows("books")])
 
 
 # --------------------------------------------------------------------------
@@ -596,12 +577,6 @@ class Rerun(Case):
 # --------------------------------------------------------------------------
 
 class Reads(Case):
-
-    def accept_all(self):
-        rows = self.rows(self.reads_csv)
-        for r in rows:
-            r["decision"] = "accept"
-        self.write_rows(self.reads_csv, rows)
 
     def test_a_book_already_read_gets_no_second_read(self):
         """Two Calibre records of one book: the near spelling is merged into
@@ -611,12 +586,8 @@ class Reads(Case):
             book("The Way of Kings", "Brandon Sanderson", read=1, date="2021-03-20 04:00:00+00:00"),
             book("The Way of Kings: Book One", "Brandon Sanderson", read=1, date="2023-08-02 04:00:00+00:00")])
         self.round()
-        rows = self.rows(self.book_review)
-        next(r for r in rows if r["reason"] == "calibre").update(decision="merge", keep="The Way of Kings")
-        self.write_rows(self.book_review, rows)
+        self.decide_calibre_pair("merge", keep="The Way of Kings")
         self.round()
-        self.accept_all()
-        self.extract()
         bid = self.book_by_title("The Way of Kings")["id"]
         events = [e for e in self.seed_rows("read_events") if e["book_id"] == bid]
         self.assertEqual([e["finished_on"] for e in events], ["2021-03-20"])
@@ -627,21 +598,19 @@ class Reads(Case):
                                       date="2019-01-01 05:00:00+00:00"),
                                  book("Mistborn", "Brandon Sanderson")], date_format="yyyy")
         self.round()
-        self.assertEqual([(r["date_read"], r["precision"]) for r in self.rows(self.reads_csv)],
-                         [("2019", "approximate")])
-        self.accept_all()
-        self.extract()
+        row = self.calibre_row("Warbreaker")
+        self.assertEqual((row["date_read"], row["precision"]), ("2019", "approximate"))
         event = self.seed_rows("read_events")[0]
         self.assertEqual((event["finished_on"], event["finished_on_precision"]), ("2019-07-01", "approximate"))
 
     def test_a_month_format_keeps_the_stored_day_as_approximate(self):
-        """The owner's `MMM yyyy` column (decided at the plan gate)."""
+        """The owner's `MMM yyyy` column (D-88)."""
         build_library(self.lib, [book("Warbreaker", "Brandon Sanderson", read=1,
                                       date="2022-05-08 04:00:00+00:00"),
                                  book("Mistborn", "Brandon Sanderson")], date_format="MMM yyyy")
         self.round()
-        self.assertEqual([(r["date_read"], r["precision"]) for r in self.rows(self.reads_csv)],
-                         [("2022-05-08", "approximate")])
+        event = self.seed_rows("read_events")[0]
+        self.assertEqual((event["finished_on"], event["finished_on_precision"]), ("2022-05-08", "approximate"))
 
     def test_a_date_is_its_eastern_day(self):
         """Calibre stores UTC; 03:00 UTC on the 9th is the evening of the 8th in New York (D-67)."""
@@ -650,24 +619,20 @@ class Reads(Case):
                                  book("Mistborn", "Brandon Sanderson", read=1,
                                       date="0101-01-01 00:00:00+00:00")])
         self.round()
-        self.assertEqual({r["title"]: (r["date_read"], r["precision"]) for r in self.rows(self.reads_csv)},
+        self.assertEqual({r["title"]: (r["date_read"], r["precision"]) for r in self.rows(self.books_csv)},
                          {"Warbreaker": ("2022-05-08", "exact"), "Mistborn": ("", "none")})
 
-    def test_a_created_book_with_an_accepted_read_loads_read_with_its_date(self):
+    def test_a_created_book_calibre_has_read_loads_read_with_its_date(self):
         build_library(self.lib, [book("Warbreaker", "Brandon Sanderson", read=1,
                                       date="2022-05-08 04:00:00+00:00"),
                                  book("Elantris", "Brandon Sanderson")])
         self.round()
-        self.accept_all()
-        self.extract()
         status = self.status_of("Warbreaker")
         self.assertEqual((status["status"], status["finished_on"], status["finished_on_precision"]),
                          ("read", "2022-05-08", "exact"))
-        self.assertEqual(self.status_of("Elantris")["status"], "unlisted")
 
-    def test_a_created_book_with_no_accepted_read_loads_unlisted(self):
-        build_library(self.lib, [book("Warbreaker", "Brandon Sanderson", read=1,
-                                      date="2022-05-08 04:00:00+00:00"),
+    def test_a_created_book_calibre_hasnt_read_loads_unlisted(self):
+        build_library(self.lib, [book("Warbreaker", "Brandon Sanderson", read=0),
                                  book("Elantris", "Brandon Sanderson")])
         self.round()
         self.assertEqual(self.status_of("Warbreaker")["status"], "unlisted")
@@ -678,8 +643,6 @@ class Reads(Case):
         build_library(self.lib, [book("Warbreaker", "Brandon Sanderson", read=1),
                                  book("Mistborn", "Brandon Sanderson")])
         self.round()
-        self.accept_all()
-        self.extract()
         event = self.seed_rows("read_events")[0]
         self.assertEqual((event["finished_on"], event["finished_on_precision"]), ("", "none"))
 
@@ -720,30 +683,27 @@ class Shape(Case):
                                       tags=("Fantasy", "Standalone")),
                                  book("Mistborn", "Brandon Sanderson")])
         self.round()
-        row = next(r for r in self.rows(self.books_csv) if r["title"] == "Warbreaker")
+        row = self.calibre_row("Warbreaker")
         self.assertEqual((row["isbn"], row["tags"]), ("9780765320308", "Fantasy; Standalone"))
         self.assertNotIn("comments", row)
         self.assertNotIn("About Warbreaker", self.books_csv.read_text(encoding="utf-8"))
 
-    def test_an_isbn_open_library_lists_is_confirmed_and_never_a_review_row(self):
+    def test_an_isbn_open_library_lists_is_confirmed(self):
         build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson", series="The Stormlight Archive",
                                       isbn="9780765326355"),
                                  book("Mistborn", "Brandon Sanderson", isbn="9999999999999",
                                       series="Mistborn Saga")])
         self.round()
-        confirmed = {r["title"]: r["confirmed"] for r in self.rows(self.books_csv)}
-        self.assertEqual(confirmed, {"The Way of Kings": "series;series_index;isbn",
-                                     "Mistborn": "series;series_index"})
-        self.assertNotIn("isbn", [r["field"] for r in self.rows(self.review_csv)])
+        self.assertEqual({r["title"]: r["confirmed"] for r in self.rows(self.books_csv)},
+                         {"The Way of Kings": "series;series_index;isbn", "Mistborn": "series;series_index"})
 
     def test_a_comic_is_skipped_and_fan_fiction_comes_in_as_fan_fiction(self):
         build_library(self.lib, [book("Saga Volume 1", "Brian K. Vaughan", kind="Comic", read=1),
                                  book("A Fic", "Someone", kind="Fan Fiction")])
         self.round()
-        titles = [b["title"] for b in self.seed_rows("books")]
-        self.assertNotIn("Saga Volume 1", titles)
+        self.assertNotIn("Saga Volume 1", [b["title"] for b in self.seed_rows("books")])
         self.assertNotIn("Saga Volume 1", self.books_csv.read_text(encoding="utf-8"))
-        self.assertEqual(self.rows(self.reads_csv), [])
+        self.assertEqual(self.seed_rows("read_events"), [])
         self.assertEqual(self.book_by_title("A Fic")["book_type"], "Fan Fiction")
         self.assertIn("Saga Volume 1", self.output)
 
@@ -755,13 +715,13 @@ class Shape(Case):
         self.assertEqual(self.book_by_title("Good Omens")["word_count"], "110000")
         self.assertEqual([b["title"] for b in self.seed_rows("books")].count("Good Omens"), 1)
 
-    def test_one_title_under_another_author_is_a_review_row(self):
+    def test_one_title_under_another_author_is_a_review_row_keeping_calibres_author(self):
         self.workbook = build_books([("Dune", "Frank Herbert", None, "SF", None)])
         build_library(self.lib, [book("Dune", "Brian Herbert"), book("Mistborn", "Brandon Sanderson")])
         self.round()
         rows = [r for r in self.rows(self.book_review) if r["reason"] == "calibre"]
-        self.assertEqual([(r["a"], r["a_author"], r["b"], r["b_author"]) for r in rows],
-                         [("Dune", "Frank Herbert", "Dune", "Brian Herbert")])
+        self.assertEqual([(r["a"], r["a_author"], r["b"], r["b_author"], r["keep"]) for r in rows],
+                         [("Dune", "Frank Herbert", "Dune", "Brian Herbert", "Brian Herbert")])
 
     def test_a_dropped_connection_skips_one_book_and_asks_about_the_next(self):
         build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy"),
@@ -778,13 +738,12 @@ class Shape(Case):
         with mock.patch.object(self, "fake_fetch", once):
             self.assertEqual(self.calibre(), 0)
         self.assertEqual(len(self.fetched), 2)
-        self.assertEqual([(r["title"], r["field"]) for r in self.rows(self.review_csv)],
-                         [("Warbreaker", "series")])
+        self.assertEqual(self.calibre_row("Mistborn")["open_library"], "")
         self.assertIn("1 series not checked", self.output)
 
     def test_failures_in_a_row_stop_the_lookups_and_still_write_the_rest(self):
         """Open Library drops every connection: after MAX_FAILURES books in a
-        row the rest go unchecked without asking, and every sidecar is written."""
+        row the rest go unchecked without asking, and the sidecar is written."""
         build_library(self.lib, [book(f"Book {n}", "Brandon Sanderson", series="Cosmere") for n in range(4)]
                       + [book("Warbreaker", "Brandon Sanderson", series="Nalthis", read=1)])
         self.extract()
@@ -794,23 +753,18 @@ class Shape(Case):
             raise eb.urllib.error.URLError("[WinError 10054] connection forcibly closed")
 
         buf = io.StringIO()
-        argv = ["--library", str(self.lib), "--env", str(self.dir / "absent.env"), "--seed", str(self.seed),
-                "--calibre-books", str(self.books_csv), "--calibre-review", str(self.review_csv),
-                "--calibre-reads", str(self.reads_csv), "--book-review", str(self.book_review),
-                "--cache", str(self.dir / "cache.sqlite")]
         with mock.patch.object(eb.OpenLibrary, "_fetch", dropped), redirect_stdout(buf):
-            self.assertEqual(cal.main(argv), 0)
+            self.assertEqual(cal.main(self.argv()), 0)
         self.assertEqual(len(self.fetched), cal.MAX_FAILURES)
         self.assertEqual(len(self.rows(self.books_csv)), 5)
-        self.assertEqual(self.rows(self.review_csv), [])
-        self.assertEqual([r["title"] for r in self.rows(self.reads_csv)], ["Warbreaker"])
         self.assertIn("5 series not checked", buf.getvalue())
 
     def test_offline_checks_nothing_new_and_keeps_what_it_knew(self):
         build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy"),
-                                 book("The Way of Kings", "Brandon Sanderson")])
+                                 book("The Way of Kings", "Brandon Sanderson", series="The Stormlight Archive")])
         self.round()
         before = self.sidecars()
+        self.assertEqual(self.calibre_row("Mistborn")["open_library"], "Mistborn Saga #1")
         self.dir.joinpath("cache.sqlite").unlink()
         self.fetched.clear()
         self.assertEqual(self.calibre("--offline"), 0)

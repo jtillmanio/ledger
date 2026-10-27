@@ -109,6 +109,8 @@ _Approved 2026-10-27 at 932d3c7. Owner's answers at the gate: Book + Fan Fiction
 
 **Risks**: ~3,000 Unlisted books (4,462 in Calibre, 1,361 in the workbook); the first real run asks Open Library about each Calibre-only series book (~1 a second, cached after); the repo is public (no comments committed).
 
+**Revision 2** (owner, 2026-10-27, during review; D-87, D-88, on `docs/1.18-calibre-source-of-truth` merged into this branch): Calibre is the source of truth for a book's data and its reads. Steps 3–5 change: one sidecar, `calibre_books.csv`, with the read flag, date and precision and Open Library's differing series (`open_library`); no `calibre_review.csv`, `calibre_reads.csv` or `hand` rows. Calibre's word count and series replace the workbook's, every Calibre read loads, and each disagreement (workbook count more than 10% off, workbook series, Open Library's series, a second read) is a row in `unresolved.csv`; a workbook series Calibre emptied is dropped unless followed. Each run prints what changed in Calibre since the last (added, removed, renamed, changed fields). A `calibre` near-spelling row pre-fills `keep` with Calibre's spelling. ACs 1, 3, 4 and 6 and the roadmap **Check:** were amended to match, with the owner's go-ahead.
+
 ## Review log
 
 _Filled by /implement-task. One line per round._
