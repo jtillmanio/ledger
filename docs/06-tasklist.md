@@ -172,7 +172,7 @@ with the task that first reads it.
 | 0.8b | Read state per run — the spine | S | — | 0.8a |
 | 0.9 | Page performance — measure, find the cause, fix it | M | — | — |
 | 0.10 | Lighthouse on every preview | M | — | 0.9 |
-| 0.12 | A redeploy of a skipped preview builds | S | — | — |
+| 0.12 | A redeploy of a skipped preview builds | S | TASK-035 | — |
 
 ## M3: Pleasant to use — MVP
 
