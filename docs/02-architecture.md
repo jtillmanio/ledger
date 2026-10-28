@@ -354,6 +354,10 @@ in `hickman-ff` and unread in `bendis-dark-reign`.
 | PR preview | One Neon branch per PR (`preview/<branch>`), deleted on merge | The Vercel and Neon integration | The preview build migrates only its own branch |
 | Production | Neon `main` | GitHub secret `DATABASE_URL`; locally only the gitignored `.env.live`, read only with `-EnvFile .env.live` | The Release workflow; before cutover `npm run rebuild -- -EnvFile .env.live` by the owner. `LEDGER_LIVE=true` makes `load` and `rebuild` refuse |
 
+Every outside service (Neon, Vercel, GitHub, Cloudflare R2, Anthropic, Metron,
+Hardcover, Calibre and the rest), its account, and where each of its keys is
+stored is in [SERVICES.md](SERVICES.md).
+
 **How merged code goes live.** A merge is not a deploy. The owner runs the
 Release workflow (START-HERE Step 13): it refuses unless CI passed on the exact
 commit, snapshots the live database when migrating, runs `drizzle-kit migrate`,

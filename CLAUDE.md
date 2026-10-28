@@ -13,6 +13,9 @@ floor, the interface rules), `docs/05-roadmap.md` (the backlog: every entry and
 its **Check:**) and `docs/06-tasklist.md` (milestones M1–M25, the entries in
 build order). `docs/HANDOFF.md` is full context, `docs/DIAGRAMS.md` visual;
 `docs/archive/` holds the superseded TASKS, FEATURES, ARCHITECTURE and DESIGN.
+`docs/SERVICES.md` lists every outside service, its account and where each key
+is stored: names only, never values (the repo is public). A change that adds,
+moves or retires a key updates it in the same PR.
 `docs/START-HERE.md` is the human's runbook: don't run its commands unless
 asked. Large docs are guarded (`largeFiles` in `.claude/kit.json`): grep for
 the section, then read it with offset and limit.
