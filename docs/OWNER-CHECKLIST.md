@@ -144,6 +144,18 @@ tick them.
       - Then run `npm run extract`, `npm run enrich:books` and
         `npm run extract`, so the 3,210 new books get their Open Library
         details.
+      - *D-94 (2026-10-28):* 1.14b replaces Open Library's details and series
+        check with Hardcover's, so the two Open Library re-runs above can wait
+        for it instead.
+- [ ] Create a Hardcover API token (hardcover.app, your account's API Access
+      page, with the narrowest read scope it offers) and set `HARDCOVER_API_TOKEN` in `.env`.
+      1.14b's runs need it. Before 1.4f's preview, set it in Vercel for Preview
+      and Production too; without it Add books searches your library only
+      (D-94).
+- [ ] Before 1.14b's real run, fill the missing ISBNs in Calibre: select the
+      books with no ISBN, *Edit metadata → Download metadata*, check what it
+      found, then `npm run calibre`. About 345 Calibre books have none (fan
+      fiction never does) (D-94).
 
 ## Approvals from follow-ups
 
