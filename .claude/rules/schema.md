@@ -46,7 +46,7 @@ Release, test isolation) and the Hard rules a reviewer checks.
   so one title under two authors is two books. `etl/data/book_review.csv`
   (`kind` book|author|series, `a`, `b`, authors, tabs, `reason` same title|
   similar, `similarity`, `keep`, `decision` merge|separate) is written by
-  `npm run extract`: it proposes pairs (≥ 0.4 trigram similarity, never names
+  `npm run extract`: it proposes pairs (≥ 0.5 trigram similarity, D-92, never names
   that differ only by a number), keeps every decision, and applies only `merge`,
   before the load, so the merged-away spelling never becomes a row. Books by
   two authors pair only on an identical title (`same title`), where `keep`
@@ -85,7 +85,7 @@ Release, test isolation) and the Hard rules a reviewer checks.
   place, a removed one goes, a new one is appended, a run over an unchanged
   library changes no byte, and each run prints what changed since the last. A
   near spelling (≥ 0.5 trigram similarity, or one title the other plus a
-  `: subtitle`; D-89, above the workbook pairs' 0.4), or one title under
+  `: subtitle`; D-89), or one title under
   another author, is a `book_review.csv`
   row with `reason = calibre` (`a` the workbook's, `b` Calibre's, `keep`
   pre-filled with Calibre's), and the Calibre book is held until it is decided:

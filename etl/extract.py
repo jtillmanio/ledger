@@ -999,6 +999,9 @@ BOOK_REVIEW_COLUMNS = ["kind", "a", "b", "a_author", "b_author", "a_tabs", "b_ta
                        "reason", "similarity", "keep", "decision"]
 BOOK_REVIEW_DECISIONS = ("merge", "separate", "")
 SIMILAR_AT = 0.4  # D-25a: pg_trgm similarity at or above this is worth a look
+# The workbook's own pairs in book_review.csv are proposed from here (D-92): under 0.5
+# they were series patterns, two books. SIMILAR_AT stays the app's near-duplicate line.
+PAIR_SIMILAR_AT = 0.5
 # A standalone roman numeral from I to XX, or a run of digits.
 NUMBER_RE = re.compile(r"\b(?:\d+|xx|x?(?:ix|iv|v?i{1,3}|v)|x)\b")
 # A near spelling etl/enrich_books.py found on Open Library (task 1.14, D-44):
@@ -1356,8 +1359,8 @@ def review_book_pairs(idx: BookIndex, existing: list[dict]) -> list[dict]:
     workbook spells, never over merged names, so a decided pair is proposed
     again on every run and matched to its decision. Books: one title under two
     authors is `same title`; one author's titles (or a title with no author
-    and no authored match) at SIMILAR_AT or more are `similar`. Authors and
-    series: any two names at SIMILAR_AT or more. Names that differ only by a
+    and no authored match) at PAIR_SIMILAR_AT or more are `similar`. Authors and
+    series: any two names at PAIR_SIMILAR_AT or more. Names that differ only by a
     number never pair. A decided row stays for good; an undecided one is
     rebuilt each run."""
     proposals: dict[frozenset, dict] = {}
@@ -1380,7 +1383,7 @@ def review_book_pairs(idx: BookIndex, existing: list[dict]) -> list[dict]:
                 shared = len(ga & gb)
                 union = len(ga) + len(gb) - shared
                 sim = shared / union if union else 0.0
-                if sim >= SIMILAR_AT:
+                if sim >= PAIR_SIMILAR_AT:
                     propose(kind, a, b, reason, sim)
 
     books = [{"name": s["title"], "author": s["author"], "tabs": s["tabs"]}
@@ -1407,7 +1410,7 @@ def review_book_pairs(idx: BookIndex, existing: list[dict]) -> list[dict]:
                     continue
                 shared = len(grams[id(a)] & grams[id(b)])
                 union = len(grams[id(a)]) + len(grams[id(b)]) - shared
-                if union and shared / union >= SIMILAR_AT:
+                if union and shared / union >= PAIR_SIMILAR_AT:
                     propose("book", a, b, "similar", shared / union)
     similar_pairs("author", [{"name": s["name"], "tabs": s["tabs"]} for s in idx.seen_authors.values()])
     similar_pairs("series", [{"name": s["name"], "tabs": s["tabs"]} for s in idx.seen_series.values()])
