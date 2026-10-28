@@ -42,17 +42,17 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 | Phase | Goal | Milestones | Done |
 |---|---|---|---|
 | [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6) | 12 / 13 |
-| [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover (START-HERE Step 14) waits for all of Phase 1, plus 2.11a and 1.11.** | M3–M9 | 26 / 36 |
+| [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover (START-HERE Step 14) waits for all of Phase 1, plus 2.11a and 1.11.** | M3–M9 | 28 / 39 |
 | [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 0 / 16 |
 | [3 Editing](#phase-3--editing) | Maintain the catalog in the app: inline edits, runs, prerequisites, eras, detail sheets and adding at scale. | M13–M15 | 0 / 14 |
 | [4 Enrichment](#phase-4--enrichment) | Metron, Open Library and Hardcover backfill, and real covers. A prerequisite for Phase 7. | M16 | 0 / 4 |
 | [5 Remaining surfaces](#phase-5--remaining-surfaces) | The remaining list and detail surfaces: shelves, tracks, editions, releases and series pages. | M17, M18 | 0 / 12 |
-| [6 Polish, in any order](#phase-6--polish-in-any-order) | Polish, in any order. | M19–M21 (6.2b in M12) | 1 / 18 |
+| [6 Polish, in any order](#phase-6--polish-in-any-order) | Polish, in any order. | M19–M21 (6.2b in M12) | 1 / 19 |
 | [7 AI-assisted curation (after Phase 4, not before)](#phase-7--ai-assisted-curation-after-phase-4-not-before) | Claude proposes, Metron verifies, you approve. Only after Phase 4. | M22 | 0 / 8 |
 | [8 Watchlist: film and television](#phase-8--watchlist-film-and-television) | Films, shows, seasons and franchises. Needs only Phase 0, so it can be pulled forward. | M23, M24 | 0 / 10 |
 | [9 Music](#phase-9--music) | A fourth medium, last (D-75). | M25 | 0 / 7 |
 
-Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91).
+Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7.
 
 ---
 
@@ -1038,6 +1038,10 @@ with a reading order across series.
   Calibre leaves the file on the next run. The run prints how many are
   undecided.
 
+*Amended 2026-10-28 (D-94):* 1.14b moves `book_details.csv` from Open
+Library to Hardcover after this task. The Check's *Open Library page count* is
+the details sidecar's page count, whichever source wrote it.
+
 **Check:** `npm run test:etl`, with 1.18's fixture `metadata.db` given
 `#superseries`, `#subseries` and `#pages` columns, shows:
 - a book with a superseries loads that universe and its position, and a
@@ -1074,6 +1078,62 @@ a book with two Calibre genres loads two `book_genres` rows with their full
 paths, a book with none keeps its workbook genre, and a re-run is
 byte-identical. Then the real library's genre count in the PR.
 
+### ☐ 1.14b Hardcover details for the books, by ISBN · M
+Owner, 2026-10-28; D-94. **After 1.18c, before 1.20**, and before its real run
+the owner fills the missing ISBNs in Calibre (*Download metadata*, then
+`npm run calibre`). 1.14 matched Open Library by title and author, and Open
+Library's titles are noisy enough that the match needed a review queue and
+still picked graphic novels and omnibuses. Calibre holds an ISBN for 3,948
+of its 4,393 books.
+
+- **`etl/enrich_books.py` asks Hardcover**, not Open Library, keeping 1.14's
+  shape: `--dry-run` (100 books, writes nothing), `--offline`, a resumable
+  SQLite cache `etl/.hardcover-cache.sqlite` (gitignored, and added to git.md's
+  never-commit list), `npm run enrich:books`. The token is
+  `HARDCOVER_API_TOKEN` from `.env` (named in `.env.example`); without it the
+  script stops and says so, except `--offline`. It sends a `User-Agent` naming
+  the app, keeps to the `RateLimit` headers and waits out a 429's
+  `Retry-After`.
+- **By ISBN first.** A book's ISBN is its `calibre_books.csv` row's. One
+  request asks for a batch of editions by `isbn_13` or `isbn_10` (a top-level
+  query is one request, however many ISBNs it lists); an edition found is a
+  match, and its book is the work.
+- **Then by title and author**, for a book with no ISBN or no edition for it:
+  Hardcover's search, one request a book. A result is matched only when it
+  has the book's title and one of its authors after `clean()` / `key()` and
+  is not a `compilation`. A near spelling by the same author (D-92's 0.5, or
+  a `: subtitle`) is a `book_review.csv` row with `reason = hardcover`, never
+  matched. For the plan gate: whether a pair whose titles are the same words
+  reordered is never proposed (*Of Darkness and Dawn* / *Of Dawn and
+  Darkness* score 1.00 and are two books).
+- **`book_details.csv`** gains `hardcover_id` (the book's id). A matched
+  row's `page_count` (the edition's pages, else the book's), `cover_url` (the
+  edition's image, else the book's) and `published_year` (the book's release
+  year) come from Hardcover with `source = hardcover`; `open_library_id` is no
+  longer filled, and a `hand` row is never touched. Extract loads
+  `hardcover_id` into `books.hardcover_id` (the column exists) and folds the
+  rest in as 1.14 does: Calibre's `#pages` still wins (D-90), and the year
+  fills only where the workbook has none.
+- **The series cross-check** 1.18's `calibre.py` makes against Open Library
+  (`calibre_changes.csv`'s `open library series differs`, D-93) compares
+  Hardcover's series and position instead. Whether `calibre.py` asks through
+  this client or extract compares the two sidecars is the plan's.
+- Rows with `source = openlibrary`, and undecided `open library` review rows,
+  are replaced by the run; decided `book_review.csv` rows stay. Removing Open
+  Library's code is 6.19's.
+
+**Check:** `npm run test:etl`, with recorded Hardcover answers, shows: two
+fixture books with ISBNs match in one request and write `hardcover_id`,
+`page_count`, `cover_url` and `published_year` with `source = hardcover`; a
+book with no ISBN matches by title and author; a near spelling is a
+`book_review.csv` row with `reason = hardcover` and no details row; a
+`compilation` result never matches; a `hand` row is unchanged; a book with
+Calibre `#pages` keeps them over Hardcover's; a 429 waits its `Retry-After`
+and the run resumes; an `--offline` re-run leaves every sidecar
+byte-identical; without `HARDCOVER_API_TOKEN` only `--offline` runs. Then a
+dry run over the real books, with the counts matched by ISBN, matched by
+title, proposed and unmatched in the PR.
+
 ### ☐ 1.4e Paste a list: title and author in their own cells · S
 Backlog intake, 2026-10-20 (owner: *adding books isn't "title - author", it's
 two fields*). *By hand* already has two fields. *Paste a list* still wants
@@ -1097,6 +1157,44 @@ dash in it keeps the dash in the title. In the browser (0.11), editing the
 Author cell of a line with no author clears its reason, and the line adds with
 that author. Each cell has an accessible name (*Title, line 3*). Screenshots at
 360px and 1280px.
+
+### ☐ 1.4f Add books searches Hardcover · M
+Owner, 2026-10-28; D-94. **After 1.4e, before 1.22.** 1.4c's *Search* lists
+Open Library's top ten works as they come, edition labels, series suffixes
+and omnibuses with them.
+
+- **`src/lib/hardcover.ts`** replaces `src/lib/openlibrary.ts` in
+  `POST /api/books/search`: Hardcover's `search` for books, ten results, one
+  request a search, sent on submit (or as 1.22 has it), server-side with
+  `HARDCOVER_API_TOKEN`, never in a response or a `NEXT_PUBLIC_` variable.
+  Without the token, Search answers from your library only and says
+  *Hardcover isn't set up here*, as Add issues does for Metron.
+- **Cached** in a new `hardcover_cache` table (approved by the owner
+  2026-10-28, D-94): `key`, `body`, `fetched_at`, as `open_library_cache`
+  is, fresh for 7 days (D-62), a 429's `Retry-After` kept as its `hold` row.
+  Rebuildable, so not in `src/db/export-tables.ts`. The migration only adds.
+- **What lists.** A `compilation` is not listed. A result shows its title,
+  with Hardcover's `subtitle` kept apart (the plan proposes how it reads), its
+  author, its series and position, its year, and *est N words* from its pages
+  as now. A query that is an ISBN (10 or 13 digits, hyphens allowed) lists
+  that edition's book alone.
+- **Adding a result** writes `hardcover_id`, `cover_url`, `page_count` and
+  `published_year`. A result your library already holds (by `hardcover_id`,
+  or by title and author, D-61) lists as your book, not a second copy.
+- **The copy follows the source** (D-94): *From Hardcover*, *Hardcover · est
+  174k words*, *Matched against your library first, then Hardcover*.
+- **The docs it changes:** `.claude/rules/ui.md` (*Hardcover is
+  backfill-only* goes), data model 2.15's add flows, architecture § Metadata
+  sources. Open Library's code stays until 6.19.
+
+**Check:** in the browser (0.11), with recorded Hardcover answers: searching
+`piranesi` lists Hardcover's results under *From Hardcover*, and a compilation
+in the recorded answer is not listed; adding one creates one `books` row with
+`hardcover_id` and its cover, and adding it again reuses it and says so; the
+same search again makes no request; a recorded 429 shows the rate-limited
+state while your library's results still list; an ISBN-13 lists one result.
+A vitest shows that with no token the route answers from the library with no
+request, and that no response carries the token.
 
 ### ☐ 1.17 Started and finished: a start date for books, a derived span for runs · M
 Backlog intake, 2026-10-20 (owner: *books: date started and ended; comics: a
@@ -1169,6 +1267,10 @@ loads as today. Placeholder titles are already skipped
 in the meantime (out of Someday until kept), whether `hand` rows in
 `book_details.csv` count as a match, and how 1.18's Calibre matches count.
 Depends on 1.14. **The Check below is proposed** (owner, 2026-10-26).
+*Amended 2026-10-28 (D-94):* it follows 1.14b, so a match is a
+`book_details.csv` row from Hardcover: the hold is for a book Hardcover
+doesn't know, and the review file lists the Hardcover lookup it tried (the
+ISBN, or the search).
 
 **Check:** `npm run test:etl`: a fixture book with no `book_details.csv` row is
 not in `books.csv` and is listed in the review file with an empty decision,
@@ -1241,6 +1343,9 @@ from (Open Library or Calibre/my list)*). D-84. Depends on 1.21 for the
   a Calibre-only book shows as *Unlisted*.
   *Amended 2026-10-27 (D-90):* 1.18b adds `books.calibre_id`, so the *Calibre*
   tag reads it and this task adds no column.
+- *Amended 2026-10-28 (D-94):* it follows 1.4f, so the outside results are
+  Hardcover's: the source tag reads *Hardcover* and the group head *From
+  Hardcover*, and the Check's *recorded Open Library answers* are Hardcover's.
 
 **Check:** in the browser (0.11), with recorded Open Library answers: typing
 `pir` and pausing lists results without Enter; typing `pi` and pausing makes no
@@ -1368,6 +1473,10 @@ Potter and the Sorcerer's Stone* has 16 (a picture-book edition), and a few more
 sit under 100. At `× 275` that is a 4,400-word estimate, so the plan should say
 how 2.1 treats an implausible page count (a floor, a flag, or a `hand` row in
 `book_details.csv`, which enrich never overwrites).
+*Amended 2026-10-28 (D-94):* after 1.18b and 1.14b a page count is Calibre's
+`#pages`, else the owner's edition's from Hardcover by ISBN, so the
+picture-book case should be rarer; the plan still says how an implausible
+count is treated.
 
 **Check:** test with 45 min/day at 185 wpm over 2027 and a fixture plan of
 3.58M words returns 118% ± 1% (3,585,000 / 3,038,625), and reports what share
@@ -2845,6 +2954,14 @@ pick one (the work with the most editions, say) is an owner decision this item
 should ask before reusing the rule; the candidates are in the run's report
 (`npm run enrich:books -- --offline`).
 
+*Amended 2026-10-28 (D-94):* Hardcover replaces Open Library here too. The
+backfill fills a book with no `hardcover_id` from Hardcover, by ISBN where
+one is known, with 1.14b's matching, and Open Library is gone (6.19).
+Hardcover's series and position fill nothing over Calibre's (D-87). The
+*ambiguous* question above came from Open Library's duplicate works, which
+Hardcover's one record per book should mostly remove; the plan rechecks it
+against 1.14b's run.
+
 **Calibre after cutover** is 4.4 (D-83, amending this paragraph's D-73 path):
 an in-app sync from an uploaded `metadata.db`, through a review. This task's
 backfill never fills a book from Calibre.
@@ -2876,6 +2993,11 @@ and the Add books and Add issues search results. A spine row only gets a
 cover box when it is pending, and a master-list row with no cover draws none.
 This task makes every row's box the same: real covers, the neutral
 placeholder, and the 28×42 size.
+
+*Amended 2026-10-28 (D-94):* a book's cover is Hardcover's image URL (1.14b,
+1.4f), hotlinked, which answers 1.14's *hotlink or cache*. This task measures
+it (the master list's Lighthouse run); if the covers load poorly, they move to
+R2, where the backups already live, under a later decision.
 
 1.8d's `/books/list` loading screen draws run rows (a title and a sub-line), not a book row's cover and status controls. When the master list's rows get their covers here, draw that geometry in the screen's skeleton so it holds the layout (from TASK-027).
 
@@ -3004,6 +3126,9 @@ This puts the same sync in the app.
   Calibre, reads load as Calibre has them, and each replacement and Open
   Library disagreement is listed before *Apply*. A near spelling still waits
   for a merge or separate decision.
+  *Amended 2026-10-28 (D-94):* read *Open Library* in this item as
+  Hardcover: the ISBN and series disagreements are Hardcover's, and a book
+  added in the app comes from Hardcover (1.4f).
   *Amended 2026-10-27 (D-90):* the sync also carries what 1.18b and 1.18c
   read (the superseries as a universe and its position, the subseries, page
   counts, genres) and matches on `books.calibre_id` before title and author.
@@ -3034,7 +3159,7 @@ it is converted.
 
 - ☐ 5.1 Shelves (books only): create, add items, reorder · M. **+ Add to
   shelf** opens the 1.4c sheet with the shelf preselected: search your library
-  and Open Library, or add by hand. A book not yet in the catalog is created
+  and Open Library (Hardcover after 1.4f, D-94), or add by hand. A book not yet in the catalog is created
   first, then shelved. Each shelf shows its **next three unread** in shelf
   order, not just the next one (design §14 → Shelves).
   - **Context on a shelf** (2026-10-20 intake: *a context field, why a book is
@@ -3438,6 +3563,22 @@ it is converted.
   `user_id` column; `user_id` appears nowhere in `src/` or `etl/` outside
   `drizzle/`; `npm run test:all` is green.
 
+- ☐ 6.19 **Remove Open Library** (D-94) · S. Owner, 2026-10-28. Once
+  Hardcover is in use (1.14b and 1.4f merged and the owner content with
+  them). It removes `src/lib/openlibrary.ts` and its tests, the
+  `open_library_cache` table, `books.open_library_id` (the *metadata pending*
+  test in `src/db/queries.ts` becomes `hardcover_id IS NULL`), the Open
+  Library code in `etl/enrich_books.py` and `etl/calibre.py`, the
+  `openlibrary` source in `book_details.csv`, `etl/.openlibrary-cache.sqlite`
+  from `.gitignore` and git.md's never-commit list, and the Open Library lines
+  in architecture § Metadata sources and data model 2.15. Both removals are
+  approved (owner, 2026-10-28). Decided `open library` rows in
+  `book_review.csv` stay: they are decisions about the workbook's titles.
+  **Check:** the migration ships `drizzle/down/<tag>.sql` and passes an
+  up → down → up test on the TEST database; `open_library`, `openlibrary` and
+  `Open Library` appear nowhere in `src/` or `etl/*.py` outside `drizzle/`;
+  `npm run test:all` is green.
+
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M
 
@@ -3578,7 +3719,8 @@ forward once 7.1 lands.
   asks for the threads that matter going into book N and for nothing from N or
   later.
 - **Grounded, and labelled.** The prompt carries each earlier book's title,
-  year, Open Library summary (if any) and the owner's own notes. The sheet
+  year, Open Library summary (if any; Hardcover's description after D-94)
+  and the owner's own notes. The sheet
   labels the text as Claude's recap, which can be wrong about less-known books,
   and offers *This is wrong*, which marks the proposal rejected. Whether to add
   the API's web search tool for grounding is a plan-time question, cost against

@@ -260,7 +260,7 @@ with the task that first reads it.
 **Demo at exit:** Books load with covers, page counts and real word counts. Answer `book_review.csv` between 1.13 and 1.14, and 1.18's `calibre` near spellings in the same file (Calibre is the source of truth for the rest, D-87); Calibre's other books wait at *Unlisted*.  
 **Features:** F-18, F-19, F-20  
 **Depends on:** M1  
-**Order:** Sitting 8: 1.13 → 1.14 → 1.15 → 1.21 → 1.18 → 1.20 (the 2026-10-08 book-ingest review; 1.20 from the owner, 2026-10-26, holds books Open Library doesn't know for review; 1.21 from the 2026-10-26 books intake). 1.14's proposals join 1.13's review file; 1.15 seeds from the series and author names 1.13's review fixed; 1.21 defines the *Unlisted* level that 1.18 creates Calibre's other books at (D-83, D-86); 1.18 reports where Calibre and 1.14's Open Library answers disagree (D-73, D-87) and can be re-run until cutover. All six change what `load` puts in, so they land before the final load. They don't depend on M3–M7 and can be built earlier, leaving time to answer the reviews.
+**Order:** Sitting 8: 1.13 → 1.14 → 1.15 → 1.21 → 1.18 → 1.18b → 1.18c → 1.14b → 1.20 (the 2026-10-08 book-ingest review; 1.20 from the owner, 2026-10-26, holds books Hardcover doesn't know for review; 1.21 from the 2026-10-26 books intake; 1.18b and 1.18c from 1.18's review, D-90; 1.14b from the switch to Hardcover, D-94). 1.14's proposals join 1.13's review file; 1.15 seeds from the series and author names 1.13's review fixed; 1.21 defines the *Unlisted* level that 1.18 creates Calibre's other books at (D-83, D-86); 1.18 reports where Calibre and 1.14's Open Library answers disagree (D-73, D-87) and can be re-run until cutover; 1.14b replaces 1.14's Open Library details with Hardcover's, by Calibre's ISBNs, once the owner has filled the missing ones in Calibre. All nine change what `load` puts in, so they land before the final load. They don't depend on M3–M7 and can be built earlier, leaving time to answer the reviews.
 
 | # | Task | Size | Task file | Depends on |
 |---|---|---|---|---|
@@ -271,7 +271,8 @@ with the task that first reads it.
 | 1.18 | Calibre: word counts, series, tags and reads for the books | M | TASK-030 | 1.14, 1.15, 1.21 |
 | 1.18b | Calibre: universes, subseries, page counts and the Calibre id | M | TASK-032 | 1.18 |
 | 1.18c | Calibre genres | M | TASK-033 | 1.18b |
-| 1.20 | Hold books with no Open Library match for review | M | TASK-031 | 1.14 |
+| 1.14b | Hardcover details for the books, by ISBN | M | — | 1.18b |
+| 1.20 | Hold books with no Open Library match for review | M | TASK-031 | 1.14b |
 
 ## M9: Captured from cutover on — MVP
 
@@ -279,13 +280,14 @@ with the task that first reads it.
 **Demo at exit:** Paste a list as title and author in their own cells; search as you type, with each result's source; set a book to *Reading* and its start date is kept; listen to a book and finish it, and it counts as a read with the headphones glyph.  
 **Features:** F-09, F-15, F-17, F-58  
 **Depends on:** M5, M8 (1.21)  
-**Order:** Sitting 9: 1.4e → 1.19 → 1.22 → 1.24 → 1.17 → 1.23. Four fixes to screens already in daily use (1.19 turns on 1.8's comics *Add*, from 1.8b's plan; 1.22 from the 2026-10-26 books intake; 1.24, from TASK-030's follow-ups, lets a wishlist accept move one of 1.18's Unlisted books onto the list), then start dates and audiobooks, which like 1.5 must land before real reading accumulates and before cutover. 1.23 follows 1.17 because both change `book_status` and `read_events`.
+**Order:** Sitting 9: 1.4e → 1.4f → 1.19 → 1.22 → 1.24 → 1.17 → 1.23. Five fixes to screens already in daily use (1.4f searches Hardcover instead of Open Library, D-94, before 1.22 tags each result's source; 1.19 turns on 1.8's comics *Add*, from 1.8b's plan; 1.22 from the 2026-10-26 books intake; 1.24, from TASK-030's follow-ups, lets a wishlist accept move one of 1.18's Unlisted books onto the list), then start dates and audiobooks, which like 1.5 must land before real reading accumulates and before cutover. 1.23 follows 1.17 because both change `book_status` and `read_events`.
 
 | # | Task | Size | Task file | Depends on |
 |---|---|---|---|---|
 | 1.4e | Paste a list: title and author in their own cells | S | — | — |
+| 1.4f | Add books searches Hardcover | M | — | — |
 | 1.19 | Comics Add remembers the last run | S | — | 1.8, 1.3c |
-| 1.22 | Search as you type, and where each result comes from | M | — | 1.21 |
+| 1.22 | Search as you type, and where each result comes from | M | — | 1.21, 1.4f |
 | 1.24 | Wishlist accept promotes an Unlisted book to Someday | S | — | 1.21, 1.4d |
 | 1.17 | Started and finished: a start date for books, a derived span for runs | M | — | — |
 | 1.23 | Audiobooks: listening, and a listen that counts as a read | M | — | 1.5, 1.17 |
@@ -487,6 +489,7 @@ with the task that first reads it.
 | 6.13 | Better sign-in than one passcode (D-23) | M | — | — |
 | 6.6 | Goodreads and StoryGraph CSV import | M | — | — |
 | 6.18 | Drop `user_id`: the schema is single-user | L | — | — |
+| 6.19 | Remove Open Library | S | — | 1.14b, 1.4f |
 | 6.9 | Revisit the theme | M | — | — |
 
 ## M22: AI-assisted curation — Later
