@@ -287,7 +287,7 @@ with the task that first reads it.
 
 | # | Task | Size | Task file | Depends on |
 |---|---|---|---|---|
-| 1.25 | Sheets parity audit | S | — | — |
+| 1.25 | Sheets parity audit | S | TASK-036 | — |
 | 1.4e | Paste a list: title and author in their own cells | S | — | — |
 | 1.4f | Add books searches Hardcover | M | — | — |
 | 1.19 | Comics Add remembers the last run | S | — | 1.8, 1.3c |
