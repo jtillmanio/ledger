@@ -690,6 +690,16 @@ class BookReview(BookCase):
         self.assertEqual(self.books()["the-lightning-thief-rick-riordan"]["title"], "The Lightning Thief")
         self.assertEqual(self.status(), {"the-lightning-thief-rick-riordan": "to_read"})
 
+    def test_a_series_pattern_under_half_is_not_proposed(self):
+        """D-92: Artemis Fowl's own titles score 0.41 to 0.46 against each
+        other, and are two books each. They are not worth a review row."""
+        titles = ["Artemis Fowl", "Artemis Fowl: The Lost Colony", "Artemis Fowl: The Time Paradox"]
+        self.assertTrue(all(ex.SIMILAR_AT <= ex.trgm_similarity(a, b) < ex.PAIR_SIMILAR_AT
+                            for a, b in (titles[0:2], titles[1:3])))
+        self.extract(build_books([(t, "Eoin Colfer", None, None, None) for t in titles]))
+        self.assertEqual(len(self.books()), 3)
+        self.assertEqual(self.review_rows(), [])
+
     def test_names_that_differ_only_by_a_number_are_not_proposed(self):
         self.extract(build_books([("Saga Vol 1", "Brian K. Vaughan", None, None, None),
                                   ("Saga Vol 2", "Brian K. Vaughan", None, None, None),

@@ -80,9 +80,10 @@ SKIPPED_TYPES = {"comic"}
 STATUSES = ("matched", "proposed", "unmatched")
 MAX_FAILURES = 3        # failed lookups in a row before the run stops asking Open Library
 # A Calibre near spelling is proposed at this trigram similarity or more, or as
-# a subtitle (subtitled()). Higher than the workbook's own pairs (D-25a's 0.4):
-# under 0.5 Calibre's pairs were series patterns, two books (owner, D-89).
-SIMILAR_AT = 0.5
+# a subtitle (ex.subtitled()). Higher than the workbook's own pairs (D-25a's 0.4):
+# under 0.5 Calibre's pairs were series patterns, two books (owner, D-89). Open
+# Library's near spellings use the same line (enrich_books.SIMILAR_AT, D-92).
+SIMILAR_AT = eb.SIMILAR_AT
 PROGRESS_SECONDS = 5    # a progress line at most this often while Open Library is asked
 
 
@@ -258,7 +259,7 @@ class Seed:
                 if ex.differs_only_by_number(title, b["title"]):
                     continue
                 sim = ex.trgm_similarity(title, b["title"])
-                if (sim >= SIMILAR_AT or subtitled(title, b["title"])) and (best is None or sim > best[0]):
+                if (sim >= SIMILAR_AT or ex.subtitled(title, b["title"])) and (best is None or sim > best[0]):
                     best = (sim, author, b)
         if best is None and self.by_title.get(ex.key(title)):
             best = (1.0, authors[0], self.by_title[ex.key(title)][0])
@@ -275,16 +276,6 @@ class Seed:
         scored = sorted(((ex.trgm_similarity(title, b["title"]), b["title"])
                          for a in authors for b in self.by_author.get(ex.key(a), [])), reverse=True)
         return " | ".join(f"{t} ({s:.2f})" for s, t in scored[:3] if s >= ex.SIMILAR_AT / 2)
-
-
-def subtitled(a: str, b: str) -> bool:
-    """One title is the other with a `: subtitle` added (`Arcanum Unbounded`,
-    `Arcanum Unbounded: The Cosmere Collection`): the same book, however low
-    the pair scores (D-89). Both subtitled never counts: `Mistborn: The Final
-    Empire` and `Mistborn: Secret History` are two books."""
-    def main(t):
-        return ex.key(t.split(":", 1)[0]) if ":" in t else None
-    return bool(a and b) and (main(a) == ex.key(b) or main(b) == ex.key(a))
 
 
 def proposal(workbook: dict, title: str, author: str, sim: float) -> dict:
