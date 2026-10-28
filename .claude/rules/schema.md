@@ -120,8 +120,10 @@ Release, test isolation) and the Hard rules a reviewer checks.
   Block/track rollups count an issue read when any placement of it in that
   scope is read. data model 2.14.
 - **Catalog and progress are separate.** `issues` is what exists, `issue_progress`
-  is what Justin read. Every progress table is keyed `(user_id, entity_id)`.
-  Never add a per-user boolean to a catalog table.
+  is what Justin read. Never add a read or plan flag to a catalog table. The
+  Ledger is single-user (D-91): today's progress tables are keyed
+  `(user_id, entity_id)` until 6.18 drops `user_id`, and a new table or column
+  carries none.
 - **A run's writers and artists are derived, never stored.** `runs` has no
   `writer` or `artists`. Read them from `run_credit_line` (creators on ≥25% of
   the run's credited issues, max three), built from `issue_credits` via
@@ -195,7 +197,8 @@ Release, test isolation) and the Hard rules a reviewer checks.
   Comic reads don't write `read_events` yet; `issue_progress` is their record.
 - **Every table is in the export.** `GET /api/export` reads its tables from
   `src/db/export-tables.ts`. A task that creates a table adds it there in the
-  same PR (`USER_TABLES` if it has a `user_id`; `users` stays out, D-17);
+  same PR (`USER_TABLES` if it has a `user_id`, which no new table does after
+  D-91; `users` stays out, D-17);
   `test/export-tables.test.ts` fails on any table left out.
 - **Soft delete only.** `deleted_at IS NULL` on every read. A hard delete on
   `runs` cascades to issues and prereq edges. That includes `run_issues`

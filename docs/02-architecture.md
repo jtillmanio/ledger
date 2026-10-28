@@ -546,6 +546,11 @@ Phase 0 and Phase 1.
 
 ## 14. If you add a second reader
 
+*Superseded 2026-10-27 (owner, D-91):* the Ledger is single-user. New tables
+and columns carry no `user_id`, and 6.18 drops the existing ones and
+`currentUserId()` with them, so these steps hold only until then. A second
+reader would be a design task of its own.
+
 1. `INSERT INTO users (id, name) VALUES ('…', '…')`.
 2. Swap the body of `currentUserId()` for a real provider. Everything downstream
    already takes `userId` as a parameter.

@@ -42,17 +42,17 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 | Phase | Goal | Milestones | Done |
 |---|---|---|---|
 | [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6) | 12 / 13 |
-| [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover (START-HERE Step 14) waits for all of Phase 1, plus 2.11a and 1.11.** | M3–M9 | 26 / 34 |
+| [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover (START-HERE Step 14) waits for all of Phase 1, plus 2.11a and 1.11.** | M3–M9 | 26 / 36 |
 | [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 0 / 16 |
 | [3 Editing](#phase-3--editing) | Maintain the catalog in the app: inline edits, runs, prerequisites, eras, detail sheets and adding at scale. | M13–M15 | 0 / 14 |
 | [4 Enrichment](#phase-4--enrichment) | Metron, Open Library and Hardcover backfill, and real covers. A prerequisite for Phase 7. | M16 | 0 / 4 |
 | [5 Remaining surfaces](#phase-5--remaining-surfaces) | The remaining list and detail surfaces: shelves, tracks, editions, releases and series pages. | M17, M18 | 0 / 12 |
-| [6 Polish, in any order](#phase-6--polish-in-any-order) | Polish, in any order. | M19–M21 (6.2b in M12) | 1 / 17 |
+| [6 Polish, in any order](#phase-6--polish-in-any-order) | Polish, in any order. | M19–M21 (6.2b in M12) | 1 / 18 |
 | [7 AI-assisted curation (after Phase 4, not before)](#phase-7--ai-assisted-curation-after-phase-4-not-before) | Claude proposes, Metron verifies, you approve. Only after Phase 4. | M22 | 0 / 8 |
 | [8 Watchlist: film and television](#phase-8--watchlist-film-and-television) | Films, shows, seasons and franchises. Needs only Phase 0, so it can be pulled forward. | M23, M24 | 0 / 10 |
 | [9 Music](#phase-9--music) | A fourth medium, last (D-75). | M25 | 0 / 7 |
 
-Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions).
+Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91).
 
 ---
 
@@ -1005,6 +1005,75 @@ shows:
 Then a dry run over the real library, with the matched, proposed and unmatched
 counts reported in the PR.
 
+### ☐ 1.18b Calibre: universes, subseries, page counts and the Calibre id · M
+Owner, 2026-10-27, after TASK-030's review; D-90. **After 1.18.** The owner's
+Calibre library has two more grouping columns, `#superseries` and
+`#subseries`, each a Calibre series column with its own index, and `#pages`
+on about 4,500 books. `#superseries` is what the Ledger calls a universe,
+with a reading order across series.
+
+- **`etl/calibre.py`** reads `#superseries`, `#subseries` and `#pages` by
+  lookup name (each overridable by a flag, as 1.18's columns are) and
+  Calibre's book id, into new `calibre_books.csv` columns.
+- **Schema** (approved by the owner 2026-10-27, D-90): `books.universe_position`;
+  `book_subseries(id, name, series_id)` with `books.subseries_id` and
+  `books.subseries_position`; `books.calibre_id`, unique where set (D-91).
+  `book_subseries` joins `src/db/export-tables.ts`. Nothing is dropped or
+  retyped.
+- **Universes come from Calibre.** A book's `#superseries` sets its
+  `universe_id`, and the index its `universe_position`. The workbook's
+  universe tabs and the Series tab's universe groups only set
+  `universe_follows` (D-43); a workbook membership Calibre doesn't share, and
+  a followed universe with no Calibre books, are reported in `unresolved.csv`.
+- **Subseries** set `subseries_id`, under the book's series, and
+  `subseries_position`. One subseries name under two series is reported.
+- **Page count:** `#pages` replaces Open Library's `page_count` (1.14), which
+  still fills a book Calibre gives none. Word count stays Calibre's (1.18).
+- **The Calibre id.** Every Calibre book the Ledger has gets its
+  `calibre_id`. A book renamed in Calibre is matched on its id, stays the
+  same book and takes Calibre's new title, and the rename is reported.
+- **Books not in Calibre** stay books. Each workbook book with no Calibre id
+  is a row in `etl/data/calibre_missing.csv` (title, author, the workbook tabs
+  that list it, `decision`). `keep` silences it on later runs; a book added to
+  Calibre leaves the file on the next run. The run prints how many are
+  undecided.
+
+**Check:** `npm run test:etl`, with 1.18's fixture `metadata.db` given
+`#superseries`, `#subseries` and `#pages` columns, shows:
+- a book with a superseries loads that universe and its position, and a
+  workbook universe membership Calibre doesn't share is in `unresolved.csv`;
+- a book with a subseries loads it under its series, with its position;
+- `#pages` replaces an Open Library page count, and Open Library still fills a
+  book with no `#pages`;
+- every Calibre book loads its `calibre_id`, and a fixture book renamed
+  between two runs is still one book, with the new title;
+- a workbook book Calibre doesn't have is one `calibre_missing.csv` row and
+  still one `books.csv` row; `keep` survives a re-run; adding the book to the
+  fixture library removes its row;
+- a second run over the same fixture leaves every sidecar byte-identical.
+
+`npm run test:db:reset` applies the migration. Then a dry run over the real
+library, with the superseries, subseries and page counts filled and the
+`calibre_missing.csv` count in the PR.
+
+### ☐ 1.18c Calibre genres · M
+Owner, 2026-10-27; D-90. **After 1.18b.** Calibre's `#genre` is multi-valued
+and hierarchical (127 values; `Fantasy.Epic Fantasy`, `Young
+Adult.Fantasy.Romantasy`). `books.genre` holds one value, from the workbook's
+Read tab columns.
+
+- **Schema** (stop and ask at the plan gate): `book_genres(book_id, genre)`,
+  one row per Calibre genre, the full dotted path kept as Calibre writes it.
+  It joins `src/db/export-tables.ts`.
+- Calibre's genres replace the workbook's. `books.genre` stays until the
+  screens that read it move to `book_genres`, which this task lists; a book
+  with no Calibre genre keeps the workbook's.
+
+**Check:** `npm run test:etl`, with the fixture given a `#genre` column, shows
+a book with two Calibre genres loads two `book_genres` rows with their full
+paths, a book with none keeps its workbook genre, and a re-run is
+byte-identical. Then the real library's genre count in the PR.
+
 ### ☐ 1.4e Paste a list: title and author in their own cells · S
 Backlog intake, 2026-10-20 (owner: *adding books isn't "title - author", it's
 two fields*). *By hand* already has two fields. *Paste a list* still wants
@@ -1170,6 +1239,8 @@ from (Open Library or Calibre/my list)*). D-84. Depends on 1.21 for the
   list needs the Ledger to remember which books Calibre matched (for example
   `books.calibre_id`), a new column: **stop and ask** at plan time. Until then
   a Calibre-only book shows as *Unlisted*.
+  *Amended 2026-10-27 (D-90):* 1.18b adds `books.calibre_id`, so the *Calibre*
+  tag reads it and this task adds no column.
 
 **Check:** in the browser (0.11), with recorded Open Library answers: typing
 `pir` and pausing lists results without Enter; typing `pi` and pausing makes no
@@ -2933,6 +3004,11 @@ This puts the same sync in the app.
   Calibre, reads load as Calibre has them, and each replacement and Open
   Library disagreement is listed before *Apply*. A near spelling still waits
   for a merge or separate decision.
+  *Amended 2026-10-27 (D-90):* the sync also carries what 1.18b and 1.18c
+  read (the superseries as a universe and its position, the subseries, page
+  counts, genres) and matches on `books.calibre_id` before title and author.
+  A book with no `calibre_id` is listed under a *Not in Calibre* filter,
+  derived from the missing id, so the owner can add it to Calibre.
 - The file is read and discarded: nothing stores `metadata.db`, and nothing
   writes to Calibre. Fetching it from Google Drive instead of an upload is
   *Later* § L-4.
@@ -3345,6 +3421,22 @@ it is converted.
   7.6 word for word. 7.6 keeps the digest, because Phase 7's *after Phase 4*
   framing fits an email about verified releases (CLAUDE-CODE-PROMPTS). The
   number is not reused.
+
+- ☐ 6.18 **Drop `user_id`: the schema is single-user** (D-91) · L. Owner,
+  2026-10-27. The 12 tables with a `user_id` (`issue_progress`,
+  `edition_progress`, `book_status`, `read_events`, `reading_plan`,
+  `reading_settings`, `run_queue`, `shelves`, `inbox`, `series_follows`,
+  `author_follows`, `universe_follows`) lose it, and each primary key
+  becomes its entity id. `etl/views.sql` drops its `user_id` columns and its
+  `CROSS JOIN users`; `currentUserId()`, the app's queries, the ETL's `$OWNER`
+  and the test fixtures follow (architecture § 14 goes). Whether `users`
+  stays for sign-in (6.13) is decided at the plan gate. Comics read state
+  still keys on the placement.
+  **Check:** the migration ships `drizzle/down/<tag>.sql` and passes an
+  up → down → up test on the TEST database; a vitest over the fixture data
+  shows every view returns the same rows before and after, less the
+  `user_id` column; `user_id` appears nowhere in `src/` or `etl/` outside
+  `drizzle/`; `npm run test:all` is green.
 
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M
@@ -4053,5 +4145,9 @@ becomes a task once its open question is answered. None has a **Check:**, and
   is current while Calibre is open (Calibre warns against libraries in synced
   folders, so the review should show the file's modified time); and whether
   the file fits a function's memory and time limits.
+- **L-5 Editors, illustrators and translators** (2026-10-27, D-90). Calibre
+  has `#editor`, `#illustrator` and `#translator`, set on few books today.
+  The open question is the schema: a contributor-role table beside
+  `books.author_id`, and whether a role shows anywhere but the book sheet.
 
 ---

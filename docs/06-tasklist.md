@@ -269,6 +269,8 @@ with the task that first reads it.
 | 1.15 | Track series, authors and universes | M | TASK-023 | 1.13 |
 | 1.21 | Unlisted: the books you have but haven't put on your list | S | TASK-029 | — |
 | 1.18 | Calibre: word counts, series, tags and reads for the books | M | TASK-030 | 1.14, 1.15, 1.21 |
+| 1.18b | Calibre: universes, subseries, page counts and the Calibre id | M | TASK-032 | 1.18 |
+| 1.18c | Calibre genres | M | TASK-033 | 1.18b |
 | 1.20 | Hold books with no Open Library match for review | M | TASK-031 | 1.14 |
 
 ## M9: Captured from cutover on — MVP
@@ -484,6 +486,7 @@ with the task that first reads it.
 | 6.16 | A malformed request body is a 400, not a 500 | S | — | — |
 | 6.13 | Better sign-in than one passcode (D-23) | M | — | — |
 | 6.6 | Goodreads and StoryGraph CSV import | M | — | — |
+| 6.18 | Drop `user_id`: the schema is single-user | L | — | — |
 | 6.9 | Revisit the theme | M | — | — |
 
 ## M22: AI-assisted curation — Later
