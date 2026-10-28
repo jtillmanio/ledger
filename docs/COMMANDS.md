@@ -48,7 +48,9 @@ npm run calibre             # etl/calibre.py (task 1.18): the Calibre library (C
                             # counts, series and reads load over the workbook's, and the books only Calibre
                             # has come in at Unlisted. A near spelling goes to book_review.csv as `calibre`
                             # (the one decision). Each run prints what changed in Calibre since the last;
-                            # extract lists every disagreement (workbook, Open Library) in unresolved.csv.
+                            # extract lists what Calibre overrode (a word count, series or type; an Open
+                            # Library series that differs) in seed/calibre_changes.csv, nothing to do (D-93),
+                            # and what needs you (a held book, a read not loaded) in unresolved.csv.
                             # `-- --dry-run` first (the match rate and the changes, writes nothing);
                             # `-- --offline` asks Open Library nothing new. Re-run after any library change,
                             # in this order: extract, calibre, extract, enrich:books, extract (the created

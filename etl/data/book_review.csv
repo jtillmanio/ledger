@@ -1,7 +1,6 @@
 kind,a,b,a_author,b_author,a_tabs,b_tabs,reason,similarity,keep,decision
 book,A New Beginning,A New Beginning,Robert Kirkman,John Flanagan,,Calibre,calibre,1,John Flanagan,separate
 book,A Short History of Nearly Everything,A Really Short History of Nearly Everything. Bill Bryson,Bill Bryson,Bill Bryson,,Calibre,calibre,0.69,A Really Short History of Nearly Everything. Bill Bryson,separate
-book,American Kingpin,American Kingpin: The Epic Hunt for the Criminal Mastermind Behind the Silk Road,Nick Bilton,Nick Bilton,,Calibre,calibre,0.25,American Kingpin: The Epic Hunt for the Criminal Mastermind Behind the Silk Road,merge
 book,Arabian Nights (and Days),Arabian Nights and Days,Bill Willingham,Naguib Mahfouz,,Calibre,calibre,1,Naguib Mahfouz,separate
 book,Artemis Fowl,Artemis Fowl: The Time Paradox,Eoin Colfer,Eoin Colfer,,Calibre,calibre,0.45,Artemis Fowl: The Time Paradox,separate
 book,Arthur,Arthur,Stephen R. Lawhead,Giles Kristian,,Calibre,calibre,1,Giles Kristian,separate
@@ -40,182 +39,52 @@ book,Theft of Swords,Age of Swords,Michael J. Sullivan,Michael J. Sullivan,,Cali
 book,Unsouled,UnSouled,Will Wight,Neal Shusterman,,Calibre,calibre,1.00,Neal Shusterman,separate
 book,White Sand,White Sand (prose),Brandon Sanderson,Brandon Sanderson,,Calibre,calibre,0.65,White Sand (prose),separate
 book,World's End,World's End,Neil Gaiman,Mark Chadbourn,,Calibre,calibre,1,Mark Chadbourn,separate
-book,1177 B.C.: The Year Civilization Collapsed,1177 B.C.: The Year Civilization Collapsed: Revised and Updated,Eric H. Cline,Eric H. Cline,,Open Library,open library,0.7,1177 B.C.: The Year Civilization Collapsed,merge
-book,A Big Day for Baseball,A Big Day for Baseball (Magic Tree House (R)),Mary Pope Osborne,Mary Pope Osborne,,Open Library,open library,0.54,A Big Day for Baseball,merge
-book,"A Christmas Carol: A Christmas Carol in Prose, Being a Ghost-Story of Christmas",A CHRISTMAS CAROL IN PROSE. Being a Ghost Story of Christmas.,Charles Dickens,Charles Dickens,,Open Library,open library,1,"A Christmas Carol: A Christmas Carol in Prose, Being a Ghost-Story of Christmas",merge
-book,A Clash of Fates,A Clash of Fates (The Echoes Saga: Book 9),Philip C. Quaintrell,Philip C. Quaintrell,,Open Library,open library,0.44,A Clash of Fates,merge
-book,A Crown for Cold Silver,A Crown for Cold Silver: Book One of the Crimson Empire,Alex Marshall,Alex Marshall,,Open Library,open library,0.45,A Crown for Cold Silver,merge
-book,A Crown Imperiled,A Crown Imperilled,Raymond E. Feist,Raymond E. Feist,,Open Library,open library,0.85,A Crown Imperiled,merge
-book,A House in the Sky: A Memoir,A House In The Sky A Memoir Of A Kidnapping That Changed Everything,Amanda Lindhout,Amanda Lindhout,,Open Library,open library,0.43,A House in the Sky: A Memoir,merge
-book,A Long Day in Lychford,A Long Day in Lychford (Witches of Lychford),Paul Cornell,Paul Cornell,,Open Library,open library,0.67,A Long Day in Lychford,merge
-book,A Prayer for the Crown-Shy,Psalm for the Wild-Built & a Prayer for the Crown-Shy Set Of 2,Becky Chambers,Becky Chambers,,Open Library,open library,0.53,A Prayer for the Crown-Shy,merge
-book,A War in Crimson Embers,A War in Crimson Embers (The Crimson Empire),Alex Marshall,Alex Marshall,,Open Library,open library,0.73,A War in Crimson Embers,merge
-book,Adventure Is Out There!,Adventure Is Out There! (Disney: A Twisted Tale #24),Liz Braswell,Liz Braswell,,Open Library,open library,0.5,Adventure Is Out There!,merge
 book,Arabian Nights (and Days),Fables 7 Arabian Nights and Days,Bill Willingham,Bill Willingham,,Open Library,open library,0.72,Arabian Nights (and Days),merge
 book,Artemis Fowl: The Arctic Incident,Artemis Fowl and the Arctic Incident,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.91,Artemis Fowl: The Arctic Incident,merge
 book,Artemis Fowl: The Atlantis Complex,Artemis Fowl and the Atlantis Complex,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.91,Artemis Fowl: The Atlantis Complex,merge
 book,Artemis Fowl: The Eternity Code,Artemis Fowl and the Eternity Code,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.91,Artemis Fowl: The Eternity Code,merge
 book,Artemis Fowl: The Opal Deception,Artemis Fowl. The Opal Deception. The Graphic Novel,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.7,Artemis Fowl: The Opal Deception,merge
 book,Artemis Fowl: The Time Paradox,Artemis Fowl and the Time Paradox,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.91,Artemis Fowl: The Time Paradox,merge
-book,Bad Blood: Secrets and Lies in a Silicon Valley Startup,"Billion Dollar Whale By Tom Wright, Bradley Hope & Bad Blood Secrets and Lies in a Silicon Valley Startup By John Carreyrou 2 Books Collection Set",John Carreyrou,John Carreyrou,,Open Library,open library,0.42,Bad Blood: Secrets and Lies in a Silicon Valley Startup,merge
 book,Battle for Hercules,Battle for Hercules (Deluxe Limited Edition),Jasmine Mas,Jasmine Mas,,Open Library,open library,0.47,Battle for Hercules,merge
-book,Book of Transformations,The book of transformations,Mark Charan Newton,Mark Charan Newton,,Open Library,open library,0.89,Book of Transformations,merge
-book,Buccaneers of the Caribbean: How Piracy Forged an Empire,Buccaneers Of The Caribbean How Piracy Forged An Empire 16071697,Jon Latimer,Jon Latimer,,Open Library,open library,0.86,Buccaneers of the Caribbean: How Piracy Forged an Empire,merge
 book,Children of Men,The Children of Men,P.D. James,P.D. James,,Open Library,open library,0.79,Children of Men,merge
-book,Cinder & the Prince of Midnight,Cinder & the Prince of Midnight (Midnight Tales),Susan Ee,Susan Ee,,Open Library,open library,0.86,Cinder & the Prince of Midnight,merge
 book,Daughter of Smoke & Bone,Daughter of Smoke and Bone,Laini Taylor,Laini Taylor,,Open Library,open library,0.85,Daughter of Smoke & Bone,merge
-book,David Beckham: My Side,David Beckham My Side Cut Out,David Beckham,David Beckham,,Open Library,open library,0.76,David Beckham: My Side,merge
 book,Days of Blood & Starlight,Days of Blood and Starlight,Laini Taylor,Laini Taylor,,Open Library,open library,0.86,Days of Blood & Starlight,merge
 book,Dear Becky,The Boys - Dear Becky,Garth Ennis,Garth Ennis,,Open Library,open library,0.58,Dear Becky,merge
-book,Death and the Underworld,Death and the Underworld Legends Anthony Horowitzpaperback,Anthony Horowitz,Anthony Horowitz,,Open Library,open library,0.44,Death and the Underworld,merge
-book,Disneyland Story: The Unofficial Guide to the Evolution of Walt Disney's Dream,The Disneyland Story The Unofficial Guide To The Evolution Of Walt Disneys Dream,Sam Gennawey,Sam Gennawey,,Open Library,open library,0.94,Disneyland Story: The Unofficial Guide to the Evolution of Walt Disney's Dream,merge
-book,Empire Ascendant,Empire Ascendant (Worldbreaker Saga #2),Kameron Hurley,Kameron Hurley,,Open Library,open library,0.46,Empire Ascendant,merge
-book,Empire of Dirt,Empire of Dirt : (the Echoes Saga: Book 2),Philip C. Quaintrell,Philip C. Quaintrell,,Open Library,open library,0.41,Empire of Dirt,merge
-book,Eye and Talon,Blade Runner 4 - Eye and Talon,K. W. Jeter,K. W. Jeter,,Open Library,open library,0.48,Eye and Talon,merge
-book,Fall of Thanes,The fall of thanes,Brian Ruckley,Brian Ruckley,,Open Library,open library,0.88,Fall of Thanes,merge
-book,Freakonomics: A Rogue Economist Explores the Hidden Side of Everything,"Freakonomics Twentieth Anniversary Edition: A Rogue Economist Explores the Hidden Side of Everything-A Groundbreaking Exploration of Hidden Incentives, Behavioral Economics, and Unconventional Wisdom",Steven D. Levitt,Steven D. Levitt,,Open Library,open library,0.46,Freakonomics: A Rogue Economist Explores the Hidden Side of Everything,merge
 book,Gate of the Feral Gods,The Gate of the Feral Gods,Matt Dinniman,Matt Dinniman,,Open Library,open library,1,Gate of the Feral Gods,merge
-book,Gods of Eden,The gods of Eden,William Bramley,William Bramley,,Open Library,open library,0.76,Gods of Eden,merge
-book,Gravity Dreams,Gravity Dreams [hc],Stephen Baxter,Stephen Baxter,,Open Library,open library,0.83,Gravity Dreams,merge
-book,Grinding It Out: The Making of McDonald's,Grinding It Out: The Making of McDonald's Mass Market,Ray Kroc,Ray Kroc,,Open Library,open library,0.82,Grinding It Out: The Making of McDonald's,merge
-book,Heaven Is for Real: A Little Boy's Astounding Story of His Trip to Heaven and Back,Heaven Is For Real A Little Boys Astounding Story Of His Trip To Heaven And Back Conversation Guide,Todd Burpo,Todd Burpo,,Open Library,open library,0.74,Heaven Is for Real: A Little Boy's Astounding Story of His Trip to Heaven and Back,merge
-book,Hemlock & Silver,Hemlock and Silver,T. Kingfisher,T. Kingfisher,,Open Library,open library,0.79,Hemlock & Silver,merge
-book,Holy Blood and the Holy Grail,The Holy Blood and the Holy Grail,Michael Baigent,Michael Baigent,,Open Library,open library,1,Holy Blood and the Holy Grail,merge
 book,"Hotel Valhalla, Guide to the Norse Worlds",For Magnus Chase: Hotel Valhalla guide to the Norse worlds,Rick Riordan,Rick Riordan,,Open Library,open library,0.71,"Hotel Valhalla, Guide to the Norse Worlds",merge
-book,"Hurry Up, Houdini!","Hurry up, Houdini (Magic Tree House #50)",Mary Pope Osborne,Mary Pope Osborne,,Open Library,open library,0.48,"Hurry Up, Houdini!",merge
-book,In the Village Where Brightwine Flows,In the Village Where Brightwine Flows: A Shattered Sands Novella (The Song of the Shattered Sands),Bradley P. Beaulieu,Bradley P. Beaulieu,,Open Library,open library,0.56,In the Village Where Brightwine Flows,merge
-book,Irresistible Devil,Stolen Vows and Irresistible Devil,Jenny Nordbak,Jenny Nordbak,,Open Library,open library,0.54,Irresistible Devil,merge
 book,Jonathan Strange & Mr Norrell,Jonathan Strange and Mr. Norrell,Susanna Clarke,Susanna Clarke,,Open Library,open library,0.88,Jonathan Strange & Mr Norrell,merge
-book,Juniper & Thorn,Juniper and Thorn,Ava Reid,Ava Reid,,Open Library,open library,0.78,Juniper & Thorn,merge
 book,Kitchen Confidential: Adventures in the Culinary Underbelly,Kitchen Confidential- Adventures in the Culinary Underbelly by Anthony Bourdain,Anthony Bourdain,Anthony Bourdain,,Open Library,open library,0.77,Kitchen Confidential: Adventures in the Culinary Underbelly,merge
-book,Last of the Dragorn,Last of the Dragorn (the Echoes Saga: Book 8),Philip C. Quaintrell,Philip C. Quaintrell,,Open Library,open library,0.51,Last of the Dragorn,merge
-book,MaddAddam,MADDADDAM TRILOGY BOX,Margaret Atwood,Margaret Atwood,,Open Library,open library,0.4,MaddAddam,merge
-book,Mark of the Fool,Mark of the Fool (Light Novel) Vol. 2,J.M. Clarke,J.M. Clarke,,Open Library,open library,0.5,Mark of the Fool,merge
-book,Mark of the Fool: 2,Mark of the Fool (Light Novel) Vol. 2,J.M. Clarke,J.M. Clarke,,Open Library,open library,0.56,Mark of the Fool: 2,merge
 book,Merlin,Merlín,Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.4,Merlin,merge
-book,Messenger,Messenger (The Giver #3),Lois Lowry,Lois Lowry,,Open Library,open library,0.48,Messenger,merge
-book,Mrs Bradshaw's Handbook: To Travelling Upon the Ankh-Morpork & Sto Plains Hygienic Railway,Mrs Bradshaw's Handbook: To Travelling Upon the Ankh-Morpork & Sto Plains Hygienic Railway (Discworld),Terry Pratchett,Terry Pratchett,,Open Library,open library,0.89,Mrs Bradshaw's Handbook: To Travelling Upon the Ankh-Morpork & Sto Plains Hygienic Railway,merge
-book,Neil Patrick Harris: Choose Your Own Autobiography,Choose Your Own Autobiography Neil Patrick Harris (Hardback) - Common,Neil Patrick Harris,Neil Patrick Harris,,Open Library,open library,0.82,Neil Patrick Harris: Choose Your Own Autobiography,merge
-book,Nexus: A Brief History of Information Networks From the Stone Age to AI,"Yuval Noah Harari Collection Set (Sapiens, Homo Deus, 21 Lessons for 21st Century and Nexus a Brief History of Information Networks from the Stone Age to AI)",Yuval Noah Harari,Yuval Noah Harari,,Open Library,open library,0.5,Nexus: A Brief History of Information Networks From the Stone Age to AI,merge
 book,Of Darkness and Dawn,Of Dawn and Darkness,Will Wight,Will Wight,,Open Library,open library,1,Of Darkness and Dawn,merge
 book,Of Killers and Kings,Of Kings and Killers,Will Wight,Will Wight,,Open Library,open library,1,Of Killers and Kings,merge
-book,Of Sea and Shadow,Of Sea and Shadow (The Elder Empire) (Volume 1),Will Wight,Will Wight,,Open Library,open library,0.4,Of Sea and Shadow,merge
-book,Of Shadow and Sea,Of Sea and Shadow (The Elder Empire) (Volume 1),Will Wight,Will Wight,,Open Library,open library,0.4,Of Shadow and Sea,merge
-book,Out of Egypt,Christ the Lord - Out of Egypt,Anne Rice,Anne Rice,,Open Library,open library,0.43,Out of Egypt,merge
-book,"Over Sea, Under Stone","Over Sea, Under Stone (The Dark Is Rising #1)",Susan Cooper,Susan Cooper,,Open Library,open library,0.47,"Over Sea, Under Stone",merge
 book,Over the Hill with the Swords of a Thousand Men,Boys - over the Hills with the Swords of a Thousand Men,Garth Ennis,Garth Ennis,,Open Library,open library,0.83,Over the Hill with the Swords of a Thousand Men,merge
-book,Peace and War,Peace and War The Omnibus Edition,Joe Haldeman,Joe Haldeman,,Open Library,open library,0.41,Peace and War,merge
 book,Percy Jackson and the Greek Heroes,Percy Jackson and the Greek Gods / Percy Jackson and the Greek Heroes / The Demigod Diaries / Demigods & Magicians / Percy Jackson and the Singer of Apollo,Rick Riordan,Rick Riordan,,Open Library,open library,0.45,Percy Jackson and the Greek Heroes,merge
-book,Rape of Nanking,The Rape of Nanking,Iris Chang,Iris Chang,,Open Library,open library,0.8,Rape of Nanking,merge
-book,Relic of the Gods,Relic of the Gods : Echoes of Fate,Philip C. Quaintrell,Philip C. Quaintrell,,Open Library,open library,0.6,Relic of the Gods,merge
-book,Replicant Night,Blade Runner - replicant night,K. W. Jeter,K. W. Jeter,,Open Library,open library,0.57,Replicant Night,merge
-book,"Revelations: Visions, Prophecy, and Politics in the Book of Revelation","Revelations Visions, Prophecy and Politics in the Book of Revelations (Book Club Edition)",Elaine Pagels,Elaine Pagels,,Open Library,open library,0.86,"Revelations: Visions, Prophecy, and Politics in the Book of Revelation",merge
 book,Roses of May,The Roses of May,Dot Hutchison,Dot Hutchison,,Open Library,open library,0.76,Roses of May,merge
-book,Rubicon: The Triumph and Tragedy of the Roman Republic,"Rubicon, The Triumph and Tragedy of tje Roman Republic",Tom Holland,Tom Holland,,Open Library,open library,0.94,Rubicon: The Triumph and Tragedy of the Roman Republic,merge
-book,"Rule by Secrecy: The Hidden History That Connects the Trilateral Commission, the Freemasons & the Great Pyramids","Rule by secrecy : the hidden history that connects the Trilateral Commission, the Freemasons, and the Great Pyramids",Jim Marrs,Jim Marrs,,Open Library,open library,0.96,"Rule by Secrecy: The Hidden History That Connects the Trilateral Commission, the Freemasons & the Great Pyramids",merge
-book,Serpent Mage,The Serpent Mage,Margaret Weis,Margaret Weis,,Open Library,open library,0.76,Serpent Mage,merge
-book,Shadow Divers: The True Adventure of Two Americans Who Risked Everything to Solve One of the Last Mysteries of World War II,Shadow Divers - True Adventure Of Two Americans Who Risked Everything To Solve One Of The Last Mysteries Of World War Ii,Robert Kurson,Robert Kurson,,Open Library,open library,1,Shadow Divers: The True Adventure of Two Americans Who Risked Everything to Solve One of the Last Mysteries of World War II,merge
-book,Shadow of the Shark,Shadow of the Shark (Magic Tree House #53),Mary Pope Osborne,Mary Pope Osborne,,Open Library,open library,0.47,Shadow of the Shark,merge
-book,Shadowplay,"Shadowplay (Shadowmarch, Vol. 2)",Tad Williams,Tad Williams,,Open Library,open library,0.48,Shadowplay,merge
-book,Shattered Innocence,Shattered Innocence and Royal Heart,Sara Cate,Sara Cate,,Open Library,open library,0.56,Shattered Innocence,merge
-book,"Short Stories From Hogwarts of Heroism, Hardship and Dangerous Hobbies","Short Stories from Hogwarts of Heroism, Hardship and Dangerous Hobbies_Surprises from the Wizarding World",J.K. Rowling,J.K. Rowling,,Open Library,open library,0.7,"Short Stories From Hogwarts of Heroism, Hardship and Dangerous Hobbies",merge
-book,Silver on the Tree,Silver on the Tree (The Dark Is Rising #5),Susan Cooper,Susan Cooper,,Open Library,open library,0.51,Silver on the Tree,merge
-book,Storming Heaven,Storming Heaven : The Age of Bronze,Miles Cameron,Miles Cameron,,Open Library,open library,0.47,Storming Heaven,merge
-book,Terciel & Elinor,Terciel and Elinor,Garth Nix,Garth Nix,,Open Library,open library,0.79,Terciel & Elinor,merge
 book,The Amazing Maurice & His Educated Rodents,The Amazing Maurice and His Educated Rodents,Terry Pratchett,Terry Pratchett,,Open Library,open library,0.93,The Amazing Maurice & His Educated Rodents,merge
-book,The Armor of Light,Armadura de la Luz / the Armor of Light,Ken Follett,Ken Follett,,Open Library,open library,0.58,The Armor of Light,merge
-book,The Average American Marriage,The Average American Marriage A Novel,Chad Kultgen,Chad Kultgen,,Open Library,open library,0.79,The Average American Marriage,merge
-book,The Black Guard,The Black Guard (The Long War),A. J. Smith,A. J. Smith,,Open Library,open library,0.64,The Black Guard,merge
-book,The Black Rood,The Black Rood (The Celtic Crusades #2),Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.47,The Black Rood,merge
 book,The Bone House,The Bone House (Bright Empires #2),Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.48,The Bone House,merge
-book,"The Book of Lost Tales, Part One","The Book of Lost Tales, Parts One & Two",J.R.R. Tolkien,J.R.R. Tolkien,,Open Library,open library,0.83,"The Book of Lost Tales, Part One",merge
-book,"The Book of Lost Tales, Part Two","The Book of Lost Tales, Parts One & Two",J.R.R. Tolkien,J.R.R. Tolkien,,Open Library,open library,0.83,"The Book of Lost Tales, Part Two",merge
-book,The Brass God,The Brass God (The Gates of the World Book 3),K. M. McKinley,K. M. McKinley,,Open Library,open library,0.41,The Brass God,merge
-book,The Bright Sword,The Bright Sword: A Novel of King Arthur,Lev Grossman,Lev Grossman,,Open Library,open library,0.44,The Bright Sword,merge
 book,The Calm Before,The Walking Dead Volume 7 The Calm Before,Robert Kirkman,Robert Kirkman,,Open Library,open library,0.42,The Calm Before,merge
-book,The Case for Christ,The Case for Christ-Japanese,Lee Strobel,Lee Strobel,,Open Library,open library,0.7,The Case for Christ,merge
-book,The Case for the Resurrection of Jesus,Case for the Resurrection of Jesus,Gary R. Habermas,Gary R. Habermas,,Open Library,open library,1,The Case for the Resurrection of Jesus,merge
-book,The City of Ember,The City of Ember (The First Book of Ember),Jeanne DuPrau,Jeanne DuPrau,,Open Library,open library,0.62,The City of Ember,merge
-book,The Collapsing Empire,The Collapsing Empire (The Interdependency),John Scalzi,John Scalzi,,Open Library,open library,0.58,The Collapsing Empire,merge
-book,The Constitution of the United States and Other Patriotic Documents,Constitution of the United States and Other Patriotic Documents,Gregg Jarrett,Gregg Jarrett,,Open Library,open library,1,The Constitution of the United States and Other Patriotic Documents,merge
-book,The Copper Promise,The Copper Promise (The Copper Cat Book 1),Jen Williams,Jen Williams,,Open Library,open library,0.66,The Copper Promise,merge
-book,The Crooked Letter,The Crooked Letter: Books of the Cataclysm,Sean Williams,Sean Williams,,Open Library,open library,0.53,The Crooked Letter,merge
-book,The Dawn of the Cursed Queen,Dawn of the Cursed Queen,Amber V. Nicole,Amber V. Nicole,,Open Library,open library,1,The Dawn of the Cursed Queen,merge
 book,The Death of Dulgath,The Death of Dulgath (The Riyria Chronicles Book 3),Michael J. Sullivan,Michael J. Sullivan,,Open Library,open library,0.42,The Death of Dulgath,merge
-book,The Discworld Atlas,The Compleat Discworld Atlas,Terry Pratchett,Terry Pratchett,,Open Library,open library,0.69,The Discworld Atlas,merge
-book,The Edge of Human,Blade Runner 2 - the edge of human,K. W. Jeter,K. W. Jeter,,Open Library,open library,0.55,The Edge of Human,merge
-book,The Ember Blade,The Ember Blade (The Darkwater Legacy),Chris Wooding,Chris Wooding,,Open Library,open library,0.5,The Ember Blade,merge
-book,The Endless Knot,The Endless Knot (The Song of Albion #3),Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.5,The Endless Knot,merge
-book,The Fall of Dragons,The Fall of Dragons (The Traitor Son Cycle),Miles Cameron,Miles Cameron,,Open Library,open library,0.54,The Fall of Dragons,merge
-book,The Fall of Lucifer,The Fall of Lucifer (Chronicles of Brothers),Wendy Alec,Wendy Alec,,Open Library,open library,0.51,The Fall of Lucifer,merge
-book,The Fall of Neverdark,Fall of Neverdark: (Echoes of the Lost Book 1),Philip C. Quaintrell,Philip C. Quaintrell,,Open Library,open library,0.54,The Fall of Neverdark,merge
 book,The Fatal Tree,The Fatal Tree (Bright Empires),Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.48,The Fatal Tree,merge
-book,The Field of Swords,"The Field of Swords (Emperor, Book 3)",Conn Iggulden,Conn Iggulden,,Open Library,open library,0.57,The Field of Swords,merge
-book,The Final Testament,The Final Testament Of The Holy Bible,James Frey,James Frey,,Open Library,open library,0.58,The Final Testament,merge
-book,The Flight of the Whisper King,Flight of the Whisper King,Bradley P. Beaulieu,Bradley P. Beaulieu,,Open Library,open library,1,The Flight of the Whisper King,merge
-book,The Gods of War,Emperor V 4 The Gods Of War,Conn Iggulden,Conn Iggulden,,Open Library,open library,0.57,The Gods of War,merge
 book,The Golden Compass,"The Golden Compass Graphic Novel, Volume 2",Philip Pullman,Philip Pullman,,Open Library,open library,0.46,The Golden Compass,merge
 book,The Golem and the Jinni,Golem and the Jinni,Helene Wecker,Helene Wecker,,Open Library,open library,1,The Golem and the Jinni,merge
-book,The Gospel According to Jesus Christ,Evangelio Según Jesucristo / the Gospel According to Jesus Christ,José Saramago,José Saramago,,Open Library,open library,0.64,The Gospel According to Jesus Christ,merge
-book,The Grail,Area 51 The Grail,Bob Mayer,Bob Mayer,,Open Library,open library,0.56,The Grail,merge
 book,The Great Hunt,The Great Hunt (The Wheel of Time Book 2),Robert Jordan,Robert Jordan,,Open Library,open library,0.43,The Great Hunt,merge
-book,The Green Pearl,Lyonesse: The Green Pearl,Jack Vance,Jack Vance,,Open Library,open library,0.64,The Green Pearl,merge
-book,The Grey King,The Grey King (The Dark is Rising #4),Susan Cooper,Susan Cooper,,Open Library,open library,0.48,The Grey King,merge
-book,The Hand of Oberon,"The Hand of Oberon (The Chronicles of Amber, Book 4)",Roger Zelazny,Roger Zelazny,,Open Library,open library,0.45,The Hand of Oberon,merge
-book,The Hand of the Sun King,Hand of the Sun King,J. T. Greathouse,J. T. Greathouse,,Open Library,open library,1,The Hand of the Sun King,merge
 book,The Heart of What Was Lost,The Heart of What Was Lost (Osten Ard),Tad Williams,Tad Williams,,Open Library,open library,0.76,The Heart of What Was Lost,merge
 book,The Hope of Elantris,The Hope of Elantris [Dramatized Adaptation],Brandon Sanderson,Brandon Sanderson,,Open Library,open library,0.5,The Hope of Elantris,merge
 book,The House Across the Lake,House Across the Lake,Riley Sager,Riley Sager,,Open Library,open library,1,The House Across the Lake,merge
-book,The House with the Golden Door,House with the Golden Door,Elodie Harper,Elodie Harper,,Open Library,open library,1,The House with the Golden Door,merge
-book,The Infernal Battalion,The Infernal Battalion (The Shadow Campaigns),Django Wexler,Django Wexler,,Open Library,open library,0.57,The Infernal Battalion,merge
-book,The Iron Ghost,The Iron Ghost (The Copper Cat Book 2),Jen Williams,Jen Williams,,Open Library,open library,0.47,The Iron Ghost,merge
-book,The Iron Lance,The Iron Lance (The Celtic Crusades #1),Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.47,The Iron Lance,merge
-book,The Jaguar Path,"Jaguar Path (the Songs of the Drowned, Book 2)",Anna Stephens,Anna Stephens,,Open Library,open library,0.4,The Jaguar Path,merge
-book,The Knights of Erador,Knights of Erador (the Echoes Saga: Book 7),Philip C. Quaintrell,Philip C. Quaintrell,,Open Library,open library,0.55,The Knights of Erador,merge
 book,The Land of the Living and the Dead,Land of the Living and the Dead,Shauna Lawless,Shauna Lawless,,Open Library,open library,1,The Land of the Living and the Dead,merge
-book,The Last of the Atalanteans,Last of the Atalanteans,P. L. Stuart,P. L. Stuart,,Open Library,open library,1,The Last of the Atalanteans,merge
-book,The London Séance Society,The London Seance Society,Sarah Penner,Sarah Penner,,Open Library,open library,0.79,The London Séance Society,merge
 book,The Mean Seasons,Fables 5 the Mean Season,Bill Willingham,Bill Willingham,,Open Library,open library,0.56,The Mean Seasons,merge
 book,The Merchant of Death,The Merchant of Death (Pendragon #1),D.J. MacHale,D.J. MacHale,,Open Library,open library,0.65,The Merchant of Death,merge
-book,The Midnight Watch,The Midnight Watch: A Sigma Force Short Story,James Rollins,James Rollins,,Open Library,open library,0.44,The Midnight Watch,merge
-book,The Mission,Area 51 The Mission (Volume 3),Bob Mayer,Bob Mayer,,Open Library,open library,0.41,The Mission,merge
-book,The Mistress and the Key,Mistress and the Key,Ben Mezrich,Ben Mezrich,,Open Library,open library,1,The Mistress and the Key,merge
-book,The Paradise War,The Paradise War (The Song of Albion #1),Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.5,The Paradise War,merge
-book,The Pattern of the World,Pattern of the World,J. T. Greathouse,J. T. Greathouse,,Open Library,open library,1,The Pattern of the World,merge
-book,The Poet Empress,Sneak Peek for the Poet Empress,Shen Tao,Shen Tao,,Open Library,open library,0.55,The Poet Empress,merge
-book,The Professor and the Madman,The Professor and the Madman CD,Simon Winchester,Simon Winchester,,Open Library,open library,0.89,The Professor and the Madman,merge
-book,The Providence of Fire,Providence of Fire : Chronicle of the Unhewn Throne,Brian Staveley,Brian Staveley,,Open Library,open library,0.53,The Providence of Fire,merge
-book,The Reply,Area 51 The Reply,Bob Mayer,Bob Mayer,,Open Library,open library,0.56,The Reply,merge
-book,The Road to Cana,Christ the Lord - The Road to Cana,Anne Rice,Anne Rice,,Open Library,open library,0.59,The Road to Cana,merge
 book,The Road to Middle-Earth: How J.R.R. Tolkien Created a New Mythology,The Road to Middle-earth: How J. R. R. Tolkien created a new mythology (How J.R.R. Tolkien Created a New Mythology),Tom Shippey,Tom Shippey,,Open Library,open library,1.00,The Road to Middle-Earth: How J.R.R. Tolkien Created a New Mythology,merge
-book,The Running Grave,Tumba Veloz / the Running Grave,Robert Galbraith,Robert Galbraith,,Open Library,open library,0.62,The Running Grave,merge
-book,The Scarlet Tides,Scarlet Tides: The Moontide Quartet Book 2,David Hair,David Hair,,Open Library,open library,0.45,The Scarlet Tides,merge
-book,The Search for the Red Dragon,Search for the Red Dragon,James A. Owen,James A. Owen,,Open Library,open library,1,The Search for the Red Dragon,merge
-book,The Serpent and the Wings of Night,The Serpent & the Wings of Night/The Ashes & the Star-Cursed King/The Songbird and the Heart of Stone,Carissa Broadbent,Carissa Broadbent,,Open Library,open library,0.45,The Serpent and the Wings of Night,merge
 book,The Shadow Lamp,The Shadow Lamp (Bright Empires #4),Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.48,The Shadow Lamp,merge
 book,The Shadow of What Was Lost,The Shadow of What Was Lost (The Licanius Trilogy Book 1),James Islington,James Islington,,Open Library,open library,0.55,The Shadow of What Was Lost,merge
-book,The Silver Tide,The Silver Tide (Copper Cat Trilogy),Jen Williams,Jen Williams,,Open Library,open library,0.48,The Silver Tide,merge
 book,The Soldiers of Halla,The Soldiers of Halla (Pendragon #10),D.J. MacHale,D.J. MacHale,,Open Library,open library,0.63,The Soldiers of Halla,merge
 book,The Spirit Well,The spirit well - Bright Empires #3,Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.5,The Spirit Well,merge
-book,The Stone Knife,The Stone Knife Lib/E,Anna Stephens,Anna Stephens,,Open Library,open library,0.73,The Stone Knife,merge
 book,The System of the World,System of the World,Neal Stephenson,Neal Stephenson,,Open Library,open library,1,The System of the World,merge
-book,The Templar Legacy,"Templar Legacy, The",Steve Berry,Steve Berry,,Open Library,open library,1,The Templar Legacy,merge
-book,The Thousand Names,The Thousand Names (The Shadow Campaigns),Django Wexler,Django Wexler,,Open Library,open library,0.5,The Thousand Names,merge
-book,The Throne of Broken Gods,The Throne of Broken Gods - Part 1,Amber V. Nicole,Amber V. Nicole,,Open Library,open library,0.77,The Throne of Broken Gods,merge
-book,The Unseen Realm: Discovering the Supernatural World of the Bible,Unseen Realm (Expanded Edition) - Discovering the Supernatural World of the Bible,Michael S. Heiser,Michael S. Heiser,,Open Library,open library,0.78,The Unseen Realm: Discovering the Supernatural World of the Bible,merge
-book,The Warlords of Nin,The Warlords of Nin (The Dragon King #2),Stephen R. Lawhead,Stephen R. Lawhead,,Open Library,open library,0.59,The Warlords of Nin,merge
 book,The Winds of Winter,The Winds of Winter ~ Preview Collection,George R .R. Martin,George R .R. Martin,,Open Library,open library,0.47,The Winds of Winter,merge
 book,The Witchwood Crown,The Witchwood Crown (Last King of Osten Ard Book 1),Tad Williams,Tad Williams,,Open Library,open library,0.41,The Witchwood Crown,merge
-book,The Wizard Heir,"Wizard Heir, The",Cinda Williams Chima,Cinda Williams Chima,,Open Library,open library,1,The Wizard Heir,merge
 book,The Woman in the Window,The Woman in the Window: A Novel,A.J. Finn,A.J. Finn,,Open Library,open library,0.7,The Woman in the Window,merge
-book,The Wrath of the Fallen,Wrath of the Fallen,Amber V. Nicole,Amber V. Nicole,,Open Library,open library,1,The Wrath of the Fallen,merge
 book,The Year of the Witching,Year of the Witching,Alexis Henderson,Alexis Henderson,,Open Library,open library,1,The Year of the Witching,merge
-book,Traitor’s Knot,Traitor's Knot (Wars of Light & Shadow),Janny Wurts,Janny Wurts,,Open Library,open library,0.43,Traitor’s Knot,merge
-book,Warriors in Winter,Warriors in Winter (Magic Tree House (R)),Mary Pope Osborne,Mary Pope Osborne,,Open Library,open library,0.49,Warriors in Winter,merge
 book,We Gotta Go Now,Boys We Gotta Go Now Vol. 4,Garth Ennis,Garth Ennis,,Open Library,open library,0.56,We Gotta Go Now,merge
-book,What the Dog Saw and Other Adventures,What the dog saw and other adventure stories,Malcolm Gladwell,Malcolm Gladwell,,Open Library,open library,0.81,What the Dog Saw and Other Adventures,merge
-book,What We Believe but Cannot Prove: Today's Leading Thinkers on Science in the Age of Certainty,WHAT WE BELIEVE BUT CANNOT PROVE: TODAY'S LEADING THINKERS ON SCIENCE IN THE AGE OF CERTAINTY; ED. BY JOHN BROCKMAN,John Brockman,John Brockman,,Open Library,open library,0.82,What We Believe but Cannot Prove: Today's Leading Thinkers on Science in the Age of Certainty,merge
-book,White Out,White Out (24690),A. A. Dark,A. A. Dark,,Open Library,open library,0.62,White Out,merge
 book,White Sand,White Sand 1,Brandon Sanderson,Brandon Sanderson,,Open Library,open library,0.85,White Sand,merge
 book,Animal Farm,Animal Farm,Bill Willingham,George Orwell,To-Read Master List,To-Read Master List,same title,1,,separate
 book,Red Queen,Red Queen,Christina Henry,Victoria Aveyard,To-Read Master List,To-Read Master List,same title,1,,separate
@@ -283,7 +152,6 @@ book,The Bone Shard Emperor,The Bone Shard War,Andrea Stewart,Andrea Stewart,To-
 book,The Bone Ships,The Bone Ships Wake,R.J. Barker,R.J. Barker,To-Read Master List,To-Read Master List,similar,0.75,,separate
 book,The Book of Koli,The Fall of Koli,M.R. Carey,M.R. Carey,To-Read Master List,To-Read Master List,similar,0.55,,separate
 book,The Book of Koli,The Trials of Koli,M.R. Carey,M.R. Carey,To-Read Master List,To-Read Master List,similar,0.52,,separate
-book,The Bruning Maze,The Burning Maze,Rick Riordan,Rick Riordan,Riordanverse,To-Read Master List,similar,0.62,,separate
 book,The Dark Half,The Dark Tower,Stephen King,Stephen King,Stephen King,To-Read Master List; Stephen King,similar,0.47,,separate
 book,The Demigod Diaries,The Demigod Files,Rick Riordan,Rick Riordan,Riordanverse,To-Read Master List; Riordanverse,similar,0.54,,separate
 book,The Eleventh Metal,The Lost Metal,Brandon Sanderson,Brandon Sanderson,Cosmere,Cosmere,similar,0.42,,separate
@@ -366,7 +234,6 @@ series,The Broken Earth,The Long Earth,,,To-Read Master List,To-Read Master List
 series,The Burning,The Shining,,,To-Read Master List; Coming Out,Stephen King,similar,0.41,,separate
 series,The Chronicles of Alice,The Kane Chronicles,,,To-Read Master List,To-Read Master List; Riordanverse,similar,0.52,,separate
 series,The Chronicles of Alice,The Riyira Chronicles,,,To-Read Master List,To-Read Master List,similar,0.48,,separate
-series,The Chronicles of Alice,The Riyria Chronicles,,,To-Read Master List,Coming Out,similar,0.48,,separate
 series,The Chronicles of Alice,The Three Kingdoms Chronicles,,,To-Read Master List,Coming Out,similar,0.41,,separate
 series,The Chronicles of Alice,The Warlord Chronicles,,,To-Read Master List,To-Read Master List,similar,0.47,,separate
 series,The Collector,The Witch Collector,,,To-Read Master List,Coming Out,similar,0.7,,separate
@@ -381,19 +248,14 @@ series,The Illuminae Files,The Themis Files,,,To-Read Master List,Series,similar
 series,The Inheritance Cycle,The Inheritance Games,,,To-Read Master List,To-Read Master List,similar,0.57,,separate
 series,The Kane Chronicles,The Kingkiller Chronicle,,,To-Read Master List; Riordanverse,To-Read Master List,similar,0.45,,separate
 series,The Kane Chronicles,The Riyira Chronicles,,,To-Read Master List; Riordanverse,To-Read Master List,similar,0.56,,separate
-series,The Kane Chronicles,The Riyria Chronicles,,,To-Read Master List; Riordanverse,Coming Out,similar,0.56,,separate
 series,The Kane Chronicles,The Three Kingdoms Chronicles,,,To-Read Master List; Riordanverse,Coming Out,similar,0.5,,separate
 series,The Kane Chronicles,The Traveler's Gate Chronicles,,,To-Read Master List; Riordanverse,To-Read Master List,similar,0.43,,separate
 series,The Kane Chronicles,The Warlord Chronicles,,,To-Read Master List; Riordanverse,To-Read Master List,similar,0.54,,separate
 series,The Kingkiller Chronicle,The Three Kingdoms Chronicles,,,To-Read Master List,Coming Out,similar,0.47,,separate
 series,The Last Magician,The Magicians,,,To-Read Master List,To-Read Master List,similar,0.6,,separate
-series,The Riyira Chronicles,The Riyria Chronicles,,,To-Read Master List,Coming Out,similar,0.69,,separate
 series,The Riyira Chronicles,The Three Kingdoms Chronicles,,,To-Read Master List,Coming Out,similar,0.43,,separate
 series,The Riyira Chronicles,The Traveler's Gate Chronicles,,,To-Read Master List,To-Read Master List,similar,0.41,,separate
 series,The Riyira Chronicles,The Warlord Chronicles,,,To-Read Master List,To-Read Master List,similar,0.5,,separate
-series,The Riyria Chronicles,The Three Kingdoms Chronicles,,,Coming Out,Coming Out,similar,0.43,,separate
-series,The Riyria Chronicles,The Traveler's Gate Chronicles,,,Coming Out,To-Read Master List,similar,0.41,,separate
-series,The Riyria Chronicles,The Warlord Chronicles,,,Coming Out,To-Read Master List,similar,0.5,,separate
 series,The Three Kingdoms Chronicles,The Warlord Chronicles,,,Coming Out,To-Read Master List,similar,0.42,,separate
 series,The Traveler's Gate Chronicles,The Traveler's Gate Trilogy,,,To-Read Master List,To-Read Master List,similar,0.53,,separate
 series,Villains,Villains of Lore,,,To-Read Master List,Coming Out,similar,0.53,,separate
