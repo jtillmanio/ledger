@@ -42,7 +42,7 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 | Phase | Goal | Milestones | Done |
 |---|---|---|---|
 | [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6) | 12 / 13 |
-| [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover (START-HERE Step 14) waits for all of Phase 1, plus 2.11a and 1.11.** | M3–M9 | 28 / 39 |
+| [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is 1.26 (START-HERE Step 14): it waits for all of Phase 1, plus 2.11a and 1.11, and for every entry 1.25's parity audit names (D-95).** | M3–M9 | 28 / 41 |
 | [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 0 / 16 |
 | [3 Editing](#phase-3--editing) | Maintain the catalog in the app: inline edits, runs, prerequisites, eras, detail sheets and adding at scale. | M13–M15 | 0 / 14 |
 | [4 Enrichment](#phase-4--enrichment) | Metron, Open Library and Hardcover backfill, and real covers. A prerequisite for Phase 7. | M16 | 0 / 4 |
@@ -52,7 +52,7 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 | [8 Watchlist: film and television](#phase-8--watchlist-film-and-television) | Films, shows, seasons and franchises. Needs only Phase 0, so it can be pulled forward. | M23, M24 | 0 / 10 |
 | [9 Music](#phase-9--music) | A fourth medium, last (D-75). | M25 | 0 / 7 |
 
-Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7.
+Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch.
 
 ---
 
@@ -216,7 +216,7 @@ or edits it first.)*
 
 ## Phase 1 — Daily use (build before anything clever)
 
-**Goal:** Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover (START-HERE Step 14) waits for all of Phase 1, plus 2.11a and 1.11.** **Milestones:** M3–M9.
+**Goal:** Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is 1.26 (START-HERE Step 14): it waits for all of Phase 1, plus 2.11a and 1.11, and for every entry 1.25's parity audit names (D-95).** **Milestones:** M3–M9.
 
 **Build order.** The entries below keep the order they were written in,
 which is not the order they are built in. The IDs predate the reviews that fixed the order (R3-10, R3-12,
@@ -1421,6 +1421,57 @@ proposed.**
 writes `book_status = to_read` and no plan row, and its undo restores
 `unlisted`; a line naming a `read` or `to_read` book leaves the status as it
 was; the review row for the Unlisted book says it moves to Someday.
+
+### ☐ 1.25 Sheets parity audit · S
+From the owner, 2026-10-28 (D-95). Cutover freezes both Sheets, so anything
+the owner still does in them stops the day after unless the app does it. The
+M1–M9 gate was drawn from the plan, not from the Sheets, and it already
+misses some things: Step 14 says catalog and prerequisite edits are made in
+the app from cutover on, but that is 3.1–3.3; the To-Read tabs budget a year
+and its quarters by word count, which is 2.0, 2.1, 2.2, 2.2b and 2.3; the
+top books per year are 3.4. The audit finds the rest instead of guessing.
+
+From a fresh export of both workbooks, `docs/cutover-parity.md` lists every
+tab, what the owner reads or does there today, and for each use one of: a
+ticked roadmap entry that does it; an open entry, which joins 1.26's
+**Depends on** and is pulled into M9's order; or *won't carry*, with the
+owner's reason. A use no entry covers gets an entry written here and agreed
+with the owner first, like any entry with no Check. Tabs of one shape (the
+`Read 20XX` and `To-Read 20XX` tabs) may share a section that names each.
+No code. Depends on nothing, and the earlier it runs the better: its list
+decides how far away cutover is. Re-read it against the final export before
+1.26.
+
+**Check:** every tab name a fresh export of `etl/data/Comics.xlsx` and
+`etl/data/Books.xlsx` holds (`py -c "import pandas as pd; [print(n) for f in
+('etl/data/Comics.xlsx', 'etl/data/Books.xlsx') for n in
+pd.ExcelFile(f).sheet_names]"`) appears in `docs/cutover-parity.md`; every use
+listed there ends in a roadmap ID or *won't carry* with a reason; the file
+says the owner signed it off, and when; and 1.26's **Depends on** names every
+open ID it lists.
+
+### ☐ 1.26 Cut over from the Sheets · M
+From the owner, 2026-10-28 (D-95). START-HERE Step 14 as an entry, so the
+switch has a box and a Check like any other work: a fresh export and extract,
+the last load of production, `LEDGER_LIVE=true` in `.env.live` and in the
+repo variable, both Sheets renamed as archives and set read-only with the
+app's URL at the top, then the wishlist promotion (1.4d) on production. The
+owner runs every command; Claude never runs one against `.env.live`
+(CLAUDE.md). Every box in Step 14's *Before the switch* is ticked first,
+including that adding a run and marking reads feel faster than the sheet.
+The entry is ticked on the day of the switch. The month of running both
+(D-18) follows it, with its *Done when* in Step 14.
+
+**Depends on:** 1.25; every open Phase 1 entry (1.14b, 1.18b, 1.18c, 1.20,
+1.4e, 1.4f, 1.17, 1.19, 1.22, 1.23, 1.24); 2.11a and 1.11 (done); and every
+open entry `docs/cutover-parity.md` names, added here by 1.25.
+
+**Check:** the owner, after the switch: `npm run rebuild -- -EnvFile .env.live`
+and `.\etl\load.ps1 seed-final -EnvFile .env.live` both refuse, naming
+`LEDGER_LIVE`; `gh variable get LEDGER_LIVE` prints `true`; both Sheets carry
+their archive names and open read-only; and the books read this year and the
+runs finished, on `/books/status` and `/comics/status` in production, match
+the frozen Sheets.
 
 ---
 

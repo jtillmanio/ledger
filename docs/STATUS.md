@@ -68,8 +68,10 @@ The rest of M8, in order: **1.21 → 1.18 → 1.20** (TASK-029, TASK-030,
 TASK-031, all Draft: review them, then set Ready). Answer `book_review.csv`
 now, and `calibre_review.csv` and `calibre_reads.csv` after 1.18. Then M9
 (1.4e → 1.19 → 1.22 → 1.17 → 1.23), which has no task files yet: `/new-task
-docs/06-tasklist.md M9`. Cutover (START-HERE Step 14) waits for M1–M9: all of
-Phase 1, plus 2.11a and 1.11. 0.12 (a redeploy of a skipped preview) is in no
+docs/06-tasklist.md M9`. Cutover is now roadmap 1.26 (START-HERE Step 14,
+D-95): it waits for M1–M9 (all of Phase 1, plus 2.11a and 1.11) and for every
+open entry 1.25's Sheets parity audit names. 1.25 needs no code and can run
+now; its list says how far away cutover is. 0.12 (a redeploy of a skipped preview) is in no
 sitting and can go on a `chore/` branch any time.
 
 **Books intake (2026-10-26).** 1.21 (*Owned*, below Someday, D-83), 1.22

@@ -1372,6 +1372,11 @@ migrates is a preview, on its own throwaway Neon branch (10f).
 
 **~1 hour for the switch, then a month of the app as the record (D-18)**
 
+This step is roadmap **1.26**, with its own box and **Check:** (D-95). It
+waits for 1.25, the Sheets parity audit: `docs/cutover-parity.md` lists every
+tab of both workbooks and what in the app replaces each use, and every open
+entry it names is built first.
+
 The order matters. The final load **truncates everything the app holds** —
 progress, book status, and through `CASCADE` the queue, shelves, eras and
 inbox — so it happens **first**, and `LEDGER_LIVE=true` goes on straight after.
@@ -1383,6 +1388,9 @@ frozen and kept only to compare numbers during the month.
 - [ ] **Step 12 is finished**, and 0.8a / 0.8b are ticked in `05-roadmap.md` (read
       state is per run). Not negotiable: after this step it cannot be done
       without guessing.
+- [ ] **The parity audit is done** (1.25, D-95): you signed off
+      `docs/cutover-parity.md`, re-read it against the fresh export below,
+      and every open entry it names is ticked in `05-roadmap.md`.
 - [ ] **The prerequisite audit is done** (D-20, `OWNER-CHECKLIST.md`): after a
       fresh workbook download, `npm run extract -- --fail-on-cycle` passes.
 - [ ] **No slug collisions** (D-15): `seed/unresolved.csv` has zero
@@ -1420,7 +1428,8 @@ migrates the live database instead of pointing you at a rebuild.
 
 4. Rename the sheet `Comics (archive, to 2026-XX)` and set it **read-only now**.
    Edits to it no longer reach the app; prerequisite and catalog changes are
-   made in the app from here (3.1–3.3).
+   made in the app from here (3.1–3.3, built before this step if 1.25's
+   audit says you still make them in the sheet).
 5. Put the app URL in a note at the top of the archived sheet.
 6. **Promote the wishlist** (task 1.4d, D-39): open `/books/add?from=wishlist`
    on production and work through the 497 lines from the old To-Read tab. Each
