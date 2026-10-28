@@ -271,7 +271,7 @@ with the task that first reads it.
 | 1.18 | Calibre: word counts, series, tags and reads for the books | M | TASK-030 | 1.14, 1.15, 1.21 |
 | 1.18b | Calibre: universes, subseries, page counts and the Calibre id | M | TASK-032 | 1.18 |
 | 1.18c | Calibre genres | M | TASK-033 | 1.18b |
-| 1.14b | Hardcover details for the books, by ISBN | M | — | 1.18b |
+| 1.14b | Hardcover details for the books, by ISBN | M | TASK-034 | 1.18b |
 | 1.20 | Hold books with no Open Library match for review | M | TASK-031 | 1.14b |
 
 ## M9: Captured from cutover on — MVP
