@@ -5,10 +5,13 @@ book,American Kingpin,American Kingpin: The Epic Hunt for the Criminal Mastermin
 book,Arabian Nights (and Days),Arabian Nights and Days,Bill Willingham,Naguib Mahfouz,,Calibre,calibre,1,Naguib Mahfouz,separate
 book,Artemis Fowl,Artemis Fowl: The Time Paradox,Eoin Colfer,Eoin Colfer,,Calibre,calibre,0.45,Artemis Fowl: The Time Paradox,separate
 book,Arthur,Arthur,Stephen R. Lawhead,Giles Kristian,,Calibre,calibre,1,Giles Kristian,separate
+book,Assholes Finish First,Assholes Finish First,,Tucker Max,,Calibre,calibre,1.00,Tucker Max,merge
 book,Big Little Lies,Big Little Truths,Liane Moriarty,Liane Moriarty,,Calibre,calibre,0.52,Big Little Truths,separate
 book,Bloodline,Bloodline,Will Wight,James Rollins,,Calibre,calibre,1,James Rollins,separate
 book,Bloodline,Bloodline,Will Wight,Conn Iggulden,,Calibre,calibre,1,Conn Iggulden,separate
 book,Camelot,Camelot,Bill Willingham,Giles Kristian,,Calibre,calibre,1,Giles Kristian,separate
+book,Children of Time,Children of Memory,Adrian Tchaikovsky,Adrian Tchaikovsky,,Calibre,calibre,0.50,Children of Memory,separate
+book,Children of Time,Children of Strife,Adrian Tchaikovsky,Adrian Tchaikovsky,,Calibre,calibre,0.50,Children of Strife,separate
 book,Dead Beat,Dead Beat,Jim Butcher,Leigh Bardugo,,Calibre,calibre,1,Leigh Bardugo,separate
 book,Empire of the Damned,Empire of the Dawn,Jay Kristoff,Jay Kristoff,,Calibre,calibre,0.67,Empire of the Dawn,separate
 book,End of Days,End of Days,Susan Ee,Wendy Alec,,Calibre,calibre,1,Wendy Alec,separate
@@ -34,6 +37,7 @@ book,The Ship of the Dead,The Court of the Dead,Rick Riordan,Rick Riordan,,Calib
 book,The Truth,The Truth,Ryan Cahill,Bob Mayer,,Calibre,calibre,1,Bob Mayer,separate
 book,The Way of Kings,The Way of Kings Prime,Brandon Sanderson,Brandon Sanderson,,Calibre,calibre,0.74,The Way of Kings Prime,separate
 book,Theft of Swords,Age of Swords,Michael J. Sullivan,Michael J. Sullivan,,Calibre,calibre,0.5,Age of Swords,separate
+book,Unsouled,UnSouled,Will Wight,Neal Shusterman,,Calibre,calibre,1.00,Neal Shusterman,separate
 book,White Sand,White Sand (prose),Brandon Sanderson,Brandon Sanderson,,Calibre,calibre,0.65,White Sand (prose),separate
 book,World's End,World's End,Neil Gaiman,Mark Chadbourn,,Calibre,calibre,1,Mark Chadbourn,separate
 book,1177 B.C.: The Year Civilization Collapsed,1177 B.C.: The Year Civilization Collapsed: Revised and Updated,Eric H. Cline,Eric H. Cline,,Open Library,open library,0.7,1177 B.C.: The Year Civilization Collapsed,merge
@@ -52,6 +56,7 @@ book,Artemis Fowl: The Arctic Incident,Artemis Fowl and the Arctic Incident,Eoin
 book,Artemis Fowl: The Atlantis Complex,Artemis Fowl and the Atlantis Complex,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.91,Artemis Fowl: The Atlantis Complex,merge
 book,Artemis Fowl: The Eternity Code,Artemis Fowl and the Eternity Code,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.91,Artemis Fowl: The Eternity Code,merge
 book,Artemis Fowl: The Opal Deception,Artemis Fowl. The Opal Deception. The Graphic Novel,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.7,Artemis Fowl: The Opal Deception,merge
+book,Artemis Fowl: The Time Paradox,Artemis Fowl and the Time Paradox,Eoin Colfer,Eoin Colfer,,Open Library,open library,0.91,Artemis Fowl: The Time Paradox,merge
 book,Bad Blood: Secrets and Lies in a Silicon Valley Startup,"Billion Dollar Whale By Tom Wright, Bradley Hope & Bad Blood Secrets and Lies in a Silicon Valley Startup By John Carreyrou 2 Books Collection Set",John Carreyrou,John Carreyrou,,Open Library,open library,0.42,Bad Blood: Secrets and Lies in a Silicon Valley Startup,merge
 book,Battle for Hercules,Battle for Hercules (Deluxe Limited Edition),Jasmine Mas,Jasmine Mas,,Open Library,open library,0.47,Battle for Hercules,merge
 book,Book of Transformations,The book of transformations,Mark Charan Newton,Mark Charan Newton,,Open Library,open library,0.89,Book of Transformations,merge
@@ -182,6 +187,7 @@ book,The Professor and the Madman,The Professor and the Madman CD,Simon Winchest
 book,The Providence of Fire,Providence of Fire : Chronicle of the Unhewn Throne,Brian Staveley,Brian Staveley,,Open Library,open library,0.53,The Providence of Fire,merge
 book,The Reply,Area 51 The Reply,Bob Mayer,Bob Mayer,,Open Library,open library,0.56,The Reply,merge
 book,The Road to Cana,Christ the Lord - The Road to Cana,Anne Rice,Anne Rice,,Open Library,open library,0.59,The Road to Cana,merge
+book,The Road to Middle-Earth: How J.R.R. Tolkien Created a New Mythology,The Road to Middle-earth: How J. R. R. Tolkien created a new mythology (How J.R.R. Tolkien Created a New Mythology),Tom Shippey,Tom Shippey,,Open Library,open library,1.00,The Road to Middle-Earth: How J.R.R. Tolkien Created a New Mythology,merge
 book,The Running Grave,Tumba Veloz / the Running Grave,Robert Galbraith,Robert Galbraith,,Open Library,open library,0.62,The Running Grave,merge
 book,The Scarlet Tides,Scarlet Tides: The Moontide Quartet Book 2,David Hair,David Hair,,Open Library,open library,0.45,The Scarlet Tides,merge
 book,The Search for the Red Dragon,Search for the Red Dragon,James A. Owen,James A. Owen,,Open Library,open library,1,The Search for the Red Dragon,merge
