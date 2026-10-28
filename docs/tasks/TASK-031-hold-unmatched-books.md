@@ -1,8 +1,8 @@
 ---
 id: TASK-031
-title: 1.20 Hold books with no Open Library match for review
-status: Draft
-depends_on: [TASK-022]
+title: 1.20 Hold books with no Hardcover match for review
+status: Ready
+depends_on: [TASK-034]
 size: M
 model: opus
 autonomy: attended
@@ -11,7 +11,7 @@ plan_status: none
 planned_at_commit:
 ---
 
-# TASK-031 — 1.20 Hold books with no Open Library match for review
+# TASK-031 — 1.20 Hold books with no Hardcover match for review
 
 ## Goal
 
