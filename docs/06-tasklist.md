@@ -17,7 +17,7 @@ roadmap, and `docs/STATUS.md` rolls them up by milestone._
 | Milestones | Scope | Roadmap phases | Entries |
 |---|---|---|---|
 
-| M1–M9 | **MVP: cutover from the Sheets.** Every MVP feature in [01-product.md § Feature index](01-product.md#feature-index) | 0, 1, and 2.11a | 43 |
+| M1–M9 | **MVP: cutover from the Sheets.** Every MVP feature in [01-product.md § Feature index](01-product.md#feature-index) | 0, 1, and 2.11a, plus what 1.25 names | 55 |
 | M10–M15 | **Next:** the pace engine, the comics dashboard, editing | 2, 3 | 30 |
 | M16–M25 | **Later:** enrichment, the remaining surfaces, polish, AI curation, watch and music | 4–9, and 6.2b in M12 | 56 |
 
@@ -25,8 +25,11 @@ roadmap, and `docs/STATUS.md` rolls them up by milestone._
   sittings 1–2 (Phase 0) with the Phase 0 work that came after them; M3–M9 are
   sittings 3–9, the same tasks in the same order. *Sitting 7* and *M7* name the
   same thing.
-- **Cutover** (START-HERE Step 14) follows M9: the final load, then a month
-  running both. Cutting over before M9 defeats the migration (HANDOFF §10).
+- **Cutover** is roadmap 1.26 (START-HERE Step 14), the last entry of M9: the
+  final load, then a month running both. Cutting over before M9 defeats the
+  migration (HANDOFF §10). Its gate is M1–M9 plus every open entry 1.25's
+  parity audit names, wherever that entry's milestone is: an entry the
+  Sheets' daily use needs is built before the switch, not after (D-95).
 - **Sizing.** The kit's guideline is 3–8 tasks a milestone and 3–6 milestones
   to an MVP. This MVP has nine because the sittings came first and decisions
   cite them; M9 has two because sitting 9 does.
@@ -54,7 +57,7 @@ roadmap, and `docs/STATUS.md` rolls them up by milestone._
 | Feature | Priority | Roadmap entries | Milestones |
 |---|---|---|---|
 | F-01 Private sign-in | MVP | 1.11 | M7 |
-| F-02 Both workbooks migrated, rebuildable until cutover | MVP | 0.3, 0.4, 0.5, 0.6, 0.7 | M1 |
+| F-02 Both workbooks migrated, rebuildable until cutover | MVP | 0.3, 0.4, 0.5, 0.6, 0.7, 1.25, 1.26 | M1, M9 |
 | F-03 Tested, released by hand, backed up | MVP | 0.1, 0.2, 0.11, 0.12 | M1, M6, M2 |
 | F-04 Fast on a phone | MVP | 0.9, 0.10, 1.8d | M2, M6 |
 | F-05 One shell for three media | MVP | 1.8a, 1.8c, 1.8, 1.8e, 1.8b | M6 |
@@ -277,13 +280,14 @@ with the task that first reads it.
 ## M9: Captured from cutover on — MVP
 
 **Goal:** Captured from cutover on.  
-**Demo at exit:** Paste a list as title and author in their own cells; search as you type, with each result's source; set a book to *Reading* and its start date is kept; listen to a book and finish it, and it counts as a read with the headphones glyph.  
-**Features:** F-09, F-15, F-17, F-58  
+**Demo at exit:** Paste a list as title and author in their own cells; search as you type, with each result's source; set a book to *Reading* and its start date is kept; listen to a book and finish it, and it counts as a read with the headphones glyph; then the last load, and both Sheets archived read-only with the app as the record.  
+**Features:** F-02, F-09, F-15, F-17, F-58  
 **Depends on:** M5, M8 (1.21)  
-**Order:** Sitting 9: 1.4e → 1.4f → 1.19 → 1.22 → 1.24 → 1.17 → 1.23. Five fixes to screens already in daily use (1.4f searches Hardcover instead of Open Library, D-94, before 1.22 tags each result's source; 1.19 turns on 1.8's comics *Add*, from 1.8b's plan; 1.22 from the 2026-10-26 books intake; 1.24, from TASK-030's follow-ups, lets a wishlist accept move one of 1.18's Unlisted books onto the list), then start dates and audiobooks, which like 1.5 must land before real reading accumulates and before cutover. 1.23 follows 1.17 because both change `book_status` and `read_events`.
+**Order:** Sitting 9: 1.25 → 1.4e → 1.4f → 1.19 → 1.22 → 1.24 → 1.17 → 1.23 → 1.26. 1.25, the Sheets parity audit (D-95), goes first and can run any time, even before M8 closes: every open entry it names is built before 1.26, so its list sets how long this milestone is, and 1.26, the switch itself, comes last. Then five fixes to screens already in daily use (1.4f searches Hardcover instead of Open Library, D-94, before 1.22 tags each result's source; 1.19 turns on 1.8's comics *Add*, from 1.8b's plan; 1.22 from the 2026-10-26 books intake; 1.24, from TASK-030's follow-ups, lets a wishlist accept move one of 1.18's Unlisted books onto the list), then start dates and audiobooks, which like 1.5 must land before real reading accumulates and before cutover. 1.23 follows 1.17 because both change `book_status` and `read_events`.
 
 | # | Task | Size | Task file | Depends on |
 |---|---|---|---|---|
+| 1.25 | Sheets parity audit | S | TASK-036 | — |
 | 1.4e | Paste a list: title and author in their own cells | S | — | — |
 | 1.4f | Add books searches Hardcover | M | — | — |
 | 1.19 | Comics Add remembers the last run | S | — | 1.8, 1.3c |
@@ -291,6 +295,7 @@ with the task that first reads it.
 | 1.24 | Wishlist accept promotes an Unlisted book to Someday | S | — | 1.21, 1.4d |
 | 1.17 | Started and finished: a start date for books, a derived span for runs | M | — | — |
 | 1.23 | Audiobooks: listening, and a listen that counts as a read | M | — | 1.5, 1.17 |
+| 1.26 | Cut over from the Sheets | M | — | 1.25, all of Phase 1, and every open entry 1.25 names |
 
 # Next
 

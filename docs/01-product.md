@@ -38,7 +38,7 @@ start from nothing.
 
 | Goal | Metric | Target |
 |---|---|---|
-| Replace both Sheets | Reading tracked in the app rather than the Sheets | All of it from cutover (START-HERE Step 14), after a month running both |
+| Replace both Sheets | Reading tracked in the app rather than the Sheets | All of it from cutover (roadmap 1.26, START-HERE Step 14), after a month running both |
 | Marking is fast | Taps to mark the next issue read | One, from the dashboard or the run, at 360px |
 | Adding beats the sheet | Steps to add a run's issues | One paste or one search, one review, one insert, however many issues |
 | Snappy on a phone | A tap paints a skeleton; a warm screen change shows the page (throttled phone profile) | Within 200 ms; within 1 s ([architecture § Operational posture](02-architecture.md#7-non-functional-requirements)) |
@@ -73,7 +73,11 @@ The MVP is **cutover**: the day the Sheets stop being the record.
 - Milestones M1–M9 are merged and accepted: all of Phase 1, plus 2.11a (the
   prerequisite graph has no unreviewed cycles) and 1.11 (failed sign-ins slow
   down).
-- The final load from the workbooks has run (START-HERE Step 14), and
+- Everything the owner still does in the Sheets has a home in the app: 1.25's
+  parity audit maps each tab's uses to a ticked entry or a *won't carry*, and
+  any entry it names from a later phase is built first (D-95).
+- The final load from the workbooks has run (START-HERE Step 14, roadmap
+  1.26), and
   `LEDGER_LIVE=true` makes `load` and `rebuild` refuse against production
   (D-18).
 - Every read carries its date from the first day: `read_events` (1.5) and a
@@ -100,7 +104,7 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | ID | Feature | User story | Priority | Roadmap | Screens |
 |---|---|---|---|---|---|
 | F-01 | **Private sign-in** (Platform) | As the owner, I want the ledger behind one passcode, with failed attempts slowed, so it is private and reachable from any device | MVP | 1.11 | — |
-| F-02 | **Both workbooks migrated, rebuildable until cutover** (Platform) | As the owner, I want the comics and books workbooks loaded into one schema and rebuildable from the workbook and its sidecars until I cut over | MVP | 0.3, 0.4, 0.5, 0.6, 0.7 | — |
+| F-02 | **Both workbooks migrated, rebuildable until cutover** (Platform) | As the owner, I want the comics and books workbooks loaded into one schema and rebuildable from the workbook and its sidecars until I cut over | MVP | 0.3, 0.4, 0.5, 0.6, 0.7, 1.25, 1.26 | — |
 | F-03 | **Tested, released by hand, backed up** (Platform) | As the owner, I want every change tested on its branch, released by hand, and the data backed up nightly, so nothing I typed is ever lost | MVP | 0.1, 0.2, 0.11, 0.12 | — |
 | F-04 | **Fast on a phone** (Platform) | As the owner on an Android phone, I want every tap to paint at once and a warm screen change inside a second | MVP | 0.9, 0.10, 1.8d | `states` |
 | F-05 | **One shell for three media** (Platform) | As the owner, I want one media bar, rail or sidebar that takes me to comics, books and watch, and `/` to open where I was | MVP | 1.8a, 1.8c, 1.8, 1.8e, 1.8b | `home`, `bdash`, `status`, `watchlist` |
