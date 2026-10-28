@@ -28,6 +28,9 @@ import pandas as pd
 # --------------------------------------------------------------------------
 
 UNRESOLVED: list[dict] = []
+# What Calibre overrode (D-93): reported, but nothing waits on the owner. Written
+# to calibre_changes.csv so unresolved.csv holds only rows that need action.
+CHANGES: list[dict] = []
 # series -> list of rules: (run_id, issue_from, issue_to, year).
 # None means "any". Rules are matched most-specific-first.
 VOLUME_MAP: dict[str, list[tuple[str | None, int | None, int | None, int]]] = {}
@@ -405,6 +408,12 @@ def sidecar(table: dict, label: str, original: str, name: str):
 
 def flag(table: str, reason: str, detail: str) -> None:
     UNRESOLVED.append({"table": table, "reason": reason, "detail": detail})
+
+
+def note(table: str, reason: str, detail: str) -> None:
+    """A change worth knowing about that needs no action (D-93): goes to
+    calibre_changes.csv, not unresolved.csv."""
+    CHANGES.append({"table": table, "reason": reason, "detail": detail})
 
 
 # NFKC spells a fraction glyph out with the fraction slash, so `#1½` would become
@@ -1555,28 +1564,28 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
 
         kind = clean(row["book_type"])
         if kind and kind != b["book_type"]:
-            flag("calibre_books", "calibre replaced a book type",
+            note("calibre_books", "calibre replaced a book type",
                  f"{b['title']}: {b['book_type']} -> Calibre's {kind}")
             b["book_type"] = kind
 
         words = as_int(row["words"])
         if words:
             if b["word_count"] and abs(words - b["word_count"]) > WORD_COUNT_TOLERANCE * b["word_count"]:
-                flag("calibre_books", "calibre replaced a word count",
+                note("calibre_books", "calibre replaced a word count",
                      f"{b['title']}: {b['word_count']} -> Calibre's {words}")
             b["word_count"], b["word_count_source"] = words, "stated"
 
         name, pos = clean(row["series"]), as_float(row["series_index"])
         if name:
             if b["series_id"] and (idx.find_series(name) != b["series_id"] or b["series_position"] != pos):
-                flag("calibre_books", "calibre replaced a series",
+                note("calibre_books", "calibre replaced a series",
                      f"{b['title']}: {series_text(idx.series[b['series_id']]['name'], b['series_position'])}"
                      f" -> Calibre's {series_text(name, pos)}")
                 replaced.add(b["series_id"])
             b["series_id"], _ = idx.series_id(name, b["author_id"])
             b["series_position"] = pos
             if row["open_library"]:
-                flag("calibre_books", "open library series differs",
+                note("calibre_books", "open library series differs",
                      f"{b['title']}: Calibre's {series_text(name, pos)} loaded, "
                      f"Open Library has {row['open_library']}")
 
@@ -1970,7 +1979,8 @@ def main(argv=None) -> int:
     ap.add_argument("--calibre-books", type=Path, default=None,
                     help="calibre_books.csv from etl/calibre.py, the source of truth for what it holds "
                          "(D-87): word counts, series and reads over the workbook's, and the books only "
-                         "Calibre has (created at unlisted); every disagreement goes to unresolved.csv")
+                         "Calibre has (created at unlisted); what needs a decision goes to unresolved.csv, "
+                         "what Calibre overrode to calibre_changes.csv (D-93)")
     ap.add_argument("--fail-on-cycle", action="store_true",
                     help="exit non-zero when the prereq graph has a cycle, after writing every "
                          "CSV (task 2.11a; START-HERE Step 14's final extract)")
@@ -1993,11 +2003,13 @@ def main(argv=None) -> int:
                   book_details=args.book_details, calibre_books=args.calibre_books)
 
     write(args.out, "unresolved", UNRESOLVED, ["table", "reason", "detail"])
+    write(args.out, "calibre_changes", CHANGES, ["table", "reason", "detail"])
     print(f"\n{len(UNRESOLVED)} rows need a human look — see {args.out}/unresolved.csv")
     cycles = [u["detail"] for u in UNRESOLVED if (u["table"], u["reason"]) == ("prereqs", "prereq cycle")]
     count = f"{len(cycles)} prereq cycle{'' if len(cycles) == 1 else 's'}"
     on, off = ("\033[31m", "\033[0m") if cycles and sys.stdout.isatty() else ("", "")
     print(f"{on}{count}{off} — see the prereq cycle rows in {args.out}/unresolved.csv")
+    print(f"{len(CHANGES)} Calibre overrides, nothing to do — see {args.out}/calibre_changes.csv")
     if cycles and args.fail_on_cycle:
         print(f"extract: --fail-on-cycle: {count}", file=sys.stderr)
         for detail in cycles:

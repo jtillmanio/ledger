@@ -779,7 +779,7 @@ had only estimates and manual lookups). The Count Pages plugin's counts load
 as `stated`. Calibre is the source of truth for a book's data and its reads,
 because the owner edits nothing else (D-87, amending D-73's API check and read
 review): its series fill over the workbook's, an Open Library series that
-differs is reported, and every disagreement lands in `unresolved.csv`.
+differs is reported, and every disagreement is listed: in `calibre_changes.csv` where Calibre simply won, in `unresolved.csv` where the owner must act (D-93).
 Calibre's reads load where the workbook's may not (D-41), because they are
 typed fields rather than tabs that parse badly.
 

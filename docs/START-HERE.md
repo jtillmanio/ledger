@@ -449,6 +449,14 @@ you accept label fixes in 8c — two spellings of one comic merge into one row.
 Counts are from the 2026-09-16 export. A `0` category is one the ETL still
 checks for; it's listed so you know what a new row there means.
 
+The file lists only rows that need you (D-93). The book rows are: `stale review` (a decided
+`book_review.csv` row whose name has left the workbook: delete it once `enrich:books` has rekeyed),
+`book_details: no such book` (a details row for a spelling that is gone: run `enrich:books`, or delete
+it), `Series-tab book matches no book` and `group matches nothing` (fix the workbook or add a merge),
+`calibre book held for review` (decide its `book_review.csv` row) and `calibre read for a book already
+read` (that read is not loaded; log it by hand if it is a reread). What Calibre overrode is in
+`seed/calibre_changes.csv`, with nothing to do.
+
 | Rows | Category                                     | What it means                                                                                                                                                       | Action                                                                                                                                                                                                      |
 | ---- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0    | `sequence renumbered`                        | Your `Sequence` formula is `=IF($B2=$B1,F1+1,1)`, which restarts whenever a run's rows aren't contiguous. The ETL renumbers from row order — the real reading order | **Spot-check `hickman-avengers`, `bendis-initiative`, `bendis-secret-invasion` after load.** Those three are the only runs with split blocks                                                                |
@@ -1278,8 +1286,9 @@ load nothing loads either again. Sitting 8 needs you between its tasks: answer
 Open Library's spellings to it. 1.18 reads your Calibre library (give it the
 folder) as the source of truth for word counts, series and reads (D-87): it
 asks you only to settle its near spellings in `book_review.csv`, and lists in
-`seed/unresolved.csv` where Calibre disagrees with the workbook or Open
-Library, for you to fix in Calibre if Calibre is wrong. **1.17 also lands before cutover**, for 1.5's
+`seed/calibre_changes.csv` where Calibre overrode the workbook or disagrees with Open
+Library (nothing to do; fix it in Calibre if Calibre is wrong), and in
+`seed/unresolved.csv` only what needs you (D-93). **1.17 also lands before cutover**, for 1.5's
 reason: a start date not captured from the first day is lost.
 
 **Done when:** every Phase 0 and Phase 1 task is ticked in `05-roadmap.md`, you can

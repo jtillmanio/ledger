@@ -1232,6 +1232,18 @@ class PrereqCycles(WorkbookCase):
         self.assertEqual([r["detail"] for r in rows], self.cycles())
         self.assertEqual(len(rows), 2)
 
+    def test_calibre_overrides_are_written_apart_from_unresolved(self):
+        """D-93: calibre_changes.csv holds what note() collected; unresolved.csv
+        does not."""
+        ex.CHANGES.clear()
+        self.addCleanup(ex.CHANGES.clear)
+        ex.note("calibre_books", "calibre replaced a series", "Mistborn: A #1 -> Calibre's B #1")
+        self.main(self.PREREQS[5:])
+        self.assertEqual(read(self.out, "calibre_changes"),
+                         [{"table": "calibre_books", "reason": "calibre replaced a series",
+                           "detail": "Mistborn: A #1 -> Calibre's B #1"}])
+        self.assertNotIn("calibre replaced a series", [r["reason"] for r in read(self.out, "unresolved")])
+
     def test_fail_on_cycle_exits_non_zero_naming_the_runs(self):
         code, err = self.main(self.PREREQS, "--fail-on-cycle")
         self.assertNotEqual(code, 0)

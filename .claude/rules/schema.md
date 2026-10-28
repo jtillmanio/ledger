@@ -96,9 +96,11 @@ Release, test isolation) and the Hard rules a reviewer checks.
   `seed/calibre_created.csv` (not loaded); a book Calibre marks read or dates
   is a `seed/read_events.csv` row and makes the status `read` (a year alone is
   July 1st `approximate`, a date shown without its day `approximate`). What
-  disagrees is reported in `unresolved.csv`, never dropped: a workbook count
-  more than 10% off, a different workbook series, Open Library's different
-  series, a second read of one book. Comics are skipped; tags, comments and
+  disagrees is reported, never dropped (D-93): a workbook count more than
+  10% off, a different workbook series, a different book type and Open
+  Library's different series go to `calibre_changes.csv` (Calibre won; nothing
+  to do), and a second read of one book goes to `unresolved.csv` (that read is
+  not loaded). `unresolved.csv` lists only what needs the owner. Comics are skipped; tags, comments and
   ISBN load nothing until `books.subjects`, `books.summary` and `books.isbn`
   are approved, and comments stay out of the CSV.
 - **One issue row per comic.** `issues` is what exists — one row per label, id a

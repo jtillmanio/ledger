@@ -133,8 +133,8 @@ tick them.
         them two books. Many are workbook typos (*Rexa Aslan*, *Hitchhikier*,
         *Bernard Cornwall*). Until you decide a row, its Calibre book is held,
         and 14 of them carry a read.
-      - Read the `calibre_books` rows in `seed/unresolved.csv` after
-        `npm run extract`. 98 series and 41 word counts were replaced by
+      - Read `seed/calibre_changes.csv` after `npm run extract` (D-93; these
+        were `calibre_books` rows in `unresolved.csv`). 98 series and 41 word counts were replaced by
         Calibre's, and 21 series differ from Open Library's (Narnia's
         chronological versus publication order, for one). Where Calibre is
         wrong, fix it in Calibre.

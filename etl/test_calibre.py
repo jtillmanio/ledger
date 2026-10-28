@@ -170,6 +170,7 @@ class Case(unittest.TestCase):
         self.fetched: list[str] = []
         self.output = ""
         self.unresolved: list[dict] = []
+        self.changes: list[dict] = []
 
     # -- running ------------------------------------------------------------
 
@@ -193,10 +194,12 @@ class Case(unittest.TestCase):
 
     def extract(self):
         ex.UNRESOLVED.clear()
+        ex.CHANGES.clear()
         with redirect_stdout(io.StringIO()):
             ex.extract_books(self.workbook, self.seed, book_review=self.book_review,
                              calibre_books=self.books_csv)
         self.unresolved = list(ex.UNRESOLVED)
+        self.changes = list(ex.CHANGES)
 
     def round(self, *extra):
         """What the owner runs: extract, calibre, extract."""
@@ -244,6 +247,13 @@ class Case(unittest.TestCase):
     def reasons(self) -> list[str]:
         return [u["reason"] for u in self.unresolved]
 
+    def changed(self, reason: str) -> list[str]:
+        """What Calibre overrode (calibre_changes.csv, D-93)."""
+        return [u["detail"] for u in self.changes if u["reason"] == reason]
+
+    def change_reasons(self) -> list[str]:
+        return [u["reason"] for u in self.changes]
+
     def decide_calibre_pair(self, decision: str, keep: str | None = None) -> None:
         rows = self.rows(self.book_review)
         hit = [r for r in rows if r["reason"] == "calibre"]
@@ -276,7 +286,7 @@ class Check(Case):
         self.assertEqual((wok["word_count"], wok["word_count_source"]), ("383389", "stated"))
         mistborn = self.book_by_title("Mistborn")
         self.assertEqual((mistborn["word_count"], mistborn["word_count_source"]), ("300000", "stated"))
-        self.assertEqual(self.reported("calibre replaced a word count"),
+        self.assertEqual(self.changed("calibre replaced a word count"),
                          ["Mistborn: 214000 -> Calibre's 300000"])
 
     def test_a_series_open_library_agrees_with_fills(self):
@@ -286,7 +296,7 @@ class Check(Case):
         self.assertEqual(self.series_of("The Way of Kings"), ("The Stormlight Archive", "1.0"))
         row = self.calibre_row("The Way of Kings")
         self.assertEqual((row["confirmed"], row["open_library"]), ("series;series_index", ""))
-        self.assertEqual(self.reported("open library series differs"), [])
+        self.assertEqual(self.changed("open library series differs"), [])
 
     def test_a_series_open_library_contradicts_still_fills_and_is_reported(self):
         self.library([book("The Way of Kings", "Brandon Sanderson"),
@@ -294,7 +304,7 @@ class Check(Case):
         self.round()
         self.assertEqual(self.series_of("Mistborn"), ("The Final Empire Trilogy", "1.0"))
         self.assertEqual(self.calibre_row("Mistborn")["open_library"], "Mistborn Saga #1")
-        self.assertEqual(self.reported("open library series differs"),
+        self.assertEqual(self.changed("open library series differs"),
                          ["Mistborn: Calibre's The Final Empire Trilogy #1 loaded, Open Library has Mistborn Saga #1"])
 
     def test_a_near_spelling_writes_a_book_review_row_keeping_calibres(self):
@@ -546,7 +556,7 @@ class Rerun(Case):
                                  book("The Way of Kings", "Brandon Sanderson")])
         self.round()
         self.assertEqual(self.book_by_title("Mistborn")["word_count"], "220000")
-        self.assertNotIn("calibre replaced a word count", self.reasons())
+        self.assertNotIn("calibre replaced a word count", self.change_reasons())
 
     def test_a_different_workbook_series_is_replaced_and_reported(self):
         self.workbook = build_books([("Mistborn", "Brandon Sanderson", "Mistborn #1", "Fantasy", None)])
@@ -554,7 +564,7 @@ class Rerun(Case):
                                  book("Warbreaker", "Brandon Sanderson")])
         self.round()
         self.assertEqual(self.series_of("Mistborn"), ("The Final Empire Trilogy", "1.0"))
-        self.assertEqual(self.reported("calibre replaced a series"),
+        self.assertEqual(self.changed("calibre replaced a series"),
                          ["Mistborn: Mistborn #1 -> Calibre's The Final Empire Trilogy #1"])
 
     def test_a_series_calibre_emptied_is_dropped_unless_followed(self):
@@ -582,7 +592,7 @@ class Rerun(Case):
                                  book("Warbreaker", "Brandon Sanderson")])
         self.round()
         self.assertEqual(self.series_of("Mistborn"), ("Mistborn Saga", "1.0"))
-        self.assertNotIn("calibre replaced a series", self.reasons())
+        self.assertNotIn("calibre replaced a series", self.change_reasons())
 
     def test_an_index_open_library_disagrees_with_fills_calibres_and_is_reported(self):
         build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson",
@@ -591,7 +601,7 @@ class Rerun(Case):
         self.round()
         self.assertEqual(self.series_of("The Way of Kings"), ("The Stormlight Archive", "2.0"))
         self.assertEqual(self.calibre_row("The Way of Kings")["open_library"], "The Stormlight Archive #1")
-        self.assertEqual(len(self.reported("open library series differs")), 1)
+        self.assertEqual(len(self.changed("open library series differs")), 1)
 
     def test_no_open_library_series_fills_and_reports_nothing(self):
         build_library(self.lib, [book("Warbreaker", "Brandon Sanderson", series="Nalthis"),
@@ -599,7 +609,7 @@ class Rerun(Case):
         self.round()
         self.assertEqual(self.series_of("Warbreaker"), ("Nalthis", "1.0"))
         self.assertEqual(self.calibre_row("Warbreaker")["open_library"], "")
-        self.assertNotIn("open library series differs", self.reasons())
+        self.assertNotIn("open library series differs", self.change_reasons())
 
     def test_a_merge_takes_calibres_spelling_and_folds_the_book_in(self):
         build_library(self.lib, [book("The Way of Kings: Book One", "Brandon Sanderson", words=383389),
@@ -651,7 +661,21 @@ class Rerun(Case):
                                  book("Warbreaker", "Brandon Sanderson")])
         self.round()
         self.assertEqual(self.book_by_title("Mistborn")["book_type"], "Fan Fiction")
-        self.assertEqual(self.reported("calibre replaced a book type"), ["Mistborn: Novel -> Calibre's Fan Fiction"])
+        self.assertEqual(self.changed("calibre replaced a book type"), ["Mistborn: Novel -> Calibre's Fan Fiction"])
+
+    def test_what_calibre_overrode_is_apart_from_what_needs_a_decision(self):
+        """D-93: unresolved.csv lists only what waits on the owner."""
+        build_library(self.lib, [book("The Way of Kings: Book One", "Brandon Sanderson"),
+                                 book("Mistborn", "Brandon Sanderson", words=300000,
+                                      series="The Final Empire Trilogy", index=1.0)])
+        self.round()
+        self.assertEqual({u["reason"] for u in self.unresolved if u["table"] == "calibre_books"},
+                         {"calibre book held for review"})
+        self.assertEqual(sorted(set(self.change_reasons())),
+                         ["calibre replaced a word count", "open library series differs"])
+        for reason in ("calibre replaced a book type", "calibre replaced a word count",
+                       "calibre replaced a series", "open library series differs"):
+            self.assertNotIn(reason, self.reasons())
 
     def test_a_held_book_says_its_read_waits_too(self):
         build_library(self.lib, [book("The Way of Kings: Book One", "Brandon Sanderson", read=1,
