@@ -16,8 +16,9 @@ How a book is decided:
 - matched     exactly one returned work has its title and one of its authors,
               both compared after extract's clean() and key()
 - proposed    no work matches, but the top result is by the same author with a
-              near spelling of the title (trigram similarity >= 0.4, the titles
-              not differing only by a number): appended to book_review.csv as
+              near spelling of the title (trigram similarity >= 0.5, or one title
+              the other plus a `: subtitle`, D-92; the titles not differing only
+              by a number): appended to book_review.csv as
               reason `open library`, never matched. Accepting it (decision
               `merge`) renames the book in extract, and the next run here moves
               its details row to the new title.
@@ -63,6 +64,10 @@ USER_AGENT = "ledger-backfill/1.0 (personal media ledger; book metadata; https:/
 MIN_INTERVAL = 1.0      # seconds between network requests: Open Library's courtesy rate
 SEARCH_LIMIT = 10       # works per search; the exact work is near the top when it exists
 SOURCE = "openlibrary"
+# An Open Library near spelling is proposed at this trigram similarity or more, or
+# as a subtitle (ex.subtitled()): the line D-89 drew for Calibre's pairs, above
+# the workbook's own 0.4 (D-92). Below it the pairs were series patterns.
+SIMILAR_AT = 0.5
 DETAIL_COLUMNS = ex.BOOK_DETAILS_COLUMNS
 STATUSES = ("matched", "proposed", "ambiguous", "unmatched", "no_author", "hand")
 
@@ -94,7 +99,7 @@ def decide(title: str, author: str, works: list[dict]) -> tuple[str, dict | None
     if top and by(top, author) and top.get("title"):
         name = ex.clean(top["title"])
         sim = ex.trgm_similarity(title, name)
-        if sim >= ex.SIMILAR_AT and not ex.differs_only_by_number(title, name):
+        if (sim >= SIMILAR_AT or ex.subtitled(title, name)) and not ex.differs_only_by_number(title, name):
             return "proposed", top, sim
     return "unmatched", None, 0.0
 

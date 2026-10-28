@@ -61,7 +61,8 @@ Release, test isolation) and the Hard rules a reviewer checks.
   `cover_url`, `published_year`; `source` openlibrary|hand) is written by
   `npm run enrich:books` (task 1.14, D-44) and folded in by extract:
   `published_year` fills only where the workbook has none, and a page count
-  never becomes a word count. A near spelling Open Library finds is a `book`
+  never becomes a word count. A near spelling Open Library finds (≥ 0.5
+  trigram similarity, or a `: subtitle`; D-92) is a `book`
   row with `reason = open library` (`a` the workbook's spelling, `b` Open
   Library's), kept undecided while the workbook has `a`; `merge` renames the
   book, and the next enrich run rekeys `book_details.csv`. The workbook loads no

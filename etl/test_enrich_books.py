@@ -136,7 +136,7 @@ class Matching(Fake):
                           "a_author": "Brandon Sanderson", "b_author": "Brandon Sanderson",
                           "b_tabs": "Open Library", "reason": "open library",
                           "keep": "Edgedancer", "decision": ""})
-        self.assertGreaterEqual(float(rows[0]["similarity"]), ex.SIMILAR_AT)
+        self.assertGreaterEqual(float(rows[0]["similarity"]), eb.SIMILAR_AT)
         # A rerun proposes it once, not twice.
         self.run_once()
         self.assertEqual(len(self.review()), 1)
@@ -195,6 +195,19 @@ class Matching(Fake):
                          "S. A. Chakraborty")
         works = [doc("OL1W", "The City of Brass", ["S. A. Chakraborty"], 533, None, 2017)]
         self.assertEqual(eb.decide("The City of Brass", "S.A. Chakraborty", works)[0], "matched")
+
+    def test_a_pair_under_half_is_not_proposed_unless_it_is_a_subtitle(self):
+        """D-92: 0.4 to 0.5 is series-pattern territory; a `: subtitle` is the
+        same book however low it scores."""
+        title, theirs = "The Bone House", "The Bone House (Bright Empires #2)"
+        self.assertTrue(ex.SIMILAR_AT <= ex.trgm_similarity(title, theirs) < eb.SIMILAR_AT)
+        works = [doc("OL1W", theirs, ["Stephen R. Lawhead"])]
+        self.assertEqual(eb.decide(title, "Stephen R. Lawhead", works)[0], "unmatched")
+
+        title, theirs = "Good Omens", "Good Omens: The Nice and Accurate Prophecies of Agnes Nutter, Witch"
+        self.assertLess(ex.trgm_similarity(title, theirs), ex.SIMILAR_AT)
+        works = [doc("OL2W", theirs, ["Terry Pratchett"])]
+        self.assertEqual(eb.decide(title, "Terry Pratchett", works)[0], "proposed")
 
     def test_a_title_the_console_cannot_print_does_not_stop_the_run(self):
         """A redirected Windows console is cp1252; Open Library has titles with

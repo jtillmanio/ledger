@@ -1057,6 +1057,16 @@ def differs_only_by_number(a: str, b: str) -> bool:
     return key(a) != key(b) and masked(a) == masked(b)
 
 
+def subtitled(a: str, b: str) -> bool:
+    """One title is the other with a `: subtitle` added (`Arcanum Unbounded`,
+    `Arcanum Unbounded: The Cosmere Collection`): the same book, however low
+    the pair scores (D-89). Both subtitled never counts: `Mistborn: The Final
+    Empire` and `Mistborn: Secret History` are two books."""
+    def main(t):
+        return key(t.split(":", 1)[0]) if ":" in t else None
+    return bool(a and b) and (main(a) == key(b) or main(b) == key(a))
+
+
 def review_keep_side(row: dict) -> str | None:
     """Which side a merge row keeps, 'a' or 'b', or None when `keep` names
     neither. On a same-title pair the titles are equal, so `keep` names the
