@@ -132,7 +132,7 @@ describe("books.word_count_source", () => {
 });
 
 describe("task 1.18b: Calibre's id and groupings (D-90)", () => {
-  it("adds five books columns and one table, and no user_id (D-91)", async () => {
+  it("adds four books columns and one table, and no user_id (D-91)", async () => {
     const rows = await sql<{ table_name: string; column_name: string }[]>`
       SELECT table_name, column_name FROM information_schema.columns
       WHERE table_schema = 'public' AND table_name IN ('books', 'book_subseries')`;

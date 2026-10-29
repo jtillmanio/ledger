@@ -1038,6 +1038,22 @@ class Groupings(Case):
         self.assertNotIn("stale review", self.reasons())
         self.assertEqual([r["title"] for r in self.rows(self.missing)], [])
 
+    def test_a_book_renamed_back_in_calibre_takes_its_first_title_again(self):
+        """Mistborn -> Mistborn: The Final Empire -> Mistborn: the rename row
+        turns round in place, and the book is the workbook's Mistborn again."""
+        for title in ("Mistborn", "Mistborn: The Final Empire", "Mistborn"):
+            build_library(self.lib, [book(title, "Brandon Sanderson"), book("The Way of Kings", "Brandon Sanderson")])
+            self.round()
+        self.assertEqual(self.book_by_title("Mistborn")["calibre_id"], "1")
+        self.assertEqual(self.status_of("Mistborn")["status"], "to_read")
+        renames = [r for r in self.rows(self.book_review) if r["reason"] == ex.CALIBRE_RENAME]
+        self.assertEqual([(r["a"], r["b"], r["keep"], r["decision"]) for r in renames],
+                         [("Mistborn: The Final Empire", "Mistborn", "Mistborn", "merge")])
+        self.assertNotIn("stale review", self.reasons())
+        before = self.sidecars()
+        self.round()
+        self.assertEqual(self.sidecars(), before)
+
     def test_a_workbook_book_calibre_lacks_is_one_missing_row_until_calibre_has_it(self):
         build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson")])
         self.round()
@@ -1175,6 +1191,30 @@ class GroupingReports(Case):
             b = self.book_by_title(title)
             self.assertEqual((b["series_id"], b["subseries_id"], b["subseries_position"]), ("elantris", "", ""))
         self.assertEqual(self.book_by_title("Mistborn")["subseries_id"], "era-one")
+
+    def test_a_second_calibre_book_on_one_book_loads_nothing(self):
+        """book_review.csv merges Calibre's `Mistborn Two` into Mistborn: the
+        second Calibre book's series, subseries, pages and read load nothing,
+        so no subseries is left under a series the book no longer has."""
+        self.write_rows(self.book_review, [{
+            "kind": "book", "a": "Mistborn", "b": "Mistborn Two", "a_author": "Brandon Sanderson",
+            "b_author": "Brandon Sanderson", "a_tabs": "", "b_tabs": "Calibre", "reason": "similar",
+            "similarity": "0.60", "keep": "Mistborn", "decision": "merge"}])
+        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="Mistborn", index=1.0,
+                                      subseries=("Era One", 1), pages=541),
+                                 book("Mistborn Two", "Brandon Sanderson", series="Other", index=2.0,
+                                      subseries=("Other Era", 1), pages=999, read=1,
+                                      date="2024-03-05 12:00:00+00:00")])
+        self.round()
+        b = self.book_by_title("Mistborn")
+        self.assertEqual((b["calibre_id"], b["series_id"], b["subseries_id"], b["page_count"]),
+                         ("1", "mistborn", "era-one", "541"))
+        self.assertEqual([s["id"] for s in self.seed_rows("book_subseries")], ["era-one"])
+        self.assertNotIn("other", [s["id"] for s in self.seed_rows("book_series")])
+        self.assertEqual(self.seed_rows("read_events"), [])
+        self.assertEqual(self.reported("two calibre books for one book"),
+                         ["Mistborn: Calibre id 1 kept, 2 (Mistborn Two) not loaded; merge them in "
+                          "Calibre, or separate them in book_review.csv"])
 
     def test_a_subseries_with_no_series_is_reported_and_not_loaded(self):
         build_library(self.lib, [book("Mistborn", "Brandon Sanderson", subseries=("Era One", 1))])

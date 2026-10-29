@@ -119,7 +119,8 @@ Release, test isolation) and the Hard rules a reviewer checks.
   decided `merge`, keeping Calibre's spelling). In `unresolved.csv`: a workbook
   universe membership Calibre doesn't share, a followed universe Calibre gives no
   book (the follow stays), a subseries under two series or with no series, and
-  two Calibre books on one book. A universe no book is in and nobody follows is
+  two Calibre books on one book (the second loads nothing). A rename back turns
+  its `calibre rename` row round in place. A universe no book is in and nobody follows is
   dropped. `etl/data/calibre_missing.csv` (`title, author, tabs, decision`) is
   written by `npm run extract` when Calibre data is given: each workbook book with
   no Calibre id, except one waiting on a `calibre` pair. `keep` keeps the book

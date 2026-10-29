@@ -489,16 +489,26 @@ def run(args) -> int:
     proposed = {ex.review_sides(p) for p in proposals}
     kept = [r for r in review
             if r["reason"] != ex.CALIBRE or r["decision"] or ex.review_sides(r) in proposed]
+    # A rename row has a direction the unordered pair hides: a book renamed
+    # back (A -> B, then B -> A) replaces its row in place, turned round.
+    fresh = {ex.review_sides(p): p for p in renames}
+    turned = 0
+    for i, r in enumerate(kept):
+        p = fresh.get(ex.review_sides(r))
+        if r["reason"] == ex.CALIBRE_RENAME and p and book_key({"title": r["a"], "author": r["a_author"]}) \
+                != book_key({"title": p["a"], "author": p["a_author"]}):
+            kept[i] = p
+            turned += 1
     known = {ex.review_sides(r) for r in kept}
-    new, renamed = [], 0
+    new, renamed = [], turned
     for p in proposals + renames:
         if ex.review_sides(p) not in known:
             known.add(ex.review_sides(p))
             new.append(p)
             renamed += p["reason"] == ex.CALIBRE_RENAME
-    if new or len(kept) < len(review):
+    if new or turned or len(kept) < len(review):
         write_csv(Path(args.book_review), ex.BOOK_REVIEW_COLUMNS, kept + new)
-        print(f"  {len(new) - renamed} new Calibre spellings to review in {args.book_review} "
+        print(f"  {len(new) - (renamed - turned)} new Calibre spellings to review in {args.book_review} "
               f"({len(review) - len(kept)} no longer proposed, dropped): "
               "`merge` takes Calibre's, `separate` makes them two books")
         if renamed:

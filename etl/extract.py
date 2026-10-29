@@ -1574,6 +1574,17 @@ def read_finish(row: dict) -> tuple[str | None, str]:
     return None, "none"
 
 
+def second_read(b: dict, prior: dict, row: dict) -> bool:
+    """A Calibre read of a book already read is not loaded, and is reported:
+    the owner logs a reread by hand (D-87, D-93). True when it was one."""
+    if prior.get("status") != "read":
+        return False
+    flag("calibre_books", "calibre read for a book already read",
+         f"{b['title']}: read {prior['finished_on'] or 'undated'} kept, "
+         f"{row['title']}'s {row['date_read'] or 'undated'} read not loaded")
+    return True
+
+
 def series_text(name: str | None, pos) -> str:
     """A series as the workbook writes one: `Name #2`, or the name alone."""
     return f"{name} #{pos:g}" if name and pos is not None else (name or "")
@@ -1615,6 +1626,20 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
                                "finished_on": None, "finished_on_precision": "none",
                                "year_rank": None, "rating": None}
             created.append({"title": row["title"], "author": row["author"], "book_id": b["id"]})
+
+        # One Ledger book is one Calibre book (task 1.18b, D-90): a second
+        # Calibre book on it (a merge in book_review.csv) loads nothing at all.
+        cid = as_int(row["calibre_id"])
+        if cid is not None and b["calibre_id"] is not None and b["calibre_id"] != cid:
+            flag("calibre_books", "two calibre books for one book",
+                 f"{b['title']}: Calibre id {b['calibre_id']} kept, {cid} ({row['title']}) not loaded; "
+                 "merge them in Calibre, or separate them in book_review.csv")
+            # Its read is a possible reread, which the owner logs by hand (D-93).
+            if row["read"] == "true" or row["date_read"]:
+                second_read(b, status.get(b["id"]) or {}, row)
+            continue
+        if cid is not None:
+            b["calibre_id"] = cid
 
         kind = clean(row["book_type"])
         if kind and kind != b["book_type"]:
@@ -1659,21 +1684,10 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
                      f"{b['title']}: {subseries} not loaded; give the book its series in Calibre")
         if as_int(row["pages"]):
             b["calibre_pages"] = as_int(row["pages"])
-        cid = as_int(row["calibre_id"])
-        if cid is not None:
-            if b["calibre_id"] is not None and b["calibre_id"] != cid:
-                flag("calibre_books", "two calibre books for one book",
-                     f"{b['title']}: Calibre id {b['calibre_id']} kept, {cid} ({row['title']}) not loaded; "
-                     "merge them in Calibre, or separate them in book_review.csv")
-            else:
-                b["calibre_id"] = cid
 
         if row["read"] == "true" or row["date_read"]:
             prior = status.get(b["id"]) or {}
-            if prior.get("status") == "read":
-                flag("calibre_books", "calibre read for a book already read",
-                     f"{b['title']}: read {prior['finished_on'] or 'undated'} kept, "
-                     f"{row['title']}'s {row['date_read'] or 'undated'} read not loaded")
+            if second_read(b, prior, row):
                 continue
             on, precision = read_finish(row)
             events.append({"user_id": "$OWNER", "book_id": b["id"], "finished_on": on,
@@ -2072,6 +2086,15 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
                  "fix the workbook's Series tab, or the series in Calibre")
         else:
             del idx.series[sid]
+    # A subseries lives under a loaded series: one whose series went is no
+    # subseries (a guard; fold_calibre gives one book one Calibre book).
+    for ssid in [s for s, v in idx.subseries.items() if v["series_id"] not in idx.series]:
+        flag("book_subseries", "subseries lost its series",
+             f"{idx.subseries[ssid]['name']}: its series is gone, so it is not loaded")
+        del idx.subseries[ssid]
+        for b in idx.by_key.values():
+            if b["subseries_id"] == ssid:
+                b["subseries_id"] = b["subseries_position"] = None
     if calibre_rows:
         report_universes(idx, follows["universe"])
     # A universe no book is in is no universe, unless it is followed (D-43).
