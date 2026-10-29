@@ -156,6 +156,23 @@ tick them.
       books with no ISBN, *Edit metadata → Download metadata*, check what it
       found, then `npm run calibre`. About 345 Calibre books have none (fan
       fiction never does) (D-94).
+- [ ] After 1.18b merges, settle what Calibre's groupings showed (from TASK-032,
+      task/1.18b-calibre-groupings):
+      - Decide the 181 rows in `etl/data/calibre_missing.csv`: workbook books
+        Calibre doesn't have. `keep` keeps one out of Calibre; adding it to
+        Calibre clears its row at the next `npm run calibre` and `npm run extract`.
+      - Read the new `unresolved.csv` rows after `npm run extract`:
+        - Seven workbook universe memberships Calibre doesn't share. *White
+          Sand* Vols. 1–3, *White Sand* and *Horneater* aren't in Calibre;
+          *The Lightning Theif* (a typo in the Riordanverse tab) and *The Sun
+          and the Stars* aren't either.
+        - *Of Kings and Killers* / *Of Killers and Kings* and *Of Dawn and
+          Darkness* / *Of Darkness and Dawn* are two Calibre books each, merged
+          into one Ledger book in `book_review.csv`. Merge them in Calibre, or
+          separate the rows.
+        - *Wars of Light and Shadow* and *War of Light and Shadow* are two
+          series in Calibre, so one subseries sits under both.
+        - *The Sunlit Man* has a `#subseries` but no series in Calibre.
 
 ## Approvals from follow-ups
 

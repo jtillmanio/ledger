@@ -1005,7 +1005,7 @@ shows:
 Then a dry run over the real library, with the matched, proposed and unmatched
 counts reported in the PR.
 
-### ☐ 1.18b Calibre: universes, subseries, page counts and the Calibre id · M
+### ☑ 1.18b Calibre: universes, subseries, page counts and the Calibre id · M
 Owner, 2026-10-27, after TASK-030's review; D-90. **After 1.18.** The owner's
 Calibre library has two more grouping columns, `#superseries` and
 `#subseries`, each a Calibre series column with its own index, and `#pages`

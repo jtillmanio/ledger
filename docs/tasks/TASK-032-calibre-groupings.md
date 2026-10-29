@@ -1,7 +1,7 @@
 ---
 id: TASK-032
 title: 1.18b Calibre: universes, subseries, page counts and the Calibre id
-status: In progress
+status: Review
 depends_on: [TASK-030]
 size: L
 model: opus
@@ -34,7 +34,7 @@ Every book takes its universe (Calibre's superseries) with its reading order, it
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm run test:etl`, with 1.18's fixture `metadata.db` given `#superseries`, `#subseries` and `#pages` columns, shows:
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm run test:etl`, with 1.18's fixture `metadata.db` given `#superseries`, `#subseries` and `#pages` columns, shows:
   - a book with a superseries loads that universe and its position, and a workbook universe membership Calibre doesn't share is in `unresolved.csv`;
   - a book with a subseries loads it under its series, with its position;
   - `#pages` replaces an Open Library page count, and Open Library still fills a book with no `#pages`;
@@ -43,10 +43,10 @@ Every book takes its universe (Calibre's superseries) with its reading order, it
   - a second run over the same fixture leaves every sidecar byte-identical.
 
   `npm run test:db:reset` applies the migration. Then a dry run over the real library, with the superseries, subseries and page counts filled and the `calibre_missing.csv` count in the PR.
-- [ ] AC-2: Given a fixture whose superseries column has the lookup name `#universe` at a different `custom_column_N`, `--superseries-column '#universe'` loads the same universes and positions as `#superseries` did; likewise `--subseries-column` and `--pages-column`. A library with none of the three columns runs, fills none of them, and reports each missing column once.
-- [ ] AC-3: A workbook universe tab or Series-tab universe group still writes its `universe_follows` row, and a followed universe Calibre gives no book is one `unresolved.csv` row. One subseries name under two different series is one `unresolved.csv` row, and the book keeps its series.
-- [ ] AC-4: The migration adds exactly the five approved columns and one table; `book_subseries` is in `src/db/export-tables.ts` (`test/export-tables.test.ts` passes); `etl/load.ps1` and `etl/load.sh` both copy `book_subseries` before `books` and truncate it, and `test/load-scripts.test.ts` covers both. Two books given the same `calibre_id` fail the unique constraint on the TEST database.
-- [ ] AC-5: Re-running extract against both workbooks on `main` and on the branch, the `seed/` CSV diff shows only: the new `books` columns filled, `book_subseries.csv`, universe memberships Calibre changed, Calibre page counts over Open Library's, and the universes no book belongs to any longer, dropped unless followed (standing rule 4; summary in the PR). `calibre_missing.csv`, its columns and its `keep` rule are in `.claude/rules/schema.md`.
+- [x] AC-2: Given a fixture whose superseries column has the lookup name `#universe` at a different `custom_column_N`, `--superseries-column '#universe'` loads the same universes and positions as `#superseries` did; likewise `--subseries-column` and `--pages-column`. A library with none of the three columns runs, fills none of them, and reports each missing column once.
+- [x] AC-3: A workbook universe tab or Series-tab universe group still writes its `universe_follows` row, and a followed universe Calibre gives no book is one `unresolved.csv` row. One subseries name under two different series is one `unresolved.csv` row, and the book keeps its series.
+- [x] AC-4: The migration adds exactly the five approved columns and one table; `book_subseries` is in `src/db/export-tables.ts` (`test/export-tables.test.ts` passes); `etl/load.ps1` and `etl/load.sh` both copy `book_subseries` before `books` and truncate it, and `test/load-scripts.test.ts` covers both. Two books given the same `calibre_id` fail the unique constraint on the TEST database.
+- [x] AC-5: Re-running extract against both workbooks on `main` and on the branch, the `seed/` CSV diff shows only: the new `books` columns filled, `book_subseries.csv`, universe memberships Calibre changed, Calibre page counts over Open Library's, and the universes no book belongs to any longer, dropped unless followed (standing rule 4; summary in the PR). `calibre_missing.csv`, its columns and its `keep` rule are in `.claude/rules/schema.md`.
 
 ## Out of scope
 
@@ -75,7 +75,13 @@ Every book takes its universe (Calibre's superseries) with its reading order, it
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Candidate decision: a Calibre rename found by the Calibre id is written to `book_review.csv` as a pre-decided `merge` row (reason `calibre rename`, keep Calibre's), so the workbook's spelling folds into the new title through the existing merges, not through a new column (approved at plan)
+- Candidate decision: a Calibre rename found by the Calibre id is written to `book_review.csv` as a pre-decided `merge` row (reason `calibre rename`, keep Calibre's), so the workbook's spelling folds into the new title through the existing merges, not through a new column (approved at plan) → docs/review/decisions.md § D-96
+- What the real library showed, for the owner: 181 `calibre_missing.csv` rows to decide, seven workbook universe memberships Calibre doesn't share, two pairs of Calibre books merged into one Ledger book, one series spelled two ways in Calibre, and one subseries with no series → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- AC-4 counts "the five approved columns and one table", but the approved schema (Context, data model § 4.1) is four `books` columns plus `book_subseries`, which is what the migration adds (spec review R1) → not tracked: an AC is the owner's to reword; proposed in the PR
+- No index on the new foreign keys (`book_subseries.series_id`, `books.subseries_id`) (schema review R1, MINOR) → not tracked: matches current practice (`books.universe_id` has none either) and the tables hold about 4,600 rows; one belongs with the first query that filters by them
+- calibre.py lists the second of two Calibre books merged into one Ledger book as unmatched on every run (schema review R1, MINOR) → not tracked: console output only; it clears when the owner settles the pair (Owner checklist above)
+- The roadmap's 1.15 **Check:** still says the Cosmere tab's books carry `universe_id` → not tracked: a done item's Check is its history, and D-90 supersedes it
+- The "subseries lost its series" guard in `extract_books` has no test (spec review R2) → not tracked: unreachable since a second Calibre book on one book loads nothing; kept as a guard for the load's foreign key
 
 ## Plan
 
@@ -93,7 +99,7 @@ _Approved 2026-10-29 at 2bc9121. Owner's answers at the gate: the rename design 
 8. **Loaders and docs.** `etl/load.ps1`, `etl/load.sh`: truncate `book_subseries`, copy it before `books`, `books` with the new columns. `etl/rebuild.ps1`, `etl/rebuild.sh` count it. `package.json` `extract` (and `rebuild.sh`) pass `--calibre-missing`. `.claude/rules/schema.md`, `docs/COMMANDS.md`.
 9. **Real runs.** `npm run calibre -- --dry-run`, then `npm run calibre -- --offline`; extract on `main` and on the branch into temp folders; CSV diff summarised in the PR; `npm run rebuild` on development (approved).
 
-**Files** (18; `never-split`, attended): `src/db/schema.ts`, `drizzle/0016_*` + meta, `src/db/export-tables.ts`, `etl/calibre.py`, `etl/extract.py`, `etl/test_calibre.py`, `etl/test_extract.py`, `test/schema-additions.test.ts`, `test/load-scripts.test.ts`, `etl/data/calibre_books.csv`, `etl/data/calibre_missing.csv` (new), `etl/data/book_review.csv`, `etl/load.ps1`, `etl/load.sh`, `etl/rebuild.ps1` and `etl/rebuild.sh` (not in Files likely touched: they count each table against the seed), `package.json`, `.claude/rules/schema.md`, `docs/COMMANDS.md`. Also `etl/test_views.sql` (found in verify R1: it pins the catalog tables' columns, so the four new `books` columns join its list).
+**Files** (19 with `etl/test_views.sql`; `never-split`, attended): `src/db/schema.ts`, `drizzle/0016_*` + meta, `src/db/export-tables.ts`, `etl/calibre.py`, `etl/extract.py`, `etl/test_calibre.py`, `etl/test_extract.py`, `test/schema-additions.test.ts`, `test/load-scripts.test.ts`, `etl/data/calibre_books.csv`, `etl/data/calibre_missing.csv` (new), `etl/data/book_review.csv`, `etl/load.ps1`, `etl/load.sh`, `etl/rebuild.ps1` and `etl/rebuild.sh` (not in Files likely touched: they count each table against the seed), `package.json`, `.claude/rules/schema.md`, `docs/COMMANDS.md`. Also `etl/test_views.sql` (found in verify R1: it pins the catalog tables' columns, so the four new `books` columns join its list).
 
 **Test strategy**
 
@@ -110,13 +116,19 @@ _Approved 2026-10-29 at 2bc9121. Owner's answers at the gate: the rename design 
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 FAIL(1: `etl/test_views.sql`'s catalog column list lacked the new `books` columns) → R2 PASS → R3 PASS (after the review fixes, 01790f4)
+- Audit R1 CHANGES (the Calibre tests errored on base in the shared helper, so none reached an assertion) → R2 PASS (a503c2a)
+- Spec R1 APPROVE → R2 APPROVE (01790f4)
+- Schema R1 CHANGES (MAJOR: a second Calibre book on one book overwrote the first, leaving a possible dangling subseries; 3 MINOR) → R2 APPROVE (01790f4)
+- Real library: dry run 4,486 records (1,165 matched, 3,227 unmatched; 393 books in 23 universes, 92 in 24 subseries, 4,385 page counts); 181 `calibre_missing.csv` rows; a second run byte-identical; `npm run rebuild` on development, every table's count matching its seed
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (R1 FAIL, R2 and R3 PASS)
+- Review rounds: 2 spec, 2 schema, 2 test audit
+- First-pass AC FAILs: 0 (audit R1 found AC-1–3 unproven, not failing)
+- Plan revisions after approval: 0 (`etl/test_views.sql` joined the Files list, found in verify R1)
