@@ -78,6 +78,40 @@ describe("ignoredBuildStep (scripts/vercel-ignore.mjs)", () => {
   it("builds a redeploy, where nothing changed", () => {
     expect(ignoredBuildStep("abc1234def", git({ diffs: { abc1234def: [] } }).run).build).toBe(true);
   });
+
+  it("skips a redeploy of a skipped commit: the previous SHA is the last successful deployment, not the commit", () => {
+    // The commit being redeployed never built, so Vercel hands the script an
+    // older deployment's SHA; the diff against it is still docs-only. The script
+    // never forces a build: that is the Redeploy dialog's box (START-HERE 10e).
+    const g = git({ diffs: { abc1234def: ["docs/05-roadmap.md", "docs/tasks/TASK-035-redeploy-skipped-preview.md"] } });
+    expect(ignoredBuildStep("abc1234def", g.run)).toEqual({
+      build: false, why: "only backups, docs, design, CI or Claude config changed since abc1234",
+    });
+  });
+
+  describe("what the comments tell the owner about a redeploy", () => {
+    const header = readFileSync("scripts/vercel-ignore.mjs", "utf8");
+    const lib = readFileSync("scripts/lib/release.mjs", "utf8");
+    const flat = (s: string) => s.replace(/\s*\n\s*\/\/\s*/g, " ").replace(/\s*\n\s*\*\s*/g, " ");
+
+    it("no longer says a redeploy always builds", () => {
+      for (const src of [header, lib]) expect(flat(src)).not.toMatch(/redeploy\s+(changes nothing, so it\s+)?always builds/i);
+      expect(flat(header)).not.toMatch(/changes nothing, so it always builds/i);
+    });
+
+    it("the vercel-ignore.mjs header says what VERCEL_GIT_PREVIOUS_SHA is and names the Redeploy box", () => {
+      const h = flat(header);
+      expect(h).toMatch(/VERCEL_GIT_PREVIOUS_SHA/);
+      expect(h).toMatch(/last successful deployment/i);
+      expect(h).toMatch(/Use project's Ignore Build Step/);
+    });
+
+    it("the release.mjs comments say a skipped commit's redeploy compares with an older deployment, and name the box", () => {
+      const l = flat(lib);
+      expect(l).toMatch(/last successful deployment/i);
+      expect(l).toMatch(/Use project's Ignore Build Step/);
+    });
+  });
 });
 
 describe("pendingMigrations (drizzle-kit migrate's rule)", () => {

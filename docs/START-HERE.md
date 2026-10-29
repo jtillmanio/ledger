@@ -1055,7 +1055,8 @@ order (Step 13).
      ticked for **Preview** and **Development**. Paste the second one here,
      never the production one, so nothing in Actions holds your production
      login. A change to either reaches a deployment only when it is next built:
-     redeploy an open PR's preview after changing it.
+     redeploy an open PR's preview after changing it (if that commit's own
+     build was skipped, see *Forcing a build of a skipped commit* below).
      `SESSION_SECRET` already has its own value in each of Production,
      Preview and Development. Keep it that way: the session cookie is signed
      with it and never expires, so the cookie the workflow gets from a preview
@@ -1079,6 +1080,24 @@ A commit that only touches `backups/`, `docs/`, `design/`, `.github/`,
 `.claude/` or Markdown shows **Canceled** in Vercel's Deployments tab. That is
 `vercel.json`'s ignore step skipping a build that would change nothing, not a
 failure. The build log says which files it compared.
+
+**Forcing a build of a skipped commit.** A plain **Redeploy** of a commit that
+shows **Canceled** is skipped again: Vercel hands the ignore step the SHA of
+the branch's last *successful* deployment, not of the commit you redeploy, and
+the diff against that is still docs-only. To build it anyway (say, so a
+changed environment variable reaches the preview):
+
+1. Vercel → the `ledger` project → **Deployments**, and open the **Canceled**
+   deployment of the commit (filter by the PR's branch).
+2. **⋯ → Redeploy**. In the dialog, **untick** *Use project's Ignore Build
+   Step*, then **Redeploy**.
+3. The new deployment goes **Ready**, and its log has no `skip:` or `build:`
+   line from the ignore step and starts `vercel-build (preview): migrate →
+   views → next build`.
+
+Nothing to set and nothing to turn off: the box applies to that one redeploy,
+and the next docs-only push is skipped as before. A redeploy of a commit that
+did build needs no unticking (the diff is empty, so it builds).
 
 GitHub's approval gate for deployments (environments with required reviewers)
 is not available to a private repo on the free plan. Release has no second
@@ -1116,9 +1135,9 @@ Open the preview: it shows your data.
 | `This preview has no DATABASE_URL`                    | Step 3 isn't done, or Preview isn't ticked in the integration                                |
 | `LEDGER_LIVE_DB_HOST is not set`                      | Step 2                                                                                        |
 | `This preview's DATABASE_URL is the live database`    | Step 1: `DATABASE_URL` is still in Preview                                                    |
-| `migrate failed` after regenerating the PR's migration | The branch already ran the old one. Delete `preview/<branch>` in Neon and redeploy           |
+| `migrate failed` after regenerating the PR's migration | The branch already ran the old one. Delete `preview/<branch>` in Neon and redeploy (untick the ignore-step box if that commit was Canceled: 10e) |
 | `migrate failed` on a migration not written for existing rows (0.8a) | Expected before cutover. Test that PR locally against `TEST_DATABASE_URL` instead |
-| A reopened PR's preview can't reach its database      | Closing deleted `preview/<branch>`. Push a commit or redeploy: the branch is re-copied from live |
+| A reopened PR's preview can't reach its database      | Closing deleted `preview/<branch>`. Push a commit or redeploy (untick the ignore-step box if that commit was Canceled: 10e): the branch is re-copied from live |
 
 Neon Free allows 10 branches per project. Main, `test`, one per open PR and
 Release's two snapshots fit. Step 3's option misses some closed PRs' branches,
