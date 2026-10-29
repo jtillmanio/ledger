@@ -157,7 +157,7 @@ tick them.
       found, then `npm run calibre`. About 345 Calibre books have none (fan
       fiction never does) (D-94).
 - [ ] After 1.18b merges, settle what Calibre's groupings showed (from TASK-032,
-      task/1.18b-calibre-groupings):
+      PR #162):
       - Decide the 181 rows in `etl/data/calibre_missing.csv`: workbook books
         Calibre doesn't have. `keep` keeps one out of Calibre; adding it to
         Calibre clears its row at the next `npm run calibre` and `npm run extract`.
