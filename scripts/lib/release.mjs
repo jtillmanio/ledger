@@ -32,11 +32,12 @@ export function deploymentNeedsBuild(files) {
 
 /**
  * The Ignored Build Step, start to finish: `{ build, why }`. It compares with
- * the branch's last successful deployment (not the commit being redeployed), or, on a branch's first push (Vercel gives no
- * previous SHA), with main's tip, so a docs-only branch skips from its first
- * commit. Against main the diff is tree to tree: a branch behind a main that
- * changed app code builds, which is the safe side. `git(args)` runs git and
- * answers `{ status, stdout }`. When it cannot tell, it builds.
+ * the branch's last successful deployment (not the commit being redeployed),
+ * or, on a branch's first push (Vercel gives no previous SHA), with main's tip,
+ * so a docs-only branch skips from its first commit. Against main the diff is
+ * tree to tree: a branch behind a main that changed app code builds, which is
+ * the safe side. `git(args)` runs git and answers `{ status, stdout }`. When it
+ * cannot tell, it builds.
  */
 export function ignoredBuildStep(previousSha, git) {
   let base = previousSha;

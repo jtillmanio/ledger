@@ -1,7 +1,7 @@
 ---
 id: TASK-035
 title: 0.12 A redeploy of a skipped preview builds
-status: In progress
+status: Review
 depends_on: []
 size: S
 model: sonnet
@@ -29,11 +29,11 @@ The owner can make Vercel build a commit whose own build the ignore step skipped
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): a redeploy, or the documented force route, of a commit whose own build was skipped builds it. A docs-only push after a build is still skipped. `scripts/vercel-ignore.mjs`'s header says what `VERCEL_GIT_PREVIOUS_SHA` is.
-- [ ] AC-2: `test/release.test.ts` fails if `scripts/vercel-ignore.mjs` or `scripts/lib/release.mjs` still says a redeploy always builds, or if the `vercel-ignore.mjs` header does not say what `VERCEL_GIT_PREVIOUS_SHA` is (the branch's last successful deployment) or does not name the Redeploy dialog's *Use project's Ignore Build Step* box. Given a fake git whose diff against the previous deployment is docs-only (`["docs/05-roadmap.md"]`), `ignoredBuildStep` returns `build: false` (expected: the existing `"only backups, docs, design, CI or Claude config changed since abc1234"`). Every existing `ignoredBuildStep` and `deploymentNeedsBuild` test still passes unchanged. *(Reworded at the plan gate, 2026-10-29, owner-approved: the force route is Vercel's Redeploy box, which skips the ignore step, so the script reads no force input.)*
-- [ ] AC-3: Given the force route is in its off state (unset, or whatever the plan names), a docs-only diff against a previous deployment skips and a first push of a docs-only branch skips (both asserted in `test/release.test.ts`), so leaving the route off costs no builds.
-- [ ] AC-4: `scripts/vercel-ignore.mjs`'s header and the `ignoredBuildStep` / `deploymentNeedsBuild` comments in `scripts/lib/release.mjs` say that `VERCEL_GIT_PREVIOUS_SHA` is the branch's last successful deployment, that a redeploy of a skipped commit compares against it, and name the force route; none still says a redeploy always builds.
-- [ ] AC-5: `docs/START-HERE.md` § 10e has the force route as owner steps (where to set it, the Redeploy, how to turn it off), next to the *Canceled* paragraph, and § 10e step 4's and § 10f's *redeploy* instructions point to it. `docs/GIT-PR.md`'s docs-only bullet mentions it in one line.
+- [x] AC-1 (roadmap **Check:**, verbatim): a redeploy, or the documented force route, of a commit whose own build was skipped builds it. A docs-only push after a build is still skipped. `scripts/vercel-ignore.mjs`'s header says what `VERCEL_GIT_PREVIOUS_SHA` is.
+- [x] AC-2: `test/release.test.ts` fails if `scripts/vercel-ignore.mjs` or `scripts/lib/release.mjs` still says a redeploy always builds, or if the `vercel-ignore.mjs` header does not say what `VERCEL_GIT_PREVIOUS_SHA` is (the branch's last successful deployment) or does not name the Redeploy dialog's *Use project's Ignore Build Step* box. Given a fake git whose diff against the previous deployment is docs-only (`["docs/05-roadmap.md"]`), `ignoredBuildStep` returns `build: false` (expected: the existing `"only backups, docs, design, CI or Claude config changed since abc1234"`). Every existing `ignoredBuildStep` and `deploymentNeedsBuild` test still passes unchanged. *(Reworded at the plan gate, 2026-10-29, owner-approved: the force route is Vercel's Redeploy box, which skips the ignore step, so the script reads no force input.)*
+- [x] AC-3: Given the force route is in its off state (unset, or whatever the plan names), a docs-only diff against a previous deployment skips and a first push of a docs-only branch skips (both asserted in `test/release.test.ts`), so leaving the route off costs no builds.
+- [x] AC-4: `scripts/vercel-ignore.mjs`'s header and the `ignoredBuildStep` / `deploymentNeedsBuild` comments in `scripts/lib/release.mjs` say that `VERCEL_GIT_PREVIOUS_SHA` is the branch's last successful deployment, that a redeploy of a skipped commit compares against it, and name the force route; none still says a redeploy always builds.
+- [x] AC-5: `docs/START-HERE.md` § 10e has the force route as owner steps (where to set it, the Redeploy, how to turn it off), next to the *Canceled* paragraph, and § 10e step 4's and § 10f's *redeploy* instructions point to it. `docs/GIT-PR.md`'s docs-only bullet mentions it in one line.
 - [ ] AC-6: On this task's own PR, after a build: a docs-only commit pushed to the branch shows **Canceled** in Vercel with a log line starting `skip:`; the force route applied to that same commit gives a **Ready** deployment whose log has no `skip:` or `build:` line from the ignore step and shows `vercel-build (preview): migrate → views → next build`; then a second docs-only push shows **Canceled**. The PR's *How it was verified* records the three deployments' commits and outcomes.
 
 ## Out of scope
@@ -54,12 +54,14 @@ The owner can make Vercel build a commit whose own build the ignore step skipped
 
 ## Verification
 
-- Automated: `test/release.test.ts` § `ignoredBuildStep (scripts/vercel-ignore.mjs)` gains a case that fails before the change (a docs-only diff with the force route present builds) and a case that pins the off state (still skips). `npm test` and `verify.full` green.
-- Manual (AC-6, on the PR's Vercel preview, the owner or Claude with the owner's Vercel access): push a docs-only commit after a build → expected: **Canceled**, log `skip: only backups, docs, design, CI or Claude config changed since <sha>`. Apply the force route to that commit → expected: a **Ready** deployment whose log starts `build:` and names the route. Turn it off and push another docs-only commit → expected: **Canceled**.
+- Automated: `test/release.test.ts` § `ignoredBuildStep (scripts/vercel-ignore.mjs)` gains comment tests that fail before the change (the header says what `VERCEL_GIT_PREVIOUS_SHA` is and names the *Use project's Ignore Build Step* box; no comment says a redeploy always builds) and a case that pins the skipped-redeploy diff (still skips). `npm test` and `verify.full` green.
+- Manual (AC-6, on the PR's Vercel preview, the owner or Claude with the owner's Vercel access): push a docs-only commit after a build → expected: **Canceled**, log `skip: only backups, docs, design, CI or Claude config changed since <sha>`. Redeploy that commit with *Use project's Ignore Build Step* unticked → expected: a **Ready** deployment whose log has no `skip:` or `build:` line from the ignore step and shows `vercel-build (preview): migrate → views → next build`. Push another docs-only commit → expected: **Canceled**.
 
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- `test/release.test.ts` line 26-27 still says a redeploy "builds the commit it last deployed" (an existing test's comment, left unchanged by AC-2) → not tracked: true for the commit the last deployment built, and the new comment tests state the rest.
 
 ## Plan
 
@@ -93,7 +95,7 @@ _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_s
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | Audit R1 PASS (comment tests discriminating; one test tightened after) | Spec R1 APPROVE (Verification wording and a long comment line fixed after)
 
 ## Blocked
 
@@ -101,7 +103,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1
+- Review rounds: 1
+- First-pass AC FAILs: 0 (AC-6 is manual, on the PR's preview)
+- Plan revisions after approval: 0
