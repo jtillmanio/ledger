@@ -109,6 +109,7 @@ describe("ignoredBuildStep (scripts/vercel-ignore.mjs)", () => {
     it("the release.mjs comments say a skipped commit's redeploy compares with an older deployment, and name the box", () => {
       const l = flat(lib);
       expect(l).toMatch(/last successful deployment/i);
+      expect(l).toMatch(/compares with an older deployment/i);
       expect(l).toMatch(/Use project's Ignore Build Step/);
     });
   });
