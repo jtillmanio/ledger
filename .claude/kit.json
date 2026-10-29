@@ -4,7 +4,7 @@
   "verify": {
     "sourceExtensions": [".ts", ".tsx", ".mjs"],
     "fast": ["node scripts/tsc-brief.mjs", "npx eslint {file} --max-warnings 0 --no-warn-ignored"],
-    "full": ["npx tsc --noEmit", "npm run lint", "npm run test:all", "npm run build"],
+    "full": ["npx tsc --noEmit", "npm run lint", "npm run test:all"],
     "maxOutputLines": 60
   },
 

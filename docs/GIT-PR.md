@@ -23,8 +23,10 @@ applies, not just the one nearest the change.
 Before pushing, locally:
 
 - `/verify`: typecheck, lint, `npm run test:all` (tokens, migration checks,
-  test-db reset, vitest, SQL view tests, ETL unittests) and `next build`. It is
-  the same set CI runs.
+  test-db reset, vitest, SQL view tests, ETL unittests, then `next build` and
+  the core browser projects against `next start`). It is the same set CI runs.
+  The browser part runs once per task; later rounds run `npm run test:no-e2e`
+  (D-97), and CI's full browser run is the gate.
 - The task's own **Check:** from `docs/05-roadmap.md`, exactly as written.
 - Schema or query changes: the `schema-reviewer` subagent (CLAUDE-CODE.md §3,
   phase 4). Phases 1 and 3 also get the adversarial review pass (standing

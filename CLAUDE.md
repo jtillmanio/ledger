@@ -92,7 +92,8 @@ suites) is in `docs/COMMANDS.md`.
 npm run dev                 # local, needs .env
 npm run clean:dev           # delete .next/dev when next dev reloads in a loop (test:e2e does it itself)
 npm test                    # vitest; needs TEST_DATABASE_URL (never DATABASE_URL), refuses without it
-npm run test:all            # everything CI runs
+npm run test:all            # everything CI runs: test:no-e2e, then a build and the core browser projects (D-97)
+npm run test:no-e2e         # the same without the build and browser suite: re-runs after the first full pass
 npm run test:e2e            # Playwright + axe in Chromium on the TEST database, the core projects (D-80); stop npm run dev first; needs `npx playwright install chromium` once
 npm run test:e2e:full       # the same at every width, light and dark: what CI runs
 npm run test:db:reset       # rebuild the TEST database: drizzle-kit migrate, then etl/views.sql

@@ -1,6 +1,7 @@
 # test-runner: reading the Ledger's output
 
-- **`npm run test:all` is an `&&` chain**: `test:tokens` → `check:migrations` → `test:db:reset` → vitest → `test:views` → `test:etl`. It stops at the first failing step. Name that step, and say the later steps did not run; don't call them passed.
+- **`npm run test:all` is an `&&` chain**: `test:no-e2e` (`test:tokens` → `check:migrations` → `test:db:reset` → vitest → `test:views` → `test:etl`), then `test:e2e:build` (`next build`, then the core browser projects against `next start`; D-97). It stops at the first failing step. Name that step, and say the later steps did not run; don't call them passed. If you were asked for the round chain (D-97), run `npx tsc --noEmit`, `npm run lint` and `npm run test:no-e2e` in place of `verify.full`, and say which you ran.
+- **The browser suite** (`scripts/e2e.mjs`): `e2e: next build failed; the browser suite did not run.` means the build step failed: its error is above it (see `npm run build` below). A Playwright failure is listed as `[w390-light] › test/e2e/x.spec.ts:48:5 › describe › test`, then the error and `at test/e2e/x.spec.ts:52:7`; the summary counts `failed` and `passed`. A trace for each failure is under `test-results/`.
 - **tsc**: `src/x.ts(12,5): error TS2322: <message>`, file(line,col).
 - **eslint**: the file path on its own line, then `12:5  error  <message>  <rule-id>` under it.
 - **`test:tokens`** (`scripts/check-tokens.mjs`): on failure, `test:tokens — N failure(s):` and one indented line each, naming the theme, the token and its value, the measured ΔE or contrast, and the limit. No file:line; the tokens are in `src/app/globals.css` (and `design/tokens.css`, which it must match). `note (6.9): …` lines are not failures.

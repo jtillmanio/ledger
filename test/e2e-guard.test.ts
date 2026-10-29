@@ -120,28 +120,40 @@ describe("e2eProjects: which project runs which test", () => {
 // Runs the wrapper from an empty folder, so no .env there can supply a
 // TEST_DATABASE_URL the case means to leave out. The folder holds a stale
 // next dev cache and a build, so a case can see what the wrapper cleared.
-function runWrapper(env: Record<string, string>, args: string[] = []) {
+// Stubs stand in for Playwright and for `next` (--build); each appends to
+// steps.txt, so a case can see what ran, in what order, with which database.
+function runWrapper(env: Record<string, string>, args: string[] = [], buildExit = 0) {
   const dir = mkdtempSync(join(tmpdir(), "e2e-guard-"));
   mkdirSync(join(dir, DEV_CACHE, "cache"), { recursive: true });
   writeFileSync(join(dir, DEV_CACHE, "cache", "stale"), "");
   writeFileSync(join(dir, ".next", "BUILD_ID"), "build");
   const marker = join(dir, "launched.json");
+  const steps = join(dir, "steps.txt");
   const stub = join(dir, "stub-playwright.mjs");
   writeFileSync(
     stub,
-    `import { writeFileSync } from "node:fs";
-     writeFileSync(${JSON.stringify(marker)}, JSON.stringify({ argv: process.argv.slice(2), db: process.env.DATABASE_URL ?? null, scope: process.env.E2E_SCOPE ?? null }));`,
+    `import { appendFileSync, writeFileSync } from "node:fs";
+     appendFileSync(${JSON.stringify(steps)}, "playwright\\n");
+     writeFileSync(${JSON.stringify(marker)}, JSON.stringify({ argv: process.argv.slice(2), db: process.env.DATABASE_URL ?? null, scope: process.env.E2E_SCOPE ?? null, server: process.env.E2E_SERVER ?? null }));`,
+  );
+  const nextStub = join(dir, "stub-next.mjs");
+  writeFileSync(
+    nextStub,
+    `import { appendFileSync } from "node:fs";
+     appendFileSync(${JSON.stringify(steps)}, "next " + process.argv.slice(2).join(" ") + " db=" + process.env.DATABASE_URL + "\\n");
+     process.exit(${buildExit});`,
   );
   const r = spawnSync(process.execPath, [wrapper, ...args], {
     cwd: dir,
     encoding: "utf8",
-    env: { NODE_ENV: "test", PATH: process.env.PATH ?? "", SystemRoot: process.env.SystemRoot ?? "", PLAYWRIGHT_CLI: stub, ...env },
+    env: { NODE_ENV: "test", PATH: process.env.PATH ?? "", SystemRoot: process.env.SystemRoot ?? "", PLAYWRIGHT_CLI: stub, NEXT_CLI: nextStub, ...env },
   });
   const launched = existsSync(marker) ? JSON.parse(readFileSync(marker, "utf8")) : null;
   const devCacheLeft = existsSync(join(dir, DEV_CACHE));
   const buildLeft = existsSync(join(dir, ".next", "BUILD_ID"));
+  const ran = existsSync(steps) ? readFileSync(steps, "utf8").trim().split("\n") : [];
   rmSync(dir, { recursive: true, force: true });
-  return { status: r.status, stderr: r.stderr, launched, devCacheLeft, buildLeft };
+  return { status: r.status, stderr: r.stderr, launched, devCacheLeft, buildLeft, ran };
 }
 
 describe("node scripts/e2e.mjs", () => {
@@ -188,6 +200,32 @@ describe("node scripts/e2e.mjs", () => {
     expect(runWrapper({ TEST_DATABASE_URL: TEST, DATABASE_URL: LIVE }).launched.scope).toBeNull();
   });
 
+  it("takes --build for itself: builds on the test database first, then serves that build with next start (D-97)", () => {
+    const r = runWrapper({ TEST_DATABASE_URL: TEST, DATABASE_URL: LIVE }, ["--build", "--project=w390-light"]);
+    expect(r.status).toBe(0);
+    expect(r.ran).toEqual([`next build db=${TEST}`, "playwright"]);
+    expect(r.launched.argv).toEqual(["test", "--project=w390-light"]);
+    expect(r.launched.server).toBe("start");
+    expect(r.launched.db).toBe(LIVE);
+    // next start serves the build: the dev cache is not the wrapper's to clear.
+    expect(r.devCacheLeft).toBe(true);
+    // Without --build nothing is built, and the server is whatever E2E_SERVER says.
+    const plain = runWrapper({ TEST_DATABASE_URL: TEST, DATABASE_URL: LIVE });
+    expect(plain.ran).toEqual(["playwright"]);
+    expect(plain.launched.server).toBeNull();
+  });
+
+  it("stops when --build's build fails, and never builds against an unsafe database", () => {
+    const failed = runWrapper({ TEST_DATABASE_URL: TEST, DATABASE_URL: LIVE }, ["--build"], 3);
+    expect(failed.status).toBe(3);
+    expect(failed.stderr).toContain("next build failed");
+    expect(failed.ran).toEqual([`next build db=${TEST}`]);
+    expect(failed.launched).toBeNull();
+    const unsafe = runWrapper({ TEST_DATABASE_URL: LIVE, DATABASE_URL: LIVE }, ["--build"]);
+    expect(unsafe.status).toBe(1);
+    expect(unsafe.ran).toEqual([]);
+  });
+
   it("test:e2e:full is the wrapper with --full, and CI's shards run the scope CI picks", () => {
     const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
     expect(pkg.scripts["test:e2e:full"]).toBe("node scripts/e2e.mjs --full");
@@ -199,9 +237,17 @@ describe("wiring: test:all runs it, the docs name it, its output is ignored", ()
   const read = (p: string) => readFileSync(join(root, p), "utf8");
   const pkg = JSON.parse(read("package.json"));
 
-  it("test:all ends with test:e2e, and test:e2e is the wrapper", () => {
+  it("test:all is test:no-e2e, then the suite on a fresh build; test:e2e is the wrapper (D-97)", () => {
     expect(pkg.scripts["test:e2e"]).toBe("node scripts/e2e.mjs");
-    expect(pkg.scripts["test:all"]).toMatch(/&& npm run test:e2e$/);
+    expect(pkg.scripts["test:e2e:build"]).toBe("node scripts/e2e.mjs --build");
+    expect(pkg.scripts["test:all"]).toBe("npm run test:no-e2e && npm run test:e2e:build");
+    expect(pkg.scripts["test:no-e2e"]).not.toContain("e2e.mjs");
+    expect(pkg.scripts["test:no-e2e"]).not.toContain("test:e2e");
+  });
+
+  it("verify.full is typecheck, lint and test:all, which builds: no second build (D-97)", () => {
+    const kit = JSON.parse(read(".claude/kit.json"));
+    expect(kit.verify.full).toEqual(["npx tsc --noEmit", "npm run lint", "npm run test:all"]);
   });
 
   it("CLAUDE.md, git.md and COMMANDS.md name npm run test:e2e", () => {
