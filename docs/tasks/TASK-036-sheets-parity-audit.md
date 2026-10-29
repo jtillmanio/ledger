@@ -1,14 +1,14 @@
 ---
 id: TASK-036
 title: 1.25 Sheets parity audit
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 2c32663
 ---
 
 # TASK-036 — 1.25 Sheets parity audit
@@ -72,7 +72,48 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner, 2026-10-29.
+
+**Steps**
+
+1. Test first: `etl/test_cutover_parity.py` (unittest). One function,
+   `problems(tabs, parity_text, roadmap_text) -> list[str]`; the real-file test
+   calls it with both workbooks' tab names (pandas), `docs/cutover-parity.md`
+   and `docs/05-roadmap.md`. It names: a tab with no section; a use bullet
+   ending in neither `→ <ID>[, <ID>…]` nor `→ won't carry: <reason>`; a cited
+   ID that is no entry; an open (☐) cited ID missing from 1.26's
+   **Depends on**; a missing `**Signed off:** the owner, YYYY-MM-DD` line.
+   Fixture cases (AC-3) for each, on small strings. Fails on `main` (no file).
+2. Draft `docs/cutover-parity.md`: one `###` section per tab, tab names in
+   backticks (the `Read 20XX` and `To-Read 20XX` tabs share a section naming
+   each), drafted from the headers, `extract.py`, HANDOFF's artifacts table
+   and product § The owner's list. Uses that can't be read from the file are
+   marked **? owner**. No sign-off.
+3. Owner pass: the owner corrects the draft in one pass. A use no entry covers
+   gets a proposed new entry with a Check, agreed first. The owner gives the
+   sign-off date; the line is written.
+4. `docs/05-roadmap.md`: 1.26's **Depends on** gains every open cited ID; any
+   agreed new entries. No other entry's text changes.
+5. `docs/06-tasklist.md`: M9's *Order* names the pulled-ahead entries; one row
+   per new entry; every roadmap ID in exactly one row.
+
+**Owner answers at the gate**
+
+- An *entry* is a `### ☐|☑ <id>` heading **or** a `- ☐|☑ <id>` bullet
+  (Phases 5–6 write entries as bullets). AC-2's "heading" reads as either.
+- `→ won't carry: <reason>` may name a later entry in its reason ("6.8 after
+  cutover"); an ID inside a won't-carry reason does not gate 1.26.
+
+**Files:** `docs/cutover-parity.md` (new), `etl/test_cutover_parity.py`
+(new), `docs/05-roadmap.md`, `docs/06-tasklist.md`.
+
+**Test strategy:** AC-1/AC-2 `test_real_parity_file_has_no_problems`; AC-3
+`test_missing_tab_section_is_named`, `test_use_without_id_is_named`, plus the
+unknown-ID, open-ID-not-in-1.26 and missing-sign-off fixtures. AC-4/AC-5 by
+spec-reviewer and the owner; the test checks cited IDs exist.
+
+**Risks:** the audit waits on the owner's pass. Open Phase 5–6 entries mapped
+as gates (5.2, 5.7, 5.9, 5.10, 6.8, 2.0–2.4) lengthen M9.
 
 ## Review log
 

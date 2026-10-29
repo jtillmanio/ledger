@@ -1464,7 +1464,10 @@ The entry is ticked on the day of the switch. The month of running both
 
 **Depends on:** 1.25; every open Phase 1 entry (1.14b, 1.18b, 1.18c, 1.20,
 1.4e, 1.4f, 1.17, 1.19, 1.22, 1.23, 1.24); 2.11a and 1.11 (done); and every
-open entry `docs/cutover-parity.md` names, added here by 1.25.
+open entry `docs/cutover-parity.md` names (1.25): 2.0,
+2.1, 2.2, 2.2b, 2.3 (the year and quarter budget), 3.1, 3.2, 3.3 (catalog and
+prerequisite edits), 3.4 (top books), 5.7 (books coming out) and 5.10
+(recording a trade bought), with 5.6, which 5.10 depends on.
 
 **Check:** the owner, after the switch: `npm run rebuild -- -EnvFile .env.live`
 and `.\etl\load.ps1 seed-final -EnvFile .env.live` both refuse, naming
