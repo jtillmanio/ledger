@@ -249,6 +249,14 @@ export const bookUniverses = pgTable("book_universes", {
   name: text("name").notNull(),
 });
 
+// A grouping inside one series, from Calibre's #subseries (task 1.18b, D-90):
+// Discworld's City Watch, Mistborn's eras.
+export const bookSubseries = pgTable("book_subseries", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  seriesId: text("series_id").notNull().references(() => bookSeries.id),
+});
+
 export const books = pgTable("books", {
   id: text("id").primaryKey(),
   title: text("title").notNull(),
@@ -268,11 +276,21 @@ export const books = pgTable("books", {
   // until someone merges them.
   openLibraryId: text("open_library_id"),
   hardcoverId: integer("hardcover_id"),
+  // Calibre's #superseries is the universe, and its index the reading order
+  // across series (task 1.18b, D-90).
   universeId: text("universe_id").references(() => bookUniverses.id),
+  universePosition: real("universe_position"),
+  subseriesId: text("subseries_id").references(() => bookSubseries.id),
+  subseriesPosition: real("subseries_position"),
+  // Calibre's books.id: a book renamed in Calibre stays this book (D-90). On
+  // the book, not per user (D-91). NULL for a book Calibre doesn't have.
+  calibreId: integer("calibre_id"),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (t) => ({
   liveSeries: index("books_live_series_idx").on(t.seriesId, t.seriesPosition)
     .where(sql`${t.deletedAt} IS NULL`),
+  // Unique where set: NULLs are distinct, so every book not in Calibre fits.
+  calibreId: unique("books_calibre_id_key").on(t.calibreId),
   wordCountSource: check("books_word_count_source_check", sql`
     (${t.wordCount} IS NULL) = (${t.wordCountSource} IS NULL)
     AND (${t.wordCountSource} IS NULL OR ${t.wordCountSource} IN ('stated', 'estimated'))`),

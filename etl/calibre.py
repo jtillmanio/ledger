@@ -10,7 +10,8 @@ The library is `--library <folder>` or CALIBRE_LIBRARY in .env (task 1.18, D-73,
 D-83). Its metadata.db is copied to a temp folder outside the repo and the copy
 is opened read-only, so a running Calibre is never locked or written; the copy
 is removed after the run. Custom columns are found by lookup name (`#words`,
-`#read`, `#date_read`, `#type`, each overridable), never by custom_column_N.
+`#read`, `#date_read`, `#type`, `#superseries`, `#subseries`, `#pages`, each
+overridable), never by custom_column_N.
 
 Calibre is the source of truth for a book's data and its reads (D-87): the owner
 edits Calibre and nothing else. So nothing here waits on a decision except a
@@ -30,6 +31,10 @@ book_review.csv's merges applied. A book with several authors matches on any.
              `separate` creates Calibre's)
 - unmatched  anything else: extract creates it at Unlisted (D-83, D-86)
 Books an earlier run created (seed/calibre_created.csv) are never matched.
+A book the seed already knows by its Calibre id (books.calibre_id, task 1.18b,
+D-90) is that book whatever Calibre calls it now: a workbook book Calibre
+renamed is a `calibre rename` row in book_review.csv, decided `merge` with
+Calibre's spelling kept, so it stays one book under the new title.
 A Comic record is skipped and listed; a Fan Fiction record comes in with
 book_type `Fan Fiction` (D-88).
 
@@ -39,8 +44,10 @@ What it writes, in etl/data/ and committed like the other sidecars:
                        or a year) and precision (D-88); `confirmed` lists what
                        Open Library agreed with, and `open_library` is its
                        series where it differs. Comments stay out until
-                       books.summary exists (D-88).
-- book_review.csv      the `calibre` proposals above.
+                       books.summary exists (D-88). Then Calibre's id, page
+                       count, superseries (the universe) and subseries, each
+                       grouping with its index (task 1.18b, D-90).
+- book_review.csv      the `calibre` proposals and `calibre rename` rows above.
 
 Open Library is asked about each Calibre series, with 1.14's client and cache
 (enrich_books.OpenLibrary), so a workbook book's answer is already cached. Its
@@ -131,7 +138,7 @@ def custom_column(db, lookup: str | None, required: bool) -> tuple[dict, dict] |
     None when the library has no such column and it isn't required."""
     if not lookup:
         return None
-    row = db.execute("SELECT id, normalized, display FROM custom_columns WHERE label = ?",
+    row = db.execute("SELECT id, normalized, display, datatype FROM custom_columns WHERE label = ?",
                      (lookup.lstrip("#"),)).fetchone()
     if row is None:
         if required:
@@ -139,15 +146,20 @@ def custom_column(db, lookup: str | None, required: bool) -> tuple[dict, dict] |
                              "with --words-column or --date-column")
         print(f"  no column {lookup}: left blank")
         return None
-    n, normalized, display = row
-    if normalized:
+    n, normalized, display, datatype = row
+    if datatype == "series":
+        # A series-type column (#superseries, #subseries): its index is the
+        # link's `extra`, so each value is (name, index).
+        q = (f"SELECT l.book, v.value, l.extra FROM books_custom_column_{n}_link l "
+             f"JOIN custom_column_{n} v ON v.id = l.value ORDER BY l.id")
+    elif normalized:
         q = (f"SELECT l.book, v.value FROM books_custom_column_{n}_link l "
              f"JOIN custom_column_{n} v ON v.id = l.value ORDER BY l.id")
     else:
         q = f"SELECT book, value FROM custom_column_{n}"
     values = {}
-    for book, value in db.execute(q):
-        values.setdefault(book, value)
+    for book, *value in db.execute(q):
+        values.setdefault(book, tuple(value) if datatype == "series" else value[0])
     return values, json.loads(display or "{}")
 
 
@@ -156,7 +168,15 @@ def records(db, columns: dict[str, str]) -> list[dict]:
     dates = custom_column(db, columns["date"], required=True)
     flags = custom_column(db, columns["read"], required=False)
     kinds = custom_column(db, columns["type"], required=False)
+    supers = custom_column(db, columns["superseries"], required=False)
+    subs = custom_column(db, columns["subseries"], required=False)
+    pages = custom_column(db, columns["pages"], required=False)
     date_format = (dates[1].get("date_format") or "") if dates else ""
+
+    def grouping(column, bid) -> tuple[str | None, str]:
+        name, index = (column[0] if column else {}).get(bid) or (None, None)
+        name = ex.clean(name)
+        return name, number(index) if name else ""
 
     def grouped(q):
         out: dict[int, list] = {}
@@ -174,7 +194,13 @@ def records(db, columns: dict[str, str]) -> list[dict]:
     for bid, title, index in db.execute("SELECT id, title, series_index FROM books ORDER BY id"):
         date_read, precision = read_date((dates[0] if dates else {}).get(bid), date_format)
         flag = (flags[0] if flags else {}).get(bid)
-        out.append({"title": ex.title_text(title), "authors": [ex.clean(a) for a in authors.get(bid, [])],
+        superseries, superseries_index = grouping(supers, bid)
+        subseries, subseries_index = grouping(subs, bid)
+        out.append({"calibre_id": bid, "title": ex.title_text(title),
+                    "authors": [ex.clean(a) for a in authors.get(bid, [])],
+                    "pages": ex.as_int((pages[0] if pages else {}).get(bid)),
+                    "superseries": superseries, "superseries_index": superseries_index,
+                    "subseries": subseries, "subseries_index": subseries_index,
                     "series": ex.clean((series.get(bid) or [None])[0]), "index": index,
                     "isbn": ex.clean((isbns.get(bid) or [None])[0]), "tags": tags.get(bid, []),
                     "words": ex.as_int((words[0] if words else {}).get(bid)),
@@ -234,11 +260,16 @@ class Seed:
         self.created: dict[tuple, dict] = {}
         self.by_author: dict[str, list[dict]] = {}
         self.by_title: dict[str, list[dict]] = {}
+        # Calibre's id -> the seed book that has it (task 1.18b), a workbook
+        # book or one Calibre created (`created`): a rename keeps the book.
+        self.by_id: dict[int, dict] = {}
         for r in read_csv(books):
             b = {"title": r["title"], "author": names.get(r["author_id"], ""),
-                 "series": series.get(r["series_id"])}
+                 "series": series.get(r["series_id"]), "created": r["id"] in created}
             k = (ex.key(b["title"]), ex.key(b["author"]))
-            if r["id"] in created:
+            if ex.as_int(r.get("calibre_id")) is not None:
+                self.by_id[ex.as_int(r["calibre_id"])] = b
+            if b["created"]:
                 self.created[k] = b
                 continue
             self.books[k] = b
@@ -246,8 +277,18 @@ class Seed:
             self.by_title.setdefault(ex.key(b["title"]), []).append(b)
 
     def match(self, title: str, authors: list[str], idx: ex.BookIndex,
-              separate: set) -> tuple[str, str, dict | None, dict | None]:
-        """(status, the author it keys under, the workbook book, a proposal)."""
+              separate: set, calibre_id: int | None = None) -> tuple[str, str, dict | None, dict | None]:
+        """(status, the author it keys under, the workbook book, a proposal).
+        A book the seed knows by its Calibre id is that book, whatever Calibre
+        calls it now; a workbook book Calibre renamed brings a `calibre rename`
+        row (task 1.18b, D-90)."""
+        known = self.by_id.get(calibre_id)
+        if known:
+            author = next((a for a in authors if ex.key(a) == ex.key(known["author"])), authors[0])
+            if known["created"]:
+                return "unmatched", author, None, None
+            renamed = (ex.key(title), ex.key(author)) != (ex.key(known["title"]), ex.key(known["author"]))
+            return "matched", author, known, rename(known, title, author) if renamed else None
         for author in authors:
             t, a = idx.book_identity(title, author)
             hit = self.books.get((ex.key(t), ex.key(a)))
@@ -287,6 +328,14 @@ def proposal(workbook: dict, title: str, author: str, sim: float) -> dict:
             "similarity": f"{sim:.2f}", "keep": author if same_title else title, "decision": ""}
 
 
+def rename(workbook: dict, title: str, author: str) -> dict:
+    """A `calibre rename` book_review.csv row: the seed's book is Calibre's,
+    found by its id, so the merge is decided (D-90): the workbook's spelling
+    folds into Calibre's on every extract."""
+    row = proposal(workbook, title, author, ex.trgm_similarity(workbook["title"], title))
+    return {**row, "reason": ex.CALIBRE_RENAME, "decision": "merge"}
+
+
 # --------------------------------------------------------------------------
 # Open Library
 # --------------------------------------------------------------------------
@@ -324,7 +373,9 @@ def run(args) -> int:
     source = library_path(args.library, Path(args.env))
     seed = Seed(Path(args.seed))
     columns = {"words": args.words_column, "date": args.date_column,
-               "read": args.read_column, "type": args.type_column}
+               "read": args.read_column, "type": args.type_column,
+               "superseries": args.superseries_column, "subseries": args.subseries_column,
+               "pages": args.pages_column}
     print(f"calibre <- {source.parent}" + (" (dry run: nothing is written)" if args.dry_run else ""))
     print("reading metadata.db (from a temp copy) …")
     library = read_library(source, columns)
@@ -341,7 +392,7 @@ def run(args) -> int:
     books: dict[tuple, dict] = {}
     unchecked: set[tuple] = set()
     failures = 0
-    proposals, skipped, duplicates, missed = [], [], [], []
+    proposals, renames, skipped, duplicates, missed = [], [], [], [], []
     series_total = sum(1 for r in library if r["series"] and r["type"].lower() not in SKIPPED_TYPES)
     print(f"matching {len(library)} records against {Path(args.seed) / 'books.csv'}"
           + (f", checking {series_total} series with Open Library (about one a second when it isn't cached)"
@@ -363,29 +414,35 @@ def run(args) -> int:
                 skipped.append(rec)
                 continue
             authors = [a for a in rec["authors"] if a] or [""]
-            state, author, workbook, p = seed.match(rec["title"], authors, idx, separate)
+            state, author, workbook, p = seed.match(rec["title"], authors, idx, separate, rec["calibre_id"])
             k = (ex.key(rec["title"]), ex.key(author))
             if k in books:
                 duplicates.append(f"{rec['title']} / {author}")
                 continue
             status[k] = state
             if p:
-                proposals.append(p)
-            if state == "unmatched" and k not in seed.created:
+                (renames if p["reason"] == ex.CALIBRE_RENAME else proposals).append(p)
+            if state == "unmatched" and k not in seed.created and rec["calibre_id"] not in seed.by_id:
                 missed.append((rec["title"], author, seed.candidates(rec["title"], authors)))
             row = {"title": rec["title"], "author": author, "words": rec["words"] or "",
                    "series": rec["series"] or "", "series_index": number(rec["index"]) if rec["series"] else "",
                    "isbn": rec["isbn"] or "", "tags": "; ".join(rec["tags"]),
                    "book_type": "" if rec["type"].lower() in ("", "book") else rec["type"],
                    "read": rec["read"], "date_read": rec["date_read"], "precision": rec["precision"],
-                   "confirmed": "", "open_library": ""}
+                   "confirmed": "", "open_library": "", "calibre_id": rec["calibre_id"],
+                   "pages": rec["pages"] or "", "superseries": rec["superseries"] or "",
+                   "superseries_index": rec["superseries_index"], "subseries": rec["subseries"] or "",
+                   "subseries_index": rec["subseries_index"]}
             books[k] = row
 
             # Open Library's word on the series, to report where it differs. A
             # held book waits for its decision.
             if api is None or not rec["series"] or state == "proposed":
                 continue
-            target = workbook if state == "matched" else seed.created.get(k)
+            # A renamed book is asked under Calibre's new title, the one the
+            # seed takes next, so the run after it changes nothing.
+            renamed = p is not None and p["reason"] == ex.CALIBRE_RENAME
+            target = workbook if state == "matched" and not renamed else seed.created.get(k)
             title, name = (target["title"], target["author"]) if target else (rec["title"], author)
             asked += 1
             if asked > 1:
@@ -421,7 +478,7 @@ def run(args) -> int:
         if k in old:
             books[k]["confirmed"], books[k]["open_library"] = old[k]["confirmed"], old[k]["open_library"]
     report(status, proposals, skipped, duplicates, missed, books, api, unchecked)
-    changes(old_books, books)
+    changes(old_books, books, header(Path(args.calibre_books)))
     if args.dry_run:
         return 0
 
@@ -433,17 +490,29 @@ def run(args) -> int:
     kept = [r for r in review
             if r["reason"] != ex.CALIBRE or r["decision"] or ex.review_sides(r) in proposed]
     known = {ex.review_sides(r) for r in kept}
-    new = []
-    for p in proposals:
+    new, renamed = [], 0
+    for p in proposals + renames:
         if ex.review_sides(p) not in known:
             known.add(ex.review_sides(p))
             new.append(p)
+            renamed += p["reason"] == ex.CALIBRE_RENAME
     if new or len(kept) < len(review):
         write_csv(Path(args.book_review), ex.BOOK_REVIEW_COLUMNS, kept + new)
-        print(f"  {len(new)} new Calibre spellings to review in {args.book_review} "
+        print(f"  {len(new) - renamed} new Calibre spellings to review in {args.book_review} "
               f"({len(review) - len(kept)} no longer proposed, dropped): "
               "`merge` takes Calibre's, `separate` makes them two books")
+        if renamed:
+            print(f"  {renamed} workbook books renamed in Calibre: merged into Calibre's title "
+                  f"(`{ex.CALIBRE_RENAME}` rows, decided)")
     return 0
+
+
+def header(path: Path) -> list[str]:
+    """A CSV's columns, or none when there is no file yet."""
+    if not path.exists():
+        return []
+    with path.open(newline="", encoding="utf-8-sig") as fh:
+        return next(csv.reader(fh), [])
 
 
 def book_key(r: dict) -> tuple:
@@ -464,32 +533,39 @@ def fold(old: list[dict], fresh: dict[tuple, dict]) -> list[dict]:
 
 
 # What a run reports as changed in Calibre: the fields Calibre owns.
-CHANGE_FIELDS = ("words", "series", "series_index", "isbn", "tags", "book_type", "read", "date_read", "precision")
+CHANGE_FIELDS = ("words", "series", "series_index", "isbn", "tags", "book_type", "read", "date_read", "precision",
+                 "pages", "superseries", "superseries_index", "subseries", "subseries_index")
 
 
-def changes(old_rows: list[dict], fresh: dict[tuple, dict]) -> None:
+def changes(old_rows: list[dict], fresh: dict[tuple, dict], old_columns: list[str] = ()) -> None:
     """What changed in Calibre since the last run's calibre_books.csv: books
-    added and removed (a removed and an added book by one author with near
-    titles is likely a rename), and each changed field, old -> new."""
+    added and removed, renames (the same Calibre id under a new title or
+    author; with no id, a removed and an added book by one author with near
+    titles is likely one), and each changed field, old -> new. A field the
+    last run's file didn't have yet is no change (task 1.18b's new columns)."""
     if not old_rows:
         return
+    fields = [f for f in CHANGE_FIELDS if f in old_columns] if old_columns else list(CHANGE_FIELDS)
     old = {book_key(r): r for r in old_rows}
     added = [r for k, r in fresh.items() if k not in old]
     removed = [r for k, r in old.items() if k not in fresh]
     renamed = []
     for r in list(removed):
-        twin = next((a for a in added if ex.key(a["author"]) == ex.key(r["author"])
-                     and (ex.trgm_similarity(a["title"], r["title"]) >= ex.SIMILAR_AT
-                          or ex.key(r["title"]) in ex.key(a["title"]) or ex.key(a["title"]) in ex.key(r["title"]))),
-                    None)
+        twin = next((a for a in added if r["calibre_id"] and str(a["calibre_id"]) == r["calibre_id"]), None)
+        guess = twin is None
+        if guess:
+            twin = next((a for a in added if ex.key(a["author"]) == ex.key(r["author"])
+                         and (ex.trgm_similarity(a["title"], r["title"]) >= ex.SIMILAR_AT
+                              or ex.key(r["title"]) in ex.key(a["title"])
+                              or ex.key(a["title"]) in ex.key(r["title"]))), None)
         if twin:
-            renamed.append((r, twin))
+            renamed.append((r, twin, guess))
             removed.remove(r)
             added.remove(twin)
     changed = []
     for k, r in fresh.items():
         if k in old:
-            diffs = [f"{f} {old[k][f] or '(none)'} -> {r[f] or '(none)'}" for f in CHANGE_FIELDS
+            diffs = [f"{f} {old[k][f] or '(none)'} -> {r[f] or '(none)'}" for f in fields
                      if str(old[k][f]) != str(r[f])]
             if diffs:
                 changed.append(f"{r['title']} — {r['author']}: {'; '.join(diffs)}")
@@ -503,8 +579,8 @@ def changes(old_rows: list[dict], fresh: dict[tuple, dict]) -> None:
     for r in removed:
         print(f"  removed  {r['title']} — {r['author']} (leaves the Ledger at the next extract "
               "if only Calibre had it)")
-    for r, a in renamed:
-        print(f"  renamed? {r['title']} -> {a['title']} — {a['author']}")
+    for r, a, guess in renamed:
+        print(f"  renamed{'?' if guess else ' '} {r['title']} -> {a['title']} — {a['author']}")
     for line in changed:
         print(f"  changed  {line}")
 
@@ -519,6 +595,11 @@ def report(status: dict, proposals: list[dict], skipped: list[dict], duplicates:
         print(f"  match rate {counts.get('matched', 0) / len(status):.0%} of {len(status)}")
     reads = sum(1 for r in books.values() if r["read"] == "true" or r["date_read"])
     print(f"  reads      {reads:>6} (each loads, D-87)")
+    for field, what in (("superseries", "universes"), ("subseries", "subseries")):
+        names = {ex.key(r[field]) for r in books.values() if r[field]}
+        filled = sum(1 for r in books.values() if r[field])
+        print(f"  {field:<11}{filled:>6} books in {len(names)} {what}")
+    print(f"  pages      {sum(1 for r in books.values() if r['pages']):>6}")
     if api:  # a dry run asks Open Library nothing, so it has no count to give
         differs = sum(1 for r in books.values() if r["open_library"])
         print(f"  series Open Library has differently: {differs} (reported by extract in unresolved.csv)")
@@ -581,6 +662,11 @@ def main(argv=None) -> int:
     ap.add_argument("--date-column", default="#date_read", help="the date-read column's lookup name")
     ap.add_argument("--read-column", default="#read", help="the read flag's lookup name (optional)")
     ap.add_argument("--type-column", default="#type", help="Book / Comic / Fan Fiction (optional)")
+    ap.add_argument("--superseries-column", default="#superseries",
+                    help="the universe, a series-type column with its index (optional)")
+    ap.add_argument("--subseries-column", default="#subseries",
+                    help="a grouping inside a series, a series-type column with its index (optional)")
+    ap.add_argument("--pages-column", default="#pages", help="the page count (optional)")
     ap.add_argument("--dry-run", action="store_true", help="report the match rate; write nothing")
     ap.add_argument("--offline", action="store_true", help="Open Library from the cache only")
     ap.add_argument("--max-requests", type=int, default=3000, help="stop asking after this many requests")

@@ -813,6 +813,7 @@ END $$;
 -- this list, and a per-user one (a state, a done flag, a user_id) belongs in a
 -- follow or progress table instead. A follow's state lives only in its own row,
 -- so changing it is one write to the follow table, and follow_state follows it.
+-- 1.18b (D-90, D-91) adds Calibre's id and groupings: facts about the book.
 DO $$
 DECLARE got text;
 BEGIN
@@ -822,9 +823,10 @@ BEGIN
     WHERE table_schema = 'public' AND table_name IN ('books', 'authors', 'book_series', 'book_universes')
     GROUP BY table_name) t;
   IF got IS DISTINCT FROM 'authors(id,name) book_series(author_id,id,name,total_books) '
-                       || 'book_universes(id,name) books(author_id,book_type,cover_url,deleted_at,genre,'
-                       || 'hardcover_id,id,open_library_id,page_count,published_year,series_id,'
-                       || 'series_position,title,universe_id,word_count,word_count_source)' THEN
+                       || 'book_universes(id,name) books(author_id,book_type,calibre_id,cover_url,'
+                       || 'deleted_at,genre,hardcover_id,id,open_library_id,page_count,published_year,'
+                       || 'series_id,series_position,subseries_id,subseries_position,title,universe_id,'
+                       || 'universe_position,word_count,word_count_source)' THEN
     RAISE EXCEPTION 'catalog columns changed (a per-user fact belongs in a follow or progress table): %', got;
   END IF;
   UPDATE author_follows SET state = 'tracking' WHERE user_id = 'zz-user' AND author_id = 'zz-f-author';

@@ -31,7 +31,11 @@ npm run extract             # etl/extract.py with every sidecar CSV (see below);
                             # would load: seed/workbook_placeholders.csv lists each one.
                             # --calibre-books folds in npm run calibre's sidecar: Calibre's reads are
                             # seed/read_events.csv, and seed/calibre_created.csv (not loaded) lists the
-                            # books only Calibre has.
+                            # books only Calibre has. Calibre's superseries are the universes (the
+                            # workbook's universe tabs only follow), its subseries are book_subseries,
+                            # its page counts win, and each book takes its Calibre id (1.18b, D-90).
+                            # --calibre-missing etl/data/calibre_missing.csv lists each workbook book
+                            # Calibre doesn't have: `keep` it, or add it to Calibre (prints the undecided).
                             # Every prerequisite loop is a `prereqs,prereq cycle` row in unresolved.csv
                             # and a console count (2.11a); `-- --fail-on-cycle` exits non-zero on any,
                             # after writing every CSV (Step 14's final extract)
@@ -51,6 +55,9 @@ npm run calibre             # etl/calibre.py (task 1.18): the Calibre library (C
                             # extract lists what Calibre overrode (a word count, series or type; an Open
                             # Library series that differs) in seed/calibre_changes.csv, nothing to do (D-93),
                             # and what needs you (a held book, a read not loaded) in unresolved.csv.
+                            # #superseries, #subseries and #pages are read too, by lookup name
+                            # (--superseries-column, --subseries-column, --pages-column); a book renamed
+                            # in Calibre stays one book, matched on its Calibre id (1.18b).
                             # `-- --dry-run` first (the match rate and the changes, writes nothing);
                             # `-- --offline` asks Open Library nothing new. Re-run after any library change,
                             # in this order: extract, calibre, extract, enrich:books, extract (the created

@@ -91,7 +91,7 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan, read_event
          run_issues, issues, events, editions, volume_rules,
          runs, blocks, tracks, releases, wishlist, external_lists,
          series_follows, author_follows, universe_follows,
-         books, book_universes, book_series, authors, shelves RESTART IDENTITY CASCADE;
+         books, book_subseries, book_universes, book_series, authors, shelves RESTART IDENTITY CASCADE;
 
 \copy tracks       FROM '$seedPath/tracks.csv'       CSV HEADER
 \copy blocks(id,track_id,number,name) FROM '$seedPath/blocks.csv' CSV HEADER
@@ -110,7 +110,8 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan, read_event
 \copy authors     FROM '$seedPath/authors.csv'     CSV HEADER
 \copy book_series FROM '$seedPath/book_series.csv' CSV HEADER
 \copy book_universes FROM '$seedPath/book_universes.csv' CSV HEADER
-\copy books(id,title,author_id,series_id,series_position,genre,book_type,word_count,word_count_source,published_year,page_count,cover_url,open_library_id,universe_id) FROM '$seedPath/books.csv' CSV HEADER
+\copy book_subseries(id,name,series_id) FROM '$seedPath/book_subseries.csv' CSV HEADER
+\copy books(id,title,author_id,series_id,series_position,genre,book_type,word_count,word_count_source,published_year,page_count,cover_url,open_library_id,universe_id,universe_position,subseries_id,subseries_position,calibre_id) FROM '$seedPath/books.csv' CSV HEADER
 \copy releases    FROM '$seedPath/releases.csv'    CSV HEADER
 \copy wishlist(genre,raw_entry,book_id) FROM '$seedPath/wishlist.csv' CSV HEADER
 \copy external_lists(source,year,rank,raw_title,book_id) FROM '$seedPath/external_lists.csv' CSV HEADER

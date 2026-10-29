@@ -1,14 +1,14 @@
 ---
 id: TASK-032
 title: 1.18b Calibre: universes, subseries, page counts and the Calibre id
-status: Ready
+status: In progress
 depends_on: [TASK-030]
 size: L
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 2bc9121
 ---
 
 # TASK-032 — 1.18b Calibre: universes, subseries, page counts and the Calibre id
@@ -75,9 +75,36 @@ Every book takes its universe (Calibre's superseries) with its reading order, it
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Candidate decision: a Calibre rename found by the Calibre id is written to `book_review.csv` as a pre-decided `merge` row (reason `calibre rename`, keep Calibre's), so the workbook's spelling folds into the new title through the existing merges, not through a new column (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+_Approved 2026-10-29 at 2bc9121. Owner's answers at the gate: the rename design (step 3) is fine; `npm run rebuild` on development at the end, yes._
+
+**Steps**
+
+1. **Schema.** `books.calibre_id` integer, unique (NULLs allowed); `books.universe_position` real; `books.subseries_id` → `book_subseries`; `books.subseries_position` real; `book_subseries(id, name, series_id NOT NULL → book_series)`. `npm run db:generate` → migration 0016 (nothing dropped or retyped: no down file). `book_subseries` joins `src/db/export-tables.ts`.
+2. **`etl/calibre.py`.** Reads `#superseries` and `#subseries` (Calibre series-type columns: value, and the link's `extra` as the index) and `#pages`, by lookup name, each with a flag (`--superseries-column`, `--subseries-column`, `--pages-column`); a missing one prints one line and stays blank. Reads Calibre's `books.id`. Six new columns at the end of `calibre_books.csv`: `calibre_id`, `pages`, `superseries`, `superseries_index`, `subseries`, `subseries_index`.
+3. **Matching by id.** calibre.py matches a seed book on its `calibre_id` first. The changes report pairs renames by id (`renamed Old -> New`, certain). A rename of a workbook book also appends a `book_review.csv` row, reason `calibre rename`, `decision` `merge`, `keep` Calibre's spelling, so extract folds the workbook's spelling into the new title; a renamed Calibre-only book just takes the new title. A first run over a sidecar without the new columns doesn't report every book as changed.
+4. **Universes (extract).** `#superseries` sets `universe_id` and `universe_position`. Calibre's superseries names are registered before the follows pass, so a Series-tab group naming one is a follow. Workbook tabs and universe groups only write `universe_follows`. With a Calibre sidecar given: a workbook membership Calibre doesn't share (one row per book) and a followed universe with no Calibre book go to `unresolved.csv`. A universe with no book that isn't followed is dropped.
+5. **Subseries (extract).** A subseries attaches to the book's series. One name under two series is one `unresolved.csv` row (the first series keeps it; the other books keep their series, no subseries). A subseries on a book with no series is reported.
+6. **Pages and ids (extract).** `#pages` replaces the details sidecar's page count whatever its `source`; the details still fill a book Calibre gives none; not reported. Each book takes its `calibre_id`; two Calibre books on one Ledger book is reported.
+7. **`calibre_missing.csv`** (extract, `--calibre-missing`, written only when Calibre data is given): one row per workbook book with no Calibre id — `title, author, tabs, decision` (`keep` or blank). Existing rows keep their place, new ones append, a row whose book has an id now or left the workbook goes. Books awaiting a `calibre` pair in `book_review.csv` are left out. The run prints how many are undecided.
+8. **Loaders and docs.** `etl/load.ps1`, `etl/load.sh`: truncate `book_subseries`, copy it before `books`, `books` with the new columns. `etl/rebuild.ps1`, `etl/rebuild.sh` count it. `package.json` `extract` (and `rebuild.sh`) pass `--calibre-missing`. `.claude/rules/schema.md`, `docs/COMMANDS.md`.
+9. **Real runs.** `npm run calibre -- --dry-run`, then `npm run calibre -- --offline`; extract on `main` and on the branch into temp folders; CSV diff summarised in the PR; `npm run rebuild` on development (approved).
+
+**Files** (18; `never-split`, attended): `src/db/schema.ts`, `drizzle/0016_*` + meta, `src/db/export-tables.ts`, `etl/calibre.py`, `etl/extract.py`, `etl/test_calibre.py`, `etl/test_extract.py`, `test/schema-additions.test.ts`, `test/load-scripts.test.ts`, `etl/data/calibre_books.csv`, `etl/data/calibre_missing.csv` (new), `etl/data/book_review.csv`, `etl/load.ps1`, `etl/load.sh`, `etl/rebuild.ps1` and `etl/rebuild.sh` (not in Files likely touched: they count each table against the seed), `package.json`, `.claude/rules/schema.md`, `docs/COMMANDS.md`.
+
+**Test strategy**
+
+- AC-1: `etl/test_calibre.py`, one test per Check bullet; the fixture gains series-type custom columns; renames of a workbook book and of a Calibre-only book.
+- AC-2: `etl/test_calibre.py`: each flag at another lookup name and `custom_column_N`; a library with none of the three.
+- AC-3: `etl/test_calibre.py`: tab and group follows, followed universe with no Calibre book, subseries under two series.
+- AC-4: `test/schema-additions.test.ts` (columns, types, `calibre_id` 23505 on the TEST database), `test/export-tables.test.ts`, `test/load-scripts.test.ts`.
+- AC-5: manual diff, summary in the PR.
+- Changed on purpose (D-90): `test_extract.py`'s 1.15 tests asserting a tab or group sets `universe_id` assert the follow and the kept universe row instead; `test_calibre.py`'s header test asserts the new header.
+
+**Risks**: Calibre's superseries names may not match the workbook's spelling; that shows as `unresolved.csv` rows, which is the report working.
 
 ## Review log
 

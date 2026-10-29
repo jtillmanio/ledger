@@ -103,6 +103,28 @@ Release, test isolation) and the Hard rules a reviewer checks.
   not loaded). `unresolved.csv` lists only what needs the owner. Comics are skipped; tags, comments and
   ISBN load nothing until `books.subjects`, `books.summary` and `books.isbn`
   are approved, and comments stay out of the CSV.
+- **Calibre owns a book's groupings, its page count and its id** (task 1.18b,
+  D-90, D-91). `calibre_books.csv` also holds Calibre's `calibre_id`, `pages`,
+  `superseries` and `subseries`, each grouping with its index (Calibre
+  series-type columns; `--superseries-column`, `--subseries-column`,
+  `--pages-column`). `#superseries` is the universe: `universe_id` and
+  `universe_position` come only from it, and the workbook's universe tabs and
+  groups only write `universe_follows`. `#subseries` is `book_subseries(id, name,
+  series_id)` under the book's series, with `subseries_position`; one name under
+  two series stays with the first, and is reported. `#pages` replaces the details
+  sidecar's page count whatever its `source`, which still fills a book Calibre
+  gives none. `books.calibre_id` is unique where set: calibre.py matches a seed
+  book on it first, so a book renamed in Calibre stays one book under the new
+  title (a workbook book through a `calibre rename` row in `book_review.csv`,
+  decided `merge`, keeping Calibre's spelling). In `unresolved.csv`: a workbook
+  universe membership Calibre doesn't share, a followed universe Calibre gives no
+  book (the follow stays), a subseries under two series or with no series, and
+  two Calibre books on one book. A universe no book is in and nobody follows is
+  dropped. `etl/data/calibre_missing.csv` (`title, author, tabs, decision`) is
+  written by `npm run extract` when Calibre data is given: each workbook book with
+  no Calibre id, except one waiting on a `calibre` pair. `keep` keeps the book
+  out of Calibre and survives every run; a book Calibre has now, or the workbook
+  no longer lists, leaves the file; the run prints how many are undecided.
 - **One issue row per comic.** `issues` is what exists — one row per label, id a
   slug of the label, never a run position. `run_issues(id, run_id, sequence,
   issue_id, type, notes)` is where it sits in a run; `type` and `notes` belong to
@@ -245,7 +267,9 @@ Release, test isolation) and the Hard rules a reviewer checks.
   it is done, come from `series_progress`, `author_progress` and
   `universe_progress`, each with the follow's `follow_state`. Extract makes a
   Series-tab group a universe only through `UNIVERSE_GROUPS` (owner,
-  2026-10-26); any other group naming nothing is reported, never guessed.
+  2026-10-26) or a Calibre superseries of that name; any other group naming
+  nothing is reported, never guessed. Which books are in a universe is
+  Calibre's `#superseries` alone (1.18b, D-90).
 - `etl/extract.py` is the migration from the workbooks. Changing its output
   format means re-running against both `.xlsx` files and diffing the CSVs.
 - **Migrations that drop or retype a column ship a down file.** `drizzle-kit`
