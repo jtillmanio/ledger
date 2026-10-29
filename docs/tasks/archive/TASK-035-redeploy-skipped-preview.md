@@ -1,7 +1,7 @@
 ---
 id: TASK-035
 title: 0.12 A redeploy of a skipped preview builds
-status: Review
+status: Done
 depends_on: []
 size: S
 model: sonnet
@@ -34,7 +34,7 @@ The owner can make Vercel build a commit whose own build the ignore step skipped
 - [x] AC-3: Given the force route is in its off state (unset, or whatever the plan names), a docs-only diff against a previous deployment skips and a first push of a docs-only branch skips (both asserted in `test/release.test.ts`), so leaving the route off costs no builds.
 - [x] AC-4: `scripts/vercel-ignore.mjs`'s header and the `ignoredBuildStep` / `deploymentNeedsBuild` comments in `scripts/lib/release.mjs` say that `VERCEL_GIT_PREVIOUS_SHA` is the branch's last successful deployment, that a redeploy of a skipped commit compares against it, and name the force route; none still says a redeploy always builds.
 - [x] AC-5: `docs/START-HERE.md` § 10e has the force route as owner steps (where to set it, the Redeploy, how to turn it off), next to the *Canceled* paragraph, and § 10e step 4's and § 10f's *redeploy* instructions point to it. `docs/GIT-PR.md`'s docs-only bullet mentions it in one line.
-- [ ] AC-6: On this task's own PR, after a build: a docs-only commit pushed to the branch shows **Canceled** in Vercel with a log line starting `skip:`; the force route applied to that same commit gives a **Ready** deployment whose log has no `skip:` or `build:` line from the ignore step and shows `vercel-build (preview): migrate → views → next build`; then a second docs-only push shows **Canceled**. The PR's *How it was verified* records the three deployments' commits and outcomes.
+- [x] AC-6: On this task's own PR, after a build: a docs-only commit pushed to the branch shows **Canceled** in Vercel with a log line starting `skip:`; the force route applied to that same commit gives a **Ready** deployment whose log has no `skip:` or `build:` line from the ignore step and shows `vercel-build (preview): migrate → views → next build`; then a second docs-only push shows **Canceled**. The PR's *How it was verified* records the three deployments' commits and outcomes.
 
 ## Out of scope
 
@@ -111,4 +111,6 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 ## AC-6 log
 
 - Built: `bacc90c` (Ready; the first push changed scripts and tests).
-- Docs-only push: this commit, expected Canceled with a `skip:` log line.
+- Docs-only push `09ea47f`: **Canceled by Ignored Build Step**.
+- Redeploy of `09ea47f` with *Use project's Ignore Build Step* unticked: **Ready** (owner, 2026-10-29).
+- Docs-only push, the accept commit: expected **Canceled**.

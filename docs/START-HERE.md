@@ -1087,8 +1087,9 @@ the branch's last *successful* deployment, not of the commit you redeploy, and
 the diff against that is still docs-only. To build it anyway (say, so a
 changed environment variable reaches the preview):
 
-1. Vercel → the `ledger` project → **Deployments**, and open the **Canceled**
-   deployment of the commit (filter by the PR's branch).
+1. Open the **Canceled** deployment of the commit from the PR's checks list:
+   **Details** on the *Vercel* check goes straight to it. (The project's
+   **Deployments** tab may not list Canceled ones.)
 2. **⋯ → Redeploy**. In the dialog, **untick** *Use project's Ignore Build
    Step*, then **Redeploy**.
 3. The new deployment goes **Ready**, and its log has no `skip:` or `build:`
