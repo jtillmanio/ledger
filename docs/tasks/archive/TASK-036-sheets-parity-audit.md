@@ -1,7 +1,7 @@
 ---
 id: TASK-036
 title: 1.25 Sheets parity audit
-status: Review
+status: Done
 depends_on: []
 size: M
 model: opus
