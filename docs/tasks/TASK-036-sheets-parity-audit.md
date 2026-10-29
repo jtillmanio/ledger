@@ -1,7 +1,7 @@
 ---
 id: TASK-036
 title: 1.25 Sheets parity audit
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: opus
@@ -32,17 +32,17 @@ The owner knows exactly what still has to be built before the Sheets can be froz
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): every tab name a fresh export of `etl/data/Comics.xlsx` and
+- [x] AC-1 (roadmap **Check:**, verbatim): every tab name a fresh export of `etl/data/Comics.xlsx` and
 `etl/data/Books.xlsx` holds (`py -c "import pandas as pd; [print(n) for f in
 ('etl/data/Comics.xlsx', 'etl/data/Books.xlsx') for n in
 pd.ExcelFile(f).sheet_names]"`) appears in `docs/cutover-parity.md`; every use
 listed there ends in a roadmap ID or *won't carry* with a reason; the file
 says the owner signed it off, and when; and 1.26's **Depends on** names every
 open ID it lists.
-- [ ] AC-2: `npm run test:etl` includes `etl/test_cutover_parity.py`, which reads both committed workbooks and `docs/cutover-parity.md` and fails, naming the item, when: a tab has no section; a use line ends in neither a roadmap ID nor *won't carry* plus a reason; a cited roadmap ID is not a heading in `docs/05-roadmap.md`; a cited ID that is open (☐) is missing from 1.26's **Depends on** line; or the sign-off line (owner, date) is absent. It fails on `main` today, where the file does not exist.
-- [ ] AC-3: Given a copy of the parity file with one tab's section removed, or a use line with no ID, the test fails naming that tab or line (a fixture case in the test, not the real file).
-- [ ] AC-4: Every roadmap ID the parity file cites as covering a use names an entry whose text or **Check:** does that use. For each open one, M9's *Order* in `docs/06-tasklist.md` says it is built before 1.26. No entry is renumbered, and no other entry's text or **Check:** changes (new entries excepted).
-- [ ] AC-5: Each new roadmap entry the audit adds has a **Check:** the owner agreed, a size, and exactly one row in `docs/06-tasklist.md`. Every roadmap ID still sits in exactly one task-list row.
+- [x] AC-2: `npm run test:etl` includes `etl/test_cutover_parity.py`, which reads both committed workbooks and `docs/cutover-parity.md` and fails, naming the item, when: a tab has no section; a use line ends in neither a roadmap ID nor *won't carry* plus a reason; a cited roadmap ID is not a heading in `docs/05-roadmap.md`; a cited ID that is open (☐) is missing from 1.26's **Depends on** line; or the sign-off line (owner, date) is absent. It fails on `main` today, where the file does not exist.
+- [x] AC-3: Given a copy of the parity file with one tab's section removed, or a use line with no ID, the test fails naming that tab or line (a fixture case in the test, not the real file).
+- [x] AC-4: Every roadmap ID the parity file cites as covering a use names an entry whose text or **Check:** does that use. For each open one, M9's *Order* in `docs/06-tasklist.md` says it is built before 1.26. No entry is renumbered, and no other entry's text or **Check:** changes (new entries excepted).
+- [x] AC-5: Each new roadmap entry the audit adds has a **Check:** the owner agreed, a size, and exactly one row in `docs/06-tasklist.md`. Every roadmap ID still sits in exactly one task-list row.
 
 ## Out of scope
 
@@ -69,6 +69,12 @@ open ID it lists.
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- HANDOFF § 2 said the `Download` and `HP Fanfiction` tabs load into `external_lists` and `wishlist`; `extract.py` reads neither (approved at close-out) → docs/HANDOFF.md § Migrated data (fixed in this PR)
+- 2.2, pulled ahead, borrows 2.4's hero geometry and hover rule, and 2.4 is not pulled ahead (spec review R1, advisory; owner: 2.2's plan decides) → docs/06-tasklist.md § M9: Captured from cutover on (fixed in this PR)
+- 2.2's *sittings* line needs 2.1b, which is not pulled ahead (owner, 2026-10-29) → docs/06-tasklist.md § M9: Captured from cutover on (fixed in this PR)
+- The Calibre sync after cutover (4.4) comes right after the switch, not before it (owner, 2026-10-29) → docs/cutover-parity.md § To-Read Master List (fixed in this PR)
+- Re-read the parity file against the final export before 1.26 → not tracked: already in roadmap 1.25's text and 1.26's Depends on
 
 ## Plan
 
@@ -117,7 +123,7 @@ as gates (5.2, 5.7, 5.9, 5.10, 6.8, 2.0–2.4) lengthen M9.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (tsc, lint, test:all: 982 vitest, 270 etl, 574 e2e; build) | Audit R1 PASS | Spec R1 CHANGES (AC-4: 1.18, 1.7, 1.8c, 1.1 cited for uses they don't do; owner chose 3.1 + 4.4 after cutover, 2.3, 1.22, 0.8b; Top pick per genre won't carry) → R2 APPROVE | schema-reviewer not run (no schema, view, query or extract change; the ETL file is a read-only test) | UI n/a
 
 ## Blocked
 
@@ -125,7 +131,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1
+- Review rounds: 2
+- First-pass AC FAILs: 1 (AC-4)
+- Plan revisions after approval: 0

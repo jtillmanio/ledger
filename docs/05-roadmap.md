@@ -1422,7 +1422,7 @@ writes `book_status = to_read` and no plan row, and its undo restores
 `unlisted`; a line naming a `read` or `to_read` book leaves the status as it
 was; the review row for the Unlisted book says it moves to Someday.
 
-### ☐ 1.25 Sheets parity audit · S
+### ☑ 1.25 Sheets parity audit · S
 From the owner, 2026-10-28 (D-95). Cutover freezes both Sheets, so anything
 the owner still does in them stops the day after unless the app does it. The
 M1–M9 gate was drawn from the plan, not from the Sheets, and it already
