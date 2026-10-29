@@ -189,7 +189,7 @@ A fixture page with an unnamed `<button>` makes the axe step fail on
 overflows at 360px. CI runs the suite on the PR against `TEST_DATABASE_URL`
 only, and `git.md`'s *Test on the branch* lists it.
 
-### ☐ 0.12 A redeploy of a skipped preview builds · S
+### ☑ 0.12 A redeploy of a skipped preview builds · S
 Found on PR #76 (task 1.4, 2026-10-12). Not in a sitting: a `chore/` branch
 whenever it bites next. `scripts/vercel-ignore.mjs` says *a redeploy changes
 nothing, so it always builds*, but Vercel's `VERCEL_GIT_PREVIOUS_SHA` is the

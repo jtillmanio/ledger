@@ -17,10 +17,14 @@ export function needsBuild(files) {
 
 /**
  * The Ignored Build Step's answer for the files changed since the branch's last
- * deployment. Nothing changed means someone asked for this build on purpose:
- * a redeploy builds the commit it last deployed, and it is how a changed
- * environment variable reaches a preview (START-HERE 10e). needsBuild([]) stays
- * false, because Release reads an empty list as nothing unreleased.
+ * successful deployment (VERCEL_GIT_PREVIOUS_SHA). Nothing changed means the
+ * commit being redeployed is the one that deployment built, so build it again:
+ * that is how a changed environment variable reaches a preview. A redeploy of a
+ * commit whose own build was skipped compares with an older deployment instead,
+ * and a docs-only diff skips it again; the way to force that build is the
+ * Redeploy dialog's "Use project's Ignore Build Step" box, unticked
+ * (START-HERE 10e). needsBuild([]) stays false, because Release reads an empty
+ * list as nothing unreleased.
  */
 export function deploymentNeedsBuild(files) {
   return files.length === 0 || needsBuild(files);
@@ -28,11 +32,12 @@ export function deploymentNeedsBuild(files) {
 
 /**
  * The Ignored Build Step, start to finish: `{ build, why }`. It compares with
- * the branch's last deployment, or, on a branch's first push (Vercel gives no
- * previous SHA), with main's tip, so a docs-only branch skips from its first
- * commit. Against main the diff is tree to tree: a branch behind a main that
- * changed app code builds, which is the safe side. `git(args)` runs git and
- * answers `{ status, stdout }`. When it cannot tell, it builds.
+ * the branch's last successful deployment (not the commit being redeployed),
+ * or, on a branch's first push (Vercel gives no previous SHA), with main's tip,
+ * so a docs-only branch skips from its first commit. Against main the diff is
+ * tree to tree: a branch behind a main that changed app code builds, which is
+ * the safe side. `git(args)` runs git and answers `{ status, stdout }`. When it
+ * cannot tell, it builds.
  */
 export function ignoredBuildStep(previousSha, git) {
   let base = previousSha;

@@ -49,7 +49,8 @@ After pushing, on GitHub:
   no Vercel build, from its first push (the ignore step compares with `main`'s
   tip), and Lighthouse's `plan` measures nothing on it. Its `check` still runs,
   without the browser suite and the build. A PR that changes
-  `lighthouse.yml` is always measured.
+  `lighthouse.yml` is always measured. To build a skipped commit anyway,
+  Redeploy it with *Use project's Ignore Build Step* unticked (START-HERE 10e).
 - UI changes: open the Vercel preview at 360–412px and walk the changed screen
   and its states against `design/mockups.html`. Say what you looked at.
 - A changed workflow runs on the branch before merge:
