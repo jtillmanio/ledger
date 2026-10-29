@@ -6,6 +6,7 @@ sqlite3, and Open Library is faked with recorded search responses.
 """
 
 import csv
+import inspect
 import io
 import json
 import os
@@ -214,10 +215,13 @@ class Case(unittest.TestCase):
     def extract(self):
         ex.UNRESOLVED.clear()
         ex.CHANGES.clear()
+        # calibre_missing only where extract takes it (1.18b), so the test audit
+        # can run these tests against the code before it and see each assertion fail.
+        missing = ({"calibre_missing": self.missing}
+                   if "calibre_missing" in inspect.signature(ex.extract_books).parameters else {})
         with redirect_stdout(io.StringIO()):
             ex.extract_books(self.workbook, self.seed, book_review=self.book_review,
-                             book_details=self.details, calibre_books=self.books_csv,
-                             calibre_missing=self.missing)
+                             book_details=self.details, calibre_books=self.books_csv, **missing)
         self.unresolved = list(ex.UNRESOLVED)
         self.changes = list(ex.CHANGES)
 
