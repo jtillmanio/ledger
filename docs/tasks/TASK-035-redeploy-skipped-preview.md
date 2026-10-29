@@ -107,3 +107,8 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Review rounds: 1
 - First-pass AC FAILs: 0 (AC-6 is manual, on the PR's preview)
 - Plan revisions after approval: 0
+
+## AC-6 log
+
+- Built: `bacc90c` (Ready; the first push changed scripts and tests).
+- Docs-only push: this commit, expected Canceled with a `skip:` log line.
