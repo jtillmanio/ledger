@@ -1,7 +1,7 @@
 ---
 id: TASK-032
 title: 1.18b Calibre: universes, subseries, page counts and the Calibre id
-status: Review
+status: Done
 depends_on: [TASK-030]
 size: L
 model: opus
