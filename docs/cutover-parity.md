@@ -24,7 +24,10 @@ Drafted from the tabs' headers, `etl/extract.py` and HANDOFF § 4's artifacts
 table; the owner answered its eighteen questions on 2026-10-29 (every
 proposal taken).
 
-**Signed off:** the owner, 2026-10-29, after reading it end to end.
+**Signed off:** the owner, 2026-10-29, after reading it end to end. Amended
+the same day from spec review, with the owner's answers: word counts (3.1,
+and 4.4 right after cutover), the To-Read *Top* pick, and the citations made
+exact (0.8b, 1.22, 2.3).
 
 ## What cutover waits for
 
@@ -41,7 +44,8 @@ on**, on top of the open Phase 1 entries it already names:
 - 5.10, and the 5.6 it depends on: recording a trade bought.
 
 Everything else the Sheets do today is either in the app already or waits,
-by the owner's choice, for an entry after the switch.
+by the owner's choice, for an entry after the switch. First among those is
+4.4, the in-app Calibre sync, right after cutover.
 
 ## Comics.xlsx
 
@@ -54,7 +58,7 @@ order with each run's state, and the run's issue checklist. All formulas over
 
 - See the runs I'm in the middle of, with progress and issues left → 1.9
 - The next issue to read in each → 1.6
-- Tick the issues I read, one or a range → 1.1
+- Tick the issues I read, one or a range → 0.8b, 1.1
 - The other runs around this one in its track, with their states → won't carry: the run list shows each run's tracks today; the telescope (2.5) and the grouped run list (2.9) come after cutover
 - *Est. done*: when I'll finish this run at my pace → won't carry: a nice-to-have; no entry estimates a run's finish, and none is wanted before cutover
 
@@ -75,7 +79,7 @@ are derived (`run_span`, `run_credit_line`), and status is `run_state`.
 Every run's issues in order (10,754 rows): `Completed`, `Sequence`, `Type`,
 `Notes`. Loaded as `issues` and `run_issues`; `Completed` is the read mark.
 
-- Tick an issue read in this run → 1.1
+- Tick an issue read in this run → 0.8b
 - Add issues to a run, typed or from Metron → 1.3c, 1.3b
 - Edit a placement's type or note → 3.1
 - Put an issue at a chosen place in a run, or reorder → won't carry: appending is enough until then; Arrange (3.11, after 3.10) comes after cutover
@@ -210,9 +214,11 @@ books, with `tracking` follows (1.15); `Completed` is not loaded (D-41).
 inputs (minutes a day, words a minute, words a day and a week) and the
 current quarter. Loaded as books with `to_read` status.
 
-- Find a book on my list, by title, author or series → 1.8c
+- Browse the master list → 1.8c
+- Find a book on it by title, author or series → 1.22
 - Add a book to the list → 1.4c
-- Fix a book's word count → 1.18
+- Fix a book's word count in the app → 3.1
+- Bring in what changed in Calibre (new, changed and removed books, word counts, series) → won't carry: Calibre is the source of truth (D-87) and its changes wait there, nothing lost; `npm run calibre` (1.18) runs until cutover and the in-app sync (4.4) comes right after it (owner, 2026-10-29)
 - Set my reading pace (minutes a day, words a minute) → 2.0
 - See what a quarter or a year can hold in words → 2.1
 
@@ -232,7 +238,7 @@ One tab per year: the books planned, in a column per genre, a count row, the
 series and authors, and the year's word-count budget. Load only with
 `--with-plan`, and nothing from 2028 on (D-13, D-70).
 
-- Put a book in a year or a quarter → 1.7
+- Put a book in a year or a quarter → 2.3
 - Budget a year and its quarters by word count → 2.1, 2.2, 2.2b, 2.3
 - Move a book between years and quarters → 2.3
 - Count the planned books per genre → won't carry: a glance; genre mix planned vs read is 6.2, after cutover
@@ -245,7 +251,8 @@ into Someday once (1.4d, D-39).
 
 - Ideas for books to read someday → 1.4d
 - Capture a new idea quickly → 1.4b
-- The *Top* pick per genre → 1.7
+- A top pick to read next → 1.7
+- One top pick per genre → won't carry: On deck, with no genre, is enough (owner, 2026-10-29)
 
 ### `Top Books`
 
