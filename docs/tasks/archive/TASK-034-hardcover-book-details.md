@@ -1,7 +1,7 @@
 ---
 id: TASK-034
 title: 1.14b Hardcover details for the books, by ISBN
-status: Review
+status: Done
 depends_on: [TASK-033]
 size: L
 model: opus
