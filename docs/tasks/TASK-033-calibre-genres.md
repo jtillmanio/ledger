@@ -1,14 +1,14 @@
 ---
 id: TASK-033
 title: 1.18c Calibre genres
-status: Ready
+status: In progress
 depends_on: [TASK-032]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: c0ef78d
 ---
 
 # TASK-033 — 1.18c Calibre genres
@@ -58,9 +58,35 @@ Each book carries every genre the owner gave it in Calibre, with Calibre's hiera
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Move the master list (`src/db/queries.ts` `listBooks`' genre filter and row line, `src/app/books/list/page.tsx`'s genre chips) and the `books_by_year` view (`yearSummary`) to `book_genres`, falling back to `books.genre` for a book with none, then drop `books.genre` with a down file; the later readers (2.10's rail genre hue, the book page, 6.x's genre-mix chart) noted (approved at plan) → docs/05-roadmap.md § Phase 4 (new item)
+- `docs/03-data-model.md` § 4.1, the 1.18c row: approved by the owner 2026-10-30 (approved at plan) → docs/03-data-model.md § 4.1
+- Candidate decision: `book_genres` is Calibre's genres only, each the full dotted path as Calibre writes it; `books.genre` stays the workbook's, and readers fall back to it until it is dropped (approved at plan) → docs/review/decisions.md
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+_Approved 2026-10-30 at c0ef78d. Owner's answers at the gate: the schema, yes; the reading below, yes; `npm run rebuild` on development at the end, yes._
+
+**Reading of the spec (confirmed):** `book_genres` holds Calibre's genres only; `books.genre` stays the workbook's for every book (AC-2: no column, no rows; AC-4: `books.csv` unchanged). A book with no Calibre genre keeps its workbook genre in `books.genre` and has no `book_genres` rows. "Calibre's genres replace the workbook's" lands when the screens move (follow-up).
+
+**Steps**
+
+1. **Schema.** `book_genres(book_id text NOT NULL → books.id, genre text NOT NULL, PRIMARY KEY (book_id, genre))`; no `user_id` (D-91), no `deleted_at`. `npm run db:generate` → 0017, add-only (no down file). Joins `src/db/export-tables.ts`.
+2. **`etl/calibre.py`.** `custom_column()` returns every value of a multi-valued column (`is_multiple`); `--genre-column` (default `#genre`), a missing column reported once. `calibre_books.csv` gains a last column, `genres`: full dotted paths, deduped case-insensitively, sorted, joined `; `. The report prints books with genres and distinct genres; `changes()` reports `genres`.
+3. **`etl/extract.py`.** `fold_calibre()` gives each Calibre book its genres (a held book, or a second Calibre book on one book, loads none); `seed/book_genres.csv` (`book_id, genre`), one row per pair.
+4. **Loaders.** `etl/load.ps1`, `etl/load.sh`: truncate `book_genres`, copy it after `books`. `etl/rebuild.ps1`, `etl/rebuild.sh` count it.
+5. **Docs.** `.claude/rules/schema.md` (a genres line), `docs/COMMANDS.md` (the flag).
+6. **Real runs.** `npm run calibre -- --dry-run` (counts), `npm run calibre -- --offline` (the sidecar); extract on `main` and on the branch into temp folders, CSV diff; `npm run rebuild` on development (approved).
+
+**Files** (17; `never-split`, attended): `src/db/schema.ts`, `drizzle/0017_*` + meta, `src/db/export-tables.ts`, `etl/calibre.py`, `etl/extract.py`, `etl/test_calibre.py`, `etl/data/calibre_books.csv`, `etl/load.ps1`, `etl/load.sh`, `etl/rebuild.ps1`, `etl/rebuild.sh`, `test/load-scripts.test.ts`, `test/schema-additions.test.ts`, `.claude/rules/schema.md`, `docs/COMMANDS.md`; `etl/test_extract.py` only if it pins the seed file list. Not in Files likely touched: the rebuild twins (they count each table) and `test/schema-additions.test.ts`.
+
+**Test strategy**
+
+- AC-1: `etl/test_calibre.py` `Genres`: two genres → two rows with full paths; a book with none keeps its workbook `books.genre` and has no rows; a second run is byte-identical (sidecars and `book_genres.csv`).
+- AC-2: `#genres` at another `custom_column_N` loads the same rows; no column → no rows, one report line.
+- AC-3: a genre linked twice → one row; `test/export-tables.test.ts`; `test/load-scripts.test.ts` (truncate, copy after `books`, rebuild counts); `test/schema-additions.test.ts` (columns, primary key).
+- AC-4: manual diff, summary in the PR.
+
+**Risks**: a genre containing `;` would split in the sidecar; reported if one exists.
 
 ## Review log
 

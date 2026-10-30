@@ -130,6 +130,33 @@ describe.each(["rebuild.ps1", "rebuild.sh"])("%s, task 1.18b", (name) => {
   });
 });
 
+// Task 1.18c (D-90): Calibre's genres are rows that point at a book, so they
+// load after books.
+describe.each(["load.ps1", "load.sh"])("%s, task 1.18c", (name) => {
+  const text = read(name);
+  const at = (re: RegExp) => {
+    const i = text.search(re);
+    expect(i, String(re)).toBeGreaterThan(-1);
+    return i;
+  };
+
+  it("truncates book_genres with the others", () => {
+    const truncate = /TRUNCATE[\s\S]*?RESTART IDENTITY CASCADE;/.exec(text)![0];
+    expect(truncate).toMatch(/\bbook_genres\b/);
+  });
+
+  it("copies book_genres after books", () => {
+    const copy = at(/\\+copy book_genres\(book_id,genre\) FROM '[^']*book_genres\.csv' CSV HEADER/);
+    expect(copy).toBeGreaterThan(at(/\\+copy books\(/));
+  });
+});
+
+describe.each(["rebuild.ps1", "rebuild.sh"])("%s, task 1.18c", (name) => {
+  it("counts book_genres against the seed", () => {
+    expect(read(name)).toMatch(/\bbook_genres\b/);
+  });
+});
+
 // Task 1.18: every extract folds in the Calibre sidecar (one since D-87).
 // rebuild.ps1 runs `npm run extract`; rebuild.sh spells the arguments out.
 describe("the Calibre sidecar reaches extract", () => {

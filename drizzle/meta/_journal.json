@@ -120,6 +120,13 @@
       "when": 1793300214646,
       "tag": "0016_calibre_groupings",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793336131257,
+      "tag": "0017_book_genres",
+      "breakpoints": true
     }
   ]
 }

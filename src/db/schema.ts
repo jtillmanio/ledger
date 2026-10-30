@@ -296,6 +296,17 @@ export const books = pgTable("books", {
     AND (${t.wordCountSource} IS NULL OR ${t.wordCountSource} IN ('stated', 'estimated'))`),
 }));
 
+// A book's genres, from Calibre's multi-valued #genre (task 1.18c, D-90): each
+// the full dotted path Calibre writes (`Young Adult.Fantasy.Romantasy`). On the
+// book, not per user (D-91). books.genre stays the workbook's until the screens
+// that read it move here.
+export const bookGenres = pgTable("book_genres", {
+  bookId: text("book_id").notNull().references(() => books.id),
+  genre: text("genre").notNull(),
+}, (t) => ({
+  pk: primaryKey({ columns: [t.bookId, t.genre] }),
+}));
+
 export const releases = pgTable("releases", {
   bookId: text("book_id").primaryKey().references(() => books.id, { onDelete: "cascade" }),
   releaseDate: text("release_date"),        // ISO date; null means announced but undated

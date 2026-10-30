@@ -493,6 +493,17 @@ def key(title: str | None) -> str:
     return re.sub(r"[^a-z0-9]", "", (title or "").lower())
 
 
+def genre_list(values) -> list[str]:
+    """A book's Calibre genres (task 1.18c): each the full dotted path as
+    Calibre writes it, cleaned, once whatever its case, sorted."""
+    out: dict[str, str] = {}
+    for v in values:
+        g = clean(v)
+        if g:
+            out.setdefault(g.casefold(), g)
+    return [out[k] for k in sorted(out)]
+
+
 def write(out: Path, name: str, rows: list[dict], columns: list[str]) -> None:
     path = out / f"{name}.csv"
     with path.open("w", newline="", encoding="utf-8") as fh:
@@ -1033,7 +1044,9 @@ CALIBRE_RENAME = "calibre rename"
 CALIBRE_BOOKS_COLUMNS = ["title", "author", "words", "series", "series_index", "isbn", "tags",
                          "book_type", "read", "date_read", "precision", "confirmed", "open_library",
                          "calibre_id", "pages", "superseries", "superseries_index",
-                         "subseries", "subseries_index"]
+                         "subseries", "subseries_index", "genres"]
+# seed/book_genres.csv (task 1.18c, D-90): one row per Calibre genre of a book.
+BOOK_GENRES_COLUMNS = ["book_id", "genre"]
 # etl/data/calibre_missing.csv (task 1.18b, D-90): each workbook book with no
 # Calibre id, to keep (`keep`) or to add to Calibre, which drops its row.
 CALIBRE_MISSING_COLUMNS = ["title", "author", "tabs", "decision"]
@@ -1601,8 +1614,10 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
     status `read` with its date (the projection 1.5 defines). Each
     disagreement is reported, never dropped: a workbook count more than 10%
     off, a different workbook series, Open Library's different series, a
-    second read of one book. Returns (read events, the books created, the
-    series Calibre took a book from)."""
+    second read of one book. Calibre's genres go on the book for
+    seed/book_genres.csv; books.genre stays the workbook's (task 1.18c,
+    D-90). Returns (read events, the books created, the series Calibre took a
+    book from)."""
     held = {(key(r["b"]), key(r["b_author"])) for r in review
             if r["reason"] == CALIBRE and not r["decision"]}
     created, events, replaced = [], [], set()
@@ -1640,6 +1655,9 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
             continue
         if cid is not None:
             b["calibre_id"] = cid
+        genres = genre_list(row["genres"].split(";"))
+        if genres:
+            b["genres"] = genres
 
         kind = clean(row["book_type"])
         if kind and kind != b["book_type"]:
@@ -2115,6 +2133,10 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
     write(out, "book_universes", list(idx.universes.values()), ["id", "name"])
     write(out, "book_subseries", list(idx.subseries.values()), ["id", "name", "series_id"])
     write(out, "books", books, BOOK_COLUMNS)
+    # Calibre's genres (task 1.18c, D-90); books.genre stays the workbook's
+    # until the screens that read it move here.
+    write(out, "book_genres", [{"book_id": b["id"], "genre": g} for b in books for g in b.get("genres", [])],
+          BOOK_GENRES_COLUMNS)
     write(out, "book_status", list(status.values()),
           ["user_id", "book_id", "status", "finished_on", "finished_on_precision",
            "year_rank", "rating"])

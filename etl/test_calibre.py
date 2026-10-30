@@ -32,20 +32,21 @@ REPO = Path(__file__).resolve().parent.parent
 # --------------------------------------------------------------------------
 
 def book(title, *authors, series=None, index=1.0, isbn=None, tags=(), words=None,
-         read=None, date=None, kind=None, universe=None, subseries=None, pages=None):
+         read=None, date=None, kind=None, universe=None, subseries=None, pages=None, genres=()):
     """One Calibre record. `date` is the stored UTC text, as Calibre writes it.
     `universe` and `subseries` are (name, index) for #superseries and
-    #subseries (task 1.18b)."""
+    #subseries (task 1.18b); `genres` the #genre values, each linked in order,
+    a repeat linked twice (task 1.18c)."""
     return {"title": title, "authors": list(authors) or ["Unknown"], "series": series,
             "index": index, "isbn": isbn, "tags": list(tags), "words": words,
             "read": read, "date": date, "type": kind, "superseries": universe,
-            "subseries": subseries, "pages": pages}
+            "subseries": subseries, "pages": pages, "genres": list(genres)}
 
 
 def build_library(folder: Path, books: list[dict], words=("words", 3), date=("date_read", 6),
                   date_format="dd MMM yyyy", read=("read", 1), kind=("type", 15),
                   superseries=("superseries", 20), subseries=("subseries", 21), pages=("pages", 22),
-                  extra_columns=()) -> Path:
+                  genre=("genre", 23), extra_columns=()) -> Path:
     """A metadata.db with Calibre's tables (the ones calibre.py reads). Each
     custom column is (lookup name without '#', its custom_column_N number), so
     a test can put one at another number; None leaves it out. Calibre numbers
@@ -71,13 +72,13 @@ def build_library(folder: Path, books: list[dict], words=("words", 3), date=("da
                                      normalized BOOL NOT NULL, display TEXT DEFAULT '{}');
     """)
 
-    def column(spec, datatype, normalized=False, display=None):
+    def column(spec, datatype, normalized=False, display=None, multiple=False):
         if spec is None:
             return None
         label, n = spec
-        db.execute("INSERT INTO custom_columns (id, label, name, datatype, normalized, display) "
-                   "VALUES (?, ?, ?, ?, ?, ?)",
-                   (n, label, label.title(), datatype, normalized, json.dumps(display or {})))
+        db.execute("INSERT INTO custom_columns (id, label, name, datatype, is_multiple, normalized, display) "
+                   "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                   (n, label, label.title(), datatype, multiple, normalized, json.dumps(display or {})))
         if normalized:
             db.execute(f"CREATE TABLE custom_column_{n} (id INTEGER PRIMARY KEY, value TEXT UNIQUE)")
             # A series-type column's link carries the index, as Calibre's does.
@@ -93,7 +94,9 @@ def build_library(folder: Path, books: list[dict], words=("words", 3), date=("da
             "type": column(kind, "enumeration", normalized=True),
             "superseries": column(superseries, "series", normalized=True),
             "subseries": column(subseries, "series", normalized=True),
-            "pages": column(pages, "int")}
+            "pages": column(pages, "int"),
+            # Multi-valued text, as the owner's #genre is (task 1.18c).
+            "genre": column(genre, "text", normalized=True, multiple=True)}
     for spec in extra_columns:
         column(spec, "int")
 
@@ -128,6 +131,12 @@ def build_library(folder: Path, books: list[dict], words=("words", 3), date=("da
             if cols[field] and b[field] is not None:
                 db.execute(f"INSERT INTO custom_column_{cols[field]} (book, value) VALUES (?, ?)",
                            (bid, b[field]))
+        for name in b["genres"]:
+            if cols["genre"]:
+                n = cols["genre"]
+                db.execute(f"INSERT OR IGNORE INTO custom_column_{n} (value) VALUES (?)", (name,))
+                vid = db.execute(f"SELECT id FROM custom_column_{n} WHERE value = ?", (name,)).fetchone()[0]
+                db.execute(f"INSERT INTO books_custom_column_{n}_link (book, value) VALUES (?, ?)", (bid, vid))
         if cols["type"]:
             n = cols["type"]
             db.execute(f"INSERT OR IGNORE INTO custom_column_{n} (value) VALUES (?)", (b["type"] or "Book",))
@@ -584,7 +593,8 @@ class Rerun(Case):
                                  book("Mistborn", "Brandon Sanderson", pages=541)])
         self.round()
         old = [c for c in ex.CALIBRE_BOOKS_COLUMNS if c not in
-               ("calibre_id", "pages", "superseries", "superseries_index", "subseries", "subseries_index")]
+               ("calibre_id", "pages", "superseries", "superseries_index", "subseries", "subseries_index",
+                "genres")]
         rows = [{c: r[c] for c in old} for r in self.rows(self.books_csv)]
         self.write_rows(self.books_csv, rows)
         build_library(self.lib, [book("Warbreaker (Tenth Anniversary)", "Brandon Sanderson", universe=("Cosmere", 1)),
@@ -1222,6 +1232,104 @@ class GroupingReports(Case):
         self.assertEqual(self.reported("calibre subseries with no series"),
                          ["Mistborn: Era One not loaded; give the book its series in Calibre"])
         self.assertEqual(self.seed_rows("book_subseries"), [])
+
+# --------------------------------------------------------------------------
+# task 1.18c: Calibre's genres
+# --------------------------------------------------------------------------
+
+class Genres(Case):
+    """1.18c's **Check:** and AC-2, AC-3: 1.18's fixture given a multi-valued
+    `#genre` column. Both workbook books are `Fantasy` on the master list."""
+
+    def genres(self) -> list[tuple[str, str]]:
+        titles = {b["id"]: b["title"] for b in self.seed_rows("books")}
+        return [(titles.get(r["book_id"]), r["genre"]) for r in self.seed_rows("book_genres")]
+
+    def run_calibre(self, *extra) -> int:
+        """calibre.py's exit code, an unknown flag's included."""
+        try:
+            return self.calibre(*extra)
+        except SystemExit as e:
+            return e.code
+
+    def test_two_genres_load_two_rows_with_their_paths_and_a_book_with_none_keeps_its_workbook_genre(self):
+        build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson",
+                                      genres=("Fantasy.Epic Fantasy", "Young Adult.Fantasy.Romantasy")),
+                                 book("Mistborn", "Brandon Sanderson")])
+        self.round()
+        self.assertEqual(self.genres(), [("The Way of Kings", "Fantasy.Epic Fantasy"),
+                                         ("The Way of Kings", "Young Adult.Fantasy.Romantasy")])
+        self.assertEqual(self.book_by_title("Mistborn")["genre"], "Fantasy")
+        # books.genre stays the workbook's until the screens move (D-90).
+        self.assertEqual(self.book_by_title("The Way of Kings")["genre"], "Fantasy")
+        self.assertEqual(self.calibre_row("The Way of Kings")["genres"],
+                         "Fantasy.Epic Fantasy; Young Adult.Fantasy.Romantasy")
+        self.assertEqual(self.calibre_row("Mistborn")["genres"], "")
+        with (self.seed / "book_genres.csv").open(newline="", encoding="utf-8") as fh:
+            self.assertEqual(next(csv.reader(fh)), ["book_id", "genre"])
+
+    def test_a_second_run_is_byte_identical(self):
+        build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson",
+                                      genres=("Young Adult.Fantasy.Romantasy", "Fantasy.Epic Fantasy")),
+                                 book("Warbreaker", "Brandon Sanderson", genres=("Fantasy",))])
+        self.round()
+        self.assertEqual(len(self.seed_rows("book_genres")), 3)
+        before = {**self.sidecars(), "book_genres.csv": (self.seed / "book_genres.csv").read_bytes()}
+        self.round()
+        self.assertEqual({**self.sidecars(), "book_genres.csv": (self.seed / "book_genres.csv").read_bytes()},
+                         before)
+        self.assertIn("no change in Calibre since the last run", self.output)
+
+    def test_a_changed_genre_is_reported(self):
+        build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson", genres=("Fantasy",))])
+        self.round()
+        build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson",
+                                      genres=("Fantasy", "Fantasy.Epic Fantasy"))])
+        self.round()
+        self.assertIn("changed  The Way of Kings — Brandon Sanderson: genres Fantasy -> "
+                      "Fantasy; Fantasy.Epic Fantasy", self.output)
+
+    def test_a_genre_listed_twice_loads_one_row(self):
+        build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson",
+                                      genres=("Fantasy.Epic Fantasy", "Fantasy.Epic Fantasy"))])
+        self.round()
+        self.assertEqual(self.genres(), [("The Way of Kings", "Fantasy.Epic Fantasy")])
+
+    def test_the_genre_column_is_found_by_its_lookup_name(self):
+        library = [book("The Way of Kings", "Brandon Sanderson", genres=("Fantasy.Epic Fantasy", "Classics")),
+                   book("Mistborn", "Brandon Sanderson", genres=("Fantasy",))]
+        build_library(self.lib, library)
+        self.round()
+        default = self.genres()
+        self.assertEqual(len(default), 3)
+        self.assertIn("genres          2 books in 3 genres", self.output)
+
+        self.books_csv.unlink()
+        build_library(self.lib, library, genre=("genres", 41))
+        self.extract()
+        self.assertEqual(self.run_calibre("--genre-column", "#genres"), 0)
+        self.extract()
+        self.assertEqual(self.genres(), default)
+
+    def test_a_library_without_the_genre_column_loads_none_and_names_it_once(self):
+        build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson", genres=("Fantasy",)),
+                                 book("Mistborn", "Brandon Sanderson")], genre=None)
+        self.round()
+        self.assertEqual(self.output.count("no column #genre"), 1)
+        self.assertTrue((self.seed / "book_genres.csv").exists())
+        self.assertEqual(self.seed_rows("book_genres"), [])
+        self.assertEqual({b["title"]: b["genre"] for b in self.seed_rows("books")},
+                         {"The Way of Kings": "Fantasy", "Mistborn": "Fantasy"})
+
+    def test_a_second_calibre_book_on_one_book_loads_no_genre(self):
+        self.write_rows(self.book_review, [{
+            "kind": "book", "a": "Mistborn", "b": "Mistborn Two", "a_author": "Brandon Sanderson",
+            "b_author": "Brandon Sanderson", "a_tabs": "", "b_tabs": "Calibre", "reason": "similar",
+            "similarity": "0.60", "keep": "Mistborn", "decision": "merge"}])
+        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", genres=("Fantasy",)),
+                                 book("Mistborn Two", "Brandon Sanderson", genres=("Horror",))])
+        self.round()
+        self.assertEqual(self.genres(), [("Mistborn", "Fantasy")])
 
 
 if __name__ == "__main__":

@@ -75,6 +75,9 @@ describe("columns", () => {
     ["book_subseries", "id", "text", "NO"],
     ["book_subseries", "name", "text", "NO"],
     ["book_subseries", "series_id", "text", "NO"],
+    // Task 1.18c (D-90, D-91): Calibre's genres.
+    ["book_genres", "book_id", "text", "NO"],
+    ["book_genres", "genre", "text", "NO"],
   ];
 
   it("adds every column with its type and nullability", async () => {
@@ -162,6 +165,26 @@ describe("task 1.18b: Calibre's id and groupings (D-90)", () => {
       VALUES ('gg', 'Guards! Guards!', 'discworld', 'city-watch', 1)`)).toBe("ok");
     expect(await sqlstate(() => sql`
       INSERT INTO books (id, title, subseries_id) VALUES ('x', 'X', 'nope')`)).toBe(FK);
+  });
+});
+
+describe("task 1.18c: Calibre's genres (D-90)", () => {
+  it("is book_id and genre, and no user_id (D-91)", async () => {
+    const rows = await sql<{ column_name: string }[]>`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'book_genres'`;
+    expect(rows.map((r) => r.column_name).sort()).toEqual(["book_id", "genre"]);
+  });
+
+  it("holds a genre once per book, for a real book", async () => {
+    await sql`INSERT INTO books (id, title) VALUES ('wok', 'The Way of Kings'), ('mb', 'Mistborn')`;
+    await sql`INSERT INTO book_genres (book_id, genre) VALUES ('wok', 'Fantasy.Epic Fantasy'), ('wok', 'Classics')`;
+    expect(await sqlstate(() => sql`
+      INSERT INTO book_genres (book_id, genre) VALUES ('wok', 'Fantasy.Epic Fantasy')`)).toBe(UNIQUE);
+    expect(await sqlstate(() => sql`
+      INSERT INTO book_genres (book_id, genre) VALUES ('mb', 'Fantasy.Epic Fantasy')`)).toBe("ok");
+    expect(await sqlstate(() => sql`
+      INSERT INTO book_genres (book_id, genre) VALUES ('nope', 'Fantasy')`)).toBe(FK);
   });
 });
 

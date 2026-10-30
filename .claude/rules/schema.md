@@ -126,6 +126,14 @@ Release, test isolation) and the Hard rules a reviewer checks.
   no Calibre id, except one waiting on a `calibre` pair. `keep` keeps the book
   out of Calibre and survives every run; a book Calibre has now, or the workbook
   no longer lists, leaves the file; the run prints how many are undecided.
+- **Calibre owns a book's genres** (task 1.18c, D-90, D-91). `#genre` is
+  multi-valued (`--genre-column`): `calibre_books.csv`'s `genres` holds every
+  value, the full dotted path as Calibre writes it (`Young
+  Adult.Fantasy.Romantasy`), once whatever its case, sorted and joined `; `.
+  Extract writes them to `book_genres(book_id, genre)`, one row per pair. A
+  book Calibre gives none has no rows. `books.genre` stays the workbook's
+  (one value, from its Read tab columns) until the screens that read it
+  move to `book_genres`.
 - **One issue row per comic.** `issues` is what exists — one row per label, id a
   slug of the label, never a run position. `run_issues(id, run_id, sequence,
   issue_id, type, notes)` is where it sits in a run; `type` and `notes` belong to
