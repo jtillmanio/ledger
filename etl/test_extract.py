@@ -1219,6 +1219,25 @@ class BookHold(BookCase):
         self.assertEqual([r["decision"] for r in self.hold_rows()], ["yes"])
         self.assertIn("unknown decision", [u["reason"] for u in ex.UNRESOLVED if u["table"] == "book_hold"])
 
+    def test_a_book_listed_twice_keeps_its_decided_row(self):
+        """A `keep` under a blank copy of its row is never lost."""
+        self.extract(self.workbook())
+        row = self.hold_rows()[0]
+        self.write(self.hold, ex.BOOK_HOLD_COLUMNS, [row, {**row, "decision": "keep"}])
+        self.extract(self.workbook())
+        self.assertIn(self.HELD, self.books())
+        self.assertEqual([r["decision"] for r in self.hold_rows()], ["keep"])
+        self.assertIn("duplicate row", [u["reason"] for u in ex.UNRESOLVED if u["table"] == "book_hold"])
+
+    def test_an_unknown_decision_on_a_book_since_matched_is_not_reported(self):
+        self.extract(self.workbook())
+        self.decide("The Hollow Crown", "yes")
+        self.write(self.details, ex.BOOK_DETAILS_COLUMNS,
+                   [self.KNOWN, {**self.KNOWN, "title": "The Hollow Crown", "author": "Ada Unknown"}])
+        self.extract(self.workbook())
+        self.assertIn(self.HELD, self.books())
+        self.assertNotIn("unknown decision", [u["reason"] for u in ex.UNRESOLVED if u["table"] == "book_hold"])
+
     # -- AC-4: the plan-gate answers, one fixture each ----------------------
 
     def test_a_hand_row_is_a_match(self):

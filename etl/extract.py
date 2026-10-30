@@ -1807,21 +1807,29 @@ def hold_books(path: Path, idx: BookIndex, details: list[dict]) -> set[str]:
         lookup = f'title search: "{b["title"]} {author}"' if author else "not looked up: no author"
         unmatched[k] = (b, {"title": b["title"], "author": author, "tabs": "; ".join(tabs),
                             "lookup": lookup, "decision": ""})
-    rows, done = [], set()
+    # One row a book, in its place: a decided copy beats a blank one.
+    existing: dict[tuple, dict] = {}
     for r in read_sidecar(path, BOOK_HOLD_COLUMNS):
         k = (key(r["title"]), key(r["author"]))
-        if k in done or not (r["decision"] or k in unmatched):
+        if k in existing:
+            flag("book_hold", "duplicate row",
+                 f"{r['title']} / {r['author'] or '(no author)'}: listed twice; one row kept, a decided one first")
+            if existing[k]["decision"] or not r["decision"]:
+                continue
+        existing[k] = r
+    rows = []
+    for k, r in existing.items():
+        if not (r["decision"] or k in unmatched):
             continue
-        done.add(k)
         if r["decision"] and k not in listed:
             flag("book_hold", "stale review",
                  f"{r['title']} / {r['author'] or '(no author)'} ({r['decision']}) — no longer in the "
                  "workbook; delete the row once it's done with")
-        if r["decision"].lower() not in BOOK_HOLD_DECISIONS:
+        if k in unmatched and r["decision"].lower() not in BOOK_HOLD_DECISIONS:
             flag("book_hold", "unknown decision",
                  f"{r['title']}: {r['decision']!r}, still held; `keep` loads it")
         rows.append({**unmatched[k][1], "decision": r["decision"]} if k in unmatched else r)
-    rows += [row for k, (_, row) in unmatched.items() if k not in done]
+    rows += [row for k, (_, row) in unmatched.items() if k not in existing]
     kept = {(key(r["title"]), key(r["author"])) for r in rows if r["decision"].lower() == "keep"}
     held = {b["id"] for k, (b, _) in unmatched.items() if k not in kept}
     with Path(path).open("w", newline="", encoding="utf-8") as fh:
