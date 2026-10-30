@@ -156,6 +156,19 @@ tick them.
       books with no ISBN, *Edit metadata → Download metadata*, check what it
       found, then `npm run calibre`. About 345 Calibre books have none (fan
       fiction never does) (D-94).
+- [ ] After 1.14b merges, the real run (from TASK-034, PR #165),
+      in this order: `npm run calibre` (its series check asks Hardcover now
+      and rewrites `calibre_books.csv` with a `hardcover` column; until it
+      runs, extract notes no series differences), `npm run extract`,
+      `npm run enrich:books -- --dry-run`, `npm run enrich:books` (a few dozen
+      ISBN requests, then a search for each book with none; 5,000 a day), and
+      `npm run extract`. It replaces the 2,061 Open Library rows in
+      `book_details.csv`. Then decide the `hardcover` rows in
+      `book_review.csv`, write `pick` on one row per book in
+      `etl/data/hardcover_review.csv`, and run `enrich:books` and `extract`
+      again. A compilation never matches (D-99): a collection like *Brief
+      Cases* gets a `hand` row in `book_details.csv` if you want its details.
+      Commit the sidecars the run writes.
 - [ ] After 1.18b merges, settle what Calibre's groupings showed (from TASK-032,
       PR #162):
       - Decide the 181 rows in `etl/data/calibre_missing.csv`: workbook books

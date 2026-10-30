@@ -71,8 +71,9 @@ uncommitted edits, stage only your hunks (build a patch and
 `git apply --cached`; `git add -p` is interactive and unavailable) or ask.
 
 Never commit `.env*`, `seed/`, `etl/.metron-cache.sqlite`,
-`etl/.openlibrary-cache.sqlite`, `etl/.fandom-cache.json` or anything under
-`backups/` (the nightly job owns it).
+`etl/.openlibrary-cache.sqlite`, `etl/.hardcover-cache.sqlite`,
+`etl/.fandom-cache.json` or anything under `backups/` (the nightly job owns
+it).
 
 ## Commit messages
 
@@ -156,6 +157,6 @@ your own branch.
   on a private free-plan repo): these rules and the `Bash(...)` and
   `PowerShell(...)` deny rules in `.claude/settings.json` are the only guard.
 - Files never to commit are listed under *Staging*: `.env*`, `seed/`, the
-  Metron, Open Library and Fandom caches, and `backups/`.
+  Metron, Open Library, Hardcover and Fandom caches, and `backups/`.
 - `--force-with-lease` after a rebase is allowed (`workflow.allowForceWithLease`
   is `true`, G-19); plain `--force` is denied.

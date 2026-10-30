@@ -2,9 +2,9 @@
 """
 calibre.py — the owner's Calibre library, into the sidecar extract folds in.
 
-    py etl/calibre.py --dry-run     # the match rate and what changed; writes nothing, asks Open Library nothing
-    py etl/calibre.py               # writes the sidecar; asks Open Library about series
-    py etl/calibre.py --offline     # Open Library from the cache only
+    py etl/calibre.py --dry-run     # the match rate and what changed; writes nothing, asks Hardcover nothing
+    py etl/calibre.py               # writes the sidecar; asks Hardcover about series
+    py etl/calibre.py --offline     # Hardcover from the cache only
 
 The library is `--library <folder>` or CALIBRE_LIBRARY in .env (task 1.18, D-73,
 D-83). Its metadata.db is copied to a temp folder outside the repo and the copy
@@ -42,8 +42,8 @@ What it writes, in etl/data/ and committed like the other sidecars:
 - calibre_books.csv    title, author -> Calibre's words, series, index, ISBN,
                        tags, type, read flag, date read (its Eastern day, D-67,
                        or a year) and precision (D-88); `confirmed` lists what
-                       Open Library agreed with, and `open_library` is its
-                       series where it differs. Comments stay out until
+                       Hardcover agreed with, and `hardcover` is its series
+                       where it differs (task 1.14b, D-94). Comments stay out until
                        books.summary exists (D-88). Then Calibre's id, page
                        count, superseries (the universe) and subseries, each
                        grouping with its index (task 1.18b, D-90). Then its
@@ -52,10 +52,12 @@ What it writes, in etl/data/ and committed like the other sidecars:
                        joined `; ` (task 1.18c).
 - book_review.csv      the `calibre` proposals and `calibre rename` rows above.
 
-Open Library is asked about each Calibre series, with 1.14's client and cache
-(enrich_books.OpenLibrary), so a workbook book's answer is already cached. Its
-answer fills nothing: a different series is reported. An ISBN is compared only
-against an answer in hand.
+Hardcover is asked about each Calibre series, with 1.14b's client and cache
+(enrich_books.Hardcover, D-94): the ISBNs first, many to a request, then one
+title search a book with none found, so enrich:books later finds most answers
+cached. Its answer fills nothing: a different series is reported. `isbn` is
+confirmed when the ISBN found the book. Without HARDCOVER_API_TOKEN the check
+reads the cache only, and says so.
 
 Re-runnable until cutover (D-83): existing rows keep their place, a changed book
 is rewritten in place, a new one appends its row, a removed one goes, a run over
@@ -70,7 +72,6 @@ import csv
 import io
 import json
 import os
-import re
 import shutil
 import sqlite3
 import sys
@@ -88,13 +89,13 @@ import extract as ex  # noqa: E402
 EASTERN = ZoneInfo("America/New_York")
 SKIPPED_TYPES = {"comic"}
 STATUSES = ("matched", "proposed", "unmatched")
-MAX_FAILURES = 3        # failed lookups in a row before the run stops asking Open Library
+MAX_FAILURES = 3        # failed lookups in a row before the run stops asking Hardcover
 # A Calibre near spelling is proposed at this trigram similarity or more, or as
 # a subtitle (ex.subtitled()). Higher than the workbook's own pairs (D-25a's 0.4):
-# under 0.5 Calibre's pairs were series patterns, two books (owner, D-89). Open
-# Library's near spellings use the same line (enrich_books.SIMILAR_AT, D-92).
+# under 0.5 Calibre's pairs were series patterns, two books (owner, D-89).
+# Hardcover's near spellings use the same line (enrich_books.SIMILAR_AT, D-92).
 SIMILAR_AT = eb.SIMILAR_AT
-PROGRESS_SECONDS = 5    # a progress line at most this often while Open Library is asked
+PROGRESS_SECONDS = 5    # a progress line at most this often while Hardcover is asked
 
 
 # --------------------------------------------------------------------------
@@ -102,7 +103,7 @@ PROGRESS_SECONDS = 5    # a progress line at most this often while Open Library 
 # --------------------------------------------------------------------------
 
 def library_path(arg: str | None, env: Path) -> Path:
-    load_env(env)
+    eb.load_env(env)
     folder = arg or os.environ.get("CALIBRE_LIBRARY", "").strip()
     if not folder:
         raise SystemExit("calibre: no library: pass --library <folder>, or set CALIBRE_LIBRARY in .env")
@@ -110,15 +111,6 @@ def library_path(arg: str | None, env: Path) -> Path:
     if not db.exists():
         raise SystemExit(f"calibre: {db} not found: --library and CALIBRE_LIBRARY name the folder holding it")
     return db
-
-
-def load_env(path: Path) -> None:
-    if not path.exists():
-        return
-    for line in path.read_text(encoding="utf-8").splitlines():
-        m = re.match(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$", line)
-        if m and m.group(1) not in os.environ:
-            os.environ[m.group(1)] = m.group(2).strip().strip('"').strip("'")
 
 
 def read_library(source: Path, columns: dict[str, str]) -> list[dict]:
@@ -346,30 +338,30 @@ def rename(workbook: dict, title: str, author: str) -> dict:
 
 
 # --------------------------------------------------------------------------
-# Open Library
+# Hardcover
 # --------------------------------------------------------------------------
 
-def check(work: dict | None, series: str, index, isbn: str | None) -> tuple[set[str], str]:
-    """What Open Library's work confirms of Calibre's series, index and ISBN,
-    and its own series (`Name #index`) where that differs. No answer differs
-    from nothing, so it is "" (D-87: the series fills either way)."""
+def check(record: dict | None, series: str, index, by_isbn: bool = False) -> tuple[set[str], str]:
+    """What Hardcover's book confirms of Calibre's series, index and ISBN, and
+    its own series (`Name #position`, the featured one first) where that
+    differs. No answer differs from nothing, so it is "" (D-87: the series
+    fills either way)."""
     confirmed = set()
-    names = (work or {}).get("series_name") or []
-    positions = (work or {}).get("series_position") or []
-    at = next((i for i, n in enumerate(names) if ex.key(ex.clean(n)) == ex.key(series)), None)
+    pairs = [(n, p) for n, p in (record or {}).get("series") or [] if n]
+    at = next((i for i, (n, _) in enumerate(pairs) if ex.key(ex.clean(n)) == ex.key(series)), None)
     theirs = ""
     if at is None:
-        if names:
-            pos = number(positions[0]) if positions else ""
-            theirs = f"{ex.clean(names[0])} #{pos}" if pos else ex.clean(names[0])
+        if pairs:
+            name, pos = ex.clean(pairs[0][0]), number(pairs[0][1])
+            theirs = f"{name} #{pos}" if pos else name
     else:
         confirmed.add("series")
-        pos = number(positions[at]) if at < len(positions) else ""
+        pos = number(pairs[at][1])
         if pos == number(index):
             confirmed.add("series_index")
         elif pos:
-            theirs = f"{ex.clean(names[at])} #{pos}"
-    if work and isbn and isbn in (work.get("isbn") or []):
+            theirs = f"{ex.clean(pairs[at][0])} #{pos}"
+    if record and by_isbn:
         confirmed.add("isbn")
     return confirmed, theirs
 
@@ -399,15 +391,20 @@ def run(args) -> int:
     old_books = read_csv(Path(args.calibre_books), ex.CALIBRE_BOOKS_COLUMNS)
     old = {book_key(r): r for r in old_books}
 
-    api = None if args.dry_run else eb.OpenLibrary(Path(args.cache), args.max_requests, offline=args.offline)
+    token = os.environ.get(eb.TOKEN_VAR, "").strip() or None   # library_path() read .env
+    api = None if args.dry_run else eb.Hardcover(Path(args.cache), args.max_requests, token=token,
+                                                 offline=args.offline)
+    if api and not token and not args.offline:
+        print(f"  {eb.TOKEN_VAR} is not set: series are checked from the Hardcover cache only")
     status: dict[tuple, str] = {}
     books: dict[tuple, dict] = {}
     unchecked: set[tuple] = set()
     failures = 0
-    proposals, renames, skipped, duplicates, missed = [], [], [], [], []
+    proposals, renames, skipped, duplicates, missed, asks = [], [], [], [], [], []
     series_total = sum(1 for r in library if r["series"] and r["type"].lower() not in SKIPPED_TYPES)
     print(f"matching {len(library)} records against {Path(args.seed) / 'books.csv'}"
-          + (f", checking {series_total} series with Open Library (about one a second when it isn't cached)"
+          + (f", checking {series_total} series with Hardcover (by ISBN, many to a request; then about "
+             "one search a second when it isn't cached)"
              if api else "") + " …")
     asked, shown = 0, time.monotonic()
 
@@ -441,13 +438,13 @@ def run(args) -> int:
                    "isbn": rec["isbn"] or "", "tags": "; ".join(rec["tags"]),
                    "book_type": "" if rec["type"].lower() in ("", "book") else rec["type"],
                    "read": rec["read"], "date_read": rec["date_read"], "precision": rec["precision"],
-                   "confirmed": "", "open_library": "", "calibre_id": rec["calibre_id"],
+                   "confirmed": "", "hardcover": "", "calibre_id": rec["calibre_id"],
                    "pages": rec["pages"] or "", "superseries": rec["superseries"] or "",
                    "superseries_index": rec["superseries_index"], "subseries": rec["subseries"] or "",
                    "subseries_index": rec["subseries_index"], "genres": "; ".join(rec["genres"])}
             books[k] = row
 
-            # Open Library's word on the series, to report where it differs. A
+            # Hardcover's word on the series, to report where it differs. A
             # held book waits for its decision.
             if api is None or not rec["series"] or state == "proposed":
                 continue
@@ -456,28 +453,39 @@ def run(args) -> int:
             renamed = p is not None and p["reason"] == ex.CALIBRE_RENAME
             target = workbook if state == "matched" and not renamed else seed.created.get(k)
             title, name = (target["title"], target["author"]) if target else (rec["title"], author)
+            asks.append((k, title, name, eb.normal_isbn(rec["isbn"]), rec))
+
+        # The ISBNs first, many to a request: then each book below finds its
+        # editions in the cache, and only a book with none found is searched.
+        if asks:
+            try:
+                api.editions([isbn for _, _, _, isbn, _ in asks])
+            except (eb.StopRun, OSError):
+                pass  # each book asks again for its own, and the failures below count
+        for k, title, name, isbn, rec in asks:
             asked += 1
             if asked > 1:
                 progress()
             try:
-                works = api.search(title, name)
+                found, record, _, how, _ = eb.find(api, title, name, isbn)
             except eb.StopRun:
                 unchecked.add(k)
                 continue
             except OSError as e:
-                # Open Library dropped us after the client's retries. It drops
-                # the odd connection, so only a run of failures means it's
-                # down: then the rest come from the cache, and the next run asks again.
+                # Hardcover dropped us after the client's retries. Only a run
+                # of failures means it's down: then the rest come from the
+                # cache, and the next run asks again.
                 failures += 1
                 if failures == MAX_FAILURES:
-                    print(f"  Open Library failed {failures} times running ({e}); "
+                    print(f"  Hardcover failed {failures} times running ({e}); "
                           "the rest come from the cache only")
                     api.offline = True
                 unchecked.add(k)
                 continue
             failures = 0
-            _, work, _ = eb.decide(title, name, works)
-            confirmed, row["open_library"] = check(work, rec["series"], rec["index"], rec["isbn"])
+            row = books[k]
+            confirmed, row["hardcover"] = check(record if found in ("matched", "proposed") else None,
+                                                rec["series"], rec["index"], by_isbn=how == "isbn")
             row["confirmed"] = ";".join(f for f in ex.CHECKED_FIELDS if f in confirmed)
     finally:
         if api:
@@ -485,10 +493,10 @@ def run(args) -> int:
                 progress(final=True)
             api.db.close()
 
-    # What Open Library couldn't be asked this run keeps what the last run knew.
+    # What Hardcover couldn't be asked this run keeps what the last run knew.
     for k in unchecked:
         if k in old:
-            books[k]["confirmed"], books[k]["open_library"] = old[k]["confirmed"], old[k]["open_library"]
+            books[k]["confirmed"], books[k]["hardcover"] = old[k]["confirmed"], old[k]["hardcover"]
     report(status, proposals, skipped, duplicates, missed, books, api, unchecked)
     changes(old_books, books, header(Path(args.calibre_books)))
     if args.dry_run:
@@ -626,9 +634,9 @@ def report(status: dict, proposals: list[dict], skipped: list[dict], duplicates:
     genres = [ex.genre_list(r["genres"].split(";")) for r in books.values()]
     distinct = {g.casefold() for gs in genres for g in gs}
     print(f"  genres     {sum(1 for gs in genres if gs):>6} books in {len(distinct)} genres")
-    if api:  # a dry run asks Open Library nothing, so it has no count to give
-        differs = sum(1 for r in books.values() if r["open_library"])
-        print(f"  series Open Library has differently: {differs} (reported by extract in unresolved.csv)")
+    if api:  # a dry run asks Hardcover nothing, so it has no count to give
+        differs = sum(1 for r in books.values() if r["hardcover"])
+        print(f"  series Hardcover has differently: {differs} (noted by extract in calibre_changes.csv)")
     if skipped:
         print(f"\nskipped, {len(skipped)} comics (the Ledger keeps comics as issues):")
         for rec in skipped:
@@ -648,7 +656,7 @@ def report(status: dict, proposals: list[dict], skipped: list[dict], duplicates:
         for title, author, cands in near:
             print(f"  {title} — {author}: {cands}")
     if api:
-        print(f"\nrequests: {api.network} to Open Library, {api.cached} from cache")
+        print(f"\nrequests: {api.network} to Hardcover, {api.cached} from cache")
     if unchecked:
         print(f"  {len(unchecked)} series not checked (offline, or the request budget is spent); "
               "they keep what the last run knew. Re-run to finish.")
@@ -683,7 +691,7 @@ def main(argv=None) -> int:
     ap.add_argument("--seed", default="seed")
     ap.add_argument("--calibre-books", default="etl/data/calibre_books.csv")
     ap.add_argument("--book-review", default="etl/data/book_review.csv")
-    ap.add_argument("--cache", default="etl/.openlibrary-cache.sqlite")
+    ap.add_argument("--cache", default="etl/.hardcover-cache.sqlite")
     ap.add_argument("--words-column", default="#words", help="the word-count column's lookup name")
     ap.add_argument("--date-column", default="#date_read", help="the date-read column's lookup name")
     ap.add_argument("--read-column", default="#read", help="the read flag's lookup name (optional)")
@@ -696,7 +704,7 @@ def main(argv=None) -> int:
     ap.add_argument("--genre-column", default="#genre",
                     help="the genres, a multi-valued column of dotted paths (optional)")
     ap.add_argument("--dry-run", action="store_true", help="report the match rate; write nothing")
-    ap.add_argument("--offline", action="store_true", help="Open Library from the cache only")
+    ap.add_argument("--offline", action="store_true", help="Hardcover from the cache only")
     ap.add_argument("--max-requests", type=int, default=3000, help="stop asking after this many requests")
     args = ap.parse_args(argv)
     # A redirected Windows console is cp1252; print what it can't show as ?.

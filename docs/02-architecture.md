@@ -376,10 +376,10 @@ the asset.
 |---|---|---|
 | Issue records, covers, cover dates, story titles, creators, canonical labels | Metron (`metron_id` on `issues`) | 20 req/min, 5,000/day. Dates, covers and labels come from series issue lists (~1,800 requests); titles and credits need one detail request per issue (~8,100) |
 | Comics gap-fill | Comic Vine | 1 req/sec, 200/hour — fallback only |
-| Book bibliographic data, page counts, covers | Open Library | no key, CC0 |
-| Series position | Hardcover GraphQL | 5,000 req/day free |
+| Book bibliographic data, page counts, covers | Hardcover GraphQL (D-94; the load from task 1.14b, *Add books* from 1.4f; Open Library until each lands, removed in 6.19) | A personal token; 60 requests a minute, bursts of 10, 5,000 a day. Found by Calibre's ISBN, many to a request, else one title-and-author search; a compilation never matches (D-99) |
+| Series position | Hardcover GraphQL | The same requests: each book's series and position |
 | Word counts | Calibre's Count Pages column (data model 2.19, task 1.18); no API | Take Calibre's as `stated`, over a typed one (D-87; a typed count more than 10% off is reported); keep a typed count where Calibre has none; estimate the rest at `pages x 275` and record which is which in `books.word_count_source` |
-| Book tags, summaries, series cross-check, read dates | Calibre, the owner's library (data model 2.19, D-73) | Read from a copy of `metadata.db`, never written. Calibre is the source of truth (D-87): its series and index fill over the workbook's, and its reads load as it has them; an Open Library series that differs is reported, not a gate. Tags, comments and ISBN load nothing until their columns are approved (D-88) |
+| Book tags, summaries, series cross-check, read dates | Calibre, the owner's library (data model 2.19, D-73) | Read from a copy of `metadata.db`, never written. Calibre is the source of truth (D-87): its series and index fill over the workbook's, and its reads load as it has them; a Hardcover series that differs is reported, not a gate (1.14b). Tags, comments and ISBN load nothing until their columns are approved (D-88) |
 | Films and TV shows | TMDB (`titles.tmdb_id`) | Free for non-commercial use, ~40-50 req/sec, covers both media in one API. Requires attribution in the UI |
 | Where to watch | TMDB `/watch/providers`, from JustWatch (data model 2.20, D-74) | US only, a dated snapshot refreshed on request. JustWatch's attribution sits beside TMDB's |
 | Music: artists, albums, tracks | MusicBrainz, covers from the Cover Art Archive (data model 2.21, D-75) | CC0 core data, 1 req/sec with a real User-Agent. Phase 9 |
@@ -390,8 +390,8 @@ value. Before cutover it writes the sidecar CSVs in 2.13; after cutover (task
 
 **Add flows are the one place an API is called live** (data model 2.15). TMDB is searched
 live because the catalogue is 1.5M+ titles and there is no watch data to seed
-from. Metron and Open Library are searched live from *Add issues* and *Add
-books*, when you submit a search, so that the thing you add arrives as a real
+from. Metron and Open Library (Hardcover from 1.4f, D-94) are searched live
+from *Add issues* and *Add books*, when you submit a search, so that the thing you add arrives as a real
 record with its metadata already on it. No page render ever calls an API.
 Responses are cached, and detail pages never re-call.
 
@@ -427,14 +427,15 @@ the series and issue range" and the app resolves 23 issue records for you.
 
 | Source | Auth | Limits | Best for |
 |---|---|---|---|
-| **Open Library** | none | courtesy limits, send a real User-Agent | Bibliographic spine: titles, authors, ISBNs, publish years, page counts, covers. CC0 data |
-| **Hardcover** | free account, GraphQL | 5,000 req/day free | Series ordering and community tags — the best single source for "book 4 of 7" |
+| **Hardcover** | free account, a personal token, GraphQL | 60 a minute, bursts of 10, 5,000 a day | The spine since D-94: one record per book with its editions under it, the subtitle and series in their own fields, a `compilation` flag, a reader count. ISBNs are looked up many to a request |
+| **Open Library** | none | courtesy limits, send a real User-Agent | Replaced by Hardcover (D-94): noisy titles, and graphic novels and omnibuses mixed in with the works. *Add books* searches it until 1.4f; 6.19 removes it |
 | Google Books | key optional | ~1,000/day per project by default, raisable on request | Descriptions and categories; good fallback |
 | ISBNdb | paid | — | Skip |
 | **Calibre** (the owner's library) | none: a local `metadata.db`, read from a copy | none | Word counts from the Count Pages plugin, series and index, tags, comments, ISBN, read dates. roadmap 1.18, D-73 |
 
-Use Open Library for the spine and Hardcover for series position, which is data
-you currently maintain by hand as `Harry Potter #1`. Calibre's series and index
+Use Hardcover for the spine and the series position, which is data you
+currently maintain by hand as `Harry Potter #1`, found by the book's Calibre
+ISBN (1.14b, D-94). Calibre's series and index
 fill as Calibre has them, and an API that disagrees is reported (D-87, amending
 D-73).
 

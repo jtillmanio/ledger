@@ -1,6 +1,7 @@
 """Tests for etl/calibre.py and extract's Calibre fold-in (task 1.18, D-73, D-83).
 No network: the Calibre library is a fixture metadata.db each test builds with
-sqlite3, and Open Library is faked with recorded search responses.
+sqlite3, and Hardcover is faked with recorded answers (task 1.14b, D-94; Open
+Library's until then), with every real request patched to fail the test.
 
     py -m unittest discover -s etl -p "test_*.py"
 """
@@ -22,6 +23,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import calibre as cal  # noqa: E402
 import enrich_books as eb  # noqa: E402
 import extract as ex  # noqa: E402
+from test_enrich_books import FakeHardcover, doc, edition, hc_book, results  # noqa: E402
 from test_extract import build_books, series_tab, tab  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
@@ -148,40 +150,38 @@ def build_library(folder: Path, books: list[dict], words=("words", 3), date=("da
 
 
 # --------------------------------------------------------------------------
-# Open Library, recorded
+# Hardcover, recorded
 # --------------------------------------------------------------------------
 
-def doc(key, title, authors, series=None, position=None, isbn=()):
-    """One work as search.json returns it with fields=*: the series fields are
-    lists, as Open Library sends them."""
-    d = {"key": f"/works/{key}", "title": title, "author_name": authors,
-         "number_of_pages_median": 400, "first_publish_year": 2010, "isbn": list(isbn)}
-    if series:
-        d["series_name"] = [series]
-        d["series_position"] = [position] if position else []
-    return d
-
-
-def page(*docs):
-    return {"numFound": len(docs), "start": 0, "docs": list(docs)}
-
-
-RESPONSES = {
-    # Open Library agrees with Calibre's series and index.
-    "The Way of Kings": page(doc("OL15358691W", "The Way of Kings", ["Brandon Sanderson"],
-                                 "The Stormlight Archive", "1", isbn=["9780765326355"])),
-    # Open Library contradicts Calibre's series.
-    "Mistborn": page(doc("OL15358692W", "Mistborn", ["Brandon Sanderson"], "Mistborn Saga", "1")),
-    # Open Library knows the work but has no series for it.
-    "Warbreaker": page(doc("OL5738148W", "Warbreaker", ["Brandon Sanderson"])),
+# The search text (title, then author) -> its results.
+SEARCHES = {
+    # Hardcover agrees with Calibre's series and index.
+    "The Way of Kings Brandon Sanderson": results(doc(386446, "The Way of Kings", ["Brandon Sanderson"],
+                                                      series="The Stormlight Archive", position=1)),
+    # Hardcover contradicts Calibre's series.
+    "Mistborn Brandon Sanderson": results(doc(369692, "Mistborn", ["Brandon Sanderson"],
+                                              series="Mistborn Saga", position=1)),
+    # Hardcover knows the book but has no series for it.
+    "Warbreaker Brandon Sanderson": results(doc(31580, "Warbreaker", ["Brandon Sanderson"])),
 }
+# ISBN -> its editions: one Hardcover has, which finds the book and confirms the ISBN.
+EDITIONS = {
+    "9780765326355": [edition(30395390, hc_book(386446, "The Way of Kings", ["Brandon Sanderson"],
+                                                series=[("The Stormlight Archive", 1)]),
+                              isbn13="9780765326355")],
+}
+
+
+def no_real_request(*args, **kwargs):
+    raise AssertionError("a real request was made: calibre.py asks only the faked Hardcover")
+
 
 MASTER = [("The Way of Kings", "Brandon Sanderson", None, "Fantasy", None),
           ("Mistborn", "Brandon Sanderson", None, "Fantasy", 214000)]
 
 
 class Case(unittest.TestCase):
-    """A workbook, a Calibre library, the sidecars, a seed, and a fake Open Library."""
+    """A workbook, a Calibre library, the sidecars, a seed, and a fake Hardcover."""
 
     def setUp(self):
         ex.UNRESOLVED.clear()
@@ -196,17 +196,17 @@ class Case(unittest.TestCase):
         self.missing = self.data / "calibre_missing.csv"
         self.details: Path | None = None
         self.workbook = build_books(MASTER)
-        self.fetched: list[str] = []
+        self.hc = FakeHardcover(EDITIONS, SEARCHES)
+        self.fetched: list[dict] = []
         self.output = ""
         self.unresolved: list[dict] = []
         self.changes: list[dict] = []
 
     # -- running ------------------------------------------------------------
 
-    def fake_fetch(self, url, attempt=1):
-        self.fetched.append(url)
-        title = dict(eb.urllib.parse.parse_qsl(url.split("?", 1)[1]))["title"]
-        return json.dumps(RESPONSES.get(title, page()))
+    def fake_fetch(self, query, variables, attempt=1):
+        self.fetched.append(variables)
+        return self.hc.body(query, variables)
 
     def argv(self, *extra, library=True) -> list[str]:
         argv = ["--env", str(self.dir / "absent.env"), "--seed", str(self.seed),
@@ -214,9 +214,13 @@ class Case(unittest.TestCase):
                 "--cache", str(self.dir / "cache.sqlite"), *extra]
         return ["--library", str(self.lib), *argv] if library else argv
 
-    def calibre(self, *extra, library=True):
+    def calibre(self, *extra, library=True, token="test-token"):
         buf = io.StringIO()
-        with mock.patch.object(eb.OpenLibrary, "_fetch", self.fake_fetch), redirect_stdout(buf):
+        with mock.patch.object(eb.Hardcover, "_fetch", self.fake_fetch), \
+             mock.patch.object(eb.urllib.request, "urlopen", no_real_request), \
+             mock.patch.dict(os.environ, {eb.TOKEN_VAR: token} if token else {}), redirect_stdout(buf):
+            if not token:
+                os.environ.pop(eb.TOKEN_VAR, None)
             code = cal.main(self.argv(*extra, library=library))
         self.output = buf.getvalue()
         return code
@@ -306,7 +310,7 @@ class Case(unittest.TestCase):
 
 class Check(Case):
     """1.18's **Check:**, one test per bullet: a fixture of two books with
-    `#words` and `#date_read` columns, and recorded Open Library answers."""
+    `#words` and `#date_read` columns, and recorded Hardcover answers."""
 
     def library(self, books):
         return build_library(self.lib, books, read=None, kind=None)
@@ -322,23 +326,23 @@ class Check(Case):
         self.assertEqual(self.changed("calibre replaced a word count"),
                          ["Mistborn: 214000 -> Calibre's 300000"])
 
-    def test_a_series_open_library_agrees_with_fills(self):
+    def test_a_series_hardcover_agrees_with_fills(self):
         self.library([book("The Way of Kings", "Brandon Sanderson", series="The Stormlight Archive", index=1.0),
                       book("Mistborn", "Brandon Sanderson")])
         self.round()
         self.assertEqual(self.series_of("The Way of Kings"), ("The Stormlight Archive", "1.0"))
         row = self.calibre_row("The Way of Kings")
-        self.assertEqual((row["confirmed"], row["open_library"]), ("series;series_index", ""))
-        self.assertEqual(self.changed("open library series differs"), [])
+        self.assertEqual((row["confirmed"], row["hardcover"]), ("series;series_index", ""))
+        self.assertEqual(self.changed("hardcover series differs"), [])
 
-    def test_a_series_open_library_contradicts_still_fills_and_is_reported(self):
+    def test_a_series_hardcover_contradicts_still_fills_and_is_reported(self):
         self.library([book("The Way of Kings", "Brandon Sanderson"),
                       book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy", index=1.0)])
         self.round()
         self.assertEqual(self.series_of("Mistborn"), ("The Final Empire Trilogy", "1.0"))
-        self.assertEqual(self.calibre_row("Mistborn")["open_library"], "Mistborn Saga #1")
-        self.assertEqual(self.changed("open library series differs"),
-                         ["Mistborn: Calibre's The Final Empire Trilogy #1 loaded, Open Library has Mistborn Saga #1"])
+        self.assertEqual(self.calibre_row("Mistborn")["hardcover"], "Mistborn Saga #1")
+        self.assertEqual(self.changed("hardcover series differs"),
+                         ["Mistborn: Calibre's The Final Empire Trilogy #1 loaded, Hardcover has Mistborn Saga #1"])
 
     def test_a_near_spelling_writes_a_book_review_row_keeping_calibres(self):
         self.library([book("The Way of Kings: Book One", "Brandon Sanderson"),
@@ -399,7 +403,7 @@ class Check(Case):
         self.extract()
         self.assertEqual(self.calibre(), 0)
         for stage in ("reading metadata.db", "read 2 records", "matching 2 records",
-                      "checking 1 series with Open Library", "writing"):
+                      "checking 1 series with Hardcover", "writing"):
             self.assertIn(stage, self.output)
         # The fake replaces the fetch that counts requests, so only the shape is checked.
         self.assertRegex(self.output, r"series 1/1 · \d+ requests, \d+ from cache")
@@ -513,8 +517,8 @@ class Options(Case):
         self.assertRegex(self.output, r"(?m)^\s*unmatched\s+2\b")
         # What changed is shown too, and still nothing is written.
         self.assertIn("added    Elantris", self.output)
-        # Open Library isn't asked in a dry run, so no count of its differences is claimed.
-        self.assertNotIn("Open Library has differently", self.output)
+        # Hardcover isn't asked in a dry run, so no count of its differences is claimed.
+        self.assertNotIn("Hardcover has differently", self.output)
 
     def test_dry_run_on_a_fresh_checkout_creates_no_sidecar(self):
         build_library(self.lib, self.TWO)
@@ -646,22 +650,24 @@ class Rerun(Case):
         self.assertEqual(self.series_of("Mistborn"), ("Mistborn Saga", "1.0"))
         self.assertNotIn("calibre replaced a series", self.change_reasons())
 
-    def test_an_index_open_library_disagrees_with_fills_calibres_and_is_reported(self):
+    def test_an_index_hardcover_disagrees_with_fills_calibres_and_is_reported(self):
         build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson",
                                       series="The Stormlight Archive", index=2.0),
                                  book("Mistborn", "Brandon Sanderson")])
         self.round()
         self.assertEqual(self.series_of("The Way of Kings"), ("The Stormlight Archive", "2.0"))
-        self.assertEqual(self.calibre_row("The Way of Kings")["open_library"], "The Stormlight Archive #1")
-        self.assertEqual(len(self.changed("open library series differs")), 1)
+        self.assertEqual(self.calibre_row("The Way of Kings")["hardcover"], "The Stormlight Archive #1")
+        self.assertEqual(self.changed("hardcover series differs"),
+                         ["The Way of Kings: Calibre's The Stormlight Archive #2 loaded, "
+                          "Hardcover has The Stormlight Archive #1"])
 
-    def test_no_open_library_series_fills_and_reports_nothing(self):
+    def test_no_hardcover_series_fills_and_reports_nothing(self):
         build_library(self.lib, [book("Warbreaker", "Brandon Sanderson", series="Nalthis"),
                                  book("Mistborn", "Brandon Sanderson")])
         self.round()
         self.assertEqual(self.series_of("Warbreaker"), ("Nalthis", "1.0"))
-        self.assertEqual(self.calibre_row("Warbreaker")["open_library"], "")
-        self.assertNotIn("open library series differs", self.change_reasons())
+        self.assertEqual(self.calibre_row("Warbreaker")["hardcover"], "")
+        self.assertNotIn("hardcover series differs", self.change_reasons())
 
     def test_a_merge_takes_calibres_spelling_and_folds_the_book_in(self):
         build_library(self.lib, [book("The Way of Kings: Book One", "Brandon Sanderson", words=383389),
@@ -724,9 +730,9 @@ class Rerun(Case):
         self.assertEqual({u["reason"] for u in self.unresolved if u["table"] == "calibre_books"},
                          {"calibre book held for review"})
         self.assertEqual(sorted(set(self.change_reasons())),
-                         ["calibre replaced a word count", "open library series differs"])
+                         ["calibre replaced a word count", "hardcover series differs"])
         for reason in ("calibre replaced a book type", "calibre replaced a word count",
-                       "calibre replaced a series", "open library series differs"):
+                       "calibre replaced a series", "hardcover series differs"):
             self.assertNotIn(reason, self.reasons())
 
     def test_a_held_book_says_its_read_waits_too(self):
@@ -847,7 +853,7 @@ class Shape(Case):
             header = next(csv.reader(fh))
         self.assertEqual(header, ["id", "title", "author_id", "series_id", "series_position", "genre",
                                   "book_type", "word_count", "word_count_source", "published_year",
-                                  "page_count", "cover_url", "open_library_id", "universe_id",
+                                  "page_count", "cover_url", "open_library_id", "hardcover_id", "universe_id",
                                   "universe_position", "subseries_id", "subseries_position", "calibre_id"])
 
     def test_the_temp_copy_is_outside_the_repo_and_removed(self):
@@ -876,7 +882,7 @@ class Shape(Case):
         self.assertNotIn("comments", row)
         self.assertNotIn("About Warbreaker", self.books_csv.read_text(encoding="utf-8"))
 
-    def test_an_isbn_open_library_lists_is_confirmed(self):
+    def test_an_isbn_hardcover_finds_is_confirmed(self):
         build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson", series="The Stormlight Archive",
                                       isbn="9780765326355"),
                                  book("Mistborn", "Brandon Sanderson", isbn="9999999999999",
@@ -917,31 +923,32 @@ class Shape(Case):
         self.extract()
         real = self.fake_fetch
 
-        def once(_api, url, attempt=1):
+        def once(_api, query, variables, attempt=1):
             if not self.fetched:
-                self.fetched.append(url)
+                self.fetched.append(variables)
                 raise eb.urllib.error.URLError("[WinError 10054] connection forcibly closed")
-            return real(url, attempt)
+            return real(query, variables, attempt)
 
         with mock.patch.object(self, "fake_fetch", once):
             self.assertEqual(self.calibre(), 0)
         self.assertEqual(len(self.fetched), 2)
-        self.assertEqual(self.calibre_row("Mistborn")["open_library"], "")
+        self.assertEqual(self.calibre_row("Mistborn")["hardcover"], "")
         self.assertIn("1 series not checked", self.output)
 
     def test_failures_in_a_row_stop_the_lookups_and_still_write_the_rest(self):
-        """Open Library drops every connection: after MAX_FAILURES books in a
+        """Hardcover drops every connection: after MAX_FAILURES books in a
         row the rest go unchecked without asking, and the sidecar is written."""
         build_library(self.lib, [book(f"Book {n}", "Brandon Sanderson", series="Cosmere") for n in range(4)]
                       + [book("Warbreaker", "Brandon Sanderson", series="Nalthis", read=1)])
         self.extract()
 
-        def dropped(_api, url, attempt=1):
-            self.fetched.append(url)
+        def dropped(_api, query, variables, attempt=1):
+            self.fetched.append(variables)
             raise eb.urllib.error.URLError("[WinError 10054] connection forcibly closed")
 
         buf = io.StringIO()
-        with mock.patch.object(eb.OpenLibrary, "_fetch", dropped), redirect_stdout(buf):
+        with mock.patch.object(eb.Hardcover, "_fetch", dropped), \
+             mock.patch.dict(os.environ, {eb.TOKEN_VAR: "test-token"}), redirect_stdout(buf):
             self.assertEqual(cal.main(self.argv()), 0)
         self.assertEqual(len(self.fetched), cal.MAX_FAILURES)
         self.assertEqual(len(self.rows(self.books_csv)), 5)
@@ -952,12 +959,41 @@ class Shape(Case):
                                  book("The Way of Kings", "Brandon Sanderson", series="The Stormlight Archive")])
         self.round()
         before = self.sidecars()
-        self.assertEqual(self.calibre_row("Mistborn")["open_library"], "Mistborn Saga #1")
+        self.assertEqual(self.calibre_row("Mistborn")["hardcover"], "Mistborn Saga #1")
         self.dir.joinpath("cache.sqlite").unlink()
         self.fetched.clear()
         self.assertEqual(self.calibre("--offline"), 0)
         self.assertEqual(self.fetched, [])
         self.assertEqual(self.sidecars(), before)
+
+    def test_isbns_are_asked_first_many_to_a_request_and_only_the_rest_searched(self):
+        """Task 1.14b AC-5: the series check asks Hardcover, never Open Library
+        (every real request fails the test), the ISBNs in one request."""
+        build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson", series="The Stormlight Archive",
+                                      isbn="9780765326355"),
+                                 book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy",
+                                      isbn="9999999999999")])
+        self.extract()
+        self.assertEqual(self.calibre(), 0)
+        self.assertEqual(self.fetched[0], {"isbn13": ["9780765326355", "9999999999999"], "isbn10": []})
+        self.assertEqual([v["query"] for v in self.fetched[1:]], ["Mistborn Brandon Sanderson"])
+        self.extract()
+        self.assertEqual(self.changed("hardcover series differs"),
+                         ["Mistborn: Calibre's The Final Empire Trilogy #1 loaded, Hardcover has Mistborn Saga #1"])
+
+    def test_without_the_token_the_check_reads_the_cache_only(self):
+        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="The Final Empire Trilogy")])
+        self.extract()
+        self.assertEqual(self.calibre(token=None), 0)
+        self.assertEqual(self.fetched, [])
+        self.assertIn("HARDCOVER_API_TOKEN is not set", self.output)
+        self.assertEqual(len(self.rows(self.books_csv)), 1)
+        # What a run with the token cached is used without it.
+        self.assertEqual(self.calibre(), 0)
+        self.fetched.clear()
+        self.assertEqual(self.calibre(token=None), 0)
+        self.assertEqual(self.fetched, [])
+        self.assertEqual(self.calibre_row("Mistborn")["hardcover"], "Mistborn Saga #1")
 
 
 # --------------------------------------------------------------------------
@@ -1009,15 +1045,16 @@ class Groupings(Case):
         """The details sidecar's count is replaced whatever its source (D-94)."""
         self.details = self.data / "book_details.csv"
         self.write_rows(self.details, [
-            {"title": "The Way of Kings", "author": "Brandon Sanderson", "open_library_id": "OL1W",
+            {"title": "The Way of Kings", "author": "Brandon Sanderson", "open_library_id": "", "hardcover_id": "",
              "page_count": "1007", "cover_url": "", "published_year": "2010", "source": "hand"},
-            {"title": "Mistborn", "author": "Brandon Sanderson", "open_library_id": "OL2W",
-             "page_count": "541", "cover_url": "", "published_year": "2006", "source": "openlibrary"}])
+            {"title": "Mistborn", "author": "Brandon Sanderson", "open_library_id": "", "hardcover_id": "369692",
+             "page_count": "541", "cover_url": "", "published_year": "2006", "source": "hardcover"}])
         build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson", pages=1258),
                                  book("Mistborn", "Brandon Sanderson")])
         self.round()
         self.assertEqual(self.book_by_title("The Way of Kings")["page_count"], "1258")
         self.assertEqual(self.book_by_title("Mistborn")["page_count"], "541")
+        self.assertEqual(self.book_by_title("Mistborn")["hardcover_id"], "369692")
         self.assertEqual(self.book_by_title("Mistborn")["word_count"], "214000")
 
     def test_every_calibre_book_loads_its_id_and_a_renamed_book_stays_one_book(self):

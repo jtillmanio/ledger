@@ -44,27 +44,33 @@ npm run extract             # etl/extract.py with every sidecar CSV (see below);
 py etl/enrich_comics.py     # Metron: dates, cover URLs, label proposals (--dry-run first)
 py etl/enrich_comics.py --details  # Metron: story titles + credits, ~8,100 requests (--dry-run first)
 npm run enrich:refresh      # --details --refresh: re-ask Metron about issues it credited nobody on (cache never expires)
-npm run enrich:books        # etl/enrich_books.py: Open Library id, page count, cover URL and first publish year
-                            # per book into etl/data/book_details.csv (task 1.14); a near spelling goes to
-                            # book_review.csv as `open library`. `-- --dry-run` first (100 books, writes
-                            # nothing); `-- --offline` reprints the report from the cache
+npm run enrich:books        # etl/enrich_books.py: Hardcover id, page count, cover URL and release year per
+                            # book into etl/data/book_details.csv (task 1.14b, D-94; Open Library's was 1.14),
+                            # found by the book's Calibre ISBN (many to a request), else one title-and-author
+                            # search. Needs HARDCOVER_API_TOKEN in .env. A near spelling goes to
+                            # book_review.csv as `hardcover`; a book two Hardcover books match goes to
+                            # etl/data/hardcover_review.csv, one row per candidate: write `pick` on one and
+                            # re-run. A compilation never matches. `-- --dry-run` first (100 books, writes
+                            # nothing); `-- --offline` reprints the report from etl/.hardcover-cache.sqlite
 npm run calibre             # etl/calibre.py (task 1.18): the Calibre library (CALIBRE_LIBRARY in .env, or
                             # `-- --library <folder>`) into etl/data/calibre_books.csv, read from a temp copy
                             # of metadata.db (never written). Calibre is the source of truth (D-87): its word
                             # counts, series and reads load over the workbook's, and the books only Calibre
                             # has come in at Unlisted. A near spelling goes to book_review.csv as `calibre`
                             # (the one decision). Each run prints what changed in Calibre since the last;
-                            # extract lists what Calibre overrode (a word count, series or type; an Open
-                            # Library series that differs) in seed/calibre_changes.csv, nothing to do (D-93),
+                            # extract lists what Calibre overrode (a word count, series or type; a
+                            # Hardcover series that differs) in seed/calibre_changes.csv, nothing to do (D-93),
                             # and what needs you (a held book, a read not loaded) in unresolved.csv.
                             # #superseries, #subseries and #pages are read too, by lookup name
                             # (--superseries-column, --subseries-column, --pages-column); a book renamed
                             # in Calibre stays one book, matched on its Calibre id (1.18b). #genre too
                             # (--genre-column): every value, as seed/book_genres.csv (1.18c).
                             # `-- --dry-run` first (the match rate and the changes, writes nothing);
-                            # `-- --offline` asks Open Library nothing new. Re-run after any library change,
+                            # the series check asks Hardcover (by ISBN first, the cache shared with
+                            # enrich:books; 1.14b), and `-- --offline`, or no HARDCOVER_API_TOKEN, asks it
+                            # nothing new. Re-run after any library change,
                             # in this order: extract, calibre, extract, enrich:books, extract (the created
-                            # books get their Open Library details like any other)
+                            # books get their Hardcover details like any other)
 npm run sidecars            # etl/check_sidecars.py: validate the issue sidecars, write etl/data/metadata_todo.md
                             # and etl/data/creator_review.csv (close creator names to accept or reject);
                             # an issue fandom_skipped.csv says has a blank Fandom title isn't listed as
