@@ -64,6 +64,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - The real library has four stray genres: `l` (*Everything Is Tuberculosis*) and `i` (*Patterns of Evidence: The Exodus*) (schema review R1, MINOR), and `Ecomonics` (37 books) and `Scie` (1) (found at revision 1), each loading as a top-level genre → docs/OWNER-CHECKLIST.md § Actions from follow-ups
 - A genre containing `;` would split in the sidecar; calibre.py warns rather than fails (schema review R1, MINOR) → not tracked: no genre in the library has one, and the warning names any that appears
 - Calibre's genres cascade: `Fantasy.Epic Fantasy` is in `Fantasy` (owner, after the PR opened) → not tracked: done in this PR (plan revision 1, the `book_genre_tree` view)
+- `book_genre_tree` keeps a stray empty segment as written (`Fantasy.` is a level of its own) and splits a prefix that differs only in case (schema review R2, MINOR) → not tracked: none of the 7,894 real rows has either; 4.5 can filter empty segments if one appears
 - No index on `book_genres(genre)` (schema review R1, MINOR) → not tracked: nothing reads the table yet; 4.5's body says the index comes with the first query that filters by genre
 - `book_genres.book_id` is `ON DELETE no action` where other children of `books` cascade (spec review R1) → not tracked: nothing hard-deletes a book (soft delete only), as approved at the plan gate
 - A book held for a `calibre` review loads no genres, with no test of its own (spec review R1) → not tracked: the same `continue` that holds every other Calibre value, already tested for the book; no AC asks for it
@@ -109,7 +110,7 @@ _Filled by /implement-task. One line per round._
 - Audit R1 PASS (every new test fails on c0ef78d for its own reason)
 - Spec R1 APPROVE; close-out follow-ups check APPROVE | Schema R1 APPROVE (3 MINOR, placed in Follow-ups) | UI: n/a (no UI files)
 - Real library: dry run 4,380 books in 126 genres; `calibre --offline` changed only the new `genres` column (4,392 rows), "no change in Calibre"; extract on `main` vs the branch: only `book_genres.csv` new (7,894 rows, 4,378 books); `npm run rebuild` on development, every count matching its seed (`book_genres` 7,894)
-- Revision 1 (the `book_genre_tree` view): `npm run test:views` PASS on a reset TEST database;
+- Revision 1 (the `book_genre_tree` view): Verify R2 round PASS (1,008 vitest, 293 ETL, `test_views.sql` ok) | Audit R2 PASS (the base and four mutants of the view fail) | Spec R2 APPROVE | Schema R2 APPROVE (1 MINOR, in Follow-ups)
 
 ## Blocked
 
@@ -117,7 +118,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds: 1 (round chain, then full chain, both PASS)
-- Review rounds: 1 spec, 1 schema, 1 test audit
+- Verify rounds: 2 (R1 round and full chain PASS; R2, after revision 1, round chain PASS)
+- Review rounds: 2 spec, 2 schema, 2 test audit (round 2 for revision 1)
 - First-pass AC FAILs: 0
 - Plan revisions after approval: 1 (the genre cascade as a view, owner, after the PR opened)
