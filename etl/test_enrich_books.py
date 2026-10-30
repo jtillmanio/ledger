@@ -530,6 +530,23 @@ class Replace(Fake):
         self.assertNotIn(("Elantris", "open library", ""), reasons)
         self.assertEqual([r for r in self.review() if r["a"] == "Mistborn"][0], decided)
 
+    def test_a_stopped_run_keeps_the_open_library_rows_it_didnt_reach(self):
+        """Schema review: a run that stops early never empties the sidecar.
+        It stops at Warbreaker; Mistborn was reached, Nothing Like It wasn't."""
+        ol = {"title": "Nothing Like It", "author": "Brandon Sanderson", "open_library_id": "OL9W",
+              "hardcover_id": "", "page_count": "100", "cover_url": "", "published_year": "1999",
+              "source": "openlibrary"}
+        self.write_details([{**ol, "title": "Mistborn", "open_library_id": "OL2W"}, ol])
+        self.hc.fail_at = 3
+        self.run_once()
+        details = self.details()
+        self.assertEqual(details["Mistborn"]["source"], "hardcover")
+        self.assertEqual(details["Nothing Like It"], ol)
+        # The run that reaches it leaves none.
+        self.hc.fail_at = None
+        self.run_once()
+        self.assertNotIn("openlibrary", {r["source"] for r in self.details().values()})
+
     def test_a_failed_lookup_never_erases_a_hardcover_row(self):
         kept = row("Nothing Like It", 77, 100, "", 1999)
         self.write_details([kept])
@@ -586,6 +603,22 @@ class Ambiguous(Fake):
         self.run_once(stdout=out)
         self.assertNotIn("White Sand", self.details())
         self.assertIn("2 rows picked", out.getvalue())
+
+    def test_a_rekey_never_doubles_a_picked_row(self):
+        """Two spellings' picks of one Hardcover book, brought together by a
+        merge, are one row."""
+        pick = {"title": "White Sand", "author": "Brandon Sanderson", "hardcover_id": "41",
+                "hardcover_title": "White Sand", "hardcover_authors": "Brandon Sanderson", "year": "2016",
+                "readers": "900", "url": "", "decision": "pick"}
+        self.write("hardcover_review.csv", eb.REVIEW_COLUMNS, [{**pick, "title": "White Sand Novella"}, pick])
+        self.write_review([{"kind": "book", "a": "White Sand Novella", "b": "White Sand",
+                            "a_author": "Brandon Sanderson", "b_author": "Brandon Sanderson",
+                            "reason": "same title", "similarity": "0.7", "keep": "White Sand",
+                            "decision": "merge"}])
+        self.run_once()
+        self.assertEqual([(r["title"], r["hardcover_id"], r["decision"]) for r in self.picks()],
+                         [("White Sand", "41", "pick")])
+        self.assertEqual(self.details()["White Sand"]["hardcover_id"], "41")
 
     def test_one_isbn_under_two_books_is_ambiguous_too(self):
         two = [edition(1, hc_book(51, "Oathbringer", ["Brandon Sanderson"], 1248), isbn13="9780765326379"),

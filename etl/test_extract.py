@@ -989,6 +989,35 @@ class BookDetails(BookCase):
         self.assertEqual([(r["a"], r["reason"], r["decision"]) for r in self.review_rows()],
                          [("Edgedancer Novella", "hardcover", "")])
 
+    def test_sidecars_written_before_hardcover_still_load(self):
+        """book_details.csv with no hardcover_id column, and calibre_books.csv
+        with 1.18's `open_library` column, load until their next runs."""
+        with self.details.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh)
+            w.writerow(["title", "author", "open_library_id", "page_count", "cover_url", "published_year",
+                        "source"])
+            w.writerow(["The Way of Kings", "Brandon Sanderson", "OL15358691W", "1008", "", "2010",
+                        "openlibrary"])
+        calibre = self.details.parent / "calibre_books.csv"
+        old = [c for c in ex.CALIBRE_BOOKS_COLUMNS]
+        old[old.index("hardcover")] = "open_library"
+        with calibre.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=old, restval="")
+            w.writeheader()
+            w.writerow({"title": "The Way of Kings", "author": "Brandon Sanderson", "series": "Stormlight",
+                        "series_index": "1", "open_library": "The Stormlight Archive #1", "calibre_id": "7"})
+        import io
+        from contextlib import redirect_stdout
+        ex.UNRESOLVED.clear()
+        ex.CHANGES.clear()
+        with redirect_stdout(io.StringIO()):
+            ex.extract_books(build_books([("The Way of Kings", "Brandon Sanderson", None, None, None)]),
+                             self.out, book_review=self.review, book_details=self.details, calibre_books=calibre)
+        wok = self.books()["the-way-of-kings-brandon-sanderson"]
+        self.assertEqual((wok["hardcover_id"], wok["open_library_id"], wok["calibre_id"]),
+                         ("", "OL15358691W", "7"))
+        self.assertNotIn("hardcover series differs", {c["reason"] for c in ex.CHANGES})
+
     def test_an_accepted_hardcover_row_renames_the_book_and_details_follow(self):
         self.write_review([{**self.PROPOSAL, "b_tabs": "Hardcover", "reason": "hardcover", "decision": "merge"}])
         self.write_details([{**self.HARDCOVER, "title": "Edgedancer", "hardcover_id": "31582"}])

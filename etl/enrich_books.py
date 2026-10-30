@@ -39,7 +39,9 @@ Rules it keeps:
 - Never overwrites a hand value. A row whose source is anything but
   `hardcover` (or 1.14's `openlibrary`, which every run drops) is never looked
   up or changed, and a failed lookup never erases a Hardcover row.
-- Undecided `open library` rows in book_review.csv go; decided ones stay.
+- Undecided `open library` rows in book_review.csv go; decided ones stay. A
+  run that stops early, or takes --limit, keeps the Open Library rows of the
+  books it didn't reach, so a failed run never empties book_details.csv.
 - No word count from pages (2.1 estimates one), no ISBNs (books has no column).
 - Hardcover's limits (D-94): 60 requests a minute, bursts of 10, 5,000 a day.
   One request a second, waiting for the reset whenever its `RateLimit` header
@@ -92,6 +94,7 @@ REVIEW_COLUMNS = ["title", "author", "hardcover_id", "hardcover_title", "hardcov
 PICK = "pick"
 STATUSES = ("matched", "proposed", "ambiguous", "unmatched", "no_author", "hand")
 HOW = ("isbn", "title", "picked")
+LOOKED_UP = ("matched", "proposed", "ambiguous", "unmatched")
 
 BOOK_FIELDS = """id title subtitle slug pages release_year compilation users_count
       image { url }
@@ -481,13 +484,13 @@ def run(args) -> int:
     review = ex.load_book_review(args.book_review)
     out = Path(args.out)
     rows = read_rows(out, DETAIL_COLUMNS)
-    dropped = sum(1 for r in rows if r["source"] == OLD_SOURCE)
+    old_rows, _ = rekey([r for r in rows if r["source"] == OLD_SOURCE], review)
     existing, moved = rekey([r for r in rows if r["source"] != OLD_SOURCE], review)
     if moved:
         print(f"rekeyed {moved} rows in {out.name} to accepted spellings"
               + (" (dry run: not written)" if args.dry_run else ""))
-    if dropped:
-        print(f"{dropped} Open Library rows in {out.name} are replaced by this run (D-94)"
+    if old_rows:
+        print(f"{len(old_rows)} Open Library rows in {out.name} go as this run reaches their books (D-94)"
               + (" (dry run: not written)" if args.dry_run else ""))
     picked_rows, _ = moved_through(read_rows(Path(args.hardcover_review), REVIEW_COLUMNS), review)
     picks: dict[tuple, set[int]] = {}
@@ -558,10 +561,18 @@ def run(args) -> int:
     for k, row in fresh.items():
         if not is_hand(existing.get(k)):
             existing[k] = row
+    # A run that didn't reach every book keeps those books' Open Library rows
+    # until one does; a complete run leaves none.
+    if stopped or args.limit:
+        reached = {k for k, s in status.items() if s in LOOKED_UP}
+        kept_old = {k: r for k, r in old_rows.items() if k not in reached and k not in existing}
+        existing.update(kept_old)
+        if kept_old:
+            print(f"  {len(kept_old)} Open Library rows kept for the books this run didn't reach")
     rows = sorted(existing.values(), key=lambda r: (ex.key(r["author"]), ex.key(r["title"])))
     write_csv(out, DETAIL_COLUMNS, rows)
     write_hardcover_review(Path(args.hardcover_review), picked_rows, candidates,
-                           {k for k, s in status.items() if s in ("matched", "proposed", "ambiguous", "unmatched")})
+                           {k for k, s in status.items() if s in LOOKED_UP})
 
     # Undecided Open Library proposals go with Open Library (D-94); decided
     # ones are the owner's and stay.
@@ -596,10 +607,18 @@ def api_top(api: Hardcover, title: str, author: str) -> list[dict]:
 def write_hardcover_review(path: Path, rows: list[dict], candidates: dict[tuple, list[dict]],
                            looked_up: set[tuple]) -> None:
     """Decided rows stay; a book looked up this run has its undecided rows
-    rebuilt from this run's candidates; the rest stay as they were."""
-    kept = [r for r in rows if r["decision"] or book_key(r) not in looked_up]
-    have = {(book_key(r), r["hardcover_id"]) for r in kept}
-    kept += [c for cs in candidates.values() for c in cs if (book_key(c), c["hardcover_id"]) not in have]
+    rebuilt from this run's candidates; the rest stay as they were. One row
+    per book and Hardcover id (a rekey can bring two together), a decided
+    one first."""
+    best: dict[tuple, dict] = {}
+    for r in rows:
+        if r["decision"] or book_key(r) not in looked_up:
+            k = (book_key(r), r["hardcover_id"])
+            if k not in best or (r["decision"] and not best[k]["decision"]):
+                best[k] = r
+    for c in (c for cs in candidates.values() for c in cs):
+        best.setdefault((book_key(c), c["hardcover_id"]), c)
+    kept = list(best.values())
     if not kept and not path.exists():
         return
     kept.sort(key=lambda r: (ex.key(r["author"]), ex.key(r["title"]), -(as_id(r["readers"]) or 0),
@@ -615,7 +634,7 @@ def report(status: dict, how: dict, proposals: list[dict], missed: list, notes: 
     for s in STATUSES:
         print(f"  {s:<10} {counts.get(s, 0):>6}")
     print("  matched by " + ", ".join(f"{w} {ways.get(w, 0)}" for w in HOW))
-    looked_up = sum(counts.get(s, 0) for s in ("matched", "proposed", "ambiguous", "unmatched"))
+    looked_up = sum(counts.get(s, 0) for s in LOOKED_UP)
     if looked_up:
         print(f"  match rate {counts.get('matched', 0) / looked_up:.0%} of {looked_up} looked up")
     if proposals:

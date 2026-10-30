@@ -102,8 +102,8 @@ npx tsc --noEmit            # typecheck
 npm run db:generate         # after editing src/db/schema.ts
 npm run extract             # etl/extract.py with every sidecar CSV; clears seed/ first;
                             # reports prereq cycles, `-- --fail-on-cycle` exits non-zero on one
-npm run enrich:books        # Open Library details for the books into etl/data/book_details.csv;
-                            # `-- --dry-run` first (100 books, writes nothing), then extract
+npm run enrich:books        # Hardcover details for the books (by Calibre ISBN) into etl/data/book_details.csv;
+                            # needs HARDCOVER_API_TOKEN; `-- --dry-run` first (100 books, writes nothing), then extract
 npm run calibre             # the Calibre library (CALIBRE_LIBRARY) into etl/data/calibre_books.csv, read-only;
                             # `-- --dry-run` first (match rate, writes nothing); then extract, enrich:books, extract
 npm run rebuild             # drop, migrate, extract, load (.env); asks first, refuses when LEDGER_LIVE=true

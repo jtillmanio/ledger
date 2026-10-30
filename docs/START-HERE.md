@@ -1308,7 +1308,7 @@ The sittings are `docs/06-tasklist.md`'s milestones under the same numbers (sitt
 | 5 | 1.4 books bulk entry, 1.4c add a book, 1.4b quick capture, 1.4d wishlist promotion screen, 1.5 dated log + `read_events`, 1.16 dates in `America/New_York` | Books work end to end |
 | 6 | 1.7 period column, 1.8a design tokens and control states, **0.11 browser test harness**, 1.8c dashboard routes, 1.8 app shell, 1.8e tablet frames, 1.8d failed writes and skeletons, 1.8b thumb bar and contrast | The real navigation |
 | 7 | 1.10 Up next queue, then 1.9 status screens, **2.11a prerequisite cycle check**, 1.12 volume map into `volume_rules`, and 1.11 failed sign-ins wait (D-36) | Phase 1 complete; extract lists the cycles for your audit |
-| 8 | 1.13 book extract and merge review, 1.14 Open Library details, 1.15 series, author and universe follows, 1.18 Calibre word counts, series, tags and reads | Books load clean, with covers, page counts and real word counts; answer `book_review.csv` between 1.13 and 1.14, and again after 1.18 for Calibre's near spellings. Can be built any time before Step 14 |
+| 8 | 1.13 book extract and merge review, 1.14 Open Library details (replaced by 1.14b's Hardcover details, D-94), 1.15 series, author and universe follows, 1.18 Calibre word counts, series, tags and reads | Books load clean, with covers, page counts and real word counts; answer `book_review.csv` between 1.13 and 1.14, again after 1.18 for Calibre's near spellings, and after 1.14b for Hardcover's (with `hardcover_review.csv`'s picks). Can be built any time before Step 14 |
 | 9 | 1.4e paste a list as two fields, 1.17 start dates | A small fix to a screen in daily use, and start dates captured from cutover on |
 
 **Task 1.5 carries a deadline.** It adds `read_events`, the re-read log, and
@@ -1325,12 +1325,13 @@ runs axe and reads computed styles in a browser. **1.12 and sitting 8 are the
 last load changes before cutover.** 1.12 puts the volume map into the database,
 and 1.13–1.15 change what the books load holds, because after Step 14's final
 load nothing loads either again. Sitting 8 needs you between its tasks: answer
-`etl/data/book_review.csv` after 1.13, and again after 1.14's enrich run adds
-Open Library's spellings to it. 1.18 reads your Calibre library (give it the
+`etl/data/book_review.csv` after 1.13, and again after 1.14b's enrich run adds
+Hardcover's spellings to it (it also lists, in `etl/data/hardcover_review.csv`,
+each book two Hardcover books match: write `pick` on the right one). 1.18 reads your Calibre library (give it the
 folder) as the source of truth for word counts, series and reads (D-87): it
 asks you only to settle its near spellings in `book_review.csv`, and lists in
-`seed/calibre_changes.csv` where Calibre overrode the workbook or disagrees with Open
-Library (nothing to do; fix it in Calibre if Calibre is wrong), and in
+`seed/calibre_changes.csv` where Calibre overrode the workbook or disagrees with
+Hardcover (nothing to do; fix it in Calibre if Calibre is wrong), and in
 `seed/unresolved.csv` only what needs you (D-93). **1.17 also lands before cutover**, for 1.5's
 reason: a start date not captured from the first day is lost.
 

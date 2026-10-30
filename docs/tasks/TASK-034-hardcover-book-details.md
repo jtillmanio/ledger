@@ -104,6 +104,8 @@ _Approved by the owner 2026-10-30 at 5a9d306, with Q3 changed to the owner's pic
 - AC-6: manual `git check-ignore` and a grep, recorded in the PR.
 - Q3: `Ambiguous.test_two_matches_write_candidates_and_no_details`, `test_a_pick_matches_on_the_next_run`.
 
+**Revision 1 (owner, 2026-10-30, after review round 1):** a run that stops early or takes `--limit` keeps the `openlibrary` rows of the books it didn't reach (a complete run leaves none); `hardcover_review.csv` keeps one row per book and Hardcover id, a decided one first; `etl/test_extract.py` loads sidecars written before Hardcover (no `hardcover_id`, the old `open_library` column). Plus three doc lines: `.claude/kit.json`'s `largeFiles` hints for both caches, CLAUDE.md's `enrich:books` command line, `docs/START-HERE.md`'s sitting 8. Files added: `.claude/kit.json`, `CLAUDE.md`, `docs/START-HERE.md`.
+
 **Risks:** fixtures follow Hardcover's docs (`hardcoverapp/hardcover-docs`); the search document's `featured_series` shape is the docs' reading, so the dry run is the real check of the queries.
 
 ## Review log
