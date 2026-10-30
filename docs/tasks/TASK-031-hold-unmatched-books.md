@@ -1,7 +1,7 @@
 ---
 id: TASK-031
 title: 1.20 Hold books with no Hardcover match for review
-status: In progress
+status: Review
 depends_on: [TASK-034]
 size: M
 model: opus
@@ -36,11 +36,11 @@ A book Open Library has never heard of doesn't reach the Ledger until the owner 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm run test:etl`: a fixture book with no `book_details.csv` row is not in `books.csv` and is listed in the review file with an empty decision, and none of its status, plan or release rows load; `decision = keep` loads it on the next extract with its status; a book with a `book_details.csv` row loads unchanged; extract prints how many books are held.
-- [ ] AC-2: After an extract that holds a book, no file in `seed/` names the held book's id: `books`, `book_status`, `reading_plan` (with `--with-plan`), `releases`, `external_lists`, `wishlist`, and any other CSV with a `book_id` column. The plan settles whether an `external_lists` or `wishlist` row keeps its line with a null `book_id` or waits too.
-- [ ] AC-3: The review file keeps every decided row across runs, as `book_review.csv` does. An undecided row is rebuilt each run, so a book that has since gained a `book_details.csv` row drops off the list and loads. Each row names the title, author, the tabs it was seen on and the Open Library search it tried.
-- [ ] AC-4: Each plan-gate answer has a test with its own fixture: a book whose only details row is `hand`; a book Calibre matched (TASK-030); a Calibre-created Unlisted book; and a held to-read book, which appears in no `to_read_level` row after the load.
-- [ ] AC-5: Re-running extract against both workbooks on `main` and on the branch, the CSV diff shows only held books and their dependent rows leaving `seed/`, and their count equals the number extract prints (standing rule 4, summary in the PR). The review file is a committed sidecar in `etl/data/`, passed by `npm run extract`, and `.claude/rules/schema.md` states the hold rule.
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm run test:etl`: a fixture book with no `book_details.csv` row is not in `books.csv` and is listed in the review file with an empty decision, and none of its status, plan or release rows load; `decision = keep` loads it on the next extract with its status; a book with a `book_details.csv` row loads unchanged; extract prints how many books are held.
+- [x] AC-2: After an extract that holds a book, no file in `seed/` names the held book's id: `books`, `book_status`, `reading_plan` (with `--with-plan`), `releases`, `external_lists`, `wishlist`, and any other CSV with a `book_id` column. The plan settles whether an `external_lists` or `wishlist` row keeps its line with a null `book_id` or waits too.
+- [x] AC-3: The review file keeps every decided row across runs, as `book_review.csv` does. An undecided row is rebuilt each run, so a book that has since gained a `book_details.csv` row drops off the list and loads. Each row names the title, author, the tabs it was seen on and the Open Library search it tried.
+- [x] AC-4: Each plan-gate answer has a test with its own fixture: a book whose only details row is `hand`; a book Calibre matched (TASK-030); a Calibre-created Unlisted book; and a held to-read book, which appears in no `to_read_level` row after the load.
+- [x] AC-5: Re-running extract against both workbooks on `main` and on the branch, the CSV diff shows only held books and their dependent rows leaving `seed/`, and their count equals the number extract prints (standing rule 4, summary in the PR). The review file is a committed sidecar in `etl/data/`, passed by `npm run extract`, and `.claude/rules/schema.md` states the hold rule.
 
 ## Out of scope
 
@@ -67,6 +67,12 @@ A book Open Library has never heard of doesn't reach the Ledger until the owner 
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- The owner decides the 181 books held in `etl/data/book_hold.csv`, after 1.14b's real run (approved at plan) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- The 1.14b real-run item names `book_hold.csv`, and the 181-row `calibre_missing.csv` item says its books moved there (approved at plan) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- What counts as a match for the hold (Hardcover, `hand` or a Calibre id; Calibre-created exempt; `openlibrary` no), and why (approved at plan) → docs/review/decisions.md § D-100
+- Schema review R1 (minor): an extract given `--book-hold` without `--calibre-books` holds every book with no Hardcover or hand row → not tracked: `npm run extract` and `rebuild.sh` always pass the Calibre file; only a hand-run extract would, and no decided row is lost
+- Spec review R2 (note): with two decided copies of one row, the first wins, so a `keep` after a `yes` stays unapplied → not tracked: it is reported as `duplicate row` in unresolved.csv, so the owner sees it
 
 ## Plan
 
@@ -117,13 +123,16 @@ Plan-gate answers (owner, 2026-10-30): a match is a `hardcover` or `hand` row in
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 round PASS → full PASS (round chain, then `test:e2e:build`: 574 passed, 1 skipped) | Audit R1 PASS | Spec R1 APPROVE | Schema R1 APPROVE (3 MINOR: 2 fixed, 1 left, see Follow-ups) | Verify R2 round PASS | Spec R2 APPROVE | Schema R2 APPROVE
+- AC-5 (manual, both workbooks, main vs branch): extract prints `181 books held for review`; seed diff `books` −181, `book_status` −100 (all `to_read`), `releases` −23, `authors` −15 and `book_series` −21 (each used only by held books), `unresolved` −7 (held books' universe-tab rows), `held_books.csv` +181 (not loaded); nothing added to a loaded CSV. `keep` on *Red God* and re-extract: 180 held, its book and `to_read` status back.
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R1 round and full PASS; R2 round PASS after the review fixes)
+- Review rounds: 2 (spec and schema both APPROVE in R1; R2 confirmed two schema MINOR fixes)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0

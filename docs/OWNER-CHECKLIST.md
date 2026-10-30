@@ -173,12 +173,28 @@ tick them.
       again. A compilation never matches (D-99): a collection like *Brief
       Cases* gets a `hand` row in `book_details.csv` if you want its details.
       Commit the sidecars the run writes. The same order, with what to review
-      after each step: `docs/COMMANDS.md` § Refreshing the data.
+      after each step: `docs/COMMANDS.md` § Refreshing the data. *Since 1.20
+      (task/1.20-hold-unmatched-books): every extract holds the books Hardcover
+      doesn't know and Calibre doesn't have, and `enrich:books` still looks
+      them up, so decide `etl/data/book_hold.csv` after the last extract,
+      below.*
+- [ ] After 1.20 merges and 1.14b's real run above, decide the books held in
+      `etl/data/book_hold.csv` (from TASK-031, task/1.20-hold-unmatched-books).
+      Each is a workbook book Hardcover doesn't know and Calibre doesn't have:
+      until you write `keep` it is no book, with no status, plan or release
+      row. 181 were held on 2026-10-30, before the full run (100 of them on
+      your to-read lists); the run will match some. `lookup` shows the search
+      tried. For a typo, fix the title or author in `Books.xlsx` (or `merge`
+      its `book_review.csv` row), then `npm run enrich:books`; for a book you
+      want as it is, `keep`; then `npm run extract`.
 - [ ] After 1.18b merges, settle what Calibre's groupings showed (from TASK-032,
       PR #162):
       - Decide the 181 rows in `etl/data/calibre_missing.csv`: workbook books
         Calibre doesn't have. `keep` keeps one out of Calibre; adding it to
         Calibre clears its row at the next `npm run calibre` and `npm run extract`.
+        *Since 1.20 (task/1.20-hold-unmatched-books): all 181 moved to
+        `book_hold.csv`, the item above, because none has a Hardcover row yet.
+        A book stays in `calibre_missing.csv` only once Hardcover knows it.*
       - Read the new `unresolved.csv` rows after `npm run extract`:
         - Seven workbook universe memberships Calibre doesn't share. *White
           Sand* Vols. 1–3, *White Sand* and *Horneater* aren't in Calibre;
