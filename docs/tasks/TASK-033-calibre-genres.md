@@ -61,8 +61,9 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - Move the master list (`src/db/queries.ts` `listBooks`' genre filter and row line, `src/app/books/list/page.tsx`'s genre chips) and the `books_by_year` view (`yearSummary`) to `book_genres`, falling back to `books.genre` for a book with none, then drop `books.genre` with a down file; the later readers (2.2b's rail genre hue, 3.1's genre field, 3.5's book sheet, 6.2's genre mix) noted (approved at plan) → docs/05-roadmap.md § 4.5 (new)
 - `docs/03-data-model.md` § 4.1, the 1.18c row: approved by the owner 2026-10-30 (approved at plan) → docs/03-data-model.md § 4.1 By task
 - Candidate decision: `book_genres` is Calibre's genres only, each the full dotted path as Calibre writes it; `books.genre` stays the workbook's, and readers fall back to it until it is dropped (approved at plan) → docs/review/decisions.md § D-98
-- The real library has two stray one-letter genres, `l` (*Everything Is Tuberculosis*) and `i` (*Patterns of Evidence: The Exodus*), which load as genres (schema review R1, MINOR) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- The real library has four stray genres: `l` (*Everything Is Tuberculosis*) and `i` (*Patterns of Evidence: The Exodus*) (schema review R1, MINOR), and `Ecomonics` (37 books) and `Scie` (1) (found at revision 1), each loading as a top-level genre → docs/OWNER-CHECKLIST.md § Actions from follow-ups
 - A genre containing `;` would split in the sidecar; calibre.py warns rather than fails (schema review R1, MINOR) → not tracked: no genre in the library has one, and the warning names any that appears
+- Calibre's genres cascade: `Fantasy.Epic Fantasy` is in `Fantasy` (owner, after the PR opened) → not tracked: done in this PR (plan revision 1, the `book_genre_tree` view)
 - No index on `book_genres(genre)` (schema review R1, MINOR) → not tracked: nothing reads the table yet; 4.5's body says the index comes with the first query that filters by genre
 - `book_genres.book_id` is `ON DELETE no action` where other children of `books` cascade (spec review R1) → not tracked: nothing hard-deletes a book (soft delete only), as approved at the plan gate
 - A book held for a `calibre` review loads no genres, with no test of its own (spec review R1) → not tracked: the same `continue` that holds every other Calibre value, already tested for the book; no AC asks for it
@@ -93,6 +94,13 @@ _Approved 2026-10-30 at c0ef78d. Owner's answers at the gate: the schema, yes; t
 
 **Risks**: a genre containing `;` would split in the sidecar; reported if one exists.
 
+**Revision 1 (owner, 2026-10-30, after PR #164 opened): Calibre's genres cascade.** `Fantasy.Epic Fantasy` is a subgenre of `Fantasy`, and the library mostly tags the subgenre alone (4,554 subgenre tags without their parent, 140 with). Owner chose the recommendation: `book_genres` stays as Calibre writes it, and the cascade is derived in a view (hard rule 2), not a `genres(id, name, parent_id)` table.
+
+7. **`etl/views.sql`**: `book_genre_tree(book_id, genre, depth, direct)`, each live book at every level of each path, once; `direct` where the book carries the path itself. Tested in `etl/test_views.sql` (a three-level path gives three rows; `Fantasy` tagged beside two of its subgenres gives one direct `Fantasy` row; no genres, or a soft-deleted book, give none).
+8. **Docs**: D-98, `.claude/rules/schema.md`, `docs/03-data-model.md` (§ 3 views, § 4.1) and roadmap 4.5 (its body and proposed Check) read genres through the view; the Owner checklist item adds `Ecomonics` (37 books) and `Scie` (1).
+
+Files added by the revision: `etl/views.sql`, `etl/test_views.sql`.
+
 ## Review log
 
 _Filled by /implement-task. One line per round._
@@ -101,6 +109,7 @@ _Filled by /implement-task. One line per round._
 - Audit R1 PASS (every new test fails on c0ef78d for its own reason)
 - Spec R1 APPROVE; close-out follow-ups check APPROVE | Schema R1 APPROVE (3 MINOR, placed in Follow-ups) | UI: n/a (no UI files)
 - Real library: dry run 4,380 books in 126 genres; `calibre --offline` changed only the new `genres` column (4,392 rows), "no change in Calibre"; extract on `main` vs the branch: only `book_genres.csv` new (7,894 rows, 4,378 books); `npm run rebuild` on development, every count matching its seed (`book_genres` 7,894)
+- Revision 1 (the `book_genre_tree` view): `npm run test:views` PASS on a reset TEST database;
 
 ## Blocked
 
@@ -111,4 +120,4 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Verify rounds: 1 (round chain, then full chain, both PASS)
 - Review rounds: 1 spec, 1 schema, 1 test audit
 - First-pass AC FAILs: 0
-- Plan revisions after approval: 0 (the `genres` line in `etl/test_calibre.py`'s pre-1.18b sidecar test is inside the planned file)
+- Plan revisions after approval: 1 (the genre cascade as a view, owner, after the PR opened)

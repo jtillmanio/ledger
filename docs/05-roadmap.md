@@ -3212,18 +3212,22 @@ yet that read a book's genre should take `book_genres` from the start: 2.2b's
 genre hue on the plan rail, 3.1's genre field, 3.5's book sheet and 6.2's
 genre mix.
 
-- Each reader takes a book's `book_genres` rows, and `books.genre` only for a
-  book with none (D-98). How a dotted path is shown (its last segment or the
-  whole path), which level a chip, a year total or a hue groups by, and how
-  126 genres map onto the eight identity hues are asked at the plan gate.
+- Each reader takes a book's genres through the `book_genre_tree` view, which
+  1.18c added: Calibre's genres cascade, so a book tagged `Fantasy.Epic
+  Fantasy` alone is in `Fantasy` too. `books.genre` counts only for a book
+  with no Calibre genre (D-98). How a dotted path is shown (its last segment
+  or the whole path), which level a chip, a year total or a hue groups by, and
+  how 43 top-level genres map onto the eight identity hues are asked at the
+  plan gate.
 - Then drop `books.genre` (extract, the loaders, `etl/test_views.sql`'s
   catalog list) with `drizzle/down/<tag>.sql` and an up → down → up test. An
   index on `book_genres(genre)` comes with the first query that filters by it.
 
 **Check:** with one book given `book_genres` rows `Fantasy.Epic Fantasy` and
 `Young Adult.Fantasy.Romantasy` and another with none and `books.genre` `Sci-Fi`,
-the master list's genre filter finds the first under each of its genres and the
-second under `Sci-Fi`, and `books_by_year` counts each; after the drop
+the master list's genre filter finds the first under `Fantasy`, `Fantasy.Epic
+Fantasy` and `Young Adult` and the second under `Sci-Fi`, and `books_by_year`
+counts each; after the drop
 migration no query, view or loader names `books.genre`, and up → down → up keeps
 every `book_genres` row.
 

@@ -131,9 +131,13 @@ Release, test isolation) and the Hard rules a reviewer checks.
   value, the full dotted path as Calibre writes it (`Young
   Adult.Fantasy.Romantasy`), once whatever its case, sorted and joined `; `.
   Extract writes them to `book_genres(book_id, genre)`, one row per pair. A
-  book Calibre gives none has no rows. `books.genre` stays the workbook's
-  (one value, from its Read tab columns) until the screens that read it
-  move to `book_genres`.
+  book Calibre gives none has no rows. Calibre's genres cascade, and the
+  cascade is derived, never stored: `book_genre_tree` (`book_id, genre, depth,
+  direct`) lists each book at every level of each path, once, so a book tagged
+  `Fantasy.Epic Fantasy` alone is in `Fantasy` too (D-98). Read genres through
+  it, never by splitting a path in the app. `books.genre` stays the workbook's
+  (one value, from its Read tab columns) until the screens that read it move
+  (4.5).
 - **One issue row per comic.** `issues` is what exists — one row per label, id a
   slug of the label, never a run position. `run_issues(id, run_id, sequence,
   issue_id, type, notes)` is where it sits in a run; `type` and `notes` belong to

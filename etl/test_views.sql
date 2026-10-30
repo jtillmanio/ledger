@@ -808,6 +808,30 @@ BEGIN
   END IF;
 END $$;
 
+-- Calibre's genres cascade (task 1.18c, D-98): a book tagged with a path is in
+-- every level above it, once, and direct only where it was tagged. A book
+-- tagged both 'Fantasy' and two Fantasy subgenres has one 'Fantasy' row; a
+-- book with no genres, or a soft-deleted one, has none.
+INSERT INTO books (id, title) VALUES
+  ('zz-g-ya', 'Zz Genre YA'), ('zz-g-both', 'Zz Genre Both'),
+  ('zz-g-none', 'Zz Genre None'), ('zz-g-gone', 'Zz Genre Gone');
+INSERT INTO book_genres (book_id, genre) VALUES
+  ('zz-g-ya', 'Young Adult.Fantasy.Romantasy'),
+  ('zz-g-both', 'Fantasy'), ('zz-g-both', 'Fantasy.Epic Fantasy'), ('zz-g-both', 'Fantasy.Urban Fantasy'),
+  ('zz-g-gone', 'Horror');
+UPDATE books SET deleted_at = now() WHERE id = 'zz-g-gone';
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT string_agg(book_id || ':' || genre || ':' || depth || ':' || direct, ' ' ORDER BY book_id, depth, genre)
+    INTO got FROM book_genre_tree WHERE book_id LIKE 'zz-g-%';
+  IF got IS DISTINCT FROM 'zz-g-both:Fantasy:1:true zz-g-both:Fantasy.Epic Fantasy:2:true '
+                       || 'zz-g-both:Fantasy.Urban Fantasy:2:true zz-g-ya:Young Adult:1:false '
+                       || 'zz-g-ya:Young Adult.Fantasy:2:false zz-g-ya:Young Adult.Fantasy.Romantasy:3:true' THEN
+    RAISE EXCEPTION 'book_genre_tree wrong: %', got;
+  END IF;
+END $$;
+
 -- No catalog table carries a per-user fact (AC-4, hard rule 3). The four tables
 -- a follow points at have exactly these columns: a task that adds one updates
 -- this list, and a per-user one (a state, a done flag, a user_id) belongs in a
