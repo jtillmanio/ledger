@@ -1,7 +1,7 @@
 ---
 id: TASK-031
 title: 1.20 Hold books with no Hardcover match for review
-status: Review
+status: Done
 depends_on: [TASK-034]
 size: M
 model: opus
