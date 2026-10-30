@@ -676,6 +676,21 @@ class Matching(Fake):
         self.run_once()
         self.assertEqual(self.hc.calls, [])
 
+    def test_held_books_are_looked_up(self):
+        """Task 1.20: a book extract held (seed/held_books.csv, beside books.csv)
+        is still searched, so the run that finds it lets the next extract load it."""
+        self.write_books([b for b in BOOKS if b[0] != "Warbreaker"])
+        self.write("held_books.csv", ex.HELD_BOOKS_COLUMNS,
+                   [{"title": "Warbreaker", "author": "Brandon Sanderson", "series": ""},
+                    # Listed in both (a hand-edited seed): one book, counted once.
+                    {"title": "Mistborn", "author": "Brandon Sanderson", "series": ""}])
+        out = io.StringIO()
+        self.run_once(stdout=out)
+        self.assertEqual(self.details()["Warbreaker"],
+                         row("Warbreaker", 31580, 592, "https://assets.hardcover.app/warbreaker.jpg", 2009))
+        self.assertIn("Warbreaker Brandon Sanderson", self.searched())
+        self.assertIn(f"{len(BOOKS)} of {len(BOOKS)} books", out.getvalue())
+
     def test_isbns_lose_their_hyphens_and_anything_else_is_none(self):
         self.assertEqual(eb.normal_isbn("978-0-7653-2635-5"), "9780765326355")
         self.assertEqual(eb.normal_isbn("0-8044-2957-x"), "080442957X")

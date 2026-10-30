@@ -1,14 +1,14 @@
 ---
 id: TASK-031
 title: 1.20 Hold books with no Hardcover match for review
-status: Ready
+status: In progress
 depends_on: [TASK-034]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 7ab6236
 ---
 
 # TASK-031 — 1.20 Hold books with no Hardcover match for review
@@ -70,7 +70,48 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Plan-gate answers (owner, 2026-10-30): a match is a `hardcover` or `hand` row in `book_details.csv` or a Calibre id (1.14's `openlibrary` rows don't count, D-94); a Calibre-created book is never held (TASK-030); the review file is `etl/data/book_hold.csv`; enrich:books and calibre read the held list so a held book is still looked up and matched; AC-4's held to-read book is proven on the seed rows `to_read_level` reads (`books`, `book_status`, `reading_plan`), not by a database load.
+
+### Steps
+
+1. **The hold** (`etl/extract.py`, `hold_books`): after `fold_calibre` and `fold_book_details`, a workbook book with no `hardcover`/`hand` details row, no Calibre id and no `keep` row in `book_hold.csv` is held. Calibre-created books never are. Extract prints `N books held, awaiting review`.
+2. **What waits with it**: its `books`, `book_status`, `reading_plan`, `releases`, `read_events` and `book_genres` rows are not written. An author or series that only held books use waits too, unless a follow names it (an author also stays while a series that stays names them). `wishlist` and `external_lists` keep their lines: extract never sets their `book_id`, so nothing points at a book.
+3. **The review file** `etl/data/book_hold.csv` (`title, author, tabs, lookup, decision`; `--book-hold`): `decision` is `keep` or blank (anything else is reported and counts as blank); `lookup` is what enrich tries, `title search: "<title> <author>"` or `not looked up: no author`. Decided rows stay for good (a book gone from the workbook is reported `stale`); undecided rows are rebuilt each run, so a book that gains a details row drops off and loads. Rows are keyed by the book's identity after merges.
+4. **The held list** `seed/held_books.csv` (`title, author, series`; not loaded): `enrich_books.read_books` reads it beside `seed/books.csv`, so a held book is still searched; `calibre.Seed` reads it as workbook books, so a held book later added to Calibre under a near spelling is a `calibre` pair, not a duplicate Unlisted book.
+5. **No double listing**: `calibre_missing.csv` leaves held books out, as it leaves a book waiting on a `calibre` pair.
+6. **Wiring and docs**: `package.json` `extract` and `etl/rebuild.sh` pass `--book-hold etl/data/book_hold.csv`; `.claude/rules/schema.md` states the hold rule; `docs/COMMANDS.md` gets the argument in the command list and, in § Refreshing the data (PR #166's runbook; owner, 2026-10-30: update it in this task), Books steps 12–14 say what the hold writes and when a held book comes back (after enrich:books finds it, or on `keep`), "Review" names `book_hold.csv`, and the review table gets a `book_hold.csv` row. The rest of #166 needs no edit: START-HERE only links to the runbook, SERVICES names no extract file, and the Owner checklist items it touched (the 1.14b real run, the 181 `calibre_missing.csv` rows, which the hold shrinks) are updated at close-out as follow-up placements.
+
+### Files
+
+- `etl/extract.py`: the hold, `book_hold.csv`, `seed/held_books.csv`, dependent rows, calibre_missing exclusion.
+- `etl/test_extract.py`: AC-1 to AC-4 (`BookHold`).
+- `etl/enrich_books.py` + `etl/test_enrich_books.py` (**not in Files likely touched**): read `seed/held_books.csv`.
+- `etl/calibre.py` + `etl/test_calibre.py` (**not in Files likely touched**): `Seed` reads `seed/held_books.csv`.
+- `etl/data/book_hold.csv` (new sidecar, from the real extract).
+- `package.json`, `etl/rebuild.sh`, `test/load-scripts.test.ts`: `--book-hold`.
+- `.claude/rules/schema.md`, `docs/COMMANDS.md`: the rule and the argument.
+
+12 files, over the size check; `splitPolicy` is `never-split`, so the task stays whole and attended: steps 4 and 5 exist only because the hold would otherwise strand a held book outside enrich and calibre.
+
+### Test strategy
+
+- AC-1: `BookHold.test_a_book_with_no_details_row_is_held_and_listed_undecided` (not in `books.csv`, a blank-decision row, no status, plan or release row), `test_keep_loads_it_on_the_next_extract_with_its_status`, `test_a_book_with_a_hardcover_row_loads_unchanged`, `test_extract_prints_how_many_are_held`.
+- AC-2: `test_no_seed_csv_names_a_held_book` (every seed CSV with a `book_id` column, `--with-plan` on; `wishlist`/`external_lists` keep their lines), plus `test_an_author_and_series_only_held_books_use_wait_unless_followed`.
+- AC-3: `test_a_decision_survives_a_second_extract`, `test_an_undecided_book_that_gains_a_details_row_drops_off_and_loads`, `test_each_row_names_title_author_tabs_and_lookup`, `test_a_kept_book_gone_from_the_workbook_stays_and_is_reported_stale`.
+- AC-4: `test_a_hand_row_is_a_match`, `test_a_book_calibre_matched_is_not_held`, `test_a_calibre_created_book_is_not_held`, `test_a_held_to_read_book_has_no_status_or_plan_row` (no `to_read_level` row can exist); `test_calibre_missing_leaves_held_books_out`.
+- Step 4: `test_enrich_books.py` `test_held_books_are_looked_up`; `test_calibre.py` `test_a_held_book_is_matched_as_a_workbook_book`.
+- AC-5 / wiring: `test/load-scripts.test.ts` (`npm run extract` and `rebuild.sh` pass `--book-hold`); `rebuild-extract-args.test.ts` already pins rebuild.sh to package.json. Manual: extract on `main` and on the branch into temp folders, CSV diff, held count in the PR; one `keep` and re-extract.
+
+### Risks
+
+- Before the full `enrich:books` run, about 150–180 books are held (181 workbook books lack a Calibre id; 33 have only an `openlibrary` row). The real `book_hold.csv` is committed as extract writes it.
+- `report_universes` must skip held books, and the universe/series clean-ups must count only loaded books.
+
+### Follow-ups
+
+- The owner decides the held books in `book_hold.csv` → `docs/OWNER-CHECKLIST.md` (approved at plan).
+- The Owner checklist's 1.14b real-run item names `book_hold.csv` among what to review after the last extract, and its 181-row `calibre_missing.csv` item notes that held books moved to `book_hold.csv` → `docs/OWNER-CHECKLIST.md` § Actions from follow-ups (approved at plan).
+- Candidate decision: what counts as a match for the hold (Hardcover, `hand` or a Calibre id; Calibre-created exempt; `openlibrary` no) → `docs/review/decisions.md`, proposed at close-out (approved at plan).
 
 ## Review log
 

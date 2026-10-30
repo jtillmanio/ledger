@@ -58,7 +58,7 @@ else
     --issue-credits etl/data/issue_credits.csv --creator-aliases etl/data/creator_aliases.csv \
     --creator-aliases etl/data/creator_review.csv --book-review etl/data/book_review.csv \
     --book-details etl/data/book_details.csv --calibre-books etl/data/calibre_books.csv \
-    --calibre-missing etl/data/calibre_missing.csv
+    --calibre-missing etl/data/calibre_missing.csv --book-hold etl/data/book_hold.csv
 fi
 
 echo "== 4/5 load"

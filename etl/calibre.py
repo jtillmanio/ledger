@@ -18,7 +18,8 @@ edits Calibre and nothing else. So nothing here waits on a decision except a
 near spelling, and what disagrees is reported (extract's unresolved.csv), never
 silently dropped.
 
-Every Calibre book is matched to the books extract wrote (seed/books.csv), by
+Every Calibre book is matched to the books extract wrote (seed/books.csv, and
+the ones it held for review, seed/held_books.csv, task 1.20), by
 1.13's rule: title and author compared after extract's clean() and key(), with
 book_review.csv's merges applied. A book with several authors matches on any.
 - matched    a workbook book with its title and one of its authors
@@ -273,9 +274,19 @@ class Seed:
             if b["created"]:
                 self.created[k] = b
                 continue
-            self.books[k] = b
-            self.by_author.setdefault(ex.key(b["author"]), []).append(b)
-            self.by_title.setdefault(ex.key(b["title"]), []).append(b)
+            self.add(k, b)
+        # The books extract held for review (task 1.20) are workbook books
+        # too: one Calibre has under a near spelling is a pair, not a new book.
+        for r in read_csv(folder / "held_books.csv", ex.HELD_BOOKS_COLUMNS):
+            b = {"title": r["title"], "author": r["author"], "series": r["series"] or None, "created": False}
+            k = (ex.key(b["title"]), ex.key(b["author"]))
+            if k not in self.books:
+                self.add(k, b)
+
+    def add(self, k: tuple, b: dict) -> None:
+        self.books[k] = b
+        self.by_author.setdefault(ex.key(b["author"]), []).append(b)
+        self.by_title.setdefault(ex.key(b["title"]), []).append(b)
 
     def match(self, title: str, authors: list[str], idx: ex.BookIndex,
               separate: set, calibre_id: int | None = None) -> tuple[str, str, dict | None, dict | None]:
