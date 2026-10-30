@@ -1,7 +1,7 @@
 ---
 id: TASK-033
 title: 1.18c Calibre genres
-status: Review
+status: Done
 depends_on: [TASK-032]
 size: M
 model: opus
