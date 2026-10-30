@@ -1060,7 +1060,7 @@ the details sidecar's page count, whichever source wrote it.
 library, with the superseries, subseries and page counts filled and the
 `calibre_missing.csv` count in the PR.
 
-### ☐ 1.18c Calibre genres · M
+### ☑ 1.18c Calibre genres · M
 Owner, 2026-10-27; D-90. **After 1.18b.** Calibre's `#genre` is multi-valued
 and hierarchical (127 values; `Fantasy.Epic Fantasy`, `Young
 Adult.Fantasy.Romantasy`). `books.genre` holds one value, from the workbook's
@@ -3199,6 +3199,33 @@ before *Apply*; *Apply* with all three accepted writes one `stated` word count,
 one `books` row with an `unlisted` status and one `read_events` row; a second sync
 of the same file lists nothing; a book with a hand-entered word count is never
 offered a fill.
+
+### ☐ 4.5 Calibre's genres on every screen · M
+From 1.18c (TASK-033), 2026-10-30; D-98. **After 1.18c.** 1.18c loads every
+Calibre genre into `book_genres` (one row per book and full dotted path,
+`Young Adult.Fantasy.Romantasy`; 126 in the owner's library) and leaves
+`books.genre` the workbook's single value, which is what the screens still
+read: the master list's genre chips, its genre filter and the genre on each
+row (`src/db/queries.ts` `listBooks`, `src/app/books/list/page.tsx`), and the
+`books_by_year` view (`etl/views.sql`, read by `yearSummary`). Items not built
+yet that read a book's genre should take `book_genres` from the start: 2.2b's
+genre hue on the plan rail, 3.1's genre field, 3.5's book sheet and 6.2's
+genre mix.
+
+- Each reader takes a book's `book_genres` rows, and `books.genre` only for a
+  book with none (D-98). How a dotted path is shown (its last segment or the
+  whole path), which level a chip, a year total or a hue groups by, and how
+  126 genres map onto the eight identity hues are asked at the plan gate.
+- Then drop `books.genre` (extract, the loaders, `etl/test_views.sql`'s
+  catalog list) with `drizzle/down/<tag>.sql` and an up → down → up test. An
+  index on `book_genres(genre)` comes with the first query that filters by it.
+
+**Check:** with one book given `book_genres` rows `Fantasy.Epic Fantasy` and
+`Young Adult.Fantasy.Romantasy` and another with none and `books.genre` `Sci-Fi`,
+the master list's genre filter finds the first under each of its genres and the
+second under `Sci-Fi`, and `books_by_year` counts each; after the drop
+migration no query, view or loader names `books.genre`, and up → down → up keeps
+every `book_genres` row.
 
 ---
 
