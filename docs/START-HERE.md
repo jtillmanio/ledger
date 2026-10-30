@@ -1332,7 +1332,9 @@ folder) as the source of truth for word counts, series and reads (D-87): it
 asks you only to settle its near spellings in `book_review.csv`, and lists in
 `seed/calibre_changes.csv` where Calibre overrode the workbook or disagrees with
 Hardcover (nothing to do; fix it in Calibre if Calibre is wrong), and in
-`seed/unresolved.csv` only what needs you (D-93). **1.17 also lands before cutover**, for 1.5's
+`seed/unresolved.csv` only what needs you (D-93). The whole refresh, in order,
+with what to review after each run: `docs/COMMANDS.md` § Refreshing the data.
+**1.17 also lands before cutover**, for 1.5's
 reason: a start date not captured from the first day is lost.
 
 **Done when:** every Phase 0 and Phase 1 task is ticked in `05-roadmap.md`, you can
@@ -1450,6 +1452,11 @@ frozen and kept only to compare numbers during the month.
       fail.
 
 ### The switch
+
+Between the fresh export (1.) and the final extract (2.), refresh every
+sidecar and settle its reviews, ending at a loaded development database:
+`docs/COMMANDS.md` § Refreshing the data. The final extract reads those
+sidecars.
 
 ```powershell
 # 1. fresh export from Google Sheets, replacing Comics.xlsx and Books.xlsx
