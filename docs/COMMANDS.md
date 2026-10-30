@@ -38,6 +38,11 @@ npm run extract             # etl/extract.py with every sidecar CSV (see below);
                             # its page counts win, and each book takes its Calibre id (1.18b, D-90).
                             # --calibre-missing etl/data/calibre_missing.csv lists each workbook book
                             # Calibre doesn't have: `keep` it, or add it to Calibre (prints the undecided).
+                            # --book-hold etl/data/book_hold.csv holds each workbook book Hardcover doesn't
+                            # know (no hardcover or hand row in book_details.csv) and Calibre doesn't have:
+                            # no book, status, plan or release row until you `keep` it or enrich:books finds
+                            # it; prints `N books held for review` (1.20). seed/held_books.csv (not loaded)
+                            # lists them for enrich:books and calibre, which still look them up.
                             # Every prerequisite loop is a `prereqs,prereq cycle` row in unresolved.csv
                             # and a console count (2.11a); `-- --fail-on-cycle` exits non-zero on any,
                             # after writing every CSV (Step 14's final extract)
@@ -249,6 +254,13 @@ books only Calibre has exist only after the extract that follows it, and
 sees them. The last extract folds the details in. If step 6 ran after your
 last workbook change, it counts as the first extract.
 
+Every extract also holds back a workbook book that Hardcover doesn't know (no
+`hardcover` or `hand` row in `book_details.csv`) and Calibre doesn't have: it
+is no book until you look at it, and `etl/data/book_hold.csv` lists it (task
+1.20). Calibre and `enrich:books` read `seed/held_books.csv` beside
+`seed/books.csv`, so a held book is still matched and looked up, and the
+extract after the run that finds it loads it.
+
 **10. Extract** (skip if step 6 is current).
 
 ```powershell
@@ -272,22 +284,25 @@ npm run calibre
 
 **12. Extract.** Creates the Calibre-only books at Unlisted
 (`seed/calibre_created.csv`, not loaded), loads Calibre's reads, and writes
-`seed/calibre_changes.csv` and `etl/data/calibre_missing.csv`.
+`seed/calibre_changes.csv`, `etl/data/calibre_missing.csv` and
+`etl/data/book_hold.csv` (a held book is in `book_hold.csv`, never in
+`calibre_missing.csv`).
 
 ```powershell
 npm run extract
 ```
 
 Review `book_review.csv` (`calibre` rows), `calibre_missing.csv`,
-`seed/calibre_changes.csv` and `seed/unresolved.csv`.
+`seed/calibre_changes.csv` and `seed/unresolved.csv`. Leave `book_hold.csv`
+until step 14: the next step may find its books.
 
 **13. Hardcover details.** The dry run looks up 100 books and writes nothing.
 The real run writes `book_details.csv` (Hardcover id, page count, cover URL,
 release year), appends `hardcover` rows to `book_review.csv` and writes
 `hardcover_review.csv`. About one request a second: a few dozen ISBN requests,
 then one search per book with no ISBN (5,000 a day; stops at 3,000,
-`--max-requests`). Cached and resumable; a run that stops early keeps the rows
-of the books it didn't reach.
+`--max-requests`), the held books (`seed/held_books.csv`) included. Cached and
+resumable; a run that stops early keeps the rows of the books it didn't reach.
 
 ```powershell
 npm run enrich:books -- --dry-run
@@ -296,11 +311,17 @@ npm run enrich:books
 
 Review `book_review.csv` (`hardcover` rows) and `hardcover_review.csv`.
 
-**14. Extract**, folding the details into the books.
+**14. Extract**, folding the details into the books. A held book Hardcover
+found loads now and leaves `book_hold.csv`.
 
 ```powershell
 npm run extract
 ```
+
+Review `book_hold.csv`: write `keep` on each book you want loaded anyway (it
+prints `N books held for review`), and extract again. A held book you'd rather
+match: fix its title or author in the workbook, or `merge` its
+`book_review.csv` row, then `enrich:books` and extract.
 
 ### What to review, and what to re-run after
 
@@ -311,6 +332,7 @@ Blank is always undecided. Re-run the listed commands after you save.
 | `etl/data/book_review.csv` | extract, calibre, enrich:books | `merge` applies the pair (`keep` names the spelling or author that survives); `separate` keeps two. Reasons below | extract; after a `hardcover` merge, enrich:books (moves its details row) and extract. `npm run sidecars` checks the file |
 | `etl/data/hardcover_review.csv` | enrich:books | `pick` on the one right candidate for each book | enrich:books, extract |
 | `etl/data/calibre_missing.csv` | extract | `keep` keeps the book out of Calibre for good; or add it to Calibre | after adding: calibre, extract |
+| `etl/data/book_hold.csv` | extract | `keep` loads a book Hardcover doesn't know and Calibre doesn't have; blank holds it (no book, status, plan or release row). It leaves the file once Hardcover or Calibre has it | extract; after a workbook fix or a `merge`: enrich:books, extract |
 | `seed/calibre_changes.csv` | extract | Nothing: Calibre won. Where Calibre is wrong, fix it in Calibre | calibre, extract |
 | `seed/unresolved.csv` | extract | Only what needs you; START-HERE 8b lists each category | extract, after the fix |
 | `etl/data/label_review.csv` | enrich | `accept` renames to Metron's label; `reject` or blank keeps yours | enrich (moves the rows), extract |

@@ -129,7 +129,8 @@ Release, test isolation) and the Hard rules a reviewer checks.
   its `calibre rename` row round in place. A universe no book is in and nobody follows is
   dropped. `etl/data/calibre_missing.csv` (`title, author, tabs, decision`) is
   written by `npm run extract` when Calibre data is given: each workbook book with
-  no Calibre id, except one waiting on a `calibre` pair. `keep` keeps the book
+  no Calibre id, except one waiting on a `calibre` pair or held for review
+  (`book_hold.csv`, task 1.20). `keep` keeps the book
   out of Calibre and survives every run; a book Calibre has now, or the workbook
   no longer lists, leaves the file; the run prints how many are undecided.
 - **Calibre owns a book's genres** (task 1.18c, D-90, D-91). `#genre` is
@@ -144,6 +145,22 @@ Release, test isolation) and the Hard rules a reviewer checks.
   it, never by splitting a path in the app. `books.genre` stays the workbook's
   (one value, from its Read tab columns) until the screens that read it move
   (4.5).
+- **A book nothing knows waits for the owner's look** (task 1.20, D-94).
+  Extract holds a workbook book with no `hardcover` or `hand` row in
+  `book_details.csv` (1.14's `openlibrary` rows don't count) and no Calibre id:
+  no `books` row, and none of its status, plan, release, read or genre rows; an
+  author or series only held books use waits too, unless a follow names it (an
+  author also stays while a series that stays names them). A book Calibre
+  created is never held: having it in Calibre is the owner's say-so (TASK-030).
+  `etl/data/book_hold.csv` (`title, author, tabs, lookup, decision`;
+  `--book-hold`) lists each one, `lookup` naming the Hardcover search
+  `enrich:books` makes for it; `keep` loads the book on the next extract and
+  survives every run (a kept book gone from the workbook is reported stale), and
+  an undecided row is rebuilt each run, so a book that finds a match leaves the
+  file and loads. `seed/held_books.csv` (`title, author, series`; not loaded)
+  lists the held books for `enrich_books.py` and `calibre.py`, which read it
+  beside `seed/books.csv`: a held book is still looked up and matched. The
+  hold is extract's, before cutover; a book added in the app is never held.
 - **One issue row per comic.** `issues` is what exists — one row per label, id a
   slug of the label, never a run position. `run_issues(id, run_id, sequence,
   issue_id, type, notes)` is where it sits in a run; `type` and `notes` belong to

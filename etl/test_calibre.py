@@ -1369,5 +1369,23 @@ class Genres(Case):
         self.assertEqual(self.genres(), [("Mistborn", "Fantasy")])
 
 
+class HeldBooks(Case):
+    """Task 1.20: a workbook book extract held (seed/held_books.csv, not in
+    books.csv) is still a workbook book to match, so its near spelling in
+    Calibre is a `calibre` pair, not a second book created at Unlisted."""
+
+    def test_a_held_books_near_spelling_in_calibre_is_a_pair(self):
+        ex.UNRESOLVED.clear()
+        with redirect_stdout(io.StringIO()):
+            # No details at all: both workbook books are held.
+            ex.extract_books(self.workbook, self.seed, book_review=self.book_review,
+                             book_hold=self.data / "book_hold.csv")
+        self.assertEqual(self.seed_rows("books"), [])
+        build_library(self.lib, [book("Mistborn: The Final Empire", "Brandon Sanderson")])
+        self.assertEqual(self.calibre(), 0)
+        self.assertEqual([(r["a"], r["b"], r["reason"]) for r in self.rows(self.book_review)],
+                         [("Mistborn", "Mistborn: The Final Empire", "calibre")])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1252,7 +1252,7 @@ nav item is enabled in all three navs and links to `/comics/A/add`; after a
 later add to run B it links to `/comics/B/add`; for a user who has added
 nothing it links to `/comics/runs`. A soft-deleted run is never the target.
 
-### ☐ 1.20 Hold books with no Open Library match for review · M
+### ☑ 1.20 Hold books with no Open Library match for review · M
 *From fix/skip-placeholder-books (owner, 2026-10-26):* the owner doesn't want
 a book loaded that Open Library has never heard of until they have looked at
 it. On 2026-10-26, 804 of the 1,352 books extract loads had no

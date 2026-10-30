@@ -181,6 +181,14 @@ describe("the Calibre sidecar reaches extract", () => {
   });
 });
 
+// Task 1.20: every extract holds the books Hardcover doesn't know for review.
+describe("the hold review file reaches extract", () => {
+  const extract = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts.extract as string;
+  it.each([["npm run extract", extract], ["rebuild.sh", read("rebuild.sh")]])("%s passes it", (_, text) => {
+    expect(text).toMatch(/--book-hold etl\/data\/book_hold\.csv/);
+  });
+});
+
 describe.each(["rebuild.ps1", "rebuild.sh"])("%s", (name) => {
   it("counts read_events against the seed", () => {
     expect(read(name)).toMatch(/\bread_events\b/);

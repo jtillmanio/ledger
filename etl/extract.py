@@ -1056,6 +1056,16 @@ BOOK_GENRES_COLUMNS = ["book_id", "genre"]
 # Calibre id, to keep (`keep`) or to add to Calibre, which drops its row.
 CALIBRE_MISSING_COLUMNS = ["title", "author", "tabs", "decision"]
 CALIBRE_MISSING_DECISIONS = ("keep", "")
+# etl/data/book_hold.csv (task 1.20, D-94): each workbook book Hardcover doesn't
+# know and Calibre doesn't have, held out of seed/ until the owner writes `keep`.
+# A book_details.csv row from one of MATCH_SOURCES is a match; 1.14's
+# `openlibrary` rows are not.
+BOOK_HOLD_COLUMNS = ["title", "author", "tabs", "lookup", "decision"]
+BOOK_HOLD_DECISIONS = ("keep", "")
+MATCH_SOURCES = ("hardcover", "hand")
+# Not loaded: the held books, which enrich_books.py looks up and calibre.py
+# matches beside seed/books.csv, so the run that finds one lets it load.
+HELD_BOOKS_COLUMNS = ["title", "author", "series"]
 BOOK_COLUMNS = ["id", "title", "author_id", "series_id", "series_position", "genre", "book_type",
                 "word_count", "word_count_source", "published_year", "page_count", "cover_url",
                 "open_library_id", "hardcover_id", "universe_id", "universe_position", "subseries_id",
@@ -1729,14 +1739,14 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
     return events, created, replaced
 
 
-def report_universes(idx: BookIndex, followed: dict) -> None:
+def report_universes(idx: BookIndex, followed: dict, held: set[str] = frozenset()) -> None:
     """Where the workbook's universe tabs and groups (D-43) and Calibre's
     superseries (D-90) disagree, in unresolved.csv: each workbook membership
     Calibre doesn't share, once per book, and each followed universe Calibre
-    gives no book."""
+    gives no book. A held book (task 1.20) loads nothing, so is not reported."""
     claims: dict[tuple, tuple[dict, str, list[str]]] = {}
     for book, uid, where in idx.memberships:
-        if book is None:
+        if book is None or book["id"] in held:
             continue
         _, _, wheres = claims.setdefault((book["id"], uid), (book, uid, []))
         if where not in wheres:
@@ -1753,7 +1763,7 @@ def report_universes(idx: BookIndex, followed: dict) -> None:
         flag("books", "workbook universe calibre doesn't share",
              f"{book['title']}: the {' and '.join(wheres)} tab{'s' if len(wheres) > 1 else ''} "
              f"put{'' if len(wheres) > 1 else 's'} it in {idx.universes[uid]['name']}; {has}")
-    in_use = {b["universe_id"] for b in idx.by_key.values()}
+    in_use = {b["universe_id"] for b in idx.by_key.values() if b["id"] not in held}
     for uid in followed:
         if uid not in in_use:
             flag("book_universes", "followed universe has no books",
@@ -1761,14 +1771,10 @@ def report_universes(idx: BookIndex, followed: dict) -> None:
                  "set #superseries in Calibre, or stop following it in the workbook")
 
 
-def write_calibre_missing(path: Path, idx: BookIndex, review: list[dict]) -> None:
-    """etl/data/calibre_missing.csv (task 1.18b, D-90): every workbook book with
-    no Calibre id, with the tabs that list it. A row keeps its place and its
-    `decision`; `keep` means the owner keeps the book without Calibre. A book
-    Calibre has now, or the workbook no longer lists, leaves the file. A book
-    whose Calibre near spelling awaits book_review.csv is left to that row."""
-    held = {(key(r["a"]), key(r["a_author"])) for r in review if r["reason"] == CALIBRE and not r["decision"]}
-    names = {aid: a["name"] for aid, a in idx.authors.items()}
+def workbook_books(idx: BookIndex) -> dict[str, tuple[dict, list[str]]]:
+    """Every book the workbook lists, by id, with the tabs that list it, after
+    merges and the authorless sightings' folds. Calibre-created books are never
+    sighted, so they are not here."""
     listed: dict[str, tuple[dict, list[str]]] = {}
     for s in idx.seen_books.values():
         b = idx.find_book(s["title"], s["author"])
@@ -1776,11 +1782,79 @@ def write_calibre_missing(path: Path, idx: BookIndex, review: list[dict]) -> Non
             continue
         _, tabs = listed.setdefault(b["id"], (b, []))
         tabs += [t for t in s["tabs"] if t not in tabs]
-    missing: dict[tuple, dict] = {}
-    for b, tabs in listed.values():
+    return listed
+
+
+def hold_books(path: Path, idx: BookIndex, details: list[dict]) -> set[str]:
+    """Task 1.20 (D-94): the ids of the workbook books held out of seed/ (no
+    `hardcover` or `hand` row in book_details.csv, no Calibre id, and no `keep`
+    in book_hold.csv), and etl/data/book_hold.csv rewritten. A decided row
+    stays for good, keeping its place (one whose book has left the workbook is
+    reported stale); an undecided row is rebuilt each run, so a book that has
+    since found a match leaves the file. `lookup` is the Hardcover search
+    enrich_books.py makes for the book: a held book has no Calibre ISBN."""
+    names = {aid: a["name"] for aid, a in idx.authors.items()}
+    matched = {(key(clean(r["title"])), key(clean(r["author"]))) for r in details
+               if r["source"] in MATCH_SOURCES}
+    listed: set[tuple] = set()
+    unmatched: dict[tuple, tuple[dict, dict]] = {}
+    for b, tabs in workbook_books(idx).values():
         author = names.get(b["author_id"], "")
         k = (key(b["title"]), key(author))
-        if b["calibre_id"] is None and k not in held:
+        listed.add(k)
+        if b["calibre_id"] is not None or k in matched:
+            continue
+        lookup = f'title search: "{b["title"]} {author}"' if author else "not looked up: no author"
+        unmatched[k] = (b, {"title": b["title"], "author": author, "tabs": "; ".join(tabs),
+                            "lookup": lookup, "decision": ""})
+    # One row a book, in its place: a decided copy beats a blank one.
+    existing: dict[tuple, dict] = {}
+    for r in read_sidecar(path, BOOK_HOLD_COLUMNS):
+        k = (key(r["title"]), key(r["author"]))
+        if k in existing:
+            flag("book_hold", "duplicate row",
+                 f"{r['title']} / {r['author'] or '(no author)'}: listed twice; one row kept, a decided one first")
+            if existing[k]["decision"] or not r["decision"]:
+                continue
+        existing[k] = r
+    rows = []
+    for k, r in existing.items():
+        if not (r["decision"] or k in unmatched):
+            continue
+        if r["decision"] and k not in listed:
+            flag("book_hold", "stale review",
+                 f"{r['title']} / {r['author'] or '(no author)'} ({r['decision']}) — no longer in the "
+                 "workbook; delete the row once it's done with")
+        if k in unmatched and r["decision"].lower() not in BOOK_HOLD_DECISIONS:
+            flag("book_hold", "unknown decision",
+                 f"{r['title']}: {r['decision']!r}, still held; `keep` loads it")
+        rows.append({**unmatched[k][1], "decision": r["decision"]} if k in unmatched else r)
+    rows += [row for k, (_, row) in unmatched.items() if k not in existing]
+    kept = {(key(r["title"]), key(r["author"])) for r in rows if r["decision"].lower() == "keep"}
+    held = {b["id"] for k, (b, _) in unmatched.items() if k not in kept}
+    with Path(path).open("w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=BOOK_HOLD_COLUMNS)
+        w.writeheader()
+        w.writerows(rows)
+    print(f"  {len(held)} book{'' if len(held) == 1 else 's'} held for review — `keep` each in {path}, "
+          "or let npm run enrich:books find it on Hardcover")
+    return held
+
+
+def write_calibre_missing(path: Path, idx: BookIndex, review: list[dict], held: set[str] = frozenset()) -> None:
+    """etl/data/calibre_missing.csv (task 1.18b, D-90): every workbook book with
+    no Calibre id, with the tabs that list it. A row keeps its place and its
+    `decision`; `keep` means the owner keeps the book without Calibre. A book
+    Calibre has now, or the workbook no longer lists, leaves the file. A book
+    whose Calibre near spelling awaits book_review.csv is left to that row, and
+    a book held for review to book_hold.csv (task 1.20)."""
+    pending = {(key(r["a"]), key(r["a_author"])) for r in review if r["reason"] == CALIBRE and not r["decision"]}
+    names = {aid: a["name"] for aid, a in idx.authors.items()}
+    missing: dict[tuple, dict] = {}
+    for b, tabs in workbook_books(idx).values():
+        author = names.get(b["author_id"], "")
+        k = (key(b["title"]), key(author))
+        if b["calibre_id"] is None and k not in pending and b["id"] not in held:
             missing[k] = {"title": b["title"], "author": author, "tabs": "; ".join(tabs), "decision": ""}
     rows = []
     for r in read_sidecar(path, CALIBRE_MISSING_COLUMNS):
@@ -1840,7 +1914,8 @@ def is_number(v) -> bool:
 
 def extract_books(path: Path, out: Path, with_plan: bool = False,
                   book_review: Path | None = None, book_details: Path | None = None,
-                  calibre_books: Path | None = None, calibre_missing: Path | None = None) -> None:
+                  calibre_books: Path | None = None, calibre_missing: Path | None = None,
+                  book_hold: Path | None = None) -> None:
     xl = pd.ExcelFile(path)
     print(f"\nbooks <- {path.name}")
     review = load_book_review(book_review)
@@ -2102,9 +2177,18 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
 
     # ---- the Calibre library, after every workbook value (task 1.18) -----
     read_events, calibre_created, replaced = fold_calibre(idx, status, review, calibre_rows)
+
+    # ---- books Hardcover doesn't know wait for review (task 1.20, D-94) ----
+    details = load_book_details(book_details)
+    held = hold_books(book_hold, idx, details) if book_hold else set()
+    held_books = [b for b in idx.by_key.values() if b["id"] in held]
+    loaded = [b for b in idx.by_key.values() if b["id"] not in held]
+    held_rows = [{"title": b["title"], "author": idx.authors[b["author_id"]]["name"] if b["author_id"] else "",
+                  "series": idx.series[b["series_id"]]["name"] if b["series_id"] else ""} for b in held_books]
+
     # A workbook series Calibre took every book from (a misspelling, most
     # often) is no series: dropped, unless it is followed, which is reported.
-    in_use = {b["series_id"] for b in idx.by_key.values()}
+    in_use = {b["series_id"] for b in loaded}
     for sid in replaced - in_use:
         if sid in follows["series"]:
             flag("book_series", "followed series has no books",
@@ -2112,6 +2196,13 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
                  "fix the workbook's Series tab, or the series in Calibre")
         else:
             del idx.series[sid]
+    # A held book's series and author wait with it, unless a follow names them;
+    # an author also stays while a series that stays names them (task 1.20).
+    for sid in {b["series_id"] for b in held_books} - in_use - set(follows["series"]) - {None}:
+        idx.series.pop(sid, None)
+    in_use = {b["author_id"] for b in loaded} | {s["author_id"] for s in idx.series.values()}
+    for aid in {b["author_id"] for b in held_books} - in_use - set(follows["author"]) - {None}:
+        del idx.authors[aid]
     # A subseries lives under a loaded series: one whose series went is no
     # subseries (a guard; fold_calibre gives one book one Calibre book).
     for ssid in [s for s, v in idx.subseries.items() if v["series_id"] not in idx.series]:
@@ -2122,19 +2213,25 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
             if b["subseries_id"] == ssid:
                 b["subseries_id"] = b["subseries_position"] = None
     if calibre_rows:
-        report_universes(idx, follows["universe"])
+        report_universes(idx, follows["universe"], held)
     # A universe no book is in is no universe, unless it is followed (D-43).
-    in_use = {b["universe_id"] for b in idx.by_key.values()}
+    in_use = {b["universe_id"] for b in loaded}
     for uid in [u for u in idx.universes if u not in in_use and u not in follows["universe"]]:
         del idx.universes[uid]
     if calibre_rows and calibre_missing:
-        write_calibre_missing(calibre_missing, idx, review)
+        write_calibre_missing(calibre_missing, idx, review, held)
 
     if book_review:
         write_book_review(book_review, review_book_pairs(idx, review))
-    fold_book_details(idx, load_book_details(book_details))
+    fold_book_details(idx, details)
 
-    books = list(idx.by_key.values())
+    # Nothing in seed/ names a held book (task 1.20): its status, plan,
+    # release, read and genre rows wait with it.
+    books = loaded
+    status = {bid: row for bid, row in status.items() if bid not in held}
+    read_events = [r for r in read_events if r["book_id"] not in held]
+    plan = [r for r in plan if r["book_id"] not in held]
+    releases = [r for r in releases if r["book_id"] not in held]
     write(out, "authors", list(idx.authors.values()), ["id", "name"])
     write(out, "book_series", list(idx.series.values()),
           ["id", "name", "author_id", "total_books"])
@@ -2152,6 +2249,9 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
     write(out, "read_events", read_events, READ_EVENTS_COLUMNS)
     # Not loaded: the books Calibre created, which calibre.py never matches.
     write(out, "calibre_created", calibre_created, CALIBRE_CREATED_COLUMNS)
+    # Not loaded either: the books held for review (task 1.20), which
+    # enrich_books.py and calibre.py read beside books.csv.
+    write(out, "held_books", held_rows, HELD_BOOKS_COLUMNS)
     write(out, "reading_plan", plan, ["user_id", "book_id", "period", "ordinal"])
     for kind in ("series", "author", "universe"):
         write(out, f"{kind}_follows", list(follows[kind].values()), ["user_id", f"{kind}_id", "state"])
@@ -2205,6 +2305,10 @@ def main(argv=None) -> int:
     ap.add_argument("--calibre-missing", type=Path, default=None,
                     help="calibre_missing.csv: rewritten each run with the workbook books Calibre doesn't "
                          "have, keeping each `keep` decision; a book added to Calibre leaves it (D-90)")
+    ap.add_argument("--book-hold", type=Path, default=None,
+                    help="book_hold.csv: rewritten each run with the workbook books Hardcover doesn't know "
+                         "(no hardcover or hand row in --book-details) and Calibre doesn't have; each is "
+                         "held out of seed/ with its status, plan and release rows until `keep` (task 1.20)")
     ap.add_argument("--fail-on-cycle", action="store_true",
                     help="exit non-zero when the prereq graph has a cycle, after writing every "
                          "CSV (task 2.11a; START-HERE Step 14's final extract)")
@@ -2225,7 +2329,7 @@ def main(argv=None) -> int:
     extract_comics(args.comics, args.out)
     extract_books(args.books, args.out, with_plan=args.with_plan, book_review=args.book_review,
                   book_details=args.book_details, calibre_books=args.calibre_books,
-                  calibre_missing=args.calibre_missing)
+                  calibre_missing=args.calibre_missing, book_hold=args.book_hold)
 
     write(args.out, "unresolved", UNRESOLVED, ["table", "reason", "detail"])
     write(args.out, "calibre_changes", CHANGES, ["table", "reason", "detail"])

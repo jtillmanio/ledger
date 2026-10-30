@@ -6,7 +6,8 @@ enrich_books.py — Hardcover details for the workbook's books, into a sidecar.
     py etl/enrich_books.py               # every book; ~1 request a second
     py etl/enrich_books.py --offline     # the report again, from the cache only
 
-Reads the books extract loads (seed/books.csv, seed/authors.csv) and each one's
+Reads the books extract loads (seed/books.csv, seed/authors.csv), and the ones
+it held for review (seed/held_books.csv, task 1.20), and each one's
 Calibre ISBN (etl/data/calibre_books.csv, found by the book's Calibre id, else
 by its title and author), asks Hardcover, and writes etl/data/book_details.csv,
 keyed by title and author: Hardcover's book id, a page count, a cover URL and
@@ -658,7 +659,10 @@ def report(status: dict, how: dict, proposals: list[dict], missed: list, notes: 
 # --------------------------------------------------------------------------
 
 def read_books(books: Path, authors: Path) -> list[tuple[str, str, str]]:
-    """(title, author name, Calibre id) for every book extract wrote, in its order."""
+    """(title, author name, Calibre id) for every book extract wrote, in its
+    order, then each book it held for review (held_books.csv beside books.csv,
+    task 1.20), so a held book is still looked up: the run that finds it lets
+    the next extract load it. A held book has no Calibre id."""
     if not books.exists():
         raise SystemExit(f"{books} not found — run `npm run extract` first")
     names = {}
@@ -666,8 +670,14 @@ def read_books(books: Path, authors: Path) -> list[tuple[str, str, str]]:
         with authors.open(newline="", encoding="utf-8") as fh:
             names = {r["id"]: r["name"] for r in csv.DictReader(fh)}
     with books.open(newline="", encoding="utf-8") as fh:
-        return [(r["title"], names.get(r["author_id"], ""), (r.get("calibre_id") or "").strip())
-                for r in csv.DictReader(fh) if r.get("title")]
+        out = [(r["title"], names.get(r["author_id"], ""), (r.get("calibre_id") or "").strip())
+               for r in csv.DictReader(fh) if r.get("title")]
+    seen = {(ex.key(t), ex.key(a)) for t, a, _ in out}
+    for r in read_rows(books.parent / "held_books.csv", ex.HELD_BOOKS_COLUMNS):
+        if (ex.key(r["title"]), ex.key(r["author"])) not in seen:
+            seen.add((ex.key(r["title"]), ex.key(r["author"])))
+            out.append((r["title"], r["author"], ""))
+    return out
 
 
 def read_isbns(path: Path, review: list[dict]) -> tuple[dict[str, str], dict[tuple, str]]:

@@ -1028,6 +1028,268 @@ class BookDetails(BookCase):
         self.assertNotIn("stale review", self.reasons())
 
 
+class BookHold(BookCase):
+    """Task 1.20 (D-94): a workbook book Hardcover doesn't know (no `hardcover`
+    or `hand` row in book_details.csv) and Calibre doesn't have is held out of
+    seed/ with every row that points at it, and listed in book_hold.csv until
+    the owner writes `keep`. A book Calibre created is never held (TASK-030)."""
+
+    KNOWN = {"title": "The Way of Kings", "author": "Brandon Sanderson", "open_library_id": "",
+             "hardcover_id": "386446", "page_count": "1007", "cover_url": "", "published_year": "2010",
+             "source": "hardcover"}
+    WOK = "the-way-of-kings-brandon-sanderson"
+    HELD = "the-hollow-crown-ada-unknown"
+
+    def setUp(self):
+        super().setUp()
+        data = Path(tempfile.mkdtemp())
+        self.details = data / "book_details.csv"
+        self.hold = data / "book_hold.csv"
+        self.calibre = data / "calibre_books.csv"
+        self.missing = data / "calibre_missing.csv"
+        self.write(self.details, ex.BOOK_DETAILS_COLUMNS, [self.KNOWN])
+
+    @staticmethod
+    def write(path: Path, columns: list[str], rows: list[dict]) -> None:
+        with path.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=columns, restval="")
+            w.writeheader()
+            w.writerows(rows)
+
+    def extract(self, path: Path, with_plan: bool = True, calibre: bool = False, hold: bool = True) -> None:
+        import io
+        from contextlib import redirect_stdout
+        ex.UNRESOLVED.clear()
+        ex.CHANGES.clear()
+        extra = {"book_hold": self.hold} if hold else {}
+        if calibre:
+            extra.update(calibre_books=self.calibre, calibre_missing=self.missing)
+        buf = io.StringIO()
+        with redirect_stdout(buf):
+            ex.extract_books(path, self.out, with_plan=with_plan, book_review=self.review,
+                             book_details=self.details, **extra)
+        self.printed = buf.getvalue()
+
+    def workbook(self, master=None, series=None, to_read=("The Hollow Crown",),
+                 coming_out=(("The Hollow Crown", "Ada Unknown", None, "2027-03-02"),)):
+        """The Way of Kings, which Hardcover knows, and The Hollow Crown, which
+        nothing does: on the master list, a To-Read tab, Coming Out and the
+        unstructured To-Read wishlist."""
+        tabs = {"To-Read 2027": df({"Fantasy": list(to_read) or [None]}),
+                "To-Read": df({"Fantasy": ["The Hollow Crown"]})}
+        if series is not None:
+            tabs["Series"] = series
+        return build_books(
+            master if master is not None else
+            [("The Way of Kings", "Brandon Sanderson", "The Stormlight Archive #1", "Fantasy", None),
+             ("The Hollow Crown", "Ada Unknown", "Hollow #1", "Fantasy", None)],
+            tabs, coming_out=list(coming_out))
+
+    def hold_rows(self) -> list[dict]:
+        with self.hold.open(newline="", encoding="utf-8") as fh:
+            return list(csv.DictReader(fh))
+
+    def decide(self, title: str, decision: str) -> None:
+        rows = self.hold_rows()
+        hit = [r for r in rows if r["title"] == title]
+        self.assertEqual(len(hit), 1, rows)
+        hit[0]["decision"] = decision
+        self.write(self.hold, ex.BOOK_HOLD_COLUMNS, rows)
+
+    def ids(self, name: str) -> list[str]:
+        return [r["book_id"] for r in read(self.out, name)]
+
+    # -- AC-1: the roadmap Check --------------------------------------------
+
+    def test_a_book_with_no_details_row_is_held_and_listed_undecided(self):
+        self.extract(self.workbook())
+        self.assertEqual(list(self.books()), [self.WOK])
+        self.assertEqual(self.hold_rows(), [{
+            "title": "The Hollow Crown", "author": "Ada Unknown",
+            "tabs": "To-Read Master List; Coming Out; To-Read 2027",
+            "lookup": 'title search: "The Hollow Crown Ada Unknown"', "decision": ""}])
+        self.assertEqual(self.ids("book_status"), [self.WOK])
+        self.assertEqual(self.ids("reading_plan"), [])
+        self.assertEqual(self.ids("releases"), [])
+
+    def test_keep_loads_it_on_the_next_extract_with_its_status(self):
+        self.extract(self.workbook())
+        self.decide("The Hollow Crown", "keep")
+        self.extract(self.workbook())
+        self.assertEqual(sorted(self.books()), [self.HELD, self.WOK])
+        self.assertEqual(self.status()[self.HELD], "to_read")
+        self.assertEqual(self.ids("reading_plan"), [self.HELD])
+        self.assertEqual(read(self.out, "releases"), [{"book_id": self.HELD, "release_date": "2027-03-02"}])
+        self.assertEqual([(r["title"], r["decision"]) for r in self.hold_rows()], [("The Hollow Crown", "keep")])
+        self.assertRegex(self.printed, r"\b0 books held for review\b")
+
+    def test_a_book_with_a_hardcover_row_loads_unchanged(self):
+        self.extract(self.workbook(), hold=False)
+        before = (self.books()[self.WOK], self.status()[self.WOK])
+        self.extract(self.workbook())
+        self.assertEqual((self.books()[self.WOK], self.status()[self.WOK]), before)
+
+    def test_extract_prints_how_many_are_held(self):
+        self.extract(self.workbook(master=[
+            ("The Way of Kings", "Brandon Sanderson", None, None, None),
+            ("The Hollow Crown", "Ada Unknown", None, None, None),
+            ("Quiet Rooms", "Ada Unknown", None, None, None)]))
+        self.assertRegex(self.printed, r"\b2 books held for review\b")
+
+    # -- AC-2: nothing in seed/ names a held book ---------------------------
+
+    def test_no_seed_csv_names_a_held_book(self):
+        self.extract(self.workbook())
+        checked = []
+        for path in sorted(self.out.glob("*.csv")):
+            with path.open(newline="", encoding="utf-8") as fh:
+                reader = csv.DictReader(fh)
+                rows = list(reader)
+            column = "id" if path.stem == "books" else "book_id"
+            if column in (reader.fieldnames or []):
+                checked.append(path.stem)
+                self.assertNotIn(self.HELD, [r[column] for r in rows], path.name)
+        self.assertTrue({"books", "book_status", "reading_plan", "releases", "read_events", "book_genres",
+                         "wishlist", "external_lists"} <= set(checked), checked)
+        # The wishlist keeps its line: extract never links one to a book.
+        self.assertEqual(read(self.out, "wishlist"),
+                         [{"genre": "Fantasy", "raw_entry": "The Hollow Crown", "book_id": ""}])
+
+    def test_an_author_and_series_only_held_books_use_wait_unless_followed(self):
+        self.extract(self.workbook())
+        self.assertNotIn("ada-unknown", [a["id"] for a in read(self.out, "authors")])
+        self.assertNotIn("hollow", [s["id"] for s in read(self.out, "book_series")])
+        self.extract(self.workbook(series=series_tab(("Hollow", "Ada Unknown", 3, []))))
+        self.assertEqual([(s["id"], s["author_id"]) for s in read(self.out, "book_series") if s["id"] == "hollow"],
+                         [("hollow", "ada-unknown")])
+        self.assertIn("ada-unknown", [a["id"] for a in read(self.out, "authors")])
+        self.assertIn("hollow", [r["series_id"] for r in read(self.out, "series_follows")])
+
+    def test_held_books_csv_lists_each_held_book_for_enrich_and_calibre(self):
+        self.extract(self.workbook())
+        self.assertEqual(read(self.out, "held_books"),
+                         [{"title": "The Hollow Crown", "author": "Ada Unknown", "series": "Hollow"}])
+
+    def test_without_book_hold_nothing_is_held(self):
+        self.extract(self.workbook(), hold=False)
+        self.assertEqual(sorted(self.books()), [self.HELD, self.WOK])
+        self.assertFalse(self.hold.exists())
+        self.assertEqual(read(self.out, "held_books"), [])
+
+    # -- AC-3: the review file across runs ----------------------------------
+
+    def test_a_decision_survives_a_second_extract(self):
+        self.extract(self.workbook())
+        self.decide("The Hollow Crown", "keep")
+        self.extract(self.workbook())
+        self.extract(self.workbook())
+        self.assertEqual([r["decision"] for r in self.hold_rows()], ["keep"])
+        self.assertIn(self.HELD, self.books())
+
+    def test_an_undecided_book_that_gains_a_details_row_drops_off_and_loads(self):
+        self.extract(self.workbook())
+        self.write(self.details, ex.BOOK_DETAILS_COLUMNS,
+                   [self.KNOWN, {**self.KNOWN, "title": "The Hollow Crown", "author": "Ada Unknown",
+                                 "hardcover_id": "77"}])
+        self.extract(self.workbook())
+        self.assertEqual(self.hold_rows(), [])
+        self.assertEqual(self.books()[self.HELD]["hardcover_id"], "77")
+
+    def test_each_row_names_title_author_tabs_and_lookup(self):
+        """An authorless To-Read title no authored book has is no Hardcover
+        lookup at all: enrich:books never searches a book with no author."""
+        self.extract(self.workbook(to_read=("The Hollow Crown", "Nameless Sea")))
+        self.assertEqual(self.hold.read_text(encoding="utf-8").splitlines()[0], "title,author,tabs,lookup,decision")
+        self.assertEqual([(r["title"], r["author"], r["tabs"], r["lookup"]) for r in self.hold_rows()][1:],
+                         [("Nameless Sea", "", "To-Read 2027", "not looked up: no author")])
+
+    def test_a_kept_book_gone_from_the_workbook_stays_and_is_reported_stale(self):
+        self.extract(self.workbook())
+        self.decide("The Hollow Crown", "keep")
+        self.extract(self.workbook(master=[("The Way of Kings", "Brandon Sanderson", None, None, None)],
+                                   to_read=(), coming_out=()))
+        self.assertEqual([(r["title"], r["decision"]) for r in self.hold_rows()], [("The Hollow Crown", "keep")])
+        self.assertIn("stale review", [u["reason"] for u in ex.UNRESOLVED if u["table"] == "book_hold"])
+
+    def test_an_unknown_decision_is_reported_and_the_book_stays_held(self):
+        self.extract(self.workbook())
+        self.decide("The Hollow Crown", "yes")
+        self.extract(self.workbook())
+        self.assertNotIn(self.HELD, self.books())
+        self.assertEqual([r["decision"] for r in self.hold_rows()], ["yes"])
+        self.assertIn("unknown decision", [u["reason"] for u in ex.UNRESOLVED if u["table"] == "book_hold"])
+
+    def test_a_book_listed_twice_keeps_its_decided_row(self):
+        """A `keep` under a blank copy of its row is never lost."""
+        self.extract(self.workbook())
+        row = self.hold_rows()[0]
+        self.write(self.hold, ex.BOOK_HOLD_COLUMNS, [row, {**row, "decision": "keep"}])
+        self.extract(self.workbook())
+        self.assertIn(self.HELD, self.books())
+        self.assertEqual([r["decision"] for r in self.hold_rows()], ["keep"])
+        self.assertIn("duplicate row", [u["reason"] for u in ex.UNRESOLVED if u["table"] == "book_hold"])
+
+    def test_an_unknown_decision_on_a_book_since_matched_is_not_reported(self):
+        self.extract(self.workbook())
+        self.decide("The Hollow Crown", "yes")
+        self.write(self.details, ex.BOOK_DETAILS_COLUMNS,
+                   [self.KNOWN, {**self.KNOWN, "title": "The Hollow Crown", "author": "Ada Unknown"}])
+        self.extract(self.workbook())
+        self.assertIn(self.HELD, self.books())
+        self.assertNotIn("unknown decision", [u["reason"] for u in ex.UNRESOLVED if u["table"] == "book_hold"])
+
+    # -- AC-4: the plan-gate answers, one fixture each ----------------------
+
+    def test_a_hand_row_is_a_match(self):
+        self.write(self.details, ex.BOOK_DETAILS_COLUMNS,
+                   [self.KNOWN, {**self.KNOWN, "title": "The Hollow Crown", "author": "Ada Unknown",
+                                 "hardcover_id": "", "page_count": "310", "source": "hand"}])
+        self.extract(self.workbook())
+        self.assertEqual(self.books()[self.HELD]["page_count"], "310")
+        self.assertEqual(self.hold_rows(), [])
+
+    def test_an_open_library_row_is_no_match(self):
+        """D-94: a match is Hardcover's (or hand); 1.14's rows go with Open Library."""
+        self.write(self.details, ex.BOOK_DETAILS_COLUMNS,
+                   [self.KNOWN, {**self.KNOWN, "title": "The Hollow Crown", "author": "Ada Unknown",
+                                 "hardcover_id": "", "open_library_id": "OL1W", "source": "openlibrary"}])
+        self.extract(self.workbook())
+        self.assertNotIn(self.HELD, self.books())
+        self.assertEqual([r["title"] for r in self.hold_rows()], ["The Hollow Crown"])
+
+    def test_a_book_calibre_matched_is_not_held(self):
+        self.write(self.calibre, ex.CALIBRE_BOOKS_COLUMNS,
+                   [{"title": "The Hollow Crown", "author": "Ada Unknown", "calibre_id": "9"}])
+        self.extract(self.workbook(), calibre=True)
+        self.assertEqual(self.books()[self.HELD]["calibre_id"], "9")
+        self.assertEqual(self.hold_rows(), [])
+
+    def test_a_calibre_created_book_is_not_held(self):
+        self.write(self.calibre, ex.CALIBRE_BOOKS_COLUMNS,
+                   [{"title": "Only In Calibre", "author": "Cal Ibre", "calibre_id": "10"}])
+        self.extract(self.workbook(), calibre=True)
+        created = "only-in-calibre-cal-ibre"
+        self.assertIn(created, self.books())
+        self.assertEqual(self.status()[created], "unlisted")
+        self.assertEqual([r["title"] for r in self.hold_rows()], ["The Hollow Crown"])
+
+    def test_a_held_to_read_book_has_no_status_or_plan_row(self):
+        """to_read_level reads book_status and reading_plan alone, so a book
+        with neither row is on no level, Someday included, until it is kept."""
+        self.extract(self.workbook(), with_plan=True)
+        self.assertEqual(self.status(), {self.WOK: "to_read"})
+        self.assertNotIn(self.HELD, self.ids("reading_plan"))
+        self.assertNotIn(self.HELD, self.books())
+
+    def test_calibre_missing_leaves_held_books_out(self):
+        """A held book is decided in book_hold.csv, not twice (task 1.20)."""
+        self.write(self.calibre, ex.CALIBRE_BOOKS_COLUMNS,
+                   [{"title": "Only In Calibre", "author": "Cal Ibre", "calibre_id": "10"}])
+        self.extract(self.workbook(), calibre=True)
+        self.assertEqual([r["title"] for r in read(self.missing.parent, "calibre_missing")], ["The Way of Kings"])
+        self.assertEqual([r["title"] for r in self.hold_rows()], ["The Hollow Crown"])
+
+
 class SeriesFollows(BookCase):
     """Task 1.15 (D-42, D-43): the Series tab and the author tabs become follows
     at `tracking`; Cosmere, the Riordanverse and the UNIVERSE_GROUPS are
