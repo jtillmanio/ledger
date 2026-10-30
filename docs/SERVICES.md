@@ -26,8 +26,8 @@ variables were not checked from here: compare them by hand with
 | [Cloudflare R2](#cloudflare-r2) | Nightly database dumps | Cloudflare account, bucket `ledger-backups` | `R2_BACKUPS_ACCESS_KEY_ID` + `R2_BACKUPS_SECRET_ACCESS_KEY` | Free tier (10 GB; 90 dumps of ~1 MB) | In use |
 | [Anthropic](#anthropic-claude) | Claude Code locally; Claude's PR review and `@claude` in Actions | Your Claude subscription | `CLAUDE_CODE_OAUTH_TOKEN` | Subscription | In use |
 | [Metron](#metron) | Comics metadata backfill; *Add issues* search | metron.cloud account | `METRON_USERNAME` + `METRON_PASSWORD` (or `METRON_API_TOKEN`) | Free: 20 a minute, 5,000 a day | In use |
-| [Hardcover](#hardcover) | Book metadata, replacing Open Library (D-94) | hardcover.app account | `HARDCOVER_API_TOKEN` | Free: 60 a minute, 5,000 a day | Planned: tasks 1.14b (TASK-034), 1.4f |
-| [Open Library](#open-library) | Book metadata today: backfill and *Add books* | None | None | Free | Retiring in 6.19 |
+| [Hardcover](#hardcover) | Book metadata, replacing Open Library (D-94) | hardcover.app account | `HARDCOVER_API_TOKEN` | Free: 60 a minute, 5,000 a day | In use (ETL, 1.14b); *Add books* planned (1.4f) |
+| [Open Library](#open-library) | Book metadata today: *Add books* only (the ETL backfill is Hardcover's since 1.14b) | None | None | Free | Retiring in 6.19 |
 | [Marvel Fandom wiki](#marvel-fandom-wiki) | Story titles Metron lacks | None | None | Free | In use (ETL only) |
 | [Calibre](#calibre) | Word counts, series, read dates from your ebook library | None: a local app | `CALIBRE_LIBRARY` (a folder path, not a secret) | Free | In use (ETL only) |
 | [Google Sheets](#google-sheets) | `Comics.xlsx` and `Books.xlsx`, the record until cutover | Your Google account | None: exported by hand | Free | Until cutover (1.26) |

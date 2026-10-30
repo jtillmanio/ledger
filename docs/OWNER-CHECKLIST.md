@@ -125,7 +125,9 @@ tick them.
       Pratchet*, *Bernard Cornwall*, *James Ilsington*): fix the cell, or `merge`
       the author row extract proposes. Then `npm run enrich:books` (free from the
       cache except for changed names) and `npm run extract` (from TASK-022,
-      PR #130).
+      PR #130). *Since 1.14b (PR #165), `enrich:books` drops the undecided
+      `open library` rows and keeps the decided ones: decide any you care about
+      before 1.14b's real run below; the rest lapse with it.*
 - [ ] After 1.18 merges, settle what the first Calibre run left (from TASK-030,
       PR #150):
       - Decide the 246 `calibre` rows in `etl/data/book_review.csv`. `merge`
@@ -157,7 +159,9 @@ tick them.
       found, then `npm run calibre`. About 345 Calibre books have none (fan
       fiction never does) (D-94).
 - [ ] After 1.14b merges, the real run (from TASK-034, PR #165),
-      in this order: `npm run calibre` (its series check asks Hardcover now
+      in this order: `npm run extract` (calibre matches against
+      `seed/books.csv`, so it needs a current one), `npm run calibre -- --dry-run`,
+      `npm run calibre` (its series check asks Hardcover now
       and rewrites `calibre_books.csv` with a `hardcover` column; until it
       runs, extract notes no series differences), `npm run extract`,
       `npm run enrich:books -- --dry-run`, `npm run enrich:books` (a few dozen
@@ -168,7 +172,8 @@ tick them.
       `etl/data/hardcover_review.csv`, and run `enrich:books` and `extract`
       again. A compilation never matches (D-99): a collection like *Brief
       Cases* gets a `hand` row in `book_details.csv` if you want its details.
-      Commit the sidecars the run writes.
+      Commit the sidecars the run writes. The same order, with what to review
+      after each step: `docs/COMMANDS.md` § Refreshing the data.
 - [ ] After 1.18b merges, settle what Calibre's groupings showed (from TASK-032,
       PR #162):
       - Decide the 181 rows in `etl/data/calibre_missing.csv`: workbook books
