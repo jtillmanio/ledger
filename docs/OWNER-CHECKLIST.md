@@ -174,7 +174,7 @@ tick them.
           series in Calibre, so one subseries sits under both.
         - *The Sunlit Man* has a `#subseries` but no series in Calibre.
 - [ ] After 1.18c merges, fix two stray one-letter genres in Calibre's `#genre`
-      (from TASK-033, task/1.18c-calibre-genres): *Everything Is Tuberculosis*
+      (from TASK-033, PR #164): *Everything Is Tuberculosis*
       (John Green) has a genre `l`, and *Patterns of Evidence: The Exodus*
       (Timothy P. Mahoney) has a genre `i`. Both load as genres today. Remove
       or correct them in Calibre, then run `npm run calibre` and `npm run extract`.
