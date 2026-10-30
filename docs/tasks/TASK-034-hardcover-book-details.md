@@ -1,7 +1,7 @@
 ---
 id: TASK-034
 title: 1.14b Hardcover details for the books, by ISBN
-status: In progress
+status: Review
 depends_on: [TASK-033]
 size: L
 model: opus
@@ -36,12 +36,12 @@ The books arrive at cutover with Hardcover's page counts, covers, release years 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm run test:etl`, with recorded Hardcover answers, shows: two fixture books with ISBNs match in one request and write `hardcover_id`, `page_count`, `cover_url` and `published_year` with `source = hardcover`; a book with no ISBN matches by title and author; a near spelling is a `book_review.csv` row with `reason = hardcover` and no details row; a `compilation` result never matches; a `hand` row is unchanged; a book with Calibre `#pages` keeps them over Hardcover's; a 429 waits its `Retry-After` and the run resumes; an `--offline` re-run leaves every sidecar byte-identical; without `HARDCOVER_API_TOKEN` only `--offline` runs. Then a dry run over the real books, with the counts matched by ISBN, matched by title, proposed and unmatched in the PR.
-- [ ] AC-2: Given a fixture book with an ISBN whose edition Hardcover doesn't have, the run makes the ISBN request and then exactly one title search for it (the faked fetch records both); a book matched by ISBN makes no search request. A matched row's `page_count` and `cover_url` are the edition's, falling back to the book's when the edition has none (one fixture each way).
-- [ ] AC-3: Given a fake response whose `RateLimit` headers say none remain, the next request waits until the reset (a patched clock records the wait). Every request carries the token and a `User-Agent` naming the app. Without `HARDCOVER_API_TOKEN`, a run that isn't `--offline` exits non-zero with a message naming the variable, sends nothing, and leaves `book_details.csv` and `book_review.csv` byte-identical; `--dry-run` with the token leaves them byte-identical too.
-- [ ] AC-4: Given a `book_details.csv` with a `source = openlibrary` row, a `hand` row, an undecided `open library` review row and a decided one, a run leaves no `openlibrary` row, the `hand` row and the decided review row unchanged, and the undecided `open library` row gone. Extract writes `hardcover_id` to `seed/books.csv`, and `etl/load.ps1` and `etl/load.sh` both copy it into `books.hardcover_id` (`test/load-scripts.test.ts`).
-- [ ] AC-5: Given a Calibre fixture book whose series or position Hardcover has differently, `seed/calibre_changes.csv` has one row saying so with Hardcover's series and position; a book where they agree has none; `calibre.py` makes no Open Library request (the Open Library fetch is patched to fail the test).
-- [ ] AC-6: `git check-ignore etl/.hardcover-cache.sqlite` names the file; `.claude/rules/git.md`'s never-commit list names it; `.env.example` names `HARDCOVER_API_TOKEN`; `docs/COMMANDS.md`'s `enrich:books` and `calibre` lines say Hardcover.
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm run test:etl`, with recorded Hardcover answers, shows: two fixture books with ISBNs match in one request and write `hardcover_id`, `page_count`, `cover_url` and `published_year` with `source = hardcover`; a book with no ISBN matches by title and author; a near spelling is a `book_review.csv` row with `reason = hardcover` and no details row; a `compilation` result never matches; a `hand` row is unchanged; a book with Calibre `#pages` keeps them over Hardcover's; a 429 waits its `Retry-After` and the run resumes; an `--offline` re-run leaves every sidecar byte-identical; without `HARDCOVER_API_TOKEN` only `--offline` runs. Then a dry run over the real books, with the counts matched by ISBN, matched by title, proposed and unmatched in the PR.
+- [x] AC-2: Given a fixture book with an ISBN whose edition Hardcover doesn't have, the run makes the ISBN request and then exactly one title search for it (the faked fetch records both); a book matched by ISBN makes no search request. A matched row's `page_count` and `cover_url` are the edition's, falling back to the book's when the edition has none (one fixture each way).
+- [x] AC-3: Given a fake response whose `RateLimit` headers say none remain, the next request waits until the reset (a patched clock records the wait). Every request carries the token and a `User-Agent` naming the app. Without `HARDCOVER_API_TOKEN`, a run that isn't `--offline` exits non-zero with a message naming the variable, sends nothing, and leaves `book_details.csv` and `book_review.csv` byte-identical; `--dry-run` with the token leaves them byte-identical too.
+- [x] AC-4: Given a `book_details.csv` with a `source = openlibrary` row, a `hand` row, an undecided `open library` review row and a decided one, a run leaves no `openlibrary` row, the `hand` row and the decided review row unchanged, and the undecided `open library` row gone. Extract writes `hardcover_id` to `seed/books.csv`, and `etl/load.ps1` and `etl/load.sh` both copy it into `books.hardcover_id` (`test/load-scripts.test.ts`).
+- [x] AC-5: Given a Calibre fixture book whose series or position Hardcover has differently, `seed/calibre_changes.csv` has one row saying so with Hardcover's series and position; a book where they agree has none; `calibre.py` makes no Open Library request (the Open Library fetch is patched to fail the test).
+- [x] AC-6: `git check-ignore etl/.hardcover-cache.sqlite` names the file; `.claude/rules/git.md`'s never-commit list names it; `.env.example` names `HARDCOVER_API_TOKEN`; `docs/COMMANDS.md`'s `enrich:books` and `calibre` lines say Hardcover.
 
 ## Out of scope
 
@@ -70,10 +70,17 @@ The books arrive at cutover with Hardcover's page counts, covers, release years 
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- `.claude/rules/schema.md`, the book bullets: `book_details.csv` holds `hardcover_id` with `source` hardcover|hand; a Hardcover near spelling is `reason = hardcover`; `hardcover_review.csv` holds the ambiguous books' candidates; `calibre_books.csv`'s `open_library` column is `hardcover` (approved at plan)
-- `docs/02-architecture.md` § Metadata sources: the Layer and Books tables still make Open Library the spine; D-94 makes it Hardcover (Open Library goes in 6.19) (approved at plan)
-- Candidate decision: reordered-word titles are never proposed (Q1); `calibre.py` asks Hardcover through 1.14b's client and cache (Q2); two matching Hardcover books are the owner's pick in `hardcover_review.csv`, never ranked (Q3); a `compilation` never matches, by ISBN or title (Q4) (approved at plan)
-- The owner asked for one runbook of every data-refresh step (extract, calibre, enrich:books, enrich comics, sidecars …) and what to review after (unresolved, book_review, hardcover_review, cover dates …): wider than 1.14b, so a `docs/` branch right after this PR, as a "Refreshing the data" section in `docs/COMMANDS.md`
+- `.claude/rules/schema.md`, the book bullets: `book_details.csv` holds `hardcover_id` with `source` hardcover|hand; a Hardcover near spelling is `reason = hardcover`; `hardcover_review.csv` holds the ambiguous books' candidates; `calibre_books.csv`'s `open_library` column is `hardcover` → .claude/rules/schema.md § Schema and data-model rules (approved at plan)
+- `docs/02-architecture.md` § Metadata sources: the Layer and Books tables still make Open Library the spine; D-94 makes it Hardcover (Open Library goes in 6.19) → docs/02-architecture.md § 10. Metadata sources (approved at plan)
+- Candidate decision: reordered-word titles are never proposed (Q1); `calibre.py` asks Hardcover through 1.14b's client and cache (Q2); two matching Hardcover books are the owner's pick in `hardcover_review.csv`, never ranked (Q3); a `compilation` never matches, by ISBN or title (Q4) → docs/review/decisions.md § D-99 (approved at plan)
+- The owner asked for one runbook of every data-refresh step (extract, calibre, enrich:books, enrich comics, sidecars …) and what to review after (unresolved, book_review, hardcover_review, cover dates …): wider than 1.14b → not tracked: requested by the owner in this session; it follows on its own `docs/` branch as soon as this PR is open, as a "Refreshing the data" section in `docs/COMMANDS.md`
+- The real run, in order, and what to decide after it (the `hardcover` proposals, the `hardcover_review.csv` picks, compilations given a `hand` row if wanted) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- Schema review R1: a stopped run dropped every Open Library row; `hardcover_review.csv` could double a row after a rekey; no test fed extract the pre-Hardcover sidecars → not tracked: done in this PR (plan revision 1)
+- Spec review R1: `.claude/kit.json`'s cache hints, CLAUDE.md's `enrich:books` line and `docs/START-HERE.md`'s sitting 8 still said Open Library → not tracked: done in this PR (plan revision 1)
+- Schema review R2: two decided rows with different decisions for one book and Hardcover id keep the first read → not tracked: a rare hand edit, accepted as is (the reviewer asked for no action)
+- Schema review R2: no test of a hand row on a stopped run → not tracked: optional; the hand rule is tested, and the stopped-run path never replaces a row already held
+- 6.19 has less to remove: the Python Open Library client went with this task → not tracked: 6.19's Check (no `Open Library` in `etl/*.py`) still finds what is left (`OPEN_LIBRARY`, `OLD_SOURCE`, the cache entries)
+- AC-5's parenthetical names an Open Library fetch that no longer exists; the tests patch `urllib.request.urlopen` to fail on any real request instead → not tracked: meets its intent (spec review), said in the PR
 
 ## Plan
 
@@ -112,13 +119,16 @@ _Approved by the owner 2026-10-30 at 5a9d306, with Q3 changed to the owner's pic
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 round PASS → full PASS (574 browser tests) | Audit R1 PASS | Spec R1 APPROVE | Schema R1 APPROVE (3 MINOR, fixed as plan revision 1) | UI not run (`ui: false`, no UI files)
+- Verify R2 round PASS | Spec R2 APPROVE | Schema R2 APPROVE | Audit not re-run (two new tests fail on the checkpoint, checked by hand)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R1 round and full, R2 round)
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1 (owner, after review round 1)

@@ -57,15 +57,21 @@ Release, test isolation) and the Hard rules a reviewer checks.
   when there is none, and is reported in `unresolved.csv` when there are
   several. A title cell is read as the text typed: a cell Excel stored as a
   date is `m/d/yy` (*11/22/63*), a number has no `.0` (task 1.14).
-  `etl/data/book_details.csv` (title, author → `open_library_id`, `page_count`,
-  `cover_url`, `published_year`; `source` openlibrary|hand) is written by
-  `npm run enrich:books` (task 1.14, D-44) and folded in by extract:
+  `etl/data/book_details.csv` (title, author → `hardcover_id`, `page_count`,
+  `cover_url`, `published_year`; `source` hardcover|hand; 1.14's
+  `open_library_id` and `openlibrary` rows until a run replaces them) is
+  written by `npm run enrich:books` (task 1.14b, D-94, D-99) from Hardcover,
+  found by the book's Calibre ISBN, else one title-and-author search, and
+  folded in by extract into `books.hardcover_id` and the rest:
   `published_year` fills only where the workbook has none, and a page count
-  never becomes a word count. A near spelling Open Library finds (≥ 0.5
-  trigram similarity, or a `: subtitle`; D-92) is a `book`
-  row with `reason = open library` (`a` the workbook's spelling, `b` Open
-  Library's), kept undecided while the workbook has `a`; `merge` renames the
-  book, and the next enrich run rekeys `book_details.csv`. The workbook loads no
+  never becomes a word count. A `compilation` never matches. A near spelling
+  Hardcover finds (≥ 0.5 trigram similarity, or a `: subtitle`, never the same
+  words reordered; D-92, D-99) is a `book` row with `reason = hardcover` (`a`
+  the workbook's spelling, `b` Hardcover's), kept undecided while the workbook
+  has `a`, as 1.14's `open library` rows were; `merge` renames the book, and
+  the next enrich run rekeys `book_details.csv`. A book two Hardcover books
+  match is never ranked: `etl/data/hardcover_review.csv` lists each candidate,
+  and the owner's `pick` makes the next run match it (D-99). The workbook loads no
   read state (D-41): `seed/workbook_reads.csv` lists its reads for hand entry
   and is not loaded. A To-Read tab for 2028 or later is speculative and loads
   nothing (`SPECULATIVE_FROM`, owner 2026-10-19): no book, status or plan row;
@@ -79,8 +85,9 @@ Release, test isolation) and the Hard rules a reviewer checks.
   temp copy of the library's `metadata.db` read-only, finds custom columns by
   lookup name, and writes one sidecar, `calibre_books.csv`, keyed by Calibre's
   title and author: words, series, index, ISBN, tags, type, the read flag, the
-  date read (its Eastern day, or a year) and its precision, and what Open
-  Library said of the series (`confirmed`; `open_library` where it differs).
+  date read (its Eastern day, or a year) and its precision, and what
+  Hardcover said of the series (`confirmed`; `hardcover` where it differs;
+  1.14b, D-99).
   Calibre is its only source: no `hand` rows. A changed book is rewritten in
   place, a removed one goes, a new one is appended, a run over an unchanged
   library changes no byte, and each run prints what changed since the last. A
@@ -97,8 +104,7 @@ Release, test isolation) and the Hard rules a reviewer checks.
   is a `seed/read_events.csv` row and makes the status `read` (a year alone is
   July 1st `approximate`, a date shown without its day `approximate`). What
   disagrees is reported, never dropped (D-93): a workbook count more than
-  10% off, a different workbook series, a different book type and Open
-  Library's different series go to `calibre_changes.csv` (Calibre won; nothing
+  10% off, a different workbook series, a different book type and Hardcover's different series go to `calibre_changes.csv` (Calibre won; nothing
   to do), and a second read of one book goes to `unresolved.csv` (that read is
   not loaded). `unresolved.csv` lists only what needs the owner. Comics are skipped; tags, comments and
   ISBN load nothing until `books.subjects`, `books.summary` and `books.isbn`

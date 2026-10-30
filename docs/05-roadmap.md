@@ -1078,7 +1078,7 @@ a book with two Calibre genres loads two `book_genres` rows with their full
 paths, a book with none keeps its workbook genre, and a re-run is
 byte-identical. Then the real library's genre count in the PR.
 
-### ☐ 1.14b Hardcover details for the books, by ISBN · M
+### ☑ 1.14b Hardcover details for the books, by ISBN · M
 Owner, 2026-10-28; D-94. **After 1.18c, before 1.20**, and before its real run
 the owner fills the missing ISBNs in Calibre (*Download metadata*, then
 `npm run calibre`). 1.14 matched Open Library by title and author, and Open
