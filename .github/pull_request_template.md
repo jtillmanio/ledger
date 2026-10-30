@@ -24,7 +24,7 @@
 
 | Check | Where | Result |
 |---|---|---|
-| `/verify` (tsc, lint, `test:all`, build) / test-runner | local | |
+| `/verify` (tsc, lint, `test:all` with its build and core browser run; later rounds `test:no-e2e`, D-97) | local | |
 | The task's **Check:**, as written | local | |
 | test-auditor | local | |
 | spec-reviewer | local | |

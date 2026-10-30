@@ -1168,15 +1168,36 @@ sideways. This section is the _sequence_; that file is the _technique_.
 your development database (see *Four databases* below), and the tests are never
 allowed to use it either: they read
 `TEST_DATABASE_URL`, refuse to start when it is missing, and refuse when it names
-the same host and database as `DATABASE_URL` (R3-02). Pick one:
+the same host and database as `DATABASE_URL` (R3-02). Pick one. B is faster:
+the suites make thousands of round trips, and against a Neon branch the
+non-browser suites took about 4 minutes, where CI's local server takes 1.5
+(D-97).
 
 **A. A Neon branch (no install).** In the Neon console: your project →
 **Branches** → **Create branch** → name it `test`, parent `main`. Open the new
 branch's **Connection details**, tick **Pooled connection** and copy the string.
 
-**B. Local Postgres.** `winget install PostgreSQL.PostgreSQL.18` (or
-`scoop install postgresql`), then `createdb ledger_test`. The string is
-`postgresql://postgres:<your password>@localhost:5432/ledger_test`.
+**B. Local Postgres, set up like CI's.** Install PostgreSQL 18, Neon's
+major (`scoop install postgresql`, or `winget install PostgreSQL.PostgreSQL.18`).
+Then give the test database a cluster of its own, with CI's collation and
+settings (`.github/actions/start-postgres`) and UTC, as Neon and the runner use
+(initdb would take Windows' time zone, and dated tests would fail), listening
+only on this machine:
+
+```powershell
+initdb -D C:\Development\pgdata\ledger-test -U postgres --auth=trust -E UTF8 --locale=C `
+  --locale-provider=builtin --builtin-locale=C.UTF-8 -c port=5433 -c listen_addresses=localhost `
+  -c timezone=UTC -c jit=off -c log_min_duration_statement=1000 -c log_lock_waits=on `
+  -c shared_preload_libraries=auto_explain -c auto_explain.log_min_duration=1000
+pg_ctl -D C:\Development\pgdata\ledger-test -l C:\Development\pgdata\ledger-test.log start
+createdb -h localhost -p 5433 -U postgres ledger_test
+```
+
+The string is `postgresql://postgres@localhost:5433/ledger_test`. The server
+doesn't start with Windows: after a restart, run the `pg_ctl ... start` line
+again (a suite that says `ECONNREFUSED` means it is down), or register it once
+as a service from an elevated shell:
+`pg_ctl register -N ledger-test -D C:\Development\pgdata\ledger-test`.
 
 Then add it to `.env` (never `.env.example`):
 
@@ -1196,8 +1217,10 @@ npm run test:views        # etl/test_views.sql, including the run_ancestors bran
 point. Option A (the Neon branch) is throwaway: delete and re-create it any time.
 
 **Every session, before you open a PR:** `npm run test:all` — it rebuilds the test
-database, then runs vitest, the SQL assertions and the Python tests, which is what
-CI runs. To ask Claude to run it: *"run `npm run test:all` and report failures"*;
+database, then runs vitest, the SQL assertions and the Python tests, then builds
+the app and runs the browser suite's core projects on that build, which is what
+CI runs. `npm run test:no-e2e` is the same without the build and browser suite,
+for a re-run after a small fix (D-97). To ask Claude to run it: *"run `npm run test:all` and report failures"*;
 Claude Code can call any of these scripts, and none of them needs `psql`. If
 `npm test` says `TEST_DATABASE_URL is not set`, that is the guard working — set the
 variable, do not work around it.
