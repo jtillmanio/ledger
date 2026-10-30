@@ -288,12 +288,12 @@ with the task that first reads it.
 | # | Task | Size | Task file | Depends on |
 |---|---|---|---|---|
 | 1.25 | Sheets parity audit | S | TASK-036 | — |
-| 1.4e | Paste a list: title and author in their own cells | S | — | — |
+| 1.4e | Paste a list: title and author in their own cells | S | TASK-037 | — |
 | 1.4f | Add books searches Hardcover | M | — | — |
-| 1.19 | Comics Add remembers the last run | S | — | 1.8, 1.3c |
+| 1.19 | Comics Add remembers the last run | S | TASK-038 | 1.8, 1.3c |
 | 1.22 | Search as you type, and where each result comes from | M | — | 1.21, 1.4f |
 | 1.24 | Wishlist accept promotes an Unlisted book to Someday | S | — | 1.21, 1.4d |
-| 1.17 | Started and finished: a start date for books, a derived span for runs | M | — | — |
+| 1.17 | Started and finished: a start date for books, a derived span for runs | M | TASK-039 | — |
 | 1.23 | Audiobooks: listening, and a listen that counts as a read | M | — | 1.5, 1.17 |
 | 1.26 | Cut over from the Sheets | M | — | 1.25, all of Phase 1, and every open entry 1.25 names |
 
