@@ -6,6 +6,7 @@ sqlite3, and Open Library is faked with recorded search responses.
 """
 
 import csv
+import inspect
 import io
 import json
 import os
@@ -21,7 +22,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 import calibre as cal  # noqa: E402
 import enrich_books as eb  # noqa: E402
 import extract as ex  # noqa: E402
-from test_extract import build_books  # noqa: E402
+from test_extract import build_books, series_tab, tab  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
 
@@ -31,19 +32,24 @@ REPO = Path(__file__).resolve().parent.parent
 # --------------------------------------------------------------------------
 
 def book(title, *authors, series=None, index=1.0, isbn=None, tags=(), words=None,
-         read=None, date=None, kind=None):
-    """One Calibre record. `date` is the stored UTC text, as Calibre writes it."""
+         read=None, date=None, kind=None, universe=None, subseries=None, pages=None):
+    """One Calibre record. `date` is the stored UTC text, as Calibre writes it.
+    `universe` and `subseries` are (name, index) for #superseries and
+    #subseries (task 1.18b)."""
     return {"title": title, "authors": list(authors) or ["Unknown"], "series": series,
             "index": index, "isbn": isbn, "tags": list(tags), "words": words,
-            "read": read, "date": date, "type": kind}
+            "read": read, "date": date, "type": kind, "superseries": universe,
+            "subseries": subseries, "pages": pages}
 
 
 def build_library(folder: Path, books: list[dict], words=("words", 3), date=("date_read", 6),
                   date_format="dd MMM yyyy", read=("read", 1), kind=("type", 15),
+                  superseries=("superseries", 20), subseries=("subseries", 21), pages=("pages", 22),
                   extra_columns=()) -> Path:
     """A metadata.db with Calibre's tables (the ones calibre.py reads). Each
     custom column is (lookup name without '#', its custom_column_N number), so
-    a test can put one at another number; None leaves it out."""
+    a test can put one at another number; None leaves it out. Calibre numbers
+    the books 1, 2, … in list order, so a rebuilt list keeps each one's id."""
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / "metadata.db"
     if path.exists():
@@ -74,15 +80,20 @@ def build_library(folder: Path, books: list[dict], words=("words", 3), date=("da
                    (n, label, label.title(), datatype, normalized, json.dumps(display or {})))
         if normalized:
             db.execute(f"CREATE TABLE custom_column_{n} (id INTEGER PRIMARY KEY, value TEXT UNIQUE)")
+            # A series-type column's link carries the index, as Calibre's does.
             db.execute(f"CREATE TABLE books_custom_column_{n}_link "
-                       "(id INTEGER PRIMARY KEY, book INTEGER, value INTEGER)")
+                       "(id INTEGER PRIMARY KEY, book INTEGER, value INTEGER"
+                       + (", extra REAL" if datatype == "series" else "") + ")")
         else:
             db.execute(f"CREATE TABLE custom_column_{n} (id INTEGER PRIMARY KEY, book INTEGER, value)")
         return n
 
     cols = {"words": column(words, "int"), "read": column(read, "bool"),
             "date": column(date, "datetime", display={"date_format": date_format}),
-            "type": column(kind, "enumeration", normalized=True)}
+            "type": column(kind, "enumeration", normalized=True),
+            "superseries": column(superseries, "series", normalized=True),
+            "subseries": column(subseries, "series", normalized=True),
+            "pages": column(pages, "int")}
     for spec in extra_columns:
         column(spec, "int")
 
@@ -106,7 +117,14 @@ def build_library(folder: Path, books: list[dict], words=("words", 3), date=("da
         for tag in b["tags"]:
             db.execute("INSERT INTO books_tags_link (book, tag) VALUES (?, ?)", (bid, ident("tags", tag)))
         db.execute("INSERT INTO comments (book, text) VALUES (?, ?)", (bid, f"<p>About {b['title']}</p>"))
-        for field in ("words", "read", "date"):
+        for field in ("superseries", "subseries"):
+            if cols[field] and b[field]:
+                n, (name, index) = cols[field], b[field]
+                db.execute(f"INSERT OR IGNORE INTO custom_column_{n} (value) VALUES (?)", (name,))
+                vid = db.execute(f"SELECT id FROM custom_column_{n} WHERE value = ?", (name,)).fetchone()[0]
+                db.execute(f"INSERT INTO books_custom_column_{n}_link (book, value, extra) VALUES (?, ?, ?)",
+                           (bid, vid, index))
+        for field in ("words", "read", "date", "pages"):
             if cols[field] and b[field] is not None:
                 db.execute(f"INSERT INTO custom_column_{cols[field]} (book, value) VALUES (?, ?)",
                            (bid, b[field]))
@@ -166,6 +184,8 @@ class Case(unittest.TestCase):
         self.seed.mkdir()
         self.books_csv = self.data / "calibre_books.csv"
         self.book_review = self.data / "book_review.csv"
+        self.missing = self.data / "calibre_missing.csv"
+        self.details: Path | None = None
         self.workbook = build_books(MASTER)
         self.fetched: list[str] = []
         self.output = ""
@@ -195,9 +215,13 @@ class Case(unittest.TestCase):
     def extract(self):
         ex.UNRESOLVED.clear()
         ex.CHANGES.clear()
+        # calibre_missing only where extract takes it (1.18b), so the test audit
+        # can run these tests against the code before it and see each assertion fail.
+        missing = ({"calibre_missing": self.missing}
+                   if "calibre_missing" in inspect.signature(ex.extract_books).parameters else {})
         with redirect_stdout(io.StringIO()):
             ex.extract_books(self.workbook, self.seed, book_review=self.book_review,
-                             calibre_books=self.books_csv)
+                             book_details=self.details, calibre_books=self.books_csv, **missing)
         self.unresolved = list(ex.UNRESOLVED)
         self.changes = list(ex.CHANGES)
 
@@ -264,7 +288,7 @@ class Case(unittest.TestCase):
         self.write_rows(self.book_review, rows)
 
     def sidecars(self) -> dict[str, bytes]:
-        return {p.name: p.read_bytes() for p in (self.books_csv, self.book_review) if p.exists()}
+        return {p.name: p.read_bytes() for p in (self.books_csv, self.book_review, self.missing) if p.exists()}
 
 
 # --------------------------------------------------------------------------
@@ -379,7 +403,8 @@ class Check(Case):
         self.assertEqual(self.book_by_title("Warbreaker")["word_count"], "190000")
         self.assertEqual(self.status_of("Warbreaker")["status"], "unlisted")
         before = self.sidecars()
-        self.assertEqual(set(before), {"calibre_books.csv", "book_review.csv"})
+        # calibre_missing.csv since 1.18b: The Way of Kings isn't in this Calibre.
+        self.assertEqual(set(before), {"calibre_books.csv", "book_review.csv", "calibre_missing.csv"})
         self.assertEqual(self.calibre(), 0)
         self.extract()
         self.assertEqual(self.sidecars(), before)
@@ -548,6 +573,23 @@ class Rerun(Case):
         build_library(self.lib, [book("Warbreaker (Tenth Anniversary)", "Brandon Sanderson"),
                                  book("Mistborn", "Brandon Sanderson")])
         self.round()
+        # The same Calibre id: a rename for certain (task 1.18b), no `?`.
+        self.assertIn("renamed  Warbreaker -> Warbreaker (Tenth Anniversary) — Brandon Sanderson", self.output)
+        self.assertIn("0 added, 0 removed, 1 renamed, 0 changed", self.output)
+
+    def test_with_no_calibre_id_yet_a_rename_is_still_guessed(self):
+        """A sidecar from before 1.18b has no calibre_id: near titles by one
+        author are a likely rename, and its missing columns are no change."""
+        build_library(self.lib, [book("Warbreaker", "Brandon Sanderson", universe=("Cosmere", 1)),
+                                 book("Mistborn", "Brandon Sanderson", pages=541)])
+        self.round()
+        old = [c for c in ex.CALIBRE_BOOKS_COLUMNS if c not in
+               ("calibre_id", "pages", "superseries", "superseries_index", "subseries", "subseries_index")]
+        rows = [{c: r[c] for c in old} for r in self.rows(self.books_csv)]
+        self.write_rows(self.books_csv, rows)
+        build_library(self.lib, [book("Warbreaker (Tenth Anniversary)", "Brandon Sanderson", universe=("Cosmere", 1)),
+                                 book("Mistborn", "Brandon Sanderson", pages=541)])
+        self.calibre("--dry-run")
         self.assertIn("renamed? Warbreaker -> Warbreaker (Tenth Anniversary) — Brandon Sanderson", self.output)
         self.assertIn("0 added, 0 removed, 1 renamed, 0 changed", self.output)
 
@@ -787,14 +829,16 @@ class Reads(Case):
 
 class Shape(Case):
 
-    def test_books_csv_header_is_unchanged(self):
+    def test_books_csv_header_adds_only_1_18b_columns(self):
+        """1.18 added no column; 1.18b adds the four the loaders copy (D-90)."""
         build_library(self.lib, [book("Warbreaker", "Brandon Sanderson"), book("Mistborn", "Brandon Sanderson")])
         self.round()
         with (self.seed / "books.csv").open(newline="", encoding="utf-8") as fh:
             header = next(csv.reader(fh))
         self.assertEqual(header, ["id", "title", "author_id", "series_id", "series_position", "genre",
                                   "book_type", "word_count", "word_count_source", "published_year",
-                                  "page_count", "cover_url", "open_library_id", "universe_id"])
+                                  "page_count", "cover_url", "open_library_id", "universe_id",
+                                  "universe_position", "subseries_id", "subseries_position", "calibre_id"])
 
     def test_the_temp_copy_is_outside_the_repo_and_removed(self):
         build_library(self.lib, [book("Warbreaker", "Brandon Sanderson"), book("Mistborn", "Brandon Sanderson")])
@@ -904,6 +948,280 @@ class Shape(Case):
         self.assertEqual(self.calibre("--offline"), 0)
         self.assertEqual(self.fetched, [])
         self.assertEqual(self.sidecars(), before)
+
+
+# --------------------------------------------------------------------------
+# Task 1.18b (D-90): universes, subseries, page counts and the Calibre id
+# --------------------------------------------------------------------------
+
+class Groupings(Case):
+    """1.18b's **Check:**, one test per bullet: 1.18's fixture given
+    `#superseries`, `#subseries` and `#pages` columns."""
+
+    def universe_of(self, title: str) -> tuple[str, str]:
+        b = self.book_by_title(title)
+        return b["universe_id"], b["universe_position"]
+
+    def follows(self) -> list[str]:
+        return [r["universe_id"] for r in self.seed_rows("universe_follows")]
+
+    def test_a_superseries_loads_its_universe_and_a_membership_calibre_doesnt_share_is_reported(self):
+        """The Cosmere tab lists The Way of Kings and Warbreaker. Calibre puts
+        The Way of Kings and Mistborn in Cosmere, at 3 and 1, and gives
+        Warbreaker no superseries: Calibre's membership loads, the tab only
+        follows, and Warbreaker's tab membership is one unresolved row."""
+        self.workbook = build_books(MASTER, {"Cosmere": tab("The Way of Kings", "Warbreaker")})
+        build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson", universe=("Cosmere", 3)),
+                                 book("Mistborn", "Brandon Sanderson", universe=("Cosmere", 1)),
+                                 book("Warbreaker", "Brandon Sanderson")])
+        self.round()
+        self.assertEqual(self.universe_of("The Way of Kings"), ("cosmere", "3.0"))
+        self.assertEqual(self.universe_of("Mistborn"), ("cosmere", "1.0"))
+        self.assertEqual(self.universe_of("Warbreaker"), ("", ""))
+        self.assertEqual(self.seed_rows("book_universes"), [{"id": "cosmere", "name": "Cosmere"}])
+        self.assertEqual(self.follows(), ["cosmere"])
+        self.assertEqual(self.reported("workbook universe calibre doesn't share"),
+                         ["Warbreaker: the Cosmere tab puts it in Cosmere; Calibre gives it no superseries"])
+
+    def test_a_subseries_loads_under_its_series_with_its_position(self):
+        build_library(self.lib, [book("Guards! Guards!", "Terry Pratchett", series="Discworld", index=8.0,
+                                      subseries=("City Watch", 1)),
+                                 book("Mort", "Terry Pratchett", series="Discworld", index=4.0)])
+        self.round()
+        self.assertEqual(self.seed_rows("book_subseries"),
+                         [{"id": "city-watch", "name": "City Watch", "series_id": "discworld"}])
+        guards, mort = self.book_by_title("Guards! Guards!"), self.book_by_title("Mort")
+        self.assertEqual((guards["series_id"], guards["subseries_id"], guards["subseries_position"]),
+                         ("discworld", "city-watch", "1.0"))
+        self.assertEqual((mort["subseries_id"], mort["subseries_position"]), ("", ""))
+
+    def test_pages_replace_the_details_page_count_which_still_fills_a_book_with_none(self):
+        """The details sidecar's count is replaced whatever its source (D-94)."""
+        self.details = self.data / "book_details.csv"
+        self.write_rows(self.details, [
+            {"title": "The Way of Kings", "author": "Brandon Sanderson", "open_library_id": "OL1W",
+             "page_count": "1007", "cover_url": "", "published_year": "2010", "source": "hand"},
+            {"title": "Mistborn", "author": "Brandon Sanderson", "open_library_id": "OL2W",
+             "page_count": "541", "cover_url": "", "published_year": "2006", "source": "openlibrary"}])
+        build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson", pages=1258),
+                                 book("Mistborn", "Brandon Sanderson")])
+        self.round()
+        self.assertEqual(self.book_by_title("The Way of Kings")["page_count"], "1258")
+        self.assertEqual(self.book_by_title("Mistborn")["page_count"], "541")
+        self.assertEqual(self.book_by_title("Mistborn")["word_count"], "214000")
+
+    def test_every_calibre_book_loads_its_id_and_a_renamed_book_stays_one_book(self):
+        """Mistborn is the workbook's; Warbreaker only Calibre's. Both are
+        renamed in Calibre between two runs, keeping their Calibre ids."""
+        build_library(self.lib, [book("Mistborn", "Brandon Sanderson"),
+                                 book("The Way of Kings", "Brandon Sanderson"),
+                                 book("Warbreaker", "Brandon Sanderson")])
+        self.round()
+        self.assertEqual({b["title"]: b["calibre_id"] for b in self.seed_rows("books")},
+                         {"Mistborn": "1", "The Way of Kings": "2", "Warbreaker": "3"})
+
+        build_library(self.lib, [book("Mistborn: The Final Empire", "Brandon Sanderson"),
+                                 book("The Way of Kings", "Brandon Sanderson"),
+                                 book("Warbreaker (Tenth Anniversary)", "Brandon Sanderson")])
+        self.round()
+        self.assertEqual({b["title"]: b["calibre_id"] for b in self.seed_rows("books")},
+                         {"Mistborn: The Final Empire": "1", "The Way of Kings": "2",
+                          "Warbreaker (Tenth Anniversary)": "3"})
+        # Still the workbook's book: its status is the workbook's, not Unlisted.
+        self.assertEqual(self.status_of("Mistborn: The Final Empire")["status"], "to_read")
+        self.assertEqual(self.status_of("Warbreaker (Tenth Anniversary)")["status"], "unlisted")
+        self.assertIn("renamed  Mistborn -> Mistborn: The Final Empire — Brandon Sanderson", self.output)
+        self.assertIn("renamed  Warbreaker -> Warbreaker (Tenth Anniversary) — Brandon Sanderson", self.output)
+        renames = [r for r in self.rows(self.book_review) if r["reason"] == ex.CALIBRE_RENAME]
+        self.assertEqual([(r["a"], r["b"], r["keep"], r["decision"]) for r in renames],
+                         [("Mistborn", "Mistborn: The Final Empire", "Mistborn: The Final Empire", "merge")])
+        self.assertNotIn("stale review", self.reasons())
+        self.assertEqual([r["title"] for r in self.rows(self.missing)], [])
+
+    def test_a_book_renamed_back_in_calibre_takes_its_first_title_again(self):
+        """Mistborn -> Mistborn: The Final Empire -> Mistborn: the rename row
+        turns round in place, and the book is the workbook's Mistborn again."""
+        for title in ("Mistborn", "Mistborn: The Final Empire", "Mistborn"):
+            build_library(self.lib, [book(title, "Brandon Sanderson"), book("The Way of Kings", "Brandon Sanderson")])
+            self.round()
+        self.assertEqual(self.book_by_title("Mistborn")["calibre_id"], "1")
+        self.assertEqual(self.status_of("Mistborn")["status"], "to_read")
+        renames = [r for r in self.rows(self.book_review) if r["reason"] == ex.CALIBRE_RENAME]
+        self.assertEqual([(r["a"], r["b"], r["keep"], r["decision"]) for r in renames],
+                         [("Mistborn: The Final Empire", "Mistborn", "Mistborn", "merge")])
+        self.assertNotIn("stale review", self.reasons())
+        before = self.sidecars()
+        self.round()
+        self.assertEqual(self.sidecars(), before)
+
+    def test_a_workbook_book_calibre_lacks_is_one_missing_row_until_calibre_has_it(self):
+        build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson")])
+        self.round()
+        self.assertEqual(self.rows(self.missing), [{"title": "Mistborn", "author": "Brandon Sanderson",
+                                                    "tabs": "To-Read Master List", "decision": ""}])
+        self.assertEqual(len([b for b in self.seed_rows("books") if b["title"] == "Mistborn"]), 1)
+
+        rows = self.rows(self.missing)
+        rows[0]["decision"] = "keep"
+        self.write_rows(self.missing, rows)
+        self.round()
+        self.assertEqual([r["decision"] for r in self.rows(self.missing)], ["keep"])
+
+        build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson"),
+                                 book("Mistborn", "Brandon Sanderson")])
+        self.round()
+        self.assertEqual(self.rows(self.missing), [])
+        self.assertEqual(self.book_by_title("Mistborn")["calibre_id"], "2")
+
+    def test_a_second_run_leaves_every_sidecar_byte_identical(self):
+        self.workbook = build_books(MASTER + [("Elantris", "Brandon Sanderson", None, "Fantasy", None)],
+                                    {"Cosmere": tab("Warbreaker")})
+        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="Mistborn", index=1.0,
+                                      universe=("Cosmere", 4), subseries=("Era One", 1), pages=541),
+                                 book("The Way of Kings", "Brandon Sanderson", universe=("Cosmere", 9)),
+                                 book("Warbreaker", "Brandon Sanderson", pages=592)])
+        self.round()
+        build_library(self.lib, [book("Mistborn: The Final Empire", "Brandon Sanderson", series="Mistborn",
+                                      index=1.0, universe=("Cosmere", 4), subseries=("Era One", 1), pages=541),
+                                 book("The Way of Kings", "Brandon Sanderson", universe=("Cosmere", 9)),
+                                 book("Warbreaker", "Brandon Sanderson", pages=592)])
+        self.round()
+        before = self.sidecars()
+        self.assertEqual(set(before), {"calibre_books.csv", "book_review.csv", "calibre_missing.csv"})
+        self.assertEqual([r["title"] for r in self.rows(self.missing)], ["Elantris"])
+        self.round()
+        self.assertEqual(self.sidecars(), before)
+
+
+class GroupingOptions(Case):
+    """AC-2: the three columns by lookup name, and a library with none."""
+
+    LIBRARY = [book("The Way of Kings", "Brandon Sanderson", series="The Stormlight Archive",
+                    universe=("Cosmere", 3), subseries=("Roshar Era", 1), pages=1258),
+               book("Mistborn", "Brandon Sanderson")]
+    FIELDS = ("pages", "superseries", "superseries_index", "subseries", "subseries_index")
+
+    def grouped(self) -> list[tuple]:
+        return [tuple(r[f] for f in self.FIELDS) for r in self.rows(self.books_csv)]
+
+    def test_the_three_columns_are_found_by_their_lookup_names(self):
+        build_library(self.lib, self.LIBRARY)
+        self.extract()
+        self.assertEqual(self.calibre("--offline"), 0)
+        default = self.grouped()
+        self.assertEqual(default[0], ("1258", "Cosmere", "3", "Roshar Era", "1"))
+        for line in ("superseries     1 books in 1 universes", "subseries       1 books in 1 subseries",
+                     "pages           1"):
+            self.assertIn(line, self.output)
+
+        self.books_csv.unlink()
+        build_library(self.lib, self.LIBRARY, superseries=("universe", 31), subseries=("arc", 32),
+                      pages=("pagecount", 33))
+        self.assertEqual(self.calibre("--offline", "--superseries-column", "#universe",
+                                      "--subseries-column", "#arc", "--pages-column", "#pagecount"), 0)
+        self.assertEqual(self.grouped(), default)
+        self.extract()
+        self.assertEqual((self.book_by_title("The Way of Kings")["universe_id"],
+                          self.book_by_title("The Way of Kings")["universe_position"]), ("cosmere", "3.0"))
+
+    def test_a_library_without_the_three_columns_fills_none_and_names_each_once(self):
+        build_library(self.lib, self.LIBRARY, superseries=None, subseries=None, pages=None)
+        self.round()
+        for column in ("#superseries", "#subseries", "#pages"):
+            self.assertEqual(self.output.count(f"no column {column}"), 1, column)
+        self.assertEqual(set(self.grouped()), {("", "", "", "", "")})
+        wok = self.book_by_title("The Way of Kings")
+        self.assertEqual((wok["universe_id"], wok["subseries_id"], wok["page_count"], wok["calibre_id"]),
+                         ("", "", "", "1"))
+        self.assertEqual(self.seed_rows("book_subseries"), [])
+
+
+class GroupingReports(Case):
+    """AC-3: the workbook only follows universes; what Calibre doesn't share,
+    and a subseries two series claim, are reported."""
+
+    def follows(self) -> list[str]:
+        return [r["universe_id"] for r in self.seed_rows("universe_follows")]
+
+    def test_a_universe_tab_and_a_universe_group_still_follow(self):
+        self.workbook = build_books(
+            [("Shadow and Bone", "Leigh Bardugo", None, None, None)],
+            {"Cosmere": tab("Warbreaker"),
+             "Series": series_tab(("Grishaverse", "Leigh Bardugo", 8, [("Shadow and Bone", None)]))})
+        build_library(self.lib, [book("Warbreaker", "Brandon Sanderson", universe=("Cosmere", 2)),
+                                 book("Shadow and Bone", "Leigh Bardugo", universe=("Grishaverse", 1))])
+        self.round()
+        self.assertEqual(sorted(self.follows()), ["cosmere", "grishaverse"])
+        self.assertEqual(self.book_by_title("Shadow and Bone")["universe_id"], "grishaverse")
+        self.assertNotIn("workbook universe calibre doesn't share", self.reasons())
+        self.assertNotIn("followed universe has no books", self.reasons())
+
+    def test_a_series_group_naming_a_calibre_superseries_is_a_follow(self):
+        """Malazan is no UNIVERSE_GROUPS entry: Calibre's superseries names it."""
+        self.workbook = build_books([("Gardens of the Moon", "Steven Erikson", None, None, None)],
+                                    {"Series": series_tab(("Malazan", "Steven Erikson", 18, []))})
+        build_library(self.lib, [book("Gardens of the Moon", "Steven Erikson", universe=("Malazan", 1))])
+        self.round()
+        self.assertEqual(self.follows(), ["malazan"])
+        self.assertNotIn("Series-tab group matches nothing", self.reasons())
+
+    def test_a_followed_universe_calibre_gives_no_book_is_one_unresolved_row(self):
+        self.workbook = build_books([], {"Riordanverse": tab("The Lightning Thief", "The Sea of Monsters")})
+        build_library(self.lib, [book("The Lightning Thief", "Rick Riordan"),
+                                 book("The Sea of Monsters", "Rick Riordan")])
+        self.round()
+        self.assertEqual(self.follows(), ["riordanverse"])
+        self.assertEqual(self.seed_rows("book_universes"), [{"id": "riordanverse", "name": "Riordanverse"}])
+        self.assertEqual(self.reported("followed universe has no books"),
+                         ["Riordanverse: Calibre gives no book this superseries; set #superseries in "
+                          "Calibre, or stop following it in the workbook"])
+
+    def test_one_subseries_under_two_series_is_one_row_and_the_books_keep_their_series(self):
+        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="Mistborn", index=1.0,
+                                      subseries=("Era One", 1)),
+                                 book("Elantris", "Brandon Sanderson", series="Elantris", index=1.0,
+                                      subseries=("Era One", 1)),
+                                 book("The Emperor's Soul", "Brandon Sanderson", series="Elantris", index=1.5,
+                                      subseries=("Era One", 2))])
+        self.round()
+        self.assertEqual(self.reported("subseries under two series"),
+                         ["Era One: kept under Mistborn; the books of Elantris keep their series, "
+                          "with no subseries. Rename one in Calibre"])
+        for title in ("Elantris", "The Emperor's Soul"):
+            b = self.book_by_title(title)
+            self.assertEqual((b["series_id"], b["subseries_id"], b["subseries_position"]), ("elantris", "", ""))
+        self.assertEqual(self.book_by_title("Mistborn")["subseries_id"], "era-one")
+
+    def test_a_second_calibre_book_on_one_book_loads_nothing(self):
+        """book_review.csv merges Calibre's `Mistborn Two` into Mistborn: the
+        second Calibre book's series, subseries, pages and read load nothing,
+        so no subseries is left under a series the book no longer has."""
+        self.write_rows(self.book_review, [{
+            "kind": "book", "a": "Mistborn", "b": "Mistborn Two", "a_author": "Brandon Sanderson",
+            "b_author": "Brandon Sanderson", "a_tabs": "", "b_tabs": "Calibre", "reason": "similar",
+            "similarity": "0.60", "keep": "Mistborn", "decision": "merge"}])
+        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", series="Mistborn", index=1.0,
+                                      subseries=("Era One", 1), pages=541),
+                                 book("Mistborn Two", "Brandon Sanderson", series="Other", index=2.0,
+                                      subseries=("Other Era", 1), pages=999, read=1,
+                                      date="2024-03-05 12:00:00+00:00")])
+        self.round()
+        b = self.book_by_title("Mistborn")
+        self.assertEqual((b["calibre_id"], b["series_id"], b["subseries_id"], b["page_count"]),
+                         ("1", "mistborn", "era-one", "541"))
+        self.assertEqual([s["id"] for s in self.seed_rows("book_subseries")], ["era-one"])
+        self.assertNotIn("other", [s["id"] for s in self.seed_rows("book_series")])
+        self.assertEqual(self.seed_rows("read_events"), [])
+        self.assertEqual(self.reported("two calibre books for one book"),
+                         ["Mistborn: Calibre id 1 kept, 2 (Mistborn Two) not loaded; merge them in "
+                          "Calibre, or separate them in book_review.csv"])
+
+    def test_a_subseries_with_no_series_is_reported_and_not_loaded(self):
+        build_library(self.lib, [book("Mistborn", "Brandon Sanderson", subseries=("Era One", 1))])
+        self.round()
+        self.assertEqual(self.reported("calibre subseries with no series"),
+                         ["Mistborn: Era One not loaded; give the book its series in Calibre"])
+        self.assertEqual(self.seed_rows("book_subseries"), [])
 
 
 if __name__ == "__main__":

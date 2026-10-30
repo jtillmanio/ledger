@@ -97,12 +97,46 @@ describe.each(["load.ps1", "load.sh"])("%s, task 1.18", (name) => {
   });
 });
 
+// Task 1.18b (D-90): Calibre's subseries are a table books point at, so it
+// loads after its series and before books; books carry Calibre's id and the
+// universe and subseries positions.
+describe.each(["load.ps1", "load.sh"])("%s, task 1.18b", (name) => {
+  const text = read(name);
+  const at = (re: RegExp) => {
+    const i = text.search(re);
+    expect(i, String(re)).toBeGreaterThan(-1);
+    return i;
+  };
+
+  it("truncates book_subseries with the others", () => {
+    const truncate = /TRUNCATE[\s\S]*?RESTART IDENTITY CASCADE;/.exec(text)![0];
+    expect(truncate).toMatch(/\bbook_subseries\b/);
+  });
+
+  it("copies book_subseries after book_series and before books", () => {
+    const copy = at(/\\+copy book_subseries\(id,name,series_id\) FROM '[^']*book_subseries\.csv' CSV HEADER/);
+    expect(copy).toBeGreaterThan(at(/\\+copy book_series\b/));
+    expect(copy).toBeLessThan(at(/\\+copy books\(/));
+  });
+
+  it("copies books with the four new columns, in the seed header's order", () => {
+    expect(text).toMatch(/\\+copy books\([^)]*,universe_id,universe_position,subseries_id,subseries_position,calibre_id\) FROM '[^']*books\.csv'/);
+  });
+});
+
+describe.each(["rebuild.ps1", "rebuild.sh"])("%s, task 1.18b", (name) => {
+  it("counts book_subseries against the seed", () => {
+    expect(read(name)).toMatch(/\bbook_subseries\b/);
+  });
+});
+
 // Task 1.18: every extract folds in the Calibre sidecar (one since D-87).
 // rebuild.ps1 runs `npm run extract`; rebuild.sh spells the arguments out.
 describe("the Calibre sidecar reaches extract", () => {
   const extract = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts.extract as string;
   it.each([["npm run extract", extract], ["rebuild.sh", read("rebuild.sh")]])("%s passes it", (_, text) => {
     expect(text).toMatch(/--calibre-books etl\/data\/calibre_books\.csv/);
+    expect(text).toMatch(/--calibre-missing etl\/data\/calibre_missing\.csv/);
     expect(text).not.toMatch(/--calibre-(review|reads)\b/);
   });
 });

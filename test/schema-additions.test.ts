@@ -67,6 +67,14 @@ describe("columns", () => {
     ["shelf_books", "shelf_id", "text", "NO"],
     ["shelf_books", "book_id", "text", "NO"],
     ["shelf_books", "ordinal", "integer", "NO"],
+    // Task 1.18b (D-90, D-91): Calibre's groupings, page count and id.
+    ["books", "calibre_id", "integer", "YES"],
+    ["books", "universe_position", "real", "YES"],
+    ["books", "subseries_id", "text", "YES"],
+    ["books", "subseries_position", "real", "YES"],
+    ["book_subseries", "id", "text", "NO"],
+    ["book_subseries", "name", "text", "NO"],
+    ["book_subseries", "series_id", "text", "NO"],
   ];
 
   it("adds every column with its type and nullability", async () => {
@@ -120,6 +128,40 @@ describe("books.word_count_source", () => {
     expect(await sqlstate(() => sql`
       INSERT INTO books (id, title, word_count, word_count_source) VALUES ('ok', 'OK', 1000, 'estimated')`)).toBe("ok");
     expect(await sqlstate(() => sql`INSERT INTO books (id, title) VALUES ('bare', 'Bare')`)).toBe("ok");
+  });
+});
+
+describe("task 1.18b: Calibre's id and groupings (D-90)", () => {
+  it("adds four books columns and one table, and no user_id (D-91)", async () => {
+    const rows = await sql<{ table_name: string; column_name: string }[]>`
+      SELECT table_name, column_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name IN ('books', 'book_subseries')`;
+    const subseries = rows.filter((r) => r.table_name === "book_subseries").map((r) => r.column_name);
+    expect(subseries.sort()).toEqual(["id", "name", "series_id"]);
+    const books = rows.filter((r) => r.table_name === "books").map((r) => r.column_name);
+    expect(books).not.toContain("user_id");
+  });
+
+  it("gives one calibre_id to one book, and any number of books none", async () => {
+    await sql`INSERT INTO books (id, title, calibre_id) VALUES ('wok', 'The Way of Kings', 42)`;
+    expect(await sqlstate(() => sql`
+      INSERT INTO books (id, title, calibre_id) VALUES ('wok2', 'The Way of Kings', 42)`)).toBe(UNIQUE);
+    expect(await sqlstate(() => sql`
+      INSERT INTO books (id, title) VALUES ('a', 'A'), ('b', 'B')`)).toBe("ok");
+  });
+
+  it("keeps a subseries inside a real series", async () => {
+    await sql`INSERT INTO book_series (id, name) VALUES ('discworld', 'Discworld')`;
+    expect(await sqlstate(() => sql`
+      INSERT INTO book_subseries (id, name) VALUES ('city-watch', 'City Watch')`)).toBe(NOT_NULL);
+    expect(await sqlstate(() => sql`
+      INSERT INTO book_subseries (id, name, series_id) VALUES ('city-watch', 'City Watch', 'nope')`)).toBe(FK);
+    await sql`INSERT INTO book_subseries (id, name, series_id) VALUES ('city-watch', 'City Watch', 'discworld')`;
+    expect(await sqlstate(() => sql`
+      INSERT INTO books (id, title, series_id, subseries_id, subseries_position)
+      VALUES ('gg', 'Guards! Guards!', 'discworld', 'city-watch', 1)`)).toBe("ok");
+    expect(await sqlstate(() => sql`
+      INSERT INTO books (id, title, subseries_id) VALUES ('x', 'X', 'nope')`)).toBe(FK);
   });
 });
 

@@ -1026,8 +1026,22 @@ WORKBOOK_READS_COLUMNS = ["title", "year", "genre", "tab", "rank"]
 # holds. A near spelling it finds is a `book` row in book_review.csv with this
 # reason: `a` the workbook's spelling, `b` Calibre's.
 CALIBRE = "calibre"
+# A workbook book Calibre renamed, found by its Calibre id (task 1.18b, D-90):
+# calibre.py writes it decided, `merge` keeping Calibre's spelling, so the
+# workbook's spelling folds into the new title on every extract.
+CALIBRE_RENAME = "calibre rename"
 CALIBRE_BOOKS_COLUMNS = ["title", "author", "words", "series", "series_index", "isbn", "tags",
-                         "book_type", "read", "date_read", "precision", "confirmed", "open_library"]
+                         "book_type", "read", "date_read", "precision", "confirmed", "open_library",
+                         "calibre_id", "pages", "superseries", "superseries_index",
+                         "subseries", "subseries_index"]
+# etl/data/calibre_missing.csv (task 1.18b, D-90): each workbook book with no
+# Calibre id, to keep (`keep`) or to add to Calibre, which drops its row.
+CALIBRE_MISSING_COLUMNS = ["title", "author", "tabs", "decision"]
+CALIBRE_MISSING_DECISIONS = ("keep", "")
+BOOK_COLUMNS = ["id", "title", "author_id", "series_id", "series_position", "genre", "book_type",
+                "word_count", "word_count_source", "published_year", "page_count", "cover_url",
+                "open_library_id", "universe_id", "universe_position", "subseries_id",
+                "subseries_position", "calibre_id"]
 # What Open Library can confirm of a Calibre book, in calibre_books.csv's `confirmed`.
 CHECKED_FIELDS = ("series", "series_index", "isbn")
 # Not loaded: the books Calibre created, so calibre.py never matches its own.
@@ -1131,6 +1145,14 @@ class BookIndex:
         self.author_keys: dict[str, str] = {}
         self.series_keys: dict[str, str] = {}
         self.universe_keys: dict[str, str] = {}
+        # Calibre's #subseries (task 1.18b): one name lives under one series;
+        # key() -> the other series' names that also claimed it.
+        self.subseries: dict[str, dict] = {}
+        self.subseries_keys: dict[str, str] = {}
+        self.subseries_clashes: dict[str, list[str]] = {}
+        # What the workbook's universe tabs and groups say a book is in (D-43).
+        # Calibre sets membership now (D-90); these only report where it differs.
+        self.memberships: list[tuple[dict, str, str]] = []
         self.taken: set[str] = set()
         self.placeholders: list[dict] = []
         # What the workbook spells, before any merge: proposals pair these.
@@ -1238,13 +1260,25 @@ class BookIndex:
         name = clean(name)
         return self.universe_keys.get(key(name) or name) if name else None
 
-    def set_universe(self, book: dict, uid: str, where: str) -> None:
-        """A book belongs to one universe: the first that claims it keeps it."""
-        if book["universe_id"] and book["universe_id"] != uid:
-            flag("books", "two universes for one book",
-                 f"{book['title']}: {book['universe_id']} kept, {uid} ({where}) dropped")
-            return
-        book["universe_id"] = uid
+    def subseries_id(self, name: str, series_id: str) -> str | None:
+        """A subseries under its series. The first series to name it keeps it;
+        another series naming it gets none, and the clash is kept for a report."""
+        k = key(name) or name
+        sid = self.subseries_keys.get(k)
+        if sid is None:
+            sid = slug(name)
+            while sid in self.subseries:
+                sid += "-x"
+            self.subseries_keys[k] = sid
+            self.subseries[sid] = {"id": sid, "name": name, "series_id": series_id}
+            return sid
+        if self.subseries[sid]["series_id"] == series_id:
+            return sid
+        other = self.series[series_id]["name"]
+        clashes = self.subseries_clashes.setdefault(k, [])
+        if other not in clashes:
+            clashes.append(other)
+        return None
 
     def find_book(self, title, author: str | None = None) -> dict | None:
         """The loaded book a title and author name, after merges. With no
@@ -1320,7 +1354,8 @@ class BookIndex:
             "title": title, "author_id": aid, "series_id": sid, "series_position": pos,
             "genre": clean(genre), "book_type": clean(book_type) or "Novel",
             "word_count": as_int(word_count), "published_year": as_int(published_year),
-            "universe_id": None,
+            "universe_id": None, "universe_position": None, "subseries_id": None,
+            "subseries_position": None, "calibre_id": None,
         }
         # Every count in the workbook was typed, so it is stated; null with the
         # count (books_word_count_source_check).
@@ -1426,9 +1461,26 @@ def review_book_pairs(idx: BookIndex, existing: list[dict]) -> list[dict]:
 
     seen = {"book": set(idx.seen_books), "author": {(k, "") for k in idx.seen_authors},
             "series": {(k, "") for k in idx.seen_series}}
+    def identity(title, author) -> tuple[str, str]:
+        t, a = idx.book_identity(title, clean(author))
+        return key(t), key(a)
+
+    # Where each workbook sighting lands once merges apply: a Calibre rename's
+    # `a` is the seed's spelling, itself perhaps an earlier rename's `b`.
+    landed = None
     rows = []
     for r in existing:
         pair = review_sides(r)
+        if r["reason"] == CALIBRE_RENAME:
+            if landed is None:
+                landed = {identity(s["title"], s["author"]) for s in idx.seen_books.values()}
+            rows.append(r)
+            proposals.pop(pair, None)
+            if identity(r["a"], r["a_author"]) not in landed:
+                flag("book_review", "stale review",
+                     f"{r['kind']}: {r['a']} / {r['b']} ({r['decision']}) — a name is no longer "
+                     "in the workbook; delete the row once it's done with")
+            continue
         if r["reason"] in (OPEN_LIBRARY, CALIBRE):
             # Only `a` is ever in the workbook, spelled with the author it loads under.
             in_workbook = any(t == key(r["a"]) and key(idx.canonical_author(s["author"])) == key(r["a_author"])
@@ -1473,9 +1525,11 @@ def fold_book_details(idx: BookIndex, details: list[dict]) -> None:
     """Fill each book's Open Library id, page count and cover from its
     book_details.csv row, matched on title and author after clean() and key()
     (task 1.14, D-44). The published year fills only where the workbook has
-    none. A page count never becomes a word count: 2.1 estimates that."""
+    none. A page count never becomes a word count: 2.1 estimates that.
+    Calibre's #pages, which fold_calibre() kept, replaces the sidecar's
+    page count whatever its source (task 1.18b, D-90, D-94)."""
     for b in idx.by_key.values():
-        b.update(open_library_id=None, page_count=None, cover_url=None)
+        b.update(open_library_id=None, page_count=b.get("calibre_pages"), cover_url=None)
     for row in details:
         b = idx.by_key.get((key(clean(row["title"])), key(clean(row["author"]))))
         if b is None:
@@ -1484,7 +1538,7 @@ def fold_book_details(idx: BookIndex, details: list[dict]) -> None:
                  "renamed or gone from the workbook; enrich:books rekeys an accepted rename")
             continue
         b["open_library_id"] = clean(row["open_library_id"])
-        b["page_count"] = as_int(row["page_count"])
+        b["page_count"] = b.get("calibre_pages") or as_int(row["page_count"])
         b["cover_url"] = clean(row["cover_url"])
         if b["published_year"] is None:
             b["published_year"] = as_int(row["published_year"])
@@ -1518,6 +1572,17 @@ def read_finish(row: dict) -> tuple[str | None, str]:
     if date:
         flag("calibre_books", "unreadable date", f"{row['title']}: {date!r}, loaded with no date")
     return None, "none"
+
+
+def second_read(b: dict, prior: dict, row: dict) -> bool:
+    """A Calibre read of a book already read is not loaded, and is reported:
+    the owner logs a reread by hand (D-87, D-93). True when it was one."""
+    if prior.get("status") != "read":
+        return False
+    flag("calibre_books", "calibre read for a book already read",
+         f"{b['title']}: read {prior['finished_on'] or 'undated'} kept, "
+         f"{row['title']}'s {row['date_read'] or 'undated'} read not loaded")
+    return True
 
 
 def series_text(name: str | None, pos) -> str:
@@ -1562,6 +1627,20 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
                                "year_rank": None, "rating": None}
             created.append({"title": row["title"], "author": row["author"], "book_id": b["id"]})
 
+        # One Ledger book is one Calibre book (task 1.18b, D-90): a second
+        # Calibre book on it (a merge in book_review.csv) loads nothing at all.
+        cid = as_int(row["calibre_id"])
+        if cid is not None and b["calibre_id"] is not None and b["calibre_id"] != cid:
+            flag("calibre_books", "two calibre books for one book",
+                 f"{b['title']}: Calibre id {b['calibre_id']} kept, {cid} ({row['title']}) not loaded; "
+                 "merge them in Calibre, or separate them in book_review.csv")
+            # Its read is a possible reread, which the owner logs by hand (D-93).
+            if row["read"] == "true" or row["date_read"]:
+                second_read(b, status.get(b["id"]) or {}, row)
+            continue
+        if cid is not None:
+            b["calibre_id"] = cid
+
         kind = clean(row["book_type"])
         if kind and kind != b["book_type"]:
             note("calibre_books", "calibre replaced a book type",
@@ -1589,12 +1668,26 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
                      f"{b['title']}: Calibre's {series_text(name, pos)} loaded, "
                      f"Open Library has {row['open_library']}")
 
+        # Calibre's groupings, page count and id (task 1.18b, D-90). The
+        # superseries is the universe: Calibre alone says which books are in one.
+        universe = clean(row["superseries"])
+        if universe:
+            b["universe_id"] = idx.universe_id(universe)
+            b["universe_position"] = as_float(row["superseries_index"])
+        subseries = clean(row["subseries"])
+        if subseries:
+            if b["series_id"]:
+                b["subseries_id"] = idx.subseries_id(subseries, b["series_id"])
+                b["subseries_position"] = as_float(row["subseries_index"]) if b["subseries_id"] else None
+            else:
+                flag("calibre_books", "calibre subseries with no series",
+                     f"{b['title']}: {subseries} not loaded; give the book its series in Calibre")
+        if as_int(row["pages"]):
+            b["calibre_pages"] = as_int(row["pages"])
+
         if row["read"] == "true" or row["date_read"]:
             prior = status.get(b["id"]) or {}
-            if prior.get("status") == "read":
-                flag("calibre_books", "calibre read for a book already read",
-                     f"{b['title']}: read {prior['finished_on'] or 'undated'} kept, "
-                     f"{row['title']}'s {row['date_read'] or 'undated'} read not loaded")
+            if second_read(b, prior, row):
                 continue
             on, precision = read_finish(row)
             events.append({"user_id": "$OWNER", "book_id": b["id"], "finished_on": on,
@@ -1602,7 +1695,84 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
             status[b["id"]] = {"user_id": "$OWNER", "book_id": b["id"], "status": "read",
                                "finished_on": on, "finished_on_precision": precision,
                                "year_rank": prior.get("year_rank"), "rating": prior.get("rating")}
+    for k, others in idx.subseries_clashes.items():
+        s = idx.subseries[idx.subseries_keys[k]]
+        flag("calibre_books", "subseries under two series",
+             f"{s['name']}: kept under {idx.series[s['series_id']]['name']}; the books of "
+             f"{' | '.join(others)} keep their series, with no subseries. Rename one in Calibre")
     return events, created, replaced
+
+
+def report_universes(idx: BookIndex, followed: dict) -> None:
+    """Where the workbook's universe tabs and groups (D-43) and Calibre's
+    superseries (D-90) disagree, in unresolved.csv: each workbook membership
+    Calibre doesn't share, once per book, and each followed universe Calibre
+    gives no book."""
+    claims: dict[tuple, tuple[dict, str, list[str]]] = {}
+    for book, uid, where in idx.memberships:
+        if book is None:
+            continue
+        _, _, wheres = claims.setdefault((book["id"], uid), (book, uid, []))
+        if where not in wheres:
+            wheres.append(where)
+    for book, uid, wheres in claims.values():
+        if book["universe_id"] == uid:
+            continue
+        if book["universe_id"]:
+            has = f"Calibre has it in {idx.universes[book['universe_id']]['name']}"
+        elif book["calibre_id"] is not None:
+            has = "Calibre gives it no superseries"
+        else:
+            has = "Calibre doesn't have it (calibre_missing.csv)"
+        flag("books", "workbook universe calibre doesn't share",
+             f"{book['title']}: the {' and '.join(wheres)} tab{'s' if len(wheres) > 1 else ''} "
+             f"put{'' if len(wheres) > 1 else 's'} it in {idx.universes[uid]['name']}; {has}")
+    in_use = {b["universe_id"] for b in idx.by_key.values()}
+    for uid in followed:
+        if uid not in in_use:
+            flag("book_universes", "followed universe has no books",
+                 f"{idx.universes[uid]['name']}: Calibre gives no book this superseries; "
+                 "set #superseries in Calibre, or stop following it in the workbook")
+
+
+def write_calibre_missing(path: Path, idx: BookIndex, review: list[dict]) -> None:
+    """etl/data/calibre_missing.csv (task 1.18b, D-90): every workbook book with
+    no Calibre id, with the tabs that list it. A row keeps its place and its
+    `decision`; `keep` means the owner keeps the book without Calibre. A book
+    Calibre has now, or the workbook no longer lists, leaves the file. A book
+    whose Calibre near spelling awaits book_review.csv is left to that row."""
+    held = {(key(r["a"]), key(r["a_author"])) for r in review if r["reason"] == CALIBRE and not r["decision"]}
+    names = {aid: a["name"] for aid, a in idx.authors.items()}
+    listed: dict[str, tuple[dict, list[str]]] = {}
+    for s in idx.seen_books.values():
+        b = idx.find_book(s["title"], s["author"])
+        if b is None:
+            continue
+        _, tabs = listed.setdefault(b["id"], (b, []))
+        tabs += [t for t in s["tabs"] if t not in tabs]
+    missing: dict[tuple, dict] = {}
+    for b, tabs in listed.values():
+        author = names.get(b["author_id"], "")
+        k = (key(b["title"]), key(author))
+        if b["calibre_id"] is None and k not in held:
+            missing[k] = {"title": b["title"], "author": author, "tabs": "; ".join(tabs), "decision": ""}
+    rows = []
+    for r in read_sidecar(path, CALIBRE_MISSING_COLUMNS):
+        row = missing.pop((key(r["title"]), key(r["author"])), None)
+        if row is None:
+            continue
+        if r["decision"].lower() not in CALIBRE_MISSING_DECISIONS:
+            flag("calibre_missing", "unknown decision",
+                 f"{r['title']}: {r['decision']!r}, counted undecided; `keep`, or add the book to Calibre")
+        rows.append({**row, "decision": r["decision"]})
+    rows += missing.values()
+    with Path(path).open("w", newline="", encoding="utf-8") as fh:
+        w = csv.DictWriter(fh, fieldnames=CALIBRE_MISSING_COLUMNS)
+        w.writeheader()
+        w.writerows(rows)
+    undecided = sum(1 for r in rows if r["decision"].lower() != "keep")
+    print(f"  {len(rows)} workbook books not in Calibre, {undecided} undecided — `keep` each "
+          f"in {path}, or add it to Calibre")
 
 
 def write_book_review(path: Path, rows: list[dict]) -> None:
@@ -1644,7 +1814,7 @@ def is_number(v) -> bool:
 
 def extract_books(path: Path, out: Path, with_plan: bool = False,
                   book_review: Path | None = None, book_details: Path | None = None,
-                  calibre_books: Path | None = None) -> None:
+                  calibre_books: Path | None = None, calibre_missing: Path | None = None) -> None:
     xl = pd.ExcelFile(path)
     print(f"\nbooks <- {path.name}")
     review = load_book_review(book_review)
@@ -1706,7 +1876,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
             bid = idx.upsert(r["Book"], author, r.get("Series"), word_count=r.get("Word Count"),
                              published_year=pub, book_type=r.get("Type"), tab=tab)
             if bid and uid:
-                idx.set_universe(idx.find_book(r["Book"], author), uid, tab)
+                idx.memberships.append((idx.find_book(r["Book"], author), uid, tab))
             # A Completed tick is a read: listed, never loaded (D-41).
             if bid and as_bool(r.get("Completed")):
                 listed_read(r["Book"], tab=tab)
@@ -1815,6 +1985,13 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
     # ---- authorless sightings join their book; references follow ---------
     remap = idx.finish()
 
+    # Calibre's superseries are the universes (task 1.18b, D-90): known before
+    # the follows, so a Series-tab group can name one.
+    calibre_rows = read_sidecar(calibre_books, CALIBRE_BOOKS_COLUMNS)
+    for row in calibre_rows:
+        if clean(row["superseries"]):
+            idx.universe_id(clean(row["superseries"]))
+
     # ---- what the owner follows (task 1.15, D-42, D-43) -------------------
     # Each author tab follows what it is, and each Series-tab group follows the
     # series, author or universe it names, all at `tracking`. A series group
@@ -1868,7 +2045,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
             if book["word_count"] is None and as_int(words):
                 book["word_count"], book["word_count_source"] = as_int(words), "stated"
             if kind == "universe":
-                idx.set_universe(book, eid, "Series tab")
+                idx.memberships.append((book, eid, "Series"))
         if missing:
             flag("books", "Series-tab book matches no book",
                  f"{name}: {' | '.join(missing)} (a read loads by hand, D-41; else fix the title)")
@@ -1898,8 +2075,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
         releases.append({"book_id": new, "release_date": date})
 
     # ---- the Calibre library, after every workbook value (task 1.18) -----
-    read_events, calibre_created, replaced = fold_calibre(
-        idx, status, review, read_sidecar(calibre_books, CALIBRE_BOOKS_COLUMNS))
+    read_events, calibre_created, replaced = fold_calibre(idx, status, review, calibre_rows)
     # A workbook series Calibre took every book from (a misspelling, most
     # often) is no series: dropped, unless it is followed, which is reported.
     in_use = {b["series_id"] for b in idx.by_key.values()}
@@ -1910,6 +2086,23 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
                  "fix the workbook's Series tab, or the series in Calibre")
         else:
             del idx.series[sid]
+    # A subseries lives under a loaded series: one whose series went is no
+    # subseries (a guard; fold_calibre gives one book one Calibre book).
+    for ssid in [s for s, v in idx.subseries.items() if v["series_id"] not in idx.series]:
+        flag("book_subseries", "subseries lost its series",
+             f"{idx.subseries[ssid]['name']}: its series is gone, so it is not loaded")
+        del idx.subseries[ssid]
+        for b in idx.by_key.values():
+            if b["subseries_id"] == ssid:
+                b["subseries_id"] = b["subseries_position"] = None
+    if calibre_rows:
+        report_universes(idx, follows["universe"])
+    # A universe no book is in is no universe, unless it is followed (D-43).
+    in_use = {b["universe_id"] for b in idx.by_key.values()}
+    for uid in [u for u in idx.universes if u not in in_use and u not in follows["universe"]]:
+        del idx.universes[uid]
+    if calibre_rows and calibre_missing:
+        write_calibre_missing(calibre_missing, idx, review)
 
     if book_review:
         write_book_review(book_review, review_book_pairs(idx, review))
@@ -1920,10 +2113,8 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
     write(out, "book_series", list(idx.series.values()),
           ["id", "name", "author_id", "total_books"])
     write(out, "book_universes", list(idx.universes.values()), ["id", "name"])
-    write(out, "books", books, ["id", "title", "author_id", "series_id", "series_position",
-                                "genre", "book_type", "word_count", "word_count_source",
-                                "published_year", "page_count", "cover_url", "open_library_id",
-                                "universe_id"])
+    write(out, "book_subseries", list(idx.subseries.values()), ["id", "name", "series_id"])
+    write(out, "books", books, BOOK_COLUMNS)
     write(out, "book_status", list(status.values()),
           ["user_id", "book_id", "status", "finished_on", "finished_on_precision",
            "year_rank", "rating"])
@@ -1981,6 +2172,9 @@ def main(argv=None) -> int:
                          "(D-87): word counts, series and reads over the workbook's, and the books only "
                          "Calibre has (created at unlisted); what needs a decision goes to unresolved.csv, "
                          "what Calibre overrode to calibre_changes.csv (D-93)")
+    ap.add_argument("--calibre-missing", type=Path, default=None,
+                    help="calibre_missing.csv: rewritten each run with the workbook books Calibre doesn't "
+                         "have, keeping each `keep` decision; a book added to Calibre leaves it (D-90)")
     ap.add_argument("--fail-on-cycle", action="store_true",
                     help="exit non-zero when the prereq graph has a cycle, after writing every "
                          "CSV (task 2.11a; START-HERE Step 14's final extract)")
@@ -2000,7 +2194,8 @@ def main(argv=None) -> int:
         old.unlink()
     extract_comics(args.comics, args.out)
     extract_books(args.books, args.out, with_plan=args.with_plan, book_review=args.book_review,
-                  book_details=args.book_details, calibre_books=args.calibre_books)
+                  book_details=args.book_details, calibre_books=args.calibre_books,
+                  calibre_missing=args.calibre_missing)
 
     write(args.out, "unresolved", UNRESOLVED, ["table", "reason", "detail"])
     write(args.out, "calibre_changes", CHANGES, ["table", "reason", "detail"])

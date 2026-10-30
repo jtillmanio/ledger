@@ -981,7 +981,8 @@ class SeriesFollows(BookCase):
 
     def test_roadmap_fixture_seeds_three_follows_and_one_unresolved(self):
         """The roadmap Check: one series, one author, one universe group and one
-        unmatched name; the Cosmere tab's books carry universe_id 'cosmere'."""
+        unmatched name. Since 1.18b (D-90) the Cosmere tab only follows: Calibre's
+        #superseries says which books are in it, so with no Calibre none is."""
         self.extract(build_books(
             [("Red Rising", "Pierce Brown", "Red Rising #1", "Sci-fi", None),
              ("Sphere", "Michael Crichton", None, "Sci-fi", None)],
@@ -997,8 +998,8 @@ class SeriesFollows(BookCase):
         self.assertEqual(read(self.out, "book_universes"), [{"id": "cosmere", "name": "Cosmere"}])
         universe = {b["id"]: b["universe_id"] for b in self.books().values()}
         self.assertEqual(universe, {"red-rising-pierce-brown": "", "sphere-michael-crichton": "",
-                                    "the-final-empire-brandon-sanderson": "cosmere",
-                                    "warbreaker-brandon-sanderson": "cosmere"})
+                                    "the-final-empire-brandon-sanderson": "",
+                                    "warbreaker-brandon-sanderson": ""})
         self.assertNotIn("Series-tab book matches no book", self.reasons())
         # The ticked Completed column is not read (D-41): no status but to_read.
         self.assertEqual(set(self.status().values()), {"to_read"})
@@ -1011,11 +1012,15 @@ class SeriesFollows(BookCase):
                              ("universe_follows", "user_id,universe_id,state")):
             self.assertEqual((self.out / f"{name}.csv").read_text(encoding="utf-8").splitlines()[0], header)
         self.assertTrue((self.out / "books.csv").read_text(encoding="utf-8").splitlines()[0]
-                        .endswith(",open_library_id,universe_id"))
+                        .endswith(",open_library_id,universe_id,universe_position,subseries_id,"
+                                  "subseries_position,calibre_id"))
+        self.assertEqual((self.out / "book_subseries.csv").read_text(encoding="utf-8").splitlines()[0],
+                         "id,name,series_id")
 
     def test_a_group_on_the_hand_list_is_a_universe_of_its_listed_books(self):
         """Owner, 2026-10-26: Grishaverse is a universe because UNIVERSE_GROUPS
-        says so. A group named nowhere is reported, and moves no book."""
+        says so, and followed. A group named nowhere is reported. Since 1.18b
+        (D-90) a group moves no book into its universe: Calibre does."""
         self.extract(build_books(
             [("Shadow and Bone", "Leigh Bardugo", None, None, None),
              ("Six of Crows", "Leigh Bardugo", "Six of Crows #1", None, None),
@@ -1026,8 +1031,9 @@ class SeriesFollows(BookCase):
         self.assertIn("Grishaverse", ex.UNIVERSE_GROUPS)
         self.assertEqual(self.follows(), [("universe", "grishaverse")])
         universe = {b["id"]: b["universe_id"] for b in self.books().values()}
-        self.assertEqual(universe, {"shadow-and-bone-leigh-bardugo": "grishaverse",
-                                    "six-of-crows-leigh-bardugo": "grishaverse",
+        self.assertEqual(read(self.out, "book_universes"), [{"id": "grishaverse", "name": "Grishaverse"}])
+        self.assertEqual(universe, {"shadow-and-bone-leigh-bardugo": "",
+                                    "six-of-crows-leigh-bardugo": "",
                                     "ninth-house-leigh-bardugo": ""})
         self.assertEqual(len(self.unmatched()), 1)
         self.assertIn("The Themis Files", self.unmatched()[0])
@@ -1076,7 +1082,8 @@ class SeriesFollows(BookCase):
         self.assertEqual(self.follows(), [("series", "the-dresden-files"), ("author", "stephen-king"),
                                           ("universe", "riordanverse")])
         self.assertEqual(read(self.out, "book_universes"), [{"id": "riordanverse", "name": "Riordanverse"}])
-        self.assertEqual(self.books()["the-lightning-thief-rick-riordan"]["universe_id"], "riordanverse")
+        # The tab follows; membership is Calibre's (1.18b, D-90).
+        self.assertEqual(self.books()["the-lightning-thief-rick-riordan"]["universe_id"], "")
         self.assertEqual(self.books()["carrie-stephen-king"]["universe_id"], "")
 
     def test_two_spellings_with_one_key_are_one_author_and_one_series(self):
