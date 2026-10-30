@@ -117,7 +117,7 @@ tick them.
       which 0012 has already passed (from TASK-025, PR #94). *Done on
       development, 2026-10-20: all 14 migrations applied, through
       `0013_plan_period`. The production caution stands for the next Release.*
-- [ ] Decide the 43 `open library` rows in `etl/data/book_review.csv`: `merge`
+- [x] Decide the 43 `open library` rows in `etl/data/book_review.csv`: `merge`
       takes Open Library's spelling (`keep` is filled in), `separate` keeps yours.
       Some are real typos (*Inheritence*, *Seasons of Mists*), some are Open
       Library's padded titles (*… CD*, *[Dramatized Adaptation]*). Several
@@ -149,12 +149,12 @@ tick them.
       - *D-94 (2026-10-28):* 1.14b replaces Open Library's details and series
         check with Hardcover's, so the two Open Library re-runs above can wait
         for it instead.
-- [ ] Create a Hardcover API token (hardcover.app, your account's API Access
+- [x] Create a Hardcover API token (hardcover.app, your account's API Access
       page, with the narrowest read scope it offers) and set `HARDCOVER_API_TOKEN` in `.env`.
       1.14b's runs need it. Before 1.4f's preview, set it in Vercel for Preview
       and Production too; without it Add books searches your library only
       (D-94).
-- [ ] Before 1.14b's real run, fill the missing ISBNs in Calibre: select the
+- [x] Before 1.14b's real run, fill the missing ISBNs in Calibre: select the
       books with no ISBN, *Edit metadata → Download metadata*, check what it
       found, then `npm run calibre`. About 345 Calibre books have none (fan
       fiction never does) (D-94).
