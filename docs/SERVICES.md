@@ -69,7 +69,7 @@ to be changed in both.
 | `R2_ACCOUNT_ID`, `R2_BUCKET` | Which Cloudflare account and bucket (not secret) | — | — | Variables | — | Cloudflare → R2 overview |
 | `CLAUDE_CODE_OAUTH_TOKEN` | Claude's PR review and `@claude` workflows | — | — | Secret | — | `/install-github-app` in Claude Code, or `claude setup-token` |
 | `METRON_USERNAME`, `METRON_PASSWORD` (or `METRON_API_TOKEN`) | Metron backfill; *Add issues* search | ✓ | — | — | Production (and Preview, to search on a preview) | Your metron.cloud login |
-| `HARDCOVER_API_TOKEN` | Hardcover backfill (1.14b); later *Add books* (1.4f) | Not yet | — | — | From 1.4f | hardcover.app → your account → the API page |
+| `HARDCOVER_API_TOKEN` | Hardcover backfill (1.14b: `enrich:books`, `calibre`'s series check); later *Add books* (1.4f) | ✓ | — | — | From 1.4f | hardcover.app → your account → the API page |
 | `CALIBRE_LIBRARY` | The Calibre library folder (not secret) | ✓ | — | — | — | The folder holding `metadata.db` |
 | `TMDB_API_KEY` | Phase 8 | Empty | — | — | From Phase 8 | themoviedb.org → account settings |
 
@@ -163,10 +163,12 @@ to be changed in both.
 ## Hardcover
 
 - **Account:** hardcover.app, free.
-- **Key:** `HARDCOVER_API_TOKEN`, a personal token, server-side only (D-94).
-  Not in `.env` or `.env.example` yet; TASK-034 adds it.
-- **What will use it:** `npm run enrich:books` (1.14b, cached in
-  `etl/.hardcover-cache.sqlite`), then *Add books* search (1.4f, cached in the
+- **Key:** `HARDCOVER_API_TOKEN`, a personal token, server-side only (D-94),
+  in `.env` (named in `.env.example`). Without it `enrich:books` runs only
+  `--offline` and `calibre` checks series from the cache.
+- **What uses it:** `npm run enrich:books` and `npm run calibre`'s series
+  check (1.14b, `etl/enrich_books.py`, both cached in
+  `etl/.hardcover-cache.sqlite`); then *Add books* search (1.4f, cached in the
   `hardcover_cache` table), which needs it in Vercel.
 - **Limits and terms:** 60 requests a minute, bursts of 10, 5,000 a day. The
   data may not train a public or commercial model. The API is "heavily in
@@ -176,8 +178,9 @@ to be changed in both.
 
 - **No account, no key.** Requests send a `User-Agent` naming the app, one a
   second.
-- **What uses it today:** `npm run enrich:books` (`etl/enrich_books.py`, cached
-  in `etl/.openlibrary-cache.sqlite`) and *Add books* (`src/lib/openlibrary.ts`).
+- **What uses it today:** *Add books* (`src/lib/openlibrary.ts`). The ETL
+  asks Hardcover since 1.14b; `etl/.openlibrary-cache.sqlite` is read by
+  nothing now.
 - **Going away:** Hardcover replaces it (D-94). Task 6.19 removes the code, the
   cache and `books.open_library_id`.
 
@@ -231,7 +234,5 @@ Found while writing this, 2026-10-28. None blocks anything.
   fixed fake value instead. It can be deleted.
 - **`.env.example` doesn't name `VERCEL_AUTOMATION_BYPASS_SECRET`**, though
   `.env` has it and `scripts/perf` and `scripts/release.mjs` read it.
-- **`HARDCOVER_API_TOKEN` is in neither `.env` nor `.env.example`**: TASK-034
-  adds it. Create the Hardcover account before that task runs.
 - **Vercel's Metron credentials are unconfirmed** from here. Check the
   dashboard against [§ Vercel](#vercel).

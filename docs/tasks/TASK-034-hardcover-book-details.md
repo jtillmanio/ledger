@@ -1,14 +1,14 @@
 ---
 id: TASK-034
 title: 1.14b Hardcover details for the books, by ISBN
-status: Ready
+status: In progress
 depends_on: [TASK-033]
 size: L
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 5a9d306
 ---
 
 # TASK-034 — 1.14b Hardcover details for the books, by ISBN
@@ -70,9 +70,41 @@ The books arrive at cutover with Hardcover's page counts, covers, release years 
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- `.claude/rules/schema.md`, the book bullets: `book_details.csv` holds `hardcover_id` with `source` hardcover|hand; a Hardcover near spelling is `reason = hardcover`; `hardcover_review.csv` holds the ambiguous books' candidates; `calibre_books.csv`'s `open_library` column is `hardcover` (approved at plan)
+- `docs/02-architecture.md` § Metadata sources: the Layer and Books tables still make Open Library the spine; D-94 makes it Hardcover (Open Library goes in 6.19) (approved at plan)
+- Candidate decision: reordered-word titles are never proposed (Q1); `calibre.py` asks Hardcover through 1.14b's client and cache (Q2); two matching Hardcover books are the owner's pick in `hardcover_review.csv`, never ranked (Q3); a `compilation` never matches, by ISBN or title (Q4) (approved at plan)
+- The owner asked for one runbook of every data-refresh step (extract, calibre, enrich:books, enrich comics, sidecars …) and what to review after (unresolved, book_review, hardcover_review, cover dates …): wider than 1.14b, so a `docs/` branch right after this PR, as a "Refreshing the data" section in `docs/COMMANDS.md`
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+_Approved by the owner 2026-10-30 at 5a9d306, with Q3 changed to the owner's pick._
+
+**Answers at the gate:** Q1 a pair whose titles are the same words reordered is never proposed. Q2 `calibre.py` asks Hardcover through this client and cache. Q3 two matching Hardcover books (two title results, or one ISBN's editions under two books, compilations dropped first) are written to `etl/data/hardcover_review.csv`, one row per candidate (`title, author, hardcover_id, hardcover_title, hardcover_authors, year, readers, url, decision`); the owner writes `pick` on one and the next run matches it. Q4 a `compilation` never matches, by ISBN or by title. `HARDCOVER_API_TOKEN` is in `.env` (written `NAME =`; `load_env` takes the space).
+
+**Steps**
+
+1. Tests first in `etl/test_enrich_books.py`: a recorded Hardcover fake (editions by ISBN, search by query, response headers) and one test per Check clause and AC-2–AC-4; confirm each fails.
+2. `etl/enrich_books.py`: `Hardcover` replaces `OpenLibrary`: POST GraphQL to `https://api.hardcover.app/v1/graphql`, `authorization: Bearer <token>`, the `User-Agent`; waits to the reset when a `RateLimit` bucket has `r=0`, waits out a 429's `Retry-After`, 1 request a second; stops on 401/403 and on GraphQL errors (uncached). Cache `etl/.hardcover-cache.sqlite`, a row per ISBN and per search. `HARDCOVER_API_TOKEN` from `.env` (`load_env` moves here from `calibre.py`); without it a run that isn't `--offline` exits 1 and sends nothing.
+3. The flow: a seed book reaches its Calibre row by `calibre_id`, else by title and author through the merges; ISBNs 100 to a request (`isbn_13` / `isbn_10` `_in`); no ISBN or no edition → one title-and-author search. `book_details.csv` gains `hardcover_id`; `source = hardcover`; pages and cover the edition's, else the book's; the year the book's. `openlibrary` rows and undecided `open library` review rows go; hand rows and decided rows stay. A near spelling is `reason = hardcover` (not when only the word order differs). Ambiguous books go to `hardcover_review.csv` (undecided rows of the books looked up are rebuilt, decided ones kept and rekeyed). The report gives matched by ISBN, by title and picked.
+4. `etl/calibre.py`: the series check asks Hardcover through the same client and cache, ISBN batches first; `calibre_books.csv`'s `open_library` column is `hardcover`; without the token the check is cache-only and says so.
+5. `etl/extract.py`: `hardcover_id` in `BOOK_DETAILS_COLUMNS` and `BOOK_COLUMNS` (after `open_library_id`), the fold fills `books.hardcover_id`; `HARDCOVER` review rows kept like `OPEN_LIBRARY`'s; the note is `hardcover series differs`.
+6. `etl/load.ps1`, `etl/load.sh`: `hardcover_id` in `\copy books(...)`; `test/load-scripts.test.ts` checks each list equals extract's `BOOK_COLUMNS`.
+7. `.gitignore` and `.claude/rules/git.md` (both lists) name the cache; `.env.example` names the token; `docs/COMMANDS.md`'s `enrich:books` and `calibre` lines say Hardcover; `docs/SERVICES.md` (CLAUDE.md: a key added updates it) its key row, § Hardcover and § Loose ends.
+8. Dry run over the real books with the token; the counts go in the PR.
+
+**Files:** `etl/enrich_books.py`, `etl/test_enrich_books.py`, `etl/calibre.py`, `etl/test_calibre.py`, `etl/extract.py`, `etl/test_extract.py`, `etl/load.ps1`, `etl/load.sh`, `test/load-scripts.test.ts`, `.gitignore`, `.claude/rules/git.md`, `.env.example`, `docs/COMMANDS.md`, `docs/SERVICES.md` (not in Files likely touched: CLAUDE.md requires it with a new key), this task file. Sixteen files: `never-split` keeps it whole and attended. No schema change.
+
+**Test strategy**
+
+- AC-1: `etl/test_enrich_books.py` `Check.*` — one test per clause (two ISBNs in one request, title match, near spelling, compilation, hand row, Calibre `#pages` through `test_extract`-style fold, 429, offline byte-identical, no token).
+- AC-2: `Lookup.test_an_isbn_with_no_edition_makes_one_search`, `test_an_isbn_match_makes_no_search`, `test_pages_and_cover_fall_back_to_the_book`.
+- AC-3: `Requests.test_ratelimit_none_remaining_waits_for_the_reset`, `test_every_request_carries_the_token_and_user_agent`, `test_no_token_exits_and_writes_nothing`, `test_dry_run_writes_nothing`.
+- AC-4: `Replace.test_open_library_rows_go_hand_and_decided_stay`; `etl/test_extract.py` header and fold tests; `test/load-scripts.test.ts` 1.14b block.
+- AC-5: `etl/test_calibre.py`, the series tests on the Hardcover fake, Open Library's `_fetch` patched to fail.
+- AC-6: manual `git check-ignore` and a grep, recorded in the PR.
+- Q3: `Ambiguous.test_two_matches_write_candidates_and_no_details`, `test_a_pick_matches_on_the_next_run`.
+
+**Risks:** fixtures follow Hardcover's docs (`hardcoverapp/hardcover-docs`); the search document's `featured_series` shape is the docs' reading, so the dry run is the real check of the queries.
 
 ## Review log
 

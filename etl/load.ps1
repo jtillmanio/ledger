@@ -111,7 +111,7 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan, read_event
 \copy book_series FROM '$seedPath/book_series.csv' CSV HEADER
 \copy book_universes FROM '$seedPath/book_universes.csv' CSV HEADER
 \copy book_subseries(id,name,series_id) FROM '$seedPath/book_subseries.csv' CSV HEADER
-\copy books(id,title,author_id,series_id,series_position,genre,book_type,word_count,word_count_source,published_year,page_count,cover_url,open_library_id,universe_id,universe_position,subseries_id,subseries_position,calibre_id) FROM '$seedPath/books.csv' CSV HEADER
+\copy books(id,title,author_id,series_id,series_position,genre,book_type,word_count,word_count_source,published_year,page_count,cover_url,open_library_id,hardcover_id,universe_id,universe_position,subseries_id,subseries_position,calibre_id) FROM '$seedPath/books.csv' CSV HEADER
 \copy book_genres(book_id,genre) FROM '$seedPath/book_genres.csv' CSV HEADER
 \copy releases    FROM '$seedPath/releases.csv'    CSV HEADER
 \copy wishlist(genre,raw_entry,book_id) FROM '$seedPath/wishlist.csv' CSV HEADER

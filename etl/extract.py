@@ -1028,8 +1028,13 @@ NUMBER_RE = re.compile(r"\b(?:\d+|xx|x?(?:ix|iv|v?i{1,3}|v)|x)\b")
 # `a` is the workbook's spelling, `b` Open Library's. Extract never proposes one,
 # so it keeps the row, undecided, while the workbook still has `a`.
 OPEN_LIBRARY = "open library"
-# etl/data/book_details.csv (task 1.14, D-44), keyed by title and author.
-BOOK_DETAILS_COLUMNS = ["title", "author", "open_library_id", "page_count", "cover_url",
+# A near spelling etl/enrich_books.py found on Hardcover (task 1.14b, D-94), which
+# replaced Open Library: kept the same way, undecided, while the workbook has `a`.
+HARDCOVER = "hardcover"
+# etl/data/book_details.csv (tasks 1.14, 1.14b; D-44, D-94), keyed by title and
+# author. Hardcover's rows fill hardcover_id; open_library_id stays for 1.14's
+# until 6.19 removes Open Library.
+BOOK_DETAILS_COLUMNS = ["title", "author", "open_library_id", "hardcover_id", "page_count", "cover_url",
                         "published_year", "source"]
 WORKBOOK_READS_COLUMNS = ["title", "year", "genre", "tab", "rank"]
 # The Calibre sidecar etl/calibre.py writes (task 1.18, D-73, D-83, D-87), keyed
@@ -1042,7 +1047,7 @@ CALIBRE = "calibre"
 # workbook's spelling folds into the new title on every extract.
 CALIBRE_RENAME = "calibre rename"
 CALIBRE_BOOKS_COLUMNS = ["title", "author", "words", "series", "series_index", "isbn", "tags",
-                         "book_type", "read", "date_read", "precision", "confirmed", "open_library",
+                         "book_type", "read", "date_read", "precision", "confirmed", "hardcover",
                          "calibre_id", "pages", "superseries", "superseries_index",
                          "subseries", "subseries_index", "genres"]
 # seed/book_genres.csv (task 1.18c, D-90): one row per Calibre genre of a book.
@@ -1053,9 +1058,10 @@ CALIBRE_MISSING_COLUMNS = ["title", "author", "tabs", "decision"]
 CALIBRE_MISSING_DECISIONS = ("keep", "")
 BOOK_COLUMNS = ["id", "title", "author_id", "series_id", "series_position", "genre", "book_type",
                 "word_count", "word_count_source", "published_year", "page_count", "cover_url",
-                "open_library_id", "universe_id", "universe_position", "subseries_id",
+                "open_library_id", "hardcover_id", "universe_id", "universe_position", "subseries_id",
                 "subseries_position", "calibre_id"]
-# What Open Library can confirm of a Calibre book, in calibre_books.csv's `confirmed`.
+# What Hardcover can confirm of a Calibre book, in calibre_books.csv's `confirmed`
+# (task 1.14b; Open Library's until then): `isbn` when the ISBN found the book.
 CHECKED_FIELDS = ("series", "series_index", "isbn")
 # Not loaded: the books Calibre created, so calibre.py never matches its own.
 CALIBRE_CREATED_COLUMNS = ["title", "author", "book_id"]
@@ -1494,7 +1500,7 @@ def review_book_pairs(idx: BookIndex, existing: list[dict]) -> list[dict]:
                      f"{r['kind']}: {r['a']} / {r['b']} ({r['decision']}) — a name is no longer "
                      "in the workbook; delete the row once it's done with")
             continue
-        if r["reason"] in (OPEN_LIBRARY, CALIBRE):
+        if r["reason"] in (OPEN_LIBRARY, HARDCOVER, CALIBRE):
             # Only `a` is ever in the workbook, spelled with the author it loads under.
             in_workbook = any(t == key(r["a"]) and key(idx.canonical_author(s["author"])) == key(r["a_author"])
                               for (t, _), s in idx.seen_books.items())
@@ -1535,14 +1541,15 @@ def load_book_details(path) -> list[dict]:
 
 
 def fold_book_details(idx: BookIndex, details: list[dict]) -> None:
-    """Fill each book's Open Library id, page count and cover from its
-    book_details.csv row, matched on title and author after clean() and key()
-    (task 1.14, D-44). The published year fills only where the workbook has
-    none. A page count never becomes a word count: 2.1 estimates that.
+    """Fill each book's Hardcover id (or 1.14's Open Library id), page count
+    and cover from its book_details.csv row, matched on title and author after
+    clean() and key() (tasks 1.14, 1.14b; D-44, D-94). The published year fills
+    only where the workbook has none. A page count never becomes a word count:
+    2.1 estimates that.
     Calibre's #pages, which fold_calibre() kept, replaces the sidecar's
     page count whatever its source (task 1.18b, D-90, D-94)."""
     for b in idx.by_key.values():
-        b.update(open_library_id=None, page_count=b.get("calibre_pages"), cover_url=None)
+        b.update(open_library_id=None, hardcover_id=None, page_count=b.get("calibre_pages"), cover_url=None)
     for row in details:
         b = idx.by_key.get((key(clean(row["title"])), key(clean(row["author"]))))
         if b is None:
@@ -1551,6 +1558,7 @@ def fold_book_details(idx: BookIndex, details: list[dict]) -> None:
                  "renamed or gone from the workbook; enrich:books rekeys an accepted rename")
             continue
         b["open_library_id"] = clean(row["open_library_id"])
+        b["hardcover_id"] = as_int(row["hardcover_id"])
         b["page_count"] = b.get("calibre_pages") or as_int(row["page_count"])
         b["cover_url"] = clean(row["cover_url"])
         if b["published_year"] is None:
@@ -1613,7 +1621,7 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
     decision. A book Calibre has read appends a read_events row and makes the
     status `read` with its date (the projection 1.5 defines). Each
     disagreement is reported, never dropped: a workbook count more than 10%
-    off, a different workbook series, Open Library's different series, a
+    off, a different workbook series, Hardcover's different series, a
     second read of one book. Calibre's genres go on the book for
     seed/book_genres.csv; books.genre stays the workbook's (task 1.18c,
     D-90). Returns (read events, the books created, the series Calibre took a
@@ -1681,10 +1689,10 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
                 replaced.add(b["series_id"])
             b["series_id"], _ = idx.series_id(name, b["author_id"])
             b["series_position"] = pos
-            if row["open_library"]:
-                note("calibre_books", "open library series differs",
+            if row["hardcover"]:
+                note("calibre_books", "hardcover series differs",
                      f"{b['title']}: Calibre's {series_text(name, pos)} loaded, "
-                     f"Open Library has {row['open_library']}")
+                     f"Hardcover has {row['hardcover']}")
 
         # Calibre's groupings, page count and id (task 1.18b, D-90). The
         # superseries is the universe: Calibre alone says which books are in one.
@@ -2187,7 +2195,7 @@ def main(argv=None) -> int:
                     help="book_review.csv: proposes book, author and series pairs that may be "
                          "one, applies the merge rows, and rewrites the file keeping decisions")
     ap.add_argument("--book-details", type=Path, default=None,
-                    help="book_details.csv from etl/enrich_books.py plus hand rows: Open Library "
+                    help="book_details.csv from etl/enrich_books.py plus hand rows: Hardcover "
                          "id, page count, cover URL, and a published year where the workbook has none")
     ap.add_argument("--calibre-books", type=Path, default=None,
                     help="calibre_books.csv from etl/calibre.py, the source of truth for what it holds "

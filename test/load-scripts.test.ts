@@ -157,6 +157,19 @@ describe.each(["rebuild.ps1", "rebuild.sh"])("%s, task 1.18c", (name) => {
   });
 });
 
+// Task 1.14b (D-94): Hardcover's id rides in seed/books.csv into
+// books.hardcover_id. \copy names its columns, so the list must be the seed
+// header extract writes (BOOK_COLUMNS), in its order.
+describe.each(["load.ps1", "load.sh"])("%s, task 1.14b", (name) => {
+  it("copies books with extract's BOOK_COLUMNS, hardcover_id among them", () => {
+    const columns = /^BOOK_COLUMNS = \[([^\]]*)\]/m.exec(read("extract.py"))![1].match(/"(\w+)"/g)!
+      .map((c) => c.slice(1, -1));
+    expect(columns).toContain("hardcover_id");
+    const copy = /\\+copy books\(([^)]*)\) FROM '[^']*books\.csv'/.exec(read(name))![1].split(",");
+    expect(copy).toEqual(columns);
+  });
+});
+
 // Task 1.18: every extract folds in the Calibre sidecar (one since D-87).
 // rebuild.ps1 runs `npm run extract`; rebuild.sh spells the arguments out.
 describe("the Calibre sidecar reaches extract", () => {
