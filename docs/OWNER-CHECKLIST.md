@@ -156,7 +156,7 @@ tick them.
       books with no ISBN, *Edit metadata → Download metadata*, check what it
       found, then `npm run calibre`. About 345 Calibre books have none (fan
       fiction never does) (D-94).
-- [ ] After 1.14b merges, the real run (from TASK-034, task/1.14b-hardcover-book-details),
+- [ ] After 1.14b merges, the real run (from TASK-034, PR #165),
       in this order: `npm run calibre` (its series check asks Hardcover now
       and rewrites `calibre_books.csv` with a `hardcover` column; until it
       runs, extract notes no series differences), `npm run extract`,
