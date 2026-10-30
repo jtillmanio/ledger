@@ -468,6 +468,22 @@ FROM book_reads r JOIN books b ON b.id = r.book_id
 WHERE r.finished_on IS NOT NULL AND b.deleted_at IS NULL
 GROUP BY r.user_id, extract(year FROM r.finished_on)::int, b.genre;
 
+-- Calibre's genres with their hierarchy (task 1.18c, D-98). book_genres keeps
+-- each genre as Calibre writes it, a dotted path, and Calibre's genres cascade:
+-- a book tagged 'Young Adult.Fantasy.Romantasy' is in 'Young Adult' and
+-- 'Young Adult.Fantasy' too, though it is rarely tagged with them. One row per
+-- book and level: depth 1 is a top-level genre, and direct is true where the
+-- book carries that path itself. books.genre (the workbook's) is not read here.
+CREATE OR REPLACE VIEW book_genre_tree AS
+SELECT g.book_id,
+       array_to_string((string_to_array(g.genre, '.'))[1:l.depth], '.') AS genre,
+       l.depth,
+       bool_or(l.depth = cardinality(string_to_array(g.genre, '.'))) AS direct
+FROM book_genres g
+JOIN books b ON b.id = g.book_id AND b.deleted_at IS NULL
+CROSS JOIN LATERAL generate_series(1, cardinality(string_to_array(g.genre, '.'))) AS l(depth)
+GROUP BY g.book_id, array_to_string((string_to_array(g.genre, '.'))[1:l.depth], '.'), l.depth;
+
 -- A plan row's period, read (task 1.7, D-37, D-38): '2027-Q1' is year 2027,
 -- quarter 1, level 'quarter'; '2027' is year 2027 with no quarter, level 'year';
 -- 'on_deck' has neither, level 'on_deck'. The year is never stored beside the

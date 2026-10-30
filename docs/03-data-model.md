@@ -562,6 +562,7 @@ filters by that run before it aggregates (architecture § Operational posture).
 | `run_creators`, `run_credit_line` | Who made a run, from its issues' credits; the line lists those on at least a quarter of credited issues (2.12) |
 | `book_reads` | Every finished read of a book: each `read_events` row, plus a `read` status with no log row (D-65) |
 | `books_by_year` | Reads per year per genre, the year from the finish date (D-21) |
+| `book_genre_tree` | Each book at every level of each Calibre genre path, once, with its depth and whether the book was tagged with that path itself: Calibre's genres cascade (1.18c, D-98) |
 | `plan_period` | A plan row's year, quarter and level, so nothing parses `period` (2.9) |
 | `to_read_level` | Each to-read book's level: a quarter, a year, On deck or Someday (derived) |
 | `series_progress` | Series completion |
@@ -584,7 +585,7 @@ the same PR (hard rule 7).
 | 1.18 | Calibre sidecars (no column: the plan gate approved none) | 2.19, D-73, D-83, D-87, D-88 |
 | 1.21 | A fifth `book_status.status` value, `unlisted` (no new column, no CHECK) | D-83, D-86 |
 | 1.18b | `books.calibre_id` (unique where set), `books.universe_position`, `book_subseries(id, name, series_id)`, `books.subseries_id`, `books.subseries_position` | Approved by the owner 2026-10-27; D-90, D-91 |
-| 1.18c | `book_genres(book_id, genre)` | Asked at 1.18c's plan gate; D-90 |
+| 1.18c | `book_genres(book_id, genre)`, primary key `(book_id, genre)`; the cascade is the `book_genre_tree` view; `books.genre` stays the workbook's until 4.5 | Approved by the owner 2026-10-30; D-90, D-91, D-98 |
 | 1.22 | Nothing: the *Calibre* tag reads 1.18b's `books.calibre_id` | D-90 |
 | 1.23 | A `listening` value of `book_status.status`; `read_events.format` (`text` \| `audio`) | D-85 |
 | 4.4 | Where a decided near-spelling row is remembered between syncs (D-87 leaves no other decision) | Asked at 4.4's plan gate |

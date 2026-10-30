@@ -173,6 +173,13 @@ tick them.
         - *Wars of Light and Shadow* and *War of Light and Shadow* are two
           series in Calibre, so one subseries sits under both.
         - *The Sunlit Man* has a `#subseries` but no series in Calibre.
+- [ ] After 1.18c merges, fix four stray genres in Calibre's `#genre` (from
+      TASK-033, PR #164). Each loads as a top-level genre today:
+      - `l` on *Everything Is Tuberculosis* (John Green), and `i` on *Patterns
+        of Evidence: The Exodus* (Timothy P. Mahoney): one letter each.
+      - `Ecomonics` on 37 books and `Scie` on one: likely `Economics` and
+        `Science`.
+      Correct them in Calibre, then run `npm run calibre` and `npm run extract`.
 
 ## Approvals from follow-ups
 

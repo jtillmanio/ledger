@@ -59,7 +59,8 @@ npm run calibre             # etl/calibre.py (task 1.18): the Calibre library (C
                             # and what needs you (a held book, a read not loaded) in unresolved.csv.
                             # #superseries, #subseries and #pages are read too, by lookup name
                             # (--superseries-column, --subseries-column, --pages-column); a book renamed
-                            # in Calibre stays one book, matched on its Calibre id (1.18b).
+                            # in Calibre stays one book, matched on its Calibre id (1.18b). #genre too
+                            # (--genre-column): every value, as seed/book_genres.csv (1.18c).
                             # `-- --dry-run` first (the match rate and the changes, writes nothing);
                             # `-- --offline` asks Open Library nothing new. Re-run after any library change,
                             # in this order: extract, calibre, extract, enrich:books, extract (the created

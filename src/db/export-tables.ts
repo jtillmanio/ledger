@@ -9,8 +9,8 @@ export const CATALOG_TABLES = [
   "tracks", "blocks", "runs", "run_tracks", "issues", "run_issues", "creators",
   "issue_credits", "prereqs", "events", "event_runs",
   "eras", "volume_rules",
-  "editions", "authors", "book_series", "book_universes", "book_subseries", "books", "releases", "wishlist",
-  "external_lists", "shelf_books",
+  "editions", "authors", "book_series", "book_universes", "book_subseries", "books", "book_genres", "releases",
+  "wishlist", "external_lists", "shelf_books",
 ] as const;
 
 /** Tables with a `user_id` column: exported for the signed-in user only. */

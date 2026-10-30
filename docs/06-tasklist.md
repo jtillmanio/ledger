@@ -403,7 +403,7 @@ with the task that first reads it.
 **Demo at exit:** After cutover, Metron, Open Library and Hardcover fill the catalog without touching a hand value; covers show on spine rows and dashboards.  
 **Features:** F-33  
 **Depends on:** Cutover  
-**Order:** 4.4 → 4.1 → 4.2 → 4.3. A prerequisite for M22. 4.4 goes first (2026-10-26 books intake): after cutover it is the only way Calibre's new books and reads come in, and it needs nothing else in this milestone.
+**Order:** 4.4 → 4.1 → 4.2 → 4.3. A prerequisite for M22. 4.4 goes first (2026-10-26 books intake): after cutover it is the only way Calibre's new books and reads come in, and it needs nothing else in this milestone. 4.5 (from 1.18c) needs only 1.18c and can come at any point.
 
 | # | Task | Size | Task file | Depends on |
 |---|---|---|---|---|
@@ -411,6 +411,7 @@ with the task that first reads it.
 | 4.1 | Metron backfill | M | — | — |
 | 4.2 | Open Library and Hardcover backfill | M | — | — |
 | 4.3 | Covers in the UI | S | — | — |
+| 4.5 | Calibre's genres on every screen | M | — | 1.18c |
 
 ## M17: Book surfaces — Later
 

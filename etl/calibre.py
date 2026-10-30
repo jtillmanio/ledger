@@ -10,8 +10,8 @@ The library is `--library <folder>` or CALIBRE_LIBRARY in .env (task 1.18, D-73,
 D-83). Its metadata.db is copied to a temp folder outside the repo and the copy
 is opened read-only, so a running Calibre is never locked or written; the copy
 is removed after the run. Custom columns are found by lookup name (`#words`,
-`#read`, `#date_read`, `#type`, `#superseries`, `#subseries`, `#pages`, each
-overridable), never by custom_column_N.
+`#read`, `#date_read`, `#type`, `#superseries`, `#subseries`, `#pages`, `#genre`,
+each overridable), never by custom_column_N.
 
 Calibre is the source of truth for a book's data and its reads (D-87): the owner
 edits Calibre and nothing else. So nothing here waits on a decision except a
@@ -46,7 +46,10 @@ What it writes, in etl/data/ and committed like the other sidecars:
                        series where it differs. Comments stay out until
                        books.summary exists (D-88). Then Calibre's id, page
                        count, superseries (the universe) and subseries, each
-                       grouping with its index (task 1.18b, D-90).
+                       grouping with its index (task 1.18b, D-90). Then its
+                       genres: every #genre value, the full dotted path as
+                       Calibre writes it (`Fantasy.Epic Fantasy`), sorted and
+                       joined `; ` (task 1.18c).
 - book_review.csv      the `calibre` proposals and `calibre rename` rows above.
 
 Open Library is asked about each Calibre series, with 1.14's client and cache
@@ -138,7 +141,7 @@ def custom_column(db, lookup: str | None, required: bool) -> tuple[dict, dict] |
     None when the library has no such column and it isn't required."""
     if not lookup:
         return None
-    row = db.execute("SELECT id, normalized, display, datatype FROM custom_columns WHERE label = ?",
+    row = db.execute("SELECT id, normalized, display, datatype, is_multiple FROM custom_columns WHERE label = ?",
                      (lookup.lstrip("#"),)).fetchone()
     if row is None:
         if required:
@@ -146,7 +149,7 @@ def custom_column(db, lookup: str | None, required: bool) -> tuple[dict, dict] |
                              "with --words-column or --date-column")
         print(f"  no column {lookup}: left blank")
         return None
-    n, normalized, display, datatype = row
+    n, normalized, display, datatype, multiple = row
     if datatype == "series":
         # A series-type column (#superseries, #subseries): its index is the
         # link's `extra`, so each value is (name, index).
@@ -159,7 +162,11 @@ def custom_column(db, lookup: str | None, required: bool) -> tuple[dict, dict] |
         q = f"SELECT book, value FROM custom_column_{n}"
     values = {}
     for book, *value in db.execute(q):
-        values.setdefault(book, tuple(value) if datatype == "series" else value[0])
+        if multiple:
+            # A multi-valued column (#genre, task 1.18c): every value, in link order.
+            values.setdefault(book, []).append(value[0])
+        else:
+            values.setdefault(book, tuple(value) if datatype == "series" else value[0])
     return values, json.loads(display or "{}")
 
 
@@ -171,6 +178,7 @@ def records(db, columns: dict[str, str]) -> list[dict]:
     supers = custom_column(db, columns["superseries"], required=False)
     subs = custom_column(db, columns["subseries"], required=False)
     pages = custom_column(db, columns["pages"], required=False)
+    genre = custom_column(db, columns["genre"], required=False)
     date_format = (dates[1].get("date_format") or "") if dates else ""
 
     def grouping(column, bid) -> tuple[str | None, str]:
@@ -201,6 +209,7 @@ def records(db, columns: dict[str, str]) -> list[dict]:
                     "pages": ex.as_int((pages[0] if pages else {}).get(bid)),
                     "superseries": superseries, "superseries_index": superseries_index,
                     "subseries": subseries, "subseries_index": subseries_index,
+                    "genres": ex.genre_list((genre[0] if genre else {}).get(bid) or []),
                     "series": ex.clean((series.get(bid) or [None])[0]), "index": index,
                     "isbn": ex.clean((isbns.get(bid) or [None])[0]), "tags": tags.get(bid, []),
                     "words": ex.as_int((words[0] if words else {}).get(bid)),
@@ -375,11 +384,14 @@ def run(args) -> int:
     columns = {"words": args.words_column, "date": args.date_column,
                "read": args.read_column, "type": args.type_column,
                "superseries": args.superseries_column, "subseries": args.subseries_column,
-               "pages": args.pages_column}
+               "pages": args.pages_column, "genre": args.genre_column}
     print(f"calibre <- {source.parent}" + (" (dry run: nothing is written)" if args.dry_run else ""))
     print("reading metadata.db (from a temp copy) …")
     library = read_library(source, columns)
     print(f"  read {len(library)} records")
+    split = sorted({g for r in library for g in r["genres"] if ";" in g})
+    if split:
+        print(f"  genres with a ';', split in two by calibre_books.csv: {' | '.join(split)}")
 
     review = ex.load_book_review(args.book_review)
     idx = ex.BookIndex(review)
@@ -432,7 +444,7 @@ def run(args) -> int:
                    "confirmed": "", "open_library": "", "calibre_id": rec["calibre_id"],
                    "pages": rec["pages"] or "", "superseries": rec["superseries"] or "",
                    "superseries_index": rec["superseries_index"], "subseries": rec["subseries"] or "",
-                   "subseries_index": rec["subseries_index"]}
+                   "subseries_index": rec["subseries_index"], "genres": "; ".join(rec["genres"])}
             books[k] = row
 
             # Open Library's word on the series, to report where it differs. A
@@ -544,7 +556,7 @@ def fold(old: list[dict], fresh: dict[tuple, dict]) -> list[dict]:
 
 # What a run reports as changed in Calibre: the fields Calibre owns.
 CHANGE_FIELDS = ("words", "series", "series_index", "isbn", "tags", "book_type", "read", "date_read", "precision",
-                 "pages", "superseries", "superseries_index", "subseries", "subseries_index")
+                 "pages", "superseries", "superseries_index", "subseries", "subseries_index", "genres")
 
 
 def changes(old_rows: list[dict], fresh: dict[tuple, dict], old_columns: list[str] = ()) -> None:
@@ -552,7 +564,8 @@ def changes(old_rows: list[dict], fresh: dict[tuple, dict], old_columns: list[st
     added and removed, renames (the same Calibre id under a new title or
     author; with no id, a removed and an added book by one author with near
     titles is likely one), and each changed field, old -> new. A field the
-    last run's file didn't have yet is no change (task 1.18b's new columns)."""
+    last run's file didn't have yet is no change (the new columns of tasks
+    1.18b and 1.18c)."""
     if not old_rows:
         return
     fields = [f for f in CHANGE_FIELDS if f in old_columns] if old_columns else list(CHANGE_FIELDS)
@@ -610,6 +623,9 @@ def report(status: dict, proposals: list[dict], skipped: list[dict], duplicates:
         filled = sum(1 for r in books.values() if r[field])
         print(f"  {field:<11}{filled:>6} books in {len(names)} {what}")
     print(f"  pages      {sum(1 for r in books.values() if r['pages']):>6}")
+    genres = [ex.genre_list(r["genres"].split(";")) for r in books.values()]
+    distinct = {g.casefold() for gs in genres for g in gs}
+    print(f"  genres     {sum(1 for gs in genres if gs):>6} books in {len(distinct)} genres")
     if api:  # a dry run asks Open Library nothing, so it has no count to give
         differs = sum(1 for r in books.values() if r["open_library"])
         print(f"  series Open Library has differently: {differs} (reported by extract in unresolved.csv)")
@@ -677,6 +693,8 @@ def main(argv=None) -> int:
     ap.add_argument("--subseries-column", default="#subseries",
                     help="a grouping inside a series, a series-type column with its index (optional)")
     ap.add_argument("--pages-column", default="#pages", help="the page count (optional)")
+    ap.add_argument("--genre-column", default="#genre",
+                    help="the genres, a multi-valued column of dotted paths (optional)")
     ap.add_argument("--dry-run", action="store_true", help="report the match rate; write nothing")
     ap.add_argument("--offline", action="store_true", help="Open Library from the cache only")
     ap.add_argument("--max-requests", type=int, default=3000, help="stop asking after this many requests")
