@@ -1,7 +1,7 @@
 ---
 id: TASK-039
 title: 1.17 Started and finished: a start date for books, a derived span for runs
-status: Draft
+status: Ready
 depends_on: []
 size: L
 model: opus

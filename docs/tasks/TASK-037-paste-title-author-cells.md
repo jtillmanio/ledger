@@ -1,7 +1,7 @@
 ---
 id: TASK-037
 title: 1.4e Paste a list: title and author in their own cells
-status: Draft
+status: Ready
 depends_on: []
 size: M
 model: sonnet
