@@ -16,7 +16,6 @@ roadmap, and `docs/STATUS.md` rolls them up by milestone._
 
 | Milestones | Scope | Roadmap phases | Entries |
 |---|---|---|---|
-
 | M1–M9 | **MVP: cutover from the Sheets.** Every MVP feature in [01-product.md § Feature index](01-product.md#feature-index) | 0, 1, and 2.11a, plus what 1.25 names | 55 |
 | M10–M15 | **Next:** the pace engine, the comics dashboard, editing | 2, 3 | 30 |
 | M16–M25 | **Later:** enrichment, the remaining surfaces, polish, AI curation, watch and music | 4–9, and 6.2b in M12 | 56 |
