@@ -1,7 +1,7 @@
 ---
 id: TASK-040
 title: 1.4f Add books searches Hardcover
-status: In progress
+status: Review
 depends_on: []
 size: L
 model: opus
@@ -36,7 +36,7 @@ planned_at_commit: 419364d
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): in the browser (0.11), with recorded Hardcover answers: searching
+- [x] AC-1 (roadmap **Check:**, verbatim): in the browser (0.11), with recorded Hardcover answers: searching
 `piranesi` lists Hardcover's results under *From Hardcover*, and a compilation
 in the recorded answer is not listed; adding one creates one `books` row with
 `hardcover_id` and its cover, and adding it again reuses it and says so; the
@@ -44,11 +44,11 @@ same search again makes no request; a recorded 429 shows the rate-limited
 state while your library's results still list; an ISBN-13 lists one result.
 A vitest shows that with no token the route answers from the library with no
 request, and that no response carries the token.
-- [ ] AC-2: Against the TEST database with a stubbed `fetch` (as `test/add-book.test.ts` stubs Open Library's): a search writes one `hardcover_cache` row and the same query again within 7 days makes zero requests; with that row's `fetched_at` moved back 8 days, it asks once more. A 429 with `Retry-After: 30` writes the `hold` row and the next search within 30 s makes no request and answers `rate_limited` with `retryIn` ≤ 30. A request that throws or answers 500 writes no cache row and answers `error` with your library's books.
-- [ ] AC-3: Given a library book with `hardcover_id` 123, a search whose answer holds book 123 lists it once, under *In your library*, and not under *From Hardcover*; given a library book with Hardcover's title and its **second** listed author but no `hardcover_id`, the same (D-61, any author). Given a recorded answer whose books have 50, 5,000 and 500 readers, they list in the order 5,000, 500, 50; a result with a subtitle shows it after the title, inside the row's accessible name, and adding it stores the title without the subtitle. Adding a Hardcover result creates a `books` row with `hardcover_id`, `cover_url`, `page_count`, `published_year` and a `word_count` of pages × your words per page, `estimated`, and a `book_status` of `to_read` (Someday) with no plan row.
-- [ ] AC-4: A query that is an ISBN, 13 or 10 digits with hyphens allowed (`978-0-7475-3269-9`, `0747532699`), asks for that edition (one request) and lists only its book; a non-ISBN of digits (`2026`) is searched as text. No response body, header or client bundle contains the token's value (the vitest asserts on the route's response; `NEXT_PUBLIC_` names no Hardcover variable).
-- [ ] AC-5: `.claude/rules/ui.md` no longer says *Hardcover is backfill-only*; `docs/03-data-model.md` § 2.15 and `docs/02-architecture.md` § 10. Metadata sources name Hardcover as Add books' source; the mockup's `add` frame reads *From Hardcover* and *Matched against your library first, then Hardcover*.
-- [ ] AC-6: Add books' *Search* meets the UX floor (`docs/04-design.md` § 10. The UX floor): the searching, no-results, rate-limited, not-set-up and error states are drawn; each result's add button names the book (*Add: Piranesi*); the source text (*Hardcover · est …*) is text, not colour alone, at 4.5:1 in both themes; targets at least 24px; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-2: Against the TEST database with a stubbed `fetch` (as `test/add-book.test.ts` stubs Open Library's): a search writes one `hardcover_cache` row and the same query again within 7 days makes zero requests; with that row's `fetched_at` moved back 8 days, it asks once more. A 429 with `Retry-After: 30` writes the `hold` row and the next search within 30 s makes no request and answers `rate_limited` with `retryIn` ≤ 30. A request that throws or answers 500 writes no cache row and answers `error` with your library's books.
+- [x] AC-3: Given a library book with `hardcover_id` 123, a search whose answer holds book 123 lists it once, under *In your library*, and not under *From Hardcover*; given a library book with Hardcover's title and its **second** listed author but no `hardcover_id`, the same (D-61, any author). Given a recorded answer whose books have 50, 5,000 and 500 readers, they list in the order 5,000, 500, 50; a result with a subtitle shows it after the title, inside the row's accessible name, and adding it stores the title without the subtitle. Adding a Hardcover result creates a `books` row with `hardcover_id`, `cover_url`, `page_count`, `published_year` and a `word_count` of pages × your words per page, `estimated`, and a `book_status` of `to_read` (Someday) with no plan row.
+- [x] AC-4: A query that is an ISBN, 13 or 10 digits with hyphens allowed (`978-0-7475-3269-9`, `0747532699`), asks for that edition (one request) and lists only its book; a non-ISBN of digits (`2026`) is searched as text. No response body, header or client bundle contains the token's value (the vitest asserts on the route's response; `NEXT_PUBLIC_` names no Hardcover variable).
+- [x] AC-5: `.claude/rules/ui.md` no longer says *Hardcover is backfill-only*; `docs/03-data-model.md` § 2.15 and `docs/02-architecture.md` § 10. Metadata sources name Hardcover as Add books' source; the mockup's `add` frame reads *From Hardcover* and *Matched against your library first, then Hardcover*.
+- [x] AC-6: Add books' *Search* meets the UX floor (`docs/04-design.md` § 10. The UX floor): the searching, no-results, rate-limited, not-set-up and error states are drawn; each result's add button names the book (*Add: Piranesi*); the source text (*Hardcover · est …*) is text, not colour alone, at 4.5:1 in both themes; targets at least 24px; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -83,6 +83,10 @@ request, and that no response carries the token.
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
 - Open Library is still named as Add books' source outside this PR's docs: `docs/01-product.md` (the metadata row, F-15 and F-19 in the feature index and F-15's outcome, the 2.15 add table and its paragraph), `docs/HANDOFF.md` (the media table, the add rule, the API table, the live-API paragraph, the add-surface row), and the mockup's `apistates` notes and the shelf-detail note in `design/mockups.html`; `BookRow.openLibraryId` in `src/db/writes.ts` is set by nothing now. 6.19 removes Open Library, so they go with it (approved at plan) → docs/05-roadmap.md § 6.19
+- After *Undo* on a search result's add, its button still reads *✓ Added to …* until the next search: the undo never clears that result's outcome (`src/components/AddBooks.tsx`, as on main since 1.4c). 1.22 rebuilds this search, results as you type → docs/tasks/TASK-041-search-as-you-type-source-tags.md § Context
+- A library book's Open Library cover URL can redirect to archive.org and fail to load (seen on `/books/add` in ui-verifier's walk, 2026-10-31); a Hardcover result's cover loads → docs/05-roadmap.md § 4.3
+- Hardcover holds some books twice under different ids (two *Die Ansichten der Tempel von Paestum* records, same authors and year), and Search lists both → not tracked: Hardcover's own records; merging them on title, authors and year would guess past D-61 and D-99, which never rank or merge on similarity
+- `books.hardcover_id` has no index, so `librarySearch`'s new match scans `books` (schema-reviewer, minor) → not tracked: about 1,400 rows, negligible
 
 ## Plan
 
@@ -123,13 +127,18 @@ Small files outside the list above, each following from a planned change: `scrip
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 round PASS → full PASS (601 core browser tests) | R2 round PASS (after the review fixes)
+- Audit R1 PASS (every automated AC proven; new tests fail to load on base, the changed ones fail on assertions; notes non-blocking)
+- Spec R1 CHANGES (follow-up with no destination) → R2 APPROVE | Schema R1 APPROVE (not re-run: no data-layer change since) | UI R1 CHANGES (ISBN listed nothing against the real Hardcover: edition authors are labelled `Author`; a subtitle the title already ends with shown twice; the subtitle a column beside the title at phone width) → R2 PASS
+- Development database: migration 0018 applied with the owner's OK (2026-10-31) so ui-verifier could walk Search; its walks added nothing it didn't undo
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (round chain twice, full chain once)
+- Review rounds: 2
+- First-pass AC FAILs: 2 (AC-4: an ISBN listed nothing against the real Hardcover; AC-3/AC-6: the subtitle repeated, and laid out as a column at phone width)
+- Plan revisions after approval: 0 (small supporting files outside the list are named in the Plan)

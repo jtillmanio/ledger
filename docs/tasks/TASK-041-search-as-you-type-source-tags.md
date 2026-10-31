@@ -19,6 +19,7 @@ Every search box in the app searches once you have typed three characters and pa
 
 ## Context
 
+- *From TASK-040 (1.4f, task/1.4f-add-books-searches-hardcover):* after *Undo* on a search result's add, its button still reads *✓ Added to …* until the next search: the undo never clears that result's outcome in `src/components/AddBooks.tsx` (as on main since 1.4c). Results as you type re-render the list, so clear the outcome on undo when this task rebuilds it.
 - Roadmap: `docs/05-roadmap.md` § 1.22 Search as you type, and where each result comes from (M9, sitting 9, after 1.4f and 1.19, before 1.24). The roadmap entry, its two amendments and its **Check:** are the contract. "In the browser (0.11)" is the Playwright harness, `test/e2e/` (TASK-013).
 - **The Check's *Open Library* reads *Hardcover*** (the entry's 2026-10-28 amendment, D-94): this task follows 1.4f (TASK-040), so the outside book results are Hardcover's, the source tag reads *Hardcover* and the group head *From Hardcover*, and the Check's *recorded Open Library answers* are Hardcover's. AC-1 copies the Check verbatim; AC-2 onward say *Hardcover*.
 - **Why this is one large task** (`workflow.splitPolicy: never-split`): three search boxes (two client components and one server-rendered form), a shared debounce-and-abort piece, the library query that supplies each book's level, the rule edit in `.claude/rules/ui.md` and the redrawn frames land together, so the behaviour is the same in every box at once.
