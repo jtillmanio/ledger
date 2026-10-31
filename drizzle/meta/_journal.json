@@ -127,6 +127,13 @@
       "when": 1793336131257,
       "tag": "0017_book_genres",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793468555181,
+      "tag": "0018_hardcover_cache",
+      "breakpoints": true
     }
   ]
 }

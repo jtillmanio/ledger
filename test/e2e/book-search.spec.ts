@@ -1,0 +1,178 @@
+// Task 1.4f: Add books' *Search* on Hardcover in a real browser (AC-1, AC-6),
+// at every width, light and dark. The route asks Hardcover from the server,
+// where page.route can't see it, so the recorded answers
+// (test/fixtures/hardcover-piranesi.json) are seeded as hardcover_cache rows
+// under the keys the route asks, and a 429 is its `hold` row. The server runs
+// with a placeholder token (scripts/lib/e2e.mjs), so a search the cache can't
+// answer would reach Hardcover, be refused, and show the error state: a
+// listing is proof that no request was made. Cover images are answered here.
+// This file removes what it makes.
+import { expect, test, type Page } from "@playwright/test";
+import { E2E_USER } from "../../scripts/lib/e2e.mjs";
+import { testSql, type TestSql } from "../db";
+import RECORDED from "../fixtures/hardcover-piranesi.json";
+import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
+
+// Writes: runs once, in w390-light.
+const ONCE = { tag: "@at-w390-light" };
+const AXE = [
+  "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
+  "aria-prohibited-attr", "aria-required-children", "aria-required-parent", "aria-valid-attr-value", "aria-hidden-focus",
+  "list", "listitem", "landmark-unique", "duplicate-id-aria", "target-size", "heading-order", "label",
+];
+const SEARCH_KEY = "search:piranesi";
+const ISBN_KEY = "isbn:9781526622426";
+/** A search the cache answers with nothing. */
+const NOTHING = "zzzz e2e nothing";
+/** A library book a rate-limited search still lists. */
+const LIBRARY = { id: "e2e-hardcover-library-book", title: "E2E Hardcover Library Book", author: "E2E Hardcover Author" };
+const LIBRARY_AUTHOR_ID = "e2e-hardcover-author";
+const FIXTURE_IDS = [444001, 444002, 444003, 444004, 444005];
+const FIXTURE_AUTHORS = ["susanna-clarke", "luigi-ficacci", "sarah-e-lawrence"];
+const PIRANESI_COVER = "https://assets.hardcover.app/edition/444001/piranesi.jpeg";
+const recorded = RECORDED as unknown as Record<string, unknown>;
+
+async function withSql<T>(work: (sql: TestSql) => Promise<T>): Promise<T> {
+  const sql = testSql();
+  try {
+    return await work(sql);
+  } finally {
+    await sql.end();
+  }
+}
+
+async function clean() {
+  await withSql(async (sql) => {
+    await sql`DELETE FROM books WHERE hardcover_id = ANY(${FIXTURE_IDS}::int[]) OR id = ${LIBRARY.id}`;
+    await sql`DELETE FROM authors a WHERE a.id = ANY(${[...FIXTURE_AUTHORS, LIBRARY_AUTHOR_ID]}::text[])
+      AND NOT EXISTS (SELECT 1 FROM books b WHERE b.author_id = a.id)`;
+    await sql`DELETE FROM hardcover_cache WHERE key IN (${SEARCH_KEY}, ${ISBN_KEY}, ${`search:${NOTHING}`}, 'hold')`;
+  });
+}
+
+test.beforeAll(async () => {
+  await clean();
+  await withSql(async (sql) => {
+    // A day old: a request would rewrite fetched_at, so an unchanged one shows none was made.
+    const rows = [[SEARCH_KEY, recorded[SEARCH_KEY]], [ISBN_KEY, recorded[ISBN_KEY]], [`search:${NOTHING}`, { found: 0, hits: [] }]];
+    for (const [key, body] of rows) {
+      await sql`INSERT INTO hardcover_cache (key, body, fetched_at)
+        VALUES (${key as string}, ${sql.json(body as never)}, now() - interval '1 day')`;
+    }
+    await sql`INSERT INTO authors (id, name) VALUES (${LIBRARY_AUTHOR_ID}, ${LIBRARY.author})`;
+    await sql`INSERT INTO books (id, title, author_id) VALUES (${LIBRARY.id}, ${LIBRARY.title}, ${LIBRARY_AUTHOR_ID})`;
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${LIBRARY.id}, 'to_read')`;
+  });
+});
+test.afterAll(clean);
+
+test.beforeEach(async ({ page }) => {
+  // The recorded covers live on Hardcover's host: answered here, so no image request leaves the machine.
+  await page.route("https://assets.hardcover.app/**", (route) => route.fulfill({
+    status: 200, contentType: "image/svg+xml", body: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="60"/>',
+  }));
+});
+
+async function floor(page: Page) {
+  await expectNoHorizontalScroll(page);
+  await expectNoAxeViolations(page, AXE);
+  expect(await contrastFailures(page)).toEqual([]);
+}
+
+/** Open Add books (Search is selected) and submit a search. */
+async function search(page: Page, q: string, { open = true } = {}) {
+  if (open) await page.goto("/books/add");
+  const box = page.getByRole("searchbox", { name: "Title or author" });
+  await hydrated(box);
+  await box.fill(q);
+  await box.press("Enter");
+}
+
+const fromHardcover = (page: Page) => page.getByRole("list", { name: "From Hardcover" });
+const statusLine = (page: Page) => page.locator("#book-search-wait .statusline");
+const searchRow = (sql: TestSql) => sql<{ fetched_at: Date }[]>`SELECT fetched_at FROM hardcover_cache WHERE key = ${SEARCH_KEY}`;
+
+test("searching piranesi lists Hardcover's books under From Hardcover, no compilation, and meets the UX floor (AC-1, AC-6)", async ({ page }, info) => {
+  await search(page, "piranesi");
+  await expect(page.getByRole("heading", { name: /^From Hardcover/ })).toBeVisible();
+  const rows = fromHardcover(page).getByRole("listitem");
+  await expect(rows).toHaveCount(3);
+  // The recorded compilation is not listed, nor the book with no author.
+  await expect(page.getByText("Piranesi & Jonathan Strange and Mr Norrell")).toHaveCount(0);
+  await expect(rows.first()).toContainText("Susanna Clarke · 272 pages");
+  await expect(rows.first()).toContainText("Hardcover · est 75k words");
+  await expect(rows.nth(2)).toContainText("Sarah E. Lawrence and John Wilton-Ely");
+  // The subtitle follows the title, and the add button names the book with it.
+  await expect(rows.nth(1).locator(".rsub")).toHaveText("The Complete Etchings");
+  await expect(page.getByRole("button", { name: "Add to Someday: Piranesi: The Complete Etchings", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Add to Someday: Piranesi", exact: true })).toBeVisible();
+  await expect(page.getByText("Matched against your library first, then Hardcover. Searches when you press Enter.")).toBeVisible();
+  for (const target of await page.locator(".pane-search button, .pane-search input").all()) {
+    if (!(await target.isVisible())) continue;
+    expect((await target.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+  }
+  await expect(statusLine(page)).toHaveCount(0);
+  await floor(page);
+  await screenshot(page, info, "book-search-results");
+});
+
+test("a recorded 429 shows the rate-limited state while your library's books still list (AC-1, AC-6)", async ({ page }, info) => {
+  await withSql((sql) => sql`INSERT INTO hardcover_cache (key, body) VALUES ('hold', ${sql.json({ retryAfter: 600 })})
+    ON CONFLICT (key) DO UPDATE SET body = EXCLUDED.body, fetched_at = now()`);
+  try {
+    await search(page, "e2e hardcover library");
+    await expect(statusLine(page)).toContainText(/Hardcover is busy\. Retrying in \d+s\./);
+    await expect(page.getByRole("list", { name: "In your library" }).getByRole("listitem")).toContainText([LIBRARY.title]);
+    await expect(fromHardcover(page)).toHaveCount(0);
+    await floor(page);
+    await screenshot(page, info, "book-search-rate-limited");
+  } finally {
+    await withSql((sql) => sql`DELETE FROM hardcover_cache WHERE key = 'hold'`);
+  }
+});
+
+test("a search with no results says so, with By hand (AC-6)", async ({ page }, info) => {
+  await search(page, NOTHING);
+  await expect(statusLine(page)).toContainText(`Nothing in your library or on Hardcover for ${NOTHING}.`);
+  await expect(statusLine(page).getByRole("button", { name: "Add it by hand" })).toBeVisible();
+  await floor(page);
+  await screenshot(page, info, "book-search-nothing");
+});
+
+test("an ISBN-13 lists one result (AC-1)", ONCE, async ({ page }) => {
+  await search(page, "978-1-5266-2242-6");
+  await expect(fromHardcover(page).getByRole("listitem")).toHaveCount(1);
+  await expect(fromHardcover(page)).toContainText("Piranesi");
+  await expect(fromHardcover(page)).toContainText("Susanna Clarke");
+  await expect(statusLine(page)).toHaveCount(0);
+});
+
+test("adding one creates one books row with hardcover_id and its cover; adding it again reuses it and says so; the same search again makes no request (AC-1)", ONCE, async ({ page }) => {
+  const before = await withSql(searchRow);
+  await search(page, "piranesi");
+  const add = page.getByRole("button", { name: "Add to Someday: Piranesi", exact: true });
+  await hydrated(add);
+  await add.click();
+  await expect(page.getByRole("button", { name: "Added to Someday: Piranesi", exact: true })).toHaveText("✓ Added to Someday");
+  const created = await withSql((sql) => sql`
+    SELECT b.id, b.title, b.hardcover_id, b.cover_url, b.page_count, b.published_year, s.status
+    FROM books b LEFT JOIN book_status s ON s.book_id = b.id AND s.user_id = ${E2E_USER}
+    WHERE b.hardcover_id = 444001 AND b.deleted_at IS NULL`);
+  expect(created).toEqual([{ id: "piranesi-susanna-clarke", title: "Piranesi", hardcover_id: 444001,
+    cover_url: PIRANESI_COVER, page_count: 272, published_year: 2020, status: "to_read" }]);
+
+  // The same search again: your copy now, Hardcover's not offered twice, and from the cache.
+  await search(page, "piranesi", { open: false });
+  const library = page.getByRole("list", { name: "In your library" });
+  await expect(library.getByRole("listitem")).toHaveCount(1);
+  await expect(fromHardcover(page).getByRole("listitem")).toHaveCount(2);
+  await expect(statusLine(page)).toHaveCount(0);
+  await library.getByRole("button", { name: "Add to Someday: Piranesi", exact: true }).click();
+  await expect(page.locator(".toast-label")).toHaveText("Already in your library");
+  expect(await withSql((sql) => sql`SELECT id FROM books WHERE hardcover_id = 444001`)).toHaveLength(1);
+
+  const after = await withSql(searchRow);
+  expect(after).toEqual(before);
+  expect(await withSql((sql) => sql`SELECT key FROM hardcover_cache WHERE key LIKE 'search:%' ORDER BY key`))
+    .toEqual([{ key: SEARCH_KEY }, { key: `search:${NOTHING}` }]);
+});

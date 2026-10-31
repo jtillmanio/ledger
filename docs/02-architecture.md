@@ -29,7 +29,7 @@ single table pivoted across ten year tabs. Both are ordinary schema problems.
 flowchart LR
   user[Phone · tablet · desktop] -->|passcode cookie, src/proxy.ts| app[Next.js 16 on Vercel]
   app -->|postgres.js, pooled| db[(Postgres on Neon)]
-  app -. add flows only, cached .-> apis[Metron · Open Library · TMDB]
+  app -. add flows only, cached .-> apis[Metron · Hardcover · TMDB]
   wb[Comics.xlsx · Books.xlsx<br/>+ sidecar CSVs] --> extract[etl/extract.py] --> seed[seed/*.csv]
   seed -->|load / rebuild, until cutover| db
   enrich[etl/enrich_comics.py] -->|sidecars keyed by label| wb
@@ -68,13 +68,13 @@ everything: catalog and per-user progress are separate tables keyed
 | Component | Responsibility | Talks to | Location |
 |---|---|---|---|
 | Pages and layouts | One server component per route; the shell (media bar, rail, sidebar) | `queries.ts` | `src/app/` |
-| Route handlers | Writes (progress, add, inbox), search proxies, export, health | `writes.ts`, Metron, Open Library | `src/app/api/` |
+| Route handlers | Writes (progress, add, inbox), search proxies, export, health | `writes.ts`, Metron, Hardcover | `src/app/api/` |
 | Passcode gate | HMAC-signed cookie; `/login`; the last-medium cookie; `/api/health` is the one route outside it | — | `src/proxy.ts`, `src/lib/auth.ts` |
 | Reads | Every read the UI performs, each page's queries in one wave | Postgres views | `src/db/queries.ts` |
 | Writes | Every insert and update, one transaction per user action | Postgres | `src/db/writes.ts` |
 | Schema and migrations | Drizzle tables; generated SQL migrations, down files for destructive ones | — | `src/db/schema.ts`, `drizzle/` |
 | Derived layer | Every view and function: readiness, progress, spans, plan levels | — | `etl/views.sql` |
-| Domain logic | The bulk-entry parser, book parsing and review, finish dates, API clients | Metron, Open Library | `src/lib/` |
+| Domain logic | The bulk-entry parser, book parsing and review, finish dates, API clients | Metron, Hardcover | `src/lib/` |
 | Components | Shared UI: sheets, nav, badges, toasts | — | `src/components/` |
 | ETL | Extract, volume proposals, Metron enrichment, sidecar checks, load and rebuild | Workbooks, Metron | `etl/` |
 | Tooling | Migration and token checks, the perf runner, the e2e runner, release helpers, `task` and `screen` printers | — | `scripts/` |
@@ -103,7 +103,7 @@ Every page. One dashboard per medium, with the lists one level down (design §11
 | `/books` | Books dashboard — reading now, the plan rail, capacity, the year so far. Until task 2.2 builds it, a redirect to `/books/list` (task 1.8c) |
 | `/books/status` | In flight · Up next · Done, for books |
 | `/books/list` | Master list: search, filter by status, to-read level, year or genre, series completion |
-| `/books/add` | Add books: search Open Library, paste a list, or by hand, with a destination (a quarter or year, On deck, Someday, or a shelf) |
+| `/books/add` | Add books: search Hardcover, paste a list, or by hand, with a destination (a quarter or year, On deck, Someday, or a shelf) |
 | `/books/plan` | Plan by quarter, full editor |
 | `/books/releases` | Books coming out that you want, *Out now* then by month (task 5.7, D-35) |
 | `/books/series` | Every series with `read / total` from `series_progress` and its next unread book (task 5.9) |
@@ -376,7 +376,7 @@ the asset.
 |---|---|---|
 | Issue records, covers, cover dates, story titles, creators, canonical labels | Metron (`metron_id` on `issues`) | 20 req/min, 5,000/day. Dates, covers and labels come from series issue lists (~1,800 requests); titles and credits need one detail request per issue (~8,100) |
 | Comics gap-fill | Comic Vine | 1 req/sec, 200/hour — fallback only |
-| Book bibliographic data, page counts, covers | Hardcover GraphQL (D-94; the load from task 1.14b, *Add books* from 1.4f; Open Library until each lands, removed in 6.19) | A personal token; 60 requests a minute, bursts of 10, 5,000 a day. Found by Calibre's ISBN, many to a request, else one title-and-author search; a compilation never matches (D-99) |
+| Book bibliographic data, page counts, covers | Hardcover GraphQL (D-94; the load from task 1.14b, *Add books* from 1.4f; Open Library's code stays, unused, until 6.19 removes it) | A personal token; 60 requests a minute, bursts of 10, 5,000 a day. Found by Calibre's ISBN, many to a request, else one title-and-author search; a compilation never matches (D-99) |
 | Series position | Hardcover GraphQL | The same requests: each book's series and position |
 | Word counts | Calibre's Count Pages column (data model 2.19, task 1.18); no API | Take Calibre's as `stated`, over a typed one (D-87; a typed count more than 10% off is reported); keep a typed count where Calibre has none; estimate the rest at `pages x 275` and record which is which in `books.word_count_source` |
 | Book tags, summaries, series cross-check, read dates | Calibre, the owner's library (data model 2.19, D-73) | Read from a copy of `metadata.db`, never written. Calibre is the source of truth (D-87): its series and index fill over the workbook's, and its reads load as it has them; a Hardcover series that differs is reported, not a gate (1.14b). Tags, comments and ISBN load nothing until their columns are approved (D-88) |
@@ -390,8 +390,8 @@ value. Before cutover it writes the sidecar CSVs in 2.13; after cutover (task
 
 **Add flows are the one place an API is called live** (data model 2.15). TMDB is searched
 live because the catalogue is 1.5M+ titles and there is no watch data to seed
-from. Metron and Open Library (Hardcover from 1.4f, D-94) are searched live
-from *Add issues* and *Add books*, when you submit a search, so that the thing you add arrives as a real
+from. Metron and Hardcover (since 1.4f, D-94; Open Library before it) are
+searched live from *Add issues* and *Add books*, when you submit a search, so that the thing you add arrives as a real
 record with its metadata already on it. No page render ever calls an API.
 Responses are cached, and detail pages never re-call.
 
@@ -428,7 +428,7 @@ the series and issue range" and the app resolves 23 issue records for you.
 | Source | Auth | Limits | Best for |
 |---|---|---|---|
 | **Hardcover** | free account, a personal token, GraphQL | 60 a minute, bursts of 10, 5,000 a day | The spine since D-94: one record per book with its editions under it, the subtitle and series in their own fields, a `compilation` flag, a reader count. ISBNs are looked up many to a request |
-| **Open Library** | none | courtesy limits, send a real User-Agent | Replaced by Hardcover (D-94): noisy titles, and graphic novels and omnibuses mixed in with the works. *Add books* searches it until 1.4f; 6.19 removes it |
+| **Open Library** | none | courtesy limits, send a real User-Agent | Replaced by Hardcover (D-94): noisy titles, and graphic novels and omnibuses mixed in with the works. *Add books* searched it until 1.4f; 6.19 removes it |
 | Google Books | key optional | ~1,000/day per project by default, raisable on request | Descriptions and categories; good fallback |
 | ISBNdb | paid | — | Skip |
 | **Calibre** (the owner's library) | none: a local `metadata.db`, read from a copy | none | Word counts from the Count Pages plugin, series and index, tags, comments, ISBN, read dates. roadmap 1.18, D-73 |
@@ -482,7 +482,7 @@ second, hosted posters. Requires a key and **attribution in the UI**.
 array with number, name, episode count, air date, and poster, so adding a show
 populates its whole season list without N further requests.
 
-Unlike Metron and Open Library, TMDB is **called live during search** — the
+Unlike Metron and Hardcover, TMDB is **called live during search** — the
 catalogue is 1.5M+ titles and there's nothing to pre-seed from. Detail is
 cached into `titles` and `seasons` on first add.
 

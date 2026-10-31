@@ -1,14 +1,14 @@
 ---
 id: TASK-040
 title: 1.4f Add books searches Hardcover
-status: Ready
+status: In progress
 depends_on: []
 size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 419364d
 ---
 
 # TASK-040 — 1.4f Add books searches Hardcover
@@ -82,9 +82,42 @@ request, and that no response carries the token.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Grep `docs/01-product.md` and `docs/HANDOFF.md` for Add books named as Open Library's; any found is a note for 6.19 (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+_Approved by the owner 2026-10-31. Size: about 22 files, schema and UI together; kept whole under `never-split`, `autonomy: attended`._
+
+**Steps**
+
+1. Schema: `hardcoverCache` (`open_library_cache`'s shape) in `src/db/schema.ts`; `npm run db:generate` writes `drizzle/<tag>.sql` and `drizzle/meta/*`; `hardcover_cache` joins `NOT_EXPORTED` in `src/db/export-tables.ts`. Additive, so no `drizzle/down/` file.
+2. `src/lib/hardcover.ts` (new, openlibrary.ts's pattern): one GraphQL POST to `https://api.hardcover.app/v1/graphql` per search, `Bearer` prefixed unless the token has it; cache keys `search:<lowercased, collapsed q>` and `isbn:<digits>`; fresh 7 days (D-62); a 429's `Retry-After` is the `hold` row; a throw, a non-2xx or GraphQL `errors` writes nothing and answers `error`; no token answers `unconfigured` with no request. An ISBN is 10 or 13 characters once hyphens go (an ISBN-10 may end in X), asked through its own editions query whose `contributions` carry `contribution`, so an illustrator is not an author. `toBooks` drops compilations and books with no author, dedupes by id, sorts by `users_count` descending (ties keep Hardcover's order). A book: `hardcoverId, title, subtitle, authors[], series, position, year, pages, coverUrl`.
+3. `src/app/api/books/search/route.ts`: Hardcover in Open Library's place; `BookSearchAnswer.hardcover` replaces `openLibrary`; `status` gains `unconfigured`; a result is held when your library has its `hardcover_id`, or its title with any of its authors (D-61 widened).
+4. `src/db/queries.ts` `librarySearch`: matches `hardcover_id` (replacing `openLibraryIds`) and one (title, author) pair per author; `LibraryHit.hardcover_id` replaces `open_library_id`.
+5. Add: `POST /api/books` takes `{ hardcover: { hardcoverId, title, authors, year, pages, coverUrl } }` (id a positive int32, cover only from `https://assets.hardcover.app/`, 1 to 10 authors); `addBook` in `src/db/writes.ts` reuses by `hardcover_id`, else title and any author, else creates with the first author, `hardcover_id`, cover, pages, year and est words (pages × your words per page), at Someday.
+6. Screen: `src/components/BookSearch.tsx` and `src/components/AddBooks.tsx` (not in "Files likely touched": it builds the add's item from the pick): *From Hardcover*, *Hardcover · est …*, the hint *Matched against your library first, then Hardcover. Searches when you press Enter.*, the subtitle muted after the title on the same line and inside the add button's name (*Add to Someday: The Way of Kings: Book One of the Stormlight Archive*; owner, 2026-10-31: the button keeps starting with what it says), authors as *A and B*, series and position, and *Hardcover isn't set up here, so only your library was searched. Nothing was added.*
+7. Open Library's arms leave the route, the add, `writes.ts` and the screen; `src/lib/openlibrary.ts`, `open_library_cache` and `books.open_library_id` stay, unused, until 6.19 (D-94).
+8. `scripts/lib/e2e.mjs`: a placeholder `HARDCOVER_API_TOKEN` in `serverEnv`.
+9. Docs: `.claude/rules/ui.md`, `docs/03-data-model.md` § 2.15, `docs/02-architecture.md` § 10, `docs/SERVICES.md` (in use); the mockup's `add` frame (*From Hardcover* head, meta, hint, and the paste lede set to the app's copy) and its lines in `design/mockups-index.md`.
+
+Small files outside the list above, each following from a planned change: `scripts/lib/e2e.d.mts` (the placeholder token's type), `test/e2e-guard.test.ts` (pins `serverEnv`), `test/db.ts` (`truncateAll` names `hardcover_cache`), `.env.example` (the token's comment), and comments in `src/components/Cover.tsx` and on `open_library_cache` in `src/db/schema.ts`. The architecture's other Open Library mentions of Add books (the system diagram, the component and route tables, the TMDB paragraph) change with § 10.
+
+**Test strategy**
+
+- AC-1 (vitest half), AC-2, AC-4: `test/hardcover-search.test.ts` (new) with a stubbed `fetch` and `test/fixtures/hardcover-piranesi.json` (the real search and edition shapes, from the ETL cache; a compilation, a subtitle, readers 50 / 5,000 / 500): cache, stale, hold, error, ISBN against text, no token makes zero requests, and the token's value in no response body or header.
+- AC-3: the same file, plus `test/add-book.test.ts`'s 1.4c tests moved from Open Library to Hardcover.
+- The screen: `test/add-book-sheet.test.tsx` and `test/inbox.test.tsx` (copy, subtitle, not-set-up, the `hardcover` shape).
+- AC-1 (browser half), AC-6: `test/e2e/book-search.spec.ts` (new): seeded `hardcover_cache` rows and a `hold` row, cover requests to `assets.hardcover.app` routed locally, axe, 24px targets, contrast, screenshots at every width in CI's full run; it removes what it makes. "No request" is the seeded row's `fetched_at` and the row count unchanged (a request with the placeholder token would answer `error`).
+- AC-5: spec-reviewer reads the docs and the frame.
+
+**Risks**
+
+- Hardcover's `search.results` can come as a JSON string: parsed either way.
+- Only `Retry-After` is read on a 429.
+
+**Follow-ups (approved at plan)**
+
+- At close-out, grep `docs/01-product.md` and `docs/HANDOFF.md` for Add books named as Open Library's; any found is a note for 6.19 (planning-doc edit: asks then).
 
 ## Review log
 

@@ -957,9 +957,9 @@ export type AddBooksResult =
   | { ok: false; reason: "gone"; missing: string[] }
   | { ok: false; reason: "no-shelf" };
 
-/** A book to create, with what Open Library or the typist said about it. */
+/** A book to create, with what Hardcover, Open Library or the typist said about it. */
 type BookRow = NewBook & {
-  openLibraryId?: string | null; coverUrl?: string | null; year?: number | null; pages?: number | null;
+  hardcoverId?: number | null; openLibraryId?: string | null; coverUrl?: string | null; year?: number | null; pages?: number | null;
   wordCount?: number | null; wordCountSource?: "stated" | "estimated" | null;
 };
 
@@ -1016,7 +1016,7 @@ async function createBooks(tx: Tx, toCreate: BookRow[]): Promise<string[]> {
     return {
       id, title: b.title, authorId: slug(b.author),
       seriesId: b.series ? slug(b.series) : null, seriesPosition: b.series ? b.position : null,
-      openLibraryId: b.openLibraryId ?? null, coverUrl: b.coverUrl ?? null,
+      hardcoverId: b.hardcoverId ?? null, openLibraryId: b.openLibraryId ?? null, coverUrl: b.coverUrl ?? null,
       publishedYear: b.year ?? null, pageCount: b.pages ?? null,
       wordCount: b.wordCount ?? null, wordCountSource: b.wordCount == null ? null : b.wordCountSource ?? null,
     };
@@ -1223,15 +1223,15 @@ export async function dismissWishlist(ids: number[]): Promise<number[]> {
   return gone.map((r) => r.id).sort((a, b) => a - b);
 }
 
-/** An Open Library result to add (task 1.4c): what the search showed. */
-export type OpenLibraryItem = {
-  openLibraryId: string; title: string; author: string;
+/** A Hardcover result to add (task 1.4f): what the search showed. `authors` has at least one; the first is saved (D-61). */
+export type HardcoverItem = {
+  hardcoverId: number; title: string; authors: string[];
   year: number | null; pages: number | null; coverUrl: string | null;
 };
 /** A book typed by hand: title and author, the rest optional. */
 export type HandItem = NewBook & { pages: number | null; words: number | null };
-/** One book to add: a library row the search listed, an Open Library result, or one typed by hand. */
-export type AddBookItem = { use: string } | { openLibrary: OpenLibraryItem } | { hand: HandItem };
+/** One book to add: a library row the search listed, a Hardcover result, or one typed by hand. */
+export type AddBookItem = { use: string } | { hardcover: HardcoverItem } | { hand: HandItem };
 
 export type AddBookResult =
   | ({
@@ -1252,10 +1252,11 @@ export type AddBookResult =
  * row when you have it, else a new `books` row, then the destination row, in
  * one transaction.
  *
- * - An Open Library result is your book when a live one has its work id, or
- *   its title and author (D-61); otherwise it is created with the work id,
- *   cover, year and pages, and an estimated word count, pages × your words per
- *   page (architecture § Metadata sources), when it has pages.
+ * - A Hardcover result (task 1.4f) is your book when a live one has its
+ *   `hardcover_id`, or its title and any of its authors (D-61); otherwise it is
+ *   created under its first author with the `hardcover_id`, cover, year and
+ *   pages, and an estimated word count, pages × your words per page
+ *   (architecture § Metadata sources), when it has pages.
  * - A book typed by hand is yours when a live one has its title and author;
  *   otherwise it is created with what you typed: a word count as `stated`,
  *   pages alone estimated as above, neither as no count.
@@ -1285,15 +1286,20 @@ export async function addBook(
       if (!live) return { ok: false, reason: "gone" } as const;
       ({ id, title } = live);
     } else {
-      const fields = "openLibrary" in item ? item.openLibrary : item.hand;
-      title = fields.title;
-      if ("openLibrary" in item) {
-        const [byWork] = await tx.select({ id: books.id, title: books.title }).from(books)
-          .where(and(eq(books.openLibraryId, item.openLibrary.openLibraryId), isNull(books.deletedAt)))
+      title = "hardcover" in item ? item.hardcover.title : item.hand.title;
+      if ("hardcover" in item) {
+        const [byId] = await tx.select({ id: books.id, title: books.title }).from(books)
+          .where(and(eq(books.hardcoverId, item.hardcover.hardcoverId), isNull(books.deletedAt)))
           .orderBy(books.id).limit(1);
-        if (byWork) ({ id, title } = byWork);
+        if (byId) ({ id, title } = byId);
       }
-      if (!id) id = (await sameBooks(tx, [fields])).get(0) ?? null;
+      if (!id) {
+        const asked = "hardcover" in item
+          ? item.hardcover.authors.map((author) => ({ title, author })) : [item.hand];
+        const same = await sameBooks(tx, asked);
+        // The first listed author with a match wins, as the add would have named them.
+        id = asked.map((_, i) => same.get(i)).find(Boolean) ?? null;
+      }
       if (!id) row = await newBookRow(tx, userId, item);
     }
 
@@ -1311,7 +1317,7 @@ export async function addBook(
   });
 }
 
-/** The `books` row an Open Library result or a typed book becomes. */
+/** The `books` row a Hardcover result or a typed book becomes. */
 async function newBookRow(tx: Tx, userId: string, item: Exclude<AddBookItem, { use: string }>): Promise<BookRow> {
   const estimate = async (pages: number | null) => {
     if (pages === null) return null;
@@ -1320,11 +1326,11 @@ async function newBookRow(tx: Tx, userId: string, item: Exclude<AddBookItem, { u
       .where(eq(readingSettings.userId, userId));
     return pages * (s?.wpp ?? DEFAULT_WORDS_PER_PAGE);
   };
-  if ("openLibrary" in item) {
-    const { openLibraryId, title, author, year, pages, coverUrl } = item.openLibrary;
+  if ("hardcover" in item) {
+    const { hardcoverId, title, authors: [author], year, pages, coverUrl } = item.hardcover;
     const words = await estimate(pages);
     return {
-      title, author, series: null, position: null, openLibraryId, coverUrl, year, pages,
+      title, author, series: null, position: null, hardcoverId, coverUrl, year, pages,
       wordCount: words, wordCountSource: words === null ? null : "estimated",
     };
   }

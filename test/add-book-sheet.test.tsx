@@ -1,7 +1,8 @@
 // @vitest-environment happy-dom
 // Task 1.4c on screen: the Add books sheet. Add to names the destination and
 // every result's button says it (AC-3); Search runs on submit, your library
-// before Open Library (AC-2); By hand needs a title and an author and says so
+// before Hardcover (AC-2; Hardcover since task 1.4f, with its subtitle, authors
+// and not-set-up state); By hand needs a title and an author and says so
 // under the field (AC-2); a record with no external one is *metadata pending*
 // (AC-4); the search's states, labelled inputs, and the sheet's focus, inert
 // and every way it closes (AC-6). *On deck* is a real choice from task 1.7
@@ -25,12 +26,14 @@ vi.mock("next/navigation", () => ({ useRouter: () => router }));
 const BLADE: LibraryHit = {
   id: "the-blade-itself-joe-abercrombie", title: "The Blade Itself", author: "Joe Abercrombie", series: "First Law",
   series_position: 1, published_year: null, page_count: null, word_count: null, word_count_source: null,
-  cover_url: null, open_library_id: null, pending: true, status: "read", shelves: 2,
+  cover_url: null, hardcover_id: null, pending: true, status: "read", shelves: 2,
 };
-const SAKEY = {
-  openLibraryId: "OL1W", title: "The Blade Itself", author: "Marcus Sakey", year: 2009, pages: 320,
-  coverUrl: "https://covers.openlibrary.org/b/id/1-M.jpg",
+const SAKEY_ITEM = {
+  hardcoverId: 1, title: "The Blade Itself", authors: ["Marcus Sakey"], year: 2009, pages: 320,
+  coverUrl: "https://assets.hardcover.app/edition/1/sakey.jpeg",
 };
+/** A Hardcover result as the search lists it; the add sends SAKEY_ITEM's fields of it. */
+const SAKEY = { ...SAKEY_ITEM, subtitle: null, series: null, position: null };
 const COSMERE: Target = { kind: "shelf", shelfId: "cosmere", name: "Cosmere" };
 
 let container: HTMLDivElement;
@@ -41,7 +44,7 @@ let searchAnswer: (q: string) => Promise<Response> | Response;
 let added: Record<string, unknown>;
 
 const answer = (over: Partial<BookSearchAnswer> = {}): BookSearchAnswer =>
-  ({ query: "blade", status: "ok", library: [BLADE], openLibrary: [SAKEY], wordsPerPage: 275, ...over });
+  ({ query: "blade", status: "ok", library: [BLADE], hardcover: [SAKEY], wordsPerPage: 275, ...over });
 
 beforeEach(() => {
   container = document.createElement("div");
@@ -148,7 +151,7 @@ describe("Add to (AC-3)", () => {
     await search();
     expect(resultButtons().map((b) => b.textContent)).toEqual(["Add to On deck", "Add to On deck"]);
     await click(resultButtons()[1]);
-    expect(adds()).toEqual([{ item: { openLibrary: SAKEY }, destination: { kind: "on_deck" } }]);
+    expect(adds()).toEqual([{ item: { hardcover: SAKEY_ITEM }, destination: { kind: "on_deck" } }]);
     expect(resultButtons()[1].textContent).toBe("✓ Added to On deck");
     expect(document.querySelector(".toast-label")!.textContent).toBe("Added to On deck");
     await click(document.querySelector(".toast-undo")!);
@@ -186,7 +189,7 @@ describe("Add to (AC-3)", () => {
 });
 
 describe("Search (AC-2, AC-6)", () => {
-  it("runs on submit, not per keystroke, and lists your library before Open Library", async () => {
+  it("runs on submit, not per keystroke, and lists your library before Hardcover", async () => {
     await open();
     await type(dialog()!.querySelector<HTMLInputElement>("#book-q")!, "b");
     await type(dialog()!.querySelector<HTMLInputElement>("#book-q")!, "blade");
@@ -194,13 +197,52 @@ describe("Search (AC-2, AC-6)", () => {
     await submit(dialog()!.querySelector('form[role="search"]')!);
     expect(searches().map(([, i]) => JSON.parse(i.body))).toEqual([{ q: "blade" }]);
     const heads = [...dialog()!.querySelectorAll(".pane-search h3.s")].map((h) => h.firstChild!.textContent);
-    expect(heads).toEqual(["In your library", "From Open Library"]);
+    expect(heads).toEqual(["In your library", "From Hardcover"]);
     const rows = [...dialog()!.querySelectorAll(".pane-search .row.res")];
     expect(rows[0].textContent).toContain("Joe Abercrombie");
     expect(rows[0].textContent).toContain("read");
     expect(rows[0].textContent).toContain("on 2 shelves");
     expect(rows[1].textContent).toContain("Marcus Sakey · 320 pages");
-    expect(rows[1].textContent).toContain("Open Library · est 88k words");
+    expect(rows[1].textContent).toContain("Hardcover · est 88k words");
+    expect(dialog()!.querySelector(".pane-search .seg-note")!.textContent)
+      .toBe("Matched against your library first, then Hardcover. Searches when you press Enter.");
+  });
+
+  it("a Hardcover result's subtitle follows its title, muted and in its button's name; every author and the series show (task 1.4f, AC-3)", async () => {
+    const WOK = {
+      hardcoverId: 386446, title: "The Way of Kings", subtitle: "Book One of the Stormlight Archive",
+      authors: ["Brandon Sanderson", "Michael Whelan"], series: "The Stormlight Archive", position: 1,
+      year: 2010, pages: 1007, coverUrl: null,
+    };
+    searchAnswer = () => Response.json(answer({ library: [], hardcover: [WOK] }));
+    await open();
+    await search("the way of kings");
+    const row = dialog()!.querySelector(".pane-search .row.res")!;
+    const head = row.querySelector(".rh")!;
+    // The title, then the subtitle on the same line, muted, then the year.
+    expect([...head.children].map((c) => [c.className, c.textContent])).toEqual([
+      ["rt", "The Way of Kings"], ["rsub muted", "Book One of the Stormlight Archive"], ["rm mono", "2010"]]);
+    expect(row.querySelector(".rs")!.textContent)
+      .toBe("Brandon Sanderson and Michael Whelan · The Stormlight Archive #1 · 1007 pages");
+    expect(resultButtons()[0].getAttribute("aria-label"))
+      .toBe("Add to Someday: The Way of Kings: Book One of the Stormlight Archive");
+    await click(resultButtons()[0]);
+    // The add sends the title alone; the subtitle is not saved.
+    expect(adds()).toEqual([{ item: { hardcover: {
+      hardcoverId: 386446, title: "The Way of Kings", authors: ["Brandon Sanderson", "Michael Whelan"],
+      year: 2010, pages: 1007, coverUrl: null,
+    } }, destination: { kind: "someday" } }]);
+  });
+
+  it("with no Hardcover token, says so with By hand and no Try again; your library's rows stay (task 1.4f)", async () => {
+    searchAnswer = () => Response.json(answer({ status: "unconfigured", hardcover: [] }));
+    await open();
+    await search();
+    const line = dialog()!.querySelector(".pane-search .statusline")!;
+    expect(line.textContent).toContain("Hardcover isn't set up here, so only your library was searched. Nothing was added.");
+    expect(button("Try again", line)).toBeFalsy();
+    expect(button("Add it by hand", line)).toBeTruthy();
+    expect(dialog()!.querySelectorAll(".pane-search .row.res")).toHaveLength(1);
   });
 
   it("loading is a status line and skeleton rows", async () => {
@@ -210,18 +252,18 @@ describe("Search (AC-2, AC-6)", () => {
     await open();
     await search();
     const line = dialog()!.querySelector('[role="status"] .statusline')!;
-    expect(line.textContent).toBe("Searching your library, then Open Library…");
+    expect(line.textContent).toBe("Searching your library, then Hardcover…");
     expect(dialog()!.querySelectorAll(".pane-search .row.res .sk")).not.toHaveLength(0);
     await act(async () => release());
     expect(dialog()!.querySelector(".pane-search .statusline")).toBeNull();
   });
 
   it("rate-limited is amber, counts down, and Add it by hand carries the search over as the title", async () => {
-    searchAnswer = () => Response.json(answer({ status: "rate_limited", retryIn: 40, openLibrary: [] }));
+    searchAnswer = () => Response.json(answer({ status: "rate_limited", retryIn: 40, hardcover: [] }));
     await open();
     await search("the way of kings");
     const line = dialog()!.querySelector(".statusline.wait")!;
-    expect(line.textContent).toContain("Open Library is busy. Retrying in 40s.");
+    expect(line.textContent).toContain("Hardcover is busy. Retrying in 40s.");
     // Your library still answered.
     expect(dialog()!.querySelectorAll(".pane-search .row.res")).toHaveLength(1);
     await click(button("Add it by hand", line)!);
@@ -230,12 +272,12 @@ describe("Search (AC-2, AC-6)", () => {
   });
 
   it("an error is a grey × that says nothing was added, with Try again; your library's rows stay", async () => {
-    searchAnswer = () => Response.json(answer({ status: "error", openLibrary: [] }));
+    searchAnswer = () => Response.json(answer({ status: "error", hardcover: [] }));
     await open();
     await search();
     const line = dialog()!.querySelector(".statusline.err")!;
     expect(line.querySelector('.x[aria-hidden="true"]')!.textContent).toBe("×");
-    expect(line.textContent).toContain("Open Library did not answer. Nothing was added.");
+    expect(line.textContent).toContain("Hardcover did not answer. Nothing was added.");
     expect(dialog()!.querySelectorAll(".pane-search .row.res")).toHaveLength(1);
     await click(button("Try again", line)!);
     expect(searches()).toHaveLength(2);
@@ -243,11 +285,11 @@ describe("Search (AC-2, AC-6)", () => {
   });
 
   it("nothing found says so, with By hand", async () => {
-    searchAnswer = () => Response.json(answer({ library: [], openLibrary: [] }));
+    searchAnswer = () => Response.json(answer({ library: [], hardcover: [] }));
     await open();
     await search("zzz");
     const line = dialog()!.querySelector(".pane-search .statusline")!;
-    expect(line.textContent).toContain("Nothing in your library or on Open Library for zzz.");
+    expect(line.textContent).toContain("Nothing in your library or on Hardcover for zzz.");
     expect(button("Add it by hand", line)).toBeTruthy();
   });
 
@@ -255,7 +297,7 @@ describe("Search (AC-2, AC-6)", () => {
     await open();
     await search();
     await click(resultButtons()[1]);
-    expect(adds()).toEqual([{ item: { openLibrary: SAKEY }, destination: { kind: "someday" } }]);
+    expect(adds()).toEqual([{ item: { hardcover: SAKEY_ITEM }, destination: { kind: "someday" } }]);
     expect(resultButtons()[1].textContent).toBe("✓ Added to Someday");
     expect(resultButtons()[1].getAttribute("aria-disabled")).toBe("true");
     expect(document.querySelector(".toast-label")!.textContent).toBe("Added to Someday");

@@ -1,0 +1,55 @@
+{
+  "_about": "Hardcover's answers for task 1.4f's tests, one per hardcover_cache key, in the shapes etl/.hardcover-cache.sqlite recorded: a search's `results` (Typesense hits) and an ISBN's editions. Trimmed to the fields src/lib/hardcover.ts reads; the ids are the fixture's own. The search holds a compilation (444002) and a book with no author (444004), neither listed; 444003 has a subtitle; 444005 has two authors. The edition names a narrator, who is not an author.",
+  "search:piranesi": {
+    "found": 5,
+    "page": 1,
+    "request_params": { "per_page": 10, "q": "piranesi" },
+    "hits": [
+      { "document": {
+        "id": "444002", "title": "Piranesi & Jonathan Strange and Mr Norrell", "subtitle": null,
+        "author_names": ["Susanna Clarke"], "compilation": true, "users_count": 40, "release_year": 2021,
+        "pages": 1290, "image": { "url": "https://assets.hardcover.app/edition/444002/boxed.jpeg" },
+        "featured_series": {}, "series_names": [], "slug": "piranesi-jonathan-strange-boxed-set"
+      } },
+      { "document": {
+        "id": "444003", "title": "Piranesi", "subtitle": "The Complete Etchings",
+        "author_names": ["Luigi Ficacci"], "compilation": false, "users_count": 30, "release_year": 2000,
+        "pages": 800, "image": { "url": "https://assets.hardcover.app/edition/444003/etchings.jpeg" },
+        "featured_series": {}, "series_names": [], "slug": "piranesi-the-complete-etchings"
+      } },
+      { "document": {
+        "id": "444001", "title": "Piranesi", "subtitle": null,
+        "author_names": ["Susanna Clarke"], "compilation": false, "users_count": 21000, "release_year": 2020,
+        "pages": 272, "image": { "url": "https://assets.hardcover.app/edition/444001/piranesi.jpeg" },
+        "featured_series": {}, "series_names": [], "slug": "piranesi"
+      } },
+      { "document": {
+        "id": "444004", "title": "Piranesi", "subtitle": null,
+        "author_names": [], "compilation": false, "users_count": 3, "release_year": null,
+        "pages": null, "image": {}, "featured_series": {}, "series_names": [], "slug": "piranesi-2"
+      } },
+      { "document": {
+        "id": "444005", "title": "Piranesi as Designer", "subtitle": null,
+        "author_names": ["Sarah E. Lawrence", "John Wilton-Ely"], "compilation": false, "users_count": 12,
+        "release_year": 2007, "pages": 368, "image": {},
+        "featured_series": {}, "series_names": [], "slug": "piranesi-as-designer"
+      } }
+    ]
+  },
+  "isbn:9781526622426": [
+    {
+      "pages": 272,
+      "image": { "url": "https://assets.hardcover.app/edition/9001/piranesi-uk.jpeg" },
+      "book": {
+        "id": 444001, "title": "Piranesi", "subtitle": null, "pages": 245, "release_year": 2020,
+        "compilation": false, "users_count": 21000,
+        "image": { "url": "https://assets.hardcover.app/edition/444001/piranesi.jpeg" },
+        "contributions": [
+          { "contribution": null, "author": { "name": "Susanna Clarke" } },
+          { "contribution": "Narrator", "author": { "name": "Chiwetel Ejiofor" } }
+        ],
+        "book_series": []
+      }
+    }
+  ]
+}

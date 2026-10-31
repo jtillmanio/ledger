@@ -12,7 +12,7 @@
 export default function Cover({ url, pending }: { url: string | null; pending: boolean }) {
   if (pending) return <span className="cv" data-enrich="pending" aria-hidden="true" />;
   if (url) {
-    // An Open Library or Metron CDN thumbnail, drawn as it comes.
+    // A Hardcover, Open Library or Metron CDN thumbnail, drawn as it comes.
     // eslint-disable-next-line @next/next/no-img-element
     return <img className="cv" src={url} alt="" width={40} height={60} loading="lazy" decoding="async" />;
   }

@@ -373,22 +373,28 @@ anything that points at it:
 | Adding | Search path | Freeform path | Then writes |
 |---|---|---|---|
 | An issue to a run | Your catalog first, then Metron live: series + number, cover and cover date on the result | A label, or many, through the bulk-entry parser (task 1.3) | `issues` (new label) or reuse of the existing row, then a `run_issues` placement |
-| A book to a to-read level (a quarter or year, On deck, Someday) or a shelf | Your library first, then Open Library live | Title and author required, series, position, pages and words optional | `books` (plus `authors` / `book_series` if new), then `shelf_books`, `book_status` or `reading_plan` |
+| A book to a to-read level (a quarter or year, On deck, Someday) or a shelf | Your library first, then Hardcover live (task 1.4f, D-94; Open Library before it) | Title and author required, series, position, pages and words optional | `books` (plus `authors` / `book_series` if new), then `shelf_books`, `book_status` or `reading_plan` |
 | A film or show | TMDB live (unchanged, 2.5b) | — none (D-28): when TMDB fails or finds nothing, *Save to inbox* keeps the query as a Watch capture note | `titles` / `seasons`, then status |
 
 An existing row is always reused. A search result that is already in your
 catalog shows up as your row ("in 3 runs", "on 2 shelves"), not as a second
 copy. A Metron result writes `metron_id`, `cover_date` and `cover_url` with
 source `metron`, and its label is normalised to the bulk-entry grammar before
-insert. A freeform issue or book is written with nothing but what you typed.
+insert. A Hardcover result writes `hardcover_id`, `cover_url`, `page_count` and
+`published_year`, under its title without the subtitle and its first-listed
+author (D-61, D-99); a compilation is never listed, and a result your library
+holds by `hardcover_id`, or by its title and any of its authors, lists as your
+book. A freeform issue or book is written with nothing but what you typed.
 Backfill (task 4.1 for issues, 4.2 for books) fills in the rest later, and
 never overwrites what you typed.
 
-This narrows a rule rather than dropping it. **Metron and Open Library are now
+This narrows a rule rather than dropping it. **Metron and Hardcover are now
 called live, but only from an add flow, which is an action you started**, and
 never to render a page. A search runs when you submit it, not on every
 keystroke. At 20 requests a minute, Metron is plenty for one person adding
-issues. Responses are cached like the backfill's. Hardcover stays backfill-only.
+issues, and Hardcover's 60 for one adding books. Responses are cached like the
+backfill's (`hardcover_cache`, 7 days, D-62). Hardcover was backfill-only until
+1.4f replaced Open Library in *Add books* (D-94).
 The AI rule is unaffected: tapping *Add* on a Metron result is an explicit
 accept of a label Metron says exists, and a freeform line is your own label,
 not a model's.
