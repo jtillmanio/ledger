@@ -11,7 +11,7 @@
  * book lands at Someday (D-37); a book you have keeps the status it has, except
  * an Unlisted one, which joins Someday as a book with no status does (task 1.21).
  */
-import { bookKey, type BookLine } from "./book-parse";
+import { bookKey, type BookCells, type BookLine } from "./book-parse";
 import type { Group, Option } from "./bulk-review";
 
 /** A library book, as the check names it. `status` is yours, null when it has none. */
@@ -39,6 +39,10 @@ export type BookRow = {
   kind: "ok" | "choice" | "error";
   text: string;
   why: string;
+  /** What the Title and Author cells show (task 1.4e). */
+  cells: BookCells;
+  /** The reason an empty Author cell gives, worded for the cell; "" when it has an author. */
+  authorWhy: string;
   check: string;
   groups: Group[];
   invalid: boolean;
@@ -68,6 +72,12 @@ const USE: Option = { id: "use", label: "Use that" };
 const SKIP: Option = { id: "skip", label: "Skip" };
 const DROP: Option = { id: "drop", label: "Drop", destructive: true };
 
+/** A row's key: the line and the text as pasted, so it holds while its cells are edited. */
+export const rowKey = (line: { line: number; text: string }) => `${line.line}:${line.text}`;
+
+const NO_AUTHOR = "No author. Type one in this cell.";
+const NO_AUTHOR_NEW = "No author, so it can't be added as new: type one, or use your book.";
+
 const named = (b: { title: string; author: string | null }) => (b.author ? `${b.title} - ${b.author}` : b.title);
 
 export function buildBookReview(
@@ -81,9 +91,9 @@ export function buildBookReview(
   let count = 0;
 
   const rows = lines.map((line): BookRow => {
-    const key = `${line.line}:${line.text}`;
+    const key = rowKey(line);
     const row: BookRow = {
-      key, line: line.line, kind: "ok", text: line.text, why: "", check: "unverified",
+      key, line: line.line, kind: "ok", text: line.text, why: "", cells: line.cells, authorWhy: "", check: "unverified",
       groups: [], invalid: false, needsChoice: false,
     };
     const decide = (options: Option[], fallback: string | null) => {
@@ -116,7 +126,7 @@ export function buildBookReview(
       if (!unchecked.has(bk)) unchecked.set(bk, { title: line.title, author: line.author });
       if (line.flag === "no_author") {
         row.kind = "choice";
-        row.why = "No author. Add one after a dash: Title - Author.";
+        row.authorWhy = NO_AUTHOR;
       } else {
         row.why = "Not checked against your library yet.";
       }
@@ -144,7 +154,7 @@ export function buildBookReview(
 
     row.check = near ? `similar ${near.similarity.toFixed(2)}` : "new";
     const why: string[] = [];
-    if (line.flag === "no_author") why.push("No author, so it can't be added as new: add one after a dash, or use your book.");
+    if (line.flag === "no_author") row.authorWhy = NO_AUTHOR_NEW;
     if (near) {
       row.kind = "choice";
       why.push(`Close to ${named(near)} in your library (similarity ${near.similarity.toFixed(2)}).`);

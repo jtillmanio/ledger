@@ -240,3 +240,109 @@ describe("Add to and undo (task 1.4c)", () => {
       { destination: { kind: "shelf", shelfId: "cosmere" }, created: ["golden-son-pierce-brown"], added: ["golden-son-pierce-brown"] }]);
   });
 });
+
+// Task 1.4e: title and author in their own cells, fixed in place.
+const input = (name: string) => container.querySelector<HTMLInputElement>(`input[aria-label="${name}"]`)!;
+async function edit(name: string, value: string) {
+  const el = input(name);
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(el, value);
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+}
+const checks = () => rows().map((r) => r.querySelector(".vcheck")!.textContent);
+
+describe("title and author cells (task 1.4e)", () => {
+  it("says two columns can be pasted, in the label and the empty slate", () => {
+    const copy = "One book per line: Title - Author, or paste two columns (title, author)";
+    expect(container.querySelector("label.add-label")!.textContent).toBe(copy);
+    expect(container.querySelector(".slate")!.textContent).toContain("or paste two columns (title, author)");
+  });
+
+  it("draws each tab-split line as a Title and an Author input with their names", async () => {
+    await type("Piranesi\tSusanna Clarke\nStar Wars - Thrawn\tTimothy Zahn\nHyperion");
+    expect(input("Title, line 1").value).toBe("Piranesi");
+    expect(input("Author, line 1").value).toBe("Susanna Clarke");
+    expect(input("Title, line 2").value).toBe("Star Wars - Thrawn");
+    expect(input("Author, line 3").value).toBe("");
+    expect(container.querySelectorAll(".review input.txt")).toHaveLength(6);
+  });
+
+  it("ties the no-author reason to its Author cell, and clears it when an author is typed", async () => {
+    await type("Hyperion\nDune - Frank Herbert");
+    const author = input("Author, line 1");
+    const why = container.querySelector(`#${author.getAttribute("aria-describedby")}`)!;
+    expect(why.textContent).toBe("No author. Type one in this cell.");
+    expect(input("Author, line 2").getAttribute("aria-describedby")).toBeNull();
+    await edit("Author, line 1", "Dan Simmons");
+    expect(input("Author, line 1").getAttribute("aria-describedby")).toBeNull();
+    expect(rows()[0].querySelector(".vm")!.textContent).toBe("Not checked against your library yet.");
+    expect(checks()).toEqual(["unverified", "unverified"]);
+    expect(checkButton()!.textContent).toBe("Check 2 lines");
+  });
+
+  it("asks again only the edited line, and the other lines keep their answers and choices", async () => {
+    await type("The Name of the Wind - Patrick Rothfuss\nGolden Son - Pierce Brown\nHyperion - Dan Simmons");
+    await click(checkButton()!);
+    expect(checks()).toEqual(["in library", "new", "new"]);
+    await act(async () => groupsOf(rows()[2])[0].querySelector<HTMLInputElement>('input[value="drop"]')!.click());
+    fetchMock.mockClear();
+
+    await edit("Author, line 2", "Pierce Brownn");
+    expect(checks()).toEqual(["in library", "unverified", "new"]);
+    expect(groupsOf(rows()[2])[0].querySelector<HTMLInputElement>("input:checked")!.value).toBe("drop");
+    expect(checkButton()!.textContent).toBe("Check 1 line");
+    await click(checkButton()!);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(fetchMock.mock.calls[0][1].body).lines).toEqual([{ title: "Golden Son", author: "Pierce Brownn" }]);
+    expect(checks()).toEqual(["in library", "new", "new"]);
+  });
+
+  it("shows an edit that matches an earlier line as a repeat with Skip", async () => {
+    await type("Dune - Frank Herbert\nDune - Brian Herbert");
+    await click(checkButton()!);
+    await edit("Author, line 2", "frank herbert");
+    expect(rows()[1].querySelector(".vm")!.textContent).toBe("Also on line 1.");
+    expect(checks()[1]).toBe("repeat");
+    expect([...groupsOf(rows()[1])[0].querySelectorAll("label")].map((l) => l.textContent)).toEqual(["Skip"]);
+  });
+
+  it("adds the line with the author typed into its cell", async () => {
+    await type("Hyperion");
+    await edit("Author, line 1", "Dan Simmons");
+    await click(checkButton()!);
+    await click(confirmButton());
+    expect(confirms()).toEqual([{ items: [{ line: 1, title: "Hyperion", author: "Dan Simmons", series: null, position: null }],
+      destination: { kind: "someday" } }]);
+  });
+
+  it("an edit typed back to the pasted cells is no edit", async () => {
+    await type("Dune - Frank Herbert");
+    await click(checkButton()!);
+    await edit("Title, line 1", "Dunes");
+    expect(checks()).toEqual(["unverified"]);
+    await edit("Title, line 1", "Dune");
+    expect(checks()).toEqual(["new"]);
+  });
+
+  it("holds the cells read-only while the add is in flight", async () => {
+    await type("Dune - Frank Herbert");
+    await click(checkButton()!);
+    fetchMock.mockImplementationOnce(() => new Promise(() => {}));
+    await click(confirmButton());
+    expect(input("Title, line 1").readOnly).toBe(true);
+    expect(input("Author, line 1").readOnly).toBe(true);
+  });
+});
+
+describe("the mockup's add frame (task 1.4e, AC-5)", () => {
+  it("shows the same paste label", async () => {
+    const { readFileSync } = await import("node:fs");
+    const html = readFileSync("design/mockups.html", "utf8");
+    const start = html.indexOf('<section class="screen" data-id="add">');
+    expect(start).toBeGreaterThan(-1);
+    const frame = html.slice(start, html.indexOf("</section>", start));
+    // The phone frame and the desktop frame both carry it.
+    expect(frame.split("One book per line: Title - Author, or paste two columns (title, author)")).toHaveLength(3);
+  });
+});

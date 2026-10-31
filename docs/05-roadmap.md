@@ -1134,7 +1134,7 @@ byte-identical; without `HARDCOVER_API_TOKEN` only `--offline` runs. Then a
 dry run over the real books, with the counts matched by ISBN, matched by
 title, proposed and unmatched in the PR.
 
-### ☐ 1.4e Paste a list: title and author in their own cells · S
+### ☑ 1.4e Paste a list: title and author in their own cells · S
 Backlog intake, 2026-10-20 (owner: *adding books isn't "title - author", it's
 two fields*). *By hand* already has two fields. *Paste a list* still wants
 `Title - Author` on one line, and its review shows the line as typed.

@@ -6,6 +6,11 @@
  * spaced dash, so a title may hold one (`Star Wars - Thrawn - Timothy Zahn`).
  * Bullets and list numbers are dropped; blank lines are skipped.
  *
+ * Two columns copied from a spreadsheet arrive tab-separated (task 1.4e): a line
+ * with a tab splits at its first tab, title then author, before whitespace is
+ * collapsed, and the dash grammar does not run on it, so a title may hold ` - `.
+ * A third column stays in the author cell.
+ *
  * A line with no author still parses, flagged: only the same title *and*
  * author is the same book (D-25), so it can't be created until it has one.
  */
@@ -28,7 +33,11 @@ export type BookLine = {
   series: string | null;
   position: number | null;
   flag: BookFlag | null;
+  /** What the review's Title and Author cells show: the title keeps its series suffix, the author is "" when there is none. */
+  cells: BookCells;
 };
+
+export type BookCells = { title: string; author: string };
 
 // `- `, `* `, `• `, `· `, or `12. ` / `12) ` before the title. A number needs
 // the space: `11.22.63` is a title.
@@ -37,15 +46,8 @@ const BULLET = /^(?:[-*•·]\s+|\d{1,3}[.)]\s+)/;
 // `(The Stormlight Archive, #2.5)`.
 const SERIES = /^(.*?)\s*\(\s*([^()]*?[^\s(),])\s*,?\s*#\s*(\d+(?:\.\d+)?)\s*\)$/;
 
-/** One line, or null for a blank one. */
-export function parseBookLine(raw: string, line: number): BookLine | null {
-  const text = normalizeLine(raw).replace(BULLET, "");
-  if (!text) return null;
-  const cut = text.lastIndexOf(" - ");
-  let head = cut < 0 ? text : text.slice(0, cut).trim();
-  const author = cut < 0 ? null : text.slice(cut + 3).trim() || null;
-  // `Title -` with nothing after the dash: no author either.
-  if (cut < 0) head = head.replace(/\s+-$/, "");
+/** The title cell (series suffix still on it) and the author, read into a line. */
+function fromCells(line: number, text: string, head: string, author: string | null, cells?: BookCells): BookLine {
   let series: string | null = null;
   let position: number | null = null;
   const m = SERIES.exec(head);
@@ -58,7 +60,38 @@ export function parseBookLine(raw: string, line: number): BookLine | null {
   const flag: BookFlag | null = !title ? "no_title"
     : [title, author, series].some((f) => (f?.length ?? 0) > MAX_FIELD) ? "too_long"
       : author === null ? "no_author" : null;
-  return { line, text, title, author, series, position, flag };
+  return {
+    line, text, title, author, series, position, flag,
+    cells: cells ?? { title: m ? `${title} (${series} #${position})` : title, author: author ?? "" },
+  };
+}
+
+/** One line, or null for a blank one. */
+export function parseBookLine(raw: string, line: number): BookLine | null {
+  const text = normalizeLine(raw).replace(BULLET, "");
+  if (!text) return null;
+  // Before `normalizeLine` collapses it, the tab is what says "two cells".
+  const tab = raw.indexOf("\t");
+  if (tab >= 0) {
+    const head = normalizeLine(raw.slice(0, tab)).replace(BULLET, "");
+    const author = normalizeLine(raw.slice(tab + 1)) || null;
+    return fromCells(line, text, head, author);
+  }
+  const cut = text.lastIndexOf(" - ");
+  let head = cut < 0 ? text : text.slice(0, cut).trim();
+  const author = cut < 0 ? null : text.slice(cut + 3).trim() || null;
+  // `Title -` with nothing after the dash: no author either.
+  if (cut < 0) head = head.replace(/\s+-$/, "");
+  return fromCells(line, text, head, author);
+}
+
+/**
+ * A line with its cells edited in the review: the same reading as a pasted
+ * tab line, with the raw strings kept in `cells` so a typed space isn't eaten.
+ * `text` stays the pasted line's, so the row keeps its key while you type.
+ */
+export function editBookLine(base: BookLine, cells: BookCells): BookLine {
+  return fromCells(base.line, base.text, normalizeLine(cells.title), normalizeLine(cells.author) || null, cells);
 }
 
 /** Every non-blank line of a paste, at most `MAX_LINES`. */

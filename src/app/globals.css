@@ -983,6 +983,11 @@ textarea.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .vhead{display:flex;gap:.5rem;align-items:baseline;flex-wrap:wrap}
 .vl{font-family:var(--mono);font-size:.8125rem;font-weight:500;overflow-wrap:anywhere}
 .vcheck{margin-left:auto;font-size:.6875rem;color:var(--muted);white-space:nowrap}
+.vcells{flex:1 1 100%;display:grid;gap:.5rem}
+.vcell{display:flex;align-items:center;gap:.5rem;min-width:0}
+.vcell-cap{flex:0 0 3.25rem;font-size:.75rem;color:var(--muted)}
+.vcell input.txt{min-height:36px}
+.vcell-why{grid-column:1 / -1}
 .vm{font-size:.75rem;color:var(--muted);margin-top:.1875rem;line-height:1.45}
 .review .opts{margin-top:.5rem}
 .review .opts .opt{border-color:var(--faint-deco)}
