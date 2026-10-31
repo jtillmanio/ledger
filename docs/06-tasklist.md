@@ -8,9 +8,12 @@ entries make up each milestone, in what order, and why._
 
 _The kit runs in roadmap mode (`workflow.roadmap` in `.claude/kit.json`), so a
 milestone is converted into task files by roadmap ID, one sitting at a time:
-`/new-task 1.10 1.9`. `/new-task` writes each new task file into its row here
-(`.claude/project/new-task.md`). Status is not kept here: a row's box is in the
-roadmap, and `docs/STATUS.md` rolls them up by milestone._
+`/new-task 1.10 1.9`. `/new-task` writes each new task's ID into its row's `#`
+cell here (`1.4e → TASK-037`, `.claude/project/new-task.md`). A row's **Done**
+cell is ✅ once every task its `#` cell names is Done, or when its Notes say it
+was done another way; `/implement-task` and `/sync-roadmap` fill it. The
+roadmap's box is still the status (D-1), and `docs/STATUS.md` rolls them up by
+milestone._
 
 ## Scope
 
@@ -150,15 +153,15 @@ with the task that first reads it.
 **Depends on:** —  
 **Order:** Sitting 1 (0.2 → 0.3 → 0.4 → 0.5), with 0.1 first because it blocks every other task, and 0.6 and 0.7 landed before the first load.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 0.1 | Test harness | S | — | — |
-| 0.2 | CI | S | — | — |
-| 0.3 | Schema additions | M | — | — |
-| 0.4 | Soft-delete everywhere | S | — | — |
-| 0.5 | Volume-year normalization | S | — | — |
-| 0.6 | Derived run span, cover dates, reviewed whys | M | — | — |
-| 0.7 | One issue per comic, credits, story titles, label review | M | — | — |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+| ✅ | 0.1 | Test harness | S | Done in M1, before task files | — |
+| ✅ | 0.2 | CI | S | Done in M1, before task files | — |
+| ✅ | 0.3 | Schema additions | M | Done in M1, before task files | — |
+| ✅ | 0.4 | Soft-delete everywhere | S | Done in M1, before task files | — |
+| ✅ | 0.5 | Volume-year normalization | S | Done in M1, before task files | — |
+| ✅ | 0.6 | Derived run span, cover dates, reviewed whys | M | Done in M1, before task files | — |
+| ✅ | 0.7 | One issue per comic, credits, story titles, label review | M | Done in M1, before task files | — |
 
 ## M2: Read state per run, and a measured app — MVP
 
@@ -168,13 +171,13 @@ with the task that first reads it.
 **Depends on:** M1  
 **Order:** Sitting 2 (0.8a → 0.8b), then 0.9 and 0.10, added when the owner found navigation slow (0.10 needs 0.9's routes and runner), and 0.12.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 0.8a | Read state per run — schema, ETL and views | M | — | — |
-| 0.8b | Read state per run — the spine | S | — | 0.8a |
-| 0.9 | Page performance — measure, find the cause, fix it | M | — | — |
-| 0.10 | Lighthouse on every preview | M | — | 0.9 |
-| 0.12 | A redeploy of a skipped preview builds | S | TASK-035 | — |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+| ✅ | 0.8a | Read state per run — schema, ETL and views | M | Done in M2, before task files | — |
+| ✅ | 0.8b | Read state per run — the spine | S | Done in M2, before task files | 0.8a |
+| ✅ | 0.9 | Page performance — measure, find the cause, fix it | M | Done in M2, before task files | — |
+| ✅ | 0.10 | Lighthouse on every preview | M | Done in M2, before task files | 0.9 |
+| ✅ | 0.12 → TASK-035 | A redeploy of a skipped preview builds | S |  | — |
 
 ## M3: Pleasant to use — MVP
 
@@ -184,11 +187,11 @@ with the task that first reads it.
 **Depends on:** M2 (0.8a)  
 **Order:** Sitting 3: 1.2 → 1.1 → 1.6. 1.1's check asserts undo, and 1.1 must not carry its own (R3-10).
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 1.2 | Undo | S | TASK-001 | — |
-| 1.1 | Range marking | M | TASK-002 | 0.8a, 1.2 |
-| 1.6 | Resume pointer | S | TASK-003 | — |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+| ✅ | 1.2 → TASK-001 | Undo | S |  | — |
+| ✅ | 1.1 → TASK-002 | Range marking | M |  | 0.8a, 1.2 |
+| ✅ | 1.6 → TASK-003 | Resume pointer | S |  | — |
 
 ## M4: Adding a run beats the sheet — MVP
 
@@ -198,11 +201,11 @@ with the task that first reads it.
 **Depends on:** M2  
 **Order:** Sitting 4: 1.3 → 1.3c → 1.3b. 1.3c's review table takes the parser's output; 1.3b's Metron results go through the same review and insert. The long one.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 1.3 | Bulk issue entry — parser and validation | M | TASK-004 | — |
-| 1.3c | Bulk issue entry — review table and insert | M | TASK-005 | 1.3 |
-| 1.3b | Add issues from a Metron search | M | TASK-006 | — |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+| ✅ | 1.3 → TASK-004 | Bulk issue entry — parser and validation | M |  | — |
+| ✅ | 1.3c → TASK-005 | Bulk issue entry — review table and insert | M |  | 1.3 |
+| ✅ | 1.3b → TASK-006 | Add issues from a Metron search | M |  | — |
 
 ## M5: Books end to end — MVP
 
@@ -212,14 +215,14 @@ with the task that first reads it.
 **Depends on:** M2  
 **Order:** Sitting 5: 1.4 → 1.4c → 1.4b → 1.4d → 1.5 → 1.16. Resolving an inbox note (1.4b) routes into the add flows; 1.4d promotes the wishlist through 1.4's paste review, once, after the final load (D-39); 1.5 must land before real rereads overwrite history; 1.16 reinterprets the dates 1.5 adds, and lands before the final load.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 1.4 | Books bulk entry | M | TASK-007 | — |
-| 1.4c | Add a book by search or by hand, to a destination | M | TASK-008 | — |
-| 1.4b | Quick-capture inbox | S | TASK-009 | — |
-| 1.4d | Promote the wishlist into Someday | S | TASK-024 | 1.4 |
-| 1.5 | Dated reading log | M | TASK-010 | — |
-| 1.16 | Dates in `America/New_York` | M | TASK-025 | 1.5 |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+| ✅ | 1.4 → TASK-007 | Books bulk entry | M |  | — |
+| ✅ | 1.4c → TASK-008 | Add a book by search or by hand, to a destination | M |  | — |
+| ✅ | 1.4b → TASK-009 | Quick-capture inbox | S |  | — |
+| ✅ | 1.4d → TASK-024 | Promote the wishlist into Someday | S |  | 1.4 |
+| ✅ | 1.5 → TASK-010 | Dated reading log | M |  | — |
+| ✅ | 1.16 → TASK-025 | Dates in `America/New_York` | M |  | 1.5 |
 
 ## M6: The real navigation — MVP
 
@@ -229,16 +232,16 @@ with the task that first reads it.
 **Depends on:** M5  
 **Order:** Sitting 6: 1.7 → 1.8a → 0.11 → 1.8c → 1.8 → 1.8e → 1.8d → 1.8b. 1.8a's tokens come before the first UI task; 0.11's harness runs 1.8's computed-style check and 1.8d's axe run; 1.8c moves the routes the nav links to; 1.8e redraws the tablet frames 1.8 drew in outline and needs only 1.8; 1.8d's axe run covers the finished chrome; 1.8b was split out of 1.8 (R3-12).
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 1.7 | One period column on `reading_plan` | M | TASK-011 | — |
-| 1.8a | Design tokens and control states | M | TASK-012 | — |
-| 0.11 | Browser test harness — Playwright and axe | M | TASK-013 | — |
-| 1.8c | Dashboard routes and the `/` redirect | M | TASK-026 | 0.11 |
-| 1.8 | App shell | L | TASK-014 | 1.8a |
-| 1.8e | Tablet frames to the feel pass | S | TASK-028 | 1.8 |
-| 1.8d | Failed writes, skeletons and row markup | M | TASK-027 | 1.8 |
-| 1.8b | Thumb bar and contrast | S | TASK-015 | 1.8, 1.8d |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+| ✅ | 1.7 → TASK-011 | One period column on `reading_plan` | M |  | — |
+| ✅ | 1.8a → TASK-012 | Design tokens and control states | M |  | — |
+| ✅ | 0.11 → TASK-013 | Browser test harness — Playwright and axe | M |  | — |
+| ✅ | 1.8c → TASK-026 | Dashboard routes and the `/` redirect | M |  | 0.11 |
+| ✅ | 1.8 → TASK-014 | App shell | L |  | 1.8a |
+| ✅ | 1.8e → TASK-028 | Tablet frames to the feel pass | S |  | 1.8 |
+| ✅ | 1.8d → TASK-027 | Failed writes, skeletons and row markup | M |  | 1.8 |
+| ✅ | 1.8b → TASK-015 | Thumb bar and contrast | S |  | 1.8, 1.8d |
 
 ## M7: Phase 1 complete — MVP
 
@@ -248,13 +251,13 @@ with the task that first reads it.
 **Depends on:** M6  
 **Order:** Sitting 7: 1.10 → 1.9 → 2.11a → 1.12 → 1.11. 1.9's Up next tab reads the queue; 2.11a is numbered in Phase 2 but built here, before cutover (D-20), and so is 1.11 (D-36); 1.12 must land before Step 14's final load, the last time `load` runs.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 1.10 | Comics Up next queue | M | TASK-016 | 0.8a |
-| 1.9 | Status screens: In flight · Up next · Done | M | TASK-017 | 0.8a, 1.8, 1.10 |
-| 2.11a | Prerequisite cycle check | S | TASK-018 | — |
-| 1.12 | Load the volume map into `volume_rules` | S | TASK-019 | — |
-| 1.11 | Slow down failed sign-ins | S | TASK-020 | — |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+| ✅ | 1.10 → TASK-016 | Comics Up next queue | M |  | 0.8a |
+| ✅ | 1.9 → TASK-017 | Status screens: In flight · Up next · Done | M |  | 0.8a, 1.8, 1.10 |
+| ✅ | 2.11a → TASK-018 | Prerequisite cycle check | S |  | — |
+| ✅ | 1.12 → TASK-019 | Load the volume map into `volume_rules` | S |  | — |
+| ✅ | 1.11 → TASK-020 | Slow down failed sign-ins | S |  | — |
 
 ## M8: Books load clean — MVP
 
@@ -264,17 +267,17 @@ with the task that first reads it.
 **Depends on:** M1  
 **Order:** Sitting 8: 1.13 → 1.14 → 1.15 → 1.21 → 1.18 → 1.18b → 1.18c → 1.14b → 1.20 (the 2026-10-08 book-ingest review; 1.20 from the owner, 2026-10-26, holds books Hardcover doesn't know for review; 1.21 from the 2026-10-26 books intake; 1.18b and 1.18c from 1.18's review, D-90; 1.14b from the switch to Hardcover, D-94). 1.14's proposals join 1.13's review file; 1.15 seeds from the series and author names 1.13's review fixed; 1.21 defines the *Unlisted* level that 1.18 creates Calibre's other books at (D-83, D-86); 1.18 reports where Calibre and 1.14's Open Library answers disagree (D-73, D-87) and can be re-run until cutover; 1.14b replaces 1.14's Open Library details with Hardcover's, by Calibre's ISBNs, once the owner has filled the missing ones in Calibre. All nine change what `load` puts in, so they land before the final load. They don't depend on M3–M7 and can be built earlier, leaving time to answer the reviews.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 1.13 | Book extract — one book per title and author, a merge review, no workbook reads | M | TASK-021 | — |
-| 1.14 | Open Library details for the workbook's books | M | TASK-022 | 1.13 |
-| 1.15 | Track series, authors and universes | M | TASK-023 | 1.13 |
-| 1.21 | Unlisted: the books you have but haven't put on your list | S | TASK-029 | — |
-| 1.18 | Calibre: word counts, series, tags and reads for the books | M | TASK-030 | 1.14, 1.15, 1.21 |
-| 1.18b | Calibre: universes, subseries, page counts and the Calibre id | M | TASK-032 | 1.18 |
-| 1.18c | Calibre genres | M | TASK-033 | 1.18b |
-| 1.14b | Hardcover details for the books, by ISBN | M | TASK-034 | 1.18b |
-| 1.20 | Hold books with no Open Library match for review | M | TASK-031 | 1.14b |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+| ✅ | 1.13 → TASK-021 | Book extract — one book per title and author, a merge review, no workbook reads | M |  | — |
+| ✅ | 1.14 → TASK-022 | Open Library details for the workbook's books | M |  | 1.13 |
+| ✅ | 1.15 → TASK-023 | Track series, authors and universes | M |  | 1.13 |
+| ✅ | 1.21 → TASK-029 | Unlisted: the books you have but haven't put on your list | S |  | — |
+| ✅ | 1.18 → TASK-030 | Calibre: word counts, series, tags and reads for the books | M |  | 1.14, 1.15, 1.21 |
+| ✅ | 1.18b → TASK-032 | Calibre: universes, subseries, page counts and the Calibre id | M |  | 1.18 |
+| ✅ | 1.18c → TASK-033 | Calibre genres | M |  | 1.18b |
+| ✅ | 1.14b → TASK-034 | Hardcover details for the books, by ISBN | M |  | 1.18b |
+| ✅ | 1.20 → TASK-031 | Hold books with no Open Library match for review | M |  | 1.14b |
 
 ## M9: Captured from cutover on — MVP
 
@@ -284,17 +287,17 @@ with the task that first reads it.
 **Depends on:** M5, M8 (1.21)  
 **Order:** Sitting 9: 1.25 → 1.4e → 1.4f → 1.19 → 1.22 → 1.24 → 1.17 → 1.23 → the entries 1.25 pulls ahead → 1.26. 1.25, the Sheets parity audit (D-95), goes first and can run any time, even before M8 closes: every open entry it names is built before 1.26, so its list sets how long this milestone is, and 1.26, the switch itself, comes last. Then five fixes to screens already in daily use (1.4f searches Hardcover instead of Open Library, D-94, before 1.22 tags each result's source; 1.19 turns on 1.8's comics *Add*, from 1.8b's plan; 1.22 from the 2026-10-26 books intake; 1.24, from TASK-030's follow-ups, lets a wishlist accept move one of 1.18's Unlisted books onto the list), then start dates and audiobooks, which like 1.5 must land before real reading accumulates and before cutover. 1.23 follows 1.17 because both change `book_status` and `read_events`. **Pulled ahead by 1.25** (`docs/cutover-parity.md`), each keeping its row in its own milestone and built before 1.26: 2.0 → 2.1 → 2.2 → 2.2b (M10) and 2.3 (M11), the year and quarter word-count budget the To-Read tabs hold (2.1b is not pulled ahead: 2.2 ships without its *sittings* line until 2.1b lands); 3.1 → 3.2 → 3.3 (M13), catalog and prerequisite edits; 3.4 (M14), top books per year; 5.7 (M17), books coming out; 5.6 → 5.10 (M18), recording a trade bought. 2.2's text gives its hero 2.4's geometry and its *Plan* 2.4's hover rule, and 2.4 is not pulled ahead (owner, 2026-10-29): 2.2's plan builds what it borrows rather than waiting for 2.4.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 1.25 | Sheets parity audit | S | TASK-036 | — |
-| 1.4e | Paste a list: title and author in their own cells | S | TASK-037 | — |
-| 1.4f | Add books searches Hardcover | M | TASK-040 | — |
-| 1.19 | Comics Add remembers the last run | S | TASK-038 | 1.8, 1.3c |
-| 1.22 | Search as you type, and where each result comes from | M | TASK-041 | 1.21, 1.4f |
-| 1.24 | Wishlist accept promotes an Unlisted book to Someday | S | TASK-042 | 1.21, 1.4d |
-| 1.17 | Started and finished: a start date for books, a derived span for runs | M | TASK-039 | — |
-| 1.23 | Audiobooks: listening, and a listen that counts as a read | M | TASK-043 | 1.5, 1.17 |
-| 1.26 | Cut over from the Sheets | M | — | 1.25, all of Phase 1, and every open entry 1.25 names |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+| ✅ | 1.25 → TASK-036 | Sheets parity audit | S |  | — |
+| ✅ | 1.4e → TASK-037 | Paste a list: title and author in their own cells | S |  | — |
+|  | 1.4f → TASK-040 | Add books searches Hardcover | M |  | — |
+|  | 1.19 → TASK-038 | Comics Add remembers the last run | S |  | 1.8, 1.3c |
+|  | 1.22 → TASK-041 | Search as you type, and where each result comes from | M |  | 1.21, 1.4f |
+|  | 1.24 → TASK-042 | Wishlist accept promotes an Unlisted book to Someday | S |  | 1.21, 1.4d |
+|  | 1.17 → TASK-039 | Started and finished: a start date for books, a derived span for runs | M |  | — |
+|  | 1.23 → TASK-043 | Audiobooks: listening, and a listen that counts as a read | M |  | 1.5, 1.17 |
+|  | 1.26 | Cut over from the Sheets | M |  | 1.25, all of Phase 1, and every open entry 1.25 names |
 
 # Next
 
@@ -306,13 +309,13 @@ with the task that first reads it.
 **Depends on:** Cutover (M1–M9)  
 **Order:** 2.0 → 2.1 → 2.1b → 2.2 → 2.2b: settings feed capacity, the dashboard reads capacity, and the rail is the dashboard's.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 2.0 | Settings | S | — | — |
-| 2.1 | Capacity view | M | — | 1.7, 2.0 |
-| 2.1b | Reading sessions — after-the-fact entry | S | — | 2.0 |
-| 2.2 | Books dashboard | M | — | 1.7, 1.8, 2.1 |
-| 2.2b | The plan rail | M | — | 2.2 |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 2.0 | Settings | S |  | — |
+|  | 2.1 | Capacity view | M |  | 1.7, 2.0 |
+|  | 2.1b | Reading sessions — after-the-fact entry | S |  | 2.0 |
+|  | 2.2 | Books dashboard | M |  | 1.7, 1.8, 2.1 |
+|  | 2.2b | The plan rail | M |  | 2.2 |
 
 ## M11: Editing the plan — Next
 
@@ -322,12 +325,12 @@ with the task that first reads it.
 **Depends on:** M10  
 **Order:** 2.3 → 2.7 → 2.8 → 2.10: the picker first, then the actions that use it, then the full-size plan page.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 2.3 | Plan editor | M | — | 1.7, 2.1 |
-| 2.7 | Rebalance, and accepting an overage | M | — | — |
-| 2.8 | Place the unquartered | M | — | — |
-| 2.10 | Plan page as the full-size rail | M | — | 1.7, 2.1, 2.2 |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 2.3 | Plan editor | M |  | 1.7, 2.1 |
+|  | 2.7 | Rebalance, and accepting an overage | M |  | — |
+|  | 2.8 | Place the unquartered | M |  | — |
+|  | 2.10 | Plan page as the full-size rail | M |  | 1.7, 2.1, 2.2 |
 
 ## M12: The comics dashboard and the telescope — Next
 
@@ -337,15 +340,15 @@ with the task that first reads it.
 **Depends on:** M7 (1.10), M6 (1.8b)  
 **Order:** 2.5 → 2.5b → 2.6 → 2.4 → 2.9 → 2.12. 2.4 draws 2.5b's telescope and 2.6's cost; 2.9 and 2.12 read 2.6's views. 2.4's *Coming out* line waits for 5.8 (M18). 6.2b is the scope note that moved unlock cost here.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 2.5 | The telescope | M | — | — |
-| 2.5b | The telescope — SVG and ladder | M | — | 2.5, 0.8a |
-| 2.6 | Unlock cost, leverage and the frontier | M | — | — |
-| 2.4 | Comics dashboard | L | — | 1.6, 1.8, 1.8b, 1.10, 2.5b, 2.6 |
-| 2.9 | Run list, grouped track → block | M | — | 2.6 |
-| 2.12 | Run and block completion | M | — | 1.8b, 2.5b, 2.6 |
-| 6.2b | True unlock cost | S | — | — |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 2.5 | The telescope | M |  | — |
+|  | 2.5b | The telescope — SVG and ladder | M |  | 2.5, 0.8a |
+|  | 2.6 | Unlock cost, leverage and the frontier | M |  | — |
+|  | 2.4 | Comics dashboard | L |  | 1.6, 1.8, 1.8b, 1.10, 2.5b, 2.6 |
+|  | 2.9 | Run list, grouped track → block | M |  | 2.6 |
+|  | 2.12 | Run and block completion | M |  | 1.8b, 2.5b, 2.6 |
+|  | 6.2b | True unlock cost | S |  | — |
 
 ## M13: Editing the catalog — Next
 
@@ -355,14 +358,14 @@ with the task that first reads it.
 **Depends on:** M12 (2.9)  
 **Order:** 3.1 → 3.2 → 3.3 → 3.7 → 3.8 → 3.9: 3.1's field is the pattern the rest reuse; 3.8 reorders 2.9's grouped run list.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 3.1 | Inline field editing | M | — | — |
-| 3.2 | Create and edit runs | M | — | — |
-| 3.3 | Prereq editor | M | — | — |
-| 3.7 | Archive and restore | S | — | 0.4 |
-| 3.8 | Blocks: assign, order, name | M | — | 2.9 |
-| 3.9 | Volume map editor | S | — | 1.12 |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 3.1 | Inline field editing | M |  | — |
+|  | 3.2 | Create and edit runs | M |  | — |
+|  | 3.3 | Prereq editor | M |  | — |
+|  | 3.7 | Archive and restore | S |  | 0.4 |
+|  | 3.8 | Blocks: assign, order, name | M |  | 2.9 |
+|  | 3.9 | Volume map editor | S |  | 1.12 |
 
 ## M14: The run detail and the detail sheets — Next
 
@@ -372,13 +375,13 @@ with the task that first reads it.
 **Depends on:** Cutover  
 **Order:** 3.5 → 3.4 → 3.6 → 3.6b → 3.6c.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 3.5 | Detail sheets — books and issues | M | — | — |
-| 3.4 | Book ratings and top-books reorder | S | — | — |
-| 3.6 | Eras on the run detail | M | — | — |
-| 3.6b | Spine rows — ordinal gutter and release dates | S | — | 0.8b |
-| 3.6c | Hide read in this run | S | — | 0.8a |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 3.5 | Detail sheets — books and issues | M |  | — |
+|  | 3.4 | Book ratings and top-books reorder | S |  | — |
+|  | 3.6 | Eras on the run detail | M |  | — |
+|  | 3.6b | Spine rows — ordinal gutter and release dates | S |  | 0.8b |
+|  | 3.6c | Hide read in this run | S |  | 0.8a |
 
 ## M15: Adding at scale — Next
 
@@ -388,11 +391,11 @@ with the task that first reads it.
 **Depends on:** M4, M13 (3.2)  
 **Order:** 3.10 → 3.11 → 3.12: 3.11's *Arrange* step follows 3.10's series browser into 1.3c's review.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 3.10 | Add from a series' issue list | M | — | 1.3b, 1.3c, 3.2 |
-| 3.11 | Arrange issues in the reading order | M | — | 1.3c, 3.10 |
-| 3.12 | Issue previews in Add issues | S | — | 1.3b |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 3.10 | Add from a series' issue list | M |  | 1.3b, 1.3c, 3.2 |
+|  | 3.11 | Arrange issues in the reading order | M |  | 1.3c, 3.10 |
+|  | 3.12 | Issue previews in Add issues | S |  | 1.3b |
 
 # Later
 
@@ -404,13 +407,13 @@ with the task that first reads it.
 **Depends on:** Cutover  
 **Order:** 4.4 → 4.1 → 4.2 → 4.3. A prerequisite for M22. 4.4 goes first (2026-10-26 books intake): after cutover it is the only way Calibre's new books and reads come in, and it needs nothing else in this milestone. 4.5 (from 1.18c) needs only 1.18c and can come at any point.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 4.4 | Sync from Calibre after cutover: upload `metadata.db` | M | — | 1.18, 1.21 |
-| 4.1 | Metron backfill | M | — | — |
-| 4.2 | Open Library and Hardcover backfill | M | — | — |
-| 4.3 | Covers in the UI | S | — | — |
-| 4.5 | Calibre's genres on every screen | M | — | 1.18c |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 4.4 | Sync from Calibre after cutover: upload `metadata.db` | M |  | 1.18, 1.21 |
+|  | 4.1 | Metron backfill | M |  | — |
+|  | 4.2 | Open Library and Hardcover backfill | M |  | — |
+|  | 4.3 | Covers in the UI | S |  | — |
+|  | 4.5 | Calibre's genres on every screen | M |  | 1.18c |
 
 ## M17: Book surfaces — Later
 
@@ -420,14 +423,14 @@ with the task that first reads it.
 **Depends on:** M7 (1.9), M8 (1.15)  
 **Order:** 5.1 → 5.5 → 5.7 → 5.9 → 5.11 → 5.12: 5.11 builds on 5.9's series page, and 5.12 reads 5.1's shelves and 5.11's follows.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 5.1 | Shelves (books only): create, add items, reorder | M | — | — |
-| 5.5 | DNF with a reason field | S | — | — |
-| 5.7 | Books coming out | M | — | 1.4c, 1.8 |
-| 5.9 | Series page from `series_progress` | M | — | — |
-| 5.11 | Author and universe pages, and the follow control | M | — | 1.15, 5.9 |
-| 5.12 | In the middle of: series, authors, universes and reading-order shelves | S | — | 1.9, 1.15, 5.1, 5.11 |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 5.1 | Shelves (books only): create, add items, reorder | M |  | — |
+|  | 5.5 | DNF with a reason field | S |  | — |
+|  | 5.7 | Books coming out | M |  | 1.4c, 1.8 |
+|  | 5.9 | Series page from `series_progress` | M |  | — |
+|  | 5.11 | Author and universe pages, and the follow control | M |  | 1.15, 5.9 |
+|  | 5.12 | In the middle of: series, authors, universes and reading-order shelves | S |  | 1.9, 1.15, 5.1, 5.11 |
 
 ## M18: Comic surfaces — Later
 
@@ -437,14 +440,14 @@ with the task that first reads it.
 **Depends on:** M14 (3.5), M16 (4.1), M17 (5.7)  
 **Order:** 5.2 → 5.4 → 5.6 → 5.8 → 5.10 → 5.13: 5.10 reads 5.6's parsed editions; 5.8 follows 5.7's release pattern.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 5.2 | Tracks page from `track_progress` | S | — | — |
-| 5.4 | Ratings and post-read notes on runs | S | — | — |
-| 5.6 | `edition_issues` parser: issue text into join rows | M | — | — |
-| 5.8 | Comic issues coming out, for the runs you follow | M | — | 1.3b, 1.3c, 5.7 |
-| 5.10 | Editions: collected and read | M | — | 5.6 |
-| 5.13 | Comic series page: every issue of a volume, its runs and its gaps | M | — | 3.5, 4.1 |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 5.2 | Tracks page from `track_progress` | S |  | — |
+|  | 5.4 | Ratings and post-read notes on runs | S |  | — |
+|  | 5.6 | `edition_issues` parser: issue text into join rows | M |  | — |
+|  | 5.8 | Comic issues coming out, for the runs you follow | M |  | 1.3b, 1.3c, 5.7 |
+|  | 5.10 | Editions: collected and read | M |  | 5.6 |
+|  | 5.13 | Comic series page: every issue of a volume, its runs and its gaps | M |  | 3.5, 4.1 |
 
 ## M19: Find and look back — Later
 
@@ -454,14 +457,14 @@ with the task that first reads it.
 **Depends on:** M10 (2.1b)  
 **Order:** Any order (Phase 6). 6.2 needs 1.5 and 2.1b; 6.17 needs 1.17.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 6.1 | Global search, `Ctrl+K`, across runs, issues, books, series, events | M | — | — |
-| 6.2 | Stats and year in review | L | — | 1.5, 2.1b |
-| 6.17 | Activity: the reading log as a page | M | — | 1.5, 1.17 |
-| 6.3 | Prereq graph visualization | M | — | — |
-| 6.8 | Events page with your read-it/skip verdicts | S | — | — |
-| 6.10 | Master list: *Fits Q2 · 56k*, *Pick one* and saved views | S | — | — |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 6.1 | Global search, `Ctrl+K`, across runs, issues, books, series, events | M |  | — |
+|  | 6.2 | Stats and year in review | L |  | 1.5, 2.1b |
+|  | 6.17 | Activity: the reading log as a page | M |  | 1.5, 1.17 |
+|  | 6.3 | Prereq graph visualization | M |  | — |
+|  | 6.8 | Events page with your read-it/skip verdicts | S |  | — |
+|  | 6.10 | Master list: *Fits Q2 · 56k*, *Pick one* and saved views | S |  | — |
 
 ## M20: Devices and input — Later
 
@@ -471,14 +474,14 @@ with the task that first reads it.
 **Depends on:** Cutover  
 **Order:** Any order (Phase 6).
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 6.4 | PWA: manifest, service worker, queued offline writes | M | — | — |
-| 6.5 | Keyboard shortcuts: `j`/`k`/`x`/`/` | S | — | — |
-| 6.11 | Density toggle in Settings → Appearance | S | — | — |
-| 6.12 | Reading-session timer | M | — | — |
-| 6.14 | Sidebar toggle (UX-N08) | S | — | — |
-| 6.15 | A favicon | S | — | — |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 6.4 | PWA: manifest, service worker, queued offline writes | M |  | — |
+|  | 6.5 | Keyboard shortcuts: `j`/`k`/`x`/`/` | S |  | — |
+|  | 6.11 | Density toggle in Settings → Appearance | S |  | — |
+|  | 6.12 | Reading-session timer | M |  | — |
+|  | 6.14 | Sidebar toggle (UX-N08) | S |  | — |
+|  | 6.15 | A favicon | S |  | — |
 
 ## M21: Hardening and the last pass — Later
 
@@ -488,14 +491,14 @@ with the task that first reads it.
 **Depends on:** M19, M20  
 **Order:** 6.9 last: it is a pass over every finished screen.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 6.16 | A malformed request body is a 400, not a 500 | S | — | — |
-| 6.13 | Better sign-in than one passcode (D-23) | M | — | — |
-| 6.6 | Goodreads and StoryGraph CSV import | M | — | — |
-| 6.18 | Drop `user_id`: the schema is single-user | L | — | — |
-| 6.19 | Remove Open Library | S | — | 1.14b, 1.4f |
-| 6.9 | Revisit the theme | M | — | — |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 6.16 | A malformed request body is a 400, not a 500 | S |  | — |
+|  | 6.13 | Better sign-in than one passcode (D-23) | M |  | — |
+|  | 6.6 | Goodreads and StoryGraph CSV import | M |  | — |
+|  | 6.18 | Drop `user_id`: the schema is single-user | L |  | — |
+|  | 6.19 | Remove Open Library | S |  | 1.14b, 1.4f |
+|  | 6.9 | Revisit the theme | M |  | — |
 
 ## M22: AI-assisted curation — Later
 
@@ -505,16 +508,16 @@ with the task that first reads it.
 **Depends on:** M16 (Phase 4)  
 **Order:** 7.1 → 7.2 first: the proposals table and the verification gate every later task goes through.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 7.1 | Proposals table and API plumbing | M | — | — |
-| 7.2 | Verification gate | M | — | — |
-| 7.3 | Review a run's reading order | M | — | — |
-| 7.4 | Review a block or track | M | — | — |
-| 7.5 | Draft a new run from scratch | L | — | — |
-| 7.6 | Release digest email | S | — | — |
-| 7.7 | Catch me up: a recap before a later book in a series | M | — | 7.1 |
-| 7.8 | Issue context: draft notes for a run's important issues | M | — | 7.1, 7.2, 4.1 |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 7.1 | Proposals table and API plumbing | M |  | — |
+|  | 7.2 | Verification gate | M |  | — |
+|  | 7.3 | Review a run's reading order | M |  | — |
+|  | 7.4 | Review a block or track | M |  | — |
+|  | 7.5 | Draft a new run from scratch | L |  | — |
+|  | 7.6 | Release digest email | S |  | — |
+|  | 7.7 | Catch me up: a recap before a later book in a series | M |  | 7.1 |
+|  | 7.8 | Issue context: draft notes for a run's important issues | M |  | 7.1, 7.2, 4.1 |
 
 ## M23: Watchlist: search, seasons, franchises — Later
 
@@ -524,13 +527,13 @@ with the task that first reads it.
 **Depends on:** M1–M2 only (Phase 0): can be pulled forward any time  
 **Order:** 8.1 → 8.2 → 8.3 → 8.4 → 8.5.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 8.1 | Schema and TMDB client | M | — | — |
-| 8.2 | Search and add | M | — | — |
-| 8.3 | Lists and season progress | M | — | — |
-| 8.4 | Detail sheets — film, show, season | M | — | — |
-| 8.5 | Franchises | M | — | — |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 8.1 | Schema and TMDB client | M |  | — |
+|  | 8.2 | Search and add | M |  | — |
+|  | 8.3 | Lists and season progress | M |  | — |
+|  | 8.4 | Detail sheets — film, show, season | M |  | — |
+|  | 8.5 | Franchises | M |  | — |
 
 ## M24: Watch, every day — Later
 
@@ -540,13 +543,13 @@ with the task that first reads it.
 **Depends on:** M23, M7 (1.9)  
 **Order:** 8.7 → 8.8 → 8.6 → 8.9 → 8.10.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 8.7 | Watch dashboard | M | — | 8.3 |
-| 8.8 | Watch status: In flight · Up next · Done | S | — | 1.9, 8.3 |
-| 8.6 | Title shelves | S | — | — |
-| 8.9 | Refresh shows: new seasons and where to watch | M | — | 8.1, 8.3 |
-| 8.10 | People: director and cast pages | S | — | 8.1, 8.3 |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 8.7 | Watch dashboard | M |  | 8.3 |
+|  | 8.8 | Watch status: In flight · Up next · Done | S |  | 1.9, 8.3 |
+|  | 8.6 | Title shelves | S |  | — |
+|  | 8.9 | Refresh shows: new seasons and where to watch | M |  | 8.1, 8.3 |
+|  | 8.10 | People: director and cast pages | S |  | 8.1, 8.3 |
 
 ## M25: Music — Later
 
@@ -556,15 +559,15 @@ with the task that first reads it.
 **Depends on:** M24 (after Phase 8)  
 **Order:** 9.0 first: a fourth medium changes the phone media bar every screen shares, so it is designed before it is built.
 
-| # | Task | Size | Task file | Depends on |
-|---|---|---|---|---|
-| 9.0 | Music in the shell, designed | M | — | — |
-| 9.1 | Schema and MusicBrainz client | M | — | 9.0 |
-| 9.2 | Search and add an artist, with the discography | M | — | 9.1 |
-| 9.3 | Albums: listened, rated, logged | S | — | 9.2 |
-| 9.4 | Rank an artist's songs | M | — | 9.2 |
-| 9.5 | Which albums you favour | S | — | 9.4 |
-| 9.6 | Music dashboard and status | M | — | 9.0, 9.3, 1.9 |
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 9.0 | Music in the shell, designed | M |  | — |
+|  | 9.1 | Schema and MusicBrainz client | M |  | 9.0 |
+|  | 9.2 | Search and add an artist, with the discography | M |  | 9.1 |
+|  | 9.3 | Albums: listened, rated, logged | S |  | 9.2 |
+|  | 9.4 | Rank an artist's songs | M |  | 9.2 |
+|  | 9.5 | Which albums you favour | S |  | 9.4 |
+|  | 9.6 | Music dashboard and status | M |  | 9.0, 9.3, 1.9 |
 
 ---
 

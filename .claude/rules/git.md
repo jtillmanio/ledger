@@ -44,13 +44,17 @@ not live until Release runs.
 One task per branch, one branch per PR. A problem that belongs to another
 task isn't fixed in this diff: it goes in the PR's Follow-ups, and is also
 tracked where the work that will do it will read it, per
-`workflow.followUps` (`.claude/skills/track-follow-ups/classify.md`). Three
+`workflow.followUps` (`.claude/skills/track-follow-ups/classify.md`). Four
 kinds of change to other files are allowed on a task branch:
 
 - **Roadmap ticks**, in the close-out or accept commit: this task's items in
   `docs/05-roadmap.md`, and items other Done tasks finished that are still
   open (`.claude/skills/sync-roadmap/ticks.md`). Only the mark changes; never
   an item's text or **Check:** line, never an untick.
+- **Task list Done ticks** (`workflow.taskListDone` is on), in the same
+  commits: the `✅` in the Done cell of this task's row in
+  `docs/06-tasklist.md`, and of other rows whose tasks are all Done. Only the
+  Done cell changes; never another cell, never an untick, never a reorder.
 - **Follow-up placements**, in the close-out commit (or a plans PR): a note
   in another task's Context, a `docs/05-roadmap.md` item, a decisions-log row, an
   approved planning-doc edit, an Owner checklist item. Each traces to a
