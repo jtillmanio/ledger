@@ -8,9 +8,11 @@ roadmap-mode steps:
   time, in that order. A roadmap ID that is in no milestone is a bug in the
   tasklist: stop and ask which milestone it belongs to.
 - **Write the task ID into the tasklist.** In the same commit as the task
-  files, put each new file's `TASK-###` in the *Task file* column of its row in
-  `docs/06-tasklist.md` (the bare ID, not a link: `archive-done.ps1` moves Done
-  files later). Change nothing else there: not the order, a title or a
-  dependency.
+  files, append each new file's `TASK-###` to the `#` cell of its row in
+  `docs/06-tasklist.md` (`1.4f → TASK-040`; the bare ID, not a link:
+  `archive-done.ps1` moves Done files later). Roadmap mode writes nothing back
+  by itself, so this rule is what lets `/implement-task` tick the row's Done
+  cell. Leave Done blank. Change nothing else there: not the order, a title,
+  a note or a dependency.
 - **The UX floor** is `docs/04-design.md` § 10. A `ui: true` task's UX-floor
   criterion cites it.

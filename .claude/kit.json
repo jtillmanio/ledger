@@ -105,6 +105,7 @@
     "roadmap": { "path": "docs/05-roadmap.md", "idPattern": "\\d+\\.\\d+[a-z]?", "checkLabel": "**Check:**" },
     "statusDoc": "docs/STATUS.md",
     "archiveDone": true,
+    "taskListDone": true,
     "followUps": "apply"
   },
 
