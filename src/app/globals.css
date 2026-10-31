@@ -988,7 +988,6 @@ textarea.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .vcell-cap{flex:0 0 3.25rem;font-size:.75rem;color:var(--muted)}
 .vcell input.txt{min-height:36px}
 .vcell-why{grid-column:1 / -1}
-@media (min-width:768px){.vcells{grid-template-columns:1fr 1fr}}
 .vm{font-size:.75rem;color:var(--muted);margin-top:.1875rem;line-height:1.45}
 .review .opts{margin-top:.5rem}
 .review .opts .opt{border-color:var(--faint-deco)}
