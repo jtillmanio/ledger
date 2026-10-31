@@ -339,6 +339,10 @@ describe("the mockup's add frame (task 1.4e, AC-5)", () => {
   it("shows the same paste label", async () => {
     const { readFileSync } = await import("node:fs");
     const html = readFileSync("design/mockups.html", "utf8");
-    expect(html).toContain("One book per line: Title - Author, or paste two columns (title, author)");
+    const start = html.indexOf('<section class="screen" data-id="add">');
+    expect(start).toBeGreaterThan(-1);
+    const frame = html.slice(start, html.indexOf("</section>", start));
+    // The phone frame and the desktop frame both carry it.
+    expect(frame.split("One book per line: Title - Author, or paste two columns (title, author)")).toHaveLength(3);
   });
 });
