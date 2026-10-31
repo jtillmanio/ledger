@@ -3053,7 +3053,7 @@ placeholder, and the 28×42 size.
 it (the master list's Lighthouse run); if the covers load poorly, they move to
 R2, where the backups already live, under a later decision.
 
-*From TASK-040 (1.4f, task/1.4f-add-books-searches-hardcover):* a library book's Open Library cover URL
+*From TASK-040 (1.4f, PR #174):* a library book's Open Library cover URL
 can redirect to archive.org and fail to load: one did on `/books/add` in the
 2026-10-31 walk (`archive.org/download/l_covers_0010/…`), and drew no cover.
 Hardcover's covers loaded. Count such books when this task measures covers.
@@ -3664,7 +3664,7 @@ it is converted.
   in architecture § Metadata sources and data model 2.15. Both removals are
   approved (owner, 2026-10-28). Decided `open library` rows in
   `book_review.csv` stay: they are decisions about the workbook's titles.
-  *From TASK-040 (1.4f, task/1.4f-add-books-searches-hardcover):* *Add books* asks Hardcover since 1.4f,
+  *From TASK-040 (1.4f, PR #174):* *Add books* asks Hardcover since 1.4f,
   so Open Library is read by nothing; its arms left the search, the add and
   the screen there. Still naming it as Add books' source, for this task to
   correct with the removal: `docs/01-product.md` (the metadata row, F-15 and
