@@ -1,14 +1,14 @@
 ---
 id: TASK-037
 title: 1.4e Paste a list: title and author in their own cells
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: d9f4c74
 ---
 
 # TASK-037 — 1.4e Paste a list: title and author in their own cells
@@ -70,9 +70,35 @@ that author. Each cell has an accessible name (*Title, line 3*). Screenshots at
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The mockup `add` frame's lede says *then Open Library*, but the paste check asks only your library (owner, TASK-008) (approved at plan) → not tracked: 1.4f reworks Search and this copy.
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-10-31 (attended, Phase 1).
+
+**Steps**
+
+1. `src/lib/book-parse.ts`: a raw line with a tab splits at its first tab **before** `normalizeLine`; each side is normalised on its own. The title cell drops bullets and list numbers and reads `(Series #N)` as today; the dash grammar does not run on a tab line. A third column stays in the author cell (visible and editable there), not refused. The tab path and the dash path both end in one `fromCells(titleCell, authorCell)` that sets the flags. `BookLine` gains `cells: { title, author }`, what the inputs show (the title keeps its series suffix). A new `editBookLine(line, cells)` re-parses edited cells through the same function and keeps the raw strings in `cells`, so typing a space isn't eaten.
+2. `src/lib/book-review.ts`: each row carries `cells` and a new `authorWhy`. The two no-author reasons move from `why` to `authorWhy`, worded for the cell: *No author. Type one in this cell.* and *No author, so it can't be added as new: type one, or use your book.* The row key stays `${line}:${text}` (exported as `rowKey`), so it is stable while typing and the input keeps focus. The wishlist review's own wording is untouched.
+3. `src/components/ReviewTable.tsx`: an opt-in `cells?: (row) => ReactNode`, drawn in place of the `.vl` text. Add issues and the wishlist pass nothing and draw as before.
+4. `src/components/PasteBooks.tsx`: `edits: Record<rowKey, cells>`, kept apart from the parsed lines as the wishlist does. An edit clears that line's choice only; its new title and author are not in `answers`, so it returns to *Not checked* and *Check 1 line* comes back. Other lines keep their answers and choices. An edit typed back to the original cells is dropped. The cells are real inputs, each with a short visible caption (*Title*, *Author*) and an sr-only suffix, so their names are *Title, line N* and *Author, line N*. The author reason sits under its input and is tied to it with `aria-describedby`. The inputs are read-only while adding. The label and empty-slate copy change. Not the wishlist's *Edit*/*Save line* form, because the roadmap asks for cells edited in place.
+5. `src/app/globals.css`: `.vcells`, stacked on a phone and side by side from 768px. Each cell is a caption beside an `input.txt`, existing tokens only, inputs at least 36px high.
+6. `design/mockups.html` (`add`, both frames): the new label above the paste box. `design/mockups-index.md`: shift its line numbers to match.
+
+**Files**: `src/lib/book-parse.ts`, `src/lib/book-review.ts`, `src/components/ReviewTable.tsx`, `src/components/PasteBooks.tsx`, `src/app/globals.css`, `design/mockups.html`, `design/mockups-index.md` (not in *Files likely touched*: its line numbers move with the mockup), `test/book-parse.test.ts`, `test/paste-books.test.tsx`, `test/review-table.test.tsx` and `test/wishlist-screen.test.tsx` (one new test each; existing assertions untouched), `test/e2e/paste-books.spec.ts` (new).
+
+**Test strategy**
+
+- AC-1 vitest, AC-2: `test/book-parse.test.ts`: a tab line parses the same as its dash line; a dash inside a tab-split title stays in the title; `Piranesi\t` gives `no_author`; the series suffix in a tab line's title cell; `editBookLine`. The existing cases are unchanged.
+- AC-3: `test/paste-books.test.tsx`: three lines, checked; editing line 2's Title or Author returns only line 2 to unverified, asks only it on the next Check, and leaves lines 1 and 3 with their answers and choices. An edit that makes line 2 match line 1 gives *Also on line 1* and *Skip*.
+- AC-4: `test/review-table.test.tsx` and `test/wishlist-screen.test.tsx` pass with their assertions unedited; one new test in each finds no Title or Author input.
+- AC-5: `test/paste-books.test.tsx` checks the label and slate copy; a vitest reads the `add` frame in `design/mockups.html` for the same copy.
+- AC-6: `test/paste-books.test.tsx` checks the input names and `aria-describedby`. `test/e2e/paste-books.spec.ts` checks names, axe, contrast, no sideways scroll, 24px targets, and screenshots at every width in light and dark.
+- AC-1 browser half: `test/e2e/paste-books.spec.ts`: paste three lines, one with no author; type its Author and the reason clears; *Check 1 line*, then *Add*; the database holds the book with that author. The spec seeds and removes its own rows.
+
+**Risks**: a value typed back that this session has already checked reuses its answer instead of asking again: one ask per title and author per paste, as for pasted repeats (owner approved at the plan gate). A wishlist `raw_entry` holding a tab would split there now; the seed CSVs hold no tab (checked). The other row reasons stay in `.vm`; only the no-author reason moves under the cell.
+
+**Size**: 12 files, more than 8. `splitPolicy` is never-split, so the task stays whole and attended. The extra files are the shared table, the mockup and its index, and the per-screen tests.
 
 ## Review log
 
