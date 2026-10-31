@@ -1,7 +1,7 @@
 ---
 id: TASK-037
 title: 1.4e Paste a list: title and author in their own cells
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: sonnet
@@ -30,17 +30,17 @@ Two columns copied from a spreadsheet (title, author) paste straight into *Paste
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): a vitest parses `Piranesi\tSusanna Clarke` and `Piranesi - Susanna
+- [x] AC-1 (roadmap **Check:**, verbatim): a vitest parses `Piranesi\tSusanna Clarke` and `Piranesi - Susanna
 Clarke` to the same title and author, and a tab-split line whose title has a
 dash in it keeps the dash in the title. In the browser (0.11), editing the
 Author cell of a line with no author clears its reason, and the line adds with
 that author. Each cell has an accessible name (*Title, line 3*). Screenshots at
 360px and 1280px.
-- [ ] AC-2: `test/book-parse.test.ts`: `Star Wars - Thrawn\tTimothy Zahn` parses to title `Star Wars - Thrawn`, author `Timothy Zahn`; `Piranesi\t` (a tab, nothing after it) parses with `author: null` and flag `no_author`; `Mistborn (Mistborn #1)\tBrandon Sanderson` gives series `Mistborn`, position 1; and every existing dash-grammar case still passes unchanged.
-- [ ] AC-3: Given a pasted list of three lines, checked, when the Title or Author cell of line 2 is edited, then only line 2 returns to *Not checked* and is asked again on the next *Check*, while lines 1 and 3 keep their answers and decisions (`test/book-review.test.ts` or `test/paste-books.test.tsx`). An edit that makes line 2 the same title and author as line 1 shows it as *Also on line 1* and *Skip*, as a pasted repeat does.
-- [ ] AC-4: Add issues and the wishlist review draw exactly what they drew before: `test/review-table.test.tsx` (Add issues) and `test/wishlist-screen.test.tsx` pass without edits to their assertions, and neither screen shows a Title or Author cell.
-- [ ] AC-5: The *Paste a list* label and the empty slate read *One book per line: Title - Author, or paste two columns (title, author)*, and the mockup's `add` frame shows the same copy (`design/mockups.html`).
-- [ ] AC-6: *Paste a list*'s review meets the UX floor (`docs/04-design.md` § 10. The UX floor): each cell is a real labelled input (*Title, line N*, *Author, line N*); the reason under an empty Author cell is tied to it with `aria-describedby`; the empty, checking and check-failed states are drawn; targets are at least 24px; text is at 4.5:1 in both themes; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-2: `test/book-parse.test.ts`: `Star Wars - Thrawn\tTimothy Zahn` parses to title `Star Wars - Thrawn`, author `Timothy Zahn`; `Piranesi\t` (a tab, nothing after it) parses with `author: null` and flag `no_author`; `Mistborn (Mistborn #1)\tBrandon Sanderson` gives series `Mistborn`, position 1; and every existing dash-grammar case still passes unchanged.
+- [x] AC-3: Given a pasted list of three lines, checked, when the Title or Author cell of line 2 is edited, then only line 2 returns to *Not checked* and is asked again on the next *Check*, while lines 1 and 3 keep their answers and decisions (`test/book-review.test.ts` or `test/paste-books.test.tsx`). An edit that makes line 2 the same title and author as line 1 shows it as *Also on line 1* and *Skip*, as a pasted repeat does.
+- [x] AC-4: Add issues and the wishlist review draw exactly what they drew before: `test/review-table.test.tsx` (Add issues) and `test/wishlist-screen.test.tsx` pass without edits to their assertions, and neither screen shows a Title or Author cell.
+- [x] AC-5: The *Paste a list* label and the empty slate read *One book per line: Title - Author, or paste two columns (title, author)*, and the mockup's `add` frame shows the same copy (`design/mockups.html`).
+- [x] AC-6: *Paste a list*'s review meets the UX floor (`docs/04-design.md` § 10. The UX floor): each cell is a real labelled input (*Title, line N*, *Author, line N*); the reason under an empty Author cell is tied to it with `aria-describedby`; the empty, checking and check-failed states are drawn; targets are at least 24px; text is at 4.5:1 in both themes; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -71,6 +71,8 @@ that author. Each cell has an accessible name (*Title, line 3*). Screenshots at
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
 - The mockup `add` frame's lede says *then Open Library*, but the paste check asks only your library (owner, TASK-008) (approved at plan) → not tracked: 1.4f reworks Search and this copy.
+- A line's status icon stays green (✓) while its check reads *unverified*, after an edit returns it to Not checked (ui-verifier). It is how every review table draws an unchecked line today → not tracked: existing behaviour of the shared table, not a regression of this task.
+- `design/mockups-index.md` line ranges for `add` are stale (2434–2525 against ~3237) → not tracked: the index says its ranges drift and `scripts/screen.ps1` computes them fresh.
 
 ## Plan
 
@@ -84,6 +86,8 @@ Approved 2026-10-31 (attended, Phase 1).
 4. `src/components/PasteBooks.tsx`: `edits: Record<rowKey, cells>`, kept apart from the parsed lines as the wishlist does. An edit clears that line's choice only; its new title and author are not in `answers`, so it returns to *Not checked* and *Check 1 line* comes back. Other lines keep their answers and choices. An edit typed back to the original cells is dropped. The cells are real inputs, each with a short visible caption (*Title*, *Author*) and an sr-only suffix, so their names are *Title, line N* and *Author, line N*. The author reason sits under its input and is tied to it with `aria-describedby`. The inputs are read-only while adding. The label and empty-slate copy change. Not the wishlist's *Edit*/*Save line* form, because the roadmap asks for cells edited in place.
 5. `src/app/globals.css`: `.vcells`, stacked on a phone and side by side from 768px. Each cell is a caption beside an `input.txt`, existing tokens only, inputs at least 36px high.
 6. `design/mockups.html` (`add`, both frames): the new label above the paste box. `design/mockups-index.md`: shift its line numbers to match.
+
+**Plan revisions** (found while implementing, no behaviour change): (a) step 6: `design/mockups-index.md` is not edited. Its `add` range (2434–2525) was already stale (the frame starts at line 3237), and the index says its ranges may drift and that `scripts/screen.ps1` computes them fresh. (b) step 4: the inputs take their names from `aria-label` (*Title, line N*, *Author, line N*) with an aria-hidden visible caption, not an sr-only suffix; the names are the same and the caption word is in the name.
 
 **Files**: `src/lib/book-parse.ts`, `src/lib/book-review.ts`, `src/components/ReviewTable.tsx`, `src/components/PasteBooks.tsx`, `src/app/globals.css`, `design/mockups.html`, `design/mockups-index.md` (not in *Files likely touched*: its line numbers move with the mockup), `test/book-parse.test.ts`, `test/paste-books.test.tsx`, `test/review-table.test.tsx` and `test/wishlist-screen.test.tsx` (one new test each; existing assertions untouched), `test/e2e/paste-books.spec.ts` (new).
 
@@ -102,7 +106,7 @@ Approved 2026-10-31 (attended, Phase 1).
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 round PASS → full PASS (1031 vitest, 581 browser) | R2 round PASS (after the CSS stack fix) | Audit R1 CHANGES (AC-5 whole-file check; AC-1 browser half unrun by the auditor, ran green in the full chain) → fixed, not re-run: test-only edit | Spec R1 CHANGES (plan gap: mockups-index and aria-label not recorded) → plan revisions recorded, not re-run: task file only | UI R1 PASS (6 widths, light and dark; Title cell clipped at 1280 → cells now stack at every width). Schema reviewer: not applicable.
 
 ## Blocked
 
@@ -110,7 +114,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (round, full; then round)
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 2 (no behaviour change; see Plan)
