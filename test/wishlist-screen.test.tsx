@@ -291,3 +291,13 @@ describe("loading (AC-4)", () => {
     expect(container.querySelectorAll("button, a, input")).toHaveLength(0);
   });
 });
+
+// Task 1.4e (AC-4): the Title and Author cells belong to Paste a list alone.
+describe("no Title or Author cells (task 1.4e)", () => {
+  it("draws every line as text, with no cell inputs", () => {
+    show();
+    expect(rows().length).toBeGreaterThan(0);
+    expect(container.querySelectorAll(".review .vcells")).toHaveLength(0);
+    expect(container.querySelector('input[aria-label^="Title"], input[aria-label^="Author"]')).toBeNull();
+  });
+});

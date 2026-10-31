@@ -400,3 +400,14 @@ describe("the Always use switch (task 1.12, AC-3, AC-5)", () => {
     expect(container.querySelectorAll(SWITCH)).toHaveLength(0);
   });
 });
+
+// Task 1.4e (AC-4): the Title and Author cells belong to Paste a list alone.
+describe("no Title or Author cells (task 1.4e)", () => {
+  it("draws the issue review's lines as text, not inputs", async () => {
+    render();
+    await type(PASTE);
+    expect(rows().length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('.review input[type="text"], .review .vcells')).toHaveLength(0);
+    expect(container.querySelector('input[aria-label^="Title"], input[aria-label^="Author"]')).toBeNull();
+  });
+});

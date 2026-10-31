@@ -19,15 +19,18 @@ export type ReviewTableRow = Pick<ReviewRow, "key" | "line" | "kind" | "text" | 
  * `aria-invalid` and points at the why.
  *
  * The wishlist review (1.4d) draws one table per genre: `label` names each, and
- * `extra` adds a control under a row's decision (its *Edit*).
+ * `extra` adds a control under a row's decision (its *Edit*). *Paste a list*
+ * (1.4e) passes `cells`, which draws the line as editable Title and Author
+ * cells in place of the parsed text.
  */
-export default function ReviewTable<R extends ReviewTableRow = ReviewTableRow>({ rows, checking, onChoose, label = "Review", extra }: {
+export default function ReviewTable<R extends ReviewTableRow = ReviewTableRow>({ rows, checking, onChoose, label = "Review", extra, cells }: {
   rows: R[];
   /** The catalog check is out: an unverified check may still change. */
   checking: boolean;
   onChoose: (group: string, option: string) => void;
   label?: string;
   extra?: (row: R) => ReactNode;
+  cells?: (row: R) => ReactNode;
 }) {
   return (
     <ol className="group review" aria-label={label}>
@@ -38,7 +41,7 @@ export default function ReviewTable<R extends ReviewTableRow = ReviewTableRow>({
             <span className={`vd ${TONE[row.kind]}`} role="img" aria-label={NAME[row.kind]}>{GLYPH[row.kind]}</span>
             <div className="vbody">
               <div className="vhead">
-                <span className="vl">{row.text}</span>
+                {cells ? cells(row) : <span className="vl">{row.text}</span>}
                 <span className="vcheck mono">{checking && row.check === "unverified" ? "checking…" : row.check}</span>
               </div>
               {row.why && <div className="vm" id={whyId}>{row.why}</div>}

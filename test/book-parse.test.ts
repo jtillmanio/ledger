@@ -3,7 +3,7 @@
 // etl/test_extract.py). What the lines then do is test/book-review.test.ts.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { bookKey, MAX_FIELD, MAX_LINES, parseBookLine, parseBooks, seriesLike } from "../src/lib/book-parse";
+import { bookKey, editBookLine, MAX_FIELD, MAX_LINES, parseBookLine, parseBooks, seriesLike } from "../src/lib/book-parse";
 import { bookId } from "../src/lib/issue-slug";
 
 const one = (text: string) => parseBookLine(text, 1)!;
@@ -110,4 +110,49 @@ describe("the wishlist's form (task 1.4d)", () => {
     "does not call %j a series", (title) => {
       expect(seriesLike(title)).toBe(false);
     });
+});
+
+// Task 1.4e (AC-1, AC-2): two spreadsheet columns, tab-separated, are title and author.
+describe("two columns (task 1.4e)", () => {
+  it("reads a tab and a spaced dash as the same title and author", () => {
+    const tab = one("Piranesi\tSusanna Clarke");
+    const dash = one("Piranesi - Susanna Clarke");
+    expect(tab).toMatchObject({ title: "Piranesi", author: "Susanna Clarke", flag: null });
+    expect([tab.title, tab.author]).toEqual([dash.title, dash.author]);
+  });
+
+  it("keeps a dash in a tab-split title: the dash grammar does not run", () => {
+    expect(one("Star Wars - Thrawn\tTimothy Zahn")).toMatchObject({ title: "Star Wars - Thrawn", author: "Timothy Zahn", flag: null });
+  });
+
+  it("flags a tab with nothing after it as having no author", () => {
+    expect(one("Piranesi\t")).toMatchObject({ title: "Piranesi", author: null, flag: "no_author" });
+  });
+
+  it("reads the series suffix from the title cell, and shows it there", () => {
+    const l = one("Mistborn (Mistborn #1)\tBrandon Sanderson");
+    expect(l).toMatchObject({ title: "Mistborn", series: "Mistborn", position: 1, author: "Brandon Sanderson" });
+    expect(l.cells).toEqual({ title: "Mistborn (Mistborn #1)", author: "Brandon Sanderson" });
+  });
+
+  it("drops a bullet from the title cell, and keeps a third column in the author cell", () => {
+    expect(one("1. Dune\tFrank Herbert\tSciFi")).toMatchObject({ title: "Dune", author: "Frank Herbert SciFi" });
+  });
+
+  it("has no title when the first cell is empty", () => {
+    expect(one("\tFrank Herbert").flag).toBe("no_title");
+  });
+
+  it("shows the dash form's cells too, the author empty when there is none", () => {
+    expect(one("Dune - Frank Herbert").cells).toEqual({ title: "Dune", author: "Frank Herbert" });
+    expect(one("Dune").cells).toEqual({ title: "Dune", author: "" });
+  });
+
+  it("re-reads edited cells, keeping the raw strings and the line's key text", () => {
+    const base = one("Piranesi");
+    const edited = editBookLine(base, { title: "Piranesi ", author: "Susanna Clarke" });
+    expect(edited).toMatchObject({ line: 1, text: base.text, title: "Piranesi", author: "Susanna Clarke", flag: null });
+    expect(edited.cells.title).toBe("Piranesi ");
+    expect(editBookLine(base, { title: "Piranesi", author: "  " }).flag).toBe("no_author");
+  });
 });
