@@ -1,7 +1,7 @@
 ---
 id: TASK-040
 title: 1.4f Add books searches Hardcover
-status: Review
+status: Done
 depends_on: []
 size: L
 model: opus
