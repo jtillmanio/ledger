@@ -1,5 +1,5 @@
 {
-  "_about": "Hardcover's answers for task 1.4f's tests, one per hardcover_cache key, in the shapes etl/.hardcover-cache.sqlite recorded: a search's `results` (Typesense hits) and an ISBN's editions. Trimmed to the fields src/lib/hardcover.ts reads; the ids are the fixture's own. The search holds a compilation (444002) and a book with no author (444004), neither listed; 444003 has a subtitle; 444005 has two authors. The edition names a narrator, who is not an author.",
+  "_about": "Hardcover's answers for task 1.4f's tests, one per hardcover_cache key, in the shapes etl/.hardcover-cache.sqlite recorded: a search's `results` (Typesense hits) and an ISBN's editions. Trimmed to the fields src/lib/hardcover.ts reads; the ids are the fixture's own. The search holds a compilation (444002) and a book with no author (444004), neither listed; 444003 has a subtitle; 444005 has two authors. The edition labels its author `Author`, as Hardcover does, and names a narrator, who is not an author.",
   "search:piranesi": {
     "found": 5,
     "page": 1,
@@ -45,7 +45,7 @@
         "compilation": false, "users_count": 21000,
         "image": { "url": "https://assets.hardcover.app/edition/444001/piranesi.jpeg" },
         "contributions": [
-          { "contribution": null, "author": { "name": "Susanna Clarke" } },
+          { "contribution": "Author", "author": { "name": "Susanna Clarke" } },
           { "contribution": "Narrator", "author": { "name": "Chiwetel Ejiofor" } }
         ],
         "book_series": []

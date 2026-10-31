@@ -175,7 +175,8 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
         <Cover url={lib ? lib.cover_url : hc!.coverUrl} pending={lib ? lib.pending : false} />
         <div className="rb">
           <span className="rh">
-            <span className="rt">{book.title}</span>{subtitle && <span className="rsub muted">{subtitle}</span>}
+            {/* One run of text: the subtitle follows the title and wraps with it. */}
+            <span><span className="rt">{book.title}</span>{subtitle && <> <span className="rsub muted">{subtitle}</span></>}</span>
             {year && <span className="rm mono">{year}</span>}
           </span>
           {sub && <div className="rs">{sub}</div>}

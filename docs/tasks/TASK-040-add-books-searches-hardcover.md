@@ -82,7 +82,7 @@ request, and that no response carries the token.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Grep `docs/01-product.md` and `docs/HANDOFF.md` for Add books named as Open Library's; any found is a note for 6.19 (approved at plan)
+- Open Library is still named as Add books' source outside this PR's docs: `docs/01-product.md` (the metadata row, F-15 and F-19 in the feature index and F-15's outcome, the 2.15 add table and its paragraph), `docs/HANDOFF.md` (the media table, the add rule, the API table, the live-API paragraph, the add-surface row), and the mockup's `apistates` notes and the shelf-detail note in `design/mockups.html`; `BookRow.openLibraryId` in `src/db/writes.ts` is set by nothing now. 6.19 removes Open Library, so they go with it (approved at plan) → docs/05-roadmap.md § 6.19
 
 ## Plan
 

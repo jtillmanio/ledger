@@ -120,6 +120,15 @@ describe("what Search lists (AC-1, AC-3)", () => {
     expect(answer.hardcover[2].authors).toEqual(["Sarah E. Lawrence", "John Wilton-Ely"]);
   });
 
+  it("a subtitle the title already ends with is not repeated: the title stays Hardcover's", async () => {
+    hardcover = () => Response.json({ data: { search: { results: { hits: [
+      { document: { id: "7", title: "Piranesi: The Complete Etchings", subtitle: "the complete etchings",
+        author_names: ["Luigi Ficacci"], users_count: 30, image: {} } },
+    ] } } } });
+    const [book] = (await find("etchings")).hardcover;
+    expect(book).toMatchObject({ title: "Piranesi: The Complete Etchings", subtitle: null });
+  });
+
   it("lists books with 50, 5,000 and 500 readers as 5,000, 500, 50; equal readers keep Hardcover's order", async () => {
     const doc = (id: number, users_count: number) => ({ document: {
       id: String(id), title: `Book ${id}`, author_names: ["A. Writer"], compilation: false, users_count, image: {},
@@ -223,6 +232,19 @@ describe("ISBNs (AC-4)", () => {
     expect((await cacheRows()).map((r) => r.key)).toEqual(["isbn:9781526622426"]);
     await find("9781526622426");
     expect(calls).toHaveLength(1);
+  });
+
+  it("an edition's authors are its `Author` contributions, and older records' unlabelled ones", async () => {
+    hardcover = () => Response.json({ data: { editions: [{ pages: 309, image: null, book: {
+      id: 328491, title: "Harry Potter and the Philosopher's Stone", subtitle: "The Illustrated Edition", compilation: false,
+      users_count: 16721, contributions: [
+        { contribution: "Author", author: { name: "J.K. Rowling" } },
+        { contribution: "Illustrator", author: { name: "Mary GrandPré" } },
+        { contribution: null, author: { name: "An Older Co-author" } },
+      ],
+    } }] } });
+    const [book] = (await find("1594130000")).hardcover;
+    expect(book.authors).toEqual(["J.K. Rowling", "An Older Co-author"]);
   });
 
   it("an ISBN-10 asks by isbn_10; digits that are not an ISBN are searched as text", async () => {

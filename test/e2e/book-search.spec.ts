@@ -104,6 +104,11 @@ test("searching piranesi lists Hardcover's books under From Hardcover, no compil
   await expect(rows.nth(2)).toContainText("Sarah E. Lawrence and John Wilton-Ely");
   // The subtitle follows the title, and the add button names the book with it.
   await expect(rows.nth(1).locator(".rsub")).toHaveText("The Complete Etchings");
+  // It flows after the title in one run of text and wraps with it: never a column of its own beside the title.
+  expect(await rows.nth(1).locator(".rsub").evaluate((el) => ({
+    sameParent: el.parentElement === el.parentElement!.querySelector(".rt")!.parentElement,
+    flex: getComputedStyle(el.parentElement!).display.includes("flex"),
+  }))).toEqual({ sameParent: true, flex: false });
   await expect(page.getByRole("button", { name: "Add to Someday: Piranesi: The Complete Etchings", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add to Someday: Piranesi", exact: true })).toBeVisible();
   await expect(page.getByText("Matched against your library first, then Hardcover. Searches when you press Enter.")).toBeVisible();

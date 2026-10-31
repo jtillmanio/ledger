@@ -219,9 +219,11 @@ describe("Search (AC-2, AC-6)", () => {
     await search("the way of kings");
     const row = dialog()!.querySelector(".pane-search .row.res")!;
     const head = row.querySelector(".rh")!;
-    // The title, then the subtitle on the same line, muted, then the year.
-    expect([...head.children].map((c) => [c.className, c.textContent])).toEqual([
-      ["rt", "The Way of Kings"], ["rsub muted", "Book One of the Stormlight Archive"], ["rm mono", "2010"]]);
+    // The title and the muted subtitle are one run of text, then the year.
+    expect([...head.children].map((c) => c.textContent)).toEqual([
+      "The Way of Kings Book One of the Stormlight Archive", "2010"]);
+    expect([...head.children[0].children].map((c) => [c.className, c.textContent])).toEqual([
+      ["rt", "The Way of Kings"], ["rsub muted", "Book One of the Stormlight Archive"]]);
     expect(row.querySelector(".rs")!.textContent)
       .toBe("Brandon Sanderson and Michael Whelan · The Stormlight Archive #1 · 1007 pages");
     expect(resultButtons()[0].getAttribute("aria-label"))

@@ -33,7 +33,7 @@ const USER_AGENT = "Ledger/1.0 (personal reading ledger; add flow)";
 const SEARCH_QUERY = `query Search($query: String!, $per_page: Int!) {
   search(query: $query, query_type: "Book", per_page: $per_page) { results }
 }`;
-// `contribution` is null for an author and names any other role (Illustrator, Translator).
+// `contribution` is `Author` (or null, on older records) for an author, and names any other role (Illustrator, Narrator).
 const EDITIONS_QUERY = `query Edition($isbn13: [String!], $isbn10: [String!]) {
   editions(where: {_or: [{isbn_13: {_in: $isbn13}}, {isbn_10: {_in: $isbn10}}]}, limit: ${LIMIT}) {
     pages image { url }
@@ -100,6 +100,12 @@ const whole = (v: unknown) => {
 };
 const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
 const position = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : null);
+/** The subtitle, unless the title already ends with it (Hardcover sometimes has *Piranesi: The Complete Etchings* as both). */
+const subtitleOf = (title: string, v: unknown) => {
+  const sub = str(v);
+  return sub && !title.toLowerCase().endsWith(sub.toLowerCase()) ? sub : null;
+};
+const isAuthor = (role: unknown) => role == null || (typeof role === "string" && role.trim().toLowerCase() === "author");
 const image = (o: Img | null | undefined) => {
   const url = str(o?.image?.url);
   return url && url.startsWith(COVERS) ? url : null;
@@ -112,7 +118,7 @@ function fromSearch(d: SearchDoc): Ranked | null {
   const featured = str(d.featured_series?.series?.name);
   const named = Array.isArray(d.series_names) ? d.series_names.map(str).find(Boolean) ?? null : null;
   return {
-    hardcoverId, title, subtitle: str(d.subtitle),
+    hardcoverId, title, subtitle: subtitleOf(title, d.subtitle),
     authors: Array.isArray(d.author_names) ? d.author_names.flatMap((a) => str(a) ?? []) : [],
     series: featured ?? named, position: featured ? position(d.featured_series?.position) : null,
     year: whole(d.release_year), pages: whole(d.pages), coverUrl: image(d),
@@ -128,8 +134,8 @@ function fromEdition(e: Edition): Ranked | null {
   const series = [...(b.book_series ?? [])].sort((x, y) => Number(y.featured === true) - Number(x.featured === true))
     .find((s) => str(s.series?.name));
   return {
-    hardcoverId, title, subtitle: str(b.subtitle),
-    authors: (b.contributions ?? []).flatMap((c) => (c.contribution == null ? str(c.author?.name) ?? [] : [])),
+    hardcoverId, title, subtitle: subtitleOf(title, b.subtitle),
+    authors: (b.contributions ?? []).flatMap((c) => (isAuthor(c.contribution) ? str(c.author?.name) ?? [] : [])),
     series: str(series?.series?.name), position: series ? position(series.position) : null,
     year: whole(b.release_year), pages: whole(e.pages) ?? whole(b.pages), coverUrl: image(e) ?? image(b),
     readers: whole(b.users_count) ?? 0, compilation: b.compilation === true,
