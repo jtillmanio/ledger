@@ -1,7 +1,7 @@
 ---
 id: TASK-043
 title: 1.23 Audiobooks: listening, and a listen that counts as a read
-status: Draft
+status: Ready
 depends_on: [TASK-010, TASK-039]
 size: L
 model: opus
@@ -27,13 +27,14 @@ You can mark a book as *Listening*, and finishing it counts as a read everywhere
 - Views: `etl/views.sql` `book_reads` (every `read_events` row, plus a `read` status with no log row) gains the format, the status-only row reading `text`; `books_by_year` (grouped by year and genre) gains a listened count beside `books`, which still includes listens. `series_progress`, `author_progress` and `universe_progress` count `status = 'read'`, so a finished listen counts with no change; the Check's `series_progress` case proves it. Derived, never stored (Hard rule 2). `etl/test_views.sql` (`npm run test:views`) is where the view cases go.
 - Every reader of *Reading* decides about *Listening* (the entry names the screens, not each query): `booksInFlight` (`src/db/queries.ts`, `status = 'reading'`) and `src/app/books/status/page.tsx` (In flight lists *Listening* as its own group after *Reading*); `src/components/BookStatus.tsx` (`STATUSES`, the control offers *Listening* beside *Reading*); the master list's *Reading* chip (`src/app/books/list/page.tsx`); the status-word maps in `src/components/AddBooks.tsx`, `src/components/BookSearch.tsx`, `src/lib/book-review.ts` and `src/lib/wishlist-review.ts`.
 - The glyph: a drawn headphones glyph with an `aria-label` (*Listened*, *Listening*). The app's glyphs are vendored Lucide paths in `src/components/nav/Icons.tsx` (`LUCIDE-LICENSE.txt` beside it): Lucide's `headphones` is the natural source. It sits beside the status on the master list, the status screens (`src/components/StatusBookRow.tsx`), search results (1.22's tags in `src/components/BookSearch.tsx`) and the status control. 3.5's book sheet shows the summary later (noted there); 2.2's *2026 so far* and 6.2's charts show the split later (noted there).
-- **To settle at the plan gate** (the entry's own list, plus what the screens raise; each a question for the owner):
-  - Whether a listen counts against the year's reading capacity (2.1's word budget) or runs alongside it.
-  - Whether a book can be *Reading* and *Listening* at once when you switch format mid-book (proposed: no, one in-progress state).
-  - Whether a listen records its length.
-  - Whether the master list's *Reading* chip includes *Listening* books, or *Listening* gets its own chip.
-  - Which read the glyph follows on a book read once on the page and later listened to (the latest read, or any listen).
-  - Whether a backfilled read (a workbook `read` status with no log row, written into the log when the status leaves `read`) is `text`.
+- **Settled with the owner, 2026-10-31** (the entry's plan-gate list, plus what the screens raised; the plan builds them, it doesn't reopen them. The schema itself is still the stop and ask above):
+  - **Capacity:** a listen runs alongside the year's reading, never against 2.1's word budget. An audiobook budget may come later; nothing here prepares for it beyond the derived listened count.
+  - **One in-progress state.** The owner allows that a book could be read and listened to at once, but it is unlikely, so a book is *Reading* or *Listening*, not both. Switching between them moves the book and keeps its 1.17 start; the finish's `format` is the state the book was in when you finished it. *Listening* stamps a start as *Reading* does (1.17).
+  - **No length is recorded.** A listen saves its format and its dates, not how many hours the audiobook ran.
+  - **The master list's *Reading* chip includes *Listening* books**; there is no separate chip.
+  - **The glyph marks any book with at least one listen, or being listened to now**, whatever its other reads. Its accessible name is *Listening* while the book is *Listening*, and *Listened* otherwise.
+  - **Reads and listens are counted apart, each shown only when above zero:** *Read N×* counts the `text` reads and *Listened N×* the `audio` ones, so a book read twice and listened to once reads *Read 2× · Listened 1×*, a book only listened to once reads *Listened 1×*, and a book only read once reads *Read 1×*. This goes on the master-list row now and 3.5's book sheet later.
+  - **A backfilled read is `text`** (a workbook `read` status with no log row, written into the log when the status leaves `read`): nothing loaded before this task was a listen (D-41, D-87).
 - Design: no frame draws the glyph or *Listening* yet. Mockups `blist` (the master list row and the status control), `status` (In flight, Done) and `add` (search results) in `design/mockups.html`; the feel pass's status words (`design/Ledger Feel Review.dc.html`). Standing rule 6: the frames that gain the glyph or the *Listening* group are redrawn in the same PR (`ui.redrawFiles`).
 - Decisions: D-85 (a finished audiobook is a read, the log says it was a listen; not chosen: a separate track, or a status that leaves the book unread), D-65 (reads are a log; years count reads), D-21 (the finish year is derived), D-86 (no CHECK on `book_status.status`), D-37 (levels), D-91, R0-C1 (a status change never nulls `rating`). F-58 and B18 in `docs/01-product.md`.
 
@@ -52,8 +53,8 @@ You can mark a book as *Listening*, and finishing it counts as a read everywhere
   - In flight lists a Listening book under *Listening*, not *Reading*.
   - `npm run test:db:reset` migrates from zero.
 - [ ] AC-2: Against the TEST database: a `read_events` row with `format = 'mp3'` violates its CHECK, and an insert naming no format reads back `text`. A migration test seeds two `read_events` rows before the migration and reads both back as `text` after it, their dates and precisions unchanged.
-- [ ] AC-3: Through `POST /api/progress/book`: *Listening* is accepted and *Reading → Listening* leaves one in-progress state (or the plan's settled rule); finishing a *Listening* book whose `rating` is 4 leaves it 4 (R0-C1) and appends one `audio` row, a second finish from *Listening* appends a second `audio` row whose `reread_of` is the first; finishing from *Reading* still appends `text`. *Undo* of the finish removes the appended row and restores *Listening* (`undoBookStatus`).
-- [ ] AC-4: Given a book with two `text` reads and one `audio` read, its master-list row reads *Read 2× · Listened 1×* and shows the glyph named *Listened*; given a book being listened to, its row shows the glyph named *Listening* and no *Listened* count; given a book with only `text` reads, its row reads as today with no glyph and no *Listened* part. The status control offers *Listening* beside *Reading*.
+- [ ] AC-3: Through `POST /api/progress/book`: *Listening* is accepted; *Reading → Listening* leaves the status `listening` with the start 1.17 stamped unchanged, and finishing it then appends `audio`; finishing a *Listening* book whose `rating` is 4 leaves it 4 (R0-C1) and appends one `audio` row, a second finish from *Listening* appends a second `audio` row whose `reread_of` is the first; finishing from *Reading* still appends `text`. *Undo* of the finish removes the appended row and restores *Listening* (`undoBookStatus`).
+- [ ] AC-4: On the master list: given a book with two `text` reads and one `audio` read, its row reads *Read 2× · Listened 1×* and shows the glyph named *Listened*; given a book with one `audio` read only, *Listened 1×* with no *Read* part; given a book with one `text` read only, *Read 1×* with no glyph and no *Listened* part; given a book being listened to for the first time, the glyph named *Listening* and no count; given a book with no reads, no count and no glyph. The *Reading* chip lists *Reading* and *Listening* books both. The status control offers *Listening* beside *Reading*.
 - [ ] AC-5: `etl/test_views.sql`: for a year with one `text` read and one `audio` read of books in the same genre, `books_by_year` gives `books = 2` and a listened count of 1; a status-only `read` with no log row counts as `text`. The view's existing cases pass unchanged.
 - [ ] AC-6: The books status screen, the master list row and the status control meet the UX floor (`docs/04-design.md` § 10. The UX floor): the glyph is an SVG with `role="img"` and an accessible name (*Listened*, *Listening*), never colour alone, and inherits the text colour at 4.5:1 in both themes; *Listening* is a real option in the control with its name; the In flight screen's *Listening* group has a heading; screenshots at every `ui.viewports` width, light and dark.
 
@@ -63,7 +64,9 @@ You can mark a book as *Listening*, and finishing it counts as a read everywhere
 - 3.5's book sheet (it shows *Read 2× · Listened 1×* later, noted there).
 - Loading listens from the workbook or Calibre: every existing and loaded read is `text` (D-41, D-87).
 - Comics: `read_events` rows for placements stay as they are, and a comic has no format.
-- An audiobook as a separate edition or catalog row, narrators, or a listen's length (unless the plan gate decides to record it).
+- An audiobook as a separate edition or catalog row, narrators, or a listen's length (owner, 2026-10-31: not recorded).
+- An audiobook word or hours budget (owner, 2026-10-31: maybe later; no roadmap entry yet).
+- Being *Reading* and *Listening* at once (owner, 2026-10-31: one in-progress state).
 - Start dates themselves (1.17, TASK-039).
 
 ## Files likely touched
