@@ -60,6 +60,8 @@ test("two pasted columns are Title and Author cells with names, the no-author re
   for (const cell of await page.locator(".review input.txt").all()) {
     expect((await cell.boundingBox())!.height).toBeGreaterThanOrEqual(24);
   }
+  // The sticky action bar rides over whatever is scrolled under it: put the review in the middle, as a reader would.
+  await page.getByRole("textbox", { name: "Title, line 2" }).evaluate((el) => el.scrollIntoView({ block: "center" }));
   await floor(page);
   await screenshot(page, info, "paste-cells");
 });
