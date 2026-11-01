@@ -1158,7 +1158,7 @@ Author cell of a line with no author clears its reason, and the line adds with
 that author. Each cell has an accessible name (*Title, line 3*). Screenshots at
 360px and 1280px.
 
-### ☐ 1.4f Add books searches Hardcover · M
+### ☑ 1.4f Add books searches Hardcover · M
 Owner, 2026-10-28; D-94. **After 1.4e, before 1.22.** 1.4c's *Search* lists
 Open Library's top ten works as they come, edition labels, series suffixes
 and omnibuses with them.
@@ -3053,6 +3053,11 @@ placeholder, and the 28×42 size.
 it (the master list's Lighthouse run); if the covers load poorly, they move to
 R2, where the backups already live, under a later decision.
 
+*From TASK-040 (1.4f, PR #174):* a library book's Open Library cover URL
+can redirect to archive.org and fail to load: one did on `/books/add` in the
+2026-10-31 walk (`archive.org/download/l_covers_0010/…`), and drew no cover.
+Hardcover's covers loaded. Count such books when this task measures covers.
+
 1.8d's `/books/list` loading screen draws run rows (a title and a sub-line), not a book row's cover and status controls. When the master list's rows get their covers here, draw that geometry in the screen's skeleton so it holds the layout (from TASK-027).
 
 **A missing cover is neutral** (UX-X05, M-01, L-01). The placeholder is `--sunk`
@@ -3659,6 +3664,17 @@ it is converted.
   in architecture § Metadata sources and data model 2.15. Both removals are
   approved (owner, 2026-10-28). Decided `open library` rows in
   `book_review.csv` stay: they are decisions about the workbook's titles.
+  *From TASK-040 (1.4f, PR #174):* *Add books* asks Hardcover since 1.4f,
+  so Open Library is read by nothing; its arms left the search, the add and
+  the screen there. Still naming it as Add books' source, for this task to
+  correct with the removal: `docs/01-product.md` (the metadata row, F-15 and
+  F-19 in the feature index and F-15's outcome, the 2.15 add table and its
+  paragraph), `docs/HANDOFF.md` (the media table, the add rule, the API
+  table, the live-API paragraph, the add-surface row), and in
+  `design/mockups.html` the `apistates` notes (*Live-API states (Metron,
+  TMDB, Open Library)*, *Same three lines on Open Library search*) and the
+  shelf-detail note on *+ Add to shelf*. `BookRow.openLibraryId` in
+  `src/db/writes.ts` is set by nothing now.
   **Check:** the migration ships `drizzle/down/<tag>.sql` and passes an
   up → down → up test on the TEST database; `open_library`, `openlibrary` and
   `Open Library` appear nowhere in `src/` or `etl/*.py` outside `drizzle/`;

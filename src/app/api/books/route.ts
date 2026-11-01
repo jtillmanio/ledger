@@ -3,19 +3,24 @@ import { apiUserId, unauthorized } from "@/lib/auth";
 import { count, MAX_ID, MAX_PAGES, MAX_POSITION, MAX_WORDS, parseDestination, text } from "@/lib/book-add";
 import { MAX_LINES } from "@/lib/book-parse";
 import { noteId } from "@/lib/inbox";
-import { COVERS } from "@/lib/openlibrary";
+import { COVERS } from "@/lib/hardcover";
 import { addBook, undoAddBooks, type AddBookItem } from "@/db/writes";
 
 export const runtime = "nodejs";
 
 const YEAR_MAX = 3000;
+/** Postgres' integer: `books.hardcover_id`. */
+const INT_MAX = 2_147_483_647;
+/** Authors a Hardcover result lists, at most. */
+const MAX_AUTHORS = 10;
+const MAX_COVER = 300;
 
 /**
- * Add one book to a destination (task 1.4c, data model 2.15), from a tap on
- * Add books, never while a page loads (task 0.9).
+ * Add one book to a destination (task 1.4c, 1.4f; data model 2.15), from a
+ * tap on Add books, never while a page loads (task 0.9).
  *
  * - POST `{ item, destination? }`: an item is `{ use: bookId }` (a library
- *   book the search listed), `{ openLibrary: { openLibraryId, title, author,
+ *   book the search listed), `{ hardcover: { hardcoverId, title, authors,
  *   year, pages, coverUrl } }` or `{ hand: { title, author, series, position,
  *   pages, words } }`. The destination is *Add to*'s, Someday when absent. One
  *   transaction; the answer says whether the book was reused, and is what the
@@ -38,7 +43,7 @@ export async function POST(req: Request) {
   if (note === undefined) return NextResponse.json({ error: "note is an inbox note's id" }, { status: 400 });
   if (!item || !destination) {
     return NextResponse.json({
-      error: "item is { use }, { openLibrary: { openLibraryId, title, author, year, pages, coverUrl } } or "
+      error: "item is { use }, { hardcover: { hardcoverId, title, authors, year, pages, coverUrl } } or "
         + "{ hand: { title, author, series, position, pages, words } }; "
         + "destination is { kind: 'someday' }, { kind: 'on_deck' } or { kind: 'shelf', shelfId }",
     }, { status: 400 });
@@ -82,18 +87,20 @@ function parseItem(raw: unknown): AddBookItem | undefined {
     const use = text(i.use);
     return use && use.length <= MAX_ID ? { use } : undefined;
   }
-  if ("openLibrary" in i) {
-    const o = (i.openLibrary ?? {}) as Record<string, unknown>;
-    const openLibraryId = typeof o.openLibraryId === "string" && /^OL\d+W$/.test(o.openLibraryId) ? o.openLibraryId : undefined;
+  if ("hardcover" in i) {
+    const o = (i.hardcover ?? {}) as Record<string, unknown>;
+    const hardcoverId = count(o.hardcoverId, INT_MAX);
     const title = text(o.title);
-    const author = text(o.author);
+    const authors = Array.isArray(o.authors) && o.authors.length > 0 && o.authors.length <= MAX_AUTHORS
+      ? o.authors.map(text) : [undefined];
     const year = count(o.year, YEAR_MAX);
     const pages = count(o.pages, MAX_PAGES);
-    // Only Open Library's own cover host: the add writes what the search showed, nothing else.
+    // Only Hardcover's own cover host: the add writes what the search showed, nothing else.
     const coverUrl = o.coverUrl == null ? null
-      : typeof o.coverUrl === "string" && o.coverUrl.startsWith(COVERS) && o.coverUrl.length <= 200 ? o.coverUrl : undefined;
-    if (!openLibraryId || !title || !author || year === undefined || pages === undefined || coverUrl === undefined) return undefined;
-    return { openLibrary: { openLibraryId, title, author, year, pages, coverUrl } };
+      : typeof o.coverUrl === "string" && o.coverUrl.startsWith(COVERS) && o.coverUrl.length <= MAX_COVER ? o.coverUrl : undefined;
+    if (!hardcoverId || !title || authors.some((a) => !a) || year === undefined || pages === undefined
+      || coverUrl === undefined) return undefined;
+    return { hardcover: { hardcoverId, title, authors: authors as string[], year, pages, coverUrl } };
   }
   if ("hand" in i) {
     const h = (i.hand ?? {}) as Record<string, unknown>;

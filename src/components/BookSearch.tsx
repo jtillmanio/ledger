@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { BookSearchAnswer, OpenLibraryResult } from "@/app/api/books/search/route";
+import type { BookSearchAnswer } from "@/app/api/books/search/route";
 import Cover, { Pending } from "@/components/Cover";
 import type { LibraryHit } from "@/db/queries";
 import { addTo, type Target } from "@/lib/book-add";
+import type { HardcoverBook } from "@/lib/hardcover";
 
 type State =
   | { phase: "idle" }
@@ -15,22 +16,27 @@ type State =
 /** What a result's button says once its add is done, by result key. */
 export type Outcome = "added" | "there";
 
-/** A result tapped *Add to …*: a library book, or an Open Library work. */
-export type Pick = { kind: "library"; book: LibraryHit } | { kind: "openLibrary"; book: OpenLibraryResult };
+/** A result tapped *Add to …*: a library book, or a Hardcover book. */
+export type Pick = { kind: "library"; book: LibraryHit } | { kind: "hardcover"; book: HardcoverBook };
 
 const STATUS: Record<string, string> = { to_read: "to read", reading: "reading", read: "read", dnf: "did not finish" };
 const shelfCount = (n: number) => `on ${n} ${n === 1 ? "shelf" : "shelves"}`;
 const thousands = (words: number) => `${Math.round(words / 1000)}k`;
-export const pickKey = (p: Pick) => (p.kind === "library" ? `lib:${p.book.id}` : `ol:${p.book.openLibraryId}`);
+export const pickKey = (p: Pick) => (p.kind === "library" ? `lib:${p.book.id}` : `hc:${p.book.hardcoverId}`);
+/** *A*, *A and B*, *A, B and C*: every author Hardcover names. */
+export const authorList = (names: string[]) =>
+  (names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`);
 
 /**
- * Add books, *Search* (task 1.4c; mockups `add`, `apistates`). A search runs
- * when it is submitted, never per keystroke: your library first, then Open
- * Library, through `POST /api/books/search`. Every result's primary button
- * names where it goes (*Add to Someday*), and a library book says where it
- * already is. Loading, rate-limited and error are each a `role="status"` line;
- * rate-limited counts Open Library's wait down and retries once at 0. *Add it
- * by hand* always works, with the query carried over as the title.
+ * Add books, *Search* (task 1.4c, 1.4f; mockups `add`, `apistates`). A search
+ * runs when it is submitted, never per keystroke: your library first, then
+ * Hardcover, through `POST /api/books/search`. Every result's primary button
+ * names where it goes (*Add to Someday*), then the book, subtitle and all; a
+ * library book says where it already is. A Hardcover book's subtitle follows
+ * its title, muted. Loading, rate-limited, not set up and error are each a
+ * `role="status"` line; rate-limited counts Hardcover's wait down and retries
+ * once at 0. *Add it by hand* always works, with the query carried over as the
+ * title.
  * `initialQuery` pre-fills the field (an inbox note's text, task 1.4b) and
  * searches nothing until it is submitted.
  */
@@ -73,7 +79,7 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
       const answer = await res.json() as BookSearchAnswer;
       setState({ phase: "answered", q: query, answer });
       if (answer.status !== "rate_limited") return;
-      // Open Library's wait, counted down each second; at 0 the search is retried once.
+      // Hardcover's wait, counted down each second; at 0 the search is retried once.
       const until = Date.now() + (answer.retryIn ?? 60) * 1000;
       setLeft(answer.retryIn ?? 60);
       timer.current = setInterval(() => {
@@ -108,18 +114,27 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
   );
   const answer = answered?.answer;
   const library = answer?.library ?? [];
-  const openLibrary = answer?.openLibrary ?? [];
+  const hardcover = answer?.hardcover ?? [];
 
   let line: React.ReactNode = null;
   let tone = "";
   if (state.phase === "loading") {
-    line = <><span className="spin" aria-hidden="true" />Searching your library, then Open Library…</>;
+    line = <><span className="spin" aria-hidden="true" />Searching your library, then Hardcover…</>;
+  } else if (answer?.status === "unconfigured") {
+    tone = "err";
+    line = (
+      <>
+        <span className="x" aria-hidden="true">×</span>
+        <span>Hardcover isn&apos;t set up here, so only your library was searched. Nothing was added.</span>
+        {byHand}
+      </>
+    );
   } else if (state.phase === "failed" || answer?.status === "error") {
     tone = "err";
     line = (
       <>
         <span className="x" aria-hidden="true">×</span>
-        <span>{state.phase === "failed" ? "The search did not answer. Nothing was added." : "Open Library did not answer. Nothing was added."}</span>
+        <span>{state.phase === "failed" ? "The search did not answer. Nothing was added." : "Hardcover did not answer. Nothing was added."}</span>
         <button type="button" className="btn sec sm" onClick={() => last.current && void search(last.current)}>Try again</button>
         {byHand}
       </>
@@ -129,14 +144,14 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
     line = waiting ? (
       <>
         <span aria-hidden="true">⏳</span>
-        <span>Open Library is busy. Retrying in <b className="mono">{left}s</b>.</span>
+        <span>Hardcover is busy. Retrying in <b className="mono">{left}s</b>.</span>
         {byHand}
       </>
     ) : (
-      <><span>Open Library is busy. Search again when you&apos;re ready.</span>{byHand}</>
+      <><span>Hardcover is busy. Search again when you&apos;re ready.</span>{byHand}</>
     );
-  } else if (answer?.status === "ok" && library.length + openLibrary.length === 0) {
-    line = <><span>Nothing in your library or on Open Library for <b>{answered!.q}</b>.</span>{byHand}</>;
+  } else if (answer?.status === "ok" && library.length + hardcover.length === 0) {
+    line = <><span>Nothing in your library or on Hardcover for <b>{answered!.q}</b>.</span>{byHand}</>;
   }
 
   const row = (pick: Pick) => {
@@ -144,19 +159,26 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
     const done = outcomes[key];
     const { book } = pick;
     const lib = pick.kind === "library" ? pick.book : null;
-    const ol = pick.kind === "openLibrary" ? pick.book : null;
-    const year = lib ? lib.published_year : ol!.year;
-    const pages = lib ? lib.page_count : ol!.pages;
-    const sub = [book.author, lib?.series && `${lib.series}${lib.series_position != null ? ` #${lib.series_position}` : ""}`,
+    const hc = pick.kind === "hardcover" ? pick.book : null;
+    const year = lib ? lib.published_year : hc!.year;
+    const pages = lib ? lib.page_count : hc!.pages;
+    const series = lib ? lib.series : hc!.series;
+    const position = lib ? lib.series_position : hc!.position;
+    const sub = [lib ? lib.author : authorList(hc!.authors), series && `${series}${position != null ? ` #${position}` : ""}`,
       pages && `${pages} pages`].filter(Boolean).join(" · ");
+    const subtitle = hc?.subtitle ?? null;
     const label = addTo(target);
     const says = done === "added" ? label.replace(/^Add/, "Added") : done === "there" ? "Already there"
       : busy === key ? "Adding…" : label;
     return (
       <li key={key} className="row res">
-        <Cover url={lib ? lib.cover_url : ol!.coverUrl} pending={lib ? lib.pending : false} />
+        <Cover url={lib ? lib.cover_url : hc!.coverUrl} pending={lib ? lib.pending : false} />
         <div className="rb">
-          <span className="rh"><span className="rt">{book.title}</span>{year && <span className="rm mono">{year}</span>}</span>
+          <span className="rh">
+            {/* One run of text: the subtitle follows the title and wraps with it. */}
+            <span><span className="rt">{book.title}</span>{subtitle && <> <span className="rsub muted">{subtitle}</span></>}</span>
+            {year && <span className="rm mono">{year}</span>}
+          </span>
           {sub && <div className="rs">{sub}</div>}
           {lib ? (
             <div className="res-tags">
@@ -166,12 +188,12 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
             </div>
           ) : (
             <div className="rs faint">
-              Open Library{ol!.pages && answer ? ` · est ${thousands(ol!.pages * answer.wordsPerPage)} words` : ""}
+              Hardcover{hc!.pages && answer ? ` · est ${thousands(hc!.pages * answer.wordsPerPage)} words` : ""}
             </div>
           )}
           <div className="btnrow res-btns">
             {/* The name starts with what the button says, then whose button it is. */}
-            <button type="button" className="btn sm res-add" aria-label={`${says}: ${book.title}`}
+            <button type="button" className="btn sm res-add" aria-label={`${says}: ${book.title}${subtitle ? `: ${subtitle}` : ""}`}
               aria-disabled={done || busy !== null ? true : undefined} onClick={() => { if (!done && busy === null) onAdd(pick); }}>
               {done && <span aria-hidden="true">✓ </span>}{says}
             </button>
@@ -192,7 +214,7 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
             aria-describedby={waiting ? "book-search-wait" : undefined}>Search</button>
         </div>
       </form>
-      <p className="small muted seg-note">Your library first, then Open Library. Searches when you press Enter.</p>
+      <p className="small muted seg-note">Matched against your library first, then Hardcover. Searches when you press Enter.</p>
       <div role="status" aria-live="polite" id="book-search-wait">
         {line && <div className={`statusline${tone ? ` ${tone}` : ""}`}>{line}</div>}
       </div>
@@ -214,15 +236,15 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
           </ul>
         </>
       )}
-      {openLibrary.length > 0 && (
+      {hardcover.length > 0 && (
         <>
-          <H className="s">From Open Library<span className="more">{`${openLibrary.length} new`}</span></H>
-          <ul className="group results" aria-label="From Open Library">
-            {openLibrary.map((book) => row({ kind: "openLibrary", book }))}
+          <H className="s">From Hardcover<span className="more">{`${hardcover.length} new`}</span></H>
+          <ul className="group results" aria-label="From Hardcover">
+            {hardcover.map((book) => row({ kind: "hardcover", book }))}
           </ul>
         </>
       )}
-      {answer && library.length + openLibrary.length > 0 && (
+      {answer && library.length + hardcover.length > 0 && (
         <p className="small muted fallback">Not here? {byHand} The search carries over as the title.</p>
       )}
     </>

@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { checkTestUrl } from "../scripts/lib/testdb.mjs";
-import { DEV_CACHE, E2E_CORE, E2E_PASSCODE, E2E_PORT, E2E_PROJECTS, e2eProjects, planE2e } from "../scripts/lib/e2e.mjs";
+import { DEV_CACHE, E2E_CORE, E2E_HARDCOVER_TOKEN, E2E_PASSCODE, E2E_PORT, E2E_PROJECTS, e2eProjects, planE2e } from "../scripts/lib/e2e.mjs";
 import { planTestRun } from "../scripts/lib/test-files.mjs";
 import { ciJob } from "./ci-yml";
 
@@ -39,6 +39,7 @@ describe("planE2e: the test database, or a refusal with testdb.mjs's own message
       APP_PASSCODE: E2E_PASSCODE,
       SESSION_SECRET: expect.any(String),
       OWNER_ID: "e2e-user",
+      HARDCOVER_API_TOKEN: E2E_HARDCOVER_TOKEN,
     });
     expect(E2E_PASSCODE).not.toBe("owners-real-one");
     expect(plan.baseUrl).toBe(`http://localhost:${E2E_PORT}`);

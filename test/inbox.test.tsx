@@ -228,7 +228,7 @@ describe("Add books, opened from a books note (AC-3)", () => {
   const BLADE = {
     id: "the-blade-itself-joe-abercrombie", title: "The Blade Itself", author: "Joe Abercrombie", series: null,
     series_position: null, published_year: null, page_count: null, word_count: null, word_count_source: null,
-    cover_url: null, open_library_id: null, pending: true, status: null, shelves: 0,
+    cover_url: null, hardcover_id: null, pending: true, status: null, shelves: 0,
   };
   const ADDED = {
     ok: true, destination: { kind: "someday" }, bookId: BLADE.id, title: BLADE.title, reused: true, status: "to_read",
@@ -239,7 +239,7 @@ describe("Add books, opened from a books note (AC-3)", () => {
     let posts = 0;
     fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
       if (url === "/api/books/search") {
-        return Response.json({ query: "x", status: "ok", library: [BLADE], openLibrary: [], wordsPerPage: 275 });
+        return Response.json({ query: "x", status: "ok", library: [BLADE], hardcover: [], wordsPerPage: 275 });
       }
       if (url === "/api/books" && init?.method === "POST") return Response.json({ ...ADDED, note: posts++ === 0 ? 5 : null });
       if (url === "/api/books" && init?.method === "DELETE") return Response.json({ ok: true });

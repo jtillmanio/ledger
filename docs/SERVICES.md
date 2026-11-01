@@ -26,8 +26,8 @@ variables were not checked from here: compare them by hand with
 | [Cloudflare R2](#cloudflare-r2) | Nightly database dumps | Cloudflare account, bucket `ledger-backups` | `R2_BACKUPS_ACCESS_KEY_ID` + `R2_BACKUPS_SECRET_ACCESS_KEY` | Free tier (10 GB; 90 dumps of ~1 MB) | In use |
 | [Anthropic](#anthropic-claude) | Claude Code locally; Claude's PR review and `@claude` in Actions | Your Claude subscription | `CLAUDE_CODE_OAUTH_TOKEN` | Subscription | In use |
 | [Metron](#metron) | Comics metadata backfill; *Add issues* search | metron.cloud account | `METRON_USERNAME` + `METRON_PASSWORD` (or `METRON_API_TOKEN`) | Free: 20 a minute, 5,000 a day | In use |
-| [Hardcover](#hardcover) | Book metadata, replacing Open Library (D-94) | hardcover.app account | `HARDCOVER_API_TOKEN` | Free: 60 a minute, 5,000 a day | In use (ETL, 1.14b); *Add books* planned (1.4f) |
-| [Open Library](#open-library) | Book metadata today: *Add books* only (the ETL backfill is Hardcover's since 1.14b) | None | None | Free | Retiring in 6.19 |
+| [Hardcover](#hardcover) | Book metadata, replacing Open Library (D-94) | hardcover.app account | `HARDCOVER_API_TOKEN` | Free: 60 a minute, 5,000 a day | In use (ETL, 1.14b; *Add books* search, 1.4f) |
+| [Open Library](#open-library) | Nothing since 1.4f: *Add books* and the ETL ask Hardcover; its code stays until 6.19 | None | None | Free | Retiring in 6.19 |
 | [Marvel Fandom wiki](#marvel-fandom-wiki) | Story titles Metron lacks | None | None | Free | In use (ETL only) |
 | [Calibre](#calibre) | Word counts, series, read dates from your ebook library | None: a local app | `CALIBRE_LIBRARY` (a folder path, not a secret) | Free | In use (ETL only) |
 | [Google Sheets](#google-sheets) | `Comics.xlsx` and `Books.xlsx`, the record until cutover | Your Google account | None: exported by hand | Free | Until cutover (1.26) |
@@ -69,7 +69,7 @@ to be changed in both.
 | `R2_ACCOUNT_ID`, `R2_BUCKET` | Which Cloudflare account and bucket (not secret) | — | — | Variables | — | Cloudflare → R2 overview |
 | `CLAUDE_CODE_OAUTH_TOKEN` | Claude's PR review and `@claude` workflows | — | — | Secret | — | `/install-github-app` in Claude Code, or `claude setup-token` |
 | `METRON_USERNAME`, `METRON_PASSWORD` (or `METRON_API_TOKEN`) | Metron backfill; *Add issues* search | ✓ | — | — | Production (and Preview, to search on a preview) | Your metron.cloud login |
-| `HARDCOVER_API_TOKEN` | Hardcover backfill (1.14b: `enrich:books`, `calibre`'s series check); later *Add books* (1.4f) | ✓ | — | — | From 1.4f | hardcover.app → your account → the API page |
+| `HARDCOVER_API_TOKEN` | Hardcover backfill (1.14b: `enrich:books`, `calibre`'s series check); *Add books* search (1.4f) | ✓ | — | — | Production (and Preview, to search on a preview) | hardcover.app → your account → the API page |
 | `CALIBRE_LIBRARY` | The Calibre library folder (not secret) | ✓ | — | — | — | The folder holding `metadata.db` |
 | `TMDB_API_KEY` | Phase 8 | Empty | — | — | From Phase 8 | themoviedb.org → account settings |
 
@@ -115,7 +115,7 @@ to be changed in both.
   | `LEDGER_LIVE_DB_HOST` | — | ✓ | — |
   | `METRON_USERNAME`, `METRON_PASSWORD` | ✓ | optional | — |
   | `TMDB_API_KEY` | Phase 8 | Phase 8 | Phase 8 |
-  | `HARDCOVER_API_TOKEN` | from 1.4f | optional | — |
+  | `HARDCOVER_API_TOKEN` | ✓ | optional | — |
 
 - **Two tokens, both in GitHub:** `VERCEL_TOKEN` (an account token, scoped to
   the team; Release uses it to promote) and `VERCEL_AUTOMATION_BYPASS_SECRET`
@@ -164,12 +164,16 @@ to be changed in both.
 
 - **Account:** hardcover.app, free.
 - **Key:** `HARDCOVER_API_TOKEN`, a personal token, server-side only (D-94),
-  in `.env` (named in `.env.example`). Without it `enrich:books` runs only
-  `--offline` and `calibre` checks series from the cache.
+  in `.env` (named in `.env.example`) and Vercel. Without it `enrich:books`
+  runs only `--offline`, `calibre` checks series from the cache, and *Add
+  books* searches your library alone and says *Hardcover isn't set up here*.
+  The browser suite's server gets a placeholder (`scripts/lib/e2e.mjs`), never
+  the real one.
 - **What uses it:** `npm run enrich:books` and `npm run calibre`'s series
   check (1.14b, `etl/enrich_books.py`, both cached in
-  `etl/.hardcover-cache.sqlite`); then *Add books* search (1.4f, cached in the
-  `hardcover_cache` table), which needs it in Vercel.
+  `etl/.hardcover-cache.sqlite`); and *Add books* search (1.4f,
+  `src/lib/hardcover.ts`, cached in the `hardcover_cache` table), which needs
+  it in Vercel.
 - **Limits and terms:** 60 requests a minute, bursts of 10, 5,000 a day. The
   data may not train a public or commercial model. The API is "heavily in
   flux", so expect changes.
@@ -178,9 +182,9 @@ to be changed in both.
 
 - **No account, no key.** Requests send a `User-Agent` naming the app, one a
   second.
-- **What uses it today:** *Add books* (`src/lib/openlibrary.ts`). The ETL
-  asks Hardcover since 1.14b; `etl/.openlibrary-cache.sqlite` is read by
-  nothing now.
+- **What uses it today:** nothing. *Add books* asks Hardcover since 1.4f
+  and the ETL since 1.14b; `src/lib/openlibrary.ts`, `open_library_cache` and
+  `etl/.openlibrary-cache.sqlite` are read by nothing now.
 - **Going away:** Hardcover replaces it (D-94). Task 6.19 removes the code, the
   cache and `books.open_library_id`.
 

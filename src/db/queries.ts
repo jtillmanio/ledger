@@ -862,7 +862,7 @@ export async function runChoices() {
 export type LibraryHit = {
   id: string; title: string; author: string | null; series: string | null; series_position: number | null;
   published_year: number | null; page_count: number | null; word_count: number | null;
-  word_count_source: "stated" | "estimated" | null; cover_url: string | null; open_library_id: string | null;
+  word_count_source: "stated" | "estimated" | null; cover_url: string | null; hardcover_id: number | null;
   /** No external record yet: *metadata pending*. */
   pending: boolean;
   /** Your status for it, if any. */
@@ -872,20 +872,20 @@ export type LibraryHit = {
 };
 
 /**
- * Add books, *Search* (task 1.4c): your library's books for a query, before
- * Open Library's. A book matches when every word of the query is in its title
- * and author, or because it is one of the books Open Library answered with,
- * by work id or by the same title and author (D-61). Exact titles first; at
- * most 20.
+ * Add books, *Search* (task 1.4c, 1.4f): your library's books for a query,
+ * before Hardcover's. A book matches when every word of the query is in its
+ * title and author, or because it is one of the books Hardcover answered with,
+ * by `hardcover_id` or by its title and one of its authors (`titles` and
+ * `authors` are pairs; D-61). Exact titles first; at most 20.
  */
 export async function librarySearch(
-  userId: string, q: string, also: { openLibraryIds: string[]; titles: string[]; authors: string[] },
+  userId: string, q: string, also: { hardcoverIds: number[]; titles: string[]; authors: string[] },
 ) {
   // Each word, its LIKE wildcards escaped, must appear somewhere in title and author.
   const words = q.toLowerCase().split(/\s+/).filter(Boolean).map((w) => `%${w.replace(/[\\%_]/g, "\\$&")}%`);
   return sql<LibraryHit[]>`
     SELECT b.id, b.title, a.name AS author, bs.name AS series, b.series_position,
-           b.published_year, b.page_count, b.word_count, b.word_count_source, b.cover_url, b.open_library_id,
+           b.published_year, b.page_count, b.word_count, b.word_count_source, b.cover_url, b.hardcover_id,
            (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
            st.status,
            (SELECT COUNT(*) FROM shelf_books sb JOIN shelves sh ON sh.id = sb.shelf_id
@@ -897,7 +897,7 @@ export async function librarySearch(
     WHERE b.deleted_at IS NULL AND (
       (cardinality(${words}::text[]) > 0
         AND lower(b.title || ' ' || COALESCE(a.name, '')) LIKE ALL (${words}::text[]))
-      OR b.open_library_id = ANY(${also.openLibraryIds}::text[])
+      OR b.hardcover_id = ANY(${also.hardcoverIds}::int[])
       OR (lower(b.title), lower(a.name)) IN (
         SELECT lower(t), lower(au) FROM unnest(${also.titles}::text[], ${also.authors}::text[]) AS o(t, au)))
     ORDER BY (lower(b.title) = lower(${q.trim()})) DESC, b.title, a.name, b.id

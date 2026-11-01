@@ -25,7 +25,7 @@ line numbers below drift after an edit.
 | `plan` | Plan by quarter | 2023–2166 |
 | `moveplan` | Move / add to a quarter | 2169–2326 |
 | `blist` | Master list; the *Unlisted · N* chip after *Read* and an Unlisted row, grey badge and *Add to Someday* (task 1.21) | 2329–2431 |
-| `add` | Add books | 2434–2525 |
+| `add` | Add books — search (Hardcover, task 1.4f) | 3237–3335 |
 | `wishlist` | Your wishlist (`/books/add?from=wishlist`, task 1.4d) | — |
 | `shelves` | Shelves | 2528–2624 |
 | `top` | Top books | 2627–2713 |

@@ -133,8 +133,8 @@ export default function AddBooks({ initial, close, query = "", note = null }: {
     const key = pickKey(pick);
     setBusy(key);
     const item = pick.kind === "library" ? { use: pick.book.id } : {
-      openLibrary: {
-        openLibraryId: pick.book.openLibraryId, title: pick.book.title, author: pick.book.author,
+      hardcover: {
+        hardcoverId: pick.book.hardcoverId, title: pick.book.title, authors: pick.book.authors,
         year: pick.book.year, pages: pick.book.pages, coverUrl: pick.book.coverUrl,
       },
     };

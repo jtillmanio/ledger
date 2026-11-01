@@ -97,8 +97,8 @@ first. A desktop layout that a phone layout degrades into is the wrong answer.
 - **Detail views are intercepted routes, not modal components:** a sheet from a
   list, a full page on direct load. The back button must dismiss.
 - **No page render calls an external API.** The one live path is an **add
-  flow**: TMDB, Metron and Open Library are searched when the user submits a
-  search in Add, and results are cached. Hardcover is backfill-only. TMDB
+  flow**: TMDB, Metron and Hardcover (Add books, task 1.4f, D-94) are searched
+  when the user submits a search in Add, and results are cached. TMDB
   attribution belongs in the footer. (What an add flow writes is
   `.claude/rules/schema.md`.)
 

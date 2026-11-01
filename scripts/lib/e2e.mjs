@@ -11,6 +11,8 @@ export const E2E_PORT = 3199;
 // Fixed and public: the suite's server, never the owner's APP_PASSCODE.
 export const E2E_PASSCODE = "e2e-passcode";
 export const E2E_USER = "e2e-user";
+// Not a token: Hardcover refuses it, so a search the cache can't answer shows the error state.
+export const E2E_HARDCOVER_TOKEN = "e2e-not-a-hardcover-token";
 // `next dev`'s output and Turbopack cache, relative to where the server runs.
 // A stale one makes the sign-in page reload in a Fast Refresh loop until the
 // setup project times out (TASK-015; again on 2026-10-27), so a dev run starts
@@ -82,6 +84,10 @@ export function planE2e(env) {
       APP_PASSCODE: E2E_PASSCODE,
       SESSION_SECRET: "e2e-only-secret",
       OWNER_ID: E2E_USER,
+      // Add books' Hardcover search runs its real cache path (task 1.4f): the
+      // spec seeds hardcover_cache with recorded answers. A placeholder, so a
+      // local run never reads the owner's real token out of .env.
+      HARDCOVER_API_TOKEN: E2E_HARDCOVER_TOKEN,
     },
     baseUrl: `http://localhost:${E2E_PORT}`,
   };

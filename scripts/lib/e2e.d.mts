@@ -1,6 +1,7 @@
 export const E2E_PORT: number;
 export const E2E_PASSCODE: string;
 export const E2E_USER: string;
+export const E2E_HARDCOVER_TOKEN: string;
 export const DEV_CACHE: string;
 export type E2eScope = "core" | "full";
 export type E2eProject = {

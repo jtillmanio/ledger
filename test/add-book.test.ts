@@ -1,9 +1,10 @@
 // Task 1.4c: Add a book by search or by hand, to a destination, against the
-// TEST database, with Open Library replaced by a stubbed fetch that counts its
-// calls. The search (POST /api/books/search), the add (POST /api/books) and
-// its undo (DELETE /api/books), Paste a list's destination and undo
-// (POST /api/books/bulk), and the open_library_cache table (D-62). The screen
-// is test/add-book-sheet.test.tsx.
+// TEST database, with Hardcover (task 1.4f, in Open Library's place) replaced
+// by a stubbed fetch that counts its calls. The search (POST /api/books/search),
+// the add (POST /api/books) and its undo (DELETE /api/books), and Paste a
+// list's destination and undo (POST /api/books/bulk). Hardcover's cache, hold,
+// ISBNs and ranking are test/hardcover-search.test.ts; the screen is
+// test/add-book-sheet.test.tsx.
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -12,7 +13,7 @@ import type { BookSearchAnswer } from "../src/app/api/books/search/route";
 import { testSql, truncateAll } from "./db";
 
 const USER = "test-user";
-const OL = "https://openlibrary.org/";
+const HC = "https://api.hardcover.app/v1/graphql";
 
 // The master list's rows hold the status control (task 1.5), which refreshes the page after a save.
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, refresh: () => {} }) }));
@@ -28,24 +29,27 @@ let books: typeof import("../src/app/api/books/route");
 let bulk: typeof import("../src/app/api/books/bulk/route");
 let appSql: { end: () => Promise<void> };
 
-/** Open Library's answer to `the way of kings`: one Sanderson work with pages and a cover, one without either. */
+/** Hardcover's search results for `the way of kings`: one Sanderson book with pages and a cover, one without either, one with no author. */
 const WAY_OF_KINGS = {
-  numFound: 2, docs: [
-    { key: "/works/OL15358691W", title: "The Way of Kings", author_name: ["Brandon Sanderson"],
-      first_publish_year: 2010, number_of_pages_median: 1007, cover_i: 8306603 },
-    { key: "/works/OL999W", title: "The Way of Kings", author_name: ["Someone Else"] },
-    { key: "/works/OL1W", title: "Authorless" },
+  found: 3, hits: [
+    { document: { id: "386446", title: "The Way of Kings", author_names: ["Brandon Sanderson"], compilation: false,
+      users_count: 9000, release_year: 2010, pages: 1007, image: { url: "https://assets.hardcover.app/edition/386446/wok.jpeg" },
+      featured_series: { position: 1, series: { name: "The Stormlight Archive" } }, series_names: ["The Stormlight Archive"] } },
+    { document: { id: "999", title: "The Way of Kings", author_names: ["Someone Else"], compilation: false, users_count: 5, image: {} } },
+    { document: { id: "1", title: "Authorless", author_names: [], compilation: false, users_count: 1, image: {} } },
   ],
 };
+const COVER = "https://assets.hardcover.app/edition/386446/wok.jpeg";
 
-/** Every request that reached Open Library, as its path after the host. */
+/** Every request that reached Hardcover, as its GraphQL variables. */
 let calls: string[];
-/** How Open Library answers. */
-let openLibrary: (path: string) => Response | Promise<Response>;
+/** How Hardcover answers. */
+let hardcover: () => Response | Promise<Response>;
 
 beforeAll(async () => {
   // src/db reads DATABASE_URL at import time: point it at the TEST database first.
   process.env.DATABASE_URL = requireTestUrl();
+  process.env.HARDCOVER_API_TOKEN = "test-token";
   search = await import("../src/app/api/books/search/route");
   books = await import("../src/app/api/books/route");
   bulk = await import("../src/app/api/books/bulk/route");
@@ -54,18 +58,19 @@ beforeAll(async () => {
 
 afterAll(async () => {
   vi.unstubAllGlobals();
+  delete process.env.HARDCOVER_API_TOKEN;
   await appSql.end();
   await sql.end();
 });
 
 beforeEach(async () => {
   calls = [];
-  openLibrary = () => Response.json(WAY_OF_KINGS);
-  vi.stubGlobal("fetch", vi.fn(async (input: string | URL | Request) => {
+  hardcover = () => Response.json({ data: { search: { results: WAY_OF_KINGS } } });
+  vi.stubGlobal("fetch", vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
     const url = String(input instanceof Request ? input.url : input);
-    if (!url.startsWith(OL)) throw new Error(`unexpected fetch ${url}`);
-    calls.push(url.slice(OL.length));
-    return openLibrary(url.slice(OL.length));
+    if (url !== HC) throw new Error(`unexpected fetch ${url}`);
+    calls.push(JSON.stringify(JSON.parse(String(init?.body)).variables));
+    return hardcover();
   }));
   await truncateAll(sql);
   await sql`INSERT INTO users (id, name) VALUES (${USER}, 'Test'), ('someone-else', 'Other')`;
@@ -98,27 +103,27 @@ const COSMERE = { kind: "shelf", shelfId: "cosmere" };
 const hand = (h: Record<string, unknown>) => ({ hand: { series: null, position: null, pages: null, words: null, ...h } });
 
 const bookRows = () => sql`
-  SELECT b.id, b.title, a.name AS author, b.open_library_id, b.word_count, b.word_count_source,
+  SELECT b.id, b.title, a.name AS author, b.hardcover_id, b.word_count, b.word_count_source,
          b.page_count, b.published_year, b.cover_url, b.deleted_at IS NOT NULL AS removed
   FROM books b LEFT JOIN authors a ON a.id = b.author_id ORDER BY b.id`;
 const statuses = () => sql`SELECT book_id, status FROM book_status WHERE user_id = ${USER} ORDER BY book_id`;
 const shelved = () => sql`SELECT shelf_id, book_id, ordinal FROM shelf_books ORDER BY shelf_id, ordinal`;
 
-describe("adding an Open Library result to the Cosmere shelf (AC-1)", () => {
-  it("creates one books row with open_library_id and one shelf_books row", async () => {
+describe("adding a Hardcover result to the Cosmere shelf (AC-1)", () => {
+  it("creates one books row with hardcover_id and one shelf_books row", async () => {
     const answer = await find("the way of kings");
     expect(answer.status).toBe("ok");
     expect(answer.library).toEqual([]);
-    const wok = answer.openLibrary[0];
-    expect(wok).toMatchObject({ openLibraryId: "OL15358691W", title: "The Way of Kings", author: "Brandon Sanderson", pages: 1007 });
+    const wok = answer.hardcover[0];
+    expect(wok).toMatchObject({ hardcoverId: 386446, title: "The Way of Kings", authors: ["Brandon Sanderson"], pages: 1007 });
 
-    const done = await add({ openLibrary: wok }, COSMERE);
+    const done = await add({ hardcover: wok }, COSMERE);
     expect(done.status).toBe(200);
     expect(done.body).toMatchObject({ ok: true, reused: false, created: ["the-way-of-kings-brandon-sanderson"] });
-    const created = (await bookRows()).filter((b) => b.open_library_id !== null);
+    const created = (await bookRows()).filter((b) => b.hardcover_id !== null);
     expect(created).toEqual([expect.objectContaining({
-      id: "the-way-of-kings-brandon-sanderson", open_library_id: "OL15358691W", author: "Brandon Sanderson",
-      page_count: 1007, published_year: 2010, cover_url: "https://covers.openlibrary.org/b/id/8306603-M.jpg",
+      id: "the-way-of-kings-brandon-sanderson", hardcover_id: 386446, author: "Brandon Sanderson",
+      page_count: 1007, published_year: 2010, cover_url: COVER,
     })]);
     expect(await shelved()).toEqual([{ shelf_id: "cosmere", book_id: "the-way-of-kings-brandon-sanderson", ordinal: 1 }]);
     // A shelf add writes the shelf row, not a status.
@@ -126,25 +131,25 @@ describe("adding an Open Library result to the Cosmere shelf (AC-1)", () => {
   });
 
   it("adding the same book again from search reuses it, says so, and lists it as yours", async () => {
-    const wok = (await find("the way of kings")).openLibrary[0];
-    await add({ openLibrary: wok }, COSMERE);
+    const wok = (await find("the way of kings")).hardcover[0];
+    await add({ hardcover: wok }, COSMERE);
     const again = await find("the way of kings");
-    // Your copy comes first, and Open Library's matching work is not offered a second time.
+    // Your copy comes first, and Hardcover's matching book is not offered a second time.
     expect(again.library.map((b) => [b.id, b.shelves])).toEqual([["the-way-of-kings-brandon-sanderson", 1]]);
-    expect(again.openLibrary.map((b) => b.openLibraryId)).toEqual(["OL999W"]);
+    expect(again.hardcover.map((b) => b.hardcoverId)).toEqual([999]);
 
-    // The same work sent again (a stale tab) is the same book: reused, by its work id, even renamed.
-    const viaWork = await add({ openLibrary: { ...wok, title: "Way of Kings" } }, COSMERE);
+    // The same book sent again (a stale tab) is the same book: reused, by its hardcover_id, even renamed.
+    const viaWork = await add({ hardcover: { ...wok, title: "Way of Kings" } }, COSMERE);
     expect(viaWork.body).toMatchObject({ ok: true, reused: true, bookId: "the-way-of-kings-brandon-sanderson", created: [], added: [] });
     // Its library row, added to Someday, reuses it too.
     const viaLibrary = await add({ use: again.library[0].id });
     expect(viaLibrary.body).toMatchObject({ ok: true, reused: true, created: [], added: ["the-way-of-kings-brandon-sanderson"] });
-    expect((await bookRows()).filter((b) => b.open_library_id !== null)).toHaveLength(1);
+    expect((await bookRows()).filter((b) => b.hardcover_id !== null)).toHaveLength(1);
     expect(await shelved()).toHaveLength(1);
   });
 
   it("adding the same title and author by hand reuses it and says so, into Someday", async () => {
-    await add({ openLibrary: (await find("the way of kings")).openLibrary[0] }, COSMERE);
+    await add({ hardcover: (await find("the way of kings")).hardcover[0] }, COSMERE);
     const byHand = await add(hand({ title: "the way of kings", author: "BRANDON SANDERSON" }));
     expect(byHand.body).toMatchObject({ ok: true, reused: true, bookId: "the-way-of-kings-brandon-sanderson", created: [],
       added: ["the-way-of-kings-brandon-sanderson"] });
@@ -155,31 +160,31 @@ describe("adding an Open Library result to the Cosmere shelf (AC-1)", () => {
     const done = await add(hand({ title: "A Small Book of Something", author: "New Author" }));
     expect(done.body).toMatchObject({ ok: true, reused: false, created: ["a-small-book-of-something-new-author"] });
     const [row] = (await bookRows()).filter((b) => b.id === "a-small-book-of-something-new-author");
-    expect(row).toMatchObject({ word_count: null, word_count_source: null, open_library_id: null, page_count: null });
+    expect(row).toMatchObject({ word_count: null, word_count_source: null, hardcover_id: null, page_count: null });
     expect(await statuses()).toContainEqual({ book_id: "a-small-book-of-something-new-author", status: "to_read" });
     expect(await sql`SELECT * FROM reading_plan`).toHaveLength(0);
   });
 
-  it("an Open Library failure writes nothing, and By hand still adds", async () => {
-    openLibrary = () => new Response("down", { status: 503 });
+  it("a Hardcover failure writes nothing, and By hand still adds", async () => {
+    hardcover = () => new Response("down", { status: 503 });
     const before = await bookRows();
     const answer = await find("the way of kings");
     expect(answer.status).toBe("error");
-    expect(answer.openLibrary).toEqual([]);
+    expect(answer.hardcover).toEqual([]);
     expect(await bookRows()).toEqual(before);
-    expect(await sql`SELECT key FROM open_library_cache`).toEqual([]);
+    expect(await sql`SELECT key FROM hardcover_cache`).toEqual([]);
 
-    openLibrary = () => { throw new TypeError("fetch failed"); };
+    hardcover = () => { throw new TypeError("fetch failed"); };
     expect((await find("the way of kings")).status).toBe("error");
-    expect(await sql`SELECT key FROM open_library_cache`).toEqual([]);
+    expect(await sql`SELECT key FROM hardcover_cache`).toEqual([]);
 
     const byHand = await add(hand({ title: "The Way of Kings", author: "Brandon Sanderson" }), COSMERE);
     expect(byHand.status).toBe(200);
     expect(await shelved()).toHaveLength(1);
   });
 
-  it("your library's matches come back even when Open Library fails", async () => {
-    openLibrary = () => new Response("down", { status: 500 });
+  it("your library's matches come back even when Hardcover fails", async () => {
+    hardcover = () => new Response("down", { status: 500 });
     const answer = await find("abercrombie blade");
     expect(answer.status).toBe("error");
     expect(answer.library.map((b) => [b.id, b.status])).toEqual([["the-blade-itself-joe-abercrombie", "read"]]);
@@ -187,22 +192,22 @@ describe("adding an Open Library result to the Cosmere shelf (AC-1)", () => {
 });
 
 describe("word counts (AC-2)", () => {
-  it("an Open Library result with pages is estimated at pages × words_per_page", async () => {
+  it("a Hardcover result with pages is estimated at pages × words_per_page", async () => {
     await sql`INSERT INTO reading_settings (user_id, words_per_page) VALUES (${USER}, 300)`;
-    await add({ openLibrary: (await find("the way of kings")).openLibrary[0] });
-    const [row] = (await bookRows()).filter((b) => b.open_library_id === "OL15358691W");
+    await add({ hardcover: (await find("the way of kings")).hardcover[0] });
+    const [row] = (await bookRows()).filter((b) => b.hardcover_id === 386446);
     expect(row).toMatchObject({ word_count: 1007 * 300, word_count_source: "estimated" });
   });
 
   it("with no reading settings row, the column default of 275 words a page", async () => {
-    await add({ openLibrary: (await find("the way of kings")).openLibrary[0] });
-    const [row] = (await bookRows()).filter((b) => b.open_library_id === "OL15358691W");
+    await add({ hardcover: (await find("the way of kings")).hardcover[0] });
+    const [row] = (await bookRows()).filter((b) => b.hardcover_id === 386446);
     expect(row).toMatchObject({ word_count: 1007 * 275, word_count_source: "estimated" });
   });
 
-  it("an Open Library result with no pages has no count", async () => {
-    await add({ openLibrary: (await find("the way of kings")).openLibrary.find((b) => b.openLibraryId === "OL999W") });
-    const [row] = (await bookRows()).filter((b) => b.open_library_id === "OL999W");
+  it("a Hardcover result with no pages has no count", async () => {
+    await add({ hardcover: (await find("the way of kings")).hardcover.find((b) => b.hardcoverId === 999) });
+    const [row] = (await bookRows()).filter((b) => b.hardcover_id === 999);
     expect(row).toMatchObject({ word_count: null, word_count_source: null });
   });
 
@@ -249,7 +254,7 @@ describe("destinations", () => {
 
 describe("undo (AC-5)", () => {
   it("removes the shelf row and soft-deletes the book the add created", async () => {
-    const done = await add({ openLibrary: (await find("the way of kings")).openLibrary[0] }, COSMERE);
+    const done = await add({ hardcover: (await find("the way of kings")).hardcover[0] }, COSMERE);
     expect(await undo(done.body)).toBe(200);
     expect(await shelved()).toEqual([]);
     const [row] = (await bookRows()).filter((b) => b.id === "the-way-of-kings-brandon-sanderson");
@@ -365,9 +370,9 @@ describe("metadata pending wherever the row appears (AC-4)", () => {
     return found;
   };
 
-  it("on the master list, a by-hand book has the dashed cover and the line; an Open Library one has its cover", async () => {
+  it("on the master list, a by-hand book has the dashed cover and the line; a Hardcover one has its cover", async () => {
     await add(hand({ title: "A Small Book of Something", author: "New Author" }));
-    await add({ openLibrary: (await find("the way of kings")).openLibrary[0] });
+    await add({ hardcover: (await find("the way of kings")).hardcover[0] });
     const Books = (await import("../src/app/books/list/page")).default;
     const { UndoProvider } = await import("../src/components/Undo");
     // The layout's UndoProvider: each row's status control pushes its undo there (task 1.5).
@@ -378,7 +383,7 @@ describe("metadata pending wherever the row appears (AC-4)", () => {
     expect(thin).toContain(">metadata pending<");
     const full = rowOf(html, 'class="row book-row"', "The Way of Kings");
     expect(full).not.toContain("data-enrich");
-    expect(full).toContain('src="https://covers.openlibrary.org/b/id/8306603-M.jpg"');
+    expect(full).toContain(`src="${COVER}"`);
   });
 
   it("in your library's search answers, a book with no external record is pending", async () => {
@@ -402,33 +407,5 @@ describe("metadata pending wherever the row appears (AC-4)", () => {
     expect(thin).toContain('data-enrich="pending"');
     expect(thin).toContain(">metadata pending<");
     expect(rowOf(html, '<div class="iss"', "Thor (1966) #337")).not.toContain("data-enrich");
-  });
-});
-
-describe("the Open Library cache (D-62)", () => {
-  it("a search is asked once and then served from open_library_cache", async () => {
-    await find("The Way of  Kings");
-    await find("the way of kings");
-    expect(calls).toHaveLength(1);
-    expect(calls[0]).toMatch(/^search\.json\?q=the\+way\+of\+kings&/);
-    expect(await sql`SELECT key FROM open_library_cache`).toHaveLength(1);
-  });
-
-  it("a stale answer is asked again", async () => {
-    await find("the way of kings");
-    await sql`UPDATE open_library_cache SET fetched_at = now() - interval '8 days'`;
-    await find("the way of kings");
-    expect(calls).toHaveLength(2);
-  });
-
-  it("a 429 is held for its Retry-After: no call until it ends, and your library still answers", async () => {
-    openLibrary = () => new Response("slow down", { status: 429, headers: { "Retry-After": "40" } });
-    const first = await find("the way of kings");
-    expect(first).toMatchObject({ status: "rate_limited", retryIn: 40 });
-    const second = await find("abercrombie");
-    expect(second.status).toBe("rate_limited");
-    expect(second.retryIn).toBeGreaterThan(0);
-    expect(second.library.map((b) => b.id)).toEqual(["the-blade-itself-joe-abercrombie"]);
-    expect(calls).toHaveLength(1);
   });
 });

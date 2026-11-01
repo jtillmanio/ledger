@@ -291,7 +291,7 @@ with the task that first reads it.
 |---|---|---|---|---|---|
 | ✅ | 1.25 → TASK-036 | Sheets parity audit | S |  | — |
 | ✅ | 1.4e → TASK-037 | Paste a list: title and author in their own cells | S |  | — |
-|  | 1.4f → TASK-040 | Add books searches Hardcover | M |  | — |
+| ✅ | 1.4f → TASK-040 | Add books searches Hardcover | M |  | — |
 |  | 1.19 → TASK-038 | Comics Add remembers the last run | S |  | 1.8, 1.3c |
 |  | 1.22 → TASK-041 | Search as you type, and where each result comes from | M |  | 1.21, 1.4f |
 |  | 1.24 → TASK-042 | Wishlist accept promotes an Unlisted book to Someday | S |  | 1.21, 1.4d |
