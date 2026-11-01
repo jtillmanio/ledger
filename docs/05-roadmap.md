@@ -44,15 +44,16 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 | [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6) | 12 / 13 |
 | [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is 1.26 (START-HERE Step 14): it waits for all of Phase 1, plus 2.11a and 1.11, and for every entry 1.25's parity audit names (D-95).** | M3–M9 | 28 / 41 |
 | [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 0 / 16 |
-| [3 Editing](#phase-3--editing) | Maintain the catalog in the app: inline edits, runs, prerequisites, eras, detail sheets and adding at scale. | M13–M15 | 0 / 14 |
+| [3 Editing](#phase-3--editing) | Maintain the catalog in the app: inline edits, runs, prerequisites, eras, detail sheets and adding at scale. | M13–M15 | 0 / 15 |
 | [4 Enrichment](#phase-4--enrichment) | Metron, Open Library and Hardcover backfill, and real covers. A prerequisite for Phase 7. | M16 | 0 / 4 |
-| [5 Remaining surfaces](#phase-5--remaining-surfaces) | The remaining list and detail surfaces: shelves, tracks, editions, releases and series pages. | M17, M18 | 0 / 12 |
+| [5 Remaining surfaces](#phase-5--remaining-surfaces) | The remaining list and detail surfaces: shelves, tracks, editions, releases and series pages. | M17, M18 | 0 / 13 |
 | [6 Polish, in any order](#phase-6--polish-in-any-order) | Polish, in any order. | M19–M21 (6.2b in M12) | 1 / 19 |
 | [7 AI-assisted curation (after Phase 4, not before)](#phase-7--ai-assisted-curation-after-phase-4-not-before) | Claude proposes, Metron verifies, you approve. Only after Phase 4. | M22 | 0 / 8 |
 | [8 Watchlist: film and television](#phase-8--watchlist-film-and-television) | Films, shows, seasons and franchises. Needs only Phase 0, so it can be pulled forward. | M23, M24 | 0 / 10 |
-| [9 Music](#phase-9--music) | A fourth medium, last (D-75). | M25 | 0 / 7 |
+| [9 Music](#phase-9--music) | A fourth medium, last (D-75). | M25 | 0 / 8 |
+| [10 Games](#phase-10--games) | A fifth medium, a planning tool for what to play: search, a queue by the platform you'll play on, and the games you're waiting for (D-102). | M26 | 0 / 6 |
 
-Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch.
+Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate.
 
 ---
 
@@ -2617,6 +2618,44 @@ Rating, notes, and the top-books rank reorder. **Status and finish date moved to
 
 **Check:** test that setting `year_rank = 3` demotes whatever held rank 3.
 
+### ☐ 3.4b Rank a book when you finish it, and every year's top ten · M
+Owner intake, 2026-11-01 (owner: *a way to rank books for each year as I
+finish them and then see my top 10 at the end of the year (and for past
+years)*). D-101. Depends on 3.4 and 1.5; after 1.23, a listened book is ranked
+like any read, with its glyph. 3.4 is pulled ahead of cutover by 1.25; this
+entry is not.
+
+- **Every book of a year is ranked, not just ten** (D-101, amending D-3's cap).
+  A year's ranks are contiguous from 1, like 1.10's queue (data model 2.16).
+  The top ten is the first ten, read off the order, never stored apart.
+- **A rank belongs to a read, not to a book.** A book read in 2024 and reread
+  in 2026 can rank in both years, which one `book_status.year_rank` can't
+  hold. Proposed: the rank moves to the read (`read_events.year_rank`, the
+  year being the read's finish year), and `book_status.year_rank` is dropped,
+  with a down file. **Stop and ask at plan time** (a column added, a column
+  dropped, CLAUDE.md). 3.4's reorder writes the same column, so if 3.4 lands
+  first this task moves its writes too.
+- **Ranked at the finish.** Setting a book to *Read* (1.5) offers *Rank it in
+  2026* beside the undo toast, and in 5.4's closing card once that exists. It
+  opens a *This or that* placement against the year's ranked books: pick one
+  of two, binary insertion, so a year of 34 books places a new one in at most
+  6 picks. *Skip* leaves the read unranked, and the Top books screen lists
+  it under *Not ranked yet* with the same control. The sorter is the one 9.4
+  draws; whichever task is built first builds it as a shared component.
+- **Every year, not only this one.** The Top books screen (mockup `top`) gains
+  a year switcher over every year with a finished read. This year says *so
+  far*. Each year shows its top ten, then the rest under *11–34*, collapsed.
+  The workbook's past ranks, kept in `seed/workbook_reads.csv` (product B4),
+  load into the reads they belong to.
+
+**Check (proposed):** `npm test`: placing a new read into a year of six ranked
+reads with scripted answers takes at most 3 picks and leaves ranks 1–7
+contiguous, and its undo restores the six as they were; *Skip* writes no rank;
+a book read in two years holds a rank in each. In the browser (0.11), a past
+year lists its first ten under *Top 10* and the rest collapsed, and an
+unranked read shows under *Not ranked yet*. The up → down → up migration test
+passes.
+
 ### ☐ 3.6 Eras on the run detail · M
 The era bands in `design/mockups.html` → "Run detail — eras" have no data behind
 them: the workbook has no era column and `etl/extract.py` never mentions one.
@@ -3498,6 +3537,38 @@ it is converted.
     their read state. A soft-deleted placement is not listed, freeform labels do
     not appear, and no page render calls Metron.
 
+- ☐ 5.14 **Audiobooks: a queue to listen next** · M. Owner intake, 2026-11-01
+  (owner: *audio books has a tracking system: what I'm reading, a queue for
+  up next, what I've read*). Depends on 1.23 and 1.9. 1.23 builds two of the
+  three: *Listening* is its own group on In flight, and a finished listen is
+  a read with `format = audio` and the headphones glyph. What's missing is
+  the order you mean to listen in. Nothing here is needed at cutover, so it
+  waits for Phase 5; it can be pulled forward.
+  - **The queue is an order, so it is stored**: proposed
+    `listen_queue(book_id PRIMARY KEY, position)`, contiguous from 1, like
+    1.10's `run_queue` (data model 2.16), no `user_id` (D-91), in
+    `src/db/export-tables.ts`. **Stop and ask at plan time** (a new table).
+    Not chosen: a format on `reading_plan` rows, because the plan is periods
+    and a word budget, and a listen queue is only an order.
+  - *Queue to listen* on the book sheet, the master-list row and the add
+    sheet (1.4c), and *Move to…* to reorder (1.10's controls). Setting a
+    queued book to *Listening* takes it off the queue and closes the gap;
+    Undo puts it back where it was.
+  - **The three states on the status screens.** Up next gains *Listen next*,
+    in queue order, after the reading plan's levels. In flight already has
+    *Listening*. Done gains a *Listened* chip that keeps only books with an
+    audio read.
+  - **For the plan gate:** whether a book can be on the reading plan and the
+    listen queue at once (proposed: yes, they answer different questions);
+    whether the books dashboard's *Up next* slot shows the first queued
+    listen.
+  - **Check (proposed):** `npm test`: queueing three books gives positions
+    1–3; setting #2 to *Listening* leaves the other two at 1–2, and its undo
+    restores all three in order. In the browser (0.11), Up next lists *Listen
+    next* in queue order; Done's *Listened* chip lists only books with an
+    audio read; each tab's count equals its rows. The export test passes with
+    `listen_queue`.
+
 ---
 
 ## Phase 6 — Polish, in any order
@@ -4238,7 +4309,8 @@ shaped like the watchlist: **artist → album → track**, as franchise → titl
 season. The catalog comes from MusicBrainz (free, CC0 core data, one request a
 second, a real User-Agent): its release groups are albums and its recordings
 are songs. Covers come from the Cover Art Archive. It starts empty, like
-watch. No playback, scrobbling or streaming-service sync.
+watch. No playback or scrobbling. The one streaming-service sync is 9.7's:
+Spotify says which artists you follow (D-103, amending D-75).
 
 The owner asked for three things: artists to listen to, those artists' albums
 to listen to, and a ranking of each song for some artists, with which albums
@@ -4356,6 +4428,204 @@ Nothing is stored beyond what 9.1 defines.
 followed as `listening` with two albums to listen shows in In flight and both
 albums in Up next; tab counts equal row counts; the feel-pass screenshots.
 
+### ☐ 9.7 Follow from Spotify: new albums into To listen · M
+Owner intake, 2026-11-01 (owner: *followed artists have upcoming albums
+automatically added to my "To listen" list; integrate with Spotify*). D-103,
+amending D-75's *no streaming-service sync*. Depends on 9.2 and 9.3.
+
+**Spotify says who you follow; MusicBrainz says what is coming.** Spotify's
+API lists an album only from its release day, and its February 2026 changes
+took `browse/new-releases` away from Development Mode apps. The artists you
+follow (`GET /me/following?type=artist`) and an artist's albums
+(`GET /artists/{id}/albums`) were not on the removed list. **Read Spotify's
+current endpoint list and terms at plan time**: they changed twice in 2026.
+
+- **Follows.** Each artist you follow on Spotify is matched to MusicBrainz
+  by the artist's Spotify link in MusicBrainz's URL relations, and followed
+  at `want` (9.1). An artist with no such link goes to a review list and is
+  never guessed. Unfollowing on Spotify is reported, never applied: a follow
+  in the Ledger is yours.
+- **What's coming.** For each followed artist, a new release group of the
+  types 9.2 keeps (studio albums by default) is added to To listen. One dated
+  after today shows *Coming Mar 14* and turns into a plain to-listen album on
+  the day. The Spotify album list adds the Spotify link to an album, and it
+  adds any album MusicBrainz doesn't have yet, matched on title and date
+  first.
+- **Automatic means a schedule, and a schedule can't type the passcode.**
+  Proposed: a nightly GitHub Actions job, the backup job's pattern, that runs
+  the sync script against the database directly, so no new route joins
+  `/api/health` outside the gate. It writes production, so **stop and ask at
+  plan time**. Not chosen: a Vercel cron route (a second route outside the
+  passcode gate); syncing when `/music` opens (no page render calls an API,
+  product § Constraints).
+- **What the sync added says so:** *Added from your Spotify follows*, with
+  9.2's *Not for me*. A hidden album is never re-added.
+- **Keys.** One Spotify app with a refresh token from a single sign-in, kept
+  as secrets (`SPOTIFY_CLIENT_ID`, `SPOTIFY_CLIENT_SECRET`,
+  `SPOTIFY_REFRESH_TOKEN`), never sent to the browser, and listed in
+  `docs/SERVICES.md` in the same PR. Since February 2026, a Development Mode
+  app works only while its owner has Spotify Premium: confirm that before
+  the plan.
+
+**Check (proposed):** against recorded fixtures: a followed Spotify artist
+whose MusicBrainz record links to it becomes one `want` follow, and one with
+no link lands in the review list with no follow. A release group dated after
+today is added once as to-listen with its date, and a second run adds
+nothing. An album hidden with *Not for me* is not re-added. The job exits
+non-zero, writing nothing, when a secret is missing, and no Spotify token
+reaches a client component.
+
+---
+
+## Phase 10 — Games
+
+**Goal:** A fifth medium, a planning tool for what to play: search, a queue by
+the platform you'll play on, and the games you're waiting for (D-102).
+**Milestones:** M26.
+
+Owner intake, 2026-11-01 (owner: *a video games category: search and add to
+my queue, metadata by the system I own or will own the game on; categories by
+genre (Action, RPG, Survival) but also playing it all the way through versus
+playing sporadically, like The Last of Us vs Civilization or Slay the Spire;
+mainly a planning tool; and tag games coming out that I'm excited for and see
+those release dates*). It needs only Phase 0 and the shell, so like Phase 8 it
+can be pulled forward; by default it follows Music. It starts empty, like
+watch. Ranking games is *Later* § L-7.
+
+The catalog comes from IGDB (Twitch's games database): free, with a Twitch
+developer app's client-credentials token. It has genres, platforms, a release
+date per platform and region, and time-to-beat estimates. **Read IGDB's
+current terms, attribution rule and rate limit at plan time** (community
+reports say four requests a second).
+
+**Two kinds of game, and they end differently.** A game you play *through*
+(The Last of Us) is wanted, then playing, then finished or dropped, like a
+book. A game you play *in rotation* (Civilization, Slay the Spire) has no
+end: it's in rotation or set aside, and it never reaches Done. This is the
+owner's own category, separate from IGDB's genres, and it decides which
+statuses a game can take.
+
+### ☐ 10.0 Games in the shell, designed · M
+Depends on 9.0. A fifth medium changes the phone media bar again (9.0 decides
+four). Settle with the owner where Games goes at 360px, on the tablet rail
+and in the sidebar, and draw at phone, tablet and desktop:
+- the `/games` dashboard in the five slots: Now (what you're playing, and
+  what's in rotation), Up next (the queue), position (hours left in the
+  game you're on, from its time to beat), situation (coming out), and this
+  year;
+- `/games/status`, the game sheet, the coming-out list (10.4), *Your
+  platforms* in Settings, and the empty first screen, a search, as watch's
+  is.
+
+**Check:** the mockup gains each screen at phone, tablet and desktop widths,
+`design/mockups-index.md` lists them, and where Games sits in the navigation
+is in the decisions log.
+
+### ☐ 10.1 Schema and IGDB client · M
+Depends on 10.0. **Stop and ask at plan time** (new tables); the plan writes
+data model 2.22 for the games shape. Proposed:
+- **Catalog:** `games(id, igdb_id UNIQUE, name, summary, cover_url,
+  first_release_date, date_precision)`, `game_genres(game_id, genre)` (IGDB's
+  genres, as 1.18c keeps a book's), `platforms(id, igdb_id UNIQUE, name)` and
+  `game_releases(game_id, platform_id, release_date, date_precision, region)`.
+  Time to beat, IGDB's *main*, *main + extras* and *completionist*, is a fact
+  about the game, so it is columns on `games`.
+- **Yours:** `owned_platforms(platform_id PRIMARY KEY, state IN ('own',
+  'will_own'))`, set on *Your platforms*: what you own is your state, not a
+  fact about the platform (hard rule 3). `game_status(game_id PRIMARY KEY,
+  play_style IN ('through', 'rotation'), platform_id, status, rating,
+  notes)`, where `through` takes
+  `want · playing · finished · dropped` and `rotation` takes `want ·
+  in_rotation · set_aside`, a CHECK for each. `play_events`, the log, as
+  `read_events` is. No `user_id` (D-91).
+- **Client:** server-side, paced to IGDB's limit, a cache table like
+  `hardcover_cache`, rebuildable and not exported. Keys `IGDB_CLIENT_ID` and
+  `IGDB_CLIENT_SECRET`, never sent to the browser, in `docs/SERVICES.md` in
+  the same PR. Every new table except the cache goes in
+  `src/db/export-tables.ts`.
+
+**Check (proposed):** a recorded IGDB fixture parses into a `games` row with
+its genres, its time to beat, and a `game_releases` row per platform with its
+date precision. A `rotation` game set to `finished` is refused, and a
+`through` game set to `in_rotation` is refused. The client never exceeds the
+rate limit, no code path returns the token to a client component, and the
+export test passes with the new tables.
+
+### ☐ 10.2 Search and add, to the queue · M
+Depends on 10.1. Search IGDB as 1.22 searches: after 3 characters and a 500 ms
+pause, cached. Each result shows its year, its genres and its platforms, yours
+first and marked.
+- **The platform you'll play on.** Adding a game asks which of your platforms
+  you'll play it on, offering those it's out (or coming) on that you own or
+  will own. A game on none of yours says so, and can still be added with no
+  platform.
+- **How you play it.** *Play through* or *In rotation*, asked at add. A
+  suggestion is fine (IGDB's 4X, card and roguelike genres lean towards
+  rotation), but it is never decided without you.
+- **Where it goes:** *Up next* (the queue, below) or *Someday*. An
+  unreleased game goes to *Coming out* (10.4).
+- **The queue is an order, so it is stored:** `game_queue(game_id PRIMARY KEY,
+  position)`, contiguous from 1, like 1.10's (data model 2.16), in the
+  export. **Stop and ask at plan time.**
+- No freeform path, as with watch (D-28): when IGDB fails or finds nothing,
+  *Save to inbox*. The inbox has no Games kind yet: a schema question for the
+  plan, as in 9.2.
+
+**Check (proposed):** adding a game with releases on three platforms, one of
+them owned, offers only that one and writes one `games` row, one
+`game_status` row with the platform and play style, and a queue position at
+the end. Adding it again updates without duplicating. A mocked failure offers
+*Save to inbox*.
+
+### ☐ 10.3 Playing, the queue, and played · M
+Depends on 10.2 and 1.9. `/games/status`, with *In flight · Up next · Done*
+(ui.md's rule for every medium):
+- **In flight:** *Playing*, then *In rotation*, as their own groups.
+- **Up next:** the queue in your order, with *Move to…*; starting a queued
+  game takes it off the queue and closes the gap, and Undo puts it back.
+- **Done:** finished games, by year. A rotation game is never here.
+- **Planning, derived:** the queue's total time to beat, through games only,
+  as text (*9 games · about 140 h*); a rotation game adds nothing, because it
+  has no end. A game with no IGDB estimate says *no estimate* and is left out
+  of the sum, never counted as zero.
+
+**Check (proposed):** finishing a through game appends one `play_events` row
+and moves it to Done; a rotation game set aside stays out of Done; starting
+queued #2 of 3 leaves positions 1–2, and its undo restores the order; the
+queue's hours equal the sum of its through games' estimates and skip one
+with none; each tab's count equals its rows.
+
+### ☐ 10.4 Coming out: games you're waiting for · M
+Depends on 10.2. Owner: *tag games as coming out that I'm excited for and see
+those release dates*.
+- **Adding it is the tag.** A wanted game whose release on your platform is
+  after today is *coming out*. That is derived from the date in a view,
+  never stored as a flag (hard rule 2).
+- **The list,** 5.7's pattern: *Out now* (released in the last 30 days), then
+  by month, at the precision IGDB gives (*Mar 14 2027*, *Q2 2027*, *2027*,
+  *TBA*), with the platform it's out on.
+- **Dates move, so the refresh says so.** *Refresh dates* asks IGDB for every
+  coming game, at most once a day, and a date that moved says *was Feb
+  2027*. On release day the game leaves *Coming out* for Someday, or for the
+  end of the queue if you said so when you added it.
+- The dashboard's situation slot (10.0) shows the next three to come out.
+
+**Check (proposed):** a game dated next month on your platform is listed
+under its month, and the same game dated last week is under *Out now*. A
+refresh that moves its date from February to May lists it under May with
+*was Feb 2027*. A game coming only on a platform you don't own says so. No
+page render calls IGDB.
+
+### ☐ 10.5 Games dashboard · M
+Depends on 10.0, 10.3 and 10.4. `/games` in 10.0's design, from the views
+10.1–10.4 define; nothing new is stored. The UX floor and the feel pass's
+rules apply as for every dashboard: no red, every meter fills with
+`--ready`.
+
+**Check (proposed):** with a fixture of one game playing, two in rotation,
+four queued and two coming out, each slot shows them as 10.0 draws; an empty
+ledger shows the search; the feel-pass screenshots at each width.
+
 ---
 
 ## Later — noted, not scheduled
@@ -4392,5 +4662,19 @@ becomes a task once its open question is answered. None has a **Check:**, and
   has `#editor`, `#illustrator` and `#translator`, set on few books today.
   The open question is the schema: a contributor-role table beside
   `books.author_id`, and whether a role shows anywhere but the book sheet.
+- **L-6 Ratings kept outside the Ledger** (2026-11-01 intake; owner: *a
+  future nice-to-have would be some integration with GitHub to keep star
+  rankings of my read books available*). The open questions, in order: where
+  they go, either a file in a GitHub repository (a README or a JSON of each
+  year's top ten, written by the app or by a scheduled job) or a reading
+  service the Ledger already talks to (Hardcover keeps a star rating per
+  book); how a rank becomes stars, when the Ledger has a ranking and no star
+  scale (D-3); and whether a public copy breaks the cut list's *no public
+  pages*, since the repository is public.
+- **L-7 Rank games** (2026-11-01 intake; owner: *ranking system maybe down
+  the line*). Once Phase 10 is in use, a game could be ranked within its year
+  as 3.4b ranks books, with the same *This or that* sorter. The open
+  question is what's ranked: finished through games only, or rotation games
+  too, which have no finish year.
 
 ---
