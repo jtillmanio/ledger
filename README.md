@@ -30,8 +30,8 @@ Every other document is reference. None of them need reading front to back.
 | **[02-architecture.md](docs/02-architecture.md)** | **The system.** Stack, routes, environments, testing, metadata sources, the performance budget | Questioning a structural decision |
 | **[03-data-model.md](docs/03-data-model.md)** | **The reasoning.** Why the schema looks like this (decisions 2.1–2.21), the views, what's proposed | Touching a table or a view |
 | **[04-design.md](docs/04-design.md)** | **How it looks.** The styling blueprint index, the UX floor, the telescope, the plan rail, the interface rules | Building any screen |
-| **[05-roadmap.md](docs/05-roadmap.md)** | **The backlog.** Phases 0–9, every entry with a pass/fail check; the status source of truth | Every build session. One task at a time |
-| **[06-tasklist.md](docs/06-tasklist.md)** | **The build order.** Milestones M1–M25: which roadmap entries, in what order, and why | Picking the next sitting |
+| **[05-roadmap.md](docs/05-roadmap.md)** | **The backlog.** Phases 0–10, every entry with a pass/fail check; the status source of truth | Every build session. One task at a time |
+| **[06-tasklist.md](docs/06-tasklist.md)** | **The build order.** Milestones M1–M26: which roadmap entries, in what order, and why | Picking the next sitting |
 | **[design/mockups.html](design/mockups.html)** | **40 annotated screens.** Authoritative for layout and copy | Building any screen. Open it in a browser |
 | **[DIAGRAMS.md](docs/DIAGRAMS.md)** | **Visual reference.** ERDs, derived layer, runtime, validation pipeline | Orienting to the schema or a data flow |
 | **[CLAUDE.md](CLAUDE.md)** | **Session context.** Auto-loaded by Claude Code | Never directly — it loads itself |
@@ -54,8 +54,8 @@ docs/
   02-architecture.md stack, routes, environments, testing, metadata sources
   03-data-model.md   schema rationale, views, proposed additions
   04-design.md       styling blueprint, UX floor, interface rules
-  05-roadmap.md      phases 0–9, every entry with an acceptance check
-  06-tasklist.md     milestones M1–M25 in build order, coverage
+  05-roadmap.md      phases 0–10, every entry with an acceptance check
+  06-tasklist.md     milestones M1–M26 in build order, coverage
   DIAGRAMS.md        11 Mermaid diagrams
   archive/           the superseded TASKS, FEATURES, ARCHITECTURE, DESIGN
   review/            audits, findings, the decisions log

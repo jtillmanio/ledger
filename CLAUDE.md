@@ -10,7 +10,7 @@ layout: `docs/01-product.md` (the brief and the feature index, F-nn),
 `docs/02-architecture.md`, `docs/03-data-model.md` (why the schema looks like
 this: decisions 2.1–2.21), `docs/04-design.md` (the styling blueprint, the UX
 floor, the interface rules), `docs/05-roadmap.md` (the backlog: every entry and
-its **Check:**) and `docs/06-tasklist.md` (milestones M1–M25, the entries in
+its **Check:**) and `docs/06-tasklist.md` (milestones M1–M26, the entries in
 build order). `docs/HANDOFF.md` is full context, `docs/DIAGRAMS.md` visual;
 `docs/archive/` holds the superseded TASKS, FEATURES, ARCHITECTURE and DESIGN.
 `docs/SERVICES.md` lists every outside service, its account and where each key
@@ -75,8 +75,8 @@ such document.
 | Data model | `src/db/schema.ts` + `etl/views.sql` (what runs); `docs/03-data-model.md` (§ 2. Decisions, why; § 4. Proposed additions); `docs/DIAGRAMS.md` § 1 |
 | Domain specs (other) | `docs/04-design.md` § 5 (telescope), § 6 (plan rail) and § 11 (interface, readiness); `docs/02-architecture.md` § 7 (performance budget); `design/Telescope Spec.dc.html`; `design/Plan Rail Spec.dc.html`; `docs/01-product.md` § Metrics |
 | Deploy | `docs/START-HERE.md` Steps 13–14, `.github/workflows/release.yml`, `.claude/rules/git.md` § Merging |
-| Roadmap (source, if separate) | `docs/05-roadmap.md` (phases 0–9; its checkboxes are the status source of truth) |
-| Task list (milestones + stubs) | `docs/06-tasklist.md` (M1–M25; M1–M9 are START-HERE's sittings); `/new-task <roadmap IDs>` converts one milestone at a time into `docs/tasks/`, copying each **Check:** verbatim |
+| Roadmap (source, if separate) | `docs/05-roadmap.md` (phases 0–10; its checkboxes are the status source of truth) |
+| Task list (milestones + stubs) | `docs/06-tasklist.md` (M1–M26; M1–M9 are START-HERE's sittings); `/new-task <roadmap IDs>` converts one milestone at a time into `docs/tasks/`, copying each **Check:** verbatim |
 | Tasks | `docs/tasks/` (fixed; Done tasks in `docs/tasks/archive/`) |
 | Decisions | `docs/review/decisions.md` (IDs `D-n`) |
 | Review findings | `docs/review/PROTOCOL.md` (protocol), `docs/review/LEDGER.md` (ledger; IDs `R0-nn`…`R3-nn`, `S-nn`, `M-nn`) |

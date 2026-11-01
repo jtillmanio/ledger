@@ -20,8 +20,8 @@ milestone._
 | Milestones | Scope | Roadmap phases | Entries |
 |---|---|---|---|
 | M1–M9 | **MVP: cutover from the Sheets.** Every MVP feature in [01-product.md § Feature index](01-product.md#feature-index) | 0, 1, and 2.11a, plus what 1.25 names | 55 |
-| M10–M15 | **Next:** the pace engine, the comics dashboard, editing | 2, 3 | 30 |
-| M16–M25 | **Later:** enrichment, the remaining surfaces, polish, AI curation, watch and music | 4–9, and 6.2b in M12 | 56 |
+| M10–M15 | **Next:** the pace engine, the comics dashboard, editing | 2, 3 | 31 |
+| M16–M26 | **Later:** enrichment, the remaining surfaces, polish, AI curation, watch, music and games | 4–10, and 6.2b in M12 | 64 |
 
 - **M1–M9 are START-HERE's sittings under one numbering.** M1 and M2 are
   sittings 1–2 (Phase 0) with the Phase 0 work that came after them; M3–M9 are
@@ -37,7 +37,8 @@ milestone._
   cite them; M9 has two because sitting 9 does.
 - **Runs in parallel.** M8 needs only M1, so it can be built any time before
   the final load. M23–M24 (watch) need only Phase 0 and can be pulled forward
-  as a change of pace.
+  as a change of pace; so can M26 (games), once its design (10.0) settles
+  the navigation.
 - **Next and Later milestones are a rough plan.** Each is reshaped when the
   milestone before it closes, and every schema proposal in them is asked at its
   task's plan gate (CLAUDE.md, *Stop and ask*).
@@ -116,6 +117,12 @@ milestone._
 | F-56 Song ranking and favourite albums | Later | 9.4, 9.5 | M25 |
 | F-57 Music dashboard and status | Later | 9.6 | M25 |
 | F-58 Audiobooks | MVP | 1.23 | M9 |
+| F-59 A queue to listen next | Later | 5.14 | M17 |
+| F-60 Rank a book as I finish it, and every year's top ten | Next | 3.4b | M14 |
+| F-61 New albums from the artists I follow on Spotify | Later | 9.7 | M25 |
+| F-62 Games: search, a queue, by my platforms | Later | 10.0, 10.1, 10.2, 10.3 | M26 |
+| F-63 Games coming out | Later | 10.4 | M26 |
+| F-64 Games dashboard | Later | 10.5 | M26 |
 
 ### Entities → tasks
 
@@ -137,6 +144,8 @@ milestone._
 | `shelf_titles` | 8.6 (proposed) |
 | `title_providers` | 8.9 (proposed) |
 | `artists`, `albums`, `tracks` (music), `artist_follows`, `album_status`, `listen_events`, song rankings | 9.1, 9.4 (proposed) |
+| `listen_queue` | 5.14 (proposed) |
+| `games`, `game_genres`, `platforms`, `game_releases`, `owned_platforms`, `game_status`, `play_events`, the IGDB cache; `game_queue` | 10.1; 10.2 (proposed) |
 
 Views are in `etl/views.sql` and listed in data model §3; each new one lands
 with the task that first reads it.
@@ -370,15 +379,16 @@ with the task that first reads it.
 ## M14: The run detail and the detail sheets — Next
 
 **Goal:** The run detail and the detail sheets.  
-**Demo at exit:** Open a book or an issue as a sheet over its list and dismiss it with Back; rate a book; section a run into eras, with ordinals, release dates and read rows hidden.  
-**Features:** F-29, F-31, F-30  
+**Demo at exit:** Open a book or an issue as a sheet over its list and dismiss it with Back; rate a book, rank it in its year as you finish it, and open a past year's top ten; section a run into eras, with ordinals, release dates and read rows hidden.  
+**Features:** F-29, F-31, F-60, F-30  
 **Depends on:** Cutover  
-**Order:** 3.5 → 3.4 → 3.6 → 3.6b → 3.6c.
+**Order:** 3.5 → 3.4 → 3.4b → 3.6 → 3.6b → 3.6c. 3.4b changes the column 3.4 writes, so it follows it.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
 |  | 3.5 | Detail sheets — books and issues | M |  | — |
 |  | 3.4 | Book ratings and top-books reorder | S |  | — |
+|  | 3.4b | Rank a book when you finish it, and every year's top ten | M |  | 3.4, 1.5 |
 |  | 3.6 | Eras on the run detail | M |  | — |
 |  | 3.6b | Spine rows — ordinal gutter and release dates | S |  | 0.8b |
 |  | 3.6c | Hide read in this run | S |  | 0.8a |
@@ -418,10 +428,10 @@ with the task that first reads it.
 ## M17: Book surfaces — Later
 
 **Goal:** The remaining book surfaces.  
-**Demo at exit:** Shelves with notes, DNF with a reason, books coming out, a page per series, author and universe pages, and *In the middle of*.  
-**Features:** F-34, F-31, F-37, F-38, F-20  
-**Depends on:** M7 (1.9), M8 (1.15)  
-**Order:** 5.1 → 5.5 → 5.7 → 5.9 → 5.11 → 5.12: 5.11 builds on 5.9's series page, and 5.12 reads 5.1's shelves and 5.11's follows.
+**Demo at exit:** Shelves with notes, DNF with a reason, books coming out, a page per series, author and universe pages, *In the middle of*, and a queue of audiobooks to listen next.  
+**Features:** F-34, F-31, F-37, F-38, F-20, F-59  
+**Depends on:** M7 (1.9), M8 (1.15), M9 (1.23)  
+**Order:** 5.1 → 5.5 → 5.7 → 5.9 → 5.11 → 5.12 → 5.14: 5.11 builds on 5.9's series page, and 5.12 reads 5.1's shelves and 5.11's follows. 5.14 needs only 1.23 and 1.9, so it can go first.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -431,6 +441,7 @@ with the task that first reads it.
 |  | 5.9 | Series page from `series_progress` | M |  | — |
 |  | 5.11 | Author and universe pages, and the follow control | M |  | 1.15, 5.9 |
 |  | 5.12 | In the middle of: series, authors, universes and reading-order shelves | S |  | 1.9, 1.15, 5.1, 5.11 |
+|  | 5.14 | Audiobooks: a queue to listen next | M |  | 1.23, 1.9 |
 
 ## M18: Comic surfaces — Later
 
@@ -554,10 +565,10 @@ with the task that first reads it.
 ## M25: Music — Later
 
 **Goal:** A fourth medium, last (D-75).  
-**Demo at exit:** Follow an artist, mark albums listened, rank an artist's songs with *This or that*, and see the music dashboard.  
-**Features:** F-55, F-56, F-57  
+**Demo at exit:** Follow an artist, mark albums listened, rank an artist's songs with *This or that*, see the music dashboard, and find a coming album from an artist you follow on Spotify already on To listen.  
+**Features:** F-55, F-56, F-57, F-61  
 **Depends on:** M24 (after Phase 8)  
-**Order:** 9.0 first: a fourth medium changes the phone media bar every screen shares, so it is designed before it is built.
+**Order:** 9.0 first: a fourth medium changes the phone media bar every screen shares, so it is designed before it is built. 9.7 last: it adds to 9.2's lists through 9.3's statuses.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -568,6 +579,24 @@ with the task that first reads it.
 |  | 9.4 | Rank an artist's songs | M |  | 9.2 |
 |  | 9.5 | Which albums you favour | S |  | 9.4 |
 |  | 9.6 | Music dashboard and status | M |  | 9.0, 9.3, 1.9 |
+|  | 9.7 | Follow from Spotify: new albums into To listen | M |  | 9.2, 9.3 |
+
+## M26: Games — Later
+
+**Goal:** A fifth medium, a planning tool for what to play (D-102).  
+**Demo at exit:** Set your platforms, add a game for the one you'll play it on as *play through* or *in rotation*, order the queue and see its hours, see the games you're waiting for by release date, and the games dashboard.  
+**Features:** F-62, F-63, F-64  
+**Depends on:** M25 by default; needs only M1–M2 (Phase 0) and 9.0's navigation, so it can be pulled forward  
+**Order:** 10.0 first, for 9.0's reason: a fifth medium changes the navigation every screen shares. Then 10.1 → 10.2 → 10.3 → 10.4 → 10.5.
+
+| Done | # | Task | Size | Notes | Depends on |
+|---|---|---|---|---|---|
+|  | 10.0 | Games in the shell, designed | M |  | 9.0 |
+|  | 10.1 | Schema and IGDB client | M |  | 10.0 |
+|  | 10.2 | Search and add, to the queue | M |  | 10.1 |
+|  | 10.3 | Playing, the queue, and played | M |  | 10.2, 1.9 |
+|  | 10.4 | Coming out: games you're waiting for | M |  | 10.2 |
+|  | 10.5 | Games dashboard | M |  | 10.0, 10.3, 10.4 |
 
 ---
 

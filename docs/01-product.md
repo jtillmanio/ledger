@@ -24,8 +24,8 @@ and removed as too much overhead). Marking an issue read on a phone in a
 10,800-row tab is the worst part of using it. The formula layer is locked to
 Google Sheets (`QUERY` and `ARRAYFORMULA` export as `__xludf.DUMMYFUNCTION`),
 and the books workbook is one table pivoted across ten year tabs, so moving a
-book between years is a cut-and-paste. A film and TV watchlist, and later music,
-start from nothing.
+book between years is a cut-and-paste. A film and TV watchlist, and later music
+and games, start from nothing.
 
 ### Users
 
@@ -62,7 +62,7 @@ completion date or progress bar against the whole catalog. Each is in the
 | Users and data volume | One user, single-user schema (D-91; the old `user_id` columns go in 6.18). About 10,138 comic issues in 10,761 placements across 258 runs, 438 prerequisite edges, 1,478 books (2026-09-23 extract) |
 | Offline | None until 6.4 (PWA, queued writes); no cross-device staleness handling (D-9) |
 | Import | `Comics.xlsx` and `Books.xlsx` through `etl/extract.py` and sidecar CSVs until cutover; the owner's Calibre library, read-only (D-73) |
-| Metadata | Metron, Open Library, Hardcover, TMDB, MusicBrainz, on free tiers; called from add flows and backfill only, never to render a page |
+| Metadata | Metron, Open Library, Hardcover, TMDB, MusicBrainz, IGDB, on free tiers, and Spotify for the artists you follow (D-103); called from add flows and backfill only, never to render a page |
 | Stack | Next.js 16, Postgres on Neon, Drizzle, plain CSS ([architecture § Stack](02-architecture.md#2-stack)) |
 | Cadence | One task per Claude Code session, one in flight at a time (`workflow.wipLimit`) |
 
@@ -99,7 +99,7 @@ The feel pass left six more, each written into its task as *stop and ask*
 
 ## Feature index
 
-Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), **Next** the first work after it (M10–M15), **Later** the rest (M16–M25). A feature whose work spans two gets the earlier, with the rest noted. Screens are mockup `data-id`s; `—` means the screen is not drawn yet, or the feature has none.
+Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), **Next** the first work after it (M10–M15), **Later** the rest (M16–M26). A feature whose work spans two gets the earlier, with the rest noted. Screens are mockup `data-id`s; `—` means the screen is not drawn yet, or the feature has none.
 
 | ID | Feature | User story | Priority | Roadmap | Screens |
 |---|---|---|---|---|---|
@@ -161,6 +161,12 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | F-56 | **Song ranking and favourite albums** (Music) | As a listener, I want to rank an artist's songs by picking between two, and see which albums I favour | Later | 9.4, 9.5 | — |
 | F-57 | **Music dashboard and status** (Music) | As a listener, I want the music dashboard and its status tabs | Later | 9.6 | — |
 | F-58 | **Audiobooks** (Books) | As a reader, I want to mark a book I'm listening to, have a finished listen count as a read, and see listens apart from reads, with an icon | MVP | 1.23 | `blist`, `status`, `bookdetail` |
+| F-59 | **A queue to listen next** (Books) | As a listener, I want the audiobooks I mean to listen to next in my order, beside what I'm listening to and what I've listened to | Later | 5.14 | `status` |
+| F-60 | **Rank a book as I finish it, and every year's top ten** (Books) | As a reader, I want to place each book I finish among that year's, and see any year's top ten | Next | 3.4b | `top` |
+| F-61 | **New albums from the artists I follow on Spotify** (Music) | As a listener, I want the artists I follow on Spotify followed here, and their coming albums on To listen without adding them | Later | 9.7 | — |
+| F-62 | **Games: search, a queue, by my platforms** (Games) | As a player, I want to add a game for the platform I'll play it on, say whether I play it through or in rotation, and keep a queue | Later | 10.0, 10.1, 10.2, 10.3 | — |
+| F-63 | **Games coming out** (Games) | As a player, I want the games I'm waiting for, with their release dates on my platforms, and to know when a date moves | Later | 10.4 | — |
+| F-64 | **Games dashboard** (Games) | As a player, I want the games dashboard: what I'm playing, what's next, and what's coming | Later | 10.5 | — |
 
 ### Observable outcomes for MVP features
 
@@ -217,6 +223,8 @@ B, C, W and M numbers are cited across the docs and stay.
 | B17 | Every Calibre book in the Ledger, kept out of the way; Calibre re-synced | planned | 2026-10-26. A new *Unlisted* level below Someday, found by search and its own chip, on no list or dashboard. 1.18 re-runs until cutover; after it, an in-app upload sync; Google Drive later. roadmap 1.21, 1.18, 4.4, Later L-4, D-83, D-86 |
 | B18 | Audiobooks: listening, and listened | planned | 2026-10-26. A *Listening* status, a finished listen counts as a read, a headphones glyph, reads and listens counted apart. roadmap 1.23, D-85 |
 | B19 | Create a shelf while adding a book | planned | 2026-10-26. *New shelf…* in the add sheet's shelf picker. roadmap 5.1 |
+| B20 | Audiobooks: listening, a queue to listen next, listened | planned | 2026-11-01. 1.23 builds *Listening* and *Listened*; the queue is a stored order, `listen_queue`, on the status screens' Up next. roadmap 5.14 |
+| B21 | Rank each book as I finish it; any year's top ten | planned | 2026-11-01. Every read of a year ranked, placed by *This or that* at the finish; the top ten is the first ten; past years too. Proposed: the rank moves to the read. roadmap 3.4b, D-101; ratings kept on GitHub or another service are Later § L-6 |
 
 ### Comics
 
@@ -260,6 +268,18 @@ B, C, W and M numbers are cited across the docs and stay.
 | M1 | Artists I want to listen to | planned | `artist_follows` (*want · listening*). roadmap 9.1, 9.2 |
 | M2 | Albums to listen to, from those artists | planned | The discography from MusicBrainz, studio albums by default; `album_status`, `listen_events`. roadmap 9.2, 9.3 |
 | M3 | Rank each song for some artists, and see which albums I favour | planned | A stored order built with a *This or that* sorter; album favourites derived. roadmap 9.4, 9.5 |
+| M4 | The artists I follow on Spotify have their coming albums put on To listen | planned | 2026-11-01. Follows from Spotify, matched through MusicBrainz; dates from MusicBrainz, since Spotify lists an album only once it's out; a nightly job. Amends D-75. roadmap 9.7, D-103 |
+
+### Games (2026-11-01 additions)
+
+| # | Feature | Status | What it needs |
+|---|---|---|---|
+| G1 | Search and add games to a queue | planned | IGDB, server-side and cached; a stored, ordered `game_queue`. roadmap 10.1, 10.2 |
+| G2 | Metadata by the platform I own or will own it on | planned | `owned_platforms` (*own · will own*); a game is added for one of yours, from its per-platform releases. roadmap 10.1, 10.2 |
+| G3 | Genre, and play through versus play in rotation | planned | IGDB's genres; the owner's play style decides the statuses, and a rotation game never reaches Done. roadmap 10.1, 10.3, D-102 |
+| G4 | Mainly a planning tool | planned | The queue in your order, with its hours from IGDB's time to beat, derived. roadmap 10.3 |
+| G5 | Games coming out that I'm excited for, with their dates | planned | Derived from a wanted game's release on your platform; refreshed when you ask, with a moved date shown. roadmap 10.4 |
+| G6 | Rank games | later | roadmap *Later* § L-7 |
 
 ## Beyond the list
 
@@ -861,6 +881,20 @@ ranking as a view. It comes after Watch, and it starts with design (9.0),
 because a fourth medium changes the phone media bar every screen shares. Out:
 playback, scrobbling, streaming-service sync.
 
+**The 2026-11-01 intake** (B20, B21, M4, G1–G6) asked for four things, two
+of them partly planned. Audiobooks already had *Listening* and *Listened*
+(1.23); the queue is new (5.14) and waits for Phase 5, since it loses nothing
+if it isn't there at cutover. A year's top books already had 3.4's reorder;
+ranking every book at the finish, and every past year, is 3.4b, which lifts
+D-3's cap of ten: everything is ranked, and the top ten is read off the order
+(D-101). Spotify reverses one line of D-75: it supplies the artists you
+follow, and MusicBrainz the dates, because Spotify knows an album only from
+its release day (D-103, 9.7). Games are a fifth medium, Phase 10, after
+Music and able to be pulled forward (D-102). Their novel part is the owner's
+own split: a game played through ends, a game played in rotation doesn't,
+so each takes its own statuses. Ratings kept on GitHub, and ranking games,
+are *Later* (L-6, L-7).
+
 **Parked under *Later*, because no API exists.** Marvel Unlimited (L-1) and
 League of Comic Geeks ratings (L-2) have no public APIs. Each has an open
 question that decides whether it can be built at all. Discovering editions
@@ -910,9 +944,10 @@ says why. Watch's own in/out table is in [§ Watch](#watch).
 - **Social features, comments, follows.** No.
 - **Mobile native app.** The PWA gets you the home-screen icon without an app
   store.
-- **Music playback, scrobbling or streaming-service sync** (D-75). Music is a
-  list of what to listen to and what you think of it, not a player or a
-  listening history fed by another service.
+- **Music playback or scrobbling** (D-75). Music is a list of what to listen
+  to and what you think of it, not a player or a listening history fed by
+  another service. The one sync is the artists you follow on Spotify (9.7,
+  D-103): it adds to the list, never to the log.
 
 - **Newly available on your services** (watch). It depends on a provider
   feed that goes stale, it changes weekly for reasons that have nothing to do
