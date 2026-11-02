@@ -4,8 +4,9 @@
 // (the w390-light project); the screenshots and the sideways-scroll check run
 // at every width, light and dark, and under reduced motion.
 import { expect, test, type Page } from "@playwright/test";
+import { testSql } from "../db";
 import {
-  E2E_INBOX_COUNT, E2E_LONG_RUN_ID, E2E_RUN_ID, expectNoAxeViolations, expectNoHorizontalScroll, screenshot,
+  E2E_INBOX_COUNT, E2E_LONG_RUN_ID, E2E_RUN_ID, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot,
 } from "./helpers";
 
 // Sets its own viewport: runs once, in w390-light.
@@ -129,26 +130,27 @@ test("at 1100 the sidebar is a 64px icon rail: every item named, its tooltip hid
   const links = page.locator(".side a");
   for (const link of await links.all()) await expect(link).toHaveAccessibleName(/\S/);
 
+  // Runs by its label: comics Add shares its href until you add to a run (1.19).
   const tipOpacity = (sel: string) =>
     page.locator(sel).first().evaluate((el) => getComputedStyle(el, "::after").opacity);
-  expect(await tipOpacity('.side a[href="/comics/runs"]'), "hidden at rest").toBe("0");
+  expect(await tipOpacity('.side a[data-tip="Runs"]'), "hidden at rest").toBe("0");
 
   // Tab in from the top of the page until the focus is on Runs.
   for (let n = 0; n < 20; n++) {
     await page.keyboard.press("Tab");
-    if (await page.locator('.side a[href="/comics/runs"]').evaluate((el) => el === document.activeElement)) break;
+    if (await page.locator('.side a[data-tip="Runs"]').evaluate((el) => el === document.activeElement)) break;
   }
-  await expect(page.locator('.side a[href="/comics/runs"]')).toBeFocused();
+  await expect(page.locator('.side a[data-tip="Runs"]')).toBeFocused();
   // At once: no hover delay on :focus-visible.
-  await expect.poll(() => tipOpacity('.side a[href="/comics/runs"]'), { timeout: 500 }).toBe("1");
+  await expect.poll(() => tipOpacity('.side a[data-tip="Runs"]'), { timeout: 500 }).toBe("1");
 });
 
 test("at 1280 the sidebar is 224px with labels, and no tooltip", ONCE, async ({ page }) => {
   await size(page, 1280);
   await page.goto("/comics");
   expect((await page.locator(".side").boundingBox())!.width).toBe(224);
-  await expect(page.locator('.side a[href="/comics/runs"] .nl')).toBeVisible();
-  const tip = await page.locator('.side a[href="/comics/runs"]').evaluate((el) => getComputedStyle(el, "::after").display);
+  await expect(page.locator('.side a[data-tip="Runs"] .nl')).toBeVisible();
+  const tip = await page.locator('.side a[data-tip="Runs"]').evaluate((el) => getComputedStyle(el, "::after").display);
   expect(tip, "tooltips are hidden at rest").toBe("none");
 });
 
@@ -383,5 +385,84 @@ test.describe("/watch (AC-5)", () => {
     await page.locator('.bar nav a[href="/watch"]').click();
     await page.waitForURL("**/watch");
     await expect(page.locator('.bar nav a[href="/watch"]')).toHaveAttribute("aria-current", "page");
+  });
+});
+
+// Roadmap 1.19: comics Add lands on the run you last added to. Its own run and
+// issue, so no other spec's run changes; removed again afterwards (TEST database).
+const LAST_RUN = { id: "e2e-last-run", title: "ZZ E2E Last Run" };
+const LAST_ISSUE = { id: "e2e-last-run-issue", label: "ZZ Last Run (2001) #1" };
+
+async function cleanLastRun() {
+  const sql = testSql();
+  try {
+    await sql`DELETE FROM run_issues WHERE run_id = ${LAST_RUN.id}`;
+    await sql`DELETE FROM runs WHERE id = ${LAST_RUN.id}`;
+    await sql`DELETE FROM issues WHERE id = ${LAST_ISSUE.id}`;
+  } finally {
+    await sql.end();
+  }
+}
+
+test.describe("comics Add remembers the last run (1.19)", () => {
+  test.beforeAll(async () => {
+    await cleanLastRun();
+    const sql = testSql();
+    try {
+      await sql`INSERT INTO runs (id, title) VALUES (${LAST_RUN.id}, ${LAST_RUN.title})`;
+      await sql`INSERT INTO issues (id, label) VALUES (${LAST_ISSUE.id}, ${LAST_ISSUE.label})`;
+    } finally {
+      await sql.end();
+    }
+  });
+  test.afterAll(cleanLastRun);
+
+  const sideAdd = (page: Page) => page.locator(".side").getByRole("link", { name: "Add", exact: true });
+
+  test("after an add, the sidebar's Add opens that run's Add issues; a run page is still Runs (AC-4)", ONCE, async ({ page }) => {
+    await size(page, 1280);
+    await page.goto("/comics");
+    await expect(sideAdd(page)).toHaveAttribute("href", "/comics/runs"); // nothing added yet
+
+    const target = `/comics/${LAST_RUN.id}/add`;
+    await page.goto(target);
+    const typeIt = page.getByRole("button", { name: "Type it" });
+    await hydrated(typeIt);
+    await typeIt.click();
+    await page.getByLabel("One per line, ranges allowed").fill(LAST_ISSUE.label);
+    await page.getByRole("button", { name: "Add 1 issue" }).click();
+    await expect(page.getByText("1 issue added")).toBeVisible();
+    // The nav knows at once: a client navigation never redraws the root layout.
+    await expect(sideAdd(page)).toHaveAttribute("href", target);
+
+    // A fresh load reads it back from the cookie the insert set.
+    await page.goto("/comics");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(sideAdd(page)).toHaveAttribute("href", target);
+    await sideAdd(page).click();
+    await expect(page).toHaveURL(target);
+    await expect(page.getByRole("heading", { level: 1, name: "Add issues" })).toBeVisible();
+    await expect(sideAdd(page)).toHaveAttribute("aria-current", "page");
+
+    await page.goto(`/comics/${LAST_RUN.id}`);
+    const current = page.locator('.side [aria-current="page"]');
+    await expect(current.filter({ hasText: "Runs" })).toHaveCount(1);
+    await expect(sideAdd(page)).not.toHaveAttribute("aria-current", "page");
+  });
+
+  test("Add is a named link at least 24px tall in the rail and the sidebar, current only on Add issues (AC-5)", ONCE, async ({ page }) => {
+    for (const [width, nav] of [[834, ".rail"], [1100, ".side"], [1280, ".side"]] as const) {
+      await size(page, width);
+      for (const [path, current] of [["/comics", false], [`/comics/${E2E_RUN_ID}/add`, true]] as const) {
+        await page.goto(path);
+        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+        const add = page.locator(nav).getByRole("link", { name: "Add", exact: true });
+        await expect(add, `${width} ${path}`).toBeVisible();
+        expect((await add.boundingBox())!.height, `${width} ${path}`).toBeGreaterThanOrEqual(24);
+        if (current) await expect(add, `${width} ${path}`).toHaveAttribute("aria-current", "page");
+        else await expect(add, `${width} ${path}`).not.toHaveAttribute("aria-current", "page");
+      }
+      await expectNoAxeViolations(page, ["link-name", "button-name", "landmark-unique", "aria-hidden-focus", "svg-img-alt", "target-size"]);
+    }
   });
 });

@@ -1,14 +1,14 @@
 ---
 id: TASK-038
 title: 1.19 Comics Add remembers the last run
-status: Ready
+status: In progress
 depends_on: [TASK-014, TASK-005]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 11e5e5b
 ---
 
 # TASK-038 — 1.19 Comics Add remembers the last run
@@ -64,9 +64,48 @@ nothing it links to `/comics/runs`. A soft-deleted run is never the target.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The Check says "all three navs"; the owner settled it as the two bars that draw medium items (the tablet rail and the sidebar; the phone's media bar draws only the switch). The Check's wording is the owner's to change (approved at plan)
+- Candidate decision: the last run is a per-browser cookie (`ledger_last_run`, like R1-13's `ledger_medium`), set only by a successful insert; an undo doesn't reset it (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Owner answers at the plan (2026-11-02): "all three navs" means the two bars that draw medium items (rail, sidebar), not the phone; the run is kept in a cookie, not a column.
+
+### Steps
+
+1. `src/lib/last-run.ts` (new): cookie `ledger_last_run` (httpOnly, lax, path `/`, one year), a length-checked parser, `addHref(runId | null)` → `/comics/<id>/add` or `/comics/runs`.
+2. `POST /api/runs/[runId]/issues` sets the cookie only when `result.ok`; a dry run, a 4xx or a 409 doesn't. Undo leaves it (you were still adding to that run).
+3. `liveRun(id)` in `src/db/queries.ts` (`deleted_at IS NULL`). A server `LastRun` (`src/components/nav/LastRun.tsx`) reads the cookie, checks the run, and streams in a `<Suspense>` in `Shell.tsx` beside `InboxCount`: outside the page budget (D-77), and the root layout stays static-capable. A failing read is "no run".
+4. `ShellFrame` holds the remembered run in state behind a small context: the streamed `LastRun` fills it, and `AddIssues.tsx` sets it after a successful insert (a client navigation doesn't re-render the root layout, so this keeps the link fresh). `ShellFrame` hands the rail and the sidebar the items with the resolved *Add* href.
+5. `items.ts`: `comics-add` `enabled: true`, default href `/comics/runs`, plus a rule making it current on any `/comics/<run>/add` (otherwise adding to B while *Add* points at A marks *Runs*). A run's own page still marks *Runs*.
+
+### Files
+
+- `src/lib/last-run.ts` (new): cookie name, parsing, href.
+- `src/components/nav/LastRun.tsx` (new; not in Files likely touched): the streamed server read and the client context.
+- `src/components/nav/items.ts`, `Shell.tsx`, `ShellFrame.tsx`: the item on, the href to the bars.
+- `src/app/api/runs/[runId]/issues/route.ts`: set the cookie on a successful insert.
+- `src/db/queries.ts`: `liveRun`.
+- `src/components/AddIssues.tsx` (not in Files likely touched): the client update after an insert.
+- `test/nav-items.test.tsx`, `test/last-run.test.ts` (new), `test/e2e/shell.spec.ts`.
+- `NavRail.tsx` and `Sidebar.tsx` already take `items`; `MediaBar.tsx` unchanged (the phone stays as designed).
+
+### Test strategy
+
+- AC-1: the union of AC-2, AC-3 and AC-4.
+- AC-2 `test/nav-items.test.tsx`: `comics-add` enabled; given run A the rail and sidebar render `/comics/A/add`, given none `/comics/runs`; the other hrefs unchanged; *Add* current only on an *Add issues* screen.
+- AC-3 `test/last-run.test.ts` (TEST DB): the POST handler sets the cookie on a successful insert, not on a dry run or a 400/404; a soft-deleted remembered run → `/comics/runs`.
+- AC-4 `test/e2e/shell.spec.ts` at 1280: add one issue, open `/comics`, the sidebar *Add* href, follow it; a run page still marks *Runs*.
+- AC-5: axe and the *Add* box ≥ 24px in the rail and the sidebar in `shell.spec.ts`; ui-verifier screenshots at 768, 1024 and 1280, light and dark.
+
+**Risks**: per-browser memory (the owner's choice). Nothing in the UI soft-deletes a run yet; one deleted mid-session leaves the link stale until the next full load.
+
+### Revisions after approval (owner-approved, 2026-11-02)
+
+1. `src/components/nav/NavLink.tsx` (new to the list) and `items.ts`: an optional `noPrefetch` on `NavItem`, set on comics Add, so the nav's Add issues link never prefetches, as every other one doesn't (task 1.3c). The client context sits in `ShellFrame.tsx` (a client file) rather than `LastRun.tsx`, which is a server component.
+2. `src/app/globals.css` (new to the list): from 1024 to 1279px every sidebar link's accessible name was doubled ("Add Add") because the tooltip's `::after{content:attr(data-tip)}` counts in it; `content:attr(data-tip) / ""` keeps it out. AC-5's browser test checks the exact name *Add* at 1100. The two existing sidebar tooltip tests found Runs by its href, now shared with Add before any add; they find it by `data-tip="Runs"`.
+
+**Size**: 11 files (over 8), 13 after the revisions. `splitPolicy` is `never-split` and the task is already `autonomy: attended`; it stays whole because the cookie, the shell and the item are one thread.
 
 ## Review log
 

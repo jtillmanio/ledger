@@ -835,6 +835,15 @@ export async function inboxCount(userId: string): Promise<number> {
 }
 
 /**
+ * Whether Add issues can add to `runId`: not soft-deleted and not a placeholder, as the insert
+ * requires. Comics Add never lands on any other run (1.19).
+ */
+export async function liveRun(runId: string): Promise<boolean> {
+  const rows = await sql`SELECT 1 FROM runs WHERE id = ${runId} AND deleted_at IS NULL AND NOT placeholder`;
+  return rows.length > 0;
+}
+
+/**
  * The run a comics note resolves against (task 1.4b; owner, 2026-10-09): the
  * one holding your most recent dated read, else the first live run by title.
  * Null with no runs at all. The run chip on Add issues changes it.

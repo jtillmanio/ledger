@@ -9,7 +9,7 @@ import MediaBar from "../src/components/nav/MediaBar";
 import NavRail from "../src/components/nav/NavRail";
 import Sidebar from "../src/components/nav/Sidebar";
 import ShellFrame from "../src/components/nav/ShellFrame";
-import { currentItem, mediumItems, NAV_ITEMS, visibleItems, type NavItem } from "../src/components/nav/items";
+import { currentItem, mediumItems, NAV_ITEMS, visibleItems, withLastRun, type NavItem } from "../src/components/nav/items";
 
 const nav = vi.hoisted(() => ({ pathname: "/comics" }));
 vi.mock("next/navigation", () => ({
@@ -34,9 +34,10 @@ describe("NAV_ITEMS (AC-2)", () => {
   });
 
   it("a disabled item renders in no bar", () => {
-    // `watch` is a medium (all three bars draw the switch); `comics-runs` is a
+    // `watch` is a medium (all three bars draw the switch); `comics-status` is a
     // medium item (the rail and the sidebar draw those, the phone bar does not).
-    for (const [id, drawnBy] of [["watch", 3], ["comics-runs", 2]] as const) {
+    // Not `comics-runs`: comics Add shares its href until you add to a run (1.19).
+    for (const [id, drawnBy] of [["watch", 3], ["comics-status", 2]] as const) {
       const href = `href="${hrefOf(id)}"`;
       const before = Object.entries(bars()).filter(([, html]) => html.includes(href));
       expect(before.length, `${id} drawn before the flip`).toBe(drawnBy);
@@ -71,7 +72,7 @@ describe("NAV_ITEMS (AC-2)", () => {
   });
 
   it("keeps the unbuilt screens out: Search, Settings, Tracks, Plan, Shelves, Top", () => {
-    const off = ["search", "settings", "comics-tracks", "comics-add", "books-plan", "books-shelves", "books-top"];
+    const off = ["search", "settings", "comics-tracks", "books-plan", "books-shelves", "books-top"];
     for (const id of off) expect(NAV_ITEMS.find((i) => i.id === id)?.enabled, id).toBe(false);
     for (const [name, html] of Object.entries(bars())) {
       expect(html, name).not.toMatch(/Ctrl K|Settings|Shelves|Tracks/);
@@ -93,6 +94,57 @@ describe("NAV_ITEMS (AC-2)", () => {
     for (const file of ["MediaBar", "Sidebar"]) {
       expect(readFileSync(`src/components/nav/${file}.tsx`, "utf8"), file).toMatch(/<Link href="\/" prefetch=\{false\}/);
     }
+  });
+});
+
+describe("comics Add remembers the last run (1.19, AC-2)", () => {
+  beforeEach(() => { nav.pathname = "/comics"; });
+  const others = (items: NavItem[]) => items.filter((i) => i.id !== "comics-add").map((i) => [i.id, i.href]);
+  const addLinks = (html: string) => [...html.matchAll(/<a [^>]*href="([^"]*)"[^>]*>(?:(?!<\/a>).)*>Add</g)].map((m) => m[1]);
+
+  it("is on, and out of the unbuilt screens", () => {
+    const add = NAV_ITEMS.find((i) => i.id === "comics-add")!;
+    expect(add.enabled).toBe(true);
+    expect(visibleItems()).toContain(add);
+  });
+
+  it("links to the remembered run's Add issues in every bar that draws comics' items", () => {
+    const all = bars(withLastRun(NAV_ITEMS, "A"));
+    for (const name of ["the tablet rail", "the sidebar"] as const) {
+      expect(addLinks(all[name]), name).toEqual(["/comics/A/add"]);
+    }
+    // The phone's bar draws only the media switch (owner, 2026-11-02): its Add is the thumb bar's.
+    expect(all["the phone bar"]).not.toContain("/add");
+  });
+
+  it("links to the run list before any add, and a run id is encoded", () => {
+    for (const [run, href] of [[null, "/comics/runs"], ["a b/c", "/comics/a%20b%2Fc/add"]] as const) {
+      const all = bars(withLastRun(NAV_ITEMS, run));
+      for (const name of ["the tablet rail", "the sidebar"] as const) {
+        expect(addLinks(all[name]), `${run} in ${name}`).toEqual([href]);
+      }
+    }
+  });
+
+  it("changes no other item's href", () => {
+    expect(others(withLastRun(NAV_ITEMS, "A"))).toEqual(others(NAV_ITEMS));
+    expect(others(withLastRun(NAV_ITEMS, null))).toEqual(others(NAV_ITEMS));
+  });
+
+  it("is the current item only on an Add issues screen", () => {
+    const items = withLastRun(NAV_ITEMS, "A");
+    const current = (html: string) => addLinks(html.replace(/<a (?![^>]*aria-current)[^>]*>(?:(?!<\/a>).)*<\/a>/g, ""));
+    for (const [path, on] of [["/comics/A/add", true], ["/comics/B/add", true], ["/comics/A", false], ["/comics/runs", false], ["/comics", false]] as const) {
+      nav.pathname = path;
+      for (const name of ["the tablet rail", "the sidebar"] as const) {
+        expect(current(bars(items)[name]).length, `${path} in ${name}`).toBe(on ? 1 : 0);
+      }
+    }
+  });
+
+  it("is never prefetched: the add screen's queries wait for the tap (task 1.3c)", () => {
+    expect(NAV_ITEMS.find((i) => i.id === "comics-add")?.noPrefetch).toBe(true);
+    expect(readFileSync("src/components/nav/NavLink.tsx", "utf8")).toMatch(/prefetch=\{item\.noPrefetch \? false : undefined\}/);
   });
 });
 
@@ -129,7 +181,14 @@ describe("currentItem", () => {
     expect(currentItem(medium, "/comics")?.id).toBe("comics-dash");
     expect(currentItem(medium, "/comics/runs")?.id).toBe("comics-runs");
     expect(currentItem(medium, "/comics/bendis-disassembled")?.id).toBe("comics-runs");
-    expect(currentItem(medium, "/comics/bendis-disassembled/add")?.id).toBe("comics-runs");
+  });
+  it("is Add on any run's Add issues screen, whichever run Add points at (1.19)", () => {
+    for (const run of [null, "bendis-disassembled", "hickman-ff"]) {
+      const set = mediumItems(withLastRun(NAV_ITEMS, run), "comics");
+      expect(currentItem(set, "/comics/bendis-disassembled/add")?.id, String(run)).toBe("comics-add");
+      expect(currentItem(set, "/comics/bendis-disassembled")?.id, String(run)).toBe("comics-runs");
+      expect(currentItem(set, "/comics/runs")?.id, String(run)).toBe("comics-runs");
+    }
   });
   it("is nothing outside the medium", () => {
     expect(currentItem(medium, "/inbox")).toBeUndefined();

@@ -350,8 +350,9 @@ a{color:inherit;text-decoration:none}
 .side .si[aria-current]{background:var(--raise);color:var(--ink);font-weight:600}
 .side .si[aria-current]::before{left:-10px;top:6px;height:28px}
 .side .sync{justify-content:center;width:44px;height:40px;padding:0;box-shadow:none}
-/* Tooltips (--overlay, --sh-2, a --rule-2 ring, 12px to the right): hover after --dur-4, focus at once. */
-.side [data-tip]::after{content:attr(data-tip);position:absolute;left:calc(100% + 12px);top:50%;
+/* Tooltips (--overlay, --sh-2, a --rule-2 ring, 12px to the right): hover after --dur-4, focus at once.
+   The empty alt keeps the tip out of the accessible name, which the hidden label already is (1.19). */
+.side [data-tip]::after{content:attr(data-tip) / "";position:absolute;left:calc(100% + 12px);top:50%;
   transform:translateY(-50%);z-index:5;padding:6px 10px;border-radius:var(--r-sm);background:var(--overlay);
   box-shadow:inset 0 0 0 1px var(--rule-2),var(--sh-2);color:var(--ink);font-size:13px;font-weight:500;
   line-height:16px;white-space:nowrap;opacity:0;pointer-events:none}
