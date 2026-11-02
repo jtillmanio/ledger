@@ -8,6 +8,7 @@ import IssueSearch, { type IssueSearchHandle } from "@/components/IssueSearch";
 import ReviewTable from "@/components/ReviewTable";
 import RunChip from "@/components/RunChip";
 import { useUndo } from "@/components/Undo";
+import { useLastRunAdded } from "@/components/nav/ShellFrame";
 import { parseBulk, type KnownSeries, type VolumeRule } from "@/lib/bulk-parse";
 import { buildReview, labelKey, type Catalog, type Choices, type Placement } from "@/lib/bulk-review";
 import type { SearchResult } from "@/lib/issue-search";
@@ -68,6 +69,7 @@ export default function AddIssues({ initial, knownSeries, rules: initialRules = 
   const textarea = useRef<HTMLTextAreaElement>(null);
   const reasonRef = useRef<HTMLParagraphElement>(null);
   const { push, notify } = useUndo();
+  const lastRunAdded = useLastRunAdded();
 
   const live = useMemo(() => ctx.placements.filter((p) => !p.removed), [ctx]);
   // The review reads the half you are on: what Search staged, one line each, or what you typed.
@@ -175,6 +177,8 @@ export default function AddIssues({ initial, knownSeries, rules: initialRules = 
         skipped: string[]; context: AddContext; note: number | null; rules: { series: string; year: number }[];
       };
       setCtx(done.context);
+      // Comics Add in the nav lands on this run now (1.19); the answer set the cookie for the next load.
+      lastRunAdded(runId);
       // What the insert wrote stands for the next paste without a reload. Undo leaves it (changing a rule is 3.9's).
       if (done.rules?.length) {
         setRules((r) => [...r, ...done.rules.map((w) => ({ ...w, runId: null, issueFrom: null, issueTo: null }))]);

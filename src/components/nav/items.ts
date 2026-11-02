@@ -4,6 +4,7 @@
 // yet; the task that builds the screen flips the flag (and its check includes
 // the flip). Hue identifies data, never navigation: icons are neutral.
 import { mediumOf, type Medium } from "@/lib/last-medium";
+import { addHref } from "@/lib/last-run";
 
 export type NavGroup = "media" | "medium" | "global" | "foot";
 export type IconName =
@@ -25,6 +26,10 @@ export interface NavItem {
   holdsDetail?: boolean;
   /** A route handler: a plain `<a>`, because a `<Link>` prefetch would run it (task 0.9). */
   plain?: boolean;
+  /** Never prefetched: the screen's queries wait for the tap (task 1.3c). */
+  noPrefetch?: boolean;
+  /** Screens this item is current on besides its own href (comics Add: any run's Add issues). */
+  currentOn?: RegExp;
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -38,8 +43,12 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "comics-status", label: "Status", href: "/comics/status", icon: "list-checks", enabled: true, group: "medium", medium: "comics" },
   { id: "comics-runs", label: "Runs", href: "/comics/runs", icon: "layers", enabled: true, group: "medium", medium: "comics", holdsDetail: true },
   { id: "comics-tracks", label: "Tracks", href: "/comics/tracks", icon: "route", enabled: false, group: "medium", medium: "comics" },
-  // No comics route adds without a run, so this waits for the remembered run (roadmap 1.19).
-  { id: "comics-add", label: "Add", href: "/comics/add", icon: "plus", enabled: false, group: "medium", medium: "comics" },
+  // No comics route adds without a run: the shell swaps in the run you last added to (roadmap
+  // 1.19, withLastRun), and before any add this lands on the run list.
+  {
+    id: "comics-add", label: "Add", href: "/comics/runs", icon: "plus", enabled: true, group: "medium", medium: "comics",
+    noPrefetch: true, currentOn: /^\/comics\/[^/]+\/add$/,
+  },
 
   // Until 2.2 builds the books dashboard, /books redirects to the list.
   { id: "books-dash", label: "Dashboard", href: "/books", icon: "layout-dashboard", enabled: false, group: "medium", medium: "books", dash: true },
@@ -62,6 +71,11 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "export", label: "Export", href: "/api/export", icon: "download", enabled: true, group: "foot", plain: true },
 ];
 
+/** The items with comics Add aimed at `runId`'s Add issues, or at the run list for none (1.19). */
+export function withLastRun(items: NavItem[], runId: string | null): NavItem[] {
+  return items.map((i) => (i.id === "comics-add" ? { ...i, href: addHref(runId) } : i));
+}
+
 /** What every bar draws: the enabled items, in order. */
 export function visibleItems(items: NavItem[] = NAV_ITEMS): NavItem[] {
   return items.filter((i) => i.enabled);
@@ -76,11 +90,12 @@ export const mediumItems = (items: NavItem[], medium: Medium) =>
   inGroup(items, "medium").filter((i) => i.medium === medium);
 
 /**
- * The item `pathname` is on: the exact match, else the longest item it is under (the dashboard
- * excepted: it is every page's prefix), else the item that holds the medium's detail pages.
+ * The item `pathname` is on: the exact match, else the item that claims it (`currentOn`), else
+ * the longest item it is under (the dashboard excepted: it is every page's prefix), else the item
+ * that holds the medium's detail pages.
  */
 export function currentItem(list: NavItem[], pathname: string): NavItem | undefined {
-  const exact = list.find((i) => i.href === pathname);
+  const exact = list.find((i) => i.href === pathname) ?? list.find((i) => i.currentOn?.test(pathname));
   if (exact) return exact;
   const under = list
     .filter((i) => !i.dash && pathname.startsWith(`${i.href}/`))

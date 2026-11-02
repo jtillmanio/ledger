@@ -1237,7 +1237,7 @@ read began.
   `none` read, and is NULL for a run with no dated read.
 - `npm run test:db:reset` migrates from zero.
 
-### ☐ 1.19 Comics Add remembers the last run · S
+### ☑ 1.19 Comics Add remembers the last run · S
 *From 1.8b (TASK-015, PR #114):* design §14 *Bulk add*,
 **Remember the last run** you added to, so consecutive adds don't re-navigate.
 1.8 ships the comics *Add* nav item `enabled: false` (`src/components/nav/items.ts`),
@@ -2894,6 +2894,11 @@ one does, on the run list and the book master list.
   shows archived rows at reduced opacity, each with **Restore**.
 - Restoring clears `deleted_at`; reading history was never touched, so it comes
   back as it was.
+- *From 1.19 (TASK-038, PR #179):* the comics *Add* nav
+  item holds the run last added to in `ShellFrame` state (D-107), and the
+  server drops an archived run only on a full load. Archiving the run *Add*
+  points at should also tell the shell (or refresh it), so *Add* doesn't lead
+  to an archived run's *Add issues* until the next reload.
 
 **Check:** test that archiving a run with read placements hides it from the run
 list, the dashboards and the status tabs; that restoring it brings it back with

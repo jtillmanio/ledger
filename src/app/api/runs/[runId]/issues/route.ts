@@ -5,6 +5,7 @@ import { addContext, catalogMatches, metronFacts, takenIds } from "@/db/queries"
 import { addVolumeRules, insertIssuesIntoRun, reopenNote, resolveNote, undoInsert, type MetronFacts, type Tx } from "@/db/writes";
 import { noteId } from "@/lib/inbox";
 import { issueSlug } from "@/lib/issue-slug";
+import { LAST_RUN_COOKIE, LAST_RUN_OPTIONS } from "@/lib/last-run";
 
 export const runtime = "nodejs";
 
@@ -100,7 +101,10 @@ export async function POST(req: Request, { params }: Params) {
   if (!result.ok) {
     return result.reason === "no-run" ? notFound() : bad(`after must be a live placement of ${runId}`);
   }
-  return NextResponse.json({ ...result, note: resolved, rules: ruled, context: await addContext(runId) });
+  const res = NextResponse.json({ ...result, note: resolved, rules: ruled, context: await addContext(runId) });
+  // Comics Add lands here next time (1.19). Only a written insert: a dry run, a refusal and an undo leave it.
+  res.cookies.set(LAST_RUN_COOKIE, runId, LAST_RUN_OPTIONS);
+  return res;
 }
 
 export async function DELETE(req: Request, { params }: Params) {
