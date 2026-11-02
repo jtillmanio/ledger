@@ -876,6 +876,11 @@ export type LibraryHit = {
   pending: boolean;
   /** Your status for it, if any. */
   status: string | null;
+  /** Where a to-read book sits (`to_read_level`, D-37), and its plan period; null for any other status. */
+  level: ToReadLevel | null;
+  period: string | null;
+  /** Calibre has it (`calibre_id`, task 1.18b, D-90): an Unlisted book reads *Unlisted · Calibre* (task 1.22). */
+  calibre: boolean;
   /** How many of your shelves hold it: *on 2 shelves*. */
   shelves: number;
 };
@@ -885,7 +890,8 @@ export type LibraryHit = {
  * before Hardcover's. A book matches when every word of the query is in its
  * title and author, or because it is one of the books Hardcover answered with,
  * by `hardcover_id` or by its title and one of its authors (`titles` and
- * `authors` are pairs; D-61). Exact titles first; at most 20.
+ * `authors` are pairs; D-61). Exact titles first; at most 20. Each says where
+ * it sits, read from `to_read_level` and never parsed here (task 1.22).
  */
 export async function librarySearch(
   userId: string, q: string, also: { hardcoverIds: number[]; titles: string[]; authors: string[] },
@@ -896,13 +902,14 @@ export async function librarySearch(
     SELECT b.id, b.title, a.name AS author, bs.name AS series, b.series_position,
            b.published_year, b.page_count, b.word_count, b.word_count_source, b.cover_url, b.hardcover_id,
            (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
-           st.status,
+           st.status, tl.level, tl.period, (b.calibre_id IS NOT NULL) AS calibre,
            (SELECT COUNT(*) FROM shelf_books sb JOIN shelves sh ON sh.id = sb.shelf_id
             WHERE sb.book_id = b.id AND sh.user_id = ${userId})::int AS shelves
     FROM books b
     LEFT JOIN authors a ON a.id = b.author_id
     LEFT JOIN book_series bs ON bs.id = b.series_id
     LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+    LEFT JOIN to_read_level tl ON tl.book_id = b.id AND tl.user_id = ${userId}
     WHERE b.deleted_at IS NULL AND (
       (cardinality(${words}::text[]) > 0
         AND lower(b.title || ' ' || COALESCE(a.name, '')) LIKE ALL (${words}::text[]))

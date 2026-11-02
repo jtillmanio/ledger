@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
-// Task 1.3b on screen: Add issues opens on Search (AC-2), searches only when
-// submitted (AC-2), lists your catalog before Metron and stages results into
+// Task 1.3b on screen: Add issues opens on Search (AC-2), searches as you
+// type since task 1.22 (3 characters and a 500 ms pause, or Enter), lists your catalog before Metron and stages results into
 // 1.3c's review (AC-2, AC-3), and draws its loading, rate-limited and error
 // states as role="status" lines (AC-4, AC-6). The search and the insert against
 // the database are test/metron-search.test.ts.
@@ -128,18 +128,45 @@ describe("Search is the default half (AC-2)", () => {
     expect(container.querySelector("#add-reason")!.textContent).toBe("Search, then tap Add on the issues you want");
   });
 
-  it("searches on submit, never per keystroke: ten characters typed make no call", async () => {
+  it("searches as you type (task 1.22): 500 ms after the last keystroke, once, and the hint says so", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
     render();
+    expect(container.querySelector(".seg-note")!.textContent).toBe("Your catalog first, then Metron. Searches as you type.");
+    await typeQuery("th");
+    await act(async () => { vi.advanceTimersByTime(600); });
+    expect(searches()).toHaveLength(0);
+    // Ten characters typed together: one request, for all ten, and not before the pause.
     await typeQuery("thor 337-3");
+    await act(async () => { vi.advanceTimersByTime(499); });
+    expect(searches()).toHaveLength(0);
+    await act(async () => { vi.advanceTimersByTime(1); });
     await flush();
-    expect(input().value).toHaveLength(10);
-    expect(fetchMock).not.toHaveBeenCalled();
-    await act(async () => {
-      container.querySelector("form[role='search']")!.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
-    });
+    expect(searches().map(([, init]) => JSON.parse(init.body))).toEqual([{ q: "thor 337-3", runId: "thor" }]);
+    expect(searches()[0][1].signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it("searching is announced once a request in the polite live region, not once a keystroke (task 1.22, AC-6)", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    let release!: () => void;
+    answer = () => new Promise((r) => { release = () => r(Response.json(OK)); });
+    render();
+    expect(status().getAttribute("aria-live")).toBe("polite");
+    const seen: string[] = [];
+    const watch = new MutationObserver(() => seen.push(status().textContent ?? ""));
+    watch.observe(status(), { childList: true, subtree: true, characterData: true });
+    await typeQuery("thor 336-340");
+    await act(async () => { vi.advanceTimersByTime(500); });
+    await act(async () => release());
     await flush();
+    watch.disconnect();
+    expect(seen.filter((t) => t.startsWith("Searching"))).toEqual(["Searching your catalog, then Metron…"]);
+  });
+
+  it("Enter still searches at once", async () => {
+    render();
+    await submit("thor 337");
     expect(searches()).toHaveLength(1);
-    expect(JSON.parse(searches()[0][1].body)).toEqual({ q: "thor 337-3", runId: "thor" });
+    expect(JSON.parse(searches()[0][1].body)).toEqual({ q: "thor 337", runId: "thor" });
   });
 });
 
@@ -157,6 +184,20 @@ describe("results (AC-2, AC-3, AC-6)", () => {
     expect(elsewhere.textContent).toContain("in 2 runs");
     expect([...metron.querySelectorAll(".rt")].map((e) => e.textContent)).toEqual([thor(338), thor(339), thor(340)]);
     expect(metron.querySelector(".rm")!.textContent).toBe("Nov 1983");
+  });
+
+  it("a Metron row's one source tag reads Metron, a catalog row keeps its run count, each in the row's name (task 1.22, AC-3)", async () => {
+    render();
+    await submit("thor 336-340");
+    const [catalog, metron] = groups();
+    const tags = (ul: HTMLElement) => [...ul.querySelectorAll("li")].map((li) => [...li.querySelectorAll(".tag")].map((t) => t.textContent));
+    expect(tags(catalog)).toEqual([["already in this run"], ["in 2 runs"]]);
+    expect(tags(metron)).toEqual([["Metron"], ["Metron"], ["Metron"]]);
+    const nameOf = (li: Element) => li.getAttribute("aria-labelledby")!.split(" ")
+      .map((id) => document.getElementById(id)!.textContent).join(" ");
+    expect([...catalog.querySelectorAll("li"), ...metron.querySelectorAll("li")].map(nameOf)).toEqual([
+      `${thor(336)} already in this run`, `${thor(337)} in 2 runs`,
+      `${thor(338)} Metron`, `${thor(339)} Metron`, `${thor(340)} Metron`]);
   });
 
   it("a catalog row in one run names it, as the mockup does", async () => {
@@ -310,6 +351,18 @@ describe("the API states (AC-4, AC-6)", () => {
     expect(searches()).toHaveLength(2);
     expect(searchButton().hasAttribute("aria-disabled")).toBe(false);
     expect(status().textContent).toContain("Search again when you're ready");
+  });
+
+  it("a recorded 429 answering a pause in typing is the same amber countdown, and typing during it asks nothing (task 1.22, AC-4)", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: false });
+    answer = async () => Response.json({ ...OK, status: "rate_limited", retryIn: 30, metron: [] });
+    render();
+    await typeQuery("thor 336-340");
+    await act(async () => { await vi.advanceTimersByTimeAsync(500); });
+    expect(status().querySelector(".statusline.wait")!.textContent).toContain("Metron is busy. Retrying in 30s.");
+    await typeQuery("thor 336-341");
+    await act(async () => { await vi.advanceTimersByTimeAsync(600); });
+    expect(searches()).toHaveLength(1);
   });
 
   it("error: a neutral line with a grey ×, nothing that resolves to --danger, Try again and Type it instead", async () => {

@@ -58,3 +58,24 @@ export function quarterName(period: string): string {
   const [year, q] = period.split("-");
   return q ? `${q} ${year}` : year;
 }
+
+const PLACE: Record<string, string> = {
+  someday: "Someday", on_deck: "On deck", reading: "Reading", read: "Read", dnf: "DNF", unlisted: "Unlisted",
+};
+
+/**
+ * Where a library book sits, as a search result's one tag says it (task 1.22):
+ * a to-read book's level from `to_read_level` (*Q1 2027*, *2027*, *On deck*,
+ * *Someday*), else its status (*Reading*, *Read*, *DNF*, *Unlisted*), and *Not
+ * on your list* with no status. Calibre is named only where it tells you
+ * something, a book it has that isn't on your list: *Unlisted · Calibre*.
+ */
+export function placeTag(b: { status: string | null; level: string | null; period: string | null; calibre: boolean }): string {
+  if (b.status === null) return "Not on your list";
+  if (b.status === "to_read") {
+    if ((b.level === "quarter" || b.level === "year") && b.period) return quarterName(b.period);
+    return PLACE[b.level ?? "someday"] ?? "Someday";
+  }
+  if (b.status === "unlisted" && b.calibre) return "Unlisted · Calibre";
+  return PLACE[b.status] ?? b.status;
+}

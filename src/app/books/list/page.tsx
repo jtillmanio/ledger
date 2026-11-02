@@ -4,6 +4,7 @@ import {
 } from "@/db/queries";
 import Link from "next/link";
 import AddBooksButton from "@/components/AddBooksButton";
+import BookListSearch from "@/components/BookListSearch";
 import BookStatus from "@/components/BookStatus";
 import Cover, { Pending } from "@/components/Cover";
 import { seriesAllHref, seriesView } from "@/lib/series-list";
@@ -62,10 +63,8 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
           : `${books.length.toLocaleString()} of ${matched.toLocaleString()} shown — search or filter to narrow`}
       </p>
 
-      <form action="/books/list" className="filters" style={{ width: "100%" }}>
-        <input type="search" name="q" defaultValue={q ?? ""}
-               placeholder="Search title or author" aria-label="Search books" />
-      </form>
+      {/* Searches as you type (task 1.22): it replaces ?q= and this page narrows. */}
+      <BookListSearch q={q ?? ""} />
 
       {/* A query-string chip is not prefetched: Next 16.4 fetches each one on
           load, and a tap re-renders this same route. */}

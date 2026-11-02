@@ -1,6 +1,6 @@
 /**
  * Metron, live, for the add flow only (task 1.3b, data model 2.15, D-51,
- * D-53). Called from `POST /api/metron/search` when the user submits a search,
+ * D-53). Called from `POST /api/metron/search` when the user submits or pauses typing,
  * never from a page render. Server-only: it reads the credentials and the
  * database.
  *

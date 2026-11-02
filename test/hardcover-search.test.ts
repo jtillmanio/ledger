@@ -156,6 +156,49 @@ describe("what Search lists (AC-1, AC-3)", () => {
   });
 });
 
+describe("where each library book sits (task 1.22, AC-3)", () => {
+  it("each book carries its level and period from to_read_level, its status, and whether Calibre has it", async () => {
+    const place: [string, string | null, string | null, number | null][] = [
+      // [id, status, plan period, calibre_id]
+      ["zz-someday", "to_read", null, null],
+      ["zz-someday-calibre", "to_read", null, 901],
+      ["zz-on-deck", "to_read", "on_deck", null],
+      ["zz-quarter", "to_read", "2027-Q1", null],
+      ["zz-year", "to_read", "2027", null],
+      ["zz-reading", "reading", null, null],
+      ["zz-read", "read", null, null],
+      ["zz-dnf", "dnf", null, null],
+      ["zz-unlisted", "unlisted", null, null],
+      ["zz-unlisted-calibre", "unlisted", null, 902],
+      ["zz-shelf-only", null, null, null],
+    ];
+    await sql`INSERT INTO authors (id, name) VALUES ('zz-author', 'Zz Placed')`;
+    for (const [id, status, period, calibre] of place) {
+      await sql`INSERT INTO books (id, title, author_id, calibre_id) VALUES (${id}, ${`Zzplace ${id}`}, 'zz-author', ${calibre})`;
+      if (status) await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, ${id}, ${status})`;
+      if (period) {
+        await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal)
+          VALUES (${USER}, ${id}, ${period}, ${period.includes("-Q") ? 1 : null})`;
+      }
+    }
+    const answer = await find("zzplace");
+    const got = Object.fromEntries(answer.library.map((b) => [b.id, [b.status, b.level, b.period, b.calibre]]));
+    expect(got).toEqual({
+      "zz-someday": ["to_read", "someday", null, false],
+      "zz-someday-calibre": ["to_read", "someday", null, true],
+      "zz-on-deck": ["to_read", "on_deck", "on_deck", false],
+      "zz-quarter": ["to_read", "quarter", "2027-Q1", false],
+      "zz-year": ["to_read", "year", "2027", false],
+      "zz-reading": ["reading", null, null, false],
+      "zz-read": ["read", null, null, false],
+      "zz-dnf": ["dnf", null, null, false],
+      "zz-unlisted": ["unlisted", null, null, false],
+      "zz-unlisted-calibre": ["unlisted", null, null, true],
+      "zz-shelf-only": [null, null, null, false],
+    });
+  });
+});
+
 describe("the cache (AC-2, D-62)", () => {
   it("a search writes one hardcover_cache row; the same query again within 7 days makes no request", async () => {
     await find("Piranesi");

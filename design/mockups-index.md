@@ -16,7 +16,7 @@ line numbers below drift after an edit.
 | `runs` | Run list | 1004–1090 |
 | `spine` | Run detail — per-run "read in …" hints; spine v2 gutter, Hide read, covers, dates, next-issue strip; the two-line undo toast (desktop frame, roadmap 1.2); 360px and 834px frames (roadmap 1.8) | 1219–1345 |
 | `range` | Range marking; its undo toast in the two-line form (roadmap 1.2); the count with its optionals, *Adopt*'s fifth option *Original dates*, and the desktop anchor and pill (roadmap 1.1) | 1348–1466 |
-| `addsearch` | Add issues — search (Metron) | 1437–1573 |
+| `addsearch` | Add issues — search (Metron); searches as you type, a *Metron* tag on each Metron row (task 1.22) | 1882–2025 |
 | `bulk` | Add issues — type it (bulk) | 1576–1680 |
 | `newrun` | New run | 1545–1647 |
 | `ai` | AI review | 1650–1745 |
@@ -24,8 +24,8 @@ line numbers below drift after an edit.
 | `status` | Status — in flight, up next, done (all media); 360px and 834px frames (roadmap 1.8) | 1915–2020 |
 | `plan` | Plan by quarter | 2023–2166 |
 | `moveplan` | Move / add to a quarter | 2169–2326 |
-| `blist` | Master list; the *Unlisted · N* chip after *Read* and an Unlisted row, grey badge and *Add to Someday* (task 1.21) | 2329–2431 |
-| `add` | Add books — search (Hardcover, task 1.4f) | 3237–3335 |
+| `blist` | Master list; the *Unlisted · N* chip after *Read* and an Unlisted row, grey badge and *Add to Someday* (task 1.21); the box searches as you type, *Searching…* (task 1.22) | 3113–3244 |
+| `add` | Add books — search (Hardcover, task 1.4f); searches as you type, one place or source tag a row (task 1.22) | 3247–3364 |
 | `wishlist` | Your wishlist (`/books/add?from=wishlist`, task 1.4d) | — |
 | `shelves` | Shelves | 2528–2624 |
 | `top` | Top books | 2627–2713 |
