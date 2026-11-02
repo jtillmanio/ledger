@@ -20,8 +20,8 @@ milestone._
 | Milestones | Scope | Roadmap phases | Entries |
 |---|---|---|---|
 | M1–M9 | **MVP: cutover from the Sheets.** Every MVP feature in [01-product.md § Feature index](01-product.md#feature-index) | 0, 1, and 2.11a, plus what 1.25 names | 55 |
-| M10–M15 | **Next:** the pace engine, the comics dashboard, editing | 2, 3 | 31 |
-| M16–M26 | **Later:** enrichment, the remaining surfaces, polish, AI curation, watch, music and games | 4–10, and 6.2b in M12 | 64 |
+| M10–M15 | **Next:** the pace engine, the comics dashboard, editing | 2, 3 | 32 |
+| M16–M26 | **Later:** enrichment, the remaining surfaces, polish, AI curation, watch, music and games | 4–10, and 6.2b in M12 | 67 |
 
 - **M1–M9 are START-HERE's sittings under one numbering.** M1 and M2 are
   sittings 1–2 (Phase 0) with the Phase 0 work that came after them; M3–M9 are
@@ -123,6 +123,9 @@ milestone._
 | F-62 Games: search, a queue, by my platforms | Later | 10.0, 10.1, 10.2, 10.3 | M26 |
 | F-63 Games coming out | Later | 10.4 | M26 |
 | F-64 Games dashboard | Later | 10.5 | M26 |
+| F-65 Plan a year or a quarter, with suggestions | Next | 2.10b | M11 |
+| F-66 Parked, and its review | Later | 5.15, 5.16, 8.8, 9.3, 10.1 | M17, M18 (then M24–M26) |
+| F-67 Game shelves | Later | 10.6 | M26 |
 
 ### Entities → tasks
 
@@ -146,6 +149,8 @@ milestone._
 | `artists`, `albums`, `tracks` (music), `artist_follows`, `album_status`, `listen_events`, song rankings | 9.1, 9.4 (proposed) |
 | `listen_queue` | 5.14 (proposed) |
 | `games`, `game_genres`, `platforms`, `game_releases`, `owned_platforms`, `game_status`, `play_events`, the IGDB cache; `game_queue` | 10.1; 10.2 (proposed) |
+| `run_parked` | 5.16 (proposed) |
+| `shelf_games` | 10.6 (proposed) |
 
 Views are in `etl/views.sql` and listed in data model §3; each new one lands
 with the task that first reads it.
@@ -329,10 +334,10 @@ with the task that first reads it.
 ## M11: Editing the plan — Next
 
 **Goal:** Act on what the plan rail shows.  
-**Demo at exit:** Move a book between periods, rebalance an over-full year or accept it as a stretch year, and place the unquartered.  
-**Features:** F-23  
+**Demo at exit:** Move a book between periods, rebalance an over-full year or accept it as a stretch year, place the unquartered, and fill a quarter from suggestions.  
+**Features:** F-23, F-65  
 **Depends on:** M10  
-**Order:** 2.3 → 2.7 → 2.8 → 2.10: the picker first, then the actions that use it, then the full-size plan page.
+**Order:** 2.3 → 2.7 → 2.8 → 2.10 → 2.10b: the picker first, then the actions that use it, then the full-size plan page, then planning a period from it.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -340,6 +345,7 @@ with the task that first reads it.
 |  | 2.7 | Rebalance, and accepting an overage | M |  | — |
 |  | 2.8 | Place the unquartered | M |  | — |
 |  | 2.10 | Plan page as the full-size rail | M |  | 1.7, 2.1, 2.2 |
+|  | 2.10b | Plan a year or a quarter, with suggestions | M |  | 2.3, 2.10, 1.15, 1.21 |
 
 ## M12: The comics dashboard and the telescope — Next
 
@@ -428,10 +434,10 @@ with the task that first reads it.
 ## M17: Book surfaces — Later
 
 **Goal:** The remaining book surfaces.  
-**Demo at exit:** Shelves with notes, DNF with a reason, books coming out, a page per series, author and universe pages, *In the middle of*, and a queue of audiobooks to listen next.  
-**Features:** F-34, F-31, F-37, F-38, F-20, F-59  
-**Depends on:** M7 (1.9), M8 (1.15), M9 (1.23)  
-**Order:** 5.1 → 5.5 → 5.7 → 5.9 → 5.11 → 5.12 → 5.14: 5.11 builds on 5.9's series page, and 5.12 reads 5.1's shelves and 5.11's follows. 5.14 needs only 1.23 and 1.9, so it can go first.
+**Demo at exit:** Shelves with notes, DNF with a reason, books coming out, a page per series, author and universe pages, *In the middle of*, a queue of audiobooks to listen next, and a book parked, then reviewed back into the plan.  
+**Features:** F-34, F-31, F-37, F-38, F-20, F-59, F-66  
+**Depends on:** M7 (1.9), M8 (1.15), M9 (1.23), M11 (2.3)  
+**Order:** 5.1 → 5.5 → 5.7 → 5.9 → 5.11 → 5.12 → 5.14 → 5.15: 5.11 builds on 5.9's series page, and 5.12 reads 5.1's shelves and 5.11's follows. 5.14 needs only 1.23 and 1.9, so it can go first. 5.15 after 5.14, because parking takes a book off the listen queue.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -442,14 +448,15 @@ with the task that first reads it.
 |  | 5.11 | Author and universe pages, and the follow control | M |  | 1.15, 5.9 |
 |  | 5.12 | In the middle of: series, authors, universes and reading-order shelves | S |  | 1.9, 1.15, 5.1, 5.11 |
 |  | 5.14 | Audiobooks: a queue to listen next | M |  | 1.23, 1.9 |
+|  | 5.15 | Parked: put a book away, and review it on a schedule | M |  | 1.9, 1.17, 1.21, 2.2, 2.3 |
 
 ## M18: Comic surfaces — Later
 
 **Goal:** The remaining comic surfaces.  
-**Demo at exit:** The tracks page, a rating when a run is finished, *Collected in*, new issues for the runs you follow, and a page per comic volume with its gaps.  
-**Features:** F-35, F-31, F-36, F-37, F-38  
+**Demo at exit:** The tracks page, a rating when a run is finished, *Collected in*, new issues for the runs you follow, a page per comic volume with its gaps, and a run parked and reviewed.  
+**Features:** F-35, F-31, F-36, F-37, F-38, F-66  
 **Depends on:** M14 (3.5), M16 (4.1), M17 (5.7)  
-**Order:** 5.2 → 5.4 → 5.6 → 5.8 → 5.10 → 5.13: 5.10 reads 5.6's parsed editions; 5.8 follows 5.7's release pattern.
+**Order:** 5.2 → 5.4 → 5.6 → 5.8 → 5.10 → 5.13 → 5.16: 5.10 reads 5.6's parsed editions; 5.8 follows 5.7's release pattern; 5.16 joins 5.15's review.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -459,6 +466,7 @@ with the task that first reads it.
 |  | 5.8 | Comic issues coming out, for the runs you follow | M |  | 1.3b, 1.3c, 5.7 |
 |  | 5.10 | Editions: collected and read | M |  | 5.6 |
 |  | 5.13 | Comic series page: every issue of a volume, its runs and its gaps | M |  | 3.5, 4.1 |
+|  | 5.16 | Parked runs | S |  | 5.15, 1.10 |
 
 ## M19: Find and look back — Later
 
@@ -584,10 +592,10 @@ with the task that first reads it.
 ## M26: Games — Later
 
 **Goal:** A fifth medium, a planning tool for what to play (D-102).  
-**Demo at exit:** Set your platforms, add a game for the one you'll play it on as *play through* or *in rotation*, order the queue and see its hours, see the games you're waiting for by release date, and the games dashboard.  
-**Features:** F-62, F-63, F-64  
+**Demo at exit:** Set your platforms, add a game for the one you'll play it on as *play through* or *in rotation*, order the queue and see its hours, see the games you're waiting for by release date, the games dashboard, and shelves by platform, by genre and your own.  
+**Features:** F-62, F-63, F-64, F-67  
 **Depends on:** M25 by default; needs only M1–M2 (Phase 0) and 9.0's navigation, so it can be pulled forward  
-**Order:** 10.0 first, for 9.0's reason: a fifth medium changes the navigation every screen shares. Then 10.1 → 10.2 → 10.3 → 10.4 → 10.5.
+**Order:** 10.0 first, for 9.0's reason: a fifth medium changes the navigation every screen shares. Then 10.1 → 10.2 → 10.3 → 10.4 → 10.5 → 10.6.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -597,6 +605,7 @@ with the task that first reads it.
 |  | 10.3 | Playing, the queue, and played | M |  | 10.2, 1.9 |
 |  | 10.4 | Coming out: games you're waiting for | M |  | 10.2 |
 |  | 10.5 | Games dashboard | M |  | 10.0, 10.3, 10.4 |
+|  | 10.6 | Game shelves: by platform, by genre, and your own | S |  | 10.3, 5.1 |
 
 ---
 

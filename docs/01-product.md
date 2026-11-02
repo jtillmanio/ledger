@@ -167,6 +167,9 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | F-62 | **Games: search, a queue, by my platforms** (Games) | As a player, I want to add a game for the platform I'll play it on, say whether I play it through or in rotation, and keep a queue | Later | 10.0, 10.1, 10.2, 10.3 | — |
 | F-63 | **Games coming out** (Games) | As a player, I want the games I'm waiting for, with their release dates on my platforms, and to know when a date moves | Later | 10.4 | — |
 | F-64 | **Games dashboard** (Games) | As a player, I want the games dashboard: what I'm playing, what's next, and what's coming | Later | 10.5 | — |
+| F-65 | **Plan a year or a quarter, with suggestions** (Books) | As a reader, I want to fill a year or a quarter in one sitting, from suggestions like the next book of a series I'm reading, with the budget in view | Next | 2.10b | `plan` |
+| F-66 | **Parked, and its review** (every medium) | As a reader, I want to put something away on purpose, off my lists and my plan, and be reminded on a schedule to keep it there, plan it, or let it go | Later | 5.15, 5.16, 8.8, 9.3, 10.1 | — |
+| F-67 | **Game shelves** (Games) | As a player, I want my games grouped by platform and by genre, and on shelves of my own | Later | 10.6 | — |
 
 ### Observable outcomes for MVP features
 
@@ -225,6 +228,8 @@ B, C, W and M numbers are cited across the docs and stay.
 | B19 | Create a shelf while adding a book | planned | 2026-10-26. *New shelf…* in the add sheet's shelf picker. roadmap 5.1 |
 | B20 | Audiobooks: listening, a queue to listen next, listened | planned | 2026-11-01. 1.23 builds *Listening* and *Listened*; the queue is a stored order, `listen_queue`, on the status screens' Up next. roadmap 5.14 |
 | B21 | Rank each book as I finish it; any year's top ten | planned | 2026-11-01. Every read of a year ranked, placed by *This or that* at the finish; the top ten is the first ten; past years too. Proposed: the rank moves to the read. roadmap 3.4b, D-101; ratings kept on GitHub or another service are Later § L-6 |
+| B22 | Create a yearly or quarterly plan, with suggestions | planned | 2026-11-02. No plan object: a planning sheet on `/books/plan` fills a period through 2.3's writes, with derived suggestions (next in a series or shelf, followed authors, On deck, coming out, recently added, fits the room, a change of genre). Books only; comics are Later § L-8. roadmap 2.10b, D-104 |
+| B23 | An on-hold status, *Parked*, for every medium, reviewed monthly or quarterly | planned | 2026-11-02. Off In flight, the plan and the queues; a review on a schedule (*Keep parked · Plan… · Unlisted*), reminded in the app, by email once 7.6 lands. Books first (5.15), comics runs (5.16), then watch, music and games in their phases. roadmap 5.15, 5.16, 8.8, 9.3, 10.1, D-105 |
 
 ### Comics
 
@@ -251,6 +256,7 @@ B, C, W and M numbers are cited across the docs and stay.
 | C13 | Context for a run's important issues | planned | The fact is Metron's summary (`issues.summary`, 4.1). Why it is in *this* run is the placement note, which Claude drafts and you accept (7.8) |
 | C14 | Search results preview an issue | planned | A *Details* disclosure: tap, or hover with a fine pointer. One Metron detail request, cached. roadmap 3.12 |
 | C15 | Arrange issues as you add them | planned | An *Arrange* step in the review: drag, menu or keyboard. It doubles as the run's reorder. roadmap 3.11 |
+| C16 | Park a run | planned | 2026-11-02. Off In flight and the queue until the review; a `run_parked` row, read state untouched. roadmap 5.16, D-105 |
 
 ### Watch (2026-10-20 additions)
 
@@ -280,6 +286,7 @@ B, C, W and M numbers are cited across the docs and stay.
 | G4 | Mainly a planning tool | planned | The queue in your order, with its hours from IGDB's time to beat, derived. roadmap 10.3 |
 | G5 | Games coming out that I'm excited for, with their dates | planned | Derived from a wanted game's release on your platform; refreshed when you ask, with a moved date shown. roadmap 10.4 |
 | G6 | Rank games | later | roadmap *Later* § L-7 |
+| G7 | Shelves by platform, by genre, and custom | planned | 2026-11-02. Platform and genre groupings are derived; your own are 5.1's shelves with a `games` kind. The *Up next* queue asked for in the same intake is G1. roadmap 10.6, D-106 |
 
 ## Beyond the list
 
@@ -730,7 +737,8 @@ the same names in the same order on all three: **In flight · Up next · Done**.
 DNF and dropped sit collapsed under *Stopped* at the foot of Done. The
 dashboards stay as they are and link into the matching tab. The master list
 stays too: it is for searching the whole catalog, and the status screen is for
-seeing where everything stands.
+seeing where everything stands. A *Parked* item (5.15, D-105) is on none of the
+three tabs: it has its own list, `/parked`, reviewed on a schedule.
 
 ### Comics Up next: an ordered want-to-read queue
 
@@ -894,6 +902,16 @@ Music and able to be pulled forward (D-102). Their novel part is the owner's
 own split: a game played through ends, a game played in rotation doesn't,
 so each takes its own statuses. Ratings kept on GitHub, and ranking games,
 are *Later* (L-6, L-7).
+
+**The 2026-11-02 intake** (B22, B23, C16, G7) asked for three things. A
+year's plan already existed as rows, one book at a time through 2.3's
+picker; what was missing is filling a year or a quarter in one sitting, with
+suggestions drawn from your own follows, shelves and budget (2.10b, D-104),
+for books only (comics are L-8). *Parked* is a new state for every medium:
+put away on purpose, off every list and plan, and brought back by a review
+on a schedule, reminded in the app and later by 7.6's email (D-105). Games
+already had their queue (10.2); shelves by platform and genre are views,
+and your own are 5.1's shelves (10.6, D-106).
 
 **Parked under *Later*, because no API exists.** Marvel Unlimited (L-1) and
 League of Comic Geeks ratings (L-2) have no public APIs. Each has an open
