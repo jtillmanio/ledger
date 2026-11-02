@@ -34,8 +34,8 @@ under the same numbers (M7 is sitting 7).
 | M7 Phase 1 complete | 5 / 5 | Done |
 | M8 Books load clean | 3 / 6 | 1.13, 1.14 and 1.15 done; 1.21, 1.18 and 1.20 Draft (TASK-029–031) |
 | M9 Captured from cutover on | 0 / 5 | Not started: no task files yet |
-| M10–M15 Next | 1 / 31 | Not started† |
-| M16–M26 Later | 0 / 65 | Not started |
+| M10–M15 Next | 1 / 32 | Not started† |
+| M16–M26 Later | 0 / 68 | Not started |
 
 ### By phase
 
@@ -43,21 +43,21 @@ under the same numbers (M7 is sitting 7).
 |---|---|---|
 | 0 — Foundation | 12 / 13 | Done but 0.12 |
 | 1 — Daily use | 26 / 34 | In progress: M3–M7 done; the rest of M8, and M9 |
-| 2 — The pace engine | 1 / 16 | Not started but 2.11a, built in M7‡ |
+| 2 — The pace engine | 1 / 17 | Not started but 2.11a, built in M7‡; 2.10b added 2026-11-02 (D-104) |
 | 3 — Editing | 0 / 15 | Not started |
 | 4 — Enrichment | 0 / 4 | Not started; 4.4 added 2026-10-26 (D-83) |
-| 5 — Remaining surfaces | 0 / 13 | Not started |
+| 5 — Remaining surfaces | 0 / 15 | Not started; 5.15–5.16 added 2026-11-02 (D-105) |
 | 6 — Polish | 1 / 17 | Not started† |
 | 7 — AI-assisted curation | 0 / 8 | Not started |
 | 8 — Watchlist (film/TV) | 0 / 10 | Not started |
 | 9 — Music | 0 / 8 | Not started; added 2026-10-20 (D-75); 9.7 2026-11-01 (D-103) |
-| 10 — Games | 0 / 6 | Not started; added 2026-11-01 (D-102) |
+| 10 — Games | 0 / 7 | Not started; added 2026-11-01 (D-102); 10.6 2026-11-02 (D-106) |
 
 † The one Phase 6 entry checked (6.2b) is a scope note, not a shipped
 feature: its work was absorbed into 2.4 and 2.6 (M12); what's left of it is a
 sort order that doesn't exist until those tasks do. It is listed in M12.
 
-‡ The roadmap's *Phases* table still says 0 / 16 for Phase 2; its checkboxes
+‡ The roadmap's *Phases* table still says 0 / 17 for Phase 2; its checkboxes
 tick 2.11a, so the count here is 1.
 
 The roadmap's *Later* section (L-1…L-4) holds ideas with no **Check:** and

@@ -43,17 +43,17 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 |---|---|---|---|
 | [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6) | 12 / 13 |
 | [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is 1.26 (START-HERE Step 14): it waits for all of Phase 1, plus 2.11a and 1.11, and for every entry 1.25's parity audit names (D-95).** | M3–M9 | 28 / 41 |
-| [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 0 / 16 |
+| [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 0 / 17 |
 | [3 Editing](#phase-3--editing) | Maintain the catalog in the app: inline edits, runs, prerequisites, eras, detail sheets and adding at scale. | M13–M15 | 0 / 15 |
 | [4 Enrichment](#phase-4--enrichment) | Metron, Open Library and Hardcover backfill, and real covers. A prerequisite for Phase 7. | M16 | 0 / 4 |
-| [5 Remaining surfaces](#phase-5--remaining-surfaces) | The remaining list and detail surfaces: shelves, tracks, editions, releases and series pages. | M17, M18 | 0 / 13 |
+| [5 Remaining surfaces](#phase-5--remaining-surfaces) | The remaining list and detail surfaces: shelves, tracks, editions, releases and series pages. | M17, M18 | 0 / 15 |
 | [6 Polish, in any order](#phase-6--polish-in-any-order) | Polish, in any order. | M19–M21 (6.2b in M12) | 1 / 19 |
 | [7 AI-assisted curation (after Phase 4, not before)](#phase-7--ai-assisted-curation-after-phase-4-not-before) | Claude proposes, Metron verifies, you approve. Only after Phase 4. | M22 | 0 / 8 |
 | [8 Watchlist: film and television](#phase-8--watchlist-film-and-television) | Films, shows, seasons and franchises. Needs only Phase 0, so it can be pulled forward. | M23, M24 | 0 / 10 |
 | [9 Music](#phase-9--music) | A fourth medium, last (D-75). | M25 | 0 / 8 |
-| [10 Games](#phase-10--games) | A fifth medium, a planning tool for what to play: search, a queue by the platform you'll play on, and the games you're waiting for (D-102). | M26 | 0 / 6 |
+| [10 Games](#phase-10--games) | A fifth medium, a planning tool for what to play: search, a queue by the platform you'll play on, and the games you're waiting for (D-102). | M26 | 0 / 7 |
 
-Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate.
+Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate. The 2026-11-02 intake added 2.10b, 5.15, 5.16, 10.6 and L-8 and amended 2.10, 7.6, 8.8, 9.3 and 10.1 (D-104–D-106); none of them is a cutover gate either.
 
 ---
 
@@ -2309,7 +2309,8 @@ its order, and one dropped on the fifth lane takes none, like Move; reordering
 inside a quarter stays on the Up next tab (1.9). The fifth lane is a drop
 target as well as a list. One consolidated empty state — "893k of room across
 Q2–Q4" with Suggest — instead of one per empty quarter. Over-budget badges are
-amber.
+amber. *Suggest* opens 2.10b's planning sheet (D-104), so it arrives with
+2.10b.
 
 The desktop plan rail supports drag-to-move: a ghost block and a live readout
 (*Q3 +118k → 533k / 760k*) before release, with the Move sheet as the keyboard
@@ -2327,6 +2328,87 @@ that quarter's word total to the pixel rounding; that a book crossing the
 capacity line renders hatched and the one below it does not; that expanding Q2
 collapses Q1; and that the rail and the dashboard render identical totals from
 the same query. Screenshot at 360px and 1280px.
+
+### ☐ 2.10b Plan a year or a quarter, with suggestions · M
+Owner intake, 2026-11-02 (owner: *the ability to create a yearly/quarterly
+plan … while creating a plan, the app gives suggestions: next book in a
+series or shelf I'm reading, maybe recently added, others you think of*).
+D-104. Depends on 2.3 (the picker and its writes), 2.10 (the page and its
+*Suggest*), 1.15 (follows) and 1.21 (Unlisted).
+
+There is no plan object to create, and this task adds none: a year's plan is
+the `reading_plan` rows whose period falls in it (D-37). What's missing is a
+way to fill a year or a quarter in one sitting, instead of one book at a time
+from the master list. **Books only**: planning comics runs by period is
+*Later* § L-8.
+
+- **Where it starts.** `/books/plan` gains *Plan 2027…* in its header (any of
+  2.3's five years) and *Plan this quarter…* on each quarter's summary row;
+  2.10's *Suggest* opens it at the quarter with the most room. It is a sheet
+  on the phone and the side rail from 1024px, so each placement is seen
+  landing on the rail.
+- **The budget stays in view.** The target's total against capacity, as 2.3's
+  preview reads it (*533k of 760k*), updates after every placement. Over
+  capacity it turns amber and offers 2.3's *Accept as a stretch year*; never
+  red, and the word "behind" appears nowhere.
+- **Suggestions, grouped by why.** Each group is a short list (five, then
+  *More*); each row is the book's title, author and word count (estimated
+  counts marked as in 2.2b), a reason line, and *Put in Q2* naming the target
+  (for a year target, the bare year and the four quarter chips). A group with
+  nothing in it is left out. In this order:
+  1. **Next in a series you're reading:** the lowest-positioned unread book of
+     each series whose follow is `reading`, or that has a read book and an
+     unread one (`series_progress`), and likewise by universe position for a
+     `reading` universe (*Next in Red Rising · you've read 3 of 6*).
+  2. **Next on a shelf:** the lowest-ordinal unread book of each ordered shelf
+     you're partway through (`shelf_books`; 5.1 builds the shelves UI).
+  3. **From authors you follow:** unread books by a followed author, newest
+     published first.
+  4. **On deck:** already next in line (D-37).
+  5. **Coming out in this period:** books whose `releases` date (5.7) falls in
+     the target.
+  6. **Recently added:** books added in the last 90 days. `books` records no
+     date added: **stop and ask at plan time** (proposed `books.added_at
+     timestamptz`, NULL for every row loaded before it, so the group starts
+     empty and fills as books are added in the app).
+  7. **Fits the room left:** to-read books whose word count fits the target's
+     remaining room, largest first, so a quarter fills without tipping over.
+  8. **A change of genre:** to-read books in a top-level genre you haven't
+     read this year (`book_genre_tree` at depth 1, `books.genre` for a book
+     with none, D-98).
+
+  A book shows in the first group that lists it, never twice. Unlisted books
+  appear in groups 1–3 with 1.22's *Unlisted* tag, because owning the next
+  book of a series is the point; placing one writes `to_read` and its plan
+  row in one transaction (1.21's promote). A book already in the plan shows
+  its period and *Move here* instead. Read, reading and DNF books never
+  appear, nor parked ones once 5.15 lands.
+- **Derived, never stored** (hard rule 2): the suggestions are a query
+  (proposed view `plan_suggestions(book_id, reason, detail, rank)` in
+  `etl/views.sql`), run when the sheet opens, not cached. *Not now* hides a
+  suggestion for this sitting only; whether a dismissal should outlast it (a
+  table) is a plan-gate question, proposed no.
+- **Every write is 2.3's.** *Put in Q2* goes through `placeInPlan`, joining
+  the end of the quarter's order (D-37); a bare year takes no position. Each
+  placement pushes an undo onto the 1.2 stack, its row reads *✓ In Q2 ·
+  Undo*, and the sheet stays open for the next.
+- No AI: the suggestions are rules over your own data.
+- **Not drawn yet.** The mockup gains the planning sheet on `plan`, at
+  phone, tablet and desktop widths, before it is built, and
+  `design/mockups-index.md` lists it.
+
+**Check:** with a fixture of a `reading` series with books 1–2 read and 3–4
+`to_read`, an ordered shelf whose first book is read, a followed author with
+one unread book, an On deck book, an Unlisted book 3 of another series whose
+books 1–2 are read, and a DNF book, the sheet for 2027 Q2 lists book 3 and not
+book 4 under *Next in a series*, the shelf's second book under *Next on a
+shelf*, the author's book, the On deck book, and the Unlisted book tagged
+*Unlisted*; it never lists the DNF book, and no book twice. *Put in Q2* on
+book 3 writes one `reading_plan` row at Q2's last ordinal, the budget line
+shows the new total, and Undo removes the row. Placing the Unlisted book
+writes its `to_read` status and its plan row in one transaction. With 100k of
+room left, *Fits the room left* lists no book over 100k. Nothing on the sheet
+resolves to `--danger`. Screenshots at 360px and 1280px.
 
 ### ☑ 2.11a Prerequisite cycle check · S
 D-7, and the loader half of R0-01. Split from the old 2.11 (R3-15; every other mention of "2.11" in the docs means this task plus the owner checklist): what is left
@@ -3568,6 +3650,94 @@ it is converted.
     next* in queue order; Done's *Listened* chip lists only books with an
     audio read; each tab's count equals its rows. The export test passes with
     `listen_queue`.
+- ☐ 5.15 **Parked: put a book away on purpose, and review it on a schedule**
+  · M. Owner intake, 2026-11-02 (owner: *an on-hold type status for all media
+  types: I put an item in it and it doesn't show up in my currently consuming
+  feed or in my plan; once a month or quarter I get a notification or email to
+  review these items and keep them, move them to the plan or queue, or remove
+  them to unlisted*). D-105. Depends on 1.9, 1.17, 1.21, 2.2 (the dashboard
+  line) and 2.3 (the review's *Plan…* is the picker). This entry builds Parked
+  for books, the review every medium shares, and its reminder. Comics runs are
+  5.16; watch, music and games take it in their own phases (8.8, 9.3, 10.1).
+  - **What it means:** *not now, but not gone.* It is not Someday (on your
+    list, not planned), not Unlisted (in your library, not on your list), not
+    DNF (stopped), and not watch's derived *Paused* (untouched for four weeks).
+  - **Stored as a status.** Proposed: a `parked` value of
+    `book_status.status`, beside 1.21's `unlisted` (no CHECK, no migration),
+    added to `SETTABLE_STATUSES`. *Park* sits on the status control, the book
+    sheet and the master-list row, for a book that is `to_read`, `reading` or
+    `listening` (1.23). **Stop and ask at plan time** (a new status meaning
+    and a column): the date it was parked, proposed `book_status.parked_on
+    date`, written by `saveBookStatus` on entering `parked` and cleared on
+    leaving it. Whether it was parked mid-read is derived: a `started_on`
+    (1.17) with no finish since.
+  - **Out of the way.** Parking takes the book out of its plan through 1.7's
+    helpers (its quarter closes up) and off 5.14's listen queue, in one
+    transaction with the status; Undo restores the status, the period and the
+    exact position. `to_read_level` reads only `to_read`, so a parked book is
+    on no plan rail, capacity sum, dashboard slot or status-screen tab, and in
+    none of 2.10b's suggestions; the progress views count it unread, as they
+    count Unlisted. Search finds it tagged *Parked* (1.22), and the master
+    list gains a *Parked · N* chip.
+  - **The review.** `/parked` lists every parked item, books first, then each
+    medium's as it lands, oldest parked first, each with *Parked 4 months*.
+    Each book row has three verbs, each one write with Undo: **Keep parked**;
+    **Plan…** (2.3's picker: a quarter, a year, On deck or Someday), or for a
+    book parked mid-read **Pick it back up** (back to `reading`); and
+    **Unlisted**. *Done reviewing* records the review, whatever is left
+    parked.
+  - **When it is due.** A Settings row (2.0), *Review parked items: monthly ·
+    quarterly · never*, default quarterly. The review is due when something is
+    parked and the last review is older than the cadence. Proposed:
+    `reading_settings.parked_review` (with a CHECK) and
+    `reading_settings.parked_reviewed_on date`. **Stop and ask at plan time**
+    (two columns).
+  - **The reminder is in the app** (owner, 2026-11-02). When the review is
+    due, the books dashboard's rollup slot (2.2) gains a grey line, *Review 9
+    parked →*, with no nudge copy, and the Inbox lists one *Parked review* row
+    at its top until it is done. No push notification. The email is 7.6's,
+    which carries the same line when it lands.
+  - **Not drawn yet.** The mockup gains `/parked`, the *Park* verb on the
+    status control and the dashboard line, at phone, tablet and desktop
+    widths, before they are built; `design/mockups-index.md` lists them.
+  - **Check (proposed):** `npm test`: parking the 2nd of 3 books in 2027 Q1
+    writes `parked`, removes its plan row and leaves Q1 at ordinals 1–2, and
+    Undo restores `to_read` at position 2. A parked book is absent from
+    `to_read_level`, `plan_period`, the three status-screen tabs and 2.10b's
+    suggestions, and present under the master list's *Parked* chip and in
+    search tagged *Parked*; a series with one read and one parked book reads
+    `1 / 2`. With a monthly cadence, one parked book and a last review 40 days
+    ago, the review is due; with nothing parked it is not; *Done reviewing*
+    makes it not due. In the browser (0.11), the review's *Plan…* opens 2.3's
+    picker, *Unlisted* writes `unlisted` and Undo puts back `parked`, and the
+    dashboard line shows only when the review is due. Nothing on the
+    dashboard or the review resolves to `--danger`.
+- ☐ 5.16 **Parked runs** · S. Owner intake, 2026-11-02; D-105. Depends on
+  5.15 (the review) and 1.10. A comics run parks as a book does: it leaves In
+  flight, even partly read, and the Up next queue, and comes back in 5.15's
+  review.
+  - **Stored per run, never on an issue or a placement.** Proposed
+    `run_parked(run_id PRIMARY KEY → runs, parked_on date NOT NULL)`, no
+    `user_id` (D-91), in `src/db/export-tables.ts`. **Stop and ask at plan
+    time** (a new table). A run's state stays derived (`run_state`,
+    `run_queue_state`); parked is a filter over it, and no read state
+    changes.
+  - Parking a queued run deletes its `run_queue` row and closes up the order
+    in the same transaction; Undo restores the position (the queue's rule
+    that only the user removes a row holds: parking is the user's act). A
+    parked run is out of the comics dashboard, the telescope's offers and
+    1.9's three tabs; its run page reads *Parked since Mar 2027 · Unpark*.
+  - **The review's comics verbs:** **Keep parked**; **Up next** (the end of
+    the queue); and **Off the list**, which unparks it unqueued. The run stays
+    in the catalog with every read: comics have no Unlisted, because the
+    catalog is the list.
+  - For the plan gate: whether marking an issue read in a parked run unparks
+    it (proposed: yes, with the toast *Unparked Hickman FF* and its Undo).
+  - **Check (proposed):** parking queued run #2 of 3 writes one `run_parked`
+    row and leaves the queue at 1–2, and Undo restores it at 2. A partly read
+    parked run is on none of 1.9's tabs and is in the review. *Off the list*
+    deletes the `run_parked` row and leaves `issue_progress` unchanged. The
+    export test passes with `run_parked`.
 
 ---
 
@@ -3871,6 +4041,8 @@ replaces a `hand` why.
 
 ### ☐ 7.6 Release digest email · S
 Vercel cron plus Resend free tier. Last thing in the backlog, by your call.
+When 5.15's parked review is due, the email carries it too: the dashboard's
+line, *Review 9 parked*, linking to `/parked` (D-105).
 
 ### ☐ 7.7 Catch me up: a recap before a later book in a series · M
 Backlog intake, 2026-10-20 (owner: *a summary of the earlier books when I come
@@ -4206,6 +4378,11 @@ yesterday does not. The feel-pass screenshots.
 with a grey `dropped` badge. Each tab's empty slate is drawn, with the design §14 copy and one primary action; the mockup gains watch's three (UX-X07,
 see 1.9).
 
+**Parked** (5.15, D-105): a film or show can be parked. It is on none of the
+three tabs, never under the dashboard's derived *Paused*, and it comes back in
+5.15's review (*Keep parked · To watch · Off the watchlist*). Whether it is a
+`title_status` value or a row of its own is a question for 8.1's plan gate.
+
 **Check:** a show with 1 of 3 seasons watched is in In flight only; a show with
 all seasons watched is in Done with nothing written to `title_status`; a
 dropped film appears only under Stopped; the genre filter narrows Up next
@@ -4381,6 +4558,8 @@ Depends on 9.2. Each album is to listen, listened or skipped, with a date and
 a rating. Every listen appends a `listen_events` row, and a relisten links to
 the previous one, as 8.3's rewatch does. The artist page lists the
 discography by year with each album's status, and `listened / listed` derived.
+An album can be parked (5.15, D-105): off To listen until 5.15's review; its
+value is asked with `album_status` at 9.1's plan gate.
 
 **Check:** marking an album listened twice appends two events and leaves one
 status row, and `artist_progress` counts the album once.
@@ -4538,6 +4717,10 @@ data model 2.22 for the games shape. Proposed:
   `want · playing · finished · dropped` and `rotation` takes `want ·
   in_rotation · set_aside`, a CHECK for each. `play_events`, the log, as
   `read_events` is. No `user_id` (D-91).
+- **Parked** (5.15, D-105): either play style can be parked, out of the
+  queue and the dashboard until 5.15's review (*Keep parked · Up next ·
+  Someday*). Rotation's `set_aside` is close to it; whether the two are one
+  value is the owner's call at this plan gate.
 - **Client:** server-side, paced to IGDB's limit, a cache table like
   `hardcover_cache`, rebuildable and not exported. Keys `IGDB_CLIENT_ID` and
   `IGDB_CLIENT_SECRET`, never sent to the browser, in `docs/SERVICES.md` in
@@ -4626,6 +4809,36 @@ rules apply as for every dashboard: no red, every meter fills with
 four queued and two coming out, each slot shows them as 10.0 draws; an empty
 ledger shows the search; the feel-pass screenshots at each width.
 
+### ☐ 10.6 Game shelves: by platform, by genre, and your own · S
+Owner intake, 2026-11-02 (owner: *tracks like shelves: could be based on
+system type, genre type, custom, etc.*). D-106. Depends on 10.3 and 5.1. They
+are called shelves, not tracks, because *track* is already the comics
+grouping (`tracks`). The queue the owner asked for in the same intake is
+10.2's `game_queue`.
+
+- **By platform and by genre are views, not shelves** (hard rule 2).
+  `/games/status` groups or filters by the platform you'll play on
+  (`game_status.platform_id`), by IGDB genre (`game_genres`) and by play
+  style, each group with its count. They keep themselves current and store
+  nothing.
+- **Your own shelves are 5.1's.** `shelves.kind` gains `games`, with
+  `shelf_games(shelf_id, game_id, ordinal, note)` carrying a real foreign key
+  (data model 2.5e: typed, never polymorphic), in `src/db/export-tables.ts`.
+  **Stop and ask at plan time** (a new table and a widened CHECK). The same
+  UI as book shelves: create, add from a game's sheet or the add sheet (*New
+  shelf…*, B19), reorder, a description and a per-game note.
+- **From a view to a shelf.** *Add these to a shelf…* on a filtered list, as
+  8.6 does it, adds every shown game in the list's order, one write with one
+  Undo. After that the shelf is yours and doesn't follow the filter.
+- The mockup gains the games shelves and the grouped status list beside
+  10.0's screens, at phone, tablet and desktop widths.
+
+**Check (proposed):** a game cannot be added to a books or titles shelf, nor
+a book to a games shelf. Grouping three games on two platforms renders two
+groups counting 2 and 1 and writes nothing. *Add these to a shelf…* on a list
+filtered to two games adds two `shelf_games` rows in list order, and Undo
+removes both. The export test passes with `shelf_games`.
+
 ---
 
 ## Later — noted, not scheduled
@@ -4676,5 +4889,10 @@ becomes a task once its open question is answered. None has a **Check:**, and
   as 3.4b ranks books, with the same *This or that* sorter. The open
   question is what's ranked: finished through games only, or rotation games
   too, which have no finish year.
+- **L-8 Plan comics runs by year or quarter** (2026-11-02 intake; owner:
+  *just books; could do comics at a future date*). 2.10b plans books only.
+  The open question is the shape: data model 2.16 says the comics queue never
+  gets years, quarters or capacity, so a run plan would be a table of its
+  own with a capacity in issues or pages, and it would amend 2.16 and D-37.
 
 ---
