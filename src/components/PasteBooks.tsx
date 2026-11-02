@@ -29,8 +29,8 @@ export const AFTER_ADD = "/books/list?status=to_read";
  *
  * Each line's title and author are two cells you can fix in place (task 1.4e),
  * so two spreadsheet columns paste straight in. The edits are kept apart from
- * the pasted lines, as the wishlist review keeps its own: an edited line has a
- * new title and author, so it is asked again, and no other line is.
+ * the pasted lines: an edited line has a new title and author, so it is asked
+ * again, and no other line is.
  */
 export default function PasteBooks({ level, target, cancel, onAdded }: {
   /** The section heading level: 2 under the page's h1, 3 under the sheet's h2. */
