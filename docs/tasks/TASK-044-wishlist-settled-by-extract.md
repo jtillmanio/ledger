@@ -99,6 +99,14 @@ Large on purpose (`never-split`): the sidecar, the table drop and the screen's r
 
 **Risks.** Statusless books include author-tab Completed reads (entered by hand, D-41): a To-Read line naming one exactly puts it at Someday (owner accepted). Running `npm run extract` rewrites every sidecar: only the new one is committed.
 
+**Revisions during implementation** (each explained to the owner in the session):
+
+- `src/components/ReviewTable.tsx` also loses its `label` and `extra` props, not just a comment: the removed screen was their only caller (step 5).
+- Three planning-doc lines outside step 6's list described the dropped table as current, and were corrected: `docs/DIAGRAMS.md` (the ER line `BOOKS ||--o{ WISHLIST`), `docs/HANDOFF.md` (the To-Read tab's line) and `docs/01-product.md` (the unsurfaced-tabs row).
+- Step 7's real run also moved one undecided `etl/data/book_review.csv` row (*Dragon Keeper*, `hardcover`, appended by enrich:books) to the top, extract's existing undecided-first sort. Asked per step 7; the owner said commit it.
+- Step 6's `docs/START-HERE.md` table list (*Verify*, after the first `migrate`) is left as it is: it counts the tables migration 0000 created (*23 tables*), in a step that already says later tasks add more, so it is a historical snapshot, and taking `wishlist` out of it would make its count wrong rather than right. The sample extract output did lose its `wishlist` line.
+- One test added beyond the list: an exact match to a statusless book loads at `to_read` (the owner's plan-gate answer).
+
 ## Review log
 
 _Filled by /implement-task. One line per round._

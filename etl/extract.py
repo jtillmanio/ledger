@@ -1945,22 +1945,34 @@ def resolve_to_read_lines(lines: list[dict], idx: BookIndex, status: dict[str, d
                 flag("wishlist_review", "unknown decision",
                      f"{what}: counted undecided, loads nothing; create, link or drop")
             continue
+        if decision == "drop":
+            continue
         if decision == "create":
-            title, author = idx.book_identity(clean(row["title"]) or "", clean(row["author"]))
-            b = idx.by_key.get((key(title), key(author))) or idx.add(title, author)
+            # As extract treats any sighting: a title with no author joins the
+            # one book with that title, and several such books is a question.
+            raw_title, raw_author = clean(row["title"]) or "", clean(row["author"])
+            b = idx.find_book(raw_title, raw_author)
+            if b is None and not raw_author and any(t == key(raw_title) for t, _ in idx.by_key):
+                flag("wishlist_review", "create with no author matches several books",
+                     f"{what}: loads nothing; give the row an author")
+                continue
+            if b is None:
+                b = idx.add(*idx.book_identity(raw_title, raw_author))
             if b is None:
                 flag("wishlist_review", "create with no title", f"{what}: give the row a title")
                 continue
             if not b["genre"]:
                 b["genre"] = clean(row["genre"].split(";")[0])
-            someday(b)
-        elif decision == "link":
+        else:
             b = idx.find_book(*to_read_line(row["near"]))
             if b is None:
                 flag("wishlist_review", "link names no book",
                      f"{what}: no book is {row['near']!r}; write `Title - Author` of a book in `near`")
                 continue
-            someday(b)
+        if b["id"] in held:
+            flag("wishlist_review", "decision names a held book",
+                 f"{what}: {named(b)} waits in book_hold.csv; it loads at Someday once kept")
+        someday(b)
     for raw, row in existing.items():
         if raw not in genres and row["decision"]:
             flag("wishlist_review", "stale review",

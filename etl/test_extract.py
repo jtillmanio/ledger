@@ -1313,24 +1313,32 @@ class WishlistReview(BookCase):
              "read": "true", "date_read": "2024-05-01", "precision": "exact"},
             {"title": "Only In Calibre", "author": "Cal Ibre", "calibre_id": "10"}])
 
-    def extract(self, path: Path, with_plan: bool = True) -> None:
+    def extract(self, path: Path, with_plan: bool = True, hold: bool = False) -> None:
+        """With `hold`, a book Hardcover doesn't know and Calibre doesn't have
+        is held (task 1.20): book_details.csv is empty, so every workbook book
+        but The Way of Kings, which Calibre has."""
         import io
         from contextlib import redirect_stdout
         ex.UNRESOLVED.clear()
         ex.CHANGES.clear()
+        extra = {}
+        if hold:
+            data = self.wishlist.parent
+            extra = {"book_hold": data / "book_hold.csv", "calibre_missing": data / "calibre_missing.csv"}
         buf = io.StringIO()
         with redirect_stdout(buf):
             ex.extract_books(path, self.out, with_plan=with_plan, book_review=self.review,
-                             calibre_books=self.calibre, wishlist_review=self.wishlist)
+                             calibre_books=self.calibre, wishlist_review=self.wishlist, **extra)
         self.printed = buf.getvalue()
 
-    def workbook(self, lines=None, **columns) -> Path:
+    def workbook(self, lines=None, master=(), **columns) -> Path:
         """The Way of Kings on the master list and To-Read 2027; Mistborn on
         Coming Out alone, so it has no status; the To-Read tab's Fantasy
-        column holds `lines`, beside a Goals column extract skips."""
+        column holds `lines`, beside a Goals column extract skips. `master`
+        adds rows to the master list."""
         to_read = {"Fantasy": list(self.LINES if lines is None else lines), "Goals": ["50 books"], **columns}
         return build_books(
-            [("The Way of Kings", "Brandon Sanderson", "The Stormlight Archive #1", "Fantasy", None)],
+            [("The Way of Kings", "Brandon Sanderson", "The Stormlight Archive #1", "Fantasy", None), *master],
             {"To-Read 2027": df({"Fantasy": ["The Way of Kings"]}), "To-Read": df(to_read)},
             coming_out=[("Mistborn: The Final Empire", "Brandon Sanderson", None, "2027-01-05")])
 
@@ -1368,6 +1376,16 @@ class WishlistReview(BookCase):
         self.extract(self.workbook())
         self.assertEqual(self.status()[self.CALIBRE_ONLY], "to_read")
         self.assertNotIn(self.CALIBRE_ONLY, [r["book_id"] for r in read(self.out, "reading_plan")])
+
+    def test_an_exact_match_to_a_statusless_book_loads_it_at_to_read(self):
+        """Owner, at the plan gate: a line naming a book with no status is
+        Someday, as a `link` to one is."""
+        lines = ["Mistborn: The Final Empire - Brandon Sanderson"]
+        self.extract(self.workbook(lines=[]))
+        self.assertNotIn(self.MISTBORN, self.status())
+        self.extract(self.workbook(lines))
+        self.assertEqual(self.status()[self.MISTBORN], "to_read")
+        self.assertEqual(self.rows(), [])
 
     def test_the_matched_book_keeps_its_status_and_its_plan_row(self):
         self.extract(self.workbook())
@@ -1493,6 +1511,50 @@ class WishlistReview(BookCase):
         self.assertIn("quiet-room-ada-unknown", self.books())
         self.assertNotIn("quiet-rooms-ada-unknown", self.books())
         self.assertEqual(self.status()["quiet-room-ada-unknown"], "to_read")
+
+    def test_create_with_no_author_is_the_one_book_with_that_title(self):
+        """A title with no author joins the one book with that title, as
+        every authorless sighting does (D-61, D-68): never a second book."""
+        lines = ["The Way of Kings"]
+        self.extract(self.workbook(lines))
+        self.assertEqual(self.row(lines[0])["reason"], "no author")
+        before = set(self.books())
+        self.decide(lines[0], "create")
+        self.extract(self.workbook(lines))
+        self.assertEqual(set(self.books()), before)
+        self.assertEqual(self.status()[self.WOK], "read")
+        self.assertEqual(self.flagged(), [])
+
+    def test_create_with_no_author_beside_two_books_of_that_title_loads_nothing(self):
+        two = [("Red Queen", "Victoria Aveyard", None, "Fantasy", None),
+               ("Red Queen", "Christina Henry", None, "Fantasy", None)]
+        lines = ["Red Queen"]
+        self.extract(self.workbook(lines, master=two))
+        before = set(self.books())
+        self.decide(lines[0], "create")
+        self.extract(self.workbook(lines, master=two))
+        self.assertEqual(set(self.books()), before)
+        self.assertIn(("wishlist_review", "create with no author matches several books"), self.flagged())
+
+    def test_a_decision_naming_a_held_book_says_so_and_a_created_book_is_never_held(self):
+        """Task 1.20: a held book loads nothing until kept, so a link to one
+        is reported; a book `create` makes is the owner's say-so, like a book
+        Calibre created, so it is never held and its author stays though the
+        author's other book is held."""
+        crown = [("The Hollow Crown", "Ada Unknown", None, "Fantasy", None)]
+        lines = ["Hollow Crown - Ada Unknown", "Second Crown - Ada Unknown"]
+        self.extract(self.workbook(lines, master=crown), hold=True)
+        self.assertEqual(self.row(lines[0])["near"], "", "a held book is never offered as `near`")
+        self.decide(lines[0], "link", near="The Hollow Crown - Ada Unknown")
+        self.decide(lines[1], "create")
+        self.extract(self.workbook(lines, master=crown), hold=True)
+        self.assertIn(("wishlist_review", "decision names a held book"), self.flagged())
+        self.assertNotIn("the-hollow-crown-ada-unknown", self.books())
+        self.assertEqual(self.status()["second-crown-ada-unknown"], "to_read")
+        self.assertIn("ada-unknown", [a["id"] for a in read(self.out, "authors")])
+        data = self.wishlist.parent
+        self.assertNotIn("Second Crown", [r["title"] for r in read(data, "book_hold")])
+        self.assertNotIn("Second Crown", [r["title"] for r in read(data, "calibre_missing")])
 
     def test_a_link_naming_no_book_is_reported_and_loads_nothing(self):
         lines = ["Quiet Rooms - Ada Unknown"]
