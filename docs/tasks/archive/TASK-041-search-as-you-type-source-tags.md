@@ -1,7 +1,7 @@
 ---
 id: TASK-041
 title: 1.22 Search as you type, and where each result comes from
-status: Review
+status: Done
 depends_on: [TASK-029, TASK-040]
 size: L
 model: opus
