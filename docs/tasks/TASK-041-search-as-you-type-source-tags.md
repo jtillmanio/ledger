@@ -148,6 +148,15 @@ and `src/app/api/metron/search/route.ts` (comments only), `.claude/rules/ui.md`,
 
 **Size**: ~17 files, `never-split`, attended; no schema change.
 
+**Revision 1 (review round 1, spec-reviewer AC-6 UNTESTED):** add
+`test/e2e/issue-search.spec.ts`, Add issues in the browser (recorded
+`metron_cache` answers; axe, contrast, the hint, the *Metron* and run-count
+tags, screenshots at every width). Its frame's stale *on Enter* note in
+`design/mockups.html` is amended, and the master list's spec counts its
+*Searching…* once a search. The new spec's axe pass found Add issues' result
+heads at `h3` straight under the page's `h1` (since 1.3b); `IssueSearch.tsx`
+draws them at `h2`, beside *Staged* and *Where they land*.
+
 **Follow-ups**: none at plan time.
 
 ## Review log

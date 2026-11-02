@@ -130,4 +130,19 @@ test("the box is a named search input, and its searching state is a polite live 
   await expect(page.locator(".list-searching")).toHaveAttribute("role", "status");
   await expect(page.locator(".list-searching")).toHaveAttribute("aria-live", "polite");
   await expect(page.getByRole("search")).toHaveCount(1);
+  // Said once a search, not once a keystroke: count the times the region comes to read Searching….
+  await page.evaluate(() => {
+    const live = document.querySelector(".list-searching")!;
+    const w = window as unknown as { said: number };
+    w.said = 0;
+    let last = live.textContent;
+    new MutationObserver(() => {
+      if (live.textContent === "Searching…" && last !== "Searching…") w.said++;
+      last = live.textContent;
+    }).observe(live, { childList: true, subtree: true, characterData: true });
+  });
+  await box(page).pressSequentially("piranesi", { delay: 60 });
+  await expect(page).toHaveURL(/\?q=piranesi$/);
+  await expect(page.locator(".list-searching")).toHaveText("");
+  expect(await page.evaluate(() => (window as unknown as { said: number }).said)).toBe(1);
 });

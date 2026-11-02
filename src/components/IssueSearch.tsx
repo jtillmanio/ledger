@@ -196,7 +196,8 @@ function Results({ title, more, rows, staged, onToggle }: {
   const uid = useId();
   return (
     <>
-      <h3 className="s">{title}<span className="more">{more}</span></h3>
+      {/* h2: the page's next level under its h1, beside Staged and Where they land (task 1.22, axe heading-order). */}
+      <h2 className="s">{title}<span className="more">{more}</span></h2>
       <ul className="group results" aria-label={title}>
         {rows.map((r, i) => {
           const on = staged.has(r.key);
