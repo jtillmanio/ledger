@@ -2894,7 +2894,7 @@ one does, on the run list and the book master list.
   shows archived rows at reduced opacity, each with **Restore**.
 - Restoring clears `deleted_at`; reading history was never touched, so it comes
   back as it was.
-- *From 1.19 (TASK-038, task/1.19-comics-add-last-run):* the comics *Add* nav
+- *From 1.19 (TASK-038, PR #179):* the comics *Add* nav
   item holds the run last added to in `ShellFrame` state (D-107), and the
   server drops an archived run only on a full load. Archiving the run *Add*
   points at should also tell the shell (or refresh it), so *Add* doesn't lead

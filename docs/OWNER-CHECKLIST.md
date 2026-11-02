@@ -215,7 +215,7 @@ tick them.
         `Science`.
       Correct them in Calibre, then run `npm run calibre` and `npm run extract`.
 - [ ] Reword roadmap 1.19's **Check:** if you want it to match what was built
-      (from TASK-038, task/1.19-comics-add-last-run). It says comics *Add* is
+      (from TASK-038, PR #179). It says comics *Add* is
       "enabled in all three navs"; at the plan gate you settled that as the two
       bars that draw medium items, the tablet rail and the sidebar. The phone's
       media bar draws no medium items, and its add is the thumb bar's
