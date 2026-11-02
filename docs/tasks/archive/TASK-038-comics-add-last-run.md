@@ -1,7 +1,7 @@
 ---
 id: TASK-038
 title: 1.19 Comics Add remembers the last run
-status: Review
+status: Done
 depends_on: [TASK-014, TASK-005]
 size: M
 model: opus
