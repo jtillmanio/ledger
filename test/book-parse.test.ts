@@ -3,7 +3,7 @@
 // etl/test_extract.py). What the lines then do is test/book-review.test.ts.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { bookKey, editBookLine, MAX_FIELD, MAX_LINES, parseBookLine, parseBooks, seriesLike } from "../src/lib/book-parse";
+import { bookKey, editBookLine, MAX_FIELD, MAX_LINES, parseBookLine, parseBooks } from "../src/lib/book-parse";
 import { bookId } from "../src/lib/issue-slug";
 
 const one = (text: string) => parseBookLine(text, 1)!;
@@ -88,28 +88,15 @@ describe("the book id", () => {
   });
 });
 
-// Task 1.4d (AC-1): the wishlist's lines use a plain hyphen where 1.4's paste
-// shows an em dash; both read the same. A line that names a series, not a book,
-// is what the wishlist review flags *series?*.
-describe("the wishlist's form (task 1.4d)", () => {
+// Task 1.4d (AC-1): a line typed with a plain hyphen reads as one with the
+// em dash 1.4's paste shows.
+describe("a plain hyphen and an em dash (task 1.4d)", () => {
   it("reads a plain hyphen and an em dash as the same line", () => {
     const hyphen = one("First Law - Joe Abercrombie");
     const em = one("First Law — Joe Abercrombie");
     expect(em).toEqual(hyphen);
     expect(hyphen).toMatchObject({ title: "First Law", author: "Joe Abercrombie", flag: null });
   });
-
-  it.each([
-    "The Warlord Chronicles", "The Licanius Trilogy", "Bloodsworn Saga", "The Riftwar Cycle",
-    "The Long Price Quartet", "Chronicles of Thomas Covenant", "Malazan: Book of the Fallen Series",
-  ])("calls %j a series", (title) => {
-    expect(seriesLike(title)).toBe(true);
-  });
-
-  it.each(["The Blade Itself", "Piranesi", "Dune", "A Memory Called Empire", "The Cycle of Time", "Sagan's Contact"])(
-    "does not call %j a series", (title) => {
-      expect(seriesLike(title)).toBe(false);
-    });
 });
 
 // Task 1.4e (AC-1, AC-2): two spreadsheet columns, tab-separated, are title and author.

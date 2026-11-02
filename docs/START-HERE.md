@@ -428,7 +428,6 @@ books <- Books.xlsx
   book_status          1289 rows -> seed/book_status.csv
   reading_plan          102 rows -> seed/reading_plan.csv
   releases               44 rows -> seed/releases.csv
-  wishlist              497 rows -> seed/wishlist.csv
   external_lists        534 rows -> seed/external_lists.csv
   unresolved            104 rows -> seed/unresolved.csv
 ```
@@ -454,8 +453,13 @@ The file lists only rows that need you (D-93). The book rows are: `stale review`
 `book_details: no such book` (a details row for a spelling that is gone: run `enrich:books`, or delete
 it), `Series-tab book matches no book` and `group matches nothing` (fix the workbook or add a merge),
 `calibre book held for review` (decide its `book_review.csv` row) and `calibre read for a book already
-read` (that read is not loaded; log it by hand if it is a reread). What Calibre overrode is in
-`seed/calibre_changes.csv`, with nothing to do.
+read` (that read is not loaded; log it by hand if it is a reread). The old To-Read tab's rows
+(`wishlist_review`, 1.27, D-111) are: `stale review` (a decided `wishlist_review.csv` row whose
+line has left the tab: it loads nothing, delete it), `unknown decision` (counted undecided: write
+`create`, `link` or `drop`), `link names no book` (fix `near` to a book's `Title - Author`),
+`create with no title` and `create with no author matches several books` (fill in the row), and
+`decision names a held book` (it loads at Someday once you `keep` it in `book_hold.csv`). What
+Calibre overrode is in `seed/calibre_changes.csv`, with nothing to do.
 
 | Rows | Category                                     | What it means                                                                                                                                                       | Action                                                                                                                                                                                                      |
 | ---- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

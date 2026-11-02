@@ -1,14 +1,14 @@
 ---
 id: TASK-044
 title: 1.27 Extract resolves the wishlist, before cutover
-status: Draft
+status: Done
 depends_on: [TASK-030, TASK-029]
 size: L
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 32931a6
 ---
 
 # TASK-044 — 1.27 Extract resolves the wishlist, before cutover
@@ -33,7 +33,7 @@ The old To-Read tab's lines are settled by `npm run extract`, before the final l
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `etl/test_*.py`: an extract over a To-Read tab holding an exact
+- [x] AC-1 (roadmap **Check:**, verbatim): `etl/test_*.py`: an extract over a To-Read tab holding an exact
   match to a seed book, an exact match to a Calibre-only book, a near spelling,
   a series name and a line with no author writes `wishlist_review.csv` with a
   row for each of the last three and none for the first two; the Calibre-only
@@ -43,10 +43,10 @@ The old To-Read tab's lines are settled by `npm run extract`, before the final l
   every decision and leaves the file byte for byte. The migration passes an
   up → down → up test on the TEST database; `wishlist` appears nowhere in
   `src/`; `npm run test:all` is green.
-- [ ] AC-2: In the AC-1 fixture, `wishlist_review.csv` has exactly the columns `genre`, `raw_entry`, `title`, `author`, `reason`, `near`, `similarity`, `decision`, in that order, one row per `raw_entry`: the near spelling's row has reason `similar`, `near` naming the seed book it is closest to and `similarity` ≥ 0.5; the series name's row has reason `series`; the line with no author has reason `no author` and an empty `author`; a further fixture line with an author and no seed book at 0.5 or more has reason `new` and an empty `near`. Every new row's `decision` is empty. A `Top` line and the `Goals` column write no row, as today.
-- [ ] AC-3: Given `wishlist_review.csv` holding a decided row whose `raw_entry` is no longer in the To-Read tab, extract keeps the row, reports it stale (`seed/unresolved.csv`, as `book_review.csv`'s stale rows are) and loads nothing from it; given a row whose `decision` is none of `create`, `link`, `drop`, extract reports it and treats it as undecided. Given three undecided rows, the run prints that three are undecided. A `link` row whose `near` book is at `read` leaves it at `read`; a `create` row whose `title` the owner edited creates the book under the edited title, not the line's.
-- [ ] AC-4: After the migration on the TEST database, no `wishlist` table exists; after its down file, `wishlist` exists with columns `id`, `genre`, `raw_entry`, `book_id` and `book_id`'s foreign key to `books`; after up again, it is gone (`npm run test:db:reset` migrates from zero). `src/db/export-tables.ts` lists no `wishlist`, extract writes no `seed/wishlist.csv`, and `etl/load.ps1`, `etl/load.sh`, `etl/rebuild.ps1`, `etl/rebuild.sh` and `test/db.ts` name no `wishlist` table.
-- [ ] AC-5: `npm run extract` passes `--wishlist-review etl/data/wishlist_review.csv` (or the plan's flag name) and, on the development workbooks, writes that file and prints its undecided count; the PR reports how many To-Read lines matched a book exactly (and how many of those were Calibre-only), and how many rows each `reason` holds. `design/mockups-index.md` has no `wishlist` row, and `docs/COMMANDS.md` names the new sidecar beside `book_review.csv`.
+- [x] AC-2: In the AC-1 fixture, `wishlist_review.csv` has exactly the columns `genre`, `raw_entry`, `title`, `author`, `reason`, `near`, `similarity`, `decision`, in that order, one row per `raw_entry`: the near spelling's row has reason `similar`, `near` naming the seed book it is closest to and `similarity` ≥ 0.5; the series name's row has reason `series`; the line with no author has reason `no author` and an empty `author`; a further fixture line with an author and no seed book at 0.5 or more has reason `new` and an empty `near`. Every new row's `decision` is empty. A `Top` line and the `Goals` column write no row, as today.
+- [x] AC-3: Given `wishlist_review.csv` holding a decided row whose `raw_entry` is no longer in the To-Read tab, extract keeps the row, reports it stale (`seed/unresolved.csv`, as `book_review.csv`'s stale rows are) and loads nothing from it; given a row whose `decision` is none of `create`, `link`, `drop`, extract reports it and treats it as undecided. Given three undecided rows, the run prints that three are undecided. A `link` row whose `near` book is at `read` leaves it at `read`; a `create` row whose `title` the owner edited creates the book under the edited title, not the line's.
+- [x] AC-4: After the migration on the TEST database, no `wishlist` table exists; after its down file, `wishlist` exists with columns `id`, `genre`, `raw_entry`, `book_id` and `book_id`'s foreign key to `books`; after up again, it is gone (`npm run test:db:reset` migrates from zero). `src/db/export-tables.ts` lists no `wishlist`, extract writes no `seed/wishlist.csv`, and `etl/load.ps1`, `etl/load.sh`, `etl/rebuild.ps1`, `etl/rebuild.sh` and `test/db.ts` name no `wishlist` table.
+- [x] AC-5: `npm run extract` passes `--wishlist-review etl/data/wishlist_review.csv` (or the plan's flag name) and, on the development workbooks, writes that file and prints its undecided count; the PR reports how many To-Read lines matched a book exactly (and how many of those were Calibre-only), and how many rows each `reason` holds. `design/mockups-index.md` has no `wishlist` row, and `docs/COMMANDS.md` names the new sidecar beside `book_review.csv`.
 
 ## Out of scope
 
@@ -81,13 +81,49 @@ The old To-Read tab's lines are settled by `npm run extract`, before the final l
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- 1.23 lists `src/lib/wishlist-review.ts` among the status-word maps to give *Listening*; this task deletes it → docs/tasks/TASK-043-audiobooks-listening.md § Context
+- START-HERE § 8b did not list the old To-Read tab's `unresolved.csv` categories (spec review advisory; owner: add it here) → docs/START-HERE.md § 8b. Read `seed/unresolved.csv` (fixed in this PR)
+- Deciding the 374 rows of `etl/data/wishlist_review.csv` before cutover → not tracked: already tracked in docs/OWNER-CHECKLIST.md (*Settle the old wishlist before the final load*) and START-HERE Step 14
+- `docs/STATUS.md` still lists `/books/add?from=wishlist`, `/api/books/wishlist` and the wishlist promotion (spec review advisory) → not tracked: `workflow.statusDoc` is regenerated from the roadmap, never hand-edited
+- A To-Read line with a `(Series #N)` suffix is not split off as 1.4's paste grammar does (spec review advisory) → not tracked: no line in today's workbook has one
+- An undecided `calibre` pair holds its Calibre book out of the index, so a line naming that book is a `new` row, and `create` would add it beside the pending pair (schema review note) → not tracked: an owner-decision edge; deciding the `book_review.csv` row first resolves it
+- The dev server on port 3141 (started before this branch deleted the wishlist files) returns 500 on `/comics/[runId]/add` with a Next worker crash; the fresh build's browser suite passes that route at every width → not tracked: local dev-server state, fixed by restarting it
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-02, with these answers: drop the `wishlist` table (schema stop and ask: yes); no bulk default per `reason` (a filtered fill-down in Excel decides a reason in one go, and every decision stays explicit in the file); the `wishlist` frame and its nav button leave `design/mockups.html` too; `near` is written `Title - Author`; an exact match to a statusless book also loads at `to_read`, as a `link` does.
+
+Large on purpose (`never-split`): the sidecar, the table drop and the screen's removal land together.
+
+1. **Extract** (`etl/extract.py`). Each To-Read line is split at its last spaced dash into title and author (the app's paste grammar, with the `(Series #N)` suffix). Then, in order: an exact title-and-author match after merges (`BookIndex.find_book`) writes no row, and an Unlisted or statusless book loads at `to_read` with no plan row while any other status is kept; else a `wishlist_review.csv` row with `reason` `series` (`SERIES_WORD`, or the key of a series in the index), else `no author`, else `similar` (closest loaded book at `PAIR_SIMILAR_AT` or more by title trigrams; ties by same author, then title, then id), else `new`. `near` is `Title - Author` of the closest loaded book, `similarity` two decimals. A line in two genre columns is one row, `genre` joined `; `.
+2. **Order.** After `fold_calibre` and `hold_books`, before the held/loaded split and every write: `near` only ever names a book that loads.
+3. **Decisions.** `create` makes the row's title and author (after merges; an existing book is used) at `to_read`, with the row's first genre, never held; `link` resolves `near` through `find_book`, and an Unlisted or statusless book loads at `to_read`; `drop` and undecided load nothing. An unknown decision (counted undecided), a `link` naming no book and a decided row whose line left the workbook (`stale review`) go to `unresolved.csv`. Decided rows keep their place; undecided ones are rebuilt in workbook order; stale ones follow. The run prints the exact matches and the undecided count. No `seed/wishlist.csv`; `package.json`'s `extract` passes `--wishlist-review etl/data/wishlist_review.csv`.
+4. **Migration.** `npm run db:generate` drops `wishlist`; `drizzle/down/<tag>.sql` recreates it with its foreign key, no rows (extract rebuilds them). Out of `src/db/export-tables.ts`, `etl/load.ps1`, `etl/load.sh`, `etl/rebuild.ps1`, `etl/rebuild.sh`, `test/db.ts`.
+5. **Removal.** The entry's list, plus `seriesLike` and its test (no other caller); comments that name the wishlist reworded, so `rg -i wishlist src/` is empty.
+6. **Design and docs.** The `wishlist` frame and nav button in `design/mockups.html`, its row in `design/mockups-index.md`; `docs/COMMANDS.md`; `docs/03-data-model.md` § 1 overview row and 2.7; `docs/02-architecture.md` (F-18's row, the load note); `docs/START-HERE.md` (the sample extract output and the table list).
+7. **Real run.** `npm run extract` on the development workbooks; commit only `etl/data/wishlist_review.csv`, and report the counts in the PR. If another committed sidecar changes, stop and ask.
+
+**Tests.** AC-1–AC-3: `etl/test_extract.py` class `WishlistReview(BookCase)` with a Calibre sidecar; its matched book is one Calibre marks read and is planned (status unchanged is discriminating). AC-4: `test/wishlist-drop-migration.test.ts`, up → down → up in a rolled-back transaction, beside `test/migrations-check.test.ts` and `test/export-tables.test.ts`. AC-5: the script's arguments, the docs, the manual run.
+
+**Risks.** Statusless books include author-tab Completed reads (entered by hand, D-41): a To-Read line naming one exactly puts it at Someday (owner accepted). Running `npm run extract` rewrites every sidecar: only the new one is committed.
+
+**Revisions during implementation** (each explained to the owner in the session):
+
+- `src/components/ReviewTable.tsx` also loses its `label` and `extra` props, not just a comment: the removed screen was their only caller (step 5).
+- Three planning-doc lines outside step 6's list described the dropped table as current, and were corrected: `docs/DIAGRAMS.md` (the ER line `BOOKS ||--o{ WISHLIST`), `docs/HANDOFF.md` (the To-Read tab's line) and `docs/01-product.md` (the unsurfaced-tabs row).
+- Step 7's real run also moved one undecided `etl/data/book_review.csv` row (*Dragon Keeper*, `hardcover`, appended by enrich:books) to the top, extract's existing undecided-first sort. Asked per step 7; the owner said commit it.
+- Step 6's `docs/START-HERE.md` table list (*Verify*, after the first `migrate`) is left as it is: it counts the tables migration 0000 created (*23 tables*), in a step that already says later tasks add more, so it is a historical snapshot, and taking `wishlist` out of it would make its count wrong rather than right. The sample extract output did lose its `wishlist` line.
+- One test added beyond the list: an exact match to a statusless book loads at `to_read` (the owner's plan-gate answer).
 
 ## Review log
 
 _Filled by /implement-task. One line per round._
+
+- Verify R1 round PASS → full PASS (vitest 1038, ETL 360, browser core 644) | R2 round PASS (vitest 1038, ETL 364)
+- Audit R1 PASS (AC-1–AC-4 proven by failing at base; AC-5's flag and the scripts' table names proven by reading the base files)
+- Spec R1 CHANGES (START-HERE table list, plan revisions unrecorded, AC-5 counts for the PR) → R2 APPROVE
+- Schema R1 CHANGES (MAJOR: a blank-author `create` made a second, authorless book; MINOR: a held book named silently; tests for both) → R2 APPROVE
+- UI R1 PASS checks 1–4 at all six widths (Add books, `?from=wishlist` renders Add books, Paste a list's review named *Review*, `/api/books/wishlist` 404); check 5 (Add issues' review) PASS at 360, then the long-running dev server returned 500 on `/comics/[runId]/add` (a stale worker); covered by the fresh build's `issue-search.spec.ts` and `routes.spec.ts` in all six core projects and `test/review-table.test.tsx`
 
 ## Blocked
 
@@ -95,7 +131,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2
+- First-pass AC FAILs: 0 (one MAJOR beyond the ACs, the authorless `create`)
+- Plan revisions after approval: 1 (the revisions recorded in the Plan)

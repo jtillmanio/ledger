@@ -163,7 +163,6 @@ erDiagram
     BOOKS       ||--o{ SHELF_BOOKS : "listed on"
     SHELVES     ||--o{ SHELF_BOOKS : holds
     BOOKS       ||--o{ EXTERNAL_LISTS : "named by"
-    BOOKS       ||--o{ WISHLIST : "resolved from"
     USERS       ||--o{ INBOX : jots
     BOOKS       ||--o{ INBOX : "resolves a books note"
     USERS       ||--o{ READ_EVENTS : "reading log"

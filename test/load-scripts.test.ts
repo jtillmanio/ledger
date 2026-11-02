@@ -189,6 +189,22 @@ describe("the hold review file reaches extract", () => {
   });
 });
 
+// Task 1.27 (D-111): every extract settles the old To-Read tab through its
+// review file, and with the table dropped no script loads, truncates or counts it.
+describe("the To-Read review file reaches extract", () => {
+  const extract = JSON.parse(readFileSync(join(root, "package.json"), "utf8")).scripts.extract as string;
+  it.each([["npm run extract", extract], ["rebuild.sh", read("rebuild.sh")]])("%s passes it", (_, text) => {
+    expect(text).toMatch(/--wishlist-review etl\/data\/wishlist_review\.csv/);
+  });
+});
+
+describe.each(["load.ps1", "load.sh", "rebuild.ps1", "rebuild.sh"])("%s after the wishlist table went", (name) => {
+  it("names no wishlist table", () => {
+    // The table, not the `--wishlist-review` flag rebuild.sh passes.
+    expect(read(name)).not.toMatch(/\bwishlist\b(?!-)/);
+  });
+});
+
 describe.each(["rebuild.ps1", "rebuild.sh"])("%s", (name) => {
   it("counts read_events against the seed", () => {
     expect(read(name)).toMatch(/\bread_events\b/);

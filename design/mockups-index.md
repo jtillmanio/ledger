@@ -1,6 +1,6 @@
 # Mockup screen index
 
-`design/mockups.html` is ~540KB for 40 screens (phone + desktop, light + dark).
+`design/mockups.html` is ~540KB for 39 screens (phone + desktop, light + dark).
 Don't `@mention` or `Read` the whole file for one screen — use
 `scripts/screen.sh <id>` (or `scripts/screen.ps1 <id>` on native PowerShell),
 which greps the live file for `data-id="<id>"` and prints just that
@@ -26,7 +26,6 @@ line numbers below drift after an edit.
 | `moveplan` | Move / add to a quarter | 2169–2326 |
 | `blist` | Master list; the *Unlisted · N* chip after *Read* and an Unlisted row, grey badge and *Add to Someday* (task 1.21); the box searches as you type, *Searching…* (task 1.22) | 3113–3244 |
 | `add` | Add books — search (Hardcover, task 1.4f); searches as you type, one place or source tag a row (task 1.22) | 3247–3364 |
-| `wishlist` | Your wishlist (`/books/add?from=wishlist`, task 1.4d) | — |
 | `shelves` | Shelves | 2528–2624 |
 | `top` | Top books | 2627–2713 |
 | `search` | Search | 2716–2826 |

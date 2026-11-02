@@ -1443,7 +1443,7 @@ listed there ends in a roadmap ID or *won't carry* with a reason; the file
 says the owner signed it off, and when; and 1.26's **Depends on** names every
 open ID it lists.
 
-### ☐ 1.27 Extract resolves the wishlist, before cutover · M
+### ☑ 1.27 Extract resolves the wishlist, before cutover · M
 From the owner, 2026-11-02 (D-111, amending D-39; replaces 1.24). The old
 To-Read tab's lines (`wishlist`, 497 of them) were to be promoted on
 production after the final load through 1.4d's review screen,
