@@ -13,6 +13,11 @@ export type UndoEntry = {
   label: string;
   /** The toast's second line, mono: "46 of 381 in Uncanny X-Men". */
   detail?: string;
+  /**
+   * The Undo button's accessible name, when *Undo* alone wouldn't say what it
+   * takes back: "Undo: 3 wishlist lines" (task 1.24). Its text stays *Undo*.
+   */
+  name?: string;
   /** Reverses the action. Rejects when it couldn't, and then changes nothing. */
   undo: () => Promise<void>;
 };
@@ -22,7 +27,7 @@ export const UNDO_MS = 8000;
 
 type Live = UndoEntry & { id: number; expires: number };
 type Toast = {
-  id: number; label: string; detail?: string; until: number; undoable: boolean;
+  id: number; label: string; detail?: string; name?: string; until: number; undoable: boolean;
   /** A failed write's way to send it again; only a failure toast has one. */
   retry?: () => void;
 };
@@ -89,7 +94,7 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
 
   const showTop = useCallback(() => {
     const top = live().at(-1);
-    present(top ? { id: top.id, label: top.label, detail: top.detail, until: top.expires, undoable: true } : null);
+    present(top ? { id: top.id, label: top.label, detail: top.detail, name: top.name, until: top.expires, undoable: true } : null);
   }, [live, present]);
 
   // Only the newest entry stays: the older ones are committed (task 1.8b).
@@ -202,7 +207,7 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
               {toast.detail && <span className="toast-detail">{toast.detail}</span>}
             </div>
             {toast.undoable && (
-              <button type="button" className="toast-undo" onClick={() => void undoTop()}>Undo</button>
+              <button type="button" className="toast-undo" aria-label={toast.name} onClick={() => void undoTop()}>Undo</button>
             )}
             {toast.retry && (
               <button type="button" className="toast-undo" onClick={() => retryTop(toast.retry!)}>Retry</button>

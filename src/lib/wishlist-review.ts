@@ -130,7 +130,10 @@ export function buildWishlistReview(
     const { match, near } = answer;
     if (match) {
       row.check = "in library";
-      if (match.status) {
+      if (match.status === "unlisted") {
+        // You have it but haven't listed it: accepting puts it on Someday, as Add books does (task 1.24, D-86).
+        row.why = "In your library, Unlisted: links this line and moves it to Someday.";
+      } else if (match.status) {
         row.why = `Already in your library (${STATUS[match.status] ?? match.status}): links this line, and your status stays.`;
       } else {
         row.why = "In your library, not on your list yet: links this line and adds it to Someday.";
@@ -148,6 +151,7 @@ export function buildWishlistReview(
     if (near) {
       row.kind = "choice";
       why.push(`Close to ${named(near)} in your library (similarity ${near.similarity.toFixed(2)}).`);
+      if (near.status === "unlisted") why.push("Use that moves it to Someday.");
     } else if (parsed.flag === "no_author") {
       row.kind = "choice";
     } else {

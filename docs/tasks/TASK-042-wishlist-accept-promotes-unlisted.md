@@ -1,14 +1,14 @@
 ---
 id: TASK-042
 title: 1.24 Wishlist accept promotes an Unlisted book to Someday
-status: Ready
+status: In progress
 depends_on: [TASK-029, TASK-024]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: b9af224
 ---
 
 # TASK-042 — 1.24 Wishlist accept promotes an Unlisted book to Someday
@@ -71,7 +71,27 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-02.
+
+### Steps
+
+1. `src/db/writes.ts`: `acceptLine` writes through `writeDestination(tx, userId, SOMEDAY, [book])` instead of `toRead`, so an Unlisted book is promoted, a book with no status gets `to_read`, and any other status stays. Its ok result says whether it wrote (`added`) or promoted a status. New `WishlistUndo = { lines: [{ id, bookId }], created, added, promoted }`.
+2. `src/db/writes.ts`: `undoAcceptWishlist(userId, entry)`, one transaction: `undoInside` with a Someday entry (skipped when the Apply wrote no status and created no book), then each line back to `book_id = NULL` where it still points at its book. Any refusal, or a line that moved, rolls the whole transaction back (a `false` from `undoInside` becomes a throw). Dismissed lines are not brought back (D-39).
+3. `src/app/api/books/wishlist/route.ts`: POST also answers `undo`, built from the accepted lines; DELETE takes it back: 400 malformed, 409 refused, `{ ok: true }`.
+4. `src/lib/wishlist-review.ts`: an Unlisted match reads *In your library, Unlisted: links this line and moves it to Someday.*; a `read`, `to_read`, `reading` or `dnf` match still says your status stays; a near match on an Unlisted book adds *Use that moves it to Someday.*
+5. `src/components/Undo.tsx` (not in Files likely touched; AC-6 needs the button's name): optional `UndoEntry.name`, the Undo button's `aria-label`. The visible text stays *Undo*; every other toast is unchanged.
+6. `src/components/WishlistReview.tsx`: Apply merges each chunk's undo entry and raises the toast (*3 wishlist lines accepted*, button *Undo: 3 wishlist lines*; a note when dismissed lines stay dismissed). Undo sends the DELETE, puts the lines back in the review, refreshes, and focuses the review's `h1` (`tabIndex=-1`, there in both states).
+
+**Files**: the six above, plus `test/wishlist.test.ts`, `test/wishlist-review.test.ts`, `test/wishlist-screen.test.tsx`, `test/undo.test.tsx`, `test/e2e/wishlist.spec.ts`.
+
+### Test strategy
+
+- AC-1, AC-2: `test/wishlist.test.ts` § an Unlisted book (task 1.24): `{ id, use }` and `{ id, title, author }` promote with the rating and note kept, no plan row, the line linked; `reading`, `read`, `dnf` keep status, finish and precision.
+- AC-1 (undo), AC-3: same file: the three-line undo; refusals for a plan row added and for `reading`, each leaving every row as it was; DELETE 400 and 409.
+- AC-1 (review row), AC-5: `test/wishlist-review.test.ts`.
+- AC-4, AC-6: `test/wishlist-screen.test.tsx` (inside `UndoProvider`: the toast's named button, the merged entry sent, lines back, focus on the `h1`, a failed undo); `test/undo.test.tsx` (`name` names the button); `test/e2e/wishlist.spec.ts` (every width and theme: the Unlisted row's why, `aria-describedby`, axe, contrast, screenshot; once at 390px light: Apply → toast → *Undo: 1 wishlist line* → line unresolved, book on the *Unlisted* list).
+
+**Risks**: 10 files, over the 8-file size check; `splitPolicy` is `never-split` and the task is already attended, the extra files being tests and `Undo.tsx`. A re-accepted line whose created book was soft-deleted gets a `-x2` id, as `undoAddBooks` does today.
 
 ## Review log
 

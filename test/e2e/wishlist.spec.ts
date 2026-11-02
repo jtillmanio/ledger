@@ -122,3 +122,79 @@ test("Apply writes, and with nothing left the slate has one way back (AC-1, AC-3
   await page.reload();
   await expect(page.locator(".slate")).toContainText("Nothing is left on your wishlist.");
 });
+
+// Task 1.24: a line naming a book you have but haven't listed. Each test seeds
+// the book (Unlisted) and its line, and takes both away after.
+const SHELVED = { id: "e2e-wish-shelved", title: "E2E Wish Shelved", line: "E2E Wish Shelved - E2E Wish Author" };
+
+async function withUnlisted(fn: () => Promise<void>) {
+  await db(async (sql) => {
+    await sql`INSERT INTO authors (id, name) VALUES (${AUTHOR}, 'E2E Wish Author') ON CONFLICT DO NOTHING`;
+    await sql`INSERT INTO books (id, title, author_id) VALUES (${SHELVED.id}, ${SHELVED.title}, ${AUTHOR})`;
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${SHELVED.id}, 'unlisted')`;
+    await sql`INSERT INTO wishlist (genre, raw_entry) VALUES ('Fantasy', ${SHELVED.line})`;
+  });
+  try {
+    await fn();
+  } finally {
+    await db(async (sql) => {
+      await sql`DELETE FROM wishlist WHERE raw_entry = ${SHELVED.line}`;
+      await sql`DELETE FROM reading_plan WHERE book_id = ${SHELVED.id}`;
+      await sql`DELETE FROM books WHERE id = ${SHELVED.id}`;
+    });
+  }
+}
+
+const shelvedRow = (page: Page) => page.locator(".review .vrow", { has: page.locator(".vl", { hasText: SHELVED.title }) });
+
+test("an Unlisted book's row says it moves to Someday, tied to its row (task 1.24, AC-5, AC-6)", async ({ page }, info) => {
+  await withUnlisted(async () => {
+    await open(page);
+    const row = shelvedRow(page);
+    await expect(row.locator(".vcheck")).toHaveText("in library");
+    const why = row.locator(".vm");
+    await expect(why).toHaveText("In your library, Unlisted: links this line and moves it to Someday.");
+    await expect(row.getByRole("radiogroup")).toHaveAttribute("aria-describedby", (await why.getAttribute("id"))!);
+    await expect(row.getByRole("radiogroup")).toHaveAccessibleDescription(
+      "In your library, Unlisted: links this line and moves it to Someday.");
+    await floor(page);
+    await screenshot(page, info, "wishlist-unlisted");
+  });
+});
+
+test("Apply moves it to Someday; Undo puts the line back and the book on the Unlisted list (task 1.24, AC-4, AC-6)", ONCE, async ({ page }, info) => {
+  await withUnlisted(async () => {
+    await open(page);
+    const apply = page.getByRole("button", { name: "Apply" });
+    await hydrated(apply);
+    await apply.click();
+
+    // The Apply before this one resolved the other lines: this one is all that's left.
+    const undo = page.locator(".toast").getByRole("button", { name: "Undo: 1 wishlist line", exact: true });
+    await expect(undo).toBeVisible();
+    await expect(undo).toHaveText("Undo");
+    await expect(page.locator(".toast-label")).toHaveText("1 wishlist line accepted");
+    expect(await db((sql) => sql`
+      SELECT s.status, (SELECT count(*) FROM reading_plan p WHERE p.book_id = s.book_id)::int AS plan,
+             (SELECT book_id FROM wishlist WHERE raw_entry = ${SHELVED.line}) AS line
+      FROM book_status s WHERE s.user_id = ${E2E_USER} AND s.book_id = ${SHELVED.id}`))
+      .toEqual([{ status: "to_read", plan: 0, line: SHELVED.id }]);
+    // Held while it is pictured, so it can't time out under the screenshot.
+    await page.locator(".toast").hover();
+    await floor(page);
+    await screenshot(page, info, "wishlist-undo");
+
+    await undo.click();
+    await expect(shelvedRow(page)).toHaveCount(1);
+    await expect(shelvedRow(page).locator(".vcheck")).toHaveText("in library");
+    await expect(page.getByRole("heading", { level: 1, name: "Your wishlist" })).toBeFocused();
+    expect(await db((sql) => sql`
+      SELECT s.status, (SELECT book_id FROM wishlist WHERE raw_entry = ${SHELVED.line}) AS line
+      FROM book_status s WHERE s.user_id = ${E2E_USER} AND s.book_id = ${SHELVED.id}`))
+      .toEqual([{ status: "unlisted", line: null }]);
+
+    await page.goto("/books/list?status=unlisted");
+    await expect(page.locator(".book-row .row-title", { hasText: SHELVED.title })).toHaveCount(1);
+    await expect(page.getByRole("link", { name: /^Unlisted,/ })).toHaveCount(1);
+  });
+});

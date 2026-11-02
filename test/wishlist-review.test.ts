@@ -87,6 +87,34 @@ describe("the five-line fixture (AC-1)", () => {
   });
 });
 
+describe("a book you have but haven't listed (task 1.24, AC-1, AC-5)", () => {
+  const withBlade = (status: string | null) => answered([["The Blade Itself", "Joe Abercrombie", answer({ ...BLADE, status }, null)]]);
+
+  it("says an Unlisted match moves to Someday, and still links it", () => {
+    const r = build({ answers: withBlade("unlisted") });
+    expect(row(r, 1)).toMatchObject({ check: "in library", kind: "ok" });
+    expect(row(r, 1).why).toBe("In your library, Unlisted: links this line and moves it to Someday.");
+    expect(row(r, 1).why).not.toContain("status stays");
+    expect(r.accepts.find((a) => a.id === 1)).toEqual({ id: 1, use: BLADE.bookId });
+  });
+
+  it.each([["read", "read"], ["to_read", "to read"], ["reading", "reading"], ["dnf", "did not finish"]])(
+    "still says a %s match keeps its status",
+    (status, shown) => {
+      const why = row(build({ answers: withBlade(status) }), 1).why;
+      expect(why).toBe(`Already in your library (${shown}): links this line, and your status stays.`);
+      expect(why).not.toContain("Someday");
+    },
+  );
+
+  it("tells a near match on an Unlisted book that Use that moves it to Someday, and a listed one nothing of the kind", () => {
+    const near = (status: string) => answered([["The Name of the Wint", "Patrick Rothfuss", answer(null, { ...WIND, status, similarity: 0.7826 })]]);
+    expect(row(build({ answers: near("unlisted") }), 2).why).toBe(
+      "Close to The Name of the Wind - Patrick Rothfuss in your library (similarity 0.78). Use that moves it to Someday.");
+    expect(row(build({ answers: near("to_read") }), 2).why).not.toContain("Someday");
+  });
+});
+
 describe("dismissing (AC-1, AC-4)", () => {
   it("is a named choice that is not red, and moves the line from accepts to dismissals", () => {
     const r = build();

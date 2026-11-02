@@ -1162,18 +1162,48 @@ async function sameBooks(tx: Tx, lines: { title: string; author: string }[]): Pr
 
 /** What accepting one wishlist line did: the book it now points at, or why it was left. */
 export type WishlistResult = { id: number } & (
-  | { ok: true; bookId: string; created: boolean }
+  | {
+    ok: true; bookId: string; created: boolean;
+    /** It wrote the book's Someday status: a new `to_read`, or an Unlisted book moved to `to_read`. */
+    added: boolean;
+    /** The book was Unlisted, and is `to_read` now (task 1.24). */
+    promoted: boolean;
+  }
   /** `gone`: a book it was pointed at is gone. `resolved`: the line is already a book, or already dismissed. `failed`: the write itself failed. */
   | { ok: false; reason: "gone" | "resolved" | "failed" }
 );
 
 /**
+ * What an Apply of the wishlist wrote, and all its undo needs (task 1.24): the
+ * lines it linked, and, as an add to Someday names them (`AddedEntry`), the
+ * books it created, the statuses it wrote and the Unlisted books it promoted.
+ */
+export type WishlistUndo = {
+  lines: { id: number; bookId: string }[];
+  created: string[];
+  added: string[];
+  promoted: string[];
+};
+
+/** The undo entry for these accepted lines: the ones that were accepted, in order. */
+export function wishlistUndo(results: WishlistResult[]): WishlistUndo {
+  const ok = results.filter((r) => r.ok);
+  return {
+    lines: ok.map((r) => ({ id: r.id, bookId: r.bookId })),
+    created: ok.filter((r) => r.created).map((r) => r.bookId),
+    added: ok.filter((r) => r.added).map((r) => r.bookId),
+    promoted: ok.filter((r) => r.promoted).map((r) => r.bookId),
+  };
+}
+
+/**
  * Promote wishlist lines into books (task 1.4d, D-39), one transaction per
  * line: a line that fails leaves itself unresolved and every other line as it
  * was written. A line that creates a book reuses the library's by now when the
- * same title and author is there (`sameBooks`, D-61); the book gets `to_read`
- * unless you have a status for it (Someday, D-37: no plan row), and
- * `wishlist.book_id` points at it.
+ * same title and author is there (`sameBooks`, D-61); the book goes to Someday
+ * as an add puts it there (`writeDestination`, D-37: no plan row): `to_read`
+ * when you have no status for it, an Unlisted book moved to `to_read` (task
+ * 1.24), and any other status kept. `wishlist.book_id` points at it.
  */
 export async function acceptWishlist(userId: string, items: WishlistItem[]): Promise<WishlistResult[]> {
   const results: WishlistResult[] = [];
@@ -1206,9 +1236,45 @@ async function acceptLine(tx: Tx, userId: string, item: WishlistItem): Promise<W
     created = same === undefined;
     book = same ?? (await createBooks(tx, [item]))[0];
   }
-  await toRead(tx, userId, [book]);
+  const { added, promoted } = await writeDestination(tx, userId, SOMEDAY, [book]);
   await tx.update(wishlist).set({ bookId: book }).where(eq(wishlist.id, item.id));
-  return { id: item.id, ok: true, bookId: book, created };
+  return { id: item.id, ok: true, bookId: book, created, added: added.length > 0, promoted: (promoted ?? []).length > 0 };
+}
+
+/**
+ * An Apply's undo (task 1.24), on `undoAddBooks`' pattern: the statuses it
+ * wrote are removed, each Unlisted book it promoted goes back to `unlisted`
+ * (an update, so its rating and note stay), the books it created are
+ * soft-deleted (Hard rule 4), and each line it linked is unresolved again
+ * (`wishlist.book_id = NULL`). A book it only linked is left as it is.
+ *
+ * Refuses, changing nothing, when anything moved in between, as an add's undo
+ * refuses (`undoInside`), or when a line no longer points at the book it was
+ * linked to. A dismissed line is not brought back: a dismissal is a hard
+ * delete, and final (D-39).
+ */
+export async function undoAcceptWishlist(userId: string, entry: WishlistUndo): Promise<boolean> {
+  const { lines, created, added, promoted } = entry;
+  if (lines.length === 0) return false;
+  const refused = Symbol("refused");
+  try {
+    return await db.transaction(async (tx) => {
+      // An Apply that only linked books you have wrote no status: there is nothing but the links to take back.
+      if (created.length + added.length > 0) {
+        const someday: AddedEntry = { destination: SOMEDAY, created, added, statused: [], promoted };
+        // A refusal after the line updates below would leave them done: refuse by rolling back.
+        if (!(await undoInside(tx, userId, someday, refused))) throw refused;
+      }
+      const back = await tx.update(wishlist).set({ bookId: null })
+        .where(or(...lines.map((l) => and(eq(wishlist.id, l.id), eq(wishlist.bookId, l.bookId)))))
+        .returning({ id: wishlist.id });
+      if (back.length !== new Set(lines.map((l) => l.id)).size) throw refused;
+      return true;
+    });
+  } catch (e) {
+    if (e === refused) return false;
+    throw e;
+  }
 }
 
 /**

@@ -164,6 +164,17 @@ describe("the undo stack takes any inverse", () => {
     expect(undoButton()!.type).toBe("button");
     expect(toast()!.closest('[role="status"]')).not.toBeNull();
     expect(lines()).toEqual(["x", "y"]);
+    // With no name of its own, the button is just *Undo*.
+    expect(undoButton()!.getAttribute("aria-label")).toBeNull();
+  });
+
+  it("names the button for what it takes back when the entry says (task 1.24), its text still Undo", async () => {
+    act(() => root.render(<UndoProvider>
+      <Pusher entry={{ label: "3 wishlist lines accepted", name: "Undo: 3 wishlist lines", undo: async () => {} }} />
+    </UndoProvider>));
+    await push();
+    expect(undoButton()!.getAttribute("aria-label")).toBe("Undo: 3 wishlist lines");
+    expect(undoButton()!.textContent).toBe("Undo");
   });
 });
 

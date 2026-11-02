@@ -135,7 +135,7 @@ describe("the five-line fixture (AC-1)", () => {
   it("gives a library book with no status of yours a to_read, and no plan row", async () => {
     await sql`DELETE FROM book_status WHERE book_id = ${WIND}`;
     const { body } = await api({ accept: [{ id: 2, use: WIND }] });
-    expect(body.accepted).toEqual([{ id: 2, ok: true, bookId: WIND, created: false }]);
+    expect(body.accepted).toEqual([{ id: 2, ok: true, bookId: WIND, created: false, added: true, promoted: false }]);
     expect(await sql`SELECT status FROM book_status WHERE book_id = ${WIND} AND user_id = ${USER}`).toEqual([{ status: "to_read" }]);
     expect((await state()).plan).toBe(0);
   });
@@ -242,6 +242,138 @@ describe("the empty slate (AC-3)", () => {
     expect(after.rows).toEqual([]);
     expect(after.accepts).toEqual([]);
     expect(await sql`SELECT count(*)::int AS n FROM wishlist`).toEqual([{ n: 4 }]);
+  });
+});
+
+describe("an Unlisted book (task 1.24)", () => {
+  const FEAR = "the-wise-mans-fear-patrick-rothfuss";
+  const HANGED = "before-they-are-hanged-joe-abercrombie";
+  const KINGS = "last-argument-of-kings-joe-abercrombie";
+  const EMPIRE = "a-memory-called-empire-arkady-martine";
+  const FEAR_LINE = { id: 6, title: "The Wise Man's Fear", author: "Patrick Rothfuss", series: null, position: null };
+  const EMPIRE_LINE = { id: 4, title: "A Memory Called Empire", author: "Arkady Martine", series: null, position: null };
+
+  beforeEach(async () => {
+    // One you have but haven't listed (Calibre's, with a rating and a note), one you're reading, one set aside.
+    await sql`INSERT INTO books (id, title, author_id) VALUES (${FEAR}, 'The Wise Man''s Fear', 'patrick-rothfuss'),
+      (${HANGED}, 'Before They Are Hanged', 'joe-abercrombie'), (${KINGS}, 'Last Argument of Kings', 'joe-abercrombie')`;
+    await sql`INSERT INTO book_status (user_id, book_id, status, rating, notes) VALUES (${USER}, ${FEAR}, 'unlisted', 4.5, 'the Calibre copy')`;
+    await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+              VALUES (${USER}, ${HANGED}, 'reading', NULL, 'none'), (${USER}, ${KINGS}, 'dnf', '2023-07-01', 'approximate')`;
+    await sql`INSERT INTO wishlist (genre, raw_entry) VALUES ('Fantasy', 'The Wise Man''s Fear - Patrick Rothfuss'),
+      ('Fantasy', 'Before They Are Hanged - Joe Abercrombie'), ('Fantasy', 'Last Argument of Kings - Joe Abercrombie')`;
+  });
+
+  const del = async (body: unknown) => {
+    const res = await route.DELETE(new Request("http://test/api/books/wishlist", {
+      method: "DELETE", body: JSON.stringify(body), headers: { "content-type": "application/json" },
+    }));
+    return { status: res.status, body: await res.json() };
+  };
+  const statusOf = async (id: string) => (await sql`
+    SELECT status, rating, notes, finished_on::text AS finished_on, finished_on_precision AS precision, year_rank
+    FROM book_status WHERE user_id = ${USER} AND book_id = ${id}`)[0];
+  /** Every row an accept or its undo can touch, as text. */
+  const everything = async () => JSON.stringify({
+    status: await sql`SELECT * FROM book_status ORDER BY book_id`,
+    books: await sql`SELECT id, deleted_at IS NULL AS live FROM books ORDER BY id`,
+    plan: await sql`SELECT * FROM reading_plan ORDER BY book_id, period`,
+    lines: await sql`SELECT id, book_id FROM wishlist ORDER BY id`,
+  });
+
+  it.each([
+    ["that links it ({ id, use })", { id: 6, use: FEAR }],
+    ["that names its title and author", FEAR_LINE],
+  ])("moves an Unlisted book to Someday from a line %s: to_read, rating and note kept, no plan row (AC-1, AC-2)", async (_, item) => {
+    const { status, body } = await api({ accept: [item] });
+    expect(status).toBe(200);
+    expect(body.accepted).toEqual([{ id: 6, ok: true, bookId: FEAR, created: false, added: true, promoted: true }]);
+    expect(await statusOf(FEAR)).toEqual({
+      status: "to_read", rating: 4.5, notes: "the Calibre copy", finished_on: null, precision: "none", year_rank: null,
+    });
+    expect(await sql`SELECT * FROM reading_plan WHERE book_id = ${FEAR}`).toEqual([]);
+    expect(await sql`SELECT book_id FROM wishlist WHERE id = 6`).toEqual([{ book_id: FEAR }]);
+  });
+
+  it("leaves a book at reading, read, dnf or to_read at its status, finish and precision, byte for byte (AC-1, AC-2)", async () => {
+    const before = await Promise.all([BLADE, WIND, HANGED, KINGS].map(statusOf));
+    const { body } = await api({ accept: [
+      { id: 1, use: BLADE }, { id: 2, use: WIND }, { id: 7, use: HANGED },
+      { id: 8, title: "Last Argument of Kings", author: "Joe Abercrombie", series: null, position: null },
+    ] });
+    expect(body.accepted.map((a: { ok: boolean; added: boolean; promoted: boolean }) => [a.ok, a.added, a.promoted]))
+      .toEqual([[true, false, false], [true, false, false], [true, false, false], [true, false, false]]);
+    expect(await Promise.all([BLADE, WIND, HANGED, KINGS].map(statusOf))).toEqual(before);
+    expect(before.map((s) => s.status)).toEqual(["read", "to_read", "reading", "dnf"]);
+    expect(await sql`SELECT id FROM wishlist WHERE book_id IS NOT NULL ORDER BY id`).toEqual([{ id: 1 }, { id: 2 }, { id: 7 }, { id: 8 }]);
+  });
+
+  it("answers what the Apply wrote: the lines it linked, the books it created, the statuses it wrote and promoted", async () => {
+    const { body } = await api({ accept: [FEAR_LINE, EMPIRE_LINE, { id: 1, use: BLADE }] });
+    expect(body.undo).toEqual({
+      lines: [{ id: 6, bookId: FEAR }, { id: 4, bookId: EMPIRE }, { id: 1, bookId: BLADE }],
+      created: [EMPIRE], added: [FEAR, EMPIRE], promoted: [FEAR],
+    });
+  });
+
+  it("undoes an Apply: the promoted book Unlisted again, the created one soft-deleted, the read one untouched, every line unresolved (AC-1, AC-3)", async () => {
+    const blade = await statusOf(BLADE);
+    const { body } = await api({ accept: [FEAR_LINE, EMPIRE_LINE, { id: 1, use: BLADE }] });
+    const undone = await del(body.undo);
+    expect(undone).toEqual({ status: 200, body: { ok: true } });
+
+    expect(await statusOf(FEAR)).toEqual({
+      status: "unlisted", rating: 4.5, notes: "the Calibre copy", finished_on: null, precision: "none", year_rank: null,
+    });
+    expect(await sql`SELECT deleted_at IS NOT NULL AS gone FROM books WHERE id = ${EMPIRE}`).toEqual([{ gone: true }]);
+    expect(await sql`SELECT * FROM book_status WHERE book_id = ${EMPIRE}`).toEqual([]);
+    expect(await statusOf(BLADE)).toEqual(blade);
+    expect(blade).toMatchObject({ status: "read", finished_on: "2024-05-01", precision: "exact" });
+    expect(await sql`SELECT id, book_id FROM wishlist WHERE id IN (1, 4, 6) ORDER BY id`)
+      .toEqual([{ id: 1, book_id: null }, { id: 4, book_id: null }, { id: 6, book_id: null }]);
+    expect((await queries.unresolvedWishlist()).map((l) => l.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+
+  it("undoes an Apply that only linked a book you have: the line is back, the book as it was", async () => {
+    const before = await everything();
+    const { body } = await api({ accept: [{ id: 1, use: BLADE }] });
+    expect(body.undo).toEqual({ lines: [{ id: 1, bookId: BLADE }], created: [], added: [], promoted: [] });
+    expect((await del(body.undo)).status).toBe(200);
+    expect(await everything()).toEqual(before);
+  });
+
+  it.each([
+    ["gained a plan row", () => sql`INSERT INTO reading_plan (user_id, book_id, period) VALUES (${USER}, ${FEAR}, '2027')`],
+    ["became reading", () => sql`UPDATE book_status SET status = 'reading' WHERE book_id = ${FEAR}`],
+  ])("refuses, changing nothing, when the promoted book %s since (AC-3)", async (_, since) => {
+    const { body } = await api({ accept: [FEAR_LINE, EMPIRE_LINE, { id: 1, use: BLADE }] });
+    await since();
+    const before = await everything();
+    const { status } = await del(body.undo);
+    expect(status).toBe(409);
+    expect(await everything()).toEqual(before);
+  });
+
+  it("refuses, rolling back what it had undone, when a line no longer points at its book", async () => {
+    const { body } = await api({ accept: [FEAR_LINE, EMPIRE_LINE] });
+    await sql`UPDATE wishlist SET book_id = ${BLADE} WHERE id = 4`;
+    const before = await everything();
+    expect((await del(body.undo)).status).toBe(409);
+    expect(await everything()).toEqual(before);
+    expect((await statusOf(FEAR)).status).toBe("to_read");
+  });
+
+  it.each([
+    [{}],
+    [{ lines: [], created: [], added: [], promoted: [] }],
+    [{ lines: [{ id: "6", bookId: "x" }], created: [], added: [], promoted: [] }],
+    [{ lines: [{ id: 6 }], created: [], added: [], promoted: [] }],
+    [{ lines: [{ id: 6, bookId: "x" }], created: "x", added: [], promoted: [] }],
+  ])("refuses the undo %j with nothing changed", async (body) => {
+    await api({ accept: [FEAR_LINE] });
+    const before = await everything();
+    expect((await del(body)).status).toBe(400);
+    expect(await everything()).toEqual(before);
   });
 });
 

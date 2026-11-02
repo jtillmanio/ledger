@@ -9,6 +9,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { UndoProvider } from "../src/components/Undo";
 import WishlistReview from "../src/components/WishlistReview";
 import { bookKey } from "../src/lib/book-parse";
 import type { BookAnswer } from "../src/lib/book-review";
@@ -42,6 +43,8 @@ let root: Root;
 let fetchMock: ReturnType<typeof vi.fn>;
 /** What the wishlist route answers for an accept request; a test replaces it. */
 let accepting: (items: { id: number; use?: string }[]) => Response;
+/** What it answers an Apply's undo (task 1.24); a test replaces it. */
+let undoing: (entry: unknown) => Response;
 
 beforeEach(() => {
   container = document.createElement("div");
@@ -49,12 +52,19 @@ beforeEach(() => {
   root = createRoot(container);
   router.push.mockReset();
   router.refresh.mockReset();
-  accepting = (items) => Response.json({
-    accepted: items.map((i) => ({ id: i.id, ok: true, bookId: i.use ?? `book-${i.id}`, created: i.use === undefined })),
-    dismissed: [],
-  });
+  accepting = (items) => {
+    const bookOf = (i: { id: number; use?: string }) => i.use ?? `book-${i.id}`;
+    const made = items.filter((i) => i.use === undefined).map(bookOf);
+    return Response.json({
+      accepted: items.map((i) => ({ id: i.id, ok: true, bookId: bookOf(i), created: i.use === undefined, added: i.use === undefined, promoted: false })),
+      dismissed: [],
+      undo: { lines: items.map((i) => ({ id: i.id, bookId: bookOf(i) })), created: made, added: made, promoted: [] },
+    });
+  };
+  undoing = () => Response.json({ ok: true });
   fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const body = JSON.parse(init!.body as string);
+    if (init!.method === "DELETE") return undoing(body);
     if (url === "/api/books/bulk") {
       return Response.json({ answers: (body.lines as unknown[]).map(() => ({ match: null, near: null })) });
     }
@@ -72,7 +82,7 @@ afterEach(() => {
 });
 
 function show(lines = LINES, answers = ANSWERS, seriesNames = ["first law"]) {
-  act(() => root.render(<WishlistReview lines={lines} answers={answers} seriesNames={seriesNames} />));
+  act(() => root.render(<UndoProvider><WishlistReview lines={lines} answers={answers} seriesNames={seriesNames} /></UndoProvider>));
 }
 const click = (el: Element) => act(async () => {
   el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
@@ -89,7 +99,10 @@ const button = (name: string) => [...container.querySelectorAll<HTMLButtonElemen
 const apply = () => container.querySelector<HTMLButtonElement>(".add-buttons button:last-child")!;
 const reason = () => container.querySelector("#wl-reason")?.textContent ?? null;
 const pick = (row: HTMLElement, value: string) => act(async () => row.querySelector<HTMLInputElement>(`input[value="${value}"]`)!.click());
-const posts = () => fetchMock.mock.calls.filter(([u]) => u === "/api/books/wishlist").map(([, init]) => JSON.parse(init.body));
+const posts = () => fetchMock.mock.calls.filter(([u, init]) => u === "/api/books/wishlist" && init.method === "POST").map(([, init]) => JSON.parse(init.body));
+const undos = () => fetchMock.mock.calls.filter(([u, init]) => u === "/api/books/wishlist" && init.method === "DELETE").map(([, init]) => JSON.parse(init.body));
+const toastText = () => [...container.querySelectorAll(".toast-label, .toast-detail")].map((n) => n.textContent);
+const undoButton = () => container.querySelector<HTMLButtonElement>(".toast .toast-undo");
 
 describe("the states (AC-4)", () => {
   it("draws one table per genre, in the sheet's order, each line with a glyph and its text", () => {
@@ -221,6 +234,63 @@ describe("applying (AC-1, AC-3)", () => {
     expect(container.querySelector('[role="alert"]')!.textContent).toContain("Couldn't finish. What was applied is done; the rest is still here.");
     expect(apply().textContent).toBe("Apply");
     expect(apply().getAttribute("aria-disabled")).toBeNull();
+  });
+});
+
+describe("undoing an Apply (task 1.24, AC-4, AC-6)", () => {
+  it("raises the undo toast, its button named for the lines it takes back", async () => {
+    show();
+    await click(apply());
+    expect(toastText()).toEqual(["4 wishlist lines accepted"]);
+    expect(undoButton()!.tagName).toBe("BUTTON");
+    expect(undoButton()!.getAttribute("aria-label")).toBe("Undo: 4 wishlist lines");
+    expect(undoButton()!.textContent).toBe("Undo");
+  });
+
+  it("says a dismissal stays: Undo takes back only the accepted lines", async () => {
+    show();
+    await pick(rows()[2], "dismiss");
+    await click(apply());
+    expect(toastText()).toEqual(["4 wishlist lines accepted", "1 dismissed line stays dismissed"]);
+  });
+
+  it("raises no undo when nothing was accepted", async () => {
+    show();
+    for (const row of rows()) await pick(row, "dismiss");
+    await click(apply());
+    expect(posts()).toEqual([{ dismiss: [1, 2, 3, 4, 5] }]);
+    expect(undoButton()).toBeNull();
+  });
+
+  it("sends back what every chunk wrote, puts the lines back in the review, and focuses it", async () => {
+    const many: WishlistLine[] = Array.from({ length: 45 }, (_, i) => ({ id: i + 1, genre: "Fantasy", text: `Book ${i + 1} - Some Author` }));
+    const answers = many.map((l): [string, BookAnswer] => [bookKey(`Book ${l.id}`, "Some Author"), { match: null, near: null }]);
+    show(many, answers, []);
+    await click(apply());
+    expect(posts().map((p) => p.accept.length)).toEqual([40, 5]);
+    expect(container.querySelector(".slate")).not.toBeNull();
+    expect(undoButton()!.getAttribute("aria-label")).toBe("Undo: 45 wishlist lines");
+    router.refresh.mockReset();
+
+    await click(undoButton()!);
+    const books = many.map((l) => `book-${l.id}`);
+    expect(undos()).toEqual([{
+      lines: many.map((l) => ({ id: l.id, bookId: `book-${l.id}` })), created: books, added: books, promoted: [],
+    }]);
+    expect(rows()).toHaveLength(45);
+    expect(container.querySelector(".slate")).toBeNull();
+    expect(router.refresh).toHaveBeenCalled();
+    expect(document.activeElement).toBe(container.querySelector("h1"));
+  });
+
+  it("a refused undo says nothing changed, and the lines stay applied", async () => {
+    undoing = () => Response.json({ error: "Something changed" }, { status: 409 });
+    show();
+    await click(apply());
+    await click(undoButton()!);
+    expect(undos()).toHaveLength(1);
+    expect(toastText()).toEqual(["Couldn't undo 4 wishlist lines accepted. Nothing changed."]);
+    expect(rows().map((r) => r.querySelector(".vl")!.textContent)).toEqual(["First Law - Joe Abercrombie"]);
   });
 });
 

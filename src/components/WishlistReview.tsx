@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import EmptySlate from "@/components/EmptySlate";
 import ReviewTable from "@/components/ReviewTable";
-import type { WishlistResult } from "@/db/writes";
+import { useUndo } from "@/components/Undo";
+import type { WishlistResult, WishlistUndo } from "@/db/writes";
 import { bookKey } from "@/lib/book-parse";
 import type { BookAnswer, BookAnswers, Choices } from "@/lib/book-review";
 import { buildWishlistReview, type WishlistLine, type WishlistRow } from "@/lib/wishlist-review";
@@ -25,6 +26,10 @@ const n = (count: number, one: string, many = `${one}s`) => `${count} ${count ==
  * it can be accepted. Nothing is written until **Apply**, which sends every
  * accept and dismissal. A line that couldn't be saved stays where it is, and
  * the rest are done. With nothing left, one way back to Add books.
+ *
+ * Apply raises the undo toast for the lines it accepted (task 1.24): *Undo*
+ * puts them back in the review, unresolved, and takes back what they wrote,
+ * focus returning to the review's heading. A dismissal is final (D-39).
  */
 export default function WishlistReview({ lines, answers: initial, seriesNames }: {
   lines: WishlistLine[];
@@ -43,7 +48,9 @@ export default function WishlistReview({ lines, answers: initial, seriesNames }:
   const [failed, setFailed] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const reasonRef = useRef<HTMLParagraphElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
   const router = useRouter();
+  const { push } = useUndo();
 
   const left = useMemo(() => lines.filter((l) => !gone.has(l.id)), [lines, gone]);
   const review = useMemo(
@@ -97,7 +104,30 @@ export default function WishlistReview({ lines, answers: initial, seriesNames }:
       method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(String(res.status));
-    return await res.json() as { accepted: WishlistResult[]; dismissed: number[] };
+    return await res.json() as { accepted: WishlistResult[]; dismissed: number[]; undo?: WishlistUndo };
+  }
+
+  /** Raise the toast that takes back what an Apply accepted: its lines come back to the review. */
+  function offerUndo(entry: WishlistUndo, dismissed: number) {
+    const count = entry.lines.length;
+    if (count === 0) return;
+    push({
+      label: `${n(count, "wishlist line")} accepted`,
+      detail: dismissed ? `${n(dismissed, "dismissed line")} ${dismissed === 1 ? "stays" : "stay"} dismissed` : undefined,
+      name: `Undo: ${n(count, "wishlist line")}`,
+      undo: async () => {
+        const res = await fetch(WISHLIST, {
+          method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify(entry),
+        });
+        if (!res.ok) throw new Error(String(res.status));
+        const back = new Set(entry.lines.map((l) => l.id));
+        setGone((g) => new Set([...g].filter((id) => !back.has(id))));
+        setDone(null);
+        setFailed(null);
+        headingRef.current?.focus();
+        router.refresh();
+      },
+    });
   }
 
   async function apply() {
@@ -112,11 +142,19 @@ export default function WishlistReview({ lines, answers: initial, seriesNames }:
     let linked = 0;
     let dismissed = 0;
     const stuck: WishlistResult[] = [];
+    // What every chunk wrote, joined: one Undo takes back the whole Apply.
+    const wrote: WishlistUndo = { lines: [], created: [], added: [], promoted: [] };
     const settle = (ids: number[]) => setGone((g) => new Set([...g, ...ids]));
     try {
       for (let at = 0; at < accepts.length; at += CHUNK) {
         setProgress(`Applying ${Math.min(at + CHUNK, accepts.length)} of ${accepts.length}…`);
-        const { accepted } = await post({ accept: accepts.slice(at, at + CHUNK) });
+        const { accepted, undo } = await post({ accept: accepts.slice(at, at + CHUNK) });
+        if (undo) {
+          wrote.lines.push(...undo.lines);
+          wrote.created.push(...undo.created);
+          wrote.added.push(...undo.added);
+          wrote.promoted.push(...undo.promoted);
+        }
         // A line already resolved elsewhere is as good as accepted: it leaves the list.
         settle(accepted.filter((r) => r.ok || r.reason === "resolved").map((r) => r.id));
         for (const r of accepted) {
@@ -147,6 +185,8 @@ export default function WishlistReview({ lines, answers: initial, seriesNames }:
     } finally {
       setProgress(null);
       router.refresh();
+      // What was accepted can be taken back, even when a later chunk failed.
+      offerUndo(wrote, dismissed);
     }
   }
 
@@ -193,10 +233,13 @@ export default function WishlistReview({ lines, answers: initial, seriesNames }:
     );
   };
 
+  // One heading for both states: the same element, so an undo can hand focus back to it.
+  const heading = <h1 className="t" ref={headingRef} tabIndex={-1}>Your wishlist</h1>;
+
   if (left.length === 0) {
     return (
       <div className="addb wishlist">
-        <h1 className="t">Your wishlist</h1>
+        {heading}
         {done && <p className="small muted review-status" role="status">{done}</p>}
         {failed && <p className="neutral-error" role="alert"><span aria-hidden="true">×</span> {failed}</p>}
         <EmptySlate title="Nothing left." href="/books/add" label="Add books">
@@ -208,7 +251,7 @@ export default function WishlistReview({ lines, answers: initial, seriesNames }:
 
   return (
     <div className="addb wishlist">
-      <h1 className="t">Your wishlist</h1>
+      {heading}
       <p className="lede">
         {n(left.length, "line")} left from your old To-Read tab, in the sheet&apos;s order. Each one becomes a Someday
         book, links a book you have, or is dismissed. Nothing is written until Apply.
