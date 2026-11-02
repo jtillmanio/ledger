@@ -53,7 +53,7 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 | [9 Music](#phase-9--music) | A fourth medium, last (D-75). | M25 | 0 / 8 |
 | [10 Games](#phase-10--games) | A fifth medium, a planning tool for what to play: search, a queue by the platform you'll play on, and the games you're waiting for (D-102). | M26 | 0 / 7 |
 
-Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate. The 2026-11-02 intake added 2.10b, 5.15, 5.16, 10.6 and L-8 and amended 2.10, 7.6, 8.8, 9.3 and 10.1 (D-104–D-106); none of them is a cutover gate either. A second 2026-11-02 intake added 2.2c, 2.2d, 2.2e, L-9 and L-10, rewrote 5.12 as one page for every medium, and amended 2.2, 2.10b, 5.11, 6.10 and L-1 (D-108–D-110): only a follow you set to *Reading* counts as reading.
+Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate. The 2026-11-02 intake added 2.10b, 5.15, 5.16, 10.6 and L-8 and amended 2.10, 7.6, 8.8, 9.3 and 10.1 (D-104–D-106); none of them is a cutover gate either. A second 2026-11-02 intake added 2.2c, 2.2d, 2.2e, L-9 and L-10, rewrote 5.12 as one page for every medium, and amended 2.2, 2.10b, 5.11, 6.10 and L-1 (D-108–D-110): only a follow you set to *Reading* counts as reading. Later that day the wishlist moved into extract (D-111): 1.27 settles it before the final load, 1.24 is removed, and 1.26 no longer promotes it on production.
 
 ---
 
@@ -326,6 +326,8 @@ became books (`First Law - Joe Abercrombie`, with a genre; none links a
 `book_id`). Nothing shows them. This task runs them once through 1.4's
 paste-a-list review, so each becomes an ordinary Someday book (D-37:
 `book_status = to_read`, no plan row) or is dismissed. Depends on 1.4.
+*Since D-111 (2026-11-02):* the wishlist is settled by extract before the
+final load instead (1.27), and 1.27 removes this screen.
 
 - **A one-off screen**, `/books/add?from=wishlist`: the unresolved lines
   (`book_id IS NULL`) pre-filled into the *Paste a list* review, in workbook
@@ -1406,22 +1408,12 @@ saying it was a listen can't be told apart later.
 - In flight lists a Listening book under *Listening*, not *Reading*.
 - `npm run test:db:reset` migrates from zero.
 
-### ☐ 1.24 Wishlist accept promotes an Unlisted book to Someday · S
-Follow-up from TASK-029 (1.21) and TASK-030 (1.18), 2026-10-27. Accepting a
-wishlist line (1.4d, `acceptLine` → `toRead` in `src/db/writes.ts`) leaves a
-book that is already in the Ledger at its status, and
-`src/lib/wishlist-review.ts` tells the owner *your status stays*. Since 1.18
-creates about 3,200 Calibre books at **Unlisted**, a wishlist line will often
-name one, and accepting it should put it on the list the way *Add books* does
-since 1.21: an Unlisted book moves to `to_read` (Someday), its undo puts it back
-to `unlisted`, and a book at any other status keeps it. The review screen's
-copy says which happens. Depends on 1.21 and 1.4d. **The Check below is
-proposed.**
-
-**Check:** `npm test`: accepting a wishlist line that names an Unlisted book
-writes `book_status = to_read` and no plan row, and its undo restores
-`unlisted`; a line naming a `read` or `to_read` book leaves the status as it
-was; the review row for the Unlisted book says it moves to Someday.
+### 1.24 — removed 2026-11-02 (D-111)
+It made a wishlist accept on 1.4d's screen move one of 1.18's Unlisted books
+to Someday, with an undo of the accept. It was built (TASK-042) and closed
+unmerged (PR #182) when the owner moved the wishlist into extract: its rule,
+an exact match to an Unlisted book loads at `to_read`, is 1.27's now. The
+number is not reused.
 
 ### ☑ 1.25 Sheets parity audit · S
 From the owner, 2026-10-28 (D-95). Cutover freezes both Sheets, so anything
@@ -1451,20 +1443,68 @@ listed there ends in a roadmap ID or *won't carry* with a reason; the file
 says the owner signed it off, and when; and 1.26's **Depends on** names every
 open ID it lists.
 
+### ☐ 1.27 Extract resolves the wishlist, before cutover · M
+From the owner, 2026-11-02 (D-111, amending D-39; replaces 1.24). The old
+To-Read tab's lines (`wishlist`, 497 of them) were to be promoted on
+production after the final load through 1.4d's review screen,
+`/books/add?from=wishlist`, which nothing in the app links to. Most of them
+are questions (a near spelling, a series name, a line with no author), the
+kind extract's review sidecars already settle before any load. So
+`npm run extract` settles them, and the final load carries the answer.
+
+- A line naming a seed book by its exact title and author (D-61, compared as
+  extract compares books) is that book. An Unlisted one, a book only Calibre
+  has (1.18, D-86), loads at `to_read` (Someday: no plan row, D-37); a book at
+  any other status keeps it.
+- Every other line is a row of `etl/data/wishlist_review.csv` (`genre`,
+  `raw_entry`, `title`, `author`, `reason` new|similar|series|no author,
+  `near`, `similarity`, `decision`), keyed by `raw_entry`. `near` is the
+  closest seed book (≥ 0.5 trigram similarity, D-92). `decision` is `create`
+  (a new book from the row's `title` and `author`, which the owner may edit,
+  at `to_read`), `link` (the line is the `near` book: an Unlisted or
+  statusless one loads at `to_read`) or `drop`. Decided rows survive every
+  run, as `book_review.csv`'s do (D-68); an undecided row loads nothing and is
+  rebuilt each run; the run prints how many are undecided. A row whose line
+  has left the workbook is reported stale.
+- Once it lands: the `wishlist` table (a migration with
+  `drizzle/down/<tag>.sql`, and its `src/db/export-tables.ts` entry),
+  `seed/wishlist.csv`, and 1.4d's screen go: the `?from=wishlist` branch of
+  `src/app/books/add/page.tsx`, `src/components/WishlistReview.tsx`,
+  `src/components/WishlistLoading.tsx`, `src/lib/wishlist-review.ts`,
+  `src/app/api/books/wishlist/route.ts`, `acceptWishlist` and
+  `dismissWishlist` in `src/db/writes.ts`, `unresolvedWishlist` and
+  `seriesNames` in `src/db/queries.ts`, their CSS and tests, and the
+  `wishlist` row in `design/mockups-index.md`.
+
+Depends on 1.18 and 1.21 (done). Cutover (1.26) waits until no row is
+undecided. **The Check below is proposed.**
+
+**Check:** `etl/test_*.py`: an extract over a To-Read tab holding an exact
+match to a seed book, an exact match to a Calibre-only book, a near spelling,
+a series name and a line with no author writes `wishlist_review.csv` with a
+row for each of the last three and none for the first two; the Calibre-only
+book loads at `to_read` with no `reading_plan` row, and the matched book's
+status is unchanged; rows decided `create`, `link` and `drop` load a new
+`to_read` book, the `near` book at `to_read`, and nothing; a second run keeps
+every decision and leaves the file byte for byte. The migration passes an
+up → down → up test on the TEST database; `wishlist` appears nowhere in
+`src/`; `npm run test:all` is green.
+
 ### ☐ 1.26 Cut over from the Sheets · M
 From the owner, 2026-10-28 (D-95). START-HERE Step 14 as an entry, so the
 switch has a box and a Check like any other work: a fresh export and extract,
 the last load of production, `LEDGER_LIVE=true` in `.env.live` and in the
 repo variable, both Sheets renamed as archives and set read-only with the
-app's URL at the top, then the wishlist promotion (1.4d) on production. The
-owner runs every command; Claude never runs one against `.env.live`
+app's URL at the top. The wishlist is settled before the final load, by
+extract (1.27, D-111), not on production after it. The owner runs every
+command; Claude never runs one against `.env.live`
 (CLAUDE.md). Every box in Step 14's *Before the switch* is ticked first,
 including that adding a run and marking reads feel faster than the sheet.
 The entry is ticked on the day of the switch. The month of running both
 (D-18) follows it, with its *Done when* in Step 14.
 
 **Depends on:** 1.25; every open Phase 1 entry (1.14b, 1.18b, 1.18c, 1.20,
-1.4e, 1.4f, 1.17, 1.19, 1.22, 1.23, 1.24); 2.11a and 1.11 (done); and every
+1.4e, 1.4f, 1.17, 1.19, 1.22, 1.23, 1.27); 2.11a and 1.11 (done); and every
 open entry `docs/cutover-parity.md` names (1.25): 2.0,
 2.1, 2.2, 2.2b, 2.3 (the year and quarter budget), 3.1, 3.2, 3.3 (catalog and
 prerequisite edits), 3.4 (top books), 5.7 (books coming out) and 5.10

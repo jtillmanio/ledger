@@ -146,9 +146,11 @@ for later; the text field is preserved verbatim so nothing is lost.
 **2.7 Books that aren't clean records stay as text.** The old `To-Read` tab mixes
 titles, series-plus-author strings, and `Top` markers. 497 of those land in
 `wishlist` with `raw_entry` intact and a nullable `book_id`, so nothing is lost
-before they are cleaned. They are promoted once, through 1.4's paste-a-list
-review (task 1.4d, D-39), after the final load: each line becomes a Someday book
-(2.9) or is dismissed, and the table goes once it is empty.
+before they are cleaned. They are settled by extract before the final load
+(1.27, D-111, amending D-39's promotion through 1.4d's review screen after it):
+a line naming a book is that book, and every other line is decided in
+`etl/data/wishlist_review.csv`, becoming a Someday book (2.9), linked to one,
+or dropped. Then the table goes.
 The 534 BookTube entries live in `external_lists` the same way.
 
 **2.8 Blocks are a table, not a number.** A track is divided into numbered
