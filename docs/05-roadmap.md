@@ -1477,7 +1477,10 @@ kind extract's review sidecars already settle before any load. So
   `wishlist` row in `design/mockups-index.md`.
 
 Depends on 1.18 and 1.21 (done). Cutover (1.26) waits until no row is
-undecided. **The Check below is proposed.**
+undecided. Open question for the plan: about 386 lines need a decision (on
+the 2026-11-02 development data), so whether a `reason` gets a default the
+owner can take in bulk (`drop` every `series` row, `create` every `new` one)
+rather than deciding each row. **The Check below is proposed.**
 
 **Check:** `etl/test_*.py`: an extract over a To-Read tab holding an exact
 match to a seed book, an exact match to a Calibre-only book, a near spelling,
