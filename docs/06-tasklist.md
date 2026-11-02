@@ -42,7 +42,7 @@ milestone._
 - **Next and Later milestones are a rough plan.** Each is reshaped when the
   milestone before it closes, and every schema proposal in them is asked at its
   task's plan gate (CLAUDE.md, *Stop and ask*).
-- **Unscheduled:** L-1 to L-9 ([05-roadmap.md § Later](05-roadmap.md#later--noted-not-scheduled)), each behind an open question.
+- **Unscheduled:** L-1 to L-10 ([05-roadmap.md § Later](05-roadmap.md#later--noted-not-scheduled)), each behind an open question.
 
 ## Coverage
 

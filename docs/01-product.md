@@ -236,7 +236,8 @@ B, C, W and M numbers are cited across the docs and stay.
 | B24 | Follow a series, author, universe or shelf myself, offered when I finish a book; its next book on the dashboard and in plan suggestions | planned | 2026-11-02. Only a *Reading* follow counts; reading one book of something never does. Shelves become followable. The next book is a derived view, `follow_next`. roadmap 2.2c, 2.2d, 2.10b, D-108 |
 | B25 | The Library: its own page, with sorting as well as filters | planned | 2026-11-02. The master list, named *Library*, with its own nav item once `/books` is the dashboard; sorts by series, title, author, length, published, finished, plan order. roadmap 2.2e, D-110 |
 | B26 | One page of everything in the middle of and completed | planned | 2026-11-02. `/progress`, every medium. roadmap 5.12, D-109 |
-| B27 | Open a book in my Android ereader, from the Calibre file | later | 2026-11-02. A web page can't see installed apps; an Android `intent:` link can fall back. roadmap *Later* § L-9 |
+| B27 | Open a book in my Android ereader (Moon+ Reader, with Calibre Companion) | later | 2026-11-02. A web page can't see installed apps; an Android `intent:` link can fall back. Opening the app is likely, opening the book is open, and Moon+ Reader's position sync might feed progress back. roadmap *Later* § L-9 |
+| B28 | A reader of my own, in the app | later | 2026-11-02, far future. The page you're on is the progress. The reader itself is a known problem; the files, offline and progress mapping are the cost. roadmap *Later* § L-10 |
 
 ### Comics
 
@@ -921,7 +922,7 @@ on a schedule, reminded in the app and later by 7.6's email (D-105). Games
 already had their queue (10.2); shelves by platform and genre are views,
 and your own are 5.1's shelves (10.6, D-106).
 
-**The second 2026-11-02 intake** (B24–B27, W5) asked how the series,
+**The second 2026-11-02 intake** (B24–B28, W5) asked how the series,
 authors and universes you're reading reach the dashboard and the plan
 suggestions. Nothing read the follows yet, and the plan inferred *reading*
 from one read book; now only a follow you set to *Reading* counts, finishing
@@ -930,7 +931,8 @@ on the plan sheet (2.2c, 2.2d, D-108). One page lists what you're in the
 middle of and what you've completed in every medium (5.12, D-109). The
 master list becomes the Library, its own page, with sorting (2.2e, D-110).
 Opening a book or a title where you read or watch it joins Marvel
-Unlimited under *Later* (L-9).
+Unlimited under *Later* (L-9), and a reader of your own in the app is
+further out (L-10).
 
 **Parked under *Later*, because no API exists.** Marvel Unlimited (L-1) and
 League of Comic Geeks ratings (L-2) have no public APIs. Each has an open

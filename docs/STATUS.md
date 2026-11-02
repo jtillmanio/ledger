@@ -60,7 +60,7 @@ sort order that doesn't exist until those tasks do. It is listed in M12.
 ‡ The roadmap's *Phases* table still says 0 / 20 for Phase 2; its checkboxes
 tick 2.11a, so the count here is 1.
 
-The roadmap's *Later* section (L-1…L-9) holds ideas with no **Check:** and
+The roadmap's *Later* section (L-1…L-10) holds ideas with no **Check:** and
 is not counted.
 
 ## What's next

@@ -53,7 +53,7 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 | [9 Music](#phase-9--music) | A fourth medium, last (D-75). | M25 | 0 / 8 |
 | [10 Games](#phase-10--games) | A fifth medium, a planning tool for what to play: search, a queue by the platform you'll play on, and the games you're waiting for (D-102). | M26 | 0 / 7 |
 
-Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate. The 2026-11-02 intake added 2.10b, 5.15, 5.16, 10.6 and L-8 and amended 2.10, 7.6, 8.8, 9.3 and 10.1 (D-104–D-106); none of them is a cutover gate either. A second 2026-11-02 intake added 2.2c, 2.2d, 2.2e and L-9, rewrote 5.12 as one page for every medium, and amended 2.2, 2.10b, 5.11, 6.10 and L-1 (D-108–D-110): only a follow you set to *Reading* counts as reading.
+Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate. The 2026-11-02 intake added 2.10b, 5.15, 5.16, 10.6 and L-8 and amended 2.10, 7.6, 8.8, 9.3 and 10.1 (D-104–D-106); none of them is a cutover gate either. A second 2026-11-02 intake added 2.2c, 2.2d, 2.2e, L-9 and L-10, rewrote 5.12 as one page for every medium, and amended 2.2, 2.10b, 5.11, 6.10 and L-1 (D-108–D-110): only a follow you set to *Reading* counts as reading.
 
 ---
 
@@ -5108,15 +5108,49 @@ becomes a task once its open question is answered. None has a **Check:**, and
   and books can open my ereader if it's installed*). Comics is L-1. For each
   of the others, a link on the item's sheet, next to where L-1 puts the
   comics one (3.5, 8.4; STYLE_GUIDE §12).
-  - **Books, an Android reader opening the Calibre file** (owner,
-    2026-11-02). A web page can't ask which apps are installed or open a
-    file by its path on the phone. Android's `intent:` links can name an app
-    and fall back to a web page when it's missing, so *if it's installed*
-    works there, but the reader needs a file it can fetch. The open
-    questions: which reader (Moon+ Reader, ReadEra or another, and whether it
-    takes a URL); where the file comes from (the Calibre library on Google
-    Drive, as in L-4, a Calibre content server, or an OPDS feed); and
-    whether the link can reach the right file from `books.calibre_id`.
+  - **Books, Moon+ Reader with Calibre Companion** (owner, 2026-11-02:
+    Calibre Companion puts the library's books on the phone, and Moon+
+    Reader reads them). A web page can't ask which apps are installed or
+    open a file by its path on the phone. Android's `intent:` links can name
+    an app and fall back to a web page when it's missing, so *if it's
+    installed* works there. The likely tiers, each an open question to test
+    on the phone:
+    - **Open Moon+ Reader** itself, by its package name, with no book. Most
+      likely to work.
+    - **Open this book in it.** It needs a file Moon+ can be handed. The
+      copy Calibre Companion put on the phone has a local path a web page
+      can't reach; a URL to the file (the library on Google Drive, as in
+      L-4, or a Calibre content server) might work if Moon+ accepts one.
+      Whether Calibre Companion has a link of its own to a book is unknown.
+    - **Read progress back.** Moon+ Reader Pro can sync reading positions
+      to a cloud folder. If that file carries a book's percentage, the
+      Ledger could read it into the Now slot's page count. Check what the
+      file holds, and how a book is matched to it (`books.calibre_id`, or
+      title and author).
+- **L-10 A reader in the app** (second 2026-11-02 intake; owner: *a far far
+  future item is to build my own into the app, if that's not too hard*).
+  Read a book's EPUB in the Ledger itself, so the page you're on is the
+  progress the dashboard shows, with nothing to log. Far future, after L-9.
+  - **How hard.** Drawing an EPUB is a solved problem: open-source web
+    readers (foliate-js, epub.js, Readium's web toolkit) paginate, theme and
+    remember a position. A plain reader (open, page, font size, light and
+    dark, resume) is about the size of an M task. The hard parts are around
+    it:
+    - **The files.** The app has no copy of the books. They would need
+      storage the app can serve privately: an upload, or a sync from the
+      Calibre library (4.4, L-4), plus the space for it. DRM-locked books
+      can't be read at all.
+    - **Offline.** Reading on a plane needs the book cached on the phone,
+      which needs 6.4's service worker first.
+    - **Progress.** A position inside an EPUB isn't a page number. Mapping
+      it to `p. 212 of 468`, or to a percentage of the word count, is a
+      decision for the data model.
+    - **Parity with Moon+ Reader.** Highlights, notes, dictionary, TTS and
+      tuned typography are each a project. Without them, the in-app reader
+      is for convenience, not a replacement.
+  - The open questions: storage and its cost; whether progress is stored as
+    a position, a percentage or pages; and whether the reader is worth
+    building before L-9 shows how far Moon+ Reader's own sync can go.
   - **Watch, the streaming service.** 8.9 stores where a title streams, but
     TMDB's provider list carries no link into a service's app, only one to
     TMDB's own page for the title. The open question is whether a
