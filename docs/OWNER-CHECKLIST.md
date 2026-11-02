@@ -529,10 +529,11 @@ of gates**. The items below are the ones only you can do.
       1.4c and 1.5; a book never on the master list is added by search. The
       top-10 ranks wait for 3.4.
 
-- [ ] Promote the wishlist (START-HERE Step 14, *The switch* item 6; task 1.4d,
-      D-39): work through `/books/add?from=wishlist` on production. When it
-      shows nothing left, ask for the `chore/` PR that drops `wishlist` and
-      `extract.py`'s `wishlist.csv`.
+- [ ] Settle the old wishlist before the final load (1.27, D-111, amending
+      D-39; START-HERE Step 14, *Before the switch*): once 1.27 is built,
+      decide every row of `etl/data/wishlist_review.csv` (`create`, `link` or
+      `drop`) until `npm run extract` reports none undecided. 1.27 also drops
+      the `wishlist` table and the `/books/add?from=wishlist` screen.
 
 ## Small questions for later, when their task starts
 

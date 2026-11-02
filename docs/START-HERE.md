@@ -1441,6 +1441,10 @@ frozen and kept only to compare numbers during the month.
       fresh workbook download, `npm run extract -- --fail-on-cycle` passes.
 - [ ] **No slug collisions** (D-15): `seed/unresolved.csv` has zero
       `labels share a slug` rows.
+- [ ] **The old wishlist is settled** (1.27, D-111; once 1.27 is built): the
+      fresh `npm run extract` reports no undecided row in
+      `etl/data/wishlist_review.csv`. Every To-Read line is a book, linked to
+      one, or dropped, and the final load carries that.
 - [ ] **`APP_PASSCODE` in Vercel is four or more random words** (D-23, R2-12).
 - [ ] **The last nightly backup is green, restore check included** (10d, D-30),
       and a downloaded `GET /api/export` opens and lists every table the app
@@ -1482,11 +1486,9 @@ migrates the live database instead of pointing you at a rebuild.
    made in the app from here (3.1–3.3, built before this step if 1.25's
    audit says you still make them in the sheet).
 5. Put the app URL in a note at the top of the archived sheet.
-6. **Promote the wishlist** (task 1.4d, D-39): open `/books/add?from=wishlist`
-   on production and work through the 497 lines from the old To-Read tab. Each
-   one you accept becomes a Someday book. It only makes sense now: any load
-   before this one would have erased the result. It can take several sittings;
-   the lines wait.
+
+The old wishlist needs nothing here: extract settled it before the final load
+(1.27, D-111), so it arrived with everything else.
 
 ### The month after
 

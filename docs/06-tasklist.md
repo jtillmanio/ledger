@@ -231,7 +231,7 @@ with the task that first reads it.
 **Demo at exit:** Add a book by search, paste or hand to a destination, finish it with a date, and jot a note in the inbox and resolve it.  
 **Features:** F-15, F-16, F-18, F-17  
 **Depends on:** M2  
-**Order:** Sitting 5: 1.4 → 1.4c → 1.4b → 1.4d → 1.5 → 1.16. Resolving an inbox note (1.4b) routes into the add flows; 1.4d promotes the wishlist through 1.4's paste review, once, after the final load (D-39); 1.5 must land before real rereads overwrite history; 1.16 reinterprets the dates 1.5 adds, and lands before the final load.
+**Order:** Sitting 5: 1.4 → 1.4c → 1.4b → 1.4d → 1.5 → 1.16. Resolving an inbox note (1.4b) routes into the add flows; 1.4d promotes the wishlist through 1.4's paste review, once, after the final load (D-39; since D-111, 1.27 settles it in extract instead, and removes the screen); 1.5 must land before real rereads overwrite history; 1.16 reinterprets the dates 1.5 adds, and lands before the final load.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -303,7 +303,7 @@ with the task that first reads it.
 **Demo at exit:** Paste a list as title and author in their own cells; search as you type, with each result's source; set a book to *Reading* and its start date is kept; listen to a book and finish it, and it counts as a read with the headphones glyph; then the last load, and both Sheets archived read-only with the app as the record.  
 **Features:** F-02, F-09, F-15, F-17, F-58  
 **Depends on:** M5, M8 (1.21)  
-**Order:** Sitting 9: 1.25 → 1.4e → 1.4f → 1.19 → 1.22 → 1.24 → 1.17 → 1.23 → the entries 1.25 pulls ahead → 1.26. 1.25, the Sheets parity audit (D-95), goes first and can run any time, even before M8 closes: every open entry it names is built before 1.26, so its list sets how long this milestone is, and 1.26, the switch itself, comes last. Then five fixes to screens already in daily use (1.4f searches Hardcover instead of Open Library, D-94, before 1.22 tags each result's source; 1.19 turns on 1.8's comics *Add*, from 1.8b's plan; 1.22 from the 2026-10-26 books intake; 1.24, from TASK-030's follow-ups, lets a wishlist accept move one of 1.18's Unlisted books onto the list), then start dates and audiobooks, which like 1.5 must land before real reading accumulates and before cutover. 1.23 follows 1.17 because both change `book_status` and `read_events`. **Pulled ahead by 1.25** (`docs/cutover-parity.md`), each keeping its row in its own milestone and built before 1.26: 2.0 → 2.1 → 2.2 → 2.2b (M10) and 2.3 (M11), the year and quarter word-count budget the To-Read tabs hold (2.1b is not pulled ahead: 2.2 ships without its *sittings* line until 2.1b lands); 3.1 → 3.2 → 3.3 (M13), catalog and prerequisite edits; 3.4 (M14), top books per year; 5.7 (M17), books coming out; 5.6 → 5.10 (M18), recording a trade bought. 2.2's text gives its hero 2.4's geometry and its *Plan* 2.4's hover rule, and 2.4 is not pulled ahead (owner, 2026-10-29): 2.2's plan builds what it borrows rather than waiting for 2.4.
+**Order:** Sitting 9: 1.25 → 1.4e → 1.4f → 1.19 → 1.22 → 1.17 → 1.23 → 1.27 → the entries 1.25 pulls ahead → 1.26. 1.25, the Sheets parity audit (D-95), goes first and can run any time, even before M8 closes: every open entry it names is built before 1.26, so its list sets how long this milestone is, and 1.26, the switch itself, comes last. Then four fixes to screens already in daily use (1.4f searches Hardcover instead of Open Library, D-94, before 1.22 tags each result's source; 1.19 turns on 1.8's comics *Add*, from 1.8b's plan; 1.22 from the 2026-10-26 books intake), then start dates and audiobooks, which like 1.5 must land before real reading accumulates and before cutover. 1.23 follows 1.17 because both change `book_status` and `read_events`. 1.27 settles the old wishlist in extract, so the final load carries it (D-111, which removed 1.24): its review sidecar is the owner's to decide, and 1.26 waits until no row is undecided. **Pulled ahead by 1.25** (`docs/cutover-parity.md`), each keeping its row in its own milestone and built before 1.26: 2.0 → 2.1 → 2.2 → 2.2b (M10) and 2.3 (M11), the year and quarter word-count budget the To-Read tabs hold (2.1b is not pulled ahead: 2.2 ships without its *sittings* line until 2.1b lands); 3.1 → 3.2 → 3.3 (M13), catalog and prerequisite edits; 3.4 (M14), top books per year; 5.7 (M17), books coming out; 5.6 → 5.10 (M18), recording a trade bought. 2.2's text gives its hero 2.4's geometry and its *Plan* 2.4's hover rule, and 2.4 is not pulled ahead (owner, 2026-10-29): 2.2's plan builds what it borrows rather than waiting for 2.4.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -312,9 +312,10 @@ with the task that first reads it.
 | ✅ | 1.4f → TASK-040 | Add books searches Hardcover | M |  | — |
 | ✅ | 1.19 → TASK-038 | Comics Add remembers the last run | S |  | 1.8, 1.3c |
 | ✅ | 1.22 → TASK-041 | Search as you type, and where each result comes from | M |  | 1.21, 1.4f |
-|  | 1.24 → TASK-042 | Wishlist accept promotes an Unlisted book to Someday | S |  | 1.21, 1.4d |
+|  | 1.24 | Wishlist accept promotes an Unlisted book to Someday | S | _Removed 2026-11-02: replaced by 1.27 (D-111); TASK-042 closed unmerged, PR #182_ | — |
 |  | 1.17 → TASK-039 | Started and finished: a start date for books, a derived span for runs | M |  | — |
 |  | 1.23 → TASK-043 | Audiobooks: listening, and a listen that counts as a read | M |  | 1.5, 1.17 |
+|  | 1.27 | Extract resolves the wishlist, before cutover | M |  | 1.18, 1.21 |
 |  | 1.26 | Cut over from the Sheets | M |  | 1.25, all of Phase 1, and every open entry 1.25 names |
 
 # Next

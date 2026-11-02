@@ -519,7 +519,8 @@ Phase 0 and Phase 1.
    `read_events` row, and the year is derived (D-21). Comic reads are not logged
    in `read_events` yet.
 6. `external_lists` entries are unresolved text until you link them to
-   `books.id`. `wishlist` is promoted into Someday by task 1.4d (D-39).
+   `books.id`. `wishlist` is settled by extract before the final load and
+   then dropped (1.27, D-111, amending D-39; 1.4d's screen until then).
 7. No editing UI. Reads are complete; writes are limited to issue check-off and
    book status.
 8. The watchlist is entirely unbuilt — `titles`, `seasons`, `franchises`, and
