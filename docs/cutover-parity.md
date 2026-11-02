@@ -250,7 +250,7 @@ with a *Top* row and an empty *Goals* column. Loaded as `wishlist`, and settled
 by extract before the final load (1.27, D-111; 1.4d's screen, promoting it on
 production after the load, was the plan until then).
 
-- Ideas for books to read someday → 1.27 (was 1.4d, D-111)
+- Ideas for books to read someday (D-111) → 1.27
 - Capture a new idea quickly → 1.4b
 - A top pick to read next → 1.7
 - One top pick per genre → won't carry: On deck, with no genre, is enough (owner, 2026-10-29)
