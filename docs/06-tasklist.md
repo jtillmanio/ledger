@@ -20,7 +20,7 @@ milestone._
 | Milestones | Scope | Roadmap phases | Entries |
 |---|---|---|---|
 | M1–M9 | **MVP: cutover from the Sheets.** Every MVP feature in [01-product.md § Feature index](01-product.md#feature-index) | 0, 1, and 2.11a, plus what 1.25 names | 55 |
-| M10–M15 | **Next:** the pace engine, the comics dashboard, editing | 2, 3 | 32 |
+| M10–M15 | **Next:** the pace engine, the comics dashboard, editing | 2, 3 | 35 |
 | M16–M26 | **Later:** enrichment, the remaining surfaces, polish, AI curation, watch, music and games | 4–10, and 6.2b in M12 | 67 |
 
 - **M1–M9 are START-HERE's sittings under one numbering.** M1 and M2 are
@@ -42,7 +42,7 @@ milestone._
 - **Next and Later milestones are a rough plan.** Each is reshaped when the
   milestone before it closes, and every schema proposal in them is asked at its
   task's plan gate (CLAUDE.md, *Stop and ask*).
-- **Unscheduled:** L-1 to L-3 ([05-roadmap.md § Later](05-roadmap.md#later--noted-not-scheduled)), each behind an open question.
+- **Unscheduled:** L-1 to L-9 ([05-roadmap.md § Later](05-roadmap.md#later--noted-not-scheduled)), each behind an open question.
 
 ## Coverage
 
@@ -126,6 +126,9 @@ milestone._
 | F-65 Plan a year or a quarter, with suggestions | Next | 2.10b | M11 |
 | F-66 Parked, and its review | Later | 5.15, 5.16, 8.8, 9.3, 10.1 | M17, M18 (then M24–M26) |
 | F-67 Game shelves | Later | 10.6 | M26 |
+| F-68 Follow what I'm reading, and see what's next in it | Next | 2.2c, 2.2d, 2.10b | M10, M11 |
+| F-69 In the middle of, and completed | Later | 5.12, 8.8, 9.6, 10.3 | M17 (then M24–M26) |
+| F-70 The Library, sorted | Next | 2.2e | M10 |
 
 ### Entities → tasks
 
@@ -151,6 +154,7 @@ milestone._
 | `games`, `game_genres`, `platforms`, `game_releases`, `owned_platforms`, `game_status`, `play_events`, the IGDB cache; `game_queue` | 10.1; 10.2 (proposed) |
 | `run_parked` | 5.16 (proposed) |
 | `shelf_games` | 10.6 (proposed) |
+| `shelf_follows` | 2.2c (proposed) |
 
 Views are in `etl/views.sql` and listed in data model §3; each new one lands
 with the task that first reads it.
@@ -318,10 +322,10 @@ with the task that first reads it.
 ## M10: Capacity: is the year overcommitted? — Next
 
 **Goal:** Answer "is 2027 overcommitted" from the real reading rate.  
-**Demo at exit:** Settings take minutes a day and words a minute; a logged session recalculates them; the books dashboard shows the book in hand and the quarter against 760k, and the plan rail draws the year.  
-**Features:** F-21, F-22  
+**Demo at exit:** Settings take minutes a day and words a minute; a logged session recalculates them; the Library sorts by length; finishing a book offers to follow its series; the books dashboard shows the book in hand, the next book of what you're reading, and the quarter against 760k, and the plan rail draws the year.  
+**Features:** F-21, F-22, F-68, F-70  
 **Depends on:** Cutover (M1–M9)  
-**Order:** 2.0 → 2.1 → 2.1b → 2.2 → 2.2b: settings feed capacity, the dashboard reads capacity, and the rail is the dashboard's.
+**Order:** 2.0 → 2.1 → 2.1b → 2.2e → 2.2c → 2.2 → 2.2d → 2.2b: settings feed capacity; the Library gets its own nav item before `/books` stops being the list; the follows exist before the dashboard reads them; the dashboard reads capacity, and the rail is the dashboard's.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -330,6 +334,9 @@ with the task that first reads it.
 |  | 2.1b | Reading sessions — after-the-fact entry | S |  | 2.0 |
 |  | 2.2 | Books dashboard | M |  | 1.7, 1.8, 2.1 |
 |  | 2.2b | The plan rail | M |  | 2.2 |
+|  | 2.2c | Follow what you're reading: the control, and an offer when you finish | M |  | 1.15, 1.5 |
+|  | 2.2d | Next in what you're reading, on the dashboard | M |  | 2.2, 2.2c |
+|  | 2.2e | Library: its own page, sorted as well as filtered | S |  | — |
 
 ## M11: Editing the plan — Next
 
@@ -345,7 +352,7 @@ with the task that first reads it.
 |  | 2.7 | Rebalance, and accepting an overage | M |  | — |
 |  | 2.8 | Place the unquartered | M |  | — |
 |  | 2.10 | Plan page as the full-size rail | M |  | 1.7, 2.1, 2.2 |
-|  | 2.10b | Plan a year or a quarter, with suggestions | M |  | 2.3, 2.10, 1.15, 1.21 |
+|  | 2.10b | Plan a year or a quarter, with suggestions | M |  | 2.3, 2.10, 1.15, 1.21, 2.2c, 2.2d |
 
 ## M12: The comics dashboard and the telescope — Next
 
@@ -434,10 +441,10 @@ with the task that first reads it.
 ## M17: Book surfaces — Later
 
 **Goal:** The remaining book surfaces.  
-**Demo at exit:** Shelves with notes, DNF with a reason, books coming out, a page per series, author and universe pages, *In the middle of*, a queue of audiobooks to listen next, and a book parked, then reviewed back into the plan.  
-**Features:** F-34, F-31, F-37, F-38, F-20, F-59, F-66  
-**Depends on:** M7 (1.9), M8 (1.15), M9 (1.23), M11 (2.3)  
-**Order:** 5.1 → 5.5 → 5.7 → 5.9 → 5.11 → 5.12 → 5.14 → 5.15: 5.11 builds on 5.9's series page, and 5.12 reads 5.1's shelves and 5.11's follows. 5.14 needs only 1.23 and 1.9, so it can go first. 5.15 after 5.14, because parking takes a book off the listen queue.
+**Demo at exit:** Shelves with notes, DNF with a reason, books coming out, a page per series, author and universe pages, the *In the middle of · Completed* page, a queue of audiobooks to listen next, and a book parked, then reviewed back into the plan.  
+**Features:** F-34, F-31, F-37, F-38, F-20, F-59, F-66, F-69  
+**Depends on:** M7 (1.9), M8 (1.15), M9 (1.23), M10 (2.2c, 2.2d), M11 (2.3)  
+**Order:** 5.1 → 5.5 → 5.7 → 5.9 → 5.11 → 5.12 → 5.14 → 5.15: 5.11 builds on 5.9's series page and places 2.2c's follow control there, and 5.12 opens rows on 5.9's and 5.11's pages. 5.14 needs only 1.23 and 1.9, so it can go first. 5.15 after 5.14, because parking takes a book off the listen queue.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -446,7 +453,7 @@ with the task that first reads it.
 |  | 5.7 | Books coming out | M |  | 1.4c, 1.8 |
 |  | 5.9 | Series page from `series_progress` | M |  | — |
 |  | 5.11 | Author and universe pages, and the follow control | M |  | 1.15, 5.9 |
-|  | 5.12 | In the middle of: series, authors, universes and reading-order shelves | S |  | 1.9, 1.15, 5.1, 5.11 |
+|  | 5.12 | In the middle of, and completed: one page for every medium | M |  | 1.9, 1.15, 2.2c, 2.2d |
 |  | 5.14 | Audiobooks: a queue to listen next | M |  | 1.23, 1.9 |
 |  | 5.15 | Parked: put a book away, and review it on a schedule | M |  | 1.9, 1.17, 1.21, 2.2, 2.3 |
 

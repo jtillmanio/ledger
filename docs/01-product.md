@@ -170,6 +170,9 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | F-65 | **Plan a year or a quarter, with suggestions** (Books) | As a reader, I want to fill a year or a quarter in one sitting, from suggestions like the next book of a series I'm reading, with the budget in view | Next | 2.10b | `plan` |
 | F-66 | **Parked, and its review** (every medium) | As a reader, I want to put something away on purpose, off my lists and my plan, and be reminded on a schedule to keep it there, plan it, or let it go | Later | 5.15, 5.16, 8.8, 9.3, 10.1 | — |
 | F-67 | **Game shelves** (Games) | As a player, I want my games grouped by platform and by genre, and on shelves of my own | Later | 10.6 | — |
+| F-68 | **Follow what I'm reading, and see what's next in it** (Books) | As a reader, I want to say I'm reading a series, author, universe or shelf myself, be offered that when I finish a book, and see its next book on the dashboard and in plan suggestions | Next | 2.2c, 2.2d, 2.10b | — |
+| F-69 | **In the middle of, and completed** (every medium) | As a reader, I want one page of everything I'm in the middle of and everything I've completed, across books, comics and the rest | Later | 5.12, 8.8, 9.6, 10.3 | — |
+| F-70 | **The Library, sorted** (Books) | As a reader, I want the library to be a page of its own, not the books home, and to sort it as well as filter it | Next | 2.2e | `blist` |
 
 ### Observable outcomes for MVP features
 
@@ -208,12 +211,12 @@ B, C, W and M numbers are cited across the docs and stay.
 |---|---|---|---|
 | B1 | Dashboard | new | Currently-reading, pace-vs-plan for the year, next up, upcoming releases, genre mix. Design below |
 | B2 | To Read by year and quarter, with word-count budgeting | partial | `reading_plan.planned_quarter` exists; task 1.7 makes one period column with four to-read levels — quarter, year, On deck, Someday (D-37) — and no months (D-38); needs the pace engine |
-| B3 | To-Read master list, searchable | shipped | Search works; needs sort by word count, filter by series-completeness. roadmap 6.10 |
+| B3 | To-Read master list, searchable | shipped | Search works; needs sort by word count (2.2e, with the Library's other sorts, D-110), filter by series-completeness. roadmap 6.10 |
 | B4 | Top books per year, editable | partial | `book_status.year_rank` holds the data, but from roadmap 1.13 the workbook's ranks don't load (no workbook read state, D-41); re-entered through 3.4's reorder, with the ranks kept in `seed/workbook_reads.csv` |
 | B5 | Coming out list | shipped | Needs "notify me" and a calendar view. Task 5.7 (D-35): *Out now* plus a month-grouped list, notified in the app; comics get the same in 5.8 |
 | B6 | Tracked series and authors with progress | partial | `series_progress` view exists; roadmap 5.9 draws it as `/books/series`. roadmap 1.15 adds universes (`book_universes`, a fact about the work, D-42), `author_progress` / `universe_progress`, and a stored `tracking` / `reading` follow per series, author or universe (D-43), seeded from the Series tab. Arbitrary groupings are shelves (5.1) |
 | — | BookTube top 10, Download, HP Fanfiction | migrated, unsurfaced | Data is in `external_lists` and `wishlist`. No pages. Leave `external_lists`; `wishlist` is promoted into Someday (task 1.4d, D-39) |
-| B7 | Series, authors, universes and reading-order shelves I'm in the middle of | planned | Derived from the progress views plus a `shelf_progress` view; authors only when followed. A group on 1.9's In flight tab. roadmap 5.12 (product § Owner additions) |
+| B7 | Series, authors, universes and reading-order shelves I'm in the middle of | planned | Derived from the progress views plus a `shelf_progress` view; authors only when followed. Since 2026-11-02, a page of its own for every medium, *In the middle of · Completed*, and only a *Reading* follow puts a book series, author, universe or shelf in the middle (D-108, D-109). roadmap 5.12 (product § Owner additions) |
 | B8 | Date started and finished | partial | The finish is a date since 1.5. The start is new: `started_on` with its precision on `book_status` and `read_events`. roadmap 1.17, before cutover |
 | B9 | Import metadata from Calibre | planned | Word counts (Count Pages, `stated`), series and index, reads and the books only Calibre has, with Calibre as the source of truth and every disagreement reported (D-73, D-87); tags, summary and ISBN once their columns are approved (D-88). roadmap 1.18, before cutover |
 | B10 | Books read each year, and a log of what I read | partial | Year totals ship (`books_by_year`, the year chips); 6.2 charts them; `/activity` is the log. roadmap 6.17 |
@@ -230,6 +233,10 @@ B, C, W and M numbers are cited across the docs and stay.
 | B21 | Rank each book as I finish it; any year's top ten | planned | 2026-11-01. Every read of a year ranked, placed by *This or that* at the finish; the top ten is the first ten; past years too. Proposed: the rank moves to the read. roadmap 3.4b, D-101; ratings kept on GitHub or another service are Later § L-6 |
 | B22 | Create a yearly or quarterly plan, with suggestions | planned | 2026-11-02. No plan object: a planning sheet on `/books/plan` fills a period through 2.3's writes, with derived suggestions (next in a series or shelf, followed authors, On deck, coming out, recently added, fits the room, a change of genre). Books only; comics are Later § L-8. roadmap 2.10b, D-104 |
 | B23 | An on-hold status, *Parked*, for every medium, reviewed monthly or quarterly | planned | 2026-11-02. Off In flight, the plan and the queues; a review on a schedule (*Keep parked · Plan… · Unlisted*), reminded in the app, by email once 7.6 lands. Books first (5.15), comics runs (5.16), then watch, music and games in their phases. roadmap 5.15, 5.16, 8.8, 9.3, 10.1, D-105 |
+| B24 | Follow a series, author, universe or shelf myself, offered when I finish a book; its next book on the dashboard and in plan suggestions | planned | 2026-11-02. Only a *Reading* follow counts; reading one book of something never does. Shelves become followable. The next book is a derived view, `follow_next`. roadmap 2.2c, 2.2d, 2.10b, D-108 |
+| B25 | The Library: its own page, with sorting as well as filters | planned | 2026-11-02. The master list, named *Library*, with its own nav item once `/books` is the dashboard; sorts by series, title, author, length, published, finished, plan order. roadmap 2.2e, D-110 |
+| B26 | One page of everything in the middle of and completed | planned | 2026-11-02. `/progress`, every medium. roadmap 5.12, D-109 |
+| B27 | Open a book in my Android ereader, from the Calibre file | later | 2026-11-02. A web page can't see installed apps; an Android `intent:` link can fall back. roadmap *Later* § L-9 |
 
 ### Comics
 
@@ -266,6 +273,7 @@ B, C, W and M numbers are cited across the docs and stay.
 | W2 | Where to watch | planned | Reverses product § Watch's *Out* (D-74). A dated TMDB/JustWatch snapshot, refreshed when you ask. roadmap 8.9 |
 | W3 | Which show I'm on, what I've finished, a rating; waiting for a new season | partial | Season tracking was already designed. Adds a show-level rating and the derived `caught_up` state. roadmap 8.1, 8.8, 8.9 |
 | W4 | Custom groupings, made in the app (examples: Nolan, Spielberg, Disney Animated, DCOM, loose groups) | planned | Two kinds, both created by you. A title shelf (8.6, with notes) is hand-picked and ordered. A saved view (8.3) is a named filter (person, studio, network, genre and so on) that keeps itself current, plus titles you add and minus titles you remove by hand; with no filter, a view is entirely hand-picked. *Add these to a shelf…* turns a filter into a shelf. Every credited person also has a page (8.10) |
+| W5 | Open a title in the streaming service | later | 2026-11-02. TMDB's provider data has no link into a service's app. roadmap *Later* § L-9 |
 
 ### Music (2026-10-20 additions)
 
@@ -912,6 +920,17 @@ put away on purpose, off every list and plan, and brought back by a review
 on a schedule, reminded in the app and later by 7.6's email (D-105). Games
 already had their queue (10.2); shelves by platform and genre are views,
 and your own are 5.1's shelves (10.6, D-106).
+
+**The second 2026-11-02 intake** (B24–B27, W5) asked how the series,
+authors and universes you're reading reach the dashboard and the plan
+suggestions. Nothing read the follows yet, and the plan inferred *reading*
+from one read book; now only a follow you set to *Reading* counts, finishing
+a book offers it, and its next book shows under Now, on *Between books* and
+on the plan sheet (2.2c, 2.2d, D-108). One page lists what you're in the
+middle of and what you've completed in every medium (5.12, D-109). The
+master list becomes the Library, its own page, with sorting (2.2e, D-110).
+Opening a book or a title where you read or watch it joins Marvel
+Unlimited under *Later* (L-9).
 
 **Parked under *Later*, because no API exists.** Marvel Unlimited (L-1) and
 League of Comic Geeks ratings (L-2) have no public APIs. Each has an open
