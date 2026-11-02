@@ -369,11 +369,22 @@ describe("an Unlisted book (task 1.24)", () => {
     [{ lines: [{ id: "6", bookId: "x" }], created: [], added: [], promoted: [] }],
     [{ lines: [{ id: 6 }], created: [], added: [], promoted: [] }],
     [{ lines: [{ id: 6, bookId: "x" }], created: "x", added: [], promoted: [] }],
+    // Longer than any book id can be.
+    [{ lines: [{ id: 6, bookId: "x".repeat(301) }], created: [], added: [], promoted: [] }],
   ])("refuses the undo %j with nothing changed", async (body) => {
     await api({ accept: [FEAR_LINE] });
     const before = await everything();
     expect((await del(body)).status).toBe(400);
     expect(await everything()).toEqual(before);
+  });
+
+  it("takes an undo of the whole wishlist at once, past one request's 500 lines, and no more than 2,000", async () => {
+    const entry = (count: number) => ({
+      lines: Array.from({ length: count }, (_, i) => ({ id: i + 1, bookId: FEAR })), created: [], added: [], promoted: [],
+    });
+    // Within the cap it is read: these lines aren't linked to FEAR, so it is refused for that, not as malformed.
+    expect((await del(entry(600))).status).toBe(409);
+    expect((await del(entry(2_001))).status).toBe(400);
   });
 });
 
