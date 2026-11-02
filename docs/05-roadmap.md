@@ -1311,7 +1311,7 @@ status screens and the plan rail never return it; *Add to Someday* writes one
 `to_read` row and Undo puts back `unlisted`; a series holding one read and one
 Unlisted book reads `1 / 2`.
 
-### ☐ 1.22 Search as you type, and where each result comes from · M
+### ☑ 1.22 Search as you type, and where each result comes from · M
 Backlog intake, 2026-10-26 (owner: *search on finish typing, not just Enter …
 any time there is a search (add books, filtering, etc), after a few characters
 and a delay in typing … make it clear in search results where the result came

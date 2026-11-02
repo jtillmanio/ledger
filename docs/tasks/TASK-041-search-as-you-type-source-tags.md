@@ -1,7 +1,7 @@
 ---
 id: TASK-041
 title: 1.22 Search as you type, and where each result comes from
-status: In progress
+status: Review
 depends_on: [TASK-029, TASK-040]
 size: L
 model: opus
@@ -40,18 +40,18 @@ Every search box in the app searches once you have typed three characters and pa
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): in the browser (0.11), with recorded Open Library answers: typing
+- [x] AC-1 (roadmap **Check:**, verbatim): in the browser (0.11), with recorded Open Library answers: typing
 `pir` and pausing lists results without Enter; typing `pi` and pausing makes no
 request; typing `piranesi` quickly makes one request, not six; a library result
 shows its level tag and an Open Library result its source tag, each part of the
 row's accessible name; the master list narrows as you type, and one Back leaves
 it. A vitest with fake timers shows the older request aborted when a newer
 query starts.
-- [ ] AC-2: A vitest with fake timers, for the shared search piece: at 2 characters and 600 ms nothing is sent and any shown results clear; at 3 characters a request is sent 500 ms after the last keystroke and not before (none at 499 ms); Enter sends at once and the pending pause sends nothing more; a newer query aborts the older request's signal, and an answer to the older query that arrives after the newer one is dropped (the list shows the newer query's results).
-- [ ] AC-3: On Add books, with recorded Hardcover answers and a fixture library holding one book at each of Someday, On deck, a quarter, a bare year, *Reading*, *Read*, *DNF* and *Unlisted*: each library row has exactly one tag, reading where the book sits in text (*Someday*, *On deck*, *Q1 2027*, *2027*, *Reading*, *Read*, *DNF*, *Unlisted*), a Hardcover row's reads *Hardcover*, and on Add issues a Metron row's reads *Metron* while a catalog row keeps its run-count tag; the tags are text inside the row's accessible name, not colour alone. An Unlisted book with a `calibre_id` reads *Unlisted · Calibre*, and a Someday book with a `calibre_id` reads *Someday* alone. The group heads *In your library* and *From Hardcover* stay.
-- [ ] AC-4: Typing the same query twice, minutes apart, makes one outside request in total (the second is served from the cache); the rate-limited state appears on a recorded 429 as it does on Enter today, on Add books and Add issues. The hints read *Searches as you type* in place of *Searches when you press Enter*, and `.claude/rules/ui.md` says *when the user submits or pauses typing*.
-- [ ] AC-5: The master list at `/books/list`: typing `pir` and pausing replaces the URL's `?q=pir` (a filter chip already chosen stays in the URL), the list narrows to the matching books, and the history gains no entry per keystroke: one Back from `/books/list?q=piranesi` returns to the page before the list. Reloading `/books/list?q=pir` shows the same narrowed list (the server still reads `q`). Typing `pi` and pausing makes no request, and deleting back to two characters after a search clears `?q=` and shows the whole list.
-- [ ] AC-6: The three search boxes meet the UX floor (`docs/04-design.md` § 10. The UX floor): each is a real `type="search"` input with an accessible name; the searching state is announced once per request (not per keystroke) through a polite live region; the no-results, rate-limited and error states are drawn; each tag is at 4.5:1 in both themes; reduced motion shows no spinner animation; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-2: A vitest with fake timers, for the shared search piece: at 2 characters and 600 ms nothing is sent and any shown results clear; at 3 characters a request is sent 500 ms after the last keystroke and not before (none at 499 ms); Enter sends at once and the pending pause sends nothing more; a newer query aborts the older request's signal, and an answer to the older query that arrives after the newer one is dropped (the list shows the newer query's results).
+- [x] AC-3: On Add books, with recorded Hardcover answers and a fixture library holding one book at each of Someday, On deck, a quarter, a bare year, *Reading*, *Read*, *DNF* and *Unlisted*: each library row has exactly one tag, reading where the book sits in text (*Someday*, *On deck*, *Q1 2027*, *2027*, *Reading*, *Read*, *DNF*, *Unlisted*), a Hardcover row's reads *Hardcover*, and on Add issues a Metron row's reads *Metron* while a catalog row keeps its run-count tag; the tags are text inside the row's accessible name, not colour alone. An Unlisted book with a `calibre_id` reads *Unlisted · Calibre*, and a Someday book with a `calibre_id` reads *Someday* alone. The group heads *In your library* and *From Hardcover* stay.
+- [x] AC-4: Typing the same query twice, minutes apart, makes one outside request in total (the second is served from the cache); the rate-limited state appears on a recorded 429 as it does on Enter today, on Add books and Add issues. The hints read *Searches as you type* in place of *Searches when you press Enter*, and `.claude/rules/ui.md` says *when the user submits or pauses typing*.
+- [x] AC-5: The master list at `/books/list`: typing `pir` and pausing replaces the URL's `?q=pir` (a filter chip already chosen stays in the URL), the list narrows to the matching books, and the history gains no entry per keystroke: one Back from `/books/list?q=piranesi` returns to the page before the list. Reloading `/books/list?q=pir` shows the same narrowed list (the server still reads `q`). Typing `pi` and pausing makes no request, and deleting back to two characters after a search clears `?q=` and shows the whole list.
+- [x] AC-6: The three search boxes meet the UX floor (`docs/04-design.md` § 10. The UX floor): each is a real `type="search"` input with an accessible name; the searching state is announced once per request (not per keystroke) through a polite live region; the no-results, rate-limited and error states are drawn; each tag is at 4.5:1 in both themes; reduced motion shows no spinner animation; screenshots at every `ui.viewports` width, light and dark. *(The spinner clause: settled at the plan gate, owner 2026-11-02; 1.8a's rule that `.spin` keeps turning stands, UX-N01.)*
 
 ## Out of scope
 
@@ -82,6 +82,12 @@ query starts.
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- 1.23 adds a `listening` status; `placeTag` (`src/lib/format.ts`) has no *Listening* yet, so it would show the raw value → docs/tasks/TASK-043-audiobooks-listening.md § Context
+- AC-6's *reduced motion shows no spinner animation* contradicts 1.8a's tested rule (`.spin` keeps turning, UX-N01) → not tracked: settled at the plan gate (owner, 2026-11-02), recorded in § Plan
+- The task names mockup `bulk` for Add issues; the frame with the search and its hint is `addsearch` → not tracked: a task-file slip, handled in § Plan (step 8)
+- `librarySearch`'s join to `to_read_level` has no index of its own (schema-reviewer, MINOR) → not tracked: fine at ~1,361 books; the perf budget (`docs/02-architecture.md` § 7) would show it first
+- The master list's *Show all N* series link is 17px tall (ui-verifier R1) → not tracked: older than this task, and axe's `target-size` passes it on `/books/list` (an inline link in a line of text, WCAG 2.5.8's exception)
 
 ## Plan
 
@@ -163,13 +169,19 @@ draws them at `h2`, beside *Staged* and *Where they land*.
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 round PASS → full FAIL (3 new e2e tests: /books redirects to the list, a seeded cache row bypassed the 429 hold, w390-light's earlier add) → specs fixed, 63 passed | R2 round PASS
+- Audit R1 PASS (suggestion taken: Add issues' once-a-request announcement)
+- Spec R1 CHANGES (AC-6 UNTESTED for Add issues in the browser) → R2 APPROVE | Schema R1 APPROVE (not re-run: nothing it read changed)
+- UI R1 PASS Add books, master list; Add issues blocked (the dev server's workers crashed) → R2 PASS Add issues (fresh server, owner's say-so)
+- Review fixes: `test/e2e/issue-search.spec.ts` (13 passed), result heads h3 → h2, round chain PASS
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (round chain ×3, full chain ×1)
+- Review rounds: 2
+- First-pass AC FAILs: 1 (AC-6 UNTESTED, Add issues)
+- Plan revisions after approval: 1
