@@ -69,7 +69,7 @@ hard → soft pass (`OWNER-CHECKLIST.md`): 219 of the 436 edges are still hard.
 **Not migrated, confirmed out of scope:** `Ultimate Order`, `Ultimate
 Collection`, `Sheet8`, `Reading Orders (old)`. `Master` is loaded as `editions`
 but has no UI. The BookTube Top 10 tab is in `external_lists`, unsurfaced; the
-old To-Read tab is `wishlist`, settled by extract before cutover (1.27, D-111). The
+old To-Read tab is settled by extract before cutover (1.27, D-111). The
 Download and HP Fanfiction tabs load nothing. What every tab became, and what
 cutover waits for, is `docs/cutover-parity.md` (1.25).
 

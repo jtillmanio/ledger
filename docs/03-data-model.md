@@ -19,7 +19,7 @@ read filters `deleted_at IS NULL`, and removing a placement soft-deletes it.
 | Group | Tables | Notes |
 |---|---|---|
 | Comics catalog | `tracks`, `blocks`, `runs`, `run_tracks`, `prereqs`, `events`, `event_runs`, `editions`, `issues`, `run_issues`, `eras`, `creators`, `issue_credits`, `volume_rules` | Run ids are as the owner wrote them (2.5); an issue id is a slug of its label (2.11) |
-| Books catalog | `books`, `authors`, `book_series`, `releases`, `wishlist`, `external_lists` | `wishlist` and `external_lists` keep raw text until resolved (2.7) |
+| Books catalog | `books`, `authors`, `book_series`, `releases`, `external_lists` | `external_lists` keeps raw text until resolved (2.7) |
 | Per user | `issue_progress` (per placement), `edition_progress`, `book_status`, `reading_plan`, `reading_settings`, `shelves`, `shelf_books`, `inbox` | Keyed `(user_id, entity_id)` (2.1) until 6.18; a new table has no `user_id` (D-91) |
 | Logs | `read_events` | Append-only; a reread is a new row with `reread_of` (1.5) |
 | Caches | `metron_cache`, `open_library_cache` | Rebuildable API responses |
@@ -144,13 +144,13 @@ line up with issue-level progress. Modeling `edition_issues` as a join is left
 for later; the text field is preserved verbatim so nothing is lost.
 
 **2.7 Books that aren't clean records stay as text.** The old `To-Read` tab mixes
-titles, series-plus-author strings, and `Top` markers. 497 of those land in
-`wishlist` with `raw_entry` intact and a nullable `book_id`, so nothing is lost
-before they are cleaned. They are settled by extract before the final load
+titles, series-plus-author strings, and `Top` markers. 497 of those landed in
+a `wishlist` table with `raw_entry` intact and a nullable `book_id`, so nothing
+was lost before they were cleaned. Extract settles them before the final load
 (1.27, D-111, amending D-39's promotion through 1.4d's review screen after it):
 a line naming a book is that book, and every other line is decided in
 `etl/data/wishlist_review.csv`, becoming a Someday book (2.9), linked to one,
-or dropped. Then the table goes.
+or dropped. Migration 0019 dropped the table.
 The 534 BookTube entries live in `external_lists` the same way.
 
 **2.8 Blocks are a table, not a number.** A track is divided into numbered

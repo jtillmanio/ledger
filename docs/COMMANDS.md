@@ -43,6 +43,10 @@ npm run extract             # etl/extract.py with every sidecar CSV (see below);
                             # no book, status, plan or release row until you `keep` it or enrich:books finds
                             # it; prints `N books held for review` (1.20). seed/held_books.csv (not loaded)
                             # lists them for enrich:books and calibre, which still look them up.
+                            # --wishlist-review etl/data/wishlist_review.csv settles the old To-Read tab
+                            # (1.27, D-111): a line naming a book by title and author is that book (an
+                            # Unlisted or statusless one loads at Someday); every other line is a row to
+                            # decide, `create`, `link` (to `near`) or `drop`; prints the undecided.
                             # Every prerequisite loop is a `prereqs,prereq cycle` row in unresolved.csv
                             # and a console count (2.11a); `-- --fail-on-cycle` exits non-zero on any,
                             # after writing every CSV (Step 14's final extract)
@@ -286,7 +290,9 @@ npm run calibre
 (`seed/calibre_created.csv`, not loaded), loads Calibre's reads, and writes
 `seed/calibre_changes.csv`, `etl/data/calibre_missing.csv` and
 `etl/data/book_hold.csv` (a held book is in `book_hold.csv`, never in
-`calibre_missing.csv`).
+`calibre_missing.csv`). Every extract also rewrites
+`etl/data/wishlist_review.csv`, the old To-Read tab's lines that name no book
+(1.27, D-111).
 
 ```powershell
 npm run extract
@@ -294,7 +300,9 @@ npm run extract
 
 Review `book_review.csv` (`calibre` rows), `calibre_missing.csv`,
 `seed/calibre_changes.csv` and `seed/unresolved.csv`. Leave `book_hold.csv`
-until step 14: the next step may find its books.
+and `wishlist_review.csv` until step 14: the next step may find held books,
+and which lines name a book, and what each row's `near` is, can change until
+then.
 
 **13. Hardcover details.** The dry run looks up 100 books and writes nothing.
 The real run writes `book_details.csv` (Hardcover id, page count, cover URL,
@@ -323,6 +331,11 @@ prints `N books held for review`), and extract again. A held book you'd rather
 match: fix its title or author in the workbook, or `merge` its
 `book_review.csv` row, then `enrich:books` and extract.
 
+Then decide `wishlist_review.csv`, once the holds are settled: `create`, `link`
+(the line is the `near` book) or `drop` on each row. Filter on `reason` and
+fill `decision` down to decide a group at once. Extract again, and repeat
+until it prints `0 undecided`. Cutover waits on that (1.26).
+
 ### What to review, and what to re-run after
 
 Blank is always undecided. Re-run the listed commands after you save.
@@ -333,6 +346,7 @@ Blank is always undecided. Re-run the listed commands after you save.
 | `etl/data/hardcover_review.csv` | enrich:books | `pick` on the one right candidate for each book | enrich:books, extract |
 | `etl/data/calibre_missing.csv` | extract | `keep` keeps the book out of Calibre for good; or add it to Calibre | after adding: calibre, extract |
 | `etl/data/book_hold.csv` | extract | `keep` loads a book Hardcover doesn't know and Calibre doesn't have; blank holds it (no book, status, plan or release row). It leaves the file once Hardcover or Calibre has it | extract; after a workbook fix or a `merge`: enrich:books, extract |
+| `etl/data/wishlist_review.csv` | extract | Each old To-Read line that names no book: `create` makes the row's `title` and `author` (edit them first if the line is off) at Someday; `link` says the line is the `near` book (`Title - Author`; edit it to point at another), which goes to Someday if it was Unlisted or had no status; `drop` loads nothing. `reason` says why it is here: `similar`, `series`, `no author` or `new`. Filter on `reason` and fill a column down to decide a group at once. Cutover waits until none is blank (1.27, D-111) | extract |
 | `seed/calibre_changes.csv` | extract | Nothing: Calibre won. Where Calibre is wrong, fix it in Calibre | calibre, extract |
 | `seed/unresolved.csv` | extract | Only what needs you; START-HERE 8b lists each category | extract, after the fix |
 | `etl/data/label_review.csv` | enrich | `accept` renames to Metron's label; `reject` or blank keeps yours | enrich (moves the rows), extract |
