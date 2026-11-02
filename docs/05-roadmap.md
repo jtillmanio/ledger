@@ -43,7 +43,7 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 |---|---|---|---|
 | [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6) | 12 / 13 |
 | [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is 1.26 (START-HERE Step 14): it waits for all of Phase 1, plus 2.11a and 1.11, and for every entry 1.25's parity audit names (D-95).** | M3–M9 | 28 / 41 |
-| [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 0 / 17 |
+| [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 0 / 20 |
 | [3 Editing](#phase-3--editing) | Maintain the catalog in the app: inline edits, runs, prerequisites, eras, detail sheets and adding at scale. | M13–M15 | 0 / 15 |
 | [4 Enrichment](#phase-4--enrichment) | Metron, Open Library and Hardcover backfill, and real covers. A prerequisite for Phase 7. | M16 | 0 / 4 |
 | [5 Remaining surfaces](#phase-5--remaining-surfaces) | The remaining list and detail surfaces: shelves, tracks, editions, releases and series pages. | M17, M18 | 0 / 15 |
@@ -53,7 +53,7 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 | [9 Music](#phase-9--music) | A fourth medium, last (D-75). | M25 | 0 / 8 |
 | [10 Games](#phase-10--games) | A fifth medium, a planning tool for what to play: search, a queue by the platform you'll play on, and the games you're waiting for (D-102). | M26 | 0 / 7 |
 
-Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate. The 2026-11-02 intake added 2.10b, 5.15, 5.16, 10.6 and L-8 and amended 2.10, 7.6, 8.8, 9.3 and 10.1 (D-104–D-106); none of them is a cutover gate either.
+Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate. The 2026-11-02 intake added 2.10b, 5.15, 5.16, 10.6 and L-8 and amended 2.10, 7.6, 8.8, 9.3 and 10.1 (D-104–D-106); none of them is a cutover gate either. A second 2026-11-02 intake added 2.2c, 2.2d, 2.2e, L-9 and L-10, rewrote 5.12 as one page for every medium, and amended 2.2, 2.10b, 5.11, 6.10 and L-1 (D-108–D-110): only a follow you set to *Reading* counts as reading.
 
 ---
 
@@ -1593,6 +1593,12 @@ shows one being read, with the headphones glyph, and *2026 so far* gives
 listens beside reads (*31 finished · 6 listened*), from `books_by_year`'s
 listened count.
 
+*From the second 2026-11-02 intake (D-108, D-110):* **Now** gains 2.2d's
+*Next in* line, and **Between books** its *Or keep going* rows, both from
+`follow_next`; build them with 2.2d, not here. The master list stops being
+`/books`: it is the Library (2.2e), which lands first or with this entry, so
+the list keeps a nav item.
+
 - **Now** is the only large thing (`--r-hero`, the art band on `--art` once
   4.2 stores it): the cover (`--cover-hero`), the title in Newsreader
   (`--fs-hero-name`), the author, `p. 212 of 468` in mono, a 6px `--ready`
@@ -1709,6 +1715,155 @@ edge and `~` label, the rail renders without horizontal page overflow at 360px,
 and no *Quarter | Month* control renders anywhere. At 360px no quarter footer renders a *room* badge; at 1280px an
 under-capacity quarter does. Nothing resolves to `--danger`. Screenshot at 360px
 and 412px.
+
+### ☐ 2.2c Follow what you're reading: the control, and an offer when you finish · M
+Owner intake, 2026-11-02 (owner: *a follow option where I can manually say
+I'm reading this author or this universe, not I happened to read one book of
+it … upon finishing a book, in addition to marking the date, also give option
+to follow the author, the universe or the shelf if it has one*). D-108.
+Depends on 1.15 (the follow tables) and 1.5 (the finish). Takes the follow
+control out of 5.11, so that 2.2d and 2.10b have something to read before the
+author and universe pages exist.
+
+- **Only *Reading* means reading** (D-108, sharpening D-43). A series, author,
+  universe or shelf counts as one you're reading only when its follow is
+  `reading`, set by you. Having read one book of it never does: no suggestion,
+  *Next in* line or *In the middle of* row infers it from `series_progress`
+  or any other progress view. Those views still say how far along you are.
+  `tracking` stays what it was: you want to know about it, not that you're on
+  it. Every follow 1.15 loaded is `tracking`, so nothing is *Reading* until you
+  set it.
+- **The control.** *Reading · Tracking · Not following*, a `role="radiogroup"`
+  writing `series_follows`, `author_follows`, `universe_follows` or
+  `shelf_follows`. *Not following* deletes the row. Each change is one write
+  with an undo (1.2) that restores the previous state, row or no row. Until
+  the series, author and universe pages exist (5.9, 5.11), it is reached from
+  *Follow…* in a book's row menu in the Library (2.2e), and on the book's
+  sheet once 3.5 draws it. *Follow…* opens a sheet listing that book's series,
+  author, universe and each shelf it is on, each with its control and its
+  `read / total` in mono.
+- **Shelves can be followed.** A shelf is the owner's own reading order (5.1),
+  so following one as *Reading* means working through it. Proposed:
+  `shelf_follows(shelf_id, state)`, `state IN ('tracking', 'reading')`, no
+  `user_id` (D-91), in `src/db/export-tables.ts`, and a `shelf_progress` view
+  (books listed and read per shelf, live books only, with `follow_state`),
+  which 5.12 then reads. **Stop and ask at plan time** (a new table).
+- **The offer at the finish.** Setting a book to *Read* (1.5's *Finished*)
+  saves at once, as today; then the toast that carries its undo gains a second
+  line, *Keep going?*, with one chip per thing the book belongs to that isn't
+  already *Reading*: its series and universe while either still has an unread
+  live book, its author, and each shelf it is on with a book left (*Mistborn ·
+  series*, *Brandon Sanderson*, *Cosmere*). A chip sets *Reading* with its own
+  undo. Ignoring the offer writes nothing, and the offer never blocks the
+  finish. It sits beside 3.4b's *Rank it in 2026* when both apply, and moves
+  into 5.4's closing card once that exists. Finishing the last unread book of
+  something you follow as *Reading* offers *Done with Mistborn* instead, which
+  sets it back to *Tracking* (D-43: *Reading* stays set until you change it,
+  so the app asks rather than changing it for you).
+- **Not drawn yet.** The mockup gains the *Follow…* sheet and the finish
+  offer at phone, tablet and desktop widths before they are built, and
+  `design/mockups-index.md` lists them.
+
+**Check (proposed):** `npm test`: setting *Reading* on a series writes one
+`series_follows` row at `reading`, *Not following* deletes it, and Undo
+restores the earlier state; the same for an author, a universe and a shelf.
+Finishing book 2 of 4 of an unfollowed series in the Cosmere, on a shelf with
+a book left, offers the series, the author, the Cosmere and the shelf;
+finishing book 4 of 4 does not offer the series; a series already *Reading* is
+not offered; finishing the last unread book of a *Reading* series offers *Done
+with* it, and taking it writes `tracking`; dismissing the offer writes no
+follow row. `shelf_progress` counts read and listed books per shelf and skips
+a soft-deleted book. The export test passes with `shelf_follows`. In the
+browser (0.11), the offer's chips are reachable by keyboard and axe passes.
+Screenshots at 360px and 1280px.
+
+### ☐ 2.2d Next in what you're reading, on the dashboard · M
+Owner intake, 2026-11-02 (owner: *how is current universe/author reading
+showing up on continue reading or "Add books to plan" recommendation?*; asked,
+the owner chose the dashboard and the plan sheet). D-108. Depends on 2.2 (the
+dashboard) and 2.2c (the follows it reads).
+
+- **One derived list, read everywhere.** Proposed view `follow_next(kind,
+  entity_id, name, book_id, read, total)` in `etl/views.sql`: for each series,
+  universe, author and shelf followed as `reading`, its next book. Next is the
+  lowest unread `series_position` for a series, the lowest
+  `universe_position` for a universe, the lowest `ordinal` for a shelf, and
+  for an author the earliest `published_year`, then title. Unread means
+  `to_read` or `unlisted`; a book read, DNF or parked (5.15) is skipped. A
+  follow whose next book is the one you're reading now has no row, and nor
+  does a follow with nothing left. Nothing is stored (hard rule 2).
+- **Under Now.** When the book in hand belongs to something you follow as
+  *Reading*, the hero gains one grey line under its meter, *Next in Mistborn:
+  The Well of Ascension*, linking to that book. One line only: the series
+  first, then the universe, then the author.
+- **Between books.** Under the top of the plan, *Or keep going* lists up to
+  three rows from `follow_next`, most recently read first, each with its
+  reason (*Next in Red Rising · 3 of 6 read*) and **Start** (sets the book
+  `reading`, with undo). *Pick something else* stays. The top of the plan is
+  still the primary, and the thumb bar's verb still starts it.
+- **The plan sheet reads the same view.** 2.10b's first three groups are
+  `follow_next`'s rows, so the dashboard and the sheet can't disagree.
+- No nudge copy, no streaks, nothing amber or red: a follow you haven't
+  touched in months is listed as calmly as one you touched yesterday.
+- **Not drawn yet.** The feel pass (D-40) draws Now and *Between books*
+  without these lines; the mockup's `bdash` frames gain them at phone,
+  tablet and desktop widths before they are built.
+
+**Check (proposed):** `etl/test_views.sql`: with a series followed `reading`
+whose books 1–2 are read and 3–4 `to_read`, `follow_next` lists book 3 only;
+the same series at `tracking`, or unfollowed with 2 read, has no row; an
+author followed `reading` lists their earliest unread book; a shelf followed
+`reading` lists its lowest unread ordinal; a DNF next book is skipped; a
+series whose next book is `reading` has no row. In the browser (0.11), with
+nothing reading, *Between books* lists book 3 under *Or keep going*, **Start**
+sets it `reading` and Undo restores `to_read`; reading book 2 of a `reading`
+series, Now shows *Next in* naming book 3. Nothing on the dashboard resolves
+to `--danger`. Screenshots at 360px and 1280px.
+
+### ☐ 2.2e Library: its own page, sorted as well as filtered · S
+Owner intake, 2026-11-02 (owner: *Library view is own page, not home of
+books dashboard that also includes sorting options, not just filtering*).
+D-110. No dependency. Build it before 2.2 or with it, because 2.2 is the
+change that makes `/books` the dashboard.
+
+- **Its name is Library.** The master list's heading, its nav item and every
+  link to it say *Library*. 2.2 points the *Books* switch and `/books` at the
+  dashboard; this entry adds a *Library* item to the books section of every
+  bar that lists books' screens (`src/components/nav/items.ts`), enabled now.
+  Proposed: it stays at `/books/list` (ui.md's list screen one level down);
+  the route's name is asked at plan time.
+- **Sort, not only filter.** A *Sort* control beside the filters: a select on
+  the phone, in the filter rail from 1024px. The orders:
+  - **Series**, the default and today's order (series, then position, then
+    title);
+  - **Title**, A to Z;
+  - **Author**, by name, then title;
+  - **Length**, longest first (an estimated count sorts by its estimate and
+    keeps 2.2b's `~` mark);
+  - **Published**, newest first;
+  - **Finished**, most recent first (meant for *Read*; under another filter a
+    book with no finish comes last);
+  - **Plan order**, on *To read*: quarters in order and by ordinal, then bare
+    years, On deck and Someday (D-37, through `to_read_level`);
+  - **Recently added**, once `books.added_at` exists (2.10b proposes it;
+    whichever task is built first asks).
+
+  Each order reverses (*↑ ↓*). The sort is in the URL
+  (`?sort=length&dir=asc`), combines with every filter and the search, keeps
+  the match count, and survives a reload. NULLs sort last in either
+  direction. It is SQL in `listBooks`, never a sort in the app.
+- This absorbs 6.10's *sort by word count*; 6.10 keeps the rest.
+- **Not drawn yet.** The mockup's `blist` gains the *Sort* control and the
+  *Library* name at phone, tablet and desktop widths before it is built.
+
+**Check (proposed):** `npm test`: `listBooks` with `sort=length` returns the
+longest book first and a book with no word count last, and `dir=asc` reverses
+the order with the empty one still last; `sort=title` with `status=read` keeps
+only read books; `sort=plan` on *To read* lists 2027 Q1's books by ordinal
+before 2027 Q2's, and Someday's after On deck's. In the browser (0.11),
+choosing *Length* updates the URL and the order and survives a reload; the
+nav shows *Library* at 360px, 768px and 1280px, current on `/books/list`.
+Screenshots at 360px and 1280px.
 
 ### ☐ 2.3 Plan editor · M
 Depends on 1.7 and 2.1.
@@ -2334,7 +2489,13 @@ Owner intake, 2026-11-02 (owner: *the ability to create a yearly/quarterly
 plan … while creating a plan, the app gives suggestions: next book in a
 series or shelf I'm reading, maybe recently added, others you think of*).
 D-104. Depends on 2.3 (the picker and its writes), 2.10 (the page and its
-*Suggest*), 1.15 (follows) and 1.21 (Unlisted).
+*Suggest*), 1.15 (follows), 1.21 (Unlisted), and 2.2c and 2.2d (the
+*Reading* follows and `follow_next`).
+
+*Amended by the second 2026-11-02 intake (D-108):* the first three groups
+read only what you follow as *Reading*. A series or shelf you happen to have
+read one book of is no longer inferred into them; it shows nowhere on the
+sheet unless another group lists it.
 
 There is no plan object to create, and this task adds none: a year's plan is
 the `reading_plan` rows whose period falls in it (D-37). What's missing is a
@@ -2356,14 +2517,13 @@ from the master list. **Books only**: planning comics runs by period is
   counts marked as in 2.2b), a reason line, and *Put in Q2* naming the target
   (for a year target, the bare year and the four quarter chips). A group with
   nothing in it is left out. In this order:
-  1. **Next in a series you're reading:** the lowest-positioned unread book of
-     each series whose follow is `reading`, or that has a read book and an
-     unread one (`series_progress`), and likewise by universe position for a
-     `reading` universe (*Next in Red Rising · you've read 3 of 6*).
-  2. **Next on a shelf:** the lowest-ordinal unread book of each ordered shelf
-     you're partway through (`shelf_books`; 5.1 builds the shelves UI).
-  3. **From authors you follow:** unread books by a followed author, newest
-     published first.
+  1. **Next in a series you're reading:** `follow_next`'s row (2.2d) for each
+     series and universe followed `reading` (*Next in Red Rising · you've
+     read 3 of 6*).
+  2. **Next on a shelf you're reading:** `follow_next`'s row for each shelf
+     followed `reading` (2.2c; 5.1 builds the shelves UI).
+  3. **From authors you're reading:** unread books by an author followed
+     `reading`, earliest published first, `follow_next`'s first.
   4. **On deck:** already next in line (D-37).
   5. **Coming out in this period:** books whose `releases` date (5.7) falls in
      the target.
@@ -2398,12 +2558,14 @@ from the master list. **Books only**: planning comics runs by period is
   `design/mockups-index.md` lists it.
 
 **Check:** with a fixture of a `reading` series with books 1–2 read and 3–4
-`to_read`, an ordered shelf whose first book is read, a followed author with
-one unread book, an On deck book, an Unlisted book 3 of another series whose
-books 1–2 are read, and a DNF book, the sheet for 2027 Q2 lists book 3 and not
-book 4 under *Next in a series*, the shelf's second book under *Next on a
-shelf*, the author's book, the On deck book, and the Unlisted book tagged
-*Unlisted*; it never lists the DNF book, and no book twice. *Put in Q2* on
+`to_read`, a shelf followed `reading` whose first book is read, an author
+followed `reading` with one unread book, an On deck book, an Unlisted book 3
+of another `reading` series whose books 1–2 are read, an unfollowed series
+with books 1–2 read and 3 `to_read`, and a DNF book, the sheet for 2027 Q2
+lists book 3 and not book 4 under *Next in a series*, the shelf's second book
+under *Next on a shelf*, the author's book, the On deck book, and the Unlisted
+book tagged *Unlisted*; it lists the unfollowed series' book 3 under none of
+the first three groups, never lists the DNF book, and no book twice. *Put in Q2* on
 book 3 writes one `reading_plan` row at Q2's last ordinal, the budget line
 shows the new total, and Undo removes the row. Placing the Unlisted book
 writes its `to_read` status and its plan row in one transaction. With 100k of
@@ -3565,6 +3727,10 @@ it is converted.
   kinds of page: *Tracking · Reading · Not following*, a `role="radiogroup"`
   writing `series_follows`, `author_follows` or `universe_follows` for the
   user. *Reading* stays set until it is changed (D-43). Done is never stored.
+  *Amended by the second 2026-11-02 intake (D-108):* 2.2c builds the control
+  and its writes (shelves included); this task places it on the author and
+  universe pages, and 5.9 on the series page, and builds no control of its
+  own.
   *From TASK-023 (1.15, PR #134):* nothing
   sets a book's `universe_id` after the load, and Grishaverse loads with no
   member books (the books its Series-tab group lists are reads, which D-41
@@ -3577,26 +3743,56 @@ it is converted.
     user, survives a reload, and shows in the view's `follow_state`. *Not
     following* deletes the row. No count or state column is added.
 
-- ☐ 5.12 **In the middle of: series, authors, universes and reading-order
-  shelves** · S. Backlog intake, 2026-10-20 (owner: *series, authors and
-  tracks I'm in the middle of*, where "tracks" means both universes and
-  ordered shelves). Depends on 1.9, 1.15, 5.1 and 5.11.
-  - **What counts is derived, never stored.** A series, universe or books
-    shelf with at least one read and at least one unread live book, or one the
-    owner follows as `reading` (D-43). An author counts only when followed:
-    376 authors would otherwise list everyone you have read once with a book
-    left. Read from `series_progress`, `author_progress`, `universe_progress`
-    and a new `shelf_progress` view (books listed and read per shelf, live
-    books only).
-  - **Where it shows.** 1.9's books *In flight* tab gains a second group under
-    the books being read, *In the middle of*. Each group gets one row: its kind,
-    name, `read / total` in mono, an `.emeter` filled with `--ready`, and the
-    next unread named. Most recently read first. The books dashboard's rollup
-    links to it.
-  - **Check:** a series with 2 of 5 read appears and one with 5 of 5 does not;
-    a series with none read appears only when followed `reading`; an author
-    appears only when followed; a shelf with 1 of 3 read appears; nothing is
-    written; each row's counts equal its view's.
+- ☐ 5.12 **In the middle of, and completed: one page for every medium** · M.
+  Backlog intake, 2026-10-20 (owner: *series, authors and tracks I'm in the
+  middle of*, where "tracks" means both universes and ordered shelves);
+  rewritten by the second 2026-11-02 intake (owner: *a page to see all the
+  things I'm in the middle of, and have completed*; asked, the owner chose
+  every medium). D-109, D-108. Depends on 1.9, 1.15, 2.2c and 2.2d; watch,
+  music and games join in their own phases (8.8, 9.6, 10.3).
+  - **One page, `/progress`, two tabs: *In the middle of · Completed***, in
+    the global part of the nav beside Inbox, with a chip per medium (*All ·
+    Books · Comics*, and *Watch*, *Music* and *Games* once they exist). It
+    replaces this entry's old plan of a group on 1.9's books *In flight*
+    tab: In flight keeps the books and runs in hand, and this page holds the
+    bigger things they belong to.
+  - **What counts is derived, never stored** (hard rule 2), and for books it
+    follows D-108: only a *Reading* follow puts something in the middle.
+    - **Books, In the middle of:** each series, universe, author and shelf
+      followed `reading` with an unread live book, from `series_progress`,
+      `universe_progress`, `author_progress` and 2.2c's `shelf_progress`.
+      Having read one book of something you don't follow never lists it.
+    - **Books, Completed:** each series, universe and shelf with two or more
+      live books, every one read (a standalone isn't a series), and each
+      followed author with every listed book read. A follow isn't needed:
+      completing something is a fact.
+    - **Comics, In the middle of:** runs partly read (1.9's In flight rows)
+      and tracks partly read (`track_progress`). **Completed:** runs and
+      tracks fully read.
+    - **Watch, music, games** add their own rows at 8.8, 9.6 and 10.3:
+      shows and franchises, followed artists, games played through. Each
+      phase's plan gate names its rows; this page draws them.
+  - **Each row**: the medium's glyph, the kind (*series*, *universe*,
+    *author*, *shelf*, *run*, *track*), the name, `read / total` in mono, an
+    `.emeter` filled with `--ready`, and on *In the middle of* the next thing
+    named (2.2d's `follow_next` for books, 1.6's resume pointer for a run).
+    *In the middle of* is most recently touched first; *Completed* is most
+    recently finished first, with the finish's month (*finished Mar 2026*).
+    A row opens its page where one exists (5.9, 5.11, 5.2, the run).
+  - The books and comics dashboards' rollups link here. Empty states are
+    calm: *Nothing in the middle. Follow a series as Reading to see it here*
+    with *Open the Library* (2.2e).
+  - **Not drawn yet.** The mockup gains `/progress` at phone, tablet and
+    desktop widths before it is built, and `design/mockups-index.md` lists
+    it.
+  - **Check:** a series followed `reading` with 2 of 5 read is under *In the
+    middle of* and the same series unfollowed is not; a series with 5 of 5
+    read is under *Completed* whether followed or not, and a one-book
+    series read is not; an author appears only when followed; a shelf
+    followed `reading` with 1 of 3 read appears; a run with 3 of 10 read is
+    under *In the middle of*, and with 10 of 10 under *Completed*; the
+    *Books* chip hides the run; nothing is written; each row's counts equal
+    its view's. Screenshots at 360px and 1280px.
 
 - ☐ 5.13 **Comic series page: every issue of a volume, its runs and its gaps**
   · M. Backlog intake, 2026-10-20 (owner: *a series view: every issue in my
@@ -3788,7 +3984,7 @@ it is converted.
 - ☐ 6.10 Master list: a *Fits Q2 · 56k* chip and a *Pick one* button (one
   highlighted row with *Another* and *Plan for…*), plus saved views (as 2.9) · S.
   Also product B3 and the route table's `/books/list` row (architecture § Routes and data access): **sort by word
-  count**, and a **series-completion filter** (*complete · in progress · not
+  count** (moved to 2.2e with the Library's other sorts, D-110), and a **series-completion filter** (*complete · in progress · not
   started*, read from `series_progress`, never computed in the app).
 
 - ☐ 6.11 Density toggle in Settings → Appearance: `.app[data-density="compact"]`,
@@ -4367,7 +4563,9 @@ yesterday does not. The feel-pass screenshots.
 
 ### ☐ 8.8 Watch status: In flight · Up next · Done · S
 `/watch/status`, the 1.9 component with film and TV rows. Depends on 1.9 and
-8.3.
+8.3. *From the second 2026-11-02 intake (D-109):* this task also adds watch's
+rows to 5.12's `/progress` (shows and franchises in the middle of and
+completed), named at its plan gate.
 
 - **In flight**: shows whose `show_progress.state` is `watching`, with next
   season, and films with `title_status = watching`. Below them, *Waiting for
@@ -4600,7 +4798,10 @@ ones, and says *4 of 11 ranked*.
 
 ### ☐ 9.6 Music dashboard and status · M
 Depends on 9.0, 9.3 and 1.9. `/music`, in 9.0's design, and `/music/status`
-with *In flight · Up next · Done* (ui.md's rule for every medium):
+with *In flight · Up next · Done* (ui.md's rule for every medium).
+*From the second 2026-11-02 intake (D-109):* it also adds music's rows to
+5.12's `/progress` (followed artists in the middle of and completed), named at
+its plan gate.
 - **In flight:** albums you have started, and artists followed as
   `listening`.
 - **Up next:** to-listen albums from followed artists, oldest added first.
@@ -4767,7 +4968,9 @@ the end. Adding it again updates without duplicating. A mocked failure offers
 
 ### ☐ 10.3 Playing, the queue, and played · M
 Depends on 10.2 and 1.9. `/games/status`, with *In flight · Up next · Done*
-(ui.md's rule for every medium):
+(ui.md's rule for every medium). *From the second 2026-11-02 intake (D-109):*
+it also adds games' rows to 5.12's `/progress` (games played through, in the
+middle of and completed), named at its plan gate:
 - **In flight:** *Playing*, then *In rotation*, as their own groups.
 - **Up next:** the queue in your order, with *Move to…*; starting a queued
   game takes it off the queue and closes the gap, and Undo puts it back.
@@ -4858,6 +5061,7 @@ becomes a task once its open question is answered. None has a **Check:**, and
   question is whether an issue's Marvel id can be found, or only a search link
   built from the label. Where the link goes is settled: links to reading
   sources live on the issue sheet and nowhere else (3.5; STYLE_GUIDE §12).
+  L-9 asks the same for books and for watch.
 - **L-2 League of Comic Geeks ratings.** The owner's issue ratings live there
   (owner: far future). It has no public API. The open questions are whether
   its export carries per-issue ratings that can be matched to labels through
@@ -4899,5 +5103,58 @@ becomes a task once its open question is answered. None has a **Check:**, and
   The open question is the shape: data model 2.16 says the comics queue never
   gets years, quarters or capacity, so a run plan would be a table of its
   own with a capacity in issues or pages, and it would amend 2.16 and D-37.
+- **L-9 Open it where you read or watch it** (second 2026-11-02 intake;
+  owner: *like comics can open Marvel Unlimited, watch can open streaming,
+  and books can open my ereader if it's installed*). Comics is L-1. For each
+  of the others, a link on the item's sheet, next to where L-1 puts the
+  comics one (3.5, 8.4; STYLE_GUIDE §12).
+  - **Books, Moon+ Reader with Calibre Companion** (owner, 2026-11-02:
+    Calibre Companion puts the library's books on the phone, and Moon+
+    Reader reads them). A web page can't ask which apps are installed or
+    open a file by its path on the phone. Android's `intent:` links can name
+    an app and fall back to a web page when it's missing, so *if it's
+    installed* works there. The likely tiers, each an open question to test
+    on the phone:
+    - **Open Moon+ Reader** itself, by its package name, with no book. Most
+      likely to work.
+    - **Open this book in it.** It needs a file Moon+ can be handed. The
+      copy Calibre Companion put on the phone has a local path a web page
+      can't reach; a URL to the file (the library on Google Drive, as in
+      L-4, or a Calibre content server) might work if Moon+ accepts one.
+      Whether Calibre Companion has a link of its own to a book is unknown.
+    - **Read progress back.** Moon+ Reader Pro can sync reading positions
+      to a cloud folder. If that file carries a book's percentage, the
+      Ledger could read it into the Now slot's page count. Check what the
+      file holds, and how a book is matched to it (`books.calibre_id`, or
+      title and author).
+- **L-10 A reader in the app** (second 2026-11-02 intake; owner: *a far far
+  future item is to build my own into the app, if that's not too hard*).
+  Read a book's EPUB in the Ledger itself, so the page you're on is the
+  progress the dashboard shows, with nothing to log. Far future, after L-9.
+  - **How hard.** Drawing an EPUB is a solved problem: open-source web
+    readers (foliate-js, epub.js, Readium's web toolkit) paginate, theme and
+    remember a position. A plain reader (open, page, font size, light and
+    dark, resume) is about the size of an M task. The hard parts are around
+    it:
+    - **The files.** The app has no copy of the books. They would need
+      storage the app can serve privately: an upload, or a sync from the
+      Calibre library (4.4, L-4), plus the space for it. DRM-locked books
+      can't be read at all.
+    - **Offline.** Reading on a plane needs the book cached on the phone,
+      which needs 6.4's service worker first.
+    - **Progress.** A position inside an EPUB isn't a page number. Mapping
+      it to `p. 212 of 468`, or to a percentage of the word count, is a
+      decision for the data model.
+    - **Parity with Moon+ Reader.** Highlights, notes, dictionary, TTS and
+      tuned typography are each a project. Without them, the in-app reader
+      is for convenience, not a replacement.
+  - The open questions: storage and its cost; whether progress is stored as
+    a position, a percentage or pages; and whether the reader is worth
+    building before L-9 shows how far Moon+ Reader's own sync can go.
+  - **Watch, the streaming service.** 8.9 stores where a title streams, but
+    TMDB's provider list carries no link into a service's app, only one to
+    TMDB's own page for the title. The open question is whether a
+    per-service link exists (JustWatch's links aren't in the free data), or
+    only the service's search for the title.
 
 ---
