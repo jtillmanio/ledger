@@ -312,14 +312,6 @@ export const releases = pgTable("releases", {
   releaseDate: text("release_date"),        // ISO date; null means announced but undated
 });
 
-/** Titles from the old To-Read tab that aren't clean book records yet. */
-export const wishlist = pgTable("wishlist", {
-  id: serial("id").primaryKey(),
-  genre: text("genre"),
-  rawEntry: text("raw_entry").notNull(),
-  bookId: text("book_id").references(() => books.id),
-});
-
 /** BookTube and similar year-end lists, kept as source material. */
 export const externalLists = pgTable("external_lists", {
   id: serial("id").primaryKey(),

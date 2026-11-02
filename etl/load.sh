@@ -52,7 +52,7 @@ INSERT INTO users (id, name) VALUES (:'owner_id', :'owner_name')
 TRUNCATE issue_progress, edition_progress, book_status, reading_plan, read_events,
          run_tracks, event_runs, prereqs, issue_credits, creators,
          run_issues, issues, events, editions, volume_rules,
-         runs, blocks, tracks, releases, wishlist, external_lists,
+         runs, blocks, tracks, releases, external_lists,
          series_follows, author_follows, universe_follows,
          book_genres, books, book_subseries, book_universes, book_series, authors, shelves RESTART IDENTITY CASCADE;
 
@@ -77,7 +77,6 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan, read_event
 \\copy books(id,title,author_id,series_id,series_position,genre,book_type,word_count,word_count_source,published_year,page_count,cover_url,open_library_id,hardcover_id,universe_id,universe_position,subseries_id,subseries_position,calibre_id) FROM '$SEED/books.csv' CSV HEADER
 \\copy book_genres(book_id,genre) FROM '$SEED/book_genres.csv' CSV HEADER
 \\copy releases       FROM '$SEED/releases.csv'       CSV HEADER
-\\copy wishlist(genre,raw_entry,book_id) FROM '$SEED/wishlist.csv' CSV HEADER
 \\copy external_lists(source,year,rank,raw_title,book_id) FROM '$SEED/external_lists.csv' CSV HEADER
 
 \\copy issue_progress(user_id,placement_id,completed_at,completed_at_precision) FROM '$tmp/issue_progress.csv' CSV HEADER

@@ -1063,6 +1063,18 @@ CALIBRE_MISSING_DECISIONS = ("keep", "")
 BOOK_HOLD_COLUMNS = ["title", "author", "tabs", "lookup", "decision"]
 BOOK_HOLD_DECISIONS = ("keep", "")
 MATCH_SOURCES = ("hardcover", "hand")
+# etl/data/wishlist_review.csv (task 1.27, D-111, amending D-39): each line of
+# the old To-Read tab that names no seed book by its title and author, keyed by
+# `raw_entry`. `create` makes a book of `title` and `author` (which the owner may
+# edit) at to_read, `link` says the line is the `near` book, `drop` loads
+# nothing. A decided row survives every run; an undecided one is rebuilt.
+WISHLIST_REVIEW_COLUMNS = ["genre", "raw_entry", "title", "author", "reason", "near", "similarity", "decision"]
+WISHLIST_REVIEW_DECISIONS = ("create", "link", "drop")
+# A title ending in what a run of books is called, or holding *Chronicles*: `The
+# Licanius Trilogy`, `The Riftwar Cycle`. A guess, never a rule (1.4d's, moved
+# here): *Osten Ard* gets through, and the owner decides that row.
+SERIES_WORD_RE = re.compile(
+    r"(?:\b(?:trilogy|saga|quartet|quintet|duology|series|sequence|cycle)|\bchronicles\b.*)$", re.I)
 # Not loaded: the held books, which enrich_books.py looks up and calibre.py
 # matches beside seed/books.csv, so the run that finds one lets it load.
 HELD_BOOKS_COLUMNS = ["title", "author", "series"]
@@ -1841,6 +1853,129 @@ def hold_books(path: Path, idx: BookIndex, details: list[dict]) -> set[str]:
     return held
 
 
+def to_read_line(text: str) -> tuple[str, str]:
+    """A line of the old To-Read tab as title and author: 1.4's paste grammar,
+    the author after the last spaced dash, so a title may hold one. A line
+    with no dash has no author."""
+    cut = text.rfind(" - ")
+    if cut < 0:
+        return re.sub(r"\s+-$", "", text), ""
+    return text[:cut].strip(), text[cut + 3:].strip()
+
+
+def resolve_to_read_lines(lines: list[dict], idx: BookIndex, status: dict[str, dict],
+                          held: set[str], path: Path | None) -> None:
+    """Task 1.27 (D-111): settle the old To-Read tab before the load. A line
+    naming a book by its title and author (after merges, D-61, D-68) is that
+    book; every other line is a wishlist_review.csv row. An Unlisted or
+    statusless book a line or a `link` names, and a book `create` makes, load
+    at to_read with no plan row (Someday, D-37); any other status stays. `near`
+    is the closest book that loads, at PAIR_SIMILAR_AT or more (D-92)."""
+    genres: dict[str, list[str]] = {}
+    for line in lines:
+        names = genres.setdefault(line["raw_entry"], [])
+        if line["genre"] not in names:
+            names.append(line["genre"])
+
+    def someday(b: dict) -> None:
+        row = status.get(b["id"])
+        if row is None or row["status"] == "unlisted":
+            status[b["id"]] = {"user_id": "$OWNER", "book_id": b["id"], "status": "to_read",
+                               "finished_on": None, "finished_on_precision": "none",
+                               "year_rank": None, "rating": None}
+
+    def named(b: dict) -> str:
+        author = idx.authors[b["author_id"]]["name"] if b["author_id"] else ""
+        return f"{b['title']} - {author}" if author else b["title"]
+
+    candidates = [(trigrams(b["title"]), b) for b in idx.by_key.values() if b["id"] not in held]
+    series = {key(s["name"]) for s in idx.series.values()}
+
+    def proposal(raw: str) -> dict:
+        title, author = to_read_line(raw)
+        mine, near = trigrams(title), []
+        aid = idx.find_author(author) if author else None
+        for grams, b in candidates:
+            shared = len(mine & grams)
+            union = len(mine) + len(grams) - shared
+            sim = shared / union if union else 0.0
+            if sim >= PAIR_SIMILAR_AT:
+                same = aid is not None and b["author_id"] == aid
+                near.append((-sim, not same, key(b["title"]), b["id"], sim, b))
+        best = min(near, key=lambda n: n[:4]) if near else None
+        if SERIES_WORD_RE.search(title) or key(title) in series:
+            reason = "series"
+        elif not author:
+            reason = "no author"
+        else:
+            reason = "similar" if best else "new"
+        return {"genre": "; ".join(genres[raw]), "raw_entry": raw, "title": title, "author": author,
+                "reason": reason, "near": named(best[5]) if best else "",
+                "similarity": f"{best[4]:.2f}" if best else "", "decision": ""}
+
+    existing: dict[str, dict] = {}
+    if path and Path(path).exists():
+        with open(path, newline="", encoding="utf-8-sig") as fh:
+            for r in csv.DictReader(fh):
+                row = {c: (r.get(c) or "").strip() for c in WISHLIST_REVIEW_COLUMNS}
+                if row["raw_entry"] and (row["raw_entry"] not in existing or
+                                         (row["decision"] and not existing[row["raw_entry"]]["decision"])):
+                    existing[row["raw_entry"]] = row
+
+    rows, matched = [], 0
+    for raw in genres:
+        prev = existing.get(raw)
+        if prev and prev["decision"]:
+            rows.append(prev)
+            continue
+        title, author = to_read_line(raw)
+        b = idx.find_book(title, author) if author else None
+        if b is not None:
+            matched += 1
+            someday(b)
+            continue
+        rows.append(proposal(raw))
+    undecided = 0
+    for row in rows:
+        decision = row["decision"].lower()
+        what = f"{row['raw_entry']} ({row['decision']})"
+        if decision not in WISHLIST_REVIEW_DECISIONS:
+            undecided += 1
+            if decision:
+                flag("wishlist_review", "unknown decision",
+                     f"{what}: counted undecided, loads nothing; create, link or drop")
+            continue
+        if decision == "create":
+            title, author = idx.book_identity(clean(row["title"]) or "", clean(row["author"]))
+            b = idx.by_key.get((key(title), key(author))) or idx.add(title, author)
+            if b is None:
+                flag("wishlist_review", "create with no title", f"{what}: give the row a title")
+                continue
+            if not b["genre"]:
+                b["genre"] = clean(row["genre"].split(";")[0])
+            someday(b)
+        elif decision == "link":
+            b = idx.find_book(*to_read_line(row["near"]))
+            if b is None:
+                flag("wishlist_review", "link names no book",
+                     f"{what}: no book is {row['near']!r}; write `Title - Author` of a book in `near`")
+                continue
+            someday(b)
+    for raw, row in existing.items():
+        if raw not in genres and row["decision"]:
+            flag("wishlist_review", "stale review",
+                 f"{raw} ({row['decision']}) — no longer in the To-Read tab; loads nothing, "
+                 "delete the row once it's done with")
+            rows.append(row)
+    if path:
+        with Path(path).open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=WISHLIST_REVIEW_COLUMNS)
+            w.writeheader()
+            w.writerows(rows)
+        print(f"  {matched} To-Read line{'' if matched == 1 else 's'} name a book; {undecided} undecided "
+              f"of the rest — create, link or drop each in {path}")
+
+
 def write_calibre_missing(path: Path, idx: BookIndex, review: list[dict], held: set[str] = frozenset()) -> None:
     """etl/data/calibre_missing.csv (task 1.18b, D-90): every workbook book with
     no Calibre id, with the tabs that list it. A row keeps its place and its
@@ -1915,13 +2050,13 @@ def is_number(v) -> bool:
 def extract_books(path: Path, out: Path, with_plan: bool = False,
                   book_review: Path | None = None, book_details: Path | None = None,
                   calibre_books: Path | None = None, calibre_missing: Path | None = None,
-                  book_hold: Path | None = None) -> None:
+                  book_hold: Path | None = None, wishlist_review: Path | None = None) -> None:
     xl = pd.ExcelFile(path)
     print(f"\nbooks <- {path.name}")
     review = load_book_review(book_review)
     idx = BookIndex(review)
     status: dict[str, dict] = {}
-    plan, releases, external, wishlist, reads, speculative = [], [], [], [], [], []
+    plan, releases, external, to_read_lines, reads, speculative = [], [], [], [], [], []
     plan_sightings: list[tuple[str, int, str]] = []
     release_sightings: list[tuple[str, str, str]] = []
     seen_plan: set[tuple[str, str]] = set()
@@ -2050,7 +2185,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
             flag("releases", "unparseable date",
                  f"{clean(r['Title'])}: {clean(date)!r} — left unscheduled")
 
-    # ---- unstructured wishlist ------------------------------------------
+    # ---- the old To-Read tab: settled after Calibre (task 1.27, D-111) ----
     raw = sheet(xl, "To-Read")
     for genre in raw.columns:
         if str(genre).startswith("Unnamed") or genre == "Goals":
@@ -2059,7 +2194,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
             e = title_text(entry)
             if not e or e.lower() == "top":
                 continue
-            wishlist.append({"genre": str(genre), "raw_entry": e, "book_id": ""})
+            to_read_lines.append({"genre": str(genre), "raw_entry": e})
 
     # ---- external top-10 lists ------------------------------------------
     raw = sheet(xl, "Booktube Top 10", header=0)
@@ -2181,6 +2316,9 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
     # ---- books Hardcover doesn't know wait for review (task 1.20, D-94) ----
     details = load_book_details(book_details)
     held = hold_books(book_hold, idx, details) if book_hold else set()
+
+    # ---- the old To-Read tab's lines: a book, or a row to decide (task 1.27) --
+    resolve_to_read_lines(to_read_lines, idx, status, held, wishlist_review)
     held_books = [b for b in idx.by_key.values() if b["id"] in held]
     loaded = [b for b in idx.by_key.values() if b["id"] not in held]
     held_rows = [{"title": b["title"], "author": idx.authors[b["author_id"]]["name"] if b["author_id"] else "",
@@ -2256,7 +2394,6 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
     for kind in ("series", "author", "universe"):
         write(out, f"{kind}_follows", list(follows[kind].values()), ["user_id", f"{kind}_id", "state"])
     write(out, "releases", releases, ["book_id", "release_date"])
-    write(out, "wishlist", wishlist, ["genre", "raw_entry", "book_id"])
     write(out, "external_lists", external, ["source", "year", "rank", "raw_title", "book_id"])
     # Not loaded (D-41): the workbook's reads, for the owner to enter by hand.
     write(out, "workbook_reads", reads, WORKBOOK_READS_COLUMNS)
@@ -2309,6 +2446,9 @@ def main(argv=None) -> int:
                     help="book_hold.csv: rewritten each run with the workbook books Hardcover doesn't know "
                          "(no hardcover or hand row in --book-details) and Calibre doesn't have; each is "
                          "held out of seed/ with its status, plan and release rows until `keep` (task 1.20)")
+    ap.add_argument("--wishlist-review", type=Path, default=None,
+                    help="wishlist_review.csv: rewritten each run with the old To-Read tab's lines that "
+                         "name no book, keeping each create, link or drop decision (task 1.27, D-111)")
     ap.add_argument("--fail-on-cycle", action="store_true",
                     help="exit non-zero when the prereq graph has a cycle, after writing every "
                          "CSV (task 2.11a; START-HERE Step 14's final extract)")
@@ -2329,7 +2469,8 @@ def main(argv=None) -> int:
     extract_comics(args.comics, args.out)
     extract_books(args.books, args.out, with_plan=args.with_plan, book_review=args.book_review,
                   book_details=args.book_details, calibre_books=args.calibre_books,
-                  calibre_missing=args.calibre_missing, book_hold=args.book_hold)
+                  calibre_missing=args.calibre_missing, book_hold=args.book_hold,
+                  wishlist_review=args.wishlist_review)
 
     write(args.out, "unresolved", UNRESOLVED, ["table", "reason", "detail"])
     write(args.out, "calibre_changes", CHANGES, ["table", "reason", "detail"])

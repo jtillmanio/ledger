@@ -428,7 +428,6 @@ books <- Books.xlsx
   book_status          1289 rows -> seed/book_status.csv
   reading_plan          102 rows -> seed/reading_plan.csv
   releases               44 rows -> seed/releases.csv
-  wishlist              497 rows -> seed/wishlist.csv
   external_lists        534 rows -> seed/external_lists.csv
   unresolved            104 rows -> seed/unresolved.csv
 ```

@@ -1,14 +1,14 @@
 ---
 id: TASK-044
 title: 1.27 Extract resolves the wishlist, before cutover
-status: Draft
+status: In progress
 depends_on: [TASK-030, TASK-029]
 size: L
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 32931a6
 ---
 
 # TASK-044 — 1.27 Extract resolves the wishlist, before cutover
@@ -83,7 +83,21 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-02, with these answers: drop the `wishlist` table (schema stop and ask: yes); no bulk default per `reason` (a filtered fill-down in Excel decides a reason in one go, and every decision stays explicit in the file); the `wishlist` frame and its nav button leave `design/mockups.html` too; `near` is written `Title - Author`; an exact match to a statusless book also loads at `to_read`, as a `link` does.
+
+Large on purpose (`never-split`): the sidecar, the table drop and the screen's removal land together.
+
+1. **Extract** (`etl/extract.py`). Each To-Read line is split at its last spaced dash into title and author (the app's paste grammar, with the `(Series #N)` suffix). Then, in order: an exact title-and-author match after merges (`BookIndex.find_book`) writes no row, and an Unlisted or statusless book loads at `to_read` with no plan row while any other status is kept; else a `wishlist_review.csv` row with `reason` `series` (`SERIES_WORD`, or the key of a series in the index), else `no author`, else `similar` (closest loaded book at `PAIR_SIMILAR_AT` or more by title trigrams; ties by same author, then title, then id), else `new`. `near` is `Title - Author` of the closest loaded book, `similarity` two decimals. A line in two genre columns is one row, `genre` joined `; `.
+2. **Order.** After `fold_calibre` and `hold_books`, before the held/loaded split and every write: `near` only ever names a book that loads.
+3. **Decisions.** `create` makes the row's title and author (after merges; an existing book is used) at `to_read`, with the row's first genre, never held; `link` resolves `near` through `find_book`, and an Unlisted or statusless book loads at `to_read`; `drop` and undecided load nothing. An unknown decision (counted undecided), a `link` naming no book and a decided row whose line left the workbook (`stale review`) go to `unresolved.csv`. Decided rows keep their place; undecided ones are rebuilt in workbook order; stale ones follow. The run prints the exact matches and the undecided count. No `seed/wishlist.csv`; `package.json`'s `extract` passes `--wishlist-review etl/data/wishlist_review.csv`.
+4. **Migration.** `npm run db:generate` drops `wishlist`; `drizzle/down/<tag>.sql` recreates it with its foreign key, no rows (extract rebuilds them). Out of `src/db/export-tables.ts`, `etl/load.ps1`, `etl/load.sh`, `etl/rebuild.ps1`, `etl/rebuild.sh`, `test/db.ts`.
+5. **Removal.** The entry's list, plus `seriesLike` and its test (no other caller); comments that name the wishlist reworded, so `rg -i wishlist src/` is empty.
+6. **Design and docs.** The `wishlist` frame and nav button in `design/mockups.html`, its row in `design/mockups-index.md`; `docs/COMMANDS.md`; `docs/03-data-model.md` § 1 overview row and 2.7; `docs/02-architecture.md` (F-18's row, the load note); `docs/START-HERE.md` (the sample extract output and the table list).
+7. **Real run.** `npm run extract` on the development workbooks; commit only `etl/data/wishlist_review.csv`, and report the counts in the PR. If another committed sidecar changes, stop and ask.
+
+**Tests.** AC-1–AC-3: `etl/test_extract.py` class `WishlistReview(BookCase)` with a Calibre sidecar; its matched book is one Calibre marks read and is planned (status unchanged is discriminating). AC-4: `test/wishlist-drop-migration.test.ts`, up → down → up in a rolled-back transaction, beside `test/migrations-check.test.ts` and `test/export-tables.test.ts`. AC-5: the script's arguments, the docs, the manual run.
+
+**Risks.** Statusless books include author-tab Completed reads (entered by hand, D-41): a To-Read line naming one exactly puts it at Someday (owner accepted). Running `npm run extract` rewrites every sidecar: only the new one is committed.
 
 ## Review log
 

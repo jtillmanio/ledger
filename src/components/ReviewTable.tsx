@@ -18,22 +18,18 @@ export type ReviewTableRow = Pick<ReviewRow, "key" | "line" | "kind" | "text" | 
  * never colour alone; a line that failed its check marks its decision
  * `aria-invalid` and points at the why.
  *
- * The wishlist review (1.4d) draws one table per genre: `label` names each, and
- * `extra` adds a control under a row's decision (its *Edit*). *Paste a list*
- * (1.4e) passes `cells`, which draws the line as editable Title and Author
- * cells in place of the parsed text.
+ * *Paste a list* (1.4e) passes `cells`, which draws the line as editable
+ * Title and Author cells in place of the parsed text.
  */
-export default function ReviewTable<R extends ReviewTableRow = ReviewTableRow>({ rows, checking, onChoose, label = "Review", extra, cells }: {
+export default function ReviewTable<R extends ReviewTableRow = ReviewTableRow>({ rows, checking, onChoose, cells }: {
   rows: R[];
   /** The catalog check is out: an unverified check may still change. */
   checking: boolean;
   onChoose: (group: string, option: string) => void;
-  label?: string;
-  extra?: (row: R) => ReactNode;
   cells?: (row: R) => ReactNode;
 }) {
   return (
-    <ol className="group review" aria-label={label}>
+    <ol className="group review" aria-label="Review">
       {rows.map((row) => {
         const whyId = `why-${row.line}`;
         return (
@@ -64,7 +60,6 @@ export default function ReviewTable<R extends ReviewTableRow = ReviewTableRow>({
                   Always use {row.rule.year} for {row.rule.series}
                 </button>
               )}
-              {extra?.(row)}
             </div>
           </li>
         );

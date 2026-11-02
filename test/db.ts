@@ -31,6 +31,6 @@ export async function truncateAll(sql: TestSql) {
     TRUNCATE issue_progress, edition_progress, book_status, reading_plan, read_events, run_queue,
              run_tracks, event_runs, prereqs, issue_credits, creators,
              run_issues, issues, events, editions,
-             runs, blocks, tracks, releases, wishlist, external_lists,
+             runs, blocks, tracks, releases, external_lists,
              books, book_series, authors, users, inbox, metron_cache, open_library_cache, hardcover_cache RESTART IDENTITY CASCADE`);
 }
