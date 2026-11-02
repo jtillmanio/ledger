@@ -1,7 +1,7 @@
 ---
 id: TASK-044
 title: 1.27 Extract resolves the wishlist, before cutover
-status: Review
+status: Done
 depends_on: [TASK-030, TASK-029]
 size: L
 model: opus
