@@ -1,5 +1,7 @@
 // @vitest-environment happy-dom
-// Task 1.4c on screen: the Add books sheet. Add to names the destination and
+// Task 1.4c on screen: the Add books sheet. Since task 1.22 Search runs as you
+// type (3 characters and a 500 ms pause, fake timers here; the pause itself is
+// test/use-search.test.ts) and every row has one tag saying where it came from. Add to names the destination and
 // every result's button says it (AC-3); Search runs on submit, your library
 // before Hardcover (AC-2; Hardcover since task 1.4f, with its subtitle, authors
 // and not-set-up state); By hand needs a title and an author and says so
@@ -26,7 +28,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => router }));
 const BLADE: LibraryHit = {
   id: "the-blade-itself-joe-abercrombie", title: "The Blade Itself", author: "Joe Abercrombie", series: "First Law",
   series_position: 1, published_year: null, page_count: null, word_count: null, word_count_source: null,
-  cover_url: null, hardcover_id: null, pending: true, status: "read", shelves: 2,
+  cover_url: null, hardcover_id: null, pending: true, status: "read", level: null, period: null, calibre: false, shelves: 2,
 };
 const SAKEY_ITEM = {
   hardcoverId: 1, title: "The Blade Itself", authors: ["Marcus Sakey"], year: 2009, pages: 320,
@@ -188,24 +190,131 @@ describe("Add to (AC-3)", () => {
   });
 });
 
-describe("Search (AC-2, AC-6)", () => {
-  it("runs on submit, not per keystroke, and lists your library before Hardcover", async () => {
+/** Every library place a row can say, one book each (task 1.22, AC-3). */
+const at = (id: string, status: string | null, level: string | null, period: string | null, calibre = false): LibraryHit =>
+  ({ ...BLADE, id, title: `Book ${id}`, pending: false, shelves: 0, status, level: level as LibraryHit["level"], period, calibre });
+const PLACES: [LibraryHit, string][] = [
+  [at("someday", "to_read", "someday", null), "Someday"],
+  [at("someday-calibre", "to_read", "someday", null, true), "Someday"],
+  [at("on-deck", "to_read", "on_deck", "on_deck"), "On deck"],
+  [at("quarter", "to_read", "quarter", "2027-Q1"), "Q1 2027"],
+  [at("year", "to_read", "year", "2027"), "2027"],
+  [at("reading", "reading", null, null), "Reading"],
+  [at("read", "read", null, null), "Read"],
+  [at("dnf", "dnf", null, null), "DNF"],
+  [at("unlisted", "unlisted", null, null), "Unlisted"],
+  [at("unlisted-calibre", "unlisted", null, null, true), "Unlisted · Calibre"],
+  [at("shelf-only", null, null, null), "Not on your list"],
+];
+/** A row's accessible name, as aria-labelledby builds it. */
+const nameOf = (li: Element) => li.getAttribute("aria-labelledby")!.split(" ")
+  .map((id) => document.getElementById(id)!.textContent).join(" ");
+
+describe("Search as you type (task 1.22: AC-2, AC-4, AC-6)", () => {
+  beforeEach(() => { vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] }); });
+  afterEach(() => { vi.useRealTimers(); });
+  const pause = (ms: number) => act(async () => { vi.advanceTimersByTime(ms); });
+  const box = () => dialog()!.querySelector<HTMLInputElement>("#book-q")!;
+
+  it("searches 500 ms after 3 characters, without Enter; 2 characters send nothing and clear the list", async () => {
     await open();
-    await type(dialog()!.querySelector<HTMLInputElement>("#book-q")!, "b");
-    await type(dialog()!.querySelector<HTMLInputElement>("#book-q")!, "blade");
+    await type(box(), "b");
+    await type(box(), "bl");
+    await pause(600);
     expect(searches()).toHaveLength(0);
-    await submit(dialog()!.querySelector('form[role="search"]')!);
-    expect(searches().map(([, i]) => JSON.parse(i.body))).toEqual([{ q: "blade" }]);
+    await type(box(), "bla");
+    await pause(499);
+    expect(searches()).toHaveLength(0);
+    await pause(1);
+    expect(searches().map(([, i]) => JSON.parse(i.body))).toEqual([{ q: "bla" }]);
+    expect(dialog()!.querySelectorAll(".pane-search .row.res")).toHaveLength(2);
+    await type(box(), "bl");
+    expect(dialog()!.querySelectorAll(".pane-search .row.res")).toHaveLength(0);
+    await pause(600);
+    expect(searches()).toHaveLength(1);
+  });
+
+  it("the request carries an abort signal, and a newer query aborts the older one", async () => {
+    let release!: () => void;
+    searchAnswer = (q) => (q === "bla" ? new Promise((r) => { release = () => r(Response.json(answer())); })
+      : Response.json(answer({ query: q, library: [], hardcover: [SAKEY] })));
+    await open();
+    await type(box(), "bla");
+    await pause(500);
+    await type(box(), "blade");
+    await pause(500);
+    const [first, second] = searches().map(([, i]) => i.signal as AbortSignal);
+    expect([first.aborted, second.aborted]).toEqual([true, false]);
+    await act(async () => release());
+    // The older answer, late, is dropped: the list is the newer query's.
+    expect([...dialog()!.querySelectorAll(".pane-search .row.res .rt")].map((t) => t.textContent)).toEqual(["The Blade Itself"]);
+    expect(dialog()!.querySelector('[aria-label="In your library"]')).toBeNull();
+  });
+
+  it("the hint says it searches as you type", async () => {
+    await open();
+    expect(dialog()!.querySelector(".pane-search .seg-note")!.textContent)
+      .toBe("Matched against your library first, then Hardcover. Searches as you type.");
+  });
+
+  it("searching is announced once a request in the polite live region, not once a keystroke", async () => {
+    let release!: () => void;
+    searchAnswer = () => new Promise((r) => { release = () => r(Response.json(answer())); });
+    await open();
+    const live = dialog()!.querySelector('.pane-search [role="status"]')!;
+    expect(live.getAttribute("aria-live")).toBe("polite");
+    const seen: string[] = [];
+    const watch = new MutationObserver(() => seen.push(live.textContent ?? ""));
+    watch.observe(live, { childList: true, subtree: true, characterData: true });
+    for (const t of ["b", "bl", "bla", "blad", "blade"]) await type(box(), t);
+    await pause(500);
+    await act(async () => release());
+    await act(async () => {});
+    watch.disconnect();
+    expect(seen.filter((t) => t.startsWith("Searching"))).toEqual(["Searching your library, then Hardcover…"]);
+  });
+
+  it("a rate-limited answer to typing is the amber countdown, and while it counts typing asks nothing (AC-4)", async () => {
+    searchAnswer = () => Response.json(answer({ status: "rate_limited", retryIn: 40, hardcover: [] }));
+    await open();
+    await type(box(), "the way");
+    await pause(500);
+    expect(dialog()!.querySelector(".statusline.wait")!.textContent).toContain("Hardcover is busy. Retrying in 40s.");
+    await type(box(), "the way of kings");
+    await pause(600);
+    expect(searches()).toHaveLength(1);
+  });
+});
+
+describe("Search (AC-2, AC-6)", () => {
+  it("Enter searches at once and lists your library before Hardcover, each row with one tag", async () => {
+    await open();
+    await search("bl");
+    expect(searches().map(([, i]) => JSON.parse(i.body))).toEqual([{ q: "bl" }]);
     const heads = [...dialog()!.querySelectorAll(".pane-search h3.s")].map((h) => h.firstChild!.textContent);
     expect(heads).toEqual(["In your library", "From Hardcover"]);
     const rows = [...dialog()!.querySelectorAll(".pane-search .row.res")];
     expect(rows[0].textContent).toContain("Joe Abercrombie");
-    expect(rows[0].textContent).toContain("read");
+    expect([...rows[0].querySelectorAll(".tag")].map((t) => t.textContent)).toEqual(["Read"]);
     expect(rows[0].textContent).toContain("on 2 shelves");
     expect(rows[1].textContent).toContain("Marcus Sakey · 320 pages");
-    expect(rows[1].textContent).toContain("Hardcover · est 88k words");
-    expect(dialog()!.querySelector(".pane-search .seg-note")!.textContent)
-      .toBe("Matched against your library first, then Hardcover. Searches when you press Enter.");
+    expect([...rows[1].querySelectorAll(".tag")].map((t) => t.textContent)).toEqual(["Hardcover"]);
+    expect(rows[1].textContent).toContain("est 88k words");
+  });
+
+  it("every library row says where the book sits, a Hardcover row Hardcover, as text in the row's name (task 1.22, AC-3)", async () => {
+    searchAnswer = () => Response.json(answer({ library: PLACES.map(([b]) => b) }));
+    await open();
+    await search("book");
+    const library = [...dialog()!.querySelectorAll('[aria-label="In your library"] > li')];
+    expect(library.map((li) => [...li.querySelectorAll(".tag")].map((t) => t.textContent))).toEqual(PLACES.map(([, tag]) => [tag]));
+    expect(library.map(nameOf)).toEqual(PLACES.map(([b, tag]) => `${b.title} ${tag}`));
+    const hc = dialog()!.querySelector('[aria-label="From Hardcover"] > li')!;
+    expect(nameOf(hc)).toBe("The Blade Itself Hardcover");
+    // Text, never hidden: a screen reader reads it where it sits too.
+    for (const tag of dialog()!.querySelectorAll(".pane-search .res-tags .tag")) expect(tag.closest("[aria-hidden]")).toBeNull();
+    const heads = [...dialog()!.querySelectorAll(".pane-search h3.s")].map((h) => h.firstChild!.textContent);
+    expect(heads).toEqual(["In your library", "From Hardcover"]);
   });
 
   it("a Hardcover result's subtitle follows its title, muted and in its button's name; every author and the series show (task 1.4f, AC-3)", async () => {
@@ -311,6 +420,9 @@ describe("Search (AC-2, AC-6)", () => {
     expect([init.method, JSON.parse(init.body)]).toEqual(["DELETE",
       { destination: { kind: "someday" }, created: ["the-blade-itself-marcus-sakey"], added: ["the-blade-itself-marcus-sakey"],
         statused: [] }]);
+    // The undo takes the result's Added back with it (TASK-040's note): it can be added again.
+    expect(resultButtons()[1].textContent).toBe("Add to Someday");
+    expect(resultButtons()[1].hasAttribute("aria-disabled")).toBe(false);
   });
 
   it("a book you already have says so, and with nothing written there is nothing to undo", async () => {

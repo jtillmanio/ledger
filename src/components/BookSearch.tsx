@@ -1,17 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { BookSearchAnswer } from "@/app/api/books/search/route";
 import Cover, { Pending } from "@/components/Cover";
 import type { LibraryHit } from "@/db/queries";
 import { addTo, type Target } from "@/lib/book-add";
+import { placeTag } from "@/lib/format";
 import type { HardcoverBook } from "@/lib/hardcover";
-
-type State =
-  | { phase: "idle" }
-  | { phase: "loading"; q: string }
-  | { phase: "failed"; q: string }
-  | { phase: "answered"; q: string; answer: BookSearchAnswer };
+import { useSearch } from "@/lib/use-search";
 
 /** What a result's button says once its add is done, by result key. */
 export type Outcome = "added" | "there";
@@ -19,7 +15,6 @@ export type Outcome = "added" | "there";
 /** A result tapped *Add to …*: a library book, or a Hardcover book. */
 export type Pick = { kind: "library"; book: LibraryHit } | { kind: "hardcover"; book: HardcoverBook };
 
-const STATUS: Record<string, string> = { to_read: "to read", reading: "reading", read: "read", dnf: "did not finish" };
 const shelfCount = (n: number) => `on ${n} ${n === 1 ? "shelf" : "shelves"}`;
 const thousands = (words: number) => `${Math.round(words / 1000)}k`;
 export const pickKey = (p: Pick) => (p.kind === "library" ? `lib:${p.book.id}` : `hc:${p.book.hardcoverId}`);
@@ -28,17 +23,20 @@ export const authorList = (names: string[]) =>
   (names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`);
 
 /**
- * Add books, *Search* (task 1.4c, 1.4f; mockups `add`, `apistates`). A search
- * runs when it is submitted, never per keystroke: your library first, then
- * Hardcover, through `POST /api/books/search`. Every result's primary button
- * names where it goes (*Add to Someday*), then the book, subtitle and all; a
- * library book says where it already is. A Hardcover book's subtitle follows
- * its title, muted. Loading, rate-limited, not set up and error are each a
- * `role="status"` line; rate-limited counts Hardcover's wait down and retries
- * once at 0. *Add it by hand* always works, with the query carried over as the
- * title.
+ * Add books, *Search* (task 1.4c, 1.4f, 1.22; mockups `add`, `apistates`). It
+ * searches as you type (`useSearch`: 3 characters and a 500 ms pause, or Enter
+ * at once): your library first, then Hardcover, through
+ * `POST /api/books/search`. Every result's primary button names where it goes
+ * (*Add to Someday*), then the book, subtitle and all. Each row has one tag
+ * saying where it came from, in text and in the row's name: a library book
+ * where it sits (*Someday*, *Q1 2027*, *Unlisted · Calibre*), a Hardcover book
+ * *Hardcover*. A Hardcover book's subtitle follows its title, muted. Loading,
+ * rate-limited, not set up and error are each a `role="status"` line, once per
+ * request; rate-limited counts Hardcover's wait down, holds the search, and
+ * retries once at 0. *Add it by hand* always works, with the query carried
+ * over as the title.
  * `initialQuery` pre-fills the field (an inbox note's text, task 1.4b) and
- * searches nothing until it is submitted.
+ * searches nothing until it is typed in or submitted.
  */
 export default function BookSearch({ level, target, outcomes, busy, onAdd, onByHand, initialQuery = "" }: {
   /** The section heading level: 2 under the page's h1, 3 under the sheet's h2. */
@@ -52,61 +50,65 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
   onByHand: (title: string) => void;
 }) {
   const H = level === 2 ? "h2" : "h3";
-  const [q, setQ] = useState(initialQuery);
-  const [state, setState] = useState<State>({ phase: "idle" });
+  const uid = useId();
   const [left, setLeft] = useState(0);
   const retried = useRef(false);
-  const last = useRef<string | null>(null);
+  /** The next search is the countdown's own retry. */
+  const auto = useRef(false);
   const input = useRef<HTMLInputElement>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const waiting = left > 0;
 
   function stopTimer() {
     if (timer.current) clearInterval(timer.current);
     timer.current = null;
   }
 
-  async function search(query: string, retry = false) {
-    stopTimer();
-    retried.current = retry;
-    setLeft(0);
-    last.current = query;
-    setState({ phase: "loading", q: query });
-    try {
-      const res = await fetch("/api/books/search", {
-        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q: query }),
-      });
-      if (!res.ok) throw new Error(String(res.status));
-      const answer = await res.json() as BookSearchAnswer;
-      setState({ phase: "answered", q: query, answer });
-      if (answer.status !== "rate_limited") return;
-      // Hardcover's wait, counted down each second; at 0 the search is retried once.
-      const until = Date.now() + (answer.retryIn ?? 60) * 1000;
-      setLeft(answer.retryIn ?? 60);
-      timer.current = setInterval(() => {
-        const n = Math.max(0, Math.ceil((until - Date.now()) / 1000));
-        setLeft(n);
-        if (n > 0) return;
-        stopTimer();
-        if (!retried.current) void search(query, true);
-      }, 1000);
-    } catch {
-      setState({ phase: "failed", q: query });
-    }
+  const search = useSearch<BookSearchAnswer>(async (query, signal) => {
+    const res = await fetch("/api/books/search", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ q: query }), signal,
+    });
+    if (!res.ok) throw new Error(String(res.status));
+    return await res.json() as BookSearchAnswer;
+  }, {
+    initialQuery,
+    hold: waiting,
+    onSearch: () => {
+      stopTimer();
+      setLeft(0);
+      retried.current = auto.current;
+      auto.current = false;
+    },
+    onAnswer: (answer, query) => {
+      if (answer.status === "rate_limited") countDown(answer.retryIn ?? 60, query);
+    },
+  });
+  const { q, state } = search;
+
+  /** Hardcover's wait, counted down each second; at 0 the search is retried once. */
+  function countDown(seconds: number, query: string) {
+    const until = Date.now() + seconds * 1000;
+    setLeft(seconds);
+    timer.current = setInterval(() => {
+      const n = Math.max(0, Math.ceil((until - Date.now()) / 1000));
+      setLeft(n);
+      if (n > 0) return;
+      stopTimer();
+      if (retried.current) return;
+      auto.current = true;
+      search.run(query);
+    }, 1000);
   }
 
   useEffect(() => stopTimer, []);
-  const waiting = left > 0;
   const answered = state.phase === "answered" ? state : null;
+  // Enter on the query already out does nothing; on a newer one it searches at once.
+  const busySearching = state.phase === "loading" && state.q === q.trim();
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (waiting || state.phase === "loading") return;
-    const query = q.trim();
-    if (!query) {
-      input.current?.focus();
-      return;
-    }
-    void search(query);
+    if (waiting || busySearching) return;
+    if (!search.submit()) input.current?.focus();
   }
 
   const byHand = (
@@ -135,7 +137,7 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
       <>
         <span className="x" aria-hidden="true">×</span>
         <span>{state.phase === "failed" ? "The search did not answer. Nothing was added." : "Hardcover did not answer. Nothing was added."}</span>
-        <button type="button" className="btn sec sm" onClick={() => last.current && void search(last.current)}>Try again</button>
+        <button type="button" className="btn sec sm" onClick={() => search.run(state.phase === "failed" ? state.q : answered!.q)}>Try again</button>
         {byHand}
       </>
     );
@@ -154,8 +156,10 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
     line = <><span>Nothing in your library or on Hardcover for <b>{answered!.q}</b>.</span>{byHand}</>;
   }
 
-  const row = (pick: Pick) => {
+  const row = (pick: Pick, i: number) => {
     const key = pickKey(pick);
+    // The row is named by its title and its tag: where it came from is part of what it is.
+    const id = `${uid}${pick.kind}${i}`;
     const done = outcomes[key];
     const { book } = pick;
     const lib = pick.kind === "library" ? pick.book : null;
@@ -171,26 +175,22 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
     const says = done === "added" ? label.replace(/^Add/, "Added") : done === "there" ? "Already there"
       : busy === key ? "Adding…" : label;
     return (
-      <li key={key} className="row res">
+      <li key={key} className="row res" aria-labelledby={`${id}t ${id}g`}>
         <Cover url={lib ? lib.cover_url : hc!.coverUrl} pending={lib ? lib.pending : false} />
         <div className="rb">
           <span className="rh">
             {/* One run of text: the subtitle follows the title and wraps with it. */}
-            <span><span className="rt">{book.title}</span>{subtitle && <> <span className="rsub muted">{subtitle}</span></>}</span>
+            <span id={`${id}t`}><span className="rt">{book.title}</span>{subtitle && <> <span className="rsub muted">{subtitle}</span></>}</span>
             {year && <span className="rm mono">{year}</span>}
           </span>
           {sub && <div className="rs">{sub}</div>}
-          {lib ? (
-            <div className="res-tags">
-              {lib.status && <span className="tag">{STATUS[lib.status] ?? lib.status}</span>}
-              {lib.shelves > 0 && <span className="tag">{shelfCount(lib.shelves)}</span>}
-              {lib.pending && <Pending />}
-            </div>
-          ) : (
-            <div className="rs faint">
-              Hardcover{hc!.pages && answer ? ` · est ${thousands(hc!.pages * answer.wordsPerPage)} words` : ""}
-            </div>
-          )}
+          {/* One tag a row, where it came from; the rest is plain text beside it. */}
+          <div className="res-tags">
+            <span className="tag" id={`${id}g`}>{lib ? placeTag(lib) : "Hardcover"}</span>
+            {lib && lib.shelves > 0 && <span className="small faint">{shelfCount(lib.shelves)}</span>}
+            {hc?.pages && answer ? <span className="small faint">{`est ${thousands(hc.pages * answer.wordsPerPage)} words`}</span> : null}
+            {lib?.pending && <Pending />}
+          </div>
           <div className="btnrow res-btns">
             {/* The name starts with what the button says, then whose button it is. */}
             <button type="button" className="btn sm res-add" aria-label={`${says}: ${book.title}${subtitle ? `: ${subtitle}` : ""}`}
@@ -209,12 +209,12 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
         <label htmlFor="book-q" className="add-label">Title or author</label>
         <div className="isearch-row">
           <input id="book-q" ref={input} type="search" className="txt" enterKeyHint="search" autoComplete="off"
-            spellCheck={false} placeholder="the blade itself" value={q} onChange={(e) => setQ(e.target.value)} />
-          <button type="submit" className="btn" aria-disabled={waiting || state.phase === "loading" ? true : undefined}
+            spellCheck={false} placeholder="the blade itself" value={q} onChange={(e) => search.change(e.target.value)} />
+          <button type="submit" className="btn" aria-disabled={waiting || busySearching ? true : undefined}
             aria-describedby={waiting ? "book-search-wait" : undefined}>Search</button>
         </div>
       </form>
-      <p className="small muted seg-note">Matched against your library first, then Hardcover. Searches when you press Enter.</p>
+      <p className="small muted seg-note">Matched against your library first, then Hardcover. Searches as you type.</p>
       <div role="status" aria-live="polite" id="book-search-wait">
         {line && <div className={`statusline${tone ? ` ${tone}` : ""}`}>{line}</div>}
       </div>
@@ -232,7 +232,7 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
         <>
           <H className="s">In your library<span className="more">{library.length}</span></H>
           <ul className="group results" aria-label="In your library">
-            {library.map((book) => row({ kind: "library", book }))}
+            {library.map((book, i) => row({ kind: "library", book }, i))}
           </ul>
         </>
       )}
@@ -240,7 +240,7 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
         <>
           <H className="s">From Hardcover<span className="more">{`${hardcover.length} new`}</span></H>
           <ul className="group results" aria-label="From Hardcover">
-            {hardcover.map((book) => row({ kind: "hardcover", book }))}
+            {hardcover.map((book, i) => row({ kind: "hardcover", book }, i))}
           </ul>
         </>
       )}

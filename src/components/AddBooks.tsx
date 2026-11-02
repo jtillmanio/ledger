@@ -85,8 +85,8 @@ export default function AddBooks({ initial, close, query = "", note = null }: {
     }
   }
 
-  /** The add's toast: one undo entry when it wrote anything, else what it found. */
-  function tell(result: Added) {
+  /** The add's toast: one undo entry when it wrote anything, else what it found. Its undo clears the result's *Added*. */
+  function tell(result: Added, key?: string) {
     const { title, reused, status, created, added, bookId, note: resolved } = result;
     const fromNote = resolved == null ? "" : " · inbox note resolved";
     if (created.length + added.length === 0) {
@@ -101,11 +101,15 @@ export default function AddBooks({ initial, close, query = "", note = null }: {
     push({
       label: `Added to ${where}`,
       detail: `${reused ? `${title} · already in your library` : title}${fromNote}`,
-      undo: async () => { await undoAdd(entry, reopen); router.refresh(); },
+      undo: async () => {
+        await undoAdd(entry, reopen);
+        if (key) setOutcomes((o) => Object.fromEntries(Object.entries(o).filter(([k]) => k !== key)));
+        router.refresh();
+      },
     });
   }
 
-  async function send(item: unknown): Promise<Added | null> {
+  async function send(item: unknown, key?: string): Promise<Added | null> {
     setFailed(null);
     try {
       const res = await fetch("/api/books", {
@@ -120,7 +124,7 @@ export default function AddBooks({ initial, close, query = "", note = null }: {
       const result = await res.json() as Added;
       // A note is resolved once: later adds here are plain adds.
       setNoteId(null);
-      tell(result);
+      tell(result, key);
       router.refresh();
       return result;
     } catch {
@@ -138,7 +142,7 @@ export default function AddBooks({ initial, close, query = "", note = null }: {
         year: pick.book.year, pages: pick.book.pages, coverUrl: pick.book.coverUrl,
       },
     };
-    const result = await send(item);
+    const result = await send(item, key);
     setBusy(null);
     if (result) setOutcomes((o) => ({ ...o, [key]: result.added.length ? "added" : "there" }));
   }

@@ -915,6 +915,8 @@ p{margin:0 0 .75rem;max-width:66ch}
 .measure span{display:block;height:100%;background:var(--ready)}
 
 .filters{display:flex;flex-wrap:wrap;gap:.375rem;margin:1rem 0 1.25rem}
+/* The master list's *Searching…* (task 1.22): its line is kept, so the list doesn't jump when it shows. */
+.list-searching{margin:-.875rem 0 .25rem;min-height:1.125rem}
 .chip{font-size:.8125rem;padding:.25rem .625rem;text-decoration:none;
   border:1px solid var(--faint-deco);color:var(--muted);background:none;border-radius:var(--r-full)}
 .chip[aria-current="true"]{border-color:var(--ink);color:var(--ink)}

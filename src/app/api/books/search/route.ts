@@ -28,7 +28,8 @@ const pair = (title: string, author: string | null) => `${title.toLowerCase()}\n
 
 /**
  * Add books, *Search* (task 1.4c, 1.4f; data model 2.15). POST `{ q }`, sent
- * when the user submits a search, never while a page loads (task 0.9): your
+ * when the user submits or pauses typing (task 1.22, D-84), never while a page
+ * loads (task 0.9): your
  * library first, then Hardcover (`src/lib/hardcover.ts`, cached in
  * `hardcover_cache`, D-62, D-94). A Hardcover book your library already holds
  * (by `hardcover_id`, or by its title and any of its authors, D-61) is listed

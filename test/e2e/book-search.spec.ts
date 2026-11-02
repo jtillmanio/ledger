@@ -7,6 +7,9 @@
 // answer would reach Hardcover, be refused, and show the error state: a
 // listing is proof that no request was made. Cover images are answered here.
 // This file removes what it makes.
+// Task 1.22: it searches as you type (AC-1: `pir` and a pause lists without
+// Enter, `pi` asks nothing, `piranesi` typed quickly is one request, counted at
+// the browser), and each row's one tag is part of its accessible name (AC-3).
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
@@ -21,6 +24,10 @@ const AXE = [
   "list", "listitem", "landmark-unique", "duplicate-id-aria", "target-size", "heading-order", "label",
 ];
 const SEARCH_KEY = "search:piranesi";
+/** What the cache answers `pir` with: the recorded piranesi answer. */
+const PIR_KEY = "search:pir";
+/** The library book's own search: Hardcover has nothing for it. */
+const LIBRARY_KEY = "search:e2e hardcover library";
 const ISBN_KEY = "isbn:9781526622426";
 /** A search the cache answers with nothing. */
 const NOTHING = "zzzz e2e nothing";
@@ -46,7 +53,8 @@ async function clean() {
     await sql`DELETE FROM books WHERE hardcover_id = ANY(${FIXTURE_IDS}::int[]) OR id = ${LIBRARY.id}`;
     await sql`DELETE FROM authors a WHERE a.id = ANY(${[...FIXTURE_AUTHORS, LIBRARY_AUTHOR_ID]}::text[])
       AND NOT EXISTS (SELECT 1 FROM books b WHERE b.author_id = a.id)`;
-    await sql`DELETE FROM hardcover_cache WHERE key IN (${SEARCH_KEY}, ${ISBN_KEY}, ${`search:${NOTHING}`}, 'hold')`;
+    await sql`DELETE FROM hardcover_cache
+      WHERE key IN (${SEARCH_KEY}, ${PIR_KEY}, ${LIBRARY_KEY}, ${ISBN_KEY}, ${`search:${NOTHING}`}, 'hold')`;
   });
 }
 
@@ -54,7 +62,8 @@ test.beforeAll(async () => {
   await clean();
   await withSql(async (sql) => {
     // A day old: a request would rewrite fetched_at, so an unchanged one shows none was made.
-    const rows = [[SEARCH_KEY, recorded[SEARCH_KEY]], [ISBN_KEY, recorded[ISBN_KEY]], [`search:${NOTHING}`, { found: 0, hits: [] }]];
+    const rows = [[SEARCH_KEY, recorded[SEARCH_KEY]], [PIR_KEY, recorded[SEARCH_KEY]], [ISBN_KEY, recorded[ISBN_KEY]],
+      [`search:${NOTHING}`, { found: 0, hits: [] }], [LIBRARY_KEY, { found: 0, hits: [] }]];
     for (const [key, body] of rows) {
       await sql`INSERT INTO hardcover_cache (key, body, fetched_at)
         VALUES (${key as string}, ${sql.json(body as never)}, now() - interval '1 day')`;
@@ -79,13 +88,27 @@ async function floor(page: Page) {
   expect(await contrastFailures(page)).toEqual([]);
 }
 
-/** Open Add books (Search is selected) and submit a search. */
-async function search(page: Page, q: string, { open = true } = {}) {
+/** Open Add books (Search is selected) and submit a search; `typed`, type it and let the pause search instead. */
+async function search(page: Page, q: string, { open = true, typed = false } = {}) {
   if (open) await page.goto("/books/add");
   const box = page.getByRole("searchbox", { name: "Title or author" });
   await hydrated(box);
-  await box.fill(q);
-  await box.press("Enter");
+  if (!typed) {
+    await box.fill(q);
+    await box.press("Enter");
+    return;
+  }
+  await box.fill("");
+  await box.pressSequentially(q, { delay: 40 });
+}
+
+/** The browser's requests to the search route from now on. */
+function searchRequests(page: Page) {
+  const seen: string[] = [];
+  page.on("request", (r) => {
+    if (new URL(r.url()).pathname === "/api/books/search") seen.push(JSON.parse(r.postData() ?? "{}").q);
+  });
+  return seen;
 }
 
 const fromHardcover = (page: Page) => page.getByRole("list", { name: "From Hardcover" });
@@ -100,7 +123,8 @@ test("searching piranesi lists Hardcover's books under From Hardcover, no compil
   // The recorded compilation is not listed, nor the book with no author.
   await expect(page.getByText("Piranesi & Jonathan Strange and Mr Norrell")).toHaveCount(0);
   await expect(rows.first()).toContainText("Susanna Clarke · 272 pages");
-  await expect(rows.first()).toContainText("Hardcover · est 75k words");
+  await expect(rows.first().locator(".tag")).toHaveText(["Hardcover"]);
+  await expect(rows.first()).toContainText("est 75k words");
   await expect(rows.nth(2)).toContainText("Sarah E. Lawrence and John Wilton-Ely");
   // The subtitle follows the title, and the add button names the book with it.
   await expect(rows.nth(1).locator(".rsub")).toHaveText("The Complete Etchings");
@@ -111,7 +135,7 @@ test("searching piranesi lists Hardcover's books under From Hardcover, no compil
   }))).toEqual({ sameParent: true, flex: false });
   await expect(page.getByRole("button", { name: "Add to Someday: Piranesi: The Complete Etchings", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Add to Someday: Piranesi", exact: true })).toBeVisible();
-  await expect(page.getByText("Matched against your library first, then Hardcover. Searches when you press Enter.")).toBeVisible();
+  await expect(page.getByText("Matched against your library first, then Hardcover. Searches as you type.")).toBeVisible();
   for (const target of await page.locator(".pane-search button, .pane-search input").all()) {
     if (!(await target.isVisible())) continue;
     expect((await target.boundingBox())!.height).toBeGreaterThanOrEqual(24);
@@ -125,7 +149,9 @@ test("a recorded 429 shows the rate-limited state while your library's books sti
   await withSql((sql) => sql`INSERT INTO hardcover_cache (key, body) VALUES ('hold', ${sql.json({ retryAfter: 600 })})
     ON CONFLICT (key) DO UPDATE SET body = EXCLUDED.body, fetched_at = now()`);
   try {
-    await search(page, "e2e hardcover library");
+    // Typed, not entered: the pause meets the 429 the way Enter did (task 1.22, AC-4).
+    // Not a query the cache answers: a cached one never meets the hold.
+    await search(page, "e2e hardcover library book", { typed: true });
     await expect(statusLine(page)).toContainText(/Hardcover is busy\. Retrying in \d+s\./);
     await expect(page.getByRole("list", { name: "In your library" }).getByRole("listitem")).toContainText([LIBRARY.title]);
     await expect(fromHardcover(page)).toHaveCount(0);
@@ -166,8 +192,8 @@ test("adding one creates one books row with hardcover_id and its cover; adding i
   expect(created).toEqual([{ id: "piranesi-susanna-clarke", title: "Piranesi", hardcover_id: 444001,
     cover_url: PIRANESI_COVER, page_count: 272, published_year: 2020, status: "to_read" }]);
 
-  // The same search again: your copy now, Hardcover's not offered twice, and from the cache.
-  await search(page, "piranesi", { open: false });
+  // The same search again, typed this time: your copy now, Hardcover's not offered twice, and from the cache (AC-4).
+  await search(page, "piranesi", { open: false, typed: true });
   const library = page.getByRole("list", { name: "In your library" });
   await expect(library.getByRole("listitem")).toHaveCount(1);
   await expect(fromHardcover(page).getByRole("listitem")).toHaveCount(2);
@@ -179,5 +205,49 @@ test("adding one creates one books row with hardcover_id and its cover; adding i
   const after = await withSql(searchRow);
   expect(after).toEqual(before);
   expect(await withSql((sql) => sql`SELECT key FROM hardcover_cache WHERE key LIKE 'search:%' ORDER BY key`))
-    .toEqual([{ key: SEARCH_KEY }, { key: `search:${NOTHING}` }]);
+    .toEqual([{ key: LIBRARY_KEY }, { key: PIR_KEY }, { key: SEARCH_KEY }, { key: `search:${NOTHING}` }]);
+});
+
+test("typing pir and pausing lists results without Enter; pi asks nothing; piranesi typed quickly is one request (task 1.22, AC-1)", async ({ page }, info) => {
+  await page.goto("/books/add");
+  const box = page.getByRole("searchbox", { name: "Title or author" });
+  await hydrated(box);
+  const requests = searchRequests(page);
+  await box.pressSequentially("pi", { delay: 60 });
+  await page.waitForTimeout(900);
+  expect(requests).toEqual([]);
+  await expect(fromHardcover(page)).toHaveCount(0);
+
+  await box.press("r");
+  // Listed without Enter. (Once the add below has run, Piranesi itself is under In your library.)
+  await expect(page.getByRole("listitem", { name: "Piranesi The Complete Etchings Hardcover", exact: true })).toBeVisible();
+  expect(requests).toEqual(["pir"]);
+  await expect(statusLine(page)).toHaveCount(0);
+  await screenshot(page, info, "book-search-as-you-type");
+
+  // Two characters again: the list clears, and nothing is asked.
+  await box.press("Backspace");
+  await expect(fromHardcover(page)).toHaveCount(0);
+  await box.fill("");
+  await box.pressSequentially("piranesi", { delay: 60 });
+  await expect(page.getByRole("listitem", { name: "Piranesi The Complete Etchings Hardcover", exact: true })).toBeVisible();
+  await page.waitForTimeout(900);
+  expect(requests).toEqual(["pir", "piranesi"]);
+});
+
+test("a library row's tag says where it sits and a Hardcover row's says Hardcover, each part of the row's name (task 1.22, AC-3)", async ({ page }, info) => {
+  await search(page, "piranesi");
+  // Piranesi itself, once the add has run, is yours: Someday, under In your library.
+  await expect(page.getByRole("listitem", { name: /^Piranesi (Hardcover|Someday)$/ })).toBeVisible();
+  await expect(fromHardcover(page).getByRole("listitem", { name: "Piranesi The Complete Etchings Hardcover", exact: true }))
+    .toBeVisible();
+  await expect(page.getByRole("heading", { name: /^From Hardcover/ })).toBeVisible();
+
+  await search(page, "e2e hardcover library", { open: false, typed: true });
+  const library = page.getByRole("list", { name: "In your library" });
+  await expect(library.getByRole("listitem", { name: `${LIBRARY.title} Someday`, exact: true })).toBeVisible();
+  await expect(library.getByRole("listitem").locator(".tag")).toHaveText(["Someday"]);
+  await expect(page.getByRole("heading", { name: /^In your library/ })).toBeVisible();
+  await floor(page);
+  await screenshot(page, info, "book-search-library-tag");
 });

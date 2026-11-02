@@ -1,6 +1,6 @@
 /**
  * Hardcover, live, for Add books' *Search* (task 1.4f, data model 2.15, D-94,
- * D-62). Called from `POST /api/books/search` when the user submits a search,
+ * D-62). Called from `POST /api/books/search` when the user submits or pauses typing,
  * never from a page render. Server-only: it reads and writes the database, and
  * it alone reads `HARDCOVER_API_TOKEN`, which never leaves the server.
  *

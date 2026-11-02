@@ -1,14 +1,14 @@
 ---
 id: TASK-041
 title: 1.22 Search as you type, and where each result comes from
-status: Ready
+status: In progress
 depends_on: [TASK-029, TASK-040]
 size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 70f08c8
 ---
 
 # TASK-041 — 1.22 Search as you type, and where each result comes from
@@ -85,7 +85,70 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-02 (owner). Settled at the gate: AC-6's *reduced motion shows
+no spinner animation* is a task-file slip; 1.8a's rule stands (`.spin` keeps
+turning under reduced motion, UX-N01, pinned by `test/control-states.test.ts`),
+and the PR says so.
+
+**Steps**
+1. `src/lib/use-search.ts` (new): `useSearch(fetcher)`: the text, and a state
+   idle / loading / failed / answered. Under 3 characters it aborts any request
+   out and clears the results; at 3 or more it searches 500 ms after the last
+   keystroke; Enter searches at once and cancels the pause; a pause on the query
+   already shown asks nothing; a newer query aborts the older one's
+   `AbortController` and a late answer is dropped by sequence number. `run(q)`
+   is exposed for *Try again*, the countdown retry and `rerun`.
+2. `BookSearch.tsx`, `IssueSearch.tsx` on the hook; countdown and one retry
+   unchanged; hints read *Searches as you type*. Add issues asks on the pause
+   (the route already asks Metron nothing for a label that doesn't parse).
+3. `librarySearch` (`src/db/queries.ts`) also returns `level`, `period` (from
+   `to_read_level`) and `calibre` (`calibre_id IS NOT NULL`); no column.
+   `placeTag()` in `src/lib/format.ts` reads them: *Someday*, *On deck*,
+   *Q1 2027* (`quarterName`), *2027*, *Reading*, *Read*, *DNF*, *Unlisted*,
+   *Unlisted · Calibre*, *Not on your list*.
+4. Tags: a library row its place, a Hardcover row *Hardcover* (its faint line
+   keeps *est 75k words*), a Metron row *Metron*, a catalog row its run count.
+   Each result `<li>` is named by `aria-labelledby` (its title and its tag).
+   *on 2 shelves* moves out of `.tag` into the faint line, so a library row has
+   exactly one tag (AC-3).
+5. `AddBooks.tsx`: *Undo* clears that result's *✓ Added* (TASK-040's note).
+6. `src/components/BookListSearch.tsx` (new): the master list's box, the same
+   floor and pause; `router.replace` keeping the other params (`scroll: false`);
+   a polite *Searching…* status while the transition runs; under 3 characters
+   `?q=` is removed; re-syncs when a chip link clears `q`.
+   `src/app/books/list/page.tsx` renders it in place of the `<form>`.
+7. `.claude/rules/ui.md`: *when the user submits or pauses typing*; the two
+   search routes' "sent when the user submits" comments follow.
+8. `design/mockups.html` frames `add`, `addsearch` (the task's `bulk`: the
+   Enter hint is drawn in `addsearch`) and `blist`; `design/mockups-index.md`.
+
+**Files**: `src/lib/use-search.ts` (new), `src/components/BookSearch.tsx`,
+`src/components/IssueSearch.tsx`, `src/components/BookListSearch.tsx` (new),
+`src/components/AddBooks.tsx` (not in the likely list: the undo note),
+`src/app/books/list/page.tsx`, `src/db/queries.ts`, `src/lib/format.ts` (not
+listed: `placeTag`), `src/app/globals.css`, `src/app/api/books/search/route.ts`
+and `src/app/api/metron/search/route.ts` (comments only), `.claude/rules/ui.md`,
+`design/mockups.html`, `design/mockups-index.md`, tests below.
+`src/components/AddIssues.tsx` needs no change: the Metron half is in `IssueSearch`.
+
+**Test strategy**
+- AC-1 vitest half, AC-2: `test/use-search.test.ts` (new, fake timers).
+- AC-1 browser half: `test/e2e/book-search.spec.ts` (`search:pir` seeded;
+  requests counted with `page.on('request')`) and
+  `test/e2e/book-list-search.spec.ts` (new).
+- AC-3: `test/add-book-sheet.test.tsx` (every place tag, *Hardcover*, one tag a
+  row, accessible name), `test/issue-search.test.tsx` (*Metron*, run count),
+  `test/hardcover-search.test.ts` (`librarySearch` level/period/calibre for each
+  status), e2e for the accessible name.
+- AC-4: e2e retype with `fetched_at` unchanged (books); the 429 states in both
+  component tests by typing; the hint text; `ui.md` read by a test.
+- AC-5: `test/e2e/book-list-search.spec.ts`.
+- AC-6: the e2e specs (axe, contrast, screenshots at every width, light/dark);
+  live region in the component tests.
+
+**Size**: ~17 files, `never-split`, attended; no schema change.
+
+**Follow-ups**: none at plan time.
 
 ## Review log
 
