@@ -1,7 +1,7 @@
 ---
 id: TASK-038
 title: 1.19 Comics Add remembers the last run
-status: In progress
+status: Review
 depends_on: [TASK-014, TASK-005]
 size: M
 model: opus
@@ -30,14 +30,14 @@ The comics *Add* item in the navigation is on, and it opens *Add issues* for the
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): after adding an issue to run A from `/comics/A/add`, the comics *Add*
+- [x] AC-1 (roadmap **Check:**, verbatim): after adding an issue to run A from `/comics/A/add`, the comics *Add*
 nav item is enabled in all three navs and links to `/comics/A/add`; after a
 later add to run B it links to `/comics/B/add`; for a user who has added
 nothing it links to `/comics/runs`. A soft-deleted run is never the target.
-- [ ] AC-2: `test/nav-items.test.tsx`: `comics-add` is enabled and drops out of the *unbuilt screens* list; given a remembered run `A`, every bar that draws comics' items renders `href="/comics/A/add"`; given none, `href="/comics/runs"`. The other medium items' hrefs are unchanged.
-- [ ] AC-3: Against the TEST database, a successful insert through `POST /api/runs/A/issues` makes A the remembered run, and a dry run (`dryRun: true`) and a refused insert (4xx) do not change it. Given remembered run A soft-deleted (`deleted_at` set), the item links to `/comics/runs`.
-- [ ] AC-4: In the browser (0.11), at 1280px: add one issue to a test run from its *Add issues* screen, then open `/comics` → the sidebar's *Add* has `href` `/comics/<that run>/add`, and following it opens that run's *Add issues*. On a run's own page the current item is still *Runs*, not *Add* (`currentItem`'s rule, `holdsDetail`).
-- [ ] AC-5: The comics *Add* item meets the UX floor (`docs/04-design.md` § 10. The UX floor): a real link with the accessible name *Add*, at least 24px tall in the rail and the sidebar, `aria-current="page"` only on an *Add issues* screen; screenshots at the tablet and desktop `ui.viewports` widths, light and dark (and at the phone widths if the phone question is settled toward drawing it there).
+- [x] AC-2: `test/nav-items.test.tsx`: `comics-add` is enabled and drops out of the *unbuilt screens* list; given a remembered run `A`, every bar that draws comics' items renders `href="/comics/A/add"`; given none, `href="/comics/runs"`. The other medium items' hrefs are unchanged.
+- [x] AC-3: Against the TEST database, a successful insert through `POST /api/runs/A/issues` makes A the remembered run, and a dry run (`dryRun: true`) and a refused insert (4xx) do not change it. Given remembered run A soft-deleted (`deleted_at` set), the item links to `/comics/runs`.
+- [x] AC-4: In the browser (0.11), at 1280px: add one issue to a test run from its *Add issues* screen, then open `/comics` → the sidebar's *Add* has `href` `/comics/<that run>/add`, and following it opens that run's *Add issues*. On a run's own page the current item is still *Runs*, not *Add* (`currentItem`'s rule, `holdsDetail`).
+- [x] AC-5: The comics *Add* item meets the UX floor (`docs/04-design.md` § 10. The UX floor): a real link with the accessible name *Add*, at least 24px tall in the rail and the sidebar, `aria-current="page"` only on an *Add issues* screen; screenshots at the tablet and desktop `ui.viewports` widths, light and dark (and at the phone widths if the phone question is settled toward drawing it there).
 
 ## Out of scope
 
@@ -64,8 +64,11 @@ nothing it links to `/comics/runs`. A soft-deleted run is never the target.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The Check says "all three navs"; the owner settled it as the two bars that draw medium items (the tablet rail and the sidebar; the phone's media bar draws only the switch). The Check's wording is the owner's to change (approved at plan)
-- Candidate decision: the last run is a per-browser cookie (`ledger_last_run`, like R1-13's `ledger_medium`), set only by a successful insert; an undo doesn't reset it (approved at plan)
+- The Check says "all three navs"; the owner settled it as the two bars that draw medium items (the tablet rail and the sidebar; the phone's media bar draws only the switch). The Check's wording is the owner's to change (approved at plan) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- Candidate decision: the last run is a per-browser cookie (`ledger_last_run`, like R1-13's `ledger_medium`), set only by a successful insert; an undo doesn't reset it (approved at plan) → docs/review/decisions.md § D-107
+- The shell drops a soft-deleted run only on a full load; once 3.7 can archive a run, archiving the one *Add* points at should tell the shell → docs/05-roadmap.md § 3.7
+- The sidebar tooltip doubled every link's accessible name at 1024–1279px ("Runs Runs") → not tracked: done in this PR (plan revision 2)
+- ui-verifier saw one aborted `GET /comics/<run>/add?_rsc=…` during its walk on `next dev`, most likely a navigation cut short by the next `goto`; the item is `noPrefetch` and the production-build e2e passes → not tracked: no defect found
 
 ## Plan
 
@@ -109,7 +112,7 @@ Owner answers at the plan (2026-11-02): "all three navs" means the two bars that
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 round PASS → full FAIL(3: two sidebar tooltip tests found Runs by an href Add now shares; AC-5 found the name "Add Add" at 1100) → shell spec PASS after plan revision 2 | R2 round PASS | Audit R1 PASS | Spec R1 APPROVE | Schema R1 APPROVE | UI R1 PASS (AC-4, AC-5 at 768, 834, 1024, 1100, 1280, light and dark; dev data left as found)
 
 ## Blocked
 
@@ -117,7 +120,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R1 round + full; R2 round)
+- Review rounds: 1
+- First-pass AC FAILs: 1 (AC-5, the doubled accessible name at 1024–1279px)
+- Plan revisions after approval: 2
