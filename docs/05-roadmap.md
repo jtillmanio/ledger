@@ -1406,7 +1406,7 @@ saying it was a listen can't be told apart later.
 - In flight lists a Listening book under *Listening*, not *Reading*.
 - `npm run test:db:reset` migrates from zero.
 
-### ☐ 1.24 Wishlist accept promotes an Unlisted book to Someday · S
+### ☑ 1.24 Wishlist accept promotes an Unlisted book to Someday · S
 Follow-up from TASK-029 (1.21) and TASK-030 (1.18), 2026-10-27. Accepting a
 wishlist line (1.4d, `acceptLine` → `toRead` in `src/db/writes.ts`) leaves a
 book that is already in the Ledger at its status, and

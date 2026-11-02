@@ -1,7 +1,7 @@
 ---
 id: TASK-042
 title: 1.24 Wishlist accept promotes an Unlisted book to Someday
-status: In progress
+status: Review
 depends_on: [TASK-029, TASK-024]
 size: M
 model: opus
@@ -35,15 +35,15 @@ Accepting a wishlist line that names a book you have but haven't put on your lis
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm test`: accepting a wishlist line that names an Unlisted book
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm test`: accepting a wishlist line that names an Unlisted book
 writes `book_status = to_read` and no plan row, and its undo restores
 `unlisted`; a line naming a `read` or `to_read` book leaves the status as it
 was; the review row for the Unlisted book says it moves to Someday.
-- [ ] AC-2: Against the TEST database (`test/wishlist.test.ts`): given an Unlisted book with a rating and a note, accepting a line linked to it (`{ id, use }`) and a line that matches it by title and author (`{ id, title, author }`) each leave `book_status.status = 'to_read'`, the rating and note unchanged, no `reading_plan` row, and `wishlist.book_id` pointing at the book; a book at `reading`, `read` or `dnf` keeps that status, its `finished_on` and its precision byte-for-byte.
-- [ ] AC-3: The undo (`test/wishlist.test.ts`): given an Apply that accepted three lines (one promoting an Unlisted book, one creating a new book, one linking a `read` book), *Undo* leaves the promoted book `unlisted` with its rating and note, the created book soft-deleted (`deleted_at` set) with no status, the `read` book's status, finish and precision unchanged, and all three lines with `book_id` NULL. Given the promoted book gained a plan row (or became `reading`) after the Apply, the undo answers that it can't, and every row is as it was before the undo.
-- [ ] AC-4: In the browser (0.11), at 390px: apply a review holding a line for an Unlisted book → the undo toast appears; press *Undo* → the line is back in the review as unresolved, and the book is on the master list's *Unlisted* chip again.
-- [ ] AC-5: `test/wishlist-review.test.ts`: the in-library row for an Unlisted match reads *In your library, Unlisted: links this line and moves it to Someday.* (or the plan's wording, which must say it moves to Someday), and the row for a `read` or `to_read` match still says your status stays.
-- [ ] AC-6: The wishlist review meets the UX floor (`docs/04-design.md` § 10. The UX floor) for what this task changes: the Unlisted row's why is text tied to its row (`aria-describedby`), at 4.5:1 in both themes, the undo toast's *Undo* is a real button whose name says what it undoes (*Undo: 3 wishlist lines*), and focus returns to the review after it; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-2: Against the TEST database (`test/wishlist.test.ts`): given an Unlisted book with a rating and a note, accepting a line linked to it (`{ id, use }`) and a line that matches it by title and author (`{ id, title, author }`) each leave `book_status.status = 'to_read'`, the rating and note unchanged, no `reading_plan` row, and `wishlist.book_id` pointing at the book; a book at `reading`, `read` or `dnf` keeps that status, its `finished_on` and its precision byte-for-byte.
+- [x] AC-3: The undo (`test/wishlist.test.ts`): given an Apply that accepted three lines (one promoting an Unlisted book, one creating a new book, one linking a `read` book), *Undo* leaves the promoted book `unlisted` with its rating and note, the created book soft-deleted (`deleted_at` set) with no status, the `read` book's status, finish and precision unchanged, and all three lines with `book_id` NULL. Given the promoted book gained a plan row (or became `reading`) after the Apply, the undo answers that it can't, and every row is as it was before the undo.
+- [x] AC-4: In the browser (0.11), at 390px: apply a review holding a line for an Unlisted book → the undo toast appears; press *Undo* → the line is back in the review as unresolved, and the book is on the master list's *Unlisted* chip again.
+- [x] AC-5: `test/wishlist-review.test.ts`: the in-library row for an Unlisted match reads *In your library, Unlisted: links this line and moves it to Someday.* (or the plan's wording, which must say it moves to Someday), and the row for a `read` or `to_read` match still says your status stays.
+- [x] AC-6: The wishlist review meets the UX floor (`docs/04-design.md` § 10. The UX floor) for what this task changes: the Unlisted row's why is text tied to its row (`aria-describedby`), at 4.5:1 in both themes, the undo toast's *Undo* is a real button whose name says what it undoes (*Undo: 3 wishlist lines*), and focus returns to the review after it; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -68,6 +68,9 @@ was; the review row for the Unlisted book says it moves to Someday.
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- The undo entry is the client's to send: a forged DELETE could name a bare `to_read` book, or a promoted one, this Apply didn't write (schema-reviewer, minor) → not tracked: the same exposure `/api/books` DELETE (`undoAddBooks`) has had since 1.4c; a single-user app behind the passcode gate, and the undo's guards refuse an entry that no longer matches the database
+- The 1.24 roadmap entry still says *The Check below is proposed* → not tracked: the owner settled it 2026-10-31 (this file § Context), and an entry's wording is the owner's; this PR changes only its mark
 
 ## Plan
 
@@ -95,7 +98,7 @@ Approved 2026-11-02.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 round PASS → full PASS (vitest 1121, Playwright core 664) | Audit R1 PASS | Spec R1 APPROVE | Schema R1 APPROVE (4 minor: a cap test added; client-supplied entry → Follow-ups) | UI R1 PASS (read-only on the development data; Apply → Undo proven in e2e on TEST) | Verify R2 round PASS (cap and long-id tests) | R2 reviewers not re-run: the only change was a test, which no reviewer's verdict depended on
 
 ## Blocked
 
@@ -103,7 +106,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R1 round + full, R2 round)
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0
