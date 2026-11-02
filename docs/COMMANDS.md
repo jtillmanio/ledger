@@ -290,7 +290,9 @@ npm run calibre
 (`seed/calibre_created.csv`, not loaded), loads Calibre's reads, and writes
 `seed/calibre_changes.csv`, `etl/data/calibre_missing.csv` and
 `etl/data/book_hold.csv` (a held book is in `book_hold.csv`, never in
-`calibre_missing.csv`).
+`calibre_missing.csv`). Every extract also rewrites
+`etl/data/wishlist_review.csv`, the old To-Read tab's lines that name no book
+(1.27, D-111).
 
 ```powershell
 npm run extract
@@ -298,7 +300,9 @@ npm run extract
 
 Review `book_review.csv` (`calibre` rows), `calibre_missing.csv`,
 `seed/calibre_changes.csv` and `seed/unresolved.csv`. Leave `book_hold.csv`
-until step 14: the next step may find its books.
+and `wishlist_review.csv` until step 14: the next step may find held books,
+and which lines name a book, and what each row's `near` is, can change until
+then.
 
 **13. Hardcover details.** The dry run looks up 100 books and writes nothing.
 The real run writes `book_details.csv` (Hardcover id, page count, cover URL,
@@ -326,6 +330,11 @@ Review `book_hold.csv`: write `keep` on each book you want loaded anyway (it
 prints `N books held for review`), and extract again. A held book you'd rather
 match: fix its title or author in the workbook, or `merge` its
 `book_review.csv` row, then `enrich:books` and extract.
+
+Then decide `wishlist_review.csv`, once the holds are settled: `create`, `link`
+(the line is the `near` book) or `drop` on each row. Filter on `reason` and
+fill `decision` down to decide a group at once. Extract again, and repeat
+until it prints `0 undecided`. Cutover waits on that (1.26).
 
 ### What to review, and what to re-run after
 
