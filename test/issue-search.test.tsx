@@ -145,6 +145,23 @@ describe("Search is the default half (AC-2)", () => {
     expect(searches()[0][1].signal).toBeInstanceOf(AbortSignal);
   });
 
+  it("searching is announced once a request in the polite live region, not once a keystroke (task 1.22, AC-6)", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    let release!: () => void;
+    answer = () => new Promise((r) => { release = () => r(Response.json(OK)); });
+    render();
+    expect(status().getAttribute("aria-live")).toBe("polite");
+    const seen: string[] = [];
+    const watch = new MutationObserver(() => seen.push(status().textContent ?? ""));
+    watch.observe(status(), { childList: true, subtree: true, characterData: true });
+    await typeQuery("thor 336-340");
+    await act(async () => { vi.advanceTimersByTime(500); });
+    await act(async () => release());
+    await flush();
+    watch.disconnect();
+    expect(seen.filter((t) => t.startsWith("Searching"))).toEqual(["Searching your catalog, then Metron…"]);
+  });
+
   it("Enter still searches at once", async () => {
     render();
     await submit("thor 337");
