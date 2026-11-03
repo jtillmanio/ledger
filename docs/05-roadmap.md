@@ -1199,7 +1199,7 @@ state while your library's results still list; an ISBN-13 lists one result.
 A vitest shows that with no token the route answers from the library with no
 request, and that no response carries the token.
 
-### ☐ 1.17 Started and finished: a start date for books, a derived span for runs · M
+### ☑ 1.17 Started and finished: a start date for books, a derived span for runs · M
 Backlog intake, 2026-10-20 (owner: *books: date started and ended; comics: a
 run's date started and ended*). **Before cutover, in sitting 9**, for 1.5's
 reason: a start date that isn't captured from the first day can't be
