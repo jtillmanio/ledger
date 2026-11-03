@@ -86,7 +86,7 @@ When you start a book, the day you started is kept, and every finished read keep
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- `docs/03-data-model.md` § 2.18 says *proposed, settled at its plan gate*: settle it with the plan's answers (approved at plan)
+- `docs/03-data-model.md` § 2.18 says *proposed, settled at its plan gate*: settle it with the plan's answers (approved at plan) → docs/03-data-model.md § 2.18 (settled in this branch)
 
 ## Plan
 

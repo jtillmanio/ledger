@@ -164,12 +164,16 @@ export async function saveBookStatus(
           .where(eq(readEvents.id, latest.id));
         edited = latest;
       } else {
-        if (!finish) throw new RefusedStatus("finish is needed to mark a book read");
-        finished = finish;
-        const dated = { finishedOn: finish.on, finishedOnPrecision: finish.precision };
+        // *Started* alone on a read the status holds with no log row (the
+        // workbook's) logs that read with its own finish, as leaving `read` does.
+        const own = before?.status === "read"
+          ? { on: before.finishedOn, precision: before.precision as Precision } : null;
+        finished = finish ?? own;
+        if (!finished) throw new RefusedStatus("finish is needed to mark a book read");
+        const dated = { finishedOn: finished.on, finishedOnPrecision: finished.precision };
         // A new read carries the start in progress, which leaves book_status.
         kept = start ?? held ?? kept;
-        if (startAfterFinish(kept, finish)) throw new StartAfterFinish();
+        if (startAfterFinish(kept, finished)) throw new StartAfterFinish();
         const [row] = await tx.insert(readEvents)
           .values({ userId, bookId, ...dated, ...asStart(kept), rereadOf: latest?.id ?? null })
           .returning({ id: readEvents.id });

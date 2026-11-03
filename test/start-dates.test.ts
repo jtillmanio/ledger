@@ -201,6 +201,20 @@ describe("a book's start (roadmap 1.17 check)", () => {
     expect(await events()).toMatchObject([{ started: null, sp: "none", finished: "2024-03-01", fp: "approximate" }]);
   });
 
+  it("Started alone on a read the status holds with no log row logs that read, and Undo takes it back out", async () => {
+    // The workbook's shape: read, finished, no read_events row.
+    await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+              VALUES (${USER}, 'wok', 'read', '2022-07-01', 'approximate')`;
+    const { change } = await set({ status: "read", start: { mode: "year", year: 2022 } });
+    expect(await events()).toMatchObject([
+      { started: "2022-07-01", sp: "approximate", finished: "2022-07-01", fp: "approximate", reread_of: null },
+    ]);
+    expect(await status()).toMatchObject({ status: "read", finished: "2022-07-01", fp: "approximate", started: null });
+    await undo(change);
+    expect(await events()).toEqual([]);
+    expect(await status()).toMatchObject({ status: "read", finished: "2022-07-01", fp: "approximate" });
+  });
+
   it("Read with a start and no finish, on a book not yet read, is refused and writes nothing", async () => {
     await set({ status: "reading", start: day("2026-03-02") });
     const before = await snapshot();
