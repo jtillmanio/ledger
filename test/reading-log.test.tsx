@@ -278,9 +278,12 @@ describe("the status control's date line (task 1.17, AC-6)", () => {
     expect(started()).toEqual(["Started 2025, approximate"]);
   });
 
-  it("A to-read book has no date line", async () => {
-    renderBook({ status: "to_read" });
+  it("A to-read book has no date line; the same book being read has one", async () => {
+    renderBook({ status: "reading", started: "2026-03-02", startPrecision: "exact" });
     await expand();
+    expect(started()).toEqual(["Started 2 March 2026"]);
+    // The server's row comes back as To read (as a refresh brings it): the line goes.
+    renderBook({ status: "to_read", started: "2026-03-02", startPrecision: "exact" });
     expect(container.querySelector(".date-line")).toBeNull();
   });
 
@@ -395,8 +398,11 @@ describe("the run hero's span line (task 1.17, AC-5)", () => {
     expect(line()).toBe("Mar–Sep 2026");
   });
 
-  it("a run whose reads are all undated shows no span line", () => {
-    renderRun([true, true], {});
+  it("a run whose reads are all undated shows no span line, while a dated one does", () => {
+    renderRun([true, true], { started: "Started Mar 2026", span: "Mar 2026" });
+    expect(line()).toBe("Mar 2026");
+    // The server gives an all-undated run neither string.
+    renderRun([true, true], { started: null, span: null });
     expect(line()).toBeNull();
   });
 });
