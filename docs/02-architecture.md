@@ -58,7 +58,7 @@ and its sidecars (`npm run rebuild`); after it, the database is the record and
 
 ## 3. Data model
 
-The schema, the decisions behind it (2.1–2.21), the views and the proposed
+The schema, the decisions behind it (2.1–2.22), the views and the proposed
 additions are in [03-data-model.md](03-data-model.md). Two rules shape
 everything: catalog and per-user progress are separate tables keyed
 `(user_id, entity_id)` (2.1), and nothing derived is stored (2.2).

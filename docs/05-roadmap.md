@@ -1358,7 +1358,7 @@ row's accessible name; the master list narrows as you type, and one Back leaves
 it. A vitest with fake timers shows the older request aborted when a newer
 query starts.
 
-### ☐ 1.23 Audiobooks: listening, and a listen that counts as a read · M
+### ☑ 1.23 Audiobooks: listening, and a listen that counts as a read · M
 Backlog intake, 2026-10-26 (owner: *audiobook listening: a separate status
 under books, a separate column on a book if I've listened to it, shown only if
 I'm listening or have listened … it counts as completed, but I want separate

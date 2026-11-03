@@ -1,7 +1,7 @@
 ---
 id: TASK-043
 title: 1.23 Audiobooks: listening, and a listen that counts as a read
-status: In progress
+status: Review
 depends_on: [TASK-010, TASK-039]
 size: L
 model: opus
@@ -42,7 +42,7 @@ You can mark a book as *Listening*, and finishing it counts as a read everywhere
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim):
+- [x] AC-1 (roadmap **Check:**, verbatim):
   - Setting a book to *Listening* and then finishing it writes `read` and one
     `read_events` row with `format = audio`; every read logged before the
     migration is `text`.
@@ -54,11 +54,11 @@ You can mark a book as *Listening*, and finishing it counts as a read everywhere
     reads and one listen says *Read 2× · Listened 1×*.
   - In flight lists a Listening book under *Listening*, not *Reading*.
   - `npm run test:db:reset` migrates from zero.
-- [ ] AC-2: Against the TEST database: a `read_events` row with `format = 'mp3'` violates its CHECK, and an insert naming no format reads back `text`. A migration test seeds two `read_events` rows before the migration and reads both back as `text` after it, their dates and precisions unchanged.
-- [ ] AC-3: Through `POST /api/progress/book`: *Listening* is accepted; *Reading → Listening* leaves the status `listening` with the start 1.17 stamped unchanged, and finishing it then appends `audio`; finishing a *Listening* book whose `rating` is 4 leaves it 4 (R0-C1) and appends one `audio` row, a second finish from *Listening* appends a second `audio` row whose `reread_of` is the first; finishing from *Reading* still appends `text`. *Undo* of the finish removes the appended row and restores *Listening* (`undoBookStatus`).
-- [ ] AC-4: On the master list: given a book with two `text` reads and one `audio` read, its row reads *Read 2× · Listened 1×* and shows the glyph named *Listened*; given a book with one `audio` read only, *Listened 1×* with no *Read* part; given a book with one `text` read only, *Read 1×* with no glyph and no *Listened* part; given a book being listened to for the first time, the glyph named *Listening* and no count; given a book with no reads, no count and no glyph. The *Reading* chip lists *Reading* and *Listening* books both. The status control offers *Listening* beside *Reading*.
-- [ ] AC-5: `etl/test_views.sql`: for a year with one `text` read and one `audio` read of books in the same genre, `books_by_year` gives `books = 2` and a listened count of 1; a status-only `read` with no log row counts as `text`. The view's existing cases pass unchanged.
-- [ ] AC-6: The books status screen, the master list row and the status control meet the UX floor (`docs/04-design.md` § 10. The UX floor): the glyph is an SVG with `role="img"` and an accessible name (*Listened*, *Listening*), never colour alone, and inherits the text colour at 4.5:1 in both themes; *Listening* is a real option in the control with its name; the In flight screen's *Listening* group has a heading; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-2: Against the TEST database: a `read_events` row with `format = 'mp3'` violates its CHECK, and an insert naming no format reads back `text`. A migration test seeds two `read_events` rows before the migration and reads both back as `text` after it, their dates and precisions unchanged.
+- [x] AC-3: Through `POST /api/progress/book`: *Listening* is accepted; *Reading → Listening* leaves the status `listening` with the start 1.17 stamped unchanged, and finishing it then appends `audio`; finishing a *Listening* book whose `rating` is 4 leaves it 4 (R0-C1) and appends one `audio` row, a second finish from *Listening* appends a second `audio` row whose `reread_of` is the first; finishing from *Reading* still appends `text`. *Undo* of the finish removes the appended row and restores *Listening* (`undoBookStatus`).
+- [x] AC-4: On the master list: given a book with two `text` reads and one `audio` read, its row reads *Read 2× · Listened 1×* and shows the glyph named *Listened*; given a book with one `audio` read only, *Listened 1×* with no *Read* part; given a book with one `text` read only, *Read 1×* with no glyph and no *Listened* part; given a book being listened to for the first time, the glyph named *Listening* and no count; given a book with no reads, no count and no glyph. The *Reading* chip lists *Reading* and *Listening* books both. The status control offers *Listening* beside *Reading*.
+- [x] AC-5: `etl/test_views.sql`: for a year with one `text` read and one `audio` read of books in the same genre, `books_by_year` gives `books = 2` and a listened count of 1; a status-only `read` with no log row counts as `text`. The view's existing cases pass unchanged.
+- [x] AC-6: The books status screen, the master list row and the status control meet the UX floor (`docs/04-design.md` § 10. The UX floor): the glyph is an SVG with `role="img"` and an accessible name (*Listened*, *Listening*), never colour alone, and inherits the text colour at 4.5:1 in both themes; *Listening* is a real option in the control with its name; the In flight screen's *Listening* group has a heading; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -93,6 +93,15 @@ You can mark a book as *Listening*, and finishing it counts as a read everywhere
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Data model decision 2.22 makes "decisions 2.1–2.21" stale in `CLAUDE.md` and `docs/02-architecture.md` (approved at close-out, owner 2026-11-03) → CLAUDE.md § Ledger (fixed in this PR); docs/02-architecture.md § 3. Data model (fixed in this PR)
+- The same range in `docs/05-roadmap.md` line 36 (roadmap prose; a task branch changes only ticks; approved at close-out) → docs/OWNER-CHECKLIST.md § Approvals from follow-ups
+- Candidate decision: Reading and Listening are one in-progress state, and a finish's format is the state you finished in; no length recorded (approved at close-out) → docs/review/decisions.md § D-112
+- Schema review: the `EXISTS … format = 'audio'` subquery is written out in four queries; a shared fragment would keep them from drifting → not tracked: a shared `sql` fragment counts as a query in `test/query-budget.test.ts` (it took /books/status from 4 to 7), so the copies are deliberate
+- Schema review: Listening → To read → Read logs a `text` read → not tracked: the owner's rule (the state you finish in is the format, 2026-10-31), D-112
+- UI check: Listening, then To read, keeps the start on `book_status` (shown nowhere) → not tracked: 1.17's rule (To read keeps the start in progress, data model 2.18), not this task's
+- UI check: the status control's option buttons are 32–34px tall, under 44px → not tracked: the existing options' size since 1.5, above the 24px floor (UX floor); this task adds one more of the same
+- UI check: the dev server on :3143 looped on `HMR hash mismatch` reloads → not tracked: local dev cache (`npm run clean:dev`), not the app
+
 ## Plan
 
 Approved 2026-11-03 (owner: "approve"), the schema change with it: `read_events.format text NOT NULL DEFAULT 'text'` with a CHECK `IN ('text','audio')`, and a `listening` value of `book_status.status`.
@@ -121,9 +130,18 @@ Approved 2026-11-03 (owner: "approve"), the schema change with it: `read_events.
 
 **Size**: ~25 files, schema and UI together; `never-split` keeps it whole (Context says why), autonomy attended.
 
+**Revisions after approval**
+
+- `test/e2e/start-dates.spec.ts`: its control check runs axe from the top of the page. The control grew a button (*Listening* wraps *DNF* at 390px), so the scrolled page put a filter chip under the sticky bar and axe's target-size called it obscured. No assertion added or removed.
+- The format helpers' unit tests are in `test/audiobooks.test.ts`, not a separate `.tsx` file.
+- The `listened` subquery is written out in each query rather than shared: a shared `sql` fragment counts as a query in `test/query-budget.test.ts`.
+- Close-out (approved): `CLAUDE.md` and `docs/02-architecture.md` say 2.1–2.22; D-112 recorded.
+
 ## Review log
 
 _Filled by /implement-task. One line per round._
+
+- Verify R1 round FAIL(1: query budget, /books/status 7 > 4) → R2 full FAIL(4: start-dates axe target-size at 390px) → R3 e2e (start-dates, audiobooks) PASS | Audit R1 PASS | Spec R1 APPROVE | Schema R1 APPROVE | UI R1 PASS (6 widths, light and dark; dev DB migrated to 0021 with the owner's yes, data left as found)
 
 ## Blocked
 
@@ -131,7 +149,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 3 (start-dates spec scroll, helper tests' file, inlined subquery)
