@@ -5,7 +5,8 @@ import type { BookSearchAnswer } from "@/app/api/books/search/route";
 import Cover, { Pending } from "@/components/Cover";
 import type { LibraryHit } from "@/db/queries";
 import { addTo, type Target } from "@/lib/book-add";
-import { placeTag } from "@/lib/format";
+import { Headphones } from "@/components/nav/Icons";
+import { listenGlyph, placeTag } from "@/lib/format";
 import type { HardcoverBook } from "@/lib/hardcover";
 import { useSearch } from "@/lib/use-search";
 
@@ -187,6 +188,8 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
           {/* One tag a row, where it came from; the rest is plain text beside it. */}
           <div className="res-tags">
             <span className="tag" id={`${id}g`}>{lib ? placeTag(lib) : "Hardcover"}</span>
+            {/* Beside the tag, not in it: the glyph is its own image, named (task 1.23). */}
+            {lib && listenGlyph(lib.status, lib.listened) && <Headphones label={listenGlyph(lib.status, lib.listened)!} />}
             {lib && lib.shelves > 0 && <span className="small faint">{shelfCount(lib.shelves)}</span>}
             {hc?.pages && answer ? <span className="small faint">{`est ${thousands(hc.pages * answer.wordsPerPage)} words`}</span> : null}
             {lib?.pending && <Pending />}

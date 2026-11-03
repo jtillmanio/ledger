@@ -113,13 +113,13 @@ const pressed = () => [...container.querySelectorAll(".status-group button[aria-
 
 function renderBook(row: {
   status: string; on?: string | null; precision?: "exact" | "approximate" | "none";
-  started?: string | null; startPrecision?: "exact" | "approximate" | "none";
+  started?: string | null; startPrecision?: "exact" | "approximate" | "none"; listened?: boolean;
 }) {
   act(() => root.render(
     <UndoProvider>
       <BookStatus bookId="wok" status={row.status}
         finishedOn={row.on ?? null} precision={row.precision ?? "none"}
-        startedOn={row.started ?? null} startPrecision={row.startPrecision ?? "none"} />
+        startedOn={row.started ?? null} startPrecision={row.startPrecision ?? "none"} listened={row.listened} />
     </UndoProvider>,
   ));
 }
@@ -210,7 +210,7 @@ describe("the master list's status control", () => {
     const group = container.querySelector(".status-group")!;
     expect(group.getAttribute("role")).toBe("group");
     expect([...group.querySelectorAll("button")].map((b) => [b.textContent, b.getAttribute("aria-pressed")]))
-      .toEqual([["To read", "false"], ["Reading", "false"], ["Read", "false"], ["DNF", "true"]]);
+      .toEqual([["To read", "false"], ["Reading", "false"], ["Listening", "false"], ["Read", "false"], ["DNF", "true"]]);
     expect(button("DNF").classList.contains("dnf")).toBe(true);
     const css = readFileSync("src/app/globals.css", "utf8");
     const dnfRules = css.split("}").filter((r) => /\.dnf\b/.test(r));
@@ -248,6 +248,56 @@ describe("the master list's status control", () => {
     await click(button("Undo"));
     expect(await sql`SELECT 1 FROM read_events`).toHaveLength(0);
     expect(pressed()).toEqual(["Reading"]);
+  });
+});
+
+describe("Listening in the status control (task 1.23, AC-4, AC-6)", () => {
+  /** The headphones glyph beside the badge: its role and name, or null when there is none. */
+  const glyph = () => {
+    const svg = container.querySelector(".status-line svg");
+    return svg && [svg.getAttribute("role"), svg.getAttribute("aria-label")];
+  };
+
+  it("offers Listening beside Reading, a real button with its name; choosing it writes listening and shows the glyph named Listening", async () => {
+    renderBook({ status: "to_read" });
+    expect(glyph()).toBeNull();
+    await expand();
+    const names = [...container.querySelectorAll(".status-group button")].map((b) => b.textContent);
+    expect(names.indexOf("Listening")).toBe(names.indexOf("Reading") + 1);
+    await click(button("Listening"));
+    expect(await status()).toMatchObject({ status: "listening" });
+    expect(pressed()).toEqual(["Listening"]);
+    expect(glyph()).toEqual(["img", "Listening"]);
+    // Listening is a read in progress: its start shows on the date line, as Reading's does.
+    expect(container.querySelector(".date-line button")!.textContent).toMatch(/^Started /);
+  });
+
+  it("finishing from Listening logs an audio read and the glyph becomes Listened; Undo puts Listening back", async () => {
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'wok', 'listening')`;
+    renderBook({ status: "listening" });
+    await expand();
+    await click(button("Read"));
+    await click(button("Save"));
+    expect(await sql`SELECT format FROM read_events`).toEqual([{ format: "audio" }]);
+    expect(glyph()).toEqual(["img", "Listened"]);
+    await click(button("Undo"));
+    expect(await sql`SELECT 1 FROM read_events`).toHaveLength(0);
+    expect(pressed()).toEqual(["Listening"]);
+    expect(glyph()).toEqual(["img", "Listening"]);
+  });
+
+  it("a book only read on the page shows no glyph; one with a listen shows Listened whatever its status", async () => {
+    renderBook({ status: "read", on: "2025-06-01", precision: "exact" });
+    expect(glyph()).toBeNull();
+    renderBook({ status: "reading", listened: true });
+    expect(glyph()).toEqual(["img", "Listened"]);
+  });
+
+  it("the glyph is an outline in the text's own colour, never a colour of its own", () => {
+    const css = readFileSync("src/app/globals.css", "utf8");
+    const rules = css.split("}").filter((r) => /\.(ico|listen)\b/.test(r) && !r.includes("@media"));
+    expect(rules.some((r) => r.includes("stroke:currentColor"))).toBe(true);
+    expect(rules.filter((r) => r.includes(".listen")).every((r) => !/color|stroke:|fill:/.test(r.split("{")[1] ?? ""))).toBe(true);
   });
 });
 

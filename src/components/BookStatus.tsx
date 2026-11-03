@@ -5,15 +5,17 @@ import { useRouter } from "next/navigation";
 import FinishDate, {
   dateWords, finishReason, finishWords, initialFinish, storedDay, toChoice, type DateFor, type FinishValue,
 } from "@/components/FinishDate";
+import { Headphones } from "@/components/nav/Icons";
 import { useUndo } from "@/components/Undo";
 import { startAfterFinish } from "@/lib/finish-date";
-import { readWhen, type Precision } from "@/lib/format";
+import { listenGlyph, readWhen, type Precision } from "@/lib/format";
 
 /** `unlisted` (task 1.21, D-86) is shown and undone to, never chosen: no button sets it. */
-type Status = "to_read" | "reading" | "read" | "dnf" | "unlisted";
+type Status = "to_read" | "reading" | "listening" | "read" | "dnf" | "unlisted";
 type Finish = { on: string | null; precision: Precision };
-/** `start` is the read in progress's, or once Read the latest read's (task 1.17). */
-type Saved = { status: Status; finish: Finish; start: Finish };
+/** `start` is the read in progress's, or once Read the latest read's (task 1.17).
+ * `listened`: the book has a listen (task 1.23), for the glyph. */
+type Saved = { status: Status; finish: Finish; start: Finish; listened: boolean };
 /** Which button opened the date control: focus goes back to it when it closes. */
 type Opener = "read" | "started" | "finished";
 /** The open date control: which date it sets, its value, and its opener. */
@@ -22,11 +24,12 @@ type Editing = { what: DateFor; value: FinishValue; opener: Opener };
 const STATUSES: { status: Exclude<Status, "unlisted">; label: string }[] = [
   { status: "to_read", label: "To read" },
   { status: "reading", label: "Reading" },
+  { status: "listening", label: "Listening" },
   { status: "read", label: "Read" },
   { status: "dnf", label: "DNF" },
 ];
 const NAMES: Record<Status, string> = {
-  to_read: "to read", reading: "reading", read: "read", dnf: "DNF", unlisted: "unlisted",
+  to_read: "to read", reading: "reading", listening: "listening", read: "read", dnf: "DNF", unlisted: "unlisted",
 };
 
 /** The book an undo has just put back to Unlisted: its row takes focus when it is drawn again. */
@@ -42,9 +45,12 @@ function badge({ status, finish }: Saved) {
 /**
  * A master-list row's status (task 1.5, R1-03; mockup `blist`). Collapsed, the
  * row carries a status badge, which is also the button that expands it.
- * Expanded, the status is a button group, *To read · Reading · Read · DNF*,
+ * Expanded, the status is a button group, *To read · Reading · Listening · Read · DNF*,
  * the current value `aria-pressed`; DNF is a grey stop, not a warning. To read,
- * Reading and DNF save at once. *Read* opens *Finished*, the finish-date
+ * Reading, Listening and DNF save at once. *Listening* is Reading by ear (task
+ * 1.23, D-85): finishing from it logs a listen, which is a read. The headphones
+ * glyph beside the badge is named *Listening* while it is, and *Listened* once
+ * the book has a listen. *Read* opens *Finished*, the finish-date
  * control, with Save and Cancel; on a book already read it corrects the date.
  * Closing it, any way, puts focus back on *Read*.
  *
@@ -53,7 +59,7 @@ function badge({ status, finish }: Saved) {
  * pressed. On the Unlisted list the row leaves after the add; its Undo brings
  * it back with focus on *Add to Someday*.
  *
- * The date line (task 1.17, data model 2.18): while Reading, *Started …*; once
+ * The date line (task 1.17, data model 2.18): while Reading or Listening, *Started …*; once
  * Read, *Started …* and *Finished …*. Each is a button named with the date it
  * holds and opens the same four-choice control (*Today · Pick a date · Year
  * only · No date*). On a Read book *Started* edits the latest read's start.
@@ -74,14 +80,16 @@ function badge({ status, finish }: Saved) {
  */
 export default function BookStatus({
   bookId, status = "to_read", finishedOn = null, precision = "none", startedOn = null, startPrecision = "none",
+  listened = false,
 }: {
   bookId: string; status?: string; finishedOn?: string | null; precision?: Precision;
-  startedOn?: string | null; startPrecision?: Precision;
+  startedOn?: string | null; startPrecision?: Precision; listened?: boolean;
 }) {
   const router = useRouter();
   const { push } = useUndo();
   const fromProps = (): Saved => ({
     status: status as Status, finish: { on: finishedOn, precision }, start: { on: startedOn, precision: startPrecision },
+    listened,
   });
   const [saved, setSaved] = useState<Saved>(fromProps);
   const [open, setOpen] = useState(false);
@@ -101,7 +109,7 @@ export default function BookStatus({
   const openers = { read: readButton, started: startedButton, finished: finishedButton };
 
   // A refresh after a save brings the server's row back: keep it, not the last local guess.
-  const props = { status, finishedOn, precision, startedOn, startPrecision };
+  const props = { status, finishedOn, precision, startedOn, startPrecision, listened };
   const [fromServer, setFromServer] = useState(props);
   if ((Object.keys(props) as (keyof typeof props)[]).some((k) => fromServer[k] !== props[k])) {
     setFromServer(props);
@@ -168,10 +176,13 @@ export default function BookStatus({
         return false;
       }
       if (!res.ok) throw new Error("status failed");
-      const { change, finish: stored, start: storedStart } =
-        (await res.json()) as { change: unknown; finish: Finish | null; start: Finish };
+      const { change, finish: stored, start: storedStart, format } =
+        (await res.json()) as { change: unknown; finish: Finish | null; start: Finish; format: string | null };
       const before = saved;
-      setSaved({ status: next, finish: stored ?? before.finish, start: storedStart });
+      setSaved({
+        status: next, finish: stored ?? before.finish, start: storedStart,
+        listened: before.listened || format === "audio",
+      });
       router.refresh();
       push({
         label: `${name}: ${NAMES[next]}`,
@@ -245,7 +256,8 @@ export default function BookStatus({
 
   const reason = editing ? why(editing) : null;
   const unlisted = saved.status === "unlisted";
-  const dated = saved.status === "reading" || saved.status === "read";
+  const dated = saved.status === "reading" || saved.status === "listening" || saved.status === "read";
+  const glyph = listenGlyph(saved.status, saved.listened);
 
   return (
     <>
@@ -259,6 +271,7 @@ export default function BookStatus({
           }}>
           <span className="sr-only">Status: </span>{badge(saved)}
         </button>
+        {glyph && <Headphones label={glyph} />}
         {unlisted && (
           <button type="button" ref={addButton} className="btn sec sm" aria-disabled={saving || undefined}
             onClick={() => void addToSomeday()}>

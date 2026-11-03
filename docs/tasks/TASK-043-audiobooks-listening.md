@@ -1,14 +1,14 @@
 ---
 id: TASK-043
 title: 1.23 Audiobooks: listening, and a listen that counts as a read
-status: Ready
+status: In progress
 depends_on: [TASK-010, TASK-039]
 size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 0451037
 ---
 
 # TASK-043 — 1.23 Audiobooks: listening, and a listen that counts as a read
@@ -95,7 +95,31 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-03 (owner: "approve"), the schema change with it: `read_events.format text NOT NULL DEFAULT 'text'` with a CHECK `IN ('text','audio')`, and a `listening` value of `book_status.status`.
+
+**Steps**
+
+1. Schema: `format` and its CHECK in `src/db/schema.ts`; `npm run db:generate` writes `drizzle/0021_*.sql` and meta. `load.ps1`/`load.sh` name their columns, so loaded reads take the `text` default.
+2. `src/db/writes.ts`: `listening` in `BOOK_STATUSES` and `SETTABLE_STATUSES`. Reading and Listening are one in-progress state: entering either stamps a start (1.17), switching keeps it, a `start` is accepted with either. A finish whose prior status is `listening` appends `format = 'audio'`, any other `text`; a re-date keeps the row's format, a backfill is `text`. Undo is unchanged (it deletes the appended row, restores the prior status).
+3. `src/app/api/progress/book/route.ts`: a start with `listening`; the answer carries `format` (the appended read's, or null) so the control's glyph moves at once.
+4. `etl/views.sql`: `book_reads` gains `format` (last column; a status-only `read` is `text`); `books_by_year` gains `listened` (last column); `books` still counts every read.
+5. `src/db/queries.ts`: `listBooks` gains `reads` (text) and `listens` (audio) from `book_reads`, and `status=reading` matches `listening` too; `booksInFlight` returns both statuses with `status`; `booksUpNext`, `booksDone`, `librarySearch` gain `listened`.
+6. `src/lib/format.ts`: `readSummary` (*Read 2× · Listened 1×*, each part only above zero), `listenGlyph` (*Listening* / *Listened* / null), `PLACE` and `bookDates` learn `listening`.
+7. Glyph: `Headphones` in `src/components/nav/Icons.tsx` (Lucide paths, inline `<svg role="img" aria-label>`, `currentColor`); `.listen` size in `src/app/globals.css`.
+8. UI: `BookStatus.tsx` offers *Listening* after *Reading*, glyph beside the badge, the date line while listening; the master list row's summary line, the *Reading* chip lists both; In flight in headed *Reading* and *Listening* groups, each only when it has books; the glyph in `StatusBookRow`, `PlanQuarter`, `BookSearch`; `AddBooks` and `book-review` status words.
+9. Docs: redraw `blist`, `status`, `add` in `design/mockups.html` and `design/mockups-index.md`; `docs/03-data-model.md` (§ 4.1 row, reads are a log) and `.claude/rules/schema.md` (one sentence on `format`; not in Files likely touched).
+
+**Test strategy**
+
+- AC-1 write bullet, AC-2 CHECK and default, AC-3 (route cases), AC-4 query values and the Reading chip: `test/audiobooks.test.ts`.
+- AC-2 migration: `test/audiobooks-migration.test.ts` (rolled-back transaction: drop the column, seed two reads, run 0021, both `text`, dates and precisions unchanged).
+- AC-1 view bullets, AC-5: `etl/test_views.sql`.
+- AC-4 / AC-6 control and glyph: `test/reading-log.test.tsx`; the format helpers: `test/audiobooks.test.tsx`; `test/add-book-sheet.test.tsx` `PLACES`.
+- AC-1 browser and In flight bullets, AC-6 (axe, 4.5:1 both themes, screenshots every width): `test/e2e/audiobooks.spec.ts`. `npm run test:db:reset` from zero.
+
+**Risks**: every read row on the master list gains a *Read N×* line (settled by the owner); `listBooks` gains two counts per row over up to 500 rows (index on `read_events`; the query-budget test watches).
+
+**Size**: ~25 files, schema and UI together; `never-split` keeps it whole (Context says why), autonomy attended.
 
 ## Review log
 

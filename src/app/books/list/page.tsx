@@ -7,7 +7,7 @@ import AddBooksButton from "@/components/AddBooksButton";
 import BookListSearch from "@/components/BookListSearch";
 import BookStatus from "@/components/BookStatus";
 import Cover, { Pending } from "@/components/Cover";
-import { bookDates } from "@/lib/format";
+import { bookDates, readSummary } from "@/lib/format";
 import { seriesAllHref, seriesView } from "@/lib/series-list";
 
 export const dynamic = "force-dynamic";
@@ -71,6 +71,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
           load, and a tap re-renders this same route. */}
       <div className="filters">
         <Link href="/books/list" className="chip" aria-current={!status && !genre && !year}>Everything</Link>
+        {/* Every read in progress, Listening included (task 1.23, owner 2026-10-31): no chip of its own. */}
         <Link prefetch={false} href="/books/list?status=reading" className="chip" aria-current={status === "reading"}>Reading</Link>
         <Link prefetch={false} href="/books/list?status=to_read" className="chip" aria-current={status === "to_read"}>To read</Link>
         <Link prefetch={false} href="/books/list?status=read" className="chip" aria-current={status === "read"}>Read</Link>
@@ -138,13 +139,16 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
               </span>
               {/* When it was started, finished and how long it took (task 1.17). */}
               {bookDates(b) && <span className="row-dates">{bookDates(b)}</span>}
+              {/* Reads and listens counted apart (task 1.23): *Read 2× · Listened 1×*. */}
+              {readSummary(b) && <span className="row-reads mono">{readSummary(b)}</span>}
               {b.pending && <Pending />}
               {/* Status and finish date (task 1.5): the badge expands the row's controls. */}
               {/* Only what differs from a bare to-read row: 500 rows travel in the RSC payload. */}
               <BookStatus bookId={b.id}
                 {...(b.status !== "to_read" && { status: b.status })}
                 {...(b.finished_on !== null && { finishedOn: b.finished_on, precision: b.finished_on_precision })}
-                {...(b.started_on !== null && { startedOn: b.started_on, startPrecision: b.started_on_precision })} />
+                {...(b.started_on !== null && { startedOn: b.started_on, startPrecision: b.started_on_precision })}
+                {...(b.listens > 0 && { listened: true })} />
             </span>
           </article>
         ))}

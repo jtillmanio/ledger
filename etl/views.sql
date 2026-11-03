@@ -451,12 +451,14 @@ WHERE r.deleted_at IS NULL;
 -- the log existed), which stands for its single read. A book read twice is two
 -- rows, so a reread counts in the year it happened and the first read keeps
 -- its year. A read with no date ('none') has a NULL finished_on and is in no year.
+-- format is how it was read (task 1.23, D-85): 'audio' is a listen, which is
+-- still a read; the status-only row is 'text', as nothing before 1.23 was a listen.
 CREATE OR REPLACE VIEW book_reads AS
-SELECT e.user_id, e.book_id, e.finished_on, e.finished_on_precision
+SELECT e.user_id, e.book_id, e.finished_on, e.finished_on_precision, e.format
 FROM read_events e
 WHERE e.book_id IS NOT NULL
 UNION ALL
-SELECT s.user_id, s.book_id, s.finished_on, s.finished_on_precision
+SELECT s.user_id, s.book_id, s.finished_on, s.finished_on_precision, 'text'
 FROM book_status s
 WHERE s.status = 'read'
   AND NOT EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = s.user_id AND e.book_id = s.book_id);
@@ -465,10 +467,12 @@ WHERE s.status = 'read'
 -- from the finish date (D-21): a year-only finish is its July 1st, 'approximate',
 -- so it lands in its year; an undated read is in no year, and the books page's
 -- *No year* chip counts it instead. `books` counts reads: a book read in 2019
--- and again in 2026 is one in each.
+-- and again in 2026 is one in each. `listened` is how many of those reads were
+-- listens (task 1.23, D-85): `books` still includes them, as a listen is a read.
 CREATE OR REPLACE VIEW books_by_year AS
 SELECT r.user_id, extract(year FROM r.finished_on)::int AS year, b.genre,
-       COUNT(*) AS books, SUM(b.word_count) AS words
+       COUNT(*) AS books, SUM(b.word_count) AS words,
+       COUNT(*) FILTER (WHERE r.format = 'audio') AS listened
 FROM book_reads r JOIN books b ON b.id = r.book_id
 WHERE r.finished_on IS NOT NULL AND b.deleted_at IS NULL
 GROUP BY r.user_id, extract(year FROM r.finished_on)::int, b.genre;

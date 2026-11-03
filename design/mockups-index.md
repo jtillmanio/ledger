@@ -21,11 +21,11 @@ line numbers below drift after an edit.
 | `newrun` | New run | 1545–1647 |
 | `ai` | AI review | 1650–1745 |
 | `bdash` | Books dashboard; 360px and 834px frames (roadmap 1.8) | 1748–1912 |
-| `status` | Status — in flight, up next, done (all media); 360px and 834px frames (roadmap 1.8); Done rows carry a run's span and a book's dates (notes, task 1.17) | 2645–2810 |
+| `status` | Status — in flight, up next, done (all media); 360px and 834px frames (roadmap 1.8); Done rows carry a run's span and a book's dates (notes, task 1.17); books In flight under *Reading*, then *Listening*, and the headphones glyph on a row with a listen (notes, task 1.23) | 2645–2810 |
 | `plan` | Plan by quarter | 2023–2166 |
 | `moveplan` | Move / add to a quarter | 2169–2326 |
-| `blist` | Master list; the *Unlisted · N* chip after *Read* and an Unlisted row, grey badge and *Add to Someday* (task 1.21); the box searches as you type, *Searching…* (task 1.22); a row's *Started …* and days taken, the date line, and *Started* refusing a start after the finish (third frame, task 1.17) | 3117–3295 |
-| `add` | Add books — search (Hardcover, task 1.4f); searches as you type, one place or source tag a row (task 1.22) | 3247–3364 |
+| `blist` | Master list; the *Unlisted · N* chip after *Read* and an Unlisted row, grey badge and *Add to Someday* (task 1.21); the box searches as you type, *Searching…* (task 1.22); a row's *Started …* and days taken, the date line, and *Started* refusing a start after the finish (third frame, task 1.17); *Listening* beside *Reading* in the control, a Listening row and a row with a listen carrying the headphones glyph, and *Read 2× · Listened 1×* (task 1.23) | 3117–3312 |
+| `add` | Add books — search (Hardcover, task 1.4f); searches as you type, one place or source tag a row (task 1.22); the headphones glyph beside a listened book's tag (task 1.23) | 3315–3433 |
 | `shelves` | Shelves | 2528–2624 |
 | `top` | Top books | 2627–2713 |
 | `search` | Search | 2716–2826 |

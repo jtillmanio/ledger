@@ -507,6 +507,8 @@ export type BookRow = {
   rating: number | null; cover_url: string | null;
   /** No external record yet (no Open Library or Hardcover id): *metadata pending* (task 1.4c). */
   pending: boolean;
+  /** Its reads by eye and its listens (task 1.23, D-85), from book_reads: *Read 2× · Listened 1×*. */
+  reads: number; listens: number;
 };
 
 /** `year` is a finished or planned year; `noYear` is the read books that have
@@ -541,6 +543,7 @@ export async function listBooks(
                 THEN lr.finished_on - lr.started_on END AS days_taken,
            st.rating,
            pl.plan_year,
+           COALESCE(rc.reads, 0) AS reads, COALESCE(rc.listens, 0) AS listens,
            COUNT(*) OVER ()::int AS total
     FROM books b
     LEFT JOIN authors a      ON a.id = b.author_id
@@ -554,6 +557,13 @@ export async function listBooks(
       ORDER BY e.id DESC
       LIMIT 1
     ) lr ON st.status = 'read'
+    -- Its reads and listens (task 1.23): derived from the log, never stored (Hard rule 2).
+    LEFT JOIN LATERAL (
+      SELECT (COUNT(*) FILTER (WHERE r.format = 'text'))::int AS reads,
+             (COUNT(*) FILTER (WHERE r.format = 'audio'))::int AS listens
+      FROM book_reads r
+      WHERE r.user_id = ${userId} AND r.book_id = b.id
+    ) rc ON true
     -- A book can be planned in two years (Light Bringer: 2026 and 2027), so
     -- collapse to the earliest to keep one row per book (R2-06). The year is
     -- plan_period's, never parsed from the period here (task 1.7).
@@ -562,7 +572,9 @@ export async function listBooks(
       WHERE pp.book_id = b.id AND pp.user_id = ${userId}
     ) pl ON true
     WHERE b.deleted_at IS NULL
-      AND (${status}::text IS NULL OR COALESCE(st.status,'to_read') = ${status})
+      -- The Reading chip is every read in progress, by eye or by ear (task 1.23).
+      AND (${status}::text IS NULL OR COALESCE(st.status,'to_read') = ${status}
+           OR (${status} = 'reading' AND st.status = 'listening'))
       AND (${status}::text IS NOT NULL OR ${q}::text IS NOT NULL OR st.status IS DISTINCT FROM 'unlisted')
       AND (${genre}::text  IS NULL OR b.genre = ${genre})
       AND (${year}::int    IS NULL
@@ -590,22 +602,27 @@ export async function listBooks(
 export const TO_READ_LEVELS = ["quarter", "year", "on_deck", "someday"] as const;
 export type ToReadLevel = (typeof TO_READ_LEVELS)[number];
 
-/** A book on a status tab (task 1.9). */
+/** A book on a status tab (task 1.9). `listened`: it has an `audio` read in the log (task 1.23), for the glyph. */
 export type StatusBook = {
   id: string; title: string; author: string | null; series: string | null;
-  series_position: number | null; word_count: number | null;
+  series_position: number | null; word_count: number | null; listened: boolean;
 };
 
-/** *In flight* for books (task 1.9): what you are reading. No reading position is stored, so the row shows the word count. */
+/** A book *In flight*: `status` says which group, Reading or Listening (task 1.23). */
+export type FlyingBook = StatusBook & { status: "reading" | "listening" };
+
+/** *In flight* for books (task 1.9): what you are reading, by eye and then by
+ * ear (task 1.23). No reading position is stored, so the row shows the word count. */
 export async function booksInFlight(userId: string) {
-  return sql<StatusBook[]>`
-    SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, b.word_count
+  return sql<FlyingBook[]>`
+    SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, b.word_count,
+           st.status, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened
     FROM book_status st
     JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
     LEFT JOIN authors a     ON a.id = b.author_id
     LEFT JOIN book_series s ON s.id = b.series_id
-    WHERE st.user_id = ${userId} AND st.status = 'reading'
-    ORDER BY b.title, b.id
+    WHERE st.user_id = ${userId} AND st.status IN ('reading', 'listening')
+    ORDER BY (st.status = 'listening'), b.title, b.id
   `;
 }
 
@@ -627,7 +644,7 @@ export async function booksUpNext(userId: string) {
   const [planned, [someday]] = await Promise.all([
     sql<PlannedBook[]>`
       SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, b.word_count,
-             pp.period, pp.level, pp.year, pp.quarter, pp.ordinal
+             pp.period, pp.level, pp.year, pp.quarter, pp.ordinal, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened
       FROM plan_period pp
       JOIN book_status st ON st.book_id = pp.book_id AND st.user_id = pp.user_id AND st.status = 'to_read'
       JOIN books b ON b.id = pp.book_id AND b.deleted_at IS NULL
@@ -658,7 +675,7 @@ export type DoneBook = StatusBook & {
 export async function booksDone(userId: string) {
   return sql<DoneBook[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, b.word_count,
-           st.status, extract(year FROM st.finished_on)::int AS year,
+           st.status, extract(year FROM st.finished_on)::int AS year, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened,
            st.finished_on::text AS finished_on, st.finished_on_precision,
            -- The start shown (task 1.17): the read in progress's, or once Read the
            -- latest read's, since finishing moves it off book_status (data model
@@ -962,6 +979,8 @@ export type LibraryHit = {
   calibre: boolean;
   /** How many of your shelves hold it: *on 2 shelves*. */
   shelves: number;
+  /** It has at least one listen (task 1.23): the glyph beside its tag. */
+  listened: boolean;
 };
 
 /**
@@ -981,7 +1000,7 @@ export async function librarySearch(
     SELECT b.id, b.title, a.name AS author, bs.name AS series, b.series_position,
            b.published_year, b.page_count, b.word_count, b.word_count_source, b.cover_url, b.hardcover_id,
            (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
-           st.status, tl.level, tl.period, (b.calibre_id IS NOT NULL) AS calibre,
+           st.status, tl.level, tl.period, (b.calibre_id IS NOT NULL) AS calibre, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened,
            (SELECT COUNT(*) FROM shelf_books sb JOIN shelves sh ON sh.id = sb.shelf_id
             WHERE sb.book_id = b.id AND sh.user_id = ${userId})::int AS shelves
     FROM books b

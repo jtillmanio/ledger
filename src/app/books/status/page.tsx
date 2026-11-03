@@ -34,7 +34,9 @@ const nBooks = (n: number) => `${n.toLocaleString()} ${n === 1 ? "book" : "books
 
 /**
  * Books status (task 1.9; mockup `status`, desktop frame): the same three tabs
- * as comics. *In flight* is what you are reading; *Up next* is the plan by
+ * as comics. *In flight* is what you are reading, under *Reading*, then what you
+ * are listening to, under *Listening* (task 1.23), each heading drawn only when
+ * it has a book; *Up next* is the plan by
  * level, each quarter in your order and draggable inside itself, each year's
  * bare-year lane after its quarters (grey, no order and no button until 2.8),
  * then On deck, and Someday as one row into the master list, never a list here
@@ -48,6 +50,10 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
     booksInFlight(userId), booksUpNext(userId), booksDone(userId),
   ]);
   const groups = groupPlan(planned);
+  const inFlight = [
+    { key: "reading", name: "Reading", books: flying.filter((b) => b.status === "reading") },
+    { key: "listening", name: "Listening", books: flying.filter((b) => b.status === "listening") },
+  ].filter((g) => g.books.length > 0);
   const stopped = finished.filter((b) => b.status === "dnf");
   const years = new Map<string, DoneBook[]>();
   for (const b of finished.filter((f) => f.status === "read")) {
@@ -69,9 +75,18 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
               Books you start land here.
             </EmptySlate>
           ) : (
-            <div className="rows">
-              {flying.map((b) => <StatusBookRow key={b.id} book={b} meta={b.word_count ? `${b.word_count.toLocaleString()} words` : null} />)}
-            </div>
+            inFlight.map((g) => (
+              <section key={g.key} aria-labelledby={`flight-${g.key}`} data-flight={g.key}>
+                <h2 id={`flight-${g.key}`} className="group-head">
+                  {g.name} <span className="mono n">{nBooks(g.books.length)}</span>
+                </h2>
+                <div className="rows">
+                  {g.books.map((b) => (
+                    <StatusBookRow key={b.id} book={b} meta={b.word_count ? `${b.word_count.toLocaleString()} words` : null} />
+                  ))}
+                </div>
+              </section>
+            ))
           )
         )}
 

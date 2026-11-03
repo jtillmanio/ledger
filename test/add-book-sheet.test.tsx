@@ -29,6 +29,7 @@ const BLADE: LibraryHit = {
   id: "the-blade-itself-joe-abercrombie", title: "The Blade Itself", author: "Joe Abercrombie", series: "First Law",
   series_position: 1, published_year: null, page_count: null, word_count: null, word_count_source: null,
   cover_url: null, hardcover_id: null, pending: true, status: "read", level: null, period: null, calibre: false, shelves: 2,
+  listened: false,
 };
 const SAKEY_ITEM = {
   hardcoverId: 1, title: "The Blade Itself", authors: ["Marcus Sakey"], year: 2009, pages: 320,
@@ -191,8 +192,10 @@ describe("Add to (AC-3)", () => {
 });
 
 /** Every library place a row can say, one book each (task 1.22, AC-3). */
-const at = (id: string, status: string | null, level: string | null, period: string | null, calibre = false): LibraryHit =>
-  ({ ...BLADE, id, title: `Book ${id}`, pending: false, shelves: 0, status, level: level as LibraryHit["level"], period, calibre });
+const at = (
+  id: string, status: string | null, level: string | null, period: string | null, calibre = false, listened = false,
+): LibraryHit =>
+  ({ ...BLADE, id, title: `Book ${id}`, pending: false, shelves: 0, status, level: level as LibraryHit["level"], period, calibre, listened });
 const PLACES: [LibraryHit, string][] = [
   [at("someday", "to_read", "someday", null), "Someday"],
   [at("someday-calibre", "to_read", "someday", null, true), "Someday"],
@@ -200,7 +203,9 @@ const PLACES: [LibraryHit, string][] = [
   [at("quarter", "to_read", "quarter", "2027-Q1"), "Q1 2027"],
   [at("year", "to_read", "year", "2027"), "2027"],
   [at("reading", "reading", null, null), "Reading"],
+  [at("listening", "listening", null, null), "Listening"],
   [at("read", "read", null, null), "Read"],
+  [at("read-listened", "read", null, null, false, true), "Read"],
   [at("dnf", "dnf", null, null), "DNF"],
   [at("unlisted", "unlisted", null, null), "Unlisted"],
   [at("unlisted-calibre", "unlisted", null, null, true), "Unlisted · Calibre"],
@@ -315,6 +320,20 @@ describe("Search (AC-2, AC-6)", () => {
     for (const tag of dialog()!.querySelectorAll(".pane-search .res-tags .tag")) expect(tag.closest("[aria-hidden]")).toBeNull();
     const heads = [...dialog()!.querySelectorAll(".pane-search h3.s")].map((h) => h.firstChild!.textContent);
     expect(heads).toEqual(["In your library", "From Hardcover"]);
+  });
+
+  it("the headphones glyph sits beside the tag of a book being listened to or listened to before, named, and nowhere else (task 1.23, AC-6)", async () => {
+    searchAnswer = () => Response.json(answer({ library: PLACES.map(([b]) => b) }));
+    await open();
+    await search("book");
+    const library = [...dialog()!.querySelectorAll('[aria-label="In your library"] > li')];
+    const glyphs = library.map((li) => {
+      const svg = li.querySelector('.res-tags svg[role="img"]');
+      return svg && [li.querySelector(".rt")!.textContent, svg.getAttribute("aria-label")];
+    }).filter(Boolean);
+    expect(glyphs).toEqual([["Book listening", "Listening"], ["Book read-listened", "Listened"]]);
+    // Beside the tag, not inside it: the row's name stays its title and its place.
+    for (const svg of dialog()!.querySelectorAll('.res-tags svg[role="img"]')) expect(svg.closest(".tag")).toBeNull();
   });
 
   it("a Hardcover result's subtitle follows its title, muted and in its button's name; every author and the series show (task 1.4f, AC-3)", async () => {

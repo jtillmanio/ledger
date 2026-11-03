@@ -256,6 +256,11 @@ Release, test isolation) and the Hard rules a reviewer checks.
   only through `saveBookStatus`: entering `read` appends a read, `read` on a book
   already read re-dates its latest one, and leaving `read` keeps the finish date.
   Comic reads don't write `read_events` yet; `issue_progress` is their record.
+  **A listen is a read** (task 1.23, D-85, data model 2.22): `listening` is
+  Reading by ear, one in-progress state with `reading` (switching keeps the
+  start), and finishing from it appends `read_events.format = 'audio'`; every
+  other read is `text`. Count listens through `book_reads.format`, never a
+  stored count.
 - **Every table is in the export.** `GET /api/export` reads its tables from
   `src/db/export-tables.ts`. A task that creates a table adds it there in the
   same PR (`USER_TABLES` if it has a `user_id`, which no new table does after

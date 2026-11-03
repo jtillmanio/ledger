@@ -70,3 +70,17 @@ export function Icon({ name }: { name: IconName }) {
     </svg>
   );
 }
+
+/**
+ * The listen glyph (task 1.23, D-85): Lucide's `headphones`, drawn inline, not
+ * from the sprite, so it renders wherever a book's status does, sheets
+ * included. Unlike the nav's icons it is the thing named: an image with its own
+ * name, *Listening* or *Listened*, never colour alone. Inherits the text colour.
+ */
+export function Headphones({ label }: { label: "Listening" | "Listened" }) {
+  return (
+    <svg className="ico listen" viewBox="0 0 24 24" role="img" aria-label={label} focusable="false">
+      <path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" />
+    </svg>
+  );
+}

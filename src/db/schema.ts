@@ -354,7 +354,7 @@ export const editionProgress = pgTable("edition_progress", {
 export const bookStatus = pgTable("book_status", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   bookId: text("book_id").notNull().references(() => books.id, { onDelete: "cascade" }),
-  status: text("status").notNull().default("to_read"), // to_read | reading | read | dnf | unlisted (below Someday, task 1.21, D-86; no CHECK)
+  status: text("status").notNull().default("to_read"), // to_read | reading | listening (task 1.23) | read | dnf | unlisted (below Someday, task 1.21, D-86; no CHECK)
   yearRank: integer("year_rank"),           // your top-10 position for that year
   rating: doublePrecision("rating"),
   // A real date since migration 0004 (it was text and 100% NULL). Same rule as
@@ -399,6 +399,10 @@ export const readEvents = pgTable("read_events", {
   // This read's own start, so a reread keeps its own (task 1.17, data model 2.18).
   startedOn: date("started_on", { mode: "string" }),
   startedOnPrecision: text("started_on_precision").notNull().default("none"), // exact | approximate | none
+  // How it was read (task 1.23, D-85): 'audio' is a listen, finished from
+  // Listening; it counts as a read everywhere reads count. Every read before
+  // 1.23 was 'text', and so is a backfilled or loaded one (D-41, D-87).
+  format: text("format").notNull().default("text"), // text | audio
   rereadOf: integer("reread_of"),
 }, (t) => ({
   byBook: index("read_events_user_book_idx").on(t.userId, t.bookId),
@@ -415,6 +419,7 @@ export const readEvents = pgTable("read_events", {
   startPrecision: check("read_events_started_on_precision_check", sql`
     ${t.startedOnPrecision} IN ('exact', 'approximate', 'none')
     AND (${t.startedOn} IS NULL) = (${t.startedOnPrecision} = 'none')`),
+  format: check("read_events_format_check", sql`${t.format} IN ('text', 'audio')`),
 }));
 
 // Following a series, an author or a universe is a stored choice (task 1.15,

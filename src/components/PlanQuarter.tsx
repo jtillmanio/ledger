@@ -1,12 +1,14 @@
 "use client";
 
+import { Headphones } from "@/components/nav/Icons";
 import ReorderList from "@/components/ReorderList";
 import { bookSub, quarterName, wordsK } from "@/lib/format";
 
-/** A planned book as one quarter's list draws it. `ordinal` is its stored place in the quarter. */
+/** A planned book as one quarter's list draws it. `ordinal` is its stored place in the quarter.
+ * `listened`: it has a listen, for the headphones glyph (task 1.23). */
 export type QuarterBook = {
   id: string; title: string; ordinal: number; author: string | null;
-  series: string | null; series_position: number | null; word_count: number | null;
+  series: string | null; series_position: number | null; word_count: number | null; listened?: boolean;
 };
 
 /** One call to `/api/plan`: move a book to a place in its own quarter. Rejects when it didn't save. */
@@ -41,7 +43,8 @@ export default function PlanQuarter({ period, rows }: { period: string; rows: Qu
         <>
           <span className="cv none" aria-hidden="true" />
           <span className="qbody">
-            <span className="qtitle">{b.title}</span>
+            {/* A planned book is to read, so its glyph can only say *Listened* (task 1.23). */}
+            <span className="qtitle">{b.title}{b.listened && <> <Headphones label="Listened" /></>}</span>
             <span className="qmeta">
               {bookSub(b) && <span className="mono">{bookSub(b)}</span>}
               {wordsK(b.word_count) && <span className="mono">{wordsK(b.word_count)}</span>}

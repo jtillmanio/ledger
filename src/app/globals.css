@@ -673,6 +673,8 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 /* A book row's status badge, and on an Unlisted row *Add to Someday* beside it (task 1.21). */
 .status-line{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-top:.375rem}
 .status-line .status-toggle{margin-top:0}
+/* The listen glyph (task 1.23): the text's own colour and size, beside the status. */
+.ico.listen{width:1.125em;height:1.125em;vertical-align:-.1875em}
 /* The status control's date line (task 1.17): *Started …* beside *Finished …*, wrapping on a phone. */
 .date-line{display:flex;gap:.5rem;flex-wrap:wrap;margin:.625rem 0 0}
 .opts button.opt{font-family:inherit}
@@ -906,7 +908,7 @@ p{margin:0 0 .75rem;max-width:66ch}
 .row-meta{margin-left:auto;white-space:nowrap;font-size:.8125rem;color:var(--muted)}
 .row-sub{color:var(--muted);font-size:.8125rem;margin-top:.125rem;display:block}
 /* A book row's dates (task 1.17): started, finished, days taken. */
-.row-dates{color:var(--muted);font-size:.75rem;margin-top:.125rem;display:block}
+.row-dates,.row-reads{color:var(--muted);font-size:.75rem;margin-top:.125rem;display:block}
 .clamp-2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
 .state-blocked .row-title{color:var(--muted)}
 .tag-held{color:var(--blocked)}
@@ -1109,6 +1111,7 @@ input.txt[aria-invalid="true"]{border-color:var(--danger)}
 .row.res .cv.none{border:0;background:var(--sunk)}
 .enrich{display:block;font-size:.6875rem;color:var(--muted);font-style:italic;margin-top:.125rem}
 .res-tags .enrich{margin-top:0;align-self:center}
+.res-tags .listen{align-self:center}
 .rows .row.book-row{display:flex;gap:.75rem;align-items:flex-start}
 .book-row .cv,.iss .cv{flex:0 0 var(--cv-row-w);width:var(--cv-row-w);height:var(--cv-row-h);
   border-radius:var(--r-cell);object-fit:cover;background:var(--sunk)}

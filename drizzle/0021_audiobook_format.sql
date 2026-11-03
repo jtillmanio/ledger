@@ -1,0 +1,2 @@
+ALTER TABLE "read_events" ADD COLUMN "format" text DEFAULT 'text' NOT NULL;--> statement-breakpoint
+ALTER TABLE "read_events" ADD CONSTRAINT "read_events_format_check" CHECK ("read_events"."format" IN ('text', 'audio'));

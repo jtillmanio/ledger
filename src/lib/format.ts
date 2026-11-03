@@ -65,7 +65,7 @@ export function readDays(days: number | null): string | null {
   return days === 0 ? "same day" : `${days} ${days === 1 ? "day" : "days"}`;
 }
 
-/** A book row's dates (task 1.17): while Reading, `Started 21 Sep`; once Read,
+/** A book row's dates (task 1.17): while Reading or Listening, `Started 21 Sep`; once Read,
  * `Started 1 Mar · finished 17 Mar · 16 days`. Null with no dated start: the
  * status badge already says when it was read. */
 export function bookDates(b: {
@@ -73,7 +73,7 @@ export function bookDates(b: {
   finished_on: string | null; finished_on_precision: Precision; days_taken: number | null;
 }, now = new Date()): string | null {
   const start = dayWhen(b.started_on, b.started_on_precision, now);
-  if (!start || (b.status !== "reading" && b.status !== "read")) return null;
+  if (!start || (b.status !== "reading" && b.status !== "listening" && b.status !== "read")) return null;
   const finish = b.status === "read" ? dayWhen(b.finished_on, b.finished_on_precision, now) : null;
   return [`Started ${start}`, finish && `finished ${finish}`, finish && readDays(b.days_taken)]
     .filter(Boolean).join(" · ");
@@ -117,7 +117,8 @@ export function quarterName(period: string): string {
 }
 
 const PLACE: Record<string, string> = {
-  someday: "Someday", on_deck: "On deck", reading: "Reading", read: "Read", dnf: "DNF", unlisted: "Unlisted",
+  someday: "Someday", on_deck: "On deck", reading: "Reading", listening: "Listening", read: "Read", dnf: "DNF",
+  unlisted: "Unlisted",
 };
 
 /**
@@ -135,4 +136,18 @@ export function placeTag(b: { status: string | null; level: string | null; perio
   }
   if (b.status === "unlisted" && b.calibre) return "Unlisted · Calibre";
   return PLACE[b.status] ?? b.status;
+}
+
+/** A book's reads and listens, counted apart (task 1.23, owner 2026-10-31):
+ * `Read 2× · Listened 1×`, each part only above zero; null with neither. */
+export function readSummary({ reads, listens }: { reads: number; listens: number }): string | null {
+  return [reads > 0 && `Read ${reads}×`, listens > 0 && `Listened ${listens}×`].filter(Boolean).join(" · ") || null;
+}
+
+/** The headphones glyph's name (task 1.23): *Listening* while the book is being
+ * listened to, *Listened* once it has a listen, whatever its other reads; null,
+ * no glyph, for a book only ever read on the page. */
+export function listenGlyph(status: string | null, listened: boolean): "Listening" | "Listened" | null {
+  if (status === "listening") return "Listening";
+  return listened ? "Listened" : null;
 }

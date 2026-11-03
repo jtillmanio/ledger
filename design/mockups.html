@@ -2800,7 +2800,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
   <ul>
     <li><b>Phone shows comics In flight; desktop shows books Up next.</b> Same component. What fills a row differs by medium, and the tabs never do.</li>
     <li><b>Comics.</b> <i>In flight</i> is runs partly read, most recently touched first, each with a one-tap <b>Read #N</b> at the resume pointer. <i>Up next</i> is <b>your queue</b> first, in your order, with drag handles, <b>Move to top</b> and <b>Remove</b> in each row menu. Queued blocked runs keep their amber badge. Below the queue, <i>Ready, not queued</i> lists runs you could start tonight, in track → block order, each with <b>+ Up next</b>. The queue has no dates and never will; a plan with periods is for books. <i>Done</i> is finished runs, each with its span, <i>Read Mar&ndash;Sep 2026</i> (<span class="chg">Nov 2026, task 1.17</span>). A run whose issues were all read in <i>other</i> runs is not done: read state is per run.</li>
-    <li><b>Books.</b> <i>In flight</i> is what you are reading, with words left. <i>Up next</i> is the plan by level: quarter by quarter, the bare-year lane in amber with a <b>Place them</b> button (the 2.8 flow), then On deck. <span class="chg">Oct 2026 (D-37):</span> each quarter is in your order, with the queue's drag handle and row menu (<b>Move to top · Move up · Move down</b>, plus <b>Move…</b> once 2.3 lands). A row never drags into another quarter; that is Move. The year lane and On deck are unordered. Someday is not listed: a closing row opens the master list at that level. The plan rail stacks the same order from the foot of each column, so the books past the capacity rule are the ones you ranked last. <i>Done</i> is read books grouped by year; a book with a dated start carries <i>Started 1 Mar &middot; finished 17 Mar &middot; 16 days</i> under its author (<span class="chg">Nov 2026, task 1.17</span>).</li>
+    <li><b>Books.</b> <i>In flight</i> is what you are reading, with words left: under <b>Reading</b>, then what you are listening to under its own <b>Listening</b> heading, each heading drawn only when it has a book (<span class="chg">Nov 2026, task 1.23</span>). A row with a listen, on any tab, carries the headphones glyph after its title, named <i>Listening</i> or <i>Listened</i>. <i>Up next</i> is the plan by level: quarter by quarter, the bare-year lane in amber with a <b>Place them</b> button (the 2.8 flow), then On deck. <span class="chg">Oct 2026 (D-37):</span> each quarter is in your order, with the queue's drag handle and row menu (<b>Move to top · Move up · Move down</b>, plus <b>Move…</b> once 2.3 lands). A row never drags into another quarter; that is Move. The year lane and On deck are unordered. Someday is not listed: a closing row opens the master list at that level. The plan rail stacks the same order from the foot of each column, so the books past the capacity rule are the ones you ranked last. <i>Done</i> is read books grouped by year; a book with a dated start carries <i>Started 1 Mar &middot; finished 17 Mar &middot; 16 days</i> under its author (<span class="chg">Nov 2026, task 1.17</span>).</li>
     <li><b>Film &amp; TV.</b> <i>In flight</i> is shows mid-season-list (state derived from <code>show_progress</code>) and films marked watching. <i>Up next</i> is to-watch, with the dashboard's film/TV and genre filters. <i>Done</i> is watched.</li>
     <li><b>Stopped isn't hidden.</b> DNF books and dropped titles collapse under <i>Stopped</i> at the foot of Done. Finished is finished, even when it wasn't the ending you planned.</li>
     <li><b>Counts on the tabs, in mono.</b> They are tabular data, and they are the answer to "how much is in flight" before you tap anything.</li>
@@ -3130,7 +3130,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
         <span class="edge" style="background:var(--g5)"></span><span class="cv m k1">WOK</span>
         <div class="rb"><span class="rh"><span class="rt">The Way of Kings</span><span class="rm">387k</span></span>
           <div class="rs">Brandon Sanderson · Stormlight Archive #1</div>
-          <div class="opts" role="radiogroup"><b role="radio" aria-checked="true" tabindex="0" data-on>To read</b><b role="radio" aria-checked="false" tabindex="0">Reading</b><b role="radio" aria-checked="false" tabindex="0">Read</b><b role="radio" aria-checked="false" tabindex="0" class="dnf">DNF</b></div>
+          <div class="opts" role="radiogroup"><b role="radio" aria-checked="true" tabindex="0" data-on>To read</b><b role="radio" aria-checked="false" tabindex="0">Reading</b><b role="radio" aria-checked="false" tabindex="0">Listening</b><b role="radio" aria-checked="false" tabindex="0">Read</b><b role="radio" aria-checked="false" tabindex="0" class="dnf">DNF</b></div>
           <div class="btnrow" style="margin-top:.5rem"><button class="btn sec sm">Plan for…</button><button class="btn sec sm">Add to shelf</button></div></div></div>
       <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k4">TRS</span>
         <div class="rb"><span class="rh"><span class="rt">Tress of the Emerald Sea</span><span class="rm">118k</span></span>
@@ -3143,16 +3143,24 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
           <div class="rs" style="font-size:.75rem">Started 21 Oct</div>
           <div style="margin-top:.375rem"><span class="bdg">reading</span></div></div>
         <span class="chev">&#8250;</span></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k4">EMP</span>
+        <div class="rb"><span class="rh"><span class="rt">The Emperor&rsquo;s Soul</span><span class="rm">2026 &middot; 48k</span></span>
+          <div class="rs">Brandon Sanderson &middot; Cosmere</div>
+          <div class="rs" style="font-size:.75rem">Started 28 Oct</div>
+          <div style="margin-top:.375rem;display:flex;align-items:center;gap:.5rem"><span class="bdg">listening</span><svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></div></div>
+        <span class="chev">&#8250;</span></div>
       <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span>
         <div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">2026 · 226k</span></span>
           <div class="rs">Brandon Sanderson · Cosmere</div>
           <div class="rs" style="font-size:.75rem">Started 1 Mar · finished 17 Mar · 16 days</div>
+          <div class="rs mono" style="font-size:.75rem">Read 1&times;</div>
           <div style="margin-top:.375rem"><span class="bdg dn">read Mar 2026</span></div></div>
         <span class="chev">&#8250;</span></div>
       <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span>
         <div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span>
           <div class="rs">Brandon Sanderson · Mistborn #1</div>
-          <div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span> <span class="tag">#3 that year</span></div></div>
+          <div class="rs mono" style="font-size:.75rem">Read 2&times; &middot; Listened 1&times;</div>
+          <div style="margin-top:.375rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap"><span class="bdg dn">read Jul 2022</span><svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listened" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg> <span class="tag">#3 that year</span></div></div>
         <span class="chev">&#8250;</span></div>
       <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">ELN</span>
         <div class="rb"><span class="rh"><span class="rt">Elantris</span><span class="rm">202k</span></span>
@@ -3173,7 +3181,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
         <span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span>
         <div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span>
           <div class="rs">Brandon Sanderson · Mistborn #1</div>
-          <div class="opts" role="radiogroup" aria-label="Status"><b role="radio" aria-checked="false" tabindex="-1">To read</b><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="true" tabindex="0" data-on>Read</b><b role="radio" aria-checked="false" tabindex="-1" class="dnf">DNF</b></div>
+          <div class="opts" role="radiogroup" aria-label="Status"><b role="radio" aria-checked="false" tabindex="-1">To read</b><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">Listening</b><b role="radio" aria-checked="true" tabindex="0" data-on>Read</b><b role="radio" aria-checked="false" tabindex="-1" class="dnf">DNF</b></div>
           <div class="btnrow" style="margin-top:.625rem"><button class="btn sec sm" aria-expanded="false">Started no date</button><button class="btn sec sm" aria-expanded="true">Finished 2022, approximate</button></div>
           <div class="rs" style="margin-top:.625rem">Finished</div>
           <div class="opts" role="radiogroup" aria-label="Finished"><b role="radio" aria-checked="false" tabindex="-1">Today</b><b role="radio" aria-checked="false" tabindex="-1">Pick a date</b><b role="radio" aria-checked="true" tabindex="0" data-on>Year only</b><b role="radio" aria-checked="false" tabindex="-1">No date</b></div>
@@ -3194,7 +3202,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
         <div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">2026 · 226k</span></span>
           <div class="rs">Brandon Sanderson · Cosmere</div>
           <div class="rs" style="font-size:.75rem">Started 1 Mar · finished 17 Mar · 16 days</div>
-          <div class="opts" role="radiogroup" aria-label="Status"><b role="radio" aria-checked="false" tabindex="-1">To read</b><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="true" tabindex="0" data-on>Read</b><b role="radio" aria-checked="false" tabindex="-1" class="dnf">DNF</b></div>
+          <div class="opts" role="radiogroup" aria-label="Status"><b role="radio" aria-checked="false" tabindex="-1">To read</b><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">Listening</b><b role="radio" aria-checked="true" tabindex="0" data-on>Read</b><b role="radio" aria-checked="false" tabindex="-1" class="dnf">DNF</b></div>
           <div class="btnrow" style="margin-top:.625rem"><button class="btn sec sm" aria-expanded="true">Started 1 March 2026</button><button class="btn sec sm" aria-expanded="false">Finished 17 March 2026</button></div>
           <div class="rs" style="margin-top:.625rem">Started</div>
           <div class="opts" role="radiogroup" aria-label="Started"><b role="radio" aria-checked="false" tabindex="-1">Today</b><b role="radio" aria-checked="true" tabindex="0" data-on>Pick a date</b><b role="radio" aria-checked="false" tabindex="-1">Year only</b><b role="radio" aria-checked="false" tabindex="-1">No date</b></div>
@@ -3244,7 +3252,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
         <span class="edge" style="background:var(--g5)"></span><span class="cv m k1">WOK</span>
         <div class="rb"><span class="rh"><span class="rt">The Way of Kings</span><span class="rm">387k</span></span>
           <div class="rs">Brandon Sanderson · Stormlight Archive #1</div>
-          <div class="opts" role="radiogroup"><b role="radio" aria-checked="true" tabindex="0" data-on>To read</b><b role="radio" aria-checked="false" tabindex="0">Reading</b><b role="radio" aria-checked="false" tabindex="0">Read</b><b role="radio" aria-checked="false" tabindex="0" class="dnf">DNF</b></div>
+          <div class="opts" role="radiogroup"><b role="radio" aria-checked="true" tabindex="0" data-on>To read</b><b role="radio" aria-checked="false" tabindex="0">Reading</b><b role="radio" aria-checked="false" tabindex="0">Listening</b><b role="radio" aria-checked="false" tabindex="0">Read</b><b role="radio" aria-checked="false" tabindex="0" class="dnf">DNF</b></div>
           <div class="btnrow" style="margin-top:.5rem"><button class="btn sec sm">Plan for…</button><button class="btn sec sm">Add to shelf</button></div></div></div>
       <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k4">TRS</span>
         <div class="rb"><span class="rh"><span class="rt">Tress of the Emerald Sea</span><span class="rm">118k</span></span>
@@ -3257,16 +3265,24 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
           <div class="rs" style="font-size:.75rem">Started 21 Oct</div>
           <div style="margin-top:.375rem"><span class="bdg">reading</span></div></div>
         <span class="chev">&#8250;</span></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k4">EMP</span>
+        <div class="rb"><span class="rh"><span class="rt">The Emperor&rsquo;s Soul</span><span class="rm">2026 &middot; 48k</span></span>
+          <div class="rs">Brandon Sanderson &middot; Cosmere</div>
+          <div class="rs" style="font-size:.75rem">Started 28 Oct</div>
+          <div style="margin-top:.375rem;display:flex;align-items:center;gap:.5rem"><span class="bdg">listening</span><svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></div></div>
+        <span class="chev">&#8250;</span></div>
       <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span>
         <div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">2026 · 226k</span></span>
           <div class="rs">Brandon Sanderson · Cosmere</div>
           <div class="rs" style="font-size:.75rem">Started 1 Mar · finished 17 Mar · 16 days</div>
+          <div class="rs mono" style="font-size:.75rem">Read 1&times;</div>
           <div style="margin-top:.375rem"><span class="bdg dn">read Mar 2026</span></div></div>
         <span class="chev">&#8250;</span></div>
       <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span>
         <div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span>
           <div class="rs">Brandon Sanderson · Mistborn #1</div>
-          <div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span> <span class="tag">#3 that year</span></div></div>
+          <div class="rs mono" style="font-size:.75rem">Read 2&times; &middot; Listened 1&times;</div>
+          <div style="margin-top:.375rem;display:flex;align-items:center;gap:.5rem;flex-wrap:wrap"><span class="bdg dn">read Jul 2022</span><svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listened" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg> <span class="tag">#3 that year</span></div></div>
         <span class="chev">&#8250;</span></div>
     </div>
       <a class="fab">+ Add books</a>
@@ -3290,6 +3306,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
     <li><span class="chg">Marking a book read (TASKS 1.5, M-13):</span> choosing <b>Read</b> opens <b>Finished</b>: <i>Today</i> and <i>Pick a date</i> store an exact date; <i>Year only</i> stores 1 July of that year as <code>approximate</code>; <i>No date</i> stores NULL with precision <code>none</code>. The same control sits in the book detail sheet. There is no <i>Spread</i>: that is for ranges of issues.</li>
     <li><span class="chg">Started and finished (task 1.17, data model 2.18):</span> a book being read carries <i>Started 21 Oct</i> under its author, and a finished one <i>Started 1 Mar &middot; finished 17 Mar &middot; 16 days</i> (the year only outside this one). Days taken is worked out by the query, only between two exact days, and never stored; a book with no start shows neither. Setting <b>Reading</b> stamps today unless a start is already held; finishing moves the start onto that read, so a reread starts afresh and keeps the first read's. Expanded, a Reading or Read row has a <b>date line</b>: <b>Started &hellip;</b> and, once read, <b>Finished &hellip;</b>, real buttons named with their dates (second frame), each opening the same four choices. On a Read book <i>Started</i> edits that read's start. A start after the finish can't be saved: the reason sits under the control, grey and announced, and Save says why it is unavailable (third frame). Undo puts the start back.</li>
     <li><span class="chg">Unlisted (task 1.21, D-83, D-86):</span> the books you have but haven't put on your list sit below Someday. <b>Unlisted &middot; N</b> follows <b>Read</b> and is the only chip that lists them (hidden at zero); <i>Everything</i>, the genre and year chips, the plan and every count leave them out, and a search finds them. The row's badge is grey (a level, not a state) with <b>Add to Someday</b> beside it, which writes <code>to_read</code> with Undo. No status button sets Unlisted.</li>
+    <li><span class="chg">Audiobooks (task 1.23, D-85):</span> <b>Listening</b> sits beside <b>Reading</b> in the status control: one read in progress, by eye or by ear, and switching keeps the start. Finishing from Listening logs a listen, which is a read everywhere reads count. A drawn headphones glyph, an image named <i>Listening</i> while the book is and <i>Listened</i> once it has a listen, sits beside the badge, in the text&rsquo;s own colour; a book only ever read on the page has none. Under the dates the row counts its reads and listens apart, each only above zero: <i>Read 2&times; &middot; Listened 1&times;</i>, <i>Listened 1&times;</i>, <i>Read 1&times;</i>. The <b>Reading</b> chip lists Listening books too; there is no chip of its own.</li>
     <li><b>Still open:</b> is rating five stars, ten points, or just your top-10 ranking? Your sheet only ever used the ranking.</li>
   </ul></div>
 </section>
@@ -3309,7 +3326,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
       <div class="row"><span class="cv m k2">BTH</span>
         <div class="rb"><span class="rh"><span class="rt">Before They Are Hanged</span><span class="rm">2007</span></span>
           <div class="rs">Joe Abercrombie · First Law #2 · 543 pages</div>
-          <div style="margin-top:.375rem;display:flex;gap:.3125rem;flex-wrap:wrap;align-items:center"><span class="tag">Q1 2027</span><span class="small faint">on 1 shelf</span></div></div>
+          <div style="margin-top:.375rem;display:flex;gap:.3125rem;flex-wrap:wrap;align-items:center"><span class="tag">Q1 2027</span><svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listened" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg><span class="small faint">on 1 shelf</span></div></div>
         <button class="btn sec sm">Add</button></div>
     </div>
     <h3 class="s" style="margin-top:.75rem">From Hardcover<span class="more">2 new</span></h3>
@@ -3374,7 +3391,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
       <div class="row"><span class="cv m k2">BTH</span>
         <div class="rb"><span class="rh"><span class="rt">Before They Are Hanged</span><span class="rm">2007</span></span>
           <div class="rs">Joe Abercrombie · First Law #2 · 543 pages</div>
-          <div style="margin-top:.375rem;display:flex;gap:.3125rem;flex-wrap:wrap;align-items:center"><span class="tag">Q1 2027</span><span class="small faint">on 1 shelf</span></div></div>
+          <div style="margin-top:.375rem;display:flex;gap:.3125rem;flex-wrap:wrap;align-items:center"><span class="tag">Q1 2027</span><svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listened" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg><span class="small faint">on 1 shelf</span></div></div>
         <button class="btn sec sm">Add</button></div>
     </div>
     <h3 class="s" style="margin-top:.75rem">From Hardcover<span class="more">2 new</span></h3>
@@ -3405,6 +3422,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
 <div class="notes"><h3>Add books</h3>
   <ul>
     <li><span class="chg">Nov 2026 (D-84, task 1.22):</span> <b>Searches as you type</b>: 3 characters and a 500 ms pause, Enter at once; a newer query drops the older one's answer. Every row has <b>one tag</b> saying where it came from, in text and in the row's name: a library book where it sits (<i>Someday</i>, <i>On deck</i>, <i>Q1 2027</i>, <i>2027</i>, <i>Reading</i>, <i>Read</i>, <i>DNF</i>, <i>Unlisted</i>, <i>Not on your list</i>), a Hardcover book <i>Hardcover</i>. Calibre is named only on a book it has that isn't on your list: <i>Unlisted · Calibre</i>. The shelf count and the word estimate are plain text beside the tag.</li>
+    <li><span class="chg">Audiobooks (task 1.23):</span> a library book you have listened to, or are listening to, carries the headphones glyph beside its tag, an image named <i>Listened</i> or <i>Listening</i>, never in it: the row&rsquo;s name stays its title and its place. <i>Listening</i> is a place a tag can say, as <i>Reading</i> is.</li>
     <li><b>Desktop:</b> Search on the left, paste on the right — the two entry paths side by side rather than one hidden under the other.</li>
     <li>Reachable from the floating button on every books screen, and from an empty search result.</li>
     <li><b>Hardcover search</b> brings page count, year, cover and series, so word count can be estimated. Same title by different authors is disambiguated by metadata, not by you guessing.</li>
