@@ -312,7 +312,7 @@ with the task that first reads it.
 | ✅ | 1.4f → TASK-040 | Add books searches Hardcover | M |  | — |
 | ✅ | 1.19 → TASK-038 | Comics Add remembers the last run | S |  | 1.8, 1.3c |
 | ✅ | 1.22 → TASK-041 | Search as you type, and where each result comes from | M |  | 1.21, 1.4f |
-|  | 1.24 | Wishlist accept promotes an Unlisted book to Someday | S | _Removed 2026-11-02: replaced by 1.27 (D-111); TASK-042 closed unmerged, PR #182_ | — |
+| ✅ | 1.24 | Wishlist accept promotes an Unlisted book to Someday | S | _Done another way: removed 2026-11-02, replaced by 1.27 (D-111); TASK-042 closed unmerged, PR #182_ | — |
 | ✅ | 1.17 → TASK-039 | Started and finished: a start date for books, a derived span for runs | M |  | — |
 |  | 1.23 → TASK-043 | Audiobooks: listening, and a listen that counts as a read | M |  | 1.5, 1.17 |
 | ✅ | 1.27 → TASK-044 | Extract resolves the wishlist, before cutover | M |  | 1.18, 1.21 |
