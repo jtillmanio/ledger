@@ -238,7 +238,8 @@ test.describe("comics", () => {
   test("Done: a run with every placement read, newest first", async ({ page }, info) => {
     await open(page, "/comics/status?tab=done");
     await expect(panel(page).locator("article.row .row-title")).toHaveText(["E2E St done"]);
-    await expect(panel(page)).toContainText("Finished");
+    // When it was read: its span since task 1.17 (*Read Mar–Sep 2026*, one month alone *Read Nov 2026*).
+    await expect(panel(page).locator("article.row .row-sub")).toContainText(/^Read (~?[A-Z][a-z]{2}–)?~?[A-Z][a-z]{2} \d{4}/);
     expect(await counted(page, "Done")).toBe(await panel(page).locator("article.row").count());
     await floor(page);
     await screenshot(page, info, "comics-done");

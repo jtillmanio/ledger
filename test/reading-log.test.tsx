@@ -111,11 +111,15 @@ const status = async () => (await sql`
 const pressed = () => [...container.querySelectorAll(".status-group button[aria-pressed='true']")]
   .map((b) => b.textContent);
 
-function renderBook(row: { status: string; on?: string | null; precision?: "exact" | "approximate" | "none" }) {
+function renderBook(row: {
+  status: string; on?: string | null; precision?: "exact" | "approximate" | "none";
+  started?: string | null; startPrecision?: "exact" | "approximate" | "none";
+}) {
   act(() => root.render(
     <UndoProvider>
       <BookStatus bookId="wok" status={row.status}
-        finishedOn={row.on ?? null} precision={row.precision ?? "none"} />
+        finishedOn={row.on ?? null} precision={row.precision ?? "none"}
+        startedOn={row.started ?? null} startPrecision={row.startPrecision ?? "none"} />
     </UndoProvider>,
   ));
 }
@@ -133,6 +137,9 @@ async function yearOnly(year: number) {
 
 describe("the master list's status control", () => {
   it("to_read → reading → read round-trips through the UI, and Year only 2019 stores 2019-07-01 approximate", async () => {
+    // Reading stamps today as the start (task 1.17): a 2019 today keeps Year only 2019 no earlier than it.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2019-08-01T17:00:00Z"));
     await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'wok', 'to_read')`;
     renderBook({ status: "to_read" });
     await expand();
@@ -241,6 +248,162 @@ describe("the master list's status control", () => {
     await click(button("Undo"));
     expect(await sql`SELECT 1 FROM read_events`).toHaveLength(0);
     expect(pressed()).toEqual(["Reading"]);
+  });
+});
+
+describe("the status control's date line (task 1.17, AC-6)", () => {
+  const started = () => [...container.querySelectorAll<HTMLButtonElement>(".date-line button")]
+    .map((b) => b.textContent);
+  const reasonLine = () => container.querySelector<HTMLParagraphElement>(".sheet-reason")!;
+  async function pickDay(date: string) {
+    await click(radio("Pick a date"));
+    const input = container.querySelector<HTMLInputElement>('input[type="date"]')!;
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, date);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  }
+  const startOf = async () => (await sql`
+    SELECT started_on::text AS on, started_on_precision AS p FROM book_status WHERE book_id = 'wok'`)[0];
+
+  it("Started and Finished are real buttons named with the dates they hold", async () => {
+    renderBook({ status: "read", on: "2026-03-17", precision: "exact", started: "2026-03-01", startPrecision: "exact" });
+    await expand();
+    expect(started()).toEqual(["Started 1 March 2026", "Finished 17 March 2026"]);
+    for (const b of container.querySelectorAll(".date-line > *")) expect(b.tagName).toBe("BUTTON");
+    act(() => root.unmount());
+    root = createRoot(container);
+    renderBook({ status: "reading", started: "2025-07-01", startPrecision: "approximate" });
+    await expand();
+    expect(started()).toEqual(["Started 2025, approximate"]);
+  });
+
+  it("A to-read book has no date line; the same book being read has one", async () => {
+    renderBook({ status: "reading", started: "2026-03-02", startPrecision: "exact" });
+    await expand();
+    expect(started()).toEqual(["Started 2 March 2026"]);
+    // The server's row comes back as To read (as a refresh brings it): the line goes.
+    renderBook({ status: "to_read", started: "2026-03-02", startPrecision: "exact" });
+    expect(container.querySelector(".date-line")).toBeNull();
+  });
+
+  it("Started opens the four named radio inputs; Cancel, Esc and Save put focus back on Started", async () => {
+    await sql`INSERT INTO book_status (user_id, book_id, status, started_on, started_on_precision)
+              VALUES (${USER}, 'wok', 'reading', '2026-03-02', 'exact')`;
+    renderBook({ status: "reading", started: "2026-03-02", startPrecision: "exact" });
+    await expand();
+    const opener = () => button("Started 2 March 2026");
+    await click(opener());
+    expect(container.querySelector("legend")!.textContent).toBe("Started");
+    const radios = [...container.querySelectorAll<HTMLInputElement>('fieldset input[type="radio"]')];
+    expect(radios.map((r) => r.closest("label")!.textContent)).toEqual(["Today", "Pick a date", "Year only", "No date"]);
+    expect(radios.every((r) => r.name === "started-wok")).toBe(true);
+    expect(opener().getAttribute("aria-expanded")).toBe("true");
+
+    await click(button("Cancel"));
+    expect(container.querySelector("fieldset")).toBeNull();
+    expect(document.activeElement).toBe(opener());
+    await click(opener());
+    await key("Escape");
+    expect(container.querySelector("fieldset")).toBeNull();
+    expect(document.activeElement).toBe(opener());
+
+    await click(opener());
+    await yearOnly(2025);
+    await click(button("Save"));
+    expect(await startOf()).toEqual({ on: "2025-07-01", p: "approximate" });
+    expect(document.activeElement).toBe(button("Started 2025, approximate"));
+    // Its undo puts the day back.
+    await click(button("Undo"));
+    expect(await startOf()).toEqual({ on: "2026-03-02", p: "exact" });
+    expect(started()).toEqual(["Started 2 March 2026"]);
+  });
+
+  it("a start after the finish can't be saved: the reason sits under the control, announced, and nothing is written", async () => {
+    await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+              VALUES (${USER}, 'wok', 'read', '2026-03-17', 'exact')`;
+    await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, started_on, started_on_precision)
+              VALUES (${USER}, 'wok', '2026-03-17', 'exact', '2026-03-01', 'exact')`;
+    renderBook({ status: "read", on: "2026-03-17", precision: "exact", started: "2026-03-01", startPrecision: "exact" });
+    await expand();
+    await click(button("Started 1 March 2026"));
+    await pickDay("2026-03-20");
+    expect(reasonLine().getAttribute("aria-live")).toBe("polite");
+    expect(reasonLine().textContent).toBe("That's after the day you finished.");
+    const save = button("Save");
+    expect(save.getAttribute("aria-disabled")).toBe("true");
+    expect(save.getAttribute("aria-describedby")).toBe(reasonLine().id);
+    await click(save);
+    expect(await sql`SELECT started_on::text AS on FROM read_events`).toEqual([{ on: "2026-03-01" }]);
+    // Grey, never --danger: a validation reason, not a destructive action.
+    expect(reasonLine().classList.contains("muted")).toBe(true);
+    expect(reasonLine().classList.contains("sheet-error")).toBe(false);
+  });
+
+  it("a finish before the start in progress shows why, and so does the server's refusal", async () => {
+    // The server holds a start the row doesn't know of yet: the client lets it through, the server refuses.
+    await sql`INSERT INTO book_status (user_id, book_id, status, started_on, started_on_precision)
+              VALUES (${USER}, 'wok', 'reading', '2026-03-10', 'exact')`;
+    renderBook({ status: "reading", started: "2026-03-10", startPrecision: "exact" });
+    await expand();
+    await click(button("Read"));
+    await pickDay("2026-03-05");
+    expect(reasonLine().textContent).toBe("That's before the day you started.");
+
+    act(() => root.unmount());
+    root = createRoot(container);
+    renderBook({ status: "reading" });
+    await expand();
+    await click(button("Read"));
+    await pickDay("2026-03-05");
+    expect(reasonLine().textContent).toBe("");
+    await click(button("Save"));
+    expect(reasonLine().textContent).toBe("Not saved: the start is after the finish.");
+    expect(await sql`SELECT 1 FROM read_events`).toHaveLength(0);
+    expect(container.querySelector("fieldset")).not.toBeNull();
+    // A new choice clears the server's reason: it was about the last one.
+    await click(radio("No date"));
+    expect(reasonLine().textContent).toBe("");
+  });
+
+  it("the date line, the row's dates and the hero's span never resolve to --danger", () => {
+    const css = readFileSync("src/app/globals.css", "utf8");
+    const rules = css.split("}").filter((r) => /\.(date-line|row-dates|runhero-span)\b/.test(r));
+    expect(rules).toHaveLength(3);
+    expect(rules.every((r) => !r.includes("--danger"))).toBe(true);
+  });
+});
+
+describe("the run hero's span line (task 1.17, AC-5)", () => {
+  beforeEach(async () => {
+    await sql`INSERT INTO runs (id, title) VALUES ('r', 'Run')`;
+    await sql`INSERT INTO issues (id, label) VALUES ('x1', 'X #1'), ('x2', 'X #2')`;
+    await sql`INSERT INTO run_issues (run_id, sequence, issue_id) VALUES ('r', 1, 'x1'), ('r', 2, 'x2')`;
+  });
+  function renderRun(read: boolean[], span: { started?: string | null; span?: string | null }) {
+    const issues = read.map((completed, i) => ({
+      id: `x${i + 1}`, placement_id: i + 1, sequence: i + 1, label: `X #${i + 1}`, type: "core", notes: null,
+      completed, read_elsewhere: [], read_elsewhere_when: null,
+    }));
+    act(() => root.render(
+      <UndoProvider><RunSpine runId="r" title="Run" issues={issues} {...span} /></UndoProvider>,
+    ));
+  }
+  const line = () => container.querySelector(".runhero-span")?.textContent ?? null;
+
+  it("reads Started Mar 2026 while unread remain and Mar–Sep 2026 once every placement is read", () => {
+    renderRun([true, false], { started: "Started Mar 2026" });
+    expect(line()).toBe("Started Mar 2026");
+    renderRun([true, true], { started: "Started Mar 2026", span: "Mar–Sep 2026" });
+    expect(line()).toBe("Mar–Sep 2026");
+  });
+
+  it("a run whose reads are all undated shows no span line, while a dated one does", () => {
+    renderRun([true, true], { started: "Started Mar 2026", span: "Mar 2026" });
+    expect(line()).toBe("Mar 2026");
+    // The server gives an all-undated run neither string.
+    renderRun([true, true], { started: null, span: null });
+    expect(line()).toBeNull();
   });
 });
 

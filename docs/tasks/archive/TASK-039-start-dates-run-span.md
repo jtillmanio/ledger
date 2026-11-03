@@ -1,14 +1,14 @@
 ---
 id: TASK-039
 title: 1.17 Started and finished: a start date for books, a derived span for runs
-status: Ready
+status: Done
 depends_on: []
 size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 4d09f77
 ---
 
 # TASK-039 — 1.17 Started and finished: a start date for books, a derived span for runs
@@ -37,7 +37,7 @@ When you start a book, the day you started is kept, and every finished read keep
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim):
+- [x] AC-1 (roadmap **Check:**, verbatim):
   - Setting a book to Reading writes `started_on` as today in Eastern, `exact`.
   - Finishing it appends a `read_events` row carrying the same start.
   - Rereading it sets a fresh `started_on` and leaves the first read's row as it
@@ -48,11 +48,11 @@ When you start a book, the day you started is kept, and every finished read keep
     run's own placements, ignores a read of the same issue in another run and a
     `none` read, and is NULL for a run with no dated read.
   - `npm run test:db:reset` migrates from zero.
-- [ ] AC-2: Against the TEST database (`test/reading-log.test.ts` or a new `test/start-dates.test.ts`): a `book_status` or `read_events` row with `started_on` set and precision `none`, or NULL and precision `exact`, violates its CHECK. A start after the finish returns 400 from `POST /api/progress/book`, and the book's `book_status` and `read_events` rows are byte-for-byte what they were. Setting *Reading* on a book whose existing `rating` is 4 leaves it 4 (R0-C1).
-- [ ] AC-3: Given *Year only* 2025 chosen for a start, the stored start is `2025-07-01` / `approximate`; given *No date*, NULL / `none`; and *Undo* of the change that stamped a start puts back the start, precision and status that were there before (`undoBookStatus`).
-- [ ] AC-4: On the master list, a book being read shows *Started* with its start in its row, and a finished one with a dated start shows its start, its finish and the days taken; the days taken equal the finish minus the start in days, computed in the query (a fixture: started 2026-03-01, finished 2026-03-17 shows *16 days*). A book with a `none` start shows no start and no days.
-- [ ] AC-5: Given a run with dated reads in March and September 2026, its hero's span line reads *Started Mar 2026* while unread placements remain and *Mar–Sep 2026* once every placement is read, and its row on Status's *Done* tab shows the same span. A run whose reads are all `none` shows no span line.
-- [ ] AC-6: The status control's date line and the run hero's span line meet the UX floor (`docs/04-design.md` § 10. The UX floor): *Started* and *Finished* are real buttons whose accessible names include the date they hold; the start's picker options are named radio inputs; the refused-start reason sits under the control and is announced; focus returns to the opener when the picker closes; nothing in either resolves to `--danger`; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-2: Against the TEST database (`test/reading-log.test.ts` or a new `test/start-dates.test.ts`): a `book_status` or `read_events` row with `started_on` set and precision `none`, or NULL and precision `exact`, violates its CHECK. A start after the finish returns 400 from `POST /api/progress/book`, and the book's `book_status` and `read_events` rows are byte-for-byte what they were. Setting *Reading* on a book whose existing `rating` is 4 leaves it 4 (R0-C1).
+- [x] AC-3: Given *Year only* 2025 chosen for a start, the stored start is `2025-07-01` / `approximate`; given *No date*, NULL / `none`; and *Undo* of the change that stamped a start puts back the start, precision and status that were there before (`undoBookStatus`).
+- [x] AC-4: On the master list, a book being read shows *Started* with its start in its row, and a finished one with a dated start shows its start, its finish and the days taken; the days taken equal the finish minus the start in days, computed in the query (a fixture: started 2026-03-01, finished 2026-03-17 shows *16 days*). A book with a `none` start shows no start and no days.
+- [x] AC-5: Given a run with dated reads in March and September 2026, its hero's span line reads *Started Mar 2026* while unread placements remain and *Mar–Sep 2026* once every placement is read, and its row on Status's *Done* tab shows the same span. A run whose reads are all `none` shows no span line.
+- [x] AC-6: The status control's date line and the run hero's span line meet the UX floor (`docs/04-design.md` § 10. The UX floor): *Started* and *Finished* are real buttons whose accessible names include the date they hold; the start's picker options are named radio inputs; the refused-start reason sits under the control and is announced; focus returns to the opener when the picker closes; nothing in either resolves to `--danger`; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -86,13 +86,96 @@ When you start a book, the day you started is kept, and every finished read keep
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- `docs/03-data-model.md` § 2.18 says *proposed, settled at its plan gate*: settle it with the plan's answers (approved at plan) → docs/03-data-model.md § 2.18 (settled in this branch)
+- *Started* alone on a Read book whose read lives only in `book_status` (the workbook's shape) was refused with a 400; it now logs that read with its own finish, and Undo removes it (schema and spec review R1) → not tracked: done in this PR (review fix, inside plan step 3)
+- Setting *Reading* stamps today, so finishing that read with an earlier day (backfilling an old read by way of Reading) is refused as a start after the finish until *Started* is changed or set to *No date*; going straight from To read to Read is unaffected → not tracked: the roadmap Check's rule, raised with the owner in the PR
+- The run hero's span line is the server's, so a run's very first mark shows *Started …* only after the next load (finishing already refreshes) → not tracked: accepted at plan (Risk)
+- 3.5's book sheet shows both dates → not tracked: already noted in docs/05-roadmap.md § 3.5
+- ui-verifier: the date line's *Started* and *Finished* buttons are 34px tall → not tracked: meets the UX floor (24px; 44px is for thumb-bar and icon buttons), the same `btn sec sm` as Save and Cancel
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-03 (owner), with the schema change. The plan gate settled:
+
+- **A start belongs to the read in progress.** `book_status.started_on` is the
+  start of the read not yet finished. Finishing moves it into the log: the new
+  `read_events` row carries it and `book_status`'s goes back to NULL / `none`.
+  A Read book's row reads its start from its latest `read_events` row.
+- **Entering Reading stamps today (Eastern, `exact`) unless `book_status`
+  already holds a start.** So *To read → Reading* and *DNF → Reading* keep the
+  stored start (DNF never finished a read), and *Read → Reading* always gets a
+  fresh one, because finishing cleared it.
+- **The start is editable while Read**: *Started* on a Read book edits the
+  latest read's start, as *Finished* edits its finish. A start after today is
+  refused, as a finish is; so is a start after the finish (by year when either
+  is `approximate`).
+- **Undo** puts back the start, its precision and the status that were there,
+  and for a re-dated read the event's start too.
+
+Steps:
+
+1. `src/db/schema.ts`: `started_on date NULL`, `started_on_precision text NOT
+   NULL DEFAULT 'none'` on `book_status` and `read_events`, each with 2.17's
+   CHECK pair; `npm run db:generate` writes `drizzle/0020_*` and meta. Nothing
+   dropped or retyped: no down file; no new table: `export-tables.ts` unchanged.
+2. `src/lib/finish-date.ts`: `resolveStart(choice, finish?, now)` beside
+   `resolveFinish`, and `startAfterFinish(start, finish)`.
+3. `src/db/writes.ts` `saveBookStatus` takes an optional `start` (accepted with
+   `reading` and `read` only), stamps on entering Reading, copies onto the
+   appended read and clears `book_status`'s, edits the latest read's start on a
+   Read re-date; `BookStatusChange.prior` / `.edited` carry the start;
+   `undoBookStatus` restores it. `src/app/api/progress/book/route.ts`: `start`
+   in, 400 on a refused start before any write, the stored start in the answer.
+4. `etl/views.sql`: `run_state.started_at`, the `MIN(completed_at)` of the same
+   lateral join (`MIN` skips the `none` reads' NULLs). `etl/test_views.sql`:
+   AC-1's view cases.
+5. `src/db/queries.ts`: `listBooks` and `booksDone` select the shown start
+   (`book_status`'s while not Read, the latest read's while Read) and
+   `days_taken` (finish minus start, only when both are `exact`); `runDetail`
+   and `doneRuns` select `started_at` and its precision.
+6. `src/lib/format.ts`: `startWhen` (*21 Sep*, the year when not this year;
+   `~2025` for a year only), `readDays` (*16 days*), `runSpan` (*Started Mar
+   2026* / *Mar–Sep 2026*).
+7. UI: `src/components/FinishDate.tsx` takes a legend (*Started* / *Finished*);
+   `src/components/BookStatus.tsx` gains the date line, *Started …* and
+   *Finished …* as buttons named with their dates, each opening the picker,
+   the reason under the control in a live region, focus back on the opener;
+   `src/app/books/list/page.tsx` row line; `src/components/StatusBookRow.tsx` +
+   `src/app/books/status/page.tsx` Done rows; `src/components/IssueRow.tsx` +
+   `src/app/comics/[runId]/page.tsx` the hero's span line;
+   `src/app/comics/status/page.tsx` Done rows; `src/app/globals.css` the line's
+   layout (tokens only).
+8. `design/mockups.html` (`blist`, `spine`, `status` frames) and
+   `design/mockups-index.md` redrawn; `docs/03-data-model.md` § 2.18 settled
+   with the answers above.
+
+Files beyond "Files likely touched": `src/lib/format.ts` (the formatters),
+`src/app/comics/[runId]/page.tsx` (passes the span), `src/app/books/status/page.tsx`
+(passes the dates), `src/app/globals.css` (the date line). Over 8 files with
+schema and UI together: `never-split` keeps it whole, attended.
+
+Test strategy:
+
+- AC-1 book bullets, AC-2, AC-3: `test/start-dates.test.ts` (new, TEST DB,
+  through the route), plus the queries behind AC-4 (16 days, `none` shows
+  nothing) and AC-5 (both spans, `none`-only run has none).
+- AC-1 view bullet: `etl/test_views.sql`; from zero: `npm run test:db:reset`.
+- AC-4 to AC-6 on screen: `test/reading-log.test.tsx` (button names, radio
+  inputs, the announced reason, focus return, no `--danger`) and
+  `test/e2e/start-dates.spec.ts` (new: list row, run hero, Done rows, axe).
+- Load: `load.ps1` / `load.sh` name their `\copy` columns, so the new columns
+  take `'none'`; `test/load-scripts.test.ts` already pins the lists.
+
+Risk: the hero's span is the server's, so a run's very first mark shows
+*Started* after the next load (finishing already refreshes, `RefreshOnce`).
 
 ## Review log
 
 _Filled by /implement-task. One line per round._
+
+- Verify R1 round FAIL (my own test run collided with it on the TEST database) → R2 round FAIL(4, query budget: nested `sql` fragments counted) → full FAIL(6, `status.spec.ts` comics Done copy) → spec re-run PASS | R3 round PASS (after review fixes)
+- Audit R1 CHANGES (2 NON-DISCRIMINATING component tests) → R2 PASS
+- Spec R1 CHANGES (FOLLOW-UP NO DESTINATION) → R2 APPROVE | Schema R1 APPROVE (1 MINOR: status-only Read start edit) → R2 APPROVE | UI R1 PASS (6 widths, light and dark; dev data restored)
 
 ## Blocked
 
@@ -100,7 +183,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 round chains, 1 full chain (plus the failing spec re-run)
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0 (the start-only edit of a Read book, and its status-only fallback, are inside step 3, per spec review)

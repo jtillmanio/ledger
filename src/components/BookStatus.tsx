@@ -3,15 +3,21 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import FinishDate, {
-  finishReason, finishWords, initialFinish, toChoice, type FinishValue,
+  dateWords, finishReason, finishWords, initialFinish, storedDay, toChoice, type DateFor, type FinishValue,
 } from "@/components/FinishDate";
 import { useUndo } from "@/components/Undo";
+import { startAfterFinish } from "@/lib/finish-date";
 import { readWhen, type Precision } from "@/lib/format";
 
 /** `unlisted` (task 1.21, D-86) is shown and undone to, never chosen: no button sets it. */
 type Status = "to_read" | "reading" | "read" | "dnf" | "unlisted";
 type Finish = { on: string | null; precision: Precision };
-type Saved = { status: Status; finish: Finish };
+/** `start` is the read in progress's, or once Read the latest read's (task 1.17). */
+type Saved = { status: Status; finish: Finish; start: Finish };
+/** Which button opened the date control: focus goes back to it when it closes. */
+type Opener = "read" | "started" | "finished";
+/** The open date control: which date it sets, its value, and its opener. */
+type Editing = { what: DateFor; value: FinishValue; opener: Opener };
 
 const STATUSES: { status: Exclude<Status, "unlisted">; label: string }[] = [
   { status: "to_read", label: "To read" },
@@ -47,6 +53,14 @@ function badge({ status, finish }: Saved) {
  * pressed. On the Unlisted list the row leaves after the add; its Undo brings
  * it back with focus on *Add to Someday*.
  *
+ * The date line (task 1.17, data model 2.18): while Reading, *Started …*; once
+ * Read, *Started …* and *Finished …*. Each is a button named with the date it
+ * holds and opens the same four-choice control (*Today · Pick a date · Year
+ * only · No date*). On a Read book *Started* edits the latest read's start.
+ * A start after the finish can't be saved: the reason sits under the control,
+ * announced, and so does the server's if it refuses one. Closing the control,
+ * any way, puts focus back on the button that opened it.
+ *
  * Every saved change pushes an undo (task 1.2) whose inverse is the server's
  * own account of what it changed, so a second read's undo removes that read and
  * nothing else. The page is refreshed after a save and an undo, so the year
@@ -58,28 +72,40 @@ function badge({ status, finish }: Saved) {
  * title, which the row already shows, is read from the row rather than sent
  * again: `.row-title` in the `.book-row` around the badge.
  */
-export default function BookStatus({ bookId, status = "to_read", finishedOn = null, precision = "none" }: {
+export default function BookStatus({
+  bookId, status = "to_read", finishedOn = null, precision = "none", startedOn = null, startPrecision = "none",
+}: {
   bookId: string; status?: string; finishedOn?: string | null; precision?: Precision;
+  startedOn?: string | null; startPrecision?: Precision;
 }) {
   const router = useRouter();
   const { push } = useUndo();
-  const [saved, setSaved] = useState<Saved>({ status: status as Status, finish: { on: finishedOn, precision } });
+  const fromProps = (): Saved => ({
+    status: status as Status, finish: { on: finishedOn, precision }, start: { on: startedOn, precision: startPrecision },
+  });
+  const [saved, setSaved] = useState<Saved>(fromProps);
   const [open, setOpen] = useState(false);
-  const [finishing, setFinishing] = useState<FinishValue | null>(null);
+  const [editing, setEditing] = useState<Editing | null>(null);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
+  /** The server's reason for refusing a save (a 400), shown under the control. */
+  const [refused, setRefused] = useState<string | null>(null);
   const readButton = useRef<HTMLButtonElement>(null);
+  const startedButton = useRef<HTMLButtonElement>(null);
+  const finishedButton = useRef<HTMLButtonElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
   const addButton = useRef<HTMLButtonElement>(null);
   const [title, setTitle] = useState("this book");
   const panelId = useId();
   const reasonId = useId();
+  const openers = { read: readButton, started: startedButton, finished: finishedButton };
 
   // A refresh after a save brings the server's row back: keep it, not the last local guess.
-  const [fromServer, setFromServer] = useState({ status, finishedOn, precision });
-  if (fromServer.status !== status || fromServer.finishedOn !== finishedOn || fromServer.precision !== precision) {
-    setFromServer({ status, finishedOn, precision });
-    setSaved({ status: status as Status, finish: { on: finishedOn, precision } });
+  const props = { status, finishedOn, precision, startedOn, startPrecision };
+  const [fromServer, setFromServer] = useState(props);
+  if ((Object.keys(props) as (keyof typeof props)[]).some((k) => fromServer[k] !== props[k])) {
+    setFromServer(props);
+    setSaved(fromProps());
   }
 
   // After an undo put this book back to Unlisted, wherever its row is drawn again.
@@ -97,39 +123,60 @@ export default function BookStatus({ bookId, status = "to_read", finishedOn = nu
     return shown || title;
   }
 
-  function closeFinished() {
-    setFinishing(null);
+  function closeEditor() {
+    const opener = editing?.opener;
+    setEditing(null);
     setFailed(false);
-    readButton.current?.focus();
+    setRefused(null);
+    if (opener) openers[opener].current?.focus();
   }
 
-  // Esc closes Finished, as Cancel does.
+  // Esc closes the date control, as Cancel does.
+  const openedBy = editing?.opener ?? null;
   useEffect(() => {
-    if (!finishing) return;
+    if (!openedBy) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") closeFinished();
+      if (e.key !== "Escape") return;
+      setEditing(null);
+      setFailed(false);
+      setRefused(null);
+      ({ read: readButton, started: startedButton, finished: finishedButton })[openedBy!].current?.focus();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [finishing]);
+  }, [openedBy]);
 
-  async function write(next: Status, finish?: FinishValue, name = title): Promise<boolean> {
+  async function write(
+    next: Status, dates: { finish?: FinishValue; start?: FinishValue } = {}, name = title,
+  ): Promise<boolean> {
+    const { finish, start } = dates;
     setSaving(true);
     setFailed(false);
+    setRefused(null);
     try {
       const res = await fetch("/api/progress/book", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ bookId, status: next, ...(finish && { finish: toChoice(finish) }) }),
+        body: JSON.stringify({
+          bookId, status: next, ...(finish && { finish: toChoice(finish) }), ...(start && { start: toChoice(start) }),
+        }),
       });
+      if (res.status === 400) {
+        // Refused, and nothing written: say why under the control.
+        const { error } = (await res.json()) as { error?: string };
+        setRefused(`Not saved: ${error ?? "the server refused it"}.`);
+        return false;
+      }
       if (!res.ok) throw new Error("status failed");
-      const { change, finish: stored } = (await res.json()) as { change: unknown; finish: Finish | null };
+      const { change, finish: stored, start: storedStart } =
+        (await res.json()) as { change: unknown; finish: Finish | null; start: Finish };
       const before = saved;
-      setSaved({ status: next, finish: stored ?? before.finish });
+      setSaved({ status: next, finish: stored ?? before.finish, start: storedStart });
       router.refresh();
       push({
         label: `${name}: ${NAMES[next]}`,
-        detail: next === "read" ? `Finished ${finishWords(finish!)}` : `Was ${NAMES[before.status]}`,
+        detail: start ? `Started ${finishWords(start)}`
+          : next === "read" ? `Finished ${finishWords(finish!)}` : `Was ${NAMES[before.status]}`,
         undo: async () => {
           const back = await fetch("/api/progress/book", {
             method: "DELETE",
@@ -151,21 +198,31 @@ export default function BookStatus({ bookId, status = "to_read", finishedOn = nu
     }
   }
 
+  function edit(what: DateFor, opener: Opener) {
+    setFailed(false);
+    setRefused(null);
+    const current = what === "start" ? saved.start : saved.status === "read" ? saved.finish : null;
+    setEditing({ what, value: initialFinish(current), opener });
+  }
+
   function choose(next: Status, button: HTMLButtonElement) {
     if (saving) return;
     if (next === "read") {
-      setFailed(false);
-      setFinishing(initialFinish(saved.status === "read" ? saved.finish : null));
+      edit("finish", "read");
       return;
     }
-    setFinishing(null);
+    setEditing(null);
     if (next !== saved.status) void write(next);
     button.focus();
   }
 
   async function save() {
-    if (!finishing || reason || saving) return;
-    if (await write("read", finishing)) closeFinished();
+    if (!editing || reason || saving) return;
+    // *Started* keeps the status; on a Read book it edits the latest read's start alone.
+    const done = editing.what === "start"
+      ? await write(saved.status, { start: editing.value })
+      : await write("read", { finish: editing.value });
+    if (done) closeEditor();
   }
 
   /** *Add to Someday* on an Unlisted row: `to_read`, with Undo. */
@@ -174,8 +231,21 @@ export default function BookStatus({ bookId, status = "to_read", finishedOn = nu
     if (await write("to_read", undefined, readTitle())) toggle.current?.focus();
   }
 
-  const reason = finishing ? finishReason(finishing) : null;
+  /** Why the open control can't be saved: an unpicked or future day, or a start after its finish. */
+  function why({ what, value }: Editing): string | null {
+    const own = finishReason(value, what);
+    if (own) return own;
+    if (what === "start") {
+      return saved.status === "read" && startAfterFinish(storedDay(value), saved.finish)
+        ? "That's after the day you finished." : null;
+    }
+    // A new read carries the start held; a correction keeps the latest read's.
+    return startAfterFinish(saved.start, storedDay(value)) ? "That's before the day you started." : null;
+  }
+
+  const reason = editing ? why(editing) : null;
   const unlisted = saved.status === "unlisted";
+  const dated = saved.status === "reading" || saved.status === "read";
 
   return (
     <>
@@ -202,23 +272,40 @@ export default function BookStatus({ bookId, status = "to_read", finishedOn = nu
             <button key={s.status} type="button" ref={s.status === "read" ? readButton : undefined}
               className={`opt${s.status === "dnf" ? " dnf" : ""}`}
               aria-pressed={saved.status === s.status}
-              aria-expanded={s.status === "read" ? finishing !== null : undefined}
+              aria-expanded={s.status === "read" ? editing?.opener === "read" : undefined}
               onClick={(e) => choose(s.status, e.currentTarget)}>
               {s.label}
             </button>
           ))}
         </div>
-        {finishing && (
+        {/* The date line (task 1.17): each date a button named with the date it holds. */}
+        {dated && (
+          <p className="date-line">
+            <button type="button" ref={startedButton} className="btn sec sm"
+              aria-expanded={editing?.what === "start"} onClick={() => edit("start", "started")}>
+              Started {dateWords(saved.start)}
+            </button>
+            {saved.status === "read" && (
+              <button type="button" ref={finishedButton} className="btn sec sm"
+                aria-expanded={editing?.opener === "finished"} onClick={() => edit("finish", "finished")}>
+                Finished {dateWords(saved.finish)}
+              </button>
+            )}
+          </p>
+        )}
+        {editing && (
           <>
-            <FinishDate value={finishing} onChange={setFinishing} name={`finished-${bookId}`} />
+            <FinishDate value={editing.value} onChange={(value) => { setRefused(null); setEditing({ ...editing, value }); }}
+              name={`${editing.what === "start" ? "started" : "finished"}-${bookId}`} what={editing.what} />
             <div className="btnrow finish-actions">
               <button type="button" className="btn sm" aria-disabled={Boolean(reason) || saving || undefined}
-                aria-describedby={reason ? reasonId : undefined} onClick={save}>
+                aria-describedby={reason || refused ? reasonId : undefined} onClick={save}>
                 {saving ? "Saving…" : "Save"}
               </button>
-              <button type="button" className="btn sec sm" onClick={closeFinished}>Cancel</button>
+              <button type="button" className="btn sec sm" onClick={closeEditor}>Cancel</button>
             </div>
-            {reason && <p id={reasonId} className="small muted sheet-reason">{reason}</p>}
+            {/* Always drawn while open, so a reason that appears is announced. */}
+            <p id={reasonId} className="small muted sheet-reason" aria-live="polite">{reason ?? refused}</p>
           </>
         )}
         {failed && (

@@ -486,7 +486,8 @@ read_events.finished_on            date        NULL, finished_on_precision   tex
   two `date` columns carry no zone; only the *today* that writes them moved.
 
 **2.18 A read has a start, stored for books and derived for runs.** *Oct 2026,
-backlog intake; task 1.17; proposed, settled at its plan gate.* A book's start
+backlog intake; task 1.17, settled at its plan gate (owner, 2026-11-03;
+migration 0020).* A book's start
 is a fact nothing else records: setting *Reading* is the only moment it is
 known. So it is stored with its precision under 2.17's rule, on `book_status`
 (the read in progress) and on `read_events` (each finished read, so a reread
@@ -498,10 +499,23 @@ read_events.started_on   date NULL, started_on_precision  text NOT NULL DEFAULT 
   same CHECK pair as the finish; a start after the finish is refused by the write path
 ```
 
+- **A start belongs to the read in progress.** Entering *Reading* stamps
+  today (Eastern, `exact`) unless `book_status` already holds a start, so *To
+  read → Reading* and *DNF → Reading* keep it (DNF never finished a read).
+  Finishing moves it onto the new `read_events` row and clears it on
+  `book_status`, so *Read → Reading* always begins a fresh read and the first
+  read's row keeps its own. A Read book's start is its latest read's.
+- **It is editable while Read**: *Started* edits the latest read's start, as
+  *Finished* edits its finish. A start after today is refused, as a finish is,
+  and so is a start after its finish: two exact days compare as days, and when
+  either is `approximate` only the years compare.
+- **Undo** puts back the start and precision that were there, the latest
+  read's included.
+
 A run's start is not a new fact. It is the earliest dated read of its own
 placements, so `run_state.started_at` sits beside `finished_at` as a view
-column. Days taken, for either, is computed in the query. Undated (`none`)
-reads count toward neither.
+column. Days taken, for either, is computed in the query, and only between
+two `exact` days. Undated (`none`) reads count toward neither.
 
 **2.19 Calibre is a metadata source, read the way the workbook is.** *Oct
 2026, D-73; task 1.18.* The owner's Calibre library has word counts no API

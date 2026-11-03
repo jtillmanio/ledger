@@ -365,12 +365,20 @@ export const bookStatus = pgTable("book_status", {
   // This is the latest read's date; every read is a read_events row (task 1.5).
   finishedOn: date("finished_on", { mode: "string" }),
   finishedOnPrecision: text("finished_on_precision").notNull().default("none"), // exact | approximate | none
+  // When the read in progress began (task 1.17, data model 2.18), under the same
+  // rule as the finish. Entering Reading stamps today unless a start is already
+  // here; finishing moves it onto the new read_events row and clears it here.
+  startedOn: date("started_on", { mode: "string" }),
+  startedOnPrecision: text("started_on_precision").notNull().default("none"), // exact | approximate | none
   notes: text("notes"),
 }, (t) => ({
   pk: primaryKey({ columns: [t.userId, t.bookId] }),
   precision: check("book_status_finished_on_precision_check", sql`
     ${t.finishedOnPrecision} IN ('exact', 'approximate', 'none')
     AND (${t.finishedOn} IS NULL) = (${t.finishedOnPrecision} = 'none')`),
+  startPrecision: check("book_status_started_on_precision_check", sql`
+    ${t.startedOnPrecision} IN ('exact', 'approximate', 'none')
+    AND (${t.startedOn} IS NULL) = (${t.startedOnPrecision} = 'none')`),
 }));
 
 // The reading log (task 1.5, product #22): one row per finished read, so a
@@ -388,6 +396,9 @@ export const readEvents = pgTable("read_events", {
   // Same rule as book_status and issue_progress: 'none' exactly when NULL (D-10).
   finishedOn: date("finished_on", { mode: "string" }),
   finishedOnPrecision: text("finished_on_precision").notNull().default("exact"), // exact | approximate | none
+  // This read's own start, so a reread keeps its own (task 1.17, data model 2.18).
+  startedOn: date("started_on", { mode: "string" }),
+  startedOnPrecision: text("started_on_precision").notNull().default("none"), // exact | approximate | none
   rereadOf: integer("reread_of"),
 }, (t) => ({
   byBook: index("read_events_user_book_idx").on(t.userId, t.bookId),
@@ -401,6 +412,9 @@ export const readEvents = pgTable("read_events", {
   precision: check("read_events_finished_on_precision_check", sql`
     ${t.finishedOnPrecision} IN ('exact', 'approximate', 'none')
     AND (${t.finishedOn} IS NULL) = (${t.finishedOnPrecision} = 'none')`),
+  startPrecision: check("read_events_started_on_precision_check", sql`
+    ${t.startedOnPrecision} IN ('exact', 'approximate', 'none')
+    AND (${t.startedOn} IS NULL) = (${t.startedOnPrecision} = 'none')`),
 }));
 
 // Following a series, an author or a universe is a stored choice (task 1.15,

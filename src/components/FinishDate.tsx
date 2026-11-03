@@ -52,10 +52,29 @@ export function toChoice(v: FinishValue): FinishChoice {
 }
 
 /** Why the value can't be saved yet, shown under the Save (UX-N18), or null. */
-export function finishReason(v: FinishValue): string | null {
-  if (v.mode === "date" && !v.date) return "Pick the day you finished.";
+export function finishReason(v: FinishValue, what: DateFor = "finish"): string | null {
+  if (v.mode === "date" && !v.date) return `Pick the day you ${what === "start" ? "started" : "finished"}.`;
   if (v.mode === "date" && v.date > localToday()) return "That day hasn't happened yet.";
   return null;
+}
+
+/** The date the value stores, as the server will (`resolveStart`, `resolveFinish`). */
+export function storedDay(v: FinishValue): { on: string | null; precision: Precision } {
+  switch (v.mode) {
+    case "today": return { on: localToday(), precision: "exact" };
+    case "date": return { on: v.date, precision: "exact" };
+    case "year": return { on: `${v.year}-07-01`, precision: "approximate" };
+    case "none": return { on: null, precision: "none" };
+  }
+}
+
+/** A stored date in words (task 1.17), for the date line's buttons: "11 March
+ * 2024", "2022, approximate" for a Year only, "~11 March 2024" for another
+ * guess, "no date". */
+export function dateWords(d: { on: string | null; precision: Precision }): string {
+  if (d.on === null || d.precision === "none") return "no date";
+  if (d.precision === "approximate") return d.on.endsWith("-07-01") ? `${d.on.slice(0, 4)}, approximate` : `~${dayName(d.on)}`;
+  return dayName(d.on);
 }
 
 /** What the toast says was saved: "11 March 2024", "2022, approximate", "no date". */
@@ -68,6 +87,14 @@ export function finishWords(v: FinishValue): string {
   }
 }
 
+/** Which date the control sets: when a read finished, or when it began (task 1.17). */
+export type DateFor = "finish" | "start";
+
+const WORDS: Record<DateFor, { legend: string; on: string; year: string }> = {
+  finish: { legend: "Finished", on: "Finished on", year: "Year finished" },
+  start: { legend: "Started", on: "Started on", year: "Year started" },
+};
+
 /**
  * The finish-date control (task 1.5, mockup `blist` second frame, M-13):
  * *Finished* — **Today · Pick a date · Year only · No date**, as named radio
@@ -76,11 +103,15 @@ export function finishWords(v: FinishValue): string {
  * row's *Read* and a spine row's *Change date…* both use it, and 3.5's detail
  * sheets will. There is no Spread: that is for ranges of issues.
  *
+ * With `what="start"` it is *Started*, the same four choices for when a book's
+ * read began (task 1.17): the status control's *Started* opens it.
+ *
  * Controlled: the caller holds the value and owns Save and Cancel.
  */
-export default function FinishDate({ value, onChange, name }: {
-  value: FinishValue; onChange: (v: FinishValue) => void; name: string;
+export default function FinishDate({ value, onChange, name, what = "finish" }: {
+  value: FinishValue; onChange: (v: FinishValue) => void; name: string; what?: DateFor;
 }) {
+  const words = WORDS[what];
   const today = localToday();
   const thisYear = Number(today.slice(0, 4));
   const set = (patch: Partial<FinishValue>) => onChange({ ...value, ...patch });
@@ -92,7 +123,7 @@ export default function FinishDate({ value, onChange, name }: {
   return (
     <div className="finish">
       <fieldset className="opts">
-        <legend className="finish-legend">Finished</legend>
+        <legend className="finish-legend">{words.legend}</legend>
         {OPTIONS.map((o) => (
           <label key={o.mode} className="opt">
             <input type="radio" name={name} value={o.mode} checked={value.mode === o.mode}
@@ -104,7 +135,7 @@ export default function FinishDate({ value, onChange, name }: {
       <div className="finish-fields">
         {value.mode === "date" && (
           <label className="frow">
-            <span className="k">Finished on</span>
+            <span className="k">{words.on}</span>
             <input className="v mono" type="date" value={value.date} max={today}
               onChange={(e) => set({ date: e.target.value })} />
           </label>
@@ -112,7 +143,7 @@ export default function FinishDate({ value, onChange, name }: {
         {value.mode === "year" && (
           <div className="frow">
             <span className="k">Year</span>
-            <span className="stepper" role="group" aria-label="Year finished">
+            <span className="stepper" role="group" aria-label={words.year}>
               <button type="button" aria-label="Earlier" aria-disabled={value.year <= EARLIEST_YEAR || undefined}
                 onClick={() => step(-1)}>−</button>
               <output className="val" aria-live="polite">{value.year}</output>
@@ -125,10 +156,14 @@ export default function FinishDate({ value, onChange, name }: {
       <p className="lede finish-note">
         {value.mode === "today" && <>Saved as <b>{dayName(today)}</b>.</>}
         {value.mode === "date" && value.date && <>Saved as <b>{dayName(value.date)}</b>.</>}
-        {value.mode === "year" && (
+        {value.mode === "year" && (what === "finish" ? (
           <>Saved as <b>1 July {value.year}, approximate</b>: it counts toward {value.year}, never as a real day.</>
-        )}
-        {value.mode === "none" && <>Saved with no date: it counts as read, in no year.</>}
+        ) : (
+          <>Saved as <b>1 July {value.year}, approximate</b>: a guess, never a real day, so no days taken.</>
+        ))}
+        {value.mode === "none" && (what === "finish"
+          ? <>Saved with no date: it counts as read, in no year.</>
+          : <>Saved with no start: no days taken are shown.</>)}
       </p>
     </div>
   );

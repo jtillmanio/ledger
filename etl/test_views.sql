@@ -341,6 +341,57 @@ BEGIN
   END IF;
 END $$;
 
+-- A run's start (task 1.17, data model 2.18) is the earliest dated read of its own
+-- placements: an earlier read of the same issue in another run doesn't move it,
+-- an undated ('none') read doesn't count, and it is there while unread remain.
+-- A run whose only reads are undated has none.
+INSERT INTO runs (id, title) VALUES ('zz-sd-a', 'Started'), ('zz-sd-b', 'Elsewhere'), ('zz-sd-n', 'Undated');
+INSERT INTO issues (id, label) VALUES
+  ('zz-sd1', 'Zz Start (2026) #1'), ('zz-sd2', 'Zz Start (2026) #2'),
+  ('zz-sd3', 'Zz Start (2026) #3'), ('zz-sd4', 'Zz Start (2026) #4');
+INSERT INTO run_issues (run_id, sequence, issue_id) VALUES
+  ('zz-sd-a', 1, 'zz-sd1'), ('zz-sd-a', 2, 'zz-sd2'), ('zz-sd-a', 3, 'zz-sd3'), ('zz-sd-a', 4, 'zz-sd4'),
+  ('zz-sd-b', 1, 'zz-sd1'), ('zz-sd-n', 1, 'zz-sd2');
+INSERT INTO issue_progress (user_id, placement_id, completed_at, completed_at_precision)
+  SELECT 'zz-user', ri.id, v.at, v.p
+  FROM (VALUES ('zz-sd-a', 'zz-sd1', '2026-03-05 00:00-05'::timestamptz, 'exact'),
+               ('zz-sd-a', 'zz-sd2', NULL, 'none'),
+               ('zz-sd-a', 'zz-sd3', '2026-09-20 00:00-04'::timestamptz, 'exact'),
+               ('zz-sd-b', 'zz-sd1', '2020-01-10 00:00-05'::timestamptz, 'exact'),
+               ('zz-sd-n', 'zz-sd2', NULL, 'none')) v(run_id, issue_id, at, p)
+  JOIN run_issues ri ON ri.run_id = v.run_id AND ri.issue_id = v.issue_id;
+DO $$
+DECLARE r record;
+BEGIN
+  SELECT * INTO r FROM run_state WHERE user_id = 'zz-user' AND run_id = 'zz-sd-a';
+  IF r.started_at IS DISTINCT FROM '2026-03-05 00:00-05'::timestamptz THEN
+    RAISE EXCEPTION 'run_state.started_at should be the run''s own earliest dated read, got %', r.started_at;
+  END IF;
+  IF r.finished_at IS NOT NULL THEN
+    RAISE EXCEPTION 'a run with an unread placement has no finished_at, got %', r.finished_at;
+  END IF;
+  IF (SELECT started_at FROM run_state WHERE user_id = 'zz-user' AND run_id = 'zz-sd-n') IS NOT NULL THEN
+    RAISE EXCEPTION 'a run with only undated reads has no started_at';
+  END IF;
+  IF (SELECT started_at FROM run_state WHERE user_id = 'zz-user' AND run_id = 'zz-sd-b')
+     IS DISTINCT FROM '2020-01-10 00:00-05'::timestamptz THEN
+    RAISE EXCEPTION 'run_state.started_at for zz-sd-b should be its own read';
+  END IF;
+END $$;
+-- Reading the last placement finishes it: the start stays, the finish is the latest.
+INSERT INTO issue_progress (user_id, placement_id, completed_at, completed_at_precision)
+  SELECT 'zz-user', id, '2026-09-25 00:00-04'::timestamptz, 'exact'
+  FROM run_issues WHERE run_id = 'zz-sd-a' AND issue_id = 'zz-sd4';
+DO $$
+DECLARE r record;
+BEGIN
+  SELECT * INTO r FROM run_state WHERE user_id = 'zz-user' AND run_id = 'zz-sd-a';
+  IF r.state <> 'read' OR r.started_at IS DISTINCT FROM '2026-03-05 00:00-05'::timestamptz
+     OR r.finished_at IS DISTINCT FROM '2026-09-25 00:00-04'::timestamptz THEN
+    RAISE EXCEPTION 'a read run should keep its start and finish on its latest read: %', row_to_json(r);
+  END IF;
+END $$;
+
 -- Hard-deleting a placement takes its read row with it (ON DELETE CASCADE);
 -- that is why the app only ever soft-deletes one (R3-06).
 DELETE FROM run_issues WHERE run_id = 'zz-fin-o' AND issue_id = 'zz-fin1';

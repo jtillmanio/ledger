@@ -6,7 +6,7 @@ import StatusBookRow from "@/components/StatusBookRow";
 import StatusTabs from "@/components/StatusTabs";
 import { requireUserId } from "@/lib/auth";
 import { booksDone, booksInFlight, booksUpNext, type DoneBook, type PlannedBook } from "@/db/queries";
-import { quarterName } from "@/lib/format";
+import { bookDates, quarterName } from "@/lib/format";
 import { parseTab } from "@/lib/status-tabs";
 
 export const dynamic = "force-dynamic";
@@ -132,7 +132,7 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
                     {year} <span className="mono n">{books.length}</span>
                   </h2>
                   <div className="rows">
-                    {books.map((b) => <StatusBookRow key={b.id} book={b} />)}
+                    {books.map((b) => <StatusBookRow key={b.id} book={b} dates={bookDates(b)} />)}
                   </div>
                 </section>
               ))}

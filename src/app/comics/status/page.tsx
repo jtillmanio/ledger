@@ -6,7 +6,7 @@ import QueueList from "@/components/QueueList";
 import StatusTabs from "@/components/StatusTabs";
 import { requireUserId } from "@/lib/auth";
 import { doneRuns, inFlightRuns, readyNotQueued, upNext } from "@/db/queries";
-import { readWhen, yearSpan } from "@/lib/format";
+import { readWhen, runSpan, yearSpan } from "@/lib/format";
 import { parseTab, QUEUE_HREF } from "@/lib/status-tabs";
 
 export const dynamic = "force-dynamic";
@@ -141,7 +141,8 @@ export default async function ComicsStatus({ searchParams }: { searchParams: Pro
           ) : (
             <div className="rows">
               {done.map((r) => {
-                const when = readWhen(r.finished_at, r.finished_precision);
+                // The run's span (task 1.17): *Read Mar–Sep 2026*, as its hero says it.
+                const when = runSpan(r.started_at, r.started_precision, r.finished_at, r.finished_precision);
                 return (
                   <article key={r.id} className="row">
                     <Link href={`/comics/${r.id}`} className="row-link">
@@ -150,7 +151,7 @@ export default async function ComicsStatus({ searchParams }: { searchParams: Pro
                         <span className="row-meta mono">{r.total_issues} iss</span>
                       </span>
                       <span className="row-sub">
-                        {[when ? `Finished ${when}` : "Finished, no date", r.writers, yearSpan(r.start_year, r.end_year)]
+                        {[when ? `Read ${when}` : "Finished, no date", r.writers, yearSpan(r.start_year, r.end_year)]
                           .filter(Boolean).join(" · ")}
                       </span>
                     </Link>

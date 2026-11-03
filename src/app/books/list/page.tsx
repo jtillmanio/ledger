@@ -7,6 +7,7 @@ import AddBooksButton from "@/components/AddBooksButton";
 import BookListSearch from "@/components/BookListSearch";
 import BookStatus from "@/components/BookStatus";
 import Cover, { Pending } from "@/components/Cover";
+import { bookDates } from "@/lib/format";
 import { seriesAllHref, seriesView } from "@/lib/series-list";
 
 export const dynamic = "force-dynamic";
@@ -135,12 +136,15 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
                 {[b.author, b.series && `${b.series}${b.series_position ? ` #${b.series_position}` : ""}`,
                   b.genre].filter(Boolean).join(" · ")}
               </span>
+              {/* When it was started, finished and how long it took (task 1.17). */}
+              {bookDates(b) && <span className="row-dates">{bookDates(b)}</span>}
               {b.pending && <Pending />}
               {/* Status and finish date (task 1.5): the badge expands the row's controls. */}
               {/* Only what differs from a bare to-read row: 500 rows travel in the RSC payload. */}
               <BookStatus bookId={b.id}
                 {...(b.status !== "to_read" && { status: b.status })}
-                {...(b.finished_on !== null && { finishedOn: b.finished_on, precision: b.finished_on_precision })} />
+                {...(b.finished_on !== null && { finishedOn: b.finished_on, precision: b.finished_on_precision })}
+                {...(b.started_on !== null && { startedOn: b.started_on, startPrecision: b.started_on_precision })} />
             </span>
           </article>
         ))}

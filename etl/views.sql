@@ -161,6 +161,10 @@ GROUP BY rp.user_id, rp.run_id;
 -- "N runs first" count is the transitive closure and comes from run_ancestors
 -- (task 2.6). finished_at is the latest dated completion of this run's own
 -- placements, for "read · Sep 2026"; NULL when every read is undated.
+-- started_at is the earliest (task 1.17, data model 2.18), for the run's span
+-- (*Started Mar 2026*, *Mar–Sep 2026*): derived, never stored. MIN skips the
+-- NULLs, so an undated ('none') read counts toward neither, and a run with no
+-- dated read has no start. Unlike finished_at it is there while unread remain.
 CREATE OR REPLACE VIEW run_state AS
 SELECT
   rr.user_id,
@@ -176,11 +180,12 @@ SELECT
   rr.soft_total - rr.soft_done         AS soft_left,
   rp.read_issues,
   rp.total_issues,
-  CASE WHEN rp.state = 'read' THEN fin.last_read_at END AS finished_at
+  CASE WHEN rp.state = 'read' THEN fin.last_read_at END AS finished_at,
+  fin.first_read_at                    AS started_at
 FROM run_readiness rr
 JOIN run_progress rp ON rp.user_id = rr.user_id AND rp.run_id = rr.run_id
 LEFT JOIN LATERAL (
-  SELECT MAX(p.completed_at) AS last_read_at
+  SELECT MAX(p.completed_at) AS last_read_at, MIN(p.completed_at) AS first_read_at
   FROM live_run_issues ri
   JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = rr.user_id
   WHERE ri.run_id = rr.run_id

@@ -1,5 +1,5 @@
 import { sql } from "./index";
-import { readWhen, type Precision } from "@/lib/format";
+import { readWhen, runSpan, type Precision } from "@/lib/format";
 import { FRESH_DAYS } from "@/lib/metron";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
 
@@ -247,18 +247,21 @@ export type DoneRun = {
   id: string; title: string; writers: string | null;
   start_year: number | null; end_year: number | null; total_issues: number;
   finished_at: Date | null; finished_precision: Precision;
+  /** The run's earliest dated read here (`run_state.started_at`, task 1.17) and its precision. */
+  started_at: Date | null; started_precision: Precision;
 };
 
 /**
  * Comics *Done* (task 1.9): the runs whose own placements are all read, from
  * `run_state` (read elsewhere does not count, data model 2.14), the latest
  * finish first. A run read only with undated marks has no finish date and sorts
- * after every dated one.
+ * after every dated one. The start is the span's (task 1.17).
  */
 export async function doneRuns(userId: string) {
   return sql<DoneRun[]>`
     SELECT r.id, r.title, cl.writers, rs.start_year, rs.end_year, st.total_issues::int AS total_issues,
-           st.finished_at, COALESCE(fp.completed_at_precision, 'none') AS finished_precision
+           st.finished_at, COALESCE(fp.completed_at_precision, 'none') AS finished_precision,
+           st.started_at, COALESCE(sp.completed_at_precision, 'none') AS started_precision
     FROM run_state st
     JOIN runs r ON r.id = st.run_id AND r.deleted_at IS NULL AND NOT r.placeholder
     JOIN run_span rs ON rs.run_id = r.id
@@ -271,6 +274,16 @@ export async function doneRuns(userId: string) {
       ORDER BY (p.completed_at_precision = 'exact') DESC
       LIMIT 1
     ) fp ON true
+    -- The precision of the run's start (task 1.17): the read at started_at among
+    -- its own placements, an exact one winning a tie (as fp does for the finish).
+    LEFT JOIN LATERAL (
+      SELECT p.completed_at_precision
+      FROM live_run_issues ri
+      JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
+      WHERE ri.run_id = r.id AND p.completed_at = st.started_at
+      ORDER BY (p.completed_at_precision = 'exact') DESC
+      LIMIT 1
+    ) sp ON true
     WHERE st.user_id = ${userId} AND st.state = 'read'
     ORDER BY st.finished_at DESC NULLS LAST, r.title, r.id
   `;
@@ -335,8 +348,17 @@ export async function runDetail(userId: string, runId: string) {
   const issues = rows.map(({ first_read_at, first_read_precision, ...r }) => ({
     ...r, read_elsewhere_when: readWhen(first_read_at, first_read_precision),
   }));
-  const { last_read_at, last_read_precision, ...header } = run;
-  return { run: { ...header, last_read_when: readWhen(last_read_at, last_read_precision) }, issues, prereqs };
+  const { last_read_at, last_read_precision, started_at, started_precision, ...header } = run;
+  return {
+    run: {
+      ...header,
+      last_read_when: readWhen(last_read_at, last_read_precision),
+      // The hero's span line (task 1.17): *Started Mar 2026*, and *Mar–Sep 2026* once read.
+      started_when: runSpan(started_at, started_precision),
+      span_when: header.state === "read" ? runSpan(started_at, started_precision, last_read_at, last_read_precision) : null,
+    },
+    issues, prereqs,
+  };
 }
 
 function runHeader(userId: string, runId: string) {
@@ -345,6 +367,7 @@ function runHeader(userId: string, runId: string) {
       notes: string | null; artists: string | null; why_source: "hand" | "claude"; placeholder: boolean;
       credited_issues: number; distinct_issues: number;
       last_read_at: Date | null; last_read_precision: Precision;
+      started_at: Date | null; started_precision: Precision;
     })[]
   >`
     SELECT r.*, cl.writers, cl.artists, cl.credited_issues, cl.issue_count AS distinct_issues,
@@ -354,9 +377,11 @@ function runHeader(userId: string, runId: string) {
                     FILTER (WHERE t.name IS NOT NULL), '{}') AS tracks,
            lr.completed_at AS last_read_at,
            COALESCE(lr.completed_at_precision, 'none') AS last_read_precision,
+           st.started_at, COALESCE(sp.completed_at_precision, 'none') AS started_precision,
            q.ordinal AS queued_ordinal
     FROM runs r
     JOIN run_progress  rp ON rp.run_id = r.id AND rp.user_id = ${userId}
+    JOIN run_state     st ON st.run_id = r.id AND st.user_id = ${userId}
     JOIN run_readiness rd ON rd.run_id = r.id AND rd.user_id = ${userId}
     JOIN run_span      rs ON rs.run_id = r.id
     JOIN run_credit_line cl ON cl.run_id = r.id
@@ -374,11 +399,21 @@ function runHeader(userId: string, runId: string) {
       ORDER BY p.completed_at DESC, (p.completed_at_precision = 'exact') DESC
       LIMIT 1
     ) lr ON true
+    -- The precision of the run's start (task 1.17): the read at started_at among
+    -- its own placements, an exact one winning a tie (as fp does for the finish).
+    LEFT JOIN LATERAL (
+      SELECT p.completed_at_precision
+      FROM live_run_issues ri
+      JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
+      WHERE ri.run_id = r.id AND p.completed_at = st.started_at
+      ORDER BY (p.completed_at_precision = 'exact') DESC
+      LIMIT 1
+    ) sp ON true
     WHERE r.id = ${runId} AND r.deleted_at IS NULL
     GROUP BY r.id, rp.total_issues, rp.read_issues, rp.pct, rp.state, rd.readiness,
              rs.series_issues, rs.start_year, rs.end_year, rs.dated_issues,
              cl.writers, cl.artists, cl.credited_issues, cl.issue_count,
-             lr.completed_at, lr.completed_at_precision, q.ordinal
+             lr.completed_at, lr.completed_at_precision, st.started_at, sp.completed_at_precision, q.ordinal
   `;
 }
 
@@ -465,6 +500,10 @@ export type BookRow = {
   read_year: number | null;
   /** The latest read's date and precision, for the finish-date control (task 1.5). */
   finished_on: string | null; finished_on_precision: "exact" | "approximate" | "none";
+  /** The start shown (task 1.17): the read in progress's, or once Read the latest read's. */
+  started_on: string | null; started_on_precision: Precision;
+  /** The latest read's finish minus its start in days, when both are exact days; null otherwise. */
+  days_taken: number | null;
   rating: number | null; cover_url: string | null;
   /** No external record yet (no Open Library or Hardcover id): *metadata pending* (task 1.4c). */
   pending: boolean;
@@ -491,6 +530,15 @@ export async function listBooks(
            COALESCE(st.status, 'to_read') AS status,
            CASE WHEN st.status = 'read' THEN extract(year FROM st.finished_on)::int END AS read_year,
            st.finished_on::text AS finished_on, COALESCE(st.finished_on_precision, 'none') AS finished_on_precision,
+           -- The start shown (task 1.17): the read in progress's, or once Read the
+           -- latest read's, since finishing moves it off book_status (data model
+           -- 2.18). Days taken is computed here, never stored (Hard rule 2), and
+           -- only between two exact days.
+           (CASE WHEN st.status = 'read' THEN lr.started_on ELSE st.started_on END)::text AS started_on,
+           COALESCE(CASE WHEN st.status = 'read' THEN lr.started_on_precision ELSE st.started_on_precision END, 'none')
+             AS started_on_precision,
+           CASE WHEN lr.started_on_precision = 'exact' AND lr.finished_on_precision = 'exact'
+                THEN lr.finished_on - lr.started_on END AS days_taken,
            st.rating,
            pl.plan_year,
            COUNT(*) OVER ()::int AS total
@@ -498,6 +546,14 @@ export async function listBooks(
     LEFT JOIN authors a      ON a.id = b.author_id
     LEFT JOIN book_series s  ON s.id = b.series_id
     LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+    -- A Read book's latest read: its start and days taken (task 1.17).
+    LEFT JOIN LATERAL (
+      SELECT e.started_on, e.started_on_precision, e.finished_on, e.finished_on_precision
+      FROM read_events e
+      WHERE e.user_id = ${userId} AND e.book_id = b.id
+      ORDER BY e.id DESC
+      LIMIT 1
+    ) lr ON st.status = 'read'
     -- A book can be planned in two years (Light Bringer: 2026 and 2027), so
     -- collapse to the earliest to keep one row per book (R2-06). The year is
     -- plan_period's, never parsed from the period here (task 1.7).
@@ -586,8 +642,13 @@ export async function booksUpNext(userId: string) {
   return { planned, someday: someday.n };
 }
 
-/** A finished or stopped book on *Done* (task 1.9). `year` is the finish year; null is *No year*. */
-export type DoneBook = StatusBook & { status: "read" | "dnf"; year: number | null };
+/** A finished or stopped book on *Done* (task 1.9). `year` is the finish year; null is *No year*.
+ * The dates are the latest read's (task 1.17), for the row's dates line. */
+export type DoneBook = StatusBook & {
+  status: "read" | "dnf"; year: number | null;
+  finished_on: string | null; finished_on_precision: Precision;
+  started_on: string | null; started_on_precision: Precision; days_taken: number | null;
+};
 
 /**
  * *Done* for books (task 1.9): `read` books, newest finish first and the undated
@@ -597,11 +658,29 @@ export type DoneBook = StatusBook & { status: "read" | "dnf"; year: number | nul
 export async function booksDone(userId: string) {
   return sql<DoneBook[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, b.word_count,
-           st.status, extract(year FROM st.finished_on)::int AS year
+           st.status, extract(year FROM st.finished_on)::int AS year,
+           st.finished_on::text AS finished_on, st.finished_on_precision,
+           -- The start shown (task 1.17): the read in progress's, or once Read the
+           -- latest read's, since finishing moves it off book_status (data model
+           -- 2.18). Days taken is computed here, never stored (Hard rule 2), and
+           -- only between two exact days.
+           (CASE WHEN st.status = 'read' THEN lr.started_on ELSE st.started_on END)::text AS started_on,
+           COALESCE(CASE WHEN st.status = 'read' THEN lr.started_on_precision ELSE st.started_on_precision END, 'none')
+             AS started_on_precision,
+           CASE WHEN lr.started_on_precision = 'exact' AND lr.finished_on_precision = 'exact'
+                THEN lr.finished_on - lr.started_on END AS days_taken
     FROM book_status st
     JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
     LEFT JOIN authors a     ON a.id = b.author_id
     LEFT JOIN book_series s ON s.id = b.series_id
+    -- A Read book's latest read: its start and days taken (task 1.17).
+    LEFT JOIN LATERAL (
+      SELECT e.started_on, e.started_on_precision, e.finished_on, e.finished_on_precision
+      FROM read_events e
+      WHERE e.user_id = ${userId} AND e.book_id = b.id
+      ORDER BY e.id DESC
+      LIMIT 1
+    ) lr ON st.status = 'read'
     WHERE st.user_id = ${userId} AND st.status IN ('read', 'dnf')
     ORDER BY (st.status = 'dnf'), st.finished_on DESC NULLS LAST, b.title, b.id
   `;
