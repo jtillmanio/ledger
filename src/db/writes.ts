@@ -6,7 +6,7 @@ import {
 } from "./index";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
 import { bookKey } from "@/lib/book-parse";
-import type { Finish } from "@/lib/finish-date";
+import { START_AFTER_FINISH, startAfterFinish, today, type Finish } from "@/lib/finish-date";
 import type { Precision } from "@/lib/format";
 import type { Kind } from "@/lib/inbox";
 import { bookId, issueSlug, slug } from "@/lib/issue-slug";
@@ -22,9 +22,24 @@ export type BookStatusInput = {
   status: string;
   /** When it was finished: required for `read`, ignored otherwise. */
   finish?: Finish;
+  /** When the read began (task 1.17): only with `reading` or `read`; undefined =
+   * leave it, or stamp today on entering Reading. */
+  start?: Finish;
   /** undefined = leave as is; null = clear it. */
   rating?: number | null;
 };
+
+/** A status write refused by what is stored (task 1.17): thrown inside the
+ * write, so the transaction rolls back and nothing is written. The route
+ * answers 400 with the message. */
+export class RefusedStatus extends Error {}
+
+/** A start after its finish (task 1.17). */
+export class StartAfterFinish extends RefusedStatus {
+  constructor() {
+    super(START_AFTER_FINISH);
+  }
+}
 
 /** A book's status row as a status write found it; the read it logged or
  * re-dated. Enough for the undo to put exactly that back (task 1.2). */
@@ -32,12 +47,19 @@ export type BookStatusChange = {
   bookId: string;
   /** The status this write set. */
   status: string;
-  /** The row before, or null when the book had none. */
-  prior: { status: string; finishedOn: string | null; precision: Precision } | null;
+  /** The row before, or null when the book had none. The start is the read in
+   * progress's (task 1.17). */
+  prior: {
+    status: string; finishedOn: string | null; precision: Precision;
+    startedOn: string | null; startPrecision: Precision;
+  } | null;
   /** The read_events row this write appended. */
   appended: number | null;
-  /** The read_events row this write re-dated, with the date it had. */
-  edited: { id: number; finishedOn: string | null; precision: Precision } | null;
+  /** The read_events row this write re-dated, with the dates it had. */
+  edited: {
+    id: number; finishedOn: string | null; precision: Precision;
+    startedOn: string | null; startPrecision: Precision;
+  } | null;
   /** The read_events row this write logged for a read the status held alone. */
   backfilled: number | null;
 };
@@ -52,12 +74,19 @@ async function lockBook(tx: Tx, bookId: string) {
 
 async function latestRead(tx: Tx, userId: string, bookId: string) {
   const [row] = await tx
-    .select({ id: readEvents.id, finishedOn: readEvents.finishedOn, precision: readEvents.finishedOnPrecision })
+    .select({
+      id: readEvents.id, finishedOn: readEvents.finishedOn, precision: readEvents.finishedOnPrecision,
+      startedOn: readEvents.startedOn, startPrecision: readEvents.startedOnPrecision,
+    })
     .from(readEvents)
     .where(and(eq(readEvents.userId, userId), eq(readEvents.bookId, bookId)))
     .orderBy(desc(readEvents.id)).limit(1);
-  return row ? { ...row, precision: row.precision as Precision } : null;
+  return row ? { ...row, precision: row.precision as Precision, startPrecision: row.startPrecision as Precision } : null;
 }
+
+/** No start: NULL and `none` (data model 2.17). */
+const NO_START = { startedOn: null, startedOnPrecision: "none" } as const;
+const asStart = (f: Finish) => ({ startedOn: f.on, startedOnPrecision: f.precision });
 
 /**
  * Set a book's status (task 1.5, R1-03). `read_events` is the log and
@@ -74,17 +103,42 @@ async function latestRead(tx: Tx, userId: string, bookId: string) {
  *   kept: a bare status change never wipes a rating or a finish (R0-C1). A read
  *   the status held with no log row is logged first, so it keeps its year (D-65).
  *
- * Answers null for a book that is missing or removed.
+ * The start (task 1.17, data model 2.18) belongs to the read in progress:
+ *
+ * - Entering `reading` stamps today, Eastern and `exact`, unless `book_status`
+ *   already holds a start (To read or DNF, then Reading again, keeps it).
+ * - Finishing moves it onto the read it appends and clears it here, so the next
+ *   Reading starts a fresh read and the first read's row keeps its own.
+ * - A `start` sent with `reading` sets the start in progress; with `read` it is
+ *   the start of the read this write appends or re-dates. *Started* on a Read
+ *   book edits the latest read's and may leave the finish out, which keeps it
+ *   exactly as stored (a guessed month stays a guess).
+ * - A start after its finish throws `StartAfterFinish`, and `read` with no
+ *   finish to keep throws `RefusedStatus`: nothing is written.
+ *
+ * Answers null for a book that is missing or removed; otherwise the change, and
+ * the start this write left on the read in progress or the read (`start`).
  */
-export async function saveBookStatus(userId: string, input: BookStatusInput): Promise<BookStatusChange | null> {
-  const { bookId, status, finish, rating } = input;
-  if (status === "read" && !finish) throw new Error("saveBookStatus: read needs a finish date");
+export async function saveBookStatus(
+  userId: string, input: BookStatusInput, now = new Date(),
+): Promise<(BookStatusChange & { start: Finish }) | null> {
+  const { bookId, status, finish, start, rating } = input;
+  if (status === "read" && !finish && !start) throw new Error("saveBookStatus: read needs a finish date");
+  if (start && status !== "reading" && status !== "read") throw new Error("saveBookStatus: a start goes with reading or read");
   return db.transaction(async (tx) => {
     if (!(await lockBook(tx, bookId))) return null;
     const mine = and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId));
     const [before] = await tx
-      .select({ status: bookStatus.status, finishedOn: bookStatus.finishedOn, precision: bookStatus.finishedOnPrecision })
+      .select({
+        status: bookStatus.status, finishedOn: bookStatus.finishedOn, precision: bookStatus.finishedOnPrecision,
+        startedOn: bookStatus.startedOn, startPrecision: bookStatus.startedOnPrecision,
+      })
       .from(bookStatus).where(mine);
+    // The start of the read in progress, if one is held.
+    const held: Finish | null = before && before.startPrecision !== "none"
+      ? { on: before.startedOn, precision: before.startPrecision as Precision } : null;
+    let kept: Finish = { on: null, precision: "none" };
+    let finished: Finish | null = null;
 
     let appended: number | null = null;
     let edited: BookStatusChange["edited"] = null;
@@ -98,39 +152,60 @@ export async function saveBookStatus(userId: string, input: BookStatusInput): Pr
         .returning({ id: readEvents.id });
       backfilled = row.id;
     }
-    if (status === "read" && finish) {
+    if (status === "read") {
       const latest = await latestRead(tx, userId, bookId);
-      const dated = { finishedOn: finish.on, finishedOnPrecision: finish.precision };
       if (before?.status === "read" && latest) {
-        await tx.update(readEvents).set(dated).where(eq(readEvents.id, latest.id));
+        // A correction of the latest read: its start and finish stay unless sent.
+        finished = finish ?? { on: latest.finishedOn, precision: latest.precision };
+        kept = start ?? { on: latest.startedOn, precision: latest.startPrecision };
+        if (startAfterFinish(kept, finished)) throw new StartAfterFinish();
+        await tx.update(readEvents)
+          .set({ finishedOn: finished.on, finishedOnPrecision: finished.precision, ...asStart(kept) })
+          .where(eq(readEvents.id, latest.id));
         edited = latest;
       } else {
+        if (!finish) throw new RefusedStatus("finish is needed to mark a book read");
+        finished = finish;
+        const dated = { finishedOn: finish.on, finishedOnPrecision: finish.precision };
+        // A new read carries the start in progress, which leaves book_status.
+        kept = start ?? held ?? kept;
+        if (startAfterFinish(kept, finish)) throw new StartAfterFinish();
         const [row] = await tx.insert(readEvents)
-          .values({ userId, bookId, ...dated, rereadOf: latest?.id ?? null })
+          .values({ userId, bookId, ...dated, ...asStart(kept), rereadOf: latest?.id ?? null })
           .returning({ id: readEvents.id });
         appended = row.id;
       }
     }
+    if (status === "reading") {
+      // Entering Reading begins a read unless one is in progress; staying keeps it.
+      const stamp: Finish = before?.status === "reading" ? kept : { on: today(now), precision: "exact" };
+      kept = start ?? held ?? stamp;
+    }
 
     const set = {
       status,
-      ...(status === "read" && finish && { finishedOn: finish.on, finishedOnPrecision: finish.precision }),
+      ...(finished && { finishedOn: finished.on, finishedOnPrecision: finished.precision }),
+      ...(status === "read" && NO_START),
+      ...(status === "reading" && asStart(kept)),
       ...(rating !== undefined && { rating }),
     };
     await tx.insert(bookStatus).values({ userId, bookId, ...set })
       .onConflictDoUpdate({ target: [bookStatus.userId, bookStatus.bookId], set });
     return {
       bookId, status,
-      prior: before ? { ...before, precision: before.precision as Precision } : null,
+      prior: before
+        ? { ...before, precision: before.precision as Precision, startPrecision: before.startPrecision as Precision }
+        : null,
       appended, edited, backfilled,
+      start: status === "read" || status === "reading" ? kept : held ?? kept,
     };
   });
 }
 
 /**
  * Undo one status write: put back exactly what `saveBookStatus` changed. The
- * read it appended or backfilled is deleted, the read it re-dated gets its date back, and the
- * status row returns to its prior status and finish (a rating is never touched).
+ * read it appended or backfilled is deleted, the read it re-dated gets its dates back, and the
+ * status row returns to its prior status, finish and start (a rating is never touched).
  * A book that had no row loses the one the write made, unless something has
  * been added to it since, when it goes back to a bare `to_read`.
  *
@@ -159,20 +234,25 @@ export async function undoBookStatus(userId: string, change: BookStatusChange): 
       if (id !== null) await tx.delete(readEvents).where(eq(readEvents.id, id));
     }
     if (edited) {
-      await tx.update(readEvents).set({ finishedOn: edited.finishedOn, finishedOnPrecision: edited.precision })
-        .where(eq(readEvents.id, edited.id));
+      await tx.update(readEvents).set({
+        finishedOn: edited.finishedOn, finishedOnPrecision: edited.precision,
+        startedOn: edited.startedOn, startedOnPrecision: edited.startPrecision,
+      }).where(eq(readEvents.id, edited.id));
     }
     const mine = and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId));
     if (prior) {
       await tx.update(bookStatus)
-        .set({ status: prior.status, finishedOn: prior.finishedOn, finishedOnPrecision: prior.precision })
+        .set({
+          status: prior.status, finishedOn: prior.finishedOn, finishedOnPrecision: prior.precision,
+          startedOn: prior.startedOn, startedOnPrecision: prior.startPrecision,
+        })
         .where(mine);
     } else {
       const gone = await tx.delete(bookStatus)
         .where(and(mine, isNull(bookStatus.rating), isNull(bookStatus.notes), isNull(bookStatus.yearRank)))
         .returning({ bookId: bookStatus.bookId });
       if (gone.length === 0) {
-        await tx.update(bookStatus).set({ status: "to_read", finishedOn: null, finishedOnPrecision: "none" })
+        await tx.update(bookStatus).set({ status: "to_read", finishedOn: null, finishedOnPrecision: "none", ...NO_START })
           .where(mine);
       }
     }

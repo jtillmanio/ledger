@@ -14,17 +14,17 @@ line numbers below drift after an edit.
 |---|---|---|
 | `home` | Comics dashboard — the Up next cover shelf and *Ready when you are* (roadmap 1.10); 360px and 834px frames (roadmap 1.8) | 655–1001 |
 | `runs` | Run list | 1004–1090 |
-| `spine` | Run detail — per-run "read in …" hints; spine v2 gutter, Hide read, covers, dates, next-issue strip; the two-line undo toast (desktop frame, roadmap 1.2); 360px and 834px frames (roadmap 1.8) | 1219–1345 |
+| `spine` | Run detail — per-run "read in …" hints; spine v2 gutter, Hide read, covers, dates, next-issue strip; the two-line undo toast (desktop frame, roadmap 1.2); 360px and 834px frames (roadmap 1.8); the hero's span line, *Started Mar 2026* (task 1.17) | 1562–1763 |
 | `range` | Range marking; its undo toast in the two-line form (roadmap 1.2); the count with its optionals, *Adopt*'s fifth option *Original dates*, and the desktop anchor and pill (roadmap 1.1) | 1348–1466 |
 | `addsearch` | Add issues — search (Metron); searches as you type, a *Metron* tag on each Metron row (task 1.22) | 1882–2025 |
 | `bulk` | Add issues — type it (bulk) | 1576–1680 |
 | `newrun` | New run | 1545–1647 |
 | `ai` | AI review | 1650–1745 |
 | `bdash` | Books dashboard; 360px and 834px frames (roadmap 1.8) | 1748–1912 |
-| `status` | Status — in flight, up next, done (all media); 360px and 834px frames (roadmap 1.8) | 1915–2020 |
+| `status` | Status — in flight, up next, done (all media); 360px and 834px frames (roadmap 1.8); Done rows carry a run's span and a book's dates (notes, task 1.17) | 2645–2810 |
 | `plan` | Plan by quarter | 2023–2166 |
 | `moveplan` | Move / add to a quarter | 2169–2326 |
-| `blist` | Master list; the *Unlisted · N* chip after *Read* and an Unlisted row, grey badge and *Add to Someday* (task 1.21); the box searches as you type, *Searching…* (task 1.22) | 3113–3244 |
+| `blist` | Master list; the *Unlisted · N* chip after *Read* and an Unlisted row, grey badge and *Add to Someday* (task 1.21); the box searches as you type, *Searching…* (task 1.22); a row's *Started …* and days taken, the date line, and *Started* refusing a start after the finish (third frame, task 1.17) | 3117–3295 |
 | `add` | Add books — search (Hardcover, task 1.4f); searches as you type, one place or source tag a row (task 1.22) | 3247–3364 |
 | `shelves` | Shelves | 2528–2624 |
 | `top` | Top books | 2627–2713 |

@@ -59,29 +59,60 @@ export function isFinish(f: unknown): f is Finish {
   return precision === "none" ? on === null : isDay(on);
 }
 
-/** The finish a choice stores, or why it can't be stored. */
-export function resolveFinish(
-  choice: unknown, now = new Date(),
-): { ok: true; finish: Finish } | { ok: false; error: string } {
+/** The date a choice stores, or why it can't be stored: a finish's or a start's,
+ * by the same four choices and the same refusal of a day after today. */
+function resolveDay(
+  what: "finish" | "start", choice: unknown, now: Date,
+): { ok: true; day: Finish } | { ok: false; error: string } {
   const { mode, date, year } = (typeof choice === "object" && choice !== null ? choice : {}) as Record<string, unknown>;
   switch (mode) {
     case "today":
-      return { ok: true, finish: { on: today(now), precision: "exact" } };
+      return { ok: true, day: { on: today(now), precision: "exact" } };
     case "date":
       if (!isDay(date)) return { ok: false, error: "Pick a date needs date, YYYY-MM-DD" };
-      if (isFuture(date, now)) return { ok: false, error: "the finish date is after today" };
-      return { ok: true, finish: { on: date, precision: "exact" } };
+      if (isFuture(date, now)) return { ok: false, error: `the ${what} date is after today` };
+      return { ok: true, day: { on: date, precision: "exact" } };
     case "year": {
       // A year, not a day: this year's July 1st may still be ahead, and is fine.
       if (!Number.isInteger(year) || (year as number) < 1000) {
         return { ok: false, error: "Year only needs year, four digits" };
       }
-      if ((year as number) > Number(today(now).slice(0, 4))) return { ok: false, error: "the finish year is after this year" };
-      return { ok: true, finish: { on: `${year}-07-01`, precision: "approximate" } };
+      if ((year as number) > Number(today(now).slice(0, 4))) return { ok: false, error: `the ${what} year is after this year` };
+      return { ok: true, day: { on: `${year}-07-01`, precision: "approximate" } };
     }
     case "none":
-      return { ok: true, finish: { on: null, precision: "none" } };
+      return { ok: true, day: { on: null, precision: "none" } };
     default:
-      return { ok: false, error: `finish.mode is one of ${FINISH_MODES.join(", ")}` };
+      return { ok: false, error: `${what}.mode is one of ${FINISH_MODES.join(", ")}` };
   }
 }
+
+/** The finish a choice stores, or why it can't be stored. */
+export function resolveFinish(
+  choice: unknown, now = new Date(),
+): { ok: true; finish: Finish } | { ok: false; error: string } {
+  const r = resolveDay("finish", choice, now);
+  return r.ok ? { ok: true, finish: r.day } : r;
+}
+
+/** The start a choice stores (task 1.17, data model 2.18), or why it can't be:
+ * the finish's four choices, and a day after today is refused the same way. */
+export function resolveStart(
+  choice: unknown, now = new Date(),
+): { ok: true; start: Finish } | { ok: false; error: string } {
+  const r = resolveDay("start", choice, now);
+  return r.ok ? { ok: true, start: r.day } : r;
+}
+
+/** A start after its finish, which is refused (task 1.17). Two exact days compare
+ * as days; when either is a guess (`approximate`, a year only's July 1st) only
+ * the years are compared, so a Year only start in the finish's year is fine.
+ * A `none` on either side is never after anything. */
+export function startAfterFinish(start: Finish, finish: Finish): boolean {
+  if (start.on === null || finish.on === null) return false;
+  if (start.precision === "exact" && finish.precision === "exact") return start.on > finish.on;
+  return start.on.slice(0, 4) > finish.on.slice(0, 4);
+}
+
+/** The reason a start after its finish is refused, said the same way wherever. */
+export const START_AFTER_FINISH = "the start is after the finish";

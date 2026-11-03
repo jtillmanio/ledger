@@ -1,14 +1,14 @@
 ---
 id: TASK-039
 title: 1.17 Started and finished: a start date for books, a derived span for runs
-status: Ready
+status: In progress
 depends_on: []
 size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 4d09f77
 ---
 
 # TASK-039 — 1.17 Started and finished: a start date for books, a derived span for runs
@@ -86,9 +86,83 @@ When you start a book, the day you started is kept, and every finished read keep
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- `docs/03-data-model.md` § 2.18 says *proposed, settled at its plan gate*: settle it with the plan's answers (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-03 (owner), with the schema change. The plan gate settled:
+
+- **A start belongs to the read in progress.** `book_status.started_on` is the
+  start of the read not yet finished. Finishing moves it into the log: the new
+  `read_events` row carries it and `book_status`'s goes back to NULL / `none`.
+  A Read book's row reads its start from its latest `read_events` row.
+- **Entering Reading stamps today (Eastern, `exact`) unless `book_status`
+  already holds a start.** So *To read → Reading* and *DNF → Reading* keep the
+  stored start (DNF never finished a read), and *Read → Reading* always gets a
+  fresh one, because finishing cleared it.
+- **The start is editable while Read**: *Started* on a Read book edits the
+  latest read's start, as *Finished* edits its finish. A start after today is
+  refused, as a finish is; so is a start after the finish (by year when either
+  is `approximate`).
+- **Undo** puts back the start, its precision and the status that were there,
+  and for a re-dated read the event's start too.
+
+Steps:
+
+1. `src/db/schema.ts`: `started_on date NULL`, `started_on_precision text NOT
+   NULL DEFAULT 'none'` on `book_status` and `read_events`, each with 2.17's
+   CHECK pair; `npm run db:generate` writes `drizzle/0020_*` and meta. Nothing
+   dropped or retyped: no down file; no new table: `export-tables.ts` unchanged.
+2. `src/lib/finish-date.ts`: `resolveStart(choice, finish?, now)` beside
+   `resolveFinish`, and `startAfterFinish(start, finish)`.
+3. `src/db/writes.ts` `saveBookStatus` takes an optional `start` (accepted with
+   `reading` and `read` only), stamps on entering Reading, copies onto the
+   appended read and clears `book_status`'s, edits the latest read's start on a
+   Read re-date; `BookStatusChange.prior` / `.edited` carry the start;
+   `undoBookStatus` restores it. `src/app/api/progress/book/route.ts`: `start`
+   in, 400 on a refused start before any write, the stored start in the answer.
+4. `etl/views.sql`: `run_state.started_at`, the `MIN(completed_at)` of the same
+   lateral join (`MIN` skips the `none` reads' NULLs). `etl/test_views.sql`:
+   AC-1's view cases.
+5. `src/db/queries.ts`: `listBooks` and `booksDone` select the shown start
+   (`book_status`'s while not Read, the latest read's while Read) and
+   `days_taken` (finish minus start, only when both are `exact`); `runDetail`
+   and `doneRuns` select `started_at` and its precision.
+6. `src/lib/format.ts`: `startWhen` (*21 Sep*, the year when not this year;
+   `~2025` for a year only), `readDays` (*16 days*), `runSpan` (*Started Mar
+   2026* / *Mar–Sep 2026*).
+7. UI: `src/components/FinishDate.tsx` takes a legend (*Started* / *Finished*);
+   `src/components/BookStatus.tsx` gains the date line, *Started …* and
+   *Finished …* as buttons named with their dates, each opening the picker,
+   the reason under the control in a live region, focus back on the opener;
+   `src/app/books/list/page.tsx` row line; `src/components/StatusBookRow.tsx` +
+   `src/app/books/status/page.tsx` Done rows; `src/components/IssueRow.tsx` +
+   `src/app/comics/[runId]/page.tsx` the hero's span line;
+   `src/app/comics/status/page.tsx` Done rows; `src/app/globals.css` the line's
+   layout (tokens only).
+8. `design/mockups.html` (`blist`, `spine`, `status` frames) and
+   `design/mockups-index.md` redrawn; `docs/03-data-model.md` § 2.18 settled
+   with the answers above.
+
+Files beyond "Files likely touched": `src/lib/format.ts` (the formatters),
+`src/app/comics/[runId]/page.tsx` (passes the span), `src/app/books/status/page.tsx`
+(passes the dates), `src/app/globals.css` (the date line). Over 8 files with
+schema and UI together: `never-split` keeps it whole, attended.
+
+Test strategy:
+
+- AC-1 book bullets, AC-2, AC-3: `test/start-dates.test.ts` (new, TEST DB,
+  through the route), plus the queries behind AC-4 (16 days, `none` shows
+  nothing) and AC-5 (both spans, `none`-only run has none).
+- AC-1 view bullet: `etl/test_views.sql`; from zero: `npm run test:db:reset`.
+- AC-4 to AC-6 on screen: `test/reading-log.test.tsx` (button names, radio
+  inputs, the announced reason, focus return, no `--danger`) and
+  `test/e2e/start-dates.spec.ts` (new: list row, run hero, Done rows, axe).
+- Load: `load.ps1` / `load.sh` name their `\copy` columns, so the new columns
+  take `'none'`; `test/load-scripts.test.ts` already pins the lists.
+
+Risk: the hero's span is the server's, so a run's very first mark shows
+*Started* after the next load (finishing already refreshes, `RefreshOnce`).
 
 ## Review log
 

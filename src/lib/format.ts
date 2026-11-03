@@ -43,6 +43,63 @@ export function readWhen(at: Date | string | null, precision: Precision): string
   return precision === "approximate" ? `~${text}` : text;
 }
 
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** A book's start or finish day as a row says it (task 1.17; the feel pass's
+ * *Started 21 Sep*): `21 Sep`, `21 Sep 2025` outside this year, `~2025` for a
+ * Year only (its July 1st, `approximate`), `~Sep 2025` for another guess, and
+ * null for `none`. A bare calendar day, so no time zone moves it; "this year"
+ * is the Eastern one (task 1.16). */
+export function dayWhen(on: string | null, precision: Precision, now = new Date()): string | null {
+  if (on == null || precision === "none") return null;
+  const [y, m, d] = on.split("-");
+  if (precision === "approximate") return m === "07" && d === "01" ? `~${y}` : `~${MONTHS[Number(m) - 1]} ${y}`;
+  const thisYear = new Intl.DateTimeFormat("en-CA", { year: "numeric", timeZone: ZONE }).format(now);
+  return `${Number(d)} ${MONTHS[Number(m) - 1]}${y === thisYear ? "" : ` ${y}`}`;
+}
+
+/** Days taken (task 1.17), computed by the query, never stored: `16 days`,
+ * `1 day`, `same day`; null when either end isn't an exact day. */
+export function readDays(days: number | null): string | null {
+  if (days == null) return null;
+  return days === 0 ? "same day" : `${days} ${days === 1 ? "day" : "days"}`;
+}
+
+/** A book row's dates (task 1.17): while Reading, `Started 21 Sep`; once Read,
+ * `Started 1 Mar · finished 17 Mar · 16 days`. Null with no dated start: the
+ * status badge already says when it was read. */
+export function bookDates(b: {
+  status: string; started_on: string | null; started_on_precision: Precision;
+  finished_on: string | null; finished_on_precision: Precision; days_taken: number | null;
+}, now = new Date()): string | null {
+  const start = dayWhen(b.started_on, b.started_on_precision, now);
+  if (!start || (b.status !== "reading" && b.status !== "read")) return null;
+  const finish = b.status === "read" ? dayWhen(b.finished_on, b.finished_on_precision, now) : null;
+  return [`Started ${start}`, finish && `finished ${finish}`, finish && readDays(b.days_taken)]
+    .filter(Boolean).join(" · ");
+}
+
+/**
+ * A run's span (task 1.17, data model 2.18), from `run_state.started_at` and
+ * its latest dated read, each with its precision: `Started Mar 2026` while
+ * unread placements remain (no end given), `Mar–Sep 2026` once it is read,
+ * `Dec 2025–Feb 2026` across a year, `Mar 2026` in one month. A guessed end
+ * keeps its `~`. Null when no read is dated: `none` reads count toward neither.
+ */
+export function runSpan(
+  start: Date | string | null, startPrecision: Precision,
+  end: Date | string | null = null, endPrecision: Precision = "none",
+): string | null {
+  const a = readWhen(start, startPrecision);
+  if (!a) return null;
+  const b = readWhen(end, endPrecision);
+  if (!b) return `Started ${a}`;
+  if (a === b) return a;
+  const [am, ay] = a.split(" ");
+  const [bm, by] = b.split(" ");
+  return ay === by ? `${am}–${bm} ${by}` : `${a}–${b}`;
+}
+
 /** A book's word count as the lists print it: `387k`; null when it has none (task 1.9). */
 export function wordsK(words: number | null): string | null {
   return words ? `${Math.round(words / 1000)}k` : null;

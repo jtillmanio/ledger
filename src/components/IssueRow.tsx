@@ -72,6 +72,12 @@ function useFinePointer() {
  * badge instead; `lastRead` is the server's latest dated read, so a run finished
  * during the visit asks the server once for the date of the read that did it.
  *
+ * The span line (task 1.17, data model 2.18) is the server's, from
+ * `run_state.started_at`: `started` (*Started Mar 2026*) while unread
+ * placements remain, `span` (*Mar–Sep 2026*) once every one is read. The span
+ * shows only while the rows are as the server sent them, so an untick on a read
+ * run falls back to *Started*; a run with no dated read has neither.
+ *
  * Ranges (task 1.1). A single tap or click never prompts for a date; only a
  * range does, through the range sheet, and a range is one request of placement
  * ids (R3-10) and one undo entry. With a fine pointer the first click on a row
@@ -90,9 +96,11 @@ function useFinePointer() {
  * the finish-date control, which re-dates this placement and nothing else. Its
  * undo puts the date it had back, through the same `restore` a mark's undo uses.
  */
-export default function RunSpine({ runId, title, issues, ranges = null, blocked = false, lastRead = null, children }: {
+export default function RunSpine({
+  runId, title, issues, ranges = null, blocked = false, lastRead = null, started = null, span = null, children,
+}: {
   runId: string; title: string; issues: Issue[]; ranges?: string | null; blocked?: boolean;
-  lastRead?: string | null; children?: React.ReactNode;
+  lastRead?: string | null; started?: string | null; span?: string | null; children?: React.ReactNode;
 }) {
   const [saved, setSaved] = useState(issues);
   const [fromServer, setFromServer] = useState(issues);
@@ -266,6 +274,9 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
     onRange: markRange,
   };
 
+  // The span line: the whole span once read, as the server dated it; else when it began.
+  const spanLine = allRead && span && saved === fromServer ? span : started;
+
   const lo = anchor !== null && hover !== null ? Math.min(anchor, hover) : null;
   const hi = anchor !== null && hover !== null ? Math.max(anchor, hover) : null;
   const byId = new Map(state.map((i) => [i.placement_id, i]));
@@ -287,6 +298,7 @@ export default function RunSpine({ runId, title, issues, ranges = null, blocked 
           </p>
         )}
         {finishedHere && <RefreshOnce />}
+        {spanLine && <p className="runhero-span">{spanLine}</p>}
         <div className="btnrow run-actions">
           {next && (
             <a className="btn sm resume" href={`#p-${nextAt + 1}`}>{`Resume ${issueName(next.label, single)}`}</a>

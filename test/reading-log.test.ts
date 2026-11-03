@@ -53,6 +53,11 @@ const req = (url: string, method: string, body: unknown) =>
 const setStatus = (body: unknown) => book.POST(req("/api/progress/book", "POST", body));
 const undoStatus = (change: unknown) => book.DELETE(req("/api/progress/book", "DELETE", { change }));
 const redate = (body: unknown) => issue.PATCH(req("/api/progress/issue", "PATCH", body));
+/** The server's today, an Eastern afternoon: what entering Reading stamps (task 1.17). */
+function onDay(day: string) {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date(`${day}T17:00:00Z`));
+}
 
 const status = async (id: string) => (await sql`
   SELECT status, finished_on::text AS on, finished_on_precision AS precision, rating
@@ -79,6 +84,8 @@ describe("a book finished 2024-03-11 (roadmap 1.5 check)", () => {
   });
 
   it("reading it again appends a second read with reread_of set, leaves the first, and keeps one status", async () => {
+    // Reading stamps today as the start (task 1.17), so today is the reread's finish day.
+    onDay("2026-01-05");
     await setStatus({ bookId: "wok", status: "read", finish: { mode: "date", date: "2024-03-11" } });
     await setStatus({ bookId: "wok", status: "reading" });
     await setStatus({ bookId: "wok", status: "read", finish: { mode: "date", date: "2026-01-05" } });
@@ -176,6 +183,8 @@ describe("the master list's status control (R0-C1, R1-03)", () => {
   });
 
   it("to_read → reading → read round-trips, one row throughout", async () => {
+    // Started in 2020 (task 1.17's stamp), so Year only 2020 is no start after the finish.
+    onDay("2020-08-01");
     for (const s of ["to_read", "reading"]) {
       expect((await setStatus({ bookId: "wok", status: s })).status).toBe(200);
       expect(await status("wok")).toMatchObject({ status: s });
@@ -217,6 +226,7 @@ describe("the master list's status control (R0-C1, R1-03)", () => {
     expect(await events("mst")).toEqual([]);
     expect(await status("mst")).toMatchObject({ status: "read", on: "2022-07-01" });
 
+    onDay("2026-01-05");
     await setStatus({ bookId: "mst", status: "reading" });
     await setStatus({ bookId: "mst", status: "read", finish: { mode: "date", date: "2026-01-05" } });
     const [first, second] = await events("mst");
@@ -266,6 +276,7 @@ describe("undoing a status change (task 1.2)", () => {
   });
 
   it("refuses once the log has moved on, changing nothing", async () => {
+    onDay("2025-01-01");
     const { change } = await (await setStatus({
       bookId: "wok", status: "read", finish: { mode: "date", date: "2024-03-11" } })).json();
     await setStatus({ bookId: "wok", status: "reading" });
