@@ -1609,6 +1609,13 @@ two were already gated behind "at least five sessions exist", so nothing
 regresses by moving them: with no timer there is no runaway-session problem to
 solve in HORIZON (R1-12 defers with them).
 
+*From TASK-049 (2.2, PR #196):* until sessions exist, the
+books dashboard's Now shows the page count, the start and the time left for
+the whole book, with no `p. n of N` and no meter (owner, at 2.2's plan gate),
+and its *Log progress* / *Log pages* verb is `aria-disabled` with the reason
+*Logging pages arrives with sessions (2.1b)*. Give Now its position and its
+6px `--ready` meter here, and enable the verb to open the session sheet.
+
 **Check:** test that 10 sessions totalling 400 minutes over 20 days with known
 word counts computes minutes/day and wpm within 1% of hand-calculated values,
 and that Settings shows the drift rather than silently overwriting — **Use

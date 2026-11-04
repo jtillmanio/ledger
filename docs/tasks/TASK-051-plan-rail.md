@@ -31,6 +31,7 @@ The plan draws as a rail. Each quarter is a column, each book a block sized by i
 - Moving a book in the Check uses the existing plan helpers (`moveToTop`, `reorderQuarter` in `src/db/writes.ts`); no new write is needed.
 - Design: mockups `bdash` (the strip), `plan` and `planmonth` (*Plan rail — estimates, stacks, drag*; month retired, D-38) in `design/mockups.html`; captures `design/captures/1.8a/planmonth-*.png`. Desktop drag (ghost, live readout) is 2.3/2.10's, not this task's.
 - Decisions: D-37, D-38, D-40, D-7, M-06, M-07, SG-D11, FP-D8, R3-12.
+- *From TASK-049 (2.2, PR #196):* the books dashboard's *This quarter* strip is `src/components/QuarterStrip.tsx`, with markup kept close to this rail's (M-07). Replace its markup and class names with this component drawn as a one-quarter rail, so there is one rail markup.
 
 ## Acceptance criteria
 

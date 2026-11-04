@@ -29,6 +29,7 @@ When the book in hand belongs to something you follow as *Reading*, the dashboar
 - **Not drawn yet.** The feel pass (D-40) draws Now and *Between books* without these lines; the mockup's `bdash` frames (`design/mockups.html`, redrawn by TASK-049) gain them at phone, tablet and desktop widths before they are built: the plan draws them first and the owner sees them at the plan gate (standing rule 6, `ui.redrawFiles`).
 - This is a feel-pass surface (`docs/04-design.md` § 10): its new states are screenshotted at every feel-pass width, light and dark, reduced motion and transparency.
 - Decisions: D-108 (only *Reading* means reading), D-43, D-37, D-85, D-40, D-91. Data model 2.18 (start dates).
+- *From TASK-049 (2.2, PR #196):* the *Next in* line goes under the hero in `src/components/BooksNow.tsx`, and *Or keep going* under the offer in `src/components/BetweenBooks.tsx`. 2.2 leaves both as named slots.
 
 ## Acceptance criteria
 

@@ -7,8 +7,8 @@ size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 391e506
 ---
 
 # TASK-049 — 2.2 Books dashboard
@@ -85,9 +85,46 @@ At 1280px *On deck* and *2026 so far* are in the side rail, and **Plan** follows
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- 2.2b: `QuarterStrip`'s markup and class names are what the rail component replaces with a one-quarter rail (M-07) → docs/tasks/TASK-051-plan-rail.md § Context
+- 2.2d: *Next in* goes under the hero in `BooksNow.tsx`, and *Or keep going* under the offer in `BetweenBooks.tsx`; both are left as named slots → docs/tasks/TASK-050-next-in-what-you-read.md § Context
+- 2.1b: Now's position, its meter and *Log progress* wait for sessions (Q1); the reason on the disabled verb names 2.1b → docs/05-roadmap.md § 2.1b (approved at plan)
+
 ## Plan
 
 _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+
+Provisional: depends on TASK-048 for the finish offer (`src/lib/follow-offer.ts`, `UndoEntry.offer`); 2.2c lands first by M10's order.
+
+**Answered at the plan gate (owner, 2026-11-04: as recommended):**
+- Q1, Now's position, until 2.1b stores one: no `p. n of N` and no meter. Show the page count (`468 pages`, mono), *Started 21 Sep*, and *about 9 evenings at your set pace* for the whole book (its words ÷ minutes a day × words a minute, rounded up).
+- Q2, the capacity card and *Place them*: `/books/plan` only. Nothing on the dashboard, and nothing built here either way.
+- Q3, **Plan** on an *On deck* row moves the book to the end of the current quarter, with Undo: a new `POST /api/plan { bookId, from: "on_deck", to: <quarter> }` through `movePlan`.
+- Q4, *✓ finished* / *Finished it* finishes the book in hand today in one tap, with Undo and 2.2c's *Keep going?*. A different date is set from the Library's *Finished*.
+
+**Rules this plan sets:** the hero is the in-progress book started most recently (`started_on DESC NULLS LAST`, then *Reading* before *Listening*, then title). *2026 so far* is plain text until Stats (6.2) exists. *Pick something else* links to `/books/status?tab=next`. The lede carries a *Library* link (TASK-047's note). *This year* and *the current quarter* come from the Eastern day (`today()`, `src/lib/finish-date.ts`), passed into each query so the tests fix the date. A new author is one with a read this year and no read dated before it or undated.
+
+**Steps**
+1. Redraw `bdash` in `design/mockups.html` from the feel pass, reading and *Between books*, at 360, 834 and 1280, light and dark. Update `design/mockups-index.md`. The owner looks before step 2.
+2. `src/db/queries.ts`: `booksInHand(userId)` (the rule above; cover, author, pages, words, start, `listened`, status); `lastFinish(userId)` (the latest dated read in `book_reads`, else the latest undated one, with its start and days taken; null when nothing is finished); `quarterShelf(userId, period)` (that quarter's `to_read` books by `ordinal`; `[0]` is *Between books*' offer); `onDeck(userId, limit)`; `yearSoFar(userId, year)` → `{ books, listened, pages, newAuthors }` from `book_reads`. The strip reads `planCapacity(userId, year).quarters[q-1]` (TASK-046) and nothing new.
+3. Components (new): `BooksNow.tsx` (the hero: `--r-hero`, `--cover-hero`, Newsreader title, the headphones glyph for *Listening*); `BetweenBooks.tsx` (a 72px cover with a `--ready` check, the `✓ finished · Sun` badge, the line, the top of the plan, *Pick something else*; with no finish, no finished line); `QuarterStrip.tsx` (*Q4 2026 · 3 of 7 read · 615k planned · 760k a quarter*: one block per planned book at k/760 of the width, the rule at the right edge, `--blocked` past 100%, no "behind"; its markup is shaped like 2.2b's rail so TASK-051 can swap it); `PlanShelf.tsx` (client, QueueShelf's pattern: covers in order, **Reorder** → the quarter's section on `/books/status?tab=next`, ‹ › only when it overflows); `OnDeckRow.tsx` (client: the row, with **Plan** per Q3).
+4. `src/components/QueueShelf.tsx` (**not in Files likely touched**): pull its pager into `useShelfPager()` so `PlanShelf` shares it. `queue.spec.ts` guards the comics side.
+5. `src/components/ThumbBar.tsx` (**not in the list**): `{ kind: "books"; book: { id, title } | null; next: { id, title } | null }`. With a book: *Log progress* / *Log pages* stay `aria-disabled` with the reason *Logging pages arrives with sessions (2.1b)*; *✓ finished* / *Finished it* per Q4. Without one: the primary is *Start <title>* (writes `reading`, with Undo; full title in its name, truncated below about 1100px), or *Pick a book* → `/books/status?tab=next` with nothing planned. There is no second verb, and the header drops *Finished it*.
+6. `src/app/books/page.tsx`: the dashboard in `DashboardVerbs`, `pagehead` + `HeaderVerbs`, then `dash-cols`: Now, *Up next in Qn* and *This quarter* in `dash-main`; *On deck* and *2026 so far* in `dash-side`. DOM order is the five slots. *Up next* with nothing planned is an `EmptySlate` with one primary (*Add a book*, On deck). `src/app/books/loading.tsx` (new): the loaded geometry in `--sunk`.
+7. `src/components/nav/items.ts`: `books-dash` enabled; the *Books* switch → `/books`; drop the redirect comments.
+8. `src/app/api/plan/route.ts` (**not in the list**): Q3's POST.
+9. `src/app/globals.css`: the slots and states; tablet 768–1023 with the horizontal hero around 150×225 and *On deck* | *2026 so far* at 1.5 : 1; desktop with the 168×252 cover, 32/36 title and the 480px meter cap; the **Plan** reveal under `(hover:hover) and (pointer:fine)`, always shown on touch. Tokens only.
+10. `scripts/perf/routes.mjs` + `budget.json`: today's `books` (`/books/list`) is renamed `library` and keeps its numbers; `books` is `/books`, with a budget set from the first preview measurement. `docs/02-architecture.md` § 7 mirrors both, and § 5 loses the redirect note (**not in the list**; the Context names both).
+
+**Test strategy**
+- AC-1: `test/e2e/books-dashboard.spec.ts`: "five slots in order", "Between books names the last finish; the button names the lowest-ordinal to_read book", "never finished: no finished line", "no horizontal scroll; the primary inside the bottom 96px", "nothing resolves to --danger", "1280: On deck and 2026 so far in the side rail; Plan hidden at rest with a fine pointer, shown on hover, focus-within and touch", and feel-pass screenshots at every width, light and dark, reduced motion and reduced transparency. `test/books-dashboard.test.ts`: "the strip's planned total equals planCapacity's for the quarter", "2026 so far is three counts, all this year".
+- AC-2: `books-dashboard.test.ts` "the hero is the most recently started of Reading and Listening", "ordinals 1, 2 read, 3 → shelf 1 then 3", "the offer skips the read one"; the e2e spec: "a Listening hero carries the headphones glyph", "Reorder opens the quarter's reorder".
+- AC-3: `books-dashboard.test.ts` "3 text reads and 1 listen by 3 new authors: 4 books, 1 listened, pages summed, 3 new authors; other years add nothing"; e2e "past 100% the figure is --blocked; no --danger; no 'behind'".
+- AC-4: `test/nav-items.test.tsx` (its 2.2 cases turn round: Dashboard and the switch → `/books`, current there; Library current on `/books/list`); `test/redirect.test.ts` (`/` with `ledger_medium=books` → `/books`, as now); `test/e2e/routes.spec.ts` ("GET /books renders the dashboard", replacing the redirect assertion).
+- AC-5: the e2e spec, "the loading state is the loaded geometry in --sunk", "nothing planned: one primary in Up next", `contrastFailures` in both themes, target sizes, names, axe. `test/e2e/skeletons.spec.ts` gains `/books`.
+
+**Risks:** (1) The dashboard reads the whole user, so the spec makes its own books and parks any other in-progress E2E book, restoring it after (`workers: 1`). (2) Date-dependent: the current quarter comes from Eastern today everywhere, tests included. (3) `/books` has no budget yet; renaming the perf id restarts the Library's history under `library`. (4) Provisional on TASK-048.
+
+**Size check:** well over 8 files, data and UI. `never-split` keeps it whole and `autonomy: attended`; Context gives the reason.
 
 ## Review log
 

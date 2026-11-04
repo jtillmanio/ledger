@@ -154,7 +154,7 @@ milestone._
 | `games`, `game_genres`, `platforms`, `game_releases`, `owned_platforms`, `game_status`, `play_events`, the IGDB cache; `game_queue` | 10.1; 10.2 (proposed) |
 | `run_parked` | 5.16 (proposed) |
 | `shelf_games` | 10.6 (proposed) |
-| `shelf_follows` | 2.2c (proposed) |
+| `shelf_follows` | 2.2c (approved 2026-11-04; planned: TASK-048) |
 
 Views are in `etl/views.sql` and listed in data model §3; each new one lands
 with the task that first reads it.
