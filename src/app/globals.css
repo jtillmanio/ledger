@@ -839,6 +839,7 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .sk-line{height:.8125rem;margin:.2rem 0 .95rem}
 .sk-input{height:2.875rem;width:100%;margin:1rem 0 1.25rem;border-radius:var(--r-md)}
 .sk-chip{display:inline-block;height:1.85rem;border-radius:var(--r-full)}
+.sk-sort{height:2rem;border-radius:var(--r-md)}
 .sk-title{height:1rem;margin:.25rem 0}
 .sk-sub{height:.8125rem;margin:.325rem 0 .2rem}
 .sk-mono{height:.8125rem;margin:.2rem 0 .2rem}

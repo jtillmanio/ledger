@@ -625,7 +625,8 @@ const LIBRARY_KEYS: Record<Sort, { lead?: string; keys: string[] }> = {
   finished: { keys: ["st.finished_on", "b.title"] },
   // A book that is not to read is after every planned one whichever way it runs. Then year by
   // year (On deck and Someday have no year, so they close the list): a year's quarters by quarter
-  // and ordinal, its bare-year books after Q4, then On deck before Someday.
+  // and ordinal, its bare-year books after Q4, then On deck before Someday (reversed with the
+  // direction, so *Last to first* has Someday before On deck; both stay after every dated book).
   plan: {
     lead: "(tl.book_id IS NULL)",
     keys: ["tl.year", "COALESCE(tl.quarter, 5)", "tl.ordinal", "(tl.level = 'someday')", "b.title"],

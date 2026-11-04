@@ -4,8 +4,11 @@
 // Library where it draws medium items. The books are made here under an E2E
 // title the rest of the suite doesn't use, and removed after the last test.
 import { expect, test, type Page } from "@playwright/test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
+import Loading from "../../src/app/books/list/loading";
 import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
 
 // A check with no layout in it: runs once, in w390-light.
@@ -158,4 +161,18 @@ test("the nav says Library where it draws medium items, and the heading says it 
   // On the status screen it is listed and not current.
   await page.goto("/books/status");
   await expect(page.getByRole("link", { name: "Library" })).not.toHaveAttribute("aria-current", "page");
+});
+
+// Sets its own viewports: runs once, in w390-light.
+test("the loading skeleton's first chip group is as tall as the loaded one, Sort included (AC-5)", ONCE, async ({ page }) => {
+  // The status chips and the Sort, wrapping as the width makes them: the rows start where the skeleton's will.
+  const group = () => page.locator(".filters:not([role=search])").first().evaluate((el) => el.getBoundingClientRect().height);
+  for (const width of [360, 390, 412, 768, 1024, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    await open(page, "/books/list");
+    const loaded = await group();
+    await page.evaluate((html) => { document.querySelector("main")!.outerHTML = html; }, renderToStaticMarkup(createElement(Loading)));
+    const skeleton = await group();
+    expect(Math.abs(skeleton - loaded), `first chip group at ${width}px: loaded ${loaded}, skeleton ${skeleton}`).toBeLessThanOrEqual(6);
+  }
 });

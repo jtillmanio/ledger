@@ -30,9 +30,10 @@ export function Bar({ w, className = "" }: { w: string; className?: string }) {
 
 /** A list screen: title, count line, its filter chip groups, then rows of title
  * + sub-line. `filters` is how many lines of chips each group wraps to, so the
- * rows start where the loaded rows will. */
-export function ListSkeleton({ rows = 8, filters = [1], search = false }:
-  { rows?: number; filters?: number[]; search?: boolean }) {
+ * rows start where the loaded rows will. `sort` ends the first group with the
+ * Library's Sort control. */
+export function ListSkeleton({ rows = 8, filters = [1], search = false, sort = false }:
+  { rows?: number; filters?: number[]; search?: boolean; sort?: boolean }) {
   return (
     <LoadingMain>
       <Bar w="9rem" className="sk-h1" />
@@ -43,6 +44,8 @@ export function ListSkeleton({ rows = 8, filters = [1], search = false }:
           {Array.from({ length: lines * 3 }, (_, n) => (
             <Bar key={n} w={`${5.5 + ((n * 7 + g) % 4) * 0.5}rem`} className="sk-chip" />
           ))}
+          {/* The Library's Sort, which ends its first group (task 2.2e): the same wrapper, so it wraps where the control does. */}
+          {sort && g === 0 && <span className="sort"><Bar w="12.5rem" className="sk-sort" /></span>}
         </div>
       ))}
       <RunRowsSkeleton rows={rows} />
