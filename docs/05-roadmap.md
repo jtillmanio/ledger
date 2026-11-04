@@ -1555,7 +1555,7 @@ capacity view reflects an edit — changing 45 to 60 min/day moves the 2027 figu
 — without a redeploy. The stepper is a button group with an accessible name, and
 the page has one `<h1>`.
 
-### ☐ 2.1 Capacity view · M
+### ☑ 2.1 Capacity view · M
 Depends on 1.7 and 2.0.
 
 `reading_settings` (minutes/day, words/minute) plus a view summing planned word

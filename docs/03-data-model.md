@@ -612,9 +612,11 @@ filters by that run before it aggregates (architecture § Operational posture).
 | `book_genre_tree` | Each book at every level of each Calibre genre path, once, with its depth and whether the book was tagged with that path itself: Calibre's genres cascade (1.18c, D-98) |
 | `plan_period` | A plan row's year, quarter and level, so nothing parses `period` (2.9) |
 | `to_read_level` | Each to-read book's level: a quarter, a year, On deck or Someday (derived) |
+| `plan_book_words` | Each planned book that counts against capacity, once, at its earliest dated period, with its words: stated, estimated (a stored estimate, or pages × your words per page from 50 pages up) or unknown. To read, reading and read count; a listen, a DNF and On deck don't (2.1, D-112, D-115) |
+| `plan_capacity` | Per year and per quarter: planned words (stated, estimated, unknown books) against minutes a day × words a minute × the year's days, a quarter a quarter of it; the load and the share resting on estimates (2.1, D-37, D-115) |
 | `series_progress` | Series completion |
 
-Views a task proposes (`run_queue_state` 1.10, the capacity view 2.1,
+Views a task proposes (`run_queue_state` 1.10,
 `run_unlock_cost` and `run_opens` 2.6, `show_progress` and `franchise_progress`
 8.1, `artist_progress` and `album_progress` 9.1) land with that task.
 
