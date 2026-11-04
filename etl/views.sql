@@ -534,7 +534,8 @@ WHERE s.status = 'to_read';
 -- while it is to read or reading, and once read, unless every read of it was a
 -- listen: a listen, or one in progress, runs beside the year's reading, never
 -- against its word budget (D-112); a DNF or Unlisted book doesn't count.
--- words is the stated count, or a stored estimate; else page_count x your
+-- words is the stated count, or a stored estimate (trusted whatever its page
+-- count: the owner, 2026-11-04); else page_count x your
 -- words_per_page (the column default, 275, with no settings row), estimated;
 -- else NULL with word_source NULL, unknown: counted as a book, never as 0
 -- words. Under 50 pages is a picture-book edition's count, not the book's
@@ -583,8 +584,10 @@ FROM (SELECT DISTINCT w.user_id, w.year FROM plan_book_words w) y
 CROSS JOIN (VALUES (NULL::int), (1), (2), (3), (4)) q(quarter)
 LEFT JOIN reading_settings rs ON rs.user_id = y.user_id
 CROSS JOIN LATERAL (
-  SELECT (COALESCE(rs.minutes_per_day, 45) * COALESCE(rs.words_per_minute, 185)
-          * (make_date(y.year + 1, 1, 1) - make_date(y.year, 1, 1)))::float8
+  -- float8 before the product, so no setting overflows it; the leap rule
+  -- itself, not make_date, as the period CHECK admits year 0000.
+  SELECT COALESCE(rs.minutes_per_day, 45)::float8 * COALESCE(rs.words_per_minute, 185)
+         * CASE WHEN (y.year % 4 = 0 AND y.year % 100 <> 0) OR y.year % 400 = 0 THEN 366 ELSE 365 END
          / CASE WHEN q.quarter IS NULL THEN 1 ELSE 4 END                      AS capacity
 ) c
 CROSS JOIN LATERAL (

@@ -72,15 +72,25 @@ describe("plan_capacity reads your settings live (task 2.1, AC-1, AC-2)", () => 
     expect(quarters[1].load).toBeCloseTo(3_035_000 / (4_051_500 / 4), 9);
   });
 
-  it("the view's capacity is wordsPerYear's, the figure Settings shows, in a leap year too", async () => {
+  it("the view's capacity is wordsPerYear's, the figure Settings shows, through every leap rule", async () => {
     await w.saveReadingSettings(USER, { minutesPerDay: 30, wordsPerMinute: 250 });
-    await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${USER}, 'stated', '2028', NULL)`;
+    await sql`INSERT INTO books (id, title, word_count, word_count_source) VALUES
+      ('y2000', 'Y2000', 1, 'stated'), ('y2100', 'Y2100', 1, 'stated'), ('y0', 'Y0', 1, 'stated')`;
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES
+      (${USER}, 'y2000', 'to_read'), (${USER}, 'y2100', 'to_read'), (${USER}, 'y0', 'to_read')`;
+    await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES
+      (${USER}, 'stated', '2028', NULL), (${USER}, 'y2000', '2000', NULL), (${USER}, 'y2100', '2100', NULL),
+      (${USER}, 'y0', '0000', NULL)`;
     await sql`DELETE FROM reading_plan WHERE book_id = 'stated' AND period = '2027-Q2'`;
     const settings = await q.readingSettings(USER);
-    for (const y of [2027, 2028]) {
-      expect((await q.planCapacity(USER, y)).year.capacity).toBe(wordsPerYear(settings, y));
-    }
+    // Every year a row is planned in: one the period CHECK admits (0000) can't make the view throw.
+    const planned = await sql<{ year: number; capacity: number }[]>`
+      SELECT year, capacity FROM plan_capacity WHERE user_id = ${USER} AND quarter IS NULL ORDER BY year`;
+    expect(planned.map((r) => r.year)).toEqual([0, 2000, 2027, 2028, 2100]);
+    for (const { year, capacity } of planned) expect(capacity, String(year)).toBe(wordsPerYear(settings, year));
     expect(wordsPerYear(settings, 2028)).toBe(30 * 250 * 366);
+    expect(wordsPerYear(settings, 2100)).toBe(30 * 250 * 365);
+    expect(wordsPerYear(settings, 2000)).toBe(30 * 250 * 366);
   });
 
   it("with no settings row, the defaults: words per page as well as the pace", async () => {
