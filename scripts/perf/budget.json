@@ -10,6 +10,7 @@
     "comics-status": { "docRscBytes": 24000, "jsBytes": 175000, "requests": 35, "a11y": 100 },
     "books-status": { "docRscBytes": 24000, "jsBytes": 175000, "requests": 35, "a11y": 100 },
     "inbox": { "docRscBytes": 11000, "jsBytes": 173000, "requests": 28, "a11y": 100 },
+    "settings": { "docRscBytes": 11000, "jsBytes": 173000, "requests": 28, "a11y": 100 },
     "watch": { "docRscBytes": 11000, "jsBytes": 173000, "requests": 28, "a11y": 100 }
   }
 }

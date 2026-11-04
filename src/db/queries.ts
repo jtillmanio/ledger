@@ -2,6 +2,7 @@ import { sql } from "./index";
 import { readWhen, runSpan, type Precision } from "@/lib/format";
 import { FRESH_DAYS } from "@/lib/metron";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
+import { DEFAULT_SETTINGS, type ReadingSettings } from "@/lib/settings";
 
 /* Raw SQL against the views in etl/views.sql. Drizzle's query builder is used
  * for writes; reads that join three or four views are clearer as SQL. */
@@ -1024,6 +1025,24 @@ export async function wordsPerPage(userId: string): Promise<number> {
   const [row] = await sql<{ wpp: number }[]>`
     SELECT words_per_page AS wpp FROM reading_settings WHERE user_id = ${userId}`;
   return row?.wpp ?? DEFAULT_WORDS_PER_PAGE;
+}
+
+/**
+ * Your reading pace (task 2.0): the row, or the column defaults when you have none yet. Never
+ * cached: another screen reads an edit on its next render, with no redeploy.
+ */
+export async function readingSettings(userId: string): Promise<ReadingSettings> {
+  const [row] = await sql<{ minutesPerDay: number; wordsPerMinute: number; wordsPerPage: number }[]>`
+    SELECT minutes_per_day AS "minutesPerDay", words_per_minute AS "wordsPerMinute", words_per_page AS "wordsPerPage"
+    FROM reading_settings WHERE user_id = ${userId}`;
+  return row ?? DEFAULT_SETTINGS;
+}
+
+/** The volume map's size for Settings' *N rules · M series* (task 2.0): derived, never stored. */
+export async function volumeMapCounts(): Promise<{ rules: number; series: number }> {
+  const [row] = await sql<{ rules: number; series: number }[]>`
+    SELECT count(*)::int AS rules, count(DISTINCT series)::int AS series FROM volume_rules`;
+  return row;
 }
 
 /** One of your book shelves, for Add books opened from it (task 1.4c), or null. */

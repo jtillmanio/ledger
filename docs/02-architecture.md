@@ -125,7 +125,7 @@ Every page. One dashboard per medium, with the lists one level down (design §11
 **Route handlers** (`src/app/api/`): `/api/progress/{issue,range,book}`,
 `/api/runs/[runId]/issues`, `/api/metron/search`, `/api/books`,
 `/api/books/bulk`, `/api/books/search`, `/api/shelves`, `/api/inbox`,
-`/api/export`, `/api/login`, `/api/health`. A page never links to one with
+`/api/settings`, `/api/export`, `/api/login`, `/api/health`. A page never links to one with
 `<Link>`, because a prefetch runs it (§ Operational posture).
 
 **Auth.** Every route is behind the passcode gate in `src/proxy.ts` except
@@ -214,7 +214,7 @@ tables.
   skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
   page within 1 s. What holds that, and the test that fails if it slips:
   - **Queries per page, in one wave.** `/comics` 7, `/comics/runs` 2, a run 3,
-    `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/inbox` 2, `/watch` none, `/login` none, `/` and `/books` none (redirects), each page's queries started together
+    `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/inbox` 2, `/settings` 2, `/watch` none, `/login` none, `/` and `/books` none (redirects), each page's queries started together
     (`test/query-budget.test.ts`, which counts them). A query that must wait on
     another raises a page's waves; raising either number needs a reason here.
     The dashboard (then `/`) and `/books/list` went from 4 to 5 with the inbox
@@ -282,6 +282,7 @@ tables.
     | `/comics/busiek-avengers` | 21,000 | 171,000 | 29 | 100 |
     | `/books/list` | 60,000 | 170,000 | 53 | 100 |
     | `/inbox` | 11,000 | 173,000 | 28 | 100 |
+    | `/settings` | 11,000 | 173,000 | 28 | 100 |
     | `/watch` | 11,000 | 173,000 | 28 | 100 |
     <!-- /perf-budget -->
 
@@ -314,6 +315,8 @@ tables.
     runner, and made 55 requests against a budget of 35. `/watch` (task 1.8) is
     the shell and an empty slate, so it starts from `/inbox`'s numbers (the same
     weight of page); it is tapped from `/comics` on the media bar's link.
+    `/settings` (task 2.0) starts from the same numbers: two small reads, three
+    steppers and a card, tapped from `/comics` on the gear or the rail's foot.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 

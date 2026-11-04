@@ -65,10 +65,11 @@ export const NAV_ITEMS: NavItem[] = [
 
   { id: "inbox", label: "Inbox", href: "/inbox", icon: "inbox", enabled: true, group: "global" },
 
-  // Search is 6.1 and Settings 2.0; Export goes to Settings then (owner, 2026-10-19).
+  // Search is 6.1. Settings (2.0) is the rail's and the sidebar's foot and, on the phone, the gear at
+  // the bar's right end; Export moved into it as *Export everything* (a plain <a href="/api/export">
+  // there, never a <Link>: owner, 2026-10-19 and 2026-11-04).
   { id: "search", label: "Search", href: "/search", icon: "search", enabled: false, group: "foot" },
-  { id: "settings", label: "Settings", href: "/settings", icon: "settings", enabled: false, group: "foot" },
-  { id: "export", label: "Export", href: "/api/export", icon: "download", enabled: true, group: "foot", plain: true },
+  { id: "settings", label: "Settings", href: "/settings", icon: "settings", enabled: true, group: "foot" },
 ];
 
 /** The items with comics Add aimed at `runId`'s Add issues, or at the run list for none (1.19). */
