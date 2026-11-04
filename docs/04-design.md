@@ -639,6 +639,8 @@ always that medium's mark verb — `Mark #141 read`, `Log progress`,
 `Mark S2 watched` — followed by a secondary and a `+`. Every `+ batch` opens the
 **batch sheet**: *Mark next N* (a stepper), *Mark through…*, *Log a session*.
 Undo toasts are `role="status"` and last 8 seconds, paused on hover or focus.
+F6 moves focus into a live toast and back, over a sheet too (D-116; planned:
+TASK-048).
 
 **Three media, told apart at a glance.** Each dashboard's `h1` carries a small
 unit badge — *sequence · issues*, *time · words*, *seasons* — because amber

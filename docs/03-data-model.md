@@ -637,6 +637,7 @@ the same PR (hard rule 7).
 | 1.18c | `book_genres(book_id, genre)`, primary key `(book_id, genre)`; the cascade is the `book_genre_tree` view; `books.genre` stays the workbook's until 4.5 | Approved by the owner 2026-10-30; D-90, D-91, D-98 |
 | 1.22 | Nothing: the *Calibre* tag reads 1.18b's `books.calibre_id` | D-90 |
 | 1.23 | A `listening` value of `book_status.status`; `read_events.format` (`text` \| `audio`) | Built (migration 0021), 2.22; D-85 |
+| 2.2c | `shelf_follows(shelf_id, state)`, `shelf_id` the primary key (→ `shelves.id`, cascade), `state IN ('tracking', 'reading')`, no `user_id`, exported with the catalog tables beside `shelf_books`; the `shelf_progress` view (books listed and read per books shelf, live books only, with `follow_state`) | Approved by the owner 2026-11-04 (planned: TASK-048); 2.5e, D-43, D-91, D-108 |
 | 4.4 | Where a decided near-spelling row is remembered between syncs (D-87 leaves no other decision) | Asked at 4.4's plan gate |
 | 2.1b | `sessions` | §4.3 |
 | 3.5 | `issues.store_date` (the publication date) | Proposed in design §11, *Spine v2* |

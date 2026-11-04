@@ -7,8 +7,8 @@ size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 391e506
 ---
 
 # TASK-048 — 2.2c Follow what you're reading: the control, and an offer when you finish
@@ -80,9 +80,43 @@ Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Decision D-116: F6 moves focus into the live undo toast and back; that's how its *Keep going?* chips, and its Undo, are reached by keyboard, over a sheet too (amends D-63's *the toast is reached by pointer*; D-63 marked *Amended by D-116*, and `docs/04-design.md` § 11.1 says so) → docs/review/decisions.md § D-116 (approved at plan)
+- `shelf_follows` and `shelf_progress` are approved (planned: this task): a 2.2c row in `docs/03-data-model.md` § 4.1 By task, and the coverage row in `docs/06-tasklist.md` (`shelf_follows | 2.2c (approved 2026-11-04; planned: TASK-048)`) → docs/03-data-model.md § 4.1 By task (approved at plan)
+- The books dashboard's *✓ finished* (2.2) carries the same offer through `src/lib/follow-offer.ts` → not tracked: already in TASK-049's plan (provisional on this task)
+
 ## Plan
 
 _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+
+**Schema (stop-and-ask, answered by approving this plan):** `shelf_follows(shelf_id text PRIMARY KEY → shelves.id ON DELETE CASCADE, state text NOT NULL DEFAULT 'tracking' CHECK (state IN ('tracking','reading')))`, no `user_id` (D-91: a shelf is already the owner's). It goes in `CATALOG_TABLES` beside `shelf_books` (`USER_TABLES` must have `user_id`, and `test/export-tables.test.ts` checks that). Nothing dropped or retyped, so no `drizzle/down/`.
+
+**Steps**
+1. Draw first: `follow` (the *Follow…* sheet) and `finishoffer` (the finish toast with *Keep going?*) in `design/mockups.html` at 360, 834 and 1280, light and dark, and list both in `design/mockups-index.md`. Stop for the owner's look before step 2.
+2. `shelfFollows` in `src/db/schema.ts`; `npm run db:generate` → `drizzle/0022_*.sql` + `drizzle/meta/*`; `"shelf_follows"` in `CATALOG_TABLES`.
+3. `shelf_progress` in `etl/views.sql`, after `universe_progress`, in its shape: `user_id` (the shelf's), `shelf_id`, `name`, `books_listed` (live books on the shelf), `books_read` (`status = 'read'`), `pct`, `follow_state` last. Books shelves only.
+4. `src/db/writes.ts`: `FOLLOW_KINDS = ["series","author","universe","shelf"]`; `setFollow(userId, kind, id, state: "tracking"|"reading"|null)` → the prior state (`null` = no row). One transaction, Drizzle builder: read the row, then upsert or delete. The undo is `setFollow(prior)`, so each of the three AC-2 cases restores exactly.
+5. `src/db/queries.ts`: `followable(userId, kind, id)` (a series, author or universe with at least one live book; a shelf of yours with `kind = 'books'`); `bookGroupings(userId, bookId)` (series, author, universe, then shelves by name: `kind, id, name, read, total, state` from the four progress views; a series' total is `total_books`, the rest `books_listed`); `finishOffer(userId, bookId)` → `{ take, done }`: a grouping already *Reading* with no unread live book left is `done`; one not *Reading* is `take` if it is the author, or has an unread live book.
+6. `src/app/api/follows/route.ts` (new): `GET ?bookId=` → the groupings (404 for no live book); `POST { kind, id, state }` (`state` null = *Not following*) → 400 for an unknown kind, a missing id or anything `followable` refuses, else `{ prior }`. The undo POSTs `prior` back.
+7. `src/app/api/progress/book/route.ts` (**not in Files likely touched**: the finish has to carry its offer): when the write appended a read (entering `read`, a listen's finish included), answer `offer: await finishOffer(...)`; else `offer: null`.
+8. `src/lib/follow-offer.ts` (new): turns an `offer` into toast chips (*Mistborn · series*, *Brandon Sanderson*, *Cosmere*, *To-read pile · shelf*, *Done with Mistborn*), each writing through `/api/follows` and returning its own undo entry. TASK-049's *✓ finished* reuses it.
+9. `src/components/Undo.tsx`: `UndoEntry.offer?: { chips }`. The toast draws a second row, *Keep going?*, with the chips (44px). Taking one writes, then pushes its own entry that carries the chips still untaken; under the one-toast rule (1.8b) that commits the finish, and the chip's Undo undoes the follow alone. The chips go when the toast does; focus already holds it. **Keyboard: F6, while a toast is up, moves focus to its first control; F6 or Esc hands focus back** (`returnTo`). It works over a sheet too (D-63). D-116 (owner, at the plan gate).
+10. `src/components/FollowSheet.tsx` (new): `Sheet` headed by the book's title. It fetches the groupings on open, and each row has its name, its kind, `read / total` in mono, and a `role="radiogroup"` of native radios (*Reading · Tracking · Not following*) named *Following <name>*. A change POSTs and pushes an undo restoring `prior`.
+11. `src/components/BookRowMenu.tsx` (new, **not in the list**): `Menu` `⋯` named *More for <title>*, with the item *Follow…*. Its only prop is `bookId` (the title is read from `.row-title`, as `BookStatus` does), and the sheet is loaded with `next/dynamic` on first open, so 500 rows add almost no RSC or JS. Placed in each row of `src/app/books/list/page.tsx`.
+12. `src/components/BookStatus.tsx`: a finish's push carries `offer` through `follow-offer.ts`.
+13. `src/app/globals.css` (**not in the list**): the toast's offer row, the sheet's rows and the menu, from tokens only.
+
+**Files:** the 13 steps' files, plus `etl/test_views.sql`, `test/follows.test.ts` (new), `test/undo.test.tsx` (**not in the list**), `test/e2e/follows.spec.ts` (new); `test/export-tables.test.ts` should pass unchanged.
+
+**Test strategy**
+- AC-1: `test/follows.test.ts`: `it.each(kinds)("Reading writes one row at reading, Not following deletes it, Undo restores")`; "finishing 2 of 4 in the Cosmere on a shelf with a book left offers series, author, Cosmere, shelf"; "4 of 4 doesn't offer the series"; "a Reading series isn't offered"; "the last unread book of a Reading series offers Done with, and taking it writes tracking"; "a finish with no chip taken writes no follow row". `etl/test_views.sql`: "shelf_progress counts read and listed, skips a soft-deleted book". `test/export-tables.test.ts` as is. `test/e2e/follows.spec.ts`: "the offer's chips by keyboard (F6, Tab, Enter)", axe, screenshots at 360 and 1280.
+- AC-2: `follows.test.ts` "undo restores the exact earlier state" (3 cases); "refuses an unknown kind, a missing id, a soft-deleted book's series, a titles shelf with 400, and writes nothing".
+- AC-3: `follows.test.ts` "bookGroupings matches the progress views; a book with no series lists none"; `follows.spec.ts` "Follow… opens the sheet with each radiogroup checked as stored; Esc, Back and close return focus".
+- AC-4: `follows.test.ts` "finish, take a chip, undo the chip: still read, no follow row"; "nothing to offer: offer empty"; `undo.test.tsx` "the finish's Undo undoes it alone", "a chip pushes its own entry with the rest", "no offer, no Keep going? line".
+- AC-5: `follows.spec.ts` at every `ui.viewports` width, light and dark: names, ≥24px (≥44px in the toast), the sheet traps Tab and returns focus, no `--danger`, axe.
+
+**Risks / open questions:** (1) F6 is a new keyboard pattern (D-116): `test/undo.test.tsx` pins it, so the other toasts keep working. (2) At 360px, four chips wrap the toast to three lines. The mockup decides whether they scroll in one row instead. (3) The Library's perf budget (`books`, 60 kB doc+RSC): measure it after step 11.
+
+**Size check:** over 8 files, with schema and UI together. `never-split` keeps it whole and `autonomy: attended`; Context gives the reason.
 
 ## Review log
 
