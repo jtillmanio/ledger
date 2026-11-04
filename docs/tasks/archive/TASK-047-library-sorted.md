@@ -1,7 +1,7 @@
 ---
 id: TASK-047
 title: 2.2e Library: its own page, sorted as well as filtered
-status: Review
+status: Done
 depends_on: []
 size: M
 model: sonnet
