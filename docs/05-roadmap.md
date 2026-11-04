@@ -1807,7 +1807,7 @@ author and universe pages exist.
   offer at phone, tablet and desktop widths before they are built, and
   `design/mockups-index.md` lists them.
 
-**Check (proposed):** `npm test`: setting *Reading* on a series writes one
+**Check:** `npm test`: setting *Reading* on a series writes one
 `series_follows` row at `reading`, *Not following* deletes it, and Undo
 restores the earlier state; the same for an author, a universe and a shelf.
 Finishing book 2 of 4 of an unfollowed series in the Cosmere, on a shelf with
@@ -1852,7 +1852,7 @@ dashboard) and 2.2c (the follows it reads).
   without these lines; the mockup's `bdash` frames gain them at phone,
   tablet and desktop widths before they are built.
 
-**Check (proposed):** `etl/test_views.sql`: with a series followed `reading`
+**Check:** `etl/test_views.sql`: with a series followed `reading`
 whose books 1–2 are read and 3–4 `to_read`, `follow_next` lists book 3 only;
 the same series at `tracking`, or unfollowed with 2 read, has no row; an
 author followed `reading` lists their earliest unread book; a shelf followed
@@ -1899,7 +1899,7 @@ change that makes `/books` the dashboard.
 - **Not drawn yet.** The mockup's `blist` gains the *Sort* control and the
   *Library* name at phone, tablet and desktop widths before it is built.
 
-**Check (proposed):** `npm test`: `listBooks` with `sort=length` returns the
+**Check:** `npm test`: `listBooks` with `sort=length` returns the
 longest book first and a book with no word count last, and `dir=asc` reverses
 the order with the empty one still last; `sort=title` with `status=read` keeps
 only read books; `sort=plan` on *To read* lists 2027 Q1's books by ordinal
