@@ -2,6 +2,7 @@ import { sql } from "./index";
 import { readWhen, runSpan, type Precision } from "@/lib/format";
 import { FRESH_DAYS } from "@/lib/metron";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
+import { parseSort, type Dir, type Sort } from "@/lib/library-sort";
 import { DEFAULT_SETTINGS, type ReadingSettings } from "@/lib/settings";
 
 /* Raw SQL against the views in etl/views.sql. Drizzle's query builder is used
@@ -494,6 +495,8 @@ export async function trackSummary(userId: string) {
 export type BookRow = {
   id: string; title: string; author: string | null; series: string | null;
   series_position: number | null; genre: string | null; word_count: number | null;
+  /** `estimated` is pages × words per page, shown with a `~` (task 2.2b). */
+  word_count_source: "stated" | "estimated" | null;
   status: string;
   /** The earliest year the book is planned in, from `plan_period` (task 1.7); null when none (On deck, Someday). */
   plan_year: number | null;
@@ -521,14 +524,19 @@ export type BookRow = {
  * year chips leave it out. */
 export async function listBooks(
   userId: string,
-  opts: { status?: string; genre?: string; year?: number; noYear?: boolean; q?: string; level?: ToReadLevel } = {},
+  opts: {
+    status?: string; genre?: string; year?: number; noYear?: boolean; q?: string; level?: ToReadLevel;
+    /** The Library's order (task 2.2e, D-110): a name from `SORTS` and `asc` or `desc`; anything else is Series. */
+    sort?: string; dir?: string;
+  } = {},
 ): Promise<WithTotal<BookRow>[]> {
   const { status = null, genre = null, year = null, noYear = false, level = null } = opts;
   // An empty search box is no search: it must not bring the Unlisted books in.
   const q = opts.q?.trim() || null;
+  const { sort, dir } = parseSort(opts.sort, opts.dir);
   return sql<WithTotal<BookRow>[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position,
-           b.genre, b.word_count, b.cover_url,
+           b.genre, b.word_count, b.word_count_source, b.cover_url,
            (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
            COALESCE(st.status, 'to_read') AS status,
            CASE WHEN st.status = 'read' THEN extract(year FROM st.finished_on)::int END AS read_year,
@@ -550,6 +558,9 @@ export async function listBooks(
     LEFT JOIN authors a      ON a.id = b.author_id
     LEFT JOIN book_series s  ON s.id = b.series_id
     LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+    -- Plan order reads where a to-read book sits, from the view, never by parsing the period (D-37).
+    -- Joined for that sort only: any other, the parameter makes the join match nothing.
+    LEFT JOIN to_read_level tl ON ${sort === "plan"}::boolean AND tl.book_id = b.id AND tl.user_id = ${userId}
     -- A Read book's latest read: its start and days taken (task 1.17).
     LEFT JOIN LATERAL (
       SELECT e.started_on, e.started_on_precision, e.finished_on, e.finished_on_precision
@@ -594,9 +605,37 @@ export async function listBooks(
       AND (${level}::text  IS NULL
            OR EXISTS (SELECT 1 FROM to_read_level l
                       WHERE l.user_id = ${userId} AND l.book_id = b.id AND l.level = ${level}))
-    ORDER BY s.name NULLS LAST, b.series_position NULLS LAST, b.title
+    ORDER BY ${sql.unsafe(libraryOrder(sort, dir))}
     LIMIT 500
   `;
+}
+
+/**
+ * The Library's ORDER BY (task 2.2e, D-110). Each key is `(key IS NULL), key
+ * <dir>`, so a book with no value is last in either direction, and `b.id`
+ * closes the order so a reversal is exact. The text is built from this table
+ * and a two-valued direction: nothing the user typed reaches it.
+ */
+const LIBRARY_KEYS: Record<Sort, { lead?: string; keys: string[] }> = {
+  series: { keys: ["s.name", "b.series_position", "b.title"] },
+  title: { keys: ["b.title"] },
+  author: { keys: ["a.name", "b.title"] },
+  length: { keys: ["b.word_count", "b.title"] },
+  published: { keys: ["b.published_year", "b.title"] },
+  finished: { keys: ["st.finished_on", "b.title"] },
+  // A book that is not to read is after every planned one whichever way it runs. Then year by
+  // year (On deck and Someday have no year, so they close the list): a year's quarters by quarter
+  // and ordinal, its bare-year books after Q4, then On deck before Someday.
+  plan: {
+    lead: "(tl.book_id IS NULL)",
+    keys: ["tl.year", "COALESCE(tl.quarter, 5)", "tl.ordinal", "(tl.level = 'someday')", "b.title"],
+  },
+};
+
+function libraryOrder(sort: Sort, dir: Dir): string {
+  const { lead, keys } = LIBRARY_KEYS[sort];
+  const d = dir === "asc" ? "ASC" : "DESC";
+  return [...(lead ? [lead] : []), ...keys.map((k) => `(${k} IS NULL), ${k} ${d}`), `b.id ${d}`].join(", ");
 }
 
 /** The four places a to-read book sits (D-37): `to_read_level`'s `level`, Someday being no plan row. */

@@ -1905,7 +1905,7 @@ the order with the empty one still last; `sort=title` with `status=read` keeps
 only read books; `sort=plan` on *To read* lists 2027 Q1's books by ordinal
 before 2027 Q2's, and Someday's after On deck's. In the browser (0.11),
 choosing *Length* updates the URL and the order and survives a reload; the
-nav shows *Library* at 360px, 768px and 1280px, current on `/books/list`.
+nav shows *Library* at 768px and 1280px, current on `/books/list`; at 360px the *Books* switch is current there and the page's heading reads *Library*.
 Screenshots at 360px and 1280px.
 
 ### ☐ 2.3 Plan editor · M

@@ -5,9 +5,10 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { MIN_CHARS, PAUSE_MS } from "@/lib/use-search";
 
 /**
- * The master list's search box (task 1.22, D-84): the same 3 characters and
+ * The Library's search box (task 1.22, D-84): the same 3 characters and
  * 500 ms pause as the add flows, or Enter at once. A search replaces `?q=` in
- * the URL, keeping the filters already chosen, so the server still narrows the
+ * the URL, keeping the filters and the sort already chosen (it edits the
+ * current query string, so `sort` and `dir` stay; task 2.2e), so the server still narrows the
  * list and a reload shows it; `router.replace` adds no history entry, so one
  * Back leaves the list rather than taking letters off. Under 3 characters a
  * search there was is cleared, and the whole list shows again. *Searching…* is

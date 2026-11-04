@@ -39,7 +39,7 @@ the order with the empty one still last; `sort=title` with `status=read` keeps
 only read books; `sort=plan` on *To read* lists 2027 Q1's books by ordinal
 before 2027 Q2's, and Someday's after On deck's. In the browser (0.11),
 choosing *Length* updates the URL and the order and survives a reload; the
-nav shows *Library* at 360px, 768px and 1280px, current on `/books/list`.
+nav shows *Library* at 768px and 1280px, current on `/books/list`; at 360px the *Books* switch is current there and the page's heading reads *Library*.
 Screenshots at 360px and 1280px.
 - [ ] AC-2: For each of *Series*, *Title*, *Author*, *Published* and *Finished*, `listBooks` on a fixture with a NULL in that order's key returns the fixture's rows in the stated order with the NULL row last, and with `dir` reversed returns the non-NULL rows reversed and the NULL row still last; an unknown `sort` or `dir` falls back to *Series* in today's order, never a 500.
 - [ ] AC-3: Given `?status=to_read&level=quarter&q=the&sort=length`, the page lists exactly the rows the same URL without `sort` lists, in length order, with the same match count; tapping a filter chip or typing in the search box keeps `sort` and `dir` in the URL.

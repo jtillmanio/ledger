@@ -923,6 +923,11 @@ p{margin:0 0 .75rem;max-width:66ch}
 .measure span{display:block;height:100%;background:var(--ready)}
 
 .filters{display:flex;flex-wrap:wrap;gap:.375rem;margin:1rem 0 1.25rem}
+/* The Library's Sort (task 2.2e): a label, a native select (the phone's own picker) and the chip that
+   reverses it, in the status row. The select is 32px, the chip's 28px or more: nothing under 24px. */
+.sort{display:inline-flex;align-items:center;gap:.375rem;margin-left:auto}
+.sort select{font:inherit;font-size:.8125rem;min-height:32px;padding:.25rem .5rem;cursor:pointer;
+  color:var(--ink);background:var(--sunk);border:1px solid var(--faint-deco);border-radius:var(--r-md)}
 /* The master list's *Searching…* (task 1.22): its line is kept, so the list doesn't jump when it shows. */
 .list-searching{margin:-.875rem 0 .25rem;min-height:1.125rem}
 .chip{font-size:.8125rem;padding:.25rem .625rem;text-decoration:none;

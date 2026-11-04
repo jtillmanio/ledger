@@ -1,3 +1,5 @@
+import { libraryHref, type LibraryParams } from "@/lib/library-sort";
+
 /**
  * The books page's series list. It shows SERIES_SHOWN rows unless the URL asks
  * for all of them, and always reports the true total, so a cut list is never
@@ -14,10 +16,7 @@ export function seriesView<T>(all: T[], param?: string) {
   };
 }
 
-/** The current filters plus series=all, so showing every series keeps the book filters. */
-export function seriesAllHref(params: Record<string, string | undefined>): string {
-  const qs = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) if (v) qs.set(k, v);
-  qs.set("series", "all");
-  return `/books/list?${qs}`;
+/** The current filters and order plus series=all, so showing every series keeps the book filters and the sort. */
+export function seriesAllHref(params: LibraryParams): string {
+  return libraryHref({ ...params, series: "all" });
 }
