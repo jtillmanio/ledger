@@ -1,7 +1,7 @@
 ---
 id: TASK-045
 title: 2.0 Settings
-status: Review
+status: Done
 depends_on: []
 size: L
 model: sonnet
