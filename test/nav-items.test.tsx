@@ -71,6 +71,33 @@ describe("NAV_ITEMS (AC-2)", () => {
     }
   });
 
+  it("turns on the Library (task 2.2e): after Status in the rail and the sidebar, current on /books/list", () => {
+    const library = NAV_ITEMS.find((i) => i.id === "books-library")!;
+    expect(library).toMatchObject({ label: "Library", href: "/books/list", enabled: true, group: "medium", medium: "books" });
+    // `library` is Shelves' icon: hue and icon identify, and two items never share one.
+    expect(library.icon).not.toBe(NAV_ITEMS.find((i) => i.id === "books-shelves")!.icon);
+    const books = mediumItems(NAV_ITEMS, "books").map((i) => i.id);
+    expect(books).toEqual(["books-status", "books-library", "books-add"]);
+    expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books/list")?.id).toBe("books-library");
+    expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books/status")?.id).toBe("books-status");
+
+    nav.pathname = "/books/list";
+    const current = (html: string) => [...html.matchAll(/<a [^>]*aria-current="page"[^>]*>(?:(?!<\/a>).)*<\/a>/g)].map((m) => m[0]);
+    for (const name of ["the tablet rail", "the sidebar"] as const) {
+      const html = bars()[name];
+      expect(html, name).toContain(">Library<");
+      expect(html.indexOf(">Status<"), name).toBeLessThan(html.indexOf(">Library<"));
+      // On the Library the rail and sidebar mark Library, and the Books switch beside them.
+      expect(current(html).filter((a) => a.includes("Library")), name).toHaveLength(1);
+    }
+    // The phone's bar draws the media switch alone: Books is current there, with no Library item.
+    const phone = renderToString(<MediaBar />);
+    expect(phone).not.toContain(">Library<");
+    expect(current(phone).filter((a) => a.includes("Books"))).toHaveLength(1);
+    // The switch still opens the Library until 2.2 builds the dashboard.
+    expect(hrefOf("books")).toBe("/books/list");
+  });
+
   it("keeps the unbuilt screens out: Search, Tracks, Plan, Shelves, Top", () => {
     const off = ["search", "comics-tracks", "books-plan", "books-shelves", "books-top"];
     for (const id of off) expect(NAV_ITEMS.find((i) => i.id === id)?.enabled, id).toBe(false);

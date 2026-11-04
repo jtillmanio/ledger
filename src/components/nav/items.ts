@@ -9,7 +9,7 @@ import { addHref } from "@/lib/last-run";
 export type NavGroup = "media" | "medium" | "global" | "foot";
 export type IconName =
   | "layout-dashboard" | "list-checks" | "layers" | "route" | "plus" | "calendar-range" | "library"
-  | "list-ordered" | "book-open" | "book" | "tv" | "inbox" | "download" | "search" | "settings" | "film";
+  | "list-ordered" | "book-open" | "book" | "book-copy" | "tv" | "inbox" | "download" | "search" | "settings" | "film";
 
 export interface NavItem {
   id: string;
@@ -53,6 +53,8 @@ export const NAV_ITEMS: NavItem[] = [
   // Until 2.2 builds the books dashboard, /books redirects to the list.
   { id: "books-dash", label: "Dashboard", href: "/books", icon: "layout-dashboard", enabled: false, group: "medium", medium: "books", dash: true },
   { id: "books-status", label: "Status", href: "/books/status", icon: "list-checks", enabled: true, group: "medium", medium: "books" },
+  // The master list, named and given its own page (task 2.2e, D-110). `library` is Shelves' icon.
+  { id: "books-library", label: "Library", href: "/books/list", icon: "book-copy", enabled: true, group: "medium", medium: "books" },
   { id: "books-plan", label: "Plan", href: "/books/plan", icon: "calendar-range", enabled: false, group: "medium", medium: "books" },
   { id: "books-shelves", label: "Shelves", href: "/books/shelves", icon: "library", enabled: false, group: "medium", medium: "books" },
   { id: "books-top", label: "Top", href: "/books/top", icon: "list-ordered", enabled: false, group: "medium", medium: "books" },

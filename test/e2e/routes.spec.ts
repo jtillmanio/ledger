@@ -44,10 +44,10 @@ test("each route answers with its own screen", ONCE, async ({ page }) => {
   await page.waitForURL("**/comics/runs?state=reading");
 
   await page.goto("/books/list");
-  await expect(h1).toHaveText("Books");
+  await expect(h1).toHaveText("Library");
   await expect(page.getByRole("link", { name: /^Everything$/ })).toHaveAttribute("href", "/books/list");
 
-  // The books dashboard is 2.2's; until then /books is the master list.
+  // The books dashboard is 2.2's; until then /books is the Library.
   await page.goto("/books");
   expect(new URL(page.url()).pathname).toBe("/books/list");
 });

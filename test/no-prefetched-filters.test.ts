@@ -15,7 +15,7 @@ function sources(dir: string): string[] {
 // The opening tag of each <Link>, attributes and all; an href built by a
 // helper is named here because the source does not show its query string.
 const LINK = /<Link\b[^>]*?>/g;
-const QUERY_HREF = /href=\{?\s*(["'`][^"'`]*\?|seriesAllHref\()/;
+const QUERY_HREF = /href=\{?\s*(["'`][^"'`]*\?|seriesAllHref\(|libraryHref\()/;
 
 describe("no prefetched query-string <Link> (Dependabot PR #82)", () => {
   it("every <Link> to a query string under src/ has prefetch={false}", () => {

@@ -1526,7 +1526,7 @@ the frozen Sheets.
 
 **Goal:** Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. **Milestones:** M10–M12 (2.11a in M7).
 
-### ☐ 2.0 Settings · S
+### ☑ 2.0 Settings · S
 R1-05. The screen that owns `reading_settings`, and the reason 2.1 onward have
 inputs at all. Nothing in any phase built it, and it was missing from
 the route table (architecture § Routes and data access); every capacity figure on the books dashboard, the
@@ -1863,7 +1863,7 @@ sets it `reading` and Undo restores `to_read`; reading book 2 of a `reading`
 series, Now shows *Next in* naming book 3. Nothing on the dashboard resolves
 to `--danger`. Screenshots at 360px and 1280px.
 
-### ☐ 2.2e Library: its own page, sorted as well as filtered · S
+### ☑ 2.2e Library: its own page, sorted as well as filtered · S
 Owner intake, 2026-11-02 (owner: *Library view is own page, not home of
 books dashboard that also includes sorting options, not just filtering*).
 D-110. No dependency. Build it before 2.2 or with it, because 2.2 is the
@@ -1905,7 +1905,7 @@ the order with the empty one still last; `sort=title` with `status=read` keeps
 only read books; `sort=plan` on *To read* lists 2027 Q1's books by ordinal
 before 2027 Q2's, and Someday's after On deck's. In the browser (0.11),
 choosing *Length* updates the URL and the order and survives a reload; the
-nav shows *Library* at 360px, 768px and 1280px, current on `/books/list`.
+nav shows *Library* at 768px and 1280px, current on `/books/list`; at 360px the *Books* switch is current there and the page's heading reads *Library*.
 Screenshots at 360px and 1280px.
 
 ### ☐ 2.3 Plan editor · M
@@ -4036,6 +4036,10 @@ it is converted.
   Also product B3 and the route table's `/books/list` row (architecture § Routes and data access): **sort by word
   count** (moved to 2.2e with the Library's other sorts, D-110), and a **series-completion filter** (*complete · in progress · not
   started*, read from `series_progress`, never computed in the app).
+  *From TASK-047 (2.2e, PR #194):* the sticky desktop filter
+  rail (search, chips and *Sort* in a right column from 1024px, the mockup's
+  `blist` desktop frame) is not built: 2.2e puts *Sort* inline beside the status
+  filters at every width. The rail goes with this entry's saved views.
 
 - ☐ 6.11 Density toggle in Settings → Appearance: `.app[data-density="compact"]`,
   desktop only, 32px rows, `.chk` min-height 2rem · S. Compact sets `--row-h`

@@ -5,14 +5,19 @@ import {
 import Link from "next/link";
 import AddBooksButton from "@/components/AddBooksButton";
 import BookListSearch from "@/components/BookListSearch";
+import BookSort from "@/components/BookSort";
 import BookStatus from "@/components/BookStatus";
 import Cover, { Pending } from "@/components/Cover";
 import { bookDates, readSummary } from "@/lib/format";
+import { libraryHref, parseSort } from "@/lib/library-sort";
 import { seriesAllHref, seriesView } from "@/lib/series-list";
 
 export const dynamic = "force-dynamic";
 
-type Search = { status?: string; genre?: string; year?: string; q?: string; series?: string; level?: string };
+type Search = {
+  status?: string; genre?: string; year?: string; q?: string; series?: string; level?: string;
+  sort?: string; dir?: string;
+};
 
 /** The To read filter's levels (task 1.9, D-37), in the order the plan reads. */
 const LEVELS: [ToReadLevel | undefined, string][] = [
@@ -23,15 +28,17 @@ const GENRES = ["Fantasy", "Science Fiction", "Thriller", "Nonfiction", "Horror"
   "Young Adult", "Contemporary", "Graphic Novel", "Classics", "Historical Fiction"];
 
 export default async function Books({ searchParams }: { searchParams: Promise<Search> }) {
-  const { status, genre, year, q, series: seriesParam, level: levelParam } = await searchParams;
+  const { status, genre, year, q, series: seriesParam, level: levelParam, sort: sortParam, dir: dirParam } = await searchParams;
   const userId = await requireUserId();
+  // The order is the URL's (task 2.2e): every link below carries it, so a chip never drops it.
+  const order = parseSort(sortParam, dirParam);
 
   const noYear = year === "none";
   // The level narrows To read only; with any other status it is ignored, as the chips are not drawn.
   const level = status === "to_read" ? TO_READ_LEVELS.find((l) => l === levelParam) : undefined;
   const [books, years, series, { unyeared, unlisted }, inbox] = await Promise.all([
     listBooks(userId, {
-      status, genre, q, noYear, level,
+      status, genre, q, noYear, level, ...order,
       year: year && !noYear ? Number(year) : undefined,
     }),
     yearSummary(userId),
@@ -49,7 +56,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
 
   return (
     <main>
-      <h1>Books</h1>
+      <h1>Library</h1>
       {/* Notes jotted and not yet resolved (task 1.4b, mockup `dashextras`); none, no chip. */}
       {inbox > 0 && (
         <p className="inbox-line">
@@ -70,26 +77,28 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
       {/* A query-string chip is not prefetched: Next 16.4 fetches each one on
           load, and a tap re-renders this same route. */}
       <div className="filters">
-        <Link href="/books/list" className="chip" aria-current={!status && !genre && !year}>Everything</Link>
+        <Link prefetch={false} href={libraryHref({ ...order })} className="chip" aria-current={!status && !genre && !year}>Everything</Link>
         {/* Every read in progress, Listening included (task 1.23, owner 2026-10-31): no chip of its own. */}
-        <Link prefetch={false} href="/books/list?status=reading" className="chip" aria-current={status === "reading"}>Reading</Link>
-        <Link prefetch={false} href="/books/list?status=to_read" className="chip" aria-current={status === "to_read"}>To read</Link>
-        <Link prefetch={false} href="/books/list?status=read" className="chip" aria-current={status === "read"}>Read</Link>
+        <Link prefetch={false} href={libraryHref({ status: "reading", ...order })} className="chip" aria-current={status === "reading"}>Reading</Link>
+        <Link prefetch={false} href={libraryHref({ status: "to_read", ...order })} className="chip" aria-current={status === "to_read"}>To read</Link>
+        <Link prefetch={false} href={libraryHref({ status: "read", ...order })} className="chip" aria-current={status === "read"}>Read</Link>
         {/* The books you have but haven't put on your list (task 1.21, D-83): only
             this chip and a search show them. None, no chip, as No year. */}
         {unlisted > 0 && (
-          <Link prefetch={false} href="/books/list?status=unlisted" className="chip" aria-current={status === "unlisted"}
+          <Link prefetch={false} href={libraryHref({ status: "unlisted", ...order })} className="chip" aria-current={status === "unlisted"}
                 aria-label={`Unlisted, ${unlisted} ${unlisted === 1 ? "book" : "books"}`}>
             Unlisted <span className="n">{unlisted}</span>
           </Link>
         )}
+        {/* The order (task 2.2e, D-110): in the URL with the filters, so a reload keeps it. */}
+        <BookSort params={{ status, level, year, genre, q }} {...order} />
       </div>
 
       {/* Where a to-read book sits (task 1.9): read from to_read_level, the same four levels the plan draws. */}
       {status === "to_read" && (
         <div className="filters" role="group" aria-label="To read level">
           {LEVELS.map(([l, name]) => (
-            <Link key={name} prefetch={false} href={l ? `/books/list?status=to_read&level=${l}` : "/books/list?status=to_read"}
+            <Link key={name} prefetch={false} href={libraryHref({ status: "to_read", level: l, ...order })}
                   className="chip" aria-current={level === l}>{name}</Link>
           ))}
         </div>
@@ -98,7 +107,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
       <div className="filters">
         {yearList.map(([y, n]) => (
           // The name says what the number is: a year counts reads, not books (D-65).
-          <Link key={y} prefetch={false} href={`/books/list?year=${y}`} className="chip" aria-current={year === String(y)}
+          <Link key={y} prefetch={false} href={libraryHref({ year: String(y), ...order })} className="chip" aria-current={year === String(y)}
                 aria-label={`${y}, ${n} read`}>
             {y} <span className="n">{n}</span>
           </Link>
@@ -106,7 +115,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
         {/* Read books with no finish date: without this the chips sum to fewer
             than the Read chip and nothing on the page reaches the rest (R2-08). */}
         {unyeared > 0 && (
-          <Link prefetch={false} href="/books/list?year=none" className="chip" aria-current={noYear}
+          <Link prefetch={false} href={libraryHref({ year: "none", ...order })} className="chip" aria-current={noYear}
                 aria-label={`No year, ${unyeared} read`}>
             No year <span className="n">{unyeared}</span>
           </Link>
@@ -115,7 +124,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
 
       <div className="filters">
         {GENRES.map((g) => (
-          <Link key={g} prefetch={false} href={`/books/list?genre=${encodeURIComponent(g)}`} className="chip"
+          <Link key={g} prefetch={false} href={libraryHref({ genre: g, ...order })} className="chip"
                 aria-current={genre === g}>{g}</Link>
         ))}
       </div>
@@ -130,7 +139,8 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
                 <span className="row-title">{b.title}</span>
                 <span className="row-meta mono">
                   {b.read_year ?? b.plan_year ?? ""}
-                  {b.word_count ? ` · ${Math.round(b.word_count / 1000)}k` : ""}
+                  {/* An estimate (pages × words per page) keeps its ~, as the sort by length ranks it by it. */}
+                  {b.word_count ? ` · ${b.word_count_source === "estimated" ? "~" : ""}${Math.round(b.word_count / 1000)}k` : ""}
                 </span>
               </span>
               <span className="row-sub">
@@ -172,7 +182,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
       {seriesList.cut && (
         <p className="muted small mono">
           {seriesList.shown.length} of {seriesList.total} series ·{" "}
-          <Link prefetch={false} href={seriesAllHref({ status, genre, year, q })}>Show all {seriesList.total}</Link>
+          <Link prefetch={false} href={seriesAllHref({ status, genre, year, q, ...order })}>Show all {seriesList.total}</Link>
         </p>
       )}
     </main>

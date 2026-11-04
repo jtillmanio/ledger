@@ -39,7 +39,7 @@ const nBooks = (n: number) => `${n.toLocaleString()} ${n === 1 ? "book" : "books
  * it has a book; *Up next* is the plan by
  * level, each quarter in your order and draggable inside itself, each year's
  * bare-year lane after its quarters (grey, no order and no button until 2.8),
- * then On deck, and Someday as one row into the master list, never a list here
+ * then On deck, and Someday as one row into the Library, never a list here
  * (D-37); *Done* is read books by year finished, the undated last, with the
  * stopped ones folded under *Stopped*.
  */
@@ -126,7 +126,7 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
                     <span className="row-head">
                       <span className="row-title">Someday · {nBooks(someday)}</span>
                     </span>
-                    <span className="row-sub">The rest of your to-read list, not planned. Opens the master list.</span>
+                    <span className="row-sub">The rest of your to-read list, not planned. Opens the Library.</span>
                   </Link>
                 </article>
               </div>

@@ -27,4 +27,11 @@ describe("books page series list", () => {
     expect(seriesAllHref({ status: "read", q: "stormlight", genre: undefined }))
       .toBe("/books/list?status=read&q=stormlight&series=all");
   });
+
+  it("keeps the sort and direction on the show-all link, and none when they are the defaults (task 2.2e)", () => {
+    expect(seriesAllHref({ status: "read", sort: "length", dir: "asc" }))
+      .toBe("/books/list?status=read&series=all&sort=length&dir=asc");
+    expect(seriesAllHref({ sort: "length", dir: "desc" })).toBe("/books/list?series=all&sort=length");
+    expect(seriesAllHref({ sort: "series", dir: "asc" })).toBe("/books/list?series=all");
+  });
 });
