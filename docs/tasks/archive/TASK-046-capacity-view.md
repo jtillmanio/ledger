@@ -1,7 +1,7 @@
 ---
 id: TASK-046
 title: 2.1 Capacity view
-status: Review
+status: Done
 depends_on: [TASK-011, TASK-045]
 size: M
 model: opus
