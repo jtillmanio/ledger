@@ -4036,7 +4036,7 @@ it is converted.
   Also product B3 and the route table's `/books/list` row (architecture § Routes and data access): **sort by word
   count** (moved to 2.2e with the Library's other sorts, D-110), and a **series-completion filter** (*complete · in progress · not
   started*, read from `series_progress`, never computed in the app).
-  *From TASK-047 (2.2e, task/2.2e-library-sorted):* the sticky desktop filter
+  *From TASK-047 (2.2e, PR #194):* the sticky desktop filter
   rail (search, chips and *Sort* in a right column from 1024px, the mockup's
   `blist` desktop frame) is not built: 2.2e puts *Sort* inline beside the status
   filters at every width. The rail goes with this entry's saved views.
