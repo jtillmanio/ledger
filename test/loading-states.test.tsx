@@ -14,6 +14,7 @@ const routes: [string, string][] = [
   ["/books/status", "../src/app/books/status/loading"],
   ["/books/list", "../src/app/books/list/loading"],
   ["/inbox", "../src/app/inbox/loading"],
+  ["/settings", "../src/app/settings/loading"],
   ["/watch", "../src/app/watch/loading"],
 ];
 

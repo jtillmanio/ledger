@@ -34,6 +34,8 @@ export const ROUTES = [
   { id: "books-status", path: "/books/status", signedIn: true, tap: { from: "/books/list", selector: 'a[href="/books/status"]' } },
   // Inbox is in the rail and the sidebar and not on the phone bar: the tap clicks the first match, hidden or not.
   { id: "inbox", path: "/inbox", signedIn: true, tap: { from: "/books/list", selector: 'nav a[href="/inbox"]' } },
+  // Settings (task 2.0): the rail's and sidebar's foot and the phone bar's gear; the tap clicks the first match, hidden or not.
+  { id: "settings", path: "/settings", signedIn: true, tap: { from: "/comics", selector: 'a[href="/settings"]' } },
   // The watch shell (task 1.8): the nav's link, with the slate and nothing more until 8.x.
   { id: "watch", path: "/watch", signedIn: true, tap: { from: "/comics", selector: 'nav a[href="/watch"]' } },
 ];

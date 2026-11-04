@@ -1159,6 +1159,34 @@ textarea.txt.capture-field[aria-invalid="true"]{border-color:var(--danger)}
 .sk-btn{flex:0 0 auto;height:32px;width:4.75rem;border-radius:var(--r-sm)}
 .sk-head{margin-top:1.5rem}
 
+/* --- Settings (task 2.0, F-21; mockup `settings`; STYLE_GUIDE §9) -------------
+   Pace on the left and data on the right from 1024px, as the inbox does. The stepper
+   sits on --sunk here (the guide's §9); the batch and finish sheets keep theirs. At a bound
+   the stepper's reason is written beneath it. The phone bar's gear is the 44px .iconbtn. */
+@media (min-width:1024px){
+  main:has(> .settings-2up){max-width:var(--content-max)}
+  .settings-2up{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1.5rem;align-items:start}
+  .settings-2up>div>h2.s:first-child{margin-top:.5rem}
+}
+.settings h2.s{font-family:inherit;font-size:.8125rem;font-weight:600;color:var(--muted);margin:1.5rem 0 .5rem;
+  display:flex;align-items:center;gap:.5rem}
+.settings .frow .v{margin-left:auto}
+.settings .frow .btn{flex:0 0 auto;min-height:32px;text-decoration:none}
+.stepper-wrap{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;min-width:0}
+.stepper-why{text-align:right}
+.settings .stepper{margin-left:0;background:var(--sunk)}
+.pace-card{margin-top:.625rem}
+.pace-card .frow{display:block;margin:0;font-size:.8125rem;color:var(--muted)}
+.pace-card b{color:var(--ink)}
+.bar .gear{border-color:transparent;background:none}
+.bar .gear .ico{width:22px;height:22px}
+.bar .gear[aria-current="page"]{background:var(--sunk);color:var(--ink)}
+.sk-stepper{flex:0 0 auto;margin-left:auto;width:8rem;height:40px;border-radius:var(--r-md)}
+.sk-card{flex-direction:column;align-items:stretch;gap:0}
+.sk-val{height:1.3125rem;margin:0}
+.kv{display:flex;flex-direction:column;min-width:0}
+.sk-k{height:1.21875rem;margin:0}
+
 /* --- the control-state matrix (task 1.8a, UX-N01; design/Specimen.dc.html B5) ---
    Every interactive class answers hover, press, keyboard focus and being
    unavailable the same way. Last in the file, so each rule outranks the base

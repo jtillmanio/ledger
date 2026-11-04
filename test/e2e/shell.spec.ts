@@ -256,7 +256,7 @@ test("every enabled nav href answers: no 404, no 500", ONCE, async ({ page, requ
     for (const h of hrefs) found.add(h);
   }
   const hrefs = [...found];
-  expect(hrefs).toEqual(expect.arrayContaining(["/", "/comics", "/books/list", "/watch", "/inbox", "/comics/runs", "/books/add", "/api/export"]));
+  expect(hrefs).toEqual(expect.arrayContaining(["/", "/comics", "/books/list", "/watch", "/inbox", "/comics/runs", "/books/add", "/settings"]));
   for (const href of hrefs) {
     const res = await request.get(href, { maxRedirects: 0 });
     expect(res.status(), href).toBeLessThan(400);

@@ -71,23 +71,44 @@ describe("NAV_ITEMS (AC-2)", () => {
     }
   });
 
-  it("keeps the unbuilt screens out: Search, Settings, Tracks, Plan, Shelves, Top", () => {
-    const off = ["search", "settings", "comics-tracks", "books-plan", "books-shelves", "books-top"];
+  it("keeps the unbuilt screens out: Search, Tracks, Plan, Shelves, Top", () => {
+    const off = ["search", "comics-tracks", "books-plan", "books-shelves", "books-top"];
     for (const id of off) expect(NAV_ITEMS.find((i) => i.id === id)?.enabled, id).toBe(false);
     for (const [name, html] of Object.entries(bars())) {
-      expect(html, name).not.toMatch(/Ctrl K|Settings|Shelves|Tracks/);
+      expect(html, name).not.toMatch(/Ctrl K|Shelves|Tracks/);
     }
   });
 
-  it("Export is a plain link at the foot of the rail and the sidebar, and not on the phone", () => {
-    const all = bars();
-    expect(all["the phone bar"]).not.toContain("/api/export");
-    for (const name of ["the tablet rail", "the sidebar"] as const) {
-      expect(all[name], name).toContain('href="/api/export"');
+  it("Settings is on (task 2.0): the foot of the rail and the sidebar, and the phone bar's gear", () => {
+    const settings = NAV_ITEMS.find((i) => i.id === "settings")!;
+    expect(settings.enabled).toBe(true);
+    expect(visibleItems()).toContain(settings);
+    for (const [name, html] of Object.entries(bars())) {
+      expect(html.match(/href="\/settings"/g), name).toHaveLength(1);
+      expect(html, name).toContain("Settings");
     }
+    // The gear is a link with a name, 44px (.iconbtn), after the media switch.
+    const phone = renderToString(<MediaBar />);
+    expect(phone).toMatch(/<a [^>]*class="iconbtn gear"[^>]*href="\/settings"|<a [^>]*href="\/settings"[^>]*class="iconbtn gear"/);
+    expect(phone.indexOf('href="/settings"')).toBeGreaterThan(phone.indexOf(">Watch<"));
+    expect(phone).toMatch(/href="\/settings"[^>]*>(?:(?!<\/a>).)*>Settings<\/span>/);
+  });
+
+  it("Settings is the current item on /settings in every bar that draws it, and on no other screen", () => {
+    const current = (html: string) => /<a [^>]*href="\/settings"[^>]*aria-current="page"|<a [^>]*aria-current="page"[^>]*href="\/settings"/.test(html);
+    nav.pathname = "/settings";
+    for (const [name, html] of Object.entries(bars())) expect(current(html), name).toBe(true);
+    nav.pathname = "/comics";
+    for (const [name, html] of Object.entries(bars())) expect(current(html), name).toBe(false);
+  });
+
+  it("Export has left the nav: Settings' Export everything is the plain link now (task 2.0)", () => {
+    expect(NAV_ITEMS.find((i) => i.id === "export")).toBeUndefined();
+    for (const [name, html] of Object.entries(bars())) expect(html, name).not.toContain("/api/export");
     // A <Link> prefetches, and a prefetch of a route handler builds the export (task 0.9).
-    const items = readFileSync("src/components/nav/items.ts", "utf8");
-    expect(items).toMatch(/plain: true/);
+    const page = readFileSync("src/app/settings/page.tsx", "utf8");
+    expect(page).toMatch(/<a href="\/api\/export"/);
+    expect(page).not.toContain("next/link");
   });
 
   it("never prefetches a redirect: / is not prefetched (task 1.8c)", () => {

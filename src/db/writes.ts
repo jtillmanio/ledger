@@ -10,6 +10,7 @@ import { START_AFTER_FINISH, startAfterFinish, today, type Finish } from "@/lib/
 import type { Precision } from "@/lib/format";
 import type { Kind } from "@/lib/inbox";
 import { bookId, issueSlug, slug } from "@/lib/issue-slug";
+import type { ReadingSettings, SettingsPatch } from "@/lib/settings";
 
 /** Every `book_status.status` value. `unlisted` is the level below Someday (task 1.21, D-86): a
  * book you have but haven't put on your list. `listening` is Reading by ear (task 1.23, D-85). */
@@ -1511,4 +1512,20 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
     await tx.update(books).set({ deletedAt: sql`now()` }).where(and(inArray(books.id, created), isNull(books.deletedAt)));
   }
   return true;
+}
+
+/**
+ * Saves the settings you changed (task 2.0). The first edit inserts your row, every later one
+ * changes only the fields it names, and the answer is the row as stored, so a client can put its
+ * steppers back to it.
+ */
+export async function saveReadingSettings(userId: string, patch: SettingsPatch): Promise<ReadingSettings> {
+  if (Object.keys(patch).length === 0) throw new Error("saveReadingSettings: name at least one setting");
+  const [row] = await db.insert(readingSettings).values({ userId, ...patch })
+    .onConflictDoUpdate({ target: readingSettings.userId, set: patch })
+    .returning({
+      minutesPerDay: readingSettings.minutesPerDay, wordsPerMinute: readingSettings.wordsPerMinute,
+      wordsPerPage: readingSettings.wordsPerPage,
+    });
+  return row;
 }

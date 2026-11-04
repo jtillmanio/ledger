@@ -125,7 +125,7 @@ Every page. One dashboard per medium, with the lists one level down (design §11
 **Route handlers** (`src/app/api/`): `/api/progress/{issue,range,book}`,
 `/api/runs/[runId]/issues`, `/api/metron/search`, `/api/books`,
 `/api/books/bulk`, `/api/books/search`, `/api/shelves`, `/api/inbox`,
-`/api/export`, `/api/login`, `/api/health`. A page never links to one with
+`/api/settings`, `/api/export`, `/api/login`, `/api/health`. A page never links to one with
 `<Link>`, because a prefetch runs it (§ Operational posture).
 
 **Auth.** Every route is behind the passcode gate in `src/proxy.ts` except
@@ -214,7 +214,7 @@ tables.
   skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
   page within 1 s. What holds that, and the test that fails if it slips:
   - **Queries per page, in one wave.** `/comics` 7, `/comics/runs` 2, a run 3,
-    `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/inbox` 2, `/watch` none, `/login` none, `/` and `/books` none (redirects), each page's queries started together
+    `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/inbox` 2, `/settings` 2, `/watch` none, `/login` none, `/` and `/books` none (redirects), each page's queries started together
     (`test/query-budget.test.ts`, which counts them). A query that must wait on
     another raises a page's waves; raising either number needs a reason here.
     The dashboard (then `/`) and `/books/list` went from 4 to 5 with the inbox
@@ -279,10 +279,11 @@ tables.
     | `/comics/status` | 24,000 | 175,000 | 35 | 100 |
     | `/books/status` | 24,000 | 175,000 | 35 | 100 |
     | `/comics/bendis-disassembled` | 25,000 | 172,000 | 38 | 100 |
-    | `/comics/busiek-avengers` | 21,000 | 171,000 | 29 | 100 |
+    | `/comics/busiek-avengers` | 22,500 | 171,000 | 29 | 100 |
     | `/books/list` | 60,000 | 170,000 | 53 | 100 |
-    | `/inbox` | 11,000 | 173,000 | 28 | 100 |
-    | `/watch` | 11,000 | 173,000 | 28 | 100 |
+    | `/inbox` | 12,500 | 173,000 | 28 | 100 |
+    | `/settings` | 12,500 | 173,000 | 28 | 100 |
+    | `/watch` | 12,500 | 173,000 | 28 | 100 |
     <!-- /perf-budget -->
 
     Measured on 0.10's preview (2026-10-07, Lighthouse 13.5.0, Chrome 154),
@@ -314,6 +315,17 @@ tables.
     runner, and made 55 requests against a budget of 35. `/watch` (task 1.8) is
     the shell and an empty slate, so it starts from `/inbox`'s numbers (the same
     weight of page); it is tapped from `/comics` on the media bar's link.
+    `/settings` (task 2.0) starts from the same numbers: two small reads, three
+    steppers and a card, tapped from `/comics` on the gear or the rail's foot.
+    Task 2.0 also raised `/inbox`, `/watch` and the large run to 12,500, 12,500
+    and 22,500 bytes. The shell's Settings links (the phone bar's gear, the
+    rail's and sidebar's foot) are `<Link>`s, which the old Export `<a>` was
+    not, so every page now prefetches `/settings`' loading shell: two requests,
+    283 + 1,084 bytes on `/inbox` in PR #193's Lighthouse run, 1.4 KB a page.
+    That run measured 12,218 (`/inbox`), 11,806 (`/watch`) and 21,857 (the large
+    run) against the old 11,000, 11,000 and 21,000; each new budget is the old
+    one plus 1.5 KB. The other pages stayed inside theirs. The prefetch is the
+    point of a `loading.tsx` (a tap shows the skeleton at once), so it stays.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 
