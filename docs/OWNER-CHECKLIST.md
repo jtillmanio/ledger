@@ -243,7 +243,7 @@ and notes where it went.
       bar*: "plus the search icon on every screen"): D-113 puts a Settings gear
       at the bar's right end, the slot Search (6.1) is drawn in. Both lines
       should name the gear, and say where Search goes when 6.1 lands (from
-      TASK-045, task/2.0-settings).
+      TASK-045, PR #193).
 - [ ] Decide whether the batch and finish sheets' steppers move from `--raise`
       to `--sunk`. STYLE_GUIDE § 9 says `--sunk` ("32px buttons on `--sunk`");
       2.0 follows it on Settings only, scoped in `src/app/globals.css`, and
@@ -251,7 +251,7 @@ and notes where it went.
       `--raise`. If yes, drop the Settings-only rule and redraw the mockup's
       sheet frames; both are small, and the STYLE_GUIDE is protected, so the
       owner's design tool changes it if the guide is the one that should move
-      (from TASK-045, task/2.0-settings).
+      (from TASK-045, PR #193).
 
 ---
 

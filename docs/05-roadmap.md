@@ -3416,7 +3416,7 @@ it is never hand-entered, and nothing new is stored.
   placeholder and no image is requested.
 - The next-issue strip (1.6) uses the same rules.
 
-*From TASK-045 (2.0, task/2.0-settings):* 2.0 ships Settings without
+*From TASK-045 (2.0, PR #193):* 2.0 ships Settings without
 *Show covers* (owner, 2026-11-04): the mockup draws the switch, but nothing
 reads it until covers are in the UI, and `docs/03-data-model.md` § 4.1 leaves
 where it is kept (`reading_settings.show_covers`, which exists, or a device
@@ -4040,7 +4040,7 @@ it is converted.
 - ☐ 6.11 Density toggle in Settings → Appearance: `.app[data-density="compact"]`,
   desktop only, 32px rows, `.chk` min-height 2rem · S. Compact sets `--row-h`
   to 32px (1.8a), a 16px check ring and 13/18 mono labels (STYLE_GUIDE §5).
-  *From TASK-045 (2.0, task/2.0-settings):* 2.0 builds Settings with *Reading
+  *From TASK-045 (2.0, PR #193):* 2.0 builds Settings with *Reading
   pace* and *Data* only (owner, 2026-11-04). This task adds the *Appearance*
   group the mockup draws: the *Light / Dark / System* **Theme** row beside the
   density toggle. `reading_settings.theme` exists (`system`, `light` or
@@ -4179,7 +4179,7 @@ it is converted.
   `npm run test:all` is green.
 
 - ☐ 6.20 **Last backup on Settings** · S. From TASK-045 (2.0,
-  task/2.0-settings), owner, 2026-11-04. The mockup's *Data* group draws a
+  PR #193), owner, 2026-11-04. The mockup's *Data* group draws a
   *Last backup* row (*today 04:00*, `ok`); 2.0 leaves it out because the
   nightly dump goes to R2 (D-66) and the app has no read of it. This item adds
   one: a server read of the newest dump's time from R2, with its credential
