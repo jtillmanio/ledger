@@ -1,7 +1,7 @@
 ---
 id: TASK-048
 title: 2.2c Follow what you're reading: the control, and an offer when you finish
-status: Draft
+status: Ready
 depends_on: [TASK-023, TASK-010, TASK-047]
 size: L
 model: opus

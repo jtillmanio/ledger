@@ -1,7 +1,7 @@
 ---
 id: TASK-050
 title: 2.2d Next in what you're reading, on the dashboard
-status: Draft
+status: Ready
 depends_on: [TASK-049, TASK-048]
 size: L
 model: opus

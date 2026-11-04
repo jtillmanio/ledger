@@ -43,7 +43,7 @@ under the same numbers (M7 is sitting 7).
 | M7 Phase 1 complete | 5 / 5 | Done |
 | M8 Books load clean | 9 / 9 | Done |
 | M9 Captured from cutover on | 9 / 10 | Done but 1.26, which waits for the entries 1.25 pulled ahead |
-| M10 Capacity: is the year overcommitted? | 0 / 8 | Not started: seven Draft task files, TASK-045–051 (2.0, 2.1, 2.2e, 2.2c, 2.2, 2.2d, 2.2b); 2.1b has none |
+| M10 Capacity: is the year overcommitted? | 0 / 8 | Not started: seven Ready task files, TASK-045–051 (2.0, 2.1, 2.2e, 2.2c, 2.2, 2.2d, 2.2b); 2.1b has none |
 | M11–M15 Next | 1 / 27 | Not started† |
 | M16–M26 Later | 0 / 71 | Not started |
 
@@ -77,8 +77,8 @@ is not counted.
 ## What's next
 
 **M10, in its order** (`docs/06-tasklist.md`): 2.0 → 2.1 → (2.1b) → 2.2e →
-2.2c → 2.2 → 2.2d → 2.2b. TASK-045 to TASK-051 are Draft: review them, then
-set them Ready. 2.2c, 2.2d and 2.2e had proposed Checks, which became their
+2.2c → 2.2 → 2.2d → 2.2b. TASK-045 to TASK-051 are Ready (set
+2026-11-04); each plan still answers its questions below. 2.2c, 2.2d and 2.2e had proposed Checks, which became their
 **Check:** lines on 2026-11-04. 2.1b is not pulled ahead and has no task file
 yet. 2.2c and 2.2d aren't cutover gates either, so 2.0 → 2.1 → 2.2e → 2.2 →
 2.2b → 2.3 is the shortest path to 1.26.

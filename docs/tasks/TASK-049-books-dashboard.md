@@ -1,7 +1,7 @@
 ---
 id: TASK-049
 title: 2.2 Books dashboard
-status: Draft
+status: Ready
 depends_on: [TASK-011, TASK-014, TASK-046, TASK-047]
 size: L
 model: opus
