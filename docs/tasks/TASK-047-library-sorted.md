@@ -1,14 +1,14 @@
 ---
 id: TASK-047
 title: 2.2e Library: its own page, sorted as well as filtered
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: edbae5b
 ---
 
 # TASK-047 — 2.2e Library: its own page, sorted as well as filtered
@@ -74,9 +74,37 @@ Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- 2.2: once `/books` is the dashboard, the phone reaches the Library only from it (the phone bar lists no medium items), so the dashboard needs a Library link → docs/tasks/TASK-049-books-dashboard.md § Context (approved at plan)
+- The sticky desktop filter rail (search, chips and Sort in a right column from 1024px, the mockup's `blist` desktop frame) is not built; it goes with 6.10's saved views → docs/05-roadmap.md § 6.10 (approved at plan)
+- Candidate decision: the Library's Sort sits inline beside the status filters at every width (the rail is 6.10's); plan order is year by year as Up next (a year's quarters by ordinal, then its bare-year books, then the next year, On deck, Someday); the phone reaches the Library through *Books* until 2.2 → docs/review/decisions.md (approved at plan; ID from next-id.ps1 at close-out)
+
 ## Plan
 
 _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+
+Approved 2026-11-04. Owner's answers at the gate: keep `/books/list`; Sort inline at every width (no desktop rail; 6.10); plan order year by year as Up next; amend the Check's 360px part (below). *Recently added* stays out (2.10b asks about `books.added_at`). The `blist` frames were redrawn first (commit edbae5b).
+
+**Steps**
+
+1. `src/lib/library-sort.ts` (new): `SORTS` — `series` (default, asc), `title` (asc), `author` (asc), `length` (desc), `published` (desc), `finished` (desc), `plan` (asc) — each with its option name and the label each direction shows (*A–Z* / *Z–A*, *Longest first* / *Shortest first*, *Newest first* / *Oldest first*, *Most recent first* / *Oldest first*, *First to last* / *Last to first*). `parseSort(sort, dir)`: an unknown `sort` or an unknown `dir` falls back to Series ascending, today's order (AC-2, read literally); a missing `dir` is the sort's default. `libraryHref(params)`: `/books/list?…` with `sort` and `dir` left out when they are the defaults.
+2. `listBooks` (`src/db/queries.ts`) takes `sort` and `dir`; the ORDER BY is a whitelisted `sql` fragment per sort (no user text reaches SQL), each `(key IS NULL), key <dir>, tie-breakers <dir>, b.id <dir>`, so NULLs are last either way and a reversal is exact. Series asc is today's order (`s.name NULLS LAST, b.series_position NULLS LAST, b.title`). Author: `a.name`, then title. Length: `b.word_count` (an estimate sorts by its estimate). Published: `b.published_year`. Finished: `st.finished_on`. Plan: `LEFT JOIN to_read_level` only for this sort; key = not to-read last, then year (On deck and Someday after every year), quarter (bare year after its quarters), ordinal, then On deck before Someday, then title. `LIMIT 500` after the order; `total` unchanged. `BookRow` gains `word_count_source`.
+3. `src/app/books/list/page.tsx`: `<h1>Library</h1>`; every chip (status, level, year, No year, genre, Everything) and *Show all N series* (`seriesAllHref` in `src/lib/series-list.ts`) built with the current `sort` and `dir`, all `prefetch={false}`; `<BookSort>` at the end of the status chip row; an estimated count prints `~387k`.
+4. `src/components/BookSort.tsx` (new, client): `<label>` *Sort* + a native `<select>` (accessible name *Sort*), `router.push(libraryHref(…))` on change, keeping every other parameter (`dir` reset to the new sort's default); beside it the direction `<Link prefetch={false}>` showing the current order (*↓ Longest first*) and named *Longest first; reverse to shortest first*. Token-only CSS in `src/app/globals.css`, nothing under 24px. `BookListSearch` already keeps the other parameters (it reads `window.location.search`): no change, only a test.
+5. `src/components/nav/items.ts`: `books-library` (*Library*, `/books/list`, after Status, enabled) with a new neutral `book-copy` icon in `src/components/nav/Icons.tsx`. The *Books* switch keeps `/books/list`.
+6. `src/app/books/status/page.tsx`: the Someday row reads *Opens the Library.* (the one rendered *master list*; AddBooks has no copy naming the list).
+7. The owner-approved amendment of the Check's 360px part, in `docs/05-roadmap.md` § 2.2e **Check:** and AC-1: "the nav shows *Library* at 768px and 1280px, current on `/books/list`; at 360px the *Books* switch is current there and the page's heading reads *Library*."
+
+**Files:** `src/lib/library-sort.ts` (new), `src/db/queries.ts`, `src/app/books/list/page.tsx`, `src/components/BookSort.tsx` (new), `src/app/globals.css` (not in Files likely touched), `src/lib/series-list.ts` (not listed), `src/components/nav/items.ts`, `src/components/nav/Icons.tsx` (not listed), `src/app/books/status/page.tsx`, `docs/05-roadmap.md` + this task's AC-1 (the amended Check), `design/mockups.html` + `design/mockups-index.md` (done, edbae5b); tests below. `src/components/BookListSearch.tsx` and `src/components/AddBooks.tsx` need no change. More than 8 files: `splitPolicy` is `never-split` and the task is already attended.
+
+**Test strategy**
+
+- AC-1 (`npm test` part), AC-2, AC-3's count: `test/library-sort.test.ts` against TEST — length desc with the uncounted book last, `asc` reversed with it still last; `title` + `status=read` only read books; `plan` on To read: 2027 Q1 by ordinal, then Q2, …, On deck, then Someday; Series, Author, Published, Finished each with a NULL row, both directions; unknown `sort`/`dir` → Series; the same `status=to_read&level=quarter&q=the` with and without `sort` → the same ids and `total`. Title is `NOT NULL` (`books.title`), so AC-2's Title case proves order and reversal only.
+- AC-3 (links), AC-4: `test/library-page.test.tsx` renders the page: every chip and *Show all* href keeps `sort`/`dir`; `<h1>` *Library*; the select named *Sort* and the direction link's name; the status page's Someday row says *Library*; no *master list* in either render. `test/series-list.test.ts` (the href carries the sort). `test/no-prefetched-filters.test.ts` learns `libraryHref(`.
+- Nav: `test/nav-items.test.tsx` — `books-library` enabled, after Status in the rail and sidebar, current on `/books/list`.
+- Browser (AC-1, AC-3, AC-5): `test/e2e/library-sort.spec.ts` — choose *Length*: URL `?sort=length`, the longest first, survives a reload; a chip and the search box keep the sort; nav at 360 (Books current, h1 Library), 768 and 1280 (Library current); the controls ≥24px; axe; screenshots at 360 and 1280 (every `ui.viewports` width, light and dark, through e2e:full and ui-verifier).
+- AC-5's loading state: the Sort sits in the first chip row, so `ListSkeleton`'s geometry is unchanged; `test/loading-states.test.tsx` stays green.
+
+**Risks:** postgres.js fragment nesting for the ORDER BY; e2e specs that pin the old `<h1>Books</h1>` text.
 
 ## Review log
 
