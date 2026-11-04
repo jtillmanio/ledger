@@ -35,6 +35,7 @@ planned_at_commit:
 - Design: `bdash` in `design/mockups.html` is superseded by the feel pass and **redrawn by this task** from it, in the same PR (`design/mockups-index.md` § Oct 2026, feel pass; standing rule 6). Reference screenshots: `design/screenshots/phone/09…12` and `desktop/07…10` (`design/screenshots/README.md`). Their figures are sample data (D-7).
 - A feel-pass surface is checked more widely (`docs/04-design.md` § 10): every state at 360, 390, 412, 768, 1024 and 1280px, light and dark, reduced motion and reduced transparency; at 1440px the content box stays 1056px wide and centred; at 1280px every hover reveal is hidden at rest with a fine pointer and shown with touch.
 - Decisions: D-40 (the feel pass), D-37 (levels and order), D-38, D-7, D-85 (listens), D-108, D-110, D-63. FP-D8, FP-D15. R3-12 (2.2b split out of 2.2).
+- *From TASK-047 (2.2e, task/2.2e-library-sorted):* once `/books` is the dashboard, the phone reaches the Library only from it (the phone bar lists no medium items, only the media switch), so the dashboard needs a *Library* link.
 
 ## Acceptance criteria
 

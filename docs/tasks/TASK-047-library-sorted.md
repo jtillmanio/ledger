@@ -1,7 +1,7 @@
 ---
 id: TASK-047
 title: 2.2e Library: its own page, sorted as well as filtered
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: sonnet
@@ -33,7 +33,7 @@ The books master list becomes the *Library*: a page of its own with its own nav 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm test`: `listBooks` with `sort=length` returns the
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm test`: `listBooks` with `sort=length` returns the
 longest book first and a book with no word count last, and `dir=asc` reverses
 the order with the empty one still last; `sort=title` with `status=read` keeps
 only read books; `sort=plan` on *To read* lists 2027 Q1's books by ordinal
@@ -41,10 +41,10 @@ before 2027 Q2's, and Someday's after On deck's. In the browser (0.11),
 choosing *Length* updates the URL and the order and survives a reload; the
 nav shows *Library* at 768px and 1280px, current on `/books/list`; at 360px the *Books* switch is current there and the page's heading reads *Library*.
 Screenshots at 360px and 1280px.
-- [ ] AC-2: For each of *Series*, *Title*, *Author*, *Published* and *Finished*, `listBooks` on a fixture with a NULL in that order's key returns the fixture's rows in the stated order with the NULL row last, and with `dir` reversed returns the non-NULL rows reversed and the NULL row still last; an unknown `sort` or `dir` falls back to *Series* in today's order, never a 500.
-- [ ] AC-3: Given `?status=to_read&level=quarter&q=the&sort=length`, the page lists exactly the rows the same URL without `sort` lists, in length order, with the same match count; tapping a filter chip or typing in the search box keeps `sort` and `dir` in the URL.
-- [ ] AC-4: The page's `<h1>` reads *Library*, the books status screen's *Someday* row and every other link to the list name it *Library*, and no rendered text on any books screen reads *master list*.
-- [ ] AC-5: The Library meets the UX floor (`docs/04-design.md` § 10. The UX floor): the *Sort* control is a real `<select>` (phone) or a set of real controls (rail) with an accessible name *Sort*, and the reverse control says which way it sorts in its name; nothing interactive is under 24px; text 4.5:1 in both themes; its existing loading state still matches the loaded geometry; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-2: For each of *Series*, *Title*, *Author*, *Published* and *Finished*, `listBooks` on a fixture with a NULL in that order's key returns the fixture's rows in the stated order with the NULL row last, and with `dir` reversed returns the non-NULL rows reversed and the NULL row still last; an unknown `sort` or `dir` falls back to *Series* in today's order, never a 500.
+- [x] AC-3: Given `?status=to_read&level=quarter&q=the&sort=length`, the page lists exactly the rows the same URL without `sort` lists, in length order, with the same match count; tapping a filter chip or typing in the search box keeps `sort` and `dir` in the URL.
+- [x] AC-4: The page's `<h1>` reads *Library*, the books status screen's *Someday* row and every other link to the list name it *Library*, and no rendered text on any books screen reads *master list*.
+- [x] AC-5: The Library meets the UX floor (`docs/04-design.md` § 10. The UX floor): the *Sort* control is a real `<select>` (phone) or a set of real controls (rail) with an accessible name *Sort*, and the reverse control says which way it sorts in its name; nothing interactive is under 24px; text 4.5:1 in both themes; its existing loading state still matches the loaded geometry; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -76,7 +76,11 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 - 2.2: once `/books` is the dashboard, the phone reaches the Library only from it (the phone bar lists no medium items), so the dashboard needs a Library link → docs/tasks/TASK-049-books-dashboard.md § Context (approved at plan)
 - The sticky desktop filter rail (search, chips and Sort in a right column from 1024px, the mockup's `blist` desktop frame) is not built; it goes with 6.10's saved views → docs/05-roadmap.md § 6.10 (approved at plan)
-- Candidate decision: the Library's Sort sits inline beside the status filters at every width (the rail is 6.10's); plan order is year by year as Up next (a year's quarters by ordinal, then its bare-year books, then the next year, On deck, Someday); the phone reaches the Library through *Books* until 2.2 → docs/review/decisions.md (approved at plan; ID from next-id.ps1 at close-out)
+- Candidate decision: the Library's Sort sits inline beside the status filters at every width (the rail is 6.10's); plan order is year by year as Up next (a year's quarters by ordinal, then its bare-year books, then the next year, On deck, Someday); the phone reaches the Library through *Books* until 2.2 → docs/review/decisions.md § D-114 (approved at plan)
+- Amendment of the roadmap Check's 360px clause (the phone bar draws only the media switch): approved by the owner at the plan gate → docs/05-roadmap.md § 2.2e (done in this PR)
+- Two minor schema-review notes, accepted: a book with no `book_status` row has no `to_read_level`, so Plan order puts it after Someday (as the `level=someday` filter already leaves it out); *Finished* sorts by `book_status.finished_on`, which a book keeps after it leaves *Read*, as the row already displays it → not tracked: matches existing behaviour
+- The *Sort* control drops `series=all` when it changes the order (the `Everything` chip already dropped it), and the *Show all N series* link is 17px high, under the 24px floor (on `main` before this task) → not tracked: not in this task's scope; 6.10 rebuilds the list's controls
+- `design/mockups.html`'s screen-picker button still reads *Master list* and `design/mockups-index.md`'s `add` row range now overlaps `blist`'s → not tracked: cosmetic (the mockup's own picker label, not app text), and the index warns that its line numbers drift
 
 ## Plan
 
@@ -102,7 +106,7 @@ Approved 2026-11-04. Owner's answers at the gate: keep `/books/list`; Sort inlin
 - AC-3 (links), AC-4: `test/library-page.test.tsx` renders the page: every chip and *Show all* href keeps `sort`/`dir`; `<h1>` *Library*; the select named *Sort* and the direction link's name; the status page's Someday row says *Library*; no *master list* in either render. `test/series-list.test.ts` (the href carries the sort). `test/no-prefetched-filters.test.ts` learns `libraryHref(`.
 - Nav: `test/nav-items.test.tsx` — `books-library` enabled, after Status in the rail and sidebar, current on `/books/list`.
 - Browser (AC-1, AC-3, AC-5): `test/e2e/library-sort.spec.ts` — choose *Length*: URL `?sort=length`, the longest first, survives a reload; a chip and the search box keep the sort; nav at 360 (Books current, h1 Library), 768 and 1280 (Library current); the controls ≥24px; axe; screenshots at 360 and 1280 (every `ui.viewports` width, light and dark, through e2e:full and ui-verifier).
-- AC-5's loading state: the Sort sits in the first chip row, so `ListSkeleton`'s geometry is unchanged; `test/loading-states.test.tsx` stays green.
+- AC-5's loading state: the Sort ends the first chip group, so the skeleton draws a placeholder in the same wrapper (added after review round 1); `test/e2e/library-sort.spec.ts` ("the loading skeleton's first chip group is as tall as the loaded one") compares the two groups' heights at 360, 390, 412, 768, 1024 and 1280px; `test/loading-states.test.tsx` stays green.
 
 **Risks:** postgres.js fragment nesting for the ORDER BY; e2e specs that pin the old `<h1>Books</h1>` text.
 
@@ -110,13 +114,15 @@ Approved 2026-11-04. Owner's answers at the gate: keep `/books/list`; Sort inlin
 
 _Filled by /implement-task. One line per round._
 
+Verify R1 round FAIL(1: `/books/list` ran 6 queries, budget 5: a nested `sql` fragment counts as one) → fixed → full PASS (1155 tests, 765 browser) | R2 round PASS | Audit R1 PASS (notes: AC-5 loading clause and an AC-4 sweep of other books screens not tested; the first became a test, the second holds by grep) | Spec R1 CHANGES (AC-5 loading clause UNTESTED) → R2 APPROVE | Schema R1 APPROVE (R2 not re-run: only a comment changed) | UI R1 PASS (360–1280px, light and dark; no console errors) | Close-out follow-ups check APPROVE
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R1 round chain FAIL (query budget, 5 → 6) → full PASS; R2 round PASS)
+- Review rounds: 2
+- First-pass AC FAILs: 1 (AC-5 loading clause UNTESTED)
+- Plan revisions after approval: 0
