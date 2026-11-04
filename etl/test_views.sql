@@ -683,6 +683,43 @@ BEGIN
   END IF;
 END $$;
 
+-- A listen is a read (task 1.23, D-85): books_by_year counts it in `books` and
+-- again in `listened`; book_reads says how each read was read, a status-only
+-- `read` with no log row being 'text'; series_progress counts a book finished
+-- by ear as read. Its own genre and series, so the cases above are untouched.
+INSERT INTO book_series (id, name) VALUES ('zz-au-series', 'Zz Audio Series');
+INSERT INTO books (id, title, genre, word_count, word_count_source, series_id) VALUES
+  ('zz-au-text',   'Zz Au Text',   'Zz Audio', 1000, 'stated', NULL),
+  ('zz-au-listen', 'Zz Au Listen', 'Zz Audio', 2000, 'stated', 'zz-au-series'),
+  ('zz-au-status', 'Zz Au Status', 'Zz Audio Status', 3000, 'stated', NULL);
+INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision) VALUES
+  ('zz-user', 'zz-au-text',   'read', '2025-03-01', 'exact'),
+  ('zz-user', 'zz-au-listen', 'read', '2025-04-01', 'exact'),
+  ('zz-user', 'zz-au-status', 'read', '2025-05-01', 'exact');
+INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, format) VALUES
+  ('zz-user', 'zz-au-text',   '2025-03-01', 'exact', 'text'),
+  ('zz-user', 'zz-au-listen', '2025-04-01', 'exact', 'audio');
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT string_agg(genre || ':' || year || ':' || books || ':' || listened || ':' || words, ', ' ORDER BY genre)
+    INTO got
+  FROM books_by_year WHERE user_id = 'zz-user' AND genre LIKE 'Zz Audio%';
+  IF got IS DISTINCT FROM 'Zz Audio:2025:2:1:3000, Zz Audio Status:2025:1:0:3000' THEN
+    RAISE EXCEPTION 'books_by_year listened wrong: %', got;
+  END IF;
+  SELECT string_agg(book_id || ':' || format, ', ' ORDER BY book_id) INTO got
+  FROM book_reads WHERE user_id = 'zz-user' AND book_id LIKE 'zz-au-%';
+  IF got IS DISTINCT FROM 'zz-au-listen:audio, zz-au-status:text, zz-au-text:text' THEN
+    RAISE EXCEPTION 'book_reads format wrong: %', got;
+  END IF;
+  SELECT books_read || '/' || total_books INTO got
+  FROM series_progress WHERE user_id = 'zz-user' AND series_id = 'zz-au-series';
+  IF got IS DISTINCT FROM '1/1' THEN
+    RAISE EXCEPTION 'series_progress should count the listened book as read: %', got;
+  END IF;
+END $$;
+
 -- plan_period reads a period's year, quarter and level, and to_read_level puts
 -- each to_read book at one level (task 1.7, D-37): no plan row is Someday; with
 -- several, the earliest by date wins (a quarter before its own bare year), and

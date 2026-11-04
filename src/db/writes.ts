@@ -12,18 +12,21 @@ import type { Kind } from "@/lib/inbox";
 import { bookId, issueSlug, slug } from "@/lib/issue-slug";
 
 /** Every `book_status.status` value. `unlisted` is the level below Someday (task 1.21, D-86): a
- * book you have but haven't put on your list. */
-export const BOOK_STATUSES = ["to_read", "reading", "read", "dnf", "unlisted"] as const;
+ * book you have but haven't put on your list. `listening` is Reading by ear (task 1.23, D-85). */
+export const BOOK_STATUSES = ["to_read", "reading", "listening", "read", "dnf", "unlisted"] as const;
 /** What a status write may set: never `unlisted`, which only an undo puts back (D-86). */
-export const SETTABLE_STATUSES = ["to_read", "reading", "read", "dnf"] as const;
+export const SETTABLE_STATUSES = ["to_read", "reading", "listening", "read", "dnf"] as const;
+/** A read in progress (task 1.23): one state at a time, by eye or by ear. Each
+ * carries the start (1.17), and switching between them keeps it. */
+export const IN_PROGRESS: readonly string[] = ["reading", "listening"];
 
 export type BookStatusInput = {
   bookId: string;
   status: string;
   /** When it was finished: required for `read`, ignored otherwise. */
   finish?: Finish;
-  /** When the read began (task 1.17): only with `reading` or `read`; undefined =
-   * leave it, or stamp today on entering Reading. */
+  /** When the read began (task 1.17): only with `reading`, `listening` or `read`;
+   * undefined = leave it, or stamp today on entering Reading or Listening. */
   start?: Finish;
   /** undefined = leave as is; null = clear it. */
   rating?: number | null;
@@ -55,6 +58,8 @@ export type BookStatusChange = {
   } | null;
   /** The read_events row this write appended. */
   appended: number | null;
+  /** How the appended read was read (task 1.23): `audio` when it was finished from Listening. */
+  format?: "text" | "audio" | null;
   /** The read_events row this write re-dated, with the dates it had. */
   edited: {
     id: number; finishedOn: string | null; precision: Precision;
@@ -95,7 +100,9 @@ const asStart = (f: Finish) => ({ startedOn: f.on, startedOnPrecision: f.precisi
  *
  * - Entering `read` from any other status appends a read, its `reread_of` the
  *   book's previous one, so reading a book again (Reading, then Read) adds to
- *   its history and never overwrites it (product #22).
+ *   its history and never overwrites it (product #22). Finished from
+ *   `listening` it is a listen, `format = 'audio'` (task 1.23, D-85); from any
+ *   other status `text`. A re-date keeps the read's format.
  * - `read` on a book already read re-dates its latest read: a correction, not
  *   another read. One read before the log existed gets its first row instead.
  * - `book_status.finished_on` follows the read; the year is derived from it (D-21).
@@ -105,11 +112,12 @@ const asStart = (f: Finish) => ({ startedOn: f.on, startedOnPrecision: f.precisi
  *
  * The start (task 1.17, data model 2.18) belongs to the read in progress:
  *
- * - Entering `reading` stamps today, Eastern and `exact`, unless `book_status`
- *   already holds a start (To read or DNF, then Reading again, keeps it).
+ * - Entering `reading` or `listening` stamps today, Eastern and `exact`, unless
+ *   `book_status` already holds a start (To read or DNF, then Reading again,
+ *   keeps it; so does switching between Reading and Listening, task 1.23).
  * - Finishing moves it onto the read it appends and clears it here, so the next
  *   Reading starts a fresh read and the first read's row keeps its own.
- * - A `start` sent with `reading` sets the start in progress; with `read` it is
+ * - A `start` sent with `reading` or `listening` sets the start in progress; with `read` it is
  *   the start of the read this write appends or re-dates. *Started* on a Read
  *   book edits the latest read's and may leave the finish out, which keeps it
  *   exactly as stored (a guessed month stays a guess).
@@ -124,7 +132,9 @@ export async function saveBookStatus(
 ): Promise<(BookStatusChange & { start: Finish }) | null> {
   const { bookId, status, finish, start, rating } = input;
   if (status === "read" && !finish && !start) throw new Error("saveBookStatus: read needs a finish date");
-  if (start && status !== "reading" && status !== "read") throw new Error("saveBookStatus: a start goes with reading or read");
+  if (start && !IN_PROGRESS.includes(status) && status !== "read") {
+    throw new Error("saveBookStatus: a start goes with reading, listening or read");
+  }
   return db.transaction(async (tx) => {
     if (!(await lockBook(tx, bookId))) return null;
     const mine = and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId));
@@ -141,6 +151,7 @@ export async function saveBookStatus(
     let finished: Finish | null = null;
 
     let appended: number | null = null;
+    let format: BookStatusChange["format"] = null;
     let edited: BookStatusChange["edited"] = null;
     let backfilled: number | null = null;
     // A read loaded before the log existed (the workbook's) lives only in the
@@ -174,15 +185,20 @@ export async function saveBookStatus(
         // A new read carries the start in progress, which leaves book_status.
         kept = start ?? held ?? kept;
         if (startAfterFinish(kept, finished)) throw new StartAfterFinish();
+        // Finished from Listening, it was a listen (task 1.23, D-85): the state
+        // the book was in when you finished it says how it was read.
+        format = before?.status === "listening" ? "audio" : "text";
         const [row] = await tx.insert(readEvents)
-          .values({ userId, bookId, ...dated, ...asStart(kept), rereadOf: latest?.id ?? null })
+          .values({ userId, bookId, ...dated, ...asStart(kept), format, rereadOf: latest?.id ?? null })
           .returning({ id: readEvents.id });
         appended = row.id;
       }
     }
-    if (status === "reading") {
-      // Entering Reading begins a read unless one is in progress; staying keeps it.
-      const stamp: Finish = before?.status === "reading" ? kept : { on: today(now), precision: "exact" };
+    const inProgress = IN_PROGRESS.includes(status);
+    if (inProgress) {
+      // Entering Reading or Listening begins a read unless one is in progress;
+      // staying, or switching between the two, keeps it (task 1.23).
+      const stamp: Finish = before && IN_PROGRESS.includes(before.status) ? kept : { on: today(now), precision: "exact" };
       kept = start ?? held ?? stamp;
     }
 
@@ -190,7 +206,7 @@ export async function saveBookStatus(
       status,
       ...(finished && { finishedOn: finished.on, finishedOnPrecision: finished.precision }),
       ...(status === "read" && NO_START),
-      ...(status === "reading" && asStart(kept)),
+      ...(inProgress && asStart(kept)),
       ...(rating !== undefined && { rating }),
     };
     await tx.insert(bookStatus).values({ userId, bookId, ...set })
@@ -200,8 +216,8 @@ export async function saveBookStatus(
       prior: before
         ? { ...before, precision: before.precision as Precision, startPrecision: before.startPrecision as Precision }
         : null,
-      appended, edited, backfilled,
-      start: status === "read" || status === "reading" ? kept : held ?? kept,
+      appended, format, edited, backfilled,
+      start: status === "read" || inProgress ? kept : held ?? kept,
     };
   });
 }

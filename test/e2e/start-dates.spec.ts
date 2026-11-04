@@ -121,8 +121,13 @@ test("the date line: Started and Finished are buttons named with their dates; St
   expect(color).not.toBe(await tokenColour(page, "--danger"));
 
   await expectNoHorizontalScroll(page);
+  // From the top: scrolled down to the open control, the sticky bar sits over a
+  // filter chip, and axe's target-size counts a chip under it as obscured (the
+  // control grew with *Listening*, task 1.23). The control stays open.
+  await page.evaluate(() => window.scrollTo(0, 0));
   await expectNoAxeViolations(page, AXE);
   expect(await contrastFailures(page)).toEqual([]);
+  await row.scrollIntoViewIfNeeded();
   await screenshot(page, info, "start-dates-control");
 
   await page.keyboard.press("Escape");

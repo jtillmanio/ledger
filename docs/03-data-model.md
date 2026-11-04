@@ -561,6 +561,31 @@ A song is a MusicBrainz recording, ranked once however many albums carry it.
 An album's tracklist comes from one canonical release, the earliest official
 one, so editions and remasters don't multiply songs.
 
+**2.22 A listen is a read, and the log says it was a listen.** *Oct 2026,
+D-85; task 1.23, settled at its plan gate (owner, 2026-10-31 and 2026-11-03;
+migration 0021).* An audiobook finished is a book read: it counts in series,
+author and universe progress, the Read filter and the year's totals, as any
+read does. So it is not a separate track or a status that leaves the book
+unread (D-85's rejected options), but one more fact on the read:
+
+```
+read_events.format   text NOT NULL DEFAULT 'text', CHECK (format IN ('text', 'audio'))
+book_status.status   gains 'listening' (no CHECK, D-86)
+```
+
+- **One read in progress.** *Listening* is Reading by ear: a book is one or
+  the other, never both. Entering either stamps a start (2.18); switching
+  between them keeps it.
+- **The state you finish in is the format.** Finishing from *Listening*
+  appends `audio`; from anything else, `text`. A re-date keeps the read's
+  format, and a backfilled read (a workbook `read` with no log row) is
+  `text`, as is every read before 0021 (D-41, D-87). No length is recorded.
+- **Counted apart, derived.** `book_reads` carries the format (the status-only
+  row is `text`), `books_by_year.listened` counts the listens its `books`
+  already includes, and a book's summary, *Read 2× · Listened 1×*, is counted
+  in the query. A listen runs alongside the year's reading, never against
+  2.1's word budget.
+
 ## 3. Views
 
 Every view and function in `etl/views.sql`, applied after every migration (a
@@ -582,7 +607,7 @@ filters by that run before it aggregates (architecture § Operational posture).
 | `track_progress`, `block_progress` | Per-track and per-block rollups, the same column shape |
 | `block_position` | "Run 3 of 5 in block 2 of 7" |
 | `run_creators`, `run_credit_line` | Who made a run, from its issues' credits; the line lists those on at least a quarter of credited issues (2.12) |
-| `book_reads` | Every finished read of a book: each `read_events` row, plus a `read` status with no log row (D-65) |
+| `book_reads` | Every finished read of a book: each `read_events` row, plus a `read` status with no log row (D-65); its `format`, `text` or `audio` (2.22) |
 | `books_by_year` | Reads per year per genre, the year from the finish date (D-21) |
 | `book_genre_tree` | Each book at every level of each Calibre genre path, once, with its depth and whether the book was tagged with that path itself: Calibre's genres cascade (1.18c, D-98) |
 | `plan_period` | A plan row's year, quarter and level, so nothing parses `period` (2.9) |
@@ -609,7 +634,7 @@ the same PR (hard rule 7).
 | 1.18b | `books.calibre_id` (unique where set), `books.universe_position`, `book_subseries(id, name, series_id)`, `books.subseries_id`, `books.subseries_position` | Approved by the owner 2026-10-27; D-90, D-91 |
 | 1.18c | `book_genres(book_id, genre)`, primary key `(book_id, genre)`; the cascade is the `book_genre_tree` view; `books.genre` stays the workbook's until 4.5 | Approved by the owner 2026-10-30; D-90, D-91, D-98 |
 | 1.22 | Nothing: the *Calibre* tag reads 1.18b's `books.calibre_id` | D-90 |
-| 1.23 | A `listening` value of `book_status.status`; `read_events.format` (`text` \| `audio`) | D-85 |
+| 1.23 | A `listening` value of `book_status.status`; `read_events.format` (`text` \| `audio`) | Built (migration 0021), 2.22; D-85 |
 | 4.4 | Where a decided near-spelling row is remembered between syncs (D-87 leaves no other decision) | Asked at 4.4's plan gate |
 | 2.1b | `sessions` | §4.3 |
 | 3.5 | `issues.store_date` (the publication date) | Proposed in design §11, *Spine v2* |

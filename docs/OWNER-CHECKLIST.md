@@ -228,6 +228,11 @@ Planning-doc edits and candidate decisions waiting for your yes
 session, and that session or the next `/track-follow-ups` run makes the change
 and notes where it went.
 
+- [ ] Update `docs/05-roadmap.md` line 36 (the preamble on `docs/03-data-model.md`):
+      "its decisions keep their numbers, 2.1–2.21" becomes 2.1–2.22, now
+      that 1.23 added decision 2.22 (from TASK-043, PR #190).
+      *Approved by the owner 2026-11-03*; it waits for a `docs/` PR, because a
+      task branch changes only the roadmap's ticks.
 - [x] Update `docs/03-data-model.md` § 2. Decisions and `docs/HANDOFF.md`
       § What each spreadsheet artifact became: the `To-Read 20XX` tabs row
       becomes "tabs before 2028; later tabs load nothing (D-70)" (from

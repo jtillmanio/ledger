@@ -20,7 +20,9 @@ type Picker =
 
 type Added = Extract<AddBookResult, { ok: true }>;
 
-const STATUS: Record<string, string> = { to_read: "on your to-read list", reading: "reading", read: "read", dnf: "did not finish" };
+const STATUS: Record<string, string> = {
+  to_read: "on your to-read list", reading: "reading", listening: "listening", read: "read", dnf: "did not finish",
+};
 
 /**
  * Add books (task 1.4c; mockups `add`, `shelves`, `apistates`): *Search ·

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import {
-  BOOK_STATUSES, RefusedStatus, SETTABLE_STATUSES, saveBookStatus, undoBookStatus, type BookStatusChange,
+  BOOK_STATUSES, IN_PROGRESS, RefusedStatus, SETTABLE_STATUSES, saveBookStatus, undoBookStatus, type BookStatusChange,
 } from "@/db/writes";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { isFinish, resolveFinish, resolveStart } from "@/lib/finish-date";
@@ -18,14 +18,17 @@ const STORED: readonly string[] = BOOK_STATUSES;
  * written: a bare status change keeps the rating and the finish (R0-C1).
  *
  * `start` (task 1.17) is the same control's choice for when the read began, sent
- * only with `reading` or `read`; without it, entering Reading stamps today. On a
+ * only with `reading`, `listening` or `read`; without it, entering Reading or
+ * Listening stamps today. `listening` (task 1.23, D-85) is Reading by ear, and
+ * a finish from it is a listen: the read it appends is `audio`. On a
  * book already read, `read` with a `start` and no `finish` edits the latest
  * read's start alone. A start after today, or after the finish, is refused with
  * a 400 and nothing is written.
  *
- * Answers `{ change, finish, start }`: what the write changed, which the undo
- * sends back to DELETE; for `read` the finish it stored; and the start the read
- * now holds.
+ * Answers `{ change, finish, start, format }`: what the write changed, which the
+ * undo sends back to DELETE; for `read` the finish it stored; the start the read
+ * now holds; and how the read it appended was read, `text` or `audio` (null
+ * when it appended none).
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -45,7 +48,7 @@ export async function POST(req: Request) {
   }
   let start;
   if (startChoice !== undefined) {
-    if (status !== "reading" && status !== "read") return bad("start goes with reading or read");
+    if (!IN_PROGRESS.includes(status) && status !== "read") return bad("start goes with reading, listening or read");
     const resolved = resolveStart(startChoice);
     if (!resolved.ok) return bad(resolved.error);
     start = resolved.start;
@@ -60,7 +63,7 @@ export async function POST(req: Request) {
   }
   if (!saved) return NextResponse.json({ error: "no such book" }, { status: 404 });
   const { start: stored, ...change } = saved;
-  return NextResponse.json({ ok: true, change, finish: finish ?? null, start: stored });
+  return NextResponse.json({ ok: true, change, finish: finish ?? null, start: stored, format: change.format ?? null });
 }
 
 /** A status change's undo: `{ change }` as the POST answered it. 409 when the

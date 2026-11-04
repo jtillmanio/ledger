@@ -8,7 +8,7 @@ Single user, single-user schema (D-91; the old `user_id` columns go in 6.18).
 `docs/STATUS.md` is where we are now. The planning docs are in the kit's
 layout: `docs/01-product.md` (the brief and the feature index, F-nn),
 `docs/02-architecture.md`, `docs/03-data-model.md` (why the schema looks like
-this: decisions 2.1–2.21), `docs/04-design.md` (the styling blueprint, the UX
+this: decisions 2.1–2.22), `docs/04-design.md` (the styling blueprint, the UX
 floor, the interface rules), `docs/05-roadmap.md` (the backlog: every entry and
 its **Check:**) and `docs/06-tasklist.md` (milestones M1–M26, the entries in
 build order). `docs/HANDOFF.md` is full context, `docs/DIAGRAMS.md` visual;

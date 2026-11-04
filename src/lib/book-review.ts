@@ -65,7 +65,9 @@ export type Choices = Record<string, string>;
 
 export const THRESHOLD = 0.4;
 
-const STATUS: Record<string, string> = { to_read: "to read", reading: "reading", read: "read", dnf: "did not finish" };
+const STATUS: Record<string, string> = {
+  to_read: "to read", reading: "reading", listening: "listening", read: "read", dnf: "did not finish",
+};
 const ADD: Option = { id: "add", label: "Add" };
 const CREATE: Option = { id: "create", label: "Create new" };
 const USE: Option = { id: "use", label: "Use that" };
