@@ -3,7 +3,7 @@ import { readWhen, runSpan, type Precision } from "@/lib/format";
 import { FRESH_DAYS } from "@/lib/metron";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
 import { parseSort, type Dir, type Sort } from "@/lib/library-sort";
-import { DEFAULT_SETTINGS, type ReadingSettings } from "@/lib/settings";
+import { DEFAULT_SETTINGS, wordsPerYear, type ReadingSettings } from "@/lib/settings";
 
 /* Raw SQL against the views in etl/views.sql. Drizzle's query builder is used
  * for writes; reads that join three or four views are clearer as SQL. */
@@ -1076,6 +1076,51 @@ export async function readingSettings(userId: string): Promise<ReadingSettings> 
     SELECT minutes_per_day AS "minutesPerDay", words_per_minute AS "wordsPerMinute", words_per_page AS "wordsPerPage"
     FROM reading_settings WHERE user_id = ${userId}`;
   return row ?? DEFAULT_SETTINGS;
+}
+
+/** One `plan_capacity` row: a year (`quarter` null) or one of its quarters (task 2.1). */
+export interface PeriodCapacity {
+  period: string;
+  year: number;
+  quarter: number | null;
+  /** Words you can read in the period at your settings; a quarter is a quarter of the year. */
+  capacity: number;
+  plannedWords: number;
+  statedWords: number;
+  estimatedWords: number;
+  books: number;
+  readBooks: number;
+  /** Books with no word count and no plausible page count: in `books`, in no word total. */
+  unknownBooks: number;
+  /** plannedWords / capacity: 1.18 is 118%. */
+  load: number;
+  /** The share of plannedWords that rests on estimates; null when nothing is planned. */
+  estimatedShare: number | null;
+}
+
+/**
+ * How full a year and each of its quarters are against your capacity (task 2.1, F-21, D-115),
+ * from `plan_capacity`, filtered to the year before it aggregates. A year nothing counts in has no
+ * rows there, so it reads as empty at your settings' capacity.
+ */
+export async function planCapacity(userId: string, year: number): Promise<{ year: PeriodCapacity; quarters: PeriodCapacity[] }> {
+  const rows = await sql<PeriodCapacity[]>`
+    SELECT period, year, quarter, capacity, planned_words AS "plannedWords", stated_words AS "statedWords",
+           estimated_words AS "estimatedWords", books, read_books AS "readBooks", unknown_books AS "unknownBooks",
+           load, estimated_share AS "estimatedShare"
+    FROM plan_capacity WHERE user_id = ${userId} AND year = ${year}
+    ORDER BY quarter NULLS FIRST`;
+  if (rows.length === 0) {
+    const capacity = wordsPerYear(await readingSettings(userId), year);
+    const empty = (quarter: number | null): PeriodCapacity => ({
+      period: quarter === null ? String(year) : `${year}-Q${quarter}`, year, quarter,
+      capacity: quarter === null ? capacity : capacity / 4,
+      plannedWords: 0, statedWords: 0, estimatedWords: 0, books: 0, readBooks: 0, unknownBooks: 0,
+      load: 0, estimatedShare: null,
+    });
+    return { year: empty(null), quarters: [1, 2, 3, 4].map(empty) };
+  }
+  return { year: rows[0], quarters: rows.slice(1) };
 }
 
 /** The volume map's size for Settings' *N rules · M series* (task 2.0): derived, never stored. */

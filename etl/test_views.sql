@@ -762,6 +762,114 @@ BEGIN
   END IF;
 END $$;
 
+-- Capacity (task 2.1, F-21, D-37): plan_capacity sums each year's and quarter's
+-- planned words against minutes a day x words a minute x the year's days, a
+-- quarter a quarter of it. Two readers of their own, so the plan rows above
+-- (zz-user's) stay out of these totals.
+-- zz-cap-a is the roadmap's Check (S-06): 45 min/day at 185 wpm over 2027, a
+-- plan of 3,585,000 words, 600k of it estimated from 2,000 pages at its own
+-- 300 words a page (the setting, not the constant). 2028 is a leap year.
+INSERT INTO users (id, name) VALUES ('zz-cap-a', 'Capacity check'), ('zz-cap-b', 'Capacity cases');
+INSERT INTO reading_settings (user_id, minutes_per_day, words_per_minute, words_per_page) VALUES
+  ('zz-cap-a', 45, 185, 300);
+INSERT INTO books (id, title, word_count, word_count_source, page_count) VALUES
+  ('zz-ca-stated', 'Zz Ca Stated', 2985000, 'stated', NULL),
+  ('zz-ca-est',    'Zz Ca Estimated', NULL, NULL, 2000),
+  ('zz-ca-leap',   'Zz Ca Leap', 1000, 'stated', NULL);
+INSERT INTO book_status (user_id, book_id, status) VALUES
+  ('zz-cap-a', 'zz-ca-stated', 'to_read'), ('zz-cap-a', 'zz-ca-est', 'to_read'), ('zz-cap-a', 'zz-ca-leap', 'to_read');
+INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES
+  ('zz-cap-a', 'zz-ca-stated', '2027-Q1', 1), ('zz-cap-a', 'zz-ca-est', '2027', NULL),
+  ('zz-cap-a', 'zz-ca-leap', '2028', NULL);
+-- zz-cap-b has no settings row (the defaults: 45, 185, 275) and one book per
+-- case: a quarter, a bare year, On deck, Someday, an unknown (no count, no
+-- pages), an implausible page count (16 pages: unknown, never estimated), a
+-- removed book, a read book (counts), a listen-only read, a listen in progress
+-- and a DNF (none of the three counts, D-112), a book in 2027-Q4 and 2028
+-- (once, at the earlier), and a count stored as estimated.
+INSERT INTO books (id, title, word_count, word_count_source, page_count) VALUES
+  ('zz-cb-q1',       'Zz Cb Q1',        300000, 'stated', NULL),
+  ('zz-cb-year',     'Zz Cb Year',      NULL, NULL, 400),
+  ('zz-cb-deck',     'Zz Cb Deck',      50000, 'stated', NULL),
+  ('zz-cb-someday',  'Zz Cb Someday',   70000, 'stated', NULL),
+  ('zz-cb-unknown',  'Zz Cb Unknown',   NULL, NULL, NULL),
+  ('zz-cb-tiny',     'Zz Cb Tiny',      NULL, NULL, 16),
+  ('zz-cb-gone',     'Zz Cb Gone',      999999, 'stated', NULL),
+  ('zz-cb-read',     'Zz Cb Read',      20000, 'stated', NULL),
+  ('zz-cb-listened', 'Zz Cb Listened',  40000, 'stated', NULL),
+  ('zz-cb-ear',      'Zz Cb Listening', 80000, 'stated', NULL),
+  ('zz-cb-dnf',      'Zz Cb Dnf',       5000, 'stated', NULL),
+  ('zz-cb-two',      'Zz Cb Two',       1000, 'stated', NULL),
+  ('zz-cb-est',      'Zz Cb Est',       7000, 'estimated', 25);
+UPDATE books SET deleted_at = now() WHERE id = 'zz-cb-gone';
+INSERT INTO book_status (user_id, book_id, status) VALUES
+  ('zz-cap-b', 'zz-cb-q1', 'to_read'), ('zz-cap-b', 'zz-cb-year', 'to_read'),
+  ('zz-cap-b', 'zz-cb-deck', 'to_read'), ('zz-cap-b', 'zz-cb-someday', 'to_read'),
+  ('zz-cap-b', 'zz-cb-unknown', 'to_read'), ('zz-cap-b', 'zz-cb-tiny', 'reading'),
+  ('zz-cap-b', 'zz-cb-gone', 'to_read'), ('zz-cap-b', 'zz-cb-read', 'read'),
+  ('zz-cap-b', 'zz-cb-listened', 'read'), ('zz-cap-b', 'zz-cb-ear', 'listening'),
+  ('zz-cap-b', 'zz-cb-dnf', 'dnf'), ('zz-cap-b', 'zz-cb-two', 'to_read'), ('zz-cap-b', 'zz-cb-est', 'to_read');
+INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, format) VALUES
+  ('zz-cap-b', 'zz-cb-read', '2027-08-01', 'exact', 'text'),
+  ('zz-cap-b', 'zz-cb-listened', '2027-08-02', 'exact', 'audio');
+INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES
+  ('zz-cap-b', 'zz-cb-q1', '2027-Q1', 1), ('zz-cap-b', 'zz-cb-gone', '2027-Q1', 2),
+  ('zz-cap-b', 'zz-cb-year', '2027', NULL), ('zz-cap-b', 'zz-cb-deck', 'on_deck', NULL),
+  ('zz-cap-b', 'zz-cb-unknown', '2027-Q2', 1), ('zz-cap-b', 'zz-cb-tiny', '2027-Q2', 2),
+  ('zz-cap-b', 'zz-cb-read', '2027-Q3', 1), ('zz-cap-b', 'zz-cb-listened', '2027-Q3', 2),
+  ('zz-cap-b', 'zz-cb-ear', '2027-Q3', 3), ('zz-cap-b', 'zz-cb-dnf', '2027-Q3', 4),
+  ('zz-cap-b', 'zz-cb-two', '2028', NULL), ('zz-cap-b', 'zz-cb-two', '2027-Q4', 1),
+  ('zz-cap-b', 'zz-cb-est', '2027-Q4', 2);
+DO $$
+DECLARE c record; got text;
+BEGIN
+  -- The Check: 3,585,000 / 3,038,625 = 118% +/- 1%, and the share on estimates.
+  SELECT * INTO c FROM plan_capacity WHERE user_id = 'zz-cap-a' AND period = '2027';
+  IF c.capacity IS DISTINCT FROM 3038625::float8 OR c.planned_words IS DISTINCT FROM 3585000
+     OR abs(c.load - 1.18) > 0.01 THEN
+    RAISE EXCEPTION 'plan_capacity 2027 wrong: % planned of %, load %', c.planned_words, c.capacity, c.load;
+  END IF;
+  IF c.stated_words <> 2985000 OR c.estimated_words <> 600000
+     OR abs(c.estimated_share - 600000.0 / 3585000) > 1e-9 THEN
+    RAISE EXCEPTION 'plan_capacity estimates wrong: % stated, % estimated, share %',
+      c.stated_words, c.estimated_words, c.estimated_share;
+  END IF;
+  SELECT string_agg(period || ':' || capacity || ':' || planned_words, ', ' ORDER BY period) INTO got
+  FROM plan_capacity WHERE user_id = 'zz-cap-a';
+  IF got IS DISTINCT FROM '2027:3038625:3585000, 2027-Q1:759656.25:2985000, 2027-Q2:759656.25:0, '
+                       || '2027-Q3:759656.25:0, 2027-Q4:759656.25:0, 2028:3046950:1000, '
+                       || '2028-Q1:761737.5:0, 2028-Q2:761737.5:0, 2028-Q3:761737.5:0, 2028-Q4:761737.5:0' THEN
+    RAISE EXCEPTION 'plan_capacity periods wrong: %', got;
+  END IF;
+
+  -- The levels, the sources and what counts: period:books:stated:estimated:unknown:read.
+  SELECT string_agg(period || ':' || books || ':' || stated_words || ':' || estimated_words || ':'
+                    || unknown_books || ':' || read_books, ', ' ORDER BY period) INTO got
+  FROM plan_capacity WHERE user_id = 'zz-cap-b';
+  IF got IS DISTINCT FROM '2027:7:321000:117000:2:1, 2027-Q1:1:300000:0:0:0, 2027-Q2:2:0:0:2:0, '
+                       || '2027-Q3:1:20000:0:0:1, 2027-Q4:2:1000:7000:0:0' THEN
+    RAISE EXCEPTION 'plan_capacity cases wrong: %', got;
+  END IF;
+  SELECT * INTO c FROM plan_capacity WHERE user_id = 'zz-cap-b' AND period = '2027';
+  IF c.capacity IS DISTINCT FROM 3038625::float8 OR c.planned_words <> 438000
+     OR abs(c.estimated_share - 117000.0 / 438000) > 1e-9 THEN
+    RAISE EXCEPTION 'plan_capacity defaults or share wrong: % of %, share %', c.planned_words, c.capacity, c.estimated_share;
+  END IF;
+  SELECT * INTO c FROM plan_capacity WHERE user_id = 'zz-cap-b' AND period = '2027-Q2';
+  IF c.estimated_share IS NOT NULL OR c.load <> 0 THEN
+    RAISE EXCEPTION 'plan_capacity: a quarter of unknowns has no share and no load: share %, load %', c.estimated_share, c.load;
+  END IF;
+  SELECT string_agg(book_id || ':' || period || ':' || coalesce(word_source, 'unknown') || ':' || coalesce(words::text, '-'),
+                    ', ' ORDER BY book_id) INTO got
+  FROM plan_book_words WHERE user_id = 'zz-cap-b';
+  IF got IS DISTINCT FROM 'zz-cb-est:2027-Q4:estimated:7000, zz-cb-q1:2027-Q1:stated:300000, '
+                       || 'zz-cb-read:2027-Q3:stated:20000, zz-cb-tiny:2027-Q2:unknown:-, '
+                       || 'zz-cb-two:2027-Q4:stated:1000, zz-cb-unknown:2027-Q2:unknown:-, '
+                       || 'zz-cb-year:2027:estimated:110000' THEN
+    RAISE EXCEPTION 'plan_book_words wrong: %', got;
+  END IF;
+END $$;
+
 -- The Up next queue (task 1.10): state and the blocked-by count are derived;
 -- the stored ordinal is read back as it was written, whatever the run's state.
 INSERT INTO users (id, name) VALUES ('zz-q-user', 'Queue fixture') ON CONFLICT DO NOTHING;

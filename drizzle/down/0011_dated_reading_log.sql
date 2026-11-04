@@ -13,6 +13,9 @@
 --
 -- The reading log itself has no home before 0011: read_events is dropped, and
 -- its rows with it. book_status still holds each book's latest read.
+-- etl/views.sql's capacity views (task 2.1) read this view: they go first.
+DROP VIEW IF EXISTS "plan_capacity";
+DROP VIEW IF EXISTS "plan_book_words";
 DROP VIEW IF EXISTS "books_by_year";
 DROP VIEW IF EXISTS "book_reads";
 -- etl/views.sql's index on extract(year FROM finished_on): an older views.sql

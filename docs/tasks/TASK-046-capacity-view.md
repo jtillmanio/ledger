@@ -1,14 +1,14 @@
 ---
 id: TASK-046
 title: 2.1 Capacity view
-status: Ready
+status: In progress
 depends_on: [TASK-011, TASK-045]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 66d0a59
 ---
 
 # TASK-046 — 2.1 Capacity view
@@ -65,9 +65,37 @@ rests on estimates. (The check once said 4.1M, which is 135%: S-06.)
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- 2.0's roadmap box and its task-list Done cell stay open until this task closes (TASK-045's note): tick both at close-out (approved at plan)
+- Candidate decision: what counts against capacity (the owner's answers at the plan gate, 2026-11-04, below) (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-04. Answers at the gate:
+
+1. A read book still counts against the period it was planned in: `to_read`, `reading` and `read` count (2.2's *3 of 7 read · 615k planned*). `listening`, `dnf`, `unlisted`, and a read book whose only reads are listens (D-112) count against nothing.
+2. A page count under 50 is implausible: that book counts as unknown, never estimated (the picture-book *Sorcerer's Stone*, 16 pages; a real novella like *Binti* is 96).
+3. Estimates can't be switched off: no column, no switch. The view reports stated and estimated words apart, so a reader can show either; the mockup's *Estimate missing counts* stays unbuilt, as 2.0 left it.
+
+**The view** `plan_capacity` (`etl/views.sql`): one row per user and period, the year (`period` `2027`) and each of its four quarters (`2027-Q1`…; an empty quarter is a row at 0) for every year a counted book is planned in. Columns: `user_id, period, year, quarter` (NULL on the year row), `capacity` (minutes × wpm × the year's days; a quarter a quarter of it), `planned_words, stated_words, estimated_words, books, read_books, unknown_books, load` (planned ÷ capacity), `estimated_share` (estimated ÷ planned, NULL at 0). Capacity and `words_per_page` read `reading_settings` live; no row reads the column defaults 45 / 185 / 275. A book counts once, at its earliest dated period (`to_read_level`'s rule: a quarter before its own bare year), found with `NOT EXISTS`, not `DISTINCT ON`, so a `year =` filter pushes down before the aggregate. Year, quarter and level come from `plan_period` (no parsing of `period`); On deck counts nowhere, Someday has no plan row; soft-deleted books are out (through `plan_period`). A book's words: `word_count` when set (a stored `estimated` stays estimated); else `page_count × words_per_page` when the page count is at least 50, estimated; else unknown: in `books` and `unknown_books`, in no word total.
+
+**Implemented as two views** (Phase 2): the per-book step is its own view, `plan_book_words` (one row per counted book: period, status, words, `word_source`), because `plan_capacity` reads it for the year row and each quarter, and a CTE read twice is materialized for every reader and year before the year filter applies. 2.3's move sheet can read a book's words from it.
+
+**Revision 1** (approved by the owner 2026-11-04): `drizzle/down/0013_plan_period.sql` and `drizzle/down/0011_dated_reading_log.sql` drop `plan_period` and `book_reads` by name, without `CASCADE`, and the new views depend on them, so 0007's, 0011's and 0013's up → down → up tests failed. Each down file now drops `plan_capacity` and `plan_book_words` first, as 0013's already drops `to_read_level`; no row handling changes.
+
+**Steps**
+
+1. `etl/test_views.sql` cases first, seen failing: AC-1 (3,585,000 words at 45/185 over 2027 → 118% ± 1%, with its estimated share), AC-3 (the four levels), AC-4 (stated, a 400-page estimate, an unknown, a 16-page implausible count), AC-5 (a soft-deleted book), the answers above (read counts, listening/dnf/listen-only don't), and a book planned `2027-Q4` and `2028` counting once, in 2027.
+2. The view in `etl/views.sql`.
+3. `planCapacity(userId, year)` in `src/db/queries.ts`: the year and its four quarters, typed; a year with nothing planned filled from `readingSettings()` and `wordsPerYear()`.
+4. `test/capacity.test.ts` (AC-2): 45 → 60 through 2.0's settings write gives 4,051,500 and 88% ± 1% with nothing else written, each quarter a quarter of the year; the view's capacity equals `wordsPerYear()`; no settings row reads the defaults; an empty year through `planCapacity`; `EXPLAIN` shows the `reading_plan` scan carries the year filter.
+5. `docs/03-data-model.md` § 3. Views: the `plan_capacity` row.
+6. Close-out: decision row in `docs/review/decisions.md`; roadmap ticks 2.1 and 2.0, task-list Done cells.
+
+**Files:** `etl/views.sql`, `etl/test_views.sql`, `src/db/queries.ts`, `test/capacity.test.ts` (new), `docs/03-data-model.md`; `docs/review/decisions.md` (not in Files likely touched: the approved decision).
+
+**Test strategy:** AC-1, AC-3, AC-4, AC-5 → `etl/test_views.sql` (`npm run test:views`); AC-2 → `test/capacity.test.ts`; manual: the view for 2027 against the Library's *To read* 2027 filter.
+
+**Risk:** the manual check's "equal" holds only when no planned book is read and none is planned in two years: the Library's year filter lists every `to_read` book with any plan row in that year, the view also counts read books and counts a two-year book in its earlier year only. A difference of exactly those books is expected, and is reported, not called a failure.
 
 ## Review log
 
@@ -82,4 +110,4 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Verify rounds:
 - Review rounds:
 - First-pass AC FAILs:
-- Plan revisions after approval:
+- Plan revisions after approval: 1 (the two down files)

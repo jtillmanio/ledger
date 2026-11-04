@@ -527,6 +527,77 @@ LEFT JOIN LATERAL (
 ) pp ON true
 WHERE s.status = 'to_read';
 
+-- Each planned book that counts against capacity, and its words (task 2.1,
+-- F-21, D-37, D-115). A book counts once, at its earliest dated period by
+-- to_read_level's rule (a quarter before its own bare year, an earlier year
+-- before a later one); On deck and Someday count against nothing. It counts
+-- while it is to read or reading, and once read, unless every read of it was a
+-- listen: a listen, or one in progress, runs beside the year's reading, never
+-- against its word budget (D-112); a DNF or Unlisted book doesn't count.
+-- words is the stated count, or a stored estimate; else page_count x your
+-- words_per_page (the column default, 275, with no settings row), estimated;
+-- else NULL with word_source NULL, unknown: counted as a book, never as 0
+-- words. Under 50 pages is a picture-book edition's count, not the book's
+-- (D-94), so it is unknown too. The earliest period is a NOT EXISTS, not a
+-- DISTINCT ON, so a read for one year filters by it before plan_capacity
+-- aggregates.
+CREATE OR REPLACE VIEW plan_book_words AS
+SELECT pp.user_id, pp.book_id, pp.period, pp.year, pp.quarter, s.status,
+       CASE WHEN b.word_count IS NOT NULL THEN b.word_count_source
+            WHEN b.page_count >= 50 THEN 'estimated' END                      AS word_source,
+       COALESCE(b.word_count,
+                CASE WHEN b.page_count >= 50 THEN b.page_count * COALESCE(rs.words_per_page, 275) END) AS words
+FROM plan_period pp
+JOIN books b ON b.id = pp.book_id
+JOIN book_status s ON s.user_id = pp.user_id AND s.book_id = pp.book_id
+LEFT JOIN reading_settings rs ON rs.user_id = pp.user_id
+WHERE pp.level <> 'on_deck'
+  AND (s.status IN ('to_read', 'reading')
+       OR s.status = 'read' AND EXISTS (
+         SELECT 1 FROM book_reads r WHERE r.user_id = pp.user_id AND r.book_id = pp.book_id AND r.format = 'text'))
+  AND NOT EXISTS (
+    SELECT 1 FROM plan_period e
+    WHERE e.user_id = pp.user_id AND e.book_id = pp.book_id AND e.level <> 'on_deck'
+      AND (e.year < pp.year
+           OR e.year = pp.year AND e.quarter IS NOT NULL AND (pp.quarter IS NULL OR e.quarter < pp.quarter)));
+
+-- How full each planned year and quarter is (task 2.1, F-21, D-37, D-115):
+-- one row per year a counted book is planned in, period '2027', and one for
+-- each of its quarters, '2027-Q1'…'2027-Q4', an empty quarter included at 0.
+-- A quarter's books count against it and its year; a bare-year book against
+-- its year and no quarter. capacity is minutes a day x words a minute x the
+-- year's days (45 x 185 x 365 = 3,038,625), a quarter a quarter of it, read
+-- live from reading_settings (the column defaults with no row). planned_words
+-- is stated + estimated; unknown_books are counted in books but in no word
+-- total; load is planned / capacity (1.18 is 118%); estimated_share is the
+-- share of planned_words that rests on estimates, NULL when nothing is planned.
+CREATE OR REPLACE VIEW plan_capacity AS
+SELECT y.user_id,
+       y.year::text || COALESCE('-Q' || q.quarter, '')                        AS period,
+       y.year, q.quarter,
+       c.capacity, a.planned_words, a.stated_words, a.estimated_words,
+       a.books, a.read_books, a.unknown_books,
+       a.planned_words / c.capacity                                           AS load,
+       a.estimated_words::float8 / NULLIF(a.planned_words, 0)                 AS estimated_share
+FROM (SELECT DISTINCT w.user_id, w.year FROM plan_book_words w) y
+CROSS JOIN (VALUES (NULL::int), (1), (2), (3), (4)) q(quarter)
+LEFT JOIN reading_settings rs ON rs.user_id = y.user_id
+CROSS JOIN LATERAL (
+  SELECT (COALESCE(rs.minutes_per_day, 45) * COALESCE(rs.words_per_minute, 185)
+          * (make_date(y.year + 1, 1, 1) - make_date(y.year, 1, 1)))::float8
+         / CASE WHEN q.quarter IS NULL THEN 1 ELSE 4 END                      AS capacity
+) c
+CROSS JOIN LATERAL (
+  SELECT COALESCE(SUM(w.words), 0)::int                                     AS planned_words,
+         COALESCE(SUM(w.words) FILTER (WHERE w.word_source = 'stated'), 0)::int    AS stated_words,
+         COALESCE(SUM(w.words) FILTER (WHERE w.word_source = 'estimated'), 0)::int AS estimated_words,
+         COUNT(*)::int                                                       AS books,
+         COUNT(*) FILTER (WHERE w.status = 'read')::int                      AS read_books,
+         COUNT(*) FILTER (WHERE w.word_source IS NULL)::int                  AS unknown_books
+  FROM plan_book_words w
+  WHERE w.user_id = y.user_id AND w.year = y.year AND (q.quarter IS NULL OR w.quarter = q.quarter)
+) a;
+
 -- The comics Up next queue with each run's state (task 1.10, data model 2.16).
 -- The order is the only thing stored; whether a queued run is still up next is
 -- derived here, so starting a run moves it to In flight and finishing it to
