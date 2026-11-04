@@ -1609,7 +1609,7 @@ two were already gated behind "at least five sessions exist", so nothing
 regresses by moving them: with no timer there is no runaway-session problem to
 solve in HORIZON (R1-12 defers with them).
 
-*From TASK-049 (2.2, docs/plans-2026-11-04):* until sessions exist, the
+*From TASK-049 (2.2, PR #196):* until sessions exist, the
 books dashboard's Now shows the page count, the start and the time left for
 the whole book, with no `p. n of N` and no meter (owner, at 2.2's plan gate),
 and its *Log progress* / *Log pages* verb is `aria-disabled` with the reason
