@@ -525,6 +525,7 @@ with the task that first reads it.
 |  | 6.6 | Goodreads and StoryGraph CSV import | M |  | — |
 |  | 6.18 | Drop `user_id`: the schema is single-user | L |  | — |
 |  | 6.19 | Remove Open Library | S |  | 1.14b, 1.4f |
+|  | 6.20 | Last backup on Settings (proposed, from TASK-045) | S |  | 2.0 |
 |  | 6.9 | Revisit the theme | M |  | — |
 
 ## M22: AI-assisted curation — Later

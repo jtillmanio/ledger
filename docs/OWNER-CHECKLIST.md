@@ -238,6 +238,20 @@ and notes where it went.
       becomes "tabs before 2028; later tabs load nothing (D-70)" (from
       TASK-021, PR #97). *Approved by the owner 2026-10-20; done in
       `chore/owner-checklist-backups` (PR #106), both rows.*
+- [ ] Update `docs/04-design.md` § 10 (the UX floor: "the phone bar is the one
+      `Comics · Books · Watch` partial") and § 11 (*Phone navigation is one
+      bar*: "plus the search icon on every screen"): D-113 puts a Settings gear
+      at the bar's right end, the slot Search (6.1) is drawn in. Both lines
+      should name the gear, and say where Search goes when 6.1 lands (from
+      TASK-045, task/2.0-settings).
+- [ ] Decide whether the batch and finish sheets' steppers move from `--raise`
+      to `--sunk`. STYLE_GUIDE § 9 says `--sunk` ("32px buttons on `--sunk`");
+      2.0 follows it on Settings only, scoped in `src/app/globals.css`, and
+      the shared `.stepper` (and the mockups' `.stepper`) is still on
+      `--raise`. If yes, drop the Settings-only rule and redraw the mockup's
+      sheet frames; both are small, and the STYLE_GUIDE is protected, so the
+      owner's design tool changes it if the guide is the one that should move
+      (from TASK-045, task/2.0-settings).
 
 ---
 

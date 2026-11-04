@@ -1,7 +1,7 @@
 ---
 id: TASK-045
 title: 2.0 Settings
-status: In progress
+status: Review
 depends_on: []
 size: L
 model: sonnet
@@ -37,10 +37,10 @@ A Settings screen where you set how many minutes a day you read and how many wor
 capacity view reflects an edit — changing 45 to 60 min/day moves the 2027 figure
 — without a redeploy. The stepper is a button group with an accessible name, and
 the page has one `<h1>`.
-- [ ] AC-2: Against the TEST database, with no `reading_settings` row: the settings read returns 45 minutes a day and 185 words a minute. After pressing + on *Minutes a day* fifteen times (or saving 60), one row holds `minutes_per_day = 60`, and the next render of `/settings` shows `60` in the stepper's `<output>` and an *a year* figure equal to 60 × 185 × the days in the current year, formatted as the card formats it.
-- [ ] AC-3: The write route refuses a value outside the plan's stated bounds (at least: 0, a negative, a non-integer, a missing field) with 400 and writes nothing; the stepper's − is `aria-disabled="true"` with a visible reason at the lower bound, never a bare `disabled`.
-- [ ] AC-4: `/settings` renders the volume map line from `volume_rules` (on a fixture of 3 rules over 2 series it reads *3 rules · 2 series*) and an *Export everything* control that is an `<a href="/api/export">`; the nav's *Settings* item is enabled, and on `/settings` it is current (`aria-current="page"`) in every bar that draws it at 768 and 1280px; at 360px the screen is reachable from the nav in no more than two taps.
-- [ ] AC-5: `/settings` meets the UX floor (`docs/04-design.md` § 10. The UX floor): its loading state is drawn (`src/app/settings/loading.tsx`, the loaded geometry in `--sunk`) and a failed save is drawn as the app's failed-write line; text 4.5:1 and outlines 3:1 in both themes; each stepper button has an accessible name and is at least 32px with a 44px row; every control is a real `<button>`, `<a href>` or `role="switch"`; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-2: Against the TEST database, with no `reading_settings` row: the settings read returns 45 minutes a day and 185 words a minute. After pressing + on *Minutes a day* fifteen times (or saving 60), one row holds `minutes_per_day = 60`, and the next render of `/settings` shows `60` in the stepper's `<output>` and an *a year* figure equal to 60 × 185 × the days in the current year, formatted as the card formats it.
+- [x] AC-3: The write route refuses a value outside the plan's stated bounds (at least: 0, a negative, a non-integer, a missing field) with 400 and writes nothing; the stepper's − is `aria-disabled="true"` with a visible reason at the lower bound, never a bare `disabled`.
+- [x] AC-4: `/settings` renders the volume map line from `volume_rules` (on a fixture of 3 rules over 2 series it reads *3 rules · 2 series*) and an *Export everything* control that is an `<a href="/api/export">`; the nav's *Settings* item is enabled, and on `/settings` it is current (`aria-current="page"`) in every bar that draws it at 768 and 1280px; at 360px the screen is reachable from the nav in no more than two taps.
+- [x] AC-5: `/settings` meets the UX floor (`docs/04-design.md` § 10. The UX floor): its loading state is drawn (`src/app/settings/loading.tsx`, the loaded geometry in `--sunk`) and a failed save is drawn as the app's failed-write line; text 4.5:1 and outlines 3:1 in both themes; each stepper button has an accessible name and is at least 32px with a 44px row; every control is a real `<button>`, `<a href>` or `role="switch"`; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -77,7 +77,10 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - The mockup's *Theme* row (Light / Dark / System; `reading_settings.theme` exists, nothing reads it) lands with Settings → Appearance → docs/05-roadmap.md § 6.11 (approved at plan)
 - The mockup's *Last backup* row needs a source the app can read (the nightly dump is in R2, D-66) → docs/05-roadmap.md § 6.20 (new, proposed Check) (approved at plan)
 - The mockup's *Estimate missing counts* switch has no column; 2.1 decides whether estimates can be switched off → docs/tasks/TASK-046-capacity-view.md § Context (approved at plan)
-- Candidate decision: the phone bar carries a Settings gear at its right end (one tap at 360px), and Export leaves the rail's and sidebar's foot for Settings' *Export everything* (owner, 2026-11-04) → docs/review/decisions.md § D-n (approved at plan; ID from next-id.ps1 at close-out)
+- Candidate decision: the phone bar carries a Settings gear at its right end (one tap at 360px), and Export leaves the rail's and sidebar's foot for Settings' *Export everything* (owner, 2026-11-04) → docs/review/decisions.md § D-113 (approved at plan)
+- D-113 contradicts two lines of `docs/04-design.md`: § 10 ("the phone bar is the one `Comics · Books · Watch` partial") and § 11 ("plus the search icon on every screen") → docs/OWNER-CHECKLIST.md § Approvals from follow-ups (queued: a planning-doc edit needs the owner's yes)
+- The shared `.stepper` (batch and finish sheets, and the mockups' `.stepper`) is still on `--raise`, where STYLE_GUIDE § 9 says `--sunk`; 2.0 follows the guide on Settings only → docs/OWNER-CHECKLIST.md § Approvals from follow-ups (queued)
+- `design/mockups-index.md` gives `settings` as lines 3987–4108, but the frame starts at line 4911; the other ranges are stale the same way → not tracked: out of date before this task, and the redraw changed no frame boundary
 
 ## Plan
 
@@ -112,6 +115,13 @@ Approved 2026-11-04. Plan-gate answers (owner): the Check is split, (a); of the 
 - `docs/02-architecture.md`: perf row, query count, route handler. *Not in "Files likely touched".*
 - Tests: `test/settings.test.ts` (new), `test/e2e/settings.spec.ts` (new), `test/nav-items.test.tsx`, `test/query-budget.test.ts` (`/settings`: 2 queries, 1 wave) and `test/e2e/shell.spec.ts` (its nav href list loses `/api/export`, gains `/settings`). The last two are *not in "Files likely touched"*.
 
+**Revision 1 (2026-11-04, owner approved at the Phase 5 question, after spec-reviewer R1):**
+
+- `design/mockups.html`: the `settings` frame only (it is a `ui.redrawFiles` file, standing rule 6). Its phone bar draws the Settings gear where it drew Search, and its three steppers, phone and desktop, sit on `--sunk`. *Not in "Files likely touched".*
+- `src/db/writes.ts`: `saveReadingSettings` also throws on an empty patch (schema-reviewer's minor).
+- Two details differ from the steps, with no change of behaviour: the test file is `test/settings.test.tsx` (it renders JSX), and a stepper at a bound writes *The lowest is 1* / *The highest is 600* beneath itself, where step 4 said *At least 1 minute*.
+- Also touched: `test/loading-states.test.tsx` (the `/settings` row in its list of loading screens), `docs/05-roadmap.md`, `docs/06-tasklist.md`, `docs/review/decisions.md`, `docs/OWNER-CHECKLIST.md` and `docs/tasks/TASK-046-capacity-view.md` (the follow-up placements below).
+
 Over 8 files, data and UI together: `workflow.splitPolicy` is `never-split`, so the task stays whole and `autonomy: attended` (as set).
 
 ### Test strategy
@@ -132,13 +142,18 @@ Over 8 files, data and UI together: `workflow.splitPolicy` is `never-split`, so 
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 round PASS → full PASS (734 passed, 1 skipped) | R2 round PASS (after the mockup redraw and the empty-patch guard)
+- Audit R1 PASS (every automated AC proven; AC-1's capacity half is TASK-046's AC-2, owner's (a))
+- Spec R1 CHANGES (the `design/mockups.html` redraw missing) → R2 APPROVE | Schema R1 APPROVE (1 minor: empty patch) → R2 APPROVE | UI R1 PASS (six widths, light and dark; the loading skeleton and the failed save are covered by the e2e spec, not walked). Round 2's ui-verifier was not re-run: the fixes touched no UI source file (D-97).
+- Close-out follow-ups check: spec-reviewer (see the PR).
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1
