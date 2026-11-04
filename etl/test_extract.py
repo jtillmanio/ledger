@@ -1859,7 +1859,9 @@ class PrereqCycles(WorkbookCase):
         self.assertNotEqual(code, 0)
         for run in ("x", "y", "z", "p", "q"):
             self.assertRegex(err, rf"\b{run}\b")
-        self.assertNotIn("c1", err)
+        # The chain is no cycle. A word match, as above: stderr also carries
+        # warnings naming random temp files (/tmp/tmpz5vf8fc1/Comics.xlsx).
+        self.assertNotRegex(err, r"\bc1\b")
         # Every CSV is still written, the cycle rows included.
         self.assertEqual(len([r for r in read(self.out, "unresolved")
                               if r["reason"] == "prereq cycle"]), 2)
