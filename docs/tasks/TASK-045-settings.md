@@ -1,14 +1,14 @@
 ---
 id: TASK-045
 title: 2.0 Settings
-status: Ready
+status: In progress
 depends_on: []
 size: L
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: d1ad1f3
 ---
 
 # TASK-045 — 2.0 Settings
@@ -72,9 +72,61 @@ the page has one `<h1>`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The Check's capacity half: the owner chose (a) at the plan gate (2026-11-04). This task proves the Settings card moves on an edit; TASK-046's AC-2 proves "45 → 60 min/day moves the 2027 figure" against the view, and 2.0's roadmap box stays open until 2.1 closes → docs/tasks/TASK-046-capacity-view.md § Context (approved at plan)
+- *Show covers* is left off the Settings screen (owner, 2026-11-04); where it is stored stays 4.3's open question → docs/05-roadmap.md § 4.3 (approved at plan)
+- The mockup's *Theme* row (Light / Dark / System; `reading_settings.theme` exists, nothing reads it) lands with Settings → Appearance → docs/05-roadmap.md § 6.11 (approved at plan)
+- The mockup's *Last backup* row needs a source the app can read (the nightly dump is in R2, D-66) → docs/05-roadmap.md § 6.20 (new, proposed Check) (approved at plan)
+- The mockup's *Estimate missing counts* switch has no column; 2.1 decides whether estimates can be switched off → docs/tasks/TASK-046-capacity-view.md § Context (approved at plan)
+- Candidate decision: the phone bar carries a Settings gear at its right end (one tap at 360px), and Export leaves the rail's and sidebar's foot for Settings' *Export everything* (owner, 2026-11-04) → docs/review/decisions.md § D-n (approved at plan; ID from next-id.ps1 at close-out)
+
 ## Plan
 
 _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+
+Approved 2026-11-04. Plan-gate answers (owner): the Check is split, (a); of the mockup's extra rows only *Words per page* ships (no Theme, Show covers, Last backup, Estimate missing counts, Measured from sessions, Density); the phone gets a gear in the bar; Export leaves the nav.
+
+### Steps
+
+1. `src/lib/settings.ts` (new): the defaults (45 min/day, 185 wpm; words per page reuses `DEFAULT_WORDS_PER_PAGE`, 275), the bounds and steps (minutes 1–600 by 1, so 45 → 60 is fifteen presses; words a minute 50–1000 by 5; words per page 100–1000 by 5), and the year figure: minutes × wpm × the days in the current year (Eastern, as the app's other dates), formatted as the card shows it (`3.0M`, one decimal) and *roughly N average novels* at 100,000 words a novel. Shared by the client card and the tests.
+2. `src/db/queries.ts`: `readingSettings(userId)` returns the row or the defaults, uncached (no `cache`, `unstable_cache` or `"use cache"`). `volumeMapCounts()` returns `count(*)` rules and `count(DISTINCT series)` series from `volume_rules`, derived and never stored. `src/db/writes.ts`: `saveReadingSettings(userId, patch)` upserts only the given fields (`INSERT … ON CONFLICT (user_id) DO UPDATE`), so the first edit inserts the row and `etl/load.ps1` doesn't change.
+3. `src/app/api/settings/route.ts` (new): `PATCH { minutesPerDay?, wordsPerMinute?, wordsPerPage? }`. At least one field; each is an integer within its bound; an unknown field, a non-integer, 0, a negative, an over-bound value, a missing or unparseable body is a 400 and writes nothing. Answers the saved settings. `apiUserId` / `unauthorized` as `/api/plan`.
+4. `src/components/Stepper.tsx` (new): `role="group"` named for its row (*Minutes a day*), a − and a + that are real `<button>`s named *Decrease minutes a day* / *Increase minutes a day*, a mono `<output>`. At a bound the button is `aria-disabled="true"` with `aria-describedby` pointing at a visible reason (*At least 1 minute*), never `disabled`; its click does nothing. `src/components/PaceSettings.tsx` (new, client): holds the three values, changes one on each press at once, and saves once, debounced (500 ms after the last press), only the fields that changed. A failed save puts back the last saved values and raises the Undo provider's failure toast (`fail({ label, retry })`), the app's failed-write line. The *a year* card is computed from the live values.
+5. `src/app/settings/page.tsx` (new, `force-dynamic`): one `<h1>` *Settings*; *Reading pace* (three stepper rows, then the card); *Data* (*Volume map* · *N rules · M series*, no *Edit* until 3.9; *Export everything* · *JSON, all tables* · a plain `<a href="/api/export" className="btn sec sm">Download</a>`, never a `<Link>`). Both queries in one wave. From 1024px, pace on the left, data on the right (the mockup's `dk-2up`). `src/app/settings/loading.tsx` (new): the loaded geometry in `--sunk`, as `src/app/inbox/loading.tsx`.
+6. `src/components/nav/items.ts`: `settings` to `enabled: true`; the `export` item is removed (its comment updated). `src/components/nav/MediaBar.tsx`: a 44px gear `<Link href="/settings">` named *Settings* at the bar's right end, `aria-current="page"` on `/settings`. The rail and sidebar already draw the foot group.
+7. `src/app/globals.css`: the settings layout, the gear, and the stepper on `--sunk` per STYLE_GUIDE § 9 (with the dark `--rule` ring, D2), scoped to the settings screen so the batch and finish sheets don't change; tokens only.
+8. Perf and docs: `scripts/perf/routes.mjs` gets `settings` (tap from `/comics`, `a[href="/settings"]`); `scripts/perf/budget.json` gets `settings` starting from `/inbox`'s numbers (11,000 / 173,000 / 28 / 100). `docs/02-architecture.md` § 7: the perf-budget row and "/settings 2" in the queries line; § 5: `/api/settings` in the route-handler list.
+
+### Files
+
+- `src/lib/settings.ts` (new): defaults, bounds, the year figure. *Not in "Files likely touched".*
+- `src/db/queries.ts`: `readingSettings`, `volumeMapCounts`.
+- `src/db/writes.ts`: `saveReadingSettings`.
+- `src/app/api/settings/route.ts` (new): the validated write.
+- `src/components/Stepper.tsx` (new): the group stepper. No switch component (no switch ships).
+- `src/components/PaceSettings.tsx` (new, client): state, debounced save, failure toast, the card. *Not in "Files likely touched".*
+- `src/app/settings/page.tsx`, `src/app/settings/loading.tsx` (new).
+- `src/components/nav/items.ts`: Settings on, Export off.
+- `src/components/nav/MediaBar.tsx`: the phone's gear. *Not in "Files likely touched".*
+- `src/app/globals.css`: settings layout, gear, stepper.
+- `scripts/perf/routes.mjs`, `scripts/perf/budget.json`: the new route.
+- `docs/02-architecture.md`: perf row, query count, route handler. *Not in "Files likely touched".*
+- Tests: `test/settings.test.ts` (new), `test/e2e/settings.spec.ts` (new), `test/nav-items.test.tsx`, `test/query-budget.test.ts` (`/settings`: 2 queries, 1 wave) and `test/e2e/shell.spec.ts` (its nav href list loses `/api/export`, gains `/settings`). The last two are *not in "Files likely touched"*.
+
+Over 8 files, data and UI together: `workflow.splitPolicy` is `never-split`, so the task stays whole and `autonomy: attended` (as set).
+
+### Test strategy
+
+- AC-1: `test/settings.test.ts` › "a user with no row gets the column defaults" (45/185/275, compared with `information_schema.columns.column_default` so the code's defaults can't drift) and › "an edit is read on the next call" (no cache). `test/e2e/settings.spec.ts` › "one h1, and each stepper is a named group". The capacity-view half is TASK-046's AC-2 (owner's (a)).
+- AC-2: `test/settings.test.ts` › "PATCH 60 leaves one row with minutes_per_day 60". `test/e2e/settings.spec.ts` › "fifteen presses of + save 60, and a reload shows it" (the `<output>` reads `60`, the card reads the figure from `src/lib/settings.ts` for 60 × 185 × the year's days); the test sets it back.
+- AC-3: `test/settings.test.ts` › "refuses 0, a negative, a non-integer, an over-bound value, an unknown field, a missing field and an empty body with 400, writing nothing" and › "the − at the lower bound is aria-disabled with a visible reason" (`renderToString(<Stepper …/>)`: `aria-disabled="true"`, `aria-describedby` → the reason's text, no `disabled` attribute).
+- AC-4: `test/settings.test.ts` › "volume map counts: 3 rules over 2 series". `test/nav-items.test.tsx` › Settings enabled and drawn in the rail and sidebar, Export in no bar, the phone bar's gear, and `aria-current="page"` on `/settings` in each. `test/e2e/settings.spec.ts` › "Export everything is a plain a href=/api/export", › "current in the rail at 768 and the sidebar at 1280", › "one tap from the phone bar at 360".
+- AC-5: `test/e2e/settings.spec.ts` › axe in light and dark, › "a failed save shows the failure toast and puts the value back" (route the PATCH to a 500), › "stepper buttons ≥ 32px in a ≥ 44px row", › "the loading state draws the loaded geometry" (as `skeletons.spec.ts` does); screenshots at every width, light and dark, from CI's full projects (the `e2e:full` gate).
+
+### Risks
+
+- The shared `.stepper` sits on `--raise`, but STYLE_GUIDE § 9 says `--sunk`. The settings-scoped rule follows the guide without moving the batch and finish sheets; whether those should follow is noted at close-out.
+- The gear widens the phone bar past "the one Comics · Books · Watch partial" (design § 10). The mockup's phone bar already draws an icon button there (Search, 6.1), so it is the slot the design kept; recorded as the candidate decision.
+- Debounced saves: a navigation inside the 500 ms window could drop the last press. The client flushes the pending save on `pagehide` / unmount.
 
 ## Review log
 
