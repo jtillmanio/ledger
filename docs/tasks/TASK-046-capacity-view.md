@@ -1,7 +1,7 @@
 ---
 id: TASK-046
 title: 2.1 Capacity view
-status: In progress
+status: Review
 depends_on: [TASK-011, TASK-045]
 size: M
 model: opus
@@ -33,13 +33,13 @@ The Ledger can say how full each planned year and quarter is against what you ca
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): test with 45 min/day at 185 wpm over 2027 and a fixture plan of
+- [x] AC-1 (roadmap **Check:**, verbatim): test with 45 min/day at 185 wpm over 2027 and a fixture plan of
 3.58M words returns 118% ± 1% (3,585,000 / 3,038,625), and reports what share
 rests on estimates. (The check once said 4.1M, which is 135%: S-06.)
-- [ ] AC-2: Given that fixture, changing `minutes_per_day` from 45 to 60 changes 2027's capacity to 60 × 185 × 365 = 4,051,500 and its load to 88% ± 1%, with no other write; each 2027 quarter's capacity is a quarter of the year's.
-- [ ] AC-3: Given a book in `2027-Q1`, one in bare `2027`, one `on_deck` and a Someday book (no plan row): 2027's planned total includes the first two; 2027-Q1's includes only the first; no quarter includes the bare-year book; neither the On deck nor the Someday book appears in any total.
-- [ ] AC-4: Given 2027 with a 300k `stated` book and a book with no word count and 400 pages, the year reports 300k stated plus the 400-page book's estimate marked estimated, and an estimated share equal to estimate ÷ total; a book with neither a count nor a page count is counted and reported as unknown (never as 0 words), and an implausible page count is treated as the plan states.
-- [ ] AC-5: A soft-deleted book (`deleted_at` set) planned in 2027 counts in no total; the view's cases are in `etl/test_views.sql` and `npm run test:views` passes, with every existing case unchanged.
+- [x] AC-2: Given that fixture, changing `minutes_per_day` from 45 to 60 changes 2027's capacity to 60 × 185 × 365 = 4,051,500 and its load to 88% ± 1%, with no other write; each 2027 quarter's capacity is a quarter of the year's.
+- [x] AC-3: Given a book in `2027-Q1`, one in bare `2027`, one `on_deck` and a Someday book (no plan row): 2027's planned total includes the first two; 2027-Q1's includes only the first; no quarter includes the bare-year book; neither the On deck nor the Someday book appears in any total.
+- [x] AC-4: Given 2027 with a 300k `stated` book and a book with no word count and 400 pages, the year reports 300k stated plus the 400-page book's estimate marked estimated, and an estimated share equal to estimate ÷ total; a book with neither a count nor a page count is counted and reported as unknown (never as 0 words), and an implausible page count is treated as the plan states.
+- [x] AC-5: A soft-deleted book (`deleted_at` set) planned in 2027 counts in no total; the view's cases are in `etl/test_views.sql` and `npm run test:views` passes, with every existing case unchanged.
 
 ## Out of scope
 
@@ -65,8 +65,12 @@ rests on estimates. (The check once said 4.1M, which is 135%: S-06.)
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- 2.0's roadmap box and its task-list Done cell stay open until this task closes (TASK-045's note): tick both at close-out (approved at plan)
-- Candidate decision: what counts against capacity (the owner's answers at the plan gate, 2026-11-04, below) (approved at plan)
+- 2.0's roadmap box and its task-list Done cell were to stay open until this task closed (TASK-045's note) → not tracked: both were already ticked when TASK-045 was accepted; nothing left to tick
+- Decision: what counts against capacity (the owner's answers at the plan gate, 2026-11-04, and the stored-estimate ruling at spec review R1, option b) → docs/review/decisions.md § D-115 (approved at plan)
+- 2.2's *This quarter* strip reads its figure through `planCapacity(userId, year)`: the quarter's `plannedWords` against `capacity` for *615k planned · 760k a quarter*, and `readBooks` of `books` for *3 of 7 read*; unknown books are counted but add no words → docs/tasks/TASK-049-books-dashboard.md § Context
+- Schema review: a later change to either view's column list or types needs a `DROP VIEW plan_capacity, plan_book_words` first, as `CREATE OR REPLACE` can't change them → not tracked: informational, true of every view in `etl/views.sql`
+- Schema review: `test/plan-period-migration.test.ts`'s after-down check names only `plan_period` and `to_read_level` → not tracked: the down file drops the new views first and the up → down → up test fails without it, which the test audit confirmed
+- Manual check: the view's 2027 total equals the Library's *To read* 2027 filter only when no planned book is read and none is planned in two years (the filter lists every to-read book with any plan row in the year) → not tracked: expected, stated in the plan's Risk
 
 ## Plan
 
@@ -99,7 +103,11 @@ Approved by the owner 2026-11-04. Answers at the gate:
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 round FAIL(1: the EXPLAIN test asserted a statistics-dependent scan) → full PASS | R2 round PASS (after review fixes)
+- Audit R1 PASS (every AC PROVEN; 10 mutations caught; the down-file change discriminating)
+- Spec R1 CHANGES (SPEC GAP: a stored estimate under 50 pages; owner chose b, trust it; follow-up destinations at close-out) → R2 APPROVE
+- Schema R1 APPROVE (2 MINOR: make_date at year 0000, int product before float8; both fixed) → R2 APPROVE
+- UI: not run (`ui: false`, no UI files)
 
 ## Blocked
 
@@ -107,7 +115,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
+- Verify rounds: 2 (R1 round + full, R2 round)
+- Review rounds: 2
+- First-pass AC FAILs: 0
 - Plan revisions after approval: 1 (the two down files)
