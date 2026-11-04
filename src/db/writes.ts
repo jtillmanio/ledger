@@ -1520,6 +1520,7 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
  * steppers back to it.
  */
 export async function saveReadingSettings(userId: string, patch: SettingsPatch): Promise<ReadingSettings> {
+  if (Object.keys(patch).length === 0) throw new Error("saveReadingSettings: name at least one setting");
   const [row] = await db.insert(readingSettings).values({ userId, ...patch })
     .onConflictDoUpdate({ target: readingSettings.userId, set: patch })
     .returning({
