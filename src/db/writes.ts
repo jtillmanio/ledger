@@ -1,7 +1,7 @@
 import { and, between, desc, eq, gt, gte, inArray, isNull, like, ne, or, sql } from "drizzle-orm";
 import {
   db, authors, books, bookSeries, bookStatus, inbox, issueProgress, issues, readEvents, readingPlan, readingSettings, runIssues,
-  runQueue, runs, shelfBooks,
+  runQueue, runs, shelfBooks, seriesFollows, authorFollows, universeFollows, shelfFollows,
   shelves, sql as pg, volumeRules,
 } from "./index";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
@@ -1528,4 +1528,74 @@ export async function saveReadingSettings(userId: string, patch: SettingsPatch):
       wordsPerPage: readingSettings.wordsPerPage,
     });
   return row;
+}
+
+/** What can be followed (task 2.2c, D-108): one narrow table each (data model 2.5e). */
+export const FOLLOW_KINDS = ["series", "author", "universe", "shelf"] as const;
+export type FollowKind = (typeof FOLLOW_KINDS)[number];
+/** A follow's state. No row is *Not following*, which is `null` here. Only `reading` means reading. */
+export const FOLLOW_STATES = ["tracking", "reading"] as const;
+export type FollowState = (typeof FOLLOW_STATES)[number];
+
+/** The row a follow of `kind` lives in, and how to find, write and remove it. */
+function followRow(tx: Tx, userId: string, kind: FollowKind, id: string) {
+  switch (kind) {
+    case "series": {
+      const where = and(eq(seriesFollows.userId, userId), eq(seriesFollows.seriesId, id));
+      return {
+        get: () => tx.select({ state: seriesFollows.state }).from(seriesFollows).where(where).for("update"),
+        put: (state: FollowState) => tx.insert(seriesFollows).values({ userId, seriesId: id, state })
+          .onConflictDoUpdate({ target: [seriesFollows.userId, seriesFollows.seriesId], set: { state } }),
+        drop: () => tx.delete(seriesFollows).where(where),
+      };
+    }
+    case "author": {
+      const where = and(eq(authorFollows.userId, userId), eq(authorFollows.authorId, id));
+      return {
+        get: () => tx.select({ state: authorFollows.state }).from(authorFollows).where(where).for("update"),
+        put: (state: FollowState) => tx.insert(authorFollows).values({ userId, authorId: id, state })
+          .onConflictDoUpdate({ target: [authorFollows.userId, authorFollows.authorId], set: { state } }),
+        drop: () => tx.delete(authorFollows).where(where),
+      };
+    }
+    case "universe": {
+      const where = and(eq(universeFollows.userId, userId), eq(universeFollows.universeId, id));
+      return {
+        get: () => tx.select({ state: universeFollows.state }).from(universeFollows).where(where).for("update"),
+        put: (state: FollowState) => tx.insert(universeFollows).values({ userId, universeId: id, state })
+          .onConflictDoUpdate({ target: [universeFollows.userId, universeFollows.universeId], set: { state } }),
+        drop: () => tx.delete(universeFollows).where(where),
+      };
+    }
+    case "shelf": {
+      // No user_id (D-91): the route has already checked the shelf is yours.
+      const where = eq(shelfFollows.shelfId, id);
+      return {
+        get: () => tx.select({ state: shelfFollows.state }).from(shelfFollows).where(where).for("update"),
+        put: (state: FollowState) => tx.insert(shelfFollows).values({ shelfId: id, state })
+          .onConflictDoUpdate({ target: shelfFollows.shelfId, set: { state } }),
+        drop: () => tx.delete(shelfFollows).where(where),
+      };
+    }
+  }
+}
+
+/**
+ * Sets how you follow a series, an author, a universe or a shelf (task 2.2c,
+ * D-108): `reading` or `tracking` writes its row, `null` (*Not following*)
+ * deletes it. Answers the state it had, `null` for no row, which is the undo:
+ * `setFollow(…, prior)` puts back exactly what was there, row or no row. One
+ * transaction. Whether the thing may be followed is the caller's
+ * (`followable`); nothing here infers *Reading* from reads.
+ */
+export async function setFollow(
+  userId: string, kind: FollowKind, id: string, state: FollowState | null,
+): Promise<FollowState | null> {
+  return db.transaction(async (tx) => {
+    const row = followRow(tx, userId, kind, id);
+    const [had] = await row.get();
+    if (state === null) await row.drop();
+    else await row.put(state);
+    return (had?.state as FollowState | undefined) ?? null;
+  });
 }

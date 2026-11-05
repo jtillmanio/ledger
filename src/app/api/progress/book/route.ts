@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   BOOK_STATUSES, IN_PROGRESS, RefusedStatus, SETTABLE_STATUSES, saveBookStatus, undoBookStatus, type BookStatusChange,
 } from "@/db/writes";
+import { finishOffer } from "@/db/queries";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { isFinish, resolveFinish, resolveStart } from "@/lib/finish-date";
 
@@ -29,6 +30,11 @@ const STORED: readonly string[] = BOOK_STATUSES;
  * undo sends back to DELETE; for `read` the finish it stored; the start the read
  * now holds; and how the read it appended was read, `text` or `audio` (null
  * when it appended none).
+ *
+ * A finish (the write appended a read: entering `read`, a listen's included)
+ * also answers `offer`, what the toast's *Keep going?* offers to follow (task
+ * 2.2c, `finishOffer`); any other write answers `offer: null`. It is read after
+ * the finish is saved, so it never holds the finish up.
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -63,7 +69,8 @@ export async function POST(req: Request) {
   }
   if (!saved) return NextResponse.json({ error: "no such book" }, { status: 404 });
   const { start: stored, ...change } = saved;
-  return NextResponse.json({ ok: true, change, finish: finish ?? null, start: stored, format: change.format ?? null });
+  const offer = change.appended !== null ? await finishOffer(userId, bookId) : null;
+  return NextResponse.json({ ok: true, change, finish: finish ?? null, start: stored, format: change.format ?? null, offer });
 }
 
 /** A status change's undo: `{ change }` as the POST answered it. 409 when the

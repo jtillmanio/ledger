@@ -1,4 +1,5 @@
 import { sql } from "./index";
+import type { FollowKind, FollowState } from "./writes";
 import { readWhen, runSpan, type Precision } from "@/lib/format";
 import { FRESH_DAYS } from "@/lib/metron";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
@@ -1199,4 +1200,84 @@ export async function bookMatches(userId: string, lines: { title: string; author
     near: r.near_id === null ? null
       : { bookId: r.near_id, title: r.near_title!, author: r.near_author, status: r.near_status, similarity: r.near_similarity! },
   }));
+}
+
+/** One thing a book belongs to (task 2.2c): its series, author, universe or a books shelf it is on,
+ * with its progress view's counts and how you follow it (`null`: not following). */
+export type Grouping = {
+  kind: FollowKind; id: string; name: string;
+  /** `read / total` as the sheet shows it: a series' total is its stated `total_books`, the rest the books listed. */
+  read: number; total: number;
+  /** Its live books not read yet, whatever a series states (the offer reads this). */
+  unread: number;
+  state: FollowState | null;
+};
+
+/**
+ * What a live book belongs to (task 2.2c, the *Follow…* sheet): its series, its author, its
+ * universe, then each books shelf of yours it is on, by name, read from the four progress views
+ * (live books only). A book with no series has no series row. Null for a missing or removed book.
+ */
+export async function bookGroupings(userId: string, bookId: string): Promise<{ title: string; groupings: Grouping[] } | null> {
+  const [book] = await sql<{ title: string }[]>`
+    SELECT title FROM books WHERE id = ${bookId} AND deleted_at IS NULL
+  `;
+  if (!book) return null;
+  const groupings = await sql<Grouping[]>`
+    WITH b AS (SELECT series_id, author_id, universe_id FROM books WHERE id = ${bookId})
+    SELECT kind, id, name, read, total, unread, state FROM (
+      SELECT 'series' AS kind, p.series_id AS id, p.name, p.books_read::int AS read, p.total_books::int AS total,
+             (p.books_listed - p.books_read)::int AS unread, p.follow_state AS state, 1 AS ord
+      FROM b JOIN series_progress p ON p.series_id = b.series_id AND p.user_id = ${userId}
+      UNION ALL
+      SELECT 'author', p.author_id, p.name, p.books_read::int, p.books_listed::int,
+             (p.books_listed - p.books_read)::int, p.follow_state, 2
+      FROM b JOIN author_progress p ON p.author_id = b.author_id AND p.user_id = ${userId}
+      UNION ALL
+      SELECT 'universe', p.universe_id, p.name, p.books_read::int, p.books_listed::int,
+             (p.books_listed - p.books_read)::int, p.follow_state, 3
+      FROM b JOIN universe_progress p ON p.universe_id = b.universe_id AND p.user_id = ${userId}
+      UNION ALL
+      SELECT 'shelf', p.shelf_id, p.name, p.books_read::int, p.books_listed::int,
+             (p.books_listed - p.books_read)::int, p.follow_state, 4
+      FROM shelf_books sb JOIN shelf_progress p ON p.shelf_id = sb.shelf_id AND p.user_id = ${userId}
+      WHERE sb.book_id = ${bookId}
+    ) g
+    ORDER BY ord, name, id
+  `;
+  return { title: book.title, groupings: [...groupings] };
+}
+
+/**
+ * Whether you may follow it (task 2.2c, AC-2): a series, an author or a universe with at least
+ * one live book, or a books shelf of yours. A series whose books are all removed, or a titles
+ * shelf, is refused.
+ */
+export async function followable(userId: string, kind: FollowKind, id: string): Promise<boolean> {
+  const [row] = kind === "shelf"
+    ? await sql`SELECT 1 FROM shelves WHERE id = ${id} AND user_id = ${userId} AND kind = 'books'`
+    : await sql`
+        SELECT 1 FROM books
+        WHERE deleted_at IS NULL AND ${sql(kind === "series" ? "series_id" : kind === "author" ? "author_id" : "universe_id")} = ${id}
+        LIMIT 1
+      `;
+  return Boolean(row);
+}
+
+/** What a finish offers (task 2.2c): `take` sets *Reading*; `done` (*Done with …*) sets *Tracking*. */
+export type FinishOffer = { take: Grouping[]; done: Grouping[] };
+
+/**
+ * What finishing a book offers to follow (task 2.2c, D-108), read after the finish is saved. A
+ * grouping already *Reading* with no unread live book left is `done`: the app asks, it never sets
+ * it back itself (D-43). One not *Reading* is offered (`take`) when it is the author, or still
+ * has an unread live book. A *Reading* one with books left offers nothing.
+ */
+export async function finishOffer(userId: string, bookId: string): Promise<FinishOffer> {
+  const found = await bookGroupings(userId, bookId);
+  const all = found?.groupings ?? [];
+  return {
+    take: all.filter((g) => g.state !== "reading" && (g.kind === "author" || g.unread > 0)),
+    done: all.filter((g) => g.state === "reading" && g.unread === 0),
+  };
 }

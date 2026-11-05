@@ -1028,6 +1028,37 @@ BEGIN
   END IF;
 END $$;
 
+-- shelf_progress (task 2.2c) counts the live books on a books shelf and how many
+-- are read: a soft-deleted book drops out of both counts, read or not; a book
+-- with no status is unread; a titles shelf has no row; follow_state is the
+-- shelf_follows row's, NULL with none.
+INSERT INTO books (id, title) VALUES
+  ('zz-sp-r', 'Zz Shelf Read'), ('zz-sp-u', 'Zz Shelf Unread'), ('zz-sp-n', 'Zz Shelf No status'),
+  ('zz-sp-gone', 'Zz Shelf Gone');
+UPDATE books SET deleted_at = now() WHERE id = 'zz-sp-gone';
+INSERT INTO book_status (user_id, book_id, status) VALUES
+  ('zz-user', 'zz-sp-r', 'read'), ('zz-user', 'zz-sp-u', 'to_read'), ('zz-user', 'zz-sp-gone', 'read');
+INSERT INTO shelves (id, name, user_id, kind) VALUES
+  ('zz-sp-shelf', 'Zz Shelf', 'zz-user', 'books'), ('zz-sp-empty', 'Zz Empty', 'zz-user', 'books'),
+  ('zz-sp-titles', 'Zz Titles', 'zz-user', 'titles');
+INSERT INTO shelf_books (shelf_id, book_id, ordinal) VALUES
+  ('zz-sp-shelf', 'zz-sp-r', 1), ('zz-sp-shelf', 'zz-sp-u', 2), ('zz-sp-shelf', 'zz-sp-n', 3),
+  ('zz-sp-shelf', 'zz-sp-gone', 4);
+INSERT INTO shelf_follows (shelf_id, state) VALUES ('zz-sp-shelf', 'reading');
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT string_agg(shelf_id || ':' || books_read || '/' || books_listed || ':' || coalesce(pct::text, '-')
+                    || ':' || coalesce(follow_state, '-'), ' ' ORDER BY shelf_id)
+    INTO got FROM shelf_progress WHERE shelf_id LIKE 'zz-sp-%';
+  IF got IS DISTINCT FROM 'zz-sp-empty:0/0:-:- zz-sp-shelf:1/3:0.3333333333333333:reading' THEN
+    RAISE EXCEPTION 'shelf_progress wrong (a soft-deleted book counts, or a titles shelf shows): %', got;
+  END IF;
+  IF (SELECT user_id FROM shelf_progress WHERE shelf_id = 'zz-sp-shelf') IS DISTINCT FROM 'zz-user' THEN
+    RAISE EXCEPTION 'shelf_progress.user_id is not the shelf''s';
+  END IF;
+END $$;
+
 -- No catalog table carries a per-user fact (AC-4, hard rule 3). The four tables
 -- a follow points at have exactly these columns: a task that adds one updates
 -- this list, and a per-user one (a state, a done flag, a user_id) belongs in a

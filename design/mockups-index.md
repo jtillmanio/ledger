@@ -25,6 +25,8 @@ line numbers below drift after an edit.
 | `plan` | Plan by quarter | 2023–2166 |
 | `moveplan` | Move / add to a quarter | 2169–2326 |
 | `blist` | Library (the master list); the *Unlisted · N* chip after *Read* and an Unlisted row, grey badge and *Add to Someday* (task 1.21); the box searches as you type, *Searching…* (task 1.22); a row's *Started …* and days taken, the date line, and *Started* refusing a start after the finish (third frame, task 1.17); *Listening* beside *Reading* in the control, a Listening row and a row with a listen carrying the headphones glyph, and *Read 2× · Listened 1×* (task 1.23); named *Library*, its *Sort* select and direction link (*↓ Longest first*) beside the status filters at every width, the rows longest first, and a tablet frame with *Library* current on the rail (task 2.2e) | 3117–3328 |
+| `follow` | *Follow…* — a Library row's `⋯` menu and the sheet it opens, headed by the book's title: its series, author, universe and shelves, each with *Reading · Tracking · Not following* and `read / total`; a book with no series, and the undo toast live over the sheet; 360, 834 and desktop frames (task 2.2c, D-108) | 3331–3510 |
+| `finishoffer` | The finish offer — the toast after *Read* gains *Keep going?* with one 44px chip per grouping not already *Reading*; a taken chip's own toast with the chips left; *Done with Mistborn* on the last unread book; F6 into the toast (D-116); 360, 834 and desktop frames (task 2.2c, D-108) | 3511–3650 |
 | `add` | Add books — search (Hardcover, task 1.4f); searches as you type, one place or source tag a row (task 1.22); the headphones glyph beside a listened book's tag (task 1.23) | 3315–3433 |
 | `shelves` | Shelves | 2528–2624 |
 | `top` | Top books | 2627–2713 |

@@ -369,3 +369,146 @@ describe("a mark on the spine", () => {
     expect(count()).toBe("3 of 10 read");
   });
 });
+
+// Task 2.2c (D-108, D-116): a finish's toast offers what the book belongs to.
+describe("the finish's Keep going? row", () => {
+  const chipButtons = () => [...container.querySelectorAll<HTMLButtonElement>(".toast-chip")];
+  const chipText = () => chipButtons().map((b) => b.textContent);
+  const f6 = async (target: EventTarget = document.activeElement ?? document.body) => act(async () => {
+    target.dispatchEvent(new KeyboardEvent("keydown", { key: "F6", bubbles: true, cancelable: true }));
+  });
+  const chip = (label: string, kind: string | undefined, entry: UndoEntry) =>
+    ({ label, kind, take: vi.fn(async () => entry) });
+
+  it("with no offer the toast has no Keep going? line", async () => {
+    act(() => root.render(<UndoProvider><Pusher entry={{ label: "x: read", undo: async () => {} }} /></UndoProvider>));
+    await push();
+    expect(container.querySelector(".toast-offer")).toBeNull();
+    expect(toast()!.textContent).not.toContain("Keep going?");
+  });
+
+  it("draws one chip per offer under Keep going?, a group named by it; the finish's Undo undoes the finish alone", async () => {
+    const finishUndo = vi.fn(async () => {});
+    const a = chip("Mistborn", "series", { label: "Reading Mistborn", undo: async () => {} });
+    const b = chip("Cosmere", undefined, { label: "Reading Cosmere", undo: async () => {} });
+    act(() => root.render(<UndoProvider>
+      <Pusher entry={{ label: "The Well of Ascension: read", undo: finishUndo, offer: [a, b] }} />
+    </UndoProvider>));
+    await push();
+    const group = container.querySelector<HTMLElement>('.toast-offer[role="group"]')!;
+    expect(document.getElementById(group.getAttribute("aria-labelledby")!)!.textContent).toBe("Keep going?");
+    expect(chipText()).toEqual(["Mistborn · series", "Cosmere"]);
+    await pressUndo();
+    expect(finishUndo).toHaveBeenCalledOnce();
+    expect(a.take).not.toHaveBeenCalled();
+    expect(b.take).not.toHaveBeenCalled();
+    expect(toast()).toBeNull();
+  });
+
+  it("a chip writes and pushes its own entry with the chips left; its Undo undoes the follow alone", async () => {
+    const finishUndo = vi.fn(async () => {});
+    const followUndo = vi.fn(async () => {});
+    const a = chip("Mistborn", "series", { label: "Reading Mistborn", detail: "series · was not followed", undo: followUndo });
+    const b = chip("Cosmere", undefined, { label: "Reading Cosmere", undo: async () => {} });
+    act(() => root.render(<UndoProvider>
+      <Pusher entry={{ label: "The Well of Ascension: read", undo: finishUndo, offer: [a, b] }} />
+    </UndoProvider>));
+    await push();
+    await act(async () => chipButtons()[0].click());
+    expect(a.take).toHaveBeenCalledOnce();
+    expect(lines()).toEqual(["Reading Mistborn", "series · was not followed"]);
+    expect(chipText()).toEqual(["Cosmere"]);
+    await pressUndo();
+    expect(followUndo).toHaveBeenCalledOnce();
+    // One toast at a time: the finish is committed, and Ctrl+Z reaches nothing.
+    await ctrlZ();
+    expect(finishUndo).not.toHaveBeenCalled();
+  });
+
+  it("taking a chip with focus in the toast keeps focus in the next one, on its first chip left", async () => {
+    const a = chip("Mistborn", "series", { label: "Reading Mistborn", undo: async () => {} });
+    const b = chip("Cosmere", undefined, { label: "Reading Cosmere", undo: async () => {} });
+    act(() => root.render(<UndoProvider><Pusher entry={{ label: "read", undo: async () => {}, offer: [a, b] }} /></UndoProvider>));
+    await push();
+    act(() => chipButtons()[0].focus());
+    await act(async () => chipButtons()[0].click());
+    expect(document.activeElement).toBe(chipButtons()[0]);
+    expect(chipButtons()[0].textContent).toBe("Cosmere");
+  });
+
+  it("a chip that fails says so, with Retry, and changes nothing", async () => {
+    const a = { label: "Mistborn", kind: "series", take: vi.fn(async (): Promise<UndoEntry> => { throw new Error("no"); }) };
+    act(() => root.render(<UndoProvider><Pusher entry={{ label: "read", undo: async () => {}, offer: [a] }} /></UndoProvider>));
+    await push();
+    await act(async () => chipButtons()[0].click());
+    expect(lines()).toEqual(["Couldn't save Mistborn. Nothing changed."]);
+    expect([...container.querySelectorAll(".toast button")].map((x) => x.textContent)).toEqual(["Retry"]);
+  });
+
+  it("F6 moves focus to the toast's first control, Tab reaches the chips, F6 hands focus back (D-116)", async () => {
+    const a = chip("Mistborn", "series", { label: "Reading Mistborn", undo: async () => {} });
+    act(() => root.render(<UndoProvider>
+      <input id="before" /><Pusher entry={{ label: "read", undo: async () => {}, offer: [a] }} />
+    </UndoProvider>));
+    await push();
+    const before = container.querySelector<HTMLInputElement>("#before")!;
+    act(() => before.focus());
+    await f6(before);
+    expect(document.activeElement).toBe(undoButton());
+    // The chips follow Undo in the toast's own order, so Tab walks to them.
+    const order = [...toast()!.querySelectorAll("button")];
+    expect(order.indexOf(chipButtons()[0])).toBeGreaterThan(order.indexOf(undoButton()!));
+    act(() => chipButtons()[0].focus());
+    await f6();
+    expect(document.activeElement).toBe(before);
+  });
+
+  it("Esc in the toast hands focus back; F6 with no toast does nothing", async () => {
+    act(() => root.render(<UndoProvider>
+      <input id="before" /><Pusher entry={{ label: "read", undo: async () => {} }} />
+    </UndoProvider>));
+    const before = container.querySelector<HTMLInputElement>("#before")!;
+    act(() => before.focus());
+    await f6(before);
+    expect(document.activeElement).toBe(before);
+    await push();
+    act(() => before.focus());
+    await f6(before);
+    expect(document.activeElement).toBe(undoButton());
+    await act(async () => {
+      undoButton()!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+    });
+    expect(document.activeElement).toBe(before);
+  });
+});
+
+describe("a finish's offer as chips (follow-offer)", () => {
+  it("offers Done with first, then each grouping, a series and a shelf with their kind; a chip posts reading and its Undo posts the prior back", async () => {
+    const { offerChips } = await import("../src/lib/follow-offer");
+    const g = (kind: "series" | "author" | "universe" | "shelf", id: string, name: string) =>
+      ({ kind, id, name, read: 0, total: 1, unread: 1, state: null });
+    const chips = offerChips({
+      done: [g("series", "stormlight", "Stormlight")],
+      take: [g("series", "mistborn", "Mistborn"), g("author", "sanderson", "Brandon Sanderson"),
+        g("universe", "cosmere", "Cosmere"), g("shelf", "epic", "Epic fantasy")],
+    });
+    expect(chips.map((c) => [c.label, c.kind])).toEqual([
+      ["Done with Stormlight", undefined], ["Mistborn", "series"], ["Brandon Sanderson", undefined],
+      ["Cosmere", undefined], ["Epic fantasy", "shelf"],
+    ]);
+    expect(offerChips(null)).toEqual([]);
+
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, prior: "reading" })));
+    const done = await chips[0].take();
+    expect(sent().at(-1)).toEqual({ kind: "series", id: "stormlight", state: "tracking" });
+    expect([done.label, done.detail]).toEqual(["Tracking Stormlight", "series · was reading"]);
+    await done.undo();
+    expect(sent().at(-1)).toEqual({ kind: "series", id: "stormlight", state: "reading" });
+
+    const take = await chips[1].take();
+    expect(sent().at(-1)).toEqual({ kind: "series", id: "mistborn", state: "reading" });
+    expect([take.label, take.detail]).toEqual(["Reading Mistborn", "series · was not followed"]);
+    await take.undo();
+    expect(sent().at(-1)).toEqual({ kind: "series", id: "mistborn", state: null });
+  });
+});

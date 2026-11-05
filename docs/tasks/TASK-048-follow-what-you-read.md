@@ -1,7 +1,7 @@
 ---
 id: TASK-048
 title: 2.2c Follow what you're reading: the control, and an offer when you finish
-status: Ready
+status: In progress
 depends_on: [TASK-023, TASK-010, TASK-047]
 size: L
 model: opus
@@ -101,8 +101,8 @@ _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_s
 8. `src/lib/follow-offer.ts` (new): turns an `offer` into toast chips (*Mistborn · series*, *Brandon Sanderson*, *Cosmere*, *To-read pile · shelf*, *Done with Mistborn*), each writing through `/api/follows` and returning its own undo entry. TASK-049's *✓ finished* reuses it.
 9. `src/components/Undo.tsx`: `UndoEntry.offer?: { chips }`. The toast draws a second row, *Keep going?*, with the chips (44px). Taking one writes, then pushes its own entry that carries the chips still untaken; under the one-toast rule (1.8b) that commits the finish, and the chip's Undo undoes the follow alone. The chips go when the toast does; focus already holds it. **Keyboard: F6, while a toast is up, moves focus to its first control; F6 or Esc hands focus back** (`returnTo`). It works over a sheet too (D-63). D-116 (owner, at the plan gate).
 10. `src/components/FollowSheet.tsx` (new): `Sheet` headed by the book's title. It fetches the groupings on open, and each row has its name, its kind, `read / total` in mono, and a `role="radiogroup"` of native radios (*Reading · Tracking · Not following*) named *Following <name>*. A change POSTs and pushes an undo restoring `prior`.
-11. `src/components/BookRowMenu.tsx` (new, **not in the list**): `Menu` `⋯` named *More for <title>*, with the item *Follow…*. Its only prop is `bookId` (the title is read from `.row-title`, as `BookStatus` does), and the sheet is loaded with `next/dynamic` on first open, so 500 rows add almost no RSC or JS. Placed in each row of `src/app/books/list/page.tsx`.
-12. `src/components/BookStatus.tsx`: a finish's push carries `offer` through `follow-offer.ts`.
+11. `src/components/BookRowMenu.tsx` (new, **not in the list**): `Menu` `⋯` named *More for <title>*, with the item *Follow…*. Its only prop is `bookId` (the title is read from `.row-title`, as `BookStatus` does), and the sheet is loaded with `next/dynamic` on first open, so 500 rows add almost no RSC or JS. ~~Placed in each row of `src/app/books/list/page.tsx`.~~ **Revision 1 (owner, 2026-11-05):** `BookStatus` draws it, pinned to the row's top right by CSS, so a row adds no RSC element: the Library had 7.5 KB of its 58.6 KB document + RSC budget left. `page.tsx` is unchanged.
+12. `src/components/BookStatus.tsx`: a finish's push carries `offer` through `follow-offer.ts`, and it draws `BookRowMenu` (revision 1).
 13. `src/app/globals.css` (**not in the list**): the toast's offer row, the sheet's rows and the menu, from tokens only.
 
 **Files:** the 13 steps' files, plus `etl/test_views.sql`, `test/follows.test.ts` (new), `test/undo.test.tsx` (**not in the list**), `test/e2e/follows.spec.ts` (new); `test/export-tables.test.ts` should pass unchanged.

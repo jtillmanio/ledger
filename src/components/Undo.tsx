@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
 
 /**
  * One undo stack for the whole app (task 1.2, R1-09). An entry is a label and
@@ -15,6 +15,21 @@ export type UndoEntry = {
   detail?: string;
   /** Reverses the action. Rejects when it couldn't, and then changes nothing. */
   undo: () => Promise<void>;
+  /** The toast's *Keep going?* row (task 2.2c): what a finish offers to follow. */
+  offer?: OfferChip[];
+};
+
+/**
+ * One chip in the toast's *Keep going?* row (task 2.2c, D-108): *Mistborn · series*,
+ * *Done with Mistborn*. Taking it writes, and answers the entry its own toast
+ * carries, whose Undo undoes that write alone; the chips not taken ride along.
+ */
+export type OfferChip = {
+  label: string;
+  /** Grey after the label: `series`, `shelf`. */
+  kind?: string;
+  /** Writes. Rejects when it couldn't, and then changed nothing. */
+  take: () => Promise<UndoEntry>;
 };
 
 /** How long an entry can be taken back, and how long its toast stays. */
@@ -25,6 +40,7 @@ type Toast = {
   id: number; label: string; detail?: string; until: number; undoable: boolean;
   /** A failed write's way to send it again; only a failure toast has one. */
   retry?: () => void;
+  offer?: OfferChip[];
 };
 
 type UndoApi = {
@@ -60,6 +76,14 @@ export function useUndo() {
  * Ctrl+Z reaches nothing older. Hover or focus holds the toast: the time spent
  * held does not count against its 8 seconds, and the countdown bar stops with
  * it. Undo and Retry hand focus back to where it was before the toast took it.
+ *
+ * A finish's toast may carry *Keep going?* chips (task 2.2c). A chip writes,
+ * then pushes its own entry with the chips left, which (one toast at a time)
+ * commits the finish; focus stays in the toast. The chips go when the toast does.
+ *
+ * F6, while a toast is up, moves focus to its first control, from anywhere, a
+ * sheet included; F6 or Esc inside it hands focus back (D-116). Focus holds the
+ * toast, so it can't expire under you, and nothing traps Tab.
  */
 export function UndoProvider({ children }: { children: React.ReactNode }) {
   const stack = useRef<Live[]>([]);
@@ -71,6 +95,11 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
   const toastEl = useRef<HTMLDivElement>(null);
   // Where focus was before the toast took it.
   const returnTo = useRef<HTMLElement | null>(null);
+  // A chip's write in flight: the chips wait for it.
+  const [taking, setTaking] = useState(false);
+  // A chip was taken with focus in the toast: the next toast takes focus back in.
+  const refocusToast = useRef(false);
+  const offerId = useId();
 
   // A held toast is frozen in time: nothing on it expires while it is held.
   const live = useCallback(() => {
@@ -89,7 +118,9 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
 
   const showTop = useCallback(() => {
     const top = live().at(-1);
-    present(top ? { id: top.id, label: top.label, detail: top.detail, until: top.expires, undoable: true } : null);
+    present(top ? {
+      id: top.id, label: top.label, detail: top.detail, until: top.expires, undoable: true, offer: top.offer,
+    } : null);
   }, [live, present]);
 
   // Only the newest entry stays: the older ones are committed (task 1.8b).
@@ -164,6 +195,45 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [live, undoTop]);
 
+  // F6 into the toast and back out (D-116).
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "F6" || e.ctrlKey || e.metaKey || e.altKey) return;
+      const el = toastEl.current;
+      if (!el) return;
+      e.preventDefault();
+      if (el.contains(document.activeElement)) giveFocusBack();
+      else el.querySelector<HTMLElement>("button")?.focus();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [giveFocusBack]);
+
+  // A new toast after a chip: focus goes to its first chip left, else its Undo.
+  useEffect(() => {
+    if (!refocusToast.current || !toast) return;
+    refocusToast.current = false;
+    const el = toastEl.current;
+    (el?.querySelector<HTMLElement>(".toast-chip") ?? el?.querySelector<HTMLElement>("button"))?.focus();
+  }, [toast]);
+
+  /** A *Keep going?* chip: write, then its own toast with the chips left. */
+  async function takeChip(chip: OfferChip, rest: OfferChip[]) {
+    if (taking) return;
+    const inside = toastEl.current?.contains(document.activeElement) ?? false;
+    setTaking(true);
+    try {
+      const entry = await chip.take();
+      refocusToast.current = inside;
+      push({ ...entry, offer: rest.length ? rest : undefined });
+    } catch {
+      if (inside) giveFocusBack();
+      fail({ label: `Couldn't save ${chip.label}. Nothing changed.`, retry: () => void takeChip(chip, rest) });
+    } finally {
+      setTaking(false);
+    }
+  }
+
   // The toast comes off before the retry runs: it raises its own, Undo or a new failure.
   const retryTop = useCallback((retry: () => void) => {
     giveFocusBack();
@@ -196,6 +266,11 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
             onBlur={(e) => {
               if (!e.currentTarget.contains(e.relatedTarget)) hold("focus", false);
             }}
+            onKeyDown={(e) => {
+              if (e.key !== "Escape") return;
+              e.stopPropagation();
+              giveFocusBack();
+            }}
           >
             <div className="toast-text">
               <span className="toast-label">{toast.label}</span>
@@ -206,6 +281,20 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
             )}
             {toast.retry && (
               <button type="button" className="toast-undo" onClick={() => retryTop(toast.retry!)}>Retry</button>
+            )}
+            {/* What a finish offers to follow (task 2.2c): chips, never green; following isn't reading. */}
+            {toast.offer && toast.offer.length > 0 && (
+              <div className="toast-offer" role="group" aria-labelledby={offerId}>
+                <span className="toast-offer-label" id={offerId}>Keep going?</span>
+                {toast.offer.map((chip, i) => (
+                  <button key={`${chip.label}-${chip.kind ?? ""}`} type="button" className="toast-chip"
+                    aria-disabled={taking || undefined}
+                    onClick={() => void takeChip(chip, toast.offer!.filter((_, j) => j !== i))}>
+                    {chip.label}
+                    {chip.kind && <span className="toast-chip-kind"> · {chip.kind}</span>}
+                  </button>
+                ))}
+              </div>
             )}
             {/* The 8 seconds, drawn: a 2px bar that shrinks, and stops while the toast is held. */}
             <span className="toast-count" aria-hidden="true" />
