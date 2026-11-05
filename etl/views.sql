@@ -680,6 +680,25 @@ LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = u.id
 LEFT JOIN universe_follows f ON f.universe_id = bu.id AND f.user_id = u.id
 GROUP BY u.id, bu.id, bu.name, f.state;
 
+-- Shelf completion (task 2.2c, D-108), in universe_progress's shape: the live
+-- books on a books shelf and how many are read. A shelf is already its owner's,
+-- so user_id is the shelf's, and shelf_follows has none (D-91). 5.12 reads it.
+CREATE OR REPLACE VIEW shelf_progress AS
+SELECT
+  s.user_id, s.id AS shelf_id, s.name,
+  COUNT(b.id)                                           AS books_listed,
+  COUNT(*) FILTER (WHERE st.status = 'read')            AS books_read,
+  COUNT(*) FILTER (WHERE st.status = 'read')::float8
+    / NULLIF(COUNT(b.id), 0)                            AS pct,
+  f.state                                               AS follow_state
+FROM shelves s
+LEFT JOIN shelf_books sb ON sb.shelf_id = s.id
+LEFT JOIN books b       ON b.id = sb.book_id AND b.deleted_at IS NULL
+LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = s.user_id
+LEFT JOIN shelf_follows f ON f.shelf_id = s.id
+WHERE s.kind = 'books'
+GROUP BY s.user_id, s.id, s.name, f.state;
+
 -- Not here yet: show_progress and franchise_progress arrive with task 8.1,
 -- because titles, seasons and season_status do not exist until then. When they
 -- do, show_progress.state must be

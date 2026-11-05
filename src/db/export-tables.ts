@@ -10,7 +10,7 @@ export const CATALOG_TABLES = [
   "issue_credits", "prereqs", "events", "event_runs",
   "eras", "volume_rules",
   "editions", "authors", "book_series", "book_universes", "book_subseries", "books", "book_genres", "releases",
-  "external_lists", "shelf_books",
+  "external_lists", "shelf_books", "shelf_follows",
 ] as const;
 
 /** Tables with a `user_id` column: exported for the signed-in user only. */

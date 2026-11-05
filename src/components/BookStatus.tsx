@@ -2,12 +2,15 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import BookRowMenu from "@/components/BookRowMenu";
 import FinishDate, {
   dateWords, finishReason, finishWords, initialFinish, storedDay, toChoice, type DateFor, type FinishValue,
 } from "@/components/FinishDate";
 import { Headphones } from "@/components/nav/Icons";
 import { useUndo } from "@/components/Undo";
+import type { FinishOffer } from "@/db/queries";
 import { startAfterFinish } from "@/lib/finish-date";
+import { offerChips } from "@/lib/follow-offer";
 import { listenGlyph, readWhen, type Precision } from "@/lib/format";
 
 /** `unlisted` (task 1.21, D-86) is shown and undone to, never chosen: no button sets it. */
@@ -70,7 +73,11 @@ function badge({ status, finish }: Saved) {
  * Every saved change pushes an undo (task 1.2) whose inverse is the server's
  * own account of what it changed, so a second read's undo removes that read and
  * nothing else. The page is refreshed after a save and an undo, so the year
- * chips and counts move with it.
+ * chips and counts move with it. A finish's toast also offers what the book
+ * belongs to, *Keep going?* (task 2.2c): its Undo still undoes the finish alone.
+ *
+ * It draws the row's `⋯` too (task 2.2c, `BookRowMenu`), so a row costs no
+ * more RSC than it did.
  *
  * The list holds up to 500 of these, so a row costs as little as it can
  * (Performance budget, task 0.10): the controls render only once the row is
@@ -176,8 +183,9 @@ export default function BookStatus({
         return false;
       }
       if (!res.ok) throw new Error("status failed");
-      const { change, finish: stored, start: storedStart, format } =
-        (await res.json()) as { change: unknown; finish: Finish | null; start: Finish; format: string | null };
+      const { change, finish: stored, start: storedStart, format, offer } = (await res.json()) as {
+        change: unknown; finish: Finish | null; start: Finish; format: string | null; offer: FinishOffer | null;
+      };
       const before = saved;
       setSaved({
         status: next, finish: stored ?? before.finish, start: storedStart,
@@ -199,6 +207,7 @@ export default function BookStatus({
           setSaved(before);
           router.refresh();
         },
+        offer: offerChips(offer),
       });
       return true;
     } catch {
@@ -261,6 +270,7 @@ export default function BookStatus({
 
   return (
     <>
+      <BookRowMenu bookId={bookId} />
       {/* One shape for every status, so the badge keeps its focus when *Add to Someday* goes. */}
       <span className="status-line">
         <button type="button" ref={toggle}

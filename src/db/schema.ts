@@ -515,6 +515,16 @@ export const shelfBooks = pgTable("shelf_books", {
   ordinal: integer("ordinal").notNull(),    // position on the shelf
 }, (t) => ({ pk: primaryKey({ columns: [t.shelfId, t.bookId] }) }));
 
+// Following a shelf (task 2.2c, D-108): the fourth follow table, as the three
+// above it, but with no user_id (D-91), since a shelf is already the owner's.
+// No row is not following; shelf_progress counts what is read on it.
+export const shelfFollows = pgTable("shelf_follows", {
+  shelfId: text("shelf_id").primaryKey().references(() => shelves.id, { onDelete: "cascade" }),
+  state: text("state").notNull().default("tracking"), // tracking | reading
+}, (t) => ({
+  state: check("shelf_follows_state_check", sql`${t.state} IN ('tracking', 'reading')`),
+}));
+
 // Quick capture (task 1.4b, product #21): a note with nothing required but its
 // text, waiting until an add turns it into a real book or run. Resolving links
 // the row the add wrote and stamps resolved_at in the add's own transaction;

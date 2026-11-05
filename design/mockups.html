@@ -907,6 +907,24 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
 .frame[data-w="tab"] .seg span .n{opacity:1}
 .frame[data-w="tab"] .seg span[data-on] .n{color:var(--on-brand)}
 .frame[data-w="p360"] .bar .iconbtn svg,.frame[data-w="tab"] .actionbar svg{display:block}
+/* ══ Task 2.2c — the Follow… sheet and the finish offer (D-108, D-116). The default Phone view shows the 360 frames. ══ */
+body[data-vp="phone"] .screen[data-id="follow"] .frame[data-w="p360"],
+body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{display:block}
+.sheetbar .fsh{margin:0;font-size:.9375rem;font-weight:700;flex:1;min-width:0}
+.fol{padding:.75rem .875rem;border-bottom:1px solid var(--line)}
+.fol:last-child{border-bottom:0}
+.fol .fh{display:flex;align-items:baseline;gap:.5rem}
+.fol .fn{font-size:.9375rem;font-weight:600}
+.fol .fk{font-size:.75rem;color:var(--muted)}
+.fol .fc{margin-left:auto;font-family:var(--mono);font-size:.75rem;color:var(--muted)}
+.fol .opts b{min-height:32px;display:inline-grid;place-items:center}
+.toast.offer{flex-wrap:wrap}
+.toast .kg{flex-basis:100%;display:flex;flex-wrap:wrap;align-items:center;gap:.375rem;margin-top:.5rem}
+.toast .kgl{flex-basis:100%;font-size:.75rem;color:var(--toast-muted)}
+.toast .kg button{min-height:44px;padding:0 .875rem;border-radius:999px;border:1px solid var(--toast-muted);background:transparent;
+  color:var(--toast-ink);font:inherit;font-size:.8125rem;font-weight:600;cursor:pointer}
+.toast .kg button .k{font-weight:400;color:var(--toast-muted)}
+.row .menubtn{align-self:flex-start}
 </style>
 </head>
 <body data-vp="phone">
@@ -946,6 +964,8 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
   <button data-s="plan">Plan by quarter — v4</button>
   <button data-s="moveplan">Move / add to plan</button>
   <button data-s="blist">Master list</button>
+  <button data-s="follow">Follow&hellip; sheet</button>
+  <button data-s="finishoffer">Finish &mdash; Keep going?</button>
   <button data-s="add">Add books</button>
   <button data-s="shelves">Shelves</button>
   <button data-s="top">Top books</button>
@@ -3324,6 +3344,294 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
     <li><span class="chg">Audiobooks (task 1.23, D-85):</span> <b>Listening</b> sits beside <b>Reading</b> in the status control: one read in progress, by eye or by ear, and switching keeps the start. Finishing from Listening logs a listen, which is a read everywhere reads count. A drawn headphones glyph, an image named <i>Listening</i> while the book is and <i>Listened</i> once it has a listen, sits beside the badge, in the text&rsquo;s own colour; a book only ever read on the page has none. Under the dates the row counts its reads and listens apart, each only above zero: <i>Read 2&times; &middot; Listened 1&times;</i>, <i>Listened 1&times;</i>, <i>Read 1&times;</i>. The <b>Reading</b> chip lists Listening books too; there is no chip of its own.</li>
     <li><span class="chg">Library (task 2.2e, D-110):</span> the master list is the <b>Library</b>: its heading, its nav item (after <i>Status</i> on the tablet rail and the sidebar; the phone reaches it through <b>Books</b> until 2.2 makes that the dashboard) and every link to it. It <b>sorts</b> as well as filters: <b>Sort</b> is a real select (<i>Series</i>, the default, <i>Title</i>, <i>Author</i>, <i>Length</i>, <i>Published</i>, <i>Finished</i>, <i>Plan order</i>) with the direction beside it, a link that names the order it shows and the one it turns to (<i>&darr; Longest first</i>, named <i>Longest first; reverse to shortest first</i>). It sits with the status filters at every width: the sticky desktop rail is 6.10&rsquo;s, with saved views. The sort is in the URL (<code>?sort=length&amp;dir=asc</code>), every chip and the search keep it, and it changes no count. A book with nothing to sort by (no word count, no finish) is last either way: <i>Sunlit Man</i> (tablet frame) has no count. An estimated count keeps its <code>~</code> (<i>~202k</i>).</li>
     <li><b>Still open:</b> is rating five stars, ten points, or just your top-10 ranking? Your sheet only ever used the ranking.</li>
+  </ul></div>
+</section>
+
+<!-- ══ FOLLOW — task 2.2c ══ -->
+<section class="screen" data-id="follow">
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <div class="wrap">
+    <h1 class="t">Library</h1>
+    <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
+    <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
+    <div class="group" style="position:relative">
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="true" aria-label="More for The Well of Ascension">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs">Brandon Sanderson &middot; Cosmere</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
+      <div class="menu" role="menu" aria-label="More for The Well of Ascension" style="position:absolute;right:.875rem;top:12.25rem;z-index:5;width:210px"><div class="opt" role="menuitem" tabindex="0" style="box-shadow:var(--focus-ring)">Follow&hellip;</div></div>
+    </div>
+  </div>
+</div></div></div>
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <div class="wrap">
+    <h1 class="t">Library</h1>
+    <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
+    <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
+    <div class="group" style="position:relative">
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs">Brandon Sanderson &middot; Cosmere</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
+
+    </div>
+  </div>
+  <div class="scrim"></div>
+  <div class="dsheet" role="dialog" aria-modal="true" aria-label="The Well of Ascension">
+    <div class="grab"></div>
+    <div class="sheetbar"><h2 class="fsh" tabindex="-1">The Well of Ascension</h2></div>
+    <div class="wrap" style="padding-top:0">
+      <p class="lede" style="margin:.25rem 0 .75rem"><b>Reading</b> says you&rsquo;re reading it now. <b>Tracking</b> keeps it in view.</p>
+      <div class="group">
+        <div class="fol"><div class="fh"><span class="fn">Mistborn</span><span class="fk">series</span><span class="fc" aria-label="1 of 7 read">1 / 7</span></div><div class="opts" role="radiogroup" aria-label="Following Mistborn"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="true" tabindex="0" data-on>Tracking</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn">Brandon Sanderson</span><span class="fk">author</span><span class="fc" aria-label="6 of 19 read">6 / 19</span></div><div class="opts" role="radiogroup" aria-label="Following Brandon Sanderson"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn">Cosmere</span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn">Epic fantasy</span><span class="fk">shelf</span><span class="fc" aria-label="14 of 38 read">14 / 38</span></div><div class="opts" role="radiogroup" aria-label="Following Epic fantasy"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
+      </div>
+      <div class="btnrow" style="margin-top:.75rem"><button class="btn sec sm" style="flex:0 0 auto">Close</button></div>
+    </div>
+  </div>
+</div></div></div>
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <div class="wrap">
+    <h1 class="t">Library</h1>
+    <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
+    <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
+    <div class="group" style="position:relative">
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs">Brandon Sanderson &middot; Cosmere</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
+
+    </div>
+  </div>
+  <div class="scrim"></div>
+  <div class="dsheet" role="dialog" aria-modal="true" aria-label="Warbreaker">
+    <div class="grab"></div>
+    <div class="sheetbar"><h2 class="fsh" tabindex="-1">Warbreaker</h2></div>
+    <div class="wrap" style="padding-top:0">
+      <p class="lede" style="margin:.25rem 0 .75rem"><b>Reading</b> says you&rsquo;re reading it now. <b>Tracking</b> keeps it in view.</p>
+      <div class="group">
+        <div class="fol"><div class="fh"><span class="fn">Brandon Sanderson</span><span class="fk">author</span><span class="fc" aria-label="6 of 19 read">6 / 19</span></div><div class="opts" role="radiogroup" aria-label="Following Brandon Sanderson"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn">Cosmere</span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn">To-read pile</span><span class="fk">shelf</span><span class="fc" aria-label="3 of 41 read">3 / 41</span></div><div class="opts" role="radiogroup" aria-label="Following To-read pile"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="true" tabindex="0" data-on>Tracking</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+      </div>
+      <div class="btnrow" style="margin-top:.75rem"><button class="btn sec sm" style="flex:0 0 auto">Close</button></div>
+    </div>
+    <div class="wrap" style="padding-top:0"><div class="toast offer" role="status" aria-live="polite"><span class="tl"><span>Reading Cosmere</span><span class="t2">universe &middot; was not followed</span></span><u>Undo</u><i class="cd" aria-hidden="true"></i></div></div>
+  </div>
+</div></div></div>
+<div class="frame" data-w="tab"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative"><nav class="rail" aria-label="Main"><span class="rail-word" aria-hidden="true">L</span><div class="rg" role="group" aria-label="Medium"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/></svg></span><span class="rl">Comics</span></a><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg></span><span class="rl">Books</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m17 2-5 5-5-5"/><rect width="20" height="15" x="2" y="7" rx="2"/></svg></span><span class="rl">Watch</span></a></div><div class="rg"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="rl">Dashboard</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="rl">Status</span></a><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 7a2 2 0 0 0-2 2v11"/><path d="M5.803 18H5a2 2 0 0 0 0 4h9.5a.5.5 0 0 0 .5-.5V21"/><path d="M9 15V4a2 2 0 0 1 2-2h9.5a.5.5 0 0 1 .5.5v14a.5.5 0 0 1-.5.5H11a2 2 0 0 1 0-4h10"/></svg></span><span class="rl">Library</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M16 2v3"/><path d="M3 9h18"/><path d="M8 2v3"/><path d="M17 13h-6"/><path d="M13 17H7"/><path d="M7 13h.01"/><path d="M17 17h.01"/></svg></span><span class="rl">Plan</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg></span><span class="rl">Shelves</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg></span><span class="rl">Top</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span><span class="rl">Add</span></a></div><span class="rrule"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span class="rcount">6</span></span><span class="rl">Inbox</span></a><span class="grow"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><span class="rl">Search</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="rl">Settings</span></a></nav><div class="tabmain">
+  <div class="wrap">
+    <h1 class="t">Library</h1>
+    <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
+    <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
+    <div class="group" style="position:relative">
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs">Brandon Sanderson &middot; Cosmere</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
+
+    </div>
+  </div>
+  <div class="scrim" style="left:72px"></div>
+  <div class="dsheet" role="dialog" aria-modal="true" aria-label="The Well of Ascension" style="left:calc(72px + 2rem);right:2rem;top:12rem">
+    <div class="grab"></div>
+    <div class="sheetbar"><h2 class="fsh" tabindex="-1">The Well of Ascension</h2></div>
+    <div class="wrap" style="padding-top:0">
+      <p class="lede" style="margin:.25rem 0 .75rem"><b>Reading</b> says you&rsquo;re reading it now. <b>Tracking</b> keeps it in view.</p>
+      <div class="group">
+        <div class="fol"><div class="fh"><span class="fn">Mistborn</span><span class="fk">series</span><span class="fc" aria-label="1 of 7 read">1 / 7</span></div><div class="opts" role="radiogroup" aria-label="Following Mistborn"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="true" tabindex="0" data-on>Tracking</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn">Brandon Sanderson</span><span class="fk">author</span><span class="fc" aria-label="6 of 19 read">6 / 19</span></div><div class="opts" role="radiogroup" aria-label="Following Brandon Sanderson"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn">Cosmere</span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn">Epic fantasy</span><span class="fk">shelf</span><span class="fc" aria-label="14 of 38 read">14 / 38</span></div><div class="opts" role="radiogroup" aria-label="Following Epic fantasy"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
+      </div>
+      <div class="btnrow" style="margin-top:.75rem"><button class="btn sec sm" style="flex:0 0 auto">Close</button></div>
+    </div>
+  </div>
+</div></div></div></div>
+<div class="frame" data-w="desk"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
+    <aside class="side"><div class="brand">Ledger</div>
+    <a>Search<span class="kbd">Ctrl K</span></a>
+    <a>Inbox<span class="kbd">6</span></a>
+    <a>Stats</a>
+    <div class="grp">Comics</div>
+    <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
+    <a><i class="ico" aria-hidden="true">&#9776;</i>Runs</a>
+    <a><i class="ico" aria-hidden="true">&#8942;</i>Tracks</a>
+    <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
+    <div class="grp">Books</div>
+    <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
+    <a aria-current="page"><i class="ico" aria-hidden="true">&#9776;</i>Library</a>
+    <a><i class="ico" aria-hidden="true">&#9636;</i>Plan</a>
+    <a><i class="ico" aria-hidden="true">&#9636;</i>Shelves</a>
+    <a><i class="ico" aria-hidden="true">&#9733;</i>Top books</a>
+    <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
+    <div class="grp">Watch</div>
+    <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
+    <a><i class="ico" aria-hidden="true">&#9776;</i>List</a>
+    <a><i class="ico" aria-hidden="true">&#9636;</i>Franchises</a>
+    <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
+    <div class="grp">&nbsp;</div>
+    <a>Settings</a>
+    <div class="syncpill" role="status" aria-live="polite" data-state="online">Synced</div>
+    </aside>
+  <div class="main"><div class="wrap">
+    <div class="dkdim">
+    <h1 class="t">Library</h1>
+    <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
+    <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
+    <div class="group" style="position:relative">
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k5">MST</span><div class="rb"><span class="rh"><span class="rt">Mistborn: The Final Empire</span><span class="rm">214k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #1</div><div style="margin-top:.375rem"><span class="bdg dn">read Jul 2022</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Mistborn: The Final Empire">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct</div><div style="margin-top:.375rem"><span class="bdg">reading</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k1">HOA</span><div class="rb"><span class="rh"><span class="rt">The Hero of Ages</span><span class="rm">248k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #3</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Hero of Ages">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k2">WBR</span><div class="rb"><span class="rh"><span class="rt">Warbreaker</span><span class="rm">226k</span></span><div class="rs">Brandon Sanderson &middot; Cosmere</div><div style="margin-top:.375rem"><span class="bdg">to read</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for Warbreaker">&#8943;</button></div>
+
+    </div>
+    </div>
+    <div class="dkdlg"><div class="dkpanel" role="dialog" aria-modal="true" aria-label="The Well of Ascension">
+    <div class="grab"></div>
+    <div class="sheetbar"><h2 class="fsh" tabindex="-1">The Well of Ascension</h2></div>
+    <div class="wrap" style="padding-top:0">
+      <p class="lede" style="margin:.25rem 0 .75rem"><b>Reading</b> says you&rsquo;re reading it now. <b>Tracking</b> keeps it in view.</p>
+      <div class="group">
+        <div class="fol"><div class="fh"><span class="fn">Mistborn</span><span class="fk">series</span><span class="fc" aria-label="1 of 7 read">1 / 7</span></div><div class="opts" role="radiogroup" aria-label="Following Mistborn"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="true" tabindex="0" data-on>Tracking</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn">Brandon Sanderson</span><span class="fk">author</span><span class="fc" aria-label="6 of 19 read">6 / 19</span></div><div class="opts" role="radiogroup" aria-label="Following Brandon Sanderson"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn">Cosmere</span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
+        <div class="fol"><div class="fh"><span class="fn">Epic fantasy</span><span class="fk">shelf</span><span class="fc" aria-label="14 of 38 read">14 / 38</span></div><div class="opts" role="radiogroup" aria-label="Following Epic fantasy"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
+      </div>
+      <div class="btnrow" style="margin-top:.75rem"><button class="btn sec sm" style="flex:0 0 auto">Close</button></div>
+    </div>
+    </div></div>
+  </div></div>
+</div></div></div>
+
+<div class="notes"><h3>Follow&hellip; &mdash; what a book belongs to</h3>
+  <p><span class="chg">New (task 2.2c, D-108, F-68):</span> you say for yourself that you&rsquo;re reading a series, an author, a universe or a shelf. Until the series, author and universe pages exist (5.9, 5.11) the control is reached from the Library.</p>
+  <ul>
+    <li><b>The row menu.</b> Each Library row ends in <b>&#8943;</b>, named <i>More for &lt;title&gt;</i> (44px), whose one item is <b>Follow&hellip;</b> (first frame). The menu is the app&rsquo;s (<code>Menu</code>): arrows move, Esc and Tab close it.</li>
+    <li><b>The sheet</b> is headed by the book&rsquo;s title and lists what the book belongs to: its series, its author, its universe, then each books shelf it is on, by name. A book with no series has no series row (<i>Warbreaker</i>, third frame); a book in none of them lists its author alone.</li>
+    <li>Each row: the name, its kind in grey, <code>read / total</code> in mono (live books only: the <code>*_progress</code> views and <code>shelf_progress</code>; a series counts against its listed total), and <b>Reading &middot; Tracking &middot; Not following</b>, a radiogroup named <i>Following &lt;name&gt;</i>. Each option is at least 24px. Nothing is red: <i>Not following</i> is a level, not a deletion you are warned about.</li>
+    <li><b>Only Reading means reading</b> (D-108, sharpening D-43). <i>Tracking</i> is &ldquo;keep it in view&rdquo;. Nothing infers Reading from what you have read; every follow loaded from the sheets is Tracking.</li>
+    <li>A change saves at once, one write, and its toast&rsquo;s <b>Undo</b> puts back exactly what was there, row or no row (third frame: <i>Reading Cosmere &middot; universe &middot; was not followed</i>). <i>Not following</i> deletes the row. The toast stays live over the sheet (D-63) and F6 reaches it (D-116).</li>
+    <li>It is the shared <code>Sheet</code>: labelled by its heading, which takes focus; Tab stays inside; Esc, Back or <b>Close</b> at its foot (as every sheet has) close it and focus returns to the row&rsquo;s &#8943;, the control that opened it. A bottom sheet on a phone and the tablet; a centred dialog over the dimmed list from 1024px, as <code>bookdetail</code>.</li>
+    <li><b>Later:</b> the series, author and universe pages carry the same control (5.9, 5.11); 3.5&rsquo;s book sheet may take <i>Follow&hellip;</i> over from the row menu.</li>
+  </ul></div>
+</section>
+
+<!-- ══ FINISH OFFER — task 2.2c ══ -->
+<section class="screen" data-id="finishoffer">
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <div class="wrap">
+    <h1 class="t">Library</h1>
+    <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
+    <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
+    <div class="group" style="position:relative">
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct &middot; finished 5 Nov &middot; 15 days</div><div style="margin-top:.375rem"><span class="bdg dn">read today</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
+
+    </div>
+    <div class="toast offer" role="status" aria-live="polite"><span class="tl"><span>The Well of Ascension read</span><span class="t2">2 of 7 in Mistborn</span></span><u>Undo</u><div class="kg" role="group" aria-labelledby="kg-l"><span class="kgl" id="kg-l">Keep going?</span><button aria-label="Follow Mistborn, series as Reading">Mistborn <span class="k">&middot; series</span></button><button aria-label="Follow Brandon Sanderson as Reading">Brandon Sanderson</button><button aria-label="Follow Cosmere as Reading">Cosmere</button><button aria-label="Follow Epic fantasy, shelf as Reading">Epic fantasy <span class="k">&middot; shelf</span></button></div><i class="cd" aria-hidden="true"></i></div>
+  </div>
+</div></div></div>
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <div class="wrap">
+    <h1 class="t">Library</h1>
+    <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
+    <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
+    <div class="group" style="position:relative">
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct &middot; finished 5 Nov &middot; 15 days</div><div style="margin-top:.375rem"><span class="bdg dn">read today</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
+
+    </div>
+    <div class="toast offer" role="status" aria-live="polite"><span class="tl"><span>Reading Mistborn</span><span class="t2">series &middot; was not followed</span></span><u>Undo</u><div class="kg" role="group" aria-labelledby="kg-l"><span class="kgl" id="kg-l">Keep going?</span><button aria-label="Follow Brandon Sanderson as Reading">Brandon Sanderson</button><button aria-label="Follow Cosmere as Reading">Cosmere</button><button aria-label="Follow Epic fantasy, shelf as Reading">Epic fantasy <span class="k">&middot; shelf</span></button></div><i class="cd" aria-hidden="true"></i></div>
+  </div>
+</div></div></div>
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <div class="wrap">
+    <h1 class="t">Library</h1>
+    <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
+    <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
+    <div class="group" style="position:relative">
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct &middot; finished 5 Nov &middot; 15 days</div><div style="margin-top:.375rem"><span class="bdg dn">read today</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
+
+    </div>
+    <div class="toast offer" role="status" aria-live="polite"><span class="tl"><span>The Lost Metal read</span><span class="t2">7 of 7 in Mistborn</span></span><u>Undo</u><div class="kg" role="group" aria-labelledby="kg-l"><span class="kgl" id="kg-l">Keep going?</span><button aria-label="Done with Mistborn: set it back to Tracking">Done with Mistborn</button><button aria-label="Follow Cosmere as Reading">Cosmere</button></div><i class="cd" aria-hidden="true"></i></div>
+  </div>
+</div></div></div>
+<div class="frame" data-w="tab"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative"><nav class="rail" aria-label="Main"><span class="rail-word" aria-hidden="true">L</span><div class="rg" role="group" aria-label="Medium"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/></svg></span><span class="rl">Comics</span></a><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg></span><span class="rl">Books</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m17 2-5 5-5-5"/><rect width="20" height="15" x="2" y="7" rx="2"/></svg></span><span class="rl">Watch</span></a></div><div class="rg"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="rl">Dashboard</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="rl">Status</span></a><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 7a2 2 0 0 0-2 2v11"/><path d="M5.803 18H5a2 2 0 0 0 0 4h9.5a.5.5 0 0 0 .5-.5V21"/><path d="M9 15V4a2 2 0 0 1 2-2h9.5a.5.5 0 0 1 .5.5v14a.5.5 0 0 1-.5.5H11a2 2 0 0 1 0-4h10"/></svg></span><span class="rl">Library</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M16 2v3"/><path d="M3 9h18"/><path d="M8 2v3"/><path d="M17 13h-6"/><path d="M13 17H7"/><path d="M7 13h.01"/><path d="M17 17h.01"/></svg></span><span class="rl">Plan</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg></span><span class="rl">Shelves</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg></span><span class="rl">Top</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span><span class="rl">Add</span></a></div><span class="rrule"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span class="rcount">6</span></span><span class="rl">Inbox</span></a><span class="grow"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><span class="rl">Search</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="rl">Settings</span></a></nav><div class="tabmain">
+  <div class="wrap">
+    <h1 class="t">Library</h1>
+    <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
+    <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
+    <div class="group" style="position:relative">
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct &middot; finished 5 Nov &middot; 15 days</div><div style="margin-top:.375rem"><span class="bdg dn">read today</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
+
+    </div>
+    <div class="toast offer" role="status" aria-live="polite"><span class="tl"><span>The Well of Ascension read</span><span class="t2">2 of 7 in Mistborn</span></span><u>Undo</u><div class="kg" role="group" aria-labelledby="kg-l"><span class="kgl" id="kg-l">Keep going?</span><button aria-label="Follow Mistborn, series as Reading">Mistborn <span class="k">&middot; series</span></button><button aria-label="Follow Brandon Sanderson as Reading">Brandon Sanderson</button><button aria-label="Follow Cosmere as Reading">Cosmere</button><button aria-label="Follow Epic fantasy, shelf as Reading">Epic fantasy <span class="k">&middot; shelf</span></button></div><i class="cd" aria-hidden="true"></i></div>
+  </div>
+</div></div></div></div>
+<div class="frame" data-w="desk"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
+    <aside class="side"><div class="brand">Ledger</div>
+    <a>Search<span class="kbd">Ctrl K</span></a>
+    <a>Inbox<span class="kbd">6</span></a>
+    <a>Stats</a>
+    <div class="grp">Comics</div>
+    <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
+    <a><i class="ico" aria-hidden="true">&#9776;</i>Runs</a>
+    <a><i class="ico" aria-hidden="true">&#8942;</i>Tracks</a>
+    <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
+    <div class="grp">Books</div>
+    <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
+    <a aria-current="page"><i class="ico" aria-hidden="true">&#9776;</i>Library</a>
+    <a><i class="ico" aria-hidden="true">&#9636;</i>Plan</a>
+    <a><i class="ico" aria-hidden="true">&#9636;</i>Shelves</a>
+    <a><i class="ico" aria-hidden="true">&#9733;</i>Top books</a>
+    <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
+    <div class="grp">Watch</div>
+    <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
+    <a><i class="ico" aria-hidden="true">&#9776;</i>List</a>
+    <a><i class="ico" aria-hidden="true">&#9636;</i>Franchises</a>
+    <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
+    <div class="grp">&nbsp;</div>
+    <a>Settings</a>
+    <div class="syncpill" role="status" aria-live="polite" data-state="online">Synced</div>
+    </aside>
+  <div class="main"><div class="wrap">
+    <div class="dk"><div>
+    <h1 class="t">Library</h1>
+    <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
+    <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Everything</span><span role="button" aria-pressed="false" tabindex="0">Reading</span><span role="button" aria-pressed="false" tabindex="0">To read</span><span role="button" aria-pressed="false" tabindex="0">Read</span></span></div>
+    <div class="group" style="position:relative">
+      <div class="row"><span class="edge" style="background:var(--g5)"></span><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div class="rs" style="font-size:.75rem">Started 21 Oct &middot; finished 5 Nov &middot; 15 days</div><div style="margin-top:.375rem"><span class="bdg dn">read today</span></div></div><button class="menubtn" aria-haspopup="menu" aria-expanded="false" aria-label="More for The Well of Ascension">&#8943;</button></div>
+
+    </div>
+    <div class="toast offer" role="status" aria-live="polite"><span class="tl"><span>The Well of Ascension read</span><span class="t2">2 of 7 in Mistborn</span></span><u>Undo</u><div class="kg" role="group" aria-labelledby="kg-l"><span class="kgl" id="kg-l">Keep going?</span><button aria-label="Follow Mistborn, series as Reading" style="box-shadow:var(--focus-ring)">Mistborn <span class="k">&middot; series</span></button><button aria-label="Follow Brandon Sanderson as Reading">Brandon Sanderson</button><button aria-label="Follow Cosmere as Reading">Cosmere</button><button aria-label="Follow Epic fantasy, shelf as Reading">Epic fantasy <span class="k">&middot; shelf</span></button></div><i class="cd" aria-hidden="true"></i></div>
+    </div><div class="dk-rail"><p class="lede" style="margin-top:.75rem">F6 reaches the toast; Tab walks its Undo and chips; F6 or Esc hands focus back.</p></div></div>
+  </div></div>
+</div></div></div>
+
+<div class="notes"><h3>The finish offer &mdash; <i>Keep going?</i></h3>
+  <p><span class="chg">New (task 2.2c, D-108):</span> finishing a book offers to follow what it belongs to. It asks; it never decides for you.</p>
+  <ul>
+    <li>Setting a book to <b>Read</b> saves at once, as before, and its toast keeps its two lines and its <b>Undo</b>, which undoes the finish alone. The toast gains a third row, <b>Keep going?</b>, with one chip per thing the book belongs to that isn&rsquo;t already <i>Reading</i>: its series and its universe while either still has an unread live book, its author, and each books shelf it is on with a book left (first frame: book 2 of 7, nothing followed).</li>
+    <li>A chip sets that one to <b>Reading</b>. It pushes its own toast, <i>Reading Mistborn &middot; series &middot; was not followed</i>, whose Undo undoes the follow alone and which carries the chips still untaken (second frame). One toast at a time (1.8b): taking a chip commits the finish.</li>
+    <li>Finishing the last unread book of something you&rsquo;re <i>Reading</i> offers <b>Done with &lt;name&gt;</b> instead, which sets it back to <i>Tracking</i> (third frame; D-43: the app asks rather than changing it). Finishing 7 of 7 of a series you don&rsquo;t follow offers no series chip.</li>
+    <li>Ignoring the offer writes nothing: the chips go with the toast, 8 seconds, held on hover or focus. With nothing to offer (every grouping already <i>Reading</i>, or a book in none), there is no <i>Keep going?</i> row and the toast is the two-line form.</li>
+    <li>The chips are 44px, outlined in the toast&rsquo;s grey, never green: following is not reading. At 360 they wrap onto a second row rather than scroll: an 8-second toast is no place to hide a choice sideways.</li>
+    <li><b>Keyboard (D-116):</b> while a toast is up, <b>F6</b> moves focus into it, onto its first control, Undo; Tab walks the chips (the desktop frame shows the ring on the first chip); F6 or Esc hands focus back to where it was. Focus holds the toast, so it doesn&rsquo;t expire under you, and nothing traps Tab. It works over a sheet too.</li>
+    <li>A listen&rsquo;s finish (1.23, from <i>Listening</i>) offers the same. The books dashboard&rsquo;s <i>&#10003; finished</i> (2.2) carries it too.</li>
+    <li><b>Later:</b> it sits beside 3.4b&rsquo;s <i>Rank it in 2026</i>, and moves into 5.4&rsquo;s closing card; neither is built.</li>
   </ul></div>
 </section>
 
