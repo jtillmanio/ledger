@@ -30,7 +30,9 @@ export async function GET(req: Request) {
  * (`null` for no row); the undo POSTs it back as `state`. 400, writing nothing,
  * for an unknown kind or state, a missing id, or something you can't follow:
  * a series, author or universe with no live book, or a shelf that isn't one of
- * your books shelves.
+ * your books shelves. *Not following* on a series, author or universe is never
+ * refused: deleting your own follow is always yours to do, even once its books
+ * are gone, and so is a follow's undo, which deletes it.
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -40,7 +42,8 @@ export async function POST(req: Request) {
   if (!KINDS.includes(kind as string)) return bad(`kind must be one of ${KINDS.join(", ")}`);
   if (typeof id !== "string" || id === "") return bad("id is required");
   if (state !== null && !STATES.includes(state as string)) return bad(`state must be ${STATES.join(", ")} or null`);
-  if (!(await followable(userId, kind as FollowKind, id))) return bad(`no ${kind} to follow`);
+  const unfollow = state === null && kind !== "shelf";
+  if (!unfollow && !(await followable(userId, kind as FollowKind, id))) return bad(`no ${kind} to follow`);
   const prior = await setFollow(userId, kind as FollowKind, id, state as FollowState | null);
   return NextResponse.json({ ok: true, prior });
 }

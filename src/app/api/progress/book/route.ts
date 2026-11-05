@@ -69,7 +69,8 @@ export async function POST(req: Request) {
   }
   if (!saved) return NextResponse.json({ error: "no such book" }, { status: 404 });
   const { start: stored, ...change } = saved;
-  const offer = change.appended !== null ? await finishOffer(userId, bookId) : null;
+  // The finish is saved: an offer that can't be read is no offer, never a failed finish.
+  const offer = change.appended !== null ? await finishOffer(userId, bookId).catch(() => null) : null;
   return NextResponse.json({ ok: true, change, finish: finish ?? null, start: stored, format: change.format ?? null, offer });
 }
 

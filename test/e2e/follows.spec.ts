@@ -207,7 +207,9 @@ test("the finish offers Keep going? chips, reached by F6 and Tab; a chip writes 
   await toastSettled(page);
   await atLeast(offer.getByRole("button"), 44);
   const { borderTopColor } = await computedStyle(offer.getByRole("button").first(), ["borderTopColor"]);
+  // Following isn't reading, and nothing here is red.
   expect(borderTopColor).not.toBe(await tokenColour(page, "--ready"));
+  expect(borderTopColor).not.toBe(await tokenColour(page, "--danger"));
   await expectNoAxeViolations(page, AXE);
   expect(await contrastFailures(page)).toEqual([]);
   await screenshot(page, info, "finish-offer");

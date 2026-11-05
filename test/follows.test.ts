@@ -15,6 +15,22 @@ vi.mock("@/lib/auth", async (importOriginal) => ({
   apiUserId: async () => USER,
 }));
 
+// The real queries, with finishOffer wrapped so one test can make it fail.
+const offerFails = { next: false };
+vi.mock("@/db/queries", async (importOriginal) => {
+  const real = await importOriginal<typeof import("../src/db/queries")>();
+  return {
+    ...real,
+    finishOffer: async (...args: Parameters<typeof real.finishOffer>) => {
+      if (offerFails.next) {
+        offerFails.next = false;
+        throw new Error("offer failed");
+      }
+      return real.finishOffer(...args);
+    },
+  };
+});
+
 const sql = testSql();
 let follows: typeof import("../src/app/api/follows/route");
 let book: typeof import("../src/app/api/progress/book/route");
@@ -161,6 +177,18 @@ describe("the route refuses what can't be followed (AC-2)", () => {
     expect(await rows()).toEqual([]);
   });
 
+  it("Not following is never refused for a series whose books are all removed, and deletes its follow", async () => {
+    await sql`INSERT INTO series_follows (user_id, series_id, state) VALUES (${USER}, 'gone-series', 'reading')`;
+    const res = await post({ kind: "series", id: "gone-series", state: null });
+    expect(res.status).toBe(200);
+    expect((await res.json()).prior).toBe("reading");
+    expect(await sql`SELECT 1 FROM series_follows WHERE series_id = 'gone-series'`).toEqual([]);
+  });
+
+  it("Not following a shelf that isn't a books shelf is still refused", async () => {
+    expect((await post({ kind: "shelf", id: "films", state: null })).status).toBe(400);
+  });
+
   it("refuses a body that isn't JSON with 400", async () => {
     const res = await follows.POST(new Request("http://test/api/follows", { method: "POST", body: "{" }));
     expect(res.status).toBe(400);
@@ -245,6 +273,14 @@ describe("the finish offers what the book belongs to (roadmap 2.2c check)", () =
   it("a listen's finish offers the same", async () => {
     const offer = await finish("mb2", "listening");
     expect(kinds(offer!.take)).toEqual(["series:mistborn", "author:sanderson", "universe:cosmere", "shelf:epic"]);
+  });
+
+  it("an offer that can't be read leaves the finish saved, with no offer", async () => {
+    offerFails.next = true;
+    expect(await finish("mb2")).toBeNull();
+    const [st] = await sql`SELECT status FROM book_status WHERE user_id = ${USER} AND book_id = 'mb2'`;
+    expect(st.status).toBe("read");
+    expect(await sql`SELECT 1 FROM read_events WHERE user_id = ${USER} AND book_id = 'mb2'`).toHaveLength(1);
   });
 
   it("a write that isn't a finish answers no offer", async () => {

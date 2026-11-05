@@ -387,6 +387,13 @@ describe("the finish's Keep going? row", () => {
     expect(toast()!.textContent).not.toContain("Keep going?");
   });
 
+  it("an empty offer (nothing to follow) draws no Keep going? line either", async () => {
+    act(() => root.render(<UndoProvider><Pusher entry={{ label: "x: read", undo: async () => {}, offer: [] }} /></UndoProvider>));
+    await push();
+    expect(container.querySelector(".toast-offer")).toBeNull();
+    expect(toast()!.textContent).not.toContain("Keep going?");
+  });
+
   it("draws one chip per offer under Keep going?, a group named by it; the finish's Undo undoes the finish alone", async () => {
     const finishUndo = vi.fn(async () => {});
     const a = chip("Mistborn", "series", { label: "Reading Mistborn", undo: async () => {} });
