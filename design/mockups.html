@@ -910,7 +910,7 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
 /* ══ Task 2.2c — the Follow… sheet and the finish offer (D-108, D-116). The default Phone view shows the 360 frames. ══ */
 body[data-vp="phone"] .screen[data-id="follow"] .frame[data-w="p360"],
 body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{display:block}
-.sheetbar .fsh{margin:0;font:500 1.25rem/1.6rem var(--display);flex:1;min-width:0}
+.sheetbar .fsh{margin:0;font-size:.9375rem;font-weight:700;flex:1;min-width:0}
 .fol{padding:.75rem .875rem;border-bottom:1px solid var(--line)}
 .fol:last-child{border-bottom:0}
 .fol .fh{display:flex;align-items:baseline;gap:.5rem}
@@ -3381,7 +3381,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
   <div class="scrim"></div>
   <div class="dsheet" role="dialog" aria-modal="true" aria-label="The Well of Ascension">
     <div class="grab"></div>
-    <div class="sheetbar"><h2 class="fsh" tabindex="-1">The Well of Ascension</h2><button class="x" aria-label="Close">&#10005;</button></div>
+    <div class="sheetbar"><h2 class="fsh" tabindex="-1">The Well of Ascension</h2></div>
     <div class="wrap" style="padding-top:0">
       <p class="lede" style="margin:.25rem 0 .75rem"><b>Reading</b> says you&rsquo;re reading it now. <b>Tracking</b> keeps it in view.</p>
       <div class="group">
@@ -3390,6 +3390,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
         <div class="fol"><div class="fh"><span class="fn">Cosmere</span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
         <div class="fol"><div class="fh"><span class="fn">Epic fantasy</span><span class="fk">shelf</span><span class="fc" aria-label="14 of 38 read">14 / 38</span></div><div class="opts" role="radiogroup" aria-label="Following Epic fantasy"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
       </div>
+      <div class="btnrow" style="margin-top:.75rem"><button class="btn sec sm" style="flex:0 0 auto">Close</button></div>
     </div>
   </div>
 </div></div></div>
@@ -3410,7 +3411,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
   <div class="scrim"></div>
   <div class="dsheet" role="dialog" aria-modal="true" aria-label="Warbreaker">
     <div class="grab"></div>
-    <div class="sheetbar"><h2 class="fsh" tabindex="-1">Warbreaker</h2><button class="x" aria-label="Close">&#10005;</button></div>
+    <div class="sheetbar"><h2 class="fsh" tabindex="-1">Warbreaker</h2></div>
     <div class="wrap" style="padding-top:0">
       <p class="lede" style="margin:.25rem 0 .75rem"><b>Reading</b> says you&rsquo;re reading it now. <b>Tracking</b> keeps it in view.</p>
       <div class="group">
@@ -3418,6 +3419,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
         <div class="fol"><div class="fh"><span class="fn">Cosmere</span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="true" tabindex="0" data-on>Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
         <div class="fol"><div class="fh"><span class="fn">To-read pile</span><span class="fk">shelf</span><span class="fc" aria-label="3 of 41 read">3 / 41</span></div><div class="opts" role="radiogroup" aria-label="Following To-read pile"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="true" tabindex="0" data-on>Tracking</b><b role="radio" aria-checked="false" tabindex="-1">Not following</b></div></div>
       </div>
+      <div class="btnrow" style="margin-top:.75rem"><button class="btn sec sm" style="flex:0 0 auto">Close</button></div>
     </div>
     <div class="wrap" style="padding-top:0"><div class="toast offer" role="status" aria-live="polite"><span class="tl"><span>Reading Cosmere</span><span class="t2">universe &middot; was not followed</span></span><u>Undo</u><i class="cd" aria-hidden="true"></i></div></div>
   </div>
@@ -3438,7 +3440,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
   <div class="scrim" style="left:72px"></div>
   <div class="dsheet" role="dialog" aria-modal="true" aria-label="The Well of Ascension" style="left:calc(72px + 2rem);right:2rem;top:12rem">
     <div class="grab"></div>
-    <div class="sheetbar"><h2 class="fsh" tabindex="-1">The Well of Ascension</h2><button class="x" aria-label="Close">&#10005;</button></div>
+    <div class="sheetbar"><h2 class="fsh" tabindex="-1">The Well of Ascension</h2></div>
     <div class="wrap" style="padding-top:0">
       <p class="lede" style="margin:.25rem 0 .75rem"><b>Reading</b> says you&rsquo;re reading it now. <b>Tracking</b> keeps it in view.</p>
       <div class="group">
@@ -3447,6 +3449,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
         <div class="fol"><div class="fh"><span class="fn">Cosmere</span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
         <div class="fol"><div class="fh"><span class="fn">Epic fantasy</span><span class="fk">shelf</span><span class="fc" aria-label="14 of 38 read">14 / 38</span></div><div class="opts" role="radiogroup" aria-label="Following Epic fantasy"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
       </div>
+      <div class="btnrow" style="margin-top:.75rem"><button class="btn sec sm" style="flex:0 0 auto">Close</button></div>
     </div>
   </div>
 </div></div></div></div>
@@ -3494,7 +3497,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
     </div>
     <div class="dkdlg"><div class="dkpanel" role="dialog" aria-modal="true" aria-label="The Well of Ascension">
     <div class="grab"></div>
-    <div class="sheetbar"><h2 class="fsh" tabindex="-1">The Well of Ascension</h2><button class="x" aria-label="Close">&#10005;</button></div>
+    <div class="sheetbar"><h2 class="fsh" tabindex="-1">The Well of Ascension</h2></div>
     <div class="wrap" style="padding-top:0">
       <p class="lede" style="margin:.25rem 0 .75rem"><b>Reading</b> says you&rsquo;re reading it now. <b>Tracking</b> keeps it in view.</p>
       <div class="group">
@@ -3503,6 +3506,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
         <div class="fol"><div class="fh"><span class="fn">Cosmere</span><span class="fk">universe</span><span class="fc" aria-label="5 of 16 read">5 / 16</span></div><div class="opts" role="radiogroup" aria-label="Following Cosmere"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
         <div class="fol"><div class="fh"><span class="fn">Epic fantasy</span><span class="fk">shelf</span><span class="fc" aria-label="14 of 38 read">14 / 38</span></div><div class="opts" role="radiogroup" aria-label="Following Epic fantasy"><b role="radio" aria-checked="false" tabindex="-1">Reading</b><b role="radio" aria-checked="false" tabindex="-1">Tracking</b><b role="radio" aria-checked="true" tabindex="0" data-on>Not following</b></div></div>
       </div>
+      <div class="btnrow" style="margin-top:.75rem"><button class="btn sec sm" style="flex:0 0 auto">Close</button></div>
     </div>
     </div></div>
   </div></div>
@@ -3516,7 +3520,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
     <li>Each row: the name, its kind in grey, <code>read / total</code> in mono (live books only: the <code>*_progress</code> views and <code>shelf_progress</code>; a series counts against its listed total), and <b>Reading &middot; Tracking &middot; Not following</b>, a radiogroup named <i>Following &lt;name&gt;</i>. Each option is at least 24px. Nothing is red: <i>Not following</i> is a level, not a deletion you are warned about.</li>
     <li><b>Only Reading means reading</b> (D-108, sharpening D-43). <i>Tracking</i> is &ldquo;keep it in view&rdquo;. Nothing infers Reading from what you have read; every follow loaded from the sheets is Tracking.</li>
     <li>A change saves at once, one write, and its toast&rsquo;s <b>Undo</b> puts back exactly what was there, row or no row (third frame: <i>Reading Cosmere &middot; universe &middot; was not followed</i>). <i>Not following</i> deletes the row. The toast stays live over the sheet (D-63) and F6 reaches it (D-116).</li>
-    <li>It is the shared <code>Sheet</code>: labelled by its heading, which takes focus; Tab stays inside; Esc, Back or &#10005; close it and focus returns to the row&rsquo;s &#8943;, the control that opened it. A bottom sheet on a phone and the tablet; a centred dialog over the dimmed list from 1024px, as <code>bookdetail</code>.</li>
+    <li>It is the shared <code>Sheet</code>: labelled by its heading, which takes focus; Tab stays inside; Esc, Back or <b>Close</b> at its foot (as every sheet has) close it and focus returns to the row&rsquo;s &#8943;, the control that opened it. A bottom sheet on a phone and the tablet; a centred dialog over the dimmed list from 1024px, as <code>bookdetail</code>.</li>
     <li><b>Later:</b> the series, author and universe pages carry the same control (5.9, 5.11); 3.5&rsquo;s book sheet may take <i>Follow&hellip;</i> over from the row menu.</li>
   </ul></div>
 </section>

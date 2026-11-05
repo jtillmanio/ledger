@@ -1,7 +1,7 @@
 ---
 id: TASK-048
 title: 2.2c Follow what you're reading: the control, and an offer when you finish
-status: In progress
+status: Review
 depends_on: [TASK-023, TASK-010, TASK-047]
 size: L
 model: opus
@@ -33,7 +33,7 @@ You can say for yourself that you're reading a series, an author, a universe or 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm test`: setting *Reading* on a series writes one
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm test`: setting *Reading* on a series writes one
 `series_follows` row at `reading`, *Not following* deletes it, and Undo
 restores the earlier state; the same for an author, a universe and a shelf.
 Finishing book 2 of 4 of an unfollowed series in the Cosmere, on a shelf with
@@ -45,10 +45,11 @@ follow row. `shelf_progress` counts read and listed books per shelf and skips
 a soft-deleted book. The export test passes with `shelf_follows`. In the
 browser (0.11), the offer's chips are reachable by keyboard and axe passes.
 Screenshots at 360px and 1280px.
-- [ ] AC-2: Undo restores the exact earlier state in each of the three cases: no row → *Reading* → undo leaves no row; *Tracking* → *Reading* → undo leaves `tracking`; *Reading* → *Not following* → undo puts back the row at `reading`. The route refuses an unknown kind, a missing id, a soft-deleted book's series, or a shelf that isn't a books shelf with 400 and writes nothing.
-- [ ] AC-3: In the Library, a book's row menu has *Follow.*; it opens a sheet headed by the book's title listing exactly the series, author, universe and shelves the book has (a book with no series lists no series row), each with a radiogroup whose checked option matches the stored state and a `read / total` that equals its progress view's counts. Closing the sheet by Esc, Back or its close control returns focus to *Follow.*.
-- [ ] AC-4: After a finish, the toast's undo still undoes the finish alone; taking a *Keep going?* chip then undoing that chip leaves the finish in place and no follow row; with nothing to offer (every grouping already *Reading*, or the book in none), the toast has no *Keep going?* line.
-- [ ] AC-5: The follow sheet, the row menu and the finish offer meet the UX floor (`docs/04-design.md` § 10. The UX floor): each radiogroup and chip has an accessible name; every option and chip is at least 24px (44px in the toast's row); the sheet traps Tab, is labelled by its heading and returns focus; nothing is red; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-2: Undo restores the exact earlier state in each of the three cases: no row → *Reading* → undo leaves no row; *Tracking* → *Reading* → undo leaves `tracking`; *Reading* → *Not following* → undo puts back the row at `reading`. The route refuses an unknown kind, a missing id, a soft-deleted book's series, or a shelf that isn't a books shelf with 400 and writes nothing.
+- [x] AC-3: In the Library, a book's row menu has *Follow.*; it opens a sheet headed by the book's title listing exactly the series, author, universe and shelves the book has (a book with no series lists no series row), each with a radiogroup whose checked option matches the stored state and a `read / total` that equals its progress view's counts. Closing the sheet by Esc, Back or its close control returns focus to *Follow.*.
+  *(Verified as: focus returns to the row's ⋯, "More for <title>", the menu's button: the* Follow… *item is gone once the menu closes. Owner, at the drawing gate, 2026-11-05.)*
+- [x] AC-4: After a finish, the toast's undo still undoes the finish alone; taking a *Keep going?* chip then undoing that chip leaves the finish in place and no follow row; with nothing to offer (every grouping already *Reading*, or the book in none), the toast has no *Keep going?* line.
+- [x] AC-5: The follow sheet, the row menu and the finish offer meet the UX floor (`docs/04-design.md` § 10. The UX floor): each radiogroup and chip has an accessible name; every option and chip is at least 24px (44px in the toast's row); the sheet traps Tab, is labelled by its heading and returns focus; nothing is red; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -80,9 +81,15 @@ Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Decision D-116: F6 moves focus into the live undo toast and back; that's how its *Keep going?* chips, and its Undo, are reached by keyboard, over a sheet too (amends D-63's *the toast is reached by pointer*; D-63 marked *Amended by D-116*, and `docs/04-design.md` § 11.1 says so) → docs/review/decisions.md § D-116 (approved at plan)
-- `shelf_follows` and `shelf_progress` are approved (planned: this task): a 2.2c row in `docs/03-data-model.md` § 4.1 By task, and the coverage row in `docs/06-tasklist.md` (`shelf_follows | 2.2c (approved 2026-11-04; planned: TASK-048)`) → docs/03-data-model.md § 4.1 By task (approved at plan)
+- Decision D-116: F6 moves focus into the live undo toast and back; that's how its *Keep going?* chips, and its Undo, are reached by keyboard, over a sheet too (amends D-63's *the toast is reached by pointer*; D-63 marked *Amended by D-116*, and `docs/04-design.md` § 11.1 says so). Placed by PR #196; its focus order corrected here to what shipped, Undo first and Tab to the chips (approved at close-out), and § 11.1's line no longer says *planned* → docs/review/decisions.md § D-116 (approved at plan)
+- `shelf_follows` and `shelf_progress` are approved (planned: this task): a 2.2c row in `docs/03-data-model.md` § 4.1 By task, and the coverage row in `docs/06-tasklist.md`. Placed by PR #196; both now say built (migration 0022) → docs/03-data-model.md § 4.1 By task (approved at plan)
 - The books dashboard's *✓ finished* (2.2) carries the same offer through `src/lib/follow-offer.ts` → not tracked: already in TASK-049's plan (provisional on this task)
+- The `follow` mockup frames drew a display-serif heading and a ✕; the app uses the shared `Sheet` (sans heading, *Close* at its foot), so the frames are redrawn to it → design/mockups.html § follow (fixed in this PR; owner, at close-out)
+- Schema review: `bookGroupings` joins the four `*_progress` views on a column, which the planner can't push into their GROUP BY, so each call aggregates them whole (milliseconds at 1,361 books) → not tracked: accepted as is until a profile shows it (schema-reviewer, MINOR)
+- Schema review: undoing a shelf follow after the shelf is deleted answers 500 (the foreign key), not 400 → not tracked: only a race reaches it, and shelves can't be deleted until 5.1
+- Spec review: F6 into the toast while a sheet is open has no browser test → not tracked: the sheet leaves the toast live (D-63, tested by pointer here) and `test/undo.test.tsx` pins F6
+- UI walk: the row's ⋯ is named *More for this book* until hydration, then *More for <title>* → not tracked: accepted, the cost of revision 1 (no title in the row's RSC)
+- UI walk: setting a finished book back through the status control keeps its read; only the finish's Undo removes it → not tracked: by design (1.5: leaving Read keeps the read)
 
 ## Plan
 
@@ -122,13 +129,15 @@ _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_s
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 round PASS → full PASS (796 browser tests) | Audit R1 NOT RUN (tree not clean: the owner's line-ending-only CSVs) → R2 PASS in a worktree (owner's choice; 2 notes, both tightened) | Schema R1 APPROVE (4 MINOR: offer after a saved finish could 500, unfollow refused for a removed series, both fixed; 2 not tracked) | Spec R1 APPROVE (D-116's order and AC-3's focus target to record) | UI R1 PASS (6 widths, light and dark; sheet chrome differed from the drawing → mockup redrawn) | Verify R2 round PASS (after the review fixes) | Schema not re-run: the fixes touched route handlers and tests only (D-97); spec re-run in the close-out check
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R1 round + full, R2 round)
+- Review rounds: 1, then the close-out check
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1 (step 11: `BookStatus` draws the ⋯, for the Library's RSC budget)

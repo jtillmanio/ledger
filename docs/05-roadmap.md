@@ -1766,7 +1766,7 @@ and no *Quarter | Month* control renders anywhere. At 360px no quarter footer re
 under-capacity quarter does. Nothing resolves to `--danger`. Screenshot at 360px
 and 412px.
 
-### ☐ 2.2c Follow what you're reading: the control, and an offer when you finish · M
+### ☑ 2.2c Follow what you're reading: the control, and an offer when you finish · M
 Owner intake, 2026-11-02 (owner: *a follow option where I can manually say
 I'm reading this author or this universe, not I happened to read one book of
 it … upon finishing a book, in addition to marking the date, also give option
