@@ -90,6 +90,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - Spec review: F6 into the toast while a sheet is open has no browser test → not tracked: the sheet leaves the toast live (D-63, tested by pointer here) and `test/undo.test.tsx` pins F6
 - UI walk: the row's ⋯ is named *More for this book* until hydration, then *More for <title>* → not tracked: accepted, the cost of revision 1 (no title in the row's RSC)
 - UI walk: setting a finished book back through the status control keeps its read; only the finish's Undo removes it → not tracked: by design (1.5: leaving Read keeps the read)
+- Lighthouse gate: `/comics` is raised to 36 requests and `/books/list` to 66,000 bytes and 58 requests, with the reason (a chunk split this task causes; the preview's data) → docs/02-architecture.md § Performance budget (approved at the gate)
 
 ## Plan
 
@@ -111,6 +112,7 @@ _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_s
 11. `src/components/BookRowMenu.tsx` (new, **not in the list**): `Menu` `⋯` named *More for <title>*, with the item *Follow…*. Its only prop is `bookId` (the title is read from `.row-title`, as `BookStatus` does), and the sheet is loaded with `next/dynamic` on first open, so 500 rows add almost no RSC or JS. ~~Placed in each row of `src/app/books/list/page.tsx`.~~ **Revision 1 (owner, 2026-11-05):** `BookStatus` draws it, pinned to the row's top right by CSS, so a row adds no RSC element: the Library had 7.5 KB of its 58.6 KB document + RSC budget left. `page.tsx` is unchanged.
 12. `src/components/BookStatus.tsx`: a finish's push carries `offer` through `follow-offer.ts`, and it draws `BookRowMenu` (revision 1).
 13. `src/app/globals.css` (**not in the list**): the toast's offer row, the sheet's rows and the menu, from tokens only.
+14. **Revision 2 (owner, 2026-11-05, at the Lighthouse gate):** the *Keep going?* row moves into `src/components/ToastOffer.tsx` (new), which `Undo.tsx` loads with `React.lazy` only when a toast carries an offer, so its code isn't on every route; the `⋯`'s glyph loses its own span. The toast's growth still splits the layout's shared chunk, so `/comics` is raised to 36 requests, and `/books/list`, over on its preview's data, to 66,000 bytes and 58 requests (`scripts/perf/budget.json`, `docs/02-architecture.md` § Performance budget, which says why). The finish test's axe run is scoped to the toast (`test/e2e/helpers.ts` gains `include`): a fixed toast at 360px partly covers the links behind it.
 
 **Files:** the 13 steps' files, plus `etl/test_views.sql`, `test/follows.test.ts` (new), `test/undo.test.tsx` (**not in the list**), `test/e2e/follows.spec.ts` (new); `test/export-tables.test.ts` should pass unchanged.
 
@@ -130,6 +132,7 @@ _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_s
 _Filled by /implement-task. One line per round._
 
 - Verify R1 round PASS → full PASS (796 browser tests) | Audit R1 NOT RUN (tree not clean: the owner's line-ending-only CSVs) → R2 PASS in a worktree (owner's choice; 2 notes, both tightened) | Schema R1 APPROVE (4 MINOR: offer after a saved finish could 500, unfollow refused for a removed series, both fixed; 2 not tracked) | Spec R1 APPROVE (D-116's order and AC-3's focus target to record) | UI R1 PASS (6 widths, light and dark; sheet chrome differed from the drawing → mockup redrawn) | Verify R2 round PASS (after the review fixes) | Schema not re-run: the fixes touched route handlers and tests only (D-97); spec re-run in the close-out check
+- Ready gates R1: CI's full browser run FAIL (axe target-size at 360px: the taller toast over two genre links) and Lighthouse FAIL (`/comics` 36 of 35 requests; `/books/list` 62.9 of 60 KB and 55 of 53) → revision 2 → follows.spec core PASS, 360 light and dark PASS
 
 ## Blocked
 
@@ -137,7 +140,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds: 2 (R1 round + full, R2 round)
+- Verify rounds: 3 (R1 round + full, R2 round, R3 round after the gate fixes)
 - Review rounds: 1, then the close-out check
 - First-pass AC FAILs: 0
-- Plan revisions after approval: 1 (step 11: `BookStatus` draws the ⋯, for the Library's RSC budget)
+- Plan revisions after approval: 2 (step 11: `BookStatus` draws the ⋯, for the Library's RSC budget; step 14: the lazy offer row and the two raised budgets, at the Lighthouse gate)

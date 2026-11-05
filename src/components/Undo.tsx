@@ -1,6 +1,9 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+
+// The *Keep going?* row, loaded only when a toast carries an offer (task 2.2c): see ToastOffer.
+const ToastOffer = lazy(() => import("@/components/ToastOffer"));
 
 /**
  * One undo stack for the whole app (task 1.2, R1-09). An entry is a label and
@@ -95,11 +98,8 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
   const toastEl = useRef<HTMLDivElement>(null);
   // Where focus was before the toast took it.
   const returnTo = useRef<HTMLElement | null>(null);
-  // A chip's write in flight: the chips wait for it.
-  const [taking, setTaking] = useState(false);
   // A chip was taken with focus in the toast: the next toast takes focus back in.
   const refocusToast = useRef(false);
-  const offerId = useId();
 
   // A held toast is frozen in time: nothing on it expires while it is held.
   const live = useCallback(() => {
@@ -217,23 +217,6 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
     (el?.querySelector<HTMLElement>(".toast-chip") ?? el?.querySelector<HTMLElement>("button"))?.focus();
   }, [toast]);
 
-  /** A *Keep going?* chip: write, then its own toast with the chips left. */
-  async function takeChip(chip: OfferChip, rest: OfferChip[]) {
-    if (taking) return;
-    const inside = toastEl.current?.contains(document.activeElement) ?? false;
-    setTaking(true);
-    try {
-      const entry = await chip.take();
-      refocusToast.current = inside;
-      push({ ...entry, offer: rest.length ? rest : undefined });
-    } catch {
-      if (inside) giveFocusBack();
-      fail({ label: `Couldn't save ${chip.label}. Nothing changed.`, retry: () => void takeChip(chip, rest) });
-    } finally {
-      setTaking(false);
-    }
-  }
-
   // The toast comes off before the retry runs: it raises its own, Undo or a new failure.
   const retryTop = useCallback((retry: () => void) => {
     giveFocusBack();
@@ -284,17 +267,10 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
             )}
             {/* What a finish offers to follow (task 2.2c): chips, never green; following isn't reading. */}
             {toast.offer && toast.offer.length > 0 && (
-              <div className="toast-offer" role="group" aria-labelledby={offerId}>
-                <span className="toast-offer-label" id={offerId}>Keep going?</span>
-                {toast.offer.map((chip, i) => (
-                  <button key={`${chip.label}-${chip.kind ?? ""}`} type="button" className="toast-chip"
-                    aria-disabled={taking || undefined}
-                    onClick={() => void takeChip(chip, toast.offer!.filter((_, j) => j !== i))}>
-                    {chip.label}
-                    {chip.kind && <span className="toast-chip-kind"> · {chip.kind}</span>}
-                  </button>
-                ))}
-              </div>
+              <Suspense fallback={null}>
+                <ToastOffer chips={toast.offer} push={push} fail={fail} handBack={giveFocusBack}
+                  keepFocus={() => { refocusToast.current = true; }} />
+              </Suspense>
             )}
             {/* The 8 seconds, drawn: a 2px bar that shrinks, and stops while the toast is held. */}
             <span className="toast-count" aria-hidden="true" />

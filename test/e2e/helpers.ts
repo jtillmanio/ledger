@@ -29,11 +29,14 @@ export const E2E_UNLISTED_TITLE = "E2E Unlisted Book";
 /**
  * Fails when axe finds a violation of any rule in `rules`, naming each rule and
  * the elements it hit. An empty list fails (axe would run every rule, or none),
- * and so does an id axe does not know: axe throws on it.
+ * and so does an id axe does not know: axe throws on it. `include` scopes the
+ * run to one region: a fixed toast over a 360px page partly covers whatever
+ * sits behind it, which target-size counts against those links, not the toast.
  */
-export async function expectNoAxeViolations(page: Page, rules: string[]) {
+export async function expectNoAxeViolations(page: Page, rules: string[], include?: string) {
   if (rules.length === 0) throw new Error("expectNoAxeViolations needs the rules the check names.");
-  const results = await new AxeBuilder({ page }).withRules(rules).analyze();
+  const builder = new AxeBuilder({ page }).withRules(rules);
+  const results = await (include ? builder.include(include) : builder).analyze();
   if (results.violations.length === 0) return;
   const lines = results.violations.map(
     (v) => `${v.id} (${v.impact ?? "n/a"}): ${v.help}\n` + v.nodes.map((n) => `    ${n.target.join(" ")}`).join("\n"),

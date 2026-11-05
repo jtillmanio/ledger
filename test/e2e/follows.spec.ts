@@ -210,7 +210,8 @@ test("the finish offers Keep going? chips, reached by F6 and Tab; a chip writes 
   // Following isn't reading, and nothing here is red.
   expect(borderTopColor).not.toBe(await tokenColour(page, "--ready"));
   expect(borderTopColor).not.toBe(await tokenColour(page, "--danger"));
-  await expectNoAxeViolations(page, AXE);
+  // The toast and its chips; the page behind it is checked with the sheet's test.
+  await expectNoAxeViolations(page, AXE, ".toast-region");
   expect(await contrastFailures(page)).toEqual([]);
   await screenshot(page, info, "finish-offer");
 

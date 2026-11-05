@@ -379,6 +379,13 @@ describe("the finish's Keep going? row", () => {
   });
   const chip = (label: string, kind: string | undefined, entry: UndoEntry) =>
     ({ label, kind, take: vi.fn(async () => entry) });
+  // The row is loaded lazily (ToastOffer): wait for it after a push that carries an offer.
+  const offerDrawn = async () => {
+    for (let i = 0; i < 40 && !container.querySelector(".toast-offer"); i++) {
+      await act(async () => { await new Promise((r) => setTimeout(r, 5)); });
+    }
+    expect(container.querySelector(".toast-offer")).not.toBeNull();
+  };
 
   it("with no offer the toast has no Keep going? line", async () => {
     act(() => root.render(<UndoProvider><Pusher entry={{ label: "x: read", undo: async () => {} }} /></UndoProvider>));
@@ -402,6 +409,7 @@ describe("the finish's Keep going? row", () => {
       <Pusher entry={{ label: "The Well of Ascension: read", undo: finishUndo, offer: [a, b] }} />
     </UndoProvider>));
     await push();
+    await offerDrawn();
     const group = container.querySelector<HTMLElement>('.toast-offer[role="group"]')!;
     expect(document.getElementById(group.getAttribute("aria-labelledby")!)!.textContent).toBe("Keep going?");
     expect(chipText()).toEqual(["Mistborn · series", "Cosmere"]);
@@ -421,6 +429,7 @@ describe("the finish's Keep going? row", () => {
       <Pusher entry={{ label: "The Well of Ascension: read", undo: finishUndo, offer: [a, b] }} />
     </UndoProvider>));
     await push();
+    await offerDrawn();
     await act(async () => chipButtons()[0].click());
     expect(a.take).toHaveBeenCalledOnce();
     expect(lines()).toEqual(["Reading Mistborn", "series · was not followed"]);
@@ -437,6 +446,7 @@ describe("the finish's Keep going? row", () => {
     const b = chip("Cosmere", undefined, { label: "Reading Cosmere", undo: async () => {} });
     act(() => root.render(<UndoProvider><Pusher entry={{ label: "read", undo: async () => {}, offer: [a, b] }} /></UndoProvider>));
     await push();
+    await offerDrawn();
     act(() => chipButtons()[0].focus());
     await act(async () => chipButtons()[0].click());
     expect(document.activeElement).toBe(chipButtons()[0]);
@@ -447,6 +457,7 @@ describe("the finish's Keep going? row", () => {
     const a = { label: "Mistborn", kind: "series", take: vi.fn(async (): Promise<UndoEntry> => { throw new Error("no"); }) };
     act(() => root.render(<UndoProvider><Pusher entry={{ label: "read", undo: async () => {}, offer: [a] }} /></UndoProvider>));
     await push();
+    await offerDrawn();
     await act(async () => chipButtons()[0].click());
     expect(lines()).toEqual(["Couldn't save Mistborn. Nothing changed."]);
     expect([...container.querySelectorAll(".toast button")].map((x) => x.textContent)).toEqual(["Retry"]);
@@ -458,6 +469,7 @@ describe("the finish's Keep going? row", () => {
       <input id="before" /><Pusher entry={{ label: "read", undo: async () => {}, offer: [a] }} />
     </UndoProvider>));
     await push();
+    await offerDrawn();
     const before = container.querySelector<HTMLInputElement>("#before")!;
     act(() => before.focus());
     await f6(before);

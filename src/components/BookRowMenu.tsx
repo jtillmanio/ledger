@@ -28,7 +28,7 @@ export default function BookRowMenu({ bookId }: { bookId: string }) {
     <span ref={wrap} className="row-more">
       <Menu label={`More for ${title}`} className="row-more-btn"
         items={[{ label: "Follow…", onSelect: (trigger) => setOpener(trigger) }]}>
-        <span aria-hidden="true">⋯</span>
+        ⋯
       </Menu>
       {opener && <FollowSheet bookId={bookId} title={title} opener={opener} onClose={() => setOpener(null)} />}
     </span>

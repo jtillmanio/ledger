@@ -274,13 +274,13 @@ tables.
     | Route | Document + RSC bytes | JS bytes | Requests | Accessibility ≥ |
     |---|---|---|---|---|
     | `/login` | 8,000 | 170,000 | 30 | 100 |
-    | `/comics` | 28,000 | 170,000 | 35 | 100 |
+    | `/comics` | 28,000 | 170,000 | 36 | 100 |
     | `/comics/runs` | 57,000 | 170,000 | 35 | 100 |
     | `/comics/status` | 24,000 | 175,000 | 35 | 100 |
     | `/books/status` | 24,000 | 175,000 | 35 | 100 |
     | `/comics/bendis-disassembled` | 25,000 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 22,500 | 171,000 | 29 | 100 |
-    | `/books/list` | 60,000 | 170,000 | 53 | 100 |
+    | `/books/list` | 66,000 | 170,000 | 58 | 100 |
     | `/inbox` | 12,500 | 173,000 | 28 | 100 |
     | `/settings` | 12,500 | 173,000 | 28 | 100 |
     | `/watch` | 12,500 | 173,000 | 28 | 100 |
@@ -326,6 +326,18 @@ tables.
     run) against the old 11,000, 11,000 and 21,000; each new budget is the old
     one plus 1.5 KB. The other pages stayed inside theirs. The prefetch is the
     point of a `loading.tsx` (a tap shows the skeleton at once), so it stays.
+    Task 2.2c (PR #197) raised `/comics` to 36 requests and `/books/list` to
+    66,000 bytes and 58 requests. Every route loads one more script: the
+    toast's *Keep going?* support (F6, D-116, and the lazily loaded
+    `ToastOffer`) tipped Turbopack into splitting the layout's shared chunk in
+    two (24.7 and 13.9 KB built, where it was one of 37.7 KB), about 1 KB more
+    JS, and `/comics` was at its 35. `/books/list` measured 62,927 bytes and 55
+    requests on PR #197's preview, against 52,323 and 47 on PR #195's: each
+    row's `⋯` (the *Follow…* menu) is about 1.5 KB of that and the script one
+    request; the rest is the preview's data (a 920 KB document against 731 KB,
+    2,475 more DOM nodes of which the `⋯` is about 2,000, and two more covers on
+    the first screen at three requests each). The new numbers are that run plus
+    about 5%.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 
