@@ -9,7 +9,7 @@ import MediaBar from "../src/components/nav/MediaBar";
 import NavRail from "../src/components/nav/NavRail";
 import Sidebar from "../src/components/nav/Sidebar";
 import ShellFrame from "../src/components/nav/ShellFrame";
-import { currentItem, mediumItems, NAV_ITEMS, visibleItems, withLastRun, type NavItem } from "../src/components/nav/items";
+import { currentItem, mediumItems, NAV_ITEMS, tabRowItems, visibleItems, withLastRun, type NavItem } from "../src/components/nav/items";
 
 const nav = vi.hoisted(() => ({ pathname: "/comics" }));
 vi.mock("next/navigation", () => ({
@@ -35,9 +35,9 @@ describe("NAV_ITEMS (AC-2)", () => {
 
   it("a disabled item renders in no bar", () => {
     // `watch` is a medium (all three bars draw the switch); `comics-status` is a
-    // medium item (the rail and the sidebar draw those, the phone bar does not).
+    // medium item (the rail and the sidebar draw those, and since 2.2i the phone's tab row).
     // Not `comics-runs`: comics Add shares its href until you add to a run (1.19).
-    for (const [id, drawnBy] of [["watch", 3], ["comics-status", 2]] as const) {
+    for (const [id, drawnBy] of [["watch", 3], ["comics-status", 3]] as const) {
       const href = `href="${hrefOf(id)}"`;
       const before = Object.entries(bars()).filter(([, html]) => html.includes(href));
       expect(before.length, `${id} drawn before the flip`).toBe(drawnBy);
@@ -90,10 +90,10 @@ describe("NAV_ITEMS (AC-2)", () => {
       // On the Library the rail and sidebar mark Library, and the Books switch beside them.
       expect(current(html).filter((a) => a.includes("Library")), name).toHaveLength(1);
     }
-    // The phone's bar draws the media switch alone: Books is current there, with no Library item.
+    // The phone's media switch marks Books, and since 2.2i its tab row lists Library too, marked once.
     const phone = renderToString(<MediaBar />);
-    expect(phone).not.toContain(">Library<");
-    expect(current(phone).filter((a) => a.includes("Books"))).toHaveLength(1);
+    expect(current(phone).filter((a) => a.includes(">Books<"))).toHaveLength(1);
+    expect(current(phone).filter((a) => a.includes(">Library<"))).toHaveLength(1);
     // The switch still opens the Library until 2.2 builds the dashboard.
     expect(hrefOf("books")).toBe("/books/list");
   });
@@ -148,7 +148,7 @@ describe("NAV_ITEMS (AC-2)", () => {
 describe("comics Add remembers the last run (1.19, AC-2)", () => {
   beforeEach(() => { nav.pathname = "/comics"; });
   const others = (items: NavItem[]) => items.filter((i) => i.id !== "comics-add").map((i) => [i.id, i.href]);
-  const addLinks = (html: string) => [...html.matchAll(/<a [^>]*href="([^"]*)"[^>]*>(?:(?!<\/a>).)*>Add</g)].map((m) => m[1]);
+  const addLinks = (html: string) => [...html.matchAll(/<a [^>]*href="([^"]*)"[^>]*>(?:(?!<\/a>).)*Add</g)].map((m) => m[1]);
 
   it("is on, and out of the unbuilt screens", () => {
     const add = NAV_ITEMS.find((i) => i.id === "comics-add")!;
@@ -158,11 +158,9 @@ describe("comics Add remembers the last run (1.19, AC-2)", () => {
 
   it("links to the remembered run's Add issues in every bar that draws comics' items", () => {
     const all = bars(withLastRun(NAV_ITEMS, "A"));
-    for (const name of ["the tablet rail", "the sidebar"] as const) {
+    for (const name of ["the phone bar", "the tablet rail", "the sidebar"] as const) {
       expect(addLinks(all[name]), name).toEqual(["/comics/A/add"]);
     }
-    // The phone's bar draws only the media switch (owner, 2026-11-02): its Add is the thumb bar's.
-    expect(all["the phone bar"]).not.toContain("/add");
   });
 
   it("links to the run list before any add, and a run id is encoded", () => {
@@ -198,7 +196,8 @@ describe("comics Add remembers the last run (1.19, AC-2)", () => {
 
 describe("the media bar", () => {
   it("draws the same media nav on every route, only aria-current differs", () => {
-    const norm = (html: string) => html.replace(/ aria-current="page"/g, "");
+    // The tab row (2.2i) differs by medium and screen on purpose; its tests are below.
+    const norm = (html: string) => html.replace(/ aria-current="page"/g, "").replace(/<nav aria-label="Screens".*?<\/nav>/, "");
     const seen = new Set<string>();
     for (const path of ["/comics", "/comics/runs", "/comics/some-run", "/books/list", "/books/add", "/watch", "/inbox"]) {
       nav.pathname = path;
@@ -211,7 +210,8 @@ describe("the media bar", () => {
     nav.pathname = "/books/add";
     expect(renderToString(<MediaBar />)).toMatch(/aria-current="page"[^>]*>(?:<[^>]+>)*Books|href="\/books\/list"[^>]*aria-current="page"/);
     nav.pathname = "/inbox";
-    expect(renderToString(<MediaBar />)).not.toContain("aria-current");
+    const html = renderToString(<MediaBar />).replace(/<nav aria-label="Screens".*?<\/nav>/, "");
+    expect(html).not.toContain("aria-current");
   });
 
   it("is a media nav of three links with their names, the wordmark first", () => {
@@ -220,6 +220,56 @@ describe("the media bar", () => {
     for (const name of ["Comics", "Books", "Watch"]) expect(html).toContain(`>${name}<`);
     expect(html.indexOf("Ledger")).toBeLessThan(html.indexOf(">Comics<"));
     expect(html).not.toContain("⚲"); // the drawn magnifier, never the glyph
+  });
+});
+
+const tabRow = (html: string) => /<nav aria-label="Screens"[^>]*>(.*?)<\/nav>/.exec(html)![1];
+const labels = (html: string) => [...html.matchAll(/<a [^>]*>([^<]*)<\/a>/g)].map((m) => m[1]);
+
+describe("the tab row (2.2i, AC-2)", () => {
+  it("lists mediumItems then Inbox, inside header.bar, for each medium", () => {
+    for (const [path, medium] of [["/comics", "comics"], ["/books/list", "books"], ["/watch", "watch"]] as const) {
+      nav.pathname = path;
+      const html = renderToString(<MediaBar />);
+      const row = tabRow(html);
+      const expected = [...mediumItems(NAV_ITEMS, medium), NAV_ITEMS.find((i) => i.id === "inbox")!];
+      expect(labels(row), medium).toEqual(expected.map((i) => i.label));
+      expect([...row.matchAll(/href="([^"]+)"/g)].map((m) => m[1]), medium).toEqual(expected.map((i) => i.href));
+      expect(html.indexOf("<header"), medium).toBeLessThan(html.indexOf('aria-label="Screens"'));
+      expect(html.indexOf('aria-label="Screens"'), medium).toBeLessThan(html.lastIndexOf("</header>"));
+    }
+  });
+
+  it("drops a disabled item: comics Status flipped off leaves the row", () => {
+    nav.pathname = "/comics";
+    expect(labels(tabRow(renderToString(<MediaBar items={NAV_ITEMS} />)))).toContain("Status");
+    const row = tabRow(renderToString(<MediaBar items={flip("comics-status")} />));
+    expect(row).not.toContain(`href="${hrefOf("comics-status")}"`);
+    expect(labels(row)).not.toContain("Status");
+  });
+
+  it("marks the current item, Inbox on /inbox, and none on /settings, where the gear is current", () => {
+    nav.pathname = "/inbox";
+    const inbox = renderToString(<MediaBar lastMedium="books" />);
+    expect(labels(tabRow(inbox))).toEqual([...mediumItems(NAV_ITEMS, "books").map((i) => i.label), "Inbox"]);
+    expect(tabRow(inbox)).toMatch(/href="\/inbox"[^>]*aria-current="page"|aria-current="page"[^>]*href="\/inbox"/);
+    expect(tabRow(inbox).match(/aria-current/g)).toHaveLength(1);
+    nav.pathname = "/settings";
+    const settings = renderToString(<MediaBar lastMedium="comics" />);
+    expect(tabRow(settings)).not.toContain("aria-current");
+    expect(settings).toMatch(/href="\/settings"[^>]*aria-current="page"|aria-current="page"[^>]*href="\/settings"/);
+  });
+
+  it("is Inbox alone until the last medium arrives, and the same height class either way", () => {
+    nav.pathname = "/settings";
+    expect(labels(tabRow(renderToString(<MediaBar />)))).toEqual(["Inbox"]);
+    expect(tabRowItems(NAV_ITEMS, null).map((i) => i.id)).toEqual(["inbox"]);
+  });
+
+  it("a screen's own medium wins over the last one", () => {
+    nav.pathname = "/watch";
+    expect(labels(tabRow(renderToString(<MediaBar lastMedium="books" />)))).toContain("Dashboard");
+    expect(labels(tabRow(renderToString(<MediaBar lastMedium="books" />)))).not.toContain("Library");
   });
 });
 

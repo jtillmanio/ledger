@@ -125,6 +125,9 @@ test("the status control offers Listening beside Reading, a real button with its
   await inheritsText(page, glyphs(row));
 
   await expectNoHorizontalScroll(page);
+  // The page scrolled to the open control; at the top the sticky bar (and, since 2.2i, its 44px tab
+  // row) covers none of the chips, so axe's target-size judges the links, not the bar over them.
+  await page.evaluate(() => window.scrollTo(0, 0));
   await expectNoAxeViolations(page, AXE);
   expect(await contrastFailures(page)).toEqual([]);
   await screenshot(page, info, "audiobooks-control");
