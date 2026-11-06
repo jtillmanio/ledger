@@ -1,7 +1,7 @@
 ---
 id: TASK-056
 title: 2.2g Where the book sits, in Now
-status: Draft
+status: Ready
 depends_on: [TASK-049, TASK-055]
 size: M
 model: sonnet

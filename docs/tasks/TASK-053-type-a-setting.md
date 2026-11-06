@@ -1,7 +1,7 @@
 ---
 id: TASK-053
 title: 2.0b Type a setting, and hold to step
-status: Draft
+status: Ready
 depends_on: [TASK-045]
 size: M
 model: sonnet

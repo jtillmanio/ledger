@@ -75,7 +75,7 @@ is not counted.
 **M10, in its order** (`docs/06-tasklist.md`): 2.0 ✅ → 2.1 ✅ → (2.1b) → 2.2e ✅ →
 2.2c ✅ → 2.2i → 2.0b → 2.2f → 2.2h → 2.2 → 2.2d → 2.2g → 2.2b. TASK-049 to TASK-051
 are Ready; each plan still answers its questions below. TASK-052 to TASK-056
-(2.2i, 2.0b, 2.2f, 2.2h, 2.2g) are Draft. 2.2c, 2.2d and 2.2e had proposed Checks,
+(2.2i, 2.0b, 2.2f, 2.2h, 2.2g) are Ready too. 2.2c, 2.2d and 2.2e had proposed Checks,
 which became their **Check:** lines on 2026-11-04, and 2.0b and 2.2f–2.2i's did
 on 2026-11-06. 2.1b is not pulled ahead and has no task file
 yet. 2.2c and 2.2d aren't cutover gates either, so 2.0 → 2.1 → 2.2e → 2.2 →
