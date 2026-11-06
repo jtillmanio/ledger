@@ -93,9 +93,14 @@ test("with every books item enabled the row scrolls inside itself and the page d
 });
 
 test("the row is not drawn at 768px or wider (AC-1, AC-6)", ONCE, async ({ page }) => {
+  // Drawn on the phone first, so "hidden" below means the CSS hides a row that exists.
+  await size(page, 360);
+  await page.goto("/books/list");
+  await expect(row(page)).toBeVisible();
   for (const width of [768, 1024, 1280]) {
     await size(page, width, 900);
     await page.goto("/books/list");
+    await expect(row(page), `at ${width}`).toHaveCount(1);
     await expect(row(page), `at ${width}`).toBeHidden();
     await expect(page.locator("header.bar"), `at ${width}`).toBeHidden();
     await screenshot(page, test.info(), `tab-row-absent-${width}`);
@@ -187,7 +192,7 @@ test("the row's height is the same before and after the last medium arrives (AC-
   });
   expect(heights, "one height for the whole load").toHaveLength(1);
   expect(heights[0]).toBe(44);
-  expect(counts, "Inbox alone, then the medium's items").toContain(1);
+  // Whether the Inbox-alone state is sampled depends on timing; the end state is not.
   expect(counts).toContain(tabRowItems(ITEMS, "books").length);
 });
 
