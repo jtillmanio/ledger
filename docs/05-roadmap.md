@@ -41,19 +41,19 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 
 | Phase | Goal | Milestones | Done |
 |---|---|---|---|
-| [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6) | 12 / 13 |
-| [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is 1.26 (START-HERE Step 14): it waits for all of Phase 1, plus 2.11a and 1.11, and for every entry 1.25's parity audit names (D-95).** | M3–M9 | 28 / 41 |
-| [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 0 / 20 |
+| [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6) | 13 / 13 |
+| [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is 1.26 (START-HERE Step 14): it waits for all of Phase 1, plus 2.11a and 1.11, and for every entry 1.25's parity audit names (D-95).** | M3–M9 | 40 / 41 |
+| [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 5 / 24 |
 | [3 Editing](#phase-3--editing) | Maintain the catalog in the app: inline edits, runs, prerequisites, eras, detail sheets and adding at scale. | M13–M15 | 0 / 15 |
-| [4 Enrichment](#phase-4--enrichment) | Metron, Open Library and Hardcover backfill, and real covers. A prerequisite for Phase 7. | M16 | 0 / 4 |
-| [5 Remaining surfaces](#phase-5--remaining-surfaces) | The remaining list and detail surfaces: shelves, tracks, editions, releases and series pages. | M17, M18 | 0 / 15 |
-| [6 Polish, in any order](#phase-6--polish-in-any-order) | Polish, in any order. | M19–M21 (6.2b in M12) | 1 / 19 |
+| [4 Enrichment](#phase-4--enrichment) | Metron, Open Library and Hardcover backfill, and real covers. A prerequisite for Phase 7. | M16 | 0 / 6 |
+| [5 Remaining surfaces](#phase-5--remaining-surfaces) | The remaining list and detail surfaces: shelves, tracks, editions, releases and series pages. | M17, M18 | 0 / 16 |
+| [6 Polish, in any order](#phase-6--polish-in-any-order) | Polish, in any order. | M19–M21 (6.2b in M12) | 1 / 21 |
 | [7 AI-assisted curation (after Phase 4, not before)](#phase-7--ai-assisted-curation-after-phase-4-not-before) | Claude proposes, Metron verifies, you approve. Only after Phase 4. | M22 | 0 / 8 |
 | [8 Watchlist: film and television](#phase-8--watchlist-film-and-television) | Films, shows, seasons and franchises. Needs only Phase 0, so it can be pulled forward. | M23, M24 | 0 / 10 |
 | [9 Music](#phase-9--music) | A fourth medium, last (D-75). | M25 | 0 / 8 |
 | [10 Games](#phase-10--games) | A fifth medium, a planning tool for what to play: search, a queue by the platform you'll play on, and the games you're waiting for (D-102). | M26 | 0 / 7 |
 
-Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate. The 2026-11-02 intake added 2.10b, 5.15, 5.16, 10.6 and L-8 and amended 2.10, 7.6, 8.8, 9.3 and 10.1 (D-104–D-106); none of them is a cutover gate either. A second 2026-11-02 intake added 2.2c, 2.2d, 2.2e, L-9 and L-10, rewrote 5.12 as one page for every medium, and amended 2.2, 2.10b, 5.11, 6.10 and L-1 (D-108–D-110): only a follow you set to *Reading* counts as reading. Later that day the wishlist moved into extract (D-111): 1.27 settles it before the final load, 1.24 is removed, and 1.26 no longer promotes it on production.
+Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate. The 2026-11-02 intake added 2.10b, 5.15, 5.16, 10.6 and L-8 and amended 2.10, 7.6, 8.8, 9.3 and 10.1 (D-104–D-106); none of them is a cutover gate either. A second 2026-11-02 intake added 2.2c, 2.2d, 2.2e, L-9 and L-10, rewrote 5.12 as one page for every medium, and amended 2.2, 2.10b, 5.11, 6.10 and L-1 (D-108–D-110): only a follow you set to *Reading* counts as reading. Later that day the wishlist moved into extract (D-111): 1.27 settles it before the final load, 1.24 is removed, and 1.26 no longer promotes it on production. The 2026-11-05 intake added 2.0b, 2.2f–2.2i, 4.5b, 5.17, 6.21 and L-11, and amended 2.2c, 2.2d, 3.4b and 5.12 (D-117–D-125): a finish follows a book's series, subseries and universe, the phone gets a tab row, and the Top books page replaces the Library's year chips; none of them is a cutover gate.
 
 ---
 
@@ -1555,6 +1555,35 @@ capacity view reflects an edit — changing 45 to 60 min/day moves the 2027 figu
 — without a redeploy. The stepper is a button group with an accessible name, and
 the page has one `<h1>`.
 
+### ☐ 2.0b Type a setting, and hold to step · S
+Owner intake, 2026-11-05 (owner: *settings: modify the number directly with
+numpad; maybe hold down button goes faster*). D-123. Depends on 2.0.
+
+- **Type it.** The number in a stepper is a button named for its row (*Edit
+  minutes a day*). A tap swaps it for an `<input inputmode="numeric">` with the
+  value selected, so a phone opens its numpad. Enter or leaving the field
+  commits; Esc puts the old value back; an empty field or anything that isn't
+  a number changes nothing. A value past a bound commits the bound and shows
+  the reason the stepper already gives (*The highest is N*).
+- **Hold to go faster.** Pressing and holding − or + repeats after 400ms, and
+  speeds up the longer it is held. It stops at a bound, on release, and when
+  the pointer leaves or is cancelled. A tap is still one step, and a keyboard
+  press still steps once.
+- **One save.** Both go through `PaceSettings`'s existing wait, one save 500ms
+  after the last change, so a long hold is one `PATCH` with the final value.
+- **Not drawn yet.** The mockup's `settings` frame gains the input, and
+  `design/STYLE_GUIDE.md` § 9 (*a number you step*) comes from the design tool
+  after this: it is a protected file, and D-123 governs until then.
+
+**Check (proposed):** component tests: typing 45 and Enter in *Minutes a day* changes it
+to 45; a value over the maximum commits the maximum and shows the reason; Esc
+and an empty field leave the value as it was; with fake timers, a hold repeats,
+repeats faster after its first second, and stops at the bound and on release; a
+tap steps once. `PaceSettings`: a hold sends one `PATCH`, carrying the final
+value. In the browser (0.11), the input has `inputmode="numeric"`, focus
+returns to the number after a commit, and axe passes. Screenshots at 360px and
+1280px.
+
 ### ☑ 2.1 Capacity view · M
 Depends on 1.7 and 2.0.
 
@@ -1775,6 +1804,10 @@ Depends on 1.15 (the follow tables) and 1.5 (the finish). Takes the follow
 control out of 5.11, so that 2.2d and 2.10b have something to read before the
 author and universe pages exist.
 
+*Amended by the 2026-11-05 intake (2.2h, D-117):* a finish now follows the
+series, subseries and universe itself, and the offer keeps the author and
+shelves. What's built here stands until 2.2h lands.
+
 - **Only *Reading* means reading** (D-108, sharpening D-43). A series, author,
   universe or shelf counts as one you're reading only when its follow is
   `reading`, set by you. Having read one book of it never does: no suggestion,
@@ -1832,6 +1865,12 @@ Owner intake, 2026-11-02 (owner: *how is current universe/author reading
 showing up on continue reading or "Add books to plan" recommendation?*; asked,
 the owner chose the dashboard and the plan sheet). D-108. Depends on 2.2 (the
 dashboard) and 2.2c (the follows it reads).
+
+*From the 2026-11-05 intake (2.2h, D-117):* when 2.2h lands first,
+`follow_next` also lists each subseries followed as `reading`, its next book
+being the lowest unread `subseries_position`, and the *Next in* line prefers
+the subseries, then the series, the universe and the author. 2.2g's rows sit
+above that line.
 
 - **One derived list, read everywhere.** Proposed view `follow_next(kind,
   entity_id, name, book_id, read, total)` in `etl/views.sql`: for each series,
@@ -1914,6 +1953,161 @@ before 2027 Q2's, and Someday's after On deck's. In the browser (0.11),
 choosing *Length* updates the URL and the order and survives a reload; the
 nav shows *Library* at 768px and 1280px, current on `/books/list`; at 360px the *Books* switch is current there and the page's heading reads *Library*.
 Screenshots at 360px and 1280px.
+
+### ☐ 2.2f Finish a book from In flight · S
+Owner intake, 2026-11-05 (owner: *a way to finish a book from the status
+tab*). Depends on 1.9, 1.5 and 2.2c. `StatusBookRow` is plain text today, so a
+book in hand can only be finished from the Library.
+
+- Each *Reading* and *Listening* row on `/books/status` gains **Finished**,
+  named for the book (*Finished The Alloy of Law*). It is the Library's finish,
+  not a second one: `saveBookStatus`, today's date, the undo toast with its
+  date control and *Keep going?*, and a listen logged as `audio` (D-112).
+- The book moves to Done and each tab's count follows. In flight has no other
+  status control: DNF, Parked and the rest stay where they are.
+- **Not drawn yet.** The mockup's `status` frame gains it, at phone, tablet and
+  desktop widths, before it is built.
+
+**Check (proposed):** in the browser (0.11), **Finished** on a *Reading* row writes `read`
+and one `read_events` row with `format = text`, and on a *Listening* row one
+with `format = audio`; the toast carries *Keep going?*; Undo restores the status
+and leaves no read; the book moves from In flight to Done and both tabs' counts
+equal their rows. The button is reachable by keyboard, axe passes and nothing
+resolves to `--danger`. Screenshots at 360px and 1280px.
+
+### ☐ 2.2g Where the book sits, in Now · M
+Owner intake, 2026-11-05 (owner: *hierarchy for currently reading dashboard.
+Universe/author, series, sub series. How to show? Super series and sub series in
+flight should be shown in some way*; asked, the owner chose stacked meters, to
+be redesigned later). D-119. Depends on 2.2 and 2.2h (`subseries_progress`).
+6.21 redesigns it; this is the working version, not the final drawing.
+
+- **One thin row per level the book belongs to**, under the meter and above
+  2.2d's *Next in* line, outermost first: the universe (D-90: Calibre's
+  superseries is the universe), or with no universe the author when followed as
+  *Reading*; then the series; then the subseries. Each row is the name, an
+  `.emeter` filled with `--ready`, and `read / total` in mono.
+- **At most three rows, and no empty one.** A level the book lacks draws
+  nothing, and a standalone by an unfollowed author draws none. *Between books*
+  draws none.
+- **Position is a fact, not a follow.** Each row reads `universe_progress`,
+  `series_progress`, `author_progress` or `subseries_progress`, whether or not
+  that level is followed. D-108 stops a progress view from saying what you're
+  *reading*; it never stopped one saying how far along you are. Nothing is stored
+  (hard rule 2).
+- Now stays the one large thing: these rows use the rollup's type sizes, not the
+  hero's. A *Listening* book draws them too.
+- **Not drawn yet.** The mockup's `bdash` frames gain the rows at phone, tablet
+  and desktop widths before they are built.
+
+**Check (proposed):** in the browser (0.11), a book in hand in a universe, a series and a
+subseries renders three rows in that order, each `read / total` equal to its
+view's; a book in a series alone renders one row; a standalone by an unfollowed
+author renders none; a standalone by an author followed `reading` renders the
+author's row; *Between books* renders none. Every meter fills with `--ready`,
+nothing resolves to `--danger`, and there is no horizontal scroll at 360px. The
+five slots keep their order. Screenshots at 360px, 834px and 1280px.
+
+### ☐ 2.2h Finishing a book follows it · M
+Owner intake, 2026-11-05 (owner: *is anything automatically followed upon
+reading? Maybe should be for series/sub/super and universe, manual for author.
+Can manually opt out. Difference between actively following and still in the
+middle of but on hold*; asked, the owner chose automatic at the finish, with
+every level still settable by hand, and On hold derived from Tracking). D-117,
+D-118; **amends D-108 and 2.2c**. Depends on 2.2c. Build it before 2.2d, whose
+`follow_next` then has followed subseries to read.
+
+- **Automatic at the finish.** A finish in the app (setting a book to *Read*,
+  from *Reading* or *Listening*) also sets the book's series, subseries and
+  universe to `reading`, each only while it has an unread live book left, in
+  the same transaction. Authors and shelves are never automatic: they stay
+  *Keep going?* chips. Only a finish does this: nothing follows from an extract,
+  a loaded read or 4.4's Calibre sync, and past reads are not backfilled.
+- **A Tracking follow is raised.** Proposed: finishing a book of something at
+  `tracking` sets it to `reading`, because you've just read it. Otherwise the
+  series loaded from the sheet, all `tracking` (1.15), would never follow
+  themselves. **Stop and ask at plan time.**
+- **By hand still works.** The *Follow…* sheet and its control stay, for any
+  level, before or after a finish.
+- **Opting out sticks.** 2.2c's *Not following* deletes the row, so the next
+  finish would follow it again. Proposed: on `series_follows`,
+  `subseries_follows` and `universe_follows`, *Not following* keeps the row with
+  a new `state` value, `off`, which every reader treats as no follow
+  (`follow_state` NULL). Author and shelf follows, never automatic, keep deleting
+  theirs. **Stop and ask at plan time** (a CHECK change on two tables, and a
+  change to 2.2c's write).
+- **The toast says what happened.** *Now reading Mistborn · Cosmere*, one chip
+  each: a chip turns that one to *Not following*, with its own undo. *Keep
+  going?* keeps the author and shelf chips. The finish's Undo undoes the finish
+  and restores each follow it changed. *Done with Mistborn* on a last unread
+  book is unchanged (D-43).
+- **Subseries are followable.** Proposed: `subseries_follows(subseries_id,
+  state)`, as `shelf_follows`, no `user_id` (D-91), in
+  `src/db/export-tables.ts`, and a `subseries_progress` view (books listed and
+  read per subseries, live books only, with `follow_state`). The *Follow…* sheet
+  lists the subseries with its control and `read / total`. **Stop and ask at
+  plan time** (a new table).
+- **On hold is a label, not a state** (D-118). The control's middle choice still
+  stores `tracking`. It reads *On hold* while the thing is partly read (at least
+  one read, at least one unread) and *Tracking* otherwise. To pause something,
+  you set it there. It is derived at display, never stored (hard rule 2), and
+  5.12 lists it as its own group.
+- **Not drawn yet.** The mockup's `follow` and `finishoffer` frames change at
+  phone, tablet and desktop widths before they are built.
+
+**Check (proposed):** `npm test`: finishing book 2 of 4 of an unfollowed series, in a
+subseries and a universe with books left, writes `reading` for all three and no
+author or shelf follow; the finish's Undo restores the book and leaves no follow
+row; finishing book 4 of 4 writes no series follow; a series at `tracking` is
+raised to `reading`, and Undo restores `tracking`; a series set to *Not
+following* stays out at the next finish; a chip turns one follow off and leaves
+the others; a DNF writes no follow; a read loaded through the ETL writes no
+follow. The subseries control writes a row at each state, and the export test
+passes with `subseries_follows`. `subseries_progress` counts read and listed
+books and skips a soft-deleted book. The control reads *On hold* at 1 of 4 read
+and *Tracking* at 0 of 4 and 4 of 4, with the same stored value. In the browser
+(0.11), the toast's chips are reachable by keyboard and axe passes. Screenshots
+at 360px and 1280px. This replaces the part of 2.2c's Check where a finish only
+offers the series and the universe.
+
+### ☐ 2.2i Every screen from a phone: the tab row · M
+Owner intake, 2026-11-05 (owner: *some of the manual checks have me go to a
+specific link. Make sure all of those links are available to get to through the
+UI and not just putting into the url bar*, and *link for books by status (or
+redo the dashboard so that's already on there)*; asked, the owner chose a tab
+row). D-120; **amends D-77**. Depends on 1.8. No later entry needs it first, but
+it is the phone's way to every screen, so it goes early.
+
+The phone's bar draws the media switch and the gear only (D-77, D-113), so at
+360px nothing links to Books *Status* or *Add* at all, and Comics *Status* has a
+link only while something is mid-run.
+
+- **A tab row under the media bar**, below 768px only, part of the sticky bar:
+  the current medium's enabled items from `NAV_ITEMS` (R1-06), then *Inbox*. A
+  task that flips an item on (Plan, Shelves, Top) adds it here with nothing else
+  to do. Hue never identifies it (ui.md), and the current item has
+  `aria-current="page"`.
+- It scrolls sideways inside itself, never the page, with the current item
+  scrolled into view. Targets are 44px tall.
+- On a screen with no medium (`/inbox`, `/settings`) it draws the last medium's
+  items (`mediumFor`, R1-13's cookie).
+- `--bar-h` grows on the phone, and every sticky offset and skeleton that reads
+  it follows, so CLS stays under the budget (0.10). The thumb bar and the five
+  slots don't move. The tablet rail and desktop sidebar already list these items
+  and don't change.
+- **Manual checks walk the UI.** Standing rule 8 (`docs/06-tasklist.md`): a
+  task's manual check says what to tap from a dashboard, not a URL to type.
+- **Not drawn yet.** The mockup's phone frames gain the row, and
+  `design/mockups-index.md` notes it, before it is built.
+
+**Check (proposed):** a browser test at 360px, built from `NAV_ITEMS`, so a newly enabled
+item is covered without editing it: from each medium's dashboard, every enabled
+item of that medium, *Inbox* and *Settings* is reached by tapping links, with no
+direct navigation. The current item has `aria-current="page"`. With every books
+item enabled, the page has no horizontal overflow at 360px. The row is not
+rendered at 768px or wider. Each item measures at least 44px tall, and axe
+passes. 0.10's CLS budget holds on `/books/list` and `/comics`. Screenshots at
+360px and 412px, light and dark.
 
 ### ☐ 2.3 Plan editor · M
 Depends on 1.7 and 2.1.
@@ -2938,17 +3132,30 @@ entry is not.
   draws; whichever task is built first builds it as a shared component.
 - **Every year, not only this one.** The Top books screen (mockup `top`) gains
   a year switcher over every year with a finished read. This year says *so
-  far*. Each year shows its top ten, then the rest under *11–34*, collapsed.
+  far*. Each year shows its top ten, a divider, then every other book read
+  that year: the rest of the ranks, then *Not ranked yet*. Nothing is
+  collapsed, so the page is the year's whole list (D-122).
   The workbook's past ranks, kept in `seed/workbook_reads.csv` (product B4),
   load into the reads they belong to.
+- **Books move** (2026-11-05 intake; owner: *can move books around*). Any
+  book moves anywhere in its year with 1.10's reorder controls, across the
+  divider too: a move past it changes what's in the top ten, the year's ranks
+  stay contiguous, and it has an undo. Moving an unranked read in ranks it.
+- **It replaces the Library's year chips** (2026-11-05 intake, D-122). When this
+  lands, the Library's year chips and *No year* go, along with `listBooks`'s
+  `year` filter. A read with no finish date keeps a home (R2-08): the year
+  switcher ends with *No year*, listed and unranked. The Library's *Finished*
+  sort stays.
 
 **Check (proposed):** `npm test`: placing a new read into a year of six ranked
 reads with scripted answers takes at most 3 picks and leaves ranks 1–7
 contiguous, and its undo restores the six as they were; *Skip* writes no rank;
-a book read in two years holds a rank in each. In the browser (0.11), a past
-year lists its first ten under *Top 10* and the rest collapsed, and an
-unranked read shows under *Not ranked yet*. The up → down → up migration test
-passes.
+a book read in two years holds a rank in each; moving a book from rank 12 to
+rank 3 leaves ranks contiguous and puts it in the top ten, and its undo restores
+the order. In the browser (0.11), a past year lists its first ten, a divider,
+then every other book read that year, with none collapsed; an unranked read
+shows under *Not ranked yet*; a read with no date shows under *No year*; and the
+Library renders no year chip. The up → down → up migration test passes.
 
 ### ☐ 3.6 Eras on the run detail · M
 The era bands in `design/mockups.html` → "Run detail — eras" have no data behind
@@ -3581,6 +3788,29 @@ counts each; after the drop
 migration no query, view or loader names `books.genre`, and up → down → up keeps
 every `book_genres` row.
 
+### ☐ 4.5b On deck by genre · S
+Owner intake, 2026-11-05 (owner: *filter on deck by genre, ie rank next up by
+genre*; asked, the owner chose filtering and grouping, not a stored ranking).
+D-124. Depends on 4.5 and 1.9.
+
+- **Chips and sections.** Status → *Up next*'s On deck group gains a chip per
+  top-level genre that has an On deck book, and sections by top-level genre
+  (`book_genre_tree` at depth 1, `books.genre` for a book with none, D-98). The
+  chip is in the URL. A book in two top-level genres is in both sections and
+  counts once on the tab.
+- **Nothing is stored.** On deck stays unordered (D-37); inside a section,
+  books run by series, then title.
+- **The Library's genre chips keep the filter.** They drop `status` and `level`
+  today, so *To read · On deck* then *Fantasy* loses On deck. A genre chip keeps
+  both.
+
+**Check (proposed):** with On deck books in `Fantasy.Epic Fantasy` and `Sci-Fi`, and one in
+both, Status → *Up next* renders a *Fantasy* and a *Sci-Fi* section, the book in
+both is in each, and the tab counts it once; the *Fantasy* chip leaves only
+*Fantasy*, survives a reload and writes nothing; a book with no Calibre genre
+sorts by `books.genre`. In the Library, *To read · On deck* then a genre chip
+lists only that genre's On deck books. Screenshots at 360px and 1280px.
+
 ---
 
 ## Phase 5 — Remaining surfaces
@@ -3819,6 +4049,11 @@ it is converted.
       followed `reading` with an unread live book, from `series_progress`,
       `universe_progress`, `author_progress` and 2.2c's `shelf_progress`.
       Having read one book of something you don't follow never lists it.
+    - **Books, On hold** (2026-11-05 intake, D-118): a collapsed group under
+      them, with its count: everything followed `tracking` with at least one
+      read and one unread, labelled as 2.2h's control labels it. It is
+      *In the middle of* without being on the go, so nothing here reaches
+      `follow_next`.
     - **Books, Completed:** each series, universe and shelf with two or more
       live books, every one read (a standalone isn't a series), and each
       followed author with every listed book read. A follow isn't needed:
@@ -3836,6 +4071,9 @@ it is converted.
     *In the middle of* is most recently touched first; *Completed* is most
     recently finished first, with the finish's month (*finished Mar 2026*).
     A row opens its page where one exists (5.9, 5.11, 5.2, the run).
+  - **Rows nest** (2026-11-05 intake, D-119): a series under a universe on
+    the page sits indented beneath it, and a subseries beneath its series, as
+    2.2g's rows do in Now. A row whose parent isn't listed stands on its own.
   - The books and comics dashboards' rollups link here. Empty states are
     calm: *Nothing in the middle. Follow a series as Reading to see it here*
     with *Open the Library* (2.2e).
@@ -3849,7 +4087,9 @@ it is converted.
     followed `reading` with 1 of 3 read appears; a run with 3 of 10 read is
     under *In the middle of*, and with 10 of 10 under *Completed*; the
     *Books* chip hides the run; nothing is written; each row's counts equal
-    its view's. Screenshots at 360px and 1280px.
+    its view's. A series followed `tracking` with 2 of 5 read is under *On
+    hold* and not above it, and at 0 of 5 it is on neither; a series under a
+    listed universe nests beneath it. Screenshots at 360px and 1280px.
 
 - ☐ 5.13 **Comic series page: every issue of a volume, its runs and its gaps**
   · M. Backlog intake, 2026-10-20 (owner: *a series view: every issue in my
@@ -3996,6 +4236,41 @@ it is converted.
     parked run is on none of 1.9's tabs and is in the review. *Off the list*
     deletes the `run_parked` row and leaves `issue_progress` unchanged. The
     export test passes with `run_parked`.
+
+- ☐ 5.17 **Physical copies: the books you own on paper** · M. Owner intake,
+  2026-11-05 (owner: *clarify physically owned vs ebook library so I can track
+  books I physically own*; asked, the owner chose a per-book toggle, with the
+  ownership type in the book's details and a way to view the physical library).
+  D-121. Depends on 2.2e, 1.4 and 1.21; 3.5 for the sheet.
+  - **Stored as a fact about your copy.** Proposed: `physical_copies(book_id
+    PRIMARY KEY → books.id)`, a row meaning you own one, no `user_id` (D-91), in
+    `src/db/export-tables.ts`. **Stop and ask at plan time** (a new table). The
+    ebook side is derived from `books.calibre_id` (D-90), never stored (hard rule
+    2). Formats are not recorded: paperback or hardcover doesn't change anything
+    the app does.
+  - **The toggle.** *I own a physical copy* in the book's row menu in the
+    Library, and on 3.5's sheet. One write with an undo.
+  - **In the details.** 3.5's sheet says what you own: *Physical*, *Ebook*,
+    *Physical · Ebook*, or nothing. Until 3.5, the Library row's grey sub-line
+    says *Physical* for a book with a copy.
+  - **The physical library is a filter.** The Library gains an *Owned* filter,
+    *Physical · Ebook*, in the URL, combining with every other filter and sort
+    (D-110). `/books/list?owned=physical` is the screen, reached by a chip.
+  - **Marking many.** *Paste a list* gains a *Physical copy* destination: a
+    matched book gets its row, and a new one is created at Unlisted (1.21) with
+    its row; one Undo removes what the paste added.
+  - It doesn't touch the plan, capacity or status. Comics already have 5.10's
+    *Collected*, which stays separate.
+  - **Not drawn yet.** The mockup's `blist`, `add` and sheet frames gain these
+    before they are built.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first) the
+    toggle writes one `physical_copies` row, Undo removes it, and the export
+    test passes with the table. *Physical* lists only books with a row; *Ebook*
+    lists only books with a `calibre_id`; a book with both is in each; a
+    soft-deleted book is in neither; each combines with a status filter and a
+    sort, and the choice survives a reload. Pasting three lines to *Physical
+    copy*, two matched and one new, writes three rows and one `unlisted` book,
+    and Undo removes all of it. Screenshots at 360px and 1280px.
 
 ---
 
@@ -4202,6 +4477,20 @@ it is converted.
   with the newest dump 40 hours old it shows the age and a grey `late` badge;
   with no dump or an unreachable bucket it shows `unknown`, and the page still
   renders.
+
+- ☐ 6.21 **Redesign where the book sits, with Claude Design** · M. Owner
+  intake, 2026-11-05 (owner: *stacked meters in Now with a subsequent future
+  task to redesign it with Claude Design*). D-119. Depends on 2.2g and 5.12.
+  2.2g's rows are a working version. This takes them to the design tool with
+  real data in place: how universe, author, series and subseries read in Now, on
+  the tablet and desktop heroes, and in 5.12's nested rows, including a long
+  universe, a book on three levels and a book on none. The result lands as
+  `design/*.dc.html` from the design tool, which is what may change those files,
+  and the mockup, then the build follows it.
+  **Check:** (proposed; the owner agrees it by merging or edits it first) the
+  design tool's frames cover phone, tablet and desktop, light and dark, the owner
+  picks one, and Now and `/progress` match it; 2.2g's own Check still passes with
+  its row and order assertions rewritten to the chosen drawing.
 
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M
@@ -5237,5 +5526,12 @@ becomes a task once its open question is answered. None has a **Check:**, and
     TMDB's own page for the title. The open question is whether a
     per-service link exists (JustWatch's links aren't in the free data), or
     only the service's search for the title.
+- **L-11 Paste a list with more columns** (2026-11-05 intake; owner: *can take
+  more data, series etc; do I need this? how often will I paste a list*).
+  Probably not. *Paste a list* takes title and author (1.4e). The wishlist is
+  settled in extract (D-111), and after cutover books arrive from Calibre (4.4)
+  or Add's search, so pasting becomes rare, and Calibre's series replaces a
+  pasted one as soon as the book is there (D-90). The open question is whether
+  you find yourself pasting series by hand after cutover.
 
 ---

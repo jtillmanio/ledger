@@ -20,8 +20,8 @@ milestone._
 | Milestones | Scope | Roadmap phases | Entries |
 |---|---|---|---|
 | M1–M9 | **MVP: cutover from the Sheets.** Every MVP feature in [01-product.md § Feature index](01-product.md#feature-index) | 0, 1, and 2.11a, plus what 1.25 names | 55 |
-| M10–M15 | **Next:** the pace engine, the comics dashboard, editing | 2, 3 | 35 |
-| M16–M26 | **Later:** enrichment, the remaining surfaces, polish, AI curation, watch, music and games | 4–10, and 6.2b in M12 | 67 |
+| M10–M15 | **Next:** the pace engine, the comics dashboard, editing | 2, 3 | 40 |
+| M16–M26 | **Later:** enrichment, the remaining surfaces, polish, AI curation, watch, music and games | 4–10, and 6.2b in M12 | 75 |
 
 - **M1–M9 are START-HERE's sittings under one numbering.** M1 and M2 are
   sittings 1–2 (Phase 0) with the Phase 0 work that came after them; M3–M9 are
@@ -42,7 +42,7 @@ milestone._
 - **Next and Later milestones are a rough plan.** Each is reshaped when the
   milestone before it closes, and every schema proposal in them is asked at its
   task's plan gate (CLAUDE.md, *Stop and ask*).
-- **Unscheduled:** L-1 to L-10 ([05-roadmap.md § Later](05-roadmap.md#later--noted-not-scheduled)), each behind an open question.
+- **Unscheduled:** L-1 to L-11 ([05-roadmap.md § Later](05-roadmap.md#later--noted-not-scheduled)), each behind an open question.
 
 ## Coverage
 
@@ -70,7 +70,7 @@ milestone._
 | F-09 Add issues by typing them | MVP | 1.3, 1.3c, 1.19 | M4, M9 |
 | F-10 Add issues from a Metron search | MVP | 1.3b | M4 |
 | F-11 An Up next queue for comics | MVP | 1.10 | M7 |
-| F-12 In flight · Up next · Done | MVP (then Later) | 1.9, 8.8 | M7, M24 |
+| F-12 In flight · Up next · Done | MVP (then Later) | 1.9, 2.2f, 8.8 | M7, M10, M24 |
 | F-13 The volume map | MVP (then Next) | 1.12, 3.9 | M7, M13 |
 | F-14 A prerequisite graph without cycles | MVP (then Next) | 2.11a, 3.3 | M7, M13 |
 | F-15 Add books by search, paste or hand | MVP | 1.4, 1.4c, 1.4e, 1.22 | M5, M9 |
@@ -79,7 +79,7 @@ milestone._
 | F-18 To-read levels | MVP | 1.7, 1.4d, 1.21 | M6, M5, M8 |
 | F-19 A clean, enriched book catalog | MVP | 1.13, 1.14, 1.18, 1.20 | M8 |
 | F-20 Follow series, authors and universes | MVP (then Later) | 1.15, 5.11, 5.12 | M8, M17 |
-| F-21 The pace engine | Next (then Later) | 2.0, 2.1, 2.1b, 6.12 | M10, M20 |
+| F-21 The pace engine | Next (then Later) | 2.0, 2.0b, 2.1, 2.1b, 6.12 | M10, M20 |
 | F-22 Books dashboard and the plan rail | Next | 2.2, 2.2b | M10 |
 | F-23 Plan editing and rebalance | Next | 2.3, 2.7, 2.8, 2.10 | M11 |
 | F-24 Comics dashboard and the telescope | Next | 2.5, 2.5b, 2.4 | M12 |
@@ -126,9 +126,13 @@ milestone._
 | F-65 Plan a year or a quarter, with suggestions | Next | 2.10b | M11 |
 | F-66 Parked, and its review | Later | 5.15, 5.16, 8.8, 9.3, 10.1 | M17, M18 (then M24–M26) |
 | F-67 Game shelves | Later | 10.6 | M26 |
-| F-68 Follow what I'm reading, and see what's next in it | Next | 2.2c, 2.2d, 2.10b | M10, M11 |
+| F-68 Follow what I'm reading, and see what's next in it | Next | 2.2c, 2.2h, 2.2d, 2.10b | M10, M11 |
 | F-69 In the middle of, and completed | Later | 5.12, 8.8, 9.6, 10.3 | M17 (then M24–M26) |
 | F-70 The Library, sorted | Next | 2.2e | M10 |
+| F-71 Every screen from a phone | Next | 2.2i | M10 |
+| F-72 Where the book sits | Next (then Later) | 2.2g, 6.21 | M10, M21 |
+| F-73 Physical copies | Later | 5.17 | M17 |
+| F-74 On deck by genre | Later | 4.5b | M16 |
 
 ### Entities → tasks
 
@@ -155,6 +159,8 @@ milestone._
 | `run_parked` | 5.16 (proposed) |
 | `shelf_games` | 10.6 (proposed) |
 | `shelf_follows` | 2.2c (approved 2026-11-04; built: TASK-048, migration 0022) |
+| `subseries_follows` | 2.2h (proposed) |
+| `physical_copies` | 5.17 (proposed) |
 
 Views are in `etl/views.sql` and listed in data model §3; each new one lands
 with the task that first reads it.
@@ -323,14 +329,15 @@ with the task that first reads it.
 ## M10: Capacity: is the year overcommitted? — Next
 
 **Goal:** Answer "is 2027 overcommitted" from the real reading rate.  
-**Demo at exit:** Settings take minutes a day and words a minute; a logged session recalculates them; the Library sorts by length; finishing a book offers to follow its series; the books dashboard shows the book in hand, the next book of what you're reading, and the quarter against 760k, and the plan rail draws the year.  
-**Features:** F-21, F-22, F-68, F-70  
+**Demo at exit:** Settings take minutes a day and words a minute; a logged session recalculates them; the Library sorts by length; finishing a book follows its series, and In flight can finish it; a tab row reaches every screen on a phone; the books dashboard shows the book in hand, the next book of what you're reading, and the quarter against 760k, and the plan rail draws the year.  
+**Features:** F-21, F-22, F-68, F-70, F-71, F-72  
 **Depends on:** Cutover (M1–M9)  
-**Order:** 2.0 → 2.1 → 2.1b → 2.2e → 2.2c → 2.2 → 2.2d → 2.2b: settings feed capacity; the Library gets its own nav item before `/books` stops being the list; the follows exist before the dashboard reads them; the dashboard reads capacity, and the rail is the dashboard's.
+**Order:** 2.0 → 2.1 → 2.1b → 2.2e → 2.2c → 2.2i → 2.0b → 2.2f → 2.2h → 2.2 → 2.2d → 2.2g → 2.2b: the phone's tab row (2.2i) needs nothing and goes early; 2.2h lands before 2.2d so `follow_next` can read followed subseries; settings feed capacity; the Library gets its own nav item before `/books` stops being the list; the follows exist before the dashboard reads them; the dashboard reads capacity, and the rail is the dashboard's.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
 | ✅ | 2.0 → TASK-045 | Settings | S |  | — |
+|  | 2.0b | Type a setting, and hold to step | S |  | 2.0 |
 | ✅ | 2.1 → TASK-046 | Capacity view | M |  | 1.7, 2.0 |
 |  | 2.1b | Reading sessions — after-the-fact entry | S |  | 2.0 |
 |  | 2.2 → TASK-049 | Books dashboard | M |  | 1.7, 1.8, 2.1 |
@@ -338,6 +345,10 @@ with the task that first reads it.
 | ✅ | 2.2c → TASK-048 | Follow what you're reading: the control, and an offer when you finish | M |  | 1.15, 1.5 |
 |  | 2.2d → TASK-050 | Next in what you're reading, on the dashboard | M |  | 2.2, 2.2c |
 | ✅ | 2.2e → TASK-047 | Library: its own page, sorted as well as filtered | S |  | — |
+|  | 2.2f | Finish a book from In flight | S |  | 1.9, 1.5, 2.2c |
+|  | 2.2g | Where the book sits, in Now | M |  | 2.2, 2.2h |
+|  | 2.2h | Finishing a book follows it | M |  | 2.2c |
+|  | 2.2i | Every screen from a phone: the tab row | M |  | 1.8 |
 
 ## M11: Editing the plan — Next
 
@@ -427,7 +438,7 @@ with the task that first reads it.
 
 **Goal:** Metadata below every label, and real covers.  
 **Demo at exit:** After cutover, Metron, Open Library and Hardcover fill the catalog without touching a hand value; covers show on spine rows and dashboards.  
-**Features:** F-33  
+**Features:** F-33, F-74  
 **Depends on:** Cutover  
 **Order:** 4.4 → 4.1 → 4.2 → 4.3. A prerequisite for M22. 4.4 goes first (2026-10-26 books intake): after cutover it is the only way Calibre's new books and reads come in, and it needs nothing else in this milestone. 4.5 (from 1.18c) needs only 1.18c and can come at any point.
 
@@ -438,14 +449,15 @@ with the task that first reads it.
 |  | 4.2 | Open Library and Hardcover backfill | M |  | — |
 |  | 4.3 | Covers in the UI | S |  | — |
 |  | 4.5 | Calibre's genres on every screen | M |  | 1.18c |
+|  | 4.5b | On deck by genre | S |  | 4.5, 1.9 |
 
 ## M17: Book surfaces — Later
 
 **Goal:** The remaining book surfaces.  
-**Demo at exit:** Shelves with notes, DNF with a reason, books coming out, a page per series, author and universe pages, the *In the middle of · Completed* page, a queue of audiobooks to listen next, and a book parked, then reviewed back into the plan.  
-**Features:** F-34, F-31, F-37, F-38, F-20, F-59, F-66, F-69  
+**Demo at exit:** Shelves with notes, DNF with a reason, books coming out, a page per series, author and universe pages, the *In the middle of · Completed* page, a queue of audiobooks to listen next, a book parked, then reviewed back into the plan, and a physical library you can filter.  
+**Features:** F-34, F-31, F-37, F-38, F-20, F-59, F-66, F-69, F-73  
 **Depends on:** M7 (1.9), M8 (1.15), M9 (1.23), M10 (2.2c, 2.2d), M11 (2.3)  
-**Order:** 5.1 → 5.5 → 5.7 → 5.9 → 5.11 → 5.12 → 5.14 → 5.15: 5.11 builds on 5.9's series page and places 2.2c's follow control there, and 5.12 opens rows on 5.9's and 5.11's pages. 5.14 needs only 1.23 and 1.9, so it can go first. 5.15 after 5.14, because parking takes a book off the listen queue.
+**Order:** 5.1 → 5.5 → 5.7 → 5.9 → 5.11 → 5.12 → 5.14 → 5.15 → 5.17: 5.11 builds on 5.9's series page and places 2.2c's follow control there, and 5.12 opens rows on 5.9's and 5.11's pages. 5.14 needs only 1.23 and 1.9, so it can go first. 5.15 after 5.14, because parking takes a book off the listen queue.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -457,6 +469,7 @@ with the task that first reads it.
 |  | 5.12 | In the middle of, and completed: one page for every medium | M |  | 1.9, 1.15, 2.2c, 2.2d |
 |  | 5.14 | Audiobooks: a queue to listen next | M |  | 1.23, 1.9 |
 |  | 5.15 | Parked: put a book away, and review it on a schedule | M |  | 1.9, 1.17, 1.21, 2.2, 2.3 |
+|  | 5.17 | Physical copies: the books you own on paper | M |  | 2.2e, 1.4, 1.21 |
 
 ## M18: Comic surfaces — Later
 
@@ -514,7 +527,7 @@ with the task that first reads it.
 
 **Goal:** Hardening and the last pass.  
 **Demo at exit:** A malformed body answers 400; a sign-in stronger than one passcode; a Goodreads or StoryGraph import; the theme revisited once every screen exists.  
-**Features:** F-45, F-46, F-44  
+**Features:** F-45, F-46, F-44, F-72  
 **Depends on:** M19, M20  
 **Order:** 6.9 last: it is a pass over every finished screen.
 
@@ -526,6 +539,7 @@ with the task that first reads it.
 |  | 6.18 | Drop `user_id`: the schema is single-user | L |  | — |
 |  | 6.19 | Remove Open Library | S |  | 1.14b, 1.4f |
 |  | 6.20 | Last backup on Settings (proposed, from TASK-045) | S |  | 2.0 |
+|  | 6.21 | Redesign where the book sits, with Claude Design | M |  | 2.2g, 5.12 |
 |  | 6.9 | Revisit the theme | M |  | — |
 
 ## M22: AI-assisted curation — Later
@@ -637,3 +651,6 @@ with the task that first reads it.
 7. A task that creates a table adds it to `GET /api/export`
    (`src/db/export-tables.ts`) in the same PR, user-scoped if it has a `user_id`;
    `test/export-tables.test.ts` fails otherwise (D-17, S-12). `users` stays out.
+8. A task's manual check walks the UI: it says what to tap from a dashboard, not
+   a URL to type. A screen a check needs that can't be reached by tapping is a
+   defect in the task (D-120).

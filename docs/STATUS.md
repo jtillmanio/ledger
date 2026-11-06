@@ -1,6 +1,6 @@
 # Status
 
-**Last regenerated:** 2026-11-04
+**Last regenerated:** 2026-11-05
 
 This is a rollup of `docs/05-roadmap.md`, not a second source of truth. Every
 count here comes from counting ☑ vs ☐ entries in that file, and the milestones
@@ -9,7 +9,7 @@ wins (D-1): recount and fix this page, don't argue from it.
 
 ## Where we are
 
-**55 of 161 roadmap entries done (34%).** Phases 0 and 1 are done except
+**59 of 170 roadmap entries done (35%).** Phases 0 and 1 are done except
 1.26, the cutover itself. M1–M8 are done, and so is M9 apart from 1.26.
 Since 2026-10-26 these shipped: Calibre (1.18, 1.18b, 1.18c), Hardcover
 details by ISBN (1.14b), holding unmatched books (1.20), *Unlisted* (1.21),
@@ -43,9 +43,9 @@ under the same numbers (M7 is sitting 7).
 | M7 Phase 1 complete | 5 / 5 | Done |
 | M8 Books load clean | 9 / 9 | Done |
 | M9 Captured from cutover on | 9 / 10 | Done but 1.26, which waits for the entries 1.25 pulled ahead |
-| M10 Capacity: is the year overcommitted? | 0 / 8 | Not started: seven Ready task files, TASK-045–051 (2.0, 2.1, 2.2e, 2.2c, 2.2, 2.2d, 2.2b); 2.1b has none |
+| M10 Capacity: is the year overcommitted? | 4 / 13 | In progress: 2.0, 2.1, 2.2e and 2.2c built; TASK-049–051 Ready (2.2, 2.2d, 2.2b); 2.1b and the 2026-11-05 entries have no task file |
 | M11–M15 Next | 1 / 27 | Not started† |
-| M16–M26 Later | 0 / 71 | Not started |
+| M16–M26 Later | 0 / 75 | Not started |
 
 ### By phase
 
@@ -53,11 +53,11 @@ under the same numbers (M7 is sitting 7).
 |---|---|---|
 | 0 — Foundation | 13 / 13 | Done |
 | 1 — Daily use | 40 / 41 | Done but 1.26, cutover |
-| 2 — The pace engine | 1 / 20 | M10 has task files; 2.11a built in M7‡ |
+| 2 — The pace engine | 5 / 24 | M10 in progress; 2.11a built in M7 |
 | 3 — Editing | 0 / 15 | Not started; 3.1–3.4 before cutover |
-| 4 — Enrichment | 0 / 5 | Not started; 4.4 right after cutover |
-| 5 — Remaining surfaces | 0 / 15 | Not started; 5.6, 5.7 and 5.10 before cutover |
-| 6 — Polish | 1 / 19 | Not started† |
+| 4 — Enrichment | 0 / 6 | Not started; 4.4 right after cutover |
+| 5 — Remaining surfaces | 0 / 16 | Not started; 5.6, 5.7 and 5.10 before cutover |
+| 6 — Polish | 1 / 21 | Not started† |
 | 7 — AI-assisted curation | 0 / 8 | Not started |
 | 8 — Watchlist (film/TV) | 0 / 10 | Not started |
 | 9 — Music | 0 / 8 | Not started |
@@ -67,18 +67,15 @@ under the same numbers (M7 is sitting 7).
 feature: its work was absorbed into 2.4 and 2.6 (M12); what's left of it is a
 sort order that doesn't exist until those tasks do. It is listed in M12.
 
-‡ The roadmap's *Phases* table has drifted from its checkboxes (it says 12 / 13
-for Phase 0, 28 / 41 for Phase 1, 0 / 20 for Phase 2 and 0 / 4 for Phase 4).
-The counts here are the checkboxes'.
-
-The roadmap's *Later* section (L-1…L-10) holds ideas with no **Check:** and
+The roadmap's *Later* section (L-1…L-11) holds ideas with no **Check:** and
 is not counted.
 
 ## What's next
 
-**M10, in its order** (`docs/06-tasklist.md`): 2.0 → 2.1 → (2.1b) → 2.2e →
-2.2c → 2.2 → 2.2d → 2.2b. TASK-045 to TASK-051 are Ready (set
-2026-11-04); each plan still answers its questions below. 2.2c, 2.2d and 2.2e had proposed Checks, which became their
+**M10, in its order** (`docs/06-tasklist.md`): 2.0 ✅ → 2.1 ✅ → (2.1b) → 2.2e ✅ →
+2.2c ✅ → 2.2i → 2.0b → 2.2f → 2.2h → 2.2 → 2.2d → 2.2g → 2.2b. TASK-049 to TASK-051
+are Ready; each plan still answers its questions below. 2.0b, 2.2f–2.2i have no
+task file yet. 2.2c, 2.2d and 2.2e had proposed Checks, which became their
 **Check:** lines on 2026-11-04. 2.1b is not pulled ahead and has no task file
 yet. 2.2c and 2.2d aren't cutover gates either, so 2.0 → 2.1 → 2.2e → 2.2 →
 2.2b → 2.3 is the shortest path to 1.26.
@@ -111,8 +108,11 @@ Phase 10 (games) and L-6–L-7 (D-101–D-103). The first 2026-11-02 intake adde
 2.10b, 5.15, 5.16, 10.6 and L-8 (D-104–D-106). The second added 2.2c, 2.2d,
 2.2e, L-9 and L-10, and rewrote 5.12 as one page for every medium
 (D-108–D-110): only a follow you set to *Reading* counts as reading. The same
-day, the wishlist moved into extract (1.27, D-111). None of these is a
-cutover gate except where 1.25 names one.
+day, the wishlist moved into extract (1.27, D-111). The 2026-11-05 intake
+added 2.0b, 2.2f–2.2i, 4.5b, 5.17, 6.21 and L-11 and amended 2.2c, 2.2d, 3.4b
+and 5.12 (D-117–D-125): a finish follows a book's series, subseries and
+universe, the phone gets a tab row, and Top books replaces the Library's year
+chips. None of these is a cutover gate except where 1.25 names one.
 
 **Every preview measures itself** (0.10). When Vercel reports a preview ready,
 `.github/workflows/lighthouse.yml` signs in, runs Lighthouse and 0.9's tap

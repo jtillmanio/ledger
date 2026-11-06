@@ -30,6 +30,7 @@ When the book in hand belongs to something you follow as *Reading*, the dashboar
 - This is a feel-pass surface (`docs/04-design.md` § 10): its new states are screenshotted at every feel-pass width, light and dark, reduced motion and transparency.
 - Decisions: D-108 (only *Reading* means reading), D-43, D-37, D-85, D-40, D-91. Data model 2.18 (start dates).
 - *From TASK-049 (2.2, PR #196):* the *Next in* line goes under the hero in `src/components/BooksNow.tsx`, and *Or keep going* under the offer in `src/components/BetweenBooks.tsx`. 2.2 leaves both as named slots.
+- **From the 2026-11-05 intake (2.2h, D-117).** If 2.2h has landed, `follow_next` also lists each subseries followed as `reading`, its next book the lowest unread `subseries_position`, and the *Next in* line prefers the subseries, then the series, the universe and the author. A `state` of `off`, if the 2.2h plan gate approves it, counts as no follow. 2.2g's rows sit above the *Next in* line. If 2.2h has not landed, build as written.
 
 ## Acceptance criteria
 

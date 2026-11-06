@@ -114,7 +114,7 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | F-09 | **Add issues by typing them** (Comics) | As the curator, I want to paste labels and ranges, validated against my catalog's grammar, and confirm each line before anything is written | MVP | 1.3, 1.3c | `bulk` |
 | F-10 | **Add issues from a Metron search** (Comics) | As the curator, I want to search Metron for the issues I am adding and see covers and dates to tell volumes apart | MVP | 1.3b | `addsearch`, `apistates` |
 | F-11 | **An Up next queue for comics** (Comics) | As a reader, I want one ordered list of the runs I mean to read next, which I can add to, reorder and remove from | MVP | 1.10 | `queue`, `home` |
-| F-12 | **In flight · Up next · Done** (Every medium) | As the owner, I want one screen per medium showing everything in flight, next and finished | MVP (then Later) | 1.9, 8.8 | `status`, `queue` |
+| F-12 | **In flight · Up next · Done** (Every medium) | As the owner, I want one screen per medium showing everything in flight, next and finished | MVP (then Later) | 1.9, 2.2f, 8.8 | `status`, `queue` |
 | F-13 | **The volume map** (Comics) | As the curator, I want a bare series label to resolve to the right volume year, by rules I can edit | MVP (then Next) | 1.12, 3.9 | `settings` |
 | F-14 | **A prerequisite graph without cycles** (Comics) | As the curator, I want the prerequisite graph checked for cycles and edited safely, so readiness means something | MVP (then Next) | 2.11a, 3.3 | `path` |
 | F-15 | **Add books by search, paste or hand** (Books) | As a reader, I want to add a book from Open Library, a pasted list or by hand, straight to where it belongs, with results as I type and each one's source shown | MVP | 1.4, 1.4c, 1.4e, 1.22 | `add`, `blist` |
@@ -123,7 +123,7 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | F-18 | **To-read levels** (Books) | As a reader, I want each to-read book at a quarter, a year, On deck or Someday, with my old wishlist promoted into it, and the books I have but haven't listed kept at Unlisted, out of the way | MVP | 1.7, 1.4d, 1.21 | `blist`, `moveplan` |
 | F-19 | **A clean, enriched book catalog** (Books) | As a reader, I want one row per book, with Open Library details and Calibre's real word counts | MVP | 1.13, 1.14, 1.18, 1.18b, 1.18c | `blist`, `bookdetail` |
 | F-20 | **Follow series, authors and universes** (Books) | As a reader, I want to follow the series, authors and universes I am tracking and see my progress through each | MVP (then Later) | 1.15, 5.11, 5.12 | `shelves` |
-| F-21 | **The pace engine** (Books) | As a reader, I want my real reading rate to say whether a year's plan fits | Next (then Later) | 2.0, 2.1, 2.1b, 6.12 | `settings`, `session`, `dashextras` |
+| F-21 | **The pace engine** (Books) | As a reader, I want my real reading rate to say whether a year's plan fits | Next (then Later) | 2.0, 2.0b, 2.1, 2.1b, 6.12 | `settings`, `session`, `dashextras` |
 | F-22 | **Books dashboard and the plan rail** (Books) | As a reader, I want the book in hand, this quarter's shelf and the year against capacity on one screen | Next | 2.2, 2.2b | `bdash`, `planmonth` |
 | F-23 | **Plan editing and rebalance** (Books) | As a reader, I want to move books between periods, rebalance an over-full year, or accept it as a stretch | Next | 2.3, 2.7, 2.8, 2.10 | `plan`, `moveplan`, `rebalance` |
 | F-24 | **Comics dashboard and the telescope** (Comics) | As a reader, I want to see where I am in the run, its block and its track at once, drawn rather than counted | Next | 2.5, 2.5b, 2.4 | `home`, `telescope`, `states` |
@@ -170,9 +170,13 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | F-65 | **Plan a year or a quarter, with suggestions** (Books) | As a reader, I want to fill a year or a quarter in one sitting, from suggestions like the next book of a series I'm reading, with the budget in view | Next | 2.10b | `plan` |
 | F-66 | **Parked, and its review** (every medium) | As a reader, I want to put something away on purpose, off my lists and my plan, and be reminded on a schedule to keep it there, plan it, or let it go | Later | 5.15, 5.16, 8.8, 9.3, 10.1 | — |
 | F-67 | **Game shelves** (Games) | As a player, I want my games grouped by platform and by genre, and on shelves of my own | Later | 10.6 | — |
-| F-68 | **Follow what I'm reading, and see what's next in it** (Books) | As a reader, I want to say I'm reading a series, author, universe or shelf myself, be offered that when I finish a book, and see its next book on the dashboard and in plan suggestions | Next | 2.2c, 2.2d, 2.10b | — |
+| F-68 | **Follow what I'm reading, and see what's next in it** (Books) | As a reader, I want to say I'm reading a series, author, universe or shelf myself, be offered that when I finish a book, and see its next book on the dashboard and in plan suggestions | Next | 2.2c, 2.2h, 2.2d, 2.10b | — |
 | F-69 | **In the middle of, and completed** (every medium) | As a reader, I want one page of everything I'm in the middle of and everything I've completed, across books, comics and the rest | Later | 5.12, 8.8, 9.6, 10.3 | — |
 | F-70 | **The Library, sorted** (Books) | As a reader, I want the library to be a page of its own, not the books home, and to sort it as well as filter it | Next | 2.2e | `blist` |
+| F-71 | **Every screen from a phone** (every medium) | As the owner on a phone, I want to reach every screen by tapping, never by typing a URL | Next | 2.2i | — |
+| F-72 | **Where the book sits** (Books) | As a reader, I want to see how far along the book in hand's universe, series and subseries I am | Next (then Later) | 2.2g, 6.21 | `bdash` |
+| F-73 | **Physical copies** (Books) | As a book owner, I want to mark what I own on paper, tell it from my ebook library, and see just those books | Later | 5.17 | `blist` |
+| F-74 | **On deck by genre** (Books) | As a reader, I want to see what's next in a genre, without ranking On deck by hand | Later | 4.5b | `status` |
 
 ### Observable outcomes for MVP features
 
@@ -238,6 +242,15 @@ B, C, W and M numbers are cited across the docs and stay.
 | B26 | One page of everything in the middle of and completed | planned | 2026-11-02. `/progress`, every medium. roadmap 5.12, D-109 |
 | B27 | Open a book in my Android ereader (Moon+ Reader, with Calibre Companion) | later | 2026-11-02. A web page can't see installed apps; an Android `intent:` link can fall back. Opening the app is likely, opening the book is open, and Moon+ Reader's position sync might feed progress back. roadmap *Later* § L-9 |
 | B28 | A reader of my own, in the app | later | 2026-11-02, far future. The page you're on is the progress. The reader itself is a known problem; the files, offline and progress mapping are the cost. roadmap *Later* § L-10 |
+| B29 | Finishing a book follows its series, subseries and universe, with an opt-out; authors stay manual; on hold distinct from actively following | planned | 2026-11-05. Reverses part of B24's *only by hand*; on hold is Tracking partly read. roadmap 2.2h, 5.12, D-117, D-118 |
+| B30 | See the universe, series and subseries of the book in hand | planned | 2026-11-05. Stacked meters in Now, redesigned later. roadmap 2.2g, 6.21, D-119 |
+| B31 | Every screen reachable by tapping, Status included | planned | 2026-11-05. A tab row on the phone; manual checks walk the UI. roadmap 2.2i, D-120 |
+| B32 | Finish a book from the status tab | planned | 2026-11-05. roadmap 2.2f |
+| B33 | Type a setting's number, and hold to step faster | planned | 2026-11-05. roadmap 2.0b, D-123 |
+| B34 | Physically owned books, told apart from the ebook library | planned | 2026-11-05. A toggle, a line in the details, a Library filter. roadmap 5.17, D-121 |
+| B35 | On deck by genre | planned | 2026-11-05. Filtered and grouped, not ranked (D-37 stands). roadmap 4.5b, D-124 |
+| B36 | Top books shows the year's whole list, reorderable, and replaces the Library's year chips | planned | 2026-11-05. roadmap 3.4b, D-122 |
+| B37 | Paste a list with more columns | later | 2026-11-05. Probably not needed. roadmap *Later* § L-11, D-125 |
 
 ### Comics
 
@@ -933,6 +946,18 @@ master list becomes the Library, its own page, with sorting (2.2e, D-110).
 Opening a book or a title where you read or watch it joins Marvel
 Unlimited under *Later* (L-9), and a reader of your own in the app is
 further out (L-10).
+
+**The 2026-11-05 intake** (B29–B37) changed how following starts: finishing
+a book now follows its series, subseries and universe, you can opt out, and
+*Tracking* on something part-read reads as *On hold* (2.2h, D-117, D-118). The
+book in hand shows where it sits on stacked meters, to be redesigned later (2.2g,
+6.21, D-119). The phone gets a tab row, because Status couldn't be reached there
+at all (2.2i, D-120). In flight can finish a book (2.2f), a setting can be typed
+or held (2.0b, D-123), physical copies get a toggle and a Library filter (5.17,
+D-121), and On deck can be filtered and grouped by genre (4.5b, D-124). Top books
+becomes the year's whole list and takes over from the Library's year chips (3.4b,
+D-122). Permanent shelves were dropped once 5.14 covered what they were for, and
+more columns in *Paste a list* went to *Later* (L-11, D-125).
 
 **Parked under *Later*, because no API exists.** Marvel Unlimited (L-1) and
 League of Comic Geeks ratings (L-2) have no public APIs. Each has an open
