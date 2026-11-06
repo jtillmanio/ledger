@@ -1,7 +1,7 @@
 ---
 id: TASK-052
 title: 2.2i Every screen from a phone: the tab row
-status: In progress
+status: Review
 depends_on: [TASK-014]
 size: L
 model: sonnet
@@ -36,7 +36,7 @@ On a phone, a row under the media bar lists every screen of the medium you're in
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): a browser test at 360px, built from `NAV_ITEMS`, so a newly enabled
+- [x] AC-1 (roadmap **Check:**, verbatim): a browser test at 360px, built from `NAV_ITEMS`, so a newly enabled
 item is covered without editing it: from each medium's dashboard, every enabled
 item of that medium, *Inbox* and *Settings* is reached by tapping links, with no
 direct navigation. The current item has `aria-current="page"`. With every books
@@ -44,11 +44,11 @@ item enabled, the page has no horizontal overflow at 360px. The row is not
 rendered at 768px or wider. Each item measures at least 44px tall, and axe
 passes. 0.10's CLS budget holds on `/books/list` and `/comics`. Screenshots at
 360px and 412px, light and dark.
-- [ ] AC-2: The row lists exactly the bar's own items in order: on each medium, `mediumItems(items, medium)` then *Inbox*, with no disabled item (a unit test flips `comics-status` off and its link leaves the row), and the row's markup is inside `header.bar`.
-- [ ] AC-3: Given you last visited a `/books` screen, then tap *Inbox*: on `/inbox` the row lists the books items and *Inbox* has `aria-current="page"`; the same from comics lists the comics items; with no `ledger_medium` cookie it lists comics. On `/settings` the row draws the last medium's items, none of them current, and the gear has `aria-current="page"` (D-113). The row's height is the same before and after the last medium arrives.
-- [ ] AC-4: At 360px, scrolled 400px, `.bar`'s bottom edge equals `--bar-h`, the row is still in view, `.sync-strip` sits directly under it, and `shell.spec`'s *everything that sticks but .bar* check passes. `--bar-h` still resolves to 64px at 768px and 80px at 1024px. Loaded on a page whose current item is last in the row, that item is inside the row's visible box and the page's `scrollLeft` is 0.
+- [x] AC-2: The row lists exactly the bar's own items in order: on each medium, `mediumItems(items, medium)` then *Inbox*, with no disabled item (a unit test flips `comics-status` off and its link leaves the row), and the row's markup is inside `header.bar`.
+- [x] AC-3: Given you last visited a `/books` screen, then tap *Inbox*: on `/inbox` the row lists the books items and *Inbox* has `aria-current="page"`; the same from comics lists the comics items; with no `ledger_medium` cookie it lists comics. On `/settings` the row draws the last medium's items, none of them current, and the gear has `aria-current="page"` (D-113). The row's height is the same before and after the last medium arrives.
+- [x] AC-4: At 360px, scrolled 400px, `.bar`'s bottom edge equals `--bar-h`, the row is still in view, `.sync-strip` sits directly under it, and `shell.spec`'s *everything that sticks but .bar* check passes. `--bar-h` still resolves to 64px at 768px and 80px at 1024px. Loaded on a page whose current item is last in the row, that item is inside the row's visible box and the page's `scrollLeft` is 0.
 - [ ] AC-5: On the preview, Lighthouse reports no route over `scripts/perf/budget.json`, and no `/api/*` request during a load or prefetch; any budget this task raises has its reason in `docs/02-architecture.md` § 7.
-- [ ] AC-6: The tab row meets the UX floor (`docs/04-design.md` § 10. The UX floor): every link has a name and is at least 44px tall; the current item shows by weight or underline as well as colour, and text is 4.5:1 in both themes; the row keeps `aria-current` on the right item with reduced motion on; axe reports no new violations (landmarks included); screenshots at 360, 390 and 412px, light and dark, and the row is absent at 768, 1024 and 1280px.
+- [x] AC-6: The tab row meets the UX floor (`docs/04-design.md` § 10. The UX floor): every link has a name and is at least 44px tall; the current item shows by weight or underline as well as colour, and text is 4.5:1 in both themes; the row keeps `aria-current` on the right item with reduced motion on; axe reports no new violations (landmarks included); screenshots at 360, 390 and 412px, light and dark, and the row is absent at 768, 1024 and 1280px.
 
 ## Out of scope
 
@@ -78,8 +78,8 @@ passes. 0.10's CLS budget holds on `/books/list` and `/comics`. Screenshots at
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Record a decision: visible phone links are prefetched and the row's budget rises are accepted, amending D-77's *a phone prefetches only the bar's links* (approved at plan)
-- The mockup and index still draw and describe the Search icon where D-113 put the gear: a note on a later entry, not part of 2.2i (approved at plan)
+- Record a decision: visible phone links are prefetched and the row's budget rises are accepted, amending D-77's *a phone prefetches only the bar's links* (approved at plan) → docs/review/decisions.md § D-126
+- The mockup and index still draw and describe the Search icon where D-113 put the gear: a note on a later entry, not part of 2.2i (approved at plan) → docs/05-roadmap.md § 6.1
 
 ## Plan
 
@@ -125,7 +125,7 @@ Approved by the owner at the plan gate, 2026-11-06, with row links prefetched. T
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 round PASS → full: 5 browser FAILs (audiobooks axe target-size ×4, library-sort ×1, both adapted for the taller bar) → specs re-run PASS | R2 round PASS | Audit R1 NOT RUN (classifier blocked the base-state swap) → run by hand in a throwaway worktree: unit tests 8 fail at base, 11 of 13 new browser tests fail at base; CLS check and screenshots pass at base by design (guard, evidence) | Spec R1 CHANGES (focus ring on the current tab, label check, plan Files) → R2 APPROVE | UI R1 PASS (schema-reviewer not run: no schema, query or ETL change).
 
 ## Blocked
 
@@ -133,7 +133,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (round chain ×2, full browser suite ×1)
+- Review rounds: 2 (spec), 1 (UI)
+- First-pass AC FAILs: 1 (AC-6, focus ring on the current item)
+- Plan revisions after approval: 0 (two spec files added to the Files list, noted in the plan)
