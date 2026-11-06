@@ -907,6 +907,12 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
 .frame[data-w="tab"] .seg span .n{opacity:1}
 .frame[data-w="tab"] .seg span[data-on] .n{color:var(--on-brand)}
 .frame[data-w="p360"] .bar .iconbtn svg,.frame[data-w="tab"] .actionbar svg{display:block}
+/* ══ Task 2.2i — the phone's tab row, part of the sticky bar (D-120). 44px targets; the current item by weight and underline. ══ */
+.bar:has(+.tabrow){border-bottom:0}
+.tabrow{display:flex;overflow-x:auto;scrollbar-width:none;gap:.125rem;padding:0 .875rem;background:var(--surface);border-bottom:1px solid var(--rule)}
+.tabrow a{display:inline-flex;align-items:center;flex:none;min-height:44px;padding:0 .625rem;color:var(--muted);font-size:.875rem;font-weight:500;white-space:nowrap}
+.tabrow a[aria-current]{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--m,var(--brand))}
+.frame[data-w="desk"] .tabrow,.frame[data-w="tab"] .tabrow{display:none}
 /* ══ Task 2.2c — the Follow… sheet and the finish offer (D-108, D-116). The default Phone view shows the 360 frames. ══ */
 body[data-vp="phone"] .screen[data-id="follow"] .frame[data-w="p360"],
 body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{display:block}
@@ -994,6 +1000,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 <section class="screen on" data-id="home">
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="comics">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab" aria-current="page">Comics</a><a class="tab">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Status</a><a>Runs</a><a>Add</a><a>Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Comics<span class="unit">sequence · issues</span></h1>
     <p class="lede">2 runs in flight · 12 up next · 41 ready to start</p><p class="since">Since Tuesday: 14 issues marked · 1 book finished <a class="chip" href="#">6 in inbox</a></p>
@@ -1125,6 +1132,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 </div></div></div>
 <div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="comics">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab" aria-current="page">Comics</a><a class="tab">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Status</a><a>Runs</a><a>Add</a><a>Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Comics<span class="unit">sequence · issues</span></h1>
     <p class="lede">2 runs in flight · 12 up next · 41 ready to start</p><p class="since">Since Tuesday: 14 issues marked · 1 book finished <a class="chip" href="#">6 in inbox</a></p>
@@ -1475,6 +1483,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 </div></div></div>
 
 <div class="notes">
+<p><b>The tab row (task 2.2i, D-120).</b> Below 768px, under the media bar and sticky with it: the medium's enabled items, then <i>Inbox</i>, 44px tall, the current one by weight and underline. It scrolls sideways inside itself, never the page, with the current item in view (<code>bdash</code> draws every books item on). On a screen with no medium (<code>capture</code>, <code>settings</code>) it lists the medium you were last in. The tablet rail and the desktop sidebar already list these items, so neither draws it.</p>
 <p><b>834px and 360px frames (task 1.8).</b> The 834 frame is a tablet: the 72px navigation rail replaces the top bar (each item a 56px target, an icon over an 11px label, the current one a <code>--raise</code> pill with the 3px medium bar), one column with 32px padding, the 40/44 title and a 48px thumb bar spanning the column. The 360 frame shows the media bar fitting <i>Watch</i> untruncated. The dashboard body at tablet width (hero, shelf, ladder) is not redrawn in this frame; the feel-pass PNGs in <code>design/screenshots/tablet/</code> are its reference.</p><h3>Comics dashboard</h3>
   <p><span class="chg">v4 changes:</span> this screen used to be a mixed-media “Saturday” home — a books pace card sitting above a comics hero. It is now the comics dashboard at <code>/comics</code>, and the run list moved to <code>/comics/runs</code>. Books and Watch get the same shape.</p>
   <ul>
@@ -1493,6 +1502,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 <section class="screen" data-id="runs">
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="comics">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab" aria-current="page">Comics</a><a class="tab">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Dashboard</a><a>Status</a><a aria-current="page">Runs</a><a>Add</a><a>Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Runs</h1>
     <p class="lede">38 shown · 27 blocked and hidden</p>
@@ -1906,6 +1916,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 <section class="screen" data-id="addsearch">
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="comics">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab" aria-current="page">Comics</a><a class="tab">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Dashboard</a><a>Status</a><a>Runs</a><a aria-current="page">Add</a><a>Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Add issues</h1>
     <p class="lede">Simonson — Thor · 44 issues</p>
@@ -2362,6 +2373,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 <section class="screen" data-id="bdash">
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Books<span class="unit">time · words</span></h1>
     <p class="lede">2026 · 22 of 35 read · 3 put down</p><p class="since">Since Tuesday: 1 book finished · 212 pages <a class="chip" href="#">6 in inbox</a></p>
@@ -2434,6 +2446,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 </div></div></div>
 <div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Books<span class="unit">time · words</span></h1>
     <p class="lede">2026 · 22 of 35 read · 3 put down</p><p class="since">Since Tuesday: 1 book finished · 212 pages <a class="chip" href="#">6 in inbox</a></p>
@@ -2633,6 +2646,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
   <div class="wrap"><h1 class="t" style="opacity:.4">Books</h1></div>
   <div class="scrim"></div><div style="position:absolute;left:.875rem;right:.875rem;bottom:.875rem;z-index:20"><div class="sheet" role="dialog" aria-label="Place 2027&rsquo;s unquartered books">
     <h4>Place 2027&rsquo;s books · 1 of 14</h4><p class="lede">One at a time. Each quarter shows what it holds now.</p>
@@ -2665,6 +2679,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 <section class="screen" data-id="status">
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="comics">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab" aria-current="page">Comics</a><a class="tab">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Dashboard</a><a aria-current="page">Status</a><a>Runs</a><a>Add</a><a>Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Runs by status</h1>
     <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="true" data-on>In flight<span class="n">3</span></span><span role="tab" aria-selected="false">Up next<span class="n">12</span></span><span role="tab" aria-selected="false">Done<span class="n">4</span></span></span></div>
@@ -2692,6 +2707,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 </div></div></div>
 <div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="comics">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab" aria-current="page">Comics</a><a class="tab">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Dashboard</a><a aria-current="page">Status</a><a>Runs</a><a>Add</a><a>Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Runs by status</h1>
     <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="true" data-on>In flight<span class="n">3</span></span><span role="tab" aria-selected="false">Up next<span class="n">12</span></span><span role="tab" aria-selected="false">Done<span class="n">4</span></span></span></div>
@@ -3137,6 +3153,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 <section class="screen" data-id="blist">
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Status</a><a aria-current="page">Library</a><a>Add</a><a>Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Library</h1>
     <div class="search" style="margin-top:.75rem">&#9906; sanderson</div>
@@ -3194,6 +3211,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 </div></div></div>
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Status</a><a aria-current="page">Library</a><a>Add</a><a>Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Library</h1>
     <div class="group" style="margin-top:.75rem">
@@ -3214,6 +3232,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 </div></div></div>
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Status</a><a aria-current="page">Library</a><a>Add</a><a>Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Library</h1>
     <div class="group" style="margin-top:.75rem">
@@ -3639,6 +3658,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 <section class="screen" data-id="add">
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Status</a><a>Library</a><a aria-current="page">Add</a><a>Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Add books</h1>
     <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Search</span><span role="button" aria-pressed="false" tabindex="0">Paste a list</span><span role="button" aria-pressed="false" tabindex="0">By hand</span></span></div>
@@ -4312,6 +4332,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 <section class="screen" data-id="capture">
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Dashboard</a><a>Status</a><a>Runs</a><a>Add</a><a aria-current="page">Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Capture</h1>
     <p class="lede">Jot it now, sort it out later.</p>
@@ -4413,6 +4434,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 <section class="screen" data-id="watchlist">
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="watch">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab">Books</a><a class="tab" aria-current="page">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Watch<span class="unit">seasons</span></h1>
     <p class="lede">1 season in flight · 61 waiting</p><p class="since">Since Tuesday: 1 season watched <a class="chip" href="#">6 in inbox</a></p>
@@ -5235,6 +5257,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 <section class="screen" data-id="settings">
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab">Books</a><a class="tab">Watch</a><a class="iconbtn" aria-label="Settings" aria-current="page">&#9881;</a></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Dashboard</a><a>Status</a><a>Runs</a><a>Add</a><a>Inbox</a></nav>
   <div class="wrap">
     <h1 class="t">Settings</h1>
     <h3 class="s">Reading pace</h3>

@@ -185,7 +185,7 @@ test("from 1024 no dashboard draws the in-inbox chip, and the sidebar's Inbox sh
 test("at 360 Watch is untruncated in the media bar, and /comics has at most one solid brand fill above the fold", ONCE, async ({ page }) => {
   await size(page, 360, 780);
   await page.goto("/comics");
-  const watch = page.locator('.bar nav a[href="/watch"]');
+  const watch = page.locator('.bar nav[aria-label="Media"] a[href="/watch"]');
   await expect(watch).toHaveText("Watch");
   const fits = await watch.evaluate((el) => el.scrollWidth <= el.clientWidth);
   const box = (await watch.boundingBox())!;
@@ -241,7 +241,12 @@ test("every phone route renders exactly the same media nav", ONCE, async ({ page
   const seen = new Set<string>();
   for (const path of ["/comics", "/comics/runs", `/comics/${E2E_RUN_ID}`, "/books/list", "/books/add", "/watch", "/inbox"]) {
     await page.goto(path);
-    seen.add((await page.locator(".bar").innerHTML()).replace(/ aria-current="page"/g, ""));
+    // The tab row (2.2i) differs by medium and screen on purpose; tab-row.spec.ts covers it.
+    seen.add(await page.locator(".bar").evaluate((bar) => {
+      const copy = bar.cloneNode(true) as HTMLElement;
+      copy.querySelector(".tabrow")?.remove();
+      return copy.innerHTML;
+    }).then((html) => html.replace(/ aria-current="page"/g, "")));
   }
   expect(seen.size).toBe(1);
 });
@@ -382,9 +387,9 @@ test.describe("/watch (AC-5)", () => {
   test("the media bar's Watch link goes there", ONCE, async ({ page }) => {
     await size(page, 390);
     await page.goto("/comics");
-    await page.locator('.bar nav a[href="/watch"]').click();
+    await page.locator('.bar nav[aria-label="Media"] a[href="/watch"]').click();
     await page.waitForURL("**/watch");
-    await expect(page.locator('.bar nav a[href="/watch"]')).toHaveAttribute("aria-current", "page");
+    await expect(page.locator('.bar nav[aria-label="Media"] a[href="/watch"]')).toHaveAttribute("aria-current", "page");
   });
 });
 

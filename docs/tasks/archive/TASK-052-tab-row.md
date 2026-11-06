@@ -1,14 +1,14 @@
 ---
 id: TASK-052
 title: 2.2i Every screen from a phone: the tab row
-status: Ready
+status: Done
 depends_on: [TASK-014]
 size: L
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 4860aac
 ---
 
 # TASK-052 — 2.2i Every screen from a phone: the tab row
@@ -36,7 +36,7 @@ On a phone, a row under the media bar lists every screen of the medium you're in
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): a browser test at 360px, built from `NAV_ITEMS`, so a newly enabled
+- [x] AC-1 (roadmap **Check:**, verbatim): a browser test at 360px, built from `NAV_ITEMS`, so a newly enabled
 item is covered without editing it: from each medium's dashboard, every enabled
 item of that medium, *Inbox* and *Settings* is reached by tapping links, with no
 direct navigation. The current item has `aria-current="page"`. With every books
@@ -44,11 +44,11 @@ item enabled, the page has no horizontal overflow at 360px. The row is not
 rendered at 768px or wider. Each item measures at least 44px tall, and axe
 passes. 0.10's CLS budget holds on `/books/list` and `/comics`. Screenshots at
 360px and 412px, light and dark.
-- [ ] AC-2: The row lists exactly the bar's own items in order: on each medium, `mediumItems(items, medium)` then *Inbox*, with no disabled item (a unit test flips `comics-status` off and its link leaves the row), and the row's markup is inside `header.bar`.
-- [ ] AC-3: Given you last visited a `/books` screen, then tap *Inbox*: on `/inbox` the row lists the books items and *Inbox* has `aria-current="page"`; the same from comics lists the comics items; with no `ledger_medium` cookie it lists comics. On `/settings` the row draws the last medium's items, none of them current, and the gear has `aria-current="page"` (D-113). The row's height is the same before and after the last medium arrives.
-- [ ] AC-4: At 360px, scrolled 400px, `.bar`'s bottom edge equals `--bar-h`, the row is still in view, `.sync-strip` sits directly under it, and `shell.spec`'s *everything that sticks but .bar* check passes. `--bar-h` still resolves to 64px at 768px and 80px at 1024px. Loaded on a page whose current item is last in the row, that item is inside the row's visible box and the page's `scrollLeft` is 0.
-- [ ] AC-5: On the preview, Lighthouse reports no route over `scripts/perf/budget.json`, and no `/api/*` request during a load or prefetch; any budget this task raises has its reason in `docs/02-architecture.md` § 7.
-- [ ] AC-6: The tab row meets the UX floor (`docs/04-design.md` § 10. The UX floor): every link has a name and is at least 44px tall; the current item shows by weight or underline as well as colour, and text is 4.5:1 in both themes; the row keeps `aria-current` on the right item with reduced motion on; axe reports no new violations (landmarks included); screenshots at 360, 390 and 412px, light and dark, and the row is absent at 768, 1024 and 1280px.
+- [x] AC-2: The row lists exactly the bar's own items in order: on each medium, `mediumItems(items, medium)` then *Inbox*, with no disabled item (a unit test flips `comics-status` off and its link leaves the row), and the row's markup is inside `header.bar`.
+- [x] AC-3: Given you last visited a `/books` screen, then tap *Inbox*: on `/inbox` the row lists the books items and *Inbox* has `aria-current="page"`; the same from comics lists the comics items; with no `ledger_medium` cookie it lists comics. On `/settings` the row draws the last medium's items, none of them current, and the gear has `aria-current="page"` (D-113). The row's height is the same before and after the last medium arrives.
+- [x] AC-4: At 360px, scrolled 400px, `.bar`'s bottom edge equals `--bar-h`, the row is still in view, `.sync-strip` sits directly under it, and `shell.spec`'s *everything that sticks but .bar* check passes. `--bar-h` still resolves to 64px at 768px and 80px at 1024px. Loaded on a page whose current item is last in the row, that item is inside the row's visible box and the page's `scrollLeft` is 0.
+- [x] AC-5: On the preview, Lighthouse reports no route over `scripts/perf/budget.json`, and no `/api/*` request during a load or prefetch; any budget this task raises has its reason in `docs/02-architecture.md` § 7.
+- [x] AC-6: The tab row meets the UX floor (`docs/04-design.md` § 10. The UX floor): every link has a name and is at least 44px tall; the current item shows by weight or underline as well as colour, and text is 4.5:1 in both themes; the row keeps `aria-current` on the right item with reduced motion on; axe reports no new violations (landmarks included); screenshots at 360, 390 and 412px, light and dark, and the row is absent at 768, 1024 and 1280px.
 
 ## Out of scope
 
@@ -78,13 +78,55 @@ passes. 0.10's CLS budget holds on `/books/list` and `/comics`. Screenshots at
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Record a decision: visible phone links are prefetched and the row's budget rises are accepted, amending D-77's *a phone prefetches only the bar's links* (approved at plan) → docs/review/decisions.md § D-126
+- The mockup and index still draw and describe the Search icon where D-113 put the gear: a note on a later entry, not part of 2.2i (approved at plan) → docs/05-roadmap.md § 6.1
+- The media switch's current item has the same underline-over-focus-ring problem the tab row's fix removed, from before this branch → not tracked: reviewer finding outside this diff's files; fix when the media switch is next touched
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner at the plan gate, 2026-11-06, with row links prefetched. The mockup frames (step 1) are done and committed with this plan.
+
+**Steps**
+
+1. **Mockup (done):** the row on 16 phone frames of `home`, `runs`, `addsearch`, `bdash`, `status`, `blist`, `add`, `capture`, `watchlist`, `settings`; `bdash` draws every books item on, past the frame edge. The note on `home`, the index entry, and the other frames under *Not shown*.
+2. **List:** `tabRowItems(items, medium)` in `items.ts`: `mediumItems`, then the Inbox item.
+3. **Row:** `TabRow.tsx` (new) draws `<nav aria-label="Screens" class="tabrow">` inside `header.bar`, through `NavLink`, current item from `currentItem`. It scrolls the current item into view by setting `nav.scrollLeft`, not `scrollIntoView`, so the page can't move.
+4. **Last medium:** `LastMedium.tsx` (new) streams the cookie in a `<Suspense>` from `Shell.tsx` (always, `pickMedium`: no cookie is comics), handed to `ShellFrame` by `RememberMedium`. `ShellFrame` also remembers the medium visited client-side, because the root layout isn't redrawn on navigation. The row's medium: this path's, then visited, then the cookie.
+5. **Until it arrives:** on a hard load of `/inbox` or `/settings` the row draws *Inbox* alone at full height: no flash of the wrong medium, no prefetch of its screens.
+6. **CSS:** `--bar-h` is 108px below 768px (today's 64px line plus a 44px row), 64px at 768–1023px, 80px from 1024px. `.bar nav` scoped to the media switch. The row's focus ring is inset, because `overflow-x` would clip it.
+7. **Issue anchors:** `.iss{scroll-margin-top:5rem}` is a hard-coded offset the entry didn't list: below 768px it follows `--bar-h`, so a `#p-…` issue doesn't land under the taller bar.
+8. **Perf:** row links prefetch (a tap shows the skeleton at once, as 2.0); only comics Add stays `noPrefetch`. Stale tap comments in `scripts/perf/routes.mjs` updated. Budgets are set from the preview's Lighthouse run, each with its reason in `docs/02-architecture.md` § 7, and `budget.json` with them.
+
+**Files**
+
+- `design/mockups.html`, `design/mockups-index.md`: the frames (done).
+- `src/components/nav/items.ts`: `tabRowItems`.
+- `src/components/nav/TabRow.tsx` (new), `src/components/nav/MediaBar.tsx`: the row, inside `header.bar`.
+- `src/components/nav/LastMedium.tsx` (new), `src/components/nav/Shell.tsx`, `src/components/nav/ShellFrame.tsx`: the hand-off.
+- `src/app/globals.css`: `--bar-h`, the two lines, the row, `.iss`.
+- `scripts/perf/routes.mjs` (not in *Files likely touched*): stale comments.
+- `scripts/perf/budget.json`, `docs/02-architecture.md`: the budgets and their reasons.
+- `test/e2e/tab-row.spec.ts` (new), `test/nav-items.test.tsx`, `test/e2e/shell.spec.ts`.
+- `test/e2e/audiobooks.spec.ts` (added after approval): scrolls to the top before axe, because the taller bar now covers chips the control click scrolled under it.
+- `test/e2e/library-sort.spec.ts` (added after approval): the phone now draws a Library link, in the tab row, marked current.
+
+**Test strategy**
+
+- AC-1: `tab-row.spec.ts`, built from `NAV_ITEMS`: taps from each media switch `href`, expected current from `currentItem` (so Add marking Runs is covered). *Every books item enabled*: swap the row's links in the page from `NAV_ITEMS` with `enabled` forced, assert the row overflows and the page doesn't. No fixture or test route ships. Layout shift measured on `/books/list` and `/comics`; screenshots at 360 and 412px, light and dark.
+- AC-2: `test/nav-items.test.tsx` (order, `comics-status` flipped off, inside `header.bar`, the Inbox-alone pending row).
+- AC-3: `tab-row.spec.ts`: tap flows from books and comics, no cookie, `/settings` with the gear current, row height sampled before and after the swap.
+- AC-4: `tab-row.spec.ts` and `shell.spec.ts`: `.bar` bottom equals `--bar-h` at 400px scrolled, `.sync-strip` under it, 64px at 768 and 80px at 1024. Last-item scroll: load `/inbox` at about 280px, where the real row overflows.
+- AC-5: Lighthouse on the preview.
+- AC-6: `tab-row.spec.ts`: names, 44px, weight or underline, reduced motion, axe, screenshots at 360, 390, 412, absent at 768, 1024, 1280.
+- `shell.spec.ts`: the same-markup check excludes the row; the media switch check takes a tighter selector, because `/watch`'s Dashboard shares that `href`.
+
+**Risks:** the extra 44px may break Playwright clicks in other phone specs (the full chain shows it). Budgets can only be measured from the preview, so they take a CI round.
+
+**Size:** about 14 files, over 8; kept whole by `workflow.splitPolicy: never-split`, `autonomy: attended`.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 round PASS → full: 5 browser FAILs (audiobooks axe target-size ×4, library-sort ×1, both adapted for the taller bar) → specs re-run PASS | R2 round PASS | Audit R1 NOT RUN (classifier blocked the base-state swap) → run by hand in a throwaway worktree: unit tests 8 fail at base, 11 of 13 new browser tests fail at base; CLS check and screenshots pass at base by design (guard, evidence) | Spec R1 CHANGES (focus ring on the current tab, label check, plan Files) → R2 APPROVE | UI R1 PASS (schema-reviewer not run: no schema, query or ETL change).
 
 ## Blocked
 
@@ -92,7 +134,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (round chain ×2, full browser suite ×1)
+- Review rounds: 2 (spec), 1 (UI)
+- First-pass AC FAILs: 1 (AC-6, focus ring on the current item)
+- Plan revisions after approval: 0 (two spec files added to the Files list, noted in the plan)

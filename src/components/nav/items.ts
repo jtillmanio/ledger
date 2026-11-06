@@ -93,6 +93,16 @@ export const mediumItems = (items: NavItem[], medium: Medium) =>
   inGroup(items, "medium").filter((i) => i.medium === medium);
 
 /**
+ * What the phone's tab row draws (2.2i, D-120): the medium's enabled items, then Inbox. With no
+ * medium yet (a hard load of /inbox or /settings, before the server's last medium streams in)
+ * it is Inbox alone, so the row never flashes the wrong medium's screens.
+ */
+export const tabRowItems = (items: NavItem[], medium: Medium | null): NavItem[] => [
+  ...(medium ? mediumItems(items, medium) : []),
+  ...inGroup(items, "global").filter((i) => i.id === "inbox"),
+];
+
+/**
  * The item `pathname` is on: the exact match, else the item that claims it (`currentOn`), else
  * the longest item it is under (the dashboard excepted: it is every page's prefix), else the item
  * that holds the medium's detail pages.

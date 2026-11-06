@@ -274,15 +274,15 @@ tables.
     | Route | Document + RSC bytes | JS bytes | Requests | Accessibility ≥ |
     |---|---|---|---|---|
     | `/login` | 8,000 | 170,000 | 30 | 100 |
-    | `/comics` | 28,000 | 170,000 | 36 | 100 |
-    | `/comics/runs` | 57,000 | 170,000 | 35 | 100 |
+    | `/comics` | 30,500 | 170,000 | 41 | 100 |
+    | `/comics/runs` | 57,000 | 170,000 | 38 | 100 |
     | `/comics/status` | 24,000 | 175,000 | 35 | 100 |
     | `/books/status` | 24,000 | 175,000 | 35 | 100 |
-    | `/comics/bendis-disassembled` | 25,000 | 172,000 | 38 | 100 |
-    | `/comics/busiek-avengers` | 22,500 | 171,000 | 29 | 100 |
-    | `/books/list` | 66,000 | 170,000 | 58 | 100 |
-    | `/inbox` | 12,500 | 173,000 | 28 | 100 |
-    | `/settings` | 12,500 | 173,000 | 28 | 100 |
+    | `/comics/bendis-disassembled` | 26,800 | 172,000 | 38 | 100 |
+    | `/comics/busiek-avengers` | 26,000 | 171,000 | 33 | 100 |
+    | `/books/list` | 70,000 | 170,000 | 64 | 100 |
+    | `/inbox` | 16,000 | 173,000 | 31 | 100 |
+    | `/settings` | 16,000 | 173,000 | 32 | 100 |
     | `/watch` | 12,500 | 173,000 | 28 | 100 |
     <!-- /perf-budget -->
 
@@ -338,6 +338,21 @@ tables.
     2,475 more DOM nodes of which the `⋯` is about 2,000, and two more covers on
     the first screen at three requests each). The new numbers are that run plus
     about 5%.
+    Task 2.2i (PR #201, D-126) added the phone's tab row. Its links are on
+    screen at phone width, so Next prefetches each one's loading shell (a tap
+    on Status or Add shows the skeleton at once); only comics Add is
+    `noPrefetch`. The hidden rail and sidebar are still never prefetched. That
+    is a few more requests on every route and about 0.9 KB of RSC for each
+    link prefetched. Measured on the preview, document + RSC bytes and requests
+    (median of three): `/comics` 29,286 and 39, `/comics/runs` 36 requests,
+    a small run 25,550 bytes, the large run 24,752 and 31, `/books/list`
+    66,956 and 61, `/inbox` 15,241 and 29, `/settings` 15,297 and 30. Each new
+    budget is that median plus about 5%: `/comics` 30,500 and 41, `/comics/runs`
+    38 requests, small run 26,800, large run 26,000 and 33, `/books/list`
+    70,000 and 64, `/inbox` and `/settings` 16,000 and 31 and 32. `/inbox` and
+    `/settings` rise most because they draw the last medium's whole row, and
+    they have no other page weight to hide it in. The other routes stayed inside
+    theirs.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 

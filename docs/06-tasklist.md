@@ -348,7 +348,7 @@ with the task that first reads it.
 |  | 2.2f → TASK-054 | Finish a book from In flight | S |  | 1.9, 1.5, 2.2c |
 |  | 2.2g → TASK-056 | Where the book sits, in Now | M |  | 2.2, 2.2h |
 |  | 2.2h → TASK-055 | Finishing a book follows it | M |  | 2.2c |
-|  | 2.2i → TASK-052 | Every screen from a phone: the tab row | M |  | 1.8 |
+| ✅ | 2.2i → TASK-052 | Every screen from a phone: the tab row | M |  | 1.8 |
 
 ## M11: Editing the plan — Next
 

@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
-import { mediumOf } from "@/lib/last-medium";
+import { mediumOf, type Medium } from "@/lib/last-medium";
 import { IconSprite } from "./Icons";
 import { NAV_ITEMS, withLastRun } from "./items";
 import MediaBar from "./MediaBar";
@@ -28,6 +28,18 @@ export function RememberRun({ runId }: { runId: string }) {
   return null;
 }
 
+// The medium the tab row draws on a screen with none (/inbox, /settings; 2.2i). The server's
+// cookie read streams in (`RememberMedium`); the medium you visited since the page loaded wins
+// over it, because the root layout isn't drawn again on a client navigation.
+const LastMediumContext = createContext<(medium: Medium) => void>(() => {});
+
+/** The server's last medium, handed to the nav once it streams in. Draws nothing. */
+export function RememberMedium({ medium }: { medium: Medium }) {
+  const remember = useContext(LastMediumContext);
+  useEffect(() => remember(medium), [remember, medium]);
+  return null;
+}
+
 // The chrome around every screen but sign-in: a signed-out visitor can open
 // none of these links, and each <Link> prefetches its route, which the passcode
 // gate answers with a redirect back to /login, so the sign-in page fetched pages
@@ -36,10 +48,14 @@ export function RememberRun({ runId }: { runId: string }) {
 // Which of the three navs shows is CSS alone (media queries in globals.css), so
 // nothing flashes at hydration and the server sends all three. `data-medium`
 // sets --m, the medium's accent, for the current-item bar and the media underline.
-export default function ShellFrame({ inbox, lastRun, children }: {
-  inbox: React.ReactNode; lastRun?: React.ReactNode; children: React.ReactNode;
+export default function ShellFrame({ inbox, lastRun, lastMedium, children }: {
+  inbox: React.ReactNode; lastRun?: React.ReactNode; lastMedium?: React.ReactNode; children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [cookieMedium, setCookieMedium] = useState<Medium | null>(null);
+  const [visited, setVisited] = useState<Medium | null>(null);
+  const here = mediumOf(pathname);
+  if (here && here !== visited) setVisited(here);
   const [run, setRun] = useState<{ id: string | null; added: boolean }>({ id: null, added: false });
   const remembered = useCallback((id: string) => setRun((r) => (r.added ? r : { id, added: false })), []);
   const added = useCallback((id: string) => setRun({ id, added: true }), []);
@@ -47,17 +63,20 @@ export default function ShellFrame({ inbox, lastRun, children }: {
   const items = useMemo(() => withLastRun(NAV_ITEMS, run.id), [run.id]);
   return (
     <LastRunContext.Provider value={api}>
+      <LastMediumContext.Provider value={setCookieMedium}>
       {pathname === "/login" ? children : (
         <div className="app" data-medium={mediumOf(pathname) ?? undefined}>
           <IconSprite />
           {lastRun}
-          <MediaBar items={items} />
+          {lastMedium}
+          <MediaBar items={items} lastMedium={visited ?? cookieMedium} />
           <SyncPill strip />
           <NavRail items={items} inbox={inbox} />
           <Sidebar items={items} inbox={inbox} />
           <div className="content">{children}</div>
         </div>
       )}
+      </LastMediumContext.Provider>
     </LastRunContext.Provider>
   );
 }

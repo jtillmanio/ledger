@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import InboxCount from "./InboxCount";
+import LastMedium from "./LastMedium";
 import LastRun from "./LastRun";
 import ShellFrame from "./ShellFrame";
 
@@ -9,6 +10,7 @@ export default function Shell({ children }: { children: React.ReactNode }) {
     <ShellFrame
       inbox={<Suspense fallback={null}><InboxCount /></Suspense>}
       lastRun={<Suspense fallback={null}><LastRun /></Suspense>}
+      lastMedium={<Suspense fallback={null}><LastMedium /></Suspense>}
     >
       {children}
     </ShellFrame>

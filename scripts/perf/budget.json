@@ -2,15 +2,15 @@
   "$comment": "Task 0.10. Per route (scripts/perf/routes.mjs): the most document + RSC bytes, JS bytes and requests a page load may take (Lighthouse's median of three, Vercel's preview toolbar left out), and the lowest accessibility score it may have. Mirrored in docs/02-architecture.md's Performance budget; raise a number only with a reason there.",
   "routes": {
     "login": { "docRscBytes": 8000, "jsBytes": 170000, "requests": 30, "a11y": 100 },
-    "comics": { "docRscBytes": 28000, "jsBytes": 170000, "requests": 36, "a11y": 100 },
-    "runs": { "docRscBytes": 57000, "jsBytes": 170000, "requests": 35, "a11y": 100 },
-    "run-small": { "docRscBytes": 25000, "jsBytes": 172000, "requests": 38, "a11y": 100 },
-    "run-large": { "docRscBytes": 22500, "jsBytes": 171000, "requests": 29, "a11y": 100 },
-    "books": { "docRscBytes": 66000, "jsBytes": 170000, "requests": 58, "a11y": 100 },
+    "comics": { "docRscBytes": 30500, "jsBytes": 170000, "requests": 41, "a11y": 100 },
+    "runs": { "docRscBytes": 57000, "jsBytes": 170000, "requests": 38, "a11y": 100 },
+    "run-small": { "docRscBytes": 26800, "jsBytes": 172000, "requests": 38, "a11y": 100 },
+    "run-large": { "docRscBytes": 26000, "jsBytes": 171000, "requests": 33, "a11y": 100 },
+    "books": { "docRscBytes": 70000, "jsBytes": 170000, "requests": 64, "a11y": 100 },
     "comics-status": { "docRscBytes": 24000, "jsBytes": 175000, "requests": 35, "a11y": 100 },
     "books-status": { "docRscBytes": 24000, "jsBytes": 175000, "requests": 35, "a11y": 100 },
-    "inbox": { "docRscBytes": 12500, "jsBytes": 173000, "requests": 28, "a11y": 100 },
-    "settings": { "docRscBytes": 12500, "jsBytes": 173000, "requests": 28, "a11y": 100 },
+    "inbox": { "docRscBytes": 16000, "jsBytes": 173000, "requests": 31, "a11y": 100 },
+    "settings": { "docRscBytes": 16000, "jsBytes": 173000, "requests": 32, "a11y": 100 },
     "watch": { "docRscBytes": 12500, "jsBytes": 173000, "requests": 28, "a11y": 100 }
   }
 }

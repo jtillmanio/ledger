@@ -29,12 +29,12 @@ export const ROUTES = [
   // Lighthouse sends the session as a Cookie header, which a redirect drops.
   { id: "books", path: "/books/list", signedIn: true, tap: { from: "/comics", selector: 'nav a[href="/books/list"]' } },
   // The status screens (task 1.9): In flight, the tab a bare visit opens, for each medium. Comics' Status is in the
-  // rail and the sidebar and not on the phone bar, so the tap clicks the first match, hidden or not.
+  // rail, the sidebar and (since 2.2i) the phone's tab row, so the tap clicks the first match, the tab row's on a phone.
   { id: "comics-status", path: "/comics/status", signedIn: true, tap: { from: "/comics", selector: 'a[href="/comics/status"]' } },
   { id: "books-status", path: "/books/status", signedIn: true, tap: { from: "/books/list", selector: 'a[href="/books/status"]' } },
-  // Inbox is in the rail and the sidebar and not on the phone bar: the tap clicks the first match, hidden or not.
+  // Inbox is in the rail, the sidebar and (since 2.2i) the phone's tab row: the tap clicks the first match, the tab row's on a phone.
   { id: "inbox", path: "/inbox", signedIn: true, tap: { from: "/books/list", selector: 'nav a[href="/inbox"]' } },
-  // Settings (task 2.0): the rail's and sidebar's foot and the phone bar's gear; the tap clicks the first match, hidden or not.
+  // Settings (task 2.0): the rail's and sidebar's foot and the phone bar's gear; the tap clicks the first match, the gear's on a phone.
   { id: "settings", path: "/settings", signedIn: true, tap: { from: "/comics", selector: 'a[href="/settings"]' } },
   // The watch shell (task 1.8): the nav's link, with the slate and nothing more until 8.x.
   { id: "watch", path: "/watch", signedIn: true, tap: { from: "/comics", selector: 'nav a[href="/watch"]' } },

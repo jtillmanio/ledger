@@ -2071,7 +2071,7 @@ and *Tracking* at 0 of 4 and 4 of 4, with the same stored value. In the browser
 at 360px and 1280px. This replaces the part of 2.2c's Check where a finish only
 offers the series and the universe.
 
-### ☐ 2.2i Every screen from a phone: the tab row · M
+### ☑ 2.2i Every screen from a phone: the tab row · M
 Owner intake, 2026-11-05 (owner: *some of the manual checks have me go to a
 specific link. Make sure all of those links are available to get to through the
 UI and not just putting into the url bar*, and *link for books by status (or
@@ -4288,6 +4288,10 @@ it is converted.
   dashboard header's *Search (Ctrl K)* slot is drawn, `aria-disabled`, until this
   lands. Turn on the `search` item in `NAV_ITEMS` and the slot becomes a link
   to it (`SearchVerb` in `ThumbBar.tsx`).
+  *From 2.2i (TASK-052, PR #201):* `design/mockups.html` and
+  `design/mockups-index.md` still draw and describe the phone bar's Search icon
+  where D-113 put Settings' gear. Redraw the bar with the gear (and this
+  trigger wherever Search lands on the phone) when this is built.
 
 - ☐ 6.2 Stats and year in review — depends on 1.5 and 2.1b · L
   Five charts per product § Metrics: books/year with plan overlaid, genre mix
