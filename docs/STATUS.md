@@ -1,6 +1,6 @@
 # Status
 
-**Last regenerated:** 2026-11-05
+**Last regenerated:** 2026-11-06
 
 This is a rollup of `docs/05-roadmap.md`, not a second source of truth. Every
 count here comes from counting ☑ vs ☐ entries in that file, and the milestones
@@ -74,9 +74,10 @@ is not counted.
 
 **M10, in its order** (`docs/06-tasklist.md`): 2.0 ✅ → 2.1 ✅ → (2.1b) → 2.2e ✅ →
 2.2c ✅ → 2.2i → 2.0b → 2.2f → 2.2h → 2.2 → 2.2d → 2.2g → 2.2b. TASK-049 to TASK-051
-are Ready; each plan still answers its questions below. 2.0b, 2.2f–2.2i have no
-task file yet. 2.2c, 2.2d and 2.2e had proposed Checks, which became their
-**Check:** lines on 2026-11-04. 2.1b is not pulled ahead and has no task file
+are Ready; each plan still answers its questions below. TASK-052 to TASK-056
+(2.2i, 2.0b, 2.2f, 2.2h, 2.2g) are Draft. 2.2c, 2.2d and 2.2e had proposed Checks,
+which became their **Check:** lines on 2026-11-04, and 2.0b and 2.2f–2.2i's did
+on 2026-11-06. 2.1b is not pulled ahead and has no task file
 yet. 2.2c and 2.2d aren't cutover gates either, so 2.0 → 2.1 → 2.2e → 2.2 →
 2.2b → 2.3 is the shortest path to 1.26.
 
@@ -97,7 +98,15 @@ Questions the task files leave for their plan gates:
 - **2.2c** (TASK-048): the `shelf_follows` table (a new table).
 - **2.2e** (TASK-047): the Library's route name, and *Recently added*
   (`books.added_at`, which 2.10b also proposes).
-- 2.2c, 2.2d and 2.2e draw their mockup frames first, before they are built.
+- **2.0b** (TASK-053): what a typed value may be (a number off the step, a
+  fraction).
+- **2.2h** (TASK-055): raising a `tracking` follow at a finish, *Not following*
+  as a stored `off`, the `subseries_follows` table, what *To read* → *Read*
+  follows, and whether a DNF counts as a book left.
+- **2.2i** (TASK-052): the last medium's hand-off, which items prefetch, and how
+  the browser test reaches *every books item enabled*.
+- 2.2c, 2.2d, 2.2e, 2.2f, 2.2g, 2.2h and 2.2i draw their mockup frames first,
+  before they are built.
 
 After M10: 2.3 (M11), then 3.1 → 3.2 → 3.3 (M13), 3.4 (M14), 5.7 (M17) and
 5.6 → 5.10 (M18), then 1.26. START-HERE Step 14 sets `LEDGER_LIVE=true` at

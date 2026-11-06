@@ -1575,7 +1575,7 @@ numpad; maybe hold down button goes faster*). D-123. Depends on 2.0.
   `design/STYLE_GUIDE.md` § 9 (*a number you step*) comes from the design tool
   after this: it is a protected file, and D-123 governs until then.
 
-**Check (proposed):** component tests: typing 45 and Enter in *Minutes a day* changes it
+**Check:** component tests: typing 45 and Enter in *Minutes a day* changes it
 to 45; a value over the maximum commits the maximum and shows the reason; Esc
 and an empty field leave the value as it was; with fake timers, a hold repeats,
 repeats faster after its first second, and stops at the bound and on release; a
@@ -1961,14 +1961,15 @@ book in hand can only be finished from the Library.
 
 - Each *Reading* and *Listening* row on `/books/status` gains **Finished**,
   named for the book (*Finished The Alloy of Law*). It is the Library's finish,
-  not a second one: `saveBookStatus`, today's date, the undo toast with its
-  date control and *Keep going?*, and a listen logged as `audio` (D-112).
+  not a second one: `saveBookStatus`, the undo toast with *Keep going?*, and a
+  listen logged as `audio` (D-112). One tap writes today, with no date step; a
+  different date is set from the Library's *Finished* (owner, 2026-11-06).
 - The book moves to Done and each tab's count follows. In flight has no other
   status control: DNF, Parked and the rest stay where they are.
 - **Not drawn yet.** The mockup's `status` frame gains it, at phone, tablet and
   desktop widths, before it is built.
 
-**Check (proposed):** in the browser (0.11), **Finished** on a *Reading* row writes `read`
+**Check:** in the browser (0.11), **Finished** on a *Reading* row writes `read`
 and one `read_events` row with `format = text`, and on a *Listening* row one
 with `format = audio`; the toast carries *Keep going?*; Undo restores the status
 and leaves no read; the book moves from In flight to Done and both tabs' counts
@@ -2000,7 +2001,7 @@ be redesigned later). D-119. Depends on 2.2 and 2.2h (`subseries_progress`).
 - **Not drawn yet.** The mockup's `bdash` frames gain the rows at phone, tablet
   and desktop widths before they are built.
 
-**Check (proposed):** in the browser (0.11), a book in hand in a universe, a series and a
+**Check:** in the browser (0.11), a book in hand in a universe, a series and a
 subseries renders three rows in that order, each `read / total` equal to its
 view's; a book in a series alone renders one row; a standalone by an unfollowed
 author renders none; a standalone by an author followed `reading` renders the
@@ -2055,7 +2056,7 @@ D-118; **amends D-108 and 2.2c**. Depends on 2.2c. Build it before 2.2d, whose
 - **Not drawn yet.** The mockup's `follow` and `finishoffer` frames change at
   phone, tablet and desktop widths before they are built.
 
-**Check (proposed):** `npm test`: finishing book 2 of 4 of an unfollowed series, in a
+**Check:** `npm test`: finishing book 2 of 4 of an unfollowed series, in a
 subseries and a universe with books left, writes `reading` for all three and no
 author or shelf follow; the finish's Undo restores the book and leaves no follow
 row; finishing book 4 of 4 writes no series follow; a series at `tracking` is
@@ -2100,7 +2101,7 @@ link only while something is mid-run.
 - **Not drawn yet.** The mockup's phone frames gain the row, and
   `design/mockups-index.md` notes it, before it is built.
 
-**Check (proposed):** a browser test at 360px, built from `NAV_ITEMS`, so a newly enabled
+**Check:** a browser test at 360px, built from `NAV_ITEMS`, so a newly enabled
 item is covered without editing it: from each medium's dashboard, every enabled
 item of that medium, *Inbox* and *Settings* is reached by tapping links, with no
 direct navigation. The current item has `aria-current="page"`. With every books
