@@ -64,6 +64,12 @@ desktop frame only, so the 360 and 834 views of those are empty.
 - **360** (`data-w="p360"`): the phone frame at 360px. The media bar fits
   *Ledger · Comics · Books · Watch* and the search icon with *Watch* untruncated.
   The search icon is a drawn magnifier, never U+26B2.
+- **The tab row** (task 2.2i, D-120), on the phone and 360 frames of `home`, `runs`,
+  `addsearch`, `bdash`, `status`, `blist`, `add`, `capture` (the Inbox screen),
+  `watchlist` and `settings`: below 768px, under the media bar and sticky with it,
+  the medium's enabled items then *Inbox*, 44px tall, the current one by weight and
+  underline. `bdash` draws every books item on, past the frame's edge, because the
+  row scrolls sideways; `capture` and `settings` draw the last medium's items.
 - **834** (`data-w="tab"`): the tablet. The 72px navigation rail replaces the
   top bar (the media switch, the medium's items, Inbox with its count, Search
   and Settings at the foot; each item a 56px target, an icon over an 11px
@@ -163,6 +169,7 @@ One line each. None is silently dropped.
 13. **Figures on the tracks, path and session screens** are illustrative, not the seed.
 14. **The credits line on `addsearch` result rows** (*Walter Simonson · Sal Buscema*). Search results carry no credits: they arrive with enrichment (0.7, 4.1), so task 1.3b draws each row with its label, cover date and *in N runs* only.
 15. **The books review after *Check N lines* on `add`, and what `add` does not draw.** The mockup ends the paste half at *Check 3 lines*; the review that follows is the `bulk` screen's, unchanged: the same five-column rows, with books' checks (*in library*, *new*, *similar 0.78*) and decisions (*Skip*, *Add · Drop*, *Create new · Use that · Drop*), and *Add N books* in the sticky bar. Since 1.4c (TASK-008, PR #77) the drawn layout is back: *Search · Paste a list · By hand* first, then *Add to*, then the search, with *Or paste a list* under its results on a phone and beside them from 1024px on the full page; *Paste a list* shows the paste alone and *By hand* the form alone (title and author required; series, #, pages and words optional), neither of which is drawn. From Books it opens as a sheet, one column at every width. On the full page the title, the control and *Add to* span both columns, because *Add to* governs the paste too; the desktop frame draws them over the left column only. Two more differences from the frame: the paste lede reads *Matched against your library first. You confirm anything ambiguous.*, without *then Open Library*, because the paste check asks only your library (owner, at TASK-008's plan gate); and a result row has its *Add to <destination>* button only, the secondary *Year or quarter…* arriving with 2.3's picker. *Add N books* adds to *Add to*'s destination and pushes an undo; on the full page it then goes to the master list's *To read* (owner, PR #76), and in the sheet it closes it.
+16. **The tab row on the other phone frames (task 2.2i).** Every screen below 768px has it, but only the screens its items open are redrawn (*The tab row*, above): the rest keep the media bar alone, and the row sits under it the same way. The row's sideways scroll, and the current item scrolled into view, are interactions a static frame cannot show; `test/e2e/tab-row.spec.ts` holds them.
 
 ## Review M pass, 2026-09-24 (`docs/review/M-findings.md`)
 
