@@ -638,6 +638,8 @@ the same PR (hard rule 7).
 | 1.22 | Nothing: the *Calibre* tag reads 1.18b's `books.calibre_id` | D-90 |
 | 1.23 | A `listening` value of `book_status.status`; `read_events.format` (`text` \| `audio`) | Built (migration 0021), 2.22; D-85 |
 | 2.2c | `shelf_follows(shelf_id, state)`, `shelf_id` the primary key (→ `shelves.id`, cascade), `state IN ('tracking', 'reading')`, no `user_id`, exported with the catalog tables beside `shelf_books`; the `shelf_progress` view (books listed and read per books shelf, live books only, with `follow_state`) | Built (migration 0022, TASK-048); approved by the owner 2026-11-04; 2.5e, D-43, D-91, D-108 |
+| 2.2h | `subseries_follows(subseries_id, state)`, as `shelf_follows`; an `off` value of `state` on `series_follows`, `universe_follows` and `subseries_follows`; the `subseries_progress` view | Asked at 2.2h's plan gate; D-117 |
+| 5.17 | `physical_copies(book_id)`, primary key `book_id` (→ `books.id`), no `user_id`; *Ebook* stays derived from `books.calibre_id` | Asked at 5.17's plan gate; D-121 |
 | 4.4 | Where a decided near-spelling row is remembered between syncs (D-87 leaves no other decision) | Asked at 4.4's plan gate |
 | 2.1b | `sessions` | §4.3 |
 | 3.5 | `issues.store_date` (the publication date) | Proposed in design §11, *Spine v2* |

@@ -563,7 +563,7 @@ text is at least 4.5:1 and control outlines 3:1 in both themes; thumb-bar and
 icon buttons are 44px and nothing interactive is under 24px; every control is a
 real `<button>` or `<a href>` with an accessible name; every readiness badge
 carries a glyph and text; the phone bar is the one `Comics · Books · Watch`
-partial. Where a task says "screenshot", that means 360px, 834px (a tablet,
+partial (task 2.2i adds a tab row under it, D-120). Where a task says "screenshot", that means 360px, 834px (a tablet,
 D-33) and 1280px, light and dark. Hover reveals, hover popovers, drag and
 shift-click sit behind `(hover:hover) and (pointer:fine)`; every one of them has
 a tap, long-press or sheet route for touch, which is what a tablet gets.
@@ -842,7 +842,7 @@ on it (D-33) — so it is a touch layout, not a small desktop:
 
 | Width | Navigation | Dashboard verbs |
 |---|---|---|
-| under 768px | the top media bar | bottom thumb bar |
+| under 768px | the top media bar, with its tab row (task 2.2i, D-120) | bottom thumb bar |
 | 768–1023px | a 72px navigation rail, icon over label | bottom thumb bar |
 | 1024–1279px | the sidebar, collapsed to a 64px icon rail | page header, primary last |
 | 1280px and up | the 224px sidebar | page header, primary last |
