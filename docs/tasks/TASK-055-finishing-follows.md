@@ -1,7 +1,7 @@
 ---
 id: TASK-055
 title: 2.2h Finishing a book follows it
-status: Draft
+status: Ready
 depends_on: [TASK-048]
 size: L
 model: opus

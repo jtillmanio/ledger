@@ -1,7 +1,7 @@
 ---
 id: TASK-052
 title: 2.2i Every screen from a phone: the tab row
-status: Draft
+status: Ready
 depends_on: [TASK-014]
 size: L
 model: sonnet
