@@ -8,7 +8,7 @@ model: sonnet
 autonomy: attended
 ui: true
 plan_status: approved
-planned_at_commit: 7cf7f48
+planned_at_commit: 4860aac
 ---
 
 # TASK-052 — 2.2i Every screen from a phone: the tab row
