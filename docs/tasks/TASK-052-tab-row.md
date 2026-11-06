@@ -80,6 +80,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 - Record a decision: visible phone links are prefetched and the row's budget rises are accepted, amending D-77's *a phone prefetches only the bar's links* (approved at plan) → docs/review/decisions.md § D-126
 - The mockup and index still draw and describe the Search icon where D-113 put the gear: a note on a later entry, not part of 2.2i (approved at plan) → docs/05-roadmap.md § 6.1
+- The media switch's current item has the same underline-over-focus-ring problem the tab row's fix removed, from before this branch → not tracked: reviewer finding outside this diff's files; fix when the media switch is next touched
 
 ## Plan
 
