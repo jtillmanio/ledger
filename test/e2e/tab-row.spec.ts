@@ -5,7 +5,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { MEDIUM_COOKIE } from "../../src/lib/last-medium";
 import { currentItem, NAV_ITEMS, tabRowItems, withLastRun } from "../../src/components/nav/items";
-import { expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
+import { expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour } from "./helpers";
 
 const ONCE = { tag: "@at-w390-light" };
 const size = (page: Page, width: number, height = 780) => page.setViewportSize({ width, height });
@@ -128,6 +128,28 @@ test("each item measures at least 44px tall, has a name, and marks the current o
     const other = row(page).locator("a:not([aria-current])").first();
     expect(Number(await other.evaluate((a) => getComputedStyle(a).fontWeight))).toBeLessThan(600);
   }
+});
+
+test("a keyboard-focused item, the current one too, shows an inset brand ring (AC-6)", ONCE, async ({ page }) => {
+  await size(page, 360);
+  await page.goto("/comics");
+  await hydrated(page.locator("header.bar"));
+  const brand = await tokenColour(page, "--brand");
+  await page.locator("header.bar a.home").focus();
+  const seen = new Set<string>();
+  for (let i = 0; i < 12 && seen.size < 2; i++) {
+    await page.keyboard.press("Tab");
+    const inRow = await page.evaluate(() => !!document.activeElement?.closest(".tabrow"));
+    if (!inRow) continue;
+    const focused = page.locator(".tabrow a:focus");
+    // box-shadow transitions on the controls, so wait for the settled value.
+    await expect.poll(() => focused.evaluate((el) => getComputedStyle(el).boxShadow), "the focus ring").toContain(brand);
+    const info = await focused.evaluate((el) => ({ current: el.hasAttribute("aria-current"), shadow: getComputedStyle(el).boxShadow }));
+    expect(info.shadow).toContain("inset");
+    expect(info.shadow).toContain("2px");
+    seen.add(info.current ? "current" : "other");
+  }
+  expect([...seen].sort(), "tabbed onto the current item and another").toEqual(["current", "other"]);
 });
 
 test("a screen with no medium draws the last medium's items (AC-3)", ONCE, async ({ page, context }) => {
@@ -275,6 +297,9 @@ test("axe passes with the row, in both themes, with reduced motion on and off (A
         await hydrated(page.locator("header.bar"));
         await expectNoAxeViolations(page, rules, "header.bar");
         // aria-current stays on the right item whatever the motion preference.
+        const medium = path === "/comics" ? "comics" : "books";
+        const expected = currentItem(tabRowItems(ITEMS, medium), path)!;
+        await expect(current(page), path).toHaveText(expected.label);
         await expect(current(page)).toHaveCount(1);
       }
     }

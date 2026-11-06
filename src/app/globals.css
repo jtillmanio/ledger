@@ -1284,7 +1284,8 @@ a.row:not([aria-disabled="true"]):active,.row:has(.row-link):not([aria-disabled=
 .bar a:focus-visible,.rail a:focus-visible,.side a:focus-visible,a.row:focus-visible,.row:has(.row-link:focus-visible),
 .switch:focus-visible,.stepper button:focus-visible{
   outline:2px solid transparent;outline-offset:2px;box-shadow:var(--focus-ring)}
-.tabrow a:focus-visible{box-shadow:inset 0 0 0 2px var(--brand)}   /* inside: the row clips an outer ring */
+/* Inside: the row clips an outer ring. The row's own selector outranks the current item's underline, so a focused current item shows it too. */
+.tabrow .tab:focus-visible,.tabrow .tab[aria-current]:focus-visible{box-shadow:inset 0 0 0 2px var(--brand)}
 .seg button:focus-visible{position:relative;z-index:1}
 /* A link row sits in a group that clips, so its ring is also drawn inside the row. */
 a.row:focus-visible,.row:has(.row-link:focus-visible){box-shadow:var(--focus-ring),inset 0 0 0 2px var(--brand)}

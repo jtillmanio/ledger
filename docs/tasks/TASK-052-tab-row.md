@@ -106,6 +106,8 @@ Approved by the owner at the plan gate, 2026-11-06, with row links prefetched. T
 - `scripts/perf/routes.mjs` (not in *Files likely touched*): stale comments.
 - `scripts/perf/budget.json`, `docs/02-architecture.md`: the budgets and their reasons.
 - `test/e2e/tab-row.spec.ts` (new), `test/nav-items.test.tsx`, `test/e2e/shell.spec.ts`.
+- `test/e2e/audiobooks.spec.ts` (added after approval): scrolls to the top before axe, because the taller bar now covers chips the control click scrolled under it.
+- `test/e2e/library-sort.spec.ts` (added after approval): the phone now draws a Library link, in the tab row, marked current.
 
 **Test strategy**
 
