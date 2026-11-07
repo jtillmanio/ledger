@@ -52,6 +52,9 @@ const output = (page: Page, name: string) => group(page, name).locator("output")
 const press = (page: Page, verb: "Increase" | "Decrease", name: string) =>
   page.getByRole("button", { name: `${verb} ${name.toLowerCase()}`, exact: true });
 
+const edit = (page: Page, name: string) => page.getByRole("button", { name: `Edit ${name.toLowerCase()}`, exact: true });
+const field = (page: Page, name: string) => group(page, name).locator("input");
+
 async function open(page: Page) {
   await page.goto("/settings");
   await hydrated(press(page, "Increase", "Minutes a day"));
@@ -66,7 +69,9 @@ test("one h1, and the three steppers are named groups of real buttons", async ({
   for (const name of ["Minutes a day", "Words a minute", "Words per page"]) {
     const g = group(page, name);
     await expect(g).toHaveCount(1);
-    await expect(g.locator("button")).toHaveCount(2);
+    // − , the number (a button named for its row, 2.0b) and +.
+    await expect(g.locator("button")).toHaveCount(3);
+    await expect(edit(page, name)).toBeVisible();
     await expect(g.locator("[role=button], [disabled]")).toHaveCount(0);
     await expect(press(page, "Decrease", name)).toBeVisible();
     await expect(press(page, "Increase", name)).toBeVisible();
@@ -258,4 +263,112 @@ test("the loading state draws the loaded rows' size (AC-5)", ONCE, async ({ page
     expect(Math.abs(s.height - loaded[n].height), `row ${n + 1} height (skeleton ${s.height}px, loaded ${loaded[n].height}px)`).toBeLessThanOrEqual(2);
   });
   expect(await page.locator("main .sk").count()).toBeGreaterThan(5);
+});
+
+// ---- Task 2.0b (D-123): type a setting, and hold to step ---------------------------------------
+
+
+test("typing: a numeric input with the text selected; Enter commits a value past the maximum with its reason and focus returns to the number (AC-1, AC-2)", ONCE, async ({ page }) => {
+  await reset();
+  await open(page);
+  const saves: string[] = [];
+  page.on("request", (r) => { if (r.method() === "PATCH" && r.url().endsWith("/api/settings")) saves.push(r.postData() ?? ""); });
+  await edit(page, "Minutes a day").click();
+  const input = field(page, "Minutes a day");
+  await expect(input).toHaveAttribute("inputmode", "numeric");
+  await expect(input).toBeFocused();
+  expect(await input.evaluate((el: HTMLInputElement) => el.value.slice(el.selectionStart ?? 0, el.selectionEnd ?? 0))).toBe("45");
+  await input.fill("9000");
+  await input.press("Enter");
+  await expect(edit(page, "Minutes a day")).toBeFocused();
+  await expect(output(page, "Minutes a day")).toHaveText("600");
+  await expect(page.getByText("The highest is 600")).toBeVisible();
+  await expect.poll(storedMinutes).toBe(600);
+  expect(saves).toEqual(['{"minutesPerDay":600}']);
+
+  // Esc puts the old value back; leaving the field commits with no Enter and leaves focus where you tapped.
+  await edit(page, "Minutes a day").click();
+  await field(page, "Minutes a day").fill("20");
+  await field(page, "Minutes a day").press("Escape");
+  await expect(edit(page, "Minutes a day")).toBeFocused();
+  await expect(output(page, "Minutes a day")).toHaveText("600");
+  // Off the bound first: the reason line goes when the value leaves it, and the rows below would move under a tap.
+  await edit(page, "Minutes a day").click();
+  await field(page, "Minutes a day").fill("100");
+  await field(page, "Minutes a day").press("Enter");
+  await expect(output(page, "Minutes a day")).toHaveText("100");
+  await edit(page, "Minutes a day").click();
+  await field(page, "Minutes a day").fill("50");
+  await edit(page, "Words a minute").click();
+  await expect(field(page, "Words a minute")).toBeFocused();
+  await expect(output(page, "Minutes a day")).toHaveText("50");
+  await field(page, "Words a minute").press("Escape");
+  await expect.poll(storedMinutes).toBe(50);
+  await reset();
+});
+
+test("hold: a press held past a second sends one save with the final value (AC-1, AC-4)", ONCE, async ({ page }) => {
+  await reset();
+  await open(page);
+  const saves: string[] = [];
+  page.on("request", (r) => { if (r.method() === "PATCH" && r.url().endsWith("/api/settings")) saves.push(r.postData() ?? ""); });
+  const box = (await press(page, "Increase", "Minutes a day").boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.waitForTimeout(1600);
+  await page.mouse.up();
+  const shown = Number(await output(page, "Minutes a day").textContent());
+  expect(shown).toBeGreaterThan(49);
+  await expect.poll(storedMinutes).toBe(shown);
+  expect(saves).toEqual([`{"minutesPerDay":${shown}}`]);
+  await reset();
+});
+
+test("the number and its input meet the floor: named, 24px+, same row height open or closed, no text selection, contrast, axe (AC-5)", async ({ page }, info) => {
+  await reset();
+  await open(page);
+  const rowOf = (name: string) => page.locator(".frow", { has: group(page, name) });
+  const closed = (await rowOf("Minutes a day").boundingBox())!.height;
+  const number = edit(page, "Minutes a day");
+  expect((await number.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+  const buttonStyle = await computedStyle(press(page, "Increase", "Minutes a day"), ["user-select", "touch-action"]);
+  expect(buttonStyle["user-select"]).toBe("none");
+  expect(buttonStyle["touch-action"]).toBe("manipulation");
+  await number.click();
+  const input = field(page, "Minutes a day");
+  await expect(input).toBeVisible();
+  expect((await input.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+  expect(await input.getAttribute("aria-label")).toBe("Minutes a day");
+  expect((await rowOf("Minutes a day").boundingBox())!.height).toBe(closed);
+  expect(await contrastFailures(page)).toEqual([]);
+  // The outline is 3:1 on the stepper's --sunk in this theme (WCAG 1.4.11): the colour is --brand.
+  const ring = await computedStyle(input, ["outline-color", "outline-style", "outline-width"]);
+  const brand = await page.evaluate(() => {
+    const probe = document.createElement("i");
+    probe.style.color = "var(--brand)";
+    document.body.append(probe);
+    const c = getComputedStyle(probe).color;
+    probe.remove();
+    return c;
+  });
+  expect(ring["outline-color"]).toBe(brand);
+  expect(ring["outline-style"]).toBe("solid");
+  await expectNoAxeViolations(page, AXE);
+  await expectNoHorizontalScroll(page);
+  await screenshot(page, info, "settings-typing");
+});
+
+test("a key press on + steps once: Enter and Space each add one step, and nothing repeats after (AC-3)", ONCE, async ({ page }) => {
+  await reset();
+  await open(page);
+  const up = press(page, "Increase", "Minutes a day");
+  await up.focus();
+  await up.press("Enter");
+  await expect(output(page, "Minutes a day")).toHaveText("46");
+  await up.press("Space");
+  await expect(output(page, "Minutes a day")).toHaveText("47");
+  await page.waitForTimeout(1200);
+  await expect(output(page, "Minutes a day")).toHaveText("47");
+  await expect.poll(storedMinutes).toBe(47);
+  await reset();
 });

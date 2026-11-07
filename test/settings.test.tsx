@@ -143,6 +143,9 @@ describe("the Stepper (AC-3, AC-5)", () => {
     expect(html).toMatch(/<button[^>]*type="button"[^>]*aria-label="Decrease minutes a day"/);
     expect(html).toMatch(/<button[^>]*type="button"[^>]*aria-label="Increase minutes a day"/);
     expect(html).toMatch(/<output[^>]*>45<\/output>/);
+    // The number is a button named for its row (2.0b); it is typed into, not a bare output.
+    expect(html).toMatch(/<button[^>]*type="button"[^>]*aria-label="Edit minutes a day"[^>]*>45<\/button>/);
+    expect(html).not.toContain("<input");
     expect(html).not.toContain("aria-disabled");
     expect(html).not.toMatch(/\sdisabled(=|\s|>)/);
   });

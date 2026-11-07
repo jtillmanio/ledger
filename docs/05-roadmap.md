@@ -1555,7 +1555,7 @@ capacity view reflects an edit — changing 45 to 60 min/day moves the 2027 figu
 — without a redeploy. The stepper is a button group with an accessible name, and
 the page has one `<h1>`.
 
-### ☐ 2.0b Type a setting, and hold to step · S
+### ☑ 2.0b Type a setting, and hold to step · S
 Owner intake, 2026-11-05 (owner: *settings: modify the number directly with
 numpad; maybe hold down button goes faster*). D-123. Depends on 2.0.
 

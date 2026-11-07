@@ -17,7 +17,7 @@ const ROWS: { key: SettingKey; label: string }[] = [
 
 /**
  * *Reading pace* (task 2.0, F-21): the three steppers and the card that turns them into words a
- * year. A press changes the number at once; one save goes out 500 ms after the last press, with
+ * year. A press, a hold or a typed value changes the number at once; one save goes out 500 ms after the last change, with
  * only the fields that changed, and any press still waiting is sent when the page is left. Saves
  * go out one at a time, so an older answer never lands over a newer one. A save that fails puts
  * the steppers back to what is stored and raises the app's failed-write line with Retry.
@@ -29,6 +29,7 @@ export default function PaceSettings({ initial, year }: { initial: ReadingSettin
   const saved = useRef(initial);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queue = useRef<Promise<void>>(Promise.resolve());
+  const gone = useRef(false);
 
   function show(next: ReadingSettings) {
     latest.current = next;
@@ -64,14 +65,18 @@ export default function PaceSettings({ initial, year }: { initial: ReadingSettin
   function change(key: SettingKey, next: number) {
     show({ ...latest.current, [key]: next });
     if (timer.current) clearTimeout(timer.current);
+    // A typed draft is committed as the page is hidden or the screen goes (2.0b), after the flush
+    // below has run: there is nothing left to wait for, so it is sent at once.
+    if (gone.current || document.visibilityState === "hidden") { save(); return; }
     timer.current = setTimeout(save, SAVE_AFTER_MS);
   }
 
   // A press inside the 500 ms window is sent when the tab is hidden or the screen unmounts.
   useEffect(() => {
+    gone.current = false;
     const flush = () => { if (timer.current) save(); };
     window.addEventListener("pagehide", flush);
-    return () => { window.removeEventListener("pagehide", flush); flush(); };
+    return () => { gone.current = true; window.removeEventListener("pagehide", flush); flush(); };
     // save only reads refs
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

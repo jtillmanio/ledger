@@ -70,6 +70,11 @@ desktop frame only, so the 360 and 834 views of those are empty.
   the medium's enabled items then *Inbox*, 44px tall, the current one by weight and
   underline. `bdash` draws every books item on, past the frame's edge, because the
   row scrolls sideways; `capture` and `settings` draw the last medium's items.
+- **A stepper's number is typed or held** (task 2.0b, D-123), in the `settings`
+  frame: the number is a button named for its row (*Edit minutes a day*) and a tap
+  swaps it for a numeric input of the same width and height; *Minutes a day* is
+  drawn with the input open (brand outline), the other two closed. Holding − or +
+  repeats. `design/STYLE_GUIDE.md` § 9 follows from the design tool.
 - **834** (`data-w="tab"`): the tablet. The 72px navigation rail replaces the
   top bar (the media switch, the medium's items, Inbox with its count, Search
   and Settings at the foot; each item a 56px target, an icon over an 11px
