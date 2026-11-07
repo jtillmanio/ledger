@@ -8,26 +8,34 @@ import { bookSub, listenGlyph, wordsK } from "@/lib/format";
  * `meta` is the right-hand mono text; it defaults to the word count. `dates` is
  * a Done row's dates line (task 1.17): *Started 1 Mar · finished 17 Mar · 16 days*.
  * The headphones glyph (task 1.23) follows the title: *Listening* while the book
- * is, *Listened* once it has a listen.
+ * is, *Listened* once it has a listen. `action` (task 2.2f) is a control at the
+ * row's end, in the same `.row-verbs` the queue rows use.
  */
-export default function StatusBookRow({ book, meta, dates = null }: {
+export default function StatusBookRow({ book, meta, dates = null, action }: {
   book: {
     title: string; author: string | null; series: string | null; series_position: number | null; word_count: number | null;
     status?: string; listened?: boolean;
   };
   meta?: string | null;
   dates?: string | null;
+  /** A control at the row's end (task 2.2f: *Finished* on In flight). Without one the row is unchanged. */
+  action?: React.ReactNode;
 }) {
   const shown = meta === undefined ? wordsK(book.word_count) : meta;
   const glyph = listenGlyph(book.status ?? null, book.listened ?? false);
-  return (
-    <article className="row">
+  const text = (
+    <>
       <span className="row-head">
         <span className="row-title">{book.title}{glyph && <> <Headphones label={glyph} /></>}</span>
         {shown && <span className="row-meta mono">{shown}</span>}
       </span>
       {bookSub(book) && <span className="row-sub">{bookSub(book)}</span>}
       {dates && <span className="row-dates">{dates}</span>}
+    </>
+  );
+  return (
+    <article className="row">
+      {action ? <><span className="row-text">{text}</span><span className="row-verbs">{action}</span></> : text}
     </article>
   );
 }

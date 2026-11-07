@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AddBooksButton from "@/components/AddBooksButton";
 import EmptySlate from "@/components/EmptySlate";
+import FinishBook from "@/components/FinishBook";
 import PlanQuarter from "@/components/PlanQuarter";
 import StatusBookRow from "@/components/StatusBookRow";
 import StatusTabs from "@/components/StatusTabs";
@@ -82,7 +83,8 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
                 </h2>
                 <div className="rows">
                   {g.books.map((b) => (
-                    <StatusBookRow key={b.id} book={b} meta={b.word_count ? `${b.word_count.toLocaleString()} words` : null} />
+                    <StatusBookRow key={b.id} book={b} meta={b.word_count ? `${b.word_count.toLocaleString()} words` : null}
+                      action={<FinishBook bookId={b.id} title={b.title} />} />
                   ))}
                 </div>
               </section>

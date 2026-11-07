@@ -1373,6 +1373,8 @@ h2.group-head{margin:2.25rem 0 .75rem}
 .rows .row > .row-link{flex:1;min-width:0}
 .rows .row > :is(.queue-verbs,.queued,.row-verbs){position:relative;z-index:1;flex:0 0 auto}
 .row-verbs{display:flex;align-items:center;gap:.5rem}
+/* A row with a control at its end (task 2.2f): the text takes the rest and wraps, so a long title never pushes the button off. */
+.row-text{display:block;flex:1;min-width:0;overflow-wrap:anywhere}
 .queued{white-space:nowrap}
 
 /* The queue row, the one the dashboard's Reorder and the status tab share (M-08). */
