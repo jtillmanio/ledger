@@ -918,6 +918,10 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
 /* ══ Task 2.2c — the Follow… sheet and the finish offer (D-108, D-116). The default Phone view shows the 360 frames. ══ */
 body[data-vp="phone"] .screen[data-id="follow"] .frame[data-w="p360"],
 body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{display:block}
+/* Task 2.2f: the books In flight frames, at 360 in the default Phone view too. */
+body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{display:block}
+.frame.fin-f .seg span .n{opacity:1}
+.frame.fin-f .seg span[data-on] .n{color:var(--on-brand)}
 .sheetbar .fsh{margin:0;font-size:.9375rem;font-weight:700;flex:1;min-width:0}
 .fol{padding:.75rem .875rem;border-bottom:1px solid var(--line)}
 .fol:last-child{border-bottom:0}
@@ -2832,6 +2836,99 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
 </div>
 </div></div></div>
 
+<div class="frame fin-f" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Dashboard</a><a aria-current="page">Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
+  <div class="wrap">
+    <h1 class="t">Books by status</h1>
+    <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="true" data-on>In flight<span class="n">3</span></span><span role="tab" aria-selected="false">Up next<span class="n">174</span></span><span role="tab" aria-selected="false">Done<span class="n">348</span></span></span></div>
+    <div class="group">
+      <div class="ghead">Reading<span class="n">2 books</span></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">245,118 words</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div></div><button class="btn sec sm" aria-label="Finished The Well of Ascension">Finished</button></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Jonathan Strange &amp; Mr Norrell</span><span class="rm">308,931 words</span></span><div class="rs">Susanna Clarke</div></div><button class="btn sec sm" aria-label="Finished Jonathan Strange &amp; Mr Norrell">Finished</button></div>
+    </div>
+    <div class="group">
+      <div class="ghead">Listening<span class="n">1 book</span></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">145,772 words</span></span><div class="rs">Andy Weir</div></div><button class="btn sec sm" aria-label="Finished Project Hail Mary">Finished</button></div>
+    </div>
+  </div>
+</div></div></div>
+<div class="frame fin-f" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Dashboard</a><a aria-current="page">Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
+  <div class="wrap">
+    <h1 class="t">Books by status</h1>
+    <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="true" data-on>In flight<span class="n">2</span></span><span role="tab" aria-selected="false">Up next<span class="n">174</span></span><span role="tab" aria-selected="false">Done<span class="n">349</span></span></span></div>
+    <div class="group">
+      <div class="ghead">Reading<span class="n">1 book</span></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Jonathan Strange &amp; Mr Norrell</span><span class="rm">308,931 words</span></span><div class="rs">Susanna Clarke</div></div><button class="btn sec sm" aria-label="Finished Jonathan Strange &amp; Mr Norrell">Finished</button></div>
+    </div>
+    <div class="group">
+      <div class="ghead">Listening<span class="n">1 book</span></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">145,772 words</span></span><div class="rs">Andy Weir</div></div><button class="btn sec sm" aria-label="Finished Project Hail Mary">Finished</button></div>
+    </div>
+    <div class="toast offer" role="status" aria-live="polite"><span class="tl"><span>The Well of Ascension: read</span><span class="t2">Finished 7 November 2026</span></span><u>Undo</u><div class="kg" role="group" aria-labelledby="kg-l"><span class="kgl" id="kg-l">Keep going?</span><button aria-label="Follow Mistborn, series as Reading">Mistborn <span class="k">&middot; series</span></button><button aria-label="Follow Brandon Sanderson as Reading">Brandon Sanderson</button><button aria-label="Follow Cosmere as Reading">Cosmere</button><button aria-label="Follow Epic fantasy, shelf as Reading">Epic fantasy <span class="k">&middot; shelf</span></button></div><span class="cd" style="width:62%"></span></div>
+  </div>
+</div></div></div>
+<div class="frame fin-f" data-w="tab"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative"><nav class="rail" aria-label="Main"><span class="rail-word" aria-hidden="true">L</span><div class="rg" role="group" aria-label="Medium"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/></svg></span><span class="rl">Comics</span></a><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg></span><span class="rl">Books</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m17 2-5 5-5-5"/><rect width="20" height="15" x="2" y="7" rx="2"/></svg></span><span class="rl">Watch</span></a></div><div class="rg"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="rl">Dashboard</span></a><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="rl">Status</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 7a2 2 0 0 0-2 2v11"/><path d="M5.803 18H5a2 2 0 0 0 0 4h9.5a.5.5 0 0 0 .5-.5V21"/><path d="M9 15V4a2 2 0 0 1 2-2h9.5a.5.5 0 0 1 .5.5v14a.5.5 0 0 1-.5.5H11a2 2 0 0 1 0-4h10"/></svg></span><span class="rl">Library</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M16 2v3"/><path d="M3 9h18"/><path d="M8 2v3"/><path d="M17 13h-6"/><path d="M13 17H7"/><path d="M7 13h.01"/><path d="M17 17h.01"/></svg></span><span class="rl">Plan</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg></span><span class="rl">Shelves</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg></span><span class="rl">Top</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span><span class="rl">Add</span></a></div><span class="rrule"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span class="rcount">6</span></span><span class="rl">Inbox</span></a><span class="grow"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><span class="rl">Search</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="rl">Settings</span></a></nav><div class="tabmain">
+    <div class="wrap">
+    <h1 class="t">Books by status</h1>
+    <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="true" data-on>In flight<span class="n">3</span></span><span role="tab" aria-selected="false">Up next<span class="n">174</span></span><span role="tab" aria-selected="false">Done<span class="n">348</span></span></span></div>
+    <div class="group">
+      <div class="ghead">Reading<span class="n">2 books</span></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">245,118 words</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div></div><button class="btn sec sm" aria-label="Finished The Well of Ascension">Finished</button></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Jonathan Strange &amp; Mr Norrell</span><span class="rm">308,931 words</span></span><div class="rs">Susanna Clarke</div></div><button class="btn sec sm" aria-label="Finished Jonathan Strange &amp; Mr Norrell">Finished</button></div>
+    </div>
+    <div class="group">
+      <div class="ghead">Listening<span class="n">1 book</span></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">145,772 words</span></span><div class="rs">Andy Weir</div></div><button class="btn sec sm" aria-label="Finished Project Hail Mary">Finished</button></div>
+    </div>
+  </div>
+</div></div></div></div>
+<div class="frame fin-f" data-w="desk"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
+  <aside class="side"><div class="brand">Ledger</div>
+    <a>Search<span class="kbd">Ctrl K</span></a>
+    <a>Inbox<span class="kbd">6</span></a>
+    <a>Stats</a>
+    <div class="grp">Comics</div>
+    <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
+    <a><i class="ico" aria-hidden="true">&#9776;</i>Runs</a>
+    <a><i class="ico" aria-hidden="true">&#8942;</i>Tracks</a>
+    <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
+    <div class="grp">Books</div>
+    <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <a aria-current="page"><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
+    <a><i class="ico" aria-hidden="true">&#9776;</i>Master list</a>
+    <a><i class="ico" aria-hidden="true">&#9636;</i>Plan</a>
+    <a><i class="ico" aria-hidden="true">&#9636;</i>Shelves</a>
+    <a><i class="ico" aria-hidden="true">&#9733;</i>Top books</a>
+    <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
+    <div class="grp">Watch</div>
+    <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
+    <a><i class="ico" aria-hidden="true">&#9776;</i>List</a>
+    <a><i class="ico" aria-hidden="true">&#9636;</i>Franchises</a>
+    <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
+    <div class="grp">&nbsp;</div>
+    <a>Settings</a>
+    <div class="syncpill" role="status" aria-live="polite" data-state="online">Synced</div>
+    </aside>
+  <div class="main"><div class="wrap">
+    <h1 class="t">Books by status</h1>
+    <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="true" data-on>In flight<span class="n">3</span></span><span role="tab" aria-selected="false">Up next<span class="n">174</span></span><span role="tab" aria-selected="false">Done<span class="n">348</span></span></span></div>
+    <div class="group">
+      <div class="ghead">Reading<span class="n">2 books</span></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">245,118 words</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div></div><button class="btn sec sm" aria-label="Finished The Well of Ascension">Finished</button></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Jonathan Strange &amp; Mr Norrell</span><span class="rm">308,931 words</span></span><div class="rs">Susanna Clarke</div></div><button class="btn sec sm" aria-label="Finished Jonathan Strange &amp; Mr Norrell">Finished</button></div>
+    </div>
+    <div class="group">
+      <div class="ghead">Listening<span class="n">1 book</span></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">145,772 words</span></span><div class="rs">Andy Weir</div></div><button class="btn sec sm" aria-label="Finished Project Hail Mary">Finished</button></div>
+    </div>
+  </div></div>
+</div></div></div>
+
 <div class="notes">
 <p><b>834px and 360px frames (task 1.8).</b> The 834 frame is a tablet: the 72px navigation rail replaces the top bar (each item a 56px target, an icon over an 11px label, the current one a <code>--raise</code> pill with the 3px medium bar), one column with 32px padding, the 40/44 title and a 48px thumb bar spanning the column. The 360 frame shows the media bar fitting <i>Watch</i> untruncated. The dashboard body at tablet width (hero, shelf, ladder) is not redrawn in this frame; the feel-pass PNGs in <code>design/screenshots/tablet/</code> are its reference.</p><h3>Status — in flight, up next, done</h3>
   <p><span class="chg">New, Sept 2026:</span> each medium can show everything in flight, everything planned or next up, and everything finished. One component and three routes — <code>/comics/status</code>, <code>/books/status</code>, <code>/watch/status</code> — with the same three tabs in the same order under the same names. ARCHITECTURE §4, TASKS 1.9 and 8.8.</p>
@@ -2839,6 +2936,7 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
     <li><b>Phone shows comics In flight; desktop shows books Up next.</b> Same component. What fills a row differs by medium, and the tabs never do.</li>
     <li><b>Comics.</b> <i>In flight</i> is runs partly read, most recently touched first, each with a one-tap <b>Read #N</b> at the resume pointer. <i>Up next</i> is <b>your queue</b> first, in your order, with drag handles, <b>Move to top</b> and <b>Remove</b> in each row menu. Queued blocked runs keep their amber badge. Below the queue, <i>Ready, not queued</i> lists runs you could start tonight, in track → block order, each with <b>+ Up next</b>. The queue has no dates and never will; a plan with periods is for books. <i>Done</i> is finished runs, each with its span, <i>Read Mar&ndash;Sep 2026</i> (<span class="chg">Nov 2026, task 1.17</span>). A run whose issues were all read in <i>other</i> runs is not done: read state is per run.</li>
     <li><b>Books.</b> <i>In flight</i> is what you are reading, with words left: under <b>Reading</b>, then what you are listening to under its own <b>Listening</b> heading, each heading drawn only when it has a book (<span class="chg">Nov 2026, task 1.23</span>). A row with a listen, on any tab, carries the headphones glyph after its title, named <i>Listening</i> or <i>Listened</i>. <i>Up next</i> is the plan by level: quarter by quarter, the bare-year lane in amber with a <b>Place them</b> button (the 2.8 flow), then On deck. <span class="chg">Oct 2026 (D-37):</span> each quarter is in your order, with the queue's drag handle and row menu (<b>Move to top · Move up · Move down</b>, plus <b>Move…</b> once 2.3 lands). A row never drags into another quarter; that is Move. The year lane and On deck are unordered. Someday is not listed: a closing row opens the master list at that level. The plan rail stacks the same order from the foot of each column, so the books past the capacity rule are the ones you ranked last. <i>Done</i> is read books grouped by year; a book with a dated start carries <i>Started 1 Mar &middot; finished 17 Mar &middot; 16 days</i> under its author (<span class="chg">Nov 2026, task 1.17</span>).</li>
+    <li><span class="chg">Nov 2026, task 2.2f:</span> a book's <i>In flight</i> rows carry <b>Finished</b>, named for the book, at the row's right where a comic's carries <b>Read #N</b>; the last frames draw it at 360, 834 and desktop. One tap writes today, with no date step: it is the Library's finish, so the toast says the same and carries <b>Keep going?</b>, and a listen is logged as one. A different date is set from the Library's <i>Finished</i>. The row leaves for <i>Done</i> and both counts move (second 360 frame). Focus goes to the next row's <b>Finished</b>; with no row left, to the <i>In flight</i> tab, above <i>Nothing in flight.</i> In flight has no other status control.</li>
     <li><b>Film &amp; TV.</b> <i>In flight</i> is shows mid-season-list (state derived from <code>show_progress</code>) and films marked watching. <i>Up next</i> is to-watch, with the dashboard's film/TV and genre filters. <i>Done</i> is watched.</li>
     <li><b>Stopped isn't hidden.</b> DNF books and dropped titles collapse under <i>Stopped</i> at the foot of Done. Finished is finished, even when it wasn't the ending you planned.</li>
     <li><b>Counts on the tabs, in mono.</b> They are tabular data, and they are the answer to "how much is in flight" before you tap anything.</li>

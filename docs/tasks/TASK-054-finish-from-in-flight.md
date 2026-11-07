@@ -1,7 +1,7 @@
 ---
 id: TASK-054
 title: 2.2f Finish a book from In flight
-status: Ready
+status: In progress
 depends_on: [TASK-017, TASK-010, TASK-048]
 size: M
 model: sonnet
