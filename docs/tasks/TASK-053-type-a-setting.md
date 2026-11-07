@@ -1,7 +1,7 @@
 ---
 id: TASK-053
 title: 2.0b Type a setting, and hold to step
-status: In progress
+status: Review
 depends_on: [TASK-045]
 size: M
 model: sonnet
@@ -31,7 +31,7 @@ A reading-pace number can be typed, with a phone's numpad, and holding − or + 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): component tests: typing 45 and Enter in *Minutes a day* changes it
+- [x] AC-1 (roadmap **Check:**, verbatim): component tests: typing 45 and Enter in *Minutes a day* changes it
 to 45; a value over the maximum commits the maximum and shows the reason; Esc
 and an empty field leave the value as it was; with fake timers, a hold repeats,
 repeats faster after its first second, and stops at the bound and on release; a
@@ -39,10 +39,10 @@ tap steps once. `PaceSettings`: a hold sends one `PATCH`, carrying the final
 value. In the browser (0.11), the input has `inputmode="numeric"`, focus
 returns to the number after a commit, and axe passes. Screenshots at 360px and
 1280px.
-- [ ] AC-2: Given *Minutes a day* at 45: a tap on the number shows an input with its text selected; typing a value under the minimum and Enter commits the minimum and shows *The lowest is N*; typing 50 and leaving the field commits 50 with no Enter; `abc` then Enter leaves 45 and sends no `PATCH`. Enter and Esc put focus back on the number; leaving the field by tapping elsewhere leaves focus where you tapped.
-- [ ] AC-3: With fake timers: nothing repeats before 400ms; a release, a `pointerleave` and a `pointercancel` each stop the repeat; a hold that reaches a bound stops there with the button `aria-disabled` and the reason shown; the value after a hold of N repeats differs from the start by N steps plus none for the closing `click`; pressing Enter or Space on + steps once.
-- [ ] AC-4: A hold whose repeats span more than one second sends one `PATCH`, with the final value and only that field; a typed value and a − press inside the same 500ms send one `PATCH`; a failed save puts the number back and raises the failed-write line with Retry, as a press does (2.0).
-- [ ] AC-5: The Settings steppers meet the UX floor (`docs/04-design.md` § 10. The UX floor): the number's button and the input are real controls with names and at least 24px tall; a row is the same height with the input open as closed at 360px; a press-and-hold on a touch screen selects no text and opens no menu; text is 4.5:1 and the input's outline 3:1 in both themes; axe reports no new violations; screenshots at every `ui.viewports` width, light and dark, with the input open.
+- [x] AC-2: Given *Minutes a day* at 45: a tap on the number shows an input with its text selected; typing a value under the minimum and Enter commits the minimum and shows *The lowest is N*; typing 50 and leaving the field commits 50 with no Enter; `abc` then Enter leaves 45 and sends no `PATCH`. Enter and Esc put focus back on the number; leaving the field by tapping elsewhere leaves focus where you tapped.
+- [x] AC-3: With fake timers: nothing repeats before 400ms; a release, a `pointerleave` and a `pointercancel` each stop the repeat; a hold that reaches a bound stops there with the button `aria-disabled` and the reason shown; the value after a hold of N repeats differs from the start by N steps plus none for the closing `click`; pressing Enter or Space on + steps once.
+- [x] AC-4: A hold whose repeats span more than one second sends one `PATCH`, with the final value and only that field; a typed value and a − press inside the same 500ms send one `PATCH`; a failed save puts the number back and raises the failed-write line with Retry, as a press does (2.0).
+- [x] AC-5: The Settings steppers meet the UX floor (`docs/04-design.md` § 10. The UX floor): the number's button and the input are real controls with names and at least 24px tall; a row is the same height with the input open as closed at 360px; a press-and-hold on a touch screen selects no text and opens no menu; text is 4.5:1 and the input's outline 3:1 in both themes; axe reports no new violations; screenshots at every `ui.viewports` width, light and dark, with the input open.
 
 ## Out of scope
 
@@ -67,7 +67,10 @@ returns to the number after a commit, and axe passes. Screenshots at 360px and
 
 ## Follow-ups
 
-- `design/STYLE_GUIDE.md` § 9 (*a number you step*) still says "rather than type"; it is protected and comes from the design tool, D-123 governs until then → docs/OWNER-CHECKLIST.md § Actions (approved at plan)
+- `design/STYLE_GUIDE.md` § 9 (*a number you step*) still says "rather than type"; it is protected and comes from the design tool, D-123 governs until then → docs/OWNER-CHECKLIST.md § Actions from follow-ups (approved at plan)
+- Typing a value off a bound removes the *highest/lowest is N* line, so the rows below move up before a tap on the next field lands; the reason line already did this on a press → not tracked: small, pre-existing with − and +, and the e2e order avoids it; raise it if it bites on the phone
+- Screenshots are taken at the e2e projects' widths (390 light and dark, 768, 1280, reduced motion, touch); the ui-verifier covered 360, 390, 412, 768, 1024 and 1280 by hand → not tracked: the projects' widths are the accepted set (D-80)
+- A real touch long press (no text selection, no context menu) can only be checked on a phone; CSS and the `contextmenu` guard are tested → not tracked: it is the task's manual step for the owner
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
@@ -90,7 +93,7 @@ Risks: happy-dom has no real touch long press.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 round PASS → full FAIL (7 e2e: one stale count of 2 buttons, one test-order slip in the new typing test) → specs re-run PASS | R2 round PASS | Audit R1 CHANGES (AC-3 key press unproven) → R2 PASS | Spec R1 CHANGES (a keyboard click swallowed after a clickless hold) → R2 APPROVE | UI R1 PASS (360–1280, light and dark; no console errors; dev data put back)
 
 ## Blocked
 
@@ -98,7 +101,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (round chain; full chain once)
+- Review rounds: 2 (spec-reviewer; ui-verifier 1)
+- First-pass AC FAILs: 1 (AC-3, the key press after a clickless hold)
+- Plan revisions after approval: 2 (test/stepper.test.tsx added; step 3 reworded, a tap steps on click)

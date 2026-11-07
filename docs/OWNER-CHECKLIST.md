@@ -220,6 +220,10 @@ tick them.
       bars that draw medium items, the tablet rail and the sidebar. The phone's
       media bar draws no medium items, and its add is the thumb bar's
       *+ Add issues* (D-107). The Check line is yours to change.
+- [ ] In the design tool, change `design/STYLE_GUIDE.md` § 9 (*a number you step*):
+      the number is typed as well as stepped (a button that opens a numeric
+      input), and a held − or + repeats. It still says "rather than type"; D-123
+      governs until you do (from TASK-053, task/2.0b-type-a-setting).
 
 ## Approvals from follow-ups
 
