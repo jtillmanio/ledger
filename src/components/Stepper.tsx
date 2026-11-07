@@ -123,8 +123,10 @@ export default function Stepper({ label, value, min, max, step, onChange }: {
     timer.current = setTimeout(tick, HOLD_DELAY_MS);
   }
 
-  /** The click that closes a hold adds no step; any other click (a tap, a key press) is one. */
-  function click(dir: 1 | -1, blocked: boolean) {
+  /** The click that closes a hold adds no step; any other click (a tap, a key press) is one. A key
+   *  press has no pointer (detail 0), so a hold that ended without its click can't swallow it. */
+  function click(dir: 1 | -1, blocked: boolean, detail: number) {
+    if (detail === 0) repeated.current = false;
     if (repeated.current) { repeated.current = false; return; }
     if (!blocked) apply(current.current + dir * step);
   }
@@ -141,7 +143,7 @@ export default function Stepper({ label, value, min, max, step, onChange }: {
         <button type="button" aria-label={`Decrease ${noun}`} aria-disabled={atMin || undefined}
                 aria-describedby={atMin ? why : undefined}
                 onPointerDown={(e) => press(e, -1, atMin)} onPointerUp={() => stop()} onPointerLeave={() => stop()}
-                onPointerCancel={() => stop()} onContextMenu={(e) => e.preventDefault()} onClick={() => click(-1, atMin)}>
+                onPointerCancel={() => stop()} onContextMenu={(e) => e.preventDefault()} onClick={(e) => click(-1, atMin, e.detail)}>
           &minus;
         </button>
         {editing ? (
@@ -163,7 +165,7 @@ export default function Stepper({ label, value, min, max, step, onChange }: {
         <button type="button" aria-label={`Increase ${noun}`} aria-disabled={atMax || undefined}
                 aria-describedby={atMax ? why : undefined}
                 onPointerDown={(e) => press(e, 1, atMax)} onPointerUp={() => stop()} onPointerLeave={() => stop()}
-                onPointerCancel={() => stop()} onContextMenu={(e) => e.preventDefault()} onClick={() => click(1, atMax)}>
+                onPointerCancel={() => stop()} onContextMenu={(e) => e.preventDefault()} onClick={(e) => click(1, atMax, e.detail)}>
           +
         </button>
       </span>

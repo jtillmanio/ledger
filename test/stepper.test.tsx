@@ -58,7 +58,9 @@ function fire(el: Element, type: string, init: Record<string, unknown> = {}) {
   act(() => { el.dispatchEvent(ev); });
 }
 const pointer = (el: Element, type: string) => fire(el, type);
-const tap = (el: HTMLElement) => { pointer(el, "pointerdown"); pointer(el, "pointerup"); act(() => el.click()); };
+/** A click from a pointer carries detail 1; a keyboard activation (el.click()) has detail 0. */
+const pointerClick = (el: Element) => fire(el, "click", { detail: 1 });
+const tap = (el: HTMLElement) => { pointer(el, "pointerdown"); pointer(el, "pointerup"); pointerClick(el); };
 const advance = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
 
 /** Types into the open field the way a user would: React reads the native value setter. */
@@ -213,7 +215,7 @@ describe("hold to step (AC-3)", () => {
     advance(300);
     expect(seen).toEqual([46, 47]);
     pointer(plus(), "pointerup");
-    act(() => plus().click());
+    pointerClick(plus());
     expect(seen).toEqual([46, 47]);
     expect(shown()).toBe("47");
   });
@@ -254,7 +256,7 @@ describe("hold to step (AC-3)", () => {
     pointer(minus(), "pointerdown");
     advance(2500);
     pointer(minus(), "pointerup");
-    act(() => minus().click());
+    pointerClick(minus());
     expect(45 - Number(shown())).toBe(seen.length);
     expect(seen.length).toBeGreaterThan(3);
   });
@@ -292,6 +294,24 @@ describe("hold to step (AC-3)", () => {
     expect(seen).toEqual([46, 47]);
   });
 
+  it("a hold that ends with no click can't swallow the next key press, on + or −", () => {
+    const seen: number[] = [];
+    mount({ start: 45, seen });
+    pointer(plus(), "pointerdown");
+    advance(700);
+    pointer(plus(), "pointercancel");
+    const held = seen.length;
+    expect(held).toBeGreaterThan(0);
+    act(() => plus().click()); // a key press: detail 0
+    expect(seen).toHaveLength(held + 1);
+    pointer(minus(), "pointerdown");
+    advance(700);
+    pointer(minus(), "pointerleave");
+    const again = seen.length;
+    act(() => minus().click());
+    expect(seen).toHaveLength(again + 1);
+  });
+
   it("the buttons refuse the context menu", () => {
     mount({ start: 45, seen: [] });
     const ev = new Event("contextmenu", { bubbles: true, cancelable: true });
@@ -310,7 +330,7 @@ describe("PaceSettings sends one save (AC-4)", () => {
     pointer(plus(), "pointerdown");
     advance(1500);
     pointer(plus(), "pointerup");
-    act(() => plus().click());
+    pointerClick(plus());
     expect(fetchMock).not.toHaveBeenCalled();
     const final = Number(shown());
     expect(final).toBeGreaterThan(48);
