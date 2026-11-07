@@ -13,7 +13,7 @@ import BooksLoading from "../../src/app/books/status/loading";
 import ComicsLoading from "../../src/app/comics/status/loading";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
-import { computedStyle, contrastFailures, E2E_BOOK_COUNT, E2E_RUN_ID, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
+import { computedStyle, contrastFailures, E2E_BOOK_COUNT, E2E_RUN_ID, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled, tokenColour } from "./helpers";
 
 // Writes or sets its own state: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
@@ -419,5 +419,189 @@ test.describe("books", () => {
     // A stopped book is on no other tab.
     await open(page, "/books/status?tab=next");
     await expect(page.getByText("E2E Stopped")).toHaveCount(0);
+  });
+});
+
+// Task 2.2f: Finished on an In flight row. Own books, own serial describe; the
+// browser suite runs one file at a time, so nothing else sees them.
+test.describe("Finished on In flight (2.2f)", () => {
+  test.describe.configure({ mode: "serial" });
+  const prefix = "e2e-fin-";
+  const LONG = "E2E Fin A Very Long Title That Goes On And On Without Any Spaces Pneumonoultramicroscopicsilicovolcanoconiosis";
+  const seed: [string, string, string][] = [
+    // id, title, status
+    ["a", "E2E Fin Alpha", "reading"],
+    ["b", "E2E Fin Beta", "reading"],
+    ["c", "E2E Fin Gamma Listening", "listening"],
+    ["next", "E2E Fin Up Next", "to_read"],
+    ["done", "E2E Fin Done", "read"],
+    ["long", LONG, "reading"],
+  ];
+  const finish = (page: Page, title: string) => page.getByRole("button", { name: `Finished ${title}`, exact: true });
+  const today = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+
+  const reads = (id: string) => db(async (sql) =>
+    [...await sql`SELECT format, finished_on::text AS finished_on, finished_on_precision AS precision, started_on::text AS started_on
+              FROM read_events WHERE user_id = ${E2E_USER} AND book_id = ${prefix + id} ORDER BY id`]
+      .map((r) => ({ ...r })));
+  const status = (id: string) => db(async (sql) => {
+    const [row] = await sql`SELECT status, started_on::text AS started_on, finished_on::text AS finished_on FROM book_status
+                            WHERE user_id = ${E2E_USER} AND book_id = ${prefix + id}`;
+    return { ...row };
+  });
+
+  async function reseed() {
+    await db(async (sql) => {
+      await sql`DELETE FROM books WHERE id LIKE ${prefix + "%"}`;
+      await sql`DELETE FROM authors WHERE id = ${prefix + "author"}`;
+      // One author with an unread book, so the finish has something to offer (Keep going?).
+      await sql`INSERT INTO authors (id, name) VALUES (${prefix + "author"}, 'E2E Fin Author')`;
+      for (const [id, title, st] of seed) {
+        const going = st === "reading" || st === "listening";
+        await sql`INSERT INTO books (id, title, genre, author_id) VALUES (${prefix + id}, ${title}, 'Fantasy', ${prefix + "author"})`;
+        await sql`INSERT INTO book_status (user_id, book_id, status, started_on, started_on_precision, finished_on, finished_on_precision)
+                  VALUES (${E2E_USER}, ${prefix + id}, ${st}, ${going ? "2026-01-15" : null}, ${going ? "exact" : "none"},
+                          ${st === "read" ? "2025-05-05" : null}, ${st === "read" ? "exact" : "none"})`;
+      }
+    });
+  }
+
+  test.beforeEach(reseed);
+  test.afterAll(async () => {
+    await db((sql) => sql`DELETE FROM books WHERE id LIKE ${prefix + "%"}`);
+    await db((sql) => sql`DELETE FROM authors WHERE id = ${prefix + "author"}`);
+  });
+
+  test("AC-3: a button named Finished <title> on Reading and Listening rows only", ONCE, async ({ page }) => {
+    await open(page, "/books/status");
+    await expect(panel(page).getByRole("button")).toHaveCount(4);
+    for (const title of ["E2E Fin Alpha", "E2E Fin Beta", "E2E Fin Gamma Listening"]) await expect(finish(page, title)).toBeVisible();
+    // Nothing else on the row is a status control.
+    await expect(panel(page).locator("article.row").first().getByRole("button")).toHaveCount(1);
+    await open(page, "/books/status?tab=next");
+    await expect(page.getByRole("button", { name: /^Finished / })).toHaveCount(0);
+    await open(page, "/books/status?tab=done");
+    await expect(page.getByRole("button", { name: /^Finished / })).toHaveCount(0);
+  });
+
+  test("AC-1/AC-2: a Reading row finishes today, exact, start kept; Keep going? is offered; Undo restores it", ONCE, async ({ page }, info) => {
+    await open(page, "/books/status");
+    const button = finish(page, "E2E Fin Alpha");
+    await hydrated(button);
+    expect(await counted(page, "In flight")).toBe(4);
+    await button.click();
+    // No date control opens.
+    await expect(page.getByRole("group", { name: /^Finished/ })).toHaveCount(0);
+    const toast = page.locator(".toast");
+    await expect(toast).toContainText("E2E Fin Alpha: read");
+    const words = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "America/New_York" });
+    await expect(toast).toContainText(`Finished ${words.format(new Date())}`);
+    await expect(toast.getByRole("group", { name: "Keep going?" })).toBeVisible();
+    await expect(finish(page, "E2E Fin Alpha")).toHaveCount(0);
+    expect(await reads("a")).toEqual([{ format: "text", finished_on: today(), precision: "exact", started_on: "2026-01-15" }]);
+    expect((await status("a")).status).toBe("read");
+    await expect.poll(() => counted(page, "In flight")).toBe(3);
+    await expect.poll(() => counted(page, "Done")).toBe(2);
+    await toastSettled(page);
+    await floor(page);
+    // Nothing on the row or its button resolves to --danger.
+    const danger = await tokenColour(page, "--danger");
+    for (const el of [finish(page, "E2E Fin Beta"), panel(page).locator("article.row").first()]) {
+      const { color, "background-color": bg, "border-top-color": border } = await computedStyle(el, ["color", "background-color", "border-top-color"]);
+      expect([color, bg, border]).not.toContain(danger);
+    }
+    await screenshot(page, info, "books-in-flight-finished");
+
+    await toast.getByRole("button", { name: "Undo" }).click();
+    await expect(finish(page, "E2E Fin Alpha")).toBeFocused();
+    expect(await reads("a")).toEqual([]);
+    expect(await status("a")).toEqual({ status: "reading", started_on: "2026-01-15", finished_on: null });
+    await expect.poll(() => counted(page, "In flight")).toBe(4);
+  });
+
+  test("AC-1: a Listening row logs an audio read", ONCE, async ({ page }) => {
+    await open(page, "/books/status");
+    await hydrated(finish(page, "E2E Fin Gamma Listening"));
+    await finish(page, "E2E Fin Gamma Listening").click();
+    await expect(page.locator(".toast")).toContainText("E2E Fin Gamma Listening: read");
+    expect((await reads("c")).map((r) => r.format)).toEqual(["audio"]);
+  });
+
+  test("AC-4: by keyboard focus goes to the next row, else the previous one; F6 reaches the toast", ONCE, async ({ page }) => {
+    // Order on the page: Reading (LONG, Alpha, Beta), then Listening (Gamma).
+    await open(page, "/books/status");
+    await hydrated(finish(page, "E2E Fin Alpha"));
+    await finish(page, "E2E Fin Alpha").focus();
+    await page.keyboard.press("Enter");
+    await expect(finish(page, "E2E Fin Beta")).toBeFocused();
+    // F6 into the toast, and F6 back out.
+    await page.keyboard.press("F6");
+    await expect(page.locator(".toast").getByRole("button").first()).toBeFocused();
+    await page.keyboard.press("F6");
+    await expect(finish(page, "E2E Fin Beta")).toBeFocused();
+    // Beta is the last of Reading: the next Finished is Gamma's, in Listening.
+    await page.keyboard.press("Enter");
+    await expect(finish(page, "E2E Fin Gamma Listening")).toBeFocused();
+    // Gamma is the last on the page: focus goes to the previous row's.
+    await page.keyboard.press("Enter");
+    await expect(finish(page, LONG)).toBeFocused();
+  });
+
+  test("AC-4: Undo puts focus on the restored row's Finished", ONCE, async ({ page }) => {
+    await open(page, "/books/status");
+    await hydrated(finish(page, "E2E Fin Alpha"));
+    await finish(page, "E2E Fin Alpha").focus();
+    await page.keyboard.press("Enter");
+    await expect(page.locator(".toast")).toContainText("E2E Fin Alpha: read");
+    await page.keyboard.press("Control+z");
+    await expect(finish(page, "E2E Fin Alpha")).toBeFocused();
+  });
+
+  test("AC-4: a refused write offers Retry, keeps the row, writes no read; Retry saves", ONCE, async ({ page }) => {
+    await open(page, "/books/status");
+    await hydrated(finish(page, "E2E Fin Alpha"));
+    await page.route("**/api/progress/book", (route) => route.abort());
+    await finish(page, "E2E Fin Alpha").click();
+    await expect(page.locator(".toast")).toContainText("Couldn't finish E2E Fin Alpha. Nothing changed.");
+    await expect(finish(page, "E2E Fin Alpha")).toBeVisible();
+    expect(await reads("a")).toEqual([]);
+    await page.unroute("**/api/progress/book");
+    await page.locator(".toast").getByRole("button", { name: "Retry" }).click();
+    await expect(page.locator(".toast")).toContainText("E2E Fin Alpha: read");
+    expect(await reads("a")).toHaveLength(1);
+  });
+
+  test("AC-4: a 400 shows the server's reason with Retry, and writes nothing", ONCE, async ({ page }) => {
+    await open(page, "/books/status");
+    await hydrated(finish(page, "E2E Fin Alpha"));
+    await page.route("**/api/progress/book", (route) => route.fulfill({ status: 400, json: { error: "it is not allowed" } }));
+    await finish(page, "E2E Fin Alpha").click();
+    await expect(page.locator(".toast")).toContainText("Not saved: it is not allowed.");
+    await expect(page.locator(".toast").getByRole("button", { name: "Retry" })).toBeVisible();
+    await expect(finish(page, "E2E Fin Alpha")).toBeVisible();
+    expect(await reads("a")).toEqual([]);
+  });
+
+  test("AC-5: the button is at least 24px tall; a long title stays inside the row at 360", async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await open(page, "/books/status");
+    expect((await finish(page, "E2E Fin Alpha").boundingBox())!.height).toBeGreaterThanOrEqual(24);
+    await expectNoHorizontalScroll(page);
+    const row = panel(page).locator("article.row").filter({ hasText: "Pneumonoultra" });
+    const r = (await row.boundingBox())!;
+    const b = (await finish(page, LONG).boundingBox())!;
+    expect(b.x + b.width).toBeLessThanOrEqual(r.x + r.width + 1);
+    await floor(page);
+  });
+
+  test("AC-5: finishing the last book shows Nothing in flight.", ONCE, async ({ page }) => {
+    await db((sql) => sql`UPDATE book_status SET status = 'to_read' WHERE user_id = ${E2E_USER} AND book_id IN (${prefix + "b"}, ${prefix + "c"}, ${prefix + "long"})`);
+    await open(page, "/books/status");
+    await hydrated(finish(page, "E2E Fin Alpha"));
+    await finish(page, "E2E Fin Alpha").focus();
+    await page.keyboard.press("Enter");
+    await expect(panel(page).locator(".slate b")).toHaveText("Nothing in flight.");
+    await expect(tab(page, "In flight")).toBeFocused();
+    await expect(tab(page, "In flight").locator(".n")).toHaveText("0");
   });
 });

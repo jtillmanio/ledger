@@ -1,20 +1,16 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import BookRowMenu from "@/components/BookRowMenu";
 import FinishDate, {
-  dateWords, finishReason, finishWords, initialFinish, storedDay, toChoice, type DateFor, type FinishValue,
+  dateWords, finishReason, initialFinish, storedDay, type DateFor, type FinishValue,
 } from "@/components/FinishDate";
 import { Headphones } from "@/components/nav/Icons";
-import { useUndo } from "@/components/Undo";
-import type { FinishOffer } from "@/db/queries";
+import { NAMES, useBookWrite, type BookStatusName } from "@/components/useBookWrite";
 import { startAfterFinish } from "@/lib/finish-date";
-import { offerChips } from "@/lib/follow-offer";
 import { listenGlyph, readWhen, type Precision } from "@/lib/format";
 
-/** `unlisted` (task 1.21, D-86) is shown and undone to, never chosen: no button sets it. */
-type Status = "to_read" | "reading" | "listening" | "read" | "dnf" | "unlisted";
+type Status = BookStatusName;
 type Finish = { on: string | null; precision: Precision };
 /** `start` is the read in progress's, or once Read the latest read's (task 1.17).
  * `listened`: the book has a listen (task 1.23), for the glyph. */
@@ -31,9 +27,6 @@ const STATUSES: { status: Exclude<Status, "unlisted">; label: string }[] = [
   { status: "read", label: "Read" },
   { status: "dnf", label: "DNF" },
 ];
-const NAMES: Record<Status, string> = {
-  to_read: "to read", reading: "reading", listening: "listening", read: "read", dnf: "DNF", unlisted: "unlisted",
-};
 
 /** The book an undo has just put back to Unlisted: its row takes focus when it is drawn again. */
 let refocus: string | null = null;
@@ -92,8 +85,7 @@ export default function BookStatus({
   bookId: string; status?: string; finishedOn?: string | null; precision?: Precision;
   startedOn?: string | null; startPrecision?: Precision; listened?: boolean;
 }) {
-  const router = useRouter();
-  const { push } = useUndo();
+  const bookWrite = useBookWrite();
   const fromProps = (): Saved => ({
     status: status as Status, finish: { on: finishedOn, precision }, start: { on: startedOn, precision: startPrecision },
     listened,
@@ -164,51 +156,27 @@ export default function BookStatus({
   async function write(
     next: Status, dates: { finish?: FinishValue; start?: FinishValue } = {}, name = title,
   ): Promise<boolean> {
-    const { finish, start } = dates;
     setSaving(true);
     setFailed(false);
     setRefused(null);
     try {
-      const res = await fetch("/api/progress/book", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          bookId, status: next, ...(finish && { finish: toChoice(finish) }), ...(start && { start: toChoice(start) }),
-        }),
-      });
-      if (res.status === 400) {
-        // Refused, and nothing written: say why under the control.
-        const { error } = (await res.json()) as { error?: string };
-        setRefused(`Not saved: ${error ?? "the server refused it"}.`);
-        return false;
-      }
-      if (!res.ok) throw new Error("status failed");
-      const { change, finish: stored, start: storedStart, format, offer } = (await res.json()) as {
-        change: unknown; finish: Finish | null; start: Finish; format: string | null; offer: FinishOffer | null;
-      };
       const before = saved;
-      setSaved({
-        status: next, finish: stored ?? before.finish, start: storedStart,
-        listened: before.listened || format === "audio",
-      });
-      router.refresh();
-      push({
-        label: `${name}: ${NAMES[next]}`,
-        detail: start ? `Started ${finishWords(start)}`
-          : next === "read" ? `Finished ${finishWords(finish!)}` : `Was ${NAMES[before.status]}`,
-        undo: async () => {
-          const back = await fetch("/api/progress/book", {
-            method: "DELETE",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ change }),
-          });
-          if (!back.ok) throw new Error("undo failed");
+      const done = await bookWrite({
+        bookId, status: next, name, was: before.status, ...dates,
+        onSaved: ({ finish: stored, start: storedStart, format }) => setSaved({
+          status: next, finish: stored ?? before.finish, start: storedStart,
+          listened: before.listened || format === "audio",
+        }),
+        onUndone: () => {
           if (before.status === "unlisted") refocus = bookId;
           setSaved(before);
-          router.refresh();
         },
-        offer: offerChips(offer),
       });
+      if ("refused" in done) {
+        // Refused, and nothing written: say why under the control.
+        setRefused(`Not saved: ${done.refused}.`);
+        return false;
+      }
       return true;
     } catch {
       setFailed(true);

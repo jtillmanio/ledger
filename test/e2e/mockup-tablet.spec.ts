@@ -30,7 +30,7 @@ async function openTab(page: Page, id: Screen, theme: "light" | "dark" = "light"
     },
     [id, theme] as const,
   );
-  return page.locator(`section.screen[data-id="${id}"] .frame[data-w="tab"]`);
+  return page.locator(`section.screen[data-id="${id}"] .frame[data-w="tab"]`).first();
 }
 
 type Box = { x: number; y: number; width: number; height: number };
