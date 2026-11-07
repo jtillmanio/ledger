@@ -357,3 +357,18 @@ test("the number and its input meet the floor: named, 24px+, same row height ope
   await expectNoHorizontalScroll(page);
   await screenshot(page, info, "settings-typing");
 });
+
+test("a key press on + steps once: Enter and Space each add one step, and nothing repeats after (AC-3)", ONCE, async ({ page }) => {
+  await reset();
+  await open(page);
+  const up = press(page, "Increase", "Minutes a day");
+  await up.focus();
+  await up.press("Enter");
+  await expect(output(page, "Minutes a day")).toHaveText("46");
+  await up.press("Space");
+  await expect(output(page, "Minutes a day")).toHaveText("47");
+  await page.waitForTimeout(1200);
+  await expect(output(page, "Minutes a day")).toHaveText("47");
+  await expect.poll(storedMinutes).toBe(47);
+  await reset();
+});
