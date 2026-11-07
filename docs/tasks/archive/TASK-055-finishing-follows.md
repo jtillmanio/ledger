@@ -1,7 +1,7 @@
 ---
 id: TASK-055
 title: 2.2h Finishing a book follows it
-status: Review
+status: Done
 depends_on: [TASK-048]
 size: L
 model: opus
@@ -59,7 +59,7 @@ offers the series and the universe.
 - [x] AC-3: After a finish that follows a series and a universe, the toast reads *Now reading <series> · <universe>* with one chip each, and *Keep going?* lists the author and shelves only. A chip sets that one `off` and leaves the other; its Undo restores `reading`. The finish's Undo, taken instead, restores every follow to its earlier state. A finish that follows nothing has no *Now reading* line. On a book with no live book left in a *Reading* series, *Done with <series>* still shows and still writes `tracking`.
 - [x] AC-4: `off` is no follow: `series_progress.follow_state`, `universe_progress.follow_state` and `subseries_progress.follow_state` are NULL at `off`, the sheet shows *Not following*, and a later finish leaves it `off` and offers no chip for it. Undoing a first *Not following* on an unfollowed series leaves no row. *Not following* on an author or a shelf still deletes the row. `POST /api/follows` refuses *Reading* or *Tracking* on an unknown subseries or one with no live book, and *Not following* (`off`) on an unknown one, with 400 and writes nothing; `off` on a subseries that exists with no live book is accepted, as stepping away is never refused (2.2c); `off` isn't accepted for an author or a shelf. *(Reworded by the owner at review, 2026-11-07.)*
 - [x] AC-5: The *Follow…* sheet lists a book's subseries with its radiogroup and a `read / total` equal to `subseries_progress`; a book with no subseries lists none. For every kind, the middle option reads *On hold* with at least one read and one unread and *Tracking* otherwise, with `tracking` stored both ways.
-- [ ] AC-6: The toast and the sheet meet the UX floor (`docs/04-design.md` § 10. The UX floor): each chip and option has an accessible name; chips are 44px in the toast's row and options at least 24px; the *Now reading* line is 4.5:1 in both themes and the toast still fits at 360px with a long series name and four chips; nothing is red; axe reports no new violations; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-6: The toast and the sheet meet the UX floor (`docs/04-design.md` § 10. The UX floor): each chip and option has an accessible name; chips are 44px in the toast's row and options at least 24px; the *Now reading* line is 4.5:1 in both themes and the toast still fits at 360px with a long series name and four chips; nothing is red; axe reports no new violations; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
