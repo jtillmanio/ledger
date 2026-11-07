@@ -249,6 +249,13 @@ describe("the route refuses what can't be followed (AC-2; 2.2h AC-4)", () => {
     expect(await sql`SELECT 1 FROM series_follows WHERE series_id = 'gone-series'`).toEqual([]);
   });
 
+  it("Not following (off) on a subseries that exists with no live book is accepted: stepping away is never refused (2.2h AC-4, owner 2026-11-07)", async () => {
+    const res = await post({ kind: "subseries", id: "empty-era", state: "off" });
+    expect(res.status).toBe(200);
+    expect((await res.json()).prior).toBeNull();
+    expect(await sql`SELECT state FROM subseries_follows WHERE subseries_id = 'empty-era'`).toEqual([{ state: "off" }]);
+  });
+
   it("Not following a shelf that isn't a books shelf is still refused", async () => {
     expect((await post({ kind: "shelf", id: "films", state: null })).status).toBe(400);
   });
