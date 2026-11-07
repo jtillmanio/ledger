@@ -13,7 +13,7 @@ import BooksLoading from "../../src/app/books/status/loading";
 import ComicsLoading from "../../src/app/comics/status/loading";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
-import { computedStyle, contrastFailures, E2E_BOOK_COUNT, E2E_RUN_ID, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled } from "./helpers";
+import { computedStyle, contrastFailures, E2E_BOOK_COUNT, E2E_RUN_ID, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled, tokenColour } from "./helpers";
 
 // Writes or sets its own state: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
@@ -504,6 +504,12 @@ test.describe("Finished on In flight (2.2f)", () => {
     await expect.poll(() => counted(page, "Done")).toBe(2);
     await toastSettled(page);
     await floor(page);
+    // Nothing on the row or its button resolves to --danger.
+    const danger = await tokenColour(page, "--danger");
+    for (const el of [finish(page, "E2E Fin Beta"), panel(page).locator("article.row").first()]) {
+      const { color, "background-color": bg, "border-top-color": border } = await computedStyle(el, ["color", "background-color", "border-top-color"]);
+      expect([color, bg, border]).not.toContain(danger);
+    }
     await screenshot(page, info, "books-in-flight-finished");
 
     await toast.getByRole("button", { name: "Undo" }).click();
@@ -522,19 +528,23 @@ test.describe("Finished on In flight (2.2f)", () => {
   });
 
   test("AC-4: by keyboard focus goes to the next row, else the previous one; F6 reaches the toast", ONCE, async ({ page }) => {
+    // Order on the page: Reading (LONG, Alpha, Beta), then Listening (Gamma).
     await open(page, "/books/status");
     await hydrated(finish(page, "E2E Fin Alpha"));
     await finish(page, "E2E Fin Alpha").focus();
     await page.keyboard.press("Enter");
     await expect(finish(page, "E2E Fin Beta")).toBeFocused();
+    // F6 into the toast, and F6 back out.
     await page.keyboard.press("F6");
     await expect(page.locator(".toast").getByRole("button").first()).toBeFocused();
     await page.keyboard.press("F6");
-    // The last row of the panel: focus goes to the previous one.
-    await finish(page, LONG).focus();
+    await expect(finish(page, "E2E Fin Beta")).toBeFocused();
+    // Beta is the last of Reading: the next Finished is Gamma's, in Listening.
     await page.keyboard.press("Enter");
-    await expect(page.locator(".toast")).toContainText(": read");
-    await expect(page.locator(".finish-book:focus")).toHaveCount(1);
+    await expect(finish(page, "E2E Fin Gamma Listening")).toBeFocused();
+    // Gamma is the last on the page: focus goes to the previous row's.
+    await page.keyboard.press("Enter");
+    await expect(finish(page, LONG)).toBeFocused();
   });
 
   test("AC-4: Undo puts focus on the restored row's Finished", ONCE, async ({ page }) => {
@@ -559,6 +569,17 @@ test.describe("Finished on In flight (2.2f)", () => {
     await page.locator(".toast").getByRole("button", { name: "Retry" }).click();
     await expect(page.locator(".toast")).toContainText("E2E Fin Alpha: read");
     expect(await reads("a")).toHaveLength(1);
+  });
+
+  test("AC-4: a 400 shows the server's reason with Retry, and writes nothing", ONCE, async ({ page }) => {
+    await open(page, "/books/status");
+    await hydrated(finish(page, "E2E Fin Alpha"));
+    await page.route("**/api/progress/book", (route) => route.fulfill({ status: 400, json: { error: "it is not allowed" } }));
+    await finish(page, "E2E Fin Alpha").click();
+    await expect(page.locator(".toast")).toContainText("Not saved: it is not allowed.");
+    await expect(page.locator(".toast").getByRole("button", { name: "Retry" })).toBeVisible();
+    await expect(finish(page, "E2E Fin Alpha")).toBeVisible();
+    expect(await reads("a")).toEqual([]);
   });
 
   test("AC-5: the button is at least 24px tall; a long title stays inside the row at 360", async ({ page }) => {
