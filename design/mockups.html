@@ -416,6 +416,8 @@ button.era{width:100%;font:inherit;color:inherit;text-align:left;border-left:0;b
 .stepper{display:flex;align-items:center;gap:.25rem;background:var(--raise);border:1px solid var(--faint-deco);border-radius:9px;padding:.1875rem}
 .stepper b{width:28px;height:28px;border-radius:6px;display:grid;place-items:center;font-weight:600;color:var(--ink);background:var(--surface);box-shadow:var(--sh-1)}
 .stepper .val{min-width:3rem;text-align:center;font-family:var(--mono);font-size:.875rem;font-weight:500}
+.stepper button.val,.stepper input.val{box-sizing:border-box;min-width:3rem;width:3rem;height:28px;margin:0;padding:0 .25rem;border:0;border-radius:6px;background:transparent;color:var(--ink);font:inherit;font-family:var(--mono);font-size:.875rem;font-weight:500;text-align:center}
+.stepper input.val{background:var(--surface);outline:2px solid var(--brand);outline-offset:-2px}
 .txt{background:var(--surface);border:1px solid var(--faint-deco);border-radius:11px;padding:.75rem;
   font-family:var(--mono);font-size:.75rem;line-height:1.8;color:var(--ink-2);box-shadow:var(--sh-1)}
 /* detail sheet — intercepted route */
@@ -5263,15 +5265,15 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
     <h3 class="s">Reading pace</h3>
     <div class="group">
       <div class="frow"><span class="k">Minutes a day</span>
-        <span class="stepper" role="group" aria-label="Adjust value" style="margin-left:auto;background:var(--sunk)"><b role="button" tabindex="0" aria-label="Decrease">&minus;</b><output class="val">45</output><b role="button" tabindex="0" aria-label="Increase">+</b></span></div>
+        <span class="stepper" role="group" aria-label="Minutes a day" style="margin-left:auto;background:var(--sunk)"><b role="button" tabindex="0" aria-label="Decrease minutes a day">&minus;</b><input class="val" type="text" inputmode="numeric" aria-label="Minutes a day" value="45"><output class="sr-only">45</output><b role="button" tabindex="0" aria-label="Increase minutes a day">+</b></span></div>
       <div class="frow"><span class="k">Words a minute</span>
-        <span class="stepper" role="group" aria-label="Adjust value" style="margin-left:auto;background:var(--sunk)"><b role="button" tabindex="0" aria-label="Decrease">&minus;</b><output class="val">185</output><b role="button" tabindex="0" aria-label="Increase">+</b></span></div>
+        <span class="stepper" role="group" aria-label="Words a minute" style="margin-left:auto;background:var(--sunk)"><b role="button" tabindex="0" aria-label="Decrease words a minute">&minus;</b><button class="val" aria-label="Edit words a minute">185</button><output class="sr-only">185</output><b role="button" tabindex="0" aria-label="Increase words a minute">+</b></span></div>
       <div class="frow" style="background:var(--blocked-soft)"><span class="k" style="color:var(--blocked)">Measured from sessions</span>
         <span class="v mono" style="color:var(--blocked)">212 wpm · 38 min/day</span>
         <button class="btn sec sm">Use these</button><a class="chip" href="#">14 sessions</a></div>
       <div class="frow"><span class="k">Estimate missing counts</span><span class="switch" role="switch" aria-checked="true" tabindex="0" data-on style="margin-left:auto"><b></b></span></div>
       <div class="frow"><span class="k">Words per page</span>
-        <span class="stepper" role="group" aria-label="Adjust value" style="margin-left:auto;background:var(--sunk)"><b role="button" tabindex="0" aria-label="Decrease">&minus;</b><output class="val">275</output><b role="button" tabindex="0" aria-label="Increase">+</b></span></div>
+        <span class="stepper" role="group" aria-label="Words per page" style="margin-left:auto;background:var(--sunk)"><b role="button" tabindex="0" aria-label="Decrease words per page">&minus;</b><button class="val" aria-label="Edit words per page">275</button><output class="sr-only">275</output><b role="button" tabindex="0" aria-label="Increase words per page">+</b></span></div>
     </div>
     <div class="group" style="margin-top:.625rem"><div class="frow" style="display:block">
       <p style="margin:0;font-size:.8125rem;color:var(--muted)">At 45 minutes a day you can read about
@@ -5330,15 +5332,15 @@ body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{displ
       <h3 class="s">Reading pace</h3>
       <div class="group">
       <div class="frow"><span class="k">Minutes a day</span>
-        <span class="stepper" role="group" aria-label="Adjust value" style="margin-left:auto;background:var(--sunk)"><b role="button" tabindex="0" aria-label="Decrease">&minus;</b><output class="val">45</output><b role="button" tabindex="0" aria-label="Increase">+</b></span></div>
+        <span class="stepper" role="group" aria-label="Minutes a day" style="margin-left:auto;background:var(--sunk)"><b role="button" tabindex="0" aria-label="Decrease minutes a day">&minus;</b><input class="val" type="text" inputmode="numeric" aria-label="Minutes a day" value="45"><output class="sr-only">45</output><b role="button" tabindex="0" aria-label="Increase minutes a day">+</b></span></div>
       <div class="frow"><span class="k">Words a minute</span>
-        <span class="stepper" role="group" aria-label="Adjust value" style="margin-left:auto;background:var(--sunk)"><b role="button" tabindex="0" aria-label="Decrease">&minus;</b><output class="val">185</output><b role="button" tabindex="0" aria-label="Increase">+</b></span></div>
+        <span class="stepper" role="group" aria-label="Words a minute" style="margin-left:auto;background:var(--sunk)"><b role="button" tabindex="0" aria-label="Decrease words a minute">&minus;</b><button class="val" aria-label="Edit words a minute">185</button><output class="sr-only">185</output><b role="button" tabindex="0" aria-label="Increase words a minute">+</b></span></div>
       <div class="frow" style="background:var(--blocked-soft)"><span class="k" style="color:var(--blocked)">Measured from sessions</span>
         <span class="v mono" style="color:var(--blocked)">212 wpm · 38 min/day</span>
         <button class="btn sec sm">Use these</button><a class="chip" href="#">14 sessions</a></div>
       <div class="frow"><span class="k">Estimate missing counts</span><span class="switch" role="switch" aria-checked="true" tabindex="0" data-on style="margin-left:auto"><b></b></span></div>
       <div class="frow"><span class="k">Words per page</span>
-        <span class="stepper" role="group" aria-label="Adjust value" style="margin-left:auto;background:var(--sunk)"><b role="button" tabindex="0" aria-label="Decrease">&minus;</b><output class="val">275</output><b role="button" tabindex="0" aria-label="Increase">+</b></span></div>
+        <span class="stepper" role="group" aria-label="Words per page" style="margin-left:auto;background:var(--sunk)"><b role="button" tabindex="0" aria-label="Decrease words per page">&minus;</b><button class="val" aria-label="Edit words per page">275</button><output class="sr-only">275</output><b role="button" tabindex="0" aria-label="Increase words per page">+</b></span></div>
     </div>
       <div class="group" style="margin-top:.625rem"><div class="frow" style="display:block">
       <p style="margin:0;font-size:.8125rem;color:var(--muted)">At 45 minutes a day you can read about

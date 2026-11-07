@@ -1,14 +1,14 @@
 ---
 id: TASK-053
 title: 2.0b Type a setting, and hold to step
-status: Ready
+status: In progress
 depends_on: [TASK-045]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: b18da5b
 ---
 
 # TASK-053 — 2.0b Type a setting, and hold to step
@@ -67,11 +67,26 @@ returns to the number after a commit, and axe passes. Screenshots at 360px and
 
 ## Follow-ups
 
+- `design/STYLE_GUIDE.md` § 9 (*a number you step*) still says "rather than type"; it is protected and comes from the design tool, D-123 governs until then → docs/OWNER-CHECKLIST.md § Actions (approved at plan)
+
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-07. Typed values: whole numbers only (a fraction is "not a number"); a whole number off the step stays as typed, and − / + continue from it, clamped. An open draft is committed when the page is left.
+
+1. Tests first: `test/settings.test.tsx` (happy-dom, fake timers) and `test/e2e/settings.spec.ts`.
+2. `Stepper.tsx` (client): the number is a button named *Edit <label>*; a tap swaps it for `<input inputmode="numeric">` with the text selected. Enter commits and refocuses the number; Esc restores and refocuses; blur commits and leaves focus where tapped. Empty or non-whole-number changes nothing; past a bound commits the bound and shows the existing reason. A visually hidden `role="status"` output keeps the value announced.
+3. Hold: `pointerdown` steps once; after 400ms it repeats every 300ms, every 120ms after 1s of hold (always under 500ms apart). Each step reads the latest value from a ref. Stops on up, leave, cancel and at a bound. The `click` after a hold is swallowed; a keyboard click (detail 0) steps once. CSS `touch-action`, `user-select:none`, `-webkit-touch-callout:none`; `contextmenu` prevented on the buttons.
+4. Draft on leave: `Stepper` commits an open draft on `pagehide` and unmount; `PaceSettings.change()` saves at once when `document.visibilityState === "hidden"`.
+5. `globals.css`: number button and input hold `.val`'s width and 32px height; input outline `--brand` (3:1); tokens only.
+6. `design/mockups.html` `settings` frame gains the input-open state; `design/mockups-index.md` updated; `Stepper.tsx` comment no longer says "rather than type".
+
+Files: `src/components/Stepper.tsx`, `src/components/PaceSettings.tsx`, `src/app/globals.css`, `design/mockups.html`, `design/mockups-index.md`, `test/settings.test.tsx`, `test/e2e/settings.spec.ts`.
+
+Tests: AC-1/2 component cases (plus e2e `inputmode`, axe); AC-3 fake timers; AC-4 `PaceSettings` with mocked `fetch`; AC-5 e2e (heights, row height open vs closed at 360px, contrast, axe, screenshots at every width, light and dark, input open; computed-style check for no-select; manual phone check for the long press).
+
+Risks: happy-dom has no real touch long press.
 
 ## Review log
 
