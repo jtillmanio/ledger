@@ -614,7 +614,10 @@ filters by that run before it aggregates (architecture § Operational posture).
 | `to_read_level` | Each to-read book's level: a quarter, a year, On deck or Someday (derived) |
 | `plan_book_words` | Each planned book that counts against capacity, once, at its earliest dated period, with its words: stated, estimated (a stored estimate, or pages × your words per page from 50 pages up) or unknown. To read, reading and read count; a listen, a DNF and On deck don't (2.1, D-112, D-115) |
 | `plan_capacity` | Per year and per quarter: planned words (stated, estimated, unknown books) against minutes a day × words a minute × the year's days, a quarter a quarter of it; the load and the share resting on estimates (2.1, D-37, D-115) |
-| `series_progress` | Series completion |
+| `series_progress` | Series completion, and how you follow it: `follow_state` `tracking` or `reading`, NULL for no follow or a stored `off` (D-43, D-117) |
+| `author_progress`, `universe_progress` | Author and universe completion, live books only, in `series_progress`'s shape; a universe's `off` reads as NULL (1.15, D-42, D-117) |
+| `subseries_progress` | Books listed and read per subseries (Calibre's `#subseries`, D-90), live books only, with `follow_state` (`off` reads as NULL) (2.2h, D-117) |
+| `shelf_progress` | Books listed and read per books shelf, live books only, with `follow_state` (2.2c, D-108) |
 
 Views a task proposes (`run_queue_state` 1.10,
 `run_unlock_cost` and `run_opens` 2.6, `show_progress` and `franchise_progress`
@@ -638,7 +641,7 @@ the same PR (hard rule 7).
 | 1.22 | Nothing: the *Calibre* tag reads 1.18b's `books.calibre_id` | D-90 |
 | 1.23 | A `listening` value of `book_status.status`; `read_events.format` (`text` \| `audio`) | Built (migration 0021), 2.22; D-85 |
 | 2.2c | `shelf_follows(shelf_id, state)`, `shelf_id` the primary key (→ `shelves.id`, cascade), `state IN ('tracking', 'reading')`, no `user_id`, exported with the catalog tables beside `shelf_books`; the `shelf_progress` view (books listed and read per books shelf, live books only, with `follow_state`) | Built (migration 0022, TASK-048); approved by the owner 2026-11-04; 2.5e, D-43, D-91, D-108 |
-| 2.2h | `subseries_follows(subseries_id, state)`, as `shelf_follows`; an `off` value of `state` on `series_follows`, `universe_follows` and `subseries_follows`; the `subseries_progress` view | Asked at 2.2h's plan gate; D-117 |
+| 2.2h | `subseries_follows(subseries_id, state)`, `subseries_id` the primary key (→ `book_subseries.id`, cascade), `state IN ('tracking', 'reading', 'off')`, no `user_id`, exported with the catalog tables; an `off` value of `state` on `series_follows` and `universe_follows` (*Not following* that sticks: no finish follows it again), which every progress view reads as NULL; author and shelf follows take no `off`; the `subseries_progress` view. No down file: the migration drops and retypes nothing | Built (migration 0023, TASK-055); approved by the owner 2026-11-07; D-91, D-117 |
 | 5.17 | `physical_copies(book_id)`, primary key `book_id` (→ `books.id`), no `user_id`; *Ebook* stays derived from `books.calibre_id` | Asked at 5.17's plan gate; D-121 |
 | 4.4 | Where a decided near-spelling row is remembered between syncs (D-87 leaves no other decision) | Asked at 4.4's plan gate |
 | 2.1b | `sessions` | §4.3 |

@@ -24,13 +24,17 @@ export type UndoEntry = {
 
 /**
  * One chip in the toast's *Keep going?* row (task 2.2c, D-108): *Mistborn · series*,
- * *Done with Mistborn*. Taking it writes, and answers the entry its own toast
- * carries, whose Undo undoes that write alone; the chips not taken ride along.
+ * *Done with Mistborn*; or in its *Now reading* row (task 2.2h, D-117), which
+ * turns a follow the finish made to *Not following*. Taking it writes, and
+ * answers the entry its own toast carries, whose Undo undoes that write alone;
+ * the chips not taken ride along, each in its row.
  */
 export type OfferChip = {
   label: string;
-  /** Grey after the label: `series`, `shelf`. */
+  /** Grey after the label: `series`, `subseries`, `shelf`. */
   kind?: string;
+  /** `now`: the *Now reading* row, above *Keep going?*. Unset: *Keep going?*. */
+  row?: "now";
   /** Writes. Rejects when it couldn't, and then changed nothing. */
   take: () => Promise<UndoEntry>;
 };
@@ -80,7 +84,8 @@ export function useUndo() {
  * held does not count against its 8 seconds, and the countdown bar stops with
  * it. Undo and Retry hand focus back to where it was before the toast took it.
  *
- * A finish's toast may carry *Keep going?* chips (task 2.2c). A chip writes,
+ * A finish's toast may carry *Keep going?* chips (task 2.2c), and above them
+ * *Now reading* chips for what the finish followed (2.2h). A chip writes,
  * then pushes its own entry with the chips left, which (one toast at a time)
  * commits the finish; focus stays in the toast. The chips go when the toast does.
  *

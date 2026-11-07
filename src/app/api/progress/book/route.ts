@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
-  BOOK_STATUSES, IN_PROGRESS, RefusedStatus, SETTABLE_STATUSES, saveBookStatus, undoBookStatus, type BookStatusChange,
+  BOOK_STATUSES, IN_PROGRESS, RefusedStatus, SETTABLE_STATUSES, isAutoKind, saveBookStatus, undoBookStatus,
+  type BookStatusChange,
 } from "@/db/writes";
 import { finishOffer } from "@/db/queries";
 import { apiUserId, unauthorized } from "@/lib/auth";
@@ -34,7 +35,10 @@ const STORED: readonly string[] = BOOK_STATUSES;
  * A finish (the write appended a read: entering `read`, a listen's included)
  * also answers `offer`, what the toast's *Keep going?* offers to follow (task
  * 2.2c, `finishOffer`); any other write answers `offer: null`. It is read after
- * the finish is saved, so it never holds the finish up.
+ * the finish is saved, so it never holds the finish up. A finish from Reading or
+ * Listening has already followed the book's series, subseries and universe
+ * (task 2.2h, D-117): `change.follows` says which, and `offer.now` names them
+ * for the toast's *Now reading*. The undo puts them back with the finish.
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -70,7 +74,7 @@ export async function POST(req: Request) {
   if (!saved) return NextResponse.json({ error: "no such book" }, { status: 404 });
   const { start: stored, ...change } = saved;
   // The finish is saved: an offer that can't be read is no offer, never a failed finish.
-  const offer = change.appended !== null ? await finishOffer(userId, bookId).catch(() => null) : null;
+  const offer = change.appended !== null ? await finishOffer(userId, bookId, change.follows).catch(() => null) : null;
   return NextResponse.json({ ok: true, change, finish: finish ?? null, start: stored, format: change.format ?? null, offer });
 }
 
@@ -95,9 +99,20 @@ const isId = (n: unknown) => Number.isInteger(n) && (n as number) > 0 && (n as n
 const asFinish = (o: Record<string, unknown>) => ({ on: o.finishedOn, precision: o.precision });
 const asStart = (o: Record<string, unknown>) => ({ on: o.startedOn, precision: o.startPrecision });
 
+/** A follow a finish set (task 2.2h): its kind is one a finish follows, its prior no row or `tracking`. */
+function validFollow(f: unknown): boolean {
+  if (typeof f !== "object" || f === null) return false;
+  const { kind, id, prior } = f as Record<string, unknown>;
+  return typeof kind === "string" && isAutoKind(kind) && typeof id === "string" && id !== ""
+    && (prior === null || prior === "tracking");
+}
+
 function validChange(c: unknown): c is BookStatusChange {
   if (typeof c !== "object" || c === null) return false;
-  const { bookId, status, prior, appended, edited, backfilled } = c as Record<string, unknown>;
+  const { bookId, status, prior, appended, edited, backfilled, follows } = c as Record<string, unknown>;
+  // Missing from a change answered before 2.2h, which followed nothing.
+  if (follows !== undefined && !(Array.isArray(follows) && follows.every(validFollow))) return false;
+  if (Array.isArray(follows) && follows.length > 0 && appended === null) return false;
   if (typeof bookId !== "string" || !ALLOWED.includes(status as string)) return false;
   if (appended !== null && !isId(appended)) return false;
   if (backfilled !== null && !(isId(backfilled) && appended === null && edited === null)) return false;

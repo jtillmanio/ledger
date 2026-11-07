@@ -426,14 +426,17 @@ export const readEvents = pgTable("read_events", {
 // D-43): 'reading' is set by the owner and stays set between books until it is
 // changed. How much is read, and whether it is done, stay derived in
 // series_progress, author_progress and universe_progress. Three narrow tables,
-// not one with a nullable key per kind (data model 2.5e).
+// not one with a nullable key per kind (data model 2.5e). A finish follows a
+// series and a universe for you (task 2.2h, D-117), so *Not following* on one
+// is kept as 'off', which every reader treats as no follow: no later finish
+// follows it again. An author is never followed for you, and has no 'off'.
 export const seriesFollows = pgTable("series_follows", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   seriesId: text("series_id").notNull().references(() => bookSeries.id, { onDelete: "cascade" }),
-  state: text("state").notNull().default("tracking"), // tracking | reading
+  state: text("state").notNull().default("tracking"), // tracking | reading | off
 }, (t) => ({
   pk: primaryKey({ columns: [t.userId, t.seriesId] }),
-  state: check("series_follows_state_check", sql`${t.state} IN ('tracking', 'reading')`),
+  state: check("series_follows_state_check", sql`${t.state} IN ('tracking', 'reading', 'off')`),
 }));
 
 export const authorFollows = pgTable("author_follows", {
@@ -448,10 +451,10 @@ export const authorFollows = pgTable("author_follows", {
 export const universeFollows = pgTable("universe_follows", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   universeId: text("universe_id").notNull().references(() => bookUniverses.id, { onDelete: "cascade" }),
-  state: text("state").notNull().default("tracking"), // tracking | reading
+  state: text("state").notNull().default("tracking"), // tracking | reading | off
 }, (t) => ({
   pk: primaryKey({ columns: [t.userId, t.universeId] }),
-  state: check("universe_follows_state_check", sql`${t.state} IN ('tracking', 'reading')`),
+  state: check("universe_follows_state_check", sql`${t.state} IN ('tracking', 'reading', 'off')`),
 }));
 
 export const readingPlan = pgTable("reading_plan", {
@@ -523,6 +526,16 @@ export const shelfFollows = pgTable("shelf_follows", {
   state: text("state").notNull().default("tracking"), // tracking | reading
 }, (t) => ({
   state: check("shelf_follows_state_check", sql`${t.state} IN ('tracking', 'reading')`),
+}));
+
+// Following a subseries (task 2.2h, D-117): as shelf_follows, no user_id
+// (D-91). A finish follows it for you, so *Not following* is kept as 'off', as
+// on series_follows. subseries_progress counts what is read in it.
+export const subseriesFollows = pgTable("subseries_follows", {
+  subseriesId: text("subseries_id").primaryKey().references(() => bookSubseries.id, { onDelete: "cascade" }),
+  state: text("state").notNull().default("tracking"), // tracking | reading | off
+}, (t) => ({
+  state: check("subseries_follows_state_check", sql`${t.state} IN ('tracking', 'reading', 'off')`),
 }));
 
 // Quick capture (task 1.4b, product #21): a note with nothing required but its

@@ -1,5 +1,5 @@
 import { sql } from "./index";
-import type { FollowKind, FollowState } from "./writes";
+import type { AutoKind, FollowKind, FollowState } from "./writes";
 import { readWhen, runSpan, type Precision } from "@/lib/format";
 import { FRESH_DAYS } from "@/lib/metron";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
@@ -1202,21 +1202,24 @@ export async function bookMatches(userId: string, lines: { title: string; author
   }));
 }
 
-/** One thing a book belongs to (task 2.2c): its series, author, universe or a books shelf it is on,
- * with its progress view's counts and how you follow it (`null`: not following). */
+/** One thing a book belongs to (task 2.2c): its series, subseries (2.2h), author, universe or a
+ * books shelf it is on, with its progress view's counts and how you follow it (`null`: not
+ * following, a stored `off` included). */
 export type Grouping = {
   kind: FollowKind; id: string; name: string;
   /** `read / total` as the sheet shows it: a series' total is its stated `total_books`, the rest the books listed. */
   read: number; total: number;
-  /** Its live books not read yet, whatever a series states (the offer reads this). */
+  /** Its live books left: neither read nor DNF, whatever a series states (task 2.2h; 2.2d's
+   * `follow_next` skips a DNF too). The offer, *Done with* and *On hold* read this. */
   unread: number;
   state: FollowState | null;
 };
 
 /**
- * What a live book belongs to (task 2.2c, the *Follow…* sheet): its series, its author, its
- * universe, then each books shelf of yours it is on, by name, read from the four progress views
- * (live books only). A book with no series has no series row. Null for a missing or removed book.
+ * What a live book belongs to (task 2.2c, the *Follow…* sheet): its series, its subseries
+ * (2.2h), its author, its universe, then each books shelf of yours it is on, by name, read
+ * from the five progress views (live books only). A book with no series has no series row, and
+ * one with no subseries no subseries row. Null for a missing or removed book.
  */
 export async function bookGroupings(userId: string, bookId: string): Promise<{ title: string; groupings: Grouping[] } | null> {
   const [book] = await sql<{ title: string }[]>`
@@ -1224,22 +1227,33 @@ export async function bookGroupings(userId: string, bookId: string): Promise<{ t
   `;
   if (!book) return null;
   const groupings = await sql<Grouping[]>`
-    WITH b AS (SELECT series_id, author_id, universe_id FROM books WHERE id = ${bookId})
+    WITH b AS (SELECT series_id, subseries_id, author_id, universe_id FROM books WHERE id = ${bookId}),
+    -- The live books left: neither read nor DNF (task 2.2h).
+    left_ AS (
+      SELECT k.id, k.series_id, k.subseries_id, k.author_id, k.universe_id
+      FROM books k LEFT JOIN book_status st ON st.book_id = k.id AND st.user_id = ${userId}
+      WHERE k.deleted_at IS NULL AND (st.status IS NULL OR st.status NOT IN ('read', 'dnf'))
+    )
     SELECT kind, id, name, read, total, unread, state FROM (
       SELECT 'series' AS kind, p.series_id AS id, p.name, p.books_read::int AS read, p.total_books::int AS total,
-             (p.books_listed - p.books_read)::int AS unread, p.follow_state AS state, 1 AS ord
+             (SELECT count(*) FROM left_ l WHERE l.series_id = p.series_id)::int AS unread, p.follow_state AS state, 1 AS ord
       FROM b JOIN series_progress p ON p.series_id = b.series_id AND p.user_id = ${userId}
       UNION ALL
+      SELECT 'subseries', p.subseries_id, p.name, p.books_read::int, p.books_listed::int,
+             (SELECT count(*) FROM left_ l WHERE l.subseries_id = p.subseries_id)::int, p.follow_state, 2
+      FROM b JOIN subseries_progress p ON p.subseries_id = b.subseries_id AND p.user_id = ${userId}
+      UNION ALL
       SELECT 'author', p.author_id, p.name, p.books_read::int, p.books_listed::int,
-             (p.books_listed - p.books_read)::int, p.follow_state, 2
+             (SELECT count(*) FROM left_ l WHERE l.author_id = p.author_id)::int, p.follow_state, 3
       FROM b JOIN author_progress p ON p.author_id = b.author_id AND p.user_id = ${userId}
       UNION ALL
       SELECT 'universe', p.universe_id, p.name, p.books_read::int, p.books_listed::int,
-             (p.books_listed - p.books_read)::int, p.follow_state, 3
+             (SELECT count(*) FROM left_ l WHERE l.universe_id = p.universe_id)::int, p.follow_state, 4
       FROM b JOIN universe_progress p ON p.universe_id = b.universe_id AND p.user_id = ${userId}
       UNION ALL
       SELECT 'shelf', p.shelf_id, p.name, p.books_read::int, p.books_listed::int,
-             (p.books_listed - p.books_read)::int, p.follow_state, 4
+             (SELECT count(*) FROM left_ l JOIN shelf_books x ON x.book_id = l.id WHERE x.shelf_id = p.shelf_id)::int,
+             p.follow_state, 5
       FROM shelf_books sb JOIN shelf_progress p ON p.shelf_id = sb.shelf_id AND p.user_id = ${userId}
       WHERE sb.book_id = ${bookId}
     ) g
@@ -1248,36 +1262,69 @@ export async function bookGroupings(userId: string, bookId: string): Promise<{ t
   return { title: book.title, groupings: [...groupings] };
 }
 
+/** The book's column naming each kind a book belongs to through. */
+const BOOK_COLUMN = { series: "series_id", subseries: "subseries_id", author: "author_id", universe: "universe_id" } as const;
+
 /**
- * Whether you may follow it (task 2.2c, AC-2): a series, an author or a universe with at least
- * one live book, or a books shelf of yours. A series whose books are all removed, or a titles
- * shelf, is refused.
+ * Whether you may follow it (task 2.2c, AC-2): a series, a subseries (2.2h), an author or a
+ * universe with at least one live book, or a books shelf of yours. A series whose books are all
+ * removed, an unknown subseries, or a titles shelf, is refused.
  */
 export async function followable(userId: string, kind: FollowKind, id: string): Promise<boolean> {
   const [row] = kind === "shelf"
     ? await sql`SELECT 1 FROM shelves WHERE id = ${id} AND user_id = ${userId} AND kind = 'books'`
-    : await sql`
-        SELECT 1 FROM books
-        WHERE deleted_at IS NULL AND ${sql(kind === "series" ? "series_id" : kind === "author" ? "author_id" : "universe_id")} = ${id}
-        LIMIT 1
-      `;
+    : await sql`SELECT 1 FROM books WHERE deleted_at IS NULL AND ${sql(BOOK_COLUMN[kind])} = ${id} LIMIT 1`;
   return Boolean(row);
 }
 
-/** What a finish offers (task 2.2c): `take` sets *Reading*; `done` (*Done with …*) sets *Tracking*. */
-export type FinishOffer = { take: Grouping[]; done: Grouping[] };
+/**
+ * Whether a series, subseries or universe exists at all (task 2.2h): *Not following* on one
+ * is a stored `off` row, which needs its target even once every book in it is gone.
+ */
+export async function followTargetExists(kind: AutoKind, id: string): Promise<boolean> {
+  const table = { series: "book_series", subseries: "book_subseries", universe: "book_universes" }[kind];
+  const [row] = await sql`SELECT 1 FROM ${sql(table)} WHERE id = ${id}`;
+  return Boolean(row);
+}
 
 /**
- * What finishing a book offers to follow (task 2.2c, D-108), read after the finish is saved. A
- * grouping already *Reading* with no unread live book left is `done`: the app asks, it never sets
- * it back itself (D-43). One not *Reading* is offered (`take`) when it is the author, or still
- * has an unread live book. A *Reading* one with books left offers nothing.
+ * What a finish offers (task 2.2c, 2.2h): `now` is what the finish followed for you (*Now
+ * reading*, each chip sets it `off`); `take` sets *Reading*; `done` (*Done with …*) sets *Tracking*.
  */
-export async function finishOffer(userId: string, bookId: string): Promise<FinishOffer> {
+export type FinishOffer = { now: Grouping[]; take: Grouping[]; done: Grouping[] };
+
+/**
+ * What finishing a book offers to follow (task 2.2c, D-108; 2.2h, D-117), read after the finish
+ * is saved. `followed` is what the finish itself set to *Reading* (`BookStatusChange.follows`):
+ * those are `now`. A grouping already *Reading* with no live book left is `done`: the app asks,
+ * it never sets it back itself (D-43). One not *Reading* is offered (`take`) when it is the
+ * author, or still has a live book left, unless you set it to *Not following* (`off`), which
+ * stays out. After a finish from Reading the series, subseries and universe are never in
+ * `take`: each was followed, is already *Reading* or `off`, or has nothing left. A past read
+ * logged from To read follows nothing, so they are offered as 2.2c did.
+ */
+export async function finishOffer(
+  userId: string, bookId: string, followed: { kind: string; id: string }[] = [],
+): Promise<FinishOffer> {
   const found = await bookGroupings(userId, bookId);
   const all = found?.groupings ?? [];
+  const off = new Set((await sql<{ key: string }[]>`
+    WITH b AS (SELECT series_id, subseries_id, universe_id FROM books WHERE id = ${bookId})
+    SELECT 'series:' || f.series_id AS key FROM b JOIN series_follows f
+      ON f.series_id = b.series_id AND f.user_id = ${userId} AND f.state = 'off'
+    UNION ALL
+    SELECT 'subseries:' || f.subseries_id FROM b JOIN subseries_follows f
+      ON f.subseries_id = b.subseries_id AND f.state = 'off'
+    UNION ALL
+    SELECT 'universe:' || f.universe_id FROM b JOIN universe_follows f
+      ON f.universe_id = b.universe_id AND f.user_id = ${userId} AND f.state = 'off'
+  `).map((r) => r.key));
+  const key = (g: { kind: string; id: string }) => `${g.kind}:${g.id}`;
+  const now = new Set(followed.map(key));
   return {
-    take: all.filter((g) => g.state !== "reading" && (g.kind === "author" || g.unread > 0)),
+    now: all.filter((g) => now.has(key(g))),
+    take: all.filter((g) => !now.has(key(g)) && !off.has(key(g)) && g.state !== "reading"
+      && (g.kind === "author" || g.unread > 0)),
     done: all.filter((g) => g.state === "reading" && g.unread === 0),
   };
 }

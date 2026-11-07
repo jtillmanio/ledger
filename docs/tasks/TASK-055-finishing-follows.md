@@ -1,14 +1,14 @@
 ---
 id: TASK-055
 title: 2.2h Finishing a book follows it
-status: Ready
+status: In progress
 depends_on: [TASK-048]
 size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 146829f
 ---
 
 # TASK-055 — 2.2h Finishing a book follows it
@@ -90,9 +90,43 @@ offers the series and the universe.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Record the plan gate's answers as a decision row: a finish raises Tracking; *Not following* is a stored `off` on series, subseries and universe; `subseries_follows` and `subseries_progress`; To read → Read follows nothing and keeps 2.2c's chips minus `off`; "a book left" is a live book neither read nor DNF; no down file (decisions mode `propose`: asked at close-out) (approved at plan)
+- `design/mockups-index.md`'s line ranges for other screens are stale (`follow` said 3331, it starts at 3473) → not tracked: the index is approximate, and this task's two rows are corrected (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-07. Gate answers (owner): a finish raises a `tracking` follow to `reading`; *Not following* on a series, subseries or universe is a stored `off`; subseries are followable (`subseries_follows`, `subseries_progress`); To read → Read follows nothing and keeps 2.2c's chips, minus `off`. Approved with the plan: "a book left" is a live book neither `read` nor `dnf` (2.2d's `follow_next` skips DNF too), used for the finish's follows, `Grouping.unread` (the offer, *Done with*, *On hold*); the sheet's `read / total` is unchanged. No `drizzle/down/` file: the migration drops and retypes nothing (it adds a table and widens two CHECKs). A *Now reading* chip's name is *Stop following <name> · <kind>* (visible text inside the name).
+
+**Steps**
+
+1. Schema: `subseries_follows(subseries_id PK → book_subseries cascade, state)`, CHECK `tracking|reading|off`; `series_follows` and `universe_follows` CHECKs gain `off`; `npm run db:generate`. `export-tables.ts` lists `subseries_follows` with the catalog tables.
+2. Views: `subseries_progress` (user_id, subseries_id, name, series_id, books_listed, books_read, pct, follow_state; live books; CROSS JOIN users as `universe_progress`); `series_progress` and `universe_progress` give `follow_state` NULL for `off`, as `subseries_progress` does.
+3. Writes: `FOLLOW_KINDS` gains `subseries`; `FollowValue = FollowState | "off"` stored; `followRow` gains subseries; `setFollow` writes `off` and answers the raw prior. `saveBookStatus`, on a finish (read appended) from `reading`/`listening`, in its transaction: for the book's series, subseries, universe, each with a live book neither read nor DNF left, not `off` and not `reading` → `reading`; `BookStatusChange.follows: {kind, id, prior: "tracking" | null}[]`. `undoBookStatus` puts each back (only where it is still `reading`).
+4. Queries: `bookGroupings` gains the subseries row (from `subseries_progress`) and computes `unread` as live books neither read nor DNF; `followable` gains subseries (a live book in it); `finishOffer(userId, bookId, followed)` answers `{ now, take, done }`: `now` the groupings the finish followed, `take` as 2.2c minus `off`.
+5. Routes: `POST /api/follows` takes `reading | tracking | off | null`; `off` only for series, subseries, universe (400 otherwise); `null` deletes (the undo of a first *Not following*); `off` on an unknown id is 400. Refuses an unknown subseries or one with no live book. Book route passes `change.follows` to `finishOffer`; `validChange` checks `follows`.
+6. UI: `OfferChip.row` `now | keep`; `ToastOffer` draws *Now reading* (chips with ×, named *Stop following …*, each sets `off` with its own undo restoring `reading`) above *Keep going?*; `follow-offer.ts` builds both, `postFollow`/`followEntry` handle `off` (*was reading*, *was not followed* for null or off). `FollowSheet`: the subseries row; middle option *On hold* when `read > 0 && unread > 0`, else *Tracking*; *Not following* sends `off` for series, subseries, universe and `null` for author, shelf. CSS in `globals.css`.
+7. Docs: `docs/03-data-model.md` § 3 (views) and § 4.1 (2.2h built). Mockup `follow`, `finishoffer` and `design/mockups-index.md` already redrawn at the gate.
+
+**Files**
+
+- `src/db/schema.ts`, `drizzle/0023_*.sql`, `drizzle/meta/*`, `src/db/export-tables.ts`
+- `etl/views.sql`, `etl/test_views.sql`
+- `src/db/writes.ts`, `src/db/queries.ts`
+- `src/app/api/follows/route.ts`, `src/app/api/progress/book/route.ts`
+- `src/lib/follow-offer.ts`, `src/components/Undo.tsx`, `src/components/ToastOffer.tsx`, `src/components/FollowSheet.tsx`, `src/app/globals.css` (not in the list: the chips' styles)
+- `design/mockups.html`, `design/mockups-index.md` (drawn at the gate)
+- `docs/03-data-model.md`
+- Tests: `test/follows.test.ts`, `test/e2e/follows.spec.ts`, `test/undo.test.tsx` (not in the list: the toast's two rows), `etl/test_extract.py` (not in the list: a Calibre read writes no follow)
+- `src/components/BookStatus.tsx` is listed but needs no change (the toast lives in `useBookWrite`, which needs none either).
+
+**Test strategy**
+
+- AC-1 (`npm test` half), AC-2: `test/follows.test.ts`, *the finish follows (roadmap 2.2h check)*: book 2 of 4 from Reading → three `reading` rows, no author/shelf; finish Undo → book back, no row; 4 of 4 → no series row; tracking → reading → Undo tracking; `off` stays; chip off leaves the others; DNF, Reading, re-date, To read → Read write none; listening the same; a level with nothing left skipped, others written; a trigger failing `series_follows` → 500, book as it was, no `read_events`; load-shaped inserts write none. `etl/test_extract.py`: a Calibre read writes no follow row.
+- AC-1 subseries control, AC-4: route tests: subseries at each state; `off` on series/subseries/universe; undo of first *Not following* leaves no row; author/shelf *Not following* deletes; `off` refused for author/shelf; unknown subseries / no live book 400.
+- AC-1 view, AC-4, AC-5: `etl/test_views.sql`: `subseries_progress` counts, skips a soft-deleted book; `off` → NULL in all three; CHECKs accept `off` only where meant. `bookGroupings` lists the subseries with `subseries_progress`'s counts.
+- AC-1 export: `test/export-tables.test.ts` (unchanged, passes with the table listed).
+- AC-1 browser, AC-3, AC-5, AC-6: `test/e2e/follows.spec.ts`: finish from Reading → *Now reading* chips, F6/Tab reach them, a chip sets `off` and its Undo restores `reading`; the finish's Undo restores every follow; no *Now reading* when nothing followed; *Done with* still writes tracking; sheet lists the subseries with `read / total`; *On hold* at 1 of 4, *Tracking* at 0 of 4 and 4 of 4; 44px chips, 24px options, long name with four chips at 360 without scroll, contrast, axe, screenshots every width light and dark (CI's full run).
+- `test/undo.test.tsx`: the toast draws *Now reading* above *Keep going?*, and the chips left ride along in both rows.
 
 ## Review log
 

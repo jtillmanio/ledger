@@ -629,7 +629,10 @@ JOIN run_readiness rr ON rr.run_id = q.run_id AND rr.user_id = q.user_id;
 -- Series completion. Replaces the Series tab. follow_state is the owner's
 -- stored choice, tracking or reading, and NULL when the series isn't followed
 -- (task 1.15, D-43); whether it is done stays derived (books_read = total_books).
--- follow_state is last, so CREATE OR REPLACE can add it to a live view.
+-- follow_state is last, so CREATE OR REPLACE can add it to a live view. A
+-- stored 'off' (*Not following*, kept so no later finish follows it again;
+-- task 2.2h, D-117) is no follow: NULL here, as in universe_progress and
+-- subseries_progress.
 CREATE OR REPLACE VIEW series_progress AS
 SELECT
   u.id AS user_id, bs.id AS series_id, bs.name, a.name AS author,
@@ -638,7 +641,7 @@ SELECT
   COUNT(*) FILTER (WHERE st.status = 'read')            AS books_read,
   COUNT(*) FILTER (WHERE st.status = 'read')::float8
     / NULLIF(COALESCE(bs.total_books, COUNT(b.id)), 0)  AS pct,
-  f.state                                               AS follow_state
+  NULLIF(f.state, 'off')                                AS follow_state
 FROM book_series bs
 CROSS JOIN users u
 LEFT JOIN authors a     ON a.id = bs.author_id
@@ -672,13 +675,32 @@ SELECT
   COUNT(*) FILTER (WHERE st.status = 'read')            AS books_read,
   COUNT(*) FILTER (WHERE st.status = 'read')::float8
     / NULLIF(COUNT(b.id), 0)                            AS pct,
-  f.state                                               AS follow_state
+  NULLIF(f.state, 'off')                                AS follow_state
 FROM book_universes bu
 CROSS JOIN users u
 LEFT JOIN books b       ON b.universe_id = bu.id AND b.deleted_at IS NULL
 LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = u.id
 LEFT JOIN universe_follows f ON f.universe_id = bu.id AND f.user_id = u.id
 GROUP BY u.id, bu.id, bu.name, f.state;
+
+-- Subseries completion (task 2.2h, D-117), in universe_progress's shape: the
+-- live books in a subseries (Calibre's #subseries, D-90) and how many are read.
+-- subseries_follows has no user_id (D-91), so every user row reads the one
+-- follow; 'off' is no follow, NULL. 2.2d's follow_next reads it.
+CREATE OR REPLACE VIEW subseries_progress AS
+SELECT
+  u.id AS user_id, ss.id AS subseries_id, ss.name, ss.series_id,
+  COUNT(b.id)                                           AS books_listed,
+  COUNT(*) FILTER (WHERE st.status = 'read')            AS books_read,
+  COUNT(*) FILTER (WHERE st.status = 'read')::float8
+    / NULLIF(COUNT(b.id), 0)                            AS pct,
+  NULLIF(f.state, 'off')                                AS follow_state
+FROM book_subseries ss
+CROSS JOIN users u
+LEFT JOIN books b       ON b.subseries_id = ss.id AND b.deleted_at IS NULL
+LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = u.id
+LEFT JOIN subseries_follows f ON f.subseries_id = ss.id
+GROUP BY u.id, ss.id, ss.name, ss.series_id, f.state;
 
 -- Shelf completion (task 2.2c, D-108), in universe_progress's shape: the live
 -- books on a books shelf and how many are read. A shelf is already its owner's,
