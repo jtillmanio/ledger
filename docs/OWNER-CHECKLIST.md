@@ -223,7 +223,7 @@ tick them.
 - [ ] In the design tool, change `design/STYLE_GUIDE.md` § 9 (*a number you step*):
       the number is typed as well as stepped (a button that opens a numeric
       input), and a held − or + repeats. It still says "rather than type"; D-123
-      governs until you do (from TASK-053, task/2.0b-type-a-setting).
+      governs until you do (from TASK-053, PR #202).
 
 ## Approvals from follow-ups
 
