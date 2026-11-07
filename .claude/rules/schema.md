@@ -302,11 +302,21 @@ Release, test isolation) and the Hard rules a reviewer checks.
   (task 1.15, D-42, D-43). `book_universes` and `books.universe_id` are
   catalog, like franchises; a book is in one universe at most. Following a
   series, an author or a universe is a row in `series_follows`,
-  `author_follows` or `universe_follows`, keyed `(user_id, <entity>_id)`,
-  `state` `tracking` or `reading`: authored and stored, never derived from
-  reads, and never a column on the catalog table. How much is read, and whether
-  it is done, come from `series_progress`, `author_progress` and
-  `universe_progress`, each with the follow's `follow_state`. Extract makes a
+  `author_follows` or `universe_follows`, keyed `(user_id, <entity>_id)`; a
+  shelf (`shelf_follows`, 2.2c) and a subseries (`subseries_follows`, 2.2h)
+  have no `user_id` (D-91). `state` is `tracking` or `reading`: authored and
+  stored, never derived from reads, and never a column on the catalog table.
+  A finish in the app from Reading or Listening (`saveBookStatus`; task 2.2h,
+  D-117, D-127) sets the book's series, subseries and universe to `reading`
+  while each has a live book neither read nor DNF, in the finish's
+  transaction; nothing else follows for you (no extract, load or sync).
+  *Not following* on those three is a stored `off`, which every progress view
+  reads as `follow_state` NULL; an author or a shelf has no `off`, and its
+  *Not following* deletes the row. *On hold* is `tracking` on something
+  part-read, derived at display (D-118). How much is read, and whether it is
+  done, come from `series_progress`, `author_progress`, `universe_progress`,
+  `subseries_progress` and `shelf_progress`, each with the follow's
+  `follow_state`. Extract makes a
   Series-tab group a universe only through `UNIVERSE_GROUPS` (owner,
   2026-10-26) or a Calibre superseries of that name; any other group naming
   nothing is reported, never guessed. Which books are in a universe is

@@ -32,6 +32,7 @@ Under the book in hand, thin stacked meters show how far along you are in its un
 - This is a feel-pass surface (`docs/04-design.md` § 10), so its new states are screenshotted at every feel-pass width, light and dark, reduced motion and transparency.
 - *From the 2026-11-05 intake:* 5.12's `/progress` nests its rows the same way (D-119), and reads what this draws.
 - Decisions: D-119, D-90, D-108, D-40, D-7. Hard rules 2 and 6.
+- *From TASK-055 (2.2h, task/2.2h-finishing-a-book-follows-it):* `bookGroupings` now lists the subseries second (series, subseries, author, universe, shelf), its `total` the books listed in `subseries_progress`. Its `unread` counts live books neither read nor DNF, and a stored `off` reads as `state: null`. The rows here read position, not the follow, so none of that changes their counts.
 
 ## Acceptance criteria
 

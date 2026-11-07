@@ -1,7 +1,7 @@
 ---
 id: TASK-055
 title: 2.2h Finishing a book follows it
-status: In progress
+status: Review
 depends_on: [TASK-048]
 size: L
 model: opus
@@ -41,7 +41,7 @@ Finishing a book follows its series, subseries and universe for you, the toast s
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm test`: finishing book 2 of 4 of an unfollowed series, in a
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm test`: finishing book 2 of 4 of an unfollowed series, in a
 subseries and a universe with books left, writes `reading` for all three and no
 author or shelf follow; the finish's Undo restores the book and leaves no follow
 row; finishing book 4 of 4 writes no series follow; a series at `tracking` is
@@ -55,10 +55,10 @@ and *Tracking* at 0 of 4 and 4 of 4, with the same stored value. In the browser
 (0.11), the toast's chips are reachable by keyboard and axe passes. Screenshots
 at 360px and 1280px. This replaces the part of 2.2c's Check where a finish only
 offers the series and the universe.
-- [ ] AC-2: The same finish from *Listening* writes the same follows. A finish where the subseries or the universe has no unread live book left writes none for that level and still writes the others. A re-date of a book already read and a status change to *Reading* write no follow. A finish in one transaction: when the follow write fails, the book stays as it was and no `read_events` row exists.
-- [ ] AC-3: After a finish that follows a series and a universe, the toast reads *Now reading <series> · <universe>* with one chip each, and *Keep going?* lists the author and shelves only. A chip sets that one `off` and leaves the other; its Undo restores `reading`. The finish's Undo, taken instead, restores every follow to its earlier state. A finish that follows nothing has no *Now reading* line. On a book with no live book left in a *Reading* series, *Done with <series>* still shows and still writes `tracking`.
-- [ ] AC-4: `off` is no follow: `series_progress.follow_state`, `universe_progress.follow_state` and `subseries_progress.follow_state` are NULL at `off`, the sheet shows *Not following*, and a later finish leaves it `off` and offers no chip for it. Undoing a first *Not following* on an unfollowed series leaves no row. *Not following* on an author or a shelf still deletes the row. `POST /api/follows` refuses *Reading* or *Tracking* on an unknown subseries or one with no live book, and *Not following* (`off`) on an unknown one, with 400 and writes nothing; `off` on a subseries that exists with no live book is accepted, as stepping away is never refused (2.2c); `off` isn't accepted for an author or a shelf. *(Reworded by the owner at review, 2026-11-07.)*
-- [ ] AC-5: The *Follow…* sheet lists a book's subseries with its radiogroup and a `read / total` equal to `subseries_progress`; a book with no subseries lists none. For every kind, the middle option reads *On hold* with at least one read and one unread and *Tracking* otherwise, with `tracking` stored both ways.
+- [x] AC-2: The same finish from *Listening* writes the same follows. A finish where the subseries or the universe has no unread live book left writes none for that level and still writes the others. A re-date of a book already read and a status change to *Reading* write no follow. A finish in one transaction: when the follow write fails, the book stays as it was and no `read_events` row exists.
+- [x] AC-3: After a finish that follows a series and a universe, the toast reads *Now reading <series> · <universe>* with one chip each, and *Keep going?* lists the author and shelves only. A chip sets that one `off` and leaves the other; its Undo restores `reading`. The finish's Undo, taken instead, restores every follow to its earlier state. A finish that follows nothing has no *Now reading* line. On a book with no live book left in a *Reading* series, *Done with <series>* still shows and still writes `tracking`.
+- [x] AC-4: `off` is no follow: `series_progress.follow_state`, `universe_progress.follow_state` and `subseries_progress.follow_state` are NULL at `off`, the sheet shows *Not following*, and a later finish leaves it `off` and offers no chip for it. Undoing a first *Not following* on an unfollowed series leaves no row. *Not following* on an author or a shelf still deletes the row. `POST /api/follows` refuses *Reading* or *Tracking* on an unknown subseries or one with no live book, and *Not following* (`off`) on an unknown one, with 400 and writes nothing; `off` on a subseries that exists with no live book is accepted, as stepping away is never refused (2.2c); `off` isn't accepted for an author or a shelf. *(Reworded by the owner at review, 2026-11-07.)*
+- [x] AC-5: The *Follow…* sheet lists a book's subseries with its radiogroup and a `read / total` equal to `subseries_progress`; a book with no subseries lists none. For every kind, the middle option reads *On hold* with at least one read and one unread and *Tracking* otherwise, with `tracking` stored both ways.
 - [ ] AC-6: The toast and the sheet meet the UX floor (`docs/04-design.md` § 10. The UX floor): each chip and option has an accessible name; chips are 44px in the toast's row and options at least 24px; the *Now reading* line is 4.5:1 in both themes and the toast still fits at 360px with a long series name and four chips; nothing is red; axe reports no new violations; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
@@ -90,8 +90,13 @@ offers the series and the universe.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Record the plan gate's answers as a decision row: a finish raises Tracking; *Not following* is a stored `off` on series, subseries and universe; `subseries_follows` and `subseries_progress`; To read → Read follows nothing and keeps 2.2c's chips minus `off`; "a book left" is a live book neither read nor DNF; no down file (decisions mode `propose`: asked at close-out) (approved at plan)
+- Record the plan gate's answers as a decision row: a finish raises Tracking; *Not following* is a stored `off` on series, subseries and universe; `subseries_follows` and `subseries_progress`; To read → Read follows nothing and keeps 2.2c's chips minus `off`; "a book left" is a live book neither read nor DNF; no down file; and the owner's AC-4 rewording at review. D-43 and D-118 are marked *Amended by D-127*, and the rule it changes is updated in `.claude/rules/schema.md` (approved at close-out) → docs/review/decisions.md § D-127 (approved at plan)
+- `.claude/rules/schema.md`'s follows bullet still said a follow's `state` is only `tracking` or `reading`, and named three follow tables (schema review, MINOR) → .claude/rules/schema.md § A universe is a fact about the work (approved at close-out)
+- 2.2d's `follow_next` should read `follow_state` from the views (where `off` is NULL), never the tables' raw `state`; `subseries_progress`'s columns; "a book left" matches its DNF skip → docs/tasks/TASK-050-next-in-what-you-read.md § Context
+- 2.2g's rows reuse `bookGroupings`, which now lists the subseries second and counts `unread` without DNF; `off` reads as `state: null` → docs/tasks/TASK-056-where-the-book-sits.md § Context
 - `design/mockups-index.md`'s line ranges for other screens are stale (`follow` said 3331, it starts at 3473) → not tracked: the index is approximate, and this task's two rows are corrected (approved at plan)
+- The finish's undo trusts the client's `follows` list after validation, so a forged change could demote a `reading` follow it didn't set; two simultaneous finishes in one series could each record `prior: null` (schema review, MINOR) → not tracked: accepted as is for a single-user app behind the passcode
+- After a finish, setting the book back to Listening from its row keeps the read and its finish date and restamps the start (ui-verifier) → not tracked: existing behaviour by design (a read is a log, and leaving `read` keeps the finish date; data model 2.17, task 1.5); the walk's residue in the development database was repaired with the owner's OK
 
 ## Plan
 
@@ -132,13 +137,18 @@ Approved by the owner 2026-11-07. Gate answers (owner): a finish raises a `track
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 round PASS → full PASS (tsc, lint, test:all: 84 vitest files / 1290 tests, views, 365 ETL, 875 core browser tests) | R2 round PASS (1291 tests)
+- Audit R1 PASS (e2e reviewed statically by the auditor; run at HEAD by Claude: 73 follows tests, then the full chain)
+- Spec R1 CHANGES (AC-4 spec gap → owner reworded AC-4; follow-up destination deferred to close-out; plan file-name typo) → R2 APPROVE | Schema R1 APPROVE (3 MINOR, placed in Follow-ups); not re-run in R2, its files untouched | UI R1 PASS on the dev data's reachable cases (one Listening book; multi-chip, long-name and Done with covered by the browser suite); not re-run, no UI file touched
+- Plan gate: the owner answered the four schema/behaviour questions and approved the redrawn `follow` and `finishoffer` frames; the dev database was migrated (0023) with the owner's OK for the UI walk
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R1 round + full, R2 round)
+- Review rounds: 2 (spec R2; schema and UI once)
+- First-pass AC FAILs: 0 (one SPEC GAP on AC-4, resolved by the owner's rewording)
+- Plan revisions after approval: 1 (AC-4 reworded by the owner, its route test added)

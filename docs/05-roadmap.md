@@ -2009,7 +2009,7 @@ author's row; *Between books* renders none. Every meter fills with `--ready`,
 nothing resolves to `--danger`, and there is no horizontal scroll at 360px. The
 five slots keep their order. Screenshots at 360px, 834px and 1280px.
 
-### ☐ 2.2h Finishing a book follows it · M
+### ☑ 2.2h Finishing a book follows it · M
 Owner intake, 2026-11-05 (owner: *is anything automatically followed upon
 reading? Maybe should be for series/sub/super and universe, manual for author.
 Can manually opt out. Difference between actively following and still in the
