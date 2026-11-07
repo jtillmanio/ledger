@@ -7,8 +7,8 @@ size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: c5d5352
 ---
 
 # TASK-054 — 2.2f Finish a book from In flight
@@ -70,9 +70,55 @@ resolves to `--danger`. Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- TASK-049's *✓ finished* / *Finished it* should finish through `useBookWrite`, not a second write (approved at plan) → docs/tasks/TASK-049-books-dashboard.md § Context
+- 2.2h: the finish toast's copy now lives in `useBookWrite`, one place for both finishes (approved at plan) → docs/tasks/TASK-055-finishing-follows.md § Context
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner at the plan gate, 2026-11-07. The mockup frames (step 1) are done and committed in c5d5352. Open question answered: In flight's meta stays `308,931 words` (the plan's default), though it squeezes a long title to three lines at 360.
+
+**Steps**
+
+1. **Mockup (done):** four `.frame.fin-f` frames at the end of `status` in `design/mockups.html` (360 before, 360 after with the toast, 834, desktop) and the `design/mockups-index.md` row. Still to do: `.first()` on the locator `openTab` returns in `test/e2e/mockup-tablet.spec.ts`, because `status` now has two `data-w="tab"` frames and a locator is strict.
+2. **Tests first:** the new tests in `test/e2e/status.spec.ts`; confirm they fail because the row has no button.
+3. **Shared finish:** `src/components/useBookWrite.ts` (new), a hook holding what `BookStatus.write` does now: `POST /api/progress/book`, `router.refresh()`, `push` with the label and detail (`NAMES` moves here, so the hook owns the toast's copy), the undo (`DELETE` with the server's `change`) and `offerChips(offer)`. A 400 returns the server's reason; anything else that fails throws. It takes callbacks for what a caller does around the write, so `BookStatus` keeps only its local state (`saving`, `failed`, `refused`, `saved`, `refocus`) and no second copy exists. It must fit TASK-049's *✓ finished* too.
+4. **Button:** `src/components/FinishBook.tsx` (new, client): `<button class="btn sec sm" aria-label="Finished <title>">Finished</button>`, sending `finish: { mode: "today" }` through the hook, with no date control, on *Reading* and *Listening* alike (the server logs `audio`, D-112).
+5. **Double taps:** ignore a tap while saving and stay locked after success until the row unmounts or Undo runs (the undo closure unlocks it, for an Undo that lands before the refresh). `onKeyDown` calls `preventDefault` on `e.repeat`: focus lands on the next book's **Finished**, so a held Enter would finish that one too.
+6. **Focus:** on success, only if the button holds focus, move it before the refresh to the next `.finish-book` in the panel, else the previous one, else `#tab-inflight`, which survives the refresh (the *Nothing in flight.* slate's link doesn't exist yet). Undo puts focus on the restored row's **Finished**: a module-level `refocus` id read in an effect, the pattern `BookStatus` uses for *Add to Someday*.
+7. **Failed write:** `fail({ label, retry })` from `useUndo` (R1-07): *Couldn't finish <title>. Nothing changed.* with Retry, or the server's reason for a 400 (*Not saved: <reason>.*), also with Retry. The row stays and focus stays on the button.
+8. **Row:** `StatusBookRow` gains `action?: React.ReactNode`. With it, the text goes in `<span class="row-text">` and the action in the existing `.row-verbs`, whose rule already makes the row flex; without it, the markup is unchanged. `src/app/books/status/page.tsx` passes `<FinishBook>` on In flight's rows only. `globals.css`: `.row-text{flex:1;min-width:0;overflow-wrap:anywhere}` (block, as the row's children are), tokens only.
+
+**Files**
+
+- `design/mockups.html`, `design/mockups-index.md`: the frames (done).
+- `src/components/useBookWrite.ts` (new; not in *Files likely touched*): the shared finish, in place of the task's "shares the finish" inside `BookStatus`.
+- `src/components/FinishBook.tsx` (new): **Finished**.
+- `src/components/BookStatus.tsx`: `write` goes through the hook.
+- `src/components/StatusBookRow.tsx`: the slot.
+- `src/app/books/status/page.tsx`: In flight's rows pass it.
+- `src/app/globals.css`: `.row-text`.
+- `test/e2e/status.spec.ts`: the task's tests.
+- `test/e2e/mockup-tablet.spec.ts` (not in *Files likely touched*): `.first()`.
+
+**Test strategy** (`test/e2e/status.spec.ts`, Playwright on the TEST database; the writing tests are `ONCE`)
+
+- AC-1: "Finished on a Reading row writes read and a text read; on a Listening row an audio read", "the toast carries Keep going?; Undo restores the status and leaves no read", "the book moves to Done and both tabs' counts equal their rows", `floor(page)` for axe, and nothing resolving to `--danger`; screenshots.
+- AC-2: "a book with a known start: no date control, today and exact, the start kept, the toast's words; Undo restores both".
+- AC-3: "a button named Finished <title> on In flight only, and no other status control on the row".
+- AC-4: "keyboard: focus goes to the next row, the previous row, then the In flight tab; F6 reaches the toast", "Undo puts focus on the restored row's Finished", "a failed write (route abort) offers Retry, the row stays, no read_events row; Retry saves".
+- AC-5: "the button is at least 24px tall", "finishing the last book shows Nothing in flight.", "a long title doesn't overflow at 360", contrast through `floor`, and the existing read-only *In flight* test's screenshot at every width, light and dark, now with the button.
+- The refactored Library write: `follows`, `start-dates`, `audiobooks`, `unlisted` already cover it.
+- Manual: the task's *Verification* steps.
+
+**Risks / open questions**
+
+- `books-status` JS budget (`scripts/perf/budget.json`): the route gains the hook and `FinishDate.tsx`'s helpers (`finishWords`). Lighthouse is the gate; if it goes over, move the helpers to `src/lib`.
+- `status.spec.ts`'s *books* describe asserts In flight's exact rows and the file runs in parallel projects: the new tests need their own serial, cleaned-up seed, leaving the existing `E2E Reading Now` row as found.
+- A held-Enter guard stops key repeat only; two deliberate presses finish two books, and only the second can be undone (one toast at a time). AC-4 asks for focus there, so it is accepted.
+
+**Size check:** 10 files, no schema, over the 8-file line. `workflow.splitPolicy` is `never-split` and `autonomy` is already `attended`: the finish, its button and the row can't ship apart.
+
+**Follow-ups:** the two in `## Follow-ups` above.
 
 ## Review log
 
