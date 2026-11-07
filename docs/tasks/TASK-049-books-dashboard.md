@@ -37,6 +37,7 @@ planned_at_commit: 391e506
 - Decisions: D-40 (the feel pass), D-37 (levels and order), D-38, D-7, D-85 (listens), D-108, D-110, D-63. FP-D8, FP-D15. R3-12 (2.2b split out of 2.2).
 - *From TASK-047 (2.2e, PR #194):* once `/books` is the dashboard, the phone reaches the Library only from it (the phone bar lists no medium items, only the media switch), so the dashboard needs a *Library* link.
 - *From TASK-046 (2.1, PR #195):* the strip's figure is `planCapacity(userId, year)` in `src/db/queries.ts` (the `plan_capacity` view): the current quarter's `plannedWords` against its `capacity` (a quarter of the year's, read live from your settings) gives *615k planned · 760k a quarter*, and `readBooks` of `books` gives *3 of 7 read*. A read book still counts against the quarter it was planned in, a listen, a DNF and On deck don't, and a book with no word count and no plausible page count is in `books` and `unknownBooks` but in no word total (D-115). A year nothing is planned in reads as empty at your capacity.
+- *From TASK-054 (2.2f, branch task/2.2f-finish-from-in-flight):* the one-tap finish is `useBookWrite` (`src/components/useBookWrite.ts`): the write, the refresh, the toast copy, the server-account Undo and *Keep going?*. *✓ finished* and *Finished it* should finish through it (`finish: initialFinish(null)` is today, Eastern, `exact`), not a second write; `src/components/FinishBook.tsx` is the pattern for focus and Retry. (arrived after the plan was approved)
 
 ## Acceptance criteria
 

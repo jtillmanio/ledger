@@ -1954,7 +1954,7 @@ choosing *Length* updates the URL and the order and survives a reload; the
 nav shows *Library* at 768px and 1280px, current on `/books/list`; at 360px the *Books* switch is current there and the page's heading reads *Library*.
 Screenshots at 360px and 1280px.
 
-### ☐ 2.2f Finish a book from In flight · S
+### ☑ 2.2f Finish a book from In flight · S
 Owner intake, 2026-11-05 (owner: *a way to finish a book from the status
 tab*). Depends on 1.9, 1.5 and 2.2c. `StatusBookRow` is plain text today, so a
 book in hand can only be finished from the Library.

@@ -37,6 +37,7 @@ Finishing a book follows its series, subseries and universe for you, the toast s
 - **2.2f** (TASK-054) lands first and reuses the Library's finish, so its toast gets all of this; test it from there too.
 - **Not drawn yet.** The mockup's `follow` and `finishoffer` frames change at phone, tablet and desktop widths before they are built: the plan draws them first and the owner sees them at the plan gate (standing rule 6, `ui.redrawFiles`).
 - Rules: read `.claude/rules/schema.md` when planning. Decisions: D-117, D-118, D-108, D-43, D-91, D-90 (subseries), D-116, D-63. Data model § 4.1, 2.5e. Roadmap 5.12 and 2.2d's *From the 2026-11-05 intake* note read what this builds.
+- *From TASK-054 (2.2f, branch task/2.2f-finish-from-in-flight):* the finish toast's copy (`NAMES`, the label and the *Finished <date>* detail) now lives in `useBookWrite` (`src/components/useBookWrite.ts`), one place for the Library's finish and In flight's **Finished**; change it there.
 
 ## Acceptance criteria
 

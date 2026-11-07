@@ -1,7 +1,7 @@
 ---
 id: TASK-054
 title: 2.2f Finish a book from In flight
-status: In progress
+status: Review
 depends_on: [TASK-017, TASK-010, TASK-048]
 size: M
 model: sonnet
@@ -33,16 +33,16 @@ A book you're reading or listening to can be finished from *In flight* with one 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): in the browser (0.11), **Finished** on a *Reading* row writes `read`
+- [x] AC-1 (roadmap **Check:**, verbatim): in the browser (0.11), **Finished** on a *Reading* row writes `read`
 and one `read_events` row with `format = text`, and on a *Listening* row one
 with `format = audio`; the toast carries *Keep going?*; Undo restores the status
 and leaves no read; the book moves from In flight to Done and both tabs' counts
 equal their rows. The button is reachable by keyboard, axe passes and nothing
 resolves to `--danger`. Screenshots at 360px and 1280px.
-- [ ] AC-2: Given a book *Reading* since a known date, **Finished** opens no date control and writes `finished_on` = today with precision `exact`; the read keeps that start date; the toast reads *<title>: read* with *Finished <today>*. Undo puts the status and the start date back.
-- [ ] AC-3: **Finished** is a `<button>` named *Finished <title>*, on *Reading* and *Listening* rows only: a row on *Up next* or *Done* has none, and an In flight row has no other status control.
-- [ ] AC-4: After a finish by keyboard, focus is not on `body`: it is on the next row's **Finished**, or where the plan says when the list empties, and F6 moves it to the toast (D-116). When the write fails, the failed-write line offers Retry, the row stays on In flight, and no `read_events` row exists.
-- [ ] AC-5: In flight meets the UX floor (`docs/04-design.md` § 10. The UX floor): the button is at least 24px tall and sized as the `status` mockup draws it; finishing the last book shows the existing *Nothing in flight.* slate; a long title doesn't overflow the row at 360px; the name stays 4.5:1 in both themes; axe reports no new violations; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-2: Given a book *Reading* since a known date, **Finished** opens no date control and writes `finished_on` = today with precision `exact`; the read keeps that start date; the toast reads *<title>: read* with *Finished <today>*. Undo puts the status and the start date back.
+- [x] AC-3: **Finished** is a `<button>` named *Finished <title>*, on *Reading* and *Listening* rows only: a row on *Up next* or *Done* has none, and an In flight row has no other status control.
+- [x] AC-4: After a finish by keyboard, focus is not on `body`: it is on the next row's **Finished**, or where the plan says when the list empties, and F6 moves it to the toast (D-116). When the write fails, the failed-write line offers Retry, the row stays on In flight, and no `read_events` row exists.
+- [x] AC-5: In flight meets the UX floor (`docs/04-design.md` § 10. The UX floor): the button is at least 24px tall and sized as the `status` mockup draws it; finishing the last book shows the existing *Nothing in flight.* slate; a long title doesn't overflow the row at 360px; the name stays 4.5:1 in both themes; axe reports no new violations; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -122,7 +122,7 @@ Approved by the owner at the plan gate, 2026-11-07. The mockup frames (step 1) a
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 round PASS → full PASS (832 e2e) | Audit R1 CHANGES (keyboard test weak, 400 path, --danger) → R2 PASS | Spec R1 APPROVE | UI R1 PASS (dev DB had one Listening book; Reading/Up next/Done rows and the DB reads are proven by the e2e suite)
 
 ## Blocked
 
@@ -130,7 +130,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1 (round, then full chain)
+- Review rounds: 1 (audit 2)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0
