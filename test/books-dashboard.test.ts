@@ -330,3 +330,35 @@ describe("the dashboard's copy (§15: sentences, not tallies; never a date to fi
     expect(between.finishBadge(last(), "2026-11-20", new Date("2026-11-20T17:00:00Z"))).toBe("✓ finished · 1 Nov");
   });
 });
+
+describe("the strip past capacity is amber, never red, and never says behind (AC-3, §12)", () => {
+  const cap = (planned: number, books = 3, read = 1) => ({
+    period: "2026-Q4", year: 2026, quarter: 4, capacity: 760_000, plannedWords: planned, statedWords: planned,
+    estimatedWords: 0, books, readBooks: read, unknownBooks: 0, load: planned / 760_000, estimatedShare: 0,
+  });
+  const blocks = [{ id: "a", title: "A", words: 600_000, status: "read" as const }, { id: "b", title: "B", words: 212_000, status: "to_read" as const }];
+  async function strip(planned: number) {
+    const { default: QuarterStrip } = await import("../src/components/QuarterStrip");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { createElement } = await import("react");
+    return renderToStaticMarkup(createElement(QuarterStrip, { cap: cap(planned), blocks, inHand: null }));
+  }
+
+  it("812k against 760k: the figure takes the amber class with what it is over; nothing danger, nothing behind", async () => {
+    const html = await strip(812_000);
+    expect(html).toMatch(/<span class="qfig over">812k planned<span class="bdg bl">52k over<\/span><\/span>/);
+    expect(html).toContain('data-over="true"');
+    // The rule moves in: the scale stretches to the plan, so 760k sits at 760/812 of the width.
+    expect(html).toContain(`left:${((760_000 / 812_000) * 100).toFixed(3)}%`);
+    expect(html).not.toMatch(/danger|\bdg\b|behind/i);
+    expect(await import("node:fs").then((fs) => fs.readFileSync("src/app/globals.css", "utf8")))
+      .toMatch(/\.qfig\.over\{color:var\(--blocked\);/);
+  });
+
+  it("at or under capacity the figure is plain: no amber, no over badge, the rule at the right edge", async () => {
+    const html = await strip(615_000);
+    expect(html).toContain('<span class="qfig">615k planned</span>');
+    expect(html).not.toMatch(/over|bdg bl|data-over/);
+    expect(html).toContain("left:100.000%");
+  });
+});
