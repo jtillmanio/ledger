@@ -58,6 +58,7 @@ Three consequences:
 | `.github/workflows/ci.yml` | Parallel jobs on every PR, gathered by `check` (the one Release reads): `tests` runs `tsc`, lint, `test:tokens`, `check:migrations`, `test:db:reset`, vitest, `test:views` and the Python ETL tests; `e2e` builds and runs the browser suite in four shards against `next start` (skipped when a PR changes only `backups/`, `docs/`, `.claude/` or root markdown: `scripts/ci-scope.mjs`), and `e2e-report` merges their reports. Each job gets Postgres 18 (Neon's major), installed on the runner by `.github/actions/start-postgres`, with `TEST_DATABASE_URL` and deliberately no `DATABASE_URL` |
 | `.github/workflows/backup.yml` | Nightly `pg_dump`, restore-checked, then uploaded to Cloudflare R2 (D-66) |
 | `.github/workflows/neon-preview-cleanup.yml` | When a PR closes, deletes its Neon preview database `preview/<git branch>` (START-HERE 10f) |
+| `.github/workflows/preview-link.yml` | When Vercel skips a PR's head (a docs-only push such as a close-out), posts a green **Preview (last build)** status on it that links to the newest earlier preview, by the ignore step's own rule (`carriedPreview` in `scripts/lib/release.mjs`) |
 | `design/mockups.html` | 40 annotated screens. Authoritative for layout and copy |
 
 ### Why CLAUDE.md stays short

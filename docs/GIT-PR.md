@@ -40,6 +40,10 @@ Before pushing, locally:
 After pushing, on GitHub:
 
 - CI (`gh pr checks <n> --watch`) is green, and the Vercel preview deploys.
+  When the head is a docs-only push after a build (a close-out), Vercel skips
+  it: its *Vercel* check reads *Canceled by Ignored Build Step*, and
+  **Preview (last build)** (`preview-link.yml`) links to the earlier build,
+  which serves the same app. That pair passes the preview gate.
 - **Lighthouse** (`.github/workflows/lighthouse.yml`, task 0.10) runs on that
   preview once it deploys and is green, and its PR comment shows nothing over
   budget. It fails on a route handler requested during a load or prefetch,

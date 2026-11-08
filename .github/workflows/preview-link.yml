@@ -1,0 +1,54 @@
+name: Preview link
+
+# Keeps a pull request linked to its preview when Vercel skips the head.
+# The Ignored Build Step (scripts/vercel-ignore.mjs) skips a push that changes
+# only backups, docs, design, CI or Claude config, such as a task's close-out.
+# The skipped head gets no GitHub deployment, and its `Vercel` status links to
+# the canceled build, so the PR shows "skipped" with no way to the preview that
+# still serves the same app. This posts a green `Preview (last build)` status
+# on the head linking to the newest earlier build (scripts/preview-link.mjs,
+# carriedPreview in scripts/lib/release.mjs, the ignore step's own rule).
+#
+#   pull_request       each push: link the head if Vercel will skip it
+#   deployment_status  a preview finished: link any open PR's head that was
+#                      pushed, and skipped, while this build was still running
+#
+# Fast by design: a filtered event never starts a runner, the checkout is
+# scripts/ only at depth 1, Node is the runner's own (no setup-node, no
+# install), and the step makes a handful of API calls.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  deployment_status:
+
+permissions: {}
+
+concurrency:
+  group: preview-link-${{ github.event.pull_request.number || github.event.deployment.sha }}
+  cancel-in-progress: true
+
+jobs:
+  link:
+    # Vercel sends a status for every deployment and every state; only a
+    # finished preview gets a runner.
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Preview')
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      deployments: read
+      pull-requests: read
+      statuses: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: scripts
+          persist-credentials: false
+      - name: Link the last build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          SHA: ${{ github.event.deployment.sha }}
+        run: node scripts/preview-link.mjs

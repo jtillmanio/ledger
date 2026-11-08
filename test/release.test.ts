@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  alreadyProduction, deploymentNeedsBuild, directUrl, ignoredBuildStep, needsBuild, pendingMigrations, promoteProblem, refProblem, releaseProblems, smokeProblem,
+  alreadyProduction, carriedPreview, carriedPreviewStatus, deploymentNeedsBuild, directUrl, ignoredBuildStep, needsBuild, pendingMigrations, promoteProblem, refProblem, releaseProblems, smokeProblem,
   snapshotsToPrune,
 } from "../scripts/lib/release.mjs";
 
@@ -111,6 +111,108 @@ describe("ignoredBuildStep (scripts/vercel-ignore.mjs)", () => {
       expect(l).toMatch(/last successful deployment/i);
       expect(l).toMatch(/compares with an older deployment/i);
       expect(l).toMatch(/Use project's Ignore Build Step/);
+    });
+  });
+});
+
+describe("carriedPreview (.github/workflows/preview-link.yml)", () => {
+  type Preview = { built: boolean; url: string | null };
+  /** Fake GitHub answers: each commit's Preview deployments, and the files changed from each base to the head. */
+  function fakes(previews: Record<string, Preview[]>, diffs: Record<string, string[] | null> = {}) {
+    const asked: string[] = [];
+    return {
+      asked,
+      previewsOf: async (sha: string) => (asked.push(sha), previews[sha] ?? []),
+      changedFiles: async (base: string) => diffs[base] ?? null,
+    };
+  }
+  const built = (url: string): Preview => ({ built: true, url });
+
+  it("links a docs-only head to the newest earlier build", async () => {
+    // TASK-049's close-out (cdbbbd3) after 15c7062's preview: Vercel skipped it.
+    const f = fakes({ "15c7062aa": [built("https://ledger-mu380o0rd-justin-tillman.vercel.app")] },
+      { "15c7062aa": ["docs/tasks/archive/TASK-049-books-dashboard.md"] });
+    expect(await carriedPreview(["aa99233aa", "15c7062aa", "cdbbbd3aa"], f.previewsOf, f.changedFiles)).toEqual({
+      carry: { sha: "15c7062aa", url: "https://ledger-mu380o0rd-justin-tillman.vercel.app" },
+      why: "only backups, docs, design, CI or Claude config changed since 15c7062",
+    });
+  });
+
+  it("walks past a commit whose build was canceled or never built", async () => {
+    const f = fakes({
+      "bbbbbbb11": [{ built: false, url: null }],
+      "aaaaaaa11": [built("https://ledger-old-justin-tillman.vercel.app")],
+    }, { "aaaaaaa11": ["docs/05-roadmap.md", ".claude/kit.json"] });
+    const { carry } = await carriedPreview(["aaaaaaa11", "bbbbbbb11", "ccccccc11", "ddddddd11"], f.previewsOf, f.changedFiles);
+    expect(carry).toEqual({ sha: "aaaaaaa11", url: "https://ledger-old-justin-tillman.vercel.app" });
+    expect(f.asked).toEqual(["ddddddd11", "ccccccc11", "bbbbbbb11", "aaaaaaa11"]);
+  });
+
+  it("links nothing when the head has a deployment of its own, and asks about no other commit", async () => {
+    const f = fakes({ "head00000": [{ built: false, url: null }], "base00000": [built("https://x.vercel.app")] });
+    expect(await carriedPreview(["base00000", "head00000"], f.previewsOf, f.changedFiles))
+      .toEqual({ carry: null, why: "head000 has a deployment of its own" });
+    expect(f.asked).toEqual(["head00000"]);
+  });
+
+  it("links nothing when anything since the last build changes the app: Vercel builds the head", async () => {
+    const f = fakes({ "base00000": [built("https://x.vercel.app")] }, { "base00000": ["docs/05-roadmap.md", "src/app/books/page.tsx"] });
+    expect(await carriedPreview(["base00000", "head00000"], f.previewsOf, f.changedFiles))
+      .toEqual({ carry: null, why: "2 file(s) changed since base000, so Vercel builds the head" });
+  });
+
+  it("links nothing for an empty diff, which the ignore step builds as a redeploy", async () => {
+    const f = fakes({ "base00000": [built("https://x.vercel.app")] }, { "base00000": [] });
+    expect((await carriedPreview(["base00000", "head00000"], f.previewsOf, f.changedFiles)).carry).toBeNull();
+  });
+
+  it("links nothing when GitHub can't list the changes, or no commit has a preview", async () => {
+    const unknown = fakes({ "base00000": [built("https://x.vercel.app")] });
+    expect(await carriedPreview(["base00000", "head00000"], unknown.previewsOf, unknown.changedFiles))
+      .toEqual({ carry: null, why: "GitHub could not list what changed since base000" });
+    // A docs-only PR is skipped from its first push: there is no preview to link.
+    const none = fakes({});
+    expect(await carriedPreview(["docs00001", "docs00002"], none.previewsOf, none.changedFiles))
+      .toEqual({ carry: null, why: "no earlier commit in the pull request has a preview" });
+    expect((await carriedPreview([], none.previewsOf, none.changedFiles)).carry).toBeNull();
+  });
+
+  it("posts a green status, apart from Vercel's, linking the preview", () => {
+    const status = carriedPreviewStatus("cdbbbd3c77f3", { sha: "15c70627af02", url: "https://ledger-mu380o0rd-justin-tillman.vercel.app" });
+    expect(status).toMatchObject({ state: "success", context: "Preview (last build)", target_url: "https://ledger-mu380o0rd-justin-tillman.vercel.app" });
+    expect(status.context).not.toBe("Vercel");
+    expect(status.description).toMatch(/cdbbbd3.*15c7062/);
+    expect(status.description.length).toBeLessThanOrEqual(140); // GitHub's limit
+  });
+
+  describe("the workflow", () => {
+    const yml = readFileSync(".github/workflows/preview-link.yml", "utf8");
+    const script = readFileSync("scripts/preview-link.mjs", "utf8");
+
+    it("runs on every PR push and on a finished preview only", () => {
+      expect(yml).toMatch(/\n {2}pull_request:\n {4}types: \[opened, synchronize, reopened\]\n/);
+      expect(yml).toMatch(/\n {2}deployment_status:\n/);
+      expect(yml).toMatch(/github\.event\.deployment_status\.state == 'success' && github\.event\.deployment\.environment == 'Preview'/);
+    });
+
+    it("stays fast: scripts/ only, no setup-node, no install, cancelled by a newer push", () => {
+      expect(yml).toMatch(/sparse-checkout: scripts\n/);
+      const steps = yml.slice(yml.indexOf("\n    steps:\n"));
+      expect(steps.match(/- (uses|name):/g)).toHaveLength(2);
+      expect(steps).not.toMatch(/setup-node|npm (ci|install)/);
+      expect(yml).toMatch(/cancel-in-progress: true/);
+      expect(yml).toMatch(/timeout-minutes: 3\n/);
+    });
+
+    it("may write statuses and nothing else", () => {
+      expect(yml).toMatch(/\npermissions: \{\}\n/);
+      expect(yml.match(/: write/g)).toEqual([": write"]);
+      expect(yml).toMatch(/ statuses: write\n/);
+    });
+
+    it("decides with the ignore step's rule, from scripts/lib/release.mjs", () => {
+      expect(script).toMatch(/import \{ carriedPreview, carriedPreviewStatus \} from "\.\/lib\/release\.mjs"/);
+      expect(yml).toMatch(/run: node scripts\/preview-link\.mjs\n/);
     });
   });
 });
