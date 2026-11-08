@@ -33,10 +33,9 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
-  // The media switch. Books links straight to its list: /books redirects there until 2.2 builds
-  // the dashboard, and a prefetch of a redirect holds the network from idle (task 1.8c).
+  // The media switch: each medium's dashboard (Books since task 2.2).
   { id: "comics", label: "Comics", href: "/comics", icon: "book-open", enabled: true, group: "media", medium: "comics" },
-  { id: "books", label: "Books", href: "/books/list", icon: "book", enabled: true, group: "media", medium: "books" },
+  { id: "books", label: "Books", href: "/books", icon: "book", enabled: true, group: "media", medium: "books" },
   { id: "watch", label: "Watch", href: "/watch", icon: "tv", enabled: true, group: "media", medium: "watch" },
 
   { id: "comics-dash", label: "Dashboard", href: "/comics", icon: "layout-dashboard", enabled: true, group: "medium", medium: "comics", dash: true },
@@ -50,8 +49,8 @@ export const NAV_ITEMS: NavItem[] = [
     noPrefetch: true, currentOn: /^\/comics\/[^/]+\/add$/,
   },
 
-  // Until 2.2 builds the books dashboard, /books redirects to the list.
-  { id: "books-dash", label: "Dashboard", href: "/books", icon: "layout-dashboard", enabled: false, group: "medium", medium: "books", dash: true },
+  // The books dashboard (task 2.2).
+  { id: "books-dash", label: "Dashboard", href: "/books", icon: "layout-dashboard", enabled: true, group: "medium", medium: "books", dash: true },
   { id: "books-status", label: "Status", href: "/books/status", icon: "list-checks", enabled: true, group: "medium", medium: "books" },
   // The master list, named and given its own page (task 2.2e, D-110). `library` is Shelves' icon.
   { id: "books-library", label: "Library", href: "/books/list", icon: "book-copy", enabled: true, group: "medium", medium: "books" },

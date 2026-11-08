@@ -11,7 +11,7 @@ import {
 
 // Sets its own viewport: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
-const DASHBOARDS = ["/comics", "/watch"];
+const DASHBOARDS = ["/comics", "/books", "/watch"];
 
 const size = (page: Page, width: number, height = 900) => page.setViewportSize({ width, height });
 

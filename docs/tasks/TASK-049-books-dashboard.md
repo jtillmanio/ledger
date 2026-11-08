@@ -1,14 +1,14 @@
 ---
 id: TASK-049
 title: 2.2 Books dashboard
-status: Ready
+status: In progress
 depends_on: [TASK-011, TASK-014, TASK-046, TASK-047]
 size: L
 model: opus
 autonomy: attended
 ui: true
 plan_status: approved
-planned_at_commit: 391e506
+planned_at_commit: 35caffc
 ---
 
 # TASK-049 — 2.2 Books dashboard
@@ -102,7 +102,11 @@ Provisional: depends on TASK-048 for the finish offer (`src/lib/follow-offer.ts`
 - Q3, **Plan** on an *On deck* row moves the book to the end of the current quarter, with Undo: a new `POST /api/plan { bookId, from: "on_deck", to: <quarter> }` through `movePlan`.
 - Q4, *✓ finished* / *Finished it* finishes the book in hand today in one tap, with Undo and 2.2c's *Keep going?*. A different date is set from the Library's *Finished*.
 
-**Rules this plan sets:** the hero is the in-progress book started most recently (`started_on DESC NULLS LAST`, then *Reading* before *Listening*, then title). *2026 so far* is plain text until Stats (6.2) exists. *Pick something else* links to `/books/status?tab=next`. The lede carries a *Library* link (TASK-047's note). *This year* and *the current quarter* come from the Eastern day (`today()`, `src/lib/finish-date.ts`), passed into each query so the tests fix the date. A new author is one with a read this year and no read dated before it or undated.
+**Revision 1 (owner, 2026-11-08, plan stale against 35caffc: 2.2c, 2.2i, 2.0b, 2.2f, 2.2h landed on its files):** *✓ finished* / *Finished it* and the between state's *Start <title>* write through `useBookWrite` (TASK-054's note: `finish: initialFinish(null)`; `FinishBook.tsx`'s focus and Retry), which brings 2.2h's *Now reading* chips with the toast. The `bdash` redraw keeps 2.2i's tab row on its 360 frame. The perf rename gives `library` today's `books` numbers (70000 · 64). **No *Library* link in the lede**: 2.2i's tab row (D-120) reaches the Library on the phone, so TASK-047's reason is gone. Enabling `books-dash` adds *Dashboard* to the books tab row.
+
+**Revision 2 (during implementation, 2026-11-08; small, inside the task's scope, each explained when made):** `quarterBlocks(userId, period)` joins step 2's queries: the strip draws every book that counts against the quarter (read and reading too), which `quarterShelf` (to read only) can't give, and it reads `plan_book_words`, the view `plan_capacity` sums, so the blocks add up to 2.1's figure. `planCapacity` takes an optional settings promise, so the page's nine queries stay one wave when the year has nothing planned (`test/query-budget.test.ts`). `useShelfPager` is its own file (`src/components/useShelfPager.ts`), as two components import it. `BOOKS_NEXT_HREF` lives in `src/lib/status-tabs.ts` beside `QUEUE_HREF`, because a server component can't read a constant from a `"use client"` module. `src/components/Skeleton.tsx` gains the dashboard's skeleton pieces, and the books skeleton's geometry is measured in `books-dashboard.spec.ts` (it needs that spec's seed) rather than `skeletons.spec.ts`. Tests outside the list that the change turned round: `test/thumb-bar.test.tsx`, `test/perf.test.ts`, `test/query-budget.test.ts`, `test/loading-states.test.tsx`, `test/e2e/shell.spec.ts` (`/books` joins its dashboards).
+
+**Rules this plan sets:** the hero is the in-progress book started most recently (`started_on DESC NULLS LAST`, then *Reading* before *Listening*, then title). *2026 so far* is plain text until Stats (6.2) exists. *Pick something else* links to `/books/status?tab=next`. *This year* and *the current quarter* come from the Eastern day (`today()`, `src/lib/finish-date.ts`), passed into each query so the tests fix the date. A new author is one with a read this year and no read dated before it or undated.
 
 **Steps**
 1. Redraw `bdash` in `design/mockups.html` from the feel pass, reading and *Between books*, at 360, 834 and 1280, light and dark. Update `design/mockups-index.md`. The owner looks before step 2.

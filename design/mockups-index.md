@@ -20,9 +20,9 @@ line numbers below drift after an edit.
 | `bulk` | Add issues — type it (bulk) | 1576–1680 |
 | `newrun` | New run | 1545–1647 |
 | `ai` | AI review | 1650–1745 |
-| `bdash` | Books dashboard; 360px and 834px frames (roadmap 1.8) | 1748–1912 |
+| `bdash` | Books dashboard; 360px and 834px frames, and the desktop's, redrawn from the feel pass (task 2.2, D-40): the five slots (Now, *Up next in Q4*, *This quarter*, *On deck*, *2026 so far*); reading at 390 and 834 and on the desktop, listening at 360 (the headphones glyph), *Between books* at 390, 360, 834 and on the desktop (past capacity: the figure amber, *52k over*), never finished with nothing planned at 360; no position, meter or sittings until 2.1b (Q1); *Plan* revealed on hover with a fine pointer on the desktop | 2443–2850 |
 | `status` | Status — in flight, up next, done (all media); 360px and 834px frames (roadmap 1.8); books In flight with **Finished** on each row, 360 (before and after, the toast with *Keep going?*), 834 and desktop frames (task 2.2f); Done rows carry a run's span and a book's dates (notes, task 1.17); books In flight under *Reading*, then *Listening*, and the headphones glyph on a row with a listen (notes, task 1.23) | 2645–2810 |
-| `plan` | Plan by quarter | 2023–2166 |
+| `plan` | Plan by quarter; *Place them* (2.8), its last phone frame, moved here from `bdash` (task 2.2: the capacity card and *Place them* are on `/books/plan` only) | 3117–3278 |
 | `moveplan` | Move / add to a quarter | 2169–2326 |
 | `blist` | Library (the master list); the *Unlisted · N* chip after *Read* and an Unlisted row, grey badge and *Add to Someday* (task 1.21); the box searches as you type, *Searching…* (task 1.22); a row's *Started …* and days taken, the date line, and *Started* refusing a start after the finish (third frame, task 1.17); *Listening* beside *Reading* in the control, a Listening row and a row with a listen carrying the headphones glyph, and *Read 2× · Listened 1×* (task 1.23); named *Library*, its *Sort* select and direction link (*↓ Longest first*) beside the status filters at every width, the rows longest first, and a tablet frame with *Library* current on the rail (task 2.2e) | 3117–3328 |
 | `follow` | *Follow…* — a Library row's `⋯` menu and the sheet it opens, headed by the book's title: its series, subseries, author, universe and shelves, each with *Reading · Tracking · Not following* and `read / total`; the middle option reads *On hold* on something part-read and *Tracking* otherwise, `tracking` stored both ways (D-118); *Not following* on a series, subseries or universe kept as `off` (D-117); a book with no series, and the undo toast live over the sheet; 360, 834 and desktop frames (task 2.2c, D-108; task 2.2h) | 3473–3652 |
@@ -193,7 +193,7 @@ One line each. None is silently dropped.
 | M-11 | `states` empty dashboard: *Pick from 41 ready runs* when the queue is empty too |
 | M-12 | Desktop `home` lede no longer repeats the catalogue total |
 | M-13 | `blist` second frame: *Finished* — Today · Pick a date · Year only · No date |
-| L-01…L-07 | Scrim literal; named `.chk`, close and segmented controls; `status` medium; `addsearch` desktop preview; `moveplan` chips and *Accept*; queue toast and *Stopped*; `bdash` third frame for 2.8 |
+| L-01…L-07 | Scrim literal; named `.chk`, close and segmented controls; `status` medium; `addsearch` desktop preview; `moveplan` chips and *Accept*; queue toast and *Stopped*; `bdash` third frame for 2.8 (now on `plan`, task 2.2) |
 | D-28, D-29 | `watchadd` second frame: TMDB error → *Save to inbox*; `tracks` and `stats` draw each track as a row of its blocks |
 | Out of horizon | Watch genre chips grey; *Start S{n}*; watch telescope titles; TMDB attribution on `watchlist` and `watchadd`; stats and shelves notes |
 
@@ -220,7 +220,7 @@ The feel pass is drawn in `design/Ledger Feel Review.dc.html`, not here, and eve
 |---|---|---|
 | `home` | §2 comics, §3 the mark, §11 desktop (the 834 frame is already redrawn, roadmap 1.8e) | 2.4 (with 1.10's shelf and 1.8b's mark; 1.8 for the desktop shell) |
 | `states` (empty dashboard) | §10a *All caught up* | 2.4 |
-| `bdash` | §4 books, reading and *Between books*, §11 desktop (the 834 frame is already redrawn, roadmap 1.8e) | 2.2 |
+| `bdash` | §4 books, reading and *Between books*, §11 desktop (the 834 frame is already redrawn, roadmap 1.8e) | 2.2 (**redrawn**, TASK-049) |
 | `watchlist` | §5 watch (open questions: roadmap 8.7) | 8.7 |
 | `spine`, `krakoa` (hero only) | §6 run detail (art band, telescope above the spine) | 4.3 (band), 2.5b (telescope) |
 | — (new) | §7 run complete, §10b block complete, §11 desktop | 2.12 |

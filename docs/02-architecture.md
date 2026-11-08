@@ -100,7 +100,7 @@ Every page. One dashboard per medium, with the lists one level down (design §11
 | `/comics/releases` | New issues in the series you follow, each offered for adding to its run (task 5.8, D-35) |
 | `/comics/editions` | Trades and omnibuses, with *Collected* and *Read* per edition (task 5.10) |
 | `/comics/series/[key]` | One volume: every catalog issue of it, the runs that place each with its read state there, and gap stubs (task 5.13) |
-| `/books` | Books dashboard — reading now, the plan rail, capacity, the year so far. Until task 2.2 builds it, a redirect to `/books/list` (task 1.8c) |
+| `/books` | Books dashboard (task 2.2) — the book in hand or *Between books*, the quarter's shelf, the quarter strip, On deck, the year so far |
 | `/books/status` | In flight · Up next · Done, for books |
 | `/books/list` | Master list: search, filter by status, to-read level, year or genre, series completion |
 | `/books/add` | Add books: search Hardcover, paste a list, or by hand, with a destination (a quarter or year, On deck, Someday, or a shelf) |
@@ -214,7 +214,7 @@ tables.
   skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
   page within 1 s. What holds that, and the test that fails if it slips:
   - **Queries per page, in one wave.** `/comics` 7, `/comics/runs` 2, a run 3,
-    `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/inbox` 2, `/settings` 2, `/watch` none, `/login` none, `/` and `/books` none (redirects), each page's queries started together
+    `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/books` 9, `/inbox` 2, `/settings` 2, `/watch` none, `/login` none, `/` none (a redirect), each page's queries started together
     (`test/query-budget.test.ts`, which counts them). A query that must wait on
     another raises a page's waves; raising either number needs a reason here.
     The dashboard (then `/`) and `/books/list` went from 4 to 5 with the inbox
@@ -280,6 +280,7 @@ tables.
     | `/books/status` | 24,000 | 175,000 | 35 | 100 |
     | `/comics/bendis-disassembled` | 26,800 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 26,000 | 171,000 | 33 | 100 |
+    | `/books` | 70,000 | 175,000 | 64 | 100 |
     | `/books/list` | 70,000 | 170,000 | 64 | 100 |
     | `/inbox` | 16,000 | 173,000 | 31 | 100 |
     | `/settings` | 16,000 | 173,000 | 32 | 100 |
@@ -309,8 +310,8 @@ tables.
     PR #145's preview measured 50,248–50,320 bytes and 44 requests in three
     runs, against 44.6 KB and 21 without covers, so the budget is that median
     plus 20%, 60,000 bytes and 53 requests. Cover sizes and *Show covers* are
-    task 4.3's. The nav's Books link points at
-    `/books/list`, and its Ledger link (`/`, a redirect) is not prefetched: a
+    task 4.3's. The nav's Books link pointed at
+    `/books/list` until task 2.2 (now `/books`, the dashboard), and its Ledger link (`/`, a redirect) is not prefetched: a
     page that prefetched a redirect never reached network idle in the tap
     runner, and made 55 requests against a budget of 35. `/watch` (task 1.8) is
     the shell and an empty slate, so it starts from `/inbox`'s numbers (the same
@@ -353,6 +354,15 @@ tables.
     `/settings` rise most because they draw the last medium's whole row, and
     they have no other page weight to hide it in. The other routes stayed inside
     theirs.
+    Task 2.2 made `/books` the books dashboard, so the route list measures it as
+    `books`, tapped from `/comics` on the media switch, and the Library as
+    `library`, which keeps `/books/list`'s numbers and is tapped from the
+    dashboard (its nav item is the books medium's). `/books`' budget starts at
+    the Library's, with 5 KB more JS for its client parts (the shelf's pager,
+    On deck's **Plan**, the finish and start verbs), and is set to its first
+    preview's median plus about 5% once that run is in. Its nine queries are
+    one wave: `planCapacity` takes the page's settings read, so a year with
+    nothing planned costs no second round trip.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 

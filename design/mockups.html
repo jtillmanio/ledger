@@ -915,6 +915,67 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
 .tabrow a{display:inline-flex;align-items:center;flex:none;min-height:44px;padding:0 .625rem;color:var(--muted);font-size:.875rem;font-weight:500;white-space:nowrap}
 .tabrow a[aria-current]{color:var(--ink);font-weight:600;box-shadow:inset 0 -2px 0 var(--m,var(--brand))}
 .frame[data-w="desk"] .tabrow,.frame[data-w="tab"] .tabrow{display:none}
+/* ══ Task 2.2 — the books dashboard (feel pass, D-40): the 834 frame's tb- parts at every width. ══ */
+.frame:is([data-w="phone"],[data-w="p360"]) .wrap.tb.bd{display:flex;flex-direction:column;gap:28px;padding-top:1.25rem;padding-bottom:1.5rem}
+.bd-top{display:flex;flex-direction:column;gap:4px}.bd-top h1.t{margin:0}
+.bd .bd-kick{display:inline-flex;align-items:center;gap:6px}.bd .bd-hp{flex:none}
+.frame:is([data-w="phone"],[data-w="p360"]) .bd .tb-cv.hero{width:112px;height:168px}
+.frame:is([data-w="phone"],[data-w="p360"]) .bd .tb-band{gap:16px;padding:16px}
+.frame:is([data-w="phone"],[data-w="p360"]) .bd .tb-name{font-size:24px;line-height:28px;margin-top:6px}
+.frame:is([data-w="phone"],[data-w="p360"]) .bd .tb-foot.one{padding:8px 16px}
+.frame:is([data-w="phone"],[data-w="p360"]) .bd .tb-shelf{overflow-x:auto;scrollbar-width:none}
+.frame:is([data-w="phone"],[data-w="p360"]) .bd .tb-shelf>[role=listitem]{width:100px}
+.frame:is([data-w="phone"],[data-w="p360"]) .bd .tb-shelf .tb-cv{width:100px;height:150px}
+.frame:is([data-w="phone"],[data-w="p360"]) .bd .tb-aside{grid-template-columns:minmax(0,1fr)}
+.frame:is([data-w="phone"],[data-w="p360"]) .bd .tb-quarter{padding:16px}
+.bd .tb-sh a.tb-btn{display:inline-flex;align-items:center;align-self:center;text-decoration:none}
+.bd .tb-btn.pri{background:var(--brand);color:var(--on-brand);box-shadow:none;min-height:44px;display:inline-flex;align-items:center;text-decoration:none}
+.bd-slate{display:flex;flex-direction:column;align-items:flex-start;gap:12px;padding:20px;border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule)}
+.bd-slate p{margin:0;font-size:14px;line-height:20px;color:var(--ink-2)}
+.bd .tb-qf{align-items:center}.bd-fig{display:inline-flex;align-items:center;gap:8px}.bd .bd-over{color:var(--blocked);font-weight:600}
+.bd-wait{background:var(--sunk);color:var(--muted);box-shadow:none;cursor:not-allowed}
+.bd-trunc{display:block;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+/* Between books (§14.2) */
+.bb-band{display:grid;grid-template-columns:72px minmax(0,1fr);column-gap:16px;row-gap:12px;align-items:end;padding:20px}
+.bb-band.none{grid-template-columns:minmax(0,1fr)}
+.bb-cv{position:relative;width:72px;height:108px;border-radius:var(--r-cover);background:var(--sunk);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-cover)}
+.bb-cv .tb-tick{width:24px;height:24px;right:-8px;bottom:-8px;font-size:14px}
+.bb-hb{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0}
+.bb-h{margin:0;font:500 32px/36px var(--display);letter-spacing:-.015em}
+.bb-line{grid-column:1/-1;margin:0;font-size:15px;line-height:22px;color:var(--ink-2)}
+.bb-offer{display:flex;align-items:center;gap:14px;padding:14px 20px;border-top:1px solid var(--line)}
+.bb-ob{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.bb-ob b{font-size:15px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bb-ob .tb-mu{font-size:13px;line-height:18px}
+.bb-else{display:flex;align-items:center;min-height:44px;color:var(--brand);font-size:14px;font-weight:500;text-decoration:none;white-space:nowrap}
+.bb-else.out{padding:0 20px;border-top:1px solid var(--line)}
+.bb-else.in{display:none}
+.app .bd a.bb-else{color:var(--brand)}
+.app .actionbar a.btn{display:flex;align-items:center;justify-content:center;color:var(--on-brand);text-decoration:none}
+.frame:is([data-w="tab"],[data-w="desk"]) .bb-band{grid-template-columns:112px minmax(0,1fr);column-gap:28px;align-items:center;padding:24px}
+.frame:is([data-w="tab"],[data-w="desk"]) .bb-cv{grid-row:1/3;width:112px;height:168px}
+.frame:is([data-w="tab"],[data-w="desk"]) .bb-hb{align-self:end}
+.frame:is([data-w="tab"],[data-w="desk"]) .bb-line{grid-column:2;align-self:start}
+.frame:is([data-w="tab"],[data-w="desk"]) .bb-else.in{display:flex}
+.frame:is([data-w="tab"],[data-w="desk"]) .bb-else.out{display:none}
+/* Desktop (§14.6): the sticky header with the verbs, main + the side rail */
+.frame[data-w="desk"] .wrap.tb.bd{display:block;padding:0 32px 2rem}
+.bd-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;min-height:80px;margin:0 -32px;padding:0 32px;
+  background:color-mix(in oklch,var(--page) 85%,transparent);backdrop-filter:blur(12px);border-bottom:1px solid var(--rule)}
+.bd-head h1.t{margin:0;font-size:40px;line-height:44px}
+.bd-head .bd-hv{min-height:44px;border-radius:var(--r-md);padding:0 16px;max-width:300px}
+.bd-head .bd-ib{width:44px;height:44px;border-radius:var(--r-md);box-shadow:inset 0 0 0 1px var(--rule-2)}
+.frame[data-w="desk"] .bd>.tb-lede{margin:14px 0 24px}
+.bd-cols{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:28px;align-items:start}
+.bd-main{display:flex;flex-direction:column;gap:32px;min-width:0}
+.frame[data-w="desk"] .bd .tb-aside{display:flex;flex-direction:column;align-items:stretch;gap:24px;position:sticky;top:104px}
+.frame[data-w="desk"] .bd .tb-band{gap:24px;padding:24px}
+.frame[data-w="desk"] .bd .tb-name{font-size:32px;line-height:36px}
+.frame[data-w="desk"] .bd .tb-shelf>[role=listitem]{width:104px}
+.frame[data-w="desk"] .bd .tb-shelf .tb-cv{width:104px;height:156px}
+.frame[data-w="desk"] .bd .tb-row .tb-btn{opacity:0}
+.frame[data-w="desk"] .bd .tb-row[data-hover]{background:var(--raise)}
+.frame[data-w="desk"] .bd .tb-row[data-hover] .tb-btn,.frame[data-w="desk"] .bd .tb-row:focus-within .tb-btn{opacity:1}
 /* ══ Task 2.2c — the Follow… sheet and the finish offer (D-108, D-116). The default Phone view shows the 360 frames. ══ */
 body[data-vp="phone"] .screen[data-id="follow"] .frame[data-w="p360"],
 body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{display:block}
@@ -2381,306 +2442,410 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
 <!-- ══ BOOKS DASH ══ -->
 <section class="screen" data-id="bdash">
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
-  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
-  <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
-  <div class="wrap">
-    <h1 class="t">Books<span class="unit">time · words</span></h1>
-    <p class="lede">2026 · 22 of 35 read · 3 put down</p><p class="since">Since Tuesday: 1 book finished · 212 pages <a class="chip" href="#">6 in inbox</a></p>
-
-    <div class="hero" style="margin-top:.75rem"><span class="stripe" style="background:var(--g5)"></span>
-      <div class="cv l k5">BUT</div>
-      <div class="meta"><div class="kick">READING NOW</div>
-        <div class="name">The Butcher of the Forest</div>
-        <div class="by">Premee Mohamed · <span class="mono">38k words</span></div>
-        <div class="meter rd" style="margin-top:.5rem"><i style="width:62%"></i></div>
-        <div class="rs mono" style="margin-top:.375rem">14k left · about one evening</div>
-      </div></div>
-
-    <h3 class="s">The plan, in quarters<span class="more">Open plan</span></h3>
-    <div class="pacecard" style="margin-top:0">
-      <div class="ctl" style="margin:0 0 .5rem"><span class="select">2027 <span class="car">&#9662;</span></span>
-        
-        <span class="rm mono" style="margin-left:auto">31 books · 3.58M</span></div>
-      <div class="planrail" style="--stack:192px"><span class="caprule" style="top:46px"></span><div class="qcol"><div class="qstack" style="height:192px"><button class="qb over" style="height:11px;--hue:var(--g5)" aria-label="Nettle &amp; Bone, 68k words, stated"></button><button class="qb over" style="height:11px;--hue:var(--g5)" aria-label="Piranesi, 65k words, stated"></button><button class="qb" style="height:21px;--hue:var(--g5)" aria-label="Tress of the Emerald Sea, 118k words, stated"></button><button class="qb" style="height:19px;--hue:var(--g1)" aria-label="Project Hail Mary, 108k words, stated"></button><button class="qb" style="height:27px;--hue:var(--g5)" aria-label="The Fifth Season, 146k words, stated"></button><button class="qb" style="height:74px;--hue:var(--g5)" aria-label="The Way of Kings, 387k words, stated"></button></div>
-<div class="qfoot"><b>Q1</b><span class="mono">892k</span><span class="bdg bl">over 132k</span></div></div><div class="qcol"><div class="qstack" style="height:192px"><button class="qb" style="height:22px;--hue:var(--g5)" aria-label="The Spear Cuts Through Water, 120k words, stated"></button><button class="qb" style="height:22px;--hue:var(--g1)" aria-label="Some Desperate Glory, 123k words, stated"></button><button class="qb" style="height:21px;--hue:var(--g5)" aria-label="The Tainted Cup, 119k words, stated"></button><button class="qb" style="height:31px;--hue:var(--g1)" aria-label="A Memory Called Empire, 168k words, stated"></button><button class="qb" style="height:32px;--hue:var(--g5)" aria-label="The Blade Itself, 174k words, stated"></button></div>
-<div class="qfoot"><b>Q2</b><span class="mono">704k</span><span class="bdg dn">56k room</span></div></div><div class="qcol"><div class="qstack" style="height:192px"><button class="qb" style="height:12px;--hue:var(--g1)" aria-label="Chain-Gang All-Stars, 70k words, stated"></button><button class="qb" style="height:7px;--hue:var(--g1)" aria-label="The Tusks of Extinction, 45k words, stated"></button><button class="qb" style="height:16px;--hue:var(--g5)" aria-label="Legends &amp; Lattes, 90k words, stated"></button><button class="qb" style="height:39px;--hue:var(--g5)" aria-label="Babel, 210k words, stated"></button></div>
-<div class="qfoot"><b>Q3</b><span class="mono">415k</span><span class="bdg dn">345k room</span></div></div><div class="qcol"><div class="qstack" style="height:192px"><button class="qb" style="height:27px;--hue:var(--g1)" aria-label="Empire of Silence, 145k words, stated"></button><button class="qb" style="height:22px;--hue:var(--g1)" aria-label="The Blighted Stars, 123k words, stated"></button></div>
-<div class="qfoot"><b>Q4</b><span class="mono">268k</span><span class="bdg dn">492k room</span></div></div><div class="qcol nq"><div class="qstack" style="height:192px"><span class="qmore">+11 more</span><button class="qb un" style="height:36px" aria-label="A Fire Upon the Deep, 191k words, unplaced in a quarter"></button><button class="qb un" style="height:39px" aria-label="The Sword of Kaigen, 204k words, unplaced in a quarter"></button><button class="qb un" style="height:88px" aria-label="Wind and Truth, 455k words, unplaced in a quarter"></button></div>
-<div class="qfoot"><b>no&nbsp;qtr</b><span class="mono">1.30M</span><span class="bdg bl">14 books</span></div></div></div>
-      <div class="leg">
-        <span class="tag"><i class="sq" style="background:var(--reading-soft);box-shadow:inset 0 0 0 1px var(--rule)"></i>planned</span>
-        <span class="tag"><i class="sq" style="border-top:1.5px dashed var(--ink-2);border-radius:0;height:0"></i>capacity 760k a quarter</span>
-        <span class="tag"><i class="sq" style="background-color:var(--blocked-soft);background-image:repeating-linear-gradient(135deg,var(--blocked) 0 1.5px,transparent 1.5px 5px)"></i>past capacity</span>
-        <span class="tag"><i class="sq" style="border:1px dashed var(--blocked)"></i>year only, no quarter</span>
-        <span class="legend-est"><i></i> ~ estimated</span>
-      </div>
-      <p class="lede" style="margin-top:.5rem">Tap a block to move that book. Q1 is 132k over; Q2–Q4 have 893k of room between them and the unplaced pile is 1.30M, so placing everything still leaves you over.</p>
-    </div>
-
-    <div class="decide"><span class="g">?</span>
-      <div class="dt"><b>14 of 2027’s 31 books have a year but no quarter.</b>
-        A year is what its quarters add up to, so these are 2027 books only by assertion.
-        <div class="btnrow" style="margin-top:.5rem"><button class="btn sm">Place them</button><button class="btn sec sm">Leave for now</button></div>
-        <div class="rs" style="margin-top:.375rem">175 like this across 2026–2030.</div></div></div>
-
-    <h3 class="s">Against capacity</h3>
-    <div class="pacecard" style="margin-top:0">
-      <div style="display:flex;align-items:flex-end;gap:.75rem">
-        <span class="capnum held">118%</span>
-        <span class="lede" style="padding-bottom:.3125rem">of 2027 capacity<br><b style="color:var(--ink)">45 min a day</b> at <span class="mono">185 wpm</span></span>
-        <button class="btn sec sm" style="margin-left:auto">Adjust</button></div>
-      <div class="capbar">
-        <i style="width:29%;background:var(--g5)"></i><i style="width:19%;background:var(--g1)"></i>
-        <i style="width:16%;background:var(--g6)"></i><i style="width:21%;background:var(--g3)"></i>
-        <i class="hatch" style="width:15%"></i><span class="pin" style="left:85%"></span></div>
-      <div class="leg">
-        <span class="tag"><i class="sq" style="background:var(--g5)"></i>Fantasy 1.4M</span>
-        <span class="tag"><i class="sq" style="background:var(--g1)"></i>Sci-fi 900k</span>
-        <span class="tag"><i class="sq" style="background:var(--g6)"></i>Thriller 780k</span>
-        <span class="tag"><i class="sq" style="background:var(--g3)"></i>Nonfiction 410k</span>
-        <span class="bdg bl">540k past capacity</span></div>
-      <p class="lede" style="margin-top:.5rem">About 5 books too many — a decision you have not made yet, not a mistake. Exact word counts for 71% of the plan; the rest estimated at pages × 275.</p>
-      <div class="btnrow"><button class="btn">Rebalance 2027</button><button class="btn sec">Accept as a stretch year</button></div>
-    </div>
-
-    <h3 class="s">2026 so far<span class="more">Full stats</span></h3>
-    <div class="stats">
-      <div class="stat"><div class="n">22</div><div class="l">read</div></div>
-      <div class="stat"><div class="n">3</div><div class="l">put down</div></div>
-      <div class="stat"><div class="n mono">6.05M</div><div class="l">words</div></div>
-      <div class="stat"><div class="n">7<span class="muted" style="font-size:.875rem">/10</span></div><div class="l">ranked</div></div>
-    </div>
-  </div>
-  <div class="actionbar"><button class="btn">Log progress</button><button class="btn sec" style="flex:0 0 auto">&#10003; finished</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)">&#9906;</button></div>
-</div></div></div>
-<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
   <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
-  <div class="wrap">
-    <h1 class="t">Books<span class="unit">time · words</span></h1>
-    <p class="lede">2026 · 22 of 35 read · 3 put down</p><p class="since">Since Tuesday: 1 book finished · 212 pages <a class="chip" href="#">6 in inbox</a></p>
-
-    <div class="hero" style="margin-top:.75rem"><span class="stripe" style="background:var(--g5)"></span>
-      <div class="cv l k5">BUT</div>
-      <div class="meta"><div class="kick">READING NOW</div>
-        <div class="name">The Butcher of the Forest</div>
-        <div class="by">Premee Mohamed · <span class="mono">38k words</span></div>
-        <div class="meter rd" style="margin-top:.5rem"><i style="width:62%"></i></div>
-        <div class="rs mono" style="margin-top:.375rem">14k left · about one evening</div>
-      </div></div>
-
-    <h3 class="s">The plan, in quarters<span class="more">Open plan</span></h3>
-    <div class="pacecard" style="margin-top:0">
-      <div class="ctl" style="margin:0 0 .5rem"><span class="select">2027 <span class="car">&#9662;</span></span>
-        
-        <span class="rm mono" style="margin-left:auto">31 books · 3.58M</span></div>
-      <div class="planrail" style="--stack:192px"><span class="caprule" style="top:46px"></span><div class="qcol"><div class="qstack" style="height:192px"><button class="qb over" style="height:11px;--hue:var(--g5)" aria-label="Nettle &amp; Bone, 68k words, stated"></button><button class="qb over" style="height:11px;--hue:var(--g5)" aria-label="Piranesi, 65k words, stated"></button><button class="qb" style="height:21px;--hue:var(--g5)" aria-label="Tress of the Emerald Sea, 118k words, stated"></button><button class="qb" style="height:19px;--hue:var(--g1)" aria-label="Project Hail Mary, 108k words, stated"></button><button class="qb" style="height:27px;--hue:var(--g5)" aria-label="The Fifth Season, 146k words, stated"></button><button class="qb" style="height:74px;--hue:var(--g5)" aria-label="The Way of Kings, 387k words, stated"></button></div>
-<div class="qfoot"><b>Q1</b><span class="mono">892k</span><span class="bdg bl">over 132k</span></div></div><div class="qcol"><div class="qstack" style="height:192px"><button class="qb" style="height:22px;--hue:var(--g5)" aria-label="The Spear Cuts Through Water, 120k words, stated"></button><button class="qb" style="height:22px;--hue:var(--g1)" aria-label="Some Desperate Glory, 123k words, stated"></button><button class="qb" style="height:21px;--hue:var(--g5)" aria-label="The Tainted Cup, 119k words, stated"></button><button class="qb" style="height:31px;--hue:var(--g1)" aria-label="A Memory Called Empire, 168k words, stated"></button><button class="qb" style="height:32px;--hue:var(--g5)" aria-label="The Blade Itself, 174k words, stated"></button></div>
-<div class="qfoot"><b>Q2</b><span class="mono">704k</span><span class="bdg dn">56k room</span></div></div><div class="qcol"><div class="qstack" style="height:192px"><button class="qb" style="height:12px;--hue:var(--g1)" aria-label="Chain-Gang All-Stars, 70k words, stated"></button><button class="qb" style="height:7px;--hue:var(--g1)" aria-label="The Tusks of Extinction, 45k words, stated"></button><button class="qb" style="height:16px;--hue:var(--g5)" aria-label="Legends &amp; Lattes, 90k words, stated"></button><button class="qb" style="height:39px;--hue:var(--g5)" aria-label="Babel, 210k words, stated"></button></div>
-<div class="qfoot"><b>Q3</b><span class="mono">415k</span><span class="bdg dn">345k room</span></div></div><div class="qcol"><div class="qstack" style="height:192px"><button class="qb" style="height:27px;--hue:var(--g1)" aria-label="Empire of Silence, 145k words, stated"></button><button class="qb" style="height:22px;--hue:var(--g1)" aria-label="The Blighted Stars, 123k words, stated"></button></div>
-<div class="qfoot"><b>Q4</b><span class="mono">268k</span><span class="bdg dn">492k room</span></div></div><div class="qcol nq"><div class="qstack" style="height:192px"><span class="qmore">+11 more</span><button class="qb un" style="height:36px" aria-label="A Fire Upon the Deep, 191k words, unplaced in a quarter"></button><button class="qb un" style="height:39px" aria-label="The Sword of Kaigen, 204k words, unplaced in a quarter"></button><button class="qb un" style="height:88px" aria-label="Wind and Truth, 455k words, unplaced in a quarter"></button></div>
-<div class="qfoot"><b>no&nbsp;qtr</b><span class="mono">1.30M</span><span class="bdg bl">14 books</span></div></div></div>
-      <div class="leg">
-        <span class="tag"><i class="sq" style="background:var(--reading-soft);box-shadow:inset 0 0 0 1px var(--rule)"></i>planned</span>
-        <span class="tag"><i class="sq" style="border-top:1.5px dashed var(--ink-2);border-radius:0;height:0"></i>capacity 760k a quarter</span>
-        <span class="tag"><i class="sq" style="background-color:var(--blocked-soft);background-image:repeating-linear-gradient(135deg,var(--blocked) 0 1.5px,transparent 1.5px 5px)"></i>past capacity</span>
-        <span class="tag"><i class="sq" style="border:1px dashed var(--blocked)"></i>year only, no quarter</span>
-        <span class="legend-est"><i></i> ~ estimated</span>
-      </div>
-      <p class="lede" style="margin-top:.5rem">Tap a block to move that book. Q1 is 132k over; Q2–Q4 have 893k of room between them and the unplaced pile is 1.30M, so placing everything still leaves you over.</p>
-    </div>
-
-    <div class="decide"><span class="g">?</span>
-      <div class="dt"><b>14 of 2027’s 31 books have a year but no quarter.</b>
-        A year is what its quarters add up to, so these are 2027 books only by assertion.
-        <div class="btnrow" style="margin-top:.5rem"><button class="btn sm">Place them</button><button class="btn sec sm">Leave for now</button></div>
-        <div class="rs" style="margin-top:.375rem">175 like this across 2026–2030.</div></div></div>
-
-    <h3 class="s">Against capacity</h3>
-    <div class="pacecard" style="margin-top:0">
-      <div style="display:flex;align-items:flex-end;gap:.75rem">
-        <span class="capnum held">118%</span>
-        <span class="lede" style="padding-bottom:.3125rem">of 2027 capacity<br><b style="color:var(--ink)">45 min a day</b> at <span class="mono">185 wpm</span></span>
-        <button class="btn sec sm" style="margin-left:auto">Adjust</button></div>
-      <div class="capbar">
-        <i style="width:29%;background:var(--g5)"></i><i style="width:19%;background:var(--g1)"></i>
-        <i style="width:16%;background:var(--g6)"></i><i style="width:21%;background:var(--g3)"></i>
-        <i class="hatch" style="width:15%"></i><span class="pin" style="left:85%"></span></div>
-      <div class="leg">
-        <span class="tag"><i class="sq" style="background:var(--g5)"></i>Fantasy 1.4M</span>
-        <span class="tag"><i class="sq" style="background:var(--g1)"></i>Sci-fi 900k</span>
-        <span class="tag"><i class="sq" style="background:var(--g6)"></i>Thriller 780k</span>
-        <span class="tag"><i class="sq" style="background:var(--g3)"></i>Nonfiction 410k</span>
-        <span class="bdg bl">540k past capacity</span></div>
-      <p class="lede" style="margin-top:.5rem">About 5 books too many — a decision you have not made yet, not a mistake. Exact word counts for 71% of the plan; the rest estimated at pages × 275.</p>
-      <div class="btnrow"><button class="btn">Rebalance 2027</button><button class="btn sec">Accept as a stretch year</button></div>
-    </div>
-
-    <h3 class="s">2026 so far<span class="more">Full stats</span></h3>
-    <div class="stats">
-      <div class="stat"><div class="n">22</div><div class="l">read</div></div>
-      <div class="stat"><div class="n">3</div><div class="l">put down</div></div>
-      <div class="stat"><div class="n mono">6.05M</div><div class="l">words</div></div>
-      <div class="stat"><div class="n">7<span class="muted" style="font-size:.875rem">/10</span></div><div class="l">ranked</div></div>
-    </div>
-  </div>
-  <div class="actionbar"><button class="btn">Log progress</button><button class="btn sec" style="flex:0 0 auto">&#10003; finished</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
-</div></div></div>
-<div class="frame" data-w="tab"><div class="frame-in"><div class="app" data-theme="light" data-medium="books"><nav class="rail" aria-label="Main"><span class="rail-word" aria-hidden="true">L</span><div class="rg" role="group" aria-label="Medium"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/></svg></span><span class="rl">Comics</span></a><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg></span><span class="rl">Books</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m17 2-5 5-5-5"/><rect width="20" height="15" x="2" y="7" rx="2"/></svg></span><span class="rl">Watch</span></a></div><div class="rg"><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="rl">Dashboard</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="rl">Status</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M16 2v3"/><path d="M3 9h18"/><path d="M8 2v3"/><path d="M17 13h-6"/><path d="M13 17H7"/><path d="M7 13h.01"/><path d="M17 17h.01"/></svg></span><span class="rl">Plan</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg></span><span class="rl">Shelves</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg></span><span class="rl">Top</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span><span class="rl">Add</span></a></div><span class="rrule"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span class="rcount">6</span></span><span class="rl">Inbox</span></a><span class="grow"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><span class="rl">Search</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="rl">Settings</span></a></nav><div class="tabmain">
-  <div class="wrap tb">
-    <div class="tb-head"><h1 class="t">Books</h1><a class="tb-chip" href="#">6 in inbox</a></div>
-    <p class="tb-lede">Two weeks into The Fifth Season.</p>
-
-    <section class="tb-hero" aria-labelledby="tbb-now">
+  <div class="wrap tb bd">
+    <div class="bd-top"><h1 class="t">Books</h1><p class="tb-lede">Two weeks into The Fifth Season.</p></div>
+    <section class="tb-hero" aria-labelledby="bdphonere-now">
       <div class="tb-band"><span class="tb-cv hero" aria-hidden="true"><span>cover</span></span>
-        <div class="tb-hb"><span class="tb-kick" id="tbb-now">Reading now</span>
+        <div class="tb-hb"><span class="tb-kick bd-kick" id="bdphonere-now">Reading now</span>
           <span class="tb-name">The Fifth Season</span>
           <span class="tb-run">N. K. Jemisin</span>
           <span class="grow"></span>
-          <div class="tb-lens"><span class="tb-pages tb-n"><b class="tb-n">p. 212</b> of 468</span>
-            <span class="tb-meter" role="img" aria-label="212 of 468 pages read"><b style="width:45%"></b></span></div>
+          <span class="tb-pages"><b>468</b> pages</span>
         </div></div>
-      <div class="tb-foot one"><span>Started 21 Sep · about 30 pages a sitting</span><span class="tb-n tb-mu">7 sittings</span></div>
+      <div class="tb-foot one"><span>Started 21 Sep · about 9 evenings at your set pace</span></div>
     </section>
-
-    <section class="tb-sec" aria-labelledby="tbb-next">
-      <div class="tb-sh"><h2 id="tbb-next">Up next in Q4</h2><span class="tb-n tb-mu">3</span><span class="grow"></span><button class="tb-btn ghost">Reorder</button></div>
+    <section class="tb-sec" aria-labelledby="bdphonere-next">
+      <div class="tb-sh"><h2 id="bdphonere-next">Up next in Q4</h2><span class="tb-n tb-mu">3</span><span class="grow"></span><a class="tb-btn ghost" href="#">Reorder</a></div>
       <div class="tb-shelf" role="list"><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Left Hand of Darkness"><span class="tb-cv" aria-hidden="true"><span>LHD</span></span><span class="tb-pos">1</span></a><span class="tb-sname">The Left Hand of Darkness</span><span class="tb-meta">304 pp · 92k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Remains of the Day"><span class="tb-cv" aria-hidden="true"><span>ROD</span></span><span class="tb-pos">2</span></a><span class="tb-sname">The Remains of the Day</span><span class="tb-meta">258 pp · 72k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open Hamnet"><span class="tb-cv" aria-hidden="true"><span>HAM</span></span><span class="tb-pos">3</span></a><span class="tb-sname">Hamnet</span><span class="tb-meta">372 pp · 100k</span></div></div>
     </section>
-
-    <section class="tb-sec" aria-labelledby="tbb-q">
-      <div class="tb-sh"><h2 id="tbb-q">This quarter</h2></div>
+    <section class="tb-sec" aria-labelledby="bdphonere-q">
+      <div class="tb-sh"><h2 id="bdphonere-q">This quarter</h2></div>
       <div class="tb-quarter">
         <div class="tb-qh"><b>Q4 2026</b><span class="tb-n tb-mu">3 of 7 read</span></div>
-        <div class="tb-qstrip" role="img" aria-label="Q4 2026: 3 of 7 books read, 615k of 760k words planned"><span class="tb-cell" data-full="" style="flex:0 0 calc(12.11% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(3.95% - 2px)"><b style="width:100%"></b><span style="padding-left:6px"></span></span><span class="tb-cell" data-head="" style="flex:0 0 calc(18.95% - 2px)"><b style="width:45%"></b><span style="padding-left:calc(45% + 6px)">144k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(11.18% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">85k</span></span><span class="tb-cell" style="flex:0 0 calc(12.11% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" style="flex:0 0 calc(9.47% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">72k</span></span><span class="tb-cell" style="flex:0 0 calc(13.16% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">100k</span></span><i class="tb-cap"></i></div>
-        <div class="tb-qf"><span class="tb-n">615k planned</span><span class="tb-n">760k a quarter</span></div>
+        <div class="tb-qstrip" role="img" aria-label="Q4 2026: 3 of 7 books read, 615k of 760k words planned"><span class="tb-cell" data-full="" style="flex:0 0 calc(12.11% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(3.95% - 2px)"><b style="width:100%"></b><span style="padding-left:6px"></span></span><span class="tb-cell" data-head="" style="flex:0 0 calc(18.95% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">144k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(11.18% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">85k</span></span><span class="tb-cell" style="flex:0 0 calc(12.11% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" style="flex:0 0 calc(9.47% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">72k</span></span><span class="tb-cell" style="flex:0 0 calc(13.16% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">100k</span></span><i class="tb-cap" style="left:100.0%;right:auto"></i></div>
+        <div class="tb-qf"><span class="bd-fig"><span class="tb-n">615k planned</span></span><span class="tb-n">760k a quarter</span></div>
       </div>
     </section>
-
     <div class="tb-aside">
-      <section class="tb-sec" aria-labelledby="tbb-deck">
-        <div class="tb-sh"><h2 id="tbb-deck">On deck</h2><span class="tb-n tb-mu">4</span></div>
+      <section class="tb-sec" aria-labelledby="bdphonere-deck">
+        <div class="tb-sh"><h2 id="bdphonere-deck">On deck</h2><span class="tb-n tb-mu">4</span></div>
         <div class="tb-list"><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>GTN</span></span><div class="tb-rb"><a href="#">Gideon the Ninth</a><span class="tb-mu">Tamsyn Muir</span></div><button class="tb-btn" aria-label="Plan Gideon the Ninth">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>OVS</span></span><div class="tb-rb"><a href="#">The Overstory</a><span class="tb-mu">Richard Powers</span></div><button class="tb-btn" aria-label="Plan The Overstory">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>DUM</span></span><div class="tb-rb"><a href="#">Dune Messiah</a><span class="tb-mu">Frank Herbert</span></div><button class="tb-btn" aria-label="Plan Dune Messiah">Plan</button></div><p class="tb-note">No year yet. First in line when a quarter has room.</p></div>
       </section>
-      <section class="tb-year" aria-label="This year"><span class="tb-kick">2026 so far</span>
-        <div><span class="tb-big tb-n">18</span><span class="tb-mu">books</span></div>
+      <section class="tb-year" aria-label="2026 so far"><span class="tb-kick">2026 so far</span>
+        <div><span class="tb-big tb-n">18</span><span class="tb-mu">books · 3 listened</span></div>
         <div><span class="tb-big tb-n">5,912</span><span class="tb-mu">pages</span></div>
         <div><span class="tb-big tb-n">6</span><span class="tb-mu">new authors</span></div>
       </section>
     </div>
   </div>
-  <div class="actionbar"><button class="btn">Log pages</button><button class="btn sec" style="flex:0 0 auto">Finished it</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
+  <div class="actionbar"><button class="btn bd-wait" aria-disabled="true" title="Logging pages arrives with sessions (2.1b)">Log progress</button><button class="btn sec" style="flex:0 0 auto">&#10003; finished</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
+</div></div></div>
+<div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
+  <div class="wrap tb bd">
+    <div class="bd-top"><h1 class="t">Books</h1><p class="tb-lede">Nothing on the go right now.</p></div>
+    <section class="tb-hero bb" aria-labelledby="bdphonebe-now">
+      <div class="bb-band"><span class="bb-cv" aria-hidden="true"><span class="tb-tick">&#10003;</span></span>
+        <div class="bb-hb"><span class="tb-bdg" data-k="rd">&#10003; finished · Sun</span><h2 class="bb-h" id="bdphonebe-now">Between books.</h2></div>
+        <p class="bb-line">You finished <i>Piranesi</i> on Sunday, 245 pages in nine days. Nothing's on the go, and that's fine.</p></div>
+      <div class="bb-offer"><span class="tb-cv row" aria-hidden="true"><span>LHD</span></span>
+        <div class="bb-ob"><span class="tb-kick">Top of your Q4 plan</span><b>The Left Hand of Darkness</b><span class="tb-mu">Ursula K. Le Guin · <span class="tb-n">304 pp</span></span></div>
+        <a class="bb-else in" href="#">Pick something else</a></div>
+      <a class="bb-else out" href="#">Pick something else</a>
+    </section>
+    <section class="tb-sec" aria-labelledby="bdphonebe-next">
+      <div class="tb-sh"><h2 id="bdphonebe-next">Up next in Q4</h2><span class="tb-n tb-mu">3</span><span class="grow"></span><a class="tb-btn ghost" href="#">Reorder</a></div>
+      <div class="tb-shelf" role="list"><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Left Hand of Darkness"><span class="tb-cv" aria-hidden="true"><span>LHD</span></span><span class="tb-pos">1</span></a><span class="tb-sname">The Left Hand of Darkness</span><span class="tb-meta">304 pp · 92k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Remains of the Day"><span class="tb-cv" aria-hidden="true"><span>ROD</span></span><span class="tb-pos">2</span></a><span class="tb-sname">The Remains of the Day</span><span class="tb-meta">258 pp · 72k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open Hamnet"><span class="tb-cv" aria-hidden="true"><span>HAM</span></span><span class="tb-pos">3</span></a><span class="tb-sname">Hamnet</span><span class="tb-meta">372 pp · 100k</span></div></div>
+    </section>
+    <section class="tb-sec" aria-labelledby="bdphonebe-q">
+      <div class="tb-sh"><h2 id="bdphonebe-q">This quarter</h2></div>
+      <div class="tb-quarter">
+        <div class="tb-qh"><b>Q4 2026</b><span class="tb-n tb-mu">3 of 7 read</span></div>
+        <div class="tb-qstrip" role="img" aria-label="Q4 2026: 3 of 7 books read, 615k of 760k words planned"><span class="tb-cell" data-full="" style="flex:0 0 calc(12.11% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(3.95% - 2px)"><b style="width:100%"></b><span style="padding-left:6px"></span></span><span class="tb-cell" style="flex:0 0 calc(18.95% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">144k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(11.18% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">85k</span></span><span class="tb-cell" style="flex:0 0 calc(12.11% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" style="flex:0 0 calc(9.47% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">72k</span></span><span class="tb-cell" style="flex:0 0 calc(13.16% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">100k</span></span><i class="tb-cap" style="left:100.0%;right:auto"></i></div>
+        <div class="tb-qf"><span class="bd-fig"><span class="tb-n">615k planned</span></span><span class="tb-n">760k a quarter</span></div>
+      </div>
+    </section>
+    <div class="tb-aside">
+      <section class="tb-sec" aria-labelledby="bdphonebe-deck">
+        <div class="tb-sh"><h2 id="bdphonebe-deck">On deck</h2><span class="tb-n tb-mu">4</span></div>
+        <div class="tb-list"><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>GTN</span></span><div class="tb-rb"><a href="#">Gideon the Ninth</a><span class="tb-mu">Tamsyn Muir</span></div><button class="tb-btn" aria-label="Plan Gideon the Ninth">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>OVS</span></span><div class="tb-rb"><a href="#">The Overstory</a><span class="tb-mu">Richard Powers</span></div><button class="tb-btn" aria-label="Plan The Overstory">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>DUM</span></span><div class="tb-rb"><a href="#">Dune Messiah</a><span class="tb-mu">Frank Herbert</span></div><button class="tb-btn" aria-label="Plan Dune Messiah">Plan</button></div><p class="tb-note">No year yet. First in line when a quarter has room.</p></div>
+      </section>
+      <section class="tb-year" aria-label="2026 so far"><span class="tb-kick">2026 so far</span>
+        <div><span class="tb-big tb-n">18</span><span class="tb-mu">books · 3 listened</span></div>
+        <div><span class="tb-big tb-n">5,912</span><span class="tb-mu">pages</span></div>
+        <div><span class="tb-big tb-n">6</span><span class="tb-mu">new authors</span></div>
+      </section>
+    </div>
+  </div>
+  <div class="actionbar"><button class="btn" aria-label="Start The Left Hand of Darkness"><span class="bd-trunc">Start The Left Hand of Darkness</span></button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
+</div></div></div>
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
+  <div class="wrap tb bd">
+    <div class="bd-top"><h1 class="t">Books</h1><p class="tb-lede">A week into Project Hail Mary.</p></div>
+    <section class="tb-hero" aria-labelledby="bdp360li-now">
+      <div class="tb-band"><span class="tb-cv hero" aria-hidden="true"><span>cover</span></span>
+        <div class="tb-hb"><span class="tb-kick bd-kick" id="bdp360li-now">Listening now <svg class="bd-hp" viewBox="0 0 24 24" width="18" height="18" role="img" aria-label="Listening" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span>
+          <span class="tb-name">Project Hail Mary</span>
+          <span class="tb-run">Andy Weir</span>
+          <span class="grow"></span>
+          <span class="tb-pages"><b>476</b> pages</span>
+        </div></div>
+      <div class="tb-foot one"><span>Started 31 Oct · about 6 evenings at your set pace</span></div>
+    </section>
+    <section class="tb-sec" aria-labelledby="bdp360li-next">
+      <div class="tb-sh"><h2 id="bdp360li-next">Up next in Q4</h2><span class="tb-n tb-mu">3</span><span class="grow"></span><a class="tb-btn ghost" href="#">Reorder</a></div>
+      <div class="tb-shelf" role="list"><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Left Hand of Darkness"><span class="tb-cv" aria-hidden="true"><span>LHD</span></span><span class="tb-pos">1</span></a><span class="tb-sname">The Left Hand of Darkness</span><span class="tb-meta">304 pp · 92k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Remains of the Day"><span class="tb-cv" aria-hidden="true"><span>ROD</span></span><span class="tb-pos">2</span></a><span class="tb-sname">The Remains of the Day</span><span class="tb-meta">258 pp · 72k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open Hamnet"><span class="tb-cv" aria-hidden="true"><span>HAM</span></span><span class="tb-pos">3</span></a><span class="tb-sname">Hamnet</span><span class="tb-meta">372 pp · 100k</span></div></div>
+    </section>
+    <section class="tb-sec" aria-labelledby="bdp360li-q">
+      <div class="tb-sh"><h2 id="bdp360li-q">This quarter</h2></div>
+      <div class="tb-quarter">
+        <div class="tb-qh"><b>Q4 2026</b><span class="tb-n tb-mu">3 of 7 read</span></div>
+        <div class="tb-qstrip" role="img" aria-label="Q4 2026: 3 of 7 books read, 615k of 760k words planned"><span class="tb-cell" data-full="" style="flex:0 0 calc(12.11% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(3.95% - 2px)"><b style="width:100%"></b><span style="padding-left:6px"></span></span><span class="tb-cell" style="flex:0 0 calc(18.95% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">144k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(11.18% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">85k</span></span><span class="tb-cell" style="flex:0 0 calc(12.11% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" style="flex:0 0 calc(9.47% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">72k</span></span><span class="tb-cell" style="flex:0 0 calc(13.16% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">100k</span></span><i class="tb-cap" style="left:100.0%;right:auto"></i></div>
+        <div class="tb-qf"><span class="bd-fig"><span class="tb-n">615k planned</span></span><span class="tb-n">760k a quarter</span></div>
+      </div>
+    </section>
+    <div class="tb-aside">
+      <section class="tb-sec" aria-labelledby="bdp360li-deck">
+        <div class="tb-sh"><h2 id="bdp360li-deck">On deck</h2><span class="tb-n tb-mu">4</span></div>
+        <div class="tb-list"><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>GTN</span></span><div class="tb-rb"><a href="#">Gideon the Ninth</a><span class="tb-mu">Tamsyn Muir</span></div><button class="tb-btn" aria-label="Plan Gideon the Ninth">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>OVS</span></span><div class="tb-rb"><a href="#">The Overstory</a><span class="tb-mu">Richard Powers</span></div><button class="tb-btn" aria-label="Plan The Overstory">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>DUM</span></span><div class="tb-rb"><a href="#">Dune Messiah</a><span class="tb-mu">Frank Herbert</span></div><button class="tb-btn" aria-label="Plan Dune Messiah">Plan</button></div><p class="tb-note">No year yet. First in line when a quarter has room.</p></div>
+      </section>
+      <section class="tb-year" aria-label="2026 so far"><span class="tb-kick">2026 so far</span>
+        <div><span class="tb-big tb-n">18</span><span class="tb-mu">books · 3 listened</span></div>
+        <div><span class="tb-big tb-n">5,912</span><span class="tb-mu">pages</span></div>
+        <div><span class="tb-big tb-n">6</span><span class="tb-mu">new authors</span></div>
+      </section>
+    </div>
+  </div>
+  <div class="actionbar"><button class="btn bd-wait" aria-disabled="true" title="Logging pages arrives with sessions (2.1b)">Log progress</button><button class="btn sec" style="flex:0 0 auto">&#10003; finished</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
+</div></div></div>
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
+  <div class="wrap tb bd">
+    <div class="bd-top"><h1 class="t">Books</h1><p class="tb-lede">Nothing on the go right now.</p></div>
+    <section class="tb-hero bb" aria-labelledby="bdp360be-now">
+      <div class="bb-band"><span class="bb-cv" aria-hidden="true"><span class="tb-tick">&#10003;</span></span>
+        <div class="bb-hb"><span class="tb-bdg" data-k="rd">&#10003; finished · Sun</span><h2 class="bb-h" id="bdp360be-now">Between books.</h2></div>
+        <p class="bb-line">You finished <i>Piranesi</i> on Sunday, 245 pages in nine days. Nothing's on the go, and that's fine.</p></div>
+      <div class="bb-offer"><span class="tb-cv row" aria-hidden="true"><span>LHD</span></span>
+        <div class="bb-ob"><span class="tb-kick">Top of your Q4 plan</span><b>The Left Hand of Darkness</b><span class="tb-mu">Ursula K. Le Guin · <span class="tb-n">304 pp</span></span></div>
+        <a class="bb-else in" href="#">Pick something else</a></div>
+      <a class="bb-else out" href="#">Pick something else</a>
+    </section>
+    <section class="tb-sec" aria-labelledby="bdp360be-next">
+      <div class="tb-sh"><h2 id="bdp360be-next">Up next in Q4</h2><span class="tb-n tb-mu">3</span><span class="grow"></span><a class="tb-btn ghost" href="#">Reorder</a></div>
+      <div class="tb-shelf" role="list"><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Left Hand of Darkness"><span class="tb-cv" aria-hidden="true"><span>LHD</span></span><span class="tb-pos">1</span></a><span class="tb-sname">The Left Hand of Darkness</span><span class="tb-meta">304 pp · 92k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Remains of the Day"><span class="tb-cv" aria-hidden="true"><span>ROD</span></span><span class="tb-pos">2</span></a><span class="tb-sname">The Remains of the Day</span><span class="tb-meta">258 pp · 72k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open Hamnet"><span class="tb-cv" aria-hidden="true"><span>HAM</span></span><span class="tb-pos">3</span></a><span class="tb-sname">Hamnet</span><span class="tb-meta">372 pp · 100k</span></div></div>
+    </section>
+    <section class="tb-sec" aria-labelledby="bdp360be-q">
+      <div class="tb-sh"><h2 id="bdp360be-q">This quarter</h2></div>
+      <div class="tb-quarter">
+        <div class="tb-qh"><b>Q4 2026</b><span class="tb-n tb-mu">3 of 7 read</span></div>
+        <div class="tb-qstrip" role="img" aria-label="Q4 2026: 3 of 7 books read, 615k of 760k words planned"><span class="tb-cell" data-full="" style="flex:0 0 calc(12.11% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(3.95% - 2px)"><b style="width:100%"></b><span style="padding-left:6px"></span></span><span class="tb-cell" style="flex:0 0 calc(18.95% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">144k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(11.18% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">85k</span></span><span class="tb-cell" style="flex:0 0 calc(12.11% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" style="flex:0 0 calc(9.47% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">72k</span></span><span class="tb-cell" style="flex:0 0 calc(13.16% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">100k</span></span><i class="tb-cap" style="left:100.0%;right:auto"></i></div>
+        <div class="tb-qf"><span class="bd-fig"><span class="tb-n">615k planned</span></span><span class="tb-n">760k a quarter</span></div>
+      </div>
+    </section>
+    <div class="tb-aside">
+      <section class="tb-sec" aria-labelledby="bdp360be-deck">
+        <div class="tb-sh"><h2 id="bdp360be-deck">On deck</h2><span class="tb-n tb-mu">4</span></div>
+        <div class="tb-list"><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>GTN</span></span><div class="tb-rb"><a href="#">Gideon the Ninth</a><span class="tb-mu">Tamsyn Muir</span></div><button class="tb-btn" aria-label="Plan Gideon the Ninth">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>OVS</span></span><div class="tb-rb"><a href="#">The Overstory</a><span class="tb-mu">Richard Powers</span></div><button class="tb-btn" aria-label="Plan The Overstory">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>DUM</span></span><div class="tb-rb"><a href="#">Dune Messiah</a><span class="tb-mu">Frank Herbert</span></div><button class="tb-btn" aria-label="Plan Dune Messiah">Plan</button></div><p class="tb-note">No year yet. First in line when a quarter has room.</p></div>
+      </section>
+      <section class="tb-year" aria-label="2026 so far"><span class="tb-kick">2026 so far</span>
+        <div><span class="tb-big tb-n">18</span><span class="tb-mu">books · 3 listened</span></div>
+        <div><span class="tb-big tb-n">5,912</span><span class="tb-mu">pages</span></div>
+        <div><span class="tb-big tb-n">6</span><span class="tb-mu">new authors</span></div>
+      </section>
+    </div>
+  </div>
+  <div class="actionbar"><button class="btn" aria-label="Start The Left Hand of Darkness"><span class="bd-trunc">Start The Left Hand of Darkness</span></button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
+</div></div></div>
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
+  <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
+  <div class="wrap tb bd">
+    <div class="bd-top"><h1 class="t">Books</h1><p class="tb-lede">Nothing on the go right now.</p></div>
+    <section class="tb-hero bb" aria-labelledby="bdp360no-now">
+      <div class="bb-band none"><div class="bb-hb"><h2 class="bb-h" id="bdp360no-now">Between books.</h2></div>
+        <p class="bb-line">Nothing's on the go, and that's fine.</p></div>
+      <div class="bb-offer"><span class="bb-ob"><span class="tb-mu">Nothing planned for Q4 yet.</span></span><a class="bb-else in" href="#">Pick something else</a></div>
+      <a class="bb-else out" href="#">Pick something else</a>
+    </section>
+    <section class="tb-sec" aria-labelledby="bdp360no-next">
+      <div class="tb-sh"><h2 id="bdp360no-next">Up next in Q4</h2><span class="tb-n tb-mu">0</span></div>
+      <div class="bd-slate"><p>Nothing planned for Q4. Plan a book from On deck, or add one.</p><a class="tb-btn pri" href="#">Add a book</a></div>
+    </section>
+    <div class="tb-aside">
+      <section class="tb-sec" aria-labelledby="bdp360no-deck">
+        <div class="tb-sh"><h2 id="bdp360no-deck">On deck</h2><span class="tb-n tb-mu">4</span></div>
+        <div class="tb-list"><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>GTN</span></span><div class="tb-rb"><a href="#">Gideon the Ninth</a><span class="tb-mu">Tamsyn Muir</span></div><button class="tb-btn" aria-label="Plan Gideon the Ninth">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>OVS</span></span><div class="tb-rb"><a href="#">The Overstory</a><span class="tb-mu">Richard Powers</span></div><button class="tb-btn" aria-label="Plan The Overstory">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>DUM</span></span><div class="tb-rb"><a href="#">Dune Messiah</a><span class="tb-mu">Frank Herbert</span></div><button class="tb-btn" aria-label="Plan Dune Messiah">Plan</button></div><p class="tb-note">No year yet. First in line when a quarter has room.</p></div>
+      </section>
+      <section class="tb-year" aria-label="2026 so far"><span class="tb-kick">2026 so far</span>
+        <div><span class="tb-big tb-n">0</span><span class="tb-mu">books · 0 listened</span></div>
+        <div><span class="tb-big tb-n">0</span><span class="tb-mu">pages</span></div>
+        <div><span class="tb-big tb-n">0</span><span class="tb-mu">new authors</span></div>
+      </section>
+    </div>
+  </div>
+  <div class="actionbar"><a class="btn" href="#">Pick a book</a><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
+</div></div></div>
+<div class="frame" data-w="tab"><div class="frame-in"><div class="app" data-theme="light" data-medium="books"><nav class="rail" aria-label="Main"><span class="rail-word" aria-hidden="true">L</span><div class="rg" role="group" aria-label="Medium"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/></svg></span><span class="rl">Comics</span></a><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg></span><span class="rl">Books</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m17 2-5 5-5-5"/><rect width="20" height="15" x="2" y="7" rx="2"/></svg></span><span class="rl">Watch</span></a></div><div class="rg"><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="rl">Dashboard</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="rl">Status</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 7a2 2 0 0 0-2 2v11"/><path d="M5.803 18H5a2 2 0 0 0 0 4h9.5a.5.5 0 0 0 .5-.5V21"/><path d="M9 15V4a2 2 0 0 1 2-2h9.5a.5.5 0 0 1 .5.5v14a.5.5 0 0 1-.5.5H11a2 2 0 0 1 0-4h10"/></svg></span><span class="rl">Library</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M16 2v3"/><path d="M3 9h18"/><path d="M8 2v3"/><path d="M17 13h-6"/><path d="M13 17H7"/><path d="M7 13h.01"/><path d="M17 17h.01"/></svg></span><span class="rl">Plan</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg></span><span class="rl">Shelves</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg></span><span class="rl">Top</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span><span class="rl">Add</span></a></div><span class="rrule"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span class="rcount">6</span></span><span class="rl">Inbox</span></a><span class="grow"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><span class="rl">Search</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="rl">Settings</span></a></nav><div class="tabmain">
+  <div class="wrap tb bd">
+    <div class="tb-head"><h1 class="t">Books</h1><a class="tb-chip" href="#">6 in inbox</a></div>
+    <p class="tb-lede">Two weeks into The Fifth Season.</p>
+    <section class="tb-hero" aria-labelledby="bdtre-now">
+      <div class="tb-band"><span class="tb-cv hero" aria-hidden="true"><span>cover</span></span>
+        <div class="tb-hb"><span class="tb-kick bd-kick" id="bdtre-now">Reading now</span>
+          <span class="tb-name">The Fifth Season</span>
+          <span class="tb-run">N. K. Jemisin</span>
+          <span class="grow"></span>
+          <span class="tb-pages"><b>468</b> pages</span>
+        </div></div>
+      <div class="tb-foot one"><span>Started 21 Sep · about 9 evenings at your set pace</span></div>
+    </section>
+    <section class="tb-sec" aria-labelledby="bdtre-next">
+      <div class="tb-sh"><h2 id="bdtre-next">Up next in Q4</h2><span class="tb-n tb-mu">3</span><span class="grow"></span><a class="tb-btn ghost" href="#">Reorder</a></div>
+      <div class="tb-shelf" role="list"><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Left Hand of Darkness"><span class="tb-cv" aria-hidden="true"><span>LHD</span></span><span class="tb-pos">1</span></a><span class="tb-sname">The Left Hand of Darkness</span><span class="tb-meta">304 pp · 92k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Remains of the Day"><span class="tb-cv" aria-hidden="true"><span>ROD</span></span><span class="tb-pos">2</span></a><span class="tb-sname">The Remains of the Day</span><span class="tb-meta">258 pp · 72k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open Hamnet"><span class="tb-cv" aria-hidden="true"><span>HAM</span></span><span class="tb-pos">3</span></a><span class="tb-sname">Hamnet</span><span class="tb-meta">372 pp · 100k</span></div></div>
+    </section>
+    <section class="tb-sec" aria-labelledby="bdtre-q">
+      <div class="tb-sh"><h2 id="bdtre-q">This quarter</h2></div>
+      <div class="tb-quarter">
+        <div class="tb-qh"><b>Q4 2026</b><span class="tb-n tb-mu">3 of 7 read</span></div>
+        <div class="tb-qstrip" role="img" aria-label="Q4 2026: 3 of 7 books read, 615k of 760k words planned"><span class="tb-cell" data-full="" style="flex:0 0 calc(12.11% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(3.95% - 2px)"><b style="width:100%"></b><span style="padding-left:6px"></span></span><span class="tb-cell" data-head="" style="flex:0 0 calc(18.95% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">144k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(11.18% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">85k</span></span><span class="tb-cell" style="flex:0 0 calc(12.11% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" style="flex:0 0 calc(9.47% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">72k</span></span><span class="tb-cell" style="flex:0 0 calc(13.16% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">100k</span></span><i class="tb-cap" style="left:100.0%;right:auto"></i></div>
+        <div class="tb-qf"><span class="bd-fig"><span class="tb-n">615k planned</span></span><span class="tb-n">760k a quarter</span></div>
+      </div>
+    </section>
+    <div class="tb-aside">
+      <section class="tb-sec" aria-labelledby="bdtre-deck">
+        <div class="tb-sh"><h2 id="bdtre-deck">On deck</h2><span class="tb-n tb-mu">4</span></div>
+        <div class="tb-list"><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>GTN</span></span><div class="tb-rb"><a href="#">Gideon the Ninth</a><span class="tb-mu">Tamsyn Muir</span></div><button class="tb-btn" aria-label="Plan Gideon the Ninth">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>OVS</span></span><div class="tb-rb"><a href="#">The Overstory</a><span class="tb-mu">Richard Powers</span></div><button class="tb-btn" aria-label="Plan The Overstory">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>DUM</span></span><div class="tb-rb"><a href="#">Dune Messiah</a><span class="tb-mu">Frank Herbert</span></div><button class="tb-btn" aria-label="Plan Dune Messiah">Plan</button></div><p class="tb-note">No year yet. First in line when a quarter has room.</p></div>
+      </section>
+      <section class="tb-year" aria-label="2026 so far"><span class="tb-kick">2026 so far</span>
+        <div><span class="tb-big tb-n">18</span><span class="tb-mu">books · 3 listened</span></div>
+        <div><span class="tb-big tb-n">5,912</span><span class="tb-mu">pages</span></div>
+        <div><span class="tb-big tb-n">6</span><span class="tb-mu">new authors</span></div>
+      </section>
+    </div>
+  </div>
+  <div class="actionbar"><button class="btn bd-wait" aria-disabled="true" title="Logging pages arrives with sessions (2.1b)">Log pages</button><button class="btn sec" style="flex:0 0 auto">Finished it</button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
+</div></div></div></div>
+<div class="frame" data-w="tab"><div class="frame-in"><div class="app" data-theme="light" data-medium="books"><nav class="rail" aria-label="Main"><span class="rail-word" aria-hidden="true">L</span><div class="rg" role="group" aria-label="Medium"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 5v16"/><path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/></svg></span><span class="rl">Comics</span></a><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg></span><span class="rl">Books</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m17 2-5 5-5-5"/><rect width="20" height="15" x="2" y="7" rx="2"/></svg></span><span class="rl">Watch</span></a></div><div class="rg"><a class="ri" aria-current="page"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="rl">Dashboard</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg></span><span class="rl">Status</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 7a2 2 0 0 0-2 2v11"/><path d="M5.803 18H5a2 2 0 0 0 0 4h9.5a.5.5 0 0 0 .5-.5V21"/><path d="M9 15V4a2 2 0 0 1 2-2h9.5a.5.5 0 0 1 .5.5v14a.5.5 0 0 1-.5.5H11a2 2 0 0 1 0-4h10"/></svg></span><span class="rl">Library</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M16 2v3"/><path d="M3 9h18"/><path d="M8 2v3"/><path d="M17 13h-6"/><path d="M13 17H7"/><path d="M7 13h.01"/><path d="M17 17h.01"/></svg></span><span class="rl">Plan</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="m16 6 4 14"/><path d="M12 6v14"/><path d="M8 8v12"/><path d="M4 4v16"/></svg></span><span class="rl">Shelves</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg></span><span class="rl">Top</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span><span class="rl">Add</span></a></div><span class="rrule"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span class="rcount">6</span></span><span class="rl">Inbox</span></a><span class="grow"></span><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span><span class="rl">Search</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="rl">Settings</span></a></nav><div class="tabmain">
+  <div class="wrap tb bd">
+    <div class="tb-head"><h1 class="t">Books</h1><a class="tb-chip" href="#">6 in inbox</a></div>
+    <p class="tb-lede">Nothing on the go right now.</p>
+    <section class="tb-hero bb" aria-labelledby="bdtbe-now">
+      <div class="bb-band"><span class="bb-cv" aria-hidden="true"><span class="tb-tick">&#10003;</span></span>
+        <div class="bb-hb"><span class="tb-bdg" data-k="rd">&#10003; finished · Sun</span><h2 class="bb-h" id="bdtbe-now">Between books.</h2></div>
+        <p class="bb-line">You finished <i>Piranesi</i> on Sunday, 245 pages in nine days. Nothing's on the go, and that's fine.</p></div>
+      <div class="bb-offer"><span class="tb-cv row" aria-hidden="true"><span>LHD</span></span>
+        <div class="bb-ob"><span class="tb-kick">Top of your Q4 plan</span><b>The Left Hand of Darkness</b><span class="tb-mu">Ursula K. Le Guin · <span class="tb-n">304 pp</span></span></div>
+        <a class="bb-else in" href="#">Pick something else</a></div>
+      <a class="bb-else out" href="#">Pick something else</a>
+    </section>
+    <section class="tb-sec" aria-labelledby="bdtbe-next">
+      <div class="tb-sh"><h2 id="bdtbe-next">Up next in Q4</h2><span class="tb-n tb-mu">3</span><span class="grow"></span><a class="tb-btn ghost" href="#">Reorder</a></div>
+      <div class="tb-shelf" role="list"><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Left Hand of Darkness"><span class="tb-cv" aria-hidden="true"><span>LHD</span></span><span class="tb-pos">1</span></a><span class="tb-sname">The Left Hand of Darkness</span><span class="tb-meta">304 pp · 92k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Remains of the Day"><span class="tb-cv" aria-hidden="true"><span>ROD</span></span><span class="tb-pos">2</span></a><span class="tb-sname">The Remains of the Day</span><span class="tb-meta">258 pp · 72k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open Hamnet"><span class="tb-cv" aria-hidden="true"><span>HAM</span></span><span class="tb-pos">3</span></a><span class="tb-sname">Hamnet</span><span class="tb-meta">372 pp · 100k</span></div></div>
+    </section>
+    <section class="tb-sec" aria-labelledby="bdtbe-q">
+      <div class="tb-sh"><h2 id="bdtbe-q">This quarter</h2></div>
+      <div class="tb-quarter">
+        <div class="tb-qh"><b>Q4 2026</b><span class="tb-n tb-mu">3 of 7 read</span></div>
+        <div class="tb-qstrip" role="img" aria-label="Q4 2026: 3 of 7 books read, 615k of 760k words planned"><span class="tb-cell" data-full="" style="flex:0 0 calc(12.11% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(3.95% - 2px)"><b style="width:100%"></b><span style="padding-left:6px"></span></span><span class="tb-cell" style="flex:0 0 calc(18.95% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">144k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(11.18% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">85k</span></span><span class="tb-cell" style="flex:0 0 calc(12.11% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" style="flex:0 0 calc(9.47% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">72k</span></span><span class="tb-cell" style="flex:0 0 calc(13.16% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">100k</span></span><i class="tb-cap" style="left:100.0%;right:auto"></i></div>
+        <div class="tb-qf"><span class="bd-fig"><span class="tb-n">615k planned</span></span><span class="tb-n">760k a quarter</span></div>
+      </div>
+    </section>
+    <div class="tb-aside">
+      <section class="tb-sec" aria-labelledby="bdtbe-deck">
+        <div class="tb-sh"><h2 id="bdtbe-deck">On deck</h2><span class="tb-n tb-mu">4</span></div>
+        <div class="tb-list"><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>GTN</span></span><div class="tb-rb"><a href="#">Gideon the Ninth</a><span class="tb-mu">Tamsyn Muir</span></div><button class="tb-btn" aria-label="Plan Gideon the Ninth">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>OVS</span></span><div class="tb-rb"><a href="#">The Overstory</a><span class="tb-mu">Richard Powers</span></div><button class="tb-btn" aria-label="Plan The Overstory">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>DUM</span></span><div class="tb-rb"><a href="#">Dune Messiah</a><span class="tb-mu">Frank Herbert</span></div><button class="tb-btn" aria-label="Plan Dune Messiah">Plan</button></div><p class="tb-note">No year yet. First in line when a quarter has room.</p></div>
+      </section>
+      <section class="tb-year" aria-label="2026 so far"><span class="tb-kick">2026 so far</span>
+        <div><span class="tb-big tb-n">18</span><span class="tb-mu">books · 3 listened</span></div>
+        <div><span class="tb-big tb-n">5,912</span><span class="tb-mu">pages</span></div>
+        <div><span class="tb-big tb-n">6</span><span class="tb-mu">new authors</span></div>
+      </section>
+    </div>
+  </div>
+  <div class="actionbar"><button class="btn" aria-label="Start The Left Hand of Darkness"><span class="bd-trunc">Start The Left Hand of Darkness</span></button><button class="btn sec" style="flex:0 0 auto" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button></div>
 </div></div></div></div>
 
 <div class="frame" data-w="desk"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
   <aside class="side"><div class="brand">Ledger</div>
     <a>Search<span class="kbd">Ctrl K</span></a>
     <a>Inbox<span class="kbd">6</span></a>
-    <a>Stats</a>
     <div class="grp">Comics</div>
     <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
     <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
     <a><i class="ico" aria-hidden="true">&#9776;</i>Runs</a>
-    <a><i class="ico" aria-hidden="true">&#8942;</i>Tracks</a>
     <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
     <div class="grp">Books</div>
-    <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <a aria-current="page"><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
     <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
-    <a><i class="ico" aria-hidden="true">&#9776;</i>Master list</a>
-    <a><i class="ico" aria-hidden="true">&#9636;</i>Plan</a>
-    <a><i class="ico" aria-hidden="true">&#9636;</i>Shelves</a>
-    <a><i class="ico" aria-hidden="true">&#9733;</i>Top books</a>
+    <a><i class="ico" aria-hidden="true">&#9776;</i>Library</a>
     <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
     <div class="grp">Watch</div>
     <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
-    <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
-    <a><i class="ico" aria-hidden="true">&#9776;</i>List</a>
-    <a><i class="ico" aria-hidden="true">&#9636;</i>Franchises</a>
-    <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
     <div class="grp">&nbsp;</div>
     <a>Settings</a>
     <div class="syncpill" role="status" aria-live="polite" data-state="online">Synced</div>
-    </aside>
-  <div class="main"><div class="wrap">
-    <div style="display:flex;align-items:flex-end;gap:1rem">
-      <div><h1 class="t">Books<span class="unit">time · words</span></h1><p class="lede">2026 · 22 of 35 read · pace 29 a year · 2027 committed to 31</p><p class="since">Since Tuesday: 1 book finished · 212 pages <a class="chip" href="#">6 in inbox</a></p></div>
-      <div style="margin-left:auto;display:flex;gap:.5rem"><button class="btn sec">&#10003; finished</button><button class="btn">Log progress</button></div>
+  </aside>
+  <div class="main"><div class="wrap tb bd">
+    <header class="bd-head"><h1 class="t">Books</h1><span class="grow"></span><button class="iconbtn bd-ib" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button><button class="tb-btn bd-hv">Finished it</button><button class="btn bd-hv bd-wait" aria-disabled="true" title="Logging pages arrives with sessions (2.1b)">Log pages</button></header>
+    <p class="tb-lede">Two weeks into The Fifth Season.</p>
+    <div class="bd-cols"><div class="bd-main">
+    <section class="tb-hero" aria-labelledby="bddre-now">
+      <div class="tb-band"><span class="tb-cv hero" aria-hidden="true"><span>cover</span></span>
+        <div class="tb-hb"><span class="tb-kick bd-kick" id="bddre-now">Reading now</span>
+          <span class="tb-name">The Fifth Season</span>
+          <span class="tb-run">N. K. Jemisin</span>
+          <span class="grow"></span>
+          <span class="tb-pages"><b>468</b> pages</span>
+        </div></div>
+      <div class="tb-foot one"><span>Started 21 Sep · about 9 evenings at your set pace</span></div>
+    </section>
+    <section class="tb-sec" aria-labelledby="bddre-next">
+      <div class="tb-sh"><h2 id="bddre-next">Up next in Q4</h2><span class="tb-n tb-mu">3</span><span class="grow"></span><a class="tb-btn ghost" href="#">Reorder</a></div>
+      <div class="tb-shelf" role="list"><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Left Hand of Darkness"><span class="tb-cv" aria-hidden="true"><span>LHD</span></span><span class="tb-pos">1</span></a><span class="tb-sname">The Left Hand of Darkness</span><span class="tb-meta">304 pp · 92k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Remains of the Day"><span class="tb-cv" aria-hidden="true"><span>ROD</span></span><span class="tb-pos">2</span></a><span class="tb-sname">The Remains of the Day</span><span class="tb-meta">258 pp · 72k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open Hamnet"><span class="tb-cv" aria-hidden="true"><span>HAM</span></span><span class="tb-pos">3</span></a><span class="tb-sname">Hamnet</span><span class="tb-meta">372 pp · 100k</span></div></div>
+    </section>
+    <section class="tb-sec" aria-labelledby="bddre-q">
+      <div class="tb-sh"><h2 id="bddre-q">This quarter</h2></div>
+      <div class="tb-quarter">
+        <div class="tb-qh"><b>Q4 2026</b><span class="tb-n tb-mu">3 of 7 read</span></div>
+        <div class="tb-qstrip" role="img" aria-label="Q4 2026: 3 of 7 books read, 615k of 760k words planned"><span class="tb-cell" data-full="" style="flex:0 0 calc(12.11% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(3.95% - 2px)"><b style="width:100%"></b><span style="padding-left:6px"></span></span><span class="tb-cell" data-head="" style="flex:0 0 calc(18.95% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">144k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(11.18% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">85k</span></span><span class="tb-cell" style="flex:0 0 calc(12.11% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" style="flex:0 0 calc(9.47% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">72k</span></span><span class="tb-cell" style="flex:0 0 calc(13.16% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">100k</span></span><i class="tb-cap" style="left:100.0%;right:auto"></i></div>
+        <div class="tb-qf"><span class="bd-fig"><span class="tb-n">615k planned</span></span><span class="tb-n">760k a quarter</span></div>
+      </div>
+    </section>
     </div>
-    <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:1rem;align-items:start;margin-top:.875rem">
-      <div>
-        <div class="pacecard" style="margin-top:0">
-          <div class="ctl" style="margin:0 0 .5rem"><span class="select">2027 <span class="car">&#9662;</span></span>
-            
-            <span class="rm mono" style="margin-left:auto">31 books · 3.58M words</span></div>
-          <div class="planrail" style="--stack:232px"><span class="caprule" style="top:46px"></span><div class="qcol"><div class="qstack" style="height:232px"><button class="qb over" style="height:15px;--hue:var(--g5)" aria-label="Nettle &amp; Bone, 68k words, stated"></button><button class="qb over" style="height:14px;--hue:var(--g5)" aria-label="Piranesi, 65k words, stated"></button><button class="qb" style="height:28px;--hue:var(--g5)" aria-label="Tress of the Emerald Sea, 118k words, stated"></button><button class="qb" style="height:25px;--hue:var(--g1)" aria-label="Project Hail Mary, 108k words, stated"></button><button class="qb" style="height:34px;--hue:var(--g5)" aria-label="The Fifth Season, 146k words, stated"></button><button class="qb" style="height:95px;--hue:var(--g5)" aria-label="The Way of Kings, 387k words, stated"></button></div>
-<div class="qfoot"><b>Q1</b><span class="mono">892k</span><span class="bdg bl">over 132k</span></div></div><div class="qcol"><div class="qstack" style="height:232px"><button class="qb" style="height:28px;--hue:var(--g5)" aria-label="The Spear Cuts Through Water, 120k words, stated"></button><button class="qb" style="height:29px;--hue:var(--g1)" aria-label="Some Desperate Glory, 123k words, stated"></button><button class="qb" style="height:28px;--hue:var(--g5)" aria-label="The Tainted Cup, 119k words, stated"></button><button class="qb" style="height:40px;--hue:var(--g1)" aria-label="A Memory Called Empire, 168k words, stated"></button><button class="qb" style="height:42px;--hue:var(--g5)" aria-label="The Blade Itself, 174k words, stated"></button></div>
-<div class="qfoot"><b>Q2</b><span class="mono">704k</span><span class="bdg dn">56k room</span></div></div><div class="qcol"><div class="qstack" style="height:232px"><button class="qb" style="height:16px;--hue:var(--g1)" aria-label="Chain-Gang All-Stars, 70k words, stated"></button><button class="qb" style="height:9px;--hue:var(--g1)" aria-label="The Tusks of Extinction, 45k words, stated"></button><button class="qb" style="height:20px;--hue:var(--g5)" aria-label="Legends &amp; Lattes, 90k words, stated"></button><button class="qb" style="height:50px;--hue:var(--g5)" aria-label="Babel, 210k words, stated"></button></div>
-<div class="qfoot"><b>Q3</b><span class="mono">415k</span><span class="bdg dn">345k room</span></div></div><div class="qcol"><div class="qstack" style="height:232px"><button class="qb" style="height:34px;--hue:var(--g1)" aria-label="Empire of Silence, 145k words, stated"></button><button class="qb" style="height:29px;--hue:var(--g1)" aria-label="The Blighted Stars, 123k words, stated"></button></div>
-<div class="qfoot"><b>Q4</b><span class="mono">268k</span><span class="bdg dn">492k room</span></div></div><div class="qcol nq"><div class="qstack" style="height:232px"><span class="qmore">+11 more</span><button class="qb un" style="height:43px" aria-label="A Fire Upon the Deep, 191k words, unplaced in a quarter"></button><button class="qb un" style="height:47px" aria-label="The Sword of Kaigen, 204k words, unplaced in a quarter"></button><button class="qb un" style="height:106px" aria-label="Wind and Truth, 455k words, unplaced in a quarter"></button></div>
-<div class="qfoot"><b>no&nbsp;qtr</b><span class="mono">1.30M</span><span class="bdg bl">14 books</span></div></div></div>
-          <p class="lede" style="margin-top:.5rem">The dashed rule is capacity — 760k a quarter, 45 minutes a day at 185 wpm. Drag a block to another quarter, or tap it for the picker. Q2–Q4 hold 893k of room between them; the unplaced pile is 1.30M.</p>
-        </div>
-        <div class="decide"><span class="g">?</span>
-          <div class="dt"><b>14 of 2027’s 31 books have a year but no quarter.</b> A year is what its quarters add up to.
-            <div class="btnrow" style="margin-top:.5rem"><button class="btn sm">Place them</button><button class="btn sec sm">Leave for now</button></div></div></div>
+    <div class="tb-aside">
+      <section class="tb-sec" aria-labelledby="bddre-deck">
+        <div class="tb-sh"><h2 id="bddre-deck">On deck</h2><span class="tb-n tb-mu">4</span></div>
+        <div class="tb-list"><div class="tb-row" data-hover=""><span class="tb-cv row" aria-hidden="true"><span>GTN</span></span><div class="tb-rb"><a href="#">Gideon the Ninth</a><span class="tb-mu">Tamsyn Muir</span></div><button class="tb-btn" aria-label="Plan Gideon the Ninth">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>OVS</span></span><div class="tb-rb"><a href="#">The Overstory</a><span class="tb-mu">Richard Powers</span></div><button class="tb-btn" aria-label="Plan The Overstory">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>DUM</span></span><div class="tb-rb"><a href="#">Dune Messiah</a><span class="tb-mu">Frank Herbert</span></div><button class="tb-btn" aria-label="Plan Dune Messiah">Plan</button></div><p class="tb-note">No year yet. First in line when a quarter has room.</p></div>
+      </section>
+      <section class="tb-year" aria-label="2026 so far"><span class="tb-kick">2026 so far</span>
+        <div><span class="tb-big tb-n">18</span><span class="tb-mu">books · 3 listened</span></div>
+        <div><span class="tb-big tb-n">5,912</span><span class="tb-mu">pages</span></div>
+        <div><span class="tb-big tb-n">6</span><span class="tb-mu">new authors</span></div>
+      </section>
+    </div>
+    </div>
+  </div></div>
+</div></div></div>
+<div class="frame" data-w="desk"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <aside class="side"><div class="brand">Ledger</div>
+    <a>Search<span class="kbd">Ctrl K</span></a>
+    <a>Inbox<span class="kbd">6</span></a>
+    <div class="grp">Comics</div>
+    <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
+    <a><i class="ico" aria-hidden="true">&#9776;</i>Runs</a>
+    <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
+    <div class="grp">Books</div>
+    <a aria-current="page"><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
+    <a><i class="ico" aria-hidden="true">&#9776;</i>Library</a>
+    <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
+    <div class="grp">Watch</div>
+    <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <div class="grp">&nbsp;</div>
+    <a>Settings</a>
+    <div class="syncpill" role="status" aria-live="polite" data-state="online">Synced</div>
+  </aside>
+  <div class="main"><div class="wrap tb bd">
+    <header class="bd-head"><h1 class="t">Books</h1><span class="grow"></span><button class="iconbtn bd-ib" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></button><button class="btn bd-hv" aria-label="Start The Left Hand of Darkness"><span class="bd-trunc">Start The Left Hand of Darkness</span></button></header>
+    <p class="tb-lede">Nothing on the go right now.</p>
+    <div class="bd-cols"><div class="bd-main">
+    <section class="tb-hero bb" aria-labelledby="bddbe-now">
+      <div class="bb-band"><span class="bb-cv" aria-hidden="true"><span class="tb-tick">&#10003;</span></span>
+        <div class="bb-hb"><span class="tb-bdg" data-k="rd">&#10003; finished · Sun</span><h2 class="bb-h" id="bddbe-now">Between books.</h2></div>
+        <p class="bb-line">You finished <i>Piranesi</i> on Sunday, 245 pages in nine days. Nothing's on the go, and that's fine.</p></div>
+      <div class="bb-offer"><span class="tb-cv row" aria-hidden="true"><span>LHD</span></span>
+        <div class="bb-ob"><span class="tb-kick">Top of your Q4 plan</span><b>The Left Hand of Darkness</b><span class="tb-mu">Ursula K. Le Guin · <span class="tb-n">304 pp</span></span></div>
+        <a class="bb-else in" href="#">Pick something else</a></div>
+      <a class="bb-else out" href="#">Pick something else</a>
+    </section>
+    <section class="tb-sec" aria-labelledby="bddbe-next">
+      <div class="tb-sh"><h2 id="bddbe-next">Up next in Q4</h2><span class="tb-n tb-mu">3</span><span class="grow"></span><a class="tb-btn ghost" href="#">Reorder</a></div>
+      <div class="tb-shelf" role="list"><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Left Hand of Darkness"><span class="tb-cv" aria-hidden="true"><span>LHD</span></span><span class="tb-pos">1</span></a><span class="tb-sname">The Left Hand of Darkness</span><span class="tb-meta">304 pp · 92k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open The Remains of the Day"><span class="tb-cv" aria-hidden="true"><span>ROD</span></span><span class="tb-pos">2</span></a><span class="tb-sname">The Remains of the Day</span><span class="tb-meta">258 pp · 72k</span></div><div role="listitem"><a class="tb-cvlink" href="#" aria-label="Open Hamnet"><span class="tb-cv" aria-hidden="true"><span>HAM</span></span><span class="tb-pos">3</span></a><span class="tb-sname">Hamnet</span><span class="tb-meta">372 pp · 100k</span></div></div>
+    </section>
+    <section class="tb-sec" aria-labelledby="bddbe-q">
+      <div class="tb-sh"><h2 id="bddbe-q">This quarter</h2></div>
+      <div class="tb-quarter">
+        <div class="tb-qh"><b>Q4 2026</b><span class="tb-n tb-mu">3 of 8 read</span></div>
+        <div class="tb-qstrip" role="img" aria-label="Q4 2026: 3 of 8 books read, 812k of 760k words planned"><span class="tb-cell" data-full="" style="flex:0 0 calc(11.33% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(3.69% - 2px)"><b style="width:100%"></b><span style="padding-left:6px"></span></span><span class="tb-cell" style="flex:0 0 calc(17.73% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">144k</span></span><span class="tb-cell" data-full="" style="flex:0 0 calc(10.47% - 2px)"><b style="width:100%"></b><span style="padding-left:6px">85k</span></span><span class="tb-cell" style="flex:0 0 calc(11.33% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">92k</span></span><span class="tb-cell" style="flex:0 0 calc(8.87% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">72k</span></span><span class="tb-cell" style="flex:0 0 calc(12.32% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">100k</span></span><span class="tb-cell" style="flex:0 0 calc(24.26% - 2px)"><b style="width:0%"></b><span style="padding-left:6px">197k</span></span><i class="tb-cap" style="left:93.6%;right:auto"></i></div>
+        <div class="tb-qf"><span class="bd-fig"><span class="tb-n bd-over">812k planned</span><span class="tb-bdg" data-k="bl">52k over</span></span><span class="tb-n">760k a quarter</span></div>
       </div>
-      <div>
-        <div class="hero" style="margin-top:0"><span class="stripe" style="background:var(--g5)"></span>
-          <div class="cv l k5">BUT</div>
-          <div class="meta"><div class="kick">READING NOW</div>
-            <div class="name">The Butcher of the Forest</div>
-            <div class="by">Premee Mohamed · <span class="mono">38k words</span></div>
-            <div class="meter rd" style="margin-top:.5rem"><i style="width:62%"></i></div>
-            <div class="rs mono" style="margin-top:.375rem">14k left · about one evening</div></div></div>
-        <div class="pacecard">
-          <div style="display:flex;align-items:flex-end;gap:.75rem">
-            <span class="capnum held">118%</span>
-            <span class="lede" style="padding-bottom:.3125rem">of 2027 capacity<br><b style="color:var(--ink)">45 min a day</b> at <span class="mono">185 wpm</span></span></div>
-          <div class="capbar"><i style="width:29%;background:var(--g5)"></i><i style="width:19%;background:var(--g1)"></i>
-            <i style="width:16%;background:var(--g6)"></i><i style="width:21%;background:var(--g3)"></i>
-            <i class="hatch" style="width:15%"></i><span class="pin" style="left:85%"></span></div>
-          <div class="leg"><span class="bdg bl">540k past capacity — about 5 books</span></div>
-          <div class="btnrow"><button class="btn">Rebalance</button><button class="btn sec">Accept</button></div>
-        </div>
-        <div class="stats" style="grid-template-columns:1fr 1fr">
-          <div class="stat"><div class="n">22</div><div class="l">read in 2026</div></div>
-          <div class="stat"><div class="n">3</div><div class="l">put down</div></div>
-          <div class="stat"><div class="n mono">6.05M</div><div class="l">words</div></div>
-          <div class="stat"><div class="n">7<span class="muted" style="font-size:.875rem">/10</span></div><div class="l">ranked</div></div>
-        </div>
-      </div>
+    </section>
+    </div>
+    <div class="tb-aside">
+      <section class="tb-sec" aria-labelledby="bddbe-deck">
+        <div class="tb-sh"><h2 id="bddbe-deck">On deck</h2><span class="tb-n tb-mu">4</span></div>
+        <div class="tb-list"><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>GTN</span></span><div class="tb-rb"><a href="#">Gideon the Ninth</a><span class="tb-mu">Tamsyn Muir</span></div><button class="tb-btn" aria-label="Plan Gideon the Ninth">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>OVS</span></span><div class="tb-rb"><a href="#">The Overstory</a><span class="tb-mu">Richard Powers</span></div><button class="tb-btn" aria-label="Plan The Overstory">Plan</button></div><div class="tb-row"><span class="tb-cv row" aria-hidden="true"><span>DUM</span></span><div class="tb-rb"><a href="#">Dune Messiah</a><span class="tb-mu">Frank Herbert</span></div><button class="tb-btn" aria-label="Plan Dune Messiah">Plan</button></div><p class="tb-note">No year yet. First in line when a quarter has room.</p></div>
+      </section>
+      <section class="tb-year" aria-label="2026 so far"><span class="tb-kick">2026 so far</span>
+        <div><span class="tb-big tb-n">18</span><span class="tb-mu">books · 3 listened</span></div>
+        <div><span class="tb-big tb-n">5,912</span><span class="tb-mu">pages</span></div>
+        <div><span class="tb-big tb-n">6</span><span class="tb-mu">new authors</span></div>
+      </section>
+    </div>
     </div>
   </div></div>
 </div></div></div>
 
-<div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
-  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
-  <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
-  <div class="wrap"><h1 class="t" style="opacity:.4">Books</h1></div>
-  <div class="scrim"></div><div style="position:absolute;left:.875rem;right:.875rem;bottom:.875rem;z-index:20"><div class="sheet" role="dialog" aria-label="Place 2027&rsquo;s unquartered books">
-    <h4>Place 2027&rsquo;s books · 1 of 14</h4><p class="lede">One at a time. Each quarter shows what it holds now.</p>
-    <div class="row" style="padding:.75rem 0;border:0"><span class="cv m k5">AFU</span><div class="rb"><span class="rt">A Fire Upon the Deep</span><div class="rs">Vernor Vinge · <span class="mono">191k words</span></div></div></div>
-    <div class="stats" style="margin-top:.25rem">
-      <button class="btn sec"><span>Q1</span><span class="mono" style="font-weight:400">892k</span><span class="bdg bl">over</span></button>
-      <button class="btn sec"><span>Q2</span><span class="mono" style="font-weight:400">704k</span></button>
-      <button class="btn sec"><span>Q3</span><span class="mono" style="font-weight:400">415k</span></button>
-      <button class="btn sec"><span>Q4</span><span class="mono" style="font-weight:400">268k</span></button></div>
-    <div class="btnrow"><button class="btn sec">Skip</button><button class="btn sec">Stop</button></div>
-    <div class="decide settled" style="margin-top:.875rem"><span class="g" aria-hidden="true">i</span><div class="dt"><b>The closing card, after the last one:</b> 14 placed. 2027 is still over by 540k &mdash; placing them made the overage visible, not smaller. <div class="btnrow"><button class="btn sm">Rebalance 2027</button><button class="btn sec sm">Accept as a stretch year</button></div></div></div>
-  </div></div>
-</div></div></div>
-
-<div class="notes">
-<p><b>834px and 360px frames (task 1.8).</b> The 834 frame is a tablet: the 72px navigation rail replaces the top bar (each item a 56px target, an icon over an 11px label, the current one a <code>--raise</code> pill with the 3px medium bar), one column with 32px padding, the 40/44 title and a 48px thumb bar spanning the column. The 360 frame shows the media bar fitting <i>Watch</i> untruncated. The dashboard body at tablet width (hero, shelf, ladder) is not redrawn in this frame; the feel-pass PNGs in <code>design/screenshots/tablet/</code> are its reference.</p><h3>Books dashboard</h3>
-  <p><span class="chg">v4 changes:</span> the capacity number is no longer the hero and no longer red. Reading now comes first, the plan rail is second, and the overage is amber with two real buttons under it.</p>
+<div class="notes"><h3>Books dashboard</h3>
+  <p><span class="chg">Redrawn from the feel pass (task 2.2, D-40):</span> <code>design/STYLE_GUIDE.md</code> &sect;14.1&ndash;&sect;14.2 and &sect;14.6, <code>Ledger Feel Review.dc.html</code> &sect;4 and &sect;11d, and <code>design/screenshots/phone/09&hellip;12</code> and <code>desktop/07&hellip;10</code>. The v4 frames (the plan rail, the capacity card, the year strip) are gone from this screen. Frames, in order: reading at 390, <i>Between books</i> at 390, listening at 360, <i>Between books</i> at 360, never finished and nothing planned at 360, reading and <i>Between books</i> at 834, reading and <i>Between books</i> on the desktop. Every frame follows the page&rsquo;s Light / Dark toggle.</p>
   <ul>
-    <li><b>The plan rail is the same instinct as the telescope, applied to time.</b> Each block is one book, sized by its word count; each column is a quarter; the dashed rule across all four is 760k, a quarter of your 45-min-a-day capacity. Anything poking above the rule is hatched. You see which quarter is over and by how much before you read a number.</li>
-    <li><b>The fifth lane is the 175 legacy entries.</b> Books with a year and no quarter sit outside the columns behind a dashed rule — in the year, not in the plan. Placing them is one tap each and never leaves this screen.</li>
-    <li><b>Amber, not red.</b> v3 turned the capacity number red at 100% and the quarter badges red when over. Over-planning by 27% is a five-year habit, not an error, and a red state you see every day is a red state you stop seeing. Amber here means <b>a decision you have not made</b>, and it clears when you make one — including by accepting it. Red is now reserved for destructive actions and validation failures.</li>
-    <li><b>Accept is a first-class button.</b> Rebalance offers push, drop, even out the quarters, and accept. A sheet that only offered ways to shrink the plan would be telling you your ambition is the bug.</li>
-    <li><b>Numbers reconciled.</b> v3 had a 240k quarter budget beside a 3.04M year capacity and rows that did not sum to their quarter totals. Quarter capacity is 760k — 45 min a day at 185 wpm, quartered — and every figure on this screen adds up.</li>
-    <li><span class="chg">Place them (TASKS 2.8):</span> the third frame. One book at a time, four quarter buttons each showing that quarter&rsquo;s current total (amber <i>over</i> where it already is), Skip and Stop; it never leaves the dashboard. The closing card is honest: placing everything does not make the year fit.</li>
-    <li><b>The year strip is last and small.</b> Four figures and a link. Looking backwards has never changed which book someone picks up tonight.</li>
+    <li><b>Five slots, in this order:</b> Now; <i>Up next in Q4</i>; <i>This quarter</i>; <i>On deck</i>; <i>2026 so far</i>. Then the thumb bar. Never the backlog. Below 768px it is one column; at 834 <i>On deck</i> | <i>2026 so far</i> are two columns, 1.5 : 1; on the desktop they are the side rail, sticky, and the DOM order is unchanged.</li>
+    <li><b>Now</b> is the only large thing (<code>--r-hero</code>, on <code>--surface</code> until 4.2/4.3 store the art band): the cover, <i>Reading now</i>, the title in Newsreader, the author, the page count in mono, and the foot <i>Started 21 Sep &middot; about 9 evenings at your set pace</i>: the book&rsquo;s words over minutes a day &times; words a minute, rounded up. Never a date. <span class="chg">Owner, at the plan gate (Q1):</span> until 2.1b stores a reading position there is no <i>p. 212 of 468</i>, no meter and no <i>sittings</i>; 2.1b adds all three where the page count is. The hero is the in-progress book started most recently. A <i>Listening</i> book is drawn the same way, with <i>Listening now</i> and the headphones glyph (360 frame; 1.23).</li>
+    <li><b>Between books</b> replaces the empty state: a 72px cover of the last finished book (112px from 768) with a <code>--ready</code> check, the <code>&#10003; finished &middot; Sun</code> badge, <i>Between books.</i>, and a line that says what you finished and how long it took (an undated finish says what, not when). Then the top of the quarter&rsquo;s plan, the lowest-ordinal book still <i>to read</i> (D-37), and <i>Pick something else</i>, which opens <i>Up next</i> on Status. With nothing ever finished there is no cover, badge or line (third 360 frame). The thumb bar&rsquo;s verb names the offer: <i>Start The Left Hand of Darkness</i>; with nothing planned it is <i>Pick a book</i>.</li>
+    <li><b>Up next in Q4</b> is a cover shelf of the quarter&rsquo;s <i>to read</i> books in your order (read ones drop out). <b>Reorder</b> opens 1.9&rsquo;s reorder for that quarter on Status. On the desktop &lsaquo; &rsaquo; appear only when the row overflows, with a fine pointer. With nothing planned it is an empty slate with one primary, <i>Add a book</i>.</li>
+    <li><b>This quarter</b> is the single-quarter strip (FP-D8): one block per planned book, its width its words against the quarter&rsquo;s capacity, read books in <code>--ready</code>, the book in hand outlined in <code>--brand</code>, and the dashed rule at 760k. The figure is 2.1&rsquo;s (<code>plan_capacity</code>): <i>3 of 7 read &middot; 615k planned &middot; 760k a quarter</i>. Past capacity (desktop <i>Between books</i> frame) the scale stretches to the plan, the rule moves in, and the figure turns <code>--blocked</code> amber with <i>52k over</i> beside it: a decision, never red, and the word &ldquo;behind&rdquo; appears nowhere. 2.2b swaps this strip for its rail component, one quarter wide.</li>
+    <li><b>On deck</b> is the books with no year yet. <b>Plan</b> moves one to the end of this quarter, with Undo. On the desktop it is hidden at rest with a fine pointer and shown on row hover or <code>:focus-within</code>, the row turning <code>--raise</code> (FP-D15; the first row is drawn hovered); with touch it is always shown.</li>
+    <li><b>2026 so far</b> is three counts on <code>--raise</code>, all this year: books (with <i>3 listened</i> beside them), pages, and new authors (an author first read this year). Plain text until Stats (6.2) exists.</li>
+    <li><b>The verbs.</b> Reading: <i>Log progress &middot; &#10003; finished &middot; search</i>, and on the desktop header <i>Search &middot; Finished it &middot; Log pages</i>, primary last. <i>Log progress</i> / <i>Log pages</i> are drawn unavailable (dimmed, <code>aria-disabled</code>, the reason <i>Logging pages arrives with sessions (2.1b)</i>). <i>&#10003; finished</i> finishes the book today in one tap, with Undo and 2.2c&rsquo;s offer. <i>Between books</i> drops <i>Finished it</i>; its primary names the offer in full, and below about 1100px it truncates and keeps the full title in its accessible name.</li>
+    <li><b>Not here:</b> the capacity card with <b>Rebalance</b> and <b>Accept</b> (2.7) and <i>Place them</i> (2.8) live on <code>/books/plan</code> only (owner, at the plan gate, Q2); the <i>Place them</i> sheet frame moved to <code>plan</code>. <i>Next in</i> under the hero and <i>Or keep going</i> under the offer are 2.2d&rsquo;s. The <i>Library</i> is reached from the tab row (phone), the rail and the sidebar.</li>
   </ul></div>
 </section>
 
@@ -3081,6 +3246,23 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   </div></div>
 </div></div></div>
 
+<div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
+  <div class="wrap"><h1 class="t" style="opacity:.4">Plan</h1></div>
+  <div class="scrim"></div><div style="position:absolute;left:.875rem;right:.875rem;bottom:.875rem;z-index:20"><div class="sheet" role="dialog" aria-label="Place 2027&rsquo;s unquartered books">
+    <h4>Place 2027&rsquo;s books · 1 of 14</h4><p class="lede">One at a time. Each quarter shows what it holds now.</p>
+    <div class="row" style="padding:.75rem 0;border:0"><span class="cv m k5">AFU</span><div class="rb"><span class="rt">A Fire Upon the Deep</span><div class="rs">Vernor Vinge · <span class="mono">191k words</span></div></div></div>
+    <div class="stats" style="margin-top:.25rem">
+      <button class="btn sec"><span>Q1</span><span class="mono" style="font-weight:400">892k</span><span class="bdg bl">over</span></button>
+      <button class="btn sec"><span>Q2</span><span class="mono" style="font-weight:400">704k</span></button>
+      <button class="btn sec"><span>Q3</span><span class="mono" style="font-weight:400">415k</span></button>
+      <button class="btn sec"><span>Q4</span><span class="mono" style="font-weight:400">268k</span></button></div>
+    <div class="btnrow"><button class="btn sec">Skip</button><button class="btn sec">Stop</button></div>
+    <div class="decide settled" style="margin-top:.875rem"><span class="g" aria-hidden="true">i</span><div class="dt"><b>The closing card, after the last one:</b> 14 placed. 2027 is still over by 540k &mdash; placing them made the overage visible, not smaller. <div class="btnrow"><button class="btn sm">Rebalance 2027</button><button class="btn sec sm">Accept as a stretch year</button></div></div></div>
+  </div></div>
+</div></div></div>
+
 <div class="notes"><h3>Plan by quarter</h3>
   <p><span class="chg">v4 changes:</span> the four quarter cards become the plan rail at full size — the same picture as the books dashboard, with the titles legible inside the blocks. The over-budget badge is amber, not red.</p>
   <ul>
@@ -3090,6 +3272,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <li><b>Only the quarter you are working on expands.</b> Q1 shows its six rows with Move on each; Q2 to Q4 are summary rows you tap. Four expanded quarters is a scroll, not a plan.</li>
     <li><b>The empty-state action moved up.</b> "893k of room across Q2–Q4" with a Suggest button, rather than three separate empty quarters each asking the same question.</li>
     <li><b>Amber says the same thing here as on the dashboard.</b> Over capacity is a decision you have not made; Rebalance and Accept are both one tap, and accepting is what makes the amber go away.</li>
+    <li><span class="chg">Place them (TASKS 2.8), moved here from the books dashboard (task 2.2, Q2):</span> the last phone frame. One book at a time, four quarter buttons each showing that quarter&rsquo;s current total (amber <i>over</i> where it already is), Skip and Stop. The closing card is honest: placing everything does not make the year fit. The capacity card and <i>Place them</i> appear on this screen only, never on the dashboard.</li>
     <li><b>Desktop:</b> the rail is taller so every block carries its title, and the capacity card and the unplaced pile move to a sticky rail — the two things you act on while you drag.</li>
   </ul></div>
 </section>

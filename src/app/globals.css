@@ -1446,3 +1446,140 @@ section[data-plan="year"] h2.group-head{color:var(--muted)}
   font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
 .stopped summary .n{font-size:.6875rem;font-weight:500;letter-spacing:0;color:var(--muted)}
 .stopped summary:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring);border-radius:var(--r-sm)}
+
+/* --- the books dashboard (task 2.2, F-22; D-40, STYLE_GUIDE §14.1, §14.2, §14.5, §14.6; mockup
+   `bdash`). Five slots: Now, *Up next in Qn*, *This quarter*, *On deck*, *2026 so far*; then the
+   thumb bar. Tokens only; nothing red, and the one amber is the strip's figure past capacity. --- */
+/* The section heads are h2s: their own rules outrank the base h2:not(.t). */
+.books-dash .dash-lede{margin:.25rem 0 0;font-size:.9375rem;line-height:1.375rem;color:var(--ink-2)}
+.books-dash .dash-main>section:first-child{margin-top:1.5rem}
+@media (max-width:767px){ .books-dash .inbox-line{display:none} }   /* drawn from the tablet up (bdash) */
+
+/* Now: the one hero (--r-hero), on --surface until 4.2/4.3 store the art band. */
+.now-hero{display:flex;flex-direction:column;border-radius:var(--r-hero);overflow:hidden;background:var(--surface);
+  box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)}
+.now-band{display:flex;gap:16px;padding:16px}
+.now-cover{flex:none;display:block;width:var(--cover-hero);aspect-ratio:2/3;border-radius:var(--r-cover);overflow:hidden;
+  box-shadow:var(--sh-cover)}
+.now-cover .cv,.now-cover .sk{display:block;width:100%;height:100%;background:var(--sunk)}   /* the cover clips them to its radius */
+.now-body{flex:1;min-width:0;display:flex;flex-direction:column}
+.now-kick,.offer-kick{display:inline-flex;align-items:center;gap:6px;font:500 var(--fs-kicker) var(--mono);
+  letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.now-kick .ico{width:16px;height:16px;flex:none}
+.now-hero .now-name{margin:8px 0 0;font:500 var(--fs-hero-name) var(--display);letter-spacing:-.015em;color:var(--ink);overflow-wrap:anywhere}
+.now-by{margin-top:6px;font:var(--fs-body) var(--sans);color:var(--ink-2)}
+.now-body .grow{flex:1;min-height:12px}
+.now-pages{font:500 var(--fs-body) var(--mono);color:var(--ink-2)}
+.now-pages b{font:500 32px/36px var(--mono);letter-spacing:-.02em;color:var(--ink)}
+.now-foot{max-width:none;margin:0;display:flex;align-items:center;min-height:48px;padding:8px 16px;border-top:1px solid var(--line);
+  font:var(--fs-body-sm) var(--sans);color:var(--ink-2)}
+
+/* Between books (§14.2): Now's state with nothing in hand, never blank. */
+.between-band{display:grid;grid-template-columns:72px minmax(0,1fr);column-gap:16px;row-gap:12px;align-items:end;padding:20px}
+.between-band.none{grid-template-columns:minmax(0,1fr)}
+.between-cover{position:relative;display:block;width:72px;aspect-ratio:2/3;border-radius:var(--r-cover);box-shadow:var(--sh-cover)}
+.between-cover .cv{display:block;width:100%;height:100%;border-radius:var(--r-cover);background:var(--sunk)}
+.between-check{position:absolute;right:-8px;bottom:-8px;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;
+  background:var(--ready);color:var(--on-ready);box-shadow:0 0 0 2px var(--surface);font:700 14px/1 var(--sans)}
+.between-head{display:flex;flex-direction:column;align-items:flex-start;gap:8px;min-width:0}
+.now-hero .between-title{margin:0;font:500 var(--fs-title) var(--display);letter-spacing:-.015em;color:var(--ink)}
+.between-line{grid-column:1/-1;max-width:none;margin:0;font-size:.9375rem;line-height:1.375rem;color:var(--ink-2)}
+.between-offer{display:flex;flex-wrap:wrap;align-items:center;column-gap:14px;padding:14px 20px 0;border-top:1px solid var(--line)}
+.between-offer>.cv{flex:none;width:var(--cover-row);aspect-ratio:2/3;border-radius:var(--r-cover);background:var(--sunk);
+  box-shadow:var(--sh-cover);margin-bottom:14px}
+.offer-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;padding-bottom:14px}
+.offer-title{font:600 var(--fs-row-title) var(--sans);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.offer-sub{font:var(--fs-body-sm) var(--sans);color:var(--muted)}
+.pick-else{flex-basis:100%;display:flex;align-items:center;min-height:44px;margin:0 -20px;padding:0 20px;
+  border-top:1px solid var(--line);color:var(--brand);font-size:.875rem;font-weight:500;text-decoration:none}
+@media (hover:hover) and (pointer:fine){ .pick-else:hover{text-decoration:underline} }
+.pick-else:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring)}
+
+/* This quarter (FP-D8): a one-quarter rail laid on its side; 2.2b's rail component replaces it (M-07).
+   Scoped under .qrail: .qcol, .qstack and .qfoot are the vertical plan rail's above. */
+.qcard{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:var(--r-xl);background:var(--surface);
+  box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)}
+.qhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:.9375rem;line-height:1.25rem}
+.qhead .mono{font-size:.75rem;color:var(--muted)}
+.qrail{display:block;height:28px}
+.qrail .qcol{position:relative;display:block;height:28px}
+.qrail .qstack{display:flex;flex-direction:row;justify-content:flex-start;gap:2px;height:28px;overflow:hidden;
+  border-radius:var(--r-cell);box-shadow:inset 0 0 0 1px var(--line)}
+.qcell{flex:0 0 auto;min-width:4px;height:28px;border-radius:var(--r-cell);background:var(--sunk);
+  box-shadow:inset 0 0 0 1px var(--faint-deco);overflow:hidden;white-space:nowrap;font-size:.6875rem;line-height:28px;color:var(--ink-2)}
+.qcell .mono{padding-left:6px}
+.qcell[data-state="read"]{background:var(--ready);box-shadow:none;color:var(--on-ready)}
+.qcell[data-state="head"]{box-shadow:inset 0 0 0 1.5px var(--brand);color:var(--ink)}
+.qcap{position:absolute;top:-4px;bottom:-4px;width:0;margin-left:-1px;border-left:1.5px dashed var(--ink-2)}
+.qfigs{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px;font-size:.75rem;color:var(--muted)}
+.qfig{display:inline-flex;align-items:center;gap:8px}
+.qfig.over{color:var(--blocked);font-weight:600}
+
+/* On deck: rows in one card; Plan is a 44px target, revealed by hover with a fine pointer (FP-D15). */
+.deck-list{border-radius:var(--r-xl);background:var(--surface);box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1);overflow:hidden}
+.deck-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.deck-row .cv{flex:none;width:var(--cover-row);aspect-ratio:2/3;border-radius:var(--r-cover);background:var(--sunk);box-shadow:var(--sh-cover)}
+.deck-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.deck-body .row-title{font-size:.9375rem;line-height:1.25rem;font-weight:600;color:var(--ink);overflow-wrap:anywhere}
+.deck-body .row-sub{margin:0}
+.deck-row .deck-plan{flex:none;min-height:44px;min-width:44px}
+.deck-note{max-width:none;margin:0;padding:12px 14px;font-size:.8125rem;line-height:1.125rem;color:var(--muted)}
+.deck-empty{margin:0;font-size:.8125rem;line-height:1.125rem;color:var(--muted)}
+@media (hover:hover) and (pointer:fine){
+  .deck-row{transition:background-color var(--dur-1) var(--ease-out)}
+  .deck-row .deck-plan{opacity:0}
+  .deck-row:hover,.deck-row:focus-within{background:var(--raise)}
+  .deck-row:hover .deck-plan,.deck-row:focus-within .deck-plan{opacity:1}
+}
+
+/* 2026 so far: three counts on --raise, the number above its word (the word first for a screen reader). */
+.year-so-far{margin-top:2.25rem;padding:16px;border-radius:var(--r-xl);background:var(--raise);box-shadow:inset 0 0 0 1px var(--line)}
+.year-so-far h2{margin:0 0 14px;font:500 var(--fs-kicker) var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.year-so-far dl{margin:0;display:flex;flex-direction:column;gap:14px}
+.year-so-far dl>div{display:flex;flex-direction:column-reverse}
+.year-so-far dt{font-size:.75rem;line-height:1rem;color:var(--muted)}
+.year-so-far dd{margin:0;font:500 28px/32px var(--mono);letter-spacing:-.02em;color:var(--ink)}
+
+/* The tablet (§14.5): the horizontal hero around 150 × 225, and the side rail stacked as two columns, 1.5 : 1. */
+@media (min-width:768px){
+  .now-band{gap:24px;padding:20px}
+  .now-foot{padding:8px 20px}
+  .between-band{grid-template-columns:112px minmax(0,1fr);column-gap:28px;align-items:center;padding:24px}
+  .between-band.none{grid-template-columns:minmax(0,1fr)}
+  .between-cover{grid-row:1/3;width:112px}
+  .between-head{align-self:end}
+  .between-line{grid-column:2;align-self:start}
+  .between-band.none .between-line{grid-column:1}
+  .between-offer{flex-wrap:nowrap;padding:14px 20px}
+  .between-offer>.cv{margin-bottom:0}
+  .offer-body{padding-bottom:0}
+  .pick-else{flex-basis:auto;margin:0;padding:0 4px;border-top:0;white-space:nowrap}
+  .qcard{padding:20px}
+}
+@media (min-width:768px) and (max-width:1023px){
+  .books-side{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);column-gap:20px;align-items:start}
+}
+/* Desktop (§14.6): main and the side rail; the hero 20/24 at 1024, 24/28 with a 168 × 252 cover at 1280. */
+@media (min-width:1024px){
+  .now-hero .now-name{font:500 var(--fs-hero-name-desk) var(--display)}
+  .books-side .slot-head:first-child{margin-top:1.5rem}
+  .books-side .year-so-far{margin-top:24px}
+}
+@media (min-width:1280px){ .now-band{gap:28px;padding:24px} }
+
+/* The loading state (Skeleton.tsx): the same boxes, their contents in --sunk. */
+.sk-fill{display:block;width:100%;height:100%}
+.sk-now-kick{height:14px}
+.sk-now-name{height:22px;margin:12px 0 4px}
+.sk-now-by{height:14px;margin:9px 0 3px}
+.sk-now-pages{height:28px;margin:4px 0}
+.sk-now .now-foot{flex-direction:column;align-items:flex-start;justify-content:center}
+.sk-now-foot{height:12px;margin:3px 0}
+@media (min-width:768px){ .sk-now-foot.two{display:none} }
+.sk-head{height:12px;margin:2px 0}
+.shelf-slot .sk-head{margin:10px 0}
+.shelf .card .sk-card-title{height:30px;margin:2px 0}
+.shelf .card .sk-card-meta{height:10px;margin:2px 0}
+.qrail.sk{border-radius:var(--r-cell)}
+.sk-qhead{height:14px;margin:3px 0}
+.sk-qfigs{height:12px;margin:6px 0}

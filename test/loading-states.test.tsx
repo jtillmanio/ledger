@@ -13,6 +13,7 @@ const routes: [string, string][] = [
   ["/comics/status", "../src/app/comics/status/loading"],
   ["/books/status", "../src/app/books/status/loading"],
   ["/books/list", "../src/app/books/list/loading"],
+  ["/books", "../src/app/books/loading"],
   ["/inbox", "../src/app/inbox/loading"],
   ["/settings", "../src/app/settings/loading"],
   ["/watch", "../src/app/watch/loading"],
@@ -23,12 +24,16 @@ const pieces = {
   telecard: 'class="telecard sk-telecard"',
   runRows: 'class="row sk-row"',
   seasonRows: 'class="sk sk-cover"',
+  // The books dashboard (task 2.2): Now, the shelf and the quarter strip.
+  booksNow: 'class="now-hero sk-now"',
+  quarter: 'class="sk qrail"',
 };
 const holds: [string, string, string[], string[]][] = [
   ["/comics", "../src/app/comics/(dash)/loading", [pieces.telecard, pieces.runRows], [pieces.seasonRows]],
   ["/comics/runs", "../src/app/comics/runs/loading", [pieces.runRows], [pieces.telecard, pieces.seasonRows]],
   ["/books/list", "../src/app/books/list/loading", [pieces.runRows], [pieces.telecard, pieces.seasonRows]],
   ["/watch", "../src/app/watch/loading", [pieces.seasonRows], [pieces.telecard, pieces.runRows]],
+  ["/books", "../src/app/books/loading", [pieces.booksNow, pieces.quarter], [pieces.telecard, pieces.runRows, pieces.seasonRows]],
 ];
 
 describe("loading states (task 0.9)", () => {

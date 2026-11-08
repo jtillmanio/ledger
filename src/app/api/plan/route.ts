@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiUserId, unauthorized } from "@/lib/auth";
-import { moveInQuarter } from "@/db/writes";
+import { moveInQuarter, movePlan } from "@/db/writes";
 
 export const runtime = "nodejs";
 
@@ -27,6 +27,26 @@ export async function PATCH(req: Request) {
     ? NextResponse.json({ error: `${bookId} isn't in ${period}` }, { status: 404 })
     : NextResponse.json({ ok: true, ordinal });
 }
+
+/**
+ * - POST `{ bookId, from, to }` (task 2.2, Q3): move a book between periods through `movePlan`,
+ *   which puts it at the end of a quarter and closes the gap it leaves. The dashboard's *Plan*
+ *   sends `on_deck` → this quarter, and its Undo the move back. Periods are a quarter
+ *   (`2027-Q1`), a year (`2027`) or `on_deck`, and differ. 404 when the book isn't in `from`.
+ */
+export async function POST(req: Request) {
+  const userId = await apiUserId();
+  if (!userId) return unauthorized();
+  const { bookId, from, to } = await body(req);
+  if (!isText(bookId)) return bad("bookId is required");
+  if (!isPeriod(from) || !isPeriod(to)) return bad("from and to are periods: 2027-Q1, 2027 or on_deck");
+  if (from === to) return bad("from and to are the same period");
+  return (await movePlan(userId, bookId, from, to))
+    ? NextResponse.json({ ok: true })
+    : NextResponse.json({ error: `${bookId} isn't in ${from}` }, { status: 404 });
+}
+
+const isPeriod = (v: unknown): v is string => typeof v === "string" && /^(\d{4}(-Q[1-4])?|on_deck)$/.test(v);
 
 async function body(req: Request): Promise<Record<string, unknown>> {
   try {

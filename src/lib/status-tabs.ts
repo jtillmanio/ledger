@@ -4,6 +4,10 @@
 /** Where *Reorder*, *In Up next · #N* and *All N* lead: the comics Up next tab (task 1.10, 1.9). A plain module, so server and client code both read the string. */
 export const QUEUE_HREF = "/comics/status?tab=next";
 
+/** The books Up next tab (task 2.2): where *Pick a book*, *Pick something else* and the On deck
+ * *All N* lead. A quarter's own list is `BOOKS_NEXT_HREF#plan-2026-Q4`, where **Reorder** goes. */
+export const BOOKS_NEXT_HREF = "/books/status?tab=next";
+
 export const TABS = ["inflight", "next", "done"] as const;
 export type StatusTab = (typeof TABS)[number];
 

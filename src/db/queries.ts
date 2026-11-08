@@ -1102,9 +1102,12 @@ export interface PeriodCapacity {
 /**
  * How full a year and each of its quarters are against your capacity (task 2.1, F-21, D-115),
  * from `plan_capacity`, filtered to the year before it aggregates. A year nothing counts in has no
- * rows there, so it reads as empty at your settings' capacity.
+ * rows there, so it reads as empty at your settings' capacity. A page that reads your settings
+ * anyway passes its read (`settings`), so that case costs no second round trip (task 2.2).
  */
-export async function planCapacity(userId: string, year: number): Promise<{ year: PeriodCapacity; quarters: PeriodCapacity[] }> {
+export async function planCapacity(
+  userId: string, year: number, settings?: Promise<ReadingSettings>,
+): Promise<{ year: PeriodCapacity; quarters: PeriodCapacity[] }> {
   const rows = await sql<PeriodCapacity[]>`
     SELECT period, year, quarter, capacity, planned_words AS "plannedWords", stated_words AS "statedWords",
            estimated_words AS "estimatedWords", books, read_books AS "readBooks", unknown_books AS "unknownBooks",
@@ -1112,7 +1115,7 @@ export async function planCapacity(userId: string, year: number): Promise<{ year
     FROM plan_capacity WHERE user_id = ${userId} AND year = ${year}
     ORDER BY quarter NULLS FIRST`;
   if (rows.length === 0) {
-    const capacity = wordsPerYear(await readingSettings(userId), year);
+    const capacity = wordsPerYear(await (settings ?? readingSettings(userId)), year);
     const empty = (quarter: number | null): PeriodCapacity => ({
       period: quarter === null ? String(year) : `${year}-Q${quarter}`, year, quarter,
       capacity: quarter === null ? capacity : capacity / 4,
@@ -1122,6 +1125,153 @@ export async function planCapacity(userId: string, year: number): Promise<{ year
     return { year: empty(null), quarters: [1, 2, 3, 4].map(empty) };
   }
   return { year: rows[0], quarters: rows.slice(1) };
+}
+
+/* ── The books dashboard (task 2.2, F-22, D-40) ─────────────────────────────────────────
+ * Its five slots: the book in hand or the last finish (Now), the quarter's shelf (Up next),
+ * the quarter's strip (This quarter), On deck, and the year so far. The year and the quarter
+ * are the caller's, from the Eastern day, so a test can fix them. */
+
+/** A book being read or listened to, for Now. `words` is the stated count, else its pages at
+ * your words per page (as plan_book_words estimates), else null; never 0. */
+export type InHandBook = {
+  id: string; title: string; author: string | null; pages: number | null; words: number | null;
+  cover_url: string | null; status: "reading" | "listening";
+  started_on: string | null; started_on_precision: Precision;
+};
+
+/** What is in hand, the hero first: the most recently started, Reading before Listening on
+ * the same day, an undated start last (task 2.2's rule). Empty is *Between books*. */
+export async function booksInHand(userId: string) {
+  return sql<InHandBook[]>`
+    SELECT b.id, b.title, a.name AS author, b.page_count AS pages, b.cover_url,
+           COALESCE(b.word_count, CASE WHEN b.page_count >= 50
+                                       THEN b.page_count * COALESCE(rs.words_per_page, ${DEFAULT_WORDS_PER_PAGE}) END) AS words,
+           st.status, st.started_on::text AS started_on, st.started_on_precision
+    FROM book_status st
+    JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
+    LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN reading_settings rs ON rs.user_id = st.user_id
+    WHERE st.user_id = ${userId} AND st.status IN ('reading', 'listening')
+    ORDER BY st.started_on DESC NULLS LAST, (st.status = 'listening'), b.title, b.id
+  `;
+}
+
+/** A book on the dashboard's shelf or in On deck. */
+export type ShelfBook = {
+  id: string; title: string; author: string | null; pages: number | null; words: number | null;
+  cover_url: string | null; ordinal: number | null;
+};
+
+/** *Up next in Qn* (task 2.2, D-37): the quarter's books still `to_read`, in your order. The
+ * first is *Between books*' offer, so a read one is skipped. `period` is `2026-Q4`. */
+export async function quarterShelf(userId: string, period: string) {
+  return sql<ShelfBook[]>`
+    SELECT b.id, b.title, a.name AS author, b.page_count AS pages, b.word_count AS words, b.cover_url, pp.ordinal
+    FROM plan_period pp
+    JOIN book_status st ON st.user_id = pp.user_id AND st.book_id = pp.book_id AND st.status = 'to_read'
+    JOIN books b ON b.id = pp.book_id
+    LEFT JOIN authors a ON a.id = b.author_id
+    WHERE pp.user_id = ${userId} AND pp.period = ${period}
+    ORDER BY pp.ordinal, b.title, b.id
+  `;
+}
+
+/** One block of the quarter strip: a book that counts against the quarter, with its words. */
+export type QuarterBlock = { id: string; title: string; words: number; status: "to_read" | "reading" | "read" };
+
+/**
+ * *This quarter*'s blocks (task 2.2, FP-D8): the books `plan_capacity` counts in that quarter,
+ * read from the view it sums (`plan_book_words`), so their words add up to the strip's
+ * planned total. A book with no word count is counted in `books` but draws no block.
+ */
+export async function quarterBlocks(userId: string, period: string) {
+  return sql<QuarterBlock[]>`
+    SELECT w.book_id AS id, b.title, w.words, w.status
+    FROM plan_book_words w
+    JOIN books b ON b.id = w.book_id
+    JOIN reading_plan p ON p.user_id = w.user_id AND p.book_id = w.book_id AND p.period = w.period
+    WHERE w.user_id = ${userId} AND w.period = ${period} AND w.words IS NOT NULL
+    ORDER BY p.ordinal NULLS LAST, b.title, b.id
+  `;
+}
+
+/** *On deck* (D-37): the `to_read` books with no year, by title, the first `limit`, and how many in all. */
+export async function onDeck(userId: string, limit: number): Promise<{ rows: ShelfBook[]; total: number }> {
+  const rows = await sql<(ShelfBook & { total: number })[]>`
+    SELECT b.id, b.title, a.name AS author, b.page_count AS pages, b.word_count AS words, b.cover_url,
+           NULL::int AS ordinal, COUNT(*) OVER ()::int AS total
+    FROM to_read_level l
+    JOIN books b ON b.id = l.book_id
+    LEFT JOIN authors a ON a.id = b.author_id
+    WHERE l.user_id = ${userId} AND l.level = 'on_deck'
+    ORDER BY b.title, b.id
+    LIMIT ${limit}
+  `;
+  const total = rows[0]?.total ?? 0;
+  for (const r of rows) delete (r as Partial<typeof r>).total;
+  return { rows, total };
+}
+
+/** The read *Between books* names. `days_taken` only between two exact days (task 1.17). */
+export type LastFinish = {
+  id: string; title: string; author: string | null; pages: number | null; cover_url: string | null;
+  finished_on: string | null; finished_on_precision: Precision; days_taken: number | null; listened: boolean;
+};
+
+/** The last finish (task 2.2, §14.2): the latest dated read, else the latest undated one, over
+ * every read `book_reads` counts (the log, and a `read` status with none). Null when nothing is
+ * finished: *Between books* then omits its finished line. */
+export async function lastFinish(userId: string): Promise<LastFinish | null> {
+  const [row] = await sql<LastFinish[]>`
+    SELECT b.id, b.title, a.name AS author, b.page_count AS pages, b.cover_url,
+           r.finished_on::text AS finished_on, r.finished_on_precision,
+           CASE WHEN r.started_on_precision = 'exact' AND r.finished_on_precision = 'exact'
+                THEN r.finished_on - r.started_on END AS days_taken,
+           r.format = 'audio' AS listened
+    FROM (
+      SELECT e.id, e.book_id, e.finished_on, e.finished_on_precision, e.started_on, e.started_on_precision, e.format
+      FROM read_events e WHERE e.user_id = ${userId} AND e.book_id IS NOT NULL
+      UNION ALL
+      SELECT 0, s.book_id, s.finished_on, s.finished_on_precision, NULL, 'none', 'text'
+      FROM book_status s
+      WHERE s.user_id = ${userId} AND s.status = 'read'
+        AND NOT EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = s.user_id AND e.book_id = s.book_id)
+    ) r
+    JOIN books b ON b.id = r.book_id AND b.deleted_at IS NULL
+    LEFT JOIN authors a ON a.id = b.author_id
+    ORDER BY r.finished_on DESC NULLS LAST, r.id DESC
+    LIMIT 1
+  `;
+  return row ?? null;
+}
+
+/** *2026 so far*: three counts, all of one year. */
+export type YearSoFar = { books: number; listened: number; pages: number; newAuthors: number };
+
+/**
+ * *2026 so far* (task 2.2, §14.1): the year's reads from `book_reads` (D-65: a reread counts
+ * again), how many were listens (D-85), their pages summed, and the new authors: an author with a
+ * read this year and none dated before it or undated. Nothing from another year counts.
+ */
+export async function yearSoFar(userId: string, year: number): Promise<YearSoFar> {
+  const [row] = await sql<YearSoFar[]>`
+    WITH r AS (
+      SELECT r.finished_on, r.format, b.author_id, b.page_count
+      FROM book_reads r JOIN books b ON b.id = r.book_id AND b.deleted_at IS NULL
+      WHERE r.user_id = ${userId}
+    ), y AS (
+      SELECT r.*, NOT EXISTS (
+        SELECT 1 FROM r o WHERE o.author_id = r.author_id
+          AND (o.finished_on IS NULL OR o.finished_on < make_date(${year}, 1, 1))) AS fresh
+      FROM r WHERE extract(year FROM r.finished_on) = ${year}
+    )
+    SELECT COUNT(*)::int AS books, COUNT(*) FILTER (WHERE format = 'audio')::int AS listened,
+           COALESCE(SUM(page_count), 0)::int AS pages,
+           COUNT(DISTINCT author_id) FILTER (WHERE fresh)::int AS "newAuthors"
+    FROM y
+  `;
+  return row;
 }
 
 /** The volume map's size for Settings' *N rules · M series* (task 2.0): derived, never stored. */
