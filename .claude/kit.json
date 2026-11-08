@@ -99,7 +99,7 @@
       { "name": "Preview walked at 360–412px", "check": "Walk the changed screen and its states on the Vercel preview against design/mockups.html and the feel pass", "by": "owner", "when": "ui" }
     ],
     "decisions": "propose",
-    "splitPolicy": "never-split",
+    "splitPolicy": "split",
     "afterMerge": "After merge, run Release (START-HERE Step 13) to put it live.",
     "allowForceWithLease": true,
     "roadmap": { "path": "docs/05-roadmap.md", "idPattern": "\\d+\\.\\d+[a-z]?", "checkLabel": "**Check:**" },
