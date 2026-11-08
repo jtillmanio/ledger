@@ -4,6 +4,16 @@ export function ignoredBuildStep(
   previousSha: string | undefined,
   git: (args: string[]) => { status: number | null; stdout: string },
 ): { build: boolean; why: string };
+export const CARRIED_PREVIEW_CONTEXT: string;
+export function carriedPreview(
+  commits: string[],
+  previewsOf: (sha: string) => Promise<{ built: boolean; url: string | null }[]>,
+  changedFiles: (base: string, head: string) => Promise<string[] | null>,
+): Promise<{ carry: { sha: string; url: string } | null; why: string }>;
+export function carriedPreviewStatus(
+  head: string,
+  carry: { sha: string; url: string },
+): { state: "success"; context: string; target_url: string; description: string };
 export function pendingMigrations(
   entries: { tag: string; when: number }[],
   appliedCreatedAt: (string | number)[],

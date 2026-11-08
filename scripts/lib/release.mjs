@@ -63,6 +63,53 @@ export function ignoredBuildStep(previousSha, git) {
   return { build: false, why: `only backups, docs, design, CI or Claude config changed since ${label}` };
 }
 
+/** The commit status the Preview link workflow posts on a head Vercel skipped. */
+export const CARRIED_PREVIEW_CONTEXT = "Preview (last build)";
+
+/**
+ * The preview a pull request's head links to when the Ignored Build Step
+ * skipped it (.github/workflows/preview-link.yml): `{ carry, why }`, where
+ * `carry` is `{ sha, url }` of the newest earlier commit that built, or null. A
+ * skipped head gets no GitHub deployment, only a `Vercel` status pointing at the
+ * canceled build, so the PR loses its link to a preview that still serves the
+ * same app. This answers the way the ignore step decides: from the branch's
+ * last successful deployment, with deploymentNeedsBuild. When the head has a
+ * deployment of its own, or anything since the last build needs one, Vercel's
+ * status is the link and this carries nothing.
+ *   commits:            the PR's commit SHAs, oldest first; the last is the head
+ *   previewsOf(sha):    async, that commit's Preview deployments as `{ built, url }`
+ *                       (`built`: one of its statuses was success)
+ *   changedFiles(a, b): async, the paths changed from a to b, or null when GitHub
+ *                       cannot say (then Vercel may build it, so carry nothing)
+ */
+export async function carriedPreview(commits, previewsOf, changedFiles) {
+  const head = commits.at(-1);
+  if (!head) return { carry: null, why: "the pull request has no commits" };
+  if ((await previewsOf(head)).length) return { carry: null, why: `${head.slice(0, 7)} has a deployment of its own` };
+  for (const sha of commits.slice(0, -1).reverse()) {
+    const built = (await previewsOf(sha)).find((d) => d.built && d.url);
+    if (!built) continue;
+    const short = sha.slice(0, 7);
+    const files = await changedFiles(sha, head);
+    if (!files) return { carry: null, why: `GitHub could not list what changed since ${short}` };
+    if (deploymentNeedsBuild(files)) {
+      return { carry: null, why: `${files.length} file(s) changed since ${short}, so Vercel builds the head` };
+    }
+    return { carry: { sha, url: built.url }, why: `only backups, docs, design, CI or Claude config changed since ${short}` };
+  }
+  return { carry: null, why: "no earlier commit in the pull request has a preview" };
+}
+
+/** The commit status that links a skipped head to the preview it still matches. */
+export function carriedPreviewStatus(head, carry) {
+  return {
+    state: "success",
+    context: CARRIED_PREVIEW_CONTEXT,
+    target_url: carry.url,
+    description: `Vercel skipped ${head.slice(0, 7)} (docs or config only); ${carry.sha.slice(0, 7)}'s preview serves the same app`,
+  };
+}
+
 /**
  * Which journal entries the database has not applied, by drizzle-kit migrate's
  * own rule: an entry runs when its `when` is later than the newest applied

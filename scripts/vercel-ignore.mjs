@@ -12,6 +12,9 @@
 // untick "Use project's Ignore Build Step" in the Redeploy dialog: Vercel then
 // does not run this script for that one redeploy (START-HERE 10e).
 //
+// A skipped PR head keeps a link to its preview through
+// .github/workflows/preview-link.yml (carriedPreview, the same rule).
+//
 // A branch's first push has no previous deployment, so it compares with main's
 // tip instead. When it cannot tell (main can't be fetched, or a previous SHA
 // outside Vercel's shallow clone), it builds.
