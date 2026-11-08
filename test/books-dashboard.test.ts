@@ -362,3 +362,22 @@ describe("the strip past capacity is amber, never red, and never says behind (AC
     expect(html).toContain("left:100.000%");
   });
 });
+
+describe("a soft-deleted book is on no slot (Hard rule 4)", () => {
+  it("in hand, finished, planned, On deck or read this year: once deleted, nothing counts it", async () => {
+    await books({ id: "hand" }, { id: "fin", author: "a", pages: 100 }, { id: "q", words: 50_000 }, { id: "deck" });
+    await status("hand", "reading", "2026-11-01");
+    await read("fin", "2026-10-01");
+    await status("q", "to_read");
+    await status("deck", "to_read");
+    await plan("q", "2026-Q4", 1);
+    await plan("deck", "on_deck", null);
+    await sql`UPDATE books SET deleted_at = now()`;
+    expect(await q.booksInHand(USER)).toEqual([]);
+    expect(await q.lastFinish(USER)).toBeNull();
+    expect(await q.quarterShelf(USER, "2026-Q4")).toEqual([]);
+    expect(await q.quarterBlocks(USER, "2026-Q4")).toEqual([]);
+    expect(await q.onDeck(USER, 3)).toEqual({ rows: [], total: 0 });
+    expect(await q.yearSoFar(USER, 2026)).toEqual({ books: 0, listened: 0, pages: 0, newAuthors: 0 });
+  });
+});

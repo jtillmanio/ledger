@@ -1490,7 +1490,8 @@ section[data-plan="year"] h2.group-head{color:var(--muted)}
 .offer-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;padding-bottom:14px}
 .offer-title{font:600 var(--fs-row-title) var(--sans);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .offer-sub{font:var(--fs-body-sm) var(--sans);color:var(--muted)}
-.pick-else{flex-basis:100%;display:flex;align-items:center;min-height:44px;margin:0 -20px;padding:0 20px;
+/* A whole row of its own below the tablet: its basis spans the -20px margins too, so it always wraps. */
+.pick-else{flex:0 0 calc(100% + 40px);display:flex;align-items:center;min-height:44px;margin:0 -20px;padding:0 20px;
   border-top:1px solid var(--line);color:var(--brand);font-size:.875rem;font-weight:500;text-decoration:none}
 @media (hover:hover) and (pointer:fine){ .pick-else:hover{text-decoration:underline} }
 .pick-else:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring)}
@@ -1553,7 +1554,7 @@ section[data-plan="year"] h2.group-head{color:var(--muted)}
   .between-offer{flex-wrap:nowrap;padding:14px 20px}
   .between-offer>.cv{margin-bottom:0}
   .offer-body{padding-bottom:0}
-  .pick-else{flex-basis:auto;margin:0;padding:0 4px;border-top:0;white-space:nowrap}
+  .pick-else{flex:0 0 auto;margin:0;padding:0 4px;border-top:0;white-space:nowrap}
   .qcard{padding:20px}
 }
 @media (min-width:768px) and (max-width:1023px){

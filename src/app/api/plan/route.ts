@@ -6,8 +6,9 @@ export const runtime = "nodejs";
 
 /**
  * The reading plan's quarters (task 1.9, data model 2.9). A quarter is an
- * ordered list; this moves one book inside it and nowhere else (moving it to
- * another quarter is 2.3's sheet).
+ * ordered list. PATCH moves one book inside it; POST (task 2.2) moves one
+ * between periods, the dashboard's On deck *Plan* and its Undo. 2.3's sheet
+ * is the general mover.
  *
  * - PATCH `{ bookId, period, to }`: *Move to top*, *Move up*, *Move down* and a
  *   drop. `period` is a quarter, `2027-Q1`; `to` is a place in it, 1 or more

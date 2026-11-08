@@ -275,7 +275,8 @@ test.describe("reading", () => {
     await expect(year.locator("dd")).toHaveText(["2", "500", "2"]);
   });
 
-  test("past capacity the figure is --blocked amber with what it is over, nothing is --danger, and nothing says behind (AC-3)", ONCE, async ({ page }, info) => {
+  // Every project: the badge is the strip's widest content, so it is checked at every width and theme.
+  test("past capacity the figure is --blocked amber with what it is over, nothing is --danger, and nothing says behind (AC-3)", async ({ page }, info) => {
     // 2M more words this quarter: far past any capacity Settings allows a quarter.
     await withSql(async (sql) => {
       await sql`INSERT INTO books (id, title, word_count, word_count_source) VALUES ('e2e-dash-big', 'E2E Dash Big', 2000000, 'stated')`;
@@ -288,6 +289,8 @@ test.describe("reading", () => {
     expect((await computedStyle(fig, ["color"])).color).toBe(await tokenColour(page, "--blocked"));
     await expect(fig.locator(".bdg.bl")).toHaveText(/^[\d.]+[kM] over$/);
     await expectNoDanger(page);
+    await expectNoHorizontalScroll(page);
+    expect(await contrastFailures(page)).toEqual([]);
     await screenshot(page, info, "books-over-capacity");
   });
 
@@ -385,6 +388,12 @@ test.describe("never finished, nothing planned", () => {
     await expect(page.locator(".between-title")).toHaveText("Between books.");
     await expect(page.locator(".between-cover, .between-head .bdg")).toHaveCount(0);
     await expect(page.locator(".between-line")).toHaveText("Nothing’s on the go, and that’s fine.");
+    // With no offer and no cover, the line still keeps the row; below 768 Pick something else is a row of its own.
+    const hero = (await page.locator(".now-hero").boundingBox())!;
+    const said = (await page.locator(".between-offer .offer-body").boundingBox())!;
+    const pick = (await page.locator(".pick-else").boundingBox())!;
+    expect(said.width, "the offer line is not squeezed").toBeGreaterThan(hero.width / 2);
+    if (page.viewportSize()!.width < 768) expect(pick.y).toBeGreaterThanOrEqual(said.y + said.height - 1);
     const next = page.locator('[data-slot="next"]');
     await expect(next.locator(".slate")).toBeVisible();
     await expect(next.locator(".slate .btn")).toHaveCount(1);
@@ -428,4 +437,32 @@ test.describe("the side rail and Plan's reveal (FP-D15)", () => {
       await expect(plan).toBeVisible();
     }
   });
+});
+
+// The UX floor's reduced-transparency pass (docs/04-design.md § 10), once, at the phone and at 1280:
+// the glass (the phone's bar, the desktop's header band) falls back to --surface in both states.
+test.describe("reduced transparency", () => {
+  for (const [state, seedState] of [["reading", { reading: true }], ["between", { between: true }]] as const) {
+    test(`${state}: the glass is solid --surface, with a screenshot at 390 and 1280 (AC-1, AC-5)`, ONCE, async ({ page, context }, info) => {
+      await seed(seedState);
+      const cdp = await context.newCDPSession(page);
+      await cdp.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-transparency", value: "reduce" }] });
+      for (const [width, glass] of [[390, ".bar"], [1280, ".pagehead"]] as const) {
+        await page.setViewportSize({ width, height: 900 });
+        await open(page);
+        const surface = await page.evaluate(() => {
+          const probe = document.createElement("i");
+          probe.style.backgroundColor = "var(--surface)";
+          document.body.append(probe);
+          const c = getComputedStyle(probe).backgroundColor;
+          probe.remove();
+          return c;
+        });
+        await expect.poll(() => page.locator(glass).first().evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(surface);
+        expect(await page.locator(glass).first().evaluate((el) => getComputedStyle(el).backdropFilter)).toBe("none");
+        await expectNoHorizontalScroll(page);
+        await screenshot(page, info, `books-${state}-reduced-transparency-${width}`);
+      }
+    });
+  }
 });
