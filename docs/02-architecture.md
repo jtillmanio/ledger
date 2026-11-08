@@ -280,7 +280,7 @@ tables.
     | `/books/status` | 24,000 | 175,000 | 35 | 100 |
     | `/comics/bendis-disassembled` | 26,800 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 26,000 | 171,000 | 33 | 100 |
-    | `/books` | 70,000 | 175,000 | 64 | 100 |
+    | `/books` | 19,000 | 175,000 | 36 | 100 |
     | `/books/list` | 70,000 | 170,000 | 64 | 100 |
     | `/inbox` | 16,000 | 173,000 | 31 | 100 |
     | `/settings` | 16,000 | 173,000 | 32 | 100 |
@@ -357,10 +357,12 @@ tables.
     Task 2.2 made `/books` the books dashboard, so the route list measures it as
     `books`, tapped from `/comics` on the media switch, and the Library as
     `library`, which keeps `/books/list`'s numbers and is tapped from the
-    dashboard (its nav item is the books medium's). `/books`' budget starts at
-    the Library's, with 5 KB more JS for its client parts (the shelf's pager,
-    On deck's **Plan**, the finish and start verbs), and is set to its first
-    preview's median plus about 5% once that run is in. Its nine queries are
+    dashboard (its nav item is the books medium's). `/books` measured 17.7 KB
+    of document + RSC, 166.0 KB of JS and 34 requests on PR #206's preview
+    (median of three; accessibility 100, CLS 0.002), so its budget is that plus
+    about 5%: 19,000 bytes and 36 requests, with JS at `/books/status`' 175,000
+    (its client parts: the shelf's pager, On deck's **Plan**, the finish and
+    start verbs). Its nine queries are
     one wave: `planCapacity` takes the page's settings read, so a year with
     nothing planned costs no second round trip.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
