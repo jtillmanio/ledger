@@ -530,6 +530,12 @@ it has them; what disagrees (the workbook's value, Open Library's series, a
 second read) is reported, never silently dropped. Only a near spelling waits on
 a decision. Tags, comments and the ISBN load nothing until their columns are
 approved (D-88). After cutover, 4.4 carries the same rules into the app.
+*Amended by D-133 (2026-11-08):* the sync is two-way. One command on the
+owner's PC brings Calibre's books and metadata in, where Calibre still wins,
+and writes the Ledger's read flag, latest finish date, status and owned
+formats back into Calibre with `calibredb`; from the books cutover on the
+Ledger wins for reads. *Amended by D-130:* the page count is Hardcover's
+first, Calibre's `#pages` only where Hardcover gives none (1.14c).
 
 **2.20 Watch metadata: credits are rows, counts are derived, availability is
 dated.** *Oct 2026, backlog intake; D-74; tasks 8.1, 8.9, 8.10; amends the
@@ -642,8 +648,8 @@ the same PR (hard rule 7).
 | 1.23 | A `listening` value of `book_status.status`; `read_events.format` (`text` \| `audio`) | Built (migration 0021), 2.22; D-85 |
 | 2.2c | `shelf_follows(shelf_id, state)`, `shelf_id` the primary key (→ `shelves.id`, cascade), `state IN ('tracking', 'reading')`, no `user_id`, exported with the catalog tables beside `shelf_books`; the `shelf_progress` view (books listed and read per books shelf, live books only, with `follow_state`) | Built (migration 0022, TASK-048); approved by the owner 2026-11-04; 2.5e, D-43, D-91, D-108 |
 | 2.2h | `subseries_follows(subseries_id, state)`, `subseries_id` the primary key (→ `book_subseries.id`, cascade), `state IN ('tracking', 'reading', 'off')`, no `user_id`, exported with the catalog tables; an `off` value of `state` on `series_follows` and `universe_follows` (*Not following* that sticks: no finish follows it again), which every progress view reads as NULL; author and shelf follows take no `off`; the `subseries_progress` view. No down file: the migration drops and retypes nothing | Built (migration 0023, TASK-055); approved by the owner 2026-11-07; D-91, D-117 |
-| 5.17 | `physical_copies(book_id)`, primary key `book_id` (→ `books.id`), no `user_id`; *Ebook* stays derived from `books.calibre_id` | Asked at 5.17's plan gate; D-121 |
-| 4.4 | Where a decided near-spelling row is remembered between syncs (D-87 leaves no other decision) | Asked at 4.4's plan gate |
+| 5.17 | `owned_copies(book_id, format)`, primary key both (`book_id` → `books.id`), `format IN ('physical', 'audio')`, no `user_id`, replacing `physical_copies(book_id)`; *Ebook* stays derived from `books.calibre_id` | Asked at 5.17's plan gate; D-121, D-132 |
+| 4.4 | Where a decided near-spelling row is remembered between syncs (D-87 leaves no other decision), and where each sync run's log is kept (D-133) | Asked at 4.4's plan gate |
 | 2.1b | `sessions` | §4.3 |
 | 3.5 | `issues.store_date` (the publication date) | Proposed in design §11, *Spine v2* |
 | 3.6b, 3.6c, 4.3 | A per-user, per-run preference for *Show release dates* and *Hide read*; where *Show covers* is kept | Never a column on `runs` (2.1) |

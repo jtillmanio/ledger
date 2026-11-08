@@ -38,7 +38,7 @@ and games, start from nothing.
 
 | Goal | Metric | Target |
 |---|---|---|
-| Replace both Sheets | Reading tracked in the app rather than the Sheets | All of it from cutover (roadmap 1.26, START-HERE Step 14), after a month running both |
+| Replace both Sheets | Reading tracked in the app rather than the Sheets | Books from the books cutover (roadmap 1.26, START-HERE Step 14), comics from the comics cutover later (1.28, D-128), each after a month running both |
 | Marking is fast | Taps to mark the next issue read | One, from the dashboard or the run, at 360px |
 | Adding beats the sheet | Steps to add a run's issues | One paste or one search, one review, one insert, however many issues |
 | Snappy on a phone | A tap paints a skeleton; a warm screen change shows the page (throttled phone profile) | Within 200 ms; within 1 s ([architecture § Operational posture](02-architecture.md#7-non-functional-requirements)) |
@@ -61,14 +61,17 @@ completion date or progress bar against the whole catalog. Each is in the
 | Platforms | Android phone first (360–412px); a touch tablet layout at 768–1023px (D-33); desktop from 1024px |
 | Users and data volume | One user, single-user schema (D-91; the old `user_id` columns go in 6.18). About 10,138 comic issues in 10,761 placements across 258 runs, 438 prerequisite edges, 1,478 books (2026-09-23 extract) |
 | Offline | None until 6.4 (PWA, queued writes); no cross-device staleness handling (D-9) |
-| Import | `Comics.xlsx` and `Books.xlsx` through `etl/extract.py` and sidecar CSVs until cutover; the owner's Calibre library, read-only (D-73) |
+| Import | `Books.xlsx` through `etl/extract.py` and sidecar CSVs until the books cutover, `Comics.xlsx` until the comics cutover (D-128); the owner's Calibre library, read by extract until the books cutover and synced both ways after (D-73, D-133) |
 | Metadata | Metron, Open Library, Hardcover, TMDB, MusicBrainz, IGDB, on free tiers, and Spotify for the artists you follow (D-103); called from add flows and backfill only, never to render a page |
 | Stack | Next.js 16, Postgres on Neon, Drizzle, plain CSS ([architecture § Stack](02-architecture.md#2-stack)) |
 | Cadence | One task per Claude Code session, one in flight at a time (`workflow.wipLimit`) |
 
 ### Success at MVP
 
-The MVP is **cutover**: the day the Sheets stop being the record.
+The MVP is **the books cutover**: the day `Books.xlsx` stops being the
+record (1.26). The comics cut over later, after the books work of Next
+(1.28, D-128, D-129); until then `Comics.xlsx` stays the comics record and
+1.29 keeps production's comics in step with it.
 
 - Milestones M1–M9 are merged and accepted: all of Phase 1, plus 2.11a (the
   prerequisite graph has no unreviewed cycles) and 1.11 (failed sign-ins slow
@@ -76,7 +79,10 @@ The MVP is **cutover**: the day the Sheets stop being the record.
 - Everything the owner still does in the Sheets has a home in the app: 1.25's
   parity audit maps each tab's uses to a ticked entry or a *won't carry*, and
   any entry it names from a later phase is built first (D-95).
-- The final load from the workbooks has run (START-HERE Step 14, roadmap
+- Calibre syncs both ways, by hand or weekly (4.4, D-133), since extract
+  no longer loads books after the switch; page counts come from Hardcover
+  (1.14c), and what you own on paper or as an audiobook is recorded (5.17).
+- The final full load from the workbooks has run (START-HERE Step 14, roadmap
   1.26), and
   `LEDGER_LIVE=true` makes `load` and `rebuild` refuse against production
   (D-18).
@@ -99,12 +105,12 @@ The feel pass left six more, each written into its task as *stop and ask*
 
 ## Feature index
 
-Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), **Next** the first work after it (M10–M15), **Later** the rest (M16–M26). A feature whose work spans two gets the earlier, with the rest noted. Screens are mockup `data-id`s; `—` means the screen is not drawn yet, or the feature has none.
+Priority comes from the milestone that builds it: **MVP** is the books cutover (M1–M9, D-128), **Next** the first work after it (M10–M15), **Later** the rest (M16–M26). A feature whose work spans two gets the earlier, with the rest noted. Screens are mockup `data-id`s; `—` means the screen is not drawn yet, or the feature has none.
 
 | ID | Feature | User story | Priority | Roadmap | Screens |
 |---|---|---|---|---|---|
 | F-01 | **Private sign-in** (Platform) | As the owner, I want the ledger behind one passcode, with failed attempts slowed, so it is private and reachable from any device | MVP | 1.11 | — |
-| F-02 | **Both workbooks migrated, rebuildable until cutover** (Platform) | As the owner, I want the comics and books workbooks loaded into one schema and rebuildable from the workbook and its sidecars until I cut over | MVP | 0.3, 0.4, 0.5, 0.6, 0.7, 1.25, 1.26 | — |
+| F-02 | **Both workbooks migrated, rebuildable until cutover** (Platform) | As the owner, I want the comics and books workbooks loaded into one schema and rebuildable from the workbook and its sidecars until I cut over, books first, then comics | MVP (then Next) | 0.3, 0.4, 0.5, 0.6, 0.7, 1.25, 1.29, 1.26, 1.28 | — |
 | F-03 | **Tested, released by hand, backed up** (Platform) | As the owner, I want every change tested on its branch, released by hand, and the data backed up nightly, so nothing I typed is ever lost | MVP | 0.1, 0.2, 0.11, 0.12 | — |
 | F-04 | **Fast on a phone** (Platform) | As the owner on an Android phone, I want every tap to paint at once and a warm screen change inside a second | MVP | 0.9, 0.10, 1.8d | `states` |
 | F-05 | **One shell for three media** (Platform) | As the owner, I want one media bar, rail or sidebar that takes me to comics, books and watch, and `/` to open where I was | MVP | 1.8a, 1.8c, 1.8, 1.8e, 1.8b | `home`, `bdash`, `status`, `watchlist` |
@@ -119,9 +125,9 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | F-14 | **A prerequisite graph without cycles** (Comics) | As the curator, I want the prerequisite graph checked for cycles and edited safely, so readiness means something | MVP (then Next) | 2.11a, 3.3 | `path` |
 | F-15 | **Add books by search, paste or hand** (Books) | As a reader, I want to add a book from Open Library, a pasted list or by hand, straight to where it belongs, with results as I type and each one's source shown | MVP | 1.4, 1.4c, 1.4e, 1.22 | `add`, `blist` |
 | F-16 | **Quick-capture inbox** (Every medium) | As the owner, I want to jot a title in two seconds with nothing required and resolve it later | MVP | 1.4b | `capture`, `dashextras` |
-| F-17 | **A dated reading log** (Books) | As a reader, I want when I started and finished each read kept, rereads included, in my time zone | MVP | 1.5, 1.16, 1.17 | `blist` |
+| F-17 | **A dated reading log** (Books) | As a reader, I want when I started and finished each read kept, rereads included, in my time zone, asked as it happens and editable on any read | MVP | 1.5, 1.16, 1.17, 1.17b | `blist` |
 | F-18 | **To-read levels** (Books) | As a reader, I want each to-read book at a quarter, a year, On deck or Someday, with my old wishlist promoted into it, and the books I have but haven't listed kept at Unlisted, out of the way | MVP | 1.7, 1.4d, 1.21 | `blist`, `moveplan` |
-| F-19 | **A clean, enriched book catalog** (Books) | As a reader, I want one row per book, with Open Library details and Calibre's real word counts | MVP | 1.13, 1.14, 1.18, 1.18b, 1.18c | `blist`, `bookdetail` |
+| F-19 | **A clean, enriched book catalog** (Books) | As a reader, I want one row per book, with Hardcover details and page counts, and Calibre's real word counts | MVP | 1.13, 1.14, 1.18, 1.18b, 1.18c, 1.14c | `blist`, `bookdetail` |
 | F-20 | **Follow series, authors and universes** (Books) | As a reader, I want to follow the series, authors and universes I am tracking and see my progress through each | MVP (then Later) | 1.15, 5.11, 5.12 | `shelves` |
 | F-21 | **The pace engine** (Books) | As a reader, I want my real reading rate to say whether a year's plan fits | Next (then Later) | 2.0, 2.0b, 2.1, 2.1b, 6.12 | `settings`, `session`, `dashextras` |
 | F-22 | **Books dashboard and the plan rail** (Books) | As a reader, I want the book in hand, this quarter's shelf and the year against capacity on one screen | Next | 2.2, 2.2b | `bdash`, `planmonth` |
@@ -135,7 +141,7 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | F-30 | **Eras and spine v2** (Comics) | As a reader, I want a long run sectioned into eras, with ordinals, release dates and read rows hidden | Next | 3.6, 3.6b, 3.6c | `spine`, `krakoa` |
 | F-31 | **Ratings, notes and DNF** (Every medium) | As a reader, I want to rate and note what I finish, rank my top books, and stop a book without it reading as failure | Next (then Later) | 3.4, 5.4, 5.5 | `top` |
 | F-32 | **Adding at scale** (Comics) | As the curator, I want to add from a whole series' issue list, arrange as I add, and preview an issue before adding it | Next | 3.10, 3.11, 3.12 | `addsearch`, `bulk` |
-| F-33 | **Metadata backfill and covers** (Every medium) | As the owner, I want Metron, Open Library and Hardcover to fill in what sits below each label, with real covers, and Calibre synced after cutover | Later | 4.1, 4.2, 4.3, 4.4 | `states` |
+| F-33 | **Metadata backfill and covers** (Every medium) | As the owner, I want Metron, Open Library and Hardcover to fill in what sits below each label, with real covers, and Calibre synced both ways (4.4, MVP since D-133) | Later | 4.1, 4.2, 4.3, 4.4 | `states` |
 | F-34 | **Shelves with context** (Every medium) | As a reader, I want my own ordered lists, with a note on why each item is on them | Later | 5.1, 8.6 | `shelves` |
 | F-35 | **Tracks page** (Comics) | As a reader, I want every track drawn as a row of its blocks | Later | 5.2 | `tracks` |
 | F-36 | **Editions: collected in** (Comics) | As a collector, I want to know which trade collects an issue and which I own and have read | Later | 5.6, 5.10 | — |
@@ -175,7 +181,7 @@ Priority comes from the milestone that builds it: **MVP** is cutover (M1–M9), 
 | F-70 | **The Library, sorted** (Books) | As a reader, I want the library to be a page of its own, not the books home, and to sort it as well as filter it | Next | 2.2e | `blist` |
 | F-71 | **Every screen from a phone** (every medium) | As the owner on a phone, I want to reach every screen by tapping, never by typing a URL | Next | 2.2i | — |
 | F-72 | **Where the book sits** (Books) | As a reader, I want to see how far along the book in hand's universe, series and subseries I am | Next (then Later) | 2.2g, 6.21 | `bdash` |
-| F-73 | **Physical copies** (Books) | As a book owner, I want to mark what I own on paper, tell it from my ebook library, and see just those books | Later | 5.17 | `blist` |
+| F-73 | **What I own** (Books) | As a book owner, I want to mark what I own on paper and as an audiobook, tell both from my ebook library, and see just those books | MVP (D-132) | 5.17 | `blist` |
 | F-74 | **On deck by genre** (Books) | As a reader, I want to see what's next in a genre, without ranking On deck by hand | Later | 4.5b | `status` |
 
 ### Observable outcomes for MVP features
@@ -247,9 +253,14 @@ B, C, W and M numbers are cited across the docs and stay.
 | B31 | Every screen reachable by tapping, Status included | planned | 2026-11-05. A tab row on the phone; manual checks walk the UI. roadmap 2.2i, D-120 |
 | B32 | Finish a book from the status tab | planned | 2026-11-05. roadmap 2.2f |
 | B33 | Type a setting's number, and hold to step faster | planned | 2026-11-05. roadmap 2.0b, D-123 |
-| B34 | Physically owned books, told apart from the ebook library | planned | 2026-11-05. A toggle, a line in the details, a Library filter. roadmap 5.17, D-121 |
+| B34 | Physically owned books, told apart from the ebook library | planned | 2026-11-05. A toggle, a line in the details, a Library filter. roadmap 5.17, D-121; audiobooks too since B41 |
 | B35 | On deck by genre | planned | 2026-11-05. Filtered and grouped, not ranked (D-37 stands). roadmap 4.5b, D-124 |
 | B36 | Top books shows the year's whole list, reorderable, and replaces the Library's year chips | planned | 2026-11-05. roadmap 3.4b, D-122 |
+| B38 | Cut the books over first, the comics later | planned | 2026-11-08. Books cutover 1.26, comics cutover 1.28, a comics-only load between them (1.29); the books work of Next before comics. D-128, D-129 |
+| B39 | Page counts from Hardcover, words still from Calibre | planned | 2026-11-08. Calibre's pages are ebook estimates, far above print. roadmap 1.14c, D-130 |
+| B40 | Edit a read's start and finish any time, and be asked when setting Reading or Read | planned | 2026-11-08. Every read, rereads included; the Library, Now and the status screens. roadmap 1.17b, D-131 |
+| B41 | Own a book on paper, as an audiobook, both or neither, apart from the Calibre library | planned | 2026-11-08. roadmap 5.17, D-132 |
+| B42 | Sync with Calibre automatically, both ways | planned | 2026-11-08. One command, run by hand or weekly: Calibre's books and metadata in, the Ledger's reads, status and owned formats out. roadmap 4.4, D-133 |
 | B37 | Paste a list with more columns | later | 2026-11-05. Probably not needed. roadmap *Later* § L-11, D-125 |
 
 ### Comics
@@ -958,6 +969,16 @@ D-121), and On deck can be filtered and grouped by genre (4.5b, D-124). Top book
 becomes the year's whole list and takes over from the Library's year chips (3.4b,
 D-122). Permanent shelves were dropped once 5.14 covered what they were for, and
 more columns in *Paste a list* went to *Later* (L-11, D-125).
+
+**The 2026-11-08 intake** (B38–B42) split the cutover: the books go first,
+with the books work of Next after them, and the comics follow, with a
+comics-only load keeping production's comics in step with `Comics.xlsx`
+meanwhile (1.26, 1.28, 1.29, D-128, D-129). Page counts come from Hardcover
+and words from Calibre (1.14c, D-130); dates are asked when a book enters
+Reading or Read, and any read can be re-dated (1.17b, D-131); what you own on
+paper and as an audiobook is recorded (5.17, D-132); and Calibre syncs both
+ways from one command, run by hand or weekly (4.4, D-133). All five land
+before the books cutover.
 
 **Parked under *Later*, because no API exists.** Marvel Unlimited (L-1) and
 League of Comic Geeks ratings (L-2) have no public APIs. Each has an open

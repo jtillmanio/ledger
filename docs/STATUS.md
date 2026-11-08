@@ -1,6 +1,6 @@
 # Status
 
-**Last regenerated:** 2026-11-06
+**Last regenerated:** 2026-11-08
 
 This is a rollup of `docs/05-roadmap.md`, not a second source of truth. Every
 count here comes from counting ☑ vs ☐ entries in that file, and the milestones
@@ -9,28 +9,39 @@ wins (D-1): recount and fix this page, don't argue from it.
 
 ## Where we are
 
-**59 of 170 roadmap entries done (35%).** Phases 0 and 1 are done except
-1.26, the cutover itself. M1–M8 are done, and so is M9 apart from 1.26.
-Since 2026-10-26 these shipped: Calibre (1.18, 1.18b, 1.18c), Hardcover
-details by ISBN (1.14b), holding unmatched books (1.20), *Unlisted* (1.21),
-the Sheets parity audit (1.25), title and author cells in *Paste a list*
-(1.4e), Hardcover search in Add books (1.4f), comics Add remembering the run
-(1.19), search as you type (1.22), start dates (1.17), audiobooks (1.23), the
-wishlist settled in extract (1.27, D-111, which removed 1.24) and the skipped
-preview's redeploy (0.12). `LEDGER_LIVE` is `false`, so the database is still
-disposable: `npm run rebuild` can reload it.
+**64 of 174 roadmap entries done (37%).** Phase 0 is done. Phase 1 is done
+except five entries: the two cutovers and the three entries the 2026-11-08
+intake added to it. M1–M8 are done, and so is M9 apart from those. `LEDGER_LIVE`
+is `false`, so the database is still disposable: `npm run rebuild` can
+reload it.
 
-Cutover (1.26) now waits only for the entries 1.25 pulled ahead
-(`docs/cutover-parity.md` § What cutover waits for): **2.0, 2.1, 2.2, 2.2b and
-2.3**, the word-count budget; 3.1–3.3, catalog and prerequisite edits; 3.4,
-top books; 5.7, books coming out; and 5.6 → 5.10, recording a trade bought.
-2.2 needs 2.2e (the Library keeps a nav item once `/books` is the dashboard,
-D-110), so 2.2e lands before cutover too.
+**The cutover is split, books first (D-128, D-129).** 1.26 is now the
+**books** cutover: the last full load, `LEDGER_LIVE=true`, and `Books.xlsx`
+archived. `Comics.xlsx` stays the comics record after it, and 1.29's
+comics-only load keeps production's comics in step with it until 1.28, the
+**comics** cutover. After 1.26 come the books entries of Next; comics work
+resumes after them.
+
+The books cutover (1.26) waits for (`docs/cutover-parity.md` § What each
+cutover waits for, and the owner's 2026-11-08 additions):
+
+- **2.2b and 2.3**, the rest of the year and quarter word-count budget (2.0,
+  2.1 and 2.2 are built);
+- **3.4**, top books; **5.7**, books coming out;
+- **1.14c**, page counts from Hardcover, words from Calibre (D-130);
+- **1.17b**, dates asked at Reading and Read, and any read re-datable (D-131);
+- **5.17**, what you own: on paper, as an audiobook, both or neither (D-132);
+- **4.4**, the two-way Calibre sync, one command run by hand or weekly
+  (D-133): from 1.26 extract no longer loads books;
+- **1.29**, the comics-only load.
+
+The comics cutover (1.28) waits for 3.1 → 3.2 → 3.3 and 5.6 → 5.10.
 
 ### By milestone
 
-M1–M9 are the MVP, cutover from the Sheets; they are START-HERE's sittings
-under the same numbers (M7 is sitting 7).
+M1–M9 are the MVP, the books cutover; they are START-HERE's sittings under
+the same numbers (M7 is sitting 7). The milestone numbers are no longer the
+build order: the tasklist's *Build order* is (D-129).
 
 | Milestone | Done / total | Status |
 |---|---|---|
@@ -42,21 +53,21 @@ under the same numbers (M7 is sitting 7).
 | M6 The real navigation | 8 / 8 | Done |
 | M7 Phase 1 complete | 5 / 5 | Done |
 | M8 Books load clean | 9 / 9 | Done |
-| M9 Captured from cutover on | 9 / 10 | Done but 1.26, which waits for the entries 1.25 pulled ahead |
-| M10 Capacity: is the year overcommitted? | 4 / 13 | In progress: 2.0, 2.1, 2.2e and 2.2c built; TASK-049–051 Ready (2.2, 2.2d, 2.2b); 2.1b and the 2026-11-05 entries have no task file |
-| M11–M15 Next | 1 / 27 | Not started† |
-| M16–M26 Later | 0 / 75 | Not started |
+| M9 Captured from cutover on | 9 / 13 | 1.14c, 1.17b and 1.29 have no task file; 1.26 waits for them and the entries above |
+| M10 Capacity: is the year overcommitted? | 9 / 13 | 2.2b (TASK-051) gates 1.26; 2.2d (TASK-050) and 2.2g (TASK-056) are Ready; 2.1b has no task file |
+| M11–M15 Next | 1 / 28 | Not started†; 1.28, the comics cutover, is in M13 |
+| M16–M26 Later | 0 / 75 | Not started; 4.4 (M16), 5.7 and 5.17 (M17) are pulled ahead of 1.26 |
 
 ### By phase
 
 | Phase | Done / total | Status |
 |---|---|---|
 | 0 — Foundation | 13 / 13 | Done |
-| 1 — Daily use | 40 / 41 | Done but 1.26, cutover |
-| 2 — The pace engine | 5 / 24 | M10 in progress; 2.11a built in M7 |
-| 3 — Editing | 0 / 15 | Not started; 3.1–3.4 before cutover |
-| 4 — Enrichment | 0 / 6 | Not started; 4.4 right after cutover |
-| 5 — Remaining surfaces | 0 / 16 | Not started; 5.6, 5.7 and 5.10 before cutover |
+| 1 — Daily use | 40 / 45 | Open: 1.14c, 1.17b, 1.29, then 1.26 (books cutover); 1.28 (comics cutover) later |
+| 2 — The pace engine | 10 / 25 | M10 in progress; 2.11a built in M7 |
+| 3 — Editing | 0 / 15 | Not started; 3.4 before 1.26, 3.1–3.3 before 1.28 |
+| 4 — Enrichment | 0 / 6 | Not started; 4.4 before 1.26 |
+| 5 — Remaining surfaces | 0 / 16 | Not started; 5.7 and 5.17 before 1.26, 5.6 and 5.10 before 1.28 |
 | 6 — Polish | 1 / 21 | Not started† |
 | 7 — AI-assisted curation | 0 / 8 | Not started |
 | 8 — Watchlist (film/TV) | 0 / 10 | Not started |
@@ -72,45 +83,33 @@ is not counted.
 
 ## What's next
 
-**M10, in its order** (`docs/06-tasklist.md`): 2.0 ✅ → 2.1 ✅ → (2.1b) → 2.2e ✅ →
-2.2c ✅ → 2.2i → 2.0b → 2.2f → 2.2h → 2.2 → 2.2d → 2.2g → 2.2b. TASK-049 to TASK-051
-are Ready; each plan still answers its questions below. TASK-052 to TASK-056
-(2.2i, 2.0b, 2.2f, 2.2h, 2.2g) are Ready too. 2.2c, 2.2d and 2.2e had proposed Checks,
-which became their **Check:** lines on 2026-11-04, and 2.0b and 2.2f–2.2i's did
-on 2026-11-06. 2.1b is not pulled ahead and has no task file
-yet. 2.2c and 2.2d aren't cutover gates either, so 2.0 → 2.1 → 2.2e → 2.2 →
-2.2b → 2.3 is the shortest path to 1.26.
+**To the books cutover**, in the tasklist's proposed order: 2.2b (TASK-051,
+Ready) → 2.3 (M11) → 3.4 (M14) → 5.7 (M17) → 1.14c → 1.17b → 5.17 → 4.4 → 1.29
+→ 1.26. 2.2d and 2.2g (TASK-050, TASK-056) are Ready and may go in between;
+they don't gate 1.26. 1.14c, 1.17b, 1.29, 4.4 and 5.17 have proposed
+**Check:** lines (the owner agrees them by merging the 2026-11-08 plans PR)
+and no task file yet: `/new-task` converts them.
 
-Questions the task files leave for their plan gates:
+**After 1.26, books first (D-129):** 2.1b, 2.2d, 2.2g (M10), 2.7 → 2.8 → 2.10
+→ 2.10b (M11), 3.5 → 3.4b (M14). **Then comics:** M12, M13 with 5.6 → 5.10
+pulled ahead and 1.28 at its end, then 3.6 → 3.6b → 3.6c (M14) and M15.
 
-- **2.0** (TASK-045): its Check asks that 2.1's capacity view reflect an
-  edit, but 2.1 is built after it. Either 2.1 proves that half, or the two
-  are built together. Also open: whether *Words per page*, *Theme* and
-  *Show covers* ship now.
-- **2.1** (TASK-046): how an implausible page count is treated; whether a
-  book already read still counts against its period.
-- **2.2** (TASK-049): where the capacity decisions surface (an amber card,
-  the strip's badge, or `/books/plan` only; the entry says stop and ask
-  before building), and what Now shows for *p. 212 of 468* and its meter,
-  since nothing stores a reading position until 2.1b's sessions.
+Questions the task files and entries leave for their plan gates:
+
 - **2.2b** (TASK-051): what tapping a block does before 2.3's picker sheet
   exists.
-- **2.2c** (TASK-048): the `shelf_follows` table (a new table).
-- **2.2e** (TASK-047): the Library's route name, and *Recently added*
-  (`books.added_at`, which 2.10b also proposes).
-- **2.0b** (TASK-053): what a typed value may be (a number off the step, a
-  fraction).
-- **2.2h** (TASK-055): raising a `tracking` follow at a finish, *Not following*
-  as a stored `off`, the `subseries_follows` table, what *To read* → *Read*
-  follows, and whether a DNF counts as a book left.
-- **2.2i** (TASK-052): the last medium's hand-off, which items prefetch, and how
-  the browser test reaches *every books item enabled*.
-- 2.2c, 2.2d, 2.2e, 2.2f, 2.2g, 2.2h and 2.2i draw their mockup frames first,
-  before they are built.
+- **2.2d** (TASK-050) and **2.2g** (TASK-056): their mockup frames first.
+- **1.29**: every table that references a run, an issue or a placement and
+  what the comics-only load does to it; the second flag's name.
+- **4.4**: the sync's route and sign-in, where the run log and a decided near
+  spelling live (new tables: stop and ask), how an approximate finish is
+  written to `#date_read`, and what the write-back may touch before 1.26.
+- **5.17**: `owned_copies` (a new table).
+- **1.17b**: its mockup frames first; stop and ask if a date's writing
+  changes.
+- **2.1b**: `sessions` (a new table), when it is converted.
 
-After M10: 2.3 (M11), then 3.1 → 3.2 → 3.3 (M13), 3.4 (M14), 5.7 (M17) and
-5.6 → 5.10 (M18), then 1.26. START-HERE Step 14 sets `LEDGER_LIVE=true` at
-cutover, and from then on `load` and `rebuild` refuse production.
+START-HERE Step 14 is the books cutover, and Step 14b the comics cutover.
 
 **Intakes since 2026-10-26.** The 2026-11-01 intake added 3.4b, 5.14, 9.7,
 Phase 10 (games) and L-6–L-7 (D-101–D-103). The first 2026-11-02 intake added
@@ -121,7 +120,7 @@ day, the wishlist moved into extract (1.27, D-111). The 2026-11-05 intake
 added 2.0b, 2.2f–2.2i, 4.5b, 5.17, 6.21 and L-11 and amended 2.2c, 2.2d, 3.4b
 and 5.12 (D-117–D-125): a finish follows a book's series, subseries and
 universe, the phone gets a tab row, and Top books replaces the Library's year
-chips. None of these is a cutover gate except where 1.25 names one.
+chips. None of these is a cutover gate except where 1.25 names one. The 2026-11-08 intake split the cutover, books first, and added 1.14c, 1.17b, 1.28 and 1.29, widened 5.17 to audiobooks and made 4.4 a two-way sync (D-128–D-133); all but 1.28 gate the books cutover.
 
 **Every preview measures itself** (0.10). When Vercel reports a preview ready,
 `.github/workflows/lighthouse.yml` signs in, runs Lighthouse and 0.9's tap

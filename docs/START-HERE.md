@@ -1425,10 +1425,15 @@ migrates is a preview, on its own throwaway Neon branch (10f).
 
 **~1 hour for the switch, then a month of the app as the record (D-18)**
 
-This step is roadmap **1.26**, with its own box and **Check:** (D-95). It
-waits for 1.25, the Sheets parity audit: `docs/cutover-parity.md` lists every
-tab of both workbooks and what in the app replaces each use, and every open
-entry it names is built first.
+**Two cutovers since 2026-11-08 (D-128): the books first, the comics later.**
+This step is roadmap **1.26**, the **books** cutover, with its own box and
+**Check:** (D-95). It waits for 1.25, the Sheets parity audit:
+`docs/cutover-parity.md` lists every tab of both workbooks and what in the app
+replaces each use, and every open entry it names for `Books.xlsx` is built
+first, with the entries the owner pulled ahead (1.14c, 1.17b, 1.29, 4.4,
+5.17). `Comics.xlsx` stays the comics record after it, refreshed into
+production by 1.29's comics-only load, until **Step 14b** (roadmap 1.28)
+cuts the comics over.
 
 The order matters. The final load **truncates everything the app holds** —
 progress, book status, and through `CASCADE` the queue, shelves, eras and
@@ -1448,6 +1453,12 @@ frozen and kept only to compare numbers during the month.
       fresh workbook download, `npm run extract -- --fail-on-cycle` passes.
 - [ ] **No slug collisions** (D-15): `seed/unresolved.csv` has zero
       `labels share a slug` rows.
+- [ ] **The comics-only load works** (1.29): run once against development,
+      it replaced the comics and left every books table as it was.
+- [ ] **Calibre syncs both ways** (4.4, D-133): `npm run calibre:sync` ran by
+      hand against development with your real library, its log reads right,
+      and the weekly task is registered. From the switch on it is how
+      Calibre's changes reach the Ledger.
 - [ ] **The old wishlist is settled** (1.27, D-111; once 1.27 is built): the
       fresh `npm run extract` reports no undecided row in
       `etl/data/wishlist_review.csv`. Every To-Read line is a book, linked to
@@ -1488,11 +1499,12 @@ development can still be rebuilt. **Also set the repo variable `LEDGER_LIVE` to 
 (Settings → Secrets and variables → Actions → Variables). From then on Release
 migrates the live database instead of pointing you at a rebuild.
 
-4. Rename the sheet `Comics (archive, to 2026-XX)` and set it **read-only now**.
-   Edits to it no longer reach the app; prerequisite and catalog changes are
-   made in the app from here (3.1–3.3, built before this step if 1.25's
-   audit says you still make them in the sheet).
+4. Rename `Books.xlsx`'s sheet `Books (archive, to 2026-XX)` and set it
+   **read-only now**. Edits to it no longer reach the app. **Leave the comics
+   sheet as it is:** it stays the comics record until Step 14b, and 1.29's
+   comics-only load brings its changes into production whenever you run it.
 5. Put the app URL in a note at the top of the archived sheet.
+6. Point the weekly Calibre sync (4.4) at production, and run it once by hand.
 
 The old wishlist needs nothing here: extract settled it before the final load
 (1.27, D-111), so it arrived with everything else.
@@ -1510,7 +1522,38 @@ the nightly `pg_dump` gives a full Postgres dump. Neither is a spreadsheet, so
 budget an afternoon to convert — but nothing is trapped.
 
 **Done when:** a month has passed, the weekly comparisons agree, and you've gone
-two weeks without opening the sheet.
+two weeks without opening the books sheet.
+
+### Until Step 14b: comics from the sheet
+
+Keep marking comics in `Comics.xlsx`. To bring its changes into production,
+export it, run the comics-only extract and load (1.29; the exact commands are
+in `docs/COMMANDS.md` once 1.29 is built), against `.env.live`. It replaces
+production's comics, read marks included, and never touches a book. A mark
+made in the app's comics screens meanwhile is replaced by the next comics
+load, so make them in the sheet.
+
+## Step 14b — Comics: the last comics load, then run both for a month
+
+This step is roadmap **1.28**, the comics cutover (D-128). It waits for every
+open entry `docs/cutover-parity.md` names for `Comics.xlsx`: 3.1–3.3 (catalog
+and prerequisite edits) and 5.6 → 5.10 (recording a trade bought), built after
+the books work of Next (D-129).
+
+Before it, every comics box of Step 14's *Before the switch* is ticked again
+for comics: the prerequisite audit and the slug check on a fresh export, the
+backup green, and adding a run and marking reads faster than the sheet.
+
+1. A fresh `Comics.xlsx` export, the comics-only extract, and the last
+   comics-only load of production (1.29).
+2. **Immediately after,** set `LEDGER_COMICS_LIVE=true` in `.env.live` (and
+   wherever else 1.29 reads it): the comics-only load refuses from then on.
+3. Rename the sheet `Comics (archive, to 2026-XX)`, set it **read-only**, and
+   put the app URL at the top. Prerequisite and catalog changes are made in the
+   app from here (3.1–3.3).
+
+Then a month of running both, as Step 14's *The month after*, comparing runs
+read and a run's issue count against the frozen sheet.
 
 ---
 
