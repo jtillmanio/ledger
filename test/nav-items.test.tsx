@@ -47,15 +47,25 @@ describe("NAV_ITEMS (AC-2)", () => {
     }
   });
 
-  it("the books Dashboard item is not rendered (2.2 builds it)", () => {
+  it("the books Dashboard is on (task 2.2, AC-4): the Books switch and Dashboard lead to /books, current there", () => {
     const dash = NAV_ITEMS.find((i) => i.id === "books-dash")!;
-    expect(dash.enabled).toBe(false);
-    expect(visibleItems()).not.toContain(dash);
-    for (const [name, html] of Object.entries(bars())) {
-      // Books is reached through the media switch, straight to its list: /books redirects there.
-      expect(html, name).not.toContain('href="/books"');
-      expect(html, name).toContain('href="/books/list"');
+    expect(dash).toMatchObject({ href: "/books", enabled: true, dash: true });
+    expect(visibleItems()).toContain(dash);
+    expect(hrefOf("books")).toBe("/books");
+    expect(mediumItems(NAV_ITEMS, "books").map((i) => i.id)).toEqual(["books-dash", "books-status", "books-library", "books-add"]);
+    expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books")?.id).toBe("books-dash");
+
+    nav.pathname = "/books";
+    const current = (html: string) => [...html.matchAll(/<a [^>]*aria-current="page"[^>]*>(?:(?!<\/a>).)*<\/a>/g)].map((m) => m[0]);
+    for (const name of ["the tablet rail", "the sidebar"] as const) {
+      const html = bars()[name];
+      // The switch and the Dashboard item, both to /books and both current there; the Library isn't.
+      expect(current(html).filter((a) => a.includes('href="/books"')), name).toHaveLength(2);
+      expect(current(html).filter((a) => a.includes("Library")), name).toHaveLength(0);
     }
+    const phone = renderToString(<MediaBar />);
+    expect(current(phone).filter((a) => a.includes(">Books<") && a.includes('href="/books"'))).toHaveLength(1);
+    expect(current(phone).filter((a) => a.includes(">Dashboard<") && a.includes('href="/books"'))).toHaveLength(1);
   });
 
   it("turns on Status for comics and books (task 1.9); Watch's waits for 8.8", () => {
@@ -77,7 +87,7 @@ describe("NAV_ITEMS (AC-2)", () => {
     // `library` is Shelves' icon: hue and icon identify, and two items never share one.
     expect(library.icon).not.toBe(NAV_ITEMS.find((i) => i.id === "books-shelves")!.icon);
     const books = mediumItems(NAV_ITEMS, "books").map((i) => i.id);
-    expect(books).toEqual(["books-status", "books-library", "books-add"]);
+    expect(books).toEqual(["books-dash", "books-status", "books-library", "books-add"]);
     expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books/list")?.id).toBe("books-library");
     expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books/status")?.id).toBe("books-status");
 
@@ -94,8 +104,8 @@ describe("NAV_ITEMS (AC-2)", () => {
     const phone = renderToString(<MediaBar />);
     expect(current(phone).filter((a) => a.includes(">Books<"))).toHaveLength(1);
     expect(current(phone).filter((a) => a.includes(">Library<"))).toHaveLength(1);
-    // The switch still opens the Library until 2.2 builds the dashboard.
-    expect(hrefOf("books")).toBe("/books/list");
+    // The switch opens the dashboard since 2.2; the Library is its own item.
+    expect(hrefOf("books")).toBe("/books");
   });
 
   it("keeps the unbuilt screens out: Search, Tracks, Plan, Shelves, Top", () => {

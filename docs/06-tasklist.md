@@ -340,7 +340,7 @@ with the task that first reads it.
 | ✅ | 2.0b → TASK-053 | Type a setting, and hold to step | S |  | 2.0 |
 | ✅ | 2.1 → TASK-046 | Capacity view | M |  | 1.7, 2.0 |
 |  | 2.1b | Reading sessions — after-the-fact entry | S |  | 2.0 |
-|  | 2.2 → TASK-049 | Books dashboard | M |  | 1.7, 1.8, 2.1 |
+| ✅ | 2.2 → TASK-049 | Books dashboard | M |  | 1.7, 1.8, 2.1 |
 |  | 2.2b → TASK-051 | The plan rail | M |  | 2.2 |
 | ✅ | 2.2c → TASK-048 | Follow what you're reading: the control, and an offer when you finish | M |  | 1.15, 1.5 |
 |  | 2.2d → TASK-050 | Next in what you're reading, on the dashboard | M |  | 2.2, 2.2c |

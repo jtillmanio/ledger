@@ -162,3 +162,59 @@ export function RunSkeleton({ rows = 10 }: { rows?: number }) {
     </LoadingMain>
   );
 }
+
+/**
+ * The books dashboard's Now (task 2.2): the hero's own box, its cover and lines in --sunk, so it
+ * holds the loaded hero's size (`now-hero`, `now-band`, `now-cover`, `now-foot`). It stands for
+ * *Between books* too, which the loading screen can't know is coming.
+ */
+export function BooksNowSkeleton() {
+  return (
+    <section className="now-hero sk-now" aria-hidden="true">
+      <div className="now-band">
+        <span className="now-cover"><span className="sk sk-fill" /></span>
+        <div className="now-body">
+          <Bar w="6rem" className="sk-now-kick" />
+          <Bar w="80%" className="sk-now-name" />
+          <Bar w="50%" className="sk-now-by" />
+          <span className="grow" />
+          <Bar w="7rem" className="sk-now-pages" />
+        </div>
+      </div>
+      {/* The foot wraps to two lines on a phone, and fits one from the tablet up. */}
+      <p className="now-foot"><Bar w="85%" className="sk-now-foot" /><Bar w="45%" className="sk-now-foot two" /></p>
+    </section>
+  );
+}
+
+/** A cover shelf (comics' Up next, books' *Up next in Qn*): the slot head and `n` cards. */
+export function ShelfSkeleton({ cards = 3 }: { cards?: number }) {
+  return (
+    <section className="shelf-slot" aria-hidden="true">
+      <div className="slot-head"><Bar w="7rem" className="sk-head" /></div>
+      <ul className="shelf">
+        {Array.from({ length: cards }, (_, n) => (
+          <li key={n} className="card">
+            <span className="cover"><span className="sk sk-fill" /></span>
+            <Bar w="90%" className="sk-card-title" />
+            <Bar w="60%" className="sk-card-meta" />
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** *This quarter*'s card: its head, the strip and the foot, at the loaded card's size. */
+export function QuarterStripSkeleton() {
+  return (
+    <section className="quarter-slot" aria-hidden="true">
+      <div className="slot-head"><Bar w="6rem" className="sk-head" /></div>
+      <div className="qcard">
+        <div className="qhead"><Bar w="4.5rem" className="sk-qhead" /></div>
+        <span className="sk qrail" />
+        <div className="qfigs"><Bar w="6rem" className="sk-qfigs" /><Bar w="6rem" className="sk-qfigs" /></div>
+      </div>
+    </section>
+  );
+}

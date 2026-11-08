@@ -19,6 +19,9 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   "/comics/runs": { queries: 2, waves: 1 },
   "/comics/[runId]": { queries: 3, waves: 1 },
   "/books/list": { queries: 5, waves: 1 },
+  // The books dashboard (task 2.2): Now, the last finish, the shelf, the strip's blocks and figure,
+  // On deck, the year, your pace and the inbox count, together; an empty year's capacity reuses the pace.
+  "/books": { queries: 9, waves: 1 },
   "/inbox": { queries: 2, waves: 1 },
   "/settings": { queries: 2, waves: 1 },
   "/watch": { queries: 0, waves: 0 },
@@ -96,6 +99,7 @@ const pages: [string, () => Promise<unknown>][] = [
     (await import("../src/app/books/status/page")).default({ searchParams: Promise.resolve({}) })],
   ["/comics/[runId]", async () =>
     (await import("../src/app/comics/[runId]/page")).default({ params: Promise.resolve({ runId: "a" }) })],
+  ["/books", async () => (await import("../src/app/books/page")).default()],
   ["/books/list", async () =>
     (await import("../src/app/books/list/page")).default({ searchParams: Promise.resolve({}) })],
   ["/inbox", async () => (await import("../src/app/inbox/page")).default()],

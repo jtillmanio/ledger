@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
 import QueueBadge from "@/components/QueueBadge";
+import { useShelfPager } from "@/components/useShelfPager";
 import { QUEUE_HREF } from "@/lib/status-tabs";
 import type { QueueRow } from "@/db/queries";
-
-const FINE = "(hover:hover) and (pointer:fine)";
 
 /**
  * The comics dashboard's slot 2 (task 1.10; D-40, FP-D2, FP-D18; STYLE_GUIDE
@@ -36,47 +34,7 @@ export default function QueueShelf({ rows, readyCount }: { rows: QueueRow[]; rea
 
 /** The head, with its ‹ › and *Reorder*, then the row: the buttons watch the row. */
 function Shelf({ rows }: { rows: QueueRow[] }) {
-  const row = useRef<HTMLUListElement>(null);
-  const [pager, setPager] = useState(false);
-  const [edge, setEdge] = useState({ start: true, end: false });
-
-  const measure = useCallback(() => {
-    const el = row.current;
-    if (!el) return;
-    const fine = matchMedia(FINE).matches;
-    // The shelf only pages where it is contained in main: from 1024px (FP-D18).
-    const contained = matchMedia("(min-width:1024px)").matches;
-    setPager(fine && contained && el.scrollWidth > el.clientWidth + 1);
-    setEdge({ start: el.scrollLeft <= 1, end: el.scrollLeft + el.clientWidth >= el.scrollWidth - 1 });
-  }, []);
-
-  useEffect(() => {
-    const el = row.current;
-    if (!el) return;
-    measure();
-    const resized = new ResizeObserver(measure);
-    resized.observe(el);
-    const fine = matchMedia(FINE);
-    fine.addEventListener("change", measure);
-    el.addEventListener("scroll", measure, { passive: true });
-    return () => {
-      resized.disconnect();
-      fine.removeEventListener("change", measure);
-      el.removeEventListener("scroll", measure);
-    };
-  }, [measure]);
-
-  /** Page by the number of covers fully in view: five at 1280, four at 1024. */
-  function page(dir: 1 | -1) {
-    const el = row.current;
-    const card = el?.firstElementChild as HTMLElement | null;
-    if (!el || !card) return;
-    const gap = parseFloat(getComputedStyle(el).columnGap) || 0;
-    const step = card.offsetWidth + gap;
-    const visible = Math.max(1, Math.floor((el.clientWidth + gap) / step));
-    const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    el.scrollBy({ left: dir * visible * step, behavior: still ? "auto" : "smooth" });
-  }
+  const { row, pager, edge, page } = useShelfPager<HTMLUListElement>();
 
   return (
     <section className="shelf-slot" aria-labelledby="up-next">

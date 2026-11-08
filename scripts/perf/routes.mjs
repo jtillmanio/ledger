@@ -25,9 +25,11 @@ export const ROUTES = [
     id: "run-large", path: "/comics/busiek-avengers", signedIn: true, // 154 issues
     tap: { from: "/comics/runs", selector: 'a[href="/comics/busiek-avengers"]' },
   },
-  // The books list, until 2.2 builds the books dashboard at /books. Not /books itself:
-  // Lighthouse sends the session as a Cookie header, which a redirect drops.
-  { id: "books", path: "/books/list", signedIn: true, tap: { from: "/comics", selector: 'nav a[href="/books/list"]' } },
+  // The books dashboard (task 2.2): the media switch's Books.
+  { id: "books", path: "/books", signedIn: true, tap: { from: "/comics", selector: 'nav a[href="/books"]' } },
+  // The Library (task 2.2e), what "books" measured before 2.2. Its item is the books medium's, so the tap
+  // starts on the dashboard: the tab row's on a phone, the rail's or the sidebar's from 768px.
+  { id: "library", path: "/books/list", signedIn: true, tap: { from: "/books", selector: 'a[href="/books/list"]' } },
   // The status screens (task 1.9): In flight, the tab a bare visit opens, for each medium. Comics' Status is in the
   // rail, the sidebar and (since 2.2i) the phone's tab row, so the tap clicks the first match, the tab row's on a phone.
   { id: "comics-status", path: "/comics/status", signedIn: true, tap: { from: "/comics", selector: 'a[href="/comics/status"]' } },
