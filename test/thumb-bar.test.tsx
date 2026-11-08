@@ -44,6 +44,8 @@ const comics = (over: Partial<Extract<BarConfig, { kind: "comics" }>> = {}): Bar
   kind: "comics", runId: "r", title: "Uncanny X-Men", read: 3, total: 10, upcoming: uncanny, single: true, ...over,
 });
 
+const reading: BarConfig = { kind: "books", book: { id: "fifth", title: "The Fifth Season", status: "reading" }, next: null };
+
 function draw(config: BarConfig) {
   act(() => root.render(
     <UndoProvider>
@@ -110,10 +112,25 @@ describe("the slots are fixed (AC-2)", () => {
     expect(header()).toEqual(["Search (Ctrl K)", "Save to inbox"]);
   });
 
-  it("books: Log progress · ✓ finished · Search; the header says Finished it · Log pages", () => {
-    draw({ kind: "books" });
-    expect(bar()).toEqual(["Log progress", "✓ finished", "Search (Ctrl K)"]);
-    expect(header()).toEqual(["Search (Ctrl K)", "Finished it", "Log pages"]);
+  it("books with one in hand: Log progress · ✓ finished · Search; the header says Finished it · Log pages (task 2.2)", () => {
+    draw(reading);
+    expect(bar()).toEqual(["Log progress", "Finished The Fifth Season", "Search (Ctrl K)"]);
+    expect([...container.querySelectorAll(".actionbar > *")].map((el) => el.textContent)).toEqual(["Log progress", "✓ finished", ""]);
+    expect(header()).toEqual(["Search (Ctrl K)", "Finished The Fifth Season", "Log pages"]);
+    expect(container.querySelector(".headverbs > .btn.sec")!.textContent).toBe("Finished it");
+  });
+
+  it("books between books: Start {the top of the plan} · Search, named in full, and no finish (task 2.2)", () => {
+    draw({ kind: "books", book: null, next: { id: "lhd", title: "The Left Hand of Darkness" } });
+    expect(bar()).toEqual(["Start The Left Hand of Darkness", "Search (Ctrl K)"]);
+    expect(header()).toEqual(["Search (Ctrl K)", "Start The Left Hand of Darkness"]);
+    expect(container.querySelector<HTMLElement>(".headverbs .btn")!.title).toBe("Start The Left Hand of Darkness");
+  });
+
+  it("books with nothing planned: Pick a book, to Status's Up next (task 2.2)", () => {
+    draw({ kind: "books", book: null, next: null });
+    expect(bar()).toEqual(["Pick a book", "Search (Ctrl K)"]);
+    expect(container.querySelector(".actionbar a")!.getAttribute("href")).toBe("/books/status?tab=next");
   });
 
   it("watch: Mark S2 watched · + Add · Search", () => {
@@ -122,12 +139,16 @@ describe("the slots are fixed (AC-2)", () => {
   });
 
   it("a verb whose screen isn't built is drawn, aria-disabled, with its reason as a title", () => {
-    draw({ kind: "books" });
+    draw({ kind: "watch" });
     for (const el of container.querySelectorAll<HTMLElement>(".actionbar > *")) {
       expect(el.tagName).toBe("BUTTON");
       expect(el.getAttribute("aria-disabled")).toBe("true");
       expect(el.title).not.toBe("");
     }
+    draw(reading);
+    const log = container.querySelector<HTMLElement>(".actionbar > :first-child")!;
+    expect(log.getAttribute("aria-disabled")).toBe("true");
+    expect(log.title).toBe("Logging pages arrives with sessions (2.1b)");
   });
 
   it("a run read through has nothing to mark: the primary says so and is disabled", () => {
@@ -231,5 +252,42 @@ describe("the run detail's bar", () => {
     const dialog = document.querySelector('[role="dialog"]')!;
     expect(dialog.querySelector("h2")!.textContent).toBe("Mark through…");
     expect([...dialog.querySelectorAll(".pick-label")].map((n) => n.textContent)).toEqual(["Marauders (2019) #1", "X-Men (2019) #8"]);
+  });
+});
+
+describe("the books verbs write through the book write (task 2.2, Q4)", () => {
+  const written = { change: { id: 1 }, finish: null, start: { on: null, precision: "none" }, format: null, offer: null };
+  beforeEach(() => { fetchMock.mockImplementation(async () => new Response(JSON.stringify(written))); });
+
+  it("✓ finished finishes the book in hand today: one POST to /api/progress/book, a refresh, a toast with Undo", async () => {
+    draw(reading);
+    await act(async () => container.querySelector<HTMLButtonElement>(".actionbar .btn.sec")!.click());
+    expect(sent()).toEqual([["/api/progress/book", { bookId: "fifth", status: "read", finish: { mode: "today" } }]]);
+    expect(refresh).toHaveBeenCalledTimes(1);
+    const [label, detail] = toastLines();
+    expect(label).toBe("The Fifth Season: read");
+    expect(detail).toMatch(/^Finished \d{1,2} [A-Z][a-z]+ \d{4}$/); // today, named as 2.2f's toast names it
+  });
+
+  it("a second tap before the page redraws writes nothing more", async () => {
+    draw(reading);
+    const finish = container.querySelector<HTMLButtonElement>(".actionbar .btn.sec")!;
+    await act(async () => { finish.click(); finish.click(); });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("Start {title} sets the top of the plan to Reading, with Undo", async () => {
+    draw({ kind: "books", book: null, next: { id: "lhd", title: "The Left Hand of Darkness" } });
+    await act(async () => container.querySelector<HTMLButtonElement>(".actionbar .btn")!.click());
+    expect(sent()).toEqual([["/api/progress/book", { bookId: "lhd", status: "reading" }]]);
+    expect(toastLines()).toEqual(["The Left Hand of Darkness: reading", "Was to read"]);
+  });
+
+  it("a failed finish says so with Retry, and nothing is undoable", async () => {
+    fetchMock.mockImplementation(async () => new Response("no", { status: 500 }));
+    draw(reading);
+    await act(async () => container.querySelector<HTMLButtonElement>(".actionbar .btn.sec")!.click());
+    expect(container.ownerDocument.body.textContent).toContain("Couldn't finish The Fifth Season. Nothing changed.");
+    expect([...container.ownerDocument.querySelectorAll(".toast button")].map((b) => b.textContent)).toContain("Retry");
   });
 });

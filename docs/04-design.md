@@ -528,7 +528,8 @@ and ask*:
   list with no stored order, and draws show → season rails. The app tracks
   seasons only and 8.7 specifies franchise → series.
 - **Books (2.2).** Where Rebalance, Accept (2.7) and *Place them* (2.8) surface
-  once the capacity and unplaced cards leave the dashboard.
+  once the capacity and unplaced cards leave the dashboard. *Answered* (owner,
+  at 2.2's plan gate, TASK-049): on `/books/plan` only, never on the dashboard.
 - **Covers (4.3).** Which cover is a run's key art, and where a run's tone is
   stored.
 - **Completion (2.12).** Whether a later visit to a block-closing run shows the
@@ -901,8 +902,11 @@ the four numbers that change what you open.
 
 Since D-40 the dashboard shows the book in hand (or *Between books*), the
 current quarter's shelf, a single-quarter strip against the 760k rule, On deck
-and *2026 so far*; the full rail below is `/books/plan`'s, and where Rebalance
-and *Place them* now surface is open (roadmap 2.2). The regions as first scoped:
+and *2026 so far*; the full rail below is `/books/plan`'s, and so are the
+capacity card with Rebalance and Accept (2.7) and *Place them* (2.8): nothing
+on the dashboard (owner, at 2.2's plan gate, TASK-049). Past capacity, the
+strip's figure turns amber with what it is over, and that is all the dashboard
+says. The regions as first scoped, before the feel pass:
 
 | Region | Answers | Source |
 |---|---|---|
@@ -922,7 +926,8 @@ thing. It clears when you decide — including when you decide to keep the
 overage. Red is reserved for destructive actions and validation failures;
 nothing on a dashboard is red.
 
-The catch-up affordance is one tap from the dashboard and offers four peers:
+The catch-up affordance is on `/books/plan` (the dashboard's strip only shows
+the amber; owner, at 2.2's plan gate, TASK-049) and offers four peers:
 
 1. **Move the overage into the next year** — and show that the next year then
    holds 45 books. The overage moves; it does not leave.

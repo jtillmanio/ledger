@@ -1,14 +1,14 @@
 ---
 id: TASK-049
 title: 2.2 Books dashboard
-status: Ready
+status: Done
 depends_on: [TASK-011, TASK-014, TASK-046, TASK-047]
 size: L
 model: opus
 autonomy: attended
 ui: true
 plan_status: approved
-planned_at_commit: 391e506
+planned_at_commit: 35caffc
 ---
 
 # TASK-049 — 2.2 Books dashboard
@@ -41,7 +41,7 @@ planned_at_commit: 391e506
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): the feel-pass screenshots (the header's widths, themes and
+- [x] AC-1 (roadmap **Check:**, verbatim): the feel-pass screenshots (the header's widths, themes and
 reduced-motion and reduced-transparency passes) of reading and *Between books* —
 no horizontal scroll, the capacity rule legible, the primary action inside the
 bottom 96px. The five slots render in the order above. Nothing on the screen
@@ -52,10 +52,10 @@ finished it omits the finished line. The strip's planned total equals 2.1's
 figure for that quarter. *2026 so far* has three counts, all this year.
 At 1280px *On deck* and *2026 so far* are in the side rail, and **Plan** follows
 2.4's hover rule for *+ Up next*.
-- [ ] AC-2: Given one book *Reading* and one *Listening*, Now shows the plan's choice of the two (the rule stated in the plan) and the *Listening* one carries the headphones glyph when it is the hero; with the current quarter holding books at ordinals 1, 2, 3 where 2 is `read`, *Up next in Qn* lists 1 then 3 in that order and **Reorder** opens 1.9's reorder; *Between books*' offer skips the `read` one.
-- [ ] AC-3: Given this year holds 3 text reads and 1 listen of books by 3 distinct authors first read this year, and reads in other years: *2026 so far* (the current year) shows 4 books with *1 listened*, their pages summed, and 3 new authors, and counts nothing from another year; the capacity figure past 100% renders in `--blocked` amber with no element on the page resolving to `--danger` and no text reading *behind*.
-- [ ] AC-4: `GET /books` renders the dashboard (no redirect); the *Books* switch and the books *Dashboard* item link to `/books` and are current there; the Library item stays current on `/books/list`; `/` with `ledger_medium=books` still lands on `/books`.
-- [ ] AC-5: The books dashboard meets the UX floor (`docs/04-design.md` § 10. The UX floor), as a feel-pass surface: its loading state (`src/app/books/loading.tsx`) is the loaded geometry in `--sunk`; *Between books* is its empty state and a dashboard with nothing planned shows an empty slate with one primary action in *Up next in Qn*; text 4.5:1 and outlines 3:1 in both themes; thumb-bar buttons 44px and nothing interactive under 24px; every control a real `<button>` or `<a href>` with a name; screenshots in every state at 360, 390, 412, 768, 1024 and 1280px, light and dark, reduced motion and reduced transparency; axe reports no new violations.
+- [x] AC-2: Given one book *Reading* and one *Listening*, Now shows the plan's choice of the two (the rule stated in the plan) and the *Listening* one carries the headphones glyph when it is the hero; with the current quarter holding books at ordinals 1, 2, 3 where 2 is `read`, *Up next in Qn* lists 1 then 3 in that order and **Reorder** opens 1.9's reorder; *Between books*' offer skips the `read` one.
+- [x] AC-3: Given this year holds 3 text reads and 1 listen of books by 3 distinct authors first read this year, and reads in other years: *2026 so far* (the current year) shows 4 books with *1 listened*, their pages summed, and 3 new authors, and counts nothing from another year; the capacity figure past 100% renders in `--blocked` amber with no element on the page resolving to `--danger` and no text reading *behind*.
+- [x] AC-4: `GET /books` renders the dashboard (no redirect); the *Books* switch and the books *Dashboard* item link to `/books` and are current there; the Library item stays current on `/books/list`; `/` with `ledger_medium=books` still lands on `/books`.
+- [x] AC-5: The books dashboard meets the UX floor (`docs/04-design.md` § 10. The UX floor), as a feel-pass surface: its loading state (`src/app/books/loading.tsx`) is the loaded geometry in `--sunk`; *Between books* is its empty state and a dashboard with nothing planned shows an empty slate with one primary action in *Up next in Qn*; text 4.5:1 and outlines 3:1 in both themes; thumb-bar buttons 44px and nothing interactive under 24px; every control a real `<button>` or `<a href>` with a name; screenshots in every state at 360, 390, 412, 768, 1024 and 1280px, light and dark, reduced motion and reduced transparency; axe reports no new violations.
 
 ## Out of scope
 
@@ -86,9 +86,15 @@ At 1280px *On deck* and *2026 so far* are in the side rail, and **Plan** follows
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- 2.2b: `QuarterStrip`'s markup and class names are what the rail component replaces with a one-quarter rail (M-07) → docs/tasks/TASK-051-plan-rail.md § Context
-- 2.2d: *Next in* goes under the hero in `BooksNow.tsx`, and *Or keep going* under the offer in `BetweenBooks.tsx`; both are left as named slots → docs/tasks/TASK-050-next-in-what-you-read.md § Context
-- 2.1b: Now's position, its meter and *Log progress* wait for sessions (Q1); the reason on the disabled verb names 2.1b → docs/05-roadmap.md § 2.1b (approved at plan)
+- 2.2b: `QuarterStrip`'s markup and class names are what the rail component replaces with a one-quarter rail (M-07) → docs/tasks/TASK-051-plan-rail.md § Context (approved at plan; written by PR #196)
+- 2.2b: the strip's `.qcol` / `.qstack` are scoped under `.qrail` because the vertical rail's CSS owns those names, and its footer is `.qfigs`; fold the two into one rail's rules → docs/tasks/TASK-051-plan-rail.md § Context
+- 2.2d: *Next in* goes under the hero in `BooksNow.tsx`, and *Or keep going* under the offer in `BetweenBooks.tsx` → docs/tasks/TASK-050-next-in-what-you-read.md § Context (approved at plan; written by PR #196)
+- 2.1b: Now's position, its meter and *Log progress* wait for sessions (Q1); the reason on the disabled verb names 2.1b → docs/05-roadmap.md § 2.1b (approved at plan; written by PR #196)
+- Q2 answered the design doc's open question: the capacity card, Rebalance/Accept and *Place them* are on `/books/plan` only → docs/04-design.md § Books dashboard (approved at close-out; also the feel pass's open-question list and § Over-commitment)
+- `/books`' perf budget starts at the Library's, to be reset from its first preview's Lighthouse median → not tracked: done in this PR (Phase 7 ready gate)
+- Schema review minors left as is: the shelf lists a book planned in two quarters in both (D-37, as Status's Up next does), and `days_taken` could go negative only if a start were after its finish, which the writes refuse → not tracked: accepted as is, reasons in the review log
+- A 2M-word book's shelf meta reads `2000k` (`wordsK`, the lists' own format) → not tracked: the app-wide format, unchanged by this task
+- The UI walk's own restore left a listen, a finish date and a raised series follow on *A Court of Wings and Ruin* in the development database → not tracked: restored in the session with the owner's approval (read_events 170 deleted, finished_on back to none, the ACOTAR series follow back to tracking)
 
 ## Plan
 
@@ -102,7 +108,11 @@ Provisional: depends on TASK-048 for the finish offer (`src/lib/follow-offer.ts`
 - Q3, **Plan** on an *On deck* row moves the book to the end of the current quarter, with Undo: a new `POST /api/plan { bookId, from: "on_deck", to: <quarter> }` through `movePlan`.
 - Q4, *✓ finished* / *Finished it* finishes the book in hand today in one tap, with Undo and 2.2c's *Keep going?*. A different date is set from the Library's *Finished*.
 
-**Rules this plan sets:** the hero is the in-progress book started most recently (`started_on DESC NULLS LAST`, then *Reading* before *Listening*, then title). *2026 so far* is plain text until Stats (6.2) exists. *Pick something else* links to `/books/status?tab=next`. The lede carries a *Library* link (TASK-047's note). *This year* and *the current quarter* come from the Eastern day (`today()`, `src/lib/finish-date.ts`), passed into each query so the tests fix the date. A new author is one with a read this year and no read dated before it or undated.
+**Revision 1 (owner, 2026-11-08, plan stale against 35caffc: 2.2c, 2.2i, 2.0b, 2.2f, 2.2h landed on its files):** *✓ finished* / *Finished it* and the between state's *Start <title>* write through `useBookWrite` (TASK-054's note: `finish: initialFinish(null)`; `FinishBook.tsx`'s focus and Retry), which brings 2.2h's *Now reading* chips with the toast. The `bdash` redraw keeps 2.2i's tab row on its 360 frame. The perf rename gives `library` today's `books` numbers (70000 · 64). **No *Library* link in the lede**: 2.2i's tab row (D-120) reaches the Library on the phone, so TASK-047's reason is gone. Enabling `books-dash` adds *Dashboard* to the books tab row.
+
+**Revision 2 (during implementation, 2026-11-08; small, inside the task's scope, each explained when made):** `quarterBlocks(userId, period)` joins step 2's queries: the strip draws every book that counts against the quarter (read and reading too), which `quarterShelf` (to read only) can't give, and it reads `plan_book_words`, the view `plan_capacity` sums, so the blocks add up to 2.1's figure. `planCapacity` takes an optional settings promise, so the page's nine queries stay one wave when the year has nothing planned (`test/query-budget.test.ts`). `useShelfPager` is its own file (`src/components/useShelfPager.ts`), as two components import it. `BOOKS_NEXT_HREF` lives in `src/lib/status-tabs.ts` beside `QUEUE_HREF`, because a server component can't read a constant from a `"use client"` module. `src/components/Skeleton.tsx` gains the dashboard's skeleton pieces, and the books skeleton's geometry is measured in `books-dashboard.spec.ts` (it needs that spec's seed) rather than `skeletons.spec.ts`. Tests outside the list that the change turned round: `test/thumb-bar.test.tsx`, `test/perf.test.ts`, `test/query-budget.test.ts`, `test/loading-states.test.tsx`, `test/e2e/shell.spec.ts` (`/books` joins its dashboards).
+
+**Rules this plan sets:** the hero is the in-progress book started most recently (`started_on DESC NULLS LAST`, then *Reading* before *Listening*, then title). *2026 so far* is plain text until Stats (6.2) exists. *Pick something else* links to `/books/status?tab=next`. *This year* and *the current quarter* come from the Eastern day (`today()`, `src/lib/finish-date.ts`), passed into each query so the tests fix the date. A new author is one with a read this year and no read dated before it or undated.
 
 **Steps**
 1. Redraw `bdash` in `design/mockups.html` from the feel pass, reading and *Between books*, at 360, 834 and 1280, light and dark. Update `design/mockups-index.md`. The owner looks before step 2.
@@ -131,13 +141,21 @@ Provisional: depends on TASK-048 for the finish offer (`src/lib/follow-offer.ts`
 
 _Filled by /implement-task. One line per round._
 
+- Plan: stale at preflight (2.2c, 2.2i, 2.0b, 2.2f, 2.2h landed on its files; TASK-054's note) → Revision 1 (owner, 2026-11-08); Revision 2 during implementation (recorded in the Plan)
+- Step 1: `bdash` redrawn; owner looked and said go
+- Verify R1 round FAIL(2: `border-radius:0`, control-states) → round PASS → full FAIL(1: mockup-tablet index wording) → spec re-run PASS → R2 round PASS (1324) | R3 round PASS (1327) after review fixes
+- Audit R1 CHANGES (browser ACs unconfirmed at base; AC-3 amber browser-only) → R2 PASS (strip unit test added)
+- Spec R1 CHANGES (reduced-transparency screenshots missing; past-capacity in one project) → R2 APPROVE
+- Schema R1 APPROVE (4 minor: route comment fixed, soft-delete test added, two accepted) | R2 not re-run: no src/db, views or migration change since
+- UI R1 PASS (2 deviations: header Log pages dimming withdrawn at R2, opacity 0.45; empty offer row squeezed, fixed) → R2 PASS. The R2 walk missed an Undo and restored by hand; the leftover dev rows were restored with the owner's approval
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (round chain), full chain 1
+- Review rounds: 2 (spec, UI), 1 (schema), audit 2
+- First-pass AC FAILs: 1 (AC-1/AC-5: reduced-transparency screenshots not taken)
+- Plan revisions after approval: 2

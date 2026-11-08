@@ -47,9 +47,12 @@ test("each route answers with its own screen", ONCE, async ({ page }) => {
   await expect(h1).toHaveText("Library");
   await expect(page.getByRole("link", { name: /^Everything$/ })).toHaveAttribute("href", "/books/list");
 
-  // The books dashboard is 2.2's; until then /books is the Library.
-  await page.goto("/books");
-  expect(new URL(page.url()).pathname).toBe("/books/list");
+  // GET /books renders the books dashboard, no redirect (task 2.2, AC-4).
+  const res = await page.goto("/books");
+  expect(new URL(page.url()).pathname).toBe("/books");
+  expect(res!.request().redirectedFrom()).toBeNull();
+  await expect(h1).toHaveText("Books");
+  await expect(page.locator('main [data-slot="now"]')).toHaveCount(1);
 });
 
 test("a run page's back link goes to /comics/runs", ONCE, async ({ page }) => {
@@ -62,7 +65,7 @@ test("a run page's back link goes to /comics/runs", ONCE, async ({ page }) => {
 test("/ opens the medium you last touched, and comics for a fresh profile", ONCE, async ({ page, context }) => {
   await page.goto("/books/list");
   await page.goto("/");
-  expect(new URL(page.url()).pathname).toBe("/books/list"); // /books, redirected on
+  expect(new URL(page.url()).pathname).toBe("/books"); // the books dashboard (task 2.2, AC-4)
 
   await page.goto("/comics");
   await page.goto("/");
