@@ -1083,7 +1083,10 @@ would promote, *CI on it: success*, and *Migrations to apply: none*.
 A commit that only touches `backups/`, `docs/`, `design/`, `.github/`,
 `.claude/` or Markdown shows **Canceled** in Vercel's Deployments tab. That is
 `vercel.json`'s ignore step skipping a build that would change nothing, not a
-failure. The build log says which files it compared.
+failure. The build log says which files it compared. On a PR, the skipped
+head's *Vercel* check links to that canceled build; the **Preview (last
+build)** check next to it (`.github/workflows/preview-link.yml`) links to the
+preview that still serves the same app.
 
 **Forcing a build of a skipped commit.** A plain **Redeploy** of a commit that
 shows **Canceled** is skipped again: Vercel hands the ignore step the SHA of
