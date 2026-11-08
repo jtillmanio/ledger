@@ -1652,7 +1652,7 @@ these** is the only thing that changes the stored setting. A session entered
 with implausible minutes still saves but is shown, not hidden, in the
 *Measured from sessions* list.
 
-### ☐ 2.2 Books dashboard · M
+### ☑ 2.2 Books dashboard · M
 Five slots in this order, per the feel pass (D-40; STYLE_GUIDE §14.1–§14.2,
 Feel Review §4), which replaces "Books — v4" in `design/mockups.html` on layout
 and copy: **Now** (the book in hand, or *Between books*); **Up next in Qn**, a
