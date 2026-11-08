@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { bookGroupings, followable } from "@/db/queries";
-import { FOLLOW_KINDS, FOLLOW_STATES, setFollow, type FollowKind, type FollowState } from "@/db/writes";
+import { bookGroupings, followable, followTargetExists } from "@/db/queries";
+import {
+  FOLLOW_KINDS, FOLLOW_STATES, isAutoKind, setFollow, type AutoKind, type FollowKind, type FollowValue,
+} from "@/db/writes";
 import { apiUserId, unauthorized } from "@/lib/auth";
 
 export const runtime = "nodejs";
@@ -24,15 +26,19 @@ export async function GET(req: Request) {
 }
 
 /**
- * Follow a series, an author, a universe or a shelf (task 2.2c, D-108):
- * `{ kind, id, state }`, `state` `reading`, `tracking` or `null` (*Not
- * following*, which deletes the row). Answers `{ prior }`, the state it had
- * (`null` for no row); the undo POSTs it back as `state`. 400, writing nothing,
- * for an unknown kind or state, a missing id, or something you can't follow:
- * a series, author or universe with no live book, or a shelf that isn't one of
- * your books shelves. *Not following* on a series, author or universe is never
- * refused: deleting your own follow is always yours to do, even once its books
- * are gone, and so is a follow's undo, which deletes it.
+ * Follow a series, a subseries, an author, a universe or a shelf (task 2.2c,
+ * D-108; 2.2h): `{ kind, id, state }`, `state` `reading`, `tracking`, `off` or
+ * `null`. *Not following* is `off` on a series, subseries or universe, which a
+ * finish follows for you (D-117): the row stays, so no later finish follows it
+ * again. On an author or a shelf it is `null`, which deletes the row, and `off`
+ * is refused. `null` on any kind deletes the row: it is how the undo of a first
+ * `off` leaves no row. Answers `{ prior }`, the state it had (`null` for no
+ * row, `off` included); the undo POSTs it back as `state`. 400, writing
+ * nothing, for an unknown kind or state, a missing id, or something you can't
+ * follow: a series, subseries, author or universe with no live book, or a shelf
+ * that isn't one of your books shelves. Stepping away (`null`, or `off` on
+ * something that exists) is never refused for want of a live book: your own
+ * follow is always yours to drop, even once its books are gone.
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -41,10 +47,14 @@ export async function POST(req: Request) {
   const { kind, id, state } = (body ?? {}) as Record<string, unknown>;
   if (!KINDS.includes(kind as string)) return bad(`kind must be one of ${KINDS.join(", ")}`);
   if (typeof id !== "string" || id === "") return bad("id is required");
-  if (state !== null && !STATES.includes(state as string)) return bad(`state must be ${STATES.join(", ")} or null`);
-  const unfollow = state === null && kind !== "shelf";
-  if (!unfollow && !(await followable(userId, kind as FollowKind, id))) return bad(`no ${kind} to follow`);
-  const prior = await setFollow(userId, kind as FollowKind, id, state as FollowState | null);
+  if (state !== null && state !== "off" && !STATES.includes(state as string)) {
+    return bad(`state must be ${STATES.join(", ")}, off or null`);
+  }
+  if (state === "off" && !isAutoKind(kind as string)) return bad(`a ${kind} has no off: Not following is null`);
+  const away = (state === null && kind !== "shelf")
+    || (state === "off" && (await followTargetExists(kind as AutoKind, id)));
+  if (!away && !(await followable(userId, kind as FollowKind, id))) return bad(`no ${kind} to follow`);
+  const prior = await setFollow(userId, kind as FollowKind, id, state as FollowValue | null);
   return NextResponse.json({ ok: true, prior });
 }
 

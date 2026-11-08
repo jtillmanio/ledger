@@ -482,6 +482,43 @@ describe("the finish's Keep going? row", () => {
     expect(document.activeElement).toBe(before);
   });
 
+  it("draws Now reading above Keep going? (task 2.2h): each chip named Stop following, and the chips left ride along in their rows", async () => {
+    const now = (label: string, kind: string | undefined, entry: UndoEntry) =>
+      ({ label, kind, row: "now" as const, take: vi.fn(async () => entry) });
+    const a = now("Mistborn", "series", { label: "Not following Mistborn", detail: "series · was reading", undo: async () => {} });
+    const b = now("Cosmere", undefined, { label: "Not following Cosmere", undo: async () => {} });
+    const c = chip("Brandon Sanderson", undefined, { label: "Reading Brandon Sanderson", undo: async () => {} });
+    act(() => root.render(<UndoProvider>
+      <Pusher entry={{ label: "The Well of Ascension: read", undo: async () => {}, offer: [a, b, c] }} />
+    </UndoProvider>));
+    await push();
+    await offerDrawn();
+    const groups = [...container.querySelectorAll<HTMLElement>('.toast-offer[role="group"]')];
+    const name = (el: HTMLElement) => document.getElementById(el.getAttribute("aria-labelledby")!)!.textContent;
+    expect(groups.map(name)).toEqual(["Now reading", "Keep going?"]);
+    expect([...groups[0].querySelectorAll("button")].map((x) => x.textContent))
+      .toEqual(["Stop following Mistborn · series ×", "Stop following Cosmere ×"]);
+    expect([...groups[1].querySelectorAll("button")].map((x) => x.textContent)).toEqual(["Brandon Sanderson"]);
+    // The × is drawn, not read: the name is Stop following, then the visible words.
+    expect(groups[0].querySelector(".toast-chip-x")!.getAttribute("aria-hidden")).toBe("true");
+
+    await act(async () => groups[0].querySelector("button")!.click());
+    expect(a.take).toHaveBeenCalledOnce();
+    expect(lines()).toEqual(["Not following Mistborn", "series · was reading"]);
+    const after = [...container.querySelectorAll<HTMLElement>('.toast-offer[role="group"]')];
+    expect(after.map(name)).toEqual(["Now reading", "Keep going?"]);
+    expect(chipText()).toEqual(["Stop following Cosmere ×", "Brandon Sanderson"]);
+  });
+
+  it("with nothing followed, there is no Now reading row", async () => {
+    const c = chip("Brandon Sanderson", undefined, { label: "Reading Brandon Sanderson", undo: async () => {} });
+    act(() => root.render(<UndoProvider><Pusher entry={{ label: "read", undo: async () => {}, offer: [c] }} /></UndoProvider>));
+    await push();
+    await offerDrawn();
+    expect(toast()!.textContent).not.toContain("Now reading");
+    expect(container.querySelectorAll('.toast-offer[role="group"]')).toHaveLength(1);
+  });
+
   it("Esc in the toast hands focus back; F6 with no toast does nothing", async () => {
     act(() => root.render(<UndoProvider>
       <input id="before" /><Pusher entry={{ label: "read", undo: async () => {} }} />
@@ -502,20 +539,24 @@ describe("the finish's Keep going? row", () => {
 });
 
 describe("a finish's offer as chips (follow-offer)", () => {
-  it("offers Done with first, then each grouping, a series and a shelf with their kind; a chip posts reading and its Undo posts the prior back", async () => {
+  type K = "series" | "subseries" | "author" | "universe" | "shelf";
+  const g = (kind: K, id: string, name: string) => ({ kind, id, name, read: 0, total: 1, unread: 1, state: null });
+
+  it("offers Now reading first (2.2h), then Done with, then each grouping, a series, subseries and shelf with their kind; a chip posts reading and its Undo posts the prior back", async () => {
     const { offerChips } = await import("../src/lib/follow-offer");
-    const g = (kind: "series" | "author" | "universe" | "shelf", id: string, name: string) =>
-      ({ kind, id, name, read: 0, total: 1, unread: 1, state: null });
     const chips = offerChips({
+      now: [g("subseries", "era1", "Era One")],
       done: [g("series", "stormlight", "Stormlight")],
       take: [g("series", "mistborn", "Mistborn"), g("author", "sanderson", "Brandon Sanderson"),
         g("universe", "cosmere", "Cosmere"), g("shelf", "epic", "Epic fantasy")],
     });
-    expect(chips.map((c) => [c.label, c.kind])).toEqual([
-      ["Done with Stormlight", undefined], ["Mistborn", "series"], ["Brandon Sanderson", undefined],
-      ["Cosmere", undefined], ["Epic fantasy", "shelf"],
+    expect(chips.map((c) => [c.label, c.kind, c.row])).toEqual([
+      ["Era One", "subseries", "now"],
+      ["Done with Stormlight", undefined, undefined], ["Mistborn", "series", undefined],
+      ["Brandon Sanderson", undefined, undefined], ["Cosmere", undefined, undefined], ["Epic fantasy", "shelf", undefined],
     ]);
     expect(offerChips(null)).toEqual([]);
+    chips.shift();
 
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, prior: "reading" })));
     const done = await chips[0].take();
@@ -529,5 +570,25 @@ describe("a finish's offer as chips (follow-offer)", () => {
     expect([take.label, take.detail]).toEqual(["Reading Mistborn", "series · was not followed"]);
     await take.undo();
     expect(sent().at(-1)).toEqual({ kind: "series", id: "mistborn", state: null });
+  });
+
+  it("a Now reading chip posts off; its toast says Not following, was reading, and its Undo posts reading back (2.2h)", async () => {
+    const { offerChips } = await import("../src/lib/follow-offer");
+    const [chip] = offerChips({ now: [g("series", "mistborn", "Mistborn")], take: [], done: [] });
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, prior: "reading" })));
+    const entry = await chip.take();
+    expect(sent().at(-1)).toEqual({ kind: "series", id: "mistborn", state: "off" });
+    expect([entry.label, entry.detail]).toEqual(["Not following Mistborn", "series · was reading"]);
+    await entry.undo();
+    expect(sent().at(-1)).toEqual({ kind: "series", id: "mistborn", state: "reading" });
+  });
+
+  it("an earlier off reads as was not followed, and its undo puts off back", async () => {
+    const { followEntry } = await import("../src/lib/follow-offer");
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ok: true, prior: null })));
+    const entry = followEntry(g("universe", "cosmere", "Cosmere"), "reading", "off");
+    expect([entry.label, entry.detail]).toEqual(["Reading Cosmere", "universe · was not followed"]);
+    await entry.undo();
+    expect(sent().at(-1)).toEqual({ kind: "universe", id: "cosmere", state: "off" });
   });
 });

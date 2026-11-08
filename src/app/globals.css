@@ -801,6 +801,10 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .toast-chip:focus-visible{outline:2px solid var(--toast-link);outline-offset:2px}
 .toast-chip[aria-disabled="true"]{opacity:.6;cursor:progress}
 .toast-chip-kind{font-weight:400;color:var(--toast-muted)}
+/* *Now reading* (task 2.2h, D-117): what the finish followed, above *Keep going?*;
+   a chip's grey × turns that follow off. */
+.toast-now + .toast-offer{padding-top:.25rem}
+.toast-chip-x{font-weight:400;color:var(--toast-muted)}
 
 /* --- the telescope: issue in run, run in block, block in track ----------
    One SVG, three rails, driven by block_position + block_progress +

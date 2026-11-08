@@ -5,22 +5,32 @@ import Sheet, { useSheetClose } from "@/components/Sheet";
 import { useUndo } from "@/components/Undo";
 import type { Grouping } from "@/db/queries";
 import type { FollowState } from "@/db/writes";
-import { followEntry, postFollow } from "@/lib/follow-offer";
+import { followEntry, notFollowing, postFollow, shown } from "@/lib/follow-offer";
 
-const OPTIONS: { state: FollowState | null; label: string }[] = [
-  { state: "reading", label: "Reading" },
-  { state: "tracking", label: "Tracking" },
-  { state: null, label: "Not following" },
+const OPTIONS: { state: FollowState | null; label: (g: Grouping) => string }[] = [
+  { state: "reading", label: () => "Reading" },
+  { state: "tracking", label: (g) => middle(g) },
+  { state: null, label: () => "Not following" },
 ];
 
 /**
+ * The middle option's words (task 2.2h, D-118): *On hold* while the thing is
+ * part-read, at least one book read and one left, else *Tracking*. Both store
+ * `tracking`; the label is worked out here, never stored (hard rule 2).
+ */
+export const middle = (g: Pick<Grouping, "read" | "unread">) => (g.read > 0 && g.unread > 0 ? "On hold" : "Tracking");
+
+/**
  * *Follow…* (task 2.2c, D-108; mockup `follow`): the shared `Sheet`, headed by
- * the book's title, listing what the book belongs to: its series, author,
- * universe and books shelves, each with `read / total` in mono and *Reading ·
- * Tracking · Not following*, a radiogroup of native radios named *Following
- * <name>*. A change saves at once and pushes an undo that puts back the state
- * it had, row or no row; the toast stays live over the sheet (D-63). Only
- * *Reading* means reading: nothing here infers it.
+ * the book's title, listing what the book belongs to: its series, subseries
+ * (2.2h), author, universe and books shelves, each with `read / total` in mono
+ * and *Reading · Tracking · Not following*, a radiogroup of native radios named
+ * *Following <name>*, whose middle option reads *On hold* on something
+ * part-read (D-118). A change saves at once and pushes an undo that puts back
+ * the state it had, row or no row; the toast stays live over the sheet (D-63).
+ * *Not following* on a series, subseries or universe is a stored `off`, so no
+ * finish follows it again (D-117); on an author or a shelf it deletes the row.
+ * Only *Reading* means reading: nothing here infers it.
  */
 export default function FollowSheet({ bookId, title, opener, onClose }: {
   bookId: string; title: string; opener: HTMLElement | null; onClose: () => void;
@@ -54,9 +64,10 @@ function FollowList({ bookId }: { bookId: string }) {
 
   async function change(g: Grouping, state: FollowState | null) {
     show(g, state);
+    const stored = state ?? notFollowing(g.kind);
     try {
-      const prior = await postFollow(g.kind, g.id, state);
-      push(followEntry(g, state, prior, (back) => show(g, back)));
+      const prior = await postFollow(g.kind, g.id, stored);
+      push(followEntry(g, stored, prior, (back) => show(g, shown(back))));
     } catch {
       show(g, g.state);
       fail({ label: `Couldn't save ${g.name}. Nothing changed.`, retry: () => void change(g, state) });
@@ -81,10 +92,10 @@ function FollowList({ bookId }: { bookId: string }) {
               </p>
               <div className="opts" role="radiogroup" aria-label={`Following ${g.name}`}>
                 {OPTIONS.map((o) => (
-                  <label key={o.label} className="opt">
+                  <label key={o.state ?? "none"} className="opt">
                     <input type="radio" name={`follow-${g.kind}-${g.id}`} checked={g.state === o.state}
                       onChange={() => void change(g, o.state)} />
-                    {o.label}
+                    {o.label(g)}
                   </label>
                 ))}
               </div>

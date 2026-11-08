@@ -162,6 +162,13 @@
       "when": 1793855716885,
       "tag": "0022_shelf_follows",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794075686656,
+      "tag": "0023_subseries_follows",
+      "breakpoints": true
     }
   ]
 }

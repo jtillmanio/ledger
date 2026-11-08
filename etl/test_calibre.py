@@ -437,6 +437,23 @@ class Check(Case):
                          ("read", "2021-03-20", "exact"))
         self.assertEqual(self.status_of("Mistborn")["status"], "to_read")
 
+    def test_a_read_calibre_loads_follows_nothing(self):
+        """Task 2.2h (D-117): only a finish in the app follows. Book 1 of a
+        series, in a subseries and a universe, each with a book left, read in
+        Calibre: the seed writes no follow for any of them, and has no
+        subseries_follows file at all (no load writes that table)."""
+        self.library([
+            book("The Final Empire", "Brandon Sanderson", series="Mistborn", index=1.0,
+                 universe=("Cosmere", 1.0), subseries=("Era One", 1.0), date="2021-03-20 04:00:00+00:00"),
+            book("The Well of Ascension", "Brandon Sanderson", series="Mistborn", index=2.0,
+                 universe=("Cosmere", 2.0), subseries=("Era One", 2.0))])
+        self.round()
+        self.assertEqual(self.status_of("The Final Empire")["status"], "read")
+        self.assertEqual(len(self.seed_rows("read_events")), 1)
+        self.assertEqual(self.seed_rows("series_follows"), [])
+        self.assertEqual(self.seed_rows("universe_follows"), [])
+        self.assertFalse((self.seed / "subseries_follows.csv").exists())
+
     def test_the_library_file_is_never_changed(self):
         db = self.library([book("The Way of Kings", "Brandon Sanderson", words=383389),
                            book("Mistborn", "Brandon Sanderson", date="2021-03-20 04:00:00+00:00")])

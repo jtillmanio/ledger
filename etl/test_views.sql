@@ -1059,6 +1059,68 @@ BEGIN
   END IF;
 END $$;
 
+-- subseries_progress (task 2.2h, D-117) counts the live books in a subseries
+-- and how many are read: a soft-deleted book drops out of both counts; a book
+-- with no status is unread; a subseries with no book has a row at 0/0;
+-- follow_state is the subseries_follows row's, NULL with none.
+INSERT INTO book_series (id, name) VALUES ('zz-ss-series', 'Zz Subseries Series');
+INSERT INTO book_subseries (id, name, series_id) VALUES
+  ('zz-ss-era', 'Zz Era', 'zz-ss-series'), ('zz-ss-empty', 'Zz Empty Era', 'zz-ss-series');
+INSERT INTO books (id, title, series_id, subseries_id) VALUES
+  ('zz-ss-r', 'Zz Era Read', 'zz-ss-series', 'zz-ss-era'), ('zz-ss-u', 'Zz Era Unread', 'zz-ss-series', 'zz-ss-era'),
+  ('zz-ss-n', 'Zz Era No status', 'zz-ss-series', 'zz-ss-era'), ('zz-ss-gone', 'Zz Era Gone', 'zz-ss-series', 'zz-ss-era');
+UPDATE books SET deleted_at = now() WHERE id = 'zz-ss-gone';
+INSERT INTO book_status (user_id, book_id, status) VALUES
+  ('zz-user', 'zz-ss-r', 'read'), ('zz-user', 'zz-ss-u', 'to_read'), ('zz-user', 'zz-ss-gone', 'read');
+INSERT INTO subseries_follows (subseries_id, state) VALUES ('zz-ss-era', 'reading');
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT string_agg(subseries_id || ':' || series_id || ':' || books_read || '/' || books_listed || ':'
+                    || coalesce(round(pct::numeric, 3)::text, '-') || ':' || coalesce(follow_state, '-'), ' ' ORDER BY subseries_id)
+    INTO got FROM subseries_progress WHERE user_id = 'zz-user' AND subseries_id LIKE 'zz-ss-%';
+  IF got IS DISTINCT FROM 'zz-ss-empty:zz-ss-series:0/0:-:- zz-ss-era:zz-ss-series:1/3:0.333:reading' THEN
+    RAISE EXCEPTION 'subseries_progress wrong (a soft-deleted book counts?): %', got;
+  END IF;
+END $$;
+
+-- *Not following* that sticks (task 2.2h, D-117): series_follows,
+-- universe_follows and subseries_follows take 'off', and each progress view
+-- reads it as no follow, NULL. author_follows and shelf_follows don't take it:
+-- an author or a shelf is never followed for you, so its *Not following*
+-- deletes the row. No table takes anything else.
+UPDATE series_follows SET state = 'off' WHERE user_id = 'zz-user' AND series_id = 'zz-f-quiet';
+UPDATE universe_follows SET state = 'off' WHERE user_id = 'zz-user' AND universe_id = 'zz-f-verse';
+UPDATE subseries_follows SET state = 'off' WHERE subseries_id = 'zz-ss-era';
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT coalesce(follow_state, '-') INTO got FROM series_progress WHERE user_id = 'zz-user' AND series_id = 'zz-f-quiet';
+  IF got IS DISTINCT FROM '-' THEN RAISE EXCEPTION 'series_progress reads off as %', got; END IF;
+  SELECT coalesce(follow_state, '-') INTO got FROM universe_progress WHERE user_id = 'zz-user' AND universe_id = 'zz-f-verse';
+  IF got IS DISTINCT FROM '-' THEN RAISE EXCEPTION 'universe_progress reads off as %', got; END IF;
+  SELECT coalesce(follow_state, '-') INTO got FROM subseries_progress WHERE user_id = 'zz-user' AND subseries_id = 'zz-ss-era';
+  IF got IS DISTINCT FROM '-' THEN RAISE EXCEPTION 'subseries_progress reads off as %', got; END IF;
+  -- The counts stay: off is about the follow, not the books.
+  SELECT books_read || '/' || books_listed INTO got FROM subseries_progress WHERE user_id = 'zz-user' AND subseries_id = 'zz-ss-era';
+  IF got IS DISTINCT FROM '1/3' THEN RAISE EXCEPTION 'subseries_progress counts changed at off: %', got; END IF;
+  BEGIN
+    INSERT INTO author_follows (user_id, author_id, state) VALUES ('zz-user', 'zz-f-nobody', 'off');
+    RAISE EXCEPTION 'author_follows accepted state off';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+  BEGIN
+    INSERT INTO shelf_follows (shelf_id, state) VALUES ('zz-sp-empty', 'off');
+    RAISE EXCEPTION 'shelf_follows accepted state off';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+  BEGIN
+    INSERT INTO subseries_follows (subseries_id, state) VALUES ('zz-ss-empty', 'done');
+    RAISE EXCEPTION 'subseries_follows accepted state done';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+END $$;
+
 -- No catalog table carries a per-user fact (AC-4, hard rule 3). The four tables
 -- a follow points at have exactly these columns: a task that adds one updates
 -- this list, and a per-user one (a state, a done flag, a user_id) belongs in a

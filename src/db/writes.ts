@@ -1,7 +1,7 @@
-import { and, between, desc, eq, gt, gte, inArray, isNull, like, ne, or, sql } from "drizzle-orm";
+import { and, between, desc, eq, gt, gte, inArray, isNull, like, ne, notInArray, or, sql } from "drizzle-orm";
 import {
   db, authors, books, bookSeries, bookStatus, inbox, issueProgress, issues, readEvents, readingPlan, readingSettings, runIssues,
-  runQueue, runs, shelfBooks, seriesFollows, authorFollows, universeFollows, shelfFollows,
+  runQueue, runs, shelfBooks, seriesFollows, authorFollows, universeFollows, shelfFollows, subseriesFollows,
   shelves, sql as pg, volumeRules,
 } from "./index";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
@@ -68,7 +68,14 @@ export type BookStatusChange = {
   } | null;
   /** The read_events row this write logged for a read the status held alone. */
   backfilled: number | null;
+  /** What a finish from Reading or Listening followed for you (task 2.2h, D-117), each with the
+   * state it had: `null` for no row. The undo puts each back. Missing from a change sent
+   * before 2.2h, which followed nothing. */
+  follows?: FinishFollow[];
 };
+
+/** One follow a finish set to `reading`, and what it was before (task 2.2h). */
+export type FinishFollow = { kind: AutoKind; id: string; prior: "tracking" | null };
 
 /** Serialises writes to one book's status and reading log, and checks the book
  * is live: a status for a removed book is refused, not written. */
@@ -125,12 +132,16 @@ const asStart = (f: Finish) => ({ startedOn: f.on, startedOnPrecision: f.precisi
  * - A start after its finish throws `StartAfterFinish`, and `read` with no
  *   finish to keep throws `RefusedStatus`: nothing is written.
  *
+ * A finish from Reading or Listening also follows the book's series, subseries
+ * and universe (task 2.2h, D-117; `followFinish`), in this transaction, so a
+ * follow that can't be written leaves the book as it was.
+ *
  * Answers null for a book that is missing or removed; otherwise the change, and
  * the start this write left on the read in progress or the read (`start`).
  */
 export async function saveBookStatus(
   userId: string, input: BookStatusInput, now = new Date(),
-): Promise<(BookStatusChange & { start: Finish }) | null> {
+): Promise<(BookStatusChange & { follows: FinishFollow[]; start: Finish }) | null> {
   const { bookId, status, finish, start, rating } = input;
   if (status === "read" && !finish && !start) throw new Error("saveBookStatus: read needs a finish date");
   if (start && !IN_PROGRESS.includes(status) && status !== "read") {
@@ -212,12 +223,16 @@ export async function saveBookStatus(
     };
     await tx.insert(bookStatus).values({ userId, bookId, ...set })
       .onConflictDoUpdate({ target: [bookStatus.userId, bookStatus.bookId], set });
+    // A finish in the app follows what the book belongs to (task 2.2h, D-117): only a
+    // read appended from Reading or Listening, never a past read logged from To read.
+    const follows = appended !== null && before && IN_PROGRESS.includes(before.status)
+      ? await followFinish(tx, userId, bookId) : [];
     return {
       bookId, status,
       prior: before
         ? { ...before, precision: before.precision as Precision, startPrecision: before.startPrecision as Precision }
         : null,
-      appended, format, edited, backfilled,
+      appended, format, edited, backfilled, follows,
       start: status === "read" || inProgress ? kept : held ?? kept,
     };
   });
@@ -227,6 +242,8 @@ export async function saveBookStatus(
  * Undo one status write: put back exactly what `saveBookStatus` changed. The
  * read it appended or backfilled is deleted, the read it re-dated gets its dates back, and the
  * status row returns to its prior status, finish and start (a rating is never touched).
+ * Each follow the finish set to `reading` goes back to what it was, row or no row
+ * (task 2.2h), unless it has been changed since: then it stays as it was set.
  * A book that had no row loses the one the write made, unless something has
  * been added to it since, when it goes back to a bare `to_read`.
  *
@@ -236,7 +253,7 @@ export async function saveBookStatus(
  * back under a plan row it has gained since (task 1.21).
  */
 export async function undoBookStatus(userId: string, change: BookStatusChange): Promise<boolean> {
-  const { bookId, status, prior, appended, edited, backfilled } = change;
+  const { bookId, status, prior, appended, edited, backfilled, follows = [] } = change;
   return db.transaction(async (tx) => {
     if (!(await lockBook(tx, bookId))) return false;
     const [now] = await tx.select({ status: bookStatus.status }).from(bookStatus)
@@ -276,6 +293,13 @@ export async function undoBookStatus(userId: string, change: BookStatusChange): 
         await tx.update(bookStatus).set({ status: "to_read", finishedOn: null, finishedOnPrecision: "none", ...NO_START })
           .where(mine);
       }
+    }
+    for (const f of follows) {
+      const row = followRow(tx, userId, f.kind, f.id);
+      const [current] = await row.get();
+      if (current?.state !== "reading") continue;
+      if (f.prior === null) await row.drop();
+      else await row.put(f.prior);
     }
     return true;
   });
@@ -1530,21 +1554,35 @@ export async function saveReadingSettings(userId: string, patch: SettingsPatch):
   return row;
 }
 
-/** What can be followed (task 2.2c, D-108): one narrow table each (data model 2.5e). */
-export const FOLLOW_KINDS = ["series", "author", "universe", "shelf"] as const;
+/** What can be followed (task 2.2c, D-108; the subseries, 2.2h): one narrow table each (data model 2.5e). */
+export const FOLLOW_KINDS = ["series", "subseries", "author", "universe", "shelf"] as const;
 export type FollowKind = (typeof FOLLOW_KINDS)[number];
-/** A follow's state. No row is *Not following*, which is `null` here. Only `reading` means reading. */
+/** What a finish follows for you (task 2.2h, D-117). *Not following* on one is a stored `off`,
+ * so no later finish follows it again. An author or a shelf has no `off`: its *Not following*
+ * deletes the row. */
+export const AUTO_KINDS = ["series", "subseries", "universe"] as const;
+export type AutoKind = (typeof AUTO_KINDS)[number];
+export const isAutoKind = (k: string): k is AutoKind => (AUTO_KINDS as readonly string[]).includes(k);
+/** A follow's state as a person chooses it. Only `reading` means reading. */
 export const FOLLOW_STATES = ["tracking", "reading"] as const;
 export type FollowState = (typeof FOLLOW_STATES)[number];
+/** A follow as stored: a chosen state, or `off` on an `AUTO_KINDS` kind (2.2h). No row is `null`. */
+export type FollowValue = FollowState | "off";
+
+type FollowRow = {
+  get: () => Promise<{ state: string }[]>;
+  put: (state: FollowValue) => Promise<unknown>;
+  drop: () => Promise<unknown>;
+};
 
 /** The row a follow of `kind` lives in, and how to find, write and remove it. */
-function followRow(tx: Tx, userId: string, kind: FollowKind, id: string) {
+function followRow(tx: Tx, userId: string, kind: FollowKind, id: string): FollowRow {
   switch (kind) {
     case "series": {
       const where = and(eq(seriesFollows.userId, userId), eq(seriesFollows.seriesId, id));
       return {
         get: () => tx.select({ state: seriesFollows.state }).from(seriesFollows).where(where).for("update"),
-        put: (state: FollowState) => tx.insert(seriesFollows).values({ userId, seriesId: id, state })
+        put: (state: FollowValue) => tx.insert(seriesFollows).values({ userId, seriesId: id, state })
           .onConflictDoUpdate({ target: [seriesFollows.userId, seriesFollows.seriesId], set: { state } }),
         drop: () => tx.delete(seriesFollows).where(where),
       };
@@ -1553,7 +1591,7 @@ function followRow(tx: Tx, userId: string, kind: FollowKind, id: string) {
       const where = and(eq(authorFollows.userId, userId), eq(authorFollows.authorId, id));
       return {
         get: () => tx.select({ state: authorFollows.state }).from(authorFollows).where(where).for("update"),
-        put: (state: FollowState) => tx.insert(authorFollows).values({ userId, authorId: id, state })
+        put: (state: FollowValue) => tx.insert(authorFollows).values({ userId, authorId: id, state })
           .onConflictDoUpdate({ target: [authorFollows.userId, authorFollows.authorId], set: { state } }),
         drop: () => tx.delete(authorFollows).where(where),
       };
@@ -1562,7 +1600,7 @@ function followRow(tx: Tx, userId: string, kind: FollowKind, id: string) {
       const where = and(eq(universeFollows.userId, userId), eq(universeFollows.universeId, id));
       return {
         get: () => tx.select({ state: universeFollows.state }).from(universeFollows).where(where).for("update"),
-        put: (state: FollowState) => tx.insert(universeFollows).values({ userId, universeId: id, state })
+        put: (state: FollowValue) => tx.insert(universeFollows).values({ userId, universeId: id, state })
           .onConflictDoUpdate({ target: [universeFollows.userId, universeFollows.universeId], set: { state } }),
         drop: () => tx.delete(universeFollows).where(where),
       };
@@ -1572,30 +1610,79 @@ function followRow(tx: Tx, userId: string, kind: FollowKind, id: string) {
       const where = eq(shelfFollows.shelfId, id);
       return {
         get: () => tx.select({ state: shelfFollows.state }).from(shelfFollows).where(where).for("update"),
-        put: (state: FollowState) => tx.insert(shelfFollows).values({ shelfId: id, state })
+        put: (state: FollowValue) => tx.insert(shelfFollows).values({ shelfId: id, state })
           .onConflictDoUpdate({ target: shelfFollows.shelfId, set: { state } }),
         drop: () => tx.delete(shelfFollows).where(where),
+      };
+    }
+    case "subseries": {
+      // No user_id (D-91), as a shelf's: the Ledger has one reader.
+      const where = eq(subseriesFollows.subseriesId, id);
+      return {
+        get: () => tx.select({ state: subseriesFollows.state }).from(subseriesFollows).where(where).for("update"),
+        put: (state: FollowValue) => tx.insert(subseriesFollows).values({ subseriesId: id, state })
+          .onConflictDoUpdate({ target: subseriesFollows.subseriesId, set: { state } }),
+        drop: () => tx.delete(subseriesFollows).where(where),
       };
     }
   }
 }
 
 /**
- * Sets how you follow a series, an author, a universe or a shelf (task 2.2c,
- * D-108): `reading` or `tracking` writes its row, `null` (*Not following*)
- * deletes it. Answers the state it had, `null` for no row, which is the undo:
- * `setFollow(…, prior)` puts back exactly what was there, row or no row. One
- * transaction. Whether the thing may be followed is the caller's
- * (`followable`); nothing here infers *Reading* from reads.
+ * Sets how you follow a series, a subseries, an author, a universe or a shelf
+ * (task 2.2c, D-108; 2.2h): `reading`, `tracking` or `off` (*Not following* on
+ * an `AUTO_KINDS` kind, D-117) writes its row; `null` deletes it (*Not
+ * following* on an author or a shelf, and the undo of a first `off`). Answers
+ * the state it had, `null` for no row, which is the undo: `setFollow(…, prior)`
+ * puts back exactly what was there, row or no row. One transaction. Whether the
+ * thing may be followed, and whether `off` fits its kind, are the caller's
+ * (`followable`, the route; the tables' CHECKs refuse `off` on an author or a
+ * shelf); nothing here infers *Reading* from reads.
  */
 export async function setFollow(
-  userId: string, kind: FollowKind, id: string, state: FollowState | null,
-): Promise<FollowState | null> {
+  userId: string, kind: FollowKind, id: string, state: FollowValue | null,
+): Promise<FollowValue | null> {
   return db.transaction(async (tx) => {
     const row = followRow(tx, userId, kind, id);
     const [had] = await row.get();
     if (state === null) await row.drop();
     else await row.put(state);
-    return (had?.state as FollowState | undefined) ?? null;
+    return (had?.state as FollowValue | undefined) ?? null;
   });
+}
+
+/** The book's column naming each level a finish follows. */
+const LEVEL = { series: books.seriesId, subseries: books.subseriesId, universe: books.universeId } as const;
+
+/**
+ * What a finish follows (task 2.2h, D-117), inside `saveBookStatus`'s transaction,
+ * after the book is saved as read: its series, subseries and universe, in that
+ * order, each set to `reading` while it still has a live book that is neither
+ * read nor DNF (2.2d's `follow_next` skips a DNF too). No row, or `tracking`, is
+ * raised (owner, at 2.2h's plan gate); `reading` is left, and `off` (*Not
+ * following*) stays off. Authors and shelves are never followed here. Answers
+ * each follow it set and what it was, for the undo.
+ */
+async function followFinish(tx: Tx, userId: string, bookId: string): Promise<FinishFollow[]> {
+  const [book] = await tx.select({ series: books.seriesId, subseries: books.subseriesId, universe: books.universeId })
+    .from(books).where(eq(books.id, bookId));
+  const followed: FinishFollow[] = [];
+  for (const kind of AUTO_KINDS) {
+    const id = book?.[kind];
+    if (!id) continue;
+    const [left] = await tx.select({ id: books.id }).from(books)
+      .leftJoin(bookStatus, and(eq(bookStatus.bookId, books.id), eq(bookStatus.userId, userId)))
+      .where(and(
+        eq(LEVEL[kind], id), isNull(books.deletedAt),
+        or(isNull(bookStatus.status), notInArray(bookStatus.status, ["read", "dnf"])),
+      ))
+      .limit(1);
+    if (!left) continue;
+    const row = followRow(tx, userId, kind, id);
+    const [had] = await row.get();
+    if (had?.state === "off" || had?.state === "reading") continue;
+    await row.put("reading");
+    followed.push({ kind, id, prior: had ? "tracking" : null });
+  }
+  return followed;
 }
