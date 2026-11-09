@@ -2391,7 +2391,7 @@ now offers *Year or quarter…* through this picker, and adding a book to a year
 or quarter writes its `book_status` and `reading_plan` rows in one transaction;
 1.9's empty Books *Up next* action becomes *Plan a book*.
 
-*From 2.2b (TASK-051, task/2.2b-the-plan-rail):* until this lands, a rail block (the dashboard's
+*From 2.2b (TASK-051, PR #214):* until this lands, a rail block (the dashboard's
 *This quarter* strip, and the rail on 2.10's page) is a `button` in a GET form
 to `/books/list?q=<title>`, its book's Library row, and a `+N` stack is an
 `aria-disabled` button with its reason shown (`PlanRail.tsx`, D-137). This task
@@ -2945,7 +2945,7 @@ capacity line renders hatched and the one below it does not; that expanding Q2
 collapses Q1; and that the rail and the dashboard render identical totals from
 the same query. Screenshot at 360px and 1280px.
 
-*From 2.2b (TASK-051, task/2.2b-the-plan-rail):* the rail component exists (`src/components/PlanRail.tsx`,
+*From 2.2b (TASK-051, PR #214):* the rail component exists (`src/components/PlanRail.tsx`,
 `src/lib/plan-rail.ts`); this page draws it with the four columns and the fifth lane.
 2.2b proved its four-column items (the Check's columns, fifth lane and footers at
 360px and 1280px) on a staged render in a real browser, since this page didn't exist:
