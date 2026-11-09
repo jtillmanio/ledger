@@ -241,7 +241,7 @@ and notes where it went.
       *Or keep going* lists a book once, with its narrowest reason
       (subseries, series, universe, author, shelf), never the top of the
       plan. You answered these at TASK-050's plan gate, 2026-11-09 (from
-      TASK-050, task/2.2d-next-in-what-youre-reading).
+      TASK-050, PR #212).
 
 - [ ] Update `docs/05-roadmap.md` line 36 (the preamble on `docs/03-data-model.md`):
       "its decisions keep their numbers, 2.1–2.21" becomes 2.1–2.22, now

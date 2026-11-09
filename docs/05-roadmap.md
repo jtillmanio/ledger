@@ -2926,7 +2926,7 @@ read only what you follow as *Reading*. A series or shelf you happen to have
 read one book of is no longer inferred into them; it shows nowhere on the
 sheet unless another group lists it.
 
-*From TASK-050 (2.2d, task/2.2d-next-in-what-youre-reading):* `follow_next`
+*From TASK-050 (2.2d, PR #212):* `follow_next`
 as built is one row per follow (`kind` subseries, series, universe, author or
 shelf), with the follow's `read`, `total` and `last_read_on` (its latest dated
 finish); a book with no status row counts unread. One book can be next in
