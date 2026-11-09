@@ -228,9 +228,11 @@ class Fake(unittest.TestCase):
         return [v["query"] for v in self.hc.kinds("search")]
 
 
-def row(title, hid, pages, cover, year, author="Brandon Sanderson"):
+def row(title, hid, pages, cover, year, author="Brandon Sanderson", edition=None):
+    """A `hardcover` details row: `pages` the book's count, `edition` the matched edition's (1.14c)."""
     return {"title": title, "author": author, "open_library_id": "", "hardcover_id": str(hid),
-            "page_count": str(pages), "cover_url": cover, "published_year": str(year), "source": "hardcover"}
+            "page_count": str(pages), "edition_page_count": str(edition or ""), "cover_url": cover,
+            "published_year": str(year), "source": "hardcover"}
 
 
 class Check(Fake):
@@ -244,7 +246,8 @@ class Check(Fake):
                          ["0765311780", "9780765326355", "9780765391162", "9999999999999"])
         details = self.details()
         self.assertEqual(details["The Way of Kings"],
-                         row("The Way of Kings", 386446, 1007, "https://assets.hardcover.app/wok-edition.jpg", 2010))
+                         row("The Way of Kings", 386446, 1001, "https://assets.hardcover.app/wok-edition.jpg", 2010,
+                             edition=1007))
         self.assertEqual(details["Mistborn"],
                          row("Mistborn", 369692, 541, "https://assets.hardcover.app/mistborn-book.jpg", 2006))
 
@@ -282,7 +285,7 @@ class Check(Fake):
 
     def test_a_hand_row_is_unchanged_and_never_looked_up(self):
         hand = {"title": "The Way of Kings", "author": "Brandon Sanderson", "open_library_id": "",
-                "hardcover_id": "", "page_count": "1001", "cover_url": "https://example.org/wok.jpg",
+                "hardcover_id": "", "page_count": "1001", "edition_page_count": "", "cover_url": "https://example.org/wok.jpg",
                 "published_year": "2010", "source": "hand"}
         self.write_details([hand])
         self.run_once()
@@ -292,9 +295,9 @@ class Check(Fake):
         self.assertNotIn("9780765326355", asked)
         self.assertNotIn("The Way of Kings Brandon Sanderson", self.searched())
 
-    def test_calibre_pages_win_over_hardcovers(self):
-        """The details row folds into books with Hardcover's id, and Calibre's
-        #pages replace its page count (D-90): extract's half of the Check."""
+    def test_hardcovers_count_beats_calibres_pages(self):
+        """The details row folds into books with Hardcover's id, and its
+        book-level count beats Calibre's #pages (1.14c, D-130, amending D-90)."""
         self.run_once()
         out = self.dir / "seed"
         out.mkdir()
@@ -312,7 +315,7 @@ class Check(Fake):
                              book_details=self.dir / "book_details.csv", calibre_books=calibre)
         books = {r["title"]: r for r in self.read(out / "books.csv")}
         self.assertEqual((books["The Way of Kings"]["page_count"], books["The Way of Kings"]["hardcover_id"]),
-                         ("1258", "386446"))
+                         ("1001", "386446"))
         self.assertEqual((books["Mistborn"]["page_count"], books["Mistborn"]["hardcover_id"]), ("541", "369692"))
 
     def test_a_429_waits_its_retry_after_and_the_run_resumes(self):
@@ -358,7 +361,7 @@ class Check(Fake):
 
 
 class Lookup(Fake):
-    """AC-2: the ISBN first, then exactly one search; the edition's pages and cover first."""
+    """AC-2: the ISBN first, then exactly one search; the edition's cover first, and both page counts."""
 
     def test_an_isbn_with_no_edition_makes_the_isbn_request_then_one_search(self):
         self.run_once()
@@ -374,13 +377,13 @@ class Lookup(Fake):
         self.assertNotIn("The Way of Kings Brandon Sanderson", self.searched())
         self.assertNotIn("Mistborn Brandon Sanderson", self.searched())
 
-    def test_pages_and_cover_are_the_editions_else_the_books(self):
+    def test_the_cover_is_the_editions_else_the_books_and_both_counts_are_kept(self):
         self.run_once()
         wok, mistborn = self.details()["The Way of Kings"], self.details()["Mistborn"]
-        self.assertEqual((wok["page_count"], wok["cover_url"]),
-                         ("1007", "https://assets.hardcover.app/wok-edition.jpg"))
-        self.assertEqual((mistborn["page_count"], mistborn["cover_url"]),
-                         ("541", "https://assets.hardcover.app/mistborn-book.jpg"))
+        self.assertEqual((wok["page_count"], wok["edition_page_count"], wok["cover_url"]),
+                         ("1001", "1007", "https://assets.hardcover.app/wok-edition.jpg"))
+        self.assertEqual((mistborn["page_count"], mistborn["edition_page_count"], mistborn["cover_url"]),
+                         ("541", "", "https://assets.hardcover.app/mistborn-book.jpg"))
 
     def test_the_report_counts_matches_by_isbn_and_by_title(self):
         out = io.StringIO()
@@ -390,6 +393,121 @@ class Lookup(Fake):
         self.assertIn("ambiguous       1", report)
         self.assertIn("unmatched       2", report)
         self.assertIn("proposed        1", report)
+
+
+# 1.14c (D-130): Hardcover's two counts, recorded. "Print First" has a book-level
+# count (320, print) and an ISBN-matched edition with another (410, the ebook);
+# "Edition Only" has the edition's alone; "No Count" has neither; "Hand Kept"
+# has a hand row; "By Title" has no ISBN, so a search finds it.
+WRITER = "A Writer"
+PRINT_FIRST = hc_book(501, "Print First", [WRITER], pages=320)
+EDITION_ONLY = hc_book(502, "Edition Only", [WRITER])
+NO_COUNT = hc_book(503, "No Count", [WRITER])
+HAND_KEPT = hc_book(504, "Hand Kept", [WRITER], pages=333)
+COUNT_EDITIONS = {
+    "9780000000011": [edition(5011, PRINT_FIRST, isbn13="9780000000011", pages=410)],
+    "9780000000012": [edition(5021, EDITION_ONLY, isbn13="9780000000012", pages=410)],
+    "9780000000013": [edition(5031, NO_COUNT, isbn13="9780000000013")],
+    "9780000000014": [edition(5041, HAND_KEPT, isbn13="9780000000014", pages=444)],
+}
+COUNT_SEARCHES = {"By Title A Writer": results(doc(505, "By Title", [WRITER], 288))}
+# (title, Calibre id, ISBN, Calibre #pages, Calibre's stated words, the page and
+# word counts seed/books.csv holds from the extract before 1.14c: Calibre's
+# #pages first, then Hardcover's edition-first count).
+COUNT_BOOKS = [("Print First", "11", "9780000000011", "600", "90000", "600", "90000"),
+               ("Edition Only", "12", "9780000000012", "600", "", "600", ""),
+               ("No Count", "13", "9780000000013", "600", "120000", "600", "120000"),
+               ("Hand Kept", "14", "9780000000014", "600", "", "600", ""),
+               ("By Title", "", "", "", "", "288", "")]
+HAND_KEPT_ROW = {"title": "Hand Kept", "author": WRITER, "open_library_id": "", "hardcover_id": "",
+                 "page_count": "900", "edition_page_count": "", "cover_url": "", "published_year": "",
+                 "source": "hand"}
+
+
+class PageCounts(Fake):
+    """1.14c's **Check:** (AC-1, AC-2): both Hardcover counts in the sidecar,
+    and extract's order: hand, then the book's, then the edition's, then
+    Calibre's #pages. Word counts stay Calibre's."""
+
+    def setUp(self):
+        super().setUp()
+        self.hc = FakeHardcover(COUNT_EDITIONS, COUNT_SEARCHES)
+        with (self.dir / "books.csv").open("w", newline="", encoding="utf-8") as fh:
+            w = csv.writer(fh)
+            w.writerow(["id", "title", "author_id", "word_count", "word_count_source", "page_count",
+                        "calibre_id"])
+            for title, cid, _, _, _, pages, words in COUNT_BOOKS:
+                w.writerow([ex.slug(title, WRITER), title, ex.slug(WRITER), words,
+                            "stated" if words else "", pages, cid])
+        with (self.dir / "authors.csv").open("w", newline="", encoding="utf-8") as fh:
+            csv.writer(fh).writerows([["id", "name"], [ex.slug(WRITER), WRITER]])
+        with (self.dir / "calibre_books.csv").open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=ex.CALIBRE_BOOKS_COLUMNS, restval="")
+            w.writeheader()
+            for title, cid, isbn, pages, words, *_ in COUNT_BOOKS:
+                if cid:
+                    w.writerow({"title": title, "author": WRITER, "calibre_id": cid, "isbn": isbn,
+                                "pages": pages, "words": words})
+        self.write_details([HAND_KEPT_ROW])
+
+    def extract(self) -> dict[str, dict]:
+        """What extract loads from this run's sidecars: books by title."""
+        from test_extract import build_books
+        out = self.dir / "seed"
+        out.mkdir(exist_ok=True)
+        ex.UNRESOLVED.clear()
+        ex.CHANGES.clear()
+        with mock.patch("sys.stdout", io.StringIO()):
+            ex.extract_books(build_books([(t, WRITER, None, None, None) for t, *_ in COUNT_BOOKS]), out,
+                             book_review=self.dir / "book_review.csv",
+                             book_details=self.dir / "book_details.csv",
+                             calibre_books=self.dir / "calibre_books.csv")
+        return {r["title"]: r for r in self.read(out / "books.csv")}
+
+    def test_the_sidecar_keeps_both_counts(self):
+        """AC-2: 320 and 410 in their two columns; a search match has no edition."""
+        self.run_once()
+        details = self.details()
+        self.assertEqual((details["Print First"]["page_count"], details["Print First"]["edition_page_count"]),
+                         ("320", "410"))
+        self.assertEqual((details["By Title"]["page_count"], details["By Title"]["edition_page_count"]),
+                         ("288", ""))
+        self.assertEqual((details["Edition Only"]["page_count"], details["Edition Only"]["edition_page_count"]),
+                         ("", "410"))
+        self.assertEqual(details["Hand Kept"], HAND_KEPT_ROW)
+
+    def test_extract_loads_the_book_count_then_the_editions_then_calibres(self):
+        self.run_once()
+        books = self.extract()
+        self.assertEqual({t: books[t]["page_count"] for t in books},
+                         {"Print First": "320", "Edition Only": "410", "No Count": "600",
+                          "Hand Kept": "900", "By Title": "288"})
+
+    def test_every_word_count_is_still_calibres(self):
+        self.run_once()
+        books = self.extract()
+        self.assertEqual({t: (books[t]["word_count"], books[t]["word_count_source"]) for t in books},
+                         {"Print First": ("90000", "stated"), "Edition Only": ("", ""),
+                          "No Count": ("120000", "stated"), "Hand Kept": ("", ""), "By Title": ("", "")})
+
+    def test_the_report_counts_page_counts_that_change_and_estimates_that_move(self):
+        """Against seed/books.csv: Print First (600 -> 320, stated words) and
+        Edition Only (600 -> 410, no words: its estimate moves) change; No
+        Count keeps Calibre's 600 and By Title its 288; the hand row is never
+        looked up. A dry run, which writes nothing, says so too."""
+        out = io.StringIO()
+        self.run_once("--dry-run", stdout=out)
+        self.assertIn("page counts: 2 of 4 matched books change on the next extract, "
+                      "1 of them with no word count, so its estimate moves", out.getvalue())
+        self.assertFalse((self.dir / "book_details.csv").read_text(encoding="utf-8").count("Print First"))
+
+    def test_an_offline_rerun_leaves_every_sidecar_byte_identical(self):
+        self.run_once()
+        before = self.sidecars()
+        self.hc.calls.clear()
+        self.assertEqual(self.run_once("--offline", token=None), 0)
+        self.assertEqual(self.hc.calls, [])
+        self.assertEqual(self.sidecars(), before)
 
 
 class Requests(Fake):
@@ -505,7 +623,7 @@ class Replace(Fake):
 
     def test_open_library_rows_go_and_hand_and_decided_rows_stay(self):
         hand = {"title": "Warbreaker", "author": "Brandon Sanderson", "open_library_id": "OL1W",
-                "hardcover_id": "", "page_count": "600", "cover_url": "", "published_year": "2009",
+                "hardcover_id": "", "page_count": "600", "edition_page_count": "", "cover_url": "", "published_year": "2009",
                 "source": "hand"}
         self.write_details([
             {"title": "Mistborn", "author": "Brandon Sanderson", "open_library_id": "OL15358692W",
@@ -534,7 +652,8 @@ class Replace(Fake):
         """Schema review: a run that stops early never empties the sidecar.
         It stops at Warbreaker; Mistborn was reached, Nothing Like It wasn't."""
         ol = {"title": "Nothing Like It", "author": "Brandon Sanderson", "open_library_id": "OL9W",
-              "hardcover_id": "", "page_count": "100", "cover_url": "", "published_year": "1999",
+              "hardcover_id": "", "page_count": "100", "edition_page_count": "", "cover_url": "",
+              "published_year": "1999",
               "source": "openlibrary"}
         self.write_details([{**ol, "title": "Mistborn", "open_library_id": "OL2W"}, ol])
         self.hc.fail_at = 3
@@ -562,7 +681,7 @@ class Replace(Fake):
         rows[0]["decision"] = "merge"
         self.write_review(rows)
         hand = {"title": "Edgedancer Novella", "author": "Brandon Sanderson", "open_library_id": "",
-                "hardcover_id": "", "page_count": "300", "cover_url": "", "published_year": "",
+                "hardcover_id": "", "page_count": "300", "edition_page_count": "", "cover_url": "", "published_year": "",
                 "source": "hand"}
         self.write_details([hand])
         # What extract loads after the accept.

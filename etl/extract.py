@@ -1031,11 +1031,14 @@ OPEN_LIBRARY = "open library"
 # A near spelling etl/enrich_books.py found on Hardcover (task 1.14b, D-94), which
 # replaced Open Library: kept the same way, undecided, while the workbook has `a`.
 HARDCOVER = "hardcover"
-# etl/data/book_details.csv (tasks 1.14, 1.14b; D-44, D-94), keyed by title and
-# author. Hardcover's rows fill hardcover_id; open_library_id stays for 1.14's
-# until 6.19 removes Open Library.
-BOOK_DETAILS_COLUMNS = ["title", "author", "open_library_id", "hardcover_id", "page_count", "cover_url",
-                        "published_year", "source"]
+# etl/data/book_details.csv (tasks 1.14, 1.14b, 1.14c; D-44, D-94, D-130), keyed
+# by title and author. Hardcover's rows fill hardcover_id; open_library_id stays
+# for 1.14's until 6.19 removes Open Library. On a `hardcover` row page_count is
+# Hardcover's book-level count (its default edition's, usually print) and
+# edition_page_count the count of the edition the Calibre ISBN matched (none
+# for a title search); on a `hand` row page_count is the owner's.
+BOOK_DETAILS_COLUMNS = ["title", "author", "open_library_id", "hardcover_id", "page_count",
+                        "edition_page_count", "cover_url", "published_year", "source"]
 WORKBOOK_READS_COLUMNS = ["title", "year", "genre", "tab", "rank"]
 # The Calibre sidecar etl/calibre.py writes (task 1.18, D-73, D-83, D-87), keyed
 # by Calibre's title and author. Calibre is the source of truth for what it
@@ -1562,14 +1565,28 @@ def load_book_details(path) -> list[dict]:
                 for r in csv.DictReader(fh) if (r.get("title") or "").strip()]
 
 
+def details_pages(row: dict) -> int | None:
+    """The page count a book_details.csv row gives, before Calibre's #pages
+    (task 1.14c, D-130): a `hardcover` row's book-level count, else its
+    edition's; any other row's count but 1.14's `openlibrary`, which is none."""
+    if row["source"] == "hardcover":
+        return as_int(row["page_count"]) or as_int(row["edition_page_count"])
+    if row["source"] == "openlibrary":
+        return None
+    return as_int(row["page_count"])
+
+
 def fold_book_details(idx: BookIndex, details: list[dict]) -> None:
     """Fill each book's Hardcover id (or 1.14's Open Library id), page count
     and cover from its book_details.csv row, matched on title and author after
     clean() and key() (tasks 1.14, 1.14b; D-44, D-94). The published year fills
     only where the workbook has none. A page count never becomes a word count:
     2.1 estimates that.
-    Calibre's #pages, which fold_calibre() kept, replaces the sidecar's
-    page count whatever its source (task 1.18b, D-90, D-94)."""
+    The page count (task 1.14c, D-130): a `hand` row's; else Hardcover's
+    book-level count; else the matched edition's; else Calibre's #pages, which
+    fold_calibre() kept and which is estimated from the ebook, so runs above
+    print. An `openlibrary` row's count is no source: Open Library is gone
+    (D-94)."""
     for b in idx.by_key.values():
         b.update(open_library_id=None, hardcover_id=None, page_count=b.get("calibre_pages"), cover_url=None)
     for row in details:
@@ -1581,7 +1598,7 @@ def fold_book_details(idx: BookIndex, details: list[dict]) -> None:
             continue
         b["open_library_id"] = clean(row["open_library_id"])
         b["hardcover_id"] = as_int(row["hardcover_id"])
-        b["page_count"] = b.get("calibre_pages") or as_int(row["page_count"])
+        b["page_count"] = details_pages(row) or b.get("calibre_pages")
         b["cover_url"] = clean(row["cover_url"])
         if b["published_year"] is None:
             b["published_year"] = as_int(row["published_year"])

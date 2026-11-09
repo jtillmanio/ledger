@@ -1,14 +1,14 @@
 ---
 id: TASK-057
 title: 1.14c Page counts from Hardcover, word counts from Calibre
-status: Ready
+status: In progress
 depends_on: [TASK-034]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 3f240b2
 ---
 
 # TASK-057 — 1.14c Page counts from Hardcover, word counts from Calibre
@@ -74,7 +74,32 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner, 2026-11-09.
+
+**Found:** the Hardcover cache already holds both counts (`EDITIONS_QUERY` asks `book.pages`; a search result's `pages` is its default edition's), so no cached answer is re-fetched. The cache holds only the 100-book dry run (104 answers); a full run over ~4,390 books costs ~42 ISBN requests (4,139 Calibre ISBNs, 100 a request) plus one search per book with no ISBN or no edition, a few hundred, inside the 3,000 budget and Hardcover's 5,000 a day.
+
+### Steps
+
+1. `etl/enrich_books.py`: a Hardcover record carries `pages` (the book's) and `edition_pages` (the matched edition's; none for a search match). `book_details.csv` keeps `page_count` (Hardcover's book-level count on a `hardcover` row; the owner's on a `hand` row) and gains `edition_page_count` after it. A file without the column still reads. Covers stay edition-first.
+2. Its report gains: page counts that change against `seed/books.csv` for the matched books, and how many of those have no word count (the estimate moves). It reads Calibre's `pages` from `calibre_books.csv` and `page_count`, `word_count` from `seed/books.csv`. Printed on a dry run too.
+3. `etl/extract.py` `fold_book_details`: a `hand` row's count, else Hardcover's book-level count, else the edition's, else Calibre's `#pages`. An `openlibrary` row's count is no source (owner, 2026-11-09: Open Library is removed, replaced by Hardcover); Calibre's `#pages` fills. A `hand` row with no count: Calibre's `#pages` fills.
+4. `src/lib/hardcover.ts` `fromEdition`: `whole(b.pages) ?? whole(e.pages)`; search results are already book-level.
+5. `.claude/rules/schema.md` (the *Calibre owns… page count* rule and the `book_details.csv` columns) and `docs/COMMANDS.md` line 40 (*its page counts win*) to the new order.
+6. Real dry run: `npm run extract` on today's code before step 3 (a `seed/books.csv` with today's counts), then `npm run enrich:books -- --dry-run --limit 99999` after: writes no CSV, fills the cache; its two counts go in the PR. The committed sidecars are not regenerated here: the owner's real run (START-HERE Step 13), together at the end or later.
+
+**Files:** `etl/enrich_books.py`, `etl/extract.py`, `src/lib/hardcover.ts`, `.claude/rules/schema.md`, `docs/COMMANDS.md` (not in Files likely touched: its line 40 states the old order), `etl/test_enrich_books.py`, `etl/test_extract.py`, `etl/test_views.sql`, `test/hardcover-search.test.ts`.
+
+### Test strategy
+
+- AC-1, AC-2: `etl/test_enrich_books.py` — a 1.14c Check class: book 1001 / edition 1007 / `#pages` 1258 loads 1001; edition-only 410 loads 410; no Hardcover count loads `#pages`; a hand row keeps its count; every Calibre `stated` count unchanged; 320/410 in their two columns, a search match leaves the edition column empty; the report line; the existing `--offline` byte-identical test covers the new column.
+- `etl/test_extract.py`: the fold order, an `openlibrary` row's count ignored, a hand row with no count, a file without `edition_page_count`.
+- AC-3: `etl/test_views.sql` — no word count and `page_count` 320 → 320 × wpp `estimated`; 40 → unknown; `stated` with 600 pages keeps its count.
+- AC-4: `test/hardcover-search.test.ts` — book 320 / edition 410 stores `page_count = 320`; book none / edition 410 stores 410.
+- AC-5: the rules file diff, and the PR body's two counts (manual).
+
+**Size:** 9 files (4 tests), one roadmap entry sized S, no schema or UI: kept whole.
+
+**Revision 1 (Phase 3):** `etl/test_calibre.py`'s `test_pages_replace_the_details_page_count_which_still_fills_a_book_with_none` pinned 1.18b's *`#pages` replaces the details count whatever its source* (D-90), which D-130 amends: it now asserts the new order (a hand row's 1007 and Hardcover's 541 beat Calibre's, Calibre's 650 fills a book with no row). Not in the original file list: the full ETL suite found it.
 
 ## Review log
 
