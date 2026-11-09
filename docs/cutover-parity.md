@@ -1,16 +1,19 @@
 # Cutover parity: the Sheets, tab by tab
 
-Roadmap 1.25 (D-95). Cutover (1.26) freezes `Comics.xlsx` and `Books.xlsx`, so
+Roadmap 1.25 (D-95). Cutover freezes `Comics.xlsx` and `Books.xlsx`, so
 anything the owner still does in them stops the day after unless the app does
-it. This file lists every tab of a fresh export (2026-10-29: 16 comics tabs, 22
+it. Since 2026-11-08 there are two cutovers (D-128): 1.26 freezes
+`Books.xlsx`, and 1.28 freezes `Comics.xlsx` later. Each workbook's uses below
+gate its own cutover. This file lists every tab of a fresh export (2026-10-29: 16 comics tabs, 22
 books tabs; re-list before 1.26 with the one-liner in 1.25's **Check:**), what
 the owner reads or does there, and where each use goes.
 
 Each use ends in one of:
 
 - **a ticked roadmap ID**: the app does it today;
-- **an open roadmap ID**: it is built before the switch, so it is in 1.26's
-  **Depends on** and in M9's *Order*;
+- **an open roadmap ID**: it is built before that workbook's switch, so it is
+  in its cutover's **Depends on** (1.26 for `Books.xlsx`, 1.28 for
+  `Comics.xlsx`) and in the tasklist's order;
 - **won't carry**, with the owner's reason. A reason may name a later entry
   (*6.8 after cutover*): that entry is not built before the switch.
 
@@ -27,25 +30,40 @@ proposal taken).
 **Signed off:** the owner, 2026-10-29, after reading it end to end. Amended
 the same day from spec review, with the owner's answers: word counts (3.1,
 and 4.4 right after cutover), the To-Read *Top* pick, and the citations made
-exact (0.8b, 1.22, 2.3).
+exact (0.8b, 1.22, 2.3). Amended 2026-11-08 with the owner's answers
+(D-128, D-133): the cutover splits, books first, and the master list's two
+Calibre uses (fixing a word count, bringing in what changed) go to 4.4's
+two-way sync, pulled ahead of 1.26, since Calibre owns word counts and each
+sync replaces them.
 
-## What cutover waits for
+## What each cutover waits for
+
+### The books cutover (1.26)
 
 The open entries below, each built before 1.26 and named in its **Depends
-on**, on top of the open Phase 1 entries it already names:
+on**, on top of the open Phase 1 entries it already names (1.14c, 1.17b and
+1.29) and 5.17, which the owner pulled ahead (D-132):
 
 - 2.0, 2.1, 2.2, 2.2b, 2.3: the year and quarter word-count budget the
   `To-Read 20XX` tabs and the master list's pace cells hold. 2.2's
   *sittings* line needs 2.1b, which is not pulled ahead (owner, 2026-10-29):
   2.2 ships without that line and gains it when 2.1b lands, after cutover.
-- 3.1, 3.2, 3.3: editing runs, placements and prerequisites, and adding a run.
 - 3.4: ranking the top books of a year.
+- 4.4: the two-way Calibre sync, by hand or weekly. From 1.26 extract no
+  longer loads books, so it is how Calibre's changes arrive (D-133).
 - 5.7: adding a book that is coming out, with its date.
+
+### The comics cutover (1.28)
+
+The open entries below, each built before 1.28 and named in its **Depends
+on**. Until then `Comics.xlsx` stays the record, and 1.29's comics-only load
+refreshes production's comics from it (D-128):
+
+- 3.1, 3.2, 3.3: editing runs, placements and prerequisites, and adding a run.
 - 5.10, and the 5.6 it depends on: recording a trade bought.
 
 Everything else the Sheets do today is either in the app already or waits,
-by the owner's choice, for an entry after the switch. First among those is
-4.4, the in-app Calibre sync, right after cutover.
+by the owner's choice, for an entry after the switch.
 
 ## Comics.xlsx
 
@@ -217,8 +235,8 @@ current quarter. Loaded as books with `to_read` status.
 - Browse the master list → 1.8c
 - Find a book on it by title, author or series → 1.22
 - Add a book to the list → 1.4c
-- Fix a book's word count in the app → 3.1
-- Bring in what changed in Calibre (new, changed and removed books, word counts, series) → won't carry: Calibre is the source of truth (D-87) and its changes wait there, nothing lost; `npm run calibre` (1.18) runs until cutover and the in-app sync (4.4) comes right after it (owner, 2026-10-29)
+- Fix a book's word count: in Calibre, which owns it, then sync (D-133) → 4.4
+- Bring in what changed in Calibre (new, changed and removed books, word counts, series) → 4.4
 - Set my reading pace (minutes a day, words a minute) → 2.0
 - See what a quarter or a year can hold in words → 2.1
 

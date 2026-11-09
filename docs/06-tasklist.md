@@ -19,19 +19,31 @@ milestone._
 
 | Milestones | Scope | Roadmap phases | Entries |
 |---|---|---|---|
-| M1–M9 | **MVP: cutover from the Sheets.** Every MVP feature in [01-product.md § Feature index](01-product.md#feature-index) | 0, 1, and 2.11a, plus what 1.25 names | 55 |
-| M10–M15 | **Next:** the pace engine, the comics dashboard, editing | 2, 3 | 40 |
+| M1–M9 | **MVP: the books cutover** (1.26, D-128). Every MVP feature in [01-product.md § Feature index](01-product.md#feature-index) | 0, 1 (but 1.28), and 2.11a, plus what 1.25 names for `Books.xlsx` and the owner pulled ahead | 58 |
+| M10–M15 | **Next:** the pace engine, the comics dashboard, editing, and the comics cutover (1.28, in M13) | 2, 3, and 1.28 | 41 |
 | M16–M26 | **Later:** enrichment, the remaining surfaces, polish, AI curation, watch, music and games | 4–10, and 6.2b in M12 | 75 |
 
 - **M1–M9 are START-HERE's sittings under one numbering.** M1 and M2 are
   sittings 1–2 (Phase 0) with the Phase 0 work that came after them; M3–M9 are
   sittings 3–9, the same tasks in the same order. *Sitting 7* and *M7* name the
   same thing.
-- **Cutover** is roadmap 1.26 (START-HERE Step 14), the last entry of M9: the
-  final load, then a month running both. Cutting over before M9 defeats the
-  migration (HANDOFF §10). Its gate is M1–M9 plus every open entry 1.25's
-  parity audit names, wherever that entry's milestone is: an entry the
-  Sheets' daily use needs is built before the switch, not after (D-95).
+- **Cutover is two entries** (D-128). 1.26 (START-HERE Step 14), the last
+  entry of M9, cuts the **books** over: the final full load, `LEDGER_LIVE`,
+  `Books.xlsx` archived, then a month running both. Its gate is M1–M9 plus
+  every open entry 1.25's parity audit names for `Books.xlsx`, wherever that
+  entry's milestone is (D-95), and the entries the owner pulled ahead on
+  2026-11-08: 1.14c, 1.17b, 1.29, 4.4 and 5.17. 1.28, the last entry of M13,
+  cuts the **comics** over, after 3.1–3.3 and 5.6 → 5.10; until then
+  `Comics.xlsx` stays the comics record and 1.29's comics-only load refreshes
+  production from it. Cutting over before M9 defeats the migration (HANDOFF
+  §10).
+- **Build order: books first** (D-129). M9 to 1.26, with what it pulls ahead;
+  then the books entries of Next: M10's open rows, M11, and 3.5 → 3.4b from
+  M14; then the comics: M12, M13 (ending in 1.28, with 5.6 → 5.10 pulled
+  ahead from M18), the rest of M14 (3.6 → 3.6b → 3.6c) and M15; then Later in
+  its order. Milestone numbers stay, since sittings and decisions cite them,
+  so the numbers are no longer the build order. *Next and Later* below still
+  holds.
 - **Sizing.** The kit's guideline is 3–8 tasks a milestone and 3–6 milestones
   to an MVP. This MVP has nine because the sittings came first and decisions
   cite them; M9 has two because sitting 9 does.
@@ -60,7 +72,7 @@ milestone._
 | Feature | Priority | Roadmap entries | Milestones |
 |---|---|---|---|
 | F-01 Private sign-in | MVP | 1.11 | M7 |
-| F-02 Both workbooks migrated, rebuildable until cutover | MVP | 0.3, 0.4, 0.5, 0.6, 0.7, 1.25, 1.26 | M1, M9 |
+| F-02 Both workbooks migrated, rebuildable until cutover | MVP (then Next) | 0.3, 0.4, 0.5, 0.6, 0.7, 1.25, 1.29, 1.26, 1.28 | M1, M9, M13 |
 | F-03 Tested, released by hand, backed up | MVP | 0.1, 0.2, 0.11, 0.12 | M1, M6, M2 |
 | F-04 Fast on a phone | MVP | 0.9, 0.10, 1.8d | M2, M6 |
 | F-05 One shell for three media | MVP | 1.8a, 1.8c, 1.8, 1.8e, 1.8b | M6 |
@@ -75,9 +87,9 @@ milestone._
 | F-14 A prerequisite graph without cycles | MVP (then Next) | 2.11a, 3.3 | M7, M13 |
 | F-15 Add books by search, paste or hand | MVP | 1.4, 1.4c, 1.4e, 1.22 | M5, M9 |
 | F-16 Quick-capture inbox | MVP | 1.4b | M5 |
-| F-17 A dated reading log | MVP | 1.5, 1.16, 1.17 | M5, M9 |
+| F-17 A dated reading log | MVP | 1.5, 1.16, 1.17, 1.17b | M5, M9 |
 | F-18 To-read levels | MVP | 1.7, 1.4d, 1.21 | M6, M5, M8 |
-| F-19 A clean, enriched book catalog | MVP | 1.13, 1.14, 1.18, 1.20 | M8 |
+| F-19 A clean, enriched book catalog | MVP | 1.13, 1.14, 1.18, 1.20, 1.14c | M8, M9 |
 | F-20 Follow series, authors and universes | MVP (then Later) | 1.15, 5.11, 5.12 | M8, M17 |
 | F-21 The pace engine | Next (then Later) | 2.0, 2.0b, 2.1, 2.1b, 6.12 | M10, M20 |
 | F-22 Books dashboard and the plan rail | Next | 2.2, 2.2b | M10 |
@@ -131,7 +143,7 @@ milestone._
 | F-70 The Library, sorted | Next | 2.2e | M10 |
 | F-71 Every screen from a phone | Next | 2.2i | M10 |
 | F-72 Where the book sits | Next (then Later) | 2.2g, 6.21 | M10, M21 |
-| F-73 Physical copies | Later | 5.17 | M17 |
+| F-73 What I own: physical copies and audiobooks | MVP (D-132) | 5.17 | M17, pulled ahead of 1.26 |
 | F-74 On deck by genre | Later | 4.5b | M16 |
 
 ### Entities → tasks
@@ -160,7 +172,7 @@ milestone._
 | `shelf_games` | 10.6 (proposed) |
 | `shelf_follows` | 2.2c (approved 2026-11-04; built: TASK-048, migration 0022) |
 | `subseries_follows` | 2.2h (proposed) |
-| `physical_copies` | 5.17 (proposed) |
+| `owned_copies` | 5.17 (proposed; replaces `physical_copies`, D-132) |
 
 Views are in `etl/views.sql` and listed in data model §3; each new one lands
 with the task that first reads it.
@@ -306,10 +318,10 @@ with the task that first reads it.
 ## M9: Captured from cutover on — MVP
 
 **Goal:** Captured from cutover on.  
-**Demo at exit:** Paste a list as title and author in their own cells; search as you type, with each result's source; set a book to *Reading* and its start date is kept; listen to a book and finish it, and it counts as a read with the headphones glyph; then the last load, and both Sheets archived read-only with the app as the record.  
-**Features:** F-02, F-09, F-15, F-17, F-58  
+**Demo at exit:** Paste a list as title and author in their own cells; search as you type, with each result's source; set a book to *Reading* and its start date is kept; listen to a book and finish it, and it counts as a read with the headphones glyph; re-date a read, start to finish; then the last full load, and `Books.xlsx` archived read-only with the app as the record for books.  
+**Features:** F-02, F-09, F-15, F-17, F-19, F-58  
 **Depends on:** M5, M8 (1.21)  
-**Order:** Sitting 9: 1.25 → 1.4e → 1.4f → 1.19 → 1.22 → 1.17 → 1.23 → 1.27 → the entries 1.25 pulls ahead → 1.26. 1.25, the Sheets parity audit (D-95), goes first and can run any time, even before M8 closes: every open entry it names is built before 1.26, so its list sets how long this milestone is, and 1.26, the switch itself, comes last. Then four fixes to screens already in daily use (1.4f searches Hardcover instead of Open Library, D-94, before 1.22 tags each result's source; 1.19 turns on 1.8's comics *Add*, from 1.8b's plan; 1.22 from the 2026-10-26 books intake), then start dates and audiobooks, which like 1.5 must land before real reading accumulates and before cutover. 1.23 follows 1.17 because both change `book_status` and `read_events`. 1.27 settles the old wishlist in extract, so the final load carries it (D-111, which removed 1.24): its review sidecar is the owner's to decide, and 1.26 waits until no row is undecided. **Pulled ahead by 1.25** (`docs/cutover-parity.md`), each keeping its row in its own milestone and built before 1.26: 2.0 → 2.1 → 2.2 → 2.2b (M10) and 2.3 (M11), the year and quarter word-count budget the To-Read tabs hold (2.1b is not pulled ahead: 2.2 ships without its *sittings* line until 2.1b lands); 3.1 → 3.2 → 3.3 (M13), catalog and prerequisite edits; 3.4 (M14), top books per year; 5.7 (M17), books coming out; 5.6 → 5.10 (M18), recording a trade bought. 2.2's text gives its hero 2.4's geometry and its *Plan* 2.4's hover rule, and 2.4 is not pulled ahead (owner, 2026-10-29): 2.2's plan builds what it borrows rather than waiting for 2.4.
+**Order:** Sitting 9: 1.25 → 1.4e → 1.4f → 1.19 → 1.22 → 1.17 → 1.23 → 1.27 → the entries 1.25 pulls ahead → 1.26. 1.25, the Sheets parity audit (D-95), goes first and can run any time, even before M8 closes: every open entry it names is built before 1.26, so its list sets how long this milestone is, and 1.26, the switch itself, comes last. Then four fixes to screens already in daily use (1.4f searches Hardcover instead of Open Library, D-94, before 1.22 tags each result's source; 1.19 turns on 1.8's comics *Add*, from 1.8b's plan; 1.22 from the 2026-10-26 books intake), then start dates and audiobooks, which like 1.5 must land before real reading accumulates and before cutover. 1.23 follows 1.17 because both change `book_status` and `read_events`. 1.27 settles the old wishlist in extract, so the final load carries it (D-111, which removed 1.24): its review sidecar is the owner's to decide, and 1.26 waits until no row is undecided. **Pulled ahead by 1.25** (`docs/cutover-parity.md`), each keeping its row in its own milestone and built before 1.26: 2.0 → 2.1 → 2.2 → 2.2b (M10) and 2.3 (M11), the year and quarter word-count budget the To-Read tabs hold (2.1b is not pulled ahead: 2.2 ships without its *sittings* line until 2.1b lands); 3.4 (M14), top books per year; 5.7 (M17), books coming out. **Split 2026-11-08 (D-128):** 1.26 is now the books cutover, so 3.1 → 3.2 → 3.3 and 5.6 → 5.10, the comics uses, gate 1.28 in M13 instead. **Pulled ahead by the owner the same day,** each built before 1.26: 1.14c (page counts from Hardcover, D-130) and 1.17b (dates asked when they happen, D-131), with rows here; 1.29, the comics-only load that keeps production's comics in step with `Comics.xlsx` once `LEDGER_LIVE` is on (D-128), with a row here; 5.17 (M17), what you own (D-132); and 4.4 (M16), the two-way Calibre sync, which replaces extract for books from 1.26 on (D-133). Proposed order for them: 1.14c → 1.17b → 5.17 → 4.4 (it writes 5.17's formats to Calibre) → 1.29 → 1.26. 2.2's text gives its hero 2.4's geometry and its *Plan* 2.4's hover rule, and 2.4 is not pulled ahead (owner, 2026-10-29): 2.2's plan builds what it borrows rather than waiting for 2.4.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -322,7 +334,10 @@ with the task that first reads it.
 | ✅ | 1.17 → TASK-039 | Started and finished: a start date for books, a derived span for runs | M |  | — |
 | ✅ | 1.23 → TASK-043 | Audiobooks: listening, and a listen that counts as a read | M |  | 1.5, 1.17 |
 | ✅ | 1.27 → TASK-044 | Extract resolves the wishlist, before cutover | M |  | 1.18, 1.21 |
-|  | 1.26 | Cut over from the Sheets | M |  | 1.25, all of Phase 1, and every open entry 1.25 names |
+|  | 1.14c | Page counts from Hardcover, word counts from Calibre | S | _Owner, 2026-11-08 (D-130)_ | 1.14b |
+|  | 1.17b | Dates when you start and finish, and on every read | M | _Owner, 2026-11-08 (D-131)_ | 1.17, 1.23 |
+|  | 1.29 | Refresh production's comics from `Comics.xlsx`, books untouched | M | _Owner, 2026-11-08 (D-128)_ | — |
+|  | 1.26 | Cut the books over from the Sheets | M | _The books cutover since 2026-11-08 (D-128)_ | 1.25, 1.14c, 1.17b, 1.29, and every open entry 1.25 names for `Books.xlsx`, with 4.4 and 5.17 |
 
 # Next
 
@@ -331,7 +346,7 @@ with the task that first reads it.
 **Goal:** Answer "is 2027 overcommitted" from the real reading rate.  
 **Demo at exit:** Settings take minutes a day and words a minute; a logged session recalculates them; the Library sorts by length; finishing a book follows its series, and In flight can finish it; a tab row reaches every screen on a phone; the books dashboard shows the book in hand, the next book of what you're reading, and the quarter against 760k, and the plan rail draws the year.  
 **Features:** F-21, F-22, F-68, F-70, F-71, F-72  
-**Depends on:** Cutover (M1–M9)  
+**Depends on:** M9 but 1.26, which waits on 2.2b (D-95); the rows still open after 1.26 come first after it (D-129)  
 **Order:** 2.0 → 2.1 → 2.1b → 2.2e → 2.2c → 2.2i → 2.0b → 2.2f → 2.2h → 2.2 → 2.2d → 2.2g → 2.2b: the phone's tab row (2.2i) needs nothing and goes early; 2.2h lands before 2.2d so `follow_next` can read followed subseries; settings feed capacity; the Library gets its own nav item before `/books` stops being the list; the follows exist before the dashboard reads them; the dashboard reads capacity, and the rail is the dashboard's.
 
 | Done | # | Task | Size | Notes | Depends on |
@@ -390,7 +405,7 @@ with the task that first reads it.
 **Demo at exit:** Edit a field inline, create a run with its tracks and prerequisites, assign and name blocks, archive and restore, edit the volume map.  
 **Features:** F-28, F-14, F-13  
 **Depends on:** M12 (2.9)  
-**Order:** 3.1 → 3.2 → 3.3 → 3.7 → 3.8 → 3.9: 3.1's field is the pattern the rest reuse; 3.8 reorders 2.9's grouped run list.
+**Order:** 3.1 → 3.2 → 3.3 → 3.7 → 3.8 → 3.9 → 1.28: 3.1's field is the pattern the rest reuse; 3.8 reorders 2.9's grouped run list. 1.28, the comics cutover (D-128), comes last, after 5.6 → 5.10, pulled ahead from M18 (`docs/cutover-parity.md`); 3.7–3.9 don't gate it, so it may move up once 3.3 and 5.10 are done.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -400,6 +415,7 @@ with the task that first reads it.
 |  | 3.7 | Archive and restore | S |  | 0.4 |
 |  | 3.8 | Blocks: assign, order, name | M |  | 2.9 |
 |  | 3.9 | Volume map editor | S |  | 1.12 |
+|  | 1.28 | Cut the comics over from the Sheets | S | _Owner, 2026-11-08 (D-128)_ | 1.26, 1.29, 3.1, 3.2, 3.3, 5.10 |
 
 ## M14: The run detail and the detail sheets — Next
 
@@ -407,7 +423,7 @@ with the task that first reads it.
 **Demo at exit:** Open a book or an issue as a sheet over its list and dismiss it with Back; rate a book, rank it in its year as you finish it, and open a past year's top ten; section a run into eras, with ordinals, release dates and read rows hidden.  
 **Features:** F-29, F-31, F-60, F-30  
 **Depends on:** Cutover  
-**Order:** 3.5 → 3.4 → 3.4b → 3.6 → 3.6b → 3.6c. 3.4b changes the column 3.4 writes, so it follows it.
+**Order:** 3.5 → 3.4 → 3.4b → 3.6 → 3.6b → 3.6c. 3.4b changes the column 3.4 writes, so it follows it. Books first (D-129): 3.4 is built before 1.26, and 3.5 and 3.4b right after M11; 3.6 → 3.6c wait for the comics.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -440,11 +456,11 @@ with the task that first reads it.
 **Demo at exit:** After cutover, Metron, Open Library and Hardcover fill the catalog without touching a hand value; covers show on spine rows and dashboards.  
 **Features:** F-33, F-74  
 **Depends on:** Cutover  
-**Order:** 4.4 → 4.1 → 4.2 → 4.3. A prerequisite for M22. 4.4 goes first (2026-10-26 books intake): after cutover it is the only way Calibre's new books and reads come in, and it needs nothing else in this milestone. 4.5 (from 1.18c) needs only 1.18c and can come at any point.
+**Order:** 4.4 → 4.1 → 4.2 → 4.3. A prerequisite for M22. 4.4 is pulled ahead of 1.26 (D-133): from the books cutover it is the only way Calibre's changes come in, and it needs nothing else in this milestone. 4.5 (from 1.18c) needs only 1.18c and can come at any point.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
-|  | 4.4 | Sync from Calibre after cutover: upload `metadata.db` | M |  | 1.18, 1.21 |
+|  | 4.4 | Sync with Calibre, both ways: one command, by hand or weekly | M | _Pulled ahead of 1.26 (D-133)_ | 1.18, 1.21, 1.14c, 5.17 |
 |  | 4.1 | Metron backfill | M |  | — |
 |  | 4.2 | Open Library and Hardcover backfill | M |  | — |
 |  | 4.3 | Covers in the UI | S |  | — |
@@ -454,10 +470,10 @@ with the task that first reads it.
 ## M17: Book surfaces — Later
 
 **Goal:** The remaining book surfaces.  
-**Demo at exit:** Shelves with notes, DNF with a reason, books coming out, a page per series, author and universe pages, the *In the middle of · Completed* page, a queue of audiobooks to listen next, a book parked, then reviewed back into the plan, and a physical library you can filter.  
+**Demo at exit:** Shelves with notes, DNF with a reason, books coming out, a page per series, author and universe pages, the *In the middle of · Completed* page, a queue of audiobooks to listen next, a book parked, then reviewed back into the plan, and what you own on paper or as an audiobook, as a filter.  
 **Features:** F-34, F-31, F-37, F-38, F-20, F-59, F-66, F-69, F-73  
 **Depends on:** M7 (1.9), M8 (1.15), M9 (1.23), M10 (2.2c, 2.2d), M11 (2.3)  
-**Order:** 5.1 → 5.5 → 5.7 → 5.9 → 5.11 → 5.12 → 5.14 → 5.15 → 5.17: 5.11 builds on 5.9's series page and places 2.2c's follow control there, and 5.12 opens rows on 5.9's and 5.11's pages. 5.14 needs only 1.23 and 1.9, so it can go first. 5.15 after 5.14, because parking takes a book off the listen queue.
+**Order:** 5.1 → 5.5 → 5.7 → 5.9 → 5.11 → 5.12 → 5.14 → 5.15 → 5.17: 5.11 builds on 5.9's series page and places 2.2c's follow control there, and 5.12 opens rows on 5.9's and 5.11's pages. 5.14 needs only 1.23 and 1.9, so it can go first. 5.15 after 5.14, because parking takes a book off the listen queue. 5.7 (by 1.25) and 5.17 (by the owner, D-132) are pulled ahead of 1.26.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -469,7 +485,7 @@ with the task that first reads it.
 |  | 5.12 | In the middle of, and completed: one page for every medium | M |  | 1.9, 1.15, 2.2c, 2.2d |
 |  | 5.14 | Audiobooks: a queue to listen next | M |  | 1.23, 1.9 |
 |  | 5.15 | Parked: put a book away, and review it on a schedule | M |  | 1.9, 1.17, 1.21, 2.2, 2.3 |
-|  | 5.17 | Physical copies: the books you own on paper | M |  | 2.2e, 1.4, 1.21 |
+|  | 5.17 | What you own: physical copies and audiobooks | M | _Pulled ahead of 1.26 (D-132)_ | 2.2e, 1.4, 1.21 |
 
 ## M18: Comic surfaces — Later
 
@@ -477,7 +493,7 @@ with the task that first reads it.
 **Demo at exit:** The tracks page, a rating when a run is finished, *Collected in*, new issues for the runs you follow, a page per comic volume with its gaps, and a run parked and reviewed.  
 **Features:** F-35, F-31, F-36, F-37, F-38, F-66  
 **Depends on:** M14 (3.5), M16 (4.1), M17 (5.7)  
-**Order:** 5.2 → 5.4 → 5.6 → 5.8 → 5.10 → 5.13 → 5.16: 5.10 reads 5.6's parsed editions; 5.8 follows 5.7's release pattern; 5.16 joins 5.15's review.
+**Order:** 5.2 → 5.4 → 5.6 → 5.8 → 5.10 → 5.13 → 5.16: 5.10 reads 5.6's parsed editions; 5.8 follows 5.7's release pattern; 5.16 joins 5.15's review. 5.6 → 5.10 are pulled ahead of 1.28, the comics cutover (D-128).
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|

@@ -543,6 +543,16 @@ of gates**. The items below are the ones only you can do.
 - [ ] See one **Nightly backup** run go green with its *Restore check* step
       (START-HERE 10d, D-30; a manual run with *check only* ticked does the
       same without a new dump) and open one `/api/export` download.
+- [ ] **Ready Calibre for the two-way sync** (4.4, D-133), before 4.4 is
+      built: create two custom columns, one for the Ledger's status and one
+      for what you own (proposed lookup names `#ledger_status`, text, and
+      `#owned`, comma-separated like tags; 4.4's plan gate confirms the names),
+      and turn on Calibre's content server for this machine only
+      (Preferences → Sharing over the net), so the sync can write while the
+      Calibre window is open.
+- [ ] **Register the weekly Calibre sync** once 4.4 is built, with the script
+      it ships, and run it once by hand (START-HERE Step 14, *Before the
+      switch*).
 
 ## After Step 14's final load
 
