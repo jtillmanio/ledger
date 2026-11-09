@@ -1,7 +1,7 @@
 ---
 id: TASK-057
 title: 1.14c Page counts from Hardcover, word counts from Calibre
-status: Review
+status: Done
 depends_on: [TASK-034]
 size: M
 model: opus
