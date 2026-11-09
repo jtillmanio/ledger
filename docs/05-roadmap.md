@@ -18,6 +18,11 @@ done" is the only signal available and you become the verification loop.
   ID is never renumbered or reused. Build order is not ID order: the
   milestones in [06-tasklist.md](06-tasklist.md) put the IDs in the order
   they are built, and say why.
+- **Which cutover.** Since 2026-11-08 there are two (D-128): 1.26 cuts the
+  books over, then 1.28 the comics, with 1.29's comics-only load between them.
+  Where an entry says *cutover* without saying which, it means the cutover of
+  the workbook its data comes from: a books entry's is 1.26, a comics entry's
+  1.28. The tasklist's *Build order* puts the books first (D-129).
 - **A done entry is short.** It keeps its line, its **Check:** and where it was
   built. The entry as it was written is in
   [archive/TASKS.md](archive/TASKS.md) and its task file.
@@ -42,8 +47,8 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 | Phase | Goal | Milestones | Done |
 |---|---|---|---|
 | [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6) | 13 / 13 |
-| [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is 1.26 (START-HERE Step 14): it waits for all of Phase 1, plus 2.11a and 1.11, and for every entry 1.25's parity audit names (D-95).** | M3–M9 | 40 / 41 |
-| [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 5 / 24 |
+| [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is two entries (D-128): 1.26 cuts the books over (START-HERE Step 14), after the rest of Phase 1, 2.11a and 1.11 and every entry 1.25's parity audit names for `Books.xlsx`; 1.28 cuts the comics over later, after what it names for `Comics.xlsx`.** | M3–M9 (1.28 in M13) | 40 / 45 |
+| [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 10 / 25 |
 | [3 Editing](#phase-3--editing) | Maintain the catalog in the app: inline edits, runs, prerequisites, eras, detail sheets and adding at scale. | M13–M15 | 0 / 15 |
 | [4 Enrichment](#phase-4--enrichment) | Metron, Open Library and Hardcover backfill, and real covers. A prerequisite for Phase 7. | M16 | 0 / 6 |
 | [5 Remaining surfaces](#phase-5--remaining-surfaces) | The remaining list and detail surfaces: shelves, tracks, editions, releases and series pages. | M17, M18 | 0 / 16 |
@@ -53,7 +58,7 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 | [9 Music](#phase-9--music) | A fourth medium, last (D-75). | M25 | 0 / 8 |
 | [10 Games](#phase-10--games) | A fifth medium, a planning tool for what to play: search, a queue by the platform you'll play on, and the games you're waiting for (D-102). | M26 | 0 / 7 |
 
-Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate. The 2026-11-02 intake added 2.10b, 5.15, 5.16, 10.6 and L-8 and amended 2.10, 7.6, 8.8, 9.3 and 10.1 (D-104–D-106); none of them is a cutover gate either. A second 2026-11-02 intake added 2.2c, 2.2d, 2.2e, L-9 and L-10, rewrote 5.12 as one page for every medium, and amended 2.2, 2.10b, 5.11, 6.10 and L-1 (D-108–D-110): only a follow you set to *Reading* counts as reading. Later that day the wishlist moved into extract (D-111): 1.27 settles it before the final load, 1.24 is removed, and 1.26 no longer promotes it on production. The 2026-11-05 intake added 2.0b, 2.2f–2.2i, 4.5b, 5.17, 6.21 and L-11, and amended 2.2c, 2.2d, 3.4b and 5.12 (D-117–D-125): a finish follows a book's series, subseries and universe, the phone gets a tab row, and the Top books page replaces the Library's year chips; none of them is a cutover gate.
+Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate. The 2026-11-02 intake added 2.10b, 5.15, 5.16, 10.6 and L-8 and amended 2.10, 7.6, 8.8, 9.3 and 10.1 (D-104–D-106); none of them is a cutover gate either. A second 2026-11-02 intake added 2.2c, 2.2d, 2.2e, L-9 and L-10, rewrote 5.12 as one page for every medium, and amended 2.2, 2.10b, 5.11, 6.10 and L-1 (D-108–D-110): only a follow you set to *Reading* counts as reading. Later that day the wishlist moved into extract (D-111): 1.27 settles it before the final load, 1.24 is removed, and 1.26 no longer promotes it on production. The 2026-11-05 intake added 2.0b, 2.2f–2.2i, 4.5b, 5.17, 6.21 and L-11, and amended 2.2c, 2.2d, 3.4b and 5.12 (D-117–D-125): a finish follows a book's series, subseries and universe, the phone gets a tab row, and the Top books page replaces the Library's year chips; none of them is a cutover gate. The 2026-11-08 intake split the cutover, books first (D-128, D-129): 1.26 is the books cutover and 1.28 the comics cutover, with 1.29's comics-only load between them. It added 1.14c (page counts from Hardcover, words from Calibre, D-130) and 1.17b (dates asked when they happen, and every read re-datable, D-131), widened 5.17 to physical and audiobook copies (D-132), made 4.4 a two-way sync run by hand or weekly (D-133), and pulled 1.14c, 1.17b, 1.29, 4.4 and 5.17 ahead of 1.26. The 2026-11-09 intake added 2.2j (a book row names its universe and series, D-134); it is not a cutover gate.
 
 ---
 
@@ -217,7 +222,7 @@ or edits it first.)*
 
 ## Phase 1 — Daily use (build before anything clever)
 
-**Goal:** Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is 1.26 (START-HERE Step 14): it waits for all of Phase 1, plus 2.11a and 1.11, and for every entry 1.25's parity audit names (D-95).** **Milestones:** M3–M9.
+**Goal:** Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is two entries (D-128): 1.26 cuts the books over (START-HERE Step 14), after the rest of Phase 1, 2.11a and 1.11 and every entry 1.25's parity audit names for `Books.xlsx`; 1.28 cuts the comics over later, after what it names for `Comics.xlsx`.** **Milestones:** M3–M9 (1.28 in M13).
 
 **Build order.** The entries below keep the order they were written in,
 which is not the order they are built in. The IDs predate the reviews that fixed the order (R3-10, R3-12,
@@ -1493,7 +1498,115 @@ every decision and leaves the file byte for byte. The migration passes an
 up → down → up test on the TEST database; `wishlist` appears nowhere in
 `src/`; `npm run test:all` is green.
 
-### ☐ 1.26 Cut over from the Sheets · M
+### ☐ 1.14c Page counts from Hardcover, word counts from Calibre · S
+Owner, 2026-11-08 (D-130; amends 1.14b and 1.18b). **Before 1.26.** 1.18b
+made Calibre's `#pages` replace Hardcover's page count (D-90), but `#pages` is
+estimated from the ebook file and runs well above print, so a book with no word
+count gets an inflated `pages × words per page` estimate. And Calibre's ISBN is
+often an ebook edition's, so the matched edition's count can be inflated too.
+
+- **`etl/enrich_books.py`** keeps both Hardcover counts in `book_details.csv`:
+  the book's (its default edition's) and the matched edition's, each in its own
+  column (names are the plan's). Where the cache already holds the answer it is
+  reused; the plan says what a re-fetch of the rest costs against Hardcover's
+  5,000 a day.
+- **Extract's order:** a `hand` row; else Hardcover's book-level count; else
+  the matched edition's; else Calibre's `#pages`. Word counts don't change:
+  Calibre's `stated` count wins (D-87), and an estimate still comes only from a
+  page count of 50 or more (`book_words`).
+- **Add books (1.4f)** stores the book-level count first, then the edition's,
+  from the answer it already fetches. 4.4's sync does the same for a book
+  Calibre creates.
+- The real run reports, in the PR, how many books' page counts changed and how
+  many estimated word counts moved with them.
+- The same PR rewrites `.claude/rules/schema.md`'s *Calibre owns a book's
+  groupings, its page count and its id* to this order.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first)
+`npm run test:etl`, with recorded Hardcover answers: a fixture book with a
+Hardcover book-level count, a different edition count and a Calibre `#pages`
+loads the book-level count; one with only an edition count loads that; one
+Hardcover gives none loads `#pages`; a `hand` row is unchanged; every word
+count is still Calibre's; an `--offline` re-run leaves every sidecar
+byte-identical. `etl/test_views.sql`: a book with no word count estimates from
+the loaded page count. A vitest test: a book added from a Hardcover result
+stores the book-level count. Then a dry run over the real books, with the
+counts in the PR.
+
+### ☐ 1.17b Dates when you start and finish, and on every read · M
+Owner, 2026-11-08 (D-131; extends 1.17). **Before 1.26.** 1.17 stamps a start
+silently when a book enters *Reading*, and its date line edits only the latest
+read. The owner wants to be asked at the moment, and to fix any read later.
+
+- **Reading asks the start.** Setting *Reading* or *Listening* writes the
+  status and today's Eastern start at once, as now, and opens the *Started*
+  picker on *Today*: *Today* or Esc keeps it, another day re-dates it. One
+  Undo restores what was there before.
+- **Read asks both.** Setting *Read* opens *Started* (the stored start, else
+  *No date*) and *Finished* (*Today*) together; confirming writes both, and a
+  start after the finish is refused with 1.17's reason.
+- **Every read.** The date line gains *All reads (n)* when a book has more than
+  one read: each read with its format glyph (1.23), its *Started* and
+  *Finished*, each editable with 1.5's picker. Re-dating an earlier read
+  changes its `read_events` row only; re-dating the latest keeps `book_status`
+  in step, through `saveBookStatus` or a sibling helper in `src/db/writes.ts`
+  (the plan's). 4.4 sends the latest finish to Calibre.
+- **Where.** The Library row (as now), the books dashboard's *Now* and the
+  status screens (In flight, Up next, Done). Not search results.
+- **Stop and ask at plan time** if the plan changes how a stored date is
+  written or interpreted (CLAUDE.md). No new column is proposed.
+- **Not drawn yet.** The status control's frames in `design/mockups.html` gain
+  the two pickers and the read list before they are built.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first) in the
+browser (0.11): setting a book to *Reading* opens *Started* on *Today*; picking
+an earlier day writes that `started_on`, `exact`, and Undo restores the status
+and start before. Setting it to *Read* opens both; confirming writes one
+`read_events` row carrying both dates; a start after the finish is refused and
+writes nothing. A book with two reads lists both under *All reads (2)*;
+re-dating the first changes only its `read_events` row, and re-dating the
+second changes it and `book_status`. The same control works from *Now* on
+`/books` and from `/books/status`; a search result has none. axe passes at
+every width.
+
+### ☐ 1.29 Refresh production's comics from `Comics.xlsx`, books untouched · M
+Owner, 2026-11-08 (D-128). **Before 1.26.** From the books cutover on,
+`LEDGER_LIVE=true` makes `rebuild` and the full `load` refuse, and both would
+truncate every progress table, the books' included. But `Comics.xlsx` stays
+the record for comics until 1.28, so production's comics need a load of their
+own.
+
+- **Extract, comics only.** A flag on `npm run extract` (its name is the
+  plan's) reads `Comics.xlsx` and the comics sidecars and writes only the
+  comics seed files; the books seed is neither read nor written.
+- **A comics-only load** (its own script with `.ps1` and `.sh` twins, or a
+  switch on `load`: the plan's) truncates and reloads the comics catalog and
+  comics progress in one transaction: runs, tracks, blocks, prerequisites,
+  events, issues, placements, credits, `issue_progress`, `edition_progress`,
+  the queue, the volume map and eras. It never truncates, cascades into or
+  writes a books table. The plan lists every table that references a run, an
+  issue or a placement (the inbox's links, comic `read_events` rows) and what
+  happens to it.
+- **It runs while `LEDGER_LIVE` is true,** and refuses once a second flag
+  (proposed: `LEDGER_COMICS_LIVE`) is true in the env file, naming it and
+  changing nothing; 1.28 sets it. It asks before running, as `rebuild` does,
+  and only the owner runs it against `.env.live` (CLAUDE.md).
+- Marks made in the app's comics screens between 1.26 and 1.28 are replaced
+  by the next comics load, as before cutover: the sheet is the comics record
+  until 1.28 (D-128).
+- The same PR teaches the new command to `.claude/kit.json`'s
+  `destructiveGuard`, CLAUDE.md's *Production is disposable*,
+  `docs/COMMANDS.md` and START-HERE Step 14.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first) on the
+test database, loaded from fixtures, with a book read, a plan row, a follow and
+a shelf written: the comics-only load replaces a changed run, issue, placement
+and read mark, and every books table has the same rows before and after; it
+runs with `LEDGER_LIVE=true`, and with `LEDGER_COMICS_LIVE=true` it refuses,
+naming the flag, and changes nothing; the comics-only extract writes no books
+seed file; `npm run test:etl` passes.
+
+### ☐ 1.26 Cut the books over from the Sheets · M
 From the owner, 2026-10-28 (D-95). START-HERE Step 14 as an entry, so the
 switch has a box and a Check like any other work: a fresh export and extract,
 the last load of production, `LEDGER_LIVE=true` in `.env.live` and in the
@@ -1506,19 +1619,48 @@ including that adding a run and marking reads feel faster than the sheet.
 The entry is ticked on the day of the switch. The month of running both
 (D-18) follows it, with its *Done when* in Step 14.
 
-**Depends on:** 1.25; every open Phase 1 entry (1.14b, 1.18b, 1.18c, 1.20,
-1.4e, 1.4f, 1.17, 1.19, 1.22, 1.23, 1.27); 2.11a and 1.11 (done); and every
-open entry `docs/cutover-parity.md` names (1.25): 2.0,
-2.1, 2.2, 2.2b, 2.3 (the year and quarter budget), 3.1, 3.2, 3.3 (catalog and
-prerequisite edits), 3.4 (top books), 5.7 (books coming out) and 5.10
-(recording a trade bought), with 5.6, which 5.10 depends on.
+*Amended 2026-11-08 (D-128): the books cutover.* The export and the extract
+still read both workbooks, the last full load of production happens here, and
+`LEDGER_LIVE=true` goes on straight after, so `rebuild` and the full `load`
+refuse from then on. Only `Books.xlsx` is archived read-only. `Comics.xlsx`
+stays the record for comics: 1.29's comics-only load refreshes production's
+comics from it until 1.28, the comics cutover. The month of running both
+compares the books. From here extract no longer loads books, so Calibre's
+changes arrive through 4.4's sync, built before the switch.
+
+**Depends on:** 1.25; the open Phase 1 entries the books need (1.14c, 1.17b)
+and 1.29, so the comics can still be refreshed after the switch; 2.11a and
+1.11 (done); and every open entry `docs/cutover-parity.md` names for
+`Books.xlsx` (1.25): 2.2b and 2.3 (the year and quarter budget, after 2.0, 2.1
+and 2.2), 3.4 (top books), 4.4 (the Calibre sync) and 5.7 (books coming out);
+and 5.17 (what you own), which the owner pulled ahead (D-132).
 
 **Check:** the owner, after the switch: `npm run rebuild -- -EnvFile .env.live`
 and `.\etl\load.ps1 seed-final -EnvFile .env.live` both refuse, naming
-`LEDGER_LIVE`; `gh variable get LEDGER_LIVE` prints `true`; both Sheets carry
-their archive names and open read-only; and the books read this year and the
-runs finished, on `/books/status` and `/comics/status` in production, match
-the frozen Sheets.
+`LEDGER_LIVE`; `gh variable get LEDGER_LIVE` prints `true`; 1.29's comics-only
+load still runs against production and leaves every books table's row count
+as it was; `Books.xlsx` carries its archive name and opens read-only, with the
+app's URL at the top; and the books read this year, on `/books/status` in
+production, match the frozen sheet.
+
+### ☐ 1.28 Cut the comics over from the Sheets · S
+Owner, 2026-11-08 (D-128). START-HERE Step 14's comics half, after the books
+cutover: a fresh `Comics.xlsx` export and a comics-only extract, the last
+comics-only load of production (1.29), `LEDGER_COMICS_LIVE=true` in
+`.env.live` (and wherever else 1.29 reads it), and `Comics.xlsx` renamed as an
+archive, read-only, with the app's URL at the top. The owner runs every
+command. Every box in Step 14's comics *Before the switch* is ticked first,
+including that adding a run and marking reads feel faster than the sheet. A
+month of running both for comics follows (D-18).
+
+**Depends on:** 1.26, 1.29; and every open entry `docs/cutover-parity.md`
+names for `Comics.xlsx` (1.25): 3.1, 3.2, 3.3 (catalog and prerequisite
+edits) and 5.10 (recording a trade bought), with 5.6, which 5.10 depends on.
+
+**Check:** the owner, after the switch: the comics-only load refuses against
+`.env.live`, naming `LEDGER_COMICS_LIVE`; `Comics.xlsx` carries its archive
+name and opens read-only; and the runs finished, on `/comics/status` in
+production, match the frozen sheet.
 
 ---
 
@@ -2109,6 +2251,48 @@ item enabled, the page has no horizontal overflow at 360px. The row is not
 rendered at 768px or wider. Each item measures at least 44px tall, and axe
 passes. 0.10's CLS budget holds on `/books/list` and `/comics`. Screenshots at
 360px and 412px, light and dark.
+
+### ☐ 2.2j The universe and series on a book's row · S
+Owner intake, 2026-11-09 (owner: *on deck shows the series or sub series or
+super series (smartly picked, whichever makes sense)*; asked, the owner chose
+the universe, then the series, and the same line on Up next, the status tabs,
+the Library and the plan sheet). D-134. Depends on 2.2 (On deck and *Up next
+in Qn*). Doesn't gate 1.26.
+
+- **One line, one rule.** A book row's second line is the author, then its
+  place: the universe (D-90: Calibre's superseries), then the series and
+  `#position` (*Brandon Sanderson · Cosmere · Mistborn #4*). With no universe
+  it is the series alone (*Robot #2*); with no series, the universe alone, with
+  no number (*First Law World*); with neither, the author alone. A series with
+  no position drops the `#`. When the series name already contains the
+  universe's, case-insensitively, the universe is dropped (*Magic Tree House
+  #3*, not *Magic Tree House · Magic Tree House #3*).
+- **The subseries isn't on this line.** 2.2g draws it in Now; a row names the
+  two levels everyone recognises.
+- **One helper, read everywhere.** A pure function in `src/lib/format.ts`
+  (proposed: `bookPlace`) builds the line, and replaces `bookSub`'s series
+  part and the Library's inline join, so a book reads the same on every
+  screen. Its queries add the universe's name: `onDeck`, `quarterShelf`,
+  `listBooks`, `booksInFlight`, `booksUpNext`, `booksDone`. Nothing is stored
+  (hard rule 2).
+- **Where:** On deck and *Up next in Qn* on the dashboard (neither shows a
+  series today); the status tabs and the Library (today *Series #n*, which now
+  gains the universe). 2.10b's suggestion rows use it when built. The plan
+  rail's blocks have no second line, so 2.2b is unchanged.
+- The line wraps rather than truncates: *The Chronicles of Thomas Covenant the
+  Unbeliever* has to stay readable at 360px.
+- **Not drawn yet.** The mockup's `bdash` frames show the line on On deck and
+  Up next at phone, tablet and desktop widths before it is built.
+
+**Check:** `npm test`: `bookPlace` returns *Cosmere · Mistborn #4* for a book
+with both, *Robot #2* for a series alone, *First Law World* for a universe
+alone, an empty place for neither, *Mistborn* for a series with no position,
+and *Magic Tree House #3* when the series name contains the universe's;
+`onDeck` and `quarterShelf` return the universe's name. In the browser (0.11),
+an On deck row and an *Up next* row for *The Alloy of Law* read *Brandon
+Sanderson · Cosmere · Mistborn #4*, and the same book reads the same on its
+status tab and in the Library. There is no horizontal scroll at 360px, axe
+passes, and nothing resolves to `--danger`. Screenshots at 360px and 1280px.
 
 ### ☐ 2.3 Plan editor · M
 Depends on 1.7 and 2.1.
@@ -2758,7 +2942,8 @@ from the master list. **Books only**: planning comics runs by period is
   capacity it turns amber and offers 2.3's *Accept as a stretch year*; never
   red, and the word "behind" appears nowhere.
 - **Suggestions, grouped by why.** Each group is a short list (five, then
-  *More*); each row is the book's title, author and word count (estimated
+  *More*); each row is the book's title, author with its universe and series
+  (2.2j's line, D-134) and word count (estimated
   counts marked as in 2.2b), a reason line, and *Put in Q2* naming the target
   (for a year target, the bare year and the four quarter chips). A group with
   nothing in it is left out. In this order:
@@ -3706,7 +3891,7 @@ height (CLS under 0.1 on a 381-row spine). With `prefers-reduced-data: reduce`
 emulated, or *Show covers* off, the spine makes zero image requests. No cover
 element carries a `box-shadow` that resolves to `--halo`.
 
-### ☐ 4.4 Sync from Calibre after cutover: upload `metadata.db` · M
+### ☐ 4.4 Sync with Calibre, both ways: one command, by hand or weekly · M
 Backlog intake, 2026-10-26 (owner: *Calibre link/import, recurring*). D-83.
 Depends on 1.18 and 1.21, and only on cutover otherwise, so it can be pulled
 ahead of 4.1–4.3. Extract stops at cutover and nothing local may write the
@@ -3750,13 +3935,67 @@ This puts the same sync in the app.
   writes to Calibre. Fetching it from Google Drive instead of an upload is
   *Later* § L-4.
 
-**Check:** with a fixture `metadata.db` of three books (one matching a Ledger
-book with no word count, one the Ledger lacks, one with a read), the review
-lists one word count, one new Unlisted book and one read, and nothing is written
-before *Apply*; *Apply* with all three accepted writes one `stated` word count,
-one `books` row with an `unlisted` status and one `read_events` row; a second sync
-of the same file lists nothing; a book with a hand-entered word count is never
-offered a fill.
+*Rewritten 2026-11-08 (D-133), and pulled ahead of 1.26.* The owner wants
+the sync two-way and automatic but light, so it is no longer an upload in the
+app with a review before *Apply*. Where the text above disagrees, this wins;
+the old Check is replaced.
+
+- **One command, both ways.** `npm run calibre:sync` on the owner's PC reads a
+  temp copy of `metadata.db` (`etl/calibre.py`'s reading, reused), sends what
+  changed since the last sync to the app through a route inside the passcode
+  gate (signed in with the passcode like a browser; `/api/health` stays the
+  one open route), then takes back what the Ledger holds for each Calibre book
+  and writes what differs into Calibre with `calibredb`. While the Calibre
+  window is open it writes through Calibre's content server on localhost (an
+  Owner checklist item turns it on), otherwise to the library folder. Any new
+  key or setting goes in `.env.example` and `docs/SERVICES.md` in the same PR.
+- **When.** A desktop shortcut runs it on demand, and a script registers a
+  weekly Windows Task Scheduler run, which the owner runs once. Nothing else
+  runs in the background.
+- **Calibre → Ledger** (Calibre wins, D-87): new books at Unlisted (D-83); the
+  title, author, series and index, subseries, universe, genres, tags, word
+  count, ISBN and Calibre id of the books it has, matched on `calibre_id`
+  first, then title and author (1.18's rules, twinned in TypeScript where the
+  app applies them). A new book's page count follows D-130 (1.14c), from
+  Hardcover through the app's client. A near spelling waits on the *Calibre*
+  page for a merge or separate decision; where that decision is kept is the
+  plan's. A book gone from Calibre stays a book, and is listed.
+- **Ledger → Calibre:** `#read` (the book has a read), `#date_read` (the latest
+  read's finish; how an `approximate` or `none` finish is written is the
+  plan's), the Ledger's status in a new `#ledger_status` column, and 5.17's
+  owned formats in a new `#owned` column. Not the start date. The owner
+  creates the two columns; a missing one is named and skipped.
+- **Reads, from the books cutover on: the Ledger wins.** A Calibre change to
+  `#read` or `#date_read` since the last sync is overwritten with the Ledger's
+  and listed. A book new to the Ledger takes Calibre's read as its first read,
+  as 1.18 loads one. Before 1.26 extract still loads Calibre's reads (D-87),
+  and the plan says what the write-back may touch until then.
+- **The log.** Each run is kept by the app and listed on a *Calibre* page
+  under Settings: when it ran, what came in, what went out, what waits. The
+  books dashboard shows a plain line (*Calibre last synced 9 days ago*) once
+  the last run is more than 7 days old; nothing red (hard rule 6).
+- A new table (the log, a remembered decision) means stop and ask at plan
+  time, and joins `src/db/export-tables.ts` (hard rule 7).
+- **Never the owner's real library in a test.** Tests use a fixture library
+  copied to a temp folder, and the test database.
+- The same PR rewrites `.claude/rules/schema.md`'s *Calibre is the source of
+  truth for a book's data and its reads* (which says nothing writes to
+  Calibre) and data model 2.19 to match, and adds the command to
+  `docs/COMMANDS.md`.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first) with a
+fixture library in a temp folder and the test database: four books, one
+matching a Ledger book with a changed title and word count, one the Ledger
+lacks and marked read, one whose `#date_read` was changed in Calibre after the
+Ledger logged a different read, and one the Ledger has read and owns on paper.
+One run creates one Unlisted book with one `read_events` row; renames the
+matched book and replaces its `stated` word count; overwrites the changed
+`#date_read` with the Ledger's and lists it; writes `#read`, `#date_read`,
+`#ledger_status` and `#owned` for the book read in the Ledger; and is one log
+entry listing each change. A second run changes nothing on either side and
+logs that nothing changed. A missing `#owned` column is named and skipped. In
+the browser (0.11), the *Calibre* page lists the run, and the dashboard's line
+shows when the last run is 8 days old and not when it is 6.
 
 ### ☐ 4.5 Calibre's genres on every screen · M
 From 1.18c (TASK-033), 2026-10-30; D-98. **After 1.18c.** 1.18c loads every
@@ -4238,7 +4477,7 @@ it is converted.
     deletes the `run_parked` row and leaves `issue_progress` unchanged. The
     export test passes with `run_parked`.
 
-- ☐ 5.17 **Physical copies: the books you own on paper** · M. Owner intake,
+- ☐ 5.17 **What you own: physical copies and audiobooks** · M. Owner intake,
   2026-11-05 (owner: *clarify physically owned vs ebook library so I can track
   books I physically own*; asked, the owner chose a per-book toggle, with the
   ownership type in the book's details and a way to view the physical library).
@@ -4264,14 +4503,28 @@ it is converted.
     *Collected*, which stays separate.
   - **Not drawn yet.** The mockup's `blist`, `add` and sheet frames gain these
     before they are built.
-  - **Check:** (proposed; the owner agrees it by merging or edits it first) the
-    toggle writes one `physical_copies` row, Undo removes it, and the export
-    test passes with the table. *Physical* lists only books with a row; *Ebook*
-    lists only books with a `calibre_id`; a book with both is in each; a
-    soft-deleted book is in neither; each combines with a status filter and a
-    sort, and the choice survives a reload. Pasting three lines to *Physical
-    copy*, two matched and one new, writes three rows and one `unlisted` book,
-    and Undo removes all of it. Screenshots at 360px and 1280px.
+  - *Amended 2026-11-08 (D-132), and pulled ahead of 1.26:* audiobooks you
+    own are recorded too, and the bullets above read for both formats.
+    Proposed: `owned_copies(book_id → books.id, format)`, primary key both,
+    `format IN ('physical', 'audio')`, no `user_id`, in
+    `src/db/export-tables.ts`, replacing `physical_copies`. **Stop and ask at
+    plan time** (a new table). A book can have neither, either or both,
+    whatever its status: owning an audiobook is not listening to it (1.23).
+    The row menu has two toggles, *I own it on paper* and *I own the
+    audiobook*; the sub-line and the sheet say *Physical*, *Audiobook* and
+    *Ebook* as they apply; the *Owned* filter is *Physical · Audiobook · Ebook
+    · Not owned* (none of the three); *Paste a list* gains a destination for
+    each format. 4.4 writes the formats to Calibre's `#owned` column.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first)
+    each toggle writes one `owned_copies` row with its format, Undo removes
+    it, and the export test passes with the table. *Physical* lists only books
+    with a `physical` row, *Audiobook* only books with an `audio` row, *Ebook*
+    only books with a `calibre_id`, and *Not owned* only books with none of
+    the three; a book with several is in each; a soft-deleted book is in none;
+    each combines with a status filter and a sort, and the choice survives a
+    reload. Pasting three lines to *Physical copy*, two matched and one new,
+    writes three rows and one `unlisted` book, and Undo removes all of it.
+    Screenshots at 360px and 1280px.
 
 ---
 
