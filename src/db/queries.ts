@@ -1138,22 +1138,52 @@ export type InHandBook = {
   id: string; title: string; author: string | null; pages: number | null; words: number | null;
   cover_url: string | null; status: "reading" | "listening";
   started_on: string | null; started_on_precision: Precision;
+  /** *Next in* (task 2.2d): the next book in what this one is in and you follow as Reading. */
+  next_in: NextIn | null;
 };
 
-/** What is in hand, the hero first: the most recently started, Reading before Listening on
- * the same day, an undated start last (task 2.2's rule). Empty is *Between books*. */
+/** Now's *Next in {name}: {title}* (task 2.2d). */
+export type NextIn = { id: string; title: string; kind: FollowKind; name: string };
+
+/** The kinds a reason can name, narrowest first: a subseries before its series, and so on. */
+const REASON_ORDER = ["subseries", "series", "universe", "author", "shelf"];
+
+/**
+ * What is in hand, the hero first: the most recently started, Reading before Listening on
+ * the same day, an undated start last (task 2.2's rule). Empty is *Between books*.
+ * Each carries its *Next in* (task 2.2d), in the same query so the dashboard stays one wave:
+ * of the things the book is in and you follow as Reading, the narrowest with a book still
+ * unread (subseries, series, universe, then author; never a shelf), and that one's
+ * lowest-ranked unread book (`follow_queue`), or null.
+ */
 export async function booksInHand(userId: string) {
   return sql<InHandBook[]>`
-    SELECT b.id, b.title, a.name AS author, b.page_count AS pages, b.cover_url,
-           COALESCE(b.word_count, CASE WHEN b.page_count >= 50
-                                       THEN b.page_count * COALESCE(rs.words_per_page, ${DEFAULT_WORDS_PER_PAGE}) END) AS words,
-           st.status, st.started_on::text AS started_on, st.started_on_precision
-    FROM book_status st
-    JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
-    LEFT JOIN authors a ON a.id = b.author_id
-    LEFT JOIN reading_settings rs ON rs.user_id = st.user_id
-    WHERE st.user_id = ${userId} AND st.status IN ('reading', 'listening')
-    ORDER BY st.started_on DESC NULLS LAST, (st.status = 'listening'), b.title, b.id
+    WITH hand AS (
+      SELECT b.id, b.title, a.name AS author, b.page_count AS pages, b.cover_url,
+             COALESCE(b.word_count, CASE WHEN b.page_count >= 50
+                                         THEN b.page_count * COALESCE(rs.words_per_page, ${DEFAULT_WORDS_PER_PAGE}) END) AS words,
+             st.status, st.started_on, st.started_on_precision
+      FROM book_status st
+      JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
+      LEFT JOIN authors a ON a.id = b.author_id
+      LEFT JOIN reading_settings rs ON rs.user_id = st.user_id
+      WHERE st.user_id = ${userId} AND st.status IN ('reading', 'listening')
+    ), fq AS MATERIALIZED (
+      SELECT * FROM follow_queue WHERE user_id = ${userId}
+    ), next_in AS (
+      SELECT DISTINCT ON (h.book_id) h.book_id AS hand_id,
+             json_build_object('id', n.book_id, 'title', nb.title, 'kind', n.kind, 'name', n.name) AS next_in
+      FROM fq h
+      JOIN fq n ON n.kind = h.kind AND n.entity_id = h.entity_id
+      JOIN books nb ON nb.id = n.book_id
+      WHERE h.book_id IN (SELECT id FROM hand) AND h.kind <> 'shelf'
+        AND (n.status IS NULL OR n.status IN ('to_read', 'unlisted'))
+      ORDER BY h.book_id, array_position(${REASON_ORDER}::text[], h.kind), n.rank
+    )
+    SELECT hand.id, hand.title, hand.author, hand.pages, hand.cover_url, hand.words, hand.status,
+           hand.started_on::text AS started_on, hand.started_on_precision, x.next_in
+    FROM hand LEFT JOIN next_in x ON x.hand_id = hand.id
+    ORDER BY hand.started_on DESC NULLS LAST, (hand.status = 'listening'), hand.title, hand.id
   `;
 }
 
@@ -1272,6 +1302,52 @@ export async function yearSoFar(userId: string, year: number): Promise<YearSoFar
     FROM y
   `;
   return row;
+}
+
+/* ── Next in what you follow as Reading (task 2.2d, F-68, D-108) ─────────────────────────
+ * Read from follow_next (etl/views.sql), each follow's next book. Now's *Next in* is
+ * booksInHand's, from follow_queue. A book's reason names the narrowest thing it is next in. */
+
+/** One *Or keep going* row: a book next in something you follow as Reading, and why. */
+export type KeepGoing = {
+  id: string; title: string; author: string | null;
+  /** Its status now, which an undo of **Start** goes back to; null with no status row. */
+  status: "to_read" | "unlisted" | null;
+  kind: FollowKind; name: string; read: number; total: number;
+};
+
+/**
+ * *Or keep going* (task 2.2d): up to `limit` of `follow_next`'s books, one row per book with its
+ * narrowest reason, the follow most recently read in first (its latest dated finish; none last),
+ * then by name. The offer above it, the top of `period`'s plan, is never listed again: found
+ * here by `quarterShelf`'s own rule, so the dashboard reads both in one wave.
+ */
+export async function keepGoing(userId: string, period: string, limit: number) {
+  return sql<KeepGoing[]>`
+    WITH offer AS (
+      -- quarterShelf's first row: the quarter's lowest-ordinal book still to read.
+      SELECT pp.book_id
+      FROM plan_period pp
+      JOIN book_status st ON st.user_id = pp.user_id AND st.book_id = pp.book_id AND st.status = 'to_read'
+      JOIN books b ON b.id = pp.book_id
+      WHERE pp.user_id = ${userId} AND pp.period = ${period}
+      ORDER BY pp.ordinal, b.title, b.id
+      LIMIT 1
+    ), n AS (
+      SELECT DISTINCT ON (f.book_id) f.*
+      FROM follow_next f
+      WHERE f.user_id = ${userId} AND f.book_id NOT IN (SELECT book_id FROM offer)
+      -- Two followed shelves can hold one book: the reason is then the first by name, every time.
+      ORDER BY f.book_id, array_position(${REASON_ORDER}::text[], f.kind), f.name, f.entity_id
+    )
+    SELECT n.book_id AS id, b.title, a.name AS author, st.status, n.kind, n.name, n.read, n.total
+    FROM n
+    JOIN books b ON b.id = n.book_id
+    LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_status st ON st.user_id = n.user_id AND st.book_id = n.book_id
+    ORDER BY n.last_read_on DESC NULLS LAST, n.name, n.kind, n.book_id
+    LIMIT ${limit}
+  `;
 }
 
 /** The volume map's size for Settings' *N rules · M series* (task 2.0): derived, never stored. */

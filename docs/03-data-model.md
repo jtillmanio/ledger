@@ -624,6 +624,8 @@ filters by that run before it aggregates (architecture § Operational posture).
 | `author_progress`, `universe_progress` | Author and universe completion, live books only, in `series_progress`'s shape; a universe's `off` reads as NULL (1.15, D-42, D-117) |
 | `subseries_progress` | Books listed and read per subseries (Calibre's `#subseries`, D-90), live books only, with `follow_state` (`off` reads as NULL) (2.2h, D-117) |
 | `shelf_progress` | Books listed and read per books shelf, live books only, with `follow_state` (2.2c, D-108) |
+| `follow_queue` | For each subseries, series, universe, author and books shelf followed as `reading` (from the `*_progress` views, so `off` is no follow): every live book still open (to read, unlisted, no status, reading or listening; read, a listen, DNF and any later status such as 5.15's parking are skipped), ranked by position, shelf ordinal or an author's `published_year`, a missing one last, then title; with the follow's `read`, `total` and `last_read_on`, its latest dated finish. Now's *Next in* reads it (2.2d, D-108) |
+| `follow_next` | Each follow's next book: `follow_queue`'s rank 1 when it is unread; one in hand means no row, as does nothing left. The dashboard's *Or keep going* reads it, and 2.10b's plan sheet will (2.2d, D-108) |
 
 Views a task proposes (`run_queue_state` 1.10,
 `run_unlock_cost` and `run_opens` 2.6, `show_progress` and `franchise_progress`
