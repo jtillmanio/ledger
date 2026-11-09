@@ -8,7 +8,7 @@ model: sonnet
 autonomy: attended
 ui: true
 plan_status: approved
-planned_at_commit: 2638494
+planned_at_commit: 5d0474a
 ---
 
 # TASK-056 — 2.2g Where the book sits, in Now
