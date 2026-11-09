@@ -4,6 +4,7 @@ import { readWhen, runSpan, type Precision } from "@/lib/format";
 import { FRESH_DAYS } from "@/lib/metron";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
 import { parseSort, type Dir, type Sort } from "@/lib/library-sort";
+import type { RailBook } from "@/lib/plan-rail";
 import { DEFAULT_SETTINGS, wordsPerYear, type ReadingSettings } from "@/lib/settings";
 
 /* Raw SQL against the views in etl/views.sql. Drizzle's query builder is used
@@ -1244,7 +1245,11 @@ export async function quarterShelf(userId: string, period: string) {
 }
 
 /** One block of the quarter strip: a book that counts against the quarter, with its words. */
-export type QuarterBlock = { id: string; title: string; words: number; status: "to_read" | "reading" | "read" };
+export type QuarterBlock = {
+  id: string; title: string; words: number; status: "to_read" | "reading" | "read";
+  /** The count is an estimate (pages at your words per page), not a stated one. */
+  estimated: boolean; genre: string | null;
+};
 
 /**
  * *This quarter*'s blocks (task 2.2, FP-D8): the books `plan_capacity` counts in that quarter,
@@ -1253,12 +1258,31 @@ export type QuarterBlock = { id: string; title: string; words: number; status: "
  */
 export async function quarterBlocks(userId: string, period: string) {
   return sql<QuarterBlock[]>`
-    SELECT w.book_id AS id, b.title, w.words, w.status
+    SELECT w.book_id AS id, b.title, w.words, w.status, w.word_source = 'estimated' AS estimated, b.genre
     FROM plan_book_words w
-    JOIN books b ON b.id = w.book_id
+    JOIN books b ON b.id = w.book_id AND b.deleted_at IS NULL
     JOIN reading_plan p ON p.user_id = w.user_id AND p.book_id = w.book_id AND p.period = w.period
     WHERE w.user_id = ${userId} AND w.period = ${period} AND w.words IS NOT NULL
     ORDER BY p.ordinal NULLS LAST, b.title, b.id
+  `;
+}
+
+/**
+ * The plan rail's books for one year (task 2.2b, F-22, M-07): each book that counts against the
+ * year's quarters or against the year alone (the fifth lane), with its words, in your order. Read
+ * from `plan_book_words` like `quarterBlocks`, so a quarter's words add up to `plan_capacity`'s
+ * `planned_words`. On deck and Someday are not on it; a book with no word count draws no block.
+ * Rows come ordered by period, then by `ordinal` (a bare year has none), so a caller groups them.
+ */
+export async function planRail(userId: string, year: number): Promise<RailBook[]> {
+  return sql<RailBook[]>`
+    SELECT w.book_id AS id, b.title, w.words, w.word_source = 'estimated' AS estimated,
+           w.period, b.genre, w.status
+    FROM plan_book_words w
+    JOIN books b ON b.id = w.book_id AND b.deleted_at IS NULL
+    JOIN reading_plan p ON p.user_id = w.user_id AND p.book_id = w.book_id AND p.period = w.period
+    WHERE w.user_id = ${userId} AND w.year = ${year} AND w.words IS NOT NULL
+    ORDER BY w.period, p.ordinal NULLS LAST, b.title, b.id
   `;
 }
 

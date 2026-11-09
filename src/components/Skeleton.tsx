@@ -90,14 +90,15 @@ export function TelecardSkeleton() {
 }
 
 /** The books plan rail: four quarter columns and the no-quarter column, each a
- * stack of blocks over its footer. The stack is 192px tall, as the rail draws it. */
+ * stack of blocks over its footer. The stack is the rail's height (230px on the phone,
+ * 300px on desktop: `--rail-h`), its blocks standing from the foot. */
 export function PlanRailSkeleton() {
-  const stacks = [[11, 11, 21, 19, 27, 74], [22, 22, 21, 31, 32], [12, 7, 16, 39], [27, 22], [36, 39, 88]];
+  const stacks = [[26, 28, 34, 28, 54, 72], [27, 28, 26, 38, 40], [14, 9, 20, 48], [34, 27], [44, 48, 108]];
   return (
     <div className="planrail sk-planrail" aria-hidden="true">
       {stacks.map((blocks, q) => (
         <div key={q} className={q === stacks.length - 1 ? "qcol nq" : "qcol"}>
-          <div className="qstack" style={{ height: 192 }}>
+          <div className="qstack">
             {blocks.map((h, n) => <i key={n} className="sk" style={{ height: h }} />)}
           </div>
           <div className="qfoot">
@@ -212,7 +213,7 @@ export function QuarterStripSkeleton() {
       <div className="slot-head"><Bar w="6rem" className="sk-head" /></div>
       <div className="qcard">
         <div className="qhead"><Bar w="4.5rem" className="sk-qhead" /></div>
-        <span className="sk qrail" />
+        <span className="sk planrail strip" />
         <div className="qfigs"><Bar w="6rem" className="sk-qfigs" /><Bar w="6rem" className="sk-qfigs" /></div>
       </div>
     </section>

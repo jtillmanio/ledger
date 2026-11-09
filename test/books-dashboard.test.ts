@@ -152,6 +152,8 @@ describe("This quarter: the strip's total is 2.1's figure (AC-1)", () => {
     expect(blocks.map((b) => [b.id, b.words, b.status])).toEqual([
       ["q1", 92_000, "read"], ["q2", 30_000, "reading"], ["q3", 400 * 275, "to_read"],
     ]);
+    // A stated count is not an estimate; a count from pages is (the strip dots its edge).
+    expect(blocks.map((b) => [b.id, b.estimated])).toEqual([["q1", false], ["q2", false], ["q3", true]]);
     const { quarters } = await q.planCapacity(USER, 2026);
     expect(blocks.reduce((n, b) => n + b.words, 0)).toBe(quarters[3].plannedWords);
     expect(quarters[3].plannedWords).toBe(92_000 + 30_000 + 110_000);
@@ -331,35 +333,61 @@ describe("the dashboard's copy (§15: sentences, not tallies; never a date to fi
   });
 });
 
-describe("the strip past capacity is amber, never red, and never says behind (AC-3, §12)", () => {
+describe("the strip past capacity is amber, never red, and never says behind (AC-3, §12; task 2.2b AC-4)", () => {
   const cap = (planned: number, books = 3, read = 1) => ({
     period: "2026-Q4", year: 2026, quarter: 4, capacity: 760_000, plannedWords: planned, statedWords: planned,
     estimatedWords: 0, books, readBooks: read, unknownBooks: 0, load: planned / 760_000, estimatedShare: 0,
   });
-  const blocks = [{ id: "a", title: "A", words: 600_000, status: "read" as const }, { id: "b", title: "B", words: 212_000, status: "to_read" as const }];
-  async function strip(planned: number) {
+  const blocks = [
+    { id: "a", title: "A", words: 600_000, status: "read" as const, estimated: false, genre: null },
+    { id: "b", title: "B", words: 212_000, status: "to_read" as const, estimated: true, genre: "Fantasy" },
+  ];
+  async function strip(planned: number, list = blocks) {
     const { default: QuarterStrip } = await import("../src/components/QuarterStrip");
     const { renderToStaticMarkup } = await import("react-dom/server");
     const { createElement } = await import("react");
-    return renderToStaticMarkup(createElement(QuarterStrip, { cap: cap(planned), blocks, inHand: null }));
+    const { Window } = await import("happy-dom");
+    const html = renderToStaticMarkup(createElement(QuarterStrip, { cap: cap(planned), blocks: list, inHand: null }));
+    const window = new Window();
+    window.document.body.innerHTML = html;
+    return { html, doc: window.document };
   }
+  const cssVar = (el: { getAttribute(name: string): string | null } | null, name: string) =>
+    Number(new RegExp(name + String.raw`:\s*([-\d.]+)`).exec(el?.getAttribute("style") ?? "")?.[1]);
 
   it("812k against 760k: the figure takes the amber class with what it is over; nothing danger, nothing behind", async () => {
-    const html = await strip(812_000);
+    const { html, doc } = await strip(812_000);
     expect(html).toMatch(/<span class="qfig over">812k planned<span class="bdg bl">52k over<\/span><\/span>/);
-    expect(html).toContain('data-over="true"');
+    expect(doc.querySelector(".planrail.strip")?.getAttribute("data-over")).toBe("true");
     // The rule moves in: the scale stretches to the plan, so 760k sits at 760/812 of the width.
-    expect(html).toContain(`left:${((760_000 / 812_000) * 100).toFixed(3)}%`);
+    expect(cssVar(doc.querySelector(".caprule"), "--cap")).toBeCloseTo(760_000 / 812_000, 4);
     expect(html).not.toMatch(/danger|\bdg\b|behind/i);
     expect(await import("node:fs").then((fs) => fs.readFileSync("src/app/globals.css", "utf8")))
       .toMatch(/\.qfig\.over\{color:var\(--blocked\);/);
   });
 
-  it("at or under capacity the figure is plain: no amber, no over badge, the rule at the right edge", async () => {
-    const html = await strip(615_000);
+  it("is the plan rail on its side: a button per book, the last block hatched exactly where it passes the rule", async () => {
+    const { doc } = await strip(812_000);
+    const buttons = [...doc.querySelectorAll(".planrail.strip button.qb")];
+    expect(buttons.map((b) => b.getAttribute("data-book"))).toEqual(["a", "b"]);
+    expect(buttons.map((b) => b.getAttribute("aria-label"))).toEqual(["A, 600k words, Q4 2026", "B, 212k words, estimated, Q4 2026"]);
+    // 600k ends before the rule; 212k runs 600k to 812k and the rule is at 760k, so 52k of it is over.
+    expect(buttons[0].classList.contains("over")).toBe(false);
+    expect(buttons[1].classList.contains("over")).toBe(true);
+    expect(buttons[0].querySelector(".ov")).toBeNull();
+    expect(buttons[1].querySelector(".ov")).not.toBeNull();
+    expect(cssVar(buttons[1], "--ov")).toBeCloseTo(52_000 / 212_000, 4);
+    expect(buttons[0].getAttribute("data-state")).toBe("read");
+    expect(buttons[1].hasAttribute("data-wc")).toBe(true);
+    // The hue rides in the markup, one markup for the strip and the rail (M-07).
+    expect(buttons[1].getAttribute("style")).toMatch(/--hue:var\(--g[1-8]\)/);
+  });
+
+  it("at or under capacity the figure is plain: no amber, no over badge, no hatch, the rule at the right edge", async () => {
+    const { html, doc } = await strip(615_000, [blocks[0], { ...blocks[1], words: 15_000 }]);
     expect(html).toContain('<span class="qfig">615k planned</span>');
-    expect(html).not.toMatch(/over|bdg bl|data-over/);
-    expect(html).toContain("left:100.000%");
+    expect(html).not.toMatch(/bdg bl|data-over|class="ov"|qb over/);
+    expect(cssVar(doc.querySelector(".caprule"), "--cap")).toBe(1);
   });
 });
 

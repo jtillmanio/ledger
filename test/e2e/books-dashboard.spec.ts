@@ -371,6 +371,26 @@ test.describe("reading", () => {
     await expect(fig).toBeVisible();
     expect((await computedStyle(fig, ["color"])).color).toBe(await tokenColour(page, "--blocked"));
     await expect(fig.locator(".bdg.bl")).toHaveText(/^[\d.]+[kM] over$/);
+    // The strip is the plan rail on its side (task 2.2b): the last block is past the rule and hatched in amber.
+    const last = page.locator(".planrail.strip button.qb").last();
+    await expect(last).toHaveClass(/\bover\b/);
+    const hatch = last.locator(".ov");
+    await expect(hatch).toBeVisible();
+    const drawn = await hatch.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { image: s.backgroundImage, color: s.backgroundColor };
+    });
+    expect(drawn.image).toContain("repeating-linear-gradient");
+    expect(drawn.color).toBe(await tokenColour(page, "--blocked-soft"));
+    // A block paints only where it is drawn: a short one's 24px box must not paint over its neighbour's label.
+    for (const box of await page.locator(".planrail.strip button.qb").all()) {
+      expect(await box.evaluate((el) => getComputedStyle(el).backgroundClip)).toBe("padding-box");
+    }
+    for (const box of await page.locator(".planrail.strip button.qb").all()) {
+      const r = (await box.boundingBox())!;
+      expect(r.width, "a strip block is at least 24px wide").toBeGreaterThanOrEqual(24);
+      expect(r.height).toBeGreaterThanOrEqual(24);
+    }
     await expectNoDanger(page);
     await expectNoHorizontalScroll(page);
     expect(await contrastFailures(page)).toEqual([]);

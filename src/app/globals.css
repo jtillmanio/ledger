@@ -824,25 +824,86 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .ladder .v{margin-left:auto;text-align:right;color:var(--muted)}
 .ladder .v b{color:var(--ink);font-weight:600}
 
-/* --- the plan rail: a quarter is a column, a book is a block sized by its
-   word count, the dashed rule is capacity. Anything above the rule is
-   hatched, never red. --- */
-.planrail{display:flex;gap:.375rem;align-items:flex-end;position:relative;padding-top:.25rem}
+/* --- the plan rail (task 2.2b; docs/04-design.md § 6, STYLE_GUIDE §3; M-07): a quarter is a
+   column, a book a block sized by its words and stacked in your order from the foot, the dashed
+   rule is capacity. Only the part of a block past the rule is hatched, never red. One markup draws
+   the four-column rail and, laid on its side with .strip, the dashboard's This quarter. A block's
+   place and size are custom properties from the layout (--at, --sz, --ov: fractions of the column,
+   of the block); nothing here is a pixel of data. The 2px gap is each block's own transparent edge,
+   so the gaps never move a block off its words. --- */
+.planrail{--rail-h:230px;--col-gap:6px;--lane-w:52px;
+  display:flex;gap:var(--col-gap);align-items:flex-start;position:relative;padding-top:.25rem}
+@media (min-width:1024px){ .planrail{--rail-h:300px;--col-gap:10px;--lane-w:150px} }
 .qcol{flex:1;min-width:0;display:flex;flex-direction:column}
-.qcol.nq{flex:0 0 48px;border-left:1px dashed var(--rule);padding-left:.4375rem;margin-left:.1875rem}
-.qstack{display:flex;flex-direction:column;justify-content:flex-end;gap:2px;position:relative}
-.qstack i{display:block;border-radius:var(--r-cell)}
+.qcol.nq{flex:0 0 var(--lane-w);box-sizing:border-box;border-left:1px dashed var(--blocked);padding-left:6px}
+.qstack{position:relative;height:var(--rail-h)}
+.qf{display:contents}
+/* The hit area (UX floor): a block drawn under 24px is a 24px box, centred on its words. Transparent
+   borders make the box (--pad above and below a block that is short, 0 otherwise); the block is painted
+   in the padding box only (background-clip), so its drawn height, hatch and ring are its own: a variant sets
+   background-color, never the shorthand, which resets the clip and paints the pad over its neighbours. The 2px gap is the far
+   border's. A real box, not a pseudo-element: axe's target-size measures the button itself. */
+.qb{--pad:max(0px,calc((24px - var(--sz) * var(--rail-h)) / 2));
+  position:absolute;left:0;right:0;bottom:calc(var(--at) * 100% - var(--pad));height:calc(var(--sz) * 100% + 2 * var(--pad));
+  box-sizing:border-box;margin:0;padding:0;border:solid transparent;border-width:var(--pad) 0 calc(var(--pad) + 2px);
+  border-radius:var(--r-cell);
+  background:var(--reading-soft);background-clip:padding-box;box-shadow:inset 0 0 0 1px var(--rule);
+  isolation:isolate;font:inherit;color:var(--ink);text-align:left;cursor:pointer}
+/* The hue edge: one book, one hue (decision, genreHue). */
+.qb::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;z-index:1;
+  background:var(--hue,var(--g8));border-radius:var(--r-cell)}
+/* A short block's box reaches into its neighbours: it stands above them, so its 24px is its own. */
+.qb.sm{z-index:1}
+.qb:focus-visible{z-index:3;outline:2px solid transparent;box-shadow:var(--focus-ring)}
+@media (hover:hover) and (pointer:fine){ .qb:not(.over):not(.un):hover{box-shadow:inset 0 0 0 1.5px var(--ink-2)} }
+.qb .ql{position:absolute;left:7px;top:50%;transform:translateY(-50%);z-index:1;font-size:.6875rem;line-height:1;
+  white-space:nowrap;color:var(--ink-2);pointer-events:none}
+/* Estimated counts: a dotted top edge, and a ~ before the words. */
+.qe{position:absolute;left:0;right:0;top:0;border-top:1.5px dotted var(--muted);pointer-events:none}
+/* Past the rule: the ring turns amber, the part past it is hatched, its label sits on a chip. */
+.qb.over{box-shadow:inset 0 0 0 1.5px var(--blocked)}
+.ov{position:absolute;left:0;right:0;top:0;height:calc(var(--ov) * (100% + 2px));max-height:100%;border-radius:var(--r-cell);
+  background-color:var(--blocked-soft);background-image:var(--hatch);box-shadow:inset 0 0 0 1.5px var(--blocked);pointer-events:none}
+.qb.over .ql,.qb.stack .ql{padding:2px 4px;border-radius:var(--r-cell);background:var(--surface);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--rule)}
+.qb.over .ql{left:5px}
+/* A stack folds adjacent blocks under 24px: dashed, on --raise, its label centred over it. */
+.qb.stack{background-color:var(--raise);box-shadow:none}
+.qb.stack::before,.qb.un::before{inset:0;width:auto;z-index:auto;box-sizing:border-box;background:none;border-radius:var(--r-cell)}
+.qb.stack::before{border:1px dashed var(--faint-deco)}
+.qb.stack.over::before{border-color:var(--blocked)}
+.qb.stack .ql{left:50%;transform:translate(-50%,-50%)}
+.qb.stack[aria-disabled="true"]{cursor:default}
+.qcol.nq .lt{display:none}
+@media (min-width:1024px){ .qcol.nq .lt{display:inline} }
+.qnote{margin:0;font-size:.75rem;line-height:1rem;color:var(--muted)}
+/* The fifth lane: a year and no quarter is a decision not made, so amber, dashed. */
+.qb.un{background-color:var(--blocked-soft);box-shadow:none}
+.qb.un::before{border:1px dashed var(--blocked)}
+.qb.un .ql{left:6px}
 .qfoot{border-top:1px solid var(--rule);margin-top:.375rem;padding-top:.3125rem;
   display:flex;flex-direction:column;align-items:center;gap:.1875rem;text-align:center}
 .qfoot b{font-size:.75rem;font-weight:600}
 .qfoot .mono{font-size:.6875rem;color:var(--muted)}
 .qfoot .bdg{font-size:.6875rem;padding:.125rem .3125rem}
-.caprule{position:absolute;left:0;right:0;border-top:1.5px dashed var(--ink-2);z-index:2;pointer-events:none}
-.hatch,.qstack i.over{background-color:var(--blocked-soft);
-  background-image:repeating-linear-gradient(135deg,var(--blocked) 0 1.5px,transparent 1.5px 6px);
-  box-shadow:inset 0 0 0 1px var(--blocked)}
-.qstack i.fits{background:var(--reading-soft);box-shadow:inset 0 0 0 1px var(--rule)}
-.qstack i.unplaced{border:1px dashed var(--blocked);background:var(--blocked-soft)}
+/* The phone's footer says only the amber overage (SG-D11): the desktop's words are not rendered below 1024px. */
+.qfoot .desk{display:none}
+@media (min-width:1024px){
+  .qfoot .desk{display:inline}
+  .qfoot .bdg.desk{display:inline-flex}
+  .qfoot .phone{display:none}
+}
+.caprule{position:absolute;z-index:4;pointer-events:none;border-top:1.5px dashed var(--ink-2);
+  left:0;right:calc(var(--lane-w) + var(--col-gap));top:calc(.25rem + (1 - var(--cap)) * var(--rail-h) - .75px)}
+.caprule em{position:absolute;right:0;top:-1.125rem;padding:.125rem .25rem;border-radius:var(--r-cell);background:var(--surface);
+  font:normal 600 .6875rem/1 var(--mono);color:var(--ink-2)}
+.qlegend{display:flex;flex-wrap:wrap;gap:.25rem .875rem;list-style:none;margin:.75rem 0 0;padding:0;font-size:.6875rem;color:var(--muted)}
+.qlegend li{display:inline-flex;align-items:center;gap:.3125rem}
+.lg{display:inline-block;flex:none;width:.75rem;height:.5rem;border-radius:var(--r-cell)}
+.lg.est{background:var(--reading-soft);border-top:1.5px dotted var(--muted)}
+.lg.ovr{background-color:var(--blocked-soft);background-image:var(--hatch);box-shadow:inset 0 0 0 1px var(--blocked)}
+.lg.stk{background:var(--raise);border:1px dashed var(--faint-deco)}
+.lg.nqt{background:var(--blocked-soft);border:1px dashed var(--blocked)}
 
 /* --- capacity --- */
 .pacecard{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r-xl);
@@ -914,6 +975,7 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .sk-telecard .ladder{margin-top:0}
 .sk-ladder{height:.8125rem;margin:.203rem 0}
 .sk-ladder.two{height:2.031rem}
+.sk-planrail .qstack{display:flex;flex-direction:column;justify-content:flex-end;gap:2px}
 .sk-planrail .qfoot .sk{flex:none}
 .sk-qb{height:.75rem;margin:.1875rem 0}
 .sk-qm{height:.6875rem;margin:.1719rem 0}
@@ -1529,22 +1591,33 @@ section[data-plan="year"] h2.group-head{color:var(--muted)}
 .keep-why{font:var(--fs-body-sm) var(--sans);color:var(--muted)}
 .keep-start{flex:none;min-width:64px;min-height:44px}
 
-/* This quarter (FP-D8): a one-quarter rail laid on its side; 2.2b's rail component replaces it (M-07).
-   Scoped under .qrail: .qcol, .qstack and .qfoot are the vertical plan rail's above. */
+/* This quarter (FP-D8, task 2.2b, M-07): the plan rail laid on its side, one quarter wide. It keeps the feel
+   pass's fills (D-40): --sunk cells, --ready when read, a --brand ring on the book in hand; the rail's states
+   (the hatch past the rule, the dotted ~ edge, stacks) are the rail's own. The hue is in the markup, not drawn here. */
 .qcard{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:var(--r-xl);background:var(--surface);
   box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)}
 .qhead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;font-size:.9375rem;line-height:1.25rem}
 .qhead .mono{font-size:.75rem;color:var(--muted)}
-.qrail{display:block;height:28px}
-.qrail .qcol{position:relative;display:block;height:28px}
-.qrail .qstack{display:flex;flex-direction:row;justify-content:flex-start;gap:2px;height:28px;overflow:hidden;
-  border-radius:var(--r-cell);box-shadow:inset 0 0 0 1px var(--line)}
-.qcell{flex:0 0 auto;min-width:4px;height:28px;border-radius:var(--r-cell);background:var(--sunk);
-  box-shadow:inset 0 0 0 1px var(--faint-deco);overflow:hidden;white-space:nowrap;font-size:.6875rem;line-height:28px;color:var(--ink-2)}
-.qcell .mono{padding-left:6px}
-.qcell[data-state="read"]{background:var(--ready);box-shadow:none;color:var(--on-ready)}
-.qcell[data-state="head"]{box-shadow:inset 0 0 0 1.5px var(--brand);color:var(--ink)}
-.qcap{position:absolute;top:-4px;bottom:-4px;width:0;margin-left:-1px;border-left:1.5px dashed var(--ink-2)}
+.planrail.strip{display:block;height:28px;padding:0}
+.strip .qcol{position:relative;display:block;height:28px}
+/* The strip's length is its container's width (100cqw), so a short block's 24px box is measured against it. */
+.strip .qstack{height:28px;border-radius:var(--r-cell);box-shadow:inset 0 0 0 1px var(--line);container-type:inline-size}
+.strip .qb{--pad:max(0px,calc((24px - var(--sz) * 100cqw) / 2));
+  top:0;bottom:auto;left:calc(var(--at) * 100% - var(--pad));right:auto;width:calc(var(--sz) * 100% + 2 * var(--pad));height:28px;
+  border-width:0 var(--pad) 0 calc(var(--pad) + 2px);
+  background-color:var(--sunk);box-shadow:inset 0 0 0 1px var(--faint-deco);color:var(--ink-2)}
+.strip .qb::before{display:none}
+.strip .qb.stack::before{display:block}
+.strip .qb[data-state="read"]{background-color:var(--ready);box-shadow:none;color:var(--on-ready)}
+.strip .qb[data-state="head"]{box-shadow:inset 0 0 0 1.5px var(--brand);color:var(--ink)}
+.strip .qb.over{box-shadow:inset 0 0 0 1.5px var(--blocked)}
+.strip .qb.stack{background-color:var(--raise);box-shadow:none}
+.strip .qb .ql{left:6px;color:inherit}
+.strip .qb.over .ql,.strip .qb.stack .ql{color:var(--ink)}
+.strip .qb.stack .ql{left:50%}
+.strip .ov{left:auto;right:0;top:0;bottom:0;height:auto;width:calc(var(--ov) * (100% + 2px));max-width:100%;max-height:none}
+.strip .qe{left:auto;top:0;bottom:0;right:0;border-top:0;border-right:1.5px dotted var(--muted)}
+.strip .caprule{top:-4px;bottom:-4px;left:calc(var(--cap) * 100%);right:auto;margin-left:-1px;border-top:0;border-left:1.5px dashed var(--ink-2)}
 .qfigs{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:24px;font-size:.75rem;color:var(--muted)}
 .qfig{display:inline-flex;align-items:center;gap:8px}
 .qfig.over{color:var(--blocked);font-weight:600}
@@ -1619,6 +1692,6 @@ section[data-plan="year"] h2.group-head{color:var(--muted)}
 .shelf-slot .sk-head{margin:10px 0}
 .shelf .card .sk-card-title{height:30px;margin:2px 0}
 .shelf .card .sk-card-meta{height:10px;margin:2px 0}
-.qrail.sk{border-radius:var(--r-cell)}
+.planrail.strip.sk{border-radius:var(--r-cell)}
 .sk-qhead{height:14px;margin:3px 0}
 .sk-qfigs{height:12px;margin:6px 0}
