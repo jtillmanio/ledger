@@ -44,8 +44,11 @@ type Placed = {
 };
 
 export type RailBlock = Placed & { kind: "block"; book: RailBook };
-/** Two or more adjacent blocks each under `min` px, folded into one button. */
-export type RailStack = Placed & { kind: "stack"; books: RailBook[]; count: number; words: number };
+/**
+ * Two or more adjacent blocks each under `min` px, merged into one button; or, with `fold`, every book that
+ * would run past the top of the column, folded into one `+N more` button standing at the top.
+ */
+export type RailStack = Placed & { kind: "stack"; books: RailBook[]; count: number; words: number; fold: boolean };
 export type RailItem = RailBlock | RailStack;
 
 export type ColumnOptions = {
@@ -96,7 +99,7 @@ export function layoutColumn(books: RailBook[], { length, scale, capacity, min =
       items.push({ kind: "block", book: run[0], ...place(run, runStart).placed });
     } else if (run.length > 1) {
       const { words, placed } = place(run, runStart);
-      items.push({ kind: "stack", books: run, count: run.length, words, ...placed });
+      items.push({ kind: "stack", books: run, count: run.length, words, fold: false, ...placed });
     }
     run = [];
   };
@@ -111,7 +114,28 @@ export function layoutColumn(books: RailBook[], { length, scale, capacity, min =
     at += book.words;
   }
   flush();
-  return items;
+  return foldOverflow(items, { length, perWord, scale, capacity });
+}
+
+/**
+ * A column holds `scale` words: the scale and the rule never move for what a plan holds. The first book
+ * that would end past the top, and every book after it, fold into one stack that runs from where that
+ * book starts to the top. Only what is drawn of it can be over.
+ */
+function foldOverflow(items: RailItem[], { length, perWord, scale, capacity }: { length: number; perWord: number; scale: number; capacity: number }): RailItem[] {
+  const at = items.findIndex((i) => i.start + i.size > length + 1e-6);
+  if (at < 0) return items;
+  const rest = items.slice(at);
+  const books = rest.flatMap((i) => (i.kind === "block" ? [i.book] : i.books));
+  const words = books.reduce((n, b) => n + b.words, 0);
+  const startWords = rest[0].start / perWord;
+  const overWords = Math.max(0, Math.min(startWords + words, scale) - Math.max(startWords, capacity));
+  const fold: RailStack = {
+    kind: "stack", books, count: books.length, words, fold: true,
+    start: rest[0].start, size: length - rest[0].start, overSize: overWords * perWord, over: overWords > 0,
+    split: overWords > 0 && startWords < capacity ? (capacity - startWords) * perWord : null,
+  };
+  return [...items.slice(0, at), fold];
 }
 
 /** The fifth lane: bare-year books have no order (D-37), so the largest stands at the foot. */
@@ -135,9 +159,24 @@ export function stackName(books: RailBook[]): string {
   return `${books.length} books, ${kWords(books.reduce((n, b) => n + b.words, 0))} words`;
 }
 
-/** What a stack's face says: `+3 · 84k`. */
-export function stackLabel(stack: Pick<RailStack, "count" | "words">): string {
-  return `+${stack.count} · ${kWords(stack.words)}`;
+/**
+ * What a stack's face says: `+3 · 84k`, or `+4 more · 545k` for the books folded off the top. `short` drops
+ * the words, for a stack too narrow to carry them beside its neighbour (its name still says them).
+ */
+export function stackLabel(stack: Pick<RailStack, "count" | "words" | "fold">, short = false): string {
+  const [head, tail] = stackLabelParts(stack);
+  return short ? head : head + tail;
+}
+
+/**
+ * A stack's label in two parts, for a lane too narrow for all of it on the phone: `+3` and ` · 84k`, or
+ * `+4` and ` more · 545k` when `narrow` (the fifth lane), where the head is only the count. The parts
+ * always join to `stackLabel`.
+ */
+export function stackLabelParts(stack: Pick<RailStack, "count" | "words" | "fold">, narrow = false): [string, string] {
+  const more = stack.fold ? " more" : "";
+  const words = ` · ${kWords(stack.words)}`;
+  return narrow ? [`+${stack.count}`, more + words] : [`+${stack.count}${more}`, words];
 }
 
 /**

@@ -135,6 +135,53 @@ describe("the layout (AC-2)", () => {
   });
 });
 
+describe("a column holds 1000k: what runs past its top folds into one +N more stack", () => {
+  it("keeps the scale and folds the books that would pass the top, from the first one that does", () => {
+    // 400k, 300k, 200k fill 900k; 150k would end at 1050k and 100k after it: both fold. The rule stays at 760k.
+    const items = layoutColumn(
+      [book("a", 400_000), book("b", 300_000), book("c", 200_000), book("d", 150_000), book("e", 120_000)],
+      { ...PHONE, capacity: 760_000 },
+    );
+    expect(items.map((i) => i.kind)).toEqual(["block", "block", "block", "stack"]);
+    const more = items[3];
+    if (more.kind !== "stack") throw new Error("not a stack");
+    expect(more.fold).toBe(true);
+    expect(more.books.map((b) => b.id)).toEqual(["d", "e"]);
+    expect(more.count).toBe(2);
+    expect(more.words).toBe(270_000);
+    expect(stackLabel(more)).toBe("+2 more · 270k");
+    // It stands where its first book starts and runs to the top of the column.
+    expect(more.start).toBeCloseTo(px(900_000), 6);
+    expect(more.start + more.size).toBeCloseTo(230, 6);
+    // The blocks before it are drawn at their words, as ever.
+    expect(items[0].size).toBeCloseTo(px(400_000), 6);
+  });
+
+  it("hatches a folded stack only where it passes the rule, up to the top of the column", () => {
+    const items = layoutColumn([book("a", 400_000), book("b", 400_000), book("c", 300_000)], { ...PHONE, capacity: 760_000 });
+    const more = items[2];
+    expect(more.kind === "stack" && more.fold).toBe(true);
+    // c starts at 800k, past the 760k rule: all of what is drawn of it is over.
+    expect(more.over).toBe(true);
+    expect(more.overSize).toBeCloseTo(more.size, 6);
+    expect(more.split).toBeNull();
+  });
+
+  it("folds a fifth lane taller than the column, smallest last, and counts it against no capacity", () => {
+    const lane = [book("l1", 455_000), book("l2", 400_000), book("l3", 204_000), book("l4", 191_000), book("l5", 60_000)];
+    const items = layoutLane(lane, PHONE);
+    expect(items.map((i) => (i.kind === "block" ? i.book.id : "more"))).toEqual(["l1", "l2", "more"]);
+    const more = items[2];
+    expect(more.kind === "stack" && more.books.map((b) => b.id)).toEqual(["l3", "l4", "l5"]);
+    expect(more.over).toBe(false);
+  });
+
+  it("leaves a column that fits alone: nothing folds at exactly 1000k", () => {
+    const items = layoutColumn([book("a", 500_000), book("b", 500_000)], { ...PHONE, capacity: 760_000 });
+    expect(items.map((i) => i.kind)).toEqual(["block", "block"]);
+  });
+});
+
 describe("the names (AC-3)", () => {
   it("name the title, the words to the k, estimated when the count is, and the period", () => {
     expect(railName(book("pir", 65_000, { title: "Piranesi", estimated: true }))).toBe("Piranesi, 65k words, estimated, Q1 2027");
@@ -331,6 +378,24 @@ describe("the Check: a quarter past capacity hatches exactly the words past it (
     expect(html).not.toMatch(/#[0-9a-f]{3,8}\b|danger/i);
   });
 
+  it("its words add up to 2.1's figures: each quarter, and the quarters plus the fifth lane for the year", async () => {
+    const rows = await q.planRail(USER, 2027);
+    const { year, quarters } = await q.planCapacity(USER, 2027);
+    const sum = (period: string) => rows.filter((r) => r.period === period).reduce((n, r) => n + r.words, 0);
+    quarters.forEach((cap) => expect(sum(cap.period), cap.period).toBe(cap.plannedWords));
+    expect(sum("2027") + quarters.reduce((n, cap) => n + sum(cap.period), 0)).toBe(year.plannedWords);
+    // On deck is on no rail, and an estimate is flagged as one.
+    expect(rows.some((r) => r.id === "deck")).toBe(false);
+    expect(rows.find((r) => r.id === "f6")?.estimated).toBe(true);
+    expect(rows.find((r) => r.id === "f1")?.estimated).toBe(false);
+  });
+
+  it("a soft-deleted book is on no rail and in no strip (Hard rule 4)", async () => {
+    await sql`UPDATE books SET deleted_at = now() WHERE id IN ('f2', 'yr')`;
+    expect((await q.planRail(USER, 2027)).some((r) => r.id === "yr" || r.id === "f2")).toBe(false);
+    expect((await q.quarterBlocks(USER, "2027-Q1")).some((r) => r.id === "f2")).toBe(false);
+  });
+
   it("each quarter's footer says its planned words, and an over one says what it is over, amber, never red", async () => {
     const { doc, quarters } = await rail();
     const over = quarters[0].plannedWords - quarters[0].capacity;
@@ -344,6 +409,70 @@ describe("the Check: a quarter past capacity hatches exactly the words past it (
     const room = quarters[1].capacity - quarters[1].plannedWords;
     expect(q2?.querySelector(".bdg.dn.desk")?.textContent).toBe(`${kWords(room)} room`);
     expect(q2?.querySelector(".bdg.phone")).toBeNull();
+  });
+});
+
+describe("a plan taller than the rail keeps the scale (decision: fixed 1000k, overflow folds)", () => {
+  it("a 1.3M fifth lane folds into a +N more button and moves nothing in the four quarters", async () => {
+    const { default: PlanRail } = await import("../src/components/PlanRail");
+    const cap = (n: number, planned: number) => ({
+      period: `2027-Q${n}`, year: 2027, quarter: n, capacity: 760_000, plannedWords: planned, statedWords: planned,
+      estimatedWords: 0, books: 0, readBooks: 0, unknownBooks: 0, load: planned / 760_000, estimatedShare: 0,
+    });
+    const quarters = [1, 2, 3, 4].map((n) => cap(n, n === 1 ? 300_000 : 0));
+    const lane = ["l1", "l2", "l3", "l4", "l5", "l6"].map((id, n) => book(id, [455_000, 300_000, 204_000, 191_000, 90_000, 60_000][n], { period: "2027" }));
+    const render = (books: RailBook[]) => {
+      const window = new Window();
+      window.document.body.innerHTML = renderToStaticMarkup(createElement(PlanRail, { year: 2027, books, quarters }));
+      return window.document;
+    };
+    const withLane = render([book("a", 300_000), ...lane]);
+    const without = render([book("a", 300_000)]);
+    // The quarter's block and the rule are where they were: the lane drives nothing.
+    expect(cssVar(withLane.querySelector('[data-book="a"]'), "--sz")).toBe(cssVar(without.querySelector('[data-book="a"]'), "--sz"));
+    expect(withLane.querySelector(".planrail")?.getAttribute("style")).toBe(without.querySelector(".planrail")?.getAttribute("style"));
+    expect(cssVar(withLane.querySelector('[data-book="a"]'), "--sz")).toBeCloseTo(300_000 / 1_000_000, 4);
+    // The lane's first books stand at the foot; the rest are one stack button that says what it holds.
+    expect([...withLane.querySelectorAll(".qcol.nq button.qb:not(.stack)")].map((b) => b.getAttribute("data-book"))).toEqual(["l1", "l2", "l3"]);
+    const more = withLane.querySelector(".qcol.nq button.stack");
+    expect(more?.getAttribute("aria-label")).toBe("3 books, 341k words");
+    expect(more?.querySelector(".ql")?.textContent).toBe("+3 more · 341k");
+  });
+});
+
+describe("the strip's stacks", () => {
+  const cap = {
+    period: "2027-Q1", year: 2027, quarter: 1, capacity: 760_000, plannedWords: 360_000, statedWords: 360_000, estimatedWords: 0,
+    books: 5, readBooks: 0, unknownBooks: 0, load: 0.47, estimatedShare: 0,
+  };
+  async function strip(books: RailBook[]) {
+    const { default: PlanRail } = await import("../src/components/PlanRail");
+    const window = new Window();
+    window.document.body.innerHTML = renderToStaticMarkup(createElement(PlanRail, { axis: "row", year: 2027, books, quarters: [cap] }));
+    return window.document;
+  }
+
+  it("a narrow stack says how many books, not their words, and the reason it does nothing is on the page", async () => {
+    // 30k each is 12px of 296 at 760k: three of them are one 35px stack, too narrow for '+3 · 90k'.
+    const doc = await strip([book("a", 200_000), book("s1", 30_000), book("s2", 30_000), book("s3", 30_000), book("z", 70_000)]);
+    const stack = doc.querySelector("button.stack");
+    expect(stack?.querySelector(".ql")?.textContent).toBe("+3");
+    expect(stack?.getAttribute("aria-label")).toBe("3 books, 90k words");
+    expect(stack?.getAttribute("aria-disabled")).toBe("true");
+    expect(doc.querySelector(".qnote")?.textContent).toContain("opens its list with the plan editor");
+    expect(doc.getElementById(stack?.getAttribute("aria-describedby") ?? "none")).toBe(doc.querySelector(".qnote"));
+  });
+
+  it("a strip with no stack has no reason to give", async () => {
+    const doc = await strip([book("a", 200_000), book("b", 160_000)]);
+    expect(doc.querySelector("button.stack")).toBeNull();
+    expect(doc.querySelector(".qnote")).toBeNull();
+  });
+
+  it("a wide stack keeps its words", async () => {
+    // Five 40k books at 760k scale are 15.6px each: one 78px stack, wide enough for '+5 · 200k'.
+    const doc = await strip([book("a", 100_000), ...["s1", "s2", "s3", "s4", "s5"].map((id) => book(id, 40_000)), book("z", 120_000)]);
+    expect(doc.querySelector("button.stack .ql")?.textContent).toBe("+5 · 200k");
   });
 });
 
@@ -361,6 +490,10 @@ describe("a stack in the markup (AC-3)", () => {
     window.document.body.innerHTML = renderToStaticMarkup(createElement(PlanRail, { year: 2027, books, quarters }));
     const stack = window.document.querySelector("button.qb.stack");
     expect(stack?.getAttribute("type")).toBe("button");
+    // Until 2.3's list sheet it does nothing, and says why: aria-disabled, described by the legend's reason.
+    expect(stack?.getAttribute("aria-disabled")).toBe("true");
+    const reason = window.document.getElementById(stack?.getAttribute("aria-describedby") ?? "none");
+    expect(reason?.textContent).toContain("opens its list with the plan editor");
     expect(stack?.getAttribute("aria-label")).toBe("3 books, 84k words");
     expect(stack?.querySelector(".ql")?.textContent).toBe("+3 · 84k");
     // The three small books are in the stack and have no button of their own; the lone one keeps its own.

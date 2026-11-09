@@ -46,6 +46,8 @@ const BOOKS: RailBook[] = [
   book("y2", "Year Two", 204_000, "2027"),
   book("y3", "Year Three", 191_000, "2027", { estimated: true }),
   book("y4", "Year Four", 60_000, "2027"),
+  // 455 + 204 + 191 = 850k fills most of the lane's 1000k, so these two (a 160k stack) run past its top and fold.
+  book("y5", "Year Five", 100_000, "2027"),
 ];
 
 const quarters = [1, 2, 3, 4].map((n) => {
@@ -166,6 +168,9 @@ test.describe("at 360px", PHONE, () => {
     const stack = page.locator('.qcol[data-period="2027-Q3"] button.stack');
     await expect(stack).toHaveCount(1);
     await expect(stack).toHaveAccessibleName("3 books, 150k words");
+    // It does nothing until 2.3's list sheet, and says why: aria-disabled and the legend's reason beside it.
+    await expect(stack).toHaveAttribute("aria-disabled", "true");
+    await expect(stack).toHaveAccessibleDescription(/opens its list with the plan editor/);
     await expect(stack).toContainText("+3 · 150k");
     await expect(page.locator('[data-book="c2"]')).toHaveCount(0);
     await expect(page.locator('[data-book="c6"]')).toHaveAccessibleName("Charlie Six, 30k words, Q3 2027");
@@ -176,6 +181,22 @@ test.describe("at 360px", PHONE, () => {
     // (A browser snaps border widths to whole device pixels, so a short block paints within a pixel of its words.)
     expect(Math.abs((await drawn(lone)) - (30_000 / 1_000_000) * 230)).toBeLessThanOrEqual(1.5);
     expect((await lone.boundingBox())?.height).toBe(24);
+  });
+
+  test("a lane taller than the column keeps the scale and folds its overflow into one +N more stack at the top (AC-1)", async ({ page }) => {
+    const more = page.locator(".qcol.nq button.stack");
+    await expect(more).toHaveCount(1);
+    await expect(more).toHaveAccessibleName("2 books, 160k words");
+    await expect(more).toContainText("+2 more · 160k");
+    // The quarters did not move for it: Q1's first block is still its words at 1000k to the column.
+    const a1 = await page.locator('[data-book="a1"]').boundingBox();
+    expect(Math.abs((a1?.height ?? 0) - 0.2 * 230)).toBeLessThanOrEqual(0.5);
+    // The fold stands from where its books start to the top of the column.
+    const column = await page.locator(".qcol.nq .qstack").boundingBox();
+    const box = await more.boundingBox();
+    if (!column || !box) throw new Error("the rail did not draw");
+    expect(Math.abs(box.y - column.y)).toBeLessThanOrEqual(2);
+    await expectNoHorizontalScroll(page);
   });
 
   test("an estimated book has the dotted edge and a ~ label; a stated one has neither (AC-1)", async ({ page }) => {

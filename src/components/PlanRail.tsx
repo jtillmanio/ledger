@@ -1,14 +1,18 @@
 import { useId, type CSSProperties } from "react";
 import type { PeriodCapacity } from "@/db/queries";
 import {
-  COLUMN_WORDS, MIN_HIT, PHONE_COLUMN, STRIP_LENGTH, genreHue, kWords, layoutColumn, layoutLane, railName, stackLabel, stackName,
-  type RailBook, type RailItem,
+  COLUMN_WORDS, MIN_HIT, PHONE_COLUMN, STRIP_LENGTH, genreHue, kWords, layoutColumn, layoutLane, railName, stackLabelParts, stackName,
+  type RailBook, type RailItem, type RailStack,
 } from "@/lib/plan-rail";
 
 /** A label shows when its block is drawn at least this big, on the phone: the text must fit. */
 const LABEL_PX = 16;
 /** On the strip, a block narrower than this share of it keeps its words to its name. */
 const LABEL_SHARE = 0.07;
+/** On the strip, a stack narrower than this many px (at the phone's 296px) says how many books, not their words. */
+const STACK_WORDS_PX = 56;
+/** Why a stack does nothing yet: the reason shown beside it, until 2.3's list sheet exists (UX floor). */
+const STACK_REASON = "A stack opens its list with the plan editor.";
 
 /** A number for a custom property: enough places to be exact at 300px, few enough to read. */
 const num = (n: number) => String(Math.round(n * 100_000) / 100_000);
@@ -43,6 +47,7 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
     const scale = Math.max(cap.plannedWords, cap.capacity) || 1;
     const items = layoutColumn(inPeriod(cap.period), { length: STRIP_LENGTH, scale, capacity: cap.capacity });
     return (
+      <>
       <div className="planrail strip" role="group" aria-label={label ?? `Plan ${cap.period}`}
         data-over={cap.plannedWords > cap.capacity || undefined}>
         <div className="qcol" data-period={cap.period}>
@@ -53,21 +58,23 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
           </div>
           <i className="caprule" style={{ "--cap": num(cap.capacity / scale) } as CSSProperties} aria-hidden="true" />
         </div>
-        <span id={note} className="sr-only">The list of these books opens with the plan editor.</span>
       </div>
+      {items.some((i) => i.kind === "stack") && <p id={note} className="qnote">{STACK_REASON}</p>}
+      </>
     );
   }
 
   const columns = quarters.map((cap) => ({ cap, books: inPeriod(cap.period) }));
   const lane = inPeriod(String(year));
   const total = (list: RailBook[]) => list.reduce((n, b) => n + b.words, 0);
-  // 1000k fills a column; a plan taller than that shrinks the whole rail to fit, so nothing is cut off.
-  const scale = Math.max(COLUMN_WORDS, total(lane), ...columns.map((c) => Math.max(total(c.books), c.cap.capacity)));
+  // 1000k fills a column, always: the rule never moves for what a plan holds, and books past the top of a
+  // column or the lane fold into one +N more button there (layoutColumn).
+  const scale = COLUMN_WORDS;
   const capacity = quarters[0]?.capacity ?? 0;
 
   return (
     <>
-    <div className="planrail" role="group" aria-label={`Plan ${year}`} style={{ "--cap": num(capacity / scale) } as CSSProperties}>
+    <div className="planrail" role="group" aria-label={`Plan ${year}`} style={{ "--cap": num(Math.min(1, capacity / scale)) } as CSSProperties}>
       {columns.map(({ cap, books: list }) => {
         const items = layoutColumn(list, { length: PHONE_COLUMN, scale, capacity: cap.capacity });
         const over = cap.plannedWords - cap.capacity;
@@ -109,15 +116,25 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
         </div>
       </div>
       <span className="caprule" aria-hidden="true"><em>{kWords(capacity)}</em></span>
-      <span id={note} className="sr-only">The list of these books opens with the plan editor.</span>
     </div>
     <ul className="qlegend">
       <li><i className="lg est" aria-hidden="true" /><span className="mono">~</span> estimated</li>
       <li><i className="lg ovr" aria-hidden="true" /> over capacity</li>
-      <li><i className="lg stk" aria-hidden="true" /><span className="mono">+N</span> merged under 24px</li>
+      <li id={note}><i className="lg stk" aria-hidden="true" /><span className="mono">+N</span> merged under 24px. {STACK_REASON}</li>
       <li><i className="lg nqt" aria-hidden="true" /> year, no quarter</li>
     </ul>
     </>
+  );
+}
+
+/** A stack's face. On the phone the fifth lane has room for the count only (45px): its tail shows from 1024px. */
+function StackLabel({ stack, short, lane }: { stack: RailStack; short: boolean; lane: boolean }) {
+  const [head, tail] = stackLabelParts(stack, lane);
+  return (
+    <span className="ql mono">
+      {head}
+      {!short && <span className={lane ? "lt" : undefined}>{tail}</span>}
+    </span>
   );
 }
 
@@ -146,9 +163,9 @@ function Item({ item, length, axis, lane = false, inHand, note }: {
   if (item.kind === "stack") {
     return (
       <button type="button" className={cls("qb", "stack", item.over && "over", small && "sm")} style={style}
-        aria-label={stackName(item.books)} aria-describedby={note}>
+        aria-label={stackName(item.books)} aria-disabled="true" aria-describedby={note}>
         {body}
-        <span className="ql mono">{stackLabel(item)}</span>
+        <StackLabel stack={item} short={axis === "row" && item.size < STACK_WORDS_PX} lane={lane} />
       </button>
     );
   }

@@ -872,6 +872,10 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .qb.stack::before{border:1px dashed var(--faint-deco)}
 .qb.stack.over::before{border-color:var(--blocked)}
 .qb.stack .ql{left:50%;transform:translate(-50%,-50%)}
+.qb.stack[aria-disabled="true"]{cursor:default}
+.qcol.nq .lt{display:none}
+@media (min-width:1024px){ .qcol.nq .lt{display:inline} }
+.qnote{margin:0;font-size:.75rem;line-height:1rem;color:var(--muted)}
 /* The fifth lane: a year and no quarter is a decision not made, so amber, dashed. */
 .qb.un{background:var(--blocked-soft);box-shadow:none}
 .qb.un::before{border:1px dashed var(--blocked)}
