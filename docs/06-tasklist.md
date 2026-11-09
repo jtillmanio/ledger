@@ -335,10 +335,10 @@ with the task that first reads it.
 | ✅ | 1.17 → TASK-039 | Started and finished: a start date for books, a derived span for runs | M |  | — |
 | ✅ | 1.23 → TASK-043 | Audiobooks: listening, and a listen that counts as a read | M |  | 1.5, 1.17 |
 | ✅ | 1.27 → TASK-044 | Extract resolves the wishlist, before cutover | M |  | 1.18, 1.21 |
-|  | 1.14c | Page counts from Hardcover, word counts from Calibre | S | _Owner, 2026-11-08 (D-130)_ | 1.14b |
-|  | 1.17b | Dates when you start and finish, and on every read | M | _Owner, 2026-11-08 (D-131)_ | 1.17, 1.23 |
-|  | 1.29 | Refresh production's comics from `Comics.xlsx`, books untouched | M | _Owner, 2026-11-08 (D-128)_ | — |
-|  | 1.26 | Cut the books over from the Sheets | M | _The books cutover since 2026-11-08 (D-128)_ | 1.25, 1.14c, 1.17b, 1.29, and every open entry 1.25 names for `Books.xlsx`, with 4.4 and 5.17 |
+|  | 1.14c → TASK-057 | Page counts from Hardcover, word counts from Calibre | S | _Owner, 2026-11-08 (D-130)_ | 1.14b |
+|  | 1.17b → TASK-058, TASK-059 | Dates when you start and finish, and on every read | M | _Owner, 2026-11-08 (D-131)_ | 1.17, 1.23 |
+|  | 1.29 → TASK-060 | Refresh production's comics from `Comics.xlsx`, books untouched | M | _Owner, 2026-11-08 (D-128)_ | — |
+|  | 1.26 → TASK-061 | Cut the books over from the Sheets | M | _The books cutover since 2026-11-08 (D-128)_ | 1.25, 1.14c, 1.17b, 1.29, and every open entry 1.25 names for `Books.xlsx`, with 4.4 and 5.17 |
 
 # Next
 
@@ -365,7 +365,7 @@ with the task that first reads it.
 | ✅ | 2.2g → TASK-056 | Where the book sits, in Now | M |  | 2.2, 2.2h |
 | ✅ | 2.2h → TASK-055 | Finishing a book follows it | M |  | 2.2c |
 | ✅ | 2.2i → TASK-052 | Every screen from a phone: the tab row | M |  | 1.8 |
-|  | 2.2j | The universe and series on a book's row | S |  | 2.2 |
+|  | 2.2j → TASK-062 | The universe and series on a book's row | S |  | 2.2 |
 |  | 2.2k | The books page scrolls sideways with a full Up next shelf | S |  | 2.2 |
 
 ## M11: Editing the plan — Next
@@ -378,11 +378,11 @@ with the task that first reads it.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
-|  | 2.3 | Plan editor | M |  | 1.7, 2.1 |
-|  | 2.7 | Rebalance, and accepting an overage | M |  | — |
-|  | 2.8 | Place the unquartered | M |  | — |
-|  | 2.10 | Plan page as the full-size rail | M |  | 1.7, 2.1, 2.2 |
-|  | 2.10b | Plan a year or a quarter, with suggestions | M |  | 2.3, 2.10, 1.15, 1.21, 2.2c, 2.2d |
+|  | 2.3 → TASK-063, TASK-064, TASK-065 | Plan editor | M |  | 1.7, 2.1 |
+|  | 2.7 → TASK-066, TASK-067 | Rebalance, and accepting an overage | M |  | — |
+|  | 2.8 → TASK-068 | Place the unquartered | M |  | — |
+|  | 2.10 → TASK-069, TASK-070 | Plan page as the full-size rail | M |  | 1.7, 2.1, 2.2 |
+|  | 2.10b → TASK-071, TASK-072 | Plan a year or a quarter, with suggestions | M |  | 2.3, 2.10, 1.15, 1.21, 2.2c, 2.2d |
 
 ## M12: The comics dashboard and the telescope — Next
 
