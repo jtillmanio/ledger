@@ -26,7 +26,7 @@ const pieces = {
   seasonRows: 'class="sk sk-cover"',
   // The books dashboard (task 2.2): Now, the shelf and the quarter strip.
   booksNow: 'class="now-hero sk-now"',
-  quarter: 'class="sk qrail"',
+  quarter: 'class="sk planrail strip"',
 };
 const holds: [string, string, string[], string[]][] = [
   ["/comics", "../src/app/comics/(dash)/loading", [pieces.telecard, pieces.runRows], [pieces.seasonRows]],

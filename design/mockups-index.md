@@ -20,7 +20,7 @@ line numbers below drift after an edit.
 | `bulk` | Add issues — type it (bulk) | 1576–1680 |
 | `newrun` | New run | 1545–1647 |
 | `ai` | AI review | 1650–1745 |
-| `bdash` | Books dashboard; 360px and 834px frames, and the desktop's, redrawn from the feel pass (task 2.2, D-40): the five slots (Now, *Up next in Q4*, *This quarter*, *On deck*, *2026 so far*); reading at 390 and 834 and on the desktop, listening at 360 (the headphones glyph), *Between books* at 390, 360, 834 and on the desktop (past capacity: the figure amber, *52k over*), never finished with nothing planned at 360; no position, meter or sittings until 2.1b (Q1); *Plan* revealed on hover with a fine pointer on the desktop | 2443–2850 |
+| `bdash` | Books dashboard; 360px and 834px frames, and the desktop's, redrawn from the feel pass (task 2.2, D-40): the five slots (Now, *Up next in Q4*, *This quarter*, *On deck*, *2026 so far*); reading at 390 and 834 and on the desktop, listening at 360 (the headphones glyph), *Between books* at 390, 360, 834 and on the desktop (past capacity: the figure amber, *52k over*, and the strip drawn as the plan rail on its side, task 2.2b: its blocks `button.qb`, the part of the last block past the rule hatched), never finished with nothing planned at 360; no position, meter or sittings until 2.1b (Q1); *Plan* revealed on hover with a fine pointer on the desktop | 2443–2850 |
 | `status` | Status — in flight, up next, done (all media); 360px and 834px frames (roadmap 1.8); books In flight with **Finished** on each row, 360 (before and after, the toast with *Keep going?*), 834 and desktop frames (task 2.2f); Done rows carry a run's span and a book's dates (notes, task 1.17); books In flight under *Reading*, then *Listening*, and the headphones glyph on a row with a listen (notes, task 1.23) | 2645–2810 |
 | `plan` | Plan by quarter; *Place them* (2.8), its last phone frame, moved here from `bdash` (task 2.2: the capacity card and *Place them* are on `/books/plan` only) | 3117–3278 |
 | `moveplan` | Move / add to a quarter | 2169–2326 |
@@ -220,7 +220,7 @@ The feel pass is drawn in `design/Ledger Feel Review.dc.html`, not here, and eve
 |---|---|---|
 | `home` | §2 comics, §3 the mark, §11 desktop (the 834 frame is already redrawn, roadmap 1.8e) | 2.4 (with 1.10's shelf and 1.8b's mark; 1.8 for the desktop shell) |
 | `states` (empty dashboard) | §10a *All caught up* | 2.4 |
-| `bdash` | §4 books, reading and *Between books*, §11 desktop (the 834 frame is already redrawn, roadmap 1.8e) | 2.2 (**redrawn**, TASK-049) |
+| `bdash` | §4 books, reading and *Between books*, §11 desktop (the 834 frame is already redrawn, roadmap 1.8e) | 2.2 (**redrawn**, TASK-049); the past-capacity strip, 2.2b (**redrawn**, TASK-051) |
 | `watchlist` | §5 watch (open questions: roadmap 8.7) | 8.7 |
 | `spine`, `krakoa` (hero only) | §6 run detail (art band, telescope above the spine) | 4.3 (band), 2.5b (telescope) |
 | — (new) | §7 run complete, §10b block complete, §11 desktop | 2.12 |
