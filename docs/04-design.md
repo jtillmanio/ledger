@@ -386,9 +386,11 @@ block, which opens the same picker sheet the plan page uses.
 
 Block heights stay proportional to words, but every block is a `<button>` with an
 accessible name (*Piranesi, 65k words, estimated, Q1 2027*) and a hit area of at
-least 24×24px (`::after` inset), because a 7px block is otherwise untappable and
-`title` does not exist on Android. Adjacent sub-24px blocks merge into a
-`+N · Nk` stack button that opens a list sheet. `data-wc="estimated"` blocks get
+least 24×24px, a real 24px box made with transparent borders, not an `::after`
+(axe's target-size can't see one; D-135), because a 7px block is otherwise
+untappable and `title` does not exist on Android. Adjacent sub-24px blocks merge
+into a `+N · Nk` stack button that opens a list sheet (until 2.3 it is
+`aria-disabled` with its reason shown, D-137). `data-wc="estimated"` blocks get
 a dotted top edge and a `~` prefix. There is no month variant (D-38). Capacity and the hatch use `--blocked`; the
 retired red classes (`.capnum.over`, `.pace .big.behind`) are gone. Only the part
 of a block above the rule is hatched. Accepting a *stretch year* turns that hatch
@@ -414,8 +416,10 @@ against a capacity rule.
 
 Only the part of a block above the rule is hatched; accepting a stretch year
 turns the hatch grey and keeps drawing the overage. Adjacent sub-24px blocks
-merge into a `+N · Nk` stack; a lone one keeps its height and gets a 24px
-`::after` hit area. Tasks 2.2b, 2.7 and 2.10.
+merge into a `+N · Nk` stack that keeps its drawn height; a lone one keeps its
+height and gets the same 24px box (D-135). The scale is fixed at 1000k a column:
+books past the top fold into one `+N more` stack, and one alone stays a clipped
+block (D-138). Tasks 2.2b (built), 2.7 and 2.10.
 
 ## 7. Where each part is built
 

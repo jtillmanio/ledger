@@ -1,7 +1,7 @@
 ---
 id: TASK-051
 title: 2.2b The plan rail
-status: In progress
+status: Review
 depends_on: [TASK-049, TASK-011]
 size: L
 model: sonnet
@@ -36,7 +36,7 @@ The plan draws as a rail. Each quarter is a column, each book a block sized by i
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): a quarter whose books total 892k against a 760k capacity renders
+- [x] AC-1 (roadmap **Check:**, verbatim): a quarter whose books total 892k against a 760k capacity renders
 exactly the blocks past 760k as hatched, and those are the quarter's highest
 ordinals; moving the last hatched book to the top of the order renders it plain
 and leaves the quarter's total unchanged. A book with `period = '2027'`
@@ -47,10 +47,10 @@ edge and `~` label, the rail renders without horizontal page overflow at 360px,
 and no *Quarter | Month* control renders anywhere. At 360px no quarter footer renders a *room* badge; at 1280px an
 under-capacity quarter does. Nothing resolves to `--danger`. Screenshot at 360px
 and 412px.
-- [ ] AC-2: The layout function, unit-tested with no browser: given a quarter's books in ordinal order with their word counts and a capacity, it returns for each block its drawn height at the rail's scale (1000k = the column height), whether it is over, and for a straddling block the split point at the rule; given three adjacent blocks each under 24px it returns one stack of `+3` with their summed words; given one lone sub-24px block it returns that block unmerged.
-- [ ] AC-3: Each block's accessible name gives its title, its word count rounded to k, *estimated* when its count is, and its period (*Q1 2027*, or *2027* in the fifth lane); a stack button's name says how many books and how many words it holds.
-- [ ] AC-4: On the dashboard, *This quarter* is drawn by this component: its planned total still equals TASK-046's figure for the current quarter, and the over part of its last block is hatched when the quarter is past capacity. `PlanRailSkeleton` measures within 2px of the loaded rail at 360px.
-- [ ] AC-5: The rail meets the UX floor (`docs/04-design.md` § 10. The UX floor): every block and stack is a real `<button>` with a name and a hit area of at least 24×24px; the hatch, the rule and the badges hold 3:1 against their background in both themes; over-capacity is amber with text (*over Nk*, *+Nk*), never colour alone and never red; screenshots at every `ui.viewports` width, light and dark.
+- [x] AC-2: The layout function, unit-tested with no browser: given a quarter's books in ordinal order with their word counts and a capacity, it returns for each block its drawn height at the rail's scale (1000k = the column height), whether it is over, and for a straddling block the split point at the rule; given three adjacent blocks each under 24px it returns one stack of `+3` with their summed words; given one lone sub-24px block it returns that block unmerged.
+- [x] AC-3: Each block's accessible name gives its title, its word count rounded to k, *estimated* when its count is, and its period (*Q1 2027*, or *2027* in the fifth lane); a stack button's name says how many books and how many words it holds.
+- [x] AC-4: On the dashboard, *This quarter* is drawn by this component: its planned total still equals TASK-046's figure for the current quarter, and the over part of its last block is hatched when the quarter is past capacity. `PlanRailSkeleton` measures within 2px of the loaded rail at 360px.
+- [x] AC-5: The rail meets the UX floor (`docs/04-design.md` § 10. The UX floor): every block and stack is a real `<button>` with a name and a hit area of at least 24×24px; the hatch, the rule and the badges hold 3:1 against their background in both themes; over-capacity is amber with text (*over Nk*, *+Nk*), never colour alone and never red; screenshots at every `ui.viewports` width, light and dark.
 
 ## Out of scope
 
@@ -78,11 +78,17 @@ and 412px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- 2.3: until the picker sheet exists, a rail block is a `<button>` in a GET form to `/books/list?q=<title>` (it opens the book's Library row); 2.3 swaps that for the picker sheet, on the dashboard strip too (approved at plan) → planned: `docs/05-roadmap.md` § 2.3
-- 2.10: the rail's four-column Check items (columns, fifth lane, footers at 360 and 1280) were proven on a staged render, since `/books/plan` didn't exist; re-run them on the real page (approved at plan) → planned: `docs/05-roadmap.md` § 2.10
-- Candidate decision: a merged stack sits at its exact word position and keeps its drawn height, with its 24px hit area from `::after` like a lone block, so the hatch is exactly the words past capacity; this departs from STYLE_GUIDE §3's "height = the sum or 24" (owner, at the plan gate) (approved at plan) → planned: `docs/review/decisions.md` (new D-n, from `next-id.ps1`)
-- Candidate decision: a book's rail hue is a stable hash of `books.genre` onto `--g1`…`--g7`, `--g8` when it has none (owner, at the plan gate) (approved at plan) → planned: `docs/review/decisions.md` (new D-n)
-- Candidate decision: the dashboard's *This quarter* strip is the rail drawn on its side; it keeps the feel pass's fills (`--sunk`, a `--ready` fill when read, the `--brand` ring on the book in hand, D-40) and takes the rail's states (buttons, the hatch above the rule, the dotted `~` estimated edge, stacks); `--hue` is in the markup but not drawn on the strip (owner, at the plan gate) (approved at plan) → planned: `docs/review/decisions.md` (new D-n)
+- 2.3: until the picker sheet exists, a rail block is a `<button>` in a GET form to `/books/list?q=<title>` (it opens the book's Library row) and a stack is `aria-disabled` with its reason shown; 2.3 swaps both for its sheets, on the dashboard strip too (approved at plan) → docs/05-roadmap.md § 2.3
+- 2.10: the rail's four-column Check items (columns, fifth lane, footers at 360 and 1280) were proven on a staged render, since `/books/plan` didn't exist; re-run them on the real page. Also there: a lone short block's 24px box overlaps a neighbour just over 24px, the skeleton has no legend, and the full-size rail can drop the labels' 16px floor (approved at plan; the three extras found in review) → docs/05-roadmap.md § 2.10
+- Candidate decision: words decide where a block sits; a short block or stack keeps its drawn height with a real 24px box (not `::after`), departing from STYLE_GUIDE §3 and the roadmap (owner, at the plan gate and at implementation) (approved at plan; the real box approved at close-out) → docs/review/decisions.md § D-135
+- Candidate decision: a book's rail hue is a stable hash of `books.genre` onto `--g1`…`--g7`, `--g8` when it has none (approved at plan) → docs/review/decisions.md § D-136
+- Candidate decision: the dashboard strip is the rail on its side with the feel pass's fills; a block opens the Library until 2.3; a stack is `aria-disabled` with its reason (plan Risk 1's fallback) (approved at plan) → docs/review/decisions.md § D-137
+- Candidate decision: the scale is fixed at 1000k and overflow folds into `+N more`; a lone overflowing book stays a clipped block (owner, at review) (approved at close-out) → docs/review/decisions.md § D-138
+- docs/04-design.md § 6 said the hit area is an `::after`; the edit makes it the real 24px box (D-135), says a stack is `aria-disabled` with its reason before 2.3 (D-137), and adds the fixed 1000k scale and the fold (D-138) (approved at close-out) → docs/04-design.md § 6
+- 2.2b's own roadmap entry still said `::after` and *height the sum or 24px*; an *As built* note records D-135 to D-138 (this task's own entry; fixed in this PR) → docs/05-roadmap.md § 2.2b (fixed in this PR)
+- Implementation detail for the preview walk, not a decision: a stack drawn under 24px on the strip shows no chip (it covered its neighbour's label), a stack in the phone's fifth lane and a narrow strip stack show the count only, all with the full name → not tracked: visible on the preview, the owner can ask for another treatment
+- `/books` scrolls sideways at 360 to 412px once four or more books are planned, from the Up next shelf (not this task's: the shelf CSS is unchanged since 2.2) → docs/05-roadmap.md § 2.2k (new)
+- A stack under the strip adds a 27px reason line the skeleton can't know; the strip's sub-16px estimated blocks show the dotted edge but no `~` (their name says it) → not tracked: accepted as is; the reason line is the UX floor's visible reason and the name carries the estimate
 
 ## Plan
 
@@ -144,7 +150,13 @@ About 14 files, schema untouched. The task file records why it stays one task (`
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+_Chains: round = tsc, lint, test:no-e2e; full = round, then build and the core browser projects (D-97)._
+
+- Verify R1 round FAIL(1: radius scale UX-N04) → R2 round PASS → full PASS (934 browser tests) | R3 to R5 round PASS after each review fix (1387, 1390, 1390 tests); the affected browser specs re-run after each fix and green
+- Audit R1 PASS (note: AC-5's 3:1 checks read token pairs; fixed to read the painted colours)
+- Spec R1 CHANGES (the 1000k scale gap-fill needed an owner decision; mockup names not in AC-3's form; an uncommitted test hunk) → R2 CHANGES (a one-book fold named "1 books") → R3 APPROVE
+- Schema R1 APPROVE (two MINORs taken: words sum to plan_capacity, a soft-deleted book is on no rail); not re-run, no data-layer file changed since
+- UI R1 PASS (strip) → R2 FAIL (a tiny stack's chip covered its neighbour's label) → R3 FAIL (the stack's transparent hit-area padding painted its background over the label; fixed in 1366cb9 with two browser tests, **not re-verified by a fourth ui-verifier run**: the review cap is two rounds and the owner allowed a third; the fix is covered by those tests and left to the owner's preview walk)
 
 ## Blocked
 
@@ -152,7 +164,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 5 round chains and 1 full chain (the browser suite once, D-97)
+- Review rounds: 3 (the owner allowed the third)
+- First-pass AC FAILs: 0 (every AC had a passing test on the first full chain; review found 6 defects: scale, mockup names, a "1 books" fold, two stack-label overlaps, a painted hit-area pad)
+- Plan revisions after approval: 4, all approved by the owner (hit area a real 24px box; strip class `.planrail.strip`; fixed 1000k scale with folding; a lone overflowing book stays a block)

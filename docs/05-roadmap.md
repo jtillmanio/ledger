@@ -1882,7 +1882,7 @@ figure for that quarter. *2026 so far* has three counts, all this year.
 At 1280px *On deck* and *2026 so far* are in the side rail, and **Plan** follows
 2.4's hover rule for *+ Up next*.
 
-### ☐ 2.2b The plan rail · M
+### ☑ 2.2b The plan rail · M
 Depends on 2.2 (the slot) and 1.7. Split out of 2.2 (R3-12). Since D-40 the
 dashboard shows one quarter of it (FP-D8, 2.2's *This quarter* strip); the
 four-column rail is `/books/plan`'s (2.10). The component and its rules below
@@ -1924,6 +1924,13 @@ sum or 24px, whichever is larger); a lone sub-24px block keeps its drawn height
 and gets a 24px `::after` hit area.
 
 1.8d's `PlanRailSkeleton` was measured against a fixture of the mockup's markup; re-measure it against this component, within 2px at 360px (from TASK-027).
+
+*As built (TASK-051; D-135 to D-138):* a block sits at its cumulative words and a
+short block or stack keeps its drawn height, its 24px hit area a real box rather
+than an `::after`; the scale is fixed at 1000k a column and overflow folds into
+a `+N more` stack; the strip is the rail on its side with the feel pass's fills.
+Until 2.3 a book block opens its Library row and a stack is `aria-disabled` with
+its reason shown.
 
 **Check:** a quarter whose books total 892k against a 760k capacity renders
 exactly the blocks past 760k as hatched, and those are the quarter's highest
@@ -2294,6 +2301,24 @@ Sanderson · Cosmere · Mistborn #4*, and the same book reads the same on its
 status tab and in the Library. There is no horizontal scroll at 360px, axe
 passes, and nothing resolves to `--danger`. Screenshots at 360px and 1280px.
 
+### ☐ 2.2k The books page scrolls sideways with a full Up next shelf · S
+Found by TASK-051's UI check, not caused by it (the shelf's CSS is unchanged
+since 2.2): at 360, 390 and 412px, once four or more books are planned in the
+quarter, `/books` is wider than the viewport (`scrollWidth` 392 to 640), and at
+768px with seven. Hiding the *Up next* `ul.shelf` clears it, hiding the *This
+quarter* strip doesn't; the shelf scrolls sideways inside its box
+(`overflow-x:auto`), and something in it escapes that box (the visually hidden
+span is the suspect). With a short shelf there is none, which is why 2.2's
+empty-dev-data checks missed it.
+
+**Check:** with six books planned in the current quarter, `/books` at 360px,
+390px and 412px has `documentElement.scrollWidth` equal to the viewport width
+(`expectNoHorizontalScroll`); the *Up next* shelf scrolls inside its own box and
+no card is clipped by the page. The same at 768px with seven. axe passes and
+nothing resolves to `--danger`.
+
+*(Check proposed by TASK-051; the owner agrees it by merging, or edits it.)*
+
 ### ☐ 2.3 Plan editor · M
 Depends on 1.7 and 2.1.
 
@@ -2365,6 +2390,13 @@ independent of a quarter and never a month. **Flip (R3-08):** 1.4c's add sheet
 now offers *Year or quarter…* through this picker, and adding a book to a year
 or quarter writes its `book_status` and `reading_plan` rows in one transaction;
 1.9's empty Books *Up next* action becomes *Plan a book*.
+
+*From 2.2b (TASK-051, task/2.2b-the-plan-rail):* until this lands, a rail block (the dashboard's
+*This quarter* strip, and the rail on 2.10's page) is a `button` in a GET form
+to `/books/list?q=<title>`, its book's Library row, and a `+N` stack is an
+`aria-disabled` button with its reason shown (`PlanRail.tsx`, D-137). This task
+swaps both for the picker sheet and the list sheet, the strip included, and drops
+the stack's reason line.
 
 ### ☐ 2.4 Comics dashboard · L
 Five slots in this order, per the feel pass (D-40; STYLE_GUIDE §14.1, §15, §16;
@@ -2912,6 +2944,17 @@ that quarter's word total to the pixel rounding; that a book crossing the
 capacity line renders hatched and the one below it does not; that expanding Q2
 collapses Q1; and that the rail and the dashboard render identical totals from
 the same query. Screenshot at 360px and 1280px.
+
+*From 2.2b (TASK-051, task/2.2b-the-plan-rail):* the rail component exists (`src/components/PlanRail.tsx`,
+`src/lib/plan-rail.ts`); this page draws it with the four columns and the fifth lane.
+2.2b proved its four-column items (the Check's columns, fifth lane and footers at
+360px and 1280px) on a staged render in a real browser, since this page didn't exist:
+re-run them here on the real page (`test/e2e/plan-rail.spec.ts`). Three things 2.2b
+saw and left: a lone block just under 24px beside a block just over it leaves the
+neighbour only part of its own hit area (a 30k book beside a 110k one), so check
+that case; `PlanRailSkeleton` has no legend, so the page shifts by the legend's
+height when the rail loads; and the full-size rail has room for a title in each
+block, so it can drop the labels' 16px floor (D-135, D-138).
 
 ### ☐ 2.10b Plan a year or a quarter, with suggestions · M
 Owner intake, 2026-11-02 (owner: *the ability to create a yearly/quarterly
