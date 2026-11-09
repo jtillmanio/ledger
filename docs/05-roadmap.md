@@ -58,7 +58,7 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 | [9 Music](#phase-9--music) | A fourth medium, last (D-75). | M25 | 0 / 8 |
 | [10 Games](#phase-10--games) | A fifth medium, a planning tool for what to play: search, a queue by the platform you'll play on, and the games you're waiting for (D-102). | M26 | 0 / 7 |
 
-Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate. The 2026-11-02 intake added 2.10b, 5.15, 5.16, 10.6 and L-8 and amended 2.10, 7.6, 8.8, 9.3 and 10.1 (D-104–D-106); none of them is a cutover gate either. A second 2026-11-02 intake added 2.2c, 2.2d, 2.2e, L-9 and L-10, rewrote 5.12 as one page for every medium, and amended 2.2, 2.10b, 5.11, 6.10 and L-1 (D-108–D-110): only a follow you set to *Reading* counts as reading. Later that day the wishlist moved into extract (D-111): 1.27 settles it before the final load, 1.24 is removed, and 1.26 no longer promotes it on production. The 2026-11-05 intake added 2.0b, 2.2f–2.2i, 4.5b, 5.17, 6.21 and L-11, and amended 2.2c, 2.2d, 3.4b and 5.12 (D-117–D-125): a finish follows a book's series, subseries and universe, the phone gets a tab row, and the Top books page replaces the Library's year chips; none of them is a cutover gate. The 2026-11-08 intake split the cutover, books first (D-128, D-129): 1.26 is the books cutover and 1.28 the comics cutover, with 1.29's comics-only load between them. It added 1.14c (page counts from Hardcover, words from Calibre, D-130) and 1.17b (dates asked when they happen, and every read re-datable, D-131), widened 5.17 to physical and audiobook copies (D-132), made 4.4 a two-way sync run by hand or weekly (D-133), and pulled 1.14c, 1.17b, 1.29, 4.4 and 5.17 ahead of 1.26.
+Unscheduled ideas, each behind an open question, are under *Later*. The 2026-10-20 intake placed 25 owner additions across these phases, and the 2026-10-26 books intake added 1.21–1.23, 4.4 and L-4 and amended 1.18 and 5.1 (product § Owner additions). The 2026-10-27 review of 1.18 added 1.18b, 1.18c, 6.18 and L-5 (D-90, D-91). The switch to Hardcover (2026-10-28, D-94) added 1.14b, 1.4f and 6.19 and amended 1.18b, 1.20, 1.22, 2.1, 4.2, 4.3, 4.4, 5.1 and 7.7. Cutover became an entry of its own the same day (D-95): 1.25 audits the Sheets for parity, and 1.26 is the switch. The 2026-11-01 intake added 3.4b, 5.14, 9.7, Phase 10 (games) and L-6–L-7 (D-101–D-103); none of them is a cutover gate. The 2026-11-02 intake added 2.10b, 5.15, 5.16, 10.6 and L-8 and amended 2.10, 7.6, 8.8, 9.3 and 10.1 (D-104–D-106); none of them is a cutover gate either. A second 2026-11-02 intake added 2.2c, 2.2d, 2.2e, L-9 and L-10, rewrote 5.12 as one page for every medium, and amended 2.2, 2.10b, 5.11, 6.10 and L-1 (D-108–D-110): only a follow you set to *Reading* counts as reading. Later that day the wishlist moved into extract (D-111): 1.27 settles it before the final load, 1.24 is removed, and 1.26 no longer promotes it on production. The 2026-11-05 intake added 2.0b, 2.2f–2.2i, 4.5b, 5.17, 6.21 and L-11, and amended 2.2c, 2.2d, 3.4b and 5.12 (D-117–D-125): a finish follows a book's series, subseries and universe, the phone gets a tab row, and the Top books page replaces the Library's year chips; none of them is a cutover gate. The 2026-11-08 intake split the cutover, books first (D-128, D-129): 1.26 is the books cutover and 1.28 the comics cutover, with 1.29's comics-only load between them. It added 1.14c (page counts from Hardcover, words from Calibre, D-130) and 1.17b (dates asked when they happen, and every read re-datable, D-131), widened 5.17 to physical and audiobook copies (D-132), made 4.4 a two-way sync run by hand or weekly (D-133), and pulled 1.14c, 1.17b, 1.29, 4.4 and 5.17 ahead of 1.26. The 2026-11-09 intake added 2.2j (a book row names its universe and series, D-134); it is not a cutover gate.
 
 ---
 
@@ -2252,6 +2252,48 @@ rendered at 768px or wider. Each item measures at least 44px tall, and axe
 passes. 0.10's CLS budget holds on `/books/list` and `/comics`. Screenshots at
 360px and 412px, light and dark.
 
+### ☐ 2.2j The universe and series on a book's row · S
+Owner intake, 2026-11-09 (owner: *on deck shows the series or sub series or
+super series (smartly picked, whichever makes sense)*; asked, the owner chose
+the universe, then the series, and the same line on Up next, the status tabs,
+the Library and the plan sheet). D-134. Depends on 2.2 (On deck and *Up next
+in Qn*). Doesn't gate 1.26.
+
+- **One line, one rule.** A book row's second line is the author, then its
+  place: the universe (D-90: Calibre's superseries), then the series and
+  `#position` (*Brandon Sanderson · Cosmere · Mistborn #4*). With no universe
+  it is the series alone (*Robot #2*); with no series, the universe alone, with
+  no number (*First Law World*); with neither, the author alone. A series with
+  no position drops the `#`. When the series name already contains the
+  universe's, case-insensitively, the universe is dropped (*Magic Tree House
+  #3*, not *Magic Tree House · Magic Tree House #3*).
+- **The subseries isn't on this line.** 2.2g draws it in Now; a row names the
+  two levels everyone recognises.
+- **One helper, read everywhere.** A pure function in `src/lib/format.ts`
+  (proposed: `bookPlace`) builds the line, and replaces `bookSub`'s series
+  part and the Library's inline join, so a book reads the same on every
+  screen. Its queries add the universe's name: `onDeck`, `quarterShelf`,
+  `listBooks`, `booksInFlight`, `booksUpNext`, `booksDone`. Nothing is stored
+  (hard rule 2).
+- **Where:** On deck and *Up next in Qn* on the dashboard (neither shows a
+  series today); the status tabs and the Library (today *Series #n*, which now
+  gains the universe). 2.10b's suggestion rows use it when built. The plan
+  rail's blocks have no second line, so 2.2b is unchanged.
+- The line wraps rather than truncates: *The Chronicles of Thomas Covenant the
+  Unbeliever* has to stay readable at 360px.
+- **Not drawn yet.** The mockup's `bdash` frames show the line on On deck and
+  Up next at phone, tablet and desktop widths before it is built.
+
+**Check:** `npm test`: `bookPlace` returns *Cosmere · Mistborn #4* for a book
+with both, *Robot #2* for a series alone, *First Law World* for a universe
+alone, an empty place for neither, *Mistborn* for a series with no position,
+and *Magic Tree House #3* when the series name contains the universe's;
+`onDeck` and `quarterShelf` return the universe's name. In the browser (0.11),
+an On deck row and an *Up next* row for *The Alloy of Law* read *Brandon
+Sanderson · Cosmere · Mistborn #4*, and the same book reads the same on its
+status tab and in the Library. There is no horizontal scroll at 360px, axe
+passes, and nothing resolves to `--danger`. Screenshots at 360px and 1280px.
+
 ### ☐ 2.3 Plan editor · M
 Depends on 1.7 and 2.1.
 
@@ -2900,7 +2942,8 @@ from the master list. **Books only**: planning comics runs by period is
   capacity it turns amber and offers 2.3's *Accept as a stretch year*; never
   red, and the word "behind" appears nowhere.
 - **Suggestions, grouped by why.** Each group is a short list (five, then
-  *More*); each row is the book's title, author and word count (estimated
+  *More*); each row is the book's title, author with its universe and series
+  (2.2j's line, D-134) and word count (estimated
   counts marked as in 2.2b), a reason line, and *Put in Q2* naming the target
   (for a year target, the bare year and the four quarter chips). A group with
   nothing in it is left out. In this order:

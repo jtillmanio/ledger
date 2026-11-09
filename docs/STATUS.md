@@ -54,7 +54,7 @@ build order: the tasklist's *Build order* is (D-129).
 | M7 Phase 1 complete | 5 / 5 | Done |
 | M8 Books load clean | 9 / 9 | Done |
 | M9 Captured from cutover on | 9 / 13 | 1.14c, 1.17b and 1.29 have no task file; 1.26 waits for them and the entries above |
-| M10 Capacity: is the year overcommitted? | 9 / 13 | 2.2b (TASK-051) gates 1.26; 2.2d (TASK-050) and 2.2g (TASK-056) are Ready; 2.1b has no task file |
+| M10 Capacity: is the year overcommitted? | 9 / 14 | 2.2b (TASK-051) gates 1.26; 2.2d (TASK-050) and 2.2g (TASK-056) are Ready; 2.1b and 2.2j have no task file |
 | M11–M15 Next | 1 / 28 | Not started†; 1.28, the comics cutover, is in M13 |
 | M16–M26 Later | 0 / 75 | Not started; 4.4 (M16), 5.7 and 5.17 (M17) are pulled ahead of 1.26 |
 
@@ -64,7 +64,7 @@ build order: the tasklist's *Build order* is (D-129).
 |---|---|---|
 | 0 — Foundation | 13 / 13 | Done |
 | 1 — Daily use | 40 / 45 | Open: 1.14c, 1.17b, 1.29, then 1.26 (books cutover); 1.28 (comics cutover) later |
-| 2 — The pace engine | 10 / 25 | M10 in progress; 2.11a built in M7 |
+| 2 — The pace engine | 10 / 26 | M10 in progress; 2.11a built in M7 |
 | 3 — Editing | 0 / 15 | Not started; 3.4 before 1.26, 3.1–3.3 before 1.28 |
 | 4 — Enrichment | 0 / 6 | Not started; 4.4 before 1.26 |
 | 5 — Remaining surfaces | 0 / 16 | Not started; 5.7 and 5.17 before 1.26, 5.6 and 5.10 before 1.28 |
@@ -90,7 +90,7 @@ they don't gate 1.26. 1.14c, 1.17b, 1.29, 4.4 and 5.17 have proposed
 **Check:** lines (the owner agrees them by merging the 2026-11-08 plans PR)
 and no task file yet: `/new-task` converts them.
 
-**After 1.26, books first (D-129):** 2.1b, 2.2d, 2.2g (M10), 2.7 → 2.8 → 2.10
+**After 1.26, books first (D-129):** 2.1b, 2.2d, 2.2g, 2.2j (M10), 2.7 → 2.8 → 2.10
 → 2.10b (M11), 3.5 → 3.4b (M14). **Then comics:** M12, M13 with 5.6 → 5.10
 pulled ahead and 1.28 at its end, then 3.6 → 3.6b → 3.6c (M14) and M15.
 
@@ -120,7 +120,7 @@ day, the wishlist moved into extract (1.27, D-111). The 2026-11-05 intake
 added 2.0b, 2.2f–2.2i, 4.5b, 5.17, 6.21 and L-11 and amended 2.2c, 2.2d, 3.4b
 and 5.12 (D-117–D-125): a finish follows a book's series, subseries and
 universe, the phone gets a tab row, and Top books replaces the Library's year
-chips. None of these is a cutover gate except where 1.25 names one. The 2026-11-08 intake split the cutover, books first, and added 1.14c, 1.17b, 1.28 and 1.29, widened 5.17 to audiobooks and made 4.4 a two-way sync (D-128–D-133); all but 1.28 gate the books cutover.
+chips. None of these is a cutover gate except where 1.25 names one. The 2026-11-08 intake split the cutover, books first, and added 1.14c, 1.17b, 1.28 and 1.29, widened 5.17 to audiobooks and made 4.4 a two-way sync (D-128–D-133); all but 1.28 gate the books cutover. The 2026-11-09 intake added 2.2j: a book's row names its universe, then its series, on On deck, Up next, the status tabs, the Library and the plan sheet (D-134); not a gate.
 
 **Every preview measures itself** (0.10). When Vercel reports a preview ready,
 `.github/workflows/lighthouse.yml` signs in, runs Lighthouse and 0.9's tap

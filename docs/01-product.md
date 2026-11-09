@@ -183,6 +183,7 @@ Priority comes from the milestone that builds it: **MVP** is the books cutover (
 | F-72 | **Where the book sits** (Books) | As a reader, I want to see how far along the book in hand's universe, series and subseries I am | Next (then Later) | 2.2g, 6.21 | `bdash` |
 | F-73 | **What I own** (Books) | As a book owner, I want to mark what I own on paper and as an audiobook, tell both from my ebook library, and see just those books | MVP (D-132) | 5.17 | `blist` |
 | F-74 | **On deck by genre** (Books) | As a reader, I want to see what's next in a genre, without ranking On deck by hand | Later | 4.5b | `status` |
+| F-75 | **The universe and series on every book row** (Books) | As a reader, I want each book in a list to say which universe and series it belongs to, the same way on every screen | Next | 2.2j | `bdash`, `status`, `blist` |
 
 ### Observable outcomes for MVP features
 
@@ -261,6 +262,7 @@ B, C, W and M numbers are cited across the docs and stay.
 | B40 | Edit a read's start and finish any time, and be asked when setting Reading or Read | planned | 2026-11-08. Every read, rereads included; the Library, Now and the status screens. roadmap 1.17b, D-131 |
 | B41 | Own a book on paper, as an audiobook, both or neither, apart from the Calibre library | planned | 2026-11-08. roadmap 5.17, D-132 |
 | B42 | Sync with Calibre automatically, both ways | planned | 2026-11-08. One command, run by hand or weekly: Calibre's books and metadata in, the Ledger's reads, status and owned formats out. roadmap 4.4, D-133 |
+| B43 | On deck shows a book's series, subseries or universe, whichever makes sense | planned | 2026-11-09. The universe, then the series (*Cosmere · Mistborn #4*); also Up next, the status tabs, the Library and the plan sheet. roadmap 2.2j, D-134 |
 | B37 | Paste a list with more columns | later | 2026-11-05. Probably not needed. roadmap *Later* § L-11, D-125 |
 
 ### Comics
@@ -979,6 +981,10 @@ Reading or Read, and any read can be re-dated (1.17b, D-131); what you own on
 paper and as an audiobook is recorded (5.17, D-132); and Calibre syncs both
 ways from one command, run by hand or weekly (4.4, D-133). All five land
 before the books cutover.
+
+**The 2026-11-09 intake** (B43) gave a book's row its place: the universe,
+then the series, on On deck, Up next, the status tabs, the Library and the
+plan sheet (2.2j, D-134). It doesn't gate the books cutover.
 
 **Parked under *Later*, because no API exists.** Marvel Unlimited (L-1) and
 League of Comic Geeks ratings (L-2) have no public APIs. Each has an open
