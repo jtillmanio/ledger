@@ -164,6 +164,44 @@ test.describe("at 360px", PHONE, () => {
     }
   });
 
+  test("on the strip a tiny stack paints over no neighbour's label (AC-5)", async ({ page }) => {
+    // 91k, two 8k books (a stack drawn 6px wide, its box 24px), then 98k: round 3 found the stack's box painted over '~91k'.
+    const cap = { ...quarters[0], plannedWords: 205_000, capacity: 760_000 };
+    const strip = renderToStaticMarkup(createElement(PlanRail, {
+      axis: "row", year: 2027, quarters: [cap],
+      books: [book("s1", "Strip One", 91_000, "2027-Q1", { estimated: true }), book("s2", "Strip Two", 8_000, "2027-Q1"),
+        book("s3", "Strip Three", 8_000, "2027-Q1"), book("s4", "Strip Four", 98_000, "2027-Q1")],
+    }));
+    await page.evaluate((html) => { document.querySelector("main")!.innerHTML = html; }, strip);
+    await expect(page.locator(".planrail.strip button.stack")).toHaveCount(1);
+    const m = await page.evaluate(() => {
+      const stack = document.querySelector(".planrail.strip button.stack")!;
+      const cs = getComputedStyle(stack);
+      const r = stack.getBoundingClientRect();
+      // What the stack paints: its box less the transparent borders that make it 24px (the hit area).
+      const painted = { left: r.left + parseFloat(cs.borderLeftWidth), right: r.right - parseFloat(cs.borderRightWidth) };
+      const labels = [...document.querySelectorAll(".planrail.strip button:not(.stack) .ql")].map((l) => {
+        const lr = l.getBoundingClientRect();
+        return { text: l.textContent ?? "", left: lr.left, right: lr.right };
+      });
+      return { box: r.width, painted, labels, hasLabel: stack.querySelector(".ql") !== null };
+    });
+    expect(m.box, "its box is 24px for the thumb").toBeGreaterThanOrEqual(24);
+    expect(m.painted.right - m.painted.left, "but it is drawn at its words").toBeLessThan(12);
+    const covered = m.labels.filter((l) => l.right > m.painted.left && l.left < m.painted.right).map((l) => l.text);
+    expect(covered, "labels the stack's painted block overlaps").toEqual([]);
+    expect(m.hasLabel).toBe(false);
+  });
+
+  test("a block paints only where it is drawn: its 24px hit area is transparent and covers nothing (AC-1, AC-5)", async ({ page }) => {
+    // The hit area's transparent borders must not take the block's background: a short block's box reaches into
+    // its neighbours, and a painted pad would cover their labels. A `background` shorthand resets the clip.
+    const clips = await page.locator(".planrail button.qb").evaluateAll((els) =>
+      els.map((el) => ({ name: el.getAttribute("aria-label"), clip: getComputedStyle(el).backgroundClip })));
+    expect(clips.length).toBeGreaterThan(10);
+    for (const c of clips) expect(c.clip, c.name ?? "").toBe("padding-box");
+  });
+
   test("three adjacent small books are one stack button, a lone small one stays its own button (AC-1, AC-2, AC-3)", async ({ page }) => {
     const stack = page.locator('.qcol[data-period="2027-Q3"] button.stack');
     await expect(stack).toHaveCount(1);

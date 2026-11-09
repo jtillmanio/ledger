@@ -840,7 +840,8 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .qf{display:contents}
 /* The hit area (UX floor): a block drawn under 24px is a 24px box, centred on its words. Transparent
    borders make the box (--pad above and below a block that is short, 0 otherwise); the block is painted
-   in the padding box only, so its drawn height, hatch and ring are its own. The 2px gap is the far
+   in the padding box only (background-clip), so its drawn height, hatch and ring are its own: a variant sets
+   background-color, never the shorthand, which resets the clip and paints the pad over its neighbours. The 2px gap is the far
    border's. A real box, not a pseudo-element: axe's target-size measures the button itself. */
 .qb{--pad:max(0px,calc((24px - var(--sz) * var(--rail-h)) / 2));
   position:absolute;left:0;right:0;bottom:calc(var(--at) * 100% - var(--pad));height:calc(var(--sz) * 100% + 2 * var(--pad));
@@ -867,7 +868,7 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
   box-shadow:inset 0 0 0 1px var(--rule)}
 .qb.over .ql{left:5px}
 /* A stack folds adjacent blocks under 24px: dashed, on --raise, its label centred over it. */
-.qb.stack{background:var(--raise);box-shadow:none}
+.qb.stack{background-color:var(--raise);box-shadow:none}
 .qb.stack::before,.qb.un::before{inset:0;width:auto;z-index:auto;box-sizing:border-box;background:none;border-radius:var(--r-cell)}
 .qb.stack::before{border:1px dashed var(--faint-deco)}
 .qb.stack.over::before{border-color:var(--blocked)}
@@ -877,7 +878,7 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 @media (min-width:1024px){ .qcol.nq .lt{display:inline} }
 .qnote{margin:0;font-size:.75rem;line-height:1rem;color:var(--muted)}
 /* The fifth lane: a year and no quarter is a decision not made, so amber, dashed. */
-.qb.un{background:var(--blocked-soft);box-shadow:none}
+.qb.un{background-color:var(--blocked-soft);box-shadow:none}
 .qb.un::before{border:1px dashed var(--blocked)}
 .qb.un .ql{left:6px}
 .qfoot{border-top:1px solid var(--rule);margin-top:.375rem;padding-top:.3125rem;
@@ -1571,13 +1572,13 @@ section[data-plan="year"] h2.group-head{color:var(--muted)}
 .strip .qb{--pad:max(0px,calc((24px - var(--sz) * 100cqw) / 2));
   top:0;bottom:auto;left:calc(var(--at) * 100% - var(--pad));right:auto;width:calc(var(--sz) * 100% + 2 * var(--pad));height:28px;
   border-width:0 var(--pad) 0 calc(var(--pad) + 2px);
-  background:var(--sunk);box-shadow:inset 0 0 0 1px var(--faint-deco);color:var(--ink-2)}
+  background-color:var(--sunk);box-shadow:inset 0 0 0 1px var(--faint-deco);color:var(--ink-2)}
 .strip .qb::before{display:none}
 .strip .qb.stack::before{display:block}
-.strip .qb[data-state="read"]{background:var(--ready);box-shadow:none;color:var(--on-ready)}
+.strip .qb[data-state="read"]{background-color:var(--ready);box-shadow:none;color:var(--on-ready)}
 .strip .qb[data-state="head"]{box-shadow:inset 0 0 0 1.5px var(--brand);color:var(--ink)}
 .strip .qb.over{box-shadow:inset 0 0 0 1.5px var(--blocked)}
-.strip .qb.stack{background:var(--raise);box-shadow:none}
+.strip .qb.stack{background-color:var(--raise);box-shadow:none}
 .strip .qb .ql{left:6px;color:inherit}
 .strip .qb.over .ql,.strip .qb.stack .ql{color:var(--ink)}
 .strip .qb.stack .ql{left:50%}

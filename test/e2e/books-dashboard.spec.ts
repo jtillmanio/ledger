@@ -299,6 +299,10 @@ test.describe("reading", () => {
     });
     expect(drawn.image).toContain("repeating-linear-gradient");
     expect(drawn.color).toBe(await tokenColour(page, "--blocked-soft"));
+    // A block paints only where it is drawn: a short one's 24px box must not paint over its neighbour's label.
+    for (const box of await page.locator(".planrail.strip button.qb").all()) {
+      expect(await box.evaluate((el) => getComputedStyle(el).backgroundClip)).toBe("padding-box");
+    }
     for (const box of await page.locator(".planrail.strip button.qb").all()) {
       const r = (await box.boundingBox())!;
       expect(r.width, "a strip block is at least 24px wide").toBeGreaterThanOrEqual(24);
