@@ -145,6 +145,7 @@ milestone._
 | F-72 Where the book sits | Next (then Later) | 2.2g, 6.21 | M10, M21 |
 | F-73 What I own: physical copies and audiobooks | MVP (D-132) | 5.17 | M17, pulled ahead of 1.26 |
 | F-74 On deck by genre | Later | 4.5b | M16 |
+| F-75 The universe and series on every book row | Next | 2.2j | M10 |
 
 ### Entities → tasks
 
@@ -345,9 +346,9 @@ with the task that first reads it.
 
 **Goal:** Answer "is 2027 overcommitted" from the real reading rate.  
 **Demo at exit:** Settings take minutes a day and words a minute; a logged session recalculates them; the Library sorts by length; finishing a book follows its series, and In flight can finish it; a tab row reaches every screen on a phone; the books dashboard shows the book in hand, the next book of what you're reading, and the quarter against 760k, and the plan rail draws the year.  
-**Features:** F-21, F-22, F-68, F-70, F-71, F-72  
+**Features:** F-21, F-22, F-68, F-70, F-71, F-72, F-75  
 **Depends on:** M9 but 1.26, which waits on 2.2b (D-95); the rows still open after 1.26 come first after it (D-129)  
-**Order:** 2.0 → 2.1 → 2.1b → 2.2e → 2.2c → 2.2i → 2.0b → 2.2f → 2.2h → 2.2 → 2.2d → 2.2g → 2.2b: the phone's tab row (2.2i) needs nothing and goes early; 2.2h lands before 2.2d so `follow_next` can read followed subseries; settings feed capacity; the Library gets its own nav item before `/books` stops being the list; the follows exist before the dashboard reads them; the dashboard reads capacity, and the rail is the dashboard's.
+**Order:** 2.0 → 2.1 → 2.1b → 2.2e → 2.2c → 2.2i → 2.0b → 2.2f → 2.2h → 2.2 → 2.2d → 2.2g → 2.2j → 2.2b: the phone's tab row (2.2i) needs nothing and goes early; 2.2h lands before 2.2d so `follow_next` can read followed subseries; settings feed capacity; the Library gets its own nav item before `/books` stops being the list; the follows exist before the dashboard reads them; the dashboard reads capacity, and the rail is the dashboard's; 2.2j's row line can go any time after 2.2.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
@@ -364,6 +365,7 @@ with the task that first reads it.
 |  | 2.2g → TASK-056 | Where the book sits, in Now | M |  | 2.2, 2.2h |
 | ✅ | 2.2h → TASK-055 | Finishing a book follows it | M |  | 2.2c |
 | ✅ | 2.2i → TASK-052 | Every screen from a phone: the tab row | M |  | 1.8 |
+|  | 2.2j | The universe and series on a book's row | S |  | 2.2 |
 
 ## M11: Editing the plan — Next
 
