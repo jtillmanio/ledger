@@ -119,8 +119,8 @@ describe("Or keep going (AC-3)", () => {
     await sql`INSERT INTO books (id, title) VALUES ('h-1', 'Shelved One'), ('h-2', 'Shelved Two')`;
     await read("h-1", "2026-05-01");
     await status("h-2", "to_read");
-    // Inserted Zeta first, so neither insert order nor id order gives Alpha.
-    for (const [id, name] of [["sh-z", "Zeta Shelf"], ["sh-a", "Alpha Shelf"]]) {
+    // Zeta is inserted first and has the lower id (sh-a), so only the name gives Alpha.
+    for (const [id, name] of [["sh-a", "Zeta Shelf"], ["sh-z", "Alpha Shelf"]]) {
       await sql`INSERT INTO shelves (id, name, user_id, kind) VALUES (${id}, ${name}, ${USER}, 'books')`;
       await sql`INSERT INTO shelf_books (shelf_id, book_id, ordinal) VALUES (${id}, 'h-1', 1), (${id}, 'h-2', 2)`;
       await sql`INSERT INTO shelf_follows (shelf_id, state) VALUES (${id}, 'reading')`;
