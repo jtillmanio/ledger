@@ -1,7 +1,7 @@
 ---
 id: TASK-070
 title: 2.10 Plan page as the full-size rail (2 of 2) — drag and hover on the desktop
-status: Draft
+status: Ready
 depends_on: [TASK-069]
 size: M
 model: sonnet

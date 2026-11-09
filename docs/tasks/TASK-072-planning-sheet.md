@@ -1,7 +1,7 @@
 ---
 id: TASK-072
 title: 2.10b Plan a year or a quarter (2 of 2) — the planning sheet
-status: Draft
+status: Ready
 depends_on: [TASK-071, TASK-062, TASK-063, TASK-064, TASK-066, TASK-069]
 size: M
 model: sonnet

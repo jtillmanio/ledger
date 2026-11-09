@@ -1,7 +1,7 @@
 ---
 id: TASK-061
 title: 1.26 Cut the books over from the Sheets
-status: Draft
+status: Ready
 depends_on: [TASK-018, TASK-020, TASK-036, TASK-051, TASK-057, TASK-058, TASK-059, TASK-060, TASK-063, TASK-064, TASK-065]
 size: S
 model: sonnet

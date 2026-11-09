@@ -1,7 +1,7 @@
 ---
 id: TASK-065
 title: 2.3 Plan editor (3 of 3) — the rail's blocks open the picker, a stack its list
-status: Draft
+status: Ready
 depends_on: [TASK-064, TASK-051]
 size: M
 model: sonnet

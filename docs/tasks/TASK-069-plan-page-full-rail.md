@@ -1,7 +1,7 @@
 ---
 id: TASK-069
 title: 2.10 Plan page as the full-size rail (1 of 2) — the page, its quarters and the fifth lane
-status: Draft
+status: Ready
 depends_on: [TASK-011, TASK-046, TASK-049, TASK-051, TASK-064]
 size: M
 model: sonnet

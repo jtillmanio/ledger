@@ -1,7 +1,7 @@
 ---
 id: TASK-059
 title: 1.17b Dates when you start and finish (2 of 2) — the status control asks the dates and lists every read
-status: Draft
+status: Ready
 depends_on: [TASK-058]
 size: M
 model: sonnet

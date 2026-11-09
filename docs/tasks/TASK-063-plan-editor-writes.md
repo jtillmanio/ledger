@@ -1,7 +1,7 @@
 ---
 id: TASK-063
 title: 2.3 Plan editor (1 of 3) — every plan level through one write
-status: Draft
+status: Ready
 depends_on: [TASK-011, TASK-046]
 size: M
 model: opus

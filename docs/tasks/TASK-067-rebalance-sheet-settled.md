@@ -1,7 +1,7 @@
 ---
 id: TASK-067
 title: 2.7 Rebalance (2 of 2) — the rebalance sheet and the settled stretch year
-status: Draft
+status: Ready
 depends_on: [TASK-066]
 size: M
 model: sonnet

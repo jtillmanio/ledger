@@ -1,7 +1,7 @@
 ---
 id: TASK-060
 title: 1.29 Refresh production's comics from Comics.xlsx, books untouched
-status: Draft
+status: Ready
 depends_on: []
 size: M
 model: opus

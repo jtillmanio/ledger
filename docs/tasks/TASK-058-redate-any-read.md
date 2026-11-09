@@ -1,7 +1,7 @@
 ---
 id: TASK-058
 title: 1.17b Dates when you start and finish (1 of 2) — re-date any read, the write and its API
-status: Draft
+status: Ready
 depends_on: [TASK-039, TASK-043]
 size: M
 model: opus
