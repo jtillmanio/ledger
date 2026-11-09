@@ -257,12 +257,33 @@ test("the rail passes axe, holds 3:1 for its hatch, rule and edges, and the word
   const [blocked, blockedSoft, ink2, page_, muted, reading, deco, raise] = await Promise.all(
     ["--blocked", "--blocked-soft", "--ink-2", "--page", "--muted", "--reading-soft", "--faint-deco", "--raise"].map(colour),
   );
-  // The hatch lines on their ground, the rule on the page, the dotted edge, the folded stack's dashes, the fifth lane's border.
-  expect(contrast(blocked, blockedSoft), "hatch").toBeGreaterThanOrEqual(3);
-  expect(contrast(ink2, page_), "capacity rule").toBeGreaterThanOrEqual(3);
-  expect(contrast(muted, reading), "estimated edge").toBeGreaterThanOrEqual(3);
-  expect(contrast(deco, raise), "stack dashes").toBeGreaterThanOrEqual(3);
-  expect(contrast(blocked, page_), "fifth lane border").toBeGreaterThanOrEqual(3);
+  // What the browser painted, read back (not the tokens we meant to use): the capacity rule, the dotted
+  // estimated edge, the folded stack's dashes, the fifth lane's border and the hatch's lines and ground.
+  const painted = await page.evaluate(() => {
+    const css = (el: Element | null, pseudo?: string) => {
+      if (!el) throw new Error("the rail did not draw");
+      return getComputedStyle(el, pseudo);
+    };
+    return {
+      rule: css(document.querySelector(".planrail > .caprule")).borderTopColor,
+      estimated: css(document.querySelector('[data-wc="estimated"] .qe')).borderTopColor,
+      stack: css(document.querySelector("button.stack"), "::before").borderTopColor,
+      lane: css(document.querySelector(".qcol.nq")).borderLeftColor,
+      hatch: css(document.querySelector(".qb .ov")).backgroundImage,
+      hatchGround: css(document.querySelector(".qb .ov")).backgroundColor,
+    };
+  });
+  expect(painted.rule).toBe(ink2);
+  expect(painted.estimated).toBe(muted);
+  expect(painted.stack).toBe(deco);
+  expect(painted.lane).toBe(blocked);
+  expect(painted.hatch, "the hatch lines are --blocked").toContain(blocked);
+  expect(painted.hatchGround).toBe(blockedSoft);
+  expect(contrast(painted.hatch.match(/rgb\([^)]*\)/)?.[0] ?? "", painted.hatchGround), "hatch").toBeGreaterThanOrEqual(3);
+  expect(contrast(painted.rule, page_), "capacity rule").toBeGreaterThanOrEqual(3);
+  expect(contrast(painted.estimated, reading), "estimated edge").toBeGreaterThanOrEqual(3);
+  expect(contrast(painted.stack, raise), "stack dashes").toBeGreaterThanOrEqual(3);
+  expect(contrast(painted.lane, page_), "fifth lane border").toBeGreaterThanOrEqual(3);
 
   // Over capacity is amber with its words, never colour alone and never red.
   await expect(page.locator('.qcol[data-period="2027-Q1"] .qfoot .bdg.bl').first()).toHaveText(/\d+k/);
