@@ -1,7 +1,7 @@
 ---
 id: TASK-058
 title: 1.17b Dates when you start and finish (1 of 2) — re-date any read, the write and its API
-status: In progress
+status: Review
 depends_on: [TASK-039, TASK-043]
 size: M
 model: opus
@@ -30,7 +30,7 @@ Any read of a book, not only the latest, can have its start and finish changed, 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves its write clauses at the API and database: an earlier start written `exact` and Undo restoring status and start, one `read_events` row carrying both dates, the refused start after the finish, and re-dating the first and second of two reads. TASK-059 proves the browser clauses): in the
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves its write clauses at the API and database: an earlier start written `exact` and Undo restoring status and start, one `read_events` row carrying both dates, the refused start after the finish, and re-dating the first and second of two reads. TASK-059 proves the browser clauses): in the
 browser (0.11): setting a book to *Reading* opens *Started* on *Today*; picking
 an earlier day writes that `started_on`, `exact`, and Undo restores the status
 and start before. Setting it to *Read* opens both; confirming writes one
@@ -40,10 +40,10 @@ re-dating the first changes only its `read_events` row, and re-dating the
 second changes it and `book_status`. The same control works from *Now* on
 `/books` and from `/books/status`; a search result has none. axe passes at
 every width.
-- [ ] AC-2: Given a book with two reads, re-dating the first read's start and finish through the API changes only that `read_events` row: the second read and `book_status` (its `started_on`, `finished_on` and their precisions) are byte-for-byte as before. Re-dating the second read changes its row and sets `book_status`'s dates to the same values and precisions.
-- [ ] AC-3: A re-date whose start falls after its finish, or whose date is after today (Eastern), answers 400 with 1.17's reason, and no `read_events` or `book_status` row changes.
-- [ ] AC-4: Given a book at `to_read` with no start, setting `reading` (today stamped) and then re-dating that start to an earlier day writes `started_on` = that day with precision `exact`; the one undo of the status change then restores `to_read` and no start, with no `read_events` row left behind.
-- [ ] AC-5: Setting `read` with a start and a finish writes exactly one new `read_events` row carrying both dates, and `book_status` in step. A book's reads are readable oldest first with their format (`text` or `audio`), start, finish and precisions, for the control to list (the plan names the query). The diff adds no column.
+- [x] AC-2: Given a book with two reads, re-dating the first read's start and finish through the API changes only that `read_events` row: the second read and `book_status` (its `started_on`, `finished_on` and their precisions) are byte-for-byte as before. Re-dating the second read changes its row and sets `book_status`'s dates to the same values and precisions.
+- [x] AC-3: A re-date whose start falls after its finish, or whose date is after today (Eastern), answers 400 with 1.17's reason, and no `read_events` or `book_status` row changes.
+- [x] AC-4: Given a book at `to_read` with no start, setting `reading` (today stamped) and then re-dating that start to an earlier day writes `started_on` = that day with precision `exact`; the one undo of the status change then restores `to_read` and no start, with no `read_events` row left behind.
+- [x] AC-5: Setting `read` with a start and a finish writes exactly one new `read_events` row carrying both dates, and `book_status` in step. A book's reads are readable oldest first with their format (`text` or `audio`), start, finish and precisions, for the control to list (the plan names the query). The diff adds no column.
 
 ## Out of scope
 
@@ -69,7 +69,9 @@ every width.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- TASK-059 needs the API's shape: the re-date route, the `redate` undo payload, the one-Undo rule (keep the status change's `change`, drop the re-date's) and the reads from `GET` on open (approved at plan) → `docs/tasks/TASK-059-*.md` § Context
+- TASK-059 needs the API's shape: the re-date route, the `redate` undo payload, the one-Undo rule (keep the status change's `change`, drop the re-date's) and the reads from `GET` on open (approved at plan) → `docs/tasks/TASK-059-status-control-asks-dates.md` § Context
+- AC-2's text says "sets `book_status`'s dates"; the owner's plan-gate decision (2026-11-09) is the finish only, recorded in `## Plan` and data model 2.18, and the tests assert that. The AC is left as written (only the owner edits an AC) → not tracked: decided by the owner at the plan gate; the decision is recorded in this task's Plan and `docs/03-data-model.md` 2.18
+- Schema review suggested pinning `undoBookStatus`'s new finish sync for a prior-null row kept by a rating and a prior `unlisted` → not tracked: reviewed safe by reasoning (no read exists on those paths, so the sync is a no-op), and the existing undo tests for both paths pass unchanged
 
 ## Plan
 
@@ -135,13 +137,19 @@ through `POST /api/progress/book`. Comic reads are excluded by `book_id`.
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 round PASS → full PASS (977 browser tests) | R2 round PASS (after review fixes)
+- Audit R1 PASS (AC-5's one-row clause a regression pin: the behaviour predates the task; AC-2 wording note for the owner)
+- Spec R1 APPROVE (AC-2 wording note; the dropped `BookRedate.status` field is a plan revision) → R2 APPROVE (fixes only)
+- Schema R1 APPROVE, 2 MINOR (undoBookStatus comment overclaimed; the undo payload lacked a start-after-finish check) → fixed in 3d8c893 → R2 APPROVE
+- UI: not run (`ui: false`, no UI files changed)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R1 round + full, R2 round)
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1 (the re-date's answer dropped a planned `status` field: its undo puts `book_status`'s finish back while the read is still the latest, checked at undo time, which a newer read appended since can't defeat)

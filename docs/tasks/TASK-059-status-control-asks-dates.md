@@ -30,6 +30,7 @@ Setting a book to *Reading* asks when you started, setting it to *Read* asks bot
 - `BookRowMenu.tsx` notes that a row's menu costs no more RSC because `BookStatus` draws it: the plan says how the read list loads (on open, from TASK-058's query) without growing every row's payload.
 - Design: `docs/04-design.md` § 11.2 Status screens, § 12. The dashboards → Books dashboard.
 - Decisions: D-131, D-40, D-63 (the undo toast stays live above a sheet), D-7.
+- *From TASK-058 (1.17b, task/1.17b-redate-any-read):* the API is `src/app/api/progress/book/read/route.ts`. `GET ?bookId=` answers `{ reads }` (`bookReads` in `src/db/queries.ts`: `id, format, started_on, started_on_precision, finished_on, finished_on_precision`, oldest first in the log's order), for *All reads* to load when it opens. `POST { bookId, readId, start?, finish? }` re-dates one read with the picker's choices (a date left out is kept); `readId: null` is the read in progress, start only, while Reading or Listening. It answers 400 with 1.17's reason (start after finish, or a day after today) and `{ redate }` on success; `DELETE { redate }` undoes that re-date alone (409 if re-dated since). **The one Undo:** after *Reading*, keep the status change's `change` for the toast and re-date the start with `readId: null`; don't push a second toast, because the status change's `DELETE /api/progress/book` restores the whole row it found. The latest read keeps `book_status`'s finish in step; `book_status`'s start is never a finished read's (owner, 2026-11-09).
 
 ## Acceptance criteria
 
