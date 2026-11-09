@@ -1,6 +1,8 @@
+import Link from "next/link";
 import { Headphones } from "@/components/nav/Icons";
-import type { InHandBook } from "@/db/queries";
+import type { InHandBook, NextIn } from "@/db/queries";
 import { dayWhen } from "@/lib/format";
+import { libraryHref } from "@/lib/library-sort";
 import type { ReadingSettings } from "@/lib/settings";
 
 const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"];
@@ -51,9 +53,12 @@ export function nowFoot(book: InHandBook, s: ReadingSettings, now = new Date()):
  * Now (§14.1, task 2.2): the book in hand, the dashboard's only large thing. The cover, *Reading
  * now* (or *Listening now* with the headphones glyph, 1.23), the title in Newsreader, the author,
  * the page count in mono, and the foot. No position, meter or sittings until 2.1b (Q1).
- * 2.2d's *Next in* goes under the hero.
+ * *Next in* (2.2d): when the book is in something you follow as Reading, one grey line under
+ * the band names the next book there and links to it, the Library row until 3.5's sheet.
  */
-export default function BooksNow({ book, settings }: { book: InHandBook; settings: ReadingSettings }) {
+export default function BooksNow({ book, settings, next = null }: {
+  book: InHandBook; settings: ReadingSettings; next?: NextIn | null;
+}) {
   const listening = book.status === "listening";
   const foot = nowFoot(book, settings);
   return (
@@ -71,6 +76,12 @@ export default function BooksNow({ book, settings }: { book: InHandBook; setting
           {book.pages ? <span className="now-pages"><b className="mono">{book.pages.toLocaleString()}</b> pages</span> : null}
         </div>
       </div>
+      {next && (
+        <Link href={libraryHref({ q: next.title })} prefetch={false} className="now-next">
+          <span className="now-next-text">Next in {next.name}: {next.title}</span>
+          <span className="now-next-go" aria-hidden="true">›</span>
+        </Link>
+      )}
       {foot && <p className="now-foot">{foot}</p>}
     </section>
   );

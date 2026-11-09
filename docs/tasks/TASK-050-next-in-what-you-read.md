@@ -1,14 +1,14 @@
 ---
 id: TASK-050
 title: 2.2d Next in what you're reading, on the dashboard
-status: Ready
+status: In progress
 depends_on: [TASK-049, TASK-048]
 size: L
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: c867967
 ---
 
 # TASK-050 — 2.2d Next in what you're reading, on the dashboard
@@ -78,7 +78,28 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-09, with the three plan-gate questions answered yes (below). Kept whole: #205 left TASK-049–051 as sized under `never-split`.
+
+**Steps**
+
+1. **Drawn first.** `bdash` in `design/mockups.html` gains *Next in* on its reading frames (390, 834, desktop) and *Or keep going* on its *Between books* frames (390, 360, 834, desktop); its notes and `design/mockups-index.md` say so. The owner looks before step 2 (as TASK-049).
+2. **The views**, tests first in `etl/test_views.sql` (AC-1's view half, AC-2), then `etl/views.sql`:
+   - `follow_queue(user_id, kind, entity_id, name, book_id, status, rank)`: every open live book of each follow at *Reading*, read through the `*_progress` views' `follow_state` (so `off` is no follow). Kinds: subseries, series, universe, author, shelf. Rank: `subseries_position` / `series_position` / `universe_position` / shelf `ordinal` / author `published_year`, each NULLS LAST, then title, id. *Open* is a list of the statuses that count: `to_read`, `unlisted`, no status row (counted unread, as the progress views do; owner Q3), `reading`, `listening`. Read (a listen included), DNF and anything later, such as 5.15's `parked`, are skipped with no change to the view.
+   - `follow_next(user_id, kind, entity_id, name, book_id, read, total, last_read_on)`: each follow's rank-1 book when it is unread (`to_read`, `unlisted`, no status); rank 1 in hand (Reading or Listening) means no row. `read`/`total` from the progress view (a series' `total_books`); `last_read_on` the follow's latest dated finish over its live books (`book_reads`), NULL when none: "most recently read first".
+3. **Queries**, tests first in `test/follow-next.test.ts` (AC-3), then `src/db/queries.ts`: `keepGoing(userId, offerId, 3)` reads `follow_next`, one row per book with the narrowest reason (subseries, series, universe, author, shelf; owner Q2), leaves out the top-of-plan offer's book (owner Q2), orders by `last_read_on DESC NULLS LAST`, then name; `nextIn(userId, heroId)` reads `follow_queue`: of the follows holding the book in hand, the lowest-ranked unread book, subseries before series, universe and author (never a shelf), or null.
+4. **UI.** `BooksNow.tsx`: one grey *Next in {name}: {title}* line, an `<a href>` to the Library row (`/books/list?q=<title>`), after the band and before the foot (no meter until 2.1b). `BetweenBooks.tsx`: *Or keep going* under the offer, up to three rows (title, *Next in Red Rising · 3 of 6 read*, **Start**). `StartBook.tsx` (new): a 44px `<button>` named *Start {title}*, through `ThumbBar.tsx`'s `useBookVerb`, now exported (its retry, and focus to the thumb bar's verb once the row is gone). `src/app/books/page.tsx` fetches both; `src/app/globals.css` styles them (tokens only, grey, nothing amber or red).
+5. **Browser** (`test/e2e/books-dashboard.spec.ts`): **Start** then Undo restores `to_read`; reading book 2 shows *Next in* naming book 3; no `--danger`; UX floor names and sizes; axe; screenshots of both states at every feel-pass width, light and dark, reduced motion and transparency.
+6. `docs/03-data-model.md` § 3. Views: the two rows.
+
+**Files**: `design/mockups.html`, `design/mockups-index.md`, `etl/views.sql`, `etl/test_views.sql`, `src/db/queries.ts`, `src/components/BooksNow.tsx`, `src/components/BetweenBooks.tsx`, `src/components/StartBook.tsx` (new), `src/components/ThumbBar.tsx` (not in the task's list: exports `useBookVerb`), `src/app/books/page.tsx` (not listed: fetches both), `src/app/globals.css` (not listed: the styles), `docs/03-data-model.md`, `test/follow-next.test.ts` (new), `test/e2e/books-dashboard.spec.ts`.
+
+**Test strategy**: AC-1 (views) and AC-2 → `etl/test_views.sql`, one block per case; AC-1 (browser) → `books-dashboard.spec.ts` *Or keep going: Start and Undo*, *Next in names the next book*, *nothing resolves to --danger*; AC-3 → `test/follow-next.test.ts` *three of four, newest finish first* and *one line, the series'*; AC-4 → the spec's names, 44px, contrast, axe and screenshot tests.
+
+**Plan-gate answers (owner, 2026-11-09)**: Q1 the two-view shape: yes. Q2 one row per book with the narrowest reason, and the offer's book left out: yes to both. Q3 a book with no status row counts as unread: yes.
+
+**Plan revision 1 (owner, 2026-11-09, after verify R1).** Two failures outside the plan's files: (a) `drizzle/down/0011_dated_reading_log.sql` drops `book_reads`, which the new views read, so the 0007 and 0011 round-trip tests failed; it drops `follow_next` and `follow_queue` first, as 2.1 did for its capacity views. (b) `/books` went to 10 queries in two waves. Now one wave: *Next in* is `booksInHand`'s `next_in` (no `nextIn` query; `test/follow-next.test.ts` reads it there), and `keepGoing(userId, period, limit)` leaves out the quarter's offer by `quarterShelf`'s rule itself. `test/query-budget.test.ts` and `docs/02-architecture.md` § Operational posture raise `/books` from 9 to 10 queries with that reason. `follow_queue` also carries `read`, `total` and `last_read_on` at its end (the follow's, for `follow_next`).
+
+**Risks**: the loading skeleton has no *Next in* row, so the spec's geometry check may need one; the e2e fixture's series, shelf and follows need cleaning as its books are.
 
 ## Review log
 

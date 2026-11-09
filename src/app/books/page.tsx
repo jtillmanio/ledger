@@ -6,7 +6,8 @@ import PlanShelf from "@/components/PlanShelf";
 import QuarterStrip from "@/components/QuarterStrip";
 import { DashboardVerbs, HeaderVerbs, ThumbBar, type BarConfig } from "@/components/ThumbBar";
 import {
-  booksInHand, inboxCount, lastFinish, onDeck, planCapacity, quarterBlocks, quarterShelf, readingSettings, yearSoFar,
+  booksInHand, inboxCount, keepGoing, lastFinish, onDeck, planCapacity, quarterBlocks, quarterShelf, readingSettings,
+  yearSoFar,
 } from "@/db/queries";
 import { requireUserId } from "@/lib/auth";
 import { today } from "@/lib/finish-date";
@@ -16,6 +17,8 @@ export const dynamic = "force-dynamic";
 
 /** How many On deck rows the side rail shows; *All N* opens the rest on Status. */
 const DECK_ROWS = 3;
+/** How many books *Or keep going* lists between books (task 2.2d). */
+const KEEP_ROWS = 3;
 
 /**
  * The books dashboard (task 2.2, F-22; feel pass D-40, STYLE_GUIDE §14.1–§14.2, §14.6). Five
@@ -34,7 +37,9 @@ export default async function Books() {
 
   // Your pace is read once: Now's evenings use it, and so does an empty year's capacity.
   const pace = readingSettings(userId);
-  const [hand, last, shelf, blocks, capacity, deck, soFar, settings, inbox] = await Promise.all([
+  // One wave (architecture § Operational posture): Now's *Next in* rides on booksInHand, and
+  // *Or keep going* (2.2d) leaves out the quarter's offer itself, so neither waits on another read.
+  const [hand, last, shelf, blocks, capacity, deck, soFar, settings, inbox, keep] = await Promise.all([
     booksInHand(userId),
     lastFinish(userId),
     quarterShelf(userId, period),
@@ -44,6 +49,7 @@ export default async function Books() {
     yearSoFar(userId, year),
     pace,
     inboxCount(userId),
+    keepGoing(userId, period, KEEP_ROWS),
   ]);
 
   const hero = hand[0] ?? null;
@@ -73,8 +79,8 @@ export default async function Books() {
       <div className="dash-cols">
         <div className="dash-main">
           {hero
-            ? <BooksNow book={hero} settings={settings} />
-            : <BetweenBooks last={last} offer={offer} quarter={quarter} today={day} />}
+            ? <BooksNow book={hero} settings={settings} next={hero.next_in} />
+            : <BetweenBooks last={last} offer={offer} quarter={quarter} today={day} keep={keep} />}
           <PlanShelf rows={shelf} period={period} quarter={quarter} />
           <QuarterStrip cap={capacity.quarters[q - 1]} blocks={blocks} inHand={hero?.id ?? null} />
         </div>

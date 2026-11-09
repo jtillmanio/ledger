@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { daysBetween, said } from "@/components/BooksNow";
-import type { LastFinish, ShelfBook } from "@/db/queries";
+import StartBook from "@/components/StartBook";
+import type { KeepGoing, LastFinish, ShelfBook } from "@/db/queries";
 import { dayWhen } from "@/lib/format";
 import { BOOKS_NEXT_HREF } from "@/lib/status-tabs";
 
@@ -55,10 +56,13 @@ export function finishLine(last: LastFinish, today: string, now = new Date()): {
  * finished book's cover with a `--ready` check and its badge, *Between books.*, the finished
  * line (none when nothing was ever finished), then the top of the quarter's plan (the
  * lowest-ordinal book still to read, D-37) and *Pick something else*. The thumb bar's verb
- * starts the offer by name. 2.2d's *Or keep going* goes under the offer.
+ * starts the offer by name. *Or keep going* (2.2d, D-108) lists, under the offer, up to three
+ * books next in what you follow as Reading, each with its reason and **Start**; none, no block.
+ * Below 768px it sits between the offer and *Pick something else*; from 768 under their row.
+ * Grey and calm: no nudge, nothing amber or red.
  */
-export default function BetweenBooks({ last, offer, quarter, today }: {
-  last: LastFinish | null; offer: ShelfBook | null; quarter: string; today: string;
+export default function BetweenBooks({ last, offer, quarter, today, keep = [] }: {
+  last: LastFinish | null; offer: ShelfBook | null; quarter: string; today: string; keep?: KeepGoing[];
 }) {
   const line = last && finishLine(last, today);
   return (
@@ -96,6 +100,24 @@ export default function BetweenBooks({ last, offer, quarter, today }: {
           </>
         ) : (
           <span className="offer-body"><span className="offer-sub">Nothing planned for {quarter} yet.</span></span>
+        )}
+        {keep.length > 0 && (
+          <div className="keep-going">
+            <span className="offer-kick" id="keep-head">Or keep going</span>
+            <ul className="keep-list" aria-labelledby="keep-head">
+              {keep.map((k) => (
+                <li key={k.id} className="keep-row">
+                  <span className="keep-body">
+                    <b className="keep-title">{k.title}</b>
+                    <span className="keep-why">
+                      Next in {k.name} · <span className="mono">{k.read} of {k.total}</span> read
+                    </span>
+                  </span>
+                  <StartBook book={k} />
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
         <Link href={BOOKS_NEXT_HREF} prefetch={false} className="pick-else">Pick something else</Link>
       </div>

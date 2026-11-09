@@ -1149,6 +1149,130 @@ BEGIN
   END IF;
 END $$;
 
+-- follow_next (task 2.2d, D-108): for each series, subseries, universe, author
+-- and books shelf followed as 'reading', its next book: the lowest position
+-- (series, subseries, universe), shelf ordinal, or earliest published_year (an
+-- author) among the live books neither read nor DNF, listed when it is unread
+-- (to_read, unlisted, or no status); in hand (reading) means no row. A listen
+-- is a read. 'tracking', 'off' and no follow have no row, nor does a follow
+-- with nothing left. read and total are the progress view's; last_read_on is
+-- the follow's latest dated finish. Its own user, so no fixture above leaks in.
+INSERT INTO users (id, name) VALUES ('zz-fn', 'Zz Follow Next');
+INSERT INTO authors (id, name) VALUES ('zz-fn-a', 'Zz Fn Author'), ('zz-fn-b', 'Zz Fn Other');
+INSERT INTO book_universes (id, name) VALUES ('zz-fn-v', 'Zz Fn Verse');
+INSERT INTO book_series (id, name, total_books) VALUES
+  ('zz-fn-s', 'Zz Fn Series', 6), ('zz-fn-t', 'Zz Fn Tracked', NULL), ('zz-fn-u', 'Zz Fn Unfollowed', NULL),
+  ('zz-fn-dnf', 'Zz Fn Dnf', NULL), ('zz-fn-rd', 'Zz Fn Reading', NULL), ('zz-fn-lis', 'Zz Fn Listened', NULL),
+  ('zz-fn-del', 'Zz Fn Deleted', NULL), ('zz-fn-done', 'Zz Fn Done', NULL), ('zz-fn-off', 'Zz Fn Off', NULL),
+  ('zz-fn-ser2', 'Zz Fn Parent', NULL);
+INSERT INTO book_subseries (id, name, series_id) VALUES ('zz-fn-ss', 'Zz Fn Era', 'zz-fn-ser2');
+INSERT INTO books (id, title, author_id, series_id, series_position) VALUES
+  ('zz-fn-s1', 'Zz Fn S1', 'zz-fn-b', 'zz-fn-s', 1), ('zz-fn-s2', 'Zz Fn S2', 'zz-fn-b', 'zz-fn-s', 2),
+  ('zz-fn-s4', 'Zz Fn S4', 'zz-fn-b', 'zz-fn-s', 4), ('zz-fn-s3', 'Zz Fn S3', 'zz-fn-b', 'zz-fn-s', 3),
+  ('zz-fn-t1', 'Zz Fn T1', 'zz-fn-b', 'zz-fn-t', 1), ('zz-fn-t2', 'Zz Fn T2', 'zz-fn-b', 'zz-fn-t', 2),
+  ('zz-fn-u1', 'Zz Fn U1', 'zz-fn-b', 'zz-fn-u', 1), ('zz-fn-u2', 'Zz Fn U2', 'zz-fn-b', 'zz-fn-u', 2),
+  ('zz-fn-u3', 'Zz Fn U3', 'zz-fn-b', 'zz-fn-u', 3),
+  ('zz-fn-d1', 'Zz Fn D1', 'zz-fn-b', 'zz-fn-dnf', 1), ('zz-fn-d2', 'Zz Fn D2', 'zz-fn-b', 'zz-fn-dnf', 2),
+  ('zz-fn-d3', 'Zz Fn D3', 'zz-fn-b', 'zz-fn-dnf', 3),
+  ('zz-fn-r1', 'Zz Fn R1', 'zz-fn-b', 'zz-fn-rd', 1), ('zz-fn-r2', 'Zz Fn R2', 'zz-fn-b', 'zz-fn-rd', 2),
+  ('zz-fn-r3', 'Zz Fn R3', 'zz-fn-b', 'zz-fn-rd', 3),
+  ('zz-fn-l1', 'Zz Fn L1', 'zz-fn-b', 'zz-fn-lis', 1), ('zz-fn-l2', 'Zz Fn L2', 'zz-fn-b', 'zz-fn-lis', 2),
+  ('zz-fn-x1', 'Zz Fn X1', 'zz-fn-b', 'zz-fn-del', 1), ('zz-fn-x2', 'Zz Fn X2', 'zz-fn-b', 'zz-fn-del', 2),
+  ('zz-fn-x3', 'Zz Fn X3', 'zz-fn-b', 'zz-fn-del', 3),
+  ('zz-fn-y1', 'Zz Fn Y1', 'zz-fn-b', 'zz-fn-done', 1), ('zz-fn-y2', 'Zz Fn Y2', 'zz-fn-b', 'zz-fn-done', 2),
+  ('zz-fn-o1', 'Zz Fn O1', 'zz-fn-b', 'zz-fn-off', 1);
+UPDATE books SET deleted_at = now() WHERE id IN ('zz-fn-x2', 'zz-fn-y2');
+-- An author's books by published year (a3 is earlier than a2; a4 has none, so last).
+INSERT INTO books (id, title, author_id, published_year) VALUES
+  ('zz-fn-a1', 'Zz Fn A1', 'zz-fn-a', 2001), ('zz-fn-a2', 'Zz Fn A2', 'zz-fn-a', 2010),
+  ('zz-fn-a3', 'Zz Fn A3', 'zz-fn-a', 2005), ('zz-fn-a4', 'Zz Fn A4', 'zz-fn-a', NULL);
+-- A universe by position: v3 (2) before v2 (3); v3 has no status row, which counts unread.
+INSERT INTO books (id, title, author_id, universe_id, universe_position) VALUES
+  ('zz-fn-v1', 'Zz Fn V1', 'zz-fn-b', 'zz-fn-v', 1), ('zz-fn-v2', 'Zz Fn V2', 'zz-fn-b', 'zz-fn-v', 3),
+  ('zz-fn-v3', 'Zz Fn V3', 'zz-fn-b', 'zz-fn-v', 2);
+INSERT INTO books (id, title, author_id, series_id, subseries_id, subseries_position) VALUES
+  ('zz-fn-sub1', 'Zz Fn Sub1', 'zz-fn-b', 'zz-fn-ser2', 'zz-fn-ss', 1),
+  ('zz-fn-sub2', 'Zz Fn Sub2', 'zz-fn-b', 'zz-fn-ser2', 'zz-fn-ss', 2);
+INSERT INTO books (id, title, author_id) VALUES
+  ('zz-fn-h1', 'Zz Fn H1', 'zz-fn-b'), ('zz-fn-h2', 'Zz Fn H2', 'zz-fn-b'), ('zz-fn-h3', 'Zz Fn H3', 'zz-fn-b');
+INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision) VALUES
+  ('zz-fn', 'zz-fn-s1', 'read', '2026-01-10', 'exact'), ('zz-fn', 'zz-fn-s2', 'read', '2026-03-05', 'exact'),
+  ('zz-fn', 'zz-fn-a1', 'read', NULL, 'none');
+INSERT INTO book_status (user_id, book_id, status) VALUES
+  ('zz-fn', 'zz-fn-s3', 'to_read'), ('zz-fn', 'zz-fn-s4', 'to_read'),
+  ('zz-fn', 'zz-fn-t1', 'read'), ('zz-fn', 'zz-fn-t2', 'to_read'),
+  ('zz-fn', 'zz-fn-u1', 'read'), ('zz-fn', 'zz-fn-u2', 'read'), ('zz-fn', 'zz-fn-u3', 'to_read'),
+  ('zz-fn', 'zz-fn-d1', 'read'), ('zz-fn', 'zz-fn-d2', 'dnf'), ('zz-fn', 'zz-fn-d3', 'to_read'),
+  ('zz-fn', 'zz-fn-r1', 'read'), ('zz-fn', 'zz-fn-r2', 'reading'), ('zz-fn', 'zz-fn-r3', 'to_read'),
+  ('zz-fn', 'zz-fn-l2', 'unlisted'),
+  ('zz-fn', 'zz-fn-x1', 'read'), ('zz-fn', 'zz-fn-x2', 'to_read'), ('zz-fn', 'zz-fn-x3', 'to_read'),
+  ('zz-fn', 'zz-fn-y1', 'read'), ('zz-fn', 'zz-fn-y2', 'to_read'),
+  ('zz-fn', 'zz-fn-o1', 'to_read'),
+  ('zz-fn', 'zz-fn-a2', 'to_read'), ('zz-fn', 'zz-fn-a3', 'to_read'), ('zz-fn', 'zz-fn-a4', 'to_read'),
+  ('zz-fn', 'zz-fn-v1', 'read'), ('zz-fn', 'zz-fn-v2', 'to_read'),
+  ('zz-fn', 'zz-fn-sub1', 'read'), ('zz-fn', 'zz-fn-sub2', 'to_read'),
+  ('zz-fn', 'zz-fn-h1', 'read'), ('zz-fn', 'zz-fn-h2', 'to_read'), ('zz-fn', 'zz-fn-h3', 'to_read');
+-- A listen is a read (1.23): finished from Listening, its read_events row is 'audio'.
+INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, format)
+  VALUES ('zz-fn', 'zz-fn-l1', '2026-02-01', 'exact', 'audio');
+INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+  VALUES ('zz-fn', 'zz-fn-l1', 'read', '2026-02-01', 'exact');
+INSERT INTO shelves (id, name, user_id, kind) VALUES ('zz-fn-sh', 'Zz Fn Shelf', 'zz-fn', 'books');
+INSERT INTO shelf_books (shelf_id, book_id, ordinal) VALUES
+  ('zz-fn-sh', 'zz-fn-h1', 1), ('zz-fn-sh', 'zz-fn-h2', 3), ('zz-fn-sh', 'zz-fn-h3', 2);
+INSERT INTO series_follows (user_id, series_id, state) VALUES
+  ('zz-fn', 'zz-fn-s', 'reading'), ('zz-fn', 'zz-fn-t', 'tracking'), ('zz-fn', 'zz-fn-dnf', 'reading'),
+  ('zz-fn', 'zz-fn-rd', 'reading'), ('zz-fn', 'zz-fn-lis', 'reading'), ('zz-fn', 'zz-fn-del', 'reading'),
+  ('zz-fn', 'zz-fn-done', 'reading'), ('zz-fn', 'zz-fn-off', 'off');
+INSERT INTO author_follows (user_id, author_id, state) VALUES ('zz-fn', 'zz-fn-a', 'reading');
+INSERT INTO universe_follows (user_id, universe_id, state) VALUES ('zz-fn', 'zz-fn-v', 'reading');
+INSERT INTO subseries_follows (subseries_id, state) VALUES ('zz-fn-ss', 'reading');
+INSERT INTO shelf_follows (shelf_id, state) VALUES ('zz-fn-sh', 'reading');
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT string_agg(column_name, ',' ORDER BY ordinal_position) INTO got
+  FROM information_schema.columns WHERE table_name = 'follow_next';
+  IF got IS DISTINCT FROM 'user_id,kind,entity_id,name,book_id,read,total,last_read_on' THEN
+    RAISE EXCEPTION 'follow_next columns wrong: %', got;
+  END IF;
+  -- AC-1, AC-2: one row per follow at reading with a next book, and only those.
+  -- zz-fn-s lists s3 only (1-2 read, 3-4 to_read); zz-fn-t (tracking), zz-fn-u
+  -- (unfollowed, 2 read) and zz-fn-off ('off') have none; the author lists a3,
+  -- the earliest published unread; the shelf h3, its lowest unread ordinal; the
+  -- universe v3, its lowest unread position, with no status row; zz-fn-dnf
+  -- skips the DNF d2 for d3; zz-fn-rd, whose next book r2 is reading, has none;
+  -- zz-fn-lis counts the listen l1 read and lists the unlisted l2; zz-fn-del
+  -- skips the soft-deleted x2 for x3; zz-fn-done, every live book read, has none.
+  SELECT string_agg(kind || ':' || entity_id || ':' || book_id || ':' || read || '/' || total, ' '
+                    ORDER BY entity_id) INTO got
+  FROM follow_next WHERE user_id = 'zz-fn';
+  IF got IS DISTINCT FROM 'author:zz-fn-a:zz-fn-a3:1/4 series:zz-fn-del:zz-fn-x3:1/2 '
+                       || 'series:zz-fn-dnf:zz-fn-d3:1/3 series:zz-fn-lis:zz-fn-l2:1/2 '
+                       || 'series:zz-fn-s:zz-fn-s3:2/6 shelf:zz-fn-sh:zz-fn-h3:1/3 '
+                       || 'subseries:zz-fn-ss:zz-fn-sub2:1/2 universe:zz-fn-v:zz-fn-v3:1/3' THEN
+    RAISE EXCEPTION 'follow_next wrong: %', got;
+  END IF;
+  -- AC-2: read and total are series_progress's (a series' stated total_books).
+  IF EXISTS (SELECT 1 FROM follow_next f JOIN series_progress p ON p.user_id = f.user_id AND p.series_id = f.entity_id
+             WHERE f.user_id = 'zz-fn' AND f.kind = 'series'
+               AND (f.read <> p.books_read OR f.total <> p.total_books)) THEN
+    RAISE EXCEPTION 'follow_next read/total differ from series_progress';
+  END IF;
+  -- The name is the follow's; last_read_on its latest dated finish, NULL with only an undated one.
+  SELECT name || ':' || coalesce(last_read_on::text, '-') INTO got FROM follow_next WHERE user_id = 'zz-fn' AND entity_id = 'zz-fn-s';
+  IF got IS DISTINCT FROM 'Zz Fn Series:2026-03-05' THEN RAISE EXCEPTION 'follow_next name/last_read_on wrong: %', got; END IF;
+  SELECT coalesce(last_read_on::text, '-') INTO got FROM follow_next WHERE user_id = 'zz-fn' AND entity_id = 'zz-fn-a';
+  IF got IS DISTINCT FROM '-' THEN RAISE EXCEPTION 'follow_next dates an undated read: %', got; END IF;
+  -- follow_queue holds every open book of a reading follow, in order: the one in
+  -- hand first for zz-fn-rd, then its next; nothing read, DNF or removed.
+  SELECT string_agg(book_id || ':' || coalesce(status, '-') || ':' || rank, ' ' ORDER BY rank, book_id) INTO got
+  FROM follow_queue WHERE user_id = 'zz-fn' AND kind = 'series' AND entity_id IN ('zz-fn-rd', 'zz-fn-dnf', 'zz-fn-del');
+  IF got IS DISTINCT FROM 'zz-fn-d3:to_read:1 zz-fn-r2:reading:1 zz-fn-x3:to_read:1 zz-fn-r3:to_read:2' THEN
+    RAISE EXCEPTION 'follow_queue wrong: %', got;
+  END IF;
+END $$;
+
 -- Applying views.sql leaves every table analyzed. A table the planner has no
 -- statistics for gets nested-loop plans that ran for minutes on a preview of
 -- live (2026-10-02).

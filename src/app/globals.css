@@ -1496,6 +1496,26 @@ section[data-plan="year"] h2.group-head{color:var(--muted)}
 @media (hover:hover) and (pointer:fine){ .pick-else:hover{text-decoration:underline} }
 .pick-else:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring)}
 
+/* Task 2.2d (D-108): what is next in what you follow as Reading. Grey, calm, nothing amber or red.
+   *Next in*: one line under Now's band, a link to that book. */
+.now-next{display:flex;align-items:center;gap:8px;min-height:44px;padding:8px 16px;border-top:1px solid var(--line);
+  font:var(--fs-body-sm) var(--sans);color:var(--ink-2);text-decoration:none}
+.now-next-text{min-width:0;overflow-wrap:anywhere}
+.now-next-go{flex:none;margin-left:auto;color:var(--muted);font-size:1rem}
+@media (hover:hover) and (pointer:fine){ .now-next:hover .now-next-text{text-decoration:underline} }
+.now-next:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring)}
+/* *Or keep going*: under the offer. Below the tablet a whole row before Pick something else, its
+   basis spanning the -20px margins as that link's does. */
+.keep-going{flex:0 0 calc(100% + 40px);display:flex;flex-direction:column;gap:4px;margin:0 -20px;padding:12px 20px 4px;
+  border-top:1px solid var(--line)}
+.keep-list{list-style:none;margin:0;padding:0}
+.keep-row{display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 0}
+.keep-row+.keep-row{border-top:1px solid var(--line)}
+.keep-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.keep-title{font:600 var(--fs-row-title) var(--sans);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.keep-why{font:var(--fs-body-sm) var(--sans);color:var(--muted)}
+.keep-start{flex:none;min-width:64px;min-height:44px}
+
 /* This quarter (FP-D8): a one-quarter rail laid on its side; 2.2b's rail component replaces it (M-07).
    Scoped under .qrail: .qcol, .qstack and .qfoot are the vertical plan rail's above. */
 .qcard{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:var(--r-xl);background:var(--surface);
@@ -1551,10 +1571,13 @@ section[data-plan="year"] h2.group-head{color:var(--muted)}
   .between-head{align-self:end}
   .between-line{grid-column:2;align-self:start}
   .between-band.none .between-line{grid-column:1}
-  .between-offer{flex-wrap:nowrap;padding:14px 20px}
+  /* One row: the cover, the offer and Pick something else; Or keep going (2.2d) wraps below it. */
+  .between-offer{padding:14px 20px}
   .between-offer>.cv{margin-bottom:0}
-  .offer-body{padding-bottom:0}
+  .offer-body{flex:1 1 0;padding-bottom:0}
   .pick-else{flex:0 0 auto;margin:0;padding:0 4px;border-top:0;white-space:nowrap}
+  .keep-going{order:1;margin:14px -20px -14px}
+  .now-next{padding:8px 20px}
   .qcard{padding:20px}
 }
 @media (min-width:768px) and (max-width:1023px){
