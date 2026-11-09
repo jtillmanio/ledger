@@ -1,7 +1,7 @@
 ---
 id: TASK-056
 title: 2.2g Where the book sits, in Now
-status: In progress
+status: Review
 depends_on: [TASK-049, TASK-055]
 size: M
 model: sonnet
@@ -36,17 +36,17 @@ Under the book in hand, thin stacked meters show how far along you are in its un
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): in the browser (0.11), a book in hand in a universe, a series and a
+- [x] AC-1 (roadmap **Check:**, verbatim): in the browser (0.11), a book in hand in a universe, a series and a
 subseries renders three rows in that order, each `read / total` equal to its
 view's; a book in a series alone renders one row; a standalone by an unfollowed
 author renders none; a standalone by an author followed `reading` renders the
 author's row; *Between books* renders none. Every meter fills with `--ready`,
 nothing resolves to `--danger`, and there is no horizontal scroll at 360px. The
 five slots keep their order. Screenshots at 360px, 834px and 1280px.
-- [ ] AC-2: A book with a universe by an author followed `reading` renders the universe's row and no author row. A book with no universe, by an author followed `reading`, in a series and a subseries, renders three rows: author, series, subseries. The same book with the author at `tracking` renders two. No book renders more than three.
-- [ ] AC-3: A universe, series or subseries that is unfollowed, at `tracking` or at `off` renders the same row with the same `read / total` as one at `reading`, and a *Listening* book renders rows as a *Reading* book does. The task's diff adds no column and no table.
-- [ ] AC-4: Given a level with 1 of 4 read, its row shows `1 / 4` and its fill is a quarter of the track, resolving to `--ready`. Finishing the book and undoing it leaves the rows as they were. The rows sit above the *Next in* line when that line is drawn, and their type is the rollup's, smaller than the hero's title.
-- [ ] AC-5: The rows meet the UX floor (`docs/04-design.md` § 10. The UX floor), as a feel-pass surface: the loading state (`src/app/books/loading.tsx`) holds their space where it can know it, or the plan says why a row's arrival causes no layout shift over budget; a long universe name truncates or wraps without horizontal scroll; text is 4.5:1 and the track 3:1 in both themes; axe reports no new violations; screenshots at 360, 390, 412, 768, 1024 and 1280px, light and dark, reduced motion and reduced transparency.
+- [x] AC-2: A book with a universe by an author followed `reading` renders the universe's row and no author row. A book with no universe, by an author followed `reading`, in a series and a subseries, renders three rows: author, series, subseries. The same book with the author at `tracking` renders two. No book renders more than three.
+- [x] AC-3: A universe, series or subseries that is unfollowed, at `tracking` or at `off` renders the same row with the same `read / total` as one at `reading`, and a *Listening* book renders rows as a *Reading* book does. The task's diff adds no column and no table.
+- [x] AC-4: Given a level with 1 of 4 read, its row shows `1 / 4` and its fill is a quarter of the track, resolving to `--ready`. Finishing the book and undoing it leaves the rows as they were. The rows sit above the *Next in* line when that line is drawn, and their type is the rollup's, smaller than the hero's title.
+- [x] AC-5: The rows meet the UX floor (`docs/04-design.md` § 10. The UX floor), as a feel-pass surface: the loading state (`src/app/books/loading.tsx`) holds their space where it can know it, or the plan says why a row's arrival causes no layout shift over budget; a long universe name truncates or wraps without horizontal scroll; text is 4.5:1 and the track 3:1 in both themes; axe reports no new violations; screenshots at 360, 390, 412, 768, 1024 and 1280px, light and dark, reduced motion and reduced transparency.
 
 ## Out of scope
 
@@ -76,6 +76,11 @@ five slots keep their order. Screenshots at 360px, 834px and 1280px.
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
 None at plan (approved at plan).
+
+- `/books` scrolled sideways at 360–412px with 5+ Up next cards (each card's sr-only number escaped the shelf's clip; found by ui-verifier, predates this task, the fixtures held 2 cards) → not tracked: done in this PR (plan revision 1, owner approved)
+- The row track's 3:1 is asserted as the `--faint-deco` outline (a token commented ≥ 3:1), not as a measured ratio in the e2e; ui-verifier measured 3.39 light and 4.08 dark → not tracked: advisory from the test audit and spec review, measured once by hand
+- AC-5's loading clause (no layout shift from the rows arriving) has no automated test; the plan argues none → not tracked: Lighthouse's CLS gate on the preview is the check (a ready gate)
+- The 360px screenshot of the rows comes from the full scope (`e2e:full`), not the core projects → not tracked: the `e2e:full` label gate on this PR runs it
 
 ## Plan
 
@@ -108,7 +113,7 @@ Approved by the owner, 2026-11-09. The `bdash` frames were drawn first, at the p
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 round (tsc, lint, unit) PASS → full PASS (957 browser tests) | R2 round PASS + dashboard spec (78) after the shelf fix | Audit R1 PASS (3 advisories: one taken, two recorded) | Spec R1 APPROVE → R2 APPROVE (fix diff only) | Schema R1 APPROVE (schema-reviewer; two minor notes, none required) | UI R1 CHANGES (page scrolled sideways at 360–412px with 5+ Up next cards, predates the task; rows themselves PASS at every width, light and dark; fixed as plan revision 1) → R2 not re-run: the change is one `position:relative` declaration pinned by a six-card e2e test (the dev database holds no shelf cards to look at), and CI's e2e:full and the owner's preview walk cover the rest.
 
 ## Blocked
 
@@ -116,7 +121,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R1 round → full; R2 round + dashboard spec)
+- Review rounds: 2 (spec, UI; schema once)
+- First-pass AC FAILs: 1 (AC-1 horizontal scroll at 360px on a full Up next shelf, found by ui-verifier)
+- Plan revisions after approval: 1 (the shelf fix and its test)
