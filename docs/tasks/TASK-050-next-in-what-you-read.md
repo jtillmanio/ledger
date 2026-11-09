@@ -1,7 +1,7 @@
 ---
 id: TASK-050
 title: 2.2d Next in what you're reading, on the dashboard
-status: In progress
+status: Review
 depends_on: [TASK-049, TASK-048]
 size: L
 model: opus
@@ -45,8 +45,8 @@ nothing reading, *Between books* lists book 3 under *Or keep going*, **Start**
 sets it `reading` and Undo restores `to_read`; reading book 2 of a `reading`
 series, Now shows *Next in* naming book 3. Nothing on the dashboard resolves
 to `--danger`. Screenshots at 360px and 1280px.
-- [ ] AC-2: `etl/test_views.sql`: a universe followed `reading` lists its lowest unread `universe_position`; an `unlisted` next book is listed; a soft-deleted book is skipped and the next live one listed; a listened book counts as read; a follow whose every live book is read has no row; `read` and `total` equal the matching `*_progress` view's counts for the series.
-- [ ] AC-3: Given four `reading` follows with a next book each, *Or keep going* lists exactly three, ordered by each follow's latest finish, newest first; given the book in hand in a `reading` series that is also in a `reading` universe, Now shows one *Next in* line, the series'.
+- [x] AC-2: `etl/test_views.sql`: a universe followed `reading` lists its lowest unread `universe_position`; an `unlisted` next book is listed; a soft-deleted book is skipped and the next live one listed; a listened book counts as read; a follow whose every live book is read has no row; `read` and `total` equal the matching `*_progress` view's counts for the series.
+- [x] AC-3: Given four `reading` follows with a next book each, *Or keep going* lists exactly three, ordered by each follow's latest finish, newest first; given the book in hand in a `reading` series that is also in a `reading` universe, Now shows one *Next in* line, the series'.
 - [ ] AC-4: The *Next in* line and the *Or keep going* rows meet the UX floor (`docs/04-design.md` § 10. The UX floor): the *Next in* line is an `<a href>` whose name includes the book's title; each **Start** is a `<button>` at least 44px tall whose name names its book; the rows' grey text is 4.5:1 in both themes; nothing is amber or red; screenshots of reading-with-*Next in* and *Between books*-with-rows at 360, 390, 412, 768, 1024 and 1280px, light and dark, reduced motion and reduced transparency; axe reports no new violations.
 
 ## Out of scope
@@ -75,6 +75,12 @@ to `--danger`. Screenshots at 360px and 1280px.
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- 2.10b's plan sheet reads `follow_next`, which as built is one row per follow (subseries rows included) with `read`, `total` and `last_read_on`; the one-row-per-book and offer rules are the dashboard's `keepGoing`, not the view's → docs/05-roadmap.md § 2.10b
+- Candidate decision: what is next in a follow (the open-status list, so 5.15's parking needs no view change; no status row counts unread; one row per book with the narrowest reason; the offer never listed), the owner's plan-gate answers → docs/OWNER-CHECKLIST.md § Approvals from follow-ups
+- **Start** on a book with no status row, then Undo, leaves it `unlisted` rather than with no row (spec review R1 note) → not tracked: matches the schema rule that only an undo writes `unlisted`, and every progress view counts both unread
+- The loading skeleton has no *Next in* row, so a hero with one is a 44px row taller than its skeleton → not tracked: the skeleton can't know whether a follow applies; the spec's geometry check seeds none
+- The development database has no follow at *Reading*, so the dev walk could show neither new state (the owner's series is *Tracking*) → not tracked: the states are proven in the browser suite on the test database; the owner's preview walk is the gate
 
 ## Plan
 
@@ -105,13 +111,20 @@ Approved by the owner 2026-11-09, with the three plan-gate questions answered ye
 
 _Filled by /implement-task. One line per round._
 
+- Step 1: `bdash` redrawn (Next in at 390/834/desktop, Or keep going at 390/360/834/desktop); owner looked and said go
+- Verify R1 round FAIL(5: down/0011 drops book_reads under the new views ×4, /books 10 > 9 queries) → plan revision 1 (owner) → R2 round PASS (1346) → full PASS (1346 vitest, build, 934 Playwright core) | R3 round PASS (1347) after review fixes
+- Audit R1 PASS (browser half static; DB/unit halves fail at base)
+- Spec R1 APPROVE (note: Start's undo of a no-status book) → R2 CHANGES (shelf tie test couldn't tell name from id order) → fixed, confirmed APPROVE
+- Schema R1 APPROVE (MINOR: shelf tie in keepGoing's DISTINCT ON) → fixed → R2 APPROVE
+- UI R1 dev walk: no regressions, no console errors, no sideways scroll at 6 widths × 2 themes; both new states UNTESTED on dev data (no follow at Reading; changing one was blocked); the states are proven by the browser suite (every core project, floor, axe, screenshots). Not an independent UI walk of the new lines
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (R1 round FAIL, R2 round + full PASS, R3 round PASS)
+- Review rounds: 2 (spec, schema), 1 (UI, dev data)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1 (down/0011, one-wave /books at 10 queries)
