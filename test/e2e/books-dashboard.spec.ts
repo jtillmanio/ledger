@@ -680,6 +680,21 @@ test.describe("where the book sits (2.2g)", () => {
     await expect(figures(page).first()).toBeVisible();
   });
 
+  test("a full Up next shelf and the rows together: no sideways scroll at 360px (AC-1)", ONCE, async ({ page }) => {
+    await seedWhere();
+    await withSql(async (sql) => {
+      for (let n = 1; n <= 4; n++) {
+        await sql`INSERT INTO books (id, title, page_count) VALUES (${`e2e-dash-shelf-${n}`}, ${`E2E Dash Shelf ${n}`}, 250)`;
+        await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${`e2e-dash-shelf-${n}`}, 'to_read')`;
+        await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${E2E_USER}, ${`e2e-dash-shelf-${n}`}, ${PERIOD}, ${3 + n})`;
+      }
+    });
+    await page.setViewportSize({ width: 360, height: 780 });
+    await open(page);
+    await expect(page.locator(".shelf .card")).toHaveCount(6);
+    await expectNoHorizontalScroll(page);
+  });
+
   test("the 834px frame: three rows, no sideways scroll, a screenshot by hand (AC-1)", ONCE, async ({ page }, info) => {
     await seedWhere();
     await page.setViewportSize({ width: 834, height: 1112 });

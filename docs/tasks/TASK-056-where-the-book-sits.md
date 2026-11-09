@@ -104,6 +104,8 @@ Approved by the owner, 2026-11-09. The `bdash` frames were drawn first, at the p
 
 **Size.** 8 files, UI and a query, no schema: no split.
 
+**Plan revision 1 (owner approved, 2026-11-09).** ui-verifier found `/books` scrolled sideways at 360–412px once Up next held 5+ cards, with or without the rows: each shelf card's `.sr-only` number is `position:absolute` with no positioned ancestor inside the row, so the row's clip doesn't contain it and it widens the page. Predates this task (TASK-049's shelf); the fixtures held 2 cards. Step 4 gains `.shelf .card{position:relative}` in `globals.css` (a planned file), and the e2e spec a test "a full Up next shelf and the rows together" (six cards, 360px). The row gap is 6px, as the mockup draws it.
+
 ## Review log
 
 _Filled by /implement-task. One line per round._
