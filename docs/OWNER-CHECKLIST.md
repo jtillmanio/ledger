@@ -230,7 +230,7 @@ tick them.
       (98 rows), which now load ahead of Calibre's `#pages`, and its 2,000
       `openlibrary` rows give no count (D-130). 1.14c's dry run already cached
       every answer, so the run makes few requests, if any (from TASK-057,
-      task/1.14c-page-counts-from-hardcover).
+      PR #217).
 
 ## Approvals from follow-ups
 
@@ -278,7 +278,7 @@ and notes where it went.
       D-130): an `openlibrary` row's page count is no source, and a `hand` row with no
       count takes Calibre's `#pages` (your plan-gate answers, 2026-11-09). D-130
       names neither; `.claude/rules/schema.md` and TASK-057's Plan already say
-      so (from TASK-057, task/1.14c-page-counts-from-hardcover).
+      so (from TASK-057, PR #217).
 
 ---
 
