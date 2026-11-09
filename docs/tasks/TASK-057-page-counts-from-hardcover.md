@@ -1,7 +1,7 @@
 ---
 id: TASK-057
 title: 1.14c Page counts from Hardcover, word counts from Calibre
-status: In progress
+status: Review
 depends_on: [TASK-034]
 size: M
 model: opus
@@ -33,7 +33,7 @@ A book's page count is Hardcover's print count, not Calibre's inflated ebook est
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm run test:etl`, with recorded Hardcover answers: a fixture book with a
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm run test:etl`, with recorded Hardcover answers: a fixture book with a
 Hardcover book-level count, a different edition count and a Calibre `#pages`
 loads the book-level count; one with only an edition count loads that; one
 Hardcover gives none loads `#pages`; a `hand` row is unchanged; every word
@@ -42,10 +42,10 @@ byte-identical. `etl/test_views.sql`: a book with no word count estimates from
 the loaded page count. A vitest test: a book added from a Hardcover result
 stores the book-level count. Then a dry run over the real books, with the
 counts in the PR.
-- [ ] AC-2: Given a recorded Hardcover answer whose book has 320 pages and whose matched edition has 410, `enrich_books.py` writes a `book_details.csv` row carrying 320 and 410 in their two columns; given an answer with no matched edition, the edition column is empty and the book-level column is filled.
-- [ ] AC-3: Given a book with no Calibre word count, Calibre `#pages` 600 and a Hardcover book-level count of 320, the loaded `page_count` is 320 and `plan_book_words` gives `320 × words_per_page` with `word_source = 'estimated'`; given a Hardcover count of 40, no estimate is made. A book with a Calibre `stated` count keeps it whatever its page count.
-- [ ] AC-4: Adding a book from a Hardcover result whose book has 320 pages and whose edition has 410 stores `page_count = 320`; one whose book has none and whose edition has 410 stores 410.
-- [ ] AC-5: `.claude/rules/schema.md` states the order *hand → Hardcover's book-level count → the matched edition's → Calibre's `#pages`*, and the PR body gives the dry run's two counts (page counts changed, estimated word counts moved).
+- [x] AC-2: Given a recorded Hardcover answer whose book has 320 pages and whose matched edition has 410, `enrich_books.py` writes a `book_details.csv` row carrying 320 and 410 in their two columns; given an answer with no matched edition, the edition column is empty and the book-level column is filled.
+- [x] AC-3: Given a book with no Calibre word count, Calibre `#pages` 600 and a Hardcover book-level count of 320, the loaded `page_count` is 320 and `plan_book_words` gives `320 × words_per_page` with `word_source = 'estimated'`; given a Hardcover count of 40, no estimate is made. A book with a Calibre `stated` count keeps it whatever its page count.
+- [x] AC-4: Adding a book from a Hardcover result whose book has 320 pages and whose edition has 410 stores `page_count = 320`; one whose book has none and whose edition has 410 stores 410.
+- [x] AC-5: `.claude/rules/schema.md` states the order *hand → Hardcover's book-level count → the matched edition's → Calibre's `#pages`*, and the PR body gives the dry run's two counts (page counts changed, estimated word counts moved).
 
 ## Out of scope
 
@@ -71,6 +71,11 @@ counts in the PR.
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- `docs/COMMANDS.md` said Calibre's page counts win (the extract and enrich:books lines) → docs/COMMANDS.md § Commands (fixed in this PR)
+- The committed `book_details.csv` keeps 1.14b's edition-first counts (98 `hardcover` rows) and 2,000 `openlibrary` rows until the owner's real `enrich:books` run and an extract; not regenerated here (owner, plan gate) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- Candidate decision, amending D-130: an `openlibrary` row's page count is no source, and a `hand` row with no count takes Calibre's `#pages` (the owner's plan-gate answers; D-130 names neither) → docs/OWNER-CHECKLIST.md § Approvals from follow-ups
+- Another session (1.17b) switched this checkout's branch while this task's work was uncommitted, so the checkpoint commit landed on local `main`; moved to the task branch before any push, `main` back at `origin/main` → not tracked: one-off, that session now runs in its own worktree
 
 ## Plan
 
@@ -105,13 +110,18 @@ Approved by the owner, 2026-11-09.
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 round FAIL(1: etl/test_calibre.py pinned D-90's order; plan revision 1) → R2 test:etl PASS → full PASS (tsc, lint, vitest 1,415, views, ETL 376, build, e2e 977)
+- Audit R1 PASS (every AC PROVEN; the views block a guard, as planned)
+- Spec R1 CHANGES (commit on local `main`, not the task branch) → R2 APPROVE (moved, no content change) | Schema R1 APPROVE (2 MINOR, both the owner's real enrich run) | UI: not run (`ui: false`, no UI files)
+- Dry run (`npm run enrich:books -- --dry-run --limit 99999`, against a seed/books.csv extracted before the change): matched 4,161, proposed 79, ambiguous 34, unmatched 291, no author 6; 1,161 requests to Hardcover, 4,242 from cache; **page counts: 3,908 of 4,093 matched books change on the next extract, 4 of them with no word count, so their estimates move**. Calibre's count was a median 1.72× Hardcover's; loaded pages over those books fall from 3,255,488 to 1,866,145
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1
