@@ -1,14 +1,14 @@
 ---
 id: TASK-056
 title: 2.2g Where the book sits, in Now
-status: Ready
+status: In progress
 depends_on: [TASK-049, TASK-055]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 2638494
 ---
 
 # TASK-056 — 2.2g Where the book sits, in Now
@@ -75,9 +75,34 @@ five slots keep their order. Screenshots at 360px, 834px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+None at plan (approved at plan).
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner, 2026-11-09. The `bdash` frames were drawn first, at the plan gate (in the planning commit): the 390, 834 and desktop reading frames show *N. K. Jemisin 4 / 12* and *The Broken Earth 0 / 3*; the 360 listening frame *Andy Weir 2 / 3*; a note in the notes column and the `mockups-index.md` row.
+
+**Layout.** A full-width block under `.now-band` and above `.now-next`: the hero lands as band → Next in → foot, and 2.1b's meter goes in the band, so this is the roadmap's "under the meter, above Next in". Each row is a grid: the name (wraps with `overflow-wrap:anywhere`, never scrolls), a meter 64px wide (120px from 768px), and `read / total` in mono, right-aligned, `minmax(7ch, max-content)`. Type `--fs-caption` (12/16, the rollup's `dt`), colour `--ink-2`. The track is `--sunk` with an inset 1px `--faint-deco` outline (3:1 on `--surface` in both themes; `--sunk` alone isn't), height 6px, the fill `--ready`. Padding 12px 16px, 12px 20px from 768px (as `.now-next`), `border-top: 1px solid var(--line)`.
+
+**Steps**
+1. `booksInHand` (`src/db/queries.ts`): the `hand` CTE carries the book's `series_id`, `subseries_id`, `author_id`, `universe_id`; a `levels` CTE builds, per book in hand, a `json_agg` ordered by level of `{kind, id, name, read, total}` from a LATERAL `UNION ALL` over `universe_progress` (ord 1), `author_progress` (ord 1, only `b.universe_id IS NULL` and `follow_state = 'reading'`), `series_progress` (ord 2, `total` = `total_books`) and `subseries_progress` (ord 3, `total` = `books_listed`), each `user_id = ${userId}`, dropping a row whose total is 0; `InHandBook` gains `levels: Level[]` (`[]` when none, via `COALESCE(..., '[]'::json)`). Same query: `/books` stays 10 queries in one wave, and *Between books* (no hand) adds nothing. The counts are read as `bookGroupings` reads them.
+2. `src/components/WhereItSits.tsx` (new, server component): `<ul className="now-where" aria-label="Where this book sits">`, one `<li>` per level: `<span className="now-where-name">`, `<span className="emeter" aria-hidden="true"><i style={{ width: `${fillShare * 100}%` }} /></span>`, `<span className="now-where-n mono">{read} / {total}</span>`. Exports `fillShare(read, total)` = `min(1, read / total)` (0 for total ≤ 0). Renders null for an empty list.
+3. `src/components/BooksNow.tsx`: draw `<WhereItSits levels={book.levels} />` between `.now-band` and the *Next in* link; update the doc comment.
+4. `src/app/globals.css`: `.now-where`, its rows, and `.now-where .emeter` (a scope of its own; `.era .emeter` unchanged), tokens only, the 768px padding and meter width in the existing media blocks.
+5. Tests first (below), confirmed failing, then 1–4.
+
+**Files** (8; no schema, no migration, no view): `src/db/queries.ts`, `src/components/WhereItSits.tsx` (new), `src/components/BooksNow.tsx`, `src/app/globals.css`, `design/mockups.html` and `design/mockups-index.md` (drawn at the plan gate), `test/books-dashboard.test.ts`, `test/e2e/books-dashboard.spec.ts`. `src/app/books/loading.tsx` is not changed (see Loading).
+
+**Test strategy**
+- AC-2, AC-3's counts: `test/books-dashboard.test.ts` › "Where the book sits (2.2g)": universe + series + subseries → kinds `universe, series, subseries`, each `read / total` equal to its view's; series alone → `series`, its total the stated `total_books`; standalone, author unfollowed → `[]`; author `reading` → `author`; author `tracking` → `[]`; a universe and an author at `reading` → `universe` only; no universe, author `reading`, series and subseries → `author, series, subseries`, author `tracking` → two; never more than three; a universe, series and subseries each unfollowed, `tracking`, `off` and `reading` → the same rows and figures; a *Listening* book → the same rows as *Reading*; every level's figures equal `bookGroupings`' for the same kind and book.
+- Unit (same file): `fillShare(1, 4) = 0.25`, `fillShare(5, 4) = 1`, `fillShare(0, 0) = 0`; `WhereItSits` with `[]` renders nothing; with 1 / 4 its markup has `1 / 4` and `width:25%`.
+- AC-1, AC-4, AC-5: `test/e2e/books-dashboard.spec.ts` › "where the book sits (2.2g)": a fixture with the hero in a universe, a series and a subseries → three rows in that order, each figure equal to its view's (queried in the test); series alone → one; standalone, author unfollowed → none; author `reading` → the author's row; *Between books* → no `.now-where`; the fill's `background-color` is `--ready` and at 1 / 4 its width a quarter of the track's (±1px); the track's outline is `--faint-deco`; `.now-where` sits above `.now-next`; the row font size is below `.now-name`'s; ✓ finished then Undo → the rows as before; a long universe name at 360px → no horizontal scroll; the floor (no `--danger`, no horizontal scroll, targets, axe, contrast); screenshots in every project (360–1280, light and dark, reduced motion), one at 834×1112 set by hand (no 834 project), and a reduced-transparency state.
+- AC-3 "no column and no table": the diff touches no `src/db/schema.ts`, `drizzle/` or `etl/views.sql`: spec-reviewer checks it; listed in the PR.
+
+**Loading (AC-5).** `loading.tsx` keeps no space for the rows: the skeleton can't know whether 0–3 rows come. It is `/books`' only Suspense fallback, so the rows arrive in the same commit as the hero and everything below it, all newly inserted nodes, which the Layout Instability API doesn't score; nothing outside `main` moves (the thumb bar is fixed). The same reasoning covers *Next in*'s 44px row (TASK-050). Lighthouse's CLS gate (< 0.1) on the preview checks it; the existing geometry test (a hero with no levels) still holds.
+
+**Risks.** The views' pushdown inside a LATERAL: `bookGroupings` already joins them per book the same way, and `test/query-budget.test.ts` pins the count. The e2e fixture adds a universe, a subseries and follows: `clean()` deletes them by the `e2e-dash-` prefix (universes, subseries, then series).
+
+**Size.** 8 files, UI and a query, no schema: no split.
 
 ## Review log
 
