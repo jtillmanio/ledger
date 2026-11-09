@@ -1,4 +1,5 @@
 export const E2E_PORT: number;
+export function e2ePort(env: Record<string, string | undefined>): { port: number; error?: undefined } | { error: string; port?: undefined };
 export const E2E_PASSCODE: string;
 export const E2E_USER: string;
 export const E2E_HARDCOVER_TOKEN: string;

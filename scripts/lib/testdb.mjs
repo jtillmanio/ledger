@@ -35,11 +35,22 @@ export function requireTestUrl(env = process.env) {
   return env.TEST_DATABASE_URL;
 }
 
-/** Load .env into process.env without overriding what is already set. */
+// A worktree's own test database and browser-suite port, written by
+// scripts/worktree-slot.mjs so two sessions' tests never truncate each other's
+// rows (workflow.wipLimit 2). Gitignored by `.env*`; absent in the main checkout.
+export const WORKTREE_ENV = ".env.worktree";
+
+/**
+ * Load .env into process.env without overriding what is already set. For
+ * .env, the worktree file is loaded first, so its TEST_DATABASE_URL and
+ * E2E_PORT win: process.loadEnvFile never overrides a variable already set.
+ */
 export function loadDotEnv(file = ".env") {
-  try {
-    process.loadEnvFile(file);
-  } catch (e) {
-    if (e && e.code !== "ENOENT") throw e;
+  for (const f of file === ".env" ? [WORKTREE_ENV, file] : [file]) {
+    try {
+      process.loadEnvFile(f);
+    } catch (e) {
+      if (e && e.code !== "ENOENT") throw e;
+    }
   }
 }

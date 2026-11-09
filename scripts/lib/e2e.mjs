@@ -5,9 +5,21 @@
 // else, and never falls back to DATABASE_URL (testdb.mjs).
 import { checkTestUrl } from "./testdb.mjs";
 
-// Below ui.portBase (3100 + a task number mod 100) so no ui-verifier server
-// shares it, and not 3000, which is the owner's `npm run dev`.
+// The default port. Not 3000, which is the owner's `npm run dev`. A worktree
+// gets its own from scripts/worktree-slot.mjs (E2E_PORT in .env.worktree,
+// 3200 and up, past every ui-verifier port, 3100 + a task number mod 100), so
+// two sessions' suites never fight over one server.
 export const E2E_PORT = 3199;
+
+/** The suite's port: E2E_PORT when set, else the default; an error for anything else. */
+export function e2ePort(env) {
+  if (env.E2E_PORT === undefined || env.E2E_PORT === "") return { port: E2E_PORT };
+  const port = Number(env.E2E_PORT);
+  if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+    return { error: `E2E_PORT is "${env.E2E_PORT}": use a whole number from 1024 to 65535.` };
+  }
+  return { port };
+}
 // Fixed and public: the suite's server, never the owner's APP_PASSCODE.
 export const E2E_PASSCODE = "e2e-passcode";
 export const E2E_USER = "e2e-user";
@@ -65,6 +77,9 @@ export function e2eProjects(scope) {
  * E2E_SCOPE picks the projects: `core` (the default, E2E_CORE) or `full`,
  * every project, which CI runs.
  *
+ * E2E_PORT picks where the server listens (e2ePort): a worktree's comes from
+ * .env.worktree, so two sessions' suites can run at once.
+ *
  * clear is the folder the wrapper deletes before Playwright starts: DEV_CACHE
  * for a dev server, null for `next start`.
  */
@@ -75,10 +90,12 @@ export function planE2e(env) {
   if (mode !== "dev" && mode !== "start") return { error: `E2E_SERVER is "${mode}": use dev or start.` };
   const scope = env.E2E_SCOPE || "core";
   if (scope !== "core" && scope !== "full") return { error: `E2E_SCOPE is "${scope}": use core or full.` };
+  const { port, error: portError } = e2ePort(env);
+  if (portError) return { error: portError };
   return {
     scope,
     clear: mode === "dev" ? DEV_CACHE : null,
-    serverCommand: `npx next ${mode} --port ${E2E_PORT}`,
+    serverCommand: `npx next ${mode} --port ${port}`,
     serverEnv: {
       DATABASE_URL: env.TEST_DATABASE_URL,
       APP_PASSCODE: E2E_PASSCODE,
@@ -89,6 +106,6 @@ export function planE2e(env) {
       // local run never reads the owner's real token out of .env.
       HARDCOVER_API_TOKEN: E2E_HARDCOVER_TOKEN,
     },
-    baseUrl: `http://localhost:${E2E_PORT}`,
+    baseUrl: `http://localhost:${port}`,
   };
 }

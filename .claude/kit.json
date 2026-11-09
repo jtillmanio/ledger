@@ -76,13 +76,13 @@
 
   "workflow": {
     "baseBranch": "main",
-    "wipLimit": 1,
-    "_wipLimitReason": "Every worktree's .env names the same test database, which test:db:reset rebuilds and vitest truncates",
+    "wipLimit": 2,
+    "_wipLimitReason": "Each worktree claims its own test database (ledger_test_<n>) and browser-suite port in .env.worktree (scripts/worktree-slot.mjs); a second worktree at once needs ledger_test_3 created first",
     "openPullRequests": true,
     "waitForCi": true,
     "maxCiFixRounds": 2,
     "unattendedPermissionMode": "acceptEdits",
-    "worktreeSetup": ["npm ci"],
+    "worktreeSetup": ["npm ci", "node scripts/worktree-slot.mjs"],
     "worktreeCopyFiles": [".env"],
     "staging": "by-path",
     "commitFormat": "area",
