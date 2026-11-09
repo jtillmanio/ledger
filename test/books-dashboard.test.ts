@@ -409,3 +409,163 @@ describe("a soft-deleted book is on no slot (Hard rule 4)", () => {
     expect(await q.yearSoFar(USER, 2026)).toEqual({ books: 0, listened: 0, pages: 0, newAuthors: 0 });
   });
 });
+
+describe("Where the book sits (2.2g)", () => {
+  type L = { kind: string; id: string; name: string; read: number; total: number };
+  const levelsOf = async (id: string): Promise<L[]> =>
+    (await q.booksInHand(USER)).find((b) => b.id === id)!.levels as L[];
+  const kinds = async (id: string) => (await levelsOf(id)).map((l) => l.kind);
+  // truncateAll leaves the universes and subseries (no other test here writes one).
+  beforeEach(async () => { await sql`TRUNCATE book_universes, book_subseries CASCADE`; });
+
+  /** The book in hand "h" (author `a`) in universe U, series S (stated 6) and subseries SS, with
+   * a read sibling and an unread one in each. */
+  async function world(opts: { universe?: boolean; series?: boolean; subseries?: boolean; author?: string | null } = {}) {
+    const { universe = true, series = true, subseries = true, author = "a" } = opts;
+    if (universe) await sql`INSERT INTO book_universes (id, name) VALUES ('u', 'Universe U')`;
+    if (series) await sql`INSERT INTO book_series (id, name, total_books) VALUES ('s', 'Series S', 6)`;
+    if (series && subseries) await sql`INSERT INTO book_subseries (id, name, series_id) VALUES ('ss', 'Subseries SS', 's')`;
+    const put = async (id: string, readIt: boolean) => {
+      await sql`INSERT INTO books (id, title, author_id, universe_id, series_id, subseries_id)
+        VALUES (${id}, ${"Title " + id}, ${author}, ${universe ? "u" : null}, ${series ? "s" : null},
+                ${series && subseries ? "ss" : null})`;
+      if (readIt) await read(id, "2026-10-01");
+    };
+    await put("h", false);
+    await put("r1", true);
+    await put("t1", false);
+    await sql`INSERT INTO book_status (user_id, book_id, status, started_on, started_on_precision)
+      VALUES (${USER}, 'h', 'reading', '2026-11-01', 'exact')`;
+  }
+  const follow = async (kind: "universe" | "series" | "subseries" | "author", id: string, state: string) => {
+    if (kind === "subseries") await sql`INSERT INTO subseries_follows (subseries_id, state) VALUES (${id}, ${state})`;
+    else await sql`INSERT INTO ${sql(kind + "_follows")} (user_id, ${sql(kind + "_id")}, state) VALUES (${USER}, ${id}, ${state})`;
+  };
+
+  it("a book in a universe, a series and a subseries has three rows, outermost first, each read / total its view's", async () => {
+    await world();
+    const levels = await levelsOf("h");
+    expect(levels.map((l) => [l.kind, l.id, l.name])).toEqual([
+      ["universe", "u", "Universe U"], ["series", "s", "Series S"], ["subseries", "ss", "Subseries SS"],
+    ]);
+    // The universe and subseries list 3 books (1 read); a series' total is its stated 6.
+    expect(levels.map((l) => [l.read, l.total])).toEqual([[1, 3], [1, 6], [1, 3]]);
+    const [uv] = await sql`SELECT books_read::int AS r, books_listed::int AS t FROM universe_progress WHERE user_id = ${USER} AND universe_id = 'u'`;
+    const [sv] = await sql`SELECT books_read::int AS r, total_books::int AS t FROM series_progress WHERE user_id = ${USER} AND series_id = 's'`;
+    const [bv] = await sql`SELECT books_read::int AS r, books_listed::int AS t FROM subseries_progress WHERE user_id = ${USER} AND subseries_id = 'ss'`;
+    expect(levels.map((l) => [l.read, l.total])).toEqual([[uv.r, uv.t], [sv.r, sv.t], [bv.r, bv.t]]);
+  });
+
+  it("a book in a series alone has one row, its total the stated total_books", async () => {
+    await world({ universe: false, subseries: false, author: null });
+    expect(await levelsOf("h")).toEqual([{ kind: "series", id: "s", name: "Series S", read: 1, total: 6 }]);
+  });
+
+  it("a standalone by an author nobody follows has none, and so does one at tracking", async () => {
+    await world({ universe: false, series: false });
+    expect(await levelsOf("h")).toEqual([]);
+    await follow("author", "a", "tracking");
+    expect(await levelsOf("h")).toEqual([]);
+  });
+
+  it("a standalone by an author followed Reading has the author's row", async () => {
+    await world({ universe: false, series: false });
+    await follow("author", "a", "reading");
+    expect(await levelsOf("h")).toEqual([{ kind: "author", id: "a", name: "Author A", read: 1, total: 3 }]);
+  });
+
+  it("a book in a universe by an author followed Reading has the universe's row and no author row", async () => {
+    await world({ series: false });
+    await follow("author", "a", "reading");
+    expect(await kinds("h")).toEqual(["universe"]);
+  });
+
+  it("no universe, author Reading, a series and a subseries: author, series, subseries; at tracking two", async () => {
+    await world({ universe: false });
+    await follow("author", "a", "reading");
+    expect(await kinds("h")).toEqual(["author", "series", "subseries"]);
+    await sql`UPDATE author_follows SET state = 'tracking'`;
+    expect(await kinds("h")).toEqual(["series", "subseries"]);
+  });
+
+  it("never more than three rows, whatever the book is in", async () => {
+    await world();
+    await follow("author", "a", "reading");
+    expect((await levelsOf("h")).length).toBeLessThanOrEqual(3);
+  });
+
+  it("position is a fact, not a follow: unfollowed, tracking, off and reading draw the same rows and figures", async () => {
+    await world();
+    const base = await levelsOf("h");
+    expect(base).toHaveLength(3);
+    for (const state of ["tracking", "off", "reading"]) {
+      await sql`DELETE FROM universe_follows`;
+      await sql`DELETE FROM series_follows`;
+      await sql`DELETE FROM subseries_follows`;
+      await follow("universe", "u", state);
+      await follow("series", "s", state);
+      await follow("subseries", "ss", state);
+      expect(await levelsOf("h")).toEqual(base);
+    }
+  });
+
+  it("a Listening book draws the rows a Reading one does", async () => {
+    await world();
+    const reading = await levelsOf("h");
+    await sql`UPDATE book_status SET status = 'listening' WHERE book_id = 'h'`;
+    expect(await levelsOf("h")).toEqual(reading);
+  });
+
+  it("the figures are the Follow sheet's: bookGroupings reads the same counts for each kind", async () => {
+    await world();
+    await follow("author", "a", "reading");
+    const { groupings } = (await q.bookGroupings(USER, "h"))!;
+    for (const l of await levelsOf("h")) {
+      const g = groupings.find((x) => x.kind === l.kind && x.id === l.id)!;
+      expect([l.read, l.total]).toEqual([g.read, g.total]);
+    }
+  });
+
+  it("a removed sibling leaves the counts; a book with no levels carries an empty list", async () => {
+    await world();
+    await sql`UPDATE books SET deleted_at = now() WHERE id = 't1'`;
+    expect((await levelsOf("h")).map((l) => [l.kind, l.read, l.total])).toEqual([["universe", 1, 2], ["series", 1, 6], ["subseries", 1, 2]]);
+    await sql`DELETE FROM book_status`;
+    await sql`DELETE FROM read_events`;
+    await sql`DELETE FROM books`;
+    await sql`INSERT INTO books (id, title) VALUES ('lone', 'Lone')`;
+    await status("lone", "reading", "2026-11-02");
+    expect(await levelsOf("lone")).toEqual([]);
+  });
+});
+
+describe("Where the book sits (2.2g): the rows' markup", () => {
+  let where: typeof import("../src/components/WhereItSits");
+  beforeAll(async () => { where = await import("../src/components/WhereItSits"); });
+  const html = async (levels: { kind: string; id: string; name: string; read: number; total: number }[]) => {
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { createElement } = await import("react");
+    return renderToStaticMarkup(createElement(where.default, { levels: levels as never }));
+  };
+
+  it("the fill is read over total, whole at most, and nothing for an empty total", () => {
+    expect(where.fillShare(1, 4)).toBe(0.25);
+    expect(where.fillShare(5, 4)).toBe(1);
+    expect(where.fillShare(0, 0)).toBe(0);
+    expect(where.fillShare(0, 3)).toBe(0);
+  });
+
+  it("no levels draw nothing", async () => {
+    expect(await html([])).toBe("");
+  });
+
+  it("1 of 4 reads 1 / 4, the fill a quarter of the track; the meter says nothing to a screen reader", async () => {
+    const out = await html([{ kind: "series", id: "s", name: "Series S", read: 1, total: 4 }]);
+    expect(out).toContain("1 / 4");
+    expect(out).toContain("width:25%");
+    expect(out).toContain('class="now-where-name">Series S<');
+    expect(out).toMatch(/<span class="emeter" aria-hidden="true">/);
+    expect(out).toContain('aria-label="Where this book sits"');
+    expect(out).not.toMatch(/danger|style="[^"]*#/);
+  });
+});

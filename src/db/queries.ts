@@ -1141,7 +1141,12 @@ export type InHandBook = {
   started_on: string | null; started_on_precision: Precision;
   /** *Next in* (task 2.2d): the next book in what this one is in and you follow as Reading. */
   next_in: NextIn | null;
+  /** Where it sits (task 2.2g): one row per level it belongs to, outermost first; `[]` when none. */
+  levels: Level[];
 };
+
+/** One of Now's *where the book sits* rows (task 2.2g): the level's name and how far along it is. */
+export type Level = { kind: "universe" | "author" | "series" | "subseries"; id: string; name: string; read: number; total: number };
 
 /** Now's *Next in {name}: {title}* (task 2.2d). */
 export type NextIn = { id: string; title: string; kind: FollowKind; name: string };
@@ -1156,6 +1161,11 @@ const REASON_ORDER = ["subseries", "series", "universe", "author", "shelf"];
  * of the things the book is in and you follow as Reading, the narrowest with a book still
  * unread (subseries, series, universe, then author; never a shelf), and that one's
  * lowest-ranked unread book (`follow_queue`), or null.
+ * And its `levels` (task 2.2g, D-119), in the same query: how far along it is in its universe (or,
+ * with none, its author when followed as Reading), series and subseries, read from the progress
+ * views whether or not the level is followed: position is a fact, not a follow (D-108). A
+ * series' total is its stated `total_books`, the others the books listed, as `bookGroupings`
+ * reads them. A level with no books draws nothing.
  */
 export async function booksInHand(userId: string) {
   return sql<InHandBook[]>`
@@ -1163,7 +1173,8 @@ export async function booksInHand(userId: string) {
       SELECT b.id, b.title, a.name AS author, b.page_count AS pages, b.cover_url,
              COALESCE(b.word_count, CASE WHEN b.page_count >= 50
                                          THEN b.page_count * COALESCE(rs.words_per_page, ${DEFAULT_WORDS_PER_PAGE}) END) AS words,
-             st.status, st.started_on, st.started_on_precision
+             st.status, st.started_on, st.started_on_precision,
+             b.series_id, b.subseries_id, b.author_id, b.universe_id
       FROM book_status st
       JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
       LEFT JOIN authors a ON a.id = b.author_id
@@ -1180,10 +1191,35 @@ export async function booksInHand(userId: string) {
       WHERE h.book_id IN (SELECT id FROM hand) AND h.kind <> 'shelf'
         AND (n.status IS NULL OR n.status IN ('to_read', 'unlisted'))
       ORDER BY h.book_id, array_position(${REASON_ORDER}::text[], h.kind), n.rank
+    ), levels AS (
+      SELECT h.id AS hand_id,
+             json_agg(json_build_object('kind', l.kind, 'id', l.id, 'name', l.name, 'read', l.read, 'total', l.total)
+                      ORDER BY l.ord, l.name, l.id) AS levels
+      FROM hand h
+      CROSS JOIN LATERAL (
+        SELECT 'universe' AS kind, p.universe_id AS id, p.name, p.books_read::int AS read, p.books_listed::int AS total, 1 AS ord
+        FROM universe_progress p WHERE p.user_id = ${userId} AND p.universe_id = h.universe_id
+        UNION ALL
+        -- The author stands in for a universe only when followed as Reading (the entry shows it so).
+        SELECT 'author', p.author_id, p.name, p.books_read::int, p.books_listed::int, 1
+        FROM author_progress p
+        WHERE p.user_id = ${userId} AND p.author_id = h.author_id AND h.universe_id IS NULL AND p.follow_state = 'reading'
+        UNION ALL
+        SELECT 'series', p.series_id, p.name, p.books_read::int, p.total_books::int, 2
+        FROM series_progress p WHERE p.user_id = ${userId} AND p.series_id = h.series_id
+        UNION ALL
+        SELECT 'subseries', p.subseries_id, p.name, p.books_read::int, p.books_listed::int, 3
+        FROM subseries_progress p WHERE p.user_id = ${userId} AND p.subseries_id = h.subseries_id
+      ) l
+      WHERE l.total > 0
+      GROUP BY h.id
     )
     SELECT hand.id, hand.title, hand.author, hand.pages, hand.cover_url, hand.words, hand.status,
-           hand.started_on::text AS started_on, hand.started_on_precision, x.next_in
-    FROM hand LEFT JOIN next_in x ON x.hand_id = hand.id
+           hand.started_on::text AS started_on, hand.started_on_precision, x.next_in,
+           COALESCE(lv.levels, '[]'::json) AS levels
+    FROM hand
+    LEFT JOIN next_in x ON x.hand_id = hand.id
+    LEFT JOIN levels lv ON lv.hand_id = hand.id
     ORDER BY hand.started_on DESC NULLS LAST, (hand.status = 'listening'), hand.title, hand.id
   `;
 }

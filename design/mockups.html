@@ -955,6 +955,16 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
 .bd-nextin{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 20px;border-top:1px solid var(--line);font-size:13px;line-height:18px;text-decoration:none}
 .app .bd a.bd-nextin{color:var(--ink-2)}
 .bd-nextin>span{margin-left:auto;color:var(--muted);font-size:16px}
+/* Task 2.2g (D-119): where the book sits, under the band and above Next in. The rollup's type, never the hero's;
+   the track is --sunk outlined in --faint-deco (3:1), the fill --ready. Read-only: no links. */
+.bd-where{list-style:none;margin:0;display:flex;flex-direction:column;gap:6px;padding:12px 20px;border-top:1px solid var(--line)}
+.frame:is([data-w="phone"],[data-w="p360"]) .bd .bd-where{padding:12px 16px}
+.bd-where li{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(7ch,max-content);align-items:center;gap:12px;font-size:12px;line-height:16px;color:var(--ink-2)}
+.frame:is([data-w="tab"],[data-w="desk"]) .bd-where li{grid-template-columns:minmax(0,1fr) 120px minmax(7ch,max-content)}
+.bd-wn{min-width:0;overflow-wrap:anywhere}
+.bd-em{height:6px;border-radius:999px;background:var(--sunk);box-shadow:inset 0 0 0 1px var(--faint-deco);overflow:hidden}
+.bd-em i{display:block;height:100%;background:var(--ready)}
+.bd-wf{font-family:var(--mono);text-align:right;white-space:nowrap}
 .bb-keep{display:flex;flex-direction:column;gap:4px;padding:12px 20px 4px;border-top:1px solid var(--line)}
 .bb-keep ul{list-style:none;margin:0;padding:0}
 .bb-krow{display:flex;align-items:center;gap:12px;min-height:56px;padding:6px 0}
@@ -2468,6 +2478,10 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
           <span class="grow"></span>
           <span class="tb-pages"><b>468</b> pages</span>
         </div></div>
+      <ul class="bd-where" aria-label="Where this book sits">
+        <li><span class="bd-wn">N. K. Jemisin</span><span class="bd-em" aria-hidden="true"><i style="width:33%"></i></span><span class="bd-wf">4 / 12</span></li>
+        <li><span class="bd-wn">The Broken Earth</span><span class="bd-em" aria-hidden="true"><i style="width:0%"></i></span><span class="bd-wf">0 / 3</span></li>
+      </ul>
       <a class="bd-nextin" href="#">Next in The Broken Earth: The Obelisk Gate<span aria-hidden="true">&rsaquo;</span></a>
       <div class="tb-foot one"><span>Started 21 Sep · about 9 evenings at your set pace</span></div>
     </section>
@@ -2551,6 +2565,9 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
           <span class="grow"></span>
           <span class="tb-pages"><b>476</b> pages</span>
         </div></div>
+      <ul class="bd-where" aria-label="Where this book sits">
+        <li><span class="bd-wn">Andy Weir</span><span class="bd-em" aria-hidden="true"><i style="width:67%"></i></span><span class="bd-wf">2 / 3</span></li>
+      </ul>
       <div class="tb-foot one"><span>Started 31 Oct · about 6 evenings at your set pace</span></div>
     </section>
     <section class="tb-sec" aria-labelledby="bdp360li-next">
@@ -2661,6 +2678,10 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
           <span class="grow"></span>
           <span class="tb-pages"><b>468</b> pages</span>
         </div></div>
+      <ul class="bd-where" aria-label="Where this book sits">
+        <li><span class="bd-wn">N. K. Jemisin</span><span class="bd-em" aria-hidden="true"><i style="width:33%"></i></span><span class="bd-wf">4 / 12</span></li>
+        <li><span class="bd-wn">The Broken Earth</span><span class="bd-em" aria-hidden="true"><i style="width:0%"></i></span><span class="bd-wf">0 / 3</span></li>
+      </ul>
       <a class="bd-nextin" href="#">Next in The Broken Earth: The Obelisk Gate<span aria-hidden="true">&rsaquo;</span></a>
       <div class="tb-foot one"><span>Started 21 Sep · about 9 evenings at your set pace</span></div>
     </section>
@@ -2763,6 +2784,10 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
           <span class="grow"></span>
           <span class="tb-pages"><b>468</b> pages</span>
         </div></div>
+      <ul class="bd-where" aria-label="Where this book sits">
+        <li><span class="bd-wn">N. K. Jemisin</span><span class="bd-em" aria-hidden="true"><i style="width:33%"></i></span><span class="bd-wf">4 / 12</span></li>
+        <li><span class="bd-wn">The Broken Earth</span><span class="bd-em" aria-hidden="true"><i style="width:0%"></i></span><span class="bd-wf">0 / 3</span></li>
+      </ul>
       <a class="bd-nextin" href="#">Next in The Broken Earth: The Obelisk Gate<span aria-hidden="true">&rsaquo;</span></a>
       <div class="tb-foot one"><span>Started 21 Sep · about 9 evenings at your set pace</span></div>
     </section>
@@ -2862,6 +2887,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <li><b>Now</b> is the only large thing (<code>--r-hero</code>, on <code>--surface</code> until 4.2/4.3 store the art band): the cover, <i>Reading now</i>, the title in Newsreader, the author, the page count in mono, and the foot <i>Started 21 Sep &middot; about 9 evenings at your set pace</i>: the book&rsquo;s words over minutes a day &times; words a minute, rounded up. Never a date. <span class="chg">Owner, at the plan gate (Q1):</span> until 2.1b stores a reading position there is no <i>p. 212 of 468</i>, no meter and no <i>sittings</i>; 2.1b adds all three where the page count is. The hero is the in-progress book started most recently. A <i>Listening</i> book is drawn the same way, with <i>Listening now</i> and the headphones glyph (360 frame; 1.23).</li>
     <li><b>Between books</b> replaces the empty state: a 72px cover of the last finished book (112px from 768) with a <code>--ready</code> check, the <code>&#10003; finished &middot; Sun</code> badge, <i>Between books.</i>, and a line that says what you finished and how long it took (an undated finish says what, not when). Then the top of the quarter&rsquo;s plan, the lowest-ordinal book still <i>to read</i> (D-37), and <i>Pick something else</i>, which opens <i>Up next</i> on Status. With nothing ever finished there is no cover, badge or line (third 360 frame). The thumb bar&rsquo;s verb names the offer: <i>Start The Left Hand of Darkness</i>; with nothing planned it is <i>Pick a book</i>.</li>
     <li><span class="chg">Task 2.2d (D-108):</span> <b>Next in.</b> When the book in hand is in something you follow as <i>Reading</i>, one grey line under the hero, <i>Next in The Broken Earth: The Obelisk Gate</i>, links to that book (the Library row until 3.5&rsquo;s sheet): the subseries first, then the series, the universe and the author, one line only (reading frames at 390, 834 and the desktop). <b>Or keep going</b> sits under the offer between books: up to three books, each next in a follow at <i>Reading</i> (<code>follow_next</code>), the follow most recently finished in first, each with its reason, <i>Next in Red Rising &middot; 3 of 6 read</i>, and <b>Start</b> (to <i>Reading</i>, with Undo), a 44px button named for its book. A book next in two follows is listed once with the narrower reason, and the offer&rsquo;s own book is never listed. <i>Pick something else</i> stays last; the top of the plan stays the primary. Grey and calm: no nudge, no streak, nothing amber or red, a follow untouched for months listed as one touched yesterday. None to list, no block.</li>
+    <li><span class="chg">Task 2.2g (D-119):</span> <b>Where the book sits.</b> Under the band and above <i>Next in</i> (under the meter once 2.1b adds one), one thin row per level the book belongs to, outermost first: its universe, or with no universe its author when you follow them as <i>Reading</i>; then its series; then its subseries. Each row is the name, a meter filled with <code>--ready</code> on a <code>--sunk</code> track outlined in <code>--faint-deco</code>, and <code>read / total</code> in mono, from that level&rsquo;s progress view (a series&rsquo; total is its stated count, as on the <i>Follow&hellip;</i> sheet). At most three rows, never an empty one: a level the book lacks draws nothing, a standalone by an author you don&rsquo;t follow as <i>Reading</i> draws none, and <i>Between books</i> draws none. Position is a fact, not a follow: a universe, series or subseries draws its row whether you follow it or not, <i>Not following</i> included. The rollup&rsquo;s type (12px), never the hero&rsquo;s; a long name wraps. Read-only, and not links (5.9, 5.11). Reading frames: the author and the series (390, 834, desktop); listening at 360: the author alone. Figures are sample data (D-7). 6.21 redraws it.</li>
     <li><b>Up next in Q4</b> is a cover shelf of the quarter&rsquo;s <i>to read</i> books in your order (read ones drop out). <b>Reorder</b> opens 1.9&rsquo;s reorder for that quarter on Status. On the desktop &lsaquo; &rsaquo; appear only when the row overflows, with a fine pointer. With nothing planned it is an empty slate with one primary, <i>Add a book</i>.</li>
     <li><b>This quarter</b> is the single-quarter strip (FP-D8): one block per planned book, its width its words against the quarter&rsquo;s capacity, read books in <code>--ready</code>, the book in hand outlined in <code>--brand</code>, and the dashed rule at 760k. The figure is 2.1&rsquo;s (<code>plan_capacity</code>): <i>3 of 7 read &middot; 615k planned &middot; 760k a quarter</i>. Past capacity (desktop <i>Between books</i> frame) the scale stretches to the plan, the rule moves in, and the figure turns <code>--blocked</code> amber with <i>52k over</i> beside it: a decision, never red, and the word &ldquo;behind&rdquo; appears nowhere. 2.2b (<b>redrawn</b>): the strip is the plan rail on its side (M-07). Its blocks are <code>button.qb</code>, each at its words along the strip; the part of the last block past the dashed rule is hatched in <code>--blocked</code> amber, so the books past capacity are the ones ranked last. A block under 24px stays drawn at its words and folds with its neighbours into a <code>+N</code> stack.</li>
     <li><b>On deck</b> is the books with no year yet. <b>Plan</b> moves one to the end of this quarter, with Undo. On the desktop it is hidden at rest with a fine pointer and shown on row hover or <code>:focus-within</code>, the row turning <code>--raise</code> (FP-D15; the first row is drawn hovered); with touch it is always shown.</li>

@@ -2125,7 +2125,7 @@ and leaves no read; the book moves from In flight to Done and both tabs' counts
 equal their rows. The button is reachable by keyboard, axe passes and nothing
 resolves to `--danger`. Screenshots at 360px and 1280px.
 
-### ☐ 2.2g Where the book sits, in Now · M
+### ☑ 2.2g Where the book sits, in Now · M
 Owner intake, 2026-11-05 (owner: *hierarchy for currently reading dashboard.
 Universe/author, series, sub series. How to show? Super series and sub series in
 flight should be shown in some way*; asked, the owner chose stacked meters, to
