@@ -1,7 +1,7 @@
 ---
 id: TASK-050
 title: 2.2d Next in what you're reading, on the dashboard
-status: Review
+status: Done
 depends_on: [TASK-049, TASK-048]
 size: L
 model: opus
@@ -35,7 +35,7 @@ When the book in hand belongs to something you follow as *Reading*, the dashboar
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `etl/test_views.sql`: with a series followed `reading`
+- [x] AC-1 (roadmap **Check:**, verbatim): `etl/test_views.sql`: with a series followed `reading`
 whose books 1–2 are read and 3–4 `to_read`, `follow_next` lists book 3 only;
 the same series at `tracking`, or unfollowed with 2 read, has no row; an
 author followed `reading` lists their earliest unread book; a shelf followed
@@ -47,7 +47,7 @@ series, Now shows *Next in* naming book 3. Nothing on the dashboard resolves
 to `--danger`. Screenshots at 360px and 1280px.
 - [x] AC-2: `etl/test_views.sql`: a universe followed `reading` lists its lowest unread `universe_position`; an `unlisted` next book is listed; a soft-deleted book is skipped and the next live one listed; a listened book counts as read; a follow whose every live book is read has no row; `read` and `total` equal the matching `*_progress` view's counts for the series.
 - [x] AC-3: Given four `reading` follows with a next book each, *Or keep going* lists exactly three, ordered by each follow's latest finish, newest first; given the book in hand in a `reading` series that is also in a `reading` universe, Now shows one *Next in* line, the series'.
-- [ ] AC-4: The *Next in* line and the *Or keep going* rows meet the UX floor (`docs/04-design.md` § 10. The UX floor): the *Next in* line is an `<a href>` whose name includes the book's title; each **Start** is a `<button>` at least 44px tall whose name names its book; the rows' grey text is 4.5:1 in both themes; nothing is amber or red; screenshots of reading-with-*Next in* and *Between books*-with-rows at 360, 390, 412, 768, 1024 and 1280px, light and dark, reduced motion and reduced transparency; axe reports no new violations.
+- [x] AC-4: The *Next in* line and the *Or keep going* rows meet the UX floor (`docs/04-design.md` § 10. The UX floor): the *Next in* line is an `<a href>` whose name includes the book's title; each **Start** is a `<button>` at least 44px tall whose name names its book; the rows' grey text is 4.5:1 in both themes; nothing is amber or red; screenshots of reading-with-*Next in* and *Between books*-with-rows at 360, 390, 412, 768, 1024 and 1280px, light and dark, reduced motion and reduced transparency; axe reports no new violations.
 
 ## Out of scope
 
@@ -117,6 +117,8 @@ _Filled by /implement-task. One line per round._
 - Spec R1 APPROVE (note: Start's undo of a no-status book) → R2 CHANGES (shelf tie test couldn't tell name from id order) → fixed, confirmed APPROVE
 - Schema R1 APPROVE (MINOR: shelf tie in keepGoing's DISTINCT ON) → fixed → R2 APPROVE
 - UI R1 dev walk: no regressions, no console errors, no sideways scroll at 6 widths × 2 themes; both new states UNTESTED on dev data (no follow at Reading; changing one was blocked); the states are proven by the browser suite (every core project, floor, axe, screenshots). Not an independent UI walk of the new lines
+- Ready gates (PR #212): CI `check` PASS; e2e:full PASS at every width, light and dark (the 360, 412 and 1024px screenshots and dark widths AC-1 and AC-4 asked for); Vercel preview PASS; Lighthouse within budget (/books 17.7 KB of 18.6 KB, 34 of 36 requests, accessibility 100). Owner gate: the preview walk at 360–412px
+- Accepted by the owner in the session (2026-11-09: "do what you need to complete the task, then do the accepted commit"), ahead of the manual check, which the owner will do on the preview
 
 ## Blocked
 
