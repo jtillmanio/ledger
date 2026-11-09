@@ -1350,7 +1350,9 @@ h2.group-head{margin:2.25rem 0 .75rem}
 @media (min-width:768px){ .shelf{gap:16px;margin:0 -2rem;padding:2px 2rem 6px;scroll-padding-inline:2rem} }
 @media (min-width:1024px){ .shelf{margin:0;padding:2px 0 6px;scroll-padding-inline:0} }
 @media (prefers-reduced-motion:no-preference){ .shelf{scroll-behavior:smooth} }
-.shelf .card{flex:none;width:var(--cover-shelf);display:flex;flex-direction:column;gap:6px;scroll-snap-align:start}
+/* position:relative: the card's sr-only number is absolute, and without a positioned ancestor inside the
+   row it escapes the row's clip and widens the page (task 2.2g: 5+ cards scrolled /books sideways at 360px). */
+.shelf .card{position:relative;flex:none;width:var(--cover-shelf);display:flex;flex-direction:column;gap:6px;scroll-snap-align:start}
 .shelf .cover{position:relative;display:block;width:var(--cover-shelf);aspect-ratio:2/3;border-radius:var(--r-cover);
   box-shadow:var(--sh-cover);overflow:hidden}
 .shelf .cover:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring)}
@@ -1504,6 +1506,17 @@ section[data-plan="year"] h2.group-head{color:var(--muted)}
 .now-next-go{flex:none;margin-left:auto;color:var(--muted);font-size:1rem}
 @media (hover:hover) and (pointer:fine){ .now-next:hover .now-next-text{text-decoration:underline} }
 .now-next:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring)}
+/* Task 2.2g (D-119): where the book sits. Thin stacked rows under Now's band, above *Next in*: the name,
+   a meter filled with --ready, and read / total in mono. The rollup's size (--fs-caption), never the hero's.
+   Its track needs its own outline: --sunk alone is under 3:1 on --surface, --faint-deco is not. */
+.now-where{list-style:none;margin:0;padding:12px 16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+.now-where li{display:grid;grid-template-columns:minmax(0,1fr) 64px minmax(7ch,max-content);align-items:center;column-gap:12px;
+  font:var(--fs-caption) var(--sans);color:var(--ink-2)}
+.now-where-name{min-width:0;overflow-wrap:anywhere}
+.now-where .emeter{display:block;height:6px;border-radius:var(--r-full);background:var(--sunk);
+  box-shadow:inset 0 0 0 1px var(--faint-deco);overflow:hidden}
+.now-where .emeter i{display:block;height:100%;background:var(--ready)}
+.now-where-n{text-align:right;color:var(--ink-2)}
 /* *Or keep going*: under the offer. Below the tablet a whole row before Pick something else, its
    basis spanning the -20px margins as that link's does. */
 .keep-going{flex:0 0 calc(100% + 40px);display:flex;flex-direction:column;gap:4px;margin:0 -20px;padding:12px 20px 4px;
@@ -1578,6 +1591,8 @@ section[data-plan="year"] h2.group-head{color:var(--muted)}
   .pick-else{flex:0 0 auto;margin:0;padding:0 4px;border-top:0;white-space:nowrap}
   .keep-going{order:1;margin:14px -20px -14px}
   .now-next{padding:8px 20px}
+  .now-where{padding:12px 20px}
+  .now-where li{grid-template-columns:minmax(0,1fr) 120px minmax(7ch,max-content)}
   .qcard{padding:20px}
 }
 @media (min-width:768px) and (max-width:1023px){

@@ -54,8 +54,11 @@ async function withSql<T>(work: (sql: TestSql) => Promise<T>): Promise<T> {
 
 const clean = () => withSql(async (sql) => {
   await sql`DELETE FROM books WHERE id LIKE 'e2e-dash-%'`;
-  // 2.2d's series, after its books; its follow goes with it (cascade).
+  // 2.2d's series, after its books; its follow goes with it (cascade). 2.2g's subseries go before
+  // their series, and its universes after the books in them.
+  await sql`DELETE FROM book_subseries WHERE id LIKE 'e2e-dash-%'`;
   await sql`DELETE FROM book_series WHERE id LIKE 'e2e-dash-%'`;
+  await sql`DELETE FROM book_universes WHERE id LIKE 'e2e-dash-%'`;
   await sql`DELETE FROM authors WHERE id LIKE 'e2e-dash-%'`;
 });
 
@@ -171,6 +174,48 @@ async function seedSaga({ twoInHand }: { twoInHand: boolean }) {
       await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${sagaId(n)}, 'to_read')`;
     }
     await sql`INSERT INTO series_follows (user_id, series_id, state) VALUES (${E2E_USER}, 'e2e-dash-saga', 'reading')`;
+  });
+}
+
+const UNIVERSE_NAME = "E2E Dash Universe";
+const WSERIES_NAME = "E2E Dash Where Series";
+const WSUB_NAME = "E2E Dash Where Subseries";
+
+type Where = {
+  universe?: boolean; series?: boolean; subseries?: boolean;
+  /** The hero's author (Dash Author One), and how she is followed, if at all. */
+  authored?: boolean; author?: "tracking" | "reading" | null; universeName?: string;
+};
+
+/**
+ * 2.2g's fixture, on top of `seed({ reading: true })`: the hero in a universe, a series (stated 8
+ * books) and a subseries, each with a read sibling and two unread: the universe and subseries read
+ * 1 / 4, the series 1 / 8. The series is followed as Reading, so the hero has a *Next in* line too.
+ */
+async function seedWhere(o: Where = {}) {
+  const { universe = true, series = true, subseries = true, authored = false, author = null, universeName = UNIVERSE_NAME } = o;
+  await withSql(async (sql) => {
+    if (universe) await sql`INSERT INTO book_universes (id, name) VALUES ('e2e-dash-uni', ${universeName})`;
+    if (series) await sql`INSERT INTO book_series (id, name, total_books) VALUES ('e2e-dash-wser', ${WSERIES_NAME}, 8)`;
+    if (series && subseries) await sql`INSERT INTO book_subseries (id, name, series_id) VALUES ('e2e-dash-wsub', ${WSUB_NAME}, 'e2e-dash-wser')`;
+    const uni = universe ? "e2e-dash-uni" : null;
+    const ser = series ? "e2e-dash-wser" : null;
+    const sub = series && subseries ? "e2e-dash-wsub" : null;
+    await sql`UPDATE books SET universe_id = ${uni}, series_id = ${ser}, subseries_id = ${sub},
+              author_id = ${authored || author ? "e2e-dash-a1" : null} WHERE id = 'e2e-dash-hero'`;
+    if (universe || series) {
+      for (const n of [1, 2, 3]) {
+        await sql`INSERT INTO books (id, title, universe_id, series_id, subseries_id, page_count)
+                  VALUES (${`e2e-dash-w${n}`}, ${`E2E Dash Where ${n}`}, ${uni}, ${ser}, ${sub}, 300)`;
+      }
+      await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, format)
+                VALUES (${E2E_USER}, 'e2e-dash-w1', ${daysAgo(60)}, 'exact', 'text')`;
+      await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+                VALUES (${E2E_USER}, 'e2e-dash-w1', 'read', ${daysAgo(60)}, 'exact')`;
+      for (const n of [2, 3]) await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${`e2e-dash-w${n}`}, 'to_read')`;
+    }
+    if (series) await sql`INSERT INTO series_follows (user_id, series_id, state) VALUES (${E2E_USER}, 'e2e-dash-wser', 'reading')`;
+    if (author) await sql`INSERT INTO author_follows (user_id, author_id, state) VALUES (${E2E_USER}, 'e2e-dash-a1', ${author})`;
   });
 }
 
@@ -487,6 +532,189 @@ test.describe("next in what you follow as Reading (2.2d)", () => {
   });
 });
 
+// Task 2.2g (F-72, D-119, D-108): where the book sits. Thin rows under Now's band, one per level,
+// read / total from the progress views. Untagged tests run in every project, so their screenshots
+// are the feel pass's; the 834px frame is set by hand (no project has it).
+test.describe("where the book sits (2.2g)", () => {
+  const rowsOf = (page: Page) => page.locator(".now-where li");
+  const names = (page: Page) => page.locator(".now-where-name");
+  const figures = (page: Page) => page.locator(".now-where-n");
+  /** The views' figures for the fixture's universe, series and subseries, as the rows write them. */
+  const viewFigures = () => withSql(async (sql) => {
+    const [u] = await sql`SELECT books_read::int AS r, books_listed::int AS t FROM universe_progress WHERE user_id = ${E2E_USER} AND universe_id = 'e2e-dash-uni'`;
+    const [s] = await sql`SELECT books_read::int AS r, total_books::int AS t FROM series_progress WHERE user_id = ${E2E_USER} AND series_id = 'e2e-dash-wser'`;
+    const [b] = await sql`SELECT books_read::int AS r, books_listed::int AS t FROM subseries_progress WHERE user_id = ${E2E_USER} AND subseries_id = 'e2e-dash-wsub'`;
+    return [u, s, b].map((v) => `${v.r} / ${v.t}`);
+  });
+
+  test.beforeEach(() => seed({ reading: true }));
+
+  test("a book in a universe, a series and a subseries draws three rows in order, each read / total its view's, filled with --ready (AC-1, AC-4, AC-5)", async ({ page }, info) => {
+    await seedWhere();
+    await open(page);
+    await expect(rowsOf(page)).toHaveCount(3);
+    await expect(names(page)).toHaveText([UNIVERSE_NAME, WSERIES_NAME, WSUB_NAME]);
+    const want = await viewFigures();
+    expect(want).toEqual(["1 / 4", "1 / 8", "1 / 4"]);
+    await expect(figures(page)).toHaveText(want);
+
+    // Every meter fills with --ready; the track is outlined in --faint-deco; 1 of 4 is a quarter of it.
+    const ready = await tokenColour(page, "--ready");
+    const deco = await tokenColour(page, "--faint-deco");
+    for (const fill of await page.locator(".now-where .emeter i").all()) {
+      expect((await computedStyle(fill, ["background-color"]))["background-color"]).toBe(ready);
+    }
+    expect((await computedStyle(page.locator(".now-where .emeter").first(), ["box-shadow"]))["box-shadow"]).toContain(deco);
+    const track = (await page.locator(".now-where .emeter").first().boundingBox())!;
+    const fill = (await page.locator(".now-where .emeter i").first().boundingBox())!;
+    expect(Math.abs(fill.width - track.width / 4), "1 / 4 fills a quarter of the track").toBeLessThanOrEqual(1);
+    const eighth = (await page.locator(".now-where .emeter i").nth(1).boundingBox())!;
+    expect(Math.abs(eighth.width - track.width / 8), "1 / 8 fills an eighth").toBeLessThanOrEqual(1);
+
+    // Under the band, above Next in (the series is followed as Reading), the rollup's type, not the hero's.
+    const where = (await page.locator(".now-where").boundingBox())!;
+    const band = (await page.locator(".now-band").boundingBox())!;
+    const next = (await page.locator(".now-next").boundingBox())!;
+    expect(where.y).toBeGreaterThanOrEqual(band.y + band.height - 1);
+    expect(next.y).toBeGreaterThanOrEqual(where.y + where.height - 1);
+    const size = (selector: string) => page.locator(selector).first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(await size(".now-where-name")).toBeLessThan(await size(".now-name"));
+
+    // The five slots keep their order.
+    const slots = await page.locator("main [data-slot]").evaluateAll((els) => els.map((el) => el.getAttribute("data-slot")));
+    expect(slots).toEqual(["now", "next", "position", "situation", "rollup"]);
+    await floor(page);
+    await screenshot(page, info, "books-where");
+  });
+
+  test("the rows are read-only text: no link, no button, the meter hidden from a screen reader (AC-1)", ONCE, async ({ page }) => {
+    await seedWhere();
+    await open(page);
+    await expect(page.locator(".now-where a, .now-where button")).toHaveCount(0);
+    await expect(page.getByRole("list", { name: "Where this book sits" }).getByRole("listitem")).toHaveCount(3);
+    await expect(page.locator('.now-where .emeter[aria-hidden="true"]')).toHaveCount(3);
+    await expect(page.locator(".now-where .emeter:not([aria-hidden])")).toHaveCount(0);
+  });
+
+  test("a book in a series alone draws one row (AC-1)", ONCE, async ({ page }) => {
+    await seedWhere({ universe: false, subseries: false });
+    await open(page);
+    await expect(names(page)).toHaveText([WSERIES_NAME]);
+    await expect(figures(page)).toHaveText(["1 / 8"]);
+  });
+
+  test("a standalone by an author nobody follows draws none, and one at tracking none (AC-1, AC-2)", ONCE, async ({ page }) => {
+    await seedWhere({ universe: false, series: false, authored: true });
+    await open(page);
+    await expect(page.locator(".now-name")).toHaveText(HERO);
+    await expect(page.locator(".now-where")).toHaveCount(0);
+    await withSql((sql) => sql`INSERT INTO author_follows (user_id, author_id, state) VALUES (${E2E_USER}, 'e2e-dash-a1', 'tracking')`);
+    await open(page);
+    await expect(page.locator(".now-where")).toHaveCount(0);
+  });
+
+  test("a standalone by an author followed Reading draws the author's row (AC-1)", async ({ page }, info) => {
+    await seedWhere({ universe: false, series: false, author: "reading" });
+    await open(page);
+    await expect(names(page)).toHaveText(["Dash Author One"]);
+    const [a] = await withSql((sql) => sql`SELECT books_read::int AS r, books_listed::int AS t FROM author_progress WHERE user_id = ${E2E_USER} AND author_id = 'e2e-dash-a1'`);
+    await expect(figures(page)).toHaveText([`${a.r} / ${a.t}`]);
+    await floor(page);
+    await screenshot(page, info, "books-where-author");
+  });
+
+  test("with a universe, an author followed Reading draws no author row; without one, the author, series, subseries (AC-2)", ONCE, async ({ page }) => {
+    await seedWhere({ author: "reading" });
+    await open(page);
+    await expect(names(page)).toHaveText([UNIVERSE_NAME, WSERIES_NAME, WSUB_NAME]);
+    await withSql((sql) => sql`UPDATE books SET universe_id = NULL WHERE id LIKE 'e2e-dash-%'`);
+    await open(page);
+    await expect(names(page)).toHaveText(["Dash Author One", WSERIES_NAME, WSUB_NAME]);
+    await withSql((sql) => sql`UPDATE author_follows SET state = 'tracking' WHERE user_id = ${E2E_USER}`);
+    await open(page);
+    await expect(names(page)).toHaveText([WSERIES_NAME, WSUB_NAME]);
+  });
+
+  test("a level set to Not following still draws its row, with the same figure (AC-3)", ONCE, async ({ page }) => {
+    await seedWhere();
+    await withSql(async (sql) => {
+      await sql`INSERT INTO universe_follows (user_id, universe_id, state) VALUES (${E2E_USER}, 'e2e-dash-uni', 'off')`;
+      await sql`UPDATE series_follows SET state = 'off' WHERE user_id = ${E2E_USER}`;
+      await sql`INSERT INTO subseries_follows (subseries_id, state) VALUES ('e2e-dash-wsub', 'off')`;
+    });
+    await open(page);
+    await expect(names(page)).toHaveText([UNIVERSE_NAME, WSERIES_NAME, WSUB_NAME]);
+    await expect(figures(page)).toHaveText(["1 / 4", "1 / 8", "1 / 4"]);
+  });
+
+  test("a Listening book draws the rows a Reading one does (AC-3)", ONCE, async ({ page }) => {
+    await seedWhere();
+    await withSql((sql) => sql`UPDATE book_status SET status = 'listening' WHERE user_id = ${E2E_USER} AND book_id = 'e2e-dash-hero'`);
+    await open(page);
+    await expect(page.locator(".now-kick")).toHaveText(/^Listening now/);
+    await expect(names(page)).toHaveText([UNIVERSE_NAME, WSERIES_NAME, WSUB_NAME]);
+  });
+
+  test("✓ finished then Undo leaves the rows as they were; Between books draws none (AC-1, AC-4)", ONCE, async ({ page }) => {
+    await seedWhere();
+    await open(page);
+    const before = await rowsOf(page).allInnerTexts();
+    expect(before).toHaveLength(3);
+    await verbs(page).getByRole("button", { name: `Finished ${HERO}` }).click();
+    await expect(page.locator(".between-title")).toHaveText("Between books.");
+    await expect(page.locator(".now-where")).toHaveCount(0);
+    await page.locator(".toast").getByRole("button", { name: "Undo" }).click();
+    await expect(page.locator(".now-name")).toHaveText(HERO);
+    expect(await rowsOf(page).allInnerTexts()).toEqual(before);
+  });
+
+  test("a long universe name wraps at 360px: no sideways scroll, the figure and meter stay whole (AC-5)", ONCE, async ({ page }) => {
+    await seedWhere({ universeName: `E2E Dash ${"Supercalifragilisticexpialidocious ".repeat(3)}Universe` });
+    await page.setViewportSize({ width: 360, height: 780 });
+    await open(page);
+    await expectNoHorizontalScroll(page);
+    const row = (await rowsOf(page).first().boundingBox())!;
+    const hero = (await page.locator(".now-hero").boundingBox())!;
+    expect(row.x + row.width).toBeLessThanOrEqual(hero.x + hero.width + 1);
+    expect((await page.locator(".now-where .emeter").first().boundingBox())!.width).toBeGreaterThanOrEqual(60);
+    await expect(figures(page).first()).toBeVisible();
+  });
+
+  test("a full Up next shelf and the rows together: no sideways scroll at 360px (AC-1)", ONCE, async ({ page }) => {
+    await seedWhere();
+    await withSql(async (sql) => {
+      for (let n = 1; n <= 4; n++) {
+        await sql`INSERT INTO books (id, title, page_count) VALUES (${`e2e-dash-shelf-${n}`}, ${`E2E Dash Shelf ${n}`}, 250)`;
+        await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${`e2e-dash-shelf-${n}`}, 'to_read')`;
+        await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${E2E_USER}, ${`e2e-dash-shelf-${n}`}, ${PERIOD}, ${3 + n})`;
+      }
+    });
+    await page.setViewportSize({ width: 360, height: 780 });
+    await open(page);
+    await expect(page.locator(".shelf .card")).toHaveCount(6);
+    await expectNoHorizontalScroll(page);
+  });
+
+  test("the 834px frame: three rows, no sideways scroll, a screenshot by hand (AC-1)", ONCE, async ({ page }, info) => {
+    await seedWhere();
+    await page.setViewportSize({ width: 834, height: 1112 });
+    await open(page);
+    await expect(rowsOf(page)).toHaveCount(3);
+    await expectNoHorizontalScroll(page);
+    // From 768px the meter is 120px wide.
+    expect((await page.locator(".now-where .emeter").first().boundingBox())!.width).toBeCloseTo(120, 0);
+    await screenshot(page, info, "books-where-834");
+  });
+
+  test("Between books draws no rows (AC-1)", ONCE, async ({ page }) => {
+    await seedWhere();
+    await withSql((sql) => sql`UPDATE book_status SET status = 'to_read' WHERE user_id = ${E2E_USER} AND status IN ('reading', 'listening')`);
+    await open(page);
+    await expect(page.locator(".between-title")).toHaveText("Between books.");
+    await expect(page.locator(".now-where")).toHaveCount(0);
+  });
+});
+
 test.describe("never finished, nothing planned", () => {
   test.beforeEach(seedEmpty);
 
@@ -550,18 +778,22 @@ test.describe("the side rail and Plan's reveal (FP-D15)", () => {
 // the glass (the phone's bar, the desktop's header band) falls back to --surface in both states.
 test.describe("reduced transparency", () => {
   // 2.2d's two states too: reading with *Next in*, and between books with *Or keep going*.
+  // And 2.2g's: reading with *where the book sits*.
   for (const [state, seedState, saga] of [
     ["reading", { reading: true }, null], ["between", { between: true }, null],
     ["next-in", { reading: true }, { twoInHand: true }], ["keep-going", { between: true }, { twoInHand: false }],
+    ["where", { reading: true }, "where"],
   ] as const) {
     test(`${state}: the glass is solid --surface, with a screenshot at 390 and 1280 (AC-1, AC-5)`, ONCE, async ({ page, context }, info) => {
       await seed(seedState);
-      if (saga) await seedSaga(saga);
+      if (saga === "where") await seedWhere();
+      else if (saga) await seedSaga(saga);
       const cdp = await context.newCDPSession(page);
       await cdp.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-transparency", value: "reduce" }] });
       for (const [width, glass] of [[390, ".bar"], [1280, ".pagehead"]] as const) {
         await page.setViewportSize({ width, height: 900 });
         await open(page);
+        if (saga === "where") await expect(page.locator(".now-where li")).toHaveCount(3);
         const surface = await page.evaluate(() => {
           const probe = document.createElement("i");
           probe.style.backgroundColor = "var(--surface)";
