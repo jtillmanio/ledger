@@ -778,6 +778,7 @@ test.describe("reduced transparency", () => {
       for (const [width, glass] of [[390, ".bar"], [1280, ".pagehead"]] as const) {
         await page.setViewportSize({ width, height: 900 });
         await open(page);
+        if (saga === "where") await expect(page.locator(".now-where li")).toHaveCount(3);
         const surface = await page.evaluate(() => {
           const probe = document.createElement("i");
           probe.style.backgroundColor = "var(--surface)";
