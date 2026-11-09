@@ -115,6 +115,20 @@ describe("Or keep going (AC-3)", () => {
     expect((await q.keepGoing(USER, "2027-Q1", 3)).map((r) => r.id)).toEqual(["t-2", "s-2", "u-2"]);
   });
 
+  it("a book next on two followed shelves takes the first shelf by name as its reason", async () => {
+    await sql`INSERT INTO books (id, title) VALUES ('h-1', 'Shelved One'), ('h-2', 'Shelved Two')`;
+    await read("h-1", "2026-05-01");
+    await status("h-2", "to_read");
+    // Inserted Zeta first, so neither insert order nor id order gives Alpha.
+    for (const [id, name] of [["sh-z", "Zeta Shelf"], ["sh-a", "Alpha Shelf"]]) {
+      await sql`INSERT INTO shelves (id, name, user_id, kind) VALUES (${id}, ${name}, ${USER}, 'books')`;
+      await sql`INSERT INTO shelf_books (shelf_id, book_id, ordinal) VALUES (${id}, 'h-1', 1), (${id}, 'h-2', 2)`;
+      await sql`INSERT INTO shelf_follows (shelf_id, state) VALUES (${id}, 'reading')`;
+    }
+    const rows = await q.keepGoing(USER, PERIOD, 3);
+    expect(rows.map((r) => [r.id, r.kind, r.name])).toEqual([["h-2", "shelf", "Alpha Shelf"]]);
+  });
+
   it("is empty with nothing followed as Reading", async () => {
     await series("z", 2, "tracking");
     await read("z-1", "2026-05-01");

@@ -1337,7 +1337,8 @@ export async function keepGoing(userId: string, period: string, limit: number) {
       SELECT DISTINCT ON (f.book_id) f.*
       FROM follow_next f
       WHERE f.user_id = ${userId} AND f.book_id NOT IN (SELECT book_id FROM offer)
-      ORDER BY f.book_id, array_position(${REASON_ORDER}::text[], f.kind)
+      -- Two followed shelves can hold one book: the reason is then the first by name, every time.
+      ORDER BY f.book_id, array_position(${REASON_ORDER}::text[], f.kind), f.name, f.entity_id
     )
     SELECT n.book_id AS id, b.title, a.name AS author, st.status, n.kind, n.name, n.read, n.total
     FROM n
