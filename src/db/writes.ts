@@ -100,6 +100,9 @@ async function latestRead(tx: Tx, userId: string, bookId: string) {
 /** No start: NULL and `none` (data model 2.17). */
 const NO_START = { startedOn: null, startedOnPrecision: "none" } as const;
 const asStart = (f: Finish) => ({ startedOn: f.on, startedOnPrecision: f.precision });
+/** A read's finish, as `book_status` holds it in step (task 1.17b). */
+const asFinish = (d: { finishedOn: string | null; precision: Precision }) =>
+  ({ finishedOn: d.finishedOn, finishedOnPrecision: d.precision });
 
 /**
  * Set a book's status (task 1.5, R1-03). `read_events` is the log and
@@ -294,12 +297,135 @@ export async function undoBookStatus(userId: string, change: BookStatusChange): 
           .where(mine);
       }
     }
+    // The finish is the latest read's (task 1.17b, D-133): a read re-dated since
+    // this write (`redateBookRead`) keeps its new finish, so the two never disagree.
+    const last = await latestRead(tx, userId, bookId);
+    if (last) await tx.update(bookStatus).set(asFinish(last)).where(mine);
     for (const f of follows) {
       const row = followRow(tx, userId, f.kind, f.id);
       const [current] = await row.get();
       if (current?.state !== "reading") continue;
       if (f.prior === null) await row.drop();
       else await row.put(f.prior);
+    }
+    return true;
+  });
+}
+
+/** A read's two dates as stored (task 1.17b). The read in progress has no finish: NULL and `none`. */
+export type ReadDates = {
+  startedOn: string | null; startPrecision: Precision;
+  finishedOn: string | null; precision: Precision;
+};
+
+/** A re-date of one read, as `redateBookRead` made it: enough for its undo to put it back. */
+export type BookRedate = {
+  bookId: string;
+  /** The `read_events` row re-dated, or null for the read in progress (its start on `book_status`). */
+  readId: number | null;
+  before: ReadDates;
+  after: ReadDates;
+};
+
+export type BookRedateInput = { bookId: string; readId: number | null; start?: Finish; finish?: Finish };
+
+const readOf = (userId: string, bookId: string, readId: number) =>
+  and(eq(readEvents.id, readId), eq(readEvents.userId, userId), eq(readEvents.bookId, bookId));
+
+async function readDates(tx: Tx, userId: string, bookId: string, readId: number): Promise<ReadDates | null> {
+  const [row] = await tx
+    .select({
+      startedOn: readEvents.startedOn, startPrecision: readEvents.startedOnPrecision,
+      finishedOn: readEvents.finishedOn, precision: readEvents.finishedOnPrecision,
+    })
+    .from(readEvents).where(readOf(userId, bookId, readId));
+  return row ? { ...row, startPrecision: row.startPrecision as Precision, precision: row.precision as Precision } : null;
+}
+
+const sameDates = (a: ReadDates, b: ReadDates) => a.startedOn === b.startedOn && a.startPrecision === b.startPrecision
+  && a.finishedOn === b.finishedOn && a.precision === b.precision;
+
+/**
+ * Re-date one read of a book (task 1.17b, D-131): any read, not only the latest.
+ * A date left out stays exactly as stored; the format and the status never change.
+ *
+ * - A `read_events` row (`readId`) gets its start, its finish or both. An earlier
+ *   read changes its own row only. The latest read (the highest id, as
+ *   `saveBookStatus` reads it) also sets `book_status`'s finish, so the two never
+ *   disagree (D-133); `book_status`'s start is the read in progress's, never a
+ *   finished read's, and stays as it is (data model 2.18; owner, 2026-11-09).
+ * - The read in progress (`readId` null) gets a start on `book_status`, only
+ *   while the book is Reading or Listening. This is the start picked right after
+ *   a status change: the status change's own undo puts back the whole row it
+ *   found, so one Undo covers both.
+ *
+ * A start after its finish throws `StartAfterFinish`, and a read in progress
+ * that isn't one throws `RefusedStatus`: nothing is written. Answers null for a
+ * book that is missing or removed, or a read that isn't this book's.
+ */
+export async function redateBookRead(userId: string, input: BookRedateInput): Promise<BookRedate | null> {
+  const { bookId, readId, start, finish } = input;
+  if (!start && !finish) throw new Error("redateBookRead: a start, a finish or both");
+  if (readId === null && (finish || !start)) throw new Error("redateBookRead: the read in progress has a start only");
+  return db.transaction(async (tx) => {
+    if (!(await lockBook(tx, bookId))) return null;
+    const mine = and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId));
+    if (readId === null) {
+      const [row] = await tx
+        .select({ status: bookStatus.status, startedOn: bookStatus.startedOn, startPrecision: bookStatus.startedOnPrecision })
+        .from(bookStatus).where(mine);
+      if (!row || !IN_PROGRESS.includes(row.status)) {
+        throw new RefusedStatus("a start is re-dated on a read in progress, reading or listening");
+      }
+      const before: ReadDates = {
+        startedOn: row.startedOn, startPrecision: row.startPrecision as Precision, finishedOn: null, precision: "none",
+      };
+      await tx.update(bookStatus).set(asStart(start!)).where(mine);
+      return { bookId, readId, before, after: { ...before, startedOn: start!.on, startPrecision: start!.precision } };
+    }
+    const before = await readDates(tx, userId, bookId, readId);
+    if (!before) return null;
+    const started = start ?? { on: before.startedOn, precision: before.startPrecision };
+    const finished = finish ?? { on: before.finishedOn, precision: before.precision };
+    if (startAfterFinish(started, finished)) throw new StartAfterFinish();
+    const after: ReadDates = {
+      startedOn: started.on, startPrecision: started.precision, finishedOn: finished.on, precision: finished.precision,
+    };
+    await tx.update(readEvents).set({ ...asStart(started), ...asFinish(after) }).where(eq(readEvents.id, readId));
+    if ((await latestRead(tx, userId, bookId))?.id === readId) {
+      await tx.update(bookStatus).set(asFinish(after)).where(mine);
+    }
+    return { bookId, readId, before, after };
+  });
+}
+
+/**
+ * Undo one re-date: the read gets back the dates it had, and the latest read's
+ * finish goes back onto `book_status` with it. Refuses, changing nothing, when
+ * the read no longer holds the dates the re-date gave it, or the read in progress
+ * is no longer one.
+ */
+export async function undoBookRedate(userId: string, redate: BookRedate): Promise<boolean> {
+  const { bookId, readId, before, after } = redate;
+  return db.transaction(async (tx) => {
+    if (!(await lockBook(tx, bookId))) return false;
+    const mine = and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId));
+    if (readId === null) {
+      const [row] = await tx
+        .select({ status: bookStatus.status, startedOn: bookStatus.startedOn, startPrecision: bookStatus.startedOnPrecision })
+        .from(bookStatus).where(mine);
+      if (!row || !IN_PROGRESS.includes(row.status)) return false;
+      if (row.startedOn !== after.startedOn || row.startPrecision !== after.startPrecision) return false;
+      await tx.update(bookStatus).set({ startedOn: before.startedOn, startedOnPrecision: before.startPrecision }).where(mine);
+      return true;
+    }
+    const now = await readDates(tx, userId, bookId, readId);
+    if (!now || !sameDates(now, after)) return false;
+    await tx.update(readEvents)
+      .set({ startedOn: before.startedOn, startedOnPrecision: before.startPrecision, ...asFinish(before) })
+      .where(eq(readEvents.id, readId));
+    if ((await latestRead(tx, userId, bookId))?.id === readId) {
+      await tx.update(bookStatus).set(asFinish(before)).where(mine);
     }
     return true;
   });

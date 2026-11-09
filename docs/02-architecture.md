@@ -123,7 +123,8 @@ Every page. One dashboard per medium, with the lists one level down (design §11
 | `/session` | Reading sessions: after-the-fact minutes entry, attach to a book or run; feeds Settings → *Measured from sessions* (the timer is 6.12, D-8) |
 
 **Route handlers** (`src/app/api/`): `/api/progress/{issue,range,book}`,
-`/api/runs/[runId]/issues`, `/api/metron/search`, `/api/books`,
+`/api/progress/book/read` (a book's reads, and re-dating any one of them; task
+1.17b), `/api/runs/[runId]/issues`, `/api/metron/search`, `/api/books`,
 `/api/books/bulk`, `/api/books/search`, `/api/shelves`, `/api/inbox`,
 `/api/settings`, `/api/export`, `/api/login`, `/api/health`. A page never links to one with
 `<Link>`, because a prefetch runs it (§ Operational posture).
@@ -167,7 +168,7 @@ tables.
 | F-14 No cycles | `path` | `etl/extract.py`'s cycle report (2.11a), `/comics/[runId]/path` | `prereqs`, `run_ancestors()` |
 | F-15 Add books | `add`, `blist` | `/books/add`, `/api/books`, `/api/books/bulk`, `/api/books/search` | `books`, `authors`, `book_series`, `open_library_cache` |
 | F-16 Inbox | `capture` | `/inbox`, `/api/inbox` | `inbox` |
-| F-17 Reading log | `blist` | `/api/progress/book`, `src/lib/finish-date.ts` | `book_status`, `read_events`, `book_reads` |
+| F-17 Reading log | `blist` | `/api/progress/book`, `/api/progress/book/read`, `src/lib/finish-date.ts` | `book_status`, `read_events`, `book_reads` |
 | F-18 To-read levels | `blist`, `moveplan` | `/books/list` | `reading_plan`, `plan_period`, `to_read_level` |
 | F-19 Clean book catalog | `blist`, `bookdetail` | `etl/extract.py`, Open Library sidecars (1.14), Calibre (1.18) | `books`, `book_series` |
 | F-20 Follows | `shelves` | the follow control (1.15), `/books/series` (5.9) | the follow tables (1.15), `series_progress` |

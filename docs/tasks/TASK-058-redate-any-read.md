@@ -1,14 +1,14 @@
 ---
 id: TASK-058
 title: 1.17b Dates when you start and finish (1 of 2) — re-date any read, the write and its API
-status: Ready
+status: In progress
 depends_on: [TASK-039, TASK-043]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 3f240b2
 ---
 
 # TASK-058 — 1.17b Dates when you start and finish (1 of 2) — re-date any read, the write and its API
@@ -69,9 +69,67 @@ every width.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- TASK-059 needs the API's shape: the re-date route, the `redate` undo payload, the one-Undo rule (keep the status change's `change`, drop the re-date's) and the reads from `GET` on open (approved at plan) → `docs/tasks/TASK-059-*.md` § Context
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-09. **Decision at the gate:** "book_status in step" is the
+**finish only** (owner, 2026-11-09). A Read book's `book_status.started_on` stays NULL /
+`none` (data model 2.18); a read's start lives on its `read_events` row alone. No column.
+
+**Steps**
+
+1. `src/db/queries.ts`: `bookReads(userId, bookId)`: `read_events` of a live book
+   (`books.deleted_at IS NULL`), `book_id` set, ordered by `id` (the log's order, as
+   `latestRead`): `id, format, started_on, started_on_precision, finished_on,
+   finished_on_precision`.
+2. `src/db/writes.ts`: `redateBookRead(userId, { bookId, readId, start?, finish? })`, in
+   one transaction under `lockBook`. `readId` a read of this book: unsent dates kept as
+   stored; `startAfterFinish` → `StartAfterFinish`; the row updated (format untouched); if
+   it is the latest read (highest id), `book_status.finished_on` and precision set to its
+   finish. `readId: null` is the read in progress: start only, status `reading` or
+   `listening`, else `RefusedStatus`; `book_status.started_on` set. Answers a `BookRedate`
+   (`bookId, readId, before, after`), or null for no such book or read.
+3. `undoBookRedate(userId, redate)`: refuses (false) unless the dates are still `after`;
+   puts back `before`, and `before`'s finish on book_status while the read is the latest.
+4. `undoBookStatus`: after restoring, if a read remains, `book_status`'s finish is the
+   latest read's (Read → Reading, re-date the latest read, Undo: never disagree; D-133).
+   Equal to the prior in every case today.
+5. `src/app/api/progress/book/read/route.ts` (new): `GET ?bookId=` → `{ reads }`;
+   `POST { bookId, readId, start?, finish? }` → choices through `resolveStart` /
+   `resolveFinish` (a day after today in Eastern refused), 400 with the reason, 404 for no
+   such book or read, `{ ok, redate }`; `DELETE { redate }` → 200, or 409 when moved on,
+   400 for a malformed payload.
+6. The one Undo: a re-date answers no status change; the status change's own `DELETE`
+   restores the whole prior row and the read it appended or edited, so it covers any
+   re-date after it. TASK-059 keeps the status change's `change` for the toast.
+7. Docs: `docs/02-architecture.md` § 5 route handlers and § 6 F-17 row gain the route;
+   `docs/03-data-model.md` 2.18 "editable while Read" → every read is editable, the latest
+   keeps `book_status`'s finish in step.
+
+**Files**: `src/db/writes.ts`, `src/db/queries.ts`, `src/app/api/progress/book/read/route.ts`
+(new), `test/start-dates.test.ts`, `test/reading-log.test.ts`, `test/audiobooks.test.ts`,
+`docs/02-architecture.md`, `docs/03-data-model.md` (the last two not in "Files likely
+touched": the route and the 2.18 rule this task extends).
+
+**Test strategy**
+
+- AC-1 (write clauses): covered by AC-2 to AC-5 below; browser clauses are TASK-059's.
+- AC-2: `test/start-dates.test.ts` "re-dating the first of two reads changes only its
+  read_events row" (row_to_json snapshots of the second read and book_status); "re-dating
+  the second read sets book_status's finish in step, its start stays none".
+- AC-3: "a re-date with its start after its finish is refused…", "a re-date after today in
+  Eastern is refused…" (fake clock at 03:30Z), each 400 with the reason and snapshots equal.
+- AC-4: "Reading, then its start re-dated, is undone by the status change's one undo".
+- AC-5: `test/reading-log.test.ts` "Read with a start and a finish writes one read_events
+  row carrying both" and "a book's reads list oldest first with format and dates" (query and
+  GET). No column: the diff has no migration and no `schema.ts` change (reviewer).
+- `test/audiobooks.test.ts` "a listen's format survives a re-date".
+- Also: 404 for another book's read, the re-date's own undo and its 409, step 4's case.
+
+**Risks**: a book whose only read is held by its status (workbook, no log row) lists no
+reads; it has one read, so *All reads* never shows, and the date line keeps editing it
+through `POST /api/progress/book`. Comic reads are excluded by `book_id`.
 
 ## Review log
 

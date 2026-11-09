@@ -509,6 +509,11 @@ read_events.started_on   date NULL, started_on_precision  text NOT NULL DEFAULT 
   *Finished* edits its finish. A start after today is refused, as a finish is,
   and so is a start after its finish: two exact days compare as days, and when
   either is `approximate` only the years compare.
+- **Every read is editable** (task 1.17b, D-131): any read's start and finish,
+  rereads included, under the same refusals. An earlier read changes its own
+  `read_events` row only; the latest read also sets `book_status`'s finish, so
+  the two never disagree (D-133). `book_status`'s start stays the read in
+  progress's, never copied from a finished read (owner, 2026-11-09).
 - **Undo** puts back the start and precision that were there, the latest
   read's included.
 
