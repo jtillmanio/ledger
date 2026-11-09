@@ -16,6 +16,8 @@ npm run test:all            # test:no-e2e, then test:e2e:build: what CI runs (ve
 npm run test:no-e2e         # test:tokens + check:migrations + test:db:reset + vitest + test:views + test:etl:
                             # the round chain's suites, which re-run after every fix (D-97)
 npm run test:db:reset       # rebuild the TEST database: drizzle-kit migrate, then etl/views.sql
+node scripts/worktree-slot.mjs  # worktree setup runs it: this worktree's own test database and e2e port
+                            # in .env.worktree (ledger_test_2 / 3200, ...), loaded before .env; no-op in the main checkout
 npm run lint                # eslint, zero warnings
 npx tsc --noEmit            # typecheck
 node scripts/tsc-brief.mjs  # the same typecheck, first 10 errors only (the post-edit hook's verify.fast)
@@ -100,7 +102,7 @@ npm run test:views          # etl/test_views.sql against TEST_DATABASE_URL; roll
 npm run test:etl            # py -m unittest over etl/test_*.py, no network
 npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in Chromium, the core projects (D-80:
                             # w390 light and dark, w768, w1280, reduced motion, touch), against `next dev` on
-                            # TEST_DATABASE_URL (port 3199, passcode `e2e-passcode`); refuses without it. Stop
+                            # TEST_DATABASE_URL (port 3199, or a worktree's E2E_PORT; passcode `e2e-passcode`); refuses without it. Stop
                             # `npm run dev` first (both use .next; a dev run deletes .next/dev before it starts). Once per machine, and after a Playwright bump:
                             # `npx playwright install chromium`. Screenshots: test-results/screens/ (ignored). Pass
                             # arguments after --, e.g. `-- --project=w390-light`. A check that needs one project is

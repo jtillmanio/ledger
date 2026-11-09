@@ -1206,6 +1206,18 @@ again (a suite that says `ECONNREFUSED` means it is down), or register it once
 as a service from an elevated shell:
 `pg_ctl register -N ledger-test -D C:\Development\pgdata\ledger-test`.
 
+**Two sessions at once (`workflow.wipLimit` 2).** Each worktree Claude works
+in gets a test database and browser-suite port of its own, so one session's
+tests never truncate the other's: worktree setup runs
+`node scripts/worktree-slot.mjs`, which writes the worktree's `.env.worktree`
+(`ledger_test_2` and port 3200, the next free pair after that), loaded before
+`.env`. The main checkout keeps `ledger_test` and port 3199. Each extra
+database is created once, on the same server:
+`createdb -h localhost -p 5433 -U postgres ledger_test_2` (done 2026-11-09);
+for two worktrees at once, also `ledger_test_3`. The script names the one to
+create when every slot is taken. Option A has no such slots: keep one session
+at a time there, or create the extra databases on the same branch.
+
 Then add it to `.env` (never `.env.example`):
 
 ```
