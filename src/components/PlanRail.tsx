@@ -120,7 +120,7 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
     <ul className="qlegend">
       <li><i className="lg est" aria-hidden="true" /><span className="mono">~</span> estimated</li>
       <li><i className="lg ovr" aria-hidden="true" /> over capacity</li>
-      <li id={note}><i className="lg stk" aria-hidden="true" /><span className="mono">+N</span> merged under 24px. {STACK_REASON}</li>
+      <li id={note}><i className="lg stk" aria-hidden="true" /><span className="mono">+N</span> merged under 24px, or folded past the top. {STACK_REASON}</li>
       <li><i className="lg nqt" aria-hidden="true" /> year, no quarter</li>
     </ul>
     </>
