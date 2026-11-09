@@ -589,6 +589,10 @@ describe("a re-date's own undo", () => {
     const { redate: r } = await redate({ readId: first, finish: day("2025-01-25") });
     const bent = { ...(r as Record<string, unknown>), before: { startedOn: "2025-01-02", startPrecision: "none" } };
     expect((await undoRedate(bent)).status).toBe(400);
+    // Dates no write could store: a start after its finish.
+    const { before } = r as { before: Record<string, unknown> };
+    const late = { ...(r as Record<string, unknown>), before: { ...before, startedOn: "2025-02-01", startPrecision: "exact" } };
+    expect((await undoRedate(late)).status).toBe(400);
     expect((await undoRedate(null)).status).toBe(400);
     expect((await events())[0]).toMatchObject({ finished: "2025-01-25" });
   });

@@ -297,8 +297,9 @@ export async function undoBookStatus(userId: string, change: BookStatusChange): 
           .where(mine);
       }
     }
-    // The finish is the latest read's (task 1.17b, D-133): a read re-dated since
-    // this write (`redateBookRead`) keeps its new finish, so the two never disagree.
+    // The finish is the latest read's (task 1.17b, D-133), so the two never
+    // disagree: a read this write didn't touch, re-dated since (`redateBookRead`),
+    // keeps its new finish here too. A read it re-dated got its old dates back above.
     const last = await latestRead(tx, userId, bookId);
     if (last) await tx.update(bookStatus).set(asFinish(last)).where(mine);
     for (const f of follows) {

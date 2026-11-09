@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { RefusedStatus, redateBookRead, undoBookRedate, type BookRedate } from "@/db/writes";
 import { bookReads } from "@/db/queries";
 import { apiUserId, unauthorized } from "@/lib/auth";
-import { isFinish, resolveFinish, resolveStart, type Finish } from "@/lib/finish-date";
+import { isFinish, resolveFinish, resolveStart, startAfterFinish, type Finish } from "@/lib/finish-date";
 
 export const runtime = "nodejs";
 
@@ -85,12 +85,14 @@ function bad(error: string) {
 
 const isId = (n: unknown) => Number.isInteger(n) && (n as number) > 0 && (n as number) <= 2147483647;
 
-/** A read's dates as stored; the read in progress's carry no finish. */
+/** A read's dates as a write could store them: each pair valid, the start not
+ * after the finish; the read in progress's carry no finish. */
 function validDates(d: unknown, inProgress: boolean): boolean {
   if (typeof d !== "object" || d === null) return false;
   const o = d as Record<string, unknown>;
+  const start = { on: o.startedOn, precision: o.startPrecision };
   const finish = { on: o.finishedOn, precision: o.precision };
-  if (!isFinish({ on: o.startedOn, precision: o.startPrecision }) || !isFinish(finish)) return false;
+  if (!isFinish(start) || !isFinish(finish) || startAfterFinish(start, finish)) return false;
   return !inProgress || finish.precision === "none";
 }
 
