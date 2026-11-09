@@ -2009,7 +2009,7 @@ a soft-deleted book. The export test passes with `shelf_follows`. In the
 browser (0.11), the offer's chips are reachable by keyboard and axe passes.
 Screenshots at 360px and 1280px.
 
-### ☐ 2.2d Next in what you're reading, on the dashboard · M
+### ☑ 2.2d Next in what you're reading, on the dashboard · M
 Owner intake, 2026-11-02 (owner: *how is current universe/author reading
 showing up on continue reading or "Add books to plan" recommendation?*; asked,
 the owner chose the dashboard and the plan sheet). D-108. Depends on 2.2 (the
@@ -2968,6 +2968,16 @@ D-104. Depends on 2.3 (the picker and its writes), 2.10 (the page and its
 read only what you follow as *Reading*. A series or shelf you happen to have
 read one book of is no longer inferred into them; it shows nowhere on the
 sheet unless another group lists it.
+
+*From TASK-050 (2.2d, PR #212):* `follow_next`
+as built is one row per follow (`kind` subseries, series, universe, author or
+shelf), with the follow's `read`, `total` and `last_read_on` (its latest dated
+finish); a book with no status row counts unread. One book can be next in
+several follows (its series and its universe); the dashboard's `keepGoing`
+lists it once, with the narrowest reason, and leaves out the top of the
+quarter's plan, but the view itself does neither, so the sheet's groups choose
+for themselves. Subseries rows exist too: group 1 can read them beside series
+and universe.
 
 There is no plan object to create, and this task adds none: a year's plan is
 the `reading_plan` rows whose period falls in it (D-37). What's missing is a

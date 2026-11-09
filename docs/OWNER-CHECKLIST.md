@@ -232,6 +232,17 @@ Planning-doc edits and candidate decisions waiting for your yes
 session, and that session or the next `/track-follow-ups` run makes the change
 and notes where it went.
 
+- [ ] Record a decision in `docs/review/decisions.md` (next free D-n): what is
+      next in a follow (2.2d). A follow's next book is its lowest-ranked live
+      book still open, a list of the statuses that count (to read, unlisted,
+      no status row, reading, listening), so read, DNF and any later status
+      (5.15's parking) are skipped without a view change; a book with no
+      status row counts unread; one in hand at the front means no row.
+      *Or keep going* lists a book once, with its narrowest reason
+      (subseries, series, universe, author, shelf), never the top of the
+      plan. You answered these at TASK-050's plan gate, 2026-11-09 (from
+      TASK-050, PR #212).
+
 - [ ] Update `docs/05-roadmap.md` line 36 (the preamble on `docs/03-data-model.md`):
       "its decisions keep their numbers, 2.1–2.21" becomes 2.1–2.22, now
       that 1.23 added decision 2.22 (from TASK-043, PR #190).

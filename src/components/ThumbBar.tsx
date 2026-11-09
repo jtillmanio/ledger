@@ -110,9 +110,10 @@ function useRefocus(kind: "finish" | "start") {
  * A book write from the dashboard's verbs (task 2.2): through `useBookWrite`, the Library's and
  * In flight's own write, so the toast, its Undo and the finish offer are theirs (2.2c, 2.2f,
  * 2.2h). A refused or failed write says so with *Retry* and changes nothing (R1-07). Held from
- * the tap: a second tap writes nothing.
+ * the tap: a second tap writes nothing. *Or keep going*'s **Start** (2.2d) writes through it too,
+ * so focus lands on the verb that replaces it.
  */
-function useBookVerb(args: Omit<Parameters<ReturnType<typeof useBookWrite>>[0], "onSaved" | "onUndone">,
+export function useBookVerb(args: Omit<Parameters<ReturnType<typeof useBookWrite>>[0], "onSaved" | "onUndone">,
   focus: { saved: "finish" | "start"; undone: "finish" | "start" }) {
   const write = useBookWrite();
   const { fail } = useUndo();

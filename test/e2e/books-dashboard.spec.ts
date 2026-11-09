@@ -54,6 +54,8 @@ async function withSql<T>(work: (sql: TestSql) => Promise<T>): Promise<T> {
 
 const clean = () => withSql(async (sql) => {
   await sql`DELETE FROM books WHERE id LIKE 'e2e-dash-%'`;
+  // 2.2d's series, after its books; its follow goes with it (cascade).
+  await sql`DELETE FROM book_series WHERE id LIKE 'e2e-dash-%'`;
   await sql`DELETE FROM authors WHERE id LIKE 'e2e-dash-%'`;
 });
 
@@ -133,6 +135,42 @@ async function seed({ reading = false, between = false }: Seed) {
       await book("e2e-dash-hero", HERO, 146_000, 468);
       await status("e2e-dash-hero", "reading", daysAgo(14));
     }
+  });
+}
+
+const SAGA_NAME = "E2E Dash Saga";
+const SAGA = ["E2E Dash Saga One", "E2E Dash Saga Two", "E2E Dash Saga Three", "E2E Dash Saga Four"];
+const sagaId = (n: number) => `e2e-dash-saga-${n}`;
+
+/**
+ * 2.2d's fixture, on top of `seed`: a series followed as Reading, books 1–4 at positions 1–4.
+ * One is read (40 days back); Two is read (20 days back), or, `twoInHand`, Reading since 3 days
+ * back, the newest start, so the hero; Three and Four are to read. Its reads are older than
+ * `seed`'s, so *Between books* still names Two of the quarter.
+ */
+async function seedSaga({ twoInHand }: { twoInHand: boolean }) {
+  await withSql(async (sql) => {
+    await sql`INSERT INTO book_series (id, name) VALUES ('e2e-dash-saga', ${SAGA_NAME})`;
+    for (const [i, title] of SAGA.entries()) {
+      await sql`INSERT INTO books (id, title, series_id, series_position, page_count) VALUES (${sagaId(i + 1)}, ${title}, 'e2e-dash-saga', ${i + 1}, 320)`;
+    }
+    const read = async (n: number, on: string) => {
+      await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, format)
+                VALUES (${E2E_USER}, ${sagaId(n)}, ${on}, 'exact', 'text')`;
+      await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+                VALUES (${E2E_USER}, ${sagaId(n)}, 'read', ${on}, 'exact')`;
+    };
+    await read(1, daysAgo(40));
+    if (twoInHand) {
+      await sql`INSERT INTO book_status (user_id, book_id, status, started_on, started_on_precision)
+                VALUES (${E2E_USER}, ${sagaId(2)}, 'reading', ${daysAgo(3)}, 'exact')`;
+    } else {
+      await read(2, daysAgo(20));
+    }
+    for (const n of [3, 4]) {
+      await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${sagaId(n)}, 'to_read')`;
+    }
+    await sql`INSERT INTO series_follows (user_id, series_id, state) VALUES (${E2E_USER}, 'e2e-dash-saga', 'reading')`;
   });
 }
 
@@ -400,6 +438,75 @@ test.describe("between books", () => {
   });
 });
 
+// Task 2.2d (F-68, D-108): what is next in what you follow as Reading. Untagged tests run in
+// every project (each width, light and dark, reduced motion), so their screenshots are the
+// feel pass's; reduced transparency is the describe at the end of this file.
+test.describe("next in what you follow as Reading (2.2d)", () => {
+  test("between books, Or keep going lists book 3 with its reason and a named, 44px Start (AC-1, AC-4)", async ({ page }, info) => {
+    await seed({ between: true });
+    await seedSaga({ twoInHand: false });
+    await open(page);
+    const keep = page.locator(".keep-going");
+    await expect(keep.locator(".offer-kick")).toHaveText("Or keep going");
+    await expect(keep.getByRole("list", { name: "Or keep going" }).getByRole("listitem")).toHaveCount(1);
+    await expect(keep.locator(".keep-title")).toHaveText([SAGA[2]]);
+    await expect(keep.locator(".keep-why")).toHaveText([`Next in ${SAGA_NAME} · 2 of 4 read`]);
+    const start = keep.getByRole("button", { name: `Start ${SAGA[2]}` });
+    await expect(start).toBeVisible();
+    expect((await start.boundingBox())!.height, "Start is 44px or more").toBeGreaterThanOrEqual(44);
+    // The offer is still the primary, and Pick something else stays.
+    await expect(page.locator(".offer-title")).toHaveText(ONE);
+    await expect(primary(page)).toHaveAccessibleName(`Start ${ONE}`);
+    await expect(page.getByRole("link", { name: "Pick something else" })).toBeVisible();
+    // Grey: the reason is --muted, never amber or red (the floor checks --danger and 4.5:1).
+    expect((await computedStyle(keep.locator(".keep-why"), ["color"])).color).toBe(await tokenColour(page, "--muted"));
+    await floor(page);
+    await screenshot(page, info, "books-keep-going");
+  });
+
+  test("Start sets book 3 Reading, and Undo restores to_read (AC-1)", ONCE, async ({ page }) => {
+    await seed({ between: true });
+    await seedSaga({ twoInHand: false });
+    await open(page);
+    const status = () => withSql((sql) => sql`SELECT status, started_on_precision FROM book_status
+      WHERE user_id = ${E2E_USER} AND book_id = ${sagaId(3)}`);
+    await page.locator(".keep-going").getByRole("button", { name: `Start ${SAGA[2]}` }).click();
+    await expect(page.locator(".now-name")).toHaveText(SAGA[2]);
+    expect(await status()).toEqual([{ status: "reading", started_on_precision: "exact" }]);
+    // Now, reading book 3, names book 4 as next.
+    await expect(page.locator(".now-next")).toHaveAccessibleName(`Next in ${SAGA_NAME}: ${SAGA[3]}`);
+    await page.locator(".toast").getByRole("button", { name: "Undo" }).click();
+    await expect(page.locator(".between-title")).toHaveText("Between books.");
+    await expect(page.locator(".keep-going .keep-title")).toHaveText([SAGA[2]]);
+    expect(await status()).toEqual([{ status: "to_read", started_on_precision: "none" }]);
+  });
+
+  test("reading book 2, Now shows one Next in line naming book 3, a link to it (AC-1, AC-4)", async ({ page }, info) => {
+    await seed({ reading: true });
+    await seedSaga({ twoInHand: true });
+    await open(page);
+    await expect(page.locator(".now-name")).toHaveText(SAGA[1]);
+    const next = page.locator(".now-hero").getByRole("link", { name: `Next in ${SAGA_NAME}: ${SAGA[2]}` });
+    await expect(page.locator(".now-next")).toHaveCount(1);
+    await expect(next).toHaveAttribute("href", `/books/list?q=${encodeURIComponent(SAGA[2]).replace(/%20/g, "+")}`);
+    expect((await next.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect((await computedStyle(page.locator(".now-next-text"), ["color"])).color).toBe(await tokenColour(page, "--ink-2"));
+    // Nothing to keep going with while a book is in hand.
+    await expect(page.locator(".keep-going")).toHaveCount(0);
+    await floor(page);
+    await screenshot(page, info, "books-next-in");
+  });
+
+  test("with nothing followed as Reading, there is no Next in and no Or keep going", ONCE, async ({ page }) => {
+    await seed({ between: true });
+    await seedSaga({ twoInHand: false });
+    await withSql((sql) => sql`UPDATE series_follows SET state = 'tracking' WHERE user_id = ${E2E_USER} AND series_id = 'e2e-dash-saga'`);
+    await open(page);
+    await expect(page.locator(".between-title")).toHaveText("Between books.");
+    await expect(page.locator(".keep-going, .now-next")).toHaveCount(0);
+  });
+});
+
 test.describe("never finished, nothing planned", () => {
   test.beforeEach(seedEmpty);
 
@@ -462,9 +569,14 @@ test.describe("the side rail and Plan's reveal (FP-D15)", () => {
 // The UX floor's reduced-transparency pass (docs/04-design.md § 10), once, at the phone and at 1280:
 // the glass (the phone's bar, the desktop's header band) falls back to --surface in both states.
 test.describe("reduced transparency", () => {
-  for (const [state, seedState] of [["reading", { reading: true }], ["between", { between: true }]] as const) {
+  // 2.2d's two states too: reading with *Next in*, and between books with *Or keep going*.
+  for (const [state, seedState, saga] of [
+    ["reading", { reading: true }, null], ["between", { between: true }, null],
+    ["next-in", { reading: true }, { twoInHand: true }], ["keep-going", { between: true }, { twoInHand: false }],
+  ] as const) {
     test(`${state}: the glass is solid --surface, with a screenshot at 390 and 1280 (AC-1, AC-5)`, ONCE, async ({ page, context }, info) => {
       await seed(seedState);
+      if (saga) await seedSaga(saga);
       const cdp = await context.newCDPSession(page);
       await cdp.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-transparency", value: "reduce" }] });
       for (const [width, glass] of [[390, ".bar"], [1280, ".pagehead"]] as const) {

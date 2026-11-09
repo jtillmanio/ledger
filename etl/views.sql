@@ -721,6 +721,83 @@ LEFT JOIN shelf_follows f ON f.shelf_id = s.id
 WHERE s.kind = 'books'
 GROUP BY s.user_id, s.id, s.name, f.state;
 
+-- What is next in what you follow as Reading (task 2.2d, D-108). follow_queue
+-- holds, for each subseries, series, universe, author and books shelf whose
+-- follow_state is 'reading' (read from the progress views, so a stored 'off'
+-- is no follow), every live book of it still open, ranked: by
+-- subseries_position, series_position or universe_position, a shelf's
+-- ordinal, or an author's published_year, a missing one last, then title.
+-- Open is a list of the statuses that count, not of those that don't: to read,
+-- unlisted, no status row (unread, as the progress views count it), reading
+-- and listening. Read (a listen included, 1.23), DNF, and any status added
+-- later (5.15's parking) are skipped without touching this view. read and
+-- total are the progress view's (a series' stated total_books); last_read_on
+-- is the follow's latest dated finish over its live books (book_reads), NULL
+-- with none: the dashboard lists the follow most recently read in first.
+-- Nothing is stored (hard rule 2).
+CREATE OR REPLACE VIEW follow_queue AS
+WITH follows AS (
+  SELECT p.user_id, 'subseries'::text AS kind, p.subseries_id AS entity_id, p.name,
+         p.books_read::int AS read, p.books_listed::int AS total
+  FROM subseries_progress p WHERE p.follow_state = 'reading'
+  UNION ALL
+  SELECT p.user_id, 'series', p.series_id, p.name, p.books_read::int, p.total_books::int
+  FROM series_progress p WHERE p.follow_state = 'reading'
+  UNION ALL
+  SELECT p.user_id, 'universe', p.universe_id, p.name, p.books_read::int, p.books_listed::int
+  FROM universe_progress p WHERE p.follow_state = 'reading'
+  UNION ALL
+  SELECT p.user_id, 'author', p.author_id, p.name, p.books_read::int, p.books_listed::int
+  FROM author_progress p WHERE p.follow_state = 'reading'
+  UNION ALL
+  SELECT p.user_id, 'shelf', p.shelf_id, p.name, p.books_read::int, p.books_listed::int
+  FROM shelf_progress p WHERE p.follow_state = 'reading'
+), members AS (
+  -- Each follow's live books, with the place its kind orders them by.
+  SELECT f.user_id, f.kind, f.entity_id, b.id AS book_id, b.title, b.subseries_position::float8 AS pos
+  FROM follows f JOIN books b ON f.kind = 'subseries' AND b.subseries_id = f.entity_id AND b.deleted_at IS NULL
+  UNION ALL
+  SELECT f.user_id, f.kind, f.entity_id, b.id, b.title, b.series_position::float8
+  FROM follows f JOIN books b ON f.kind = 'series' AND b.series_id = f.entity_id AND b.deleted_at IS NULL
+  UNION ALL
+  SELECT f.user_id, f.kind, f.entity_id, b.id, b.title, b.universe_position::float8
+  FROM follows f JOIN books b ON f.kind = 'universe' AND b.universe_id = f.entity_id AND b.deleted_at IS NULL
+  UNION ALL
+  SELECT f.user_id, f.kind, f.entity_id, b.id, b.title, b.published_year::float8
+  FROM follows f JOIN books b ON f.kind = 'author' AND b.author_id = f.entity_id AND b.deleted_at IS NULL
+  UNION ALL
+  SELECT f.user_id, f.kind, f.entity_id, b.id, b.title, sb.ordinal::float8
+  FROM follows f JOIN shelf_books sb ON f.kind = 'shelf' AND sb.shelf_id = f.entity_id
+  JOIN books b ON b.id = sb.book_id AND b.deleted_at IS NULL
+), last_read AS (
+  SELECT m.user_id, m.kind, m.entity_id, max(r.finished_on) AS last_read_on
+  FROM members m JOIN book_reads r ON r.user_id = m.user_id AND r.book_id = m.book_id
+  WHERE r.finished_on IS NOT NULL
+  GROUP BY m.user_id, m.kind, m.entity_id
+), open AS (
+  SELECT m.*, st.status
+  FROM members m
+  LEFT JOIN book_status st ON st.user_id = m.user_id AND st.book_id = m.book_id
+  WHERE st.status IS NULL OR st.status IN ('to_read', 'unlisted', 'reading', 'listening')
+)
+SELECT o.user_id, o.kind, o.entity_id, f.name, o.book_id, o.status,
+       row_number() OVER (PARTITION BY o.user_id, o.kind, o.entity_id
+                          ORDER BY o.pos NULLS LAST, o.title, o.book_id)::int AS rank,
+       f.read, f.total, lr.last_read_on
+FROM open o
+JOIN follows f ON f.user_id = o.user_id AND f.kind = o.kind AND f.entity_id = o.entity_id
+LEFT JOIN last_read lr ON lr.user_id = o.user_id AND lr.kind = o.kind AND lr.entity_id = o.entity_id;
+
+-- Each follow's next book (task 2.2d, D-108): its first open book, listed only
+-- when it is unread (to read, unlisted, or no status). One in hand (reading or
+-- listening) means you are already on it: no row. A follow with nothing open
+-- has none either. The dashboard's *Or keep going* reads it, and so will
+-- 2.10b's plan sheet, so the two can't disagree.
+CREATE OR REPLACE VIEW follow_next AS
+SELECT q.user_id, q.kind, q.entity_id, q.name, q.book_id, q.read, q.total, q.last_read_on
+FROM follow_queue q
+WHERE q.rank = 1 AND (q.status IS NULL OR q.status IN ('to_read', 'unlisted'));
+
 -- Not here yet: show_progress and franchise_progress arrive with task 8.1,
 -- because titles, seasons and season_status do not exist until then. When they
 -- do, show_progress.state must be

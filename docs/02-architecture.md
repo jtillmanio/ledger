@@ -214,7 +214,7 @@ tables.
   skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
   page within 1 s. What holds that, and the test that fails if it slips:
   - **Queries per page, in one wave.** `/comics` 7, `/comics/runs` 2, a run 3,
-    `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/books` 9, `/inbox` 2, `/settings` 2, `/watch` none, `/login` none, `/` none (a redirect), each page's queries started together
+    `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/books` 10, `/inbox` 2, `/settings` 2, `/watch` none, `/login` none, `/` none (a redirect), each page's queries started together
     (`test/query-budget.test.ts`, which counts them). A query that must wait on
     another raises a page's waves; raising either number needs a reason here.
     The dashboard (then `/`) and `/books/list` went from 4 to 5 with the inbox
@@ -362,9 +362,12 @@ tables.
     (median of three; accessibility 100, CLS 0.002), so its budget is that plus
     about 5%: 19,000 bytes and 36 requests, with JS at `/books/status`' 175,000
     (its client parts: the shelf's pager, On deck's **Plan**, the finish and
-    start verbs). Its nine queries are
+    start verbs). Its queries are
     one wave: `planCapacity` takes the page's settings read, so a year with
-    nothing planned costs no second round trip.
+    nothing planned costs no second round trip. Task 2.2d took it from 9 to 10:
+    *Or keep going* reads `follow_next` beside the rest, leaving out the
+    quarter's offer by `quarterShelf`'s own rule rather than waiting for it,
+    and Now's *Next in* is part of `booksInHand`'s read, not a query of its own.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 

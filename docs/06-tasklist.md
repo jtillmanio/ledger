@@ -359,7 +359,7 @@ with the task that first reads it.
 | ✅ | 2.2 → TASK-049 | Books dashboard | M |  | 1.7, 1.8, 2.1 |
 | ✅ | 2.2b → TASK-051 | The plan rail | M |  | 2.2 |
 | ✅ | 2.2c → TASK-048 | Follow what you're reading: the control, and an offer when you finish | M |  | 1.15, 1.5 |
-|  | 2.2d → TASK-050 | Next in what you're reading, on the dashboard | M |  | 2.2, 2.2c |
+| ✅ | 2.2d → TASK-050 | Next in what you're reading, on the dashboard | M |  | 2.2, 2.2c |
 | ✅ | 2.2e → TASK-047 | Library: its own page, sorted as well as filtered | S |  | — |
 | ✅ | 2.2f → TASK-054 | Finish a book from In flight | S |  | 1.9, 1.5, 2.2c |
 |  | 2.2g → TASK-056 | Where the book sits, in Now | M |  | 2.2, 2.2h |
