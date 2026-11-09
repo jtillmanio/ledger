@@ -120,7 +120,8 @@ export function layoutColumn(books: RailBook[], { length, scale, capacity, min =
 /**
  * A column holds `scale` words: the scale and the rule never move for what a plan holds. The first book
  * that would end past the top, and every book after it, fold into one stack that runs from where that
- * book starts to the top. Only what is drawn of it can be over.
+ * book starts to the top; one book alone stays a block, clipped there (owner, at review). Only what is
+ * drawn of it can be over.
  */
 function foldOverflow(items: RailItem[], { length, perWord, scale, capacity }: { length: number; perWord: number; scale: number; capacity: number }): RailItem[] {
   const at = items.findIndex((i) => i.start + i.size > length + 1e-6);
@@ -130,11 +131,14 @@ function foldOverflow(items: RailItem[], { length, perWord, scale, capacity }: {
   const words = books.reduce((n, b) => n + b.words, 0);
   const startWords = rest[0].start / perWord;
   const overWords = Math.max(0, Math.min(startWords + words, scale) - Math.max(startWords, capacity));
-  const fold: RailStack = {
-    kind: "stack", books, count: books.length, words, fold: true,
+  const placed = {
     start: rest[0].start, size: length - rest[0].start, overSize: overWords * perWord, over: overWords > 0,
     split: overWords > 0 && startWords < capacity ? (capacity - startWords) * perWord : null,
-  };
+  } satisfies Placed;
+  // One book alone past the top is not a stack to fold: it stays its own block (its name, its tap),
+  // drawn from where its words start to the top of the column.
+  if (rest.length === 1 && rest[0].kind === "block") return [...items.slice(0, at), { ...rest[0], ...placed }];
+  const fold: RailStack = { kind: "stack", books, count: books.length, words, fold: true, ...placed };
   return [...items.slice(0, at), fold];
 }
 

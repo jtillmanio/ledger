@@ -165,7 +165,8 @@ function Item({ item, length, axis, lane = false, inHand, note }: {
       <button type="button" className={cls("qb", "stack", item.over && "over", small && "sm")} style={style}
         aria-label={stackName(item.books)} aria-disabled="true" aria-describedby={note}>
         {body}
-        <StackLabel stack={item} short={axis === "row" && item.size < STACK_WORDS_PX} lane={lane} />
+        {/* On the strip a stack under 24px would cover its neighbour's label: its name says the count. */}
+        {!(axis === "row" && small) && <StackLabel stack={item} short={axis === "row" && item.size < STACK_WORDS_PX} lane={lane} />}
       </button>
     );
   }

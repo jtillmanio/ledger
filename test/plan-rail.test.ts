@@ -137,7 +137,7 @@ describe("the layout (AC-2)", () => {
 
 describe("a column holds 1000k: what runs past its top folds into one +N more stack", () => {
   it("keeps the scale and folds the books that would pass the top, from the first one that does", () => {
-    // 400k, 300k, 200k fill 900k; 150k would end at 1050k and 100k after it: both fold. The rule stays at 760k.
+    // 400k, 300k, 200k fill 900k; 150k would end at 1050k and 120k after it: both fold. The rule stays at 760k.
     const items = layoutColumn(
       [book("a", 400_000), book("b", 300_000), book("c", 200_000), book("d", 150_000), book("e", 120_000)],
       { ...PHONE, capacity: 760_000 },
@@ -158,13 +158,38 @@ describe("a column holds 1000k: what runs past its top folds into one +N more st
   });
 
   it("hatches a folded stack only where it passes the rule, up to the top of the column", () => {
-    const items = layoutColumn([book("a", 400_000), book("b", 400_000), book("c", 300_000)], { ...PHONE, capacity: 760_000 });
+    const items = layoutColumn(
+      [book("a", 400_000), book("b", 400_000), book("c", 300_000), book("d", 200_000)],
+      { ...PHONE, capacity: 760_000 },
+    );
     const more = items[2];
     expect(more.kind === "stack" && more.fold).toBe(true);
     // c starts at 800k, past the 760k rule: all of what is drawn of it is over.
     expect(more.over).toBe(true);
     expect(more.overSize).toBeCloseTo(more.size, 6);
     expect(more.split).toBeNull();
+  });
+
+  it("keeps a lone book past the top as its own block, clipped there, so it keeps its name and its tap", () => {
+    const items = layoutColumn([book("a", 900_000), book("b", 150_000)], { ...PHONE, capacity: 760_000 });
+    expect(items.map((i) => i.kind)).toEqual(["block", "block"]);
+    const b = items[1];
+    if (b.kind !== "block") throw new Error("not a block");
+    expect(b.book.id).toBe("b");
+    // It is drawn from where its words start to the top of the column, not to the end of its words.
+    expect(b.start).toBeCloseTo(px(900_000), 6);
+    expect(b.start + b.size).toBeCloseTo(230, 6);
+    // Past the rule all the way: what is drawn of it is over.
+    expect(b.over).toBe(true);
+    expect(b.overSize).toBeCloseTo(b.size, 6);
+  });
+
+  it("clips a lone straddling book's hatch to what is drawn: the rule is still where its words cross it", () => {
+    // 600k, then 500k: it starts under the 760k rule and would end past the top at 1100k.
+    const [, b] = layoutColumn([book("a", 600_000), book("b", 500_000)], { ...PHONE, capacity: 760_000 });
+    expect(b.split).toBeCloseTo(px(160_000), 6);
+    expect(b.overSize).toBeCloseTo(px(240_000), 6);
+    expect(b.split! + b.overSize).toBeCloseTo(b.size, 6);
   });
 
   it("folds a fifth lane taller than the column, smallest last, and counts it against no capacity", () => {
@@ -473,6 +498,26 @@ describe("the strip's stacks", () => {
     // Five 40k books at 760k scale are 15.6px each: one 78px stack, wide enough for '+5 · 200k'.
     const doc = await strip([book("a", 100_000), ...["s1", "s2", "s3", "s4", "s5"].map((id) => book(id, 40_000)), book("z", 120_000)]);
     expect(doc.querySelector("button.stack .ql")?.textContent).toBe("+5 · 200k");
+  });
+});
+
+describe("the strip's tiny stacks", () => {
+  it("a stack drawn under 24px has no chip: it would cover its neighbour's label, so its name carries the count", async () => {
+    const { default: PlanRail } = await import("../src/components/PlanRail");
+    const cap = {
+      period: "2027-Q1", year: 2027, quarter: 1, capacity: 760_000, plannedWords: 190_000, statedWords: 190_000, estimatedWords: 0,
+      books: 4, readBooks: 0, unknownBooks: 0, load: 0.25, estimatedShare: 0,
+    };
+    const window = new Window();
+    // Two 8k books are 3px each of 296 at 760k: one 6px stack beside a 91k block.
+    window.document.body.innerHTML = renderToStaticMarkup(createElement(PlanRail, {
+      axis: "row", year: 2027, quarters: [cap],
+      books: [book("a", 91_000), book("s1", 8_000), book("s2", 8_000), book("z", 83_000)],
+    }));
+    const stack = window.document.querySelector("button.stack");
+    expect(stack?.getAttribute("aria-label")).toBe("2 books, 16k words");
+    expect(stack?.querySelector(".ql")).toBeNull();
+    expect(window.document.querySelector(".qnote")).not.toBeNull();
   });
 });
 

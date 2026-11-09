@@ -46,7 +46,7 @@ const BOOKS: RailBook[] = [
   book("y2", "Year Two", 204_000, "2027"),
   book("y3", "Year Three", 191_000, "2027", { estimated: true }),
   book("y4", "Year Four", 60_000, "2027"),
-  // 455 + 204 + 191 = 850k fills most of the lane's 1000k, so these two (a 160k stack) run past its top and fold.
+  // 455 + 204 + 191 = 850k fills most of the lane's 1000k; this and Year Four are both under 24px, merge into a 160k stack, and that runs past its top, so it folds.
   book("y5", "Year Five", 100_000, "2027"),
 ];
 
