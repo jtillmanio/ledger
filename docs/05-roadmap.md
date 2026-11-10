@@ -1569,7 +1569,7 @@ second changes it and `book_status`. The same control works from *Now* on
 `/books` and from `/books/status`; a search result has none. axe passes at
 every width.
 
-### ☐ 1.29 Refresh production's comics from `Comics.xlsx`, books untouched · M
+### ☑ 1.29 Refresh production's comics from `Comics.xlsx`, books untouched · M
 Owner, 2026-11-08 (D-128). **Before 1.26.** From the books cutover on,
 `LEDGER_LIVE=true` makes `rebuild` and the full `load` refuse, and both would
 truncate every progress table, the books' included. But `Comics.xlsx` stays

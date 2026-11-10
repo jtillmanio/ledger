@@ -58,6 +58,7 @@ to be changed in both.
 | `APP_PASSCODE` | The passcode at sign-in | ✓ | — | Secret: the **Preview** passcode, for Lighthouse | Two values: your real one in Production, a second one in Preview + Development | You choose. Never put the Production one in GitHub |
 | `SESSION_SECRET` | Signs the session cookie | ✓ | — | Secret (unused, see [Loose ends](#loose-ends)) | A different value in each scope | `openssl rand -base64 32` |
 | `LEDGER_LIVE` | `true` makes `load` and `rebuild` refuse | `false` | `false` until cutover, then `true` | Variable, same rule | — | You set it (Step 14) |
+| `LEDGER_COMICS_LIVE` | `true` makes `load:comics` refuse (1.29); `LEDGER_LIVE` doesn't | `false` | `false` until the comics cutover, then `true` | — (Release doesn't read it) | — | You set it (Step 14b) |
 | `LEDGER_LIVE_DB_HOST` | Production's host, so a preview refuses to build against it (not secret) | — | — | — | Preview only | The host part of production's `DATABASE_URL` |
 | `NEON_API_KEY` | Release's snapshots; deleting PR branches | — | — | Secret | — | Neon → Account settings → API keys (`ledger-release`) |
 | `NEON_PROJECT_ID` | Which Neon project (not secret) | — | — | Variable | — | Neon → project → Settings → General |

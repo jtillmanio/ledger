@@ -1542,11 +1542,18 @@ two weeks without opening the books sheet.
 ### Until Step 14b: comics from the sheet
 
 Keep marking comics in `Comics.xlsx`. To bring its changes into production,
-export it, run the comics-only extract and load (1.29; the exact commands are
-in `docs/COMMANDS.md` once 1.29 is built), against `.env.live`. It replaces
-production's comics, read marks included, and never touches a book. A mark
-made in the app's comics screens meanwhile is replaced by the next comics
-load, so make them in the sheet.
+export it over `etl/data/Comics.xlsx`, then run the comics-only extract and
+load (1.29; `docs/COMMANDS.md` § Comics only, after the books cutover):
+
+```powershell
+npm run extract:comics
+npm run load:comics -- -EnvFile .env.live   # type COMICS when it asks
+```
+
+It replaces production's comics, read marks included, in one transaction,
+and never touches a book; `LEDGER_LIVE=true` doesn't stop it. A mark made in
+the app's comics screens meanwhile is replaced by the next comics load (and
+the Up next queue and any eras come back empty), so make them in the sheet.
 
 ## Step 14b — Comics: the last comics load, then run both for a month
 
@@ -1561,8 +1568,8 @@ backup green, and adding a run and marking reads faster than the sheet.
 
 1. A fresh `Comics.xlsx` export, the comics-only extract, and the last
    comics-only load of production (1.29).
-2. **Immediately after,** set `LEDGER_COMICS_LIVE=true` in `.env.live` (and
-   wherever else 1.29 reads it): the comics-only load refuses from then on.
+2. **Immediately after,** set `LEDGER_COMICS_LIVE=true` in `.env.live` (the
+   only place 1.29 reads it): `npm run load:comics` refuses from then on.
 3. Rename the sheet `Comics (archive, to 2026-XX)`, set it **read-only**, and
    put the app URL at the top. Prerequisite and catalog changes are made in the
    app from here (3.1–3.3).
