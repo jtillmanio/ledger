@@ -46,7 +46,7 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 
 | Phase | Goal | Milestones | Done |
 |---|---|---|---|
-| [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6) | 13 / 13 |
+| [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6, 0.13 in M9) | 13 / 14 |
 | [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is two entries (D-128): 1.26 cuts the books over (START-HERE Step 14), after the rest of Phase 1, 2.11a and 1.11 and every entry 1.25's parity audit names for `Books.xlsx`, with the books entries the owner pulled ahead (D-132, D-133, D-139); 1.28 cuts the comics over later, after what it names for `Comics.xlsx`.** | M3–M9 (1.28 in M13) | 40 / 45 |
 | [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 10 / 25 |
 | [3 Editing](#phase-3--editing) | Maintain the catalog in the app: inline edits, runs, prerequisites, eras, detail sheets and adding at scale. | M13–M15 | 0 / 15 |
@@ -217,6 +217,60 @@ build was skipped builds it. A docs-only push after a build is still skipped.
 `scripts/vercel-ignore.mjs`'s header says what `VERCEL_GIT_PREVIOUS_SHA` is.
 *(Check proposed by task 1.4's close-out; the owner agrees it by merging PR #76
 or edits it first.)*
+
+### ☐ 0.13 Gate a preview on what its PR adds, not on a ceiling it must raise · M
+Owner, 2026-11-10 (D-142). 0.10 set each route's budget at its measurement
+plus 20%. Since then seven PRs have raised them (#115, #147, #193, #197, #201, #222, #224),
+the last three by about 5%, under 1% and 51 bytes, so the next feature starts
+at its ceiling and a raise is routine, not a decision. The raise history in
+`docs/02-architecture.md` § Performance budget shows four causes: the headroom
+shrinks with each raise; every route's JS budget carries the shared framework
+and layout chunks (about 140 KB of each route's JS), so one shell change edits
+every row; `/books/list`'s requests count the preview's Open Library
+covers (three requests each, through archive.org), which is the data, not the
+code; and nothing tells a PR that adds weight from the app growing steadily.
+This entry changes what fails the job. What is measured, the PR comment, the
+route handler check, CLS and accessibility stay as 0.10 built them.
+
+- **Growth over main fails.** Against the baseline the report already fetches
+  (main's last green run), a route fails when its JS grows by more than 3,000
+  bytes, its document + RSC by more than 10% and 1,500 bytes, or its requests
+  by more than 3. A PR with the `perf-growth` label passes, and the comment
+  lists that growth as accepted. The owner adds the label; Claude asks for it in
+  the PR body under **Perf growth** with the reason (`docs/GIT-PR.md`), and
+  never adds it. Adding the label re-reports without a new push. With no
+  baseline (none yet, or its artifact expired) the growth check is skipped and
+  the comment says so.
+- **Ceilings are loose, and raised by decision.** `scripts/perf/budget.json`
+  holds the shared JS once (the scripts every measured route loads) and, per
+  route, only that route's own JS, document + RSC and requests. Each is the
+  measurement on this entry's preview plus 25%. A ceiling is raised only with a
+  decision (D-n), not in a feature's PR.
+- **Only the app's requests count.** Requests to another origin (cover images
+  and their redirects) are reported, not budgeted. Document + RSC bytes already
+  leave them out.
+- **The baseline lasts.** The merged numbers artifact (`lighthouse-metrics`,
+  numbers only) is kept 90 days instead of 14. The per-route reports stay at 14:
+  they hold the rendered pages.
+- **The architecture doc keeps the rule, not the history.** § Performance
+  budget keeps the table, the growth limits and how a ceiling is raised. Its
+  paragraphs on each raise, PR #80 to #224, move to a new
+  `docs/perf-budget-history.md` (`docs/archive/` is frozen), which the section
+  links.
+- **After 1.30**, so that 1.30's budgets land first and this entry measures from
+  them.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first)
+`test/perf.test.ts` covers the growth gate on fixture metrics: a route 3,001
+bytes of JS over the baseline fails, naming the route, the growth and the
+baseline's PR, and 3,000 passes; the `perf-growth` label turns that failure into
+accepted growth in the comment; no baseline skips the check and the comment says
+so; a request to another origin counts toward no budget. `scripts/perf/budget.json`
+holds the shared JS once and `test/perf.test.ts` holds the table in
+`docs/02-architecture.md` to it. On a throwaway branch, a client import of
+5 KB or more on one route fails the Lighthouse job with that route named, and
+adding the label turns the job green with no new push. The job passes on this
+entry's own PR, and `lighthouse-metrics` is kept 90 days.
 
 ---
 
