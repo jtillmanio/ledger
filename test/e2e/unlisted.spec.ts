@@ -15,6 +15,8 @@ import {
 
 // Writes: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
+// What a screen does, not how it looks or fits: the core projects only (D-143).
+const CORE = { tag: "@core" };
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
   "aria-prohibited-attr", "aria-valid-attr-value", "aria-hidden-focus", "landmark-unique", "duplicate-id-aria",
@@ -39,7 +41,7 @@ const titles = (page: Page) => page.locator(".book-row .row-title");
 const row = (page: Page) => page.locator(".book-row", { has: page.locator(".row-title", { hasText: E2E_UNLISTED_TITLE }) });
 const addToSomeday = (page: Page) => row(page).getByRole("button", { name: "Add to Someday" });
 
-test("Everything leaves it out; the Unlisted chip, named with its count, lists it; a search finds it", async ({ page }) => {
+test("Everything leaves it out; the Unlisted chip, named with its count, lists it; a search finds it", CORE, async ({ page }) => {
   await page.goto("/books/list");
   await expect(titles(page).first()).toBeVisible();
   await expect(titles(page).filter({ hasText: E2E_UNLISTED_TITLE })).toHaveCount(0);

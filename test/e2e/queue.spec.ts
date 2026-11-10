@@ -12,6 +12,8 @@ import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydr
 
 // Writes or sets its own viewport: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
+// What a screen does, not how it looks or fits: the core projects only (D-143).
+const CORE = { tag: "@core" };
 const LIST = "/comics/status?tab=next";
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-prohibited-attr",
@@ -246,7 +248,7 @@ test.describe("the queue list", () => {
     await expect(page.getByRole("button", { name: `Reorder ${titleOf(ids[1])}, position 4 of 5` })).toBeFocused();
   });
 
-  test("Esc mid-lift leaves the order unchanged", async ({ page }) => {
+  test("Esc mid-lift leaves the order unchanged", CORE, async ({ page }) => {
     await queue(ids.slice(0, 5));
     await openList(page);
     const handle = page.getByRole("button", { name: `Reorder ${titleOf(ids[1])}, position 2 of 5` });

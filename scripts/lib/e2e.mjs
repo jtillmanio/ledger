@@ -48,10 +48,16 @@ export const E2E_PROJECTS = [
 // motion and touch. What a local run (and /verify) checks; CI's full run is the gate.
 export const E2E_CORE = ["w390-light", "w390-dark", "w768-light", "w1280-light", "w390-reduced-motion", "w390-touch"];
 
+// The tag for a test whose outcome no width or theme changes (D-143): what a
+// screen does (a write, a request, the URL, focus, the keys, its copy), not how
+// it looks or fits. It runs in the core projects only, in either scope.
+export const CORE_TAG = "@core";
+
 /**
  * The projects a scope runs, each with the grep that picks its tests. A test
- * with no `@at-` tag runs in every project of the scope; one tagged
- * `@at-<project>` runs only there, and nowhere when the scope leaves that
+ * with no tag runs in every project of the scope; one tagged `@core` runs in
+ * the core projects only; one tagged `@at-<project>` runs only there (an
+ * `@at-` tag wins over `@core`), and nowhere when the scope leaves that
  * project out. Playwright filters on the title path plus every tag (a
  * describe's too) before it schedules anything, so a test filtered out never
  * opens a page or runs a hook.
@@ -59,7 +65,10 @@ export const E2E_CORE = ["w390-light", "w390-dark", "w768-light", "w1280-light",
 export function e2eProjects(scope) {
   return E2E_PROJECTS.filter((p) => scope === "full" || E2E_CORE.includes(p.name)).map((p) => ({
     ...p,
-    grep: [/^(?!.*@at-)/, new RegExp(`@at-${p.name}(?![\\w-])`)],
+    grep: [
+      E2E_CORE.includes(p.name) ? /^(?!.*@at-)/ : new RegExp(`^(?!.*@at-)(?!.*${CORE_TAG}(?![\\w-]))`),
+      new RegExp(`@at-${p.name}(?![\\w-])`),
+    ],
   }));
 }
 

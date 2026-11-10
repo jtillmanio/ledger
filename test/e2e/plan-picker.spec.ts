@@ -14,6 +14,9 @@ import {
   computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
 } from "./helpers";
 
+// What a screen does, not how it looks or fits: the core projects only (D-143).
+const CORE = { tag: "@core" };
+
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
   "aria-prohibited-attr", "aria-valid-attr-value", "aria-hidden-focus", "landmark-unique", "duplicate-id-aria",
@@ -144,7 +147,7 @@ async function pick(sheet: Locator, year: number, quarter?: string) {
   if (quarter) await chip(sheet.getByRole("group", { name: `Quarter of ${year}` }), quarter).click();
 }
 
-test("Plan for… opens on the next five years then On deck and Someday; a year shows No quarter yet and Q1–Q4, each with its total (AC-2)", async ({ page }) => {
+test("Plan for… opens on the next five years then On deck and Someday; a year shows No quarter yet and Q1–Q4, each with its total (AC-2)", CORE, async ({ page }) => {
   await openLibrary(page);
   const { sheet } = await openPlan(page, S.title);
   const row = sheet.getByRole("group", { name: "Move to" });
@@ -170,7 +173,7 @@ test("Plan for… opens on the next five years then On deck and Someday; a year 
   expect(await planOf(S.id)).toEqual([]);
 });
 
-test("a quarter fills the preview with its total plus the book's words before anything is written; the primary names it (AC-2)", async ({ page }) => {
+test("a quarter fills the preview with its total plus the book's words before anything is written; the primary names it (AC-2)", CORE, async ({ page }) => {
   await openLibrary(page);
   const { sheet } = await openPlan(page, S.title);
   await expect(primary(sheet)).toHaveAttribute("aria-disabled", "true");
@@ -186,7 +189,7 @@ test("a quarter fills the preview with its total plus the book's words before an
   expect(await planOf(S.id)).toEqual([]);
 });
 
-test("moving a 150k book from the next year's Q1 to the later year's Q2: previewed first, both totals move by 150k, it goes last, Undo puts it back (AC-1)", async ({ page }) => {
+test("moving a 150k book from the next year's Q1 to the later year's Q2: previewed first, both totals move by 150k, it goes last, Undo puts it back (AC-1)", CORE, async ({ page }) => {
   const bodies: Record<string, unknown>[] = [];
   page.on("request", (req) => {
     if (req.method() === "POST" && new URL(req.url()).pathname === "/api/plan") bodies.push(req.postDataJSON());
@@ -224,7 +227,7 @@ test("moving a 150k book from the next year's Q1 to the later year's Q2: preview
   expect(await totalOf(LATER)).toBe(before.q2);
 });
 
-test("On deck and Someday need no year or quarter: no quarter row, no total; Someday clears the plan row and leaves book_status (AC-1, AC-3)", async ({ page }) => {
+test("On deck and Someday need no year or quarter: no quarter row, no total; Someday clears the plan row and leaves book_status (AC-1, AC-3)", CORE, async ({ page }) => {
   await openLibrary(page);
   let { sheet } = await openPlan(page, B.title);
   await chip(sheet, "On deck").click();
@@ -255,7 +258,7 @@ test("On deck and Someday need no year or quarter: no quarter row, no total; Som
   expect(await statusOf(A.id)).toBe("to_read");
 });
 
-test("No quarter yet writes a bare year (AC-1)", async ({ page }) => {
+test("No quarter yet writes a bare year (AC-1)", CORE, async ({ page }) => {
   const bodies: Record<string, unknown>[] = [];
   page.on("request", (req) => {
     if (req.method() === "POST" && new URL(req.url()).pathname === "/api/plan") bodies.push(req.postDataJSON());
@@ -311,7 +314,7 @@ test("over capacity the preview is amber with the amount over and a disabled Acc
   await expect(preview).not.toHaveAttribute("data-over", "true");
 });
 
-test("Esc, Back, Cancel and a confirm each close the sheet and return focus to the row's ⋯ (AC-5)", async ({ page }) => {
+test("Esc, Back, Cancel and a confirm each close the sheet and return focus to the row's ⋯ (AC-5)", CORE, async ({ page }) => {
   await openLibrary(page);
   let { more, sheet } = await openPlan(page, S.title);
   await expect(sheet.getByRole("heading", { name: S.title })).toBeFocused();
