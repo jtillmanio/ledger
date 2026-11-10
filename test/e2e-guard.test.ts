@@ -246,9 +246,30 @@ describe("wiring: test:all runs it, the docs name it, its output is ignored", ()
     expect(pkg.scripts["test:no-e2e"]).not.toContain("test:e2e");
   });
 
-  it("verify.full is typecheck, lint and test:all, which builds: no second build (D-97)", () => {
+  // D-141: the whole browser suite runs only in CI, every project, and Claude fixes what fails there.
+  it("verify.full is typecheck, lint and test:no-e2e: no local browser suite and no local build (D-141)", () => {
     const kit = JSON.parse(read(".claude/kit.json"));
-    expect(kit.verify.full).toEqual(["npx tsc --noEmit", "npm run lint", "npm run test:all"]);
+    expect(kit.verify.full).toEqual(["npx tsc --noEmit", "npm run lint", "npm run test:no-e2e"]);
+    expect(kit.verify.full.join(" ")).not.toMatch(/test:all|test:e2e|e2e\.mjs|npm run build/);
+  });
+
+  it("CI's browser run is the gate: e2e:full from the first push, and rounds to fix what it finds (D-141)", () => {
+    const kit = JSON.parse(read(".claude/kit.json"));
+    expect(kit.workflow.maxCiFixRounds).toBe(4);
+    const gate = kit.workflow.readyGates.find((g: { name?: string }) => g.name === "Full browser suite on the branch");
+    expect(gate.check).toContain("from its first push");
+    expect(gate.check).toContain("D-141");
+    const implement = read(".claude/project/implement-task.md");
+    expect(implement).toContain("Watch CI from the first push, and fix what fails");
+    expect(implement).toContain("gh run view <id> --log-failed");
+  });
+
+  it("/verify runs test:no-e2e and the touched specs, never test:all (D-141)", () => {
+    const skill = read(".claude/skills/verify/SKILL.md");
+    const block = skill.slice(skill.indexOf("```bash"), skill.indexOf("```", skill.indexOf("```bash") + 3));
+    expect(block).toContain("npm run test:no-e2e");
+    expect(block).not.toContain("test:all");
+    expect(skill).toContain("node scripts/test-files.mjs <specs>");
   });
 
   it("CLAUDE.md, git.md and COMMANDS.md name npm run test:e2e", () => {
