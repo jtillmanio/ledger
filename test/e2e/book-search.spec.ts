@@ -141,6 +141,8 @@ test("searching piranesi lists Hardcover's books under From Hardcover, no compil
     expect((await target.boundingBox())!.height).toBeGreaterThanOrEqual(24);
   }
   await expect(statusLine(page)).toHaveCount(0);
+  // A search result carries no status control (task 1.17b, D-131): its one verb is the add button.
+  await expect(page.locator("main .status-toggle, main .status-group")).toHaveCount(0);
   await floor(page);
   await screenshot(page, info, "book-search-results");
 });

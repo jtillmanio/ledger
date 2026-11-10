@@ -1533,7 +1533,7 @@ the loaded page count. A vitest test: a book added from a Hardcover result
 stores the book-level count. Then a dry run over the real books, with the
 counts in the PR.
 
-### ☐ 1.17b Dates when you start and finish, and on every read · M
+### ☑ 1.17b Dates when you start and finish, and on every read · M
 Owner, 2026-11-08 (D-131; extends 1.17). **Before 1.26.** 1.17 stamps a start
 silently when a book enters *Reading*, and its date line edits only the latest
 read. The owner wants to be asked at the moment, and to fix any read later.
@@ -1605,6 +1605,36 @@ and read mark, and every books table has the same rows before and after; it
 runs with `LEDGER_LIVE=true`, and with `LEDGER_COMICS_LIVE=true` it refuses,
 naming the flag, and changes nothing; the comics-only extract writes no books
 seed file; `npm run test:etl` passes.
+
+### ☐ 1.30 Bring the Library and Now back under their JS budgets · M
+Owner, 2026-11-10 (PR #222, 1.17b). The book status control now asks the dates
+(*Started* after *Reading*, *Started* and *Finished* together for *Read*) and
+sits on Now and every status row. Its client code ships with every Library row
+and with the dashboard, and took `/books` to 175,918 bytes of JS and
+`/books/list` to 171,581 bytes and 65 requests. PR #222 raised the budgets to
+177,000, 173,000 and 65 as a stopgap (`docs/02-architecture.md` § Performance
+budget); this entry brings them back, so the next feature does not start from
+a raised ceiling.
+
+- **Measure first.** The plan says where the bytes are: the control's two
+  pickers and their reasons, `FinishDate`, the start re-date, what each Library
+  row hydrates. PR #222's attempt (the read list as a lazy chunk) saved under
+  250 bytes and added a request, so guesses are not enough.
+- **Then load less of it up front.** For example the pickers and their logic
+  only when a row is opened, one component shared with the sheets that use
+  `FinishDate`, or the control drawn from the server until it is touched. The
+  plan picks, and keeps the control's behaviour and tests as they are.
+- **Put the budgets back.** `scripts/perf/budget.json` and the table in
+  `docs/02-architecture.md` return to `/books` 175,000 and `/books/list`
+  170,000 bytes and 64 requests, with a line saying why they were raised and
+  when they came back.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first) on the
+branch's Vercel preview, Lighthouse's median of three measures `/books` at no
+more than 175,000 bytes of JS and `/books/list` at no more than 170,000 bytes
+and 64 requests; the budget table and `scripts/perf/budget.json` show those
+numbers again; the Lighthouse job passes; and the status control's tests
+(`test/reading-log.test.tsx`, `test/e2e/start-dates.spec.ts`) pass unchanged.
 
 ### ☐ 1.26 Cut the books over from the Sheets · M
 From the owner, 2026-10-28 (D-95). START-HERE Step 14 as an entry, so the

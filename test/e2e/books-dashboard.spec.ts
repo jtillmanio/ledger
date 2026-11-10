@@ -341,6 +341,81 @@ test.describe("reading", () => {
     await expect(page.locator(".now-kick").getByRole("img", { name: "Listening" })).toBeVisible();
   });
 
+  // Task 1.17b (D-131): the status control on Now. It writes nothing until a test says so.
+  const hero = () => withSql(async (sql) => ({
+    status: (await sql`SELECT status, started_on::text AS started_on FROM book_status WHERE user_id = ${E2E_USER} AND book_id = 'e2e-dash-hero'`)[0],
+    reads: [...await sql`SELECT started_on::text AS started_on, finished_on::text AS finished_on FROM read_events
+                         WHERE user_id = ${E2E_USER} AND book_id = 'e2e-dash-hero'`].map((r) => ({ ...r })),
+  }));
+
+  test("Now carries the status control: Started opens a picker with 44px options on the phone, focus comes back, the floor holds (1.17b, AC-5, AC-6)", async ({ page }, info) => {
+    await open(page);
+    const now = page.locator(".now-hero");
+    const toggle = now.locator(".status-toggle");
+    await hydrated(toggle);
+    await expect(toggle).toHaveText("Status: reading");
+    // No row menu on the dashboard.
+    await expect(now.locator(".row-more-btn")).toHaveCount(0);
+    await toggle.click();
+    await expect(now.getByRole("group", { name: `Status of ${HERO}` })).toBeVisible();
+    const started = now.getByRole("button", { name: /^Started / });
+    await started.click();
+    const group = now.getByRole("group", { name: "Started" });
+    await expect(group.getByRole("radio", { name: "Pick a date" })).toBeChecked();
+    if (page.viewportSize()!.width < 768) {
+      for (const radio of await group.getByRole("radio").all()) {
+        // The option is the label around the input, which sits inside its border.
+        expect((await radio.locator("xpath=..").boundingBox())!.height, "a picker option").toBeGreaterThanOrEqual(44);
+      }
+    }
+    await floor(page);
+    await screenshot(page, info, "books-now-control");
+    await page.keyboard.press("Escape");
+    await expect(group).toHaveCount(0);
+    await expect(started).toBeFocused();
+  });
+
+  test("Now: switching to Listening saves and opens nothing; Undo puts Reading back (1.17b, AC-1)", ONCE, async ({ page }) => {
+    await open(page);
+    const now = page.locator(".now-hero");
+    await hydrated(now.locator(".status-toggle"));
+    await now.locator(".status-toggle").click();
+    await now.getByRole("button", { name: "Listening", exact: true }).click();
+    await expect.poll(async () => (await hero()).status.status).toBe("listening");
+    expect((await hero()).status.started_on).toBe(daysAgo(14));
+    await expect(now.getByRole("group", { name: "Started" })).toHaveCount(0);
+    await page.locator(".toast").getByRole("button", { name: "Undo" }).click();
+    await expect.poll(async () => (await hero()).status.status).toBe("reading");
+  });
+
+  test("Now: Read opens both; a start after the finish is refused and writes nothing; confirming writes one read with both dates (1.17b, AC-1)", ONCE, async ({ page }) => {
+    const posts: string[] = [];
+    page.on("request", (r) => { if (r.method() === "POST" && r.url().includes("/api/progress/")) posts.push(r.url()); });
+    await open(page);
+    const now = page.locator(".now-hero");
+    await hydrated(now.locator(".status-toggle"));
+    await now.locator(".status-toggle").click();
+    await now.getByRole("button", { name: "Read", exact: true }).click();
+    const finished = now.getByRole("group", { name: "Finished" });
+    await expect(now.getByRole("group", { name: "Started" })).toBeVisible();
+    await expect(finished.getByRole("radio", { name: "Today" })).toBeChecked();
+
+    await finished.getByRole("radio", { name: "Pick a date" }).check();
+    await now.getByLabel("Finished on").fill(daysAgo(20));
+    await expect(now.locator(".sheet-reason").first()).toHaveText("That's after the day you finished.");
+    const save = now.getByRole("button", { name: "Save" });
+    await expect(save).toHaveAttribute("aria-disabled", "true");
+    // aria-disabled is not disabled: the click lands, and sends nothing.
+    await save.click({ force: true });
+    expect(posts).toEqual([]);
+    expect(await hero()).toEqual({ status: { status: "reading", started_on: daysAgo(14) }, reads: [] });
+
+    await finished.getByRole("radio", { name: "Today" }).check();
+    await save.click();
+    await expect.poll(async () => (await hero()).reads).toEqual([{ started_on: daysAgo(14), finished_on: DAY }]);
+    expect((await hero()).status.status).toBe("read");
+  });
+
   test("the strip's figure is 2.1's for the quarter, and 2026 so far is three counts, all this year (AC-1, AC-3)", ONCE, async ({ page }) => {
     const [cap] = await withSql((sql) => sql<{ planned_words: number; books: number; read_books: number; capacity: number }[]>`
       SELECT planned_words, books, read_books, capacity FROM plan_capacity WHERE user_id = ${E2E_USER} AND period = ${PERIOD}`);
@@ -829,4 +904,32 @@ test.describe("reduced transparency", () => {
       }
     });
   }
+
+  // Task 1.17b (AC-6): the status control open on Now, its Started picker showing.
+  test("reading, the status control open: the glass is solid --surface, with a screenshot at 390 and 1280 (1.17b, AC-6)", ONCE, async ({ page, context }, info) => {
+    await seed({ reading: true });
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-transparency", value: "reduce" }] });
+    for (const [width, glass] of [[390, ".bar"], [1280, ".pagehead"]] as const) {
+      await page.setViewportSize({ width, height: 900 });
+      await open(page);
+      const now = page.locator(".now-hero");
+      await hydrated(now.locator(".status-toggle"));
+      await now.locator(".status-toggle").click();
+      await now.getByRole("button", { name: /^Started / }).click();
+      await expect(now.getByRole("group", { name: "Started" })).toBeVisible();
+      const surface = await page.evaluate(() => {
+        const probe = document.createElement("i");
+        probe.style.backgroundColor = "var(--surface)";
+        document.body.append(probe);
+        const c = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return c;
+      });
+      await expect.poll(() => page.locator(glass).first().evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(surface);
+      expect(await page.locator(glass).first().evaluate((el) => getComputedStyle(el).backdropFilter)).toBe("none");
+      await expectNoHorizontalScroll(page);
+      await screenshot(page, info, `books-now-control-reduced-transparency-${width}`);
+    }
+  });
 });

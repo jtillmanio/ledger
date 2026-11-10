@@ -1,13 +1,14 @@
 import Link from "next/link";
 import AddBooksButton from "@/components/AddBooksButton";
+import BookStatus from "@/components/BookStatus";
 import EmptySlate from "@/components/EmptySlate";
 import FinishBook from "@/components/FinishBook";
 import PlanQuarter from "@/components/PlanQuarter";
 import StatusBookRow from "@/components/StatusBookRow";
 import StatusTabs from "@/components/StatusTabs";
 import { requireUserId } from "@/lib/auth";
-import { booksDone, booksInFlight, booksUpNext, type DoneBook, type PlannedBook } from "@/db/queries";
-import { bookDates, quarterName } from "@/lib/format";
+import { booksDone, booksInFlight, booksUpNext, type DoneBook, type PlannedBook, type StatusBook } from "@/db/queries";
+import { bookDates, quarterName, type Precision } from "@/lib/format";
 import { parseTab } from "@/lib/status-tabs";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,19 @@ const kWords = (books: PlannedBook[]) => {
   return words ? ` · ${Math.round(words / 1000)}k` : "";
 };
 const nBooks = (n: number) => `${n.toLocaleString()} ${n === 1 ? "book" : "books"}`;
+
+/** A row's status control (task 1.17b, D-131): the title is the row's own, with no `⋯` beside it. */
+function control(b: StatusBook & {
+  status?: string; finished_on?: string | null; finished_on_precision?: Precision;
+  started_on?: string | null; started_on_precision?: Precision;
+}) {
+  return (
+    <BookStatus bookId={b.id} title={b.title} menu={false} glyph={false} listened={b.listened}
+      {...(b.status && { status: b.status })}
+      {...(b.finished_on && { finishedOn: b.finished_on, precision: b.finished_on_precision })}
+      {...(b.started_on && { startedOn: b.started_on, startPrecision: b.started_on_precision })} />
+  );
+}
 
 /**
  * Books status (task 1.9; mockup `status`, desktop frame): the same three tabs
@@ -84,7 +98,7 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
                 <div className="rows">
                   {g.books.map((b) => (
                     <StatusBookRow key={b.id} book={b} meta={b.word_count ? `${b.word_count.toLocaleString()} words` : null}
-                      action={<FinishBook bookId={b.id} title={b.title} />} />
+                      action={<FinishBook bookId={b.id} title={b.title} />} control={control(b)} />
                   ))}
                 </div>
               </section>
@@ -115,7 +129,7 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
                     <PlanQuarter period={g.period} rows={g.books.map((b) => ({ ...b, ordinal: b.ordinal! }))} />
                   ) : (
                     <div className={`rows plan-rows${g.kind === "year" ? " lane-year" : ""}`}>
-                      {g.books.map((b) => <StatusBookRow key={b.id} book={b} />)}
+                      {g.books.map((b) => <StatusBookRow key={b.id} book={b} control={control(b)} />)}
                     </div>
                   )}
                 </section>
@@ -149,7 +163,7 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
                     {year} <span className="mono n">{books.length}</span>
                   </h2>
                   <div className="rows">
-                    {books.map((b) => <StatusBookRow key={b.id} book={b} dates={bookDates(b)} />)}
+                    {books.map((b) => <StatusBookRow key={b.id} book={b} dates={bookDates(b)} control={control(b)} />)}
                   </div>
                 </section>
               ))}
@@ -158,7 +172,7 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
                 <details className="stopped">
                   <summary>Stopped <span className="mono n">{stopped.length}</span></summary>
                   <div className="rows">
-                    {stopped.map((b) => <StatusBookRow key={b.id} book={b} />)}
+                    {stopped.map((b) => <StatusBookRow key={b.id} book={b} control={control(b)} />)}
                   </div>
                 </details>
               )}
