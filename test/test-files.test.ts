@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
-import { normalize, planTestRun } from "../scripts/lib/test-files.mjs";
+import { DEFAULT_E2E_PROJECT, e2eArgsProblem, normalize, planTestRun, splitArgs } from "../scripts/lib/test-files.mjs";
 
 // scripts/test-files.mjs is the kit's testAudit.run: the test-auditor hands it a
 // task's changed test files, of any runner, and needs each one run against the
@@ -66,7 +66,7 @@ describe("planTestRun: each file goes to its own runner", () => {
       "npx vitest run test/queries.test.ts",
       "npm run test:views",
       "py -m unittest discover -s etl -p test_extract.py",
-      "node scripts/e2e.mjs test/e2e/spine.spec.ts",
+      "node scripts/e2e.mjs test/e2e/spine.spec.ts --project=w390-light",
     ]);
   });
 
@@ -86,6 +86,62 @@ describe("planTestRun: each file goes to its own runner", () => {
   });
 });
 
+// The test-auditor and the cheap check before the first chain ask "does this
+// test fail" and "does it pass now": one project answers both. The six core
+// projects are the full chain's and CI's.
+describe("planTestRun: specs run in one project, and Playwright arguments follow them", () => {
+  it("runs specs in w390-light when nothing names a project", () => {
+    expect(DEFAULT_E2E_PROJECT).toBe("w390-light");
+    expect(planTestRun(["test/e2e/a.spec.ts", "test/e2e/b.spec.ts"]).commands).toEqual([
+      "npm run test:db:reset",
+      "node scripts/e2e.mjs test/e2e/a.spec.ts test/e2e/b.spec.ts --project=w390-light",
+    ]);
+  });
+
+  it("passes arguments on after the specs, quoting one with a space, and keeps the default project", () => {
+    expect(planTestRun(["test/e2e/status.spec.ts"], ["-g", "Plan a book…"]).commands[1]).toBe(
+      'node scripts/e2e.mjs test/e2e/status.spec.ts --project=w390-light -g "Plan a book…"',
+    );
+  });
+
+  it("drops the default when the arguments name a project, either spelling", () => {
+    expect(planTestRun(["test/e2e/a.spec.ts"], ["--project=w768-light"]).commands[1]).toBe(
+      "node scripts/e2e.mjs test/e2e/a.spec.ts --project=w768-light",
+    );
+    expect(planTestRun(["test/e2e/a.spec.ts"], ["--project", "w390-touch", "--project", "w390-dark"]).commands[1]).toBe(
+      "node scripts/e2e.mjs test/e2e/a.spec.ts --project w390-touch --project w390-dark",
+    );
+  });
+
+  it("quotes what a shell would read as its own: parentheses, a pipe, an ampersand", () => {
+    expect(planTestRun(["test/e2e/a.spec.ts"], ["-g", "AC-1|AC-5", "--grep-invert=a&b"]).commands[1]).toBe(
+      'node scripts/e2e.mjs test/e2e/a.spec.ts --project=w390-light -g "AC-1|AC-5" "--grep-invert=a&b"',
+    );
+  });
+
+  it("leaves vitest, views and unittest commands alone", () => {
+    expect(planTestRun(["test/a.test.ts", "etl/test_views.sql"], ["-g", "x"]).commands).toEqual([
+      "npm run test:db:reset",
+      "npx vitest run test/a.test.ts",
+      "npm run test:views",
+    ]);
+  });
+});
+
+describe("splitArgs and e2eArgsProblem", () => {
+  it("splits at the first --: files before, Playwright's after", () => {
+    expect(splitArgs(["test/e2e/a.spec.ts", "--", "-g", "x", "--", "y"])).toEqual({
+      files: ["test/e2e/a.spec.ts"], e2eArgs: ["-g", "x", "--", "y"],
+    });
+    expect(splitArgs(["test/a.test.ts"])).toEqual({ files: ["test/a.test.ts"], e2eArgs: [] });
+  });
+
+  it("refuses what the quoting can't carry the same way through cmd and sh", () => {
+    for (const bad of ['say "hi"', "100%", "$HOME", "a`b", "ends\\"]) expect(e2eArgsProblem(["-g", bad])).toMatch(/can't pass/);
+    expect(e2eArgsProblem(["-g", "Undo puts it back (AC-1)", "--project=w390-light"])).toBeNull();
+  });
+});
+
 describe("scripts/test-files.mjs refuses before running anything", () => {
   const run = (...args: string[]) =>
     spawnSync(process.execPath, ["scripts/test-files.mjs", ...args], { encoding: "utf8" });
@@ -100,6 +156,20 @@ describe("scripts/test-files.mjs refuses before running anything", () => {
     const r = run("test/spine.test.tsx", "README.md");
     expect(r.status).toBe(2);
     expect(r.stderr).toMatch(/no runner for README\.md/);
+    expect(r.stdout).not.toMatch(/^> /m);
+  });
+
+  it("exits 2 when arguments after -- have no spec to go to", () => {
+    const r = run("test/spine.test.tsx", "--", "-g", "x");
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/no file in the list is a browser spec/);
+    expect(r.stdout).not.toMatch(/^> /m);
+  });
+
+  it("exits 2 on an argument the shell would mangle", () => {
+    const r = run("test/e2e/spine.spec.ts", "--", "-g", "100%");
+    expect(r.status).toBe(2);
+    expect(r.stderr).toMatch(/can't pass 100%/);
     expect(r.stdout).not.toMatch(/^> /m);
   });
 });
