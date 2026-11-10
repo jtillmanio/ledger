@@ -1,7 +1,7 @@
 ---
 id: TASK-059
 title: 1.17b Dates when you start and finish (2 of 2) — the status control asks the dates and lists every read
-status: In progress
+status: Review
 depends_on: [TASK-058]
 size: M
 model: sonnet
@@ -34,7 +34,7 @@ Setting a book to *Reading* asks when you started, setting it to *Read* asks bot
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): in the
+- [x] AC-1 (roadmap **Check:**, verbatim): in the
 browser (0.11): setting a book to *Reading* opens *Started* on *Today*; picking
 an earlier day writes that `started_on`, `exact`, and Undo restores the status
 and start before. Setting it to *Read* opens both; confirming writes one
@@ -44,11 +44,11 @@ re-dating the first changes only its `read_events` row, and re-dating the
 second changes it and `book_status`. The same control works from *Now* on
 `/books` and from `/books/status`; a search result has none. axe passes at
 every width.
-- [ ] AC-2: Given a `to_read` book on the Library row, choosing *Reading* saves at once and opens *Started* with *Today* selected; pressing Esc, or choosing *Today*, closes it with today's start kept; the toast's single Undo puts the book back at `to_read` with no start.
-- [ ] AC-3: Choosing *Read* opens *Started* (showing the stored start, else *No date*) and *Finished* (on *Today*) together; with a start after the finish, 1.17's reason shows under *Started*, the confirm is `aria-disabled` with that reason, and no request is sent.
-- [ ] AC-4: A book with one read shows no *All reads* line; a book with two reads shows *All reads (2)*, each read with its *Started* and *Finished* and, for a listen, the headphones glyph named *Listened*; each date opens 1.5's picker.
-- [ ] AC-5: The control appears on *Now* on `/books` and on the rows of each `/books/status` tab, and an Add books search result row has none.
-- [ ] AC-6: The control, its pickers and the read list meet the UX floor (`docs/04-design.md` § 10. The UX floor), on feel-pass surfaces: every control a real button with a name, nothing interactive under 24px and the pickers' options 44px on the phone, focus returns to the control that opened a picker, text 4.5:1 in both themes, nothing resolves to `--danger` but the refusal, axe reports no new violations, no horizontal scroll at 360px, and screenshots at 360, 390, 412, 768, 1024 and 1280px, light and dark, with reduced motion and reduced transparency.
+- [x] AC-2: Given a `to_read` book on the Library row, choosing *Reading* saves at once and opens *Started* with *Today* selected; pressing Esc, or choosing *Today*, closes it with today's start kept; the toast's single Undo puts the book back at `to_read` with no start.
+- [x] AC-3: Choosing *Read* opens *Started* (showing the stored start, else *No date*) and *Finished* (on *Today*) together; with a start after the finish, 1.17's reason shows under *Started*, the confirm is `aria-disabled` with that reason, and no request is sent.
+- [x] AC-4: A book with one read shows no *All reads* line; a book with two reads shows *All reads (2)*, each read with its *Started* and *Finished* and, for a listen, the headphones glyph named *Listened*; each date opens 1.5's picker.
+- [x] AC-5: The control appears on *Now* on `/books` and on the rows of each `/books/status` tab, and an Add books search result row has none.
+- [x] AC-6: The control, its pickers and the read list meet the UX floor (`docs/04-design.md` § 10. The UX floor), on feel-pass surfaces: every control a real button with a name, nothing interactive under 24px and the pickers' options 44px on the phone, focus returns to the control that opened a picker, text 4.5:1 in both themes, nothing resolves to `--danger` but the refusal, axe reports no new violations, no horizontal scroll at 360px, and screenshots at 360, 390, 412, 768, 1024 and 1280px, light and dark, with reduced motion and reduced transparency.
 
 ## Out of scope
 
@@ -78,9 +78,17 @@ every width.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The UI verifier's walk on the development database saved *A Court of Wings and Ruin* as Read by accident (a forced click in its script; not reproduced with a normal Cancel). It was undone, but a series follow it had set was put back to `tracking` by guess → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- Skeleton.tsx and `.sk-now-status`: Now's loading skeleton gains the control's row so it keeps the loaded height (`books-dashboard.spec.ts` "the loading state is the loaded geometry"); `useBookWrite`'s optional `refresh` argument holds the page refresh back while *Started* is offered after *Reading*, so the row (Up next, a filtered Library) is still there to answer it → not tracked: done in this PR (plan revisions, written into ## Plan)
+- Once, on a To-read filtered Library, focus fell to the body after saving a changed date because the row had left the filter; not seen in the browser suite → not tracked: seen once by the UI verifier, not reproduced; the row's own refresh moved it (R1-11 is the rule to read if it recurs)
+- A held start is kept across To read, so a later *Reading* opens *Started* on that day rather than *Today* → not tracked: 1.17's documented held-start rule, working as designed
+- The manual step says the row reads *Started yesterday*; it reads the date (*Started 9 November 2026*) → not tracked: wording of the manual step only, the date is the control's
+- One `CONNECTION_CLOSED` from the Neon pooler during the verifier's first load of Now → not tracked: a dropped development-database connection, not this task's code
+- Development data has no book read twice and an empty Up next, so *All reads* and a quarter row were not walked there → not tracked: both are covered by the test-database specs (`start-dates.spec.ts`, `status.spec.ts`)
+
 ## Plan
 
-Approved by the owner 2026-11-10. **Decisions at the gate:**
+Approved by the owner 2026-11-10. **Revisions after approval (2):** (1) `src/components/Skeleton.tsx` and `.sk-now-status` in `globals.css`: the control adds a row to Now, and the loading skeleton must hold the loaded height (ui.md; `books-dashboard.spec.ts` checks it within 2px). (2) `useBookWrite` takes an optional `refresh` (default true) so the page refresh waits while *Started* is offered after *Reading*: on Up next and a filtered Library, *Reading* takes the row off the tab, and the picker would vanish before it was answered; `BookStatus` refreshes when the picker closes. Also written: `StatusBookRow`'s `.row-text` is a `div`, not a `span`, because the control nests block content. **Decisions at the gate:**
 
 - **Kept whole**, though it is past the size check (about 11 source files, two
   more than "Files likely touched": `src/db/queries.ts` and
@@ -229,7 +237,8 @@ Approved by the owner 2026-11-10. **Decisions at the gate:**
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 e2e (4 specs) FAIL(15: 44px measured on the input, a click on an aria-disabled Save, Now's skeleton 36px short) → R2 264 pass → R3 status + dashboard specs 199 pass with the reduced-transparency passes | vitest `test/reading-log.test.tsx` 42 pass | `npx tsc --noEmit` and `npm run lint` clean on the rebased head. The full chain (`npm run test:all`) and `test:no-e2e` were **not** run: the owner said not to re-run the full chain after a rebase that only brought in a CI change (#220), and it had not been run before the rebase either. CI's `check` and the e2e:full run are the gate for the rest.
+Audit R1 PASS (no UNPROVEN; AC-5/AC-6 browser clauses judged by static review) | Spec R1 CHANGES (AC-6 reduced transparency UNTESTED) → R2 APPROVE | Schema R1 APPROVE | UI R1 CHANGES REQUIRED as reported (no failure in the task's code; AC-4 two reads and the Up next quarter row untestable on dev data, covered by the specs; AC-6 dark theme, reduced motion and axe not done by the verifier, covered by the specs at every width; a data accident on the development database, see Follow-ups). Not re-run: nothing under src/ changed after it.
 
 ## Blocked
 
@@ -237,7 +246,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 browser rounds (the full chain was not run, at the owner's instruction)
+- Review rounds: 2 (spec-reviewer), 1 each (test-auditor, schema-reviewer, ui-verifier)
+- First-pass AC FAILs: 0 failing; AC-6 UNTESTED once (reduced transparency), fixed in round 2
+- Plan revisions after approval: 2 (the skeleton row; the held-back refresh)

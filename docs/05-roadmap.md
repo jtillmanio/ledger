@@ -1533,7 +1533,7 @@ the loaded page count. A vitest test: a book added from a Hardcover result
 stores the book-level count. Then a dry run over the real books, with the
 counts in the PR.
 
-### ☐ 1.17b Dates when you start and finish, and on every read · M
+### ☑ 1.17b Dates when you start and finish, and on every read · M
 Owner, 2026-11-08 (D-131; extends 1.17). **Before 1.26.** 1.17 stamps a start
 silently when a book enters *Reading*, and its date line edits only the latest
 read. The owner wants to be asked at the moment, and to fix any read later.
