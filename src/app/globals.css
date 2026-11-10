@@ -1212,8 +1212,36 @@ input.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
   background:var(--surface);border:1px solid var(--faint-deco);color:var(--ink-2)}
 .addto .chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--on-brand);font-weight:600}
 .addto .chip[aria-disabled="true"]{background:none;color:var(--muted);border-style:dashed;cursor:not-allowed}
-.addto-later{margin:.375rem 0 0}
 .addto-pick{margin:.5rem 0 0}
+/* --- the plan picker (task 2.3, F-23; mockup `moveplan`; D-37, D-38) -------
+   Chips are real buttons: 44px under 1024px, 32px from there, never under 24px.
+   Pressed is the brand fill. The preview sits on --raise; over capacity it is
+   a held decision, --blocked on --blocked-soft, never red. Tokens only. */
+.pp-head{display:flex;gap:.625rem;align-items:center;padding-bottom:.75rem;border-bottom:1px solid var(--rule);margin-bottom:.75rem}
+.pp-by{margin:0;font-size:.8125rem;color:var(--muted);min-width:0}
+.pp-head .bdg{margin-left:auto;flex:0 0 auto}
+.pp-k{font-size:.8125rem;color:var(--muted);font-weight:600;margin:0 0 .5rem}
+.pp-chips{display:flex;flex-wrap:wrap;gap:.375rem}
+.pp-quarters{margin-top:.625rem}
+.pp-chip{font:inherit;font-size:.8125rem;display:inline-flex;align-items:center;gap:.375rem;min-height:44px;
+  padding:.25rem .75rem;cursor:pointer;background:var(--surface);color:var(--ink-2)}
+.pp-chip .pp-sum{font-size:.6875rem;color:var(--muted)}
+.pp-chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--on-brand);font-weight:600}
+.pp-chip[aria-pressed="true"] .pp-sum{color:var(--on-brand)}
+.pp-note{margin:.5rem 0 0}
+.pp-preview{margin-top:.75rem;border-radius:var(--r-lg);background:var(--raise);min-height:0}
+.pp-preview:empty{display:none}
+.pp-line{display:flex;gap:.75rem;align-items:baseline;justify-content:space-between;margin:0;padding:.75rem .875rem;
+  font-size:.8125rem;color:var(--ink-2)}
+.pp-name{font-weight:600}
+.pp-figure{font-weight:600;color:var(--ink);text-align:right}
+.pp-preview[data-over="true"]{background:var(--blocked-soft)}
+.pp-preview[data-over="true"] .pp-name,.pp-preview[data-over="true"] .pp-figure{color:var(--blocked)}
+.pp-stretch{padding:0 .875rem .75rem}
+.pp-why{margin:.375rem 0 0;color:var(--blocked)}
+.pp-step{margin-top:.25rem}
+.pp-back{min-height:44px}
+@media (min-width:1024px){.pp-chip{min-height:32px}}
 .addb .seg{margin-top:.75rem}
 .addb .add-failed{margin:.75rem 0 0}
 .sheet .addb .add-2up{display:block}
