@@ -10,10 +10,14 @@ Reads the books extract loads (seed/books.csv, seed/authors.csv), and the ones
 it held for review (seed/held_books.csv, task 1.20), and each one's
 Calibre ISBN (etl/data/calibre_books.csv, found by the book's Calibre id, else
 by its title and author), asks Hardcover, and writes etl/data/book_details.csv,
-keyed by title and author: Hardcover's book id, a page count, a cover URL and
-the book's release year. `npm run extract` folds it into books (task 1.14b,
-D-94, replacing 1.14's Open Library, D-44); Calibre's #pages still wins (D-90)
-and the year fills only where the workbook has none.
+keyed by title and author: Hardcover's book id, two page counts (the book's,
+its default edition's, usually print; and the matched edition's), a cover URL
+and the book's release year. `npm run extract` folds it into books (task 1.14b,
+D-94, replacing 1.14's Open Library, D-44): the page count is the book's, else
+the edition's, else Calibre's #pages (1.14c, D-130), and the year fills only
+where the workbook has none. The report says how many matched books' page
+counts the next extract changes against seed/books.csv, and how many of those
+have no word count, so their estimate moves.
 
 How a book is decided:
 - by ISBN     the book's ISBN finds an edition: its book is the match. ISBNs
@@ -132,20 +136,23 @@ def as_id(v) -> int | None:
 
 
 def from_edition(edition: dict) -> dict:
-    """A book found by an edition: the edition's pages and cover, else the book's."""
+    """A book found by an edition: the book's page count and the edition's,
+    each its own (D-130); the edition's cover, else the book's."""
     book = edition.get("book") or {}
     series = sorted(book.get("book_series") or [], key=lambda s: not s.get("featured"))
     return {"id": as_id(book.get("id")), "title": book.get("title") or "",
             "subtitle": book.get("subtitle") or "",
             "authors": [(c.get("author") or {}).get("name") or "" for c in book.get("contributions") or []],
             "compilation": bool(book.get("compilation")), "readers": book.get("users_count") or 0,
-            "year": book.get("release_year"), "pages": edition.get("pages") or book.get("pages"),
+            "year": book.get("release_year"), "pages": book.get("pages"),
+            "edition_pages": edition.get("pages"),
             "cover": image(edition) or image(book), "slug": book.get("slug") or "",
             "series": [((s.get("series") or {}).get("name") or "", s.get("position")) for s in series]}
 
 
 def from_search(doc: dict) -> dict:
-    """A book as a search result: the default edition's pages, the book's cover."""
+    """A book as a search result: the book's pages (its default edition's),
+    no edition's, and the book's cover."""
     featured = doc.get("featured_series") or {}
     series = []
     name = (featured.get("series") or {}).get("name")
@@ -155,7 +162,7 @@ def from_search(doc: dict) -> dict:
     return {"id": as_id(doc.get("id")), "title": doc.get("title") or "", "subtitle": doc.get("subtitle") or "",
             "authors": list(doc.get("author_names") or []), "compilation": bool(doc.get("compilation")),
             "readers": doc.get("users_count") or 0, "year": doc.get("release_year"),
-            "pages": doc.get("pages"), "cover": image(doc), "slug": doc.get("slug") or "",
+            "pages": doc.get("pages"), "edition_pages": None, "cover": image(doc), "slug": doc.get("slug") or "",
             "series": series}
 
 
@@ -174,6 +181,7 @@ def isbn_books(editions: list[dict]) -> list[dict]:
             continue
         if r["id"] in out:
             out[r["id"]]["pages"] = out[r["id"]]["pages"] or r["pages"]
+            out[r["id"]]["edition_pages"] = out[r["id"]]["edition_pages"] or r["edition_pages"]
             out[r["id"]]["cover"] = out[r["id"]]["cover"] or r["cover"]
         else:
             out[r["id"]] = r
@@ -258,7 +266,8 @@ def find(api: "Hardcover", title: str, author: str, isbn: str = "",
 
 def details(title: str, author: str, record: dict) -> dict:
     return {"title": title, "author": author, "open_library_id": "", "hardcover_id": record["id"],
-            "page_count": record["pages"] or "", "cover_url": record["cover"] or "",
+            "page_count": record["pages"] or "", "edition_page_count": record["edition_pages"] or "",
+            "cover_url": record["cover"] or "",
             "published_year": record["year"] or "", "source": SOURCE}
 
 
@@ -499,6 +508,8 @@ def run(args) -> int:
         if r["decision"].lower() == PICK and as_id(r["hardcover_id"]) is not None:
             picks.setdefault(book_key(r), set()).add(as_id(r["hardcover_id"]))
     by_id, by_key = read_isbns(Path(args.calibre_books), review)
+    calibre_pages = read_calibre_pages(Path(args.calibre_books), review)
+    loaded = read_loaded(Path(args.books), Path(args.authors))
     books = read_books(Path(args.books), Path(args.authors))
     total = len(books)
     if args.limit:
@@ -555,7 +566,8 @@ def run(args) -> int:
     finally:
         api.db.close()
 
-    report(status, how, proposals, missed, notes, api, stopped)
+    report(status, how, proposals, missed, notes, api, stopped,
+           page_counts(fresh, loaded, {(ex.key(t), ex.key(a)): c for t, a, c in books}, calibre_pages))
     if args.dry_run:
         return 0
 
@@ -627,8 +639,34 @@ def write_hardcover_review(path: Path, rows: list[dict], candidates: dict[tuple,
     write_csv(path, REVIEW_COLUMNS, kept)
 
 
+def page_counts(fresh: dict[tuple, dict], loaded: dict[tuple, tuple], calibre_ids: dict[tuple, str],
+                calibre_pages: tuple[dict, dict]) -> str:
+    """How many matched books' page counts the next extract changes against
+    seed/books.csv (task 1.14c, D-130), and how many of those have no word
+    count, so the estimate (pages x words per page, from 50 pages) moves.
+    The new count is extract's order: the book's, the edition's, Calibre's
+    #pages. A book seed/books.csv doesn't load (a held one) isn't counted."""
+    def estimated_from(pages):
+        return pages if pages and pages >= 50 else None
+
+    by_id, by_key = calibre_pages
+    changed = moved = matched = 0
+    for k, row in fresh.items():
+        if k not in loaded:
+            continue
+        matched += 1
+        old, words = loaded[k]
+        new = ex.details_pages(row) or by_id.get(calibre_ids.get(k, "")) or by_key.get(k)
+        if new != old:
+            changed += 1
+            if words is None and estimated_from(new) != estimated_from(old):
+                moved += 1
+    return (f"page counts: {changed} of {matched} matched books change on the next extract, "
+            f"{moved} of them with no word count, so {'its estimate moves' if moved == 1 else 'their estimates move'}")
+
+
 def report(status: dict, how: dict, proposals: list[dict], missed: list, notes: list[str],
-           api: Hardcover, stopped) -> None:
+           api: Hardcover, stopped, pages: str = "") -> None:
     counts = Counter(status.values())
     ways = Counter(how[k] for k, s in status.items() if s == "matched")
     print("\n" + (f"stopped: {stopped}\n" if stopped else ""))
@@ -638,6 +676,8 @@ def report(status: dict, how: dict, proposals: list[dict], missed: list, notes: 
     looked_up = sum(counts.get(s, 0) for s in LOOKED_UP)
     if looked_up:
         print(f"  match rate {counts.get('matched', 0) / looked_up:.0%} of {looked_up} looked up")
+    if pages:
+        print(f"  {pages}")
     if proposals:
         print("\nproposed (book_review.csv):")
         for p in proposals:
@@ -678,6 +718,35 @@ def read_books(books: Path, authors: Path) -> list[tuple[str, str, str]]:
             seen.add((ex.key(r["title"]), ex.key(r["author"])))
             out.append((r["title"], r["author"], ""))
     return out
+
+
+def read_loaded(books: Path, authors: Path) -> dict[tuple, tuple[int | None, int | None]]:
+    """(page count, word count) of each book seed/books.csv loads, by its
+    (title, author) key: what the page-count report compares against."""
+    names = {}
+    if authors.exists():
+        with authors.open(newline="", encoding="utf-8") as fh:
+            names = {r["id"]: r["name"] for r in csv.DictReader(fh)}
+    with books.open(newline="", encoding="utf-8") as fh:
+        return {(ex.key(r["title"]), ex.key(names.get(r["author_id"], ""))):
+                (ex.as_int(r.get("page_count")), ex.as_int(r.get("word_count")))
+                for r in csv.DictReader(fh) if r.get("title")}
+
+
+def read_calibre_pages(path: Path, review: list[dict]) -> tuple[dict[str, int], dict[tuple, int]]:
+    """Each Calibre book's #pages, by its Calibre id and by the (title,
+    author) it loads as, as read_isbns() finds its ISBN."""
+    idx = ex.BookIndex(review)
+    by_id, by_key = {}, {}
+    for r in ex.read_sidecar(path, ex.CALIBRE_BOOKS_COLUMNS):
+        pages = ex.as_int(r["pages"])
+        if not pages:
+            continue
+        if r["calibre_id"]:
+            by_id[r["calibre_id"]] = pages
+        title, author = idx.book_identity(r["title"], r["author"] or None)
+        by_key.setdefault((ex.key(title), ex.key(author)), pages)
+    return by_id, by_key
 
 
 def read_isbns(path: Path, review: list[dict]) -> tuple[dict[str, str], dict[tuple, str]]:

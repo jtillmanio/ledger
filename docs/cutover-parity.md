@@ -34,7 +34,10 @@ exact (0.8b, 1.22, 2.3). Amended 2026-11-08 with the owner's answers
 (D-128, D-133): the cutover splits, books first, and the master list's two
 Calibre uses (fixing a word count, bringing in what changed) go to 4.4's
 two-way sync, pulled ahead of 1.26, since Calibre owns word counts and each
-sync replaces them.
+sync replaces them. Amended 2026-11-10 with the owner's answer (D-139):
+fourteen more books entries are built before 1.26, and the Dark Tower
+reading order, which waited for a shelf after cutover, now goes to 5.1
+before it.
 
 ## What each cutover waits for
 
@@ -51,7 +54,12 @@ on**, on top of the open Phase 1 entries it already names (1.14c, 1.17b and
 - 3.4: ranking the top books of a year.
 - 4.4: the two-way Calibre sync, by hand or weekly. From 1.26 extract no
   longer loads books, so it is how Calibre's changes arrive (D-133).
+- 5.1: shelves, so the Dark Tower reading order has a place.
 - 5.7: adding a book that is coming out, with its date.
+
+And the books entries the owner pulled ahead on 2026-11-10 (D-139), which
+no use below needs: 2.2j, 2.2k, 2.7, 2.8, 2.10, 2.10b, 3.4b, 4.2, 4.5, 4.5b,
+5.5, 5.14 and 5.15.
 
 ### The comics cutover (1.28)
 
@@ -224,7 +232,7 @@ books, with `tracking` follows (1.15); `Completed` is not loaded (D-41).
 - Add a newly announced book to the list → 1.4c
 - See how much of an author or universe I've read → won't carry: the views exist (1.15); the author and universe pages (5.11) come after cutover
 - Plan when I'll read the next one (`Read Plan`) → 2.3
-- The Dark Tower reading order column → won't carry: a reading-order shelf (5.1) after cutover
+- The Dark Tower reading order column → 5.1
 
 ### `To-Read Master List`
 

@@ -870,6 +870,33 @@ BEGIN
   END IF;
 END $$;
 
+-- Task 1.14c (D-130, AC-3): the estimate comes from the page count extract
+-- loaded, Hardcover's 320 here where Calibre's #pages said 600: 320 x your
+-- words per page. A count under 50 makes no estimate, and a stated count stays
+-- whatever the page count.
+INSERT INTO users (id, name) VALUES ('zz-pc-user', 'Page count fixture') ON CONFLICT DO NOTHING;
+INSERT INTO reading_settings (user_id, words_per_page) VALUES ('zz-pc-user', 300);
+INSERT INTO books (id, title, word_count, word_count_source, page_count) VALUES
+  ('zz-pc-print',  'Zz Pc Print',  NULL, NULL, 320),
+  ('zz-pc-tiny',   'Zz Pc Tiny',   NULL, NULL, 40),
+  ('zz-pc-stated', 'Zz Pc Stated', 250000, 'stated', 600);
+INSERT INTO book_status (user_id, book_id, status) VALUES
+  ('zz-pc-user', 'zz-pc-print', 'to_read'), ('zz-pc-user', 'zz-pc-tiny', 'to_read'),
+  ('zz-pc-user', 'zz-pc-stated', 'to_read');
+INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES
+  ('zz-pc-user', 'zz-pc-print', '2027-Q1', 1), ('zz-pc-user', 'zz-pc-tiny', '2027-Q1', 2),
+  ('zz-pc-user', 'zz-pc-stated', '2027-Q1', 3);
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT string_agg(book_id || ':' || coalesce(word_source, 'unknown') || ':' || coalesce(words::text, '-'),
+                    ', ' ORDER BY book_id) INTO got
+  FROM plan_book_words WHERE user_id = 'zz-pc-user';
+  IF got IS DISTINCT FROM 'zz-pc-print:estimated:96000, zz-pc-stated:stated:250000, zz-pc-tiny:unknown:-' THEN
+    RAISE EXCEPTION '1.14c: the estimate from the loaded page count wrong: %', got;
+  END IF;
+END $$;
+
 -- The Up next queue (task 1.10): state and the blocked-by count are derived;
 -- the stored ordinal is read back as it was written, whatever the run's state.
 INSERT INTO users (id, name) VALUES ('zz-q-user', 'Queue fixture') ON CONFLICT DO NOTHING;

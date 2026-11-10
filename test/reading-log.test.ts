@@ -19,6 +19,7 @@ const sql = testSql();
 let book: typeof import("../src/app/api/progress/book/route");
 let issue: typeof import("../src/app/api/progress/issue/route");
 let range: typeof import("../src/app/api/progress/range/route");
+let bookRead: typeof import("../src/app/api/progress/book/read/route");
 let q: typeof import("../src/db/queries");
 let appSql: { end: () => Promise<void> };
 
@@ -28,6 +29,7 @@ beforeAll(async () => {
   book = await import("../src/app/api/progress/book/route");
   issue = await import("../src/app/api/progress/issue/route");
   range = await import("../src/app/api/progress/range/route");
+  bookRead = await import("../src/app/api/progress/book/read/route");
   q = await import("../src/db/queries");
   appSql = (await import("../src/db")).sql;
 });
@@ -404,5 +406,50 @@ describe("the range route refuses a day after today (PR #67 follow-up)", () => {
     expect((await post({ mode: "spread", from: "2026-10-01", to: "2026-10-03" })).status).toBe(400);
     expect((await sql`SELECT 1 FROM issue_progress`)).toHaveLength(0);
     expect((await post({ mode: "date", date: "2026-10-02" })).status).toBe(200);
+  });
+});
+
+describe("a book's reads (roadmap 1.17b, AC-5)", () => {
+  it("Read with a start and a finish writes exactly one read_events row carrying both, and book_status in step", async () => {
+    onDay("2026-03-20");
+    const res = await setStatus({
+      bookId: "wok", status: "read", start: { mode: "date", date: "2026-03-01" }, finish: { mode: "date", date: "2026-03-18" },
+    });
+    expect(res.status).toBe(200);
+    expect(await sql`
+      SELECT started_on::text AS started, started_on_precision AS sp, finished_on::text AS finished, finished_on_precision AS fp
+      FROM read_events WHERE user_id = ${USER} AND book_id = 'wok'`)
+      .toEqual([{ started: "2026-03-01", sp: "exact", finished: "2026-03-18", fp: "exact" }]);
+    expect(await status("wok")).toMatchObject({ status: "read", on: "2026-03-18", precision: "exact" });
+  });
+
+  it("bookReads lists a book's reads in the log's order, oldest first, with format, start, finish and precisions", async () => {
+    // The log's order is the order the reads were logged (id), as the latest read is the last:
+    // a re-date never reorders them, even when it moves the first read past the second.
+    await sql`INSERT INTO read_events (user_id, book_id, started_on, started_on_precision, finished_on, finished_on_precision, format)
+              VALUES (${USER}, 'wok', '2019-02-01', 'exact', '2027-01-01', 'exact', 'text')`;
+    await sql`INSERT INTO read_events (user_id, book_id, started_on, started_on_precision, finished_on, finished_on_precision, format)
+              VALUES (${USER}, 'wok', NULL, 'none', '2024-07-01', 'approximate', 'audio')`;
+    await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision) VALUES (${USER}, 'mst', NULL, 'none')`;
+    const ids = (await events("wok")).map((e) => e.id);
+    const wok = [
+      { id: ids[0], format: "text", started_on: "2019-02-01", started_on_precision: "exact", finished_on: "2027-01-01", finished_on_precision: "exact" },
+      { id: ids[1], format: "audio", started_on: null, started_on_precision: "none", finished_on: "2024-07-01", finished_on_precision: "approximate" },
+    ];
+    expect(await q.bookReads(USER, "wok")).toEqual(wok);
+
+    const res = await bookRead.GET(new Request("http://test/api/progress/book/read?bookId=wok"));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ reads: wok });
+  });
+
+  it("a removed book, a book with no reads and another reader's reads list nothing", async () => {
+    await sql`INSERT INTO users (id, name) VALUES ('someone-else', 'Other')`;
+    await sql`INSERT INTO read_events (user_id, book_id, finished_on) VALUES ('someone-else', 'mst', '2025-01-01')`;
+    await sql`INSERT INTO read_events (user_id, book_id, finished_on) VALUES (${USER}, 'wok', '2025-01-01')`;
+    await sql`UPDATE books SET deleted_at = now() WHERE id = 'wok'`;
+    expect(await q.bookReads(USER, "wok")).toEqual([]);
+    expect(await q.bookReads(USER, "mst")).toEqual([]);
+    expect((await bookRead.GET(new Request("http://test/api/progress/book/read"))).status).toBe(400);
   });
 });

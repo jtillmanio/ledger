@@ -224,6 +224,13 @@ tick them.
       the number is typed as well as stepped (a button that opens a numeric
       input), and a held − or + repeats. It still says "rather than type"; D-123
       governs until you do (from TASK-053, PR #202).
+- [ ] Run `npm run enrich:books` (the real run), then `npm run extract`, and
+      commit the sidecars on a branch: until then the committed
+      `book_details.csv` holds 1.14b's edition-first counts in `page_count`
+      (98 rows), which now load ahead of Calibre's `#pages`, and its 2,000
+      `openlibrary` rows give no count (D-130). 1.14c's dry run already cached
+      every answer, so the run makes few requests, if any (from TASK-057,
+      PR #217).
 
 ## Approvals from follow-ups
 
@@ -267,6 +274,11 @@ and notes where it went.
       sheet frames; both are small, and the STYLE_GUIDE is protected, so the
       owner's design tool changes it if the guide is the one that should move
       (from TASK-045, PR #193).
+- [ ] Record a decision in `docs/review/decisions.md` (next free D-n, amending
+      D-130): an `openlibrary` row's page count is no source, and a `hand` row with no
+      count takes Calibre's `#pages` (your plan-gate answers, 2026-11-09). D-130
+      names neither; `.claude/rules/schema.md` and TASK-057's Plan already say
+      so (from TASK-057, PR #217).
 
 ---
 

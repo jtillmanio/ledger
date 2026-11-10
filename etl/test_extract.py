@@ -902,9 +902,10 @@ class BookDetails(BookCase):
                                   ("Mistborn", "Brandon Sanderson", None, "Fantasy", 214000)]))
         books = self.books()
         wok = books["the-way-of-kings-brandon-sanderson"]
+        # An Open Library row's page count is no source since 1.14c (D-130).
         self.assertEqual({k: wok[k] for k in ("open_library_id", "page_count", "cover_url",
                                               "published_year")},
-                         {"open_library_id": "OL15358691W", "page_count": "1008",
+                         {"open_library_id": "OL15358691W", "page_count": "",
                           "cover_url": "https://covers.openlibrary.org/b/id/14658316-L.jpg",
                           "published_year": "2010"})
         mistborn = books["mistborn-brandon-sanderson"]
@@ -1017,6 +1018,70 @@ class BookDetails(BookCase):
         self.assertEqual((wok["hardcover_id"], wok["open_library_id"], wok["calibre_id"]),
                          ("", "OL15358691W", "7"))
         self.assertNotIn("hardcover series differs", {c["reason"] for c in ex.CHANGES})
+
+    # Task 1.14c (D-130): the page count is a hand row's, else Hardcover's
+    # book-level count, else the matched edition's, else Calibre's #pages.
+
+    def extract_with_calibre(self, titles: list[str], pages: dict[str, str]) -> dict[str, dict]:
+        """Extract the books `titles` (all Brandon Sanderson's) with Calibre
+        giving each title in `pages` its #pages; books by title."""
+        calibre = self.details.parent / "calibre_books.csv"
+        with calibre.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=ex.CALIBRE_BOOKS_COLUMNS, restval="")
+            w.writeheader()
+            for n, title in enumerate(titles, start=1):
+                w.writerow({"title": title, "author": "Brandon Sanderson", "calibre_id": str(n),
+                            "pages": pages.get(title, "")})
+        import io
+        from contextlib import redirect_stdout
+        ex.UNRESOLVED.clear()
+        ex.CHANGES.clear()
+        with redirect_stdout(io.StringIO()):
+            ex.extract_books(build_books([(t, "Brandon Sanderson", None, None, None) for t in titles]),
+                             self.out, book_review=self.review, book_details=self.details, calibre_books=calibre)
+        return {b["title"]: b for b in self.books().values()}
+
+    def test_the_page_count_order(self):
+        hc = {**self.HARDCOVER, "edition_page_count": ""}
+        self.write_details([
+            {**hc, "title": "Book And Edition", "page_count": "1001", "edition_page_count": "1007"},
+            {**hc, "title": "Edition Only", "page_count": "", "edition_page_count": "410"},
+            {**hc, "title": "Neither", "page_count": "", "edition_page_count": ""},
+            {**hc, "title": "Hand", "page_count": "900", "source": "hand", "hardcover_id": ""},
+            {**hc, "title": "Hand Without", "page_count": "", "source": "hand", "hardcover_id": ""},
+        ])
+        titles = ["Book And Edition", "Edition Only", "Neither", "Hand", "Hand Without", "No Row"]
+        books = self.extract_with_calibre(titles, {t: "1258" for t in titles})
+        self.assertEqual({t: books[t]["page_count"] for t in titles},
+                         {"Book And Edition": "1001", "Edition Only": "410", "Neither": "1258",
+                          "Hand": "900", "Hand Without": "1258", "No Row": "1258"})
+
+    def test_hardcovers_count_beats_calibres_whichever_is_larger(self):
+        """AC-3: Calibre's 600 is the ebook's estimate; Hardcover's 320 is print."""
+        self.write_details([{**self.HARDCOVER, "title": "Short", "page_count": "320", "edition_page_count": ""},
+                            {**self.HARDCOVER, "title": "Tiny", "page_count": "40", "edition_page_count": ""}])
+        books = self.extract_with_calibre(["Short", "Tiny"], {"Short": "600", "Tiny": "600"})
+        self.assertEqual((books["Short"]["page_count"], books["Tiny"]["page_count"]), ("320", "40"))
+        # A page count never becomes a word count: the view estimates (D-130 keeps D-87).
+        self.assertEqual((books["Short"]["word_count"], books["Short"]["word_count_source"]), ("", ""))
+
+    def test_an_open_library_rows_count_is_no_source(self):
+        """Open Library is gone (D-94; owner, 2026-11-09): Calibre's #pages
+        fills, and with none the book has no count."""
+        self.write_details([{**self.WOK, "title": "With Calibre"}, {**self.WOK, "title": "Without"}])
+        books = self.extract_with_calibre(["With Calibre", "Without"], {"With Calibre": "600"})
+        self.assertEqual((books["With Calibre"]["page_count"], books["Without"]["page_count"]), ("600", ""))
+        self.assertEqual(books["Without"]["open_library_id"], "OL15358691W")
+
+    def test_a_details_file_without_edition_page_count_still_loads(self):
+        """A sidecar written before 1.14c: its page_count is the count."""
+        with self.details.open("w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=[c for c in ex.BOOK_DETAILS_COLUMNS if c != "edition_page_count"],
+                               extrasaction="ignore")
+            w.writeheader()
+            w.writerow({**self.HARDCOVER, "title": "Old"})
+        books = self.extract_with_calibre(["Old"], {"Old": "1258"})
+        self.assertEqual(books["Old"]["page_count"], "1007")
 
     def test_an_accepted_hardcover_row_renames_the_book_and_details_follow(self):
         self.write_review([{**self.PROPOSAL, "b_tabs": "Hardcover", "reason": "hardcover", "decision": "merge"}])

@@ -19,11 +19,11 @@ reload it.
 **books** cutover: the last full load, `LEDGER_LIVE=true`, and `Books.xlsx`
 archived. `Comics.xlsx` stays the comics record after it, and 1.29's
 comics-only load keeps production's comics in step with it until 1.28, the
-**comics** cutover. After 1.26 come the books entries of Next; comics work
-resumes after them.
+**comics** cutover. Since 2026-11-10 nearly all the books work comes before
+1.26 (D-139); after it come 2.1b and 3.5, then the comics.
 
 The books cutover (1.26) waits for (`docs/cutover-parity.md` § What each
-cutover waits for, and the owner's 2026-11-08 additions):
+cutover waits for, and the owner's 2026-11-08 and 2026-11-10 additions):
 
 - **2.2b and 2.3**, the rest of the year and quarter word-count budget (2.0,
   2.1 and 2.2 are built);
@@ -33,7 +33,12 @@ cutover waits for, and the owner's 2026-11-08 additions):
 - **5.17**, what you own: on paper, as an audiobook, both or neither (D-132);
 - **4.4**, the two-way Calibre sync, one command run by hand or weekly
   (D-133): from 1.26 extract no longer loads books;
-- **1.29**, the comics-only load.
+- **1.29**, the comics-only load;
+- **the rest of the books work** (D-139): 2.2j and 2.2k; 2.7, 2.8, 2.10 and
+  2.10b, editing and planning the year; 3.4b, ranking as you finish; 4.2,
+  the Hardcover backfill; 4.5 and 4.5b, Calibre's genres; 5.1, shelves (the
+  Dark Tower reading order); 5.5, DNF with a reason; 5.14, the listen queue;
+  5.15, Parked. Only 2.1b, 3.5 and the read-only pages wait for after it.
 
 The comics cutover (1.28) waits for 3.1 → 3.2 → 3.3 and 5.6 → 5.10.
 
@@ -120,7 +125,7 @@ day, the wishlist moved into extract (1.27, D-111). The 2026-11-05 intake
 added 2.0b, 2.2f–2.2i, 4.5b, 5.17, 6.21 and L-11 and amended 2.2c, 2.2d, 3.4b
 and 5.12 (D-117–D-125): a finish follows a book's series, subseries and
 universe, the phone gets a tab row, and Top books replaces the Library's year
-chips. None of these is a cutover gate except where 1.25 names one. The 2026-11-08 intake split the cutover, books first, and added 1.14c, 1.17b, 1.28 and 1.29, widened 5.17 to audiobooks and made 4.4 a two-way sync (D-128–D-133); all but 1.28 gate the books cutover. The 2026-11-09 intake added 2.2j: a book's row names its universe, then its series, on On deck, Up next, the status tabs, the Library and the plan sheet (D-134); not a gate.
+chips. None of these is a cutover gate except where 1.25 names one. The 2026-11-08 intake split the cutover, books first, and added 1.14c, 1.17b, 1.28 and 1.29, widened 5.17 to audiobooks and made 4.4 a two-way sync (D-128–D-133); all but 1.28 gate the books cutover. The 2026-11-09 intake added 2.2j: a book's row names its universe, then its series, on On deck, Up next, the status tabs, the Library and the plan sheet (D-134). On 2026-11-10 the owner pulled fourteen books entries ahead of the books cutover, 2.2j among them (D-139).
 
 **Every preview measures itself** (0.10). When Vercel reports a preview ready,
 `.github/workflows/lighthouse.yml` signs in, runs Lighthouse and 0.9's tap
