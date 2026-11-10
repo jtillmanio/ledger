@@ -282,11 +282,11 @@ tables.
     | `/comics` | 30,500 | 170,000 | 41 | 100 |
     | `/comics/runs` | 57,000 | 170,000 | 38 | 100 |
     | `/comics/status` | 24,000 | 175,000 | 35 | 100 |
-    | `/books/status` | 24,000 | 175,000 | 35 | 100 |
+    | `/books/status` | 24,000 | 175,100 | 35 | 100 |
     | `/comics/bendis-disassembled` | 26,800 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 26,000 | 171,000 | 33 | 100 |
-    | `/books` | 19,000 | 177,200 | 36 | 100 |
-    | `/books/list` | 70,000 | 173,000 | 65 | 100 |
+    | `/books` | 19,000 | 177,400 | 36 | 100 |
+    | `/books/list` | 70,000 | 173,100 | 65 | 100 |
     | `/inbox` | 16,000 | 173,000 | 31 | 100 |
     | `/settings` | 16,000 | 173,000 | 32 | 100 |
     | `/watch` | 12,500 | 173,000 | 28 | 100 |
@@ -393,6 +393,12 @@ tables.
     every page with an Add button ships Search, *Paste a list* and *By hand*
     before the sheet opens; loading it with the sheet is the likeliest large
     saving.
+    PR #232 (D-144) made an open sheet lift its buttons clear of the undo
+    toast, which needs the toast's height measured in the always-loaded undo
+    provider. Its preview measured `/books` at 177,359, `/books/list` at 173,068
+    and `/books/status` at 175,045 bytes of JS (median of three), so the owner
+    raised them to 177,400, 173,100 and 175,100 (2026-11-10): the same stopgap,
+    1.30's targets unchanged.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 

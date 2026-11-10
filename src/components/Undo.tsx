@@ -241,13 +241,12 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
     const measure = () =>
       root.style.setProperty("--toast-clear", `${Math.ceil(window.innerHeight - el.getBoundingClientRect().top)}px`);
     measure();
-    // A toast that grows (an offer's chips) moves its top; jsdom has no ResizeObserver.
+    // A toast that grows (an offer's chips) moves its top, and the region spans the viewport, so a
+    // resize of the window resizes it too. jsdom has no ResizeObserver.
     const sizes = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
     sizes?.observe(el);
-    window.addEventListener("resize", measure);
     return () => {
       sizes?.disconnect();
-      window.removeEventListener("resize", measure);
       root.style.removeProperty("--toast-clear");
     };
   }, [showing]);
