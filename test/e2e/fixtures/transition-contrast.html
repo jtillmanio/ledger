@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Contrast mid-transition</title>
+<style>
+  /* A chip that starts pale and settles dark under white text: 1.16:1 at the
+     start of its transition, over 17:1 once it ends. The spinner never ends,
+     and the contrast helper must not wait on it. */
+  body { margin: 0; background: #ffffff; font: 16px sans-serif; }
+  .chip { display: inline-block; padding: 12px; color: #ffffff; background: #eeeeee; transition: background-color 1200ms linear; }
+  .chip.on { background: #111111; }
+  .spin { display: inline-block; width: 16px; height: 16px; border: 2px solid #111111; animation: spin 900ms linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <span class="chip">Q3</span>
+  <span class="spin" aria-hidden="true"></span>
+</body>
+</html>

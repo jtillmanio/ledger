@@ -6,7 +6,7 @@ import { expect, test } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
-  E2E_RUN_ID, computedStyle, expectNoAxeViolations, expectNoHorizontalScroll, screenshot,
+  E2E_RUN_ID, computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, screenshot,
 } from "./helpers";
 
 const fixture = (name: string) => readFileSync(join(__dirname, "fixtures", name), "utf8");
@@ -33,6 +33,22 @@ test("no-scroll fails on a page that overflows at 360px", { tag: ["@at-w360-ligh
 
   await page.locator("#wide").evaluate((el) => { el.style.width = "100%"; });
   await expectNoHorizontalScroll(page);
+});
+
+// A pressed chip measured while its colour still moves read 1.35:1 in TASK-064's
+// first full run; the same check passed once the transition ended. The helper
+// waits for every transition and animation that ends, and not for one that loops.
+test("contrast is measured once transitions end, without waiting on a looping animation", async ({ page }) => {
+  await page.setContent(fixture("transition-contrast.html"));
+  await page.locator(".chip").evaluate((el) => {
+    el.classList.add("on");
+    void getComputedStyle(el).backgroundColor; // start the transition now
+  });
+  const started = Date.now();
+  expect(await contrastFailures(page)).toEqual([]);
+  // It waited for the 1.2s transition, and the infinite spinner didn't hold it.
+  expect(Date.now() - started).toBeGreaterThanOrEqual(900);
+  expect(Date.now() - started).toBeLessThan(5_000);
 });
 
 test("the helpers work together", async ({ page }, testInfo) => {

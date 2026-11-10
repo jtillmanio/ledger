@@ -109,8 +109,17 @@ export function tokenColour(page: Page, token: string) {
  * WCAG 1.4.3 leaves inactive components out. Text on a background image or
  * gradient is not measured (none of the screens it runs on has one). Returns
  * one line per failure, empty when everything passes.
+ *
+ * It measures what the page settles on: it first waits for every transition
+ * and animation that ends (a pressed chip read mid-transition is neither
+ * colour), but not for one that loops, and for no more than 3s.
  */
 export async function contrastFailures(page: Page): Promise<string[]> {
+  await page.evaluate(() => {
+    const ending = document.getAnimations().filter((a) => a.effect?.getComputedTiming().endTime !== Infinity);
+    const done = Promise.all(ending.map((a) => a.finished.catch(() => undefined)));
+    return Promise.race([done, new Promise((resolve) => setTimeout(resolve, 3_000))]);
+  });
   return page.evaluate(() => {
     const ctx = document.createElement("canvas").getContext("2d", { willReadFrequently: true })!;
     type Rgba = [number, number, number, number];
