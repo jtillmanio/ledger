@@ -83,8 +83,8 @@ to be changed in both.
   `ci.yml` (no secrets), `lighthouse.yml`, `release.yml`, `backup.yml`,
   `neon-preview-cleanup.yml`, `preview-link.yml` (no secrets),
   `claude.yml`, `claude-pr-review.yml`.
-- **Dependabot** opens dependency PRs. It runs without the repo's secrets, so
-  its Neon cleanup only warns.
+- **Dependabot** opens dependency PRs. It runs without the repo's secrets; its
+  previews' Neon branches are swept daily like any other PR's.
 - **If it lapses:** a `gh` login expires rarely; `gh auth login` again.
 
 ## Neon

@@ -6,3 +6,11 @@ export function previewBranchToDelete<T extends { name: string; default?: boolea
   branches: T[],
   gitBranch: string | undefined,
 ): T | null;
+export const SWEEP_GRACE_MS: number;
+export function sweepDecision(
+  branch: { name: string; default?: boolean; protected?: boolean; created_at: string },
+  prs: { number: number; state: string; closed_at: string | null }[],
+  gitBranchExists: boolean,
+  now: number,
+  graceMs?: number,
+): { delete: boolean; why: string } | null;

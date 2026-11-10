@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSteps, endpointId, previewBranchToDelete, previewDbProblem } from "../scripts/lib/preview.mjs";
+import { buildSteps, endpointId, previewBranchToDelete, previewDbProblem, SWEEP_GRACE_MS, sweepDecision } from "../scripts/lib/preview.mjs";
 
 const LIVE_POOLED = "postgresql://u:p@ep-live-a1b2-pooler.c-2.us-east-2.aws.neon.tech/neondb?sslmode=require";
 const LIVE_HOST = "ep-live-a1b2.c-2.us-east-2.aws.neon.tech";
@@ -85,5 +85,55 @@ describe("previewBranchToDelete", () => {
     const kept = [{ id: "br-kept", name: "preview/keep", default: false, protected: true }];
     expect(previewBranchToDelete(live, "main")).toBeNull();
     expect(previewBranchToDelete(kept, "keep")).toBeNull();
+  });
+});
+
+describe("sweepDecision (the daily Neon sweep, a backstop to the integration)", () => {
+  const now = Date.parse("2026-11-12T09:17:00Z");
+  const ago = (h: number) => new Date(now - h * 3_600_000).toISOString();
+  const preview = (name: string, createdHoursAgo = 72) => ({ name: `preview/${name}`, default: false, protected: false, created_at: ago(createdHoursAgo) });
+  const closed = (number: number, hoursAgo: number) => ({ number, state: "closed", closed_at: ago(hoursAgo) });
+
+  it("gives the grace period a day", () => {
+    expect(SWEEP_GRACE_MS).toBe(24 * 3_600_000);
+  });
+
+  it("keeps a branch whose PR is open, however old", () => {
+    expect(sweepDecision(preview("dependabot/npm_and_yarn/x", 500), [{ number: 216, state: "open", closed_at: null }], true, now))
+      .toEqual({ delete: false, why: "PR #216 is open" });
+  });
+
+  it("leaves a PR closed under a day ago to the integration, and deletes it after", () => {
+    // 2026-11-10: the workflow deleted preview/chore/ci-browser-gate at the PR's
+    // close, under the integration, and its stale entry blocked every preview.
+    expect(sweepDecision(preview("chore/ci-browser-gate"), [closed(227, 2)], false, now))
+      .toEqual({ delete: false, why: "PR #227 closed 2 h ago: the integration's turn" });
+    expect(sweepDecision(preview("chore/ci-browser-gate"), [closed(227, 24)], false, now))
+      .toEqual({ delete: true, why: "PR #227 closed 24 h ago" });
+  });
+
+  it("goes by the latest PR when a branch had several", () => {
+    // docs/perf-budget-gate: #229 closed, the same branch could be reopened as a new PR.
+    expect(sweepDecision(preview("docs/x"), [closed(229, 30), closed(231, 3)], true, now))
+      .toEqual({ delete: false, why: "PR #231 closed 3 h ago: the integration's turn" });
+    expect(sweepDecision(preview("docs/x"), [closed(229, 30), { number: 231, state: "open", closed_at: null }], true, now))
+      .toEqual({ delete: false, why: "PR #231 is open" });
+  });
+
+  it("keeps a pushed branch with no PR yet, and deletes one whose git branch is gone once it is a day old", () => {
+    expect(sweepDecision(preview("fix/wip", 200), [], true, now))
+      .toEqual({ delete: false, why: "no PR yet, and the git branch is still there" });
+    expect(sweepDecision(preview("fix/gone", 5), [], false, now))
+      .toEqual({ delete: false, why: "no PR and the git branch is gone, but the Neon branch is only 5 h old" });
+    expect(sweepDecision(preview("fix/gone", 30), [], false, now))
+      .toEqual({ delete: true, why: "no PR, the git branch is gone, and the Neon branch is 30 h old" });
+  });
+
+  it("never considers the live, test, snapshot, default or protected branches", () => {
+    for (const name of ["production", "development", "test", "pre-release/202610150900-abc1234"]) {
+      expect(sweepDecision({ name, created_at: ago(1000) }, [], false, now)).toBeNull();
+    }
+    expect(sweepDecision({ ...preview("main"), default: true }, [], false, now)).toBeNull();
+    expect(sweepDecision({ ...preview("keep"), protected: true }, [closed(1, 999)], false, now)).toBeNull();
   });
 });
