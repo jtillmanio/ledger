@@ -145,6 +145,31 @@ describe("Add to Someday on an Unlisted row", () => {
     expect(await statusOf(UNLISTED)).toBe("to_read");
   });
 
+  it("an undo on a book that had no status row refuses, changing nothing, once it has been planned since (task 2.3, AC-5)", async () => {
+    // Plan rows with no book_status row: what the undo must never leave.
+    const orphans = () => sql`SELECT p.book_id FROM reading_plan p
+      LEFT JOIN book_status s ON s.user_id = p.user_id AND s.book_id = p.book_id WHERE s.book_id IS NULL`;
+    await sql`INSERT INTO books (id, title, author_id) VALUES ('mistborn', 'Mistborn', 'brandon-sanderson'),
+      ('emperors-soul', 'The Emperor''s Soul', 'brandon-sanderson')`;
+    for (const [id, set, period] of [["mistborn", "to_read", "2027-Q1"], ["emperors-soul", "reading", "2027"]]) {
+      const { change } = await (await status.POST(json("POST", { bookId: id, status: set }))).json();
+      expect(change.prior, id).toBeNull();
+      await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal)
+                VALUES (${USER}, ${id}, ${period}, ${period.includes("-Q") ? 1 : null})`;
+      expect((await status.DELETE(json("DELETE", { change }))).status, id).toBe(409);
+      expect(await statusOf(id), id).toBe(set);
+      expect(await plan(id), id).toEqual([{ period }]);
+    }
+    expect(await orphans()).toEqual([]);
+
+    // Unplanned, the same undo still takes the row away.
+    await sql`DELETE FROM reading_plan WHERE book_id = 'mistborn'`;
+    await sql`DELETE FROM book_status WHERE book_id = 'mistborn'`;
+    const { change } = await (await status.POST(json("POST", { bookId: "mistborn", status: "to_read" }))).json();
+    expect((await status.DELETE(json("DELETE", { change }))).status).toBe(200);
+    expect(await statusOf("mistborn")).toBeNull();
+  });
+
   it("a status POST never sets unlisted: only an undo writes it", async () => {
     const res = await status.POST(json("POST", { bookId: SOMEDAY, status: "unlisted" }));
     expect(res.status).toBe(400);

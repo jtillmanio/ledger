@@ -1136,24 +1136,49 @@ export interface PeriodCapacity {
  */
 export async function planCapacity(
   userId: string, year: number, settings?: Promise<ReadingSettings>,
-): Promise<{ year: PeriodCapacity; quarters: PeriodCapacity[] }> {
-  const rows = await sql<PeriodCapacity[]>`
-    SELECT period, year, quarter, capacity, planned_words AS "plannedWords", stated_words AS "statedWords",
-           estimated_words AS "estimatedWords", books, read_books AS "readBooks", unknown_books AS "unknownBooks",
-           load, estimated_share AS "estimatedShare"
-    FROM plan_capacity WHERE user_id = ${userId} AND year = ${year}
-    ORDER BY quarter NULLS FIRST`;
-  if (rows.length === 0) {
-    const capacity = wordsPerYear(await (settings ?? readingSettings(userId)), year);
-    const empty = (quarter: number | null): PeriodCapacity => ({
-      period: quarter === null ? String(year) : `${year}-Q${quarter}`, year, quarter,
-      capacity: quarter === null ? capacity : capacity / 4,
-      plannedWords: 0, statedWords: 0, estimatedWords: 0, books: 0, readBooks: 0, unknownBooks: 0,
-      load: 0, estimatedShare: null,
-    });
-    return { year: empty(null), quarters: [1, 2, 3, 4].map(empty) };
-  }
+): Promise<YearCapacity> {
+  const rows = await capacityRows(userId, year, year);
+  if (rows.length === 0) return emptyYear(await (settings ?? readingSettings(userId)), year);
   return { year: rows[0], quarters: rows.slice(1) };
+}
+
+/** A year and its four quarters, as `planCapacity` answers them. */
+export type YearCapacity = { year: PeriodCapacity; quarters: PeriodCapacity[] };
+
+/** `plan_capacity`'s rows for the years `from`…`to`, each year before its quarters. */
+const capacityRows = (userId: string, from: number, to: number) => sql<PeriodCapacity[]>`
+  SELECT period, year, quarter, capacity, planned_words AS "plannedWords", stated_words AS "statedWords",
+         estimated_words AS "estimatedWords", books, read_books AS "readBooks", unknown_books AS "unknownBooks",
+         load, estimated_share AS "estimatedShare"
+  FROM plan_capacity WHERE user_id = ${userId} AND year BETWEEN ${from} AND ${to}
+  ORDER BY year, quarter NULLS FIRST`;
+
+/** A year nothing counts in: empty, at your settings' capacity. */
+function emptyYear(settings: ReadingSettings, year: number): YearCapacity {
+  const capacity = wordsPerYear(settings, year);
+  const empty = (quarter: number | null): PeriodCapacity => ({
+    period: quarter === null ? String(year) : `${year}-Q${quarter}`, year, quarter,
+    capacity: quarter === null ? capacity : capacity / 4,
+    plannedWords: 0, statedWords: 0, estimatedWords: 0, books: 0, readBooks: 0, unknownBooks: 0,
+    load: 0, estimatedShare: null,
+  });
+  return { year: empty(null), quarters: [1, 2, 3, 4].map(empty) };
+}
+
+/**
+ * The plan editor's chips (task 2.3): `count` years from `first`, each year and its quarters
+ * with its current words against capacity, as `planCapacity` reads them, in one read of
+ * `plan_capacity`. Your settings are read only when a year has nothing planned.
+ */
+export async function planYears(userId: string, first: number, count = 5): Promise<YearCapacity[]> {
+  const rows = await capacityRows(userId, first, first + count - 1);
+  let settings: Promise<ReadingSettings> | undefined;
+  return Promise.all(Array.from({ length: count }, async (_, i) => {
+    const year = first + i;
+    const mine = rows.filter((r) => r.year === year);
+    if (mine.length) return { year: mine[0], quarters: mine.slice(1) };
+    return emptyYear(await (settings ??= readingSettings(userId)), year);
+  }));
 }
 
 /* ── The books dashboard (task 2.2, F-22, D-40) ─────────────────────────────────────────

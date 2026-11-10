@@ -1,14 +1,14 @@
 ---
 id: TASK-063
 title: 2.3 Plan editor (1 of 3) — every plan level through one write
-status: Ready
+status: In progress
 depends_on: [TASK-011, TASK-046]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: c6f1ec4
 ---
 
 # TASK-063 — 2.3 Plan editor (1 of 3) — every plan level through one write
@@ -75,7 +75,27 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-10. Worktree `.claude/worktrees/task-2.3` runs its tests on `.env`'s `ledger_test` (owner: `ledger_test_2` is another job's, no `ledger_test_3`).
+
+**Steps**
+
+1. `src/db/writes.ts`: `restoreToPlan(userId, bookId, period, ordinal)` puts a book back at a place in a quarter (the books from that place shift down, so the quarter stays 1…N; a bare year or On deck takes none). `planMove(userId, bookId, from, to)` is the general mover, `from`/`to` a period or `someday`: someday → period is `placeInPlan` (refused unless the book is `to_read` with no plan row), period → period `movePlan`, period → someday `moveToSomeday`. It answers its undo, `{ placed, prior: [{ period, ordinal }] }`, read before the move in its transaction. `undoPlanMove` takes the book out of `to` (only when the move placed it there) and restores each prior row at its ordinal; refused, changing nothing, when the book is no longer in `to` or has gained a prior period.
+2. The preview, `previewPlanMove`: the same move in a transaction, then `plan_capacity` for the target, then a rollback, so the figure is 2.1's view's. A book not in the library yet (the add sheet) sends `words`: the target's current total plus them. Answers `{ plannedWords, capacity, over }` (`over` null when it fits); On deck and Someday answer no budget.
+3. `src/db/queries.ts`: `planYears(userId, from, 5)`, the chip totals: one read of `plan_capacity` for five years and their quarters, an empty year at your capacity (`planCapacity`'s empty filler, shared).
+4. `src/app/api/plan/route.ts`: POST extended (`from`/`to` may be `someday`; answers the undo), so 2.2's On deck *Plan* keeps working; DELETE is its undo; GET `?from=YYYY` the chip totals, GET `?bookId|words&from&to` the preview. A body with `year`, `quarter` or `month` keys, or a period like `2027-03`, answers 400 and writes nothing.
+5. `Destination` gains `{ kind: "period", period }`, a quarter or a bare year (`parseDestination`, `writeDestination`): promote or status `to_read`, then `placeInPlan`, in the add's transaction; `undoInside` handles it as On deck. `/api/books/bulk` gains it with the parser.
+6. `undoBookStatus`'s no-prior case refuses when the book has a plan row, as the Unlisted case does (owner's choice).
+
+**Files**: `src/db/writes.ts`, `src/db/queries.ts`, `src/app/api/plan/route.ts`, `src/lib/book-add.ts`, `src/app/api/books/route.ts` (the 400 message), `test/plan-period.test.ts`, `test/capacity.test.ts`, `test/add-book.test.ts`, `test/unlisted.test.ts`. All in *Files likely touched*.
+
+**Test strategy**
+
+- AC-1, AC-2: `test/plan-period.test.ts` § the general move (2.3): A, B (150k), C in 2027-Q1 and D in 2028-Q2; ordinals, each total ±150k exactly, undo to 1-2-3; *No quarter yet* writes `2027`; On deck and Someday need no quarter.
+- AC-3: `test/capacity.test.ts`: the preview equals `planCapacity` after the real move; over and null; `reading_plan` unchanged after a preview.
+- AC-4: `test/plan-period.test.ts`: month and split-value requests 400 and write nothing; Someday keeps `book_status` (status, dates, rating, note); its undo restores the old ordinal.
+- AC-5: `test/add-book.test.ts`: quarter and year adds; one transaction (a period the CHECK refuses, `2027-Q5`, passed straight to `addBook`, leaves no `book_status`). `test/unlisted.test.ts`: the no-prior undo after planning refuses and changes nothing.
+
+**Risks**: the preview's rollback must never commit (a thrown sentinel, as `undoAddBooks`); `restoreToPlan`'s shift passes through a duplicate ordinal, which the deferred UNIQUE allows. Size: 9 files, no schema or UI; already 1 of 3 parts, not split again.
 
 ## Review log
 
