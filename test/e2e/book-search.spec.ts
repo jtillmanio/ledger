@@ -215,6 +215,7 @@ test("a result's Year or quarter… adds the book at the end of a quarter, and U
   const year = easternYear() + 1;
   const period = `${year}-Q2`;
   const plan = () => withSql((sql) => sql`SELECT period, ordinal FROM reading_plan WHERE user_id = ${E2E_USER} AND book_id = ${LIBRARY.id}`);
+  const status = () => withSql((sql) => sql`SELECT status FROM book_status WHERE user_id = ${E2E_USER} AND book_id = ${LIBRARY.id}`);
   const last = () => withSql((sql) => sql`SELECT COALESCE(MAX(ordinal), 0)::int AS n FROM reading_plan WHERE user_id = ${E2E_USER} AND period = ${period}`)
     .then((rows) => rows[0].n as number);
   const placed = await last();
@@ -236,6 +237,7 @@ test("a result's Year or quarter… adds the book at the end of a quarter, and U
   await expect(page.locator(".toast-label")).toHaveText(`Added to Q2 ${year}`);
   // The book is last in the quarter, still to read.
   expect(await plan()).toEqual([{ period, ordinal: placed + 1 }]);
+  expect(await status()).toEqual([{ status: "to_read" }]);
 
   await page.getByRole("button", { name: "Undo" }).click();
   await expect.poll(plan).toEqual([]);

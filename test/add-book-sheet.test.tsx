@@ -455,7 +455,8 @@ describe("Search (AC-2, AC-6)", () => {
     expect(resultButtons()[1].hasAttribute("aria-disabled")).toBe(false);
   });
 
-  it("a book you already have says so, and with nothing written there is nothing to undo", async () => {    added = { ...added, bookId: BLADE.id, reused: true, status: "read", created: [], added: [] };
+  it("a book you already have says so, and with nothing written there is nothing to undo", async () => {
+    added = { ...added, bookId: BLADE.id, reused: true, status: "read", created: [], added: [] };
     await open();
     await search();
     await click(resultButtons()[0]);

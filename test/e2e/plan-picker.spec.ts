@@ -280,6 +280,10 @@ test("over capacity the preview is amber with the amount over and a disabled Acc
     return [s.color, s.backgroundColor, s.borderTopColor, s.borderLeftColor, s.outlineColor];
   }));
   expect(painted).not.toContain(danger);
+  // The one new colour pair, --blocked text on --blocked-soft, measured as drawn (light and dark projects both run this).
+  await settled(page);
+  expect(await contrastFailures(page)).toEqual([]);
+  await expectNoAxeViolations(page, AXE);
   await screenshot(page, info, "plan-picker-over");
 
   // A target that fits is plain again.
