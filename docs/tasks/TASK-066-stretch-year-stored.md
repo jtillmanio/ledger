@@ -29,6 +29,7 @@ Accepting an over-full year as a stretch year is remembered with its date and fi
 - Every move goes through 1.7's helpers (`src/db/writes.ts`) and pushes one undo onto the 1.2 stack that restores every ordinal it changed. Capacity comes from 2.1 (`planCapacity`, `plan_capacity`).
 - Data model: `docs/03-data-model.md` § 2. Decisions, 2.9; § 4. Proposed additions.
 - Decisions: D-37, D-91, R3-14. Hard rules 2, 3 and 7.
+- *From TASK-064 (2.3, PR #224):* the plan picker's over-capacity preview already draws *Accept as a stretch year* `aria-disabled`, with its reason *Accepting a stretch year arrives with 2.7.* (`STRETCH_WHY` in `src/components/PlanPicker.tsx`). Enabling it to write the acceptance, and dropping that reason, belongs to this part or TASK-067's sheet; the picker's preview figure (`over`) is `previewPlanMove`'s.
 
 ## Acceptance criteria
 

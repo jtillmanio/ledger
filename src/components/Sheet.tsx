@@ -110,7 +110,8 @@ export default function Sheet({ heading, opener, onClose, children }: {
     }
     if (e.key !== "Tab") return;
     const all = [...dialog.current!.querySelectorAll<HTMLElement>(FOCUSABLE)]
-      .filter((el) => !el.hasAttribute("disabled"));
+      // A step that hides the rest of the sheet (Add books' plan picker, task 2.3) leaves it out of the loop.
+      .filter((el) => !el.hasAttribute("disabled") && !el.closest("[hidden], [inert]"));
     if (all.length === 0) return;
     const first = all[0], last = all.at(-1)!;
     const at = document.activeElement;

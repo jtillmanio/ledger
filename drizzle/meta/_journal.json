@@ -169,6 +169,13 @@
       "when": 1794075686656,
       "tag": "0023_subseries_follows",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794328058619,
+      "tag": "0024_books_added_at",
+      "breakpoints": true
     }
   ]
 }

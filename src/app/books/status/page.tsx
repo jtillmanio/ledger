@@ -8,6 +8,7 @@ import StatusBookRow from "@/components/StatusBookRow";
 import StatusTabs from "@/components/StatusTabs";
 import { requireUserId } from "@/lib/auth";
 import { booksDone, booksInFlight, booksUpNext, type DoneBook, type PlannedBook, type StatusBook } from "@/db/queries";
+import { today } from "@/lib/finish-date";
 import { bookDates, quarterName, type Precision } from "@/lib/format";
 import { parseTab } from "@/lib/status-tabs";
 
@@ -26,6 +27,12 @@ function groupPlan(planned: PlannedBook[]): Group[] {
     groups.set(key, g);
   }
   return [...groups.values()];
+}
+
+/** This quarter, `2026-Q4`, on the Eastern day (task 1.16): *Plan a book* opens Add books on it (task 2.3). */
+function thisQuarter() {
+  const day = today();
+  return `${day.slice(0, 4)}-Q${Math.floor((Number(day.slice(5, 7)) - 1) / 3) + 1}`;
 }
 
 const kWords = (books: PlannedBook[]) => {
@@ -111,7 +118,7 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
             {planned.length === 0 && (
               <EmptySlate
                 title="Nothing planned."
-                action={<AddBooksButton target={{ kind: "on_deck" }} label="Add a book" className="btn sm" />}
+                action={<AddBooksButton target={{ kind: "period", period: thisQuarter() }} label="Plan a book" className="btn sm" />}
               >
                 The plan starts empty; nothing is added for you.
               </EmptySlate>

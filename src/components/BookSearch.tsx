@@ -39,15 +39,19 @@ export const authorList = (names: string[]) =>
  * `initialQuery` pre-fills the field (an inbox note's text, task 1.4b) and
  * searches nothing until it is typed in or submitted.
  */
-export default function BookSearch({ level, target, outcomes, busy, onAdd, onByHand, initialQuery = "" }: {
+export default function BookSearch({ level, target, outcomes, wheres, busy, onAdd, onPlan, onByHand, initialQuery = "" }: {
   /** The section heading level: 2 under the page's h1, 3 under the sheet's h2. */
   level: 2 | 3;
   initialQuery?: string;
   target: Target;
   outcomes: Record<string, Outcome>;
+  /** Where a result was added when that wasn't `target` (its own *Year or quarter…*); read only once it has an outcome. */
+  wheres: Record<string, Target>;
   /** The key of the result being added. */
   busy: string | null;
   onAdd: (pick: Pick) => void;
+  /** *Year or quarter…* on a result (task 2.3): the plan picker for this book, its words as the sheet will add them. */
+  onPlan: (pick: Pick, words: number | null, opener: HTMLElement) => void;
   onByHand: (title: string) => void;
 }) {
   const H = level === 2 ? "h2" : "h3";
@@ -172,7 +176,9 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
     const sub = [lib ? lib.author : authorList(hc!.authors), series && `${series}${position != null ? ` #${position}` : ""}`,
       pages && `${pages} pages`].filter(Boolean).join(" · ");
     const subtitle = hc?.subtitle ?? null;
-    const label = addTo(target);
+    const label = addTo(done ? (wheres[key] ?? target) : target);
+    // The words a plan total would gain: the stated count, else pages at your words per page (50 or more).
+    const words = lib?.word_count ?? (pages && pages >= 50 && answer ? pages * answer.wordsPerPage : null);
     const says = done === "added" ? label.replace(/^Add/, "Added") : done === "there" ? "Already there"
       : busy === key ? "Adding…" : label;
     return (
@@ -199,6 +205,13 @@ export default function BookSearch({ level, target, outcomes, busy, onAdd, onByH
             <button type="button" className="btn sm res-add" aria-label={`${says}: ${book.title}${subtitle ? `: ${subtitle}` : ""}`}
               aria-disabled={done || busy !== null ? true : undefined} onClick={() => { if (!done && busy === null) onAdd(pick); }}>
               {done && <span aria-hidden="true">✓ </span>}{says}
+            </button>
+            {/* The secondary route to a year or a quarter (task 2.3); the primary adds to the Add to chip. */}
+            <button type="button" className="btn sec sm res-plan" aria-haspopup="dialog"
+              aria-label={`Year or quarter…: ${book.title}${subtitle ? `: ${subtitle}` : ""}`}
+              aria-disabled={done || busy !== null ? true : undefined}
+              onClick={(e) => { if (!done && busy === null) onPlan(pick, words, e.currentTarget); }}>
+              Year or quarter…
             </button>
           </div>
         </div>

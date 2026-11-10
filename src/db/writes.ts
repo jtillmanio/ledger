@@ -1445,6 +1445,8 @@ async function createBooks(tx: Tx, toCreate: BookRow[]): Promise<string[]> {
       hardcoverId: b.hardcoverId ?? null, openLibraryId: b.openLibraryId ?? null, coverUrl: b.coverUrl ?? null,
       publishedYear: b.year ?? null, pageCount: b.pages ?? null,
       wordCount: b.wordCount ?? null, wordCountSource: b.wordCount == null ? null : b.wordCountSource ?? null,
+      // Every add path creates its books here, so this is the one stamp *Recently added* reads (task 2.10b).
+      addedAt: sql`now()`,
     };
   });
   await tx.insert(books).values(rows);

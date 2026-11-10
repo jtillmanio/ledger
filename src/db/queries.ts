@@ -1197,6 +1197,38 @@ export async function planYears(userId: string, first: number, count = 5): Promi
   }));
 }
 
+/** One book as the plan picker needs it (task 2.3): its words and where it sits now. */
+export type PlanBook = {
+  id: string; title: string; author: string | null; status: string | null;
+  /** `to_read_level`'s level and period; null unless the book is to read. */
+  level: ToReadLevel | null; period: string | null;
+  /** The stated count, else pages x your words per page (50 pages or more), as `plan_book_words` reads it; null when unknown. */
+  words: number | null;
+  /** The words rest on an estimate: a stored estimate, or pages x words per page. */
+  estimated: boolean;
+};
+
+/**
+ * A live book for the plan picker's header and its move's `from` (task 2.3), or null when it is
+ * removed or unknown. Its words are `plan_book_words`'s rule for a book in no period (Someday),
+ * worked out here and never stored (hard rule 2).
+ */
+export async function planBook(userId: string, bookId: string): Promise<PlanBook | null> {
+  const [row] = await sql<PlanBook[]>`
+    SELECT b.id, b.title, a.name AS author, st.status, tl.level, tl.period,
+           COALESCE(b.word_count, CASE WHEN b.page_count >= 50
+                                       THEN b.page_count * COALESCE(rs.words_per_page, ${DEFAULT_WORDS_PER_PAGE}) END) AS words,
+           CASE WHEN b.word_count IS NOT NULL THEN b.word_count_source = 'estimated'
+                ELSE b.page_count >= 50 END AS estimated
+    FROM books b
+    LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+    LEFT JOIN to_read_level tl ON tl.book_id = b.id AND tl.user_id = ${userId}
+    LEFT JOIN reading_settings rs ON rs.user_id = ${userId}
+    WHERE b.id = ${bookId} AND b.deleted_at IS NULL`;
+  return row ? { ...row, estimated: row.estimated === true } : null;
+}
+
 /* ── The books dashboard (task 2.2, F-22, D-40) ─────────────────────────────────────────
  * Its five slots: the book in hand or the last finish (Now), the quarter's shelf (Up next),
  * the quarter's strip (This quarter), On deck, and the year so far. The year and the quarter
@@ -1479,6 +1511,61 @@ export async function keepGoing(userId: string, period: string, limit: number) {
     LEFT JOIN book_status st ON st.user_id = n.user_id AND st.book_id = n.book_id
     ORDER BY n.last_read_on DESC NULLS LAST, n.name, n.kind, n.book_id
     LIMIT ${limit}
+  `;
+}
+
+/* ── Plan a year or a quarter: the suggestions (task 2.10b, F-65, D-104, D-108) ──────────── */
+
+/** The planning sheet's groups, in the order it shows them (the roadmap entry 2.10b's). */
+export const SUGGESTION_REASONS = [
+  "next_in_series", "next_on_shelf", "from_author", "on_deck",
+  "coming_out", "recently_added", "fits_room", "genre_change",
+] as const;
+export type SuggestionReason = (typeof SUGGESTION_REASONS)[number];
+
+/** One suggestion: a book, the group it is in, its place there, and its reason line. */
+export type PlanSuggestion = {
+  id: string; title: string; author: string | null;
+  reason: SuggestionReason;
+  /** The reason line: *Next in Red Rising · you've read 3 of 6*, *Out May 4, 2027*. */
+  detail: string;
+  /** 1… within its group. */
+  rank: number;
+  /** Its status now: groups 1–3 also list Unlisted books and books with no status row. */
+  status: "to_read" | "unlisted" | null;
+  /** Placing it writes `to_read` too (1.21's promote): the sheet tags it *Unlisted* (1.22). */
+  unlisted: boolean;
+  /** Where it is already planned, outside the target (`2027-Q3`, `2027`, `on_deck`), or null. */
+  period: string | null;
+  /** Its words as `plan_book_words` counts them, or null when unknown. */
+  words: number | null;
+  estimated: boolean;
+};
+
+const TARGET = /^\d{4}(-Q[1-4])?$/;
+
+/**
+ * What to plan in `target` (`2027-Q2` or `2027`), grouped by why, from `plan_suggestions`
+ * (etl/views.sql): run when the sheet opens, never stored (hard rule 2). The room *Fits the room
+ * left* fills is the target's capacity less its planned words, as `planCapacity` reads them, so
+ * the sheet's budget line and this agree. `today` is the Eastern day (`YYYY-MM-DD`): *Recently
+ * added* counts 90 days back from it, *A change of genre* reads its year. Groups come in
+ * `SUGGESTION_REASONS` order, each by rank; a book is in one group only.
+ */
+export async function planSuggestions(userId: string, target: string, today: string): Promise<PlanSuggestion[]> {
+  if (!TARGET.test(target)) throw new Error(`not a year or a quarter: ${target}`);
+  const year = Number(target.slice(0, 4));
+  const quarter = target.length > 4 ? Number(target.slice(-1)) : null;
+  const cap = await planCapacity(userId, year);
+  const period = quarter === null ? cap.year : cap.quarters[quarter - 1];
+  const room = Math.floor(period.capacity - period.plannedWords);
+  return sql<PlanSuggestion[]>`
+    SELECT s.book_id AS id, b.title, a.name AS author, s.reason, s.detail, s.rank, s.status, s.unlisted,
+           s.period, s.words, COALESCE(s.word_source = 'estimated', false) AS estimated
+    FROM plan_suggestions(${userId}, ${target}, ${room}::bigint, ${today}::date) s
+    JOIN books b ON b.id = s.book_id
+    LEFT JOIN authors a ON a.id = b.author_id
+    ORDER BY array_position(${[...SUGGESTION_REASONS]}::text[], s.reason), s.rank
   `;
 }
 

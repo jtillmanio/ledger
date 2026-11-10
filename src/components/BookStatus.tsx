@@ -373,7 +373,7 @@ export default function BookStatus({
 
   return (
     <>
-      {menu && <BookRowMenu bookId={bookId} />}
+      {menu && <BookRowMenu bookId={bookId} status={saved.status} />}
       {/* One shape for every status, so the badge keeps its focus when *Add to Someday* goes. */}
       <span className="status-line">
         <button type="button" ref={toggle}

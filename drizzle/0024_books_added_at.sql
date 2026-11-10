@@ -1,0 +1,1 @@
+ALTER TABLE "books" ADD COLUMN "added_at" timestamp with time zone;
