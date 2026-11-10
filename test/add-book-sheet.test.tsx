@@ -8,7 +8,7 @@
 // under the field (AC-2); a record with no external one is *metadata pending*
 // (AC-4); the search's states, labelled inputs, and the sheet's focus, inert
 // and every way it closes (AC-6). *On deck* is a real choice from task 1.7
-// (its AC-4); *Year or quarter…* waits for 2.3. The writes, against the
+// (its AC-4); *Year or quarter…* is the plan picker from task 2.3 (its AC-4). The writes, against the
 // database, are test/add-book.test.ts and test/plan-period.test.ts.
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
@@ -19,6 +19,7 @@ import IssueSearch from "../src/components/IssueSearch";
 import { UndoProvider } from "../src/components/Undo";
 import type { LibraryHit } from "../src/db/queries";
 import type { Target } from "../src/lib/book-add";
+import { easternYear } from "../src/lib/settings";
 
 const router = { push: vi.fn(), refresh: vi.fn() };
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
@@ -46,6 +47,13 @@ let fetchMock: ReturnType<typeof vi.fn>;
 let searchAnswer: (q: string) => Promise<Response> | Response;
 let added: Record<string, unknown>;
 
+/** The plan picker's chips: five years from `first`, each year and quarter with some words planned. */
+const planned = (period: string, plannedWords: number) => ({ period, plannedWords, capacity: 760_000 });
+const planYears = (first: number) => Array.from({ length: 5 }, (_, i) => ({
+  year: planned(String(first + i), 1_300_000),
+  quarters: [1, 2, 3, 4].map((q) => planned(`${first + i}-Q${q}`, q * 100_000)),
+}));
+
 const answer = (over: Partial<BookSearchAnswer> = {}): BookSearchAnswer =>
   ({ query: "blade", status: "ok", library: [BLADE], hardcover: [SAKEY], wordsPerPage: 275, ...over });
 
@@ -68,6 +76,10 @@ beforeEach(() => {
         ? Response.json({ answers: body.lines.map(() => ({ match: null, near: null })) })
         : Response.json({ ok: true, destination: body.destination, created: ["golden-son-pierce-brown"], matched: [],
           added: ["golden-son-pierce-brown"] });
+    }
+    if (url.startsWith("/api/plan?firstYear=")) return Response.json({ years: planYears(Number(url.split("=")[1])) });
+    if (url.startsWith("/api/plan?to=")) {
+      return Response.json({ budget: { period: new URL(url, "http://x").searchParams.get("to"), plannedWords: 533_000, capacity: 760_000, over: null } });
     }
     if (url === "/api/books" && init?.method === "POST") return Response.json(added);
     if (url === "/api/books" && init?.method === "DELETE") return Response.json({ ok: true });
@@ -125,7 +137,7 @@ async function search(q = "blade") {
 }
 
 describe("Add to (AC-3)", () => {
-  it("opened from Add books, it is Someday; Year or quarter… is unavailable, with the reason shown", async () => {
+  it("opened from Add books, it is Someday; Year or quarter… is enabled, with no reason line (task 2.3, AC-4)", async () => {
     await open();
     // It opens on its segmented control, Search selected, and Add to follows (ui.md; mockup `add`).
     const control = dialog()!.querySelector(".seg")!;
@@ -134,12 +146,11 @@ describe("Add to (AC-3)", () => {
     // Search shows Or paste a list under it, as drawn; By hand is the form alone.
     expect(dialog()!.querySelector(".pane-paste")!.hasAttribute("hidden")).toBe(false);
     expect(chips().map((c) => [c.textContent, c.getAttribute("aria-pressed"), c.getAttribute("aria-disabled")])).toEqual([
-      ["Someday", "true", null], ["On deck", "false", null], ["Year or quarter…", null, "true"], ["Shelf…", "false", null],
+      ["Someday", "true", null], ["On deck", "false", null], ["Year or quarter…", "false", null], ["Shelf…", "false", null],
     ]);
     expect(chip("On deck").hasAttribute("aria-describedby")).toBe(false);
-    const reason = document.getElementById(chip("Year or quarter…").getAttribute("aria-describedby")!)!;
-    expect(reason.textContent).toBe("Year or quarter… arrives with the plan editor.");
-    expect(reason.hidden).toBe(false);
+    expect(chip("Year or quarter…").hasAttribute("aria-describedby")).toBe(false);
+    expect(dialog()!.textContent).not.toContain("arrives with the plan editor");
     await search();
     expect(resultButtons().map((b) => b.textContent)).toEqual(["Add to Someday", "Add to Someday"]);
   });
@@ -150,7 +161,7 @@ describe("Add to (AC-3)", () => {
     await click(chip("On deck"));
     expect(chip("On deck").getAttribute("aria-pressed")).toBe("true");
     expect(chip("Someday").getAttribute("aria-pressed")).toBe("false");
-    expect(chip("Year or quarter…").getAttribute("aria-disabled")).toBe("true");
+    expect(chip("Year or quarter…").hasAttribute("aria-disabled")).toBe(false);
     await search();
     expect(resultButtons().map((b) => b.textContent)).toEqual(["Add to On deck", "Add to On deck"]);
     await click(resultButtons()[1]);
@@ -454,6 +465,110 @@ describe("Search (AC-2, AC-6)", () => {
     expect(document.querySelector(".toast-label")!.textContent).toBe("Already in your library");
     expect(document.querySelector(".toast-detail")!.textContent).toBe("The Blade Itself · read");
     expect(document.querySelector(".toast-undo")).toBeNull();
+  });
+});
+
+describe("Year or quarter… (task 2.3, AC-4)", () => {
+  const Y = easternYear() + 1;
+  const Q3 = `${Y}-Q3`;
+  const pp = (name: string) => [...dialog()!.querySelectorAll<HTMLButtonElement>(".pp-chip")].find((b) => b.textContent!.startsWith(name))!;
+  const primary = () => dialog()!.querySelector<HTMLButtonElement>(".pp .btnrow .btn:not(.sec)")!;
+  const planButtons = () => [...dialog()!.querySelectorAll<HTMLButtonElement>(".res-plan")];
+  const planCalls = () => fetchMock.mock.calls.map(([u]) => String(u)).filter((u) => u.startsWith("/api/plan?to="));
+  /** Opens the picker and waits for it: Add books loads it on first use (next/dynamic), not with the page. */
+  const opening = async (opener: Element) => {
+    await click(opener);
+    await vi.waitFor(() => {
+      if (!dialog()?.querySelector(".pp-chips .pp-chip")) throw new Error("the picker hasn't loaded");
+    });
+    await act(async () => {});
+  };
+  const choosing = async (quarter = "Q3") => {
+    await click(pp(String(Y)));
+    await click(pp(quarter));
+  };
+
+  it("the chip opens the picker inside the same dialog; choosing a quarter sets Add to, and every result says it", async () => {
+    await open();
+    await opening(chip("Year or quarter…"));
+    expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(1);
+    const heading = dialog()!.querySelector("h2")!;
+    expect(heading.textContent).toBe("Year or quarter");
+    expect(document.activeElement).toBe(heading);
+    expect(dialog()!.querySelector(".addb")!.hasAttribute("hidden")).toBe(true);
+    // The next five years, then On deck and Someday; a year opens No quarter yet and Q1–Q4.
+    expect([...dialog()!.querySelector(".pp-chips")!.querySelectorAll(".pp-chip")].map((b) => b.firstChild!.textContent))
+      .toEqual([0, 1, 2, 3, 4].map((i) => String(Y - 1 + i)).concat(["On deck", "Someday"]));
+    expect(dialog()!.textContent).not.toContain("planned ·");
+    await choosing();
+    expect(primary().textContent).toBe(`Choose Q3 ${Y}`);
+    await click(primary());
+    expect(dialog()!.querySelector("h2")!.textContent).toBe("Add books");
+    expect(dialog()!.querySelector(".addb")!.hasAttribute("hidden")).toBe(false);
+    expect(chip(`Q3 ${Y}`).getAttribute("aria-pressed")).toBe("true");
+    expect(document.activeElement).toBe(chip(`Q3 ${Y}`));
+    added = { ...added, destination: { kind: "period", period: Q3 }, statused: ["the-blade-itself-marcus-sakey"] };
+    await search();
+    expect(resultButtons().map((b) => b.textContent)).toEqual([`Add to Q3 ${Y}`, `Add to Q3 ${Y}`]);
+    await click(resultButtons()[1]);
+    expect(adds()).toEqual([{ item: { hardcover: SAKEY_ITEM }, destination: { kind: "period", period: Q3 } }]);
+  });
+
+  it("a result's own Year or quarter… adds that book at the end of a quarter, and Undo makes the row addable again", async () => {
+    added = { ...added, destination: { kind: "period", period: Q3 }, statused: ["the-blade-itself-marcus-sakey"] };
+    await open();
+    await search();
+    expect(planButtons().map((b) => b.textContent)).toEqual(["Year or quarter…", "Year or quarter…"]);
+    await opening(planButtons()[1]);
+    expect(dialog()!.querySelector("h2")!.textContent).toBe("The Blade Itself");
+    // A book not planned yet: no *currently planned* badge. Its words come from the pages, 320 x 275.
+    expect(dialog()!.textContent).not.toContain("planned ·");
+    expect(dialog()!.textContent).toContain("~88k words");
+    await choosing();
+    expect(planCalls().at(-1)).toBe(`/api/plan?to=${Q3}&words=88000`);
+    expect(primary().textContent).toBe(`Add to Q3 ${Y}`);
+    await click(primary());
+    expect(adds()).toEqual([{ item: { hardcover: SAKEY_ITEM }, destination: { kind: "period", period: Q3 } }]);
+    // The Add to target is untouched; the row says where it went.
+    expect(chip("Someday").getAttribute("aria-pressed")).toBe("true");
+    expect(resultButtons()[1].textContent).toBe(`✓ Added to Q3 ${Y}`);
+    expect(resultButtons()[0].textContent).toBe("Add to Someday");
+    expect(document.querySelector(".toast-label")!.textContent).toBe(`Added to Q3 ${Y}`);
+    await click(document.querySelector(".toast-undo")!);
+    const [, init] = fetchMock.mock.calls.at(-1)!;
+    expect(init.method).toBe("DELETE");
+    expect(JSON.parse(init.body).destination).toEqual({ kind: "period", period: Q3 });
+    expect(resultButtons()[1].textContent).toBe("Add to Someday");
+    expect(resultButtons()[1].hasAttribute("aria-disabled")).toBe(false);
+    expect(planButtons()[1].hasAttribute("aria-disabled")).toBe(false);
+  });
+
+  it("‹ Add books and Cancel go back with focus on the control that opened the picker, writing nothing", async () => {
+    await open();
+    await search();
+    await opening(planButtons()[0]);
+    await click(button("‹ Add books")!);
+    expect(dialog()!.querySelector("h2")!.textContent).toBe("Add books");
+    expect(document.activeElement).toBe(planButtons()[0]);
+    await opening(planButtons()[0]);
+    await click(button("Cancel", dialog()!.querySelector(".pp")!)!);
+    expect(document.activeElement).toBe(planButtons()[0]);
+    expect(adds()).toEqual([]);
+  });
+
+  it("the primary stays unavailable, with its reason, until a year and a quarter are chosen", async () => {
+    await open();
+    await opening(chip("Year or quarter…"));
+    expect(primary().getAttribute("aria-disabled")).toBe("true");
+    expect(document.getElementById(primary().getAttribute("aria-describedby")!)!.textContent).toBe("Choose where it goes first.");
+    await click(pp(String(Y)));
+    expect(primary().getAttribute("aria-disabled")).toBe("true");
+    await click(pp("No quarter yet"));
+    expect(primary().textContent).toBe(`Choose ${Y}`);
+    expect(primary().hasAttribute("aria-disabled")).toBe(false);
+    await click(pp("Someday"));
+    expect(dialog()!.querySelector(".pp-quarters")).toBeNull();
+    expect(primary().textContent).toBe("Choose Someday");
   });
 });
 

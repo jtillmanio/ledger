@@ -1197,6 +1197,38 @@ export async function planYears(userId: string, first: number, count = 5): Promi
   }));
 }
 
+/** One book as the plan picker needs it (task 2.3): its words and where it sits now. */
+export type PlanBook = {
+  id: string; title: string; author: string | null; status: string | null;
+  /** `to_read_level`'s level and period; null unless the book is to read. */
+  level: ToReadLevel | null; period: string | null;
+  /** The stated count, else pages x your words per page (50 pages or more), as `plan_book_words` reads it; null when unknown. */
+  words: number | null;
+  /** The words rest on an estimate: a stored estimate, or pages x words per page. */
+  estimated: boolean;
+};
+
+/**
+ * A live book for the plan picker's header and its move's `from` (task 2.3), or null when it is
+ * removed or unknown. Its words are `plan_book_words`'s rule for a book in no period (Someday),
+ * worked out here and never stored (hard rule 2).
+ */
+export async function planBook(userId: string, bookId: string): Promise<PlanBook | null> {
+  const [row] = await sql<PlanBook[]>`
+    SELECT b.id, b.title, a.name AS author, st.status, tl.level, tl.period,
+           COALESCE(b.word_count, CASE WHEN b.page_count >= 50
+                                       THEN b.page_count * COALESCE(rs.words_per_page, ${DEFAULT_WORDS_PER_PAGE}) END) AS words,
+           CASE WHEN b.word_count IS NOT NULL THEN b.word_count_source = 'estimated'
+                ELSE b.page_count >= 50 END AS estimated
+    FROM books b
+    LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+    LEFT JOIN to_read_level tl ON tl.book_id = b.id AND tl.user_id = ${userId}
+    LEFT JOIN reading_settings rs ON rs.user_id = ${userId}
+    WHERE b.id = ${bookId} AND b.deleted_at IS NULL`;
+  return row ? { ...row, estimated: row.estimated === true } : null;
+}
+
 /* ── The books dashboard (task 2.2, F-22, D-40) ─────────────────────────────────────────
  * Its five slots: the book in hand or the last finish (Now), the quarter's shelf (Up next),
  * the quarter's strip (This quarter), On deck, and the year so far. The year and the quarter
