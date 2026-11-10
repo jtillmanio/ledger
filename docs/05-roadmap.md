@@ -47,7 +47,7 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 | Phase | Goal | Milestones | Done |
 |---|---|---|---|
 | [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6) | 13 / 13 |
-| [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is two entries (D-128): 1.26 cuts the books over (START-HERE Step 14), after the rest of Phase 1, 2.11a and 1.11 and every entry 1.25's parity audit names for `Books.xlsx`; 1.28 cuts the comics over later, after what it names for `Comics.xlsx`.** | M3–M9 (1.28 in M13) | 40 / 45 |
+| [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is two entries (D-128): 1.26 cuts the books over (START-HERE Step 14), after the rest of Phase 1, 2.11a and 1.11 and every entry 1.25's parity audit names for `Books.xlsx`, with the books entries the owner pulled ahead (D-132, D-133, D-139); 1.28 cuts the comics over later, after what it names for `Comics.xlsx`.** | M3–M9 (1.28 in M13) | 40 / 45 |
 | [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 10 / 25 |
 | [3 Editing](#phase-3--editing) | Maintain the catalog in the app: inline edits, runs, prerequisites, eras, detail sheets and adding at scale. | M13–M15 | 0 / 15 |
 | [4 Enrichment](#phase-4--enrichment) | Metron, Open Library and Hardcover backfill, and real covers. A prerequisite for Phase 7. | M16 | 0 / 6 |
@@ -222,7 +222,7 @@ or edits it first.)*
 
 ## Phase 1 — Daily use (build before anything clever)
 
-**Goal:** Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is two entries (D-128): 1.26 cuts the books over (START-HERE Step 14), after the rest of Phase 1, 2.11a and 1.11 and every entry 1.25's parity audit names for `Books.xlsx`; 1.28 cuts the comics over later, after what it names for `Comics.xlsx`.** **Milestones:** M3–M9 (1.28 in M13).
+**Goal:** Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is two entries (D-128): 1.26 cuts the books over (START-HERE Step 14), after the rest of Phase 1, 2.11a and 1.11 and every entry 1.25's parity audit names for `Books.xlsx`, with the books entries the owner pulled ahead (D-132, D-133, D-139); 1.28 cuts the comics over later, after what it names for `Comics.xlsx`.** **Milestones:** M3–M9 (1.28 in M13).
 
 **Build order.** The entries below keep the order they were written in,
 which is not the order they are built in. The IDs predate the reviews that fixed the order (R3-10, R3-12,
@@ -1628,12 +1628,24 @@ comics from it until 1.28, the comics cutover. The month of running both
 compares the books. From here extract no longer loads books, so Calibre's
 changes arrive through 4.4's sync, built before the switch.
 
+*Amended 2026-11-10 (D-139): the books work of Next and Later comes first.*
+The owner pulled fourteen more books entries ahead, so the app the books
+switch to already plans, ranks, shelves, parks and queues: what the plan
+rail shows can be acted on, and what the owner records from the first day
+has a place. Only 2.1b, 3.5 and the read-only pages (5.9, 5.11, 5.12, 4.3,
+Phase 6) stay after the switch.
+
 **Depends on:** 1.25; the open Phase 1 entries the books need (1.14c, 1.17b)
 and 1.29, so the comics can still be refreshed after the switch; 2.11a and
 1.11 (done); and every open entry `docs/cutover-parity.md` names for
 `Books.xlsx` (1.25): 2.2b and 2.3 (the year and quarter budget, after 2.0, 2.1
-and 2.2), 3.4 (top books), 4.4 (the Calibre sync) and 5.7 (books coming out);
-and 5.17 (what you own), which the owner pulled ahead (D-132).
+and 2.2), 3.4 (top books), 4.4 (the Calibre sync), 5.1 (shelves, the Dark
+Tower reading order) and 5.7 (books coming out); 5.17 (what you own), which
+the owner pulled ahead (D-132); and the entries the owner pulled ahead on
+2026-11-10 (D-139): 2.2j and 2.2k (the book's row and the books page), 2.7,
+2.8, 2.10 and 2.10b (editing and planning the year), 3.4b (ranking as you
+finish), 4.2, 4.5 and 4.5b (Hardcover backfill and Calibre's genres), and
+5.5, 5.14 and 5.15 (DNF with a reason, the listen queue, Parked).
 
 **Check:** the owner, after the switch: `npm run rebuild -- -EnvFile .env.live`
 and `.\etl\load.ps1 seed-final -EnvFile .env.live` both refuse, naming
@@ -2264,7 +2276,7 @@ Owner intake, 2026-11-09 (owner: *on deck shows the series or sub series or
 super series (smartly picked, whichever makes sense)*; asked, the owner chose
 the universe, then the series, and the same line on Up next, the status tabs,
 the Library and the plan sheet). D-134. Depends on 2.2 (On deck and *Up next
-in Qn*). Doesn't gate 1.26.
+in Qn*). Pulled ahead of 1.26 by the owner (D-139).
 
 - **One line, one rule.** A book row's second line is the author, then its
   place: the universe (D-90: Calibre's superseries), then the series and
@@ -2302,6 +2314,8 @@ status tab and in the Library. There is no horizontal scroll at 360px, axe
 passes, and nothing resolves to `--danger`. Screenshots at 360px and 1280px.
 
 ### ☐ 2.2k The books page scrolls sideways with a full Up next shelf · S
+*Pulled ahead of 1.26 by the owner (D-139).*
+
 Found by TASK-051's UI check, not caused by it (the shelf's CSS is unchanged
 since 2.2): at 360, 390 and 412px, once four or more books are planned in the
 quarter, `/books` is wider than the viewport (`scrollWidth` 392 to 640), and at
@@ -2801,6 +2815,8 @@ an unread S) and C (soft only), `run_opens(R)` is A and C and not B; reading S
 adds B; with A in R's block and C queued, A comes before C.
 
 ### ☐ 2.7 Rebalance, and accepting an overage · M
+*Pulled ahead of 1.26 by the owner (D-139).*
+
 The catch-up affordance, one tap from the books dashboard. A sheet with four
 peers, not three ways to shrink the plan:
 
@@ -2845,6 +2861,8 @@ the flag; and that "even out the quarters" leaves the year's book count
 unchanged and never puts a book ahead of one that was ahead of it before.
 
 ### ☐ 2.8 Place the unquartered · M
+*Pulled ahead of 1.26 by the owner (D-139).*
+
 Plan rows with a year and no quarter — a bare `2027`. The plan starts empty (R0-04), so this flow serves whatever the owner has added without choosing a quarter; the count is always derived from `plan_period`, never a literal. A bulk flow on the books
 dashboard: one book at a time, largest first (the lane has no order, D-37), four quarter
 buttons each showing that quarter's current word total, plus Skip and Stop. A
@@ -2914,6 +2932,8 @@ The frontier group's counts equal 2.6's `frontier` view, and a row's *opens N*
 equals its `run_opens` count.
 
 ### ☐ 2.10 Plan page as the full-size rail · M
+*Pulled ahead of 1.26 by the owner (D-139).*
+
 Same geometry as the books dashboard, taller, with each block's title and word
 count legible inside it. Depends on 1.7, 2.1 and 2.2.
 
@@ -2957,6 +2977,8 @@ height when the rail loads; and the full-size rail has room for a title in each
 block, so it can drop the labels' 16px floor (D-135, D-138).
 
 ### ☐ 2.10b Plan a year or a quarter, with suggestions · M
+*Pulled ahead of 1.26 by the owner (D-139).*
+
 Owner intake, 2026-11-02 (owner: *the ability to create a yearly/quarterly
 plan … while creating a plan, the app gives suggestions: next book in a
 series or shelf I'm reading, maybe recently added, others you think of*).
@@ -3349,8 +3371,8 @@ Rating, notes, and the top-books rank reorder. **Status and finish date moved to
 Owner intake, 2026-11-01 (owner: *a way to rank books for each year as I
 finish them and then see my top 10 at the end of the year (and for past
 years)*). D-101. Depends on 3.4 and 1.5; after 1.23, a listened book is ranked
-like any read, with its glyph. 3.4 is pulled ahead of cutover by 1.25; this
-entry is not.
+like any read, with its glyph. 3.4 is pulled ahead of cutover by 1.25, and
+this entry by the owner (D-139).
 
 - **Every book of a year is ranked, not just ten** (D-101, amending D-3's cap).
   A year's ranks are contiguous from 1, like 1.10's queue (data model 2.16).
@@ -3773,6 +3795,10 @@ run is the placement's note, which 7.8 drafts.
 Then a real run of 200 with the cache warm.
 
 ### ☐ 4.2 Open Library and Hardcover backfill · M
+*Pulled ahead of 1.26 by the owner (D-139):* built before the switch, so a book
+added in the app after it is backfilled from the first day. The after-cutover
+shape below is still the shape; it runs against production from 1.26 on.
+
 Page counts, covers, ISBNs from Open Library; series position from Hardcover.
 
 **The Open Library pass for the workbook's books moved to 1.14** (D-44)
@@ -4051,6 +4077,8 @@ the browser (0.11), the *Calibre* page lists the run, and the dashboard's line
 shows when the last run is 8 days old and not when it is 6.
 
 ### ☐ 4.5 Calibre's genres on every screen · M
+*Pulled ahead of 1.26 by the owner (D-139).*
+
 From 1.18c (TASK-033), 2026-10-30; D-98. **After 1.18c.** 1.18c loads every
 Calibre genre into `book_genres` (one row per book and full dotted path,
 `Young Adult.Fantasy.Romantasy`; 126 in the owner's library) and leaves
@@ -4082,6 +4110,8 @@ migration no query, view or loader names `books.genre`, and up → down → up k
 every `book_genres` row.
 
 ### ☐ 4.5b On deck by genre · S
+*Pulled ahead of 1.26 by the owner (D-139).*
+
 Owner intake, 2026-11-05 (owner: *filter on deck by genre, ie rank next up by
 genre*; asked, the owner chose filtering and grouping, not a stored ranking).
 D-124. Depends on 4.5 and 1.9.
@@ -4119,7 +4149,9 @@ it is converted.
   shelf** opens the 1.4c sheet with the shelf preselected: search your library
   and Open Library (Hardcover after 1.4f, D-94), or add by hand. A book not yet in the catalog is created
   first, then shelved. Each shelf shows its **next three unread** in shelf
-  order, not just the next one (design §14 → Shelves).
+  order, not just the next one (design §14 → Shelves). Pulled ahead of 1.26
+  by the owner (D-139), whole: the Dark Tower's reading order is a shelf
+  before `Books.xlsx` freezes (`docs/cutover-parity.md`).
   - **Context on a shelf** (2026-10-20 intake: *a context field, why a book is
     on it, like the Dark Tower reading order*). Proposed: `shelves.description`
     and `shelf_books.note`, and `shelf_titles.note` in 8.6. **Stop and ask**
@@ -4162,6 +4194,8 @@ it is converted.
 
 - ☐ 5.5 DNF with a reason field · S. DNF opens the same closing card as 5.4
   with a reason field instead of a rating; DNF stays grey (UX-N13).
+  *Pulled ahead of 1.26 by the owner (D-139), without 5.4:* 5.5 builds the
+  closing card for a book, and 5.4 reuses it for a run's rating and note.
 
 - ☐ 5.6 `edition_issues` parser: `"Avengers #500-503 and Avengers Finale"` into join rows · M
 
@@ -4415,8 +4449,8 @@ it is converted.
   up next, what I've read*). Depends on 1.23 and 1.9. 1.23 builds two of the
   three: *Listening* is its own group on In flight, and a finished listen is
   a read with `format = audio` and the headphones glyph. What's missing is
-  the order you mean to listen in. Nothing here is needed at cutover, so it
-  waits for Phase 5; it can be pulled forward.
+  the order you mean to listen in. Nothing here is needed at cutover, but the
+  owner pulled it ahead of 1.26 (D-139).
   - **The queue is an order, so it is stored**: proposed
     `listen_queue(book_id PRIMARY KEY, position)`, contiguous from 1, like
     1.10's `run_queue` (data model 2.16), no `user_id` (D-91), in
@@ -4447,7 +4481,8 @@ it is converted.
   feed or in my plan; once a month or quarter I get a notification or email to
   review these items and keep them, move them to the plan or queue, or remove
   them to unlisted*). D-105. Depends on 1.9, 1.17, 1.21, 2.2 (the dashboard
-  line) and 2.3 (the review's *Plan…* is the picker). This entry builds Parked
+  line) and 2.3 (the review's *Plan…* is the picker). Pulled ahead of 1.26 by
+  the owner (D-139). This entry builds Parked
   for books, the review every medium shares, and its reminder. Comics runs are
   5.16; watch, music and games take it in their own phases (8.8, 9.3, 10.1).
   - **What it means:** *not now, but not gone.* It is not Someday (on your

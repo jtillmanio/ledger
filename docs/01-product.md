@@ -82,6 +82,12 @@ record (1.26). The comics cut over later, after the books work of Next
 - Calibre syncs both ways, by hand or weekly (4.4, D-133), since extract
   no longer loads books after the switch; page counts come from Hardcover
   (1.14c), and what you own on paper or as an audiobook is recorded (5.17).
+- The books work the owner pulled ahead (D-139) is built: the plan can be
+  rebalanced, placed and planned with suggestions (2.7–2.10b), a book is
+  ranked as you finish it (3.4b), and shelves, DNF with a reason, the listen
+  queue, Parked and Calibre's genres are in the app (5.1, 5.5, 5.14, 5.15,
+  4.5, 4.5b), with the Hardcover backfill for books added after the switch
+  (4.2).
 - The final full load from the workbooks has run (START-HERE Step 14, roadmap
   1.26), and
   `LEDGER_LIVE=true` makes `load` and `rebuild` refuse against production
@@ -131,7 +137,7 @@ Priority comes from the milestone that builds it: **MVP** is the books cutover (
 | F-20 | **Follow series, authors and universes** (Books) | As a reader, I want to follow the series, authors and universes I am tracking and see my progress through each | MVP (then Later) | 1.15, 5.11, 5.12 | `shelves` |
 | F-21 | **The pace engine** (Books) | As a reader, I want my real reading rate to say whether a year's plan fits | Next (then Later) | 2.0, 2.0b, 2.1, 2.1b, 6.12 | `settings`, `session`, `dashextras` |
 | F-22 | **Books dashboard and the plan rail** (Books) | As a reader, I want the book in hand, this quarter's shelf and the year against capacity on one screen | Next | 2.2, 2.2b | `bdash`, `planmonth` |
-| F-23 | **Plan editing and rebalance** (Books) | As a reader, I want to move books between periods, rebalance an over-full year, or accept it as a stretch | Next | 2.3, 2.7, 2.8, 2.10 | `plan`, `moveplan`, `rebalance` |
+| F-23 | **Plan editing and rebalance** (Books) | As a reader, I want to move books between periods, rebalance an over-full year, or accept it as a stretch | MVP (D-139) | 2.3, 2.7, 2.8, 2.10 | `plan`, `moveplan`, `rebalance` |
 | F-24 | **Comics dashboard and the telescope** (Comics) | As a reader, I want to see where I am in the run, its block and its track at once, drawn rather than counted | Next | 2.5, 2.5b, 2.4 | `home`, `telescope`, `states` |
 | F-25 | **Unlock cost, leverage and the frontier** (Comics) | As a reader, I want each run's true cost and what finishing it opens, so I pick what to start | Next | 2.6, 6.2b | `path`, `runs` |
 | F-26 | **Run list by track and block** (Comics) | As a reader, I want the run list grouped track → block with cost and readiness on every row | Next | 2.9 | `runs` |
@@ -139,10 +145,10 @@ Priority comes from the milestone that builds it: **MVP** is the books cutover (
 | F-28 | **Edit the catalog in place** (Comics) | As the curator, I want to edit fields inline, create runs, assign blocks and archive rather than delete | Next | 3.1, 3.2, 3.7, 3.8 | `newrun`, `runs`, `spine` |
 | F-29 | **Detail sheets** (Every medium) | As the owner, I want a book, issue, film or show to open as a sheet over the list, linkable and dismissed by Back | Next (then Later) | 3.5, 8.4 | `bookdetail`, `issuedetail`, `titledetail` |
 | F-30 | **Eras and spine v2** (Comics) | As a reader, I want a long run sectioned into eras, with ordinals, release dates and read rows hidden | Next | 3.6, 3.6b, 3.6c | `spine`, `krakoa` |
-| F-31 | **Ratings, notes and DNF** (Every medium) | As a reader, I want to rate and note what I finish, rank my top books, and stop a book without it reading as failure | Next (then Later) | 3.4, 5.4, 5.5 | `top` |
+| F-31 | **Ratings, notes and DNF** (Every medium) | As a reader, I want to rate and note what I finish, rank my top books, and stop a book without it reading as failure | MVP (3.4, 5.5; D-139), then Later (5.4) | 3.4, 5.4, 5.5 | `top` |
 | F-32 | **Adding at scale** (Comics) | As the curator, I want to add from a whole series' issue list, arrange as I add, and preview an issue before adding it | Next | 3.10, 3.11, 3.12 | `addsearch`, `bulk` |
-| F-33 | **Metadata backfill and covers** (Every medium) | As the owner, I want Metron, Open Library and Hardcover to fill in what sits below each label, with real covers, and Calibre synced both ways (4.4, MVP since D-133) | Later | 4.1, 4.2, 4.3, 4.4 | `states` |
-| F-34 | **Shelves with context** (Every medium) | As a reader, I want my own ordered lists, with a note on why each item is on them | Later | 5.1, 8.6 | `shelves` |
+| F-33 | **Metadata backfill and covers** (Every medium) | As the owner, I want Metron, Open Library and Hardcover to fill in what sits below each label, with real covers, and Calibre synced both ways (4.4, MVP since D-133) | MVP (4.2, 4.4; D-133, D-139), then Later (4.1, 4.3) | 4.1, 4.2, 4.3, 4.4 | `states` |
+| F-34 | **Shelves with context** (Every medium) | As a reader, I want my own ordered lists, with a note on why each item is on them | MVP (5.1, D-139), then Later (8.6) | 5.1, 8.6 | `shelves` |
 | F-35 | **Tracks page** (Comics) | As a reader, I want every track drawn as a row of its blocks | Later | 5.2 | `tracks` |
 | F-36 | **Editions: collected in** (Comics) | As a collector, I want to know which trade collects an issue and which I own and have read | Later | 5.6, 5.10 | — |
 | F-37 | **Coming out** (Every medium) | As a reader, I want the books I want listed when they come out, and new issues in series I follow offered for my runs | Later | 5.7, 5.8 | — |
@@ -167,23 +173,23 @@ Priority comes from the milestone that builds it: **MVP** is the books cutover (
 | F-56 | **Song ranking and favourite albums** (Music) | As a listener, I want to rank an artist's songs by picking between two, and see which albums I favour | Later | 9.4, 9.5 | — |
 | F-57 | **Music dashboard and status** (Music) | As a listener, I want the music dashboard and its status tabs | Later | 9.6 | — |
 | F-58 | **Audiobooks** (Books) | As a reader, I want to mark a book I'm listening to, have a finished listen count as a read, and see listens apart from reads, with an icon | MVP | 1.23 | `blist`, `status`, `bookdetail` |
-| F-59 | **A queue to listen next** (Books) | As a listener, I want the audiobooks I mean to listen to next in my order, beside what I'm listening to and what I've listened to | Later | 5.14 | `status` |
-| F-60 | **Rank a book as I finish it, and every year's top ten** (Books) | As a reader, I want to place each book I finish among that year's, and see any year's top ten | Next | 3.4b | `top` |
+| F-59 | **A queue to listen next** (Books) | As a listener, I want the audiobooks I mean to listen to next in my order, beside what I'm listening to and what I've listened to | MVP (D-139) | 5.14 | `status` |
+| F-60 | **Rank a book as I finish it, and every year's top ten** (Books) | As a reader, I want to place each book I finish among that year's, and see any year's top ten | MVP (D-139) | 3.4b | `top` |
 | F-61 | **New albums from the artists I follow on Spotify** (Music) | As a listener, I want the artists I follow on Spotify followed here, and their coming albums on To listen without adding them | Later | 9.7 | — |
 | F-62 | **Games: search, a queue, by my platforms** (Games) | As a player, I want to add a game for the platform I'll play it on, say whether I play it through or in rotation, and keep a queue | Later | 10.0, 10.1, 10.2, 10.3 | — |
 | F-63 | **Games coming out** (Games) | As a player, I want the games I'm waiting for, with their release dates on my platforms, and to know when a date moves | Later | 10.4 | — |
 | F-64 | **Games dashboard** (Games) | As a player, I want the games dashboard: what I'm playing, what's next, and what's coming | Later | 10.5 | — |
-| F-65 | **Plan a year or a quarter, with suggestions** (Books) | As a reader, I want to fill a year or a quarter in one sitting, from suggestions like the next book of a series I'm reading, with the budget in view | Next | 2.10b | `plan` |
-| F-66 | **Parked, and its review** (every medium) | As a reader, I want to put something away on purpose, off my lists and my plan, and be reminded on a schedule to keep it there, plan it, or let it go | Later | 5.15, 5.16, 8.8, 9.3, 10.1 | — |
+| F-65 | **Plan a year or a quarter, with suggestions** (Books) | As a reader, I want to fill a year or a quarter in one sitting, from suggestions like the next book of a series I'm reading, with the budget in view | MVP (D-139) | 2.10b | `plan` |
+| F-66 | **Parked, and its review** (every medium) | As a reader, I want to put something away on purpose, off my lists and my plan, and be reminded on a schedule to keep it there, plan it, or let it go | MVP (5.15, D-139), then Later (5.16, 8.8, 9.3, 10.1) | 5.15, 5.16, 8.8, 9.3, 10.1 | — |
 | F-67 | **Game shelves** (Games) | As a player, I want my games grouped by platform and by genre, and on shelves of my own | Later | 10.6 | — |
-| F-68 | **Follow what I'm reading, and see what's next in it** (Books) | As a reader, I want to say I'm reading a series, author, universe or shelf myself, be offered that when I finish a book, and see its next book on the dashboard and in plan suggestions | Next | 2.2c, 2.2h, 2.2d, 2.10b | — |
+| F-68 | **Follow what I'm reading, and see what's next in it** (Books) | As a reader, I want to say I'm reading a series, author, universe or shelf myself, be offered that when I finish a book, and see its next book on the dashboard and in plan suggestions | MVP (D-139) | 2.2c, 2.2h, 2.2d, 2.10b | — |
 | F-69 | **In the middle of, and completed** (every medium) | As a reader, I want one page of everything I'm in the middle of and everything I've completed, across books, comics and the rest | Later | 5.12, 8.8, 9.6, 10.3 | — |
 | F-70 | **The Library, sorted** (Books) | As a reader, I want the library to be a page of its own, not the books home, and to sort it as well as filter it | Next | 2.2e | `blist` |
 | F-71 | **Every screen from a phone** (every medium) | As the owner on a phone, I want to reach every screen by tapping, never by typing a URL | Next | 2.2i | — |
 | F-72 | **Where the book sits** (Books) | As a reader, I want to see how far along the book in hand's universe, series and subseries I am | Next (then Later) | 2.2g, 6.21 | `bdash` |
 | F-73 | **What I own** (Books) | As a book owner, I want to mark what I own on paper and as an audiobook, tell both from my ebook library, and see just those books | MVP (D-132) | 5.17 | `blist` |
-| F-74 | **On deck by genre** (Books) | As a reader, I want to see what's next in a genre, without ranking On deck by hand | Later | 4.5b | `status` |
-| F-75 | **The universe and series on every book row** (Books) | As a reader, I want each book in a list to say which universe and series it belongs to, the same way on every screen | Next | 2.2j | `bdash`, `status`, `blist` |
+| F-74 | **On deck by genre** (Books) | As a reader, I want to see what's next in a genre, without ranking On deck by hand | MVP (D-139) | 4.5b | `status` |
+| F-75 | **The universe and series on every book row** (Books) | As a reader, I want each book in a list to say which universe and series it belongs to, the same way on every screen | MVP (D-139) | 2.2j | `bdash`, `status`, `blist` |
 
 ### Observable outcomes for MVP features
 
@@ -984,7 +990,15 @@ before the books cutover.
 
 **The 2026-11-09 intake** (B43) gave a book's row its place: the universe,
 then the series, on On deck, Up next, the status tabs, the Library and the
-plan sheet (2.2j, D-134). It doesn't gate the books cutover.
+plan sheet (2.2j, D-134).
+
+**On 2026-11-10** the owner pulled nearly all the books work ahead of the
+books cutover (D-139): the row line and the books page (2.2j, 2.2k), editing
+and planning the year (2.7, 2.8, 2.10, 2.10b), ranking as you finish (3.4b),
+the Hardcover backfill and Calibre's genres (4.2, 4.5, 4.5b), shelves, DNF
+with a reason, the listen queue and Parked (5.1, 5.5, 5.14, 5.15). Reading
+sessions (2.1b), the detail sheets (3.5) and the pages that only show what is
+loaded come after it.
 
 **Parked under *Later*, because no API exists.** Marvel Unlimited (L-1) and
 League of Comic Geeks ratings (L-2) have no public APIs. Each has an open
