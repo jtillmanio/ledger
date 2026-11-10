@@ -335,7 +335,7 @@ with the task that first reads it.
 | ✅ | 1.17 → TASK-039 | Started and finished: a start date for books, a derived span for runs | M |  | — |
 | ✅ | 1.23 → TASK-043 | Audiobooks: listening, and a listen that counts as a read | M |  | 1.5, 1.17 |
 | ✅ | 1.27 → TASK-044 | Extract resolves the wishlist, before cutover | M |  | 1.18, 1.21 |
-|  | 1.14c → TASK-057 | Page counts from Hardcover, word counts from Calibre | S | _Owner, 2026-11-08 (D-130)_ | 1.14b |
+| ✅ | 1.14c → TASK-057 | Page counts from Hardcover, word counts from Calibre | S | _Owner, 2026-11-08 (D-130)_ | 1.14b |
 |  | 1.17b → TASK-058, TASK-059 | Dates when you start and finish, and on every read | M | _Owner, 2026-11-08 (D-131)_ | 1.17, 1.23 |
 |  | 1.29 → TASK-060 | Refresh production's comics from `Comics.xlsx`, books untouched | M | _Owner, 2026-11-08 (D-128)_ | — |
 |  | 1.26 → TASK-061 | Cut the books over from the Sheets | M | _The books cutover since 2026-11-08 (D-128)_ | 1.25, 1.14c, 1.17b, 1.29, and every open entry 1.25 names for `Books.xlsx`, with 4.4 and 5.17 |

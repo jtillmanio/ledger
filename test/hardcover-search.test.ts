@@ -268,9 +268,10 @@ describe("ISBNs (AC-4)", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0].query).toContain("editions(");
     expect(calls[0].variables).toEqual({ isbn13: ["9781526622426"], isbn10: [] });
+    // The book's 245 pages, not the edition's 272 (1.14c, D-130).
     expect(answer.hardcover).toEqual([{
       hardcoverId: 444001, title: "Piranesi", subtitle: null, authors: ["Susanna Clarke"], series: null, position: null,
-      year: 2020, pages: 272, coverUrl: "https://assets.hardcover.app/edition/9001/piranesi-uk.jpeg",
+      year: 2020, pages: 245, coverUrl: "https://assets.hardcover.app/edition/9001/piranesi-uk.jpeg",
     }]);
     expect((await cacheRows()).map((r) => r.key)).toEqual(["isbn:9781526622426"]);
     await find("9781526622426");
@@ -343,6 +344,33 @@ describe("the token (AC-1, AC-4)", () => {
     // A type import is erased; a value import would put the module, and its process.env read, in the bundle.
     expect(sources.filter(([, text]) => /^["']use client["']/.test(text)
       && /^import\s+(?!type\b)[^;]*from\s+["']@\/lib\/hardcover["']/m.test(text)).map(([f]) => f)).toEqual([]);
+  });
+});
+
+describe("1.14c: a book added from Hardcover stores the book-level page count (D-130)", () => {
+  /** An ISBN answer: one edition of 410 pages, its book `bookPages`. */
+  const edition = (bookPages: number | null) => () => Response.json({ data: { editions: [{
+    pages: 410, image: null, book: {
+      id: 777001, title: "Counted Pages", pages: bookPages, release_year: 2021, compilation: false, users_count: 50,
+      contributions: [{ contribution: "Author", author: { name: "Page Writer" } }],
+    },
+  }] } });
+  const stored = async () => (await sql<{ page_count: number | null }[]>`SELECT page_count FROM books`)
+    .map((r) => r.page_count);
+
+  it("a book of 320 pages whose edition has 410 stores page_count = 320", async () => {
+    hardcover = edition(320);
+    const [book] = (await find("9780000000777")).hardcover;
+    expect(book.pages).toBe(320);
+    expect((await add({ hardcover: book })).status).toBe(200);
+    expect(await stored()).toEqual([320]);
+  });
+
+  it("a book with no count whose edition has 410 stores 410", async () => {
+    hardcover = edition(null);
+    const [book] = (await find("9780000000777")).hardcover;
+    expect((await add({ hardcover: book })).status).toBe(200);
+    expect(await stored()).toEqual([410]);
   });
 });
 
