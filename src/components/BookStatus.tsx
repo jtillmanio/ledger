@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import AllReads, { AllReadsToggle, ReadsFailed, useReads } from "@/components/AllReads";
+import { AllReadsToggle, ReadsFailed, useReads } from "@/components/useReads";
 import BookRowMenu from "@/components/BookRowMenu";
 import FinishDate, {
-  dateWords, finishReason, initialFinish, localToday, storedDay, type DateFor, type FinishValue,
+  dateWords, finishReason, initialFinish, localToday, storedDay, toChoice, type DateFor, type FinishValue,
 } from "@/components/FinishDate";
 import { Headphones } from "@/components/nav/Icons";
-import { NAMES, useBookWrite, useRedate, type BookStatusName, type BookWritten } from "@/components/useBookWrite";
+import { NAMES, useBookWrite, type BookStatusName, type BookWritten } from "@/components/useBookWrite";
 import { startAfterFinish } from "@/lib/finish-date";
 import { listenGlyph, readWhen, type Precision } from "@/lib/format";
 
@@ -29,6 +29,10 @@ type Opener = "read" | "started" | "finished" | "status";
 type Editing =
   | { kind: "one"; what: DateFor; value: FinishValue; opener: Opener; fresh?: boolean }
   | { kind: "both"; start: FinishValue; finish: FinishValue; touched: boolean; opener: "read" };
+
+/** The read list loads only when a row with several reads is open and *All reads* is pressed (task 1.17b),
+ * so it adds nothing to the Library's or Now's first load (the performance budget). */
+const AllReads = lazy(() => import("@/components/AllReads"));
 
 const STATUSES: { status: Exclude<Status, "unlisted">; label: string }[] = [
   { status: "to_read", label: "To read" },
@@ -69,7 +73,8 @@ function startValue(d: Finish): FinishValue {
  * It is drawn on the Library row, on Now and on the books status screens
  * (task 1.17b, D-131), never on a search result. `title` is the book's name
  * where there is no `.book-row` to read it from (Now, the status rows), and
- * `menu={false}` leaves the `⋯` off where the row has its own.
+ * `menu={false}` leaves the `⋯` off where the row has its own, and `glyph={false}` the
+ * headphones beside the badge where the row already draws one by its title or kicker.
  *
  * **It asks the dates** (task 1.17b, D-131). *Reading* or *Listening*, entered
  * from another status, saves at once and today's start with it, then opens
@@ -114,15 +119,14 @@ function startValue(d: Finish): FinishValue {
  */
 export default function BookStatus({
   bookId, status = "to_read", finishedOn = null, precision = "none", startedOn = null, startPrecision = "none",
-  listened = false, title: given, menu = true,
+  listened = false, title: given, menu = true, glyph: showGlyph = true,
 }: {
   bookId: string; status?: string; finishedOn?: string | null; precision?: Precision;
   startedOn?: string | null; startPrecision?: Precision; listened?: boolean;
-  title?: string; menu?: boolean;
+  title?: string; menu?: boolean; glyph?: boolean;
 }) {
   const router = useRouter();
   const bookWrite = useBookWrite();
-  const redate = useRedate();
   const fromProps = (): Saved => ({
     status: status as Status, finish: { on: finishedOn, precision }, start: { on: startedOn, precision: startPrecision },
     listened,
@@ -303,12 +307,20 @@ export default function BookStatus({
       setFailed(false);
       setRefused(null);
       try {
-        const done = await redate({
-          bookId, readId: null, name: title, start: editing.value, silent: true,
-          onSaved: () => setSaved((s) => ({ ...s, start: day })),
+        const res = await fetch("/api/progress/book/read", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ bookId, readId: null, start: toChoice(editing.value) }),
         });
-        if ("refused" in done) setRefused(`Not saved: ${done.refused}.`);
-        else closeEditor();
+        if (res.status === 400) {
+          const { error } = (await res.json()) as { error?: string };
+          setRefused(`Not saved: ${error ?? "the server refused it"}.`);
+        } else if (!res.ok) {
+          throw new Error("re-date failed");
+        } else {
+          setSaved((s) => ({ ...s, start: day }));
+          closeEditor();
+        }
       } catch {
         setFailed(true);
       } finally {
@@ -355,7 +367,7 @@ export default function BookStatus({
   }
 
   const reasons = why(editing);
-  const glyph = listenGlyph(saved.status, saved.listened);
+  const glyph = showGlyph ? listenGlyph(saved.status, saved.listened) : null;
   const describedBy = [reasons.start && startReasonId, reasons.finish && finishReasonId, refused && reasonId]
     .filter(Boolean).join(" ") || undefined;
 
@@ -417,7 +429,9 @@ export default function BookStatus({
         )}
         {dated && readsFailed && <ReadsFailed />}
         {dated && reads && reads.length > 1 && showReads && (
-          <AllReads id={readsId} bookId={bookId} title={title} reads={reads} onChanged={() => void reload()} />
+          <Suspense fallback={null}>
+            <AllReads id={readsId} bookId={bookId} title={title} reads={reads} onChanged={() => void reload()} />
+          </Suspense>
         )}
         {editing?.kind === "one" && (
           <>

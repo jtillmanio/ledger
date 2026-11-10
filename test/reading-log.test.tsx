@@ -311,6 +311,14 @@ describe("Listening in the status control (task 1.23, AC-4, AC-6)", () => {
     expect(glyph()).toEqual(["img", "Listened"]);
   });
 
+  it("glyph={false} leaves the headphones off a row that draws its own (Now, the status rows; task 1.17b)", () => {
+    act(() => root.render(
+      <UndoProvider><BookStatus bookId="wok" status="listening" listened glyph={false} /></UndoProvider>,
+    ));
+    expect(glyph()).toBeNull();
+    expect(container.querySelector(".status-toggle")!.textContent).toBe("Status: listening");
+  });
+
   it("the glyph is an outline in the text's own colour, never a colour of its own", () => {
     const css = readFileSync("src/app/globals.css", "utf8");
     const rules = css.split("}").filter((r) => /\.(ico|listen)\b/.test(r) && !r.includes("@media"));
@@ -632,6 +640,11 @@ describe("the status control asks the dates (task 1.17b, D-131)", () => {
       await expand();
     }
     const list = () => container.querySelector<HTMLElement>(".reads")!;
+    /** Press *All reads (2)*; the list is a lazy chunk, so wait for it to arrive. */
+    const openReads = async (toggle: Element = button("All reads (2)")) => {
+      await click(toggle);
+      await act(async () => { await new Promise((r) => setTimeout(r, 25)); });
+    };
     const readsDb = async () => (await sql`
       SELECT started_on::text AS s, finished_on::text AS f FROM read_events ORDER BY id`);
 
@@ -662,7 +675,7 @@ describe("the status control asks the dates (task 1.17b, D-131)", () => {
       const toggle = button("All reads (2)", container.querySelector(".date-line")!);
       expect(toggle.getAttribute("aria-expanded")).toBe("false");
       expect(container.querySelector(".reads")).toBeNull();
-      await click(toggle);
+      await openReads(toggle);
       expect(toggle.getAttribute("aria-expanded")).toBe("true");
       const items = [...list().querySelectorAll("li")];
       expect(items.map((li) => [...li.querySelectorAll("button")].map((b) => b.textContent))).toEqual([
@@ -677,7 +690,7 @@ describe("the status control asks the dates (task 1.17b, D-131)", () => {
 
     it("each date opens the four-choice picker; Cancel and Esc put focus back on it", async () => {
       await twoReads();
-      await click(button("All reads (2)"));
+      await openReads();
       const first = () => button("Started 3 June 2022", list());
       await click(first());
       expect(first().getAttribute("aria-expanded")).toBe("true");
@@ -694,7 +707,7 @@ describe("the status control asks the dates (task 1.17b, D-131)", () => {
 
     it("re-dating the first read changes only its row; book_status is untouched", async () => {
       await twoReads();
-      await click(button("All reads (2)"));
+      await openReads();
       await click(button("Started 3 June 2022", list()));
       await click(radio("Pick a date"));
       await setDay(list().querySelector<HTMLInputElement>('input[type="date"]')!, "2022-06-10");
@@ -708,7 +721,7 @@ describe("the status control asks the dates (task 1.17b, D-131)", () => {
 
     it("re-dating the second (the latest) read changes its row and book_status", async () => {
       await twoReads();
-      await click(button("All reads (2)"));
+      await openReads();
       await click(button("Finished 19 March 2025", list()));
       await click(radio("Pick a date"));
       await setDay(list().querySelector<HTMLInputElement>('input[type="date"]')!, "2025-03-25");
@@ -719,7 +732,7 @@ describe("the status control asks the dates (task 1.17b, D-131)", () => {
 
     it("a start after the finish is refused under the control and writes nothing; the toast's Undo takes a re-date back", async () => {
       await twoReads();
-      await click(button("All reads (2)"));
+      await openReads();
       await click(button("Started 2 March 2025", list()));
       await click(radio("Pick a date"));
       await setDay(list().querySelector<HTMLInputElement>('input[type="date"]')!, "2025-04-01");

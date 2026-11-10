@@ -40,7 +40,7 @@ function control(b: StatusBook & {
   started_on?: string | null; started_on_precision?: Precision;
 }) {
   return (
-    <BookStatus bookId={b.id} title={b.title} menu={false} listened={b.listened}
+    <BookStatus bookId={b.id} title={b.title} menu={false} glyph={false} listened={b.listened}
       {...(b.status && { status: b.status })}
       {...(b.finished_on && { finishedOn: b.finished_on, precision: b.finished_on_precision })}
       {...(b.started_on && { startedOn: b.started_on, startPrecision: b.started_on_precision })} />

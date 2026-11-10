@@ -83,7 +83,7 @@ export default function BooksNow({ book, settings, next = null }: {
         </div>
       </div>
       <div className="now-status">
-        <BookStatus bookId={book.id} title={book.title} menu={false} status={book.status} listened={book.listened}
+        <BookStatus bookId={book.id} title={book.title} menu={false} glyph={false} status={book.status} listened={book.listened}
           startedOn={book.started_on} startPrecision={book.started_on_precision} />
       </div>
       <WhereItSits levels={book.levels} />

@@ -51,7 +51,7 @@ export default function PlanQuarter({ period, rows }: { period: string; rows: Qu
               {wordsK(b.word_count) && <span className="mono">{wordsK(b.word_count)}</span>}
             </span>
             {/* The status control (task 1.17b): a planned book is to read, so it starts at Reading from here. */}
-            <BookStatus bookId={b.id} title={b.title} menu={false} listened={b.listened} />
+            <BookStatus bookId={b.id} title={b.title} menu={false} glyph={false} listened={b.listened} />
           </span>
         </>
       )}

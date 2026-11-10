@@ -1,75 +1,85 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import FinishDate, {
-  dateWords, finishReason, initialFinish, storedDay, type DateFor, type FinishValue,
+  dateWords, finishReason, finishWords, initialFinish, storedDay, toChoice, type DateFor, type FinishValue,
 } from "@/components/FinishDate";
 import { Headphones } from "@/components/nav/Icons";
-import { useRedate } from "@/components/useBookWrite";
+import { useUndo } from "@/components/Undo";
 import type { BookRead } from "@/db/queries";
 import { startAfterFinish } from "@/lib/finish-date";
 import type { Precision } from "@/lib/format";
 
+type RedateArgs = {
+  bookId: string;
+  /** One of the book's reads; null is the read in progress (its start alone). */
+  readId: number | null;
+  /** The title, for the toast. */
+  name: string;
+  start?: FinishValue;
+  finish?: FinishValue;
+  /** No toast of its own: the start picked just after *Reading* is undone by the status change's Undo. */
+  silent?: boolean;
+  /** Runs once the server has saved, before the page refreshes. */
+  onSaved?: () => void;
+  /** Runs once an Undo has taken the re-date back, before the page refreshes. */
+  onUndone?: () => void;
+};
+
+/**
+ * Re-date one read of a book (task 1.17b, D-131): `POST /api/progress/book/read`,
+ * a page refresh, and a toast whose Undo is `DELETE` with the server's own
+ * account of the re-date, which undoes that re-date alone. `silent` pushes no
+ * toast (the start picked right after *Reading*, whose one Undo is the status
+ * change's). Resolves `{ refused }` on a 400 (nothing was written) and
+ * `{ redated }` when it saved; anything else that goes wrong throws.
+ */
+function useRedate() {
+  const router = useRouter();
+  const { push } = useUndo();
+  return useCallback(async ({
+    bookId, readId, name, start, finish, silent, onSaved, onUndone,
+  }: RedateArgs): Promise<{ refused: string } | { redated: true }> => {
+    const res = await fetch("/api/progress/book/read", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        bookId, readId, ...(start && { start: toChoice(start) }), ...(finish && { finish: toChoice(finish) }),
+      }),
+    });
+    if (res.status === 400) {
+      const { error } = (await res.json()) as { error?: string };
+      return { refused: error ?? "the server refused it" };
+    }
+    if (!res.ok) throw new Error("re-date failed");
+    const { redate } = (await res.json()) as { redate: unknown };
+    onSaved?.();
+    router.refresh();
+    if (!silent) {
+      push({
+        label: `${name}: dates changed`,
+        detail: [start && `Started ${finishWords(start)}`, finish && `Finished ${finishWords(finish)}`]
+          .filter(Boolean).join(" · "),
+        undo: async () => {
+          const back = await fetch("/api/progress/book/read", {
+            method: "DELETE",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ redate }),
+          });
+          if (!back.ok) throw new Error("undo failed");
+          onUndone?.();
+          router.refresh();
+        },
+      });
+    }
+    return { redated: true };
+  }, [router, push]);
+}
+
 type Day = { on: string | null; precision: Precision };
 const started = (r: BookRead): Day => ({ on: r.started_on, precision: r.started_on_precision });
 const finished = (r: BookRead): Day => ({ on: r.finished_on, precision: r.finished_on_precision });
-
-/**
- * A book's finished reads, loaded from `GET /api/progress/book/read` when the
- * status control is `active` (open, on a dated status) and again by `reload`
- * after any save or undo in it (task 1.17b, D-131). They never ride in the page:
- * the Library's 500 rows cost no more RSC for it. `reads` is null until they
- * arrive, and `failed` says they could not.
- */
-export function useReads(bookId: string, active: boolean) {
-  const [reads, setReads] = useState<BookRead[] | null>(null);
-  const [failed, setFailed] = useState(false);
-  const reload = useCallback(async () => {
-    try {
-      setReads(await fetchReads(bookId));
-      setFailed(false);
-    } catch {
-      setFailed(true);
-    }
-  }, [bookId]);
-  useEffect(() => {
-    if (!active) return;
-    let live = true;
-    fetchReads(bookId).then(
-      (found) => { if (live) { setReads(found); setFailed(false); } },
-      () => { if (live) setFailed(true); },
-    );
-    return () => { live = false; };
-  }, [active, bookId]);
-  return { reads, failed, reload };
-}
-
-async function fetchReads(bookId: string): Promise<BookRead[]> {
-  const res = await fetch(`/api/progress/book/read?bookId=${encodeURIComponent(bookId)}`);
-  if (!res.ok) throw new Error(`reads ${res.status}`);
-  return ((await res.json()) as { reads: BookRead[] }).reads;
-}
-
-/** *All reads (n)*, in the date line: shown once a book has more than one read. */
-export function AllReadsToggle({ count, open, onToggle, listId }: {
-  count: number; open: boolean; onToggle: () => void; listId: string;
-}) {
-  return (
-    <button type="button" className="btn sec sm" aria-expanded={open} aria-controls={open ? listId : undefined}
-      onClick={onToggle}>
-      All reads ({count})
-    </button>
-  );
-}
-
-/** A neutral line, a grey ×, when the reads could not be loaded: never `--danger`. */
-export function ReadsFailed() {
-  return (
-    <p className="small sheet-reason sheet-error" role="status">
-      <span aria-hidden="true">×</span> Couldn&apos;t load this book&apos;s reads.
-    </p>
-  );
-}
 
 type Editing = { id: number; what: DateFor; value: FinishValue };
 

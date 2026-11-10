@@ -708,6 +708,8 @@ test.describe("the status control on the status screens (1.17b)", () => {
 
     await open(page, "/books/status?tab=done");
     await expect(toggle(page, TWICE)).toHaveText(/^Status: read /);
+    // A book with a listen has the one headphones glyph its row draws by the title, not a second by the badge.
+    await expect(row(page, TWICE).locator('svg[role="img"].listen')).toHaveCount(1);
     await expect(toggle(page, ONCE_READ)).toHaveText(/^Status: read /);
     await panel(page).locator("details.stopped summary").click();
     await expect(toggle(page, QUIT)).toHaveText("Status: DNF");
