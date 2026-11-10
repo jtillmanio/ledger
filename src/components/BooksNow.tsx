@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BookStatus from "@/components/BookStatus";
 import { Headphones } from "@/components/nav/Icons";
 import type { InHandBook, NextIn } from "@/db/queries";
 import { dayWhen } from "@/lib/format";
@@ -54,6 +55,8 @@ export function nowFoot(book: InHandBook, s: ReadingSettings, now = new Date()):
  * Now (§14.1, task 2.2): the book in hand, the dashboard's only large thing. The cover, *Reading
  * now* (or *Listening now* with the headphones glyph, 1.23), the title in Newsreader, the author,
  * the page count in mono, and the foot. No page position, meter or sittings until 2.1b (Q1).
+ * Under the band sits the book's status control (task 1.17b, D-131): its badge expands the
+ * statuses and the date line, and *Reading* asks *Started*; no `⋯`, the dashboard has no row to act on.
  * *Where the book sits* (2.2g): thin rows under the band, one per level (universe, series,
  * subseries) with `read / total`; 2.1b's meter, when it lands, goes in the band above them.
  * *Next in* (2.2d): when the book is in something you follow as Reading, one grey line under
@@ -78,6 +81,10 @@ export default function BooksNow({ book, settings, next = null }: {
           <span className="grow" />
           {book.pages ? <span className="now-pages"><b className="mono">{book.pages.toLocaleString()}</b> pages</span> : null}
         </div>
+      </div>
+      <div className="now-status">
+        <BookStatus bookId={book.id} title={book.title} menu={false} status={book.status} listened={book.listened}
+          startedOn={book.started_on} startPrecision={book.started_on_precision} />
       </div>
       <WhereItSits levels={book.levels} />
       {next && (

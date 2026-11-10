@@ -323,7 +323,9 @@ test.describe("books", () => {
 
     const lane = panel(page).locator('section[data-plan="year"]');
     await expect(lane.locator(".row-title")).toHaveText(["E2E Plan Year"]);
-    await expect(lane.locator("button, a, .drag")).toHaveCount(0);
+    // No handle, link or Place button until 2.8; the status control (1.17b) is the one button.
+    await expect(lane.locator("a, .drag")).toHaveCount(0);
+    await expect(lane.getByRole("button")).toHaveText(["Status: to read"]);
     // Nothing on the lane resolves to --blocked: its colour, as the browser computes it, is compared to a probe.
     const blocked = await page.evaluate(() => {
       const probe = document.body.appendChild(document.createElement("span"));
@@ -474,10 +476,10 @@ test.describe("Finished on In flight (2.2f)", () => {
 
   test("AC-3: a button named Finished <title> on Reading and Listening rows only", ONCE, async ({ page }) => {
     await open(page, "/books/status");
-    await expect(panel(page).getByRole("button")).toHaveCount(4);
+    await expect(panel(page).getByRole("button", { name: /^Finished / })).toHaveCount(4);
     for (const title of ["E2E Fin Alpha", "E2E Fin Beta", "E2E Fin Gamma Listening"]) await expect(finish(page, title)).toBeVisible();
-    // Nothing else on the row is a status control.
-    await expect(panel(page).locator("article.row").first().getByRole("button")).toHaveCount(1);
+    // Nothing else on the row is a Finished button: its other button is the status control (1.17b).
+    await expect(panel(page).locator("article.row").first().getByRole("button", { name: /^Finished / })).toHaveCount(1);
     await open(page, "/books/status?tab=next");
     await expect(page.getByRole("button", { name: /^Finished / })).toHaveCount(0);
     await open(page, "/books/status?tab=done");
@@ -603,5 +605,248 @@ test.describe("Finished on In flight (2.2f)", () => {
     await expect(panel(page).locator(".slate b")).toHaveText("Nothing in flight.");
     await expect(tab(page, "In flight")).toBeFocused();
     await expect(tab(page, "In flight").locator(".n")).toHaveText("0");
+  });
+});
+
+// Task 1.17b (D-131): the status control on the status screens. Own books under `e2e-ctl-`, reseeded before
+// each test and removed after the last. The tests that only open the control run at every width, light and
+// dark, for the floor and the feel-pass screenshots; the ones that write run once.
+test.describe("the status control on the status screens (1.17b)", () => {
+  test.describe.configure({ mode: "serial" });
+  const prefix = "e2e-ctl-";
+  const FLIGHT = "E2E Ctl Flight";
+  const QUARTER = "E2E Ctl Quarter";
+  const LANE = "E2E Ctl Lane";
+  const DECK = "E2E Ctl Deck";
+  const TWICE = "E2E Ctl Twice";
+  const ONCE_READ = "E2E Ctl Once";
+  const QUIT = "E2E Ctl Quit";
+  const todayEastern = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+  const daysAgo = (n: number) => new Date(Date.parse(`${todayEastern()}T12:00:00Z`) - n * 86_400_000).toISOString().slice(0, 10);
+
+  async function reseed() {
+    await db(async (sql) => {
+      await sql`DELETE FROM books WHERE id LIKE ${prefix + "%"}`;
+      const book = (id: string, title: string) => sql`INSERT INTO books (id, title, genre) VALUES (${prefix + id}, ${title}, 'Fantasy')`;
+      await book("flight", FLIGHT);
+      await sql`INSERT INTO book_status (user_id, book_id, status, started_on, started_on_precision)
+                VALUES (${E2E_USER}, ${prefix + "flight"}, 'reading', '2026-10-01', 'exact')`;
+      for (const [id, title, period, ordinal] of [
+        ["quarter", QUARTER, "2027-Q1", 1], ["lane", LANE, "2027", null], ["deck", DECK, "on_deck", null],
+      ] as const) {
+        await book(id, title);
+        await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${prefix + id}, 'to_read')`;
+        await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${E2E_USER}, ${prefix + id}, ${period}, ${ordinal})`;
+      }
+      // Read twice: a text read, then a listen, whose finish the status holds in step.
+      await book("twice", TWICE);
+      await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+                VALUES (${E2E_USER}, ${prefix + "twice"}, 'read', '2025-03-19', 'exact')`;
+      await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, started_on, started_on_precision, format)
+                VALUES (${E2E_USER}, ${prefix + "twice"}, '2022-07-01', 'approximate', '2022-06-03', 'exact', 'text'),
+                       (${E2E_USER}, ${prefix + "twice"}, '2025-03-19', 'exact', '2025-03-02', 'exact', 'audio')`;
+      await book("once", ONCE_READ);
+      await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+                VALUES (${E2E_USER}, ${prefix + "once"}, 'read', '2024-05-05', 'exact')`;
+      await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, started_on, started_on_precision)
+                VALUES (${E2E_USER}, ${prefix + "once"}, '2024-05-05', 'exact', '2024-04-20', 'exact')`;
+      await book("quit", QUIT);
+      await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${prefix + "quit"}, 'dnf')`;
+    });
+  }
+  test.beforeEach(reseed);
+  test.afterAll(() => db((sql) => sql`DELETE FROM books WHERE id LIKE ${prefix + "%"}`));
+
+  const row = (page: Page, title: string) => page.locator("article.row, li.qrow").filter({ hasText: title });
+  const toggle = (page: Page, title: string) => row(page, title).locator(".status-toggle");
+  const state = (id: string) => db(async (sql) => {
+    const [r] = await sql`SELECT status, started_on::text AS started_on, started_on_precision AS sp, finished_on::text AS finished_on
+                          FROM book_status WHERE user_id = ${E2E_USER} AND book_id = ${prefix + id}`;
+    return { ...r };
+  });
+  const reads = (id: string) => db(async (sql) =>
+    [...await sql`SELECT started_on::text AS started_on, finished_on::text AS finished_on, format
+                  FROM read_events WHERE user_id = ${E2E_USER} AND book_id = ${prefix + id} ORDER BY id`].map((r) => ({ ...r })));
+  /** Opens a row's control (its badge) once React has hold of it. */
+  async function expand(page: Page, title: string) {
+    const t = toggle(page, title);
+    await hydrated(t);
+    await t.click();
+    await expect(row(page, title).getByRole("group", { name: `Status of ${title}` })).toBeVisible();
+    return row(page, title);
+  }
+  /** Nothing inside `scope` resolves to --danger. */
+  async function expectNoDanger(page: Page, scope: ReturnType<Page["locator"]>) {
+    const danger = await tokenColour(page, "--danger");
+    const hits = await scope.locator("*").evaluateAll((els, d) => els.filter((el) => {
+      const cs = getComputedStyle(el);
+      return [cs.color, cs.backgroundColor, cs.borderTopColor].includes(d);
+    }).map((el) => `${el.tagName.toLowerCase()}.${el.className}`), danger);
+    expect(hits, "nothing resolves to --danger").toEqual([]);
+  }
+  /** On a phone the pickers' options are 44px. */
+  async function expectOptions44(page: Page, scope: ReturnType<Page["locator"]>) {
+    if (page.viewportSize()!.width >= 768) return;
+    for (const radio of await scope.getByRole("radio").all()) {
+      expect((await radio.locator("xpath=..").boundingBox())!.height, "a picker option").toBeGreaterThanOrEqual(44);
+    }
+  }
+
+  test("AC-5: every tab's rows carry the control, the quarter's too; the year lane gains no handle", ONCE, async ({ page }) => {
+    await open(page, "/books/status");
+    await expect(toggle(page, FLIGHT)).toHaveText("Status: reading");
+    // Finished (2.2f) is still there beside it.
+    await expect(page.getByRole("button", { name: `Finished ${FLIGHT}`, exact: true })).toBeVisible();
+
+    await open(page, "/books/status?tab=next");
+    await expect(page.locator(`ol[aria-label="Q1 2027"]`).locator(".status-toggle")).toHaveText("Status: to read");
+    await expect(page.locator(`ol[aria-label="Q1 2027"] .drag`)).toHaveCount(1);
+    const lane = panel(page).locator('section[data-plan="year"]');
+    await expect(lane.locator(".status-toggle")).toHaveText("Status: to read");
+    await expect(lane.locator("a, .drag")).toHaveCount(0);
+    await expect(panel(page).locator('section[data-plan="on_deck"] .status-toggle')).toHaveText("Status: to read");
+
+    await open(page, "/books/status?tab=done");
+    await expect(toggle(page, TWICE)).toHaveText(/^Status: read /);
+    await expect(toggle(page, ONCE_READ)).toHaveText(/^Status: read /);
+    await panel(page).locator("details.stopped summary").click();
+    await expect(toggle(page, QUIT)).toHaveText("Status: DNF");
+  });
+
+  test("AC-6: the control open on In flight, Up next and Done meets the floor; focus returns to what opened it", async ({ page }, info) => {
+    // In flight: the date line's Started opens the picker.
+    await open(page, "/books/status");
+    const flight = await expand(page, FLIGHT);
+    const started = flight.getByRole("button", { name: /^Started / });
+    await started.click();
+    const group = flight.getByRole("group", { name: "Started" });
+    await expect(group.getByRole("radio", { name: "Today" })).toBeVisible();
+    await expectOptions44(page, group);
+    await expectNoDanger(page, flight);
+    await floor(page);
+    await screenshot(page, info, "books-in-flight-control");
+    await page.keyboard.press("Escape");
+    await expect(group).toHaveCount(0);
+    await expect(started).toBeFocused();
+
+    // Up next: a quarter row, where Read asks both dates.
+    await open(page, "/books/status?tab=next");
+    const quarter = await expand(page, QUARTER);
+    const read = quarter.getByRole("button", { name: "Read", exact: true });
+    await read.click();
+    await expect(quarter.getByRole("group", { name: "Started" })).toBeVisible();
+    await expect(quarter.getByRole("group", { name: "Finished" })).toBeVisible();
+    await expectOptions44(page, quarter.getByRole("group", { name: "Finished" }));
+    await expectNoDanger(page, quarter);
+    await floor(page);
+    await screenshot(page, info, "books-up-next-control");
+    await page.keyboard.press("Escape");
+    await expect(read).toBeFocused();
+    await expect(quarter.getByRole("group", { name: "Started" })).toHaveCount(0);
+
+    // Done: All reads (2), with one date's picker open.
+    await open(page, "/books/status?tab=done");
+    const twice = await expand(page, TWICE);
+    await twice.getByRole("button", { name: "All reads (2)" }).click();
+    const list = twice.getByRole("list", { name: `All reads of ${TWICE}` });
+    await expect(list.getByRole("listitem")).toHaveCount(2);
+    await expect(list.getByRole("img", { name: "Listened" })).toHaveCount(1);
+    const first = list.getByRole("button", { name: "Started 3 June 2022, read 1" });
+    await first.click();
+    await expectOptions44(page, list.getByRole("group", { name: "Started" }));
+    await expectNoDanger(page, twice);
+    await floor(page);
+    await screenshot(page, info, "books-done-all-reads");
+    await page.keyboard.press("Escape");
+    await expect(first).toBeFocused();
+  });
+
+  test("AC-1: Reading from Up next opens Started on Today; an earlier day writes started_on, exact; one Undo restores to_read", ONCE, async ({ page }) => {
+    await open(page, "/books/status?tab=next");
+    const quarter = await expand(page, QUARTER);
+    await quarter.getByRole("button", { name: "Reading", exact: true }).click();
+    const group = quarter.getByRole("group", { name: "Started" });
+    await expect(group.getByRole("radio", { name: "Today" })).toBeChecked();
+    // The row stays while the question is open, even though Reading takes it off Up next.
+    await expect.poll(() => state("quarter")).toMatchObject({ status: "reading", started_on: todayEastern(), sp: "exact" });
+    await expect(toggle(page, QUARTER)).toBeVisible();
+
+    const day = daysAgo(3);
+    await group.getByRole("radio", { name: "Pick a date" }).check();
+    await quarter.getByLabel("Started on").fill(day);
+    await quarter.getByRole("button", { name: "Save" }).click();
+    await expect.poll(() => state("quarter")).toMatchObject({ status: "reading", started_on: day, sp: "exact" });
+    // One toast, one Undo: the status change's.
+    const undo = page.locator(".toast").getByRole("button", { name: "Undo" });
+    await expect(undo).toHaveCount(1);
+    await undo.click();
+    await expect.poll(() => state("quarter")).toMatchObject({ status: "to_read", started_on: null, sp: "none" });
+  });
+
+  test("AC-1: Read from In flight opens both; a start after the finish is refused and writes nothing; confirming writes one read with both dates", ONCE, async ({ page }) => {
+    const posts: string[] = [];
+    page.on("request", (r) => { if (r.method() === "POST" && r.url().includes("/api/progress/")) posts.push(r.url()); });
+    await open(page, "/books/status");
+    const flight = await expand(page, FLIGHT);
+    await flight.getByRole("button", { name: "Read", exact: true }).click();
+    const startGroup = flight.getByRole("group", { name: "Started" });
+    const finishGroup = flight.getByRole("group", { name: "Finished" });
+    await expect(startGroup.getByRole("radio", { name: "Pick a date" })).toBeChecked();
+    await expect(flight.getByLabel("Started on")).toHaveValue("2026-10-01");
+    await expect(finishGroup.getByRole("radio", { name: "Today" })).toBeChecked();
+
+    await finishGroup.getByRole("radio", { name: "Pick a date" }).check();
+    await flight.getByLabel("Finished on").fill("2026-09-20");
+    const reason = flight.locator(".sheet-reason").first();
+    await expect(reason).toHaveText("That's after the day you finished.");
+    await expect(reason).toHaveAttribute("aria-live", "polite");
+    const save = flight.getByRole("button", { name: "Save" });
+    await expect(save).toHaveAttribute("aria-disabled", "true");
+    const { color } = await computedStyle(reason, ["color"]);
+    expect(color).not.toBe(await tokenColour(page, "--danger"));
+    await save.click({ force: true });
+    expect(posts).toEqual([]);
+    expect((await state("flight")).status).toBe("reading");
+    expect(await reads("flight")).toEqual([]);
+
+    await flight.getByLabel("Finished on").fill("2026-10-10");
+    await expect(reason).toHaveText("");
+    await save.click();
+    await expect.poll(() => reads("flight")).toEqual([{ started_on: "2026-10-01", finished_on: "2026-10-10", format: "text" }]);
+    expect((await state("flight")).status).toBe("read");
+    await expect(toggle(page, FLIGHT)).toHaveCount(0);
+  });
+
+  test("AC-1: All reads (2): re-dating the first changes only its row; the second changes its row and book_status", ONCE, async ({ page }) => {
+    await open(page, "/books/status?tab=done");
+    const twice = await expand(page, TWICE);
+    // The date line: one All reads button, and the once-read book has none.
+    await expect(twice.getByRole("button", { name: "All reads (2)" })).toHaveAttribute("aria-expanded", "false");
+    await twice.getByRole("button", { name: "All reads (2)" }).click();
+    const list = twice.getByRole("list", { name: `All reads of ${TWICE}` });
+
+    await list.getByRole("button", { name: "Started 3 June 2022, read 1" }).click();
+    await list.getByRole("radio", { name: "Pick a date" }).check();
+    await list.getByLabel("Started on").fill("2022-06-10");
+    await list.getByRole("button", { name: "Save" }).click();
+    await expect.poll(() => reads("twice")).toEqual([
+      { started_on: "2022-06-10", finished_on: "2022-07-01", format: "text" },
+      { started_on: "2025-03-02", finished_on: "2025-03-19", format: "audio" },
+    ]);
+    expect((await state("twice")).finished_on).toBe("2025-03-19");
+
+    await list.getByRole("button", { name: "Finished 19 March 2025, read 2" }).click();
+    await list.getByRole("radio", { name: "Pick a date" }).check();
+    await list.getByLabel("Finished on").fill("2025-03-25");
+    await list.getByRole("button", { name: "Save" }).click();
+    await expect.poll(() => reads("twice")).toEqual([
+      { started_on: "2022-06-10", finished_on: "2022-07-01", format: "text" },
+      { started_on: "2025-03-02", finished_on: "2025-03-25", format: "audio" },
+    ]);
+    expect((await state("twice")).finished_on).toBe("2025-03-25");
+
+    // A book read once lists no All reads.
+    await expand(page, ONCE_READ);
+    await expect(row(page, ONCE_READ).getByRole("button", { name: /^All reads/ })).toHaveCount(0);
   });
 });

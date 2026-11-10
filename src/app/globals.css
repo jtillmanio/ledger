@@ -729,6 +729,20 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
   -webkit-tap-highlight-color:transparent}
 .finish-note{margin-top:.5rem;font-size:.75rem}
 .finish-actions{margin-top:.5rem}
+/* The pickers' options are 44px on the phone (the UX floor, task 1.17b). */
+@media (max-width:767px){
+  .finish .opts .opt,.status-group .opt{min-height:44px}
+  .finish .stepper button{width:44px;height:44px}
+}
+/* The status control on Now and on the status rows (task 1.17b, D-131): under the band and under the text. */
+.now-status{padding:0 16px 12px}
+.now-status .status-line{margin-top:0}
+.row-control{margin-top:.375rem}
+/* All reads (task 1.17b): each read oldest first, the dates a button apiece, grey text and rules only. */
+.reads{list-style:none;margin:.5rem 0 0;padding:0;display:flex;flex-direction:column;gap:.5rem}
+.read-item{padding-top:.5rem;border-top:1px solid var(--line)}
+.read-name{display:flex;align-items:center;gap:.375rem;font-size:.8125rem;color:var(--ink-2)}
+.read-dates{display:flex;gap:.5rem;flex-wrap:wrap;margin:.375rem 0 0}
 
 .sheet-fields{margin-top:.75rem}
 .sheet-fields .frow input{margin-left:auto;font:inherit;font-family:var(--mono);font-size:.875rem;color:var(--ink);
@@ -1682,6 +1696,7 @@ section[data-plan="year"] h2.group-head{color:var(--muted)}
 /* The loading state (Skeleton.tsx): the same boxes, their contents in --sunk. */
 .sk-fill{display:block;width:100%;height:100%}
 .sk-now-kick{height:14px}
+.sk-now-status{height:24px}
 .sk-now-name{height:22px;margin:12px 0 4px}
 .sk-now-by{height:14px;margin:9px 0 3px}
 .sk-now-pages{height:28px;margin:4px 0}

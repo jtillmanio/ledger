@@ -35,6 +35,8 @@ export type BookWriteArgs = {
   onSaved?: (written: BookWritten) => void;
   /** Runs once an Undo has taken the save back, before the page refreshes. */
   onUndone?: () => void;
+  /** False holds the page refresh back: the caller refreshes when it has finished asking (task 1.17b). */
+  refresh?: boolean;
 };
 
 /**
@@ -52,7 +54,7 @@ export function useBookWrite() {
   const router = useRouter();
   const { push } = useUndo();
   return useCallback(async ({
-    bookId, status, name, was, finish, start, onSaved, onUndone,
+    bookId, status, name, was, finish, start, onSaved, onUndone, refresh = true,
   }: BookWriteArgs): Promise<{ refused: string } | { written: BookWritten }> => {
     const res = await fetch("/api/progress/book", {
       method: "POST",
@@ -68,7 +70,7 @@ export function useBookWrite() {
     if (!res.ok) throw new Error("status failed");
     const written = (await res.json()) as BookWritten;
     onSaved?.(written);
-    router.refresh();
+    if (refresh) router.refresh();
     push({
       label: `${name}: ${NAMES[status]}`,
       detail: start ? `Started ${finishWords(start)}`
@@ -86,5 +88,71 @@ export function useBookWrite() {
       offer: offerChips(written.offer),
     });
     return { written };
+  }, [router, push]);
+}
+
+export type RedateArgs = {
+  bookId: string;
+  /** One of the book's reads; null is the read in progress (its start alone). */
+  readId: number | null;
+  /** The title, for the toast. */
+  name: string;
+  start?: FinishValue;
+  finish?: FinishValue;
+  /** No toast of its own: the start picked just after *Reading* is undone by the status change's Undo. */
+  silent?: boolean;
+  /** Runs once the server has saved, before the page refreshes. */
+  onSaved?: () => void;
+  /** Runs once an Undo has taken the re-date back, before the page refreshes. */
+  onUndone?: () => void;
+};
+
+/**
+ * Re-date one read of a book (task 1.17b, D-131): `POST /api/progress/book/read`,
+ * a page refresh, and a toast whose Undo is `DELETE` with the server's own
+ * account of the re-date, which undoes that re-date alone. `silent` pushes no
+ * toast (the start picked right after *Reading*, whose one Undo is the status
+ * change's). Resolves `{ refused }` on a 400 (nothing was written) and
+ * `{ redated }` when it saved; anything else that goes wrong throws.
+ */
+export function useRedate() {
+  const router = useRouter();
+  const { push } = useUndo();
+  return useCallback(async ({
+    bookId, readId, name, start, finish, silent, onSaved, onUndone,
+  }: RedateArgs): Promise<{ refused: string } | { redated: true }> => {
+    const res = await fetch("/api/progress/book/read", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        bookId, readId, ...(start && { start: toChoice(start) }), ...(finish && { finish: toChoice(finish) }),
+      }),
+    });
+    if (res.status === 400) {
+      const { error } = (await res.json()) as { error?: string };
+      return { refused: error ?? "the server refused it" };
+    }
+    if (!res.ok) throw new Error("re-date failed");
+    const { redate } = (await res.json()) as { redate: unknown };
+    onSaved?.();
+    router.refresh();
+    if (!silent) {
+      push({
+        label: `${name}: dates changed`,
+        detail: [start && `Started ${finishWords(start)}`, finish && `Finished ${finishWords(finish)}`]
+          .filter(Boolean).join(" · "),
+        undo: async () => {
+          const back = await fetch("/api/progress/book/read", {
+            method: "DELETE",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ redate }),
+          });
+          if (!back.ok) throw new Error("undo failed");
+          onUndone?.();
+          router.refresh();
+        },
+      });
+    }
+    return { redated: true };
   }, [router, push]);
 }

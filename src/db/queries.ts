@@ -651,15 +651,19 @@ export type StatusBook = {
   series_position: number | null; word_count: number | null; listened: boolean;
 };
 
-/** A book *In flight*: `status` says which group, Reading or Listening (task 1.23). */
-export type FlyingBook = StatusBook & { status: "reading" | "listening" };
+/** A book *In flight*: `status` says which group, Reading or Listening (task 1.23). The start is the
+ * read in progress's, for the status control's date line (task 1.17b). */
+export type FlyingBook = StatusBook & {
+  status: "reading" | "listening"; started_on: string | null; started_on_precision: Precision;
+};
 
 /** *In flight* for books (task 1.9): what you are reading, by eye and then by
  * ear (task 1.23). No reading position is stored, so the row shows the word count. */
 export async function booksInFlight(userId: string) {
   return sql<FlyingBook[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, b.word_count,
-           st.status, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened
+           st.status, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened,
+           st.started_on::text AS started_on, st.started_on_precision
     FROM book_status st
     JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
     LEFT JOIN authors a     ON a.id = b.author_id
@@ -1204,6 +1208,8 @@ export type InHandBook = {
   id: string; title: string; author: string | null; pages: number | null; words: number | null;
   cover_url: string | null; status: "reading" | "listening";
   started_on: string | null; started_on_precision: Precision;
+  /** It has a listen in the log (task 1.23), for the status control's headphones glyph (task 1.17b). */
+  listened: boolean;
   /** *Next in* (task 2.2d): the next book in what this one is in and you follow as Reading. */
   next_in: NextIn | null;
   /** Where it sits (task 2.2g): one row per level it belongs to, outermost first; `[]` when none. */
@@ -1239,6 +1245,7 @@ export async function booksInHand(userId: string) {
              COALESCE(b.word_count, CASE WHEN b.page_count >= 50
                                          THEN b.page_count * COALESCE(rs.words_per_page, ${DEFAULT_WORDS_PER_PAGE}) END) AS words,
              st.status, st.started_on, st.started_on_precision,
+             EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = st.user_id AND e.book_id = b.id AND e.format = 'audio') AS listened,
              b.series_id, b.subseries_id, b.author_id, b.universe_id
       FROM book_status st
       JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
@@ -1280,7 +1287,7 @@ export async function booksInHand(userId: string) {
       GROUP BY h.id
     )
     SELECT hand.id, hand.title, hand.author, hand.pages, hand.cover_url, hand.words, hand.status,
-           hand.started_on::text AS started_on, hand.started_on_precision, x.next_in,
+           hand.started_on::text AS started_on, hand.started_on_precision, hand.listened, x.next_in,
            COALESCE(lv.levels, '[]'::json) AS levels
     FROM hand
     LEFT JOIN next_in x ON x.hand_id = hand.id

@@ -1,5 +1,6 @@
 "use client";
 
+import BookStatus from "@/components/BookStatus";
 import { Headphones } from "@/components/nav/Icons";
 import ReorderList from "@/components/ReorderList";
 import { bookSub, quarterName, wordsK } from "@/lib/format";
@@ -49,6 +50,8 @@ export default function PlanQuarter({ period, rows }: { period: string; rows: Qu
               {bookSub(b) && <span className="mono">{bookSub(b)}</span>}
               {wordsK(b.word_count) && <span className="mono">{wordsK(b.word_count)}</span>}
             </span>
+            {/* The status control (task 1.17b): a planned book is to read, so it starts at Reading from here. */}
+            <BookStatus bookId={b.id} title={b.title} menu={false} listened={b.listened} />
           </span>
         </>
       )}

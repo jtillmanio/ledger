@@ -182,6 +182,8 @@ export function BooksNowSkeleton() {
           <Bar w="7rem" className="sk-now-pages" />
         </div>
       </div>
+      {/* The status control's badge (task 1.17b) holds its row's height. */}
+      <div className="now-status"><Bar w="5rem" className="sk-now-status" /></div>
       {/* The foot wraps to two lines on a phone, and fits one from the tablet up. */}
       <p className="now-foot"><Bar w="85%" className="sk-now-foot" /><Bar w="45%" className="sk-now-foot two" /></p>
     </section>
