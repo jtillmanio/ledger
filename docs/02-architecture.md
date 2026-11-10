@@ -281,7 +281,7 @@ tables.
     | `/books/status` | 24,000 | 175,000 | 35 | 100 |
     | `/comics/bendis-disassembled` | 26,800 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 26,000 | 171,000 | 33 | 100 |
-    | `/books` | 19,000 | 177,000 | 36 | 100 |
+    | `/books` | 19,000 | 177,200 | 36 | 100 |
     | `/books/list` | 70,000 | 173,000 | 65 | 100 |
     | `/inbox` | 16,000 | 173,000 | 31 | 100 |
     | `/settings` | 16,000 | 173,000 | 32 | 100 |
@@ -380,6 +380,15 @@ tables.
     requests, each the measured number plus under 1%. This is a stopgap, not a
     new floor: a roadmap item (1.30) brings the two routes back under their
     old budgets.
+    Task 2.3's picker sheet (PR #224) put *Year or quarter…* on Add books and
+    on each search result. With the picker itself loaded only when it opens, as
+    the Library row's *Plan for…* loads it, the preview measured `/books` at
+    177,149 bytes of JS (median of three), so the owner raised `/books` to
+    177,200 (2026-11-10), the same kind of stopgap with 1.30's target
+    unchanged. For 1.30: `AddBooksButton` imports `AddBooks` statically, so
+    every page with an Add button ships Search, *Paste a list* and *By hand*
+    before the sheet opens; loading it with the sheet is the likeliest large
+    saving.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 
