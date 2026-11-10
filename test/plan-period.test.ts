@@ -449,6 +449,24 @@ describe("GET /api/plan?bookId= is the picker's book (task 2.3, part 2, AC-2)", 
     expect((await book("d")).body.book).toMatchObject({ words: null, estimated: false });
   });
 
+  it("gives the words and estimate plan_book_words gives the same book once it has a plan row, so the two rules cannot drift", async () => {
+    await sql`UPDATE books SET page_count = 400 WHERE id = 'a'`;                       // pages x words per page
+    await sql`UPDATE books SET page_count = 49 WHERE id = 'b'`;                        // under 50 pages: unknown
+    await sql`UPDATE books SET word_count = 90000, word_count_source = 'stated' WHERE id = 'c'`;
+    await sql`UPDATE books SET word_count = 70000, word_count_source = 'estimated', page_count = 10 WHERE id = 'd'`;
+    for (const settings of [false, true]) {
+      if (settings) await sql`INSERT INTO reading_settings (user_id, words_per_page) VALUES (${USER}, 320)`;
+      for (const id of ["a", "b", "c", "d"]) {
+        await sql`DELETE FROM reading_plan WHERE book_id = ${id}`;
+        const asked = (await book(id)).body.book;
+        await w.placeInPlan(USER, id, "2027-Q1");
+        const [view] = await sql`SELECT words, word_source FROM plan_book_words WHERE book_id = ${id}`;
+        expect([id, settings, asked.words, asked.estimated])
+          .toEqual([id, settings, view.words, view.word_source === "estimated"]);
+      }
+    }
+  });
+
   it("reads On deck as its own level, and a book that isn't to read as no level", async () => {
     await w.placeInPlan(USER, "a", "on_deck");
     expect((await book("a")).body.book).toMatchObject({ status: "to_read", level: "on_deck", period: "on_deck" });
@@ -461,6 +479,8 @@ describe("GET /api/plan?bookId= is the picker's book (task 2.3, part 2, AC-2)", 
     expect((await book("a")).status).toBe(404);
     expect((await book("nope")).status).toBe(404);
     expect((await preview({ bookId: "b", month: "03" })).status).toBe(400);
+    // The book alone is the picker's book; with a `from` but no `to` it is a malformed preview, still 400.
+    expect((await preview({ bookId: "b", from: "2027-Q1" })).status).toBe(400);
   });
 });
 

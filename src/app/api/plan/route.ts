@@ -90,7 +90,7 @@ export async function GET(req: Request) {
   }
   const { bookId, from, to, words } = params;
   if (splitsPeriod(params)) return bad(SPLIT);
-  if (to === undefined && bookId !== undefined) {
+  if (to === undefined && bookId !== undefined && from === undefined && words === undefined) {
     if (!isText(bookId)) return bad("bookId is a book's id");
     const book = await planBook(userId, bookId);
     return book ? NextResponse.json({ book }) : NextResponse.json({ error: `${bookId} isn't in your library` }, { status: 404 });
