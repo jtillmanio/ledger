@@ -258,6 +258,33 @@ test("On deck and Someday need no year or quarter: no quarter row, no total; Som
   expect(await statusOf(A.id)).toBe("to_read");
 });
 
+// The undo toast stays live above a sheet (D-63). Below 1024px the sheet rises from the bottom, where
+// the toast is, so the sheet's own buttons must sit clear of it: the next move is never held up for 8s.
+test("the last move's toast never covers the next sheet's buttons (D-63, D-144)", async ({ page }) => {
+  await openLibrary(page);
+  let { sheet } = await openPlan(page, B.title);
+  await chip(sheet, "On deck").click();
+  await primary(sheet).click();
+  await expect(sheet).toHaveCount(0);
+  const toast = page.locator(".toast");
+  await expect(toast).toBeVisible();
+
+  ({ sheet } = await openPlan(page, A.title));
+  await chip(sheet, "Someday").click();
+  // Still showing: the sheet has to make room for it, not wait it out.
+  await expect(toast).toBeVisible();
+  const buttons = sheet.locator(".btnrow .btn");
+  await expect(buttons).toHaveCount(2);
+  for (const button of await buttons.all()) {
+    // A trial click checks that the button, not something above it, takes the pointer; it presses nothing.
+    await button.click({ trial: true, timeout: 1_000 });
+  }
+  // The toast's own Undo is not covered either.
+  await toast.getByRole("button", { name: "Undo" }).click({ trial: true, timeout: 1_000 });
+  await primary(sheet).click({ timeout: 1_000 });
+  await expect.poll(() => planOf(A.id)).toEqual([]);
+});
+
 test("No quarter yet writes a bare year (AC-1)", CORE, async ({ page }) => {
   const bodies: Record<string, unknown>[] = [];
   page.on("request", (req) => {
