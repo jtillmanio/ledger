@@ -269,7 +269,11 @@ tables.
     (`test/perf.test.ts` holds this table to it); each is the median
     measured on 0.10's own preview plus 20%, and the accessibility score is the
     one measured. Raising one needs a reason here. A new top-level screen adds
-    its route to `scripts/perf/routes.mjs` and its row here.
+    its route to `scripts/perf/routes.mjs` and its row here. Task 0.13 (D-142)
+    replaces this rule, after 1.30: a preview fails on what its PR adds over
+    main's last run, the shared JS is budgeted once, ceilings are the
+    measurement plus 25% and rise only by decision, and requests to another
+    origin are not budgeted. Until it lands, the rule above holds.
 
     <!-- perf-budget -->
     | Route | Document + RSC bytes | JS bytes | Requests | Accessibility ≥ |
