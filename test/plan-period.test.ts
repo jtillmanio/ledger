@@ -422,6 +422,48 @@ describe("the general move (task 2.3, roadmap Check, AC-1, AC-2)", () => {
   });
 });
 
+describe("GET /api/plan?bookId= is the picker's book (task 2.3, part 2, AC-2)", () => {
+  const book = async (bookId: string) => {
+    const res = await preview({ bookId });
+    return { status: res.status, body: await res.json() };
+  };
+
+  it("answers the title, author, status, level and period, with the stated words", async () => {
+    await sql`INSERT INTO authors (id, name) VALUES ('au', 'Ann Author')`;
+    await sql`UPDATE books SET author_id = 'au', word_count = 150000, word_count_source = 'stated' WHERE id = 'b'`;
+    await w.placeInPlan(USER, "b", "2027-Q1");
+    const rows = await planRows();
+    expect(await book("b")).toEqual({ status: 200, body: { book: {
+      id: "b", title: "Beta", author: "Ann Author", status: "to_read", level: "quarter", period: "2027-Q1",
+      words: 150_000, estimated: false,
+    } } });
+    expect(await planRows()).toEqual(rows);
+  });
+
+  it("estimates a Someday book's words from its pages at your words per page, and says so; under 50 pages it has none", async () => {
+    await sql`UPDATE books SET page_count = 400 WHERE id = 'c'`;
+    await sql`UPDATE books SET page_count = 49 WHERE id = 'd'`;
+    expect((await book("c")).body.book).toMatchObject({ level: "someday", period: null, words: 110_000, estimated: true });
+    await sql`INSERT INTO reading_settings (user_id, words_per_page) VALUES (${USER}, 300)`;
+    expect((await book("c")).body.book).toMatchObject({ words: 120_000, estimated: true });
+    expect((await book("d")).body.book).toMatchObject({ words: null, estimated: false });
+  });
+
+  it("reads On deck as its own level, and a book that isn't to read as no level", async () => {
+    await w.placeInPlan(USER, "a", "on_deck");
+    expect((await book("a")).body.book).toMatchObject({ status: "to_read", level: "on_deck", period: "on_deck" });
+    await sql`UPDATE book_status SET status = 'dnf' WHERE book_id = 'e'`;
+    expect((await book("e")).body.book).toMatchObject({ status: "dnf", level: null, period: null });
+  });
+
+  it("is 404 for a book that is removed or unknown, and 400 for a month or a split period", async () => {
+    await sql`UPDATE books SET deleted_at = now() WHERE id = 'a'`;
+    expect((await book("a")).status).toBe(404);
+    expect((await book("nope")).status).toBe(404);
+    expect((await preview({ bookId: "b", month: "03" })).status).toBe(400);
+  });
+});
+
 describe("one period value, never a year apart or a month (AC-4)", () => {
   it("a move carrying a month, or a year and a quarter as separate values, answers 400 and writes nothing", async () => {
     for (const body of [

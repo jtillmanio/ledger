@@ -13,6 +13,7 @@ import BooksLoading from "../../src/app/books/status/loading";
 import ComicsLoading from "../../src/app/comics/status/loading";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
+import { today } from "../../src/lib/finish-date";
 import { computedStyle, contrastFailures, E2E_BOOK_COUNT, E2E_RUN_ID, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled, tokenColour } from "./helpers";
 
 // Writes or sets its own state: runs once, in w390-light.
@@ -78,12 +79,12 @@ test.describe("the empty slates (AC-4)", () => {
     }
   });
 
-  test("books: all three, with the design §14 copy; Add a book opens the sheet", async ({ page }, info) => {
+  test("books: all three, with the design §14 copy; Plan a book opens Add books on this quarter (task 2.3)", async ({ page }, info) => {
     await open(page, "/books/status");
     await expect(page.getByRole("heading", { level: 1, name: "Books by status" })).toBeVisible();
     for (const [name, title, body, action] of [
       ["In flight", "Nothing in flight.", "Books you start land here.", "Open To read"],
-      ["Up next", "Nothing planned.", "The plan starts empty; nothing is added for you.", "Add a book"],
+      ["Up next", "Nothing planned.", "The plan starts empty; nothing is added for you.", "Plan a book"],
       ["Done", "Nothing finished yet.", "Finished books land here, by year.", "Go to In flight"],
     ] as const) {
       await tab(page, name).click();
@@ -96,10 +97,27 @@ test.describe("the empty slates (AC-4)", () => {
       await screenshot(page, info, `books-empty-${name.replace(" ", "-").toLowerCase()}`);
     }
     await tab(page, "Up next").click();
-    const add = panel(page).getByRole("button", { name: "Add a book" });
+    const add = panel(page).getByRole("button", { name: "Plan a book" });
+    await expect(panel(page).getByRole("button", { name: "Add a book" })).toHaveCount(0);
     await hydrated(add);
     await add.click();
-    await expect(page.getByRole("dialog", { name: "Add books" })).toBeVisible();
+    const sheet = page.getByRole("dialog", { name: "Add books" });
+    await expect(sheet).toBeVisible();
+    // Add to is this quarter, on the Eastern day, chosen: the picker's chip reads it, pressed.
+    const day = today();
+    const quarter = `Q${Math.floor((Number(day.slice(5, 7)) - 1) / 3) + 1} ${day.slice(0, 4)}`;
+    const chip = sheet.getByRole("button", { name: quarter, exact: true });
+    await expect(chip).toHaveAttribute("aria-pressed", "true");
+    await expect(sheet.getByRole("button", { name: "Someday", exact: true })).toHaveAttribute("aria-pressed", "false");
+
+    // The picker is a step in this same dialog (never a second one); it takes the heading and gives it back.
+    await chip.click();
+    await expect(page.getByRole("dialog")).toHaveCount(1);
+    await expect(page.getByRole("dialog", { name: "Year or quarter" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Year or quarter" })).toBeFocused();
+    await page.getByRole("button", { name: "‹ Add books" }).click();
+    await expect(sheet).toBeVisible();
+    await expect(chip).toBeFocused();
   });
 });
 

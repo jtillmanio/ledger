@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { PLAN_PERIOD, splitsPeriod, YEAR_OR_QUARTER } from "@/lib/book-add";
-import { planYears } from "@/db/queries";
+import { planBook, planYears } from "@/db/queries";
 import {
   moveInQuarter, planMove, previewPlanMove, undoPlanMove, type PlanEnd, type PlanMove, type PlanPrior, type PreviewAsk,
 } from "@/db/writes";
@@ -73,6 +73,8 @@ export async function DELETE(req: Request) {
  *
  * - GET `?firstYear=2027`: the chips, five years from that one, each year and quarter with its
  *   words against capacity (`planYears`).
+ * - GET `?bookId=…` alone: the book the sheet is for, `{ book }` (`planBook`): title, author, words
+ *   and where it sits now; 404 when it is removed or unknown.
  * - GET `?to=…` with `bookId` and `from`, or `words` (a book not in the library yet), or neither:
  *   the preview, `{ budget }`, `to`'s words after the move and how far over capacity
  *   (`previewPlanMove`); `budget` is null for On deck and Someday, which count against nothing.
@@ -88,6 +90,11 @@ export async function GET(req: Request) {
   }
   const { bookId, from, to, words } = params;
   if (splitsPeriod(params)) return bad(SPLIT);
+  if (to === undefined && bookId !== undefined) {
+    if (!isText(bookId)) return bad("bookId is a book's id");
+    const book = await planBook(userId, bookId);
+    return book ? NextResponse.json({ book }) : NextResponse.json({ error: `${bookId} isn't in your library` }, { status: 404 });
+  }
   if (!isEnd(to)) return bad("to is a period: 2027-Q1, 2027, on_deck or someday");
   let ask: PreviewAsk;
   if (bookId !== undefined) {
