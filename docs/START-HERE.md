@@ -1461,6 +1461,9 @@ frozen and kept only to compare numbers during the month.
 - [ ] **The parity audit is done** (1.25, D-95): you signed off
       `docs/cutover-parity.md`, re-read it against the fresh export below,
       and every open entry it names is ticked in `05-roadmap.md`.
+- [ ] **The books work you pulled ahead is done** (D-132, D-133, D-139):
+      every entry in 1.26's **Depends on** is ticked in `05-roadmap.md`,
+      2.2j through 5.15 included.
 - [ ] **The prerequisite audit is done** (D-20, `OWNER-CHECKLIST.md`): after a
       fresh workbook download, `npm run extract -- --fail-on-cycle` passes.
 - [ ] **No slug collisions** (D-15): `seed/unresolved.csv` has zero

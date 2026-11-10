@@ -753,6 +753,34 @@ export async function yearSummary(userId: string) {
   `;
 }
 
+/** One finished read of a book, as the status control's *All reads* lists it (task 1.17b). */
+export type BookRead = {
+  id: number;
+  /** `audio` is a listen (task 1.23, D-85). */
+  format: "text" | "audio";
+  started_on: string | null; started_on_precision: Precision;
+  finished_on: string | null; finished_on_precision: Precision;
+};
+
+/**
+ * A book's reads, oldest first (task 1.17b, D-131): its `read_events` rows in
+ * the log's order, the order they were logged, so the last is the latest read
+ * `book_status` keeps in step with. A re-date never reorders them. A read the
+ * status holds with no log row (the workbook's) is not listed: it has no row to
+ * re-date, and a book with it has only that one read. Empty for a removed book.
+ */
+export async function bookReads(userId: string, bookId: string): Promise<BookRead[]> {
+  return sql<BookRead[]>`
+    SELECT e.id, e.format,
+           e.started_on::text AS started_on, e.started_on_precision,
+           e.finished_on::text AS finished_on, e.finished_on_precision
+    FROM read_events e
+    JOIN books b ON b.id = e.book_id AND b.deleted_at IS NULL
+    WHERE e.user_id = ${userId} AND e.book_id = ${bookId}
+    ORDER BY e.id
+  `;
+}
+
 /** Undated reads (precision `none`), from book_reads as the year chips count
  * theirs (D-65): the ones no year chip can reach. */
 export async function readWithoutYear(userId: string): Promise<number> {
