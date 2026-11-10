@@ -1,49 +1,60 @@
 name: Neon preview cleanup
 
-# Deletes a PR's Neon preview database when the PR closes, merged or not
-# (START-HERE 10f). The integration's own "delete obsolete branches" option
-# misses some, and every leftover holds a copy of the ledger and takes one of
-# Neon Free's ten branches. scripts/neon-preview-cleanup.mjs deletes exactly
-# preview/<git branch>: never the default (live) branch, a protected one, or
-# anything outside preview/. A missing branch passes.
+# A daily backstop for the PR preview databases the Neon integration leaves
+# behind (START-HERE 10f). The integration deletes preview/<git branch> itself
+# once the branch merges or goes, but misses some, and every leftover holds a
+# copy of the ledger and takes one of Neon Free's ten branches.
 #
-# A leftover by hand: gh workflow run neon-preview-cleanup.yml -f branch=<git branch>
+# It never deletes at a PR's close: deleting under the integration left a stale
+# Obsolete entry on its page that blocked every preview on 2026-11-10 (PR #229,
+# #231). The sweep deletes only a preview/ branch whose PR closed more than a
+# day ago, or that never had a PR and whose git branch has been gone a day
+# (scripts/lib/preview.mjs sweepDecision). It never touches the default (live)
+# branch, a protected one, or anything outside preview/.
+#
+# By hand:
+#   gh workflow run neon-preview-cleanup.yml                           sweep now
+#   gh workflow run neon-preview-cleanup.yml -f branch=<git branch>    delete that one now
+#   add -f dry_run=true to either to see what it would delete
+# A by-hand delete of a branch the integration still lists can leave the same
+# stale entry: check Neon → Settings → Vercel → Branches afterwards.
 on:
-  pull_request:
-    types: [closed]
+  schedule:
+    - cron: "17 9 * * *"
   workflow_dispatch:
     inputs:
       branch:
-        description: "Git branch whose Neon preview/<branch> database to delete"
+        description: "Delete only this git branch's preview/<branch> now (empty: run the sweep)"
         type: string
-        required: true
+        required: false
+      dry_run:
+        description: "Report what it would delete, and delete nothing"
+        type: boolean
+        default: false
 
 concurrency:
-  group: neon-preview-cleanup-${{ github.head_ref || inputs.branch }}
+  group: neon-preview-cleanup
   cancel-in-progress: false
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
-  delete:
-    # A fork's PR gets no secrets, and its preview is not built from this project.
-    if: >-
-      github.event_name == 'workflow_dispatch'
-      || github.event.pull_request.head.repo.full_name == github.repository
+  sweep:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
-      # The PR's head, not refs/pull/<n>/merge, which a closed PR may no longer have.
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           sparse-checkout: scripts
       - uses: actions/setup-node@v7
         with: { node-version-file: .nvmrc }
-      - name: Delete preview/<git branch>
+      - name: Delete leftover preview databases
         env:
           NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
           NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
-          GIT_BRANCH: ${{ github.head_ref || inputs.branch }}
+          GIT_BRANCH: ${{ inputs.branch }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/neon-preview-cleanup.mjs
