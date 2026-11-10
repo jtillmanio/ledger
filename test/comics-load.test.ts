@@ -327,7 +327,9 @@ describe.each(twins)("%s, task 1.29", (_name, run) => {
 
     const r = load(seedV2(), {}, { yes: false, input: "\n" });
     expect(r.status).not.toBe(0);
-    expect(r.out).toContain("COMICS");
+    // The refusal itself, not only the prompt: bash shows `read -p`'s prompt
+    // only on a terminal, which is how this first failed on CI.
+    expect(r.out).toContain("COMICS was not typed. Nothing was changed.");
     expect(await snapshot("comics")).toEqual(before);
   }, SPAWN_TIMEOUT);
 });

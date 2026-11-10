@@ -54,9 +54,11 @@ done
 host=$(echo "$DATABASE_URL" | sed -E 's#.*@([^/:?]+).*#\1#')
 echo "This REPLACES every comics table in $host (runs, issues, placements, read marks, the queue, eras) from $SEED. No books table is touched."
 if [ "$YES" -ne 1 ]; then
+  # printf, not read -p: bash shows -p's prompt only on a terminal.
+  printf 'Type COMICS to continue: '
   answer=""
-  read -r -p "Type COMICS to continue: " answer || true
-  [ "$answer" = "COMICS" ] || { echo "Not confirmed. Nothing was changed." >&2; exit 1; }
+  read -r answer || true
+  [ "$answer" = "COMICS" ] || { echo "COMICS was not typed. Nothing was changed." >&2; exit 1; }
 fi
 
 # The extract writes a literal $OWNER placeholder; bind it to your real user id.

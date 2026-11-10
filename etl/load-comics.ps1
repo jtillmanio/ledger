@@ -87,7 +87,7 @@ $dbHost = ([regex]::Match($dbUrl, '@([^/:?]+)')).Groups[1].Value
 Write-Host "This REPLACES every comics table in $dbHost (runs, issues, placements, read marks, the queue, eras) from $Seed. No books table is touched." -ForegroundColor Yellow
 if (-not $Yes) {
     $answer = Read-Host "Type COMICS to continue"
-    if ($answer -cne "COMICS") { throw "Not confirmed. Nothing was changed." }
+    if ($answer -cne "COMICS") { throw "COMICS was not typed. Nothing was changed." }
 }
 
 # --- bind the $OWNER placeholder in the progress CSVs ---------------------
