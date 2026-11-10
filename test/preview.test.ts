@@ -53,6 +53,12 @@ describe("buildSteps: only a preview migrates, and only its own branch", () => {
   it("refuses a preview the integration gave no database", () => {
     expect(previewDbProblem({ VERCEL_ENV: "preview", LEDGER_LIVE_DB_HOST: LIVE_HOST })).toMatch(/no DATABASE_URL/);
   });
+
+  it("names the fix for a stale Obsolete branch, which blocked every preview on 2026-11-10 (PR #229, #231)", () => {
+    const said = previewDbProblem({ VERCEL_ENV: "preview", LEDGER_LIVE_DB_HOST: LIVE_HOST });
+    expect(said).toMatch(/Settings > Vercel > Branches/);
+    expect(said).toMatch(/Obsolete branch: delete it/);
+  });
 });
 
 describe("previewBranchToDelete", () => {
