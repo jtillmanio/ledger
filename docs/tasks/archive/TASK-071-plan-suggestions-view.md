@@ -1,7 +1,7 @@
 ---
 id: TASK-071
 title: 2.10b Plan a year or a quarter (1 of 2) — the suggestions, derived
-status: Review
+status: Done
 depends_on: [TASK-023, TASK-029, TASK-048, TASK-050]
 size: M
 model: opus
