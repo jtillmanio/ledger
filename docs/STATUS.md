@@ -182,7 +182,7 @@ it draws: the books dashboard is 2.2's, which redraws `bdash`.
   `America/New_York` (1.16)
 - Placement-keyed read state (0.8a), the spine's read-elsewhere hint (0.8b),
   and the browser test harness (0.11), with a core scope locally and the full
-  suite sharded four ways in CI (D-80, D-97)
+  suite sharded eight ways in CI (D-80, D-97, D-143)
 - `.github/workflows/`: CI, nightly backup to Cloudflare R2 (D-66), Release,
   Lighthouse on every preview, Neon preview-branch cleanup, and the `@claude`
   and PR-review runs

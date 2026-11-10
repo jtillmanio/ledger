@@ -1140,7 +1140,7 @@ Open the preview: it shows your data.
 
 | Symptom                                               | Fix                                                                                          |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `This preview has no DATABASE_URL`                    | Step 3 isn't done, or Preview isn't ticked in the integration                                |
+| `This preview has no DATABASE_URL`                    | Step 3 isn't done, or Preview isn't ticked in the integration. If previews built before: Neon console → Settings → **Vercel** → **Branches** lists an **Obsolete** branch that no longer exists. Delete it with its bin icon; Neon then creates the preview's branch and redeploys it within a few minutes (2026-11-10: it blocked every preview until removed) |
 | `LEDGER_LIVE_DB_HOST is not set`                      | Step 2                                                                                        |
 | `This preview's DATABASE_URL is the live database`    | Step 1: `DATABASE_URL` is still in Preview                                                    |
 | `migrate failed` after regenerating the PR's migration | The branch already ran the old one. Delete `preview/<branch>` in Neon and redeploy (untick the ignore-step box if that commit was Canceled: 10e) |

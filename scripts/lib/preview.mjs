@@ -25,7 +25,9 @@ export function endpointId(urlOrHost) {
 export function previewDbProblem(env) {
   const url = env.DATABASE_URL_UNPOOLED || env.DATABASE_URL;
   if (!url) {
-    return "This preview has no DATABASE_URL: the Neon integration did not give it a branch (START-HERE 10f).";
+    return "This preview has no DATABASE_URL: the Neon integration did not give it a branch (START-HERE 10f). " +
+      "If previews built before, look in the Neon console, Settings > Vercel > Branches, for an Obsolete branch: " +
+      "delete it there, and Neon creates this preview's branch and redeploys it within a few minutes.";
   }
   const live = endpointId(env.LEDGER_LIVE_DB_HOST);
   if (!live) {

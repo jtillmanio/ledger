@@ -19,6 +19,8 @@ import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydr
 
 // Writes: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
+// What a screen does, not how it looks or fits: the core projects only (D-143).
+const CORE = { tag: "@core" };
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
   "aria-prohibited-attr", "aria-required-children", "aria-required-parent", "aria-valid-attr-value", "aria-hidden-focus",
@@ -246,7 +248,7 @@ test("a result's Year or quarter… adds the book at the end of a quarter, and U
   await expect(row.getByRole("button", { name: `Year or quarter…: ${LIBRARY.title}`, exact: true })).not.toHaveAttribute("aria-disabled", "true");
 });
 
-test("typing pir and pausing lists results without Enter; pi asks nothing; piranesi typed quickly is one request (task 1.22, AC-1)", async ({ page }, info) => {
+test("typing pir and pausing lists results without Enter; pi asks nothing; piranesi typed quickly is one request (task 1.22, AC-1)", CORE, async ({ page }, info) => {
   await page.goto("/books/add");
   const box = page.getByRole("searchbox", { name: "Title or author" });
   await hydrated(box);

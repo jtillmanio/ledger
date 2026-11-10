@@ -18,6 +18,8 @@ import { computedStyle, contrastFailures, E2E_BOOK_COUNT, E2E_RUN_ID, expectNoAx
 
 // Writes or sets its own state: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
+// What a screen does, not how it looks or fits: the core projects only (D-143).
+const CORE = { tag: "@core" };
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
   "aria-prohibited-attr", "aria-required-children", "aria-required-parent", "aria-valid-attr-value", "aria-hidden-focus",
@@ -122,7 +124,7 @@ test.describe("the empty slates (AC-4)", () => {
 });
 
 test.describe("the tabs (AC-2)", () => {
-  test("the tab is in the URL and survives a reload; an unknown tab opens In flight", async ({ page }) => {
+  test("the tab is in the URL and survives a reload; an unknown tab opens In flight", CORE, async ({ page }) => {
     await open(page, "/comics/status?tab=done");
     await expect(tab(page, "Done")).toHaveAttribute("aria-selected", "true");
     await page.reload();
@@ -135,7 +137,7 @@ test.describe("the tabs (AC-2)", () => {
     await expect(page.locator(".tabs .tab-ink")).toHaveCount(1);
   });
 
-  test("the arrow keys, Home and End move along the strip and open the tab", async ({ page }) => {
+  test("the arrow keys, Home and End move along the strip and open the tab", CORE, async ({ page }) => {
     await open(page, "/comics/status");
     const strip = (name: string) => tab(page, name);
     await hydrated(strip("In flight"));
@@ -263,12 +265,12 @@ test.describe("comics", () => {
     await screenshot(page, info, "comics-done");
   });
 
-  test("every tab's count is its row count", async ({ page }) => {
+  test("every tab's count is its row count", CORE, async ({ page }) => {
     await open(page, "/comics/status");
     expect(await counted(page, "In flight")).toBe(await panel(page).locator("article.row").count());
   });
 
-  test("the dashboard links to the matching tab, with N computed (AC-5)", async ({ page }) => {
+  test("the dashboard links to the matching tab, with N computed (AC-5)", CORE, async ({ page }) => {
     await page.goto("/comics");
     await expect(page.getByRole("heading", { level: 2, name: "Up next" })).toBeVisible();
     const flying = page.getByRole("link", { name: /^All \d+$/ }).first();
@@ -397,7 +399,7 @@ test.describe("books", () => {
     expect(await order("2027-Q2")).toEqual(["q2:1"]);
   });
 
-  test("Someday opens the master list at that level; the chips filter by level (AC-3)", async ({ page }) => {
+  test("Someday opens the master list at that level; the chips filter by level (AC-3)", CORE, async ({ page }) => {
     await open(page, "/books/status?tab=next");
     await page.getByRole("link", { name: /^Someday · 2 books/ }).click();
     await expect(page).toHaveURL(/\/books\/list\?status=to_read&level=someday$/);

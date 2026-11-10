@@ -106,8 +106,10 @@ jobs:
   # and the shard serves it with `next start` (E2E_SERVER), so no route is
   # compiled on its first request. scripts/e2e.mjs refuses without
   # TEST_DATABASE_URL; DATABASE_URL exists only for the build, and names nothing.
+  # Eight shards (D-143): the suite's own time halves, against about 1.5 minutes
+  # of setup each shard repeats; a public repo's runner minutes cost nothing.
   e2e:
-    name: e2e ${{ needs.scope.outputs.e2e_scope }} ${{ matrix.shard }}/4
+    name: e2e ${{ needs.scope.outputs.e2e_scope }} ${{ matrix.shard }}/${{ strategy.job-total }}
     needs: scope
     if: needs.scope.outputs.full == 'true'
     runs-on: ubuntu-latest
@@ -115,7 +117,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4]
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
     env:
       E2E_SERVER: start
       E2E_SCOPE: ${{ needs.scope.outputs.e2e_scope }}
