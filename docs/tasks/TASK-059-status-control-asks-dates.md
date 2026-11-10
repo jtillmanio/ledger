@@ -1,14 +1,14 @@
 ---
 id: TASK-059
 title: 1.17b Dates when you start and finish (2 of 2) — the status control asks the dates and lists every read
-status: Ready
+status: In progress
 depends_on: [TASK-058]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: c6f1ec4
 ---
 
 # TASK-059 — 1.17b Dates when you start and finish (2 of 2) — the status control asks the dates and lists every read
@@ -80,7 +80,152 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-10. **Decisions at the gate:**
+
+- **Kept whole**, though it is past the size check (about 11 source files, two
+  more than "Files likely touched": `src/db/queries.ts` and
+  `src/components/PlanQuarter.tsx`). Autonomy stays attended.
+- **The pickers stay inline** in the expanded control, as `blist` draws them and
+  as 1.17's control works. They are not in the shared `Sheet`, because the mockup
+  outranks Context's "shared sheet or popover". Focus returns to the opener on
+  Save, Cancel and Esc, as it does now.
+- ***Read* on a book already Read** opens both pickers on the latest read's
+  stored start and finish: a correction, as 1.5 and 1.17 do now. *Finished on
+  Today* is for a book entering Read.
+
+**Steps**
+
+1. **Draw first.** `design/mockups.html` `blist` gains three phone frames,
+   inline in the expanded row:
+   - (a) *Reading* just set, *Started* open on *Today*, with the toast.
+   - (b) *Read* with *Started* and *Finished* open together, Save
+     `aria-disabled` and 1.17's reason under *Started*.
+   - (c) *All reads (2)* open, a listen carrying the headphones glyph, and one
+     read's date picker open.
+
+   A notes bullet (1.17b, D-131) also says where the control sits on Now and on
+   the status rows. `design/mockups-index.md`'s `blist` line follows.
+2. **`src/components/useBookWrite.ts`** gains `useRedate()`: `POST
+   /api/progress/book/read` (`{ bookId, readId, start?, finish? }`), answering
+   `{ refused }` on a 400 as `useBookWrite` does, then a page refresh and a toast
+   whose Undo is `DELETE { redate }`. With `silent`, no toast is pushed: used for
+   the start re-dated just after *Reading*, whose one Undo is the status change's
+   (TASK-058's note in Context).
+3. **`src/components/BookStatus.tsx`**:
+   - **Reading.** *Reading* or *Listening*, entered from any other status, saves
+     at once (as now), then opens *Started* on the start the server stored. That
+     is `written.start`: *Today*, unless a start was already held (1.17's rule).
+     Switching between Reading and Listening opens nothing, since the start is
+     kept. Save on an unchanged value, Cancel or Esc closes the picker and the
+     start is kept. Another day is a silent `useRedate` with `readId: null`. An
+     Undo while the picker is open closes it.
+   - **Read.** *Read* opens *Started* and *Finished* together with one Save and
+     one Cancel. *Started* opens on the stored start, else *No date*; *Finished*
+     opens on *Today*, or on a Read book on the stored dates (see the gate
+     decisions). Save is one `write("read", { finish, start? })`. The start is
+     sent only when it was changed, so a held approximate start is never
+     rewritten as `exact`. A start after the finish puts 1.17's reason under
+     *Started*, makes Save `aria-disabled` with `aria-describedby`, and sends no
+     request.
+   - **New optional props.** `title`: Now and the status rows have no
+     `.book-row` to read the title from. `menu`: the `⋯` (`BookRowMenu`) is drawn
+     on the Library row only, which is the default.
+4. **`src/components/AllReads.tsx`** (new):
+   - **Loading.** The reads load from `GET /api/progress/book/read?bookId=` when
+     the row's control opens (never in the RSC payload), and again after any
+     save or undo in the control.
+   - **The list.** With more than one read, the date line gains a disclosure
+     button, *All reads (n)*, with `aria-expanded`. Its list holds each read,
+     oldest first: the headphones glyph named *Listened* for an `audio` read, and
+     *Started …* and *Finished …* buttons named with their dates.
+   - **Editing.** Each date opens 1.5's `FinishDate` inline with Save and Cancel.
+     A start after the finish shows 1.17's reason the same way. Save calls
+     `useRedate` with the read's id; Save, Cancel and Esc return focus to the
+     button that opened the picker.
+   - **States.** While loading, nothing is drawn. A failed load shows a neutral
+     line with a grey `×`, never `--danger`.
+5. **The surfaces.**
+   - `src/components/BooksNow.tsx`: Now draws `<BookStatus>` in its body
+     (status, start, `listened`, `title`, no menu).
+   - `src/components/StatusBookRow.tsx` gains an optional `control` slot under
+     the sub-line, filled by `src/app/books/status/page.tsx`: In flight (beside
+     2.2f's *Finished*), the year lane, On deck, Done (with its dates) and
+     Stopped.
+   - Up next's quarters are drawn by `PlanQuarter.tsx`, not `StatusBookRow`, so
+     its `renderBody` gets the control too. Its drag starts only from the handle.
+   - `src/db/queries.ts`: `booksInFlight` adds `started_on` and its precision;
+     `booksInHand` adds `listened`. These are SELECT columns only: no schema
+     change and no stored value.
+   - The Add books search results draw nothing new.
+6. **`src/app/globals.css`**: the read list, and the control's place on Now and
+   on the status rows, from tokens only. Pickers' options are 44px on the phone;
+   nothing resolves to `--danger` but the refusal.
+
+**Stored dates**: unchanged. Every write goes through TASK-058's route or
+`saveBookStatus` as they stand, and an unchanged start is never re-sent.
+
+**Files**:
+
+- `design/mockups.html`, `design/mockups-index.md`
+- `src/components/useBookWrite.ts`, `src/components/BookStatus.tsx`,
+  `src/components/AllReads.tsx` (new)
+- `src/components/BooksNow.tsx`, `src/components/StatusBookRow.tsx`,
+  `src/components/PlanQuarter.tsx` (not in "Files likely touched"),
+  `src/app/books/status/page.tsx`
+- `src/db/queries.ts` (not in "Files likely touched"), `src/app/globals.css`
+- `src/components/FinishDate.tsx`: only if a picker needs an id hook
+- Tests: `test/e2e/start-dates.spec.ts`, `test/reading-log.test.tsx`,
+  `test/e2e/status.spec.ts`, `test/e2e/books-dashboard.spec.ts`
+
+**Test strategy**
+
+- AC-1 (browser clauses), in `test/e2e/start-dates.spec.ts`, describe "1.17b":
+  - "Reading opens Started on Today; an earlier day writes started_on exact; Undo restores to_read and no start"
+  - "Read opens both; Save writes one read_events row with both dates"
+  - "a start after the finish is refused and writes nothing"
+  - "All reads (2): re-dating the first changes only its row; the second changes it and book_status"
+  - Axe at every width (the spec runs in every project).
+
+  Now and `/books/status` are covered by AC-5's tests below.
+- AC-2, in `start-dates.spec.ts`: "Esc, or Save on Today, keeps today's start;
+  one Undo puts to_read back". Also in `test/reading-log.test.tsx`: "after
+  Reading, Started opens on Today and Esc keeps it".
+- AC-3, in `test/reading-log.test.tsx`: "Read opens Started (stored, else No
+  date) and Finished (Today)", and "a start after the finish: the reason under
+  Started, Save aria-disabled, no fetch" (`fetch` mocked and counted). The
+  browser test counts the requests too.
+- AC-4, in `test/reading-log.test.tsx`: "one read, no All reads"; "two reads:
+  All reads (2), each with Started and Finished, a listen named Listened"; "each
+  date opens the picker". In `start-dates.spec.ts`: the re-date clauses above.
+- AC-5:
+  - `test/e2e/books-dashboard.spec.ts`: "Now carries the status control and it
+    saves"
+  - `test/e2e/status.spec.ts`: "each tab's rows carry the control", including a
+    quarter row
+  - An Add books search result row has none.
+- AC-6, in the same three specs:
+  - Every control is a button with a name.
+  - Target sizes, and 44px options at 360px.
+  - Focus returns to the opener.
+  - Text contrast, in both themes.
+  - Nothing `--danger` but the refusal.
+  - Axe.
+  - No horizontal scroll at 360px.
+  - Feel-pass screenshots of Now and the status tabs with the control open, at
+    360, 390, 412, 768, 1024 and 1280px, light and dark, with reduced motion
+    and with reduced transparency.
+
+**Risks**
+
+- **Concurrent writes.** The silent re-date after *Reading* races the toast's
+  Undo. The Undo is the status change's `DELETE`, which puts back the whole row,
+  so a re-date that lands first is undone with it. A re-date that lands after the
+  Undo answers 400 (`RefusedStatus`), which the control ignores once it has
+  closed.
+- **A workbook read.** A book whose one read lives only in `book_status` lists
+  no reads, so *All reads* doesn't show (TASK-058's note).
+- **Layout.** On Now the control adds height to a feel-pass hero. The frames
+  are drawn first, and the screenshots check it.
 
 ## Review log
 
