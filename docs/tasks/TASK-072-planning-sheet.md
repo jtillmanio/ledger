@@ -29,6 +29,7 @@ From the plan page, one sheet fills a year or a quarter: suggestions grouped by 
 - The sheet is the shared `src/components/Sheet.tsx` below 1024px (focus on its heading, Tab trapped, focus back to the opener, R1-11); from 1024px a side rail, which traps nothing.
 - Design: `docs/04-design.md` § 12 → Over-commitment is a decision, not an error; § 14 → Plan.
 - Decisions: D-104, D-108, D-134, D-37, D-86, D-7, D-63.
+- *From TASK-071 (2.10b, task/2.10b-plan-suggestions):* the suggestions are `planSuggestions(userId, target, today)` in `src/db/queries.ts` (`target` `2027-Q2` or `2027`, `today` the Eastern day), over the SQL function `plan_suggestions` in `etl/views.sql`. Rows come in `SUGGESTION_REASONS` order (`next_in_series`, `next_on_shelf`, `from_author`, `on_deck`, `coming_out`, `recently_added`, `fits_room`, `genre_change`), ranked 1… within each, each with `detail` (the reason line), `status`, `unlisted` (the *Unlisted* tag), `period` (where it is already planned outside the target, for *Move here*), `words` and `estimated`. A book already planned inside the target is left out (owner, at TASK-071's plan gate). It returns title and author only: 2.2j's place line (universe, series and `#position`, D-134) is this task's to join or extend. *Recently added* reads the new `books.added_at`, NULL for every loaded book, so it starts empty.
 
 ## Acceptance criteria
 
