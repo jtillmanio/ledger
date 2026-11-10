@@ -1,14 +1,14 @@
 ---
 id: TASK-064
 title: 2.3 Plan editor (2 of 3) — the picker sheet, from the Library and Add books
-status: Ready
+status: In progress
 depends_on: [TASK-063]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: b9b7397
 ---
 
 # TASK-064 — 2.3 Plan editor (2 of 3) — the picker sheet, from the Library and Add books
@@ -84,6 +84,56 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 ## Plan
 
 _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+
+Approved 2026-11-10 (owner, plan gate). Worked in the worktree `.claude/worktrees/task-2.3-picker` on `task/2.3-plan-picker-sheet`, with its own test database `ledger_test_3` and E2E port 3201 (`.env.worktree`); another session holds the main checkout.
+
+**Owner's choices at the gate**
+- *Accept as a stretch year* is drawn in the amber preview `aria-disabled`, with its reason shown (*Accepting a stretch year arrives with 2.7.*); TASK-066 enables it.
+- *Plan a book* (the empty Books *Up next* tab) opens Add books with *Add to* set to the current Eastern quarter (`{ kind: "period", period: "<year>-Q<n>" }`), changeable through *Year or quarter…*.
+- Kept whole, not split (10 source files, no schema; TASK-063 the same as 1 of 3).
+
+**Steps**
+1. `src/lib/book-add.ts`: `Target` gains `{ kind: "period"; period }`; `targetName` says `Q3 2027` / `2027` (`quarterName`); `destinationOf` sends `{ kind: "period", period }`. Verifiable: `add-book-sheet.test.tsx` adds to a period target and reads the request body.
+2. One book's plan level for the sheet: `planBook(userId, bookId)` in `src/db/queries.ts` (title, author, status, `to_read_level`'s `level` and `period`, words: the stated count, else pages × your words per page when 50 pages or more, as `plan_book_words`; `estimated`), and `GET /api/plan?bookId=…` (no `to`, no `firstYear`) answering `{ book }`, 404 for a removed or unknown book. Nothing added to the Library's 500-row payload. Verifiable: `test/plan-period.test.ts`.
+3. `src/components/PlanPicker.tsx` (new): `PlanPickerBody` and `PlanPickerSheet` (the shared `Sheet`).
+   - Header: title, *author · 118k words* (mono; `~` when estimated), and *planned · Q2 2027* (or *planned · On deck*) in move mode only.
+   - Row 1, a group *Move to* / *Add to*: five years from `easternYear()`, then *On deck* and *Someday*; each a real `<button type="button" aria-pressed>`. Choosing a year opens row 2: *No quarter yet* (the bare year) and Q1–Q4, each with its period's current words (`GET /api/plan?firstYear=`), in mono. In move mode the sheet opens on the current period's year.
+   - Preview card (`role="status"`, live): `GET /api/plan?to=…` with `bookId`/`from` (move) or `words` (add); *Q3 2027 after the move* · *533k of 760k*; over capacity it is `--blocked` amber with *1,010k of 760k · over 250k* and the disabled *Accept as a stretch year* with its reason. Never `--danger`. On deck and Someday: no quarter row, no preview.
+   - Primary names the target: *Move to Q3 2027* / *Move to Someday* (move), *Add to Q3 2027* (a result row's picker), *Choose Q3 2027* (the Add to chip's picker, which sets the target only). `aria-disabled` with a reason until a target is chosen, and when the target is the book's current level (*It's already there.*). *Cancel* beside it.
+   - Move: `POST /api/plan { bookId, from, to }` (from = `to_read_level`'s period, or `someday`); pushes an undo onto the 1.2 stack whose undo sends `DELETE /api/plan { move }` (a 409 rejects, so the stack reports it); `router.refresh()`; closes the sheet. A failed move keeps the sheet open with a neutral error line.
+4. Library: `BookStatus` passes its live `saved.status` to `BookRowMenu`, which adds *Plan for…* (first item) on a `to_read` row and opens `PlanPickerSheet` (loaded with `next/dynamic`, as `FollowSheet`); focus returns to the `⋯`.
+5. Add books (`AddBooks.tsx`, `BookSearch.tsx`): *Year or quarter…* chip enabled, the `addto-later` reason line gone; its picker sets the target (the chip then reads the period, pressed). Each result row gets a secondary *Year or quarter…* (`btn sec sm`) beside its primary, opening the picker for that book (words: the library hit's `word_count`, else pages × `answer.wordsPerPage`), whose primary adds that one book to the chosen level through `POST /api/books` with that destination (a per-row override of the target in `send`). Inside the add sheet (`AddBooksButton`), the picker is a step swapped inside the same `Sheet` (as `BatchSheet`, D-34: never two sheets), its heading focused and a *‹ Add books* back button returning focus to the opener; on the full page it is a `PlanPickerSheet`. Undoing an add returns its result row to addable (its outcome cleared), whatever level it went to.
+6. `src/app/books/status/page.tsx`: the empty *Up next* action reads *Plan a book*, an `AddBooksButton` with the current Eastern quarter as its target.
+7. `src/app/globals.css`: the picker's chips (min 44px tall under 1024px, 32px from there, never under 24px; pressed = `--brand` / `--on-brand`, as `.addto .chip`), the chip totals, the preview (`--raise`; over: `--blocked-soft` ground, `--blocked` text), all from tokens.
+
+**Files**
+- `src/components/PlanPicker.tsx` (new) — the sheet and its body.
+- `src/components/BookRowMenu.tsx` — *Plan for…* on a to-read row.
+- `src/components/BookStatus.tsx` — passes the live status to the menu. **Not in Files likely touched.**
+- `src/components/AddBooks.tsx` — the chip enabled, the row picker's add, the in-sheet step.
+- `src/components/BookSearch.tsx` — the row's *Year or quarter…*, reset on undo.
+- `src/lib/book-add.ts` — `Target`'s period (the task's Context names it).
+- `src/db/queries.ts` — `planBook`. **Not in Files likely touched.**
+- `src/app/api/plan/route.ts` — `GET ?bookId=`. **Not in Files likely touched.**
+- `src/app/books/status/page.tsx` — *Plan a book*.
+- `src/app/globals.css` — the sheet's chips and preview.
+- Tests: `test/plan-period.test.ts` (the new GET; **not in Files likely touched**), `test/add-book-sheet.test.tsx`, `test/e2e/plan-picker.spec.ts` (new), `test/e2e/book-search.spec.ts`, `test/e2e/status.spec.ts`.
+
+**Test strategy** (years relative to `easternYear()`: Y+1 and Y+2, which in 2026 are the Check's 2027 and 2028; the chips only offer five years from now)
+- AC-1: `test/e2e/plan-picker.spec.ts` › *moves a 150k book from Q1 to Q2 of the next year, previewed first*: fixture books in Y+1-Q1 (the 150k one in the middle) and Y+2-Q2; the preview reads Y+2-Q2's total + 150k while the DB is unchanged; after confirming, the book is Y+2-Q2's last ordinal, Y+1-Q1 is contiguous, both chips' totals moved by 150k; Undo puts it back at its old ordinal. › *On deck and Someday need no year or quarter* (no quarter row, the write lands; Someday deletes the `reading_plan` rows and leaves `book_status` as it was). › *No quarter yet writes a bare year*. › every POST body captured (`page.on("request")`) has `from`/`to` matching one period value and no `year`, `quarter` or `month` key. The Flip: AC-4's tests.
+- AC-2: `plan-picker.spec.ts` › *Plan for… opens on five years, On deck and Someday*: chip names in order; a year shows *No quarter yet* and Q1–Q4 with totals equal to `planCapacity`'s for the fixture; a quarter fills the preview with its total + the book's words before anything is written; the primary reads `Move to Q{n} {year}`.
+- AC-3: `plan-picker.spec.ts` › *over capacity is amber, never red*: the preview's colour equals `tokenColour(--blocked)` and shows the amount over; no descendant of the sheet has a colour, background or border colour equal to `--danger`; On deck and Someday show no quarter row and no total.
+- AC-4: `test/add-book-sheet.test.tsx` › the chip has no `aria-disabled` and there is no reason line; a result row has *Year or quarter…*; a period target's add sends `{ kind: "period", period }`. `test/e2e/book-search.spec.ts` › *adds a result to a quarter at its end, and Undo makes it addable again*. `test/e2e/status.spec.ts` › the empty *Up next* action reads *Plan a book* and opens Add books on this quarter.
+- AC-5: `plan-picker.spec.ts` › chips are buttons with names and `aria-pressed`; every control ≥ 24px, chips ≥ 44px at 360–412px; focus on the heading at open and back on the opener after Esc, Back, Cancel and a confirm; `contrastFailures` empty and outlines 3:1 in light and dark; `expectNoAxeViolations`; `expectNoHorizontalScroll` at 360px; screenshots at 360, 834 and 1280px, light and dark.
+
+**Risks / open questions**
+- The 1.7 reset (undo returns the row to addable) may already hold (`tell`'s undo clears the outcome); then the test proves it rather than fixes it, and the PR says so.
+- A book with more than one plan row: `from` is `to_read_level`'s period (its earliest), the one the rest of the app shows.
+- `planBook` repeats `plan_book_words`'s words rule for a book in no period (Someday); computed, not stored (hard rule 2).
+
+**Size check**: 10 source files, over 8, no schema; kept whole by the owner (above). `autonomy: attended`.
+
+**Follow-ups**: none at plan time.
 
 ## Review log
 
