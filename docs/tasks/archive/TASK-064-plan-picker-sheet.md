@@ -1,7 +1,7 @@
 ---
 id: TASK-064
 title: 2.3 Plan editor (2 of 3) — the picker sheet, from the Library and Add books
-status: Review
+status: Done
 depends_on: [TASK-063]
 size: M
 model: sonnet
