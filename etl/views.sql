@@ -861,8 +861,9 @@ WITH span AS (
                       AND (pp.period = p_target OR s.quarter IS NULL AND pp.year = s.year))
 ), top_genre AS (
   -- Each live book's top-level genres: Calibre's, else the workbook's one;
-  -- one spelling of each whatever its case, so the detail never names it twice.
-  SELECT g.book_id, min(g.genre) AS genre
+  -- one spelling of each whatever its case, so the detail never names it twice:
+  -- the capitalised one, under "C" (byte order), on any database's collation.
+  SELECT g.book_id, min(g.genre COLLATE "C") AS genre
   FROM (
     SELECT t.book_id, t.genre FROM book_genre_tree t WHERE t.depth = 1
     UNION ALL
