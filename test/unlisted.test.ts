@@ -211,6 +211,22 @@ describe("Add books promotes an Unlisted book to Someday or On deck (AC-3)", () 
       expect(await statusOf(UNLISTED)).toBe("unlisted");
       expect(await plan(UNLISTED)).toEqual([]);
     });
+
+    it(`${how} to a quarter or a year (task 2.3): to_read with that period's row; Undo puts back unlisted`, async () => {
+      for (const period of ["2027-Q1", "2027"]) {
+        const target = { kind: "period", period };
+        const res = await send(target);
+        expect(res.status, period).toBe(200);
+        const result = await res.json();
+        expect(result.promoted, period).toEqual([UNLISTED]);
+        expect(await statusOf(UNLISTED), period).toBe("to_read");
+        expect(await plan(UNLISTED), period).toEqual([{ period }]);
+
+        expect((await undo(entryOf(result, target))).status, period).toBe(200);
+        expect(await statusOf(UNLISTED), period).toBe("unlisted");
+        expect(await plan(UNLISTED), period).toEqual([]);
+      }
+    });
   }
 
   it("a shelf leaves it Unlisted, with one shelf_books row", async () => {

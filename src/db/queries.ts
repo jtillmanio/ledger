@@ -1145,13 +1145,25 @@ export async function planCapacity(
 /** A year and its four quarters, as `planCapacity` answers them. */
 export type YearCapacity = { year: PeriodCapacity; quarters: PeriodCapacity[] };
 
-/** `plan_capacity`'s rows for the years `from`…`to`, each year before its quarters. */
-const capacityRows = (userId: string, from: number, to: number) => sql<PeriodCapacity[]>`
-  SELECT period, year, quarter, capacity, planned_words AS "plannedWords", stated_words AS "statedWords",
-         estimated_words AS "estimatedWords", books, read_books AS "readBooks", unknown_books AS "unknownBooks",
-         load, estimated_share AS "estimatedShare"
-  FROM plan_capacity WHERE user_id = ${userId} AND year BETWEEN ${from} AND ${to}
-  ORDER BY year, quarter NULLS FIRST`;
+/**
+ * `plan_capacity`'s rows for the years `from`…`to`, each year before its quarters. One year is
+ * read with `year =`, the form the view pushes down into its scan (test/capacity.test.ts's
+ * EXPLAIN); a range only for the chips' few years. Two whole statements, not a nested `sql`
+ * fragment: test/query-budget.test.ts counts every `sql` call as a query.
+ */
+const capacityRows = (userId: string, from: number, to: number) => (from === to
+  ? sql<PeriodCapacity[]>`
+    SELECT period, year, quarter, capacity, planned_words AS "plannedWords", stated_words AS "statedWords",
+           estimated_words AS "estimatedWords", books, read_books AS "readBooks", unknown_books AS "unknownBooks",
+           load, estimated_share AS "estimatedShare"
+    FROM plan_capacity WHERE user_id = ${userId} AND year = ${from}
+    ORDER BY quarter NULLS FIRST`
+  : sql<PeriodCapacity[]>`
+    SELECT period, year, quarter, capacity, planned_words AS "plannedWords", stated_words AS "statedWords",
+           estimated_words AS "estimatedWords", books, read_books AS "readBooks", unknown_books AS "unknownBooks",
+           load, estimated_share AS "estimatedShare"
+    FROM plan_capacity WHERE user_id = ${userId} AND year BETWEEN ${from} AND ${to}
+    ORDER BY year, quarter NULLS FIRST`);
 
 /** A year nothing counts in: empty, at your settings' capacity. */
 function emptyYear(settings: ReadingSettings, year: number): YearCapacity {

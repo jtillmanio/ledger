@@ -477,4 +477,43 @@ describe("Someday from the plan (AC-4)", () => {
     expect(await quarter("2027-Q1")).toEqual([["a", 1], ["b", 2], ["c", 3]]);
     expect(await sql`SELECT * FROM book_status WHERE book_id = 'b'`).toEqual(status);
   });
+
+  it("its undo refuses, changing nothing, once the book is read, Unlisted, without a status or removed", async () => {
+    for (const id of ["a", "b", "c"]) await w.placeInPlan(USER, id, "2027-Q1");
+    const moved = await move("b", "2027-Q1", "someday");
+    const rows = await planRows();
+    const cases: [string, () => Promise<unknown>, () => Promise<unknown>][] = [
+      ["read",
+        () => sql`UPDATE book_status SET status = 'read', finished_on = '2026-01-02', finished_on_precision = 'exact' WHERE book_id = 'b'`,
+        () => sql`UPDATE book_status SET status = 'to_read', finished_on = NULL, finished_on_precision = 'none' WHERE book_id = 'b'`],
+      ["unlisted", () => sql`UPDATE book_status SET status = 'unlisted' WHERE book_id = 'b'`,
+        () => sql`UPDATE book_status SET status = 'to_read' WHERE book_id = 'b'`],
+      ["no status", () => sql`DELETE FROM book_status WHERE book_id = 'b'`,
+        () => sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'b', 'to_read')`],
+      ["removed", () => sql`UPDATE books SET deleted_at = now() WHERE id = 'b'`,
+        () => sql`UPDATE books SET deleted_at = NULL WHERE id = 'b'`],
+    ];
+    for (const [what, change, back] of cases) {
+      await change();
+      expect((await call("DELETE", { move: moved })).status, what).toBe(409);
+      expect(await planRows(), what).toEqual(rows);
+      await back();
+    }
+    // Back as the move left it, the undo goes through.
+    expect((await call("DELETE", { move: moved })).status).toBe(200);
+    expect(await quarter("2027-Q1")).toEqual([["a", 1], ["b", 2], ["c", 3]]);
+  });
+
+  it("a crafted undo never plans an Unlisted book; a book being read moved between periods undoes as usual", async () => {
+    await sql`UPDATE book_status SET status = 'unlisted' WHERE book_id = 'e'`;
+    const crafted = { bookId: "e", from: "2027-Q1", to: "2028", placed: false, prior: [{ period: "2027-Q1", ordinal: 1 }] };
+    expect((await call("DELETE", { move: crafted })).status).toBe(409);
+    expect(await planRows()).toEqual([]);
+
+    for (const id of ["a", "b"]) await w.placeInPlan(USER, id, "2027-Q1");
+    await sql`UPDATE book_status SET status = 'reading' WHERE book_id = 'a'`;
+    const moved = await move("a", "2027-Q1", "2028");
+    expect((await call("DELETE", { move: moved })).status).toBe(200);
+    expect(await quarter("2027-Q1")).toEqual([["a", 1], ["b", 2]]);
+  });
 });
