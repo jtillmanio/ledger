@@ -904,4 +904,32 @@ test.describe("reduced transparency", () => {
       }
     });
   }
+
+  // Task 1.17b (AC-6): the status control open on Now, its Started picker showing.
+  test("reading, the status control open: the glass is solid --surface, with a screenshot at 390 and 1280 (1.17b, AC-6)", ONCE, async ({ page, context }, info) => {
+    await seed({ reading: true });
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-transparency", value: "reduce" }] });
+    for (const [width, glass] of [[390, ".bar"], [1280, ".pagehead"]] as const) {
+      await page.setViewportSize({ width, height: 900 });
+      await open(page);
+      const now = page.locator(".now-hero");
+      await hydrated(now.locator(".status-toggle"));
+      await now.locator(".status-toggle").click();
+      await now.getByRole("button", { name: /^Started / }).click();
+      await expect(now.getByRole("group", { name: "Started" })).toBeVisible();
+      const surface = await page.evaluate(() => {
+        const probe = document.createElement("i");
+        probe.style.backgroundColor = "var(--surface)";
+        document.body.append(probe);
+        const c = getComputedStyle(probe).backgroundColor;
+        probe.remove();
+        return c;
+      });
+      await expect.poll(() => page.locator(glass).first().evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(surface);
+      expect(await page.locator(glass).first().evaluate((el) => getComputedStyle(el).backdropFilter)).toBe("none");
+      await expectNoHorizontalScroll(page);
+      await screenshot(page, info, `books-now-control-reduced-transparency-${width}`);
+    }
+  });
 });

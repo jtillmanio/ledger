@@ -761,6 +761,27 @@ test.describe("the status control on the status screens (1.17b)", () => {
     await expect(first).toBeFocused();
   });
 
+  test("AC-6: with reduced transparency the glass is solid --surface and the control open on every tab holds, at 390 and 1280", ONCE, async ({ page, context }, info) => {
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-transparency", value: "reduce" }] });
+    for (const [width, glass] of [[390, ".bar"], [1280, ".side"]] as const) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const [path, title, name] of [
+        ["/books/status", FLIGHT, "in-flight"], ["/books/status?tab=next", QUARTER, "up-next"], ["/books/status?tab=done", TWICE, "done"],
+      ] as const) {
+        await open(page, path);
+        const opened = await expand(page, title);
+        await opened.getByRole("button", { name: "Read", exact: true }).click();
+        await expect(opened.getByRole("group", { name: "Finished" })).toBeVisible();
+        const surface = await tokenColour(page, "--surface");
+        await expect.poll(() => page.locator(glass).first().evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(surface);
+        expect(await page.locator(glass).first().evaluate((el) => getComputedStyle(el).backdropFilter)).toBe("none");
+        await expectNoHorizontalScroll(page);
+        await screenshot(page, info, `books-${name}-control-reduced-transparency-${width}`);
+      }
+    }
+  });
+
   test("AC-1: Reading from Up next opens Started on Today; an earlier day writes started_on, exact; one Undo restores to_read", ONCE, async ({ page }) => {
     await open(page, "/books/status?tab=next");
     const quarter = await expand(page, QUARTER);
