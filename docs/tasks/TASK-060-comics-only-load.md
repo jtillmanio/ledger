@@ -105,6 +105,7 @@ empties `inbox` and `read_events` entirely, book rows included.
 _Filled by /implement-task. One line per round._
 
 - Verify R1 round FAIL(1: `books-dashboard.test.ts` 5 s timeout, outside this task; 42/42 alone) → full PASS (vitest 1518, Python 381, test_views, e2e 1008) | Audit R1 PASS (nit: a dropped space in package.json, fixed in a90a94f) | Spec R1 CHANGES (Follow-ups bullet format only; rewritten at close-out) | Schema R1 APPROVE (3 minors, not tracked) | Close-out check R1 APPROVE
+- CI R1 FAIL(1: the bash twin's prompt test; `read -p` prints no prompt off a terminal) → fixed in 27c43b7 → Verify R2 round PASS (vitest 1518, Python 381, test_views)
 
 ## Blocked
 
@@ -112,7 +113,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds: 1 (round chain, then the full chain once)
+- Verify rounds: 2 (R1 round chain, then the full chain once; R2 round chain after the CI fix)
 - Review rounds: 1 (spec, schema), plus the close-out check
 - First-pass AC FAILs: 0
 - Plan revisions after approval: 0
