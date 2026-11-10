@@ -118,7 +118,10 @@ npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in
                             # `npm run dev` first (both use .next; a dev run deletes .next/dev before it starts). Once per machine, and after a Playwright bump:
                             # `npx playwright install chromium`. Screenshots: test-results/screens/ (ignored). Pass
                             # arguments after --, e.g. `-- --project=w390-light`. A check that needs one project is
-                            # tagged `{ tag: "@at-<project>" }`, never skipped on testInfo.project.name. E2E_SERVER=start
+                            # tagged `{ tag: "@at-<project>" }`, never skipped on testInfo.project.name. One whose outcome no
+                            # width or theme changes (a write, a request, the URL, focus, copy) is tagged `{ tag: "@core" }`:
+                            # the core projects only, in either scope (D-143). Untagged runs everywhere: axe, contrast,
+                            # colours, sizes, scroll, per-layout markup, §10 state screenshots. E2E_SERVER=start
                             # serves an existing `npm run build` with `next start` instead (CI's shards do)
 npm run test:e2e:full       # the same at every project, 360-1280px light and dark (E2E_SCOPE=full): what CI runs
 npm run test:e2e:build      # `next build` with the suite's server environment, then the core projects against

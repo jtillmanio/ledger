@@ -137,6 +137,12 @@ describe("e2eScope: how much of the browser suite a run checks (D-80)", () => {
     expect(ciJob("scope")).toContain("e2e_scope: ${{ steps.scope.outputs.e2e_scope }}");
     const e2e = ciJob("e2e");
     expect(e2e).toContain("E2E_SCOPE: ${{ needs.scope.outputs.e2e_scope }}");
-    expect(e2e).toContain("name: e2e ${{ needs.scope.outputs.e2e_scope }} ${{ matrix.shard }}/4");
+    expect(e2e).toContain("name: e2e ${{ needs.scope.outputs.e2e_scope }} ${{ matrix.shard }}/${{ strategy.job-total }}");
+  });
+
+  it("the browser suite runs in eight shards, each named for its place among them (D-143)", () => {
+    const e2e = ciJob("e2e");
+    expect(e2e).toContain("shard: [1, 2, 3, 4, 5, 6, 7, 8]");
+    expect(e2e).toContain("--shard=${{ matrix.shard }}/${{ strategy.job-total }}");
   });
 });

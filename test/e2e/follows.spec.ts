@@ -19,6 +19,9 @@ import {
   toastSettled, tokenColour,
 } from "./helpers";
 
+// What a screen does, not how it looks or fits: the core projects only (D-143).
+const CORE = { tag: "@core" };
+
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
   "aria-prohibited-attr", "aria-valid-attr-value", "aria-hidden-focus", "landmark-unique", "duplicate-id-aria",
@@ -186,7 +189,7 @@ test("Follow… opens a sheet headed by the title, each grouping checked as stor
   await screenshot(page, info, "follow-sheet");
 });
 
-test("the middle option reads On hold at 1 of 4 read and Tracking at 0 of 4 and 4 of 4, tracking stored each time (2.2h AC-5)", async ({ page }) => {
+test("the middle option reads On hold at 1 of 4 read and Tracking at 0 of 4 and 4 of 4, tracking stored each time (2.2h AC-5)", CORE, async ({ page }) => {
   const series = async () => {
     await openLibrary(page);
     const { sheet } = await openFollow(page);
@@ -213,14 +216,14 @@ test("the middle option reads On hold at 1 of 4 read and Tracking at 0 of 4 and 
   expect((await follows()).series).toBe("tracking");
 });
 
-test("a book with no series lists no series or subseries row", async ({ page }) => {
+test("a book with no series lists no series or subseries row", CORE, async ({ page }) => {
   await openLibrary(page);
   const { sheet } = await openFollow(page, LOOSE.title);
   await expect(sheet.getByRole("radiogroup")).toHaveCount(1);
   await expect(sheet.getByRole("radiogroup")).toHaveAccessibleName(`Following ${AUTHOR.name}`);
 });
 
-test("Esc, Back and Close each close the sheet and return focus to the row's ⋯ (AC-3)", async ({ page }) => {
+test("Esc, Back and Close each close the sheet and return focus to the row's ⋯ (AC-3)", CORE, async ({ page }) => {
   await openLibrary(page);
   let { more, sheet } = await openFollow(page);
   await page.keyboard.press("Escape");
@@ -239,7 +242,7 @@ test("Esc, Back and Close each close the sheet and return focus to the row's ⋯
   await expect(more).toBeFocused();
 });
 
-test("a change saves at once, and its Undo, live over the sheet, puts back the earlier state (AC-1, AC-2)", async ({ page }) => {
+test("a change saves at once, and its Undo, live over the sheet, puts back the earlier state (AC-1, AC-2)", CORE, async ({ page }) => {
   await openLibrary(page);
   const { sheet } = await openFollow(page);
   const universe = sheet.getByRole("radiogroup", { name: `Following ${UNIVERSE.name}` });
@@ -253,7 +256,7 @@ test("a change saves at once, and its Undo, live over the sheet, puts back the e
   await expect(sheet).toBeVisible();
 });
 
-test("Not following on a series is kept as off and shows as Not following; on the author it deletes the row (2.2h AC-4)", async ({ page }) => {
+test("Not following on a series is kept as off and shows as Not following; on the author it deletes the row (2.2h AC-4)", CORE, async ({ page }) => {
   await openLibrary(page);
   const { sheet } = await openFollow(page);
   await sheet.getByRole("radiogroup", { name: `Following ${SERIES.name}` }).getByText("Not following").click();
@@ -347,7 +350,7 @@ test.describe("a finish from Reading follows (2.2h)", () => {
     expect(await statusOf(TWO.id)).toBe("read");
   });
 
-  test("the finish's Undo restores the book and every follow it changed (AC-3)", async ({ page }) => {
+  test("the finish's Undo restores the book and every follow it changed (AC-3)", CORE, async ({ page }) => {
     await openLibrary(page);
     await finishInLibrary(page);
     await expect(nowRow(page)).toBeVisible();
@@ -356,7 +359,7 @@ test.describe("a finish from Reading follows (2.2h)", () => {
     await expect.poll(() => statusOf(TWO.id)).toBe("reading");
   });
 
-  test("In flight's Finished follows the same, and its toast says so (2.2f's finish)", async ({ page }) => {
+  test("In flight's Finished follows the same, and its toast says so (2.2f's finish)", CORE, async ({ page }) => {
     await page.goto("/books/status");
     const button = page.getByRole("button", { name: `Finished ${TWO.title}`, exact: true });
     await hydrated(button);
@@ -365,7 +368,7 @@ test.describe("a finish from Reading follows (2.2h)", () => {
     await expect.poll(follows).toEqual({ series: "reading", subseries: "reading", universe: "reading", author: "reading" });
   });
 
-  test("on the last book left in a Reading series, Done with still shows and writes tracking; nothing else followed, no Now reading (AC-3)", async ({ page }) => {
+  test("on the last book left in a Reading series, Done with still shows and writes tracking; nothing else followed, no Now reading (AC-3)", CORE, async ({ page }) => {
     await withSql(async (sql) => {
       await sql`UPDATE series_follows SET state = 'reading' WHERE series_id = ${SERIES.id}`;
       await sql`UPDATE book_status SET status = 'read' WHERE user_id = ${E2E_USER} AND book_id = ANY(${[BOOKS[2].id, BOOKS[3].id]}::text[])`;

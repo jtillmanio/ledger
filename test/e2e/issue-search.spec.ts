@@ -13,6 +13,9 @@ import {
   contrastFailures, E2E_RUN_ID, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot,
 } from "./helpers";
 
+// What a screen does, not how it looks or fits: the core projects only (D-143).
+const CORE = { tag: "@core" };
+
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
   "aria-prohibited-attr", "aria-required-children", "aria-required-parent", "aria-valid-attr-value", "aria-hidden-focus",
@@ -93,7 +96,7 @@ test("typing thor 337-340 and pausing lists the catalog's row with its run count
   await screenshot(page, info, "issue-search-as-you-type");
 });
 
-test("two characters ask nothing (AC-6)", async ({ page }) => {
+test("two characters ask nothing (AC-6)", CORE, async ({ page }) => {
   await page.goto(`/comics/${E2E_RUN_ID}/add`);
   await hydrated(box(page));
   const requests: string[] = [];
