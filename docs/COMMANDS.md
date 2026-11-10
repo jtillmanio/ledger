@@ -12,9 +12,12 @@ npm run dev                 # local, needs .env
 npm run clean:dev           # delete .next/dev (next dev's output and Turbopack cache) with `npm run dev` stopped:
                             # a stale one reloads a page in a Fast Refresh loop. test:e2e clears it before every dev run
 npm test                    # vitest; needs TEST_DATABASE_URL (never DATABASE_URL), refuses without it
-npm run test:all            # test:no-e2e, then test:e2e:build: what CI runs (verify.full; D-97)
+npm run test:all            # test:no-e2e, then test:e2e:build: everything, by hand; no gate needs it (D-141)
 npm run test:no-e2e         # test:tokens + check:migrations + test:db:reset + vitest + test:views + test:etl:
-                            # the round chain's suites, which re-run after every fix (D-97)
+                            # verify.full's suites, which re-run after every fix (D-141: the browser suite is CI's)
+node scripts/test-files.mjs <files> [-- <playwright args>]
+                            # the given test files, any runner; specs in one project (w390-light) unless the args
+                            # name a --project. /verify runs the specs a branch touched this way; the test-auditor too
 npm run test:db:reset       # rebuild the TEST database: drizzle-kit migrate, then etl/views.sql
 node scripts/worktree-slot.mjs  # worktree setup runs it: this worktree's own test database and e2e port
                             # in .env.worktree (ledger_test_2 / 3200, ...), loaded before .env; no-op in the main checkout
@@ -120,7 +123,8 @@ npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in
 npm run test:e2e:full       # the same at every project, 360-1280px light and dark (E2E_SCOPE=full): what CI runs
 npm run test:e2e:build      # `next build` with the suite's server environment, then the core projects against
                             # `next start` over that build (--build, D-97): no route compiles on its first
-                            # request, and never a stale build. test:all's browser step; arguments after --
+                            # request, and never a stale build. test:all's browser step; arguments after --.
+                            # Reproduces a CI failure against a build: `-- <spec> --project=<p> -g "<fragment>"`
 npm run test:tokens         # colour tokens: mockups = globals.css, hue distance, on-fill contrast; no DB
 npm run check:migrations    # journal = files, drop/retype has a drizzle/down file, schema.ts fully generated,
                             # no migration already on main edited (standing rule 3); no DB

@@ -1,21 +1,78 @@
 # implement-task: Ledger
 
-- **Push the draft PR at the end of Phase 3, without asking.** In attended
-  mode too, as soon as the full chain has passed and the checkpoint commit is
-  made, push the task branch and open the draft PR (skip the "Push and open a
-  draft PR?" question; owner, 2026-10-09 and 2026-11-10; `.claude/rules/git.md`
-  § *Push and open the PR*: the local gates have passed by then). Don't wait
-  for the test audit, the reviews or the close-out: CI's core run, the Vercel
-  preview and Lighthouse then run while they do, and a CI-only failure (a
-  width or theme the core projects skip) turns up sooner. Write the body's **What**, **Why** and **How it was
-  verified** now and mark **Follow-ups** as pending; at close-out, push the
-  close-out commit and rewrite the body with `gh pr edit <n> --body-file`.
+- **Verification (D-97, D-141): one local chain; the browser suite is CI's.**
+  `verify.full` is `npx tsc --noEmit`, `npm run lint`, `npm run test:no-e2e`.
+  No local run of the whole browser suite and no local build: CI runs both,
+  every project on four shards, in about 10 minutes.
+  - Before the first run, check cheaply: run the test files the task added or
+    changed (`node scripts/test-files.mjs <files>`; vitest, SQL and Python as
+    they are, browser specs in one project, `w390-light`; add
+    `-- -g "<fragment>"` for some tests, `-- --project=<p>` for a test tagged
+    `@at-<p>`). A spec that sets its own viewport and theme (the three-width,
+    two-theme screenshot tests) covers the widths in that one project. A task
+    that changes `test/e2e/helpers.ts` runs `test/e2e/harness.spec.ts` too.
+    And grep `test/`, `etl/test_*.py` and `etl/test_views.sql` for every
+    table, column, view, function, CLI flag, command line and file name the
+    diff adds, renames or removes: some tests pin a list (the catalog columns
+    in `etl/test_views.sql`, the auditor's command in `test/e2e-guard.test.ts`)
+    and fail only in the full suites.
+  - Then run `verify.full` until it passes; every later round (after a CI,
+    audit or review fix, and the Phase 7 gate when code changed) runs it
+    again, with the touched specs in one project when the fix touched UI or a
+    spec.
+  - Record each round in the Review log: `Verify R1 PASS | CI R1 FAIL
+    (status.spec.ts:82, w768-light) → fixed | Verify R2 PASS | CI R2 PASS`.
+- **Run the chain yourself, in the background; don't delegate it to
+  test-runner.** One shell command with `run_in_background`, all output to a
+  log in the session temp folder, e.g. (Bash)
+  `{ npx tsc --noEmit && npm run lint && npm run test:no-e2e; } > <temp>/verify-r1.log 2>&1`.
+  Don't poll it. When it reports, read the log's last 60 lines, then only the
+  failing step's part (`.claude/project/test-runner.md` says how each tool
+  reports a failure and where the location is). The test-runner agent spent
+  most of its tokens waiting on the suite.
+- **Push the draft PR at the end of Phase 3, without asking, with
+  `e2e:full`.** In attended mode too, as soon as `verify.full` and the touched
+  specs have passed and the checkpoint commit is made, push the task branch,
+  open the draft PR (skip the "Push and open a draft PR?" question; owner,
+  2026-10-09 and 2026-11-10; `.claude/rules/git.md` § *Push and open the PR*:
+  the local gates have passed by then) and add the `e2e:full` label, so CI's
+  first run is already every project. Don't wait for the test audit, the
+  reviews or the close-out. Write the body's **What**, **Why** and **How it
+  was verified** now and mark **Follow-ups** as pending; at close-out, push
+  the close-out commit and rewrite the body with `gh pr edit <n> --body-file`.
   CI reruns on every push (its scope is the whole PR's diff against `main`),
-  so the gates in Phase 7 are judged on the close-out head, as before: add
-  `e2e:full` only once that head is pushed. Then go straight into the Phase 7
-  ready gates. The floor is unchanged: the PR stays a draft until the gates
-  pass, never push to or merge into `main`, never force-push, never start
-  Release.
+  so the Phase 7 gates are judged on the close-out head. The floor is
+  unchanged: the PR stays a draft until the gates pass, never push to or
+  merge into `main`, never force-push, never start Release.
+- **Watch CI from the first push, and fix what fails (owner, 2026-11-10).**
+  Watch each run in the background (`gh run watch <id> --exit-status`,
+  `run_in_background`) while the audit and reviews go on; don't sit on it.
+  When it fails, act on it straight away, whatever phase you are in:
+  1. Read the failure where it lives: `gh run view <id> --log-failed`, and
+     for a browser failure the merged HTML report in the run's `e2e-report`
+     artifact (`gh run download <id> -n e2e-report`). Note the spec, the line,
+     the test and every project it failed in.
+  2. Reproduce it locally in one failing project:
+     `node scripts/test-files.mjs <spec> -- --project=<p> -g "<fragment>"`
+     (`next dev`), or `npm run test:e2e:build -- <spec> --project=<p> -g "<fragment>"`
+     when it looks like it needs a build (`next start`, as CI serves).
+     If it won't reproduce, read the trace in the report before calling it
+     a flake. A flake that comes from a test reading something that moves (a
+     transition, a toast, a reload) gets the test fixed; a rerun alone is
+     not a fix.
+  3. Fix it on the branch, run `verify.full` and the reproduced test, commit,
+     push, and watch the new run.
+  Each push that answers a red run counts toward `workflow.maxCiFixRounds`
+  (4), with Phase 7's rounds. Past it, stop: leave the PR in draft and report
+  what still fails and what you tried. If the fix needs the owner (a gate's
+  `ownerFix`, a secret, a Neon branch), stop and say so rather than loop.
+- **After the push: reviewers, then the audit, then ui-verifier.** Start
+  spec-reviewer and (when it applies) schema-reviewer together in the
+  background on the pushed commit; they read files and git. The test-auditor
+  runs when they have reported, because it swaps pre-task files into the
+  tree they read; ui-verifier runs after the auditor has put the tree back.
+  CI runs alongside all of it. A fix any of them forces goes through
+  *Review round 2* below and is pushed like a CI fix.
 - **ui-verifier runs against the development database without asking.** The
   dev server (`npm run dev`) reads `.env` `DATABASE_URL`. The owner allows the
   ticks, unticks and undos a UI check makes there, as long as it leaves the data
@@ -29,52 +86,6 @@
   check matters most for `sonnet` tasks in an Opus session: implementing on
   Sonnet is the cheaper path the field exists for. Unattended sessions skip it:
   `dispatch-approved.ps1` already starts them on the task's model.
-- **Verification rounds (D-97): the browser suite once per task.** Two
-  chains. The *round chain* is `npx tsc --noEmit`, `npm run lint`,
-  `npm run test:no-e2e`. The *full chain* is `verify.full` (typecheck, lint,
-  `npm run test:all`, which builds and runs the core browser projects against
-  `next start`).
-  - Phase 3: run the round chain until it passes, then the full chain once.
-    If only the browser suite fails, fix it, re-run only the failing tests,
-    in a project each failed in:
-    `npm run test:e2e:build -- <spec files> --project=<project> -g "<title fragment>"`,
-    then the round chain. Not the spec in all six core projects: the full
-    chain already ran the rest, and CI runs every project.
-  - The full chain is the one time a task's specs run in the core projects
-    locally. While writing and fixing, run a spec in one project
-    (`node scripts/test-files.mjs <spec>` does that, in `w390-light`; add
-    `-- -g "<fragment>"` for one test, `-- --project=<p>` for a test tagged
-    `@at-<p>`). A spec that sets its own viewport and theme (the
-    three-width, two-theme screenshot tests) covers the widths in that one
-    project.
-  - Every later re-run (after test-audit fixes, after review fixes, and the
-    Phase 7 `verify.full` gate when code changed) runs the round chain. The
-    browser suite on the branch head is CI's: the `e2e:full` gate.
-  - Record which chain each round ran in the Review log (`Verify R1 round
-    PASS → full PASS | R2 round PASS`).
-- **Run the chains yourself, in the background; don't delegate them to
-  test-runner.** One shell command with `run_in_background`, all output to a
-  log in the session temp folder, e.g. (Bash)
-  `{ npx tsc --noEmit && npm run lint && npm run test:no-e2e; } > <temp>/verify-r1.log 2>&1`.
-  Don't poll it. When it reports, read the log's last 60 lines, then only the
-  failing step's part (`.claude/project/test-runner.md` says how each tool
-  reports a failure and where the location is). The test-runner agent spent
-  most of its tokens waiting on the suite.
-- **Commit before the full chain, and review while it runs.** Make the Phase 3
-  checkpoint commit once the round chain passes, then start the full chain in
-  the background and, alongside it, spec-reviewer and (when it applies)
-  schema-reviewer on that commit: they read files and git, and the chain
-  writes neither. Not ui-verifier (its dev server shares `.next` with the
-  chain's build) and not the test-auditor (it swaps pre-task files into the
-  tree the chain is building): both wait for the chain. A fix the chain, the
-  audit or a reviewer forces goes through *Review round 2* below.
-- **Before the first chain, check cheaply.** Run the test files the task
-  touched (`node scripts/test-files.mjs <files>`; specs run in one project),
-  and grep `test/`,
-  `etl/test_*.py` and `etl/test_views.sql` for every table, column, view,
-  function, CLI flag and file name the diff adds, renames or removes: some
-  tests pin a list (the catalog columns in `etl/test_views.sql`) and fail only
-  in the full suites.
 - **Review round 2 re-reads only what changed (D-97).** Re-run a reviewer that
   returned anything but APPROVE, and one whose files the fixes touched
   (spec-reviewer: any; schema-reviewer: migrations, `src/db/`, `etl/`, views,
