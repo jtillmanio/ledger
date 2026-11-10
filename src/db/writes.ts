@@ -10,7 +10,7 @@ import { START_AFTER_FINISH, startAfterFinish, today, type Finish } from "@/lib/
 import type { Precision } from "@/lib/format";
 import type { Kind } from "@/lib/inbox";
 import { bookId, issueSlug, slug } from "@/lib/issue-slug";
-import type { ReadingSettings, SettingsPatch } from "@/lib/settings";
+import { DEFAULT_SETTINGS, wordsPerYear, type ReadingSettings, type SettingsPatch } from "@/lib/settings";
 
 /** Every `book_status.status` value. `unlisted` is the level below Someday (task 1.21, D-86): a
  * book you have but haven't put on your list. `listening` is Reading by ear (task 1.23, D-85). */
@@ -253,7 +253,9 @@ export async function saveBookStatus(
  * Refuses, changing nothing, when anything moved on in between: the book's
  * status is no longer the one this write set, the read it logged or
  * re-dated is no longer the book's latest, or it would put an Unlisted book
- * back under a plan row it has gained since (task 1.21).
+ * back under a plan row it has gained since (task 1.21), or take the status
+ * row of a book that had none, and has been planned since, out from under its
+ * plan row (task 2.3).
  */
 export async function undoBookStatus(userId: string, change: BookStatusChange): Promise<boolean> {
   const { bookId, status, prior, appended, edited, backfilled, follows = [] } = change;
@@ -262,8 +264,8 @@ export async function undoBookStatus(userId: string, change: BookStatusChange): 
     const [now] = await tx.select({ status: bookStatus.status }).from(bookStatus)
       .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId)));
     if (now?.status !== status) return false;
-    // Back to Unlisted under a plan row would leave a planned book off your list (task 1.21).
-    if (prior?.status === "unlisted") {
+    // Back to Unlisted, or to no row at all, under a plan row would leave a planned book off your list (tasks 1.21, 2.3).
+    if (prior === null || prior.status === "unlisted") {
       const [planned] = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
         .where(and(eq(readingPlan.userId, userId), eq(readingPlan.bookId, bookId))).limit(1);
       if (planned) return false;
@@ -1059,6 +1061,173 @@ export async function moveToSomeday(userId: string, bookId: string, outer?: Tx):
   });
 }
 
+const isQuarter = (period: Period) => period.includes("-Q");
+
+/**
+ * Put a book back into `period` at `ordinal` (task 2.3): an undo's way back.
+ * In a quarter the books from that place on move down one, so the quarter
+ * stays 1…N; past the end it joins the end. A bare year or On deck takes no
+ * place. False, writing nothing, when the book is there already.
+ */
+export async function restoreToPlan(
+  userId: string, bookId: string, period: Period, ordinal: number | null, outer?: Tx,
+): Promise<boolean> {
+  return inPlan(userId, outer, async (tx) => {
+    const [there] = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan).where(planRow(userId, bookId, period));
+    if (there) return false;
+    if (!isQuarter(period)) {
+      await tx.insert(readingPlan).values({ userId, bookId, period, ordinal: null });
+      return true;
+    }
+    const [{ n }] = await tx.select({ n: sql<number>`count(*)::int` }).from(readingPlan)
+      .where(and(eq(readingPlan.userId, userId), eq(readingPlan.period, period)));
+    const at = Math.min(Math.max(1, Math.trunc(ordinal ?? n + 1)), n + 1);
+    await tx.update(readingPlan).set({ ordinal: sql`${readingPlan.ordinal} + 1` })
+      .where(and(eq(readingPlan.userId, userId), eq(readingPlan.period, period), gte(readingPlan.ordinal, at)));
+    await tx.insert(readingPlan).values({ userId, bookId, period, ordinal: at });
+    return true;
+  });
+}
+
+/** One end of the plan editor's move (task 2.3): a period, or Someday, a `to_read` book with no plan row (D-37). */
+export type PlanEnd = Period | "someday";
+
+/** A plan row as it was before a move, which the move's undo puts back. */
+export type PlanPrior = { period: Period; ordinal: number | null };
+
+/** What a move did, and all its undo needs. */
+export type PlanMove = {
+  bookId: string; from: PlanEnd; to: PlanEnd;
+  /** The move wrote the book's row in `to` (false when it was there already, or `to` is Someday). */
+  placed: boolean;
+  /** The rows the move took away, with their places: `from`'s, or every row for Someday. */
+  prior: PlanPrior[];
+};
+
+/**
+ * The plan editor's move (task 2.3, D-37): a book from one level to another,
+ * through the helpers above, so a quarter it joins takes it at the end and a
+ * quarter it leaves closes up.
+ *
+ * - From Someday, the book must be `to_read`, live and in no period; it is placed in `to`.
+ * - To Someday, every plan row of the book goes (`moveToSomeday`); `book_status` is untouched.
+ * - Between periods, `movePlan`.
+ *
+ * Null, writing nothing, when the book isn't at `from`, or `from` is `to`.
+ */
+export async function planMove(userId: string, bookId: string, from: PlanEnd, to: PlanEnd, outer?: Tx): Promise<PlanMove | null> {
+  if (from === to) return null;
+  return inPlan(userId, outer, async (tx) => {
+    const rows = await tx.select({ period: readingPlan.period, ordinal: readingPlan.ordinal }).from(readingPlan)
+      .where(and(eq(readingPlan.userId, userId), eq(readingPlan.bookId, bookId)));
+    if (from === "someday") {
+      const [waiting] = await tx.select({ bookId: bookStatus.bookId }).from(bookStatus)
+        .innerJoin(books, eq(books.id, bookStatus.bookId))
+        .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId), eq(bookStatus.status, "to_read"),
+          isNull(books.deletedAt)));
+      if (!waiting || rows.length > 0) return null;
+      await placeInPlan(userId, bookId, to, tx);
+      return { bookId, from, to, placed: true, prior: [] };
+    }
+    const left = rows.find((r) => r.period === from);
+    if (!left) return null;
+    if (to === "someday") {
+      await moveToSomeday(userId, bookId, tx);
+      return { bookId, from, to, placed: false, prior: rows };
+    }
+    const placed = !rows.some((r) => r.period === to);
+    await movePlan(userId, bookId, from, to, tx);
+    return { bookId, from, to, placed, prior: [left] };
+  });
+}
+
+/**
+ * A move's undo (task 2.3): the book leaves `to`, when the move put it there,
+ * and each row it took away comes back at its old place (`restoreToPlan`), so
+ * the quarter it left reads exactly as before. Refuses, changing nothing, when
+ * the book has moved on since: it is no longer in `to`, or is back in a period
+ * it left. A row comes back only to a live book on your list: never to one
+ * removed, Unlisted or with no status (a plan row is always a listed book's,
+ * task 1.21), and after a move to Someday only to one still `to_read` (read
+ * or started since, it has moved on).
+ */
+export async function undoPlanMove(userId: string, move: PlanMove): Promise<boolean> {
+  const refused = Symbol("refused");
+  try {
+    return await db.transaction((tx) => inPlan(userId, tx, async () => {
+      const { bookId, to, placed, prior } = move;
+      if (prior.length) {
+        const [listed] = await tx.select({ status: bookStatus.status }).from(bookStatus)
+          .innerJoin(books, eq(books.id, bookStatus.bookId))
+          .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId), isNull(books.deletedAt)));
+        if (!listed || listed.status === "unlisted") throw refused;
+        if (to === "someday" && listed.status !== "to_read") throw refused;
+      }
+      if (to === "someday") {
+        // Planned again since: it isn't at Someday any more.
+        const [planned] = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
+          .where(and(eq(readingPlan.userId, userId), eq(readingPlan.bookId, bookId))).limit(1);
+        if (planned) throw refused;
+      } else if (placed && !(await takeOutOfPlan(userId, bookId, to, tx))) throw refused;
+      for (const p of prior) if (!(await restoreToPlan(userId, bookId, p.period, p.ordinal, tx))) throw refused;
+      return true;
+    }));
+  } catch (e) {
+    if (e === refused) return false;
+    throw e;
+  }
+}
+
+/** The plan editor's budget for one period (task 2.3): its words after the move, and how far over capacity. */
+export type PlanBudget = {
+  period: Period;
+  plannedWords: number;
+  capacity: number;
+  /** plannedWords past capacity; null when it fits (amber, never red: the sheet's). */
+  over: number | null;
+};
+
+/** What a preview is asked: a book's move, or the words of a book not in the library yet (Add books). */
+export type PreviewAsk = { bookId: string; from: PlanEnd } | { words: number | null };
+
+/**
+ * The preview (task 2.3): `to`'s budget after the move, before it is confirmed.
+ * A book's move is made in a transaction, `plan_capacity` read for `to`, and the
+ * transaction rolled back, so the figure is 2.1's view's own (the sheet, the
+ * rail and the dashboard never disagree) and nothing is written. A book not in
+ * the library yet adds its words to `to`'s total. `to` is a year or a quarter:
+ * On deck and Someday have no budget. Null when the book isn't at `from`.
+ */
+export async function previewPlanMove(userId: string, ask: PreviewAsk, to: Period): Promise<PlanBudget | null> {
+  const rollback = Symbol("rollback");
+  let budget: PlanBudget | null = null;
+  try {
+    await db.transaction(async (tx) => {
+      let extra = 0;
+      if ("bookId" in ask) {
+        if (!(await planMove(userId, ask.bookId, ask.from, to, tx))) throw rollback;
+      } else {
+        extra = ask.words ?? 0;
+      }
+      const year = Number(to.slice(0, 4));
+      const [row] = await tx.execute<{ planned_words: number; capacity: number }>(sql`
+        SELECT planned_words, capacity FROM plan_capacity WHERE user_id = ${userId} AND year = ${year} AND period = ${to}`);
+      let capacity = row ? Number(row.capacity) : null;
+      if (capacity === null) {
+        const [s] = await tx.select({ minutesPerDay: readingSettings.minutesPerDay, wordsPerMinute: readingSettings.wordsPerMinute })
+          .from(readingSettings).where(eq(readingSettings.userId, userId));
+        capacity = wordsPerYear(s ?? DEFAULT_SETTINGS, year) / (isQuarter(to) ? 4 : 1);
+      }
+      const plannedWords = Number(row?.planned_words ?? 0) + extra;
+      budget = { period: to, plannedWords, capacity, over: plannedWords > capacity ? plannedWords - capacity : null };
+      throw rollback;
+    });
+  } catch (e) {
+    if (e !== rollback) throw e;
+  }
+  return budget;
+}
+
 /**
  * The comics Up next queue (task 1.10, data model 2.16). Every queue write goes
  * through the helpers below: they keep `ordinal` contiguous from 1. Each is one
@@ -1180,10 +1349,16 @@ export type BookItem = NewBook | { use: string };
 /**
  * Where an add puts a book (task 1.4c, D-37). Someday is a `to_read` status
  * with no plan row; On deck (task 1.7) is a `to_read` book with an `on_deck`
- * plan row; a shelf is a `shelf_books` row. A year or quarter (2.3) joins later.
+ * plan row; a shelf is a `shelf_books` row. A year or quarter (task 2.3) is a
+ * `to_read` book with that period's plan row, one value (`2027-Q1` or `2027`,
+ * D-38), at the end of a quarter.
  */
-export type Destination = { kind: "someday" } | { kind: "on_deck" } | { kind: "shelf"; shelfId: string };
+export type Destination =
+  | { kind: "someday" } | { kind: "on_deck" } | { kind: "period"; period: Period } | { kind: "shelf"; shelfId: string };
 export const SOMEDAY: Destination = { kind: "someday" };
+
+/** The plan period an add puts its books in: On deck's, a year's or a quarter's; null for Someday or a shelf. */
+const plannedIn = (d: Destination): Period | null => (d.kind === "on_deck" ? "on_deck" : d.kind === "period" ? d.period : null);
 
 /** What an add wrote, and all its undo needs. */
 export type AddedEntry = {
@@ -1192,9 +1367,9 @@ export type AddedEntry = {
   created: string[];
   /** Books whose destination row this add wrote: a status, a plan row, or a place on the shelf. */
   added: string[];
-  /** On deck only: books this add also gave a `to_read` status, because they had none. */
+  /** On deck, a year or a quarter: books this add also gave a `to_read` status, because they had none. */
   statused: string[];
-  /** Someday and On deck: Unlisted books this add moved to `to_read` (task 1.21), which its undo
+  /** Someday, On deck, a year or a quarter: Unlisted books this add moved to `to_read` (task 1.21), which its undo
    * puts back to `unlisted`. Absent from an entry that promoted none. */
   promoted?: string[];
 };
@@ -1294,10 +1469,11 @@ async function promote(tx: Tx, userId: string, ids: string[]): Promise<string[]>
 /**
  * Write the destination row for each book, unless it is there already: Someday
  * is `book_status = to_read`, and a status the book has is kept (no plan row,
- * D-37), except that an Unlisted book moves to `to_read` (task 1.21); On deck
- * gives a book with no status, or an Unlisted one, `to_read` too, then an
- * `on_deck` plan row to each book that is `to_read` (one read, reading or set
- * aside keeps its status and gets none); a shelf is a `shelf_books` row at the
+ * D-37), except that an Unlisted book moves to `to_read` (task 1.21); On deck,
+ * a year or a quarter (task 2.3) gives a book with no status, or an Unlisted
+ * one, `to_read` too, then that period's plan row to each book that is
+ * `to_read`, at a quarter's end (one read, reading or set aside keeps its
+ * status and gets none); a shelf is a `shelf_books` row at the
  * end of the shelf, and leaves an Unlisted book Unlisted. Returns the books it
  * wrote a destination row for, the statuses On deck wrote, and the Unlisted
  * books it moved.
@@ -1311,7 +1487,8 @@ async function writeDestination(
     const wrote = new Set([...promoted, ...await toRead(tx, userId, ids)]);
     return { added: ids.filter((id) => wrote.has(id)), statused: [], promoted };
   }
-  if (destination.kind === "on_deck") {
+  const period = plannedIn(destination);
+  if (period !== null) {
     const promoted = await promote(tx, userId, ids);
     const statused = await toRead(tx, userId, ids);
     const waiting = new Set((await tx.select({ bookId: bookStatus.bookId }).from(bookStatus)
@@ -1319,10 +1496,11 @@ async function writeDestination(
       .map((r) => r.bookId));
     const added: string[] = [];
     for (const id of ids) {
-      if (waiting.has(id) && await placeInPlan(userId, id, "on_deck", tx)) added.push(id);
+      if (waiting.has(id) && await placeInPlan(userId, id, period, tx)) added.push(id);
     }
     return { added, statused, promoted };
   }
+  if (destination.kind !== "shelf") throw new Error(`writeDestination: no destination ${destination.kind}`);
   const { shelfId } = destination;
   const there = new Set((await tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks)
     .where(and(eq(shelfBooks.shelfId, shelfId), inArray(shelfBooks.bookId, ids)))).map((r) => r.bookId));
@@ -1536,8 +1714,8 @@ async function newBookRow(tx: Tx, userId: string, item: Exclude<AddBookItem, { u
  * removed, and the books it created are soft-deleted (Hard rule 4). A book it
  * reused, and any status or shelf it had before, are left exactly as they
  * were, because only rows the add wrote are named. The authors and series it
- * created stay: catalog, and harmless. On deck (task 1.7) takes out its
- * `on_deck` rows through the plan helpers, and the statuses it wrote with them.
+ * created stay: catalog, and harmless. On deck (task 1.7), a year or a quarter (task 2.3) take out their
+ * plan rows through the plan helpers, and the statuses they wrote with them.
  * An Unlisted book the add promoted (task 1.21) goes back to `unlisted`: an
  * update, never a delete, so the row and anything on it stay.
  *
@@ -1574,15 +1752,17 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
   const placed = new Set(added);
   if (created.some((id) => !placed.has(id))) return false;
   const isShelf = destination.kind === "shelf";
-  const onDeck = destination.kind === "on_deck";
-  if (onDeck && created.some((id) => !statused.includes(id))) return false;
-  // Only Someday and On deck promote, and only books they placed and didn't create (task 1.21).
+  // On deck, a year or a quarter (task 2.3): the plan period the add wrote its rows in.
+  const period = plannedIn(destination);
+  const toPlan = period !== null;
+  if (toPlan && created.some((id) => !statused.includes(id))) return false;
+  // Only Someday and the plan's levels (On deck, a year, a quarter) promote, and only books they placed and didn't create (task 1.21).
   if ([...promoted].some((id) => isShelf || !placed.has(id) || created.includes(id) || statused.includes(id))) return false;
   if (isShelf && !(await ownShelf(tx, userId, destination.shelfId))) return false;
 
-  // The statuses this add wrote: Someday's are its destination rows; On deck names its own.
+  // The statuses this add wrote: Someday's are its destination rows; a plan level names its own.
   // An Unlisted book it promoted had a status already: that goes back to `unlisted`, not away.
-  const statuses = new Set((destination.kind === "someday" ? added : onDeck ? statused : [])
+  const statuses = new Set((destination.kind === "someday" ? added : toPlan ? statused : [])
     .filter((id) => !promoted.has(id)));
   const touched = [...statuses, ...promoted];
   // A promoted book still on your list as the add left it; a rating or note it had stays with it.
@@ -1594,15 +1774,15 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
     ? and(eq(shelfBooks.shelfId, destination.shelfId), inArray(shelfBooks.bookId, added)) : undefined;
   const bareStatus = and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, [...statuses]), eq(bookStatus.status, "to_read"),
     isNull(bookStatus.rating), isNull(bookStatus.notes), isNull(bookStatus.finishedOn), isNull(bookStatus.yearRank));
-  // A plan row this add didn't write: any, except On deck's own.
-  const notOurs = onDeck ? ne(readingPlan.period, "on_deck") : undefined;
+  // A plan row this add didn't write: any, except the add's own period's.
+  const notOurs = period !== null ? ne(readingPlan.period, period) : undefined;
   if (isShelf && added.length) {
     const ours = await tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(shelfRows);
     if (ours.length !== placed.size) return false;
   }
-  if (onDeck && added.length) {
+  if (period !== null && added.length) {
     const ours = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan).where(and(
-      eq(readingPlan.userId, userId), eq(readingPlan.period, "on_deck"), inArray(readingPlan.bookId, added)));
+      eq(readingPlan.userId, userId), eq(readingPlan.period, period), inArray(readingPlan.bookId, added)));
     if (ours.length !== placed.size) return false;
   }
   if (statuses.size) {
@@ -1629,7 +1809,7 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
       .where(and(inArray(books.id, created), isNull(books.deletedAt)));
     if (live.length !== new Set(created).size) return false;
     // A new book has nothing but the rows this add wrote: its own status for
-    // Someday, that and its On deck row, or its place on this shelf. Anything
+    // Someday, that and its plan row (On deck, a year or a quarter), or its place on this shelf. Anything
     // else came later.
     const [others, shelved, planned] = await Promise.all([
       tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(and(inArray(bookStatus.bookId, created),
@@ -1637,7 +1817,7 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
       tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(and(inArray(shelfBooks.bookId, created),
         isShelf ? ne(shelfBooks.shelfId, destination.shelfId) : undefined)).limit(1),
       tx.select({ bookId: readingPlan.bookId }).from(readingPlan).where(and(inArray(readingPlan.bookId, created),
-        onDeck ? or(ne(readingPlan.userId, userId), notOurs) : undefined)).limit(1),
+        toPlan ? or(ne(readingPlan.userId, userId), notOurs) : undefined)).limit(1),
     ]);
     if (others.length + shelved.length + planned.length > 0) return false;
   }
@@ -1647,8 +1827,8 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
     const gone = await tx.delete(shelfBooks).where(shelfRows).returning({ bookId: shelfBooks.bookId });
     if (gone.length !== placed.size) throw refused;
   }
-  if (onDeck) {
-    for (const id of placed) if (!(await takeOutOfPlan(userId, id, "on_deck", tx))) throw refused;
+  if (period !== null) {
+    for (const id of placed) if (!(await takeOutOfPlan(userId, id, period, tx))) throw refused;
   }
   if (statuses.size) {
     const gone = await tx.delete(bookStatus).where(bareStatus).returning({ bookId: bookStatus.bookId });

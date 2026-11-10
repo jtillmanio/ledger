@@ -44,6 +44,15 @@ export async function undoAdd(entry: AddedEntry, note?: { id: number; bookId: st
   if (!res.ok) throw new Error(String(res.status));
 }
 
+/** A year or a quarter, one value (task 2.3, D-38): `2027` or `2027-Q1`, never a month. */
+export const YEAR_OR_QUARTER = /^\d{4}(-Q[1-4])?$/;
+/** A plan period: a year, a quarter or On deck. */
+export const PLAN_PERIOD = /^(\d{4}(-Q[1-4])?|on_deck)$/;
+/** Keys that would carry a year, a quarter or a month apart from the one period value: refused (task 2.3, D-38). */
+export const SPLIT_PERIOD_KEYS = ["year", "quarter", "month"] as const;
+/** True when an object carries a year, a quarter or a month as a value of its own. */
+export const splitsPeriod = (o: Record<string, unknown>) => SPLIT_PERIOD_KEYS.some((k) => k in o);
+
 /** The destination a request names, or undefined when it names none properly. Missing means Someday. */
 export function parseDestination(raw: unknown): Destination | undefined {
   if (raw === undefined || raw === null) return { kind: "someday" };
@@ -51,6 +60,11 @@ export function parseDestination(raw: unknown): Destination | undefined {
   const d = raw as Record<string, unknown>;
   if (d.kind === "someday") return { kind: "someday" };
   if (d.kind === "on_deck") return { kind: "on_deck" };
+  // A year or a quarter (task 2.3): one `period` value, and nothing beside it that splits it.
+  if (d.kind === "period") {
+    return typeof d.period === "string" && YEAR_OR_QUARTER.test(d.period) && !splitsPeriod(d)
+      ? { kind: "period", period: d.period } : undefined;
+  }
   if (d.kind === "shelf" && typeof d.shelfId === "string" && d.shelfId && d.shelfId.length <= MAX_ID) {
     return { kind: "shelf", shelfId: d.shelfId };
   }

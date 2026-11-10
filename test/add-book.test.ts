@@ -325,6 +325,74 @@ describe("undo (AC-5)", () => {
   });
 });
 
+describe("a year or quarter (task 2.3, AC-5; the Check's Flip, R3-08)", () => {
+  const plan = () => sql`SELECT book_id, period, ordinal FROM reading_plan WHERE user_id = ${USER} ORDER BY period, ordinal, book_id`;
+  const Q1 = { kind: "period", period: "2027-Q1" };
+
+  it("a new book into a quarter writes its to_read status and its plan row, at the quarter's end; undo takes both and closes up", async () => {
+    const first = await add(hand({ title: "First", author: "Hand Author", words: 90000 }), Q1);
+    expect(first.status).toBe(200);
+    expect(first.body).toMatchObject({ destination: Q1, created: ["first-hand-author"], added: ["first-hand-author"],
+      statused: ["first-hand-author"] });
+    const second = await add(hand({ title: "Second", author: "Hand Author" }), Q1);
+    expect(await plan()).toEqual([
+      { book_id: "first-hand-author", period: "2027-Q1", ordinal: 1 },
+      { book_id: "second-hand-author", period: "2027-Q1", ordinal: 2 },
+    ]);
+    expect(await statuses()).toContainEqual({ book_id: "first-hand-author", status: "to_read" });
+    expect((await sql`SELECT level FROM to_read_level WHERE book_id = 'first-hand-author'`)[0].level).toBe("quarter");
+
+    expect(await undo(first.body)).toBe(200);
+    expect(await plan()).toEqual([{ book_id: "second-hand-author", period: "2027-Q1", ordinal: 1 }]);
+    expect((await statuses()).map((s) => s.book_id)).not.toContain("first-hand-author");
+    expect((await bookRows()).find((b) => b.id === "first-hand-author")!.removed).toBe(true);
+    expect(second.status).toBe(200);
+  });
+
+  it("a library book with no status into a bare year: to_read and a 2027 row with no place", async () => {
+    await sql`INSERT INTO books (id, title, author_id) VALUES ('red-seas', 'Red Seas', 'joe-abercrombie')`;
+    const done = await add({ use: "red-seas" }, { kind: "period", period: "2027" });
+    expect(done.body).toMatchObject({ created: [], added: ["red-seas"], statused: ["red-seas"] });
+    expect(await plan()).toEqual([{ book_id: "red-seas", period: "2027", ordinal: null }]);
+    expect(await statuses()).toContainEqual({ book_id: "red-seas", status: "to_read" });
+    expect(await undo(done.body)).toBe(200);
+    expect(await plan()).toEqual([]);
+    expect((await statuses()).map((s) => s.book_id)).not.toContain("red-seas");
+  });
+
+  it("a book already read keeps its status and gets no plan row", async () => {
+    const done = await add({ use: "the-blade-itself-joe-abercrombie" }, Q1);
+    expect(done.body).toMatchObject({ added: [], statused: [], status: "read" });
+    expect(await plan()).toEqual([]);
+  });
+
+  it("when the plan insert fails, the add writes no book_status row: one transaction", async () => {
+    await sql`INSERT INTO books (id, title, author_id) VALUES ('red-seas', 'Red Seas', 'joe-abercrombie')`;
+    const { addBook } = await import("../src/db/writes");
+    // A period the reading_plan CHECK refuses, past the route's parser: the plan insert fails after the status is written.
+    const failure = async (p: Promise<unknown>) => {
+      const e = await p.then(() => null, (err) => err as { code?: string; cause?: { code?: string } });
+      return e?.code ?? e?.cause?.code ?? null;
+    };
+    expect(await failure(addBook(USER, { use: "red-seas" }, { kind: "period", period: "2027-Q5" }))).toBe("23514");
+    expect(await failure(addBook(USER, { hand: { title: "Fresh", author: "Hand Author", series: null, position: null, pages: null, words: null } },
+      { kind: "period", period: "2027-Q5" })))
+      .toBe("23514");
+    expect(await statuses()).toEqual([{ book_id: "the-blade-itself-joe-abercrombie", status: "read" }]);
+    expect(await plan()).toEqual([]);
+    expect((await bookRows()).map((b) => b.id)).not.toContain("fresh-hand-author");
+  });
+
+  it("an undo refuses, changing nothing, once the book has moved to another period", async () => {
+    const done = await add(hand({ title: "Fresh", author: "Hand Author" }), Q1);
+    const { movePlan } = await import("../src/db/writes");
+    await movePlan(USER, "fresh-hand-author", "2027-Q1", "2028");
+    expect(await undo(done.body)).toBe(409);
+    expect(await plan()).toEqual([{ book_id: "fresh-hand-author", period: "2028", ordinal: null }]);
+    expect(await statuses()).toContainEqual({ book_id: "fresh-hand-author", status: "to_read" });
+  });
+});
+
 describe("undo names only what an add wrote", () => {
   it("refuses a created book the add didn't also place, changing nothing", async () => {
     const done = await add(hand({ title: "Fresh", author: "Hand Author" }));

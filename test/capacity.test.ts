@@ -4,15 +4,24 @@
 // (wordsPerYear); a reader with no settings row reads the defaults; planCapacity
 // answers a year nothing is planned in; and a read for one year filters by that
 // year before the view aggregates (architecture § Operational posture).
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+// Task 2.3 adds the plan editor's preview and chip totals (AC-3): the same view's
+// figures, the preview's read inside a move that is rolled back.
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireTestUrl } from "../scripts/lib/testdb.mjs";
 import { DEFAULT_SETTINGS, wordsPerYear } from "../src/lib/settings";
 import { testSql, truncateAll } from "./db";
 
 const USER = "test-user";
+
+vi.mock("@/lib/auth", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../src/lib/auth")>()),
+  apiUserId: async () => USER,
+}));
+
 const sql = testSql();
 let q: typeof import("../src/db/queries");
 let w: typeof import("../src/db/writes");
+let planRoute: typeof import("../src/app/api/plan/route");
 let appSql: { end: () => Promise<void> };
 
 beforeAll(async () => {
@@ -20,6 +29,7 @@ beforeAll(async () => {
   process.env.DATABASE_URL = requireTestUrl();
   q = await import("../src/db/queries");
   w = await import("../src/db/writes");
+  planRoute = await import("../src/app/api/plan/route");
   appSql = (await import("../src/db")).sql;
 });
 
@@ -109,6 +119,59 @@ describe("plan_capacity reads your settings live (task 2.1, AC-1, AC-2)", () => 
     expect(year).toMatchObject({ period: "2031", quarter: null, capacity: 4_051_500, plannedWords: 0, books: 0, load: 0, estimatedShare: null });
     expect(quarters.map((x) => [x.period, x.capacity, x.plannedWords])).toEqual(
       [1, 2, 3, 4].map((n) => [`2031-Q${n}`, 4_051_500 / 4, 0]));
+  });
+});
+
+describe("the plan editor's preview and chip totals (task 2.3, AC-3)", () => {
+  const get = async (params: Record<string, string>) => {
+    const res = await planRoute.GET(new Request(`http://x/api/plan?${new URLSearchParams(params)}`));
+    expect(res.status, JSON.stringify(params)).toBe(200);
+    return res.json();
+  };
+  const Q = 3_038_625 / 4;
+
+  beforeEach(async () => {
+    await sql`INSERT INTO books (id, title, word_count, word_count_source) VALUES ('small', 'Small', 150000, 'stated')`;
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'small', 'to_read')`;
+  });
+
+  it("a preview answers the target's total after the move and how far over, writes nothing, and matches the move", async () => {
+    const before = await inputs();
+    // 2027's bare-year book (550k estimated) into Q2, which holds 3,035,000 already: over.
+    const { budget: over } = await get({ bookId: "pages", from: "2027", to: "2027-Q2" });
+    expect(over).toEqual({ period: "2027-Q2", plannedWords: 3_585_000, capacity: Q, over: 3_585_000 - Q });
+    // A Someday book into an empty quarter: it fits.
+    const { budget: fits } = await get({ bookId: "small", from: "someday", to: "2027-Q3" });
+    expect(fits).toEqual({ period: "2027-Q3", plannedWords: 150_000, capacity: Q, over: null });
+    expect(await inputs()).toEqual(before);
+
+    await w.movePlan(USER, "pages", "2027", "2027-Q2");
+    const { quarters } = await q.planCapacity(USER, 2027);
+    expect([quarters[1].plannedWords, quarters[1].capacity]).toEqual([over.plannedWords, over.capacity]);
+  });
+
+  it("a book not in the library yet previews by its words; a year nothing is planned in at your capacity", async () => {
+    expect((await get({ words: "200000", to: "2027-Q2" })).budget)
+      .toEqual({ period: "2027-Q2", plannedWords: 3_235_000, capacity: Q, over: 3_235_000 - Q });
+    const year = wordsPerYear(DEFAULT_SETTINGS, 2031);
+    expect((await get({ words: "200000", to: "2031" })).budget)
+      .toEqual({ period: "2031", plannedWords: 200_000, capacity: year, over: null });
+    expect((await get({ to: "2031-Q1" })).budget)
+      .toEqual({ period: "2031-Q1", plannedWords: 0, capacity: year / 4, over: null });
+  });
+
+  it("a preview of a book that isn't where it says is 404", async () => {
+    const res = await planRoute.GET(new Request("http://x/api/plan?bookId=small&from=2027&to=2027-Q2"));
+    expect(res.status).toBe(404);
+  });
+
+  it("the chips: five years from the first, each year and quarter as planCapacity reads it, an empty year at your capacity", async () => {
+    await w.saveReadingSettings(USER, { minutesPerDay: 60 });
+    const { years } = await get({ firstYear: "2027" });
+    expect(years.map((y: { year: { period: string } }) => y.year.period)).toEqual(["2027", "2028", "2029", "2030", "2031"]);
+    expect(years[0]).toEqual(await q.planCapacity(USER, 2027));
+    for (const [i, y] of [2028, 2029, 2030, 2031].entries()) expect(years[i + 1], String(y)).toEqual(await q.planCapacity(USER, y));
+    expect(years[1].year).toMatchObject({ plannedWords: 0, capacity: 60 * 185 * 366 });
   });
 });
 

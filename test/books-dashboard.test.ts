@@ -252,7 +252,10 @@ describe("Plan on an On deck row: POST /api/plan (task 2.2, Q3)", () => {
   it("moves the book from On deck to the end of the quarter, and answers its place", async () => {
     const res = await post({ bookId: "deck", from: "on_deck", to: "2026-Q4" });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true });
+    // Task 2.3: the answer carries the move, which is what its undo sends back.
+    expect(await res.json()).toEqual({
+      ok: true, move: { bookId: "deck", from: "on_deck", to: "2026-Q4", placed: true, prior: [{ period: "on_deck", ordinal: null }] },
+    });
     expect(await rows()).toEqual([
       { book_id: "q1", period: "2026-Q4", ordinal: 1 }, { book_id: "q2", period: "2026-Q4", ordinal: 2 },
       { book_id: "deck", period: "2026-Q4", ordinal: 3 },

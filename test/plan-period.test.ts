@@ -19,14 +19,18 @@ vi.mock("@/lib/auth", async (importOriginal) => ({
 
 const sql = testSql();
 let w: typeof import("../src/db/writes");
+let q: typeof import("../src/db/queries");
 let books: typeof import("../src/app/api/books/route");
+let planRoute: typeof import("../src/app/api/plan/route");
 let appSql: { end: () => Promise<void> };
 
 beforeAll(async () => {
   // src/db reads DATABASE_URL at import time: point it at the TEST database first.
   process.env.DATABASE_URL = requireTestUrl();
   w = await import("../src/db/writes");
+  q = await import("../src/db/queries");
   books = await import("../src/app/api/books/route");
+  planRoute = await import("../src/app/api/plan/route");
   appSql = (await import("../src/db")).sql;
 });
 
@@ -305,5 +309,211 @@ describe("Add books' On deck (AC-1, AC-4)", () => {
       statused: ["piranesi-susanna-clarke"] });
     const levels = await sql`SELECT book_id, level FROM to_read_level WHERE level <> 'someday' ORDER BY book_id`;
     expect(levels.map((r) => [r.book_id, r.level])).toEqual([["b", "on_deck"], ["piranesi-susanna-clarke", "on_deck"]]);
+  });
+});
+
+/* ── Task 2.3: the plan editor's writes ───────────────────────────────────────────────── */
+
+const call = (method: "POST" | "DELETE", body: unknown) => planRoute[method](new Request("http://x/api/plan", {
+  method, headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+}));
+const preview = (params: Record<string, string>) =>
+  planRoute.GET(new Request(`http://x/api/plan?${new URLSearchParams(params)}`));
+const move = async (bookId: string, from: string, to: string) => {
+  const res = await call("POST", { bookId, from, to });
+  expect(res.status, `${bookId} ${from} → ${to}`).toBe(200);
+  return (await res.json()).move;
+};
+/** Every reading_plan row, to show a request wrote nothing. */
+const planRows = () => sql`SELECT book_id, period, ordinal FROM reading_plan ORDER BY book_id, period`;
+/** A period's planned words, as 2.1's planCapacity answers them. */
+async function total(period: string) {
+  const { year, quarters } = await q.planCapacity(USER, Number(period.slice(0, 4)));
+  return [year, ...quarters].find((p) => p.period === period)!.plannedWords;
+}
+
+describe("the general move (task 2.3, roadmap Check, AC-1, AC-2)", () => {
+  /** The roadmap Check's fixture: A, B (150k) and C in 2027 Q1, D in 2028 Q2. */
+  beforeEach(async () => {
+    await sql`UPDATE books SET word_count = v.words, word_count_source = 'stated'
+              FROM (VALUES ('a', 100000), ('b', 150000), ('c', 80000), ('d', 120000)) v(id, words) WHERE books.id = v.id`;
+    for (const id of ["a", "b", "c"]) await w.placeInPlan(USER, id, "2027-Q1");
+    await w.placeInPlan(USER, "d", "2028-Q2");
+  });
+
+  it("moving B from 2027 Q1 to 2028 Q2: the preview first, then each total by exactly 150k, B last, Q1 closed up; undo puts it back", async () => {
+    expect([await total("2027-Q1"), await total("2027"), await total("2028-Q2"), await total("2028")])
+      .toEqual([330_000, 330_000, 120_000, 120_000]);
+    const rows = await planRows();
+
+    // The preview, before the move is confirmed: the destination's total after it, and nothing written.
+    const res = await preview({ bookId: "b", from: "2027-Q1", to: "2028-Q2" });
+    expect(res.status).toBe(200);
+    const { budget } = await res.json();
+    expect(budget).toMatchObject({ period: "2028-Q2", plannedWords: 270_000, over: null });
+    expect(await planRows()).toEqual(rows);
+
+    const moved = await move("b", "2027-Q1", "2028-Q2");
+    expect(await quarter("2027-Q1")).toEqual([["a", 1], ["c", 2]]);
+    expect(await quarter("2028-Q2")).toEqual([["d", 1], ["b", 2]]);
+    expect([await total("2027-Q1"), await total("2027"), await total("2028-Q2"), await total("2028")])
+      .toEqual([180_000, 180_000, 270_000, 270_000]);
+    // The preview's figure is the one the views give after the move.
+    expect(await total("2028-Q2")).toBe(budget.plannedWords);
+
+    expect((await call("DELETE", { move: moved })).status).toBe(200);
+    expect(await quarter("2027-Q1")).toEqual([["a", 1], ["b", 2], ["c", 3]]);
+    expect(await quarter("2028-Q2")).toEqual([["d", 1]]);
+    expect(await planRows()).toEqual(rows);
+  });
+
+  it("undo puts the book back at its old place even after the quarter has gained a book", async () => {
+    const moved = await move("b", "2027-Q1", "2028-Q2");
+    await w.placeInPlan(USER, "e", "2027-Q1");
+    expect(await quarter("2027-Q1")).toEqual([["a", 1], ["c", 2], ["e", 3]]);
+    expect((await call("DELETE", { move: moved })).status).toBe(200);
+    expect(await quarter("2027-Q1")).toEqual([["a", 1], ["b", 2], ["c", 3], ["e", 4]]);
+  });
+
+  it("undo refuses, changing nothing, once the book has moved on", async () => {
+    const moved = await move("b", "2027-Q1", "2028-Q2");
+    await move("b", "2028-Q2", "2029");
+    const rows = await planRows();
+    expect((await call("DELETE", { move: moved })).status).toBe(409);
+    expect(await planRows()).toEqual(rows);
+  });
+
+  it("On deck and Someday need no year or quarter, and answer no budget", async () => {
+    for (const [bookId, from, to] of [["e", "someday", "on_deck"], ["a", "2027-Q1", "someday"]]) {
+      const res = await preview({ bookId, from, to });
+      expect(res.status, to).toBe(200);
+      expect((await res.json()).budget, to).toBeNull();
+    }
+    await move("e", "someday", "on_deck");
+    expect(await rowOf("e")).toEqual([["on_deck", null]]);
+    await move("e", "on_deck", "someday");
+    expect(await rowOf("e")).toEqual([]);
+    await move("a", "2027-Q1", "on_deck");
+    expect(await rowOf("a")).toEqual([["on_deck", null]]);
+    expect(await quarter("2027-Q1")).toEqual([["b", 1], ["c", 2]]);
+  });
+
+  it("No quarter yet writes a bare year", async () => {
+    await move("e", "someday", "2027");
+    const [row] = await sql`SELECT period, year, quarter, level, ordinal FROM plan_period WHERE book_id = 'e'`;
+    expect(row).toEqual({ period: "2027", year: 2027, quarter: null, level: "year", ordinal: null });
+    await move("b", "2027-Q1", "2027");
+    expect(await rowOf("b")).toEqual([["2027", null]]);
+  });
+
+  it("a Someday book joins the end of a quarter; a book that isn't a to-read Someday book is 404, writing nothing", async () => {
+    await move("e", "someday", "2027-Q1");
+    expect(await quarter("2027-Q1")).toEqual([["a", 1], ["b", 2], ["c", 3], ["e", 4]]);
+    await sql`INSERT INTO books (id, title) VALUES ('f', 'Phi'), ('g', 'Gee')`;
+    await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+              VALUES (${USER}, 'f', 'read', '2025-01-01', 'exact')`;
+    const rows = await planRows();
+    // Read, no status at all, planned already, or not in the period named.
+    expect((await call("POST", { bookId: "f", from: "someday", to: "2027" })).status).toBe(404);
+    expect((await call("POST", { bookId: "g", from: "someday", to: "2027" })).status).toBe(404);
+    expect((await call("POST", { bookId: "a", from: "someday", to: "2027" })).status).toBe(404);
+    expect((await call("POST", { bookId: "a", from: "2027-Q2", to: "2027" })).status).toBe(404);
+    expect(await planRows()).toEqual(rows);
+  });
+});
+
+describe("one period value, never a year apart or a month (AC-4)", () => {
+  it("a move carrying a month, or a year and a quarter as separate values, answers 400 and writes nothing", async () => {
+    for (const body of [
+      { bookId: "a", from: "someday", to: "2027-03" },
+      { bookId: "a", from: "someday", to: "2027-Q1-03" },
+      { bookId: "a", from: "someday", to: "2027-Q1", month: 3 },
+      { bookId: "a", from: "someday", to: "2027", quarter: 1 },
+      { bookId: "a", from: "someday", year: 2027, quarter: 1 },
+      { bookId: "a", from: "someday", to: "2027-Q1", year: 2027 },
+    ]) {
+      expect((await call("POST", body)).status, JSON.stringify(body)).toBe(400);
+      expect((await preview(Object.fromEntries(Object.entries(body).map(([k, v]) => [k, String(v)])))).status,
+        `preview ${JSON.stringify(body)}`).toBe(400);
+    }
+    expect(await planRows()).toEqual([]);
+  });
+
+  it("an add whose destination carries a year and quarter apart, or a month, answers 400 and writes nothing", async () => {
+    const statuses = await sql`SELECT * FROM book_status ORDER BY book_id`;
+    for (const destination of [
+      { kind: "period", year: 2027, quarter: 1 },
+      { kind: "period", period: "2027", quarter: 1 },
+      { kind: "period", period: "2027-03" },
+      { kind: "period", period: "2027-Q1", month: 3 },
+      { kind: "period", period: "on_deck" },
+    ]) {
+      const res = await books.POST(new Request("http://x/api/books", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ item: { use: "a" }, destination }),
+      }));
+      expect(res.status, JSON.stringify(destination)).toBe(400);
+    }
+    expect(await planRows()).toEqual([]);
+    expect(await sql`SELECT * FROM book_status ORDER BY book_id`).toEqual(statuses);
+  });
+});
+
+describe("Someday from the plan (AC-4)", () => {
+  it("deletes the plan row, leaves book_status as it was, and its undo restores the old ordinal", async () => {
+    await sql`UPDATE book_status SET rating = 4, notes = 'keep me', finished_on = '2020-05-01', finished_on_precision = 'exact'
+              WHERE book_id = 'b'`;
+    for (const id of ["a", "b", "c"]) await w.placeInPlan(USER, id, "2027-Q1");
+    const status = await sql`SELECT * FROM book_status WHERE book_id = 'b'`;
+
+    const moved = await move("b", "2027-Q1", "someday");
+    expect(moved.prior).toEqual([{ period: "2027-Q1", ordinal: 2 }]);
+    expect(await rowOf("b")).toEqual([]);
+    expect(await quarter("2027-Q1")).toEqual([["a", 1], ["c", 2]]);
+    expect(await sql`SELECT * FROM book_status WHERE book_id = 'b'`).toEqual(status);
+    expect((await sql`SELECT level FROM to_read_level WHERE book_id = 'b'`)[0].level).toBe("someday");
+
+    expect((await call("DELETE", { move: moved })).status).toBe(200);
+    expect(await quarter("2027-Q1")).toEqual([["a", 1], ["b", 2], ["c", 3]]);
+    expect(await sql`SELECT * FROM book_status WHERE book_id = 'b'`).toEqual(status);
+  });
+
+  it("its undo refuses, changing nothing, once the book is read, Unlisted, without a status or removed", async () => {
+    for (const id of ["a", "b", "c"]) await w.placeInPlan(USER, id, "2027-Q1");
+    const moved = await move("b", "2027-Q1", "someday");
+    const rows = await planRows();
+    const cases: [string, () => Promise<unknown>, () => Promise<unknown>][] = [
+      ["read",
+        () => sql`UPDATE book_status SET status = 'read', finished_on = '2026-01-02', finished_on_precision = 'exact' WHERE book_id = 'b'`,
+        () => sql`UPDATE book_status SET status = 'to_read', finished_on = NULL, finished_on_precision = 'none' WHERE book_id = 'b'`],
+      ["unlisted", () => sql`UPDATE book_status SET status = 'unlisted' WHERE book_id = 'b'`,
+        () => sql`UPDATE book_status SET status = 'to_read' WHERE book_id = 'b'`],
+      ["no status", () => sql`DELETE FROM book_status WHERE book_id = 'b'`,
+        () => sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'b', 'to_read')`],
+      ["removed", () => sql`UPDATE books SET deleted_at = now() WHERE id = 'b'`,
+        () => sql`UPDATE books SET deleted_at = NULL WHERE id = 'b'`],
+    ];
+    for (const [what, change, back] of cases) {
+      await change();
+      expect((await call("DELETE", { move: moved })).status, what).toBe(409);
+      expect(await planRows(), what).toEqual(rows);
+      await back();
+    }
+    // Back as the move left it, the undo goes through.
+    expect((await call("DELETE", { move: moved })).status).toBe(200);
+    expect(await quarter("2027-Q1")).toEqual([["a", 1], ["b", 2], ["c", 3]]);
+  });
+
+  it("a crafted undo never plans an Unlisted book; a book being read moved between periods undoes as usual", async () => {
+    await sql`UPDATE book_status SET status = 'unlisted' WHERE book_id = 'e'`;
+    const crafted = { bookId: "e", from: "2027-Q1", to: "2028", placed: false, prior: [{ period: "2027-Q1", ordinal: 1 }] };
+    expect((await call("DELETE", { move: crafted })).status).toBe(409);
+    expect(await planRows()).toEqual([]);
+
+    for (const id of ["a", "b"]) await w.placeInPlan(USER, id, "2027-Q1");
+    await sql`UPDATE book_status SET status = 'reading' WHERE book_id = 'a'`;
+    const moved = await move("a", "2027-Q1", "2028");
+    expect((await call("DELETE", { move: moved })).status).toBe(200);
+    expect(await quarter("2027-Q1")).toEqual([["a", 1], ["b", 2]]);
   });
 });
