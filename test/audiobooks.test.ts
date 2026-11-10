@@ -18,6 +18,7 @@ vi.mock("@/lib/auth", async (importOriginal) => ({
 
 const sql = testSql();
 let book: typeof import("../src/app/api/progress/book/route");
+let bookRead: typeof import("../src/app/api/progress/book/read/route");
 let q: typeof import("../src/db/queries");
 let appSql: { end: () => Promise<void> };
 
@@ -25,6 +26,7 @@ beforeAll(async () => {
   // src/db reads DATABASE_URL at import time: point it at the TEST database first.
   process.env.DATABASE_URL = requireTestUrl();
   book = await import("../src/app/api/progress/book/route");
+  bookRead = await import("../src/app/api/progress/book/read/route");
   q = await import("../src/db/queries");
   appSql = (await import("../src/db")).sql;
 });
@@ -148,6 +150,19 @@ describe("Listening through POST /api/progress/book (AC-3)", () => {
     const fix = await set(finish("2026-06-01"));
     expect((await events()).map((e) => e.format)).toEqual(["audio"]);
     expect(fix.format).toBeNull();
+  });
+
+  it("re-dating a listen through the read route keeps it audio (task 1.17b)", async () => {
+    await set({ status: "listening" });
+    await set(finish());
+    const [{ id }] = await events();
+    const res = await bookRead.POST(new Request("http://test/api/progress/book/read", {
+      method: "POST",
+      body: JSON.stringify({ bookId: "wok", readId: id, start: { mode: "date", date: "2026-05-20" }, finish: { mode: "date", date: "2026-05-30" } }),
+    }));
+    expect(res.status).toBe(200);
+    expect(await events()).toEqual([{ id, format: "audio", reread_of: null }]);
+    expect(await q.bookReads(USER, "wok")).toMatchObject([{ id, format: "audio", started_on: "2026-05-20", finished_on: "2026-05-30" }]);
   });
 
   it("Undo of the finish removes the appended row and restores Listening", async () => {
