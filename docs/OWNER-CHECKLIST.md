@@ -233,7 +233,7 @@ tick them.
       PR #217).
 
 - [ ] Check what the UI verifier left on the development database (from
-      TASK-059, PR pending). During its walk a scripted forced click saved
+      TASK-059, PR #222). During its walk a scripted forced click saved
       *A Court of Wings and Ruin* (Listening, started 3 Nov) as Read today; it
       could not reproduce this with a normal Cancel. It was undone through
       `DELETE /api/progress/book` (the `read_events` row 183 is gone), but the
