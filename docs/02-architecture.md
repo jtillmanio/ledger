@@ -281,8 +281,8 @@ tables.
     | `/books/status` | 24,000 | 175,000 | 35 | 100 |
     | `/comics/bendis-disassembled` | 26,800 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 26,000 | 171,000 | 33 | 100 |
-    | `/books` | 19,000 | 175,000 | 36 | 100 |
-    | `/books/list` | 70,000 | 170,000 | 64 | 100 |
+    | `/books` | 19,000 | 177,000 | 36 | 100 |
+    | `/books/list` | 70,000 | 173,000 | 65 | 100 |
     | `/inbox` | 16,000 | 173,000 | 31 | 100 |
     | `/settings` | 16,000 | 173,000 | 32 | 100 |
     | `/watch` | 12,500 | 173,000 | 28 | 100 |
@@ -369,6 +369,17 @@ tables.
     *Or keep going* reads `follow_next` beside the rest, leaving out the
     quarter's offer by `quarterShelf`'s own rule rather than waiting for it,
     and Now's *Next in* is part of `booksInHand`'s read, not a query of its own.
+    Task 1.17b (PR #222, D-131) put the book status control on Now and on the
+    status screens, and made it ask the dates: *Reading* opens *Started*, *Read*
+    opens *Started* and *Finished* together. Its client code (the two pickers, the
+    refusal reasons, the start re-date) ships with every Library row and with
+    Now. PR #222's preview measured `/books` at 175,918 bytes of JS and
+    `/books/list` at 171,581 bytes and 65 requests (median of three). Making the
+    read list a lazy chunk saved under 250 bytes and added the one request, so
+    the budgets were raised to `/books` 177,000, `/books/list` 173,000 and 65
+    requests, each the measured number plus under 1%. This is a stopgap, not a
+    new floor: a roadmap item (1.30) brings the two routes back under their
+    old budgets.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 

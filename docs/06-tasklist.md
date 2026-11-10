@@ -341,6 +341,7 @@ with the task that first reads it.
 | ✅ | 1.14c → TASK-057 | Page counts from Hardcover, word counts from Calibre | S | _Owner, 2026-11-08 (D-130)_ | 1.14b |
 | ✅ | 1.17b → TASK-058, TASK-059 | Dates when you start and finish, and on every read | M | _Owner, 2026-11-08 (D-131)_ | 1.17, 1.23 |
 |  | 1.29 → TASK-060 | Refresh production's comics from `Comics.xlsx`, books untouched | M | _Owner, 2026-11-08 (D-128)_ | — |
+|  | 1.30 | Bring the Library and Now back under their JS budgets | M | _Owner, 2026-11-10 (PR #222)_ | 1.17b |
 |  | 1.26 → TASK-061 | Cut the books over from the Sheets | M | _The books cutover since 2026-11-08 (D-128)_ | 1.25, 1.14c, 1.17b, 1.29, and every open entry 1.25 names for `Books.xlsx`, with 4.4 and 5.17 (D-132, D-133) and what D-139 pulled ahead |
 
 # Next
