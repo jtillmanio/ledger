@@ -658,6 +658,12 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .sheet h2{font-size:.9375rem;font-weight:700;margin:0 0 .1875rem;font-family:inherit}
 .sheet h2:focus{outline:none}
 .sheet h2:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+/* The undo toast stays live above a sheet (D-63) and, on a phone or a tablet, where the sheet rises:
+   while one shows, the sheet's foot makes room for it, so its buttons sit .5rem above the toast (D-144).
+   --toast-clear is set by Undo.tsx only while a toast shows. */
+@media (max-width:1023px){
+  .sheet{padding-bottom:max(calc(.875rem + env(safe-area-inset-bottom)), calc(var(--toast-clear, 0px) + .5rem))}
+}
 @media (min-width:1024px){
   .sheet-host{align-items:flex-start;padding-top:6.5rem}
   .sheet{max-width:28rem;border-bottom:1px solid var(--rule-2);border-radius:var(--r-xl);padding:.9375rem}

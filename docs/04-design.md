@@ -604,7 +604,9 @@ to it. This is one behaviour in the shared sheet component, not eight
 per-screen fixes: 1.1, 1.3c, 1.3b, 1.4c, 1.8b, 2.1b, 2.3, 2.6 and 2.7 all open
 one. A sheet also traps Tab while open and is labelled by its own heading.
 Opening one puts focus on that heading (`tabindex="-1"`) and marks the page
-behind it `inert`, except the undo toast, which stays live above it (D-63); Esc and Back both dismiss (UX-N11). Sheets are solid
+behind it `inert`, except the undo toast, which stays live above it (D-63);
+below 1024px, where the sheet rises from the bottom, its foot makes room for
+the toast, so the sheet's buttons are never under it (D-144); Esc and Back both dismiss (UX-N11). Sheets are solid
 `--overlay` over `--scrim`, never glass (SG §8).
 
 **Figures in the mockups are sample data** (D-7). `design/mockups.html` wins on
