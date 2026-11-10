@@ -1,8 +1,10 @@
 export function needsBuild(files: string[]): boolean;
 export function deploymentNeedsBuild(files: string[]): boolean;
+export function vercelRepoUrl(env: Record<string, string | undefined>): string | undefined;
 export function ignoredBuildStep(
   previousSha: string | undefined,
-  git: (args: string[]) => { status: number | null; stdout: string },
+  git: (args: string[]) => { status: number | null; stdout: string; stderr?: string },
+  options?: { repoUrl?: string },
 ): { build: boolean; why: string };
 export const CARRIED_PREVIEW_CONTEXT: string;
 export function carriedPreview(

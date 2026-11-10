@@ -31,23 +31,51 @@ export function deploymentNeedsBuild(files) {
 }
 
 /**
+ * The repository's public URL from Vercel's system variables, or undefined
+ * outside a GitHub-connected Vercel build (or with any of them missing).
+ */
+export function vercelRepoUrl(env) {
+  const { VERCEL_GIT_PROVIDER: provider, VERCEL_GIT_REPO_OWNER: owner, VERCEL_GIT_REPO_SLUG: slug } = env;
+  return provider === "github" && owner && slug ? `https://github.com/${owner}/${slug}.git` : undefined;
+}
+
+/**
  * The Ignored Build Step, start to finish: `{ build, why }`. It compares with
  * the branch's last successful deployment (not the commit being redeployed),
  * or, on a branch's first push (Vercel gives no previous SHA), with main's tip,
  * so a docs-only branch skips from its first commit. Against main the diff is
  * tree to tree: a branch behind a main that changed app code builds, which is
- * the safe side. `git(args)` runs git and answers `{ status, stdout }`. When it
- * cannot tell, it builds.
+ * the safe side. `git(args)` runs git and answers `{ status, stdout, stderr }`.
+ * When it cannot tell, it builds.
+ *
+ * Main comes from `origin`, and when that fails, from `repoUrl`, the
+ * repository's own URL (scripts/vercel-ignore.mjs builds it from Vercel's
+ * VERCEL_GIT_* variables). Until this fallback, `origin` failed in every
+ * Vercel clone, so every branch's first push built, docs-only ones included,
+ * and each got a Neon branch it never needed. When both fail, `why` carries
+ * git's own last line for each, so the build log says why.
  */
-export function ignoredBuildStep(previousSha, git) {
+export function ignoredBuildStep(previousSha, git, { repoUrl } = {}) {
   let base = previousSha;
   const label = previousSha ? previousSha.slice(0, 7) : "main";
   if (!base) {
     // Vercel's clone is shallow and holds only this branch.
-    if (git(["fetch", "--no-tags", "--depth=1", "origin", "main"]).status !== 0) {
-      return { build: true, why: "no previous deployment, and main could not be fetched to compare with" };
+    const failures = [];
+    for (const remote of repoUrl ? ["origin", repoUrl] : ["origin"]) {
+      const r = git(["fetch", "--no-tags", "--depth=1", remote, "main"]);
+      if (r.status === 0) {
+        base = "FETCH_HEAD";
+        break;
+      }
+      const said = String(r.stderr ?? "").trim().split(/\r?\n/).filter(Boolean).at(-1);
+      failures.push(`${remote}: ${said || `git exited ${r.status}`}`);
     }
-    base = "FETCH_HEAD";
+    if (!base) {
+      return {
+        build: true,
+        why: `no previous deployment, and main could not be fetched to compare with (${failures.join("; ")})`,
+      };
+    }
   }
   const diff = git(["diff", "--name-only", base, "HEAD"]);
   if (diff.status !== 0) return { build: true, why: `${label} is not in the clone, so nothing to compare with` };

@@ -16,12 +16,16 @@
 // .github/workflows/preview-link.yml (carriedPreview, the same rule).
 //
 // A branch's first push has no previous deployment, so it compares with main's
-// tip instead. When it cannot tell (main can't be fetched, or a previous SHA
-// outside Vercel's shallow clone), it builds.
+// tip instead, fetched from `origin` or, when Vercel's clone can't reach that,
+// from the repository's public URL (VERCEL_GIT_REPO_OWNER and _SLUG; the repo
+// is public). A docs-only first push then skips and never asks Neon for a
+// preview branch. When it cannot tell (main can't be fetched from either, or a
+// previous SHA outside Vercel's shallow clone), it builds, and says git's
+// reason.
 import { spawnSync } from "node:child_process";
-import { ignoredBuildStep } from "./lib/release.mjs";
+import { ignoredBuildStep, vercelRepoUrl } from "./lib/release.mjs";
 
 const git = (args) => spawnSync("git", args, { encoding: "utf8" });
-const { build, why } = ignoredBuildStep(process.env.VERCEL_GIT_PREVIOUS_SHA, git);
+const { build, why } = ignoredBuildStep(process.env.VERCEL_GIT_PREVIOUS_SHA, git, { repoUrl: vercelRepoUrl(process.env) });
 console.log(`${build ? "build" : "skip"}: ${why}`);
 process.exit(build ? 1 : 0);

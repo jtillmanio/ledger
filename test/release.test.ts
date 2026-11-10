@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   alreadyProduction, carriedPreview, carriedPreviewStatus, deploymentNeedsBuild, directUrl, ignoredBuildStep, needsBuild, pendingMigrations, promoteProblem, refProblem, releaseProblems, smokeProblem,
-  snapshotsToPrune,
+  snapshotsToPrune, vercelRepoUrl,
 } from "../scripts/lib/release.mjs";
 
 describe("needsBuild (vercel.json ignoreCommand)", () => {
@@ -68,6 +68,74 @@ describe("ignoredBuildStep (scripts/vercel-ignore.mjs)", () => {
   it("builds a first push that changes app code", () => {
     const g = git({ diffs: { FETCH_HEAD: ["docs/05-roadmap.md", "src/app/books/status/page.tsx"] } });
     expect(ignoredBuildStep("", g.run)).toMatchObject({ build: true, why: "2 file(s) changed since main" });
+  });
+
+  describe("when origin can't be fetched in Vercel's clone", () => {
+    const REPO = "https://github.com/owner/ledger.git";
+    /** A fake git whose fetch answers per remote, with git's own stderr. */
+    function fetching(byRemote: Record<string, { status: number; stderr?: string }>, diffs: Record<string, string[]> = {}) {
+      const calls: string[][] = [];
+      const run = (args: string[]) => {
+        calls.push(args);
+        if (args[0] === "fetch") return { stdout: "", ...(byRemote[args[3]] ?? { status: 128 }) };
+        const files = diffs[args[2]];
+        return files ? { status: 0, stdout: files.join("\n") + "\n" } : { status: 128, stdout: "" };
+      };
+      return { run, calls };
+    }
+
+    it("fetches main from the repository's URL instead, and skips a docs-only first push", () => {
+      // PR #229 and #231 (2026-11-10): `origin` failed, the docs-only branch
+      // built, and its build died asking Neon for a branch it never needed.
+      const g = fetching(
+        { origin: { status: 128, stderr: "fatal: 'origin' does not appear to be a git repository\n" }, [REPO]: { status: 0 } },
+        { FETCH_HEAD: ["docs/05-roadmap.md", "docs/tasks/TASK-073-library-and-now-js-budgets.md"] },
+      );
+      expect(ignoredBuildStep(undefined, g.run, { repoUrl: REPO })).toEqual({
+        build: false, why: "only backups, docs, design, CI or Claude config changed since main",
+      });
+      expect(g.calls.filter((c) => c[0] === "fetch")).toEqual([
+        ["fetch", "--no-tags", "--depth=1", "origin", "main"],
+        ["fetch", "--no-tags", "--depth=1", REPO, "main"],
+      ]);
+    });
+
+    it("builds a first push that changes app code, compared through the URL", () => {
+      const g = fetching({ [REPO]: { status: 0 } }, { FETCH_HEAD: ["scripts/lib/release.mjs"] });
+      expect(ignoredBuildStep(undefined, g.run, { repoUrl: REPO })).toEqual({ build: true, why: "1 file(s) changed since main" });
+    });
+
+    it("does not try the URL when origin works", () => {
+      const g = fetching({ origin: { status: 0 } }, { FETCH_HEAD: ["docs/05-roadmap.md"] });
+      expect(ignoredBuildStep(undefined, g.run, { repoUrl: REPO }).build).toBe(false);
+      expect(g.calls.filter((c) => c[0] === "fetch")).toHaveLength(1);
+    });
+
+    it("builds when neither can be fetched, and says git's reason for each", () => {
+      const g = fetching({
+        origin: { status: 128, stderr: "fatal: 'origin' does not appear to be a git repository\nfatal: Could not read from remote repository.\n" },
+        [REPO]: { status: 128, stderr: "fatal: unable to access 'https://github.com/owner/ledger.git/': Could not resolve host: github.com\n" },
+      });
+      expect(ignoredBuildStep(undefined, g.run, { repoUrl: REPO })).toEqual({
+        build: true,
+        why: "no previous deployment, and main could not be fetched to compare with (origin: fatal: Could not read from remote repository.; " +
+          `${REPO}: fatal: unable to access 'https://github.com/owner/ledger.git/': Could not resolve host: github.com)`,
+      });
+    });
+
+    it("builds the URL from Vercel's variables, and only for a GitHub repository", () => {
+      const env = { VERCEL_GIT_PROVIDER: "github", VERCEL_GIT_REPO_OWNER: "owner", VERCEL_GIT_REPO_SLUG: "ledger" };
+      expect(vercelRepoUrl(env)).toBe(REPO);
+      expect(vercelRepoUrl({ ...env, VERCEL_GIT_PROVIDER: "gitlab" })).toBeUndefined();
+      expect(vercelRepoUrl({ ...env, VERCEL_GIT_REPO_SLUG: "" })).toBeUndefined();
+      expect(vercelRepoUrl({})).toBeUndefined();
+    });
+
+    it("says git's exit code when git printed nothing", () => {
+      expect(ignoredBuildStep(undefined, fetching({}).run).why).toBe(
+        "no previous deployment, and main could not be fetched to compare with (origin: git exited 128)",
+      );
+    });
   });
 
   it("builds when it cannot tell: main can't be fetched, or the last deployment isn't in the clone", () => {
