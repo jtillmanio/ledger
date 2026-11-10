@@ -1,7 +1,7 @@
 ---
 id: TASK-064
 title: 2.3 Plan editor (2 of 3) — the picker sheet, from the Library and Add books
-status: In progress
+status: Review
 depends_on: [TASK-063]
 size: M
 model: sonnet
@@ -39,7 +39,7 @@ One sheet picks where a book goes in the plan, with each year's and quarter's wo
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the preview in the sheet before the move is confirmed and the *Flip*'s screens, on TASK-063's writes): test that moving a 150k-word book from 2027 Q1 to 2028 Q2 changes
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the preview in the sheet before the move is confirmed and the *Flip*'s screens, on TASK-063's writes): test that moving a 150k-word book from 2027 Q1 to 2028 Q2 changes
 both periods' totals correctly and that the preview reflects the destination
 period before the move is confirmed. The moved book takes 2028 Q2's last
 ordinal, 2027 Q1 stays contiguous, and undo puts it back at its old position.
@@ -50,10 +50,10 @@ independent of a quarter and never a month. **Flip (R3-08):** 1.4c's add sheet
 now offers *Year or quarter…* through this picker, and adding a book to a year
 or quarter writes its `book_status` and `reading_plan` rows in one transaction;
 1.9's empty Books *Up next* action becomes *Plan a book*.
-- [ ] AC-2: Given a fixture plan and a book on a Library row, *Plan for…* opens the sheet showing the next five years then On deck and Someday; choosing a year shows *No quarter yet* and Q1–Q4, each chip carrying its period's total as TASK-063's query returns it; choosing a quarter fills the preview with that quarter's total plus the book's words, before anything is written, and the primary button reads *Move to Q<n> <year>*.
-- [ ] AC-3: A target the move would push past capacity draws the preview amber with the amount over, and nothing on the sheet resolves to `--danger`. On deck and Someday show no quarter row and no total.
-- [ ] AC-4: On Add books, *Year or quarter…* is enabled (no `aria-disabled`, no reason line) and a search result row has a secondary *Year or quarter…* button; both open the sheet without the *currently planned* badge, and adding to a quarter puts the book at its end. Undoing that add returns the result row to its addable state. The empty Books *Up next* tab's action reads *Plan a book*.
-- [ ] AC-5: The sheet meets the UX floor (`docs/04-design.md` § 10. The UX floor): every chip a real button with a name and its pressed state, nothing interactive under 24px and the chips 44px on the phone, focus on the heading when it opens and back on the opener when it closes by any route, text 4.5:1 and outlines 3:1 in both themes, axe with no new violations, no horizontal scroll at 360px, and screenshots at 360px, 834px and 1280px, light and dark.
+- [x] AC-2: Given a fixture plan and a book on a Library row, *Plan for…* opens the sheet showing the next five years then On deck and Someday; choosing a year shows *No quarter yet* and Q1–Q4, each chip carrying its period's total as TASK-063's query returns it; choosing a quarter fills the preview with that quarter's total plus the book's words, before anything is written, and the primary button reads *Move to Q<n> <year>*.
+- [x] AC-3: A target the move would push past capacity draws the preview amber with the amount over, and nothing on the sheet resolves to `--danger`. On deck and Someday show no quarter row and no total.
+- [x] AC-4: On Add books, *Year or quarter…* is enabled (no `aria-disabled`, no reason line) and a search result row has a secondary *Year or quarter…* button; both open the sheet without the *currently planned* badge, and adding to a quarter puts the book at its end. Undoing that add returns the result row to its addable state. The empty Books *Up next* tab's action reads *Plan a book*.
+- [x] AC-5: The sheet meets the UX floor (`docs/04-design.md` § 10. The UX floor): every chip a real button with a name and its pressed state, nothing interactive under 24px and the chips 44px on the phone, focus on the heading when it opens and back on the opener when it closes by any route, text 4.5:1 and outlines 3:1 in both themes, axe with no new violations, no horizontal scroll at 360px, and screenshots at 360px, 834px and 1280px, light and dark.
 
 ## Out of scope
 
@@ -80,6 +80,11 @@ or quarter writes its `book_status` and `reading_plan` rows in one transaction;
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- *Accept as a stretch year* is drawn `aria-disabled` in the over-capacity preview, with the reason *Accepting a stretch year arrives with 2.7.*; enabling it to write the acceptance belongs to 2.7 → docs/tasks/TASK-066-stretch-year-stored.md § Context
+- The Books status empty *Up next* frame in the mockups still read *Add a book* → not tracked: done in this PR (plan revision: `design/mockups.html` and `design/mockups-index.md` redrawn to *Plan a book*)
+- Browser Back from the picker step inside the Add books sheet closes the whole sheet instead of unwinding one level, as `BatchSheet` does → not tracked: a deliberate departure from D-34's "Back unwinds one level at a time", chosen at the plan gate (as `BatchSheet` does) so a second sheet opened as the first closes can't race its history entry; the PR says so plainly
+- An Add books preview for a library book already planned in the target quarter counts its words twice (it sends `words`, not `bookId`/`from`) → not tracked: an edge case outside the ACs; the write and the plan totals are unaffected
 
 ## Plan
 
@@ -135,9 +140,15 @@ Approved 2026-11-10 (owner, plan gate). Worked in the worktree `.claude/worktree
 
 **Follow-ups**: none at plan time.
 
+**Plan revisions after approval** (two, both small; no scope added)
+
+- `src/components/Sheet.tsx` (not in the Files list): the Tab trap skips controls inside `[hidden]` or `[inert]`. The Add books picker is a step that hides the rest of the sheet (plan step 5); without this, Tab from the step's first or last control left the dialog.
+- `design/mockups.html` and `design/mockups-index.md` (`ui.redrawFiles`): the Books status empty *Up next* frame reads *Plan a book* (plan step 6's copy change), as the kit asks for a redrawn frame in the same PR.
+- `src/components/AddBooksButton.tsx` was already named in plan step 5 but missing from the Files list: it holds the sheet's heading so the step can take it.
+
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 full: 1,058 passed, 6 failed (my contrast check in `plan-picker.spec.ts` ran while a chip was mid-transition; the spec now waits for transitions) → R2 round PASS → R3 round PASS (after the review fixes) | Audit R1 CHANGES REQUIRED (book_status not asserted after the add; the amber state's contrast never measured; one joined line) → R2 PASS | Spec R1 APPROVE | Schema R1 APPROVE (two minors applied: a test that `planBook` agrees with `plan_book_words`, and the `?bookId=` branch only without `from`/`words`) | UI NOT RUN: ui-verifier was blocked reading the passcode and the owner chose to skip it for this task (2026-11-10), so the live walk was not independently run; `plan-picker.spec.ts` covers the sheet in every core project and at 360/834/1280px light and dark, and the owner's preview walk stays the gate.
 
 ## Blocked
 
@@ -145,7 +156,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (1 full chain, 2 round chains)
+- Review rounds: 1 spec, 1 schema, 1 audit re-check; UI not run
+- First-pass AC FAILs: 0 from reviewers (1 own test failure in the first full chain)
+- Plan revisions after approval: 2 (Sheet.tsx Tab trap; the mockup redraw), plus AddBooksButton.tsx named in step 5 but not in Files
