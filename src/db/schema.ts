@@ -285,6 +285,11 @@ export const books = pgTable("books", {
   // Calibre's books.id: a book renamed in Calibre stays this book (D-90). On
   // the book, not per user (D-91). NULL for a book Calibre doesn't have.
   calibreId: integer("calibre_id"),
+  // When the book was added in the app (task 2.10b, D-104): *Recently added* reads it. No
+  // default, on purpose: load.ps1 / load.sh name their columns in \copy books(...), so every
+  // loaded row stays NULL and only createBooks (src/db/writes.ts) stamps one. A fact about the
+  // book in a single-user Ledger, not a per-user one (D-91).
+  addedAt: timestamp("added_at", { withTimezone: true }),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
 }, (t) => ({
   liveSeries: index("books_live_series_idx").on(t.seriesId, t.seriesPosition)

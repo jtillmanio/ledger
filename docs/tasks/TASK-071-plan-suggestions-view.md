@@ -1,14 +1,14 @@
 ---
 id: TASK-071
 title: 2.10b Plan a year or a quarter (1 of 2) — the suggestions, derived
-status: Ready
+status: In progress
 depends_on: [TASK-023, TASK-029, TASK-048, TASK-050]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 4f91752
 ---
 
 # TASK-071 — 2.10b Plan a year or a quarter (1 of 2) — the suggestions, derived
@@ -83,9 +83,40 @@ resolves to `--danger`. Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- `docs/03-data-model.md` § 3 Views and § 4 Proposed additions gain `plan_suggestions` and `books.added_at` (approved at plan)
+- Candidate decision: `books.added_at` has no default, so every loaded row stays NULL and only `createBooks` stamps it (approved at plan; asked again at close-out as a decision)
+- TASK-072's Context: `planSuggestions`' signature and the eight `reason` values (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-10 with the owner's answers: (1) `books.added_at` approved; (2) no dismissal table, *Not now* lasts the sitting; (3) group 8's "this year" is today's Eastern year, passed in; (4) a book with several top-level genres lists under group 8 only when none of them has a read this year; (5) a book already planned inside the target is left out (a year target: anything planned in that year), any other planned book comes back with its period.
+
+**Shape.** A view can't take the target, the room or today, so `plan_suggestions` is a SQL **function** in `etl/views.sql` (beside `run_ancestors`): `plan_suggestions(p_user text, p_target text, p_room bigint, p_today date)` returning `book_id, reason, detail, rank, status, unlisted, period, words, word_source`, one row per book. The wrapper `planSuggestions(userId, target, today)` in `src/db/queries.ts` reads the room from `planCapacity` (the capacity formula stays in one place) and calls it. Derived on every call, nothing stored.
+
+#### Steps
+
+1. Tests first: `test/plan-suggestions.test.ts` (the Check's fixture, AC-1's listing clauses to AC-5) and a `plan_suggestions` block in `etl/test_views.sql`; confirm both fail.
+2. The function. Groups 1–3 from `follow_next` / `follow_queue`: 1 = subseries, series, universe (one row per book, the narrowest reason; the follow most recently read in first); 2 = shelf; 3 = every unread book of an author followed `reading`, `follow_queue` rank (earliest published first). These take status NULL, `to_read` or `unlisted`; detail *Next in X · you've read 2 of 4*. Groups 4–8 take `to_read` only: 4 On deck (`to_read_level`); 5 `releases.release_date` in the target's range; 6 `added_at` within 90 days of `p_today`; 7 words ≤ `p_room` (as `plan_book_words` counts them, estimates included; unknown words left out), largest first; 8 none of the book's depth-1 genres (`book_genre_tree`, else `books.genre`) has a read in `p_today`'s year. A book shows in its first group only; books planned inside the target are left out; any other plan period is returned in `period`.
+3. `planSuggestions(userId, target, today)` in `src/db/queries.ts`: validates the target, room from `planCapacity`, joins title and author.
+4. `books.added_at timestamptz`, nullable, **no default** (`\copy books(...)` names its columns, so every loaded row stays NULL; a default would stamp the load time): `src/db/schema.ts`, `npm run db:generate` (`drizzle/0024_*`, `drizzle/meta/*`); `createBooks` in `src/db/writes.ts`, the one path that inserts a book, sets it; `etl/test_views.sql`'s catalog-columns list gains it. An added column needs no down file.
+
+#### Files
+
+- `etl/views.sql` — the `plan_suggestions` function.
+- `etl/test_views.sql` — its columns and a listing assertion; `added_at` in the catalog-columns list.
+- `src/db/queries.ts` — `planSuggestions`.
+- `src/db/schema.ts`, `drizzle/0024_*.sql`, `drizzle/meta/*` — `books.added_at`.
+- `src/db/writes.ts` — `createBooks` sets `added_at`.
+- `test/plan-suggestions.test.ts` (new).
+
+#### Test strategy
+
+- AC-1 (listing clauses), AC-2: the Check's fixture for 2027 Q2 → `test/plan-suggestions.test.ts` "the Check's fixture …"; 100k room set through `reading_settings` and a planned book → "fits the room left lists nothing over 100k".
+- AC-3: a book planned in 2027-Q3 comes back for Q2 with `period` `2027-Q3`; reading and listening never.
+- AC-4: a release in Q2 listed for Q2 and not Q3; two to-read books by genre read this year or not; group 7 largest first.
+- AC-5: no table added (`information_schema`), the function stores nothing; `addBooks` stamps created books and leaves a reused one NULL; *Recently added* lists the book added 10 days before `today`, not 100.
+
+**Risks.** Groups 7 and 8 can be hundreds of rows; all are returned (the sheet shows five, then *More*). The detail copy is a first draft TASK-072 may refine when the mockup is drawn.
 
 ## Review log
 
