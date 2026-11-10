@@ -815,8 +815,9 @@ WHERE q.rank = 1 AND (q.status IS NULL OR q.status IN ('to_read', 'unlisted'));
 --                   follow_next's book leads.
 --   on_deck         to_read books On deck (D-37), by title.
 --   coming_out      to_read books whose releases date falls in the target, by date.
---   recently_added  to_read books added in the app in the 90 days to p_today
---                   (books.added_at; a loaded book has none), newest first.
+--   recently_added  to_read books added in the app in the last 90 days, p_today
+--                   and the 89 before it, Eastern (books.added_at; a loaded
+--                   book has none), newest first.
 --   fits_room       to_read books whose words, as plan_book_words counts them
 --                   (estimates included, an unknown count never), are at most
 --                   p_room, largest first.
@@ -859,12 +860,17 @@ WITH span AS (
                     WHERE pp.user_id = p_user AND pp.book_id = b.id
                       AND (pp.period = p_target OR s.quarter IS NULL AND pp.year = s.year))
 ), top_genre AS (
-  -- Each live book's top-level genres: Calibre's, else the workbook's one.
-  SELECT t.book_id, t.genre FROM book_genre_tree t WHERE t.depth = 1
-  UNION
-  SELECT b.id, b.genre FROM books b
-  WHERE b.deleted_at IS NULL AND b.genre IS NOT NULL
-    AND NOT EXISTS (SELECT 1 FROM book_genres g WHERE g.book_id = b.id)
+  -- Each live book's top-level genres: Calibre's, else the workbook's one;
+  -- one spelling of each whatever its case, so the detail never names it twice.
+  SELECT g.book_id, min(g.genre) AS genre
+  FROM (
+    SELECT t.book_id, t.genre FROM book_genre_tree t WHERE t.depth = 1
+    UNION ALL
+    SELECT b.id, b.genre FROM books b
+    WHERE b.deleted_at IS NULL AND b.genre IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM book_genres g WHERE g.book_id = b.id)
+  ) g
+  GROUP BY g.book_id, lower(g.genre)
 ), read_genre AS (
   SELECT DISTINCT lower(g.genre) AS genre
   FROM book_reads r JOIN top_genre g ON g.book_id = r.book_id
@@ -890,17 +896,22 @@ WITH span AS (
   FROM book b JOIN to_read_level l ON l.user_id = p_user AND l.book_id = b.id
   WHERE b.status = 'to_read' AND l.level = 'on_deck'
   UNION ALL
-  SELECT 5, b.id, 'Out ' || to_char(r.release_date::date, 'FMMon FMDD, YYYY'), 0,
+  -- release_date is ISO text (5.7); it is compared and printed as text, never
+  -- cast, so a malformed or impossible date (2027-02-30) can't fail the call.
+  SELECT 5, b.id, 'Out ' || (ARRAY['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+                              [substr(r.release_date, 6, 2)::int]
+                  || ' ' || substr(r.release_date, 9, 2)::int || ', ' || left(r.release_date, 4), 0,
          row_number() OVER (ORDER BY r.release_date, b.title, b.id)
   FROM book b JOIN releases r ON r.book_id = b.id CROSS JOIN span s
-  WHERE b.status = 'to_read' AND r.release_date ~ '^\d{4}-\d{2}-\d{2}$'
-    AND r.release_date >= s.starts::text AND r.release_date < s.ends::text
+  WHERE b.status = 'to_read' AND r.release_date ~ '^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$'
+    AND r.release_date >= to_char(s.starts, 'YYYY-MM-DD') AND r.release_date < to_char(s.ends, 'YYYY-MM-DD')
   UNION ALL
+  -- The last 90 days are today and the 89 before it, Eastern.
   SELECT 6, b.id, 'Added ' || to_char(b.added_at AT TIME ZONE 'America/New_York', 'FMMon FMDD, YYYY'), 0,
          row_number() OVER (ORDER BY b.added_at DESC, b.title, b.id)
   FROM book b
   WHERE b.status = 'to_read'
-    AND b.added_at >= (p_today - 90)::timestamp AT TIME ZONE 'America/New_York'
+    AND b.added_at >= (p_today - 89)::timestamp AT TIME ZONE 'America/New_York'
     AND b.added_at < (p_today + 1)::timestamp AT TIME ZONE 'America/New_York'
   UNION ALL
   SELECT 7, b.id, round(b.words / 1000.0) || 'k words · fits the ' || floor(p_room / 1000.0) || 'k left', 0,

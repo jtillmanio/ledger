@@ -255,6 +255,15 @@ describe("coming out, a change of genre (AC-4)", () => {
     expect(idsIn(await q.planSuggestions(USER, "2027", TODAY), "coming_out")).toEqual(["rel", "last-day", "next-q"]);
   });
 
+  it("an impossible or malformed release date fails nothing: it is read as text, never cast", async () => {
+    await book("feb30"); await status("feb30", "to_read");
+    await sql`INSERT INTO releases (book_id, release_date) VALUES ('feb30', '2027-02-30')`;
+    await book("bad"); await status("bad", "to_read");
+    await sql`INSERT INTO releases (book_id, release_date) VALUES ('bad', '2027-13-01')`;
+    const rows = await q.planSuggestions(USER, "2027-Q1", TODAY);
+    expect(rows.filter((r) => r.reason === "coming_out").map((r) => [r.id, r.detail])).toEqual([["feb30", "Out Feb 30, 2027"]]);
+  });
+
   it("lists a to-read book whose top-level genres have no read this year, and not one whose genre has", async () => {
     // Read this year (2026): a Fantasy subgenre, which cascades to Fantasy (D-98), and a workbook-only Mystery.
     await book("r-fan"); await read("r-fan", "2026-02-01");
@@ -281,6 +290,10 @@ describe("coming out, a change of genre (AC-4)", () => {
     expect(rows.find((r) => r.id === "hor")?.detail).toBe("Horror · none read in 2026");
     // The year is today's, not the target's: in 2027 nothing is read yet, but the sheet is opened in 2026.
     expect(idsIn(await q.planSuggestions(USER, "2027", TODAY), "genre_change").sort()).toEqual(["cal", "hor", "rom"]);
+    // One genre in two spellings is named once.
+    await book("twice"); await status("twice", "to_read");
+    await sql`INSERT INTO book_genres (book_id, genre) VALUES ('twice', 'Horror'), ('twice', 'horror.Cosmic')`;
+    expect((await q.planSuggestions(USER, Q2, TODAY)).find((r) => r.id === "twice")?.detail).toBe("Horror · none read in 2026");
   });
 });
 
@@ -329,7 +342,9 @@ describe("stored nothing, and books.added_at (AC-5)", () => {
 
   it("Recently added lists exactly the books added in the last 90 days, newest first", async () => {
     for (const [id, at] of [
-      ["d10", "2026-10-31T12:00:00Z"], ["d89", "2026-08-13T12:00:00Z"], ["d100", "2026-08-02T12:00:00Z"], ["d1", "2026-11-09T12:00:00Z"],
+      // Today and the 89 days before it: day 89 (Aug 13) is in, day 90 (Aug 12) is out.
+      ["d10", "2026-10-31T12:00:00Z"], ["d89", "2026-08-13T12:00:00Z"], ["d90", "2026-08-12T12:00:00Z"],
+      ["d100", "2026-08-02T12:00:00Z"], ["d1", "2026-11-09T12:00:00Z"],
     ] as const) {
       await book(id); await status(id, "to_read");
       await sql`UPDATE books SET added_at = ${at} WHERE id = ${id}`;
