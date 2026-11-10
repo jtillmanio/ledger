@@ -418,7 +418,7 @@ in `hickman-ff` and unread in `bendis-dark-reign`.
 | Development | A Neon branch | `.env` `DATABASE_URL` (never production) | `npm run dev`; `rebuild`, `load`, `db:push` and `db:views` after asking; the running app without asking, data left as found |
 | Test | A Neon branch or a local `*_test` database | `TEST_DATABASE_URL`, locally and in CI | Tests and anything that truncates, only |
 | PR preview | One Neon branch per PR (`preview/<branch>`), deleted on merge | The Vercel and Neon integration | The preview build migrates only its own branch |
-| Production | Neon `main` | GitHub secret `DATABASE_URL`; locally only the gitignored `.env.live`, read only with `-EnvFile .env.live` | The Release workflow; before cutover `npm run rebuild -- -EnvFile .env.live` by the owner. `LEDGER_LIVE=true` makes `load` and `rebuild` refuse |
+| Production | Neon `main` | GitHub secret `DATABASE_URL`; locally only the gitignored `.env.live`, read only with `-EnvFile .env.live` | The Release workflow; before cutover `npm run rebuild -- -EnvFile .env.live` by the owner. `LEDGER_LIVE=true` makes `load` and `rebuild` refuse. From the books cutover to the comics cutover, `npm run load:comics -- -EnvFile .env.live` by the owner replaces only the comics (task 1.29, D-128); `LEDGER_COMICS_LIVE=true` makes it refuse |
 
 Every outside service (Neon, Vercel, GitHub, Cloudflare R2, Anthropic, Metron,
 Hardcover, Calibre and the rest), its account, and where each of its keys is
