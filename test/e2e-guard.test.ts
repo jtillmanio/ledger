@@ -276,9 +276,9 @@ describe("wiring: test:all runs it, the docs name it, its output is ignored", ()
     }
   });
 
-  it("the test-auditor can run an e2e spec through the wrapper, after a reset", () => {
+  it("the test-auditor can run an e2e spec through the wrapper, after a reset, in one project", () => {
     expect(planTestRun(["test/e2e/spine.spec.ts", "test/e2e/harness.spec.ts"])).toEqual({
-      commands: ["npm run test:db:reset", "node scripts/e2e.mjs test/e2e/spine.spec.ts test/e2e/harness.spec.ts"],
+      commands: ["npm run test:db:reset", "node scripts/e2e.mjs test/e2e/spine.spec.ts test/e2e/harness.spec.ts --project=w390-light"],
       unknown: [],
     });
     const kit = JSON.parse(read(".claude/kit.json"));
