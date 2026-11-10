@@ -1514,6 +1514,61 @@ export async function keepGoing(userId: string, period: string, limit: number) {
   `;
 }
 
+/* ── Plan a year or a quarter: the suggestions (task 2.10b, F-65, D-104, D-108) ──────────── */
+
+/** The planning sheet's groups, in the order it shows them (the roadmap entry 2.10b's). */
+export const SUGGESTION_REASONS = [
+  "next_in_series", "next_on_shelf", "from_author", "on_deck",
+  "coming_out", "recently_added", "fits_room", "genre_change",
+] as const;
+export type SuggestionReason = (typeof SUGGESTION_REASONS)[number];
+
+/** One suggestion: a book, the group it is in, its place there, and its reason line. */
+export type PlanSuggestion = {
+  id: string; title: string; author: string | null;
+  reason: SuggestionReason;
+  /** The reason line: *Next in Red Rising · you've read 3 of 6*, *Out May 4, 2027*. */
+  detail: string;
+  /** 1… within its group. */
+  rank: number;
+  /** Its status now: groups 1–3 also list Unlisted books and books with no status row. */
+  status: "to_read" | "unlisted" | null;
+  /** Placing it writes `to_read` too (1.21's promote): the sheet tags it *Unlisted* (1.22). */
+  unlisted: boolean;
+  /** Where it is already planned, outside the target (`2027-Q3`, `2027`, `on_deck`), or null. */
+  period: string | null;
+  /** Its words as `plan_book_words` counts them, or null when unknown. */
+  words: number | null;
+  estimated: boolean;
+};
+
+const TARGET = /^\d{4}(-Q[1-4])?$/;
+
+/**
+ * What to plan in `target` (`2027-Q2` or `2027`), grouped by why, from `plan_suggestions`
+ * (etl/views.sql): run when the sheet opens, never stored (hard rule 2). The room *Fits the room
+ * left* fills is the target's capacity less its planned words, as `planCapacity` reads them, so
+ * the sheet's budget line and this agree. `today` is the Eastern day (`YYYY-MM-DD`): *Recently
+ * added* counts 90 days back from it, *A change of genre* reads its year. Groups come in
+ * `SUGGESTION_REASONS` order, each by rank; a book is in one group only.
+ */
+export async function planSuggestions(userId: string, target: string, today: string): Promise<PlanSuggestion[]> {
+  if (!TARGET.test(target)) throw new Error(`not a year or a quarter: ${target}`);
+  const year = Number(target.slice(0, 4));
+  const quarter = target.length > 4 ? Number(target.slice(-1)) : null;
+  const cap = await planCapacity(userId, year);
+  const period = quarter === null ? cap.year : cap.quarters[quarter - 1];
+  const room = Math.floor(period.capacity - period.plannedWords);
+  return sql<PlanSuggestion[]>`
+    SELECT s.book_id AS id, b.title, a.name AS author, s.reason, s.detail, s.rank, s.status, s.unlisted,
+           s.period, s.words, COALESCE(s.word_source = 'estimated', false) AS estimated
+    FROM plan_suggestions(${userId}, ${target}, ${room}::bigint, ${today}::date) s
+    JOIN books b ON b.id = s.book_id
+    LEFT JOIN authors a ON a.id = b.author_id
+    ORDER BY array_position(${[...SUGGESTION_REASONS]}::text[], s.reason), s.rank
+  `;
+}
+
 /** The volume map's size for Settings' *N rules · M series* (task 2.0): derived, never stored. */
 export async function volumeMapCounts(): Promise<{ rules: number; series: number }> {
   const [row] = await sql<{ rules: number; series: number }[]>`
