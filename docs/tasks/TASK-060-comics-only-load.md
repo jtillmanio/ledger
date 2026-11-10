@@ -1,14 +1,14 @@
 ---
 id: TASK-060
 title: 1.29 Refresh production's comics from Comics.xlsx, books untouched
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: b9b7397
 ---
 
 # TASK-060 — 1.29 Refresh production's comics from Comics.xlsx, books untouched
@@ -70,9 +70,32 @@ seed file; `npm run test:etl` passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- `docs/02-architecture.md` § 9. Environments: the production row names the comics-only load and `LEDGER_COMICS_LIVE` beside `LEDGER_LIVE` (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-10 (owner: "approve with all recommendations": the queue empties on each comics load as the roadmap lists; the task stays whole).
+
+**Why not `TRUNCATE … CASCADE`.** Two mixed tables point at comics tables:
+`inbox.run_id` (ON DELETE SET NULL) and `read_events.placement_id` (ON DELETE
+CASCADE). A `TRUNCATE runs, run_issues` fails without `CASCADE` and, with it,
+empties `inbox` and `read_events` entirely, book rows included.
+
+**Steps**
+1. Extract: `--comics-only` on `etl/extract.py`. `--books` is required only without it; `--books` or any books flag with it is an error. It clears only `COMICS_SEED` (the 16 names `extract_comics` writes), runs `extract_comics` only, and writes its flags to `comics_unresolved.csv` (`unresolved.csv` and `calibre_changes.csv` untouched); `--fail-on-cycle` still applies. npm `extract:comics`: the comics sidecars only.
+2. Load: new twins `etl/load-comics.ps1` / `etl/load-comics.sh` (`load`, `rebuild` unchanged). Env file read; refuses on `LEDGER_COMICS_LIVE` true before the required-vars check, the prompt and psql; ignores `LEDGER_LIVE`; checks the 15 comics seed files exist; asks `Type COMICS to continue` (`-Yes` / `--yes` skip). One transaction, no `CASCADE`: save inbox `(id, run_id)` links to a temp table; `DELETE FROM read_events WHERE placement_id IS NOT NULL`; `TRUNCATE issue_progress, edition_progress, run_queue, run_tracks, event_runs, prereqs, issue_credits, creators, events, editions, volume_rules RESTART IDENTITY` (without `CASCADE` Postgres refuses if anything else references them); `DELETE` run_issues, eras, issues, runs, blocks, tracks; `\copy` the comics seed, `$OWNER` bound in the two progress CSVs; restore inbox links whose run still exists; reset the `run_issues` and `eras` sequences. No `views.sql`. npm `load:comics`, `load:comics:bash`.
+3. Every table referencing a run, issue or placement, and what happens: replaced — tracks, blocks, runs, run_tracks, eras (empty: nothing extracts them), issues, run_issues, creators, issue_credits, prereqs, events, event_runs, editions, volume_rules, issue_progress, edition_progress; emptied — run_queue (no seed); mixed — `read_events` comic rows deleted (none written yet), book rows untouched; `inbox` book and open notes untouched, comics notes keep their run link (lose only the link if the run is gone).
+4. `.claude/kit.json` `destructiveGuard`: the *ask* pattern gains `npm run load:comics` and `load-comics.(ps1|sh)`; the `.env.live` *deny* pattern gains `load-comics`.
+5. Docs: CLAUDE.md (Commands, *Production is disposable*); `docs/COMMANDS.md` (commands + a comics-only section); START-HERE *Until Step 14b* gets the commands, 14b step 2 loses "wherever else"; `docs/SERVICES.md` gets a `LEDGER_COMICS_LIVE` row (an env-file flag like `LEDGER_LIVE`; `.env.live` only, no GitHub variable).
+
+**Files** (12): `etl/extract.py`, `etl/load-comics.ps1` (new), `etl/load-comics.sh` (new), `package.json`, `.claude/kit.json`, `CLAUDE.md`, `docs/COMMANDS.md`, `docs/START-HERE.md`, `docs/SERVICES.md` (not in likely touched: it lists `LEDGER_LIVE`), `etl/test_extract.py`, `test/load-scripts.test.ts`, `test/comics-load.test.ts` (new). Over 8, kept whole: 5 are doc/config lines the roadmap requires in this PR; no schema, no UI.
+
+**Test strategy**
+- `test/comics-load.test.ts` runs both real twins on `TEST_DATABASE_URL` through a temp env file, spawned with `DATABASE_URL` and `LEDGER_*` stripped (ps1 via pwsh/powershell; sh skipped on win32, CI's Linux runner covers it). AC-1/AC-2: load fixture seed v1, write the books-side rows (book read + reread, plan, every follow table, shelf + book + follow, genres, release, external list, inbox notes, settings), load v2 (changed run title, issue story title, placement type, read mark) with `LEDGER_LIVE=true` → new values, every books table equal row for row (`to_jsonb`, sorted). AC-3: `LEDGER_COMICS_LIVE=true` → non-zero, names the flag, nothing changed; also with an unreachable `DATABASE_URL` (refuses before connecting). AC-4: v3 seed whose last progress row breaks a foreign key → every comics and books table unchanged. No `-Yes` and nothing typed → refuses, nothing changed. Catalog: every foreign key into a comics table is from the script's tables or `read_events`/`inbox`.
+- `test/load-scripts.test.ts`: twins have no `CASCADE`, name the same tables in the same order, guard before psql; AC-6: kit.json's ask and deny regexes match the new commands; CLAUDE.md, COMMANDS.md, START-HERE name the command.
+- `etl/test_extract.py` (AC-5): runs without `--books`; planted books seed files keep bytes and mtime, none created when absent; `--books` with `--comics-only` errors; `extract_comics` writes exactly `COMICS_SEED`.
+
+**Risks**: the queue empties every comics load (roadmap); psql must be on PATH (it is locally and in CI).
 
 ## Review log
 

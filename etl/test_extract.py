@@ -452,6 +452,76 @@ class CreatorAliases(WorkbookCase):
         self.assertIn("alias names two creators", self.reasons())
 
 
+class ComicsOnly(WorkbookCase):
+    """Task 1.29 (D-128): after the books cutover, `--comics-only` refreshes the
+    comics seed from Comics.xlsx and neither reads nor writes a books file."""
+
+    # Everything a full extract writes that isn't the comics seed: the books
+    # seed, the not-loaded books lists, and the two reports.
+    BOOKS_FILES = ["authors", "book_series", "book_universes", "book_subseries", "books", "book_genres",
+                   "book_status", "read_events", "calibre_created", "held_books", "reading_plan",
+                   "series_follows", "author_follows", "universe_follows", "releases", "external_lists",
+                   "workbook_reads", "workbook_plans", "workbook_placeholders", "unresolved", "calibre_changes"]
+
+    ROWS = [("a", "Avengers (1963) #1", None, "core", None)]
+
+    def main(self, *args):
+        from unittest import mock
+        with mock.patch("sys.stdout"), mock.patch("sys.stderr"):
+            return ex.main(list(args))
+
+    def listing(self):
+        return sorted(p.stem for p in self.out.glob("*.csv"))
+
+    def test_extract_comics_writes_exactly_the_comics_seed(self):
+        self.extract(self.ROWS)
+        self.assertEqual(self.listing(), sorted(ex.COMICS_SEED))
+
+    def test_runs_without_books_and_writes_only_comics_files(self):
+        wb = build_workbook(self.ROWS, self.RUNS)
+        self.assertEqual(self.main("--comics-only", "--comics", str(wb), "--out", str(self.out)), 0)
+        self.assertEqual(self.listing(), sorted([*ex.COMICS_SEED, "comics_unresolved"]))
+        self.assertEqual([r["label"] for r in read(self.out, "issues")], ["Avengers (1963) #1"])
+
+    def test_leaves_every_books_file_as_it_was(self):
+        import os
+        stamp = 1_600_000_000
+        for name in self.BOOKS_FILES:
+            path = self.out / f"{name}.csv"
+            path.write_bytes(f"planted {name}\r\n".encode())
+            os.utime(path, (stamp, stamp))
+        (self.out / "runs.csv").write_text("stale\n", encoding="utf-8")
+
+        wb = build_workbook(self.ROWS, self.RUNS)
+        self.assertEqual(self.main("--comics-only", "--comics", str(wb), "--out", str(self.out)), 0)
+
+        for name in self.BOOKS_FILES:
+            path = self.out / f"{name}.csv"
+            self.assertEqual(path.read_bytes(), f"planted {name}\r\n".encode(), name)
+            self.assertEqual(int(path.stat().st_mtime), stamp, name)
+        self.assertEqual([r["id"] for r in read(self.out, "runs")], ["a", "b"])
+
+    def test_books_or_a_books_flag_with_comics_only_is_an_error(self):
+        import io
+        from unittest import mock
+        wb = build_workbook(self.ROWS, self.RUNS)
+        for extra in (["--books", "Books.xlsx"], ["--book-review", "book_review.csv"],
+                      ["--calibre-books", "calibre_books.csv"], ["--with-plan"]):
+            err = io.StringIO()
+            with self.subTest(extra=extra), mock.patch("sys.stdout"), mock.patch("sys.stderr", err), \
+                    self.assertRaises(SystemExit) as raised:
+                ex.main(["--comics-only", "--comics", str(wb), "--out", str(self.out), *extra])
+            self.assertEqual(raised.exception.code, 2)
+            self.assertIn(f"--comics-only reads no books: {extra[0]}", err.getvalue())
+        self.assertEqual(self.listing(), [])
+
+    def test_books_is_still_required_without_comics_only(self):
+        wb = build_workbook(self.ROWS, self.RUNS)
+        with self.assertRaises(SystemExit) as raised:
+            self.main("--comics", str(wb), "--out", str(self.out))
+        self.assertEqual(raised.exception.code, 2)
+
+
 class BookWordCountSource(unittest.TestCase):
     """books_word_count_source_check: the source is null exactly when the count is."""
 

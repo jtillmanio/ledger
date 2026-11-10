@@ -107,6 +107,8 @@ npm run enrich:books        # Hardcover details for the books (by Calibre ISBN) 
 npm run calibre             # the Calibre library (CALIBRE_LIBRARY) into etl/data/calibre_books.csv, read-only;
                             # `-- --dry-run` first (match rate, writes nothing); then extract, enrich:books, extract
 npm run rebuild             # drop, migrate, extract, load (.env); asks first, refuses when LEDGER_LIVE=true
+npm run extract:comics      # the comics seed only (Comics.xlsx and its sidecars); books files untouched (1.29)
+npm run load:comics         # replace the comics tables only (.env); asks first, refuses when LEDGER_COMICS_LIVE=true
 ```
 
 `.claude/kit.json` is the single source of truth for the verification
@@ -136,7 +138,12 @@ those paths**. The Hard rules below are the checklist a reviewer enforces.
   progress table **and, through `CASCADE`, every table that references a run,
   issue or book**. `.env.live` `LEDGER_LIVE=true` (START-HERE Step 14, D-18)
   makes `load` and `rebuild` (both twins) refuse against production. Never
-  suggest a rebuild or a load of production once it is set.
+  suggest a rebuild or a load of production once it is set. From then until
+  the comics cutover, `npm run extract:comics` and `npm run load:comics`
+  (`etl/load-comics.ps1` / `.sh`, task 1.29, D-128) replace only the comics
+  catalog and comics progress, with no `CASCADE`, and run while `LEDGER_LIVE`
+  is true; `LEDGER_COMICS_LIVE=true` (Step 14b) makes them refuse. Only the
+  owner runs the comics load against `.env.live`.
 - **A merge is not a deploy; Release is** (START-HERE Step 13,
   `.github/workflows/release.yml`, run by hand). It is the only path a migration
   takes to the live database: never tell anyone to run `db:migrate`, `db:push`
