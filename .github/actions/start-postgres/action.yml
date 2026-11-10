@@ -21,14 +21,37 @@ runs:
       shell: bash
       run: echo "PG_MAJOR=18" >> "$GITHUB_ENV"
 
+    # A mirror that stops answering must fail fast and be retried, not hang:
+    # one shard sat silent in this step until its 20-minute job timeout while
+    # the other three took 16s (PR #218, 2026-11-10). apt's own timeouts and
+    # retries cover every fetch, including the update the PGDG script runs;
+    # `timeout` caps each attempt for a stall apt doesn't notice. Only the
+    # network work is capped: packages are fetched with --download-only first,
+    # so a kill never lands in the middle of dpkg unpacking them. The fetches
+    # print their Get/Hit lines, so the log shows which mirror stalled.
     - name: Install PostgreSQL
       shell: bash
+      env:
+        ATTEMPT_SECONDS: "180"
       run: |
-        sudo apt-get update -qq
+        printf '%s\n' 'Acquire::Retries "3";' 'Acquire::http::Timeout "30";' 'Acquire::https::Timeout "30";' \
+          | sudo tee /etc/apt/apt.conf.d/80-ci-network > /dev/null
+        fetch() {
+          for attempt in 1 2 3; do
+            if sudo timeout "$ATTEMPT_SECONDS" "$@"; then return 0; fi
+            echo "::warning::Attempt $attempt of 3 failed or passed ${ATTEMPT_SECONDS}s: $*"
+            sleep 5
+          done
+          echo "::error::Gave up after 3 attempts: $*"
+          return 1
+        }
+        fetch apt-get update -q
+        fetch apt-get install -y -q --download-only postgresql-common
         sudo apt-get install -y -qq postgresql-common
         # Binaries only: the next step starts its own server, so apt creates none.
         echo "create_main_cluster = false" | sudo tee -a /etc/postgresql-common/createcluster.conf > /dev/null
-        sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+        fetch /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+        fetch apt-get install -y -q --download-only "postgresql-$PG_MAJOR"
         sudo apt-get install -y -qq "postgresql-$PG_MAJOR"
         # The runner image ships its own PostgreSQL, and /usr/bin/pg_dump is a
         # wrapper that can pick that one; put this major's binaries first.
