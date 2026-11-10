@@ -1,16 +1,21 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import BookSearch, { authorList, pickKey, type Outcome, type Pick } from "@/components/BookSearch";
 import ByHand from "@/components/ByHand";
 import PasteBooks, { AFTER_ADD } from "@/components/PasteBooks";
-import { PlanPickerBody, type PickerBook, type Verb } from "@/components/PlanPicker";
+import type { PickerBook, Verb } from "@/components/PlanPicker";
 import Sheet, { useSheetClose } from "@/components/Sheet";
 import { useUndo } from "@/components/Undo";
 import type { AddBookResult, AddedEntry, HandItem } from "@/db/writes";
 import { destinationOf, targetName, undoAdd, type Target } from "@/lib/book-add";
+
+// Loaded on the first *Year or quarter…*, as the Library row's *Plan for…* loads it: every page with an
+// Add button carries Add books, and none of them should carry the picker until it opens (perf budget).
+const PlanPickerBody = dynamic(() => import("@/components/PlanPicker").then((m) => m.PlanPickerBody), { ssr: false });
 
 type Mode = "search" | "paste" | "hand";
 type Shelf = { id: string; name: string };

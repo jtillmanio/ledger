@@ -475,6 +475,14 @@ describe("Year or quarter… (task 2.3, AC-4)", () => {
   const primary = () => dialog()!.querySelector<HTMLButtonElement>(".pp .btnrow .btn:not(.sec)")!;
   const planButtons = () => [...dialog()!.querySelectorAll<HTMLButtonElement>(".res-plan")];
   const planCalls = () => fetchMock.mock.calls.map(([u]) => String(u)).filter((u) => u.startsWith("/api/plan?to="));
+  /** Opens the picker and waits for it: Add books loads it on first use (next/dynamic), not with the page. */
+  const opening = async (opener: Element) => {
+    await click(opener);
+    await vi.waitFor(() => {
+      if (!dialog()?.querySelector(".pp-chips .pp-chip")) throw new Error("the picker hasn't loaded");
+    });
+    await act(async () => {});
+  };
   const choosing = async (quarter = "Q3") => {
     await click(pp(String(Y)));
     await click(pp(quarter));
@@ -482,7 +490,7 @@ describe("Year or quarter… (task 2.3, AC-4)", () => {
 
   it("the chip opens the picker inside the same dialog; choosing a quarter sets Add to, and every result says it", async () => {
     await open();
-    await click(chip("Year or quarter…"));
+    await opening(chip("Year or quarter…"));
     expect(document.querySelectorAll('[role="dialog"]')).toHaveLength(1);
     const heading = dialog()!.querySelector("h2")!;
     expect(heading.textContent).toBe("Year or quarter");
@@ -511,7 +519,7 @@ describe("Year or quarter… (task 2.3, AC-4)", () => {
     await open();
     await search();
     expect(planButtons().map((b) => b.textContent)).toEqual(["Year or quarter…", "Year or quarter…"]);
-    await click(planButtons()[1]);
+    await opening(planButtons()[1]);
     expect(dialog()!.querySelector("h2")!.textContent).toBe("The Blade Itself");
     // A book not planned yet: no *currently planned* badge. Its words come from the pages, 320 x 275.
     expect(dialog()!.textContent).not.toContain("planned ·");
@@ -538,11 +546,11 @@ describe("Year or quarter… (task 2.3, AC-4)", () => {
   it("‹ Add books and Cancel go back with focus on the control that opened the picker, writing nothing", async () => {
     await open();
     await search();
-    await click(planButtons()[0]);
+    await opening(planButtons()[0]);
     await click(button("‹ Add books")!);
     expect(dialog()!.querySelector("h2")!.textContent).toBe("Add books");
     expect(document.activeElement).toBe(planButtons()[0]);
-    await click(planButtons()[0]);
+    await opening(planButtons()[0]);
     await click(button("Cancel", dialog()!.querySelector(".pp")!)!);
     expect(document.activeElement).toBe(planButtons()[0]);
     expect(adds()).toEqual([]);
@@ -550,7 +558,7 @@ describe("Year or quarter… (task 2.3, AC-4)", () => {
 
   it("the primary stays unavailable, with its reason, until a year and a quarter are chosen", async () => {
     await open();
-    await click(chip("Year or quarter…"));
+    await opening(chip("Year or quarter…"));
     expect(primary().getAttribute("aria-disabled")).toBe("true");
     expect(document.getElementById(primary().getAttribute("aria-describedby")!)!.textContent).toBe("Choose where it goes first.");
     await click(pp(String(Y)));
