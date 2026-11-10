@@ -126,6 +126,11 @@ function fromSearch(d: SearchDoc): Ranked | null {
   };
 }
 
+/**
+ * A book an ISBN found. Its page count is the book's (its default edition's,
+ * usually print), else the edition's: an ISBN is often an ebook edition's,
+ * whose count runs high (1.14c, D-130). The cover is the edition's first.
+ */
 function fromEdition(e: Edition): Ranked | null {
   const b = e.book;
   const hardcoverId = whole(b?.id);
@@ -137,7 +142,7 @@ function fromEdition(e: Edition): Ranked | null {
     hardcoverId, title, subtitle: subtitleOf(title, b.subtitle),
     authors: (b.contributions ?? []).flatMap((c) => (isAuthor(c.contribution) ? str(c.author?.name) ?? [] : [])),
     series: str(series?.series?.name), position: series ? position(series.position) : null,
-    year: whole(b.release_year), pages: whole(e.pages) ?? whole(b.pages), coverUrl: image(e) ?? image(b),
+    year: whole(b.release_year), pages: whole(b.pages) ?? whole(e.pages), coverUrl: image(e) ?? image(b),
     readers: whole(b.users_count) ?? 0, compilation: b.compilation === true,
   };
 }

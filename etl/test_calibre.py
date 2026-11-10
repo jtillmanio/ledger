@@ -1058,8 +1058,9 @@ class Groupings(Case):
                          ("discworld", "city-watch", "1.0"))
         self.assertEqual((mort["subseries_id"], mort["subseries_position"]), ("", ""))
 
-    def test_pages_replace_the_details_page_count_which_still_fills_a_book_with_none(self):
-        """The details sidecar's count is replaced whatever its source (D-94)."""
+    def test_a_details_count_beats_calibres_pages_which_fill_a_book_with_none(self):
+        """1.14c (D-130, amending D-90): a hand row's count and Hardcover's
+        beat Calibre's #pages, which fills a book the sidecar gives none."""
         self.details = self.data / "book_details.csv"
         self.write_rows(self.details, [
             {"title": "The Way of Kings", "author": "Brandon Sanderson", "open_library_id": "", "hardcover_id": "",
@@ -1067,10 +1068,12 @@ class Groupings(Case):
             {"title": "Mistborn", "author": "Brandon Sanderson", "open_library_id": "", "hardcover_id": "369692",
              "page_count": "541", "cover_url": "", "published_year": "2006", "source": "hardcover"}])
         build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson", pages=1258),
-                                 book("Mistborn", "Brandon Sanderson")])
+                                 book("Mistborn", "Brandon Sanderson", pages=700),
+                                 book("Warbreaker", "Brandon Sanderson", pages=650)])
         self.round()
-        self.assertEqual(self.book_by_title("The Way of Kings")["page_count"], "1258")
+        self.assertEqual(self.book_by_title("The Way of Kings")["page_count"], "1007")
         self.assertEqual(self.book_by_title("Mistborn")["page_count"], "541")
+        self.assertEqual(self.book_by_title("Warbreaker")["page_count"], "650")
         self.assertEqual(self.book_by_title("Mistborn")["hardcover_id"], "369692")
         self.assertEqual(self.book_by_title("Mistborn")["word_count"], "214000")
 

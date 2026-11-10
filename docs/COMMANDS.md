@@ -37,7 +37,8 @@ npm run extract             # etl/extract.py with every sidecar CSV (see below);
                             # seed/read_events.csv, and seed/calibre_created.csv (not loaded) lists the
                             # books only Calibre has. Calibre's superseries are the universes (the
                             # workbook's universe tabs only follow), its subseries are book_subseries,
-                            # its page counts win, and each book takes its Calibre id (1.18b, D-90).
+                            # and each book takes its Calibre id (1.18b, D-90). Its #pages fills a page
+                            # count Hardcover gives none (1.14c, D-130).
                             # --calibre-missing etl/data/calibre_missing.csv lists each workbook book
                             # Calibre doesn't have: `keep` it, or add it to Calibre (prints the undecided).
                             # --book-hold etl/data/book_hold.csv holds each workbook book Hardcover doesn't
@@ -55,7 +56,7 @@ npm run extract             # etl/extract.py with every sidecar CSV (see below);
 py etl/enrich_comics.py     # Metron: dates, cover URLs, label proposals (--dry-run first)
 py etl/enrich_comics.py --details  # Metron: story titles + credits, ~8,100 requests (--dry-run first)
 npm run enrich:refresh      # --details --refresh: re-ask Metron about issues it credited nobody on (cache never expires)
-npm run enrich:books        # etl/enrich_books.py: Hardcover id, page count, cover URL and release year per
+npm run enrich:books        # etl/enrich_books.py: Hardcover id, page counts, cover URL and release year per
                             # book into etl/data/book_details.csv (task 1.14b, D-94; Open Library's was 1.14),
                             # found by the book's Calibre ISBN (many to a request), else one title-and-author
                             # search. Needs HARDCOVER_API_TOKEN in .env. A near spelling goes to

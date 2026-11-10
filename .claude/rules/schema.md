@@ -58,7 +58,7 @@ Release, test isolation) and the Hard rules a reviewer checks.
   several. A title cell is read as the text typed: a cell Excel stored as a
   date is `m/d/yy` (*11/22/63*), a number has no `.0` (task 1.14).
   `etl/data/book_details.csv` (title, author → `hardcover_id`, `page_count`,
-  `cover_url`, `published_year`; `source` hardcover|hand; 1.14's
+  `edition_page_count`, `cover_url`, `published_year`; `source` hardcover|hand; 1.14's
   `open_library_id` and `openlibrary` rows until a run replaces them) is
   written by `npm run enrich:books` (task 1.14b, D-94, D-99) from Hardcover,
   found by the book's Calibre ISBN, else one title-and-author search, and
@@ -109,18 +109,23 @@ Release, test isolation) and the Hard rules a reviewer checks.
   not loaded). `unresolved.csv` lists only what needs the owner. Comics are skipped; tags, comments and
   ISBN load nothing until `books.subjects`, `books.summary` and `books.isbn`
   are approved, and comments stay out of the CSV.
-- **Calibre owns a book's groupings, its page count and its id** (task 1.18b,
-  D-90, D-91). `calibre_books.csv` also holds Calibre's `calibre_id`, `pages`,
-  `superseries` and `subseries`, each grouping with its index (Calibre
-  series-type columns; `--superseries-column`, `--subseries-column`,
+- **Calibre owns a book's groupings and its id; its page count is
+  Hardcover's first** (task 1.18b, D-90, D-91; task 1.14c, D-130).
+  `calibre_books.csv` also holds Calibre's `calibre_id`, `pages`, `superseries`
+  and `subseries`, each grouping with its index (Calibre series-type columns; `--superseries-column`, `--subseries-column`,
   `--pages-column`). `#superseries` is the universe: `universe_id` and
   `universe_position` come only from it, and the workbook's universe tabs and
   groups only write `universe_follows`. `#subseries` is `book_subseries(id, name,
   series_id)` under the book's series, with `subseries_position`; one name under
-  two series stays with the first, and is reported. `#pages` replaces the details
-  sidecar's page count whatever its `source`, which still fills a book Calibre
-  gives none. `books.calibre_id` is unique where set: calibre.py matches a seed
-  book on it first, so a book renamed in Calibre stays one book under the new
+  two series stays with the first, and is reported. A book's page count is, in
+  order: a `hand` row's in `book_details.csv`; else Hardcover's book-level
+  count (`page_count`, its default edition's, usually print); else the count of
+  the edition Calibre's ISBN matched (`edition_page_count`); else Calibre's
+  `#pages`, which is estimated from the ebook and runs above print. An
+  `openlibrary` row's count is no source (Open Library is gone, D-94). Add books
+  (1.4f) keeps the same order, the book's count before the edition's, and so
+  will 4.4's sync. Word counts stay Calibre's (D-87). `books.calibre_id` is
+  unique where set: calibre.py matches a seed book on it first, so a book renamed in Calibre stays one book under the new
   title (a workbook book through a `calibre rename` row in `book_review.csv`,
   decided `merge`, keeping Calibre's spelling). In `unresolved.csv`: a workbook
   universe membership Calibre doesn't share, a followed universe Calibre gives no

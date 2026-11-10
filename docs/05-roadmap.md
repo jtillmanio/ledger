@@ -1498,7 +1498,7 @@ every decision and leaves the file byte for byte. The migration passes an
 up → down → up test on the TEST database; `wishlist` appears nowhere in
 `src/`; `npm run test:all` is green.
 
-### ☐ 1.14c Page counts from Hardcover, word counts from Calibre · S
+### ☑ 1.14c Page counts from Hardcover, word counts from Calibre · S
 Owner, 2026-11-08 (D-130; amends 1.14b and 1.18b). **Before 1.26.** 1.18b
 made Calibre's `#pages` replace Hardcover's page count (D-90), but `#pages` is
 estimated from the ebook file and runs well above print, so a book with no word
