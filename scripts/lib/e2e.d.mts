@@ -17,6 +17,7 @@ export type E2eProject = {
 };
 export const E2E_PROJECTS: E2eProject[];
 export const E2E_CORE: string[];
+export const CORE_TAG: "@core";
 export function e2eProjects(scope: E2eScope): (E2eProject & { grep: RegExp[] })[];
 export type E2ePlan =
   | { error: string; scope?: undefined; clear?: undefined; serverCommand?: undefined; serverEnv?: undefined; baseUrl?: undefined }

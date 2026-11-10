@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, lazy, Suspense, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 // The *Keep going?* row, loaded only when a toast carries an offer (task 2.2c): see ToastOffer.
 const ToastOffer = lazy(() => import("@/components/ToastOffer"));
@@ -229,6 +229,28 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
     retry();
   }, [showTop, giveFocusBack]);
 
+  // A bottom sheet keeps its buttons clear of the toast that stays live above it (D-63, D-144):
+  // --toast-clear is how far the toast's top sits above the viewport's bottom, while one shows.
+  // The region, not the toast: the toast's 12px rise moves only the toast.
+  const region = useRef<HTMLDivElement>(null);
+  const showing = toast !== null;
+  useLayoutEffect(() => {
+    const el = region.current;
+    const root = document.documentElement;
+    if (!showing || !el) return;
+    const measure = () =>
+      root.style.setProperty("--toast-clear", `${Math.ceil(window.innerHeight - el.getBoundingClientRect().top)}px`);
+    measure();
+    // A toast that grows (an offer's chips) moves its top, and the region spans the viewport, so a
+    // resize of the window resizes it too. jsdom has no ResizeObserver.
+    const sizes = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    sizes?.observe(el);
+    return () => {
+      sizes?.disconnect();
+      root.style.removeProperty("--toast-clear");
+    };
+  }, [showing]);
+
   // push, notify and fail are stable, so consumers don't re-render when the toast changes.
   const ctx = useMemo(() => ({ push, notify, fail }), [push, notify, fail]);
 
@@ -237,7 +259,7 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
       {children}
       {/* Always mounted, so a screen reader hears each new toast (role="status"). */}
       {/* data-over-sheet: a sheet leaves it live, so an add made in a sheet can be undone there (task 1.4c). */}
-      <div className="toast-region" role="status" aria-live="polite" data-over-sheet="">
+      <div ref={region} className="toast-region" role="status" aria-live="polite" data-over-sheet="">
         {toast && (
           <div
             className="toast"

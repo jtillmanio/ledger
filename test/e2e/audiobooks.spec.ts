@@ -13,6 +13,9 @@ import {
   computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
 } from "./helpers";
 
+// What a screen does, not how it looks or fits: the core projects only (D-143).
+const CORE = { tag: "@core" };
+
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
   "aria-prohibited-attr", "aria-valid-attr-value", "aria-hidden-focus", "landmark-unique", "duplicate-id-aria",
@@ -105,7 +108,7 @@ test("the master list: the glyph and the counts, apart (AC-1, AC-4, AC-6)", asyn
   await screenshot(page, info, "audiobooks-list");
 });
 
-test("the Reading chip lists Reading and Listening books both (AC-4)", async ({ page }) => {
+test("the Reading chip lists Reading and Listening books both (AC-4)", CORE, async ({ page }) => {
   await page.goto("/books/list?status=reading&q=E2E%20Au");
   await expect(page.locator(".book-row .row-title")).toHaveText([NOW.title, EYES.title]);
 });

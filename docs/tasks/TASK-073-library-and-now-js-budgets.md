@@ -36,7 +36,10 @@ they do changes.
   on task 1.17b and task 2.3). The targets are the earlier ones: `/books`
   175,000, `/books/list` 170,000 and 64 requests. PR #226 (2.10b) merged after
   #224, so the plan starts from main's latest Lighthouse comment, not from these
-  figures.
+  figures. PR #232 (D-144, the sheet making room for the undo toast) then
+  raised `/books` to 177,400, `/books/list` to 173,100 and `/books/status` to
+  175,100 bytes of JS, a third stopgap with the same targets; its measuring
+  code is in `src/components/Undo.tsx`, which every page loads.
 - **Leads, to be checked by measuring, not trusted.**
   - `src/components/AddBooksButton.tsx` imports `AddBooks` statically, so
     every page with an Add books button ships Search, *Paste a list* and *By

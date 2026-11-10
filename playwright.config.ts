@@ -15,7 +15,7 @@ if (plan.error !== undefined) throw new Error(plan.error);
 const STATE = "test/e2e/.auth/state.json";
 
 // The projects, and which tests each runs: scripts/lib/e2e.mjs (E2E_SCOPE,
-// the `@at-<project>` tags).
+// the `@core` and `@at-<project>` tags).
 const projects: Project[] = [
   { name: "setup", testMatch: /auth\.setup\.ts/ },
   ...e2eProjects(plan.scope).map(({ name, use, grep }) => ({
