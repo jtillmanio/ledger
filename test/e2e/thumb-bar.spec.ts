@@ -13,6 +13,8 @@ import {
 
 // Sets its own viewport: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
+// What a screen does, not how it looks or fits: the core projects only (D-143).
+const CORE = { tag: "@core" };
 const RUN = `/comics/${E2E_RUN_ID}`;
 const NEXT = E2E_READ_COUNT + 1; // the seeded run has its first three read, so #4 is next
 
@@ -211,7 +213,7 @@ test("two marks in a row leave one toast, the first marked, and Undo takes back 
   await expect(page.locator(".toast")).toHaveCount(0);
 });
 
-test("a failed write reverts the verb at once and raises That didn't save with Retry (AC-1, R1-07)", async ({ page }, testInfo) => {
+test("a failed write reverts the verb at once and raises That didn't save with Retry (AC-1, R1-07)", CORE, async ({ page }, testInfo) => {
   await open(page, "run");
   await page.route("**/api/progress/issue", (route) => route.fulfill({ status: 500, body: "{}" }));
   await primary(page, "run").click();
@@ -303,7 +305,7 @@ test("on a dashboard the toast clears the primary verb too, wherever the bar is 
   expect(toast.y + toast.height, "the toast ends above the verb").toBeLessThanOrEqual(verb.y);
 });
 
-test("Undo hands focus back to the bar's verb, not to the page (AC-4)", async ({ page }) => {
+test("Undo hands focus back to the bar's verb, not to the page (AC-4)", CORE, async ({ page }) => {
   await open(page, "run");
   await primary(page, "run").click();
   const undo = page.locator(".toast-undo");
@@ -381,7 +383,7 @@ test("at 1100px a truncated primary keeps its full label as its accessible name 
   await expect(verb).toHaveAttribute("title", full);
 });
 
-test("on a run spanning two series the verb names the issue in full (AC-1, M-10)", async ({ page }) => {
+test("on a run spanning two series the verb names the issue in full (AC-1, M-10)", CORE, async ({ page }) => {
   await page.goto(`/comics/${E2E_LONG_RUN_ID}`);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   const verb = page.locator(".actionbar .mark");
@@ -430,7 +432,7 @@ test("the batch sheet marks the next N in one request, and its Log a session say
   await expect.poll(() => readHere()).toEqual([1, 2, 3, 4, 5, 6, 7]);
 });
 
-test("Mark through… on the run detail opens the unread list, then the range sheet (AC-3)", async ({ page }) => {
+test("Mark through… on the run detail opens the unread list, then the range sheet (AC-3)", CORE, async ({ page }) => {
   await open(page, "run");
   await page.getByRole("button", { name: "Mark through…" }).click();
   const sheet = page.getByRole("dialog", { name: "Mark through…" });

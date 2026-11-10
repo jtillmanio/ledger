@@ -4,6 +4,16 @@
 
 `testAudit.run` is `node scripts/test-files.mjs {tests}`. It prints `> <command>` before each step: `npm run test:db:reset` first whenever a vitest or SQL file is in the list (so the test database matches the restored pre-task schema), then one `npx vitest run …`, then `npm run test:views`, then one `py -m unittest discover -s etl -p <file>` per Python file. Every test step runs even when an earlier one fails. Exit 2 with `no runner for <path>` means a changed file matched `testPathPatterns` but no runner: report it, don't guess a command. A failed reset stops the run before any test: that is **NOT RUN**, not a test result.
 
+## Browser specs: one project, only the tests that changed
+
+A browser spec (`test/e2e/*.spec.ts`) is the slow part of an audit: the whole spec in the six core projects took TASK-064's audit past 30 minutes. What the audit asks, whether each new or changed test fails without the change, is answered in one project.
+
+- `node scripts/test-files.mjs <spec>` runs specs in `w390-light` (`DEFAULT_E2E_PROJECT` in `scripts/lib/test-files.mjs`) and prints the `> node scripts/e2e.mjs … --project=w390-light` command it runs. Don't add the other projects.
+- Run only the tests the task added or changed, never the rest of a changed spec: everything after `--` goes to Playwright, so `node scripts/test-files.mjs test/e2e/status.spec.ts -- -g "Plan a book"`. `-g` is a regular expression over the test's full title; give a plain fragment of each title, and join several with `|` (`-g "Undo puts it back|No quarter yet"`). The script refuses a fragment holding `"`, `%`, `$`, a backtick or a trailing backslash (exit 2): pick a different fragment.
+- A test tagged `@at-<project>` runs only in that project, so `-- --project=<project> -g "…"` for it, in a call of its own. `@at-w390-light` is the default already. Playwright exiting with `No tests found` means the fragment or the project missed: that is **NOT RUN**, not a pass or a fail.
+- A spec's post-task result is CI's run on the pushed head (every project, D-141; `gh pr checks <n>`, or the Review log's `CI R… PASS`). Run browser specs only against the pre-task code. If that run hasn't finished or failed on the spec you're auditing, run the same one-project command on the restored tree too, and say which you relied on.
+- Vitest, SQL and Python files are unchanged: run them as before (they take seconds).
+
 `etl/data/*` sidecars and `seed/` are **other**, never implementation, even though `testAudit.implementationExtensions` lists `.py` and `.sql`.
 
 Telling an assertion failure (**DISCRIMINATING**) from a load failure (**FAILS-TO-LOAD**):

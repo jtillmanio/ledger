@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { checkTestUrl } from "../scripts/lib/testdb.mjs";
-import { DEV_CACHE, E2E_CORE, E2E_HARDCOVER_TOKEN, E2E_PASSCODE, E2E_PORT, E2E_PROJECTS, e2eProjects, planE2e } from "../scripts/lib/e2e.mjs";
+import { CORE_TAG, DEV_CACHE, E2E_CORE, E2E_HARDCOVER_TOKEN, E2E_PASSCODE, E2E_PORT, E2E_PROJECTS, e2eProjects, planE2e } from "../scripts/lib/e2e.mjs";
 import { planTestRun } from "../scripts/lib/test-files.mjs";
 import { ciJob } from "./ci-yml";
 
@@ -101,6 +101,33 @@ describe("e2eProjects: which project runs which test", () => {
     expect(runsIn("core", "at 1024 › moves four covers @at-w1024-light")).toEqual([]);
     // A project name that starts another's is not that project.
     expect(runsIn("full", "x @at-w390-reduced-motion")).toEqual(["w390-reduced-motion"]);
+  });
+
+  it("a test tagged @core runs in the core projects only, in either scope (D-143)", () => {
+    expect(CORE_TAG).toBe("@core");
+    expect(runsIn("full", "Esc closes the sheet @core")).toEqual(E2E_CORE);
+    expect(runsIn("core", "Esc closes the sheet @core")).toEqual(E2E_CORE);
+    // A describe's tag counts the same as the test's own.
+    expect(runsIn("full", "the plan picker @core › Esc closes the sheet")).toEqual(E2E_CORE);
+    // Only the tag itself: a longer word that starts with it is not @core.
+    expect(runsIn("full", "x @core-ish")).toEqual(E2E_PROJECTS.map((p) => p.name));
+  });
+
+  it("an @at- tag wins over @core, even at a width core leaves out", () => {
+    expect(runsIn("full", "x @core @at-w1024-light")).toEqual(["w1024-light"]);
+    expect(runsIn("full", "x @at-w390-light @core")).toEqual(["w390-light"]);
+    expect(runsIn("core", "x @core @at-w1024-light")).toEqual([]);
+  });
+
+  it("every tag in the specs is @core or names a project, and some tests carry @core", () => {
+    const names = new Set(E2E_PROJECTS.map((p) => p.name));
+    const tags = specs.flatMap((f) =>
+      [...spec(f).matchAll(/\{ tag: (\[[^\]]*\]|"[^"]*") \}/g)].flatMap((m) =>
+        [...m[1].matchAll(/"([^"]+)"/g)].map((t) => ({ f, tag: t[1] }))));
+    for (const { f, tag } of tags) {
+      expect(tag === CORE_TAG || (tag.startsWith("@at-") && names.has(tag.slice(4))), `${f}: ${tag}`).toBe(true);
+    }
+    expect(tags.filter((t) => t.tag === CORE_TAG).length).toBeGreaterThan(0);
   });
 
   it("every @at- tag in the specs names a project", () => {
@@ -246,9 +273,30 @@ describe("wiring: test:all runs it, the docs name it, its output is ignored", ()
     expect(pkg.scripts["test:no-e2e"]).not.toContain("test:e2e");
   });
 
-  it("verify.full is typecheck, lint and test:all, which builds: no second build (D-97)", () => {
+  // D-141: the whole browser suite runs only in CI, every project, and Claude fixes what fails there.
+  it("verify.full is typecheck, lint and test:no-e2e: no local browser suite and no local build (D-141)", () => {
     const kit = JSON.parse(read(".claude/kit.json"));
-    expect(kit.verify.full).toEqual(["npx tsc --noEmit", "npm run lint", "npm run test:all"]);
+    expect(kit.verify.full).toEqual(["npx tsc --noEmit", "npm run lint", "npm run test:no-e2e"]);
+    expect(kit.verify.full.join(" ")).not.toMatch(/test:all|test:e2e|e2e\.mjs|npm run build/);
+  });
+
+  it("CI's browser run is the gate: e2e:full from the first push, and rounds to fix what it finds (D-141)", () => {
+    const kit = JSON.parse(read(".claude/kit.json"));
+    expect(kit.workflow.maxCiFixRounds).toBe(4);
+    const gate = kit.workflow.readyGates.find((g: { name?: string }) => g.name === "Full browser suite on the branch");
+    expect(gate.check).toContain("from its first push");
+    expect(gate.check).toContain("D-141");
+    const implement = read(".claude/project/implement-task.md");
+    expect(implement).toContain("Watch CI from the first push, and fix what fails");
+    expect(implement).toContain("gh run view <id> --log-failed");
+  });
+
+  it("/verify runs test:no-e2e and the touched specs, never test:all (D-141)", () => {
+    const skill = read(".claude/skills/verify/SKILL.md");
+    const block = skill.slice(skill.indexOf("```bash"), skill.indexOf("```", skill.indexOf("```bash") + 3));
+    expect(block).toContain("npm run test:no-e2e");
+    expect(block).not.toContain("test:all");
+    expect(skill).toContain("node scripts/test-files.mjs <specs>");
   });
 
   it("CLAUDE.md, git.md and COMMANDS.md name npm run test:e2e", () => {
@@ -276,9 +324,9 @@ describe("wiring: test:all runs it, the docs name it, its output is ignored", ()
     }
   });
 
-  it("the test-auditor can run an e2e spec through the wrapper, after a reset", () => {
+  it("the test-auditor can run an e2e spec through the wrapper, after a reset, in one project", () => {
     expect(planTestRun(["test/e2e/spine.spec.ts", "test/e2e/harness.spec.ts"])).toEqual({
-      commands: ["npm run test:db:reset", "node scripts/e2e.mjs test/e2e/spine.spec.ts test/e2e/harness.spec.ts"],
+      commands: ["npm run test:db:reset", "node scripts/e2e.mjs test/e2e/spine.spec.ts test/e2e/harness.spec.ts --project=w390-light"],
       unknown: [],
     });
     const kit = JSON.parse(read(".claude/kit.json"));

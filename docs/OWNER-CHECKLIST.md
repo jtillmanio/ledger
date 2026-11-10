@@ -232,6 +232,17 @@ tick them.
       every answer, so the run makes few requests, if any (from TASK-057,
       PR #217).
 
+- [ ] Check what the UI verifier left on the development database (from
+      TASK-059, PR #222). During its walk a scripted forced click saved
+      *A Court of Wings and Ruin* (Listening, started 3 Nov) as Read today; it
+      could not reproduce this with a normal Cancel. It was undone through
+      `DELETE /api/progress/book` (the `read_events` row 183 is gone), but the
+      finish had set the *A Court of Thorns and Roses* series follow to
+      `reading`, and the verifier put it back to `tracking` by guess. Confirm
+      Wings and Ruin is Listening with start 3 Nov and no finish, and that the
+      series follow is what you had (`tracking` or otherwise); restore from
+      your own record if not.
+
 ## Approvals from follow-ups
 
 Planning-doc edits and candidate decisions waiting for your yes

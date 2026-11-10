@@ -2434,10 +2434,29 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
 
 # --------------------------------------------------------------------------
 
+# What extract_comics writes (test_extract.py checks it): the files
+# `--comics-only` clears and rewrites, and all it touches (task 1.29, D-128).
+# etl/load-comics.ps1 and .sh load every one but workbook_run_fields.
+COMICS_SEED = ("tracks", "blocks", "runs", "run_tracks", "volume_rules", "issues", "run_issues",
+               "creators", "issue_credits", "workbook_run_fields", "issue_progress", "prereqs",
+               "events", "event_runs", "editions", "edition_progress")
+
+# The books' inputs, each an error with --comics-only: (flag, argparse dest).
+BOOKS_FLAGS = (("--books", "books"), ("--with-plan", "with_plan"), ("--book-review", "book_review"),
+               ("--book-details", "book_details"), ("--calibre-books", "calibre_books"),
+               ("--calibre-missing", "calibre_missing"), ("--book-hold", "book_hold"),
+               ("--wishlist-review", "wishlist_review"))
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--comics", required=True, type=Path)
-    ap.add_argument("--books", required=True, type=Path)
+    ap.add_argument("--books", type=Path, default=None,
+                    help="Books.xlsx; required unless --comics-only")
+    ap.add_argument("--comics-only", action="store_true",
+                    help="write only the comics seed (COMICS_SEED) and comics_unresolved.csv, and leave "
+                         "every other file in --out as it is: after the books cutover, the comics' "
+                         "refresh for npm run load:comics (task 1.29, D-128); no books flag with it")
     ap.add_argument("--out", default=Path("seed"), type=Path)
     ap.add_argument("--volume-map", type=Path, default=None,
                     help="approved output of etl/volumes.py")
@@ -2482,6 +2501,12 @@ def main(argv=None) -> int:
                     help="exit non-zero when the prereq graph has a cycle, after writing every "
                          "CSV (task 2.11a; START-HERE Step 14's final extract)")
     args = ap.parse_args(argv)
+    if args.comics_only:
+        given = [flag for flag, dest in BOOKS_FLAGS if getattr(args, dest)]
+        if given:
+            ap.error(f"--comics-only reads no books: {', '.join(given)}")
+    elif args.books is None:
+        ap.error("the following arguments are required: --books (or --comics-only)")
 
     load_volume_map(args.volume_map)
     load_cover_dates(args.cover_dates)
@@ -2491,24 +2516,35 @@ def main(argv=None) -> int:
     load_issue_credits(args.issue_credits)
     load_creator_aliases(*args.creator_aliases)
     args.out.mkdir(parents=True, exist_ok=True)
-    # Never leave output from an older schema behind (R2-09): a stale
-    # event_tracks.csv or a missing run_issues.csv both pass unnoticed otherwise.
-    for old in args.out.glob("*.csv"):
-        old.unlink()
-    extract_comics(args.comics, args.out)
-    extract_books(args.books, args.out, with_plan=args.with_plan, book_review=args.book_review,
-                  book_details=args.book_details, calibre_books=args.calibre_books,
-                  calibre_missing=args.calibre_missing, book_hold=args.book_hold,
-                  wishlist_review=args.wishlist_review)
+    if args.comics_only:
+        # Only the comics seed is cleared (task 1.29): every books file, and
+        # the full extract's reports, stay byte for byte as they were.
+        for name in (*COMICS_SEED, "comics_unresolved"):
+            (args.out / f"{name}.csv").unlink(missing_ok=True)
+        extract_comics(args.comics, args.out)
+        report = "comics_unresolved"
+    else:
+        # Never leave output from an older schema behind (R2-09): a stale
+        # event_tracks.csv or a missing run_issues.csv both pass unnoticed otherwise.
+        for old in args.out.glob("*.csv"):
+            old.unlink()
+        extract_comics(args.comics, args.out)
+        extract_books(args.books, args.out, with_plan=args.with_plan, book_review=args.book_review,
+                      book_details=args.book_details, calibre_books=args.calibre_books,
+                      calibre_missing=args.calibre_missing, book_hold=args.book_hold,
+                      wishlist_review=args.wishlist_review)
+        report = "unresolved"
 
-    write(args.out, "unresolved", UNRESOLVED, ["table", "reason", "detail"])
-    write(args.out, "calibre_changes", CHANGES, ["table", "reason", "detail"])
-    print(f"\n{len(UNRESOLVED)} rows need a human look — see {args.out}/unresolved.csv")
+    write(args.out, report, UNRESOLVED, ["table", "reason", "detail"])
+    if not args.comics_only:
+        write(args.out, "calibre_changes", CHANGES, ["table", "reason", "detail"])
+    print(f"\n{len(UNRESOLVED)} rows need a human look — see {args.out}/{report}.csv")
     cycles = [u["detail"] for u in UNRESOLVED if (u["table"], u["reason"]) == ("prereqs", "prereq cycle")]
     count = f"{len(cycles)} prereq cycle{'' if len(cycles) == 1 else 's'}"
     on, off = ("\033[31m", "\033[0m") if cycles and sys.stdout.isatty() else ("", "")
-    print(f"{on}{count}{off} — see the prereq cycle rows in {args.out}/unresolved.csv")
-    print(f"{len(CHANGES)} Calibre overrides, nothing to do — see {args.out}/calibre_changes.csv")
+    print(f"{on}{count}{off} — see the prereq cycle rows in {args.out}/{report}.csv")
+    if not args.comics_only:
+        print(f"{len(CHANGES)} Calibre overrides, nothing to do — see {args.out}/calibre_changes.csv")
     if cycles and args.fail_on_cycle:
         print(f"extract: --fail-on-cycle: {count}", file=sys.stderr)
         for detail in cycles:

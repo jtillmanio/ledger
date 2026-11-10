@@ -112,11 +112,13 @@ in order: `verify.full` on the branch head, CI `check`, the Vercel preview,
 Lighthouse, a changed workflow run on the branch, and the owner's preview walk
 for UI. "It will show up on `main`" is not a test: a failure found after merge
 means reverting `main`. Run every suite that applies, not just the one nearest
-the change. A UI change includes the browser suite's core projects, with axe
-(D-80): `npm run test:all` runs them against a fresh build
-(`npm run test:e2e:build`), once per task (D-97); later local rounds run
-`npm run test:no-e2e`. CI's `check` runs every width, light and dark
-(`npm run test:e2e:full`), and that run is the gate.
+the change. The browser suite, with axe (D-80), runs whole only in CI
+(D-141): locally, `/verify` runs `npm run test:no-e2e` and the specs the
+branch added or changed in one project (`node scripts/test-files.mjs
+<specs>`). CI's `check` with the `e2e:full` label runs every width, light and
+dark (`npm run test:e2e:full`, sharded), and that run is the gate. Claude
+watches it in the background and, when it fails, fixes the failure on the
+branch and pushes again, up to `workflow.maxCiFixRounds` rounds.
 
 Before pushing: `/verify` and the task's own **Check:** exactly as written.
 After pushing: CI green, the preview deployed, Lighthouse green. **Read

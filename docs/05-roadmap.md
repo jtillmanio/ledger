@@ -46,7 +46,7 @@ Document names in short form: *product* is [01-product.md](01-product.md),
 
 | Phase | Goal | Milestones | Done |
 |---|---|---|---|
-| [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6) | 13 / 13 |
+| [0 Foundation (prerequisites for everything else)](#phase-0--foundation-prerequisites-for-everything-else) | Every later check has a runner, CI and a schema that can hold per-run read state; the app is measured on every preview. | M1, M2 (0.11 in M6, 0.13 in M9) | 13 / 14 |
 | [1 Daily use (build before anything clever)](#phase-1--daily-use-build-before-anything-clever) | Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is two entries (D-128): 1.26 cuts the books over (START-HERE Step 14), after the rest of Phase 1, 2.11a and 1.11 and every entry 1.25's parity audit names for `Books.xlsx`, with the books entries the owner pulled ahead (D-132, D-133, D-139); 1.28 cuts the comics over later, after what it names for `Comics.xlsx`.** | M3–M9 (1.28 in M13) | 40 / 45 |
 | [2 The pace engine](#phase-2--the-pace-engine) | Answer "is 2027 overcommitted" and "what does this run really cost": the pace engine, the books and comics dashboards, the telescope and unlock cost. | M10–M12 (2.11a in M7) | 10 / 25 |
 | [3 Editing](#phase-3--editing) | Maintain the catalog in the app: inline edits, runs, prerequisites, eras, detail sheets and adding at scale. | M13–M15 | 0 / 15 |
@@ -217,6 +217,60 @@ build was skipped builds it. A docs-only push after a build is still skipped.
 `scripts/vercel-ignore.mjs`'s header says what `VERCEL_GIT_PREVIOUS_SHA` is.
 *(Check proposed by task 1.4's close-out; the owner agrees it by merging PR #76
 or edits it first.)*
+
+### ☐ 0.13 Gate a preview on what its PR adds, not on a ceiling it must raise · M
+Owner, 2026-11-10 (D-142). 0.10 set each route's budget at its measurement
+plus 20%. Since then seven PRs have raised them (#115, #147, #193, #197, #201, #222, #224),
+the last three by about 5%, under 1% and 51 bytes, so the next feature starts
+at its ceiling and a raise is routine, not a decision. The raise history in
+`docs/02-architecture.md` § Performance budget shows four causes: the headroom
+shrinks with each raise; every route's JS budget carries the shared framework
+and layout chunks (about 140 KB of each route's JS), so one shell change edits
+every row; `/books/list`'s requests count the preview's Open Library
+covers (three requests each, through archive.org), which is the data, not the
+code; and nothing tells a PR that adds weight from the app growing steadily.
+This entry changes what fails the job. What is measured, the PR comment, the
+route handler check, CLS and accessibility stay as 0.10 built them.
+
+- **Growth over main fails.** Against the baseline the report already fetches
+  (main's last green run), a route fails when its JS grows by more than 3,000
+  bytes, its document + RSC by more than 10% and 1,500 bytes, or its requests
+  by more than 3. A PR with the `perf-growth` label passes, and the comment
+  lists that growth as accepted. The owner adds the label; Claude asks for it in
+  the PR body under **Perf growth** with the reason (`docs/GIT-PR.md`), and
+  never adds it. Adding the label re-reports without a new push. With no
+  baseline (none yet, or its artifact expired) the growth check is skipped and
+  the comment says so.
+- **Ceilings are loose, and raised by decision.** `scripts/perf/budget.json`
+  holds the shared JS once (the scripts every measured route loads) and, per
+  route, only that route's own JS, document + RSC and requests. Each is the
+  measurement on this entry's preview plus 25%. A ceiling is raised only with a
+  decision (D-n), not in a feature's PR.
+- **Only the app's requests count.** Requests to another origin (cover images
+  and their redirects) are reported, not budgeted. Document + RSC bytes already
+  leave them out.
+- **The baseline lasts.** The merged numbers artifact (`lighthouse-metrics`,
+  numbers only) is kept 90 days instead of 14. The per-route reports stay at 14:
+  they hold the rendered pages.
+- **The architecture doc keeps the rule, not the history.** § Performance
+  budget keeps the table, the growth limits and how a ceiling is raised. Its
+  paragraphs on each raise, PR #80 to #224, move to a new
+  `docs/perf-budget-history.md` (`docs/archive/` is frozen), which the section
+  links.
+- **After 1.30**, so that 1.30's budgets land first and this entry measures from
+  them.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first)
+`test/perf.test.ts` covers the growth gate on fixture metrics: a route 3,001
+bytes of JS over the baseline fails, naming the route, the growth and the
+baseline's PR, and 3,000 passes; the `perf-growth` label turns that failure into
+accepted growth in the comment; no baseline skips the check and the comment says
+so; a request to another origin counts toward no budget. `scripts/perf/budget.json`
+holds the shared JS once and `test/perf.test.ts` holds the table in
+`docs/02-architecture.md` to it. On a throwaway branch, a client import of
+5 KB or more on one route fails the Lighthouse job with that route named, and
+adding the label turns the job green with no new push. The job passes on this
+entry's own PR, and `lighthouse-metrics` is kept 90 days.
 
 ---
 
@@ -1533,7 +1587,7 @@ the loaded page count. A vitest test: a book added from a Hardcover result
 stores the book-level count. Then a dry run over the real books, with the
 counts in the PR.
 
-### ☐ 1.17b Dates when you start and finish, and on every read · M
+### ☑ 1.17b Dates when you start and finish, and on every read · M
 Owner, 2026-11-08 (D-131; extends 1.17). **Before 1.26.** 1.17 stamps a start
 silently when a book enters *Reading*, and its date line edits only the latest
 read. The owner wants to be asked at the moment, and to fix any read later.
@@ -1569,7 +1623,7 @@ second changes it and `book_status`. The same control works from *Now* on
 `/books` and from `/books/status`; a search result has none. axe passes at
 every width.
 
-### ☐ 1.29 Refresh production's comics from `Comics.xlsx`, books untouched · M
+### ☑ 1.29 Refresh production's comics from `Comics.xlsx`, books untouched · M
 Owner, 2026-11-08 (D-128). **Before 1.26.** From the books cutover on,
 `LEDGER_LIVE=true` makes `rebuild` and the full `load` refuse, and both would
 truncate every progress table, the books' included. But `Comics.xlsx` stays
@@ -1605,6 +1659,36 @@ and read mark, and every books table has the same rows before and after; it
 runs with `LEDGER_LIVE=true`, and with `LEDGER_COMICS_LIVE=true` it refuses,
 naming the flag, and changes nothing; the comics-only extract writes no books
 seed file; `npm run test:etl` passes.
+
+### ☐ 1.30 Bring the Library and Now back under their JS budgets · M
+Owner, 2026-11-10 (PR #222, 1.17b). The book status control now asks the dates
+(*Started* after *Reading*, *Started* and *Finished* together for *Read*) and
+sits on Now and every status row. Its client code ships with every Library row
+and with the dashboard, and took `/books` to 175,918 bytes of JS and
+`/books/list` to 171,581 bytes and 65 requests. PR #222 raised the budgets to
+177,000, 173,000 and 65 as a stopgap (`docs/02-architecture.md` § Performance
+budget); this entry brings them back, so the next feature does not start from
+a raised ceiling.
+
+- **Measure first.** The plan says where the bytes are: the control's two
+  pickers and their reasons, `FinishDate`, the start re-date, what each Library
+  row hydrates. PR #222's attempt (the read list as a lazy chunk) saved under
+  250 bytes and added a request, so guesses are not enough.
+- **Then load less of it up front.** For example the pickers and their logic
+  only when a row is opened, one component shared with the sheets that use
+  `FinishDate`, or the control drawn from the server until it is touched. The
+  plan picks, and keeps the control's behaviour and tests as they are.
+- **Put the budgets back.** `scripts/perf/budget.json` and the table in
+  `docs/02-architecture.md` return to `/books` 175,000 and `/books/list`
+  170,000 bytes and 64 requests, with a line saying why they were raised and
+  when they came back.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first) on the
+branch's Vercel preview, Lighthouse's median of three measures `/books` at no
+more than 175,000 bytes of JS and `/books/list` at no more than 170,000 bytes
+and 64 requests; the budget table and `scripts/perf/budget.json` show those
+numbers again; the Lighthouse job passes; and the status control's tests
+(`test/reading-log.test.tsx`, `test/e2e/start-dates.spec.ts`) pass unchanged.
 
 ### ☐ 1.26 Cut the books over from the Sheets · M
 From the owner, 2026-10-28 (D-95). START-HERE Step 14 as an entry, so the

@@ -1140,23 +1140,27 @@ Open the preview: it shows your data.
 
 | Symptom                                               | Fix                                                                                          |
 | ----------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `This preview has no DATABASE_URL`                    | Step 3 isn't done, or Preview isn't ticked in the integration                                |
+| `This preview has no DATABASE_URL`                    | Step 3 isn't done, or Preview isn't ticked in the integration. If previews built before: Neon console → Settings → **Vercel** → **Branches** lists an **Obsolete** branch that no longer exists. Delete it with its bin icon; Neon then creates the preview's branch and redeploys it within a few minutes (2026-11-10: it blocked every preview until removed) |
 | `LEDGER_LIVE_DB_HOST is not set`                      | Step 2                                                                                        |
 | `This preview's DATABASE_URL is the live database`    | Step 1: `DATABASE_URL` is still in Preview                                                    |
 | `migrate failed` after regenerating the PR's migration | The branch already ran the old one. Delete `preview/<branch>` in Neon and redeploy (untick the ignore-step box if that commit was Canceled: 10e) |
 | `migrate failed` on a migration not written for existing rows (0.8a) | Expected before cutover. Test that PR locally against `TEST_DATABASE_URL` instead |
-| A reopened PR's preview can't reach its database      | Closing deleted `preview/<branch>`. Push a commit or redeploy (untick the ignore-step box if that commit was Canceled: 10e): the branch is re-copied from live |
+| A reopened PR's preview can't reach its database      | The integration, or a day later the cleanup sweep, deleted `preview/<branch>`. Push a commit or redeploy (untick the ignore-step box if that commit was Canceled: 10e): the branch is re-copied from live |
 
 Neon Free allows 10 branches per project. Main, `test`, one per open PR and
 Release's two snapshots fit. Step 3's option misses some closed PRs' branches,
 so the **Neon preview cleanup** workflow
-(`.github/workflows/neon-preview-cleanup.yml`) deletes `preview/<git branch>`
-whenever a PR closes, merged or not. It needs nothing new: it uses Release's
-`NEON_API_KEY` secret and `NEON_PROJECT_ID` variable. It deletes nothing but
-that one branch, never live, `test` or a snapshot. A PR Dependabot closes
-itself runs without secrets and only warns. Delete a leftover by hand with
-`gh workflow run neon-preview-cleanup.yml -f branch=<git branch>`, or in the
-Neon console.
+(`.github/workflows/neon-preview-cleanup.yml`) sweeps once a day: it deletes a
+`preview/` branch whose PR closed more than a day ago, or that never had a PR
+and whose git branch has been gone a day. It never deletes at a PR's close,
+because deleting a branch under the integration leaves a stale **Obsolete**
+entry that blocks every preview (2026-11-10, PR #229 and #231). It needs
+nothing new: it uses Release's `NEON_API_KEY` secret and `NEON_PROJECT_ID`
+variable. It deletes nothing outside `preview/`, never live, `test` or a
+snapshot. Sweep now with `gh workflow run neon-preview-cleanup.yml`, delete
+one leftover with `-f branch=<git branch>`, and add `-f dry_run=true` to see
+what either would delete. After deleting one by hand (or in the Neon
+console), check Neon → Settings → **Vercel** → **Branches** for a stale entry.
 
 **Done with Part 2 when:** you can mark an issue read from your phone, and the
 Actions tab shows one successful backup.
@@ -1542,11 +1546,18 @@ two weeks without opening the books sheet.
 ### Until Step 14b: comics from the sheet
 
 Keep marking comics in `Comics.xlsx`. To bring its changes into production,
-export it, run the comics-only extract and load (1.29; the exact commands are
-in `docs/COMMANDS.md` once 1.29 is built), against `.env.live`. It replaces
-production's comics, read marks included, and never touches a book. A mark
-made in the app's comics screens meanwhile is replaced by the next comics
-load, so make them in the sheet.
+export it over `etl/data/Comics.xlsx`, then run the comics-only extract and
+load (1.29; `docs/COMMANDS.md` § Comics only, after the books cutover):
+
+```powershell
+npm run extract:comics
+npm run load:comics -- -EnvFile .env.live   # type COMICS when it asks
+```
+
+It replaces production's comics, read marks included, in one transaction,
+and never touches a book; `LEDGER_LIVE=true` doesn't stop it. A mark made in
+the app's comics screens meanwhile is replaced by the next comics load (and
+the Up next queue and any eras come back empty), so make them in the sheet.
 
 ## Step 14b — Comics: the last comics load, then run both for a month
 
@@ -1561,8 +1572,8 @@ backup green, and adding a run and marking reads faster than the sheet.
 
 1. A fresh `Comics.xlsx` export, the comics-only extract, and the last
    comics-only load of production (1.29).
-2. **Immediately after,** set `LEDGER_COMICS_LIVE=true` in `.env.live` (and
-   wherever else 1.29 reads it): the comics-only load refuses from then on.
+2. **Immediately after,** set `LEDGER_COMICS_LIVE=true` in `.env.live` (the
+   only place 1.29 reads it): `npm run load:comics` refuses from then on.
 3. Rename the sheet `Comics (archive, to 2026-XX)`, set it **read-only**, and
    put the app URL at the top. Prerequisite and catalog changes are made in the
    app from here (3.1–3.3).

@@ -12,9 +12,12 @@ npm run dev                 # local, needs .env
 npm run clean:dev           # delete .next/dev (next dev's output and Turbopack cache) with `npm run dev` stopped:
                             # a stale one reloads a page in a Fast Refresh loop. test:e2e clears it before every dev run
 npm test                    # vitest; needs TEST_DATABASE_URL (never DATABASE_URL), refuses without it
-npm run test:all            # test:no-e2e, then test:e2e:build: what CI runs (verify.full; D-97)
+npm run test:all            # test:no-e2e, then test:e2e:build: everything, by hand; no gate needs it (D-141)
 npm run test:no-e2e         # test:tokens + check:migrations + test:db:reset + vitest + test:views + test:etl:
-                            # the round chain's suites, which re-run after every fix (D-97)
+                            # verify.full's suites, which re-run after every fix (D-141: the browser suite is CI's)
+node scripts/test-files.mjs <files> [-- <playwright args>]
+                            # the given test files, any runner; specs in one project (w390-light) unless the args
+                            # name a --project. /verify runs the specs a branch touched this way; the test-auditor too
 npm run test:db:reset       # rebuild the TEST database: drizzle-kit migrate, then etl/views.sql
 node scripts/worktree-slot.mjs  # worktree setup runs it: this worktree's own test database and e2e port
                             # in .env.worktree (ledger_test_2 / 3200, ...), loaded before .env; no-op in the main checkout
@@ -99,6 +102,14 @@ npm run titles:fandom       # etl/fandom_titles.py: fill missing story titles fr
 npm run rebuild             # drop, migrate from zero, extract, load, test_views, row counts;
                             # .env (development) by default, `-- -EnvFile .env.live` is production
                             # etl/rebuild.ps1; refuses when LEDGER_LIVE=true; twin etl/rebuild.sh
+npm run extract:comics      # extract --comics-only (task 1.29, D-128): Comics.xlsx and the comics sidecars into
+                            # the comics seed files of seed/ (COMICS_SEED), its report in comics_unresolved.csv;
+                            # every books file in seed/ stays as it was. No books flag with it
+npm run load:comics         # etl/load-comics.ps1 (twin: npm run load:comics:bash, etl/load-comics.sh): replace
+                            # the comics catalog and comics progress from seed/, books untouched, in one
+                            # transaction with no CASCADE; asks you to type COMICS (`-- -Yes` skips it).
+                            # Runs while LEDGER_LIVE=true; refuses when LEDGER_COMICS_LIVE=true.
+                            # .env by default; see "Comics only" below
 npm run test:views          # etl/test_views.sql against TEST_DATABASE_URL; rolls back
 npm run test:etl            # py -m unittest over etl/test_*.py, no network
 npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in Chromium, the core projects (D-80:
@@ -107,12 +118,16 @@ npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in
                             # `npm run dev` first (both use .next; a dev run deletes .next/dev before it starts). Once per machine, and after a Playwright bump:
                             # `npx playwright install chromium`. Screenshots: test-results/screens/ (ignored). Pass
                             # arguments after --, e.g. `-- --project=w390-light`. A check that needs one project is
-                            # tagged `{ tag: "@at-<project>" }`, never skipped on testInfo.project.name. E2E_SERVER=start
+                            # tagged `{ tag: "@at-<project>" }`, never skipped on testInfo.project.name. One whose outcome no
+                            # width or theme changes (a write, a request, the URL, focus, copy) is tagged `{ tag: "@core" }`:
+                            # the core projects only, in either scope (D-143). Untagged runs everywhere: axe, contrast,
+                            # colours, sizes, scroll, per-layout markup, §10 state screenshots. E2E_SERVER=start
                             # serves an existing `npm run build` with `next start` instead (CI's shards do)
 npm run test:e2e:full       # the same at every project, 360-1280px light and dark (E2E_SCOPE=full): what CI runs
 npm run test:e2e:build      # `next build` with the suite's server environment, then the core projects against
                             # `next start` over that build (--build, D-97): no route compiles on its first
-                            # request, and never a stale build. test:all's browser step; arguments after --
+                            # request, and never a stale build. test:all's browser step; arguments after --.
+                            # Reproduces a CI failure against a build: `-- <spec> --project=<p> -g "<fragment>"`
 npm run test:tokens         # colour tokens: mockups = globals.css, hue distance, on-fill contrast; no DB
 npm run check:migrations    # journal = files, drop/retype has a drizzle/down file, schema.ts fully generated,
                             # no migration already on main edited (standing rule 3); no DB
@@ -390,3 +405,42 @@ Then commit what changed in `etl/data/`, staged by path:
 git status --short etl/data
 git add etl/data/<each changed sidecar>
 ```
+
+## Comics only, after the books cutover
+
+From the books cutover (START-HERE Step 14, roadmap 1.26) until the comics
+cutover (Step 14b, 1.28), `Comics.xlsx` stays the comics record while the app
+is the books record (D-128). `rebuild` and `load` refuse once
+`LEDGER_LIVE=true`; these two bring the sheet's comics in and leave every book
+alone (task 1.29).
+
+**1. Extract the comics.** A fresh `Comics.xlsx` export saved over
+`etl/data/Comics.xlsx`, and the comics sidecars refreshed as in *Comics*
+above (steps 2–9: each `npm run extract` there becomes `npm run extract:comics`).
+
+```powershell
+npm run extract:comics
+```
+
+It rewrites only the comics seed files in `seed/`; `books.csv` and the rest of
+the books seed, `unresolved.csv` and `calibre_changes.csv` are left exactly as
+they were. Review `seed/comics_unresolved.csv`; `-- --fail-on-cycle` works
+here too.
+
+**2. Load the comics.** Replaces runs, tracks, blocks, prerequisites, events,
+issues, placements, credits, editions, the volume map, `issue_progress` and
+`edition_progress`, in one transaction; the queue and eras come back empty
+(no seed holds them). It never truncates, cascades into or writes a books
+table: `read_events` loses only its comic reads, and an inbox note resolved
+into a run keeps its link while the run is still in the sheet. A mark made in
+the app's comics screens is replaced: the sheet is the comics record until
+Step 14b. Type `COMICS` when it asks. If any row fails, nothing changes.
+
+```powershell
+npm run load:comics                         # development (.env)
+npm run load:comics -- -EnvFile .env.live   # production: you, never Claude
+```
+
+Bash: `bash etl/load-comics.sh [--yes] [seed-dir]`, with `ENV_FILE=` for the
+env file. Once Step 14b sets `LEDGER_COMICS_LIVE=true` in `.env.live`, both
+refuse against production and change nothing.

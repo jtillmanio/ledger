@@ -13,11 +13,14 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
+import { easternYear } from "../../src/lib/settings";
 import RECORDED from "../fixtures/hardcover-piranesi.json";
 import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
 
 // Writes: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
+// What a screen does, not how it looks or fits: the core projects only (D-143).
+const CORE = { tag: "@core" };
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
   "aria-prohibited-attr", "aria-required-children", "aria-required-parent", "aria-valid-attr-value", "aria-hidden-focus",
@@ -141,6 +144,8 @@ test("searching piranesi lists Hardcover's books under From Hardcover, no compil
     expect((await target.boundingBox())!.height).toBeGreaterThanOrEqual(24);
   }
   await expect(statusLine(page)).toHaveCount(0);
+  // A search result carries no status control (task 1.17b, D-131): its one verb is the add button.
+  await expect(page.locator("main .status-toggle, main .status-group")).toHaveCount(0);
   await floor(page);
   await screenshot(page, info, "book-search-results");
 });
@@ -208,7 +213,42 @@ test("adding one creates one books row with hardcover_id and its cover; adding i
     .toEqual([{ key: LIBRARY_KEY }, { key: PIR_KEY }, { key: SEARCH_KEY }, { key: `search:${NOTHING}` }]);
 });
 
-test("typing pir and pausing lists results without Enter; pi asks nothing; piranesi typed quickly is one request (task 1.22, AC-1)", async ({ page }, info) => {
+test("a result's Year or quarter… adds the book at the end of a quarter, and Undo makes the row addable again (task 2.3, AC-4)", ONCE, async ({ page }) => {
+  const year = easternYear() + 1;
+  const period = `${year}-Q2`;
+  const plan = () => withSql((sql) => sql`SELECT period, ordinal FROM reading_plan WHERE user_id = ${E2E_USER} AND book_id = ${LIBRARY.id}`);
+  const status = () => withSql((sql) => sql`SELECT status FROM book_status WHERE user_id = ${E2E_USER} AND book_id = ${LIBRARY.id}`);
+  const last = () => withSql((sql) => sql`SELECT COALESCE(MAX(ordinal), 0)::int AS n FROM reading_plan WHERE user_id = ${E2E_USER} AND period = ${period}`)
+    .then((rows) => rows[0].n as number);
+  const placed = await last();
+
+  await search(page, "e2e hardcover library");
+  const row = page.getByRole("list", { name: "In your library" }).getByRole("listitem");
+  const secondary = row.getByRole("button", { name: `Year or quarter…: ${LIBRARY.title}`, exact: true });
+  await hydrated(secondary);
+  await secondary.click();
+  // A book not planned yet: the sheet has no *currently planned* badge.
+  const sheet = page.getByRole("dialog", { name: LIBRARY.title });
+  await expect(sheet).toBeVisible();
+  await expect(sheet.locator(".bdg")).toHaveCount(0);
+  await sheet.getByRole("button", { name: new RegExp(`^${year}`) }).click();
+  await sheet.getByRole("group", { name: `Quarter of ${year}` }).getByRole("button", { name: /^Q2/ }).click();
+  await sheet.getByRole("button", { name: `Add to Q2 ${year}`, exact: true }).click();
+  await expect(sheet).toHaveCount(0);
+  await expect(row.getByRole("button", { name: `Added to Q2 ${year}: ${LIBRARY.title}`, exact: true })).toHaveText(`✓ Added to Q2 ${year}`);
+  await expect(page.locator(".toast-label")).toHaveText(`Added to Q2 ${year}`);
+  // The book is last in the quarter, still to read.
+  expect(await plan()).toEqual([{ period, ordinal: placed + 1 }]);
+  expect(await status()).toEqual([{ status: "to_read" }]);
+
+  await page.getByRole("button", { name: "Undo" }).click();
+  await expect.poll(plan).toEqual([]);
+  // The row can be added again, to the default, without searching again.
+  await expect(row.getByRole("button", { name: `Add to Someday: ${LIBRARY.title}`, exact: true })).not.toHaveAttribute("aria-disabled", "true");
+  await expect(row.getByRole("button", { name: `Year or quarter…: ${LIBRARY.title}`, exact: true })).not.toHaveAttribute("aria-disabled", "true");
+});
+
+test("typing pir and pausing lists results without Enter; pi asks nothing; piranesi typed quickly is one request (task 1.22, AC-1)", CORE, async ({ page }, info) => {
   await page.goto("/books/add");
   const box = page.getByRole("searchbox", { name: "Title or author" });
   await hydrated(box);

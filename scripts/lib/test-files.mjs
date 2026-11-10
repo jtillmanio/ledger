@@ -19,12 +19,45 @@ export function normalize(file) {
 const quote = (s) => (/\s/.test(s) ? `"${s}"` : s);
 
 /**
+ * The browser project specs run in when the caller names none. Whether a test
+ * fails without the change, or passes after a fix, is answered in one project;
+ * the six core projects only repeat it, at six times the wait. The full chain
+ * (`npm run test:all`) and CI are where every project runs. `w390-light` is
+ * also where the suite's run-once tests (`@at-w390-light`) live.
+ */
+export const DEFAULT_E2E_PROJECT = "w390-light";
+
+/**
+ * `<test files> [-- <playwright arguments>]`: the files, then what goes to
+ * Playwright, e.g. `-- -g "Undo puts it back"` or `-- --project=w768-light`.
+ */
+export function splitArgs(argv) {
+  const at = argv.indexOf("--");
+  return at === -1 ? { files: argv, e2eArgs: [] } : { files: argv.slice(0, at), e2eArgs: argv.slice(at + 1) };
+}
+
+/**
+ * Why these Playwright arguments can't be passed on, or null. The command runs
+ * through a shell (cmd.exe here), so an argument is double-quoted when it holds
+ * anything but plain characters; a double quote, `%`, `$`, a backtick or a
+ * trailing backslash would survive that quoting differently in cmd and sh.
+ */
+export function e2eArgsProblem(e2eArgs) {
+  const bad = e2eArgs.find((a) => /["%$`]|\\$/.test(a));
+  return bad === undefined ? null : `can't pass ${bad} to Playwright: drop its " % $ \` or trailing \\ (a -g fragment needs none).`;
+}
+
+const quoteArg = (s) => (/^[\w./=:@,+-]+$/.test(s) ? s : `"${s}"`);
+
+/**
  * The commands for these test files, in run order, and any file no runner
  * owns. The test database is rebuilt first whenever a vitest, e2e or SQL file
  * is in the list: the auditor runs the tests against the pre-task schema.ts,
  * migrations and views.sql, and the test database still holds the task's.
+ * Specs run in DEFAULT_E2E_PROJECT unless `e2eArgs` names a `--project`;
+ * `e2eArgs` go to Playwright after the specs.
  */
-export function planTestRun(files) {
+export function planTestRun(files, e2eArgs = []) {
   const vitest = [];
   const e2e = [];
   const unittest = [];
@@ -43,6 +76,10 @@ export function planTestRun(files) {
   if (vitest.length) commands.push(`npx vitest run ${vitest.map(quote).join(" ")}`);
   if (views) commands.push("npm run test:views");
   for (const p of unittest) commands.push(`py -m unittest discover -s etl -p ${quote(p)}`);
-  if (e2e.length) commands.push(`node scripts/e2e.mjs ${e2e.map(quote).join(" ")}`);
+  if (e2e.length) {
+    const named = e2eArgs.some((a) => a === "--project" || a.startsWith("--project="));
+    const args = [...(named ? [] : [`--project=${DEFAULT_E2E_PROJECT}`]), ...e2eArgs];
+    commands.push(`node scripts/e2e.mjs ${[...e2e.map(quote), ...args.map(quoteArg)].join(" ")}`);
+  }
   return { commands, unknown };
 }

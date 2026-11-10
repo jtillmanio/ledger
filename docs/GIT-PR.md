@@ -13,7 +13,9 @@ in order: `verify.full` on the branch head, CI `check`, the full browser suite,
 the Vercel preview, Lighthouse, a changed workflow run on the branch, and the
 owner's preview walk for UI. A draft's CI checks the browser suite's core
 projects; adding the `e2e:full` label reruns it on every project (D-80), and
-Claude watches that run in the background rather than waiting on it. A PR
+Claude watches that run in the background rather than waiting on it, and
+fixes a failure on the branch (`gh run view <id> --log-failed`, reproduced
+locally in the failing project) and pushes again. A PR
 marked ready, and every push to `main`, always gets the full suite.
 Claude marks a PR ready only when every gate it can check has passed,
 and lists the owner's gates in its report. "It will show up on `main`" is not a test:
@@ -22,11 +24,11 @@ applies, not just the one nearest the change.
 
 Before pushing, locally:
 
-- `/verify`: typecheck, lint, `npm run test:all` (tokens, migration checks,
-  test-db reset, vitest, SQL view tests, ETL unittests, then `next build` and
-  the core browser projects against `next start`). It is the same set CI runs.
-  The browser part runs once per task; later rounds run `npm run test:no-e2e`
-  (D-97), and CI's full browser run is the gate.
+- `/verify`: typecheck, lint, `npm run test:no-e2e` (tokens, migration
+  checks, test-db reset, vitest, SQL view tests, ETL unittests), and the
+  browser specs the branch added or changed in one project
+  (`node scripts/test-files.mjs <specs>`). The whole browser suite and the
+  build run only in CI (D-141): its `e2e:full` run is the gate.
 - The task's own **Check:** from `docs/05-roadmap.md`, exactly as written.
 - Schema or query changes: the `schema-reviewer` subagent (CLAUDE-CODE.md §3,
   phase 4). Phases 1 and 3 also get the adversarial review pass (standing

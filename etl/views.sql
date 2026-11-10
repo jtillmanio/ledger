@@ -798,6 +798,154 @@ SELECT q.user_id, q.kind, q.entity_id, q.name, q.book_id, q.read, q.total, q.las
 FROM follow_queue q
 WHERE q.rank = 1 AND (q.status IS NULL OR q.status IN ('to_read', 'unlisted'));
 
+-- What the planning sheet suggests for a year or a quarter (task 2.10b, F-65,
+-- D-104, D-108). A function, not a view: the target, the room it has left and
+-- today are its arguments. p_target is '2027-Q2' or '2027'; p_room is the
+-- target's capacity less its planned words (plan_capacity, read by the caller,
+-- src/db/queries.ts planSuggestions, so the capacity formula stays in one
+-- place); p_today is the Eastern day. STABLE and SQL, so it cannot write:
+-- nothing is stored or cached (hard rule 2). One row per book, in its first
+-- group, in this order (rank 1… within each):
+--   next_in_series  follow_next for each subseries, series and universe followed
+--                   Reading; a book next in several names the narrowest. The
+--                   follow most recently read in first, then by name.
+--   next_on_shelf   follow_next for each shelf followed Reading, likewise.
+--   from_author     every unread book of an author followed Reading, in
+--                   follow_queue's order (earliest published first), so
+--                   follow_next's book leads.
+--   on_deck         to_read books On deck (D-37), by title.
+--   coming_out      to_read books whose releases date falls in the target, by date.
+--   recently_added  to_read books added in the app in the last 90 days, p_today
+--                   and the 89 before it, Eastern (books.added_at; a loaded
+--                   book has none), newest first.
+--   fits_room       to_read books whose words, as plan_book_words counts them
+--                   (estimates included, an unknown count never), are at most
+--                   p_room, largest first.
+--   genre_change    to_read books none of whose top-level genres has a read in
+--                   p_today's year: book_genre_tree at depth 1, else books.genre
+--                   for a book Calibre gives none (D-98). The year is today's,
+--                   not the target's: a future year has no reads yet.
+-- Groups 1-3 take what follow_next does (to read, Unlisted, no status), flagged
+-- `unlisted` for the sheet's tag (1.22); groups 4-8 take to_read only. So a read,
+-- reading, listening or DNF book never appears, nor any later status (5.15's
+-- parking). A book already planned in the target is left out (for a year, a
+-- book planned anywhere in it); one planned elsewhere carries its period
+-- (to_read_level's), for the sheet's *Move here*.
+CREATE OR REPLACE FUNCTION plan_suggestions(p_user text, p_target text, p_room bigint, p_today date)
+RETURNS TABLE (book_id text, reason text, detail text, rank int, status text, unlisted boolean,
+               period text, words int, word_source text)
+LANGUAGE sql STABLE AS $$
+WITH span AS (
+  SELECT t.year, t.quarter, t.starts,
+         (t.starts + CASE WHEN t.quarter IS NULL THEN interval '1 year' ELSE interval '3 months' END)::date AS ends
+  FROM (
+    SELECT y.year, y.quarter, make_date(y.year, COALESCE((y.quarter - 1) * 3 + 1, 1), 1) AS starts
+    FROM (SELECT left(p_target, 4)::int AS year,
+                 CASE WHEN p_target ~ '-Q' THEN right(p_target, 1)::int END AS quarter) y
+  ) t
+), book AS (
+  -- Every live book not already planned in the target, with your status and
+  -- its words as plan_book_words counts them.
+  SELECT b.id, b.title, b.genre, b.added_at, st.status,
+         CASE WHEN b.word_count IS NOT NULL THEN b.word_count_source
+              WHEN b.page_count >= 50 THEN 'estimated' END                       AS word_source,
+         COALESCE(b.word_count,
+                  CASE WHEN b.page_count >= 50 THEN b.page_count * COALESCE(rs.words_per_page, 275) END) AS words
+  FROM books b
+  LEFT JOIN book_status st ON st.user_id = p_user AND st.book_id = b.id
+  LEFT JOIN reading_settings rs ON rs.user_id = p_user
+  CROSS JOIN span s
+  WHERE b.deleted_at IS NULL
+    AND NOT EXISTS (SELECT 1 FROM plan_period pp
+                    WHERE pp.user_id = p_user AND pp.book_id = b.id
+                      AND (pp.period = p_target OR s.quarter IS NULL AND pp.year = s.year))
+), top_genre AS (
+  -- Each live book's top-level genres: Calibre's, else the workbook's one;
+  -- one spelling of each whatever its case, so the detail never names it twice:
+  -- the capitalised one, under "C" (byte order), on any database's collation.
+  SELECT g.book_id, min(g.genre COLLATE "C") AS genre
+  FROM (
+    SELECT t.book_id, t.genre FROM book_genre_tree t WHERE t.depth = 1
+    UNION ALL
+    SELECT b.id, b.genre FROM books b
+    WHERE b.deleted_at IS NULL AND b.genre IS NOT NULL
+      AND NOT EXISTS (SELECT 1 FROM book_genres g WHERE g.book_id = b.id)
+  ) g
+  GROUP BY g.book_id, lower(g.genre)
+), read_genre AS (
+  SELECT DISTINCT lower(g.genre) AS genre
+  FROM book_reads r JOIN top_genre g ON g.book_id = r.book_id
+  WHERE r.user_id = p_user AND extract(year FROM r.finished_on) = extract(year FROM p_today)
+), cand AS (
+  -- grp is the group; narrow picks the narrowest follow of a book next in
+  -- several; ord is the place in its group before a book lands elsewhere.
+  SELECT 1 AS grp, f.book_id, 'Next in ' || f.name || ' · you''ve read ' || f.read || ' of ' || f.total AS detail,
+         array_position(ARRAY['subseries', 'series', 'universe'], f.kind) AS narrow,
+         row_number() OVER (ORDER BY f.last_read_on DESC NULLS LAST, f.name, f.entity_id) AS ord
+  FROM follow_next f WHERE f.user_id = p_user AND f.kind IN ('subseries', 'series', 'universe')
+  UNION ALL
+  SELECT 2, f.book_id, 'Next on ' || f.name || ' · you''ve read ' || f.read || ' of ' || f.total, 0,
+         row_number() OVER (ORDER BY f.last_read_on DESC NULLS LAST, f.name, f.entity_id)
+  FROM follow_next f WHERE f.user_id = p_user AND f.kind = 'shelf'
+  UNION ALL
+  SELECT 3, f.book_id, 'More from ' || f.name || ' · you''ve read ' || f.read || ' of ' || f.total, 0,
+         row_number() OVER (ORDER BY f.last_read_on DESC NULLS LAST, f.name, f.entity_id, f.rank)
+  FROM follow_queue f
+  WHERE f.user_id = p_user AND f.kind = 'author' AND (f.status IS NULL OR f.status IN ('to_read', 'unlisted'))
+  UNION ALL
+  SELECT 4, b.id, 'On deck', 0, row_number() OVER (ORDER BY b.title, b.id)
+  FROM book b JOIN to_read_level l ON l.user_id = p_user AND l.book_id = b.id
+  WHERE b.status = 'to_read' AND l.level = 'on_deck'
+  UNION ALL
+  -- release_date is ISO text (5.7); it is compared and printed as text, never
+  -- cast, so a malformed or impossible date (2027-02-30) can't fail the call.
+  SELECT 5, b.id, 'Out ' || (ARRAY['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'])
+                              [substr(r.release_date, 6, 2)::int]
+                  || ' ' || substr(r.release_date, 9, 2)::int || ', ' || left(r.release_date, 4), 0,
+         row_number() OVER (ORDER BY r.release_date, b.title, b.id)
+  FROM book b JOIN releases r ON r.book_id = b.id CROSS JOIN span s
+  WHERE b.status = 'to_read' AND r.release_date ~ '^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$'
+    AND r.release_date >= to_char(s.starts, 'YYYY-MM-DD') AND r.release_date < to_char(s.ends, 'YYYY-MM-DD')
+  UNION ALL
+  -- The last 90 days are today and the 89 before it, Eastern.
+  SELECT 6, b.id, 'Added ' || to_char(b.added_at AT TIME ZONE 'America/New_York', 'FMMon FMDD, YYYY'), 0,
+         row_number() OVER (ORDER BY b.added_at DESC, b.title, b.id)
+  FROM book b
+  WHERE b.status = 'to_read'
+    AND b.added_at >= (p_today - 89)::timestamp AT TIME ZONE 'America/New_York'
+    AND b.added_at < (p_today + 1)::timestamp AT TIME ZONE 'America/New_York'
+  UNION ALL
+  SELECT 7, b.id, round(b.words / 1000.0) || 'k words · fits the ' || floor(p_room / 1000.0) || 'k left', 0,
+         row_number() OVER (ORDER BY b.words DESC, b.title, b.id)
+  FROM book b
+  WHERE b.status = 'to_read' AND b.words <= p_room
+  UNION ALL
+  SELECT 8, g.book_id, g.genres || ' · none read in ' || extract(year FROM p_today), 0,
+         row_number() OVER (ORDER BY g.genres, g.title, g.book_id)
+  FROM (
+    SELECT b.id AS book_id, b.title, string_agg(t.genre, ', ' ORDER BY t.genre) AS genres
+    FROM book b JOIN top_genre t ON t.book_id = b.id
+    WHERE b.status = 'to_read'
+    GROUP BY b.id, b.title
+    HAVING NOT bool_or(lower(t.genre) IN (SELECT genre FROM read_genre))
+  ) g
+), picked AS (
+  SELECT DISTINCT ON (c.book_id) c.*
+  FROM cand c JOIN book b ON b.id = c.book_id
+  ORDER BY c.book_id, c.grp, c.narrow, c.ord
+)
+SELECT p.book_id,
+       (ARRAY['next_in_series', 'next_on_shelf', 'from_author', 'on_deck',
+              'coming_out', 'recently_added', 'fits_room', 'genre_change'])[p.grp],
+       p.detail,
+       row_number() OVER (PARTITION BY p.grp ORDER BY p.ord)::int,
+       b.status, COALESCE(b.status = 'unlisted', false), l.period, b.words, b.word_source
+FROM picked p
+JOIN book b ON b.id = p.book_id
+LEFT JOIN to_read_level l ON l.user_id = p_user AND l.book_id = p.book_id
+ORDER BY p.grp, p.ord
+$$;
+
 -- Not here yet: show_progress and franchise_progress arrive with task 8.1,
 -- because titles, seasons and season_status do not exist until then. When they
 -- do, show_progress.state must be

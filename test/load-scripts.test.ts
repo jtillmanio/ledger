@@ -220,6 +220,123 @@ describe.each(["rebuild.ps1", "rebuild.sh"])("%s", (name) => {
     });
 });
 
+// Task 1.29 (D-128): the comics-only load. test/comics-load.test.ts runs both
+// twins; these read their text, so a twin drifting from the other, or a
+// CASCADE creeping in, fails without a database.
+const COMICS_TRUNCATED = ["issue_progress", "edition_progress", "run_queue", "run_tracks", "event_runs",
+  "prereqs", "issue_credits", "creators", "events", "editions", "volume_rules"];
+const COMICS_DELETED = ["run_issues", "eras", "issues", "runs", "blocks", "tracks"];
+
+/** The transaction's statements, comments dropped, in a form both twins share. */
+function statements(text: string) {
+  const body = /^BEGIN;$([\s\S]*?)^COMMIT;$/m.exec(text)![1];
+  return body.split(/\r?\n/).map((l) => l.trim()).filter((l) => l && !l.startsWith("--"))
+    .join("\n")
+    .replace(/\\\\copy/g, "\\copy")
+    .replace(/'[^']*\/(\w+\.csv)'/g, "'$1'")
+    .replace(/VALUES \([^)]*\)\n\s*ON CONFLICT/, "VALUES (owner) ON CONFLICT")
+    .replace(/[ \t]+/g, " ");
+}
+
+describe.each(["load-comics.ps1", "load-comics.sh"])("%s, task 1.29", (name) => {
+  const text = read(name);
+  const sqlText = statements(text);
+
+  it("cascades into nothing", () => {
+    expect(sqlText).not.toMatch(/\bCASCADE\b/i);
+  });
+
+  it("truncates and deletes only the comics, and only comic reads from read_events", () => {
+    const truncate = /TRUNCATE ([^;]*?) RESTART IDENTITY;/.exec(sqlText)![1].split(/,\s*/);
+    expect(truncate).toEqual(COMICS_TRUNCATED);
+    const deletes = [...sqlText.matchAll(/^DELETE FROM (\w+)(.*);$/gm)].map((m) => [m[1], m[2].trim()]);
+    expect(deletes).toEqual([["read_events", "WHERE placement_id IS NOT NULL"], ...COMICS_DELETED.map((t) => [t, ""])]);
+    // The one other write: an inbox note's run link, put back.
+    expect([...sqlText.matchAll(/^(?:UPDATE|INSERT INTO) (\w+)/gm)].map((m) => m[1])).toEqual(["users", "inbox"]);
+  });
+
+  it("copies each comics table with load's own \\copy line, and no books file", () => {
+    const own = statements(read(name === "load-comics.ps1" ? "load.ps1" : "load.sh")).split("\n");
+    const copies = sqlText.split("\n").filter((l) => l.startsWith("\\copy"));
+    expect(copies).toHaveLength(15);
+    for (const c of copies) expect(own).toContain(c);
+    expect(sqlText).not.toMatch(/\b(books|book_\w+|authors|reading_plan|\w+_follows|shelves|shelf_\w+|releases|external_lists)\.csv/);
+  });
+
+  it("refuses on LEDGER_COMICS_LIVE before it reads the database settings, asks or connects", () => {
+    const guard = text.search(/LEDGER_COMICS_LIVE:?-?\w*\}?"? *\| *tr|"\$env:LEDGER_COMICS_LIVE"/);
+    expect(guard).toBeGreaterThan(-1);
+    for (const later of [/DATABASE_URL:\?|"DATABASE_URL", "OWNER_ID"/, /Read-Host|read -r/, /psql (\$dbUrl|"\$DATABASE_URL")/]) {
+      expect(text.search(later), String(later)).toBeGreaterThan(guard);
+    }
+    expect(text).not.toMatch(/\$env:LEDGER_LIVE\b|\$\{LEDGER_LIVE\b/);
+  });
+});
+
+describe("the comics-only load's twins", () => {
+  it("run the same statements in the same order", () => {
+    expect(statements(read("load-comics.sh"))).toEqual(statements(read("load-comics.ps1")));
+  });
+});
+
+// AC-6: the guard asks before the comics load and denies it aimed at .env.live,
+// as guard-destructive.ps1 decides (case-insensitive; a deny wins).
+describe("destructiveGuard, task 1.29", () => {
+  const rules = JSON.parse(readFileSync(join(root, ".claude", "kit.json"), "utf8")).destructiveGuard.commands as
+    { pattern: string; decision: string }[];
+  const decide = (command: string) => {
+    const hits = rules.filter((r) => new RegExp(r.pattern, "i").test(command)).map((r) => r.decision);
+    return hits.includes("deny") ? "deny" : hits.length ? "ask" : "allow";
+  };
+
+  it.each([
+    "npm run load:comics",
+    "npm run load:comics -- -Yes",
+    "npm run load:comics:bash",
+    ".\\etl\\load-comics.ps1",
+    "powershell -NoProfile -ExecutionPolicy Bypass -File etl/load-comics.ps1 -Yes",
+    "bash etl/load-comics.sh --yes",
+  ])("asks before %s", (command) => {
+    expect(decide(command)).toBe("ask");
+  });
+
+  it.each([
+    "npm run load:comics -- -EnvFile .env.live",
+    ".\\etl\\load-comics.ps1 -EnvFile .env.live",
+    ".\\etl\\load-comics.ps1 seed -Yes -EnvFile:.env.live",
+    "ENV_FILE=.env.live bash etl/load-comics.sh",
+    "ENV_FILE=.env.live npm run load:comics:bash",
+  ])("denies %s", (command) => {
+    expect(decide(command)).toBe("deny");
+  });
+
+  it("leaves the comics-only extract alone: it writes seed/, no database", () => {
+    expect(decide("npm run extract:comics")).toBe("allow");
+  });
+});
+
+describe("the comics-only commands are documented, task 1.29", () => {
+  const doc = (path: string) => readFileSync(join(root, path), "utf8");
+  it.each(["CLAUDE.md", "docs/COMMANDS.md", "docs/START-HERE.md"])("%s names extract:comics and load:comics", (path) => {
+    expect(doc(path)).toContain("npm run extract:comics");
+    expect(doc(path)).toContain("npm run load:comics");
+  });
+
+  it("START-HERE's Step 14 names the commands where it said they would arrive", () => {
+    const step = /### Until Step 14b: comics from the sheet[\s\S]*?(?=\n## )/.exec(doc("docs/START-HERE.md"))![0];
+    expect(step).toContain("npm run load:comics");
+    expect(step).not.toMatch(/once 1\.29 is built/);
+  });
+
+  it("npm scripts point at the twins and the flag", () => {
+    const scripts = JSON.parse(doc("package.json")).scripts;
+    expect(scripts["extract:comics"]).toMatch(/--comics-only/);
+    expect(scripts["extract:comics"]).not.toMatch(/--books\b|--book-|--calibre-|--wishlist-/);
+    expect(scripts["load:comics"]).toMatch(/etl\/load-comics\.ps1/);
+    expect(scripts["load:comics:bash"]).toMatch(/etl\/load-comics\.sh/);
+  });
+});
+
 describe("the seed CSV header", () => {
   it("is the table's column order, which the \\copy lists", () => {
     const extract = read("extract.py");

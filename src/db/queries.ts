@@ -651,15 +651,19 @@ export type StatusBook = {
   series_position: number | null; word_count: number | null; listened: boolean;
 };
 
-/** A book *In flight*: `status` says which group, Reading or Listening (task 1.23). */
-export type FlyingBook = StatusBook & { status: "reading" | "listening" };
+/** A book *In flight*: `status` says which group, Reading or Listening (task 1.23). The start is the
+ * read in progress's, for the status control's date line (task 1.17b). */
+export type FlyingBook = StatusBook & {
+  status: "reading" | "listening"; started_on: string | null; started_on_precision: Precision;
+};
 
 /** *In flight* for books (task 1.9): what you are reading, by eye and then by
  * ear (task 1.23). No reading position is stored, so the row shows the word count. */
 export async function booksInFlight(userId: string) {
   return sql<FlyingBook[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, b.word_count,
-           st.status, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened
+           st.status, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened,
+           st.started_on::text AS started_on, st.started_on_precision
     FROM book_status st
     JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
     LEFT JOIN authors a     ON a.id = b.author_id
@@ -1136,24 +1140,93 @@ export interface PeriodCapacity {
  */
 export async function planCapacity(
   userId: string, year: number, settings?: Promise<ReadingSettings>,
-): Promise<{ year: PeriodCapacity; quarters: PeriodCapacity[] }> {
-  const rows = await sql<PeriodCapacity[]>`
+): Promise<YearCapacity> {
+  const rows = await capacityRows(userId, year, year);
+  if (rows.length === 0) return emptyYear(await (settings ?? readingSettings(userId)), year);
+  return { year: rows[0], quarters: rows.slice(1) };
+}
+
+/** A year and its four quarters, as `planCapacity` answers them. */
+export type YearCapacity = { year: PeriodCapacity; quarters: PeriodCapacity[] };
+
+/**
+ * `plan_capacity`'s rows for the years `from`…`to`, each year before its quarters. One year is
+ * read with `year =`, the form the view pushes down into its scan (test/capacity.test.ts's
+ * EXPLAIN); a range only for the chips' few years. Two whole statements, not a nested `sql`
+ * fragment: test/query-budget.test.ts counts every `sql` call as a query.
+ */
+const capacityRows = (userId: string, from: number, to: number) => (from === to
+  ? sql<PeriodCapacity[]>`
     SELECT period, year, quarter, capacity, planned_words AS "plannedWords", stated_words AS "statedWords",
            estimated_words AS "estimatedWords", books, read_books AS "readBooks", unknown_books AS "unknownBooks",
            load, estimated_share AS "estimatedShare"
-    FROM plan_capacity WHERE user_id = ${userId} AND year = ${year}
-    ORDER BY quarter NULLS FIRST`;
-  if (rows.length === 0) {
-    const capacity = wordsPerYear(await (settings ?? readingSettings(userId)), year);
-    const empty = (quarter: number | null): PeriodCapacity => ({
-      period: quarter === null ? String(year) : `${year}-Q${quarter}`, year, quarter,
-      capacity: quarter === null ? capacity : capacity / 4,
-      plannedWords: 0, statedWords: 0, estimatedWords: 0, books: 0, readBooks: 0, unknownBooks: 0,
-      load: 0, estimatedShare: null,
-    });
-    return { year: empty(null), quarters: [1, 2, 3, 4].map(empty) };
-  }
-  return { year: rows[0], quarters: rows.slice(1) };
+    FROM plan_capacity WHERE user_id = ${userId} AND year = ${from}
+    ORDER BY quarter NULLS FIRST`
+  : sql<PeriodCapacity[]>`
+    SELECT period, year, quarter, capacity, planned_words AS "plannedWords", stated_words AS "statedWords",
+           estimated_words AS "estimatedWords", books, read_books AS "readBooks", unknown_books AS "unknownBooks",
+           load, estimated_share AS "estimatedShare"
+    FROM plan_capacity WHERE user_id = ${userId} AND year BETWEEN ${from} AND ${to}
+    ORDER BY year, quarter NULLS FIRST`);
+
+/** A year nothing counts in: empty, at your settings' capacity. */
+function emptyYear(settings: ReadingSettings, year: number): YearCapacity {
+  const capacity = wordsPerYear(settings, year);
+  const empty = (quarter: number | null): PeriodCapacity => ({
+    period: quarter === null ? String(year) : `${year}-Q${quarter}`, year, quarter,
+    capacity: quarter === null ? capacity : capacity / 4,
+    plannedWords: 0, statedWords: 0, estimatedWords: 0, books: 0, readBooks: 0, unknownBooks: 0,
+    load: 0, estimatedShare: null,
+  });
+  return { year: empty(null), quarters: [1, 2, 3, 4].map(empty) };
+}
+
+/**
+ * The plan editor's chips (task 2.3): `count` years from `first`, each year and its quarters
+ * with its current words against capacity, as `planCapacity` reads them, in one read of
+ * `plan_capacity`. Your settings are read only when a year has nothing planned.
+ */
+export async function planYears(userId: string, first: number, count = 5): Promise<YearCapacity[]> {
+  const rows = await capacityRows(userId, first, first + count - 1);
+  let settings: Promise<ReadingSettings> | undefined;
+  return Promise.all(Array.from({ length: count }, async (_, i) => {
+    const year = first + i;
+    const mine = rows.filter((r) => r.year === year);
+    if (mine.length) return { year: mine[0], quarters: mine.slice(1) };
+    return emptyYear(await (settings ??= readingSettings(userId)), year);
+  }));
+}
+
+/** One book as the plan picker needs it (task 2.3): its words and where it sits now. */
+export type PlanBook = {
+  id: string; title: string; author: string | null; status: string | null;
+  /** `to_read_level`'s level and period; null unless the book is to read. */
+  level: ToReadLevel | null; period: string | null;
+  /** The stated count, else pages x your words per page (50 pages or more), as `plan_book_words` reads it; null when unknown. */
+  words: number | null;
+  /** The words rest on an estimate: a stored estimate, or pages x words per page. */
+  estimated: boolean;
+};
+
+/**
+ * A live book for the plan picker's header and its move's `from` (task 2.3), or null when it is
+ * removed or unknown. Its words are `plan_book_words`'s rule for a book in no period (Someday),
+ * worked out here and never stored (hard rule 2).
+ */
+export async function planBook(userId: string, bookId: string): Promise<PlanBook | null> {
+  const [row] = await sql<PlanBook[]>`
+    SELECT b.id, b.title, a.name AS author, st.status, tl.level, tl.period,
+           COALESCE(b.word_count, CASE WHEN b.page_count >= 50
+                                       THEN b.page_count * COALESCE(rs.words_per_page, ${DEFAULT_WORDS_PER_PAGE}) END) AS words,
+           CASE WHEN b.word_count IS NOT NULL THEN b.word_count_source = 'estimated'
+                ELSE b.page_count >= 50 END AS estimated
+    FROM books b
+    LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+    LEFT JOIN to_read_level tl ON tl.book_id = b.id AND tl.user_id = ${userId}
+    LEFT JOIN reading_settings rs ON rs.user_id = ${userId}
+    WHERE b.id = ${bookId} AND b.deleted_at IS NULL`;
+  return row ? { ...row, estimated: row.estimated === true } : null;
 }
 
 /* ── The books dashboard (task 2.2, F-22, D-40) ─────────────────────────────────────────
@@ -1167,6 +1240,8 @@ export type InHandBook = {
   id: string; title: string; author: string | null; pages: number | null; words: number | null;
   cover_url: string | null; status: "reading" | "listening";
   started_on: string | null; started_on_precision: Precision;
+  /** It has a listen in the log (task 1.23), for the status control's headphones glyph (task 1.17b). */
+  listened: boolean;
   /** *Next in* (task 2.2d): the next book in what this one is in and you follow as Reading. */
   next_in: NextIn | null;
   /** Where it sits (task 2.2g): one row per level it belongs to, outermost first; `[]` when none. */
@@ -1202,6 +1277,7 @@ export async function booksInHand(userId: string) {
              COALESCE(b.word_count, CASE WHEN b.page_count >= 50
                                          THEN b.page_count * COALESCE(rs.words_per_page, ${DEFAULT_WORDS_PER_PAGE}) END) AS words,
              st.status, st.started_on, st.started_on_precision,
+             EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = st.user_id AND e.book_id = b.id AND e.format = 'audio') AS listened,
              b.series_id, b.subseries_id, b.author_id, b.universe_id
       FROM book_status st
       JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
@@ -1243,7 +1319,7 @@ export async function booksInHand(userId: string) {
       GROUP BY h.id
     )
     SELECT hand.id, hand.title, hand.author, hand.pages, hand.cover_url, hand.words, hand.status,
-           hand.started_on::text AS started_on, hand.started_on_precision, x.next_in,
+           hand.started_on::text AS started_on, hand.started_on_precision, hand.listened, x.next_in,
            COALESCE(lv.levels, '[]'::json) AS levels
     FROM hand
     LEFT JOIN next_in x ON x.hand_id = hand.id
@@ -1435,6 +1511,61 @@ export async function keepGoing(userId: string, period: string, limit: number) {
     LEFT JOIN book_status st ON st.user_id = n.user_id AND st.book_id = n.book_id
     ORDER BY n.last_read_on DESC NULLS LAST, n.name, n.kind, n.book_id
     LIMIT ${limit}
+  `;
+}
+
+/* ── Plan a year or a quarter: the suggestions (task 2.10b, F-65, D-104, D-108) ──────────── */
+
+/** The planning sheet's groups, in the order it shows them (the roadmap entry 2.10b's). */
+export const SUGGESTION_REASONS = [
+  "next_in_series", "next_on_shelf", "from_author", "on_deck",
+  "coming_out", "recently_added", "fits_room", "genre_change",
+] as const;
+export type SuggestionReason = (typeof SUGGESTION_REASONS)[number];
+
+/** One suggestion: a book, the group it is in, its place there, and its reason line. */
+export type PlanSuggestion = {
+  id: string; title: string; author: string | null;
+  reason: SuggestionReason;
+  /** The reason line: *Next in Red Rising · you've read 3 of 6*, *Out May 4, 2027*. */
+  detail: string;
+  /** 1… within its group. */
+  rank: number;
+  /** Its status now: groups 1–3 also list Unlisted books and books with no status row. */
+  status: "to_read" | "unlisted" | null;
+  /** Placing it writes `to_read` too (1.21's promote): the sheet tags it *Unlisted* (1.22). */
+  unlisted: boolean;
+  /** Where it is already planned, outside the target (`2027-Q3`, `2027`, `on_deck`), or null. */
+  period: string | null;
+  /** Its words as `plan_book_words` counts them, or null when unknown. */
+  words: number | null;
+  estimated: boolean;
+};
+
+const TARGET = /^\d{4}(-Q[1-4])?$/;
+
+/**
+ * What to plan in `target` (`2027-Q2` or `2027`), grouped by why, from `plan_suggestions`
+ * (etl/views.sql): run when the sheet opens, never stored (hard rule 2). The room *Fits the room
+ * left* fills is the target's capacity less its planned words, as `planCapacity` reads them, so
+ * the sheet's budget line and this agree. `today` is the Eastern day (`YYYY-MM-DD`): *Recently
+ * added* counts 90 days back from it, *A change of genre* reads its year. Groups come in
+ * `SUGGESTION_REASONS` order, each by rank; a book is in one group only.
+ */
+export async function planSuggestions(userId: string, target: string, today: string): Promise<PlanSuggestion[]> {
+  if (!TARGET.test(target)) throw new Error(`not a year or a quarter: ${target}`);
+  const year = Number(target.slice(0, 4));
+  const quarter = target.length > 4 ? Number(target.slice(-1)) : null;
+  const cap = await planCapacity(userId, year);
+  const period = quarter === null ? cap.year : cap.quarters[quarter - 1];
+  const room = Math.floor(period.capacity - period.plannedWords);
+  return sql<PlanSuggestion[]>`
+    SELECT s.book_id AS id, b.title, a.name AS author, s.reason, s.detail, s.rank, s.status, s.unlisted,
+           s.period, s.words, COALESCE(s.word_source = 'estimated', false) AS estimated
+    FROM plan_suggestions(${userId}, ${target}, ${room}::bigint, ${today}::date) s
+    JOIN books b ON b.id = s.book_id
+    LEFT JOIN authors a ON a.id = b.author_id
+    ORDER BY array_position(${[...SUGGESTION_REASONS]}::text[], s.reason), s.rank
   `;
 }
 

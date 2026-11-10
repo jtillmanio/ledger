@@ -45,7 +45,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       error: "item is { use }, { hardcover: { hardcoverId, title, authors, year, pages, coverUrl } } or "
         + "{ hand: { title, author, series, position, pages, words } }; "
-        + "destination is { kind: 'someday' }, { kind: 'on_deck' } or { kind: 'shelf', shelfId }",
+        + "destination is { kind: 'someday' }, { kind: 'on_deck' }, { kind: 'period', period: '2027-Q1' or '2027' } "
+        + "or { kind: 'shelf', shelfId }",
     }, { status: 400 });
   }
   const result = await addBook(userId, item, destination, note === null ? {} : { note });

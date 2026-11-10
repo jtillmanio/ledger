@@ -35,6 +35,8 @@ export type BookWriteArgs = {
   onSaved?: (written: BookWritten) => void;
   /** Runs once an Undo has taken the save back, before the page refreshes. */
   onUndone?: () => void;
+  /** False holds the page refresh back: the caller refreshes when it has finished asking (task 1.17b). */
+  refresh?: boolean;
 };
 
 /**
@@ -52,7 +54,7 @@ export function useBookWrite() {
   const router = useRouter();
   const { push } = useUndo();
   return useCallback(async ({
-    bookId, status, name, was, finish, start, onSaved, onUndone,
+    bookId, status, name, was, finish, start, onSaved, onUndone, refresh = true,
   }: BookWriteArgs): Promise<{ refused: string } | { written: BookWritten }> => {
     const res = await fetch("/api/progress/book", {
       method: "POST",
@@ -68,7 +70,7 @@ export function useBookWrite() {
     if (!res.ok) throw new Error("status failed");
     const written = (await res.json()) as BookWritten;
     onSaved?.(written);
-    router.refresh();
+    if (refresh) router.refresh();
     push({
       label: `${name}: ${NAMES[status]}`,
       detail: start ? `Started ${finishWords(start)}`

@@ -1154,6 +1154,7 @@ END $$;
 -- follow or progress table instead. A follow's state lives only in its own row,
 -- so changing it is one write to the follow table, and follow_state follows it.
 -- 1.18b (D-90, D-91) adds Calibre's id and groupings: facts about the book.
+-- 2.10b adds added_at, when the book was added in the app: a fact about the book.
 DO $$
 DECLARE got text;
 BEGIN
@@ -1163,7 +1164,7 @@ BEGIN
     WHERE table_schema = 'public' AND table_name IN ('books', 'authors', 'book_series', 'book_universes')
     GROUP BY table_name) t;
   IF got IS DISTINCT FROM 'authors(id,name) book_series(author_id,id,name,total_books) '
-                       || 'book_universes(id,name) books(author_id,book_type,calibre_id,cover_url,'
+                       || 'book_universes(id,name) books(added_at,author_id,book_type,calibre_id,cover_url,'
                        || 'deleted_at,genre,hardcover_id,id,open_library_id,page_count,published_year,'
                        || 'series_id,series_position,subseries_id,subseries_position,title,universe_id,'
                        || 'universe_position,word_count,word_count_source)' THEN
@@ -1297,6 +1298,37 @@ BEGIN
   FROM follow_queue WHERE user_id = 'zz-fn' AND kind = 'series' AND entity_id IN ('zz-fn-rd', 'zz-fn-dnf', 'zz-fn-del');
   IF got IS DISTINCT FROM 'zz-fn-d3:to_read:1 zz-fn-r2:reading:1 zz-fn-x3:to_read:1 zz-fn-r3:to_read:2' THEN
     RAISE EXCEPTION 'follow_queue wrong: %', got;
+  END IF;
+END $$;
+
+-- plan_suggestions (task 2.10b, D-104, D-108), on follow_next's fixture above:
+-- groups 1-3 are follow_next's books, each once, the series kinds first (the
+-- follow most recently read in first, then by name), then the shelf, then every
+-- unread book of the author (earliest published first). zz-fn has no plan, no
+-- release, no date added, no genre and no room, so groups 4-8 are empty; the
+-- unlisted l2 is flagged. The test suite's test/plan-suggestions.test.ts holds
+-- the roadmap Check's fixture.
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT pg_get_function_result('plan_suggestions(text,text,bigint,date)'::regprocedure) INTO got;
+  IF got IS DISTINCT FROM 'TABLE(book_id text, reason text, detail text, rank integer, status text, '
+                       || 'unlisted boolean, period text, words integer, word_source text)' THEN
+    RAISE EXCEPTION 'plan_suggestions columns wrong: %', got;
+  END IF;
+  SELECT string_agg(reason || ':' || book_id || ':' || rank || CASE WHEN unlisted THEN ':unlisted' ELSE '' END, ' '
+                    ORDER BY array_position(ARRAY['next_in_series', 'next_on_shelf', 'from_author'], reason), rank)
+    INTO got
+  FROM plan_suggestions('zz-fn', '2027-Q2', 0, '2026-11-10');
+  IF got IS DISTINCT FROM 'next_in_series:zz-fn-s3:1 next_in_series:zz-fn-l2:2:unlisted '
+                       || 'next_in_series:zz-fn-x3:3 next_in_series:zz-fn-d3:4 next_in_series:zz-fn-sub2:5 '
+                       || 'next_in_series:zz-fn-v3:6 next_on_shelf:zz-fn-h3:1 '
+                       || 'from_author:zz-fn-a3:1 from_author:zz-fn-a2:2 from_author:zz-fn-a4:3' THEN
+    RAISE EXCEPTION 'plan_suggestions wrong: %', got;
+  END IF;
+  SELECT detail INTO got FROM plan_suggestions('zz-fn', '2027-Q2', 0, '2026-11-10') WHERE book_id = 'zz-fn-s3';
+  IF got IS DISTINCT FROM 'Next in Zz Fn Series · you''ve read 2 of 6' THEN
+    RAISE EXCEPTION 'plan_suggestions detail wrong: %', got;
   END IF;
 END $$;
 

@@ -269,7 +269,11 @@ tables.
     (`test/perf.test.ts` holds this table to it); each is the median
     measured on 0.10's own preview plus 20%, and the accessibility score is the
     one measured. Raising one needs a reason here. A new top-level screen adds
-    its route to `scripts/perf/routes.mjs` and its row here.
+    its route to `scripts/perf/routes.mjs` and its row here. Task 0.13 (D-142)
+    replaces this rule, after 1.30: a preview fails on what its PR adds over
+    main's last run, the shared JS is budgeted once, ceilings are the
+    measurement plus 25% and rise only by decision, and requests to another
+    origin are not budgeted. Until it lands, the rule above holds.
 
     <!-- perf-budget -->
     | Route | Document + RSC bytes | JS bytes | Requests | Accessibility ≥ |
@@ -278,11 +282,11 @@ tables.
     | `/comics` | 30,500 | 170,000 | 41 | 100 |
     | `/comics/runs` | 57,000 | 170,000 | 38 | 100 |
     | `/comics/status` | 24,000 | 175,000 | 35 | 100 |
-    | `/books/status` | 24,000 | 175,000 | 35 | 100 |
+    | `/books/status` | 24,000 | 175,400 | 35 | 100 |
     | `/comics/bendis-disassembled` | 26,800 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 26,000 | 171,000 | 33 | 100 |
-    | `/books` | 19,000 | 175,000 | 36 | 100 |
-    | `/books/list` | 70,000 | 170,000 | 64 | 100 |
+    | `/books` | 19,000 | 177,700 | 36 | 100 |
+    | `/books/list` | 70,000 | 173,400 | 65 | 100 |
     | `/inbox` | 16,000 | 173,000 | 31 | 100 |
     | `/settings` | 16,000 | 173,000 | 32 | 100 |
     | `/watch` | 12,500 | 173,000 | 28 | 100 |
@@ -369,6 +373,39 @@ tables.
     *Or keep going* reads `follow_next` beside the rest, leaving out the
     quarter's offer by `quarterShelf`'s own rule rather than waiting for it,
     and Now's *Next in* is part of `booksInHand`'s read, not a query of its own.
+    Task 1.17b (PR #222, D-131) put the book status control on Now and on the
+    status screens, and made it ask the dates: *Reading* opens *Started*, *Read*
+    opens *Started* and *Finished* together. Its client code (the two pickers, the
+    refusal reasons, the start re-date) ships with every Library row and with
+    Now. PR #222's preview measured `/books` at 175,918 bytes of JS and
+    `/books/list` at 171,581 bytes and 65 requests (median of three). Making the
+    read list a lazy chunk saved under 250 bytes and added the one request, so
+    the budgets were raised to `/books` 177,000, `/books/list` 173,000 and 65
+    requests, each the measured number plus under 1%. This is a stopgap, not a
+    new floor: a roadmap item (1.30) brings the two routes back under their
+    old budgets.
+    Task 2.3's picker sheet (PR #224) put *Year or quarter…* on Add books and
+    on each search result. With the picker itself loaded only when it opens, as
+    the Library row's *Plan for…* loads it, the preview measured `/books` at
+    177,149 bytes of JS (median of three), so the owner raised `/books` to
+    177,200 (2026-11-10), the same kind of stopgap with 1.30's target
+    unchanged. For 1.30: `AddBooksButton` imports `AddBooks` statically, so
+    every page with an Add button ships Search, *Paste a list* and *By hand*
+    before the sheet opens; loading it with the sheet is the likeliest large
+    saving.
+    PR #232 (D-144) made an open sheet lift its buttons clear of the undo
+    toast, which needs the toast's height measured in the always-loaded undo
+    provider. Its preview measured `/books` at 177,359, `/books/list` at 173,068
+    and `/books/status` at 175,045 bytes of JS (median of three), so the owner
+    raised them to 177,400, 173,100 and 175,100 (2026-11-10): the same stopgap,
+    1.30's targets unchanged.
+    PR #233 (a CI-only change: no app code) then measured `/books` at 177,416
+    and `/books/list` at 173,118 bytes of JS, 57 and 50 bytes above #232's
+    preview of the same app code, and `/books/status` at about 175,000: build
+    to build noise, with no headroom left to absorb it. The owner raised all
+    three by 300 bytes, to 177,700, 173,400 and 175,400 (2026-11-10), the same
+    stopgap with 1.30's targets unchanged; 0.13 (D-142) replaces this kind of
+    ceiling with a gate on what each PR adds.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 
@@ -407,7 +444,7 @@ in `hickman-ff` and unread in `bendis-dark-reign`.
 | Development | A Neon branch | `.env` `DATABASE_URL` (never production) | `npm run dev`; `rebuild`, `load`, `db:push` and `db:views` after asking; the running app without asking, data left as found |
 | Test | A Neon branch or a local `*_test` database | `TEST_DATABASE_URL`, locally and in CI | Tests and anything that truncates, only |
 | PR preview | One Neon branch per PR (`preview/<branch>`), deleted on merge | The Vercel and Neon integration | The preview build migrates only its own branch |
-| Production | Neon `main` | GitHub secret `DATABASE_URL`; locally only the gitignored `.env.live`, read only with `-EnvFile .env.live` | The Release workflow; before cutover `npm run rebuild -- -EnvFile .env.live` by the owner. `LEDGER_LIVE=true` makes `load` and `rebuild` refuse |
+| Production | Neon `main` | GitHub secret `DATABASE_URL`; locally only the gitignored `.env.live`, read only with `-EnvFile .env.live` | The Release workflow; before cutover `npm run rebuild -- -EnvFile .env.live` by the owner. `LEDGER_LIVE=true` makes `load` and `rebuild` refuse. From the books cutover to the comics cutover, `npm run load:comics -- -EnvFile .env.live` by the owner replaces only the comics (task 1.29, D-128); `LEDGER_COMICS_LIVE=true` makes it refuse |
 
 Every outside service (Neon, Vercel, GitHub, Cloudflare R2, Anthropic, Metron,
 Hardcover, Calibre and the rest), its account, and where each of its keys is

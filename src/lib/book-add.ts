@@ -4,6 +4,7 @@
  */
 import { MAX_FIELD } from "@/lib/book-parse";
 import { normalizeLine } from "@/lib/bulk-parse";
+import { quarterName } from "@/lib/format";
 import type { AddedEntry, Destination } from "@/db/writes";
 
 /** `reading_settings.words_per_page`'s column default, for a user with no settings row (architecture § Metadata sources: pages × 275). */
@@ -16,18 +17,26 @@ export const MAX_PAGES = 20_000;
 export const MAX_WORDS = 10_000_000;
 export const MAX_POSITION = 100_000;
 
-/** Where the screen says an add is going: Someday, On deck (task 1.7), or a shelf by id and name. */
-export type Target = { kind: "someday" } | { kind: "on_deck" } | { kind: "shelf"; shelfId: string; name: string };
+/**
+ * Where the screen says an add is going: Someday, On deck (task 1.7), a year or a quarter (task 2.3,
+ * one `period` value: `2027` or `2027-Q3`), or a shelf by id and name.
+ */
+export type Target =
+  | { kind: "someday" } | { kind: "on_deck" }
+  | { kind: "period"; period: string }
+  | { kind: "shelf"; shelfId: string; name: string };
 
-/** *Someday*, *On deck*, *Cosmere*: the target's name on the screen. */
-export const targetName = (t: Target) => (t.kind === "someday" ? "Someday" : t.kind === "on_deck" ? "On deck" : t.name);
+/** *Someday*, *On deck*, *Q3 2027*, *Cosmere*: the target's name on the screen. */
+export const targetName = (t: Target) => (t.kind === "someday" ? "Someday" : t.kind === "on_deck" ? "On deck"
+  : t.kind === "period" ? quarterName(t.period) : t.name);
 
 /** *Add to Someday*, *Add to On deck*, *Add to Cosmere*: what every result's primary button says. */
 export const addTo = (t: Target) => `Add to ${targetName(t)}`;
 
 /** What a request sends for the screen's target. */
 export const destinationOf = (t: Target): Destination =>
-  (t.kind === "shelf" ? { kind: "shelf", shelfId: t.shelfId } : { kind: t.kind });
+  (t.kind === "shelf" ? { kind: "shelf", shelfId: t.shelfId }
+    : t.kind === "period" ? { kind: "period", period: t.period } : { kind: t.kind });
 
 /**
  * An add's undo, from the screen (task 1.4c, AC-5): rejects when it couldn't,
@@ -44,6 +53,15 @@ export async function undoAdd(entry: AddedEntry, note?: { id: number; bookId: st
   if (!res.ok) throw new Error(String(res.status));
 }
 
+/** A year or a quarter, one value (task 2.3, D-38): `2027` or `2027-Q1`, never a month. */
+export const YEAR_OR_QUARTER = /^\d{4}(-Q[1-4])?$/;
+/** A plan period: a year, a quarter or On deck. */
+export const PLAN_PERIOD = /^(\d{4}(-Q[1-4])?|on_deck)$/;
+/** Keys that would carry a year, a quarter or a month apart from the one period value: refused (task 2.3, D-38). */
+export const SPLIT_PERIOD_KEYS = ["year", "quarter", "month"] as const;
+/** True when an object carries a year, a quarter or a month as a value of its own. */
+export const splitsPeriod = (o: Record<string, unknown>) => SPLIT_PERIOD_KEYS.some((k) => k in o);
+
 /** The destination a request names, or undefined when it names none properly. Missing means Someday. */
 export function parseDestination(raw: unknown): Destination | undefined {
   if (raw === undefined || raw === null) return { kind: "someday" };
@@ -51,6 +69,11 @@ export function parseDestination(raw: unknown): Destination | undefined {
   const d = raw as Record<string, unknown>;
   if (d.kind === "someday") return { kind: "someday" };
   if (d.kind === "on_deck") return { kind: "on_deck" };
+  // A year or a quarter (task 2.3): one `period` value, and nothing beside it that splits it.
+  if (d.kind === "period") {
+    return typeof d.period === "string" && YEAR_OR_QUARTER.test(d.period) && !splitsPeriod(d)
+      ? { kind: "period", period: d.period } : undefined;
+  }
   if (d.kind === "shelf" && typeof d.shelfId === "string" && d.shelfId && d.shelfId.length <= MAX_ID) {
     return { kind: "shelf", shelfId: d.shelfId };
   }

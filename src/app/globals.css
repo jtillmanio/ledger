@@ -658,6 +658,12 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .sheet h2{font-size:.9375rem;font-weight:700;margin:0 0 .1875rem;font-family:inherit}
 .sheet h2:focus{outline:none}
 .sheet h2:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+/* The undo toast stays live above a sheet (D-63) and, on a phone or a tablet, where the sheet rises:
+   while one shows, the sheet's foot makes room for it, so its buttons sit .5rem above the toast (D-144).
+   --toast-clear is set by Undo.tsx only while a toast shows. */
+@media (max-width:1023px){
+  .sheet{padding-bottom:max(calc(.875rem + env(safe-area-inset-bottom)), calc(var(--toast-clear, 0px) + .5rem))}
+}
 @media (min-width:1024px){
   .sheet-host{align-items:flex-start;padding-top:6.5rem}
   .sheet{max-width:28rem;border-bottom:1px solid var(--rule-2);border-radius:var(--r-xl);padding:.9375rem}
@@ -729,6 +735,20 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
   -webkit-tap-highlight-color:transparent}
 .finish-note{margin-top:.5rem;font-size:.75rem}
 .finish-actions{margin-top:.5rem}
+/* The pickers' options are 44px on the phone (the UX floor, task 1.17b). */
+@media (max-width:767px){
+  .finish .opts .opt,.status-group .opt{min-height:44px}
+  .finish .stepper button{width:44px;height:44px}
+}
+/* The status control on Now and on the status rows (task 1.17b, D-131): under the band and under the text. */
+.now-status{padding:0 16px 12px}
+.now-status .status-line{margin-top:0}
+.row-control{margin-top:.375rem}
+/* All reads (task 1.17b): each read oldest first, the dates a button apiece, grey text and rules only. */
+.reads{list-style:none;margin:.5rem 0 0;padding:0;display:flex;flex-direction:column;gap:.5rem}
+.read-item{padding-top:.5rem;border-top:1px solid var(--line)}
+.read-name{display:flex;align-items:center;gap:.375rem;font-size:.8125rem;color:var(--ink-2)}
+.read-dates{display:flex;gap:.5rem;flex-wrap:wrap;margin:.375rem 0 0}
 
 .sheet-fields{margin-top:.75rem}
 .sheet-fields .frow input{margin-left:auto;font:inherit;font-family:var(--mono);font-size:.875rem;color:var(--ink);
@@ -1198,8 +1218,36 @@ input.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
   background:var(--surface);border:1px solid var(--faint-deco);color:var(--ink-2)}
 .addto .chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--on-brand);font-weight:600}
 .addto .chip[aria-disabled="true"]{background:none;color:var(--muted);border-style:dashed;cursor:not-allowed}
-.addto-later{margin:.375rem 0 0}
 .addto-pick{margin:.5rem 0 0}
+/* --- the plan picker (task 2.3, F-23; mockup `moveplan`; D-37, D-38) -------
+   Chips are real buttons: 44px under 1024px, 32px from there, never under 24px.
+   Pressed is the brand fill. The preview sits on --raise; over capacity it is
+   a held decision, --blocked on --blocked-soft, never red. Tokens only. */
+.pp-head{display:flex;gap:.625rem;align-items:center;padding-bottom:.75rem;border-bottom:1px solid var(--rule);margin-bottom:.75rem}
+.pp-by{margin:0;font-size:.8125rem;color:var(--muted);min-width:0}
+.pp-head .bdg{margin-left:auto;flex:0 0 auto}
+.pp-k{font-size:.8125rem;color:var(--muted);font-weight:600;margin:0 0 .5rem}
+.pp-chips{display:flex;flex-wrap:wrap;gap:.375rem}
+.pp-quarters{margin-top:.625rem}
+.pp-chip{font:inherit;font-size:.8125rem;display:inline-flex;align-items:center;gap:.375rem;min-height:44px;
+  padding:.25rem .75rem;cursor:pointer;background:var(--surface);color:var(--ink-2)}
+.pp-chip .pp-sum{font-size:.6875rem;color:var(--muted)}
+.pp-chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--on-brand);font-weight:600}
+.pp-chip[aria-pressed="true"] .pp-sum{color:var(--on-brand)}
+.pp-note{margin:.5rem 0 0}
+.pp-preview{margin-top:.75rem;border-radius:var(--r-lg);background:var(--raise);min-height:0}
+.pp-preview:empty{display:none}
+.pp-line{display:flex;gap:.75rem;align-items:baseline;justify-content:space-between;margin:0;padding:.75rem .875rem;
+  font-size:.8125rem;color:var(--ink-2)}
+.pp-name{font-weight:600}
+.pp-figure{font-weight:600;color:var(--ink);text-align:right}
+.pp-preview[data-over="true"]{background:var(--blocked-soft)}
+.pp-preview[data-over="true"] .pp-name,.pp-preview[data-over="true"] .pp-figure{color:var(--blocked)}
+.pp-stretch{padding:0 .875rem .75rem}
+.pp-why{margin:.375rem 0 0;color:var(--blocked)}
+.pp-step{margin-top:.25rem}
+.pp-back{min-height:44px}
+@media (min-width:1024px){.pp-chip{min-height:32px}}
 .addb .seg{margin-top:.75rem}
 .addb .add-failed{margin:.75rem 0 0}
 .sheet .addb .add-2up{display:block}
@@ -1682,6 +1730,7 @@ section[data-plan="year"] h2.group-head{color:var(--muted)}
 /* The loading state (Skeleton.tsx): the same boxes, their contents in --sunk. */
 .sk-fill{display:block;width:100%;height:100%}
 .sk-now-kick{height:14px}
+.sk-now-status{height:24px}
 .sk-now-name{height:22px;margin:12px 0 4px}
 .sk-now-by{height:14px;margin:9px 0 3px}
 .sk-now-pages{height:28px;margin:4px 0}
