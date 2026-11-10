@@ -52,9 +52,16 @@ const clean = () => withSql(async (sql) => {
   await sql`DELETE FROM authors WHERE id = ${AUTHOR.id}`;
 });
 
+// The E2E user's reading settings, as an earlier spec left them (settings.spec.ts writes them): put
+// aside for this file, so every capacity here is the default one (45 min × 185 wpm, a quarter about
+// 760k), and put back after. The suite runs one file at a time (workers: 1), so nothing races this.
+let savedSettings: Record<string, unknown> | undefined;
+
 test.beforeAll(async () => {
   await clean();
   await withSql(async (sql) => {
+    [savedSettings] = await sql`SELECT * FROM reading_settings WHERE user_id = ${E2E_USER}`;
+    await sql`DELETE FROM reading_settings WHERE user_id = ${E2E_USER}`;
     await sql`INSERT INTO authors (id, name) VALUES (${AUTHOR.id}, ${AUTHOR.name})`;
     for (const b of BOOKS) {
       await sql`INSERT INTO books (id, title, author_id, word_count, word_count_source)
@@ -62,7 +69,13 @@ test.beforeAll(async () => {
     }
   });
 });
-test.afterAll(clean);
+test.afterAll(async () => {
+  await clean();
+  await withSql(async (sql) => {
+    await sql`DELETE FROM reading_settings WHERE user_id = ${E2E_USER}`;
+    if (savedSettings) await sql`INSERT INTO reading_settings ${sql(savedSettings)}`;
+  });
+});
 
 // Every test starts from the same plan: A, B, C in the next year's Q1, D in the later year's Q2, the rest Someday.
 test.beforeEach(async () => {
@@ -286,8 +299,15 @@ test("over capacity the preview is amber with the amount over and a disabled Acc
   await expectNoAxeViolations(page, AXE);
   await screenshot(page, info, "plan-picker-over");
 
-  // A target that fits is plain again.
-  await chip(sheet.getByRole("group", { name: `Quarter of ${Y + 3}` }), "Q3").click();
+  // A target that fits is plain again: the year itself (about 3,040k), as no quarter can hold 900k.
+  // Wait for its figure first: while the total is being worked out data-over is unset too, so the
+  // flag alone would pass before the answer came back (it did, for Q3, which is over).
+  const year = String(Y + 3);
+  const yearTotal = (await totalOf(year)) + G.words;
+  const yearCapacity = await capacityOf(year);
+  expect(yearTotal).toBeLessThan(yearCapacity);
+  await chip(sheet.getByRole("group", { name: `Quarter of ${Y + 3}` }), "No quarter yet").click();
+  await expect(preview.locator(".pp-figure")).toHaveText(`${k(yearTotal)} of ${k(yearCapacity)}`);
   await expect(preview).not.toHaveAttribute("data-over", "true");
 });
 
