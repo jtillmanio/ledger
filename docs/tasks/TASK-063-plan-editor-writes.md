@@ -1,7 +1,7 @@
 ---
 id: TASK-063
 title: 2.3 Plan editor (1 of 3) — every plan level through one write
-status: In progress
+status: Review
 depends_on: [TASK-011, TASK-046]
 size: M
 model: opus
@@ -33,7 +33,7 @@ Moving a book to any plan level (a quarter, a bare year, On deck or Someday), an
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves its write clauses: both periods' totals, the preview's figure as the API answers it, the last ordinal, contiguity and undo, On deck and Someday, *No quarter yet*, one `period` value, and the one-transaction add. TASK-064 proves the preview in the sheet and the *Flip*'s screens): test that moving a 150k-word book from 2027 Q1 to 2028 Q2 changes
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves its write clauses: both periods' totals, the preview's figure as the API answers it, the last ordinal, contiguity and undo, On deck and Someday, *No quarter yet*, one `period` value, and the one-transaction add. TASK-064 proves the preview in the sheet and the *Flip*'s screens): test that moving a 150k-word book from 2027 Q1 to 2028 Q2 changes
 both periods' totals correctly and that the preview reflects the destination
 period before the move is confirmed. The moved book takes 2028 Q2's last
 ordinal, 2027 Q1 stays contiguous, and undo puts it back at its old position.
@@ -44,10 +44,10 @@ independent of a quarter and never a month. **Flip (R3-08):** 1.4c's add sheet
 now offers *Year or quarter…* through this picker, and adding a book to a year
 or quarter writes its `book_status` and `reading_plan` rows in one transaction;
 1.9's empty Books *Up next* action becomes *Plan a book*.
-- [ ] AC-2: Given 2027-Q1 holding A, B (150k) and C in that order and 2028-Q2 holding D, moving B leaves 2027-Q1 as A = 1, C = 2 and 2028-Q2 as D = 1, B = 2; each period's total changes by exactly 150k; undo restores A = 1, B = 2, C = 3 and D alone.
-- [ ] AC-3: A preview request for a book and a target answers the target's total after the move and the amount over capacity (none when it fits), and writes nothing (`reading_plan` unchanged).
-- [ ] AC-4: A request carrying a month, or a year and a quarter as separate values, answers 400 and writes nothing. Moving to Someday deletes the book's `reading_plan` row and leaves its `book_status` (status, dates, rating, note) unchanged, and its undo restores the row at its old ordinal.
-- [ ] AC-5: `POST /api/books` with a quarter or bare-year destination writes `book_status` (`to_read`) and the `reading_plan` row together; when the plan insert fails, no `book_status` row is left. Undoing a status change on a book that had no status row, and has been planned since, never leaves a `reading_plan` row without a `book_status` row.
+- [x] AC-2: Given 2027-Q1 holding A, B (150k) and C in that order and 2028-Q2 holding D, moving B leaves 2027-Q1 as A = 1, C = 2 and 2028-Q2 as D = 1, B = 2; each period's total changes by exactly 150k; undo restores A = 1, B = 2, C = 3 and D alone.
+- [x] AC-3: A preview request for a book and a target answers the target's total after the move and the amount over capacity (none when it fits), and writes nothing (`reading_plan` unchanged).
+- [x] AC-4: A request carrying a month, or a year and a quarter as separate values, answers 400 and writes nothing. Moving to Someday deletes the book's `reading_plan` row and leaves its `book_status` (status, dates, rating, note) unchanged, and its undo restores the row at its old ordinal.
+- [x] AC-5: `POST /api/books` with a quarter or bare-year destination writes `book_status` (`to_read`) and the `reading_plan` row together; when the plan insert fails, no `book_status` row is left. Undoing a status change on a book that had no status row, and has been planned since, never leaves a `reading_plan` row without a `book_status` row.
 
 ## Out of scope
 
@@ -73,6 +73,10 @@ or quarter writes its `book_status` and `reading_plan` rows in one transaction;
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- TASK-064 builds the sheet on this task's API. It needs the contract: the chips GET, the preview GET (`bookId`/`from` or `words`), POST's `move` as the undo payload for DELETE, the `period` destination, and the screen-side `Target`, which lacks a period → docs/tasks/TASK-064-plan-picker-sheet.md § Context
+- Undoing a move to Someday restored the plan row even after the book had been read since (spec reviewer, round 1) → not tracked: done in this PR (plan revision, with the schema reviewer's MAJOR: `undoPlanMove` refuses for a book removed, Unlisted, with no status, or no longer `to_read` after Someday)
+- The owner's plan-gate choice that the no-prior status undo refuses under a plan row → not tracked: it extends 1.21's existing rule (a plan row is always a listed book's, `.claude/rules/schema.md`), not a new decision
+
 ## Plan
 
 Approved by the owner 2026-11-10. Worktree `.claude/worktrees/task-2.3` runs its tests on `.env`'s `ledger_test` (owner: `ledger_test_2` is another job's, no `ledger_test_3`).
@@ -97,9 +101,19 @@ Approved by the owner 2026-11-10. Worktree `.claude/worktrees/task-2.3` runs its
 
 **Risks**: the preview's rollback must never commit (a thrown sentinel, as `undoAddBooks`); `restoreToPlan`'s shift passes through a duplicate ordinal, which the deferred UNIQUE allows. Size: 9 files, no schema or UI; already 1 of 3 parts, not split again.
 
+**Revisions after approval**
+
+1. `test/books-dashboard.test.ts` (outside *Files*): one assertion, because POST `/api/plan`'s answer now carries `move` (step 4).
+2. `src/app/api/books/bulk/route.ts` (outside *Files*): its 400 message lists the `period` destination its parser now takes (step 5; spec reviewer).
+3. `undoPlanMove` also refuses unless the book is live with a status other than Unlisted, and after a move to Someday unless it is still `to_read` (schema reviewer MAJOR; settles the spec reviewer's open note). `planCapacity` keeps `year =` (the form the EXPLAIN test pins), the range only for `planYears`; the preview filters `plan_capacity` by year (schema reviewer MINORs). The chips' GET parameter is `firstYear`, not `from`, so it can't be read as a move's `from`.
+
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 round PASS → full PASS (977 e2e passed, 1 skipped) | rebased onto 7a33f04 (#220, CI only; not re-run)
+- Audit R1 PASS (one guard test non-discriminating at base, accepted: a mutation of `splitsPeriod` fails it)
+- Spec R1 APPROVE (close-out notes) | Schema R1 CHANGES (1 MAJOR, 2 MINOR) | UI not run (`ui: false`, no UI files)
+- Verify R2 round FAIL (query budget: a nested `sql` fragment counted as an 11th `/books` query) → round PASS
+- Spec R2 APPROVE | Schema R2 APPROVE
 
 ## Blocked
 
@@ -107,7 +121,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R1 round + full; R2 round twice, after one budget failure)
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 3

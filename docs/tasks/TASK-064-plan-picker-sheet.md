@@ -25,6 +25,13 @@ One sheet picks where a book goes in the plan, with each year's and quarter's wo
 - **Accept as a stretch year.** The entry's preview offers *Accept as a stretch year* when a move would go over. Accepting is stored in 2.7's `plan_acceptance` table (TASK-066), which M11's order builds after 2.3. **Stop and ask at plan time** whether the preview draws *Accept* `aria-disabled` with its reason until 2.7, or leaves it out until 2.7 adds it.
 - **Entry points.** *Plan for…* on the Library row's ⋯ menu (`src/components/BookRowMenu.tsx`, which today holds only *Follow…*). *Year or quarter…* on Add books (`src/components/AddBooks.tsx`): today an `aria-disabled` chip with the reason *Year or quarter… arrives with the plan editor.* (around lines 191–197); this task enables it, and adds the mockup's secondary *Year or quarter…* button on a search result row (`src/components/BookSearch.tsx`).
 - *From 1.7 (TASK-011, PR #96):* undoing an add from a search result clears the toast but leaves that row reading *✓ Added to …* (disabled), so it can't be re-added without searching again. This task reworks those result-row buttons; reset the row when its add is undone.
+- *From TASK-063 (2.3, task/2.3-plan-editor-writes):* the API this sheet calls, all in `src/app/api/plan/route.ts`:
+  - **Chips:** `GET /api/plan?firstYear=YYYY` answers `{ years }`, five years each `{ year, quarters }` as `planCapacity` reads them (`planYears`). The client sends the Eastern year.
+  - **Preview:** `GET /api/plan?to=…&bookId=…&from=…` answers `{ budget: { period, plannedWords, capacity, over } }`, with `over` null when it fits; `budget` is null for `on_deck` and `someday`.
+    - In add mode, a book not in the library yet sends `words` instead of `bookId`/`from`.
+    - `from` is the book's level now: a period, or `someday`.
+  - **Move:** `POST /api/plan { bookId, from, to }` answers `{ ok, move }`. `move` is the undo: push it onto the 1.2 stack and send `DELETE /api/plan { move }`, which answers 409 when the book has moved on.
+  - **Add into the plan:** `POST /api/books` takes `destination: { kind: "period", period }` for a year or a quarter. The screen-side `Target` and `destinationOf` in `src/lib/book-add.ts` don't have it yet; this task adds them.
 - **The Check's Flip:** 1.9's empty Books *Up next* action (`src/app/books/status/page.tsx`, today *Add a book*) becomes *Plan a book*.
 - The sheet is the shared `src/components/Sheet.tsx`: focus on its heading, Tab trapped, Esc and Back dismiss, focus back to the opener, the undo toast live above it (R1-11, D-63).
 - Design: `docs/04-design.md` § 12 → Over-commitment is a decision, not an error; § 14 Per-screen refinements → Plan and → Master list.
