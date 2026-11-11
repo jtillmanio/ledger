@@ -164,7 +164,7 @@ export type QuarterRoom = { quarter: number | null; capacity: number; plannedWor
 /**
  * The plan page's one empty state (task 2.10): the room across the quarters still ahead that are not over
  * (this quarter and later for this year, all four for a later year, none for a past one), named as a range
- * when they run on (*Q2–Q4*), else as a list (*Q2 and Q4*). Null when no quarter ahead is empty.
+ * when they run on (*Q2–Q4*), else as a list (*Q2 and Q4*). Null when no quarter ahead has room.
  */
 export function roomAhead(quarters: QuarterRoom[], year: number, today: string): { words: number; quarters: number[]; text: string } | null {
   const thisYear = Number(today.slice(0, 4));
@@ -172,7 +172,6 @@ export function roomAhead(quarters: QuarterRoom[], year: number, today: string):
   const ahead = quarters.filter((q): q is QuarterRoom & { quarter: number } =>
     q.quarter !== null && (year > thisYear || (year === thisYear && q.quarter >= thisQuarter)));
   const open = ahead.filter((q) => q.plannedWords <= q.capacity && q.capacity > q.plannedWords);
-  if (!ahead.some((q) => q.books === 0)) return null;
   if (open.length === 0) return null;
   const nums = open.map((q) => q.quarter);
   const words = open.reduce((n, q) => n + q.capacity - q.plannedWords, 0);

@@ -598,6 +598,16 @@ test("the page passes axe, holds 3:1 for the rail's hatch, rule and edges, and i
   expect(contrast(painted.stack, raise), "stack dashes").toBeGreaterThanOrEqual(3);
   expect(contrast(painted.lane, page_), "fifth lane border").toBeGreaterThanOrEqual(3);
 
+  // A plain block's outline and a summary row's are --faint-deco (D-71), 3:1 on the page and the card (AC-6).
+  const rings = await page.evaluate(([a, sum]) => [a, sum].map((sel) => getComputedStyle(document.querySelector(sel)!).boxShadow),
+    [`button.qb[data-book="${id("a2")}"]`, "button.plan-sum"]);
+  const [surface] = await Promise.all([colour("--surface")]);
+  for (const ring of rings) {
+    expect(ring, "outline token").toContain(deco);
+    expect(contrast(deco, page_), "outline on the page").toBeGreaterThanOrEqual(3);
+    expect(contrast(deco, surface), "outline on the card").toBeGreaterThanOrEqual(3);
+  }
+
   // Over capacity is amber with its words, never colour alone and never red.
   await expect(page.locator(`.qcol[data-period="${q(1)}"] .qfoot .bdg.bl`).first()).toHaveText(/\d+k/);
   await expect(page.locator(`button.plan-sum[data-period="${q(3)}"] .bdg`)).toHaveClass(/\bbl\b|\bdn\b/);

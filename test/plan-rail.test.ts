@@ -301,7 +301,8 @@ describe("the room line (task 2.10, AC-4)", () => {
     const room = roomAhead([q(1, 0), q(2, 500_000), q(3, 900_000), q(4, 0)], 2027, TODAY);
     expect(room?.quarters).toEqual([2, 4]);
     const one = roomAhead([q(1, 0), q(2, 500_000), q(3, 900_000), q(4, 900_000)], 2027, TODAY);
-    expect(one).toBeNull(); // the only open quarter holds books: nothing ahead is empty
+    // A quarter that holds books still has room: the line is the room, not the emptiness.
+    expect(one?.text).toBe("260k of room in Q2");
     const single = roomAhead([q(1, 0), q(2, 500_000), q(3, 900_000), q(4, 0)].map((x) => (x.quarter === 2 ? { ...x, plannedWords: 900_000 } : x)), 2027, TODAY);
     expect(single?.text).toBe("760k of room in Q4");
   });
@@ -311,8 +312,9 @@ describe("the room line (task 2.10, AC-4)", () => {
     expect(roomAhead([q(1, 0), q(2, 0), q(3, 0), q(4, 0)], 2026, TODAY)).toBeNull();
   });
 
-  it("is not drawn when no quarter ahead is empty, or none has room", () => {
-    expect(roomAhead([q(1, 0), q(2, 700_000), q(3, 700_000), q(4, 700_000)], 2027, TODAY)).toBeNull();
+  it("counts quarters that hold books, as the mockup's 893k across Q2–Q4 does, and is not drawn when none ahead has room", () => {
+    const held = roomAhead([q(1, 0), q(2, 700_000), q(3, 700_000), q(4, 700_000)], 2027, TODAY);
+    expect(held?.text).toBe("180k of room across Q2–Q4");
     expect(roomAhead([q(1, 0), q(2, 900_000), q(3, 900_000), q(4, 900_000)], 2027, TODAY)).toBeNull();
   });
 });

@@ -112,6 +112,8 @@ describe("NAV_ITEMS (AC-2)", () => {
     const plan = NAV_ITEMS.find((i) => i.id === "books-plan")!;
     expect(plan).toMatchObject({ label: "Plan", href: "/books/plan", enabled: true, group: "medium", medium: "books" });
     expect(visibleItems()).toContain(plan);
+    // Never prefetched: its shell and chunks would ride on every books page (Lighthouse's budgets for /books, the Library and Status).
+    expect(plan.noPrefetch).toBe(true);
     expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books/plan")?.id).toBe("books-plan");
     expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books/list")?.id).toBe("books-library");
     nav.pathname = "/books/plan";

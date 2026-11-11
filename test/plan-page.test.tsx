@@ -161,12 +161,24 @@ describe("one empty state, not one per empty quarter (AC-4)", () => {
     expect(html.match(/of room/g)).toHaveLength(1);
   });
 
-  it("is not drawn when no quarter ahead is empty", async () => {
+  it("counts the quarters ahead that hold books: what they hold comes off their capacity", async () => {
     await seed([
       ...Q1_ONLY,
       { id: "c", title: "Charlie", period: "2027-Q2", ordinal: 1, words: 100_000 },
       { id: "d", title: "Delta", period: "2027-Q3", ordinal: 1, words: 100_000 },
       { id: "e", title: "Echo", period: "2027-Q4", ordinal: 1, words: 100_000 },
+    ]);
+    const { quarters } = await q.planCapacity(USER, 2027);
+    const room = quarters.slice(1).reduce((n, c) => n + c.capacity - c.plannedWords, 0);
+    expect((await page()).doc.querySelector(".plan-room-line")?.textContent).toBe(`${kWords(room)} of room across Q2–Q4`);
+  });
+
+  it("is not drawn when no quarter ahead has room", async () => {
+    await seed([
+      ...Q1_ONLY,
+      { id: "c", title: "Charlie", period: "2027-Q2", ordinal: 1, words: 900_000 },
+      { id: "d", title: "Delta", period: "2027-Q3", ordinal: 1, words: 900_000 },
+      { id: "e", title: "Echo", period: "2027-Q4", ordinal: 1, words: 900_000 },
     ]);
     expect((await page()).doc.querySelectorAll(".plan-room")).toHaveLength(0);
   });
