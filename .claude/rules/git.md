@@ -106,7 +106,7 @@ Co-Authored-By: ...
 
 ## Test on the branch, before merge
 
-A PR is ready only when everything that can prove the change has run
+A PR is mergeable only when everything that can prove the change has run
 **against the branch** and passed. `workflow.readyGates` is the enforced list,
 in order: `verify.full` on the branch head, CI `check`, the Vercel preview,
 Lighthouse, a changed workflow run on the branch, and the owner's preview walk
@@ -115,12 +115,17 @@ means reverting `main`. Run every suite that applies, not just the one nearest
 the change. The browser suite, with axe (D-80), runs whole only in CI
 (D-141): locally, `/verify` runs `npm run test:no-e2e` and the specs the
 branch added or changed in one project (`node scripts/test-files.mjs
-<specs>`). CI's `check` with the `e2e:full` label runs every width, light and
-dark (`npm run test:e2e:full`, sharded), and that run is the gate. Claude
-watches it in the background and, when it fails, fixes the failure on the
-branch and pushes again, up to `workflow.maxCiFixRounds` rounds.
+<specs>`). CI's `check` on a PR that is ready for review runs every width,
+light and dark (`npm run test:e2e:full`, sharded), and that run is the gate. A
+later push that adds only docs skips it when an earlier run on the branch
+passed every project (D-145). Claude watches it in the background and, when
+it fails, fixes the failure on the branch and pushes again, up to
+`workflow.maxCiFixRounds` rounds.
 
-Before pushing: `/verify` and the task's own **Check:** exactly as written.
+Before pushing: `/verify` and the task's own **Check:** exactly as written. A
+branch that changes only docs, `.claude/`, `backups/` or root markdown runs
+`npm run verify:docs` instead of `/verify` (D-145): the tests that name a
+changed file, and the task-file parse. CI's `tests` job still runs whole.
 After pushing: CI green, the preview deployed, Lighthouse green. **Read
 `docs/GIT-PR.md` before pushing** for the full checklist: reviewers, the
 up → down → up test, Lighthouse budgets, the UI preview walk, running a changed
@@ -131,13 +136,17 @@ checked after merge.
 
 ```bash
 git push -u origin <branch>
-gh pr create --draft --base main --title "<same form as a commit subject>" --body-file <file outside the repo>
+gh pr create --base main --title "<same form as a commit subject>" --body-file <file outside the repo>
 ```
 
-Once the local gates pass, push and open the draft PR without asking first,
+Once the local gates pass, push and open the PR without asking first,
 attended or not (owner, 2026-10-09). Pushing to `main`, force-pushing and
-merging still never happen without the owner. Mark it ready (`gh pr ready <n>`)
-only after the gates above. The body has **What**, **Why**, **How it was
+merging still never happen without the owner. The PR opens ready for review,
+not as a draft (owner, 2026-11-11, D-145): CI checks every project from the
+first push and Claude's PR review starts with it. Ready for review is not
+ready to merge: the owner merges once the gates above are green. When Claude
+stops with a gate still failing, it turns the PR into a draft
+(`gh pr ready <n> --undo`) and says why. The body has **What**, **Why**, **How it was
 verified** and **Follow-ups** (every bullet ends `→ <path> § <section>` or
 `→ not tracked: <reason>`), as `docs/GIT-PR.md` spells out, and ends with the
 attribution line the session gives you.

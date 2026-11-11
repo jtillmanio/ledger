@@ -15,6 +15,8 @@ npm test                    # vitest; needs TEST_DATABASE_URL (never DATABASE_UR
 npm run test:all            # test:no-e2e, then test:e2e:build: everything, by hand; no gate needs it (D-141)
 npm run test:no-e2e         # test:tokens + check:migrations + test:db:reset + vitest + test:views + test:etl:
                             # verify.full's suites, which re-run after every fix (D-141: the browser suite is CI's)
+npm run verify:docs         # a docs-only branch's check instead of verify.full (D-145): the tests that name a changed
+                            # file, and the task-file parse; exits 2 when the branch changes anything but docs/.claude/root .md
 node scripts/test-files.mjs <files> [-- <playwright args>]
                             # the given test files, any runner; specs in one project (w390-light) unless the args
                             # name a --project. /verify runs the specs a branch touched this way; the test-auditor too

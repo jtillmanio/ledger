@@ -3,7 +3,14 @@ import { describe, expect, it } from "vitest";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { FULL_E2E_LABEL, e2eScope, needsBrowserAndBuild } from "../scripts/lib/ci-scope.mjs";
+import {
+  FULL_E2E_LABEL,
+  e2eScope,
+  greenFullRunToReuse,
+  isDocsOnly,
+  needsBrowserAndBuild,
+  ranEveryProject,
+} from "../scripts/lib/ci-scope.mjs";
 import { checkScript, ci, ciJob, ciJobs } from "./ci-yml";
 
 describe("needsBrowserAndBuild (scripts/ci-scope.mjs)", () => {
@@ -36,6 +43,96 @@ describe("needsBrowserAndBuild (scripts/ci-scope.mjs)", () => {
 
   it("runs them when nothing changed, because there is nothing to compare", () => {
     expect(needsBrowserAndBuild([])).toBe(true);
+  });
+});
+
+describe("isDocsOnly: the line the CI scope and verify:docs share (D-145)", () => {
+  it("holds for docs, Claude config, backups and root markdown, and for nothing", () => {
+    expect(isDocsOnly(["docs/tasks/TASK-073-x.md", ".claude/kit.json", "CLAUDE.md", "backups/a.sql.gz"])).toBe(true);
+    expect(isDocsOnly([])).toBe(true);
+  });
+
+  it("fails on anything the app, the build or the browser suite reads", () => {
+    expect(isDocsOnly(["docs/STATUS.md", "design/mockups-index.md"])).toBe(false);
+    expect(isDocsOnly([".github/workflows/ci.yml"])).toBe(false);
+    expect(isDocsOnly(["scripts/ci-scope.mjs"])).toBe(false);
+  });
+});
+
+// D-145: a task's close-out and accept pushes only add docs after CI already
+// passed every project, so they lean on that run instead of repeating it.
+describe("greenFullRunToReuse: when a push can lean on an earlier full run", () => {
+  const shards = (scope: string, conclusion = "success") =>
+    [1, 2, 3].map((n) => ({ name: `e2e ${scope} ${n}/3`, conclusion }));
+  const skipped = [{ name: "e2e ${{ needs.scope.outputs.e2e_scope }} ${{ matrix.shard }}/${{ strategy.job-total }}", conclusion: "skipped" }];
+  const tests = { name: "tests", conclusion: "success" };
+
+  // Newest first: a docs push that skipped e2e (3), the full run (2), the draft's core run (1).
+  const runs = [
+    { id: 3, head_sha: "ccc3333" },
+    { id: 2, head_sha: "bbb2222" },
+    { id: 1, head_sha: "aaa1111" },
+  ];
+  const jobs: Record<number, { name: string; conclusion: string }[]> = {
+    3: [tests, ...skipped],
+    2: [tests, ...shards("full")],
+    1: [tests, ...shards("core")],
+  };
+  const world = (over: Partial<Parameters<typeof greenFullRunToReuse>[1]> = {}) => ({
+    jobsOf: (id: number) => jobs[id],
+    isAncestor: () => true,
+    changedSince: (sha: string) => (sha === "bbb2222" ? ["docs/tasks/TASK-073-x.md", "docs/05-roadmap.md"] : ["src/app/page.tsx"]),
+    ...over,
+  });
+
+  it("counts only full-scope shards that all passed", () => {
+    expect(ranEveryProject([tests, ...shards("full")])).toBe(true);
+    expect(ranEveryProject([tests, ...shards("core")])).toBe(false);
+    expect(ranEveryProject([tests, ...skipped])).toBe(false);
+    expect(ranEveryProject([tests])).toBe(false);
+    expect(ranEveryProject([...shards("full"), { name: "e2e full 4/4", conclusion: "failure" }])).toBe(false);
+  });
+
+  it("reuses the newest run that passed every project, past docs-only runs that skipped the suite", () => {
+    const r = greenFullRunToReuse(runs, world());
+    expect(r?.run.id).toBe(2);
+    expect(r?.files).toEqual(["docs/tasks/TASK-073-x.md", "docs/05-roadmap.md"]);
+  });
+
+  it("reuses it when nothing differs at all (the same tree passed)", () => {
+    expect(greenFullRunToReuse(runs, world({ changedSince: () => [] }))?.run.id).toBe(2);
+  });
+
+  it("runs the full gate when code changed since that run, on the branch or on main", () => {
+    expect(greenFullRunToReuse(runs, world({ changedSince: () => ["docs/STATUS.md", "src/db/queries.ts"] }))).toBeNull();
+  });
+
+  it("does not fall back to an older full run when the newest one cannot be reused", () => {
+    const older = [...runs, { id: 0, head_sha: "0000000" }];
+    jobs[0] = [tests, ...shards("full")];
+    const changedSince = (sha: string) => (sha === "0000000" ? ["docs/a.md"] : ["src/app/page.tsx"]);
+    expect(greenFullRunToReuse(older, world({ changedSince }))).toBeNull();
+    delete jobs[0];
+  });
+
+  it("skips a run whose head left the history (a force-push) and uses an older one still in it", () => {
+    const rewritten = [{ id: 9, head_sha: "9999999" }, ...runs];
+    jobs[9] = [tests, ...shards("full")];
+    const r = greenFullRunToReuse(rewritten, world({ isAncestor: (sha: string) => sha !== "9999999" }));
+    expect(r?.run.id).toBe(2);
+    delete jobs[9];
+  });
+
+  it("runs the full gate when no run passed every project, or the diff cannot be read", () => {
+    expect(greenFullRunToReuse([runs[0], runs[2]], world())).toBeNull();
+    expect(greenFullRunToReuse([], world())).toBeNull();
+    expect(greenFullRunToReuse(runs, world({ changedSince: () => null }))).toBeNull();
+  });
+
+  it("ci.yml gives the scope job a token that can read the PR's earlier runs", () => {
+    const scope = ciJob("scope");
+    expect(scope).toMatch(/permissions:\n\s+contents: read\n\s+actions: read/);
+    expect(scope).toContain("GH_TOKEN: ${{ github.token }}");
   });
 });
 
