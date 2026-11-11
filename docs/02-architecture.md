@@ -408,7 +408,7 @@ tables.
     ceiling with a gate on what each PR adds.
     Task 1.30 put `/books` back to 175,000 and `/books/list` to 170,000 bytes
     and 64 requests (the old budgets). Measured first: main's last run (PR
-    #216) had `/books` at 177,050 bytes of JS and `/books/list` at 172,850 and
+    #216) had `/books` at 177,069 bytes of JS and `/books/list` at 172,836 and
     65 requests, and a source-mapped build showed that one chunk all three
     books routes loaded, 9.4 KB of brotli, was Add books' whole tree (Search,
     *Paste a list*, *By hand*), shipped with every Add books button before

@@ -163,7 +163,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
 
-**Measured.** Main's last Lighthouse run (PR #216, `10e8dc5`): `/books` 177,050 B JS / 36 requests, `/books/list` 172,850 B / 65. A local build with browser source maps shows the 9.4 KB (brotli) chunk common to all three book routes is exactly the Add books tree (`AddBooks`, `BookSearch`, `PasteBooks`, `ByHand`, `book-review`, `book-parse`); `BookStatus` + `FinishDate` are about 3.5 KB. A throwaway build with `AddBooks` lazy took ~10.5 KB and one script off each books route (`/books` 23,321 → 12,761 br of route chunks, `/books/list` 19,975 → 9,441, `/books/status` 21,719 → 10,523), so the status control is left alone.
+**Measured.** Main's last Lighthouse run (PR #216, `10e8dc5`): `/books` 177,069 B JS / 36 requests, `/books/list` 172,836 B / 65. A local build with browser source maps shows the 9.4 KB (brotli) chunk common to all three book routes is exactly the Add books tree (`AddBooks`, `BookSearch`, `PasteBooks`, `ByHand`, `book-review`, `book-parse`); `BookStatus` + `FinishDate` are about 3.5 KB. A throwaway build with `AddBooks` lazy took ~10.5 KB and one script off each books route (`/books` 23,321 → 12,761 br of route chunks, `/books/list` 19,975 → 9,441, `/books/status` 21,719 → 10,523), so the status control is left alone.
 
 **Steps**
 1. AC-3 guard test first; confirm it fails on main.
