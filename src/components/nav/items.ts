@@ -54,7 +54,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "books-status", label: "Status", href: "/books/status", icon: "list-checks", enabled: true, group: "medium", medium: "books" },
   // The master list, named and given its own page (task 2.2e, D-110). `library` is Shelves' icon.
   { id: "books-library", label: "Library", href: "/books/list", icon: "book-copy", enabled: true, group: "medium", medium: "books" },
-  { id: "books-plan", label: "Plan", href: "/books/plan", icon: "calendar-range", enabled: false, group: "medium", medium: "books" },
+  { id: "books-plan", label: "Plan", href: "/books/plan", icon: "calendar-range", enabled: true, group: "medium", medium: "books" },
   { id: "books-shelves", label: "Shelves", href: "/books/shelves", icon: "library", enabled: false, group: "medium", medium: "books" },
   { id: "books-top", label: "Top", href: "/books/top", icon: "list-ordered", enabled: false, group: "medium", medium: "books" },
   { id: "books-add", label: "Add", href: "/books/add", icon: "plus", enabled: true, group: "medium", medium: "books" },

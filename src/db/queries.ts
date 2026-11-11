@@ -1390,6 +1390,40 @@ export async function planRail(userId: string, year: number): Promise<RailBook[]
   `;
 }
 
+/** One planned book as the plan page lists it under its quarter (task 2.10). */
+export type PlanRow = {
+  id: string; title: string; author: string | null; series: string | null; seriesPosition: number | null;
+  /** Null when the book has no word count and no plausible page count: it counts in `books`, in no word total. */
+  words: number | null;
+  /** The count rests on an estimate (pages at your words per page), not a stated one. */
+  estimated: boolean;
+  genre: string | null;
+  /** `2027-Q1`. */
+  period: string;
+  /** Contiguous from 1 within the quarter (D-37). */
+  ordinal: number;
+};
+
+/**
+ * The plan page's rows for one year (task 2.10, F-23): each book planned in one of its four quarters, in
+ * `ordinal` order within the quarter, read from `plan_book_words` like `planRail` and `plan_capacity`, so
+ * a quarter's words add up to its `planned_words`. Unlike the rail, a book with no word count is listed
+ * (it counts in `books`); the fifth lane's bare-year books are not (they have no order, D-37).
+ */
+export async function planRows(userId: string, year: number): Promise<PlanRow[]> {
+  return sql<PlanRow[]>`
+    SELECT w.book_id AS id, b.title, a.name AS author, s.name AS series, b.series_position AS "seriesPosition",
+           w.words, w.word_source = 'estimated' AS estimated, b.genre, w.period, p.ordinal
+    FROM plan_book_words w
+    JOIN books b ON b.id = w.book_id AND b.deleted_at IS NULL
+    JOIN reading_plan p ON p.user_id = w.user_id AND p.book_id = w.book_id AND p.period = w.period
+    LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_series s ON s.id = b.series_id
+    WHERE w.user_id = ${userId} AND w.year = ${year} AND w.quarter IS NOT NULL
+    ORDER BY w.period, p.ordinal, b.title, b.id
+  `;
+}
+
 /** *On deck* (D-37): the `to_read` books with no year, by title, the first `limit`, and how many in all. */
 export async function onDeck(userId: string, limit: number): Promise<{ rows: ShelfBook[]; total: number }> {
   const rows = await sql<(ShelfBook & { total: number })[]>`

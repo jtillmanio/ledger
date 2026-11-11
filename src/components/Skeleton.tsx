@@ -13,6 +13,7 @@
  * measured against test/e2e/fixtures/*.html; the task that builds each one
  * re-measures its skeleton.
  */
+import { RailLegend } from "@/components/PlanRail";
 
 /** The page a `loading.tsx` paints: busy, and one "Loading" for a screen reader. */
 export function LoadingMain({ children }: { children: React.ReactNode }) {
@@ -95,6 +96,7 @@ export function TelecardSkeleton() {
 export function PlanRailSkeleton() {
   const stacks = [[26, 28, 34, 28, 54, 72], [27, 28, 26, 38, 40], [14, 9, 20, 48], [34, 27], [44, 48, 108]];
   return (
+    <>
     <div className="planrail sk-planrail" aria-hidden="true">
       {stacks.map((blocks, q) => (
         <div key={q} className={q === stacks.length - 1 ? "qcol nq" : "qcol"}>
@@ -109,6 +111,9 @@ export function PlanRailSkeleton() {
         </div>
       ))}
     </div>
+    {/* The legend is the loaded rail's, word for word, so its arrival shifts nothing (task 2.10). */}
+    <RailLegend hidden />
+    </>
   );
 }
 

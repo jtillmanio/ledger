@@ -30,6 +30,8 @@ export const ROUTES = [
   // The Library (task 2.2e), what "books" measured before 2.2. Its item is the books medium's, so the tap
   // starts on the dashboard: the tab row's on a phone, the rail's or the sidebar's from 768px.
   { id: "library", path: "/books/list", signedIn: true, tap: { from: "/books", selector: 'a[href="/books/list"]' } },
+  // The plan page (task 2.10), the books medium's Plan item: the tap starts on the dashboard, as the Library's does.
+  { id: "plan", path: "/books/plan", signedIn: true, tap: { from: "/books", selector: 'a[href="/books/plan"]' } },
   // The status screens (task 1.9): In flight, the tab a bare visit opens, for each medium. Comics' Status is in the
   // rail, the sidebar and (since 2.2i) the phone's tab row, so the tap clicks the first match, the tab row's on a phone.
   { id: "comics-status", path: "/comics/status", signedIn: true, tap: { from: "/comics", selector: 'a[href="/comics/status"]' } },

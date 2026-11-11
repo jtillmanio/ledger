@@ -13,6 +13,7 @@ const routes: [string, string][] = [
   ["/comics/status", "../src/app/comics/status/loading"],
   ["/books/status", "../src/app/books/status/loading"],
   ["/books/list", "../src/app/books/list/loading"],
+  ["/books/plan", "../src/app/books/plan/loading"],
   ["/books", "../src/app/books/loading"],
   ["/inbox", "../src/app/inbox/loading"],
   ["/settings", "../src/app/settings/loading"],
@@ -63,6 +64,16 @@ describe("loading states (task 0.9)", () => {
       expect(html).not.toContain("role=\"status\"");
       expect(html).not.toContain("aria-busy");
     }
+  });
+
+  it("the plan rail's skeleton draws the legend, the loaded rail's own, so its arrival shifts nothing (task 2.10, AC-5)", async () => {
+    const { PlanRailSkeleton } = await import("../src/components/Skeleton");
+    const { RailLegend } = await import("../src/components/PlanRail");
+    const html = renderToStaticMarkup(<PlanRailSkeleton />);
+    expect(html).toContain('<ul class="qlegend" aria-hidden="true">');
+    // Word for word what the loaded rail says, so the two wrap alike.
+    const text = (markup: string) => markup.replace(/<[^>]+>/g, "|").replace(/\|+/g, "|");
+    expect(text(html)).toContain(text(renderToStaticMarkup(<RailLegend />)));
   });
 
   it("the dashboard's skeleton never stands in front of a run page", () => {
