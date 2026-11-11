@@ -1,7 +1,7 @@
 ---
 id: TASK-073
 title: 1.30 Bring the Library and Now back under their JS budgets
-status: Review
+status: Done
 depends_on: [TASK-058, TASK-059]
 size: M
 model: opus
