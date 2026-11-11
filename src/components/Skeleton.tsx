@@ -251,8 +251,9 @@ export function AddBooksSheetSkeleton() {
         <Bar w="100%" className="sk-line" />
         <Bar w="30%" className="sk-line" />
         <span className="sk sk-title" style={{ width: "5rem", margin: "1.5rem 0 .5rem" }} />
-        <span className="sk add-sk-slate" style={{ height: "9.4375rem" }} />
-        <div className="actionbar add-bar">
+        <span className="sk add-sk-slate" style={{ height: "9.6875rem" }} />
+        {/* Outside .addb, so the sheet's own margin for it (globals.css .sheet .addb .add-bar) is given here. */}
+        <div className="actionbar add-bar" style={{ margin: "1.25rem -.875rem 0" }}>
           <div className="add-buttons">
             <span className="sk" style={{ width: "5rem", height: "2.75rem", borderRadius: "var(--r-md)" }} />
             <span className="sk" style={{ flex: 1, height: "2.75rem", borderRadius: "var(--r-md)" }} />

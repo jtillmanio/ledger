@@ -33,6 +33,8 @@ test("Add books' sheet is its loaded size while its code loads, so nothing moves
   // The open asked for its code: the loading state is what shows while it is held.
   expect(asked.length).toBeGreaterThan(0);
   const during = (await sheet.boundingBox())!;
+  // Nor does the loading state scroll the sheet sideways.
+  expect(await sheet.evaluate((el) => el.scrollWidth - el.clientWidth), "the sheet's sideways overflow").toBeLessThanOrEqual(0);
 
   release();
   await expect(sheet.locator(".addb")).toBeVisible();
