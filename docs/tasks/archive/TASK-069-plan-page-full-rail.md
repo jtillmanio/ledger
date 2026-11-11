@@ -1,7 +1,7 @@
 ---
 id: TASK-069
 title: 2.10 Plan page as the full-size rail (1 of 2) — the page, its quarters and the fifth lane
-status: In progress
+status: Done
 depends_on: [TASK-011, TASK-046, TASK-049, TASK-051, TASK-064]
 size: M
 model: sonnet
@@ -33,16 +33,16 @@ planned_at_commit: ae56fe1
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves all of it, and TASK-070 re-runs it with drag in place): test that the sum of the rendered block heights in a quarter equals
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves all of it, and TASK-070 re-runs it with drag in place): test that the sum of the rendered block heights in a quarter equals
 that quarter's word total to the pixel rounding; that a book crossing the
 capacity line renders hatched and the one below it does not; that expanding Q2
 collapses Q1; and that the rail and the dashboard render identical totals from
 the same query. Screenshot at 360px and 1280px.
-- [ ] AC-2: The *Plan* nav item is enabled and leads to `/books/plan`, which draws the current year's four quarter columns, the fifth lane and their footers, and 2.2b's four-column checks (`test/e2e/plan-rail.spec.ts`) pass on this page at 360px and 1280px.
-- [ ] AC-3: Exactly one quarter is expanded at a time: its rows are in ordinal order and each has a **Move** button that opens 2.3's picker for that book; each of the other three is one summary row with its total, book count and room.
-- [ ] AC-4: Given a plan with Q2, Q3 and Q4 empty, the page shows one empty-state line naming the combined room across them (each quarter's capacity summed, minus what they hold) and no per-quarter empty state; an over-budget badge resolves to `--blocked`, never `--danger`.
-- [ ] AC-5: A block tall enough shows its title and word count inside it; an estimated count reads `~65k` with the dotted edge on the rail, on the plan rows and in the Library's `.rm` values; a 30k block beside a 110k block leaves each its own whole hit area; and the loading skeleton draws the legend, so the rail's arrival shifts nothing.
-- [ ] AC-6: The page meets the UX floor (`docs/04-design.md` § 10. The UX floor): empty, loading and error states drawn; every block, row and **Move** a real button with a name and at least a 24px target; text 4.5:1 and block outlines 3:1 in both themes; axe with no new violations; no horizontal scroll at 360px; screenshots at 360px, 834px and 1280px, light and dark.
+- [x] AC-2: The *Plan* nav item is enabled and leads to `/books/plan`, which draws the current year's four quarter columns, the fifth lane and their footers, and 2.2b's four-column checks (`test/e2e/plan-rail.spec.ts`) pass on this page at 360px and 1280px.
+- [x] AC-3: Exactly one quarter is expanded at a time: its rows are in ordinal order and each has a **Move** button that opens 2.3's picker for that book; each of the other three is one summary row with its total, book count and room.
+- [x] AC-4: Given a plan with Q2, Q3 and Q4 empty, the page shows one empty-state line naming the combined room across them (each quarter's capacity summed, minus what they hold) and no per-quarter empty state; an over-budget badge resolves to `--blocked`, never `--danger`.
+- [x] AC-5: A block tall enough shows its title and word count inside it; an estimated count reads `~65k` with the dotted edge on the rail, on the plan rows and in the Library's `.rm` values; a 30k block beside a 110k block leaves each its own whole hit area; and the loading skeleton draws the legend, so the rail's arrival shifts nothing.
+- [x] AC-6: The page meets the UX floor (`docs/04-design.md` § 10. The UX floor): empty, loading and error states drawn; every block, row and **Move** a real button with a name and at least a 24px target; text 4.5:1 and block outlines 3:1 in both themes; axe with no new violations; no horizontal scroll at 360px; screenshots at 360px, 834px and 1280px, light and dark.
 
 ## Out of scope
 
@@ -71,9 +71,10 @@ the same query. Screenshot at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The book detail's Words field takes the estimated-count treatment (`~65k`, the dotted edge): no detail sheet exists yet (`docs/04-design.md` § 13), so it is 3.5's to draw. A *From 2.10* line on the roadmap entry. (approved at plan)
-- *+ Add books* in the plan page's header (mockup `plan`, desktop beside *Suggest books*): not in 2.10's Check; a note in TASK-072's Context, which adds *Suggest books* to that header. (approved at plan)
-- Candidate decision: a lone block under 24px takes its hit area's missing px from the side that has room (the column's foot or top, or a neighbour's px beyond its own 24px), not evenly from both; when neither side has room (a 30k book between two 110k ones at 230px), it falls back to the even split. Decisions mode `propose`: asked at close-out. (approved at plan)
+- The book detail's Words field takes the estimated-count treatment (`~65k`, the dotted edge): no detail sheet exists yet (`docs/04-design.md` § 13), so it is 3.5's to draw. → docs/05-roadmap.md § 3.5 (a *From 2.10* line)
+- *+ Add books* in the plan page's header (mockup `plan`, desktop beside *Suggest books*): not in 2.10's Check; TASK-072 adds *Suggest books* to that header. → docs/tasks/TASK-072-planning-sheet.md § Context
+- Candidate decision: a lone block under 24px takes its hit area's missing px from the side that has room, with a px of slack on a neighbour's spare (a browser's hit test snaps to device pixels, found by the browser check), falling back to the even split when both sides are tight. Decisions mode `propose`, no answer at close-out. → docs/OWNER-CHECKLIST.md § Approvals from follow-ups
+- The mockup's `plan` frame now follows what was built (heading, year chips, the room row's *Library* action); its rows are still not regenerated with `~`, as `design/mockups-index.md` open item 5 says. → not tracked: done in this PR (plan revision)
 
 ## Plan
 
@@ -117,9 +118,11 @@ Steps:
 
 **Risks:** the squeeze case (two tight neighbours) can't give three 24px targets in 57px at 230px; it keeps today's even split, and the test pins that this is the only case that does. The 1.30 branch (PR #236) also edits `Skeleton.tsx` and `budget.json`, in other places; whichever merges second rebases.
 
+**Revisions after approval (2026-11-11):** (1) *the room line* follows the owner's answer exactly: the sum of room across the quarters ahead that are not over, drawn whether or not a quarter holds books (the mockup draws it over quarters that do); (2) *step 9, the mockup redraw* (`ui.redrawFiles`: the `plan` frame in `design/mockups.html` and its row in `design/mockups-index.md`), added at the owner's yes after the spec review; (3) the Plan nav item is `noPrefetch: true` (Lighthouse), a lone block's neighbour keeps a px of slack (`HIT_SLACK`), a block's ring and the summary rows' outline are `--faint-deco` (D-71), the room panel `--raise`.
+
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | Verify R2 PASS (after review) | Verify R3 PASS (after rebase onto main) | CI/Lighthouse R1 FAIL (the Plan item's prefetch put /books, the Library and Status over budget) → `noPrefetch` | Audit R1 PASS | Spec R1 CHANGES (room-line gate, AC-6 block outline untested, mockup redraw missing, `--raise`/`--faint-deco`) → fixed, not re-run (the fixes are tested directly, and the owner approved the redraw) | Schema R1 APPROVE | UI: no ui-verifier run; the browser spec walks the page at 360, 768, 1280 (light and dark) and screenshots at 360, 834 and 1280 in both themes.
 
 ## Blocked
 
@@ -127,7 +130,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 1 (spec CHANGES, schema APPROVE)
+- First-pass AC FAILs: 0 (AC-6's block outline was untested, which the review caught)
+- Plan revisions after approval: 3 (the room line no longer waits for an empty quarter; the mockup `plan` frame redrawn, owner-approved; the Plan nav item is `noPrefetch`)

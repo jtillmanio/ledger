@@ -250,6 +250,14 @@ Planning-doc edits and candidate decisions waiting for your yes
 session, and that session or the next `/track-follow-ups` run makes the change
 and notes where it went.
 
+- [ ] Record a decision in `docs/review/decisions.md` (next free D-n): a lone
+      plan-rail block under 24px takes its hit area's missing px from the side
+      that has room, not evenly from both: the column's foot or top, or a
+      neighbour's px beyond its own 24 and a px of slack (a browser's hit test
+      snaps to device pixels and would take it). When neither side has room (a
+      30k book between two 110k ones at 230px) it falls back to the even
+      split. `hitLift` in `src/lib/plan-rail.ts` (from TASK-069, PR #237).
+
 - [ ] Record a decision in `docs/review/decisions.md` (next free D-n): what is
       next in a follow (2.2d). A follow's next book is its lowest-ranked live
       book still open, a list of the statuses that count (to read, unlisted,
