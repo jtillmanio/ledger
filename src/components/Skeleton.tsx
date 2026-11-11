@@ -224,17 +224,40 @@ export function QuarterStripSkeleton() {
 
 /** Add books in its sheet while its code loads (task 1.30: it loads when the
  * sheet opens, not with the page). The sheet's frame and heading are already
- * drawn and focused; this is the body's loaded geometry: the *Search · Paste a
- * list · By hand* control, Add to's chips, then the search box under its label. */
+ * drawn and focused; this is the body's loaded geometry, Search open: the
+ * *Search · Paste a list · By hand* control, Add to's chips (wrapping as they
+ * do), the search box and its note, *Or paste a list* with its box, *Review*
+ * and its empty slate, and the sticky Cancel · Add bar. It is as tall as the
+ * loaded body, so the sheet does not jump when the code arrives. */
 export function AddBooksSheetSkeleton() {
   return (
     <div aria-busy="true">
       <span className="sr-only" role="status">Loading</span>
       <div aria-hidden="true">
-        <span className="sk" style={{ width: "16rem", maxWidth: "100%", height: "2.125rem", marginTop: ".75rem", borderRadius: "var(--r-md)" }} />
-        <span className="sk sk-chip" style={{ display: "block", width: "100%", maxWidth: "22rem", height: "2rem", margin: ".75rem 0 0" }} />
-        <span className="sk sk-title" style={{ width: "6rem", marginTop: "1rem" }} />
-        <span className="sk sk-input" style={{ marginTop: ".375rem" }} />
+        <span className="sk" style={{ width: "14rem", maxWidth: "100%", height: "2.125rem", marginTop: ".75rem", borderRadius: "var(--r-md)" }} />
+        <div className="addto">
+          {["2.75rem", "5.25rem", "4.5rem", "7.5rem", "4.25rem"].map((w, i) => (
+            <span key={w} className="sk sk-chip" style={{ width: w, height: i === 0 ? ".8125rem" : "2rem" }} />
+          ))}
+        </div>
+        <span className="sk sk-title" style={{ width: "6rem", margin: "1rem 0 .375rem" }} />
+        <span className="sk" style={{ height: "2.75rem", borderRadius: "var(--r-md)" }} />
+        <Bar w="100%" className="sk-line" />
+        <Bar w="40%" className="sk-line" />
+        <span className="sk sk-title" style={{ width: "7rem", margin: "1.5rem 0 .5rem" }} />
+        <span className="sk sk-title" style={{ width: "100%", margin: "1rem 0 .25rem" }} />
+        <span className="sk sk-title" style={{ width: "50%", margin: "0 0 .375rem" }} />
+        <span className="sk add-sk-text" style={{ height: "10.25rem", borderRadius: "var(--r-md)" }} />
+        <Bar w="100%" className="sk-line" />
+        <Bar w="30%" className="sk-line" />
+        <span className="sk sk-title" style={{ width: "5rem", margin: "1.5rem 0 .5rem" }} />
+        <span className="sk add-sk-slate" style={{ height: "9.4375rem" }} />
+        <div className="actionbar add-bar">
+          <div className="add-buttons">
+            <span className="sk" style={{ width: "5rem", height: "2.75rem", borderRadius: "var(--r-md)" }} />
+            <span className="sk" style={{ flex: 1, height: "2.75rem", borderRadius: "var(--r-md)" }} />
+          </div>
+        </div>
       </div>
     </div>
   );

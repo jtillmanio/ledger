@@ -178,6 +178,7 @@ _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_s
 - `test/add-book-sheet.test.tsx` — only if needed: `open()` waits for the lazy body; no assertion edited.
 - `scripts/perf/budget.json`, `docs/02-architecture.md`.
 - No `design/mockups.html` redraw: the loaded sheet does not change.
+- `test/e2e/add-books-loading.spec.ts` (new; plan revision 1, owner-approved after ui-verifier R1): holds the lazy chunk and checks the sheet's top and height are the same during the skeleton and after load, at every width. The skeleton is drawn to the whole Search pane for it.
 
 **Test strategy**
 - AC-1: preview Lighthouse; `test/perf.test.ts`; `test/reading-log.test.tsx`, `test/e2e/start-dates.spec.ts` unchanged (BookStatus untouched).
