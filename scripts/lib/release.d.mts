@@ -20,6 +20,16 @@ export function pendingMigrations(
   entries: { tag: string; when: number }[],
   appliedCreatedAt: (string | number)[],
 ): { pending: string[]; unknown: number[] };
+export function backupSkewProblem(input: {
+  commit: string;
+  entries: { tag: string; when: number }[];
+  applied: (string | number)[];
+}): string | null;
+export function dryRunNotice(input: {
+  dryRun: boolean;
+  target: { sha: string } | null;
+  problems: string[];
+}): string | null;
 export function directUrl(url: string): string;
 export function refProblem(ref: string | undefined, dryRun: boolean): string | null;
 export function releaseProblems(input: {

@@ -154,6 +154,51 @@ export function pendingMigrations(entries, appliedCreatedAt) {
   };
 }
 
+/**
+ * Why the nightly backup cannot re-apply the views of the commit production
+ * serves to a dump of production's database, or null when the two agree. The
+ * app (Vercel) and the database (Neon) move separately: before cutover a
+ * schema change reaches the database through a rebuild from main, and only a
+ * real Release moves the app. A rebuild with no Release after it (the Release
+ * left on its default dry run, 2026-11-04) leaves the database ahead of the
+ * app, and every backup then fails on psql's "cannot drop columns from view".
+ *   commit:   the commit production's /api/health names
+ *   entries:  that commit's drizzle/meta/_journal.json entries
+ *   applied:  created_at of every row in the dump's drizzle.__drizzle_migrations
+ */
+export function backupSkewProblem({ commit, entries, applied }) {
+  const { pending, unknown } = pendingMigrations(entries, applied);
+  const sha = commit.slice(0, 7);
+  if (unknown.length) {
+    return `Production's database is ahead of its app: it holds ${unknown.length} migration(s) that ${sha}, ` +
+      `the commit production serves, does not list, so ${sha}'s views cannot be re-applied to it. ` +
+      "A rebuild of production from a newer main with no real Release after it does this. " +
+      "Run Release from main with Dry run unticked (START-HERE Step 13), then run this workflow again.";
+  }
+  if (pending.length) {
+    return `Production's database is behind its app: ${sha}, the commit production serves, has ` +
+      `${pending.length} migration(s) the database has not applied (${pending.join(", ")}), so ${sha}'s views ` +
+      "cannot be re-applied to it. Before cutover, run `npm run rebuild -- -EnvFile .env.live` on main and then " +
+      "Release with Dry run unticked; after cutover, Release migrates. Then run this workflow again.";
+  }
+  return null;
+}
+
+/**
+ * The line a dry run that would have released ends its summary with, or null.
+ * Release defaults to a dry run, and a dry run that finds nothing wrong ends
+ * green, which reads like a release: the 2026-11-04 run planned 391e506,
+ * changed nothing, and production stayed on bba27cd for a week.
+ *   dryRun:   the workflow's dry_run input
+ *   target:   { sha } plan picked, or null
+ *   problems: plan's refusals (a refused run fails, which says enough)
+ */
+export function dryRunNotice({ dryRun, target, problems }) {
+  if (!dryRun || !target || problems.length) return null;
+  return `Dry run: nothing was released, and production serves what it served before. ` +
+    `To release ${target.sha.slice(0, 7)}, run Release again from main with Dry run unticked.`;
+}
+
 /** A Neon pooled URL made direct (`-pooler` dropped): migrations want a session. */
 export function directUrl(url) {
   const u = new URL(url);

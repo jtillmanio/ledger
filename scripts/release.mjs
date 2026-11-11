@@ -11,7 +11,7 @@ import { spawnSync } from "node:child_process";
 import { appendFileSync } from "node:fs";
 import postgres from "postgres";
 import {
-  alreadyProduction, directUrl, pendingMigrations, promoteProblem, refProblem, releaseProblems, smokeProblem, snapshotsToPrune,
+  alreadyProduction, directUrl, dryRunNotice, pendingMigrations, promoteProblem, refProblem, releaseProblems, smokeProblem, snapshotsToPrune,
 } from "./lib/release.mjs";
 
 const env = process.env;
@@ -77,8 +77,9 @@ async function plan() {
     ...releaseProblems({ live, target, ci, unreleasedFiles, pending, unknown }),
   ].filter(Boolean);
 
+  const notice = dryRunNotice({ dryRun: env.DRY_RUN === "true", target, problems });
   summary([
-    `### Release ${env.DRY_RUN === "true" ? "(dry run)" : ""}`,
+    `### Release ${env.DRY_RUN === "true" ? "(dry run: nothing changes)" : ""}`,
     "",
     `- Build: ${target ? `\`${target.sha.slice(0, 7)}\` ${target.url}` : "none found"}`,
     `- CI on it: ${ci ? (ci.conclusion ?? ci.status) : "no run"}`,
@@ -86,7 +87,10 @@ async function plan() {
     `- Migrations to apply: ${pending.length ? pending.join(", ") : "none"}`,
     `- Steps: ${pending.length ? "snapshot → migrate → " : ""}views → promote`,
     ...(problems.length ? ["", "**Refused:**", ...problems.map((p) => `- ${p}`)] : []),
+    ...(notice ? ["", `> **${notice}**`] : []),
   ]);
+  // An annotation shows on the run's page, where a green dry run otherwise reads as a release.
+  if (notice) console.log(`::warning title=Dry run, nothing released::${notice}`);
   if (problems.length) process.exit(1);
   output("sha", target.sha);
   output("url", target.url);
