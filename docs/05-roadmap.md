@@ -1660,7 +1660,7 @@ runs with `LEDGER_LIVE=true`, and with `LEDGER_COMICS_LIVE=true` it refuses,
 naming the flag, and changes nothing; the comics-only extract writes no books
 seed file; `npm run test:etl` passes.
 
-### ☐ 1.30 Bring the Library and Now back under their JS budgets · M
+### ☑ 1.30 Bring the Library and Now back under their JS budgets · M
 Owner, 2026-11-10 (PR #222, 1.17b). The book status control now asks the dates
 (*Started* after *Reading*, *Started* and *Finished* together for *Read*) and
 sits on Now and every status row. Its client code ships with every Library row

@@ -417,6 +417,9 @@ tables.
     `test/lazy-imports.test.ts` fails if a static import brings it back. A local
     build took about 10.5 KB of brotli and one script off each books route; the
     status control (`BookStatus`, `FinishDate`, about 3.5 KB) stayed as it was.
+    PR #236's preview measured `/books` at 165,095 bytes of JS and 35
+    requests and `/books/list` at 161,143 bytes and 64 (median of three), so
+    the old budgets hold with room to spare.
     `/books/status` shrank by as much, and keeps its 175,400 until 0.13
     re-bases the ceilings.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
