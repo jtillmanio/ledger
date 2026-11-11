@@ -1,14 +1,14 @@
 ---
 id: TASK-073
 title: 1.30 Bring the Library and Now back under their JS budgets
-status: Draft
+status: In progress
 depends_on: [TASK-058, TASK-059]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 9f0959f
 ---
 
 # TASK-073 — 1.30 Bring the Library and Now back under their JS budgets
@@ -157,9 +157,36 @@ numbers again; the Lighthouse job passes; and the status control's tests
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- After 1.30, `/books/status` measures about 11 KB under its 175,400 ceiling (it lost the Add books chunk too, and Out of scope leaves its number alone); 0.13 re-bases it (approved at plan)
+
 ## Plan
 
 _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+
+**Measured.** Main's last Lighthouse run (PR #216, `10e8dc5`): `/books` 177,050 B JS / 36 requests, `/books/list` 172,850 B / 65. A local build with browser source maps shows the 9.4 KB (brotli) chunk common to all three book routes is exactly the Add books tree (`AddBooks`, `BookSearch`, `PasteBooks`, `ByHand`, `book-review`, `book-parse`); `BookStatus` + `FinishDate` are about 3.5 KB. A throwaway build with `AddBooks` lazy took ~10.5 KB and one script off each books route (`/books` 23,321 → 12,761 br of route chunks, `/books/list` 19,975 → 9,441, `/books/status` 21,719 → 10,523), so the status control is left alone.
+
+**Steps**
+1. AC-3 guard test first; confirm it fails on main.
+2. `AddBooksButton.tsx`: load `AddBooks` with `next/dynamic` (`ssr: false`, as `BookRowMenu` does), `loading` = a sheet skeleton (the segmented control, Add to chips, search box in `--sunk`; busy; one sr-only "Loading"). `Sheet` keeps heading focus, inert and focus return.
+3. `budget.json` back to `books` 175,000, `library` 170,000 / 64; `docs/02-architecture.md` table and a paragraph on why raised, when back, what was measured.
+
+**Files**
+- `src/components/AddBooksButton.tsx` — the lazy import.
+- `src/components/Skeleton.tsx` — `AddBooksSheetSkeleton`.
+- `test/lazy-imports.test.ts` (new) — static import walk from `/books`, `/books/list`, `/books/status`; fails if it reaches `AddBooks`, `BookSearch`, `PasteBooks` or `ByHand`.
+- `test/add-books-loading.test.tsx` (new) — held import: skeleton, never an empty body; released: body replaces it.
+- `test/add-book-sheet.test.tsx` — only if needed: `open()` waits for the lazy body; no assertion edited.
+- `scripts/perf/budget.json`, `docs/02-architecture.md`.
+- No `design/mockups.html` redraw: the loaded sheet does not change.
+
+**Test strategy**
+- AC-1: preview Lighthouse; `test/perf.test.ts`; `test/reading-log.test.tsx`, `test/e2e/start-dates.spec.ts` unchanged (BookStatus untouched).
+- AC-2: PR body tables (before = #216's reports).
+- AC-3: `test/lazy-imports.test.ts`.
+- AC-4: the six named suites; e2e in `w390-light` locally, CI `e2e:full`.
+- AC-5: `test/add-books-loading.test.tsx`; ui-verifier screenshots at every `ui.viewports` width.
+
+**Risks**: `/books/list` lands at exactly 64 requests (covers depend on preview data); first open fetches ~9 KB behind the skeleton; `/books/status` shrinks ~11 KB, its number left alone.
 
 ## Review log
 

@@ -221,3 +221,21 @@ export function QuarterStripSkeleton() {
     </section>
   );
 }
+
+/** Add books in its sheet while its code loads (task 1.30: it loads when the
+ * sheet opens, not with the page). The sheet's frame and heading are already
+ * drawn and focused; this is the body's loaded geometry: the *Search · Paste a
+ * list · By hand* control, Add to's chips, then the search box under its label. */
+export function AddBooksSheetSkeleton() {
+  return (
+    <div aria-busy="true">
+      <span className="sr-only" role="status">Loading</span>
+      <div aria-hidden="true">
+        <span className="sk" style={{ width: "16rem", maxWidth: "100%", height: "2.125rem", marginTop: ".75rem", borderRadius: "var(--r-md)" }} />
+        <span className="sk sk-chip" style={{ display: "block", width: "100%", maxWidth: "22rem", height: "2rem", margin: ".75rem 0 0" }} />
+        <span className="sk sk-title" style={{ width: "6rem", marginTop: "1rem" }} />
+        <span className="sk sk-input" style={{ marginTop: ".375rem" }} />
+      </div>
+    </div>
+  );
+}

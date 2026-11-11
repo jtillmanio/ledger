@@ -1,9 +1,15 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useState } from "react";
-import AddBooks from "@/components/AddBooks";
 import Sheet, { useSheetClose } from "@/components/Sheet";
+import { AddBooksSheetSkeleton } from "@/components/Skeleton";
 import type { Target } from "@/lib/book-add";
+
+// Loaded when the sheet opens, not with the page (task 1.30): Search, Paste a list and By hand were
+// 9.4 KB of brotli and a script request on every page with this button. The sheet draws its loading
+// state meanwhile. test/lazy-imports.test.ts fails if a page reaches them through a static import.
+const AddBooks = dynamic(() => import("@/components/AddBooks"), { ssr: false, loading: AddBooksSheetSkeleton });
 
 /**
  * Opens Add books as a sheet over the page (task 1.4c), with its destination

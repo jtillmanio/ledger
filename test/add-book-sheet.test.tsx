@@ -129,6 +129,12 @@ const adds = () => fetchMock.mock.calls.filter(([u, i]) => u === "/api/books" &&
 async function open(target?: Target) {
   act(() => root.render(<UndoProvider><AddBooksButton target={target} /></UndoProvider>));
   await click(opener());
+  // Add books' code loads with its sheet (task 1.30): wait for the body, past its loading state, on
+  // setImmediate ticks so the fake setTimeout below never moves. test/add-books-loading.test.tsx is the wait itself.
+  // The first open in a worker compiles the module, so the bound is time, not ticks.
+  for (const until = Date.now() + 10_000; Date.now() < until && !dialog()?.querySelector(".addb");) {
+    await act(async () => { await new Promise((r) => setImmediate(r)); });
+  }
 }
 
 async function search(q = "blade") {
