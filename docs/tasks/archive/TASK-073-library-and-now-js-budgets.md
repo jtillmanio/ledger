@@ -1,14 +1,14 @@
 ---
 id: TASK-073
 title: 1.30 Bring the Library and Now back under their JS budgets
-status: Draft
+status: Done
 depends_on: [TASK-058, TASK-059]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 9f0959f
 ---
 
 # TASK-073 — 1.30 Bring the Library and Now back under their JS budgets
@@ -76,23 +76,23 @@ they do changes.
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): on the
+- [x] AC-1 (roadmap **Check:**, verbatim): on the
 branch's Vercel preview, Lighthouse's median of three measures `/books` at no
 more than 175,000 bytes of JS and `/books/list` at no more than 170,000 bytes
 and 64 requests; the budget table and `scripts/perf/budget.json` show those
 numbers again; the Lighthouse job passes; and the status control's tests
 (`test/reading-log.test.tsx`, `test/e2e/start-dates.spec.ts`) pass unchanged.
-- [ ] AC-2: The PR body has a before/after table for `/books` and
+- [x] AC-2: The PR body has a before/after table for `/books` and
   `/books/list` (JS bytes and requests, with main's last Lighthouse run as
   *before* and the branch's preview as *after*). It also lists the scripts each
   route loaded before the change, each with its size, so the change can be read
   against where the bytes were.
-- [ ] AC-3: A guard test (beside `test/no-prefetched-handlers.test.ts`) fails
+- [x] AC-3: A guard test (beside `test/no-prefetched-handlers.test.ts`) fails
   if any component this task made lazy is imported statically by a component
   that renders on `/books` or `/books/list` (at least `AddBooks` from
   `AddBooksButton.tsx`, if the plan makes it lazy). Run against `main`, it
   fails.
-- [ ] AC-4: Behaviour is unchanged. Opening Add books from the Library, from
+- [x] AC-4: Behaviour is unchanged. Opening Add books from the Library, from
   the dashboard's plan shelf and from `/books/status` opens the sheet with its
   destination set, as before. Focus moves into the sheet, and on close returns
   to the button that opened it. Tapping *Read* in the status control still opens
@@ -100,7 +100,7 @@ numbers again; the Lighthouse job passes; and the status control's tests
   `test/e2e/book-search.spec.ts`, `test/e2e/paste-books.spec.ts`,
   `test/e2e/plan-picker.spec.ts`, `test/reading-log.test.tsx` and
   `test/e2e/start-dates.spec.ts` pass without their assertions being edited.
-- [ ] AC-5: The sheets and the status control meet the UX floor
+- [x] AC-5: The sheets and the status control meet the UX floor
   (`docs/04-design.md` § 10) after the change. While a lazily loaded part's
   code is still loading, the sheet shows its drawn loading state, never an
   empty sheet. Opening it shifts nothing on the page behind (Lighthouse CLS on
@@ -157,13 +157,49 @@ numbers again; the Lighthouse job passes; and the status control's tests
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- After 1.30, `/books/status` measures about 12 KB under its 175,400 ceiling (162,575 bytes on PR #236's preview: it lost the Add books chunk too, and Out of scope leaves its number alone). Approved at plan for a sentence in roadmap § 0.13; at close-out 0.13 was found to re-measure every ceiling from its own preview already ("the measurement on this entry's preview plus 25%") → not tracked: already covered by docs/05-roadmap.md § 0.13
+- `test/lazy-imports.test.ts` strips `/* */` comments without regard to string literals, and reads one import per line, so a string such as `"src/**/*.ts"` in a walked file could hide imports (test audit R1). No such string is in `src/` today, and the walk's own checks (it must reach `AddBooksButton` and `BookStatus`) catch a gross failure → not tracked: theoretical, accepted as is
+
 ## Plan
 
 _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
 
+**Measured.** Main's last Lighthouse run (PR #216, `10e8dc5`): `/books` 177,069 B JS / 36 requests, `/books/list` 172,836 B / 65. A local build with browser source maps shows the 9.4 KB (brotli) chunk common to all three book routes is exactly the Add books tree (`AddBooks`, `BookSearch`, `PasteBooks`, `ByHand`, `book-review`, `book-parse`); `BookStatus` + `FinishDate` are about 3.5 KB. A throwaway build with `AddBooks` lazy took ~10.5 KB and one script off each books route (`/books` 23,321 → 12,761 br of route chunks, `/books/list` 19,975 → 9,441, `/books/status` 21,719 → 10,523), so the status control is left alone.
+
+**Steps**
+1. AC-3 guard test first; confirm it fails on main.
+2. `AddBooksButton.tsx`: load `AddBooks` with `next/dynamic` (`ssr: false`, as `BookRowMenu` does), `loading` = a sheet skeleton (the segmented control, Add to chips, search box in `--sunk`; busy; one sr-only "Loading"). `Sheet` keeps heading focus, inert and focus return.
+3. `budget.json` back to `books` 175,000, `library` 170,000 / 64; `docs/02-architecture.md` table and a paragraph on why raised, when back, what was measured.
+
+**Files**
+- `src/components/AddBooksButton.tsx` — the lazy import.
+- `src/components/Skeleton.tsx` — `AddBooksSheetSkeleton`.
+- `test/lazy-imports.test.ts` (new) — static import walk from `/books`, `/books/list`, `/books/status`; fails if it reaches `AddBooks`, `BookSearch`, `PasteBooks` or `ByHand`.
+- `test/add-books-loading.test.tsx` (new) — held import: skeleton, never an empty body; released: body replaces it.
+- `test/add-book-sheet.test.tsx` — only if needed: `open()` waits for the lazy body; no assertion edited.
+- `scripts/perf/budget.json`, `docs/02-architecture.md`.
+- No `design/mockups.html` redraw: the loaded sheet does not change.
+- `test/e2e/add-books-loading.spec.ts` (new; plan revision 1, owner-approved after ui-verifier R1): holds the lazy chunk and checks the sheet's top and height are the same during the skeleton and after load, at every width. The skeleton is drawn to the whole Search pane for it.
+
+**Test strategy**
+- AC-1: preview Lighthouse; `test/perf.test.ts`; `test/reading-log.test.tsx`, `test/e2e/start-dates.spec.ts` unchanged (BookStatus untouched).
+- AC-2: PR body tables (before = #216's reports).
+- AC-3: `test/lazy-imports.test.ts`.
+- AC-4: the six named suites; e2e in `w390-light` locally, CI `e2e:full`.
+- AC-5: `test/add-books-loading.test.tsx`; `test/e2e/add-books-loading.spec.ts` (plan revision 1); ui-verifier screenshots at every `ui.viewports` width.
+
+**Risks**: `/books/list` lands at exactly 64 requests (covers depend on preview data); first open fetches ~9 KB behind the skeleton; `/books/status` shrinks ~11 KB, its number left alone.
+
 ## Review log
 
 _Filled by /implement-task. One line per round._
+
+- Verify R1 FAIL (lowercase c: cwd: every vitest file) → R2 FAIL(12, add-book-sheet's open() before the lazy body; helper waits) → R3 FAIL(1, tick-bounded wait too short cold) → R4 PASS (time-bounded wait)
+- Push → PR #236 (draft, e2e:full) | CI R1 (9506ca1) PASS, every project | Lighthouse (9506ca1) PASS: /books 164,897 B · 35, /books/list 160,907 B · 64
+- Spec R1 CHANGES (follow-up bullet has no destination: written at close-out; note: cite #216's exact medians → fixed) | Audit R1 PASS | UI R1 CHANGES (skeleton ~300px against a ~760px sheet: the sheet jumped, 0.53 layout shift)
+- Rebased on main ae56fe1 (#235; owner asked) → Verify R5 PASS → force-with-lease push; PR marked ready (D-145) | CI R2 (96d6239) PASS
+- Fix: skeleton drawn at the loaded size + test/e2e/add-books-loading.spec.ts (plan revision 1, owner-approved) → Verify R6 PASS | CI R3 (084c306) PASS | Spec R2 APPROVE (note: skeleton's action bar 6px past the sheet's padding → fixed, overflow assertion added) → Verify R7 PASS | Audit R2 PASS (overflow assertion then proven: fails by 6px without the fix) | UI R2 PASS (same top and height at all six widths, no shift, no sideways scroll)
+- Lighthouse (b1cc92b) PASS: /books 165,095 B · 35 requests, /books/list 161,143 B · 64, CLS 0.002 / 0.001
 
 ## Blocked
 
@@ -171,7 +207,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 7 (4 before the first push: 1 environment, 2 test-helper waits)
+- Review rounds: 2 (spec 2, audit 2, UI 2)
+- First-pass AC FAILs: 1 (AC-5: the skeleton's size, ui-verifier R1)
+- Plan revisions after approval: 1 (test/e2e/add-books-loading.spec.ts)

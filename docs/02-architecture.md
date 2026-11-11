@@ -285,8 +285,8 @@ tables.
     | `/books/status` | 24,000 | 175,400 | 35 | 100 |
     | `/comics/bendis-disassembled` | 26,800 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 26,000 | 171,000 | 33 | 100 |
-    | `/books` | 19,000 | 177,700 | 36 | 100 |
-    | `/books/list` | 70,000 | 173,400 | 65 | 100 |
+    | `/books` | 19,000 | 175,000 | 36 | 100 |
+    | `/books/list` | 70,000 | 170,000 | 64 | 100 |
     | `/inbox` | 16,000 | 173,000 | 31 | 100 |
     | `/settings` | 16,000 | 173,000 | 32 | 100 |
     | `/watch` | 12,500 | 173,000 | 28 | 100 |
@@ -406,6 +406,22 @@ tables.
     three by 300 bytes, to 177,700, 173,400 and 175,400 (2026-11-10), the same
     stopgap with 1.30's targets unchanged; 0.13 (D-142) replaces this kind of
     ceiling with a gate on what each PR adds.
+    Task 1.30 put `/books` back to 175,000 and `/books/list` to 170,000 bytes
+    and 64 requests (the old budgets). Measured first: main's last run (PR
+    #216) had `/books` at 177,069 bytes of JS and `/books/list` at 172,836 and
+    65 requests, and a source-mapped build showed that one chunk all three
+    books routes loaded, 9.4 KB of brotli, was Add books' whole tree (Search,
+    *Paste a list*, *By hand*), shipped with every Add books button before
+    anyone opened it. `AddBooksButton` now loads it with the sheet
+    (`next/dynamic`, which draws the sheet's skeleton meanwhile), and
+    `test/lazy-imports.test.ts` fails if a static import brings it back. A local
+    build took about 10.5 KB of brotli and one script off each books route; the
+    status control (`BookStatus`, `FinishDate`, about 3.5 KB) stayed as it was.
+    PR #236's preview measured `/books` at 165,095 bytes of JS and 35
+    requests and `/books/list` at 161,143 bytes and 64 (median of three), so
+    the old budgets hold with room to spare.
+    `/books/status` shrank by as much, and keeps its 175,400 until 0.13
+    re-bases the ceilings.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 
