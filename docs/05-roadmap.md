@@ -3365,6 +3365,11 @@ apart (*Read 2× · Listened 1×*), each listen marked with the headphones glyph
 The *Listened* line appears only when there is a listen or the book is being
 listened to.
 
+*From 2.10 (TASK-069, PR #237):* the Words field takes the estimated-count
+treatment from 2.2 (`~65k` and the dotted edge, `docs/04-design.md` § 14 →
+Plan). 2.10 applied it to the plan rail, the plan rows and the Library's
+`.rm` values; no detail sheet existed to draw it on.
+
 From the 2026-10-20 intake: *Your record* shows the start date beside the
 finish (1.17), and each read in *History* shows both, with the days taken
 derived. The series name is a link to its series page (5.9). If 1.18 already

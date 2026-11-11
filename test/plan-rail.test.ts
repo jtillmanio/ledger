@@ -9,7 +9,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { requireTestUrl } from "../scripts/lib/testdb.mjs";
 import {
-  genreHue, kWords, layoutColumn, layoutLane, periodName, railName, stackLabel, stackName, type RailBook,
+  genreHue, HIT_SLACK, hitLift, kWords, labelFit, layoutColumn, layoutLane, periodName, planYear, railName, roomAhead, stackLabel,
+  stackName, type RailBook,
 } from "../src/lib/plan-rail";
 import { testSql, truncateAll } from "./db";
 
@@ -204,6 +205,129 @@ describe("a column holds 1000k: what runs past its top folds into one +N more st
   it("leaves a column that fits alone: nothing folds at exactly 1000k", () => {
     const items = layoutColumn([book("a", 500_000), book("b", 500_000)], { ...PHONE, capacity: 760_000 });
     expect(items.map((i) => i.kind)).toEqual(["block", "block"]);
+  });
+});
+
+describe("a lone small block's hit area comes from the side with room (task 2.10, AC-5)", () => {
+  const cols = { ...PHONE, capacity: 760_000 };
+  const lift = (items: ReturnType<typeof layoutColumn>, id: string) => {
+    const item = items.find((i) => i.kind === "block" && i.book.id === id);
+    return item?.lift;
+  };
+
+  it("at the foot, under a 110k block: the 24px reaches below the foot, so the 110k keeps its whole 24px", () => {
+    const items = layoutColumn([book("small", 30_000), book("big", 110_000), book("pad", 300_000)], cols);
+    const missing = 24 - px(30_000);
+    const l = lift(items, "small")!;
+    // Above it, the 110k (25.3px) spares 0.3px (it keeps a px of slack beyond its 24); the rest is taken below.
+    expect((1 - l) * missing).toBeCloseTo(px(110_000) - 24 - HIT_SLACK, 6);
+    expect(l).toBeGreaterThan(0.9);
+  });
+
+  it("at the top, above a 110k block: the 24px reaches above, so the 110k keeps its whole 24px", () => {
+    const items = layoutColumn([book("big", 110_000), book("small", 30_000)], cols);
+    const missing = 24 - px(30_000);
+    const l = lift(items, "small")!;
+    expect(l * missing).toBeCloseTo(px(110_000) - 24 - HIT_SLACK, 6);
+    expect(l).toBeLessThan(0.1);
+  });
+
+  it("between neighbours with px to spare, it stays the even split", () => {
+    const items = layoutColumn([book("a", 300_000), book("small", 30_000), book("b", 300_000)], cols);
+    expect(lift(items, "small")).toBe(0.5);
+  });
+
+  it("between two 110k blocks neither side has room, so it falls back to the even split, and only then", () => {
+    const squeezed = layoutColumn([book("a", 110_000), book("small", 30_000), book("b", 110_000)], cols);
+    expect(lift(squeezed, "small")).toBe(0.5);
+    // One side with room is enough to take the px from it.
+    const oneSide = layoutColumn([book("a", 110_000), book("small", 30_000), book("b", 400_000)], cols);
+    expect(lift(oneSide, "small")).toBeCloseTo((px(110_000) - 24 - HIT_SLACK) / (24 - px(30_000)), 6);
+  });
+
+  it("is set for a small block and nothing else: a block of 24px or more, and a stack, carry none", () => {
+    const items = layoutColumn([book("s1", 30_000), book("big", 300_000), book("s2", 30_000), book("s3", 30_000)], cols);
+    expect(items.map((i) => i.kind)).toEqual(["block", "block", "stack"]);
+    expect(items.map((i) => i.lift !== undefined)).toEqual([true, false, false]);
+  });
+
+  it("hitLift takes the missing px from the roomy side and never more than a side has", () => {
+    expect(hitLift(10, { below: Infinity, above: 1 })).toBeCloseTo(0.9, 6);
+    expect(hitLift(10, { below: 2, above: Infinity })).toBeCloseTo(0.2, 6);
+    expect(hitLift(10, { below: Infinity, above: Infinity })).toBe(0.5);
+    expect(hitLift(10, { below: 1, above: 1 })).toBe(0.5);
+  });
+});
+
+describe("what a block says of itself on the full-size rail (task 2.10, AC-5; D-135, D-138)", () => {
+  it("shows nothing under the words floor, its words from it, its title and words from tall enough", () => {
+    expect(labelFit(px(30_000))).toEqual({ phone: 0, desk: 0 });
+    // 100k is 23px on the phone: words. On the desktop's 300px it is 30px: still words.
+    expect(labelFit(px(100_000))).toEqual({ phone: 1, desk: 1 });
+    // 150k is 34.5px on the phone: title and words, and on the desktop too.
+    expect(labelFit(px(150_000))).toEqual({ phone: 2, desk: 2 });
+  });
+
+  it("the desktop fits a title the phone cannot: a block between the two heights", () => {
+    // 110k is 25.3px on the phone (words only) and 33px on the desktop (title and words).
+    expect(labelFit(px(110_000))).toEqual({ phone: 1, desk: 2 });
+    // 45k is 10.4px on the phone (nothing) and 13.5px on the desktop: still under the floor; 50k is 15px there.
+    expect(labelFit(px(45_000)).desk).toBe(0);
+    expect(labelFit(px(50_000))).toEqual({ phone: 0, desk: 1 });
+  });
+});
+
+describe("the room line (task 2.10, AC-4)", () => {
+  const q = (n: number, planned: number, books = planned > 0 ? 1 : 0, capacity = 760_000) =>
+    ({ quarter: n, capacity, plannedWords: planned, books });
+  const TODAY = "2027-05-10";
+
+  it("sums capacity less what is held across the empty quarters ahead, named as a range", () => {
+    const room = roomAhead([q(1, 900_000), q(2, 0), q(3, 0), q(4, 0)], 2027, TODAY);
+    expect(room?.words).toBe(3 * 760_000);
+    expect(room?.quarters).toEqual([2, 3, 4]);
+    expect(room?.text).toBe("2.3M of room across Q2–Q4");
+  });
+
+  it("counts what the quarters ahead already hold, and names non-adjacent ones as a list", () => {
+    const room = roomAhead([q(1, 0), q(2, 0), q(3, 800_000), q(4, 100_000)], 2027, TODAY);
+    // Q2 (this quarter) and Q4 have room; Q3 is over and left out; Q1 is behind.
+    expect(room?.quarters).toEqual([2, 4]);
+    expect(room?.words).toBe(760_000 + 660_000);
+    expect(room?.text).toBe("1.4M of room across Q2 and Q4");
+  });
+
+  it("says in Qn for one quarter, and leaves out a quarter that is over", () => {
+    const room = roomAhead([q(1, 0), q(2, 500_000), q(3, 900_000), q(4, 0)], 2027, TODAY);
+    expect(room?.quarters).toEqual([2, 4]);
+    const one = roomAhead([q(1, 0), q(2, 500_000), q(3, 900_000), q(4, 900_000)], 2027, TODAY);
+    // A quarter that holds books still has room: the line is the room, not the emptiness.
+    expect(one?.text).toBe("260k of room in Q2");
+    const single = roomAhead([q(1, 0), q(2, 500_000), q(3, 900_000), q(4, 0)].map((x) => (x.quarter === 2 ? { ...x, plannedWords: 900_000 } : x)), 2027, TODAY);
+    expect(single?.text).toBe("760k of room in Q4");
+  });
+
+  it("a later year offers all four quarters, and a past year none", () => {
+    expect(roomAhead([q(1, 0), q(2, 0), q(3, 0), q(4, 0)], 2028, TODAY)?.text).toBe("3M of room across Q1–Q4");
+    expect(roomAhead([q(1, 0), q(2, 0), q(3, 0), q(4, 0)], 2026, TODAY)).toBeNull();
+  });
+
+  it("counts quarters that hold books, as the mockup's 893k across Q2–Q4 does, and is not drawn when none ahead has room", () => {
+    const held = roomAhead([q(1, 0), q(2, 700_000), q(3, 700_000), q(4, 700_000)], 2027, TODAY);
+    expect(held?.text).toBe("180k of room across Q2–Q4");
+    expect(roomAhead([q(1, 0), q(2, 900_000), q(3, 900_000), q(4, 900_000)], 2027, TODAY)).toBeNull();
+  });
+});
+
+describe("the year switch (task 2.10)", () => {
+  it("is this year by default and for anything outside this year and the next four", () => {
+    for (const raw of [undefined, "", "abc", "2026", "2032", "20271", "-2027", ["2028", "2029"]]) {
+      expect(planYear(raw, "2027-05-10"), String(raw)).toBe(2027);
+    }
+  });
+
+  it("takes this year and each of the next four", () => {
+    for (const y of [2027, 2028, 2029, 2030, 2031]) expect(planYear(String(y), "2027-05-10")).toBe(y);
   });
 });
 

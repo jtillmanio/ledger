@@ -41,6 +41,11 @@ type Placed = {
   over: boolean;
   /** For a block the rule runs through: px from its start to the rule. Null otherwise. */
   split: number | null;
+  /**
+   * For a lone block drawn under `min` px: the share of its missing px its 24px hit area takes below it
+   * (the rest above). Set by `layoutColumn`; absent means an even split.
+   */
+  lift?: number;
 };
 
 export type RailBlock = Placed & { kind: "block"; book: RailBook };
@@ -114,7 +119,75 @@ export function layoutColumn(books: RailBook[], { length, scale, capacity, min =
     at += book.words;
   }
   flush();
-  return foldOverflow(items, { length, perWord, scale, capacity });
+  return liftSmall(foldOverflow(items, { length, perWord, scale, capacity }), min);
+}
+
+/**
+ * A lone block under `min` px gets a `min`px hit area that reaches into its neighbours. Rather than an
+ * even split, the missing px come from the side with room: the column's foot or top, or a neighbour's px
+ * beyond its own `min` and a px of slack (`HIT_SLACK`). Both sides tight (a 30k book between two 110k ones at 230px) is the even split.
+ */
+export function hitLift(missing: number, room: { below: number; above: number }): number {
+  let below = missing / 2;
+  let above = missing - below;
+  if (below > room.below) { below = room.below; above = missing - below; }
+  else if (above > room.above) { above = room.above; below = missing - above; }
+  return below > room.below + 1e-9 || above > room.above + 1e-9 ? 0.5 : below / missing;
+}
+
+/** A neighbour keeps a px beyond its `min`: a browser's hit test snaps to device pixels and would take it. */
+export const HIT_SLACK = 1;
+
+function liftSmall(items: RailItem[], min: number): RailItem[] {
+  const spare = (item: RailItem | undefined) => (item ? Math.max(0, item.size - min - HIT_SLACK) : Infinity);
+  return items.map((item, i) => (item.kind === "block" && item.size < min
+    ? { ...item, lift: hitLift(min - item.size, { below: spare(items[i - 1]), above: spare(items[i + 1]) }) }
+    : item));
+}
+
+/** The desktop rail is this many times as tall as the phone's (230px → 300px). */
+export const DESK_SCALE = 300 / PHONE_COLUMN;
+/** A block shows its words from this drawn height, and its title above them from `TITLE_PX` (the plan page's full-size rail, D-135, D-138). */
+const WORDS_PX = 14;
+const TITLE_PX = 32;
+
+/** What a block of `size` px (at the phone's height) says about itself: 0 nothing, 1 its words, 2 its title and words. */
+export type Fit = 0 | 1 | 2;
+export function labelFit(size: number): { phone: Fit; desk: Fit } {
+  const at = (px: number): Fit => (px >= TITLE_PX ? 2 : px >= WORDS_PX ? 1 : 0);
+  return { phone: at(size), desk: at(size * DESK_SCALE) };
+}
+
+/** The shape of a `plan_capacity` quarter that the room line reads. */
+export type QuarterRoom = { quarter: number | null; capacity: number; plannedWords: number; books: number };
+
+/**
+ * The plan page's one empty state (task 2.10): the room across the quarters still ahead that are not over
+ * (this quarter and later for this year, all four for a later year, none for a past one), named as a range
+ * when they run on (*Q2–Q4*), else as a list (*Q2 and Q4*). Null when no quarter ahead has room.
+ */
+export function roomAhead(quarters: QuarterRoom[], year: number, today: string): { words: number; quarters: number[]; text: string } | null {
+  const thisYear = Number(today.slice(0, 4));
+  const thisQuarter = Math.floor((Number(today.slice(5, 7)) - 1) / 3) + 1;
+  const ahead = quarters.filter((q): q is QuarterRoom & { quarter: number } =>
+    q.quarter !== null && (year > thisYear || (year === thisYear && q.quarter >= thisQuarter)));
+  const open = ahead.filter((q) => q.plannedWords <= q.capacity && q.capacity > q.plannedWords);
+  if (open.length === 0) return null;
+  const nums = open.map((q) => q.quarter);
+  const words = open.reduce((n, q) => n + q.capacity - q.plannedWords, 0);
+  const names = nums.map((n) => `Q${n}`);
+  const run = nums.length > 1 && nums.every((n, i) => i === 0 || n === nums[i - 1] + 1);
+  const where = nums.length === 1 ? `in ${names[0]}`
+    : run ? `across ${names[0]}–${names[names.length - 1]}`
+    : `across ${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+  return { words, quarters: nums, text: `${kWords(words)} of room ${where}` };
+}
+
+/** The year the page shows: `?year=` when it is this year or one of the next four, else this year. */
+export function planYear(raw: string | string[] | undefined, today: string): number {
+  const thisYear = Number(today.slice(0, 4));
+  const year = typeof raw === "string" && /^\d{4}$/.test(raw) ? Number(raw) : NaN;
+  return year >= thisYear && year < thisYear + 5 ? year : thisYear;
 }
 
 /**

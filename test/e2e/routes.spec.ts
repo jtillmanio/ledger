@@ -47,6 +47,11 @@ test("each route answers with its own screen", ONCE, async ({ page }) => {
   await expect(h1).toHaveText("Library");
   await expect(page.getByRole("link", { name: /^Everything$/ })).toHaveAttribute("href", "/books/list");
 
+  // The Plan item leads to the plan page (task 2.10, AC-2).
+  await page.locator('a[href="/books/plan"]:visible').first().click();
+  await page.waitForURL("**/books/plan");
+  await expect(h1).toHaveText("Plan");
+
   // GET /books renders the books dashboard, no redirect (task 2.2, AC-4).
   const res = await page.goto("/books");
   expect(new URL(page.url()).pathname).toBe("/books");

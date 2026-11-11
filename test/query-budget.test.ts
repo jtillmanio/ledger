@@ -23,6 +23,8 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   // On deck, the year, your pace and the inbox count, together; an empty year's capacity reuses the pace.
   // Task 2.2d adds *Or keep going* (follow_next) in the same wave; Now's *Next in* rides on Now's read.
   "/books": { queries: 10, waves: 1 },
+  // The plan page (task 2.10): the year's capacity, the rail's books, the quarters' rows and your pace, together.
+  "/books/plan": { queries: 4, waves: 1 },
   "/inbox": { queries: 2, waves: 1 },
   "/settings": { queries: 2, waves: 1 },
   "/watch": { queries: 0, waves: 0 },
@@ -103,6 +105,8 @@ const pages: [string, () => Promise<unknown>][] = [
   ["/books", async () => (await import("../src/app/books/page")).default()],
   ["/books/list", async () =>
     (await import("../src/app/books/list/page")).default({ searchParams: Promise.resolve({}) })],
+  ["/books/plan", async () =>
+    (await import("../src/app/books/plan/page")).default({ searchParams: Promise.resolve({}) })],
   ["/inbox", async () => (await import("../src/app/inbox/page")).default()],
   ["/settings", async () => (await import("../src/app/settings/page")).default()],
   ["/watch", async () => (await import("../src/app/watch/page")).default()],

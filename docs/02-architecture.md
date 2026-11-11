@@ -104,7 +104,7 @@ Every page. One dashboard per medium, with the lists one level down (design §11
 | `/books/status` | In flight · Up next · Done, for books |
 | `/books/list` | Master list: search, filter by status, to-read level, year or genre, series completion |
 | `/books/add` | Add books: search Hardcover, paste a list, or by hand, with a destination (a quarter or year, On deck, Someday, or a shelf) |
-| `/books/plan` | Plan by quarter, full editor |
+| `/books/plan` | Plan by quarter: the year as the full-size rail, the quarter in focus listed with *Move* (task 2.10); the capacity card, Rebalance and Accept join it (2.7, 2.8) |
 | `/books/releases` | Books coming out that you want, *Out now* then by month (task 5.7, D-35) |
 | `/books/series` | Every series with `read / total` from `series_progress` and its next unread book (task 5.9) |
 | `/books/series/[id]` | One series: its books in position order with status and dates, the next unread, gap rows (task 5.9) |
@@ -215,7 +215,7 @@ tables.
   skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
   page within 1 s. What holds that, and the test that fails if it slips:
   - **Queries per page, in one wave.** `/comics` 7, `/comics/runs` 2, a run 3,
-    `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/books` 10, `/inbox` 2, `/settings` 2, `/watch` none, `/login` none, `/` none (a redirect), each page's queries started together
+    `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/books` 10, `/books/plan` 4 (task 2.10: capacity, rail, rows, your pace), `/inbox` 2, `/settings` 2, `/watch` none, `/login` none, `/` none (a redirect), each page's queries started together
     (`test/query-budget.test.ts`, which counts them). A query that must wait on
     another raises a page's waves; raising either number needs a reason here.
     The dashboard (then `/`) and `/books/list` went from 4 to 5 with the inbox
@@ -287,6 +287,7 @@ tables.
     | `/comics/busiek-avengers` | 26,000 | 171,000 | 33 | 100 |
     | `/books` | 19,000 | 175,000 | 36 | 100 |
     | `/books/list` | 70,000 | 170,000 | 64 | 100 |
+    | `/books/plan` | 24,000 | 177,700 | 40 | 100 |
     | `/inbox` | 16,000 | 173,000 | 31 | 100 |
     | `/settings` | 16,000 | 173,000 | 32 | 100 |
     | `/watch` | 12,500 | 173,000 | 28 | 100 |

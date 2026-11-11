@@ -1,12 +1,11 @@
 import { useId, type CSSProperties } from "react";
 import type { PeriodCapacity } from "@/db/queries";
 import {
-  COLUMN_WORDS, MIN_HIT, PHONE_COLUMN, STRIP_LENGTH, genreHue, kWords, layoutColumn, layoutLane, railName, stackLabelParts, stackName,
-  type RailBook, type RailItem, type RailStack,
+  COLUMN_WORDS, MIN_HIT, PHONE_COLUMN, STRIP_LENGTH, genreHue, kWords, labelFit, layoutColumn, layoutLane, railName,
+  stackLabelParts, stackName,
+  type Fit, type RailBook, type RailItem, type RailStack,
 } from "@/lib/plan-rail";
 
-/** A label shows when its block is drawn at least this big, on the phone: the text must fit. */
-const LABEL_PX = 16;
 /** On the strip, a block narrower than this share of it keeps its words to its name. */
 const LABEL_SHARE = 0.07;
 /** On the strip, a stack narrower than this many px (at the phone's 296px) says how many books, not their words. */
@@ -117,13 +116,23 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
       </div>
       <span className="caprule" aria-hidden="true"><em>{kWords(capacity)}</em></span>
     </div>
-    <ul className="qlegend">
+    <RailLegend noteId={note} />
+    </>
+  );
+}
+
+/**
+ * The rail's key. The loading skeleton draws it too (same text, same wrap), so the rail's arrival shifts
+ * nothing; `hidden` is that one, out of the accessibility tree like the rest of the skeleton.
+ */
+export function RailLegend({ noteId, hidden = false }: { noteId?: string; hidden?: boolean }) {
+  return (
+    <ul className="qlegend" aria-hidden={hidden || undefined}>
       <li><i className="lg est" aria-hidden="true" /><span className="mono">~</span> estimated</li>
       <li><i className="lg ovr" aria-hidden="true" /> over capacity</li>
-      <li id={note}><i className="lg stk" aria-hidden="true" /><span className="mono">+N</span> merged under 24px, or folded past the top. {STACK_REASON}</li>
+      <li id={noteId}><i className="lg stk" aria-hidden="true" /><span className="mono">+N</span> merged under 24px, or folded past the top. {STACK_REASON}</li>
       <li><i className="lg nqt" aria-hidden="true" /> year, no quarter</li>
     </ul>
-    </>
   );
 }
 
@@ -172,18 +181,30 @@ function Item({ item, length, axis, lane = false, inHand, note }: {
   }
 
   const { book } = item;
-  const fits = axis === "row" ? item.size / length >= LABEL_SHARE : item.size >= LABEL_PX;
+  // The strip shows a block's words when its share of the strip fits them; a column says what its height
+  // fits, at the phone's height and at the desktop's (`data-p`, `data-d`: 1 its words, 2 its title above them).
+  const fit = axis === "row"
+    ? ((item.size / length >= LABEL_SHARE ? 1 : 0) as Fit)
+    : null;
+  const { phone, desk } = fit === null ? labelFit(item.size) : { phone: fit, desk: fit };
   const state = book.id === inHand ? "head" : book.status === "read" ? "read" : undefined;
   const classes = cls("qb", item.over && "over", lane && "un", small && "sm");
+  const place = (axis === "column" && item.lift !== undefined ? { ...style, "--lift": num(item.lift) } : style) as CSSProperties;
   return (
     // Until 2.3's picker sheet, a block opens the book's Library row: a GET form, no script.
     <form action="/books/list" className="qf">
       <input type="hidden" name="q" value={book.title} />
       <button type="submit" className={classes} data-book={book.id} data-wc={book.estimated ? "estimated" : undefined}
-        data-state={state} aria-label={railName(book)}
-        style={{ ...style, "--hue": `var(${genreHue(book.genre)})` } as CSSProperties}>
+        data-state={state} aria-label={railName(book)} data-p={phone || undefined} data-d={desk || undefined}
+        style={{ ...place, "--hue": `var(${genreHue(book.genre)})` } as CSSProperties}>
         {body}
-        {fits && <span className="ql mono">{book.estimated ? "~" : ""}{kWords(book.words)}</span>}
+        {(phone > 0 || desk > 0) && (
+          <>
+            {/* The title only on a column, and only the part of it that fits: CSS ellipsises it. */}
+            {axis === "column" && (phone === 2 || desk === 2) && <span className="qt">{book.title}</span>}
+            <span className="ql mono">{book.estimated ? "~" : ""}{kWords(book.words)}</span>
+          </>
+        )}
       </button>
     </form>
   );
