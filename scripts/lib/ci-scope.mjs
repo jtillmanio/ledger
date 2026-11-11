@@ -12,11 +12,56 @@
 const NO_BROWSER_OR_BUILD = [/^backups\//, /^docs\//, /^\.claude\//, /^[^/]+\.md$/i];
 
 /**
+ * True when every path is one the browser suite and the build never read
+ * (an empty list is trivially docs-only; callers decide what nothing means).
+ * scripts/verify-docs.mjs uses the same line for the local check (D-145).
+ */
+export function isDocsOnly(files) {
+  return files.every((f) => NO_BROWSER_OR_BUILD.some((re) => re.test(f)));
+}
+
+/**
  * True when the browser suite and `npm run build` should run. An empty list
  * runs them: with nothing to compare, the safe answer is the full gate.
  */
 export function needsBrowserAndBuild(files) {
-  return files.length === 0 || files.some((f) => !NO_BROWSER_OR_BUILD.some((re) => re.test(f)));
+  return files.length === 0 || !isDocsOnly(files);
+}
+
+/** A browser-suite shard that checked every project, as ci.yml names it. */
+const FULL_SHARD = /^e2e full \d+\/\d+$/;
+
+/**
+ * True when a CI run's jobs show the browser suite ran in the full scope and
+ * passed: at least one `e2e full n/m` shard, and every one of them green. A
+ * draft's core run (`e2e core n/m`) and a run that skipped the suite (its
+ * shard keeps the unexpanded `${{ … }}` name) do not count.
+ */
+export function ranEveryProject(jobs) {
+  const shards = jobs.filter((j) => FULL_SHARD.test(j.name));
+  return shards.length > 0 && shards.every((j) => j.conclusion === "success");
+}
+
+/**
+ * The earlier run on this PR that lets a push skip the browser suite and the
+ * build (D-145), or null. `runs` are the PR branch's successful CI runs,
+ * newest first ({ id, head_sha }). The newest one whose head is still in the
+ * history being tested and that passed every project is the candidate; it is
+ * reused only when every path that differs between its head and the tree
+ * under test now is docs-only. That tree is the PR merged into today's main,
+ * so code that reached main since that run also forces the full gate. If the
+ * newest such run is not reusable, no older one is: its diff is wider still.
+ *   jobsOf(id)        the run's jobs ({ name, conclusion })
+ *   isAncestor(sha)   the commit is in the history under test
+ *   changedSince(sha) paths that differ from the commit, or null if unknown
+ */
+export function greenFullRunToReuse(runs, { jobsOf, isAncestor, changedSince }) {
+  for (const run of runs) {
+    if (!isAncestor(run.head_sha) || !ranEveryProject(jobsOf(run.id))) continue;
+    const files = changedSince(run.head_sha);
+    return files !== null && isDocsOnly(files) ? { run, files } : null;
+  }
+  return null;
 }
 
 // The label that asks a draft PR for the full browser suite (D-80).

@@ -7,18 +7,23 @@ two disagree, `git.md` wins and the disagreement is a bug to fix.
 
 ## Test on the branch, before merge
 
-A PR is ready only when everything that can prove the change has run
+A PR is mergeable only when everything that can prove the change has run
 **against the branch** and passed. `workflow.readyGates` is the enforced list,
 in order: `verify.full` on the branch head, CI `check`, the full browser suite,
 the Vercel preview, Lighthouse, a changed workflow run on the branch, and the
-owner's preview walk for UI. A draft's CI checks the browser suite's core
-projects; adding the `e2e:full` label reruns it on every project (D-80), and
-Claude watches that run in the background rather than waiting on it, and
-fixes a failure on the branch (`gh run view <id> --log-failed`, reproduced
-locally in the failing project) and pushes again. A PR
-marked ready, and every push to `main`, always gets the full suite.
-Claude marks a PR ready only when every gate it can check has passed,
-and lists the owner's gates in its report. "It will show up on `main`" is not a test:
+owner's preview walk for UI. Claude opens its PRs ready for review (D-145), so
+CI checks every project from the first push (a draft checks the core projects
+until it gets the `e2e:full` label, D-80). Claude watches that run in the
+background rather than waiting on it, and fixes a failure on the branch
+(`gh run view <id> --log-failed`, reproduced locally in the failing project)
+and pushes again. Every push to `main` always gets the full suite. A later
+push that adds only docs (a close-out, an accept) skips the browser suite and
+the build when an earlier run on the branch passed every project and nothing
+else differs, `main` included (D-145): the scope job's log names that run.
+Claude tells the owner the PR is done only when every gate it can check has
+passed, and lists the owner's gates in its report; when it stops with one
+failing, it turns the PR into a draft (`gh pr ready <n> --undo`).
+"It will show up on `main`" is not a test:
 a failure found after merge means reverting `main`. Run every suite that
 applies, not just the one nearest the change.
 
@@ -28,7 +33,12 @@ Before pushing, locally:
   checks, test-db reset, vitest, SQL view tests, ETL unittests), and the
   browser specs the branch added or changed in one project
   (`node scripts/test-files.mjs <specs>`). The whole browser suite and the
-  build run only in CI (D-141): its `e2e:full` run is the gate.
+  build run only in CI (D-141): its every-project run is the gate.
+- A branch that changes only docs, `.claude/`, `backups/` or root markdown
+  runs `npm run verify:docs` instead of `/verify` (D-145): every vitest,
+  unittest or SQL test that names a changed file (some pin what a doc says),
+  and the task-file parse when a task file changed. It exits 2 and runs
+  nothing when the branch changes anything else.
 - The task's own **Check:** from `docs/05-roadmap.md`, exactly as written.
 - Schema or query changes: the `schema-reviewer` subagent (CLAUDE-CODE.md §3,
   phase 4). Phases 1 and 3 also get the adversarial review pass (standing
@@ -86,16 +96,18 @@ Tick the task's checkbox in `docs/05-roadmap.md` in the same PR.
 
 ```bash
 git push -u origin <branch>
-gh pr create --draft --base main --title "<same form as a commit subject>" --body-file <file outside the repo>
+gh pr create --base main --title "<same form as a commit subject>" --body-file <file outside the repo>
 ```
 
-Once the local gates in *Test on the branch* pass, push and open the draft PR
+Once the local gates in *Test on the branch* pass, push and open the PR
 without asking first, attended or not (owner, 2026-10-09). The owner reviews
 the PR, not a prompt before it exists. Pushing to `main`, force-pushing and
 merging still never happen without the owner.
 
-The PR opens as a draft and is marked ready (`gh pr ready <n>`) only after the
-gates in *Test on the branch*.
+The PR opens ready for review (owner, 2026-11-11, D-145), which starts the
+full browser suite and Claude's PR review at once; a `[BLOCKED]` PR opens as a
+draft. Ready for review is not ready to merge: the owner merges once the gates
+in *Test on the branch* are green.
 
 The PR body has these sections:
 

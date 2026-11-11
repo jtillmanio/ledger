@@ -24,14 +24,14 @@
 
 | Check | Where | Result |
 |---|---|---|
-| `/verify` (tsc, lint, `test:no-e2e`, and the touched specs in one project; D-141) | local | |
+| `/verify` (tsc, lint, `test:no-e2e`, and the touched specs in one project; D-141), or `npm run verify:docs` on a docs-only branch (D-145) | local | |
 | The task's **Check:**, as written | local | |
 | test-auditor | local | |
 | spec-reviewer | local | |
 | schema-reviewer | local | n/a |
 | Up → down → up (drop or retype migrations) | local | n/a |
 | ui-verifier | local dev server | n/a |
-| CI `check` with `e2e:full`: the whole browser suite, every project (fix rounds, if any) | GitHub | see checks below |
+| CI `check`: the whole browser suite, every project (fix rounds, if any; a docs-only head names the run it leans on, D-145) | GitHub | see checks below |
 | Vercel preview deploys | Vercel | |
 | Lighthouse (no route over budget) | GitHub, on the preview | |
 | Preview walked at 360–412px against the mockup / feel pass | preview | n/a |

@@ -1,5 +1,6 @@
-# OPTIONAL: Claude reviews each PR once it leaves draft (it skips drafts).
-# In the kit's flow, /implement-task opens a draft PR, checks the ready gates, then marks it ready, which triggers this.
+# OPTIONAL: Claude reviews each PR once, when it opens ready for review or leaves draft (it skips drafts).
+# Claude opens its PRs ready for review (D-145), so the review starts with the first push, alongside CI;
+# a PR opened as a draft is reviewed when it is marked ready.
 # Setup: run /install-github-app in Claude Code (attached terminal) and choose the subscription token,
 # or add a CLAUDE_CODE_OAUTH_TOKEN secret (generate with `claude setup-token`).
 # Until the secret exists, the job skips its steps and passes, instead of failing every PR that leaves draft.
@@ -7,10 +8,11 @@ name: Claude PR review
 
 on:
   pull_request:
-    types: [ready_for_review, reopened]
+    types: [opened, ready_for_review, reopened]
 
 jobs:
   review:
+    if: ${{ !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:

@@ -30,20 +30,33 @@
   failing step's part (`.claude/project/test-runner.md` says how each tool
   reports a failure and where the location is). The test-runner agent spent
   most of its tokens waiting on the suite.
-- **Push the draft PR at the end of Phase 3, without asking, with
-  `e2e:full`.** In attended mode too, as soon as `verify.full` and the touched
-  specs have passed and the checkpoint commit is made, push the task branch,
-  open the draft PR (skip the "Push and open a draft PR?" question; owner,
-  2026-10-09 and 2026-11-10; `.claude/rules/git.md` § *Push and open the PR*:
-  the local gates have passed by then) and add the `e2e:full` label, so CI's
-  first run is already every project. Don't wait for the test audit, the
-  reviews or the close-out. Write the body's **What**, **Why** and **How it
-  was verified** now and mark **Follow-ups** as pending; at close-out, push
-  the close-out commit and rewrite the body with `gh pr edit <n> --body-file`.
-  CI reruns on every push (its scope is the whole PR's diff against `main`),
-  so the Phase 7 gates are judged on the close-out head. The floor is
-  unchanged: the PR stays a draft until the gates pass, never push to or
-  merge into `main`, never force-push, never start Release.
+- **Push the PR at the end of Phase 3, without asking, ready for review
+  (D-145).** In attended mode too, as soon as `verify.full` and the touched
+  specs have passed and the checkpoint commit is made, push the task branch
+  and open the PR with `gh pr create` **without `--draft`** (skip the "Push
+  and open a draft PR?" question; owner, 2026-10-09, 2026-11-10 and
+  2026-11-11; `.claude/rules/git.md` § *Push and open the PR*: the local gates
+  have passed by then). A PR that is ready for review runs every project from
+  its first push, so it needs no `e2e:full` label, and Claude's PR review
+  starts alongside CI. Phase 7's `gh pr ready` is then already done: skip it.
+  Don't wait for the test audit, the reviews or the close-out. Write the
+  body's **What**, **Why** and **How it was verified** now and mark
+  **Follow-ups** as pending; at close-out, push the close-out commit and
+  rewrite the body with `gh pr edit <n> --body-file`. The Phase 7 gates are
+  judged on the close-out head; CI skips the browser suite there when only
+  docs changed since a run that passed every project (D-145), and the gate
+  reads that run. The floor is unchanged: never push to or merge into
+  `main`, never force-push, never start Release.
+- **No separate "link follow-ups" commit (D-145).** The PR exists from
+  Phase 3, so at close-out write `PR #<n>` straight into every placement where
+  the kit would write the branch name (`track-follow-ups/classify.md`), in the
+  close-out commit itself. Every push to a task branch is a CI run; this one
+  only renamed a link.
+- **Ready for review is not "ready to merge".** The owner reads the checks
+  before merging. When Claude stops without the gates green (past
+  `workflow.maxCiFixRounds`, an `ownerFix`, Blocked), it turns the PR back
+  into a draft with `gh pr ready <n> --undo` and says why, so a red PR never
+  looks finished.
 - **Watch CI from the first push, and fix what fails (owner, 2026-11-10).**
   Watch each run in the background (`gh run watch <id> --exit-status`,
   `run_in_background`) while the audit and reviews go on; don't sit on it.
@@ -63,7 +76,8 @@
   3. Fix it on the branch, run `verify.full` and the reproduced test, commit,
      push, and watch the new run.
   Each push that answers a red run counts toward `workflow.maxCiFixRounds`
-  (4), with Phase 7's rounds. Past it, stop: leave the PR in draft and report
+  (4), with Phase 7's rounds. Past it, stop: turn the PR into a draft
+  (`gh pr ready <n> --undo`) and report
   what still fails and what you tried. If the fix needs the owner (a gate's
   `ownerFix`, a secret, a Neon branch), stop and say so rather than loop.
 - **After the push: reviewers, then the audit, then ui-verifier.** Start

@@ -22,6 +22,14 @@ unset, run the suites that don't need a database (`test:tokens`,
 `check:migrations`, `test:etl`), say plainly that the others ran only in CI,
 and never point them at `DATABASE_URL`.
 
+**A docs-only branch skips this chain (D-145).** When every file the branch
+changes is under `docs/`, `.claude/`, `backups/` or is root markdown, run
+`npm run verify:docs` instead: it runs every vitest, unittest and SQL test that
+names a changed file (some tests pin what a doc says, e.g. `e2e-guard` reads
+`CLAUDE.md` and `.claude/kit.json`) and the task-file parse when a task file
+changed. It exits 2 without running anything when the branch changes anything
+else; then run the chain above. CI's `tests` job still runs whole on the PR.
+
 **The browser suite is CI's (D-141).** Locally, run only the specs the branch
 added or changed, in one project: `node scripts/test-files.mjs <specs>`
 (`w390-light`; `-- -g "<fragment>"` for some tests, `-- --project=<p>` for a
