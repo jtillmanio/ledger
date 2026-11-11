@@ -518,7 +518,11 @@ test("a nav item leads to the page, and the page is headed Plan with the year's 
   await page.locator('a[href="/books/plan"]:visible').first().click();
   await page.waitForURL("**/books/plan");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Plan");
-  await expect(page.locator(".planrail")).toBeVisible();
+  // The year's rail by its name, not `.planrail`: the dashboard's strip is a `.planrail` too. When the click
+  // beats /books' stream, the strip is left behind in React's hidden streaming segment (<div hidden id="S:n">)
+  // after the client-side navigation, the bare class matches two elements, and strict mode fails at once
+  // (main's CI, 2026-11-11). A role query skips the hidden copy, and the name is the rail's alone.
+  await expect(page.getByRole("group", { name: `Plan ${THIS_YEAR}`, exact: true })).toBeVisible();
   // This year has nothing planned by the fixture: next year's chip leads to the rail with its books.
   await page.getByRole("link", { name: String(Y), exact: true }).click();
   await page.waitForURL(`**/books/plan?year=${Y}`);
