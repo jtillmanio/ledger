@@ -475,10 +475,10 @@ test.describe("reading", () => {
   // Task 2.3 (part 3): the strip's blocks open the plan picker, a stack its list.
   const strip = (page: Page) => page.locator(".planrail.strip");
   const stripBlock = (page: Page, n: number) => strip(page).locator(`button.qb[data-book="e2e-dash-${n}"]`);
-  /** Three 20k books at the end of the quarter: adjacent, each under 24px on the strip, so one stack. */
+  /** Three 30k books at the end of the quarter: adjacent, each 11px on the strip, so one 35px stack. */
   const seedStack = () => withSql(async (sql) => {
     for (const n of [4, 5, 6]) {
-      await sql`INSERT INTO books (id, title, word_count, word_count_source) VALUES (${`e2e-dash-${n}`}, ${`E2E Dash Tiny ${n}`}, 20000, 'stated')`;
+      await sql`INSERT INTO books (id, title, word_count, word_count_source) VALUES (${`e2e-dash-${n}`}, ${`E2E Dash Tiny ${n}`}, 30000, 'stated')`;
       await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${`e2e-dash-${n}`}, 'to_read')`;
       await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${E2E_USER}, ${`e2e-dash-${n}`}, ${PERIOD}, ${n})`;
     }
@@ -542,25 +542,27 @@ test.describe("reading", () => {
     const stack = strip(page).locator("button.stack");
     await expect(stack).toHaveCount(1);
     await hydrated(stack);
-    await expect(stack).toHaveAccessibleName("3 books, 60k words");
+    await expect(stack).toHaveAccessibleName("3 books, 90k words");
     await expect(stack).not.toHaveAttribute("aria-disabled", /.*/);
     await expect(page.locator(".qnote")).toHaveCount(0);
-    expect((await stack.boundingBox())!.height).toBeGreaterThanOrEqual(24);
-    expect((await stack.boundingBox())!.width).toBeGreaterThanOrEqual(24);
+    // The strip is laid out in fractions of the card, so a 24px box can measure 23.98 at 360px: whole px, as axe's target-size rounds.
+    const box = (await stack.boundingBox())!;
+    expect(Math.round(box.height)).toBeGreaterThanOrEqual(24);
+    expect(Math.round(box.width)).toBeGreaterThanOrEqual(24);
     await floor(page);
 
     await stack.click();
-    const list = page.getByRole("dialog", { name: "3 books, 60k words" });
+    const list = page.getByRole("dialog", { name: "3 books, 90k words" });
     await expect(list).toBeVisible();
-    await expect(list.locator("ul button")).toHaveText([/^E2E Dash Tiny 4\s*20k$/, /^E2E Dash Tiny 5\s*20k$/, /^E2E Dash Tiny 6\s*20k$/]);
-    for (const row of await list.locator("ul button").all()) expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await expect(list.locator("ul button")).toHaveText([/^E2E Dash Tiny 4\s*30k$/, /^E2E Dash Tiny 5\s*30k$/, /^E2E Dash Tiny 6\s*30k$/]);
+    for (const row of await list.locator("ul button").all()) expect(Math.round((await row.boundingBox())!.height)).toBeGreaterThanOrEqual(44);
     await expectNoAxeViolations(page, [...AXE, "aria-dialog-name"], ".sheet");
     await expectNoHorizontalScroll(page);
     await expectNoDanger(page);
     expect(await contrastFailures(page)).toEqual([]);
     await screenshot(page, info, "books-stack-list");
 
-    await list.getByRole("button", { name: "E2E Dash Tiny 5, 20k words" }).click();
+    await list.getByRole("button", { name: "E2E Dash Tiny 5, 30k words" }).click();
     const picker = page.getByRole("dialog", { name: "E2E Dash Tiny 5" });
     await expect(picker.locator(".pp-chip").first()).toBeVisible();
     await expectNoAxeViolations(page, [...AXE, "aria-dialog-name"], ".sheet");
@@ -587,7 +589,7 @@ test.describe("reading", () => {
       const stack = strip(page).locator("button.stack");
       await hydrated(stack);
       await stack.click();
-      const list = page.getByRole("dialog", { name: "3 books, 60k words" });
+      const list = page.getByRole("dialog", { name: "3 books, 90k words" });
       await expect(list).toBeVisible();
       expect(await list.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(await tokenColour(page, "--overlay"));
       expect(await list.evaluate((el) => getComputedStyle(el).backdropFilter)).toBe("none");
