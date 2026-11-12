@@ -3,6 +3,7 @@ import AddBooksButton from "@/components/AddBooksButton";
 import BookStatus from "@/components/BookStatus";
 import EmptySlate from "@/components/EmptySlate";
 import FinishBook from "@/components/FinishBook";
+import PlaceThem from "@/components/PlaceThem";
 import PlanQuarter from "@/components/PlanQuarter";
 import StatusBookRow from "@/components/StatusBookRow";
 import StatusTabs from "@/components/StatusTabs";
@@ -60,7 +61,7 @@ function control(b: StatusBook & {
  * are listening to, under *Listening* (task 1.23), each heading drawn only when
  * it has a book; *Up next* is the plan by
  * level, each quarter in your order and draggable inside itself, each year's
- * bare-year lane after its quarters (grey, no order and no button until 2.8),
+ * bare-year lane after its quarters (amber, no order, with *Place them*, task 2.8),
  * then On deck, and Someday as one row into the Library, never a list here
  * (D-37); *Done* is read books by year finished, the undated last, with the
  * stopped ones folded under *Stopped*.
@@ -132,6 +133,14 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
                   <h2 id={id} className="group-head">
                     {name} <span className="mono n">{nBooks(g.books.length)}{g.kind === "quarter" ? kWords(g.books) : ""}</span>
                   </h2>
+                  {g.kind === "year" && (
+                    // Held: these books count against the year and sit in no quarter (task 2.8; mockup `status`).
+                    <div className="lane-place">
+                      <span className="lane-place-what">In {g.year}, not in the plan</span>
+                      <span className="bdg bl">{g.books.length.toLocaleString()} unplaced</span>
+                      <PlaceThem year={g.year!} />
+                    </div>
+                  )}
                   {g.kind === "quarter" ? (
                     <PlanQuarter period={g.period} rows={g.books.map((b) => ({ ...b, ordinal: b.ordinal! }))} />
                   ) : (

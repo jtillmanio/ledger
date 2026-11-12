@@ -1443,6 +1443,31 @@ export async function planRows(userId: string, year: number): Promise<PlanRow[]>
   `;
 }
 
+/** A book committed to a year with no quarter, as *Place them* offers it (task 2.8). */
+export type UnplacedBook = {
+  id: string; title: string; author: string | null;
+  /** Null when the book has no word count and no plausible page count. */
+  words: number | null;
+  /** The count rests on an estimate (pages at your words per page), not a stated one. */
+  estimated: boolean;
+};
+
+/**
+ * *Place them*'s books for one year (task 2.8, F-23, D-37): the year's bare-year rows as `plan_book_words`
+ * counts them, so the flow, the rail's fifth lane and `plan_capacity` agree. The lane has no order, so the
+ * flow takes the largest first; a book with no word count comes last, then by title.
+ */
+export async function unplacedBooks(userId: string, year: number): Promise<UnplacedBook[]> {
+  return sql<UnplacedBook[]>`
+    SELECT w.book_id AS id, b.title, a.name AS author, w.words, w.word_source = 'estimated' AS estimated
+    FROM plan_book_words w
+    JOIN books b ON b.id = w.book_id AND b.deleted_at IS NULL
+    LEFT JOIN authors a ON a.id = b.author_id
+    WHERE w.user_id = ${userId} AND w.period = ${String(year)}
+    ORDER BY w.words DESC NULLS LAST, b.title, b.id
+  `.then((rows) => rows.map((r) => ({ ...r, estimated: r.estimated === true })));
+}
+
 /** *On deck* (D-37): the `to_read` books with no year, by title, the first `limit`, and how many in all. */
 export async function onDeck(userId: string, limit: number): Promise<{ rows: ShelfBook[]; total: number }> {
   const rows = await sql<(ShelfBook & { total: number })[]>`

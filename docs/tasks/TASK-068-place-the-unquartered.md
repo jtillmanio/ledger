@@ -1,14 +1,14 @@
 ---
 id: TASK-068
 title: 2.8 Place the unquartered
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 4351eb9
 ---
 
 # TASK-068 — 2.8 Place the unquartered
@@ -66,9 +66,40 @@ states the year is still over capacity when it is.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Candidate decision: *Place them* surfaces on Up next's bare-year lane and on `/books/plan`'s card, one component, never on the dashboard; the flow's books are `plan_book_words`' bare-year rows (approved at plan)
+- `docs/04-design.md` § Books dashboard and § Over-commitment say *Place them* is on `/books/plan` only: add Up next's lane (approved at plan)
+- The closing card's *Rebalance 2027* and *Accept as a stretch year* (mockup `plan`, last frame) arrive with 2.7: TASK-067 adds them to the card (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner up front (2026-11-12: "accept the plan right away"; the questions the gate would have asked are in the final report and the PR).
+
+**Where it surfaces (the Context's stop-and-ask, decided here).** In both places the sources draw it, never on the dashboard: (1) Up next's bare-year lane (the Check verbatim: "turns amber and gains *Place them* here"; the `status` mockup's lane, `design/mockups.html` ~3035); (2) `/books/plan`, as the mockup `plan` frame's amber card above the quarters, whose sheet frame moved there (TASK-049 Q2 forbids only the dashboard). One component, two mounts. The Check is not amended.
+
+**Which books.** A year's bare-year rows as `plan_book_words` counts them (`period = '2027'`), so the flow, the fifth lane and `plan_capacity` agree; largest first, a book with no count last, then by title.
+
+Steps:
+
+1. `unplacedBooks(userId, year)` in `src/db/queries.ts`: id, title, author, words, estimated, largest first.
+2. `GET /api/plan?unplaced=2027` answers `{ year, quarters, books }` (`planCapacity` + step 1); 400 for anything not a year. Placing reuses `POST /api/plan` (`planMove` → `movePlan`: the bare-year row becomes the quarter row at its next ordinal; no new write).
+3. `src/components/PlaceThem.tsx` (client): a *Place them* button; the shared `Sheet` (heading *Place 2027's books · 1 of N*, focus on it), the book (title, author, words), four quarter buttons each with its current total and an amber *over* badge, *Skip*, *Stop*. A placement POSTs, then adds the book's words to that quarter before the next book shows. After the last book, the closing card: *N placed. 2027 is still over by 540k — placing them made the overage visible, not smaller.* (amber), or *N placed. 2027 fits, with 120k of room.* (settled, grey); *Done* closes. Close by any route refreshes the page when something was placed; focus returns to *Place them*, or to the page heading when the button is gone.
+4. `src/app/books/status/page.tsx`: the year lane's head on `--blocked-soft`, a summary row *In 2027, not in the plan* with an *N unplaced* badge and *Place them*, the books listed below as before.
+5. `src/app/books/plan/page.tsx`: when the year has bare-year books (`year.books − Σ quarter.books`, from `plan_capacity`, no new query), the amber `.decide` card: *N books sit in 2027 with no quarter — X words.* plus whether the year fits, and *Place them*.
+6. `src/app/globals.css`: the lane's amber, the sheet's 2×2 quarter grid (44px), the card; tokens only.
+7. `design/mockups.html` notes: `status` and `plan` say 2.8 is built (redraw rule); the card's *Place all · Leave for now* becomes *Place them*.
+
+Files: `src/db/queries.ts`, `src/app/api/plan/route.ts`, `src/components/PlaceThem.tsx` (new), `src/app/books/status/page.tsx`, `src/app/books/plan/page.tsx` (not in "Files likely touched": the second mount), `src/app/globals.css`, `design/mockups.html` (redraw rule), `test/plan-period.test.ts`, `test/e2e/place-them.spec.ts` (new), `test/e2e/status.spec.ts`.
+
+Test strategy:
+
+- AC-1 writes, AC-3: `test/plan-period.test.ts` › "Place them (task 2.8)": POST from `2027` to `2027-Q3` writes `period = '2027-Q3'` at Q3's next ordinal, one plan row before and after; the year's bare-year count (`plan_book_words`) drops by one; a book left alone keeps its row.
+- AC-2 order: same file, `GET ?unplaced=` gives 200k, 150k, 90k (and an unknown-words book last) with the year's quarters.
+- AC-1 lane, closing card; AC-2 totals; AC-3 Skip/Stop; AC-4; AC-5; AC-6: `test/e2e/place-them.spec.ts` (Up next and `/books/plan`; screenshots 360/834/1280 light and dark; axe; 44px; focus; no scroll at 360).
+- `test/e2e/status.spec.ts`: the 1.9 lane test flips from grey-no-button to amber with *Place them*.
+
+Risks: query budgets (`test/query-budget.test.ts`) stay as they are: the sheet's figures are read on open, not on render. Size: 10 files with 3 tests and one mockup note, no schema: kept whole (`split` policy) because the owner asked for the task to complete in one go.
+
+Follow-ups (approved at plan): see `## Follow-ups`.
 
 ## Review log
 

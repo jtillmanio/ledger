@@ -579,3 +579,63 @@ describe("Someday from the plan (AC-4)", () => {
     expect(await quarter("2027-Q1")).toEqual([["a", 1], ["b", 2]]);
   });
 });
+
+/* ── Task 2.8: Place the unquartered ─────────────────────────────────────────────────── */
+
+describe("Place them (task 2.8, roadmap Check, AC-1, AC-2, AC-3)", () => {
+  /** 2027 holds A (100k) in Q3, and bare-year books of 200k (C), 150k (D) and 90k (B); E has no count at all. */
+  beforeEach(async () => {
+    await sql`UPDATE books SET word_count = v.words, word_count_source = 'stated'
+              FROM (VALUES ('a', 100000), ('b', 90000), ('c', 200000), ('d', 150000)) v(id, words) WHERE books.id = v.id`;
+    await w.placeInPlan(USER, "a", "2027-Q3");
+    for (const id of ["b", "c", "d", "e"]) await w.placeInPlan(USER, id, "2027");
+  });
+
+  const unplaced = async (year: string) => {
+    const res = await preview({ unplaced: year });
+    return { status: res.status, body: await res.json() };
+  };
+  /** The fifth lane's count: the year's bare-year books as plan_book_words counts them. */
+  const lane = async () => Number((await sql`SELECT count(*)::int AS n FROM plan_book_words
+    WHERE user_id = ${USER} AND period = '2027'`)[0].n);
+
+  it("offers the year's bare-year books largest first, the one with no count last, with each quarter's total", async () => {
+    const rows = await planRows();
+    const { status, body } = await unplaced("2027");
+    expect(status).toBe(200);
+    expect(body.books.map((b: { id: string; words: number | null }) => [b.id, b.words]))
+      .toEqual([["c", 200_000], ["d", 150_000], ["b", 90_000], ["e", null]]);
+    expect(body.books[0]).toMatchObject({ title: "Gamma", estimated: false });
+    expect(body.quarters.map((p: { period: string; plannedWords: number }) => [p.period, p.plannedWords]))
+      .toEqual([["2027-Q1", 0], ["2027-Q2", 0], ["2027-Q3", 100_000], ["2027-Q4", 0]]);
+    expect(body.year).toMatchObject({ period: "2027", plannedWords: 540_000 });
+    // Read only.
+    expect(await planRows()).toEqual(rows);
+  });
+
+  it("is 400 for anything but a year, and a year with nothing bare is an empty list", async () => {
+    for (const bad of ["2027-Q1", "on_deck", "27", ""]) expect((await unplaced(bad)).status, bad).toBe(400);
+    expect((await unplaced("2028")).body.books).toEqual([]);
+  });
+
+  it("placing a book writes period 2027-Q3 at Q3's next ordinal, replacing its bare-year row, and the lane drops by one", async () => {
+    expect(await lane()).toBe(4);
+    expect(await rowOf("c")).toEqual([["2027", null]]);
+    await move("c", "2027", "2027-Q3");
+    expect(await rowOf("c")).toEqual([["2027-Q3", 2]]);
+    expect(await quarter("2027-Q3")).toEqual([["a", 1], ["c", 2]]);
+    expect(await lane()).toBe(3);
+    // The quarter's total grew by the book's words; the year's did not move.
+    expect(await total("2027-Q3")).toBe(300_000);
+    expect(await total("2027")).toBe(540_000);
+    expect((await unplaced("2027")).body.books.map((b: { id: string }) => b.id)).toEqual(["d", "b", "e"]);
+  });
+
+  it("stopping after one leaves every other book's bare-year row untouched", async () => {
+    const others = () => sql`SELECT book_id, period, ordinal FROM reading_plan WHERE book_id <> 'c' ORDER BY book_id, period`;
+    const before = await others();
+    await move("c", "2027", "2027-Q1");
+    expect(await others()).toEqual(before);
+    for (const id of ["b", "d", "e"]) expect(await rowOf(id), id).toEqual([["2027", null]]);
+  });
+});
