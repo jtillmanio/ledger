@@ -271,3 +271,18 @@ export function genreHue(genre: string | null): string {
   }
   return `--g${(hash % 7) + 1}`;
 }
+
+/** Where a dragged block would land (task 2.10, 2 of 2): a quarter with its capacity, or the fifth lane with none. */
+export type DropTarget = { period: string; quarter: number | null; plannedWords: number; capacity: number | null };
+
+/**
+ * The drag's live readout (Plan Rail Spec A4.4, STYLE_GUIDE §3 *Drag (desktop)*): *Q3 +118k → 533k / 760k*, the
+ * target's total after the drop against its capacity, from the same `plannedWords` its footer and summary row print.
+ * The fifth lane counts against nothing (*2027 +118k → 1.3M*), and the book's own period takes nothing.
+ */
+export function dropReadout(book: Pick<RailBook, "words" | "period">, target: DropTarget): string {
+  const name = target.quarter === null ? target.period : `Q${target.quarter}`;
+  if (book.period === target.period) return `${name} · already here`;
+  const after = `${name} +${kWords(book.words)} → ${kWords(target.plannedWords + book.words)}`;
+  return target.capacity === null ? after : `${after} / ${kWords(target.capacity)}`;
+}

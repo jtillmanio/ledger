@@ -926,6 +926,42 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .qb.un{background-color:var(--blocked-soft);box-shadow:none}
 .qb.un::before{border:1px dashed var(--blocked)}
 .qb.un .ql{left:6px}
+/* Desktop drag and hover (task 2.10, 2 of 2; Plan Rail Spec A4.4; STYLE_GUIDE §3; D-33): a mouse or a trackpad only.
+   The ghost is lifted (--sh-2), turned -1.5deg, outlined 2px dashed --brand; the slot it left keeps a dashed
+   placeholder; the column it would land in is outlined; output.dropdelta says that column's total after the drop.
+   Touch has none of it: the tap opens the Move sheet. */
+.dropdelta,.rail-ghost,.bpop{display:none}
+@media (hover:hover) and (pointer:fine){
+  .dropdelta{display:block;min-height:1.25rem;margin:0 0 .25rem;font-size:.8125rem;line-height:1.25rem;color:var(--ink-2)}
+  .rail-ghost{display:block}
+  .bpop{display:flex}
+}
+.planrail[data-dragging]{user-select:none;-webkit-user-select:none}
+.planrail[data-dragging],.planrail[data-dragging] .qb{cursor:grabbing}
+.qb[data-lifted]{background-color:transparent;box-shadow:none}
+.qb[data-lifted]::before{inset:0;width:auto;z-index:auto;box-sizing:border-box;background:none;border:1px dashed var(--faint-deco);
+  border-radius:var(--r-cell)}
+.qb[data-lifted]>*{visibility:hidden}
+.qcol[data-drop] .qstack{outline:2px dashed var(--brand);outline-offset:2px;border-radius:var(--r-cell)}
+.rail-ghost{position:fixed;z-index:30;box-sizing:border-box;pointer-events:none;overflow:hidden;border-radius:var(--r-cell);
+  background:var(--reading-soft);outline:2px dashed var(--brand);box-shadow:var(--sh-2);color:var(--ink);
+  transform:rotate(-1.5deg);animation:ghost-lift var(--dur-2) ease-out}
+/* The lift confirms the press: the block turns as it leaves its slot. */
+@keyframes ghost-lift{from{transform:none}}
+.rail-ghost::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--hue,var(--g8));border-radius:var(--r-cell)}
+.rail-ghost[data-wc="estimated"]{border-top:1.5px dotted var(--muted)}
+.rail-ghost .qt,.rail-ghost .ql{position:absolute;left:7px;max-width:calc(100% - 12px);overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;font-size:.6875rem;line-height:1.1}
+.rail-ghost .qt{bottom:calc(50% + 1px)}
+.rail-ghost .ql{top:calc(50% + 1px);color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){ .rail-ghost{transform:none;animation:none} }
+.bpop{position:fixed;z-index:30;pointer-events:none;flex-direction:column;gap:.125rem;box-sizing:border-box;max-width:15rem;
+  padding:.5rem .625rem;border-radius:var(--r-lg);background:var(--overlay);box-shadow:var(--sh-2),inset 0 0 0 1px var(--rule);
+  font-size:.8125rem;line-height:1.3;color:var(--ink);transform:translateY(-50%)}
+.bpop[data-flip]{transform:translate(-100%,-50%)}
+.bpop-title{font-weight:600;overflow-wrap:anywhere}
+.bpop-words{font-size:.75rem;color:var(--ink-2)}
+.bpop-est{font-size:.75rem;font-style:italic;color:var(--muted)}
 .qfoot{border-top:1px solid var(--rule);margin-top:.375rem;padding-top:.3125rem;
   display:flex;flex-direction:column;align-items:center;gap:.1875rem;text-align:center}
 .qfoot b{font-size:.75rem;font-weight:600}

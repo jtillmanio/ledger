@@ -3042,7 +3042,7 @@ to the middle of a track, that track's header is fully visible below `.bar`.
 The frontier group's counts equal 2.6's `frontier` view, and a row's *opens N*
 equals its `run_opens` count.
 
-### ☐ 2.10 Plan page as the full-size rail · M
+### ☑ 2.10 Plan page as the full-size rail · M
 *Pulled ahead of 1.26 by the owner (D-139).*
 
 Same geometry as the books dashboard, taller, with each block's title and word

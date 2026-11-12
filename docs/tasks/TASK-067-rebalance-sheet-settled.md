@@ -29,6 +29,7 @@ From an over-full year, one tap opens four equal choices, each showing what it w
 - Amber means *held* and red is for destructive actions only (`docs/04-design.md` § 10): nothing here is red, and the word *behind* appears nowhere.
 - The dashboard is a feel-pass surface; if the banner lands on `/books/plan`, that page follows the UX floor's ordinary screenshot widths.
 - Decisions: D-37, D-137, D-40, D-7, M-07.
+- *From TASK-070 (2.10, PR #245):* the plan page's loading skeleton doesn't match the loaded page at 1280px. Both gaps predate 2.10's drag; the drag readout's own line is matched since PR #245. First, the skeleton's header is about 14px shorter than the loaded *Plan* title and total line, so everything below it moves down when the page arrives. Second, `PlanRailSkeleton`'s rail is about 14px shorter than the loaded rail (the desktop footers carry `/ 760k` and a room or over badge). Since this task redraws the rail's legend and footers for the settled state, check the skeleton against them at 1280px. `swapInSkeleton` in `test/e2e/plan-rail.spec.ts` measures the rail's top, height and gap.
 
 ## Acceptance criteria
 

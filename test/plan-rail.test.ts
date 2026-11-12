@@ -10,7 +10,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { requireTestUrl } from "../scripts/lib/testdb.mjs";
 import {
-  genreHue, HIT_SLACK, hitLift, kWords, labelFit, layoutColumn, layoutLane, periodName, planYear, railName, roomAhead, stackLabel,
+  dropReadout, genreHue, HIT_SLACK, hitLift, kWords, labelFit, layoutColumn, layoutLane, periodName, planYear, railName, roomAhead, stackLabel,
   stackName, type RailBook,
 } from "../src/lib/plan-rail";
 import { testSql, truncateAll } from "./db";
@@ -685,6 +685,27 @@ describe("a stack in the markup (AC-3)", () => {
     // The three small books are in the stack and have no button of their own; the lone one keeps its own.
     expect(window.document.querySelector('[data-book="s1"]')).toBeNull();
     expect(window.document.querySelector('[data-book="lone"]')?.getAttribute("aria-label")).toBe("Small lone, 30k words, Q1 2027");
+  });
+});
+
+describe("the drag's readout (task 2.10, 2 of 2; Plan Rail Spec A4.4)", () => {
+  const moving = book("m", 118_000, { period: "2027-Q2" });
+  const q3 = { period: "2027-Q3", quarter: 3, plannedWords: 415_000, capacity: 760_000 };
+
+  it("a quarter reads its name, the book's words, its total after and its capacity, from the quarter's own figures", () => {
+    expect(dropReadout(moving, q3)).toBe("Q3 +118k → 533k / 760k");
+  });
+
+  it("a quarter the drop would put over capacity reads the same way: the total after is past the capacity", () => {
+    expect(dropReadout(moving, { ...q3, plannedWords: 700_000 })).toBe("Q3 +118k → 818k / 760k");
+  });
+
+  it("the fifth lane counts against no capacity: its year, the words and the lane's total after", () => {
+    expect(dropReadout(moving, { period: "2027", quarter: null, plannedWords: 1_182_000, capacity: null })).toBe("2027 +118k → 1.3M");
+  });
+
+  it("the book's own quarter takes nothing: it says the book is already there", () => {
+    expect(dropReadout(moving, { ...q3, period: "2027-Q2", quarter: 2 })).toBe("Q2 · already here");
   });
 });
 
