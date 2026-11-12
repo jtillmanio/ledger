@@ -857,7 +857,6 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .qcol{flex:1;min-width:0;display:flex;flex-direction:column}
 .qcol.nq{flex:0 0 var(--lane-w);box-sizing:border-box;border-left:1px dashed var(--blocked);padding-left:6px}
 .qstack{position:relative;height:var(--rail-h)}
-.qf{display:contents}
 /* The hit area (UX floor): a block drawn under 24px is a 24px box, centred on its words. Transparent
    borders make the box (--pad above and below a block that is short, 0 otherwise); the block is painted
    in the padding box only (background-clip), so its drawn height, hatch and ring are its own: a variant sets
@@ -909,10 +908,20 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .qb.stack::before{border:1px dashed var(--faint-deco)}
 .qb.stack.over::before{border-color:var(--blocked)}
 .qb.stack .ql{left:50%;transform:translate(-50%,-50%)}
-.qb.stack[aria-disabled="true"]{cursor:default}
 .qcol.nq .lt{display:none}
 @media (min-width:1024px){ .qcol.nq .lt{display:inline} }
-.qnote{margin:0;font-size:.75rem;line-height:1rem;color:var(--muted)}
+/* The rail takes focus when the control a sheet came from has gone (task 2.3): its name says the new summary. */
+.planrail:focus{outline:none}
+.planrail:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:var(--r-cell)}
+/* A stack's list sheet (task 2.3): one 44px button a book, its title and its words. */
+.rss{list-style:none;margin:.625rem 0 0;padding:0;display:flex;flex-direction:column;gap:.375rem}
+.rss-row{display:flex;align-items:center;justify-content:space-between;gap:.75rem;box-sizing:border-box;width:100%;min-height:44px;
+  padding:.5rem .75rem;border:1px solid var(--faint-deco);border-radius:var(--r-lg);background:var(--surface);color:var(--ink);
+  font:inherit;font-size:.875rem;text-align:left;cursor:pointer}
+.rss-row:hover{background:var(--raise)}
+.rss-row:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.rss-title{min-width:0;overflow-wrap:anywhere}
+.rss-words{flex:none;font-size:.75rem;color:var(--muted)}
 /* The fifth lane: a year and no quarter is a decision not made, so amber, dashed. */
 .qb.un{background-color:var(--blocked-soft);box-shadow:none}
 .qb.un::before{border:1px dashed var(--blocked)}

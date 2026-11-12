@@ -472,6 +472,134 @@ test.describe("reading", () => {
     await screenshot(page, info, "books-over-capacity");
   });
 
+  // Task 2.3 (part 3): the strip's blocks open the plan picker, a stack its list.
+  const strip = (page: Page) => page.locator(".planrail.strip");
+  const stripBlock = (page: Page, n: number) => strip(page).locator(`button.qb[data-book="e2e-dash-${n}"]`);
+  /** Three 30k books at the end of the quarter: adjacent, each 11px on the strip, so one 35px stack. */
+  const seedStack = () => withSql(async (sql) => {
+    for (const n of [4, 5, 6]) {
+      await sql`INSERT INTO books (id, title, word_count, word_count_source) VALUES (${`e2e-dash-${n}`}, ${`E2E Dash Tiny ${n}`}, 30000, 'stated')`;
+      await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${`e2e-dash-${n}`}, 'to_read')`;
+      await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${E2E_USER}, ${`e2e-dash-${n}`}, ${PERIOD}, ${n})`;
+    }
+  });
+  const ordersOf = () => withSql((sql) => sql`SELECT book_id, ordinal FROM reading_plan WHERE user_id = ${E2E_USER}
+    AND period = ${PERIOD} AND book_id LIKE 'e2e-dash-%' ORDER BY ordinal`).then((rows) => rows.map((r) => [r.book_id, r.ordinal]));
+
+  test("a strip block opens the picker for its book, the URL does not change, the rail has no form, and Esc puts focus back on it (AC-2)", ONCE, async ({ page }) => {
+    await open(page);
+    const one = stripBlock(page, 1);
+    await hydrated(one);
+    await expect(strip(page).locator("form")).toHaveCount(0);
+    const url = page.url();
+    await one.click();
+    const sheet = page.getByRole("dialog", { name: ONE });
+    await expect(sheet).toBeVisible();
+    expect(page.url()).toBe(url);
+    await expect(sheet.locator(".pp-chip").first()).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    await expect(one).toBeFocused();
+  });
+
+  test("moving a block to another quarter redraws the strip with the new total; Undo puts the book and the strip back (AC-4)", ONCE, async ({ page }) => {
+    await open(page);
+    const k = (n: number) => `${Math.round(n / 1000)}k`;
+    await expect(page.locator(".qfig")).toHaveText(`${k(222_000)} planned`);
+    await expect(page.locator(".qhead")).toContainText("1 of 3 read");
+    const before = await ordersOf();
+    expect(before).toEqual([["e2e-dash-1", 1], ["e2e-dash-2", 2], ["e2e-dash-3", 3]]);
+
+    const one = stripBlock(page, 1);
+    await hydrated(one);
+    await one.click();
+    const sheet = page.getByRole("dialog", { name: ONE });
+    await sheet.getByRole("button", { name: new RegExp(`^${YEAR + 1}`) }).click();
+    await sheet.getByRole("group", { name: `Quarter of ${YEAR + 1}` }).getByRole("button", { name: /^Q2/ }).click();
+    await sheet.getByRole("button", { name: `Move to Q2 ${YEAR + 1}` }).click();
+
+    await expect(page.locator(".toast-label").first()).toHaveText(`Moved to Q2 ${YEAR + 1}`);
+    await expect(sheet).toBeHidden();
+    // The strip is drawn again without it: 130k of the quarter's 222k, two books, the block gone.
+    await expect(page.locator(".qfig")).toHaveText(`${k(130_000)} planned`);
+    await expect(page.locator(".qhead")).toContainText("1 of 2 read");
+    await expect(one).toHaveCount(0);
+    // The block that held focus is gone: focus lands on the strip, whose name carries the new summary.
+    await expect(strip(page)).toBeFocused();
+    await expect(strip(page)).toHaveAccessibleName(/: 1 of 2 books read, 130k of \d+k words planned$/);
+    expect(await ordersOf()).toEqual([["e2e-dash-2", 1], ["e2e-dash-3", 2]]);
+
+    await page.locator(".toast").getByRole("button", { name: "Undo" }).click();
+    await expect(page.locator(".qfig")).toHaveText(`${k(222_000)} planned`);
+    await expect(one).toHaveCount(1);
+    expect(await ordersOf()).toEqual(before);
+  });
+
+  // Every project: the list sheet and the picker it opens, at each width and theme, with the page's floor.
+  test("a strip stack opens its list sheet, choosing a book opens its picker, and the floor holds with each open (AC-3, AC-5)", async ({ page }, info) => {
+    await seedStack();
+    await open(page);
+    const stack = strip(page).locator("button.stack");
+    await expect(stack).toHaveCount(1);
+    await hydrated(stack);
+    await expect(stack).toHaveAccessibleName("3 books, 90k words");
+    await expect(stack).not.toHaveAttribute("aria-disabled", /.*/);
+    await expect(page.locator(".qnote")).toHaveCount(0);
+    // The strip is laid out in fractions of the card, so a 24px box can measure 23.98 at 360px: whole px, as axe's target-size rounds.
+    const box = (await stack.boundingBox())!;
+    expect(Math.round(box.height)).toBeGreaterThanOrEqual(24);
+    expect(Math.round(box.width)).toBeGreaterThanOrEqual(24);
+    await floor(page);
+
+    await stack.click();
+    const list = page.getByRole("dialog", { name: "3 books, 90k words" });
+    await expect(list).toBeVisible();
+    await expect(list.locator("ul button")).toHaveText([/^E2E Dash Tiny 4\s*30k words$/, /^E2E Dash Tiny 5\s*30k words$/, /^E2E Dash Tiny 6\s*30k words$/]);
+    for (const row of await list.locator("ul button").all()) expect(Math.round((await row.boundingBox())!.height)).toBeGreaterThanOrEqual(44);
+    await expectNoAxeViolations(page, [...AXE, "aria-dialog-name", "label-content-name-mismatch"], ".sheet");
+    await expectNoHorizontalScroll(page);
+    await expectNoDanger(page);
+    expect(await contrastFailures(page)).toEqual([]);
+    await screenshot(page, info, "books-stack-list");
+
+    await list.getByRole("button", { name: "E2E Dash Tiny 5 30k words" }).click();
+    const picker = page.getByRole("dialog", { name: "E2E Dash Tiny 5" });
+    await expect(picker.locator(".pp-chip").first()).toBeVisible();
+    await expectNoAxeViolations(page, [...AXE, "aria-dialog-name", "label-content-name-mismatch"], ".sheet");
+    await expectNoHorizontalScroll(page);
+    await expectNoDanger(page);
+    await screenshot(page, info, "books-stack-picker");
+
+    await page.keyboard.press("Escape");
+    await expect(picker).toBeHidden();
+    await expect(stack).toBeFocused();
+    expect(await ordersOf()).toHaveLength(6);
+  });
+
+  // The UX floor's reduced-motion and reduced-transparency pass for the sheet a stack opens: solid --overlay, no glass.
+  test("with reduced motion and reduced transparency the list sheet is solid --overlay, with a screenshot (AC-5)", ONCE, async ({ page, context }, info) => {
+    await seedStack();
+    const cdp = await context.newCDPSession(page);
+    await cdp.send("Emulation.setEmulatedMedia", { features: [
+      { name: "prefers-reduced-transparency", value: "reduce" }, { name: "prefers-reduced-motion", value: "reduce" },
+    ] });
+    for (const width of [390, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      await open(page);
+      const stack = strip(page).locator("button.stack");
+      await hydrated(stack);
+      await stack.click();
+      const list = page.getByRole("dialog", { name: "3 books, 90k words" });
+      await expect(list).toBeVisible();
+      expect(await list.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(await tokenColour(page, "--overlay"));
+      expect(await list.evaluate((el) => getComputedStyle(el).backdropFilter)).toBe("none");
+      await expectNoHorizontalScroll(page);
+      await screenshot(page, info, `books-stack-list-reduced-${width}`);
+      await page.keyboard.press("Escape");
+      await expect(list).toBeHidden();
+    }
+  });
+
   test("✓ finished finishes the book today with Undo; Between books then names it and offers the top of the plan", ONCE, async ({ page }) => {
     await open(page);
     await verbs(page).getByRole("button", { name: `Finished ${HERO}` }).click();

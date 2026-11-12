@@ -210,7 +210,12 @@ export default function PlanPickerSheet({ bookId, title, opener, onClose }: {
   );
 }
 
-function MoveBody({ bookId, title }: { bookId: string; title: string }) {
+/**
+ * The picker for one library book, inside a `Sheet` the caller owns: it loads the book, moves it through
+ * `POST /api/plan`, pushes the undo, refreshes the page and closes that sheet. `PlanPickerSheet` is it under
+ * its own sheet; the rail's list sheet (task 2.3) swaps it into the sheet it already has open.
+ */
+export function MoveBody({ bookId, title }: { bookId: string; title: string }) {
   const close = useSheetClose();
   const router = useRouter();
   const { push } = useUndo();

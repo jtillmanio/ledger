@@ -13,7 +13,7 @@
  * measured against test/e2e/fixtures/*.html; the task that builds each one
  * re-measures its skeleton.
  */
-import { RailLegend } from "@/components/PlanRail";
+import RailLegend from "@/components/RailLegend";
 
 /** The page a `loading.tsx` paints: busy, and one "Loading" for a screen reader. */
 export function LoadingMain({ children }: { children: React.ReactNode }) {

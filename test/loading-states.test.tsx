@@ -68,7 +68,7 @@ describe("loading states (task 0.9)", () => {
 
   it("the plan rail's skeleton draws the legend, the loaded rail's own, so its arrival shifts nothing (task 2.10, AC-5)", async () => {
     const { PlanRailSkeleton } = await import("../src/components/Skeleton");
-    const { RailLegend } = await import("../src/components/PlanRail");
+    const { default: RailLegend } = await import("../src/components/RailLegend");
     const html = renderToStaticMarkup(<PlanRailSkeleton />);
     expect(html).toContain('<ul class="qlegend" aria-hidden="true">');
     // Word for word what the loaded rail says, so the two wrap alike.

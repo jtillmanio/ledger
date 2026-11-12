@@ -389,8 +389,7 @@ accessible name (*Piranesi, 65k words, estimated, Q1 2027*) and a hit area of at
 least 24×24px, a real 24px box made with transparent borders, not an `::after`
 (axe's target-size can't see one; D-135), because a 7px block is otherwise
 untappable and `title` does not exist on Android. Adjacent sub-24px blocks merge
-into a `+N · Nk` stack button that opens a list sheet (until 2.3 it is
-`aria-disabled` with its reason shown, D-137). `data-wc="estimated"` blocks get
+into a `+N · Nk` stack button that opens a list sheet (D-146). `data-wc="estimated"` blocks get
 a dotted top edge and a `~` prefix. There is no month variant (D-38). Capacity and the hatch use `--blocked`; the
 retired red classes (`.capnum.over`, `.pace .big.behind`) are gone. Only the part
 of a block above the rule is hatched. Accepting a *stretch year* turns that hatch
