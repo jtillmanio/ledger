@@ -1,14 +1,14 @@
 ---
 id: TASK-065
 title: 2.3 Plan editor (3 of 3) — the rail's blocks open the picker, a stack its list
-status: Ready
+status: In progress
 depends_on: [TASK-064, TASK-051]
 size: M
 model: sonnet
 autonomy: unattended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 5e77a3d
 ---
 
 # TASK-065 — 2.3 Plan editor (3 of 3) — the rail's blocks open the picker, a stack its list
@@ -71,9 +71,30 @@ or quarter writes its `book_status` and `reading_plan` rows in one transaction;
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- (approved at plan) `docs/04-design.md` § 6: drop "until 2.3 it is `aria-disabled` with its reason shown, D-137" from the stack sentence.
+- (approved at plan) Decisions log: a new row, a rail block opens the picker and a stack opens its list sheet, in one `Sheet`; supersedes D-137's interim clause. ID from `next-id.ps1`.
+- (approved at plan) `docs/05-roadmap.md` 2.3 and `docs/06-tasklist.md` row 2.3: ticks at close-out, once the three parts are Done.
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner at the plan gate, with every follow-up below.
+
+**Steps**
+1. Tests first, confirmed failing: no `form`, no `aria-disabled` stack and no `.qnote` in the rail markup; a strip block opens the picker with the URL unchanged; a stack opens the list sheet and choosing a book opens the picker; Move then Undo on the strip; focus back on the opener.
+2. `PlanRail.tsx` becomes a client component that owns the open-sheet state. Blocks are plain `button.qb` (no GET form). Stacks are real buttons (no `aria-disabled`, no `aria-describedby`); `STACK_REASON`, the `.qnote` line and the legend's reason sentence go. Both sheets load lazily with `dynamic`, as `PlanQuarterRows` does.
+3. New `RailStackSheet.tsx`: one `Sheet` (no history-entry race between two sheets). Its body is first the stack's books (title and words, one button each); choosing one swaps the body to that book's picker (`MoveBody`) with a back button and the heading changed to the title; focus goes to the heading on the swap and back to the chosen row on back, as `AddBooks` does.
+4. Focus on close: `Sheet` returns focus to the opener. After a move the block may be gone once the page refreshes: the rail remembers the opener and, when the refreshed props arrive with focus lost to `body`, refocuses the same block or falls back to the rail group (`tabIndex=-1`, which announces the new summary).
+5. `globals.css` (tokens only): list-sheet rows with 44px targets, a focus style for the group; drop `.qf`, `.qnote`, `.qb.stack[aria-disabled]`.
+
+**Files**: `src/components/PlanRail.tsx`, `src/components/RailStackSheet.tsx` (new), `src/components/PlanPicker.tsx` (export `MoveBody`; not in "Files likely touched"), `src/app/globals.css`, `test/plan-rail.test.ts`, `test/e2e/plan-rail.spec.ts`, `test/e2e/books-dashboard.spec.ts`. `QuarterStrip.tsx` only if its props must change. `design/mockups.html` and `design/mockups-index.md` (`ui.redrawFiles`) only if `bdash`, `plan` or `planmonth` still draw the old stopgap.
+
+**Test strategy**
+- AC-1: TASK-063's and TASK-064's suites re-run unchanged.
+- AC-2, AC-4: `test/e2e/books-dashboard.spec.ts`.
+- AC-3, AC-5: `test/e2e/plan-rail.spec.ts`, including axe, 24px targets, no horizontal scroll at 360px, nothing on `--danger`, and screenshots at 360, 390, 412, 768, 1024 and 1280px, light and dark, with reduced motion and reduced transparency.
+- Markup (no form, no `aria-disabled` stack): `test/plan-rail.test.ts`.
+
+**Risks**: the strip also draws read and reading books; tapping one opens the picker, which already says only a to-read book can be planned (TASK-064). Left as it is. `/books/plan` gets the same behaviour from the shared component (TASK-069, TASK-070 expect it).
 
 ## Review log
 

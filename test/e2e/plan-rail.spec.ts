@@ -324,9 +324,11 @@ test.describe("at 360px", PHONE, () => {
     const stack = page.locator(`.qcol[data-period="${q(3)}"] button.stack`);
     await expect(stack).toHaveCount(1);
     await expect(stack).toHaveAccessibleName("3 books, 150k words");
-    // It does nothing until 2.3's list sheet, and says why: aria-disabled and the legend's reason beside it.
-    await expect(stack).toHaveAttribute("aria-disabled", "true");
-    await expect(stack).toHaveAccessibleDescription(/opens its list with the plan editor/);
+    // Task 2.3: it opens the list sheet, so it is a live button and nothing explains why it does nothing.
+    await expect(stack).not.toHaveAttribute("aria-disabled", /.*/);
+    await expect(stack).toHaveAccessibleDescription("");
+    await expect(page.locator(".qnote")).toHaveCount(0);
+    await expect(page.locator(".qlegend")).not.toContainText("plan editor");
     await expect(stack).toContainText("+3 · 150k");
     await expect(block(page, "c2")).toHaveCount(0);
     await expect(block(page, "c6")).toHaveAccessibleName(`Charlie Six, 30k words, Q3 ${Y}`);
@@ -337,6 +339,94 @@ test.describe("at 360px", PHONE, () => {
     // (A browser snaps border widths to whole device pixels, so a short block paints within a pixel of its words.)
     expect(Math.abs((await drawn(lone)) - (30_000 / 1_000_000) * 230)).toBeLessThanOrEqual(1.5);
     expect((await lone.boundingBox())?.height).toBe(24);
+  });
+
+  // Task 2.3 (part 3): the rail's blocks and stacks open the picker and the list sheet.
+  test("a block opens the picker for its book, the URL does not change, the rail has no form, and Esc puts focus back on the block (AC-2)", async ({ page }) => {
+    const a2 = block(page, "a2");
+    await hydrated(a2);
+    const url = page.url();
+    await expect(page.locator(".planrail form")).toHaveCount(0);
+    await a2.click();
+    const sheet = page.getByRole("dialog", { name: "Alpha Two" });
+    await expect(sheet).toBeVisible();
+    expect(page.url()).toBe(url);
+    await page.keyboard.press("Escape");
+    await expect(sheet).toBeHidden();
+    await expect(a2).toBeFocused();
+    expect(page.url()).toBe(url);
+  });
+
+  test("moving a block to another quarter puts focus on the block where it now stands (AC-5)", async ({ page }) => {
+    const a2 = block(page, "a2");
+    await hydrated(a2);
+    await a2.click();
+    const sheet = page.getByRole("dialog", { name: "Alpha Two" });
+    await sheet.getByRole("button", { name: new RegExp(`^${Y}`) }).click();
+    await sheet.getByRole("group", { name: `Quarter of ${Y}` }).getByRole("button", { name: /^Q4/ }).click();
+    await sheet.getByRole("button", { name: `Move to Q4 ${Y}` }).click();
+    await expect(sheet).toBeHidden();
+    await expect(page.locator(`.qcol[data-period="${q(4)}"]`).locator(`button.qb[data-book="${id("a2")}"]`)).toBeFocused();
+  });
+
+  test("a stack opens a list sheet naming each of its books with its words; choosing one opens its picker; Back returns to the list (AC-3)", async ({ page }) => {
+    const stack = page.locator(`.qcol[data-period="${q(3)}"] button.stack`);
+    await hydrated(stack);
+    await stack.click();
+    const sheet = page.getByRole("dialog", { name: "3 books, 150k words" });
+    await expect(sheet).toBeVisible();
+    // Each book, in the plan's order, by name and words.
+    const rows = sheet.locator("ul button");
+    await expect(rows).toHaveText([/^Charlie Two\s*50k$/, /^Charlie Three\s*40k$/, /^Charlie Four\s*60k$/]);
+    await expect(sheet.getByRole("button", { name: "Charlie Three, 40k words" })).toBeVisible();
+
+    await sheet.getByRole("button", { name: "Charlie Three, 40k words" }).click();
+    // The same sheet now heads the book and shows its picker; the URL has not changed.
+    await expect(sheet).toHaveCount(0);
+    const picker = page.getByRole("dialog", { name: "Charlie Three" });
+    await expect(picker).toBeVisible();
+    await expect(picker.locator(".pp")).toBeVisible();
+    await expect(picker.locator(".pp-chip").first()).toBeVisible();
+
+    await picker.getByRole("button", { name: /^‹/ }).click();
+    const again = page.getByRole("dialog", { name: "3 books, 150k words" });
+    await expect(again).toBeVisible();
+    await expect(again.getByRole("button", { name: "Charlie Three, 40k words" })).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(again).toBeHidden();
+    await expect(stack).toBeFocused();
+  });
+
+  test("a folded +N more stack opens its books too, the lane's included (AC-3)", async ({ page }) => {
+    const more = page.locator(".qcol.nq button.stack");
+    await hydrated(more);
+    await more.click();
+    const sheet = page.getByRole("dialog", { name: "2 books, 160k words" });
+    await expect(sheet.locator("ul button")).toHaveCount(2);
+    await page.keyboard.press("Escape");
+    await expect(more).toBeFocused();
+  });
+
+  test("a stack is a named button of at least 24px, and the list sheet meets the floor: axe, 44px rows, nothing red, no sideways scroll (AC-5)", async ({ page }) => {
+    const stack = page.locator(`.qcol[data-period="${q(3)}"] button.stack`);
+    await hydrated(stack);
+    expect((await stack.boundingBox())?.height).toBeGreaterThanOrEqual(24);
+    await stack.click();
+    const sheet = page.getByRole("dialog", { name: "3 books, 150k words" });
+    await expect(sheet).toBeVisible();
+    for (const row of await sheet.locator("ul button").all()) {
+      const box = (await row.boundingBox())!;
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.width).toBeGreaterThanOrEqual(44);
+    }
+    await expectNoAxeViolations(page, [...AXE, "aria-dialog-name"], ".sheet");
+    await expectNoHorizontalScroll(page);
+    const danger = await tokenColour(page, "--danger");
+    const reds = await sheet.evaluate((el, red) => [el, ...el.querySelectorAll("*")].filter((n) => {
+      const s = getComputedStyle(n);
+      return s.color === red || s.backgroundColor === red || s.borderTopColor === red;
+    }).length, danger);
+    expect(reds).toBe(0);
   });
 
   test("a lane taller than the column keeps the scale and folds its overflow into one +N more stack at the top (AC-1)", async ({ page }) => {

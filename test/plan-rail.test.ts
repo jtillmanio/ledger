@@ -601,15 +601,28 @@ describe("the strip's stacks", () => {
     return window.document;
   }
 
-  it("a narrow stack says how many books, not their words, and the reason it does nothing is on the page", async () => {
+  it("a narrow stack says how many books, not their words, and is a live button with no reason beside it (task 2.3, AC-3)", async () => {
     // 30k each is 12px of 296 at 760k: three of them are one 35px stack, too narrow for '+3 · 90k'.
     const doc = await strip([book("a", 200_000), book("s1", 30_000), book("s2", 30_000), book("s3", 30_000), book("z", 70_000)]);
     const stack = doc.querySelector("button.stack");
     expect(stack?.querySelector(".ql")?.textContent).toBe("+3");
     expect(stack?.getAttribute("aria-label")).toBe("3 books, 90k words");
-    expect(stack?.getAttribute("aria-disabled")).toBe("true");
-    expect(doc.querySelector(".qnote")?.textContent).toContain("opens its list with the plan editor");
-    expect(doc.getElementById(stack?.getAttribute("aria-describedby") ?? "none")).toBe(doc.querySelector(".qnote"));
+    // It opens the list sheet now: not disabled, and nothing explains why it does nothing.
+    expect(stack?.hasAttribute("aria-disabled")).toBe(false);
+    expect(stack?.hasAttribute("aria-describedby")).toBe(false);
+    expect(doc.querySelector(".qnote")).toBeNull();
+    expect(doc.body.textContent).not.toContain("plan editor");
+  });
+
+  it("a strip draws no form: a block is a button that opens the picker, not a GET to the Library (task 2.3, AC-2)", async () => {
+    const doc = await strip([book("a", 200_000), book("s1", 30_000), book("s2", 30_000), book("s3", 30_000), book("z", 70_000)]);
+    expect(doc.querySelectorAll("form")).toHaveLength(0);
+    expect(doc.querySelector('input[name="q"]')).toBeNull();
+    for (const id of ["a", "z"]) {
+      const block = doc.querySelector(`[data-book="${id}"]`);
+      expect(block?.tagName).toBe("BUTTON");
+      expect(block?.getAttribute("type")).toBe("button");
+    }
   });
 
   it("a strip with no stack has no reason to give", async () => {
@@ -641,7 +654,8 @@ describe("the strip's tiny stacks", () => {
     const stack = window.document.querySelector("button.stack");
     expect(stack?.getAttribute("aria-label")).toBe("2 books, 16k words");
     expect(stack?.querySelector(".ql")).toBeNull();
-    expect(window.document.querySelector(".qnote")).not.toBeNull();
+    expect(window.document.querySelector(".qnote")).toBeNull();
+    expect(stack?.hasAttribute("aria-disabled")).toBe(false);
   });
 });
 
@@ -659,10 +673,12 @@ describe("a stack in the markup (AC-3)", () => {
     window.document.body.innerHTML = renderToStaticMarkup(createElement(PlanRail, { year: 2027, books, quarters }));
     const stack = window.document.querySelector("button.qb.stack");
     expect(stack?.getAttribute("type")).toBe("button");
-    // Until 2.3's list sheet it does nothing, and says why: aria-disabled, described by the legend's reason.
-    expect(stack?.getAttribute("aria-disabled")).toBe("true");
-    const reason = window.document.getElementById(stack?.getAttribute("aria-describedby") ?? "none");
-    expect(reason?.textContent).toContain("opens its list with the plan editor");
+    // Task 2.3: it opens the list sheet, so it is not disabled and the legend gives no reason for it.
+    expect(stack?.hasAttribute("aria-disabled")).toBe(false);
+    expect(stack?.hasAttribute("aria-describedby")).toBe(false);
+    expect(window.document.querySelector(".qlegend")?.textContent).not.toContain("plan editor");
+    expect(window.document.querySelectorAll("form")).toHaveLength(0);
+    expect(window.document.querySelectorAll("[aria-disabled]")).toHaveLength(0);
     expect(stack?.getAttribute("aria-label")).toBe("3 books, 84k words");
     expect(stack?.querySelector(".ql")?.textContent).toBe("+3 · 84k");
     // The three small books are in the stack and have no button of their own; the lone one keeps its own.

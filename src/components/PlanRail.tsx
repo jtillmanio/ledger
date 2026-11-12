@@ -1,4 +1,7 @@
-import { useId, type CSSProperties } from "react";
+"use client";
+
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import dynamic from "next/dynamic";
 import type { PeriodCapacity } from "@/db/queries";
 import {
   COLUMN_WORDS, MIN_HIT, PHONE_COLUMN, STRIP_LENGTH, genreHue, kWords, labelFit, layoutColumn, layoutLane, railName,
@@ -10,8 +13,15 @@ import {
 const LABEL_SHARE = 0.07;
 /** On the strip, a stack narrower than this many px (at the phone's 296px) says how many books, not their words. */
 const STACK_WORDS_PX = 56;
-/** Why a stack does nothing yet: the reason shown beside it, until 2.3's list sheet exists (UX floor). */
-const STACK_REASON = "A stack opens its list with the plan editor.";
+// Loaded on the first tap, as the Library's and the plan page's Move load the picker: the page carries none
+// of either sheet until a block or a stack is pressed.
+const PlanPickerSheet = dynamic(() => import("@/components/PlanPicker"), { ssr: false });
+const RailStackSheet = dynamic(() => import("@/components/RailStackSheet"), { ssr: false });
+
+/** What is open: the picker for one book, or the list of a stack's books. `key` names the control it came from. */
+type Open = { key: string; opener: HTMLElement; book?: RailBook; books?: RailBook[] };
+/** How long, after a sheet closes, the rail remembers where focus should return if a refresh removes that place. */
+const REFOCUS_MS = 3000;
 
 /** A number for a custom property: enough places to be exact at 300px, few enough to read. */
 const num = (n: number) => String(Math.round(n * 100_000) / 100_000);
@@ -24,9 +34,12 @@ const num = (n: number) => String(Math.round(n * 100_000) / 100_000);
  * last. A fifth lane holds the bare-year books, largest at the foot. With `axis="row"` and one
  * quarter it is the dashboard's *This quarter* strip, the same markup laid on its side.
  *
- * Every block is a `<button>` with a name and a 24px hit area; a block opens its Library row until
- * 2.3's picker sheet exists. Nothing here sets a fill: a block's place and size are custom
- * properties (`--at`, `--sz`, `--ov`) and its hue `--hue` (Hard rule 6).
+ * Every block is a `<button>` with a name and a 24px hit area. A block opens the plan picker for its book
+ * and a `+N` stack the list of its books (task 2.3, D-137 superseded): both sheets are the rail's own, so
+ * the dashboard's strip and the plan page share them. When a sheet closes, focus goes back to the control
+ * it came from; if a move took that control away, to the same book where it now stands, else to the rail
+ * itself, whose name carries the new summary. Nothing here sets a fill: a block's place and size are
+ * custom properties (`--at`, `--sz`, `--ov`) and its hue `--hue` (Hard rule 6).
  */
 export default function PlanRail({ year, books, quarters, axis = "column", inHand = null, label }: {
   year: number;
@@ -38,8 +51,41 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
   /** The strip's own summary, as its accessible name. */
   label?: string;
 }) {
-  const note = useId();
   const inPeriod = (period: string) => books.filter((b) => b.period === period);
+  const root = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState<Open | null>(null);
+  /** The control the last sheet came from, until focus is settled or REFOCUS_MS has passed. */
+  const back = useRef<string | null>(null);
+  const press = (key: string, opener: HTMLElement, what: Pick<Open, "book" | "books">) => setOpen({ key, opener, ...what });
+  function close() {
+    if (open) {
+      back.current = open.key;
+      setTimeout(() => { back.current = null; }, REFOCUS_MS);
+    }
+    setOpen(null);
+  }
+
+  // `Sheet` puts focus back on the control that opened it. A move can take that control away, and the page
+  // redraws a moment after the sheet has gone: when the new props arrive with focus lost, it goes to the
+  // same book where it now stands, else to the rail, whose name says the new total.
+  useEffect(() => {
+    const key = back.current;
+    if (!key || open) return;
+    const at = document.activeElement;
+    if (at && at !== document.body) return;
+    const target = key.startsWith("stack-")
+      ? root.current?.querySelector<HTMLElement>(`[data-stack="${CSS.escape(key.slice(6))}"]`)
+      : root.current?.querySelector<HTMLElement>(`[data-book="${CSS.escape(key)}"]`);
+    (target ?? root.current)?.focus();
+    back.current = null;
+  }, [open, books, quarters]);
+
+  const sheets = (
+    <>
+      {open?.book && <PlanPickerSheet bookId={open.book.id} title={open.book.title} opener={open.opener} onClose={close} />}
+      {open?.books && <RailStackSheet books={open.books} opener={open.opener} onClose={close} />}
+    </>
+  );
 
   if (axis === "row") {
     const cap = quarters[0];
@@ -47,18 +93,18 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
     const items = layoutColumn(inPeriod(cap.period), { length: STRIP_LENGTH, scale, capacity: cap.capacity });
     return (
       <>
-      <div className="planrail strip" role="group" aria-label={label ?? `Plan ${cap.period}`}
+      <div ref={root} tabIndex={-1} className="planrail strip" role="group" aria-label={label ?? `Plan ${cap.period}`}
         data-over={cap.plannedWords > cap.capacity || undefined}>
         <div className="qcol" data-period={cap.period}>
           <div className="qstack">
             {items.map((item) => (
-              <Item key={itemKey(item)} item={item} length={STRIP_LENGTH} axis="row" inHand={inHand} note={note} />
+              <Item key={itemKey(item)} item={item} length={STRIP_LENGTH} axis="row" inHand={inHand} onPress={press} />
             ))}
           </div>
           <i className="caprule" style={{ "--cap": num(cap.capacity / scale) } as CSSProperties} aria-hidden="true" />
         </div>
       </div>
-      {items.some((i) => i.kind === "stack") && <p id={note} className="qnote">{STACK_REASON}</p>}
+      {sheets}
       </>
     );
   }
@@ -73,7 +119,7 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
 
   return (
     <>
-    <div className="planrail" role="group" aria-label={`Plan ${year}`} style={{ "--cap": num(Math.min(1, capacity / scale)) } as CSSProperties}>
+    <div ref={root} tabIndex={-1} className="planrail" role="group" aria-label={`Plan ${year}`} style={{ "--cap": num(Math.min(1, capacity / scale)) } as CSSProperties}>
       {columns.map(({ cap, books: list }) => {
         const items = layoutColumn(list, { length: PHONE_COLUMN, scale, capacity: cap.capacity });
         const over = cap.plannedWords - cap.capacity;
@@ -81,7 +127,7 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
           <div key={cap.period} className="qcol" data-period={cap.period}>
             <div className="qstack">
               {items.map((item) => (
-                <Item key={itemKey(item)} item={item} length={PHONE_COLUMN} axis="column" inHand={inHand} note={note} />
+                <Item key={itemKey(item)} item={item} length={PHONE_COLUMN} axis="column" inHand={inHand} onPress={press} />
               ))}
             </div>
             <div className="qfoot">
@@ -105,7 +151,7 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
       <div className="qcol nq" data-period={String(year)}>
         <div className="qstack">
           {layoutLane(lane, { length: PHONE_COLUMN, scale }).map((item) => (
-            <Item key={itemKey(item)} item={item} length={PHONE_COLUMN} axis="column" lane inHand={inHand} note={note} />
+            <Item key={itemKey(item)} item={item} length={PHONE_COLUMN} axis="column" lane inHand={inHand} onPress={press} />
           ))}
         </div>
         <div className="qfoot">
@@ -116,7 +162,8 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
       </div>
       <span className="caprule" aria-hidden="true"><em>{kWords(capacity)}</em></span>
     </div>
-    <RailLegend noteId={note} />
+    <RailLegend />
+    {sheets}
     </>
   );
 }
@@ -125,12 +172,12 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
  * The rail's key. The loading skeleton draws it too (same text, same wrap), so the rail's arrival shifts
  * nothing; `hidden` is that one, out of the accessibility tree like the rest of the skeleton.
  */
-export function RailLegend({ noteId, hidden = false }: { noteId?: string; hidden?: boolean }) {
+export function RailLegend({ hidden = false }: { hidden?: boolean }) {
   return (
     <ul className="qlegend" aria-hidden={hidden || undefined}>
       <li><i className="lg est" aria-hidden="true" /><span className="mono">~</span> estimated</li>
       <li><i className="lg ovr" aria-hidden="true" /> over capacity</li>
-      <li id={noteId}><i className="lg stk" aria-hidden="true" /><span className="mono">+N</span> merged under 24px, or folded past the top. {STACK_REASON}</li>
+      <li><i className="lg stk" aria-hidden="true" /><span className="mono">+N</span> merged under 24px, or folded past the top</li>
       <li><i className="lg nqt" aria-hidden="true" /> year, no quarter</li>
     </ul>
   );
@@ -151,8 +198,10 @@ const cls = (...names: (string | false)[]) => names.filter(Boolean).join(" ");
 const itemKey = (item: RailItem) => (item.kind === "block" ? item.book.id : `stack-${item.books[0].id}`);
 
 /** One block or stack, placed along its column by custom properties alone. */
-function Item({ item, length, axis, lane = false, inHand, note }: {
-  item: RailItem; length: number; axis: "column" | "row"; lane?: boolean; inHand: string | null; note: string;
+function Item({ item, length, axis, lane = false, inHand, onPress }: {
+  item: RailItem; length: number; axis: "column" | "row"; lane?: boolean; inHand: string | null;
+  /** A press: the control's key (a book id, or `stack-<first id>`), the control, and what it opens. */
+  onPress: (key: string, opener: HTMLElement, what: Pick<Open, "book" | "books">) => void;
 }) {
   const style = {
     "--at": num(item.start / length),
@@ -172,7 +221,8 @@ function Item({ item, length, axis, lane = false, inHand, note }: {
   if (item.kind === "stack") {
     return (
       <button type="button" className={cls("qb", "stack", item.over && "over", small && "sm")} style={style}
-        aria-label={stackName(item.books)} aria-disabled="true" aria-describedby={note}>
+        data-stack={item.books[0].id} aria-label={stackName(item.books)}
+        onClick={(e) => onPress(itemKey(item), e.currentTarget, { books: item.books })}>
         {body}
         {/* On the strip a stack under 24px would cover its neighbour's label: its name says the count. */}
         {!(axis === "row" && small) && <StackLabel stack={item} short={axis === "row" && item.size < STACK_WORDS_PX} lane={lane} />}
@@ -191,21 +241,18 @@ function Item({ item, length, axis, lane = false, inHand, note }: {
   const classes = cls("qb", item.over && "over", lane && "un", small && "sm");
   const place = (axis === "column" && item.lift !== undefined ? { ...style, "--lift": num(item.lift) } : style) as CSSProperties;
   return (
-    // Until 2.3's picker sheet, a block opens the book's Library row: a GET form, no script.
-    <form action="/books/list" className="qf">
-      <input type="hidden" name="q" value={book.title} />
-      <button type="submit" className={classes} data-book={book.id} data-wc={book.estimated ? "estimated" : undefined}
-        data-state={state} aria-label={railName(book)} data-p={phone || undefined} data-d={desk || undefined}
-        style={{ ...place, "--hue": `var(${genreHue(book.genre)})` } as CSSProperties}>
-        {body}
-        {(phone > 0 || desk > 0) && (
-          <>
-            {/* The title only on a column, and only the part of it that fits: CSS ellipsises it. */}
-            {axis === "column" && (phone === 2 || desk === 2) && <span className="qt">{book.title}</span>}
-            <span className="ql mono">{book.estimated ? "~" : ""}{kWords(book.words)}</span>
-          </>
-        )}
-      </button>
-    </form>
+    <button type="button" className={classes} data-book={book.id} data-wc={book.estimated ? "estimated" : undefined}
+      data-state={state} aria-label={railName(book)} data-p={phone || undefined} data-d={desk || undefined}
+      style={{ ...place, "--hue": `var(${genreHue(book.genre)})` } as CSSProperties}
+      onClick={(e) => onPress(book.id, e.currentTarget, { book })}>
+      {body}
+      {(phone > 0 || desk > 0) && (
+        <>
+          {/* The title only on a column, and only the part of it that fits: CSS ellipsises it. */}
+          {axis === "column" && (phone === 2 || desk === 2) && <span className="qt">{book.title}</span>}
+          <span className="ql mono">{book.estimated ? "~" : ""}{kWords(book.words)}</span>
+        </>
+      )}
+    </button>
   );
 }
