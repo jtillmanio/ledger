@@ -1,7 +1,7 @@
 ---
 id: TASK-068
 title: 2.8 Place the unquartered
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: sonnet
@@ -31,15 +31,15 @@ Books committed to a year with no quarter can be placed into quarters one at a t
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): the bare-year lane turns amber and gains *Place them* here (1.9 rendered it grey). Test that placing a book writes `period = '2027-Q3'` with Q3's next ordinal,
+- [x] AC-1 (roadmap **Check:**, verbatim): the bare-year lane turns amber and gains *Place them* here (1.9 rendered it grey). Test that placing a book writes `period = '2027-Q3'` with Q3's next ordinal,
 that the fifth lane's count drops by one; that Skip advances without writing; that
 stopping mid-way leaves the remainder untouched; and that the closing card
 states the year is still over capacity when it is.
-- [ ] AC-2: Given 2027 with bare-year books of 200k, 150k and 90k, the flow offers the 200k book first, then the 150k, then the 90k; each quarter button shows its current total, and the chosen quarter's total grows by the placed book's words before the next book shows.
-- [ ] AC-3: Placing a book replaces its bare-year row with one quarter row (the book has one plan row before and after), at that quarter's last ordinal; *Stop* closes the flow and every remaining book keeps its bare-year row.
-- [ ] AC-4: When the year's total is still over capacity after the last book, the closing card names the year and the amount over, in amber; when it fits, the card says it fits. Neither card congratulates, and nothing resolves to `--danger`.
-- [ ] AC-5: A year with no bare-year books shows the lane neither amber nor with *Place them*.
-- [ ] AC-6: The flow meets the UX floor (`docs/04-design.md` § 10. The UX floor): the four quarter buttons, Skip and Stop real buttons with names and 44px on the phone, focus on the sheet's heading and back on *Place them* when it closes by any route, text 4.5:1 in both themes, axe with no new violations, no horizontal scroll at 360px, and screenshots at 360px, 834px and 1280px, light and dark.
+- [x] AC-2: Given 2027 with bare-year books of 200k, 150k and 90k, the flow offers the 200k book first, then the 150k, then the 90k; each quarter button shows its current total, and the chosen quarter's total grows by the placed book's words before the next book shows.
+- [x] AC-3: Placing a book replaces its bare-year row with one quarter row (the book has one plan row before and after), at that quarter's last ordinal; *Stop* closes the flow and every remaining book keeps its bare-year row.
+- [x] AC-4: When the year's total is still over capacity after the last book, the closing card names the year and the amount over, in amber; when it fits, the card says it fits. Neither card congratulates, and nothing resolves to `--danger`.
+- [x] AC-5: A year with no bare-year books shows the lane neither amber nor with *Place them*.
+- [x] AC-6: The flow meets the UX floor (`docs/04-design.md` § 10. The UX floor): the four quarter buttons, Skip and Stop real buttons with names and 44px on the phone, focus on the sheet's heading and back on *Place them* when it closes by any route, text 4.5:1 in both themes, axe with no new violations, no horizontal scroll at 360px, and screenshots at 360px, 834px and 1280px, light and dark.
 
 ## Out of scope
 
@@ -66,9 +66,11 @@ states the year is still over capacity when it is.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Candidate decision: *Place them* surfaces on Up next's bare-year lane and on `/books/plan`'s card, one component, never on the dashboard; the flow's books are `plan_book_words`' bare-year rows (approved at plan)
-- `docs/04-design.md` § Books dashboard and § Over-commitment say *Place them* is on `/books/plan` only: add Up next's lane (approved at plan)
-- The closing card's *Rebalance 2027* and *Accept as a stretch year* (mockup `plan`, last frame) arrive with 2.7: TASK-067 adds them to the card (approved at plan)
+- Candidate decision: *Place them* surfaces on Up next's bare-year lane and on `/books/plan`'s card, one component, never on the dashboard; the flow's books are `plan_book_words`' bare-year rows (approved at plan) → docs/review/decisions.md § D-147
+- `docs/04-design.md` § Books dashboard and the feel pass's open questions say *Place them* is on `/books/plan` only: add Up next's lane (approved at plan) → docs/04-design.md § 9. The feel pass (open questions, *Books (2.2)*) and § 12 → Books dashboard
+- The closing card's *Rebalance 2027* and *Accept as a stretch year* (mockup `plan`, last frame) arrive with 2.7: TASK-067 adds them to the card (approved at plan) → docs/tasks/TASK-067-rebalance-sheet-settled.md § Context
+- ui-verifier: axe's `label-content-name-mismatch` flags the plan rail's block buttons on `/books/plan` (a block's visible `129k` against its name *The Last American Vampire, 129k words, 2027*). The blocks are 2.2b's (`PlanRail.tsx`), not this task's, and the rule is not in the suites' axe lists → docs/tasks/TASK-067-rebalance-sheet-settled.md § Context
+- AC-6's "back on *Place them* when it closes by any route" can't hold once every book is placed, because the button goes with the lane; focus goes to the page heading then (plan step 3, D-147). A possible rewording for the owner: "…or on the page heading when nothing is left to place" → not tracked: an AC wording question for the owner, asked in the PR and the final report
 
 ## Plan
 
@@ -76,7 +78,7 @@ Approved by the owner up front (2026-11-12: "accept the plan right away"; the qu
 
 **Where it surfaces (the Context's stop-and-ask, decided here).** In both places the sources draw it, never on the dashboard: (1) Up next's bare-year lane (the Check verbatim: "turns amber and gains *Place them* here"; the `status` mockup's lane, `design/mockups.html` ~3035); (2) `/books/plan`, as the mockup `plan` frame's amber card above the quarters, whose sheet frame moved there (TASK-049 Q2 forbids only the dashboard). One component, two mounts. The Check is not amended.
 
-**Which books.** A year's bare-year rows as `plan_book_words` counts them (`period = '2027'`), so the flow, the fifth lane and `plan_capacity` agree; largest first, a book with no count last, then by title.
+**Which books.** A year's bare-year rows as `plan_book_words` counts them (`year = 2027 AND quarter IS NULL`; revised after schema review from `period = '2027'`), so the flow, the fifth lane and `plan_capacity` agree; largest first, a book with no count last, then by title.
 
 Steps:
 
@@ -103,7 +105,7 @@ Follow-ups (approved at plan): see `## Follow-ups`.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Touched specs R1 FAIL(3: a strict `.planrail` locator; the card's glyph read into its text; all three in the spec) → fixed | Verify R1 PASS | CI R1 PASS (every project, 8 shards) | Spec R1 APPROVE (2 non-blocking gaps) | Schema R1 APPROVE (1 minor: year and quarter, not the period text) → fixed, with the spec review's undo-focus edge | Verify R2 PASS | Audit R1 PASS | CI R2 PASS | UI R1 PASS (the over card isn't reachable on dev data; e2e covers it) | Lighthouse R2: run-large's Chrome failed to launch on the runner → reran
 
 ## Blocked
 
@@ -111,7 +113,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1 (the fixes were minor points from approving reviews; nothing re-reviewed)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1 (the bare-year match is `year`, `quarter IS NULL`, after schema review)
