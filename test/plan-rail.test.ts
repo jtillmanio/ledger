@@ -1,8 +1,9 @@
 // @vitest-environment node
-// Task 2.2b (F-22, D-37, D-38, M-07): the plan rail. The layout function and the names are pure
+// Task 2.2b (F-22, D-37, D-38, M-07): the plan rail. Task 2.3 part 3 adds the bundle guard at the foot. The layout function and the names are pure
 // (AC-2, AC-3), tested with no browser and no database; the roadmap's Check (AC-1) is read against
 // the TEST database, rendered with the component and parsed back with happy-dom. Figures in the
 // fixture are the fixture's own (D-7): what is asserted is a relationship to the quarter's capacity.
+import { readFileSync } from "node:fs";
 import { Window } from "happy-dom";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -684,5 +685,18 @@ describe("a stack in the markup (AC-3)", () => {
     // The three small books are in the stack and have no button of their own; the lone one keeps its own.
     expect(window.document.querySelector('[data-book="s1"]')).toBeNull();
     expect(window.document.querySelector('[data-book="lone"]')?.getAttribute("aria-label")).toBe("Small lone, 30k words, Q1 2027");
+  });
+});
+
+describe("the rail stays out of every skeleton route's bundle (task 2.3; Lighthouse)", () => {
+  // PlanRail is a client component now (it owns the sheets). Skeleton is on every route's loading boundary:
+  // importing the legend from PlanRail put the whole rail into each of those bundles, +5.7 KB and a request.
+  it("draws the legend from a module that is not a client component, and Skeleton imports nothing from PlanRail", () => {
+    const skeleton = readFileSync("src/components/Skeleton.tsx", "utf8");
+    expect(skeleton).not.toMatch(/from\s+["']@\/components\/PlanRail["']/);
+    expect(skeleton).toMatch(/from\s+["']@\/components\/RailLegend["']/);
+    expect(readFileSync("src/components/RailLegend.tsx", "utf8")).not.toMatch(/^\s*["']use client["']/m);
+    // And the rail itself is the client component that owns the sheets.
+    expect(readFileSync("src/components/PlanRail.tsx", "utf8")).toMatch(/^"use client";/);
   });
 });

@@ -377,10 +377,10 @@ test.describe("at 360px", PHONE, () => {
     await expect(sheet).toBeVisible();
     // Each book, in the plan's order, by name and words.
     const rows = sheet.locator("ul button");
-    await expect(rows).toHaveText([/^Charlie Two\s*50k$/, /^Charlie Three\s*40k$/, /^Charlie Four\s*60k$/]);
-    await expect(sheet.getByRole("button", { name: "Charlie Three, 40k words" })).toBeVisible();
+    await expect(rows).toHaveText([/^Charlie Two\s*50k words$/, /^Charlie Three\s*40k words$/, /^Charlie Four\s*60k words$/]);
+    await expect(sheet.getByRole("button", { name: "Charlie Three 40k words" })).toBeVisible();
 
-    await sheet.getByRole("button", { name: "Charlie Three, 40k words" }).click();
+    await sheet.getByRole("button", { name: "Charlie Three 40k words" }).click();
     // The same sheet now heads the book and shows its picker; the URL has not changed.
     await expect(sheet).toHaveCount(0);
     const picker = page.getByRole("dialog", { name: "Charlie Three" });
@@ -391,7 +391,7 @@ test.describe("at 360px", PHONE, () => {
     await picker.getByRole("button", { name: /^‹/ }).click();
     const again = page.getByRole("dialog", { name: "3 books, 150k words" });
     await expect(again).toBeVisible();
-    await expect(again.getByRole("button", { name: "Charlie Three, 40k words" })).toBeFocused();
+    await expect(again.getByRole("button", { name: "Charlie Three 40k words" })).toBeFocused();
     await page.keyboard.press("Escape");
     await expect(again).toBeHidden();
     await expect(stack).toBeFocused();
@@ -419,7 +419,7 @@ test.describe("at 360px", PHONE, () => {
       expect(box.height).toBeGreaterThanOrEqual(44);
       expect(box.width).toBeGreaterThanOrEqual(44);
     }
-    await expectNoAxeViolations(page, [...AXE, "aria-dialog-name"], ".sheet");
+    await expectNoAxeViolations(page, [...AXE, "aria-dialog-name", "label-content-name-mismatch"], ".sheet");
     await expectNoHorizontalScroll(page);
     const danger = await tokenColour(page, "--danger");
     const reds = await sheet.evaluate((el, red) => [el, ...el.querySelectorAll("*")].filter((n) => {

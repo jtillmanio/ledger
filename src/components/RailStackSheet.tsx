@@ -52,10 +52,10 @@ function Body({ books, chosen, onChoose }: { books: RailBook[]; chosen: RailBook
         <ul className="rss">
           {books.map((b) => (
             <li key={b.id}>
-              <button type="button" className="rss-row" data-book={b.id} onClick={() => onChoose(b)}
-                aria-label={`${b.title}, ${kWords(b.words)} words${b.estimated ? ", estimated" : ""}`}>
-                <span className="rss-title">{b.title}</span>
-                <span className="rss-words mono">{b.estimated ? "~" : ""}{kWords(b.words)}</span>
+              {/* No aria-label: the name is the visible text (WCAG 2.5.3), *Title 27k words*; a ~ marks an estimate. */}
+              <button type="button" className="rss-row" data-book={b.id} onClick={() => onChoose(b)}>
+                <span className="rss-title">{b.title}</span>{" "}
+                <span className="rss-words mono">{b.estimated ? "~" : ""}{kWords(b.words)} words</span>
               </button>
             </li>
           ))}

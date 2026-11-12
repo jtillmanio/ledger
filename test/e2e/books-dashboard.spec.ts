@@ -554,18 +554,18 @@ test.describe("reading", () => {
     await stack.click();
     const list = page.getByRole("dialog", { name: "3 books, 90k words" });
     await expect(list).toBeVisible();
-    await expect(list.locator("ul button")).toHaveText([/^E2E Dash Tiny 4\s*30k$/, /^E2E Dash Tiny 5\s*30k$/, /^E2E Dash Tiny 6\s*30k$/]);
+    await expect(list.locator("ul button")).toHaveText([/^E2E Dash Tiny 4\s*30k words$/, /^E2E Dash Tiny 5\s*30k words$/, /^E2E Dash Tiny 6\s*30k words$/]);
     for (const row of await list.locator("ul button").all()) expect(Math.round((await row.boundingBox())!.height)).toBeGreaterThanOrEqual(44);
-    await expectNoAxeViolations(page, [...AXE, "aria-dialog-name"], ".sheet");
+    await expectNoAxeViolations(page, [...AXE, "aria-dialog-name", "label-content-name-mismatch"], ".sheet");
     await expectNoHorizontalScroll(page);
     await expectNoDanger(page);
     expect(await contrastFailures(page)).toEqual([]);
     await screenshot(page, info, "books-stack-list");
 
-    await list.getByRole("button", { name: "E2E Dash Tiny 5, 30k words" }).click();
+    await list.getByRole("button", { name: "E2E Dash Tiny 5 30k words" }).click();
     const picker = page.getByRole("dialog", { name: "E2E Dash Tiny 5" });
     await expect(picker.locator(".pp-chip").first()).toBeVisible();
-    await expectNoAxeViolations(page, [...AXE, "aria-dialog-name"], ".sheet");
+    await expectNoAxeViolations(page, [...AXE, "aria-dialog-name", "label-content-name-mismatch"], ".sheet");
     await expectNoHorizontalScroll(page);
     await expectNoDanger(page);
     await screenshot(page, info, "books-stack-picker");

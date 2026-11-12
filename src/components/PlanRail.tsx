@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
+import RailLegend from "@/components/RailLegend";
 import type { PeriodCapacity } from "@/db/queries";
 import {
   COLUMN_WORDS, MIN_HIT, PHONE_COLUMN, STRIP_LENGTH, genreHue, kWords, labelFit, layoutColumn, layoutLane, railName,
@@ -165,21 +166,6 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
     <RailLegend />
     {sheets}
     </>
-  );
-}
-
-/**
- * The rail's key. The loading skeleton draws it too (same text, same wrap), so the rail's arrival shifts
- * nothing; `hidden` is that one, out of the accessibility tree like the rest of the skeleton.
- */
-export function RailLegend({ hidden = false }: { hidden?: boolean }) {
-  return (
-    <ul className="qlegend" aria-hidden={hidden || undefined}>
-      <li><i className="lg est" aria-hidden="true" /><span className="mono">~</span> estimated</li>
-      <li><i className="lg ovr" aria-hidden="true" /> over capacity</li>
-      <li><i className="lg stk" aria-hidden="true" /><span className="mono">+N</span> merged under 24px, or folded past the top</li>
-      <li><i className="lg nqt" aria-hidden="true" /> year, no quarter</li>
-    </ul>
   );
 }
 

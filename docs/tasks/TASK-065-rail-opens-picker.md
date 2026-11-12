@@ -1,7 +1,7 @@
 ---
 id: TASK-065
 title: 2.3 Plan editor (3 of 3) — the rail's blocks open the picker, a stack its list
-status: In progress
+status: Review
 depends_on: [TASK-064, TASK-051]
 size: M
 model: sonnet
@@ -32,7 +32,7 @@ Tapping a book on the plan rail, including the dashboard's *This quarter* strip,
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; proven by TASK-063 and TASK-064, and re-run here once the rail opens the same sheet): test that moving a 150k-word book from 2027 Q1 to 2028 Q2 changes
+- [x] AC-1 (roadmap **Check:**, verbatim; proven by TASK-063 and TASK-064, and re-run here once the rail opens the same sheet): test that moving a 150k-word book from 2027 Q1 to 2028 Q2 changes
 both periods' totals correctly and that the preview reflects the destination
 period before the move is confirmed. The moved book takes 2028 Q2's last
 ordinal, 2027 Q1 stays contiguous, and undo puts it back at its old position.
@@ -43,10 +43,10 @@ independent of a quarter and never a month. **Flip (R3-08):** 1.4c's add sheet
 now offers *Year or quarter…* through this picker, and adding a book to a year
 or quarter writes its `book_status` and `reading_plan` rows in one transaction;
 1.9's empty Books *Up next* action becomes *Plan a book*.
-- [ ] AC-2: On `/books`, activating a book block in the *This quarter* strip opens the picker sheet for that book (its title in the heading) and the URL does not change; no `form` element is left in the rail's markup.
-- [ ] AC-3: A `+N` stack is a button without `aria-disabled`, and the stack's reason line is gone; activating it opens a list sheet naming each of its books with its words, and choosing one opens the picker for that book.
-- [ ] AC-4: Moving a book from the strip to another quarter redraws the strip with the new total, and the toast's Undo puts the book back and the strip as it was.
-- [ ] AC-5: The strip and the list sheet meet the UX floor (`docs/04-design.md` § 10. The UX floor), on a feel-pass surface: every block and stack a named button with at least a 24px target, focus back on the block or stack when a sheet closes, nothing resolves to `--danger`, axe with no new violations, no horizontal scroll at 360px, and screenshots at 360, 390, 412, 768, 1024 and 1280px, light and dark, with reduced motion and reduced transparency.
+- [x] AC-2: On `/books`, activating a book block in the *This quarter* strip opens the picker sheet for that book (its title in the heading) and the URL does not change; no `form` element is left in the rail's markup.
+- [x] AC-3: A `+N` stack is a button without `aria-disabled`, and the stack's reason line is gone; activating it opens a list sheet naming each of its books with its words, and choosing one opens the picker for that book.
+- [x] AC-4: Moving a book from the strip to another quarter redraws the strip with the new total, and the toast's Undo puts the book back and the strip as it was.
+- [x] AC-5: The strip and the list sheet meet the UX floor (`docs/04-design.md` § 10. The UX floor), on a feel-pass surface: every block and stack a named button with at least a 24px target, focus back on the block or stack when a sheet closes, nothing resolves to `--danger`, axe with no new violations, no horizontal scroll at 360px, and screenshots at 360, 390, 412, 768, 1024 and 1280px, light and dark, with reduced motion and reduced transparency.
 
 ## Out of scope
 
@@ -71,9 +71,13 @@ or quarter writes its `book_status` and `reading_plan` rows in one transaction;
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- (approved at plan) `docs/04-design.md` § 6: drop "until 2.3 it is `aria-disabled` with its reason shown, D-137" from the stack sentence.
-- (approved at plan) Decisions log: a new row, a rail block opens the picker and a stack opens its list sheet, in one `Sheet`; supersedes D-137's interim clause. ID from `next-id.ps1`.
-- (approved at plan) `docs/05-roadmap.md` 2.3 and `docs/06-tasklist.md` row 2.3: ticks at close-out, once the three parts are Done.
+- (approved at plan) `docs/04-design.md` § 6: drop "until 2.3 it is `aria-disabled` with its reason shown, D-137" from the stack sentence → docs/04-design.md § 6. The plan rail (approved at plan)
+- (approved at plan) Decision: a rail block opens the picker and a stack opens its list sheet, in one `Sheet`; supersedes D-137's interim clause → docs/review/decisions.md § D-146 (approved at plan)
+- A full-ruleset axe run (ui-verifier) found two things on the dashboard that are not the rail's and are outside the specs' rule list: `scrollable-region-focusable` on the *Up next* shelf, and `label-content-name-mismatch` on the *Finished it* header button at 1024 and 1280 → docs/05-roadmap.md § Later — noted, not scheduled (L-12, new)
+- Lighthouse failed on the first push: `PlanRail` became a client component and `Skeleton` imported `RailLegend` from it, so every skeleton route carried the rail (+5.7 KB, +1 request) → not tracked: done in this PR (plan revision 1: `RailLegend.tsx`, with a guard test)
+- The list rows' `aria-label` did not contain their visible text (WCAG 2.5.3, ui-verifier) → not tracked: done in this PR (the name is now the visible text; `label-content-name-mismatch` joins the sheet axe checks)
+- The picker reached from a stack list draws the *‹ stack* back button as a full-width bar at 1280 → not tracked: it is the `pp-back` pattern Add books already draws; no design source draws either
+- A strip stack under 24px measures 23.98px at 360px (the browser snaps border widths) → not tracked: existing strip geometry (D-135, out of scope), and axe's target-size passes
 
 ## Plan
 
@@ -94,11 +98,13 @@ Approved by the owner at the plan gate, with every follow-up below.
 - AC-3, AC-5: `test/e2e/plan-rail.spec.ts`, including axe, 24px targets, no horizontal scroll at 360px, nothing on `--danger`, and screenshots at 360, 390, 412, 768, 1024 and 1280px, light and dark, with reduced motion and reduced transparency.
 - Markup (no form, no `aria-disabled` stack): `test/plan-rail.test.ts`.
 
+**Revision 1 (owner OK, after Lighthouse failed on the first push):** add `src/components/RailLegend.tsx`, a module with no `"use client"` that `Skeleton.tsx` and `PlanRail.tsx` both import, so the skeleton routes no longer carry the rail's client bundle; `test/loading-states.test.tsx` imports it from there, and `test/plan-rail.test.ts` guards the split.
+
 **Risks**: the strip also draws read and reading books; tapping one opens the picker, which already says only a to-read book can be planned (TASK-064). Left as it is. `/books/plan` gets the same behaviour from the shared component (TASK-069, TASK-070 expect it).
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | CI R1 FAIL (books-dashboard.spec.ts:539, w360-light and w360-dark: a 60k strip stack measures 23.98px, the shared floor check wants 24) -> fixed, a 90k stack | CI R2 PASS, Lighthouse FAIL (library 65 requests; +5.7 KB on every skeleton route, the rail pulled in by Skeleton) -> fixed, RailLegend.tsx (plan revision 1) | Verify R2 PASS | Audit R1 PASS | Spec R1 CHANGES (Follow-ups wording only) -> fixed at close-out | UI R1 PASS (AC-2 to AC-5 at six widths; list-row label-content-name-mismatch -> fixed, name is the visible text)
 
 ## Blocked
 
@@ -106,7 +112,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1 (spec-reviewer, test-auditor, ui-verifier; one round each)
+- First-pass AC FAILs: 0 (CI and Lighthouse each found one thing the local run did not)
+- Plan revisions after approval: 1 (RailLegend.tsx)

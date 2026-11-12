@@ -2417,7 +2417,7 @@ nothing resolves to `--danger`.
 
 *(Check proposed by TASK-051; the owner agrees it by merging, or edits it.)*
 
-### ☐ 2.3 Plan editor · M
+### ☑ 2.3 Plan editor · M
 Depends on 1.7 and 2.1.
 
 One picker sheet, three entry points: **Move** on a plan-page row, **Plan
@@ -5968,5 +5968,13 @@ becomes a task once its open question is answered. None has a **Check:**, and
   or Add's search, so pasting becomes rare, and Calibre's series replaces a
   pasted one as soon as the book is there (D-90). The open question is whether
   you find yourself pasting series by hand after cutover.
+- **L-12 Two dashboard axe findings outside the specs' rule list**
+  (2026-11-12, TASK-065's ui-verifier, a full-ruleset run). On the books
+  dashboard, `scrollable-region-focusable` on the *Up next* shelf (a full
+  shelf scrolls but cannot take focus) and `label-content-name-mismatch` on the
+  *Finished it* header button at 1024px and 1280px (its visible text is not
+  in its name). Neither involves the plan rail. The open question is whether
+  to add both rules to the dashboard spec's list and fix them there, or to
+  give the shelf another keyboard route.
 
 ---
