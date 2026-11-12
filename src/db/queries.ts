@@ -1463,7 +1463,7 @@ export async function unplacedBooks(userId: string, year: number): Promise<Unpla
     FROM plan_book_words w
     JOIN books b ON b.id = w.book_id AND b.deleted_at IS NULL
     LEFT JOIN authors a ON a.id = b.author_id
-    WHERE w.user_id = ${userId} AND w.period = ${String(year)}
+    WHERE w.user_id = ${userId} AND w.year = ${year} AND w.quarter IS NULL
     ORDER BY w.words DESC NULLS LAST, b.title, b.id
   `.then((rows) => rows.map((r) => ({ ...r, estimated: r.estimated === true })));
 }

@@ -93,9 +93,13 @@ function PlaceSheet({ year, opener, onClose, onOutcome }: {
             if (quarters) setData({ ...data, quarters });
             onOutcome(next.placed, next.at >= n && next.skipped === 0);
           }}
-          onUndone={(period, words) => setData((d) => (d && d !== "failed"
-            ? { ...d, quarters: d.quarters.map((q) => (q.period === period ? { ...q, plannedWords: q.plannedWords - words } : q)) }
-            : d))} />
+          onUndone={(period, words) => {
+            // An undone placement puts its book back in the lane, so *Place them* stays after the refresh.
+            onOutcome(step.placed, false);
+            setData((d) => (d && d !== "failed"
+              ? { ...d, quarters: d.quarters.map((q) => (q.period === period ? { ...q, plannedWords: q.plannedWords - words } : q)) }
+              : d));
+          }} />
       )}
     </Sheet>
   );
