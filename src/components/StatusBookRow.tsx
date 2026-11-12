@@ -14,7 +14,8 @@ import { bookSub, listenGlyph, wordsK } from "@/lib/format";
  */
 export default function StatusBookRow({ book, meta, dates = null, action, control }: {
   book: {
-    title: string; author: string | null; series: string | null; series_position: number | null; word_count: number | null;
+    title: string; author: string | null; series: string | null; series_position: number | null; universe: string | null;
+    word_count: number | null;
     status?: string; listened?: boolean;
   };
   meta?: string | null;

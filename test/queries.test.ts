@@ -75,6 +75,40 @@ describe("listBooks (R2-06, R2-08)", () => {
   });
 });
 
+describe("a book's universe on every books list (task 2.2j, D-134, AC-3)", () => {
+  // truncateAll leaves the universes; the books reference them, so clear them before each test.
+  beforeEach(async () => {
+    await sql`TRUNCATE book_universes CASCADE`;
+    await sql`INSERT INTO book_universes (id, name) VALUES ('cosmere', 'Cosmere')`;
+    await sql`INSERT INTO books (id, title, universe_id) VALUES ('in-u', 'In a universe', 'cosmere'), ('no-u', 'In none', NULL)`;
+  });
+
+  const byId = <T extends { id: string; universe: string | null }>(rows: T[]) =>
+    Object.fromEntries(rows.map((r) => [r.id, r.universe]));
+
+  it("listBooks returns the universe's name, null for a book with none", async () => {
+    expect(byId(await q.listBooks(USER))).toEqual({ "in-u": "Cosmere", "no-u": null });
+  });
+
+  it("booksInFlight returns it", async () => {
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'in-u', 'reading'), (${USER}, 'no-u', 'listening')`;
+    expect(byId(await q.booksInFlight(USER))).toEqual({ "in-u": "Cosmere", "no-u": null });
+  });
+
+  it("booksUpNext returns it for the planned books", async () => {
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'in-u', 'to_read'), (${USER}, 'no-u', 'to_read')`;
+    await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES
+              (${USER}, 'in-u', '2026-Q4', 1), (${USER}, 'no-u', 'on_deck', NULL)`;
+    expect(byId((await q.booksUpNext(USER)).planned)).toEqual({ "in-u": "Cosmere", "no-u": null });
+  });
+
+  it("booksDone returns it, read and DNF alike", async () => {
+    await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+              VALUES (${USER}, 'in-u', 'read', '2026-01-02', 'exact'), (${USER}, 'no-u', 'dnf', NULL, 'none')`;
+    expect(byId(await q.booksDone(USER))).toEqual({ "in-u": "Cosmere", "no-u": null });
+  });
+});
+
 describe("saveBookStatus (R0-C1)", () => {
   it("a bare status change keeps an existing rating and finish date; an explicit null clears", async () => {
     await sql`INSERT INTO books (id, title) VALUES ('b1', 'Book 1')`;

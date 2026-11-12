@@ -1089,7 +1089,7 @@ p{margin:0 0 .75rem;max-width:66ch}
 .row-head{display:flex;gap:.75rem;align-items:baseline}
 .row-title{font-weight:500}
 .row-meta{margin-left:auto;white-space:nowrap;font-size:.8125rem;color:var(--muted)}
-.row-sub{color:var(--muted);font-size:.8125rem;margin-top:.125rem;display:block}
+.row-sub{color:var(--muted);font-size:.8125rem;margin-top:.125rem;display:block;overflow-wrap:anywhere}   /* wraps, never ellipsised (task 2.2j) */
 /* A book row's dates (task 1.17): started, finished, days taken. */
 .row-dates,.row-reads{color:var(--muted);font-size:.75rem;margin-top:.125rem;display:block}
 .clamp-2{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
@@ -1521,6 +1521,8 @@ h2.group-head{margin:2.25rem 0 .75rem}
   line-height:22px;text-align:center}
 .shelf .card-title{font-size:.8125rem;line-height:1.0625rem;font-weight:600;color:var(--ink);
   display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow:hidden}
+/* The author and where the book belongs (task 2.2j, D-134): it wraps, never clamped or ellipsised. */
+.shelf .card-sub{font-size:.6875rem;line-height:.875rem;color:var(--muted);overflow-wrap:anywhere}
 .shelf .card-meta{font-size:.6875rem;line-height:.875rem;color:var(--muted);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .shelf .bdg,.qmeta .bdg,.row-verbs .bdg{align-self:flex-start;font-family:var(--mono)}
@@ -1552,6 +1554,9 @@ h2.group-head{margin:2.25rem 0 .75rem}
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .qmeta{display:flex;align-items:center;gap:.5rem;min-width:0;font-size:.75rem;color:var(--muted)}
 .qmeta .mono{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* The author and where the book belongs wraps, never ellipsised (task 2.2j, D-134); the words stay whole beside it. */
+.qmeta .qplace{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+.qmeta .qwords{flex:none}
 .qrow .btn.sm{flex:0 0 auto;min-height:32px;box-shadow:none}
 .drag{flex:0 0 auto;width:44px;min-height:44px;display:grid;place-items:center;border:0;border-radius:var(--r-md);
   background:none;color:var(--muted);font:inherit;font-size:1rem;letter-spacing:-.15em;cursor:grab;
@@ -1789,6 +1794,7 @@ section[data-plan="year"] h2.group-head{color:var(--muted)}
 .sk-head{height:12px;margin:2px 0}
 .shelf-slot .sk-head{margin:10px 0}
 .shelf .card .sk-card-title{height:30px;margin:2px 0}
+.shelf .card .sk-card-sub{height:10px;margin:2px 0}   /* one line of .card-sub (task 2.2j); a wrapped place is taller */
 .shelf .card .sk-card-meta{height:10px;margin:2px 0}
 .planrail.strip.sk{border-radius:var(--r-cell)}
 .sk-qhead{height:14px;margin:3px 0}

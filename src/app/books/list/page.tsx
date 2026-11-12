@@ -8,7 +8,7 @@ import BookListSearch from "@/components/BookListSearch";
 import BookSort from "@/components/BookSort";
 import BookStatus from "@/components/BookStatus";
 import Cover, { Pending } from "@/components/Cover";
-import { bookDates, readSummary } from "@/lib/format";
+import { bookDates, bookSub, readSummary } from "@/lib/format";
 import { libraryHref, parseSort } from "@/lib/library-sort";
 import { seriesAllHref, seriesView } from "@/lib/series-list";
 
@@ -144,8 +144,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
                 </span>
               </span>
               <span className="row-sub">
-                {[b.author, b.series && `${b.series}${b.series_position ? ` #${b.series_position}` : ""}`,
-                  b.genre].filter(Boolean).join(" · ")}
+                {[bookSub(b), b.genre].filter(Boolean).join(" · ")}
               </span>
               {/* When it was started, finished and how long it took (task 1.17). */}
               {bookDates(b) && <span className="row-dates">{bookDates(b)}</span>}
