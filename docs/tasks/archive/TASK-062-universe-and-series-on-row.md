@@ -1,7 +1,7 @@
 ---
 id: TASK-062
 title: 2.2j The universe and series on a book's row
-status: Review
+status: Done
 depends_on: [TASK-049]
 size: M
 model: sonnet
