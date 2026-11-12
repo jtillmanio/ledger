@@ -1,7 +1,7 @@
 ---
 id: TASK-068
 title: 2.8 Place the unquartered
-status: Review
+status: Done
 depends_on: []
 size: M
 model: sonnet
