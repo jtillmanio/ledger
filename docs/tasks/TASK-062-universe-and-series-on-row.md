@@ -1,7 +1,7 @@
 ---
 id: TASK-062
 title: 2.2j The universe and series on a book's row
-status: In progress
+status: Review
 depends_on: [TASK-049]
 size: M
 model: sonnet
@@ -33,7 +33,7 @@ Every book row's second line names the author and where the book belongs, its un
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): `npm test`: `bookPlace` returns *Cosmere · Mistborn #4* for a book
+- [x] AC-1 (roadmap **Check:**, verbatim): `npm test`: `bookPlace` returns *Cosmere · Mistborn #4* for a book
 with both, *Robot #2* for a series alone, *First Law World* for a universe
 alone, an empty place for neither, *Mistborn* for a series with no position,
 and *Magic Tree House #3* when the series name contains the universe's;
@@ -42,10 +42,10 @@ an On deck row and an *Up next* row for *The Alloy of Law* read *Brandon
 Sanderson · Cosmere · Mistborn #4*, and the same book reads the same on its
 status tab and in the Library. There is no horizontal scroll at 360px, axe
 passes, and nothing resolves to `--danger`. Screenshots at 360px and 1280px.
-- [ ] AC-2: The universe is dropped whatever the case: a universe *MAGIC TREE HOUSE* with a series *Magic Tree House: Merlin Missions* at position 2 gives *Magic Tree House: Merlin Missions #2*. A whole-number position prints without a decimal (`#4`, not `#4.0`).
-- [ ] AC-3: `listBooks`, `booksInFlight`, `booksUpNext` and `booksDone` also return the universe's name, null for a book with none; no other builder of the line is left (`bookSub`'s series part and the Library's inline join are gone).
-- [ ] AC-4: A row for a book in *The Chronicles of Thomas Covenant the Unbeliever* shows the series name in full at 360px, wrapped and with no ellipsis, and the page has no horizontal scroll.
-- [ ] AC-5: The changed rows meet the UX floor (`docs/04-design.md` § 10. The UX floor), on a feel-pass surface: the line's text is 4.5:1 in both themes, the loading states (`src/app/books/loading.tsx`, `src/app/books/status/loading.tsx`, `src/app/books/list/loading.tsx`) keep the rows' height or the plan says why no layout shift goes over budget, axe reports no new violations, and screenshots at 360, 390, 412, 768, 1024 and 1280px, light and dark, with reduced motion and reduced transparency.
+- [x] AC-2: The universe is dropped whatever the case: a universe *MAGIC TREE HOUSE* with a series *Magic Tree House: Merlin Missions* at position 2 gives *Magic Tree House: Merlin Missions #2*. A whole-number position prints without a decimal (`#4`, not `#4.0`).
+- [x] AC-3: `listBooks`, `booksInFlight`, `booksUpNext` and `booksDone` also return the universe's name, null for a book with none; no other builder of the line is left (`bookSub`'s series part and the Library's inline join are gone).
+- [x] AC-4: A row for a book in *The Chronicles of Thomas Covenant the Unbeliever* shows the series name in full at 360px, wrapped and with no ellipsis, and the page has no horizontal scroll.
+- [x] AC-5: The changed rows meet the UX floor (`docs/04-design.md` § 10. The UX floor), on a feel-pass surface: the line's text is 4.5:1 in both themes, the loading states (`src/app/books/loading.tsx`, `src/app/books/status/loading.tsx`, `src/app/books/list/loading.tsx`) keep the rows' height or the plan says why no layout shift goes over budget, axe reports no new violations, and screenshots at 360, 390, 412, 768, 1024 and 1280px, light and dark, with reduced motion and reduced transparency.
 
 ## Out of scope
 
@@ -73,7 +73,11 @@ passes, and nothing resolves to `--danger`. Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Add books' search results (`src/components/BookSearch.tsx` around line 175) build their own second line, *author · series #n · pages*, so a library hit there doesn't name its universe; a Hardcover hit has none to name. Out of scope here (owner, plan gate 2026-11-12). At close-out: a new roadmap item in Phase 2 beside 2.2j (next free ID from `next-id.ps1 -List`), with a proposed **Check:** that a library hit's line reads `bookSub`'s *author · universe · series #n* followed by its pages → docs/05-roadmap.md § Phase 2 (new) (approved at plan)
+- Add books' search results (`src/components/BookSearch.tsx` around line 175) build their own second line, *author · series #n · pages*, so a library hit there doesn't name its universe; a Hardcover hit has none to name. Out of scope here (owner, plan gate 2026-11-12) → docs/05-roadmap.md § 2.2l (new) (approved at plan; Check proposed), and docs/06-tasklist.md § M10 (new row)
+- The plan sheet (`src/components/PlanPicker.tsx`, 2.3) still names the book it moves as *author · words*, with no universe or series, although the 2026-11-09 intake asked for the line on "the plan sheet" (found by spec-reviewer and ui-verifier). Owner, at close-out 2026-11-12: add it to 2.2l → docs/05-roadmap.md § 2.2l (new)
+- The *Up next* card's pages-and-words line follows its place line, so it sits 14px higher on a card whose place wraps less (cards stay equal height; found by ui-verifier). Cosmetic; pinning `.card-meta` to the card's bottom would align them → not tracked: cosmetic, the cards' heights and tops match, and the plan's risks named mixed heights as acceptable
+- The status tab's quarter rows set the line in `.mono` (their existing `.qmeta .mono` style), the other screens in Plex Sans (found by ui-verifier) → not tracked: the mono sub line predates 2.2j, and the plan's own wording keeps `PlanQuarter`'s calls unchanged
+- `quarterShelf` and `onDeck` don't filter `b.deleted_at IS NULL` themselves; the views they read do (schema-reviewer, minor, pre-existing) → not tracked: no soft-deleted row leaks, and nothing in 2.2j changes it
 
 ## Plan
 
@@ -133,7 +137,7 @@ Approved by the owner at the plan gate, 2026-11-12 (Opus session; implemented on
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (`verify.full`, then the new and changed specs in `w390-light`: 45 passed) | CI R1 PASS on `b44ea97` (`check`, e2e full 8/8, Lighthouse within budget after one rerun of `measure (run-small)`, a Chrome launch timeout on an unrelated comics route) | Audit R1 PASS (every AC test fails on the base; the reduced-transparency `place` case passes at base and no AC relies on it) | Spec R1 APPROVE (two departures traced: `PlanQuarter`'s `qplace`/`qwords` markup for AC-4, and the AC-3 scan's exemptions of `book-parse.ts` and `book-review.ts` beside `BookSearch.tsx`, which echo a typed bulk-entry line and a review explanation, not a row's place) | Schema R1 APPROVE | UI R1 PASS (six widths, light and dark, four screens; two visual notes, both in Follow-ups as not tracked). No reviewer fix, so no round 2.
 
 ## Blocked
 
@@ -141,7 +145,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0 (two additions inside the plan's steps: the AC-3 scan's two extra exemptions, and `PlanQuarter`'s `qplace`/`qwords` classes for AC-4)
