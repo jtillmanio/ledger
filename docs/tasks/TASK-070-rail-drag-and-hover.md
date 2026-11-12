@@ -1,14 +1,14 @@
 ---
 id: TASK-070
 title: 2.10 Plan page as the full-size rail (2 of 2) — drag and hover on the desktop
-status: Ready
+status: In progress
 depends_on: [TASK-069, TASK-065]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 1460e95
 ---
 
 # TASK-070 — 2.10 Plan page as the full-size rail (2 of 2) — drag and hover on the desktop
@@ -69,7 +69,28 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner up front (2026-11-12: "accept the plan right away"; questions listed in the final report).
+
+**Steps**
+
+1. `src/lib/plan-rail.ts`: `dropReadout(book, target)`, pure. A quarter reads `Q3 +118k → 533k / 760k` from that quarter's `plannedWords` (the same `plan_capacity` figure its footer and summary row print) plus the book's words, against its capacity. The fifth lane reads `2028 +118k → 1.2M` (no capacity). The book's own period reads `Q1 · already here`. Copy follows the style guide's A4.4 (target only), not the mockup's two-sided line (D-31 beats the mockup on component states).
+2. `src/components/RailDrag.tsx` (new): `useRailDrag({ year, quarters, lane })`, the pointer engine for the column rail only (not the strip, which is out of scope). A press on a block starts a drag only when `pointerType === "mouse"` (or a pen) **and** `matchMedia("(hover:hover) and (pointer:fine)")` matches, and only after the pointer has moved 4px. It follows the window, not pointer capture (as ReorderList does). The target is the `.qcol[data-period]` under the pointer. Esc cancels. While dragging it sets `data-dragging` on the rail (no text selection), `data-lifted` on the source block (dashed placeholder) and `data-drop` on the target column. On release over another column it POSTs `/api/plan { bookId, from, to }` (2.3's `planMove` → `movePlan`: last in a quarter, no ordinal in the year), pushes the undo (`DELETE /api/plan`), and calls `router.refresh()`. Over its own column, or over no column, nothing is written. The click that follows a drag is swallowed, so the picker doesn't open. It also renders the ghost (fixed, `aria-hidden`, the block's painted height, title and words) and the always-present `output.dropdelta` (`aria-live="polite"`). A failed write says *Couldn't move it. Nothing was written.* in the output.
+3. `src/components/BlockPopover.tsx` (new): a hover popover for a block, gated the same way in JS (only on a mouse `pointerenter` with FINE matching) and in CSS. It shows the title, `~65k words` and, for an estimated count, *estimated*. It is `aria-hidden`, since the block's accessible name already says all three. It is hidden while dragging. It sits at the block's right, or flips left near the viewport edge.
+4. `src/components/PlanRail.tsx`: the column rail wires both in. Blocks get `onPointerDown`, `onPointerEnter` and `onPointerLeave`. Stacks are neither dragged nor hovered.
+5. `src/app/globals.css`: `.ghost` (−1.5°, `--sh-2`, 2px dashed `--brand` outline), `.qb[data-lifted]` (dashed placeholder), `.qcol[data-drop]` (dashed `--brand` outline on the stack), `.dropdelta`, `.bpop` (`--sh-2`, `--overlay`), all from tokens. `prefers-reduced-motion` gives the ghost no rotation and no transition. `.bpop` and `.ghost` show only under `(hover:hover) and (pointer:fine)`.
+
+**Files**: the five above, plus `test/e2e/plan-rail-drag.spec.ts` (new) and `test/plan-rail.test.ts`. All are in Files likely touched. No redraw: `planmonth` already draws the drag.
+
+**Test strategy**
+
+- AC-1: `test/e2e/plan-rail.spec.ts`, unchanged, re-run (CI, every project).
+- AC-2: drag-spec *dragging a Q1 block over Q3 shows the ghost and Q3's readout; release puts it last in Q3, Q1 closes up, Undo restores both*. It asserts the readout against the `plan_capacity` row for Q3 and against Q3's footer text, and the ordinals from `reading_plan`.
+- AC-3: drag-spec *dropped on the fifth lane it is a bare-year row with no ordinal* and *dropped back on its own quarter nothing is written and no sheet opens*.
+- AC-4: drag-spec *hovering names the block* (an estimated book and a stated one), plus a touch describe at 390px and at 834px (`hasTouch`, `isMobile`): a pointer drag starts no ghost, and a tap opens the Move sheet.
+- AC-5: drag-spec *the readout is aria-live*, *reduced motion drops the ghost's rotation*, *axe during a drag* and the screenshots at 1280px, light and dark.
+- `test/plan-rail.test.ts`: `dropReadout` for a quarter, over capacity, the lane, and its own period.
+
+**Risks**: `router.refresh()` races the undo (the same as MoveBody's). Touch emulation must make FINE false (w390-touch already relies on that).
 
 ## Review log
 

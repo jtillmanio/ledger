@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
+import { useBlockPopover } from "@/components/BlockPopover";
+import { useRailDrag } from "@/components/RailDrag";
 import RailLegend from "@/components/RailLegend";
 import type { PeriodCapacity } from "@/db/queries";
 import {
   COLUMN_WORDS, MIN_HIT, PHONE_COLUMN, STRIP_LENGTH, genreHue, kWords, labelFit, layoutColumn, layoutLane, railName,
   stackLabelParts, stackName,
-  type Fit, type RailBook, type RailItem, type RailStack,
+  type DropTarget, type Fit, type RailBook, type RailItem, type RailStack,
 } from "@/lib/plan-rail";
 
 /** On the strip, a block narrower than this share of it keeps its words to its name. */
@@ -18,6 +20,16 @@ const STACK_WORDS_PX = 56;
 // of either sheet until a block or a stack is pressed.
 const PlanPickerSheet = dynamic(() => import("@/components/PlanPicker"), { ssr: false });
 const RailStackSheet = dynamic(() => import("@/components/RailStackSheet"), { ssr: false });
+
+/** A column block's pointer routes on the desktop (task 2.10, 2 of 2): drag, hover, and which block is lifted. */
+type Pointer = {
+  down: (e: React.PointerEvent<HTMLElement>, book: RailBook) => void;
+  enter: (e: React.PointerEvent<HTMLElement>, book: RailBook) => void;
+  leave: () => void;
+  lifted: string | null;
+  /** False for the click a drag leaves behind. */
+  isClick: () => boolean;
+};
 
 /** What is open: the picker for one book, or the list of a stack's books. `key` names the control it came from. */
 type Open = { key: string; opener: HTMLElement; book?: RailBook; books?: RailBook[] };
@@ -41,6 +53,10 @@ const num = (n: number) => String(Math.round(n * 100_000) / 100_000);
  * it came from; if a move took that control away, to the same book where it now stands, else to the rail
  * itself, whose name carries the new summary. Nothing here sets a fill: a block's place and size are
  * custom properties (`--at`, `--sz`, `--ov`) and its hue `--hue` (Hard rule 6).
+ *
+ * On the column rail, with a mouse or a trackpad, a block can also be dragged to another quarter or the fifth lane
+ * (`useRailDrag`) and hovered for its name and words (`useBlockPopover`; task 2.10, 2 of 2, D-33). Touch and the
+ * keyboard keep the press to the picker. The strip has neither.
  */
 export default function PlanRail({ year, books, quarters, axis = "column", inHand = null, label }: {
   year: number;
@@ -53,7 +69,23 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
   label?: string;
 }) {
   const inPeriod = (period: string) => books.filter((b) => b.period === period);
+  const total = (list: RailBook[]) => list.reduce((n, b) => n + b.words, 0);
   const root = useRef<HTMLDivElement>(null);
+  const lane = inPeriod(String(year));
+  // What a drop would make of each column: a quarter's own `plannedWords` (its footer's figure), the lane's sum.
+  const targets: DropTarget[] = [
+    ...quarters.map((q) => ({ period: q.period, quarter: q.quarter, plannedWords: q.plannedWords, capacity: q.capacity })),
+    { period: String(year), quarter: null, plannedWords: total(lane), capacity: null },
+  ];
+  const drag = useRailDrag(root, targets);
+  const pop = useBlockPopover();
+  const lifted = drag.drag;
+  const pointer: Pointer = {
+    down: (e, book) => { pop.leave(); drag.onPointerDown(e, book); },
+    enter: pop.enter, leave: pop.leave, lifted: lifted?.book.id ?? null, isClick: drag.isClick,
+  };
+  /** The column a drag would land in, when it is not the book's own. */
+  const dropOn = (period: string) => (lifted && lifted.over === period && lifted.book.period !== period) || undefined;
   const [open, setOpen] = useState<Open | null>(null);
   /** The control the last sheet came from, until focus is settled or REFOCUS_MS has passed. */
   const back = useRef<string | null>(null);
@@ -111,8 +143,6 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
   }
 
   const columns = quarters.map((cap) => ({ cap, books: inPeriod(cap.period) }));
-  const lane = inPeriod(String(year));
-  const total = (list: RailBook[]) => list.reduce((n, b) => n + b.words, 0);
   // 1000k fills a column, always: the rule never moves for what a plan holds, and books past the top of a
   // column or the lane fold into one +N more button there (layoutColumn).
   const scale = COLUMN_WORDS;
@@ -120,15 +150,17 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
 
   return (
     <>
-    <div ref={root} tabIndex={-1} className="planrail" role="group" aria-label={`Plan ${year}`} style={{ "--cap": num(Math.min(1, capacity / scale)) } as CSSProperties}>
+    {drag.layer}
+    {!lifted && pop.popover}
+    <div ref={root} tabIndex={-1} className="planrail" role="group" data-dragging={lifted ? true : undefined} aria-label={`Plan ${year}`} style={{ "--cap": num(Math.min(1, capacity / scale)) } as CSSProperties}>
       {columns.map(({ cap, books: list }) => {
         const items = layoutColumn(list, { length: PHONE_COLUMN, scale, capacity: cap.capacity });
         const over = cap.plannedWords - cap.capacity;
         return (
-          <div key={cap.period} className="qcol" data-period={cap.period}>
+          <div key={cap.period} className="qcol" data-period={cap.period} data-drop={dropOn(cap.period)}>
             <div className="qstack">
               {items.map((item) => (
-                <Item key={itemKey(item)} item={item} length={PHONE_COLUMN} axis="column" inHand={inHand} onPress={press} />
+                <Item key={itemKey(item)} item={item} length={PHONE_COLUMN} axis="column" inHand={inHand} onPress={press} pointer={pointer} />
               ))}
             </div>
             <div className="qfoot">
@@ -149,10 +181,10 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
           </div>
         );
       })}
-      <div className="qcol nq" data-period={String(year)}>
+      <div className="qcol nq" data-period={String(year)} data-drop={dropOn(String(year))}>
         <div className="qstack">
           {layoutLane(lane, { length: PHONE_COLUMN, scale }).map((item) => (
-            <Item key={itemKey(item)} item={item} length={PHONE_COLUMN} axis="column" lane inHand={inHand} onPress={press} />
+            <Item key={itemKey(item)} item={item} length={PHONE_COLUMN} axis="column" lane inHand={inHand} onPress={press} pointer={pointer} />
           ))}
         </div>
         <div className="qfoot">
@@ -184,8 +216,10 @@ const cls = (...names: (string | false)[]) => names.filter(Boolean).join(" ");
 const itemKey = (item: RailItem) => (item.kind === "block" ? item.book.id : `stack-${item.books[0].id}`);
 
 /** One block or stack, placed along its column by custom properties alone. */
-function Item({ item, length, axis, lane = false, inHand, onPress }: {
+function Item({ item, length, axis, lane = false, inHand, onPress, pointer }: {
   item: RailItem; length: number; axis: "column" | "row"; lane?: boolean; inHand: string | null;
+  /** The column rail's drag and hover; the strip passes none. */
+  pointer?: Pointer;
   /** A press: the control's key (a book id, or `stack-<first id>`), the control, and what it opens. */
   onPress: (key: string, opener: HTMLElement, what: Pick<Open, "book" | "books">) => void;
 }) {
@@ -230,7 +264,11 @@ function Item({ item, length, axis, lane = false, inHand, onPress }: {
     <button type="button" className={classes} data-book={book.id} data-wc={book.estimated ? "estimated" : undefined}
       data-state={state} aria-label={railName(book)} data-p={phone || undefined} data-d={desk || undefined}
       style={{ ...place, "--hue": `var(${genreHue(book.genre)})` } as CSSProperties}
-      onClick={(e) => onPress(book.id, e.currentTarget, { book })}>
+      data-lifted={pointer?.lifted === book.id || undefined}
+      onPointerDown={pointer && ((e) => pointer.down(e, book))}
+      onPointerEnter={pointer && ((e) => pointer.enter(e, book))}
+      onPointerLeave={pointer?.leave}
+      onClick={(e) => { if (!pointer || pointer.isClick()) onPress(book.id, e.currentTarget, { book }); }}>
       {body}
       {(phone > 0 || desk > 0) && (
         <>
