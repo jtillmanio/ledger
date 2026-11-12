@@ -130,6 +130,11 @@ jobs:
           git fetch --quiet --no-tags --depth 1 origin "$VIEWS_COMMIT"
           git show "$VIEWS_COMMIT:etl/views.sql" > "$RUNNER_TEMP/views.sql"
           git show "$VIEWS_COMMIT:etl/test_views.sql" > "$RUNNER_TEMP/test_views.sql"
+          git show "$VIEWS_COMMIT:drizzle/meta/_journal.json" > "$RUNNER_TEMP/journal.json"
+
+      # For scripts/backup-skew.mjs, which needs no packages, so no npm ci.
+      - uses: actions/setup-node@v7
+        with: { node-version-file: .nvmrc }
 
       # The restore drill (START-HERE 10d): load the dump into the restore server,
       # re-apply production's views, run the SQL tests CI ran on that commit, and
@@ -146,8 +151,21 @@ jobs:
           echo "Restoring $KEY"
           # stdout is only the dump's setval() results; errors still reach the log.
           gzip -dc "$DUMP" | PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q > /dev/null
+          # The app and the database move separately (a rebuild moves only the
+          # database, a Release the app): when the dump's migrations are not the
+          # serving commit's, its views cannot go on, and this says which way
+          # round and what to run, not psql's "cannot drop columns from view".
+          if [ "$(psql "$db" -tAc "SELECT to_regclass('drizzle.__drizzle_migrations') IS NOT NULL")" = t ]; then
+            psql "$db" -tAc "SELECT created_at FROM drizzle.__drizzle_migrations" \
+              | node scripts/backup-skew.mjs "$VIEWS_COMMIT" "$RUNNER_TEMP/journal.json"
+          else
+            echo "::warning::The dump has no drizzle.__drizzle_migrations, so its migrations were not compared with ${VIEWS_COMMIT:0:7}'s."
+          fi
           # A dump taken between a schema change and its views carries the old views.
-          PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q -f "$RUNNER_TEMP/views.sql"
+          PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q -f "$RUNNER_TEMP/views.sql" || {
+            echo "::error::${VIEWS_COMMIT:0:7}'s etl/views.sql did not apply to the restored dump (psql's error is above). The migrations agree, so the database's views came from another commit: a rebuild or db:views from a commit production does not serve. Run Release from main with Dry run unticked (START-HERE Step 13), then run this workflow again." >&2
+            exit 1
+          }
           PGOPTIONS="$quiet" psql "$db" -v ON_ERROR_STOP=1 -q -f "$RUNNER_TEMP/test_views.sql"
 
           # Every table the dump holds, plus the labels with characters a bad

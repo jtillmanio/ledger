@@ -1,7 +1,10 @@
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  alreadyProduction, carriedPreview, carriedPreviewStatus, deploymentNeedsBuild, directUrl, ignoredBuildStep, needsBuild, pendingMigrations, promoteProblem, refProblem, releaseProblems, smokeProblem,
+  alreadyProduction, backupSkewProblem, carriedPreview, carriedPreviewStatus, deploymentNeedsBuild, directUrl, dryRunNotice, ignoredBuildStep, needsBuild, pendingMigrations, promoteProblem, refProblem, releaseProblems, smokeProblem,
   snapshotsToPrune, vercelRepoUrl,
 } from "../scripts/lib/release.mjs";
 
@@ -299,6 +302,81 @@ describe("pendingMigrations (drizzle-kit migrate's rule)", () => {
 
   it("reports a database ahead of the code", () => {
     expect(pendingMigrations(journal, [300, 400, 500, 600]).unknown).toEqual([600]);
+  });
+});
+
+describe("backupSkewProblem (the nightly backup's restore check)", () => {
+  const commit = "bba27cdb4afed7a18092f955440db9c44ed7f935";
+  // bba27cd's journal ended at 0018; production's database had been rebuilt through 0021 (2026-11-04).
+  const journal = [{ tag: "0017_a", when: 1700 }, { tag: "0018_hardcover_cache", when: 1800 }];
+
+  it("says nothing when the dump's migrations are the serving commit's", () => {
+    expect(backupSkewProblem({ commit, entries: journal, applied: ["1700", "1800"] })).toBeNull();
+  });
+
+  it("names a database ahead of its app, and Release with Dry run unticked as the way out", () => {
+    const problem = backupSkewProblem({ commit, entries: journal, applied: ["1700", "1800", "1900", "2000", "2100"] });
+    expect(problem).toMatch(/database is ahead of its app: it holds 3 migration\(s\) that bba27cd/);
+    expect(problem).toMatch(/Run Release from main with Dry run unticked/);
+  });
+
+  it("names a database behind its app, and the migrations it lacks", () => {
+    const problem = backupSkewProblem({ commit, entries: journal, applied: ["1700"] });
+    expect(problem).toMatch(/database is behind its app: bba27cd.*1 migration\(s\).*\(0018_hardcover_cache\)/);
+    expect(problem).toMatch(/npm run rebuild -- -EnvFile \.env\.live/);
+  });
+});
+
+describe("scripts/backup-skew.mjs", () => {
+  const dir = mkdtempSync(join(tmpdir(), "backup-skew-"));
+  const journal = join(dir, "journal.json");
+  writeFileSync(journal, JSON.stringify({ entries: [{ tag: "0017_a", when: 1700 }, { tag: "0018_b", when: 1800 }] }));
+  const run = (stdin: string) => spawnSync(process.execPath, ["scripts/backup-skew.mjs", "bba27cdb4afed7a1", journal], { input: stdin, encoding: "utf8" });
+
+  it("passes a dump whose migrations match, psql's -tA output as it comes", () => {
+    const r = run("1700\n1800\n");
+    expect(r.status).toBe(0);
+    expect(r.stdout).toMatch(/match bba27cd's journal/);
+  });
+
+  it("fails a dump ahead of the serving commit with a ::error:: annotation", () => {
+    const r = run("1700\n1800\n1900\n");
+    expect(r.status).toBe(1);
+    expect(r.stdout).toMatch(/^::error title=Production's app and database disagree::Production's database is ahead/m);
+  });
+});
+
+describe("backup.yml", () => {
+  const backup = readFileSync(".github/workflows/backup.yml", "utf8");
+
+  it("compares the dump's migrations with the serving commit's journal after the restore, before the views", () => {
+    const restore = backup.indexOf('gzip -dc "$DUMP" | PGOPTIONS');
+    const skew = backup.indexOf('node scripts/backup-skew.mjs "$VIEWS_COMMIT" "$RUNNER_TEMP/journal.json"');
+    const views = backup.indexOf('-f "$RUNNER_TEMP/views.sql"');
+    expect(restore).toBeGreaterThan(-1);
+    expect(skew).toBeGreaterThan(restore);
+    expect(views).toBeGreaterThan(skew);
+    expect(backup).toContain('git show "$VIEWS_COMMIT:drizzle/meta/_journal.json" > "$RUNNER_TEMP/journal.json"');
+  });
+
+  it("explains a views failure the migrations did not predict", () => {
+    expect(backup).toMatch(/-f "\$RUNNER_TEMP\/views\.sql" \|\| \{\n\s+echo "::error::.*Run Release from main with Dry run unticked/);
+  });
+});
+
+describe("dryRunNotice (Release's summary)", () => {
+  const target = { sha: "391e5061234567" };
+
+  it("tells a dry run that would have released that nothing was released, and how to release", () => {
+    expect(dryRunNotice({ dryRun: true, target, problems: [] }))
+      .toBe("Dry run: nothing was released, and production serves what it served before. " +
+        "To release 391e506, run Release again from main with Dry run unticked.");
+  });
+
+  it("says nothing on a real release, a refused run, or with no build", () => {
+    expect(dryRunNotice({ dryRun: false, target, problems: [] })).toBeNull();
+    expect(dryRunNotice({ dryRun: true, target, problems: ["CI has not run on 391e506."] })).toBeNull();
+    expect(dryRunNotice({ dryRun: true, target: null, problems: [] })).toBeNull();
   });
 });
 
