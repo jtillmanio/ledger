@@ -135,6 +135,29 @@ describe("the open quarter and the summary rows (AC-3)", () => {
   });
 });
 
+describe("a row names the author, the universe, then the series and number (task 2.2j, D-134)", () => {
+  beforeEach(async () => {
+    // truncateAll leaves the universes, and truncating them cascades to the books: clear them first.
+    await sql`TRUNCATE book_universes CASCADE`;
+    await seed(MIXED);
+    await sql`INSERT INTO book_universes (id, name) VALUES ('un', 'Fixture Universe')`;
+    await sql`UPDATE books SET universe_id = 'un' WHERE id = 'z'`;
+  });
+
+  it("planRows returns the universe's name, null for a book in none", async () => {
+    const rows = await q.planRows(USER, 2027);
+    expect(rows.find((r) => r.id === "z")?.universe).toBe("Fixture Universe");
+    expect(rows.find((r) => r.id === "m")?.universe).toBeNull();
+    expect(rows).toHaveLength(new Set(rows.map((r) => r.id + r.period)).size);
+  });
+
+  it("the open quarter's row reads the same line the dashboard does", async () => {
+    const { doc } = await page();
+    expect(doc.querySelector('.plan-row[data-book="z"] .row-sub')?.textContent)
+      .toBe("Ursula Fixture · Fixture Universe · The Fixture Cycle #2");
+  });
+});
+
 describe("one empty state, not one per empty quarter (AC-4)", () => {
   beforeEach(() => seed(Q1_ONLY));
 

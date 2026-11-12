@@ -2355,7 +2355,7 @@ rendered at 768px or wider. Each item measures at least 44px tall, and axe
 passes. 0.10's CLS budget holds on `/books/list` and `/comics`. Screenshots at
 360px and 412px, light and dark.
 
-### ☐ 2.2j The universe and series on a book's row · S
+### ☑ 2.2j The universe and series on a book's row · S
 Owner intake, 2026-11-09 (owner: *on deck shows the series or sub series or
 super series (smartly picked, whichever makes sense)*; asked, the owner chose
 the universe, then the series, and the same line on Up next, the status tabs,
@@ -2416,6 +2416,33 @@ no card is clipped by the page. The same at 768px with seven. axe passes and
 nothing resolves to `--danger`.
 
 *(Check proposed by TASK-051; the owner agrees it by merging, or edits it.)*
+
+### ☐ 2.2l The universe and series on Add books' search results and the plan sheet · M
+*Noticed by TASK-062 (2.2j); owner's call at its plan gate, 2026-11-12: left out of 2.2j. The plan sheet was added at its close-out, the same day.*
+
+Add books' search results (`src/components/BookSearch.tsx`) build their own
+second line, *author · series #n · pages*, so a library hit there doesn't name
+its universe, and it is the one builder of a book's line outside `bookSub`
+(2.2j's source scan exempts it by name). A library hit should read *author ·
+universe · series #n*, as every other books row does (D-134), followed by its
+pages. A Hardcover hit has no universe to name. Depends on 2.2j; `librarySearch`
+adds the universe's name as 2.2j's queries do. The plan sheet
+(`src/components/PlanPicker.tsx`, 2.3) names the book it moves in its header,
+*author · words*; the 2026-11-09 intake asked for the same line on the plan
+sheet, and 2.2j left it, so it reads *author · universe · series #n* there
+too, followed by its words.
+
+**Check:** `npm test`: given a book by Brandon Sanderson in universe *Cosmere*,
+series *Mistborn* at 4, with `page_count` 330, its library hit has the line
+*Brandon Sanderson · Cosmere · Mistborn #4 · 330 pages*, built from
+`bookSub` and followed by its pages; a hit with no universe reads as it does
+today; a Hardcover hit is unchanged. 2.2j's source scan no longer exempts
+`BookSearch.tsx`. The plan sheet's header for that book reads *Brandon
+Sanderson · Cosmere · Mistborn #4* followed by its words. In the browser (0.11)
+a long series name wraps at 360px in both, with no horizontal scroll, and axe
+passes.
+
+*(Check proposed by TASK-062; the owner agrees it by merging, or edits it.)*
 
 ### ☑ 2.3 Plan editor · M
 Depends on 1.7 and 2.1.

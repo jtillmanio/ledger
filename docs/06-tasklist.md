@@ -370,8 +370,9 @@ with the task that first reads it.
 | ✅ | 2.2g → TASK-056 | Where the book sits, in Now | M |  | 2.2, 2.2h |
 | ✅ | 2.2h → TASK-055 | Finishing a book follows it | M |  | 2.2c |
 | ✅ | 2.2i → TASK-052 | Every screen from a phone: the tab row | M |  | 1.8 |
-|  | 2.2j → TASK-062 | The universe and series on a book's row | S | _Pulled ahead of 1.26 (D-139)_ | 2.2 |
+| ✅ | 2.2j → TASK-062 | The universe and series on a book's row | S | _Pulled ahead of 1.26 (D-139)_ | 2.2 |
 |  | 2.2k | The books page scrolls sideways with a full Up next shelf | S | _Pulled ahead of 1.26 (D-139)_ | 2.2 |
+|  | 2.2l | The universe and series on Add books' search results and the plan sheet | M |  | 2.2j |
 
 ## M11: Editing the plan — Next
 

@@ -173,6 +173,52 @@ describe("On deck", () => {
   });
 });
 
+describe("The book's place: universe, series and number (task 2.2j, D-134)", () => {
+  // truncateAll leaves the universes (and series are cleared by the books' cascade).
+  beforeEach(async () => {
+    await sql`TRUNCATE book_universes CASCADE`;
+    await sql`INSERT INTO book_universes (id, name) VALUES ('cosmere', 'Cosmere')`;
+    await sql`INSERT INTO book_series (id, name, author_id) VALUES ('mistborn', 'Mistborn', 'a')`;
+    await books({ id: "alloy", author: "a" }, { id: "plain", author: "b" }, { id: "series-only", author: "c" });
+    await sql`UPDATE books SET series_id = 'mistborn', series_position = 4, universe_id = 'cosmere' WHERE id = 'alloy'`;
+    await sql`UPDATE books SET series_id = 'mistborn', series_position = 1 WHERE id = 'series-only'`;
+    for (const id of ["alloy", "plain", "series-only"]) await status(id, "to_read");
+  });
+
+  const place = (b: { universe: string | null; series: string | null; series_position: number | null }) =>
+    [b.universe, b.series, b.series_position];
+
+  it("onDeck returns each book's universe name, series and position; null where it has none", async () => {
+    for (const id of ["alloy", "plain", "series-only"]) await plan(id, "on_deck", null);
+    const rows = (await q.onDeck(USER, 10)).rows;
+    expect(Object.fromEntries(rows.map((b) => [b.id, place(b)]))).toEqual({
+      alloy: ["Cosmere", "Mistborn", 4],
+      plain: [null, null, null],
+      "series-only": [null, "Mistborn", 1],
+    });
+  });
+
+  it("quarterShelf returns the same three fields for the quarter's books", async () => {
+    await plan("alloy", "2026-Q4", 1);
+    await plan("plain", "2026-Q4", 2);
+    await plan("series-only", "2026-Q4", 3);
+    const rows = await q.quarterShelf(USER, "2026-Q4");
+    expect(rows.map((b) => [b.id, ...place(b)])).toEqual([
+      ["alloy", "Cosmere", "Mistborn", 4],
+      ["plain", null, null, null],
+      ["series-only", null, "Mistborn", 1],
+    ]);
+  });
+
+  it("one row per book: a universe join never doubles a row", async () => {
+    await plan("alloy", "on_deck", null);
+    await plan("plain", "on_deck", null);
+    const deck = await q.onDeck(USER, 10);
+    expect(deck.rows).toHaveLength(2);
+    expect(deck.total).toBe(2);
+  });
+});
+
 describe("Between books: the last finish (AC-1)", () => {
   it("is the latest dated read, with its start and the days it took", async () => {
     await books({ id: "old", pages: 100 }, { id: "new", pages: 245 }, { id: "undated" });
