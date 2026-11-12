@@ -496,7 +496,10 @@ export async function trackSummary(userId: string) {
 
 export type BookRow = {
   id: string; title: string; author: string | null; series: string | null;
-  series_position: number | null; genre: string | null; word_count: number | null;
+  series_position: number | null;
+  /** Its universe's name (task 2.2j, D-134); null when it is in none. */
+  universe: string | null;
+  genre: string | null; word_count: number | null;
   /** `estimated` is pages × words per page, shown with a `~` (task 2.2b). */
   word_count_source: "stated" | "estimated" | null;
   status: string;
@@ -537,7 +540,7 @@ export async function listBooks(
   const q = opts.q?.trim() || null;
   const { sort, dir } = parseSort(opts.sort, opts.dir);
   return sql<WithTotal<BookRow>[]>`
-    SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position,
+    SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe,
            b.genre, b.word_count, b.word_count_source, b.cover_url,
            (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
            COALESCE(st.status, 'to_read') AS status,
@@ -559,6 +562,7 @@ export async function listBooks(
     FROM books b
     LEFT JOIN authors a      ON a.id = b.author_id
     LEFT JOIN book_series s  ON s.id = b.series_id
+    LEFT JOIN book_universes u ON u.id = b.universe_id
     LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
     -- Plan order reads where a to-read book sits, from the view, never by parsing the period (D-37).
     -- Joined for that sort only: any other, the parameter makes the join match nothing.
@@ -648,7 +652,10 @@ export type ToReadLevel = (typeof TO_READ_LEVELS)[number];
 /** A book on a status tab (task 1.9). `listened`: it has an `audio` read in the log (task 1.23), for the glyph. */
 export type StatusBook = {
   id: string; title: string; author: string | null; series: string | null;
-  series_position: number | null; word_count: number | null; listened: boolean;
+  series_position: number | null;
+  /** Its universe's name (task 2.2j, D-134); null when it is in none. */
+  universe: string | null;
+  word_count: number | null; listened: boolean;
 };
 
 /** A book *In flight*: `status` says which group, Reading or Listening (task 1.23). The start is the
@@ -661,13 +668,14 @@ export type FlyingBook = StatusBook & {
  * ear (task 1.23). No reading position is stored, so the row shows the word count. */
 export async function booksInFlight(userId: string) {
   return sql<FlyingBook[]>`
-    SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, b.word_count,
+    SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe, b.word_count,
            st.status, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened,
            st.started_on::text AS started_on, st.started_on_precision
     FROM book_status st
     JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
     LEFT JOIN authors a     ON a.id = b.author_id
     LEFT JOIN book_series s ON s.id = b.series_id
+    LEFT JOIN book_universes u ON u.id = b.universe_id
     WHERE st.user_id = ${userId} AND st.status IN ('reading', 'listening')
     ORDER BY (st.status = 'listening'), b.title, b.id
   `;
@@ -690,13 +698,14 @@ export type PlannedBook = StatusBook & {
 export async function booksUpNext(userId: string) {
   const [planned, [someday]] = await Promise.all([
     sql<PlannedBook[]>`
-      SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, b.word_count,
+      SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe, b.word_count,
              pp.period, pp.level, pp.year, pp.quarter, pp.ordinal, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened
       FROM plan_period pp
       JOIN book_status st ON st.book_id = pp.book_id AND st.user_id = pp.user_id AND st.status = 'to_read'
       JOIN books b ON b.id = pp.book_id AND b.deleted_at IS NULL
       LEFT JOIN authors a     ON a.id = b.author_id
       LEFT JOIN book_series s ON s.id = b.series_id
+      LEFT JOIN book_universes u ON u.id = b.universe_id
       WHERE pp.user_id = ${userId}
       ORDER BY (pp.level = 'on_deck'), pp.year, pp.quarter NULLS LAST, pp.ordinal, b.title, b.id
     `,
@@ -721,7 +730,7 @@ export type DoneBook = StatusBook & {
  */
 export async function booksDone(userId: string) {
   return sql<DoneBook[]>`
-    SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, b.word_count,
+    SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe, b.word_count,
            st.status, extract(year FROM st.finished_on)::int AS year, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened,
            st.finished_on::text AS finished_on, st.finished_on_precision,
            -- The start shown (task 1.17): the read in progress's, or once Read the
@@ -737,6 +746,7 @@ export async function booksDone(userId: string) {
     JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
     LEFT JOIN authors a     ON a.id = b.author_id
     LEFT JOIN book_series s ON s.id = b.series_id
+    LEFT JOIN book_universes u ON u.id = b.universe_id
     -- A Read book's latest read: its start and days taken (task 1.17).
     LEFT JOIN LATERAL (
       SELECT e.started_on, e.started_on_precision, e.finished_on, e.finished_on_precision
@@ -1332,17 +1342,22 @@ export async function booksInHand(userId: string) {
 export type ShelfBook = {
   id: string; title: string; author: string | null; pages: number | null; words: number | null;
   cover_url: string | null; ordinal: number | null;
+  /** Where it belongs, for the row's second line (`bookSub`; task 2.2j, D-134). */
+  series: string | null; series_position: number | null; universe: string | null;
 };
 
 /** *Up next in Qn* (task 2.2, D-37): the quarter's books still `to_read`, in your order. The
  * first is *Between books*' offer, so a read one is skipped. `period` is `2026-Q4`. */
 export async function quarterShelf(userId: string, period: string) {
   return sql<ShelfBook[]>`
-    SELECT b.id, b.title, a.name AS author, b.page_count AS pages, b.word_count AS words, b.cover_url, pp.ordinal
+    SELECT b.id, b.title, a.name AS author, b.page_count AS pages, b.word_count AS words, b.cover_url, pp.ordinal,
+           s.name AS series, b.series_position, u.name AS universe
     FROM plan_period pp
     JOIN book_status st ON st.user_id = pp.user_id AND st.book_id = pp.book_id AND st.status = 'to_read'
     JOIN books b ON b.id = pp.book_id
     LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_series s ON s.id = b.series_id
+    LEFT JOIN book_universes u ON u.id = b.universe_id
     WHERE pp.user_id = ${userId} AND pp.period = ${period}
     ORDER BY pp.ordinal, b.title, b.id
   `;
@@ -1393,6 +1408,8 @@ export async function planRail(userId: string, year: number): Promise<RailBook[]
 /** One planned book as the plan page lists it under its quarter (task 2.10). */
 export type PlanRow = {
   id: string; title: string; author: string | null; series: string | null; seriesPosition: number | null;
+  /** Its universe's name (task 2.2j, D-134); null when it is in none. */
+  universe: string | null;
   /** Null when the book has no word count and no plausible page count: it counts in `books`, in no word total. */
   words: number | null;
   /** The count rests on an estimate (pages at your words per page), not a stated one. */
@@ -1413,12 +1430,14 @@ export type PlanRow = {
 export async function planRows(userId: string, year: number): Promise<PlanRow[]> {
   return sql<PlanRow[]>`
     SELECT w.book_id AS id, b.title, a.name AS author, s.name AS series, b.series_position AS "seriesPosition",
+           u.name AS universe,
            w.words, w.word_source = 'estimated' AS estimated, b.genre, w.period, p.ordinal
     FROM plan_book_words w
     JOIN books b ON b.id = w.book_id AND b.deleted_at IS NULL
     JOIN reading_plan p ON p.user_id = w.user_id AND p.book_id = w.book_id AND p.period = w.period
     LEFT JOIN authors a ON a.id = b.author_id
     LEFT JOIN book_series s ON s.id = b.series_id
+    LEFT JOIN book_universes u ON u.id = b.universe_id
     WHERE w.user_id = ${userId} AND w.year = ${year} AND w.quarter IS NOT NULL
     ORDER BY w.period, p.ordinal, b.title, b.id
   `;
@@ -1428,10 +1447,12 @@ export async function planRows(userId: string, year: number): Promise<PlanRow[]>
 export async function onDeck(userId: string, limit: number): Promise<{ rows: ShelfBook[]; total: number }> {
   const rows = await sql<(ShelfBook & { total: number })[]>`
     SELECT b.id, b.title, a.name AS author, b.page_count AS pages, b.word_count AS words, b.cover_url,
-           NULL::int AS ordinal, COUNT(*) OVER ()::int AS total
+           NULL::int AS ordinal, s.name AS series, b.series_position, u.name AS universe, COUNT(*) OVER ()::int AS total
     FROM to_read_level l
     JOIN books b ON b.id = l.book_id
     LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_series s ON s.id = b.series_id
+    LEFT JOIN book_universes u ON u.id = b.universe_id
     WHERE l.user_id = ${userId} AND l.level = 'on_deck'
     ORDER BY b.title, b.id
     LIMIT ${limit}

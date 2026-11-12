@@ -105,9 +105,28 @@ export function wordsK(words: number | null): string | null {
   return words ? `${Math.round(words / 1000)}k` : null;
 }
 
-/** A book's second line on a status tab: author, then its series and place (task 1.9). */
-export function bookSub(b: { author: string | null; series: string | null; series_position: number | null }): string {
-  return [b.author, b.series && `${b.series}${b.series_position ? ` #${b.series_position}` : ""}`].filter(Boolean).join(" · ");
+/**
+ * Where a book belongs, as its row's second line says it (task 2.2j, D-134): the universe (D-90,
+ * Calibre's superseries), then the series and `#position`: *Cosmere · Mistborn #4*. No universe, the
+ * series alone (*Robot #2*); no series, the universe alone and unnumbered (*First Law World*); neither,
+ * `""`. A series with no position drops the `#` (only a missing position does: a `0` prints `#0`), and a
+ * whole-number position prints without a decimal (`#4`, not `#4.0`). The universe is dropped when the
+ * series name already contains it, case-insensitively (*Magic Tree House #3*). The subseries is not on
+ * this line (2.2g draws it in Now). The one builder of the line: every books screen reads it here.
+ */
+export function bookPlace(b: { universe: string | null; series: string | null; series_position: number | null }): string {
+  const { universe, series } = b;
+  if (!series) return universe ?? "";
+  const numbered = b.series_position == null ? series : `${series} #${Number(b.series_position)}`;
+  if (!universe || series.toLowerCase().includes(universe.toLowerCase())) return numbered;
+  return `${universe} · ${numbered}`;
+}
+
+/** A book's second line on every books screen: the author, then where it belongs (`bookPlace`; tasks 1.9, 2.2j). */
+export function bookSub(
+  b: { author: string | null; universe: string | null; series: string | null; series_position: number | null },
+): string {
+  return [b.author, bookPlace(b)].filter(Boolean).join(" · ");
 }
 
 /** A plan quarter as people say it: `2027-Q1` is `Q1 2027`. The period is the database's; this only reads it for display. */

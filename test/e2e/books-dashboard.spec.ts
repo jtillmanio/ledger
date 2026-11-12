@@ -499,8 +499,12 @@ test.describe("reading", () => {
   });
 
   test("the loading state is the loaded geometry in --sunk (AC-5)", ONCE, async ({ page }) => {
+    // Task 2.2j: a card now carries the author's line, which the skeleton draws as one bar. Give the
+    // shelf's books an author (a place of one line) so the loaded card is the skeleton's height.
+    await withSql((sql) => sql`UPDATE books SET author_id = 'e2e-dash-a1' WHERE id IN ('e2e-dash-1', 'e2e-dash-3')`);
     await page.setViewportSize({ width: 360, height: 780 });
     await open(page);
+    await expect(page.locator(".shelf .card-sub").first()).toBeVisible();
     const measure = (selector: string) => page.locator(selector).evaluateAll((els) =>
       els.map((el) => { const r = el.getBoundingClientRect(); return { width: Math.round(r.width), height: Math.round(r.height) }; }));
     const parts = [".now-hero", ".shelf .card", ".qcard"];
@@ -810,6 +814,118 @@ test.describe("where the book sits (2.2g)", () => {
   });
 });
 
+// Task 2.2j (D-134, F-75): the author, then the universe, then the series and number, on every
+// books row. The same line on On deck, *Up next*, the status tab and the Library.
+const COVENANT = "The Chronicles of Thomas Covenant the Unbeliever";
+const ALLOY = "The Alloy of Law";
+const ALLOY_LINE = "Brandon Sanderson · Cosmere · Mistborn #4";
+const COVENANT_LINE = `Stephen R. Donaldson · ${COVENANT} #1`;
+const COVENANT_BOOK = "E2E Place Lord Foul's Bane";
+
+/**
+ * On top of `seed({ reading: true })`: *The Alloy of Law* (Brandon Sanderson, Cosmere, Mistborn #4)
+ * On deck, and *Lord Foul's Bane* (Stephen R. Donaldson, in a series with a long name and no
+ * universe) On deck. The four filler On deck books go, so both are among the dashboard's three rows.
+ */
+async function seedPlace() {
+  await withSql(async (sql) => {
+    await sql`DELETE FROM books WHERE id LIKE 'e2e-dash-deck-%'`;
+    await sql`INSERT INTO authors (id, name) VALUES ('e2e-dash-place-au', 'Brandon Sanderson'), ('e2e-dash-place-sd', 'Stephen R. Donaldson')`;
+    await sql`INSERT INTO book_universes (id, name) VALUES ('e2e-dash-place-uni', 'Cosmere')`;
+    await sql`INSERT INTO book_series (id, name, author_id) VALUES
+              ('e2e-dash-place-mist', 'Mistborn', 'e2e-dash-place-au'), ('e2e-dash-place-cov', ${COVENANT}, 'e2e-dash-place-sd')`;
+    await sql`INSERT INTO books (id, title, author_id, series_id, series_position, universe_id, page_count, word_count, word_count_source) VALUES
+              ('e2e-dash-place-alloy', ${ALLOY}, 'e2e-dash-place-au', 'e2e-dash-place-mist', 4, 'e2e-dash-place-uni', 330, 100000, 'stated'),
+              ('e2e-dash-place-cov1', ${COVENANT_BOOK}, 'e2e-dash-place-sd', 'e2e-dash-place-cov', 1, NULL, 400, 130000, 'stated')`;
+    for (const id of ["e2e-dash-place-alloy", "e2e-dash-place-cov1"]) {
+      await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${id}, 'to_read')`;
+      await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${E2E_USER}, ${id}, 'on_deck', NULL)`;
+    }
+  });
+}
+
+/** The Alloy and Lord Foul's Bane into the quarter, after the fixture's three: they are *Up next* cards. */
+const planPlace = () => withSql(async (sql) => {
+  await sql`UPDATE reading_plan SET period = ${PERIOD}, ordinal = CASE book_id WHEN 'e2e-dash-place-alloy' THEN 4 ELSE 5 END
+            WHERE user_id = ${E2E_USER} AND book_id IN ('e2e-dash-place-alloy', 'e2e-dash-place-cov1')`;
+});
+
+test.describe("the book's place on its row (2.2j)", () => {
+  test.beforeEach(async () => {
+    await seed({ reading: true });
+    await seedPlace();
+  });
+
+  const deckLine = (page: Page, title: string) => page.locator(".deck-row", { hasText: title }).locator(".row-sub");
+  const cardLine = (page: Page, title: string) => page.locator('[data-slot="next"] .card', { hasText: title }).locator(".card-sub");
+
+  test("On deck and Up next read Author · Universe · Series #n, and the floor holds (AC-1, AC-5)", async ({ page }, info) => {
+    await open(page);
+    await expect(deckLine(page, ALLOY)).toHaveText(ALLOY_LINE);
+    await expect(deckLine(page, COVENANT_BOOK)).toHaveText(COVENANT_LINE);
+    await floor(page);
+    await screenshot(page, info, "2.2j-books-on-deck");
+
+    await planPlace();
+    await open(page);
+    await expect(cardLine(page, ALLOY)).toHaveText(ALLOY_LINE);
+    await expect(cardLine(page, COVENANT_BOOK)).toHaveText(COVENANT_LINE);
+    await floor(page);
+    await screenshot(page, info, "2.2j-books-up-next");
+  });
+
+  test("the same book reads the same line on its status tab and in the Library (AC-1)", ONCE, async ({ page }) => {
+    await page.goto("/books/status?tab=next");
+    await expect(page.locator(".row-sub", { hasText: "Mistborn" })).toHaveText(ALLOY_LINE);
+    await expectNoHorizontalScroll(page);
+    await expectNoAxeViolations(page, AXE);
+
+    await page.goto("/books/list?q=Alloy");
+    // The Library appends the genre when the book has one; this one has none.
+    await expect(page.locator(".row-sub", { hasText: "Mistborn" })).toHaveText(ALLOY_LINE);
+    await expectNoHorizontalScroll(page);
+    await expectNoAxeViolations(page, AXE);
+  });
+
+  test("a long series name wraps in full at 360px on every screen: no ellipsis, no sideways scroll (AC-4)", ONCE, async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    const wraps = async (where: string, line: ReturnType<Page["locator"]>) => {
+      // Visible first: a streamed page holds its content in a hidden node until it swaps in.
+      await expect(line).toBeVisible();
+      await expect(line).toHaveText(COVENANT_LINE);
+      const m = await line.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return {
+          overflow: cs.textOverflow, nowrap: cs.whiteSpace === "nowrap", clipped: el.scrollWidth > el.clientWidth + 1,
+          // `normal` has no number: a line is then about 1.3 × the font size.
+          lines: el.getBoundingClientRect().height / (parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.3),
+        };
+      });
+      expect(m.overflow, `${where}: no ellipsis`).not.toBe("ellipsis");
+      expect(m.nowrap, `${where}: it may wrap`).toBe(false);
+      expect(m.clipped, `${where}: nothing cut off sideways`).toBe(false);
+      expect(m.lines, `${where}: it wraps to more than one line`).toBeGreaterThan(1.5);
+      await expectNoHorizontalScroll(page);
+    };
+    await open(page);
+    await wraps("On deck", deckLine(page, COVENANT_BOOK));
+    await planPlace();
+    await open(page);
+    await wraps("Up next", cardLine(page, COVENANT_BOOK));
+    await page.goto("/books/status?tab=next");
+    await wraps("status tab", page.locator(".qplace", { hasText: "Covenant" }));
+    await page.goto("/books/list?q=Foul");
+    await wraps("Library", page.locator(".row-sub", { hasText: "Covenant" }));
+  });
+
+  test("the loading skeleton draws the card's place line (AC-5)", ONCE, async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await open(page);
+    await page.evaluate((html) => { document.querySelector("main")!.outerHTML = html; }, renderToStaticMarkup(createElement(Loading)));
+    await expect(page.locator(".shelf .card .sk-card-sub").first()).toBeVisible();
+  });
+});
+
 test.describe("never finished, nothing planned", () => {
   test.beforeEach(seedEmpty);
 
@@ -877,11 +993,12 @@ test.describe("reduced transparency", () => {
   for (const [state, seedState, saga] of [
     ["reading", { reading: true }, null], ["between", { between: true }, null],
     ["next-in", { reading: true }, { twoInHand: true }], ["keep-going", { between: true }, { twoInHand: false }],
-    ["where", { reading: true }, "where"],
+    ["where", { reading: true }, "where"], ["place", { reading: true }, "place"],
   ] as const) {
     test(`${state}: the glass is solid --surface, with a screenshot at 390 and 1280 (AC-1, AC-5)`, ONCE, async ({ page, context }, info) => {
       await seed(seedState);
       if (saga === "where") await seedWhere();
+      else if (saga === "place") { await seedPlace(); await planPlace(); }
       else if (saga) await seedSaga(saga);
       const cdp = await context.newCDPSession(page);
       await cdp.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-transparency", value: "reduce" }] });

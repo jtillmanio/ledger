@@ -9,7 +9,8 @@ import { bookSub, quarterName, wordsK } from "@/lib/format";
  * `listened`: it has a listen, for the headphones glyph (task 1.23). */
 export type QuarterBook = {
   id: string; title: string; ordinal: number; author: string | null;
-  series: string | null; series_position: number | null; word_count: number | null; listened?: boolean;
+  series: string | null; series_position: number | null; universe: string | null;
+  word_count: number | null; listened?: boolean;
 };
 
 /** One call to `/api/plan`: move a book to a place in its own quarter. Rejects when it didn't save. */
@@ -47,8 +48,8 @@ export default function PlanQuarter({ period, rows }: { period: string; rows: Qu
             {/* A planned book is to read, so its glyph can only say *Listened* (task 1.23). */}
             <span className="qtitle">{b.title}{b.listened && <> <Headphones label="Listened" /></>}</span>
             <span className="qmeta">
-              {bookSub(b) && <span className="mono">{bookSub(b)}</span>}
-              {wordsK(b.word_count) && <span className="mono">{wordsK(b.word_count)}</span>}
+              {bookSub(b) && <span className="mono qplace">{bookSub(b)}</span>}
+              {wordsK(b.word_count) && <span className="mono qwords">{wordsK(b.word_count)}</span>}
             </span>
             {/* The status control (task 1.17b): a planned book is to read, so it starts at Reading from here. */}
             <BookStatus bookId={b.id} title={b.title} menu={false} glyph={false} listened={b.listened} />

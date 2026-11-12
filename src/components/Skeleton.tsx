@@ -205,6 +205,7 @@ export function ShelfSkeleton({ cards = 3 }: { cards?: number }) {
           <li key={n} className="card">
             <span className="cover"><span className="sk sk-fill" /></span>
             <Bar w="90%" className="sk-card-title" />
+            <Bar w="75%" className="sk-card-sub" />
             <Bar w="60%" className="sk-card-meta" />
           </li>
         ))}
