@@ -533,6 +533,8 @@ and ask*:
 - **Books (2.2).** Where Rebalance, Accept (2.7) and *Place them* (2.8) surface
   once the capacity and unplaced cards leave the dashboard. *Answered* (owner,
   at 2.2's plan gate, TASK-049): on `/books/plan` only, never on the dashboard.
+  *Place them* is also on Up next's bare-year lane, as roadmap 2.8's Check
+  asks (D-147, TASK-068).
 - **Covers (4.3).** Which cover is a run's key art, and where a run's tone is
   stored.
 - **Completion (2.12).** Whether a later visit to a block-closing run shows the
@@ -909,7 +911,8 @@ Since D-40 the dashboard shows the book in hand (or *Between books*), the
 current quarter's shelf, a single-quarter strip against the 760k rule, On deck
 and *2026 so far*; the full rail below is `/books/plan`'s, and so are the
 capacity card with Rebalance and Accept (2.7) and *Place them* (2.8): nothing
-on the dashboard (owner, at 2.2's plan gate, TASK-049). Past capacity, the
+on the dashboard (owner, at 2.2's plan gate, TASK-049). *Place them* opens
+from Up next's amber bare-year lane too (D-147). Past capacity, the
 strip's figure turns amber with what it is over, and that is all the dashboard
 says. The regions as first scoped, before the feel pass:
 
