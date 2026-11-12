@@ -2,7 +2,7 @@
 id: TASK-070
 title: 2.10 Plan page as the full-size rail (2 of 2) — drag and hover on the desktop
 status: Ready
-depends_on: [TASK-069]
+depends_on: [TASK-069, TASK-065]
 size: M
 model: sonnet
 autonomy: attended
@@ -21,6 +21,7 @@ With a mouse or trackpad, a book can be dragged to another quarter or the fifth 
 
 - Roadmap: `docs/05-roadmap.md` § 2.10 Plan page as the full-size rail (M11). The entry and its **Check:** are the contract. Feature F-23.
 - **Split, 2 of 2.** TASK-069 built the page and proved the Check; this part adds the desktop's pointer routes. **Its merge ticks the roadmap entry**, and the tasklist row's Done cell once both are Done.
+- **After TASK-065 (owner, 2026-11-12).** Until TASK-065 lands, a rail block is a submit button in a GET form to its Library row, so AC-4's *a tap opens the Move sheet* can't hold and a drag would start on a form button. TASK-065 swaps the blocks for the picker on every rail, this page's included; drag and hover build on those blocks.
 - **Drag-to-move** (the entry; `design/Plan Rail Spec.dc.html` A4.4): a ghost block and a live readout (*Q3 +118k → 533k / 760k*, sample figures, D-7) before release. The ghost is rotated −1.5° on `--sh-2` with a 2px dashed `--brand` outline, the source slot keeps a dashed placeholder, and the readout is an `output.dropdelta` with `aria-live`. A block dropped on another quarter joins the end of its order; one dropped on the fifth lane takes none, like Move. Reordering inside a quarter stays on the Up next tab (1.9).
 - **Hover** on a block shows a popover with its name, words and the estimated flag.
 - **Pointer, not width (D-33).** Drag and hover need `(hover:hover) and (pointer:fine)`; phone and tablet keep the tap to the Move sheet (2.3, TASK-064), which is also the keyboard route.
