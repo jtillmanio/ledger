@@ -240,6 +240,8 @@ test.describe("at 1280px with a fine pointer", DESK, () => {
       await page.emulateMedia({ colorScheme: scheme });
       await lift(page, block(page, "a1"), column(page, q(3)));
       await expect(ghost(page)).toBeVisible();
+      // The lift turns the ghost over --dur-2: read it once the turn has finished.
+      await ghost(page).evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
       const look = await ghost(page).evaluate((el) => {
         const s = getComputedStyle(el);
         return { transform: s.transform, outline: `${s.outlineStyle} ${s.outlineWidth}`, shadow: s.boxShadow };
