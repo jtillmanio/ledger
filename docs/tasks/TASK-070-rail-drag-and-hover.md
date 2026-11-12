@@ -1,7 +1,7 @@
 ---
 id: TASK-070
 title: 2.10 Plan page as the full-size rail (2 of 2) — drag and hover on the desktop
-status: In progress
+status: Review
 depends_on: [TASK-069, TASK-065]
 size: M
 model: sonnet
@@ -32,15 +32,15 @@ With a mouse or trackpad, a book can be dragged to another quarter or the fifth 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; proven by TASK-069 and re-run here with drag in place): test that the sum of the rendered block heights in a quarter equals
+- [x] AC-1 (roadmap **Check:**, verbatim; proven by TASK-069 and re-run here with drag in place): test that the sum of the rendered block heights in a quarter equals
 that quarter's word total to the pixel rounding; that a book crossing the
 capacity line renders hatched and the one below it does not; that expanding Q2
 collapses Q1; and that the rail and the dashboard render identical totals from
 the same query. Screenshot at 360px and 1280px.
-- [ ] AC-2: At 1280px with a fine pointer, dragging a block from Q1 over Q3 shows the ghost and an `output.dropdelta` reading *Q3 +<book's words> → <Q3's total after> / <capacity>* before release, from the same totals Q3's summary row shows; releasing puts the book last in Q3 and closes up Q1, and the toast's Undo restores both.
-- [ ] AC-3: Dropping a block on the fifth lane writes a bare-year row with no ordinal; dropping it back on its own quarter writes nothing.
-- [ ] AC-4: Hovering a block at 1280px shows a popover with its title, words and, for an estimated count, *estimated*; with touch emulated at 390px and 834px no drag starts and a tap opens the Move sheet.
-- [ ] AC-5: Drag and hover meet the UX floor (`docs/04-design.md` § 10. The UX floor): both sit behind `(hover:hover) and (pointer:fine)` with the Move sheet as the touch and keyboard route; the readout is announced (`aria-live`); the ghost's rotation and motion drop under reduced motion; axe with no new violations; screenshots of the drag at 1280px, light and dark.
+- [x] AC-2: At 1280px with a fine pointer, dragging a block from Q1 over Q3 shows the ghost and an `output.dropdelta` reading *Q3 +<book's words> → <Q3's total after> / <capacity>* before release, from the same totals Q3's summary row shows; releasing puts the book last in Q3 and closes up Q1, and the toast's Undo restores both.
+- [x] AC-3: Dropping a block on the fifth lane writes a bare-year row with no ordinal; dropping it back on its own quarter writes nothing.
+- [x] AC-4: Hovering a block at 1280px shows a popover with its title, words and, for an estimated count, *estimated*; with touch emulated at 390px and 834px no drag starts and a tap opens the Move sheet.
+- [x] AC-5: Drag and hover meet the UX floor (`docs/04-design.md` § 10. The UX floor): both sit behind `(hover:hover) and (pointer:fine)` with the Move sheet as the touch and keyboard route; the readout is announced (`aria-live`); the ghost's rotation and motion drop under reduced motion; axe with no new violations; screenshots of the drag at 1280px, light and dark.
 
 ## Out of scope
 
@@ -66,6 +66,10 @@ the same query. Screenshot at 360px and 1280px.
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- The plan page's loading skeleton is shorter than the loaded page at 1280px, in its header and in its rail. Both gaps predate this task: the page shifts about 14px when it arrives. Found by the 1280px skeleton check and by ui-verifier. → docs/tasks/TASK-067-rebalance-sheet-settled.md § Context
+- `plan-rail.spec.ts`'s error-state test swapped `main` before hydration and flaked about 1 in 4 runs; it now waits for hydration. → not tracked: done in this PR (plan revision)
+- The readout follows the style guide's A4.4 wording (*Q3 +99k → 514k / 760k*, the target alone). The mockup `planmonth` also shows the source (*Q2 −118k → … · Q3 +118k → …*) and a *Dragging <title> to Q3* line. → not tracked: D-31 puts the blueprint over the mockup on component states; raised with the owner in the PR
 
 ## Plan
 
@@ -98,13 +102,17 @@ Approved by the owner up front (2026-11-12: "accept the plan right away"; questi
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 PASS | Spec R1 CHANGES (UX floor: the readout's line not in the skeleton; Esc release opened the sheet; the failed drop untested) → fixed | Verify R2 PASS | Spec R2 APPROVE
+- CI R1 PASS (be799c1, every project) | CI R2 FAIL (plan-rail-drag.spec.ts:249, w1280-light: the ghost's rotation was read mid-lift) → fixed (wait for the animation) | Verify R3 PASS
+- Audit R1 PASS (every AC has a discriminating test; the touch and click tests are guards) | UI R1 PASS (1280, 1024, 390, 834, 768; dev DB left as found)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 2 (spec), 1 (audit), 1 (UI)
+- First-pass AC FAILs: 1 (AC-5, the skeleton shift)
+- Plan revisions after approval: 1
