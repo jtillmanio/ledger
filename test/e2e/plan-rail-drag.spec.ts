@@ -165,7 +165,7 @@ test.describe("at 1280px with a fine pointer", DESK, () => {
     ]);
   });
 
-  test("dropping a block back on its own quarter writes nothing and opens no sheet; nor does Esc mid-drag (AC-3)", async ({ page }) => {
+  test("dropping a block back on its own quarter writes nothing and opens no sheet; nor does Esc mid-drag, released over the block (AC-3)", async ({ page }) => {
     const sent = writes(page);
     const before = await plan();
     await lift(page, block(page, "a2"), column(page, q(1)));
@@ -175,11 +175,14 @@ test.describe("at 1280px with a fine pointer", DESK, () => {
     await page.mouse.up();
     await expect(ghost(page)).toHaveCount(0);
 
+    // Esc mid-drag, then the button let go back over the block it was pressed on: no write, and no click either.
+    const home = await centre(block(page, "a3"));
     await lift(page, block(page, "a3"), column(page, q(2)));
     await expect(column(page, q(2))).toHaveAttribute("data-drop", "true");
     await page.keyboard.press("Escape");
     await expect(ghost(page)).toHaveCount(0);
     await expect(readout(page)).toHaveText("");
+    await page.mouse.move(home.x, home.y, { steps: 4 });
     await page.mouse.up();
 
     // Long enough for a stray write or sheet to have shown.
@@ -187,6 +190,19 @@ test.describe("at 1280px with a fine pointer", DESK, () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
     expect(sent).toEqual([]);
     expect(await plan()).toEqual(before);
+  });
+
+  test("a drop that fails to save says so in the readout and leaves the plan as it was (AC-2, AC-5)", async ({ page }) => {
+    const before = await plan();
+    await page.route("**/api/plan", (route) => (route.request().method() === "POST"
+      ? route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: "down" }) })
+      : route.fallback()));
+    await lift(page, block(page, "a1"), column(page, q(3)));
+    await page.mouse.up();
+    await expect(readout(page)).toHaveText("Couldn't move it. Nothing was written.");
+    await expect(page.locator(".toast")).toHaveCount(0);
+    expect(await plan()).toEqual(before);
+    await expect(column(page, q(1)).locator(`button.qb[data-book="${id("a1")}"]`)).toBeVisible();
   });
 
   test("a plain click on a block still opens the Move sheet (the keyboard and touch route stays)", async ({ page }) => {

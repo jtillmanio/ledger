@@ -97,6 +97,9 @@ export function PlanRailSkeleton() {
   const stacks = [[26, 28, 34, 28, 54, 72], [27, 28, 26, 38, 40], [14, 9, 20, 48], [34, 27], [44, 48, 108]];
   return (
     <>
+    {/* The drag readout's line (task 2.10, 2 of 2): drawn, empty, wherever a fine pointer shows it, so the rail
+        below it lands where the skeleton's stood. */}
+    <div className="dropdelta" aria-hidden="true" />
     <div className="planrail sk-planrail" aria-hidden="true">
       {stacks.map((blocks, q) => (
         <div key={q} className={q === stacks.length - 1 ? "qcol nq" : "qcol"}>

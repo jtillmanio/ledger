@@ -85,11 +85,11 @@ export function useRailDrag(root: RefObject<HTMLElement | null>, targets: DropTa
     window.addEventListener("keydown", key, true);
   }
 
+  /** Ends the press. The click a release over the block leaves comes in the release's own task; after it, a click is a click again. */
   function end() {
     press.current?.stop();
     press.current = null;
     setDrag(null);
-    // The click, if the release was over the block, comes in this same task; after it, a click is a click again.
     setTimeout(() => { swallow.current = false; }, 0);
   }
 
@@ -142,8 +142,18 @@ export function useRailDrag(root: RefObject<HTMLElement | null>, targets: DropTa
     if (e.key !== "Escape" || !press.current?.lifted) return;
     e.preventDefault();
     e.stopPropagation();
-    end();
+    // Cancelled with the button still down: the release that follows is no click either, so the picker waits for it.
+    press.current.stop();
+    press.current = null;
+    setDrag(null);
     setSaid("");
+    const released = () => {
+      window.removeEventListener("pointerup", released, true);
+      window.removeEventListener("pointercancel", released, true);
+      setTimeout(() => { swallow.current = false; }, 0);
+    };
+    window.addEventListener("pointerup", released, true);
+    window.addEventListener("pointercancel", released, true);
   }
 
   useLayoutEffect(() => { latest.current = { move: onMove, up: onUp, key: onKey }; });

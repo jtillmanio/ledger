@@ -139,6 +139,27 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
+/**
+ * Measures the loaded rail and legend, then swaps the loading skeleton in where they stood and measures it: the
+ * rail's height and its top below the year chips (where the desktop's drag readout sits, task 2.10, 2 of 2), the
+ * legend's height, its gap below the rail and its width.
+ */
+async function swapInSkeleton(page: Page) {
+  const measure = () => page.evaluate(() => {
+    const filters = document.querySelector("main .filters")!.getBoundingClientRect();
+    const rail = document.querySelector(".planrail")!.getBoundingClientRect();
+    const legend = document.querySelector(".qlegend")!.getBoundingClientRect();
+    return { top: rail.top - filters.bottom, rail: rail.height, legend: legend.height, gap: legend.top - rail.bottom, width: legend.width };
+  });
+  const loaded = await measure();
+  await page.evaluate((html) => {
+    const head = document.querySelector("main")!.querySelector(".filters")!;
+    for (const sel of [".dropdelta", ".planrail", ".qlegend", ".plan-quarters"]) document.querySelector(sel)?.remove();
+    head.insertAdjacentHTML("afterend", html);
+  }, renderToStaticMarkup(createElement(PlanRailSkeleton)));
+  return { loaded, skeleton: await measure() };
+}
+
 const AXE = [
   "button-name", "link-name", "target-size", "color-contrast", "aria-allowed-attr", "aria-valid-attr-value", "aria-hidden-focus",
   "duplicate-id-aria", "heading-order", "landmark-unique", "list", "listitem",
@@ -529,28 +550,25 @@ test.describe("at 360px", PHONE, () => {
     await expect(chips.nth(1)).toHaveAttribute("aria-current", "true");
 
     // The loaded legend and rail, then the skeleton's in the same place: nothing moves when the rail arrives.
-    const measure = () => page.evaluate(() => {
-      const rail = document.querySelector(".planrail")!.getBoundingClientRect();
-      const legend = document.querySelector(".qlegend")!.getBoundingClientRect();
-      return { rail: rail.height, legend: legend.height, gap: legend.top - rail.bottom, width: legend.width };
-    });
-    const loaded = await measure();
+    const { loaded, skeleton } = await swapInSkeleton(page);
     expect(loaded.legend, "the loaded legend is drawn").toBeGreaterThan(20);
-    await page.evaluate((html) => {
-      const head = document.querySelector("main")!.querySelector(".filters")!;
-      document.querySelector(".planrail")!.remove();
-      document.querySelector(".qlegend")!.remove();
-      document.querySelector(".plan-quarters")!.remove();
-      head.insertAdjacentHTML("afterend", html);
-    }, renderToStaticMarkup(createElement(PlanRailSkeleton)));
-    const skeleton = await measure();
     expect(Math.abs(skeleton.legend - loaded.legend)).toBeLessThanOrEqual(2);
     expect(Math.abs(skeleton.gap - loaded.gap)).toBeLessThanOrEqual(2);
     expect(Math.abs(skeleton.width - loaded.width)).toBeLessThanOrEqual(2);
+    expect(Math.abs(skeleton.top - loaded.top)).toBeLessThanOrEqual(2);
   });
 });
 
 test.describe("at 1280px", DESK, () => {
+  test("the loading skeleton keeps the drag readout's line, so the rail lands where it stood (AC-5; task 2.10, 2 of 2)", async ({ page }) => {
+    await seed();
+    await open(page);
+    // A fine pointer shows the readout's line above the rail, empty until a drag.
+    await expect(page.locator("output.dropdelta")).toBeVisible();
+    const { loaded, skeleton } = await swapInSkeleton(page);
+    expect(Math.abs(skeleton.top - loaded.top), "the rail's top below the year chips").toBeLessThanOrEqual(2);
+  });
+
   test("an under-capacity quarter's footer says its room in grey; an over one says what it is over in amber (AC-1, SG-D11)", async ({ page }) => {
     await seed();
     await open(page);
@@ -634,6 +652,8 @@ test("the error state is a neutral line with a way to try again (AC-6)", ONCE, a
   await page.goto("/books/plan");
   await page.locator("main.plan-page").waitFor();
   await expect(page.locator("main[aria-busy]")).toHaveCount(0);
+  // Swapped before hydration, the page's markup no longer matches and React regenerates it over the error state.
+  await hydrated(page.locator("button.plan-sum").first());
   await page.evaluate((html) => { document.querySelector("main")!.outerHTML = html; },
     renderToStaticMarkup(createElement(PlanError, { error: new Error("x"), reset: () => undefined })));
   // (Next's route announcer is a second role=alert, empty.)

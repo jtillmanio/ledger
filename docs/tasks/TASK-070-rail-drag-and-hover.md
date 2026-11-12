@@ -90,6 +90,8 @@ Approved by the owner up front (2026-11-12: "accept the plan right away"; questi
 - AC-5: drag-spec *the readout is aria-live*, *reduced motion drops the ghost's rotation*, *axe during a drag* and the screenshots at 1280px, light and dark.
 - `test/plan-rail.test.ts`: `dropReadout` for a quarter, over capacity, the lane, and its own period.
 
+**Revision 1 (after spec review R1)**: two files outside the list. The readout's empty line (about 24px under a fine pointer) moved the rail down on load: `src/components/Skeleton.tsx` reserves it in `PlanRailSkeleton`, and `test/e2e/plan-rail.spec.ts` gains a 1280px check of the rail's top under the year chips (`swapInSkeleton`, shared with the 360px skeleton test). Its error-state test now waits for hydration before swapping `main`. That race was flaky, 1 in 4 locally, with the rail's new client code. Also: an Esc-cancelled drag swallows the click its release leaves, and a failed drop is tested.
+
 **Risks**: `router.refresh()` races the undo (the same as MoveBody's). Touch emulation must make FINE false (w390-touch already relies on that).
 
 ## Review log
