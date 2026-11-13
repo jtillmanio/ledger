@@ -28,7 +28,7 @@ const fixture = (name: string) => readFileSync(join(__dirname, "fixtures", name)
 // The plan rail as it loads: four quarters, one over capacity, and the fifth lane. The books are
 // the fixture's own; the skeleton holds the rail's box and each column's stack, not its blocks.
 const rail = (id: string, words: number, period: string, o: Partial<RailBook> = {}): RailBook => ({
-  id, title: id, words, estimated: false, period, genre: "Fantasy", status: "to_read", ...o,
+  id, title: id, words, estimated: false, period, genres: ["Fantasy"], status: "to_read", ...o,
 });
 const RAIL_BOOKS = [
   rail("a1", 200_000, "2027-Q1"), rail("a2", 150_000, "2027-Q1"), rail("a3", 140_000, "2027-Q1", { estimated: true }),

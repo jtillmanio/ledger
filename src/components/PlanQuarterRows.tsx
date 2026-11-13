@@ -90,7 +90,7 @@ export default function PlanQuarterRows({ quarters, rows, focus, room, settled =
             {mine.length > 0 && (
               <ul className="plan-rows">
                 {mine.map((r) => (
-                  <li key={r.id} className="plan-row" data-book={r.id} style={{ "--hue": `var(${genreHue(r.genre)})` } as React.CSSProperties}>
+                  <li key={r.id} className="plan-row" data-book={r.id} style={{ "--hue": `var(${genreHue(r.genres)})` } as React.CSSProperties}>
                     <span className="rb">
                       <span className="row-head">
                         <span className="row-title">{r.title}</span>

@@ -1089,6 +1089,49 @@ BEGIN
   END IF;
 END $$;
 
+-- 4.5's Check (task 4.5, D-98): book_genre_levels is book_genre_tree, plus the
+-- workbook's books.genre as one top-level row for a book Calibre gives none;
+-- folded per book whatever its case ('Horror' and 'horror.Cosmic' are one
+-- 'Horror'), its name a path's last segment. books_by_year counts a read once
+-- under each top-level genre: the Check's first book under 'Fantasy' and 'Young
+-- Adult' and not its workbook 'Thriller', the second under its 'Sci-Fi', a book
+-- with neither under NULL.
+INSERT INTO users (id, name) VALUES ('zz-gy-user', 'Genre year fixture');
+INSERT INTO books (id, title, genre, word_count, word_count_source) VALUES
+  ('zz-gy-cal',  'Zz GY Calibre',  'Thriller', 100000, 'stated'),
+  ('zz-gy-wb',   'Zz GY Workbook', 'Sci-Fi',   50000,  'stated'),
+  ('zz-gy-case', 'Zz GY Case',     NULL,       10000,  'stated'),
+  ('zz-gy-bare', 'Zz GY Bare',     NULL,       1000,   'stated');
+INSERT INTO book_genres (book_id, genre) VALUES
+  ('zz-gy-cal', 'Fantasy.Epic Fantasy'), ('zz-gy-cal', 'Young Adult.Fantasy.Romantasy'),
+  ('zz-gy-case', 'Horror'), ('zz-gy-case', 'horror.Cosmic');
+INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision) VALUES
+  ('zz-gy-user', 'zz-gy-cal',  'read', '2025-06-01', 'exact'),
+  ('zz-gy-user', 'zz-gy-wb',   'read', '2025-06-02', 'exact'),
+  ('zz-gy-user', 'zz-gy-case', 'read', '2025-06-03', 'exact'),
+  ('zz-gy-user', 'zz-gy-bare', 'read', '2025-06-04', 'exact');
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT string_agg(book_id || ':' || genre || ':' || depth || ':' || direct || ':' || name, ' '
+                    ORDER BY book_id, genre COLLATE "C")
+    INTO got FROM book_genre_levels WHERE book_id LIKE 'zz-gy-%';
+  IF got IS DISTINCT FROM 'zz-gy-cal:Fantasy:1:false:Fantasy zz-gy-cal:Fantasy.Epic Fantasy:2:true:Epic Fantasy '
+                       || 'zz-gy-cal:Young Adult:1:false:Young Adult zz-gy-cal:Young Adult.Fantasy:2:false:Fantasy '
+                       || 'zz-gy-cal:Young Adult.Fantasy.Romantasy:3:true:Romantasy '
+                       || 'zz-gy-case:Horror:1:true:Horror zz-gy-case:horror.Cosmic:2:true:Cosmic '
+                       || 'zz-gy-wb:Sci-Fi:1:true:Sci-Fi' THEN
+    RAISE EXCEPTION 'book_genre_levels wrong: %', got;
+  END IF;
+  SELECT string_agg(COALESCE(genre, '(none)') || ':' || year || ':' || books || ':' || words, ', '
+                    ORDER BY genre COLLATE "C" NULLS LAST)
+    INTO got FROM books_by_year WHERE user_id = 'zz-gy-user';
+  IF got IS DISTINCT FROM 'Fantasy:2025:1:100000, Horror:2025:1:10000, Sci-Fi:2025:1:50000, '
+                       || 'Young Adult:2025:1:100000, (none):2025:1:1000' THEN
+    RAISE EXCEPTION 'books_by_year by Calibre genre wrong: %', got;
+  END IF;
+END $$;
+
 -- shelf_progress (task 2.2c) counts the live books on a books shelf and how many
 -- are read: a soft-deleted book drops out of both counts, read or not; a book
 -- with no status is unread; a titles shelf has no row; follow_state is the

@@ -305,7 +305,7 @@ test.describe("at 360px", PHONE, () => {
       estimatedWords: 0, books: 0, readBooks: 0, unknownBooks: 0, load: 0.27, estimatedShare: 0,
     };
     const b = (key: string, title: string, words: number, o: Partial<RailBook> = {}): RailBook =>
-      ({ id: key, title, words, estimated: false, period: q(1), genre: "Fantasy", status: "to_read", ...o });
+      ({ id: key, title, words, estimated: false, period: q(1), genres: ["Fantasy"], status: "to_read", ...o });
     const strip = renderToStaticMarkup(createElement(PlanRail, {
       axis: "row", year: Y, quarters: [cap],
       books: [b("s1", "Strip One", 91_000, { estimated: true }), b("s2", "Strip Two", 8_000), b("s3", "Strip Three", 8_000), b("s4", "Strip Four", 98_000)],

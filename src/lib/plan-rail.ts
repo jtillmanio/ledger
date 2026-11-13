@@ -19,7 +19,8 @@ export type RailBook = {
   estimated: boolean;
   /** `2027-Q1`, or `2027` for the fifth lane. */
   period: string;
-  genre: string | null;
+  /** Its top-level genres (task 4.5): `book_genre_levels` at depth 1, Calibre's else the workbook's; empty for none. */
+  genres: string[];
   status: "to_read" | "reading" | "read";
 };
 
@@ -257,19 +258,33 @@ export function stackLabelParts(stack: Pick<RailStack, "count" | "words" | "fold
 }
 
 /**
- * One book, one hue: a stable hash of its genre onto `--g1`…`--g7`, and `--g8` for a book with no
- * genre. Case and spacing don't matter. Hue identifies data and nothing else (docs/04-design.md § 3).
+ * The genre families and their hues (task 4.5, the owner's table at its plan gate; D-98): a top-level
+ * genre in Calibre, in any case, onto `--g1`…`--g6`. Every other genre, and one added to Calibre later,
+ * is `--g7`. Hue identifies data and nothing else (docs/04-design.md § 3).
  */
-export function genreHue(genre: string | null): string {
-  const key = (genre ?? "").trim().toLowerCase();
-  if (key === "") return "--g8";
-  // FNV-1a, 32 bits.
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < key.length; i++) {
-    hash ^= key.charCodeAt(i);
-    hash = Math.imul(hash, 0x01000193) >>> 0;
-  }
-  return `--g${(hash % 7) + 1}`;
+export const GENRE_FAMILIES: readonly (readonly string[])[] = [
+  ["Fantasy"],
+  ["Science Fiction"],
+  ["Young Adult", "Childrens"],
+  ["Thriller", "Mystery", "Crime"],
+  ["Horror", "Paranormal"],
+  ["History", "Science", "Biography", "Autobiography", "Nonfiction", "Politics", "Business", "Religion", "Christian",
+    "Psychology", "Philosophy", "Sociology", "Ecomonics", "Health", "Food", "Travel", "Sports", "Popular Culture",
+    "Games", "Video Games", "Survival"],
+];
+
+const FAMILY_OF = new Map(GENRE_FAMILIES.flatMap((names, i) => names.map((n) => [n.toLowerCase(), i] as const)));
+
+/**
+ * One book, one hue: the first family in `--g1`…`--g7` order among its top-level genres, whatever order
+ * they come in, so a Young Adult fantasy is `--g1`; `--g7` for a genre in no family, `--g8` for a book
+ * with no genre. Case and spacing don't matter.
+ */
+export function genreHue(genres: readonly string[]): string {
+  const keys = genres.map((g) => g.trim().toLowerCase()).filter((g) => g !== "");
+  if (keys.length === 0) return "--g8";
+  const family = Math.min(...keys.map((k) => FAMILY_OF.get(k) ?? GENRE_FAMILIES.length));
+  return `--g${family + 1}`;
 }
 
 /** A year against its capacity and its acceptance (task 2.7): what the plan page's card and the rail's hatch say. */

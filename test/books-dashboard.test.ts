@@ -388,8 +388,8 @@ describe("the strip past capacity is amber, never red, and never says behind (AC
     estimatedWords: 0, books, readBooks: read, unknownBooks: 0, load: planned / 760_000, estimatedShare: 0,
   });
   const blocks = [
-    { id: "a", title: "A", words: 600_000, status: "read" as const, estimated: false, genre: null },
-    { id: "b", title: "B", words: 212_000, status: "to_read" as const, estimated: true, genre: "Fantasy" },
+    { id: "a", title: "A", words: 600_000, status: "read" as const, estimated: false, genres: [] },
+    { id: "b", title: "B", words: 212_000, status: "to_read" as const, estimated: true, genres: ["Fantasy"] },
   ];
   async function strip(planned: number, list = blocks) {
     const { default: QuarterStrip } = await import("../src/components/QuarterStrip");

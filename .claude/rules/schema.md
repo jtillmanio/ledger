@@ -154,9 +154,12 @@ Release, test isolation) and the Hard rules a reviewer checks.
   cascade is derived, never stored: `book_genre_tree` (`book_id, genre, depth,
   direct`) lists each book at every level of each path, once, so a book tagged
   `Fantasy.Epic Fantasy` alone is in `Fantasy` too (D-98). Read genres through
-  it, never by splitting a path in the app. `books.genre` stays the workbook's
-  (one value, from its Read tab columns) until the screens that read it move
-  (4.5).
+  it, never by splitting a path in the app. Every reader takes a book's genres
+  through `book_genre_levels` (`book_id, genre, depth, direct, name`; 4.5,
+  D-149): `book_genre_tree`'s rows, plus the workbook's `books.genre` as one
+  top-level row for a book Calibre gives none, the only place `books.genre` is
+  read until 4.5's drop (TASK-089); `name` is a path's last segment, split in
+  SQL.
 - **A book nothing knows waits for the owner's look** (task 1.20, D-94).
   Extract holds a workbook book with no `hardcover` or `hand` row in
   `book_details.csv` (1.14's `openlibrary` rows don't count) and no Calibre id:

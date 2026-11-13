@@ -27,6 +27,7 @@ On deck can be narrowed to one genre and is grouped by genre, so picking the nex
 - Size: the tasklist says S; the status screen, its query, the Library's chips and their tests are four to six files over two layers, so M.
 - Design: no mockup frame draws the chips on *Up next*; the `status` frames (`powershell -NoProfile -File scripts/screen.ps1 status`) and `docs/04-design.md` § 11.2 Status screens set the look; `ui.redrawFiles` get the frame in the same PR.
 - Decisions: D-37, D-98, D-124, D-139. Hard rules 2 and 6.
+- *From TASK-088 (4.5, PR #252):* the top-level genres On deck groups by are `book_genre_levels` at `depth = 1` (`etl/views.sql`), one spelling per genre whatever its case; `listCounts(userId).genres` (`src/db/queries.ts`) already lists them for the Library's chips, most books first, and a book's hue family is `genreHue(genres)` (`src/lib/plan-rail.ts`, D-149).
 
 ## Acceptance criteria
 

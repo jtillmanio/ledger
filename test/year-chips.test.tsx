@@ -12,14 +12,13 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: 
 vi.mock("@/lib/auth", () => ({ requireUserId: async () => "test-user" }));
 vi.mock("@/db/queries", () => ({
   listBooks: async () => [],
-  // Two genres in 2024: the chip sums them.
+  // Reads per year (task 4.5: one row a year, as a read under two genres is still one read).
   yearSummary: async () => [
-    { year: 2024, genre: "Fantasy", books: 7, words: 0 },
-    { year: 2024, genre: "Horror", books: 5, words: 0 },
-    { year: 2023, genre: "Fantasy", books: 3, words: 0 },
+    { year: 2024, books: 12, words: 0 },
+    { year: 2023, books: 3, words: 0 },
   ],
   seriesProgress: async () => [],
-  listCounts: async () => ({ unyeared: 4, unlisted: 0 }),
+  listCounts: async () => ({ unyeared: 4, unlisted: 0, genres: [] }),
   inboxCount: async () => 0,
 }));
 

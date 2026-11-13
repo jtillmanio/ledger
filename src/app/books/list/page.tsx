@@ -24,9 +24,6 @@ const LEVELS: [ToReadLevel | undefined, string][] = [
   [undefined, "All"], ["quarter", "Quarter"], ["year", "Year"], ["on_deck", "On deck"], ["someday", "Someday"],
 ];
 
-const GENRES = ["Fantasy", "Science Fiction", "Thriller", "Nonfiction", "Horror",
-  "Young Adult", "Contemporary", "Graphic Novel", "Classics", "Historical Fiction"];
-
 export default async function Books({ searchParams }: { searchParams: Promise<Search> }) {
   const { status, genre, year, q, series: seriesParam, level: levelParam, sort: sortParam, dir: dirParam } = await searchParams;
   const userId = await requireUserId();
@@ -36,7 +33,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
   const noYear = year === "none";
   // The level narrows To read only; with any other status it is ignored, as the chips are not drawn.
   const level = status === "to_read" ? TO_READ_LEVELS.find((l) => l === levelParam) : undefined;
-  const [books, years, series, { unyeared, unlisted }, inbox] = await Promise.all([
+  const [books, years, series, { unyeared, unlisted, genres }, inbox] = await Promise.all([
     listBooks(userId, {
       status, genre, q, noYear, level, ...order,
       year: year && !noYear ? Number(year) : undefined,
@@ -50,9 +47,8 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
   const matched = books[0]?.total ?? 0;
   const seriesList = seriesView(series, seriesParam);
 
-  const byYear = new Map<number, number>();
-  for (const y of years) byYear.set(y.year, (byYear.get(y.year) ?? 0) + Number(y.books));
-  const yearList = [...byYear.entries()].sort((a, b) => b[0] - a[0]);
+  // Reads per year, newest first: one row a year (task 4.5), a read under two genres still one read.
+  const yearList = years.map((y) => [y.year, Number(y.books)] as const);
 
   return (
     <main>
@@ -122,12 +118,19 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
         )}
       </div>
 
-      <div className="filters">
-        {GENRES.map((g) => (
-          <Link key={g} prefetch={false} href={libraryHref({ genre: g, ...order })} className="chip"
-                aria-current={genre === g}>{g}</Link>
-        ))}
-      </div>
+      {/* The top-level genres of the books listed (task 4.5, D-98): Calibre's, else the workbook's,
+          most books first. A chip finds every book under it, a subgenre's too. One row that scrolls
+          sideways, never the page; the chip's text is the genre's whole name. Only the chosen chip
+          carries aria-current: a `false` on each of some forty chips cost the route's byte budget
+          ~1.5 KB in the HTML and the RSC payload, and no attribute already means not current. */}
+      {genres.length > 0 && (
+        <div className="filters genre-row" role="group" aria-label="Genre">
+          {genres.map(({ genre: g }) => (
+            <Link key={g} prefetch={false} href={libraryHref({ genre: g, ...order })} className="chip"
+                  aria-current={genre?.toLowerCase() === g.toLowerCase() || undefined}>{g}</Link>
+          ))}
+        </div>
+      )}
 
       <div className="rows">
         {books.length === 0 && <div className="empty">Nothing matches. Try a broader filter.</div>}

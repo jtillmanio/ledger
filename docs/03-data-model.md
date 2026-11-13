@@ -647,8 +647,9 @@ filters by that run before it aggregates (architecture § Operational posture).
 | `block_position` | "Run 3 of 5 in block 2 of 7" |
 | `run_creators`, `run_credit_line` | Who made a run, from its issues' credits; the line lists those on at least a quarter of credited issues (2.12) |
 | `book_reads` | Every finished read of a book: each `read_events` row, plus a `read` status with no log row (D-65); its `format`, `text` or `audio` (2.22) |
-| `books_by_year` | Reads per year per genre, the year from the finish date (D-21) |
+| `books_by_year` | Reads per year per top-level genre, the year from the finish date (D-21): a read counts once under each of its book's top-level genres (4.5, D-149), so a year's genres can sum past its reads |
 | `book_genre_tree` | Each book at every level of each Calibre genre path, once, with its depth and whether the book was tagged with that path itself: Calibre's genres cascade (1.18c, D-98) |
+| `book_genre_levels` | A book's genres as every reader takes them (4.5, D-98, D-149): `book_genre_tree`'s rows, plus `books.genre` as one top-level row for a book Calibre gives none (until TASK-089 drops the column), one spelling per genre whatever its case, with `name`, a path's last segment |
 | `plan_period` | A plan row's year, quarter and level, so nothing parses `period` (2.9) |
 | `to_read_level` | Each to-read book's level: a quarter, a year, On deck or Someday (derived) |
 | `plan_book_words` | Each planned book that counts against capacity, once, at its earliest dated period, with its words: stated, estimated (a stored estimate, or pages × your words per page from 50 pages up) or unknown. To read, reading and read count; a listen, a DNF and On deck don't (2.1, D-112, D-115) |
