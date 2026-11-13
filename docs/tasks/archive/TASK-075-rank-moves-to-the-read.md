@@ -1,7 +1,7 @@
 ---
 id: TASK-075
 title: 3.4b Rank a book when you finish it (1 of 3) — the rank moves to the read
-status: Review
+status: Done
 depends_on: [TASK-074, TASK-010]
 size: M
 model: opus
