@@ -176,6 +176,13 @@
       "when": 1794328058619,
       "tag": "0024_books_added_at",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794549407238,
+      "tag": "0025_plan_acceptance",
+      "breakpoints": true
     }
   ]
 }

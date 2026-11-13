@@ -222,6 +222,25 @@ On deck are unordered on purpose: they hold books you have not decided about
 yet, and ranking them would be the decision those levels exist to put off. The
 queue stays period-free (2.16); the plan gains an order but keeps its periods.
 
+**Accepting an over-full year is a row, and the overage is read** (task 2.7,
+F-23, R3-14, D-148). Because those last-ranked books are the overage, the
+`plan_overage` view marks them. It lists each counted quarter book in ordinal
+order with its running end, and a book is `past_rule` when that end passes the
+quarter's capacity: the rail's own rule, so the book the rule cuts through
+counts. *Move the overage* moves the `to_read` ones, to the next year's
+bare-year lane or to On deck. Keeping the overage instead is stored:
+
+```
+plan_acceptance(year int PRIMARY KEY, accepted_at timestamptz NOT NULL,
+                accepted_total bigint NOT NULL)   -- no user_id (D-91)
+```
+
+It is a row, not a column on `reading_settings`, because acceptance is per year
+and keeps its own date and figure. `accepted_total` is the year's planned words
+when you accept, a decision recorded as made, not a rollup. Whether the year
+reads settled (over capacity, at most that figure) or over again (past it) is
+compared on every read and never stored. *Undo acceptance* deletes the row.
+
 **2.10 An era is to a run what a block is to a track.** `design/mockups.html`
 sections the reading spine into named eras — "Second Genesis & Phoenix 38/38",
 "Days of Future Past 4/22" — each with its own count and bar. Nothing in the
@@ -625,6 +644,7 @@ filters by that run before it aggregates (architecture § Operational posture).
 | `to_read_level` | Each to-read book's level: a quarter, a year, On deck or Someday (derived) |
 | `plan_book_words` | Each planned book that counts against capacity, once, at its earliest dated period, with its words: stated, estimated (a stored estimate, or pages × your words per page from 50 pages up) or unknown. To read, reading and read count; a listen, a DNF and On deck don't (2.1, D-112, D-115) |
 | `plan_capacity` | Per year and per quarter: planned words (stated, estimated, unknown books) against minutes a day × words a minute × the year's days, a quarter a quarter of it; the load and the share resting on estimates (2.1, D-37, D-115) |
+| `plan_overage` | Each counted quarter book in ordinal order with its words, its running end and the quarter's capacity; `past_rule` when the end passes it, the rail's rule. The overage *move the overage* offers is its `to_read` rows (2.7, D-37, D-148) |
 | `series_progress` | Series completion, and how you follow it: `follow_state` `tracking` or `reading`, NULL for no follow or a stored `off` (D-43, D-117) |
 | `author_progress`, `universe_progress` | Author and universe completion, live books only, in `series_progress`'s shape; a universe's `off` reads as NULL (1.15, D-42, D-117) |
 | `subseries_progress` | Books listed and read per subseries (Calibre's `#subseries`, D-90), live books only, with `follow_state` (`off` reads as NULL) (2.2h, D-117) |

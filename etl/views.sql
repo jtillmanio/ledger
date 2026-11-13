@@ -601,6 +601,28 @@ CROSS JOIN LATERAL (
   WHERE w.user_id = y.user_id AND w.year = y.year AND (q.quarter IS NULL OR w.quarter = q.quarter)
 ) a;
 
+-- Each book counted in a quarter, in the quarter's order, and whether it is
+-- past the quarter's capacity rule (task 2.7, F-23, D-37): the rail's rule
+-- (src/lib/plan-rail.ts layoutColumn), so a book is past it when its running
+-- end passes capacity, the one the rule runs through included. A book of
+-- unknown words takes no room (0). The overage is these books, the end of each
+-- quarter's order, so *move the overage* offers the books ranked last.
+-- Partitioned by year and quarter, so a read for one year filters before the
+-- window runs.
+CREATE OR REPLACE VIEW plan_overage AS
+SELECT o.user_id, o.book_id, o.period, o.year, o.quarter, o.ordinal, o.status, o.words,
+       o.end_words, o.capacity, o.end_words > o.capacity AS past_rule
+FROM (
+  SELECT w.user_id, w.book_id, w.period, w.year, w.quarter, p.ordinal, w.status, w.words,
+         SUM(COALESCE(w.words, 0)) OVER (PARTITION BY w.user_id, w.year, w.quarter
+                                         ORDER BY p.ordinal, w.book_id)::bigint AS end_words,
+         c.capacity
+  FROM plan_book_words w
+  JOIN reading_plan p ON p.user_id = w.user_id AND p.book_id = w.book_id AND p.period = w.period
+  JOIN plan_capacity c ON c.user_id = w.user_id AND c.year = w.year AND c.quarter = w.quarter
+  WHERE w.quarter IS NOT NULL
+) o;
+
 -- The comics Up next queue with each run's state (task 1.10, data model 2.16).
 -- The order is the only thing stored; whether a queued run is still up next is
 -- derived here, so starting a run moves it to In flight and finishing it to

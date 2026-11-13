@@ -31,6 +31,18 @@ From an over-full year, one tap opens four equal choices, each showing what it w
 - Decisions: D-37, D-137, D-40, D-7, M-07.
 - *From TASK-070 (2.10, PR #245):* the plan page's loading skeleton doesn't match the loaded page at 1280px. Both gaps predate 2.10's drag; the drag readout's own line is matched since PR #245. First, the skeleton's header is about 14px shorter than the loaded *Plan* title and total line, so everything below it moves down when the page arrives. Second, `PlanRailSkeleton`'s rail is about 14px shorter than the loaded rail (the desktop footers carry `/ 760k` and a room or over badge). Since this task redraws the rail's legend and footers for the settled state, check the skeleton against them at 1280px. `swapInSkeleton` in `test/e2e/plan-rail.spec.ts` measures the rail's top, height and gap.
 - *From TASK-068 (2.8, PR #246):* *Place them*'s closing card (`src/components/PlaceThem.tsx`, `Closing`) is amber when the year is still over. Mockup `plan`'s last frame gives it **Rebalance 2027** and **Accept as a stretch year**, which 2.8 left out because they are this task's. Add them to that card, opening the same sheet and Accept as the capacity card's. Accepting should also turn the card's amber to settled. The card is checked in `test/e2e/place-them.spec.ts` (Check, AC-3, AC-4).
+- *From TASK-066 (2.7, PR #247):* what part 1 leaves this part.
+  - **The route** is `/api/plan/rebalance` (`src/app/api/plan/rebalance/route.ts`):
+    - POST `{ action: accept | next | on_deck | even, year }` answers `{ ok, undo }`, and what it did: `acceptance`, `moves` or `layout`.
+    - DELETE `{ undo }` reverses that action. `{ undo: { kind: "accept", year } }` is also the settled card's *Undo acceptance*.
+    - GET `?year=` answers `{ decision, overage }`.
+  - **The reads**, in `src/db/queries.ts`:
+    - `planDecision(userId, year)` gives `state` `fits | over | settled`, with `acceptedAt` (ISO) and `acceptedTotal`. A server page can call it directly.
+    - `planOverage(userId, year)` gives the `to_read` books past each quarter's rule, plus `longestFirst` for On deck's suggestion.
+  - **The sheet's deltas** come from the overage's words and the next year's `planCapacity` (*2028 then holds N books*). `previewPlanMove` is still the per-book figure.
+  - **An accepted year that drops back under capacity** reads `fits`, not `settled`. The row stays, and the year settles again if it goes back over without passing `accepted_total`. Decide whether the banner says anything then.
+  - **Starting books stay put.** Only `to_read` books move, so after *Move the overage* a year can stay slightly over when a started book is past the rule (D-148).
+  - **`STRETCH_WHY`** in `src/components/PlanPicker.tsx` still disables the picker's *Accept as a stretch year*. Enabling it (POST `accept`) and dropping the reason is this part's job.
 - *From TASK-068 (2.8, PR #246):* on `/books/plan`, axe's `label-content-name-mismatch` flags the rail's block buttons (`PlanRail.tsx`, 2.2b). A block shows `129k` and is named *The Last American Vampire, 129k words, 2027*: one at 360px and 834px, three at 1280px, the fifth lane's `.qb.un` ones included. The rule isn't in the suites' axe lists. While this task redraws the rail, consider whether a block's name should start with its visible text (WCAG 2.5.3, label in name).
 
 ## Acceptance criteria

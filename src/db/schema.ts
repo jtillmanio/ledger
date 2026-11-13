@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
-  boolean, check, date, doublePrecision, foreignKey, index, integer, jsonb, pgTable, primaryKey,
+  bigint, boolean, check, date, doublePrecision, foreignKey, index, integer, jsonb, pgTable, primaryKey,
   real, serial, text, timestamp, unique,
 } from "drizzle-orm/pg-core";
 
@@ -473,6 +473,17 @@ export const readingPlan = pgTable("reading_plan", {
   ordinal: check("reading_plan_ordinal_check", sql`(${t.ordinal} IS NULL) = (${t.period} !~ '-Q')`),
   quarterOrder: unique("reading_plan_quarter_order").on(t.userId, t.period, t.ordinal),
 }));
+
+// A stretch year (task 2.7, F-23, R3-14): accepting an over-full year is
+// remembered with its date and the words planned then. No user_id (D-91). The
+// year reads settled while its planned words stay at or under accepted_total
+// and over again past it: that comparison is read (planDecision), never stored.
+// *Undo acceptance* deletes the row.
+export const planAcceptance = pgTable("plan_acceptance", {
+  year: integer("year").primaryKey(),
+  acceptedAt: timestamp("accepted_at", { withTimezone: true }).notNull().defaultNow(),
+  acceptedTotal: bigint("accepted_total", { mode: "number" }).notNull(),
+});
 
 // The comics Up next queue (task 1.10, data model 2.16): one ordered list per
 // user, no dates. The order is authored, so it is stored, contiguous from 1;
