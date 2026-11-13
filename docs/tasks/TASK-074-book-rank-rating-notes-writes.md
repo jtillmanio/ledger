@@ -86,7 +86,8 @@ Approved by the owner 2026-11-13. Answers to the plan-gate questions: **rating**
 
 _Filled by /implement-task. One line per round._
 
-Verify R1 PASS | CI R1 PASS (2ecdf5b) | Schema R1 CHANGES (MAJOR: undoRank checked only changed rows, a later append left a tie or gap; 3 MINOR) | Spec R1 CHANGES (AC-5 rank-only survival UNTESTED; follow-up bullet had no destination) → fixed in 33a836a | Verify R2 PASS | Schema R2 APPROVE | Spec R2 APPROVE | Audit: test-auditor NOT RUN (dirty tree: the owner's CRLF-only CSVs, `.playwright-mcp/`) → run by hand, not independent: 9 mutations of `writes.ts`, each caught by its AC's test; pre-task tree has no routes, every test fails → PASS
+Verify R1 PASS | CI R1 cancelled (2ecdf5b, superseded by the fix push; its Lighthouse failed on that superseded build) | Schema R1 CHANGES (MAJOR: undoRank checked only changed rows, a later append left a tie or gap; 3 MINOR) | Spec R1 CHANGES (AC-5 rank-only survival UNTESTED; follow-up bullet had no destination) → fixed in 33a836a | Verify R2 PASS | Schema R2 APPROVE | Spec R2 APPROVE | Audit: test-auditor NOT RUN (dirty tree: the owner's CRLF-only CSVs, `.playwright-mcp/`) → run by hand, not independent: 9 mutations of `writes.ts`, each caught by its AC's test; pre-task tree has no routes, every test fails → PASS
+CI R2 cancelled (33a836a, superseded by the close-out push) | CI R3 PASS (80a5d9f: tests, every e2e project on 8 shards) | Vercel PASS (33a836a's preview; 80a5d9f docs-only, skipped) | Lighthouse PASS (33a836a, within budget)
 
 ## Blocked
 
