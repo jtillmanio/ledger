@@ -87,6 +87,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - The plan picker's *Accept as a stretch year* stays `aria-disabled`; its reason now points at Rebalance on the plan page. Enabling it means *move, then accept the year*, shown only when the target's **year** would go over (the preview's `over` is the target period's, so a quarter over in a year that fits can't be accepted), which needs `previewPlanMove` to answer the year's figure too. TASK-072's budget line offers the same Accept (approved at plan) → docs/tasks/TASK-072-planning-sheet.md § Context
 - The plan page skeleton is ~14px short in its header and ~14px short in its rail at 1280px (from TASK-070); the settled state changes neither height (the footer badge keeps its line, the legend item its wrap at 1280px), so the gap is unchanged and still open (approved at plan) → docs/tasks/TASK-072-planning-sheet.md § Context
 - axe's `label-content-name-mismatch` on the rail's blocks (from TASK-068): untouched here, since this task changes no block's name (approved at plan) → docs/tasks/TASK-072-planning-sheet.md § Context
+- Candidate decision: roadmap 2.7's prose and **Check:** put the card, Rebalance and the settled banner on the dashboard. This task built and tested them on `/books/plan`, per TASK-049 Q2 and `docs/04-design.md` § 12. A decision amending the entry (like D-147 for 2.8) waits on the owner, since decisions mode is `propose` → docs/OWNER-CHECKLIST.md § Approvals from follow-ups
 
 ## Plan
 
