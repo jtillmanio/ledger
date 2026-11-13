@@ -3524,7 +3524,7 @@ this entry by the owner (D-139).
   switcher ends with *No year*, listed and unranked. The Library's *Finished*
   sort stays.
 
-**Check (proposed):** `npm test`: placing a new read into a year of six ranked
+**Check:** `npm test`: placing a new read into a year of six ranked
 reads with scripted answers takes at most 3 picks and leaves ranks 1–7
 contiguous, and its undo restores the six as they were; *Skip* writes no rank;
 a book read in two years holds a rank in each; moving a book from rank 12 to
@@ -4178,7 +4178,7 @@ the old Check is replaced.
   Calibre) and data model 2.19 to match, and adds the command to
   `docs/COMMANDS.md`.
 
-**Check:** (proposed; the owner agrees it by merging or edits it first) with a
+**Check:** with a
 fixture library in a temp folder and the test database: four books, one
 matching a Ledger book with a changed title and word count, one the Ledger
 lacks and marked read, one whose `#date_read` was changed in Calibre after the
@@ -4243,12 +4243,11 @@ D-124. Depends on 4.5 and 1.9.
   today, so *To read · On deck* then *Fantasy* loses On deck. A genre chip keeps
   both.
 
-**Check (proposed):** with On deck books in `Fantasy.Epic Fantasy` and `Sci-Fi`, and one in
+**Check:** with On deck books in `Fantasy.Epic Fantasy` and `Sci-Fi`, and one in
 both, Status → *Up next* renders a *Fantasy* and a *Sci-Fi* section, the book in
 both is in each, and the tab counts it once; the *Fantasy* chip leaves only
-*Fantasy*, survives a reload and writes nothing; a book with no Calibre genre
-sorts by `books.genre`. In the Library, *To read · On deck* then a genre chip
-lists only that genre's On deck books. Screenshots at 360px and 1280px.
+*Fantasy*, survives a reload and writes nothing. In the Library, *To read · On
+deck* then a genre chip lists only that genre's On deck books. Screenshots at 360px and 1280px.
 
 ---
 
