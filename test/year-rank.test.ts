@@ -259,6 +259,19 @@ describe("a Read held only in its status (no log row; owner at 3.4b's plan gate)
     expect(await ranking(2025)).toEqual(BEFORE_2025);
   });
 
+  it("an undo naming a logged read the write didn't rank from nothing is refused with 400, deleting nothing", async () => {
+    // Ranking a6 at 3 moved a3 from 3 to 4: a3's read was ranked before, so it was never one this write logged.
+    const { change } = await (await setRank({ readId: await readOf("a6"), rank: 3 })).json();
+    const a3 = await readOf("a3");
+    expect(change.after).toContainEqual({ readId: a3, rank: 4 });
+    const before = await allReads();
+    expect((await undoRank({ ...change, readId: a3, backfilled: a3 })).status).toBe(400);
+    // Nor one the write never touched.
+    const b1 = await readOf("b1");
+    expect((await undoRank({ ...change, readId: b1, backfilled: b1 })).status).toBe(400);
+    expect(await allReads()).toEqual(before);
+  });
+
   it("taking it out has no read to take out: 400, nothing logged", async () => {
     expect((await setRank({ bookId: "statusonly", rank: null })).status).toBe(400);
     expect(await readsOf("statusonly")).toEqual([]);

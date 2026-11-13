@@ -530,8 +530,11 @@ export async function rankRead(userId: string, target: RankTarget, rank: number 
     let own: { id: number; bookId: string; rank: number | null; year: number | null } | null;
     let backfilled: number | null = null;
     if ("readId" in target) {
+      // The book first, then the read again under its lock: a status undo or a
+      // re-date that commits while this waits has moved or deleted it by then.
+      const found = await rankedRead(tx, userId, target.readId);
+      if (!found || !(await lockBook(tx, found.bookId))) return null;
       own = await rankedRead(tx, userId, target.readId);
-      if (!own || !(await lockBook(tx, own.bookId))) return null;
     } else {
       const { bookId } = target;
       if (!(await lockBook(tx, bookId))) return null;

@@ -70,7 +70,7 @@ describe("migration 0026 (the rank moves to the read)", () => {
     await expect(
       sql.begin(async (tx) => {
         await tx`INSERT INTO books (id, title) VALUES ('ranked', 'A'), ('unranked', 'B'), ('undated', 'C'),
-                 ('twice', 'D'), ('statusonly', 'E'), ('nofinish', 'F')`;
+                 ('twice', 'D'), ('statusonly', 'E'), ('nofinish', 'F'), ('moved', 'G')`;
         await tx`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision) VALUES
                  (${USER}, 'ranked', 'read', '2025-03-01', 'exact'),
                  (${USER}, 'unranked', 'read', '2025-05-01', 'exact'),
@@ -94,15 +94,21 @@ describe("migration 0026 (the rank moves to the read)", () => {
           .map((r) => [r.book_id, r.on, r.p]);
         expect(dates).toEqual(AT_0026.map(([b, on, p]) => [b, on, p]));
 
-        // Rows as 3.4 could leave them: a ranked Read held only in its status, and a rank with no finish.
+        // Rows as 3.4 could leave them: a ranked Read held only in its status, a rank with no finish,
+        // and a rank in 2022 whose book's latest read is in 2023 (the status out of step with it).
         await tx`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision, year_rank) VALUES
                  (${USER}, 'statusonly', 'read', '2023-04-01', 'exact', 1),
-                 (${USER}, 'nofinish', 'to_read', NULL, 'none', 3)`;
+                 (${USER}, 'nofinish', 'to_read', NULL, 'none', 3),
+                 (${USER}, 'moved', 'read', '2022-05-05', 'exact', 2)`;
+        await tx`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision)
+                 VALUES (${USER}, 'moved', '2023-01-15', 'exact')`;
 
         // up: every rank is back on its read. twice's 2024 rank was the one thing down could not hold;
-        // statusonly's read is logged with its rank; nofinish's rank has no read to go to.
+        // statusonly's read is logged with its rank; nofinish's and moved's ranks have no read in their
+        // year, so neither lands anywhere (the migration names them in a NOTICE).
         await up(tx);
         const afterUp = [
+          ["moved", "2023-01-15", "exact", null],
           ["ranked", "2025-03-01", "exact", 1],
           ["statusonly", "2023-04-01", "exact", 1],
           ["twice", "2024-06-01", "exact", null],
@@ -117,7 +123,8 @@ describe("migration 0026 (the rank moves to the read)", () => {
         // down and up once more: nothing moves.
         await tx.unsafe(DOWN).simple();
         expect(await statusRanks(tx)).toEqual([
-          ["nofinish", null], ["ranked", 1], ["statusonly", 1], ["twice", 2], ["undated", null], ["unranked", null],
+          ["moved", null], ["nofinish", null], ["ranked", 1], ["statusonly", 1], ["twice", 2], ["undated", null],
+          ["unranked", null],
         ]);
         await up(tx);
         expect(await reads(tx)).toEqual(afterUp);

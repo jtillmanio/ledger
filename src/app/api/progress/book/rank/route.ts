@@ -76,5 +76,11 @@ function validChange(c: unknown): c is RankChange {
   if (!Array.isArray(left) || left.length > MAX_ROWS || !left.every(isId)) return false;
   if (year === null && left.length > 0) return false;
   if (!validRows(before) || !validRows(after) || before.length !== after.length) return false;
-  return before.every((r, i) => r.readId === after[i].readId);
+  if (!before.every((r, i) => r.readId === after[i].readId)) return false;
+  // A read the write logged was ranked by it, from no rank: the undo deletes only that read.
+  if (backfilled !== null) {
+    const i = after.findIndex((r) => r.readId === backfilled);
+    if (i < 0 || after[i].rank === null || before[i].rank !== null) return false;
+  }
+  return true;
 }
