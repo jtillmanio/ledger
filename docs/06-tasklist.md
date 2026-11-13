@@ -436,9 +436,9 @@ with the task that first reads it.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
-|  | 3.5 | Detail sheets — books and issues | M |  | — |
-|  | 3.4 | Book ratings and top-books reorder | S |  | — |
-|  | 3.4b | Rank a book when you finish it, and every year's top ten | M | _Pulled ahead of 1.26 (D-139)_ | 3.4, 1.5 |
+|  | 3.5 → TASK-078, TASK-079, TASK-080 | Detail sheets — books and issues | M |  | — |
+|  | 3.4 → TASK-074 | Book ratings and top-books reorder | S |  | — |
+|  | 3.4b → TASK-075, TASK-076, TASK-077 | Rank a book when you finish it, and every year's top ten | M | _Pulled ahead of 1.26 (D-139)_ | 3.4, 1.5 |
 |  | 3.6 | Eras on the run detail | M |  | — |
 |  | 3.6b | Spine rows — ordinal gutter and release dates | S |  | 0.8b |
 |  | 3.6c | Hide read in this run | S |  | 0.8a |
@@ -469,12 +469,12 @@ with the task that first reads it.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
-|  | 4.4 | Sync with Calibre, both ways: one command, by hand or weekly | M | _Pulled ahead of 1.26 (D-133)_ | 1.18, 1.21, 1.14c, 5.17 |
+|  | 4.4 → TASK-081, TASK-082, TASK-083 | Sync with Calibre, both ways: one command, by hand or weekly | M | _Pulled ahead of 1.26 (D-133)_ | 1.18, 1.21, 1.14c, 5.17 |
 |  | 4.1 | Metron backfill | M |  | — |
-|  | 4.2 | Open Library and Hardcover backfill | M | _Pulled ahead of 1.26 (D-139)_ | — |
-|  | 4.3 | Covers in the UI | S |  | — |
-|  | 4.5 | Calibre's genres on every screen | M | _Pulled ahead of 1.26 (D-139)_ | 1.18c |
-|  | 4.5b | On deck by genre | S | _Pulled ahead of 1.26 (D-139)_ | 4.5, 1.9 |
+|  | 4.2 → TASK-084 | Open Library and Hardcover backfill | M | _Pulled ahead of 1.26 (D-139)_ | — |
+|  | 4.3 → TASK-085, TASK-086, TASK-087 | Covers in the UI | S |  | — |
+|  | 4.5 → TASK-088, TASK-089 | Calibre's genres on every screen | M | _Pulled ahead of 1.26 (D-139)_ | 1.18c |
+|  | 4.5b → TASK-090 | On deck by genre | S | _Pulled ahead of 1.26 (D-139)_ | 4.5, 1.9 |
 
 ## M17: Book surfaces — Later
 
