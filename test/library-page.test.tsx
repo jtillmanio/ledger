@@ -16,12 +16,16 @@ const queries = vi.hoisted(() => ({ listBooks: vi.fn(async () => [] as unknown[]
 vi.mock("@/db/queries", () => ({
   listBooks: queries.listBooks,
   TO_READ_LEVELS: ["quarter", "year", "on_deck", "someday"],
-  yearSummary: async () => [{ year: 2024, genre: "Fantasy", books: 7, words: 0 }],
+  yearSummary: async () => [{ year: 2024, books: 7, words: 0 }],
   // 41 series: more than the page shows, so the Show all link is drawn.
   seriesProgress: async () => Array.from({ length: 41 }, (_, i) => ({
     series_id: `s${i}`, name: `Series ${i}`, author: null, books_read: 0, total_books: 1, pct: 0,
   })),
-  listCounts: async () => ({ unyeared: 4, unlisted: 3 }),
+  // The genres of the listed books (task 4.5): not the old hard-coded ten.
+  listCounts: async () => ({
+    unyeared: 4, unlisted: 3,
+    genres: [{ genre: "Fantasy", books: 9 }, { genre: "Young Adult", books: 4 }, { genre: "Sci-Fi", books: 1 }],
+  }),
   inboxCount: async () => 0,
   booksInFlight: async () => [],
   booksUpNext: async () => ({ planned: [], someday: 12 }),
@@ -58,8 +62,8 @@ describe("the Library page (AC-3, AC-4)", () => {
     // The reverse link is the one that changes the direction: it is checked on its own below.
     const chips = [...doc.querySelectorAll<HTMLAnchorElement>("a.chip")].filter((a) => !a.closest(".sort"))
       .map((a) => a.getAttribute("href")!).filter((h) => h.startsWith("/books/list"));
-    // Everything, Reading, To read, Read, Unlisted, the five levels, one year, No year and ten genres.
-    expect(chips.length).toBeGreaterThanOrEqual(19);
+    // Everything, Reading, To read, Read, Unlisted, the five levels, one year, No year and three genres.
+    expect(chips.length).toBeGreaterThanOrEqual(12);
     for (const href of chips) {
       const p = new URL(href, "http://x").searchParams;
       expect(p.get("sort"), href).toBe("length");
@@ -103,6 +107,34 @@ describe("the Library page (AC-3, AC-4)", () => {
     }]);
     const { doc } = await render({});
     expect(doc.querySelector(".row-meta")?.textContent).toContain("~202k");
+  });
+});
+
+// Task 4.5 (D-98): the genre chips are the genres the data has, and a row shows the genre listBooks gives it.
+describe("the Library's genres (task 4.5)", () => {
+  it("draws one chip per genre listCounts returns, in its order, in a group named Genre (AC-2)", async () => {
+    const { doc } = await render({ genre: "Young Adult", sort: "length" });
+    const group = doc.querySelector('[role="group"][aria-label="Genre"]')!;
+    expect(group).not.toBeNull();
+    const chips = [...group.querySelectorAll<HTMLAnchorElement>("a.chip")];
+    expect(chips.map((a) => a.textContent)).toEqual(["Fantasy", "Young Adult", "Sci-Fi"]);
+    expect(chips.map((a) => new URL(a.getAttribute("href")!, "http://x").searchParams.get("genre")))
+      .toEqual(["Fantasy", "Young Adult", "Sci-Fi"]);
+    expect(chips.map((a) => a.getAttribute("aria-current"))).toEqual(["false", "true", "false"]);
+    // None of the old hard-coded list the data doesn't have.
+    expect(group.textContent).not.toMatch(/Graphic Novel|Thriller|Classics/);
+    expect(queries.listBooks).toHaveBeenLastCalledWith("test-user", expect.objectContaining({ genre: "Young Adult" }));
+  });
+
+  it("shows the row's genre after its byline (AC-3)", async () => {
+    queries.listBooks.mockResolvedValueOnce([{
+      id: "r", title: "Fourth Fixture", author: "Ann Author", series: null, series_position: null, universe: null,
+      genre: "Romantasy", word_count: null, word_count_source: null, cover_url: null, pending: false, status: "to_read",
+      read_year: null, plan_year: null, finished_on: null, finished_on_precision: "none", started_on: null,
+      started_on_precision: "none", days_taken: null, rating: null, reads: 0, listens: 0, total: 1,
+    }]);
+    const { doc } = await render({});
+    expect(doc.querySelector(".book-row .row-sub")?.textContent).toBe("Ann Author · Romantasy");
   });
 });
 

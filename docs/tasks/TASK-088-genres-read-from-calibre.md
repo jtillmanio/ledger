@@ -1,14 +1,14 @@
 ---
 id: TASK-088
 title: 4.5 Calibre's genres on every screen (1 of 2) — every genre reader takes Calibre's genres
-status: Ready
+status: In progress
 depends_on: [TASK-033, TASK-047, TASK-051]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 11d4126
 ---
 
 # TASK-088 — 4.5 Calibre's genres on every screen (1 of 2) — every genre reader takes Calibre's genres
@@ -75,13 +75,59 @@ every `book_genres` row.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Calibre carries stray top-level genres (`l`, `i`, `Scie`, `Ecomonics`), which now become Library chips; fix them in Calibre, then `npm run calibre` and extract (approved at plan) → `docs/OWNER-CHECKLIST.md` § Actions
+- TASK-089: the drop removes `book_genre_levels`' workbook-fallback branch; no reader changes (approved at plan) → `docs/tasks/TASK-089-drop-books-genre.md` § Context
+- TASK-090: `listCounts().genres` and `book_genre_levels` serve On deck's top-level genre sections (approved at plan) → `docs/tasks/TASK-090-on-deck-by-genre.md` § Context
+- `test/reading-log.test.tsx` › *two reads: All reads (2)…* is a timing flake: `openReads` waits a fixed 25ms for the lazy reads chunk, and under the full suite's load the list isn't there yet (`list()` null at :680); it passes alone. Wait for the list instead (`vi.waitFor`). Not this task's code
+- Candidate decision: the plan-gate answers (row shows the deepest direct path's last segment; chips and year totals at depth 1; seven hue families, family order for a book with several) — asked at close-out (`decisions: propose`)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+_Approved 2026-11-13. Plan-gate answers (the entry's questions): a Library row shows the last segment of the book's deepest direct path (ties: alphabetical by path); chips are top-level genres only; year totals count at depth 1; hues are seven families in a hand-written table, a book with several top-level genres taking the first family in `--g1`…`--g7` order; `--g8` for no genre._
+
+**Steps**
+
+1. `etl/views.sql`: new view `book_genre_levels (book_id, genre, depth, direct, name)` — `book_genre_tree`'s rows, plus a book with no `book_genres` row's `books.genre` as one depth-1 direct row; case folded per book (`min(genre COLLATE "C")` grouped on `lower(genre)`); `name` is a path's last segment (SQL, never the app). The one home of the fallback, so TASK-089 drops only that branch. `books_by_year` counts each read once per depth-1 genre of `book_genre_levels` (NULL for a book with none). `plan_suggestions`' `top_genre` reads `book_genre_levels` at depth 1 instead of its own union.
+2. `src/db/queries.ts`: `listBooks` filters with `EXISTS (book_genre_levels, any depth, lower(genre) = lower($genre))`; a row's `genre` is the `name` of its deepest direct path (ties alphabetical by path). `listCounts` gains `genres`: depth-1 genres of the live books the list's *Everything* shows (not Unlisted), merged case-insensitively, most books first, then by name (in the page's one chip query, task 0.9's budget; *revision 1*). `yearSummary` becomes reads per year from `book_reads` (the year chips; summing `books_by_year` would now count a two-genre read twice; *revision 1*). `planRail`, `planRows` and `quarterBlocks` return `genres text[]` (depth-1, sorted; *revision 2*).
+3. `src/lib/plan-rail.ts`: `GENRE_FAMILIES` (g1 Fantasy; g2 Science Fiction; g3 Young Adult, Childrens; g4 Thriller, Mystery, Crime; g5 Horror, Paranormal; g6 History, Science, Biography, Autobiography, Nonfiction, Politics, Business, Religion, Christian, Psychology, Philosophy, Sociology, Ecomonics, Health, Food, Travel, Sports, Popular Culture, Games, Video Games, Survival; anything else g7); `genreHue(genres: string[])` = first family the book has, `--g7` for an unmapped genre, `--g8` for none. `RailBook.genres`; `PlanRail.tsx`, `PlanQuarterRows.tsx`, `RailDrag.tsx` pass it.
+4. `src/app/books/list/page.tsx` + `src/app/globals.css`: chips from `listCounts().genres` in `role="group"` `aria-label="Genre"`, one row scrolling sideways (no page scroll), 44px on the phone; year chips from `yearSummary`, one row a year.
+5. `design/mockups-index.md`: a not-drawn note — the Library's genre chip row (4.5) is built, not drawn.
+
+**Files**
+
+- `etl/views.sql` — `book_genre_levels`, `books_by_year`, `plan_suggestions`' `top_genre`.
+- `src/db/queries.ts` — `listBooks` filter and row genre, `listCounts().genres`, `yearSummary`, rail/rows/strip `genres`.
+- `src/app/books/list/page.tsx` — chips and year chips from the data.
+- `src/lib/plan-rail.ts` — family table, `genreHue`.
+- `src/components/PlanRail.tsx`, `PlanQuarterRows.tsx`, `RailDrag.tsx` — *not in Files likely touched* (named in Context): pass `genres`. (`QuarterStrip.tsx` unchanged: it spreads `quarterBlocks`' rows, now with `genres`.)
+- `src/app/globals.css` — *not listed*: the scrolling genre row.
+- `design/mockups-index.md` — *not listed*: the not-drawn note.
+- Tests: `etl/test_views.sql`, `test/queries.test.ts`, `test/plan-rail.test.ts`, `test/library-page.test.tsx`; *not listed*: `test/year-chips.test.tsx`, `test/list-totals.test.tsx` (the new `yearSummary` and `listCounts` shapes), `test/plan-page.test.tsx` (AC-5 across the rail, rows and the dashboard strip), `test/books-dashboard.test.ts`, `test/e2e/plan-rail.spec.ts`, `test/e2e/skeletons.spec.ts` (fixtures: `genres`), new `test/e2e/library-genres.spec.ts`.
+
+**Index**: none. The filter is a per-book `EXISTS` through the view, which reads `book_genres` by its primary key (`book_id` first); no query filters `book_genres` by `genre`, so an index on it would go unused.
+
+**Test strategy**
+
+- AC-1 (filter clauses), AC-2, AC-3 (row genre): `test/queries.test.ts` › *genres from Calibre (task 4.5)* — the Check's fixture; filter finds book 1 under `Fantasy`, `Fantasy.Epic Fantasy`, `Young Adult` (and not `Sci-Fi`), book 2 under `Sci-Fi`; `listCounts().genres` = the depth-1 genres of listed books, an Unlisted book's genre making no chip, and each chip's `listBooks` = the view's books under it; rows read `Romantasy` and `Sci-Fi`; `yearSummary` counts book 1 once.
+- AC-1 (`books_by_year` counts each), AC-4: `etl/test_views.sql` — 2025 has one read each under `Fantasy`, `Young Adult`, `Sci-Fi`.
+- AC-5: `test/plan-rail.test.ts` — the family table, family order, `--g7` unmapped, `--g8` none; `planRail`/`planRows` return Calibre's depth-1 genres else `books.genre`. Same `genreHue(book.genres)` call in the three components.
+- AC-3 render, AC-2 chips from data: `test/library-page.test.tsx`.
+- AC-6: `test/e2e/library-genres.spec.ts` — chip names, ≥ 44px at 360px, no horizontal page scroll, axe, screenshots 360/834/1280 light and dark.
+
+**Risks**: the year chips change source; reading-log tests (single or no genre) should hold.
+
+**Revisions after approval**
+
+1. Chips and year chips through the existing `listCounts` and `yearSummary`, not new `libraryGenres` and `readYears`: the page keeps one chip query (task 0.9's budget), and `yearSummary`'s only reader is the year chips. Same results, no new function.
+2. `quarterBlocks` returns `genres` instead of dropping `b.genre`: the plan called it unused, but `QuarterStrip.tsx` spreads its rows into `RailBook`, so the books dashboard's strip draws the hue from it (AC-5: one book, one hue).
+
+**Size**: ~9 source and 7 test files, no schema. Already part 1 of 2; a further split would part the rail's hue from its data, so kept whole.
 
 ## Review log
 
 _Filled by /implement-task. One line per round._
+
+- Verify R1 FAIL(1: reading-log.test.tsx flake, passes alone; follow-up) → R2 PASS (tsc, lint, test:no-e2e: 1705 vitest, views SQL, 381 ETL) | touched specs in w390-light PASS (library-genres 4/4 after a cleanup-order fix, plan-rail, skeletons)
 
 ## Blocked
 
@@ -92,4 +138,4 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Verify rounds:
 - Review rounds:
 - First-pass AC FAILs:
-- Plan revisions after approval:
+- Plan revisions after approval: 2

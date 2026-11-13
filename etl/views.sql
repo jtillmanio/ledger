@@ -463,20 +463,6 @@ FROM book_status s
 WHERE s.status = 'read'
   AND NOT EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = s.user_id AND e.book_id = s.book_id);
 
--- Reads per year per genre. Replaces the Read 20XX tabs. The year is derived
--- from the finish date (D-21): a year-only finish is its July 1st, 'approximate',
--- so it lands in its year; an undated read is in no year, and the books page's
--- *No year* chip counts it instead. `books` counts reads: a book read in 2019
--- and again in 2026 is one in each. `listened` is how many of those reads were
--- listens (task 1.23, D-85): `books` still includes them, as a listen is a read.
-CREATE OR REPLACE VIEW books_by_year AS
-SELECT r.user_id, extract(year FROM r.finished_on)::int AS year, b.genre,
-       COUNT(*) AS books, SUM(b.word_count) AS words,
-       COUNT(*) FILTER (WHERE r.format = 'audio') AS listened
-FROM book_reads r JOIN books b ON b.id = r.book_id
-WHERE r.finished_on IS NOT NULL AND b.deleted_at IS NULL
-GROUP BY r.user_id, extract(year FROM r.finished_on)::int, b.genre;
-
 -- Calibre's genres with their hierarchy (task 1.18c, D-98). book_genres keeps
 -- each genre as Calibre writes it, a dotted path, and Calibre's genres cascade:
 -- a book tagged 'Young Adult.Fantasy.Romantasy' is in 'Young Adult' and
@@ -492,6 +478,46 @@ FROM book_genres g
 JOIN books b ON b.id = g.book_id AND b.deleted_at IS NULL
 CROSS JOIN LATERAL generate_series(1, cardinality(string_to_array(g.genre, '.'))) AS l(depth)
 GROUP BY g.book_id, array_to_string((string_to_array(g.genre, '.'))[1:l.depth], '.'), l.depth;
+
+-- A book's genres as every reader takes them (task 4.5, D-98): book_genre_tree's
+-- rows, and for a book Calibre gives no genre, the workbook's books.genre as one
+-- top-level row. That branch is the only place books.genre is read, so dropping
+-- the column (TASK-089) changes nothing else. One row per book, genre and level
+-- whatever its case, spelled the capitalised way under "C" (byte order, on any
+-- database's collation, as plan_suggestions did): a book tagged 'Horror' and
+-- 'horror.Cosmic' is in 'Horror' once. `name` is a path's last segment, what a
+-- Library row shows ('Romantasy'): split here, never in the app.
+CREATE OR REPLACE VIEW book_genre_levels AS
+SELECT g.book_id, min(g.genre COLLATE "C") AS genre, g.depth, bool_or(g.direct) AS direct,
+       (string_to_array(min(g.genre COLLATE "C"), '.'))[g.depth] AS name
+FROM (
+  SELECT t.book_id, t.genre, t.depth, t.direct FROM book_genre_tree t
+  UNION ALL
+  SELECT b.id, b.genre, 1, true FROM books b
+  WHERE b.deleted_at IS NULL AND btrim(b.genre) <> ''
+    AND NOT EXISTS (SELECT 1 FROM book_genres x WHERE x.book_id = b.id)
+) g
+GROUP BY g.book_id, lower(g.genre), g.depth;
+
+-- Reads per year per genre. Replaces the Read 20XX tabs. The year is derived
+-- from the finish date (D-21): a year-only finish is its July 1st, 'approximate',
+-- so it lands in its year; an undated read is in no year, and the books page's
+-- *No year* chip counts it instead. `books` counts reads: a book read in 2019
+-- and again in 2026 is one in each. `listened` is how many of those reads were
+-- listens (task 1.23, D-85): `books` still includes them, as a listen is a read.
+-- The genre is each top-level genre of book_genre_levels (task 4.5, D-98): a
+-- read counts once under each, so a year's genres can sum past its reads (the
+-- year chips count reads, not this); a book with none is under NULL. One
+-- spelling whatever the case across books; the column keeps the database's
+-- collation, which CREATE OR REPLACE can't change.
+CREATE OR REPLACE VIEW books_by_year AS
+SELECT r.user_id, extract(year FROM r.finished_on)::int AS year, min(g.genre) COLLATE "default" AS genre,
+       COUNT(*) AS books, SUM(b.word_count) AS words,
+       COUNT(*) FILTER (WHERE r.format = 'audio') AS listened
+FROM book_reads r JOIN books b ON b.id = r.book_id
+LEFT JOIN book_genre_levels g ON g.book_id = b.id AND g.depth = 1
+WHERE r.finished_on IS NOT NULL AND b.deleted_at IS NULL
+GROUP BY r.user_id, extract(year FROM r.finished_on)::int, lower(g.genre);
 
 -- A plan row's period, read (task 1.7, D-37, D-38): '2027-Q1' is year 2027,
 -- quarter 1, level 'quarter'; '2027' is year 2027 with no quarter, level 'year';
@@ -844,8 +870,9 @@ WHERE q.rank = 1 AND (q.status IS NULL OR q.status IN ('to_read', 'unlisted'));
 --                   (estimates included, an unknown count never), are at most
 --                   p_room, largest first.
 --   genre_change    to_read books none of whose top-level genres has a read in
---                   p_today's year: book_genre_tree at depth 1, else books.genre
---                   for a book Calibre gives none (D-98). The year is today's,
+--                   p_today's year: book_genre_levels at depth 1, Calibre's,
+--                   else books.genre for a book Calibre gives none (D-98,
+--                   task 4.5). The year is today's,
 --                   not the target's: a future year has no reads yet.
 -- Groups 1-3 take what follow_next does (to read, Unlisted, no status), flagged
 -- `unlisted` for the sheet's tag (1.22); groups 4-8 take to_read only. So a read,
@@ -868,7 +895,7 @@ WITH span AS (
 ), book AS (
   -- Every live book not already planned in the target, with your status and
   -- its words as plan_book_words counts them.
-  SELECT b.id, b.title, b.genre, b.added_at, st.status,
+  SELECT b.id, b.title, b.added_at, st.status,
          CASE WHEN b.word_count IS NOT NULL THEN b.word_count_source
               WHEN b.page_count >= 50 THEN 'estimated' END                       AS word_source,
          COALESCE(b.word_count,
@@ -882,18 +909,10 @@ WITH span AS (
                     WHERE pp.user_id = p_user AND pp.book_id = b.id
                       AND (pp.period = p_target OR s.quarter IS NULL AND pp.year = s.year))
 ), top_genre AS (
-  -- Each live book's top-level genres: Calibre's, else the workbook's one;
-  -- one spelling of each whatever its case, so the detail never names it twice:
-  -- the capitalised one, under "C" (byte order), on any database's collation.
-  SELECT g.book_id, min(g.genre COLLATE "C") AS genre
-  FROM (
-    SELECT t.book_id, t.genre FROM book_genre_tree t WHERE t.depth = 1
-    UNION ALL
-    SELECT b.id, b.genre FROM books b
-    WHERE b.deleted_at IS NULL AND b.genre IS NOT NULL
-      AND NOT EXISTS (SELECT 1 FROM book_genres g WHERE g.book_id = b.id)
-  ) g
-  GROUP BY g.book_id, lower(g.genre)
+  -- Each live book's top-level genres: Calibre's, else the workbook's one
+  -- (book_genre_levels, task 4.5); one spelling of each whatever its case, so
+  -- the detail never names it twice: the capitalised one, under "C".
+  SELECT g.book_id, g.genre FROM book_genre_levels g WHERE g.depth = 1
 ), read_genre AS (
   SELECT DISTINCT lower(g.genre) AS genre
   FROM book_reads r JOIN top_genre g ON g.book_id = r.book_id

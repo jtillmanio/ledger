@@ -1254,6 +1254,12 @@ p{margin:0 0 .75rem;max-width:66ch}
 .measure span{display:block;height:100%;background:var(--ready)}
 
 .filters{display:flex;flex-wrap:wrap;gap:.375rem;margin:1rem 0 1.25rem}
+/* The Library's genre chips (task 4.5): as many as Calibre has top-level genres, so one row that
+   scrolls sideways inside itself, never the page. The padding keeps a chip's focus ring inside the
+   row's clip. 44px on the phone, 28px from the tablet up (the UX floor). */
+.genre-row{flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;padding:4px;margin-left:-4px;margin-right:-4px}
+.genre-row .chip{flex:0 0 auto;display:inline-flex;align-items:center;white-space:nowrap;min-height:44px}
+@media (min-width:768px){ .genre-row .chip{min-height:28px} }
 /* The Library's Sort (task 2.2e): a label, a native select (the phone's own picker) and the chip that
    reverses it, in the status row. The select is 32px, the chip's 28px or more: nothing under 24px. */
 .sort{display:inline-flex;align-items:center;gap:.375rem;margin-left:auto}

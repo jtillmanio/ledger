@@ -499,6 +499,7 @@ export type BookRow = {
   series_position: number | null;
   /** Its universe's name (task 2.2j, D-134); null when it is in none. */
   universe: string | null;
+  /** The last segment of its deepest Calibre genre, else its workbook genre (task 4.5, D-98): `Romantasy`. */
   genre: string | null; word_count: number | null;
   /** `estimated` is pages × words per page, shown with a `~` (task 2.2b). */
   word_count_source: "stated" | "estimated" | null;
@@ -526,7 +527,9 @@ export type BookRow = {
  * from book_reads, as books_by_year counts it (D-65): a reread doesn't move it
  * out of its first year. An Unlisted book (task 1.21, D-83) is listed only by a
  * search or `status: "unlisted"`, its own chip: *Everything*, the genre and the
- * year chips leave it out. */
+ * year chips leave it out. `genre` is a whole path at any level, any case: a
+ * book is under it when `book_genre_levels` puts it there (task 4.5, D-98), so
+ * `Fantasy` finds a book tagged only `Fantasy.Epic Fantasy`. */
 export async function listBooks(
   userId: string,
   opts: {
@@ -541,7 +544,10 @@ export async function listBooks(
   const { sort, dir } = parseSort(opts.sort, opts.dir);
   return sql<WithTotal<BookRow>[]>`
     SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe,
-           b.genre, b.word_count, b.word_count_source, b.cover_url,
+           -- The row's genre (task 4.5): the last segment of its deepest direct path, ties by the path.
+           (SELECT l.name FROM book_genre_levels l WHERE l.book_id = b.id AND l.direct
+            ORDER BY l.depth DESC, l.genre LIMIT 1) AS genre,
+           b.word_count, b.word_count_source, b.cover_url,
            (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
            COALESCE(st.status, 'to_read') AS status,
            CASE WHEN st.status = 'read' THEN extract(year FROM st.finished_on)::int END AS read_year,
@@ -594,7 +600,9 @@ export async function listBooks(
       AND (${status}::text IS NULL OR COALESCE(st.status,'to_read') = ${status}
            OR (${status} = 'reading' AND st.status = 'listening'))
       AND (${status}::text IS NOT NULL OR ${q}::text IS NOT NULL OR st.status IS DISTINCT FROM 'unlisted')
-      AND (${genre}::text  IS NULL OR b.genre = ${genre})
+      AND (${genre}::text  IS NULL
+           OR EXISTS (SELECT 1 FROM book_genre_levels l
+                      WHERE l.book_id = b.id AND lower(l.genre) = lower(${genre})))
       AND (${year}::int    IS NULL
            OR EXISTS (SELECT 1 FROM book_reads r
                       WHERE r.user_id = ${userId} AND r.book_id = b.id
@@ -760,10 +768,18 @@ export async function booksDone(userId: string) {
   `;
 }
 
+/**
+ * The reads in each year, newest first: the Library's year chips (D-65). From
+ * `book_reads`, not `books_by_year`, which counts a read under each of its
+ * book's top-level genres (task 4.5) and would count a two-genre read twice.
+ */
 export async function yearSummary(userId: string) {
-  return sql<{ year: number; genre: string | null; books: number; words: number }[]>`
-    SELECT year, genre, books, words FROM books_by_year
-    WHERE user_id = ${userId} ORDER BY year DESC, books DESC
+  return sql<{ year: number; books: number; words: number }[]>`
+    SELECT extract(year FROM r.finished_on)::int AS year, COUNT(*)::int AS books,
+           COALESCE(SUM(b.word_count), 0)::float8 AS words
+    FROM book_reads r JOIN books b ON b.id = r.book_id AND b.deleted_at IS NULL
+    WHERE r.user_id = ${userId} AND r.finished_on IS NOT NULL
+    GROUP BY 1 ORDER BY year DESC
   `;
 }
 
@@ -801,13 +817,20 @@ export async function readWithoutYear(userId: string): Promise<number> {
   return (await listCounts(userId)).unyeared;
 }
 
+/** A Library genre chip (task 4.5): a top-level genre and how many listed books are under it. */
+export type GenreChip = { genre: string; books: number };
+
 /**
- * The master list's two chip counts, in one query (the page's budget, task 0.9):
- * `unyeared`, as `readWithoutYear`; `unlisted`, the live books that are
- * Unlisted (task 1.21), for the *Unlisted · N* chip, hidden at zero.
+ * The Library's chips, in one query (the page's budget, task 0.9): `unyeared`,
+ * as `readWithoutYear`; `unlisted`, the live books that are Unlisted (task
+ * 1.21), for the *Unlisted · N* chip, hidden at zero; and `genres`, the
+ * top-level genres of the books *Everything* lists, from `book_genre_levels`
+ * (task 4.5, D-98: Calibre's, else the workbook's), most books first, one chip
+ * per genre whatever its case. An Unlisted book makes no chip, as the genre
+ * filter would not list it.
  */
-export async function listCounts(userId: string): Promise<{ unyeared: number; unlisted: number }> {
-  const [row] = await sql<{ unyeared: number; unlisted: number }[]>`
+export async function listCounts(userId: string): Promise<{ unyeared: number; unlisted: number; genres: GenreChip[] }> {
+  const [row] = await sql<{ unyeared: number; unlisted: number; genres: GenreChip[] }[]>`
     SELECT
       (SELECT COUNT(*)::int
        FROM book_reads r
@@ -816,7 +839,14 @@ export async function listCounts(userId: string): Promise<{ unyeared: number; un
       (SELECT COUNT(*)::int
        FROM book_status st
        JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
-       WHERE st.user_id = ${userId} AND st.status = 'unlisted') AS unlisted
+       WHERE st.user_id = ${userId} AND st.status = 'unlisted') AS unlisted,
+      (SELECT COALESCE(json_agg(json_build_object('genre', c.genre, 'books', c.books)
+                                ORDER BY c.books DESC, lower(c.genre), c.genre), '[]'::json)
+       FROM (SELECT min(l.genre) AS genre, COUNT(DISTINCT l.book_id)::int AS books
+             FROM book_genre_levels l
+             LEFT JOIN book_status st ON st.book_id = l.book_id AND st.user_id = ${userId}
+             WHERE l.depth = 1 AND st.status IS DISTINCT FROM 'unlisted'
+             GROUP BY lower(l.genre)) c) AS genres
   `;
   return row;
 }
@@ -1433,11 +1463,19 @@ export async function quarterShelf(userId: string, period: string) {
   `;
 }
 
+/**
+ * A book's top-level genres for its hue (task 4.5, D-98): `book_genre_levels` at depth 1, Calibre's
+ * else the workbook's, sorted; an empty array for a book with none. Needs the book as `b`.
+ */
+const TOP_GENRES = `ARRAY(SELECT l.genre FROM book_genre_levels l WHERE l.book_id = b.id AND l.depth = 1 ORDER BY l.genre)`;
+
 /** One block of the quarter strip: a book that counts against the quarter, with its words. */
 export type QuarterBlock = {
   id: string; title: string; words: number; status: "to_read" | "reading" | "read";
   /** The count is an estimate (pages at your words per page), not a stated one. */
-  estimated: boolean; genre: string | null;
+  estimated: boolean;
+  /** Its top-level genres, for its hue on the dashboard's strip (task 4.5): as `planRail`'s. */
+  genres: string[];
 };
 
 /**
@@ -1447,7 +1485,8 @@ export type QuarterBlock = {
  */
 export async function quarterBlocks(userId: string, period: string) {
   return sql<QuarterBlock[]>`
-    SELECT w.book_id AS id, b.title, w.words, w.status, w.word_source = 'estimated' AS estimated, b.genre
+    SELECT w.book_id AS id, b.title, w.words, w.status, w.word_source = 'estimated' AS estimated,
+           ${sql.unsafe(TOP_GENRES)} AS genres
     FROM plan_book_words w
     JOIN books b ON b.id = w.book_id AND b.deleted_at IS NULL
     JOIN reading_plan p ON p.user_id = w.user_id AND p.book_id = w.book_id AND p.period = w.period
@@ -1466,7 +1505,7 @@ export async function quarterBlocks(userId: string, period: string) {
 export async function planRail(userId: string, year: number): Promise<RailBook[]> {
   return sql<RailBook[]>`
     SELECT w.book_id AS id, b.title, w.words, w.word_source = 'estimated' AS estimated,
-           w.period, b.genre, w.status
+           w.period, ${sql.unsafe(TOP_GENRES)} AS genres, w.status
     FROM plan_book_words w
     JOIN books b ON b.id = w.book_id AND b.deleted_at IS NULL
     JOIN reading_plan p ON p.user_id = w.user_id AND p.book_id = w.book_id AND p.period = w.period
@@ -1484,7 +1523,8 @@ export type PlanRow = {
   words: number | null;
   /** The count rests on an estimate (pages at your words per page), not a stated one. */
   estimated: boolean;
-  genre: string | null;
+  /** Its top-level genres, for its hue (task 4.5): `book_genre_levels` at depth 1, sorted; empty for none. */
+  genres: string[];
   /** `2027-Q1`. */
   period: string;
   /** Contiguous from 1 within the quarter (D-37). */
@@ -1501,7 +1541,7 @@ export async function planRows(userId: string, year: number): Promise<PlanRow[]>
   return sql<PlanRow[]>`
     SELECT w.book_id AS id, b.title, a.name AS author, s.name AS series, b.series_position AS "seriesPosition",
            u.name AS universe,
-           w.words, w.word_source = 'estimated' AS estimated, b.genre, w.period, p.ordinal
+           w.words, w.word_source = 'estimated' AS estimated, ${sql.unsafe(TOP_GENRES)} AS genres, w.period, p.ordinal
     FROM plan_book_words w
     JOIN books b ON b.id = w.book_id AND b.deleted_at IS NULL
     JOIN reading_plan p ON p.user_id = w.user_id AND p.book_id = w.book_id AND p.period = w.period

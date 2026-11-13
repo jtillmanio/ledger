@@ -158,6 +158,50 @@ describe("a row names the author, the universe, then the series and number (task
   });
 });
 
+// Task 4.5 (AC-5, D-98): a book's hue is its Calibre top-level genre's family, else its books.genre's,
+// else --g8, and the rail and the open quarter's rows draw it from the same genres.
+describe("a book's hue comes from its Calibre genres, the same on the rail and the rows (task 4.5, AC-5)", () => {
+  beforeEach(async () => {
+    await seed(MIXED);
+    // z: Calibre's Science Fiction and Young Adult paths (its workbook Horror must not count) → --g2.
+    // m: no Calibre genre, the workbook's Fantasy → --g1. k: none at all → --g8.
+    await sql`UPDATE books SET genre = 'Horror' WHERE id = 'z'`;
+    await sql`UPDATE books SET genre = 'Fantasy' WHERE id = 'm'`;
+    await sql`INSERT INTO book_genres (book_id, genre) VALUES ('z', 'Young Adult.Dystopia'), ('z', 'Science Fiction.Space Opera')`;
+  });
+
+  const hue = (el: { getAttribute(name: string): string | null } | null) =>
+    /--hue:\s*var\((--g\d)\)/.exec(el?.getAttribute("style") ?? "")?.[1] ?? null;
+
+  it("planRail and planRows return the book's top-level genres, Calibre's first", async () => {
+    const rail = Object.fromEntries((await q.planRail(USER, 2027)).map((b) => [b.id, b.genres]));
+    expect(rail).toMatchObject({ z: ["Science Fiction", "Young Adult"], m: ["Fantasy"], a: [] });
+    const rows = Object.fromEntries((await q.planRows(USER, 2027)).map((r) => [r.id, r.genres]));
+    expect(rows).toMatchObject({ z: ["Science Fiction", "Young Adult"], m: ["Fantasy"], k: [] });
+  });
+
+  it("draws each book in its family's hue, the same on its rail block and its row", async () => {
+    const { doc } = await page();
+    for (const [id, expected] of [["z", "--g2"], ["m", "--g1"]] as const) {
+      expect(hue(doc.querySelector(`.plan-row[data-book="${id}"]`)), `row ${id}`).toBe(expected);
+      expect(hue(doc.querySelector(`button.qb[data-book="${id}"]`)), `rail ${id}`).toBe(expected);
+    }
+    // No word count, no block; its row still draws the no-genre hue.
+    expect(hue(doc.querySelector('.plan-row[data-book="k"]'))).toBe("--g8");
+  });
+
+  it("draws the same hue on the books dashboard's quarter strip (quarterBlocks)", async () => {
+    const { quarters } = await q.planCapacity(USER, 2027);
+    const { default: QuarterStrip } = await import("../src/components/QuarterStrip");
+    const blocks = await q.quarterBlocks(USER, "2027-Q2");
+    expect(Object.fromEntries(blocks.map((b) => [b.id, b.genres]))).toMatchObject({ z: ["Science Fiction", "Young Adult"], m: ["Fantasy"] });
+    const strip = new Window();
+    strip.document.body.innerHTML = renderToStaticMarkup(createElement(QuarterStrip, { cap: quarters[1], blocks, inHand: null }));
+    expect(hue(strip.document.querySelector('button.qb[data-book="z"]'))).toBe("--g2");
+    expect(hue(strip.document.querySelector('button.qb[data-book="m"]'))).toBe("--g1");
+  });
+});
+
 describe("one empty state, not one per empty quarter (AC-4)", () => {
   beforeEach(() => seed(Q1_ONLY));
 

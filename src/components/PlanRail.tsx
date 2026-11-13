@@ -269,7 +269,7 @@ function Item({ item, length, axis, lane = false, inHand, onPress, pointer }: {
   return (
     <button type="button" className={classes} data-book={book.id} data-wc={book.estimated ? "estimated" : undefined}
       data-state={state} aria-label={railName(book)} data-p={phone || undefined} data-d={desk || undefined}
-      style={{ ...place, "--hue": `var(${genreHue(book.genre)})` } as CSSProperties}
+      style={{ ...place, "--hue": `var(${genreHue(book.genres)})` } as CSSProperties}
       data-lifted={pointer?.lifted === book.id || undefined}
       onPointerDown={pointer && ((e) => pointer.down(e, book))}
       onPointerEnter={pointer && ((e) => pointer.enter(e, book))}

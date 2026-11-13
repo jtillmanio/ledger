@@ -171,7 +171,7 @@ export function useRailDrag(root: RefObject<HTMLElement | null>, targets: DropTa
         <div className="rail-ghost" aria-hidden="true" data-wc={drag.book.estimated ? "estimated" : undefined}
           style={{
             left: drag.left, top: drag.top, width: drag.width, height: drag.height,
-            "--hue": `var(${genreHue(drag.book.genre)})`,
+            "--hue": `var(${genreHue(drag.book.genres)})`,
           } as CSSProperties}>
           <span className="qt">{drag.book.title}</span>
           <span className="ql mono">{drag.book.estimated ? "~" : ""}{kWords(drag.book.words)}</span>

@@ -17,7 +17,7 @@ import {
 import { testSql, truncateAll } from "./db";
 
 const book = (id: string, words: number, o: Partial<RailBook> = {}): RailBook => ({
-  id, title: id.toUpperCase(), words, estimated: false, period: "2027-Q1", genre: null, status: "to_read", ...o,
+  id, title: id.toUpperCase(), words, estimated: false, period: "2027-Q1", genres: [], status: "to_read", ...o,
 });
 
 /** The phone's column: 230px stands for 1000k, so a word is 0.00023px. */
@@ -363,24 +363,43 @@ describe("the names (AC-3)", () => {
   });
 });
 
-describe("a book's hue (decision: one book, one hue)", () => {
-  it("is the same for the same genre, whatever its case or spacing", () => {
-    expect(genreHue("Fantasy")).toBe(genreHue("  fantasy "));
-    expect(genreHue("Science Fiction")).toBe(genreHue("science fiction"));
+describe("a book's hue: its top-level genre's family (task 4.5, AC-5)", () => {
+  it("maps each family onto its hue, the owner's table at 4.5's plan gate", () => {
+    const families: [string, string[]][] = [
+      ["--g1", ["Fantasy"]],
+      ["--g2", ["Science Fiction"]],
+      ["--g3", ["Young Adult", "Childrens"]],
+      ["--g4", ["Thriller", "Mystery", "Crime"]],
+      ["--g5", ["Horror", "Paranormal"]],
+      ["--g6", ["History", "Science", "Biography", "Autobiography", "Nonfiction", "Politics", "Business", "Religion",
+        "Christian", "Psychology", "Philosophy", "Sociology", "Ecomonics", "Health", "Food", "Travel", "Sports",
+        "Popular Culture", "Games", "Video Games", "Survival"]],
+    ];
+    for (const [hue, genres] of families) for (const g of genres) expect(genreHue([g]), g).toBe(hue);
   });
 
-  it("is one of the seven genre hues, and a book with no genre is the eighth", () => {
-    for (const g of ["Fantasy", "Mystery", "Horror", "Romance", "History", "Poetry", "Memoir", "Thriller", "Classics"]) {
-      expect(genreHue(g)).toMatch(/^--g[1-7]$/);
+  it("puts every other genre, and one added to Calibre later, on --g7", () => {
+    for (const g of ["Historical Fiction", "Classics", "Contemporary", "Humor", "Erotica", "Romance", "Fan Fiction", "Comics", "Memoir", "Sci-Fi"]) {
+      expect(genreHue([g]), g).toBe("--g7");
     }
-    expect(genreHue(null)).toBe("--g8");
-    expect(genreHue("")).toBe("--g8");
-    expect(genreHue("   ")).toBe("--g8");
   });
 
-  it("does not put every genre on one hue", () => {
-    const hues = new Set(["Fantasy", "Mystery", "Horror", "Romance", "History", "Poetry", "Memoir", "Thriller", "Classics", "Essays"].map(genreHue));
-    expect(hues.size).toBeGreaterThan(2);
+  it("is --g8 for a book with no genre at all", () => {
+    expect(genreHue([])).toBe("--g8");
+    expect(genreHue([" "])).toBe("--g8");
+  });
+
+  it("ignores case and spacing", () => {
+    expect(genreHue(["  fantasy "])).toBe("--g1");
+    expect(genreHue(["science fiction"])).toBe("--g2");
+  });
+
+  it("takes the first family in --g1…--g7 order that the book has, whatever order its genres come in", () => {
+    expect(genreHue(["Young Adult", "Fantasy"])).toBe("--g1");
+    expect(genreHue(["Young Adult", "Science Fiction"])).toBe("--g2");
+    expect(genreHue(["Horror", "Young Adult"])).toBe("--g3");
+    expect(genreHue(["Romance", "Paranormal"])).toBe("--g5");
+    expect(genreHue(["History", "Classics"])).toBe("--g6");
   });
 });
 
