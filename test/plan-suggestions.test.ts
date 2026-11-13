@@ -354,3 +354,15 @@ describe("stored nothing, and books.added_at (AC-5)", () => {
     expect(idsIn(await q.planSuggestions(USER, Q2, TODAY), "recently_added")).toEqual(["d1", "d10", "d89"]);
   });
 });
+
+describe("the row's place line (TASK-072, D-134)", () => {
+  it("answers each book's universe, series and position, null where it has none", async () => {
+    await checkFixture();
+    await sql`INSERT INTO book_universes (id, name) VALUES ('v', 'Verse')`;
+    await sql`UPDATE books SET universe_id = 'v' WHERE series_id = 's'`;
+    const rows = await q.planSuggestions(USER, Q2, TODAY);
+    expect(rows.find((r) => r.id === "s-3")).toMatchObject({ universe: "Verse", series: "Series s" });
+    expect(Number(rows.find((r) => r.id === "s-3")!.seriesPosition)).toBe(3);
+    expect(rows.find((r) => r.id === "af-1")).toMatchObject({ universe: null, series: null, seriesPosition: null });
+  });
+});

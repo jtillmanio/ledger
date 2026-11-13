@@ -1,14 +1,14 @@
 ---
 id: TASK-072
 title: 2.10b Plan a year or a quarter (2 of 2) — the planning sheet
-status: Ready
+status: In progress
 depends_on: [TASK-071, TASK-062, TASK-063, TASK-064, TASK-066, TASK-069]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 9cee95b
 ---
 
 # TASK-072 — 2.10b Plan a year or a quarter (2 of 2) — the planning sheet
@@ -84,7 +84,89 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner up front, 2026-11-13 ("accept the plan right away"; the questions it would have
+asked are in the PR).
+
+**Steps**
+
+1. **Mockup first** (`ui.redrawFiles`): `plan` gains three frames, the planning sheet over the page at
+   360px (quarter target, *Put in Q2*, a placed row *✓ In Q2 · Undo*, an Unlisted tag, a planned row's
+   *Move here*, the amber budget line with *Accept as a stretch year*), at 834px (year target: the bare
+   year and four quarter chips), and at the desktop beside the rail. The header's *Suggest books* becomes
+   *Plan 2027…* beside *+ Add books*; each summary row gains *Plan this quarter…*; the room row's action
+   becomes *Suggest*. `design/mockups-index.md`'s `plan` row says so.
+2. **The place line** (D-134): `planSuggestions` also answers `universe`, `series`, `seriesPosition` (joins
+   `book_series`, `book_universes`), so a row draws `bookSub`. Test in `test/plan-suggestions.test.ts`.
+3. **`GET /api/plan/suggestions?target=2027-Q2|2027`** (new route): `{ suggestions }` for the Eastern day;
+   400 for anything else. Run when the sheet opens, never cached.
+4. **`src/components/PlanSheet.tsx`** (new): `PlanSheetHost` (a client provider around the page body that
+   owns the open target and the opener, and the year's figures from the server render), `PlanSheetButton`
+   (an opener), and the sheet body:
+   - groups in `SUGGESTION_REASONS` order with their headings, five rows then *More*; an empty group is left out;
+   - a row: title, words (`~` when estimated), `bookSub` line, reason line, *Unlisted* tag; *Put in Q2*, or for
+     a year the bare year and Q1–Q4 chips; a planned row shows its period and *Move here*; *Not now* hides it
+     for the sitting (state dies with the sheet);
+   - writes: a `to_read` book with no plan row → `POST /api/plan` from `someday`; an Unlisted book or one with
+     no status → `POST /api/books` `{ use }` to `{ kind: "period" }` (1.21's promote and the plan row in one
+     transaction, `addBook`); *Move here* → `POST /api/plan` from its period. Each pushes its undo onto the 1.2
+     stack; the row reads *✓ In Q2 · Undo* and its Undo runs the same inverse; `router.refresh()` redraws the
+     rail and the budget line, and the sheet stays open;
+   - the budget line: the target's planned words of capacity, from the page's own `planCapacity` (so it, the
+     rail and the dashboard agree); over capacity amber (`--blocked`) with *Accept as a stretch year*
+     (`POST /api/plan/rebalance` `accept`, undo on the stack), `aria-disabled` with a reason when the year as
+     a whole still fits; settled years read calm; never red, never *behind*;
+   - loading (skeleton rows), error (neutral line, *Try again*), empty (*Nothing to suggest for Q2 2027*)
+     states;
+   - below 1024px the shared `Sheet`; from 1024px an `aside` beside the rail, focus to its heading on open
+     and back to the opener on *Done* or Esc, nothing trapped (a `matchMedia` hook).
+5. **Openers**: `/books/plan`'s header gets *Plan 2027…* and *+ Add books* (`AddBooksButton`); each quarter
+   gets *Plan this quarter…* (summary rows become a row holding the expand button and the opener; the open
+   quarter's head too); the room row's *Library* link becomes *Suggest*, opening the quarter ahead with the
+   most room, and its sub-line is redrawn.
+6. **CSS** in `globals.css` from tokens only: the sheet's groups and rows, the chips, the budget line, the
+   desktop two-column layout.
+7. **Tests**: `test/e2e/plan-sheet.spec.ts` on the Check's fixture (below); `plan-rail.spec.ts`'s *Library*
+   assertion becomes *Suggest*.
+
+**Files**: `design/mockups.html`, `design/mockups-index.md`, `src/db/queries.ts` (not in the likely list:
+the place line), `src/app/api/plan/suggestions/route.ts`, `src/components/PlanSheet.tsx`,
+`src/components/PlanQuarterRows.tsx`, `src/app/books/plan/page.tsx`, `src/app/globals.css`,
+`test/plan-suggestions.test.ts`, `test/e2e/plan-sheet.spec.ts`, `test/e2e/plan-rail.spec.ts` (the room
+row's action). 11 files, all UI and one query: no schema. Over the 8-file line, kept whole because it is
+already the second half of a split and the mockup and test files are the bulk.
+
+**Test strategy**
+
+- AC-1: `plan-sheet.spec.ts` › *Check*: the fixture (made under `e2e-ps-*` ids, in this year + 1) in the
+  browser; groups by heading; *Put in Q2* on book 3 → one row at Q2's last ordinal, budget line = new total,
+  Undo → no row; the Unlisted book → `to_read` and its plan row (one POST, `addBook`'s transaction); with
+  100k of room, no *Fits the room left* row over 100k; no `--danger`; screenshots 360 and 1280.
+- AC-2: › *openers*: *Plan Y…* → year sheet with five chips per row; *Plan this quarter…* → that quarter;
+  *Suggest* → the quarter with the most room.
+- AC-3: › *placement*: *✓ In Q2 · Undo*, sheet open, line grows by the words; Undo returns it; an over
+  placement → amber line and *Accept as a stretch year*; no *behind*.
+- AC-4: › *More, Not now, Move here*.
+- AC-5: › *side rail* at 1280 (an `aside`, no dialog, the rail block appears without reload) and a dialog
+  at 390.
+- AC-6: › *UX floor*: names, 44px on the phone, focus heading/opener, axe, contrast, no sideways scroll,
+  screenshots 360/834/1280 light and dark; loading and error drawn by holding and failing the route.
+- Place line: `test/plan-suggestions.test.ts` › *answers each book's place line*.
+
+**Revisions during implementation** (owner pre-approved the plan; each noted here):
+
+1. The year's decision (settled or not) is read by the sheet (`GET /api/plan/rebalance?year=`) when it opens and
+   whenever the year's total moves, not by the page: `test/query-budget.test.ts` pins `/books/plan` at 4 queries,
+   and the page should pay nothing for a sheet that is closed.
+2. `test/plan-page.test.tsx` pinned the room row's *Library* link and sub-line; it now pins *Suggest*, the header's
+   *Plan 2027…*, each quarter's *Plan this quarter…*, and that *Suggest* skips a past quarter. A 12th file.
+3. Focus follows a placement: the tapped button is replaced by the row's *Undo* (and back), *Not now* and *More*
+   remove their button, so focus moves to the row's new control, the next row, or the sheet's heading (found by
+   the AC-2 test, where Esc no longer reached the sheet).
+
+**Risks**: suggestions over the whole E2E database include other specs' books, so assertions name the
+fixture's own ids; `router.refresh()` timing, so tests wait on the line's text, not a timer.
+
+**Follow-ups**: none planned beyond what implementation finds.
 
 ## Review log
 

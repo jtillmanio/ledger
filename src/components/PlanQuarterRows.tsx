@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import Link from "next/link";
+import { PlanSheetButton } from "@/components/PlanSheet";
 import type { PeriodCapacity, PlanRow } from "@/db/queries";
 import { bookSub } from "@/lib/format";
 import { genreHue, kWords, periodName } from "@/lib/plan-rail";
@@ -24,8 +24,10 @@ const books = (n: number) => `${n} ${n === 1 ? "book" : "books"}`;
  * capacity, never red). Reordering inside a quarter stays on the Up next tab (1.9). The one empty state
  * the page has is `room`, the room left across the quarters ahead; no quarter draws one of its own.
  * A year accepted as a stretch year (task 2.7, `settled`) still says each quarter's overage, in grey.
+ * Each quarter offers *Plan this quarter…*, and the room row *Suggest*, which open the planning sheet
+ * (task 2.10b) there and at the quarter ahead with the most room.
  */
-export default function PlanQuarterRows({ quarters, rows, focus, room, settled = false }: {
+export default function PlanQuarterRows({ quarters, rows, focus, room, settled = false, suggest }: {
   quarters: PeriodCapacity[];
   rows: PlanRow[];
   /** The quarter open at first, 1–4. */
@@ -34,6 +36,8 @@ export default function PlanQuarterRows({ quarters, rows, focus, room, settled =
   room: string | null;
   /** The year is accepted as a stretch year: an overage is a decision made, so its badge is grey, not amber. */
   settled?: boolean;
+  /** The quarter *Suggest* opens the planning sheet at: the one ahead with the most room. */
+  suggest: string | null;
 }) {
   const overBadge = settled ? "bdg dn" : "bdg bl";
   const [open, setOpen] = useState(focus);
@@ -52,26 +56,37 @@ export default function PlanQuarterRows({ quarters, rows, focus, room, settled =
         const n = cap.quarter ?? 0;
         const over = cap.plannedWords - cap.capacity;
         const name = periodName(cap.period);
+        const planThis = (
+          <PlanSheetButton target={cap.period} className="btn sec sm plan-this">
+            Plan this quarter…<span className="sr-only"> ({name})</span>
+          </PlanSheetButton>
+        );
         if (n !== open) {
           return (
-            <button key={cap.period} type="button" className="plan-sum" aria-expanded="false" data-period={cap.period}
-              onClick={() => { changed.current = true; setOpen(n); }}>
-              <b>{name}</b>
-              <span className="mono">{kWords(cap.plannedWords)}</span>
-              <span className="plan-count">{books(cap.books)}</span>
-              {over > 0
-                ? <span className={overBadge}>over {kWords(over)}</span>
-                : <span className="bdg dn">{kWords(-over)} room</span>}
-            </button>
+            <div key={cap.period} className="plan-sum-row">
+              <button type="button" className="plan-sum" aria-expanded="false" data-period={cap.period}
+                onClick={() => { changed.current = true; setOpen(n); }}>
+                <b>{name}</b>
+                <span className="mono">{kWords(cap.plannedWords)}</span>
+                <span className="plan-count">{books(cap.books)}</span>
+                {over > 0
+                  ? <span className={overBadge}>over {kWords(over)}</span>
+                  : <span className="bdg dn">{kWords(-over)} room</span>}
+              </button>
+              {planThis}
+            </div>
           );
         }
         const mine = rows.filter((r) => r.period === cap.period);
         return (
           <div key={cap.period} className="plan-open" data-period={cap.period}>
+            <div className="plan-open-head">
             <h2 ref={heading} tabIndex={-1}>
               {name} · <span className="mono">{kWords(cap.plannedWords)} of {kWords(cap.capacity)}</span>
               {over > 0 && <span className={overBadge}>over {kWords(over)}</span>}
             </h2>
+            {planThis}
+            </div>
             {mine.length > 0 && (
               <ul className="plan-rows">
                 {mine.map((r) => (
@@ -97,9 +112,8 @@ export default function PlanQuarterRows({ quarters, rows, focus, room, settled =
       {room && (
         <div className="plan-room">
           <p className="plan-room-line">{room}</p>
-          {/* Until 2.10b's Suggest: the way to a plan is the Library's ⋯ menu. */}
-          <p className="plan-room-sub">Plan books from the Library: ⋯ → Plan for…</p>
-          <Link href="/books/list" prefetch={false} className="btn sec sm">Library</Link>
+          <p className="plan-room-sub">Suggest opens the planning sheet at the quarter with the most room.</p>
+          {suggest && <PlanSheetButton target={suggest} className="btn sec sm plan-suggest">Suggest</PlanSheetButton>}
         </div>
       )}
       {moving && <PlanPickerSheet bookId={moving.row.id} title={moving.row.title} opener={moving.opener} onClose={() => setMoving(null)} />}

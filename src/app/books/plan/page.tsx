@@ -1,7 +1,9 @@
 import Link from "next/link";
+import AddBooksButton from "@/components/AddBooksButton";
 import PlaceThem from "@/components/PlaceThem";
 import PlanQuarterRows from "@/components/PlanQuarterRows";
 import PlanRail from "@/components/PlanRail";
+import { PlanSheetButton, PlanSheetHost } from "@/components/PlanSheet";
 import YearDecision from "@/components/YearDecision";
 import { planAcceptance, planCapacity, planRail, planRows, readingSettings } from "@/db/queries";
 import { requireUserId } from "@/lib/auth";
@@ -19,6 +21,9 @@ export const dynamic = "force-dynamic";
  * `YearDecision`). The rail and the dashboard's strip read the same query
  * (`plan_capacity` through `planCapacity`), so their totals agree. This year by default, `?year=` for
  * the next four (the picker's five). The focus starts on this quarter, and on Q1 in a later year.
+ *
+ * The planning sheet (task 2.10b, F-65, F-68): *Plan 2027…* in the header, *Plan this quarter…* on each quarter and
+ * the room row's *Suggest* open it; `PlanSheetHost` draws it beside the rail from 1024px and over the page below.
  */
 export default async function Plan({ searchParams }: { searchParams: Promise<{ year?: string | string[] }> }) {
   const userId = await requireUserId();
@@ -39,6 +44,10 @@ export default async function Plan({ searchParams }: { searchParams: Promise<{ y
 
   const focus = year === thisYear ? Math.floor((Number(day.slice(5, 7)) - 1) / 3) + 1 : 1;
   const room = roomAhead(capacity.quarters, year, day);
+  // *Suggest* opens the sheet at the quarter ahead with the most room (a quarter of this year already past is behind you).
+  const ahead = capacity.quarters.filter((q) => year > thisYear || (q.quarter ?? 0) >= focus);
+  const roomiest = ahead.reduce<(typeof ahead)[number] | null>((best, q) =>
+    best === null || q.capacity - q.plannedWords > best.capacity - best.plannedWords ? q : best, null);
   const { year: total } = capacity;
   // The fifth lane's books, from the same view: what counts against the year less what counts against a quarter.
   const bare = {
@@ -51,7 +60,14 @@ export default async function Plan({ searchParams }: { searchParams: Promise<{ y
 
   return (
     <main className="plan-page">
-      <h1>Plan</h1>
+      <PlanSheetHost key={year} figures={{ year, total, quarters: capacity.quarters }}>
+      <div className="plan-head">
+        <h1>Plan</h1>
+        <div className="plan-head-acts">
+          <PlanSheetButton target={String(year)}>Plan {year}…</PlanSheetButton>
+          <AddBooksButton label="+ Add books" className="btn sm" />
+        </div>
+      </div>
       <p className="muted small mono plan-total">
         {total.books === 0 ? `${year}: nothing planned` : `${total.books} ${total.books === 1 ? "book" : "books"} · ${kWords(total.plannedWords)} of ${kWords(total.capacity)}`}
       </p>
@@ -82,7 +98,8 @@ export default async function Plan({ searchParams }: { searchParams: Promise<{ y
         </div>
       )}
       <PlanQuarterRows key={year} quarters={capacity.quarters} rows={rows} focus={focus} room={room?.text ?? null}
-        settled={decision === "settled"} />
+        settled={decision === "settled"} suggest={roomiest?.period ?? null} />
+      </PlanSheetHost>
     </main>
   );
 }

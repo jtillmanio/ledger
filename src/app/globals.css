@@ -1024,6 +1024,73 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .plan-error span{color:var(--muted)}
 .plan-sum-sk{display:block;height:44px;border-radius:var(--r-lg)}
 
+/* --- the planning sheet (task 2.10b, F-65, F-68; mockup `plan`): Plan 2027… in the header, Plan this quarter… on
+   each quarter, Suggest on the room row. Below 1024px the shared .sheet; from 1024px .plan-side, a column beside
+   the rail. The budget line is amber over capacity (held: a decision), never red. --- */
+.plan-head{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .75rem}
+.plan-head h1{margin-right:auto}
+.plan-head-acts{display:flex;flex-wrap:wrap;gap:.5rem}
+.plan-head-acts .btn,.plan-this,.plan-suggest{min-height:44px}
+.plan-sum-row{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem}
+.plan-sum-row .plan-sum{flex:1 1 15rem;width:auto}
+.plan-sum-row .plan-this{flex:0 0 auto;margin-left:auto}
+.plan-open-head{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:0 0 .25rem}
+.plan-page .plan-open-head h2{flex:1 1 12rem;margin:0}
+.plan-open-head .plan-this{margin-left:auto}
+@media (min-width:1024px){
+  .plan-head-acts .btn,.plan-this,.plan-suggest{min-height:32px}
+  .plan-page:has(.plan-layout[data-planning]){max-width:none}
+  .plan-layout[data-planning]{display:grid;grid-template-columns:minmax(0,1fr) 24rem;gap:1.5rem;align-items:start}
+}
+.plan-main{min-width:0}
+.plan-side{position:sticky;top:1rem;max-height:calc(100vh - 2rem);overflow:auto;box-sizing:border-box;
+  padding:.9375rem;border-radius:var(--r-xl);background:var(--overlay);border:1px solid var(--rule-2);box-shadow:var(--sh-3)}
+.plan-page .plan-side h2{font-size:.9375rem;font-weight:700;margin:0 0 .25rem;font-family:inherit}
+.plan-side h2:focus{outline:none}
+.plan-side h2:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.ps-budget{margin:.5rem 0 .25rem;border-radius:var(--r-lg);background:var(--raise);padding:.625rem .875rem}
+.ps-line{display:flex;flex-wrap:wrap;gap:.25rem .75rem;align-items:baseline;justify-content:space-between;margin:0;
+  font-size:.8125rem;color:var(--ink-2)}
+.ps-name{font-weight:600}
+.ps-figure{font-weight:600;color:var(--ink)}
+.ps-budget[data-over="true"]{background:var(--blocked-soft)}
+.ps-budget[data-over="true"] .ps-name,.ps-budget[data-over="true"] .ps-figure{color:var(--blocked)}
+.ps-note{margin:.375rem 0 0;color:var(--ink-2)}
+.ps-stretch{display:flex;flex-direction:column;align-items:flex-start;gap:.375rem}
+.ps-stretch .btn{min-height:44px}
+.ps-k{font-size:.8125rem;color:var(--muted);font-weight:600;margin:1rem 0 .25rem}
+.ps-rows{list-style:none;margin:0;padding:0}
+.ps-row{padding:.625rem 0;border-top:1px solid var(--rule)}
+.ps-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:.25rem .5rem}
+.ps-title{font-weight:600;color:var(--ink);overflow-wrap:anywhere;min-width:0}
+.ps-words{margin-left:auto;font-size:.8125rem;color:var(--ink-2)}
+.ps-sub,.ps-why{margin:.125rem 0 0;font-size:.8125rem;overflow-wrap:anywhere}
+.ps-sub{color:var(--muted)}
+.ps-why{color:var(--ink-2)}
+.ps-acts{display:flex;flex-wrap:wrap;align-items:center;gap:.375rem;margin-top:.5rem}
+.ps-acts .btn,.ps-done .btn,.ps-more{min-height:44px;min-width:44px}
+.ps-chips{display:flex;flex-wrap:wrap;gap:.375rem}
+.ps-chip{font:inherit;font-size:.8125rem;display:inline-flex;align-items:center;min-height:44px;min-width:44px;justify-content:center;
+  padding:.25rem .75rem;cursor:pointer;background:var(--surface);color:var(--ink-2)}
+.ps-chip:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring)}
+.ps-planned{flex:0 0 auto}
+.ps-done{display:flex;align-items:center;gap:.375rem;margin:.5rem 0 0;font-size:.8125rem;font-weight:600;color:var(--ink)}
+.ps-done>span[aria-hidden]{color:var(--ready)}
+.ps-more{margin-top:.25rem}
+.ps-loading{display:flex;flex-direction:column;gap:.5rem;margin-top:1rem}
+.ps-sk{height:4.5rem;border-radius:var(--r-lg)}
+.ps-error{display:flex;flex-direction:column;align-items:flex-start;gap:.5rem;margin-top:1rem}
+.ps-error .btn{min-height:44px}
+.ps-empty{margin-top:1rem;padding:.875rem;border-radius:var(--r-lg);background:var(--raise);display:flex;flex-direction:column;align-items:flex-start;gap:.25rem}
+.ps-empty-line{margin:0;font-weight:600}
+.ps-empty-sub{margin:0;font-size:.8125rem;color:var(--muted)}
+.ps-empty .btn{margin-top:.25rem;min-height:44px}
+.ps-foot{margin-top:1rem}
+.ps-foot .btn{min-height:44px}
+@media (min-width:1024px){
+  .ps-acts .btn,.ps-done .btn,.ps-more,.ps-chip,.ps-stretch .btn,.ps-error .btn,.ps-empty .btn,.ps-foot .btn{min-height:32px}
+}
+
 /* --- capacity --- */
 .pacecard{background:var(--surface);border:1px solid var(--rule);border-radius:var(--r-xl);
   padding:.9375rem;box-shadow:var(--sh-1);margin-top:.75rem}

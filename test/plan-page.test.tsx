@@ -168,9 +168,28 @@ describe("one empty state, not one per empty quarter (AC-4)", () => {
     const line = doc.querySelectorAll(".plan-room-line");
     expect(line).toHaveLength(1);
     expect(line[0].textContent).toBe(`${kWords(room)} of room across Q2–Q4`);
-    // Until 2.10b's Suggest, the way to a plan is the Library.
-    expect(doc.querySelector(".plan-room-sub")?.textContent).toBe("Plan books from the Library: ⋯ → Plan for…");
-    expect(doc.querySelector('.plan-room a[href="/books/list"]')?.textContent).toBe("Library");
+    // 2.10b's Suggest opens the planning sheet at the quarter ahead with the most room: Q2–Q4 are empty, so the first.
+    expect(doc.querySelector(".plan-room-sub")?.textContent).toBe("Suggest opens the planning sheet at the quarter with the most room.");
+    const suggest = doc.querySelector(".plan-room button.plan-suggest");
+    expect(suggest?.textContent).toBe("Suggest");
+    expect(suggest?.getAttribute("data-plan-target")).toBe("2027-Q2");
+    expect(doc.querySelector('.plan-room a[href="/books/list"]')).toBeNull();
+  });
+
+  it("opens the planning sheet from the header and from every quarter (task 2.10b, AC-2)", async () => {
+    const { doc } = await page();
+    expect(doc.querySelector('.plan-head button[data-plan-target="2027"]')?.textContent).toBe("Plan 2027…");
+    expect([...doc.querySelectorAll("button.plan-this")].map((b) => b.getAttribute("data-plan-target")).sort())
+      .toEqual(["2027-Q1", "2027-Q2", "2027-Q3", "2027-Q4"]);
+  });
+
+  it("Suggest skips a quarter already past and picks the roomiest ahead", async () => {
+    // Q2 (this quarter) takes a book: Q3 and Q4 are equal and emptier, so Suggest opens Q3; Q1, past, is never chosen.
+    await sql`INSERT INTO books (id, title, word_count, word_count_source) VALUES ('sug', 'Suggest Holder', 50000, 'stated')`;
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'sug', 'to_read')`;
+    await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${USER}, 'sug', '2027-Q2', 1)`;
+    const { doc } = await page();
+    expect(doc.querySelector(".plan-room button.plan-suggest")?.getAttribute("data-plan-target")).toBe("2027-Q3");
   });
 
   it("draws no empty state of its own for the open quarter or a summary row", async () => {

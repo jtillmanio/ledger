@@ -1676,6 +1676,8 @@ export type SuggestionReason = (typeof SUGGESTION_REASONS)[number];
 /** One suggestion: a book, the group it is in, its place there, and its reason line. */
 export type PlanSuggestion = {
   id: string; title: string; author: string | null;
+  /** The book's place (task 2.2j, D-134): its universe, series and `#position`, for the row's place line. */
+  universe: string | null; series: string | null; seriesPosition: number | null;
   reason: SuggestionReason;
   /** The reason line: *Next in Red Rising · you've read 3 of 6*, *Out May 4, 2027*. */
   detail: string;
@@ -1710,11 +1712,15 @@ export async function planSuggestions(userId: string, target: string, today: str
   const period = quarter === null ? cap.year : cap.quarters[quarter - 1];
   const room = Math.floor(period.capacity - period.plannedWords);
   return sql<PlanSuggestion[]>`
-    SELECT s.book_id AS id, b.title, a.name AS author, s.reason, s.detail, s.rank, s.status, s.unlisted,
+    SELECT s.book_id AS id, b.title, a.name AS author,
+           u.name AS universe, bs.name AS series, b.series_position AS "seriesPosition",
+           s.reason, s.detail, s.rank, s.status, s.unlisted,
            s.period, s.words, COALESCE(s.word_source = 'estimated', false) AS estimated
     FROM plan_suggestions(${userId}, ${target}, ${room}::bigint, ${today}::date) s
     JOIN books b ON b.id = s.book_id
     LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_series bs ON bs.id = b.series_id
+    LEFT JOIN book_universes u ON u.id = b.universe_id
     ORDER BY array_position(${[...SUGGESTION_REASONS]}::text[], s.reason), s.rank
   `;
 }
