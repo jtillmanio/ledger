@@ -61,9 +61,11 @@ function validRows(rows: unknown): rows is RankRow[] {
 
 function validChange(c: unknown): c is RankChange {
   if (typeof c !== "object" || c === null) return false;
-  const { bookId, year, before, after } = c as Record<string, unknown>;
+  const { bookId, year, before, after, left } = c as Record<string, unknown>;
   if (typeof bookId !== "string" || bookId === "") return false;
   if (year !== null && !Number.isInteger(year)) return false;
+  if (!Array.isArray(left) || left.length > MAX_ROWS || !left.every((id) => typeof id === "string" && id !== "")) return false;
+  if (year === null && left.length > 0) return false;
   if (!validRows(before) || !validRows(after) || before.length !== after.length) return false;
   return before.every((r, i) => r.bookId === after[i].bookId);
 }

@@ -112,6 +112,28 @@ describe("ranking a sixth 2025 book at 3 (AC-2)", () => {
     expect(await ranking(2025)).toEqual(moved);
   });
 
+  it("an undo refuses once a later write touched only other rows, so it never leaves a tie or a gap", async () => {
+    // Taking a2 out, then adding a6 at the end, changes only a6: undoing the first would put a5 back on a6's 5.
+    const { change: out } = await (await setRank({ bookId: "a2", rank: null })).json();
+    await setRank({ bookId: "a6", rank: 99 });
+    const now = ["a1:1", "a3:2", "a4:3", "a5:4", "a6:5"];
+    expect(await ranking(2025)).toEqual(now);
+    expect((await undoRank(out)).status).toBe(409);
+    expect(await ranking(2025)).toEqual(now);
+
+    // Ranking a6 at 3, then adding another 2025 book at the end: undoing the first would leave a gap at 6.
+    await sql`UPDATE book_status SET year_rank = NULL WHERE book_id = 'a6'`;
+    await sql`UPDATE book_status SET year_rank = n FROM (VALUES ('a1', 1), ('a2', 2), ('a3', 3), ('a4', 4), ('a5', 5))
+              AS v(id, n) WHERE book_id = v.id`;
+    await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+              VALUES (${USER}, 'fresh', 'read', '2025-12-20', 'exact')`;
+    const { change: placed } = await (await setRank({ bookId: "a6", rank: 3 })).json();
+    await setRank({ bookId: "fresh", rank: 99 });
+    const later = await ranking(2025);
+    expect((await undoRank(placed)).status).toBe(409);
+    expect(await ranking(2025)).toEqual(later);
+  });
+
   it("a rank past the end joins the end; moving a ranked book up shifts only those between", async () => {
     await setRank({ bookId: "a6", rank: 99 });
     expect(await ranking(2025)).toEqual([...BEFORE_2025, "a6:6"]);
@@ -183,17 +205,26 @@ describe("a book's note (AC-5)", () => {
     expect((await setNote({ bookId: "missing", note: "x" })).status).toBe(404);
   });
 
-  it("a ranked or noted book keeps its row through a status undo that deletes an empty row", async () => {
-    // `fresh` has no status row: Read, then ranked and noted; the status undo would delete a bare row.
-    const read = await status.POST(req("/api/progress/book", "POST",
-      { bookId: "fresh", status: "read", finish: { mode: "date", date: "2025-12-01" } }));
-    expect(read.status).toBe(200);
-    expect((await setRank({ bookId: "fresh", rank: 1 })).status).toBe(200);
-    expect((await setNote({ bookId: "fresh", note: "Loved it." })).status).toBe(200);
+  // `fresh` has no status row: a status write makes one, and its undo deletes the row while it is bare.
+  const statusWrite = async (body: Record<string, unknown>) => {
+    const res = await status.POST(req("/api/progress/book", "POST", { bookId: "fresh", ...body }));
+    expect(res.status).toBe(200);
+    return (await res.json()).change;
+  };
+  const undoStatus = (change: unknown) => status.DELETE(req("/api/progress/book", "DELETE", { change }));
 
-    const { change } = await read.json();
-    expect((await status.DELETE(req("/api/progress/book", "DELETE", { change }))).status).toBe(200);
-    expect(await row("fresh")).toMatchObject({ year_rank: 1, notes: "Loved it." });
+  it("a ranked book (no note) keeps its row and its rank through a status undo that deletes a bare row", async () => {
+    const change = await statusWrite({ status: "read", finish: { mode: "date", date: "2025-12-01" } });
+    expect((await setRank({ bookId: "fresh", rank: 1 })).status).toBe(200);
+    expect((await undoStatus(change)).status).toBe(200);
+    expect(await row("fresh")).toMatchObject({ year_rank: 1, notes: null });
+  });
+
+  it("a noted book (no rank) keeps its row and its note through a status undo that deletes a bare row", async () => {
+    const change = await statusWrite({ status: "to_read" });
+    expect((await setNote({ bookId: "fresh", note: "Loved it." })).status).toBe(200);
+    expect((await undoStatus(change)).status).toBe(200);
+    expect(await row("fresh")).toMatchObject({ year_rank: null, notes: "Loved it." });
   });
 
   it("a noted book keeps its row through Add to Someday's undo, which deletes a bare to_read row", async () => {

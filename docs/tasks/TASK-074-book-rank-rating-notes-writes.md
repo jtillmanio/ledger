@@ -61,7 +61,7 @@ A finished book can be given a place in its year's ranking, and a note, and putt
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- A ranked book whose finish is re-dated across years (`redateBookRead`, a `read` re-date) or cleared by a status undo keeps its `year_rank` in the wrong year, or with no year; nothing here prevents it, a later rank write to that year heals the list. TASK-075 moves the rank onto the read and should keep it with the read's year (approved at plan).
+- A ranked book whose finish is re-dated across years (`redateBookRead`, a `read` re-date) or cleared by a status undo keeps its `year_rank` in the wrong year, or with no year; nothing here prevents it, a later rank write to that year heals the list. TASK-075 moves the rank onto the read and should keep it with the read's year; until then a reader treats a rank as meaningful only where `finished_on` is set (schema-reviewer R1) → docs/tasks/TASK-075-rank-moves-to-the-read.md § Context (approved at plan)
 
 ## Plan
 

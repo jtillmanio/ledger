@@ -47,10 +47,12 @@ function bad(error: string) {
   return NextResponse.json({ error }, { status: 400 });
 }
 
-const isNote = (n: unknown) => n === null || (typeof n === "string" && n.length <= MAX_NOTE);
+/** The note written is capped; the note it replaced may be anything stored (a longer one loaded earlier). */
+const isText = (n: unknown) => n === null || typeof n === "string";
 
 function validChange(c: unknown): c is NoteChange {
   if (typeof c !== "object" || c === null) return false;
   const { bookId, prior, note } = c as Record<string, unknown>;
-  return typeof bookId === "string" && bookId !== "" && isNote(prior) && isNote(note);
+  return typeof bookId === "string" && bookId !== "" && isText(prior) && isText(note)
+    && (note === null || (note as string).length <= MAX_NOTE);
 }
