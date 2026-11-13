@@ -243,6 +243,33 @@ describe("the real run (AC-3)", () => {
   });
 });
 
+describe("a book that changes while the run asks (AC-3)", () => {
+  it("writes nothing to a book given an id, or renamed, between the read and the write", async () => {
+    await sql`DELETE FROM hardcover_cache WHERE key IN ('search:piranesi susanna clarke', 'search:small gods terry pratchett')`;
+    hardcover = (variables) => {
+      const key = `search:${variables.query}` as keyof typeof RECORDED;
+      return Response.json({ data: { search: { results: RECORDED[key] } } });
+    };
+    // While Hardcover is asked, the owner gives Piranesi an id by hand and renames Small Gods.
+    const fetchStub = globalThis.fetch;
+    vi.stubGlobal("fetch", async (input: string | URL | Request, init?: RequestInit) => {
+      const { variables } = JSON.parse(String(init?.body));
+      if (variables.query === "piranesi susanna clarke") await sql`UPDATE books SET hardcover_id = 999 WHERE id = 'piranesi'`;
+      if (variables.query === "small gods terry pratchett") await sql`UPDATE books SET title = 'Small Gods (Discworld)' WHERE id = 'small-gods'`;
+      return fetchStub(input, init);
+    });
+    const report = await run({ limit: 100 });
+    if (report.status === "refused") throw new Error(report.reason);
+    expect(await bookRow("piranesi")).toMatchObject({ hardcover_id: 999, page_count: null, cover_url: null });
+    expect(await bookRow("small-gods")).toMatchObject({ hardcover_id: null, page_count: 284, cover_url: null });
+    const entry = (id: string) => report.books.find((b) => b.id === id);
+    expect(entry("piranesi")).toMatchObject({ outcome: "title", filled: false });
+    expect(entry("small-gods")).toMatchObject({ outcome: "title", filled: false });
+    expect(entry("way-of-kings")).toMatchObject({ filled: true });
+    expect(report.filled).toBe(1 + FILLERS + 4 - 2);
+  });
+});
+
 describe("rate limits, resuming and the token (AC-4)", () => {
   it("waits out a 429's Retry-After and resumes, a second after each real request", async () => {
     await sql`DELETE FROM hardcover_cache WHERE key IN ('search:piranesi susanna clarke', 'search:small gods terry pratchett')`;

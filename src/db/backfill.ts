@@ -12,7 +12,8 @@
  * (D-130, as `toBooks` reads it). Hardcover's series and position fill nothing
  * (D-87); a position that differs from the stored `series_position` is
  * reported. A near spelling is proposed and two matches are listed (D-99):
- * neither fills anything. A dry run writes no book; it may cache what it had to
+ * neither fills anything. A match is written only while the book is as it was
+ * read (no id since, same title and author, live). A dry run writes no book; it may cache what it had to
  * ask Hardcover (`hardcover_cache`, rebuildable).
  *
  * Hardcover's free plan allows 60 requests a minute: real requests go about one
@@ -46,6 +47,12 @@ export type BackfillBook = {
   hardcover?: HardcoverFacts;
   /** `ambiguous`: every book that matched, never ranked (D-99). */
   candidates?: HardcoverFacts[];
+  /**
+   * A real run's match: whether it was written. False when the book changed
+   * while the run asked (an id set, a rename, a delete), so the match no longer
+   * stands: nothing is written, and the next run asks again.
+   */
+  filled?: boolean;
 };
 
 /** A match whose series position differs from the one stored (the Check). */
@@ -108,7 +115,7 @@ export async function backfillBooks(opts: BackfillOptions): Promise<BackfillResu
 
   // One more than the limit, to know whether more wait after this run.
   const rows = await db.select({
-    id: books.id, title: books.title, author: authors.name,
+    id: books.id, title: books.title, authorId: books.authorId, author: authors.name,
     seriesPosition: books.seriesPosition, seriesName: bookSeries.name,
   }).from(books)
     .innerJoin(authors, eq(authors.id, books.authorId))
@@ -194,8 +201,10 @@ export async function backfillBooks(opts: BackfillOptions): Promise<BackfillResu
             pageCount: sql`coalesce(${books.pageCount}, ${found.pages}::int)`,
             coverUrl: sql`coalesce(${books.coverUrl}, ${found.coverUrl}::text)`,
             publishedYear: sql`coalesce(${books.publishedYear}, ${found.year}::int)`,
-          }).where(and(eq(books.id, row.id), isNull(books.hardcoverId), isNull(books.deletedAt)))
+          }).where(and(eq(books.id, row.id), isNull(books.hardcoverId), isNull(books.deletedAt),
+            eq(books.title, row.title), eq(books.authorId, row.authorId!)))
             .returning({ id: books.id });
+          entry.filled = written.length > 0;
           report.filled += written.length;
         }
       }

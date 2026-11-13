@@ -86,6 +86,11 @@ _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_s
 
 **Files:** the four above, `test/hardcover-backfill.test.ts`, `test/fixtures/hardcover-backfill.json`, `.claude/rules/schema.md`. The route and `book-match.ts` are not in *Files likely touched*.
 
+**Revisions after approval (in step, no new approach):**
+- `docs/SERVICES.md`: the backfill is a new consumer of `HARDCOVER_API_TOKEN` in Vercel, and its refusal message points the reader there, so the key's *What uses it* names it (no key added, moved or retired).
+- `after` (a book id) on the backfill and the route: a run takes books in id order, and without a cursor a page of 100 books that matched nothing would be the whole of every run.
+- The write's guard also checks the title and author read at the start, and a real run's match says whether it was written (`filled`), from schema-reviewer's round 1.
+
 **Test strategy:** recorded answers are seeded into `hardcover_cache`, and `fetch` is stubbed to throw.
 - AC-2: `test/hardcover-backfill.test.ts` › dry run over 100 seeded books: every count and conflict, and a database dump identical before and after.
 - AC-3: › real run: only matched books filled; a hand page count kept; a Calibre series kept; a compilation result fills nothing.

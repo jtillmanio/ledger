@@ -16,6 +16,11 @@
  * A compilation is never a candidate: `toBooks` in `src/lib/hardcover.ts` has
  * already dropped it, with every result that has no author. The top result is
  * the most read, as `toBooks` lists them.
+ *
+ * Two small differences from the Python, both from `toBooks`, and neither
+ * fills anything: a result with no author is dropped before the top result is
+ * taken, so the next one can be proposed where 1.14b would say unmatched; and an
+ * edition's authors are its `Author` contributions only, not every contributor.
  */
 import { normalizeLine, trigramSimilarity } from "./bulk-parse";
 import type { HardcoverBook } from "./hardcover";
