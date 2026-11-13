@@ -3477,7 +3477,7 @@ exactly one sheet in the DOM, and Back returns to the issue sheet. An issue
 with a `cover_date` renders *Cover date* in `Mon YYYY`. An undated issue
 renders no *Dates* group and no `—`.
 
-### ☐ 3.4 Book ratings and top-books reorder · S
+### ☑ 3.4 Book ratings and top-books reorder · S
 Rating, notes, and the top-books rank reorder. **Status and finish date moved to
 1.5** (R1-03) — they are a daily-use flow and could not wait for Phase 3.
 

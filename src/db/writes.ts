@@ -1,4 +1,4 @@
-import { and, between, desc, eq, gt, gte, inArray, isNull, like, ne, notInArray, or, sql } from "drizzle-orm";
+import { and, between, desc, eq, gt, gte, inArray, isNotNull, isNull, like, ne, notInArray, or, sql } from "drizzle-orm";
 import {
   db, authors, books, bookSeries, bookStatus, inbox, issueProgress, issues, readEvents, readingPlan, readingSettings, runIssues,
   planAcceptance, runQueue, runs, shelfBooks, seriesFollows, authorFollows, universeFollows, shelfFollows, subseriesFollows,
@@ -431,6 +431,156 @@ export async function undoBookRedate(userId: string, redate: BookRedate): Promis
     if ((await latestRead(tx, userId, bookId))?.id === readId) {
       await tx.update(bookStatus).set(asFinish(before)).where(mine);
     }
+    return true;
+  });
+}
+
+/** One book's place in its finish year's ranking (task 3.4): null when it is out of it. */
+export type RankRow = { bookId: string; rank: number | null };
+
+/** A rank write as `rankBook` made it: every row it changed, before and after, for its undo. */
+export type RankChange = {
+  bookId: string;
+  /** The finish year ranked in, or null for a book with no finish taken out. */
+  year: number | null;
+  before: RankRow[];
+  after: RankRow[];
+  /** The year's ranked books in order as the write left them, ranked 1…N: the undo refuses unless the year still is. */
+  left: string[];
+};
+
+/** Serialises every rank write of one user, as `inQueue` does the comics queue. */
+async function inRanking<T>(userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`ledger:rank:${userId}`}))`);
+    return fn(tx);
+  });
+}
+
+/** A year's ranked live books in their order (`year_rank`, then the book's id). */
+function yearRanking(tx: Tx, userId: string, year: number) {
+  return tx
+    .select({ bookId: bookStatus.bookId, rank: bookStatus.yearRank })
+    .from(bookStatus)
+    .innerJoin(books, and(eq(books.id, bookStatus.bookId), isNull(books.deletedAt)))
+    .where(and(eq(bookStatus.userId, userId), isNotNull(bookStatus.yearRank),
+      sql`extract(year FROM ${bookStatus.finishedOn}) = ${year}`))
+    .orderBy(bookStatus.yearRank, bookStatus.bookId);
+}
+
+async function setRanks(tx: Tx, userId: string, rows: RankRow[]) {
+  for (const { bookId, rank } of rows) {
+    await tx.update(bookStatus).set({ yearRank: rank })
+      .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId)));
+  }
+}
+
+/**
+ * Put a book with a finish date at `rank` in its year's ranking, or take it out (`null`)
+ * (task 3.4, D-101). A year's ranks are contiguous from 1 over its ranked live
+ * books: placing a book at rank n (clamped to the end) moves the books at n and
+ * below down one, and taking one out closes the gap, as the comics queue keeps
+ * its ordinals (data model 2.16). The year is `extract(year FROM finished_on)`
+ * (D-21), never stored. The whole year is renumbered from 1 in its order
+ * (`year_rank`, then the book's id), so a gap or a tie left by a re-dated book
+ * is healed by the next write to that year. Writes no rating: the rank is the
+ * only rating (D-3).
+ *
+ * Any book with a finish date can be ranked in that year, whatever its status
+ * now: leaving `read` keeps the finish (R0-C1), and the read still counts in its
+ * year (D-65). Throws `RefusedStatus`, writing nothing, when the book has no
+ * status row or no finish date to rank it in (one with no finish may still be
+ * taken out).
+ * Answers null for a book that is missing or removed; otherwise every row it
+ * changed, which `undoRank` puts back.
+ */
+export async function rankBook(userId: string, bookId: string, rank: number | null): Promise<RankChange | null> {
+  if (rank !== null && !(Number.isInteger(rank) && rank >= 1)) throw new Error("rankBook: a rank is a whole number from 1");
+  return inRanking(userId, async (tx) => {
+    if (!(await lockBook(tx, bookId))) return null;
+    const [own] = await tx
+      .select({ finishedOn: bookStatus.finishedOn, rank: bookStatus.yearRank, year: sql<number | null>`extract(year FROM ${bookStatus.finishedOn})::int` })
+      .from(bookStatus).where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId)));
+    if (!own) throw new RefusedStatus("the book has no status, so no finish date to rank it by");
+    if (own.year === null && rank !== null) throw new RefusedStatus("a book with no finish date has no year to rank in");
+
+    const ranked = own.year === null ? [] : await yearRanking(tx, userId, own.year);
+    const order = ranked.map((r) => r.bookId).filter((id) => id !== bookId);
+    if (rank !== null) order.splice(Math.min(rank, order.length + 1) - 1, 0, bookId);
+    const next = new Map(order.map((id, i) => [id, i + 1]));
+    const prior = new Map<string, number | null>(ranked.map((r) => [r.bookId, r.rank]));
+    prior.set(bookId, own.rank);
+
+    const before: RankRow[] = [];
+    const after: RankRow[] = [];
+    for (const [id, was] of prior) {
+      const now = next.get(id) ?? null;
+      if (now === was) continue;
+      before.push({ bookId: id, rank: was });
+      after.push({ bookId: id, rank: now });
+    }
+    await setRanks(tx, userId, after);
+    return { bookId, year: own.year, before, after, left: order };
+  });
+}
+
+/**
+ * Undo one rank write: every row it changed gets its rank back. Refuses,
+ * changing nothing, when the year's ranking is no longer exactly as the write
+ * left it (any later rank write to that year, a book re-dated into or out of
+ * it), or a row it changed no longer holds the rank the write gave it or has
+ * lost its status row. Checking the whole year, not only the rows changed,
+ * keeps an undo after a later append from leaving a tie or a gap.
+ */
+export async function undoRank(userId: string, change: RankChange): Promise<boolean> {
+  const { year, before, after, left } = change;
+  return inRanking(userId, async (tx) => {
+    if (year !== null) {
+      const now = (await yearRanking(tx, userId, year)).map((r) => `${r.bookId}:${r.rank}`);
+      const was = left.map((id, i) => `${id}:${i + 1}`);
+      if (now.length !== was.length || now.some((r, i) => r !== was[i])) return false;
+    }
+    if (after.length === 0) return true;
+    const rows = await tx.select({ bookId: bookStatus.bookId, rank: bookStatus.yearRank }).from(bookStatus)
+      .where(and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, after.map((r) => r.bookId))));
+    const now = new Map(rows.map((r) => [r.bookId, r.rank]));
+    if (after.some((r) => !now.has(r.bookId) || now.get(r.bookId) !== r.rank)) return false;
+    await setRanks(tx, userId, before);
+    return true;
+  });
+}
+
+/** A note write as `saveBookNote` made it: the note before and the note written. */
+export type NoteChange = { bookId: string; prior: string | null; note: string | null };
+
+/**
+ * Write a book's note (task 3.4): trimmed, and an empty note clears it (NULL).
+ * The note lives on `book_status`, so a book with no status row is refused
+ * (`RefusedStatus`; owner at the plan gate: no row is made to hold it). Answers
+ * null for a book that is missing or removed; otherwise the change `undoBookNote`
+ * puts back.
+ */
+export async function saveBookNote(userId: string, bookId: string, text: string): Promise<NoteChange | null> {
+  const note = text.trim() || null;
+  return db.transaction(async (tx) => {
+    if (!(await lockBook(tx, bookId))) return null;
+    const mine = and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId));
+    const [row] = await tx.select({ notes: bookStatus.notes }).from(bookStatus).where(mine);
+    if (!row) throw new RefusedStatus("put the book on your list before writing a note");
+    await tx.update(bookStatus).set({ notes: note }).where(mine);
+    return { bookId, prior: row.notes, note };
+  });
+}
+
+/** Undo one note write: the note before comes back, unless the note has changed since. */
+export async function undoBookNote(userId: string, change: NoteChange): Promise<boolean> {
+  const { bookId, prior, note } = change;
+  return db.transaction(async (tx) => {
+    if (!(await lockBook(tx, bookId))) return false;
+    const mine = and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId));
+    const [row] = await tx.select({ notes: bookStatus.notes }).from(bookStatus).where(mine);
+    if (!row || row.notes !== note) return false;
+    await tx.update(bookStatus).set({ notes: prior }).where(mine);
     return true;
   });
 }
