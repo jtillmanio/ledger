@@ -9,8 +9,9 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { requireTestUrl } from "../scripts/lib/testdb.mjs";
+import { acceptedDay } from "../src/lib/format";
 import {
-  dropReadout, genreHue, HIT_SLACK, hitLift, kWords, labelFit, layoutColumn, layoutLane, periodName, planYear, railName, roomAhead, stackLabel,
+  decisionState, dropReadout, evenQuarters, genreHue, HIT_SLACK, hitLift, kWords, labelFit, layoutColumn, layoutLane, periodName, planYear, railName, roomAhead, stackLabel,
   stackName, type RailBook,
 } from "../src/lib/plan-rail";
 import { testSql, truncateAll } from "./db";
@@ -719,5 +720,82 @@ describe("the rail stays out of every skeleton route's bundle (task 2.3; Lightho
     expect(readFileSync("src/components/RailLegend.tsx", "utf8")).not.toMatch(/^\s*["']use client["']/m);
     // And the rail itself is the client component that owns the sheets.
     expect(readFileSync("src/components/PlanRail.tsx", "utf8")).toMatch(/^"use client";/);
+  });
+});
+
+describe("a year accepted as a stretch year (task 2.7, 2 of 2; Plan Rail Spec A4.2)", () => {
+  it("decides fits, over or settled from the year's words, its capacity and the figure accepted", () => {
+    const year = { plannedWords: 3_585_000, capacity: 3_038_625 };
+    expect(decisionState({ ...year, plannedWords: 3_038_625 }, null)).toBe("fits");
+    // An acceptance left behind on a year back under capacity reads fits, not settled.
+    expect(decisionState({ ...year, plannedWords: 3_000_000 }, 3_585_000)).toBe("fits");
+    expect(decisionState(year, null)).toBe("over");
+    expect(decisionState(year, 3_585_000)).toBe("settled");
+    expect(decisionState(year, 3_584_999)).toBe("over");
+  });
+
+  it("evens out by each book's midpoint: the order kept, the quarters never out of sequence, the count unchanged", () => {
+    const words = [400, 300, 200, 100, 700, 150, 500, 400, 300].map((k) => k * 1000);
+    const quarters = evenQuarters(words);
+    expect(quarters).toHaveLength(words.length);
+    // Never a step back: a book ahead of another is never put in a later quarter than it.
+    expect(quarters.every((n, i) => i === 0 || n >= quarters[i - 1])).toBe(true);
+    // 3,050k across four: 762.5k each. Midpoints 200, 550, 800, 950, 1350, 1775, 2100, 2550, 2900.
+    expect(quarters).toEqual([1, 1, 2, 2, 2, 3, 3, 4, 4]);
+    expect(evenQuarters([0, 0])).toEqual([1, 1]);
+  });
+
+  it("says the day it was accepted as Eastern's day and month, the year added outside this one", () => {
+    const now = new Date("2027-11-13T12:00:00Z");
+    expect(acceptedDay("2027-09-14T15:00:00.000Z", now)).toBe("14 Sep");
+    // 02:00 UTC on the 15th is still the 14th in New York.
+    expect(acceptedDay("2027-09-15T02:00:00.000Z", now)).toBe("14 Sep");
+    expect(acceptedDay("2026-09-14T15:00:00.000Z", now)).toBe("14 Sep 2026");
+  });
+
+  it("marks the rail settled, greys its overage badges and keys the grey hatch as over, accepted (settled)", async () => {
+    const { default: PlanRail } = await import("../src/components/PlanRail");
+    const books = await q.planRail(USER, 2027);
+    const { quarters } = await q.planCapacity(USER, 2027);
+    const render = (settled: boolean) => {
+      const window = new Window();
+      window.document.body.innerHTML = renderToStaticMarkup(createElement(PlanRail, { year: 2027, books, quarters, settled }));
+      return window.document;
+    };
+    const held = render(false);
+    const settled = render(true);
+    // The overage is still drawn: the same blocks are over, with the same hatch layers.
+    expect(ids(settled, "button.qb.over")).toEqual(ids(held, "button.qb.over"));
+    expect(settled.querySelectorAll(".ov")).toHaveLength(held.querySelectorAll(".ov").length);
+    expect(held.querySelector(".planrail")?.hasAttribute("data-settled")).toBe(false);
+    expect(settled.querySelector(".planrail")?.getAttribute("data-settled")).toBe("true");
+    // Q1's footer still says the overage, in grey: no amber badge left on a settled rail's quarters.
+    const foot = (doc: Doc) => [...doc.querySelectorAll('.qcol[data-period="2027-Q1"] .qfoot .bdg')].map((b) => b.className);
+    expect(foot(held)).toEqual(["bdg bl phone", "bdg bl desk"]);
+    expect(foot(settled)).toEqual(["bdg dn phone", "bdg dn desk"]);
+    expect(settled.querySelector(".qlegend")?.textContent).toContain("over, accepted (settled)");
+    expect(settled.querySelector(".qlegend")?.textContent).not.toContain("over capacity");
+    expect(settled.querySelector(".lg.ovr")?.className).toBe("lg ovr settled");
+    expect(held.querySelector(".qlegend")?.textContent).toContain("over capacity");
+  });
+
+  it("marks the dashboard's strip settled and turns its figure grey (the strip is the same rail, M-07)", async () => {
+    const { default: QuarterStrip } = await import("../src/components/QuarterStrip");
+    const blocks = await q.quarterBlocks(USER, "2027-Q1");
+    const { quarters } = await q.planCapacity(USER, 2027);
+    const render = (settled: boolean) => {
+      const window = new Window();
+      window.document.body.innerHTML = renderToStaticMarkup(createElement(QuarterStrip, { cap: quarters[0], blocks, inHand: null, settled }));
+      return window.document;
+    };
+    const held = render(false);
+    const settled = render(true);
+    expect(held.querySelector(".qfig")?.className).toBe("qfig over");
+    expect(held.querySelector(".qfig .bdg")?.className).toBe("bdg bl");
+    expect(settled.querySelector(".planrail.strip")?.getAttribute("data-settled")).toBe("true");
+    expect(settled.querySelector(".qfig")?.className).toBe("qfig");
+    expect(settled.querySelector(".qfig .bdg")?.className).toBe("bdg dn");
+    expect(settled.querySelector(".planrail.strip")?.getAttribute("aria-label")).toMatch(/over, accepted as a stretch year$/);
+    expect(settled.querySelectorAll(".ov").length).toBe(held.querySelectorAll(".ov").length);
   });
 });

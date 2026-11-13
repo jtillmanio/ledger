@@ -215,7 +215,7 @@ tables.
   skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
   page within 1 s. What holds that, and the test that fails if it slips:
   - **Queries per page, in one wave.** `/comics` 7, `/comics/runs` 2, a run 3,
-    `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/books` 10, `/books/plan` 4 (task 2.10: capacity, rail, rows, your pace), `/inbox` 2, `/settings` 2, `/watch` none, `/login` none, `/` none (a redirect), each page's queries started together
+    `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/books` 11, `/books/plan` 5 (task 2.10: capacity, rail, rows, your pace; task 2.7: the year's acceptance), `/inbox` 2, `/settings` 2, `/watch` none, `/login` none, `/` none (a redirect), each page's queries started together
     (`test/query-budget.test.ts`, which counts them). A query that must wait on
     another raises a page's waves; raising either number needs a reason here.
     The dashboard (then `/`) and `/books/list` went from 4 to 5 with the inbox
@@ -228,7 +228,12 @@ tables.
     as `inProgressRuns` instead of waiting on it. It is 6 with the Up next shelf
     (task 1.10): `upNext`, the queue's unstarted runs from `run_queue_state`, in
     the same wave; *In Up next · #N* rides on the existing run reads as a join, not
-    a query of its own. The shell adds one more to every screen but
+    a query of its own. `/books` went from 10 to 11 and `/books/plan` from 4 to
+    5 with the stretch year (task 2.7): `planAcceptance`, the year's one
+    `plan_acceptance` row, in the same wave. It is a distinct need (the strip's
+    and the rail's settled hatch, the plan page's card), and the state is worked
+    out from it and the capacity the page already reads (`decisionState`) rather
+    than by a second read of `plan_capacity`. The shell adds one more to every screen but
     sign-in (task 1.8): the sidebar's and rail's `Inbox (N)` count, a one-row query
     in a `<Suspense>` of its own (`InboxCount`, deduplicated with React's `cache`
     so the rail and the sidebar share one). It is outside each page's budget

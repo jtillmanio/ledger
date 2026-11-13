@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { PLAN_PERIOD } from "@/lib/book-add";
-import { planDecision, planOverage } from "@/db/queries";
+import {
+  planDecision, planOverage, planRail, planYears, type OverageBook, type PeriodCapacity, type PlanDecision,
+} from "@/db/queries";
+import { evenQuarters } from "@/lib/plan-rail";
 import {
   acceptStretch, evenOutQuarters, moveOverage, parsePlanMove, undoAcceptance, undoEvenOut, undoPlanMoves,
   type PlanEnd, type PlanMove, type QuarterLayout,
@@ -20,9 +23,11 @@ export const runtime = "nodejs";
  *   the action did (`acceptance`, `moves`, `layout`); `undo` is what DELETE takes back.
  * - DELETE `{ undo }`: that action's one undo. `{ kind: "accept", year }` is also *Undo acceptance*:
  *   it deletes the year's row. 409 when the plan has moved on since, and then nothing is changed.
- * - GET `?year=2027`: `{ decision, overage }`, the year's state (`fits`, `over` or `settled`)
- *   against its capacity and acceptance (`planDecision`), and the books past each quarter's rule
- *   (`planOverage`). Nothing is written.
+ * - GET `?year=2027`: `{ decision, overage, quarters, next, even }`, the year's state (`fits`,
+ *   `over` or `settled`) against its capacity and acceptance (`planDecision`), the books past each
+ *   quarter's rule (`planOverage`), the year's quarters, the next year's book count, and each
+ *   quarter's words after *Even out* (`evenQuarters`, the write's own rule): the sheet's four
+ *   deltas (TASK-067). Nothing is written.
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -71,9 +76,30 @@ export async function GET(req: Request) {
   const raw = new URL(req.url).searchParams.get("year");
   if (raw === null || !/^\d{4}$/.test(raw)) return bad("year is a year, like 2027");
   const year = Number(raw);
-  const [decision, overage] = await Promise.all([planDecision(userId, year), planOverage(userId, year)]);
-  return NextResponse.json({ decision, overage });
+  const [decision, overage, [now, next], rail] = await Promise.all([
+    planDecision(userId, year), planOverage(userId, year), planYears(userId, year, 2), planRail(userId, year),
+  ]);
+  // What *Even out* would leave in each quarter: the rail's quarter books in order, through the write's own rule.
+  const inQuarters = rail.filter((b) => b.period.includes("-Q"));
+  const even = [0, 0, 0, 0];
+  evenQuarters(inQuarters.map((b) => b.words)).forEach((q, i) => { even[q - 1] += inQuarters[i].words; });
+  return NextResponse.json({
+    decision, overage, quarters: now.quarters, next: { year: year + 1, books: next.year.books },
+    even: inQuarters.length ? even : now.quarters.map((q) => q.plannedWords),
+  } satisfies Rebalance);
 }
+
+/** What GET answers: everything the rebalance sheet's four deltas are worked out from (TASK-067). */
+export type Rebalance = {
+  decision: PlanDecision;
+  overage: { books: OverageBook[]; longestFirst: string[] };
+  /** The year's four quarters, as `plan_capacity` holds them. */
+  quarters: PeriodCapacity[];
+  /** The next year's books now: *Move the overage into 2028* adds the overage's to them. */
+  next: { year: number; books: number };
+  /** Each quarter's words after *Even out the quarters*, Q1 to Q4. */
+  even: number[];
+};
 
 /** What DELETE takes back: one POST's undo. */
 type Undo = { kind: "accept"; year: number } | { kind: "moves"; moves: PlanMove[] } | { kind: "even"; layout: QuarterLayout };

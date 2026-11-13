@@ -298,6 +298,17 @@ and notes where it went.
       count takes Calibre's `#pages` (your plan-gate answers, 2026-11-09). D-130
       names neither; `.claude/rules/schema.md` and TASK-057's Plan already say
       so (from TASK-057, PR #217).
+- [ ] Record a decision in `docs/review/decisions.md` (next free D-n, like D-147
+      for 2.8), amending roadmap 2.7's prose and **Check:**. The capacity card,
+      Rebalance and the settled banner live on `/books/plan`, never the dashboard
+      (your TASK-049 Q2 answer; `docs/04-design.md` § 12). The Check's clause
+      becomes "that `/books/plan` renders `.decide.settled` rather than
+      `.decide`, and the over-rule part of each block, on the plan page's rail
+      and the dashboard's strip, uses `--hatch-settled`, not `--hatch`". The
+      prose's "one tap from the books dashboard" and "on the dashboard and the
+      plan page" become the plan page. TASK-067 built and tested it that way. If
+      you want the card on the dashboard instead, say so, and it moves (from
+      TASK-067, PR #248).
 
 ---
 

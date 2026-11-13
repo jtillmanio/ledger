@@ -2,10 +2,11 @@ import Link from "next/link";
 import PlaceThem from "@/components/PlaceThem";
 import PlanQuarterRows from "@/components/PlanQuarterRows";
 import PlanRail from "@/components/PlanRail";
-import { planCapacity, planRail, planRows, readingSettings } from "@/db/queries";
+import YearDecision from "@/components/YearDecision";
+import { planAcceptance, planCapacity, planRail, planRows, readingSettings } from "@/db/queries";
 import { requireUserId } from "@/lib/auth";
 import { today } from "@/lib/finish-date";
-import { kWords, planYear, roomAhead } from "@/lib/plan-rail";
+import { decisionState, kWords, planYear, roomAhead } from "@/lib/plan-rail";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,9 @@ export const dynamic = "force-dynamic";
  * Plan (task 2.10, F-23; mockup `plan`, STYLE_GUIDE §14 → Plan): the year as the full-size rail, every
  * book a legible block in its quarter, the quarter in focus listed with **Move** on each row, and one
  * honest line about the room left, and, when the year holds books with no quarter, the amber card with *Place
- * them* (task 2.8). The rail and the dashboard's strip read the same query
+ * them* (task 2.8). Over capacity, the capacity card with *Rebalance* and *Accept as a stretch year*; once
+ * accepted, the same card calm and grey with *Undo*, and the rail's overage hatched in grey (task 2.7,
+ * `YearDecision`). The rail and the dashboard's strip read the same query
  * (`plan_capacity` through `planCapacity`), so their totals agree. This year by default, `?year=` for
  * the next four (the picker's five). The focus starts on this quarter, and on Q1 in a later year.
  */
@@ -26,10 +29,11 @@ export default async function Plan({ searchParams }: { searchParams: Promise<{ y
   // One wave (architecture § Operational posture): none of the reads waits on another. Your pace starts
   // with them, so a year nothing is planned in (its capacity at your settings) costs no second round trip.
   const pace = readingSettings(userId);
-  const [capacity, books, rows] = await Promise.all([
+  const [capacity, books, rows, acceptance] = await Promise.all([
     planCapacity(userId, year, pace),
     planRail(userId, year),
     planRows(userId, year),
+    planAcceptance(year),
     pace,
   ]);
 
@@ -42,6 +46,8 @@ export default async function Plan({ searchParams }: { searchParams: Promise<{ y
     words: total.plannedWords - capacity.quarters.reduce((n, q) => n + q.plannedWords, 0),
   };
   const over = total.plannedWords - total.capacity;
+  // Held or settled (task 2.7): the year against its capacity and its stretch-year acceptance, read, never stored.
+  const decision = decisionState(total, acceptance?.acceptedTotal ?? null);
 
   return (
     <main className="plan-page">
@@ -57,7 +63,11 @@ export default async function Plan({ searchParams }: { searchParams: Promise<{ y
         ))}
       </nav>
 
-      <PlanRail year={year} books={books} quarters={capacity.quarters} />
+      <PlanRail year={year} books={books} quarters={capacity.quarters} settled={decision === "settled"} />
+      {decision !== "fits" && (
+        <YearDecision year={year} state={decision} plannedWords={total.plannedWords} capacity={total.capacity}
+          acceptedAt={acceptance?.acceptedAt ?? null} acceptedTotal={acceptance?.acceptedTotal ?? null} />
+      )}
       {bare.books > 0 && (
         // Held (task 2.8; mockup `plan`): books in the year that no quarter holds yet. Amber, never red.
         <div className="decide plan-place">
@@ -71,7 +81,8 @@ export default async function Plan({ searchParams }: { searchParams: Promise<{ y
           </div>
         </div>
       )}
-      <PlanQuarterRows key={year} quarters={capacity.quarters} rows={rows} focus={focus} room={room?.text ?? null} />
+      <PlanQuarterRows key={year} quarters={capacity.quarters} rows={rows} focus={focus} room={room?.text ?? null}
+        settled={decision === "settled"} />
     </main>
   );
 }

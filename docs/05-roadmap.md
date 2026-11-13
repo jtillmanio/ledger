@@ -2925,7 +2925,7 @@ where R is the hard prerequisite of A (nothing else), B (also hard-blocked by
 an unread S) and C (soft only), `run_opens(R)` is A and C and not B; reading S
 adds B; with A in R's block and C queued, A comes before C.
 
-### ☐ 2.7 Rebalance, and accepting an overage · M
+### ☑ 2.7 Rebalance, and accepting an overage · M
 *Pulled ahead of 1.26 by the owner (D-139).*
 
 The catch-up affordance, one tap from the books dashboard. A sheet with four

@@ -902,6 +902,10 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .qb.over .ql,.qb.stack .ql{padding:2px 4px;border-radius:var(--r-cell);background:var(--surface);color:var(--ink);
   box-shadow:inset 0 0 0 1px var(--rule)}
 .qb.over .ql{left:5px}
+/* A stretch year accepted (task 2.7; Plan Rail Spec A4.2): the overage is still drawn, its hatch and ring grey,
+   since the decision is made. Only the held state clears. The strip shares these (data-settled on its root). */
+.planrail[data-settled] .qb.over{box-shadow:inset 0 0 0 1.5px var(--muted)}
+.planrail[data-settled] .ov{background-color:var(--sunk);background-image:var(--hatch-settled);box-shadow:inset 0 0 0 1.5px var(--muted)}
 /* A stack folds adjacent blocks under 24px: dashed, on --raise, its label centred over it. */
 .qb.stack{background-color:var(--raise);box-shadow:none}
 .qb.stack::before,.qb.un::before{inset:0;width:auto;z-index:auto;box-sizing:border-box;background:none;border-radius:var(--r-cell)}
@@ -983,6 +987,7 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .lg{display:inline-block;flex:none;width:.75rem;height:.5rem;border-radius:var(--r-cell)}
 .lg.est{background:var(--reading-soft);border-top:1.5px dotted var(--muted)}
 .lg.ovr{background-color:var(--blocked-soft);background-image:var(--hatch);box-shadow:inset 0 0 0 1px var(--blocked)}
+.lg.ovr.settled{background-color:var(--sunk);background-image:var(--hatch-settled);box-shadow:inset 0 0 0 1px var(--muted)}
 .lg.stk{background:var(--raise);border:1px dashed var(--faint-deco)}
 .lg.nqt{background:var(--blocked-soft);border:1px dashed var(--blocked)}
 
@@ -1044,6 +1049,21 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .decide .dt{font-size:.8125rem;color:var(--ink-2);line-height:1.45}
 .decide .dt b{color:var(--ink);font-weight:600}
 .decide .dt{margin:0}
+
+/* The plan page's capacity card (task 2.7): amber while held, the settled grey once accepted; and the Rebalance
+   sheet's four peers, each a row with its delta and one button, all four of one class and one size. Tokens only. */
+.decide .dt-text{margin:0}
+.plan-decision .btnrow,.place-close .btnrow{margin-top:.625rem}
+.plan-decision .btn,.place-close .btn{min-height:44px}
+.plan-decision .neutral-error,.place-close .neutral-error{margin:.5rem 0 0}
+.rb-opts{list-style:none;margin:.75rem 0;padding:0;border:1px solid var(--rule);border-radius:var(--r-lg);background:var(--surface)}
+.rb-opt{display:flex;gap:.75rem;align-items:flex-start;padding:.75rem .875rem}
+.rb-opt + .rb-opt{border-top:1px solid var(--rule)}
+.rb-text{flex:1;min-width:0}
+.rb-title{margin:0;font-weight:600;font-size:.875rem;line-height:1.25rem;color:var(--ink)}
+.rb-delta{margin:.1875rem 0 0;font-size:.75rem;line-height:1.125rem;color:var(--muted)}
+.rb-go{flex:0 0 auto;width:7.5rem;min-height:44px;justify-content:center;white-space:nowrap}
+@media (min-width:1024px){.rb-go{min-height:32px}}
 
 /* Place them (task 2.8; mockup `plan`, last frame): one book at a time, four quarter buttons two by two, each
    with its current total and an amber *over* badge where it already is; then the closing card. Tokens only. */

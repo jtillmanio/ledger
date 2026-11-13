@@ -272,6 +272,37 @@ export function genreHue(genre: string | null): string {
   return `--g${(hash % 7) + 1}`;
 }
 
+/** A year against its capacity and its acceptance (task 2.7): what the plan page's card and the rail's hatch say. */
+export type DecisionState = "fits" | "over" | "settled";
+
+/**
+ * A year's decision (task 2.7, F-23; R3-14): `fits` at or under capacity; over it, `settled` while its planned
+ * words stay at or under the figure accepted, and `over` when nothing is accepted or it has grown past that.
+ * One rule for `planDecision`, the plan page and the dashboard's strip, so none of them disagrees.
+ */
+export function decisionState(year: { plannedWords: number; capacity: number }, acceptedTotal: number | null): DecisionState {
+  if (year.plannedWords <= year.capacity) return "fits";
+  return acceptedTotal !== null && year.plannedWords <= acceptedTotal ? "settled" : "over";
+}
+
+/**
+ * *Even out the quarters* (task 2.7, D-37): given the year's quarter books Q1 to Q4, each quarter in its order,
+ * the quarter (1–4) each goes to: the one its words' midpoint falls in at a quarter of the total each. The order
+ * never changes and no quarter is skipped mid-run, so every book ahead of another stays ahead of it.
+ * `evenOutQuarters` writes it and the rebalance sheet previews it, from this one function.
+ */
+export function evenQuarters(words: number[]): number[] {
+  const total = words.reduce((n, w) => n + w, 0);
+  if (total === 0) return words.map(() => 1);
+  const share = total / 4;
+  let run = 0;
+  return words.map((w) => {
+    const quarter = Math.min(3, Math.floor((run + w / 2) / share)) + 1;
+    run += w;
+    return quarter;
+  });
+}
+
 /** Where a dragged block would land (task 2.10, 2 of 2): a quarter with its capacity, or the fifth lane with none. */
 export type DropTarget = { period: string; quarter: number | null; plannedWords: number; capacity: number | null };
 

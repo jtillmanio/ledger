@@ -30,7 +30,12 @@ export const endName = (to: string) => (to === "someday" ? "Someday" : to === "o
 /** Words as the preview prints them, `1,010k`. */
 const k = (words: number) => `${Math.round(words / 1000).toLocaleString("en-US")}k`;
 
-const STRETCH_WHY = "Accepting a stretch year arrives with 2.7.";
+/**
+ * A stretch year is the whole year's decision (task 2.7): accepted from the plan page's capacity card or its
+ * Rebalance sheet, once the year is over. From here it would mean *move, then accept*, which waits on the
+ * preview answering the year's figure as well as the period's (TASK-072).
+ */
+const STRETCH_WHY = "Accept the whole year from Rebalance on the plan page.";
 
 /**
  * The plan editor's sheet body (task 2.3, F-23; mockup `moveplan`; D-37, D-38): one row of chips,

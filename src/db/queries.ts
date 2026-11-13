@@ -4,7 +4,7 @@ import { readWhen, runSpan, type Precision } from "@/lib/format";
 import { FRESH_DAYS } from "@/lib/metron";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
 import { parseSort, type Dir, type Sort } from "@/lib/library-sort";
-import type { RailBook } from "@/lib/plan-rail";
+import { decisionState, type RailBook } from "@/lib/plan-rail";
 import { DEFAULT_SETTINGS, wordsPerYear, type ReadingSettings } from "@/lib/settings";
 
 /* Raw SQL against the views in etl/views.sql. Drizzle's query builder is used
@@ -1237,8 +1237,24 @@ export async function planDecision(userId: string, year: number): Promise<PlanDe
   const capacity = row.capacity ?? wordsPerYear(await readingSettings(userId), year);
   const plannedWords = row.plannedWords ?? 0;
   const acceptedTotal = row.acceptedTotal === null ? null : Number(row.acceptedTotal);
-  const state = plannedWords <= capacity ? "fits" : acceptedTotal !== null && plannedWords <= acceptedTotal ? "settled" : "over";
+  const state = decisionState({ plannedWords, capacity }, acceptedTotal);
   return { year, capacity, plannedWords, acceptedAt: row.acceptedAt, acceptedTotal, state };
+}
+
+/** A year's stretch-year acceptance (task 2.7): when (ISO) and the words planned then; null when it isn't accepted. */
+export type YearAcceptance = { acceptedAt: string; acceptedTotal: number };
+
+/**
+ * The year's `plan_acceptance` row alone (task 2.7, 2 of 2), for a page that already reads the year's capacity:
+ * `decisionState(capacity.year, acceptance?.acceptedTotal ?? null)` is then `planDecision`'s state with no
+ * second read of `plan_capacity`.
+ */
+export async function planAcceptance(year: number): Promise<YearAcceptance | null> {
+  const [row] = await sql<{ acceptedAt: string; acceptedTotal: string }[]>`
+    SELECT to_char(accepted_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "acceptedAt",
+           accepted_total AS "acceptedTotal"
+    FROM plan_acceptance WHERE year = ${year}`;
+  return row ? { acceptedAt: row.acceptedAt, acceptedTotal: Number(row.acceptedTotal) } : null;
 }
 
 /** One book of a year's overage (task 2.7): past its quarter's rule, to read, and so one a rebalance moves. */
