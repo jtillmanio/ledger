@@ -1,7 +1,7 @@
 ---
 id: TASK-066
 title: 2.7 Rebalance (1 of 2) — a stretch year stored, and the rebalance writes
-status: Review
+status: Done
 depends_on: []
 size: M
 model: opus
