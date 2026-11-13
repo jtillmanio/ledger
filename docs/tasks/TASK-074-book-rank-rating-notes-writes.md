@@ -1,7 +1,7 @@
 ---
 id: TASK-074
 title: 3.4 Book ratings and top-books reorder
-status: Draft
+status: Ready
 depends_on: [TASK-010]
 size: S
 model: opus

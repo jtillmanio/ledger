@@ -1,7 +1,7 @@
 ---
 id: TASK-083
 title: 4.4 Sync with Calibre (3 of 3) — the Calibre page, and a line when the last sync is old
-status: Draft
+status: Ready
 depends_on: [TASK-081, TASK-082, TASK-045, TASK-049]
 size: M
 model: sonnet

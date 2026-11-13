@@ -1,7 +1,7 @@
 ---
 id: TASK-086
 title: 4.3 Covers in the UI (2 of 3) — covers at the feel-pass sizes: the heroes, the shelf and the dashboard rows
-status: Draft
+status: Ready
 depends_on: [TASK-085, TASK-049]
 size: M
 model: sonnet

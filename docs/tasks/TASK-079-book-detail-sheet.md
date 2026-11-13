@@ -1,7 +1,7 @@
 ---
 id: TASK-079
 title: 3.5 Detail sheets (2 of 3) — the book sheet, a route over the list
-status: Draft
+status: Ready
 depends_on: [TASK-078, TASK-074]
 size: M
 model: opus

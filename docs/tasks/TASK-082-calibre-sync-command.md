@@ -1,7 +1,7 @@
 ---
 id: TASK-082
 title: 4.4 Sync with Calibre (2 of 3) — npm run calibre:sync, both ways, by hand or weekly
-status: Draft
+status: Ready
 depends_on: [TASK-081]
 size: M
 model: opus

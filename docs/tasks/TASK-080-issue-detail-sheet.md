@@ -1,7 +1,7 @@
 ---
 id: TASK-080
 title: 3.5 Detail sheets (3 of 3) — the issue sheet, every run that places it
-status: Draft
+status: Ready
 depends_on: [TASK-078, TASK-079]
 size: M
 model: opus

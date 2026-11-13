@@ -1,7 +1,7 @@
 ---
 id: TASK-081
 title: 4.4 Sync with Calibre (1 of 3) — the sync route: Calibre's changes in, the Ledger's back, each run logged
-status: Draft
+status: Ready
 depends_on: [TASK-030, TASK-032, TASK-033, TASK-029, TASK-057]
 size: M
 model: opus

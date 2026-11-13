@@ -1,7 +1,7 @@
 ---
 id: TASK-078
 title: 3.5 Detail sheets (1 of 3) — a book's summary and subjects, an issue's story arc
-status: Draft
+status: Ready
 depends_on: [TASK-081, TASK-082]
 size: M
 model: opus

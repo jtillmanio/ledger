@@ -1,7 +1,7 @@
 ---
 id: TASK-077
 title: 3.4b Rank a book when you finish it (3 of 3) — rank it at the finish, this or that
-status: Draft
+status: Ready
 depends_on: [TASK-075, TASK-076, TASK-055]
 size: M
 model: opus

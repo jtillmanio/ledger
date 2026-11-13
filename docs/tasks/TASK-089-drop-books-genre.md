@@ -1,7 +1,7 @@
 ---
 id: TASK-089
 title: 4.5 Calibre's genres on every screen (2 of 2) — drop books.genre
-status: Draft
+status: Ready
 depends_on: [TASK-088]
 size: M
 model: opus

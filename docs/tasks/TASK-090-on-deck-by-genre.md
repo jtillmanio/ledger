@@ -1,7 +1,7 @@
 ---
 id: TASK-090
 title: 4.5b On deck by genre
-status: Draft
+status: Ready
 depends_on: [TASK-088, TASK-089, TASK-017]
 size: M
 model: sonnet

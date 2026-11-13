@@ -1,7 +1,7 @@
 ---
 id: TASK-087
 title: 4.3 Covers in the UI (3 of 3) — Show covers, and no image requested when data is reduced
-status: Draft
+status: Ready
 depends_on: [TASK-085, TASK-086, TASK-045]
 size: M
 model: sonnet

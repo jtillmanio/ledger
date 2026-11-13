@@ -1,7 +1,7 @@
 ---
 id: TASK-085
 title: 4.3 Covers in the UI (1 of 3) — real covers in every row: the spine, the Library and the next-issue strip
-status: Draft
+status: Ready
 depends_on: [TASK-027, TASK-003]
 size: M
 model: sonnet
