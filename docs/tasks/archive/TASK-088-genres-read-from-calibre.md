@@ -1,7 +1,7 @@
 ---
 id: TASK-088
 title: 4.5 Calibre's genres on every screen (1 of 2) — every genre reader takes Calibre's genres
-status: Review
+status: Done
 depends_on: [TASK-033, TASK-047, TASK-051]
 size: M
 model: opus
