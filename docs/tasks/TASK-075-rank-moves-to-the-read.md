@@ -1,7 +1,7 @@
 ---
 id: TASK-075
 title: 3.4b Rank a book when you finish it (1 of 3) — the rank moves to the read
-status: In progress
+status: Review
 depends_on: [TASK-074, TASK-010]
 size: M
 model: opus
@@ -32,7 +32,7 @@ A rank belongs to a read, not a book, so a book read in 2024 and again in 2026 c
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves *a book read in two years holds a rank in each*, *moving a book from rank 12 to rank 3 … its undo restores the order*, and *the up → down → up migration test passes*. TASK-077 proves the placement and *Skip*; TASK-076 the browser clauses): `npm test`: placing a new read into a year of six ranked
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves *a book read in two years holds a rank in each*, *moving a book from rank 12 to rank 3 … its undo restores the order*, and *the up → down → up migration test passes*. TASK-077 proves the placement and *Skip*; TASK-076 the browser clauses): `npm test`: placing a new read into a year of six ranked
 reads with scripted answers takes at most 3 picks and leaves ranks 1–7
 contiguous, and its undo restores the six as they were; *Skip* writes no rank;
 a book read in two years holds a rank in each; moving a book from rank 12 to
@@ -41,10 +41,10 @@ the order. In the browser (0.11), a past year lists its first ten, a divider,
 then every other book read that year, with none collapsed; an unranked read
 shows under *Not ranked yet*; a read with no date shows under *No year*; and the
 Library renders no year chip. The up → down → up migration test passes.
-- [ ] AC-2: After the migration, `read_events` has a nullable `year_rank` and `book_status` has none; `npm run test:db:reset` builds the schema, and no query, view, loader or test names `book_status.year_rank`.
-- [ ] AC-3: Up → down → up on a fixture with a ranked read, an unranked read and a precision-`none` read keeps every `read_events` row's `year_rank`, date and precision, the `none` read still `none` with a NULL date.
-- [ ] AC-4: Given 2025 with twelve ranked reads, moving the read at rank 12 to rank 3 leaves ranks 1–12 contiguous with it at 3; moving an unranked 2025 read to rank 5 ranks it and leaves 1–13 contiguous; one undo restores each. A rank on a read with no date is refused with 400 and writes nothing.
-- [ ] AC-5: An extract over a fixture workbook whose Top Books tab ranks two books in 2023 writes each rank onto that book's 2023 read in the seed the loaders read; a ranked title with no 2023 read, or two, is reported, never dropped; `npm run test:etl` covers both.
+- [x] AC-2: After the migration, `read_events` has a nullable `year_rank` and `book_status` has none; `npm run test:db:reset` builds the schema, and no query, view, loader or test names `book_status.year_rank`.
+- [x] AC-3: Up → down → up on a fixture with a ranked read, an unranked read and a precision-`none` read keeps every `read_events` row's `year_rank`, date and precision, the `none` read still `none` with a NULL date.
+- [x] AC-4: Given 2025 with twelve ranked reads, moving the read at rank 12 to rank 3 leaves ranks 1–12 contiguous with it at 3; moving an unranked 2025 read to rank 5 ranks it and leaves 1–13 contiguous; one undo restores each. A rank on a read with no date is refused with 400 and writes nothing.
+- [x] AC-5: An extract over a fixture workbook whose Top Books tab ranks two books in 2023 writes each rank onto that book's 2023 read in the seed the loaders read; a ranked title with no 2023 read, or two, is reported, never dropped; `npm run test:etl` covers both.
 
 ## Out of scope
 
@@ -71,9 +71,13 @@ Library renders no year chip. The up → down → up migration test passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Data model 2.16, 2.17 and § 4.1 get the 3.4b row: the rank is on the read (approved at plan).
-- Candidate decision: the workbook's Top Books ranks load onto Calibre's reads, narrowing D-41 (approved at plan; decisions are `propose`).
-- A ranked read re-dated into another year, or to no date, carries its rank (a gap in one year, a tie in the other, until the next rank write to each) → TASK-077 Context (approved at plan).
+- The data model says the rank is on the read: 2.16 gains a year ranking's shape (2.17's `none` read has no rank), and § 4.1 gains the 3.4b row → docs/03-data-model.md § 2. Decisions (2.16) and § 4.1 By task (approved at plan)
+- Candidate decision: the rank is on the read, and the workbook's Top Books ranks load onto Calibre's reads, narrowing D-41; D-41 and D-101 get *Amended by D-150*, and the schema rule that said the workbook loads no read state now names the exception → docs/review/decisions.md § D-150 and .claude/rules/schema.md § A book is its title and author (approved at close-out)
+- The ER diagram still drew `year_rank` on `BOOK_STATUS` → docs/DIAGRAMS.md § 2. Books data model (approved at close-out)
+- Product B4 said the workbook's ranks don't load → docs/01-product.md § The owner's list (Books, B4) (approved at close-out)
+- A ranked read re-dated into another year, or to no date, carries its rank (a gap in one year, a tie in the other, until the next rank write to each); and a finish's undo now refuses once its read is ranked, which the finish toast's two undos must order → docs/tasks/TASK-077-rank-at-the-finish-this-or-that.md § Context (approved at plan)
+- Production check before the Release that carries 0026: a rank no read can hold is only named in a `RAISE NOTICE` (schema review); production's books are rebuilt by extract before cutover (D-139), so nothing there is lost → not tracked: production is rebuilt from extract before the books cutover (D-139), which re-derives every rank
+- The `book_reads` view and the Library still read nothing of the rank; the Top books screen that reads `read_events.year_rank` is TASK-076's → not tracked: already tracked in TASK-076 (the screen)
 
 ## Plan
 
@@ -103,7 +107,7 @@ Approved 2026-11-13 by the owner, with the three decisions below.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL (test/load-scripts.test.ts:92 and etl/test_calibre.py:432 pinned the old columns) → fixed | Verify R1b PASS | CI R1 PASS (4b8d9ab, e2e full 8/8) | Spec R1 CHANGES (follow-up destinations only; every AC PASS) | Schema R1 APPROVE (3 MINOR: stale read before the book lock, a forgeable `backfilled`, an untested year-mismatch rank) → fixed | Verify R2 PASS | CI R2 PASS (f134faa) | Audit R1 NOT RUN (owner's uncommitted files) → re-run in a clean worktree on ledger_test_2 (owner: free the merged 2.10b worktree) | Audit R1 CHANGES (AC-5: the two-reads and ranked-twice branches untested) → test added | Audit R2 PASS (both mutants killed) | Verify R3 PASS | Schema R2 not re-run (no data-layer change since its APPROVE but tests)
 
 ## Blocked
 
@@ -111,7 +115,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (R1 failed on two tests pinning the old columns)
+- Review rounds: 2 (spec 1 + close-out check, schema 1, audit 2)
+- First-pass AC FAILs: 0 (AC-5 PARTIAL at audit R1: two report branches untested)
+- Plan revisions after approval: 0 (outside the plan's file list, `etl/test_calibre.py` and `test/load-scripts.test.ts` follow from steps 5 and 6)
