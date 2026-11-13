@@ -1,14 +1,14 @@
 ---
 id: TASK-084
 title: 4.2 Open Library and Hardcover backfill
-status: Ready
+status: In progress
 depends_on: [TASK-034, TASK-040, TASK-057]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: b688fed
 ---
 
 # TASK-084 — 4.2 Open Library and Hardcover backfill
@@ -67,6 +67,35 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 ## Plan
 
 _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+
+**Owner's answers at the plan gate (2026-11-13):**
+- *Where it runs:* `POST /api/books/backfill` inside the passcode gate; `{ dryRun: true }` is the dry run. 4.4's `calibre:sync` calls it after each sync (follow-up). No schedule, no command of its own.
+- *ISBNs:* no `books.isbn`. The caller may pass `{ bookId: isbn }` (4.4 fills it from Calibre); otherwise title and author.
+- *Page counts:* the backfill fills `page_count`, `cover_url` and `published_year` only where NULL; any existing count is kept (no source column tells a `hand` count from Calibre's estimate).
+- *Art tone:* deferred again; the Check's second sentence stays open and goes to TASK-085.
+- *Ambiguous:* D-99 unchanged (1.14b's run left no `hardcover_review.csv`): two matches fill nothing, and both are listed in the report.
+
+**Found at planning:** 1.14b's real run hasn't happened: `book_details.csv` holds 98 `hardcover` rows and 2,000 `openlibrary` ones, so 4,292 of 4,390 seed books have no `hardcover_id`.
+
+**Steps**
+1. `src/lib/book-match.ts` (new): `decideMatch(title, author, books)` ports `enrich_books.decide` (matched / ambiguous / proposed / unmatched), with extract's `clean` and `key`, `subtitled`, `differs_only_by_number` and the reordered-words rule, reusing `trigramSimilarity`. A compilation is never a candidate.
+2. `src/lib/hardcover.ts`: a `cached` flag on the `ok` answer, so the backfill paces only real requests (about one a second).
+3. `src/db/backfill.ts` (new): `backfillBooks({ dryRun, limit ≤ 100, isbns?, sleep, deadline })`. It reads live books with no `hardcover_id` and an author; looks each one up by ISBN when given, else by title and author; reports counts (ISBN, title, proposed, ambiguous, unmatched) and every series position Hardcover gives that differs from the stored `series_position`. A real run makes one UPDATE per match, guarded by `hardcover_id IS NULL`, and never writes series or position. A 429 waits out its `Retry-After`, then retries the same book; past the deadline it stops with `retryIn`. Without the token it refuses and says why.
+4. `src/app/api/books/backfill/route.ts` (new): `POST { dryRun, limit, isbns? }`, signed in, `maxDuration` 300; returns the report, or 503 with the reason.
+5. `.claude/rules/schema.md`: a rule for the backfill.
+
+**Files:** the four above, `test/hardcover-backfill.test.ts`, `test/fixtures/hardcover-backfill.json`, `.claude/rules/schema.md`. The route and `book-match.ts` are not in *Files likely touched*.
+
+**Test strategy:** recorded answers are seeded into `hardcover_cache`, and `fetch` is stubbed to throw.
+- AC-2: `test/hardcover-backfill.test.ts` › dry run over 100 seeded books: every count and conflict, and a database dump identical before and after.
+- AC-3: › real run: only matched books filled; a hand page count kept; a Calibre series kept; a compilation result fills nothing.
+- AC-4: › a stubbed 429 then 200 waits `Retry-After` and fills; a run stopped at `limit` and run again skips the filled books; no token refuses.
+- AC-5: › the file and the route name only `TEST_DATABASE_URL` and the test helpers.
+- AC-1 (manual): a dry run over 100 development books through `npm run dev` (it adds cache rows only); the PR reports the match rate and conflicts.
+
+**Risks:** a dry run that has to ask Hardcover writes `hardcover_cache` rows (rebuildable, never `books`); AC-2's byte-identical check runs with every answer recorded. The first production run covers almost the whole library unless the full `enrich:books` run comes first.
+
+**Follow-ups (planned):** a note in TASK-081/082 (call the route after the sync and pass Calibre's ISBNs; apply D-130 when creating a book); a note in TASK-085 (art tone deferred again); a note in TASK-078 (`books.isbn` still not added).
 
 ## Review log
 

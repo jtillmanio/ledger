@@ -61,7 +61,8 @@ export type HardcoverBook = {
 };
 
 export type HardcoverAnswer =
-  | { status: "ok"; books: HardcoverBook[] }
+  /** `cached`: served from `hardcover_cache`, no request made (the backfill paces only real ones, task 4.2). */
+  | { status: "ok"; books: HardcoverBook[]; cached: boolean }
   | { status: "rate_limited"; retryIn: number }
   | { status: "error" }
   /** No `HARDCOVER_API_TOKEN`: nothing was asked. */
@@ -185,6 +186,11 @@ async function keep(key: string, body: unknown) {
     .onConflictDoUpdate({ target: hardcoverCache.key, set: { body, fetchedAt: sql`now()` } });
 }
 
+/** Whether `HARDCOVER_API_TOKEN` is set: without it nothing is asked. */
+export function hardcoverConfigured(): boolean {
+  return authorization() !== null;
+}
+
 /** `HARDCOVER_API_TOKEN` as an Authorization header (Hardcover's API page shows it with `Bearer ` already), or null. */
 function authorization(): string | null {
   const token = process.env.HARDCOVER_API_TOKEN?.trim();
@@ -212,7 +218,7 @@ export async function searchHardcover(q: string): Promise<HardcoverAnswer> {
   const [cached] = await db.select({ body: hardcoverCache.body }).from(hardcoverCache)
     .where(and(eq(hardcoverCache.key, key),
       gt(hardcoverCache.fetchedAt, sql`now() - make_interval(days => ${FRESH_DAYS})`)));
-  if (cached) return { status: "ok", books: toBooks(key, cached.body) };
+  if (cached) return { status: "ok", books: toBooks(key, cached.body), cached: true };
 
   const held = await heldFor();
   if (held > 0) return { status: "rate_limited", retryIn: held };
@@ -243,5 +249,5 @@ export async function searchHardcover(q: string): Promise<HardcoverAnswer> {
   const body = bodyOf(key, answer.data);
   if (body === undefined) return { status: "error" };
   await keep(key, body);
-  return { status: "ok", books: toBooks(key, body) };
+  return { status: "ok", books: toBooks(key, body), cached: false };
 }

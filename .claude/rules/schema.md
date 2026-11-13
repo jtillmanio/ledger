@@ -176,6 +176,20 @@ Release, test isolation) and the Hard rules a reviewer checks.
   lists the held books for `enrich_books.py` and `calibre.py`, which read it
   beside `seed/books.csv`: a held book is still looked up and matched. The
   hold is extract's, before cutover; a book added in the app is never held.
+- **A book with no Hardcover id is backfilled in the app, filling only what is
+  empty** (task 4.2, D-94, D-99, D-139; owner, 2026-11-13). `backfillBooks`
+  (`src/db/backfill.ts`, `POST /api/books/backfill` inside the gate, a dry run
+  unless `dryRun: false`) looks up live books with no `hardcover_id` and an
+  author, by the ISBN its caller passes (4.4's sync, from Calibre; `books` has
+  no ISBN column), else one title-and-author search decided by 1.14b's rule
+  (`src/lib/book-match.ts`, `enrich_books.decide` ported). A match sets
+  `hardcover_id`, and `page_count` (the book's count, else the edition's,
+  D-130), `cover_url` and `published_year` only where NULL: no column says a
+  count was typed, so nothing already there is replaced. Series and position
+  fill nothing (D-87); a differing `series_position` is reported. A proposal or
+  two matches fill nothing and are listed. It writes straight into `books`, so
+  it reaches the live database only through the deployed app (D-18); nothing
+  runs it on a schedule.
 - **One issue row per comic.** `issues` is what exists — one row per label, id a
   slug of the label, never a run position. `run_issues(id, run_id, sequence,
   issue_id, type, notes)` is where it sits in a run; `type` and `notes` belong to
