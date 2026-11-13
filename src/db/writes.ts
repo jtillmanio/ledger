@@ -1314,16 +1314,24 @@ async function quarterRows(tx: Tx, userId: string, year: number) {
   }));
 }
 
-/** Put each quarter in `wanted` back as listed: books that change quarter move, then each quarter is reordered. */
+/**
+ * Put each quarter in `wanted` back as listed: books that change quarter move, then each quarter is
+ * reordered. Throws, rolling the caller's transaction back, if a move or a reorder is refused:
+ * `wanted` is always exactly the year's quarter books, so a refusal is a bug, never a half-done layout.
+ */
 async function layOut(tx: Tx, userId: string, now: { bookId: string; period: Period }[], wanted: { bookId: string; period: Period }[]) {
   const was = new Map(now.map((r) => [r.bookId, r.period]));
   for (const { bookId, period } of wanted) {
     const from = was.get(bookId)!;
-    if (from !== period) await movePlan(userId, bookId, from, period, tx);
+    if (from !== period && !(await movePlan(userId, bookId, from, period, tx))) {
+      throw new Error(`layOut: ${bookId} couldn't move from ${from} to ${period}`);
+    }
   }
   const quarters = [...new Set(wanted.map((r) => r.period))];
   for (const period of quarters) {
-    await reorderQuarter(userId, period, wanted.filter((r) => r.period === period).map((r) => r.bookId), tx);
+    if (!(await reorderQuarter(userId, period, wanted.filter((r) => r.period === period).map((r) => r.bookId), tx))) {
+      throw new Error(`layOut: ${period} refused its order`);
+    }
   }
 }
 
@@ -1356,7 +1364,9 @@ export async function evenOutQuarters(userId: string, year: number): Promise<Qua
 
 /**
  * An even-out's undo (task 2.7): the year's quarters back as they were. Refuses, changing nothing,
- * when the year's quarter books are no longer the same books, each once.
+ * when the year's quarter books are no longer the same books, each once. While they are, it puts
+ * every one back where it was before the even-out, so a reorder inside the year since is undone
+ * with it (last writer wins; no book is added, lost or taken out of the year).
  */
 export async function undoEvenOut(userId: string, layout: QuarterLayout): Promise<boolean> {
   return inPlan(userId, undefined, async (tx) => {

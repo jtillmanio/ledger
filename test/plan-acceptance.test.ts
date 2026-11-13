@@ -198,7 +198,9 @@ describe("moving the overage (AC-4)", () => {
 
   it("to On deck: c, d and f go to On deck with no ordinal, out of 2027's words; one undo restores them", async () => {
     const before = await planRows();
+    const statusBefore = await sql`SELECT * FROM book_status ORDER BY book_id`;
     const moves = await w.moveOverage(USER, 2027, "on_deck");
+    expect(await sql`SELECT * FROM book_status ORDER BY book_id`).toEqual(statusBefore);
     expect(moves.map((m) => m.bookId).sort()).toEqual(["c", "d", "f"]);
     expect((await sql`SELECT book_id, ordinal FROM reading_plan WHERE period = 'on_deck' ORDER BY book_id`).map((r) => [r.book_id, r.ordinal]))
       .toEqual([["c", null], ["d", null], ["f", null]]);
@@ -259,6 +261,21 @@ describe("evening out the quarters (AC-1, AC-5)", () => {
     const now = await planRows();
     expect(await w.undoEvenOut(USER, layout!)).toBe(false);
     expect(await planRows()).toEqual(now);
+  });
+});
+
+type PlanNode = { "Node Type": string; "Relation Name"?: string; "Index Cond"?: string; Filter?: string; Plans?: PlanNode[] };
+const nodes = (n: PlanNode): PlanNode[] => [n, ...(n.Plans ?? []).flatMap(nodes)];
+
+describe("a read of one year's overage filters by the year before the window runs", () => {
+  it("the scan of reading_plan applies the year itself", async () => {
+    const [row] = await sql.unsafe(`EXPLAIN (FORMAT JSON) SELECT * FROM plan_overage WHERE user_id = '${USER}' AND year = 2027`);
+    const conds = nodes((row["QUERY PLAN"] as { Plan: PlanNode }[])[0].Plan)
+      .filter((n) => n["Relation Name"] === "reading_plan")
+      .map((n) => [n["Index Cond"], n.Filter].filter(Boolean).join(" "));
+    expect(conds.length).toBeGreaterThan(0);
+    // A pushed-down qual: some reading_plan scan keeps 2027's rows only (capacity.test.ts's form).
+    expect(conds.some((c) => /\(period, 4\)\)::integer END = 2027\)/.test(c)), conds.join("\n")).toBe(true);
   });
 });
 
