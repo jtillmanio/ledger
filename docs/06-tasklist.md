@@ -437,7 +437,7 @@ with the task that first reads it.
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
 |  | 3.5 → TASK-078, TASK-079, TASK-080 | Detail sheets — books and issues | M |  | — |
-|  | 3.4 → TASK-074 | Book ratings and top-books reorder | S |  | — |
+| ✅ | 3.4 → TASK-074 | Book ratings and top-books reorder | S |  | — |
 |  | 3.4b → TASK-075, TASK-076, TASK-077 | Rank a book when you finish it, and every year's top ten | M | _Pulled ahead of 1.26 (D-139)_ | 3.4, 1.5 |
 |  | 3.6 | Eras on the run detail | M |  | — |
 |  | 3.6b | Spine rows — ordinal gutter and release dates | S |  | 0.8b |

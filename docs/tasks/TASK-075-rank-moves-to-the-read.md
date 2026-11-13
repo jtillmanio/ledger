@@ -28,6 +28,7 @@ A rank belongs to a read, not a book, so a book read in 2024 and again in 2026 c
 - Readers of `book_status.year_rank` to move: `src/db/writes.ts` (~296, ~1950: the empty-row checks), `etl/extract.py` (writes `year_rank` empty), `etl/load.ps1` / `load.sh` (`\copy book_status(...)`), `etl/test_extract.py`.
 - Data model: `docs/03-data-model.md` § 2. Decisions, 2.16 and 2.17; § 3. Views (`book_reads`); § 4.1 By task (add the row for 3.4b).
 - Decisions: D-3, D-21, D-41, D-65, D-93, D-101, D-122, D-139. Hard rules 2, 3 and 7.
+- *From TASK-074 (3.4, PR #251):* 3.4's rank writes are `rankBook` / `undoRank` in `src/db/writes.ts` (`/api/progress/book/rank`): a per-user advisory lock, the year's ranked live books renumbered from 1 on every write, and an undo that refuses unless the whole year is still as the write left it (`RankChange.left`). Nothing keeps `book_status.year_rank` with its year when the finish moves: a re-date across years (`redateBookRead`, a `read` re-date) or a status undo that clears the finish leaves the rank in the wrong year or in none (the next rank write to that year heals the list). Moving the rank onto the read should keep it with the read's year; until then a reader treats a rank as meaningful only where `finished_on` is set.
 
 ## Acceptance criteria
 

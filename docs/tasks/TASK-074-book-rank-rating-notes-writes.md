@@ -1,7 +1,7 @@
 ---
 id: TASK-074
 title: 3.4 Book ratings and top-books reorder
-status: In progress
+status: Review
 depends_on: [TASK-010]
 size: S
 model: opus
@@ -32,11 +32,11 @@ A finished book can be given a place in its year's ranking, and a note, and putt
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): test that setting `year_rank = 3` demotes whatever held rank 3.
-- [ ] AC-2: Given 2025 with five read books ranked 1–5, ranking a sixth 2025 book at 3 leaves ranks 1–6 contiguous, the books that held 3, 4 and 5 now at 4, 5 and 6, and the order of the rest unchanged; one undo restores all five ranks and clears the sixth's.
-- [ ] AC-3: Taking the book at rank 2 out of 2025's ranking clears its `year_rank` and moves ranks 3–5 up to 2–4; a book finished in 2024 keeps its rank throughout (ranks are per year).
-- [ ] AC-4: Ranking a book with no finish date (`finished_on_precision = 'none'`) is refused with 400 and writes nothing.
-- [ ] AC-5: Writing a note stores it in `book_status.notes`, an empty note stores NULL, and a book with a rank or a note survives the paths that delete an empty `book_status` row (the Unlisted undo).
+- [x] AC-1 (roadmap **Check:**, verbatim): test that setting `year_rank = 3` demotes whatever held rank 3.
+- [x] AC-2: Given 2025 with five read books ranked 1–5, ranking a sixth 2025 book at 3 leaves ranks 1–6 contiguous, the books that held 3, 4 and 5 now at 4, 5 and 6, and the order of the rest unchanged; one undo restores all five ranks and clears the sixth's.
+- [x] AC-3: Taking the book at rank 2 out of 2025's ranking clears its `year_rank` and moves ranks 3–5 up to 2–4; a book finished in 2024 keeps its rank throughout (ranks are per year).
+- [x] AC-4: Ranking a book with no finish date (`finished_on_precision = 'none'`) is refused with 400 and writes nothing.
+- [x] AC-5: Writing a note stores it in `book_status.notes`, an empty note stores NULL, and a book with a rank or a note survives the paths that delete an empty `book_status` row (the Unlisted undo).
 
 ## Out of scope
 
@@ -62,6 +62,9 @@ A finished book can be given a place in its year's ranking, and a note, and putt
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
 - A ranked book whose finish is re-dated across years (`redateBookRead`, a `read` re-date) or cleared by a status undo keeps its `year_rank` in the wrong year, or with no year; nothing here prevents it, a later rank write to that year heals the list. TASK-075 moves the rank onto the read and should keep it with the read's year; until then a reader treats a rank as meaningful only where `finished_on` is set (schema-reviewer R1) → docs/tasks/TASK-075-rank-moves-to-the-read.md § Context (approved at plan)
+- The owner's plan-gate answers (no rating write; notes through the API only; a note on a book with no status row refused) → not tracked: recorded in this task's Plan, and within D-3 and D-101 (no new decision)
+- A rank is allowed on any book with a finish date, whatever its status now (leaving `read` keeps the finish, R0-C1; that read still counts in its year, D-65) → not tracked: stated in `rankBook`'s doc comment; TASK-075 revisits it when the rank moves onto the read
+- The test auditor refused to run because of the owner's uncommitted CRLF-only changes to `etl/data/book_review.csv` and `etl/data/wishlist_review.csv` and the untracked `.playwright-mcp/`; the audit was run by hand instead (mutation runs) → not tracked: the owner's work in progress, left alone
 
 ## Plan
 
@@ -83,13 +86,15 @@ Approved by the owner 2026-11-13. Answers to the plan-gate questions: **rating**
 
 _Filled by /implement-task. One line per round._
 
+Verify R1 PASS | CI R1 PASS (2ecdf5b) | Schema R1 CHANGES (MAJOR: undoRank checked only changed rows, a later append left a tie or gap; 3 MINOR) | Spec R1 CHANGES (AC-5 rank-only survival UNTESTED; follow-up bullet had no destination) → fixed in 33a836a | Verify R2 PASS | Schema R2 APPROVE | Spec R2 APPROVE | Audit: test-auditor NOT RUN (dirty tree: the owner's CRLF-only CSVs, `.playwright-mcp/`) → run by hand, not independent: 9 mutations of `writes.ts`, each caught by its AC's test; pre-task tree has no routes, every test fails → PASS
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2
+- First-pass AC FAILs: 1 (AC-5 UNTESTED in part)
+- Plan revisions after approval: 0
