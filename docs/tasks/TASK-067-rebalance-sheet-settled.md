@@ -1,7 +1,7 @@
 ---
 id: TASK-067
 title: 2.7 Rebalance (2 of 2) — the rebalance sheet and the settled stretch year
-status: In progress
+status: Review
 depends_on: [TASK-066]
 size: M
 model: sonnet
@@ -47,16 +47,16 @@ From an over-full year, one tap opens four equal choices, each showing what it w
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves `.decide.settled` and `--hatch-settled` in the browser, on TASK-066's stored acceptance): test that accepting 2027 at 118% stores the acceptance with a date and
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves `.decide.settled` and `--hatch-settled` in the browser, on TASK-066's stored acceptance): test that accepting 2027 at 118% stores the acceptance with a date and
 that the dashboard renders `.decide.settled` rather than `.decide`, and the
 over-rule part of each block uses `--hatch-settled`, not `--hatch`; that Undo
 removes it; that a later change pushing 2027 past the accepted total re-raises
 the flag; and that "even out the quarters" leaves the year's book count
 unchanged and never puts a book ahead of one that was ahead of it before.
-- [ ] AC-2: Given a year over capacity, the rebalance sheet shows four buttons with the same class and size, each with its before/after delta as TASK-066 computes it; nothing on the sheet resolves to `--danger`, and no text on it says *behind*.
-- [ ] AC-3: After *Accept it as a stretch year*, the banner is `.decide.settled` and reads *<year> accepted as a stretch year on <day> <month> · Undo*; every over-rule block part on the rail (and on the strip) uses `--hatch-settled`, and the legend reads *over, accepted (settled)*. Undo returns the banner to `.decide` and the hatch to `--hatch`.
-- [ ] AC-4: With an acceptance stored on an earlier day, a fresh load still shows the settled state; placing a book that takes the year past `accepted_total` shows `.decide` again.
-- [ ] AC-5: The sheet and the banner meet the UX floor (`docs/04-design.md` § 10. The UX floor): four real buttons with names, nothing interactive under 24px and 44px on the phone, the sheet's focus on its heading and back on the opener, text 4.5:1 and the settled hatch 3:1 in both themes, axe with no new violations, no horizontal scroll at 360px, and screenshots at 360px, 834px and 1280px, light and dark (every feel-pass width, with reduced motion and transparency, if the banner is on the dashboard).
+- [x] AC-2: Given a year over capacity, the rebalance sheet shows four buttons with the same class and size, each with its before/after delta as TASK-066 computes it; nothing on the sheet resolves to `--danger`, and no text on it says *behind*.
+- [x] AC-3: After *Accept it as a stretch year*, the banner is `.decide.settled` and reads *<year> accepted as a stretch year on <day> <month> · Undo*; every over-rule block part on the rail (and on the strip) uses `--hatch-settled`, and the legend reads *over, accepted (settled)*. Undo returns the banner to `.decide` and the hatch to `--hatch`.
+- [x] AC-4: With an acceptance stored on an earlier day, a fresh load still shows the settled state; placing a book that takes the year past `accepted_total` shows `.decide` again.
+- [x] AC-5: The sheet and the banner meet the UX floor (`docs/04-design.md` § 10. The UX floor): four real buttons with names, nothing interactive under 24px and 44px on the phone, the sheet's focus on its heading and back on the opener, text 4.5:1 and the settled hatch 3:1 in both themes, axe with no new violations, no horizontal scroll at 360px, and screenshots at 360px, 834px and 1280px, light and dark (every feel-pass width, with reduced motion and transparency, if the banner is on the dashboard).
 
 ## Out of scope
 
@@ -88,6 +88,8 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - The plan page skeleton is ~14px short in its header and ~14px short in its rail at 1280px (from TASK-070); the settled state changes neither height (the footer badge keeps its line, the legend item its wrap at 1280px), so the gap is unchanged and still open (approved at plan) → docs/tasks/TASK-072-planning-sheet.md § Context
 - axe's `label-content-name-mismatch` on the rail's blocks (from TASK-068): untouched here, since this task changes no block's name (approved at plan) → docs/tasks/TASK-072-planning-sheet.md § Context
 - Candidate decision: roadmap 2.7's prose and **Check:** put the card, Rebalance and the settled banner on the dashboard. This task built and tested them on `/books/plan`, per TASK-049 Q2 and `docs/04-design.md` § 12. A decision amending the entry (like D-147 for 2.8) waits on the owner, since decisions mode is `propose` → docs/OWNER-CHECKLIST.md § Approvals from follow-ups
+- The development database lacked migration 0025 (`plan_acceptance`, TASK-066), so `/books` and `/books/plan` threw there. It is applied now (`npm run db:migrate`, in this session) → not tracked: done; production gets it through Release
+- ui-verifier saw existing controls under 44px on the plan page and the dashboard: year chips 53×30 and *Library* 64×34 at 360px. They are at least 24px, the floor for anything that isn't the thumb bar or an icon button (UX floor), and this task added none of them → not tracked: within the floor, not this task's
 
 ## Plan
 
@@ -128,13 +130,20 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 _Filled by /implement-task. One line per round._
 
+- Touched specs R1 FAIL(1) (rebalance.spec.ts:292: the skeleton's `.planrail.strip`, w390-light) → fixed | Touched specs R2 PASS
+- Verify R1 PASS | Push → PR #248 | CI R1 FAIL (rebalance.spec.ts:135, `.qlegend` matched the streaming skeleton's legend, in w390-light, w390-touch and w768-light) → fixed | Verify R2 PASS | CI R2 PASS (every project, Vercel, Lighthouse)
+- Schema R1 APPROVE (2 minors, both done: preview test with a no-count book and a deleted book; a direct `planAcceptance` test)
+- Spec R1 CHANGES (Check SPEC GAP; `PlanQuarterRows` plan gap; mockup copy advisory) → R2 CHANGES (Owner checklist placement had no Follow-ups bullet) → fixed. The Check's "dashboard" clause is escalated to the owner (Owner checklist § Approvals); nothing else is open.
+- Audit R1 PASS: every AC test fails on 9cee95b. One NON-DISCRIMINATING item, the query-budget ceiling bump: a ceiling can't fail when raised. Accepted as housekeeping, not AC evidence. Tree restored.
+- UI R1 NOT RUN (the dev DB lacked migration 0025; the dev server was in a reload loop) → dev DB migrated, `.next/dev` cleared → UI R2: fits-year and layout clauses PASS. Over/settled UNTESTED on dev data (nothing planned there); `rebalance.spec.ts` covers them in CI at every width and theme.
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (plus 2 CI rounds, 1 fix)
+- Review rounds: 2 (spec), 1 (schema), 1 (audit), 2 (UI)
+- First-pass AC FAILs: 0 (one flaky locator in CI, AC-3's test)
+- Plan revisions after approval: 1 (`PlanQuarterRows` grey badges)
