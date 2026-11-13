@@ -291,7 +291,7 @@ tables.
     | `/comics/bendis-disassembled` | 26,800 | 172,000 | 38 | 100 |
     | `/comics/busiek-avengers` | 26,000 | 171,000 | 33 | 100 |
     | `/books` | 19,000 | 175,000 | 36 | 100 |
-    | `/books/list` | 70,000 | 170,000 | 64 | 100 |
+    | `/books/list` | 74,000 | 170,000 | 64 | 100 |
     | `/books/plan` | 24,000 | 177,700 | 40 | 100 |
     | `/inbox` | 16,000 | 173,000 | 31 | 100 |
     | `/settings` | 16,000 | 173,000 | 32 | 100 |
@@ -428,6 +428,14 @@ tables.
     the old budgets hold with room to spare.
     `/books/status` shrank by as much, and keeps its 175,400 until 0.13
     re-bases the ceilings.
+    Task 4.5 (PR #252, D-149) drew the Library's genre chips from the data,
+    about forty top-level genres instead of ten fixed ones, and named each
+    row's subgenre (*Epic Fantasy*) on nearly every one of its 500 rows.
+    Recent previews had `/books/list` at about 67.2 KB of document + RSC;
+    PR #252's measured 70,249 bytes (median of three), and leaving out the
+    unselected chips' `aria-current="false"` saved only 65 of them under
+    compression. The owner raised it to that median plus about 5%, 74,000
+    (2026-11-13).
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 

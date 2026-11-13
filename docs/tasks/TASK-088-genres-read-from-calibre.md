@@ -81,6 +81,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - `test/reading-log.test.tsx` › *two reads: All reads (2)…* is a timing flake: `openReads` waits a fixed 25ms for the lazy reads chunk, and under the full suite's load the list isn't there yet (`list()` null at :680); it passes alone. Wait for the list instead (`vi.waitFor`). Not this task's code (approved at close-out) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
 - Candidate decision: the plan-gate answers (row shows the deepest direct path's last segment; chips and year totals at depth 1; seven hue families, family order for a book with several) (approved at close-out) → docs/review/decisions.md § D-149
 - Schema review R1: `.claude/rules/schema.md` still said `books.genre` stays the workbook's until 4.5, and `docs/03-data-model.md` § 3. Views had no `book_genre_levels` row and called `books_by_year` per genre (approved at close-out) → docs/03-data-model.md § 3. Views, .claude/rules/schema.md § Calibre owns a book's genres
+- Lighthouse: the Library's document + RSC grew about 1.4 KB with the data-driven chips and row subgenres, to 70,249 bytes against its 70,000 budget; trimming `aria-current="false"` saved 65 (approved at close-out: raise to the median plus about 5%) → docs/02-architecture.md § 7. Non-functional requirements (Performance budget), scripts/perf/budget.json
 - ui-verifier: AC-5's hue couldn't be seen in the browser, as the development database has no planned books; `test/plan-page.test.tsx` renders the plan page and the dashboard strip with seeded plans and checks each hue → not tracked: covered by the automated tests, no plan rows written to development data
 - ui-verifier: the chip row shows the browser's own horizontal scrollbar under the chips on a desktop pointer (the sideways-scroll affordance) → not tracked: accepted as is, a hidden scrollbar would hide that the row scrolls
 
@@ -134,7 +135,7 @@ _Filled by /implement-task. One line per round._
 - Spec R1 APPROVE | Schema R1 APPROVE (3 MINOR: lower() under "C" folds ASCII only → COLLATE "default" on the readers this task added (not provable on the C-collated test databases); the workbook fallback untrimmed → btrim, new test fails without it; data-model/schema.md views docs → follow-up) | Verify R3 PASS (1706 vitest, views SQL, 381 ETL) | Spec R2 APPROVE | Schema R2 APPROVE | CI R1 (8a1cc77) cancelled, superseded → CI R2 (14ba99b) PASS, every project
 - Audit R1 CHANGES (1 NON-DISCRIMINATING: queries.test.ts › counts a read once in its year's chip passed on base) → strengthened (books_by_year two rows vs yearSummary one; fails on base 11d4126) | Verify R4 PASS (1706 vitest, views SQL, 381 ETL) | CI R3 (bce54ee) PASS, every project
 - UI R1 PASS on the development database (db:views applied with the owner's OK): chips a named group of 34 real links, Fantasy finds subgenre-only books, rows name the last segment, 44px under 768px and 29.5px above, one scrolling row, no page scroll at 360px, contrast ≥ 5.5:1 light and dark, focus ring unclipped, axe 0 at 360 and 1280 light and dark, year chips not inflated; AC-5 not visible (no planned books on dev), covered by test/plan-page.test.tsx | Close-out: follow-ups placed (D-149, OWNER-CHECKLIST ×2, TASK-089/090 Context, data model and schema.md approved); roadmap: nothing to tick (4.5 waits for TASK-089)
-- Lighthouse R1 FAIL on 8a1cc77, 14ba99b, bce54ee (library: document + RSC 70,314 bytes, budget 70,000; the data-driven chip row) → fixed: only the chosen genre chip carries aria-current (~43 bytes a chip in the HTML and RSC payload) | Verify R5 PASS (1706 vitest, views SQL, 381 ETL) | touched specs PASS (library-page, library-genres 4/4)
+- Lighthouse R1 FAIL on 8a1cc77, 14ba99b, bce54ee (library: document + RSC 70,314 bytes, budget 70,000; the data-driven chip row) → fixed: only the chosen genre chip carries aria-current (~43 bytes a chip in the HTML and RSC payload) | Verify R5 PASS (1706 vitest, views SQL, 381 ETL) | touched specs PASS (library-page, library-genres 4/4) | CI R4 (1f04d32) PASS | Lighthouse R2 FAIL (70,249 bytes; the trim saved 65 under compression) → owner raised the Library's budget to 74,000 (docs/02-architecture.md, budget.json; perf.test.ts PASS) | Verify R6 PASS (1706 vitest, views SQL, 381 ETL)
 
 ## Blocked
 
@@ -142,7 +143,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds: 5 (R1 flake, R2–R5 PASS)
+- Verify rounds: 6 (R1 flake, R2–R6 PASS)
 - Review rounds: 2 (spec and schema R1 APPROVE with minors fixed, R2 APPROVE; audit R1 1 non-discriminating test fixed; UI R1 PASS)
 - First-pass AC FAILs: 0
 - Plan revisions after approval: 2
