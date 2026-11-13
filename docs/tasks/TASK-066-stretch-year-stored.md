@@ -1,7 +1,7 @@
 ---
 id: TASK-066
 title: 2.7 Rebalance (1 of 2) — a stretch year stored, and the rebalance writes
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: opus
@@ -33,17 +33,17 @@ Accepting an over-full year as a stretch year is remembered with its date and fi
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves storing the acceptance with a date, Undo removing it, a later change re-raising the flag, and *even out the quarters* keeping the count and the order. TASK-067 proves `.decide.settled` and `--hatch-settled` in the browser): test that accepting 2027 at 118% stores the acceptance with a date and
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves storing the acceptance with a date, Undo removing it, a later change re-raising the flag, and *even out the quarters* keeping the count and the order. TASK-067 proves `.decide.settled` and `--hatch-settled` in the browser): test that accepting 2027 at 118% stores the acceptance with a date and
 that the dashboard renders `.decide.settled` rather than `.decide`, and the
 over-rule part of each block uses `--hatch-settled`, not `--hatch`; that Undo
 removes it; that a later change pushing 2027 past the accepted total re-raises
 the flag; and that "even out the quarters" leaves the year's book count
 unchanged and never puts a book ahead of one that was ahead of it before.
-- [ ] AC-2: Given 2027 planned at 118% of capacity, accepting stores one `plan_acceptance` row for 2027 with `accepted_at` set and `accepted_total` equal to the year's planned total; accepting again leaves one row; *Undo acceptance* deletes it.
-- [ ] AC-3: With 2027 accepted at total T, the year reads settled while its total is at most T and over once a placement takes it past T; the diff stores no flag (no column, no status).
-- [ ] AC-4: *Move the overage into the next year* and *Move it to On deck* move exactly the books past each quarter's rule (each quarter's last in order), each landing where the plan settles and, in a quarter, at its end; On deck rows carry no ordinal; neither deletes a book or a `book_status` row; one undo restores every row and ordinal they changed.
-- [ ] AC-5: After *Even out the quarters*, the year's book count and word total are unchanged, every book is still in the year, every quarter is contiguous from 1, and reading Q1 to Q4 in ordinal order gives the same sequence as before.
-- [ ] AC-6: `plan_acceptance` has no `user_id` column and is listed in `src/db/export-tables.ts`, and `GET /api/export` returns it.
+- [x] AC-2: Given 2027 planned at 118% of capacity, accepting stores one `plan_acceptance` row for 2027 with `accepted_at` set and `accepted_total` equal to the year's planned total; accepting again leaves one row; *Undo acceptance* deletes it.
+- [x] AC-3: With 2027 accepted at total T, the year reads settled while its total is at most T and over once a placement takes it past T; the diff stores no flag (no column, no status).
+- [x] AC-4: *Move the overage into the next year* and *Move it to On deck* move exactly the books past each quarter's rule (each quarter's last in order), each landing where the plan settles and, in a quarter, at its end; On deck rows carry no ordinal; neither deletes a book or a `book_status` row; one undo restores every row and ordinal they changed.
+- [x] AC-5: After *Even out the quarters*, the year's book count and word total are unchanged, every book is still in the year, every quarter is contiguous from 1, and reading Q1 to Q4 in ordinal order gives the same sequence as before.
+- [x] AC-6: `plan_acceptance` has no `user_id` column and is listed in `src/db/export-tables.ts`, and `GET /api/export` returns it.
 
 ## Out of scope
 
@@ -70,9 +70,12 @@ unchanged and never puts a book ahead of one that was ahead of it before.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- `docs/03-data-model.md` § 2.9 records `plan_acceptance` as built (planning-doc update) (approved at plan)
-- TASK-067 Context note: the reads and routes this part leaves it (`planDecision`, `planOverage`, `/api/plan/rebalance`), and `STRETCH_WHY` in `PlanPicker` still to drop (approved at plan)
-- Candidate decision: the overage is each quarter's counted books whose running end passes the quarter's capacity (the rail's rule, the straddler included); *into the next year* lands in its bare-year lane; only `to_read` books move (owner, plan gate 2026-11-13) (approved at plan)
+- The data model records `plan_acceptance` as built: § 2.9 gets a paragraph, and § 3's views table gets a `plan_overage` row (planning-doc update) → docs/03-data-model.md § 2.9 (approved at plan)
+- What this part leaves TASK-067: the route and reads it needs (`/api/plan/rebalance`, `planDecision`, `planOverage`), that an accepted year that drops back under capacity reads `fits`, that a year can stay slightly over after a move because started books stay put, and that `STRETCH_WHY` in `PlanPicker` is still there to drop → docs/tasks/TASK-067-rebalance-sheet-settled.md § Context (approved at plan)
+- Candidate decision: `plan_acceptance` has no `user_id`; the overage is the rail's books past the rule, including the one the rule cuts through; *into the next year* lands in that year's bare-year lane; only `to_read` books move; even-out works by word midpoint (owner, plan gate 2026-11-13) → docs/review/decisions.md § D-148 (approved at plan)
+- `etl/load.ps1` and `load.sh` truncate `reading_plan` but not `plan_acceptance`, so after a development load an old acceptance can sit on a reloaded plan (schema-reviewer and spec-reviewer, round 1) → not tracked: harmless. The year still compares against `accepted_total`, so an old row only settles a year that is over and still at or under that figure. `reading_settings` and `shelf_follows` behave the same way, and `LEDGER_LIVE` refuses a load on production.
+- `/api/plan`'s own `parseMove` duplicates the new `parsePlanMove` in `src/db/writes.ts` (plan revision 1) → not tracked: both parsers are correct for their routes; folding them is a refactor for whoever next changes `/api/plan`, outside 2.7's scope.
+- The EXPLAIN pushdown test matches the text of PostgreSQL's plan (test-auditor, minor) → not tracked: same form as `test/capacity.test.ts`'s check; both would move together on a PostgreSQL major upgrade.
 
 ## Plan
 
@@ -105,7 +108,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL (comics-load BOOK_TABLES; down files 0011, 0013 dropping plan_capacity under plan_overage) → fixed (plan revision 1) | Verify R2 PASS | CI R1 PASS (a9c4d13, all eight e2e shards, Vercel, Lighthouse) | Spec R1 CHANGES (follow-ups without destinations: written at close-out; notes taken: book_status compared around On deck, layOut refuses) | Schema R1 APPROVE (4 MINOR: pushdown asserted, undoEvenOut documented, load scripts and docs as follow-ups) | Verify R3 PASS | Audit R1 PASS | Schema R2 APPROVE | Spec R2 APPROVE (with the close-out follow-ups check)
 
 ## Blocked
 
@@ -113,7 +116,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1
