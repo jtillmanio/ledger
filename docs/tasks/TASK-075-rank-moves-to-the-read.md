@@ -1,14 +1,14 @@
 ---
 id: TASK-075
 title: 3.4b Rank a book when you finish it (1 of 3) — the rank moves to the read
-status: Ready
+status: In progress
 depends_on: [TASK-074, TASK-010]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: baed953
 ---
 
 # TASK-075 — 3.4b Rank a book when you finish it (1 of 3) — the rank moves to the read
@@ -71,9 +71,35 @@ Library renders no year chip. The up → down → up migration test passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Data model 2.16, 2.17 and § 4.1 get the 3.4b row: the rank is on the read (approved at plan).
+- Candidate decision: the workbook's Top Books ranks load onto Calibre's reads, narrowing D-41 (approved at plan; decisions are `propose`).
+- A ranked read re-dated into another year, or to no date, carries its rank (a gap in one year, a tie in the other, until the next rank write to each) → TASK-077 Context (approved at plan).
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-13 by the owner, with the three decisions below.
+
+**Owner decisions at the plan gate (CLAUDE.md stop-and-ask: a column added and a column dropped)**
+1. Approved: add `read_events.year_rank` (nullable integer), drop `book_status.year_rank`.
+2. Down rule: `book_status.year_rank` comes back holding the rank of the book's latest read (the highest `read_events.id`), the read whose finish `book_status.finished_on` mirrors (D-133), so 3.4's code reads it in the right year. A rank on an earlier read of the same book is lost going down; the gap it leaves heals on the next rank write to that year.
+3. A `read` status with no log row (`book_reads`' second branch) can be ranked: the rank write logs the read first from the status's finish (as `saveBookStatus` does when leaving `read`), and its undo deletes that row.
+
+**Steps**
+1. Migration 0026 (`drizzle-kit generate`, hand-edited): add `read_events.year_rank`; log a read for each ranked `read` status with no log row; copy each `book_status.year_rank` onto the book's latest read where its finish year equals `book_status.finished_on`'s; drop `book_status.year_rank`. `schema.ts` follows.
+2. `drizzle/down/0026_<tag>.sql`: add `book_status.year_rank`, fill it from the latest read's rank, drop `read_events.year_rank`.
+3. `src/db/writes.ts`: `rankBook` → `rankRead` over the year's ranked live reads (`read_events` of live books, year `extract(year FROM finished_on)`), same advisory lock, renumbering 1…N, `RankChange` with `readId`, `backfilled` and `left` (read ids); `undoRank` restores every rank it changed and deletes a backfilled read. A read with no date is refused (`RefusedStatus` → 400), writing nothing. The route takes `{ readId, rank }` or `{ bookId, rank }` (the book's latest read; a status-only read is logged first).
+4. The empty-row checks (`undoBookStatus`, the Someday add's undo) stop naming `yearRank`; `undoBookStatus` refuses (409) when the read it would delete holds a rank.
+5. `etl/extract.py`: each Top Books row resolves by title (`find_book`, no author) to its book, then to that book's read in that year in `read_events`; exactly one → `year_rank` on that `seed/read_events.csv` row; none, a title naming several books, two reads, or a second rank for one read → reported (`flag`), never dropped (D-93). Each year's landed ranks are renumbered 1…N in the workbook's order. `book_status.csv` loses the column; `read_events.csv` gains it.
+6. `etl/load.ps1`, `etl/load.sh`: the `\copy` column lists.
+
+**Files**: `src/db/schema.ts`; `drizzle/0026_*.sql`, `drizzle/meta/*`; `drizzle/down/0026_*.sql`; `src/db/writes.ts`; `src/app/api/progress/book/rank/route.ts` (not in "Files likely touched": the API's input moves to the read); `etl/extract.py`; `etl/load.ps1`; `etl/load.sh`; `etl/test_extract.py`; `test/year-rank.test.ts`; `test/year-rank-migration.test.ts` (new). Over 8 files, kept whole: it is already 1 of 3 and has no UI.
+
+**Test strategy**
+- AC-1, AC-4: `test/year-rank.test.ts` — a book read in 2024 and 2025 holds a rank in each; 2025 with twelve ranked reads, rank 12 → 3 keeps 1–12 contiguous and puts it in the top ten, undo restores; an unranked read → 5 gives 1–13, undo restores; a read with no date → 400, nothing written; a status-only read is logged and ranked, its undo removes the log row.
+- AC-2, AC-3: `test/year-rank-migration.test.ts` — up → down → up on a ranked read, an unranked read and a precision-`none` read, asserting every row's `year_rank`, date and precision and both columns' shapes; plus the grep that nothing names `book_status.year_rank`.
+- AC-5: `etl/test_extract.py` — Top Books ranks two books in 2023, each rank lands on its 2023 read; a ranked title with no 2023 read and one with two are reported.
+
+**Risks**: a ranked read re-dated across years carries its rank (follow-up to TASK-077).
 
 ## Review log
 
