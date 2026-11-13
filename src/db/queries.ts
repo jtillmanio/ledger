@@ -1694,7 +1694,8 @@ export type PlanSuggestion = {
   estimated: boolean;
 };
 
-const TARGET = /^\d{4}(-Q[1-4])?$/;
+/** A year from 1900 to 2999, or one of its quarters: `make_date` has no year 0, and no plan reaches further. */
+const TARGET = /^(19|2\d)\d\d(-Q[1-4])?$/;
 
 /**
  * What to plan in `target` (`2027-Q2` or `2027`), grouped by why, from `plan_suggestions`

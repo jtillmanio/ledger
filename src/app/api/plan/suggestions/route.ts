@@ -15,7 +15,8 @@ export async function GET(req: Request) {
   const userId = await apiUserId();
   if (!userId) return unauthorized();
   const target = new URL(req.url).searchParams.get("target");
-  if (target === null || !/^\d{4}(-Q[1-4])?$/.test(target)) {
+  // A year from 1900 to 2999: make_date has no year 0, and no plan reaches further.
+  if (target === null || !/^(19|2\d)\d\d(-Q[1-4])?$/.test(target)) {
     return NextResponse.json({ error: "target is a year or a quarter, like 2027 or 2027-Q2" }, { status: 400 });
   }
   const suggestions = await planSuggestions(userId, target, today());

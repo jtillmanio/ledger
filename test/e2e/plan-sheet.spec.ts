@@ -187,6 +187,11 @@ test("Check, AC-1: the Check's groups, the Unlisted tag, no DNF and no book twic
   await seed();
   const p = await open(page);
   await expect(p.getByRole("heading", { name: `Plan Q2 ${Y}` })).toBeVisible();
+  await expect(p.locator(".ps-lede")).toHaveText("Grouped by why. Each one is a tap; the sheet stays open.");
+  // A target that is no year or quarter, or a year make_date can't take, is refused.
+  for (const bad of ["2027-Q5", "0000", "2027-05"]) {
+    expect((await page.request.get(`/api/plan/suggestions?target=${bad}`)).status(), bad).toBe(400);
+  }
 
   // Next in a series: book 3, not book 4; the shelf's second book; the author's book; the On deck book.
   await expect(row(group(p, "next_in_series"), "s-3")).toBeVisible();
@@ -247,6 +252,7 @@ test("AC-2: Plan Y… opens the year with the bare year and four quarter chips; 
   await seed();
   let p = await open(page, String(Y));
   await expect(p.getByRole("heading", { name: `Plan ${Y}` })).toBeVisible();
+  await expect(p.locator(".ps-lede")).toHaveText("Grouped by why. Put a book in the year, or straight into a quarter.");
   const chips = row(p, "s-3").locator("button.ps-chip");
   // Each chip shows its period (the title before it is for screen readers only).
   expect(await chips.evaluateAll((els) => els.map((el) => [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent).join(""))))
@@ -286,6 +292,7 @@ test("AC-3: an over placement turns the line amber with Accept as a stretch year
   const accept = p.getByRole("button", { name: "Accept as a stretch year" });
   await expect(accept).toBeVisible();
   await expect(accept).not.toHaveAttribute("aria-disabled");
+  await expect(budget).toContainText("A decision, not a mistake.");
   await expect(p).not.toContainText(/behind/i);
 
   await accept.click();

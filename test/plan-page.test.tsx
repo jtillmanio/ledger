@@ -179,6 +179,8 @@ describe("one empty state, not one per empty quarter (AC-4)", () => {
   it("opens the planning sheet from the header and from every quarter (task 2.10b, AC-2)", async () => {
     const { doc } = await page();
     expect(doc.querySelector('.plan-head button[data-plan-target="2027"]')?.textContent).toBe("Plan 2027…");
+    // Beside it, + Add books (the mockup's desktop header; TASK-069's follow-up).
+    expect([...doc.querySelectorAll(".plan-head-acts button")].map((b) => b.textContent)).toEqual(["Plan 2027…", "+ Add books"]);
     expect([...doc.querySelectorAll("button.plan-this")].map((b) => b.getAttribute("data-plan-target")).sort())
       .toEqual(["2027-Q1", "2027-Q2", "2027-Q3", "2027-Q4"]);
   });

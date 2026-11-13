@@ -186,8 +186,10 @@ function PlanBody({ target, figures, onDone }: { target: string; figures: PlanFi
     setError(s.id, null);
     try {
       const undo = await write(s, to);
-      if (!undo) {
-        setError(s.id, "That book has moved since. Nothing was written.");
+      if (typeof undo === "string") {
+        setError(s.id, undo === "already"
+          ? `It’s already planned in ${periodName(to)}, and it is on your to-read list now.`
+          : "That book has moved since. Nothing was written.");
         return;
       }
       setPlaced((p) => ({ ...p, [s.id]: { to, undo } }));
@@ -227,6 +229,9 @@ function PlanBody({ target, figures, onDone }: { target: string; figures: PlanFi
 
   return (
     <div className="ps">
+      <p className="lede ps-lede">
+        {isYear ? "Grouped by why. Put a book in the year, or straight into a quarter." : "Grouped by why. Each one is a tap; the sheet stays open."}
+      </p>
       <Budget target={target} figures={figures} />
       {rows === null && (
         <div className="ps-loading">
@@ -286,20 +291,22 @@ function PlanBody({ target, figures, onDone }: { target: string; figures: PlanFi
 }
 
 /**
- * One placement through 2.3's writes; answers its undo, or null when the book wasn't where the sheet saw it
+ * One placement through 2.3's writes; answers its undo, or `moved` when the book wasn't where the sheet saw it
  * (nothing written). An Unlisted book, or one with no status, goes through Add books' `{ use }` add to the period,
  * which promotes it to `to_read` and writes its plan row in one transaction; every other book is a plan move.
+ * `already`: that add found the book planned there already (another tab placed it), so it wrote no plan row and
+ * has no undo, though it may have put the book on your list.
  */
-async function write(s: PlanSuggestion, to: string): Promise<(() => Promise<void>) | null> {
+async function write(s: PlanSuggestion, to: string): Promise<(() => Promise<void>) | "moved" | "already"> {
   const json = { "content-type": "application/json" };
   if (s.unlisted || s.status === null) {
     const res = await fetch("/api/books", {
       method: "POST", headers: json, body: JSON.stringify({ item: { use: s.id }, destination: { kind: "period", period: to } }),
     });
-    if (res.status === 409) return null;
+    if (res.status === 409) return "moved";
     if (!res.ok) throw new Error(String(res.status));
     const entry = await res.json() as { destination: unknown; created: string[]; added: string[]; statused: string[]; promoted?: string[] };
-    if (entry.added.length === 0) return null;
+    if (entry.added.length === 0) return "already";
     const { destination, created, added, statused, promoted = [] } = entry;
     return async () => {
       const back = await fetch("/api/books", {
@@ -311,7 +318,7 @@ async function write(s: PlanSuggestion, to: string): Promise<(() => Promise<void
   const res = await fetch("/api/plan", {
     method: "POST", headers: json, body: JSON.stringify({ bookId: s.id, from: s.period ?? "someday", to }),
   });
-  if (res.status === 404) return null;
+  if (res.status === 404) return "moved";
   if (!res.ok) throw new Error(String(res.status));
   const { move } = await res.json() as { move: PlanMove };
   return async () => {
@@ -468,7 +475,7 @@ function Budget({ target, figures }: { target: string; figures: PlanFigures }) {
       {over > 0 && settled && <p className="ps-note small">{year} is accepted as a stretch year.</p>}
       {held && (
         <div className="ps-stretch">
-          <p className="ps-note small">Over capacity is a decision, not a mistake.</p>
+          <p className="ps-note small">A decision, not a mistake.</p>
           <button type="button" className="btn sec sm" aria-disabled={!yearOver || busy || undefined}
             aria-describedby={yearOver ? undefined : reasonId} onClick={() => void accept()}>
             Accept as a stretch year

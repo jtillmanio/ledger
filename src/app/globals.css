@@ -1048,6 +1048,7 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .plan-page .plan-side h2{font-size:.9375rem;font-weight:700;margin:0 0 .25rem;font-family:inherit}
 .plan-side h2:focus{outline:none}
 .plan-side h2:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.ps-lede{margin:0 0 .25rem}
 .ps-budget{margin:.5rem 0 .25rem;border-radius:var(--r-lg);background:var(--raise);padding:.625rem .875rem}
 .ps-line{display:flex;flex-wrap:wrap;gap:.25rem .75rem;align-items:baseline;justify-content:space-between;margin:0;
   font-size:.8125rem;color:var(--ink-2)}
