@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { apiUserId, unauthorized } from "@/lib/auth";
 import { PLAN_PERIOD, splitsPeriod, YEAR_OR_QUARTER } from "@/lib/book-add";
-import { planBook, planYears } from "@/db/queries";
+import { planBook, planCapacity, planYears, unplacedBooks } from "@/db/queries";
 import {
   moveInQuarter, planMove, previewPlanMove, undoPlanMove, type PlanEnd, type PlanMove, type PlanPrior, type PreviewAsk,
 } from "@/db/writes";
@@ -73,6 +73,8 @@ export async function DELETE(req: Request) {
  *
  * - GET `?firstYear=2027`: the chips, five years from that one, each year and quarter with its
  *   words against capacity (`planYears`).
+ * - GET `?unplaced=2027` (task 2.8, *Place them*): the year and its quarters as `planCapacity` reads them,
+ *   and `books`, the year's bare-year books, largest first (`unplacedBooks`). Placing one is POST's move.
  * - GET `?bookId=…` alone: the book the sheet is for, `{ book }` (`planBook`): title, author, words
  *   and where it sits now; 404 when it is removed or unknown.
  * - GET `?to=…` with `bookId` and `from`, or `words` (a book not in the library yet), or neither:
@@ -87,6 +89,12 @@ export async function GET(req: Request) {
   if (params.firstYear !== undefined) {
     if (!/^\d{4}$/.test(params.firstYear)) return bad("firstYear is a year, like 2027");
     return NextResponse.json({ years: await planYears(userId, Number(params.firstYear)) });
+  }
+  if (params.unplaced !== undefined) {
+    if (!/^\d{4}$/.test(params.unplaced)) return bad("unplaced is a year, like 2027");
+    const year = Number(params.unplaced);
+    const [capacity, books] = await Promise.all([planCapacity(userId, year), unplacedBooks(userId, year)]);
+    return NextResponse.json({ ...capacity, books });
   }
   const { bookId, from, to, words } = params;
   if (splitsPeriod(params)) return bad(SPLIT);

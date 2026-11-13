@@ -1,7 +1,7 @@
 // Task 1.9: the status screens in a real browser, comics and books. The tab in
 // the URL and the arrow keys, one underline, counts that are the rows, the
 // resume button named for its target, a quarter's keyboard reorder that never
-// leaves the quarter, the bare-year lane that is grey with no button, the
+// leaves the quarter, the bare-year lane (amber with Place them since 2.8), the
 // level filter behind *Someday*, Stopped, the dashboard's links and the six
 // empty slates. Runs at every width, light and dark; the checks that write or
 // set their own state run once. This file seeds its own runs and books and
@@ -334,7 +334,7 @@ test.describe("books", () => {
     await screenshot(page, info, "books-in-flight");
   });
 
-  test("Up next: quarters in order, the 2027 lane after them with no handle, then On deck, then Someday", async ({ page }, info) => {
+  test("Up next: quarters in order, the 2027 lane after them, amber with Place them and no handle, then On deck, then Someday", async ({ page }, info) => {
     await open(page, "/books/status?tab=next");
     await expect(panel(page).getByRole("heading", { level: 2 })).toHaveText([
       /^2027 · Q1\s*3 books$/, /^2027 · Q2\s*1 book$/, /^2027 · no quarter yet\s*1 book$/, /^On deck\s*1 book$/,
@@ -343,21 +343,15 @@ test.describe("books", () => {
 
     const lane = panel(page).locator('section[data-plan="year"]');
     await expect(lane.locator(".row-title")).toHaveText(["E2E Plan Year"]);
-    // No handle, link or Place button until 2.8; the status control (1.17b) is the one button.
+    // No handle or link (the lane has no order, D-37); 2.8's Place them and the status control (1.17b) are its buttons.
     await expect(lane.locator("a, .drag")).toHaveCount(0);
-    await expect(lane.getByRole("button")).toHaveText(["Status: to read"]);
-    // Nothing on the lane resolves to --blocked: its colour, as the browser computes it, is compared to a probe.
-    const blocked = await page.evaluate(() => {
-      const probe = document.body.appendChild(document.createElement("span"));
-      probe.style.color = "var(--blocked)";
-      const colour = getComputedStyle(probe).color;
-      probe.remove();
-      return colour;
-    });
-    for (const el of [lane.getByRole("heading", { level: 2 }), lane.locator(".row-title"), lane]) {
-      const { color, "background-color": bg, "border-top-color": border } = await computedStyle(el.first(), ["color", "background-color", "border-top-color"]);
-      expect([color, bg, border]).not.toContain(blocked);
-    }
+    await expect(lane.getByRole("button")).toHaveText(["Place them", "Status: to read"]);
+    // Amber since 2.8 (1.9 drew it grey): the head resolves to --blocked, as the browser computes it; the book rows don't.
+    const blocked = await tokenColour(page, "--blocked");
+    expect((await computedStyle(lane.getByRole("heading", { level: 2 }), ["color"])).color).toBe(blocked);
+    await expect(lane.locator(".lane-place .bdg")).toHaveText("1 unplaced");
+    const { color, "background-color": bg } = await computedStyle(lane.locator(".row-title").first(), ["color", "background-color"]);
+    expect([color, bg]).not.toContain(blocked);
 
     // The tab's count is its book rows; Someday is a row of its own, counted in words.
     expect(await counted(page, "Up next")).toBe(6);

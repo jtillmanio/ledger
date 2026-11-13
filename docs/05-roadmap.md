@@ -2971,7 +2971,7 @@ removes it; that a later change pushing 2027 past the accepted total re-raises
 the flag; and that "even out the quarters" leaves the year's book count
 unchanged and never puts a book ahead of one that was ahead of it before.
 
-### ☐ 2.8 Place the unquartered · M
+### ☑ 2.8 Place the unquartered · M
 *Pulled ahead of 1.26 by the owner (D-139).*
 
 Plan rows with a year and no quarter — a bare `2027`. The plan starts empty (R0-04), so this flow serves whatever the owner has added without choosing a quarter; the count is always derived from `plan_period`, never a literal. A bulk flow on the books

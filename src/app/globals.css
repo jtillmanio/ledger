@@ -988,7 +988,7 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 
 /* --- the plan page (task 2.10, F-23; mockup `plan`): the year's rail, then its quarters. Exactly one quarter
    is open, as rows with Move; the other three are one summary row each. Over is amber, never red. The
-   desktop's side column is left free for the capacity card (2.7) and Place them (2.8). --- */
+   desktop's side column is left free for the capacity card (2.7). Place them (2.8) is the amber card under the rail. --- */
 .plan-page{max-width:60rem}
 .plan-total{margin:0 0 .25rem}
 .plan-quarters{display:flex;flex-direction:column;gap:.5rem;margin-top:1.25rem}
@@ -1043,6 +1043,21 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .decide.settled .g{border-color:var(--muted);color:var(--muted)}
 .decide .dt{font-size:.8125rem;color:var(--ink-2);line-height:1.45}
 .decide .dt b{color:var(--ink);font-weight:600}
+.decide .dt{margin:0}
+
+/* Place them (task 2.8; mockup `plan`, last frame): one book at a time, four quarter buttons two by two, each
+   with its current total and an amber *over* badge where it already is; then the closing card. Tokens only. */
+.plan-place .btnrow{margin-top:.625rem}
+.plan-place .btn{min-height:44px}
+.place{margin-top:.25rem}
+.place-book{padding:.75rem 0}
+.place-title{margin:0;font-family:var(--display);font-weight:500;font-size:1.0625rem;line-height:1.375rem;color:var(--ink)}
+.place-book .small{margin:.125rem 0 0}
+.place-qs{display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin:.25rem 0 .75rem}
+.place-q{display:flex;align-items:center;gap:.5rem;min-height:44px;justify-content:flex-start}
+.place-q .mono{font-weight:400;color:var(--ink-2)}
+.place-q .bdg{margin-left:auto}
+.place-close{margin:0 0 .75rem}
 
 /* --- stats --- */
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:.625rem;margin-top:.75rem}
@@ -1644,9 +1659,13 @@ span.meter{display:block}
 .head-link{color:inherit;text-decoration:none}
 @media (hover:hover) and (pointer:fine){ .head-link:hover{text-decoration:underline} }
 
-/* A year's bare-year lane (R1-10): grey, because nothing is decided yet that a colour could mean;
-   --blocked waits for 2.8's Place them. No handle and no button until then. */
-section[data-plan="year"] h2.group-head{color:var(--muted)}
+/* A year's bare-year lane (R1-10; task 2.8, mockup `status`): amber, held, because a decision is waiting:
+   which quarter. Its head says so and Place them makes it; the books below keep 1.9's grey rows, no handle. */
+section[data-plan="year"] h2.group-head{color:var(--blocked)}
+.lane-place{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .625rem;margin:0 0 .5rem;padding:.625rem .875rem;
+  background:var(--blocked-soft);border:1px solid var(--blocked);border-radius:var(--r-lg)}
+.lane-place-what{font-size:.875rem;font-weight:500;color:var(--ink)}
+.lane-place .btn{margin-left:auto;min-height:44px}
 .lane-year{background:var(--raise);border-radius:var(--r-lg);padding:0 .875rem;border-top:0}
 .lane-year .row:last-child{border-bottom:0}
 .lane-year .row-title{color:var(--ink-2)}
