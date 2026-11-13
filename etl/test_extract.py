@@ -1480,6 +1480,33 @@ class TopBooksRanks(BookCase):
         listed = [(r["title"], r["rank"]) for r in read(self.out, "workbook_reads") if r["tab"] == "Top Books"]
         self.assertEqual(len(listed), 5)
 
+    def test_one_book_read_twice_in_the_year_or_one_read_ranked_twice_is_reported(self):
+        """Calibre logs one read per book today (second_read, D-87), so extract
+        can't build these yet: rank_reads is given the reads directly. A book
+        with two 2023 reads takes no rank on either; a second rank naming a read
+        already ranked is reported and the first rank stands."""
+
+        class Index:  # the two lookups rank_reads makes of a BookIndex
+            by_key = {("dune", "frank herbert"): {"id": "dune", "title": "Dune"},
+                      ("emma", "jane austen"): {"id": "emma", "title": "Emma"}}
+
+            def find_book(self, title):
+                return {"Dune": self.by_key[("dune", "frank herbert")],
+                        "Emma": self.by_key[("emma", "jane austen")]}.get(title)
+
+        events = [{"book_id": "dune", "finished_on": "2023-02-01", "year_rank": None},
+                  {"book_id": "dune", "finished_on": "2023-11-01", "year_rank": None},
+                  {"book_id": "emma", "finished_on": "2023-05-05", "year_rank": None}]
+        reads = [{"title": t, "year": 2023, "genre": None, "tab": "Top Books", "rank": r}
+                 for t, r in [("Dune", 1), ("Emma", 2), ("Emma", 3)]]
+        ex.UNRESOLVED.clear()
+        ex.rank_reads(reads, events, Index())
+        self.assertEqual([e["year_rank"] for e in events], [None, None, 1])
+        self.assertEqual({(u["reason"], u["detail"].split(":")[0]) for u in ex.UNRESOLVED}, {
+            ("top books rank matches two reads", "Dune (Top Books 2023, rank 1)"),
+            ("top books ranks one read twice", "Emma (Top Books 2023, rank 3)"),
+        })
+
 
 class WishlistReview(BookCase):
     """Task 1.27 (D-111, amending D-39): extract settles the old To-Read tab.
