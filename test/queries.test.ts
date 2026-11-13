@@ -147,7 +147,12 @@ describe("the Library's genres from Calibre (task 4.5)", () => {
   it("counts a read once in its year's chip, however many top-level genres the book has", async () => {
     await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
               VALUES (${USER}, 'cal', 'read', '2025-06-01', 'exact')`;
-    expect((await q.yearSummary(USER)).map((r) => [r.year, Number(r.books)])).toEqual([[2025, 1]]);
+    // books_by_year counts the read under each of its two top-level genres: summing it, as the chips did, makes two.
+    const perGenre = await sql<{ genre: string; books: number }[]>`
+      SELECT genre, books::int AS books FROM books_by_year WHERE user_id = ${USER} AND year = 2025 ORDER BY genre`;
+    expect(perGenre).toEqual([{ genre: "Fantasy", books: 1 }, { genre: "Young Adult", books: 1 }]);
+    // The year chips read yearSummary: one row a year, the read counted once.
+    expect(await q.yearSummary(USER)).toEqual([{ year: 2025, books: 1, words: 0 }]);
   });
 });
 

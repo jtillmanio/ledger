@@ -128,7 +128,8 @@ _Approved 2026-11-13. Plan-gate answers (the entry's questions): a Library row s
 _Filled by /implement-task. One line per round._
 
 - Verify R1 FAIL(1: reading-log.test.tsx flake, passes alone; follow-up) → R2 PASS (tsc, lint, test:no-e2e: 1705 vitest, views SQL, 381 ETL) | touched specs in w390-light PASS (library-genres 4/4 after a cleanup-order fix, plan-rail, skeletons)
-- Spec R1 APPROVE | Schema R1 APPROVE (3 MINOR: lower() under "C" folds ASCII only → COLLATE "default" on the readers this task added (not provable on the C-collated test databases); the workbook fallback untrimmed → btrim, new test fails without it; data-model/schema.md views docs → follow-up) | Verify R3 PASS (1706 vitest, views SQL, 381 ETL)
+- Spec R1 APPROVE | Schema R1 APPROVE (3 MINOR: lower() under "C" folds ASCII only → COLLATE "default" on the readers this task added (not provable on the C-collated test databases); the workbook fallback untrimmed → btrim, new test fails without it; data-model/schema.md views docs → follow-up) | Verify R3 PASS (1706 vitest, views SQL, 381 ETL) | Spec R2 APPROVE | Schema R2 APPROVE | CI R1 (8a1cc77) cancelled, superseded → CI R2 (14ba99b) PASS, every project
+- Audit R1 CHANGES (1 NON-DISCRIMINATING: queries.test.ts › counts a read once in its year's chip passed on base) → strengthened (books_by_year two rows vs yearSummary one; fails on base 11d4126) | Verify R4 PASS (1706 vitest, views SQL, 381 ETL)
 
 ## Blocked
 
