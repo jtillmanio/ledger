@@ -243,6 +243,18 @@ tick them.
       series follow is what you had (`tracking` or otherwise); restore from
       your own record if not.
 
+- [ ] Fix the stray top-level genres in Calibre (from TASK-088, PR #252):
+      `l`, `i`, `Scie` and `Ecomonics` are typos or fragments of a genre
+      path, and since 4.5 every top-level genre a book has is a Library chip
+      (`Ecomonics` shows today; `l`, `i` and `Scie` will once their books are
+      listed). Correct them in Calibre, then `npm run calibre`, `npm run
+      extract` and the load your usual sitting uses.
+- [ ] Have a session fix a flaky test on a `fix/` branch (from TASK-088,
+      PR #252): `test/reading-log.test.tsx` › *two reads: All reads (2)…*
+      waits a fixed 25ms for the lazily loaded reads list (`openReads`), and
+      under the full suite's load the list isn't there yet (`list()` is null
+      at :680); it passes alone. Waiting for the list (`vi.waitFor`) fixes it.
+
 ## Approvals from follow-ups
 
 Planning-doc edits and candidate decisions waiting for your yes

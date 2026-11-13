@@ -1,7 +1,7 @@
 ---
 id: TASK-088
 title: 4.5 Calibre's genres on every screen (1 of 2) — every genre reader takes Calibre's genres
-status: In progress
+status: Review
 depends_on: [TASK-033, TASK-047, TASK-051]
 size: M
 model: opus
@@ -36,18 +36,18 @@ The Library's genre filter, each row's genre, the yearly totals and the plan rai
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the filter and `books_by_year` clauses, with `books.genre` still in place for the book that has no Calibre genre. TASK-089 proves the drop and up → down → up): with one book given `book_genres` rows `Fantasy.Epic Fantasy` and
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the filter and `books_by_year` clauses, with `books.genre` still in place for the book that has no Calibre genre. TASK-089 proves the drop and up → down → up): with one book given `book_genres` rows `Fantasy.Epic Fantasy` and
 `Young Adult.Fantasy.Romantasy` and another with none and `books.genre` `Sci-Fi`,
 the master list's genre filter finds the first under `Fantasy`, `Fantasy.Epic
 Fantasy` and `Young Adult` and the second under `Sci-Fi`, and `books_by_year`
 counts each; after the drop
 migration no query, view or loader names `books.genre`, and up → down → up keeps
 every `book_genres` row.
-- [ ] AC-2: The Library's genre chips are the genres of live books read through `book_genre_tree` at the level the plan gate chose (plus `books.genre` values of books with none), not a hard-coded list; each chip's filter returns exactly the books the view puts under that genre.
-- [ ] AC-3: A Library row shows the genre the plan gate chose (for example the last segment of the deepest direct path), and a book with no Calibre genre shows its `books.genre`.
-- [ ] AC-4: `books_by_year` counts a read once per genre at the chosen level, so the fixture's first book counts under each of its top-level genres in its year, and the second under `Sci-Fi`.
-- [ ] AC-5: The plan rail and the quarter rows colour a book by the hue its Calibre genre maps to under the approved mapping, and a book with no genre at all `--g8`; the same book has the same hue on the rail, the rows and while dragged.
-- [ ] AC-6: The Library's genre chips meet the UX floor (`docs/04-design.md` § 10. The UX floor): real links with names (a path's full name in the accessible name if the chip shows a segment), nothing under 24px and 44px on the phone, the chip row scrolls without a horizontal page scroll at 360px, genre hues identity only and never the only cue; text 4.5:1 in both themes; axe reports no new violations; screenshots at 360px, 834px and 1280px, light and dark.
+- [x] AC-2: The Library's genre chips are the genres of live books read through `book_genre_tree` at the level the plan gate chose (plus `books.genre` values of books with none), not a hard-coded list; each chip's filter returns exactly the books the view puts under that genre.
+- [x] AC-3: A Library row shows the genre the plan gate chose (for example the last segment of the deepest direct path), and a book with no Calibre genre shows its `books.genre`.
+- [x] AC-4: `books_by_year` counts a read once per genre at the chosen level, so the fixture's first book counts under each of its top-level genres in its year, and the second under `Sci-Fi`.
+- [x] AC-5: The plan rail and the quarter rows colour a book by the hue its Calibre genre maps to under the approved mapping, and a book with no genre at all `--g8`; the same book has the same hue on the rail, the rows and while dragged.
+- [x] AC-6: The Library's genre chips meet the UX floor (`docs/04-design.md` § 10. The UX floor): real links with names (a path's full name in the accessible name if the chip shows a segment), nothing under 24px and 44px on the phone, the chip row scrolls without a horizontal page scroll at 360px, genre hues identity only and never the only cue; text 4.5:1 in both themes; axe reports no new violations; screenshots at 360px, 834px and 1280px, light and dark.
 
 ## Out of scope
 
@@ -75,11 +75,14 @@ every `book_genres` row.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Calibre carries stray top-level genres (`l`, `i`, `Scie`, `Ecomonics`), which now become Library chips; fix them in Calibre, then `npm run calibre` and extract (approved at plan) → `docs/OWNER-CHECKLIST.md` § Actions
-- TASK-089: the drop removes `book_genre_levels`' workbook-fallback branch; no reader changes (approved at plan) → `docs/tasks/TASK-089-drop-books-genre.md` § Context
-- TASK-090: `listCounts().genres` and `book_genre_levels` serve On deck's top-level genre sections (approved at plan) → `docs/tasks/TASK-090-on-deck-by-genre.md` § Context
-- `test/reading-log.test.tsx` › *two reads: All reads (2)…* is a timing flake: `openReads` waits a fixed 25ms for the lazy reads chunk, and under the full suite's load the list isn't there yet (`list()` null at :680); it passes alone. Wait for the list instead (`vi.waitFor`). Not this task's code
-- Candidate decision: the plan-gate answers (row shows the deepest direct path's last segment; chips and year totals at depth 1; seven hue families, family order for a book with several) — asked at close-out (`decisions: propose`)
+- Calibre carries stray top-level genres (`l`, `i`, `Scie`, `Ecomonics`), which now become Library chips; fix them in Calibre, then `npm run calibre` and extract (approved at plan) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- TASK-089: the drop removes `book_genre_levels`' workbook-fallback branch; no reader changes (approved at plan) → docs/tasks/TASK-089-drop-books-genre.md § Context
+- TASK-090: `listCounts().genres` and `book_genre_levels` serve On deck's top-level genre sections (approved at plan) → docs/tasks/TASK-090-on-deck-by-genre.md § Context
+- `test/reading-log.test.tsx` › *two reads: All reads (2)…* is a timing flake: `openReads` waits a fixed 25ms for the lazy reads chunk, and under the full suite's load the list isn't there yet (`list()` null at :680); it passes alone. Wait for the list instead (`vi.waitFor`). Not this task's code (approved at close-out) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- Candidate decision: the plan-gate answers (row shows the deepest direct path's last segment; chips and year totals at depth 1; seven hue families, family order for a book with several) (approved at close-out) → docs/review/decisions.md § D-149
+- Schema review R1: `.claude/rules/schema.md` still said `books.genre` stays the workbook's until 4.5, and `docs/03-data-model.md` § 3. Views had no `book_genre_levels` row and called `books_by_year` per genre (approved at close-out) → docs/03-data-model.md § 3. Views, .claude/rules/schema.md § Calibre owns a book's genres
+- ui-verifier: AC-5's hue couldn't be seen in the browser, as the development database has no planned books; `test/plan-page.test.tsx` renders the plan page and the dashboard strip with seeded plans and checks each hue → not tracked: covered by the automated tests, no plan rows written to development data
+- ui-verifier: the chip row shows the browser's own horizontal scrollbar under the chips on a desktop pointer (the sideways-scroll affordance) → not tracked: accepted as is, a hidden scrollbar would hide that the row scrolls
 
 ## Plan
 
@@ -129,7 +132,8 @@ _Filled by /implement-task. One line per round._
 
 - Verify R1 FAIL(1: reading-log.test.tsx flake, passes alone; follow-up) → R2 PASS (tsc, lint, test:no-e2e: 1705 vitest, views SQL, 381 ETL) | touched specs in w390-light PASS (library-genres 4/4 after a cleanup-order fix, plan-rail, skeletons)
 - Spec R1 APPROVE | Schema R1 APPROVE (3 MINOR: lower() under "C" folds ASCII only → COLLATE "default" on the readers this task added (not provable on the C-collated test databases); the workbook fallback untrimmed → btrim, new test fails without it; data-model/schema.md views docs → follow-up) | Verify R3 PASS (1706 vitest, views SQL, 381 ETL) | Spec R2 APPROVE | Schema R2 APPROVE | CI R1 (8a1cc77) cancelled, superseded → CI R2 (14ba99b) PASS, every project
-- Audit R1 CHANGES (1 NON-DISCRIMINATING: queries.test.ts › counts a read once in its year's chip passed on base) → strengthened (books_by_year two rows vs yearSummary one; fails on base 11d4126) | Verify R4 PASS (1706 vitest, views SQL, 381 ETL)
+- Audit R1 CHANGES (1 NON-DISCRIMINATING: queries.test.ts › counts a read once in its year's chip passed on base) → strengthened (books_by_year two rows vs yearSummary one; fails on base 11d4126) | Verify R4 PASS (1706 vitest, views SQL, 381 ETL) | CI R3 (bce54ee) PASS, every project
+- UI R1 PASS on the development database (db:views applied with the owner's OK): chips a named group of 34 real links, Fantasy finds subgenre-only books, rows name the last segment, 44px under 768px and 29.5px above, one scrolling row, no page scroll at 360px, contrast ≥ 5.5:1 light and dark, focus ring unclipped, axe 0 at 360 and 1280 light and dark, year chips not inflated; AC-5 not visible (no planned books on dev), covered by test/plan-page.test.tsx | Close-out: follow-ups placed (D-149, OWNER-CHECKLIST ×2, TASK-089/090 Context, data model and schema.md approved); roadmap: nothing to tick (4.5 waits for TASK-089)
 
 ## Blocked
 
@@ -137,7 +141,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
+- Verify rounds: 4 (R1 flake, R2–R4 PASS)
+- Review rounds: 2 (spec and schema R1 APPROVE with minors fixed, R2 APPROVE; audit R1 1 non-discriminating test fixed; UI R1 PASS)
+- First-pass AC FAILs: 0
 - Plan revisions after approval: 2

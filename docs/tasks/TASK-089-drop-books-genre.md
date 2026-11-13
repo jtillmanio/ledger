@@ -27,6 +27,7 @@ A book's genre has one source, Calibre's: the workbook's single genre column is 
 - **Where `books.genre` is still named** after TASK-088: the schema (`src/db/schema.ts`); extract writes the workbook's genre into `seed/books.csv` (`etl/extract.py`; `seed/workbook_reads.csv` keeps its own `genre` column, which is a listing, not the load); the loaders' `\copy books(...)` column lists (`etl/load.ps1`, `etl/load.sh`); `etl/test_views.sql`'s catalog list; `plan_suggestions`' fallback (`etl/views.sql`, the `top_genre` CTE); TASK-088's fallbacks in `src/db/queries.ts`. `etl/load-comics.ps1` / `.sh` don't touch books.
 - `etl/extract.py` is the migration from the workbooks: changing its output means re-running against both `.xlsx` files and diffing `seed/` (`.claude/rules/schema.md`).
 - Decisions: D-90, D-98, D-139. Hard rules 2 and 7.
+- *From TASK-088 (4.5, PR #252):* every reader now takes a book's genres through the view `book_genre_levels` (`etl/views.sql`), whose second `UNION ALL` branch (`books.genre` for a book with no `book_genres` row) is the only place `books.genre` is read. The drop removes that branch (and `top_genre`'s note in `plan_suggestions`); no query in `src/` or other view changes.
 
 ## Acceptance criteria
 
