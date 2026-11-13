@@ -76,14 +76,15 @@ describe("listBooks (R2-06, R2-08)", () => {
 });
 
 // Task 4.5 (D-98): every Library reader takes a book's genres from Calibre, through
-// book_genre_tree, and books.genre only for a book Calibre gives none.
+// book_genre_levels; since TASK-089 dropped the workbook's column, Calibre's are a
+// book's only genres, and a book Calibre gives none has none.
 describe("the Library's genres from Calibre (task 4.5)", () => {
   beforeEach(async () => {
-    // The Check's two books: Calibre's two paths (its workbook Thriller must not count), and none with Sci-Fi.
-    await sql`INSERT INTO books (id, title, genre) VALUES
-              ('cal', 'Calibre book', 'Thriller'), ('wb', 'Workbook book', 'Sci-Fi'),
-              ('fan2', 'Second fantasy', NULL), ('fan3', 'Third fantasy', NULL),
-              ('unl', 'Unlisted horror', NULL), ('plain', 'No genre', NULL)`;
+    // The Check's two books: Calibre's two paths, and one Calibre gives none (once the workbook's Sci-Fi).
+    await sql`INSERT INTO books (id, title) VALUES
+              ('cal', 'Calibre book'), ('wb', 'Workbook book'),
+              ('fan2', 'Second fantasy'), ('fan3', 'Third fantasy'),
+              ('unl', 'Unlisted horror'), ('plain', 'No genre')`;
     await sql`INSERT INTO book_genres (book_id, genre) VALUES
               ('cal', 'Fantasy.Epic Fantasy'), ('cal', 'Young Adult.Fantasy.Romantasy'),
               ('fan2', 'Fantasy'), ('fan3', 'fantasy.Dark Fantasy'), ('unl', 'Horror')`;
@@ -92,9 +93,8 @@ describe("the Library's genres from Calibre (task 4.5)", () => {
 
   const under = async (genre: string) => (await q.listBooks(USER, { genre })).map((r) => r.id).sort();
 
-  it("the Check: the filter finds the first under Fantasy, Fantasy.Epic Fantasy and Young Adult, the second under Sci-Fi (AC-1)", async () => {
+  it("the Check: the filter finds the first under Fantasy, Fantasy.Epic Fantasy and Young Adult (AC-1)", async () => {
     for (const g of ["Fantasy", "Fantasy.Epic Fantasy", "Young Adult"]) expect(await under(g), g).toContain("cal");
-    expect(await under("Sci-Fi")).toEqual(["wb"]);
     expect(await under("Fantasy.Epic Fantasy")).toEqual(["cal"]);
     expect(await under("Young Adult")).toEqual(["cal"]);
     expect(await under("Young Adult.Fantasy")).toEqual(["cal"]);
@@ -102,8 +102,7 @@ describe("the Library's genres from Calibre (task 4.5)", () => {
     expect(await under("fantasy")).toEqual(["cal", "fan2", "fan3"]);
   });
 
-  it("reads books.genre only for a book Calibre gives none, and matches whole paths only (AC-1)", async () => {
-    expect(await under("Thriller")).toEqual([]);
+  it("matches whole paths only (AC-1)", async () => {
     expect(await under("Fantasy.Epic")).toEqual([]);
     expect(await under("Romantasy")).toEqual([]);
     expect(await under("Epic Fantasy")).toEqual([]);
@@ -112,7 +111,7 @@ describe("the Library's genres from Calibre (task 4.5)", () => {
   it("draws a chip for each top-level genre of the listed books, most books first, Unlisted books making none (AC-2)", async () => {
     // In listCounts, the page's one query for its chips (the route's budget, task 0.9).
     expect((await q.listCounts(USER)).genres).toEqual([
-      { genre: "Fantasy", books: 3 }, { genre: "Sci-Fi", books: 1 }, { genre: "Young Adult", books: 1 },
+      { genre: "Fantasy", books: 3 }, { genre: "Young Adult", books: 1 },
     ]);
   });
 
@@ -127,16 +126,25 @@ describe("the Library's genres from Calibre (task 4.5)", () => {
     }
   });
 
-  it("gives a row the last segment of its deepest direct path, else books.genre (AC-3)", async () => {
+  it("gives a row the last segment of its deepest direct path, and none to a book Calibre gives none (AC-3)", async () => {
     const rows = Object.fromEntries((await q.listBooks(USER)).map((r) => [r.id, r.genre]));
-    expect(rows).toMatchObject({ cal: "Romantasy", wb: "Sci-Fi", fan2: "Fantasy", fan3: "Dark Fantasy", plain: null });
+    expect(rows).toEqual({ cal: "Romantasy", wb: null, fan2: "Fantasy", fan3: "Dark Fantasy", plain: null });
   });
 
-  it("trims a workbook genre, so ' Sci-Fi ' is the same chip, filter and row as 'Sci-Fi' (schema review)", async () => {
-    await sql`UPDATE books SET genre = ' Sci-Fi ' WHERE id = 'plain'`;
-    expect((await q.listCounts(USER)).genres).toContainEqual({ genre: "Sci-Fi", books: 2 });
-    expect(await under("Sci-Fi")).toEqual(["plain", "wb"]);
-    expect((await q.listBooks(USER)).find((r) => r.id === "plain")?.genre).toBe("Sci-Fi");
+  it("a book Calibre gives no genre has none: on the Library, under no chip, and under NULL in books_by_year (TASK-089 AC-5)", async () => {
+    // Listed by Everything, with no genre on its row, and the filter finds it under no genre.
+    expect((await q.listBooks(USER)).map((r) => r.id)).toContain("wb");
+    expect((await q.listBooks(USER)).find((r) => r.id === "wb")?.genre).toBeNull();
+    for (const { genre } of (await q.listCounts(USER)).genres) expect(await under(genre), genre).not.toContain("wb");
+    expect(await under("Sci-Fi")).toEqual([]);
+    expect(await sql`SELECT 1 FROM book_genre_levels WHERE book_id = 'wb'`).toHaveLength(0);
+    // Its read still counts: once in its year, under NULL among the year's genres.
+    await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+              VALUES (${USER}, 'wb', 'read', '2025-06-02', 'exact')`;
+    const perGenre = (await sql<{ genre: string | null; books: number }[]>`
+      SELECT genre, books::int AS books FROM books_by_year WHERE user_id = ${USER} AND year = 2025`).map((r) => ({ ...r }));
+    expect(perGenre).toEqual([{ genre: null, books: 1 }]);
+    expect(await q.yearSummary(USER)).toEqual([{ year: 2025, books: 1, words: 0 }]);
   });
 
   it("breaks a tie between two deepest paths by the path, alphabetically (AC-3)", async () => {

@@ -156,10 +156,12 @@ Release, test isolation) and the Hard rules a reviewer checks.
   `Fantasy.Epic Fantasy` alone is in `Fantasy` too (D-98). Read genres through
   it, never by splitting a path in the app. Every reader takes a book's genres
   through `book_genre_levels` (`book_id, genre, depth, direct, name`; 4.5,
-  D-149): `book_genre_tree`'s rows, plus the workbook's `books.genre` as one
-  top-level row for a book Calibre gives none, the only place `books.genre` is
-  read until 4.5's drop (TASK-089); `name` is a path's last segment, split in
-  SQL.
+  D-149): `book_genre_tree`'s rows, one spelling per genre whatever its case;
+  `name` is a path's last segment, split in SQL. Calibre's genres are a book's
+  only ones: 4.5 dropped the workbook's single genre column (TASK-089, D-98),
+  so a book Calibre gives none has no genre, on no chip and under NULL in
+  `books_by_year`, and extract writes the workbook's genre columns only to the
+  listings (`workbook_reads.csv`, `workbook_plans.csv`, `wishlist_review.csv`).
 - **A book nothing knows waits for the owner's look** (task 1.20, D-94).
   Extract holds a workbook book with no `hardcover` or `hand` row in
   `book_details.csv` (1.14's `openlibrary` rows don't count) and no Calibre id:

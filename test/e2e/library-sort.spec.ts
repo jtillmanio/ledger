@@ -45,8 +45,8 @@ test.beforeAll(async () => {
   await clean();
   await withSql(async (sql) => {
     for (const b of BOOKS) {
-      await sql`INSERT INTO books (id, title, genre, word_count, word_count_source)
-                VALUES (${b.id}, ${b.title}, 'Fantasy', ${b.words}, ${b.words ? "stated" : null})`;
+      await sql`INSERT INTO books (id, title, word_count, word_count_source)
+                VALUES (${b.id}, ${b.title}, ${b.words}, ${b.words ? "stated" : null})`;
       await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${b.id}, 'to_read')`;
     }
   });

@@ -1,0 +1,13 @@
+-- Reverses 0027_drop_books_genre.sql. Run by hand, in one transaction so a
+-- failure leaves nothing half-reverted:
+--   psql "$URL" -1 -v ON_ERROR_STOP=1 -f drizzle/down/0027_drop_books_genre.sql
+-- drizzle-kit does not run it; delete 0027's row from
+-- drizzle.__drizzle_migrations before migrating up again, and apply the
+-- older commit's etl/views.sql, whose book_genre_levels reads the column.
+--
+-- Lossy, accepted at the plan gate (owner, 2026-11-13; TASK-089): the column
+-- comes back NULL on every book, because a dropped column keeps no values. It
+-- counted only for a book Calibre gives no genre (one book in the 2026-11-13
+-- seed), and before 1.26 a rebuild at the older commit refills it from the
+-- workbook. book_genres, and every other column, is untouched either way.
+ALTER TABLE "books" ADD COLUMN "genre" text;

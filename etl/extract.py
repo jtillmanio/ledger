@@ -1081,7 +1081,10 @@ SERIES_WORD_RE = re.compile(
 # Not loaded: the held books, which enrich_books.py looks up and calibre.py
 # matches beside seed/books.csv, so the run that finds one lets it load.
 HELD_BOOKS_COLUMNS = ["title", "author", "series"]
-BOOK_COLUMNS = ["id", "title", "author_id", "series_id", "series_position", "genre", "book_type",
+# No genre: a book's genres are Calibre's, in seed/book_genres.csv (task 4.5,
+# TASK-089, D-98); the workbook's genre columns are listed in workbook_reads.csv,
+# workbook_plans.csv and wishlist_review.csv, never loaded.
+BOOK_COLUMNS = ["id", "title", "author_id", "series_id", "series_position", "book_type",
                 "word_count", "word_count_source", "published_year", "page_count", "cover_url",
                 "open_library_id", "hardcover_id", "universe_id", "universe_position", "subseries_id",
                 "subseries_position", "calibre_id"]
@@ -1356,7 +1359,7 @@ class BookIndex:
         if name:
             note(self.seen_series, key(name), name=name)
 
-    def upsert(self, title, author=None, series=None, genre=None,
+    def upsert(self, title, author=None, series=None,
                word_count=None, published_year=None, book_type=None, tab=None) -> str | None:
         title, author = title_text(title), clean(author)
         if not title or len(title) < 2:
@@ -1369,7 +1372,7 @@ class BookIndex:
         bk = (key(title), key(author))
         if bk in self.by_key:
             b = self.by_key[bk]
-            for field, value in (("genre", clean(genre)), ("word_count", as_int(word_count)),
+            for field, value in (("word_count", as_int(word_count)),
                                  ("published_year", as_int(published_year)),
                                  ("book_type", clean(book_type))):
                 if value and not b.get(field):
@@ -1377,7 +1380,7 @@ class BookIndex:
             if b["word_count"] is not None:
                 b["word_count_source"] = "stated"
             return b["id"]
-        return self.new_book(title, author, series, genre, word_count, published_year, book_type)["id"]
+        return self.new_book(title, author, series, word_count, published_year, book_type)["id"]
 
     def add(self, title, author=None, book_type=None) -> dict | None:
         """A book only Calibre has (task 1.18, D-83). Made as upsert makes one,
@@ -1387,16 +1390,16 @@ class BookIndex:
         if not title or len(title) < 2 or is_placeholder(title):
             return None
         return self.by_key.get((key(title), key(author))) or \
-            self.new_book(title, author, None, None, None, None, book_type)
+            self.new_book(title, author, None, None, None, book_type)
 
-    def new_book(self, title, author, series, genre, word_count, published_year, book_type) -> dict:
+    def new_book(self, title, author, series, word_count, published_year, book_type) -> dict:
         bk = (key(title), key(author))
         aid = self.author_id(author)
         sid, pos = self.series_id(series, aid)
         b = {
             "id": slug(title, author or "")[:100] or f"book-{len(self.by_key)}",
             "title": title, "author_id": aid, "series_id": sid, "series_position": pos,
-            "genre": clean(genre), "book_type": clean(book_type) or "Novel",
+            "book_type": clean(book_type) or "Novel",
             "word_count": as_int(word_count), "published_year": as_int(published_year),
             "universe_id": None, "universe_position": None, "subseries_id": None,
             "subseries_position": None, "calibre_id": None,
@@ -1433,7 +1436,7 @@ class BookIndex:
                      f"{b['title']} ({tabs}): {names} — add the author in the workbook")
                 continue
             target = matches[0]
-            for field in ("genre", "word_count", "published_year", "series_id", "series_position"):
+            for field in ("word_count", "published_year", "series_id", "series_position"):
                 if b.get(field) is not None and not target.get(field):
                     target[field] = b[field]
             if target["word_count"] is not None:
@@ -1703,8 +1706,8 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
     disagreement is reported, never dropped: a workbook count more than 10%
     off, a different workbook series, Hardcover's different series, a
     second read of one book. Calibre's genres go on the book for
-    seed/book_genres.csv; books.genre stays the workbook's (task 1.18c,
-    D-90). Returns (read events, the books created, the series Calibre took a
+    seed/book_genres.csv, a book's only genres (task 1.18c, D-90; task 4.5,
+    D-98). Returns (read events, the books created, the series Calibre took a
     book from)."""
     held = {(key(r["b"]), key(r["b_author"])) for r in review
             if r["reason"] == CALIBRE and not r["decision"]}
@@ -2019,8 +2022,6 @@ def resolve_to_read_lines(lines: list[dict], idx: BookIndex, status: dict[str, d
             if b is None:
                 flag("wishlist_review", "create with no title", f"{what}: give the row a title")
                 continue
-            if not b["genre"]:
-                b["genre"] = clean(row["genre"].split(";")[0])
         else:
             b = idx.find_book(*to_read_line(row["near"]))
             if b is None:
@@ -2161,7 +2162,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
         if clean(r["Book"]) == "Book":
             continue
         bid = idx.upsert(r["Book"], r.get("Author"), r.get("Series"),
-                         r.get("Genre"), r.get("Words"), tab="To-Read Master List")
+                         word_count=r.get("Words"), tab="To-Read Master List")
         if bid:
             to_read(bid)
 
@@ -2221,7 +2222,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
                         speculative.append({"title": title_text(title), "year": year,
                                             "genre": str(genre), "tab": tab})
                     continue
-                bid = idx.upsert(title, genre=genre, tab=tab)
+                bid = idx.upsert(title, tab=tab)
                 if bid:
                     to_read(bid)
                     # The reading plan starts empty and is built in the app
@@ -2447,8 +2448,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
     write(out, "book_universes", list(idx.universes.values()), ["id", "name"])
     write(out, "book_subseries", list(idx.subseries.values()), ["id", "name", "series_id"])
     write(out, "books", books, BOOK_COLUMNS)
-    # Calibre's genres (task 1.18c, D-90); books.genre stays the workbook's
-    # until the screens that read it move here.
+    # Calibre's genres (task 1.18c, D-90), a book's only ones (task 4.5, D-98).
     write(out, "book_genres", [{"book_id": b["id"], "genre": g} for b in books for g in b.get("genres", [])],
           BOOK_GENRES_COLUMNS)
     write(out, "book_status", list(status.values()),

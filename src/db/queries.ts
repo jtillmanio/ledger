@@ -499,7 +499,7 @@ export type BookRow = {
   series_position: number | null;
   /** Its universe's name (task 2.2j, D-134); null when it is in none. */
   universe: string | null;
-  /** The last segment of its deepest Calibre genre, else its workbook genre (task 4.5, D-98): `Romantasy`. */
+  /** The last segment of its deepest Calibre genre (task 4.5, D-98): `Romantasy`; null for a book Calibre gives none. */
   genre: string | null; word_count: number | null;
   /** `estimated` is pages × words per page, shown with a `~` (task 2.2b). */
   word_count_source: "stated" | "estimated" | null;
@@ -825,7 +825,7 @@ export type GenreChip = { genre: string; books: number };
  * as `readWithoutYear`; `unlisted`, the live books that are Unlisted (task
  * 1.21), for the *Unlisted · N* chip, hidden at zero; and `genres`, the
  * top-level genres of the books *Everything* lists, from `book_genre_levels`
- * (task 4.5, D-98: Calibre's, else the workbook's), most books first, one chip
+ * (task 4.5, D-98: Calibre's; a book with none makes no chip), most books first, one chip
  * per genre whatever its case. An Unlisted book makes no chip, as the genre
  * filter would not list it.
  */
@@ -1464,8 +1464,8 @@ export async function quarterShelf(userId: string, period: string) {
 }
 
 /**
- * A book's top-level genres for its hue (task 4.5, D-98): `book_genre_levels` at depth 1, Calibre's
- * else the workbook's, sorted; an empty array for a book with none. Needs the book as `b`.
+ * A book's top-level genres for its hue (task 4.5, D-98): `book_genre_levels` at depth 1, Calibre's,
+ * sorted; an empty array for a book with none (`--g8`). Needs the book as `b`.
  */
 const TOP_GENRES = `ARRAY(SELECT l.genre FROM book_genre_levels l WHERE l.book_id = b.id AND l.depth = 1 ORDER BY l.genre)`;
 

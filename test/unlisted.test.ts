@@ -50,10 +50,11 @@ beforeEach(async () => {
   await sql`INSERT INTO users (id, name) VALUES (${USER}, 'Test')`;
   await sql`INSERT INTO authors (id, name) VALUES ('brandon-sanderson', 'Brandon Sanderson')`;
   await sql`INSERT INTO book_series (id, name, author_id) VALUES ('selish', 'Selish', 'brandon-sanderson')`;
-  await sql`INSERT INTO books (id, title, author_id, series_id, series_position, genre) VALUES
-    (${UNLISTED}, 'Elantris', 'brandon-sanderson', 'selish', 2, 'Fantasy'),
-    (${SOMEDAY}, 'Warbreaker', 'brandon-sanderson', NULL, NULL, 'Fantasy'),
-    (${READ}, 'The Final Empire', 'brandon-sanderson', 'selish', 1, 'Fantasy')`;
+  await sql`INSERT INTO books (id, title, author_id, series_id, series_position) VALUES
+    (${UNLISTED}, 'Elantris', 'brandon-sanderson', 'selish', 2),
+    (${SOMEDAY}, 'Warbreaker', 'brandon-sanderson', NULL, NULL),
+    (${READ}, 'The Final Empire', 'brandon-sanderson', 'selish', 1)`;
+  await sql`INSERT INTO book_genres (book_id, genre) VALUES (${UNLISTED}, 'Fantasy'), (${SOMEDAY}, 'Fantasy'), (${READ}, 'Fantasy')`;
   await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision) VALUES
     (${USER}, ${UNLISTED}, 'unlisted', NULL, 'none'),
     (${USER}, ${SOMEDAY}, 'to_read', NULL, 'none'),

@@ -735,10 +735,29 @@ class BookReview(BookCase):
         self.extract(build_books([("Piranesi", "Susanna Clarke", None, None, None)],
                                  {"To-Read 2027": df({"Fantasy": ["Piranesi"]})}), with_plan=True)
         self.assertEqual(list(self.books()), ["piranesi-susanna-clarke"])
-        self.assertEqual(self.books()["piranesi-susanna-clarke"]["genre"], "Fantasy")
         self.assertEqual(self.status(), {"piranesi-susanna-clarke": "to_read"})
         self.assertEqual([r["book_id"] for r in read(self.out, "reading_plan")], ["piranesi-susanna-clarke"])
         self.assertEqual(self.review_rows(), [])
+
+    def test_books_csv_has_no_genre_and_the_listings_keep_theirs(self):
+        """Task 4.5, TASK-089 (D-98), AC-4: a book's genres are Calibre's
+        (book_genres.csv), so books.csv has no genre column, whichever tab named
+        one: the master list's Genre, a To-Read genre column, a Read tab's.
+        workbook_reads.csv and workbook_plans.csv still list the workbook's."""
+        read_tab = df({"Fantasy": ["Piranesi", 1], "Unnamed: 1": [None, None]})
+        self.extract(build_books([("Piranesi", "Susanna Clarke", None, "Fantasy", None)],
+                                 {"To-Read 2027": df({"Horror": ["Piranesi"]}),
+                                  "To-Read 2030": df({"Mystery": ["Someday Book"]}),
+                                  "Read 2024": read_tab}), with_plan=True)
+        with (self.out / "books.csv").open(newline="", encoding="utf-8") as fh:
+            header = next(csv.reader(fh))
+        self.assertEqual(header, ex.BOOK_COLUMNS)
+        self.assertNotIn("genre", header)
+        self.assertEqual(list(self.books()), ["piranesi-susanna-clarke"])
+        self.assertEqual([(r["title"], r["genre"]) for r in read(self.out, "workbook_reads")],
+                         [("Piranesi", "Fantasy")])
+        self.assertEqual([(r["title"], r["genre"]) for r in read(self.out, "workbook_plans")],
+                         [("Someday Book", "Mystery")])
 
     def test_a_one_letter_typo_is_proposed_not_merged_then_merged_under_keep(self):
         path = build_books([("The Lightning Theif", "Rick Riordan", None, "Fantasy", None)],

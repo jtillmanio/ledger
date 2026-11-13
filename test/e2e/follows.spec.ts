@@ -66,11 +66,11 @@ test.beforeAll(async () => {
     await sql`INSERT INTO book_series (id, name, author_id, total_books) VALUES (${SERIES.id}, ${SERIES.name}, ${AUTHOR.id}, 4)`;
     await sql`INSERT INTO book_subseries (id, name, series_id) VALUES (${SUBSERIES.id}, ${SUBSERIES.name}, ${SERIES.id})`;
     for (const b of BOOKS) {
-      await sql`INSERT INTO books (id, title, genre, author_id, series_id, series_position, universe_id, subseries_id)
-                VALUES (${b.id}, ${b.title}, 'Fantasy', ${AUTHOR.id}, ${SERIES.id}, ${b.n}, ${UNIVERSE.id},
+      await sql`INSERT INTO books (id, title, author_id, series_id, series_position, universe_id, subseries_id)
+                VALUES (${b.id}, ${b.title}, ${AUTHOR.id}, ${SERIES.id}, ${b.n}, ${UNIVERSE.id},
                         ${b.n < 4 ? SUBSERIES.id : null})`;
     }
-    await sql`INSERT INTO books (id, title, genre, author_id) VALUES (${LOOSE.id}, ${LOOSE.title}, 'Fantasy', ${AUTHOR.id})`;
+    await sql`INSERT INTO books (id, title, author_id) VALUES (${LOOSE.id}, ${LOOSE.title}, ${AUTHOR.id})`;
     await sql`INSERT INTO shelves (id, name, user_id, kind) VALUES (${SHELF.id}, ${SHELF.name}, ${E2E_USER}, 'books')`;
     await sql`INSERT INTO shelf_books (shelf_id, book_id, ordinal) VALUES (${SHELF.id}, ${BOOKS[1].id}, 1), (${SHELF.id}, ${BOOKS[2].id}, 2)`;
   });
