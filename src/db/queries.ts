@@ -1207,6 +1207,60 @@ export async function planYears(userId: string, first: number, count = 5): Promi
   }));
 }
 
+/**
+ * A year against its capacity and its acceptance (task 2.7, F-23): `fits` at or under capacity;
+ * over it, `settled` while the planned words stay at or under the accepted figure, and `over`
+ * when nothing is accepted or the year has grown past it. Read on every call, never stored.
+ */
+export type PlanDecision = {
+  year: number;
+  capacity: number;
+  plannedWords: number;
+  /** When it was accepted as a stretch year (ISO), and the words planned then; null when it isn't. */
+  acceptedAt: string | null;
+  acceptedTotal: number | null;
+  state: "fits" | "over" | "settled";
+};
+
+/**
+ * A year's decision (task 2.7): `plan_capacity`'s year row beside its `plan_acceptance` row, in one
+ * read. A year nothing counts in fits at your settings' capacity (a second read, only then).
+ */
+export async function planDecision(userId: string, year: number): Promise<PlanDecision> {
+  // accepted_at as ISO text in SQL: drizzle's driver hands the shared client's timestamps back as raw strings.
+  const [row] = await sql<{ capacity: number | null; plannedWords: number | null; acceptedAt: string | null; acceptedTotal: string | null }[]>`
+    SELECT c.capacity, c.planned_words AS "plannedWords", a.accepted_total AS "acceptedTotal",
+           to_char(a.accepted_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "acceptedAt"
+    FROM (SELECT ${year}::int AS year) y
+    LEFT JOIN plan_capacity c ON c.user_id = ${userId} AND c.year = y.year AND c.quarter IS NULL
+    LEFT JOIN plan_acceptance a ON a.year = y.year`;
+  const capacity = row.capacity ?? wordsPerYear(await readingSettings(userId), year);
+  const plannedWords = row.plannedWords ?? 0;
+  const acceptedTotal = row.acceptedTotal === null ? null : Number(row.acceptedTotal);
+  const state = plannedWords <= capacity ? "fits" : acceptedTotal !== null && plannedWords <= acceptedTotal ? "settled" : "over";
+  return { year, capacity, plannedWords, acceptedAt: row.acceptedAt, acceptedTotal, state };
+}
+
+/** One book of a year's overage (task 2.7): past its quarter's rule, to read, and so one a rebalance moves. */
+export type OverageBook = { id: string; title: string; period: string; ordinal: number; words: number | null };
+
+/**
+ * A year's overage (task 2.7, D-37): every `to_read` book past its quarter's rule (`plan_overage`),
+ * Q1 to Q4, each quarter's in its order: the books *move the overage* moves. `longestFirst` is the
+ * same books as *Move it to On deck* suggests them, longest first (unknown words last, then title).
+ */
+export async function planOverage(userId: string, year: number): Promise<{ books: OverageBook[]; longestFirst: string[] }> {
+  const books = await sql<OverageBook[]>`
+    SELECT o.book_id AS id, b.title, o.period, o.ordinal, o.words
+    FROM plan_overage o JOIN books b ON b.id = o.book_id
+    WHERE o.user_id = ${userId} AND o.year = ${year} AND o.past_rule AND o.status = 'to_read'
+    ORDER BY o.quarter, o.ordinal`;
+  const longestFirst = [...books]
+    .sort((a, b) => (b.words ?? -1) - (a.words ?? -1) || a.title.localeCompare(b.title))
+    .map((b) => b.id);
+  return { books, longestFirst };
+}
+
 /** One book as the plan picker needs it (task 2.3): its words and where it sits now. */
 export type PlanBook = {
   id: string; title: string; author: string | null; status: string | null;

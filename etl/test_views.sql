@@ -897,6 +897,40 @@ BEGIN
   END IF;
 END $$;
 
+-- The overage (task 2.7, D-37): plan_overage marks a quarter book past the rule
+-- when its running end passes the quarter's capacity (759,656.25 at the
+-- defaults), the rail's rule: the book the rule runs through is past it, an
+-- unknown after it takes no room and is past it too, a book ending exactly
+-- under it is not, and a bare-year book is in no quarter. Order is the
+-- quarter's ordinal, not the words.
+INSERT INTO users (id, name) VALUES ('zz-ov-user', 'Overage fixture');
+INSERT INTO books (id, title, word_count, word_count_source, page_count) VALUES
+  ('zz-ov-a', 'Zz Ov A', 500000, 'stated', NULL), ('zz-ov-b', 'Zz Ov B', 200000, 'stated', NULL),
+  ('zz-ov-c', 'Zz Ov C', 100000, 'stated', NULL), ('zz-ov-u', 'Zz Ov Unknown', NULL, NULL, NULL),
+  ('zz-ov-d', 'Zz Ov D', 759656, 'stated', NULL), ('zz-ov-e', 'Zz Ov E', 1, 'stated', NULL),
+  ('zz-ov-y', 'Zz Ov Year', 900000, 'stated', NULL);
+INSERT INTO book_status (user_id, book_id, status) VALUES
+  ('zz-ov-user', 'zz-ov-a', 'to_read'), ('zz-ov-user', 'zz-ov-b', 'to_read'), ('zz-ov-user', 'zz-ov-c', 'to_read'),
+  ('zz-ov-user', 'zz-ov-u', 'to_read'), ('zz-ov-user', 'zz-ov-d', 'to_read'), ('zz-ov-user', 'zz-ov-e', 'reading'),
+  ('zz-ov-user', 'zz-ov-y', 'to_read');
+INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES
+  ('zz-ov-user', 'zz-ov-b', '2027-Q1', 1), ('zz-ov-user', 'zz-ov-a', '2027-Q1', 2),
+  ('zz-ov-user', 'zz-ov-c', '2027-Q1', 3), ('zz-ov-user', 'zz-ov-u', '2027-Q1', 4),
+  ('zz-ov-user', 'zz-ov-d', '2027-Q2', 1), ('zz-ov-user', 'zz-ov-e', '2027-Q2', 2),
+  ('zz-ov-user', 'zz-ov-y', '2027', NULL);
+DO $$
+DECLARE got text;
+BEGIN
+  SELECT string_agg(book_id || ':' || period || ':' || ordinal || ':' || end_words || ':' || past_rule || ':' || status,
+                    ', ' ORDER BY period, ordinal) INTO got
+  FROM plan_overage WHERE user_id = 'zz-ov-user' AND year = 2027;
+  IF got IS DISTINCT FROM 'zz-ov-b:2027-Q1:1:200000:false:to_read, zz-ov-a:2027-Q1:2:700000:false:to_read, '
+                       || 'zz-ov-c:2027-Q1:3:800000:true:to_read, zz-ov-u:2027-Q1:4:800000:true:to_read, '
+                       || 'zz-ov-d:2027-Q2:1:759656:false:to_read, zz-ov-e:2027-Q2:2:759657:true:reading' THEN
+    RAISE EXCEPTION 'plan_overage wrong: %', got;
+  END IF;
+END $$;
+
 -- The Up next queue (task 1.10): state and the blocked-by count are derived;
 -- the stored ordinal is read back as it was written, whatever the run's state.
 INSERT INTO users (id, name) VALUES ('zz-q-user', 'Queue fixture') ON CONFLICT DO NOTHING;

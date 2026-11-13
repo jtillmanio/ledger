@@ -24,7 +24,9 @@ BEGIN
     RAISE EXCEPTION 'a book is planned in a year and a quarter of that year, which the legacy key cannot hold: move one first';
   END IF;
 END $$;
--- etl/views.sql's capacity views (task 2.1) read this view: they go first.
+-- etl/views.sql's capacity views (task 2.1) read this view, and plan_overage
+-- (task 2.7) reads them: they go first.
+DROP VIEW IF EXISTS "plan_overage";
 DROP VIEW IF EXISTS "plan_capacity";
 DROP VIEW IF EXISTS "plan_book_words";
 DROP VIEW IF EXISTS "to_read_level";

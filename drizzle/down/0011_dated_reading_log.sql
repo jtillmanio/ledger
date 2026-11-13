@@ -16,7 +16,9 @@
 -- etl/views.sql's follow views (task 2.2d) read this view too: they go first.
 DROP VIEW IF EXISTS "follow_next";
 DROP VIEW IF EXISTS "follow_queue";
--- etl/views.sql's capacity views (task 2.1) read this view: they go first.
+-- etl/views.sql's capacity views (task 2.1) read this view, and plan_overage
+-- (task 2.7) reads them: they go first.
+DROP VIEW IF EXISTS "plan_overage";
 DROP VIEW IF EXISTS "plan_capacity";
 DROP VIEW IF EXISTS "plan_book_words";
 DROP VIEW IF EXISTS "books_by_year";

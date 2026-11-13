@@ -29,4 +29,12 @@ describe("GET /api/export table list", () => {
     const withUser = rows.map((r) => r.table_name).sort();
     expect([...USER_TABLES].sort()).toEqual(withUser);
   });
+
+  it("exports plan_acceptance whole: a stretch year carries no user_id (task 2.7, D-91, AC-6)", async () => {
+    const cols = await sql<{ column_name: string }[]>`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'plan_acceptance'`;
+    expect(cols.map((c) => c.column_name).sort()).toEqual(["accepted_at", "accepted_total", "year"]);
+    expect(CATALOG_TABLES).toContain("plan_acceptance");
+  });
 });

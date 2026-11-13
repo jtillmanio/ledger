@@ -1,7 +1,7 @@
 import { and, between, desc, eq, gt, gte, inArray, isNull, like, ne, notInArray, or, sql } from "drizzle-orm";
 import {
   db, authors, books, bookSeries, bookStatus, inbox, issueProgress, issues, readEvents, readingPlan, readingSettings, runIssues,
-  runQueue, runs, shelfBooks, seriesFollows, authorFollows, universeFollows, shelfFollows, subseriesFollows,
+  planAcceptance, runQueue, runs, shelfBooks, seriesFollows, authorFollows, universeFollows, shelfFollows, subseriesFollows,
   shelves, sql as pg, volumeRules,
 } from "./index";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
@@ -1152,30 +1152,44 @@ export async function planMove(userId: string, bookId: string, from: PlanEnd, to
  * or started since, it has moved on).
  */
 export async function undoPlanMove(userId: string, move: PlanMove): Promise<boolean> {
+  return undoPlanMoves(userId, [move]);
+}
+
+/**
+ * Several moves' one undo (task 2.7: *move the overage*): each move undone, last first, in one
+ * transaction, so every row and ordinal they changed comes back. All or nothing: when one of them
+ * has moved on since, the whole undo refuses and nothing is changed.
+ */
+export async function undoPlanMoves(userId: string, moves: PlanMove[]): Promise<boolean> {
   const refused = Symbol("refused");
   try {
     return await db.transaction((tx) => inPlan(userId, tx, async () => {
-      const { bookId, to, placed, prior } = move;
-      if (prior.length) {
-        const [listed] = await tx.select({ status: bookStatus.status }).from(bookStatus)
-          .innerJoin(books, eq(books.id, bookStatus.bookId))
-          .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId), isNull(books.deletedAt)));
-        if (!listed || listed.status === "unlisted") throw refused;
-        if (to === "someday" && listed.status !== "to_read") throw refused;
-      }
-      if (to === "someday") {
-        // Planned again since: it isn't at Someday any more.
-        const [planned] = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
-          .where(and(eq(readingPlan.userId, userId), eq(readingPlan.bookId, bookId))).limit(1);
-        if (planned) throw refused;
-      } else if (placed && !(await takeOutOfPlan(userId, bookId, to, tx))) throw refused;
-      for (const p of prior) if (!(await restoreToPlan(userId, bookId, p.period, p.ordinal, tx))) throw refused;
+      for (const move of [...moves].reverse()) await undoMoveIn(tx, userId, move, refused);
       return true;
     }));
   } catch (e) {
     if (e === refused) return false;
     throw e;
   }
+}
+
+/** One move's undo inside the caller's plan transaction; throws `refused` when it has moved on since. */
+async function undoMoveIn(tx: Tx, userId: string, move: PlanMove, refused: symbol) {
+  const { bookId, to, placed, prior } = move;
+  if (prior.length) {
+    const [listed] = await tx.select({ status: bookStatus.status }).from(bookStatus)
+      .innerJoin(books, eq(books.id, bookStatus.bookId))
+      .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId), isNull(books.deletedAt)));
+    if (!listed || listed.status === "unlisted") throw refused;
+    if (to === "someday" && listed.status !== "to_read") throw refused;
+  }
+  if (to === "someday") {
+    // Planned again since: it isn't at Someday any more.
+    const [planned] = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
+      .where(and(eq(readingPlan.userId, userId), eq(readingPlan.bookId, bookId))).limit(1);
+    if (planned) throw refused;
+  } else if (placed && !(await takeOutOfPlan(userId, bookId, to, tx))) throw refused;
+  for (const p of prior) if (!(await restoreToPlan(userId, bookId, p.period, p.ordinal, tx))) throw refused;
 }
 
 /** The plan editor's budget for one period (task 2.3): its words after the move, and how far over capacity. */
@@ -1226,6 +1240,158 @@ export async function previewPlanMove(userId: string, ask: PreviewAsk, to: Perio
     if (e !== rollback) throw e;
   }
   return budget;
+}
+
+/* ------------------------------------------- rebalance and the stretch year */
+
+/** A year accepted as a stretch year (task 2.7, R3-14): when, and the words it held then. */
+export type Acceptance = { year: number; acceptedAt: string; acceptedTotal: number };
+
+/**
+ * *Accept it as a stretch year* (task 2.7, F-23): the `plan_acceptance` row for `year`, its date
+ * now and its figure the year's planned words (`plan_capacity`'s), written over any earlier one,
+ * so a year is accepted once. Null, writing nothing, when the year fits its capacity: there is
+ * nothing to accept. The year reads settled while it stays at or under the figure (`planDecision`).
+ */
+export async function acceptStretch(userId: string, year: number): Promise<Acceptance | null> {
+  return inPlan(userId, undefined, async (tx) => {
+    const [row] = await tx.execute<{ planned_words: number; capacity: number }>(sql`
+      SELECT planned_words, capacity FROM plan_capacity WHERE user_id = ${userId} AND year = ${year} AND quarter IS NULL`);
+    if (!row || Number(row.planned_words) <= Number(row.capacity)) return null;
+    const acceptedTotal = Number(row.planned_words);
+    const [saved] = await tx.insert(planAcceptance).values({ year, acceptedTotal })
+      .onConflictDoUpdate({ target: planAcceptance.year, set: { acceptedAt: sql`now()`, acceptedTotal } })
+      .returning();
+    return { year: saved.year, acceptedAt: saved.acceptedAt.toISOString(), acceptedTotal: Number(saved.acceptedTotal) };
+  });
+}
+
+/** *Undo acceptance* (task 2.7): the year's row goes, and the year reads over again. False when it wasn't accepted. */
+export async function undoAcceptance(year: number): Promise<boolean> {
+  return (await db.delete(planAcceptance).where(eq(planAcceptance.year, year))
+    .returning({ year: planAcceptance.year })).length > 0;
+}
+
+/** Where *move the overage* sends it: the next year's bare-year lane (owner, TASK-066's plan gate), or On deck. */
+export type OverageTo = "next" | "on_deck";
+
+/**
+ * *Move the overage into the next year* and *Move it to On deck* (task 2.7, D-37): every `to_read`
+ * book past its quarter's rule (`plan_overage`, the end of each quarter's order) moves through
+ * `planMove`, last first, so each quarter closes up and keeps its order. A book started or read
+ * stays where it is. Into the next year is its bare-year lane, `2028` for 2027, with no ordinal;
+ * On deck is out of every year and its capacity. Nothing is deleted: a book leaves one period for
+ * another and its `book_status` is untouched. Answers the moves, which `undoPlanMoves` undoes in one.
+ */
+export async function moveOverage(userId: string, year: number, to: OverageTo): Promise<PlanMove[]> {
+  return inPlan(userId, undefined, async (tx) => {
+    const past = await tx.execute<{ book_id: string; period: string }>(sql`
+      SELECT book_id, period FROM plan_overage
+      WHERE user_id = ${userId} AND year = ${year} AND past_rule AND status = 'to_read'
+      ORDER BY quarter, ordinal DESC`);
+    const target = to === "next" ? String(year + 1) : "on_deck";
+    const moves: PlanMove[] = [];
+    for (const { book_id, period } of past) {
+      const move = await planMove(userId, book_id, period, target, tx);
+      if (move) moves.push(move);
+    }
+    return moves;
+  });
+}
+
+/** A year's quarters as they were (task 2.7): each quarter book with its period and place, which an even-out's undo puts back. */
+export type QuarterLayout = { year: number; rows: { bookId: string; period: Period; ordinal: number }[] };
+
+/** Every row in `year`'s quarters, Q1 to Q4, each in its order, with the words it counts (0 when it counts none). */
+async function quarterRows(tx: Tx, userId: string, year: number) {
+  return (await tx.execute<{ book_id: string; period: string; ordinal: number; words: number | null }>(sql`
+    SELECT p.book_id, p.period, p.ordinal, w.words
+    FROM reading_plan p
+    LEFT JOIN plan_book_words w ON w.user_id = p.user_id AND w.book_id = p.book_id AND w.period = p.period
+    WHERE p.user_id = ${userId} AND p.period LIKE ${`${year}-Q%`}
+    ORDER BY p.period, p.ordinal`)).map((r) => ({
+    bookId: r.book_id, period: r.period, ordinal: Number(r.ordinal), words: Number(r.words ?? 0),
+  }));
+}
+
+/** Put each quarter in `wanted` back as listed: books that change quarter move, then each quarter is reordered. */
+async function layOut(tx: Tx, userId: string, now: { bookId: string; period: Period }[], wanted: { bookId: string; period: Period }[]) {
+  const was = new Map(now.map((r) => [r.bookId, r.period]));
+  for (const { bookId, period } of wanted) {
+    const from = was.get(bookId)!;
+    if (from !== period) await movePlan(userId, bookId, from, period, tx);
+  }
+  const quarters = [...new Set(wanted.map((r) => r.period))];
+  for (const period of quarters) {
+    await reorderQuarter(userId, period, wanted.filter((r) => r.period === period).map((r) => r.bookId), tx);
+  }
+}
+
+/**
+ * *Even out the quarters* (task 2.7, D-37): same books, redistributed. The year's quarter books
+ * are read Q1 to Q4, each quarter in its order, and the quarters refilled in that sequence, each
+ * book going to the quarter its words' midpoint falls in at a quarter of the total each, so the
+ * year's order never changes and every quarter stays contiguous from 1. The bare-year lane is left
+ * as it is. Answers the layout before, for the undo; null, writing nothing, when a book is in two
+ * of the year's quarters (the move would merge its rows).
+ */
+export async function evenOutQuarters(userId: string, year: number): Promise<QuarterLayout | null> {
+  return inPlan(userId, undefined, async (tx) => {
+    const rows = await quarterRows(tx, userId, year);
+    if (new Set(rows.map((r) => r.bookId)).size !== rows.length) return null;
+    const before: QuarterLayout = { year, rows: rows.map(({ bookId, period, ordinal }) => ({ bookId, period, ordinal })) };
+    const total = rows.reduce((n, r) => n + r.words, 0);
+    if (total === 0) return before;
+    const share = total / 4;
+    let run = 0;
+    const wanted = rows.map((r) => {
+      const quarter = Math.min(3, Math.floor((run + r.words / 2) / share)) + 1;
+      run += r.words;
+      return { bookId: r.bookId, period: `${year}-Q${quarter}` };
+    });
+    await layOut(tx, userId, rows, wanted);
+    return before;
+  });
+}
+
+/**
+ * An even-out's undo (task 2.7): the year's quarters back as they were. Refuses, changing nothing,
+ * when the year's quarter books are no longer the same books, each once.
+ */
+export async function undoEvenOut(userId: string, layout: QuarterLayout): Promise<boolean> {
+  return inPlan(userId, undefined, async (tx) => {
+    const now = await quarterRows(tx, userId, layout.year);
+    const asked = new Set(layout.rows.map((r) => r.bookId));
+    if (asked.size !== layout.rows.length || now.length !== asked.size || now.some((r) => !asked.has(r.bookId))) return false;
+    if (layout.rows.some((r) => !r.period.startsWith(`${layout.year}-Q`))) return false;
+    const wanted = [...layout.rows].sort((a, b) => a.period.localeCompare(b.period) || a.ordinal - b.ordinal);
+    await layOut(tx, userId, now, wanted);
+    return true;
+  });
+}
+
+/** A book is in a handful of periods at most; past this a `prior` list is not one a move answered. */
+const MAX_PRIOR = 20;
+
+/**
+ * A move as `planMove` answered it, checked, or undefined when it isn't one (the undo a client
+ * sends back). `isEnd` says what a period or Someday is; the route owns that rule.
+ */
+export function parsePlanMove(raw: unknown, isEnd: (v: unknown) => v is PlanEnd): PlanMove | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const { bookId, from, to, placed, prior } = raw as Record<string, unknown>;
+  if (typeof bookId !== "string" || bookId.length === 0 || bookId.length > 200) return undefined;
+  if (!isEnd(from) || !isEnd(to) || from === to || typeof placed !== "boolean") return undefined;
+  if (!Array.isArray(prior) || prior.length > MAX_PRIOR) return undefined;
+  const rows: PlanPrior[] = [];
+  for (const p of prior) {
+    if (!p || typeof p !== "object") return undefined;
+    const { period, ordinal } = p as Record<string, unknown>;
+    if (!isEnd(period) || period === "someday") return undefined;
+    if (ordinal !== null && !(Number.isInteger(ordinal) && (ordinal as number) >= 1)) return undefined;
+    rows.push({ period, ordinal: ordinal as number | null });
+  }
+  return { bookId, from, to, placed, prior: rows };
 }
 
 /**

@@ -1,14 +1,14 @@
 ---
 id: TASK-066
 title: 2.7 Rebalance (1 of 2) — a stretch year stored, and the rebalance writes
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 8690eae
 ---
 
 # TASK-066 — 2.7 Rebalance (1 of 2) — a stretch year stored, and the rebalance writes
@@ -70,9 +70,38 @@ unchanged and never puts a book ahead of one that was ahead of it before.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- `docs/03-data-model.md` § 2.9 records `plan_acceptance` as built (planning-doc update) (approved at plan)
+- TASK-067 Context note: the reads and routes this part leaves it (`planDecision`, `planOverage`, `/api/plan/rebalance`), and `STRETCH_WHY` in `PlanPicker` still to drop (approved at plan)
+- Candidate decision: the overage is each quarter's counted books whose running end passes the quarter's capacity (the rail's rule, the straddler included); *into the next year* lands in its bare-year lane; only `to_read` books move (owner, plan gate 2026-11-13) (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+**Owner answers at the plan gate (2026-11-13):** (1) `plan_acceptance(year int PRIMARY KEY, accepted_at timestamptz NOT NULL DEFAULT now(), accepted_total bigint NOT NULL)`, no `user_id` (D-91); `accepted_total` is the year's `planned_words` at accept. (2) *Move the overage into the next year* lands each book in the next year's bare-year lane (`2028`). (3) Only `to_read` books move; a reading or read book past the rule stays.
+
+### Steps
+
+1. Schema: `plan_acceptance` in `src/db/schema.ts`; `npm run db:generate` → `drizzle/0025_*.sql` + meta; `CATALOG_TABLES` in `src/db/export-tables.ts`. Creates only, so no down file.
+2. View `plan_overage` (`etl/views.sql`): each counted quarter book (`plan_book_words`) in ordinal order with its words, its running end and the quarter's capacity; `past_rule` = end > capacity (the rail's `layoutColumn` rule: the straddler is over; unknown words count 0). Partitioned so a year filter pushes down.
+3. Writes (`src/db/writes.ts`, behind the plan lock): `acceptStretch(year)` upserts with `accepted_total` = the year's `planned_words`, null when the year fits; `undoAcceptance(year)` deletes; `moveOverage(year, "next" | "on_deck")` sends each `to_read` book past the rule through `planMove` (last first), answering `PlanMove[]`; `undoPlanMoves(moves)` reverses them in one transaction, all or nothing (`undoPlanMove`'s body taking a tx); `evenOutQuarters(year)` reads every quarter row Q1→Q4 in ordinal order, gives each the quarter its words' midpoint falls in at total/4 per quarter (contiguous, order kept), writes through `movePlan` + `reorderQuarter`, answers the prior layout; its undo puts the layout back, refusing when the year's set of books changed. Refuses (null) when a book has two quarter rows in the year.
+4. Reads (`src/db/queries.ts`): `planDecision(year)` → `{ capacity, plannedWords, acceptedAt, acceptedTotal, state: fits | over | settled }` (settled = over capacity and planned ≤ accepted_total; derived per read); `planOverage(year)` → the books past the rule, and the On deck order, longest first.
+5. Route `src/app/api/plan/rebalance/route.ts` (new; the task file named "a sibling route"): POST `{ action: accept | next | on_deck | even, year }`, DELETE `{ undo }`, GET `?year=` the decision and the overage; 400/404/409 as `/api/plan`.
+
+**Files:** `src/db/schema.ts`, `drizzle/0025_*.sql`, `drizzle/meta/*`, `src/db/export-tables.ts`, `etl/views.sql` (not in Files likely touched as the primary home; listed as the alternative), `src/db/writes.ts`, `src/db/queries.ts`, `src/app/api/plan/rebalance/route.ts`, `test/plan-acceptance.test.ts` (new), `test/export-tables.test.ts`, `etl/test_views.sql` (new; the view's test).
+
+### Test strategy
+
+- AC-1 (stored clauses), AC-2: `test/plan-acceptance.test.ts` "accepting 2027 at 118% stores one row with a date and the total; again keeps one; undo deletes it".
+- AC-3: same file, "settled while at most the accepted total, over once a placement passes it; no flag stored".
+- AC-4: same file, "into the next year" / "to On deck" / "one undo restores every row and ordinal".
+- AC-5: same file, "even out keeps the count, the words and the order; quarters contiguous from 1".
+- AC-6: `test/export-tables.test.ts` "plan_acceptance is exported and has no user_id"; `npm run check:migrations`.
+- `plan_overage`: `etl/test_views.sql` block.
+
+**Size:** 10+ files with generated meta; no UI, and already the split's first half, so kept whole.
+
+**Risks:** the window view's pushdown; a book with two quarter rows in one year (refused).
+
+**Revision 1 (during Phase 3, pinned lists the full suite found):** `test/comics-load.test.ts` lists `plan_acceptance` among `BOOK_TABLES` (the comics load leaves it alone); `drizzle/down/0011_dated_reading_log.sql` and `drizzle/down/0013_plan_period.sql` drop `plan_overage` before `plan_capacity`, as 2.2d added the follow views there. `parsePlanMove` lives in `src/db/writes.ts` beside `PlanMove`, for the new route (Next refuses extra exports from a route file); `/api/plan`'s own `parseMove` is left as it is.
 
 ## Review log
 
