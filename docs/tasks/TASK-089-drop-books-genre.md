@@ -66,7 +66,7 @@ every `book_genres` row.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- `docs/03-data-model.md` § Views: `book_genre_levels` and `plan_suggestions` rows, and the 1.18c row, no longer name `books.genre` (approved at plan)
+- `book_genre_levels` and `plan_suggestions` rows, and the 1.18c row, no longer name `books.genre` (approved at plan) → docs/03-data-model.md § 3. Views, § 4.1 By task
 
 ## Plan
 
@@ -91,7 +91,7 @@ Approved by the owner 2026-11-13 (attended). Plan-gate answers: keep the task wh
 
 **Risks**: a fixture missed only fails in the full browser suite (CI); grep `test/` for `genre)` / `, genre` before the first run. The migration's `DROP VIEW` leaves `plan_suggestions` (a string-body function) failing between migrate and views, as every Release already does.
 
-**Revision 1 (during Phase 2, outside the file list, no behaviour change):** `test/audiobooks.test.ts`, `test/plan-page.test.tsx` (its `--g1` fallback book is now `--g8`, AC-5) and `etl/test_calibre.py` also wrote or read `books.genre` (the AC-2 scan found the last); `src/app/books/list/page.tsx` and `src/lib/plan-rail.ts` had a comment saying "else the workbook's", corrected (comment only).
+**Revision 1 (during Phase 2, outside the file list, no behaviour change):** `test/audiobooks.test.ts`, `etl/test_enrich_books.py` (its `books.csv` fixture header; spec review R1), `test/plan-page.test.tsx` (its `--g1` fallback book is now `--g8`, AC-5) and `etl/test_calibre.py` also wrote or read `books.genre` (the AC-2 scan found the last); `src/app/books/list/page.tsx` and `src/lib/plan-rail.ts` had a comment saying "else the workbook's", corrected (comment only).
 
 **Follow-ups** (approved at plan): `docs/03-data-model.md` § Views rows for `book_genre_levels` and `plan_suggestions`, and the 1.18c row.
 

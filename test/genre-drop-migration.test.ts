@@ -131,6 +131,7 @@ describe("migration 0027 (books.genre is dropped)", () => {
       /\bbooks\.genre\b/, // the column, in SQL or prose
       /\bbooks\s*\(\s*(?:\w+\s*,\s*)*genre\s*(?:,\s*\w+\s*)*\)/, // a column list: INSERT INTO books (...), \copy books(...)
       /\bb\[["']genre["']\]/, // extract's book record, which books.csv is written from
+      /["']series_position["']\s*,\s*["']genre["']/, // a books.csv header in its old order, as a fixture writes one
     ];
     // The column under the usual alias, where SQL is written. A screen's `b.genre` is listBooks' row
     // field, Calibre's deepest genre (task 4.5), not the column.
