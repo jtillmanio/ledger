@@ -388,7 +388,7 @@ with the task that first reads it.
 | ✅ | 2.7 → TASK-066, TASK-067 | Rebalance, and accepting an overage | M | _Pulled ahead of 1.26 (D-139)_ | — |
 | ✅ | 2.8 → TASK-068 | Place the unquartered | M | _Pulled ahead of 1.26 (D-139)_ | — |
 | ✅ | 2.10 → TASK-069, TASK-070 | Plan page as the full-size rail | M | _Pulled ahead of 1.26 (D-139)_ | 1.7, 2.1, 2.2 |
-|  | 2.10b → TASK-071, TASK-072 | Plan a year or a quarter, with suggestions | M | _Pulled ahead of 1.26 (D-139)_ | 2.3, 2.10, 1.15, 1.21, 2.2c, 2.2d |
+| ✅ | 2.10b → TASK-071, TASK-072 | Plan a year or a quarter, with suggestions | M | _Pulled ahead of 1.26 (D-139)_ | 2.3, 2.10, 1.15, 1.21, 2.2c, 2.2d |
 
 ## M12: The comics dashboard and the telescope — Next
 

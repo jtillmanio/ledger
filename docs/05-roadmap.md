@@ -3087,7 +3087,7 @@ that case; `PlanRailSkeleton` has no legend, so the page shifts by the legend's
 height when the rail loads; and the full-size rail has room for a title in each
 block, so it can drop the labels' 16px floor (D-135, D-138).
 
-### ☐ 2.10b Plan a year or a quarter, with suggestions · M
+### ☑ 2.10b Plan a year or a quarter, with suggestions · M
 *Pulled ahead of 1.26 by the owner (D-139).*
 
 Owner intake, 2026-11-02 (owner: *the ability to create a yearly/quarterly

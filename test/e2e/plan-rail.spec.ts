@@ -645,7 +645,9 @@ test("one empty-state line names the room across the empty quarters and no quart
   await expect(page.locator(".plan-room-line")).toHaveCount(1);
   await expect(page.locator(".plan-room-line")).toHaveText(/^[\d.]+[kM] of room across Q1–Q4$/);
   await expect(page.locator(".empty")).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Library" }).first()).toHaveAttribute("href", "/books/list");
+  // Its action is 2.10b's Suggest, opening the planning sheet at a quarter ahead (task 2.10b).
+  await expect(page.locator(".plan-room button.plan-suggest")).toHaveText("Suggest");
+  await expect(page.locator(".plan-room button.plan-suggest")).toHaveAttribute("data-plan-target", /^\d{4}-Q[1-4]$/);
 });
 
 test("the error state is a neutral line with a way to try again (AC-6)", ONCE, async ({ page }) => {
