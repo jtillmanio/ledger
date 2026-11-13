@@ -3,6 +3,7 @@
 import { createContext, useCallback, useContext, useEffect, useId, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { acceptYear, undoAccept } from "@/components/RebalanceSheet";
 import Sheet, { useSheetClose } from "@/components/Sheet";
 import { useUndo } from "@/components/Undo";
 import type { PeriodCapacity, PlanSuggestion, SuggestionReason } from "@/db/queries";
@@ -57,6 +58,8 @@ export type PlanFigures = {
   year: number;
   total: PeriodCapacity;
   quarters: PeriodCapacity[];
+  /** The year is accepted as a stretch year and still within it (task 2.7, the page's `decisionState`). */
+  settled: boolean;
 };
 
 /**
@@ -401,7 +404,9 @@ function Row({ s, target, year, isYear, placed, busy, error, onPlace, onUndo, on
 /**
  * The budget line: the target's planned words against its capacity, as the page's `planCapacity` reads them, so
  * it moves with every placement. Over capacity it is amber (held: a decision not made yet), with *Accept as a
- * stretch year* (task 2.7's write); a year accepted reads calm. Never red, and never *behind*.
+ * stretch year*, the capacity card's own write (`acceptYear`, task 2.7) with its undo on the 1.2 stack; a year
+ * accepted reads calm. Whether it is settled is the page's `decisionState`, so the sheet and the card agree and
+ * both move on the refresh that follows. Never red, and never *behind*.
  */
 function Budget({ target, figures }: { target: string; figures: PlanFigures }) {
   const router = useRouter();
@@ -409,22 +414,7 @@ function Budget({ target, figures }: { target: string; figures: PlanFigures }) {
   const reasonId = useId();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [settled, setSettled] = useState(false);
-  /** Bumped by an accept and its undo, which change the decision but not the total. */
-  const [attempt, setAttempt] = useState(0);
-  const { year, total, quarters } = figures;
-
-  // The year's decision (task 2.7), read by the sheet rather than the page, so the page pays nothing for it: a
-  // year accepted as a stretch year, and still within what was accepted, is settled and reads calm. Read again
-  // whenever the year's total moves (a placement, an accept, an undo).
-  useEffect(() => {
-    const ctl = new AbortController();
-    fetch(`/api/plan/rebalance?year=${year}`, { signal: ctl.signal, cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : Promise.reject(new Error("decision failed"))))
-      .then((body: { decision: { state: string } }) => setSettled(body.decision.state === "settled"))
-      .catch(() => { if (!ctl.signal.aborted) setSettled(false); });
-    return () => ctl.abort();
-  }, [year, total.plannedWords, attempt]);
+  const { year, total, quarters, settled } = figures;
   const period = target.includes("-Q") ? quarters[Number(target.slice(-1)) - 1] : total;
   const over = period.plannedWords - period.capacity;
   const yearOver = total.plannedWords > total.capacity;
@@ -435,33 +425,21 @@ function Budget({ target, figures }: { target: string; figures: PlanFigures }) {
     if (busy || !yearOver) return;
     setBusy(true);
     setError(null);
-    try {
-      const res = await fetch("/api/plan/rebalance", {
-        method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "accept", year }),
-      });
-      if (!res.ok) {
-        setError(res.status === 409 ? `${year} fits its capacity now: there is nothing to accept.` : "Couldn’t save that. Nothing was changed.");
-        return;
-      }
-      const { undo } = await res.json() as { undo: unknown };
-      push({
-        label: `${year} accepted as a stretch year`,
-        undo: async () => {
-          const back = await fetch("/api/plan/rebalance", {
-            method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ undo }),
-          });
-          if (!back.ok) throw new Error(String(back.status));
-          setAttempt((n) => n + 1);
-          router.refresh();
-        },
-      });
-      setAttempt((n) => n + 1);
-      router.refresh();
-    } catch {
-      setError("Couldn’t save that. Nothing was changed.");
-    } finally {
-      setBusy(false);
+    const problem = await acceptYear(year);
+    setBusy(false);
+    if (problem) {
+      setError(problem);
+      return;
     }
+    push({
+      label: `${year} accepted as a stretch year`,
+      undo: async () => {
+        const back = await undoAccept(year);
+        if (back) throw new Error(back);
+        router.refresh();
+      },
+    });
+    router.refresh();
   }
 
   return (

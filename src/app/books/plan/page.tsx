@@ -60,7 +60,7 @@ export default async function Plan({ searchParams }: { searchParams: Promise<{ y
 
   return (
     <main className="plan-page">
-      <PlanSheetHost key={year} figures={{ year, total, quarters: capacity.quarters }}>
+      <PlanSheetHost key={year} figures={{ year, total, quarters: capacity.quarters, settled: decision === "settled" }}>
       <div className="plan-head">
         <h1>Plan</h1>
         <div className="plan-head-acts">

@@ -82,7 +82,7 @@ resolves to `--danger`. Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- 2.7 part 2: the sheet's budget line already offers a working *Accept as a stretch year* (POST `accept`, its undo, and a re-read of the decision), which the picker's and the capacity card's Accept can reuse → docs/tasks/TASK-067-rebalance-sheet-settled.md § Context
+- 2.7 part 2 and this sheet both wrote an *Accept as a stretch year*. TASK-067 (PR #248) merged first, with `acceptYear` and `undoAccept` in `src/components/RebalanceSheet.tsx` and the year's decision read on the page; on the rebase the sheet's budget line moved onto both, so there is one accept and one decision → not tracked: done in this PR (rebase onto PR #248)
 - At 360–412px each summary row's *Plan this quarter…* wraps to a line of its own under the row, heavier than the mockup's phone frame draws it (inside the row). The tests pass and nothing scrolls sideways; whether to tighten it is the owner's call at the preview walk → not tracked: raised for the owner's preview walk in PR #249
 - The development database is behind `main` (no migration 0025 `plan_acceptance`, no `plan_suggestions` or `plan_overage` from `etl/views.sql`), so on `npm run dev` the sheet shows its error state until `npm run db:migrate` and `npm run db:views` run against it. Both ask first (CLAUDE.md) → not tracked: an owner step for the manual check, listed in PR #249
 - The year chips on `/books/plan` (2026–2030) are 30px tall at 360px, under the phone's 44px; they predate this task (2.10) → not tracked: under the UX floor's 24px minimum, and the 44px phone rule names thumb-bar and icon buttons; noted in PR #249 for the owner
@@ -160,9 +160,10 @@ already the second half of a split and the mockup and test files are the bulk.
 
 **Revisions during implementation** (owner pre-approved the plan; each noted here):
 
-1. The year's decision (settled or not) is read by the sheet (`GET /api/plan/rebalance?year=`) when it opens and
-   whenever the year's total moves, not by the page: `test/query-budget.test.ts` pins `/books/plan` at 4 queries,
-   and the page should pay nothing for a sheet that is closed.
+1. The year's decision (settled or not) was first read by the sheet (`GET /api/plan/rebalance?year=`), because
+   `test/query-budget.test.ts` pinned `/books/plan` at 4 queries. After the rebase onto TASK-067 (PR #248), which
+   reads `planAcceptance` on the page (5 queries) for its capacity card, the sheet takes `settled` from the page's
+   `decisionState` and sends the accept through TASK-067's `acceptYear` / `undoAccept`: no request of its own.
 2. `test/plan-page.test.tsx` pinned the room row's *Library* link and sub-line; it now pins *Suggest*, the header's
    *Plan 2027…*, each quarter's *Plan this quarter…*, and that *Suggest* skips a past quarter. A 12th file.
 3. Focus follows a placement: the tapped button is replaced by the row's *Undo* (and back), *Not now* and *More*
