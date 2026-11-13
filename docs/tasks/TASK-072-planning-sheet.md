@@ -1,7 +1,7 @@
 ---
 id: TASK-072
 title: 2.10b Plan a year or a quarter (2 of 2) — the planning sheet
-status: In progress
+status: Review
 depends_on: [TASK-071, TASK-062, TASK-063, TASK-064, TASK-066, TASK-069]
 size: M
 model: sonnet
@@ -36,7 +36,7 @@ From the plan page, one sheet fills a year or a quarter: suggestions grouped by 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): with a fixture of a `reading` series with books 1–2 read and 3–4
+- [x] AC-1 (roadmap **Check:**, verbatim): with a fixture of a `reading` series with books 1–2 read and 3–4
 `to_read`, a shelf followed `reading` whose first book is read, an author
 followed `reading` with one unread book, an On deck book, an Unlisted book 3
 of another `reading` series whose books 1–2 are read, an unfollowed series
@@ -50,11 +50,11 @@ shows the new total, and Undo removes the row. Placing the Unlisted book
 writes its `to_read` status and its plan row in one transaction. With 100k of
 room left, *Fits the room left* lists no book over 100k. Nothing on the sheet
 resolves to `--danger`. Screenshots at 360px and 1280px.
-- [ ] AC-2: *Plan 2027…* in `/books/plan`'s header opens the sheet for 2027, each row offering the bare year and the four quarter chips; *Plan this quarter…* on a summary row opens it for that quarter; *Suggest* opens it at the quarter with the most room.
-- [ ] AC-3: After *Put in Q2*, the row reads *✓ In Q2 · Undo*, the sheet stays open, and the budget line grows by the book's words; Undo removes the row and returns the line to its prior total. A placement that takes the target over capacity turns the line amber and offers *Accept as a stretch year*, and no text on the sheet says *behind*.
-- [ ] AC-4: A group with more than five books shows five and *More*; *Not now* hides a row until the sheet closes, and reopening the sheet shows it again; a planned book shows its period and *Move here*.
-- [ ] AC-5: From 1024px the sheet sits beside the rail and each placement redraws the rail without a reload; below 1024px it is a sheet over the page.
-- [ ] AC-6: The sheet meets the UX floor (`docs/04-design.md` § 10. The UX floor): empty, loading and error states drawn; every *Put in*, chip, *More* and *Not now* a real button with a name, nothing interactive under 24px and 44px on the phone; focus on the heading and back on the opener below 1024px; text 4.5:1 in both themes; axe with no new violations; no horizontal scroll at 360px; screenshots at 360px, 834px and 1280px, light and dark.
+- [x] AC-2: *Plan 2027…* in `/books/plan`'s header opens the sheet for 2027, each row offering the bare year and the four quarter chips; *Plan this quarter…* on a summary row opens it for that quarter; *Suggest* opens it at the quarter with the most room.
+- [x] AC-3: After *Put in Q2*, the row reads *✓ In Q2 · Undo*, the sheet stays open, and the budget line grows by the book's words; Undo removes the row and returns the line to its prior total. A placement that takes the target over capacity turns the line amber and offers *Accept as a stretch year*, and no text on the sheet says *behind*.
+- [x] AC-4: A group with more than five books shows five and *More*; *Not now* hides a row until the sheet closes, and reopening the sheet shows it again; a planned book shows its period and *Move here*.
+- [x] AC-5: From 1024px the sheet sits beside the rail and each placement redraws the rail without a reload; below 1024px it is a sheet over the page.
+- [x] AC-6: The sheet meets the UX floor (`docs/04-design.md` § 10. The UX floor): empty, loading and error states drawn; every *Put in*, chip, *More* and *Not now* a real button with a name, nothing interactive under 24px and 44px on the phone; focus on the heading and back on the opener below 1024px; text 4.5:1 in both themes; axe with no new violations; no horizontal scroll at 360px; screenshots at 360px, 834px and 1280px, light and dark.
 
 ## Out of scope
 
@@ -81,6 +81,12 @@ resolves to `--danger`. Screenshots at 360px and 1280px.
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- 2.7 part 2: the sheet's budget line already offers a working *Accept as a stretch year* (POST `accept`, its undo, and a re-read of the decision), which the picker's and the capacity card's Accept can reuse → docs/tasks/TASK-067-rebalance-sheet-settled.md § Context
+- At 360–412px each summary row's *Plan this quarter…* wraps to a line of its own under the row, heavier than the mockup's phone frame draws it (inside the row). The tests pass and nothing scrolls sideways; whether to tighten it is the owner's call at the preview walk → not tracked: raised for the owner's preview walk in PR #249
+- The development database is behind `main` (no migration 0025 `plan_acceptance`, no `plan_suggestions` or `plan_overage` from `etl/views.sql`), so on `npm run dev` the sheet shows its error state until `npm run db:migrate` and `npm run db:views` run against it. Both ask first (CLAUDE.md) → not tracked: an owner step for the manual check, listed in PR #249
+- The year chips on `/books/plan` (2026–2030) are 30px tall at 360px, under the phone's 44px; they predate this task (2.10) → not tracked: under the UX floor's 24px minimum, and the 44px phone rule names thumb-bar and icon buttons; noted in PR #249 for the owner
+- `design/mockups-index.md`'s line ranges for the screens after `plan` are now about 160 lines early; they were already approximate before this task, and `scripts/screen.ps1` finds a screen by its `data-id` → not tracked: the ranges were already stale and nothing reads them
 
 ## Plan
 
@@ -172,13 +178,18 @@ fixture's own ids; `router.refresh()` timing, so tests wait on the line's text, 
 
 _Filled by /implement-task. One line per round._
 
+- Touched specs R1 FAIL(1) (AC-2: chip text read the screen-reader prefix; then Esc lost after a placement, a real focus bug) → fixed | Verify R1 PASS (run overlapped edits) → R2 PASS | CI R1 PASS (7a823fa: check, e2e full 8/8, Vercel, Lighthouse)
+- Spec R1 CHANGES (copy differs from the frame: lede, over note; optional Unlisted tag, + Add books test) | Schema R1 APPROVE (2 MINOR: "already planned" add, target year bound) → fixed in becfb92 | Verify R3 PASS | CI R2 PASS (becfb92) | Spec R2 APPROVE | Schema R2 APPROVE
+- Audit R1 PASS (every new test fails against 9cee95b's code; tree restored)
+- UI R1 PARTIAL: openers, dialog below 1024px / aside from 1024px, focus to heading and back, error state, no sideways scroll at 360px PASS; groups, placement, budget, More, Not now NOT RUN (the dev database is behind main: suggestions 500). Covered by CI's full browser suite on the test database.
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (all PASS); CI rounds: 2 (both PASS)
+- Review rounds: 2
+- First-pass AC FAILs: 0 (spec R1 asked for copy changes only)
+- Plan revisions after approval: 3 (listed in ## Plan)
