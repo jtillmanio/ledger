@@ -203,7 +203,6 @@ erDiagram
         text status "to_read|reading|read|dnf"
         date finished_on "latest read; the year is derived (D-21)"
         text finished_on_precision "exact|approximate|none"
-        int  year_rank "top-10 position"
         real rating
         text notes
     }
@@ -245,6 +244,7 @@ erDiagram
         date finished_on
         text finished_on_precision "exact|approximate|none"
         int  reread_of FK "the item's previous read"
+        int  year_rank "place in its finish year, contiguous from 1 (3.4b, D-101)"
     }
 ```
 

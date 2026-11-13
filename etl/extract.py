@@ -1090,7 +1090,7 @@ BOOK_COLUMNS = ["id", "title", "author_id", "series_id", "series_position", "gen
 CHECKED_FIELDS = ("series", "series_index", "isbn")
 # Not loaded: the books Calibre created, so calibre.py never matches its own.
 CALIBRE_CREATED_COLUMNS = ["title", "author", "book_id"]
-READ_EVENTS_COLUMNS = ["user_id", "book_id", "finished_on", "finished_on_precision"]
+READ_EVENTS_COLUMNS = ["user_id", "book_id", "finished_on", "finished_on_precision", "year_rank"]
 # A workbook count further than this from Calibre's is reported as Calibre's replaces it (D-87).
 WORD_COUNT_TOLERANCE = 0.10
 YEAR_RE = re.compile(r"^\d{4}$")
@@ -1634,6 +1634,47 @@ def read_finish(row: dict) -> tuple[str | None, str]:
     return None, "none"
 
 
+def rank_reads(reads: list[dict], read_events: list[dict], idx: "BookIndex") -> None:
+    """The workbook's past top tens onto the reads they belong to (task 3.4b,
+    D-101). A Top Books row names a title and a year, no author: the title
+    finds its book as any authorless sighting does (`find_book`: the one book
+    with that title, after merges), and the year finds that book's read in
+    read_events (Calibre's, D-87) by its finish year. Exactly one read takes
+    the rank. A title naming no book or several, a book with no read that year
+    or two, and a second rank for one read are reported in unresolved.csv,
+    never dropped (D-93); the read stays unranked. Each year's ranks that land
+    are renumbered 1…N in the workbook's order, so a year's ranks stay
+    contiguous (data model 2.16)."""
+    by_book: dict[str, list[dict]] = {}
+    for e in read_events:
+        by_book.setdefault(e["book_id"], []).append(e)
+    landed: dict[int, list[tuple[int, dict]]] = {}
+    for r in reads:
+        if r["tab"] != "Top Books" or r["rank"] is None or r["year"] is None:
+            continue
+        year, rank, title = r["year"], r["rank"], r["title"]
+        where = f"{title} (Top Books {year}, rank {rank})"
+        b = idx.find_book(title)
+        if b is None:
+            matches = sum(1 for (t, _) in idx.by_key if t == key(title))
+            flag("read_events", "top books rank names several books" if matches > 1 else "top books rank names no book",
+                 f"{where}: not loaded; rank its read in the app")
+            continue
+        found = [e for e in by_book.get(b["id"], [])
+                 if e["finished_on"] and str(e["finished_on"])[:4] == str(year)]
+        if len(found) != 1:
+            flag("read_events", "top books rank matches two reads" if found else "top books rank has no read",
+                 f"{where}: {'two' if found else 'no'} {year} read for {b['title']} in Calibre; not loaded")
+            continue
+        if any(e is found[0] for _, e in landed.get(year, [])):
+            flag("read_events", "top books ranks one read twice", f"{where}: its read is ranked already; not loaded")
+            continue
+        landed.setdefault(year, []).append((rank, found[0]))
+    for year, ranked in landed.items():
+        for n, (_, e) in enumerate(sorted(ranked, key=lambda x: x[0]), start=1):
+            e["year_rank"] = n
+
+
 def second_read(b: dict, prior: dict, row: dict) -> bool:
     """A Calibre read of a book already read is not loaded, and is reported:
     the owner logs a reread by hand (D-87, D-93). True when it was one."""
@@ -1686,7 +1727,7 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
                 continue
             status[b["id"]] = {"user_id": "$OWNER", "book_id": b["id"], "status": "unlisted",
                                "finished_on": None, "finished_on_precision": "none",
-                               "year_rank": None, "rating": None}
+                               "rating": None}
             created.append({"title": row["title"], "author": row["author"], "book_id": b["id"]})
 
         # One Ledger book is one Calibre book (task 1.18b, D-90): a second
@@ -1756,10 +1797,10 @@ def fold_calibre(idx: BookIndex, status: dict[str, dict], review: list[dict],
                 continue
             on, precision = read_finish(row)
             events.append({"user_id": "$OWNER", "book_id": b["id"], "finished_on": on,
-                           "finished_on_precision": precision})
+                           "finished_on_precision": precision, "year_rank": None})
             status[b["id"]] = {"user_id": "$OWNER", "book_id": b["id"], "status": "read",
                                "finished_on": on, "finished_on_precision": precision,
-                               "year_rank": prior.get("year_rank"), "rating": prior.get("rating")}
+                               "rating": prior.get("rating")}
     for k, others in idx.subseries_clashes.items():
         s = idx.subseries[idx.subseries_keys[k]]
         flag("calibre_books", "subseries under two series",
@@ -1899,7 +1940,7 @@ def resolve_to_read_lines(lines: list[dict], idx: BookIndex, status: dict[str, d
         if row is None or row["status"] == "unlisted":
             status[b["id"]] = {"user_id": "$OWNER", "book_id": b["id"], "status": "to_read",
                                "finished_on": None, "finished_on_precision": "none",
-                               "year_rank": None, "rating": None}
+                               "rating": None}
 
     def named(b: dict) -> str:
         author = idx.authors[b["author_id"]]["name"] if b["author_id"] else ""
@@ -2109,7 +2150,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
         # undated to_read. Reads are listed in workbook_reads.csv for hand entry.
         status.setdefault(bid, {"user_id": "$OWNER", "book_id": bid, "status": "to_read",
                                 "finished_on": None, "finished_on_precision": "none",
-                                "year_rank": None, "rating": None})
+                                "rating": None})
 
     def listed_read(title, year=None, genre=None, tab=None, rank=None):
         reads.append({"title": title_text(title), "year": year, "genre": genre, "tab": tab, "rank": rank})
@@ -2397,6 +2438,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
     books = loaded
     status = {bid: row for bid, row in status.items() if bid not in held}
     read_events = [r for r in read_events if r["book_id"] not in held]
+    rank_reads(reads, read_events, idx)
     plan = [r for r in plan if r["book_id"] not in held]
     releases = [r for r in releases if r["book_id"] not in held]
     write(out, "authors", list(idx.authors.values()), ["id", "name"])
@@ -2410,8 +2452,7 @@ def extract_books(path: Path, out: Path, with_plan: bool = False,
     write(out, "book_genres", [{"book_id": b["id"], "genre": g} for b in books for g in b.get("genres", [])],
           BOOK_GENRES_COLUMNS)
     write(out, "book_status", list(status.values()),
-          ["user_id", "book_id", "status", "finished_on", "finished_on_precision",
-           "year_rank", "rating"])
+          ["user_id", "book_id", "status", "finished_on", "finished_on_precision", "rating"])
     # Only Calibre's reads load (D-73, D-87); the workbook's never do (D-41).
     write(out, "read_events", read_events, READ_EVENTS_COLUMNS)
     # Not loaded: the books Calibre created, which calibre.py never matches.

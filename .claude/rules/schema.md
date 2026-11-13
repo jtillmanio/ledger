@@ -73,7 +73,14 @@ Release, test isolation) and the Hard rules a reviewer checks.
   match is never ranked: `etl/data/hardcover_review.csv` lists each candidate,
   and the owner's `pick` makes the next run match it (D-99). The workbook loads no
   read state (D-41): `seed/workbook_reads.csv` lists its reads for hand entry
-  and is not loaded. A To-Read tab for 2028 or later is speculative and loads
+  and is not loaded, with one exception (task 3.4b, D-150): a Top Books rank
+  goes onto that book's read in that year in `seed/read_events.csv`
+  (Calibre's reads; the title found as any authorless sighting is, the year
+  by the finish), each year renumbered 1…N, and a rank that finds no book,
+  several books, no read or two is reported in `unresolved.csv`, never
+  dropped. **A rank belongs to a read** (`read_events.year_rank`, D-101): a
+  year's ranks are contiguous from 1 over its ranked reads, written only
+  through `rankRead` in `src/db/writes.ts`; a read with no date has none. A To-Read tab for 2028 or later is speculative and loads
   nothing (`SPECULATIVE_FROM`, owner 2026-10-19): no book, status or plan row;
   `seed/workbook_plans.csv` lists its titles and is not loaded. A placeholder
   title (`Untitled`, `Untitled 2`, `TBA`, `TBD`; `PLACEHOLDER_RE`, owner

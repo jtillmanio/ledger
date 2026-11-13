@@ -1,4 +1,4 @@
-import { and, between, desc, eq, gt, gte, inArray, isNull, like, ne, notInArray, or, sql } from "drizzle-orm";
+import { and, between, desc, eq, gt, gte, inArray, isNotNull, isNull, like, ne, notInArray, or, sql } from "drizzle-orm";
 import {
   db, authors, books, bookSeries, bookStatus, inbox, issueProgress, issues, readEvents, readingPlan, readingSettings, runIssues,
   planAcceptance, runQueue, runs, shelfBooks, seriesFollows, authorFollows, universeFollows, shelfFollows, subseriesFollows,
@@ -253,7 +253,8 @@ export async function saveBookStatus(
  *
  * Refuses, changing nothing, when anything moved on in between: the book's
  * status is no longer the one this write set, the read it logged or
- * re-dated is no longer the book's latest, or it would put an Unlisted book
+ * re-dated is no longer the book's latest, the read it would delete has been
+ * ranked since (task 3.4b: its year would keep a gap), or it would put an Unlisted book
  * back under a plan row it has gained since (task 1.21), or take the status
  * row of a book that had none, and has been planned since, out from under its
  * plan row (task 2.3).
@@ -273,6 +274,13 @@ export async function undoBookStatus(userId: string, change: BookStatusChange): 
     }
     const touched = appended ?? edited?.id ?? backfilled ?? null;
     if (touched !== null && (await latestRead(tx, userId, bookId))?.id !== touched) return false;
+    // A read ranked since holds a place in its year (task 3.4b): deleting it would leave a gap.
+    const made = [appended, backfilled].filter((id): id is number => id !== null);
+    if (made.length > 0) {
+      const ranked = await tx.select({ id: readEvents.id }).from(readEvents)
+        .where(and(inArray(readEvents.id, made), isNotNull(readEvents.yearRank)));
+      if (ranked.length > 0) return false;
+    }
 
     for (const id of [appended, backfilled]) {
       if (id !== null) await tx.delete(readEvents).where(eq(readEvents.id, id));
@@ -293,7 +301,7 @@ export async function undoBookStatus(userId: string, change: BookStatusChange): 
         .where(mine);
     } else {
       const gone = await tx.delete(bookStatus)
-        .where(and(mine, isNull(bookStatus.rating), isNull(bookStatus.notes), isNull(bookStatus.yearRank)))
+        .where(and(mine, isNull(bookStatus.rating), isNull(bookStatus.notes)))
         .returning({ bookId: bookStatus.bookId });
       if (gone.length === 0) {
         await tx.update(bookStatus).set({ status: "to_read", finishedOn: null, finishedOnPrecision: "none", ...NO_START })
@@ -431,6 +439,214 @@ export async function undoBookRedate(userId: string, redate: BookRedate): Promis
     if ((await latestRead(tx, userId, bookId))?.id === readId) {
       await tx.update(bookStatus).set(asFinish(before)).where(mine);
     }
+    return true;
+  });
+}
+
+/** One read's place in its finish year's ranking (task 3.4b): null when it is out of it. */
+export type RankRow = { readId: number; rank: number | null };
+
+/** A rank write as `rankRead` made it: every read it changed, before and after, for its undo. */
+export type RankChange = {
+  /** The read ranked or taken out, and its book. */
+  readId: number;
+  bookId: string;
+  /** The finish year ranked in, or null for a read with no date taken out. */
+  year: number | null;
+  before: RankRow[];
+  after: RankRow[];
+  /** The year's ranked reads in order as the write left them, ranked 1…N: the undo refuses unless the year still is. */
+  left: number[];
+  /** The read this write logged for a read the status held alone (D-65), which the undo deletes; else null. */
+  backfilled: number | null;
+};
+
+/** Which read to rank: one by its id, or a book's latest read (logged first when only its status holds it). */
+export type RankTarget = { readId: number } | { bookId: string };
+
+/** Serialises every rank write of one user, as `inQueue` does the comics queue. */
+async function inRanking<T>(userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${`ledger:rank:${userId}`}))`);
+    return fn(tx);
+  });
+}
+
+/** A year's ranked reads of live books in their order (`year_rank`, then the read's id). */
+function yearRanking(tx: Tx, userId: string, year: number) {
+  return tx
+    .select({ readId: readEvents.id, rank: readEvents.yearRank })
+    .from(readEvents)
+    .innerJoin(books, and(eq(books.id, readEvents.bookId), isNull(books.deletedAt)))
+    .where(and(eq(readEvents.userId, userId), isNotNull(readEvents.yearRank),
+      sql`extract(year FROM ${readEvents.finishedOn}) = ${year}`))
+    .orderBy(readEvents.yearRank, readEvents.id);
+}
+
+async function setRanks(tx: Tx, userId: string, rows: RankRow[]) {
+  for (const { readId, rank } of rows) {
+    await tx.update(readEvents).set({ yearRank: rank })
+      .where(and(eq(readEvents.userId, userId), eq(readEvents.id, readId)));
+  }
+}
+
+/** One book read of this user's, by its id: its book, its rank and its finish year. */
+async function rankedRead(tx: Tx, userId: string, readId: number) {
+  const [row] = await tx
+    .select({
+      id: readEvents.id, bookId: readEvents.bookId, rank: readEvents.yearRank,
+      year: sql<number | null>`extract(year FROM ${readEvents.finishedOn})::int`,
+    })
+    .from(readEvents)
+    .where(and(eq(readEvents.id, readId), eq(readEvents.userId, userId), isNotNull(readEvents.bookId)));
+  return row ? { ...row, bookId: row.bookId! } : null;
+}
+
+/**
+ * Put a read with a finish date at `rank` in its year's ranking, or take it out
+ * (`null`) (task 3.4b, D-101, D-122). The rank belongs to the read, not the
+ * book, so a book read in two years holds a place in each. A year's ranks are
+ * contiguous from 1 over its ranked reads of live books: placing a read at rank
+ * n (clamped to the end) moves the reads at n and below down one, moving a
+ * ranked read shifts only those between, moving an unranked one in ranks it,
+ * and taking one out closes the gap, as the comics queue keeps its ordinals
+ * (data model 2.16). The year is the read's `extract(year FROM finished_on)`
+ * (D-21), never stored. The whole year is renumbered from 1 in its order
+ * (`year_rank`, then the read's id), so a gap or a tie left by a re-dated read
+ * is healed by the next write to that year. Writes no rating: the rank is the
+ * only rating (D-3).
+ *
+ * `{ readId }` names the read; `{ bookId }` the book's latest read, and a book
+ * whose `read` status holds its read with no log row (`book_reads`) has that
+ * read logged first, with the status's finish (D-65; owner at 3.4b's plan
+ * gate), which the undo deletes. Throws `RefusedStatus`, writing nothing, when
+ * the read has no date (*No year*: no year to rank in) or the book has no read.
+ * Answers null for a read or book that is missing or removed; otherwise every
+ * rank it changed, which `undoRank` puts back.
+ */
+export async function rankRead(userId: string, target: RankTarget, rank: number | null): Promise<RankChange | null> {
+  if (rank !== null && !(Number.isInteger(rank) && rank >= 1)) throw new Error("rankRead: a rank is a whole number from 1");
+  return inRanking(userId, async (tx) => {
+    let own: { id: number; bookId: string; rank: number | null; year: number | null } | null;
+    let backfilled: number | null = null;
+    if ("readId" in target) {
+      // The book first, then the read again under its lock: a status undo or a
+      // re-date that commits while this waits has moved or deleted it by then.
+      const found = await rankedRead(tx, userId, target.readId);
+      if (!found || !(await lockBook(tx, found.bookId))) return null;
+      own = await rankedRead(tx, userId, target.readId);
+    } else {
+      const { bookId } = target;
+      if (!(await lockBook(tx, bookId))) return null;
+      const latest = await latestRead(tx, userId, bookId);
+      if (latest) {
+        own = await rankedRead(tx, userId, latest.id);
+      } else {
+        const [status] = await tx
+          .select({ status: bookStatus.status, finishedOn: bookStatus.finishedOn, precision: bookStatus.finishedOnPrecision })
+          .from(bookStatus).where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId)));
+        if (status?.status !== "read" || rank === null) throw new RefusedStatus("the book has no read to rank");
+        if (status.finishedOn === null) throw new RefusedStatus("a read with no finish date has no year to rank in");
+        const [row] = await tx.insert(readEvents)
+          .values({ userId, bookId, finishedOn: status.finishedOn, finishedOnPrecision: status.precision })
+          .returning({ id: readEvents.id });
+        backfilled = row.id;
+        own = await rankedRead(tx, userId, row.id);
+      }
+    }
+    if (!own) return null;
+    if (own.year === null && rank !== null) throw new RefusedStatus("a read with no finish date has no year to rank in");
+    const readId = own.id;
+
+    const ranked = own.year === null ? [] : await yearRanking(tx, userId, own.year);
+    const order = ranked.map((r) => r.readId).filter((id) => id !== readId);
+    if (rank !== null) order.splice(Math.min(rank, order.length + 1) - 1, 0, readId);
+    const next = new Map(order.map((id, i) => [id, i + 1]));
+    const prior = new Map<number, number | null>(ranked.map((r) => [r.readId, r.rank]));
+    prior.set(readId, own.rank);
+
+    const before: RankRow[] = [];
+    const after: RankRow[] = [];
+    for (const [id, was] of prior) {
+      const now = next.get(id) ?? null;
+      if (now === was) continue;
+      before.push({ readId: id, rank: was });
+      after.push({ readId: id, rank: now });
+    }
+    await setRanks(tx, userId, after);
+    return { readId, bookId: own.bookId, year: own.year, before, after, left: order, backfilled };
+  });
+}
+
+/**
+ * Undo one rank write: every read it changed gets its rank back, and a read it
+ * logged from the status is deleted. Refuses, changing nothing, when the year's
+ * ranking is no longer exactly as the write left it (any later rank write to
+ * that year, a read re-dated into or out of it), a read it changed no longer
+ * holds the rank the write gave it or is gone, or the read it logged is no
+ * longer the book's latest with the book still Read. Checking the whole year,
+ * not only the reads changed, keeps an undo after a later append from leaving a
+ * tie or a gap.
+ */
+export async function undoRank(userId: string, change: RankChange): Promise<boolean> {
+  const { bookId, year, before, after, left, backfilled } = change;
+  return inRanking(userId, async (tx) => {
+    if (year !== null) {
+      const now = (await yearRanking(tx, userId, year)).map((r) => `${r.readId}:${r.rank}`);
+      const was = left.map((id, i) => `${id}:${i + 1}`);
+      if (now.length !== was.length || now.some((r, i) => r !== was[i])) return false;
+    }
+    if (backfilled !== null) {
+      if (!(await lockBook(tx, bookId))) return false;
+      if ((await latestRead(tx, userId, bookId))?.id !== backfilled) return false;
+      const [status] = await tx.select({ status: bookStatus.status }).from(bookStatus)
+        .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId)));
+      if (status?.status !== "read") return false;
+    }
+    if (after.length > 0) {
+      const rows = await tx.select({ readId: readEvents.id, rank: readEvents.yearRank }).from(readEvents)
+        .where(and(eq(readEvents.userId, userId), inArray(readEvents.id, after.map((r) => r.readId))));
+      const now = new Map(rows.map((r) => [r.readId, r.rank]));
+      if (after.some((r) => !now.has(r.readId) || now.get(r.readId) !== r.rank)) return false;
+      await setRanks(tx, userId, before);
+    }
+    // The read the status held alone goes back to the status alone: book_reads counts it the same.
+    if (backfilled !== null) await tx.delete(readEvents).where(eq(readEvents.id, backfilled));
+    return true;
+  });
+}
+
+/** A note write as `saveBookNote` made it: the note before and the note written. */
+export type NoteChange = { bookId: string; prior: string | null; note: string | null };
+
+/**
+ * Write a book's note (task 3.4): trimmed, and an empty note clears it (NULL).
+ * The note lives on `book_status`, so a book with no status row is refused
+ * (`RefusedStatus`; owner at the plan gate: no row is made to hold it). Answers
+ * null for a book that is missing or removed; otherwise the change `undoBookNote`
+ * puts back.
+ */
+export async function saveBookNote(userId: string, bookId: string, text: string): Promise<NoteChange | null> {
+  const note = text.trim() || null;
+  return db.transaction(async (tx) => {
+    if (!(await lockBook(tx, bookId))) return null;
+    const mine = and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId));
+    const [row] = await tx.select({ notes: bookStatus.notes }).from(bookStatus).where(mine);
+    if (!row) throw new RefusedStatus("put the book on your list before writing a note");
+    await tx.update(bookStatus).set({ notes: note }).where(mine);
+    return { bookId, prior: row.notes, note };
+  });
+}
+
+/** Undo one note write: the note before comes back, unless the note has changed since. */
+export async function undoBookNote(userId: string, change: NoteChange): Promise<boolean> {
+  const { bookId, prior, note } = change;
+  return db.transaction(async (tx) => {
+    if (!(await lockBook(tx, bookId))) return false;
+    const mine = and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId));
+    const [row] = await tx.select({ notes: bookStatus.notes }).from(bookStatus).where(mine);
+    if (!row || row.notes !== note) return false;
+    await tx.update(bookStatus).set({ notes: prior }).where(mine);
     return true;
   });
 }
@@ -1947,7 +2163,7 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
   const shelfRows = isShelf
     ? and(eq(shelfBooks.shelfId, destination.shelfId), inArray(shelfBooks.bookId, added)) : undefined;
   const bareStatus = and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, [...statuses]), eq(bookStatus.status, "to_read"),
-    isNull(bookStatus.rating), isNull(bookStatus.notes), isNull(bookStatus.finishedOn), isNull(bookStatus.yearRank));
+    isNull(bookStatus.rating), isNull(bookStatus.notes), isNull(bookStatus.finishedOn));
   // A plan row this add didn't write: any, except the add's own period's.
   const notOurs = period !== null ? ne(readingPlan.period, period) : undefined;
   if (isShelf && added.length) {

@@ -183,6 +183,13 @@
       "when": 1794549407238,
       "tag": "0025_plan_acceptance",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794596190346,
+      "tag": "0026_rank_on_read",
+      "breakpoints": true
     }
   ]
 }
