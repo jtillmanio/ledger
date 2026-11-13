@@ -120,7 +120,8 @@ describe("the Library's genres (task 4.5)", () => {
     expect(chips.map((a) => a.textContent)).toEqual(["Fantasy", "Young Adult", "Sci-Fi"]);
     expect(chips.map((a) => new URL(a.getAttribute("href")!, "http://x").searchParams.get("genre")))
       .toEqual(["Fantasy", "Young Adult", "Sci-Fi"]);
-    expect(chips.map((a) => a.getAttribute("aria-current"))).toEqual(["false", "true", "false"]);
+    // Only the chosen chip carries aria-current (the route's byte budget, task 0.10).
+    expect(chips.map((a) => a.getAttribute("aria-current"))).toEqual([null, "true", null]);
     // None of the old hard-coded list the data doesn't have.
     expect(group.textContent).not.toMatch(/Graphic Novel|Thriller|Classics/);
     expect(queries.listBooks).toHaveBeenLastCalledWith("test-user", expect.objectContaining({ genre: "Young Adult" }));

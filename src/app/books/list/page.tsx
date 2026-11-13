@@ -120,12 +120,14 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
 
       {/* The top-level genres of the books listed (task 4.5, D-98): Calibre's, else the workbook's,
           most books first. A chip finds every book under it, a subgenre's too. One row that scrolls
-          sideways, never the page; the chip's text is the genre's whole name. */}
+          sideways, never the page; the chip's text is the genre's whole name. Only the chosen chip
+          carries aria-current: a `false` on each of some forty chips cost the route's byte budget
+          ~1.5 KB in the HTML and the RSC payload, and no attribute already means not current. */}
       {genres.length > 0 && (
         <div className="filters genre-row" role="group" aria-label="Genre">
           {genres.map(({ genre: g }) => (
             <Link key={g} prefetch={false} href={libraryHref({ genre: g, ...order })} className="chip"
-                  aria-current={genre?.toLowerCase() === g.toLowerCase()}>{g}</Link>
+                  aria-current={genre?.toLowerCase() === g.toLowerCase() || undefined}>{g}</Link>
           ))}
         </div>
       )}
