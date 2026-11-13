@@ -58,6 +58,15 @@ export function dayWhen(on: string | null, precision: Precision, now = new Date(
   return `${Number(d)} ${MONTHS[Number(m) - 1]}${y === thisYear ? "" : ` ${y}`}`;
 }
 
+/** The Eastern day a moment fell on, `2026-09-14` (task 1.16): what `dayWhen` takes. */
+const easternDay = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: ZONE });
+
+/** When a year was accepted as a stretch year (task 2.7): its Eastern day as a row says it, `14 Sep`
+ * (`14 Sep 2026` outside this year). `at` is the stored moment, as ISO. */
+export function acceptedDay(at: string, now = new Date()): string {
+  return dayWhen(easternDay.format(new Date(at)), "exact", now)!;
+}
+
 /** Days taken (task 1.17), computed by the query, never stored: `16 days`,
  * `1 day`, `same day`; null when either end isn't an exact day. */
 export function readDays(days: number | null): string | null {

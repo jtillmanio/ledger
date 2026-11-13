@@ -312,7 +312,7 @@ test("over capacity the preview is amber with the amount over and a disabled Acc
   await expect(preview.locator(".pp-figure")).toHaveText(`${k(planned)} of ${k(capacity)} · over ${k(planned - capacity)}`);
   const accept = preview.getByRole("button", { name: "Accept as a stretch year" });
   await expect(accept).toHaveAttribute("aria-disabled", "true");
-  await expect(accept).toHaveAccessibleDescription("Accepting a stretch year arrives with 2.7.");
+  await expect(accept).toHaveAccessibleDescription("Accept the whole year from Rebalance on the plan page.");
   expect((await computedStyle(preview, ["background-color"]))["background-color"]).toBe(await tokenColour(page, "--blocked-soft"));
   expect((await computedStyle(preview.locator(".pp-figure"), ["color"])).color).toBe(await tokenColour(page, "--blocked"));
 

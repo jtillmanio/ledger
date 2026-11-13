@@ -11,6 +11,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { easternYear } from "../../src/lib/settings";
+import { acceptedDay } from "../../src/lib/format";
 import { kWords } from "../../src/lib/plan-rail";
 import { testSql, type TestSql } from "../db";
 import {
@@ -53,7 +54,10 @@ async function withSql<T>(work: (sql: TestSql) => Promise<T>): Promise<T> {
   }
 }
 
-const clean = () => withSql((sql) => sql`DELETE FROM books WHERE id LIKE 'e2e-pt-%'`);
+const clean = () => withSql(async (sql) => {
+  await sql`DELETE FROM books WHERE id LIKE 'e2e-pt-%'`;
+  await sql`DELETE FROM plan_acceptance WHERE year IN (${Y}, ${QUIET})`;
+});
 
 // The E2E user's reading settings, as an earlier spec left them: put aside, so every capacity here is the
 // default one, and put back after. The suite runs one file at a time (workers: 1), so nothing races this.
@@ -181,7 +185,7 @@ test("AC-2, AC-3, Check: largest first; a placement writes the quarter's next or
   await expect(card).toBeVisible();
   // The year fits: a grey card that says so, with no congratulation.
   const year = await capacity(String(Y));
-  await expect(card.locator(".dt")).toHaveText(`2 placed. 1 still has no quarter. ${Y} fits, with ${kWords(year.capacity - year.planned)} of room.`);
+  await expect(card.locator(".dt-text")).toHaveText(`2 placed. 1 still has no quarter. ${Y} fits, with ${kWords(year.capacity - year.planned)} of room.`);
   await expect(card).not.toHaveAttribute("data-over");
   expect(await plan()).toMatchObject({ small: [q(2), 1], mid: [String(Y), null], big: [q(3), 2] });
 
@@ -219,7 +223,7 @@ test("Check, AC-3, AC-4: on /books/plan the fifth lane drops by one, Stop leaves
   const card = s.locator(".place-close");
   const year = await capacity(String(Y));
   expect(year.planned).toBeGreaterThan(year.capacity);
-  await expect(card.locator(".dt")).toHaveText(
+  await expect(card.locator(".dt-text")).toHaveText(
     `2 placed. ${Y} is still over by ${kWords(year.planned - year.capacity)} — placing them made the overage visible, not smaller.`);
   await expect(card).toHaveAttribute("data-over", "true");
   // Amber, never red: the card's ring is --blocked, and nothing in the sheet resolves to --danger.
@@ -290,4 +294,49 @@ test("AC-6: screenshots at 360, 834 and 1280px, light and dark: no horizontal sc
       await expect(s).toHaveCount(0);
     }
   }
+});
+
+test("task 2.7: an over year's closing card offers Rebalance and Accept; Accept settles it with an Undo, Rebalance swaps the sheet", CORE, async ({ page }) => {
+  await seed({ heavy: true });
+  let s = await open(page, `/books/plan?year=${Y}`);
+  // Skip every book: nothing is written, and the card says the year is still over.
+  for (let i = 0; i < 3; i += 1) await s.getByRole("button", { name: "Skip" }).click();
+  const card = s.locator(".place-close");
+  await expect(card).toHaveAttribute("data-over", "true");
+  const accept = card.getByRole("button", { name: "Accept as a stretch year" });
+  await expect(card.getByRole("button", { name: `Rebalance ${Y}` })).toBeVisible();
+  await expect(accept).toBeVisible();
+  await expect(card).toHaveClass("decide place-close");
+
+  // Accept: the row is stored, and the card turns the settled grey with today's date and an Undo, focused.
+  await accept.click();
+  await expect(card).toHaveAttribute("data-state", "settled");
+  await expect(card).toHaveClass("decide settled place-close");
+  const [row] = await withSql((sql) => sql<{ accepted_at: Date }[]>`SELECT accepted_at FROM plan_acceptance WHERE year = ${Y}`);
+  expect(row).toBeDefined();
+  await expect(card.locator(".dt-text")).toContainText(`accepted as a stretch year on ${acceptedDay(row.accepted_at.toISOString())}.`);
+  const undo = card.getByRole("button", { name: "Undo" });
+  await expect(undo).toBeFocused();
+  await undo.click();
+  await expect(card).not.toHaveAttribute("data-state", "settled");
+  await expect(card).toHaveClass("decide place-close");
+  expect(await withSql((sql) => sql`SELECT 1 FROM plan_acceptance WHERE year = ${Y}`)).toHaveLength(0);
+  await expect(accept).toBeFocused();
+
+  // Rebalance: the same sheet becomes the Rebalance sheet (one sheet, one history entry), heading focused.
+  await card.getByRole("button", { name: `Rebalance ${Y}` }).click();
+  const rebalance = page.getByRole("dialog", { name: `Rebalance ${Y}` });
+  await expect(rebalance.getByRole("heading", { name: `Rebalance ${Y}` })).toBeFocused();
+  await expect(rebalance.locator("button.rb-go")).toHaveCount(4);
+  await page.keyboard.press("Escape");
+  await expect(rebalance).toHaveCount(0);
+  await expect(placeThem(page)).toBeFocused();
+
+  // A year accepted already: the closing card opens settled.
+  await page.request.post("/api/plan/rebalance", { data: { action: "accept", year: Y } });
+  s = await open(page, `/books/plan?year=${Y}`);
+  for (let i = 0; i < 3; i += 1) await s.getByRole("button", { name: "Skip" }).click();
+  await expect(s.locator(".place-close")).toHaveAttribute("data-state", "settled");
+  await expect(s.locator(".place-close").getByRole("button", { name: "Undo" })).toBeVisible();
+  await page.keyboard.press("Escape");
 });

@@ -10,6 +10,7 @@ import { START_AFTER_FINISH, startAfterFinish, today, type Finish } from "@/lib/
 import type { Precision } from "@/lib/format";
 import type { Kind } from "@/lib/inbox";
 import { bookId, issueSlug, slug } from "@/lib/issue-slug";
+import { evenQuarters } from "@/lib/plan-rail";
 import { DEFAULT_SETTINGS, wordsPerYear, type ReadingSettings, type SettingsPatch } from "@/lib/settings";
 
 /** Every `book_status.status` value. `unlisted` is the level below Someday (task 1.21, D-86): a
@@ -1348,15 +1349,10 @@ export async function evenOutQuarters(userId: string, year: number): Promise<Qua
     const rows = await quarterRows(tx, userId, year);
     if (new Set(rows.map((r) => r.bookId)).size !== rows.length) return null;
     const before: QuarterLayout = { year, rows: rows.map(({ bookId, period, ordinal }) => ({ bookId, period, ordinal })) };
-    const total = rows.reduce((n, r) => n + r.words, 0);
-    if (total === 0) return before;
-    const share = total / 4;
-    let run = 0;
-    const wanted = rows.map((r) => {
-      const quarter = Math.min(3, Math.floor((run + r.words / 2) / share)) + 1;
-      run += r.words;
-      return { bookId: r.bookId, period: `${year}-Q${quarter}` };
-    });
+    if (rows.every((r) => r.words === 0)) return before;
+    // The rule is shared with the rebalance sheet's preview (task 2.7, 2 of 2), so what it shows is what this writes.
+    const quarters = evenQuarters(rows.map((r) => r.words));
+    const wanted = rows.map((r, i) => ({ bookId: r.bookId, period: `${year}-Q${quarters[i]}` }));
     await layOut(tx, userId, rows, wanted);
     return before;
   });

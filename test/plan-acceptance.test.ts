@@ -254,6 +254,23 @@ describe("evening out the quarters (AC-1, AC-5)", () => {
     expect(await planRows()).toEqual(before);
   });
 
+  it("GET previews it exactly (TASK-067's sheet): each quarter's words after, as the write then leaves them", async () => {
+    const res = await get("year=2027");
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    // Before: the four quarters as plan_capacity holds them; the next year's books; the overage's books.
+    expect(body.quarters.map((p: { plannedWords: number }) => p.plannedWords)).toEqual([1_000_000, 850_000, 900_000, 300_000]);
+    expect(body.next).toEqual({ year: 2028, books: 0 });
+    expect(body.overage.books.map((b: { id: string }) => b.id)).toEqual(["c", "d", "f"]);
+    expect(body.even).toEqual([700_000, 1_000_000, 650_000, 700_000]);
+    // Nothing was written by the preview.
+    expect(await quarter("2027-Q1")).toEqual(["a", "b", "c", "d"]);
+
+    await w.evenOutQuarters(USER, 2027);
+    const after = (await q.planCapacity(USER, 2027)).quarters.map((p) => p.plannedWords);
+    expect(after).toEqual(body.even);
+  });
+
   it("refuses its undo, changing nothing, once the year's books have changed", async () => {
     const layout = await w.evenOutQuarters(USER, 2027);
     expect(layout).not.toBeNull();

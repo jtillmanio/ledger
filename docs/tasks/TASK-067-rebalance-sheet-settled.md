@@ -1,14 +1,14 @@
 ---
 id: TASK-067
 title: 2.7 Rebalance (2 of 2) — the rebalance sheet and the settled stretch year
-status: Ready
+status: In progress
 depends_on: [TASK-066]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 9cee95b
 ---
 
 # TASK-067 — 2.7 Rebalance (2 of 2) — the rebalance sheet and the settled stretch year
@@ -84,9 +84,43 @@ unchanged and never puts a book ahead of one that was ahead of it before.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The plan picker's *Accept as a stretch year* stays `aria-disabled`; its reason now points at Rebalance on the plan page. Enabling it means *move, then accept the year*, shown only when the target's **year** would go over (the preview's `over` is the target period's, so a quarter over in a year that fits can't be accepted), which needs `previewPlanMove` to answer the year's figure too. TASK-072's budget line offers the same Accept (approved at plan) → docs/tasks/TASK-072-planning-sheet.md § Context
+- The plan page skeleton is ~14px short in its header and ~14px short in its rail at 1280px (from TASK-070); the settled state changes neither height (the footer badge keeps its line, the legend item its wrap at 1280px), so the gap is unchanged and still open (approved at plan) → docs/tasks/TASK-072-planning-sheet.md § Context
+- axe's `label-content-name-mismatch` on the rail's blocks (from TASK-068): untouched here, since this task changes no block's name (approved at plan) → docs/tasks/TASK-072-planning-sheet.md § Context
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+**Decisions taken at the gate (the owner asked for no stop; each is a question in the final report):**
+- **Where the banner goes:** `/books/plan` only, per the owner's later answer at TASK-049 Q2 (`docs/04-design.md` § 12 → Books dashboard and → Over-commitment). The dashboard's *This quarter* strip gets the settled hatch and its figure turns grey, and that is all the dashboard says. AC-1's "the dashboard renders `.decide.settled`" is tested on `/books/plan`'s card, and the PR reports the wording as a roadmap/task disagreement. `rebalance`'s settled frame is redrawn on Plan (`ui.redrawFiles`).
+- **Over means the year** (TASK-066's `planDecision`: `fits | over | settled` on the year's words). A year that fits with one quarter past its rule keeps the amber hatch and shows no card. An accepted year back under capacity reads `fits`, and the card says nothing.
+- **The picker's Accept is not enabled** (see Follow-ups); only its stale *arrives with 2.7* reason changes.
+- **Size:** about 20 files with tests, over the split line. Kept whole because the owner asked for the task done in one go; no schema change.
+
+**Steps**
+1. `src/lib/plan-rail.ts`: pure `decisionState(year, acceptedTotal)` and `evenQuarters(words[])` (the quarter for each book, by its words' midpoint). `planDecision` (queries) and `evenOutQuarters` (writes) call them, so the sheet's preview and the write share one rule.
+2. `src/db/queries.ts`: `planAcceptance(year)` (one row read: `acceptedAt` as ISO, `acceptedTotal`).
+3. `GET /api/plan/rebalance?year=` also answers `quarters` (the year's four), `next` (`{ year, books }` from `planYears(year, 2)`) and `even` (each quarter's words after *Even out*, from `planRail` and `evenQuarters`).
+4. `src/lib/format.ts`: `acceptedDay(iso)`, the Eastern day as `14 Sep` (`dayWhen`).
+5. `src/components/RebalanceSheet.tsx` (new): `RebalanceBody` (inside a `Sheet`: the lede, then four `.rb-opt` rows, each with a title, a delta and one `btn sec sm rb-go` of fixed equal size; the moves and even-out push an Undo toast; every action refreshes and closes; errors stay in the sheet as a neutral line) and `RebalanceButton` (opens it).
+6. `src/components/YearDecision.tsx` (new): the plan page's card. Amber `.decide` *2027 is over by 546k…* with **Rebalance 2027** and **Accept as a stretch year**; settled `.decide.settled` *✓ 2027 accepted as a stretch year on 14 Sep. It stays at …* with **Undo**. Focus goes to the other state's button after a change.
+7. `/books/plan` reads `planAcceptance` in its wave, renders the card when the state is over or settled, and passes `settled` to `PlanRail`. `PlanRail`: `data-settled` on the rail, the footer's over badge goes grey, and `RailLegend settled` reads *over, accepted (settled)* with a `--hatch-settled` swatch. `/books` does the same for `QuarterStrip` (settled hatch, grey figure and badge).
+8. `globals.css` (tokens only): `[data-settled]` hatch, ring and badge; `.lg.ovr.settled`; `.rb-opt`, `.rb-go`.
+9. `PlaceThem`'s closing card when over: **Rebalance 2027** swaps the same sheet to `RebalanceBody` (no second sheet, D-34), and **Accept as a stretch year** posts and turns the card settled with **Undo**. It reads the year's decision when it opens, so an accepted year's card is already grey. Closing refreshes the page after any change.
+10. `PlanPicker`: `STRETCH_WHY` becomes *Accept the whole year from Rebalance on the plan page.*
+11. Budgets: `/books` 10 → 11, `/books/plan` 4 → 5 (the acceptance row, in the same wave), with the reason in `docs/02-architecture.md` § Performance budget.
+12. Mockup `rebalance`: the settled frame and the sheet's backdrop on Plan rather than Books; a note line; `design/mockups-index.md` row.
+
+**Files:** steps 1–12 above, plus tests: `test/plan-rail.test.ts`, `test/plan-acceptance.test.ts`, `test/query-budget.test.ts`, `test/e2e/rebalance.spec.ts` (new), `test/e2e/place-them.spec.ts`, `test/e2e/plan-picker.spec.ts` (the reason text). Outside "Files likely touched": queries, writes, the route, format, `YearDecision.tsx`, PlaceThem, PlanPicker, RailLegend, the budget test and the architecture doc.
+
+**Test strategy**
+- AC-1: `rebalance.spec.ts` "Check": seed 2027-like year at ~118%; Accept → `plan_acceptance` row with today's date; `.decide.settled` on `/books/plan`, and every `.ov` on the rail and the dashboard strip computes `--hatch-settled`'s image, not `--hatch`'s; Undo → row gone and `.decide`; accept, then a placement past `accepted_total` → `.decide` again; *Even out* → same count, order kept (DB sequence). Unit: `plan-acceptance.test.ts` GET's `even` matches what `evenOutQuarters` writes, and `decisionState`.
+- AC-2: spec: four `.rb-go` with equal class and box, each delta text from the seed's figures; no element resolves to `--danger`; no *behind*.
+- AC-3: spec: banner text and the legend; `plan-rail.test.ts`: `settled` markup (`data-settled`, the legend copy, grey badge).
+- AC-4: spec: an acceptance row inserted with yesterday's date shows settled on a fresh load; placing a book past the total → `.decide`.
+- AC-5: spec: names, 24px/44px boxes, focus on the heading and back on the opener, contrast, settled hatch 3:1 against the surface, axe, no scroll at 360, screenshots 360/834/1280 × light/dark.
+- PlaceThem: `place-them.spec.ts`: the closing card's two buttons; Accept turns it settled; Rebalance swaps the sheet to *Rebalance <year>*.
+
+**Risks:** the strip's figure turning grey is my reading of "amber clears when you decide"; the even-out preview must match the write (one shared function, and a unit test pins it).
 
 ## Review log
 

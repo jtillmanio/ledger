@@ -6,11 +6,12 @@ import PlanShelf from "@/components/PlanShelf";
 import QuarterStrip from "@/components/QuarterStrip";
 import { DashboardVerbs, HeaderVerbs, ThumbBar, type BarConfig } from "@/components/ThumbBar";
 import {
-  booksInHand, inboxCount, keepGoing, lastFinish, onDeck, planCapacity, quarterBlocks, quarterShelf, readingSettings,
-  yearSoFar,
+  booksInHand, inboxCount, keepGoing, lastFinish, onDeck, planAcceptance, planCapacity, quarterBlocks, quarterShelf,
+  readingSettings, yearSoFar,
 } from "@/db/queries";
 import { requireUserId } from "@/lib/auth";
 import { today } from "@/lib/finish-date";
+import { decisionState } from "@/lib/plan-rail";
 import { BOOKS_NEXT_HREF } from "@/lib/status-tabs";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ export default async function Books() {
   const pace = readingSettings(userId);
   // One wave (architecture § Operational posture): Now's *Next in* rides on booksInHand, and
   // *Or keep going* (2.2d) leaves out the quarter's offer itself, so neither waits on another read.
-  const [hand, last, shelf, blocks, capacity, deck, soFar, settings, inbox, keep] = await Promise.all([
+  const [hand, last, shelf, blocks, capacity, deck, soFar, settings, inbox, keep, acceptance] = await Promise.all([
     booksInHand(userId),
     lastFinish(userId),
     quarterShelf(userId, period),
@@ -50,7 +51,10 @@ export default async function Books() {
     pace,
     inboxCount(userId),
     keepGoing(userId, period, KEEP_ROWS),
+    planAcceptance(year),
   ]);
+  // The strip's overage is grey once the year is accepted as a stretch year (task 2.7); the card itself is the plan page's.
+  const settled = decisionState(capacity.year, acceptance?.acceptedTotal ?? null) === "settled";
 
   const hero = hand[0] ?? null;
   // Between books, the offer is the quarter's lowest-ordinal book still to read (D-37).
@@ -82,7 +86,7 @@ export default async function Books() {
             ? <BooksNow book={hero} settings={settings} next={hero.next_in} />
             : <BetweenBooks last={last} offer={offer} quarter={quarter} today={day} keep={keep} />}
           <PlanShelf rows={shelf} period={period} quarter={quarter} />
-          <QuarterStrip cap={capacity.quarters[q - 1]} blocks={blocks} inHand={hero?.id ?? null} />
+          <QuarterStrip cap={capacity.quarters[q - 1]} blocks={blocks} inHand={hero?.id ?? null} settled={settled} />
         </div>
 
         <aside className="dash-side books-side" aria-label="On deck and this year">

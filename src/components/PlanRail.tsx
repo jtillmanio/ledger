@@ -58,7 +58,7 @@ const num = (n: number) => String(Math.round(n * 100_000) / 100_000);
  * (`useRailDrag`) and hovered for its name and words (`useBlockPopover`; task 2.10, 2 of 2, D-33). Touch and the
  * keyboard keep the press to the picker. The strip has neither.
  */
-export default function PlanRail({ year, books, quarters, axis = "column", inHand = null, label }: {
+export default function PlanRail({ year, books, quarters, axis = "column", inHand = null, label, settled = false }: {
   year: number;
   books: RailBook[];
   quarters: PeriodCapacity[];
@@ -67,6 +67,11 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
   inHand?: string | null;
   /** The strip's own summary, as its accessible name. */
   label?: string;
+  /**
+   * The year is accepted as a stretch year (task 2.7): the overage is still drawn, but hatched in grey
+   * (`--hatch-settled`) and its badges grey, and the legend says so. Only the held state clears.
+   */
+  settled?: boolean;
 }) {
   const inPeriod = (period: string) => books.filter((b) => b.period === period);
   const total = (list: RailBook[]) => list.reduce((n, b) => n + b.words, 0);
@@ -127,7 +132,7 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
     return (
       <>
       <div ref={root} tabIndex={-1} className="planrail strip" role="group" aria-label={label ?? `Plan ${cap.period}`}
-        data-over={cap.plannedWords > cap.capacity || undefined}>
+        data-over={cap.plannedWords > cap.capacity || undefined} data-settled={settled || undefined}>
         <div className="qcol" data-period={cap.period}>
           <div className="qstack">
             {items.map((item) => (
@@ -152,7 +157,7 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
     <>
     {drag.layer}
     {!lifted && pop.popover}
-    <div ref={root} tabIndex={-1} className="planrail" role="group" data-dragging={lifted ? true : undefined} aria-label={`Plan ${year}`} style={{ "--cap": num(Math.min(1, capacity / scale)) } as CSSProperties}>
+    <div ref={root} tabIndex={-1} className="planrail" role="group" data-dragging={lifted ? true : undefined} data-settled={settled || undefined} aria-label={`Plan ${year}`} style={{ "--cap": num(Math.min(1, capacity / scale)) } as CSSProperties}>
       {columns.map(({ cap, books: list }) => {
         const items = layoutColumn(list, { length: PHONE_COLUMN, scale, capacity: cap.capacity });
         const over = cap.plannedWords - cap.capacity;
@@ -171,8 +176,9 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
               </span>
               {over > 0 ? (
                 <>
-                  <span className="bdg bl phone">+{kWords(over)}</span>
-                  <span className="bdg bl desk">over {kWords(over)}</span>
+                  {/* Accepted, the overage is still said, in grey: a decision made, not one held (task 2.7). */}
+                  <span className={settled ? "bdg dn phone" : "bdg bl phone"}>+{kWords(over)}</span>
+                  <span className={settled ? "bdg dn desk" : "bdg bl desk"}>over {kWords(over)}</span>
                 </>
               ) : (
                 <span className="bdg dn desk">{kWords(-over)} room</span>
@@ -195,7 +201,7 @@ export default function PlanRail({ year, books, quarters, axis = "column", inHan
       </div>
       <span className="caprule" aria-hidden="true"><em>{kWords(capacity)}</em></span>
     </div>
-    <RailLegend />
+    <RailLegend settled={settled} />
     {sheets}
     </>
   );

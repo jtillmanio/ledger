@@ -23,15 +23,19 @@ const books = (n: number) => `${n} ${n === 1 ? "book" : "books"}`;
  * other three are one summary row each, with their total, book count and room (an amber badge past
  * capacity, never red). Reordering inside a quarter stays on the Up next tab (1.9). The one empty state
  * the page has is `room`, the room left across the quarters ahead; no quarter draws one of its own.
+ * A year accepted as a stretch year (task 2.7, `settled`) still says each quarter's overage, in grey.
  */
-export default function PlanQuarterRows({ quarters, rows, focus, room }: {
+export default function PlanQuarterRows({ quarters, rows, focus, room, settled = false }: {
   quarters: PeriodCapacity[];
   rows: PlanRow[];
   /** The quarter open at first, 1–4. */
   focus: number;
   /** The empty state's line, or null when no quarter ahead is empty. */
   room: string | null;
+  /** The year is accepted as a stretch year: an overage is a decision made, so its badge is grey, not amber. */
+  settled?: boolean;
 }) {
+  const overBadge = settled ? "bdg dn" : "bdg bl";
   const [open, setOpen] = useState(focus);
   const [moving, setMoving] = useState<{ row: PlanRow; opener: HTMLButtonElement } | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -56,7 +60,7 @@ export default function PlanQuarterRows({ quarters, rows, focus, room }: {
               <span className="mono">{kWords(cap.plannedWords)}</span>
               <span className="plan-count">{books(cap.books)}</span>
               {over > 0
-                ? <span className="bdg bl">over {kWords(over)}</span>
+                ? <span className={overBadge}>over {kWords(over)}</span>
                 : <span className="bdg dn">{kWords(-over)} room</span>}
             </button>
           );
@@ -66,7 +70,7 @@ export default function PlanQuarterRows({ quarters, rows, focus, room }: {
           <div key={cap.period} className="plan-open" data-period={cap.period}>
             <h2 ref={heading} tabIndex={-1}>
               {name} · <span className="mono">{kWords(cap.plannedWords)} of {kWords(cap.capacity)}</span>
-              {over > 0 && <span className="bdg bl">over {kWords(over)}</span>}
+              {over > 0 && <span className={overBadge}>over {kWords(over)}</span>}
             </h2>
             {mine.length > 0 && (
               <ul className="plan-rows">

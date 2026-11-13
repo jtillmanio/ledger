@@ -50,7 +50,7 @@ line numbers below drift after an edit.
 | `dashextras` | Dashboard extras — tonight, since, inbox, timer chip | 4803–4850 |
 | `states` | Offline, loading, empty, metadata pending, all read here, covers in a row | 4851–4942 |
 | `apistates` | Live-API states — loading, rate-limited, error | 4943–5000 |
-| `rebalance` | Rebalance sheet and the settled stretch year | 5001–5052 |
+| `rebalance` | Rebalance sheet and the settled stretch year, on Plan (task 2.7) | 5001–5052 |
 | `planmonth` | Plan rail — estimates, stacks, drag (month retired, D-38) | 5053–5106 |
 | `watchempty` | Watch — first run | 5107–5152 |
 | `palette` | Ctrl K — search and verbs | 5153–5203 |

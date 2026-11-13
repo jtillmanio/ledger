@@ -22,9 +22,11 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   // The books dashboard (task 2.2): Now, the last finish, the shelf, the strip's blocks and figure,
   // On deck, the year, your pace and the inbox count, together; an empty year's capacity reuses the pace.
   // Task 2.2d adds *Or keep going* (follow_next) in the same wave; Now's *Next in* rides on Now's read.
-  "/books": { queries: 10, waves: 1 },
-  // The plan page (task 2.10): the year's capacity, the rail's books, the quarters' rows and your pace, together.
-  "/books/plan": { queries: 4, waves: 1 },
+  // Task 2.7 adds the year's stretch-year acceptance (one row), so the strip's overage can read settled.
+  "/books": { queries: 11, waves: 1 },
+  // The plan page (task 2.10): the year's capacity, the rail's books, the quarters' rows and your pace, together;
+  // task 2.7 adds the year's acceptance row, for the capacity card and the settled hatch.
+  "/books/plan": { queries: 5, waves: 1 },
   "/inbox": { queries: 2, waves: 1 },
   "/settings": { queries: 2, waves: 1 },
   "/watch": { queries: 0, waves: 0 },
