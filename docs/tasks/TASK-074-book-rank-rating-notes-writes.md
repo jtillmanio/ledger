@@ -1,14 +1,14 @@
 ---
 id: TASK-074
 title: 3.4 Book ratings and top-books reorder
-status: Ready
+status: In progress
 depends_on: [TASK-010]
 size: S
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 11d4126
 ---
 
 # TASK-074 — 3.4 Book ratings and top-books reorder
@@ -61,9 +61,23 @@ A finished book can be given a place in its year's ranking, and a note, and putt
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- A ranked book whose finish is re-dated across years (`redateBookRead`, a `read` re-date) or cleared by a status undo keeps its `year_rank` in the wrong year, or with no year; nothing here prevents it, a later rank write to that year heals the list. TASK-075 moves the rank onto the read and should keep it with the read's year (approved at plan).
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-13. Answers to the plan-gate questions: **rating** is not written by this task (the rank is the only rating, D-3, D-101; the status POST's existing `rating` pass-through, task 1.5's, is left alone); **notes** are written through the API now, with no screen until TASK-079; **a book with no `book_status` row** is refused a note with a 400 (no `unlisted` row is created to hold it).
+
+1. Tests first: `test/year-rank.test.ts` (AC-1 to AC-5) through the routes on `TEST_DATABASE_URL`; confirm they fail.
+2. `src/db/writes.ts`: `rankBook(userId, bookId, rank)` and `unrankBook(userId, bookId)`, one per-user advisory lock (as `inQueue`). The year is `extract(year FROM finished_on)` (D-21); a book with no finish (`finished_on_precision = 'none'`) or no status row throws `RefusedStatus`. The write reads the year's ranked books in order (`year_rank`, then `book_id`), takes the book out, puts it at `rank` (clamped to 1…N+1), and renumbers 1…k, so a gap or duplicate it finds is healed. Answers `{ bookId, year, before: [{bookId, rank}], after: [{bookId, rank}] }` for every row it changed; `undoRank` puts `before` back, refusing (false → 409) when any of those rows no longer holds its `after` rank. Null for a missing or removed book.
+3. `saveBookNote(userId, bookId, text)`: trimmed, empty stores NULL; a book with no status row throws `RefusedStatus`. Answers `{ bookId, prior, note }`; `undoBookNote` refuses when the note is no longer `note`.
+4. Routes: `src/app/api/progress/book/rank/route.ts` (POST `{ bookId, rank: n | null }`, null takes the book out; DELETE `{ change }`) and `src/app/api/progress/book/note/route.ts` (POST `{ bookId, note }`; DELETE `{ change }`). Bad input or a refused write is 400, a missing book 404, a stale undo 409.
+5. AC-5: a ranked or noted book keeps its `book_status` row through `undoBookStatus`'s delete-if-empty path and `undoAddBooks`'s Unlisted promotion undo (both already check `notes` and `year_rank` IS NULL).
+
+**Files:** `src/db/writes.ts`; `src/app/api/progress/book/rank/route.ts` (new); `src/app/api/progress/book/note/route.ts` (new); `test/year-rank.test.ts` (new). No schema change.
+
+**Tests:** `test/year-rank.test.ts`, one `describe` per AC.
+
+**Risks:** a ranked book whose finish is re-dated across years, or cleared by a status undo, keeps its rank in the wrong year or none; a later rank write to that year heals it. Follow-up to TASK-075, which moves the rank onto the read.
 
 ## Review log
 
