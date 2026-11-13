@@ -467,6 +467,15 @@ run_queue(user_id → users, run_id → runs, ordinal int NOT NULL,
 the dashboard and the status screen read one ordered row set with state and
 badges, and nothing is computed in the app.
 
+**A year's book ranking has the same shape** (task 3.4b, D-101, D-150). The
+rank is authored, so it is stored, on the read: `read_events.year_rank`,
+contiguous from 1 over the year's ranked reads, renumbered in one transaction
+on every write (`rankRead`), with no unique constraint because the year is
+derived (`extract(year FROM finished_on)`, D-21) and never stored. A rank on
+the read, not the book, lets a book read in two years rank in each; a read
+with no date (2.17's `none`) has no year and no rank. The top ten is the
+first ten, read off the order, never stored apart.
+
 **Table count:** 33 in `src/db/schema.ts` today (migrations through `0014`, which added `run_queue`); the proposed tables are in §4.
 
 **2.17 A date is stored with its precision.** *Sept 2026, D-R3-1 (closes
@@ -677,6 +686,7 @@ the same PR (hard rule 7).
 | 2.2c | `shelf_follows(shelf_id, state)`, `shelf_id` the primary key (→ `shelves.id`, cascade), `state IN ('tracking', 'reading')`, no `user_id`, exported with the catalog tables beside `shelf_books`; the `shelf_progress` view (books listed and read per books shelf, live books only, with `follow_state`) | Built (migration 0022, TASK-048); approved by the owner 2026-11-04; 2.5e, D-43, D-91, D-108 |
 | 2.2h | `subseries_follows(subseries_id, state)`, `subseries_id` the primary key (→ `book_subseries.id`, cascade), `state IN ('tracking', 'reading', 'off')`, no `user_id`, exported with the catalog tables; an `off` value of `state` on `series_follows` and `universe_follows` (*Not following* that sticks: no finish follows it again), which every progress view reads as NULL; author and shelf follows take no `off`; the `subseries_progress` view. No down file: the migration drops and retypes nothing | Built (migration 0023, TASK-055); approved by the owner 2026-11-07; D-91, D-117 |
 | 2.10b | `books.added_at timestamptz`, nullable with no default: `\copy books(...)` names its columns, so every loaded row stays NULL, and `createBooks`, the one path that inserts a book, stamps `now()`. *Recently added* reads it; no table (the suggestions are the `plan_suggestions` function). No down file: the migration only adds a column | Built (migration 0024, TASK-071); approved by the owner 2026-11-10; D-104 |
+| 3.4b | `read_events.year_rank` (nullable integer), replacing `book_status.year_rank`; a ranked `read` status with no log row gets its read logged by the migration. Ships `drizzle/down/0026_rank_on_read.sql`: the book keeps its latest read's rank | Built (migration 0026, TASK-075); approved by the owner 2026-11-13; 2.16, D-101, D-150 |
 | 5.17 | `owned_copies(book_id, format)`, primary key both (`book_id` → `books.id`), `format IN ('physical', 'audio')`, no `user_id`, replacing `physical_copies(book_id)`; *Ebook* stays derived from `books.calibre_id` | Asked at 5.17's plan gate; D-121, D-132 |
 | 4.4 | Where a decided near-spelling row is remembered between syncs (D-87 leaves no other decision), and where each sync run's log is kept (D-133) | Asked at 4.4's plan gate |
 | 2.1b | `sessions` | §4.3 |

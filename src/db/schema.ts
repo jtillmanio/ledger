@@ -360,7 +360,7 @@ export const bookStatus = pgTable("book_status", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   bookId: text("book_id").notNull().references(() => books.id, { onDelete: "cascade" }),
   status: text("status").notNull().default("to_read"), // to_read | reading | listening (task 1.23) | read | dnf | unlisted (below Someday, task 1.21, D-86; no CHECK)
-  yearRank: integer("year_rank"),           // your top-10 position for that year
+  // No year_rank: a rank belongs to a read (read_events.year_rank, task 3.4b, D-101).
   rating: doublePrecision("rating"),
   // A real date since migration 0004 (it was text and 100% NULL). Same rule as
   // issue_progress: precision 'none' exactly when the date is NULL. A finish
@@ -409,6 +409,13 @@ export const readEvents = pgTable("read_events", {
   // 1.23 was 'text', and so is a backfilled or loaded one (D-41, D-87).
   format: text("format").notNull().default("text"), // text | audio
   rereadOf: integer("reread_of"),
+  // This read's place in its finish year's ranking (task 3.4b, D-101): a year's
+  // ranks are contiguous from 1 over its ranked reads, and the top ten is the
+  // first ten, read off the order. The year is extract(year FROM finished_on),
+  // never stored (D-21), so a read with no date has no rank. A rank on the read,
+  // not the book, lets a book reread in another year rank in both. NULL is
+  // unranked (*Not ranked yet*). Written only through rankRead in writes.ts.
+  yearRank: integer("year_rank"),
 }, (t) => ({
   byBook: index("read_events_user_book_idx").on(t.userId, t.bookId),
   byPlacement: index("read_events_user_placement_idx").on(t.userId, t.placementId),

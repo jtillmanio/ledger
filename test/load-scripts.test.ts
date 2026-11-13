@@ -89,7 +89,7 @@ describe.each(["load.ps1", "load.sh"])("%s, task 1.18", (name) => {
   });
 
   it("copies read_events after books and the owner, from the bound CSV", () => {
-    const copy = at(/\\+copy read_events\(user_id,book_id,finished_on,finished_on_precision\) FROM '[^']*(tmp|Path)[^']*\/read_events\.csv' CSV HEADER/);
+    const copy = at(/\\+copy read_events\(user_id,book_id,finished_on,finished_on_precision,year_rank\) FROM '[^']*(tmp|Path)[^']*\/read_events\.csv' CSV HEADER/);
     expect(copy).toBeGreaterThan(at(/\\+copy books\(/));
     expect(copy).toBeGreaterThan(at(/INSERT INTO users/));
     const bind = /(?:foreach \(\$f in @\(|for f in )([^);]*)/.exec(text)![1];

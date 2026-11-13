@@ -81,8 +81,8 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan, read_event
 
 \\copy issue_progress(user_id,placement_id,completed_at,completed_at_precision) FROM '$tmp/issue_progress.csv' CSV HEADER
 \\copy edition_progress FROM '$tmp/edition_progress.csv' CSV HEADER
-\\copy book_status(user_id,book_id,status,finished_on,finished_on_precision,year_rank,rating) FROM '$tmp/book_status.csv' CSV HEADER
-\\copy read_events(user_id,book_id,finished_on,finished_on_precision) FROM '$tmp/read_events.csv' CSV HEADER
+\\copy book_status(user_id,book_id,status,finished_on,finished_on_precision,rating) FROM '$tmp/book_status.csv' CSV HEADER
+\\copy read_events(user_id,book_id,finished_on,finished_on_precision,year_rank) FROM '$tmp/read_events.csv' CSV HEADER
 \\copy reading_plan(user_id,book_id,period,ordinal) FROM '$tmp/reading_plan.csv' CSV HEADER
 \\copy series_follows(user_id,series_id,state) FROM '$tmp/series_follows.csv' CSV HEADER
 \\copy author_follows(user_id,author_id,state) FROM '$tmp/author_follows.csv' CSV HEADER

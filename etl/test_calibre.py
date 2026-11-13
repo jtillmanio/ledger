@@ -431,7 +431,7 @@ class Check(Case):
         bid = self.book_by_title("The Way of Kings")["id"]
         self.assertEqual(self.seed_rows("read_events"), [
             {"user_id": "$OWNER", "book_id": bid, "finished_on": "2021-03-20",
-             "finished_on_precision": "exact"}])
+             "finished_on_precision": "exact", "year_rank": ""}])  # unranked: only Top Books ranks (3.4b)
         status = self.status_of("The Way of Kings")
         self.assertEqual((status["status"], status["finished_on"], status["finished_on_precision"]),
                          ("read", "2021-03-20", "exact"))

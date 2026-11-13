@@ -567,8 +567,8 @@ class BookStatusFinishDate(unittest.TestCase):
 
         with (out / "book_status.csv").open(newline="", encoding="utf-8") as fh:
             header = next(csv.reader(fh))
-        self.assertEqual(header, ["user_id", "book_id", "status", "finished_on", "finished_on_precision",
-                                  "year_rank", "rating"])
+        # No year_rank: a rank belongs to a read, in read_events.csv (task 3.4b).
+        self.assertEqual(header, ["user_id", "book_id", "status", "finished_on", "finished_on_precision", "rating"])
         rows = {r["book_id"].split("-")[0]: r for r in read(out, "book_status")}
         self.assertEqual((rows["piranesi"]["status"], rows["piranesi"]["finished_on"],
                           rows["piranesi"]["finished_on_precision"]), ("to_read", "", "none"))
@@ -1420,6 +1420,92 @@ class BookHold(BookCase):
         self.extract(self.workbook(), calibre=True)
         self.assertEqual([r["title"] for r in read(self.missing.parent, "calibre_missing")], ["The Way of Kings"])
         self.assertEqual([r["title"] for r in self.hold_rows()], ["The Hollow Crown"])
+
+
+class TopBooksRanks(BookCase):
+    """Task 3.4b (D-101), AC-5: the workbook's Top Books tab ranks a title in a
+    year, with no author. Each rank goes onto that book's read in that year in
+    seed/read_events.csv (Calibre's reads, D-87), the year's landed ranks
+    renumbered 1…N in the workbook's order. A ranked title with no read that
+    year, or one naming two books read that year, is reported, never dropped."""
+
+    def extract_top(self) -> None:
+        import io
+        from contextlib import redirect_stdout
+        calibre = Path(tempfile.mkdtemp()) / "calibre_books.csv"
+        BookHold.write(calibre, ex.CALIBRE_BOOKS_COLUMNS, [
+            {"title": t, "author": a, "calibre_id": str(n), "read": "true", "date_read": d, "precision": "exact"}
+            for n, (t, a, d) in enumerate([
+                ("Piranesi", "Susanna Clarke", "2023-03-04"),
+                ("Dune", "Frank Herbert", "2023-06-01"),
+                ("Emma", "Jane Austen", "2022-05-05"),
+                ("Red Queen", "Victoria Aveyard", "2023-02-02"),
+                ("Red Queen", "Christina Henry", "2023-09-09"),
+            ], start=1)])
+        top = df({"Unnamed: 0": [1, 2, 3, 4, 5],
+                  "2023": ["Dune", "Emma", "Piranesi", "Red Queen", "A Book Nobody Has"]})
+        path = build_books([("Piranesi", "Susanna Clarke", None, None, None),
+                            ("Dune", "Frank Herbert", None, None, None),
+                            ("Emma", "Jane Austen", None, None, None),
+                            ("Red Queen", "Victoria Aveyard", None, None, None),
+                            ("Red Queen", "Christina Henry", None, None, None)], {"Top Books": top})
+        ex.UNRESOLVED.clear()
+        ex.CHANGES.clear()
+        with redirect_stdout(io.StringIO()):
+            ex.extract_books(path, self.out, book_review=self.review, calibre_books=calibre)
+
+    def test_each_rank_lands_on_its_books_read_in_that_year(self):
+        self.extract_top()
+        ranks = {r["book_id"]: (r["finished_on"], r["year_rank"]) for r in read(self.out, "read_events")}
+        self.assertEqual(ranks, {
+            "dune-frank-herbert": ("2023-06-01", "1"),
+            "piranesi-susanna-clarke": ("2023-03-04", "2"),  # the workbook's 3, after Emma's 2 found no read
+            "emma-jane-austen": ("2022-05-05", ""),
+            "red-queen-victoria-aveyard": ("2023-02-02", ""),
+            "red-queen-christina-henry": ("2023-09-09", ""),
+        })
+        with (self.out / "read_events.csv").open(newline="", encoding="utf-8") as fh:
+            self.assertEqual(next(csv.reader(fh)), ex.READ_EVENTS_COLUMNS)
+        self.assertIn("year_rank", ex.READ_EVENTS_COLUMNS)
+
+    def test_a_rank_with_no_read_that_year_or_two_is_reported_never_dropped(self):
+        self.extract_top()
+        reported = {(u["reason"], u["detail"].split(":")[0]) for u in ex.UNRESOLVED if u["table"] == "read_events"}
+        self.assertEqual(reported, {
+            ("top books rank has no read", "Emma (Top Books 2023, rank 2)"),
+            ("top books rank names several books", "Red Queen (Top Books 2023, rank 4)"),
+            ("top books rank names no book", "A Book Nobody Has (Top Books 2023, rank 5)"),
+        })
+        # Still listed for the owner, as every workbook read is.
+        listed = [(r["title"], r["rank"]) for r in read(self.out, "workbook_reads") if r["tab"] == "Top Books"]
+        self.assertEqual(len(listed), 5)
+
+    def test_one_book_read_twice_in_the_year_or_one_read_ranked_twice_is_reported(self):
+        """Calibre logs one read per book today (second_read, D-87), so extract
+        can't build these yet: rank_reads is given the reads directly. A book
+        with two 2023 reads takes no rank on either; a second rank naming a read
+        already ranked is reported and the first rank stands."""
+
+        class Index:  # the two lookups rank_reads makes of a BookIndex
+            by_key = {("dune", "frank herbert"): {"id": "dune", "title": "Dune"},
+                      ("emma", "jane austen"): {"id": "emma", "title": "Emma"}}
+
+            def find_book(self, title):
+                return {"Dune": self.by_key[("dune", "frank herbert")],
+                        "Emma": self.by_key[("emma", "jane austen")]}.get(title)
+
+        events = [{"book_id": "dune", "finished_on": "2023-02-01", "year_rank": None},
+                  {"book_id": "dune", "finished_on": "2023-11-01", "year_rank": None},
+                  {"book_id": "emma", "finished_on": "2023-05-05", "year_rank": None}]
+        reads = [{"title": t, "year": 2023, "genre": None, "tab": "Top Books", "rank": r}
+                 for t, r in [("Dune", 1), ("Emma", 2), ("Emma", 3)]]
+        ex.UNRESOLVED.clear()
+        ex.rank_reads(reads, events, Index())
+        self.assertEqual([e["year_rank"] for e in events], [None, None, 1])
+        self.assertEqual({(u["reason"], u["detail"].split(":")[0]) for u in ex.UNRESOLVED}, {
+            ("top books rank matches two reads", "Dune (Top Books 2023, rank 1)"),
+            ("top books ranks one read twice", "Emma (Top Books 2023, rank 3)"),
+        })
 
 
 class WishlistReview(BookCase):
