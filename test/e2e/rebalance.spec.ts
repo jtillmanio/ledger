@@ -111,6 +111,8 @@ const tokenImage = (page: Page, token: string) => page.evaluate((t) => {
 const hatches = (scope: Locator) => scope.locator(".ov").evaluateAll((els) => els.map((el) => getComputedStyle(el).backgroundImage));
 
 const card = (page: Page) => page.locator(".plan-decision");
+/** The rail's key, not the loading skeleton's copy of it (aria-hidden), which can still be in the page as it streams. */
+const legend = (page: Page) => page.locator(".qlegend:not([aria-hidden])");
 const sheet = (page: Page) => page.getByRole("dialog", { name: `Rebalance ${Y}` });
 const acceptButton = (page: Page) => card(page).getByRole("button", { name: "Accept as a stretch year" });
 const rebalanceButton = (page: Page) => card(page).getByRole("button", { name: `Rebalance ${Y}` });
@@ -149,7 +151,7 @@ test("Check, AC-3: accepting stores the date, the card turns .decide.settled, ev
   const rail = page.locator('.planrail[role="group"]');
   expect((await hatches(rail)).length).toBeGreaterThan(0);
   expect(new Set(await hatches(rail))).toEqual(new Set([held]));
-  await expect(page.locator(".qlegend")).toContainText("over capacity");
+  await expect(legend(page)).toContainText("over capacity");
 
   await hydrated(acceptButton(page));
   await acceptButton(page).click();
@@ -166,8 +168,8 @@ test("Check, AC-3: accepting stores the date, the card turns .decide.settled, ev
   await expect(undo).toBeFocused();
   // The overage is still drawn, every part of it now in the grey hatch, and the key says so.
   expect(new Set(await hatches(rail))).toEqual(new Set([settled]));
-  await expect(page.locator(".qlegend")).toContainText("over, accepted (settled)");
-  await expect(page.locator(".qlegend")).not.toContainText("over capacity");
+  await expect(legend(page)).toContainText("over, accepted (settled)");
+  await expect(legend(page)).not.toContainText("over capacity");
   expect(await dangerCount(page, card(page))).toBe(0);
   // Only the held state clears: every quarter's overage is still said, on the rail and in the rows, in grey.
   await expect(page.locator(".plan-quarters .bdg.bl, .planrail .qcol:not(.nq) .qfoot .bdg.bl")).toHaveCount(0);
@@ -185,7 +187,7 @@ test("Check, AC-3: accepting stores the date, the card turns .decide.settled, ev
   await expect(card(page)).toHaveClass("decide plan-decision");
   expect(await acceptances(Y)).toHaveLength(0);
   expect(new Set(await hatches(rail))).toEqual(new Set([held]));
-  await expect(page.locator(".qlegend")).toContainText("over capacity");
+  await expect(legend(page)).toContainText("over capacity");
   await expect(acceptButton(page)).toBeFocused();
 });
 

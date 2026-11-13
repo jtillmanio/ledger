@@ -123,6 +123,14 @@ describe("accepting a stretch year (AC-1, AC-2)", () => {
     expect(await q.planDecision(USER, 2027)).toMatchObject({ state: "over", acceptedAt: null, acceptedTotal: null });
   });
 
+  it("planAcceptance (TASK-067) reads the year's row alone: null before, the ISO date and the figure after", async () => {
+    expect(await q.planAcceptance(2027)).toBeNull();
+    await w.acceptStretch(USER, 2027);
+    const [row] = await acceptances();
+    expect(await q.planAcceptance(2027)).toEqual({ acceptedAt: row.accepted_at.toISOString(), acceptedTotal: 3_585_000 });
+    expect(await q.planAcceptance(2028)).toBeNull();
+  });
+
   it("a year that fits has nothing to accept: 409, and no row", async () => {
     const res = await post({ action: "accept", year: 2029 });
     expect(res.status).toBe(409);
@@ -255,16 +263,25 @@ describe("evening out the quarters (AC-1, AC-5)", () => {
   });
 
   it("GET previews it exactly (TASK-067's sheet): each quarter's words after, as the write then leaves them", async () => {
+    // Where the preview's books (the rail's) and the write's (every quarter row) differ: a book with no count in
+    // Q2, and a removed book still holding a Q1 row. Neither counts in a total, so neither may move the preview.
+    await sql`INSERT INTO books (id, title) VALUES ('n', 'Book N')`;
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'n', 'to_read')`;
+    await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${USER}, 'n', '2027-Q2', 3)`;
+    await sql`INSERT INTO books (id, title, word_count, word_count_source, deleted_at) VALUES ('z', 'Book Z', 900000, 'stated', now())`;
+    await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'z', 'to_read')`;
+    await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${USER}, 'z', '2027-Q1', 5)`;
     const res = await get("year=2027");
     expect(res.status).toBe(200);
     const body = await res.json();
     // Before: the four quarters as plan_capacity holds them; the next year's books; the overage's books.
     expect(body.quarters.map((p: { plannedWords: number }) => p.plannedWords)).toEqual([1_000_000, 850_000, 900_000, 300_000]);
     expect(body.next).toEqual({ year: 2028, books: 0 });
-    expect(body.overage.books.map((b: { id: string }) => b.id)).toEqual(["c", "d", "f"]);
+    // n, at the end of Q2's order, is past its rule too: it moves with the overage, its words unknown.
+    expect(body.overage.books.map((b: { id: string }) => b.id)).toEqual(["c", "d", "f", "n"]);
     expect(body.even).toEqual([700_000, 1_000_000, 650_000, 700_000]);
     // Nothing was written by the preview.
-    expect(await quarter("2027-Q1")).toEqual(["a", "b", "c", "d"]);
+    expect(await quarter("2027-Q1")).toEqual(["a", "b", "c", "d", "z"]);
 
     await w.evenOutQuarters(USER, 2027);
     const after = (await q.planCapacity(USER, 2027)).quarters.map((p) => p.plannedWords);

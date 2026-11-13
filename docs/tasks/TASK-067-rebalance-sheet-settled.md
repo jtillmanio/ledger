@@ -108,7 +108,8 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 9. `PlaceThem`'s closing card when over: **Rebalance 2027** swaps the same sheet to `RebalanceBody` (no second sheet, D-34), and **Accept as a stretch year** posts and turns the card settled with **Undo**. It reads the year's decision when it opens, so an accepted year's card is already grey. Closing refreshes the page after any change.
 10. `PlanPicker`: `STRETCH_WHY` becomes *Accept the whole year from Rebalance on the plan page.*
 11. Budgets: `/books` 10 → 11, `/books/plan` 4 → 5 (the acceptance row, in the same wave), with the reason in `docs/02-architecture.md` § Performance budget.
-12. Mockup `rebalance`: the settled frame and the sheet's backdrop on Plan rather than Books; a note line; `design/mockups-index.md` row.
+12. Mockup `rebalance`: the settled frame and the sheet's backdrop on Plan rather than Books; a note line; `design/mockups-index.md` row. The lede, the deltas and the settled line are redrawn in the year's figures, because over means the year (spec-review advisory).
+13. *(Plan revision 1, after the first screenshots.)* `src/components/PlanQuarterRows.tsx` takes `settled`: the quarter rows' *over Nk* badges go grey like the rail's footers. The screenshots showed amber badges under a settled rail, which contradicts "only the held state clears" (§ 12, Plan Rail Spec A4.2). The Check test in `rebalance.spec.ts` covers it.
 
 **Files:** steps 1–12 above, plus tests: `test/plan-rail.test.ts`, `test/plan-acceptance.test.ts`, `test/query-budget.test.ts`, `test/e2e/rebalance.spec.ts` (new), `test/e2e/place-them.spec.ts`, `test/e2e/plan-picker.spec.ts` (the reason text). Outside "Files likely touched": queries, writes, the route, format, `YearDecision.tsx`, PlaceThem, PlanPicker, RailLegend, the budget test and the architecture doc.
 
