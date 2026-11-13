@@ -493,7 +493,7 @@ SELECT g.book_id, min(g.genre COLLATE "C") AS genre, g.depth, bool_or(g.direct) 
 FROM (
   SELECT t.book_id, t.genre, t.depth, t.direct FROM book_genre_tree t
   UNION ALL
-  SELECT b.id, b.genre, 1, true FROM books b
+  SELECT b.id, btrim(b.genre), 1, true FROM books b
   WHERE b.deleted_at IS NULL AND btrim(b.genre) <> ''
     AND NOT EXISTS (SELECT 1 FROM book_genres x WHERE x.book_id = b.id)
 ) g
@@ -508,8 +508,10 @@ GROUP BY g.book_id, lower(g.genre), g.depth;
 -- The genre is each top-level genre of book_genre_levels (task 4.5, D-98): a
 -- read counts once under each, so a year's genres can sum past its reads (the
 -- year chips count reads, not this); a book with none is under NULL. One
--- spelling whatever the case across books; the column keeps the database's
--- collation, which CREATE OR REPLACE can't change.
+-- spelling whatever the case across books (folded under the database's own
+-- collation, as book_genre_levels' genre is "C" and lower() under "C" folds
+-- ASCII only); the column keeps the database's collation, which CREATE OR
+-- REPLACE can't change.
 CREATE OR REPLACE VIEW books_by_year AS
 SELECT r.user_id, extract(year FROM r.finished_on)::int AS year, min(g.genre) COLLATE "default" AS genre,
        COUNT(*) AS books, SUM(b.word_count) AS words,
@@ -517,7 +519,7 @@ SELECT r.user_id, extract(year FROM r.finished_on)::int AS year, min(g.genre) CO
 FROM book_reads r JOIN books b ON b.id = r.book_id
 LEFT JOIN book_genre_levels g ON g.book_id = b.id AND g.depth = 1
 WHERE r.finished_on IS NOT NULL AND b.deleted_at IS NULL
-GROUP BY r.user_id, extract(year FROM r.finished_on)::int, lower(g.genre);
+GROUP BY r.user_id, extract(year FROM r.finished_on)::int, lower(g.genre COLLATE "default");
 
 -- A plan row's period, read (task 1.7, D-37, D-38): '2027-Q1' is year 2027,
 -- quarter 1, level 'quarter'; '2027' is year 2027 with no quarter, level 'year';

@@ -602,7 +602,7 @@ export async function listBooks(
       AND (${status}::text IS NOT NULL OR ${q}::text IS NOT NULL OR st.status IS DISTINCT FROM 'unlisted')
       AND (${genre}::text  IS NULL
            OR EXISTS (SELECT 1 FROM book_genre_levels l
-                      WHERE l.book_id = b.id AND lower(l.genre) = lower(${genre})))
+                      WHERE l.book_id = b.id AND lower(l.genre COLLATE "default") = lower(${genre})))
       AND (${year}::int    IS NULL
            OR EXISTS (SELECT 1 FROM book_reads r
                       WHERE r.user_id = ${userId} AND r.book_id = b.id
@@ -841,12 +841,12 @@ export async function listCounts(userId: string): Promise<{ unyeared: number; un
        JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
        WHERE st.user_id = ${userId} AND st.status = 'unlisted') AS unlisted,
       (SELECT COALESCE(json_agg(json_build_object('genre', c.genre, 'books', c.books)
-                                ORDER BY c.books DESC, lower(c.genre), c.genre), '[]'::json)
+                                ORDER BY c.books DESC, lower(c.genre COLLATE "default"), c.genre), '[]'::json)
        FROM (SELECT min(l.genre) AS genre, COUNT(DISTINCT l.book_id)::int AS books
              FROM book_genre_levels l
              LEFT JOIN book_status st ON st.book_id = l.book_id AND st.user_id = ${userId}
              WHERE l.depth = 1 AND st.status IS DISTINCT FROM 'unlisted'
-             GROUP BY lower(l.genre)) c) AS genres
+             GROUP BY lower(l.genre COLLATE "default")) c) AS genres
   `;
   return row;
 }

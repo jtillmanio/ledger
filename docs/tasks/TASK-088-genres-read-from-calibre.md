@@ -128,6 +128,7 @@ _Approved 2026-11-13. Plan-gate answers (the entry's questions): a Library row s
 _Filled by /implement-task. One line per round._
 
 - Verify R1 FAIL(1: reading-log.test.tsx flake, passes alone; follow-up) → R2 PASS (tsc, lint, test:no-e2e: 1705 vitest, views SQL, 381 ETL) | touched specs in w390-light PASS (library-genres 4/4 after a cleanup-order fix, plan-rail, skeletons)
+- Spec R1 APPROVE | Schema R1 APPROVE (3 MINOR: lower() under "C" folds ASCII only → COLLATE "default" on the readers this task added (not provable on the C-collated test databases); the workbook fallback untrimmed → btrim, new test fails without it; data-model/schema.md views docs → follow-up) | Verify R3 PASS (1706 vitest, views SQL, 381 ETL)
 
 ## Blocked
 

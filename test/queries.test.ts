@@ -132,6 +132,13 @@ describe("the Library's genres from Calibre (task 4.5)", () => {
     expect(rows).toMatchObject({ cal: "Romantasy", wb: "Sci-Fi", fan2: "Fantasy", fan3: "Dark Fantasy", plain: null });
   });
 
+  it("trims a workbook genre, so ' Sci-Fi ' is the same chip, filter and row as 'Sci-Fi' (schema review)", async () => {
+    await sql`UPDATE books SET genre = ' Sci-Fi ' WHERE id = 'plain'`;
+    expect((await q.listCounts(USER)).genres).toContainEqual({ genre: "Sci-Fi", books: 2 });
+    expect(await under("Sci-Fi")).toEqual(["plain", "wb"]);
+    expect((await q.listBooks(USER)).find((r) => r.id === "plain")?.genre).toBe("Sci-Fi");
+  });
+
   it("breaks a tie between two deepest paths by the path, alphabetically (AC-3)", async () => {
     await sql`INSERT INTO book_genres (book_id, genre) VALUES ('plain', 'Science Fiction.Space Opera'), ('plain', 'Fantasy.Epic Fantasy')`;
     expect((await q.listBooks(USER)).find((r) => r.id === "plain")?.genre).toBe("Epic Fantasy");
