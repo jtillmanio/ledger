@@ -243,6 +243,17 @@ describe("the real run (AC-3)", () => {
   });
 });
 
+describe("the page count's order (AC-3, D-130)", () => {
+  it("takes the matched edition's count when Hardcover has no book-level one", async () => {
+    const [edition] = RECORDED["isbn:9780316229296"];
+    const noBookPages = [{ ...edition, book: { ...edition.book, pages: null } }];
+    await sql`UPDATE hardcover_cache SET body = ${sql.json(noBookPages as never)} WHERE key = 'isbn:9780316229296'`;
+    const report = await run({ limit: 100 });
+    if (report.status === "refused") throw new Error(report.reason);
+    expect(await bookRow("fifth-season")).toMatchObject({ hardcover_id: 555001, page_count: 468 });
+  });
+});
+
 describe("a book that changes while the run asks (AC-3)", () => {
   it("writes nothing to a book given an id, or renamed, between the read and the write", async () => {
     await sql`DELETE FROM hardcover_cache WHERE key IN ('search:piranesi susanna clarke', 'search:small gods terry pratchett')`;

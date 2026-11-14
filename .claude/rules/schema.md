@@ -185,7 +185,9 @@ Release, test isolation) and the Hard rules a reviewer checks.
   (`src/lib/book-match.ts`, `enrich_books.decide` ported). A match sets
   `hardcover_id`, and `page_count` (the book's count, else the edition's,
   D-130), `cover_url` and `published_year` only where NULL: no column says a
-  count was typed, so nothing already there is replaced. Series and position
+  count was typed, so nothing already there is replaced. A match is written
+  only while the book is as it was read: no id since, the same title and
+  author, still live. Series and position
   fill nothing (D-87); a differing `series_position` is reported. A proposal or
   two matches fill nothing and are listed. It writes straight into `books`, so
   it reaches the live database only through the deployed app (D-18); nothing

@@ -29,6 +29,7 @@ The app can take what changed in Calibre since the last sync, apply it the way t
 - **5.17 has no task file yet** (D-132 proposes `owned_copies(book_id, format)`). The owned formats this route returns are 5.17's; its task joins `depends_on` when created, and is built before this one (the tasklist's order: 5.17 → 4.4).
 - Data model: `docs/03-data-model.md` § 2. Decisions, 2.19; § 4.1. Architecture: `docs/02-architecture.md` § 5. Routes and data access, § 10. Metadata sources → Books.
 - Decisions: D-59, D-61, D-83, D-87, D-89, D-90, D-91, D-93, D-98, D-130, D-132, D-133. Hard rules 2, 3, 4, 5 and 7.
+- *From TASK-084 (4.2, PR #255):* the Hardcover backfill (`POST /api/books/backfill`, `src/db/backfill.ts`) fills `page_count`, `cover_url` and `published_year` only where they are NULL, because `books` has no column saying a count was typed (owner, 2026-11-13). So a book this route creates should get D-130's page order when it is created: a Calibre `#pages` estimate written here is never replaced by Hardcover's count later.
 
 ## Acceptance criteria
 

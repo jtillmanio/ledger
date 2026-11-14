@@ -28,6 +28,7 @@ One command on the owner's PC, run from a desktop shortcut or once a week, sends
 - **Never the owner's real library in a test.** Tests use a fixture library copied to a temp folder and the test database (`TEST_DATABASE_URL`).
 - **Docs in the same PR** (the entry): rewrite `.claude/rules/schema.md`'s *Calibre is the source of truth for a book's data and its reads* (which says nothing writes to Calibre) and `docs/03-data-model.md` 2.19 to match; add the command to `docs/COMMANDS.md` (and keep `.claude/kit.json` in step if a verify command changes); an Owner checklist item (`docs/OWNER-CHECKLIST.md`) for the content server, the two columns and registering the weekly run.
 - Decisions: D-18, D-83, D-87, D-90, D-130, D-132, D-133. Hard rule 5.
+- *From TASK-084 (4.2, PR #255), open question for the plan:* the owner chose to have the sync call the Hardcover backfill rather than run it on a schedule (2026-11-13). After a sync, the command sends `POST /api/books/backfill { dryRun: false, isbns: { bookId: ISBN } }`, with Calibre's ISBNs, since `books` has none. It sends the request again with `after: next` while `next` is set, and waits `retryIn` seconds when `status` is `stopped`. It's up to 100 books a call, about one Hardcover request a second. The plan says whether the backfill is part of the sync's log entry.
 
 ## Acceptance criteria
 

@@ -28,6 +28,7 @@ The facts the detail sheets show and the app throws away today are kept: a book'
   - *Summary and subjects*: Calibre's comments and tags (`.claude/rules/schema.md`: *tags, comments and ISBN load nothing until `books.subjects`, `books.summary` and `books.isbn` are approved, and comments stay out of the CSV*). This task is built **after** 1.26, when extract no longer loads books and the only way Calibre's data comes in is 4.4's sync (D-133). So the books pair rides `npm run calibre:sync` (TASK-082) and its route (TASK-081). **Stop and ask at plan time** if that turns out not to be the path, for example if extract still loads books when this is built.
 - Data model: `docs/03-data-model.md` § 2. Decisions, 2.19; § 4.1 By task (3.5's rows). Architecture: `docs/02-architecture.md` § 10. Metadata sources.
 - Decisions: D-87, D-90, D-94, D-128, D-129, D-133. Hard rules 2 and 7.
+- *From TASK-084 (4.2, PR #255):* 4.2 did not add `books.isbn`. The backfill takes ISBNs from its caller (4.4's sync, from Calibre; owner, 2026-11-13), so the column is still unasked-for if this task or 4.4 wants it.
 
 ## Acceptance criteria
 

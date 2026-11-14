@@ -29,6 +29,7 @@ Every spine row, Library row and the next-issue strip shows the real cover in a 
 - **Stop and ask at plan time: hotlink or cache.** Hotlinking makes a page render depend on Metron's and Hardcover's image servers; `next/image` with a `remotePatterns` entry has Vercel cache small resized copies, at a config change and a cost. Read `node_modules/next/dist/docs/` for the version-16 image API first. This part measures the Library's Lighthouse run either way; poor loading moves covers to R2 under a later decision (D-94).
 - Design: `design/mockups.html` (`spine`, `blist`, `states`), `design/STYLE_GUIDE.md` § 9; `ui.redrawFiles` get the placeholder change in the same PR (the gradient covers go from the frames).
 - Decisions: D-40, D-94, SG-D13, SG-D14, UX-X05, M-01, L-01. Hard rule 6.
+- *From TASK-084 (4.2, PR #255):* asked at 4.2's plan gate (2026-11-13), the owner deferred the cover art tone again: no `books.art_d` / `art_l`, and no comics columns either. 4.2's Check sentence about the tone strings and 4.3's clamp tests waits for the columns, and this task's art tone stays out of scope.
 
 ## Acceptance criteria
 

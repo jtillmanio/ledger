@@ -1,7 +1,7 @@
 ---
 id: TASK-084
 title: 4.2 Open Library and Hardcover backfill
-status: In progress
+status: Review
 depends_on: [TASK-034, TASK-040, TASK-057]
 size: M
 model: opus
@@ -32,14 +32,15 @@ A book that arrives in the Ledger without Hardcover's details (typed by hand, pa
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): dry run over 100 books; report match rate and conflicts against
+- [x] AC-1 (roadmap **Check:**, verbatim): dry run over 100 books; report match rate and conflicts against
 existing `series_position`. Once the columns are approved: every book with a
 cover has both tone strings or neither, and 4.3's clamp tests cover the
 shared extractor.
-- [ ] AC-2: A dry run over 100 books with no `hardcover_id`, with recorded Hardcover answers and no network, reports how many matched by ISBN, matched by title and author, were proposed (a near spelling) and matched nothing, lists each match whose series position differs from the stored `series_position`, and writes no row (the database is byte-identical before and after).
-- [ ] AC-3: A real run with the same answers fills `hardcover_id`, `page_count` (D-130's order) and `cover_url` for the matched books only; a book whose page count came from a `hand` source keeps it; a book with a Calibre series keeps its series and position; a `compilation` result fills nothing.
-- [ ] AC-4: A 429 waits its `Retry-After` and resumes; a run interrupted halfway and started again skips the books already filled; without `HARDCOVER_API_TOKEN` it refuses to run and says why.
-- [ ] AC-5: Tests touch `TEST_DATABASE_URL` only, and no test or command in this task names `.env.live` or production.
+  *First sentence: the dry run over 100 development books, through `npm run dev` (2026-11-13), looked up 100: 85 matched by title, 0 by ISBN (no caller passed any), 2 proposed, 3 ambiguous, 10 unmatched, 0 failed. Match rate 0.85, nothing written. Two series positions differ: *A Court of Frost and Starlight* (stored 3.5, Hardcover 4) and *A Court of Silver Flames* (stored 4, Hardcover 5). Second sentence: the owner deferred the tone columns again at the plan gate, so it isn't applicable yet; it's carried to TASK-085.*
+- [x] AC-2: A dry run over 100 books with no `hardcover_id`, with recorded Hardcover answers and no network, reports how many matched by ISBN, matched by title and author, were proposed (a near spelling) and matched nothing, lists each match whose series position differs from the stored `series_position`, and writes no row (the database is byte-identical before and after).
+- [x] AC-3: A real run with the same answers fills `hardcover_id`, `page_count` (D-130's order) and `cover_url` for the matched books only; a book whose page count came from a `hand` source keeps it; a book with a Calibre series keeps its series and position; a `compilation` result fills nothing.
+- [x] AC-4: A 429 waits its `Retry-After` and resumes; a run interrupted halfway and started again skips the books already filled; without `HARDCOVER_API_TOKEN` it refuses to run and says why.
+- [x] AC-5: Tests touch `TEST_DATABASE_URL` only, and no test or command in this task names `.env.live` or production.
 
 ## Out of scope
 
@@ -63,6 +64,16 @@ shared extractor.
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- 4.4's sync command calls the backfill after a sync, passing Calibre's ISBNs, following `next` and waiting out `stopped` (approved at plan) → docs/tasks/TASK-082-calibre-sync-command.md § Context
+- A book the sync creates gets D-130's page order when it's created, because the backfill never replaces a count (approved at plan) → docs/tasks/TASK-081-calibre-sync-route.md § Context
+- The art tone columns are deferred again, so 4.2's Check sentence about the tone strings waits on them (approved at plan) → docs/tasks/TASK-085-covers-in-every-row.md § Context
+- `books.isbn` is still not added; the backfill takes ISBNs from its caller (approved at plan) → docs/tasks/TASK-078-summary-subjects-story-arc-stored.md § Context
+- The dry run's misses: the title-and-author search turns up box sets first, and a *Jr.* suffix breaks the author key; a question about D-99's shared rule (owner, at close-out) → docs/OWNER-CHECKLIST.md § Decisions waiting on you
+- A sitting to settle every open Owner checklist item before the books cutover (owner, at close-out; Check proposed) → docs/05-roadmap.md § 1.31 (new)
+- 1.31 joins 1.26's Depends on (owner, at close-out: "before cutover"; the paragraph in docs/05-roadmap.md § 1.26 is edited, not its Check) → docs/tasks/TASK-061-books-cutover.md § Context
+- The full `npm run enrich:books` run hasn't happened (98 `hardcover` rows): without it, the first production backfill looks up about 4,300 books → not tracked: already in docs/OWNER-CHECKLIST.md § Actions from follow-ups (*Run `npm run enrich:books` (the real run)*), and 1.31's Check names it
+- Backfilled ids live only in `books`, not `book_details.csv`, so a pre-cutover rebuild drops them until the next `enrich:books` (schema-reviewer INFO) → not tracked: follows from the owner's decision that the backfill writes `books` directly; extract re-derives them
 
 ## Plan
 
@@ -106,13 +117,20 @@ _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_s
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 PASS | CI R1 PASS (29a7778)
+- Spec R1 CHANGES (SERVICES.md not justified in the plan; dry run owed) | Schema R1 APPROVE (4 MINOR: guard on title/author, `filled`, toBooks divergences, guard test)
+- Dry run over 100 development books: match rate 0.85, 2 conflicts (AC-1)
+- Verify R2 PASS | CI R2 PASS (44b1915) | Spec R2 APPROVE | Schema R2 APPROVE
+- Audit R1 NOT RUN (the owner's uncommitted files in the main tree) → R2 PASS in a clean worktree (minor: no test of the edition's count) → test added
+- Verify R3 PASS
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 2 (spec), 2 (schema), 2 (audit; R1 not run)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1 (SERVICES.md line, the `after` cursor, the stricter write guard)
