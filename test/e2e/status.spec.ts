@@ -6,7 +6,7 @@
 // empty slates. Runs at every width, light and dark; the checks that write or
 // set their own state run once. This file seeds its own runs and books and
 // removes them; the empty slates are checked first, on the seed alone.
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import BooksLoading from "../../src/app/books/status/loading";
@@ -885,5 +885,149 @@ test.describe("the status control on the status screens (1.17b)", () => {
     // A book read once lists no All reads.
     await expand(page, ONCE_READ);
     await expect(row(page, ONCE_READ).getByRole("button", { name: /^All reads/ })).toHaveCount(0);
+  });
+});
+
+// Task 4.5b (D-124): On deck by genre, and the Library's genre chip that keeps the filter. Own books under
+// E2E genre names, own describe (the project runs one worker, in file order), removed after the last test.
+test.describe("On deck by genre (4.5b)", () => {
+  const prefix = "e2e-deck-";
+  const FANTASY = "E2E Fantasy";
+  const SCIFI = "E2E Sci-Fi";
+  // id, title, its Calibre genre paths
+  const books: [string, string, string[]][] = [
+    ["fan", "E2E Deck Fantasy One", [`${FANTASY}.E2E Epic Fantasy`]],
+    ["sci", "E2E Deck Sci-Fi One", [SCIFI]],
+    ["both", "E2E Deck Both", [SCIFI, `${FANTASY}.E2E Epic Fantasy`]],
+    ["none", "E2E Deck No Genre", []],
+  ];
+
+  const clean = () => db(async (sql) => {
+    const ids = books.map(([id]) => prefix + id);
+    await sql`DELETE FROM book_genres WHERE book_id = ANY(${ids}::text[])`;
+    await sql`DELETE FROM reading_plan WHERE book_id = ANY(${ids}::text[])`;
+    await sql`DELETE FROM book_status WHERE book_id = ANY(${ids}::text[])`;
+    await sql`DELETE FROM books WHERE id = ANY(${ids}::text[])`;
+  });
+
+  test.beforeAll(async () => {
+    await clean();
+    await db(async (sql) => {
+      for (const [id, title, genres] of books) {
+        await sql`INSERT INTO books (id, title) VALUES (${prefix + id}, ${title})`;
+        await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${prefix + id}, 'to_read')`;
+        await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${E2E_USER}, ${prefix + id}, 'on_deck', NULL)`;
+        for (const g of genres) await sql`INSERT INTO book_genres (book_id, genre) VALUES (${prefix + id}, ${g})`;
+      }
+    });
+  });
+  test.afterAll(clean);
+
+  const chips = (page: Page) => page.getByRole("group", { name: "On deck genre" });
+  const chip = (page: Page, name: string) => chips(page).getByRole("link", { name, exact: true });
+  const deck = (page: Page) => page.locator('section[data-plan="on_deck"]');
+  const sections = (page: Page) => deck(page).locator("[data-deck-genre]");
+  const titles = (section: Locator) => section.locator(".row-title");
+  /** The distinct books every row on the panel draws: what the tab counts. */
+  const distinctRows = (page: Page) => panel(page).locator(".row-title, .qtitle").evaluateAll((els) => new Set(els.map((e) => e.textContent)).size);
+
+  async function openDeck(page: Page, path = "/books/status?tab=next") {
+    await open(page, path);
+    await expect(chip(page, FANTASY)).toBeVisible();
+  }
+
+  test("a Fantasy and a Sci-Fi section, the book in both in each, then No genre; the tab counts it once (AC-1, AC-2)", CORE, async ({ page }) => {
+    await openDeck(page);
+    await expect(deck(page).getByRole("heading", { level: 2 })).toHaveText(/^On deck\s*4 books$/);
+    await expect(deck(page).getByRole("heading", { level: 3 })).toHaveText([
+      /^E2E Fantasy\s*2 books$/, /^E2E Sci-Fi\s*2 books$/, /^No genre\s*1 book$/,
+    ]);
+    // By series, then title: none is in a series, so by title.
+    await expect(titles(sections(page).nth(0))).toHaveText(["E2E Deck Both", "E2E Deck Fantasy One"]);
+    await expect(titles(sections(page).nth(1))).toHaveText(["E2E Deck Both", "E2E Deck Sci-Fi One"]);
+    await expect(titles(sections(page).nth(2))).toHaveText(["E2E Deck No Genre"]);
+    // The book in both is two rows and one count.
+    expect(await counted(page, "Up next")).toBe(await distinctRows(page));
+    // No genre has no chip; All and the genres do, and only one is current.
+    await expect(chip(page, "No genre")).toHaveCount(0);
+    await expect(chip(page, "All")).toHaveAttribute("aria-current", "true");
+    await expect(chips(page).locator("a[aria-current]")).toHaveCount(1);
+  });
+
+  test("the Fantasy chip leaves only Fantasy, is in the URL, survives a reload and writes nothing (AC-1, AC-3)", CORE, async ({ page }) => {
+    await openDeck(page);
+    const before = await counted(page, "Up next");
+    const rows = () => db(async (sql) => ({
+      plan: (await sql`SELECT count(*)::int AS n FROM reading_plan`)[0].n,
+      status: (await sql`SELECT count(*)::int AS n FROM book_status`)[0].n,
+      genres: (await sql`SELECT count(*)::int AS n FROM book_genres`)[0].n,
+    }));
+    const was = await rows();
+    const writes: string[] = [];
+    page.on("request", (r) => { if (!["GET", "HEAD", "OPTIONS"].includes(r.method())) writes.push(`${r.method()} ${r.url()}`); });
+
+    await chip(page, FANTASY).click();
+    await expect(page).toHaveURL(/tab=next&genre=E2E\+Fantasy/);
+    await expect(chip(page, FANTASY)).toHaveAttribute("aria-current", "true");
+    await expect(sections(page)).toHaveCount(1);
+    await expect(titles(sections(page))).toHaveText(["E2E Deck Both", "E2E Deck Fantasy One"]);
+    await expect(deck(page).getByRole("heading", { level: 2 })).toHaveText(/^On deck\s*2 books$/);
+    // The tab counts what it draws: Sci-Fi One and No genre are hidden.
+    expect(await counted(page, "Up next")).toBe(before - 2);
+
+    await page.reload();
+    await expect(chip(page, FANTASY)).toHaveAttribute("aria-current", "true");
+    await expect(titles(sections(page))).toHaveText(["E2E Deck Both", "E2E Deck Fantasy One"]);
+
+    // All clears it, the other chip swaps it.
+    await chip(page, "All").click();
+    await expect(sections(page)).toHaveCount(3);
+    await chip(page, SCIFI).click();
+    await expect(titles(sections(page))).toHaveText(["E2E Deck Both", "E2E Deck Sci-Fi One"]);
+
+    expect(writes).toEqual([]);
+    expect(await rows()).toEqual(was);
+  });
+
+  test("in the Library, To read · On deck then a genre chip lists only that genre's On deck books (AC-1, AC-4)", CORE, async ({ page }) => {
+    await page.goto("/books/list");
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Library");
+    await page.getByRole("link", { name: "To read", exact: true }).click();
+    await page.getByRole("link", { name: "On deck", exact: true }).click();
+    await expect(page).toHaveURL(/status=to_read&level=on_deck/);
+    await page.getByRole("group", { name: "Genre" }).getByRole("link", { name: FANTASY, exact: true }).click();
+    await expect(page).toHaveURL(/status=to_read&level=on_deck&genre=E2E\+Fantasy/);
+    await expect(page.locator(".book-row .row-title")).toHaveText(["E2E Deck Both", "E2E Deck Fantasy One"]);
+    await expect(page.getByRole("link", { name: "To read", exact: true })).toHaveAttribute("aria-current", "true");
+  });
+
+  test("the chips are named links, 44px on the phone, in a row that never widens the page; the sections are headings (AC-5)", async ({ page }, info) => {
+    await openDeck(page);
+    const width = page.viewportSize()!.width;
+    const links = chips(page).getByRole("link");
+    await expect(links).toHaveText(["All", FANTASY, SCIFI]);
+    const tall = width < 768 ? 44 : 24;
+    for (const box of await links.evaluateAll((els) => els.map((el) => el.getBoundingClientRect().toJSON() as DOMRect))) {
+      expect(box.height, `chip height at ${width}px`).toBeGreaterThanOrEqual(tall);
+    }
+    await floor(page);
+    await screenshot(page, info, "books-up-next-genres");
+    await chip(page, FANTASY).click();
+    await expect(sections(page)).toHaveCount(1);
+    await floor(page);
+    await screenshot(page, info, "books-up-next-genre-chosen");
+  });
+
+  // Sets its own viewports and themes: runs once, in w390-light.
+  test("360, 834 and 1280px, light and dark: no sideways page scroll, text 4.5:1, axe (AC-1, AC-5)", ONCE, async ({ page }, info) => {
+    for (const colorScheme of ["light", "dark"] as const) {
+      await page.emulateMedia({ colorScheme });
+      for (const [width, height] of [[360, 780], [834, 1112], [1280, 800]]) {
+        await page.setViewportSize({ width, height });
+        await openDeck(page, "/books/status?tab=next&genre=E2E%20Fantasy");
+        await floor(page);
+        await screenshot(page, info, `books-up-next-genre-${width}-${colorScheme}`);
+      }
+    }
   });
 });

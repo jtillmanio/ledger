@@ -693,12 +693,15 @@ export async function booksInFlight(userId: string) {
 export type PlannedBook = StatusBook & {
   period: string; level: "quarter" | "year" | "on_deck";
   year: number | null; quarter: number | null; ordinal: number | null;
+  /** Its top-level genres, for On deck's chips and sections (task 4.5b, D-124); empty for a book with none. */
+  genres: string[];
 };
 
 /**
  * *Up next* for books (task 1.9): the plan by level, every `to_read` book with a
  * plan row. Quarters first by year and quarter, in the order you gave them; each
- * year's bare-year entries after its quarters, by title; On deck last, by title.
+ * year's bare-year entries after its quarters, by title; On deck last, by series, position
+ * then title, as the Library's Series order runs (task 4.5b: the status screen groups it by genre).
  * A book planned in two periods is in both. `someday` is how many `to_read` books
  * have no plan row: the closing row, never listed here (D-37). Hidden from the
  * tab, and not in either count: a planned book that is reading, read or DNF.
@@ -707,7 +710,8 @@ export async function booksUpNext(userId: string) {
   const [planned, [someday]] = await Promise.all([
     sql<PlannedBook[]>`
       SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe, b.word_count,
-             pp.period, pp.level, pp.year, pp.quarter, pp.ordinal, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened
+             pp.period, pp.level, pp.year, pp.quarter, pp.ordinal, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened,
+             ${sql.unsafe(TOP_GENRES)} AS genres
       FROM plan_period pp
       JOIN book_status st ON st.book_id = pp.book_id AND st.user_id = pp.user_id AND st.status = 'to_read'
       JOIN books b ON b.id = pp.book_id AND b.deleted_at IS NULL
@@ -715,7 +719,10 @@ export async function booksUpNext(userId: string) {
       LEFT JOIN book_series s ON s.id = b.series_id
       LEFT JOIN book_universes u ON u.id = b.universe_id
       WHERE pp.user_id = ${userId}
-      ORDER BY (pp.level = 'on_deck'), pp.year, pp.quarter NULLS LAST, pp.ordinal, b.title, b.id
+      ORDER BY (pp.level = 'on_deck'), pp.year, pp.quarter NULLS LAST, pp.ordinal,
+               -- On deck only (the other levels have no series key): series, position, title, nothing last.
+               (pp.level = 'on_deck' AND s.name IS NULL), CASE WHEN pp.level = 'on_deck' THEN s.name END,
+               CASE WHEN pp.level = 'on_deck' THEN b.series_position END NULLS LAST, b.title, b.id
     `,
     sql<{ n: number }[]>`
       SELECT COUNT(*)::int AS n FROM to_read_level WHERE user_id = ${userId} AND level = 'someday'`,
