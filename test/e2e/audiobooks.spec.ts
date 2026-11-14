@@ -43,7 +43,7 @@ const clean = () => withSql((sql) => sql`DELETE FROM books WHERE id = ANY(${BOOK
 test.beforeAll(async () => {
   await clean();
   await withSql(async (sql) => {
-    for (const b of BOOKS) await sql`INSERT INTO books (id, title, genre) VALUES (${b.id}, ${b.title}, 'Fantasy')`;
+    for (const b of BOOKS) await sql`INSERT INTO books (id, title) VALUES (${b.id}, ${b.title})`;
     for (const [b, status] of [[BOTH, "read"], [HEARD, "read"], [SEEN, "read"], [NOW, "listening"], [EYES, "reading"]] as const) {
       const done = status === "read";
       await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision, started_on, started_on_precision)

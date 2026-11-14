@@ -308,7 +308,7 @@ test.describe("books", () => {
   test.beforeAll(async () => {
     await db(async (sql) => {
       for (const [id, title, status, finished, plan] of books) {
-        await sql`INSERT INTO books (id, title, genre) VALUES (${prefix + id}, ${title}, 'Fantasy')`;
+        await sql`INSERT INTO books (id, title) VALUES (${prefix + id}, ${title})`;
         await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
                   VALUES (${E2E_USER}, ${prefix + id}, ${status}, ${finished}, ${finished ? "exact" : "none"})`;
         if (plan) {
@@ -474,7 +474,7 @@ test.describe("Finished on In flight (2.2f)", () => {
       await sql`INSERT INTO authors (id, name) VALUES (${prefix + "author"}, 'E2E Fin Author')`;
       for (const [id, title, st] of seed) {
         const going = st === "reading" || st === "listening";
-        await sql`INSERT INTO books (id, title, genre, author_id) VALUES (${prefix + id}, ${title}, 'Fantasy', ${prefix + "author"})`;
+        await sql`INSERT INTO books (id, title, author_id) VALUES (${prefix + id}, ${title}, ${prefix + "author"})`;
         await sql`INSERT INTO book_status (user_id, book_id, status, started_on, started_on_precision, finished_on, finished_on_precision)
                   VALUES (${E2E_USER}, ${prefix + id}, ${st}, ${going ? "2026-01-15" : null}, ${going ? "exact" : "none"},
                           ${st === "read" ? "2025-05-05" : null}, ${st === "read" ? "exact" : "none"})`;
@@ -641,7 +641,7 @@ test.describe("the status control on the status screens (1.17b)", () => {
   async function reseed() {
     await db(async (sql) => {
       await sql`DELETE FROM books WHERE id LIKE ${prefix + "%"}`;
-      const book = (id: string, title: string) => sql`INSERT INTO books (id, title, genre) VALUES (${prefix + id}, ${title}, 'Fantasy')`;
+      const book = (id: string, title: string) => sql`INSERT INTO books (id, title) VALUES (${prefix + id}, ${title})`;
       await book("flight", FLIGHT);
       await sql`INSERT INTO book_status (user_id, book_id, status, started_on, started_on_precision)
                 VALUES (${E2E_USER}, ${prefix + "flight"}, 'reading', '2026-10-01', 'exact')`;

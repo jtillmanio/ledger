@@ -4212,7 +4212,7 @@ logs that nothing changed. A missing `#owned` column is named and skipped. In
 the browser (0.11), the *Calibre* page lists the run, and the dashboard's line
 shows when the last run is 8 days old and not when it is 6.
 
-### ☐ 4.5 Calibre's genres on every screen · M
+### ☑ 4.5 Calibre's genres on every screen · M
 *Pulled ahead of 1.26 by the owner (D-139).*
 
 From 1.18c (TASK-033), 2026-10-30; D-98. **After 1.18c.** 1.18c loads every

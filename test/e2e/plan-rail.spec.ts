@@ -79,14 +79,17 @@ async function withSql<T>(work: (sql: TestSql) => Promise<T>): Promise<T> {
 }
 
 const clean = () => withSql(async (sql) => {
+  await sql`DELETE FROM book_genres WHERE book_id LIKE 'e2e-plan-%'`;
   await sql`DELETE FROM books WHERE id LIKE 'e2e-plan-%'`;
 });
 test.beforeEach(clean);
 test.afterEach(clean);
 
 async function insert(sql: TestSql, b: Seed) {
-  await sql`INSERT INTO books (id, title, genre, word_count, word_count_source, page_count)
-    VALUES (${id(b.key)}, ${b.title}, ${b.genre ?? null}, ${b.words ?? null}, ${b.words == null ? null : "stated"}, ${b.pages ?? null})`;
+  await sql`INSERT INTO books (id, title, word_count, word_count_source, page_count)
+    VALUES (${id(b.key)}, ${b.title}, ${b.words ?? null}, ${b.words == null ? null : "stated"}, ${b.pages ?? null})`;
+  // Its genre is Calibre's, for its hue (task 4.5, D-98).
+  if (b.genre) await sql`INSERT INTO book_genres (book_id, genre) VALUES (${id(b.key)}, ${b.genre})`;
   await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${id(b.key)}, 'to_read')`;
   await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${E2E_USER}, ${id(b.key)}, ${b.period}, ${b.ordinal})`;
 }

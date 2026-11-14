@@ -263,7 +263,6 @@ export const books = pgTable("books", {
   authorId: text("author_id").references(() => authors.id),
   seriesId: text("series_id").references(() => bookSeries.id),
   seriesPosition: real("series_position"),
-  genre: text("genre"),
   bookType: text("book_type").notNull().default("Novel"),
   wordCount: integer("word_count"),
   // stated    = a count someone published or typed
@@ -303,8 +302,8 @@ export const books = pgTable("books", {
 
 // A book's genres, from Calibre's multi-valued #genre (task 1.18c, D-90): each
 // the full dotted path Calibre writes (`Young Adult.Fantasy.Romantasy`). On the
-// book, not per user (D-91). books.genre stays the workbook's until the screens
-// that read it move here.
+// book, not per user (D-91). A book's only genres since 4.5 dropped the
+// workbook's one (TASK-089, D-98): a book Calibre gives none has none.
 export const bookGenres = pgTable("book_genres", {
   bookId: text("book_id").notNull().references(() => books.id),
   genre: text("genre").notNull(),

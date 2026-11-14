@@ -454,8 +454,9 @@ beforeEach(async () => {
     ["deck", { words: 80_000 }, "on_deck", null],
   ];
   for (const [id, o, period, ordinal] of rows) {
-    await sql`INSERT INTO books (id, title, genre, word_count, word_count_source, page_count)
-      VALUES (${id}, ${"Title " + id}, ${o.genre ?? null}, ${o.words ?? null}, ${o.words == null ? null : "stated"}, ${o.pages ?? null})`;
+    await sql`INSERT INTO books (id, title, word_count, word_count_source, page_count)
+      VALUES (${id}, ${"Title " + id}, ${o.words ?? null}, ${o.words == null ? null : "stated"}, ${o.pages ?? null})`;
+    if (o.genre) await sql`INSERT INTO book_genres (book_id, genre) VALUES (${id}, ${o.genre})`;
     await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, ${id}, 'to_read')`;
     await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${USER}, ${id}, ${period}, ${ordinal})`;
   }

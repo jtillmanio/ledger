@@ -190,6 +190,13 @@
       "when": 1794596190346,
       "tag": "0026_rank_on_read",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1794603335110,
+      "tag": "0027_drop_books_genre",
+      "breakpoints": true
     }
   ]
 }

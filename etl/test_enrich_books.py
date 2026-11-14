@@ -150,13 +150,13 @@ class Fake(unittest.TestCase):
         authors = {}
         with (self.dir / "books.csv").open("w", newline="", encoding="utf-8") as fh:
             w = csv.writer(fh)
-            w.writerow(["id", "title", "author_id", "series_id", "series_position", "genre",
+            w.writerow(["id", "title", "author_id", "series_id", "series_position",
                         "book_type", "word_count", "word_count_source", "published_year", "calibre_id"])
             for title, author, *cid in books:
                 aid = ex.slug(author) if author else ""
                 if author:
                     authors[aid] = author
-                w.writerow([ex.slug(title, author or ""), title, aid, "", "", "", "Novel", "", "", "",
+                w.writerow([ex.slug(title, author or ""), title, aid, "", "", "Novel", "", "", "",
                             cid[0] if cid else ""])
         with (self.dir / "authors.csv").open("w", newline="", encoding="utf-8") as fh:
             w = csv.writer(fh)

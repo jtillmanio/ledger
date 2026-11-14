@@ -47,7 +47,7 @@ beforeEach(async () => {
   await truncateAll(sql);
   await sql`INSERT INTO users (id, name) VALUES (${USER}, 'Test')`;
   await sql`INSERT INTO book_series (id, name) VALUES ('stormlight', 'Stormlight')`;
-  await sql`INSERT INTO books (id, title, genre, series_id) VALUES ('wok', 'The Way of Kings', 'Fantasy', 'stormlight')`;
+  await sql`INSERT INTO books (id, title, series_id) VALUES ('wok', 'The Way of Kings', 'stormlight')`;
 });
 
 const req = (method: string, body: unknown) =>

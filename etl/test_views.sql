@@ -652,12 +652,14 @@ END $$;
 -- D-65): an exact day and a year-only July 1st land in their years, a read with
 -- no date is in no year, a status with no log row counts only while `read`, and
 -- a book read twice counts in both years.
-INSERT INTO books (id, title, genre, word_count, word_count_source) VALUES
-  ('zz-b-exact', 'Zz Exact', 'Zz Genre', 100000, 'stated'),
-  ('zz-b-year',  'Zz Year',  'Zz Genre', 50000, 'stated'),
-  ('zz-b-none',  'Zz None',  'Zz Genre', 10000, 'stated'),
-  ('zz-b-dnf',   'Zz Dnf',   'Zz Genre', 10000, 'stated'),
-  ('zz-b-again', 'Zz Again', 'Zz Genre', 20000, 'stated');
+INSERT INTO books (id, title, word_count, word_count_source) VALUES
+  ('zz-b-exact', 'Zz Exact', 100000, 'stated'),
+  ('zz-b-year',  'Zz Year',  50000, 'stated'),
+  ('zz-b-none',  'Zz None',  10000, 'stated'),
+  ('zz-b-dnf',   'Zz Dnf',   10000, 'stated'),
+  ('zz-b-again', 'Zz Again', 20000, 'stated');
+INSERT INTO book_genres (book_id, genre)
+  SELECT id, 'Zz Genre' FROM books WHERE id IN ('zz-b-exact', 'zz-b-year', 'zz-b-none', 'zz-b-dnf', 'zz-b-again');
 INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision) VALUES
   ('zz-user', 'zz-b-exact', 'read', '2024-03-11', 'exact'),
   ('zz-user', 'zz-b-year',  'read', '2019-07-01', 'approximate'),
@@ -688,10 +690,12 @@ END $$;
 -- `read` with no log row being 'text'; series_progress counts a book finished
 -- by ear as read. Its own genre and series, so the cases above are untouched.
 INSERT INTO book_series (id, name) VALUES ('zz-au-series', 'Zz Audio Series');
-INSERT INTO books (id, title, genre, word_count, word_count_source, series_id) VALUES
-  ('zz-au-text',   'Zz Au Text',   'Zz Audio', 1000, 'stated', NULL),
-  ('zz-au-listen', 'Zz Au Listen', 'Zz Audio', 2000, 'stated', 'zz-au-series'),
-  ('zz-au-status', 'Zz Au Status', 'Zz Audio Status', 3000, 'stated', NULL);
+INSERT INTO books (id, title, word_count, word_count_source, series_id) VALUES
+  ('zz-au-text',   'Zz Au Text',   1000, 'stated', NULL),
+  ('zz-au-listen', 'Zz Au Listen', 2000, 'stated', 'zz-au-series'),
+  ('zz-au-status', 'Zz Au Status', 3000, 'stated', NULL);
+INSERT INTO book_genres (book_id, genre) VALUES
+  ('zz-au-text', 'Zz Audio'), ('zz-au-listen', 'Zz Audio'), ('zz-au-status', 'Zz Audio Status');
 INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision) VALUES
   ('zz-user', 'zz-au-text',   'read', '2025-03-01', 'exact'),
   ('zz-user', 'zz-au-listen', 'read', '2025-04-01', 'exact'),
@@ -1089,19 +1093,19 @@ BEGIN
   END IF;
 END $$;
 
--- 4.5's Check (task 4.5, D-98): book_genre_levels is book_genre_tree, plus the
--- workbook's books.genre as one top-level row for a book Calibre gives none;
--- folded per book whatever its case ('Horror' and 'horror.Cosmic' are one
--- 'Horror'), its name a path's last segment. books_by_year counts a read once
--- under each top-level genre: the Check's first book under 'Fantasy' and 'Young
--- Adult' and not its workbook 'Thriller', the second under its 'Sci-Fi', a book
--- with neither under NULL.
+-- 4.5's Check (task 4.5, D-98): book_genre_levels is book_genre_tree, Calibre's
+-- genres alone since TASK-089 dropped the workbook's column; folded per book
+-- whatever its case ('Horror' and 'horror.Cosmic' are one 'Horror'), its name a
+-- path's last segment. books_by_year counts a read once under each top-level
+-- genre: the Check's first book under 'Fantasy' and 'Young Adult'; the second,
+-- with no Calibre genre (once the workbook's 'Sci-Fi'), has no row in
+-- book_genre_levels and is counted under NULL, as a bare book is (TASK-089 AC-5).
 INSERT INTO users (id, name) VALUES ('zz-gy-user', 'Genre year fixture');
-INSERT INTO books (id, title, genre, word_count, word_count_source) VALUES
-  ('zz-gy-cal',  'Zz GY Calibre',  'Thriller', 100000, 'stated'),
-  ('zz-gy-wb',   'Zz GY Workbook', 'Sci-Fi',   50000,  'stated'),
-  ('zz-gy-case', 'Zz GY Case',     NULL,       10000,  'stated'),
-  ('zz-gy-bare', 'Zz GY Bare',     NULL,       1000,   'stated');
+INSERT INTO books (id, title, word_count, word_count_source) VALUES
+  ('zz-gy-cal',  'Zz GY Calibre',  100000, 'stated'),
+  ('zz-gy-wb',   'Zz GY Workbook', 50000,  'stated'),
+  ('zz-gy-case', 'Zz GY Case',     10000,  'stated'),
+  ('zz-gy-bare', 'Zz GY Bare',     1000,   'stated');
 INSERT INTO book_genres (book_id, genre) VALUES
   ('zz-gy-cal', 'Fantasy.Epic Fantasy'), ('zz-gy-cal', 'Young Adult.Fantasy.Romantasy'),
   ('zz-gy-case', 'Horror'), ('zz-gy-case', 'horror.Cosmic');
@@ -1119,15 +1123,14 @@ BEGIN
   IF got IS DISTINCT FROM 'zz-gy-cal:Fantasy:1:false:Fantasy zz-gy-cal:Fantasy.Epic Fantasy:2:true:Epic Fantasy '
                        || 'zz-gy-cal:Young Adult:1:false:Young Adult zz-gy-cal:Young Adult.Fantasy:2:false:Fantasy '
                        || 'zz-gy-cal:Young Adult.Fantasy.Romantasy:3:true:Romantasy '
-                       || 'zz-gy-case:Horror:1:true:Horror zz-gy-case:horror.Cosmic:2:true:Cosmic '
-                       || 'zz-gy-wb:Sci-Fi:1:true:Sci-Fi' THEN
+                       || 'zz-gy-case:Horror:1:true:Horror zz-gy-case:horror.Cosmic:2:true:Cosmic' THEN
     RAISE EXCEPTION 'book_genre_levels wrong: %', got;
   END IF;
   SELECT string_agg(COALESCE(genre, '(none)') || ':' || year || ':' || books || ':' || words, ', '
                     ORDER BY genre COLLATE "C" NULLS LAST)
     INTO got FROM books_by_year WHERE user_id = 'zz-gy-user';
-  IF got IS DISTINCT FROM 'Fantasy:2025:1:100000, Horror:2025:1:10000, Sci-Fi:2025:1:50000, '
-                       || 'Young Adult:2025:1:100000, (none):2025:1:1000' THEN
+  IF got IS DISTINCT FROM 'Fantasy:2025:1:100000, Horror:2025:1:10000, '
+                       || 'Young Adult:2025:1:100000, (none):2025:2:51000' THEN
     RAISE EXCEPTION 'books_by_year by Calibre genre wrong: %', got;
   END IF;
 END $$;
@@ -1242,7 +1245,7 @@ BEGIN
     GROUP BY table_name) t;
   IF got IS DISTINCT FROM 'authors(id,name) book_series(author_id,id,name,total_books) '
                        || 'book_universes(id,name) books(added_at,author_id,book_type,calibre_id,cover_url,'
-                       || 'deleted_at,genre,hardcover_id,id,open_library_id,page_count,published_year,'
+                       || 'deleted_at,hardcover_id,id,open_library_id,page_count,published_year,'
                        || 'series_id,series_position,subseries_id,subseries_position,title,universe_id,'
                        || 'universe_position,word_count,word_count_source)' THEN
     RAISE EXCEPTION 'catalog columns changed (a per-user fact belongs in a follow or progress table): %', got;

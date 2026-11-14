@@ -863,12 +863,13 @@ class Reads(Case):
 class Shape(Case):
 
     def test_books_csv_header_adds_only_1_18b_columns(self):
-        """1.18 added no column; 1.18b adds the four the loaders copy (D-90)."""
+        """1.18 added no column; 1.18b adds the four the loaders copy (D-90);
+        4.5 drops the workbook's genre (TASK-089, D-98)."""
         build_library(self.lib, [book("Warbreaker", "Brandon Sanderson"), book("Mistborn", "Brandon Sanderson")])
         self.round()
         with (self.seed / "books.csv").open(newline="", encoding="utf-8") as fh:
             header = next(csv.reader(fh))
-        self.assertEqual(header, ["id", "title", "author_id", "series_id", "series_position", "genre",
+        self.assertEqual(header, ["id", "title", "author_id", "series_id", "series_position",
                                   "book_type", "word_count", "word_count_source", "published_year",
                                   "page_count", "cover_url", "open_library_id", "hardcover_id", "universe_id",
                                   "universe_position", "subseries_id", "subseries_position", "calibre_id"])
@@ -1309,16 +1310,17 @@ class Genres(Case):
         except SystemExit as e:
             return e.code
 
-    def test_two_genres_load_two_rows_with_their_paths_and_a_book_with_none_keeps_its_workbook_genre(self):
+    def test_two_genres_load_two_rows_with_their_paths_and_a_book_with_none_has_none(self):
         build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson",
                                       genres=("Fantasy.Epic Fantasy", "Young Adult.Fantasy.Romantasy")),
                                  book("Mistborn", "Brandon Sanderson")])
         self.round()
         self.assertEqual(self.genres(), [("The Way of Kings", "Fantasy.Epic Fantasy"),
                                          ("The Way of Kings", "Young Adult.Fantasy.Romantasy")])
-        self.assertEqual(self.book_by_title("Mistborn")["genre"], "Fantasy")
-        # books.genre stays the workbook's until the screens move (D-90).
-        self.assertEqual(self.book_by_title("The Way of Kings")["genre"], "Fantasy")
+        # Calibre's are a book's only genres (task 4.5, TASK-089, D-98): the workbook's Fantasy
+        # loads nowhere, so Mistborn, which Calibre gives none, has none.
+        self.assertNotIn("genre", self.book_by_title("Mistborn"))
+        self.assertNotIn("Mistborn", [t for t, _ in self.genres()])
         self.assertEqual(self.calibre_row("The Way of Kings")["genres"],
                          "Fantasy.Epic Fantasy; Young Adult.Fantasy.Romantasy")
         self.assertEqual(self.calibre_row("Mistborn")["genres"], "")
@@ -1375,8 +1377,9 @@ class Genres(Case):
         self.assertEqual(self.output.count("no column #genre"), 1)
         self.assertTrue((self.seed / "book_genres.csv").exists())
         self.assertEqual(self.seed_rows("book_genres"), [])
-        self.assertEqual({b["title"]: b["genre"] for b in self.seed_rows("books")},
-                         {"The Way of Kings": "Fantasy", "Mistborn": "Fantasy"})
+        # No workbook genre stands in (task 4.5, TASK-089, D-98): both books are loaded, with none.
+        self.assertEqual(sorted(b["title"] for b in self.seed_rows("books")), ["Mistborn", "The Way of Kings"])
+        self.assertTrue(all("genre" not in b for b in self.seed_rows("books")))
 
     def test_a_second_calibre_book_on_one_book_loads_no_genre(self):
         self.write_rows(self.book_review, [{

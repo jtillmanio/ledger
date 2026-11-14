@@ -19,7 +19,7 @@ export type RailBook = {
   estimated: boolean;
   /** `2027-Q1`, or `2027` for the fifth lane. */
   period: string;
-  /** Its top-level genres (task 4.5): `book_genre_levels` at depth 1, Calibre's else the workbook's; empty for none. */
+  /** Its top-level genres (task 4.5): `book_genre_levels` at depth 1, Calibre's; empty for none. */
   genres: string[];
   status: "to_read" | "reading" | "read";
 };

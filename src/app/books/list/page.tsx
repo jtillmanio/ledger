@@ -118,7 +118,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
         )}
       </div>
 
-      {/* The top-level genres of the books listed (task 4.5, D-98): Calibre's, else the workbook's,
+      {/* The top-level genres of the books listed (task 4.5, D-98): Calibre's,
           most books first. A chip finds every book under it, a subgenre's too. One row that scrolls
           sideways, never the page; the chip's text is the genre's whole name. Only the chosen chip
           carries aria-current: a `false` on each of some forty chips cost the route's byte budget

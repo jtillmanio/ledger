@@ -46,10 +46,12 @@ beforeEach(async () => {
 
 type Extra = { author?: string; words?: number; genre?: string; series?: string; position?: number };
 
+/** A book; `genre` is one Calibre genre, a book's only kind since 4.5 (TASK-089, D-98). */
 async function book(id: string, x: Extra = {}) {
-  await sql`INSERT INTO books (id, title, author_id, series_id, series_position, word_count, word_count_source, genre)
+  await sql`INSERT INTO books (id, title, author_id, series_id, series_position, word_count, word_count_source)
     VALUES (${id}, ${"Title " + id}, ${x.author ?? "au"}, ${x.series ?? null}, ${x.position ?? null},
-            ${x.words ?? null}, ${x.words == null ? null : "stated"}, ${x.genre ?? null})`;
+            ${x.words ?? null}, ${x.words == null ? null : "stated"})`;
+  if (x.genre) await sql`INSERT INTO book_genres (book_id, genre) VALUES (${id}, ${x.genre})`;
 }
 
 async function status(id: string, s: string) {
@@ -265,7 +267,7 @@ describe("coming out, a change of genre (AC-4)", () => {
   });
 
   it("lists a to-read book whose top-level genres have no read this year, and not one whose genre has", async () => {
-    // Read this year (2026): a Fantasy subgenre, which cascades to Fantasy (D-98), and a workbook-only Mystery.
+    // Read this year (2026): a Fantasy subgenre, which cascades to Fantasy (D-98), and a Mystery.
     await book("r-fan"); await read("r-fan", "2026-02-01");
     await sql`INSERT INTO book_genres (book_id, genre) VALUES ('r-fan', 'Fantasy.Epic Fantasy')`;
     await book("r-mys", { genre: "Mystery" }); await read("r-mys", "2026-04-01");
@@ -280,16 +282,15 @@ describe("coming out, a change of genre (AC-4)", () => {
     await book("both"); await status("both", "to_read");
     await sql`INSERT INTO book_genres (book_id, genre) VALUES ('both', 'Fantasy'), ('both', 'Horror')`;
     await book("mys", { genre: "Mystery" }); await status("mys", "to_read");
-    // books.genre stands in only for a book with no Calibre genre: Calibre's Horror wins over its Mystery.
-    await book("cal", { genre: "Mystery" }); await status("cal", "to_read");
-    await sql`INSERT INTO book_genres (book_id, genre) VALUES ('cal', 'Horror')`;
+    // A book with no Calibre genre has no genre at all (TASK-089, D-98), so it is no change of genre.
+    await book("none"); await status("none", "to_read");
     await book("rom", { genre: "Romance" }); await status("rom", "to_read");
 
     const rows = await q.planSuggestions(USER, Q2, TODAY);
-    expect(idsIn(rows, "genre_change").sort()).toEqual(["cal", "hor", "rom"]);
+    expect(idsIn(rows, "genre_change").sort()).toEqual(["hor", "rom"]);
     expect(rows.find((r) => r.id === "hor")?.detail).toBe("Horror · none read in 2026");
     // The year is today's, not the target's: in 2027 nothing is read yet, but the sheet is opened in 2026.
-    expect(idsIn(await q.planSuggestions(USER, "2027", TODAY), "genre_change").sort()).toEqual(["cal", "hor", "rom"]);
+    expect(idsIn(await q.planSuggestions(USER, "2027", TODAY), "genre_change").sort()).toEqual(["hor", "rom"]);
     // One genre in two spellings is named once.
     await book("twice"); await status("twice", "to_read");
     await sql`INSERT INTO book_genres (book_id, genre) VALUES ('twice', 'Horror'), ('twice', 'horror.Cosmic')`;

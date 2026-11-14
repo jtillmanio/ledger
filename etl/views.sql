@@ -468,7 +468,7 @@ WHERE s.status = 'read'
 -- a book tagged 'Young Adult.Fantasy.Romantasy' is in 'Young Adult' and
 -- 'Young Adult.Fantasy' too, though it is rarely tagged with them. One row per
 -- book and level: depth 1 is a top-level genre, and direct is true where the
--- book carries that path itself. books.genre (the workbook's) is not read here.
+-- book carries that path itself.
 CREATE OR REPLACE VIEW book_genre_tree AS
 SELECT g.book_id,
        array_to_string((string_to_array(g.genre, '.'))[1:l.depth], '.') AS genre,
@@ -480,23 +480,16 @@ CROSS JOIN LATERAL generate_series(1, cardinality(string_to_array(g.genre, '.'))
 GROUP BY g.book_id, array_to_string((string_to_array(g.genre, '.'))[1:l.depth], '.'), l.depth;
 
 -- A book's genres as every reader takes them (task 4.5, D-98): book_genre_tree's
--- rows, and for a book Calibre gives no genre, the workbook's books.genre as one
--- top-level row. That branch is the only place books.genre is read, so dropping
--- the column (TASK-089) changes nothing else. One row per book, genre and level
--- whatever its case, spelled the capitalised way under "C" (byte order, on any
+-- rows, Calibre's alone since the workbook's one genre column was dropped
+-- (TASK-089), so a book Calibre gives no genre has no row. One row per book,
+-- genre and level whatever its case, spelled the capitalised way under "C" (byte order, on any
 -- database's collation, as plan_suggestions did): a book tagged 'Horror' and
 -- 'horror.Cosmic' is in 'Horror' once. `name` is a path's last segment, what a
 -- Library row shows ('Romantasy'): split here, never in the app.
 CREATE OR REPLACE VIEW book_genre_levels AS
 SELECT g.book_id, min(g.genre COLLATE "C") AS genre, g.depth, bool_or(g.direct) AS direct,
        (string_to_array(min(g.genre COLLATE "C"), '.'))[g.depth] AS name
-FROM (
-  SELECT t.book_id, t.genre, t.depth, t.direct FROM book_genre_tree t
-  UNION ALL
-  SELECT b.id, btrim(b.genre), 1, true FROM books b
-  WHERE b.deleted_at IS NULL AND btrim(b.genre) <> ''
-    AND NOT EXISTS (SELECT 1 FROM book_genres x WHERE x.book_id = b.id)
-) g
+FROM book_genre_tree g
 GROUP BY g.book_id, lower(g.genre), g.depth;
 
 -- Reads per year per genre. Replaces the Read 20XX tabs. The year is derived
@@ -872,9 +865,9 @@ WHERE q.rank = 1 AND (q.status IS NULL OR q.status IN ('to_read', 'unlisted'));
 --                   (estimates included, an unknown count never), are at most
 --                   p_room, largest first.
 --   genre_change    to_read books none of whose top-level genres has a read in
---                   p_today's year: book_genre_levels at depth 1, Calibre's,
---                   else books.genre for a book Calibre gives none (D-98,
---                   task 4.5). The year is today's,
+--                   p_today's year: book_genre_levels at depth 1, Calibre's
+--                   (D-98, task 4.5); a book with none is never listed. The
+--                   year is today's,
 --                   not the target's: a future year has no reads yet.
 -- Groups 1-3 take what follow_next does (to read, Unlisted, no status), flagged
 -- `unlisted` for the sheet's tag (1.22); groups 4-8 take to_read only. So a read,
@@ -911,8 +904,8 @@ WITH span AS (
                     WHERE pp.user_id = p_user AND pp.book_id = b.id
                       AND (pp.period = p_target OR s.quarter IS NULL AND pp.year = s.year))
 ), top_genre AS (
-  -- Each live book's top-level genres: Calibre's, else the workbook's one
-  -- (book_genre_levels, task 4.5); one spelling of each whatever its case, so
+  -- Each live book's top-level genres, Calibre's (book_genre_levels, task
+  -- 4.5); one spelling of each whatever its case, so
   -- the detail never names it twice: the capitalised one, under "C".
   SELECT g.book_id, g.genre FROM book_genre_levels g WHERE g.depth = 1
 ), read_genre AS (
