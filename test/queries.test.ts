@@ -138,6 +138,18 @@ describe("the Library's genres from Calibre (task 4.5)", () => {
     for (const { genre } of (await q.listCounts(USER)).genres) expect(await under(genre), genre).not.toContain("wb");
     expect(await under("Sci-Fi")).toEqual([]);
     expect(await sql`SELECT 1 FROM book_genre_levels WHERE book_id = 'wb'`).toHaveLength(0);
+    // And nothing could give it one: books has no genre column, and no view reads a column of books
+    // named genre (before TASK-089, book_genre_levels read the workbook's books.genre for this book).
+    expect(await sql`SELECT 1 FROM information_schema.columns
+                     WHERE table_schema = 'public' AND table_name = 'books' AND column_name = 'genre'`).toHaveLength(0);
+    const readers = await sql`
+      SELECT DISTINCT c.relname FROM pg_depend d
+      JOIN pg_rewrite rw ON rw.oid = d.objid JOIN pg_class c ON c.oid = rw.ev_class
+      JOIN pg_attribute a ON a.attrelid = d.refobjid AND a.attnum = d.refobjsubid
+      WHERE d.classid = 'pg_rewrite'::regclass AND d.refobjid = 'books'::regclass AND a.attname = 'genre'`;
+    expect(readers).toHaveLength(0);
+    expect(await sql`SELECT 1 FROM book_genre_levels l WHERE NOT EXISTS (
+                       SELECT 1 FROM book_genres g WHERE g.book_id = l.book_id)`).toHaveLength(0);
     // Its read still counts: once in its year, under NULL among the year's genres.
     await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
               VALUES (${USER}, 'wb', 'read', '2025-06-02', 'exact')`;
