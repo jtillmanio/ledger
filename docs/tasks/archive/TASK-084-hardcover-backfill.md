@@ -1,7 +1,7 @@
 ---
 id: TASK-084
 title: 4.2 Open Library and Hardcover backfill
-status: Review
+status: Done
 depends_on: [TASK-034, TASK-040, TASK-057]
 size: M
 model: opus
