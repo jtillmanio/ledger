@@ -215,7 +215,7 @@ tables.
   skeleton within 200 ms, cold or warm, and a warm tap between screens shows the
   page within 1 s. What holds that, and the test that fails if it slips:
   - **Queries per page, in one wave.** `/comics` 7, `/comics/runs` 2, a run 3,
-    `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/books` 11, `/books/plan` 5 (task 2.10: capacity, rail, rows, your pace; task 2.7: the year's acceptance), `/inbox` 2, `/settings` 2, `/watch` none, `/login` none, `/` none (a redirect), each page's queries started together
+    `/comics/status` 4, `/books/status` 4, `/books/list` 5, `/books` 11, `/books/plan` 5 (task 2.10: capacity, rail, rows, your pace; task 2.7: the year's acceptance), `/books/top` 2 (task 3.4b: the years, and the year asked for or this one; a third query in a second wave only when that year has no read and the page opens the newest instead), `/inbox` 2, `/settings` 2, `/watch` none, `/login` none, `/` none (a redirect), each page's queries started together
     (`test/query-budget.test.ts`, which counts them). A query that must wait on
     another raises a page's waves; raising either number needs a reason here.
     The dashboard (then `/`) and `/books/list` went from 4 to 5 with the inbox
