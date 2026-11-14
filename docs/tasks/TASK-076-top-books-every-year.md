@@ -74,8 +74,8 @@ Library renders no year chip. The up → down → up migration test passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The Library's year chips, split out at the plan gate: TASK-091 (new), and the 3.4b row of the task list names it (approved at plan)
-- D-65's text and the `books_by_year` comment in `etl/views.sql` still name the Library's year chips; they go with the chips (approved at plan)
+- The Library's year chips, split out at the plan gate: TASK-091 (new), and the 3.4b row of the task list names it (approved at plan) → docs/tasks/TASK-091-library-year-chips-go.md (new); docs/06-tasklist.md § M14 (3.4b row)
+- D-65's text and the `books_by_year` comment in `etl/views.sql` still name the Library's year chips; they go with the chips (approved at plan) → docs/tasks/TASK-091-library-year-chips-go.md § Context
 
 ## Plan
 
@@ -96,6 +96,10 @@ Approved 2026-11-14 by the owner: split (the Library's chips → TASK-091), carr
 - AC-2, AC-3, AC-6 states: `test/top-books.test.tsx` (the test database, the real query, the page rendered): 2024 with 14 reads, 12 ranked → ranks 1–10, one divider, 11–12, *Not ranked yet*, the 2 unranked, 14 rows, no `<details>`; the switcher's options newest first then *No year*; *so far* on this year's heading; `?year=` chooses the year; the empty, skeleton and error states.
 - AC-1 (browser clauses), AC-3 reload, AC-4, AC-6: `test/e2e/top-books.spec.ts`: a past year's ten, the divider, the rest, *Not ranked yet*, *No year*; the year survives a reload; rank 11 → 4 by the keyboard and by the row menu, the undo toast restoring the screen and the database; handle names, 44px handles at the phone, axe, contrast, reduced motion, screenshots at 360, 834 and 1280px light and dark.
 - `test/e2e/queue.spec.ts` re-run unchanged for ReorderList.
+
+**Revisions after approval**
+- `test/query-budget.test.ts` (outside the file list): `/books/top` joins the budget at 2 queries, 1 wave, proving the page reads the years and the year together (task 0.9). Test only.
+- The row menu is named with the rank too (*More for <title>, rank n*, AC-6): `ReorderList` adds the caller's `place` to the menu's name; the queue, which passes none, keeps *More for <title>* (spec review R1).
 
 **Risks**: dropping a ranked read below the unranked ones makes it the last rank, not unranked; taking a read out of the ranking is not offered here.
 

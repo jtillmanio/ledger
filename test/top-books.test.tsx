@@ -109,7 +109,11 @@ describe("a year's whole list (AC-2)", () => {
       ...RANKED.map((id, i) => `Reorder ${title(id)}, rank ${i + 1}`),
       `Reorder ${title("u1")}, not ranked yet`, `Reorder ${title("u2")}, not ranked yet`,
     ]);
-    expect(doc.querySelectorAll("button.rowmenu-btn")).toHaveLength(14);
+    const menus = [...doc.querySelectorAll("button.rowmenu-btn")].map((b) => b.getAttribute("aria-label"));
+    expect(menus).toEqual([
+      ...RANKED.map((id, i) => `More for ${title(id)}, rank ${i + 1}`),
+      `More for ${title("u1")}, not ranked yet`, `More for ${title("u2")}, not ranked yet`,
+    ]);
     // A listen is ranked like any read, with the headphones glyph (1.23).
     expect(rows(doc)[2].querySelector('svg.listen[aria-label="Listened"]')).not.toBeNull();
   });
@@ -174,6 +178,37 @@ describe("the year switcher (AC-3)", () => {
     expect(selected(doc)).toBe("none");
     expect(titles(doc)).toEqual([title("undated")]);
     expect(doc.querySelectorAll("button.drag")).toHaveLength(0);
+  });
+});
+
+describe("what a year counts (D-65, R2-08)", () => {
+  it("lists a reread in each year it was read, and nothing of another user's", async () => {
+    await read("now", "2019-02-02");
+    await sql`INSERT INTO users (id, name) VALUES ('someone', 'Else')`;
+    await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, year_rank)
+              VALUES ('someone', 'u1', '2025-05-05', 'exact', 1), ('someone', 'old', NULL, 'none', NULL)`;
+    expect(titles(await page({ year: "2019" }))).toEqual([title("now"), title("old"), title("statusonly")]);
+    expect(titles(await page({ year: "2026" }))).toEqual([title("now")]);
+    const doc = await page();
+    // 2025 is someone else's only.
+    expect(options(doc).map(([v]) => v)).toEqual(["2026", "2024", "2019", "none"]);
+    expect(titles(await page({ year: "none" }))).toEqual([title("undated")]);
+  });
+
+  it("counts a year-only finish in its year, with no month, and an undated status-only read under No year", async () => {
+    await sql`UPDATE read_events SET finished_on = '2019-07-01', finished_on_precision = 'approximate' WHERE book_id = 'old'`;
+    await sql`UPDATE book_status SET finished_on = NULL, finished_on_precision = 'none' WHERE book_id = 'statusonly'`;
+    const y2019 = await page({ year: "2019" });
+    expect(titles(y2019)).toEqual([title("old")]);
+    expect(rows(y2019)[0].querySelector(".qwords")).toBeNull();
+    expect(titles(await page({ year: "none" }))).toEqual([title("statusonly"), title("undated")]);
+  });
+
+  it("lists a tie a re-dated read left in read order, as rankRead renumbers it", async () => {
+    // t05 re-dated in from another year with its rank 2: two reads at 2, the later-logged one second.
+    await sql`UPDATE read_events SET year_rank = 2 WHERE book_id = 't05'`;
+    const order = titles(await page({ year: "2024" }));
+    expect(order.slice(0, 4)).toEqual([title("t01"), title("t02"), title("t05"), title("t03")]);
   });
 });
 

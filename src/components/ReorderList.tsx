@@ -48,7 +48,7 @@ export const REORDER_HELP = "Space lifts a row, arrows move it, Space drops it, 
  */
 export default function ReorderList<R extends ReorderRow>({
   rows, move: write, remove: removal, renderBody, scopeLabel = "", label, helpId = "dnd-help",
-  help = REORDER_HELP, helpHidden = false, place = (_row, i, n) => `position ${i + 1} of ${n}`, marker,
+  help = REORDER_HELP, helpHidden = false, place, marker,
 }: {
   rows: R[];
   move: (id: string, toOrdinal: number) => Promise<void | MoveResult>;
@@ -63,7 +63,7 @@ export default function ReorderList<R extends ReorderRow>({
   help?: string;
   /** Screen readers only, for a page that holds several lists. */
   helpHidden?: boolean;
-  /** A row's place, in its handle's name: `position 2 of 5` unless the caller names it. */
+  /** A row's place, in its handle's name (`position 2 of 5` unless the caller names it), and then in its menu's too. */
   place?: (row: R, index: number, n: number) => string;
   /** A divider or a heading drawn at the top of the row at `index`; null for none. */
   marker?: (index: number) => React.ReactNode;
@@ -91,6 +91,7 @@ export default function ReorderList<R extends ReorderRow>({
   }, [lift, order]);
 
   const n = order.length;
+  const placeOf = (r: R, i: number) => (place ? place(r, i, n) : `position ${i + 1} of ${n}`);
   const title = (id: string) => order.find((r) => r.id === id)?.title ?? "";
   const at = (id: string, list = order) => list.findIndex((r) => r.id === id);
 
@@ -292,7 +293,7 @@ export default function ReorderList<R extends ReorderRow>({
                 type="button"
                 className="drag"
                 ref={(el) => { if (el) handles.current.set(r.id, el); else handles.current.delete(r.id); }}
-                aria-label={`Reorder ${r.title}, ${place(r, i, n)}${scopeLabel}`}
+                aria-label={`Reorder ${r.title}, ${placeOf(r, i)}${scopeLabel}`}
                 aria-describedby={helpId}
                 aria-pressed={lift?.id === r.id}
                 onKeyDown={(e) => onKeyDown(e, r.id)}
@@ -303,7 +304,7 @@ export default function ReorderList<R extends ReorderRow>({
                 <span aria-hidden="true">⋮⋮</span>
               </button>
               {renderBody(r, i)}
-              <Menu label={`More for ${r.title}`} className="rowmenu-btn" items={items(r, i)}>⋯</Menu>
+              <Menu label={`More for ${r.title}${place ? `, ${place(r, i, n)}` : ""}`} className="rowmenu-btn" items={items(r, i)}>⋯</Menu>
             </li>
           );
         })}

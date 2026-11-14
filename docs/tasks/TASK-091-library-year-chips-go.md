@@ -1,7 +1,7 @@
 ---
 id: TASK-091
 title: 3.4b Rank a book when you finish it (2b of 3) — the Library's year chips go
-status: Ready
+status: Draft
 depends_on: [TASK-076]
 size: M
 model: sonnet
