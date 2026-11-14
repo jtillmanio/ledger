@@ -2,7 +2,7 @@
 // Task 1.2: one undo stack for the app. Its entries are closures, so it is not
 // coupled to progress rows (R1-09); a spine mark is just one caller. The toast
 // says what happened (STYLE_GUIDE 14.3, 15) and lasts 8 seconds.
-import { act, useRef } from "react";
+import { act, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { UNDO_MS, UndoProvider, useUndo, type OfferChip, type UndoEntry } from "../src/components/Undo";
@@ -549,18 +549,30 @@ describe("the finish's Rank it chip and the toast's pin", () => {
     expect(container.querySelector(".toast-offer")).not.toBeNull();
   };
 
-  /** Pushes, pins the toast showing and lets go of it, each from its own button. */
+  /**
+   * Pushes, pins the toast showing and lets go, each from its own button. `#pin` counts the
+   * pins that answered a release (`data-pins`); `#release` lets go of the newest, `#release-first`
+   * of the oldest.
+   */
   function Holder({ entry, focus = false }: { entry: UndoEntry; focus?: boolean }) {
     const { push, hold } = useUndo();
-    const release = useRef<(() => void) | null>(null);
+    const releases = useRef<(() => void)[]>([]);
+    const [pins, setPins] = useState(0);
     return (
       <>
         <button type="button" id="push" onClick={() => push(entry, { focus })}>push</button>
-        <button type="button" id="pin" onClick={() => { release.current = hold(); }}>pin</button>
-        <button type="button" id="release" onClick={() => release.current?.()}>release</button>
+        <button type="button" id="pin" data-pins={pins} onClick={() => {
+          const release = hold();
+          if (typeof release !== "function") return;
+          releases.current.push(release);
+          setPins((n) => n + 1);
+        }}>pin</button>
+        <button type="button" id="release" onClick={() => releases.current.pop()?.()}>release</button>
+        <button type="button" id="release-first" onClick={() => releases.current.shift()?.()}>release first</button>
       </>
     );
   }
+  const pins = () => container.querySelector("#pin")!.getAttribute("data-pins");
   const click = async (id: string) => act(async () => container.querySelector<HTMLButtonElement>(`#${id}`)!.click());
 
   it("draws Rank it first, on a row of its own above Now reading; pressing it opens with itself as opener and writes nothing", async () => {
@@ -603,26 +615,39 @@ describe("the finish's Rank it chip and the toast's pin", () => {
     expect(toast()).toBeNull();
   });
 
-  it("a pin let go after its toast was replaced leaves the new toast alone, held or not", async () => {
+  it("a pin let go after its toast was replaced leaves the new toast's own pin alone", async () => {
     vi.useFakeTimers();
     act(() => root.render(<UndoProvider><Holder entry={{ label: "x", undo: async () => {} }} /></UndoProvider>));
     await click("push");
     await click("pin");
-    // A placement pushes its own entry: the new toast starts unheld.
+    expect(toast()!.hasAttribute("data-held")).toBe(true);
+    // A placement pushes its own entry: the new toast starts unheld, and is pinned in its turn.
     await click("push");
     expect(toast()!.hasAttribute("data-held")).toBe(false);
-    act(() => toast()!.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })));
+    await click("pin");
+    expect(pins()).toBe("2");
     expect(toast()!.hasAttribute("data-held")).toBe(true);
-    // The old pin's release must not end the hover's hold on the new toast.
+    // The first toast's release is stale: the new toast stays pinned, past 8s.
+    await click("release-first");
+    expect(toast()!.hasAttribute("data-held")).toBe(true);
+    act(() => vi.advanceTimersByTime(20_000));
+    expect(toast()).not.toBeNull();
+    // Its own release lets go.
     await click("release");
-    expect(toast()!.hasAttribute("data-held")).toBe(true);
+    expect(toast()!.hasAttribute("data-held")).toBe(false);
+    act(() => vi.advanceTimersByTime(8100));
+    expect(toast()).toBeNull();
   });
 
-  it("with no toast showing a pin is a no-op", async () => {
+  it("with no toast showing a pin still answers a release, and letting go changes nothing", async () => {
     act(() => root.render(<UndoProvider><Holder entry={{ label: "x", undo: async () => {} }} /></UndoProvider>));
     await click("pin");
+    expect(pins()).toBe("1");
     await click("release");
     expect(toast()).toBeNull();
+    // A toast pushed after it is not held by it.
+    await click("push");
+    expect(toast()!.hasAttribute("data-held")).toBe(false);
   });
 
   it("push with focus sends focus into the new toast, on its Undo when it carries no chips", async () => {
