@@ -3554,6 +3554,24 @@ then every other book read that year, with none collapsed; an unranked read
 shows under *Not ranked yet*; a read with no date shows under *No year*; and the
 Library renders no year chip. The up → down → up migration test passes.
 
+### ☐ 3.4c A re-dated read leaves its old year's ranking · S
+From TASK-077 (3.4b, PR #260), approved at its plan gate (owner, 2026-11-14).
+Depends on 3.4b. A ranked read re-dated into another year, or to no date
+(`redateBookRead`, a *Finished* correction through `saveBookStatus`, *All
+reads*), carries its `year_rank` today: a gap in the year it left and a tie in
+the year it joined, until the next rank write to each heals them
+(`yearRanking` orders by rank, then the read's id; TASK-075). Instead, the
+re-date takes the read out of its old year's ranking in the same transaction,
+closing the gap (as `rankRead(…, null)` does), and lands unranked in its new
+year, under *Not ranked yet*; its undo puts the date and the old year's ranks
+back as they were. A re-date within the same year keeps the rank.
+
+**Check:** `npm test`: re-dating the read ranked 3 of five in 2025 into 2024
+leaves 2025 ranked 1–4 contiguous, the read unranked in 2024 and 2024's ranks
+unchanged; re-dating it to no date does the same with no year; one undo of
+either restores 2025's five ranks and the read's date; re-dating it to another
+day of 2025 keeps it at 3.
+
 ### ☐ 3.6 Eras on the run detail · M
 The era bands in `design/mockups.html` → "Run detail — eras" have no data behind
 them: the workbook has no era column and `etl/extract.py` never mentions one.
