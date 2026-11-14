@@ -5,6 +5,7 @@
 // level filter. The tabs read views; nothing about them is stored.
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireTestUrl } from "../scripts/lib/testdb.mjs";
+import { deckSections } from "../src/lib/on-deck";
 import { markRead, testSql, truncateAll } from "./db";
 
 const USER = "test-user";
@@ -309,5 +310,89 @@ describe("books Up next, Done and the level filter (roadmap 1.9 check)", () => {
     expect(done.map((b) => [b.id, b.status, b.year])).toEqual([
       ["fin", "read", 2026], ["old", "read", 2024], ["nodate", "read", null], ["quit", "dnf", 2026],
     ]);
+  });
+});
+
+// Task 4.5b (D-124, AC-2): On deck by genre. The query gives each On deck book its top-level genres
+// and runs the group by series, then title; the pure grouping makes the chips and sections.
+describe("On deck by genre (roadmap 4.5b check)", () => {
+  const genre = (id: string, ...paths: string[]) => Promise.all(paths.map((g) => sql`INSERT INTO book_genres (book_id, genre) VALUES (${id}, ${g})`));
+  const deck = async (id: string, title: string, genres: string[] = [], series?: string, pos?: number) => {
+    if (series) await sql`INSERT INTO book_series (id, name) VALUES (${series}, ${series}) ON CONFLICT DO NOTHING`;
+    await sql`INSERT INTO books (id, title, series_id, series_position) VALUES (${id}, ${title}, ${series ?? null}, ${pos ?? null})`;
+    await status(id, "to_read");
+    await plan(id, "on_deck");
+    await genre(id, ...genres);
+  };
+
+  it("each On deck book carries its top-level genres, a subgenre's parent included once, sorted", async () => {
+    await deck("epic", "Epic", ["Fantasy.Epic Fantasy"]);
+    await deck("sf", "Sci", ["Sci-Fi"]);
+    await deck("both", "Both", ["Sci-Fi", "Fantasy.Epic Fantasy", "Fantasy.Dark"]);
+    await deck("none", "None");
+    const { planned } = await q.booksUpNext(USER);
+    const genres = Object.fromEntries(planned.map((b) => [b.id, b.genres]));
+    expect(genres).toEqual({ epic: ["Fantasy"], sf: ["Sci-Fi"], both: ["Fantasy", "Sci-Fi"], none: [] });
+  });
+
+  it("the On deck group runs by series, then position, then title, a book with no series last; quarters keep their order", async () => {
+    await deck("z", "Zebra");
+    await deck("b2", "Xray", [], "Beta", 2);
+    await deck("b1", "Yankee", [], "Beta", 1);
+    await deck("a1", "Zulu", [], "Alpha", 1);
+    await deck("m", "Mango");
+    for (const id of ["q2", "q1"]) { await book(id); await status(id, "to_read"); await plan(id, "2027-Q1"); }
+
+    const { planned } = await q.booksUpNext(USER);
+    expect(planned.map((b) => b.id)).toEqual(["q2", "q1", "a1", "b1", "b2", "m", "z"]);
+  });
+
+  type B = { id: string; genres: string[] };
+  const fantasy: B = { id: "f", genres: ["Fantasy"] };
+  const sf: B = { id: "s", genres: ["Sci-Fi"] };
+  const both: B = { id: "x", genres: ["Fantasy", "Sci-Fi"] };
+  const none: B = { id: "n", genres: [] };
+
+  it("a Fantasy and a Sci-Fi section, the book in both in each, and the count the distinct books", () => {
+    const view = deckSections([fantasy, both, sf]);
+    expect(view.sections.map((s) => [s.genre, s.books.map((b) => b.id)])).toEqual([
+      ["Fantasy", ["f", "x"]], ["Sci-Fi", ["x", "s"]],
+    ]);
+    expect(view.chips).toEqual([{ genre: "Fantasy", books: 2 }, { genre: "Sci-Fi", books: 2 }]);
+    expect(view.drawn).toBe(3);
+  });
+
+  it("chips run most books first, ties by name; sections follow the chips", () => {
+    const view = deckSections([sf, both, { id: "m", genres: ["Mystery"] }, { id: "s2", genres: ["Sci-Fi"] }]);
+    expect(view.chips.map((c) => c.genre)).toEqual(["Sci-Fi", "Fantasy", "Mystery"]);
+    expect(view.sections.map((s) => s.genre)).toEqual(["Sci-Fi", "Fantasy", "Mystery"]);
+  });
+
+  it("a book with no genre is in a last No genre section with no chip, counted once", () => {
+    const view = deckSections([none, fantasy, sf]);
+    expect(view.sections.map((s) => s.genre)).toEqual(["Fantasy", "Sci-Fi", null]);
+    expect(view.chips.map((c) => c.genre)).toEqual(["Fantasy", "Sci-Fi"]);
+    expect(view.drawn).toBe(3);
+  });
+
+  it("a chosen genre, in any case, leaves only that section and counts what it draws; No genre is hidden", () => {
+    const view = deckSections([none, fantasy, both, sf], "fANTASY");
+    expect(view.chosen).toBe("Fantasy");
+    expect(view.sections.map((s) => [s.genre, s.books.map((b) => b.id)])).toEqual([["Fantasy", ["f", "x"]]]);
+    expect(view.drawn).toBe(2);
+    // The chips stay whole: the row lets you switch.
+    expect(view.chips.map((c) => c.genre)).toEqual(["Fantasy", "Sci-Fi"]);
+  });
+
+  it("a genre no On deck book has draws everything, as a stale link would", () => {
+    const view = deckSections([fantasy, sf, none], "Horror");
+    expect(view.chosen).toBeNull();
+    expect(view.sections).toHaveLength(3);
+    expect(view.drawn).toBe(3);
+  });
+
+  it("one spelling per genre whatever its case", () => {
+    const view = deckSections([{ id: "a", genres: ["Fantasy"] }, { id: "b", genres: ["fantasy"] }]);
+    expect(view.chips).toEqual([{ genre: "Fantasy", books: 2 }]);
   });
 });

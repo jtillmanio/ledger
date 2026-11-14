@@ -1990,3 +1990,8 @@ section[data-plan="year"] h2.group-head{color:var(--blocked)}
 .planrail.strip.sk{border-radius:var(--r-cell)}
 .sk-qhead{height:14px;margin:3px 0}
 .sk-qfigs{height:12px;margin:6px 0}
+
+/* On deck's genre sections (task 4.5b, D-124): a quiet sub-heading under the group's, grey like the
+   Library's genre chips (hue identifies data, and a genre's hue stays on the plan rail, D-149). */
+h3.deck-genre{margin:1.25rem 0 .5rem;font-size:.8125rem;line-height:1.25rem;font-weight:600;color:var(--ink-2)}
+h3.deck-genre .n{font-size:.6875rem;font-weight:500;color:var(--muted)}

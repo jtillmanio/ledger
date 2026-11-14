@@ -9,7 +9,7 @@ import BookSort from "@/components/BookSort";
 import BookStatus from "@/components/BookStatus";
 import Cover, { Pending } from "@/components/Cover";
 import { bookDates, bookSub, readSummary } from "@/lib/format";
-import { libraryHref, parseSort } from "@/lib/library-sort";
+import { genreChipHref, libraryHref, parseSort } from "@/lib/library-sort";
 import { seriesAllHref, seriesView } from "@/lib/series-list";
 
 export const dynamic = "force-dynamic";
@@ -126,7 +126,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
       {genres.length > 0 && (
         <div className="filters genre-row" role="group" aria-label="Genre">
           {genres.map(({ genre: g }) => (
-            <Link key={g} prefetch={false} href={libraryHref({ genre: g, ...order })} className="chip"
+            <Link key={g} prefetch={false} href={genreChipHref({ status, level, ...order }, g)} className="chip"
                   aria-current={genre?.toLowerCase() === g.toLowerCase() || undefined}>{g}</Link>
           ))}
         </div>

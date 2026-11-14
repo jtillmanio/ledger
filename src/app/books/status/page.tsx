@@ -11,6 +11,7 @@ import { requireUserId } from "@/lib/auth";
 import { booksDone, booksInFlight, booksUpNext, type DoneBook, type PlannedBook, type StatusBook } from "@/db/queries";
 import { today } from "@/lib/finish-date";
 import { bookDates, quarterName, type Precision } from "@/lib/format";
+import { deckHref, deckSections, NO_GENRE } from "@/lib/on-deck";
 import { parseTab } from "@/lib/status-tabs";
 
 export const dynamic = "force-dynamic";
@@ -63,16 +64,22 @@ function control(b: StatusBook & {
  * level, each quarter in your order and draggable inside itself, each year's
  * bare-year lane after its quarters (amber, no order, with *Place them*, task 2.8),
  * then On deck, and Someday as one row into the Library, never a list here
- * (D-37); *Done* is read books by year finished, the undated last, with the
+ * (D-37), the On deck group drawn by top-level genre with a chip per genre
+ * (task 4.5b, D-124: `?genre=`, nothing stored); *Done* is read books by year finished, the undated last, with the
  * stopped ones folded under *Stopped*.
  */
-export default async function BooksStatus({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
-  const [{ tab: asked }, userId] = await Promise.all([searchParams, requireUserId()]);
+export default async function BooksStatus({ searchParams }: { searchParams: Promise<{ tab?: string; genre?: string }> }) {
+  const [{ tab: asked, genre: askedGenre }, userId] = await Promise.all([searchParams, requireUserId()]);
   const tab = parseTab(asked);
   const [flying, { planned, someday }, finished] = await Promise.all([
     booksInFlight(userId), booksUpNext(userId), booksDone(userId),
   ]);
   const groups = groupPlan(planned);
+  // On deck by genre (task 4.5b): the chips, the sections and the books they draw. The tab counts the
+  // distinct books it draws, so a book in two genre sections counts once and a chosen genre counts its own.
+  const deckGroup = groups.find((g) => g.kind === "on_deck");
+  const deck = deckSections(deckGroup?.books ?? [], typeof askedGenre === "string" ? askedGenre : null);
+  const drawn = planned.filter((b) => b.level !== "on_deck").length + (deckGroup ? deck.drawn : 0);
   const inFlight = [
     { key: "reading", name: "Reading", books: flying.filter((b) => b.status === "reading") },
     { key: "listening", name: "Listening", books: flying.filter((b) => b.status === "listening") },
@@ -90,7 +97,7 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
       <StatusTabs
         base="/books/status"
         tab={tab}
-        counts={{ inflight: flying.length, next: planned.length, done: finished.length }}
+        counts={{ inflight: flying.length, next: drawn, done: finished.length }}
       >
         {tab === "inflight" && (
           flying.length === 0 ? (
@@ -131,7 +138,7 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
               return (
                 <section key={g.key} aria-labelledby={id} data-plan={g.kind}>
                   <h2 id={id} className="group-head">
-                    {name} <span className="mono n">{nBooks(g.books.length)}{g.kind === "quarter" ? kWords(g.books) : ""}</span>
+                    {name} <span className="mono n">{nBooks(g.kind === "on_deck" ? deck.drawn : g.books.length)}{g.kind === "quarter" ? kWords(g.books) : ""}</span>
                   </h2>
                   {g.kind === "year" && (
                     // Held: these books count against the year and sit in no quarter (task 2.8; mockup `status`).
@@ -141,7 +148,28 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
                       <PlaceThem year={g.year!} />
                     </div>
                   )}
-                  {g.kind === "quarter" ? (
+                  {g.kind === "on_deck" && deck.chips.length > 0 && (
+                    // Real links, so the genre is in the URL and a reload keeps it; the chosen one carries aria-current.
+                    <div className="filters genre-row" role="group" aria-label="On deck genre">
+                      <Link prefetch={false} href={deckHref(null)} className="chip" aria-current={!deck.chosen || undefined}>All</Link>
+                      {deck.chips.map(({ genre: c }) => (
+                        <Link key={c} prefetch={false} href={deckHref(c)} className="chip"
+                              aria-current={deck.chosen === c || undefined}>{c}</Link>
+                      ))}
+                    </div>
+                  )}
+                  {g.kind === "on_deck" ? (
+                    deck.sections.map((s) => (
+                      <div key={s.genre ?? "none"} data-deck-genre={s.genre ?? "none"}>
+                        {deck.chips.length > 0 && (
+                          <h3 className="deck-genre">{s.genre ?? NO_GENRE} <span className="mono n">{nBooks(s.books.length)}</span></h3>
+                        )}
+                        <div className="rows plan-rows">
+                          {s.books.map((b) => <StatusBookRow key={b.id} book={b} control={control(b)} />)}
+                        </div>
+                      </div>
+                    ))
+                  ) : g.kind === "quarter" ? (
                     <PlanQuarter period={g.period} rows={g.books.map((b) => ({ ...b, ordinal: b.ordinal! }))} />
                   ) : (
                     <div className={`rows plan-rows${g.kind === "year" ? " lane-year" : ""}`}>

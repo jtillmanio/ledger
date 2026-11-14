@@ -80,3 +80,15 @@ export function libraryHref(params: LibraryParams): string {
   const search = qs.toString();
   return search ? `/books/list?${search}` : "/books/list";
 }
+
+/**
+ * A genre chip's link (task 4.5b, D-124): the genre on top of the status and
+ * the To read level already chosen, so *To read · On deck* then *Fantasy*
+ * lists Fantasy's On deck books instead of the whole Library. The sort rides
+ * along as on every chip; the year and the search, which a genre chip has
+ * always replaced, still go.
+ */
+export function genreChipHref(current: Pick<LibraryParams, "status" | "level" | "sort" | "dir">, genre: string): string {
+  const { status, level, sort, dir } = current;
+  return libraryHref({ status, level, genre, sort, dir });
+}

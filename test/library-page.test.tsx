@@ -7,7 +7,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { UndoProvider } from "../src/components/Undo";
-import { libraryHref, parseSort, reverseName } from "../src/lib/library-sort";
+import { genreChipHref, libraryHref, parseSort, reverseName } from "../src/lib/library-sort";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }) }));
 vi.mock("@/lib/auth", () => ({ requireUserId: async () => "test-user" }));
@@ -169,6 +169,14 @@ describe("the sort in the URL (AC-3)", () => {
     expect(libraryHref({ genre: "Science Fiction", sort: "title" })).toBe("/books/list?genre=Science+Fiction&sort=title");
     expect(libraryHref({ status: "to_read", level: "quarter", q: "the", series: "all", sort: "plan" }))
       .toBe("/books/list?status=to_read&level=quarter&q=the&series=all&sort=plan");
+  });
+
+  it("a genre chip keeps the status and the To read level, and the sort (4.5b, AC-4)", () => {
+    expect(genreChipHref({ status: "to_read", level: "on_deck" }, "Fantasy")).toBe("/books/list?status=to_read&level=on_deck&genre=Fantasy");
+    expect(genreChipHref({ status: "read" }, "Sci-Fi")).toBe("/books/list?status=read&genre=Sci-Fi");
+    expect(genreChipHref({ status: "to_read", level: "on_deck", sort: "title", dir: "desc" }, "Science Fiction"))
+      .toBe("/books/list?status=to_read&level=on_deck&genre=Science+Fiction&sort=title&dir=desc");
+    expect(genreChipHref({}, "Fantasy")).toBe("/books/list?genre=Fantasy");
   });
 
   it("reads a missing dir as the sort's own, and anything unknown as Series", () => {
