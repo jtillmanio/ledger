@@ -2,10 +2,10 @@
 // Task 1.2: one undo stack for the app. Its entries are closures, so it is not
 // coupled to progress rows (R1-09); a spine mark is just one caller. The toast
 // says what happened (STYLE_GUIDE 14.3, 15) and lasts 8 seconds.
-import { act } from "react";
+import { act, useRef } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { UNDO_MS, UndoProvider, useUndo, type UndoEntry } from "../src/components/Undo";
+import { UNDO_MS, UndoProvider, useUndo, type OfferChip, type UndoEntry } from "../src/components/Undo";
 import RunSpine from "../src/components/IssueRow";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -535,6 +535,108 @@ describe("the finish's Keep going? row", () => {
       undoButton()!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
     });
     expect(document.activeElement).toBe(before);
+  });
+});
+
+// Task 3.4b, 3 of 3 (TASK-077, AC-3, AC-5): a finish's *Rank it in <year>* opens This or that, and the
+// toast holds while that sheet is open, so its Undo and chips are still live when it closes.
+describe("the finish's Rank it chip and the toast's pin", () => {
+  const chipButtons = () => [...container.querySelectorAll<HTMLButtonElement>(".toast-chip")];
+  const offerDrawn = async () => {
+    for (let i = 0; i < 40 && !container.querySelector(".toast-offer"); i++) {
+      await act(async () => { await new Promise((r) => setTimeout(r, 5)); });
+    }
+    expect(container.querySelector(".toast-offer")).not.toBeNull();
+  };
+
+  /** Pushes, pins the toast showing and lets go of it, each from its own button. */
+  function Holder({ entry, focus = false }: { entry: UndoEntry; focus?: boolean }) {
+    const { push, hold } = useUndo();
+    const release = useRef<(() => void) | null>(null);
+    return (
+      <>
+        <button type="button" id="push" onClick={() => push(entry, { focus })}>push</button>
+        <button type="button" id="pin" onClick={() => { release.current = hold(); }}>pin</button>
+        <button type="button" id="release" onClick={() => release.current?.()}>release</button>
+      </>
+    );
+  }
+  const click = async (id: string) => act(async () => container.querySelector<HTMLButtonElement>(`#${id}`)!.click());
+
+  it("draws Rank it first, on a row of its own above Now reading; pressing it opens with itself as opener and writes nothing", async () => {
+    const finishUndo = vi.fn(async () => {});
+    const open = vi.fn();
+    const rank: OfferChip = { label: "Rank it in 2026", row: "rank", open };
+    const now: OfferChip = { label: "Mistborn", kind: "series", row: "now", take: vi.fn(async () => ({ label: "x", undo: async () => {} })) };
+    act(() => root.render(<UndoProvider><Pusher entry={{ label: "The Final Empire: read", undo: finishUndo, offer: [rank, now] }} /></UndoProvider>));
+    await push();
+    await offerDrawn();
+    const rows = [...container.querySelectorAll(".toast-offer")];
+    expect(rows[0].classList.contains("toast-rank")).toBe(true);
+    expect(rows[0].textContent).toBe("Rank it in 2026");
+    expect(rows[1].classList.contains("toast-now")).toBe(true);
+    const button = chipButtons()[0];
+    expect(button.tagName).toBe("BUTTON");
+    await act(async () => button.click());
+    expect(open).toHaveBeenCalledExactlyOnceWith(button);
+    // Nothing was written or pushed: the finish's toast and its Undo are still the ones showing.
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(lines()).toEqual(["The Final Empire: read"]);
+    await pressUndo();
+    expect(finishUndo).toHaveBeenCalledOnce();
+  });
+
+  it("a pin holds the toast past 8s until it is let go, and then it has the time it had left", async () => {
+    vi.useFakeTimers();
+    act(() => root.render(<UndoProvider><Holder entry={{ label: "x", undo: async () => {} }} /></UndoProvider>));
+    await click("push");
+    act(() => vi.advanceTimersByTime(5000));
+    await click("pin");
+    expect(toast()!.hasAttribute("data-held")).toBe(true);
+    act(() => vi.advanceTimersByTime(60_000));
+    expect(toast()).not.toBeNull();
+    await click("release");
+    expect(toast()!.hasAttribute("data-held")).toBe(false);
+    act(() => vi.advanceTimersByTime(2900));
+    expect(toast()).not.toBeNull();
+    act(() => vi.advanceTimersByTime(200));
+    expect(toast()).toBeNull();
+  });
+
+  it("a pin let go after its toast was replaced leaves the new toast alone, held or not", async () => {
+    vi.useFakeTimers();
+    act(() => root.render(<UndoProvider><Holder entry={{ label: "x", undo: async () => {} }} /></UndoProvider>));
+    await click("push");
+    await click("pin");
+    // A placement pushes its own entry: the new toast starts unheld.
+    await click("push");
+    expect(toast()!.hasAttribute("data-held")).toBe(false);
+    act(() => toast()!.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })));
+    expect(toast()!.hasAttribute("data-held")).toBe(true);
+    // The old pin's release must not end the hover's hold on the new toast.
+    await click("release");
+    expect(toast()!.hasAttribute("data-held")).toBe(true);
+  });
+
+  it("with no toast showing a pin is a no-op", async () => {
+    act(() => root.render(<UndoProvider><Holder entry={{ label: "x", undo: async () => {} }} /></UndoProvider>));
+    await click("pin");
+    await click("release");
+    expect(toast()).toBeNull();
+  });
+
+  it("push with focus sends focus into the new toast, on its Undo when it carries no chips", async () => {
+    act(() => root.render(<UndoProvider><Holder entry={{ label: "Ranked x", undo: async () => {} }} focus /></UndoProvider>));
+    await click("push");
+    expect(document.activeElement).toBe(undoButton());
+  });
+
+  it("push without it leaves focus where it was", async () => {
+    act(() => root.render(<UndoProvider><Holder entry={{ label: "x", undo: async () => {} }} /></UndoProvider>));
+    const opener = container.querySelector<HTMLButtonElement>("#push")!;
+    act(() => opener.focus());
+    await click("push");
+    expect(document.activeElement).toBe(opener);
   });
 });
 

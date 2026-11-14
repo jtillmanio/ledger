@@ -29,7 +29,7 @@ export type UndoEntry = {
  * answers the entry its own toast carries, whose Undo undoes that write alone;
  * the chips not taken ride along, each in its row.
  */
-export type OfferChip = {
+export type FollowChip = {
   label: string;
   /** Grey after the label: `series`, `subseries`, `shelf`. */
   kind?: string;
@@ -38,6 +38,14 @@ export type OfferChip = {
   /** Writes. Rejects when it couldn't, and then changed nothing. */
   take: () => Promise<UndoEntry>;
 };
+
+/**
+ * *Rank it in 2026* (task 3.4b, TASK-077): a chip on a row of its own, first, that writes
+ * nothing itself but opens *This or that* (`RankSorter`), with the chip as its opener.
+ */
+export type RankChip = { label: string; row: "rank"; open: (opener: HTMLElement) => void };
+
+export type OfferChip = FollowChip | RankChip;
 
 /** How long an entry can be taken back, and how long its toast stays. */
 export const UNDO_MS = 8000;
@@ -51,7 +59,14 @@ type Toast = {
 };
 
 type UndoApi = {
-  push: (entry: UndoEntry) => void;
+  /** `focus`: the new toast takes focus, its first chip else its Undo, as after a chip taken from inside it. */
+  push: (entry: UndoEntry, options?: { focus?: boolean }) => void;
+  /**
+   * Holds the toast showing now, as hover and focus do, until the returned release is called: a
+   * sheet the toast opened (*This or that*, task 3.4b) keeps its Undo and chips live until it
+   * closes, and focus goes back to its chip. Releasing after that toast has gone does nothing.
+   */
+  hold: () => () => void;
   /** A toast with nothing to take back: "Copied 523 unread issues" (task 1.1). */
   notify: (label: string, detail?: string) => void;
   /**
@@ -92,6 +107,12 @@ export function useUndo() {
  * F6, while a toast is up, moves focus to its first control, from anywhere, a
  * sheet included; F6 or Esc inside it hands focus back (D-116). Focus holds the
  * toast, so it can't expire under you, and nothing traps Tab.
+ *
+ * A finish's *Rank it in 2026* chip (task 3.4b, TASK-077) opens *This or that*
+ * instead of writing, and `hold()` pins the toast while that sheet is open: the
+ * finish's Undo and chips stay live above it (D-63), and its chip is still
+ * there for focus to return to. The placement pushes its own entry, which (one
+ * toast at a time) commits the finish.
  */
 export function UndoProvider({ children }: { children: React.ReactNode }) {
   const stack = useRef<Live[]>([]);
@@ -99,7 +120,9 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<Toast | null>(null);
   const [held, setHeld] = useState(false);
   const heldAt = useRef<number | null>(null);
-  const holds = useRef({ hover: false, focus: false });
+  const holds = useRef({ hover: false, focus: false, pin: false });
+  // The toast showing, for a pin's release.
+  const shownId = useRef<number | null>(null);
   const toastEl = useRef<HTMLDivElement>(null);
   // Where focus was before the toast took it.
   const returnTo = useRef<HTMLElement | null>(null);
@@ -115,7 +138,8 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
 
   /** Shows `next` (or nothing), unheld. */
   const present = useCallback((next: Toast | null) => {
-    holds.current = { hover: false, focus: false };
+    holds.current = { hover: false, focus: false, pin: false };
+    shownId.current = next?.id ?? null;
     heldAt.current = null;
     setHeld(false);
     setToast(next);
@@ -129,8 +153,9 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
   }, [live, present]);
 
   // Only the newest entry stays: the older ones are committed (task 1.8b).
-  const push = useCallback((entry: UndoEntry) => {
+  const push = useCallback((entry: UndoEntry, options?: { focus?: boolean }) => {
     stack.current = [{ ...entry, id: ++ids.current, expires: Date.now() + UNDO_MS }];
+    if (options?.focus) refocusToast.current = true;
     showTop();
   }, [showTop]);
 
@@ -167,9 +192,9 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
   }, [live, showTop, present, giveFocusBack]);
 
   // Hover or focus holds the toast; letting go gives back the time it was held.
-  const hold = useCallback((kind: "hover" | "focus", on: boolean) => {
+  const hold = useCallback((kind: "hover" | "focus" | "pin", on: boolean) => {
     holds.current[kind] = on;
-    const want = holds.current.hover || holds.current.focus;
+    const want = holds.current.hover || holds.current.focus || holds.current.pin;
     if (want && heldAt.current === null) {
       heldAt.current = Date.now();
       setHeld(true);
@@ -251,8 +276,18 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
     };
   }, [showing]);
 
-  // push, notify and fail are stable, so consumers don't re-render when the toast changes.
-  const ctx = useMemo(() => ({ push, notify, fail }), [push, notify, fail]);
+  // A pin holds the toast showing now until its release; a release after that toast has gone does nothing.
+  const pin = useCallback(() => {
+    const id = shownId.current;
+    if (id === null) return () => {};
+    hold("pin", true);
+    return () => {
+      if (shownId.current === id) hold("pin", false);
+    };
+  }, [hold]);
+
+  // push, notify, fail and hold are stable, so consumers don't re-render when the toast changes.
+  const ctx = useMemo(() => ({ push, notify, fail, hold: pin }), [push, notify, fail, pin]);
 
   return (
     <UndoContext.Provider value={ctx}>

@@ -1004,6 +1004,12 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
 /* ══ Task 2.2c — the Follow… sheet and the finish offer (D-108, D-116). The default Phone view shows the 360 frames. ══ */
 body[data-vp="phone"] .screen[data-id="follow"] .frame[data-w="p360"],
 body[data-vp="phone"] .screen[data-id="finishoffer"] .frame[data-w="p360"]{display:block}
+/* Task 3.4b, 3 of 3 (TASK-077): This or that. The default Phone view shows the 360 frames. */
+body[data-vp="phone"] .screen[data-id="thisorthat"] .frame[data-w="p360"]{display:block}
+.tot-pair{display:flex;align-items:stretch;gap:.5rem}
+.tot-card{flex:1 1 0;min-width:0;min-height:44px;display:flex;flex-direction:column;gap:.25rem;padding:.75rem;font:inherit;text-align:left;color:var(--ink);background:var(--surface);border:1px solid var(--faint-deco);border-radius:8px}
+.tot-card .tot-tag{margin-top:auto;padding-top:.25rem}
+.toast .kg.tot-rank + .kg{margin-top:.25rem}
 /* Task 2.2f: the books In flight frames, at 360 in the default Phone view too. */
 body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{display:block}
 .frame.fin-f .seg span .n{opacity:1}
@@ -1070,6 +1076,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   <button data-s="add">Add books</button>
   <button data-s="shelves">Shelves</button>
   <button data-s="top">Top books</button>
+  <button data-s="thisorthat">This or that</button>
 
   <h2>Sept 2026 audit</h2>
   <button data-s="telescope">Telescope — variants</button>
@@ -4434,6 +4441,72 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
 </section>
 
 <!-- ══ TOP ══ -->
+<section class="screen" data-id="thisorthat">
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a></nav>
+  <div class="wrap">
+    <h1 class="t">Library</h1>
+    <div class="group" style="position:relative">
+      <div class="row"><span class="cv m k3">WOA</span><div class="rb"><span class="rh"><span class="rt">The Well of Ascension</span><span class="rm">2026 &middot; 245k</span></span><div class="rs">Brandon Sanderson &middot; Mistborn #2</div><div style="margin-top:.375rem"><span class="bdg dn">read today</span></div></div><button class="menubtn" aria-label="More for The Well of Ascension">&#8943;</button></div>
+    </div>
+    <div class="toast offer" role="status" aria-live="polite"><span class="tl"><span>The Well of Ascension: read</span><span class="t2">Finished 5 November 2026</span></span><u>Undo</u><div class="kg tot-rank"><button>Rank it in 2026</button></div><div class="kg nr" role="group" aria-labelledby="tot-nr"><span class="kgl" id="tot-nr">Now reading</span><button aria-label="Stop following Mistborn, series">Mistborn <span class="k">&middot; series</span> <span class="x" aria-hidden="true">&times;</span></button><button aria-label="Stop following Cosmere">Cosmere <span class="x" aria-hidden="true">&times;</span></button></div><i class="cd" aria-hidden="true"></i></div>
+  </div>
+</div></div></div>
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a></nav>
+  <div class="wrap"><h1 class="t">Library</h1></div>
+  <div class="scrim"></div>
+  <div class="dsheet" role="dialog" aria-modal="true" aria-label="Rank The Well of Ascension in 2026" style="top:auto">
+    <div class="grab"></div>
+    <div class="sheetbar"><h2 class="fsh" tabindex="-1">Rank The Well of Ascension in 2026</h2></div>
+    <div class="wrap" style="padding-top:0">
+      <p style="margin:.25rem 0 .75rem;font-size:.9375rem">Which did you like more?</p>
+      <div class="tot-pair" role="group" aria-label="Which did you like more?">
+        <button class="tot-card"><span class="cv m k3" style="width:48px;height:72px">WOA</span><b>The Well of Ascension</b><span class="lede">Brandon Sanderson &middot; Mistborn #2</span><span class="lede tot-tag">Just finished</span></button>
+        <span class="lede" style="align-self:center">or</span>
+        <button class="tot-card"><span class="cv m k1" style="width:48px;height:72px">WAT</span><b>Wind and Truth</b><span class="lede">Brandon Sanderson &middot; Stormlight #5</span><span class="lede tot-tag mono">#17</span></button>
+      </div>
+      <p class="lede mono" style="margin:.625rem 0 0">Pick 1 of at most 6</p>
+      <div class="btnrow" style="margin-top:.875rem"><button class="btn sec">Skip</button></div>
+    </div>
+    <div class="toast offer" role="status" aria-live="polite" style="margin:.75rem .875rem"><span class="tl"><span>The Well of Ascension: read</span><span class="t2">Finished 5 November 2026</span></span><u>Undo</u><div class="kg tot-rank"><button>Rank it in 2026</button></div><i class="cd" aria-hidden="true"></i></div>
+  </div>
+</div></div></div>
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a></nav>
+  <div class="wrap"><h1 class="t">Best of 2026 so far</h1></div>
+  <div class="scrim"></div>
+  <div class="dsheet" role="dialog" aria-modal="true" aria-label="Rank Hamnet in 2026" style="top:auto">
+    <div class="grab"></div>
+    <div class="sheetbar"><h2 class="fsh" tabindex="-1">Rank Hamnet in 2026</h2></div>
+    <div class="wrap" style="padding-top:0">
+      <p style="margin:.25rem 0 .75rem;font-size:.9375rem">Nothing ranked in 2026 yet.</p>
+      <div class="btnrow"><button class="btn">Make it #1</button></div>
+      <div class="btnrow" style="margin-top:.875rem"><button class="btn sec">Skip</button></div>
+    </div>
+  </div>
+</div></div></div>
+<div class="frame" data-w="p360"><div class="frame-in"><div class="app" data-theme="dark" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a></nav>
+  <div class="wrap">
+    <h1 class="t">Best of 2026 so far</h1>
+    <div class="group">
+      <h2 class="rankhead" style="margin:0;padding:.75rem .875rem .25rem;font-size:.8125rem;font-weight:600">Not ranked yet <span class="lede">2</span></h2>
+      <div class="row"><span class="cv m k6"></span><div class="rb"><span class="rh"><span class="rt">Hamnet</span><span class="rm">Sep</span></span><div class="rs">Maggie O&rsquo;Farrell</div></div><button class="btn sec sm" style="flex:0 0 auto;min-height:44px;align-self:center">Rank it</button><button class="drag" aria-label="Reorder Hamnet, not ranked yet">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for Hamnet">&#8943;</button></div>
+      <div class="row"><span class="cv m k1"></span><div class="rb"><span class="rh"><span class="rt">The Alloy of Law</span><span class="rm">Oct</span></span><div class="rs">Brandon Sanderson &middot; Cosmere &middot; Mistborn #4</div></div><button class="btn sec sm" style="flex:0 0 auto;min-height:44px;align-self:center">Rank it</button><button class="drag" aria-label="Reorder The Alloy of Law, not ranked yet">&#8942;&#8942;</button><button class="rowmenu-btn" aria-label="More for The Alloy of Law">&#8943;</button></div>
+    </div>
+  </div>
+</div></div></div>
+<div class="notes"><h3>This or that (task 3.4b, D-101, TASK-077)</h3>
+  <ul>
+    <li><b>Ranked at the finish.</b> A finish of a dated read puts <i>Rank it in 2026</i> first in its toast, on a row of its own above <i>Now reading</i> and <i>Keep going?</i>; it writes nothing, it opens the sorter. A read with no date has no year and no chip.</li>
+    <li><b>Two at a time.</b> The sheet asks <i>Which did you like more?</i>: the read being placed (<i>Just finished</i>, or <i>Not ranked yet</i> from Top books) beside one of the year's ranked reads (<i>#17</i>), each card a 44px+ button. Binary insertion picks which one to ask about, so a year of 34 takes at most 6 picks; the mono line counts them. <i>Skip</i> is grey and writes nothing: the read waits under <i>Not ranked yet</i>.</li>
+    <li><b>The toast holds while the sheet is open</b> (D-63): the finish's Undo and chips stay live above it, and on a phone the sheet's foot clears it (D-144). Placing pushes its own toast, <i>Ranked The Well of Ascension · rank 4 of 35 in 2026</i>, which commits the finish; its Undo puts the year's ranks back. Focus goes to that Undo; Skip, Esc or Back return it to the chip.</li>
+    <li><b>An empty year</b> asks nothing: <i>Make it #1</i> or <i>Skip</i>.</li>
+    <li><b>Top books</b>: every <i>Not ranked yet</i> row carries <i>Rank it</i> (44px on the phone), the same sorter. The sorter is shared with 9.4's song ranking.</li>
+    <li>From 1024px the sheet is the centred dialogue every sheet is; the pair stays side by side at every width. A new pair fades in, opacity only, and not at all under reduced motion.</li>
+  </ul></div>
+</section>
 <section class="screen" data-id="top">
 <div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>

@@ -1,6 +1,6 @@
 # Mockup screen index
 
-`design/mockups.html` is ~540KB for 39 screens (phone + desktop, light + dark).
+`design/mockups.html` is ~540KB for 40 screens (phone + desktop, light + dark).
 Don't `@mention` or `Read` the whole file for one screen — use
 `scripts/screen.sh <id>` (or `scripts/screen.ps1 <id>` on native PowerShell),
 which greps the live file for `data-id="<id>"` and prints just that
@@ -29,7 +29,8 @@ line numbers below drift after an edit.
 | `finishoffer` | The finish offer — a finish from *Reading* or *Listening* follows the series, subseries and universe (D-117): the toast after *Read* gains *Now reading*, one 44px chip each that turns that one to *Not following*, then *Keep going?* for the author and shelves; a taken chip's own toast with the chips left; *Done with Mistborn* on the last unread book; a past read from *To read* follows nothing and keeps 2.2c's chips; F6 into the toast (D-116); 360, 834 and desktop frames (task 2.2c, D-108; task 2.2h) | 3655–3777 |
 | `add` | Add books — search (Hardcover, task 1.4f); searches as you type, one place or source tag a row (task 1.22); the headphones glyph beside a listened book's tag (task 1.23) | 3315–3433 |
 | `shelves` | Shelves | 2528–2624 |
-| `top` | Top books; every year with a finished read in the select, then *No year*; *Best of 2026 so far*; the top ten, the divider (*Beyond the top ten*), the rest of the ranks, then *Not ranked yet*, none collapsed, each row with its handle and ⋯ (task 3.4b, D-122) | 4415–4526 |
+| `thisorthat` | This or that: the finish's toast with *Rank it in 2026* first, above *Now reading*; the sorter sheet over the Library, *Which did you like more?*, the read being placed (*Just finished*) beside a ranked one (*#17*), each card a button, the mono *Pick 1 of at most 6*, grey *Skip*, the held toast above it; an empty year's *Make it #1*; *Rank it* on Top books' *Not ranked yet* rows (dark); 360 frames (task 3.4b, D-101, TASK-077) | 4422–4487 |
+| `top` | Top books; every year with a finished read in the select, then *No year*; *Best of 2026 so far*; the top ten, the divider (*Beyond the top ten*), the rest of the ranks, then *Not ranked yet*, none collapsed, each row with its handle and ⋯ (task 3.4b, D-122); *Rank it* on a *Not ranked yet* row is drawn in `thisorthat` | 4488–4599 |
 | `search` | Search | 2716–2826 |
 | `stats` | Stats | 2830–3076 |
 | `capture` | Quick capture | 3079–3176 |

@@ -863,6 +863,35 @@ export async function topBooksYear(userId: string, year: number | null): Promise
   `;
 }
 
+/**
+ * The read *This or that* places (task 3.4b, D-101): the read with its book,
+ * its finish year (D-21; null for a read with no date, which has no year to
+ * rank in), and that year's ranked reads, best first, in `topBooksYear`'s
+ * order. Null for a read that is missing, not this user's, a comic's, or of a
+ * removed book.
+ */
+export async function rankSorterRead(
+  userId: string, readId: number,
+): Promise<{ read: TopRead; year: number | null; ranked: TopRead[] } | null> {
+  const [read] = await sql<(TopRead & { year: number | null })[]>`
+    SELECT e.id AS read_id, b.id AS book_id, b.title, a.name AS author,
+           s.name AS series, b.series_position, u.name AS universe,
+           b.cover_url, (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
+           e.finished_on::text AS finished_on, e.finished_on_precision, e.format::text AS format, e.year_rank,
+           extract(year FROM e.finished_on)::int AS year
+    FROM read_events e
+    JOIN books b ON b.id = e.book_id AND b.deleted_at IS NULL
+    LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_series s ON s.id = b.series_id
+    LEFT JOIN book_universes u ON u.id = b.universe_id
+    WHERE e.id = ${readId} AND e.user_id = ${userId}
+  `;
+  if (!read) return null;
+  const { year, ...own } = read;
+  const ranked = year === null ? [] : (await topBooksYear(userId, year)).filter((r) => r.year_rank !== null);
+  return { read: own, year, ranked };
+}
+
 /** One finished read of a book, as the status control's *All reads* lists it (task 1.17b). */
 export type BookRead = {
   id: number;

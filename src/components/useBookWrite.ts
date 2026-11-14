@@ -3,7 +3,8 @@
 import { useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { finishWords, toChoice, type FinishValue } from "@/components/FinishDate";
-import { useUndo } from "@/components/Undo";
+import { useRankSorter } from "@/components/RankSorter";
+import { useUndo, type RankChip } from "@/components/Undo";
 import type { FinishOffer } from "@/db/queries";
 import { offerChips } from "@/lib/follow-offer";
 import type { Precision } from "@/lib/format";
@@ -52,7 +53,8 @@ export type BookWriteArgs = {
  */
 export function useBookWrite() {
   const router = useRouter();
-  const { push } = useUndo();
+  const { push, hold } = useUndo();
+  const sorter = useRankSorter();
   return useCallback(async ({
     bookId, status, name, was, finish, start, onSaved, onUndone, refresh = true,
   }: BookWriteArgs): Promise<{ refused: string } | { written: BookWritten }> => {
@@ -71,6 +73,16 @@ export function useBookWrite() {
     const written = (await res.json()) as BookWritten;
     onSaved?.(written);
     if (refresh) router.refresh();
+    const follows = offerChips(written.offer);
+    // A finish that appended a dated read offers to rank it in its year (task 3.4b, D-101); a read with no date has none.
+    const appended = (written.change as { appended?: number | null } | null)?.appended ?? null;
+    const year = status === "read" && written.finish?.on ? Number(written.finish.on.slice(0, 4)) : null;
+    const rank: RankChip[] = sorter && appended !== null && year !== null ? [{
+      label: `Rank it in ${year}`, row: "rank",
+      open: (opener) => sorter.open({
+        readId: appended, bookId, title: name, year, tag: "Just finished", opener, rest: follows, release: hold(),
+      }),
+    }] : [];
     push({
       label: `${name}: ${NAMES[status]}`,
       detail: start ? `Started ${finishWords(start)}`
@@ -82,11 +94,13 @@ export function useBookWrite() {
           body: JSON.stringify({ change: written.change }),
         });
         if (!back.ok) throw new Error("undo failed");
+        // The read is gone: a sorter placing it closes, having written nothing.
+        if (appended !== null) sorter?.cancel(appended);
         onUndone?.();
         router.refresh();
       },
-      offer: offerChips(written.offer),
+      offer: [...rank, ...follows],
     });
     return { written };
-  }, [router, push]);
+  }, [router, push, hold, sorter]);
 }

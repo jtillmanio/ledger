@@ -1,14 +1,14 @@
 ---
 id: TASK-077
 title: 3.4b Rank a book when you finish it (3 of 3) — rank it at the finish, this or that
-status: Ready
+status: In progress
 depends_on: [TASK-075, TASK-076, TASK-055]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 73c21d9
 ---
 
 # TASK-077 — 3.4b Rank a book when you finish it (3 of 3) — rank it at the finish, this or that
@@ -72,9 +72,34 @@ Library renders no year chip. The up → down → up migration test passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- A ranked read re-dated into another year (or to no date) should leave its old year's ranking in the same write, closing the gap, with its undo putting the rank back: a new roadmap item with a proposed Check (approved at plan)
+- Candidate decision: the toast's *Rank it in <year>* chip opens the sorter and holds the toast while it is open (the finish's Undo and chips stay live, D-63); placing pushes its own entry, which commits the finish (one toast at a time), and its Undo undoes the placement alone (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-14 (kept whole: the ACs span both entry points, so a split would rewrite them; empty year: the sheet offers *Make it #1* or *Skip*).
+
+**Steps**
+1. `src/lib/rank-insert.ts` (new): a pure binary-insertion state machine. `start(n)`, `answer(state, "new" | "old" | "skip")` give the next comparison index (into the ranked list, best first), or `done` with a rank (or null for Skip), and the picks so far. At most ⌈log₂(n+1)⌉ picks; n = 0 asks none and places at 1.
+2. `src/components/ThisOrThat.tsx` (new): the shared sorter (9.4 reuses it), generic over `{ id, title, sub, cover }` items, rendered inside `Sheet`. *Which did you like more?*, two cover cards side by side (the new one *Just finished*, the other *#k*), each a named button, 44px or more; a mono *Pick 2 of at most 3*; *Skip* (grey) at the foot. With 0 ranked: *Nothing ranked in <year> yet*, *Make it #1* or *Skip*. Reduced motion: opacity-only.
+3. `GET /api/progress/book/rank?readId=` (+ a query in `src/db/queries.ts`): the read's year, its book, and that year's ranked reads; a read with no date is a 400, a missing one a 404.
+4. `src/components/RankSorter.tsx` (new): provider + `useRankSorter().open(...)`, mounted in `src/app/layout.tsx` inside `UndoProvider`, the sheet lazy-loaded. Loads the year (or takes Top books' rows), runs the sorter, writes `/api/progress/book/rank`, pushes the undo (*Ranked X*, *rank 3 of 7 in 2026*) whose inverse sends the change back.
+5. `Undo.tsx` + `ToastOffer.tsx`: an `OfferChip` may `open` instead of `take`; the rank chip draws on its own row above *Now reading*. `useUndo().hold()` holds the toast until released (as focus does); `push(entry, { focus: true })` sends focus into the new toast.
+6. `useBookWrite.ts`: a finish whose change carries `appended` and a dated finish gets *Rank it in <year>*; undoing the finish closes an open sorter.
+7. `TopBooks.tsx`: each *Not ranked yet* row gets *Rank it* (named *Rank <title> in <year>*), opening the same sorter from the page's rows.
+8. `src/app/globals.css` for the sorter and the rank chip; `design/mockups.html` + `design/mockups-index.md`: the sorter's frame and the toast's rank chip.
+
+**Toast and the two undos.** While the sorter is open the toast is held: the finish's Undo and chips stay live (D-63), and undoing the finish closes the sorter with nothing ranked. Placing pushes its own entry, which (one toast at a time) commits the finish; its Undo undoes the placement alone, and focus goes to it. *Skip*, Esc or Back put focus back on the chip, still there because the toast was held.
+
+**Files**: the eight steps' files (`RankSorter.tsx`, `layout.tsx`, `Undo.tsx`, the rank route, `queries.ts`, `globals.css` beyond "Files likely touched"; `src/lib/follow-offer.ts` too, a type rename only: `offerChips` returns the follow kind of chip now that `OfferChip` has a rank kind); tests `test/rank-insert.test.ts` (new), `test/year-rank.test.ts`, `test/undo.test.tsx`, `test/e2e/top-books.spec.ts`.
+
+**Test strategy**
+- AC-2: `test/rank-insert.test.ts`: n 0–40, every true position within ⌈log₂(n+1)⌉ picks; n ≤ 6, every answer sequence returns the position its answers imply; n = 0 asks none, places at 1.
+- AC-1 (placement, *Skip*): `test/year-rank.test.ts`: six ranked reads, scripted answers through rank-insert into POST: ≤ 3 picks, ranks 1–7 contiguous, undo restores the six; *Skip* writes nothing. The GET route there too.
+- AC-3: `test/undo.test.tsx` (the open chip, `hold` outliving 8 s); `test/e2e/top-books.spec.ts`: a *Year only 1986* finish shows *Rank it in 1986*, an undated finish none, the chip opens the sheet.
+- AC-4, AC-5: `top-books.spec.ts` with a fixture year 1986 of three ranked reads: the picks place it where the answers say; *Skip* → *Not ranked yet*, whose control opens the same sorter; names, 44px, focus to the heading and back to the opener after Esc, Skip and Back, the toast above the sheet, axe, contrast, reduced motion, screenshots 360/834/1280 light and dark.
+
+**Risks**: answers that land after another rank write moved the year: the server clamps, and the toast names the real rank.
 
 ## Review log
 
