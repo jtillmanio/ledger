@@ -343,6 +343,7 @@ with the task that first reads it.
 | ✅ | 1.29 → TASK-060 | Refresh production's comics from `Comics.xlsx`, books untouched | M | _Owner, 2026-11-08 (D-128)_ | — |
 | ✅ | 1.30 → TASK-073 | Bring the Library and Now back under their JS budgets | M | _Owner, 2026-11-10 (PR #222)_ | 1.17b |
 |  | 0.13 | Gate a preview on what its PR adds, not on a ceiling it must raise | M | _Owner, 2026-11-10 (D-142); Phase 0's, listed here beside 1.30; not a cutover gate_ | 1.30 |
+|  | 1.31 | Settle the Owner checklist before the books cutover | S | _Owner, 2026-11-14 (from TASK-084, PR #255); Check proposed_ | — |
 |  | 1.26 → TASK-061 | Cut the books over from the Sheets | M | _The books cutover since 2026-11-08 (D-128)_ | 1.25, 1.14c, 1.17b, 1.29, and every open entry 1.25 names for `Books.xlsx`, with 4.4 and 5.17 (D-132, D-133) and what D-139 pulled ahead |
 
 # Next
@@ -471,7 +472,7 @@ with the task that first reads it.
 |---|---|---|---|---|---|
 |  | 4.4 → TASK-081, TASK-082, TASK-083 | Sync with Calibre, both ways: one command, by hand or weekly | M | _Pulled ahead of 1.26 (D-133)_ | 1.18, 1.21, 1.14c, 5.17 |
 |  | 4.1 | Metron backfill | M |  | — |
-|  | 4.2 → TASK-084 | Open Library and Hardcover backfill | M | _Pulled ahead of 1.26 (D-139)_ | — |
+| ✅ | 4.2 → TASK-084 | Open Library and Hardcover backfill | M | _Pulled ahead of 1.26 (D-139)_ | — |
 |  | 4.3 → TASK-085, TASK-086, TASK-087 | Covers in the UI | S |  | — |
 |  | 4.5 → TASK-088, TASK-089 | Calibre's genres on every screen | M | _Pulled ahead of 1.26 (D-139)_ | 1.18c |
 |  | 4.5b → TASK-090 | On deck by genre | S | _Pulled ahead of 1.26 (D-139)_ | 4.5, 1.9 |

@@ -81,6 +81,16 @@ blocked on it: 2.4, 2.6 and 2.9 assert relationships, not counts.
       you want words left, where should the position live (a page or percent
       on `book_status`, or a log of sessions), and which task builds it? It
       is a schema column, so it waits for your yes.
+- [ ] **Hardcover's matching misses real books (from TASK-084, 4.2, PR #255).**
+      The backfill's dry run over 100 development books matched 85, and some
+      of the 10 it missed are real books it should find. The title-and-author
+      search turns up box sets first (*A Game of Thrones George R .R. Martin*
+      lists four bundles and no novel), and *Walter M. Miller Jr.* doesn't key
+      the same as *Walter M. Miller*. `enrich:books` (1.14b) and the backfill
+      share the rule (D-99), so both miss these. Should a book that matches
+      nothing get a second, title-only search, and should an author's
+      *Jr.*/*Sr.* be ignored when comparing? Answering changes D-99, so it
+      waits for your yes; 1.31 settles it before the cutover.
 
 ## Actions from follow-ups
 

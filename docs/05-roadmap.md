@@ -1690,6 +1690,25 @@ and 64 requests; the budget table and `scripts/perf/budget.json` show those
 numbers again; the Lighthouse job passes; and the status control's tests
 (`test/reading-log.test.tsx`, `test/e2e/start-dates.spec.ts`) pass unchanged.
 
+### ☐ 1.31 Settle the Owner checklist before the books cutover · S
+Owner, 2026-11-14, at 4.2's close-out (TASK-084, PR #255). Follow-ups have
+been queuing owner decisions and actions in `docs/OWNER-CHECKLIST.md`
+(*Decisions waiting on you*, *Actions from follow-ups*, *Approvals from
+follow-ups*). Some of them change the books data the last load carries,
+for example the full `npm run enrich:books` run (1.14b, 1.14c) and 4.2's
+question about the shared Hardcover matching rule. This entry is the
+sitting where every open item is settled before 1.26. The owner decides and
+runs every command. An answer that needs code becomes its own entry or a
+note on the task that will do it, and an item that can wait says so.
+
+**Check:** (proposed; the owner agrees it by merging or edits it first)
+before 1.26's final load, every unticked box under *Decisions waiting on
+you*, *Actions from follow-ups* and *Approvals from follow-ups* in
+`docs/OWNER-CHECKLIST.md` is either ticked with where it went, or ends
+*after the switch:* with a reason; 4.2's Hardcover matching question is
+answered there; and `etl/data/book_details.csv` on `main` holds no
+`openlibrary` row (the full `enrich:books` run has replaced them).
+
 ### ☐ 1.26 Cut the books over from the Sheets · M
 From the owner, 2026-10-28 (D-95). START-HERE Step 14 as an entry, so the
 switch has a box and a Check like any other work: a fresh export and extract,
@@ -1729,7 +1748,8 @@ the owner pulled ahead (D-132); and the entries the owner pulled ahead on
 2026-11-10 (D-139): 2.2j and 2.2k (the book's row and the books page), 2.7,
 2.8, 2.10 and 2.10b (editing and planning the year), 3.4b (ranking as you
 finish), 4.2, 4.5 and 4.5b (Hardcover backfill and Calibre's genres), and
-5.5, 5.14 and 5.15 (DNF with a reason, the listen queue, Parked).
+5.5, 5.14 and 5.15 (DNF with a reason, the listen queue, Parked); and 1.31
+(the Owner checklist settled, owner 2026-11-14).
 
 **Check:** the owner, after the switch: `npm run rebuild -- -EnvFile .env.live`
 and `.\etl\load.ps1 seed-final -EnvFile .env.live` both refuse, naming
@@ -3910,7 +3930,7 @@ run is the placement's note, which 7.8 drafts.
 **Check:** dry run against 50 issues reports match rate and writes nothing.
 Then a real run of 200 with the cache warm.
 
-### ☐ 4.2 Open Library and Hardcover backfill · M
+### ☑ 4.2 Open Library and Hardcover backfill · M
 *Pulled ahead of 1.26 by the owner (D-139):* built before the switch, so a book
 added in the app after it is backfilled from the first day. The after-cutover
 shape below is still the shape; it runs against production from 1.26 on.

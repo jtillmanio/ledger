@@ -70,7 +70,7 @@ to be changed in both.
 | `R2_ACCOUNT_ID`, `R2_BUCKET` | Which Cloudflare account and bucket (not secret) | — | — | Variables | — | Cloudflare → R2 overview |
 | `CLAUDE_CODE_OAUTH_TOKEN` | Claude's PR review and `@claude` workflows | — | — | Secret | — | `/install-github-app` in Claude Code, or `claude setup-token` |
 | `METRON_USERNAME`, `METRON_PASSWORD` (or `METRON_API_TOKEN`) | Metron backfill; *Add issues* search | ✓ | — | — | Production (and Preview, to search on a preview) | Your metron.cloud login |
-| `HARDCOVER_API_TOKEN` | Hardcover backfill (1.14b: `enrich:books`, `calibre`'s series check); *Add books* search (1.4f) | ✓ | — | — | Production (and Preview, to search on a preview) | hardcover.app → your account → the API page |
+| `HARDCOVER_API_TOKEN` | Hardcover lookups (1.14b: `enrich:books`, `calibre`'s series check); *Add books* search (1.4f); the in-app backfill (4.2) | ✓ | — | — | Production (and Preview, to search on a preview) | hardcover.app → your account → the API page |
 | `CALIBRE_LIBRARY` | The Calibre library folder (not secret) | ✓ | — | — | — | The folder holding `metadata.db` |
 | `TMDB_API_KEY` | Phase 8 | Empty | — | — | From Phase 8 | themoviedb.org → account settings |
 
@@ -168,14 +168,16 @@ to be changed in both.
 - **Key:** `HARDCOVER_API_TOKEN`, a personal token, server-side only (D-94),
   in `.env` (named in `.env.example`) and Vercel. Without it `enrich:books`
   runs only `--offline`, `calibre` checks series from the cache, and *Add
-  books* searches your library alone and says *Hardcover isn't set up here*.
+  books* searches your library alone and says *Hardcover isn't set up here*,
+  and the backfill (`POST /api/books/backfill`) refuses with a 503.
   The browser suite's server gets a placeholder (`scripts/lib/e2e.mjs`), never
   the real one.
 - **What uses it:** `npm run enrich:books` and `npm run calibre`'s series
   check (1.14b, `etl/enrich_books.py`, both cached in
   `etl/.hardcover-cache.sqlite`); and *Add books* search (1.4f,
-  `src/lib/hardcover.ts`, cached in the `hardcover_cache` table), which needs
-  it in Vercel.
+  `src/lib/hardcover.ts`, cached in the `hardcover_cache` table), and the
+  backfill of books with no Hardcover id (4.2, `src/db/backfill.ts`, the same
+  client and cache), which need it in Vercel.
 - **Limits and terms:** 60 requests a minute, bursts of 10, 5,000 a day. The
   data may not train a public or commercial model. The API is "heavily in
   flux", so expect changes.

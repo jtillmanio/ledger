@@ -1,0 +1,85 @@
+{
+  "_about": "Hardcover's answers for task 4.2's backfill tests, one per hardcover_cache key (a search is `search:<title> <author>` lower-cased, an ISBN `isbn:<digits>`), in the shapes src/lib/hardcover.ts caches: a search's `results` (Typesense hits) and an ISBN's editions. Trimmed to the fields it reads; the ids are the fixture's own. Each key is one case: an ISBN match whose book-level page count beats its edition's (D-130); a title match behind a compilation; a hand page count; a series position that differs from the stored one; a near spelling (proposed); two books that both match (ambiguous); a compilation alone; the same words reordered; and an ISBN with no edition, which falls back to the title search.",
+  "isbn:9780316229296": [
+    { "pages": 468, "image": { "url": "https://assets.hardcover.app/edition/555001/ebook.jpeg" },
+      "book": { "id": 555001, "title": "The Fifth Season", "subtitle": null, "pages": 512, "release_year": 2015,
+        "compilation": false, "users_count": 900, "image": { "url": "https://assets.hardcover.app/book/555001.jpeg" },
+        "contributions": [{ "contribution": "Author", "author": { "name": "N. K. Jemisin" } }],
+        "book_series": [{ "position": 1, "featured": true, "series": { "name": "The Broken Earth" } }] } }
+  ],
+  "isbn:9780000000002": [],
+  "search:piranesi susanna clarke": {
+    "found": 2, "page": 1,
+    "hits": [
+      { "document": { "id": "444002", "title": "Piranesi & Jonathan Strange and Mr Norrell", "subtitle": null,
+        "author_names": ["Susanna Clarke"], "compilation": true, "users_count": 40, "release_year": 2021, "pages": 1290,
+        "image": { "url": "https://assets.hardcover.app/edition/444002/boxed.jpeg" }, "featured_series": {}, "series_names": [] } },
+      { "document": { "id": "444001", "title": "Piranesi", "subtitle": null,
+        "author_names": ["Susanna Clarke"], "compilation": false, "users_count": 2500, "release_year": 2020, "pages": 272,
+        "image": { "url": "https://assets.hardcover.app/edition/444001/piranesi.jpeg" }, "featured_series": {}, "series_names": [] } }
+    ]
+  },
+  "search:small gods terry pratchett": {
+    "found": 1, "page": 1,
+    "hits": [
+      { "document": { "id": "555002", "title": "Small Gods", "subtitle": null,
+        "author_names": ["Terry Pratchett"], "compilation": false, "users_count": 700, "release_year": 1992, "pages": 400,
+        "image": { "url": "https://assets.hardcover.app/edition/555002/small-gods.jpeg" },
+        "featured_series": { "position": 13, "series": { "name": "Discworld" } }, "series_names": ["Discworld"] } }
+    ]
+  },
+  "search:the way of kings brandon sanderson": {
+    "found": 1, "page": 1,
+    "hits": [
+      { "document": { "id": "555003", "title": "The Way of Kings", "subtitle": null,
+        "author_names": ["Brandon Sanderson"], "compilation": false, "users_count": 5000, "release_year": 2010, "pages": 1007,
+        "image": { "url": "https://assets.hardcover.app/edition/555003/way-of-kings.jpeg" },
+        "featured_series": { "position": 1, "series": { "name": "The Stormlight Archive" } }, "series_names": ["The Stormlight Archive"] } }
+    ]
+  },
+  "search:arcanum unbounded brandon sanderson": {
+    "found": 1, "page": 1,
+    "hits": [
+      { "document": { "id": "555004", "title": "Arcanum Unbounded: The Cosmere Collection", "subtitle": null,
+        "author_names": ["Brandon Sanderson"], "compilation": false, "users_count": 800, "release_year": 2016, "pages": 672,
+        "image": { "url": "https://assets.hardcover.app/edition/555004/arcanum.jpeg" }, "featured_series": {}, "series_names": [] } }
+    ]
+  },
+  "search:jade war fonda lee": {
+    "found": 2, "page": 1,
+    "hits": [
+      { "document": { "id": "555005", "title": "Jade War", "subtitle": null,
+        "author_names": ["Fonda Lee"], "compilation": false, "users_count": 600, "release_year": 2019, "pages": 590,
+        "image": { "url": "https://assets.hardcover.app/edition/555005/jade-war.jpeg" }, "featured_series": {}, "series_names": [] } },
+      { "document": { "id": "555006", "title": "Jade War", "subtitle": null,
+        "author_names": ["Fonda Lee"], "compilation": false, "users_count": 12, "release_year": 2019, "pages": 608,
+        "image": { "url": "https://assets.hardcover.app/edition/555006/jade-war-2.jpeg" }, "featured_series": {}, "series_names": [] } }
+    ]
+  },
+  "search:harry potter collection j. k. rowling": {
+    "found": 1, "page": 1,
+    "hits": [
+      { "document": { "id": "555007", "title": "Harry Potter Collection", "subtitle": null,
+        "author_names": ["J. K. Rowling"], "compilation": true, "users_count": 300, "release_year": 2014, "pages": 4100,
+        "image": { "url": "https://assets.hardcover.app/edition/555007/boxed.jpeg" }, "featured_series": {}, "series_names": [] } }
+    ]
+  },
+  "search:of darkness and dawn a. b. writer": {
+    "found": 1, "page": 1,
+    "hits": [
+      { "document": { "id": "555008", "title": "Of Dawn and Darkness", "subtitle": null,
+        "author_names": ["A. B. Writer"], "compilation": false, "users_count": 50, "release_year": 2022, "pages": 300,
+        "image": { "url": "https://assets.hardcover.app/edition/555008/dawn.jpeg" }, "featured_series": {}, "series_names": [] } }
+    ]
+  },
+  "search:the obelisk gate n. k. jemisin": {
+    "found": 1, "page": 1,
+    "hits": [
+      { "document": { "id": "555009", "title": "The Obelisk Gate", "subtitle": null,
+        "author_names": ["N. K. Jemisin"], "compilation": false, "users_count": 700, "release_year": 2016, "pages": 410,
+        "image": { "url": "https://assets.hardcover.app/edition/555009/obelisk.jpeg" },
+        "featured_series": { "position": 2, "series": { "name": "The Broken Earth" } }, "series_names": ["The Broken Earth"] } }
+    ]
+  },
+  "search:nothing here no one": { "found": 0, "page": 1, "hits": [] }
+}

@@ -26,6 +26,7 @@ The app becomes the record for books: production has had its last full load, it 
 - **Claude's part.** Before the owner starts: confirm every **Depends on** entry is ticked and the parity check passes on `main`. After the owner reports the switch: tick 1.26 in the roadmap on the day of the switch and record it in `docs/STATUS.md`. No code changes, so CLAUDE.md's *no task merges without a test that would have failed before it* is met by `etl/test_cutover_parity.py`, which fails while a gating entry is open, and by the Check, which the owner runs. The plan says whether anything more is needed.
 - The month of running both (D-18) follows the tick, with its *Done when* in Step 14; it is not this entry's box.
 - Decisions: D-95, D-128, D-129, D-18, D-111, D-133, D-132, D-139.
+- *From TASK-084 (4.2, PR #255):* the owner added 1.31 (*Settle the Owner checklist before the books cutover*, 2026-11-14) to 1.26's **Depends on** paragraph: every open Owner checklist item is settled, or marked for after the switch, before the final load. AC-2's check of the paragraph covers it.
 
 ## Acceptance criteria
 
