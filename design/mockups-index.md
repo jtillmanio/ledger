@@ -30,7 +30,7 @@ line numbers below drift after an edit.
 | `add` | Add books — search (Hardcover, task 1.4f); searches as you type, one place or source tag a row (task 1.22); the headphones glyph beside a listened book's tag (task 1.23) | 3315–3433 |
 | `shelves` | Shelves | 2528–2624 |
 | `thisorthat` | This or that: the finish's toast with *Rank it in 2026* first, above *Now reading*; the sorter sheet over the Library, *Which did you like more?*, the read being placed (*Just finished*) beside a ranked one (*#17*), each card a button, the mono *Pick 1 of at most 6*, grey *Skip*, the held toast above it; an empty year's *Make it #1*; *Rank it* on Top books' *Not ranked yet* rows (dark); 360 frames (task 3.4b, D-101, TASK-077) | 4422–4487 |
-| `top` | Top books; every year with a finished read in the select, then *No year*; *Best of 2026 so far*; the top ten, the divider (*Beyond the top ten*), the rest of the ranks, then *Not ranked yet*, none collapsed, each row with its handle and ⋯ (task 3.4b, D-122); *Rank it* on a *Not ranked yet* row is drawn in `thisorthat` | 4488–4599 |
+| `top` | Top books; every year with a finished read in the select, then *No year*; *Best of 2026 so far*; the top ten, the divider (*Beyond the top ten*), the rest of the ranks, then *Not ranked yet*, none collapsed, each row with its handle and ⋯ (task 3.4b, D-122); *Rank it* on a *Not ranked yet* row is drawn in `thisorthat` | 4489–4600 |
 | `search` | Search | 2716–2826 |
 | `stats` | Stats | 2830–3076 |
 | `capture` | Quick capture | 3079–3176 |

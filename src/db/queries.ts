@@ -866,9 +866,9 @@ export async function topBooksYear(userId: string, year: number | null): Promise
 /**
  * The read *This or that* places (task 3.4b, D-101): the read with its book,
  * its finish year (D-21; null for a read with no date, which has no year to
- * rank in), and that year's ranked reads, best first, in `topBooksYear`'s
- * order. Null for a read that is missing, not this user's, a comic's, or of a
- * removed book.
+ * rank in), and that year's other ranked reads, best first, in `topBooksYear`'s
+ * order (a read already ranked is never compared with itself). Null for a read
+ * that is missing, not this user's, a comic's, or of a removed book.
  */
 export async function rankSorterRead(
   userId: string, readId: number,
@@ -888,7 +888,9 @@ export async function rankSorterRead(
   `;
   if (!read) return null;
   const { year, ...own } = read;
-  const ranked = year === null ? [] : (await topBooksYear(userId, year)).filter((r) => r.year_rank !== null);
+  // The read is placed against the others: a read already ranked is left out of its own list.
+  const ranked = year === null ? []
+    : (await topBooksYear(userId, year)).filter((r) => r.year_rank !== null && r.read_id !== readId);
   return { read: own, year, ranked };
 }
 

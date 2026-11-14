@@ -72,8 +72,8 @@ Library renders no year chip. The up → down → up migration test passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- A ranked read re-dated into another year (or to no date) should leave its old year's ranking in the same write, closing the gap, with its undo putting the rank back: a new roadmap item with a proposed Check (approved at plan)
-- Candidate decision: the toast's *Rank it in <year>* chip opens the sorter and holds the toast while it is open (the finish's Undo and chips stay live, D-63); placing pushes its own entry, which commits the finish (one toast at a time), and its Undo undoes the placement alone (approved at plan)
+- A ranked read re-dated into another year (or to no date) should leave its old year's ranking in the same write, closing the gap, with its undo putting the rank back: a new roadmap item with a proposed Check → docs/05-roadmap.md § 3.4c (new) (approved at plan)
+- Candidate decision: the toast's *Rank it in <year>* chip opens the sorter and holds the toast while it is open (the finish's Undo and chips stay live, D-63); placing pushes its own entry, which commits the finish (one toast at a time), and its Undo undoes the placement alone → docs/review/decisions.md § D-151 (approved at plan)
 
 ## Plan
 
@@ -91,7 +91,7 @@ Approved by the owner 2026-11-14 (kept whole: the ACs span both entry points, so
 
 **Toast and the two undos.** While the sorter is open the toast is held: the finish's Undo and chips stay live (D-63), and undoing the finish closes the sorter with nothing ranked. Placing pushes its own entry, which (one toast at a time) commits the finish; its Undo undoes the placement alone, and focus goes to it. *Skip*, Esc or Back put focus back on the chip, still there because the toast was held.
 
-**Files**: the eight steps' files (`RankSorter.tsx`, `layout.tsx`, `Undo.tsx`, the rank route, `queries.ts`, `globals.css` beyond "Files likely touched"; `src/lib/follow-offer.ts` too, a type rename only: `offerChips` returns the follow kind of chip now that `OfferChip` has a rank kind); tests `test/rank-insert.test.ts` (new), `test/year-rank.test.ts`, `test/undo.test.tsx`, `test/e2e/top-books.spec.ts`.
+**Files**: the eight steps' files (`RankSorter.tsx`, `layout.tsx`, `Undo.tsx`, the rank route, `queries.ts`, `globals.css` beyond "Files likely touched"; `src/lib/follow-offer.ts` too, a type rename only: `offerChips` returns the follow kind of chip now that `OfferChip` has a rank kind. Step 7's button shows *Rank it* and is named *Rank it: <title>*, so its name starts with the words it shows (WCAG 2.5.3); the dialog it opens carries the year); tests `test/rank-insert.test.ts` (new), `test/year-rank.test.ts`, `test/undo.test.tsx`, `test/e2e/top-books.spec.ts`.
 
 **Test strategy**
 - AC-2: `test/rank-insert.test.ts`: n 0–40, every true position within ⌈log₂(n+1)⌉ picks; n ≤ 6, every answer sequence returns the position its answers imply; n = 0 asks none, places at 1.

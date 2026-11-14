@@ -272,6 +272,11 @@ describe("placing a new read with This or that (roadmap 3.4b check, TASK-077 AC-
     expect(body.read).toMatchObject({ readId: in2024, bookId: "twice", title: "Book twice", rank: null });
     expect(body.ranked.map((r: { bookId: string; rank: number }) => `${r.bookId}:${r.rank}`)).toEqual(BEFORE_2024);
 
+    // A read already ranked is placed against the others, never against itself.
+    const own = await (await getYear(await readOf("b1"))).json();
+    expect(own.read).toMatchObject({ bookId: "b1", rank: 1 });
+    expect(own.ranked.map((r: { bookId: string }) => r.bookId)).toEqual(["b2"]);
+
     expect((await getYear(await readOf("nodate"))).status).toBe(400);
     expect((await getYear(999999)).status).toBe(404);
     expect((await getYear("x")).status).toBe(400);
