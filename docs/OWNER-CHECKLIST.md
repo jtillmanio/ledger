@@ -271,6 +271,11 @@ tick them.
       waits a fixed 25ms for the lazily loaded reads list (`openReads`), and
       under the full suite's load the list isn't there yet (`list()` is null
       at :680); it passes alone. Waiting for the list (`vi.waitFor`) fixes it.
+- [ ] Reword roadmap 4.5b's first bullet (from TASK-090, PR #259): it still
+      says *`books.genre` for a book with none*, a column 4.5 (TASK-089)
+      dropped. On deck now puts a book with no Calibre genre in a last
+      *No genre* section with no chip, and a chosen genre hides it. Roadmap
+      item text isn't edited on a task branch, so the line is yours to change.
 
 ## Approvals from follow-ups
 

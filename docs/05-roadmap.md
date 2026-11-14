@@ -4245,7 +4245,7 @@ counts each; after the drop
 migration no query, view or loader names `books.genre`, and up → down → up keeps
 every `book_genres` row.
 
-### ☐ 4.5b On deck by genre · S
+### ☑ 4.5b On deck by genre · S
 *Pulled ahead of 1.26 by the owner (D-139).*
 
 Owner intake, 2026-11-05 (owner: *filter on deck by genre, ie rank next up by

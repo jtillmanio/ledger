@@ -1,7 +1,7 @@
 ---
 id: TASK-090
 title: 4.5b On deck by genre
-status: In progress
+status: Review
 depends_on: [TASK-088, TASK-089, TASK-017]
 size: M
 model: sonnet
@@ -31,15 +31,15 @@ On deck can be narrowed to one genre and is grouped by genre, so picking the nex
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): with On deck books in `Fantasy.Epic Fantasy` and `Sci-Fi`, and one in
+- [x] AC-1 (roadmap **Check:**, verbatim): with On deck books in `Fantasy.Epic Fantasy` and `Sci-Fi`, and one in
 both, Status → *Up next* renders a *Fantasy* and a *Sci-Fi* section, the book in
 both is in each, and the tab counts it once; the *Fantasy* chip leaves only
 *Fantasy*, survives a reload and writes nothing. In the Library, *To read · On
 deck* then a genre chip lists only that genre's On deck books. Screenshots at 360px and 1280px.
-- [ ] AC-2: Given On deck books in `Fantasy.Epic Fantasy` and `Sci-Fi` and one in both, *Up next*'s On deck group draws a *Fantasy* and a *Sci-Fi* section, each listing its books by series then title, the two-genre book in both; the *Up next* tab's count is the number of distinct books it draws.
-- [ ] AC-3: Choosing the *Fantasy* chip leaves only the *Fantasy* section, puts the genre in the URL, survives a reload, and makes no write request (no `POST`, `PATCH` or `DELETE` in the browser's log) and changes no row.
-- [ ] AC-4: In the Library, *To read* · *On deck* then a genre chip lists only that genre's On deck books, and the URL keeps `status`, `level` and `genre`.
-- [ ] AC-5: *Up next*'s genre chips and sections meet the UX floor (`docs/04-design.md` § 10. The UX floor): the chips are real links with names and `aria-current` on the chosen one, 44px on the phone, the row scrolls without a horizontal page scroll at 360px; section headings are headings; genre hues identity only; text 4.5:1 in both themes; axe reports no new violations; screenshots at 360px, 834px and 1280px, light and dark (the Check names 360 and 1280).
+- [x] AC-2: Given On deck books in `Fantasy.Epic Fantasy` and `Sci-Fi` and one in both, *Up next*'s On deck group draws a *Fantasy* and a *Sci-Fi* section, each listing its books by series then title, the two-genre book in both; the *Up next* tab's count is the number of distinct books it draws.
+- [x] AC-3: Choosing the *Fantasy* chip leaves only the *Fantasy* section, puts the genre in the URL, survives a reload, and makes no write request (no `POST`, `PATCH` or `DELETE` in the browser's log) and changes no row.
+- [x] AC-4: In the Library, *To read* · *On deck* then a genre chip lists only that genre's On deck books, and the URL keeps `status`, `level` and `genre`.
+- [x] AC-5: *Up next*'s genre chips and sections meet the UX floor (`docs/04-design.md` § 10. The UX floor): the chips are real links with names and `aria-current` on the chosen one, 44px on the phone, the row scrolls without a horizontal page scroll at 360px; section headings are headings; genre hues identity only; text 4.5:1 in both themes; axe reports no new violations; screenshots at 360px, 834px and 1280px, light and dark (the Check names 360 and 1280).
 
 ## Out of scope
 
@@ -64,7 +64,7 @@ deck* then a genre chip lists only that genre's On deck books. Screenshots at 36
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Roadmap 4.5b's first bullet still says *`books.genre` for a book with none*, a column TASK-089 dropped; roadmap item text isn't edited on a task branch, so it goes to the owner (approved at plan) → planned: `docs/OWNER-CHECKLIST.md`.
+- Roadmap 4.5b's first bullet still says *`books.genre` for a book with none*, a column TASK-089 dropped; roadmap item text isn't edited on a task branch, so it goes to the owner (approved at plan) → docs/OWNER-CHECKLIST.md § Actions from follow-ups.
 
 ## Plan
 
@@ -130,7 +130,9 @@ schema. Kept whole, as the task's own file list does (owner, at the gate).
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL(1: `genre-drop-migration.test.ts` matched `b.genre` in a sort comparator) → R2 PASS | Audit R1 PASS | Spec R1 APPROVE (note: mockup frame's row order, fixed) | Schema R1 APPROVE | UI R1 NOT RUN (ui-verifier could not sign in to the dev server; the passcode was not handed over) — covered by the new e2e tests with screenshots at 360, 834 and 1280px, light and dark, and the owner's preview walk | CI R1 see PR #259
+
+AC-4's URL test is in `test/library-page.test.tsx` (where `libraryHref` is tested), not `test/library-sort.test.ts` as planned; `test/no-prefetched-filters.test.ts` gained the two new href helpers.
 
 ## Blocked
 
@@ -138,7 +140,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0
