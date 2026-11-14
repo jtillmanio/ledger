@@ -1,14 +1,14 @@
 ---
 id: TASK-090
 title: 4.5b On deck by genre
-status: Ready
+status: In progress
 depends_on: [TASK-088, TASK-089, TASK-017]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 73c21d9
 ---
 
 # TASK-090 — 4.5b On deck by genre
@@ -64,9 +64,69 @@ deck* then a genre chip lists only that genre's On deck books. Screenshots at 36
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Roadmap 4.5b's first bullet still says *`books.genre` for a book with none*, a column TASK-089 dropped; roadmap item text isn't edited on a task branch, so it goes to the owner (approved at plan) → planned: `docs/OWNER-CHECKLIST.md`.
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-14. Owner's answers at the gate (the recommended ones):
+an On deck book with no Calibre genre goes in its own *No genre* section,
+last, with no chip, and a chosen genre hides it; sections run most books
+first, the chips' order; the task stays whole.
+
+**Steps**
+
+1. **Query** (`src/db/queries.ts` `booksUpNext`): each row gains `genres:
+   string[]`, its top-level genres (`TOP_GENRES`, `book_genre_levels` at depth
+   1). On deck rows sort by series, position, then title (the Library's series
+   order); quarters and year lanes keep their order.
+2. **Grouping** (new `src/lib/on-deck.ts`, pure): `deckSections(books, genre?)`
+   returns the chips (each top-level genre with an On deck book, most books
+   first, ties by name), the sections (a two-genre book in each; *No genre*
+   last, with no chip), and the distinct books drawn. A chosen genre is matched
+   case-blind; an unknown one draws everything.
+3. **Status page** (`src/app/books/status/page.tsx`): reads `?genre=`. The On
+   deck group gets a chip row (`.filters genre-row`: 44px on the phone,
+   scrolls inside itself): *All*, then one link chip per genre to
+   `?tab=next&genre=…`, `aria-current` on the chosen one; an `h3` per section.
+   The On deck heading and the *Up next* tab count are the distinct books
+   drawn (a two-genre book once; a filtered view counts what it shows). No
+   genre hue on chips or headings: grey with text, as the Library's.
+4. **Library** (`src/lib/library-sort.ts`, `src/app/books/list/page.tsx`):
+   `genreChipHref(current, g)` keeps `status`, `level` and the sort; the genre
+   chips use it.
+5. **Redraw** the `status` frame in `design/mockups.html` (the books *Up next*
+   frame gains the chips and sections) and note it in `design/mockups-index.md`.
+
+**Files**
+
+- `src/db/queries.ts`: On deck rows with their top-level genres, by series.
+- `src/lib/on-deck.ts` (new, not in "Files likely touched"): the pure grouping.
+- `src/app/books/status/page.tsx`: the chips and sections.
+- `src/lib/library-sort.ts`, `src/app/books/list/page.tsx`: the chip keeps the filter.
+- `design/mockups.html`, `design/mockups-index.md`: the redraw (`ui.redrawFiles`).
+- `src/app/globals.css` only if the section `h3` needs a style (said if so).
+- `test/status.test.ts`, `test/library-sort.test.ts`, `test/e2e/status.spec.ts`.
+
+**Test strategy**
+
+- AC-2: `test/status.test.ts`: Fantasy.Epic Fantasy, Sci-Fi and one in both give
+  two sections by series then title, the two-genre book in each, a count of 3;
+  the *No genre* section last; a filter leaves only Fantasy.
+- AC-4: `test/library-sort.test.ts`: `genreChipHref` keeps `status`, `level`, `genre`.
+- AC-1, AC-3, AC-4, AC-5: `test/e2e/status.spec.ts`: seeds `book_genres`;
+  sections, tab count, chip, reload, no POST/PATCH/DELETE and row counts
+  unchanged; the Library's *To read · On deck* then *Fantasy*; axe, 44px chips,
+  no sideways page scroll at 360px, contrast; screenshots at 360, 834 and
+  1280px, light and dark.
+
+**Risks**
+
+- `TOP_GENRES` reaches the query through `sql.unsafe`; it is a constant.
+- The tab count with a filter on counts what is drawn (StatusTabs: *the rows
+  that tab draws*).
+
+**Size check**: about 11 files, 3 of them tests and 2 the mandated redraw, no
+schema. Kept whole, as the task's own file list does (owner, at the gate).
 
 ## Review log
 
