@@ -650,9 +650,23 @@ describe("the finish's Rank it chip and the toast's pin", () => {
     expect(toast()!.hasAttribute("data-held")).toBe(false);
   });
 
-  it("push with focus sends focus into the new toast, on its Undo when it carries no chips", async () => {
+  it("push with focus sends focus into the new toast, on its Undo", async () => {
     act(() => root.render(<UndoProvider><Holder entry={{ label: "Ranked x", undo: async () => {} }} focus /></UndoProvider>));
     await click("push");
+    expect(document.activeElement).toBe(undoButton());
+  });
+
+  it("push with focus lands on Undo even when the chips ride along: the placement is what you'd take back", async () => {
+    const keep: OfferChip = { label: "Mistborn", kind: "series", take: vi.fn(async () => ({ label: "x", undo: async () => {} })) };
+    act(() => root.render(<UndoProvider>
+      <Holder entry={{ label: "Ranked The Final Empire", undo: async () => {}, offer: [keep] }} focus />
+    </UndoProvider>));
+    // The first push loads the chip row lazily; the second draws it in the same render, as a finish's
+    // toast does in the app by the time a placement replaces it.
+    await click("push");
+    await offerDrawn();
+    await click("push");
+    expect(chipButtons()).toHaveLength(1);
     expect(document.activeElement).toBe(undoButton());
   });
 

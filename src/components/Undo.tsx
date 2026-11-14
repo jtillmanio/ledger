@@ -59,7 +59,7 @@ type Toast = {
 };
 
 type UndoApi = {
-  /** `focus`: the new toast takes focus, its first chip else its Undo, as after a chip taken from inside it. */
+  /** `focus`: the new toast's Undo takes focus, chips or not (a placement from This or that, task 3.4b). */
   push: (entry: UndoEntry, options?: { focus?: boolean }) => void;
   /**
    * Holds the toast showing now, as hover and focus do, until the returned release is called: a
@@ -126,8 +126,9 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
   const toastEl = useRef<HTMLDivElement>(null);
   // Where focus was before the toast took it.
   const returnTo = useRef<HTMLElement | null>(null);
-  // A chip was taken with focus in the toast: the next toast takes focus back in.
-  const refocusToast = useRef(false);
+  // The next toast takes focus: `chip` after a chip taken with focus in the toast (its first chip
+  // left, else its Undo); `undo` after a push asked for it (a placement: its Undo, chips or not).
+  const refocusToast = useRef<"chip" | "undo" | null>(null);
 
   // A held toast is frozen in time: nothing on it expires while it is held.
   const live = useCallback(() => {
@@ -155,7 +156,7 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
   // Only the newest entry stays: the older ones are committed (task 1.8b).
   const push = useCallback((entry: UndoEntry, options?: { focus?: boolean }) => {
     stack.current = [{ ...entry, id: ++ids.current, expires: Date.now() + UNDO_MS }];
-    if (options?.focus) refocusToast.current = true;
+    if (options?.focus) refocusToast.current = "undo";
     showTop();
   }, [showTop]);
 
@@ -239,12 +240,15 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [giveFocusBack]);
 
-  // A new toast after a chip: focus goes to its first chip left, else its Undo.
+  // A new toast after a chip: focus goes to its first chip left, else its Undo. After a push that
+  // asked for focus: its Undo.
   useEffect(() => {
-    if (!refocusToast.current || !toast) return;
-    refocusToast.current = false;
+    const want = refocusToast.current;
+    if (!want || !toast) return;
+    refocusToast.current = null;
     const el = toastEl.current;
-    (el?.querySelector<HTMLElement>(".toast-chip") ?? el?.querySelector<HTMLElement>("button"))?.focus();
+    const chip = want === "chip" ? el?.querySelector<HTMLElement>(".toast-chip") : null;
+    (chip ?? el?.querySelector<HTMLElement>(".toast-undo"))?.focus();
   }, [toast]);
 
   // The toast comes off before the retry runs: it raises its own, Undo or a new failure.
@@ -331,7 +335,7 @@ export function UndoProvider({ children }: { children: React.ReactNode }) {
             {toast.offer && toast.offer.length > 0 && (
               <Suspense fallback={null}>
                 <ToastOffer chips={toast.offer} push={push} fail={fail} handBack={giveFocusBack}
-                  keepFocus={() => { refocusToast.current = true; }} />
+                  keepFocus={() => { refocusToast.current = "chip"; }} />
               </Suspense>
             )}
             {/* The 8 seconds, drawn: a 2px bar that shrinks, and stops while the toast is held. */}
