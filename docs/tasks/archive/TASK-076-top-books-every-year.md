@@ -1,7 +1,7 @@
 ---
 id: TASK-076
 title: 3.4b Rank a book when you finish it (2 of 3) — Top books for every year
-status: Review
+status: Done
 depends_on: [TASK-075, TASK-016]
 size: M
 model: sonnet
