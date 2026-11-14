@@ -783,6 +783,79 @@ export async function yearSummary(userId: string) {
   `;
 }
 
+/** The Top books year switcher (task 3.4b, D-122): each year with a finished read, and the undated reads. */
+export type TopBookYears = { years: { year: number; reads: number }[]; undated: number };
+
+/**
+ * The years Top books can show (task 3.4b, D-122, R2-08): every year with a
+ * finished read of a live book, newest first, with its reads counted as
+ * `book_reads` counts them (D-65: a reread counts in its own year), and how many
+ * reads have no date, which the switcher ends with as *No year*.
+ */
+export async function topBookYears(userId: string): Promise<TopBookYears> {
+  const [row] = await sql<TopBookYears[]>`
+    WITH r AS (
+      SELECT extract(year FROM r.finished_on)::int AS year
+      FROM book_reads r JOIN books b ON b.id = r.book_id AND b.deleted_at IS NULL
+      WHERE r.user_id = ${userId}
+    )
+    SELECT
+      (SELECT COALESCE(json_agg(json_build_object('year', y.year, 'reads', y.reads) ORDER BY y.year DESC), '[]'::json)
+       FROM (SELECT year, COUNT(*)::int AS reads FROM r WHERE year IS NOT NULL GROUP BY year) y) AS years,
+      (SELECT COUNT(*)::int FROM r WHERE year IS NULL) AS undated
+  `;
+  return row;
+}
+
+/** One read on the Top books page (task 3.4b): its place in its year's ranking, and what its row shows. */
+export type TopRead = {
+  /** The `read_events` row; null for a read its `read` status holds with no log row (D-65), ranked by its book. */
+  read_id: number | null;
+  book_id: string; title: string; author: string | null;
+  series: string | null; series_position: number | null; universe: string | null;
+  cover_url: string | null; pending: boolean;
+  finished_on: string | null; finished_on_precision: Precision;
+  /** `audio` is a listen (task 1.23), ranked like any read. */
+  format: "text" | "audio";
+  /** Its place in the year (`read_events.year_rank`); null when not ranked yet. */
+  year_rank: number | null;
+};
+
+/**
+ * A year's reads as Top books lists them (task 3.4b, D-101, D-122): the ranked
+ * reads in their order (`year_rank`, then the read's id, as `rankRead` orders
+ * them), then the rest, *Not ranked yet*, by finish date and title. Every read
+ * of a live book `book_reads` counts: the log, and a `read` status with no log
+ * row, which has no read id and no rank. `year` null is *No year*: the reads
+ * with no date (R2-08), none of them ranked. The top ten is the first ten, read
+ * off this order, never stored (Hard rule 2).
+ */
+export async function topBooksYear(userId: string, year: number | null): Promise<TopRead[]> {
+  return sql<TopRead[]>`
+    SELECT r.read_id, b.id AS book_id, b.title, a.name AS author,
+           s.name AS series, b.series_position, u.name AS universe,
+           b.cover_url, (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
+           r.finished_on::text AS finished_on, r.finished_on_precision, r.format, r.year_rank
+    FROM (
+      SELECT e.id AS read_id, e.book_id, e.finished_on, e.finished_on_precision, e.format::text AS format, e.year_rank
+      FROM read_events e WHERE e.user_id = ${userId} AND e.book_id IS NOT NULL
+      UNION ALL
+      SELECT NULL::int, s.book_id, s.finished_on, s.finished_on_precision, 'text', NULL::int
+      FROM book_status s
+      WHERE s.user_id = ${userId} AND s.status = 'read'
+        AND NOT EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = s.user_id AND e.book_id = s.book_id)
+    ) r
+    JOIN books b ON b.id = r.book_id AND b.deleted_at IS NULL
+    LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_series s ON s.id = b.series_id
+    LEFT JOIN book_universes u ON u.id = b.universe_id
+    WHERE CASE WHEN ${year}::int IS NULL THEN r.finished_on IS NULL
+               ELSE extract(year FROM r.finished_on) = ${year}::int END
+    ORDER BY (r.year_rank IS NULL), r.year_rank, CASE WHEN r.year_rank IS NOT NULL THEN r.read_id END,
+             r.finished_on, b.title, b.id
+  `;
+}
+
 /** One finished read of a book, as the status control's *All reads* lists it (task 1.17b). */
 export type BookRead = {
   id: number;

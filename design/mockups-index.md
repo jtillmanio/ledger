@@ -29,7 +29,7 @@ line numbers below drift after an edit.
 | `finishoffer` | The finish offer — a finish from *Reading* or *Listening* follows the series, subseries and universe (D-117): the toast after *Read* gains *Now reading*, one 44px chip each that turns that one to *Not following*, then *Keep going?* for the author and shelves; a taken chip's own toast with the chips left; *Done with Mistborn* on the last unread book; a past read from *To read* follows nothing and keeps 2.2c's chips; F6 into the toast (D-116); 360, 834 and desktop frames (task 2.2c, D-108; task 2.2h) | 3655–3777 |
 | `add` | Add books — search (Hardcover, task 1.4f); searches as you type, one place or source tag a row (task 1.22); the headphones glyph beside a listened book's tag (task 1.23) | 3315–3433 |
 | `shelves` | Shelves | 2528–2624 |
-| `top` | Top books | 2627–2713 |
+| `top` | Top books; every year with a finished read in the select, then *No year*; *Best of 2026 so far*; the top ten, the divider (*Beyond the top ten*), the rest of the ranks, then *Not ranked yet*, none collapsed, each row with its handle and ⋯ (task 3.4b, D-122) | 4415–4526 |
 | `search` | Search | 2716–2826 |
 | `stats` | Stats | 2830–3076 |
 | `capture` | Quick capture | 3079–3176 |

@@ -23,7 +23,7 @@ export default function Sidebar({ items = NAV_ITEMS, inbox }: { items?: NavItem[
   const item = (i: NavItem, current: boolean, className = "si") => (
     <NavLink key={i.id} item={i} current={current} className={className}>
       <Icon name={i.icon} />
-      <span className="nl">{i.label}</span>
+      <span className="nl">{i.sideLabel ?? i.label}</span>
       {i.id === "inbox" && inbox ? <span className="count">{inbox}</span> : null}
     </NavLink>
   );

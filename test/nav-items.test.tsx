@@ -52,7 +52,7 @@ describe("NAV_ITEMS (AC-2)", () => {
     expect(dash).toMatchObject({ href: "/books", enabled: true, dash: true });
     expect(visibleItems()).toContain(dash);
     expect(hrefOf("books")).toBe("/books");
-    expect(mediumItems(NAV_ITEMS, "books").map((i) => i.id)).toEqual(["books-dash", "books-status", "books-library", "books-plan", "books-add"]);
+    expect(mediumItems(NAV_ITEMS, "books").map((i) => i.id)).toEqual(["books-dash", "books-status", "books-library", "books-plan", "books-top", "books-add"]);
     expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books")?.id).toBe("books-dash");
 
     nav.pathname = "/books";
@@ -87,7 +87,7 @@ describe("NAV_ITEMS (AC-2)", () => {
     // `library` is Shelves' icon: hue and icon identify, and two items never share one.
     expect(library.icon).not.toBe(NAV_ITEMS.find((i) => i.id === "books-shelves")!.icon);
     const books = mediumItems(NAV_ITEMS, "books").map((i) => i.id);
-    expect(books).toEqual(["books-dash", "books-status", "books-library", "books-plan", "books-add"]);
+    expect(books).toEqual(["books-dash", "books-status", "books-library", "books-plan", "books-top", "books-add"]);
     expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books/list")?.id).toBe("books-library");
     expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books/status")?.id).toBe("books-status");
 
@@ -125,8 +125,25 @@ describe("NAV_ITEMS (AC-2)", () => {
     }
   });
 
-  it("keeps the unbuilt screens out: Search, Tracks, Shelves, Top", () => {
-    const off = ["search", "comics-tracks", "books-shelves", "books-top"];
+  it("turns on Top books (task 3.4b): after Plan, to /books/top, *Top* in the rail and tab row, *Top books* in the sidebar", () => {
+    const top = NAV_ITEMS.find((i) => i.id === "books-top")!;
+    expect(top).toMatchObject({
+      label: "Top", sideLabel: "Top books", href: "/books/top", enabled: true, group: "medium", medium: "books", noPrefetch: true,
+    });
+    expect(visibleItems()).toContain(top);
+    expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books/top")?.id).toBe("books-top");
+    nav.pathname = "/books/top";
+    const current = (html: string) => [...html.matchAll(/<a [^>]*aria-current="page"[^>]*>(?:(?!<\/a>).)*<\/a>/g)].map((m) => m[0]);
+    const { "the tablet rail": rail, "the sidebar": side } = bars();
+    expect(current(side).filter((a) => a.includes('href="/books/top"') && a.includes(">Top books<"))).toHaveLength(1);
+    expect(current(rail).filter((a) => a.includes('href="/books/top"') && a.includes(">Top<"))).toHaveLength(1);
+    expect(side.indexOf(">Plan<")).toBeLessThan(side.indexOf(">Top books<"));
+    const phone = renderToString(<MediaBar />);
+    expect(current(phone).filter((a) => a.includes('href="/books/top"') && a.includes(">Top<"))).toHaveLength(1);
+  });
+
+  it("keeps the unbuilt screens out: Search, Tracks, Shelves", () => {
+    const off = ["search", "comics-tracks", "books-shelves"];
     for (const id of off) expect(NAV_ITEMS.find((i) => i.id === id)?.enabled, id).toBe(false);
     for (const [name, html] of Object.entries(bars())) {
       expect(html, name).not.toMatch(/Ctrl K|Shelves|Tracks/);

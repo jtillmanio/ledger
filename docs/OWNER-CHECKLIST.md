@@ -91,6 +91,13 @@ blocked on it: 2.4, 2.6 and 2.9 assert relationships, not counts.
       nothing get a second, title-only search, and should an author's
       *Jr.*/*Sr.* be ignored when comparing? Answering changes D-99, so it
       waits for your yes; 1.31 settles it before the cutover.
+- [ ] **The ⋯ row menu on the phone** (from TASK-076, PR #257). The shared
+      `.rowmenu-btn` is 32px at every width: the comics queue, the books Up next
+      quarters and the other `ReorderList` screens. Top books makes its own 44px
+      on the phone, which its AC asked for. The UX floor (`docs/04-design.md`
+      § 10) allows a 32px control with a 44px hit area, and the UI verifier
+      found no expanded hit area. Should every row menu be 44px on the phone, or
+      32px with a 44px hit area? Your answer becomes a small fix task.
 
 ## Actions from follow-ups
 

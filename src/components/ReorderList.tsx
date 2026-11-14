@@ -14,6 +14,9 @@ type Lift = { id: string; from: number };
 /** What a reorderable row needs: a stable id, the name its handle and toasts use, and its stored place. */
 export type ReorderRow = { id: string; title: string; ordinal: number };
 
+/** What a move may answer: its own undo, and the toast's detail (*rank 4*). */
+export type MoveResult = { undo: () => Promise<void>; detail?: string };
+
 export const REORDER_HELP = "Space lifts a row, arrows move it, Space drops it, Esc cancels. The long-press and drag work too.";
 
 /**
@@ -32,16 +35,23 @@ export const REORDER_HELP = "Space lifts a row, arrows move it, Space drops it, 
  * ordinal of the row it lands on, so a row hidden from this list (a started run
  * between two queued ones) keeps its own ordinal.
  *
- * `move` writes a move to a stored ordinal and rejects when it didn't save.
+ * `move` writes a move to a stored ordinal and rejects when it didn't save. It
+ * may answer its own undo (and the toast's detail): Top books (task 3.4b) moves
+ * an unranked read in, which has no old rank a second move could go back to.
+ * Otherwise the undo moves the row back to the ordinal it came from.
  * `remove` is optional: `run` writes the removal and answers its inverse.
- * `renderBody` draws what sits between the handle and the menu.
+ * `renderBody` draws what sits between the handle and the menu. `place` names a
+ * row's place in its handle (*position 2 of 5*, or Top books' *rank 2*), and
+ * `marker` draws a divider or a heading at the top of the row at an index,
+ * inside its `<li>`, so the list holds nothing but rows and stays put while a
+ * row moves past it.
  */
 export default function ReorderList<R extends ReorderRow>({
   rows, move: write, remove: removal, renderBody, scopeLabel = "", label, helpId = "dnd-help",
-  help = REORDER_HELP, helpHidden = false,
+  help = REORDER_HELP, helpHidden = false, place, marker,
 }: {
   rows: R[];
-  move: (id: string, toOrdinal: number) => Promise<void>;
+  move: (id: string, toOrdinal: number) => Promise<void | MoveResult>;
   remove?: { label: string; toast: (title: string) => string; run: (id: string) => Promise<() => Promise<void>> };
   renderBody: (row: R, index: number) => React.ReactNode;
   /** Appended to each handle's name: ` in Q1 2027`. */
@@ -53,6 +63,10 @@ export default function ReorderList<R extends ReorderRow>({
   help?: string;
   /** Screen readers only, for a page that holds several lists. */
   helpHidden?: boolean;
+  /** A row's place, in its handle's name (`position 2 of 5` unless the caller names it), and then in its menu's too. */
+  place?: (row: R, index: number, n: number) => string;
+  /** A divider or a heading drawn at the top of the row at `index`; null for none. */
+  marker?: (index: number) => React.ReactNode;
 }) {
   const router = useRouter();
   const undo = useUndo();
@@ -77,6 +91,7 @@ export default function ReorderList<R extends ReorderRow>({
   }, [lift, order]);
 
   const n = order.length;
+  const placeOf = (r: R, i: number) => (place ? place(r, i, n) : `position ${i + 1} of ${n}`);
   const title = (id: string) => order.find((r) => r.id === id)?.title ?? "";
   const at = (id: string, list = order) => list.findIndex((r) => r.id === id);
 
@@ -96,11 +111,12 @@ export default function ReorderList<R extends ReorderRow>({
     const target = before[to].ordinal;
     const back = before[from].ordinal;
     try {
-      await write(id, target);
+      const own = await write(id, target);
       undo.push({
-        label: `Moved ${title(id)}`, detail: `position ${to + 1} of ${before.length}`,
+        label: `Moved ${title(id)}`, detail: own?.detail ?? `position ${to + 1} of ${before.length}`,
         undo: async () => {
-          await write(id, back);
+          if (own) await own.undo();
+          else await write(id, back);
           setOrder(before);
           router.refresh();
         },
@@ -268,26 +284,30 @@ export default function ReorderList<R extends ReorderRow>({
   return (
     <>
       <ol className="queue" aria-label={label}>
-        {order.map((r, i) => (
-          <li key={r.id} className="qrow" data-lifted={lift?.id === r.id || undefined}>
-            <button
-              type="button"
-              className="drag"
-              ref={(el) => { if (el) handles.current.set(r.id, el); else handles.current.delete(r.id); }}
-              aria-label={`Reorder ${r.title}, position ${i + 1} of ${n}${scopeLabel}`}
-              aria-describedby={helpId}
-              aria-pressed={lift?.id === r.id}
-              onKeyDown={(e) => onKeyDown(e, r.id)}
-              onBlur={() => onBlur(r.id)}
-              onPointerDown={(e) => onPointerDown(e, r.id)}
-              onContextMenu={(e) => e.preventDefault()}
-            >
-              <span aria-hidden="true">⋮⋮</span>
-            </button>
-            {renderBody(r, i)}
-            <Menu label={`More for ${r.title}`} className="rowmenu-btn" items={items(r, i)}>⋯</Menu>
-          </li>
-        ))}
+        {order.map((r, i) => {
+          const mark = marker?.(i) ?? null;
+          return (
+            <li key={r.id} className="qrow" data-lifted={lift?.id === r.id || undefined} data-marked={mark ? "" : undefined}>
+              {mark}
+              <button
+                type="button"
+                className="drag"
+                ref={(el) => { if (el) handles.current.set(r.id, el); else handles.current.delete(r.id); }}
+                aria-label={`Reorder ${r.title}, ${placeOf(r, i)}${scopeLabel}`}
+                aria-describedby={helpId}
+                aria-pressed={lift?.id === r.id}
+                onKeyDown={(e) => onKeyDown(e, r.id)}
+                onBlur={() => onBlur(r.id)}
+                onPointerDown={(e) => onPointerDown(e, r.id)}
+                onContextMenu={(e) => e.preventDefault()}
+              >
+                <span aria-hidden="true">⋮⋮</span>
+              </button>
+              {renderBody(r, i)}
+              <Menu label={`More for ${r.title}${place ? `, ${place(r, i, n)}` : ""}`} className="rowmenu-btn" items={items(r, i)}>⋯</Menu>
+            </li>
+          );
+        })}
       </ol>
       <p id={helpId} className={helpHidden ? "sr-only" : "muted small"}>{help}</p>
       <p id={liveId} className="sr-only" aria-live="assertive">{said}</p>

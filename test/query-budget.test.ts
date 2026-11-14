@@ -27,6 +27,9 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   // The plan page (task 2.10): the year's capacity, the rail's books, the quarters' rows and your pace, together;
   // task 2.7 adds the year's acceptance row, for the capacity card and the settled hatch.
   "/books/plan": { queries: 5, waves: 1 },
+  // Top books (task 3.4b): the years and the year asked for (or this one), together; a second read only
+  // when that year has no read, and the page opens the newest instead.
+  "/books/top": { queries: 2, waves: 1 },
   "/inbox": { queries: 2, waves: 1 },
   "/settings": { queries: 2, waves: 1 },
   "/watch": { queries: 0, waves: 0 },
@@ -109,6 +112,8 @@ const pages: [string, () => Promise<unknown>][] = [
     (await import("../src/app/books/list/page")).default({ searchParams: Promise.resolve({}) })],
   ["/books/plan", async () =>
     (await import("../src/app/books/plan/page")).default({ searchParams: Promise.resolve({}) })],
+  ["/books/top", async () =>
+    (await import("../src/app/books/top/page")).default({ searchParams: Promise.resolve({}) })],
   ["/inbox", async () => (await import("../src/app/inbox/page")).default()],
   ["/settings", async () => (await import("../src/app/settings/page")).default()],
   ["/watch", async () => (await import("../src/app/watch/page")).default()],

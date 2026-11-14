@@ -30,6 +30,8 @@ export interface NavItem {
   noPrefetch?: boolean;
   /** Screens this item is current on besides its own href (comics Add: any run's Add issues). */
   currentOn?: RegExp;
+  /** The desktop sidebar's longer name, where it has room: *Top books* (mockup `top`). The tab row and rail keep `label`. */
+  sideLabel?: string;
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -56,7 +58,11 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "books-library", label: "Library", href: "/books/list", icon: "book-copy", enabled: true, group: "medium", medium: "books" },
   { id: "books-plan", label: "Plan", href: "/books/plan", icon: "calendar-range", enabled: true, group: "medium", medium: "books", noPrefetch: true },
   { id: "books-shelves", label: "Shelves", href: "/books/shelves", icon: "library", enabled: false, group: "medium", medium: "books" },
-  { id: "books-top", label: "Top", href: "/books/top", icon: "list-ordered", enabled: false, group: "medium", medium: "books" },
+  // Every year's whole reading list, ranked (task 3.4b, D-122). Never prefetched, as Plan: its chunks would ride on every books page.
+  {
+    id: "books-top", label: "Top", sideLabel: "Top books", href: "/books/top", icon: "list-ordered", enabled: true,
+    group: "medium", medium: "books", noPrefetch: true,
+  },
   { id: "books-add", label: "Add", href: "/books/add", icon: "plus", enabled: true, group: "medium", medium: "books" },
 
   { id: "watch-dash", label: "Dashboard", href: "/watch", icon: "layout-dashboard", enabled: true, group: "medium", medium: "watch", dash: true },
