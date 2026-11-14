@@ -474,7 +474,7 @@ with the task that first reads it.
 |  | 4.1 | Metron backfill | M |  | — |
 | ✅ | 4.2 → TASK-084 | Open Library and Hardcover backfill | M | _Pulled ahead of 1.26 (D-139)_ | — |
 |  | 4.3 → TASK-085, TASK-086, TASK-087 | Covers in the UI | S |  | — |
-|  | 4.5 → TASK-088, TASK-089 | Calibre's genres on every screen | M | _Pulled ahead of 1.26 (D-139)_ | 1.18c |
+| ✅ | 4.5 → TASK-088, TASK-089 | Calibre's genres on every screen | M | _Pulled ahead of 1.26 (D-139)_ | 1.18c |
 |  | 4.5b → TASK-090 | On deck by genre | S | _Pulled ahead of 1.26 (D-139)_ | 4.5, 1.9 |
 
 ## M17: Book surfaces — Later

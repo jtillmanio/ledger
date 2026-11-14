@@ -1,7 +1,7 @@
 ---
 id: TASK-089
 title: 4.5 Calibre's genres on every screen (2 of 2) — drop books.genre
-status: In progress
+status: Done
 depends_on: [TASK-088]
 size: M
 model: opus
@@ -31,17 +31,17 @@ A book's genre has one source, Calibre's: the workbook's single genre column is 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves *after the drop migration no query, view or loader names `books.genre`, and up → down → up keeps every `book_genres` row*. TASK-088 proves the filter and `books_by_year` clauses, before the drop): with one book given `book_genres` rows `Fantasy.Epic Fantasy` and
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves *after the drop migration no query, view or loader names `books.genre`, and up → down → up keeps every `book_genres` row*. TASK-088 proves the filter and `books_by_year` clauses, before the drop): with one book given `book_genres` rows `Fantasy.Epic Fantasy` and
 `Young Adult.Fantasy.Romantasy` and another with none and `books.genre` `Sci-Fi`,
 the master list's genre filter finds the first under `Fantasy`, `Fantasy.Epic
 Fantasy` and `Young Adult` and the second under `Sci-Fi`, and `books_by_year`
 counts each; after the drop
 migration no query, view or loader names `books.genre`, and up → down → up keeps
 every `book_genres` row.
-- [ ] AC-2: After the migration `books` has no `genre` column; `npm run test:db:reset` (migrate, then `etl/views.sql`) succeeds; a search of `src/`, `etl/*.py`, `etl/*.sql`, `etl/*.ps1` and `etl/*.sh` for `books.genre`, `b.genre` and the `genre` column of `books.csv` finds none (`seed/workbook_reads.csv`'s own column aside).
-- [ ] AC-3: Up → down → up on a fixture with `book_genres` rows for two books keeps every `book_genres` row and its values; after the down `books.genre` exists again (with the values the plan gate settled); a precision-`none` read in the fixture is still `none` with a NULL date.
-- [ ] AC-4: Extract over both workbooks writes `seed/books.csv` without a genre column and changes no other seed file except as the plan lists; `npm run test:etl` and `etl/test_views.sql` pass; `npm run rebuild` (development, asked first) loads.
-- [ ] AC-5: A book with no Calibre genre renders and counts as the plan gate settled, on the Library and in `books_by_year`, with no error.
+- [x] AC-2: After the migration `books` has no `genre` column; `npm run test:db:reset` (migrate, then `etl/views.sql`) succeeds; a search of `src/`, `etl/*.py`, `etl/*.sql`, `etl/*.ps1` and `etl/*.sh` for `books.genre`, `b.genre` and the `genre` column of `books.csv` finds none (`seed/workbook_reads.csv`'s own column aside).
+- [x] AC-3: Up → down → up on a fixture with `book_genres` rows for two books keeps every `book_genres` row and its values; after the down `books.genre` exists again (with the values the plan gate settled); a precision-`none` read in the fixture is still `none` with a NULL date.
+- [x] AC-4: Extract over both workbooks writes `seed/books.csv` without a genre column and changes no other seed file except as the plan lists; `npm run test:etl` and `etl/test_views.sql` pass; `npm run rebuild` (development, asked first) loads.
+- [x] AC-5: A book with no Calibre genre renders and counts as the plan gate settled, on the Library and in `books_by_year`, with no error.
 
 ## Out of scope
 
@@ -67,6 +67,9 @@ every `book_genres` row.
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
 - `book_genre_levels` and `plan_suggestions` rows, and the 1.18c row, no longer name `books.genre` (approved at plan) → docs/03-data-model.md § 3. Views, § 4.1 By task
+- The roadmap Check's pre-drop clauses (the second book found under `Sci-Fi`, `books_by_year` counting it there) can't run once the column is gone → not tracked: TASK-088 (#252) proved them before the drop; this task proves the drop clauses
+- Release leaves `book_genre_levels` and `books_by_year` absent between Migrate and Apply views (schema review, MINOR) → not tracked: the existing Release order, as for 0007 and 0011; Promote follows the views step
+- Two local worktrees hold test-DB slots after their work merged (`.claude/worktrees/audit-3.4b`, and a leftover `task-2.8-place-them` folder) → not tracked: local machine housekeeping, reported to the owner
 
 ## Plan
 
@@ -91,13 +94,16 @@ Approved by the owner 2026-11-13 (attended). Plan-gate answers: keep the task wh
 
 **Risks**: a fixture missed only fails in the full browser suite (CI); grep `test/` for `genre)` / `, genre` before the first run. The migration's `DROP VIEW` leaves `plan_suggestions` (a string-body function) failing between migrate and views, as every Release already does.
 
+**Revision 2 (Phase 5, Vercel preview):** `drizzle/0027_drop_books_genre.sql` drops every view on `books.genre` through `pg_depend`, not `book_genre_levels` by name: a preview branch copied from production (released before #252) holds a `books_by_year` that reads `b.genre`, and the by-name drop failed there. `test/genre-drop-migration.test.ts` re-creates that view before an up too.
+
 **Revision 1 (during Phase 2, outside the file list, no behaviour change):** `test/audiobooks.test.ts`, `etl/test_enrich_books.py` (its `books.csv` fixture header; spec review R1), `test/plan-page.test.tsx` (its `--g1` fallback book is now `--g8`, AC-5) and `etl/test_calibre.py` also wrote or read `books.genre` (the AC-2 scan found the last); `src/app/books/list/page.tsx` and `src/lib/plan-rail.ts` had a comment saying "else the workbook's", corrected (comment only).
 
 **Follow-ups** (approved at plan): `docs/03-data-model.md` § Views rows for `book_genre_levels` and `plan_suggestions`, and the 1.18c row.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL (test/plan-page.test.tsx:168 still wrote books.genre) → R2 PASS | Touched e2e specs w390-light 105/105 PASS | CI R1 PASS (1631438) | Spec R1 CHANGES (AC-2: etl/test_enrich_books.py header; follow-up bullet destination) → fixed, Verify R3 PASS, CI R2 PASS (a5ac1df) | Schema R1 APPROVE | Vercel preview FAIL (0027 by-name view drop vs production's pre-4.5 books_by_year) → fixed by pg_depend, Verify R4 PASS | Schema R2 APPROVE | Spec R2 APPROVE → R3 APPROVE | Audit R1 NOT RUN (dirty tree: rebuild's CRLF sidecars, discarded with the owner's OK) → R1 CHANGES (AC-5 NON-DISCRIMINATING) → fixed, Verify R5 PASS → Audit R2 PASS | Vercel preview PASS (bab7512) | ui-verifier n/a (no screen changed; two comment-only edits)
+AC-4 by hand: extract base vs branch over both workbooks: only seed/books.csv differs (genre column gone, 4,390 rows, every other value identical); `npm run rebuild` on development (owner, 2026-11-13) loaded books 4390/4390, book_genres 7894/7894.
 
 ## Blocked
 
@@ -105,7 +111,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 5 (R1 FAIL, R2–R5 PASS)
+- Review rounds: spec 3, schema 2, audit 2
+- First-pass AC FAILs: 2 (AC-2 enrich fixture, spec R1; AC-5 non-discriminating, audit R1)
+- Plan revisions after approval: 2 (fixtures and comments outside the file list; the pg_depend view drop)
