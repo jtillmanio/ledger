@@ -5,9 +5,10 @@
 // genres and an undated read, asserting the values, not just that it ran.
 // Going down the column comes back empty: its values are gone once dropped
 // (owner at the plan gate, 2026-11-13: lossy, accepted; one seed book leaned on
-// it). Before the up the test re-creates 4.5's book_genre_levels, which named
-// the column, as the development and production databases hold it: 0027 must
-// drop that view to drop the column. The test database is already at 0027
+// it). Before each up the test re-creates a view that names the column, as a
+// real database at 0026 holds one: 4.5's book_genre_levels (released after
+// #252), then the earlier books_by_year (before it). 0027 must drop whichever
+// it finds to drop the column. The test database is already at 0027
 // (test:db:reset), so this runs the down file, then 0027, then both again,
 // inside one transaction rolled back at the end.
 import { readFileSync, readdirSync, statSync } from "node:fs";
@@ -35,6 +36,23 @@ FROM (
     AND NOT EXISTS (SELECT 1 FROM book_genres x WHERE x.book_id = b.id)
 ) g
 GROUP BY g.book_id, lower(g.genre), g.depth`;
+
+// books_by_year before 4.5 (#252), the view production held at 0026 until that release: it reads the
+// column itself. A preview branch copied from that production failed a by-name DROP VIEW (CI, PR #256).
+const BOOKS_BY_YEAR_BEFORE_4_5 = `
+CREATE VIEW books_by_year AS
+SELECT r.user_id, extract(year FROM r.finished_on)::int AS year, b.genre,
+       COUNT(*) AS books, SUM(b.word_count) AS words,
+       COUNT(*) FILTER (WHERE r.format = 'audio') AS listened
+FROM book_reads r JOIN books b ON b.id = r.book_id
+WHERE r.finished_on IS NOT NULL AND b.deleted_at IS NULL
+GROUP BY r.user_id, extract(year FROM r.finished_on)::int, b.genre`;
+
+/** Which of the two genre views exist. */
+async function genreViews(tx: TransactionSql) {
+  return (await tx`SELECT viewname FROM pg_views WHERE schemaname = 'public'
+                   AND viewname IN ('book_genre_levels', 'books_by_year') ORDER BY viewname`).map((r) => r.viewname);
+}
 
 afterAll(async () => {
   await sql.end();
@@ -109,13 +127,25 @@ describe("migration 0027 (books.genre is dropped)", () => {
         expect(await genres(tx)).toEqual(GENRES);
         expect(await undated(tx)).toEqual(UNDATED);
 
-        // down and up once more: nothing moves.
+        expect(await genreViews(tx)).toEqual([]);
+
+        // down again, to a database released before 4.5: no book_genre_levels, and a books_by_year
+        // that reads the column. The up finds that view through pg_depend and drops it too.
         await tx.unsafe(DOWN).simple();
         expect(await genres(tx)).toEqual(GENRES);
+        await tx.unsafe(BOOKS_BY_YEAR_BEFORE_4_5);
+        expect(await genreViews(tx)).toEqual(["books_by_year"]);
+        await up(tx);
+        expect(await column(tx)).toEqual([]);
+        expect(await genreViews(tx)).toEqual([]);
+        expect(await genres(tx)).toEqual(GENRES);
+        expect(await undated(tx)).toEqual(UNDATED);
+
+        // And once more with no view naming the column, as a fresh database: nothing to drop, nothing moves.
+        await tx.unsafe(DOWN).simple();
         await up(tx);
         expect(await column(tx)).toEqual([]);
         expect(await genres(tx)).toEqual(GENRES);
-        expect(await undated(tx)).toEqual(UNDATED);
 
         throw new Rollback();
       }),
