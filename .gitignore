@@ -17,3 +17,5 @@ next-env.d.ts
 /test-results/
 /playwright-report/
 test/e2e/.auth/
+# the Playwright MCP's console logs, page snapshots and screenshots from ui-verifier walks
+/.playwright-mcp/
