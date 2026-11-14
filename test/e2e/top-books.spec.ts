@@ -218,12 +218,16 @@ test("handles are 44px named buttons on the phone; reduced motion stops the move
   await open(page);
   const handle = page.getByRole("button", { name: `Reorder ${titleOf(RANKED[0])}, rank 1` });
   await expect(handle).toHaveClass(/\bdrag\b/);
-  await expect(page.getByRole("button", { name: `More for ${titleOf(RANKED[0])}` })).toBeVisible();
+  const more = page.getByRole("button", { name: `More for ${titleOf(RANKED[0])}, rank 1` });
+  await expect(more).toBeAttached();
   const width = page.viewportSize()!.width;
   if (width < 768) {
-    const box = (await handle.boundingBox())!;
-    expect(box.width).toBeGreaterThanOrEqual(44);
-    expect(box.height).toBeGreaterThanOrEqual(44);
+    // The handle and the ⋯ menu both: the shared row menu is 32px elsewhere.
+    for (const button of [handle, more]) {
+      const box = (await button.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
   }
   if (await page.evaluate(() => matchMedia("(prefers-reduced-motion: reduce)").matches)) {
     const durations = await rows(page).evaluateAll((lis) => lis.map((li) => getComputedStyle(li).transitionDuration));
