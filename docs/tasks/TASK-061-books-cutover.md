@@ -27,6 +27,7 @@ The app becomes the record for books: production has had its last full load, it 
 - The month of running both (D-18) follows the tick, with its *Done when* in Step 14; it is not this entry's box.
 - Decisions: D-95, D-128, D-129, D-18, D-111, D-133, D-132, D-139.
 - *From TASK-084 (4.2, PR #255):* the owner added 1.31 (*Settle the Owner checklist before the books cutover*, 2026-11-14) to 1.26's **Depends on** paragraph: every open Owner checklist item is settled, or marked for after the switch, before the final load. AC-2's check of the paragraph covers it.
+- *From TASK-082 (4.4, PR #267):* `npm run calibre:sync` writes no `#read` or `#read_date` into Calibre until `CALIBRE_SYNC_READS=true` is set in the env file the sync uses. The owner sets it at the switch, once extract no longer loads Calibre's reads (D-87, D-133); `docs/OWNER-CHECKLIST.md` § Actions from follow-ups has the item.
 
 ## Acceptance criteria
 

@@ -1,7 +1,7 @@
 ---
 id: TASK-082
 title: 4.4 Sync with Calibre (2 of 3) — npm run calibre:sync, both ways, by hand or weekly
-status: In progress
+status: Review
 depends_on: [TASK-081]
 size: M
 model: opus
@@ -33,7 +33,7 @@ One command on the owner's PC, run from a desktop shortcut or once a week, sends
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the run end to end with the fixture library in a temp folder: everything up to *A missing `#owned` column is named and skipped*, including the values written into the fixture's `metadata.db` and the second run changing nothing on either side. TASK-083 proves the browser clauses): with a
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the run end to end with the fixture library in a temp folder: everything up to *A missing `#owned` column is named and skipped*, including the values written into the fixture's `metadata.db` and the second run changing nothing on either side. TASK-083 proves the browser clauses): with a
 fixture library in a temp folder and the test database: four books, one
 matching a Ledger book with a changed title and word count, one the Ledger
 lacks and marked read, one whose `#date_read` was changed in Calibre after the
@@ -46,10 +46,10 @@ entry listing each change. A second run changes nothing on either side and
 logs that nothing changed. A missing `#owned` column is named and skipped. In
 the browser (0.11), the *Calibre* page lists the run, and the dashboard's line
 shows when the last run is 8 days old and not when it is 6.
-- [ ] AC-2: The command copies `metadata.db` to a temp folder before reading it and never opens the library's own file for reading; with the content server unreachable it writes with `calibredb --library-path` against the (fixture) library folder, and with it reachable through the server.
-- [ ] AC-3: With `#ledger_status` missing from the fixture library, the run names it, skips that column, writes the others and exits 0; with the app unreachable or the passcode wrong it exits non-zero, writes nothing to Calibre, and says why.
-- [ ] AC-4: The scheduler script registers one weekly task that runs the command and nothing else, and a second registration replaces it rather than adding another (checked with `-WhatIf` or against a fake `schtasks`, never the real scheduler in a test).
-- [ ] AC-5: `.claude/rules/schema.md` and `docs/03-data-model.md` 2.19 no longer say nothing writes to Calibre; `docs/COMMANDS.md` lists `npm run calibre:sync`; every new key is in `.env.example` and `docs/SERVICES.md` by name only.
+- [x] AC-2: The command copies `metadata.db` to a temp folder before reading it and never opens the library's own file for reading; with the content server unreachable it writes with `calibredb --library-path` against the (fixture) library folder, and with it reachable through the server.
+- [x] AC-3: With `#ledger_status` missing from the fixture library, the run names it, skips that column, writes the others and exits 0; with the app unreachable or the passcode wrong it exits non-zero, writes nothing to Calibre, and says why.
+- [x] AC-4: The scheduler script registers one weekly task that runs the command and nothing else, and a second registration replaces it rather than adding another (checked with `-WhatIf` or against a fake `schtasks`, never the real scheduler in a test).
+- [x] AC-5: `.claude/rules/schema.md` and `docs/03-data-model.md` 2.19 no longer say nothing writes to Calibre; `docs/COMMANDS.md` lists `npm run calibre:sync`; every new key is in `.env.example` and `docs/SERVICES.md` by name only.
 
 ## Out of scope
 
@@ -76,8 +76,12 @@ shows when the last run is 8 days old and not when it is 6.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- TASK-083's *Calibre* page labels the log's `skippedColumns` as "missing, or held until the books cutover": before 1.26 the command sends `#read` and `#date_read` as skipped while `CALIBRE_SYNC_READS` is off (approved at plan).
-- From schema-reviewer: the write-back loses a finish's precision. If the owner's date-read column displays a year alone, Calibre's value reads back as July 1st `approximate` and the route (`src/db/calibre-sync.ts`, `out("#date_read", …)`) compares days, so an exact Ledger finish differs and is rewritten every run. Compare by the column's display precision, or say so on the *Calibre* page.
+- TASK-083's *Calibre* page labels the log's `skippedColumns` as "missing, or held until the books cutover": before 1.26 the command sends `#read` and `#date_read` as skipped while `CALIBRE_SYNC_READS` is off → docs/tasks/TASK-083-calibre-page-and-stale-line.md § Context (approved at plan)
+- From schema-reviewer: the write-back loses a finish's precision. If the owner's date-read column displays a year alone, Calibre's value reads back as July 1st `approximate` and the route (`src/db/calibre-sync.ts`, `out("#date_read", …)`) compares days, so an exact Ledger finish differs and is rewritten every run. Compare by the column's display precision, or say so on the *Calibre* page → docs/tasks/TASK-083-calibre-page-and-stale-line.md § Context
+- At the books cutover the owner sets `CALIBRE_SYNC_READS=true`, so the sync starts writing reads → docs/tasks/TASK-061-books-cutover.md § Context (the owner's action is in `docs/OWNER-CHECKLIST.md` § Actions from follow-ups, written in this PR as plan step 5)
+- Candidate decision: the sync holds the Ledger's reads back until 1.26 (`CALIBRE_SYNC_READS`), sends every Calibre book each run, and keeps the backfill out of the sync's log entry → docs/OWNER-CHECKLIST.md § Approvals from follow-ups (queued: `workflow.decisions` is `propose`)
+- From spec-reviewer: the scheduler's `\"` quoting for a script path with a space, and `-Shortcut`, have no automated test (no AC asks for one; the repo path has no space) → not tracked: covered by the owner's first registration in the Owner checklist item
+- From schema-reviewer: a real `calibredb` was never run; the fake treats an empty `--field` as clearing the value → not tracked: the owner's first manual run (Owner checklist) confirms it
 
 ## Plan
 
@@ -110,7 +114,7 @@ Approved by the owner 2026-11-15, with these answers: (1) reads held until 1.26 
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL (tsc: spawn env type, test/calibre-sync-command.test.ts:201) → R2 PASS | PR #267 opened | Spec R1 CHANGES (AC-2: empty CALIBRE_SERVER_URL turned off the content server) → fixed | Schema R1 APPROVE (3 MINOR: 2 fixed, 1 to TASK-083) | Verify R3 PASS | Spec R2 APPROVE | Schema R2 APPROVE | Audit R1 PASS | UI n/a (ui: false, no UI files) | CI: R1 cancelled by the fix push, R2 on d842b01
 
 ## Blocked
 
@@ -118,7 +122,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 2
+- First-pass AC FAILs: 1 (AC-2)
+- Plan revisions after approval: 1 (the weekly task runs the script's `-Run`)

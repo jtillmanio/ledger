@@ -277,7 +277,7 @@ tick them.
       *No genre* section with no chip, and a chosen genre hides it. Roadmap
       item text isn't edited on a task branch, so the line is yours to change.
 - [ ] Set up the Calibre sync, `npm run calibre:sync` (from TASK-082, 4.4,
-      branch `task/4.4-calibre-sync-command`). In Calibre: create two columns
+      PR #267). In Calibre: create two columns
       (Preferences → Add your own columns): `#ledger_status` (text) and
       `#owned` (comma-separated text, like tags); a missing one is named and
       skipped. Turn on the content server (Preferences → Sharing over the net:
@@ -293,7 +293,7 @@ tick them.
       -Shortcut` (re-running replaces the task; its log is
       `%LOCALAPPDATA%\Ledger\calibre-sync.log`).
 - [ ] At the books cutover (1.26), set `CALIBRE_SYNC_READS=true` in the env
-      file the sync uses (from TASK-082, 4.4): until then the sync writes no
+      file the sync uses (from TASK-082, 4.4, PR #267): until then the sync writes no
       `#read` or `#read_date` into Calibre, because extract still loads
       Calibre's reads (D-87) and a read the Ledger lacks would clear Calibre's.
 
@@ -304,6 +304,16 @@ Planning-doc edits and candidate decisions waiting for your yes
 session, and that session or the next `/track-follow-ups` run makes the change
 and notes where it went.
 
+- [ ] Record a decision in `docs/review/decisions.md` (next free D-n; from
+      TASK-082, 4.4, PR #267): the Calibre sync holds the Ledger's reads back
+      until the books cutover. `npm run calibre:sync` writes no `#read` or
+      date read into Calibre until `CALIBRE_SYNC_READS=true` (set at 1.26),
+      because before then extract still loads Calibre's reads (D-87) and a read
+      the Ledger lacks would clear Calibre's. It sends every Calibre book each
+      run (the route applies only what changed, so the log's *what went out*
+      is complete), and the Hardcover backfill it calls afterwards is not part
+      of the sync's log entry. Not chosen: writing reads from day one; sending
+      only what changed since the last sync.
 - [ ] Record a decision in `docs/review/decisions.md` (next free D-n): a lone
       plan-rail block under 24px takes its hit area's missing px from the side
       that has room, not evenly from both: the column's foot or top, or a
