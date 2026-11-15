@@ -4725,7 +4725,7 @@ it is converted.
     deletes the `run_parked` row and leaves `issue_progress` unchanged. The
     export test passes with `run_parked`.
 
-- ☐ 5.17 **What you own: physical copies and audiobooks** · M. Owner intake,
+- ☑ 5.17 **What you own: physical copies and audiobooks** · M. Owner intake,
   2026-11-05 (owner: *clarify physically owned vs ebook library so I can track
   books I physically own*; asked, the owner chose a per-book toggle, with the
   ownership type in the book's details and a way to view the physical library).
@@ -4773,6 +4773,39 @@ it is converted.
     reload. Pasting three lines to *Physical copy*, two matched and one new,
     writes three rows and one `unlisted` book, and Undo removes all of it.
     Screenshots at 360px and 1280px.
+- ☐ 5.17b **Own it from Search and By hand** · S. *From TASK-094 (5.17,
+  PR #268):* the owner chose, at its plan gate, to give *Physical copy* and
+  *Audiobook* to *Paste a list* only and to bring them to the other two add
+  modes here. Depends on 5.17.
+  - **The destinations.** *Add to* keeps the two chips in *Search* and *By
+    hand* instead of going back to Someday (`switchTo` in
+    `src/components/AddBooks.tsx`). A library result gets its `owned_copies`
+    row, whatever its status. A Hardcover result or a typed book that the
+    library lacks is created at Unlisted (D-152) with its row. Each result's
+    button says *Add to Physical copy*. `addBook` stops throwing on the owned
+    destination and goes through `writeDestination`'s owned branch.
+    `POST /api/books` accepts it (`parseDestination`'s `{ owned }`), and the
+    undo is `undoOwned`, as the paste's is.
+  - **The paste check knows what you own.** `bookMatches` (the dry run) says
+    which formats a matched book already has, so the review says *Already
+    owned on paper* and *Add N books* counts only the rows it will write.
+    Today a paste to *Physical copy* counts a book that already has the row,
+    and the toast then counts fewer (spec review, PR #268).
+  - **While there.** `undoInside` (Someday, On deck, a year or quarter, a
+    shelf) refuses a book it created that 4.4's sync has linked since
+    (`calibre_id` set), as `undoOwned` does. Removing the book would make the
+    sync skip it for good (schema review, PR #268).
+  - **Not drawn yet.** The mockup's `add` frame gains a result row's *Add to
+    Physical copy* before it is built.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first)
+    with *Physical copy* chosen, Search's *Add to Physical copy* on a library
+    book with a status writes one `physical` row and changes no status. On a
+    Hardcover result, and on a typed book the library lacks, it creates one
+    `unlisted` book with its row. Undo removes exactly what each add wrote,
+    and leaves a row the book had before. A paste whose matched book already
+    has the row counts it as already owned. Undoing an add to Someday whose
+    created book has since gained a `calibre_id` answers 409 and changes
+    nothing. Screenshots at 360px and 1280px.
 
 ---
 
