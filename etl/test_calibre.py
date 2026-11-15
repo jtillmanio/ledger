@@ -1392,6 +1392,45 @@ class Genres(Case):
         self.assertEqual(self.genres(), [("Mistborn", "Fantasy")])
 
 
+class SharedMatchFixture(unittest.TestCase):
+    """Task 4.4, AC-2: test/fixtures/calibre-match.json holds Seed.match and
+    the app's TypeScript twin (src/lib/calibre-match.ts, test/calibre-match.test.ts)
+    to one answer per case, as issue-slugs.json holds extract's ids (D-59)."""
+
+    def test_seed_match_gives_every_cases_expected_answer(self):
+        path = REPO / "test" / "fixtures" / "calibre-match.json"
+        cases = json.loads(path.read_text(encoding="utf-8"))["cases"]
+        self.assertGreaterEqual(len(cases), 15)
+        for case in cases:
+            with self.subTest(case["name"]):
+                folder = Path(tempfile.mkdtemp())
+                names = sorted({b["author"] for b in case["ledger"]})
+                with (folder / "authors.csv").open("w", newline="", encoding="utf-8") as fh:
+                    w = csv.writer(fh)
+                    w.writerow(["id", "name"])
+                    w.writerows([ex.slug(n), n] for n in names)
+                with (folder / "books.csv").open("w", newline="", encoding="utf-8") as fh:
+                    w = csv.writer(fh)
+                    w.writerow(["id", "title", "author_id", "series_id", "calibre_id"])
+                    w.writerows([ex.slug(b["title"], b["author"]), b["title"], ex.slug(b["author"]), "",
+                                 b.get("calibre_id", "")] for b in case["ledger"])
+                seed = cal.Seed(folder)
+                rec = case["record"]
+                authors = [ex.clean(a) or "" for a in rec["authors"]] or [""]
+                title = ex.title_text(rec["title"])
+                idx = ex.BookIndex()
+                separate: set = set()
+                if case.get("separate"):
+                    # The owner decided the pair the run proposed.
+                    _, _, _, p = seed.match(title, authors, idx, set(), rec["calibre_id"])
+                    self.assertIsNotNone(p)
+                    separate.add(ex.review_sides(p))
+                status, author, hit, p = seed.match(title, authors, idx, separate, rec["calibre_id"])
+                renamed = p is not None and p["reason"] == ex.CALIBRE_RENAME
+                self.assertEqual({"status": status, "author": author, "book": hit["title"] if hit else None,
+                                  "renamed": renamed}, case["expect"])
+
+
 class HeldBooks(Case):
     """Task 1.20: a workbook book extract held (seed/held_books.csv, not in
     books.csv) is still a workbook book to match, so its near spelling in

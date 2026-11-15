@@ -63,5 +63,12 @@ describe("proxy (the passcode gate)", () => {
     expect(gated.test("/api/export")).toBe(true);
     expect(gated.test("/api/progress/issue")).toBe(true);
     expect(gated.test("/comics")).toBe(true);
+    // The Calibre sync signs in like a browser (task 4.4, D-133, AC-3).
+    expect(gated.test("/api/calibre/sync")).toBe(true);
+    const { NextRequest } = await import("next/server");
+    const { proxy } = await import("../src/proxy");
+    const out = proxy(new NextRequest("http://ledger.test/api/calibre/sync", { method: "POST" }));
+    expect(out.status).toBe(307);
+    expect(out.headers.get("location")).toBe("http://ledger.test/login?next=%2Fapi%2Fcalibre%2Fsync");
   });
 });

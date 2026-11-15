@@ -25,6 +25,7 @@ A *Calibre* page under Settings lists every sync run (when it ran, what came in,
 - **The dashboard line**: the books dashboard (`src/app/books/page.tsx`, TASK-049) shows a plain line, *Calibre last synced 9 days ago*, once the last run is more than 7 days old; none at 7 or fewer, and none before any run (the plan says what a never-synced Ledger shows, if anything). Nothing red (hard rule 6, `docs/04-design.md` § 10: nothing on a dashboard is red). *Days* are Eastern days (1.16, D-67).
 - Design: no mockup frame draws either; the `settings` frame (`powershell -NoProfile -File scripts/screen.ps1 settings`) and § 14 → Settings set the page's look, and `docs/04-design.md` § 12 → Books dashboard the line's slot. `ui.redrawFiles` (`design/mockups.html`, `design/mockups-index.md`) get both frames in the same PR.
 - Decisions: D-40, D-67, D-90, D-133. Hard rule 6.
+- *From TASK-081 (4.4, PR #265):* the app keeps no author merges (extract's are `book_review.csv`'s `kind = author` rows), so a Calibre author spelled a new way creates a new author through the sync. The page lists the run's `report.in` entries of kind `created`; an author new to the Ledger is worth showing there so a stray spelling is seen. TASK-081 stores decisions per Calibre book (`calibre_decisions`, written by `decideCalibrePair` in `src/db/writes.ts`), which this page can call for a waiting near spelling.
 
 ## Acceptance criteria
 
