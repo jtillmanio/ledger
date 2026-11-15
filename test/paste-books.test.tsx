@@ -8,11 +8,12 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import AddBooks from "../src/components/AddBooks";
 import PasteBooks from "../src/components/PasteBooks";
 import { UndoProvider } from "../src/components/Undo";
 import type { BookAnswer } from "../src/lib/book-review";
 
-const router = { push: vi.fn() };
+const router = { push: vi.fn(), refresh: vi.fn() };
 vi.mock("next/navigation", () => ({ useRouter: () => router }));
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -241,6 +242,74 @@ describe("Add to and undo (task 1.4c)", () => {
   });
 });
 
+// Task 5.17 (3 of 3, AC-5): *Physical copy* and *Audiobook*, Paste a list's alone.
+describe("Physical copy and Audiobook (task 5.17)", () => {
+  const chip = (name: string) => [...container.querySelectorAll<HTMLButtonElement>(".addto .chip")]
+    .find((b) => b.textContent === name);
+  const mode = (name: string) => [...container.querySelectorAll<HTMLButtonElement>('[aria-label="Add by"] button')]
+    .find((b) => b.textContent === name)!;
+  const renderPage = () => act(() => root.render(<UndoProvider><AddBooks initial={{ kind: "someday" }} /></UndoProvider>));
+
+  it("offers them in Add to only while Paste a list is chosen, as named, pressed chips", async () => {
+    renderPage();
+    expect(chip("Physical copy")).toBeUndefined();
+    expect(chip("Audiobook")).toBeUndefined();
+    await click(mode("Paste a list"));
+    expect(chip("Physical copy")!.getAttribute("aria-pressed")).toBe("false");
+    expect(chip("Audiobook")!.getAttribute("aria-pressed")).toBe("false");
+    expect(chip("Physical copy")!.closest('[role="group"]')!.getAttribute("aria-labelledby")).toBe("addto-label");
+    await click(chip("Physical copy")!);
+    expect(chip("Physical copy")!.getAttribute("aria-pressed")).toBe("true");
+    expect(chip("Someday")!.getAttribute("aria-pressed")).toBe("false");
+    // By hand never offers them: Add to goes back to Someday.
+    await click(mode("By hand"));
+    expect(chip("Physical copy")).toBeUndefined();
+    expect(chip("Someday")!.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("names the format on the confirm, sends it, and lands on the Library's Owned filter", async () => {
+    renderPage();
+    await click(mode("Paste a list"));
+    await click(chip("Audiobook")!);
+    library["the name of the wind"] = { match: { ...WIND, status: "read" }, near: null };
+    await type("The Name of the Wind - Patrick Rothfuss\nGolden Son - Pierce Brown");
+    await click(checkButton()!);
+    expect(confirmButton().textContent).toBe("Add 2 books to Audiobook");
+    await click(confirmButton());
+    expect(confirms()).toEqual([{
+      items: [{ line: 1, use: WIND.bookId }, { line: 2, title: "Golden Son", author: "Pierce Brown", series: null, position: null }],
+      destination: { kind: "owned", format: "audio" },
+    }]);
+    expect(router.push).toHaveBeenCalledWith("/books/list?owned=audio");
+  });
+
+  it("says it in the toast, and its Undo sends back exactly what the paste wrote", async () => {
+    act(() => root.render(
+      <UndoProvider>
+        <PasteBooks level={2} target={{ kind: "owned", format: "physical" }} cancel={<a href="/books" className="btn sec">Cancel</a>}
+          onAdded={onAdded} />
+      </UndoProvider>));
+    library["the name of the wind"] = { match: { ...WIND, status: "to_read" }, near: null };
+    await type("The Name of the Wind - Patrick Rothfuss\nGolden Son - Pierce Brown");
+    await click(checkButton()!);
+    expect(confirmButton().textContent).toBe("Add 2 books to Physical copy");
+    fetchMock.mockImplementationOnce(async () => Response.json({
+      ok: true, destination: { kind: "owned", format: "physical" }, created: ["golden-son-pierce-brown"], matched: [WIND.bookId],
+      added: ["golden-son-pierce-brown", WIND.bookId], statused: ["golden-son-pierce-brown"], promoted: [],
+    }));
+    await click(confirmButton());
+    expect(container.querySelector(".toast-region .toast-label")!.textContent).toBe("2 books added to Physical copy");
+    expect(container.querySelector(".toast-region .toast-detail")!.textContent).toBe("1 already in your library");
+    fetchMock.mockImplementationOnce(async () => Response.json({ ok: true }));
+    await click(container.querySelector(".toast-region .toast-undo")!);
+    const [url, init] = fetchMock.mock.calls.at(-1)!;
+    expect([url, init.method, JSON.parse(init.body)]).toEqual(["/api/books", "DELETE", {
+      destination: { kind: "owned", format: "physical" }, created: ["golden-son-pierce-brown"],
+      added: ["golden-son-pierce-brown", WIND.bookId], statused: ["golden-son-pierce-brown"],
+    }]);
+  });
+});
+
 // Task 1.4e: title and author in their own cells, fixed in place.
 const input = (name: string) => container.querySelector<HTMLInputElement>(`input[aria-label="${name}"]`)!;
 async function edit(name: string, value: string) {
@@ -342,7 +411,21 @@ describe("the mockup's add frame (task 1.4e, AC-5)", () => {
     const start = html.indexOf('<section class="screen" data-id="add">');
     expect(start).toBeGreaterThan(-1);
     const frame = html.slice(start, html.indexOf("</section>", start));
-    // The phone frame and the desktop frame both carry it.
-    expect(frame.split("One book per line: Title - Author, or paste two columns (title, author)")).toHaveLength(3);
+    // The phone frame, the desktop frame and the Paste a list frame (task 5.17) all carry it.
+    expect(frame.split("One book per line: Title - Author, or paste two columns (title, author)")).toHaveLength(4);
+  });
+
+  it("draws Physical copy and Audiobook in Add to, Physical copy chosen, and the confirm naming it (task 5.17, AC-5)", async () => {
+    const { readFileSync } = await import("node:fs");
+    const html = readFileSync("design/mockups.html", "utf8");
+    const start = html.indexOf('<section class="screen" data-id="add">');
+    const frame = html.slice(start, html.indexOf("</section>", start));
+    expect(frame).toContain('aria-pressed="true" tabindex="0" data-on>Physical copy</span>');
+    expect(frame).toContain('aria-pressed="false" tabindex="0">Audiobook</span>');
+    expect(frame).toContain("Add 3 books to Physical copy");
+    const row = readFileSync("design/mockups-index.md", "utf8").split("\n").find((l) => l.startsWith("| `add` |"))!;
+    expect(row).toContain("*Physical copy*");
+    expect(row).toContain("*Audiobook*");
+    expect(row).toContain("task 5.17");
   });
 });

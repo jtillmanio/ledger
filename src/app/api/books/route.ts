@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiUserId, unauthorized } from "@/lib/auth";
-import { count, MAX_ID, MAX_PAGES, MAX_POSITION, MAX_WORDS, parseDestination, text } from "@/lib/book-add";
+import { count, destinationShapes, MAX_ID, MAX_PAGES, MAX_POSITION, MAX_WORDS, parseDestination, text } from "@/lib/book-add";
 import { MAX_LINES } from "@/lib/book-parse";
 import { noteId } from "@/lib/inbox";
 import { COVERS } from "@/lib/hardcover";
@@ -27,8 +27,9 @@ const MAX_COVER = 300;
  *   undo sends back. `note`, an inbox note's id, resolves that note into the
  *   book in the same transaction (task 1.4b); the answer's `note` says it did.
  * - DELETE `{ destination, created, added, statused?, promoted?, note? }`: that
- *   add's undo, from an add here or a paste (`/api/books/bulk`); `statused` is
- *   the statuses an On deck add wrote (task 1.7), `promoted` the Unlisted books
+ *   add's undo, from an add here or a paste (`/api/books/bulk`, whose
+ *   destination may be a format you own, task 5.17; an add here never is);
+ *   `statused` is the statuses an On deck add wrote (task 1.7), `promoted` the Unlisted books
  *   it moved onto your list (task 1.21). 409 when something changed
  *   since, and then nothing is changed. `note: { id, bookId }` reopens the
  *   note the add resolved.
@@ -44,9 +45,7 @@ export async function POST(req: Request) {
   if (!item || !destination) {
     return NextResponse.json({
       error: "item is { use }, { hardcover: { hardcoverId, title, authors, year, pages, coverUrl } } or "
-        + "{ hand: { title, author, series, position, pages, words } }; "
-        + "destination is { kind: 'someday' }, { kind: 'on_deck' }, { kind: 'period', period: '2027-Q1' or '2027' } "
-        + "or { kind: 'shelf', shelfId }",
+        + "{ hand: { title, author, series, position, pages, words } }; " + destinationShapes(),
     }, { status: 400 });
   }
   const result = await addBook(userId, item, destination, note === null ? {} : { note });
@@ -64,7 +63,8 @@ export async function DELETE(req: Request) {
   const userId = await apiUserId();
   if (!userId) return unauthorized();
   const body = await req.json().catch(() => null);
-  const destination = parseDestination(body?.destination);
+  // A paste to a format you own (task 5.17) is undone here too.
+  const destination = parseDestination(body?.destination, { owned: true });
   const created = ids(body?.created);
   const added = ids(body?.added);
   const statused = body?.statused === undefined ? [] : ids(body.statused);

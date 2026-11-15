@@ -16,6 +16,7 @@ const queries = vi.hoisted(() => ({ listBooks: vi.fn(async () => [] as unknown[]
 vi.mock("@/db/queries", () => ({
   listBooks: queries.listBooks,
   TO_READ_LEVELS: ["quarter", "year", "on_deck", "someday"],
+  OWNED_FILTERS: ["physical", "audio", "ebook", "none"],
   // 41 series: more than the page shows, so the Show all link is drawn.
   seriesProgress: async () => Array.from({ length: 41 }, (_, i) => ({
     series_id: `s${i}`, name: `Series ${i}`, author: null, books_read: 0, total_books: 1, pct: 0,
@@ -61,8 +62,9 @@ describe("the Library page (AC-3, AC-4)", () => {
     // The reverse link is the one that changes the direction: it is checked on its own below.
     const chips = [...doc.querySelectorAll<HTMLAnchorElement>("a.chip")].filter((a) => !a.closest(".sort"))
       .map((a) => a.getAttribute("href")!).filter((h) => h.startsWith("/books/list"));
-    // Everything, Reading, To read, Read, Unlisted, the five levels and three genres: no year chip (task 3.4b, D-122).
-    expect(chips).toHaveLength(13);
+    // Everything, Reading, To read, Read, Unlisted, the five levels, the four Owned chips (task 5.17) and three
+    // genres: no year chip (task 3.4b, D-122).
+    expect(chips).toHaveLength(17);
     for (const href of chips) {
       const p = new URL(href, "http://x").searchParams;
       expect(p.get("sort"), href).toBe("length");
@@ -138,6 +140,79 @@ describe("the Library's genres (task 4.5)", () => {
   });
 });
 
+// Task 5.17 (TASK-093, D-121, D-132): the Owned filter is a chip row in the URL that every other link keeps.
+describe("the Library's Owned filter (task 5.17, AC-3)", () => {
+  const params = (href: string) => new URL(href, "http://x").searchParams;
+  const ownedGroup = (doc: Document) => doc.querySelector('[role="group"][aria-label="Owned"]');
+
+  it("draws Physical · Audiobook · Ebook · Not owned as links in a group named Owned", async () => {
+    const { doc } = await render({});
+    const chips = [...ownedGroup(doc)!.querySelectorAll<HTMLAnchorElement>("a.chip")];
+    expect(chips.map((a) => a.textContent)).toEqual(["Physical", "Audiobook", "Ebook", "Not owned"]);
+    expect(chips.map((a) => params(a.getAttribute("href")!).get("owned"))).toEqual(["physical", "audio", "ebook", "none"]);
+    // None chosen: none current, and Everything is.
+    expect(chips.map((a) => a.getAttribute("aria-current"))).toEqual([null, null, null, null]);
+    expect(queries.listBooks).toHaveBeenLastCalledWith("test-user", expect.objectContaining({ owned: undefined }));
+  });
+
+  it("with Read, Title and Physical chosen, both chips are current, listBooks gets all three, and every other link keeps owned", async () => {
+    const { doc } = await render({ status: "read", sort: "title", owned: "physical" });
+    expect(queries.listBooks).toHaveBeenLastCalledWith("test-user",
+      expect.objectContaining({ status: "read", owned: "physical", sort: "title", dir: "asc" }));
+    const named = (name: string) => [...doc.querySelectorAll<HTMLAnchorElement>("a.chip")].find((a) => a.textContent === name)!;
+    expect(named("Read").getAttribute("aria-current")).toBe("true");
+    expect(named("Physical").getAttribute("aria-current")).toBe("true");
+    expect(named("Everything").getAttribute("aria-current")).toBe("false");
+
+    // Everything clears it (and the status), keeping the order.
+    expect(named("Everything").getAttribute("href")).toBe("/books/list?sort=title");
+    // The current chip is the way back: it drops owned and keeps the rest.
+    expect(named("Physical").getAttribute("href")).toBe("/books/list?status=read&sort=title");
+
+    // Every other link into the Library keeps owned=physical: the status chips, the genres, the other
+    // Owned chips (with their own value), the reverse link and Show all.
+    const others = hrefs(doc).filter((h) => h !== "/books/list?sort=title" && h !== "/books/list?status=read&sort=title");
+    expect(others.length).toBeGreaterThanOrEqual(11);
+    for (const href of others) {
+      const owned = params(href).get("owned");
+      expect(owned, href).not.toBeNull();
+      if (!["audio", "ebook", "none"].includes(owned!)) expect(owned, href).toBe("physical");
+    }
+    expect(others).toContain("/books/list?status=to_read&owned=physical&sort=title");
+    expect(others).toContain("/books/list?status=read&genre=Fantasy&owned=physical&sort=title");
+    expect(others).toContain("/books/list?status=read&owned=audio&sort=title");
+    expect(others).toContain("/books/list?status=read&owned=physical&series=all&sort=title");
+    expect(doc.querySelector<HTMLAnchorElement>(".sort a")!.getAttribute("href"))
+      .toBe("/books/list?status=read&owned=physical&sort=title&dir=desc");
+  });
+
+  it("an Owned chip keeps the search, the level and the genre too", async () => {
+    const { doc } = await render({ status: "to_read", level: "on_deck", genre: "Fantasy", q: "the" });
+    const audio = [...ownedGroup(doc)!.querySelectorAll<HTMLAnchorElement>("a.chip")].find((a) => a.textContent === "Audiobook")!;
+    expect(audio.getAttribute("href")).toBe("/books/list?status=to_read&level=on_deck&genre=Fantasy&owned=audio&q=the");
+  });
+
+  it("ignores an owned value it doesn't know: nothing filtered, no chip current", async () => {
+    const { doc } = await render({ owned: "paper" });
+    expect(queries.listBooks).toHaveBeenLastCalledWith("test-user", expect.objectContaining({ owned: undefined }));
+    const chips = [...ownedGroup(doc)!.querySelectorAll<HTMLAnchorElement>("a.chip")];
+    expect(chips.map((a) => a.getAttribute("aria-current"))).toEqual([null, null, null, null]);
+    expect(hrefs(doc).filter((h) => h.includes("paper"))).toEqual([]);
+  });
+
+  it("ends the row's sub-line with what you own (AC-2)", async () => {
+    queries.listBooks.mockResolvedValueOnce([{
+      id: "o", title: "Owned Fixture", author: "Ann Author", series: null, series_position: null, universe: null,
+      genre: "Romantasy", word_count: null, word_count_source: null, cover_url: null, pending: false, status: "to_read",
+      read_year: null, plan_year: null, finished_on: null, finished_on_precision: "none", started_on: null,
+      started_on_precision: "none", days_taken: null, rating: null, reads: 0, listens: 0, total: 1,
+      owned: ["physical", "audio", "ebook"],
+    }]);
+    const { doc } = await render({});
+    expect(doc.querySelector(".book-row .row-sub")?.textContent).toBe("Ann Author · Romantasy · Physical · Audiobook · Ebook");
+  });
+});
+
 describe("Library is its name (AC-4)", () => {
   it("is on no rendered text as the master list", async () => {
     const { html } = await render({});
@@ -176,6 +251,14 @@ describe("the sort in the URL (AC-3)", () => {
     expect(genreChipHref({ status: "to_read", level: "on_deck", sort: "title", dir: "desc" }, "Science Fiction"))
       .toBe("/books/list?status=to_read&level=on_deck&genre=Science+Fiction&sort=title&dir=desc");
     expect(genreChipHref({}, "Fantasy")).toBe("/books/list?genre=Fantasy");
+  });
+
+  it("carries owned after the genre, and a genre chip keeps it (task 5.17, AC-3)", () => {
+    expect(libraryHref({ status: "read", owned: "physical", sort: "title" })).toBe("/books/list?status=read&owned=physical&sort=title");
+    expect(libraryHref({ genre: "Fantasy", owned: "none", q: "the", series: "all" }))
+      .toBe("/books/list?genre=Fantasy&owned=none&q=the&series=all");
+    expect(genreChipHref({ status: "read", owned: "audio", sort: "length" }, "Fantasy"))
+      .toBe("/books/list?status=read&genre=Fantasy&owned=audio&sort=length");
   });
 
   it("reads a missing dir as the sort's own, and anything unknown as Series", () => {

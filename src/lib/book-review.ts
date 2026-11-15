@@ -10,7 +10,11 @@
  * defaults to *Create new*: nothing is merged without your *Use that*. A new
  * book lands at Someday (D-37); a book you have keeps the status it has, except
  * an Unlisted one, which joins Someday as a book with no status does (task 1.21).
+ *
+ * To a format you own (`owned`, task 5.17) a book you have is marked owned
+ * whatever its status, and a new one is created Unlisted (D-152).
  */
+import type { OwnedFormat } from "@/db/writes";
 import { bookKey, type BookCells, type BookLine } from "./book-parse";
 import type { Group, Option } from "./bulk-review";
 
@@ -82,10 +86,18 @@ const NO_AUTHOR_NEW = "No author, so it can't be added as new: type one, or use 
 
 const named = (b: { title: string; author: string | null }) => (b.author ? `${b.title} - ${b.author}` : b.title);
 
+/** What a book you have does on its way to a format you own (task 5.17). */
+const MARKS: Record<OwnedFormat, string> = {
+  physical: "In your library: marks it as owned on paper.",
+  audio: "In your library: marks the audiobook as yours.",
+};
+
 export function buildBookReview(
   lines: BookLine[],
-  { answers, choices }: { answers: BookAnswers; choices: Choices },
+  { answers, choices, owned = null }: { answers: BookAnswers; choices: Choices; owned?: OwnedFormat | null },
 ): BookReview {
+  /** A book you have joins the destination: always for a format you own, else only with no status or Unlisted. */
+  const joins = (status: string | null) => owned !== null || !status || status === "unlisted";
   const unchecked = new Map<string, { title: string; author: string | null }>();
   const writes: BookWrite[] = [];
   const seen = new Map<string, number>(); // book key → the line that writes or keeps it
@@ -140,11 +152,11 @@ export function buildBookReview(
       row.check = "in library";
       seen.set(bk, line.line);
       // An Unlisted book (task 1.21) is in your library but not on your list: it joins Someday.
-      if (match.status && match.status !== "unlisted") {
-        row.why = `Already in your library (${STATUS[match.status] ?? match.status}).`;
+      if (!joins(match.status)) {
+        row.why = `Already in your library (${STATUS[match.status!] ?? match.status}).`;
         decide([SKIP], "skip");
       } else {
-        row.why = "In your library, not on your list yet: adds it to Someday.";
+        row.why = owned ? MARKS[owned] : "In your library, not on your list yet: adds it to Someday.";
         if (decide([ADD, DROP], "add") === "add") {
           writes.push({ line: line.line, use: match.bookId });
           if (!used.has(match.bookId)) count++;
@@ -163,7 +175,7 @@ export function buildBookReview(
     } else if (line.flag === "no_author") {
       row.kind = "choice";
     } else {
-      why.push(`New: creates the book${line.series ? `, in ${line.series} at #${line.position}` : ""}.`);
+      why.push(`New: creates the book${line.series ? `, in ${line.series} at #${line.position}` : ""}${owned ? ", Unlisted" : ""}.`);
     }
     row.why = why.join(" ");
 
@@ -176,7 +188,7 @@ export function buildBookReview(
       seen.set(bk, line.line);
     } else if (choice === "use" && near) {
       writes.push({ line: line.line, use: near.bookId });
-      if ((!near.status || near.status === "unlisted") && !used.has(near.bookId)) count++;
+      if (joins(near.status) && !used.has(near.bookId)) count++;
       used.add(near.bookId);
       seen.set(bk, line.line);
     }

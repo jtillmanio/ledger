@@ -23,7 +23,9 @@ export const AFTER_ADD = "/books/list?status=to_read";
  * will do. Nothing is written until **Add N books**, which writes exactly what
  * it counts, in one transaction, to *Add to*'s destination, and pushes its
  * undo onto the app's one stack (task 1.2): the statuses or shelf rows it
- * wrote go, and the books it created are removed. Then `onAdded`: the sheet
+ * wrote go, and the books it created are removed. To *Physical copy* or
+ * *Audiobook* (task 5.17) it marks each book owned, a new one Unlisted, and the
+ * button names the format. Then `onAdded`: the sheet
  * closes, or the page goes to *To read*. The button stays *Adding…* until
  * then, so a second tap can't add again.
  *
@@ -58,7 +60,9 @@ export default function PasteBooks({ level, target, cancel, onAdded }: {
     () => pasted.map((l) => (edits[rowKey(l)] ? editBookLine(l, edits[rowKey(l)]) : l)),
     [pasted, edits],
   );
-  const review = useMemo(() => buildBookReview(lines, { answers, choices }), [lines, answers, choices]);
+  // To a format you own (task 5.17) a book you have is marked whatever its status, and a new one is Unlisted.
+  const owned = target.kind === "owned" ? target.format : null;
+  const review = useMemo(() => buildBookReview(lines, { answers, choices, owned }), [lines, answers, choices, owned]);
   const toCheck = review.unchecked.length;
   const where = targetName(target);
 
@@ -217,7 +221,8 @@ export default function PasteBooks({ level, target, cancel, onAdded }: {
           {cancel}
           <button type="button" className="btn" aria-disabled={reason ? true : undefined}
             aria-describedby={reason ? "add-reason" : undefined} onClick={confirm}>
-            {`Add ${books(review.count)}`}
+            {/* A format you own is named on the button (task 5.17, AC-5): it marks books, it doesn't plan them. */}
+            {`Add ${books(review.count)}${owned ? ` to ${where}` : ""}`}
           </button>
         </div>
       </div>

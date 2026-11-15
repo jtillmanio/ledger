@@ -1739,10 +1739,13 @@ export type BookItem = NewBook | { use: string };
  * with no plan row; On deck (task 1.7) is a `to_read` book with an `on_deck`
  * plan row; a shelf is a `shelf_books` row. A year or quarter (task 2.3) is a
  * `to_read` book with that period's plan row, one value (`2027-Q1` or `2027`,
- * D-38), at the end of a quarter.
+ * D-38), at the end of a quarter. A format you own (task 5.17, D-132; *Paste a
+ * list* only) is an `owned_copies` row, and a book the paste created is
+ * Unlisted (D-152); it touches no plan and no status a book already had.
  */
 export type Destination =
-  | { kind: "someday" } | { kind: "on_deck" } | { kind: "period"; period: Period } | { kind: "shelf"; shelfId: string };
+  | { kind: "someday" } | { kind: "on_deck" } | { kind: "period"; period: Period } | { kind: "shelf"; shelfId: string }
+  | { kind: "owned"; format: OwnedFormat };
 export const SOMEDAY: Destination = { kind: "someday" };
 
 /** The plan period an add puts its books in: On deck's, a year's or a quarter's; null for Someday or a shelf. */
@@ -1753,9 +1756,10 @@ export type AddedEntry = {
   destination: Destination;
   /** `books` rows this add created. */
   created: string[];
-  /** Books whose destination row this add wrote: a status, a plan row, or a place on the shelf. */
+  /** Books whose destination row this add wrote: a status, a plan row, a place on the shelf, or an owned format's row. */
   added: string[];
-  /** On deck, a year or a quarter: books this add also gave a `to_read` status, because they had none. */
+  /** On deck, a year or a quarter: books this add also gave a `to_read` status, because they had none. A format
+   * you own (task 5.17): the books it created, each given `unlisted`. */
   statused: string[];
   /** Someday, On deck, a year or a quarter: Unlisted books this add moved to `to_read` (task 1.21), which its undo
    * puts back to `unlisted`. Absent from an entry that promoted none. */
@@ -1880,14 +1884,26 @@ async function promote(tx: Tx, userId: string, ids: string[]): Promise<string[]>
  * one, `to_read` too, then that period's plan row to each book that is
  * `to_read`, at a quarter's end (one read, reading or set aside keeps its
  * status and gets none); a shelf is a `shelf_books` row at the
- * end of the shelf, and leaves an Unlisted book Unlisted. Returns the books it
- * wrote a destination row for, the statuses On deck wrote, and the Unlisted
- * books it moved.
+ * end of the shelf, and leaves an Unlisted book Unlisted. A format you own
+ * (task 5.17) is that format's `owned_copies` row, once (a book that has it
+ * keeps its row, and it isn't counted as this add's), and each book in
+ * `created` is Unlisted (D-152); no other status, and no plan row. Returns the
+ * books it wrote a destination row for, the statuses On deck (or the owned
+ * format's creates) wrote, and the Unlisted books it moved.
  */
 async function writeDestination(
-  tx: Tx, userId: string, destination: Destination, ids: string[],
+  tx: Tx, userId: string, destination: Destination, ids: string[], created: string[] = [],
 ): Promise<Pick<AddedEntry, "added" | "statused" | "promoted">> {
   if (ids.length === 0) return { added: [], statused: [], promoted: [] };
+  if (destination.kind === "owned") {
+    const { format } = destination;
+    const wrote = new Set((await tx.insert(ownedCopies).values(ids.map((bookId) => ({ bookId, format })))
+      .onConflictDoNothing().returning({ bookId: ownedCopies.bookId })).map((r) => r.bookId));
+    const statused = created.length === 0 ? [] : (await tx.insert(bookStatus)
+      .values(created.map((bookId) => ({ userId, bookId, status: "unlisted" })))
+      .onConflictDoNothing().returning({ bookId: bookStatus.bookId })).map((r) => r.bookId);
+    return { added: ids.filter((id) => wrote.has(id)), statused, promoted: [] };
+  }
   if (destination.kind === "someday") {
     const promoted = await promote(tx, userId, ids);
     const wrote = new Set([...promoted, ...await toRead(tx, userId, ids)]);
@@ -1969,7 +1985,7 @@ export async function addBooks(userId: string, items: BookItem[], destination: D
       const i = f++;
       return exact.get(i) ?? createdAs.get(bookKey(item.title, item.author))!;
     }))];
-    const { added, statused, promoted } = await writeDestination(tx, userId, destination, named);
+    const { added, statused, promoted } = await writeDestination(tx, userId, destination, named, created);
     return { ok: true, destination, created, matched: [...matched], added, statused, promoted } as const;
   });
 }
@@ -2043,6 +2059,8 @@ export type AddBookResult =
 export async function addBook(
   userId: string, item: AddBookItem, destination: Destination, { note }: { note?: number } = {},
 ): Promise<AddBookResult> {
+  // A format you own is *Paste a list*'s alone (task 5.17; Search and By hand are 5.17b): POST /api/books refuses it.
+  if (destination.kind === "owned") throw new Error("addBook: an owned format is a paste's destination only");
   return db.transaction(async (tx) => {
     await addLock(tx);
     if (destination.kind === "shelf" && !(await ownShelf(tx, userId, destination.shelfId))) {
@@ -2157,6 +2175,7 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
   if (added.length === 0 && created.length === 0) return false;
   const placed = new Set(added);
   if (created.some((id) => !placed.has(id))) return false;
+  if (destination.kind === "owned") return undoOwned(tx, userId, { ...entry, destination }, refused);
   const isShelf = destination.kind === "shelf";
   // On deck, a year or a quarter (task 2.3): the plan period the add wrote its rows in.
   const period = plannedIn(destination);
@@ -2246,6 +2265,64 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
     if (back.length !== promoted.size) throw refused;
   }
   if (created.length) {
+    await tx.update(books).set({ deletedAt: sql`now()` }).where(and(inArray(books.id, created), isNull(books.deletedAt)));
+  }
+  return true;
+}
+
+/**
+ * A paste to a format you own, undone (task 5.17, D-132): the `owned_copies`
+ * rows it wrote go, and the books it created lose the Unlisted status it gave
+ * them and are soft-deleted (Hard rule 4). A row a book had before the paste
+ * was never in `added`, so it stays. Refuses, changing nothing, when a row it
+ * wrote is gone, a book it created is no longer a bare `unlisted` (a status, a
+ * rating, a note or a finish since), or has gained anything else: the other
+ * format, a shelf, a plan row, a read or a Calibre id. Called inside `undoInside`'s lock.
+ */
+async function undoOwned(
+  tx: Tx, userId: string, entry: AddedEntry & { destination: { kind: "owned"; format: OwnedFormat } }, refused: symbol,
+): Promise<boolean> {
+  const { destination: { format }, created, added, statused } = entry;
+  // Its statuses are exactly the books it created, and it promotes nothing.
+  const made = new Set(created);
+  if (entry.promoted?.length || statused.length !== made.size || statused.some((id) => !made.has(id))) return false;
+  const rows = and(eq(ownedCopies.format, format), inArray(ownedCopies.bookId, added));
+  const unlisted = and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, created), eq(bookStatus.status, "unlisted"),
+    isNull(bookStatus.rating), isNull(bookStatus.notes), isNull(bookStatus.finishedOn));
+  if (added.length) {
+    const ours = await tx.select({ bookId: ownedCopies.bookId }).from(ownedCopies).where(rows);
+    if (ours.length !== new Set(added).size) return false;
+  }
+  if (made.size) {
+    // FOR UPDATE: setOwned reads the book FOR SHARE without the add lock, so it waits here and then finds it gone.
+    // A book Calibre has linked since (4.4's sync, by title and author) is Calibre's now: removing it would make
+    // the sync skip it for good.
+    const live = await tx.select({ id: books.id }).from(books)
+      .where(and(inArray(books.id, created), isNull(books.deletedAt), isNull(books.calibreId))).for("update");
+    if (live.length !== made.size) return false;
+    const bare = await tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(unlisted);
+    if (bare.length !== made.size) return false;
+    // A new book has nothing but its row and its Unlisted status: anything else came later.
+    const later = await Promise.all([
+      tx.select({ bookId: bookStatus.bookId }).from(bookStatus)
+        .where(and(inArray(bookStatus.bookId, created), ne(bookStatus.userId, userId))).limit(1),
+      tx.select({ bookId: ownedCopies.bookId }).from(ownedCopies)
+        .where(and(inArray(ownedCopies.bookId, created), ne(ownedCopies.format, format))).limit(1),
+      tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(inArray(shelfBooks.bookId, created)).limit(1),
+      tx.select({ bookId: readingPlan.bookId }).from(readingPlan).where(inArray(readingPlan.bookId, created)).limit(1),
+      tx.select({ id: readEvents.id }).from(readEvents).where(inArray(readEvents.bookId, created)).limit(1),
+    ]);
+    if (later.some((r) => r.length > 0)) return false;
+  }
+
+  // Something else wrote between a check and its delete: roll it all back.
+  if (added.length) {
+    const gone = await tx.delete(ownedCopies).where(rows).returning({ bookId: ownedCopies.bookId });
+    if (gone.length !== new Set(added).size) throw refused;
+  }
+  if (made.size) {
+    const gone = await tx.delete(bookStatus).where(unlisted).returning({ bookId: bookStatus.bookId });
+    if (gone.length !== made.size) throw refused;
     await tx.update(books).set({ deletedAt: sql`now()` }).where(and(inArray(books.id, created), isNull(books.deletedAt)));
   }
   return true;
