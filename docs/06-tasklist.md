@@ -488,14 +488,14 @@ with the task that first reads it.
 
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
-|  | 5.1 | Shelves (books only): create, add items, reorder | M | _Pulled ahead of 1.26 (D-139)_ | — |
-|  | 5.5 | DNF with a reason field | S | _Pulled ahead of 1.26 (D-139); builds the closing card 5.4 reuses_ | — |
-|  | 5.7 | Books coming out | M |  | 1.4c, 1.8 |
-|  | 5.9 | Series page from `series_progress` | M |  | — |
-|  | 5.11 | Author and universe pages, and the follow control | M |  | 1.15, 5.9 |
-|  | 5.12 | In the middle of, and completed: one page for every medium | M |  | 1.9, 1.15, 2.2c, 2.2d |
-|  | 5.14 | Audiobooks: a queue to listen next | M | _Pulled ahead of 1.26 (D-139)_ | 1.23, 1.9 |
-|  | 5.15 | Parked: put a book away, and review it on a schedule | M | _Pulled ahead of 1.26 (D-139)_ | 1.9, 1.17, 1.21, 2.2, 2.3 |
+|  | 5.1 → TASK-095, TASK-096, TASK-097 | Shelves (books only): create, add items, reorder | M | _Pulled ahead of 1.26 (D-139)_ | — |
+|  | 5.5 → TASK-098 | DNF with a reason field | S | _Pulled ahead of 1.26 (D-139); builds the closing card 5.4 reuses_ | — |
+|  | 5.7 → TASK-099, TASK-100 | Books coming out | M |  | 1.4c, 1.8 |
+|  | 5.9 → TASK-101, TASK-102 | Series page from `series_progress` | M |  | — |
+|  | 5.11 → TASK-103 | Author and universe pages, and the follow control | M |  | 1.15, 5.9 |
+|  | 5.12 → TASK-104, TASK-105 | In the middle of, and completed: one page for every medium | M |  | 1.9, 1.15, 2.2c, 2.2d |
+|  | 5.14 → TASK-106, TASK-107 | Audiobooks: a queue to listen next | M | _Pulled ahead of 1.26 (D-139)_ | 1.23, 1.9 |
+|  | 5.15 → TASK-108, TASK-109, TASK-110, TASK-111 | Parked: put a book away, and review it on a schedule | M | _Pulled ahead of 1.26 (D-139)_ | 1.9, 1.17, 1.21, 2.2, 2.3 |
 |  | 5.17 → TASK-092, TASK-093, TASK-094 | What you own: physical copies and audiobooks | M | _Pulled ahead of 1.26 (D-132)_ | 2.2e, 1.4, 1.21 |
 
 ## M18: Comic surfaces — Later

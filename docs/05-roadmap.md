@@ -4349,6 +4349,13 @@ it is converted.
   with a reason field instead of a rating; DNF stays grey (UX-N13).
   *Pulled ahead of 1.26 by the owner (D-139), without 5.4:* 5.5 builds the
   closing card for a book, and 5.4 reuses it for a run's rating and note.
+  The reason is the book's note, `book_status.notes`, written through 3.4's
+  note write: no new column (owner, 2026-11-15).
+  **Check:** setting a book to DNF opens the closing card with a reason field
+  and *Skip*; a typed reason saves, survives a reload and shows under the
+  book's *Stopped* row on Done; *Skip* leaves the DNF with no reason; Undo of
+  the DNF restores the prior status and the prior reason; nothing on the card
+  or the row resolves to `--ready` or `--danger`.
 
 - ☐ 5.6 `edition_issues` parser: `"Avengers #500-503 and Avengers Finale"` into join rows · M
 
