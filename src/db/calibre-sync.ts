@@ -142,13 +142,15 @@ const optStr = (v: unknown) => v === undefined || v === null || typeof v === "st
 const optNum = (v: unknown) => v === undefined || v === null || (typeof v === "number" && Number.isFinite(v));
 const optStrs = (v: unknown) => v === undefined || v === null || (Array.isArray(v) && v.every((s) => typeof s === "string"));
 
-/** `YYYY`, or a `YYYY-MM-DD` that is a day on the calendar (no February 31st). */
+/** `YYYY`, or a `YYYY-MM-DD` that is a day on the calendar (no February 31st), from the year 1 (Postgres has no year 0). */
 function isCalendarDate(s: string): boolean {
-  if (/^\d{4}$/.test(s)) return true;
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
-  if (!m) return false;
-  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
-  return d.getUTCFullYear() === Number(m[1]) && d.getUTCMonth() === Number(m[2]) - 1 && d.getUTCDate() === Number(m[3]);
+  const m = /^(\d{4})(?:-(\d{2})-(\d{2}))?$/.exec(s);
+  if (!m || Number(m[1]) < 1) return false;
+  if (m[2] === undefined) return true;
+  const [y, mo, day] = [Number(m[1]), Number(m[2]) - 1, Number(m[3])];
+  const d = new Date(0);
+  d.setUTCFullYear(y, mo, day); // not Date.UTC, which reads 0001–0099 as 1901–1999
+  return d.getUTCFullYear() === y && d.getUTCMonth() === mo && d.getUTCDate() === day;
 }
 
 /** The request body as a payload, or what is wrong with it. */
@@ -227,6 +229,8 @@ function planRun(records: CalibreRecord[], library: ReadonlySet<number>, ledger:
   const removed = new Set(ledger.filter((b) => b.deleted && b.calibreId != null).map((b) => b.calibreId!));
   const separate = new Set([...decisions].filter(([, d]) => d.decision === "separate").map(([id]) => id));
   const seen = new Set<string>();
+  // Ledger books a record of this run has already matched: a second Calibre book on one waits (two merges into one book).
+  const claimed = new Set<string>();
   const plans = new Map<CalibreRecord, Plan>();
 
   for (const rec of records) {
@@ -254,13 +258,14 @@ function planRun(records: CalibreRecord[], library: ReadonlySet<number>, ledger:
 
     if (m.status === "matched" && m.book) {
       const book = byId.get(m.book.id)!;
-      if (book.calibreId != null && book.calibreId !== rec.calibreId && library.has(book.calibreId)) {
+      if (claimed.has(book.id) || (book.calibreId != null && book.calibreId !== rec.calibreId && library.has(book.calibreId))) {
         plans.set(rec, { kind: "wait", waiting: {
           kind: "two calibre books", calibreId: rec.calibreId, title: normalizeLine(rec.title), author: m.author,
           bookId: book.id, bookTitle: book.title,
         } });
         continue;
       }
+      claimed.add(book.id);
       plans.set(rec, { kind: "match", book, author: m.author, takeId: book.calibreId !== rec.calibreId });
     } else if (m.status === "proposed" && m.book) {
       const sameTitle = cleanKey(m.book.title) === cleanKey(rec.title);

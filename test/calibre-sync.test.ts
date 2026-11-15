@@ -212,6 +212,7 @@ describe("the gate and a bad body (AC-3)", () => {
     ["an unknown column", { records, calibreIds: [2], missingColumns: ["#rating"] }],
     ["a malformed date", { records: [{ ...records[0], dateRead: "March 2024" }], calibreIds: [2] }],
     ["a day not on the calendar", { records: [{ ...records[0], read: true, dateRead: "2026-02-31" }], calibreIds: [2] }],
+    ["the year 0000", { records: [{ ...records[0], read: true, dateRead: "0000" }], calibreIds: [2] }],
     ["one Calibre id sent twice", { records: [records[0], { ...records[0], title: "Piranesi Again" }], calibreIds: [2] }],
   ])("answers 400 for %s and writes nothing", async (_name, body) => {
     const res = await post(body);
@@ -290,6 +291,16 @@ describe("what waits, and what is gone (AC-4)", () => {
     expect(result.report.waiting.map((w) => [w.kind, w.calibreId, w.bookId])).toEqual([["two calibre books", 10, "elantris"]]);
     expect(result.report.gone).toEqual([]);
     expect(await sql`SELECT calibre_id, word_count FROM books WHERE id = 'elantris'`).toEqual([{ calibre_id: 9, word_count: null }]);
+  });
+
+  it("two merges into one Ledger book in one run: the first takes it, the second waits", async () => {
+    const other: CalibreRecord = { calibreId: 6, title: "The Way of Kings (Leatherbound)", authors: ["Brandon Sanderson"], words: 2 };
+    expect(await writes.decideCalibrePair(5, "merge", "way-of-kings")).toBe(true);
+    expect(await writes.decideCalibrePair(6, "merge", "way-of-kings")).toBe(true);
+    const result = await sync(payloadOf([near, other]));
+    expect(result.report.waiting.map((w) => [w.kind, w.calibreId, w.bookId])).toEqual([["two calibre books", 6, "way-of-kings"]]);
+    expect(await sql`SELECT title, calibre_id, word_count FROM books`)
+      .toEqual([{ title: "The Way of Kings: Book One", calibre_id: 5, word_count: 383389 }]);
   });
 });
 
