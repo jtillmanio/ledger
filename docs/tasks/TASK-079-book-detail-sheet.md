@@ -31,6 +31,7 @@ Tapping a book opens everything about it as a sheet over the list (summary, coun
   - **Read again** (UX-N24): a read book's *History* offers *Read again*, which starts a `read_events` row with `reread_of` set (1.5).
 - **The status control is the Library's** (`src/components/BookStatus.tsx`, `saveBookStatus` in `src/db/writes.ts`): the sheet and the master list's inline editor write status through the same code path (design § 13 → *What this changes*, 2: both exist and don't compete).
 - Which rows link to the sheet (the Library's rows, Status, the dashboard's) is the plan's; the Library at least.
+- *From 5.17 (TASK-092, TASK-093, TASK-094; D-121, D-132):* the sheet says what you own, *Physical*, *Audiobook* and *Ebook* as they apply (*Ebook* is `books.calibre_id` being set, D-90), or nothing, and carries the row menu's two toggles, *I own it on paper* and *I own the audiobook*, each one write with an undo through TASK-092's route, as the Library's `⋯` does (TASK-093). Whichever of this task and 5.17 lands second draws it: if this one merges before TASK-093, the sheet leaves ownership out and TASK-093's plan adds it.
 - Decisions: D-33, D-34, D-63, D-85, D-101, D-144, R1-11, UX-N24. Hard rule 6.
 
 ## Acceptance criteria

@@ -22,7 +22,7 @@ From a Library row you can say you own the book on paper or as an audiobook, the
 - Roadmap: `docs/05-roadmap.md` § 5.17 What you own: physical copies and audiobooks (M17). The *Amended 2026-11-08 (D-132)* half wins. Its **Check:** is the contract (still marked *proposed*; the owner agrees it by merging or edits it first). Feature F-73. Pulled ahead of 1.26 (D-132).
 - **Split, 2 of 3.** TASK-092 built the table, the route and `listBooks`'s `owned` option; this part draws them in the Library. TASK-094 adds the *Paste a list* destinations, and its merge ticks the entry.
 - **The toggles.** Two items in the row's `⋯` (`src/components/BookRowMenu.tsx`, drawn by `BookStatus` with the live status, task 2.2c): *I own it on paper* and *I own the audiobook*, each one write with an undo toast (`src/components/Undo.tsx`), shown whatever the status. The menu item says which way it goes (owned or not): the copy is the plan's against the redrawn frame.
-- **The sub-line.** The Library row's grey `row-sub` (`src/app/books/list/page.tsx`, `bookSub` in `src/lib/format.ts`) says *Physical*, *Audiobook* and *Ebook* as they apply. The entry says this holds *until 3.5*; 3.5's sheet (TASK-079) then says it too.
+- **The sub-line.** The Library row's grey `row-sub` (`src/app/books/list/page.tsx`, `bookSub` in `src/lib/format.ts`) says *Physical*, *Audiobook* and *Ebook* as they apply. The entry says this holds *until 3.5*; 3.5's sheet (TASK-079) then says it too. Whichever of the two lands second draws the sheet's line and toggles (TASK-079's *From 5.17* note): if TASK-079 has merged by this plan, the plan adds them to the sheet.
 - **The Owned filter** (D-121, D-132): *Physical · Audiobook · Ebook · Not owned*, in the URL (`?owned=physical`; the other values are the plan's), combining with every other filter and sort (D-110): `libraryHref` (`src/lib/library-sort.ts`) and every link that rebuilds the URL (`src/components/BookSort.tsx`, `genreChipHref`, `src/lib/series-list.ts`) carry it, so a chip never drops it. `/books/list?owned=physical` is the physical library, reached by a chip, not a page of its own. Whether it shows Unlisted books is TASK-092's plan-gate answer.
 - **Not drawn yet** (the entry): the mockup's `blist` frame gains the two menu items, the sub-line and the *Owned* chips before they are built, in this PR (`ui.redrawFiles`: `design/mockups.html`, `design/mockups-index.md`). Print the frame with `powershell -NoProfile -File scripts/screen.ps1 blist`.
 - **TASK-091** (Draft) takes the Library's year chips away; whichever lands second rebases the filter rows.
@@ -50,7 +50,7 @@ Screenshots at 360px and 1280px.
 
 - The table, the route and the query (TASK-092).
 - *Paste a list*'s destinations (TASK-094).
-- 3.5's sheet (TASK-079).
+- 3.5's sheet (TASK-079), unless it has merged by this plan: see Context.
 - Showing ownership on the dashboard, the status tabs, On deck or search results.
 
 ## Files likely touched
