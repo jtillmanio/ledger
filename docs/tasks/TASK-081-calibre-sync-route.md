@@ -1,7 +1,7 @@
 ---
 id: TASK-081
 title: 4.4 Sync with Calibre (1 of 3) — the sync route: Calibre's changes in, the Ledger's back, each run logged
-status: In progress
+status: Review
 depends_on: [TASK-030, TASK-032, TASK-033, TASK-029, TASK-057, TASK-092]
 size: M
 model: opus
@@ -33,7 +33,7 @@ The app can take what changed in Calibre since the last sync, apply it the way t
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the Ledger side of one run on the test database, driven by recorded payloads in place of the command: the Unlisted book with one `read_events` row, the rename and `stated` count, the Ledger's read returned for the changed `#date_read` and listed, the four values returned for the book read in the Ledger, one log entry, and a second run that changes nothing and logs it. TASK-082 proves the run end to end with the fixture library; TASK-083 the browser clauses): with a
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the Ledger side of one run on the test database, driven by recorded payloads in place of the command: the Unlisted book with one `read_events` row, the rename and `stated` count, the Ledger's read returned for the changed `#date_read` and listed, the four values returned for the book read in the Ledger, one log entry, and a second run that changes nothing and logs it. TASK-082 proves the run end to end with the fixture library; TASK-083 the browser clauses): with a
 fixture library in a temp folder and the test database: four books, one
 matching a Ledger book with a changed title and word count, one the Ledger
 lacks and marked read, one whose `#date_read` was changed in Calibre after the
@@ -46,10 +46,10 @@ entry listing each change. A second run changes nothing on either side and
 logs that nothing changed. A missing `#owned` column is named and skipped. In
 the browser (0.11), the *Calibre* page lists the run, and the dashboard's line
 shows when the last run is 8 days old and not when it is 6.
-- [ ] AC-2: The TypeScript matcher, run over `etl/test_calibre.py`'s fixtures, matches exactly the pairs `etl/calibre.py` matches: on `calibre_id` first, then title and author; a near spelling is held, never matched.
-- [ ] AC-3: A request without the passcode cookie gets the gate's redirect or 401 and writes nothing; `/api/health` is still the only route outside the gate (`test/health.test.ts` / the proxy test).
-- [ ] AC-4: A Calibre book whose title is a near spelling of a Ledger book creates nothing and is listed as waiting; after a merge decision is stored, the next run applies it and does not ask again. A Ledger book whose `calibre_id` is gone from Calibre stays live and is listed.
-- [ ] AC-5: The log and decision tables have no `user_id`, are in `src/db/export-tables.ts`, and `GET /api/export` returns them (`test/export-tables.test.ts`).
+- [x] AC-2: The TypeScript matcher, run over `etl/test_calibre.py`'s fixtures, matches exactly the pairs `etl/calibre.py` matches: on `calibre_id` first, then title and author; a near spelling is held, never matched.
+- [x] AC-3: A request without the passcode cookie gets the gate's redirect or 401 and writes nothing; `/api/health` is still the only route outside the gate (`test/health.test.ts` / the proxy test).
+- [x] AC-4: A Calibre book whose title is a near spelling of a Ledger book creates nothing and is listed as waiting; after a merge decision is stored, the next run applies it and does not ask again. A Ledger book whose `calibre_id` is gone from Calibre stays live and is listed.
+- [x] AC-5: The log and decision tables have no `user_id`, are in `src/db/export-tables.ts`, and `GET /api/export` returns them (`test/export-tables.test.ts`).
 
 ## Out of scope
 
@@ -76,8 +76,12 @@ shows when the last run is 8 days old and not when it is 6.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The app keeps no author merges, so a Calibre author spelled a new way creates a new author (approved at plan); destination: TASK-083's Context.
-- Candidate decision: a book new to the Ledger that Calibre marks read gets status `read` with its first read, as 1.18 loads it; the 4.4 Check's "Unlisted book" means a book new to the Ledger (approved at plan; decisions mode `propose`, asked at close-out).
+- The app keeps no author merges, so a Calibre author spelled a new way creates a new author (approved at plan) → docs/tasks/TASK-083-calibre-page-and-stale-line.md § Context
+- Candidate decision: a book new to the Ledger that Calibre marks read gets status `read` with its first read, as 1.18 loads it; the 4.4 Check's "Unlisted book" means a book new to the Ledger, and the Check keeps its wording (approved at plan; recorded with the owner's yes at close-out) → docs/review/decisions.md § D-153
+- The log's `report.out` covers only the records sent, so a command that sends only Calibre's changes would log no write-back for a Ledger-side change on an unchanged Calibre book (spec review R1) → docs/tasks/TASK-082-calibre-sync-command.md § Context
+- A new book Hardcover answers only with a proposal, or with two matches, takes Calibre's `#pages`, which 4.2's backfill (fills only NULL) never replaces (spec review R1) → not tracked: the same as extract's undecided Hardcover row (D-130) under the owner's fill-only-empty rule for the backfill (2026-11-13)
+- No index on `calibre_decisions.book_id` (schema review R1) → not tracked: a table of a few rows, cascaded only by a load's truncate
+- `test/health.test.ts`'s gate assertion for `/api/calibre/sync` passes before the task too, since the gate's matcher is generic (test audit) → not tracked: a standing guard; the route's own 401 test proves AC-3
 
 ## Plan
 
@@ -166,13 +170,19 @@ at worst; `maxDuration` set). The matcher's two documented differences.
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 PASS (00323a8) | CI R1 PASS (every project) | Claude PR review: no issues | Lighthouse within budget
+- Fixes found before the reviews (a second session): one Calibre id sent twice and a day off the calendar answer 400; a book removed in the Ledger is skipped and listed (test); the data model's load note corrected (a full load empties `calibre_decisions` whole) | Verify R2 PASS (ae9c7ca) | CI R2 PASS
+- Spec R1 CHANGES (spec gap: the Check's "Unlisted book" vs `read` → D-153, the owner's yes at close-out; Follow-ups destinations) | Schema R1 APPROVE (3 minor: two merges into one book, the year 0000, no index) → fixed 2 | Verify R3 PASS (10e34e8) | Schema R2 APPROVE
+- Audit R1 PASS (health.test.ts gate assertion a guard that passes at base)
+- Close-out: D-153 recorded (owner's yes; the Check keeps its wording), follow-ups placed | Spec R2 (follow-ups check) APPROVE
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
+- Verify rounds: 3 (all PASS)
+- Review rounds: 2 (spec R1 CHANGES on wording only; schema R1 APPROVE with minors, R2 APPROVE)
+- First-pass AC FAILs: 0
 - Plan revisions after approval: 1 (three supporting files, see Plan)
