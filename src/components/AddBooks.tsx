@@ -11,7 +11,7 @@ import type { PickerBook, Verb } from "@/components/PlanPicker";
 import Sheet, { useSheetClose } from "@/components/Sheet";
 import { useUndo } from "@/components/Undo";
 import type { AddBookResult, AddedEntry, HandItem } from "@/db/writes";
-import { destinationOf, targetName, undoAdd, type Target } from "@/lib/book-add";
+import { destinationOf, OWNED_CHOICES, OWNED_NAMES, targetName, undoAdd, type Target } from "@/lib/book-add";
 
 // Loaded on the first *Year or quarter…*, as the Library row's *Plan for…* loads it: every page with an
 // Add button carries Add books, and none of them should carry the picker until it opens (perf budget).
@@ -98,6 +98,12 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
     setOutcomes({});
     setWheres({});
     setPicker({ phase: "closed" });
+  }
+
+  /** A format you own is *Paste a list*'s alone (task 5.17; Search and By hand are 5.17b): leaving it goes back to Someday. */
+  function switchTo(next: Mode) {
+    setMode(next);
+    if (next !== "paste" && target.kind === "owned") choose({ kind: "someday" });
   }
 
   const stepHeading = (what: Step) => (what.what === "target" ? "Year or quarter" : what.pick.book.title);
@@ -228,7 +234,7 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
 
   function byHand(title: string) {
     setHand((h) => ({ key: h.key + 1, title }));
-    setMode("hand");
+    switchTo("hand");
     // The form mounts with the switch; its title takes focus once it is there.
     requestAnimationFrame(() => document.getElementById("hand-title")?.focus());
   }
@@ -238,7 +244,9 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
       close();
       router.refresh();
     } else {
-      router.push(target.kind === "shelf" ? "/books/list" : AFTER_ADD);
+      // A format you own lands on the Library's Owned filter for it (task 5.17), where an Unlisted book shows too (D-152).
+      router.push(target.kind === "shelf" ? "/books/list"
+        : target.kind === "owned" ? `/books/list?owned=${target.format}` : AFTER_ADD);
     }
   }
 
@@ -266,9 +274,9 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
       {!close && <h1 className="t">Add books</h1>}
       {/* The add surface opens on its segmented control (ui.md, mockup `add`); Add to comes next. */}
       <div className="seg" role="group" aria-label="Add by">
-        <button type="button" aria-pressed={mode === "search"} onClick={() => setMode("search")}>Search</button>
-        <button type="button" aria-pressed={mode === "paste"} onClick={() => setMode("paste")}>Paste a list</button>
-        <button type="button" aria-pressed={mode === "hand"} onClick={() => setMode("hand")}>By hand</button>
+        <button type="button" aria-pressed={mode === "search"} onClick={() => switchTo("search")}>Search</button>
+        <button type="button" aria-pressed={mode === "paste"} onClick={() => switchTo("paste")}>Paste a list</button>
+        <button type="button" aria-pressed={mode === "hand"} onClick={() => switchTo("hand")}>By hand</button>
       </div>
       <div className="addto" role="group" aria-labelledby="addto-label">
         <span id="addto-label" className="addto-k">Add to</span>
@@ -284,6 +292,12 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
           aria-expanded={picker.phase !== "closed"} aria-controls="addto-shelves" onClick={openPicker}>
           {target.kind === "shelf" ? target.name : "Shelf…"}
         </button>
+        {/* What you own (task 5.17, D-132): a paste marks each book, creating a new one Unlisted. */}
+        {mode === "paste" && OWNED_CHOICES.map((format) => (
+          <button key={format} type="button" className="chip"
+            aria-pressed={target.kind === "owned" && target.format === format}
+            onClick={() => choose({ kind: "owned", format })}>{OWNED_NAMES[format]}</button>
+        ))}
       </div>
       <div id="addto-shelves" role="status" aria-live="polite">
         {picker.phase === "loading" && <p className="small muted addto-pick">Loading your shelves…</p>}

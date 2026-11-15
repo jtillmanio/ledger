@@ -1,14 +1,14 @@
 ---
 id: TASK-094
 title: 5.17 What you own (3 of 3) — Paste a list marks many: a destination for each format
-status: Ready
+status: In progress
 depends_on: [TASK-092, TASK-093, TASK-007, TASK-029]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 00f003e
 ---
 
 # TASK-094 — 5.17 What you own (3 of 3) — Paste a list marks many: a destination for each format
@@ -71,9 +71,34 @@ Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Search and *By hand* should offer *Physical copy* and *Audiobook* too (owner, at the plan gate: paste only here, the other modes as a roadmap item) → docs/05-roadmap.md § 5.17b (new), docs/06-tasklist.md § M17 (approved at plan)
+- `.claude/rules/schema.md` § Unlisted says only an undo or the Calibre import writes `unlisted`; a paste to an owned format now does too → .claude/rules/schema.md (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Owner decisions at the gate (2026-11-15): the owned destinations are **Paste a list only** (the other modes go to a new roadmap item, 5.17b); the audio one is named **Audiobook**; the confirm reads **Add 3 books to Physical copy** (plan destinations keep *Add 3 books*).
+
+**Steps**
+1. `src/lib/book-add.ts`: `Target` gains `{ kind: "owned"; format: OwnedFormat }`; `targetName` → *Physical copy* / *Audiobook*; `destinationOf` passes it through; `parseDestination(raw, { owned })` accepts `{ kind: "owned", format: "physical" | "audio" }` only when the caller allows it.
+2. `src/db/writes.ts`: `Destination` gains the owned kind. `addBooks` (via `writeDestination`) writes `owned_copies` `ON CONFLICT DO NOTHING RETURNING`, so `added` is only the rows this paste wrote; each created book gets an `unlisted` status (`statused`). No plan, no status change on a matched book, no promotion, no read.
+3. `undoInside` owned branch: refuses, changing nothing, when a row it wrote is gone, a created book's status is no longer a bare `unlisted`, or a created book has gained another format, shelf, plan row, status or read; otherwise deletes this paste's rows (that format, `added`), the created books' `unlisted` statuses, and soft-deletes the created books. A row the book had before is never named, so it stays.
+4. `src/app/api/books/bulk/route.ts` accepts owned, its 400 text names the shape; `src/app/api/books/route.ts` DELETE accepts owned (the paste's undo), POST answers 400 for it (paste only).
+5. `src/components/AddBooks.tsx`: *Physical copy* and *Audiobook* chips after *Shelf…*, shown only in Paste a list mode; leaving paste mode with one chosen puts Add to back on Someday; after the add, the full page goes to `/books/list?owned=physical|audio`.
+6. `src/components/PasteBooks.tsx`: confirm *Add N books to Physical copy*; toast *N books added to Physical copy* with its Undo.
+7. `design/mockups.html` `add`: a phone frame for Paste a list with *Physical copy* chosen, the review of 3 and that confirm, and a note; `design/mockups-index.md` row.
+
+8. *(Plan revision 1, approved 2026-11-15: the review skipped a matched book with a status, so it never reached the write.)* `src/lib/book-review.ts`: for an owned destination, a matched book with any status is *Add · Drop*, default *Add*, and counted (*In your library: marks it as owned on paper.* / *marks the audiobook as yours.*); a new line reads *New: creates the book, Unlisted.*; plan destinations unchanged. Test: `test/book-review.test.ts`.
+
+**Files**: the seven above, `src/lib/book-review.ts` and `test/book-review.test.ts` (revision 1), and `test/books-bulk.test.ts`, `test/paste-books.test.tsx`, `test/e2e/paste-books.spec.ts`. Ten files, over the split line, no schema: kept whole because it is already part 3 of 3 and the redraw ships in the same PR.
+
+**Test strategy**
+- AC-1 (paste clause): `test/books-bulk.test.ts` — 2 matched + 1 new to Physical copy → 3 `physical` rows, 1 `unlisted` book; Undo removes all; `test/e2e/paste-books.spec.ts` the same in the browser, axe, screenshots 360/1280.
+- AC-2: `test/books-bulk.test.ts` — the earlier row survives Undo, the paste's goes.
+- AC-3: `test/books-bulk.test.ts` — audio: two rows, no `read_events`, no status change, no `reading_plan`; Undo removes both.
+- AC-4: `test/books-bulk.test.ts` — 400 and nothing written for an unknown kind and an unknown format; single-add POST 400 for owned.
+- AC-5: `test/paste-books.test.tsx` — chips only in paste mode, named and pressed; the confirm's name; the toast and Undo body; e2e axe and contrast light/dark; the mockup frame and index row checked by the spec reviewer.
+
+**Risks**: the paste pane also shows under Search, where it keeps the plan or shelf destinations. Writing `unlisted` on a create widens D-86's "only an undo or Calibre writes it" (follow-up 2).
 
 ## Review log
 

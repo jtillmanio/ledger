@@ -4362,9 +4362,33 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   </div>
 </div>
 </div></div></div>
+<div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Status</a><a>Library</a><a aria-current="page">Add</a><a>Inbox</a></nav>
+  <div class="wrap">
+    <h1 class="t">Add books</h1>
+    <div class="ctl"><span class="seg"><span role="button" aria-pressed="false" tabindex="0">Search</span><span role="button" aria-pressed="true" tabindex="0" data-on>Paste a list</span><span role="button" aria-pressed="false" tabindex="0">By hand</span></span></div>
+    <div class="chips" style="margin-bottom:.75rem;align-items:center"><span class="rs" style="margin:0 .25rem 0 0">Add to</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Someday</span><span class="chip" role="button" aria-pressed="false" tabindex="0">On deck</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Year or quarter&hellip;</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Shelf&hellip;</span><span class="chip" role="button" aria-pressed="true" tabindex="0" data-on>Physical copy</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Audiobook</span></div>
+    <h3 class="s">Or paste a list</h3>
+    <div class="rs faint" style="margin-bottom:.25rem">One book per line: Title - Author, or paste two columns (title, author)</div>
+<div class="txt">Dune - Frank Herbert<br>The Blade Itself - Joe Abercrombie<br>The Fifth Season - N. K. Jemisin</div>
+    <p class="lede" style="margin-top:.5rem">Matched against your library first. You confirm anything ambiguous.</p>
+    <h3 class="s">Review<span class="more">3 will be added</span></h3>
+    <div class="group">
+      <div class="vrow"><span class="vd ok">&#10003;</span><div><div class="vl">Dune - Frank Herbert</div>
+        <div class="vm">In your library: marks it as owned on paper.</div></div></div>
+      <div class="vrow"><span class="vd ok">&#10003;</span><div><div class="vl">The Blade Itself - Joe Abercrombie</div>
+        <div class="vm">In your library: marks it as owned on paper.</div></div></div>
+      <div class="vrow"><span class="vd ok">&#10003;</span><div><div class="vl">The Fifth Season - N. K. Jemisin</div>
+        <div class="vm">New: creates the book, Unlisted.</div></div></div>
+    </div>
+  </div>
+  <div class="actionbar"><button class="btn sec" style="flex:0 0 auto">Cancel</button><button class="btn">Add 3 books to Physical copy</button></div>
+</div></div></div>
 
 <div class="notes"><h3>Add books</h3>
   <ul>
+    <li><span class="chg">Nov 2026 (D-132, task 5.17):</span> <b>What you own</b>: in <b>Paste a list</b>, <b>Add to</b> also offers <b>Physical copy</b> and <b>Audiobook</b> after <b>Shelf&hellip;</b> (third frame). A book you have is marked owned in that format whatever its status (<i>In your library: marks it as owned on paper.</i>, <i>marks the audiobook as yours.</i>), and a new one is created at <i>Unlisted</i> (D-152) with its copy; neither touches the plan or a status. The confirm names the format, <b>Add 3 books to Physical copy</b>, its toast <i>3 books added to Physical copy</i> with one Undo for the whole paste, and the full page then opens the Library's <i>Owned</i> filter for that format. Search and By hand don't offer them (5.17b); leaving Paste a list with one chosen puts Add to back on Someday.</li>
     <li><span class="chg">Nov 2026 (D-84, task 1.22):</span> <b>Searches as you type</b>: 3 characters and a 500 ms pause, Enter at once; a newer query drops the older one's answer. Every row has <b>one tag</b> saying where it came from, in text and in the row's name: a library book where it sits (<i>Someday</i>, <i>On deck</i>, <i>Q1 2027</i>, <i>2027</i>, <i>Reading</i>, <i>Read</i>, <i>DNF</i>, <i>Unlisted</i>, <i>Not on your list</i>), a Hardcover book <i>Hardcover</i>. Calibre is named only on a book it has that isn't on your list: <i>Unlisted · Calibre</i>. The shelf count and the word estimate are plain text beside the tag.</li>
     <li><span class="chg">Audiobooks (task 1.23):</span> a library book you have listened to, or are listening to, carries the headphones glyph beside its tag, an image named <i>Listened</i> or <i>Listening</i>, never in it: the row&rsquo;s name stays its title and its place. <i>Listening</i> is a place a tag can say, as <i>Reading</i> is.</li>
     <li><b>Desktop:</b> Search on the left, paste on the right — the two entry paths side by side rather than one hidden under the other.</li>
