@@ -167,6 +167,44 @@ test("the nav says Library where it draws medium items, and the heading says it 
   await expect(page.getByRole("link", { name: "Library" })).not.toHaveAttribute("aria-current", "page");
 });
 
+// Task 3.4b (D-122, R2-08): a year's reading is found on Top books, so the Library draws no year chip
+// and no No year, and an old ?year= link lists everything. The books are two read books with exact
+// finish dates in two years, under a title the other tests here don't filter on.
+const YEARS = [
+  { id: "e2e-yr-2024", title: "E2E Yr Newer", on: "2024-05-01" },
+  { id: "e2e-yr-2023", title: "E2E Yr Older", on: "2023-05-01" },
+];
+
+test("the Library draws no year chip or No year, ignores ?year=, and Finished still sorts newest first (AC-1, AC-2)", ONCE, async ({ page }) => {
+  await withSql(async (sql) => {
+    await sql`DELETE FROM books WHERE id = ANY(${YEARS.map((b) => b.id)}::text[])`;
+    for (const b of YEARS) {
+      await sql`INSERT INTO books (id, title) VALUES (${b.id}, ${b.title})`;
+      await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+                VALUES (${E2E_USER}, ${b.id}, 'read', ${b.on}, 'exact')`;
+      await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, format)
+                VALUES (${E2E_USER}, ${b.id}, ${b.on}, 'exact', 'text')`;
+    }
+  });
+  try {
+    await open(page, "/books/list?year=2024&sort=finished&q=E2E%20Yr");
+    // ?year=2024 is not a filter any more: the 2023 book is listed too, the 2024 one first (Finished, newest first).
+    await expect(titles(page)).toHaveText(["E2E Yr Newer", "E2E Yr Older"]);
+    await expect(sort(page)).toHaveValue("finished");
+    // The status chips are still drawn, so an empty .filters is not what passes.
+    await expect(page.locator(".filters").getByRole("link", { name: "Everything" })).toBeVisible();
+    await expect(page.locator(".filters").getByRole("link", { name: "Read", exact: true })).toBeVisible();
+    // No chip, or any link on the page, carries ?year=, and nothing says No year.
+    await expect(page.locator('a[href*="year="]')).toHaveCount(0);
+    await expect(page.locator(".filters").getByText(/no year/i)).toHaveCount(0);
+    await expect(page.getByRole("link", { name: /^20\d\d, \d+ read$/ })).toHaveCount(0);
+    // Everything is the current chip, as with no filter.
+    await expect(page.locator(".filters").getByRole("link", { name: "Everything" })).toHaveAttribute("aria-current", "true");
+  } finally {
+    await withSql((sql) => sql`DELETE FROM books WHERE id = ANY(${YEARS.map((b) => b.id)}::text[])`);
+  }
+});
+
 // Sets its own viewports: runs once, in w390-light.
 test("the loading skeleton's first chip group is as tall as the loaded one, Sort included (AC-5)", ONCE, async ({ page }) => {
   // The status chips and the Sort, wrapping as the width makes them: the rows start where the skeleton's will.

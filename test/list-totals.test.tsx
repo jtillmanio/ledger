@@ -26,9 +26,8 @@ vi.mock("@/db/queries", () => ({
   trackSummary: async () => [],
   // listBooks caps its page: two rows came back of five that match.
   listBooks: async () => [book("x", 5), book("y", 5)],
-  yearSummary: async () => [],
   seriesProgress: async () => [],
-  listCounts: async () => ({ unyeared: 0, unlisted: 0, genres: [] }),
+  listCounts: async () => ({ unlisted: 0, genres: [] }),
   inboxCount: async () => 0,
 }));
 

@@ -95,10 +95,11 @@ describe("the AC-1 fixture: lists, counts, search, levels, status tabs, series a
     expect(ids(await q.listBooks(USER, { status: "unlisted" }))).toEqual([]);
   });
 
-  it("To read and its Someday level list only the to_read book; the year chips only the read one", async () => {
+  it("To read and its Someday level list only the to_read book; Top books' 2025 only the read one", async () => {
     expect(ids(await q.listBooks(USER, { status: "to_read" }))).toEqual([SOMEDAY]);
     expect(ids(await q.listBooks(USER, { status: "to_read", level: "someday" }))).toEqual([SOMEDAY]);
-    expect(ids(await q.listBooks(USER, { year: 2025 }))).toEqual([READ]);
+    expect((await q.topBooksYear(USER, 2025)).map((r) => r.book_id)).toEqual([READ]);
+    expect((await q.topBookYears(USER)).years).toEqual([{ year: 2025, reads: 1 }]);
     expect(await sql`SELECT year, books::int AS books FROM books_by_year WHERE user_id = ${USER}`).toEqual([{ year: 2025, books: 1 }]);
   });
 

@@ -1,46 +1,73 @@
 // @vitest-environment happy-dom
-// /books' year chips (owner, 2026-10-20): `2024 12` read as one number, because
-// the count sat 6px from the year in the same grey. The count is now split from
-// its label by a rule in the outline token (D-71), and each chip's name says
-// what the number is: a year counts reads, not books (D-65).
+// The Library draws no year chip (task 3.4b, D-122, R2-08). A year's reading, and a
+// read with no finish date, are found on Top books' year switcher; `/books/list`
+// keeps the status, genre and Unlisted chips and the Finished sort. `?year=` is
+// no longer a parameter, so an old link opens the whole list.
 import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { parseCss } from "../scripts/lib/css-rules.mjs";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
 vi.mock("@/lib/auth", () => ({ requireUserId: async () => "test-user" }));
+
+const listBooks = vi.hoisted(() => vi.fn<(userId: string, options: Record<string, unknown>) => Promise<unknown[]>>(async () => []));
 vi.mock("@/db/queries", () => ({
-  listBooks: async () => [],
-  // Reads per year (task 4.5: one row a year, as a read under two genres is still one read).
-  yearSummary: async () => [
-    { year: 2024, books: 12, words: 0 },
-    { year: 2023, books: 3, words: 0 },
-  ],
+  listBooks,
   seriesProgress: async () => [],
-  listCounts: async () => ({ unyeared: 4, unlisted: 0, genres: [] }),
+  listCounts: async () => ({ unlisted: 0, genres: [] }),
   inboxCount: async () => 0,
 }));
 
 const { default: Books } = await import("../src/app/books/list/page");
 
-async function chips(): Promise<HTMLAnchorElement[]> {
-  const html = renderToStaticMarkup(await Books({ searchParams: Promise.resolve({}) }));
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  return [...doc.querySelectorAll<HTMLAnchorElement>('a.chip[href^="/books/list?year="]')];
+async function render(search: Record<string, string> = {}): Promise<Document> {
+  const html = renderToStaticMarkup(await Books({ searchParams: Promise.resolve(search) }));
+  return new DOMParser().parseFromString(html, "text/html");
 }
 
-describe("year chips", () => {
-  it("name each count as reads, the year first", async () => {
-    const names = (await chips()).map((a) => a.getAttribute("aria-label"));
-    expect(names).toEqual(["2024, 12 read", "2023, 3 read", "No year, 4 read"]);
+beforeEach(() => listBooks.mockClear());
+
+describe("the Library's year chips are gone", () => {
+  it("draws no chip that filters by year, and no No year chip", async () => {
+    const doc = await render();
+    const chips = [...doc.querySelectorAll<HTMLAnchorElement>("a.chip")];
+    // The status chips are still there: the page did not lose its chip row.
+    expect(chips.map((a) => a.textContent)).toEqual(expect.arrayContaining(["Everything", "Reading", "To read", "Read"]));
+    expect(chips.filter((a) => (a.getAttribute("href") ?? "").includes("year="))).toEqual([]);
+    expect(chips.filter((a) => /no year/i.test(a.textContent ?? ""))).toEqual([]);
+    expect(doc.body.textContent).not.toMatch(/no year/i);
   });
 
-  it("keep the count in its own element", async () => {
-    for (const a of await chips()) expect(a.querySelector(".n")?.textContent).toMatch(/^\d+$/);
+  it("draws no chip even when the books list has finished reads", async () => {
+    listBooks.mockResolvedValueOnce([]);
+    const doc = await render({ status: "read" });
+    expect([...doc.querySelectorAll("a")].filter((a) => (a.getAttribute("href") ?? "").includes("year="))).toEqual([]);
   });
 
-  it("split the count from the year with an outline-token rule and at least 8px each side", () => {
+  it("ignores ?year=2024 and ?year=none: listBooks is asked for neither", async () => {
+    for (const year of ["2024", "none"]) {
+      listBooks.mockClear();
+      const doc = await render({ year });
+      expect(listBooks).toHaveBeenCalledTimes(1);
+      const options = listBooks.mock.calls[0]![1] as Record<string, unknown>;
+      expect(options).not.toHaveProperty("year");
+      expect(options).not.toHaveProperty("noYear");
+      // Nothing else on the page carries the old param either: Everything is current, as with no filter.
+      expect(doc.querySelector('a.chip[aria-current="true"]')?.textContent).toBe("Everything");
+      for (const a of doc.querySelectorAll("a")) expect(a.getAttribute("href") ?? "").not.toContain("year=");
+    }
+  });
+
+  it("still passes the Finished sort on to listBooks", async () => {
+    await render({ sort: "finished", dir: "asc" });
+    expect(listBooks.mock.calls[0]![1]).toMatchObject({ sort: "finished", dir: "asc" });
+  });
+});
+
+describe("the chip count rule", () => {
+  // The Unlisted chip still shows a count (`.chip .n`), so the rule keeps its rule between label and number (D-71).
+  it("splits the count from the label with an outline-token rule and at least 8px each side", () => {
     const rules = parseCss(readFileSync("src/app/globals.css", "utf8"));
     const rule = rules.find((r) => r.media.length === 0 && r.selectors.includes(".chip .n"));
     expect(rule).toBeDefined();

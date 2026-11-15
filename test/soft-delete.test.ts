@@ -125,12 +125,12 @@ describe("a soft-deleted book", () => {
     expect(await count("books")).toBe(2);
   });
 
-  it("leaves the No year count, so the chip agrees with the list it opens", async () => {
+  it("leaves the No year count, so Top books' switcher agrees with the list it opens", async () => {
     await sql`INSERT INTO books (id, title) VALUES ('u1', 'Undated'), ('u2', 'Deleted undated')`;
     await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'u1', 'read'), (${USER}, 'u2', 'read')`;
     await sql`UPDATE books SET deleted_at = now() WHERE id = 'u2'`;
-    expect(await q.readWithoutYear(USER)).toBe(1);
-    expect((await q.listBooks(USER, { noYear: true })).map((b) => b.id)).toEqual(["u1"]);
+    expect((await q.topBookYears(USER)).undated).toBe(1);
+    expect((await q.topBooksYear(USER, null)).map((r) => r.book_id)).toEqual(["u1"]);
   });
 });
 

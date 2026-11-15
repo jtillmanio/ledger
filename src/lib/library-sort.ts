@@ -59,7 +59,7 @@ export function reverseName(sort: Sort, dir: Dir): string {
 }
 
 export type LibraryParams = {
-  status?: string; level?: string; year?: string; genre?: string; q?: string; series?: string;
+  status?: string; level?: string; genre?: string; q?: string; series?: string;
   sort?: Sort; dir?: Dir;
 };
 
@@ -71,7 +71,7 @@ export type LibraryParams = {
  */
 export function libraryHref(params: LibraryParams): string {
   const qs = new URLSearchParams();
-  for (const k of ["status", "level", "year", "genre", "q", "series"] as const) {
+  for (const k of ["status", "level", "genre", "q", "series"] as const) {
     if (params[k]) qs.set(k, params[k]);
   }
   const { sort, dir } = parseSort(params.sort, params.dir);
@@ -85,8 +85,8 @@ export function libraryHref(params: LibraryParams): string {
  * A genre chip's link (task 4.5b, D-124): the genre on top of the status and
  * the To read level already chosen, so *To read · On deck* then *Fantasy*
  * lists Fantasy's On deck books instead of the whole Library. The sort rides
- * along as on every chip; the year and the search, which a genre chip has
- * always replaced, still go.
+ * along as on every chip; the search, which a genre chip has always
+ * replaced, still goes.
  */
 export function genreChipHref(current: Pick<LibraryParams, "status" | "level" | "sort" | "dir">, genre: string): string {
   const { status, level, sort, dir } = current;
