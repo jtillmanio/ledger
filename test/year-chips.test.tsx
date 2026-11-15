@@ -14,6 +14,7 @@ vi.mock("@/lib/auth", () => ({ requireUserId: async () => "test-user" }));
 const listBooks = vi.hoisted(() => vi.fn<(userId: string, options: Record<string, unknown>) => Promise<unknown[]>>(async () => []));
 vi.mock("@/db/queries", () => ({
   listBooks,
+  OWNED_FILTERS: ["physical", "audio", "ebook", "none"],
   seriesProgress: async () => [],
   listCounts: async () => ({ unlisted: 0, genres: [] }),
   inboxCount: async () => 0,

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
-import { bookPlace, bookSub } from "@/lib/format";
+import { bookPlace, bookSub, ownedWords } from "@/lib/format";
 
 const place = (universe: string | null, series: string | null, series_position: number | null) =>
   bookPlace({ universe, series, series_position });
@@ -75,6 +75,22 @@ describe("bookSub (task 2.2j, D-134)", () => {
   it("reads the place alone when there is no author", () => {
     expect(sub(null, "Cosmere", "Mistborn", 4)).toBe("Cosmere · Mistborn #4");
     expect(sub(null, null, null, null)).toBe("");
+  });
+});
+
+// Task 5.17 (TASK-093, D-132): the Library row's sub-line says what you own, in listBooks's order.
+describe("ownedWords (task 5.17)", () => {
+  it("names each format owned, paper then audiobook then ebook", () => {
+    expect(ownedWords(["physical", "audio", "ebook"])).toBe("Physical · Audiobook · Ebook");
+    expect(ownedWords(["physical"])).toBe("Physical");
+    expect(ownedWords(["audio"])).toBe("Audiobook");
+    expect(ownedWords(["ebook"])).toBe("Ebook");
+    expect(ownedWords(["audio", "ebook"])).toBe("Audiobook · Ebook");
+  });
+
+  it("is empty for a book you own none of", () => {
+    expect(ownedWords([])).toBe("");
+    expect(ownedWords(undefined)).toBe("");
   });
 });
 

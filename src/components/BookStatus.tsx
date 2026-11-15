@@ -3,7 +3,7 @@
 import { lazy, Suspense, useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AllReadsToggle, ReadsFailed, useReads } from "@/components/useReads";
-import BookRowMenu from "@/components/BookRowMenu";
+import BookRowMenu, { type OwnedCopy } from "@/components/BookRowMenu";
 import FinishDate, {
   dateWords, finishReason, initialFinish, localToday, storedDay, toChoice, type DateFor, type FinishValue,
 } from "@/components/FinishDate";
@@ -109,7 +109,7 @@ function startValue(d: Finish): FinishValue {
  * belongs to, *Keep going?* (task 2.2c): its Undo still undoes the finish alone.
  *
  * It draws the row's `⋯` too (task 2.2c, `BookRowMenu`), so a row costs no
- * more RSC than it did.
+ * more RSC than it did; `owned` is handed straight to it (task 5.17).
  *
  * The list holds up to 500 of these, so a row costs as little as it can
  * (Performance budget, task 0.10): the controls render only once the row is
@@ -119,11 +119,13 @@ function startValue(d: Finish): FinishValue {
  */
 export default function BookStatus({
   bookId, status = "to_read", finishedOn = null, precision = "none", startedOn = null, startPrecision = "none",
-  listened = false, title: given, menu = true, glyph: showGlyph = true,
+  listened = false, title: given, menu = true, glyph: showGlyph = true, owned,
 }: {
   bookId: string; status?: string; finishedOn?: string | null; precision?: Precision;
   startedOn?: string | null; startPrecision?: Precision; listened?: boolean;
   title?: string; menu?: boolean; glyph?: boolean;
+  /** The copies the row owns, for the `⋯`'s toggles (task 5.17); left out when none. */
+  owned?: readonly OwnedCopy[];
 }) {
   const router = useRouter();
   const bookWrite = useBookWrite();
@@ -373,7 +375,7 @@ export default function BookStatus({
 
   return (
     <>
-      {menu && <BookRowMenu bookId={bookId} status={saved.status} />}
+      {menu && <BookRowMenu bookId={bookId} status={saved.status} owned={owned} />}
       {/* One shape for every status, so the badge keeps its focus when *Add to Someday* goes. */}
       <span className="status-line">
         <button type="button" ref={toggle}

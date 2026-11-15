@@ -1,14 +1,14 @@
 ---
 id: TASK-093
 title: 5.17 What you own (2 of 3) — the row menu's toggles, the sub-line and the Library's Owned filter
-status: Ready
+status: In progress
 depends_on: [TASK-092]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 4cfa4c1
 ---
 
 # TASK-093 — 5.17 What you own (2 of 3) — the row menu's toggles, the sub-line and the Library's Owned filter
@@ -74,7 +74,28 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-15, with these choices: the menu items read *I own it on paper* / *I own the audiobook*, and *I don't own it on paper* / *I don't own the audiobook* once owned; the toast reads *You own it on paper* (or *You don't own it on paper*; the audiobook alike) with the title as its detail; tapping the current *Owned* chip clears it, keeping the rest, and *Everything* clears everything; an *Owned* chip keeps the search, status, level, genre and sort (the status chips still drop the search). TASK-079 hasn't merged, so the sheet stays out.
+
+**Steps**
+
+1. Tests first (`test/library-sort.test.ts`, `test/library-page.test.tsx`, `test/format.test.ts`, `test/e2e/library-owned.spec.ts`); confirm they fail.
+2. `src/lib/library-sort.ts`: `LibraryParams.owned`; `libraryHref` writes it after `genre`; `genreChipHref` keeps it. `BookSort` and `seriesAllHref` then carry it unchanged.
+3. `src/lib/format.ts`: `ownedWords(owned)` → *Physical · Audiobook · Ebook* in that order; `bookSub` untouched (shared with screens that don't show ownership).
+4. `src/app/books/list/page.tsx`: parse `?owned=` against `OWNED_FILTERS` and pass it to `listBooks`; every chip and link carries it; an *Owned* group (*Physical · Audiobook · Ebook · Not owned*) between the levels and the genres; the current chip's link drops `owned`; *Everything* clears it and isn't current while one is chosen; the sub-line appends `ownedWords`; the row hands `physical` / `audio` to `BookStatus` only when set.
+5. `BookStatus` → `BookRowMenu`: two items after *Follow…*, each one `POST /api/books/owned`, an undo toast (the undo posts `prior`), `router.refresh()`; failure → `fail` with *Retry*; the label flips locally and follows the server props after the refresh.
+6. `src/app/books/list/loading.tsx`: one more chip line.
+7. `design/mockups.html` `blist`: the first phone frame gains the *Owned* row and owned words on two rows; a new phone frame shows *Physical* current, a row's `⋯` open with the two items and the undo toast; the desktop frame gains the row; a notes bullet. `design/mockups-index.md`'s `blist` row names them.
+
+**Files**: `src/lib/library-sort.ts`, `src/lib/format.ts`, `src/app/books/list/page.tsx`, `src/components/BookRowMenu.tsx`, `src/components/BookStatus.tsx` (not in Files likely touched: it draws the menu), `src/app/books/list/loading.tsx` (not listed: the skeleton), `design/mockups.html`, `design/mockups-index.md`, `test/library-sort.test.ts`, `test/library-page.test.tsx`, `test/format.test.ts` (not listed: `ownedWords`), `test/e2e/library-owned.spec.ts` (new). 12–13 files, over the split line, kept whole: UI only, no schema, and the redraw and tests must ship in the same PR.
+
+**Test strategy**
+
+- AC-1 / AC-2: `test/e2e/library-owned.spec.ts` — each toggle writes one row of its format (read from the test DB) and Undo removes it; the sub-line says *Physical* with no page load between (a window marker survives); a calibre + physical + audio book names all three; each *Owned* chip lists exactly its fixture books combined with *Read* and *Title*, and survives a reload.
+- AC-3: `test/library-page.test.tsx` (both chips current, every link carries `owned`, *Everything* drops it, `listBooks` gets it) plus a browser step in the spec.
+- AC-4: the mockup diff (spec review).
+- AC-5: the spec — an *Owned* chip with no match draws the empty state; chips and menu items named, ≥ 24px (44px phone); axe, contrast; screenshots at 360, 834 and 1280px, light and dark.
+
+**Risks**: the test DB has seeded Calibre books, so *Ebook* / *Not owned* assertions read only the spec's own `E2E Own …` books (by search or title).
 
 ## Review log
 
