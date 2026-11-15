@@ -73,4 +73,27 @@ describe("GET /api/export table list", () => {
     const rows = body.owned_copies.map((r) => `${r.book_id}:${r.format}`).sort();
     expect(rows).toEqual(["dune:audio", "dune:physical", "emma:audio"]);
   });
+
+  it("exports the Calibre sync's log and decisions whole, with no user_id (task 4.4, D-91, D-133, AC-5)", async () => {
+    const cols = await sql<{ table_name: string; column_name: string }[]>`
+      SELECT table_name, column_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name IN ('calibre_syncs', 'calibre_decisions')`;
+    const of = (t: string) => cols.filter((c) => c.table_name === t).map((c) => c.column_name).sort();
+    expect(of("calibre_syncs")).toEqual(["id", "ran_at", "report"]);
+    expect(of("calibre_decisions")).toEqual(["book_id", "calibre_id", "decided_at", "decision"]);
+    expect(CATALOG_TABLES).toContain("calibre_syncs");
+    expect(CATALOG_TABLES).toContain("calibre_decisions");
+
+    await truncateAll(sql);
+    await sql`INSERT INTO users (id, name) VALUES (${USER}, 'Test')`;
+    await sql`INSERT INTO books (id, title) VALUES ('dune', 'Dune')`;
+    await sql`INSERT INTO calibre_syncs (report) VALUES (${sql.json({ in: [], out: [] })})`;
+    await sql`INSERT INTO calibre_decisions (calibre_id, decision, book_id) VALUES (7, 'merge', 'dune'), (8, 'separate', NULL)`;
+    const res = await exportRoute.GET();
+    expect(res.status).toBe(200);
+    const body = await res.json() as Record<string, Record<string, unknown>[]>;
+    expect(body.calibre_syncs.map((r) => r.report)).toEqual([{ in: [], out: [] }]);
+    expect(body.calibre_decisions.map((r) => `${r.calibre_id}:${r.decision}:${r.book_id}`).sort())
+      .toEqual(["7:merge:dune", "8:separate:null"]);
+  });
 });

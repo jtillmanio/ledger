@@ -1,0 +1,126 @@
+{
+  "_readme": "How a Calibre record matches a Ledger book (task 4.4, D-59, D-61, D-87, D-89, D-90). etl/test_calibre.py runs calibre.py's Seed.match over each case (the Ledger books as the seed's books.csv, a separate as a decided book_review.csv row); test/calibre-match.test.ts runs src/lib/calibre-match.ts over the same cases. Both must give `expect`: the status, the author it keys under, the Ledger book's title (null for none) and whether a match by Calibre id is a rename.",
+  "cases": [
+    {
+      "name": "an exact title and author match",
+      "ledger": [{ "title": "The Way of Kings", "author": "Brandon Sanderson" }, { "title": "Mistborn", "author": "Brandon Sanderson" }],
+      "record": { "calibre_id": 3, "title": "Mistborn", "authors": ["Brandon Sanderson"] },
+      "expect": { "status": "matched", "author": "Brandon Sanderson", "book": "Mistborn", "renamed": false }
+    },
+    {
+      "name": "case, spacing and punctuation are no difference",
+      "ledger": [{ "title": "The Way of Kings", "author": "Brandon Sanderson" }],
+      "record": { "calibre_id": 4, "title": "THE WAY OF KINGS.", "authors": ["brandon  sanderson"] },
+      "expect": { "status": "matched", "author": "brandon sanderson", "book": "The Way of Kings", "renamed": false }
+    },
+    {
+      "name": "a book by two authors matches on either",
+      "ledger": [{ "title": "Good Omens", "author": "Neil Gaiman" }],
+      "record": { "calibre_id": 5, "title": "Good Omens", "authors": ["Terry Pratchett", "Neil Gaiman"] },
+      "expect": { "status": "matched", "author": "Neil Gaiman", "book": "Good Omens", "renamed": false }
+    },
+    {
+      "name": "a near spelling by the same author is held",
+      "ledger": [{ "title": "The Way of Kings", "author": "Brandon Sanderson" }, { "title": "Mistborn", "author": "Brandon Sanderson" }],
+      "record": { "calibre_id": 6, "title": "The Way of Kings: Book One", "authors": ["Brandon Sanderson"] },
+      "expect": { "status": "proposed", "author": "Brandon Sanderson", "book": "The Way of Kings", "renamed": false }
+    },
+    {
+      "name": "a typo over half similar is held",
+      "ledger": [{ "title": "Brisingr", "author": "Christopher Paolini" }],
+      "record": { "calibre_id": 7, "title": "Brisngr", "authors": ["Christopher Paolini"] },
+      "expect": { "status": "proposed", "author": "Christopher Paolini", "book": "Brisingr", "renamed": false }
+    },
+    {
+      "name": "a different book under half similar is new (D-89)",
+      "ledger": [{ "title": "A Court of Thorns and Roses", "author": "Sarah J. Maas" }],
+      "record": { "calibre_id": 8, "title": "A Court of Wings and Ruin", "authors": ["Sarah J. Maas"] },
+      "expect": { "status": "unmatched", "author": "Sarah J. Maas", "book": null, "renamed": false }
+    },
+    {
+      "name": "a subtitle is held however low it scores (D-89)",
+      "ledger": [{ "title": "Arcanum Unbounded", "author": "Brandon Sanderson" }],
+      "record": { "calibre_id": 9, "title": "Arcanum Unbounded: The Cosmere Collection", "authors": ["Brandon Sanderson"] },
+      "expect": { "status": "proposed", "author": "Brandon Sanderson", "book": "Arcanum Unbounded", "renamed": false }
+    },
+    {
+      "name": "two titles both subtitled are not a subtitle pair",
+      "ledger": [{ "title": "Mistborn: The Final Empire", "author": "Brandon Sanderson" }],
+      "record": { "calibre_id": 10, "title": "Mistborn: Secret History", "authors": ["Brandon Sanderson"] },
+      "expect": { "status": "unmatched", "author": "Brandon Sanderson", "book": null, "renamed": false }
+    },
+    {
+      "name": "titles differing only by a number are two books",
+      "ledger": [{ "title": "Saga Volume 1", "author": "Brian K. Vaughan" }],
+      "record": { "calibre_id": 11, "title": "Saga Volume 2", "authors": ["Brian K. Vaughan"] },
+      "expect": { "status": "unmatched", "author": "Brian K. Vaughan", "book": null, "renamed": false }
+    },
+    {
+      "name": "a roman numeral is a number too",
+      "ledger": [{ "title": "The Dark Tower II", "author": "Stephen King" }],
+      "record": { "calibre_id": 12, "title": "The Dark Tower III", "authors": ["Stephen King"] },
+      "expect": { "status": "unmatched", "author": "Stephen King", "book": null, "renamed": false }
+    },
+    {
+      "name": "one title under another author is held, keyed under Calibre's author",
+      "ledger": [{ "title": "Dune", "author": "Frank Herbert" }],
+      "record": { "calibre_id": 13, "title": "Dune", "authors": ["Brian Herbert"] },
+      "expect": { "status": "proposed", "author": "Brian Herbert", "book": "Dune", "renamed": false }
+    },
+    {
+      "name": "a near spelling by the same author beats the same title under another",
+      "ledger": [{ "title": "Elantris", "author": "Someone Else" }, { "title": "Elantriss", "author": "Brandon Sanderson" }],
+      "record": { "calibre_id": 14, "title": "Elantris", "authors": ["Brandon Sanderson"] },
+      "expect": { "status": "proposed", "author": "Brandon Sanderson", "book": "Elantriss", "renamed": false }
+    },
+    {
+      "name": "the Calibre id finds the book whatever Calibre calls it now",
+      "ledger": [{ "title": "Mistborn", "author": "Brandon Sanderson", "calibre_id": 1 }],
+      "record": { "calibre_id": 1, "title": "Mistborn: The Final Empire", "authors": ["Brandon Sanderson"] },
+      "expect": { "status": "matched", "author": "Brandon Sanderson", "book": "Mistborn", "renamed": true }
+    },
+    {
+      "name": "a new author spelling under a known id is a rename",
+      "ledger": [{ "title": "Good Omens", "author": "Neil Gaiman", "calibre_id": 2 }],
+      "record": { "calibre_id": 2, "title": "Good Omens", "authors": ["Terry Pratchett"] },
+      "expect": { "status": "matched", "author": "Terry Pratchett", "book": "Good Omens", "renamed": true }
+    },
+    {
+      "name": "the id keeps the author Calibre lists for the book",
+      "ledger": [{ "title": "Good Omens", "author": "Neil Gaiman", "calibre_id": 2 }],
+      "record": { "calibre_id": 2, "title": "Good Omens", "authors": ["Terry Pratchett", "Neil Gaiman"] },
+      "expect": { "status": "matched", "author": "Neil Gaiman", "book": "Good Omens", "renamed": false }
+    },
+    {
+      "name": "the id beats a title match on another book",
+      "ledger": [{ "title": "Mistborn", "author": "Brandon Sanderson", "calibre_id": 1 }, { "title": "Warbreaker", "author": "Brandon Sanderson" }],
+      "record": { "calibre_id": 1, "title": "Warbreaker", "authors": ["Brandon Sanderson"] },
+      "expect": { "status": "matched", "author": "Brandon Sanderson", "book": "Mistborn", "renamed": true }
+    },
+    {
+      "name": "an unknown id still matches on title and author",
+      "ledger": [{ "title": "Mistborn", "author": "Brandon Sanderson", "calibre_id": 1 }],
+      "record": { "calibre_id": 20, "title": "Mistborn", "authors": ["Brandon Sanderson"] },
+      "expect": { "status": "matched", "author": "Brandon Sanderson", "book": "Mistborn", "renamed": false }
+    },
+    {
+      "name": "a separate decision makes the near spelling new",
+      "ledger": [{ "title": "The Way of Kings", "author": "Brandon Sanderson" }],
+      "record": { "calibre_id": 21, "title": "The Way of Kings: Book One", "authors": ["Brandon Sanderson"] },
+      "separate": true,
+      "expect": { "status": "unmatched", "author": "Brandon Sanderson", "book": null, "renamed": false }
+    },
+    {
+      "name": "a record with no author keys under none",
+      "ledger": [{ "title": "Mistborn", "author": "Brandon Sanderson" }],
+      "record": { "calibre_id": 22, "title": "Beowulf", "authors": [] },
+      "expect": { "status": "unmatched", "author": "", "book": null, "renamed": false }
+    },
+    {
+      "name": "nothing like it in the Ledger is new",
+      "ledger": [{ "title": "Mistborn", "author": "Brandon Sanderson" }],
+      "record": { "calibre_id": 23, "title": "Piranesi", "authors": ["Susanna Clarke"] },
+      "expect": { "status": "unmatched", "author": "Susanna Clarke", "book": null, "renamed": false }
+    }
+  ]
+}

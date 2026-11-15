@@ -11,6 +11,7 @@ export const CATALOG_TABLES = [
   "eras", "volume_rules",
   "editions", "authors", "book_series", "book_universes", "book_subseries", "books", "book_genres", "releases",
   "external_lists", "shelf_books", "shelf_follows", "subseries_follows", "plan_acceptance", "owned_copies",
+  "calibre_syncs", "calibre_decisions",
 ] as const;
 
 /** Tables with a `user_id` column: exported for the signed-in user only. */

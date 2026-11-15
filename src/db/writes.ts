@@ -1,6 +1,6 @@
 import { and, between, desc, eq, gt, gte, inArray, isNotNull, isNull, like, ne, notInArray, or, sql } from "drizzle-orm";
 import {
-  db, authors, books, bookSeries, bookStatus, inbox, issueProgress, issues, readEvents, readingPlan, readingSettings, runIssues,
+  db, authors, books, bookSeries, bookStatus, calibreDecisions, inbox, issueProgress, issues, readEvents, readingPlan, readingSettings, runIssues,
   ownedCopies, planAcceptance, runQueue, runs, shelfBooks, seriesFollows, authorFollows, universeFollows, shelfFollows, subseriesFollows,
   shelves, sql as pg, volumeRules,
 } from "./index";
@@ -1772,13 +1772,22 @@ export type AddBooksResult =
   | { ok: false; reason: "no-shelf" };
 
 /** A book to create, with what Hardcover, Open Library or the typist said about it. */
-type BookRow = NewBook & {
+export type BookRow = NewBook & {
   hardcoverId?: number | null; openLibraryId?: string | null; coverUrl?: string | null; year?: number | null; pages?: number | null;
   wordCount?: number | null; wordCountSource?: "stated" | "estimated" | null;
+  /**
+   * The Calibre sync (task 4.4): an author or series it already found by
+   * extract's `key()` (whose id may not be the name's slug), and what Calibre
+   * owns of the book (D-90). An add leaves them out.
+   */
+  authorId?: string; seriesId?: string | null;
+  calibreId?: number | null; bookType?: string;
+  universeId?: string | null; universePosition?: number | null;
+  subseriesId?: string | null; subseriesPosition?: number | null;
 };
 
-/** One add at a time: two tabs adding the same new book would both create it. */
-async function addLock(tx: Tx) {
+/** One add at a time: two tabs adding the same new book would both create it. The Calibre sync takes it too. */
+export async function addLock(tx: Tx) {
   await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('ledger:add-books'))`);
 }
 
@@ -1792,30 +1801,33 @@ async function ownShelf(tx: Tx, userId: string, shelfId: string) {
 /**
  * Create these books, in order, with extract's id for each (D-61), and their
  * authors and series too when they are new, by slug, as extract keys them. A
- * series sets `series_position`. Returns the ids.
+ * series sets `series_position`. Returns the ids. The one path that inserts a
+ * book: the adds and the Calibre sync (task 4.4) both come here.
  */
-async function createBooks(tx: Tx, toCreate: BookRow[]): Promise<string[]> {
+export async function createBooks(tx: Tx, toCreate: BookRow[]): Promise<string[]> {
   if (toCreate.length === 0) return [];
-  const authorIds = [...new Set(toCreate.map((b) => slug(b.author)))];
+  const authorOf = (b: BookRow) => b.authorId ?? slug(b.author);
+  const authorIds = [...new Set(toCreate.map(authorOf))];
   const knownAuthors = new Set((await tx.select({ id: authors.id }).from(authors)
     .where(inArray(authors.id, authorIds))).map((r) => r.id));
   const newAuthors = new Map<string, string>();
   for (const b of toCreate) {
-    const id = slug(b.author);
+    const id = authorOf(b);
     if (!knownAuthors.has(id) && !newAuthors.has(id)) newAuthors.set(id, b.author);
   }
   if (newAuthors.size) {
     await tx.insert(authors).values([...newAuthors].map(([id, name]) => ({ id, name }))).onConflictDoNothing();
   }
 
-  const seriesIds = [...new Set(toCreate.flatMap((b) => (b.series ? [slug(b.series)] : [])))];
+  const seriesOf = (b: BookRow) => (b.seriesId !== undefined ? b.seriesId : b.series ? slug(b.series) : null);
+  const seriesIds = [...new Set(toCreate.flatMap((b) => (seriesOf(b) ? [seriesOf(b)!] : [])))];
   const knownSeries = new Set(seriesIds.length === 0 ? [] : (await tx.select({ id: bookSeries.id })
     .from(bookSeries).where(inArray(bookSeries.id, seriesIds))).map((r) => r.id));
   const newSeries = new Map<string, typeof bookSeries.$inferInsert>();
   for (const b of toCreate) {
-    if (!b.series) continue;
-    const id = slug(b.series);
-    if (!knownSeries.has(id) && !newSeries.has(id)) newSeries.set(id, { id, name: b.series, authorId: slug(b.author) });
+    const id = seriesOf(b);
+    if (!b.series || !id) continue;
+    if (!knownSeries.has(id) && !newSeries.has(id)) newSeries.set(id, { id, name: b.series, authorId: authorOf(b) });
   }
   if (newSeries.size) await tx.insert(bookSeries).values([...newSeries.values()]).onConflictDoNothing();
 
@@ -1828,8 +1840,12 @@ async function createBooks(tx: Tx, toCreate: BookRow[]): Promise<string[]> {
     taken.add(id);
     created.push(id);
     return {
-      id, title: b.title, authorId: slug(b.author),
-      seriesId: b.series ? slug(b.series) : null, seriesPosition: b.series ? b.position : null,
+      id, title: b.title, authorId: authorOf(b),
+      seriesId: seriesOf(b), seriesPosition: seriesOf(b) ? b.position : null,
+      calibreId: b.calibreId ?? null, universeId: b.universeId ?? null, universePosition: b.universePosition ?? null,
+      subseriesId: b.subseriesId ?? null, subseriesPosition: b.subseriesPosition ?? null,
+      // Undefined is the column's default (`Novel`).
+      bookType: b.bookType,
       hardcoverId: b.hardcoverId ?? null, openLibraryId: b.openLibraryId ?? null, coverUrl: b.coverUrl ?? null,
       publishedYear: b.year ?? null, pageCount: b.pages ?? null,
       wordCount: b.wordCount ?? null, wordCountSource: b.wordCount == null ? null : b.wordCountSource ?? null,
@@ -2274,6 +2290,31 @@ export async function setOwned(bookId: string, format: OwnedFormat, owned: boole
     if (owned) await tx.insert(ownedCopies).values({ bookId, format }).onConflictDoNothing();
     else await tx.delete(ownedCopies).where(row);
     return had !== undefined;
+  });
+}
+
+export const CALIBRE_DECISIONS = ["merge", "separate"] as const;
+export type CalibreDecision = (typeof CALIBRE_DECISIONS)[number];
+
+/**
+ * Decide a Calibre near spelling the sync held (task 4.4, D-89, D-133): `merge`
+ * makes Calibre's book `bookId` (the next sync renames it to Calibre's spelling
+ * and gives it the id, D-87), `separate` makes it a book of its own. Keyed on
+ * the Calibre id, so a second decision replaces the first. False, writing
+ * nothing, for a merge into a missing or soft-deleted book.
+ */
+export async function decideCalibrePair(calibreId: number, decision: CalibreDecision, bookId: string | null): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    const target = decision === "merge" ? bookId : null;
+    if (decision === "merge") {
+      if (!bookId) return false;
+      const [book] = await tx.select({ id: books.id }).from(books)
+        .where(and(eq(books.id, bookId), isNull(books.deletedAt))).for("share");
+      if (!book) return false;
+    }
+    await tx.insert(calibreDecisions).values({ calibreId, decision, bookId: target })
+      .onConflictDoUpdate({ target: calibreDecisions.calibreId, set: { decision, bookId: target, decidedAt: sql`now()` } });
+    return true;
   });
 }
 

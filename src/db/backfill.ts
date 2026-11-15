@@ -94,7 +94,8 @@ export type BackfillOptions = {
   deadline?: number;
 };
 
-class Stop {
+/** A 429 that outlasts the deadline: the run stops and says when to come back. */
+export class Stop {
   constructor(readonly retryIn: number) {}
 }
 
@@ -103,7 +104,81 @@ const facts = (b: HardcoverBook): HardcoverFacts => ({
   series: b.series, position: b.position, year: b.year, pages: b.pages, coverUrl: b.coverUrl,
 });
 
-const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+export const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * One answer from Hardcover at a time, a second after the last real request,
+ * waiting out a 429 (throwing `Stop` when it can't be waited out). Shared by
+ * the backfill and the Calibre sync's new books (task 4.4).
+ */
+export function hardcoverAsker(sleep: (ms: number) => Promise<void> = wait, deadline = Infinity) {
+  let pace = false;
+  return async function ask(q: string): Promise<HardcoverAnswer> {
+    for (let waits = 0; ; waits++) {
+      if (pace) {
+        await sleep(PACE_MS);
+        pace = false;
+      }
+      const answer = await searchHardcover(q);
+      if (answer.status !== "rate_limited") {
+        pace = answer.status !== "ok" || !answer.cached;
+        return answer;
+      }
+      if (waits >= MAX_WAITS || Date.now() + answer.retryIn * 1000 > deadline) throw new Stop(answer.retryIn);
+      await sleep(answer.retryIn * 1000);
+    }
+  };
+}
+
+/** What one book's lookup found: the match (`isbn`, `title`), else why there is none. */
+export type Lookup = {
+  outcome: BackfillOutcome;
+  found: HardcoverBook | null;
+  /** The match, or the proposal (`proposed`). */
+  hardcover?: HardcoverFacts;
+  /** `ambiguous`: every book that matched, never ranked (D-99). */
+  candidates?: HardcoverFacts[];
+};
+
+/**
+ * Look one book up: by its ISBN, else one title-and-author search decided by
+ * 1.14b's rule (`decideMatch`). `failed` when Hardcover couldn't answer.
+ */
+export async function lookUpBook(ask: (q: string) => Promise<HardcoverAnswer>, title: string, author: string,
+  rawIsbn: string | null | undefined): Promise<Lookup> {
+  const out: Lookup = { outcome: "unmatched", found: null };
+  const isbn = rawIsbn ? isbnOf(rawIsbn) : null;
+  if (isbn) {
+    const answer = await ask(isbn);
+    if (answer.status === "ok" && answer.books.length === 1) {
+      out.found = answer.books[0];
+      out.outcome = "isbn";
+    } else if (answer.status === "ok" && answer.books.length > 1) {
+      out.outcome = "ambiguous";
+      out.candidates = answer.books.map(facts);
+    }
+  }
+  if (!out.found && out.outcome !== "ambiguous") {
+    const answer = await ask(`${title} ${author}`);
+    if (answer.status !== "ok") {
+      out.outcome = "failed";
+    } else {
+      const decided = decideMatch(title, author, answer.books);
+      if (decided.status === "matched") {
+        out.found = decided.book;
+        out.outcome = "title";
+      } else if (decided.status === "proposed") {
+        out.outcome = "proposed";
+        out.hardcover = facts(decided.book);
+      } else if (decided.status === "ambiguous") {
+        out.outcome = "ambiguous";
+        out.candidates = decided.candidates.map(facts);
+      }
+    }
+  }
+  if (out.found) out.hardcover = facts(out.found);
+  return out;
+}
 
 export async function backfillBooks(opts: BackfillOptions): Promise<BackfillResult> {
   if (!hardcoverConfigured()) {
@@ -133,62 +208,15 @@ export async function backfillBooks(opts: BackfillOptions): Promise<BackfillResu
     next: rows.length > limit ? todo[todo.length - 1].id : null,
   };
 
-  let pace = false;
-  /** One answer from Hardcover, a second after the last real request, waiting out a 429. */
-  async function ask(q: string): Promise<HardcoverAnswer> {
-    for (let waits = 0; ; waits++) {
-      if (pace) {
-        await sleep(PACE_MS);
-        pace = false;
-      }
-      const answer = await searchHardcover(q);
-      if (answer.status !== "rate_limited") {
-        pace = answer.status !== "ok" || !answer.cached;
-        return answer;
-      }
-      if (waits >= MAX_WAITS || Date.now() + answer.retryIn * 1000 > deadline) throw new Stop(answer.retryIn);
-      await sleep(answer.retryIn * 1000);
-    }
-  }
+  const ask = hardcoverAsker(sleep, deadline);
 
   let lastDone: string | null = opts.after ?? null;
   try {
     for (const row of todo) {
-      const entry: BackfillBook = { id: row.id, title: row.title, author: row.author, outcome: "unmatched" };
-      let found: HardcoverBook | null = null;
-
-      const isbn = opts.isbns?.[row.id] ? isbnOf(opts.isbns[row.id]) : null;
-      if (isbn) {
-        const answer = await ask(isbn);
-        if (answer.status === "ok" && answer.books.length === 1) {
-          found = answer.books[0];
-          entry.outcome = "isbn";
-        } else if (answer.status === "ok" && answer.books.length > 1) {
-          entry.outcome = "ambiguous";
-          entry.candidates = answer.books.map(facts);
-        }
-      }
-      if (!found && entry.outcome !== "ambiguous") {
-        const answer = await ask(`${row.title} ${row.author}`);
-        if (answer.status !== "ok") {
-          entry.outcome = "failed";
-        } else {
-          const decided = decideMatch(row.title, row.author, answer.books);
-          if (decided.status === "matched") {
-            found = decided.book;
-            entry.outcome = "title";
-          } else if (decided.status === "proposed") {
-            entry.outcome = "proposed";
-            entry.hardcover = facts(decided.book);
-          } else if (decided.status === "ambiguous") {
-            entry.outcome = "ambiguous";
-            entry.candidates = decided.candidates.map(facts);
-          }
-        }
-      }
+      const { found, ...looked } = await lookUpBook(ask, row.title, row.author, opts.isbns?.[row.id]);
+      const entry: BackfillBook = { id: row.id, title: row.title, author: row.author, ...looked };
 
       if (found) {
-        entry.hardcover = facts(found);
         if (row.seriesPosition != null && found.position != null && found.position !== row.seriesPosition) {
           report.conflicts.push({
             id: row.id, title: row.title, series: row.seriesName, seriesPosition: row.seriesPosition,
