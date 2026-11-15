@@ -89,6 +89,17 @@ npm run calibre             # etl/calibre.py (task 1.18): the Calibre library (C
                             # nothing new. Re-run after any library change,
                             # in this order: extract, calibre, extract, enrich:books, extract (the created
                             # books get their Hardcover details like any other)
+npm run calibre:sync        # etl/calibre_sync.py (task 4.4, D-133): the sync, both ways. Reads a temp copy of
+                            # metadata.db (CALIBRE_LIBRARY), signs in to the app in CALIBRE_SYNC_URL with
+                            # APP_PASSCODE, sends every Calibre book to POST /api/calibre/sync (the app applies
+                            # what changed and logs the run), then writes back #read, #read_date, #ledger_status
+                            # and #owned with calibredb (CALIBREDB): through the content server while
+                            # CALIBRE_SERVER_URL answers, else in the library folder. A missing column is named
+                            # and skipped; the reads wait for CALIBRE_SYNC_READS=true (the books cutover, 1.26).
+                            # Then asks the app's Hardcover backfill (4.2) with Calibre's ISBNs. Exits non-zero,
+                            # writing nothing to Calibre, when the app is down or refuses the passcode.
+                            # `-- --env <file>` for other settings, `-- --no-backfill`. Talks only to the app's
+                            # URL. Weekly and a desktop shortcut: scripts/calibre-sync-schedule.ps1 (-Shortcut)
 npm run sidecars            # etl/check_sidecars.py: validate the issue sidecars, write etl/data/metadata_todo.md
                             # and etl/data/creator_review.csv (close creator names to accept or reject);
                             # an issue fandom_skipped.csv says has a blank Fandom title isn't listed as

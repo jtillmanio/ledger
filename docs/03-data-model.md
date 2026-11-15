@@ -555,7 +555,8 @@ two `exact` days. Undated (`none`) reads count toward neither.
 offers (architecture § Metadata sources). It is read like the workbook: `etl/calibre.py`
 opens a copy of `metadata.db` read-only, matches on title and author (1.13's
 rule), and writes sidecars that extract folds in, so the data survives every
-re-extract and nothing writes to Calibre. *Amended by D-87 (2026-10-27):*
+re-extract; calibre.py never writes to Calibre (the sync does, below).
+*Amended by D-87 (2026-10-27):*
 Calibre is the source of truth for a book's data and its reads, because the
 owner edits nothing else. Its word count, series and index replace the
 workbook's, a series Open Library contradicts still fills, and its reads load as
@@ -567,7 +568,13 @@ approved (D-88). After cutover, 4.4 carries the same rules into the app.
 owner's PC brings Calibre's books and metadata in, where Calibre still wins,
 and writes the Ledger's read flag, latest finish date, status and owned
 formats back into Calibre with `calibredb`; from the books cutover on the
-Ledger wins for reads. *Amended by D-130:* the page count is Hardcover's
+Ledger wins for reads. Built in 4.4 (TASK-081, TASK-082): `npm run
+calibre:sync` (`etl/calibre_sync.py`) sends every Calibre book to `POST
+/api/calibre/sync` and writes `#read`, the date-read column, `#ledger_status`
+and `#owned` with `calibredb set_metadata`, through the content server while
+Calibre is open, else the library folder; a missing column is named and
+skipped, and the reads are held back (`CALIBRE_SYNC_READS`) until 1.26, while
+extract still loads Calibre's. *Amended by D-130:* the page count is Hardcover's
 first, Calibre's `#pages` only where Hardcover gives none (1.14c).
 
 **2.20 Watch metadata: credits are rows, counts are derived, availability is

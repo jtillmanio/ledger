@@ -26,6 +26,8 @@ A *Calibre* page under Settings lists every sync run (when it ran, what came in,
 - Design: no mockup frame draws either; the `settings` frame (`powershell -NoProfile -File scripts/screen.ps1 settings`) and § 14 → Settings set the page's look, and `docs/04-design.md` § 12 → Books dashboard the line's slot. `ui.redrawFiles` (`design/mockups.html`, `design/mockups-index.md`) get both frames in the same PR.
 - Decisions: D-40, D-67, D-90, D-133. Hard rule 6.
 - *From TASK-081 (4.4, PR #265):* the app keeps no author merges (extract's are `book_review.csv`'s `kind = author` rows), so a Calibre author spelled a new way creates a new author through the sync. The page lists the run's `report.in` entries of kind `created`; an author new to the Ledger is worth showing there so a stray spelling is seen. TASK-081 stores decisions per Calibre book (`calibre_decisions`, written by `decideCalibrePair` in `src/db/writes.ts`), which this page can call for a waiting near spelling.
+- *From TASK-082 (4.4, PR #267):* until the books cutover the command sends `#read` and `#date_read` in `missingColumns` while `CALIBRE_SYNC_READS` is off, so a run's `report.skippedColumns` lists them although the library has them. Label the log's skipped columns "missing, or held until the books cutover".
+- *From TASK-082 (4.4, PR #267), open question for the plan:* the write-back loses a finish's precision. If the owner's date-read column (`#read_date`) displays a year alone, Calibre's value reads back as July 1st `approximate`, and the route compares days (`src/db/calibre-sync.ts`, `out("#date_read", …)`), so an exact Ledger finish differs and is rewritten every run. Compare by the column's display precision in the route, or say so on the page.
 
 ## Acceptance criteria
 

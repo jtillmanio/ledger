@@ -95,6 +95,18 @@ Release, test isolation) and the Hard rules a reviewer checks.
   date read (its Eastern day, or a year) and its precision, and what
   Hardcover said of the series (`confirmed`; `hardcover` where it differs;
   1.14b, D-99).
+  **The sync writes back, and only through `calibredb`** (task 4.4, D-133):
+  `npm run calibre:sync` (`etl/calibre_sync.py`) reads the same temp copy,
+  sends every Calibre book to `POST /api/calibre/sync` (`src/db/calibre-sync.ts`:
+  Calibre wins on a book's data, the Ledger on reads from the books cutover),
+  and writes what the Ledger holds into Calibre with `calibredb set_metadata`
+  (through the content server on localhost while Calibre is open, else the
+  library folder): `#read`, the date-read column (the latest read's finish,
+  its day at noon Eastern; a `none` finish clears it), `#ledger_status` and
+  `#owned` (5.17's formats). Never the start date, never `metadata.db`
+  directly, never a database: it talks only to the app's URL. A column the
+  library lacks is named and skipped. Until the books cutover (1.26) the reads
+  are not written (`CALIBRE_SYNC_READS`), since extract still loads Calibre's.
   Calibre is its only source: no `hand` rows. A changed book is rewritten in
   place, a removed one goes, a new one is appended, a run over an unchanged
   library changes no byte, and each run prints what changed since the last. A
