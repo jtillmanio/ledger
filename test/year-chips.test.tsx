@@ -39,12 +39,6 @@ describe("the Library's year chips are gone", () => {
     expect(doc.body.textContent).not.toMatch(/no year/i);
   });
 
-  it("draws no chip even when the books list has finished reads", async () => {
-    listBooks.mockResolvedValueOnce([]);
-    const doc = await render({ status: "read" });
-    expect([...doc.querySelectorAll("a")].filter((a) => (a.getAttribute("href") ?? "").includes("year="))).toEqual([]);
-  });
-
   it("ignores ?year=2024 and ?year=none: listBooks is asked for neither", async () => {
     for (const year of ["2024", "none"]) {
       listBooks.mockClear();

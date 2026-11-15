@@ -499,8 +499,8 @@ GROUP BY g.book_id, lower(g.genre), g.depth;
 -- and again in 2026 is one in each. `listened` is how many of those reads were
 -- listens (task 1.23, D-85): `books` still includes them, as a listen is a read.
 -- The genre is each top-level genre of book_genre_levels (task 4.5, D-98): a
--- read counts once under each, so a year's genres can sum past its reads (the
--- Top books' year switcher counts reads, not this); a book with none is under NULL. One
+-- read counts once under each, so a year's genres can sum past its reads
+-- (Top books' year switcher counts reads, not this); a book with none is under NULL. One
 -- spelling whatever the case across books (folded under the database's own
 -- collation, as book_genre_levels' genre is "C" and lower() under "C" folds
 -- ASCII only); the column keeps the database's collation, which CREATE OR
