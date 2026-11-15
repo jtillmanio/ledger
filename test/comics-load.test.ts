@@ -26,7 +26,7 @@ const BOOK_TABLES = [
   "users", "authors", "book_series", "book_universes", "book_subseries", "books", "book_genres",
   "releases", "external_lists", "book_status", "reading_plan", "series_follows", "author_follows",
   "universe_follows", "shelves", "shelf_books", "shelf_follows", "subseries_follows", "reading_settings",
-  "plan_acceptance", "owned_copies",
+  "plan_acceptance", "owned_copies", "calibre_syncs", "calibre_decisions",
 ];
 // Two tables hold both media. Their books rows are books-side; their comics
 // rows go with the comics.

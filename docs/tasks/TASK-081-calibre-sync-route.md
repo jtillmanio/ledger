@@ -1,14 +1,14 @@
 ---
 id: TASK-081
 title: 4.4 Sync with Calibre (1 of 3) — the sync route: Calibre's changes in, the Ledger's back, each run logged
-status: Ready
+status: In progress
 depends_on: [TASK-030, TASK-032, TASK-033, TASK-029, TASK-057, TASK-092]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 1b37cad
 ---
 
 # TASK-081 — 4.4 Sync with Calibre (1 of 3) — the sync route: Calibre's changes in, the Ledger's back, each run logged
@@ -76,9 +76,91 @@ shows when the last run is 8 days old and not when it is 6.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The app keeps no author merges, so a Calibre author spelled a new way creates a new author (approved at plan); destination: TASK-083's Context.
+- Candidate decision: a book new to the Ledger that Calibre marks read gets status `read` with its first read, as 1.18 loads it; the 4.4 Check's "Unlisted book" means a book new to the Ledger (approved at plan; decisions mode `propose`, asked at close-out).
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-15 with the owner's answers at the gate: tags and ISBN are
+accepted and **not stored** (no `books.isbn` / `books.subjects` yet); the two
+tables **as proposed**; a book new to the Ledger that Calibre marks read gets
+status **`read`** with its one `read_events` row, as 1.18 loads it (the
+Check's "Unlisted book" read as "a book new to the Ledger"; a candidate
+decision at close-out). Kept whole (already the split's 1 of 3).
+
+**Steps**
+
+1. `test/fixtures/calibre-match.json`: cases from `etl/test_calibre.py`
+   (exact, two authors, near spelling, under 0.5, subtitle, differs only by a
+   number, same title under another author, rename by `calibre_id`, id beats
+   title, a stored separate). A Python test in `etl/test_calibre.py` runs
+   `Seed.match` over it; the TS test runs the twin over the same file
+   (as `issue-slugs.json`).
+2. `src/lib/calibre-match.ts`: `Seed.match` ported against the Ledger's live
+   books (`id, title, author, calibre_id`): `calibre_id` first (renamed when the
+   title or author differs), then title and author on any of the record's
+   authors, then a near spelling by the same author (≥ 0.5 or a `: subtitle`,
+   not differing only by a number) or the same title under another author,
+   held unless a separate is stored. Header lists the differences: no author
+   merges (`book_review.csv`), no `created` flag.
+3. `src/db/schema.ts` + migration (adds tables only, no down file):
+   `calibre_syncs(id serial, ran_at timestamptz not null default now(),
+   report jsonb not null)`; `calibre_decisions(calibre_id integer primary key,
+   decision text check in ('merge','separate'), book_id text → books.id
+   cascade, decided_at timestamptz not null default now())`, CHECK
+   `(decision = 'merge') = (book_id IS NOT NULL)`. No `user_id`; both in
+   `CATALOG_TABLES`. A `decideCalibrePair` write in `src/db/writes.ts` stores a
+   decision (TASK-083's page will call it).
+4. `src/db/calibre-sync.ts` `syncCalibre(userId, payload, opts)`: payload
+   `records[]` (changed or all), `calibreIds[]` (the whole library, for gone
+   books), `missingColumns[]`. One transaction under an advisory lock.
+   Matched: Calibre's title, author, series + index, subseries + index,
+   universe + position, genre set, and `stated` word count where Calibre has
+   one replace the Ledger's (D-87); page count and reads untouched. New:
+   `createBooks` at `unlisted`, or `read` with one `read_events` row
+   (`format = 'text'`) when Calibre marks it read or dates it; a comic is
+   skipped and listed; Fan Fiction keeps its type. Near spelling waits; a
+   stored merge renames the Ledger book to Calibre's spelling and takes the id;
+   a stored separate creates the book. Two Calibre ids on one book wait. A
+   soft-deleted book is skipped and listed. Gone from Calibre: stays live,
+   listed. Returns, per Calibre book, `{ calibreId, bookId, read, finishedOn,
+   precision, status, owned }` and the writes that differ from Calibre's
+   values (a missing column named and skipped). Same before and after 1.26:
+   what reaches Calibre is TASK-082's. One `calibre_syncs` row per run.
+5. D-130 for a new book: before the transaction, Hardcover by ISBN, else a
+   title search decided by `decideMatch`, at most 20 a run, through a lookup
+   moved out of `src/db/backfill.ts` and shared. A match sets `hardcover_id`,
+   cover, year and the page count (book's, else edition's); Hardcover
+   answering with none → Calibre's `#pages`; a failure or the cap → NULL and
+   listed, for the backfill.
+6. `src/app/api/calibre/sync/route.ts`: `POST`, inside the gate; 401 without a
+   session, 400 for a malformed payload, writing nothing.
+7. `docs/03-data-model.md` § 4.1 row 4.4 marked Built.
+
+**Files**: `test/fixtures/calibre-match.json` (new), `etl/test_calibre.py`,
+`src/lib/calibre-match.ts` (new), `src/db/schema.ts`, `drizzle/0029_*.sql` +
+`drizzle/meta/*`, `src/db/export-tables.ts`, `src/db/writes.ts`
+(`createBooks` exported, `decideCalibrePair`), `src/db/backfill.ts` (shared
+lookup; not in Files likely touched), `src/db/calibre-sync.ts` (new),
+`src/app/api/calibre/sync/route.ts` (new), `test/calibre-match.test.ts`
+(new), `test/calibre-sync.test.ts` (new), `test/export-tables.test.ts`,
+`test/health.test.ts` (gate assertion), `docs/03-data-model.md`.
+
+**Test strategy**: AC-1 → `test/calibre-sync.test.ts` "the Check's Ledger
+side" (recorded payloads); AC-2 → `test/calibre-match.test.ts` + the Python
+parity test; AC-3 → `test/calibre-sync.test.ts` "without the session" +
+`test/health.test.ts`; AC-4 → `test/calibre-sync.test.ts` near spelling,
+merge, separate, gone; AC-5 → `test/export-tables.test.ts`.
+
+**Revision 1 (during Phase 2)**: three files outside the list, each to keep
+one home for a rule rather than copy it: `src/lib/book-match.ts` exports its
+`key`, `cleanKey`, `differsOnlyByNumber` and `subtitled` for the matcher;
+`test/db.ts`'s `truncateAll` empties `calibre_syncs` (it references nothing,
+so `CASCADE` never reaches it); `test/comics-load.test.ts` counts both new
+tables on the books side (its every-table check fails otherwise).
+
+**Risks**: Hardcover pacing inside a request (capped at 20 lookups, about 40 s
+at worst; `maxDuration` set). The matcher's two documented differences.
 
 ## Review log
 
@@ -93,4 +175,4 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Verify rounds:
 - Review rounds:
 - First-pass AC FAILs:
-- Plan revisions after approval:
+- Plan revisions after approval: 1 (three supporting files, see Plan)

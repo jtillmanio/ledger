@@ -565,6 +565,34 @@ export const ownedCopies = pgTable("owned_copies", {
   format: check("owned_copies_format_check", sql`${t.format} IN ('physical', 'audio')`),
 }));
 
+// The Calibre sync's log (task 4.4, D-133): one row per run of
+// `POST /api/calibre/sync`. `report` holds what the run listed: what came in
+// from Calibre, what went back out, what waits (a near spelling, two Calibre
+// books on one Ledger book), the books gone from Calibre and the Calibre
+// columns it skipped (src/db/calibre-sync.ts, SyncReport). No count is
+// stored (hard rule 2): a run that changed nothing has empty lists. An event,
+// not per user: no user_id (D-91).
+export const calibreSyncs = pgTable("calibre_syncs", {
+  id: serial("id").primaryKey(),
+  ranAt: timestamp("ran_at", { withTimezone: true }).defaultNow().notNull(),
+  report: jsonb("report").notNull(),
+});
+
+// A held Calibre near spelling, decided (task 4.4, D-89, D-133): `merge`
+// makes the Calibre book that Ledger book (renamed to Calibre's spelling,
+// D-87), `separate` makes it a book of its own. Keyed on Calibre's id, which
+// survives a rename in Calibre (D-90), so the next sync applies it and never
+// asks again. No user_id (D-91).
+export const calibreDecisions = pgTable("calibre_decisions", {
+  calibreId: integer("calibre_id").primaryKey(),
+  decision: text("decision").notNull(), // merge | separate
+  bookId: text("book_id").references(() => books.id, { onDelete: "cascade" }),
+  decidedAt: timestamp("decided_at", { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  decision: check("calibre_decisions_decision_check", sql`
+    ${t.decision} IN ('merge', 'separate') AND (${t.decision} = 'merge') = (${t.bookId} IS NOT NULL)`),
+}));
+
 // Following a subseries (task 2.2h, D-117): as shelf_follows, no user_id
 // (D-91). A finish follows it for you, so *Not following* is kept as 'off', as
 // on series_follows. subseries_progress counts what is read in it.
