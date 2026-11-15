@@ -1,7 +1,7 @@
 ---
 id: TASK-093
 title: 5.17 What you own (2 of 3) — the row menu's toggles, the sub-line and the Library's Owned filter
-status: In progress
+status: Review
 depends_on: [TASK-092]
 size: M
 model: opus
@@ -32,7 +32,7 @@ From a Library row you can say you own the book on paper or as an audiobook, the
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves, in the browser (0.11) on the test database: each toggle from the row menu writes its row and its Undo removes it, each *Owned* chip lists its books combined with a status chip and a sort, the choice survives a reload, and the screenshots. TASK-092 proves the data clauses, TASK-094 the paste): (proposed; the owner agrees it by merging or edits it first)
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves, in the browser (0.11) on the test database: each toggle from the row menu writes its row and its Undo removes it, each *Owned* chip lists its books combined with a status chip and a sort, the choice survives a reload, and the screenshots. TASK-092 proves the data clauses, TASK-094 the paste): (proposed; the owner agrees it by merging or edits it first)
 each toggle writes one `owned_copies` row with its format, Undo removes
 it, and the export test passes with the table. *Physical* lists only books
 with a `physical` row, *Audiobook* only books with an `audio` row, *Ebook*
@@ -42,10 +42,10 @@ each combines with a status filter and a sort, and the choice survives a
 reload. Pasting three lines to *Physical copy*, two matched and one new,
 writes three rows and one `unlisted` book, and Undo removes all of it.
 Screenshots at 360px and 1280px.
-- [ ] AC-2: Given a to-read book with no owned row, when *I own it on paper* is chosen from its `⋯`, then its sub-line reads *Physical* without a reload and an undo toast offers *Undo*; pressing *Undo* removes the word and the row. Given a book with a `calibre_id`, a `physical` and an `audio` row, its sub-line names all three.
-- [ ] AC-3: Given `/books/list?status=read&sort=title&owned=physical`, the *Read* and *Physical* chips are both current, the rows are only read physical books in title order, and choosing *To read* or another sort keeps `owned=physical` in the URL; *Everything* clears it.
-- [ ] AC-4: The `blist` frame in `design/mockups.html` draws the two menu items, the sub-line and the *Owned* chips, and `design/mockups-index.md`'s `blist` row names them (task 5.17).
-- [ ] AC-5: The Library meets the UX floor (`docs/04-design.md` § 10): an *Owned* chip with no match draws the list's empty state; each chip and menu item is a real link or button with a name and ≥ 24px; text contrast holds in light and dark; screenshots at 360px and 1280px.
+- [x] AC-2: Given a to-read book with no owned row, when *I own it on paper* is chosen from its `⋯`, then its sub-line reads *Physical* without a reload and an undo toast offers *Undo*; pressing *Undo* removes the word and the row. Given a book with a `calibre_id`, a `physical` and an `audio` row, its sub-line names all three.
+- [x] AC-3: Given `/books/list?status=read&sort=title&owned=physical`, the *Read* and *Physical* chips are both current, the rows are only read physical books in title order, and choosing *To read* or another sort keeps `owned=physical` in the URL; *Everything* clears it.
+- [x] AC-4: The `blist` frame in `design/mockups.html` draws the two menu items, the sub-line and the *Owned* chips, and `design/mockups-index.md`'s `blist` row names them (task 5.17).
+- [x] AC-5: The Library meets the UX floor (`docs/04-design.md` § 10): an *Owned* chip with no match draws the list's empty state; each chip and menu item is a real link or button with a name and ≥ 24px; text contrast holds in light and dark; screenshots at 360px and 1280px.
 
 ## Out of scope
 
@@ -70,7 +70,10 @@ Screenshots at 360px and 1280px.
 
 ## Follow-ups
 
-_Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+- On a 360px phone, a Library row near the bottom of the screen opens its `⋯` menu past the bottom edge, so the two new items are off-screen until you scroll: the shared `Menu`'s placement, not this task's (ui-verifier) → docs/05-roadmap.md § 6.22 (new)
+- The development database lacked TASK-092's migration 0028 (`owned_copies`), so `/books/list` errored on dev after #263 → not tracked: applied to dev with `npm run db:migrate` in this session, with the owner's OK
+- `design/mockups-index.md`'s line ranges (`blist` says 3117–3328) were already out of date before this PR, and the new frame shifts every screen after `blist` → not tracked: nothing reads the ranges; `scripts/screen.ps1` finds a screen by its `data-id`
+- The Library's Series list ignores every filter, the status chips' included → not tracked: unchanged behaviour (R2 L-7), outside 5.17
 
 ## Plan
 
@@ -99,7 +102,8 @@ Approved by the owner 2026-11-15, with these choices: the menu items read *I own
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 FAIL (`test/list-totals.test.tsx`, `test/year-chips.test.tsx`: their `@/db/queries` mocks lacked `OWNED_FILTERS`, one line each) → R2 PASS (104 files, 1831 tests; `library-owned.spec.ts` 8, `library-sort`/`library-genres`/`follows` 24, `w390-light`) | CI R1 PASS (check, tests, e2e full 8/8, Vercel, Lighthouse within budget, Claude review: no issues) | Spec R1 APPROVE | Audit R1 PASS | UI R1 NOT RUN (dev DB lacked migration 0028; applied with the owner's OK) → R2 PASS
+- Plan note: the `libraryHref` / `genreChipHref` tests went into `test/library-page.test.tsx` § the sort in the URL, where those builders' unit tests already live; `test/library-sort.test.ts` is `listBooks`'s database test and is untouched (spec review)
 
 ## Blocked
 
@@ -107,7 +111,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1 (UI 2: the first couldn't run)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0 (two one-line mock fixes in older tests, and the href tests in `library-page.test.tsx` rather than `library-sort.test.ts`)
