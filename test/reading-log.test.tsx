@@ -193,10 +193,11 @@ describe("the master list's status control", () => {
     await click(radio("No date", "Finished"));
     await click(button("Save"));
     expect(await status()).toMatchObject({ status: "read", on: null, precision: "none" });
-    expect(await q.readWithoutYear(USER)).toBe(1);
+    expect((await q.topBookYears(USER)).undated).toBe(1);
+    expect((await q.topBooksYear(USER, null)).map((r) => r.book_id)).toEqual(["wok"]);
   });
 
-  it("marked read with Today on 2026-10-02 is under the 2026 year chip and in books_by_year", async () => {
+  it("marked read with Today on 2026-10-02 is under 2026 on Top books and in books_by_year", async () => {
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-02T15:00:00Z"));
     renderBook({ status: "reading" });
@@ -205,8 +206,8 @@ describe("the master list's status control", () => {
     expect(radio("Today", "Finished").checked).toBe(true);
     await click(button("Save"));
     expect(await status()).toMatchObject({ on: "2026-10-02", precision: "exact" });
-    expect((await q.listBooks(USER, { year: 2026 })).map((r) => r.id)).toEqual(["wok"]);
-    expect((await q.yearSummary(USER)).map((r) => [r.year, Number(r.books)])).toEqual([[2026, 1]]);
+    expect((await q.topBooksYear(USER, 2026)).map((r) => r.book_id)).toEqual(["wok"]);
+    expect((await q.topBookYears(USER)).years.map((r) => [r.year, r.reads])).toEqual([[2026, 1]]);
   });
 
   it("marking a book read from the list writes the event and keeps its rating (R0-C1)", async () => {

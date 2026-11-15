@@ -3503,7 +3503,7 @@ Rating, notes, and the top-books rank reorder. **Status and finish date moved to
 
 **Check:** test that setting `year_rank = 3` demotes whatever held rank 3.
 
-### ☐ 3.4b Rank a book when you finish it, and every year's top ten · M
+### ☑ 3.4b Rank a book when you finish it, and every year's top ten · M
 Owner intake, 2026-11-01 (owner: *a way to rank books for each year as I
 finish them and then see my top 10 at the end of the year (and for past
 years)*). D-101. Depends on 3.4 and 1.5; after 1.23, a listened book is ranked

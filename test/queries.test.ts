@@ -58,20 +58,18 @@ describe("listBooks (R2-06, R2-08)", () => {
     // Its year is the earliest, from plan_period (task 1.7): a quarter's year, none On deck.
     expect(Object.fromEntries(rows.map((r) => [r.id, r.plan_year])))
       .toEqual({ lb: 2026, other: null, quarter: 2028, deck: null });
-    // and it is findable under either year
-    expect((await q.listBooks(USER, { year: 2027 })).map((r) => r.id)).toEqual(["lb"]);
-    expect((await q.listBooks(USER, { year: 2026 })).map((r) => r.id)).toEqual(["lb"]);
-    expect((await q.listBooks(USER, { year: 2028 })).map((r) => r.id)).toEqual(["quarter"]);
   });
 
-  it("can reach the read books that have no finish date", async () => {
+  it("Top books can reach the read books that have no finish date (R2-08, D-122)", async () => {
     await book("dated");
     await book("undated");
     await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
               VALUES (${USER}, 'dated', 'read', '2024-07-01', 'approximate')`;
     await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'undated', 'read')`;
-    expect(await q.readWithoutYear(USER)).toBe(1);
-    expect((await q.listBooks(USER, { noYear: true })).map((r) => r.id)).toEqual(["undated"]);
+    // The year switcher counts it under No year, and No year lists it: its only home since the Library's chip went.
+    expect((await q.topBookYears(USER)).undated).toBe(1);
+    expect((await q.topBooksYear(USER, null)).map((r) => r.book_id)).toEqual(["undated"]);
+    expect((await q.topBooksYear(USER, 2024)).map((r) => r.book_id)).toEqual(["dated"]);
   });
 });
 
@@ -156,7 +154,7 @@ describe("the Library's genres from Calibre (task 4.5)", () => {
     const perGenre = (await sql<{ genre: string | null; books: number }[]>`
       SELECT genre, books::int AS books FROM books_by_year WHERE user_id = ${USER} AND year = 2025`).map((r) => ({ ...r }));
     expect(perGenre).toEqual([{ genre: null, books: 1 }]);
-    expect(await q.yearSummary(USER)).toEqual([{ year: 2025, books: 1, words: 0 }]);
+    expect(await q.topBookYears(USER)).toEqual({ years: [{ year: 2025, reads: 1 }], undated: 0 });
   });
 
   it("breaks a tie between two deepest paths by the path, alphabetically (AC-3)", async () => {
@@ -164,15 +162,15 @@ describe("the Library's genres from Calibre (task 4.5)", () => {
     expect((await q.listBooks(USER)).find((r) => r.id === "plain")?.genre).toBe("Epic Fantasy");
   });
 
-  it("counts a read once in its year's chip, however many top-level genres the book has", async () => {
+  it("counts a read once in its year's switcher entry, however many top-level genres the book has", async () => {
     await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
               VALUES (${USER}, 'cal', 'read', '2025-06-01', 'exact')`;
-    // books_by_year counts the read under each of its two top-level genres: summing it, as the chips did, makes two.
+    // books_by_year counts the read under each of its two top-level genres: summing it would make two.
     const perGenre = await sql<{ genre: string; books: number }[]>`
       SELECT genre, books::int AS books FROM books_by_year WHERE user_id = ${USER} AND year = 2025 ORDER BY genre`;
     expect(perGenre).toEqual([{ genre: "Fantasy", books: 1 }, { genre: "Young Adult", books: 1 }]);
-    // The year chips read yearSummary: one row a year, the read counted once.
-    expect(await q.yearSummary(USER)).toEqual([{ year: 2025, books: 1, words: 0 }]);
+    // Top books' year switcher reads topBookYears: one row a year, the read counted once.
+    expect(await q.topBookYears(USER)).toEqual({ years: [{ year: 2025, reads: 1 }], undated: 0 });
   });
 });
 

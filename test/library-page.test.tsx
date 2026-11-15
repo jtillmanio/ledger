@@ -16,14 +16,13 @@ const queries = vi.hoisted(() => ({ listBooks: vi.fn(async () => [] as unknown[]
 vi.mock("@/db/queries", () => ({
   listBooks: queries.listBooks,
   TO_READ_LEVELS: ["quarter", "year", "on_deck", "someday"],
-  yearSummary: async () => [{ year: 2024, books: 7, words: 0 }],
   // 41 series: more than the page shows, so the Show all link is drawn.
   seriesProgress: async () => Array.from({ length: 41 }, (_, i) => ({
     series_id: `s${i}`, name: `Series ${i}`, author: null, books_read: 0, total_books: 1, pct: 0,
   })),
   // The genres of the listed books (task 4.5): not the old hard-coded ten.
   listCounts: async () => ({
-    unyeared: 4, unlisted: 3,
+    unlisted: 3,
     genres: [{ genre: "Fantasy", books: 9 }, { genre: "Young Adult", books: 4 }, { genre: "Sci-Fi", books: 1 }],
   }),
   inboxCount: async () => 0,
@@ -62,8 +61,8 @@ describe("the Library page (AC-3, AC-4)", () => {
     // The reverse link is the one that changes the direction: it is checked on its own below.
     const chips = [...doc.querySelectorAll<HTMLAnchorElement>("a.chip")].filter((a) => !a.closest(".sort"))
       .map((a) => a.getAttribute("href")!).filter((h) => h.startsWith("/books/list"));
-    // Everything, Reading, To read, Read, Unlisted, the five levels, one year, No year and three genres.
-    expect(chips.length).toBeGreaterThanOrEqual(12);
+    // Everything, Reading, To read, Read, Unlisted, the five levels and three genres: no year chip (task 3.4b, D-122).
+    expect(chips).toHaveLength(13);
     for (const href of chips) {
       const p = new URL(href, "http://x").searchParams;
       expect(p.get("sort"), href).toBe("length");

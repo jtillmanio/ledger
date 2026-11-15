@@ -529,13 +529,11 @@ export const OWNED_FILTERS = ["physical", "audio", "ebook", "none"] as const;
 export type OwnedFilter = (typeof OWNED_FILTERS)[number];
 export type OwnedKind = Exclude<OwnedFilter, "none">;
 
-/** `year` is a finished or planned year; `noYear` is the read books that have
- * an undated read (R2-08). A book is under every year it was read in, and under
- * No year if one of its reads has no date,
- * from book_reads, as books_by_year counts it (D-65): a reread doesn't move it
- * out of its first year. An Unlisted book (task 1.21, D-83) is listed only by a
- * search or `status: "unlisted"`, its own chip: *Everything*, the genre and the
- * year chips leave it out. `genre` is a whole path at any level, any case: a
+/** The Library's list. It has no year filter: a year's reading, and the reads
+ * with no finish date, are Top books' (`topBooksYear`, task 3.4b, D-122, R2-08).
+ * An Unlisted book (task 1.21, D-83) is listed only by a
+ * search or `status: "unlisted"`, its own chip: *Everything* and the genre
+ * chips leave it out. `genre` is a whole path at any level, any case: a
  * book is under it when `book_genre_levels` puts it there (task 4.5, D-98), so
  * `Fantasy` finds a book tagged only `Fantasy.Epic Fantasy`. `owned` is what you
  * own of it (task 5.17, D-132): `physical` and `audio` read owned_copies, `ebook`
@@ -546,13 +544,13 @@ export type OwnedKind = Exclude<OwnedFilter, "none">;
 export async function listBooks(
   userId: string,
   opts: {
-    status?: string; genre?: string; year?: number; noYear?: boolean; q?: string; level?: ToReadLevel;
+    status?: string; genre?: string; q?: string; level?: ToReadLevel;
     /** The Library's order (task 2.2e, D-110): a name from `SORTS` and `asc` or `desc`; anything else is Series. */
     sort?: string; dir?: string;
     owned?: OwnedFilter;
   } = {},
 ): Promise<WithTotal<BookRow>[]> {
-  const { status = null, genre = null, year = null, noYear = false, level = null } = opts;
+  const { status = null, genre = null, level = null } = opts;
   const owned = (OWNED_FILTERS as readonly string[]).includes(opts.owned ?? "") ? opts.owned! : null;
   const ownedHasUnlisted = owned !== null && owned !== "none";
   // An empty search box is no search: it must not bring the Unlisted books in.
@@ -630,17 +628,7 @@ export async function listBooks(
       AND (${genre}::text  IS NULL
            OR EXISTS (SELECT 1 FROM book_genre_levels l
                       WHERE l.book_id = b.id AND lower(l.genre COLLATE "default") = lower(${genre})))
-      AND (${year}::int    IS NULL
-           OR EXISTS (SELECT 1 FROM book_reads r
-                      WHERE r.user_id = ${userId} AND r.book_id = b.id
-                        AND extract(year FROM r.finished_on) = ${year})
-           OR EXISTS (SELECT 1 FROM plan_period p2
-                      WHERE p2.book_id = b.id AND p2.user_id = ${userId}
-                        AND p2.year = ${year}))
-      AND (NOT ${noYear}::boolean
-           OR EXISTS (SELECT 1 FROM book_reads r
-                      WHERE r.user_id = ${userId} AND r.book_id = b.id AND r.finished_on IS NULL))
-      AND (${q}::text      IS NULL OR b.title ILIKE '%' || ${q} || '%'
+      AND (${q}::text     IS NULL OR b.title ILIKE '%' || ${q} || '%'
                                    OR a.name  ILIKE '%' || ${q} || '%')
       -- The To read filter's level (task 1.9): the level to_read_level assigns, Someday included.
       AND (${level}::text  IS NULL
@@ -808,21 +796,6 @@ export async function booksDone(userId: string) {
   `;
 }
 
-/**
- * The reads in each year, newest first: the Library's year chips (D-65). From
- * `book_reads`, not `books_by_year`, which counts a read under each of its
- * book's top-level genres (task 4.5) and would count a two-genre read twice.
- */
-export async function yearSummary(userId: string) {
-  return sql<{ year: number; books: number; words: number }[]>`
-    SELECT extract(year FROM r.finished_on)::int AS year, COUNT(*)::int AS books,
-           COALESCE(SUM(b.word_count), 0)::float8 AS words
-    FROM book_reads r JOIN books b ON b.id = r.book_id AND b.deleted_at IS NULL
-    WHERE r.user_id = ${userId} AND r.finished_on IS NOT NULL
-    GROUP BY 1 ORDER BY year DESC
-  `;
-}
-
 /** The Top books year switcher (task 3.4b, D-122): each year with a finished read, and the undated reads. */
 export type TopBookYears = { years: { year: number; reads: number }[]; undated: number };
 
@@ -955,31 +928,21 @@ export async function bookReads(userId: string, bookId: string): Promise<BookRea
   `;
 }
 
-/** Undated reads (precision `none`), from book_reads as the year chips count
- * theirs (D-65): the ones no year chip can reach. */
-export async function readWithoutYear(userId: string): Promise<number> {
-  return (await listCounts(userId)).unyeared;
-}
-
 /** A Library genre chip (task 4.5): a top-level genre and how many listed books are under it. */
 export type GenreChip = { genre: string; books: number };
 
 /**
- * The Library's chips, in one query (the page's budget, task 0.9): `unyeared`,
- * as `readWithoutYear`; `unlisted`, the live books that are Unlisted (task
+ * The Library's chips, in one query (the page's budget, task 0.9): `unlisted`,
+ * the live books that are Unlisted (task
  * 1.21), for the *Unlisted · N* chip, hidden at zero; and `genres`, the
  * top-level genres of the books *Everything* lists, from `book_genre_levels`
  * (task 4.5, D-98: Calibre's; a book with none makes no chip), most books first, one chip
  * per genre whatever its case. An Unlisted book makes no chip, as the genre
  * filter would not list it.
  */
-export async function listCounts(userId: string): Promise<{ unyeared: number; unlisted: number; genres: GenreChip[] }> {
-  const [row] = await sql<{ unyeared: number; unlisted: number; genres: GenreChip[] }[]>`
+export async function listCounts(userId: string): Promise<{ unlisted: number; genres: GenreChip[] }> {
+  const [row] = await sql<{ unlisted: number; genres: GenreChip[] }[]>`
     SELECT
-      (SELECT COUNT(*)::int
-       FROM book_reads r
-       JOIN books b ON b.id = r.book_id AND b.deleted_at IS NULL
-       WHERE r.user_id = ${userId} AND r.finished_on IS NULL) AS unyeared,
       (SELECT COUNT(*)::int
        FROM book_status st
        JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
