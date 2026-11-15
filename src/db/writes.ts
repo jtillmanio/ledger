@@ -2277,7 +2277,7 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
  * was never in `added`, so it stays. Refuses, changing nothing, when a row it
  * wrote is gone, a book it created is no longer a bare `unlisted` (a status, a
  * rating, a note or a finish since), or has gained anything else: the other
- * format, a shelf, a plan row or a read. Called inside `undoInside`'s lock.
+ * format, a shelf, a plan row, a read or a Calibre id. Called inside `undoInside`'s lock.
  */
 async function undoOwned(
   tx: Tx, userId: string, entry: AddedEntry & { destination: { kind: "owned"; format: OwnedFormat } }, refused: symbol,
@@ -2294,7 +2294,11 @@ async function undoOwned(
     if (ours.length !== new Set(added).size) return false;
   }
   if (made.size) {
-    const live = await tx.select({ id: books.id }).from(books).where(and(inArray(books.id, created), isNull(books.deletedAt)));
+    // FOR UPDATE: setOwned reads the book FOR SHARE without the add lock, so it waits here and then finds it gone.
+    // A book Calibre has linked since (4.4's sync, by title and author) is Calibre's now: removing it would make
+    // the sync skip it for good.
+    const live = await tx.select({ id: books.id }).from(books)
+      .where(and(inArray(books.id, created), isNull(books.deletedAt), isNull(books.calibreId))).for("update");
     if (live.length !== made.size) return false;
     const bare = await tx.select({ bookId: bookStatus.bookId }).from(bookStatus).where(unlisted);
     if (bare.length !== made.size) return false;

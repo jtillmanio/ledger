@@ -404,9 +404,32 @@ describe("Physical copy and Audiobook (task 5.17)", () => {
     expect(await statusOf(fresh)).toBe("unlisted");
     await sql`DELETE FROM owned_copies WHERE book_id = ${fresh} AND format = 'audio'`;
 
+    // A book it created that has gained a shelf, a plan row or a read since, or that Calibre has linked
+    // since (4.4's sync takes it by title and author, and would skip a removed book for good).
+    await sql`INSERT INTO shelves (id, user_id, name, kind) VALUES ('keep', ${USER}, 'Keep', 'books')`;
+    const later = [
+      [sql`INSERT INTO shelf_books (shelf_id, book_id, ordinal) VALUES ('keep', ${fresh}, 1)`, sql`DELETE FROM shelf_books`],
+      [sql`INSERT INTO reading_plan (user_id, book_id, period) VALUES (${USER}, ${fresh}, '2028')`,
+        sql`DELETE FROM reading_plan WHERE book_id = ${fresh}`],
+      [sql`INSERT INTO read_events (user_id, book_id, finished_on_precision) VALUES (${USER}, ${fresh}, 'none')`,
+        sql`DELETE FROM read_events`],
+      [sql`UPDATE books SET calibre_id = 4242 WHERE id = ${fresh}`, sql`UPDATE books SET calibre_id = NULL WHERE id = ${fresh}`],
+    ] as const;
+    for (const [add, takeBack] of later) {
+      await add;
+      expect(await undo(body)).toBe(409);
+      expect(await owned()).toEqual([["dune-frank-herbert", "physical"], [fresh, "physical"]].sort());
+      await takeBack;
+    }
+
     // A row this paste wrote, removed since by the Library's toggle: nothing to take back as written.
     await sql`DELETE FROM owned_copies WHERE book_id = 'dune-frank-herbert'`;
     expect(await undo(body)).toBe(409);
     expect(await sql`SELECT 1 FROM books WHERE id = ${fresh} AND deleted_at IS NULL`).toHaveLength(1);
+    await sql`INSERT INTO owned_copies (book_id, format) VALUES ('dune-frank-herbert', 'physical')`;
+
+    // Put back as the paste left it, the same undo goes through.
+    expect(await undo(body)).toBe(200);
+    expect(await owned()).toEqual([]);
   });
 });
