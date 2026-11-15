@@ -142,6 +142,15 @@ const optStr = (v: unknown) => v === undefined || v === null || typeof v === "st
 const optNum = (v: unknown) => v === undefined || v === null || (typeof v === "number" && Number.isFinite(v));
 const optStrs = (v: unknown) => v === undefined || v === null || (Array.isArray(v) && v.every((s) => typeof s === "string"));
 
+/** `YYYY`, or a `YYYY-MM-DD` that is a day on the calendar (no February 31st). */
+function isCalendarDate(s: string): boolean {
+  if (/^\d{4}$/.test(s)) return true;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return false;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])));
+  return d.getUTCFullYear() === Number(m[1]) && d.getUTCMonth() === Number(m[2]) - 1 && d.getUTCDate() === Number(m[3]);
+}
+
 /** The request body as a payload, or what is wrong with it. */
 export function parseSyncPayload(raw: unknown): SyncPayload | { error: string } {
   if (!isObj(raw)) return { error: "the body must be a JSON object" };
@@ -153,11 +162,15 @@ export function parseSyncPayload(raw: unknown): SyncPayload | { error: string } 
     return { error: `missingColumns may name only ${CALIBRE_COLUMNS.join(", ")}` };
   }
   const library = new Set(calibreIds);
+  const sent = new Set<number>();
   for (const [i, r] of records.entries()) {
     const at = `records[${i}]`;
     if (!isObj(r)) return { error: `${at} must be an object` };
     if (!isId(r.calibreId)) return { error: `${at}.calibreId must be a Calibre id` };
     if (!library.has(r.calibreId)) return { error: `${at}.calibreId is not in calibreIds` };
+    // Two records with one id would both be created onto books.calibre_id's unique key.
+    if (sent.has(r.calibreId)) return { error: `${at}.calibreId ${r.calibreId} is sent twice` };
+    sent.add(r.calibreId);
     if (typeof r.title !== "string") return { error: `${at}.title must be text` };
     if (!Array.isArray(r.authors) || !r.authors.every((a) => typeof a === "string")) return { error: `${at}.authors must be a list of names` };
     for (const f of ["series", "subseries", "superseries", "isbn", "type", "dateRead", "ledgerStatus"]) {
@@ -173,8 +186,8 @@ export function parseSyncPayload(raw: unknown): SyncPayload | { error: string } 
     if (!(r.precision === undefined || r.precision === null || (PRECISIONS as readonly unknown[]).includes(r.precision))) {
       return { error: `${at}.precision must be exact, approximate or none` };
     }
-    if (typeof r.dateRead === "string" && r.dateRead !== "" && !/^\d{4}(-\d{2}-\d{2})?$/.test(r.dateRead)) {
-      return { error: `${at}.dateRead must be YYYY-MM-DD or YYYY` };
+    if (typeof r.dateRead === "string" && r.dateRead !== "" && !isCalendarDate(r.dateRead)) {
+      return { error: `${at}.dateRead must be a real date, YYYY-MM-DD, or a year, YYYY` };
     }
   }
   return { records: records as CalibreRecord[], calibreIds, missingColumns: missingColumns as CalibreColumn[] };

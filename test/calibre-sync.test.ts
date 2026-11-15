@@ -211,6 +211,8 @@ describe("the gate and a bad body (AC-3)", () => {
     ["an id outside calibreIds", { records, calibreIds: [9] }],
     ["an unknown column", { records, calibreIds: [2], missingColumns: ["#rating"] }],
     ["a malformed date", { records: [{ ...records[0], dateRead: "March 2024" }], calibreIds: [2] }],
+    ["a day not on the calendar", { records: [{ ...records[0], read: true, dateRead: "2026-02-31" }], calibreIds: [2] }],
+    ["one Calibre id sent twice", { records: [records[0], { ...records[0], title: "Piranesi Again" }], calibreIds: [2] }],
   ])("answers 400 for %s and writes nothing", async (_name, body) => {
     const res = await post(body);
     expect(res.status).toBe(400);
@@ -331,6 +333,15 @@ describe("what Calibre owns of a book (D-87, D-90)", () => {
     ]));
     expect(result.report.skipped).toEqual([{ reason: "repeats a title and author", calibreId: 11, title: "Mistborn" }]);
     expect(await sql`SELECT id, word_count FROM books`).toEqual([{ id: "mistborn", word_count: 200000 }]);
+  });
+
+  it("skips a book removed in the Ledger and lists it, never creating it again", async () => {
+    await sql`UPDATE books SET deleted_at = now() WHERE id = 'mistborn'`;
+    const result = await sync(payloadOf([{ calibreId: 1, title: "Mistborn", authors: ["Brandon Sanderson"], words: 1 }]));
+    expect(result.report.skipped).toEqual([{ reason: "removed in the Ledger", calibreId: 1, title: "Mistborn" }]);
+    expect(result.holdings).toEqual([]);
+    expect(await sql`SELECT id, word_count, deleted_at IS NOT NULL AS removed FROM books`)
+      .toEqual([{ id: "mistborn", word_count: 200000, removed: true }]);
   });
 
   it("skips a comic and lists it", async () => {
