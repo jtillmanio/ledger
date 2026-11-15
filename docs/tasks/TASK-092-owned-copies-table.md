@@ -1,14 +1,14 @@
 ---
 id: TASK-092
 title: 5.17 What you own (1 of 3) — the owned_copies table, its write and undo, and the Owned filter's query
-status: Ready
+status: In progress
 depends_on: [TASK-047, TASK-029, TASK-043]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 8d31c4a
 ---
 
 # TASK-092 — 5.17 What you own (1 of 3) — the owned_copies table, its write and undo, and the Owned filter's query
@@ -72,9 +72,36 @@ Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Data model § 4.1 row 5.17 marked Built (migration 0028, TASK-092) (approved at plan)
+- Candidate decision: the Owned filter's Physical, Audiobook and Ebook list Unlisted books, Not owned doesn't (owner, at TASK-092's plan gate, 2026-11-15) (approved at plan)
+- TASK-093 note: the route contract, `listBooks`'s `owned` option, the row's `owned` field and the Unlisted rule (approved at plan)
+- TASK-094 note: the paste writes its rows through `setOwned` / the owned route, and its undo deletes them (approved at plan)
+- `.claude/rules/schema.md` bullet for `owned_copies` (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-15. At the plan gate the owner approved the table as proposed (D-132's shape, no other columns, in `CATALOG_TABLES`) and chose: an owned filter of `physical`, `audio` or `ebook` lists Unlisted books (as a search does); `none` leaves them out (as *Everything* does).
+
+**Steps**
+
+1. Tests first: `test/owned-copies.test.ts` (new), extend `test/export-tables.test.ts` and `test/comics-load.test.ts`; confirm they fail.
+2. `src/db/schema.ts`: `ownedCopies` — `book_id text NOT NULL → books.id ON DELETE CASCADE`, `format text NOT NULL CHECK IN ('physical','audio')`, PK `(book_id, format)`, no `user_id`. `npm run db:generate` → `drizzle/0028_owned_copies.sql` + meta; `npm run test:db:reset`.
+3. `src/db/export-tables.ts`: `owned_copies` in `CATALOG_TABLES`.
+4. `src/db/writes.ts`: `setOwned(bookId, format, owned)` — one transaction: the book must be live, else `null`; then insert `ON CONFLICT DO NOTHING` or delete that row; answers the prior boolean for the undo.
+5. `src/app/api/books/owned/route.ts` (new): `POST { bookId, format, owned: boolean }` → `{ ok, prior }`; the undo posts `owned: prior`. 400 bad format / missing id / non-boolean `owned`; 404 missing or soft-deleted book; 401 without a session. Inside the passcode gate.
+6. `src/db/queries.ts` `listBooks`: `owned?: 'physical' | 'audio' | 'ebook' | 'none'` (Ebook = `calibre_id IS NOT NULL`; Not owned = none of the three); physical/audio/ebook bring Unlisted in, `none` doesn't; combines with every filter and sort. `BookRow.owned: ('physical'|'audio'|'ebook')[]`, in that order.
+7. `docs/03-data-model.md` § 4.1 row 5.17 → Built (migration 0028, TASK-092).
+
+**Files**: `src/db/schema.ts`, `drizzle/0028_owned_copies.sql`, `drizzle/meta/*`, `src/db/export-tables.ts`, `src/db/writes.ts`, `src/app/api/books/owned/route.ts` (new), `src/db/queries.ts`, `test/owned-copies.test.ts` (new), `test/export-tables.test.ts`, `test/comics-load.test.ts` (not in Files likely touched: its every-table check), `docs/03-data-model.md` (not in Files likely touched: the § 4.1 row).
+
+**Test strategy**
+
+- AC-2: `test/owned-copies.test.ts` › the toggle — one row per format, idempotent repost, undo leaves none, the other format survives an undo.
+- AC-3: same file › refusals — 400 (`ebook`, `paper`, missing bookId) and 404 (missing, soft-deleted), table unchanged; 401 without a session, nothing written; the proxy matcher gates `/api/books/owned` and redirects a cookieless request.
+- AC-4: `test/export-tables.test.ts` — no `user_id`, in `CATALOG_TABLES`, `GET /api/export` returns the seeded rows.
+- AC-5 / AC-1 data clauses: `test/owned-copies.test.ts` › the filter — the AC's five fixtures plus an Unlisted physical book; exact ids per value, several-format book in each, soft-deleted in none, each value with `status: 'read'` + `sort: 'title'`, the rows' `owned` arrays.
+
+**Risks**: `test/query-budget.test.ts` / `test/perf.test.ts` may time `listBooks`; the new lookups are primary-key probes.
 
 ## Review log
 

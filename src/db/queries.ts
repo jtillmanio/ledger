@@ -519,7 +519,15 @@ export type BookRow = {
   pending: boolean;
   /** Its reads by eye and its listens (task 1.23, D-85), from book_reads: *Read 2× · Listened 1×*. */
   reads: number; listens: number;
+  /** What you own of it (task 5.17, D-132), in this order: `physical` and `audio` from
+   * owned_copies, `ebook` when Calibre has it (`calibre_id`, D-90); empty for none. */
+  owned: OwnedKind[];
 };
+
+/** The Library's *Owned* filter (task 5.17, D-132): *Physical · Audiobook · Ebook · Not owned*. */
+export const OWNED_FILTERS = ["physical", "audio", "ebook", "none"] as const;
+export type OwnedFilter = (typeof OWNED_FILTERS)[number];
+export type OwnedKind = Exclude<OwnedFilter, "none">;
 
 /** `year` is a finished or planned year; `noYear` is the read books that have
  * an undated read (R2-08). A book is under every year it was read in, and under
@@ -529,16 +537,24 @@ export type BookRow = {
  * search or `status: "unlisted"`, its own chip: *Everything*, the genre and the
  * year chips leave it out. `genre` is a whole path at any level, any case: a
  * book is under it when `book_genre_levels` puts it there (task 4.5, D-98), so
- * `Fantasy` finds a book tagged only `Fantasy.Epic Fantasy`. */
+ * `Fantasy` finds a book tagged only `Fantasy.Epic Fantasy`. `owned` is what you
+ * own of it (task 5.17, D-132): `physical` and `audio` read owned_copies, `ebook`
+ * is a `calibre_id`, `none` is none of the three; anything else filters nothing.
+ * Physical, Audiobook and Ebook list Unlisted books too, as a search does (they
+ * are books you have); Not owned leaves them out, as *Everything* does (owner, at
+ * TASK-092's plan gate). */
 export async function listBooks(
   userId: string,
   opts: {
     status?: string; genre?: string; year?: number; noYear?: boolean; q?: string; level?: ToReadLevel;
     /** The Library's order (task 2.2e, D-110): a name from `SORTS` and `asc` or `desc`; anything else is Series. */
     sort?: string; dir?: string;
+    owned?: OwnedFilter;
   } = {},
 ): Promise<WithTotal<BookRow>[]> {
   const { status = null, genre = null, year = null, noYear = false, level = null } = opts;
+  const owned = (OWNED_FILTERS as readonly string[]).includes(opts.owned ?? "") ? opts.owned! : null;
+  const ownedHasUnlisted = owned !== null && owned !== "none";
   // An empty search box is no search: it must not bring the Unlisted books in.
   const q = opts.q?.trim() || null;
   const { sort, dir } = parseSort(opts.sort, opts.dir);
@@ -564,6 +580,9 @@ export async function listBooks(
            st.rating,
            pl.plan_year,
            COALESCE(rc.reads, 0) AS reads, COALESCE(rc.listens, 0) AS listens,
+           array_remove(ARRAY[CASE WHEN own.physical THEN 'physical' END,
+                              CASE WHEN own.audio THEN 'audio' END,
+                              CASE WHEN b.calibre_id IS NOT NULL THEN 'ebook' END], NULL) AS owned,
            COUNT(*) OVER ()::int AS total
     FROM books b
     LEFT JOIN authors a      ON a.id = b.author_id
@@ -595,11 +614,19 @@ export async function listBooks(
       SELECT MIN(pp.year) AS plan_year FROM plan_period pp
       WHERE pp.book_id = b.id AND pp.user_id = ${userId}
     ) pl ON true
+    -- What you own on paper and by ear (task 5.17): primary-key probes, never stored on the book.
+    LEFT JOIN LATERAL (
+      SELECT COALESCE(bool_or(oc.format = 'physical'), false) AS physical,
+             COALESCE(bool_or(oc.format = 'audio'), false) AS audio
+      FROM owned_copies oc
+      WHERE oc.book_id = b.id
+    ) own ON true
     WHERE b.deleted_at IS NULL
       -- The Reading chip is every read in progress, by eye or by ear (task 1.23).
       AND (${status}::text IS NULL OR COALESCE(st.status,'to_read') = ${status}
            OR (${status} = 'reading' AND st.status = 'listening'))
-      AND (${status}::text IS NOT NULL OR ${q}::text IS NOT NULL OR st.status IS DISTINCT FROM 'unlisted')
+      AND (${status}::text IS NOT NULL OR ${q}::text IS NOT NULL OR ${ownedHasUnlisted}::boolean
+           OR st.status IS DISTINCT FROM 'unlisted')
       AND (${genre}::text  IS NULL
            OR EXISTS (SELECT 1 FROM book_genre_levels l
                       WHERE l.book_id = b.id AND lower(l.genre COLLATE "default") = lower(${genre})))
@@ -619,6 +646,12 @@ export async function listBooks(
       AND (${level}::text  IS NULL
            OR EXISTS (SELECT 1 FROM to_read_level l
                       WHERE l.user_id = ${userId} AND l.book_id = b.id AND l.level = ${level}))
+      -- The Owned filter (task 5.17, D-132): the ebook is Calibre's, never a row.
+      AND (${owned}::text IS NULL
+           OR (${owned} = 'physical' AND own.physical)
+           OR (${owned} = 'audio' AND own.audio)
+           OR (${owned} = 'ebook' AND b.calibre_id IS NOT NULL)
+           OR (${owned} = 'none' AND NOT own.physical AND NOT own.audio AND b.calibre_id IS NULL))
     ORDER BY ${sql.unsafe(libraryOrder(sort, dir))}
     LIMIT 500
   `;
