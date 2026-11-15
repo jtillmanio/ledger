@@ -1,14 +1,14 @@
 ---
 id: TASK-082
 title: 4.4 Sync with Calibre (2 of 3) — npm run calibre:sync, both ways, by hand or weekly
-status: Ready
+status: In progress
 depends_on: [TASK-081]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 7957946
 ---
 
 # TASK-082 — 4.4 Sync with Calibre (2 of 3) — npm run calibre:sync, both ways, by hand or weekly
@@ -76,9 +76,36 @@ shows when the last run is 8 days old and not when it is 6.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- TASK-083's *Calibre* page labels the log's `skippedColumns` as "missing, or held until the books cutover": before 1.26 the command sends `#read` and `#date_read` as skipped while `CALIBRE_SYNC_READS` is off (approved at plan).
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-15, with these answers: (1) reads held until 1.26 behind `CALIBRE_SYNC_READS`; (2) the settings below; (3) the Check's "one Unlisted book with one `read_events` row" is tested as D-153 reads it (created at Read with that one read); (4) the merged worktrees removed, this one on `ledger_test_2`.
+
+**Steps**
+
+1. `etl/calibre.py`: split `read_library` so one temp copy of `metadata.db` can be read by a caller's function (`with_copy(source, fn)`); `read_library` keeps its behaviour.
+2. `etl/calibre_sync.py` (new), `py etl/calibre_sync.py`:
+   - settings from `--env` (default `.env`): `CALIBRE_LIBRARY`, `APP_PASSCODE`, and the new `CALIBRE_SYNC_URL` (default `http://localhost:3000`), `CALIBRE_SERVER_URL` (default `http://localhost:8080`), `CALIBREDB` (default `calibredb` on PATH, else `C:\Program Files\Calibre2\calibredb.exe`), `CALIBRE_SYNC_READS` (default off); column lookup names as calibre.py's flags (`--date-column`, `--read-column`, …) plus `--status-column #ledger_status`, `--owned-column #owned`.
+   - reads the copy: calibre.py's `records()` plus `#ledger_status` and `#owned`, and which write-back columns the library lacks.
+   - signs in (`POST /api/login`, the passcode form, keeping `rt_session` from the 303), sends every record each run to `POST /api/calibre/sync` (the route applies only what changed, and the log's *what went out* stays complete), with `missingColumns` = the columns the library lacks, plus `#read` and `#date_read` while `CALIBRE_SYNC_READS` is off (printed as held until the books cutover, 1.26).
+   - writes `report.out` with one `calibredb set_metadata <id> --field "#col:value" …` per book: through `--with-library <server>#<library id>` when `CALIBRE_SERVER_URL` answers, else `--library-path <folder>`. `#date_read` is the `--date-column` (the owner's `#read_date`); an exact or approximate finish is written as its stored day at noon Eastern (it reads back as the same day), a `none` finish clears it; `#owned` is the formats comma-joined.
+   - then the backfill: `POST /api/books/backfill { dryRun: false, isbns: { bookId: ISBN } }` from the holdings and Calibre's ISBNs, again with `after: next` while `next` is set, waiting `retryIn` on `stopped`; a 503 (no token) is printed, not fatal. The backfill isn't part of the sync's log entry.
+   - exits non-zero, writing nothing to Calibre, when the app is unreachable, the passcode is refused or the sync answers non-200; a failed `calibredb` call is listed and exits non-zero; a missing column is named and skipped, exit 0.
+3. `scripts/calibre-sync-schedule.ps1` (new): `schtasks /Create /TN "Ledger Calibre sync" /SC WEEKLY … /TR <npm run calibre:sync in the repo> /F` (a second registration replaces it); `-Schtasks <path>` for a fake, `-WhatIf`; `-Shortcut` writes the desktop shortcut. *Revised in Phase 2:* the task's `/TR` runs this script with `-Run`, which runs `npm run calibre:sync` in the repo appended to `%LOCALAPPDATA%\Ledger\calibre-sync.log` (no nested quoting inside `/TR`, and no extra file).
+4. `package.json`: `calibre:sync` = `py etl/calibre_sync.py --date-column "#read_date"`.
+5. Docs: `.claude/rules/schema.md` and `docs/03-data-model.md` 2.19 (the write-back is real), `docs/COMMANDS.md`, `.env.example` and `docs/SERVICES.md` (the four new settings, names only), `docs/OWNER-CHECKLIST.md` (content server with unauthenticated local writes, the two columns, the weekly registration and shortcut, `CALIBRE_SYNC_READS=true` at 1.26).
+
+**Files**: `etl/calibre_sync.py`, `etl/test_calibre_sync.py`, `test/calibre-sync-command.test.ts`, `test/fixtures/fake-calibredb.mjs`, `scripts/calibre-sync-schedule.ps1`, `test/calibre-sync-schedule.test.ts`, `test/fixtures/fake-schtasks.ps1` (new); `etl/calibre.py`, `package.json`, `.env.example`, `docs/SERVICES.md`, `docs/COMMANDS.md`, `docs/OWNER-CHECKLIST.md`, `.claude/rules/schema.md`, `docs/03-data-model.md`. Not in *Files likely touched*: the two fakes and the scheduler test. 15 files, kept whole (owner): most are tests, fixtures and docs the entry puts in the same PR; no schema.
+
+**Test strategy**
+
+- AC-1, AC-2, AC-3: `test/calibre-sync-command.test.ts` (TEST database): builds the four-book fixture library in a temp folder (`node:sqlite`), serves the real login, sync and backfill route handlers on 127.0.0.1, runs the Python command twice with `CALIBRE_SYNC_READS=true` and the fake `calibredb` (which writes the fixture's `metadata.db`); asserts the Ledger rows, the values written into `metadata.db`, one log row per run (the second empty, nothing written), a missing `#owned` and a missing `#ledger_status` named and skipped with exit 0, the server flag when a fake content server answers and `--library-path` when not, and a refused passcode or unreachable app exiting non-zero with no write.
+- AC-2's "never opens the library's own file": `etl/test_calibre_sync.py` patches `sqlite3.connect`; plus the date and field formatting and the held-reads columns.
+- AC-4: `test/calibre-sync-schedule.test.ts` runs the script under pwsh / powershell.exe against `test/fixtures/fake-schtasks.ps1` twice: one task, running `npm run calibre:sync` only; `-WhatIf` calls nothing.
+- AC-5: `npm run verify:docs` and a grep.
+
+**Risks**: real `calibredb` and the content server are never run in a test (fakes); the first real run writes `#ledger_status` and `#owned` for every book, one `calibredb` call each (minutes); `node:sqlite` needs Node 22.13+.
 
 ## Review log
 

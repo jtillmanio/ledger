@@ -276,6 +276,26 @@ tick them.
       dropped. On deck now puts a book with no Calibre genre in a last
       *No genre* section with no chip, and a chosen genre hides it. Roadmap
       item text isn't edited on a task branch, so the line is yours to change.
+- [ ] Set up the Calibre sync, `npm run calibre:sync` (from TASK-082, 4.4,
+      branch `task/4.4-calibre-sync-command`). In Calibre: create two columns
+      (Preferences → Add your own columns): `#ledger_status` (text) and
+      `#owned` (comma-separated text, like tags); a missing one is named and
+      skipped. Turn on the content server (Preferences → Sharing over the net:
+      *Start server automatically*, port 8080) and, under *Advanced*, *Allow
+      un-authenticated local connections to make changes*, so the sync can
+      write while the Calibre window is open. In `.env`, set
+      `CALIBRE_SYNC_URL` to the app the sync should talk to (empty is local
+      `npm run dev`); see `.env.example` and `docs/SERVICES.md`. Run it once by
+      hand against the dev app with Calibre closed, then open Calibre:
+      `#ledger_status` and `#owned` match the Ledger. Then register the weekly
+      run and the desktop shortcut once: `powershell -NoProfile
+      -ExecutionPolicy Bypass -File scripts/calibre-sync-schedule.ps1
+      -Shortcut` (re-running replaces the task; its log is
+      `%LOCALAPPDATA%\Ledger\calibre-sync.log`).
+- [ ] At the books cutover (1.26), set `CALIBRE_SYNC_READS=true` in the env
+      file the sync uses (from TASK-082, 4.4): until then the sync writes no
+      `#read` or `#read_date` into Calibre, because extract still loads
+      Calibre's reads (D-87) and a read the Ledger lacks would clear Calibre's.
 
 ## Approvals from follow-ups
 

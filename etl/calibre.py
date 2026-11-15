@@ -114,19 +114,26 @@ def library_path(arg: str | None, env: Path) -> Path:
     return db
 
 
-def read_library(source: Path, columns: dict[str, str]) -> list[dict]:
-    """Every record in a temp copy of metadata.db, in Calibre's id order."""
+def with_copy(source: Path, read):
+    """`read(db)` over a temp copy of metadata.db, opened read-only; the
+    library's own file is only copied, never opened (4.4's sync reads its
+    write-back columns from the same copy)."""
     folder = Path(tempfile.mkdtemp(prefix="ledger-calibre-"))
     try:
         copy = folder / "metadata.db"
         shutil.copyfile(source, copy)
         db = sqlite3.connect(copy.resolve().as_uri() + "?mode=ro", uri=True)
         try:
-            return records(db, columns)
+            return read(db)
         finally:
             db.close()
     finally:
         shutil.rmtree(folder, ignore_errors=True)
+
+
+def read_library(source: Path, columns: dict[str, str]) -> list[dict]:
+    """Every record in a temp copy of metadata.db, in Calibre's id order."""
+    return with_copy(source, lambda db: records(db, columns))
 
 
 def custom_column(db, lookup: str | None, required: bool) -> tuple[dict, dict] | None:

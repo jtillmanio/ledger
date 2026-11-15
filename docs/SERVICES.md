@@ -29,7 +29,7 @@ variables were not checked from here: compare them by hand with
 | [Hardcover](#hardcover) | Book metadata, replacing Open Library (D-94) | hardcover.app account | `HARDCOVER_API_TOKEN` | Free: 60 a minute, 5,000 a day | In use (ETL, 1.14b; *Add books* search, 1.4f) |
 | [Open Library](#open-library) | Nothing since 1.4f: *Add books* and the ETL ask Hardcover; its code stays until 6.19 | None | None | Free | Retiring in 6.19 |
 | [Marvel Fandom wiki](#marvel-fandom-wiki) | Story titles Metron lacks | None | None | Free | In use (ETL only) |
-| [Calibre](#calibre) | Word counts, series, read dates from your ebook library | None: a local app | `CALIBRE_LIBRARY` (a folder path, not a secret) | Free | In use (ETL only) |
+| [Calibre](#calibre) | Word counts, series, read dates from your ebook library | None: a local app | `CALIBRE_LIBRARY` (a folder path, not a secret); the sync's `CALIBRE_SYNC_URL`, `CALIBRE_SERVER_URL`, `CALIBREDB`, `CALIBRE_SYNC_READS` | Free | In use (ETL; the sync, 4.4) |
 | [Google Sheets](#google-sheets) | `Comics.xlsx` and `Books.xlsx`, the record until cutover | Your Google account | None: exported by hand | Free | Until cutover (1.26) |
 | [TMDB](#later-tmdb-musicbrainz) | Films and TV (Phase 8) | Not created yet | `TMDB_API_KEY` | Free, non-commercial | Later |
 | [MusicBrainz](#later-tmdb-musicbrainz) | Music (Phase 9) | None | None | Free | Later |
@@ -72,6 +72,10 @@ to be changed in both.
 | `METRON_USERNAME`, `METRON_PASSWORD` (or `METRON_API_TOKEN`) | Metron backfill; *Add issues* search | ✓ | — | — | Production (and Preview, to search on a preview) | Your metron.cloud login |
 | `HARDCOVER_API_TOKEN` | Hardcover lookups (1.14b: `enrich:books`, `calibre`'s series check); *Add books* search (1.4f); the in-app backfill (4.2) | ✓ | — | — | Production (and Preview, to search on a preview) | hardcover.app → your account → the API page |
 | `CALIBRE_LIBRARY` | The Calibre library folder (not secret) | ✓ | — | — | — | The folder holding `metadata.db` |
+| `CALIBRE_SYNC_URL` | The app `npm run calibre:sync` signs in to (4.4; not secret) | ✓ (empty: `http://localhost:3000`) | — | — | — | The app's URL: local dev, a preview or production |
+| `CALIBRE_SERVER_URL` | Calibre's content server on your PC, which the sync writes through while it answers (not secret) | ✓ (empty: `http://localhost:8080`) | — | — | — | Calibre → Preferences → Sharing over the net |
+| `CALIBREDB` | Where `calibredb` is (not secret) | ✓ (empty: on PATH, else `C:\Program Files\Calibre2`) | — | — | — | Calibre's install folder |
+| `CALIBRE_SYNC_READS` | `true` lets the sync write the Ledger's reads into Calibre | `false` | — | — | — | You set it at the books cutover (1.26) |
 | `TMDB_API_KEY` | Phase 8 | Empty | — | — | From Phase 8 | themoviedb.org → account settings |
 
 ## GitHub
@@ -205,6 +209,13 @@ to be changed in both.
 - **What uses it:** `npm run calibre` (`etl/calibre.py`) reads a temporary copy
   and never writes the library. It needs the **Count Pages** plugin's word-count
   column and the `#read_date` column.
+- `npm run calibre:sync` (`etl/calibre_sync.py`, task 4.4) reads the same copy,
+  sends it to the app (`CALIBRE_SYNC_URL`, signed in with `APP_PASSCODE`), and
+  writes the Ledger's read flag, date read, status and owned formats back with
+  `calibredb` (`CALIBREDB`): through the content server (`CALIBRE_SERVER_URL`)
+  while the Calibre window is open, else in the library folder. Nothing is
+  exposed to the internet: the server is on localhost. The reads wait for
+  `CALIBRE_SYNC_READS=true` (1.26).
 
 ## Google Sheets
 
