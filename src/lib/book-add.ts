@@ -5,7 +5,7 @@
 import { MAX_FIELD } from "@/lib/book-parse";
 import { normalizeLine } from "@/lib/bulk-parse";
 import { quarterName } from "@/lib/format";
-import type { AddedEntry, Destination } from "@/db/writes";
+import type { AddedEntry, Destination, OwnedFormat } from "@/db/writes";
 
 /** `reading_settings.words_per_page`'s column default, for a user with no settings row (architecture § Metadata sources: pages × 275). */
 export const DEFAULT_WORDS_PER_PAGE = 275;
@@ -19,16 +19,23 @@ export const MAX_POSITION = 100_000;
 
 /**
  * Where the screen says an add is going: Someday, On deck (task 1.7), a year or a quarter (task 2.3,
- * one `period` value: `2027` or `2027-Q3`), or a shelf by id and name.
+ * one `period` value: `2027` or `2027-Q3`), a shelf by id and name, or a format you own
+ * (*Physical copy*, *Audiobook*: *Paste a list* only, task 5.17).
  */
 export type Target =
   | { kind: "someday" } | { kind: "on_deck" }
   | { kind: "period"; period: string }
-  | { kind: "shelf"; shelfId: string; name: string };
+  | { kind: "shelf"; shelfId: string; name: string }
+  | { kind: "owned"; format: OwnedFormat };
 
-/** *Someday*, *On deck*, *Q3 2027*, *Cosmere*: the target's name on the screen. */
+/** The owned destinations' names (task 5.17): the Library's *Owned* filter calls them *Physical* and *Audiobook*. */
+export const OWNED_NAMES: Record<OwnedFormat, string> = { physical: "Physical copy", audio: "Audiobook" };
+/** The formats *Paste a list* offers, in Add to's order (writes.ts's OWNED_FORMATS, which the browser can't import). */
+export const OWNED_CHOICES = Object.keys(OWNED_NAMES) as OwnedFormat[];
+
+/** *Someday*, *On deck*, *Q3 2027*, *Cosmere*, *Physical copy*: the target's name on the screen. */
 export const targetName = (t: Target) => (t.kind === "someday" ? "Someday" : t.kind === "on_deck" ? "On deck"
-  : t.kind === "period" ? quarterName(t.period) : t.name);
+  : t.kind === "period" ? quarterName(t.period) : t.kind === "owned" ? OWNED_NAMES[t.format] : t.name);
 
 /** *Add to Someday*, *Add to On deck*, *Add to Cosmere*: what every result's primary button says. */
 export const addTo = (t: Target) => `Add to ${targetName(t)}`;
@@ -36,7 +43,8 @@ export const addTo = (t: Target) => `Add to ${targetName(t)}`;
 /** What a request sends for the screen's target. */
 export const destinationOf = (t: Target): Destination =>
   (t.kind === "shelf" ? { kind: "shelf", shelfId: t.shelfId }
-    : t.kind === "period" ? { kind: "period", period: t.period } : { kind: t.kind });
+    : t.kind === "period" ? { kind: "period", period: t.period }
+      : t.kind === "owned" ? { kind: "owned", format: t.format } : { kind: t.kind });
 
 /**
  * An add's undo, from the screen (task 1.4c, AC-5): rejects when it couldn't,
@@ -62,11 +70,22 @@ export const SPLIT_PERIOD_KEYS = ["year", "quarter", "month"] as const;
 /** True when an object carries a year, a quarter or a month as a value of its own. */
 export const splitsPeriod = (o: Record<string, unknown>) => SPLIT_PERIOD_KEYS.some((k) => k in o);
 
-/** The destination a request names, or undefined when it names none properly. Missing means Someday. */
-export function parseDestination(raw: unknown): Destination | undefined {
+/** What a 400 says a destination may be; `owned` adds the paste's formats (task 5.17). */
+export const destinationShapes = ({ owned = false } = {}) =>
+  "destination is { kind: 'someday' }, { kind: 'on_deck' }, { kind: 'period', period: '2027-Q1' or '2027' }"
+  + (owned ? ", { kind: 'shelf', shelfId } or { kind: 'owned', format: 'physical' or 'audio' }" : " or { kind: 'shelf', shelfId }");
+
+/**
+ * The destination a request names, or undefined when it names none properly. Missing means Someday.
+ * A format you own (task 5.17) counts only where the caller says so: *Paste a list* and its undo.
+ */
+export function parseDestination(raw: unknown, { owned = false } = {}): Destination | undefined {
   if (raw === undefined || raw === null) return { kind: "someday" };
   if (typeof raw !== "object") return undefined;
   const d = raw as Record<string, unknown>;
+  if (owned && d.kind === "owned") {
+    return d.format === "physical" || d.format === "audio" ? { kind: "owned", format: d.format } : undefined;
+  }
   if (d.kind === "someday") return { kind: "someday" };
   if (d.kind === "on_deck") return { kind: "on_deck" };
   // A year or a quarter (task 2.3): one `period` value, and nothing beside it that splits it.

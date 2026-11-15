@@ -258,7 +258,9 @@ Release, test isolation) and the Hard rules a reviewer checks.
   *Everything* leaves it out (its own chip, a search and the *Physical*,
   *Audiobook* and *Ebook* owned filters list it; D-152). The progress
   views count it unread. Only an undo writes `unlisted` (and the Calibre
-  import, 1.18): a status write never sets it (`SETTABLE_STATUSES`).
+  import, 1.18, and a paste to *Physical copy* or *Audiobook*, which creates
+  its new books Unlisted, task 5.17, D-152): a status write never sets it
+  (`SETTABLE_STATUSES`).
   *Add to Someday*, or an add to Someday or On deck, moves it to `to_read`;
   a shelf leaves it Unlisted. No CHECK constrains the column.
 - **Blocks group runs inside a track; eras section issues inside a run.** Both
@@ -304,8 +306,12 @@ Release, test isolation) and the Hard rules a reviewer checks.
   `owned_copies(book_id, format)`, `format` `physical` or `audio`, one row per
   format you own, whatever the book's status (owning an audiobook is not
   listening to it); no `user_id`, never a column on `books`. The ebook is
-  `books.calibre_id` being set (D-90), never a row. Written only through
-  `setOwned` in `src/db/writes.ts`: not owning a format any more deletes its
+  `books.calibre_id` being set (D-90), never a row. Written through
+  `setOwned` in `src/db/writes.ts`, and by *Paste a list* to *Physical copy*
+  or *Audiobook* (`addBooks` through `writeDestination`: a row once, a book
+  that has the format keeps its row and it isn't the paste's) with its undo
+  (`undoOwned`, which deletes only the rows the paste wrote; task 5.17). Not
+  owning a format any more deletes its
   row (it is no catalog row), and a soft-deleted book takes no writes and is
   in no owned filter. `load` empties it through `books`' `CASCADE`; extract
   writes nothing to it.

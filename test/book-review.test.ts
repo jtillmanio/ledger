@@ -116,6 +116,45 @@ describe("a book you have (AC-4)", () => {
   });
 });
 
+// Task 5.17: *Physical copy* and *Audiobook* mark what you own, whatever the book's status.
+describe("to a format you own (task 5.17)", () => {
+  const owned = (text: string, given: [string, string | null, BookAnswer][], format: "physical" | "audio", choices: Choices = {}) => {
+    const answers: BookAnswers = new Map(given.map(([t, a, ans]) => [bookKey(t, a), ans]));
+    return buildBookReview(parseBooks(text), { answers, choices, owned: format });
+  };
+
+  it("adds a book you have with any status, counted, and says it marks it owned", () => {
+    const text = "The Name of the Wind - Patrick Rothfuss\nDune - Frank Herbert\nHyperion - Dan Simmons";
+    const given: [string, string | null, BookAnswer][] = [
+      ["The Name of the Wind", "Patrick Rothfuss", { match: { ...WIND, status: "read" }, near: null }],
+      ["Dune", "Frank Herbert", { match: { bookId: "dune", title: "Dune", author: "Frank Herbert", status: "reading" }, near: null }],
+      ["Hyperion", "Dan Simmons", { match: { bookId: "hyperion", title: "Hyperion", author: "Dan Simmons", status: null }, near: null }],
+    ];
+    const r = owned(text, given, "physical");
+    expect(r.rows.map((x) => x.why)).toEqual(Array(3).fill("In your library: marks it as owned on paper."));
+    expect(r.rows.map((x) => x.groups[0].options.map((o) => o.id))).toEqual(Array(3).fill(["add", "drop"]));
+    expect(r.writes).toEqual([{ line: 1, use: WIND.bookId }, { line: 2, use: "dune" }, { line: 3, use: "hyperion" }]);
+    expect(r.count).toBe(3);
+    expect(owned(text, given, "audio").rows[0].why).toBe("In your library: marks the audiobook as yours.");
+    // Dropped, it writes nothing.
+    const dropped = owned(text, given, "physical", { [r.rows[0].key]: "drop" });
+    expect(dropped.writes.map((w) => "use" in w && w.use)).toEqual(["dune", "hyperion"]);
+    expect(dropped.count).toBe(2);
+  });
+
+  it("creates a new line at Unlisted, and counts Use that on a book with a status", () => {
+    const r = owned("Golden Son - Pierce Brown", [["Golden Son", "Pierce Brown", none]], "physical");
+    expect(r.rows[0].why).toBe("New: creates the book, Unlisted.");
+    expect(r.count).toBe(1);
+    const first = owned("The Name of the Wint - Patrick Rothfuss",
+      [["The Name of the Wint", "Patrick Rothfuss", near(0.78, "read")]], "audio");
+    const used = owned("The Name of the Wint - Patrick Rothfuss",
+      [["The Name of the Wint", "Patrick Rothfuss", near(0.78, "read")]], "audio", { [first.rows[0].key]: "use" });
+    expect(used.writes).toEqual([{ line: 1, use: WIND.bookId }]);
+    expect(used.count).toBe(1);
+  });
+});
+
 describe("a malformed line", () => {
   it("is an error, invalid, and dropped", () => {
     const r = review("(Mistborn #1) - Brandon Sanderson", []);

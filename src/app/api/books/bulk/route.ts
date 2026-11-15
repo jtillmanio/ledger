@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiUserId, unauthorized } from "@/lib/auth";
-import { MAX_POSITION, parseDestination, text } from "@/lib/book-add";
+import { destinationShapes, MAX_POSITION, parseDestination, text } from "@/lib/book-add";
 import { MAX_LINES } from "@/lib/book-parse";
 import { bookMatches } from "@/db/queries";
 import { addBooks, type BookItem } from "@/db/writes";
@@ -16,8 +16,9 @@ export const runtime = "nodejs";
  *   author, or the closest title at similarity ≥ 0.4.
  * - POST `{ items, destination? }`: the confirm, in one transaction. An item is
  *   a line to create, `{ title, author, series, position }`, or `{ use: bookId }`.
- *   The destination is *Add to*'s (Someday when absent). The answer is what the
- *   undo sends back to `DELETE /api/books`.
+ *   The destination is *Add to*'s (Someday when absent), or a format you own,
+ *   `{ kind: 'owned', format: 'physical' | 'audio' }` (task 5.17). The answer
+ *   is what the undo sends back to `DELETE /api/books`.
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -48,11 +49,11 @@ export async function POST(req: Request) {
     if (!title || !author || series === undefined || !okPosition) return undefined;
     return { title, author, series, position: series ? position : null };
   });
-  const destination = parseDestination(body?.destination);
+  // A format you own (task 5.17) is a paste's destination: a matched book gets its row, a new one is Unlisted with it.
+  const destination = parseDestination(body?.destination, { owned: true });
   if (!items || !destination) {
     return bad(`items is a list of 1 to ${MAX_LINES}: { title, author, series, position } or { use }; `
-      + "destination is { kind: 'someday' }, { kind: 'on_deck' }, { kind: 'period', period: '2027-Q1' or '2027' } "
-      + "or { kind: 'shelf', shelfId }");
+      + destinationShapes({ owned: true }));
   }
   const result = await addBooks(userId, items, destination);
   if (!result.ok) {
