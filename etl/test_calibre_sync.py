@@ -148,6 +148,29 @@ class Writer(unittest.TestCase):
         with mock.patch.object(cs, "server_answers", return_value=False):
             self.assertEqual(cs.library_option("http://localhost:8080", folder), ["--library-path", str(folder)])
 
+    def test_empty_settings_are_the_defaults(self):
+        # As .env.example ships them: load_env puts "" in the environment.
+        empty = {"CALIBRE_SYNC_URL": "", "CALIBRE_SERVER_URL": "", "CALIBREDB": "", "CALIBRE_SYNC_READS": "false"}
+        self.assertEqual(cs.settings(empty), {"url": "http://localhost:3000", "server": "http://localhost:8080",
+                                              "calibredb": "", "reads": False})
+        self.assertEqual(cs.settings({})["server"], "http://localhost:8080")
+        self.assertEqual(cs.settings({"CALIBRE_SERVER_URL": " http://localhost:9090 ", "CALIBRE_SYNC_READS": "true"}),
+                         {"url": "http://localhost:3000", "server": "http://localhost:9090", "calibredb": "",
+                          "reads": True})
+
+    def test_calibredb_gets_no_secrets(self):
+        with mock.patch.dict("os.environ", {"DATABASE_URL": "postgres://x", "APP_PASSCODE": "p",
+                                            "HARDCOVER_API_TOKEN": "t", "SESSION_SECRET": "s", "PATH": "/bin"}):
+            env = cs.child_env()
+            with mock.patch("subprocess.run") as run:
+                run.return_value = mock.Mock(returncode=0, stdout="", stderr="")
+                cs.write_back([{"calibreId": 1, "title": "T", "column": "#read", "to": True}], LOOKUPS,
+                              ["calibredb"], ["--library-path", "L"])
+        for k in ("DATABASE_URL", "APP_PASSCODE", "HARDCOVER_API_TOKEN", "SESSION_SECRET"):
+            self.assertNotIn(k, env)
+            self.assertNotIn(k, run.call_args.kwargs["env"])
+        self.assertEqual(env["PATH"], "/bin")
+
     def test_a_down_server_does_not_answer(self):
         self.assertFalse(cs.server_answers("http://127.0.0.1:9"))
 

@@ -225,6 +225,14 @@ def field_value(column: str, value) -> str:
     return value or ""
 
 
+SECRET_NAME = re.compile(r"DATABASE_URL|PASSCODE|TOKEN|SECRET|PASSWORD|API_KEY", re.I)
+
+
+def child_env() -> dict:
+    """The environment calibredb gets: without the secrets load_env read from .env."""
+    return {k: v for k, v in os.environ.items() if not SECRET_NAME.search(k)}
+
+
 def write_back(out: list[dict], lookups: dict[str, str], command: list[str], where: list[str]) -> list[str]:
     """One `calibredb set_metadata` per book; the failures, as lines."""
     by_book: dict[int, list[dict]] = {}
@@ -236,7 +244,7 @@ def write_back(out: list[dict], lookups: dict[str, str], command: list[str], whe
         for w in writes:
             args += ["--field", f"{lookups[w['column']]}:{field_value(w['column'], w['to'])}"]
         try:
-            r = subprocess.run(args, capture_output=True, text=True)
+            r = subprocess.run(args, capture_output=True, text=True, env=child_env())
         except OSError as e:
             failed.append(f"{writes[0]['title']}: calibredb couldn't start ({e}); set CALIBREDB to its path")
             continue
@@ -301,9 +309,19 @@ def backfill(app: App, isbns: dict[str, str], sleep=time.sleep) -> int:
     return 0
 
 
+def settings(env) -> dict:
+    """The sync's settings; an empty value (as .env.example ships them) is the default."""
+    value = lambda k: (env.get(k) or "").strip()  # noqa: E731
+    return {"url": value("CALIBRE_SYNC_URL") or DEFAULT_URL,
+            "server": value("CALIBRE_SERVER_URL") or DEFAULT_SERVER,
+            "calibredb": value("CALIBREDB"),
+            "reads": value("CALIBRE_SYNC_READS").lower() in ("1", "true", "yes")}
+
+
 def run(args) -> int:
     eb.load_env(Path(args.env))
     env = os.environ
+    conf = settings(env)
     folder = (args.library or env.get("CALIBRE_LIBRARY", "")).strip()
     if not folder:
         print("calibre:sync: no library: pass --library <folder>, or set CALIBRE_LIBRARY", file=sys.stderr)
@@ -312,14 +330,14 @@ def run(args) -> int:
     if not source.exists():
         print(f"calibre:sync: {source} not found", file=sys.stderr)
         return 1
-    reads = env.get("CALIBRE_SYNC_READS", "").strip().lower() in ("1", "true", "yes")
+    reads = conf["reads"]
     lookups = {"#read": args.read_column, "#date_read": args.date_column,
                "#ledger_status": args.status_column, "#owned": args.owned_column}
     columns = {"words": args.words_column, "date": args.date_column, "read": args.read_column,
                "type": args.type_column, "superseries": args.superseries_column,
                "subseries": args.subseries_column, "pages": args.pages_column, "genre": args.genre_column}
 
-    print(f"calibre:sync <- {Path(folder)} -> {env.get('CALIBRE_SYNC_URL') or DEFAULT_URL}")
+    print(f"calibre:sync <- {Path(folder)} -> {conf['url']}")
     print("reading metadata.db (from a temp copy) …")
     records, missing = read_library(source, columns, lookups)
     print(f"  read {len(records)} books")
@@ -333,7 +351,7 @@ def run(args) -> int:
                   "(CALIBRE_SYNC_READS=true at 1.26)")
         skipped += held
 
-    app = App(env.get("CALIBRE_SYNC_URL") or DEFAULT_URL, env.get("APP_PASSCODE", ""))
+    app = App(conf["url"], env.get("APP_PASSCODE", ""))
     try:
         app.sign_in()
         code, result = app.post("/api/calibre/sync", {
@@ -355,11 +373,13 @@ def run(args) -> int:
         print(line)
 
     status = 0
-    if report["out"]:
-        where = library_option(env.get("CALIBRE_SERVER_URL", DEFAULT_SERVER).strip(), Path(folder))
-        print(f"writing {len(report['out'])} values into Calibre "
+    # The app leaves a skipped column out of `out`; dropped here too, so a held read is never written.
+    out = [w for w in report["out"] if w["column"] not in skipped]
+    if out:
+        where = library_option(conf["server"], Path(folder))
+        print(f"writing {len(out)} values into Calibre "
               + ("through its content server" if where[0] == "--with-library" else "in the library folder") + " …")
-        failed = write_back(report["out"], lookups, calibredb_command(env.get("CALIBREDB", "").strip()), where)
+        failed = write_back(out, lookups, calibredb_command(conf["calibredb"]), where)
         for f in failed:
             print(f"  not written: {f}", file=sys.stderr)
         if failed:

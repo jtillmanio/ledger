@@ -77,6 +77,7 @@ shows when the last run is 8 days old and not when it is 6.
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
 - TASK-083's *Calibre* page labels the log's `skippedColumns` as "missing, or held until the books cutover": before 1.26 the command sends `#read` and `#date_read` as skipped while `CALIBRE_SYNC_READS` is off (approved at plan).
+- From schema-reviewer: the write-back loses a finish's precision. If the owner's date-read column displays a year alone, Calibre's value reads back as July 1st `approximate` and the route (`src/db/calibre-sync.ts`, `out("#date_read", …)`) compares days, so an exact Ledger finish differs and is rewritten every run. Compare by the column's display precision, or say so on the *Calibre* page.
 
 ## Plan
 
