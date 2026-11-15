@@ -1,7 +1,7 @@
 ---
 id: TASK-091
 title: 3.4b Rank a book when you finish it (2b of 3) — the Library's year chips go
-status: In progress
+status: Review
 depends_on: [TASK-076]
 size: M
 model: sonnet
@@ -29,7 +29,7 @@ The Library stops drawing year chips and *No year*: a year's reading, and a read
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves *the Library renders no year chip*. TASK-075 and TASK-077 prove the `npm test` clauses, TASK-076 the other browser clauses): `npm test`: placing a new read into a year of six ranked
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves *the Library renders no year chip*. TASK-075 and TASK-077 prove the `npm test` clauses, TASK-076 the other browser clauses): `npm test`: placing a new read into a year of six ranked
 reads with scripted answers takes at most 3 picks and leaves ranks 1–7
 contiguous, and its undo restores the six as they were; *Skip* writes no rank;
 a book read in two years holds a rank in each; moving a book from rank 12 to
@@ -38,7 +38,7 @@ the order. In the browser (0.11), a past year lists its first ten, a divider,
 then every other book read that year, with none collapsed; an unranked read
 shows under *Not ranked yet*; a read with no date shows under *No year*; and the
 Library renders no year chip. The up → down → up migration test passes.
-- [ ] AC-2: `/books/list` renders no year chip and no *No year* chip, `?year=2024` is ignored, and the *Finished* sort still orders by finish date.
+- [x] AC-2: `/books/list` renders no year chip and no *No year* chip, `?year=2024` is ignored, and the *Finished* sort still orders by finish date.
 
 ## Out of scope
 
@@ -63,9 +63,10 @@ Library renders no year chip. The up → down → up migration test passes.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- `docs/01-product.md` § Owner additions: B10's "(… the year chips)" and B36's status *planned* are fixed once the chips are gone (approved at plan)
-- Roadmap 3.4b ticked at close-out: TASK-075, -076, -077 and this task all Done (approved at plan)
-- The ticked roadmap entries that still name the chips (1.5's check, 4.5's text) stay as written: a ticked entry is history and its text is never edited (approved at plan; not tracked)
+- B10's "(… the year chips)" now reads "Top books' year switcher" and B36's status is *shipped*, since the chips are gone (approved at plan) → docs/01-product.md § The owner's list, Books (fixed in this PR)
+- Roadmap 3.4b ticked: TASK-075, -076, -077 and this task are all Done or in Review (approved at plan) → docs/05-roadmap.md § 3.4b (ticked in this PR), with the task list's Done cell → docs/06-tasklist.md § M14 (ticked in this PR)
+- The ticked roadmap entries that still name the chips (1.5's check, 4.5's text) and prose naming the removed reads (`yearSummary` in docs/05-roadmap.md, `readWithoutYear` in docs/CLAUDE-CODE-PROMPTS.md, R2-08's fix column in docs/review/LEDGER.md) stay as written → not tracked: a ticked entry and a findings ledger are history and their text is never edited (approved at plan)
+- The Library can no longer be filtered by plan year (the removed `year` option also matched `plan_period`) → not tracked: the task's own Context says that match goes with the option (D-122), and the plan rail has its own year pages
 
 ## Plan
 
@@ -102,7 +103,7 @@ Approved by the owner 2026-11-15. Planned on Opus; implemented on Sonnet (the ta
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL(1: lint, an unused mock argument in test/year-chips.test.tsx) → R2 PASS | CI R1 PASS (832947d, every project) | Audit R1 PASS | Spec R1 APPROVE (two notes taken: a redundant test dropped, a comment fixed) | Schema R1 APPROVE | UI R1 PASS (AC-1 to AC-4 at 360, 390, 412, 768, 1024, 1280; the skeleton not seen in the browser, covered by library-sort.spec.ts' skeleton height test) | Round 2: no reviewer re-run, the fixes touched one test and a views.sql comment only.
 
 ## Blocked
 
@@ -110,7 +111,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0

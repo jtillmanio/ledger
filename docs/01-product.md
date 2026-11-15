@@ -236,7 +236,7 @@ B, C, W and M numbers are cited across the docs and stay.
 | B7 | Series, authors, universes and reading-order shelves I'm in the middle of | planned | Derived from the progress views plus a `shelf_progress` view; authors only when followed. Since 2026-11-02, a page of its own for every medium, *In the middle of · Completed*, and only a *Reading* follow puts a book series, author, universe or shelf in the middle (D-108, D-109). roadmap 5.12 (product § Owner additions) |
 | B8 | Date started and finished | partial | The finish is a date since 1.5. The start is new: `started_on` with its precision on `book_status` and `read_events`. roadmap 1.17, before cutover |
 | B9 | Import metadata from Calibre | planned | Word counts (Count Pages, `stated`), series and index, reads and the books only Calibre has, with Calibre as the source of truth and every disagreement reported (D-73, D-87); tags, summary and ISBN once their columns are approved (D-88). roadmap 1.18, before cutover |
-| B10 | Books read each year, and a log of what I read | partial | Year totals ship (`books_by_year`, the year chips); 6.2 charts them; `/activity` is the log. roadmap 6.17 |
+| B10 | Books read each year, and a log of what I read | partial | Year totals ship (`books_by_year`, Top books' year switcher); 6.2 charts them; `/activity` is the log. roadmap 6.17 |
 | B11 | Add books: title and author as two fields | partial | *By hand* has them. *Paste a list* gains a tab-separated form and a review with separate cells. roadmap 1.4e |
 | B12 | Series are links | planned | Every series name links to `/books/series/[id]`, which lists the books in order, with gaps. roadmap 5.9 |
 | B13 | Year chip: the count reads apart from the year | bug | Fixed outside the task list, on `fix/year-chip-count` |
@@ -262,7 +262,7 @@ B, C, W and M numbers are cited across the docs and stay.
 | B33 | Type a setting's number, and hold to step faster | planned | 2026-11-05. roadmap 2.0b, D-123 |
 | B34 | Physically owned books, told apart from the ebook library | planned | 2026-11-05. A toggle, a line in the details, a Library filter. roadmap 5.17, D-121; audiobooks too since B41 |
 | B35 | On deck by genre | planned | 2026-11-05. Filtered and grouped, not ranked (D-37 stands). roadmap 4.5b, D-124 |
-| B36 | Top books shows the year's whole list, reorderable, and replaces the Library's year chips | planned | 2026-11-05. roadmap 3.4b, D-122 |
+| B36 | Top books shows the year's whole list, reorderable, and replaces the Library's year chips | shipped | 2026-11-05. roadmap 3.4b, D-122 |
 | B38 | Cut the books over first, the comics later | planned | 2026-11-08. Books cutover 1.26, comics cutover 1.28, a comics-only load between them (1.29); the books work of Next before comics. D-128, D-129 |
 | B39 | Page counts from Hardcover, words still from Calibre | planned | 2026-11-08. Calibre's pages are ebook estimates, far above print. roadmap 1.14c, D-130 |
 | B40 | Edit a read's start and finish any time, and be asked when setting Reading or Read | planned | 2026-11-08. Every read, rereads included; the Library, Now and the status screens. roadmap 1.17b, D-131 |
