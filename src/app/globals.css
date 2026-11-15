@@ -1759,6 +1759,34 @@ p.muted[id^="dnd-help"]{margin:.5rem 0 0}
   .top-ctl{grid-area:ctl;position:sticky;top:calc(var(--bar-h) + 1rem)}
   .top-list{grid-area:list}
 }
+/* *Rank it* on a *Not ranked yet* row (TASK-077): grey, 44px on the phone like the row's handle and ⋯. */
+.qrow .btn.sm.toprank{align-self:center}
+@media (max-width:767px){ .qrow .btn.sm.toprank{min-height:44px} }
+
+/* --- This or that (task 3.4b, D-101, TASK-077; mockup `thisorthat`) ---------------------
+   The sorter sheet: the read being placed and one ranked read, side by side, each card a
+   44px+ button; a mono count of the picks; Skip grey at the foot (DNF and Skip are grey).
+   A new item fades in, opacity only, and not at all under reduced motion. */
+.tot-ask{margin:.5rem 0 .75rem;font-size:.9375rem;color:var(--ink)}
+.tot-pair{display:flex;align-items:stretch;gap:.5rem}
+.tot-card{flex:1 1 0;min-width:0;min-height:44px;display:flex;padding:.75rem;font:inherit;text-align:left;color:var(--ink);
+  background:var(--surface);border:1px solid var(--faint-deco);border-radius:var(--r-md);cursor:pointer}
+.tot-card.sk{height:9.5rem;border:0}
+.tot-card:focus-visible{outline:2px solid transparent;box-shadow:var(--focus-ring)}
+.tot-card[aria-disabled="true"]{cursor:progress}
+@media (hover:hover) and (pointer:fine){ .tot-card:not([aria-disabled="true"]):hover{background:var(--raise)} }
+.tot-in{display:flex;flex-direction:column;gap:.25rem;min-width:0;width:100%}
+@media (prefers-reduced-motion:no-preference){ .tot-in{animation:tot-fade var(--dur-2) var(--ease-out)} }
+@keyframes tot-fade{from{opacity:0}to{opacity:1}}
+.tot-in .cv{width:48px;height:72px;margin-bottom:.25rem;border-radius:var(--r-cover);background:var(--sunk);object-fit:cover}
+.tot-title{font-weight:600;font-size:.9375rem;line-height:1.25rem;overflow-wrap:anywhere}
+.tot-sub{font-size:.75rem;line-height:1rem;color:var(--muted);overflow-wrap:anywhere}
+.tot-tag{margin-top:auto;padding-top:.25rem;font-size:.75rem;color:var(--muted)}
+.tot-or{align-self:center;font-size:.75rem;color:var(--muted)}
+.tot-count{margin:.625rem 0 0;min-height:1rem;font-size:.75rem;color:var(--muted)}
+.tot-foot{margin-top:.875rem}
+/* *Rank it in 2026* in the finish's toast: its own row, first, above *Now reading*. */
+.toast-rank + .toast-offer{padding-top:.25rem}
 .menu .opt.danger{color:var(--danger)}
 
 /* --- Status screens (task 1.9; STYLE_GUIDE §9 *Status tablist*, mockup `status`) ----

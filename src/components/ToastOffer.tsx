@@ -11,7 +11,9 @@ import type { OfferChip, UndoEntry } from "@/components/Undo";
  * offers to follow. Taking any chip writes, then pushes its own entry carrying
  * the chips left in both rows, which (one toast at a time) commits the finish;
  * focus stays in the toast when it was there. A chip that fails says so, with
- * Retry, and changed nothing.
+ * Retry, and changed nothing. Above both, a finish of a dated read carries
+ * *Rank it in 2026* (task 3.4b, TASK-077), which writes nothing: it opens *This
+ * or that* with itself as the opener.
  *
  * `Undo.tsx` loads this lazily, only when a toast carries an offer: drawn
  * inline, its code tipped every route's shared chunk into two and cost each a
@@ -33,6 +35,10 @@ export default function ToastOffer({ chips, push, fail, handBack, keepFocus }: {
 
   async function take(chip: OfferChip, button: HTMLElement) {
     if (taking) return;
+    if (chip.row === "rank") {
+      chip.open(button);
+      return;
+    }
     const rest = chips.filter((c) => c !== chip);
     const inside = button.closest(".toast")?.contains(document.activeElement) ?? false;
     setTaking(true);
@@ -48,20 +54,26 @@ export default function ToastOffer({ chips, push, fail, handBack, keepFocus }: {
     }
   }
 
+  const rank = chips.filter((c) => c.row === "rank");
   const now = chips.filter((c) => c.row === "now");
-  const keep = chips.filter((c) => c.row !== "now");
-  const button = (chip: OfferChip) => (
-    <button key={`${chip.row ?? "keep"}-${chip.label}-${chip.kind ?? ""}`} type="button" className="toast-chip"
-      aria-disabled={taking || undefined} onClick={(e) => void take(chip, e.currentTarget)}>
-      {chip.row === "now" && <span className="sr-only">Stop following </span>}
-      {chip.label}
-      {chip.kind && <span className="toast-chip-kind"> · {chip.kind}</span>}
-      {chip.row === "now" && <span className="toast-chip-x" aria-hidden="true"> ×</span>}
-    </button>
-  );
+  const keep = chips.filter((c) => c.row === undefined);
+  const button = (chip: OfferChip) => {
+    const kind = chip.row !== "rank" ? chip.kind : undefined;
+    return (
+      <button key={`${chip.row ?? "keep"}-${chip.label}-${kind ?? ""}`} type="button" className="toast-chip"
+        aria-disabled={taking || undefined} onClick={(e) => void take(chip, e.currentTarget)}>
+        {chip.row === "now" && <span className="sr-only">Stop following </span>}
+        {chip.label}
+        {kind && <span className="toast-chip-kind"> · {kind}</span>}
+        {chip.row === "now" && <span className="toast-chip-x" aria-hidden="true"> ×</span>}
+      </button>
+    );
+  };
 
   return (
     <>
+      {/* *Rank it in 2026* (task 3.4b): first, on a row of its own; it opens This or that. */}
+      {rank.length > 0 && <div className="toast-offer toast-rank">{rank.map(button)}</div>}
       {now.length > 0 && (
         <div className="toast-offer toast-now" role="group" aria-labelledby={nowId}>
           <span className="toast-offer-label" id={nowId}>Now reading</span>

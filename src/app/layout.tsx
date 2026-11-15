@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { preload } from "react-dom";
 import "./globals.css";
 import Shell from "@/components/nav/Shell";
+import { RankSorterProvider } from "@/components/RankSorter";
 import { UndoProvider } from "@/components/Undo";
 
 // Fonts are self-hosted @font-face rules in globals.css (D-40): no request
@@ -21,8 +22,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         {/* App-wide: the spine, the queue (1.10) and the add flows (1.3c, 1.4c)
-            all push onto the one undo stack (task 1.2). */}
-        <UndoProvider><Shell>{children}</Shell></UndoProvider>
+            all push onto the one undo stack (task 1.2). This or that (3.4b) is
+            one sorter for the app, opened from a finish's toast or Top books. */}
+        <UndoProvider><RankSorterProvider><Shell>{children}</Shell></RankSorterProvider></UndoProvider>
       </body>
     </html>
   );

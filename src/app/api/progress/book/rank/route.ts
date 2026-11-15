@@ -1,8 +1,39 @@
 import { NextResponse } from "next/server";
+import { rankSorterRead, type TopRead } from "@/db/queries";
 import { RefusedStatus, rankRead, undoRank, type RankChange, type RankRow, type RankTarget } from "@/db/writes";
 import { apiUserId, unauthorized } from "@/lib/auth";
+import { bookSub } from "@/lib/format";
 
 export const runtime = "nodejs";
+
+/** One read as *This or that* draws it (`src/components/RankSorter.tsx`). */
+export type SorterRead = {
+  readId: number | null; bookId: string; title: string; sub: string; cover: string | null; pending: boolean;
+  rank: number | null;
+};
+
+const sorterRead = (r: TopRead): SorterRead => ({
+  readId: r.read_id, bookId: r.book_id, title: r.title, sub: bookSub(r), cover: r.cover_url, pending: r.pending,
+  rank: r.year_rank,
+});
+
+/**
+ * What *This or that* needs to place a read (task 3.4b, D-101): `?readId=` the
+ * read, answered with its finish year and that year's ranked reads, best
+ * first: `{ year, read, ranked }`. A read with no date has no year to rank in:
+ * 400. A missing read, or one of a removed book: 404.
+ */
+export async function GET(req: Request) {
+  const userId = await apiUserId();
+  if (!userId) return unauthorized();
+  const param = new URL(req.url).searchParams.get("readId");
+  const readId = param !== null && /^\d+$/.test(param) ? Number(param) : NaN;
+  if (!isId(readId)) return bad("readId is a read's id");
+  const found = await rankSorterRead(userId, readId);
+  if (!found) return NextResponse.json({ error: "no such read" }, { status: 404 });
+  if (found.year === null) return bad("a read with no finish date has no year to rank in");
+  return NextResponse.json({ year: found.year, read: sorterRead(found.read), ranked: found.ranked.map(sorterRead) });
+}
 
 /** More rows than any year's reads: a change bigger than this isn't one `rankRead` answered. */
 const MAX_ROWS = 1000;

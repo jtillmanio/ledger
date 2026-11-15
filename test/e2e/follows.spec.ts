@@ -120,6 +120,8 @@ const bookRow = (page: Page, title: string) =>
 const toast = (page: Page) => page.locator(".toast");
 const nowRow = (page: Page) => toast(page).getByRole("group", { name: "Now reading" });
 const keepRow = (page: Page) => toast(page).getByRole("group", { name: "Keep going?" });
+/** A dated finish's *Rank it in <year>* (3.4b, TASK-077): first in the toast, on a row of its own. */
+const rankChip = (page: Page) => toast(page).getByRole("button", { name: /^Rank it in \d{4}$/ });
 
 async function openLibrary(page: Page) {
   await page.goto("/books/list?q=E2E%20Fo");
@@ -289,16 +291,18 @@ test("a past read logged from To read follows nothing and offers Keep going? chi
   expect(await contrastFailures(page)).toEqual([]);
   await screenshot(page, info, "finish-offer");
 
-  // By keyboard: F6 into the toast (Undo), Tab to the first chip, Enter takes it.
+  // By keyboard: F6 into the toast (Undo), Tab past *Rank it* (3.4b) to the first chip, Enter takes it.
   await page.keyboard.press("F6");
   await expect(toast(page).getByRole("button", { name: "Undo" })).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(rankChip(page)).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(keepRow(page).getByRole("button").first()).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(toast(page).locator(".toast-label")).toHaveText(`Reading ${SERIES.name}`);
   await expect.poll(follows).toMatchObject({ series: "reading" });
-  // Focus stays in the toast, on the first chip left.
-  await expect(keepRow(page).getByRole("button").first()).toBeFocused();
+  // Focus stays in the toast, on the first chip left: *Rank it*, which rides along, then the rest.
+  await expect(rankChip(page)).toBeFocused();
   await expect(keepRow(page).getByRole("button").first()).toHaveText(`${SUBSERIES.name} · subseries`);
 
   // The chip's Undo puts the follow back to Tracking; the finish stays.
@@ -331,17 +335,19 @@ test.describe("a finish from Reading follows (2.2h)", () => {
     expect(await contrastFailures(page)).toEqual([]);
     await screenshot(page, info, "finish-now-reading");
 
-    // F6 into the toast, Tab to the first Now reading chip, Enter turns the series off.
+    // F6 into the toast, Tab past *Rank it* (3.4b) to the first Now reading chip, Enter turns the series off.
     await page.keyboard.press("F6");
     await expect(toast(page).getByRole("button", { name: "Undo" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(rankChip(page)).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(nowRow(page).getByRole("button").first()).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(toast(page).locator(".toast-label")).toHaveText(`Not following ${SERIES.name}`);
     await expect(toast(page).locator(".toast-detail")).toHaveText("series · was reading");
     await expect.poll(follows).toEqual({ series: "off", subseries: "reading", universe: "reading", author: "reading" });
-    // The chips left ride along, focus on the first.
-    await expect(nowRow(page).getByRole("button").first()).toBeFocused();
+    // The chips left ride along, *Rank it* first, with focus on it.
+    await expect(rankChip(page)).toBeFocused();
     await expect(nowRow(page).getByRole("button")).toHaveCount(2);
     await expect(keepRow(page).getByRole("button")).toHaveCount(1);
 
@@ -380,12 +386,14 @@ test.describe("a finish from Reading follows (2.2h)", () => {
     await expect.poll(async () => (await follows()).series).toBe("tracking");
   });
 
-  test("at 360 the toast fits with a long series name and four chips (AC-6)", async ({ page }, info) => {
+  test("at 360 the toast fits with a long series name and four chips, and Rank it (AC-6)", async ({ page }, info) => {
     const long = "E2E Fo Series The Stormlight Archive Of Very Long Names Indeed";
     await withSql((sql) => sql`UPDATE book_series SET name = ${long} WHERE id = ${SERIES.id}`);
     await openLibrary(page);
     await finishInLibrary(page);
-    await expect(toast(page).locator(".toast-chip")).toHaveCount(4);
+    // Four follow chips, and the finish's *Rank it in <year>* (3.4b) above them.
+    await expect(toast(page).locator(".toast-chip")).toHaveCount(5);
+    await expect(rankChip(page)).toBeVisible();
     await toastSettled(page);
     const width = page.viewportSize()!.width;
     const box = (await toast(page).boundingBox())!;

@@ -1,4 +1,4 @@
-import type { OfferChip, UndoEntry } from "@/components/Undo";
+import type { FollowChip, UndoEntry } from "@/components/Undo";
 import type { FinishOffer, Grouping } from "@/db/queries";
 import type { FollowKind, FollowState, FollowValue } from "@/db/writes";
 
@@ -63,9 +63,9 @@ const shownKind = (k: FollowKind) => (k === "series" || k === "subseries" || k =
  * *Done with <name>* (it sets *Tracking*; D-43, the app asks), then each grouping
  * to set *Reading*. None, no chips.
  */
-export function offerChips(offer: FinishOffer | null | undefined): OfferChip[] {
+export function offerChips(offer: FinishOffer | null | undefined): FollowChip[] {
   if (!offer) return [];
-  const chip = (g: Grouping, state: FollowValue, label: string, kind?: string, row?: "now"): OfferChip => ({
+  const chip = (g: Grouping, state: FollowValue, label: string, kind?: string, row?: "now"): FollowChip => ({
     label, kind, row,
     take: async () => followEntry(g, state, await postFollow(g.kind, g.id, state)),
   });

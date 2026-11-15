@@ -9,6 +9,7 @@
 // can't be ranked. No rating is written: the rank is the only rating.
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireTestUrl } from "../scripts/lib/testdb.mjs";
+import { answer, done, next, start, type Answer } from "../src/lib/rank-insert";
 import { testSql, truncateAll } from "./db";
 
 const USER = "test-user";
@@ -184,6 +185,102 @@ describe("a book read in two years (roadmap 3.4b check, AC-1)", () => {
     expect(await ranking(2025)).toEqual(["a1:1", "twice:2", "a2:3", "a3:4", "a4:5", "a5:6"]);
     const ranks = await sql`SELECT id, year_rank FROM read_events WHERE book_id = 'twice' ORDER BY id`;
     expect(ranks.map((r) => [r.id, r.year_rank])).toEqual([[in2024, 1], [in2025, 2]]);
+  });
+});
+
+describe("placing a new read with This or that (roadmap 3.4b check, TASK-077 AC-1)", () => {
+  const SIX = [...BEFORE_2025, "a6:6"];
+  const getYear = (readId: unknown) => rank.GET(new Request(`http://test/api/progress/book/rank?readId=${readId}`));
+
+  beforeEach(async () => {
+    // 2025 holds six ranked reads: a6 joins a1–a5 at 6.
+    await sql`UPDATE read_events SET year_rank = 6 WHERE book_id = 'a6'`;
+    expect(await ranking(2025)).toEqual(SIX);
+  });
+
+  /**
+   * The sorter as the sheet runs it: the read's year from GET, then one scripted answer per pick
+   * against the ranked read the insertion asks about, then one POST of the rank it lands on, and
+   * none on a Skip. Answers which books it compared, and what it wrote.
+   */
+  async function place(readId: number, script: Answer[]) {
+    const { year, ranked } = await (await getYear(readId)).json() as { year: number; ranked: { bookId: string }[] };
+    let s = start(ranked.length);
+    const compared: string[] = [];
+    for (const said of script) {
+      if (done(s)) break;
+      compared.push(ranked[next(s)!].bookId);
+      s = answer(s, said);
+    }
+    const written = s.rank ? await (await setRank({ readId, rank: s.rank })).json() : null;
+    return { year, end: s, compared, change: written?.change };
+  }
+
+  it("six ranked reads place a seventh in at most 3 picks, where the answers say; ranks 1–7 stay contiguous", async () => {
+    const [, in2025] = await readsOf("twice");
+    // Better than a4, worse than a2, better than a3: third.
+    const { year, end, compared } = await place(in2025, ["new", "old", "new"]);
+    expect(year).toBe(2025);
+    expect(compared).toEqual(["a4", "a2", "a3"]);
+    expect(end.picks).toBeLessThanOrEqual(3);
+    expect(end.rank).toBe(3);
+    expect(await ranking(2025)).toEqual(["a1:1", "a2:2", "twice:3", "a3:4", "a4:5", "a5:6", "a6:7"]);
+    expect(await ranking(2024)).toEqual(BEFORE_2024);
+  });
+
+  it("better than every one lands first, worse than every one last: each in 3 picks or fewer", async () => {
+    const [, in2025] = await readsOf("twice");
+    const top = await place(in2025, ["new", "new", "new"]);
+    expect(top.end).toMatchObject({ rank: 1 });
+    expect(top.end.picks).toBeLessThanOrEqual(3);
+    expect((await ranking(2025))[0]).toBe("twice:1");
+    expect((await undoRank(top.change)).status).toBe(200);
+
+    const last = await place(in2025, ["old", "old", "old"]);
+    expect(last.end).toMatchObject({ rank: 7 });
+    expect(last.end.picks).toBeLessThanOrEqual(3);
+    expect(await ranking(2025)).toEqual([...SIX, "twice:7"]);
+  });
+
+  it("its undo restores the six as they were and leaves the new read unranked", async () => {
+    const [, in2025] = await readsOf("twice");
+    const { change } = await place(in2025, ["new", "old", "new"]);
+    expect((await undoRank(change)).status).toBe(200);
+    expect(await ranking(2025)).toEqual(SIX);
+    const [r] = await sql`SELECT year_rank FROM read_events WHERE id = ${in2025}`;
+    expect(r.year_rank).toBeNull();
+  });
+
+  it("Skip writes no rank, at the first pick or after some", async () => {
+    const [, in2025] = await readsOf("twice");
+    const before = await allReads();
+    for (const script of [["skip"], ["new", "skip"], ["old", "new", "skip"]] as Answer[][]) {
+      const { end, change } = await place(in2025, script);
+      expect(end.rank).toBeNull();
+      expect(change).toBeUndefined();
+      expect(await allReads()).toEqual(before);
+    }
+    expect(await ranking(2025)).toEqual(SIX);
+  });
+
+  it("GET answers the read's year and that year's ranked reads, best first; a read with no date is 400, a missing one 404", async () => {
+    const [in2024] = await readsOf("twice");
+    const res = await getYear(in2024);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.year).toBe(2024);
+    expect(body.read).toMatchObject({ readId: in2024, bookId: "twice", title: "Book twice", rank: null });
+    expect(body.ranked.map((r: { bookId: string; rank: number }) => `${r.bookId}:${r.rank}`)).toEqual(BEFORE_2024);
+
+    // A read already ranked is placed against the others, never against itself.
+    const own = await (await getYear(await readOf("b1"))).json();
+    expect(own.read).toMatchObject({ bookId: "b1", rank: 1 });
+    expect(own.ranked.map((r: { bookId: string }) => r.bookId)).toEqual(["b2"]);
+
+    expect((await getYear(await readOf("nodate"))).status).toBe(400);
+    expect((await getYear(999999)).status).toBe(404);
+    expect((await getYear("x")).status).toBe(400);
+    expect((await getYear("")).status).toBe(400);
   });
 });
 

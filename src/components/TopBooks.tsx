@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import Cover from "@/components/Cover";
 import { Headphones } from "@/components/nav/Icons";
+import { useRankSorter, type SorterRead } from "@/components/RankSorter";
 import ReorderList, { type MoveResult, type ReorderRow } from "@/components/ReorderList";
 import type { RankChange } from "@/db/writes";
 
@@ -36,8 +37,12 @@ async function rankCall(method: "POST" | "DELETE", body: unknown) {
   return res.json() as Promise<{ change?: RankChange }>;
 }
 
-/** What a row draws between its handle and its menu: the cover with its rank, the title, the line. */
-function Body({ r }: { r: TopRow }) {
+const sorterRead = (r: TopRow): SorterRead => ({
+  readId: r.readId, bookId: r.bookId, title: r.title, sub: r.sub, cover: r.cover, pending: r.pending, rank: r.rank,
+});
+
+/** What a row draws between its handle and its menu: the cover with its rank, the title, the line; an unranked row's *Rank it*. */
+function Body({ r, rank }: { r: TopRow; rank?: (opener: HTMLElement) => void }) {
   return (
     <>
       <span className="topcv">
@@ -56,6 +61,12 @@ function Body({ r }: { r: TopRow }) {
           </span>
         )}
       </span>
+      {/* *Not ranked yet*'s control (task 3.4b, TASK-077): the same This or that as a finish's toast. */}
+      {rank && r.rank === null && (
+        <button type="button" className="btn sec sm toprank" onClick={(e) => rank(e.currentTarget)}>
+          Rank it<span className="sr-only">: {r.title}</span>
+        </button>
+      )}
     </>
   );
 }
@@ -68,10 +79,21 @@ function Body({ r }: { r: TopRow }) {
  * lands (`/api/progress/book/rank`; the server clamps a place past the ranked
  * reads to the end), so moving an unranked read up ranks it, and its undo sends
  * the write's change back. A row's handle names its rank, or *not ranked yet*.
+ * Each unranked row also carries *Rank it* (TASK-077), which opens *This or
+ * that* (`RankSorter`) against the ranked reads this page draws.
  */
 export default function TopBooks({ rows, year }: { rows: TopRow[]; year: number }) {
+  const sorter = useRankSorter();
   const ranked = rows.filter((r) => r.rank !== null).length;
   const unranked = rows.length - ranked;
+
+  /** *Rank it*: This or that against the year's ranked reads as this page draws them. */
+  function rank(r: TopRow, opener: HTMLElement) {
+    sorter?.open({
+      readId: r.readId, bookId: r.bookId, title: r.title, year, tag: "Not ranked yet", opener,
+      subject: sorterRead(r), ranked: rows.filter((x) => x.rank !== null).map(sorterRead),
+    });
+  }
 
   async function move(id: string, to: number): Promise<MoveResult> {
     const row = rows.find((r) => r.id === id)!;
@@ -106,7 +128,7 @@ export default function TopBooks({ rows, year }: { rows: TopRow[]; year: number 
       marker={marker}
       label={`Best of ${year}`}
       help={TOP_HELP}
-      renderBody={(r) => <Body r={r} />}
+      renderBody={(r) => <Body r={r} rank={sorter ? (opener) => rank(r, opener) : undefined} />}
     />
   );
 }
