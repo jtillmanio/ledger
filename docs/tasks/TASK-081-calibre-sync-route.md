@@ -2,7 +2,7 @@
 id: TASK-081
 title: 4.4 Sync with Calibre (1 of 3) — the sync route: Calibre's changes in, the Ledger's back, each run logged
 status: Ready
-depends_on: [TASK-030, TASK-032, TASK-033, TASK-029, TASK-057]
+depends_on: [TASK-030, TASK-032, TASK-033, TASK-029, TASK-057, TASK-092]
 size: M
 model: opus
 autonomy: attended
@@ -26,7 +26,7 @@ The app can take what changed in Calibre since the last sync, apply it the way t
 - **Tags and ISBN need columns `books` doesn't have** (`books.subjects`, `books.isbn`; 3.5 and 4.2 also ask for them). Whichever task comes first asks; **stop and ask at plan time** whether this one adds them or carries tags and ISBN as listed-not-stored until then.
 - **Reads.** From the books cutover on, the Ledger wins: a Calibre change to `#read` or `#date_read` since the last sync is overwritten (TASK-082 writes it) and listed. A book new to the Ledger takes Calibre's read as its first read, as 1.18 loads one (`read_events`, `format = 'text'`). Before 1.26 extract still loads Calibre's reads (D-87): the plan says what the sync may touch until then.
 - **Two new tables, and a stop-and-ask** (CLAUDE.md; `docs/03-data-model.md` § 4.1, row 4.4): where each sync run's log is kept (when it ran, what came in, what went out, what waits) and where a decided near-spelling is remembered between syncs. Each joins `src/db/export-tables.ts` with no `user_id` (hard rules 3 and 7, D-91).
-- **5.17 has no task file yet** (D-132 proposes `owned_copies(book_id, format)`). The owned formats this route returns are 5.17's; its task joins `depends_on` when created, and is built before this one (the tasklist's order: 5.17 → 4.4).
+- **5.17 is TASK-092, TASK-093, TASK-094** (D-132 proposes `owned_copies(book_id, format)`). The owned formats this route returns are 5.17's; TASK-092, which builds the table, is in `depends_on`, and is built before this one (the tasklist's order: 5.17 → 4.4).
 - Data model: `docs/03-data-model.md` § 2. Decisions, 2.19; § 4.1. Architecture: `docs/02-architecture.md` § 5. Routes and data access, § 10. Metadata sources → Books.
 - Decisions: D-59, D-61, D-83, D-87, D-89, D-90, D-91, D-93, D-98, D-130, D-132, D-133. Hard rules 2, 3, 4, 5 and 7.
 - *From TASK-084 (4.2, PR #255):* the Hardcover backfill (`POST /api/books/backfill`, `src/db/backfill.ts`) fills `page_count`, `cover_url` and `published_year` only where they are NULL, because `books` has no column saying a count was typed (owner, 2026-11-13). So a book this route creates should get D-130's page order when it is created: a Calibre `#pages` estimate written here is never replaced by Hardcover's count later.
