@@ -4998,6 +4998,19 @@ it is converted.
   picks one, and Now and `/progress` match it; 2.2g's own Check still passes with
   its row and order assertions rewritten to the chosen drawing.
 
+- ☐ 6.22 **A row's `⋯` menu stays on screen** · S. From TASK-093 (5.17,
+  PR #266): on a 360px phone, a Library row near the bottom of the screen
+  opens its `⋯` menu (`src/components/Menu.tsx`, absolutely placed under the
+  button) past the bottom edge, so its last items, now *I own it on paper*
+  and *I own the audiobook*, are off-screen until you scroll. The shared
+  `Menu` opens upward when there isn't room below (or scrolls itself into
+  view), for every menu that uses it.
+  **Check:** (proposed; the owner agrees it by merging or edits it first)
+  browser test at 360×780: the `⋯` of the last Library row on screen opens
+  with every menu item's box inside the viewport and the first item focused;
+  a row at the top still opens downward; arrow keys, Esc and Tab behave as
+  before.
+
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M
 

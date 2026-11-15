@@ -138,6 +138,17 @@ export function bookSub(
   return [b.author, bookPlace(b)].filter(Boolean).join(" · ");
 }
 
+const OWNED_WORDS = { physical: "Physical", audio: "Audiobook", ebook: "Ebook" } as const;
+
+/**
+ * What you own of a book, as the Library row's sub-line ends (task 5.17, D-132):
+ * *Physical · Audiobook · Ebook*, as they apply, in `listBooks`'s order; empty
+ * for none. Only the Library says it (until 3.5's sheet), so it isn't part of `bookSub`.
+ */
+export function ownedWords(owned: readonly (keyof typeof OWNED_WORDS)[] | undefined): string {
+  return (owned ?? []).map((o) => OWNED_WORDS[o]).join(" · ");
+}
+
 /** A plan quarter as people say it: `2027-Q1` is `Q1 2027`. The period is the database's; this only reads it for display. */
 export function quarterName(period: string): string {
   const [year, q] = period.split("-");
