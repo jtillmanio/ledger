@@ -1,7 +1,7 @@
 ---
 id: TASK-092
 title: 5.17 What you own (1 of 3) — the owned_copies table, its write and undo, and the Owned filter's query
-status: Review
+status: Done
 depends_on: [TASK-047, TASK-029, TASK-043]
 size: M
 model: opus
