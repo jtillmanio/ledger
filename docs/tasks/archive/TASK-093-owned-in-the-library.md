@@ -1,7 +1,7 @@
 ---
 id: TASK-093
 title: 5.17 What you own (2 of 3) — the row menu's toggles, the sub-line and the Library's Owned filter
-status: Review
+status: Done
 depends_on: [TASK-092]
 size: M
 model: opus
