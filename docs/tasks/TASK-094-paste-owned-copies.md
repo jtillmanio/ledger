@@ -27,6 +27,7 @@ You can paste a list of books you own on paper, or as audiobooks, and the Ledger
 - **Not drawn yet** (the entry): the mockup's `add` frame gains the destinations before they are built, in this PR (`ui.redrawFiles`: `design/mockups.html`, `design/mockups-index.md`). Print it with `powershell -NoProfile -File scripts/screen.ps1 add`.
 - Design: `design/mockups.html` § `add`; `docs/04-design.md` § 10 The UX floor; `.claude/rules/ui.md` (every add surface opens on Search; *Paste a list · By hand* beside it).
 - Decisions: D-83, D-86, D-121, D-132. Hard rules 2, 3 and 4.
+- *From TASK-092 (5.17, PR #263):* built: `owned_copies(book_id, format)` with `OWNED_FORMATS` (`physical`, `audio`) and `setOwned` in `src/db/writes.ts`. `setOwned` opens its own transaction, so `addBooks` writes the paste's rows inside its one transaction (`INSERT ... ON CONFLICT DO NOTHING`) and keeps which rows it wrote, so that `undoAddBooks` deletes only those and leaves a row the book already had. A pasted book created at Unlisted shows under *Physical* (D-152).
 
 ## Acceptance criteria
 

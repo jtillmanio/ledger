@@ -197,6 +197,13 @@
       "when": 1794603335110,
       "tag": "0027_drop_books_genre",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1794722859322,
+      "tag": "0028_owned_copies",
+      "breakpoints": true
     }
   ]
 }

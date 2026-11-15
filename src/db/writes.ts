@@ -1,7 +1,7 @@
 import { and, between, desc, eq, gt, gte, inArray, isNotNull, isNull, like, ne, notInArray, or, sql } from "drizzle-orm";
 import {
   db, authors, books, bookSeries, bookStatus, inbox, issueProgress, issues, readEvents, readingPlan, readingSettings, runIssues,
-  planAcceptance, runQueue, runs, shelfBooks, seriesFollows, authorFollows, universeFollows, shelfFollows, subseriesFollows,
+  ownedCopies, planAcceptance, runQueue, runs, shelfBooks, seriesFollows, authorFollows, universeFollows, shelfFollows, subseriesFollows,
   shelves, sql as pg, volumeRules,
 } from "./index";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
@@ -2249,6 +2249,32 @@ export async function saveReadingSettings(userId: string, patch: SettingsPatch):
       wordsPerPage: readingSettings.wordsPerPage,
     });
   return row;
+}
+
+/** The formats you can own a copy in (task 5.17, D-132). The ebook is `books.calibre_id`, never a row. */
+export const OWNED_FORMATS = ["physical", "audio"] as const;
+export type OwnedFormat = (typeof OWNED_FORMATS)[number];
+
+/**
+ * I own it on paper / I own the audiobook (task 5.17, D-132): one toggle is one
+ * write, `owned` true adds the format's row (once: a second add changes
+ * nothing) and false deletes it, leaving the book's other format alone.
+ * Answers whether the book had the format before, which the undo sends back as
+ * `owned`; `null`, writing nothing, when the book is missing or soft-deleted.
+ * The book is read FOR SHARE so a removal can't land between the check and the
+ * write. Touches no status, plan or capacity.
+ */
+export async function setOwned(bookId: string, format: OwnedFormat, owned: boolean): Promise<boolean | null> {
+  return db.transaction(async (tx) => {
+    const [book] = await tx.select({ id: books.id }).from(books)
+      .where(and(eq(books.id, bookId), isNull(books.deletedAt))).for("share");
+    if (!book) return null;
+    const row = and(eq(ownedCopies.bookId, bookId), eq(ownedCopies.format, format));
+    const [had] = await tx.select({ bookId: ownedCopies.bookId }).from(ownedCopies).where(row);
+    if (owned) await tx.insert(ownedCopies).values({ bookId, format }).onConflictDoNothing();
+    else await tx.delete(ownedCopies).where(row);
+    return had !== undefined;
+  });
 }
 
 /** What can be followed (task 2.2c, D-108; the subseries, 2.2h): one narrow table each (data model 2.5e). */

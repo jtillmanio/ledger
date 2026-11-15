@@ -550,6 +550,21 @@ export const shelfFollows = pgTable("shelf_follows", {
   state: check("shelf_follows_state_check", sql`${t.state} IN ('tracking', 'reading')`),
 }));
 
+// What you own (task 5.17, D-132): a row is a copy of the book you own, on
+// paper or as an audiobook; a book can have neither, either or both, whatever
+// its status (owning an audiobook is not listening to it). The ebook side is
+// books.calibre_id being set (D-90), never stored here (hard rule 2). A fact
+// about your copy, not a column on books (hard rule 3), with no user_id
+// (D-91). Not owning it any more deletes the row: it is no catalog row, so
+// soft delete is the book's, and a soft-deleted book takes no writes.
+export const ownedCopies = pgTable("owned_copies", {
+  bookId: text("book_id").notNull().references(() => books.id, { onDelete: "cascade" }),
+  format: text("format").notNull(), // physical | audio
+}, (t) => ({
+  pk: primaryKey({ columns: [t.bookId, t.format] }),
+  format: check("owned_copies_format_check", sql`${t.format} IN ('physical', 'audio')`),
+}));
+
 // Following a subseries (task 2.2h, D-117): as shelf_follows, no user_id
 // (D-91). A finish follows it for you, so *Not following* is kept as 'off', as
 // on series_follows. subseries_progress counts what is read in it.
