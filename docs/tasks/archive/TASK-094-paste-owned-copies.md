@@ -1,7 +1,7 @@
 ---
 id: TASK-094
 title: 5.17 What you own (3 of 3) — Paste a list marks many: a destination for each format
-status: Review
+status: Done
 depends_on: [TASK-092, TASK-093, TASK-007, TASK-029]
 size: M
 model: opus
