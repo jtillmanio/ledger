@@ -28,6 +28,7 @@ From a Library row you can say you own the book on paper or as an audiobook, the
 - **TASK-091** (Draft) takes the Library's year chips away; whichever lands second rebases the filter rows.
 - Design: `design/mockups.html` § `blist`; `design/LedgerDesktop.dc.html` (desktop Library); `docs/04-design.md` § 10 The UX floor; `.claude/rules/ui.md` (DNF and grey stay grey: owning is not a state colour).
 - Decisions: D-83, D-90, D-110, D-121, D-132.
+- *From TASK-092 (5.17, PR #263):* built: `POST /api/books/owned` takes `{ bookId, format, owned }` (`format` `physical` or `audio`, `owned` a boolean) and answers `{ ok, prior }`; the toggle's undo posts `prior` back as `owned`. 400 for a bad body, 404 for a missing or soft-deleted book. `listBooks(userId, { owned })` takes `OWNED_FILTERS` (`physical`, `audio`, `ebook`, `none`, exported from `src/db/queries.ts`; anything else filters nothing), and each `BookRow` carries `owned: ('physical' | 'audio' | 'ebook')[]` in that order for the sub-line. The plan-gate answer (D-152): *Physical*, *Audiobook* and *Ebook* list Unlisted books, *Not owned* doesn't.
 
 ## Acceptance criteria
 

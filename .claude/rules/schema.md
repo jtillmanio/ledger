@@ -255,7 +255,8 @@ Release, test isolation) and the Hard rules a reviewer checks.
   `book_status.status = 'unlisted'`, a book you have but haven't put on your
   list. It is not a to-read level: `to_read_level` reads only `to_read`, so it has no level and
   is on no plan, status screen, dashboard or year total, and the master list's
-  *Everything* leaves it out (its own chip and a search list it). The progress
+  *Everything* leaves it out (its own chip, a search and the *Physical*,
+  *Audiobook* and *Ebook* owned filters list it; D-152). The progress
   views count it unread. Only an undo writes `unlisted` (and the Calibre
   import, 1.18): a status write never sets it (`SETTABLE_STATUSES`).
   *Add to Someday*, or an add to Someday or On deck, moves it to `to_read`;
@@ -299,6 +300,15 @@ Release, test isolation) and the Hard rules a reviewer checks.
   same PR (`USER_TABLES` if it has a `user_id`, which no new table does after
   D-91; `users` stays out, D-17);
   `test/export-tables.test.ts` fails on any table left out.
+- **What you own is a fact about your copy** (task 5.17, D-132, D-152).
+  `owned_copies(book_id, format)`, `format` `physical` or `audio`, one row per
+  format you own, whatever the book's status (owning an audiobook is not
+  listening to it); no `user_id`, never a column on `books`. The ebook is
+  `books.calibre_id` being set (D-90), never a row. Written only through
+  `setOwned` in `src/db/writes.ts`: not owning a format any more deletes its
+  row (it is no catalog row), and a soft-deleted book takes no writes and is
+  in no owned filter. `load` empties it through `books`' `CASCADE`; extract
+  writes nothing to it.
 - **Soft delete only.** `deleted_at IS NULL` on every read. A hard delete on
   `runs` cascades to issues and prereq edges. That includes `run_issues`
   (R3-06): removing an issue from a run soft-deletes the placement, because a

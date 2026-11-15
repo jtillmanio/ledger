@@ -1,7 +1,7 @@
 ---
 id: TASK-092
 title: 5.17 What you own (1 of 3) — the owned_copies table, its write and undo, and the Owned filter's query
-status: In progress
+status: Review
 depends_on: [TASK-047, TASK-029, TASK-043]
 size: M
 model: opus
@@ -31,7 +31,7 @@ The Ledger can record that you own a book on paper, as an audiobook, both or nei
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves, on the test database: each toggle's one row and its Undo, the export test, and the four filters' membership through `listBooks`, a book with several in each, a soft-deleted book in none, each combined with a status filter and a sort. TASK-093 proves the toggles in the browser, the reload and the screenshots; TASK-094 the paste): (proposed; the owner agrees it by merging or edits it first)
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves, on the test database: each toggle's one row and its Undo, the export test, and the four filters' membership through `listBooks`, a book with several in each, a soft-deleted book in none, each combined with a status filter and a sort. TASK-093 proves the toggles in the browser, the reload and the screenshots; TASK-094 the paste): (proposed; the owner agrees it by merging or edits it first)
 each toggle writes one `owned_copies` row with its format, Undo removes
 it, and the export test passes with the table. *Physical* lists only books
 with a `physical` row, *Audiobook* only books with an `audio` row, *Ebook*
@@ -41,10 +41,10 @@ each combines with a status filter and a sort, and the choice survives a
 reload. Pasting three lines to *Physical copy*, two matched and one new,
 writes three rows and one `unlisted` book, and Undo removes all of it.
 Screenshots at 360px and 1280px.
-- [ ] AC-2: Given a book with no owned row, when the route is posted `physical`, then `owned_copies` holds exactly one row `(book, 'physical')`; posting `physical` again leaves one row; posting the undo leaves none. The same for `audio`, and a book holding both keeps the other row when one is undone.
-- [ ] AC-3: The route answers 400 for a format other than `physical` or `audio` and 404 for a missing or soft-deleted book, and writes nothing in either case; a request without the passcode cookie gets the gate's answer and writes nothing.
-- [ ] AC-4: `owned_copies` has no `user_id` column, is listed in `src/db/export-tables.ts`, and `GET /api/export` returns its rows (`test/export-tables.test.ts`).
-- [ ] AC-5: Given four fixture books (one physical, one audio and with a `calibre_id`, one with all three, one with none) and a fifth soft-deleted with a `physical` row, `listBooks({ owned })` returns exactly the books the Check names for each of the four values, and `listBooks({ owned: 'physical', status: 'read', sort: 'title' })` returns only the read physical books in title order.
+- [x] AC-2: Given a book with no owned row, when the route is posted `physical`, then `owned_copies` holds exactly one row `(book, 'physical')`; posting `physical` again leaves one row; posting the undo leaves none. The same for `audio`, and a book holding both keeps the other row when one is undone.
+- [x] AC-3: The route answers 400 for a format other than `physical` or `audio` and 404 for a missing or soft-deleted book, and writes nothing in either case; a request without the passcode cookie gets the gate's answer and writes nothing.
+- [x] AC-4: `owned_copies` has no `user_id` column, is listed in `src/db/export-tables.ts`, and `GET /api/export` returns its rows (`test/export-tables.test.ts`).
+- [x] AC-5: Given four fixture books (one physical, one audio and with a `calibre_id`, one with all three, one with none) and a fifth soft-deleted with a `physical` row, `listBooks({ owned })` returns exactly the books the Check names for each of the four values, and `listBooks({ owned: 'physical', status: 'read', sort: 'title' })` returns only the read physical books in title order.
 
 ## Out of scope
 
@@ -72,11 +72,12 @@ Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Data model § 4.1 row 5.17 marked Built (migration 0028, TASK-092) (approved at plan)
-- Candidate decision: the Owned filter's Physical, Audiobook and Ebook list Unlisted books, Not owned doesn't (owner, at TASK-092's plan gate, 2026-11-15) (approved at plan)
-- TASK-093 note: the route contract, `listBooks`'s `owned` option, the row's `owned` field and the Unlisted rule (approved at plan)
-- TASK-094 note: the paste writes its rows through `setOwned` / the owned route, and its undo deletes them (approved at plan)
-- `.claude/rules/schema.md` bullet for `owned_copies` (approved at plan)
+- Data model § 4.1 row 5.17 marked Built (migration 0028, TASK-092) (approved at plan) → docs/03-data-model.md § 4.1 By task (fixed in this PR)
+- Candidate decision: the Owned filter's Physical, Audiobook and Ebook list Unlisted books, Not owned doesn't (owner, at the plan gate) (approved at plan) → docs/review/decisions.md § D-152
+- TASK-093 note: the route contract, `listBooks`'s `owned` option, the row's `owned` field and the Unlisted rule (approved at plan) → docs/tasks/TASK-093-owned-in-the-library.md § Context
+- TASK-094 note: the paste writes its rows inside `addBooks`'s transaction (`setOwned` opens its own) and its undo deletes only the rows it wrote (approved at plan) → docs/tasks/TASK-094-paste-owned-copies.md § Context
+- `.claude/rules/schema.md` bullet for `owned_copies`, and the Unlisted sentence names the owned filters (approved at plan) → .claude/rules/schema.md § What you own is a fact about your copy
+- Schema review (minor): `setOwned`'s `prior` comes from a read before the write, so two concurrent toggles of one book and format could answer a stale `prior`; the table stays right (primary key, `ON CONFLICT DO NOTHING`) → not tracked: single-user app, so two toggles of one row at once is not a real case; the reviewer marked it optional
 
 ## Plan
 
@@ -105,7 +106,7 @@ Approved by the owner 2026-11-15. At the plan gate the owner approved the table 
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 PASS (tsc, lint, test:no-e2e: 104 files) | CI R1 PASS (check, tests, e2e full 8/8, Vercel, Lighthouse, Claude review: no issues) | Spec R1 APPROVE | Schema R1 APPROVE (2 minor: concurrent `prior`, accepted; rules bullet, placed at close-out) | Audit R1 PASS
 
 ## Blocked
 
@@ -113,7 +114,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0 (the work moved to the worktree `.claude/worktrees/task-5.17-owned-copies` after the main checkout was switched to `main` mid-review; owner's choice)
