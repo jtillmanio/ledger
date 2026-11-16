@@ -1,7 +1,7 @@
 ---
 id: TASK-083
 title: 4.4 Sync with Calibre (3 of 3) — the Calibre page, and a line when the last sync is old
-status: In progress
+status: Review
 depends_on: [TASK-081, TASK-082, TASK-045, TASK-049]
 size: M
 model: sonnet
@@ -31,7 +31,7 @@ A *Calibre* page under Settings lists every sync run (when it ran, what came in,
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the browser clauses: the *Calibre* page lists the run, and the dashboard's line shows at 8 days and not at 6. TASK-081 and TASK-082 prove the run): with a
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the browser clauses: the *Calibre* page lists the run, and the dashboard's line shows at 8 days and not at 6. TASK-081 and TASK-082 prove the run): with a
 fixture library in a temp folder and the test database: four books, one
 matching a Ledger book with a changed title and word count, one the Ledger
 lacks and marked read, one whose `#date_read` was changed in Calibre after the
@@ -44,10 +44,10 @@ entry listing each change. A second run changes nothing on either side and
 logs that nothing changed. A missing `#owned` column is named and skipped. In
 the browser (0.11), the *Calibre* page lists the run, and the dashboard's line
 shows when the last run is 8 days old and not when it is 6.
-- [ ] AC-2: Given three logged runs, the *Calibre* page lists them newest first, each with its Eastern date and time and its counts in, out and waiting, and a run's details show each change by book; a run that changed nothing reads that it changed nothing.
-- [ ] AC-3: Given a last run 8 Eastern days before today, the books dashboard renders *Calibre last synced 8 days ago*, linking to the *Calibre* page; at 6 days and at 7 it renders no such line; no part of the line resolves to `--danger`.
-- [ ] AC-4: Settings links to the *Calibre* page, and a Ledger book with no `calibre_id` is listed there under *Not in Calibre*.
-- [ ] AC-5: The *Calibre* page and the dashboard line meet the UX floor (`docs/04-design.md` § 10. The UX floor): empty (no run yet), loading and error states drawn; every control a real button or link with a name, nothing under 24px and 44px on the phone; text 4.5:1 in both themes; axe reports no new violations; screenshots at 360px, 834px and 1280px, light and dark, and the dashboard with the line at every feel-pass width (360, 390, 412, 768, 1024, 1280) with reduced motion and reduced transparency (D-40).
+- [x] AC-2: Given three logged runs, the *Calibre* page lists them newest first, each with its Eastern date and time and its counts in, out and waiting, and a run's details show each change by book; a run that changed nothing reads that it changed nothing.
+- [x] AC-3: Given a last run 8 Eastern days before today, the books dashboard renders *Calibre last synced 8 days ago*, linking to the *Calibre* page; at 6 days and at 7 it renders no such line; no part of the line resolves to `--danger`.
+- [x] AC-4: Settings links to the *Calibre* page, and a Ledger book with no `calibre_id` is listed there under *Not in Calibre*.
+- [x] AC-5: The *Calibre* page and the dashboard line meet the UX floor (`docs/04-design.md` § 10. The UX floor): empty (no run yet), loading and error states drawn; every control a real button or link with a name, nothing under 24px and 44px on the phone; text 4.5:1 in both themes; axe reports no new violations; screenshots at 360px, 834px and 1280px, light and dark, and the dashboard with the line at every feel-pass width (360, 390, 412, 768, 1024, 1280) with reduced motion and reduced transparency (D-40).
 
 ## Out of scope
 
@@ -73,9 +73,12 @@ shows when the last run is 8 days old and not when it is 6.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Deciding a waiting near spelling on the *Calibre* page (*Merge* / *Separate*): an API route around `decideCalibrePair` (`src/db/writes.ts`), a client component and tests. This page only lists what waits; until the follow-up lands nothing in the app decides one. Planned: a new roadmap item or task beside 4.4 (approved at plan)
-- The write-back's lost finish precision (TASK-082's open question): a date-read column displaying a year alone reads back as July 1st `approximate`, so an exact Ledger finish is rewritten every run (`src/db/calibre-sync.ts`, `out("#date_read", …)`). Moot until `CALIBRE_SYNC_READS` is on; the route is TASK-082's, out of scope here. Planned: a note on `docs/05-roadmap.md` § 1.26 (approved at plan)
-- An author new to the Ledger on a created book: the report's `created` entries don't record whether the sync created the author, so the page can't flag a stray spelling without guessing. Needs the route to record it. Planned: a note on `docs/05-roadmap.md` § 4.4 (approved at plan)
+- Deciding a waiting near spelling on the *Calibre* page (*Merge* / *Separate*): an API route around `decideCalibrePair` (`src/db/writes.ts`), a client component and tests. This page only lists what waits; until the follow-up lands nothing in the app decides one → docs/05-roadmap.md § 4.6 (new, approved at plan; the Check is a proposal)
+- The write-back's lost finish precision (TASK-082's open question): a date-read column displaying a year alone reads back as July 1st `approximate`, so an exact Ledger finish is rewritten every run (`src/db/calibre-sync.ts`, `out("#date_read", …)`). Moot until `CALIBRE_SYNC_READS` is on; the route is TASK-082's, out of scope here → docs/tasks/TASK-061-books-cutover.md § Context (placement moved at close-out: 1.26 already has a task file, so the note is read where the work is; approved at plan for the roadmap entry)
+- An author new to the Ledger on a created book: the report's `created` entries don't record whether the sync created the author, so the page can't flag a stray spelling without guessing. Needs the route to record it → docs/05-roadmap.md § 4.6 (placement moved at close-out: 4.4 is ticked, so the note sits in the open item on the same page; approved at plan for 4.4)
+- The query budget's three changed lines (`/books` 12, `/settings` 3, `/settings/calibre` 4) need their reasons recorded in the performance budget, as `test/query-budget.test.ts` says → docs/02-architecture.md § Performance budget (approved at close-out)
+- Settings' *Calibre* row stacks its value under the name, as the built *Export everything* row does, where the mockup frame draws the value inline → not tracked: the build follows the existing row layout, and the mockup frame is the sketch
+- `calibreRuns()` reads and decompresses every stored report to count its lists, and has no limit; fine for a log that gains a row per sync (schema-reviewer, MINOR) → not tracked: accepted as is at one row a week; cap it or count in a view if the log ever grows large
 
 ## Plan
 
@@ -85,7 +88,7 @@ Approved 2026-11-16 at 4ab259b, with the recommended answer to each open questio
 
 ### Steps
 
-1. `src/db/queries.ts`: `calibreRuns()` (id, `ran_at`, and the in / out / waiting counts as `jsonb_array_length` of the report's lists, derived in SQL, never stored, hard rule 2; newest first; the reports themselves not loaded); `calibreRun(id)` (one run's report); `lastCalibreSync()` (the latest `ran_at`, or null); `notInCalibre()` (live books with `calibre_id IS NULL`, title order, with the author name; `deleted_at IS NULL`, hard rule 4).
+1. `src/db/queries.ts`: `calibreRuns()` (id, `ran_at`, and the in / out / waiting counts as `jsonb_array_length` of the report's lists, derived in SQL, never stored, hard rule 2; newest first; the reports themselves not loaded); `calibreReports(limit)` (the newest runs' reports, one read, not one per run) and `createdBookAuthors(limit)` (the authors, as they stand, of the books those runs created: both in the page's one wave); `lastCalibreSync()` (the latest `ran_at`, or null); `notInCalibre()` (live books with `calibre_id IS NULL`, title order, with the author name; `deleted_at IS NULL`, hard rule 4).
 2. `src/lib/calibre-log.ts` (new, pure): `syncLine(ranAt, now)` → *Calibre last synced N days ago* when the Eastern days between `easternDay(ranAt)` and `today(now)` (`daysBetween`, `src/components/BooksNow.tsx`) exceed 7, else null, and null for no run; `byBook(report)` groups `in` and `out` by book (title, changes, writes); labels for each field and column; the skipped columns' label *missing, or held until the books cutover*.
 3. `src/app/settings/calibre/page.tsx` (new): runs newest first, each a native `<details>` (the newest open) whose summary is the Eastern date and time and *n in · n out · n waiting*; inside, by book: came in (a created book shows its current author, joined live), went out (from → to), waiting, gone from Calibre, skipped, skipped columns, notes; a run with empty lists reads *Nothing changed.* Then *Not in Calibre · N*, a collapsed `<details>` listing those books. Empty state: a `--raise` panel, *No sync yet. Run `npm run calibre:sync` on your PC.*, no button (D-133: nothing in the browser runs a sync). `loading.tsx` (new): skeletons at the loaded geometry. `error.tsx` (new, the app's first route error boundary): a neutral line with a grey ×, never red, and a *Try again* button calling `reset`.
 4. `src/app/settings/page.tsx`: a *Calibre* row under *Data* (*Last synced …*, or *Not synced yet*) linking to `/settings/calibre`.
@@ -104,11 +107,19 @@ Approved 2026-11-16 at 4ab259b, with the recommended answer to each open questio
 - AC-5 → `test/e2e/calibre-page.spec.ts`: axe, target sizes (24px, 44px on the phone), contrast, no sideways scroll; screenshots at 360, 834 and 1280px light and dark (the page, empty and with runs), the dashboard with the line at 360, 390, 412, 768, 1024 and 1280 with reduced motion and reduced transparency; the loading skeleton's geometry and the error boundary rendered.
 - The spec runs serially and deletes its `calibre_syncs` rows after each test, so other dashboard specs never meet a stale run.
 
+### Plan revisions after approval
+
+1. `src/components/CalibreSyncLine.tsx` (new): the dashboard line as a component, so a unit test can render it and assert the link and that nothing is red (the plan's test strategy needed it).
+2. `src/components/SettingsLink.tsx` (new): the Settings row, because `test/nav-items.test.tsx` fails any `next/link` import in `settings/page.tsx` (its *Export everything* must stay a plain `<a>`); the row's own Link lives here.
+3. `src/app/settings/loading.tsx`: a third *Data* skeleton row, because the loaded Settings gained the *Calibre* row and `settings.spec.ts` compares the skeleton's rows to the loaded ones.
+4. `test/query-budget.test.ts`: `/books` 11 → 12 and `/settings` 2 → 3 (one read each in the same wave), and `/settings/calibre` at 4 queries in 1 wave; the architecture doc's budget follows (approved at close-out).
+5. The page's reads: `calibreReports` and `createdBookAuthors` replace one `calibreRun(id)` per run and a second wave for authors (spec-reviewer R1: three waves, up to 13 queries). `normalizeReport` in `src/lib/calibre-log.ts` reads a stored report whose lists are missing, null or not arrays as empty (test-auditor and schema-reviewer notes), and the two text links get a 44px hit area on the phone (spec-reviewer R1, AC-5).
+
 **Risks:** a stray `calibre_syncs` row left in the shared test database would put the line on other specs' dashboard screenshots (mitigated above). `ran_at` is a timestamp, so the Eastern day must come from `easternDay`, never `toISOString().slice(0, 10)`.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL (nav-items, query-budget ×2) → R2 FAIL (settings.spec ×7: my `.row-link` collided with the list rows' overlay class, renamed `set-link`) → R3 PASS (109 files, 1919 tests) | CI R1 PASS (4a6f2d1) | Schema R1 APPROVE (3 MINOR, fixed) → R2 APPROVE | Spec R1 CHANGES (AC-5 44px; one wave; budget doc; unplanned files recorded above) → R2 APPROVE | Verify R4 PASS (d68ae15) | Audit R1 PASS (2 advisory gaps closed: ordering by `ran_at`, a page render from odd report shapes, which also found a real crash on a non-array list) | UI R1 PASS (the dev database has no runs, so the empty state, Settings row, *Not in Calibre* and focus were walked at all six widths in both themes; the run list, the dashboard line, loading and error are the spec's, on the test database) | Verify R5 PASS (109 files, 1925 tests, calibre spec 15 passed) | CI R2 PASS (d68ae15)
 
 ## Blocked
 
@@ -116,7 +127,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 5 (R1, R2 failed; R3, R4, R5 passed)
+- Review rounds: 2 (spec-reviewer, schema-reviewer), test audit 1, UI 1
+- First-pass AC FAILs: 1 (AC-5, the 44px targets on the phone)
+- Plan revisions after approval: 5 (listed above)
