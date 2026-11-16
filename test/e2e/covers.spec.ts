@@ -128,6 +128,13 @@ test("a spine row with a cover has one lazy 28×42 <img>, one without has its nu
   for (const row of [covered, bare, pending]) expect(await box(row.locator(".rcv"))).toEqual({ width: 28, height: 42 });
   // The same row height with and without a cover.
   expect((await box(covered)).height).toBe((await box(bare)).height);
+  // One column: the box sits at the same x whether the ordinal beside it has one, two or three digits.
+  const lefts: number[] = [];
+  for (const id of ["#p-3", "#p-30", "#p-300"]) {
+    await page.locator(id).scrollIntoViewIfNeeded();
+    lefts.push((await page.locator(`${id} .rcv`).boundingBox())!.x);
+  }
+  expect(new Set(lefts.map((x) => Math.round(x))).size, `cover left edges ${lefts.join(", ")}`).toBe(1);
 });
 
 test("in compact density every cover box is 20×30 and the row keeps its height (AC-2)", async ({ page }) => {

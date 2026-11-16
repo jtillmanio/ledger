@@ -575,7 +575,7 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .lbl{font-size:.875rem;font-weight:600}
 .inote{font-size:.75rem;color:var(--muted);margin-top:.0625rem}
 .iss[data-type="optional"] .lbl{font-weight:500;color:var(--muted)}
-.iseq{font-size:.75rem;color:var(--muted)}
+.iseq{font-size:.75rem;color:var(--muted);min-width:var(--ord-w);text-align:right}   /* one width for 1–4 digits, so the cover beside it sits in one column (task 4.3) */
 /* read in another run — a hint, grey, never green: green means read here */
 .seen{display:inline-flex;align-items:center;gap:.25rem;font-size:.6875rem;font-weight:500;color:var(--muted);
   margin-top:.1875rem;padding:.0625rem .375rem;border:1px dashed var(--rule);border-radius:var(--r-sm)}
