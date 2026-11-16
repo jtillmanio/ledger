@@ -8,6 +8,7 @@ import BookListSearch from "@/components/BookListSearch";
 import BookSort from "@/components/BookSort";
 import BookStatus from "@/components/BookStatus";
 import { bookInitials, Pending, RowCover } from "@/components/Cover";
+import { bookHref } from "@/components/StatusBookRow";
 import { bookDates, bookSub, ownedWords, readSummary } from "@/lib/format";
 import { genreChipHref, libraryHref, parseSort } from "@/lib/library-sort";
 import { seriesAllHref, seriesView } from "@/lib/series-list";
@@ -136,7 +137,11 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
             <RowCover url={b.cover_url} pending={b.pending} text={bookInitials(b.title)} />
             <span className="rb">
               <span className="row-head">
-                <span className="row-title">{b.title}</span>
+                {/* The book's sheet over the list (task 3.5): Back closes it with the list where it was.
+                    No prefetch: 500 rows would each fetch on load. */}
+                <span className="row-title">
+                  <Link href={bookHref(b.id)} scroll={false} prefetch={false} className="book-link">{b.title}</Link>
+                </span>
                 <span className="row-meta mono">
                   {b.read_year ?? b.plan_year ?? ""}
                   {/* An estimate (pages × words per page) keeps its ~, as the sort by length ranks it by it. */}

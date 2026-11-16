@@ -16,15 +16,17 @@ const PRELOAD = [
 export const metadata: Metadata = { title: "Ledger" };
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children, modal }: { children: React.ReactNode; modal: React.ReactNode }) {
   for (const href of PRELOAD) preload(href, { as: "font", type: "font/woff2", crossOrigin: "anonymous" });
   return (
     <html lang="en">
       <body>
         {/* App-wide: the spine, the queue (1.10) and the add flows (1.3c, 1.4c)
             all push onto the one undo stack (task 1.2). This or that (3.4b) is
-            one sorter for the app, opened from a finish's toast or Top books. */}
-        <UndoProvider><RankSorterProvider><Shell>{children}</Shell></RankSorterProvider></UndoProvider>
+            one sorter for the app, opened from a finish's toast or Top books.
+            `modal` is the detail-sheet slot (task 3.5): a detail route arrived
+            at from a list draws here, over it, inside the same providers. */}
+        <UndoProvider><RankSorterProvider><Shell>{children}</Shell>{modal}</RankSorterProvider></UndoProvider>
       </body>
     </html>
   );

@@ -1,14 +1,14 @@
 ---
 id: TASK-079
 title: 3.5 Detail sheets (2 of 3) — the book sheet, a route over the list
-status: Ready
+status: In progress
 depends_on: [TASK-078, TASK-074]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: ebbe799
 ---
 
 # TASK-079 — 3.5 Detail sheets (2 of 3) — the book sheet, a route over the list
@@ -78,9 +78,46 @@ renders no *Dates* group and no `—`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The book sheet's own writes (split at the plan gate): a notes editor (TASK-074's route), 5.17's *I own it on paper* / *I own the audiobook* toggles, plan *Move* and shelves *Edit*, and the dashboards' book rows opening the sheet → docs/05-roadmap.md § new item in phase 3 (approved at plan)
+- The cover → hero morph through the View Transitions API (`view-transition-name: cover-{id}`) → docs/tasks/TASK-080-issue-detail-sheet.md § Context (approved at plan)
+- *Read again* is a status change to Reading; its `read_events` row arrives with the finish → not tracked: the owner's plan-gate answer, recorded in this task's Plan (within data model 2.17 and 1.5's log rule, no new decision)
+- Candidate decision (approved by the owner 2026-11-16): a detail route never shares a dynamic segment with static siblings, because Next 16 applies the interception rewrite ahead of them; the book's route is `/book/[id]`, and `docs/04-design.md` § 13's `/books/[id]` and the roadmap's wording follow it
+- TASK-080: `/comics/[runId]/[issueId]` collides with `/comics/[runId]/add` the same way (an intercepted `[issueId]` catches `add`); its plan picks a route that doesn't
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-16. Plan-gate answers: **Read again** sets the status to Reading through `saveBookStatus` (the status control's path, today's start stamped); the `read_events` row with `reread_of` = the latest read's id is appended when that read is finished, never on the press (an unfinished row would count as a read in `book_reads`), and AC-4's clause is proven by Read again → finish → exactly one new row with that `reread_of`. **Split**: the sheet's writes beyond status and Read again (a notes editor, 5.17's ownership toggles, plan *Move*, shelves *Edit*) go to a new roadmap item; here notes, ownership, plan placement and shelves are read-only text. **The cover morph** (View Transitions) is TASK-080's. **Links**: the Library's rows and the books Status rows; the dashboards' rows are the new item's.
+
+**Steps**
+
+1. Route frame: `src/app/layout.tsx` takes a `modal` slot, rendered after `<Shell>` inside the providers; `src/app/@modal/default.tsx` and `src/app/@modal/[...catchAll]/page.tsx` render null (a soft navigation out of the sheet must clear the slot).
+2. `src/app/@modal/(.)books/[id]/page.tsx`: `<RouteSheet heading=…><BookDetail …/></RouteSheet>`; `src/app/@modal/(.)books/[id]/loading.tsx`: the sheet chrome with a skeleton in the loaded geometry. `src/app/books/[id]/page.tsx`: the full page, `<main>` with the same `BookDetail`, no sheet chrome; `loading.tsx` and `error.tsx` beside it. Both pages `await params` and call `notFound()` when `bookDetail` answers null (unknown or soft-deleted).
+3. One focus behaviour: the focus core of `src/components/Sheet.tsx` (inert outside but the toast, heading focus, Tab trap, Esc, focus back to the opener) moves into an exported `useSheetFocus` hook in the same file; `Sheet` keeps its own `pushState`/popstate, `RouteSheet` uses the route's history entry: every close (×, scrim, Esc, drag) is `router.back()`, and the opener is the element focused when it mounted (the row link, R1-11).
+4. `src/components/RouteSheet.tsx` (client): `--overlay` over `--scrim`, a 36×4 grab handle that is a named button, a 44px close. Below 1024px a bottom sheet (tablet: centred, at most 640px, D-33) that follows a drag 1:1 and dismisses past 30% of its height or a flick over 0.5px/ms, else springs back; enter `translate-y-full → 0` over `--dur-4` `--ease-out`, scrim over `--dur-3`, exit `--dur-3` `--ease-in` before `router.back()`. 1024px and up: a centred modal, opacity and `scale(.98 → 1)` over `--dur-2`. Reduced motion: opacity only. Page scroll is locked while open.
+5. `src/components/BookDetail.tsx` (server): the shared layout from design § 13 and mockup `bookdetail`. Hero (cover, title, author, series #n · year, plan badge, genre chip); About (the summary; with none, a one-line *No summary yet* placeholder at a fixed block size so later content does not move); Details (Published, Pages, Words: `~` and the dotted edge when estimated, a `stated` badge when stated; Series as plain text until 5.9; Subjects); Your record (the Library's `BookStatus`, the same component and `saveBookStatus` path, with a new `open` prop so it starts expanded and the title passed in; the start and finish; Notes, Shelves, Planned for and Owned as read-only text); Reading history (newest first: each read's start, finish and days taken, its rank in its year where ranked, the headphones glyph on a listen; the header *Read 2× · Listened 1×*, the *Listened* part only with a listen or while listening; *Read again* on a read book, a small client button that posts `status: reading` through `useBookWrite`).
+6. `src/db/queries.ts`: `bookDetail(userId, bookId)`: one live book's facts (summary, subjects, pages, words and source, published year, cover, series and position, universe, genre via `book_genre_levels`), status, start/finish, notes, plan level and period (`to_read_level`), shelves, owned, read and listen counts; and its reads newest first with `year_rank` and days taken (exact days only). Null for an unknown or removed book.
+7. Links: `src/app/books/list/page.tsx` row titles and `src/components/StatusBookRow.tsx` titles become `<Link href=/books/{id} scroll={false}>`.
+8. `src/app/globals.css`: the sheet, modal, drag and detail classes, tokens only (hard rule 6).
+
+**Files**: `src/app/layout.tsx`; `src/app/@modal/default.tsx`, `src/app/@modal/[...catchAll]/page.tsx`, `src/app/@modal/(.)books/[id]/page.tsx`, `…/loading.tsx` (new); `src/app/books/[id]/page.tsx`, `loading.tsx`, `error.tsx` (new); `src/components/BookDetail.tsx`, `src/components/RouteSheet.tsx`, `src/components/ReadAgain.tsx` (new); `src/components/Sheet.tsx` (hook extracted); `src/components/BookStatus.tsx` (`open` prop); `src/db/queries.ts`; `src/app/books/list/page.tsx`; `src/components/StatusBookRow.tsx` (not in Files likely touched); `src/app/globals.css`; tests below.
+
+**Test strategy**
+
+- AC-1 (book clauses), AC-2: `test/e2e/book-detail.spec.ts` › *opens over the Library and Back restores scroll and focus* (scroll past row 40, open, list still rendered, Back: URL, scrollY, focused link) and › *the sheet and the row write status through one route* (both POST `/api/progress/book`).
+- AC-3: › *a direct visit renders the full page* (no `role=dialog`, same headings; reload too) and › *an unknown id is not found*; › *static siblings are not intercepted* (`/books/plan` from the Library).
+- AC-4: `test/book-detail.test.tsx` (render: three reads newest first, dates and days, glyph, header, no *Listened* line) and `test/book-detail-query.test.ts` (`bookDetail` against the TEST database; Read again → finish → one new `read_events` row with `reread_of` = the previous latest).
+- AC-5: `test/book-detail.test.tsx` (`~`/dotted edge vs `stated`); e2e › *no summary, no layout shift* (CLS 0 with a PerformanceObserver).
+- AC-6: e2e › focus on open and on close by Esc, scrim, close and Back; `inert` behind; reduced motion opacity only; axe; screenshots 360/834/1280 light and dark.
+
+**Risks**: `(.)books/[id]` could intercept static siblings (`/books/plan`), covered by a test; the hardware Back unmounts the sheet without the exit motion (the route is gone); the size (about 17 files, UI only) is over the threshold, reduced by the split above.
+
+**Follow-ups**: see `## Follow-ups` (approved at plan).
+
+**Revisions after approval**
+
+1. *The route is `/book/[id]`, not `/books/[id]`* (owner, 2026-11-16, after the e2e run). Next 16 applies an intercepting route's rewrite ahead of the static routes beside it: with `@modal/(.)books/[id]`, a tap from the Library to `/books/plan` (or Status, Top, Add, the Library itself) was intercepted as `id = "plan"` and rendered a 404, and a save inside the sheet (`router.refresh()`) fell back to a full page load. Both reproduced on a production build (`npm run test:e2e:build`) and both went away with the route at `/book/[id]`, a segment nothing else uses. The files are `src/app/book/[id]/…` and `src/app/@modal/(.)book/[id]/…`; AC-1's and AC-3's `/books/{id}` is read as `/book/{id}`.
+2. *No `@modal/[...catchAll]` page.* It made `@next/next/no-html-link-for-pages` treat every URL as a page (the settings page's deliberate `<a href="/api/export">`, two test fixtures). `RouteSheet` remembers the path it opened on instead and unmounts on any other (its page back from `inert`, focus returned), which is the job the catch-all did. Two fixtures in `test/paste-books.test.tsx` became the `<button>` the same file already uses, as the new `/book/[id]` page made the rule flag their `<a href="/books">`.
+3. Two files beside the planned ones in the same steps: `src/app/@modal/(.)book/[id]/layout.tsx` (the sheet is the segment's layout, so it stays put while the skeleton gives way to the book and its focus and motion run once) and `…/error.tsx` (the UX floor's error state in the sheet).
 
 ## Review log
 

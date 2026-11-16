@@ -666,6 +666,97 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
   .sheet{max-width:28rem;border-bottom:1px solid var(--rule-2);border-radius:var(--r-xl);padding:.9375rem}
   .sheet::before{display:none}
 }
+
+/* The route sheet (task 3.5; STYLE_GUIDE § 7, UX-N10, N12, N25): a detail view arrived at from a list.
+   Below 1024px it rises from the bottom (a tablet's centred, at most 640px, D-33) and follows a drag;
+   from 1024px a centred modal. Every movement is on the --dur-* tokens, which reduced motion makes 0,
+   and under reduced motion the keyframes are opacity alone. The grab handle is a real button. */
+.rsheet{max-width:640px;max-height:92vh;overscroll-behavior:contain;padding-top:0;
+  animation:rsheet-up var(--dur-4) var(--ease-out)}
+.rsheet::before{display:none}
+.rsheet-host .scrim{animation:scrim-in var(--dur-3) var(--ease-out)}
+.rsheet-host[data-state="closing"] .rsheet{animation:rsheet-down var(--dur-3) var(--ease-in) forwards}
+.rsheet-host[data-state="closing"] .scrim{animation:scrim-out var(--dur-3) var(--ease-in) forwards}
+.rsheet[data-drag]{animation:none}
+.rsheet:not([data-drag]){transition:transform var(--dur-3) var(--ease-out)}
+.rsheet-top{position:sticky;top:0;z-index:1;margin:0 -.875rem;padding:0 .875rem;background:var(--overlay);touch-action:none}
+.rsheet-top .grab{display:flex;align-items:center;justify-content:center;width:100%;min-height:24px;padding:0;
+  border:0;background:none;cursor:grab}
+.rsheet-top .grab::before{content:"";width:36px;height:4px;border-radius:var(--r-full);background:var(--rule-2)}
+.rsheet-top .grab:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+.sheetbar{display:flex;align-items:center;gap:.5rem}
+.sheetbar .x{display:inline-flex;align-items:center;justify-content:center;margin-left:auto;width:44px;height:44px;
+  border:0;border-radius:var(--r-full);background:none;color:var(--muted);font-size:1rem;cursor:pointer}
+.sheetbar .x:focus-visible{outline:2px solid var(--brand);outline-offset:0}
+@keyframes rsheet-up{from{transform:translateY(100%)}}
+@keyframes rsheet-down{from{transform:translateY(var(--drag-y,0))}to{transform:translateY(100%)}}
+@keyframes rsheet-pop{from{opacity:0;transform:scale(.98)}}
+@keyframes rsheet-unpop{to{opacity:0;transform:scale(.98)}}
+@keyframes rsheet-fade{from{opacity:0}}
+@keyframes rsheet-unfade{to{opacity:0}}
+@keyframes scrim-in{from{opacity:0}}
+@keyframes scrim-out{to{opacity:0}}
+@media (min-width:1024px){
+  .rsheet-host{align-items:flex-start;padding-top:4rem}
+  .rsheet{max-width:40rem;max-height:calc(100vh - 6rem);padding-top:0;animation:rsheet-pop var(--dur-2) var(--ease-out)}
+  .rsheet-host[data-state="closing"] .rsheet{animation:rsheet-unpop var(--dur-2) var(--ease-in) forwards}
+  .rsheet-top .grab{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  .rsheet,.rsheet-host .rsheet{animation-name:rsheet-fade}
+  .rsheet-host[data-state="closing"] .rsheet{animation-name:rsheet-unfade}
+  .rsheet:not([data-drag]){transition:none}
+}
+
+/* A book row's title, the link to its sheet (task 3.5). Not `.row-link`, whose ::after covers the row: a
+   book row's status control sits inside it, and must stay its own target. 24px tall at least (UX floor). */
+.book-link{display:inline-flex;align-items:center;min-height:24px;color:inherit;text-decoration:none}
+.book-link:hover{text-decoration:underline;text-underline-offset:.15em}
+.book-link:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:var(--r-sm)}
+
+/* A book's detail (task 3.5; docs/04-design.md § 13, mockup `bookdetail`): hero, About, Details, Your record,
+   Reading history. One layout in the sheet and on the full page. */
+.book-page{max-width:var(--col)}
+.detail-hero{display:flex;gap:.875rem;align-items:flex-start;margin-top:.25rem}
+.detail-cover{flex:none;display:flex;align-items:center;justify-content:center;width:var(--cover-hero);
+  aspect-ratio:2/3;overflow:hidden;border-radius:var(--r-cover);background:var(--sunk);box-shadow:var(--sh-cover)}
+.detail-cover>img{display:block;width:100%;height:100%;object-fit:cover}
+.detail-initials{font-family:var(--mono);font-size:.875rem;font-weight:600;color:var(--muted)}
+.detail-meta{flex:1;min-width:0}
+.detail-title{margin:0;font-family:var(--display);font-weight:500;font-size:1.375rem;line-height:1.75rem;color:var(--ink)}
+.detail-title:focus{outline:none}
+.detail-title:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.detail-title .sk{display:block;height:1.375rem}
+.detail-by{margin:.25rem 0 0;font-size:.875rem;color:var(--ink-2)}
+.detail-place{margin:.25rem 0 0;font-size:.8125rem;color:var(--muted)}
+.detail-tags{display:flex;flex-wrap:wrap;align-items:center;gap:.3125rem;margin:.4375rem 0 0}
+.detail-meta>.sk{display:block;height:.875rem;margin-top:.5rem}
+/* The summary's box is the same with and without one, so nothing under it moves. */
+.detail-about{padding:.875rem}
+.detail-summary{margin:0;min-height:1.375rem}
+.detail-summary p{margin:0 0 .625rem;font-size:.875rem;line-height:1.55;color:var(--ink)}
+.detail-summary p.lede{margin:.5rem 0 0;font-size:.75rem;color:var(--muted)}
+.detail-summary .sk{display:block;height:.875rem;margin-bottom:.5rem}
+.detail-none{font-style:italic}
+.detail .frow .v.plain{font-weight:400;font-size:.8125rem}
+.detail .frow .sk{height:.875rem}
+/* An estimated count (task 2.10's treatment): a ~ before it and a dotted top edge; a stated one neither. */
+.detail .words[data-wc="estimated"]{padding-top:.125rem;border-top:1.5px dotted var(--muted)}
+.detail .frow .bdg{margin-left:auto}
+.detail-status{align-items:flex-start;flex-wrap:wrap}
+.detail-control{flex:1 1 14rem;min-width:0}
+.detail-control .status-group{margin-top:.5rem}
+.detail-notes{display:block}
+.detail-notes .lede{margin:.3125rem 0 0;white-space:pre-line}
+.detail-history-head{display:flex;align-items:baseline;gap:.5rem}
+.detail-history-head .detail-reads{margin-left:auto}
+.detail-history{list-style:none;margin:0;padding:0}
+.detail-history .frow{flex-wrap:wrap}
+.detail-history .k{flex:0 0 4.5rem;display:inline-flex;align-items:center;gap:.25rem}
+.detail-history .v{flex:1 1 12rem}
+.read-again{margin-top:.75rem}
+.detail-error{margin:.75rem 0;color:var(--ink-2)}
+.detail-error span{color:var(--muted)}
 .range-count{margin:.25rem 0 0}
 .opts{display:flex;gap:.375rem;flex-wrap:wrap;margin:.625rem 0 0;padding:0;border:0;min-inline-size:0}
 .opts .opt{position:relative;display:inline-flex;align-items:center;min-height:32px;padding:0 .625rem;

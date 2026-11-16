@@ -28,6 +28,58 @@ function quietOutside(root: Element, keep: Element | null): Element[] {
 
 const FOCUSABLE ='a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
+/** The heading a sheet is labelled by and focuses on open (`tabindex="-1"`). */
+const HEADING = "[data-sheet-heading]";
+
+/**
+ * The focus half of every sheet, `Sheet`'s and the intercepted route's
+ * (`RouteSheet`, task 3.5), so the rules stay one behaviour (R1-11, UX-N11):
+ * while it is mounted everything outside `host` is `inert` but the undo toast
+ * (D-63), the dialog's heading (`[data-sheet-heading]`) takes focus, and on
+ * the way out the page comes back and focus returns to `opener`. Answers the
+ * dialog's keydown handler: Esc calls `close`, and Tab stays inside.
+ */
+export function useSheetFocus(
+  host: React.RefObject<HTMLElement | null>,
+  dialog: React.RefObject<HTMLElement | null>,
+  opener: HTMLElement | null,
+  close: () => void,
+) {
+  useLayoutEffect(() => {
+    const quiet = quietOutside(document.body, host.current);
+    for (const el of quiet) el.setAttribute("inert", "");
+    dialog.current?.querySelector<HTMLElement>(HEADING)?.focus();
+    return () => {
+      for (const el of quiet) el.removeAttribute("inert");
+      if (opener?.isConnected) opener.focus();
+    };
+  }, [host, dialog, opener]);
+
+  return function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      close();
+      return;
+    }
+    if (e.key !== "Tab" || !dialog.current) return;
+    const all = [...dialog.current.querySelectorAll<HTMLElement>(FOCUSABLE)]
+      // A step that hides the rest of the sheet (Add books' plan picker, task 2.3) leaves it out of the loop.
+      .filter((el) => !el.hasAttribute("disabled") && !el.closest("[hidden], [inert]"));
+    if (all.length === 0) return;
+    const first = all[0], last = all.at(-1)!;
+    const at = document.activeElement;
+    const heading = dialog.current.querySelector(HEADING);
+    if (e.shiftKey && (at === first || at === heading)) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && at === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+}
+
 /**
  * The one sheet behaviour every sheet shares (docs/04-design.md § 10, *Focus returns
  * where it came from*, R1-11; UX-N11). Task 1.1 opens the first one; 1.3c, 1.3b,
@@ -56,7 +108,6 @@ export default function Sheet({ heading, opener, onClose, children }: {
 }) {
   const headingId = useId();
   const dialog = useRef<HTMLDivElement>(null);
-  const title = useRef<HTMLHeadingElement>(null);
   const host = useRef<HTMLDivElement>(null);
   // Refs survive StrictMode's remount, so the history entry is pushed once.
   const pushed = useRef(false);
@@ -76,15 +127,7 @@ export default function Sheet({ heading, opener, onClose, children }: {
 
   // The page behind goes inert, and the heading takes focus; on the way out
   // the page comes back and focus returns to the opener.
-  useLayoutEffect(() => {
-    const quiet = quietOutside(document.body, host.current);
-    for (const el of quiet) el.setAttribute("inert", "");
-    title.current?.focus();
-    return () => {
-      for (const el of quiet) el.removeAttribute("inert");
-      if (opener?.isConnected) opener.focus();
-    };
-  }, [opener]);
+  const onKeyDown = useSheetFocus(host, dialog, opener, close);
 
   useEffect(() => {
     if (!pushed.current) {
@@ -100,29 +143,6 @@ export default function Sheet({ heading, opener, onClose, children }: {
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
-
-  function onKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Escape") {
-      e.preventDefault();
-      e.stopPropagation();
-      close();
-      return;
-    }
-    if (e.key !== "Tab") return;
-    const all = [...dialog.current!.querySelectorAll<HTMLElement>(FOCUSABLE)]
-      // A step that hides the rest of the sheet (Add books' plan picker, task 2.3) leaves it out of the loop.
-      .filter((el) => !el.hasAttribute("disabled") && !el.closest("[hidden], [inert]"));
-    if (all.length === 0) return;
-    const first = all[0], last = all.at(-1)!;
-    const at = document.activeElement;
-    if (e.shiftKey && (at === first || at === title.current)) {
-      e.preventDefault();
-      last.focus();
-    } else if (!e.shiftKey && at === last) {
-      e.preventDefault();
-      first.focus();
-    }
-  }
 
   return createPortal(
     <div ref={host} className="sheet-host">
@@ -146,7 +166,7 @@ export default function Sheet({ heading, opener, onClose, children }: {
         aria-labelledby={headingId}
         onKeyDown={onKeyDown}
       >
-        <h2 ref={title} id={headingId} tabIndex={-1}>{heading}</h2>
+        <h2 id={headingId} tabIndex={-1} data-sheet-heading>{heading}</h2>
         <CloseContext.Provider value={close}>{children}</CloseContext.Provider>
       </div>
     </div>,
