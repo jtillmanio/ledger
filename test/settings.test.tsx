@@ -20,6 +20,11 @@ vi.mock("@/lib/auth", async (importOriginal) => ({
   apiUserId: async () => USER,
   requireUserId: async () => USER,
 }));
+// The page reads the per-device Show covers cookie (task 4.3); a request-less render has no jar.
+const cookieJar = new Map<string, string>();
+vi.mock("next/headers", () => ({
+  cookies: async () => ({ get: (name: string) => (cookieJar.has(name) ? { name, value: cookieJar.get(name) } : undefined) }),
+}));
 vi.mock("next/navigation", () => ({
   usePathname: () => "/settings",
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
@@ -44,6 +49,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
+  cookieJar.clear();
   await truncateAll(sql);
   await sql`TRUNCATE reading_settings, volume_rules RESTART IDENTITY CASCADE`;
   await sql`INSERT INTO users (id, name) VALUES (${USER}, 'Test')`;
@@ -188,6 +194,21 @@ describe("the screen reads the row live (AC-2)", () => {
     const year = Number(new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York", year: "numeric" }).format(new Date()));
     const days = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0 ? 366 : 365;
     expect(after).toContain(`${((60 * 185 * days) / 1e6).toFixed(1)}M`);
+  });
+
+  it("draws Appearance with a Show covers switch, on with no cookie and off with ledger_covers=off (task 4.3, AC-4)", async () => {
+    const Page = (await import("../src/app/settings/page")).default;
+    const render = async () => renderToStaticMarkup(<UndoProvider>{await Page()}</UndoProvider>);
+    const sw = (html: string) => html.match(/<button[^>]*role="switch"[^>]*>/)![0];
+    const on = await render();
+    expect(on).toMatch(/<h2[^>]*>Appearance<\/h2>/);
+    expect(on).toMatch(/id="[^"]+">Show covers<\/span>/);
+    expect(sw(on)).toContain('aria-checked="true"');
+    expect(on.match(/role="switch"/g)).toHaveLength(1);
+    cookieJar.set("ledger_covers", "off");
+    expect(sw(await render())).toContain('aria-checked="false"');
+    cookieJar.set("ledger_covers", "garbage");
+    expect(sw(await render())).toContain('aria-checked="true"');
   });
 
   it("draws the volume map line and Export everything as a plain link", async () => {

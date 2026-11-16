@@ -295,3 +295,114 @@ test("the spine, the Library and the strip at 360, 834 and 1280px, light and dar
     }
   }
 });
+
+// ---- Task 4.3, part 3 of 3 (TASK-087): Show covers off, or reduced data, and not one image is requested ----
+//
+// The server can't see a media query, so every cover's HTML is its placeholder and the image is drawn after
+// hydration only when covers are on and the device isn't asking for less data (src/lib/covers.ts). Counted in
+// the browser: every `image` request to a host that isn't the app, over a spine scrolled end to end.
+
+const SHOW_COVERS = "ledger_covers";
+
+/** Counts the image requests that leave for any host but the app's own. */
+function countImages(page: Page, baseURL: string) {
+  const app = new URL(baseURL).origin;
+  const seen: string[] = [];
+  page.on("request", (r) => {
+    if (r.resourceType() !== "image" || !/^https?:/.test(r.url())) return;
+    if (new URL(r.url()).origin !== app) seen.push(r.url());
+  });
+  return seen;
+}
+
+async function scrollEndToEnd(page: Page) {
+  await page.evaluate(async () => {
+    for (let y = 0; y < document.documentElement.scrollHeight; y += window.innerHeight / 2) {
+      window.scrollTo(0, y);
+      await new Promise((r) => setTimeout(r, 30));
+    }
+  });
+}
+
+/** The spine hydrated, scrolled end to end, with its placeholders drawn: nothing here may have asked for an image. */
+async function expectSpineWithoutImages(page: Page, seen: string[]) {
+  await openSpine(page, BIG);
+  await expect(page.locator(".iss")).toHaveCount(BIG_ROWS);
+  await hydrated(page.locator(".iss .chk").first());
+  await scrollEndToEnd(page);
+  // A moment for any image the page was going to ask for.
+  await page.waitForTimeout(500);
+  expect(seen, "image requests").toEqual([]);
+  await expect(page.locator(".rcv img")).toHaveCount(0);
+  await expect(page.locator(".iss .rcv")).toHaveCount(BIG_ROWS);
+  // Every slot is its placeholder, at the size the cover would have had.
+  expect(await box(page.locator("#p-3 .rcv"))).toEqual({ width: 28, height: 42 });
+  await expect(page.locator("#p-3 .rcv")).toHaveText("3");
+}
+
+test("with Show covers off, the spine makes zero image requests and every box is its placeholder; on again after a reload, the covers come back (AC-1, AC-2)", async ({ page, baseURL }) => {
+  await fakeCovers(page);
+  const seen = countImages(page, baseURL!);
+  await page.context().addCookies([{ name: SHOW_COVERS, value: "off", url: baseURL! }]);
+  await expectSpineWithoutImages(page, seen);
+
+  // The same row height with covers off and on: nothing moved.
+  const offHeight = (await box(page.locator("#p-3"))).height;
+  await page.context().clearCookies({ name: SHOW_COVERS });
+  await page.reload();
+  await expect(page.locator("#p-3 .rcv img")).toHaveCount(1);
+  expect(seen.length).toBeGreaterThan(0);
+  expect((await box(page.locator("#p-3"))).height).toBe(offHeight);
+  expect(await box(page.locator("#p-3 .rcv"))).toEqual({ width: 28, height: 42 });
+});
+
+test("the Library and the next-issue strip make zero image requests with Show covers off, and draw their placeholders (AC-2)", async ({ page, baseURL }) => {
+  await fakeCovers(page);
+  const seen = countImages(page, baseURL!);
+  await page.context().addCookies([{ name: SHOW_COVERS, value: "off", url: baseURL! }]);
+
+  await openLibrary(page);
+  await hydrated(page.locator(".book-row").first());
+  const withCover = page.locator(".book-row").filter({ has: page.locator(".row-title", { hasText: "The Way of Kings" }) });
+  await expect(withCover.locator(".rcv")).toHaveText("ECT"); // "E2E Cover The Way of Kings": the first three words
+  expect(await box(withCover.locator(".rcv"))).toEqual({ width: 28, height: 42 });
+
+  await openSpine(page, WITH);
+  await hydrated(page.locator(".iss .chk").first());
+  await expect(page.locator(".nextis .rcv")).toHaveText("1");
+  expect(await box(page.locator(".nextis .rcv"))).toEqual({ width: 28, height: 42 });
+  await page.waitForTimeout(500);
+  expect(seen, "image requests").toEqual([]);
+  await expect(page.locator("img")).toHaveCount(0);
+});
+
+test("the Show covers switch in Settings turns the covers off and on, and the choice survives a reload (AC-2, AC-4)", ONCE, async ({ page, baseURL }) => {
+  await fakeCovers(page);
+  const seen = countImages(page, baseURL!);
+  await page.goto("/settings");
+  const sw = page.getByRole("switch", { name: "Show covers" });
+  await hydrated(sw);
+  await expect(sw).toHaveAttribute("aria-checked", "true");
+  await sw.click();
+  await expect(sw).toHaveAttribute("aria-checked", "false");
+  await page.reload();
+  await expect(page.getByRole("switch", { name: "Show covers" })).toHaveAttribute("aria-checked", "false");
+
+  await expectSpineWithoutImages(page, seen);
+
+  await page.goto("/settings");
+  await hydrated(page.getByRole("switch", { name: "Show covers" }));
+  await page.getByRole("switch", { name: "Show covers" }).click();
+  await expect(page.getByRole("switch", { name: "Show covers" })).toHaveAttribute("aria-checked", "true");
+  await openSpine(page, BIG);
+  await expect(page.locator("#p-3 .rcv img")).toHaveCount(1);
+});
+
+test("an image that fails to load falls back to its placeholder text in the same box (AC-1)", ONCE, async ({ page }) => {
+  await page.route(`${HOST}/**`, (route) => route.abort());
+  await openSpine(page, BIG);
+  await hydrated(page.locator(".iss .chk").first());
+  await expect(page.locator("#p-3 .rcv")).toHaveText("3");
+  await expect(page.locator("#p-3 .rcv img")).toHaveCount(0);
+  expect(await box(page.locator("#p-3 .rcv"))).toEqual({ width: 28, height: 42 });
+});

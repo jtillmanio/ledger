@@ -44,6 +44,8 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
 const count = { queries: 0, waves: 0, inFlight: 0 };
 
 // The page asks the session cookie who is calling; the test is the owner.
+// Settings reads the per-device Show covers cookie (task 4.3); a request-less render has no jar.
+vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => undefined }) }));
 vi.mock("@/lib/auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../src/lib/auth")>()),
   requireUserId: async () => USER,

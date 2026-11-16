@@ -133,17 +133,15 @@ describe("the row cover (task 4.3, AC-2, AC-5)", () => {
     return spine("b");
   }
 
-  it("a row whose issue has a cover_url renders exactly one 28×42 lazy decorative <img>", async () => {
+  it("a row whose issue has a cover_url is the placeholder box with no <img> in the server HTML", async () => {
+    // The server can't see prefers-reduced-data (task 4.3 part 3), so every cover's HTML is its
+    // placeholder and CoverImage draws the <img> after hydration, only when covers are allowed. The
+    // 28×42 lazy decorative <img> is proved by test/covers.test.tsx and, in the browser, by
+    // test/e2e/covers.spec.ts.
     const row = (await withCovers()).row("Issue x");
-    const imgs = row.match(/<img[^>]*>/g) ?? [];
-    expect(imgs).toHaveLength(1);
-    expect(imgs[0]).toContain(`src="${URL_X}"`);
-    expect(imgs[0]).toContain('loading="lazy"');
-    expect(imgs[0]).toContain('decoding="async"');
-    expect(imgs[0]).toContain('width="28"');
-    expect(imgs[0]).toContain('height="42"');
-    expect(imgs[0]).toContain('alt=""');
-    expect(row).toMatch(/<span class="cv rcv"[^>]*><img/);
+    expect(row).not.toContain("<img");
+    expect(row).not.toContain(URL_X);
+    expect(row).toMatch(/<span class="cv rcv none" aria-hidden="true">ISS<\/span>/);
   });
 
   it("a row without one renders its text in the same box, with no <img>", async () => {

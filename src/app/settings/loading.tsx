@@ -1,5 +1,5 @@
 // Painted the moment a tap lands (task 0.9): Settings' loaded geometry in --sunk, the three
-// stepper rows and the card, then the two data rows, so nothing jumps when the values arrive.
+// stepper rows and the card, the Appearance row, then the data rows, so nothing jumps when the values arrive.
 export default function Loading() {
   return (
     <main aria-busy="true">
@@ -20,6 +20,14 @@ export default function Loading() {
             <div className="frow sk-card">
               <span className="sk sk-title" style={{ width: "100%" }} />
               <span className="sk sk-title" style={{ width: "70%" }} />
+            </div>
+          </div>
+          {/* Appearance (4.3): one row, Show covers, with its 44px switch. */}
+          <span className="sk sk-line sk-head" style={{ width: "6rem" }} />
+          <div className="group" aria-hidden="true">
+            <div className="frow">
+              <span className="sk sk-title" style={{ width: "6rem" }} />
+              <span className="sk sk-stepper" style={{ width: "36px", height: "44px" }} />
             </div>
           </div>
         </div>

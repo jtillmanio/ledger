@@ -372,3 +372,75 @@ test("a key press on + steps once: Enter and Space each add one step, and nothin
   await expect.poll(storedMinutes).toBe(47);
   await reset();
 });
+
+// ---- Task 4.3, part 3 of 3 (TASK-087, AC-5): Appearance → Show covers ----
+
+const showCovers = (page: Page) => page.getByRole("switch", { name: "Show covers" });
+
+test("Appearance holds one Show covers switch: 44px, on by default, its state in the knob and not the colour alone, 4.5:1 text, axe clean (AC-4, AC-5)", async ({ page }) => {
+  await open(page);
+  await expect(page.getByRole("heading", { level: 2, name: "Appearance" })).toBeVisible();
+  const sw = showCovers(page);
+  await hydrated(sw);
+  await expect(sw).toHaveAttribute("aria-checked", "true");
+  expect((await sw.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  expect((await page.locator(".frow", { has: sw }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+
+  // The knob sits at the other end when it is off: the state is the position, not only the track's colour.
+  const knob = () => page.locator('[role="switch"] b').evaluate((el) => getComputedStyle(el, "::after").left);
+  expect(await knob()).toBe("17px");
+  await sw.click();
+  await expect(sw).toHaveAttribute("aria-checked", "false");
+  expect(await knob()).toBe("1px");
+
+  expect(await contrastFailures(page)).toEqual([]);
+  await expectNoAxeViolations(page, AXE);
+  await expectNoHorizontalScroll(page);
+});
+
+test("the switch is keyboard-operable: Space toggles it, and focus stays on it", ONCE, async ({ page }) => {
+  await open(page);
+  const sw = showCovers(page);
+  await hydrated(sw);
+  await sw.focus();
+  await page.keyboard.press("Space");
+  await expect(sw).toHaveAttribute("aria-checked", "false");
+  await expect(sw).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(sw).toHaveAttribute("aria-checked", "true");
+});
+
+test("from 1024px Appearance sits with the pace on the left and Data stays on the right; below it they stack in the mockup's order", async ({ page }) => {
+  await open(page);
+  const pace = (await page.getByRole("heading", { name: "Reading pace" }).boundingBox())!;
+  const appearance = (await page.getByRole("heading", { name: "Appearance" }).boundingBox())!;
+  const data = (await page.getByRole("heading", { name: "Data" }).boundingBox())!;
+  expect(appearance.y).toBeGreaterThan(pace.y);
+  if (page.viewportSize()!.width >= 1024) {
+    expect(Math.abs(appearance.x - pace.x)).toBeLessThan(2);
+    expect(data.x).toBeGreaterThan(appearance.x + 200);
+  } else {
+    expect(data.y).toBeGreaterThan(appearance.y);
+  }
+});
+
+// Sets its own viewports and themes: runs once, in w390-light.
+test("Settings with Show covers on and off at 360, 834 and 1280px, light and dark (AC-5)", ONCE, async ({ page }, info) => {
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    for (const [width, height] of [[360, 780], [834, 1112], [1280, 800]]) {
+      await page.setViewportSize({ width, height });
+      await open(page);
+      const sw = showCovers(page);
+      await hydrated(sw);
+      await expectNoHorizontalScroll(page);
+      if ((await sw.getAttribute("aria-checked")) === "false") await sw.click();
+      await expect(sw).toHaveAttribute("aria-checked", "true");
+      await screenshot(page, info, `settings-appearance-${width}-${colorScheme}`);
+      await sw.click();
+      await expect(sw).toHaveAttribute("aria-checked", "false");
+      await screenshot(page, info, `settings-appearance-off-${width}-${colorScheme}`);
+      await page.context().clearCookies({ name: "ledger_covers" });
+    }
+  }
+});
