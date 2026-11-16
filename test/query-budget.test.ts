@@ -34,6 +34,9 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   "/inbox": { queries: 2, waves: 1 },
   // Task 4.4 adds the last Calibre sync (one scalar row) for the *Calibre* row, in the same wave.
   "/settings": { queries: 3, waves: 1 },
+  // The Calibre page (task 4.4): the runs and their counts, the books with no Calibre id, the newest runs' reports
+  // (one read, not one per run) and the authors of the books they created, together.
+  "/settings/calibre": { queries: 4, waves: 1 },
   "/watch": { queries: 0, waves: 0 },
   "/login": { queries: 0, waves: 0 },
 };
@@ -118,6 +121,7 @@ const pages: [string, () => Promise<unknown>][] = [
     (await import("../src/app/books/top/page")).default({ searchParams: Promise.resolve({}) })],
   ["/inbox", async () => (await import("../src/app/inbox/page")).default()],
   ["/settings", async () => (await import("../src/app/settings/page")).default()],
+  ["/settings/calibre", async () => (await import("../src/app/settings/calibre/page")).default()],
   ["/watch", async () => (await import("../src/app/watch/page")).default()],
   ["/login", async () =>
     (await import("../src/app/login/page")).default({ searchParams: Promise.resolve({}) })],

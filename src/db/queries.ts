@@ -1886,21 +1886,23 @@ export type CalibreRun = { id: number; ranAt: string; in: number; out: number; w
 /**
  * Every Calibre sync run, newest first, with its counts (task 4.4, D-133). The counts are the
  * lengths of the report's lists, taken in SQL: none is stored (hard rule 2), and the reports
- * themselves aren't loaded, so a long log stays one small read. `ranAt` is ISO; the page says it in Eastern.
+ * themselves aren't loaded, so a long log stays one small read. A list a report lacks, or holds as
+ * anything but an array, counts 0: one odd row never takes the page down. `ranAt` is ISO; the page
+ * says it in Eastern.
  */
 export async function calibreRuns(): Promise<CalibreRun[]> {
   return sql<CalibreRun[]>`
     SELECT id, to_char(ran_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "ranAt",
-           jsonb_array_length(coalesce(report->'in', '[]'::jsonb)) AS "in",
-           jsonb_array_length(coalesce(report->'out', '[]'::jsonb)) AS "out",
-           jsonb_array_length(coalesce(report->'waiting', '[]'::jsonb)) AS "waiting"
+           CASE WHEN jsonb_typeof(report->'in') = 'array' THEN jsonb_array_length(report->'in') ELSE 0 END AS "in",
+           CASE WHEN jsonb_typeof(report->'out') = 'array' THEN jsonb_array_length(report->'out') ELSE 0 END AS "out",
+           CASE WHEN jsonb_typeof(report->'waiting') = 'array' THEN jsonb_array_length(report->'waiting') ELSE 0 END AS "waiting"
     FROM calibre_syncs ORDER BY ran_at DESC, id DESC`;
 }
 
-/** One run's report as the sync stored it, or null: the page reads it to list each change by book. */
-export async function calibreRun(id: number): Promise<import("./calibre-sync").SyncReport | null> {
-  const [row] = await sql<{ report: import("./calibre-sync").SyncReport }[]>`SELECT report FROM calibre_syncs WHERE id = ${id}`;
-  return row?.report ?? null;
+/** The newest `limit` runs' reports as the sync stored them, newest first: the page lists each change by book. One read, not one per run. */
+export async function calibreReports(limit: number): Promise<{ id: number; report: import("./calibre-sync").SyncReport }[]> {
+  return sql<{ id: number; report: import("./calibre-sync").SyncReport }[]>`
+    SELECT id, report FROM calibre_syncs ORDER BY ran_at DESC, id DESC LIMIT ${limit}`;
 }
 
 /** When the last sync ran, as ISO, or null before any run: the dashboard's line and Settings' row read it. */
@@ -1911,15 +1913,20 @@ export async function lastCalibreSync(): Promise<string | null> {
 }
 
 /**
- * The authors of these books as they stand now (task 4.4): a run's report names a book it created
- * by its title only, so the page asks who wrote it today, which shows a stray new spelling.
+ * The authors, as they stand now, of the books the newest `limit` runs created (task 4.4): a run's
+ * report names a created book by its title only, so the page asks who wrote it today, which shows
+ * a stray new spelling. Read beside the reports, in the same wave, by the same newest-`limit` rule.
  * A book soft-deleted since has no entry.
  */
-export async function authorsOfBooks(ids: string[]): Promise<Map<string, string | null>> {
-  if (ids.length === 0) return new Map();
+export async function createdBookAuthors(limit: number): Promise<Map<string, string | null>> {
   const rows = await sql<{ id: string; author: string | null }[]>`
-    SELECT b.id, a.name AS author FROM books b LEFT JOIN authors a ON a.id = b.author_id
-    WHERE b.id IN ${sql(ids)} AND b.deleted_at IS NULL`;
+    SELECT b.id, a.name AS author
+    FROM books b LEFT JOIN authors a ON a.id = b.author_id
+    WHERE b.deleted_at IS NULL AND b.id IN (
+      SELECT e->>'bookId'
+      FROM (SELECT report FROM calibre_syncs ORDER BY ran_at DESC, id DESC LIMIT ${limit}) s,
+           jsonb_array_elements(CASE WHEN jsonb_typeof(s.report->'in') = 'array' THEN s.report->'in' ELSE '[]'::jsonb END) e
+      WHERE e->>'kind' = 'created')`;
   return new Map(rows.map((r) => [r.id, r.author]));
 }
 

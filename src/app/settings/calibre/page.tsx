@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { authorsOfBooks, calibreRun, calibreRuns, notInCalibre, type CalibreRun } from "@/db/queries";
+import { calibreReports, calibreRuns, createdBookAuthors, notInCalibre, type CalibreRun } from "@/db/queries";
 import type { SyncReport } from "@/db/calibre-sync";
 import {
   BOOK_CAP, byBook, changedNothing, columnLabel, ranWhen, SKIPPED_COLUMNS_LABEL, WAITING_WORDS, type BookEntry, type Change,
@@ -123,12 +123,12 @@ function Summary({ run, now }: { run: CalibreRun; now: Date }) {
  */
 export default async function CalibrePage() {
   const now = new Date();
-  const [runs, missing] = await Promise.all([calibreRuns(), notInCalibre()]);
-  const detailed = runs.slice(0, DETAIL_RUNS);
-  const reports = await Promise.all(detailed.map((r) => calibreRun(r.id)));
-  // A created book's author is asked for today, so a stray new spelling shows.
-  const created = [...new Set(reports.flatMap((r) => (r?.in ?? []).filter((c) => c.kind === "created").map((c) => c.bookId)))];
-  const authors = await authorsOfBooks(created);
+  // One wave: the runs and their counts, the newest runs' reports, a created book's author as it stands
+  // today (so a stray new spelling shows) and the books with no Calibre id.
+  const [runs, missing, detailed, authors] = await Promise.all([
+    calibreRuns(), notInCalibre(), calibreReports(DETAIL_RUNS), createdBookAuthors(DETAIL_RUNS),
+  ]);
+  const reports = new Map(detailed.map((d) => [d.id, d.report]));
 
   return (
     <main className="settings calibre">
@@ -144,7 +144,7 @@ export default async function CalibrePage() {
       ) : (
         <div className="group cruns">
           {runs.map((run, n) => {
-            const report = n < DETAIL_RUNS ? reports[n] : null;
+            const report = n < DETAIL_RUNS ? reports.get(run.id) : null;
             return report ? (
               <details key={run.id} className="crun" open={n === 0}>
                 <summary><Summary run={run} now={now} /></summary>

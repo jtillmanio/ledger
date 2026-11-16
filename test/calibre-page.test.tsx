@@ -87,8 +87,23 @@ describe("the log's queries (AC-2, AC-4)", () => {
     const runs = await q.calibreRuns();
     expect(runs.map((r) => [r.id, r.in, r.out, r.waiting])).toEqual([[3, 1, 0, 0], [2, 1, 1, 1], [1, 0, 0, 0]]);
     expect(runs[0].ranAt).toBe("2026-11-14T23:30:00.000Z");
-    expect((await q.calibreRun(2))?.out[0].column).toBe("#date_read");
-    expect(await q.calibreRun(99)).toBeNull();
+  });
+
+  it("reads the newest runs' reports in one query, newest first, and no more than asked", async () => {
+    await threeRuns();
+    const two = await q.calibreReports(2);
+    expect(two.map((r) => r.id)).toEqual([3, 2]);
+    expect(two[1].report.out[0].column).toBe("#date_read");
+    expect((await q.calibreReports(10)).map((r) => r.id)).toEqual([3, 2, 1]);
+    expect(await q.calibreReports(0)).toEqual([]);
+  });
+
+  it("counts a run whose report lacks a list, or holds one as something else, as 0 — never an error", async () => {
+    await run("2026-11-01T14:00:00Z", { in: [], out: [] } as never); // no waiting key
+    await run("2026-11-02T14:00:00Z", {} as never);
+    await run("2026-11-03T14:00:00Z", { in: null, out: "x", waiting: {} } as never);
+    expect((await q.calibreRuns()).map((r) => [r.in, r.out, r.waiting])).toEqual([[0, 0, 0], [0, 0, 0], [0, 0, 0]]);
+    expect((await q.createdBookAuthors(10)).size).toBe(0);
   });
 
   it("the last sync is the latest run's moment, or null before any", async () => {
@@ -101,9 +116,20 @@ describe("the log's queries (AC-2, AC-4)", () => {
     expect(await q.notInCalibre()).toEqual([{ id: "loose", title: "Loose Book", author: "N. K. Jemisin" }]);
   });
 
-  it("names the author a book has now", async () => {
-    expect([...(await q.authorsOfBooks(["b2", "gone", "nope"])).entries()]).toEqual([["b2", "Tamsyn Muir"]]);
-    expect((await q.authorsOfBooks([])).size).toBe(0);
+  it("names the author, as it stands now, of a book one of the newest runs created", async () => {
+    await threeRuns();
+    expect([...(await q.createdBookAuthors(10)).entries()]).toEqual([["b2", "Tamsyn Muir"]]);
+    // A book soft-deleted since has none.
+    await sql`UPDATE books SET deleted_at = now() WHERE id = 'b2'`;
+    expect((await q.createdBookAuthors(10)).size).toBe(0);
+  });
+
+  it("looks only at the newest runs it is asked for", async () => {
+    // An older run created b1; three newer runs came after it.
+    await run("2026-10-01T14:00:00Z", empty({ in: [{ kind: "created", calibreId: 1, bookId: "b1", title: "The Fifth Season", changes: [] }] }));
+    await threeRuns();
+    expect([...(await q.createdBookAuthors(3)).keys()]).toEqual(["b2"]);
+    expect([...(await q.createdBookAuthors(4)).keys()].sort()).toEqual(["b1", "b2"]);
   });
 });
 

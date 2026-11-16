@@ -1562,7 +1562,7 @@ textarea.txt.capture-field[aria-invalid="true"]{border-color:var(--danger)}
 .settings .set-link{color:inherit;text-decoration:none;min-height:44px}
 .settings .set-link:hover{background:var(--raise)}
 .set-link .set-chev{margin-left:auto;color:var(--muted);font-size:1.25rem;line-height:1}
-.calibre .lede .clink{color:var(--muted);text-decoration:underline;text-underline-offset:.15em}
+.calibre .lede .clink{display:inline-flex;align-items:center;min-height:24px;margin-block:-2px;color:var(--muted);text-decoration:underline;text-underline-offset:.15em}
 .crun{border-bottom:1px solid var(--line)}
 .crun:last-child{border-bottom:0}
 .crun>summary,.crun .csum{display:flex;align-items:center;gap:.75rem;min-height:44px;padding:.6875rem .875rem;box-sizing:border-box;cursor:pointer;list-style:none}
@@ -1603,6 +1603,11 @@ textarea.txt.capture-field[aria-invalid="true"]{border-color:var(--danger)}
 .dash-notes{display:flex;flex-wrap:wrap;align-items:center;column-gap:.75rem}
 .sync-line{margin:.375rem 0 .75rem;font-size:.8125rem}
 .sync-link{display:inline-flex;align-items:center;min-height:24px;color:var(--muted);text-decoration:underline;text-underline-offset:.15em}
+/* The phone's targets are 44px (design § 10): the hit area grows, and the negative margin keeps the line where it was. */
+@media (max-width:767px){
+  .sync-link{min-height:44px;margin-block:-10px}
+  .calibre .lede .clink{display:inline-flex;align-items:center;min-height:44px;margin-block:-12px}
+}
 
 /* --- the control-state matrix (task 1.8a, UX-N01; design/Specimen.dc.html B5) ---
    Every interactive class answers hover, press, keyboard focus and being

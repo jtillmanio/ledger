@@ -129,6 +129,8 @@ test("lists the runs newest first with counts, the newest open, and each change 
 test("a run's details open and close from the keyboard with a named summary", async ({ page }) => {
   await threeRuns();
   await open(page);
+  const back = page.locator(".calibre .lede .clink");
+  expect((await back.boundingBox())!.height, "the Settings link").toBeGreaterThanOrEqual(page.viewportSize()!.width < 768 ? 44 : 24);
   const second = summaries(page).nth(1);
   await second.focus();
   await expect(second).toBeFocused();
@@ -257,7 +259,8 @@ test("at 8 days the books dashboard says Calibre last synced 8 days ago, in --mu
   const style = await computedStyle(link, ["color"]);
   expect(style.color).toBe(muted);
   expect(style.color).not.toBe(danger);
-  expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+  // 44px on the phone, 24px elsewhere (design § 10); the line itself stays where it was.
+  expect((await link.boundingBox())!.height).toBeGreaterThanOrEqual(page.viewportSize()!.width < 768 ? 44 : 24);
   await hydrated(link);
   await link.click();
   await expect(page).toHaveURL(/\/settings\/calibre$/);
