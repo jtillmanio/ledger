@@ -1,14 +1,14 @@
 ---
 id: TASK-085
 title: 4.3 Covers in the UI (1 of 3) — real covers in every row: the spine, the Library and the next-issue strip
-status: Ready
+status: In progress
 depends_on: [TASK-027, TASK-003]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 4ab259b
 ---
 
 # TASK-085 — 4.3 Covers in the UI (1 of 3) — real covers in every row: the spine, the Library and the next-issue strip
@@ -74,9 +74,38 @@ element carries a `box-shadow` that resolves to `--halo`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Candidate decision: comic covers are hotlinked from Metron's image host, as D-94 hotlinks Hardcover's book covers; `next/image` (Vercel-cached resized copies) was ruled out for its `remotePatterns` config and its Hobby-plan image quota against ~11.5k covers. This PR measures the Library; poor loading moves covers to R2 under a later decision. (approved at plan, 2026-11-16) → destination at close-out: `docs/review/decisions.md`
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+*Approved by the owner 2026-11-16 (planned on Opus; implement on `model: sonnet`).*
+
+**Plan-time findings.** The Context says the spine query already selects `issues.cover_url`; it doesn't (`runSpine` in `src/db/queries.ts`), so step 2 adds it (a SELECT, no schema change). `listBooks` does. `Cover` is also used by `TopBooks`, `ThisOrThat` and the Add search results at other sizes (TASK-086's surfaces), so the row box is a new `RowCover` and `Cover` stays as it is. **Hotlink or cache:** hotlink (owner, at plan): a plain `<img>` on Metron's and Hardcover's hosts, as D-94; no `next/image`, no `next.config.ts` change.
+
+### Steps
+
+1. `src/components/Cover.tsx`: add `RowCover({ url, pending, text })`: a fixed `span.cv.rcv` box holding `<img loading="lazy" decoding="async" width={28} height={42} alt="">` when there is a url; the mono text placeholder (`.rcv.none`) when there is none; the dashed pending outline (`data-enrich="pending"`) carrying the same text when pending. All `aria-hidden` except the img (decorative by `alt=""`). Two helpers beside it: `issueCoverText(label)` (NextStrip's current rule: `issueName(label, true)` without the `#`, else the label's first three letters, upper-cased: `141`, `GN5`) and `bookInitials(title)` (first letters of the words, a leading The/A/An dropped, at most 3, upper-cased: *The Way of Kings* → `WOK`).
+2. Spine: `src/db/queries.ts` `runSpine` selects `i.cover_url`; `src/components/IssueRow.tsx` `Issue` gains `cover_url`, and every row renders `<RowCover url={issue.cover_url} pending={issue.pending} text={issueCoverText(issue.label)} />` where the pending-only `<Cover>` was (between `.ib` and `.iseq`).
+3. Next-issue strip: `src/components/NextStrip.tsx` takes `cover: string | null` and `pending`, and draws `RowCover` (its number when there is no cover); `RunSpine` passes the next row's.
+4. Library: `src/app/books/list/page.tsx` draws `<RowCover url={b.cover_url} pending={b.pending} text={bookInitials(b.title)} />`, so a book with no cover gets the box too.
+5. `src/app/globals.css`, existing tokens only: `.rcv` is `--cv-row-w` × `--cv-row-h` (20×30 under compact), radius `--r-cell`, `--sunk`, overflow hidden, a 1px inset `--rule` ring drawn by `::after` over the image (in both themes, no literal colour), the img `width:100%;height:100%;object-fit:cover`; the placeholder text mono `--muted` at .6875rem (smaller under compact so three letters fit 20px); no box-shadow, filter or tint. Every `.iss` is the five-column grid (drop the `:has(> .cv)` switch); `.book-row .cv.none{display:none}` goes; `.nextis .cv`'s own rules fold into `.rcv`.
+6. Loading: `src/components/Skeleton.tsx` gets `BookRowsSkeleton` (the `--sunk` cover box, title, sub-line and the status control, at the loaded geometry) and `ListSkeleton` a `book` prop that uses it; `src/app/books/list/loading.tsx` passes it. `RunSkeleton` draws the box on every spine row. The shimmer is already off under reduced motion (check `.sk` is covered; add it if not).
+7. Redraw (`ui.redrawFiles`): in `design/mockups.html`, the `.k1`–`.k8` gradient covers in the `spine`, `krakoa` and `blist` frames and the *Covers in a row* sheet become a neutral placeholder class (`--sunk`, mono `--muted`, inset `--rule` ring); no row keeps both an `.edge` and a `.tag .sq`. The dashboard frames stay for TASK-086. `design/mockups-index.md` only if a frame's description changes.
+
+**Files**: `src/components/Cover.tsx`, `src/components/IssueRow.tsx`, `src/components/NextStrip.tsx`, `src/db/queries.ts` (not in Files likely touched: the missing `cover_url`), `src/app/books/list/page.tsx`, `src/app/books/list/loading.tsx`, `src/components/Skeleton.tsx` (not listed: the skeletons live there), `src/app/globals.css`, `design/mockups.html`, `design/mockups-index.md` (maybe), `test/spine.test.tsx`, `test/e2e/covers.spec.ts` (new), `test/e2e/skeletons.spec.ts` (not listed: the Library skeleton's geometry). 13 files, past the split threshold of 8; kept whole by the owner (already 1 of 3, one row change).
+
+### Test strategy
+
+- AC-2, AC-5 (`test/spine.test.tsx`): a row with a `cover_url` renders exactly one `<img>` with `loading="lazy"`, `decoding="async"`, `width="28"`, `height="42"`, `alt=""`; a row without renders its number in `.rcv.none`; a pending row renders `data-enrich="pending"`; `issueCoverText` / `bookInitials` cases.
+- AC-1 row clauses, AC-2 sizes (`test/e2e/covers.spec.ts`): a 381-placement run seeded in the TEST database, every other issue with a `cover_url` on a fake host served by `page.route` (a small image; no outside request). Each row's cover box measures 28×42 (20×30 with `data-density="compact"`), every row the same height, CLS under 0.1 (a `layout-shift` PerformanceObserver while scrolling the whole spine and the images arrive).
+- AC-1, AC-5: no `.cv`/`.rcv` has a gradient `background-image`, a background equal to any `--t1`–`--t8` / `--g1`–`--g8`, or a `box-shadow` containing `--halo`'s value, light and dark; no Library row has both `.edge` and `.tag .sq`.
+- AC-3: Library rows with a cover, none (initials), pending (dashed box and *metadata pending*); AC-4: the strip with and without a cover.
+- AC-6: axe over the spine and the Library (placeholder contrast is axe's color-contrast); screenshots at 360, 834, 1280, light and dark; the skeleton box under reduced motion has no animation. `test/e2e/skeletons.spec.ts`: the Library skeleton's first row matches the loaded row's cover box and height.
+- AC-1's books-page CLS: Lighthouse in CI (`library` route, `/books/list`; the workflow fails at CLS ≥ 0.1). The PR reports CLS, LCP and how many covers failed to load.
+
+**Risks**: covers add requests to the Library's Lighthouse run (budget `library.requests` 64; lazy loads near the first screen may add 15–30): if it goes over, stop and ask before raising it (a `docs/02-architecture.md` change with a reason). The dark ring uses `--rule`, not the spec's white at 10%, to stay on tokens (hard rule 6). Wrapping the img in a span changes the selector the spine and Library tests use for the cover.
+
+**Follow-ups**: the candidate decision above (hotlink). The Context's wrong claim about the spine query is fixed by this PR, not tracked.
 
 ## Review log
 
