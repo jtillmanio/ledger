@@ -24,6 +24,8 @@ const routes: [string, string][] = [
 const pieces = {
   telecard: 'class="telecard sk-telecard"',
   runRows: 'class="row sk-row"',
+  // The Library's rows (task 4.3): the cover's box, a title, a sub-line and the status control.
+  bookRows: 'class="row book-row sk-bookrow"',
   seasonRows: 'class="sk sk-cover"',
   // The books dashboard (task 2.2): Now, the shelf and the quarter strip.
   booksNow: 'class="now-hero sk-now"',
@@ -32,7 +34,7 @@ const pieces = {
 const holds: [string, string, string[], string[]][] = [
   ["/comics", "../src/app/comics/(dash)/loading", [pieces.telecard, pieces.runRows], [pieces.seasonRows]],
   ["/comics/runs", "../src/app/comics/runs/loading", [pieces.runRows], [pieces.telecard, pieces.seasonRows]],
-  ["/books/list", "../src/app/books/list/loading", [pieces.runRows], [pieces.telecard, pieces.seasonRows]],
+  ["/books/list", "../src/app/books/list/loading", [pieces.bookRows], [pieces.runRows, pieces.telecard, pieces.seasonRows]],
   ["/watch", "../src/app/watch/loading", [pieces.seasonRows], [pieces.telecard, pieces.runRows]],
   ["/books", "../src/app/books/loading", [pieces.booksNow, pieces.quarter], [pieces.telecard, pieces.runRows, pieces.seasonRows]],
 ];

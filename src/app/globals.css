@@ -615,9 +615,6 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .runhero{margin:.75rem 0 .5rem}
 .nextis{display:flex;gap:.625rem;align-items:center;padding:.5rem;border-radius:var(--r-md);
   background:var(--raise);color:var(--ink)}
-.nextis .cv{flex:0 0 28px;height:42px;display:grid;place-items:center;overflow:hidden;
-  border-radius:var(--r-cover);background:var(--sunk);color:var(--muted);
-  font-family:var(--mono);font-size:.6875rem;font-weight:600}
 .nextis .nb{display:flex;flex-direction:column;min-width:0}
 .nextis .nk{font-size:.6875rem;line-height:1rem;text-transform:uppercase;letter-spacing:.04em;color:var(--faint)}
 .nextis .lbl{font-size:.8125rem;line-height:1.125rem;font-weight:600;color:var(--ink);
@@ -1483,10 +1480,24 @@ input.txt[aria-invalid="true"]{border-color:var(--danger)}
 .res-tags .enrich{margin-top:0;align-self:center}
 .res-tags .listen{align-self:center}
 .rows .row.book-row{display:flex;gap:.75rem;align-items:flex-start}
-.book-row .cv,.iss .cv{flex:0 0 var(--cv-row-w);width:var(--cv-row-w);height:var(--cv-row-h);
-  border-radius:var(--r-cell);object-fit:cover;background:var(--sunk)}
-.book-row .cv.none{display:none}
-.iss:has(> .cv){grid-template-columns:2.75rem 1fr auto auto auto}
+/* The cover in a row (task 4.3; STYLE_GUIDE § 9): one fixed box, 28×42 (20×30 compact), on the spine, the
+   Library and the next-issue strip, whether a cover has arrived or not, so nothing moves when it does. A
+   cover never glows and is never tinted; the ring is --rule, drawn over the image so it holds on any art. */
+.rcv{position:relative;flex:0 0 var(--cv-row-w);width:var(--cv-row-w);height:var(--cv-row-h);
+  display:grid;place-items:center;overflow:hidden;border-radius:var(--r-cell);background:var(--sunk);
+  color:var(--muted);font-family:var(--mono);font-size:.6875rem;font-weight:600;line-height:1;
+  letter-spacing:-.04em}   /* three characters fit the 20px compact box at the 11px floor */
+.rcv::after{content:"";position:absolute;inset:0;border-radius:var(--r-cell);box-shadow:inset 0 0 0 1px var(--rule);pointer-events:none}
+.rcv img{display:block;width:100%;height:100%;object-fit:cover}
+.rcv[data-enrich="pending"]{border:1px dashed var(--muted)}
+.rcv[data-enrich="pending"]::after{content:none}
+.iss{grid-template-columns:2.75rem 1fr auto auto auto}
+.book-row > .rcv{margin-top:.125rem}
+.sk.rcv::after{content:none}   /* the loading box has no ring: it is the --sunk box alone */
+.sk-bookrow .rb{display:flex;flex-direction:column;align-items:flex-start}   /* no margin collapse: the regions below add up to the loaded row's */
+.rows .row.sk-bookrow .sk-title{margin:.25rem 0}   /* the head: 24px */
+.sk-bookrow .sk-sub{margin:.2656rem 0}              /* the sub-line: 2px + 19.5px */
+.sk-bstatus{height:1.5rem;margin-top:.375rem;border-radius:var(--r-full)}
 
 .add-sk-text{height:9rem}
 .add-sk-slate{display:block;height:6rem;border-radius:var(--r-lg);margin-top:.5rem}

@@ -16,9 +16,10 @@ import { createElement, type ComponentType } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import PlanRail from "../../src/components/PlanRail";
 import {
-  PlanRailSkeleton, RunRowsSkeleton, SeasonRowsSkeleton, TelecardSkeleton,
+  BookRowsSkeleton, PlanRailSkeleton, RunRowsSkeleton, SeasonRowsSkeleton, TelecardSkeleton,
 } from "../../src/components/Skeleton";
 import type { RailBook } from "../../src/lib/plan-rail";
+import { hydrated } from "./helpers";
 
 const TOLERANCE = 2;
 const render = <P extends object>(component: ComponentType<P>, props?: P) =>
@@ -108,6 +109,25 @@ test.describe("at 360px", { tag: "@at-w390-light" }, () => {
     expect(loaded.length, "the seed has a run with no reads").toBe(1);
     await stage(page, render(RunRowsSkeleton, { rows: 1 }));
     expectClose(await boxes(page, ".rows .row"), loaded, "run row");
+  });
+
+  test("the Library rows skeleton draws the loaded row's cover box and height (task 4.3, AC-3)", async ({ page }) => {
+    await open(page, "/books/list", ".book-row .row-title");
+    // Edit the page only once React owns it: a text change before hydration regenerates the tree.
+    await hydrated(page.locator(".book-row .status-toggle").first());
+    // The seed's books have no sub-line; give them the line a real book has. They are pending, and a
+    // skeleton cannot know a row will carry *metadata pending*: measure the row as a matched book draws it.
+    await page.locator(".book-row .row-sub:empty").evaluateAll((els) => {
+      for (const el of els) el.textContent = "Brandon Sanderson · Fantasy";
+    });
+    await page.locator(".book-row .enrich").evaluateAll((els) => { for (const el of els) el.remove(); });
+    const loaded = (await boxes(page, ".book-row")).slice(0, 1);
+    const loadedCover = (await boxes(page, ".book-row .rcv")).slice(0, 1);
+    expect(loaded.length, "the seed has a book").toBe(1);
+    expect(loadedCover, "the loaded cover box").toEqual([{ width: 28, height: 42 }]);
+    await stage(page, render(BookRowsSkeleton, { rows: 1 }));
+    expectClose(await boxes(page, ".book-row .rcv"), loadedCover, "library cover box");
+    expectClose(await boxes(page, ".book-row"), loaded, "library row");
   });
 
   test("the plan rail skeleton is the plan rail's size, its stacks too (AC-1)", async ({ page }) => {

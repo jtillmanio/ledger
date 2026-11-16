@@ -7,7 +7,7 @@ import AddBooksButton from "@/components/AddBooksButton";
 import BookListSearch from "@/components/BookListSearch";
 import BookSort from "@/components/BookSort";
 import BookStatus from "@/components/BookStatus";
-import Cover, { Pending } from "@/components/Cover";
+import { bookInitials, Pending, RowCover } from "@/components/Cover";
 import { bookDates, bookSub, ownedWords, readSummary } from "@/lib/format";
 import { genreChipHref, libraryHref, parseSort } from "@/lib/library-sort";
 import { seriesAllHref, seriesView } from "@/lib/series-list";
@@ -132,7 +132,8 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
         {books.length === 0 && <div className="empty">Nothing matches. Try a broader filter.</div>}
         {books.map((b) => (
           <article key={b.id} className="row book-row">
-            <Cover url={b.cover_url} pending={b.pending} />
+            {/* The same box with or without a cover, so a cover arriving moves no row (task 4.3). */}
+            <RowCover url={b.cover_url} pending={b.pending} text={bookInitials(b.title)} />
             <span className="rb">
               <span className="row-head">
                 <span className="row-title">{b.title}</span>

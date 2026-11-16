@@ -122,3 +122,75 @@ describe("the check button", () => {
     }
   });
 });
+
+describe("the row cover (task 4.3, AC-2, AC-5)", () => {
+  const URL_X = "https://static.metron.cloud/media/issue/x.jpg";
+
+  /** Run b's rows: x has a cover and a Metron record, b2 has a record and no cover. */
+  async function withCovers() {
+    await sql`UPDATE issues SET metron_id = 1, cover_url = ${URL_X} WHERE id = 'x'`;
+    await sql`UPDATE issues SET metron_id = 2 WHERE id = 'b2'`;
+    return spine("b");
+  }
+
+  it("a row whose issue has a cover_url renders exactly one 28×42 lazy decorative <img>", async () => {
+    const row = (await withCovers()).row("Issue x");
+    const imgs = row.match(/<img[^>]*>/g) ?? [];
+    expect(imgs).toHaveLength(1);
+    expect(imgs[0]).toContain(`src="${URL_X}"`);
+    expect(imgs[0]).toContain('loading="lazy"');
+    expect(imgs[0]).toContain('decoding="async"');
+    expect(imgs[0]).toContain('width="28"');
+    expect(imgs[0]).toContain('height="42"');
+    expect(imgs[0]).toContain('alt=""');
+    expect(row).toMatch(/<span class="cv rcv"[^>]*><img/);
+  });
+
+  it("a row without one renders its text in the same box, with no <img>", async () => {
+    const row = (await withCovers()).row("Issue b2");
+    expect(row).not.toContain("<img");
+    expect(row).toMatch(/<span class="cv rcv none" aria-hidden="true">ISS<\/span>/);
+  });
+
+  it("a row with no Metron record keeps data-enrich=pending, its text and its line", async () => {
+    // The fixture's issues have no metron_id: pending.
+    const row = (await spine("b")).row("Issue b2");
+    expect(row).toContain('data-enrich="pending"');
+    expect(row).toContain("metadata pending");
+    expect(row).toContain("rcv");
+  });
+
+  it("every row has one cover box, so a cover arriving moves nothing", async () => {
+    const { rows } = await withCovers();
+    expect(rows).toHaveLength(2);
+    for (const r of rows) expect(r.match(/class="cv rcv/g)).toHaveLength(1);
+  });
+
+  it("issueCoverText is the issue number, else the label's first three letters", async () => {
+    const { issueCoverText } = await import("../src/components/Cover");
+    expect(issueCoverText("Thor (1966) #141")).toBe("141");
+    expect(issueCoverText("Annual #2")).toBe("2");
+    expect(issueCoverText("Marvel Graphic Novel")).toBe("MAR");
+  });
+
+  it("bookInitials is the first letters of the words, a leading article dropped, at most three", async () => {
+    const { bookInitials } = await import("../src/components/Cover");
+    expect(bookInitials("The Way of Kings")).toBe("WOK");
+    expect(bookInitials("A Memory of Light")).toBe("MOL");
+    expect(bookInitials("Dune")).toBe("D");
+    expect(bookInitials("Words of Radiance Part Two")).toBe("WOR");
+    expect(bookInitials("The")).toBe("T");
+  });
+
+  it("the row box is the --cv-row tokens: no gradient, identity hue or halo, and no per-cover grid", () => {
+    const css = readFileSync("src/app/globals.css", "utf8");
+    const rule = (css.match(/\.rcv[^{]*\{[^}]*\}/g) ?? []).join("\n");
+    expect(rule).toContain("var(--cv-row-w)");
+    expect(rule).toContain("var(--cv-row-h)");
+    expect(rule).toContain("var(--r-cell)");
+    expect(rule).toContain("var(--sunk)");
+    expect(rule).not.toMatch(/gradient|--t[1-8]\b|--g[1-8]\b|--halo|#[0-9a-fA-F]{3,8}/);
+    // No row is a different shape because it has a cover: the five-column grid is unconditional.
+    expect(css).not.toContain(".iss:has(> .cv)");
+  });
+});

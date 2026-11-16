@@ -433,10 +433,10 @@ function runSpine(userId: string, runId: string) {
   return sql<{
     id: string; placement_id: number; sequence: number; label: string; type: string;
     notes: string | null; completed: boolean; read_elsewhere: string[];
-    first_read_at: Date | null; first_read_precision: Precision; pending: boolean;
+    first_read_at: Date | null; first_read_precision: Precision; pending: boolean; cover_url: string | null;
   }[]>`
     SELECT ri.issue_id AS id, ri.id AS placement_id, ri.sequence, i.label, ri.type, ri.notes,
-           (i.metron_id IS NULL) AS pending,
+           (i.metron_id IS NULL) AS pending, i.cover_url,
            (p.placement_id IS NOT NULL) AS completed,
            COALESCE(rr.titles, '{}') AS read_elsewhere,
            CASE WHEN p.placement_id IS NULL THEN irr.first_read_at END AS first_read_at,
