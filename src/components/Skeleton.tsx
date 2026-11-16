@@ -33,8 +33,8 @@ export function Bar({ w, className = "" }: { w: string; className?: string }) {
  * + sub-line. `filters` is how many lines of chips each group wraps to, so the
  * rows start where the loaded rows will. `sort` ends the first group with the
  * Library's Sort control. */
-export function ListSkeleton({ rows = 8, filters = [1], search = false, sort = false }:
-  { rows?: number; filters?: number[]; search?: boolean; sort?: boolean }) {
+export function ListSkeleton({ rows = 8, filters = [1], search = false, sort = false, book = false }:
+  { rows?: number; filters?: number[]; search?: boolean; sort?: boolean; book?: boolean }) {
   return (
     <LoadingMain>
       <Bar w="9rem" className="sk-h1" />
@@ -49,8 +49,28 @@ export function ListSkeleton({ rows = 8, filters = [1], search = false, sort = f
           {sort && g === 0 && <span className="sort"><Bar w="12.5rem" className="sk-sort" /></span>}
         </div>
       ))}
-      <RunRowsSkeleton rows={rows} />
+      {book ? <BookRowsSkeleton rows={rows} /> : <RunRowsSkeleton rows={rows} />}
     </LoadingMain>
+  );
+}
+
+/** Library rows (task 4.3): the cover's box (28×42 in --sunk, as `RowCover` draws it), a title, a sub-line
+ * and the status control, at the loaded row's geometry, so a cover arriving moves nothing. The row is
+ * `.sk-bookrow`, not `.book-row`: a test counting the loaded rows must not count these. */
+export function BookRowsSkeleton({ rows = 8 }: { rows?: number }) {
+  return (
+    <div className="rows" aria-hidden="true">
+      {Array.from({ length: rows }, (_, n) => (
+        <div key={n} className="row sk-bookrow">
+          <span className="sk rcv" />
+          <span className="rb">
+            <Bar w={`${50 + ((n * 17) % 35)}%`} className="sk-title" />
+            <Bar w={`${35 + ((n * 23) % 30)}%`} className="sk-sub" />
+            <Bar w="5.5rem" className="sk-bstatus" />
+          </span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -164,6 +184,8 @@ export function RunSkeleton({ rows = 10 }: { rows?: number }) {
           <div key={n} className="iss">
             <span className="chk"><i className="sk-dot" /></span>
             <span className="ib"><Bar w={`${45 + ((n * 19) % 40)}%`} className="sk-title" /></span>
+            {/* The cover's box on every row, as the loaded rows have it (task 4.3). */}
+            <span className="sk rcv" />
             <Bar w="1.25rem" className="sk-sub" />
           </div>
         ))}

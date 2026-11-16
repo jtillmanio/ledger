@@ -3,7 +3,7 @@
 import { useEffect, useId, useOptimistic, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import Cover, { Pending } from "@/components/Cover";
+import { issueCoverText, Pending, RowCover } from "@/components/Cover";
 import FinishDate, { finishReason, finishWords, initialFinish, toChoice, type FinishValue } from "@/components/FinishDate";
 import Menu from "@/components/Menu";
 import NextStrip from "@/components/NextStrip";
@@ -18,8 +18,10 @@ type Issue = {
   id: string; placement_id: number; sequence: number; label: string;
   type: string; notes: string | null; completed: boolean;
   read_elsewhere: string[]; read_elsewhere_when: string | null;
-  /** No Metron record yet: *metadata pending* (task 1.4c). Real covers on every row are 4.3's. */
+  /** No Metron record yet: *metadata pending* (task 1.4c). */
   pending?: boolean;
+  /** Metron's image, hotlinked (D-94); none draws the issue number in the same box (task 4.3). */
+  cover_url?: string | null;
 };
 
 /** The range sheet's subject: placement ids in reading order, and where focus goes back to. */
@@ -286,7 +288,7 @@ export default function RunSpine({
       <div className="runhero">
         {next && (
           <NextStrip label={next.label} notes={next.notes} ordinal={nextAt + 1} total={state.length}
-            href={`#p-${nextAt + 1}`} />
+            href={`#p-${nextAt + 1}`} cover={next.cover_url ?? null} pending={next.pending} />
         )}
         {allRead && (
           <p className="runhero-done">
@@ -374,7 +376,8 @@ export default function RunSpine({
               )}
               {issue.pending && <Pending />}
             </div>
-            {issue.pending && <Cover url={null} pending />}
+            {/* Every row has the box, so a cover arriving moves nothing (task 4.3). */}
+            <RowCover url={issue.cover_url ?? null} pending={issue.pending} text={issueCoverText(issue.label)} />
             <span className="iseq mono">{issue.sequence}</span>
             {/* stopPropagation: opening the menu is not a click on the row. */}
             <span className="rowmenu" onClick={(e) => e.stopPropagation()}>
