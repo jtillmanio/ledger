@@ -1,7 +1,7 @@
 ---
 id: TASK-085
 title: 4.3 Covers in the UI (1 of 3) — real covers in every row: the spine, the Library and the next-issue strip
-status: Review
+status: Done
 depends_on: [TASK-027, TASK-003]
 size: M
 model: sonnet
@@ -121,8 +121,8 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Review log
 
-- Verify R1 FAIL (`test:tokens` 11px floor; `control-states` radius `inherit`; `loading-states` Library rows) → R2 PASS | CI R1 FAIL (`markup.spec.ts:79` in w390-touch and w1280-light: the skeleton's `.book-row`s; Lighthouse: run routes over budget) → fixed, budgets raised by the owner | Verify R3 PASS (alignment fix; 1909 tests) | CI R2 PASS (every e2e shard, `check`, Lighthouse within budget)
-- Audit R1 CHANGES (AC-6 axe/contrast and the three-width screenshots passed without the change) → strengthened, boxes asserted first | the optional AC-5 `.edge`/`.tag` guard left as is (the seeded books carry neither, the Library test is discriminating through its cover assertions)
+- Verify R1 FAIL (`test:tokens` 11px floor; `control-states` radius `inherit`; `loading-states` Library rows) → R2 PASS | CI R1 FAIL (`markup.spec.ts:79` in w390-touch and w1280-light: the skeleton's `.book-row`s; Lighthouse: run routes over budget) → fixed, budgets raised by the owner | CI R2 PASS on c1e40c5 (every e2e shard, `check`, Lighthouse within budget) | Verify R3 PASS (alignment fix; 1909 tests) | CI R3 on 389b7a1, the head with the alignment fix: see the PR's checks
+- Audit R1 CHANGES (AC-6 axe/contrast and the three-width screenshots passed without the change) → strengthened, boxes asserted first | the optional AC-5 `.edge`/`.tag` guard left as is (the seeded books carry neither, the Library test is discriminating through its cover assertions) | Audit R2 PASS (narrow: every covers, skeleton, loading-states and spine test fails on the pre-task `src/` and passes at HEAD; tree restored)
 - Spec R1 APPROVE (notes: the compact text size, recorded above; the 4-column `.iss` rule at globals.css:558 is overridden by the 5-column one later) | Schema R1 APPROVE (a SELECT of an existing column)
 - UI R1 CHANGES (the cover column drifted with the ordinal's digits) → `.iseq` fixed width, pinned in `covers.spec.ts`; the rest PASS at 360, 390, 412, 768, 1024, 1280, light and dark: covers 28×42, every row one height, strip, Library, skeleton, no gradient/glow/red, no console errors, placeholder text 4.98:1 light and 8.45:1 dark. Failed covers: spine 0 of 461; Library 63 of 295 in one run, 0 in the next (Open Library redirects). Re-run of ui-verifier not needed: the fix touched one CSS rule and a spec, and the spec passes at every CI width.
 
