@@ -1,7 +1,7 @@
 ---
 id: TASK-085
 title: 4.3 Covers in the UI (1 of 3) — real covers in every row: the spine, the Library and the next-issue strip
-status: In progress
+status: Review
 depends_on: [TASK-027, TASK-003]
 size: M
 model: sonnet
@@ -33,7 +33,7 @@ Every spine row, Library row and the next-issue strip shows the real cover in a 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the row clauses: CLS under 0.1 on the books page, no placeholder gradient or identity hue, no row with both an `.edge` and a `.tag .sq`, the spine's `<img loading="lazy" alt="">` in a 28×42 box and the issue number in the same box, no height change on a swap (CLS under 0.1 on a 381-row spine), and no cover `box-shadow` resolving to `--halo`. TASK-087 proves the zero-request clause): Lighthouse CLS under 0.1 on the books page. No cover placeholder
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the row clauses: CLS under 0.1 on the books page, no placeholder gradient or identity hue, no row with both an `.edge` and a `.tag .sq`, the spine's `<img loading="lazy" alt="">` in a 28×42 box and the issue number in the same box, no height change on a swap (CLS under 0.1 on a 381-row spine), and no cover `box-shadow` resolving to `--halo`. TASK-087 proves the zero-request clause): Lighthouse CLS under 0.1 on the books page. No cover placeholder
 renders a gradient or an identity hue, and no row renders both an `.edge` and a
 `.tag .sq`. On the spine, a row whose issue has a `cover_url` renders one
 `<img loading="lazy" alt="">` inside a 28×42 box, and a row without one renders
@@ -41,11 +41,11 @@ the issue number in the same box. Swapping one for the other changes no row's
 height (CLS under 0.1 on a 381-row spine). With `prefers-reduced-data: reduce`
 emulated, or *Show covers* off, the spine makes zero image requests. No cover
 element carries a `box-shadow` that resolves to `--halo`.
-- [ ] AC-2: On the spine, a row whose issue has a `cover_url` renders exactly one `<img>` with `loading="lazy"`, `decoding="async"`, `width="28"`, `height="42"` and `alt=""`; one without renders its issue number in a box of the same computed size; in compact density both are 20×30; every row's height is the same with and without a cover.
-- [ ] AC-3: On the Library, a book with a `cover_url` renders its cover in the 28×42 box, one without renders its initials in the neutral placeholder, and one pending renders the dashed box and *metadata pending*; the loading skeleton draws the same box per row.
-- [ ] AC-4: The next-issue strip renders the next placement's cover by the same rules, its number when it has none.
-- [ ] AC-5: No cover placeholder's computed background is a gradient or one of `--t1`–`--t8` / `--g1`–`--g8`; a book row on the Library carries an `.edge` or a `.tag .sq`, never both.
-- [ ] AC-6: The spine, the Library and the strip meet the UX floor (`docs/04-design.md` § 10. The UX floor): loading (the `--sunk` box), no-cover and pending states drawn; covers decorative (`alt=""`), the label beside them naming the row; placeholder text 4.5:1 in both themes; reduced motion stops the skeleton shimmer; axe reports no new violations; screenshots at 360px, 834px and 1280px, light and dark.
+- [x] AC-2: On the spine, a row whose issue has a `cover_url` renders exactly one `<img>` with `loading="lazy"`, `decoding="async"`, `width="28"`, `height="42"` and `alt=""`; one without renders its issue number in a box of the same computed size; in compact density both are 20×30; every row's height is the same with and without a cover.
+- [x] AC-3: On the Library, a book with a `cover_url` renders its cover in the 28×42 box, one without renders its initials in the neutral placeholder, and one pending renders the dashed box and *metadata pending*; the loading skeleton draws the same box per row.
+- [x] AC-4: The next-issue strip renders the next placement's cover by the same rules, its number when it has none.
+- [x] AC-5: No cover placeholder's computed background is a gradient or one of `--t1`–`--t8` / `--g1`–`--g8`; a book row on the Library carries an `.edge` or a `.tag .sq`, never both.
+- [x] AC-6: The spine, the Library and the strip meet the UX floor (`docs/04-design.md` § 10. The UX floor): loading (the `--sunk` box), no-cover and pending states drawn; covers decorative (`alt=""`), the label beside them naming the row; placeholder text 4.5:1 in both themes; reduced motion stops the skeleton shimmer; axe reports no new violations; screenshots at 360px, 834px and 1280px, light and dark.
 
 ## Out of scope
 
@@ -74,7 +74,12 @@ element carries a `box-shadow` that resolves to `--halo`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Candidate decision: comic covers are hotlinked from Metron's image host, as D-94 hotlinks Hardcover's book covers; `next/image` (Vercel-cached resized copies) was ruled out for its `remotePatterns` config and its Hobby-plan image quota against ~11.5k covers. This PR measures the Library; poor loading moves covers to R2 under a later decision. (approved at plan, 2026-11-16) → destination at close-out: `docs/review/decisions.md`
+- Candidate decision: comic covers are hotlinked from Metron's image host, as D-94 hotlinks Hardcover's book covers; `next/image` (Vercel-cached resized copies) was ruled out for its `remotePatterns` config and its Hobby-plan image quota against ~11.5k covers. This PR measures the Library; poor loading moves covers to R2 under a later decision. (approved at plan, 2026-11-16) → docs/review/decisions.md § D-154 (with the two run routes' raised Lighthouse budgets, which the owner chose at the stop-and-ask)
+- A cover that fails to load leaves an empty `--sunk` box with no text. On the dev Library's first 500 rows, 295 had covers and 211 of those are Open Library URLs that redirect to archive.org: 63 failed in one run, none in the next. The spine's 461 covers (static.metron.cloud) all loaded. A text fallback for a broken image needs a client `onError`. → docs/tasks/TASK-087-show-covers-and-reduced-data.md § Context
+- The spine's ordinal stays `.iseq`, right of the cover; the mockup's `states` frame (SG-D14) puts it in the gutter, and draws a pending spine box as series initial and number (`A5`) where the app draws the bare number. → not tracked: outside 4.3's acceptance criteria and a layout call for the owner, who can say whether to redraw the mockup or move the ordinal
+- Compact density (20×30 boxes) has no switch: `data-density` is set nowhere in `src`. → not tracked: 6.11 builds the density toggle, and a spec forces the attribute
+- The Library skeleton's row is 100.5px; a loaded phone row that wraps is 120–164px, so rows grow a little when the list arrives. → not tracked: a row's height follows its text, as the run rows skeleton already approximates, and the cover box is the part this task pins
+- The spine's no-cover number placeholder (a non-pending issue with no `cover_url`) can't be seen in dev data: every no-cover row there is pending. → not tracked: `test/spine.test.tsx` and `test/e2e/covers.spec.ts` seed it, so it needs no data change
 
 ## Plan
 
@@ -107,9 +112,19 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 **Follow-ups**: the candidate decision above (hotlink). The Context's wrong claim about the spine query is fixed by this PR, not tracked.
 
+### Revisions after approval
+
+1. Step 5: the compact placeholder text stays at .6875rem with `letter-spacing:-.04em` instead of shrinking: `test:tokens` holds text to an 11px floor.
+2. Step 6: the Library skeleton row is `.sk-bookrow`, not `.book-row`: `markup.spec.ts` counts `.rows > .row.book-row` the moment `/books/list` loads, and a skeleton still up read as 8 extra books. `test/loading-states.test.tsx` (which pinned the Library's old run rows) now pins the new rows and that no `.book-row` is among them.
+3. Lighthouse failed the two run routes once rows drew covers (requests 42 against 38, 56 against 33, document + RSC 26,490 against 26,000). The owner chose, at the plan's stop-and-ask, to raise them in this PR: `scripts/perf/budget.json` and `docs/02-architecture.md` § Performance budget (50 and 72 requests, 28,000 bytes for the large run), and D-154.
+4. The ui-verifier found the cover column drifting with the ordinal's digit count: `.iseq` takes `--ord-w`, right-aligned, and `covers.spec.ts` pins one x for rows 3, 30 and 300.
+
 ## Review log
 
-_Filled by /implement-task. One line per round._
+- Verify R1 FAIL (`test:tokens` 11px floor; `control-states` radius `inherit`; `loading-states` Library rows) → R2 PASS | CI R1 FAIL (`markup.spec.ts:79` in w390-touch and w1280-light: the skeleton's `.book-row`s; Lighthouse: run routes over budget) → fixed, budgets raised by the owner | Verify R3 PASS (alignment fix; 1909 tests) | CI R2 PASS (every e2e shard, `check`, Lighthouse within budget)
+- Audit R1 CHANGES (AC-6 axe/contrast and the three-width screenshots passed without the change) → strengthened, boxes asserted first | the optional AC-5 `.edge`/`.tag` guard left as is (the seeded books carry neither, the Library test is discriminating through its cover assertions)
+- Spec R1 APPROVE (notes: the compact text size, recorded above; the 4-column `.iss` rule at globals.css:558 is overridden by the 5-column one later) | Schema R1 APPROVE (a SELECT of an existing column)
+- UI R1 CHANGES (the cover column drifted with the ordinal's digits) → `.iseq` fixed width, pinned in `covers.spec.ts`; the rest PASS at 360, 390, 412, 768, 1024, 1280, light and dark: covers 28×42, every row one height, strip, Library, skeleton, no gradient/glow/red, no console errors, placeholder text 4.98:1 light and 8.45:1 dark. Failed covers: spine 0 of 461; Library 63 of 295 in one run, 0 in the next (Open Library redirects). Re-run of ui-verifier not needed: the fix touched one CSS rule and a spec, and the spec passes at every CI width.
 
 ## Blocked
 
@@ -117,7 +132,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 local (R1 FAIL, R2 PASS, R3 PASS), plus the touched specs each time
+- Review rounds: 1 (spec APPROVE, schema APPROVE, test audit CHANGES then fixed, UI CHANGES then fixed)
+- First-pass AC FAILs: 0 of the 6 criteria failed a reviewer (the audit's AC-6 gap and the UI's column drift were test and CSS fixes)
+- Plan revisions after approval: 4 (listed under *Revisions after approval*)
