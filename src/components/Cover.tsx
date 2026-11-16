@@ -1,3 +1,4 @@
+import CoverImage from "@/components/CoverImage";
 import { issueName } from "@/lib/format";
 
 /**
@@ -14,12 +15,11 @@ import { issueName } from "@/lib/format";
  */
 export default function Cover({ url, pending }: { url: string | null; pending: boolean }) {
   if (pending) return <span className="cv" data-enrich="pending" aria-hidden="true" />;
-  if (url) {
-    // A Hardcover, Open Library or Metron CDN thumbnail, drawn as it comes.
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img className="cv" src={url} alt="" width={40} height={60} loading="lazy" decoding="async" />;
-  }
-  return <span className="cv none" aria-hidden="true" />;
+  const none = <span className="cv none" aria-hidden="true" />;
+  if (!url) return none;
+  // A Hardcover, Open Library or Metron CDN thumbnail, drawn as it comes: by CoverImage, which draws
+  // it only when Show covers is on and data isn't reduced (task 4.3). Otherwise the placeholder.
+  return <CoverImage url={url} className="cv" width={40} height={60} fallback={none} />;
 }
 
 /**
@@ -35,15 +35,9 @@ export function RowCover({ url, pending = false, text }: { url: string | null; p
   if (pending) {
     return <span className="cv rcv" data-enrich="pending" aria-hidden="true">{text}</span>;
   }
-  if (url) {
-    return (
-      <span className="cv rcv">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={url} alt="" width={28} height={42} loading="lazy" decoding="async" />
-      </span>
-    );
-  }
-  return <span className="cv rcv none" aria-hidden="true">{text}</span>;
+  const none = <span className="cv rcv none" aria-hidden="true">{text}</span>;
+  if (!url) return none;
+  return <CoverImage url={url} box="cv rcv" width={28} height={42} fallback={none} />;
 }
 
 /**
@@ -55,13 +49,9 @@ export function RowCover({ url, pending = false, text }: { url: string | null; p
  * (D-94), never tinted, never glowing.
  */
 export function ArtCover({ url, w }: { url: string | null; w: number }) {
-  if (!url) return <span className="cv none" aria-hidden="true" />;
-  return (
-    <span className="cv art">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={url} alt="" width={w} height={w * 1.5} loading="lazy" decoding="async" />
-    </span>
-  );
+  const none = <span className="cv none" aria-hidden="true" />;
+  if (!url) return none;
+  return <CoverImage url={url} box="cv art" width={w} height={w * 1.5} fallback={none} />;
 }
 
 /** What stands in for a comic's cover: the issue number (`141`), else the label's first three letters. */

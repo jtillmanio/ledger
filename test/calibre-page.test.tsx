@@ -14,6 +14,8 @@ import { testSql, truncateAll } from "./db";
 
 const USER = "test-user";
 
+// Settings reads the per-device Show covers cookie (task 4.3); a request-less render has no jar.
+vi.mock("next/headers", () => ({ cookies: async () => ({ get: () => undefined }) }));
 vi.mock("@/lib/auth", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../src/lib/auth")>()),
   apiUserId: async () => USER,

@@ -4002,7 +4002,7 @@ existing `series_position`. Once the columns are approved: every book with a
 cover has both tone strings or neither, and 4.3's clamp tests cover the
 shared extractor.
 
-### ☐ 4.3 Covers in the UI · S
+### ☑ 4.3 Covers in the UI · S
 Lazy-loaded, aspect-locked, graceful when null. Do not let a missing cover
 shift layout.
 
@@ -5009,6 +5009,9 @@ it is converted.
   and the test fixtures follow (architecture § 14 goes). Whether `users`
   stays for sign-in (6.13) is decided at the plan gate. Comics read state
   still keys on the placement.
+  *From TASK-087 (4.3, PR #274):* `reading_settings.show_covers` has been
+  unused since D-156 (*Show covers* is a per-device cookie); this migration
+  drops that column too, while `reading_settings` keeps its pace columns.
   **Check:** the migration ships `drizzle/down/<tag>.sql` and passes an
   up → down → up test on the TEST database; a vitest over the fixture data
   shows every view returns the same rows before and after, less the
