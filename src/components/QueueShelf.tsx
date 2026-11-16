@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArtCover } from "@/components/Cover";
 import QueueBadge from "@/components/QueueBadge";
 import { useShelfPager } from "@/components/useShelfPager";
 import { QUEUE_HREF } from "@/lib/status-tabs";
@@ -16,7 +17,8 @@ import type { QueueRow } from "@/db/queries";
  * keyboard live (M-08). The row scrolls and snaps; it bleeds to the frame edge
  * below 1024px and stops at main's edge from there (FP-D18), where a fine
  * pointer gets ‹ › paging by the visible count, rendered only while it
- * overflows. Until 4.3 every card shows the neutral cover placeholder.
+ * overflows. A card's cover is its run's (task 4.3: the first placement with one),
+ * else the neutral placeholder in the same box.
  */
 export default function QueueShelf({ rows, readyCount }: { rows: QueueRow[]; readyCount: number }) {
   if (rows.length === 0) {
@@ -56,7 +58,7 @@ function Shelf({ rows }: { rows: QueueRow[] }) {
         {rows.map((r, i) => (
           <li key={r.id} className="card">
             <Link href={`/comics/${r.id}`} className="cover" aria-label={`${r.title}, number ${r.ordinal} in Up next`}>
-              <span className="cv none" aria-hidden="true" />
+              <ArtCover url={r.cover_url} w={112} />
               <span className="pos mono" aria-hidden="true">{r.ordinal}</span>
             </Link>
             <span className="card-title" aria-hidden="true">{r.title}</span>

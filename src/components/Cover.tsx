@@ -46,6 +46,24 @@ export function RowCover({ url, pending = false, text }: { url: string | null; p
   return <span className="cv rcv none" aria-hidden="true">{text}</span>;
 }
 
+/**
+ * A cover on the dashboards (task 4.3; STYLE_GUIDE § 4.2, § 7): the hero, the shelf, the On deck and queue
+ * rows. One 2:3 `.cv` box either way, sized by its slot's CSS (`--cover-hero`, `--cover-shelf`,
+ * `--cover-row`), so a cover arriving moves nothing. With a url it holds the image, decorative beside the
+ * title (`alt=""`), lazy, with `width` and `height` for `w` (its slot's width in px, so the browser
+ * reserves the box before it loads); without one, the neutral placeholder. Hotlinked as it comes
+ * (D-94), never tinted, never glowing.
+ */
+export function ArtCover({ url, w }: { url: string | null; w: number }) {
+  if (!url) return <span className="cv none" aria-hidden="true" />;
+  return (
+    <span className="cv art">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={url} alt="" width={w} height={w * 1.5} loading="lazy" decoding="async" />
+    </span>
+  );
+}
+
 /** What stands in for a comic's cover: the issue number (`141`), else the label's first three letters. */
 export function issueCoverText(label: string): string {
   const number = issueName(label, true);

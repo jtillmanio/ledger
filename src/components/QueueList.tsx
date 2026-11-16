@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArtCover } from "@/components/Cover";
 import QueueBadge from "@/components/QueueBadge";
 import { queueCall } from "@/components/QueueButton";
 import ReorderList from "@/components/ReorderList";
@@ -28,7 +29,7 @@ export default function QueueList({ rows }: { rows: QueueRow[] }) {
       }}
       renderBody={(r, i) => (
         <>
-          <span className="cv none" aria-hidden="true" />
+          <ArtCover url={r.cover_url} w={36} />
           <span className="qbody">
             <Link href={`/comics/${r.id}`} className="qtitle">{r.title}</Link>
             <span className="qmeta">

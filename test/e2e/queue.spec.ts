@@ -97,7 +97,7 @@ test.describe("the dashboard shelf", () => {
     await expect(cards(page).first().getByRole("link", { name: `Start ${titleOf(order[0])}` }))
       .toHaveAttribute("href", `/comics/${order[0]}#p-1`);
     await expect(shelf(page).locator(".drag, button")).toHaveCount(0);
-    // Every card falls back to the neutral placeholder until 4.3.
+    // These runs' issues have no cover, so every card draws the neutral placeholder (a cover is 4.3's dashboard-covers.spec.ts).
     await expect(cards(page).locator(".cover .cv.none")).toHaveCount(3);
     await expect(page.getByRole("link", { name: "Reorder" })).toHaveAttribute("href", LIST);
 

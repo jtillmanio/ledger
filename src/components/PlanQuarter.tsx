@@ -1,6 +1,7 @@
 "use client";
 
 import BookStatus from "@/components/BookStatus";
+import { ArtCover } from "@/components/Cover";
 import { Headphones } from "@/components/nav/Icons";
 import ReorderList from "@/components/ReorderList";
 import { bookSub, quarterName, wordsK } from "@/lib/format";
@@ -10,7 +11,7 @@ import { bookSub, quarterName, wordsK } from "@/lib/format";
 export type QuarterBook = {
   id: string; title: string; ordinal: number; author: string | null;
   series: string | null; series_position: number | null; universe: string | null;
-  word_count: number | null; listened?: boolean;
+  word_count: number | null; listened?: boolean; cover_url: string | null;
 };
 
 /** One call to `/api/plan`: move a book to a place in its own quarter. Rejects when it didn't save. */
@@ -43,7 +44,7 @@ export default function PlanQuarter({ period, rows }: { period: string; rows: Qu
       move={(id, to) => planMove(id, period, to)}
       renderBody={(b) => (
         <>
-          <span className="cv none" aria-hidden="true" />
+          <ArtCover url={b.cover_url} w={36} />
           <span className="qbody">
             {/* A planned book is to read, so its glyph can only say *Listened* (task 1.23). */}
             <span className="qtitle">{b.title}{b.listened && <> <Headphones label="Listened" /></>}</span>

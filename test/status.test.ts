@@ -213,6 +213,17 @@ describe("books Up next, Done and the level filter (roadmap 1.9 check)", () => {
     expect(planned.find((b) => b.id === "deck")).toMatchObject({ level: "on_deck", year: null, ordinal: null });
   });
 
+  it("booksUpNext carries each planned book's cover_url, null for a book with none (task 4.3)", async () => {
+    await sql`INSERT INTO books (id, title, cover_url) VALUES ('with', 'With', 'https://img.test/with.jpg')`;
+    await book("without");
+    for (const id of ["with", "without"]) { await status(id, "to_read"); await plan(id, "2027-Q1"); }
+
+    const { planned } = await q.booksUpNext(USER);
+    expect(Object.fromEntries(planned.map((b) => [b.id, b.cover_url]))).toEqual({
+      with: "https://img.test/with.jpg", without: null,
+    });
+  });
+
   it("three books planned 2027-Q1 are in ordinal order, and a move keeps the quarter a contiguous 1–3", async () => {
     for (const id of ["a", "b", "c"]) { await book(id); await status(id, "to_read"); await plan(id, "2027-Q1"); }
     await book("elsewhere"); await status("elsewhere", "to_read"); await plan("elsewhere", "2027-Q2");
