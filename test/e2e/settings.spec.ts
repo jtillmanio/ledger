@@ -410,17 +410,18 @@ test("the switch is keyboard-operable: Space toggles it, and focus stays on it",
   await expect(sw).toHaveAttribute("aria-checked", "true");
 });
 
-test("from 1024px Appearance sits with the pace on the left and Data stays on the right; below it they stack in the mockup's order", async ({ page }) => {
+test("from 1024px pace is on the left and Appearance sits above Data on the right (the mockup's desktop); below it they stack pace, Appearance, Data", async ({ page }) => {
   await open(page);
   const pace = (await page.getByRole("heading", { name: "Reading pace" }).boundingBox())!;
   const appearance = (await page.getByRole("heading", { name: "Appearance" }).boundingBox())!;
   const data = (await page.getByRole("heading", { name: "Data" }).boundingBox())!;
-  expect(appearance.y).toBeGreaterThan(pace.y);
+  expect(data.y).toBeGreaterThan(appearance.y);
   if (page.viewportSize()!.width >= 1024) {
-    expect(Math.abs(appearance.x - pace.x)).toBeLessThan(2);
-    expect(data.x).toBeGreaterThan(appearance.x + 200);
+    expect(appearance.x).toBeGreaterThan(pace.x + 200);
+    expect(Math.abs(appearance.x - data.x)).toBeLessThan(2);
   } else {
-    expect(data.y).toBeGreaterThan(appearance.y);
+    expect(appearance.y).toBeGreaterThan(pace.y);
+    expect(Math.abs(appearance.x - pace.x)).toBeLessThan(2);
   }
 });
 

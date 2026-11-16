@@ -474,34 +474,39 @@ test("with Show covers off, both dashboards make zero image requests and every c
   page.on("request", (r) => {
     if (r.resourceType() === "image" && /^https?:/.test(r.url()) && new URL(r.url()).origin !== app) seen.push(r.url());
   });
-  const slots = async () => ({
-    books: await page.locator("main .cv").evaluateAll((els) => els.map((el) => {
-      const b = el.getBoundingClientRect();
-      return [Math.round(b.width * 100) / 100, Math.round(b.height * 100) / 100];
-    })),
-  });
+  const slots = () => page.locator("main .cv").evaluateAll((els) => els.map((el) => {
+    const b = el.getBoundingClientRect();
+    return [Math.round(b.width * 100) / 100, Math.round(b.height * 100) / 100];
+  }));
+  const off = () => page.context().addCookies([{ name: "ledger_covers", value: "off", url: baseURL! }]);
+  const on = () => page.context().clearCookies({ name: "ledger_covers" });
 
   // Covers on: the covers are drawn, and these are the sizes the placeholders must keep.
   await openBooks(page);
   await expect(page.locator("main .cv img").first()).toBeVisible();
-  const on = await slots();
+  const booksOn = await slots();
+  await openComics(page);
+  await expect(page.locator("main .cv img").first()).toBeVisible();
+  const comicsOn = await slots();
   expect(seen.length).toBeGreaterThan(0);
   seen.length = 0;
 
-  await page.context().addCookies([{ name: "ledger_covers", value: "off", url: baseURL! }]);
+  await off();
   await openBooks(page);
   await expect(page.locator(".now-cover .cv")).toHaveCount(1);
   await page.waitForTimeout(500);
   await expect(page.locator("main img")).toHaveCount(0);
-  expect(await slots()).toEqual(on);
+  expect(await slots()).toEqual(booksOn);
 
   await openComics(page);
+  await expect(page.locator("main .cv").first()).toBeVisible();
   await page.waitForTimeout(500);
   await expect(page.locator("main img")).toHaveCount(0);
+  expect(await slots()).toEqual(comicsOn);
   expect(seen, "image requests").toEqual([]);
 
   // On again: a reload draws them.
-  await page.context().clearCookies({ name: "ledger_covers" });
+  await on();
   await openComics(page);
   await expect(page.locator("main .cv img").first()).toBeVisible();
 });

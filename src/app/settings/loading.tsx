@@ -22,6 +22,8 @@ export default function Loading() {
               <span className="sk sk-title" style={{ width: "70%" }} />
             </div>
           </div>
+        </div>
+        <div aria-hidden="true">
           {/* Appearance (4.3): one row, Show covers, with its 44px switch. */}
           <span className="sk sk-line sk-head" style={{ width: "6rem" }} />
           <div className="group" aria-hidden="true">
@@ -30,8 +32,6 @@ export default function Loading() {
               <span className="sk sk-stepper" style={{ width: "36px", height: "44px" }} />
             </div>
           </div>
-        </div>
-        <div aria-hidden="true">
           <span className="sk sk-line sk-head" style={{ width: "4rem" }} />
           <div className="group">
             {/* Volume map has a line and no button; Export everything has its Download. */}
