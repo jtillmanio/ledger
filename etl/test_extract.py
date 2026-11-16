@@ -106,7 +106,7 @@ class WorkbookCase(unittest.TestCase):
             ("b", "Run B", "Avengers", "Stan Lee", None)]
 
     def setUp(self):
-        for table in (ex.UNRESOLVED, ex.COVER_DATES, ex.WHY_REVIEW, ex.LABEL_RENAMES,
+        for table in (ex.UNRESOLVED, ex.COVER_DATES, ex.STORE_DATES, ex.WHY_REVIEW, ex.LABEL_RENAMES,
                       ex.ISSUE_DETAILS, ex.ISSUE_CREDITS, ex.VOLUME_MAP, ex.VOLUME_RULES, ex.CREATOR_ALIASES):
             table.clear()
         ex.USED_RENAMES.clear()
@@ -340,6 +340,69 @@ class RenameKeepsHandValues(WorkbookCase):
         self.assertEqual((issue["cover_date"], issue["cover_date_source"]), ("2004-04-01", "hand"))
         credits = {(c["creator_id"], c["role"]) for c in read(self.out, "issue_credits")}
         self.assertEqual(credits, {("me", "writer"), ("mark-bagley", "artist")})
+
+
+class StoryArcAndStoreDate(WorkbookCase):
+    """Task 3.5 (TASK-078): the arc and the on-sale date reach seed/issues.csv,
+    in the columns load.ps1, load.sh and load-comics.ps1 / .sh name, in order."""
+
+    def test_arc_and_store_date_ride_into_the_seed_issues(self):
+        ex.load_cover_dates(write_csv([
+            {"label": "Avengers (1998) #1", "cover_date": "1998-02-01", "source": "metron",
+             "store_date": "1997-12-17", "store_date_source": "metron", "metron_issue_id": "701"},
+            {"label": "Avengers (1998) #2", "cover_date": "", "source": "",
+             "store_date": "1998-01", "store_date_source": "hand", "metron_issue_id": ""},
+            {"label": "Avengers (1998) #3", "cover_date": "1998-04-01", "source": "metron",
+             "store_date": "1998-02-11", "store_date_source": "", "metron_issue_id": ""},
+        ]))
+        ex.load_issue_details(write_csv([
+            {"label": "Avengers (1998) #1", "story_title": "Once an Avenger", "story_title_source": "metron",
+             "story_arc": "Once an Avenger; Busiek Avengers", "story_arc_source": "metron",
+             "cover_url": "", "metron_issue_id": "701"},
+            {"label": "Avengers (1998) #2", "story_title": "", "story_title_source": "",
+             "story_arc": "Mine", "story_arc_source": "hand", "cover_url": "", "metron_issue_id": ""},
+            {"label": "Avengers (1998) #3", "story_title": "", "story_title_source": "",
+             "story_arc": "Unsourced", "story_arc_source": "", "cover_url": "", "metron_issue_id": ""},
+        ]))
+        self.extract([("a", "Avengers (1998) #1", False, "Core", None),
+                      ("a", "Avengers (1998) #2", False, "Core", None),
+                      ("a", "Avengers (1998) #3", False, "Core", None),
+                      ("a", "Avengers (1998) #4", False, "Core", None)])
+        with (self.out / "issues.csv").open(newline="", encoding="utf-8") as fh:
+            header = next(csv.reader(fh))
+        self.assertEqual(header, ["id", "label", "cover_date", "cover_date_source", "story_title",
+                                  "story_title_source", "cover_url", "metron_id",
+                                  "story_arc", "story_arc_source", "store_date", "store_date_source"])
+        issues = {i["label"]: i for i in read(self.out, "issues")}
+        pick = lambda label: tuple(issues[label][c] for c in
+                                   ("story_arc", "story_arc_source", "store_date", "store_date_source"))
+        self.assertEqual(pick("Avengers (1998) #1"),
+                         ("Once an Avenger; Busiek Avengers", "metron", "1997-12-17", "metron"))
+        self.assertEqual(pick("Avengers (1998) #2"), ("Mine", "hand", "1998-01-01", "hand"))
+        # A value with no source loads as nothing, and is reported (the CHECK would refuse it).
+        self.assertEqual(pick("Avengers (1998) #3"), ("", "", "", ""))
+        self.assertEqual(pick("Avengers (1998) #4"), ("", "", "", ""))
+        self.assertIn("story arc without a valid source", self.reasons())
+        self.assertIn("store date without a valid source", self.reasons())
+
+    def test_loaders_name_the_same_columns_in_the_same_order(self):
+        root = Path(__file__).parent
+        want = ("issues(id,label,cover_date,cover_date_source,story_title,story_title_source,cover_url,"
+                "metron_id,story_arc,story_arc_source,store_date,store_date_source)")
+        for name in ("load.ps1", "load.sh", "load-comics.ps1", "load-comics.sh"):
+            self.assertIn(want, (root / name).read_text(encoding="utf-8"), name)
+
+    def test_a_hand_arc_under_the_old_label_survives_a_rename(self):
+        ex.load_label_review(write_csv([
+            {"label": "Pulse #1", "proposed_label": "The Pulse (2004) #1", "category": "year_added",
+             "decision": "accept"}]))
+        ex.ISSUE_DETAILS["Pulse #1"] = {"story_arc": "Mine", "story_arc_source": "hand"}
+        ex.ISSUE_DETAILS["The Pulse (2004) #1"] = {"story_arc": "Theirs", "story_arc_source": "metron"}
+        ex.STORE_DATES["Pulse #1"] = ("2004-03-10", "hand")
+        ex.STORE_DATES["The Pulse (2004) #1"] = ("2004-03-17", "metron")
+        self.extract([("a", "Pulse #1", False, "Core", None)])
+        issue = read(self.out, "issues")[0]
+        self.assertEqual((issue["story_arc"], issue["store_date"]), ("Mine", "2004-03-10"))
 
 
 class DetailsAndCredits(WorkbookCase):

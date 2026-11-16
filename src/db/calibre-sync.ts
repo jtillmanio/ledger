@@ -25,8 +25,10 @@
  *   Ledger removed; a record repeating an earlier one's title and author is
  *   skipped, as calibre.py skips it.
  * - a Ledger book whose Calibre id has left Calibre stays live and is listed.
- * Tags and ISBN are accepted and not stored: `books` has no column for them
- * yet (owner, at 4.4's plan gate).
+ * The tags are the book's subjects and the comments its summary (task 3.5,
+ * TASK-078), on a new book and, Calibre winning, on a matched one; none is NULL.
+ * The log names a summary by its length, never its text. The ISBN is accepted
+ * and not stored: `books` has no column for it (owner, at 4.4's plan gate).
  *
  * Ledger → Calibre: for every Calibre book the Ledger has, whether it has a
  * read, the latest read's finish and precision, the status and the owned
@@ -71,8 +73,10 @@ export type CalibreRecord = {
   /** `#superseries`: the universe (D-90). */
   superseries?: string | null; superseriesIndex?: number | null;
   genres?: string[];
-  /** Accepted, not stored yet. */
+  /** Calibre's tags: the book's subjects (task 3.5, TASK-078). */
   tags?: string[];
+  /** Calibre's comments as plain text (`etl/calibre.py`'s `summary_text`): the book's summary (task 3.5). */
+  summary?: string | null;
   /** Accepted, not stored yet; the command passes it to the backfill, and the sync's Hardcover lookup reads it. */
   isbn?: string | null;
   words?: number | null;
@@ -175,7 +179,7 @@ export function parseSyncPayload(raw: unknown): SyncPayload | { error: string } 
     sent.add(r.calibreId);
     if (typeof r.title !== "string") return { error: `${at}.title must be text` };
     if (!Array.isArray(r.authors) || !r.authors.every((a) => typeof a === "string")) return { error: `${at}.authors must be a list of names` };
-    for (const f of ["series", "subseries", "superseries", "isbn", "type", "dateRead", "ledgerStatus"]) {
+    for (const f of ["series", "subseries", "superseries", "isbn", "type", "dateRead", "ledgerStatus", "summary"]) {
       if (!optStr(r[f])) return { error: `${at}.${f} must be text or null` };
     }
     for (const f of ["seriesIndex", "subseriesIndex", "superseriesIndex", "words", "pages"]) {
@@ -372,6 +376,18 @@ function genreList(values: string[]): string[] {
   return [...out.keys()].sort().map((k) => out.get(k)!);
 }
 
+/** Calibre's tags as `books.subjects`: cleaned, once whatever the case, sorted; none is NULL. */
+function subjectList(tags: string[] | null | undefined): string[] | null {
+  const list = genreList(tags ?? []);
+  return list.length ? list : null;
+}
+
+/** Calibre's comments as `books.summary`: the command's plain text, trimmed; none is NULL. */
+const summaryOf = (s: string | null | undefined) => (s && s.trim() ? s.trim() : null);
+
+/** A summary as the log shows it: its length, never its text (the first run would log a library's worth). */
+const summaryLog = (s: string | null) => (s ? `${s.split(/\s+/).filter(Boolean).length} words` : null);
+
 /** Calibre's read as the Ledger stores one: a year alone is its July 1st, `approximate` (data model 2.17). */
 function calibreRead(rec: CalibreRecord): { read: boolean; finishedOn: string | null; precision: Precision } {
   const day = rec.dateRead ? (rec.dateRead.length === 4 ? `${rec.dateRead}-07-01` : rec.dateRead) : null;
@@ -451,6 +467,7 @@ export async function syncCalibre(userId: string, payload: SyncPayload, opts: Sy
         universeId, universePosition: universeId ? rec.superseriesIndex ?? null : null,
         subseriesId, subseriesPosition: subseriesId ? rec.subseriesIndex ?? null : null,
         wordCount: rec.words ?? null, wordCountSource: rec.words != null ? "stated" : null,
+        summary: summaryOf(rec.summary), subjects: subjectList(rec.tags),
         pages, ...hardcover,
       } });
     }
@@ -527,6 +544,14 @@ export async function syncCalibre(userId: string, payload: SyncPayload, opts: Sy
         set.wordCountSource = "stated";
         changes.push({ field: "word count", from: b.wordCount, to: rec.words });
       }
+      if (rec.summary !== undefined) {
+        const want = summaryOf(rec.summary);
+        if (want !== b.summary) {
+          set.summary = want;
+          changes.push({ field: "summary", from: summaryLog(b.summary), to: summaryLog(want) });
+        }
+      }
+      if (rec.tags !== undefined) change("subjects", "subjects", b.subjects, subjectList(rec.tags));
       if (plan.takeId) change("calibre id", "calibreId", b.calibreId, rec.calibreId);
       // No other book holds an id this book takes: planRun matched a live one by it first, and
       // skipped a record whose id a removed book holds.

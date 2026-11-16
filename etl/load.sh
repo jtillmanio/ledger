@@ -61,7 +61,7 @@ TRUNCATE issue_progress, edition_progress, book_status, reading_plan, read_event
 \\copy runs(id,title,tier,block_id,sequence,spine,rating,why,why_source,notes,placeholder) FROM '$SEED/runs.csv' CSV HEADER
 \\copy run_tracks    FROM '$SEED/run_tracks.csv'    CSV HEADER
 \\copy volume_rules(series,run_id,issue_from,issue_to,year) FROM '$SEED/volume_rules.csv' CSV HEADER
-\\copy issues(id,label,cover_date,cover_date_source,story_title,story_title_source,cover_url,metron_id) FROM '$SEED/issues.csv' CSV HEADER
+\\copy issues(id,label,cover_date,cover_date_source,story_title,story_title_source,cover_url,metron_id,story_arc,story_arc_source,store_date,store_date_source) FROM '$SEED/issues.csv' CSV HEADER
 \\copy run_issues(id,run_id,sequence,issue_id,type,notes) FROM '$SEED/run_issues.csv' CSV HEADER
 \\copy creators(id,name,metron_id) FROM '$SEED/creators.csv' CSV HEADER
 \\copy issue_credits(issue_id,creator_id,role,source) FROM '$SEED/issue_credits.csv' CSV HEADER

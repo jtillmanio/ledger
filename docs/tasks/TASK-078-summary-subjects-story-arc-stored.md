@@ -1,14 +1,14 @@
 ---
 id: TASK-078
 title: 3.5 Detail sheets (1 of 3) — a book's summary and subjects, an issue's story arc
-status: Ready
+status: In progress
 depends_on: [TASK-081, TASK-082]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 87f1423
 ---
 
 # TASK-078 — 3.5 Detail sheets (1 of 3) — a book's summary and subjects, an issue's story arc
@@ -71,13 +71,76 @@ renders no *Dates* group and no `—`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- `docs/04-design.md` § 13 *What this changes* says Open Library returns the summary and subjects; Calibre's comments and tags do since D-94 → docs/04-design.md § What this changes (approved at plan)
+- `.claude/rules/schema.md`: the sidecar list gains the story arc and the store date; "tags, comments … load nothing until approved" becomes "the sync stores them" → .claude/rules/schema.md (approved at plan)
+- `docs/03-data-model.md` § 4.1: the 3.5 row becomes *Built (migration 0030)* with the approved types → docs/03-data-model.md § 4.1 By task (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+**Decisions at the plan gate (owner, 2026-11-16).** `books.summary text` is
+Calibre's comments as plain text (HTML turned into paragraphs, `\n\n` between
+them), `books.subjects text[]` is Calibre's tags (cleaned, once whatever the
+case, sorted); neither has a source column (Calibre is the only writer). Both
+ride the sync only: extract still loads books (1.26 not done), and a full
+`load`/`rebuild` leaves them NULL until the next `calibre:sync`.
+`issues.story_arc text` (Metron's arc names joined `; `, like `story_title`)
+with `story_arc_source` (`metron | hand`, the CHECK pair). `issues.store_date
+date` with `store_date_source` (`metron | hand`, the CHECK pair) is approved,
+filled from Metron's issue-list `store_date` into `cover_dates.csv`. One PR,
+not split (13 code files, the four loader edits a column list each).
+
+**Steps**
+1. Schema: `src/db/schema.ts` gains the five columns and two CHECKs; `npm run
+   db:generate` writes `drizzle/0030_*.sql` and its meta. Adds only, so no down file.
+2. Store date: `enrich_comics.py`'s date pass writes `store_date` and
+   `store_date_source` into `cover_dates.csv` from the issue-list entry; a `hand`
+   store date survives, independently of the cover date's source.
+3. Story arc: `enrich_comics.py --details` writes `story_arc` and
+   `story_arc_source` into `issue_details.csv`; a `hand` arc survives a rerun and
+   a rename (rekey). `check_sidecars.py` makes an unsourced arc or store date
+   `hand`, as it does a story title.
+4. `extract.py` carries both into `seed/issues.csv`; `load.ps1`, `load.sh`,
+   `load-comics.ps1` and `load-comics.sh` name the four columns in `\copy issues(...)`.
+5. Books: `calibre.py`'s `records()` reads `comments` (a library without the
+   table reads none) as plain text in `summary`, never written to
+   `calibre_books.csv`; `calibre_sync.py` sends it. `calibre-sync.ts` accepts
+   `summary`, stores it and the tags as `subjects` on created books (`BookRow`
+   in `writes.ts` gains both) and on matched books when the record carries the
+   field; empty is NULL; an unchanged value changes nothing. The log names the
+   field without copying the summary's text.
+6. Manual: `py etl/enrich_comics.py --offline` and `--details --offline` over the
+   warm cache (no requests), commit the refreshed `cover_dates.csv` and
+   `issue_details.csv`, report the arc and store-date counts, run `npm run extract:comics`.
+
+**Files**: `src/db/schema.ts`, `drizzle/0030_*.sql`, `drizzle/meta/*`,
+`etl/enrich_comics.py`, `etl/check_sidecars.py` (not listed), `etl/extract.py`,
+the four loaders, `etl/calibre.py` (not listed), `etl/calibre_sync.py`,
+`src/db/calibre-sync.ts`, `src/db/writes.ts` (not listed: `BookRow`),
+`etl/data/cover_dates.csv` and `etl/data/issue_details.csv` (not listed: the
+manual refresh); the three follow-up docs at close-out.
+
+**Test strategy**
+- AC-2, AC-5 (CHECK): `test/schema-additions.test.ts` — the columns and types;
+  an unsourced arc or store date, and a source with no value, are refused.
+- AC-3: `etl/test_enrich_comics.py` (a recorded detail page with two arcs →
+  `issue_details.csv`, no network; a `hand` arc kept on rerun and rekey);
+  `etl/test_extract.py` (arc and store date in `seed/issues.csv`);
+  `test/comics-load.test.ts` (both loaders' column lists); `etl/test_check_sidecars.py`.
+- AC-4: `test/calibre-sync-command.test.ts` (the fixture library gains a
+  `comments` table: comments and two tags fill both; neither leaves both NULL;
+  a second run changes nothing); `test/calibre-sync.test.ts` (cleared, kept,
+  not logged as text); `etl/test_calibre.py` (HTML to text; not in the CSV).
+- AC-5 (fill): `etl/test_enrich_comics.py` (a recorded issue list's `store_date`
+  → `cover_dates.csv` with `metron`; a hand one kept).
+
+**Risks**: `load:comics` against production after merge and before Release
+fails in its transaction (no column yet): Release first, said in the PR.
 
 ## Review log
 
 _Filled by /implement-task. One line per round._
+
+- Verify R1 PASS (tsc, lint, test:no-e2e: 109 vitest files, test_views.sql, 410 ETL tests; the first vitest launch ran from `c:\` and found no runner, so it was rerun from `C:\`; no browser spec touched)
 
 ## Blocked
 

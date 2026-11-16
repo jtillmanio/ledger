@@ -418,6 +418,28 @@ class CoverDates(unittest.TestCase):
         self.assertIn(("cover_dates.csv", "unparseable date"), report.problems)
         self.assertEqual(rows[1]["source"], "hand")
 
+    def test_store_date_and_story_arc_with_no_source_are_hand(self):
+        """Task 3.5 (TASK-078): typed into the sidecar, they are the owner's, as a story title is."""
+        report = cs.Report()
+        dates = [{"label": "A #1", "cover_date": "1987-03-01", "source": "metron", "store_date": "1986-12-09",
+                  "store_date_source": "", "status": "matched", "metron_issue_id": "5"},
+                 {"label": "B #1", "cover_date": "", "source": "", "store_date": "1986-12-09",
+                  "store_date_source": "metro", "status": "matched", "metron_issue_id": "6"},
+                 {"label": "C #1", "cover_date": "", "source": "", "status": "matched", "metron_issue_id": "7"}]
+        cs.fix_cover_dates(dates, {}, report)
+        self.assertEqual([r.get("store_date_source") for r in dates], ["hand", "metro", None])
+        self.assertIn(("cover_dates.csv", "store date with no source set to hand"), report.fixes)
+        self.assertIn(("cover_dates.csv", "store date with an unknown source"), report.problems)
+        details = [{"label": "A #1", "story_title": "", "story_title_source": "", "story_arc": "Born Again",
+                    "story_arc_source": ""},
+                   {"label": "B #1", "story_title": "", "story_title_source": ""}]
+        cs.fix_details(details, report)
+        self.assertEqual([r.get("story_arc_source") for r in details], ["hand", None])
+        self.assertIn(("issue_details.csv", "story arc with no source set to hand"), report.fixes)
+        self.assertTrue(cs.has_hand_value({"story_arc_source": "hand"}))
+        self.assertTrue(cs.has_hand_value({"store_date_source": "hand"}))
+        self.assertFalse(cs.has_hand_value({"story_arc_source": "metron", "source": "metron"}))
+
 
 class Checklist(unittest.TestCase):
     def test_sections_runs_and_ticks(self):

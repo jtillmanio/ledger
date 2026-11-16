@@ -78,6 +78,13 @@ describe("columns", () => {
     // Task 1.18c (D-90, D-91): Calibre's genres.
     ["book_genres", "book_id", "text", "NO"],
     ["book_genres", "genre", "text", "NO"],
+    // Task 3.5, part 1 (TASK-078): the detail sheets' facts, as the owner approved them.
+    ["books", "summary", "text", "YES"],
+    ["books", "subjects", "ARRAY", "YES"],
+    ["issues", "story_arc", "text", "YES"],
+    ["issues", "story_arc_source", "text", "YES"],
+    ["issues", "store_date", "date", "YES"],
+    ["issues", "store_date_source", "text", "YES"],
   ];
 
   it("adds every column with its type and nullability", async () => {
@@ -186,6 +193,42 @@ describe("task 1.18c: Calibre's genres (D-90)", () => {
     expect(await sqlstate(() => sql`
       INSERT INTO book_genres (book_id, genre) VALUES ('nope', 'Fantasy')`)).toBe(FK);
   });
+});
+
+describe("task 3.5: a book's summary and subjects, an issue's story arc and store date (TASK-078)", () => {
+  it("keeps subjects as a list of text, with no source column for the books pair", async () => {
+    const [col] = await sql<{ udt_name: string }[]>`
+      SELECT udt_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'books' AND column_name = 'subjects'`;
+    expect(col.udt_name).toBe("_text");
+    const sources = await sql`
+      SELECT 1 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'books' AND column_name IN ('summary_source', 'subjects_source')`;
+    expect(sources).toHaveLength(0);
+    expect(await sqlstate(() => sql`
+      INSERT INTO books (id, title, summary, subjects)
+      VALUES ('wok', 'The Way of Kings', 'Roshar.', ${["Epic", "Fantasy"]})`)).toBe("ok");
+    expect(await sql`SELECT summary, subjects FROM books WHERE id = 'wok'`)
+      .toEqual([{ summary: "Roshar.", subjects: ["Epic", "Fantasy"] }]);
+  });
+
+  for (const [value, source, literal] of [
+    ["story_arc", "story_arc_source", "'Secret Wars'"],
+    ["store_date", "store_date_source", "'2008-12-17'"],
+  ] as const) {
+    it(`pairs ${value} with its provenance, metron or hand`, async () => {
+      const ins = (cols: string, vals: string) =>
+        sqlstate(() => sql.unsafe(`INSERT INTO issues (id, label, ${cols}) VALUES ('i', 'I #1', ${vals})`));
+      expect(await ins(value, literal), "a value with no source").toBe(CHECK);
+      expect(await ins(source, "'metron'"), "a source with no value").toBe(CHECK);
+      expect(await ins(`${value}, ${source}`, `${literal}, 'guessed'`), "an unknown source").toBe(CHECK);
+      expect(await ins(`${value}, ${source}`, `${literal}, 'hand'`)).toBe("ok");
+      await sql`DELETE FROM issues`;
+      expect(await ins(`${value}, ${source}`, `${literal}, 'metron'`)).toBe("ok");
+      await sql`DELETE FROM issues`;
+      expect(await ins("cover_date", "NULL"), "neither").toBe("ok");
+    });
+  }
 });
 
 describe("eras", () => {

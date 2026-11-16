@@ -116,6 +116,36 @@ class MergeRows(unittest.TestCase):
         self.assertEqual(rows["X #1"]["metron_issue_id"], "42")
         self.assertEqual(rows["Y #1"]["cover_date"], "2011-01-01")
 
+    def test_store_date_travels_on_its_own(self):
+        """Task 3.5 (TASK-078): the on-sale date beside the cover date, with its own source."""
+        existing = {
+            # A hand cover date keeps its row, but Metron's store date still fills it.
+            "A #1": {"label": "A #1", "cover_date": "1990-05", "source": "hand", "store_date": "",
+                     "store_date_source": "", "status": "matched"},
+            # A hand store date survives a Metron refresh of the cover date.
+            "B #1": {"label": "B #1", "cover_date": "1991-01-01", "source": "metron",
+                     "store_date": "1990-11-02", "store_date_source": "hand", "status": "matched"},
+            # A failed lookup erases neither date.
+            "C #1": {"label": "C #1", "cover_date": "1992-01-01", "source": "metron",
+                     "store_date": "1991-11-06", "store_date_source": "metron", "status": "matched"},
+            # A row from before 3.5 has no store-date columns.
+            "D #1": {"label": "D #1", "cover_date": "1993-01-01", "source": "metron", "status": "matched"},
+        }
+        fresh = {
+            "A #1": ec.row("A #1", "matched", date="1999-09-01", store_date="1990-03-14"),
+            "B #1": ec.row("B #1", "matched", date="1991-02-01", store_date="1990-12-05"),
+            "C #1": ec.row("C #1", "ambiguous_volume", "two volumes"),
+            "D #1": ec.row("D #1", "matched", date="1993-01-01", store_date="1992-11-10"),
+        }
+        rows = {r["label"]: r for r in ec.merge_rows(existing, fresh)}
+        pick = lambda label: (rows[label]["cover_date"], rows[label]["source"],
+                              rows[label]["store_date"], rows[label]["store_date_source"])
+        self.assertEqual(pick("A #1"), ("1990-05", "hand", "1990-03-14", "metron"))
+        self.assertEqual(pick("B #1"), ("1991-02-01", "metron", "1990-11-02", "hand"))
+        self.assertEqual(pick("C #1"), ("1992-01-01", "metron", "1991-11-06", "metron"))
+        self.assertEqual(pick("D #1"), ("1993-01-01", "metron", "1992-11-10", "metron"))
+        self.assertEqual(ec.row("E #1", "matched", date="2000-01-01")["store_date_source"], "")
+
 
 class MetronFake(unittest.TestCase):
     PAGES: dict = {}
@@ -254,6 +284,24 @@ class Credits(unittest.TestCase):
         self.assertEqual((row["story_title"], row["story_title_source"], row["cover_url"], row["status"]),
                          ("Mine", "hand", "https://x/1.jpg", "detailed"))
 
+    def test_story_arcs_joined_once_and_a_hand_arc_survives(self):
+        """Task 3.5 (TASK-078): Metron's arcs, names joined like story titles; a hand arc is kept."""
+        detail = {"arcs": [{"id": 36, "name": "Secret Wars (2015)"}, {"id": 389, "name": " Time Runs Out "},
+                           {"id": 36, "name": "Secret Wars (2015)"}, {"id": 1, "name": ""}]}
+        self.assertEqual(ec.story_arc(detail), "Secret Wars (2015); Time Runs Out")
+        self.assertEqual(ec.story_arc({"arcs": []}), "")
+        self.assertEqual(ec.story_arc({}), "")
+        existing = {"A #1": {"label": "A #1", "story_title": "", "story_title_source": "",
+                             "story_arc": "My Arc", "story_arc_source": "hand", "status": "detailed"},
+                    "B #1": {"label": "B #1", "story_arc": "Old", "story_arc_source": "metron"}}
+        fresh = {"A #1": {"label": "A #1", "story_title": "T", "story_title_source": "metron",
+                          "story_arc": "Metron's Arc", "story_arc_source": "metron", "status": "detailed"},
+                 "B #1": {"label": "B #1", "story_arc": "New", "story_arc_source": "metron"}}
+        rows = {r["label"]: r for r in ec.merge_details(existing, fresh)}
+        self.assertEqual((rows["A #1"]["story_arc"], rows["A #1"]["story_arc_source"], rows["A #1"]["story_title"]),
+                         ("My Arc", "hand", "T"))
+        self.assertEqual((rows["B #1"]["story_arc"], rows["B #1"]["story_arc_source"]), ("New", "metron"))
+
 
 class Rekey(unittest.TestCase):
     def test_accepted_rename_moves_rows_and_hand_wins(self):
@@ -270,6 +318,26 @@ class Rekey(unittest.TestCase):
         self.assertEqual(sorted(by), ["The Pulse (2004) #1", "The Pulse (2004) #2"])
         self.assertEqual(by["The Pulse (2004) #1"]["source"], "hand")
         self.assertEqual(by["The Pulse (2004) #2"]["cover_date"], "2004-05-01")
+
+    def test_a_hand_arc_or_store_date_wins_a_rename_too(self):
+        """Task 3.5 (TASK-078): every hand pair of a one-row-per-label file counts."""
+        renames = {"Pulse #1": "The Pulse (2004) #1", "Pulse #2": "The Pulse (2004) #2"}
+        details = [
+            {"label": "Pulse #1", "story_title": "", "story_title_source": "", "story_arc": "Mine",
+             "story_arc_source": "hand"},
+            {"label": "The Pulse (2004) #1", "story_title": "Thin Air", "story_title_source": "metron",
+             "story_arc": "", "story_arc_source": ""},
+        ]
+        rows, _ = ec.rekey(details, renames, True, ec.DETAIL_HAND)
+        self.assertEqual([(r["label"], r["story_arc"]) for r in rows], [("The Pulse (2004) #1", "Mine")])
+        dates = [
+            {"label": "Pulse #2", "cover_date": "2004-05-01", "source": "metron", "store_date": "2004-03-10",
+             "store_date_source": "hand"},
+            {"label": "The Pulse (2004) #2", "cover_date": "2004-05-01", "source": "metron", "store_date": "",
+             "store_date_source": ""},
+        ]
+        rows, _ = ec.rekey(dates, renames, True, ec.DATE_HAND)
+        self.assertEqual([(r["label"], r["store_date_source"]) for r in rows], [("The Pulse (2004) #2", "hand")])
 
     def test_credit_rows_move_and_hand_role_wins(self):
         c = lambda label, who, role, src: {"label": label, "creator": who, "metron_creator_id": "",
@@ -446,6 +514,61 @@ class Proposals(MetronFake):
     def test_refresh_needs_details(self):
         with self.assertRaises(SystemExit), mock.patch("sys.stderr"):
             self.run_once("--refresh")
+
+
+class DetailFacts(MetronFake):
+    """Task 3.5 (TASK-078): the story arc and the store date, from pages already cached."""
+
+    setUp = Proposals.setUp
+    csv = Proposals.csv
+
+    PAGES = {
+        **Proposals.PAGES,
+        "series/7/issue_list/": {"next": None, "results": [
+            {"id": 701, "number": "1", "issue": "Avengers (1998) #1", "cover_date": "1998-02-01",
+             "store_date": "1997-12-17", "image": "https://x/701.jpg"},
+            {"id": 703, "number": "3", "issue": "Avengers (1998) #3", "cover_date": "1998-04-01",
+             "store_date": None}]},
+        "issue/701/": {**Proposals.PAGES["issue/701/"], "arcs": [
+            {"id": 5, "name": "Once an Avenger", "modified": "2020-01-01T00:00:00-05:00"},
+            {"id": 6, "name": "Busiek Avengers", "modified": "2020-01-01T00:00:00-05:00"}]},
+        "issue/703/": {"name": [], "credits": [], "arcs": []},
+    }
+
+    def test_arcs_and_store_dates_come_from_the_cache_and_hand_ones_stay(self):
+        self.run_once()
+        self.run_once("--details")
+        dates = self.csv("cover_dates")
+        self.assertEqual((dates["Avengers (1998) #1"]["store_date"], dates["Avengers (1998) #1"]["store_date_source"]),
+                         ("1997-12-17", "metron"))
+        self.assertEqual((dates["Avengers (1998) #3"]["store_date"], dates["Avengers (1998) #3"]["store_date_source"]),
+                         ("", ""))
+        # A sidecar written before 3.5 has no arc columns; the warm cache fills them, with no request.
+        old = [{k: v for k, v in r.items() if not k.startswith("story_arc")} for r in self.csv("issue_details").values()]
+        ec.write_csv(self.dir / "issue_details.csv", [c for c in ec.DETAIL_COLUMNS if not c.startswith("story_arc")], old)
+        first = len(self.fetched)
+        self.assertEqual(self.run_once("--details", "--offline"), 0)
+        self.assertEqual(len(self.fetched), first, "the arcs cost no request")
+        details = self.csv("issue_details")
+        self.assertEqual((details["Avengers (1998) #1"]["story_arc"], details["Avengers (1998) #1"]["story_arc_source"]),
+                         ("Once an Avenger; Busiek Avengers", "metron"))
+        self.assertEqual((details["Avengers (1998) #3"]["story_arc"], details["Avengers (1998) #3"]["story_arc_source"]),
+                         ("", ""))
+        # Typed by hand: the next run of either pass leaves them alone.
+        rows = list(details.values())
+        for r in rows:
+            if r["label"] == "Avengers (1998) #1":
+                r.update(story_arc="Mine", story_arc_source="hand")
+        ec.write_csv(self.dir / "issue_details.csv", ec.DETAIL_COLUMNS, rows)
+        rows = list(self.csv("cover_dates").values())
+        for r in rows:
+            if r["label"] == "Avengers (1998) #1":
+                r.update(store_date="1997-12-10", store_date_source="hand")
+        ec.write_csv(self.dir / "cover_dates.csv", ec.COLUMNS, rows)
+        self.assertEqual(self.run_once("--offline"), 0)
+        self.assertEqual(self.run_once("--details", "--offline"), 0)
+        self.assertEqual(self.csv("issue_details")["Avengers (1998) #1"]["story_arc"], "Mine")
+        self.assertEqual(self.csv("cover_dates")["Avengers (1998) #1"]["store_date"], "1997-12-10")
 
 
 if __name__ == "__main__":

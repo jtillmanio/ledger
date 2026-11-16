@@ -118,6 +118,9 @@ def apply_volume_year(label: str, run_id: str | None = None) -> str:
 
 # label -> (cover_date "YYYY-MM-DD", source, metron_id). From cover_dates.csv.
 COVER_DATES: dict[str, tuple[str, str, int | None]] = {}
+# label -> (store_date "YYYY-MM-DD", source): the on-sale date, from the same
+# file's store_date and store_date_source (task 3.5, TASK-078).
+STORE_DATES: dict[str, tuple[str, str]] = {}
 # run_id -> {"decision", "proposed_why", "final_why"}. From why_review.csv.
 WHY_REVIEW: dict[str, dict] = {}
 
@@ -152,9 +155,22 @@ def load_cover_dates(path) -> None:
         print(f"cover dates: {path} not found — issues load undated")
         return
     counts = {"metron": 0, "hand": 0}
+    stores = {"metron": 0, "hand": 0}
     with open(path, newline="", encoding="utf-8-sig") as fh:
         for row in csv.DictReader(fh):
             label = clean(row.get("label"))
+            store_raw = (row.get("store_date") or "").strip()
+            if label and store_raw:
+                store_source = (row.get("store_date_source") or "").strip().lower()
+                store = normalize_date(store_raw)
+                if store_source not in stores:
+                    flag("cover_dates", "store date without a valid source",
+                         f"{label}: source {store_source!r} — set it to hand or metron")
+                elif not store:
+                    flag("cover_dates", "unparseable store date", f"{label}: {store_raw!r}")
+                else:
+                    STORE_DATES[label] = (store, store_source)
+                    stores[store_source] += 1
             raw = (row.get("cover_date") or "").strip()
             if not label or not raw:
                 continue
@@ -169,7 +185,8 @@ def load_cover_dates(path) -> None:
                 continue
             COVER_DATES[label] = (date, source, as_int(row.get("metron_issue_id")))
             counts[source] += 1
-    print(f"cover dates: {counts['metron']} from Metron, {counts['hand']} by hand")
+    print(f"cover dates: {counts['metron']} from Metron, {counts['hand']} by hand; "
+          f"store dates: {stores['metron']} from Metron, {stores['hand']} by hand")
 
 
 def load_why_review(path) -> None:
@@ -269,7 +286,7 @@ def apply_rename(label: str) -> str:
 
 
 def load_issue_details(path) -> None:
-    """Story titles and cover URLs per label, from etl/enrich_comics.py plus hand entry."""
+    """Story titles, story arcs and cover URLs per label, from etl/enrich_comics.py plus hand entry."""
     if not path:
         return
     if not Path(path).exists():
@@ -287,9 +304,17 @@ def load_issue_details(path) -> None:
                 flag("issue_details", "story title without a valid source",
                      f"{label}: source {source!r} — set it to hand or metron")
                 title = None
+            arc = clean(row.get("story_arc"))
+            arc_source = (row.get("story_arc_source") or "").strip().lower()
+            if arc and arc_source not in SOURCES:
+                flag("issue_details", "story arc without a valid source",
+                     f"{label}: source {arc_source!r} — set it to hand or metron")
+                arc = None
             ISSUE_DETAILS[label] = {
                 "story_title": title,
                 "story_title_source": source if title else None,
+                "story_arc": arc,
+                "story_arc_source": arc_source if arc else None,
                 "cover_url": clean(row.get("cover_url")),
                 "metron_issue_id": as_int(row.get("metron_issue_id")),
             }
@@ -375,10 +400,10 @@ def is_hand_entry(name: str, value) -> bool:
     """Does a sidecar entry carry a hand-entered value?"""
     if value is None:
         return False
-    if name == "cover_dates":
+    if name in ("cover_dates", "store_dates"):
         return value[1] == "hand"
     if name == "issue_details":
-        return value.get("story_title_source") == "hand"
+        return "hand" in (value.get("story_title_source"), value.get("story_arc_source"))
     return any(source == "hand" for _, _, _, source in value)
 
 
@@ -739,6 +764,7 @@ def extract_comics(path: Path, out: Path) -> None:
             cover_date, cover_source, metron_id = (
                 sidecar(COVER_DATES, label, original, "cover_dates") or (None, None, None))
             details = sidecar(ISSUE_DETAILS, label, original, "issue_details") or {}
+            store_date, store_source = sidecar(STORE_DATES, label, original, "store_dates") or (None, None)
             issue = {
                 "id": iid,
                 "label": label,
@@ -746,6 +772,10 @@ def extract_comics(path: Path, out: Path) -> None:
                 "cover_date_source": cover_source,
                 "story_title": details.get("story_title"),
                 "story_title_source": details.get("story_title_source"),
+                "story_arc": details.get("story_arc"),
+                "story_arc_source": details.get("story_arc_source"),
+                "store_date": store_date,
+                "store_date_source": store_source,
                 "cover_url": details.get("cover_url"),
                 "metron_id": metron_id or details.get("metron_issue_id"),
                 "_credits": sidecar(ISSUE_CREDITS, label, original, "issue_credits") or [],
@@ -968,7 +998,8 @@ def extract_comics(path: Path, out: Path) -> None:
           ["series", "run_id", "issue_from", "issue_to", "year"])
     write(out, "issues", list(issues.values()),
           ["id", "label", "cover_date", "cover_date_source", "story_title",
-           "story_title_source", "cover_url", "metron_id"])
+           "story_title_source", "cover_url", "metron_id",
+           "story_arc", "story_arc_source", "store_date", "store_date_source"])
     write(out, "run_issues", placements, ["id", "run_id", "sequence", "issue_id", "type", "notes"])
     write(out, "creators", list(creators.values()), ["id", "name", "metron_id"])
     write(out, "issue_credits", credits, ["issue_id", "creator_id", "role", "source"])

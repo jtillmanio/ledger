@@ -1788,6 +1788,8 @@ export type BookRow = NewBook & {
   calibreId?: number | null; bookType?: string;
   universeId?: string | null; universePosition?: number | null;
   subseriesId?: string | null; subseriesPosition?: number | null;
+  /** Calibre's comments as plain text and its tags (task 3.5, TASK-078); an add leaves them out. */
+  summary?: string | null; subjects?: string[] | null;
 };
 
 /** One add at a time: two tabs adding the same new book would both create it. The Calibre sync takes it too. */
@@ -1853,6 +1855,7 @@ export async function createBooks(tx: Tx, toCreate: BookRow[]): Promise<string[]
       hardcoverId: b.hardcoverId ?? null, openLibraryId: b.openLibraryId ?? null, coverUrl: b.coverUrl ?? null,
       publishedYear: b.year ?? null, pageCount: b.pages ?? null,
       wordCount: b.wordCount ?? null, wordCountSource: b.wordCount == null ? null : b.wordCountSource ?? null,
+      summary: b.summary ?? null, subjects: b.subjects ?? null,
       // Every add path creates its books here, so this is the one stamp *Recently added* reads (task 2.10b).
       addedAt: sql`now()`,
     };
