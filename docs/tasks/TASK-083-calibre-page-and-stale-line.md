@@ -1,14 +1,14 @@
 ---
 id: TASK-083
 title: 4.4 Sync with Calibre (3 of 3) — the Calibre page, and a line when the last sync is old
-status: Ready
+status: In progress
 depends_on: [TASK-081, TASK-082, TASK-045, TASK-049]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 4ab259b
 ---
 
 # TASK-083 — 4.4 Sync with Calibre (3 of 3) — the Calibre page, and a line when the last sync is old
@@ -73,9 +73,38 @@ shows when the last run is 8 days old and not when it is 6.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Deciding a waiting near spelling on the *Calibre* page (*Merge* / *Separate*): an API route around `decideCalibrePair` (`src/db/writes.ts`), a client component and tests. This page only lists what waits; until the follow-up lands nothing in the app decides one. Planned: a new roadmap item or task beside 4.4 (approved at plan)
+- The write-back's lost finish precision (TASK-082's open question): a date-read column displaying a year alone reads back as July 1st `approximate`, so an exact Ledger finish is rewritten every run (`src/db/calibre-sync.ts`, `out("#date_read", …)`). Moot until `CALIBRE_SYNC_READS` is on; the route is TASK-082's, out of scope here. Planned: a note on `docs/05-roadmap.md` § 1.26 (approved at plan)
+- An author new to the Ledger on a created book: the report's `created` entries don't record whether the sync created the author, so the page can't flag a stray spelling without guessing. Needs the route to record it. Planned: a note on `docs/05-roadmap.md` § 4.4 (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-16 at 4ab259b, with the recommended answer to each open question.
+
+**Decisions at the gate.** The page lists a waiting near spelling and does not decide it (follow-up). A never-synced Ledger shows no dashboard line. TASK-082's precision question is a follow-up on 1.26, not fixed here. Kept whole despite 13 files (UI only, no schema; 2 are tests and 2 the required mockup redraws), `autonomy: attended`.
+
+### Steps
+
+1. `src/db/queries.ts`: `calibreRuns()` (id, `ran_at`, and the in / out / waiting counts as `jsonb_array_length` of the report's lists, derived in SQL, never stored, hard rule 2; newest first; the reports themselves not loaded); `calibreRun(id)` (one run's report); `lastCalibreSync()` (the latest `ran_at`, or null); `notInCalibre()` (live books with `calibre_id IS NULL`, title order, with the author name; `deleted_at IS NULL`, hard rule 4).
+2. `src/lib/calibre-log.ts` (new, pure): `syncLine(ranAt, now)` → *Calibre last synced N days ago* when the Eastern days between `easternDay(ranAt)` and `today(now)` (`daysBetween`, `src/components/BooksNow.tsx`) exceed 7, else null, and null for no run; `byBook(report)` groups `in` and `out` by book (title, changes, writes); labels for each field and column; the skipped columns' label *missing, or held until the books cutover*.
+3. `src/app/settings/calibre/page.tsx` (new): runs newest first, each a native `<details>` (the newest open) whose summary is the Eastern date and time and *n in · n out · n waiting*; inside, by book: came in (a created book shows its current author, joined live), went out (from → to), waiting, gone from Calibre, skipped, skipped columns, notes; a run with empty lists reads *Nothing changed.* Then *Not in Calibre · N*, a collapsed `<details>` listing those books. Empty state: a `--raise` panel, *No sync yet. Run `npm run calibre:sync` on your PC.*, no button (D-133: nothing in the browser runs a sync). `loading.tsx` (new): skeletons at the loaded geometry. `error.tsx` (new, the app's first route error boundary): a neutral line with a grey ×, never red, and a *Try again* button calling `reset`.
+4. `src/app/settings/page.tsx`: a *Calibre* row under *Data* (*Last synced …*, or *Not synced yet*) linking to `/settings/calibre`.
+5. `src/app/books/page.tsx`: `lastCalibreSync()` joins the one wave; `syncLine` renders a plain `--muted` link to `/settings/calibre` under the lede, beside the inbox chip, at every width. Nothing resolves to `--danger`.
+6. `src/app/globals.css`: the page's rows, the empty panel, the error line, the dashboard line (tokens only, hard rule 6).
+7. `design/mockups.html`, `design/mockups-index.md` (`ui.redrawFiles`): a new `calibre` frame (phone and desktop: runs, an open run, *Not in Calibre*, the empty state) and the line on one `bdash` frame.
+
+**Files:** `src/db/queries.ts`, `src/lib/calibre-log.ts` (new, not in Files likely touched), `src/app/settings/calibre/page.tsx`, `loading.tsx`, `error.tsx` (new, not in the list), `src/app/settings/page.tsx`, `src/app/books/page.tsx`, `src/app/globals.css` (not in the list), `design/mockups.html`, `design/mockups-index.md`, `test/calibre-page.test.tsx`, `test/e2e/calibre-page.spec.ts`.
+
+### Test strategy
+
+- AC-2 → `test/calibre-page.test.tsx`: three runs come back newest first with their counts; the page renders each Eastern date and time, the changes by book, and *Nothing changed.* for an empty run.
+- AC-3 → `test/calibre-page.test.tsx`: `syncLine` at 8 Eastern days renders the line, at 7 and 6 none, before any run none; the rendered line links to `/settings/calibre` and carries no `--danger` class or style. `test/e2e/calibre-page.spec.ts`: the dashboard with a run 8 days old shows it, 6 days old doesn't, and its computed colour isn't `--danger`'s.
+- AC-1 (browser clauses) → `test/e2e/calibre-page.spec.ts`: a logged run is listed on `/settings/calibre`; the 8- and 6-day dashboard checks above.
+- AC-4 → both: `notInCalibre()` lists a book with no `calibre_id` (vitest); Settings links to the page and the page lists it (e2e).
+- AC-5 → `test/e2e/calibre-page.spec.ts`: axe, target sizes (24px, 44px on the phone), contrast, no sideways scroll; screenshots at 360, 834 and 1280px light and dark (the page, empty and with runs), the dashboard with the line at 360, 390, 412, 768, 1024 and 1280 with reduced motion and reduced transparency; the loading skeleton's geometry and the error boundary rendered.
+- The spec runs serially and deletes its `calibre_syncs` rows after each test, so other dashboard specs never meet a stale run.
+
+**Risks:** a stray `calibre_syncs` row left in the shared test database would put the line on other specs' dashboard screenshots (mitigated above). `ran_at` is a timestamp, so the Eastern day must come from `easternDay`, never `toISOString().slice(0, 10)`.
 
 ## Review log
 

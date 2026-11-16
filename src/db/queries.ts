@@ -1880,6 +1880,61 @@ export async function volumeMapCounts(): Promise<{ rules: number; series: number
   return row;
 }
 
+/** One sync run in the log's list (task 4.4, D-133): when, and how many came in, went out and wait. */
+export type CalibreRun = { id: number; ranAt: string; in: number; out: number; waiting: number };
+
+/**
+ * Every Calibre sync run, newest first, with its counts (task 4.4, D-133). The counts are the
+ * lengths of the report's lists, taken in SQL: none is stored (hard rule 2), and the reports
+ * themselves aren't loaded, so a long log stays one small read. `ranAt` is ISO; the page says it in Eastern.
+ */
+export async function calibreRuns(): Promise<CalibreRun[]> {
+  return sql<CalibreRun[]>`
+    SELECT id, to_char(ran_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "ranAt",
+           jsonb_array_length(coalesce(report->'in', '[]'::jsonb)) AS "in",
+           jsonb_array_length(coalesce(report->'out', '[]'::jsonb)) AS "out",
+           jsonb_array_length(coalesce(report->'waiting', '[]'::jsonb)) AS "waiting"
+    FROM calibre_syncs ORDER BY ran_at DESC, id DESC`;
+}
+
+/** One run's report as the sync stored it, or null: the page reads it to list each change by book. */
+export async function calibreRun(id: number): Promise<import("./calibre-sync").SyncReport | null> {
+  const [row] = await sql<{ report: import("./calibre-sync").SyncReport }[]>`SELECT report FROM calibre_syncs WHERE id = ${id}`;
+  return row?.report ?? null;
+}
+
+/** When the last sync ran, as ISO, or null before any run: the dashboard's line and Settings' row read it. */
+export async function lastCalibreSync(): Promise<string | null> {
+  const [row] = await sql<{ at: string | null }[]>`
+    SELECT to_char(max(ran_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS at FROM calibre_syncs`;
+  return row?.at ?? null;
+}
+
+/**
+ * The authors of these books as they stand now (task 4.4): a run's report names a book it created
+ * by its title only, so the page asks who wrote it today, which shows a stray new spelling.
+ * A book soft-deleted since has no entry.
+ */
+export async function authorsOfBooks(ids: string[]): Promise<Map<string, string | null>> {
+  if (ids.length === 0) return new Map();
+  const rows = await sql<{ id: string; author: string | null }[]>`
+    SELECT b.id, a.name AS author FROM books b LEFT JOIN authors a ON a.id = b.author_id
+    WHERE b.id IN ${sql(ids)} AND b.deleted_at IS NULL`;
+  return new Map(rows.map((r) => [r.id, r.author]));
+}
+
+/**
+ * Live books Calibre doesn't have (task 4.4, D-90): `books.calibre_id` is NULL, so no sync has
+ * matched or made them. Derived, never stored; title order, with the author.
+ */
+export async function notInCalibre(): Promise<{ id: string; title: string; author: string | null }[]> {
+  return sql<{ id: string; title: string; author: string | null }[]>`
+    SELECT b.id, b.title, a.name AS author
+    FROM books b LEFT JOIN authors a ON a.id = b.author_id
+    WHERE b.deleted_at IS NULL AND b.calibre_id IS NULL
+    ORDER BY lower(b.title), b.id`;
+}
+
 /** One of your book shelves, for Add books opened from it (task 1.4c), or null. */
 export async function shelfFor(userId: string, shelfId: string) {
   const [row] = await sql<{ id: string; name: string }[]>`

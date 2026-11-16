@@ -1,12 +1,13 @@
 import Link from "next/link";
 import BetweenBooks from "@/components/BetweenBooks";
 import BooksNow, { nowLede } from "@/components/BooksNow";
+import CalibreSyncLine from "@/components/CalibreSyncLine";
 import OnDeckRow from "@/components/OnDeckRow";
 import PlanShelf from "@/components/PlanShelf";
 import QuarterStrip from "@/components/QuarterStrip";
 import { DashboardVerbs, HeaderVerbs, ThumbBar, type BarConfig } from "@/components/ThumbBar";
 import {
-  booksInHand, inboxCount, keepGoing, lastFinish, onDeck, planAcceptance, planCapacity, quarterBlocks, quarterShelf,
+  booksInHand, inboxCount, keepGoing, lastCalibreSync, lastFinish, onDeck, planAcceptance, planCapacity, quarterBlocks, quarterShelf,
   readingSettings, yearSoFar,
 } from "@/db/queries";
 import { requireUserId } from "@/lib/auth";
@@ -40,7 +41,7 @@ export default async function Books() {
   const pace = readingSettings(userId);
   // One wave (architecture § Operational posture): Now's *Next in* rides on booksInHand, and
   // *Or keep going* (2.2d) leaves out the quarter's offer itself, so neither waits on another read.
-  const [hand, last, shelf, blocks, capacity, deck, soFar, settings, inbox, keep, acceptance] = await Promise.all([
+  const [hand, last, shelf, blocks, capacity, deck, soFar, settings, inbox, keep, acceptance, synced] = await Promise.all([
     booksInHand(userId),
     lastFinish(userId),
     quarterShelf(userId, period),
@@ -52,6 +53,7 @@ export default async function Books() {
     inboxCount(userId),
     keepGoing(userId, period, KEEP_ROWS),
     planAcceptance(year),
+    lastCalibreSync(),
   ]);
   // The strip's overage is grey once the year is accepted as a stretch year (task 2.7); the card itself is the plan page's.
   const settled = decisionState(capacity.year, acceptance?.acceptedTotal ?? null) === "settled";
@@ -74,11 +76,15 @@ export default async function Books() {
         <HeaderVerbs />
       </header>
       <p className="dash-lede">{hero ? nowLede(hero, day) : "Nothing on the go right now."}</p>
-      {inbox > 0 && (
-        <p className="inbox-line">
-          <Link href="/inbox" className="chip inbox-chip"><span className="mono">{inbox}</span> in inbox</Link>
-        </p>
-      )}
+      {/* Beside the inbox chip, one plain grey line once the last Calibre sync is over a week old (task 4.4). */}
+      <div className="dash-notes">
+        {inbox > 0 && (
+          <p className="inbox-line">
+            <Link href="/inbox" className="chip inbox-chip"><span className="mono">{inbox}</span> in inbox</Link>
+          </p>
+        )}
+        <CalibreSyncLine ranAt={synced} />
+      </div>
 
       <div className="dash-cols">
         <div className="dash-main">

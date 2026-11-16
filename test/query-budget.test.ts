@@ -23,7 +23,8 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   // On deck, the year, your pace and the inbox count, together; an empty year's capacity reuses the pace.
   // Task 2.2d adds *Or keep going* (follow_next) in the same wave; Now's *Next in* rides on Now's read.
   // Task 2.7 adds the year's stretch-year acceptance (one row), so the strip's overage can read settled.
-  "/books": { queries: 11, waves: 1 },
+  // Task 4.4 adds the last Calibre sync (one scalar row) for the stale-sync line, in the same wave.
+  "/books": { queries: 12, waves: 1 },
   // The plan page (task 2.10): the year's capacity, the rail's books, the quarters' rows and your pace, together;
   // task 2.7 adds the year's acceptance row, for the capacity card and the settled hatch.
   "/books/plan": { queries: 5, waves: 1 },
@@ -31,7 +32,8 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   // when that year has no read, and the page opens the newest instead.
   "/books/top": { queries: 2, waves: 1 },
   "/inbox": { queries: 2, waves: 1 },
-  "/settings": { queries: 2, waves: 1 },
+  // Task 4.4 adds the last Calibre sync (one scalar row) for the *Calibre* row, in the same wave.
+  "/settings": { queries: 3, waves: 1 },
   "/watch": { queries: 0, waves: 0 },
   "/login": { queries: 0, waves: 0 },
 };
