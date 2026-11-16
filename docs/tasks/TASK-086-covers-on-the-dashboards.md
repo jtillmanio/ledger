@@ -1,7 +1,7 @@
 ---
 id: TASK-086
 title: 4.3 Covers in the UI (2 of 3) — covers at the feel-pass sizes: the heroes, the shelf and the dashboard rows
-status: In progress
+status: Review
 depends_on: [TASK-085, TASK-049]
 size: M
 model: sonnet
@@ -30,7 +30,7 @@ The dashboards lead with real covers (the book in hand, the comics Up next shelf
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves, for the dashboard and shelf covers, *no cover placeholder renders a gradient or an identity hue* and *no cover element carries a `box-shadow` that resolves to `--halo`*. TASK-085 proves the row clauses and TASK-087 the zero-request clause): Lighthouse CLS under 0.1 on the books page. No cover placeholder
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves, for the dashboard and shelf covers, *no cover placeholder renders a gradient or an identity hue* and *no cover element carries a `box-shadow` that resolves to `--halo`*. TASK-085 proves the row clauses and TASK-087 the zero-request clause): Lighthouse CLS under 0.1 on the books page. No cover placeholder
 renders a gradient or an identity hue, and no row renders both an `.edge` and a
 `.tag .sq`. On the spine, a row whose issue has a `cover_url` renders one
 `<img loading="lazy" alt="">` inside a 28×42 box, and a row without one renders
@@ -38,10 +38,10 @@ the issue number in the same box. Swapping one for the other changes no row's
 height (CLS under 0.1 on a 381-row spine). With `prefers-reduced-data: reduce`
 emulated, or *Show covers* off, the spine makes zero image requests. No cover
 element carries a `box-shadow` that resolves to `--halo`.
-- [ ] AC-2: On the books dashboard reading a book with a `cover_url`, the hero renders it 2:3 at `--cover-hero` (112px at 360, 150px at 768, 168px at 1280), with `--r-cover` and `--sh-cover`; a book without one renders the neutral placeholder in the same box, and the hero's height is the same either way.
-- [ ] AC-3: The comics Up next shelf renders each queued run's cover (as the plan gate settled) at `--cover-shelf`, and the On deck and queue rows at `--cover-row`, each lazy with explicit `width` and `height` and `alt=""`, or the placeholder in the same box.
-- [ ] AC-4: No dashboard cover or placeholder has a computed gradient background, an identity hue, or a `box-shadow` containing `--halo`'s value, in light or dark.
-- [ ] AC-5: The two dashboards meet the UX floor, feel-pass width (`docs/04-design.md` § 10. The UX floor): every state they have (reading, listening, between books, never finished; the shelf full and empty) with real covers and with placeholders, screenshotted at 360, 390, 412, 768, 1024 and 1280px, light and dark, once with `prefers-reduced-motion` and once with `prefers-reduced-transparency`; at 1440px the content box stays 1056px; axe reports no new violations; nothing resolves to `--danger`.
+- [x] AC-2: On the books dashboard reading a book with a `cover_url`, the hero renders it 2:3 at `--cover-hero` (112px at 360, 150px at 768, 168px at 1280), with `--r-cover` and `--sh-cover`; a book without one renders the neutral placeholder in the same box, and the hero's height is the same either way.
+- [x] AC-3: The comics Up next shelf renders each queued run's cover (as the plan gate settled) at `--cover-shelf`, and the On deck and queue rows at `--cover-row`, each lazy with explicit `width` and `height` and `alt=""`, or the placeholder in the same box.
+- [x] AC-4: No dashboard cover or placeholder has a computed gradient background, an identity hue, or a `box-shadow` containing `--halo`'s value, in light or dark.
+- [x] AC-5: The two dashboards meet the UX floor, feel-pass width (`docs/04-design.md` § 10. The UX floor): every state they have (reading, listening, between books, never finished; the shelf full and empty) with real covers and with placeholders, screenshotted at 360, 390, 412, 768, 1024 and 1280px, light and dark, once with `prefers-reduced-motion` and once with `prefers-reduced-transparency`; at 1440px the content box stays 1056px; axe reports no new violations; nothing resolves to `--danger`.
 
 ## Out of scope
 
@@ -68,7 +68,9 @@ element carries a `box-shadow` that resolves to `--halo`.
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
 - 2.4's comics hero and its *Since Tuesday* stack (30px) are not built, so this task adds no `--cover-stack` token (none in `design/tokens.css`) and no hero cover; 2.4 uses the run-cover rule settled here and takes the 30 width from `design/tokens.css` (approved at plan, 2026-11-16) → docs/05-roadmap.md § 2.4
-- Candidate decision: a run's cover is the cover of its lowest-sequence live placement whose issue has a `cover_url`; the placeholder only when none has one. Owner's choice at the plan gate, 2026-11-16, over sequence 1 strictly and a chosen cover (a schema change) (approved at plan, 2026-11-16) → docs/review/decisions.md § D-n
+- Candidate decision: a run's cover is the cover of its lowest-sequence live placement whose issue has a `cover_url`; the placeholder only when none has one. Owner's choice at the plan gate, 2026-11-16, over sequence 1 strictly and a chosen cover (a schema change) (approved at plan, 2026-11-16) → docs/review/decisions.md § D-155
+- `docs/review/decisions.md`'s closing line still read *The next new decision is **D-154*** after D-154 was recorded; it now reads D-156 → docs/review/decisions.md § D-155 (fixed in this PR)
+- An empty-string `cover_url` would pass `IS NOT NULL` in `upNext`'s lateral (schema-reviewer, minor): only Metron and the ETL write the column and neither writes one → not tracked: theoretical
 
 ## Plan
 
@@ -94,7 +96,7 @@ _Approved 2026-11-16 (owner): one task, not split, the books status screen's qua
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | CI R1 PASS (all 8 e2e shards, Vercel, Lighthouse on 8add61d) | Audit R1 PASS | Spec R1 APPROVE | Schema R1 APPROVE | UI R1 CHANGES (AC-2: at 360px a three-line title stretched the hero cover to 112×186) → fixed (`align-self:flex-start`, test fails without it) | Verify R2 PASS | CI R2 pending at close-out
 
 ## Blocked
 
@@ -102,7 +104,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1 (a fix after the UI round, re-checked below)
+- First-pass AC FAILs: 1 (AC-2 at 360px with a long title, found by ui-verifier)
+- Plan revisions after approval: 0

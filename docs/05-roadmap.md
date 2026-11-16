@@ -2560,6 +2560,13 @@ five-cover shelf, the telescope at W = column − 84 with a three-column ladder,
 and *Ready when you are* | *2026 so far* below, 1.5 : 1. Build the 768–1023px
 layout from it.
 
+*From TASK-086 (4.3, PR #271):* the hero's cover is the run's cover by D-155:
+the `issues.cover_url` of its lowest-`sequence` live placement that has one
+(`upNext`'s lateral in `src/db/queries.ts`), the neutral placeholder only when
+none does; draw it with `ArtCover` at `--cover-hero`. TASK-086 builds no hero
+and no *Since Tuesday* stack, so no `--cover-stack` token exists yet: take the
+30px width from `design/tokens.css` when this builds the stack.
+
 | Slot | Content |
 |---|---|
 | 1 Now | **The hero** (P1, P3; FP-D3, FP-D4). The only large thing on the page, radius `--r-hero` 20, on the `--art` band once 4.3 stores it (`--surface` until then). The cover at `--cover-hero` (112, 2:3, `--sh-cover`), the kicker *Up now*, the issue number in mono `--fs-hero-num` 44/48, the story title in Newsreader italic 19/23 (`issues.story_title`; omitted when null), and the run · credit line. Then the **This stretch** lens: 24 cells, one per issue around the resume pointer (fewer on a shorter run), run-relative and never catalogue-relative, read-here cells `--ready`, read-elsewhere cells dashed grey, the head cell ringed with `--halo`, ends labelled (`#130 … #153`) and the count *45 of 381 read*. Then the **Since Tuesday** stack: up to four covers of the issues marked since your last visit, with the count. Then **Also reading**: the other runs in flight as one row with a 32px secondary verb (*Astonishing X-Men 11 / 25 · Read #12*). |
