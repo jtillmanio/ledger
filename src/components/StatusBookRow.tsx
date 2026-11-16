@@ -1,10 +1,11 @@
+import Link from "next/link";
 import { Headphones } from "@/components/nav/Icons";
 import { bookSub, listenGlyph, wordsK } from "@/lib/format";
 
 /**
  * A book on a status tab that has no handle (task 1.9): In flight, a bare-year
- * lane, On deck and Done. Plain text, not a link: there is no book page until
- * 2.x, and the master list is where a book is opened and its status changed.
+ * lane, On deck and Done. With its `id`, the title is a link to the book
+ * (task 3.5): a sheet over the tab, Back closing it where the tab was.
  * `meta` is the right-hand mono text; it defaults to the word count. `dates` is
  * a Done row's dates line (task 1.17): *Started 1 Mar · finished 17 Mar · 16 days*.
  * The headphones glyph (task 1.23) follows the title: *Listening* while the book
@@ -12,8 +13,13 @@ import { bookSub, listenGlyph, wordsK } from "@/lib/format";
  * row's end, in the same `.row-verbs` the queue rows use. `control` (task 1.17b) is the
  * book's status control, under the sub-line; the page fills it for the rows that carry one.
  */
+/** A book's own route (task 3.5): its sheet from a list, its page on a direct load. */
+export const bookHref = (id: string) => `/book/${encodeURIComponent(id)}`;
+
 export default function StatusBookRow({ book, meta, dates = null, action, control }: {
   book: {
+    /** Links the title to the book's sheet (task 3.5). */
+    id?: string;
     title: string; author: string | null; series: string | null; series_position: number | null; universe: string | null;
     word_count: number | null;
     status?: string; listened?: boolean;
@@ -30,7 +36,13 @@ export default function StatusBookRow({ book, meta, dates = null, action, contro
   const text = (
     <>
       <span className="row-head">
-        <span className="row-title">{book.title}{glyph && <> <Headphones label={glyph} /></>}</span>
+        <span className="row-title">
+          {/* No prefetch: a tab can list hundreds, and the sheet's skeleton paints at once. */}
+          {book.id
+            ? <Link href={bookHref(book.id)} scroll={false} prefetch={false} className="book-link">{book.title}</Link>
+            : book.title}
+          {glyph && <> <Headphones label={glyph} /></>}
+        </span>
         {shown && <span className="row-meta mono">{shown}</span>}
       </span>
       {bookSub(book) && <span className="row-sub">{bookSub(book)}</span>}

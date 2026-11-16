@@ -940,6 +940,119 @@ export async function bookReads(userId: string, bookId: string): Promise<BookRea
   `;
 }
 
+/** One read of a book as its sheet's *Reading history* lists it (task 3.5, TASK-079). */
+export type HistoryRead = {
+  /** Its `read_events` row; null for the read a `read` status holds with no log row (the workbook's). */
+  id: number | null;
+  /** `audio` is a listen (task 1.23, D-85). */
+  format: "text" | "audio";
+  started_on: string | null; started_on_precision: Precision;
+  finished_on: string | null; finished_on_precision: Precision;
+  /** Finish minus start in days, when both are exact days; never stored (hard rule 2). */
+  days_taken: number | null;
+  /** Its finish year, from `finished_on` (D-21), and its rank in that year (D-101); null when unranked. */
+  year: number | null; year_rank: number | null;
+};
+
+/** Everything the book sheet and the book page show (task 3.5, TASK-079; docs/04-design.md § 13). */
+export type BookDetail = {
+  id: string; title: string; author: string | null; series: string | null; series_position: number | null;
+  universe: string | null;
+  /** The last segment of its deepest Calibre genre, as the Library row shows it (task 4.5, D-98). */
+  genre: string | null;
+  /** Calibre's comments and tags (TASK-078); null when Calibre has none. */
+  summary: string | null; subjects: string[] | null;
+  page_count: number | null; word_count: number | null; word_count_source: "stated" | "estimated" | null;
+  published_year: number | null; cover_url: string | null;
+  /** No external record yet: *metadata pending* (task 1.4c). */
+  pending: boolean;
+  status: string;
+  finished_on: string | null; finished_on_precision: Precision;
+  started_on: string | null; started_on_precision: Precision;
+  notes: string | null;
+  /** Where a to-read book sits (`to_read_level`, D-37): its level and period; null unless to read. A book
+   * with no status row is to read with a null level, which is Someday: `placeTag` draws it so. */
+  plan_level: ToReadLevel | null; plan_period: string | null;
+  /** The book shelves it is on, by name. */
+  shelves: string[];
+  /** What you own of it (task 5.17, D-132), as `listBooks` says it. */
+  owned: OwnedKind[];
+  /** Its reads by eye and its listens, from `book_reads` (task 1.23). */
+  reads: number; listens: number;
+  /** Every read, newest first: the log's order, which a re-date never changes. */
+  history: HistoryRead[];
+};
+
+/**
+ * One live book for its sheet and its page (task 3.5, TASK-079): its facts,
+ * your record (status, the start shown and the latest finish as the Library
+ * row reads them, notes, plan level, shelves, what you own) and its reads,
+ * newest first, each with its days taken and its rank. Null for a book that is
+ * unknown or removed. Every count and span is worked out here, never stored.
+ */
+export async function bookDetail(userId: string, bookId: string): Promise<BookDetail | null> {
+  const [row] = await sql<BookDetail[]>`
+    SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe,
+           (SELECT l.name FROM book_genre_levels l WHERE l.book_id = b.id AND l.direct
+            ORDER BY l.depth DESC, l.genre LIMIT 1) AS genre,
+           b.summary, b.subjects, b.page_count, b.word_count, b.word_count_source, b.published_year, b.cover_url,
+           (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
+           COALESCE(st.status, 'to_read') AS status,
+           st.finished_on::text AS finished_on, COALESCE(st.finished_on_precision, 'none') AS finished_on_precision,
+           (CASE WHEN st.status = 'read' THEN lr.started_on ELSE st.started_on END)::text AS started_on,
+           COALESCE(CASE WHEN st.status = 'read' THEN lr.started_on_precision ELSE st.started_on_precision END, 'none')
+             AS started_on_precision,
+           st.notes,
+           tl.level AS plan_level, tl.period AS plan_period,
+           COALESCE((SELECT array_agg(sh.name ORDER BY lower(sh.name), sh.id)
+                     FROM shelf_books sb
+                     JOIN shelves sh ON sh.id = sb.shelf_id AND sh.kind = 'books' AND sh.user_id = ${userId}
+                     WHERE sb.book_id = b.id), '{}') AS shelves,
+           array_remove(ARRAY[CASE WHEN EXISTS (SELECT 1 FROM owned_copies oc WHERE oc.book_id = b.id AND oc.format = 'physical')
+                                   THEN 'physical' END,
+                              CASE WHEN EXISTS (SELECT 1 FROM owned_copies oc WHERE oc.book_id = b.id AND oc.format = 'audio')
+                                   THEN 'audio' END,
+                              CASE WHEN b.calibre_id IS NOT NULL THEN 'ebook' END], NULL) AS owned,
+           (SELECT COUNT(*) FILTER (WHERE r.format = 'text') FROM book_reads r
+            WHERE r.user_id = ${userId} AND r.book_id = b.id)::int AS reads,
+           (SELECT COUNT(*) FILTER (WHERE r.format = 'audio') FROM book_reads r
+            WHERE r.user_id = ${userId} AND r.book_id = b.id)::int AS listens,
+           COALESCE((
+             SELECT json_agg(to_jsonb(h) - 'sort' ORDER BY h.sort DESC)
+             FROM (
+               SELECT e.id, e.format,
+                      e.started_on::text AS started_on, e.started_on_precision,
+                      e.finished_on::text AS finished_on, e.finished_on_precision,
+                      CASE WHEN e.started_on_precision = 'exact' AND e.finished_on_precision = 'exact'
+                           THEN e.finished_on - e.started_on END AS days_taken,
+                      extract(year FROM e.finished_on)::int AS year, e.year_rank, e.id AS sort
+               FROM read_events e
+               WHERE e.user_id = ${userId} AND e.book_id = b.id
+               UNION ALL
+               -- The read a Read status holds with no log row (the workbook's), as book_reads counts it.
+               SELECT NULL, 'text', NULL, 'none', st.finished_on::text, st.finished_on_precision, NULL,
+                      extract(year FROM st.finished_on)::int, NULL, 0
+               WHERE st.status = 'read'
+                 AND NOT EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id)
+             ) h), '[]'::json) AS history
+    FROM books b
+    LEFT JOIN authors a        ON a.id = b.author_id
+    LEFT JOIN book_series s    ON s.id = b.series_id
+    LEFT JOIN book_universes u ON u.id = b.universe_id
+    LEFT JOIN book_status st   ON st.book_id = b.id AND st.user_id = ${userId}
+    LEFT JOIN to_read_level tl ON tl.book_id = b.id AND tl.user_id = ${userId}
+    -- A Read book's latest read: the start shown (task 1.17), as listBooks reads it.
+    LEFT JOIN LATERAL (
+      SELECT e.started_on, e.started_on_precision
+      FROM read_events e
+      WHERE e.user_id = ${userId} AND e.book_id = b.id
+      ORDER BY e.id DESC
+      LIMIT 1
+    ) lr ON st.status = 'read'
+    WHERE b.id = ${bookId} AND b.deleted_at IS NULL`;
+  return row ?? null;
+}
+
 /** A Library genre chip (task 4.5): a top-level genre and how many listed books are under it. */
 export type GenreChip = { genre: string; books: number };
 

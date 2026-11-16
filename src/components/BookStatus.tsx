@@ -70,8 +70,9 @@ function startValue(d: Finish): FinishValue {
  * glyph beside the badge is named *Listening* while it is, and *Listened* once
  * the book has a listen.
  *
- * It is drawn on the Library row, on Now and on the books status screens
- * (task 1.17b, D-131), never on a search result. `title` is the book's name
+ * It is drawn on the Library row, on Now, on the books status screens
+ * (task 1.17b, D-131) and in the book sheet's *Your record*, open (`expanded`;
+ * task 3.5, one write path for both), never on a search result. `title` is the book's name
  * where there is no `.book-row` to read it from (Now, the status rows), and
  * `menu={false}` leaves the `⋯` off where the row has its own, and `glyph={false}` the
  * headphones beside the badge where the row already draws one by its title or kicker.
@@ -119,11 +120,13 @@ function startValue(d: Finish): FinishValue {
  */
 export default function BookStatus({
   bookId, status = "to_read", finishedOn = null, precision = "none", startedOn = null, startPrecision = "none",
-  listened = false, title: given, menu = true, glyph: showGlyph = true, owned,
+  listened = false, title: given, menu = true, glyph: showGlyph = true, owned, expanded = false,
 }: {
   bookId: string; status?: string; finishedOn?: string | null; precision?: Precision;
   startedOn?: string | null; startPrecision?: Precision; listened?: boolean;
   title?: string; menu?: boolean; glyph?: boolean;
+  /** Drawn open: the book sheet's *Your record* (task 3.5), where the controls are the point. */
+  expanded?: boolean;
   /** The copies the row owns, for the `⋯`'s toggles (task 5.17); left out when none. */
   owned?: readonly OwnedCopy[];
 }) {
@@ -134,7 +137,7 @@ export default function BookStatus({
     listened,
   });
   const [saved, setSaved] = useState<Saved>(fromProps);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(expanded);
   const [editing, setEditing] = useState<Editing | null>(null);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);

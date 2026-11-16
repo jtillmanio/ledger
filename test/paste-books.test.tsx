@@ -51,7 +51,7 @@ beforeEach(() => {
   onAdded.mockReset();
   act(() => root.render(
     <UndoProvider>
-      <PasteBooks level={2} target={{ kind: "someday" }} cancel={<a href="/books" className="btn sec">Cancel</a>} onAdded={onAdded} />
+      <PasteBooks level={2} target={{ kind: "someday" }} cancel={<button type="button" className="btn sec">Cancel</button>} onAdded={onAdded} />
     </UndoProvider>));
 });
 
@@ -286,7 +286,7 @@ describe("Physical copy and Audiobook (task 5.17)", () => {
   it("says it in the toast, and its Undo sends back exactly what the paste wrote", async () => {
     act(() => root.render(
       <UndoProvider>
-        <PasteBooks level={2} target={{ kind: "owned", format: "physical" }} cancel={<a href="/books" className="btn sec">Cancel</a>}
+        <PasteBooks level={2} target={{ kind: "owned", format: "physical" }} cancel={<button type="button" className="btn sec">Cancel</button>}
           onAdded={onAdded} />
       </UndoProvider>));
     library["the name of the wind"] = { match: { ...WIND, status: "to_read" }, near: null };

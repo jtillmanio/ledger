@@ -28,6 +28,8 @@ Tapping an issue opens a sheet with its story, credits and dates, and every run 
 - **What links to it**: the spine's grey `+N` / *read in …* hint and every issue row (`src/components/IssueRow.tsx`), and the master list's collapsed row, whose full record is this sheet.
 - **Stop and ask at plan time:** the Check's *Opening Why blocked? from inside an issue sheet leaves exactly one sheet in the DOM, and Back returns to the issue sheet* needs 2.6's *Why blocked?* sheet (`/comics/[runId]/path`, roadmap § 2.6, M12), which is not built. Whether this part waits for 2.6, builds the clause's test against another sheet the issue sheet can open, or carries the clause to 2.6 is the owner's call.
 - Decisions: D-19, D-33, D-34, D-63, D-129, UX-N10, UX-N12. Hard rules 3 and 6.
+- *From TASK-079 (3.5, PR #275), open question for the plan:* the route above, `@modal/(.)comics/[runId]/[issueId]`, would catch `/comics/[runId]/add` as an issue called `add` (D-157): Next 16 applies an intercepting route's rewrite ahead of the static routes beside it, which is why the book's route became `/book/[id]`. Pick a route with no static sibling (an `/issue/…` segment, say) and say how it reads the Check's wording. The frame to reuse is `src/components/RouteSheet.tsx` with `SheetHeading`, mounted as the segment's `layout.tsx` so the skeleton gives way inside one sheet; a plain `router.refresh()` inside it stays soft once the route has no static sibling.
+- *From TASK-079 (3.5, PR #275):* the cover → hero morph through the View Transitions API (`view-transition-name: cover-{id}`, the entry's progressive enhancement) was left for this part, to build once for both sheets; without support it is the plain enter the book sheet has now.
 
 ## Acceptance criteria
 

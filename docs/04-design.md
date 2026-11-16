@@ -1032,25 +1032,33 @@ phone, a centred modal on desktop. The list stays behind it, scroll position
 intact. Dismiss by dragging down, tapping outside, or pressing back.
 
 The trick is that it's **a real route, not a modal component.** Next.js
-intercepting routes render `/books/[id]` as a sheet when you arrive from the
-list, and as a full page when you land on it directly:
+intercepting routes render `/book/[id]` as a sheet when you arrive from a
+list, and as a full page when you land on it directly (task 3.5, TASK-079):
 
 ```
 src/app/
-  books/
-    page.tsx                  the master list
-    [id]/page.tsx             full page — direct link, refresh, new tab
+  books/list/page.tsx         the Library
+  book/[id]/page.tsx          full page — direct link, refresh, new tab
   @modal/
-    (.)books/[id]/page.tsx    the sheet — same component, sheet chrome
+    default.tsx               no sheet
+    (.)book/[id]/layout.tsx   the sheet's chrome (RouteSheet)
+    (.)book/[id]/page.tsx     the sheet — the same BookDetail
 ```
+
+**The detail route is its own segment, `/book/`, not `/books/[id]`** (D-157).
+Next 16 applies an intercepting route's rewrite ahead of the static routes beside
+it, so a `[id]` under `/books/` caught `/books/plan` and the Library's other
+screens as a book and rendered a 404. A detail route never shares a dynamic
+segment with static siblings.
 
 This gets three things a modal component cannot:
 
 1. **The back button dismisses it.** Which is what a phone user will press.
-2. **It's linkable.** `/books/abc` works pasted into a note or opened cold.
+2. **It's linkable.** `/book/abc` works pasted into a note or opened cold.
 3. **Refresh doesn't lose you.** You get the full page, not the list.
 
-Same pattern for `/comics/[runId]/[issueId]` and `/watch/[id]`. Runs keep a
+Same pattern for the issue (TASK-080, which picks a route clear of
+`/comics/[runId]/add`, D-157) and `/watch/[id]`. Runs keep a
 full page of their own — they're too dense for a sheet and you navigate to them
 deliberately.
 

@@ -213,6 +213,34 @@ describe("the Library's Owned filter (task 5.17, AC-3)", () => {
   });
 });
 
+// Task 3.5 (TASK-079): a Library row's title, and a status row's, open the book's sheet: a link to
+// /book/{id}, not prefetched (500 rows), that keeps the list's scroll.
+describe("a row opens its book (task 3.5)", () => {
+  it("links the Library row's title to /book/{id}", async () => {
+    queries.listBooks.mockResolvedValueOnce([{
+      id: "the way/of kings", title: "The Way of Kings", author: null, series: null, series_position: null, universe: null,
+      genre: null, word_count: null, word_count_source: null, cover_url: null, pending: false, status: "to_read",
+      read_year: null, plan_year: null, finished_on: null, finished_on_precision: "none", started_on: null,
+      started_on_precision: "none", days_taken: null, rating: null, reads: 0, listens: 0, total: 1, owned: [],
+    }]);
+    const { doc } = await render({});
+    const link = doc.querySelector<HTMLAnchorElement>(".book-row .row-title a");
+    expect(link?.getAttribute("href")).toBe("/book/the%20way%2Fof%20kings");
+    expect(link?.textContent).toBe("The Way of Kings");
+  });
+
+  it("links a status row's title when it has the book's id, and leaves it text without one", async () => {
+    const { default: StatusBookRow } = await import("../src/components/StatusBookRow");
+    const book = { title: "Elantris", author: null, series: null, series_position: null, universe: null, word_count: null };
+    const linked = new DOMParser().parseFromString(
+      renderToStaticMarkup(createElement(StatusBookRow, { book: { ...book, id: "elantris" } })), "text/html");
+    expect(linked.querySelector(".row-title a")?.getAttribute("href")).toBe("/book/elantris");
+    const plain = new DOMParser().parseFromString(renderToStaticMarkup(createElement(StatusBookRow, { book })), "text/html");
+    expect(plain.querySelector(".row-title a")).toBeNull();
+    expect(plain.querySelector(".row-title")?.textContent).toBe("Elantris");
+  });
+});
+
 describe("Library is its name (AC-4)", () => {
   it("is on no rendered text as the master list", async () => {
     const { html } = await render({});

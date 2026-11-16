@@ -291,10 +291,10 @@ tables.
     | `/comics/bendis-disassembled` | 26,800 | 172,000 | 50 | 100 |
     | `/comics/busiek-avengers` | 28,000 | 171,000 | 72 | 100 |
     | `/books` | 19,000 | 175,000 | 36 | 100 |
-    | `/books/list` | 74,000 | 170,000 | 64 | 100 |
+    | `/books/list` | 80,000 | 170,000 | 64 | 100 |
     | `/books/plan` | 24,000 | 177,700 | 40 | 100 |
     | `/inbox` | 16,000 | 173,000 | 31 | 100 |
-    | `/settings` | 16,000 | 173,000 | 32 | 100 |
+    | `/settings` | 16,800 | 173,000 | 32 | 100 |
     | `/watch` | 12,500 | 173,000 | 28 | 100 |
     <!-- /perf-budget -->
 
@@ -448,6 +448,15 @@ tables.
     unselected chips' `aria-current="false"` saved only 65 of them under
     compression. The owner raised it to that median plus about 5%, 74,000
     (2026-11-13).
+    Task 3.5 (TASK-079, PR #275, D-157) made each Library row's title a link
+    to its book's sheet, and added the detail-sheet slot (`@modal`) that every
+    route's payload now carries. With a `<Link>` per row `/books/list`
+    measured 76,775 bytes; a plain `<a>` opened by one wrapper
+    (`SheetLinks`) saved only 313 of them, since the cost is each row's
+    `/book/{id}`, so it measured 76,462. `/settings`, the route with the least
+    room, went from about 15,700 to 16,077 with the slot. The owner chose to
+    trim, remeasure and raise only what was still over (2026-11-16): both to
+    that median plus about 5%, `/books/list` 80,000 and `/settings` 16,800.
 - **Instrumentation.** Deliberately none. This is a single-user CRUD app over
   14,000 rows; adding APM here would be ceremony.
 
