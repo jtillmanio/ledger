@@ -251,10 +251,16 @@ test("axe finds nothing on the spine, the Library or the strip; the placeholder 
   await fakeCovers(page);
   for (const scheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
+    // The boxes are on the page before axe runs, so a page without them cannot pass: the strip's cover and
+    // the first row's, a placeholder with text, and (Library) a pending box.
     await openSpine(page, WITH);
+    await expect(page.locator(".rcv img")).toHaveCount(2);   // the strip's and row 1's: #1 has a cover
+    await expect(page.locator(".rcv.none")).toHaveText(["2"]); // row 2's placeholder, its number drawn
     await expectNoAxeViolations(page, AXE);
     expect(await contrastFailures(page), `spine ${scheme}`).toEqual([]);
     await openLibrary(page);
+    await expect(page.locator(".rcv.none").first()).toHaveText(/\S/);
+    await expect(page.locator(".rcv[data-enrich='pending']")).toHaveCount(1);
     await expectNoAxeViolations(page, AXE);
     expect(await contrastFailures(page), `library ${scheme}`).toEqual([]);
   }
@@ -270,9 +276,14 @@ test("the spine, the Library and the strip at 360, 834 and 1280px, light and dar
       await openSpine(page, WITH);
       await hydrated(page.locator(".iss .chk").first());
       await expectNoHorizontalScroll(page);
+      // The box at every width, so the shots are of the covers: row 1 has one, row 2 its number, the strip's is row 1's.
+      for (const sel of [".nextis .rcv", "#p-1 .rcv", "#p-2 .rcv"]) {
+        expect(await box(page.locator(sel)), `${sel} at ${width}px`).toEqual({ width: 28, height: 42 });
+      }
       await screenshot(page, info, `covers-spine-${width}-${colorScheme}`);
       await openLibrary(page);
       await expectNoHorizontalScroll(page);
+      expect(await box(page.locator(".book-row .rcv").first()), `library cover at ${width}px`).toEqual({ width: 28, height: 42 });
       await screenshot(page, info, `covers-library-${width}-${colorScheme}`);
     }
   }
