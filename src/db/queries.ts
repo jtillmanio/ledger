@@ -107,6 +107,8 @@ export type QueueRow = {
   start_year: number | null; end_year: number | null; total_issues: number;
   ordinal: number; readiness: "blocked" | "ready_hard" | "ready_all";
   blocked_by: number; soft_left: number;
+  /** The run's cover (task 4.3): its lowest-sequence live placement whose issue has one; null when none does. */
+  cover_url: string | null;
 };
 
 /**
@@ -118,11 +120,19 @@ export type QueueRow = {
 export async function upNext(userId: string) {
   return sql<QueueRow[]>`
     SELECT r.id, r.title, cl.writers, rs.start_year, rs.end_year, qs.total_issues,
-           qs.ordinal, qs.readiness, qs.blocked_by, qs.soft_left
+           qs.ordinal, qs.readiness, qs.blocked_by, qs.soft_left, cv.cover_url
     FROM run_queue_state qs
     JOIN runs r            ON r.id = qs.run_id
     JOIN run_span      rs  ON rs.run_id = qs.run_id
     JOIN run_credit_line cl ON cl.run_id = qs.run_id
+    LEFT JOIN LATERAL (
+      SELECT i.cover_url
+      FROM run_issues ri
+      JOIN issues i ON i.id = ri.issue_id AND i.deleted_at IS NULL
+      WHERE ri.run_id = qs.run_id AND ri.deleted_at IS NULL AND i.cover_url IS NOT NULL
+      ORDER BY ri.sequence, ri.id
+      LIMIT 1
+    ) cv ON true
     WHERE qs.user_id = ${userId} AND qs.state = 'unstarted'
     ORDER BY qs.ordinal
   `;
@@ -716,6 +726,8 @@ export type PlannedBook = StatusBook & {
   year: number | null; quarter: number | null; ordinal: number | null;
   /** Its top-level genres, for On deck's chips and sections (task 4.5b, D-124); empty for a book with none. */
   genres: string[];
+  /** Its cover (task 4.3), for the quarter rows of the books status screen. */
+  cover_url: string | null;
 };
 
 /**
@@ -732,7 +744,7 @@ export async function booksUpNext(userId: string) {
     sql<PlannedBook[]>`
       SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe, b.word_count,
              pp.period, pp.level, pp.year, pp.quarter, pp.ordinal, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened,
-             ${sql.unsafe(TOP_GENRES)} AS genres
+             ${sql.unsafe(TOP_GENRES)} AS genres, b.cover_url
       FROM plan_period pp
       JOIN book_status st ON st.book_id = pp.book_id AND st.user_id = pp.user_id AND st.status = 'to_read'
       JOIN books b ON b.id = pp.book_id AND b.deleted_at IS NULL

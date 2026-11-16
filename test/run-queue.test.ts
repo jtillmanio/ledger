@@ -204,3 +204,41 @@ describe("the reads carry the queue (AC-3)", () => {
     expect(notQueued[0].total).toBe(4);
   });
 });
+
+describe("a run's cover on the dashboards (task 4.3)", () => {
+  /** The queue's covers by run id. */
+  async function covers() {
+    return Object.fromEntries((await q.upNext(USER)).map((r) => [r.id, r.cover_url]));
+  }
+
+  it("upNext gives a run the cover of its first placement with one, skipping a coverless head, a deleted placement and a deleted issue; null when none", async () => {
+    for (const id of ["a", "b", "c", "d"]) await add(id);
+    // Every run holds i1 at sequence 1 and i2 at sequence 2. Only i2 has a cover.
+    await sql`UPDATE issues SET cover_url = 'https://img.test/i2.jpg' WHERE id = 'i2'`;
+    await sql`INSERT INTO issues (id, label, cover_url, deleted_at) VALUES
+              ('b1', 'Bb #1', 'https://img.test/b1.jpg', NULL), ('c1', 'Cc #1', 'https://img.test/c1.jpg', now())`;
+    // a: a coverless head is skipped.
+    // b: a covered head whose placement is soft-deleted is skipped too.
+    await sql`UPDATE run_issues SET issue_id = 'b1', deleted_at = now() WHERE run_id = 'b' AND sequence = 1`;
+    // c: a covered head whose issue is soft-deleted, then the last placement removed: no cover left.
+    await sql`UPDATE run_issues SET issue_id = 'c1' WHERE run_id = 'c' AND sequence = 1`;
+    await sql`UPDATE run_issues SET deleted_at = now() WHERE run_id = 'c' AND sequence = 2`;
+    // d: every placement removed.
+    await sql`UPDATE run_issues SET deleted_at = now() WHERE run_id = 'd'`;
+
+    expect(await covers()).toEqual({
+      a: "https://img.test/i2.jpg", b: "https://img.test/i2.jpg", c: null, d: null,
+    });
+  });
+
+  it("the lowest sequence wins when several placements have a cover; a run with none has null", async () => {
+    await add("a");
+    await add("b");
+    await sql`UPDATE issues SET cover_url = 'https://img.test/' || id`;
+    // b is left with one placement, an issue that has no cover.
+    await sql`DELETE FROM run_issues WHERE run_id = 'b'`;
+    await sql`INSERT INTO issues (id, label) VALUES ('n1', 'Nn #1')`;
+    await sql`INSERT INTO run_issues (run_id, sequence, issue_id) VALUES ('b', 1, 'n1')`;
+    expect(await covers()).toEqual({ a: "https://img.test/i1", b: null });
+  });
+});

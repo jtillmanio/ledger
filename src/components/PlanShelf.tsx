@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import AddBooksButton from "@/components/AddBooksButton";
+import { ArtCover } from "@/components/Cover";
 import EmptySlate from "@/components/EmptySlate";
 import { useShelfPager } from "@/components/useShelfPager";
 import type { ShelfBook } from "@/db/queries";
@@ -48,7 +49,7 @@ export default function PlanShelf({ rows, period, quarter }: { rows: ShelfBook[]
           {rows.map((b) => (
             <li key={b.id} className="card">
               <span className="cover">
-                <span className="cv none" aria-hidden="true" />
+                <ArtCover url={b.cover_url} w={112} />
                 <span className="pos mono" aria-hidden="true">{b.ordinal}</span>
               </span>
               <span className="card-title"><span className="sr-only">{b.ordinal}. </span>{b.title}</span>

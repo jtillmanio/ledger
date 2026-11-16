@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
+import { ArtCover } from "@/components/Cover";
 import { useUndo } from "@/components/Undo";
 import type { ShelfBook } from "@/db/queries";
 import { bookSub } from "@/lib/format";
@@ -49,7 +50,7 @@ export default function OnDeckRow({ book, period, quarter }: { book: ShelfBook; 
 
   return (
     <article className="row deck-row">
-      <span className="cv none" aria-hidden="true" />
+      <ArtCover url={book.cover_url} w={36} />
       <span className="deck-body">
         <span className="row-title">{book.title}</span>
         {bookSub(book) && <span className="row-sub">{bookSub(book)}</span>}
