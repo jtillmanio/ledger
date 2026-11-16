@@ -235,7 +235,7 @@ describe("a run's cover on the dashboards (task 4.3)", () => {
     await add("a");
     await add("b");
     await sql`UPDATE issues SET cover_url = 'https://img.test/' || id`;
-    // b holds i2 first and i1 second, with none covered after the update below.
+    // b is left with one placement, an issue that has no cover.
     await sql`DELETE FROM run_issues WHERE run_id = 'b'`;
     await sql`INSERT INTO issues (id, label) VALUES ('n1', 'Nn #1')`;
     await sql`INSERT INTO run_issues (run_id, sequence, issue_id) VALUES ('b', 1, 'n1')`;

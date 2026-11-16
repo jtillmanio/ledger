@@ -1914,8 +1914,8 @@ section[data-plan="year"] h2.group-head{color:var(--blocked)}
 .now-hero{display:flex;flex-direction:column;border-radius:var(--r-hero);overflow:hidden;background:var(--surface);
   box-shadow:inset 0 0 0 1px var(--rule),var(--sh-1)}
 .now-band{display:flex;gap:16px;padding:16px}
-.now-cover{flex:none;display:block;width:var(--cover-hero);aspect-ratio:2/3;border-radius:var(--r-cover);overflow:hidden;
-  box-shadow:var(--sh-cover)}
+.now-cover{flex:none;align-self:flex-start;display:block;width:var(--cover-hero);aspect-ratio:2/3;border-radius:var(--r-cover);overflow:hidden;
+  box-shadow:var(--sh-cover)}   /* flex-start: a title that wraps to three lines must not stretch the box off 2:3 */
 .now-cover .cv,.now-cover .sk{display:block;width:100%;height:100%;background:var(--sunk)}   /* the cover clips them to its radius */
 .now-body{flex:1;min-width:0;display:flex;flex-direction:column}
 .now-kick,.offer-kick{display:inline-flex;align-items:center;gap:6px;font:500 var(--fs-kicker) var(--mono);

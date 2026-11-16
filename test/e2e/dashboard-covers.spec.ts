@@ -413,6 +413,20 @@ test("a cover arriving moves nothing: the hero, the shelf and the On deck list a
   expect(withCover.cover.width).toBe(heroWidth(page));
 });
 
+// Sets its own viewport: runs once. At 360px a three-line title makes the text band taller than the cover.
+test("a long title wrapping beside the hero does not stretch the cover off 2:3 (AC-2)", ONCE, async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 780 });
+  await seedBooks("reading", true);
+  await withSql((sql) => sql`UPDATE books SET title = ${"E2E DC Hero and a Title Long Enough to Wrap Over Many Lines Beside the Cover at Phone Width and Then Some More"} WHERE id = 'e2e-dc-hero'`);
+  await fakeCovers(page);
+  await openBooks(page);
+  const cover = page.locator(".now-cover");
+  await expectCoverBox(cover, heroWidth(page), "hero beside a long title");
+  // The text band is taller than the cover at phone width, so the band is what could stretch it.
+  const band = await size(page.locator(".now-band"));
+  expect(band.height).toBeGreaterThanOrEqual((await size(cover)).height);
+});
+
 // Sets its own viewport: runs once. The UX floor's reduced-transparency pass: the glass is solid --surface and
 // the covers are drawn the same, on both dashboards.
 test("reduced transparency: the glass is solid --surface and the covers are still data, at 390 and 1280 (AC-5)", ONCE, async ({ page, context }, info) => {
