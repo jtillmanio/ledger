@@ -1068,9 +1068,9 @@ deliberately.
 
 ### What this changes
 
-1. **`books` needs `summary` and `subjects`** — Open Library returns both and
-   the app currently discards them. `subjects` is a better genre source than the
-   single hand-entered value.
+1. **`books` needs `summary` and `subjects`** — Calibre's comments and tags,
+   which the Calibre sync stores (task 3.5, TASK-078; Open Library is gone,
+   D-94). The genres stay Calibre's `#genre` (`book_genres`, D-98).
 2. **The master list keeps inline status editing.** The sheet is for reading
    about an item; the list row is the fastest path to marking it read. Both
    exist and don't compete.

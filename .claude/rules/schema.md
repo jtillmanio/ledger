@@ -24,8 +24,10 @@ Release, test isolation) and the Hard rules a reviewer checks.
   back as columns. `dated_issues < issue_count` means the span is incomplete.
 - **Issue metadata and whys come from sidecar files, not the workbook.** They sit
   beside `etl/data/volume_map.csv` and survive every re-extract:
-  `cover_dates.csv` (label; `source` metron|hand), `issue_details.csv` (label;
-  story title with `story_title_source`, cover URL), `issue_credits.csv` (label,
+  `cover_dates.csv` (label; `source` metron|hand; the on-sale `store_date` with
+  `store_date_source`, a full day, task 3.5), `issue_details.csv` (label;
+  story title with `story_title_source`, story arc with `story_arc_source`,
+  cover URL), `issue_credits.csv` (label,
   creator, role; `source` metron|hand), `label_review.csv` (label → proposed
   label; `decision` accept|reject), `why_review.csv` (run id; `decision`
   accept|edit|keep) and `creator_aliases.csv` (alias → the creator name credits
@@ -125,9 +127,11 @@ Release, test isolation) and the Hard rules a reviewer checks.
   disagrees is reported, never dropped (D-93): a workbook count more than
   10% off, a different workbook series, a different book type and Hardcover's different series go to `calibre_changes.csv` (Calibre won; nothing
   to do), and a second read of one book goes to `unresolved.csv` (that read is
-  not loaded). `unresolved.csv` lists only what needs the owner. Comics are skipped; tags, comments and
-  ISBN load nothing until `books.subjects`, `books.summary` and `books.isbn`
-  are approved, and comments stay out of the CSV.
+  not loaded). `unresolved.csv` lists only what needs the owner. Comics are skipped; comments
+  stay out of the CSV. Extract loads no tags or comments: the sync stores
+  Calibre's tags as `books.subjects` and its comments, as plain text, as
+  `books.summary` (task 3.5, TASK-078; none is NULL, Calibre winning), and
+  the ISBN loads nothing until `books.isbn` is approved.
 - **Calibre owns a book's groupings and its id; its page count is
   Hardcover's first** (task 1.18b, D-90, D-91; task 1.14c, D-130).
   `calibre_books.csv` also holds Calibre's `calibre_id`, `pages`, `superseries`

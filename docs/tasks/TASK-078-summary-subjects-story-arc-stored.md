@@ -1,7 +1,7 @@
 ---
 id: TASK-078
 title: 3.5 Detail sheets (1 of 3) — a book's summary and subjects, an issue's story arc
-status: In progress
+status: Review
 depends_on: [TASK-081, TASK-082]
 size: M
 model: opus
@@ -42,10 +42,10 @@ read, and that marking a second from the sheet writes exactly one
 exactly one sheet in the DOM, and Back returns to the issue sheet. An issue
 with a `cover_date` renders *Cover date* in `Mon YYYY`. An undated issue
 renders no *Dates* group and no `—`.
-- [ ] AC-2: After the migration, `books.summary`, `books.subjects` and `issues.story_arc` exist with the types approved at the plan gate, each nullable; `npm run test:db:reset` builds the schema; no column is added without that approval.
-- [ ] AC-3: `npm run test:etl`, with a recorded Metron detail page that names a story arc, writes the arc to `issue_details.csv` without a request, keeps a `hand` arc on a rerun, and extract carries it into the seed `issues` rows that `load.ps1`, `load.sh` and `load-comics.ps1` / `.sh` load.
-- [ ] AC-4: With the fixture Calibre library 4.4's tests use, a book with comments and two tags syncs its summary and subjects into `books`; a book Calibre gives neither keeps both NULL; a second sync changes nothing.
-- [ ] AC-5: If the owner approves `issues.store_date` at the plan gate, a recorded Metron `store_date` fills it with `store_date_source = 'metron'` through `cover_dates.csv`, and the CHECK refuses a date without a source; if not, no such column exists and the PR's Follow-ups say so.
+- [x] AC-2: After the migration, `books.summary`, `books.subjects` and `issues.story_arc` exist with the types approved at the plan gate, each nullable; `npm run test:db:reset` builds the schema; no column is added without that approval.
+- [x] AC-3: `npm run test:etl`, with a recorded Metron detail page that names a story arc, writes the arc to `issue_details.csv` without a request, keeps a `hand` arc on a rerun, and extract carries it into the seed `issues` rows that `load.ps1`, `load.sh` and `load-comics.ps1` / `.sh` load.
+- [x] AC-4: With the fixture Calibre library 4.4's tests use, a book with comments and two tags syncs its summary and subjects into `books`; a book Calibre gives neither keeps both NULL; a second sync changes nothing.
+- [x] AC-5: If the owner approves `issues.store_date` at the plan gate, a recorded Metron `store_date` fills it with `store_date_source = 'metron'` through `cover_dates.csv`, and the CHECK refuses a date without a source; if not, no such column exists and the PR's Follow-ups say so.
 
 ## Out of scope
 
@@ -72,8 +72,14 @@ renders no *Dates* group and no `—`.
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
 - `docs/04-design.md` § 13 *What this changes* says Open Library returns the summary and subjects; Calibre's comments and tags do since D-94 → docs/04-design.md § What this changes (approved at plan)
-- `.claude/rules/schema.md`: the sidecar list gains the story arc and the store date; "tags, comments … load nothing until approved" becomes "the sync stores them" → .claude/rules/schema.md (approved at plan)
+- `.claude/rules/schema.md`: the sidecar list gains the story arc and the store date → .claude/rules/schema.md § Issue metadata and whys come from sidecar files (approved at plan)
+- `.claude/rules/schema.md`: "tags, comments … load nothing until approved" becomes "the sync stores them" → .claude/rules/schema.md § Calibre is the source of truth for a book's data and its reads (approved at plan)
 - `docs/03-data-model.md` § 4.1: the 3.5 row becomes *Built (migration 0030)* with the approved types → docs/03-data-model.md § 4.1 By task (approved at plan)
+- Schema review R1: a hand store date typed without its day (`1987-03`) loaded as a guessed 1st; it is now reported and loads nothing (extract, `check_sidecars.py`) → not tracked: done in this PR (plan revision, owner 2026-11-16)
+- Schema review R1: extract's report of sidecar rows for labels gone from the sheet ignored the store date (a row with only a hand store date was missed or not marked hand-entered) → not tracked: done in this PR (plan revision, owner 2026-11-16)
+- Schema review R1: a Metron store date under a pre-rename label is passed over for the new label's row until `enrich_comics.py` rekeys → not tracked: transient and the same as every other sidecar; the next enrich run rekeys it
+- Test audit R1: `load.ps1` and `load.sh` are checked by their `\copy issues(...)` column list, not by a run; `load-comics.ps1` runs for real in `test/comics-load.test.ts` → not tracked: accepted as is; the four lists are pinned to extract's column order by one test
+- Data model § 2.19 says tags and comments "load nothing until their columns are approved" → not tracked: the clause is conditional, and § 4.1's 3.5 row now records the approval
 
 ## Plan
 
@@ -136,11 +142,20 @@ manual refresh); the three follow-up docs at close-out.
 **Risks**: `load:comics` against production after merge and before Release
 fails in its transaction (no column yet): Release first, said in the PR.
 
+**Plan revision 1 (owner, 2026-11-16, after schema review R1).** A hand
+store date must be a full day: `1987` or `1987-03` is reported (extract's
+`store date is not a full day`, and the same problem from `check_sidecars.py`)
+and loads nothing. Extract's report of sidecar rows for labels gone from the
+sheet reads the store dates too, and a hand one marks the row hand-entered.
+Files: `etl/extract.py`, `etl/check_sidecars.py` and their tests.
+
 ## Review log
 
 _Filled by /implement-task. One line per round._
 
 - Verify R1 PASS (tsc, lint, test:no-e2e: 109 vitest files, test_views.sql, 410 ETL tests; the first vitest launch ran from `c:\` and found no runner, so it was rerun from `C:\`; no browser spec touched)
+- Spec R1 APPROVE (advisory: name the schema.md section in the follow-up, done) | Schema R1 APPROVE (3 minor: 2 fixed by plan revision 1, 1 not tracked) | Audit R1 PASS (AC-2–AC-5 proven, restoration OK) | CI R1 PASS (5e3c705, every project) | UI n/a (no UI)
+- Plan revision 1 → Verify R2 PASS (109 vitest files, test_views.sql, 411 ETL tests) | Spec R2 APPROVE (and the close-out follow-ups check APPROVE) | Schema R2 APPROVE | Audit not re-run (the revision's tests fail on 5e3c705, as spec R2 checked) | CI R2 on the close-out head
 
 ## Blocked
 
@@ -148,7 +163,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1
