@@ -438,7 +438,7 @@ describe("metadata pending wherever the row appears (AC-4)", () => {
     return found;
   };
 
-  it("on the master list, a by-hand book has the dashed cover and the line; a Hardcover one has its cover", async () => {
+  it("on the master list, a by-hand book has the dashed cover and the line; a Hardcover one has its cover box, the image itself arriving on the client (task 4.3)", async () => {
     await add(hand({ title: "A Small Book of Something", author: "New Author" }));
     await add({ hardcover: (await find("the way of kings")).hardcover[0] });
     const Books = (await import("../src/app/books/list/page")).default;
@@ -451,7 +451,9 @@ describe("metadata pending wherever the row appears (AC-4)", () => {
     expect(thin).toContain(">metadata pending<");
     const full = rowOf(html, 'class="row book-row"', "The Way of Kings");
     expect(full).not.toContain("data-enrich");
-    expect(full).toContain(`src="${COVER}"`);
+    // The server HTML is the placeholder: CoverImage draws the <img> after hydration, only when covers are allowed.
+    expect(full).not.toContain("<img");
+    expect(full).toMatch(/class="cv rcv none"/);
   });
 
   it("in your library's search answers, a book with no external record is pending", async () => {
