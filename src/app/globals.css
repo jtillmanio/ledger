@@ -1494,6 +1494,8 @@ input.txt[aria-invalid="true"]{border-color:var(--danger)}
 .iss{grid-template-columns:2.75rem 1fr auto auto auto}
 .book-row > .rcv{margin-top:.125rem}
 .sk.rcv::after{content:none}   /* the loading box has no ring: it is the --sunk box alone */
+.rows .row.sk-bookrow{display:flex;gap:.75rem;align-items:flex-start;padding-right:3.25rem}   /* the loaded .book-row's box */
+.sk-bookrow > .rcv{margin-top:.125rem}
 .sk-bookrow .rb{display:flex;flex-direction:column;align-items:flex-start}   /* no margin collapse: the regions below add up to the loaded row's */
 .rows .row.sk-bookrow .sk-title{margin:.25rem 0}   /* the head: 24px */
 .sk-bookrow .sk-sub{margin:.2656rem 0}              /* the sub-line: 2px + 19.5px */

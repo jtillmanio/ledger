@@ -55,12 +55,13 @@ export function ListSkeleton({ rows = 8, filters = [1], search = false, sort = f
 }
 
 /** Library rows (task 4.3): the cover's box (28×42 in --sunk, as `RowCover` draws it), a title, a sub-line
- * and the status control, at the loaded row's geometry, so a cover arriving moves nothing. */
+ * and the status control, at the loaded row's geometry, so a cover arriving moves nothing. The row is
+ * `.sk-bookrow`, not `.book-row`: a test counting the loaded rows must not count these. */
 export function BookRowsSkeleton({ rows = 8 }: { rows?: number }) {
   return (
     <div className="rows" aria-hidden="true">
       {Array.from({ length: rows }, (_, n) => (
-        <div key={n} className="row book-row sk-bookrow">
+        <div key={n} className="row sk-bookrow">
           <span className="sk rcv" />
           <span className="rb">
             <Bar w={`${50 + ((n * 17) % 35)}%`} className="sk-title" />

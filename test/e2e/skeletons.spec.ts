@@ -126,8 +126,8 @@ test.describe("at 360px", { tag: "@at-w390-light" }, () => {
     expect(loaded.length, "the seed has a book").toBe(1);
     expect(loadedCover, "the loaded cover box").toEqual([{ width: 28, height: 42 }]);
     await stage(page, render(BookRowsSkeleton, { rows: 1 }));
-    expectClose(await boxes(page, ".book-row .rcv"), loadedCover, "library cover box");
-    expectClose(await boxes(page, ".book-row"), loaded, "library row");
+    expectClose(await boxes(page, ".sk-bookrow .rcv"), loadedCover, "library cover box");
+    expectClose(await boxes(page, ".sk-bookrow"), loaded, "library row");
   });
 
   test("the plan rail skeleton is the plan rail's size, its stacks too (AC-1)", async ({ page }) => {
