@@ -3,7 +3,7 @@ import Link from "next/link";
 import { calibreReports, calibreRuns, createdBookAuthors, notInCalibre, type CalibreRun } from "@/db/queries";
 import type { SyncReport } from "@/db/calibre-sync";
 import {
-  BOOK_CAP, byBook, changedNothing, columnLabel, ranWhen, SKIPPED_COLUMNS_LABEL, WAITING_WORDS, type BookEntry, type Change,
+  BOOK_CAP, byBook, changedNothing, columnLabel, normalizeReport, ranWhen, SKIPPED_COLUMNS_LABEL, WAITING_WORDS, type BookEntry, type Change,
 } from "@/lib/calibre-log";
 
 export const dynamic = "force-dynamic";
@@ -54,19 +54,20 @@ function Section({ title, n, children }: { title: string; n?: number; children: 
   );
 }
 
-function RunDetails({ report, authors }: { report: SyncReport; authors: Map<string, string | null> }) {
+function RunDetails({ report: stored, authors }: { report: SyncReport; authors: Map<string, string | null> }) {
+  const report = normalizeReport(stored);
   const entries = byBook(report);
   const came = entries.filter((e) => e.came.length);
   const went = entries.filter((e) => e.went.length);
   const reasons = new Map<string, number>();
-  for (const s of report.skipped ?? []) reasons.set(s.reason, (reasons.get(s.reason) ?? 0) + 1);
-  const unusual = (report.skipped ?? []).filter((s) => s.reason !== "comic");
+  for (const s of report.skipped) reasons.set(s.reason, (reasons.get(s.reason) ?? 0) + 1);
+  const unusual = report.skipped.filter((s) => s.reason !== "comic");
   return (
     <div className="cbody">
       {changedNothing(report) && <p className="cnone">Nothing changed.</p>}
       {came.length > 0 && <Section title="Came in from Calibre" n={came.length}><Books entries={entries} side="came" authors={authors} /></Section>}
       {went.length > 0 && <Section title="Went out to Calibre" n={went.length}><Books entries={entries} side="went" authors={authors} /></Section>}
-      {(report.waiting ?? []).length > 0 && (
+      {report.waiting.length > 0 && (
         <Section title="Waiting" n={report.waiting.length}>
           <ul className="cbooks">
             {report.waiting.slice(0, BOOK_CAP).map((w) => (
@@ -79,7 +80,7 @@ function RunDetails({ report, authors }: { report: SyncReport; authors: Map<stri
           <p className="cmore">A near spelling waits for a merge or separate decision.</p>
         </Section>
       )}
-      {(report.gone ?? []).length > 0 && (
+      {report.gone.length > 0 && (
         <Section title="Gone from Calibre" n={report.gone.length}>
           <ul className="cbooks">
             {report.gone.slice(0, BOOK_CAP).map((g) => <li key={g.bookId}><span className="ctitle">{g.title}</span></li>)}
@@ -92,12 +93,12 @@ function RunDetails({ report, authors }: { report: SyncReport; authors: Map<stri
           {unusual.length > 0 && <ul className="cbooks">{unusual.slice(0, BOOK_CAP).map((s) => <li key={s.calibreId}><span className="ctitle">{s.title}</span></li>)}</ul>}
         </Section>
       )}
-      {(report.skippedColumns ?? []).length > 0 && (
+      {report.skippedColumns.length > 0 && (
         <Section title={SKIPPED_COLUMNS_LABEL}>
           <p className="cwhy">{report.skippedColumns.map(columnLabel).join(", ")}</p>
         </Section>
       )}
-      {(report.notes ?? []).length > 0 && (
+      {report.notes.length > 0 && (
         <Section title="Notes"><ul className="cbooks">{report.notes.map((n, i) => <li key={i}>{n}</li>)}</ul></Section>
       )}
     </div>

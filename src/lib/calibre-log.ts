@@ -72,6 +72,23 @@ export function showValue(v: unknown, now = new Date()): string {
   return String(v);
 }
 
+const objects = <T>(v: unknown): T[] => (Array.isArray(v) ? v.filter((x) => x !== null && typeof x === "object") : []) as T[];
+const strings = <T extends string>(v: unknown): T[] => (Array.isArray(v) ? v.filter((x) => typeof x === "string") : []) as T[];
+
+/**
+ * A stored report as the page reads it: all seven lists present, each an array of the right kind of
+ * element. The sync always writes this shape, but the log is a column of JSON the app didn't type:
+ * a list that is missing, null or not an array reads as empty, and an element of the wrong kind is
+ * dropped, so one odd row never takes the page down.
+ */
+export function normalizeReport(report: unknown): SyncReport {
+  const r = (report !== null && typeof report === "object" ? report : {}) as Record<string, unknown>;
+  return {
+    in: objects(r.in), out: objects(r.out), waiting: objects(r.waiting), gone: objects(r.gone), skipped: objects(r.skipped),
+    skippedColumns: strings(r.skippedColumns), notes: strings(r.notes),
+  };
+}
+
 /** One line of a book's entry: the field, and what it was and became (`from` is empty on a new book). */
 export type Change = { label: string; from: string | null; to: string };
 
@@ -89,21 +106,22 @@ export type BookEntry = {
  * (what the sync wrote to Calibre) grouped under the Ledger book they are about. A new book's
  * lines have no *was*. Waiting, gone and skipped are lists of their own, not book entries.
  */
-export function byBook(report: SyncReport, now = new Date()): BookEntry[] {
+export function byBook(raw: SyncReport, now = new Date()): BookEntry[] {
+  const report = normalizeReport(raw);
   const books = new Map<string, BookEntry>();
   const entry = (bookId: string, calibreId: number, title: string) => {
     let e = books.get(bookId);
     if (!e) books.set(bookId, e = { bookId, calibreId, title, created: false, came: [], went: [] });
     return e;
   };
-  for (const c of report.in ?? []) {
+  for (const c of report.in) {
     const e = entry(c.bookId, c.calibreId, c.title);
     e.created = e.created || c.kind === "created";
     for (const f of c.changes) {
       e.came.push({ label: f.field, from: c.kind === "created" ? null : showValue(f.from, now), to: showValue(f.to, now) });
     }
   }
-  for (const w of report.out ?? []) {
+  for (const w of report.out) {
     entry(w.bookId, w.calibreId, w.title).went.push({ label: columnLabel(w.column), from: showValue(w.from, now), to: showValue(w.to, now) });
   }
   return [...books.values()].sort((a, b) => a.title.localeCompare(b.title) || a.bookId.localeCompare(b.bookId));
@@ -114,6 +132,7 @@ export function byBook(report: SyncReport, now = new Date()): BookEntry[] {
  * skipped (every comic, each run), the columns it skipped and its notes are standing facts of the
  * library, not changes, so they don't count; the page still lists them under the run.
  */
-export function changedNothing(report: SyncReport): boolean {
-  return !(report.in?.length || report.out?.length || report.waiting?.length || report.gone?.length);
+export function changedNothing(raw: SyncReport): boolean {
+  const report = normalizeReport(raw);
+  return !(report.in.length || report.out.length || report.waiting.length || report.gone.length);
 }

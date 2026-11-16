@@ -106,6 +106,15 @@ describe("the log's queries (AC-2, AC-4)", () => {
     expect((await q.createdBookAuthors(10)).size).toBe(0);
   });
 
+  it("orders by when a run ran, not by when its row was written: a later-inserted older run is last", async () => {
+    await run("2026-11-14T23:30:00Z", FRESH); // id 1, the newest moment
+    await run("2026-11-02T14:00:00Z", NOTHING); // id 2, an older moment written later
+    await run("2026-11-09T15:42:00Z", CHANGED); // id 3
+    expect((await q.calibreRuns()).map((r) => r.id)).toEqual([1, 3, 2]);
+    expect((await q.calibreReports(2)).map((r) => r.id)).toEqual([1, 3]);
+    expect(await q.lastCalibreSync()).toBe("2026-11-14T23:30:00.000Z");
+  });
+
   it("the last sync is the latest run's moment, or null before any", async () => {
     expect(await q.lastCalibreSync()).toBeNull();
     await threeRuns();
@@ -245,6 +254,20 @@ describe("the Calibre page (AC-1 browser clauses, AC-2, AC-4)", () => {
     expect(section).not.toContain("Deleted Loose Book");
     expect(section).not.toContain("Gideon the Ninth");
     expect(section).toMatch(/Not in Calibre[^<]*<[^>]*>[^<]*1/);
+  });
+
+  it("a report with a missing, null or non-array list still renders: the page and byBook read it as empty", async () => {
+    await run("2026-11-01T14:00:00Z", { in: [], out: [] } as never);
+    await run("2026-11-02T14:00:00Z", {} as never);
+    await run("2026-11-03T14:00:00Z", { in: null, out: "x", waiting: {}, gone: 7, skipped: null, skippedColumns: "y", notes: {} } as never);
+    const html = await render();
+    expect(html.match(/Nothing changed\./g)).toHaveLength(3);
+    expect(html.match(/0 in · 0 out · 0 waiting/g)).toHaveLength(3);
+    expect(byBook({} as never)).toEqual([]);
+    expect(byBook({ in: null, out: "x" } as never)).toEqual([]);
+    expect(byBook({ in: ["x", 3, null], out: [{ calibreId: 1, bookId: "b", title: "T", column: "#read", from: false, to: true }] } as never))
+      .toEqual([expect.objectContaining({ title: "T", went: [{ label: "Read", from: "no", to: "yes" }] })]);
+    expect(changedNothing({} as never)).toBe(true);
   });
 
   it("before any run: the empty state, one line, no button and no run list", async () => {
