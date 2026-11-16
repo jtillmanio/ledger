@@ -796,6 +796,20 @@ body[data-vp="tab"] .frame[data-w="phone"],body[data-vp="tab"] .frame[data-w="de
 .tb-chip{display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--rule-2);
   font:500 12px/16px var(--mono);color:var(--ink-2);text-decoration:none}
 .tb-lede{margin:0;font-size:15px;line-height:22px;color:var(--ink-2)}
+/* The Calibre page and the books dashboard's stale-sync line (task 4.4, D-133) */
+.bd-sync{margin:2px 0 0;font-size:13px;line-height:20px}.bd-sync a{color:var(--muted);text-decoration:underline;text-underline-offset:.15em}
+.cl-run{border-bottom:1px solid var(--line)}.cl-run:last-child{border-bottom:0}
+.cl-sum{display:flex;align-items:center;gap:.75rem;min-height:44px;box-sizing:border-box;padding:.6875rem .875rem}
+.cl-sum .ch{color:var(--muted);font-size:1.25rem;line-height:1;flex:0 0 .75rem}.cl-run.open .cl-sum .ch{transform:rotate(90deg)}
+.cl-meta{display:flex;flex-direction:column;flex:1;min-width:0}.cl-when{font-size:.875rem;font-weight:600}.cl-n{font-family:var(--mono);font-size:.75rem;color:var(--muted)}
+.frame[data-w="tab"] .cl-meta,.frame[data-w="desk"] .cl-meta{flex-direction:row;align-items:center;justify-content:space-between;gap:.75rem}
+.cl-body{padding:0 .875rem .875rem}.cl-sec{margin-top:.75rem}.cl-sec h4{margin:0 0 .25rem;font-size:.75rem;font-weight:600;color:var(--muted)}
+.cl-sec ul{list-style:none;margin:0;padding:0}.cl-sec li{padding:.375rem 0;border-bottom:1px solid var(--line);font-size:.875rem}.cl-sec li:last-child{border-bottom:0}
+.cl-sec b{font-weight:600}.cl-mu{color:var(--muted);font-size:.8125rem}.cl-sec .cl-ch{font-size:.8125rem;color:var(--ink-2);display:block;margin-top:.125rem}
+.cl-empty{background:var(--raise);border:1px solid var(--rule);border-radius:14px;padding:1.25rem .875rem;color:var(--muted);font-size:.8125rem}
+.cl-empty b{display:block;color:var(--ink);font-size:.875rem;margin-bottom:.25rem}
+.cl-err{display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;background:var(--raise);border:1px solid var(--rule);border-radius:14px;padding:.875rem;color:var(--ink-2);font-size:.875rem}
+.cl-err .x{color:var(--muted);font-size:1.25rem;line-height:1}.cl-err .btn{margin-left:auto}
 .tb-kick{font:500 11px/14px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
 .tb-meta{font:500 11px/14px var(--mono);color:var(--muted)}
 .tb-cv{position:relative;flex:none;display:grid;place-items:end start;width:112px;height:168px;padding:8px;box-sizing:border-box;
@@ -1050,6 +1064,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   <button data-s="stats">Stats</button>
   <button data-s="capture">Quick capture</button>
   <button data-s="settings">Settings</button>
+  <button data-s="calibre">Settings — Calibre</button>
   <h2>Comics</h2>
   <button data-s="runs">Run list — v4</button>
   <button data-s="spine">Run detail — eras</button>
@@ -2477,7 +2492,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
   <nav class="tabrow" aria-label="Screens"><a aria-current="page">Dashboard</a><a>Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
   <div class="wrap tb bd">
-    <div class="bd-top"><h1 class="t">Books</h1><p class="tb-lede">Two weeks into The Fifth Season.</p></div>
+    <div class="bd-top"><h1 class="t">Books</h1><p class="tb-lede">Two weeks into The Fifth Season.</p><p class="bd-sync"><a href="#">Calibre last synced 9 days ago</a></p></div>
     <section class="tb-hero" aria-labelledby="bdphonere-now">
       <div class="tb-band"><span class="tb-cv hero" aria-hidden="true"><span>cover</span></span>
         <div class="tb-hb"><span class="tb-kick bd-kick" id="bdphonere-now">Reading now</span>
@@ -6006,6 +6021,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <h3 class="s">Data</h3>
     <div class="group">
       <div class="frow"><span class="k">Volume map</span><span class="v">67 rules · 61 series</span><button class="btn sec sm">Edit</button></div>
+      <div class="frow"><span class="k">Calibre</span><span class="v faint" style="font-weight:400">Last synced 14 Nov</span><span class="chev" aria-hidden="true" style="color:var(--muted);font-size:1.25rem;line-height:1;margin-left:.5rem">&#8250;</span></div>
       <div class="frow"><span class="k">Export everything</span><span class="v faint" style="font-weight:400">JSON, all tables</span><button class="btn sec sm">Download</button></div>
       <div class="frow"><span class="k">Last backup</span><span class="v mono" style="font-size:.8125rem">today 04:00</span><span class="bdg dn">ok</span></div>
     </div>
@@ -6072,6 +6088,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
       <h3 class="s">Data</h3>
       <div class="group">
       <div class="frow"><span class="k">Volume map</span><span class="v">67 rules · 61 series</span><button class="btn sec sm">Edit</button></div>
+      <div class="frow"><span class="k">Calibre</span><span class="v faint" style="font-weight:400">Last synced 14 Nov</span><span class="chev" aria-hidden="true" style="color:var(--muted);font-size:1.25rem;line-height:1;margin-left:.5rem">&#8250;</span></div>
       <div class="frow"><span class="k">Export everything</span><span class="v faint" style="font-weight:400">JSON, all tables</span><button class="btn sec sm">Download</button></div>
       <div class="frow"><span class="k">Last backup</span><span class="v mono" style="font-size:.8125rem">today 04:00</span><span class="bdg dn">ok</span></div>
     </div>
@@ -6087,6 +6104,91 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <li>The card underneath <b>translates the settings into books a year</b> — how you'd sanity-check whether 185 wpm is right for you.</li>
     <li>Words-per-page governs every estimated count; if your library skews to dense fantasy, 275 may be low.</li>
     <li>The volume map is editable here, so the 19 series still in review don't need a CSV round-trip forever.</li>
+  </ul></div>
+</section>
+
+<!-- ══ SETTINGS — CALIBRE (task 4.4, D-133) ══ -->
+<section class="screen" data-id="calibre">
+<div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab">Books</a><a class="tab">Watch</a><a class="iconbtn" aria-label="Settings" aria-current="page">&#9881;</a></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Dashboard</a><a>Status</a><a>Runs</a><a>Add</a><a>Inbox</a></nav>
+  <div class="wrap">
+    <h1 class="t">Calibre</h1>
+    <p class="lede"><u>Settings</u> &middot; every sync run, newest first</p>
+    <h3 class="s">Sync runs</h3>
+    <div class="group">
+      <div class="cl-run open"><div class="cl-sum"><span class="ch" aria-hidden="true">&#8250;</span><span class="cl-meta"><span class="cl-when">14 Nov &middot; 6:30 PM</span><span class="cl-n">3 in &middot; 2 out &middot; 1 waiting</span></span></div><div class="cl-body">
+<div class="cl-sec"><h4>Came in from Calibre <span class="cl-n">2</span></h4><ul>
+  <li><b>Gideon the Ninth</b> <span class="cl-mu">&middot; new &middot; Tamsyn Muir</span><span class="cl-ch"><span class="cl-mu">status</span> unlisted</span></li>
+  <li><b>The Fifth Season</b><span class="cl-ch"><span class="cl-mu">title</span> Fifth Season &rarr; The Fifth Season</span><span class="cl-ch"><span class="cl-mu">word count</span> 100000 &rarr; 112000</span></li></ul></div>
+<div class="cl-sec"><h4>Went out to Calibre <span class="cl-n">1</span></h4><ul>
+  <li><b>The Fifth Season</b><span class="cl-ch"><span class="cl-mu">Date read</span> 1 Mar &rarr; 17 Mar</span></li></ul></div>
+<div class="cl-sec"><h4>Waiting <span class="cl-n">1</span></h4><ul>
+  <li><b>Piranesi!</b> <span class="cl-mu">&middot; Susanna Clarke</span><span class="cl-mu" style="display:block">A near spelling of: <b>Piranesi</b></span></li></ul>
+  <p class="cl-mu" style="margin:.25rem 0 0">A near spelling waits for a merge or separate decision.</p></div>
+<div class="cl-sec"><h4>Gone from Calibre <span class="cl-n">1</span></h4><ul><li><b>A Vanished Book</b></li></ul></div>
+<div class="cl-sec"><h4>Skipped <span class="cl-n">212</span></h4><p class="cl-mu" style="margin:0">212 comic</p></div>
+<div class="cl-sec"><h4>Skipped columns (missing, or held until the books cutover)</h4><p class="cl-mu" style="margin:0">Read, Date read</p></div></div></div>
+      <div class="cl-run"><div class="cl-sum"><span class="ch" aria-hidden="true">&#8250;</span><span class="cl-meta"><span class="cl-when">7 Nov &middot; 6:30 PM</span><span class="cl-n">0 in &middot; 0 out &middot; 0 waiting</span></span></div></div>
+      <div class="cl-run"><div class="cl-sum"><span class="ch" aria-hidden="true">&#8250;</span><span class="cl-meta"><span class="cl-when">31 Oct &middot; 6:30 PM</span><span class="cl-n">1 in &middot; 0 out &middot; 0 waiting</span></span></div></div>
+    </div>
+    <h3 class="s">Not in Calibre <span class="cl-n">4</span></h3>
+    <div class="group"><div class="cl-run"><div class="cl-sum"><span class="ch" aria-hidden="true">&#8250;</span><span class="cl-meta"><span class="cl-when">Books with no Calibre id</span><span class="cl-n">4</span></span></div></div></div>
+    <h3 class="s">Before any run</h3>
+    <div class="cl-empty"><b>No sync yet.</b>Run <span class="mono">npm run calibre:sync</span> on your PC. Each run is listed here.</div>
+    <h3 class="s">If the log can&rsquo;t be read</h3>
+    <div class="cl-err" role="alert"><span class="x" aria-hidden="true">&times;</span><span>Couldn&rsquo;t read the sync log.</span><button class="btn sec">Try again</button></div>
+  </div>
+</div></div></div>
+<div class="frame" data-w="desk"><div class="frame-in"><div class="app" data-theme="light" style="position:relative">
+    <aside class="side"><div class="brand">Ledger</div>
+    <a>Inbox<span class="kbd">6</span></a>
+    <div class="grp">Books</div>
+    <a>Dashboard</a>
+    <a>Status</a>
+    <a>Master list</a>
+    <a>Plan</a>
+    <div class="grp">&nbsp;</div>
+    <a aria-current="page">Settings</a>
+    <div class="syncpill" role="status" aria-live="polite" data-state="online">Synced</div>
+    </aside>
+  <div class="main"><div class="wrap">
+    <h1 class="t">Calibre</h1>
+    <p class="lede"><u>Settings</u> &middot; every sync run, newest first</p>
+    <h3 class="s">Sync runs</h3>
+    <div class="group">
+      <div class="cl-run open"><div class="cl-sum"><span class="ch" aria-hidden="true">&#8250;</span><span class="cl-meta"><span class="cl-when">14 Nov &middot; 6:30 PM</span><span class="cl-n">3 in &middot; 2 out &middot; 1 waiting</span></span></div><div class="cl-body">
+<div class="cl-sec"><h4>Came in from Calibre <span class="cl-n">2</span></h4><ul>
+  <li><b>Gideon the Ninth</b> <span class="cl-mu">&middot; new &middot; Tamsyn Muir</span><span class="cl-ch"><span class="cl-mu">status</span> unlisted</span></li>
+  <li><b>The Fifth Season</b><span class="cl-ch"><span class="cl-mu">title</span> Fifth Season &rarr; The Fifth Season</span><span class="cl-ch"><span class="cl-mu">word count</span> 100000 &rarr; 112000</span></li></ul></div>
+<div class="cl-sec"><h4>Went out to Calibre <span class="cl-n">1</span></h4><ul>
+  <li><b>The Fifth Season</b><span class="cl-ch"><span class="cl-mu">Date read</span> 1 Mar &rarr; 17 Mar</span></li></ul></div>
+<div class="cl-sec"><h4>Waiting <span class="cl-n">1</span></h4><ul>
+  <li><b>Piranesi!</b> <span class="cl-mu">&middot; Susanna Clarke</span><span class="cl-mu" style="display:block">A near spelling of: <b>Piranesi</b></span></li></ul>
+  <p class="cl-mu" style="margin:.25rem 0 0">A near spelling waits for a merge or separate decision.</p></div>
+<div class="cl-sec"><h4>Gone from Calibre <span class="cl-n">1</span></h4><ul><li><b>A Vanished Book</b></li></ul></div>
+<div class="cl-sec"><h4>Skipped <span class="cl-n">212</span></h4><p class="cl-mu" style="margin:0">212 comic</p></div>
+<div class="cl-sec"><h4>Skipped columns (missing, or held until the books cutover)</h4><p class="cl-mu" style="margin:0">Read, Date read</p></div></div></div>
+      <div class="cl-run"><div class="cl-sum"><span class="ch" aria-hidden="true">&#8250;</span><span class="cl-meta"><span class="cl-when">7 Nov &middot; 6:30 PM</span><span class="cl-n">0 in &middot; 0 out &middot; 0 waiting</span></span></div></div>
+      <div class="cl-run"><div class="cl-sum"><span class="ch" aria-hidden="true">&#8250;</span><span class="cl-meta"><span class="cl-when">31 Oct &middot; 6:30 PM</span><span class="cl-n">1 in &middot; 0 out &middot; 0 waiting</span></span></div></div>
+    </div>
+    <h3 class="s">Not in Calibre <span class="cl-n">4</span></h3>
+    <div class="group"><div class="cl-run"><div class="cl-sum"><span class="ch" aria-hidden="true">&#8250;</span><span class="cl-meta"><span class="cl-when">Books with no Calibre id</span><span class="cl-n">4</span></span></div></div></div>
+    <h3 class="s">Before any run</h3>
+    <div class="cl-empty"><b>No sync yet.</b>Run <span class="mono">npm run calibre:sync</span> on your PC. Each run is listed here.</div>
+    <h3 class="s">If the log can&rsquo;t be read</h3>
+    <div class="cl-err" role="alert"><span class="x" aria-hidden="true">&times;</span><span>Couldn&rsquo;t read the sync log.</span><button class="btn sec">Try again</button></div>
+  </div></div>
+</div></div></div>
+
+<div class="notes"><h3>Settings &mdash; Calibre</h3>
+  <ul>
+    <li><b>The log</b> (task 4.4, D-133): every run of <code>npm run calibre:sync</code>, newest first, each a native disclosure: its Eastern date and time, and <i>n in &middot; n out &middot; n waiting</i>. The newest is open. On the phone the moment sits over the counts; from 768px they share a line.</li>
+    <li>A run's details list each change by book: what came in from Calibre (a new book shows its author today, so a stray spelling is seen), what went out to Calibre as <i>from &rarr; to</i>, what waits, the books gone from Calibre, what the run skipped, and the columns it skipped, <i>missing, or held until the books cutover</i>. A run that changed nothing reads <i>Nothing changed.</i></li>
+    <li><b>A near spelling waits for a merge or separate decision</b>; nothing in the app decides one yet (a follow-up), so the page only lists it. There is no button that runs a sync: the command on the PC is the only trigger (D-133).</li>
+    <li><b>Not in Calibre</b> lists the live books with no Calibre id (D-90), collapsed. Derived, never stored.</li>
+    <li><b>Before any run:</b> one panel, one line, no button. <b>If the log can&rsquo;t be read:</b> a neutral line with a grey &times; and <i>Try again</i>, never red (a failed read is neither destructive nor a validation failure).</li>
+    <li><b>On the books dashboard</b> (<code>bdash</code>, first phone frame): once the last run is more than 7 Eastern days old, one plain grey line under the lede, <i>Calibre last synced 9 days ago</i>, linking here. Nothing at 7 days or fewer, and nothing before any run. Nothing is red.</li>
   </ul></div>
 </section>
 

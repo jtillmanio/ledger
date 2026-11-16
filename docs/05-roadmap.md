@@ -4124,7 +4124,7 @@ height (CLS under 0.1 on a 381-row spine). With `prefers-reduced-data: reduce`
 emulated, or *Show covers* off, the spine makes zero image requests. No cover
 element carries a `box-shadow` that resolves to `--halo`.
 
-### ☐ 4.4 Sync with Calibre, both ways: one command, by hand or weekly · M
+### ☑ 4.4 Sync with Calibre, both ways: one command, by hand or weekly · M
 Backlog intake, 2026-10-26 (owner: *Calibre link/import, recurring*). D-83.
 Depends on 1.18 and 1.21, and only on cutover otherwise, so it can be pulled
 ahead of 4.1–4.3. Extract stops at cutover and nothing local may write the
@@ -4286,6 +4286,38 @@ both, Status → *Up next* renders a *Fantasy* and a *Sci-Fi* section, the book 
 both is in each, and the tab counts it once; the *Fantasy* chip leaves only
 *Fantasy*, survives a reload and writes nothing. In the Library, *To read · On
 deck* then a genre chip lists only that genre's On deck books. Screenshots at 360px and 1280px.
+
+### ☐ 4.6 Decide a waiting Calibre near spelling on the Calibre page · S
+*From task 4.4 part 3 (TASK-083, PR #270). The Check is a proposal: agreed when merged, or edit it first.*
+The *Calibre* page lists what a sync holds (a near spelling, or two Calibre
+books on one Ledger book) but nothing in the app decides one.
+`decideCalibrePair` (`src/db/writes.ts`, 4.4) stores a *merge* or *separate* per
+Calibre book in `calibre_decisions`, and the next sync applies it (D-89, D-133).
+
+- **A button for each answer** on each waiting entry of the newest run: an API
+  route inside the gate around `decideCalibrePair`, and a client component with
+  a real button each, named for its book (*Merge "Piranesi!" into Piranesi*,
+  *Keep "Piranesi!" separate*), 44px on the phone. Neither is red: a merge
+  renames (D-87) and is undone by deciding again.
+- **An entry stops waiting once decided.** Derived from `calibre_decisions`,
+  never stored on the log. A decided entry reads *Merged* or *Kept separate*
+  and keeps its buttons, so the answer can be changed before the next sync.
+- No new table: `calibre_decisions` exists (4.4).
+- *Noted with it (task 4.4 part 3, TASK-083, PR #270):* the sync's report doesn't
+  record whether a book it created brought a new author with it, so the page
+  can't flag a stray new spelling (a Calibre author spelled a new way creates a
+  new author: the app keeps no author merges) without guessing. The route would
+  record a `newAuthor` flag on each `created` entry and the page would mark it.
+  Its own Check, when it is done: a created book whose author the Ledger lacked
+  carries the flag and the page marks it; one with a known author doesn't.
+
+**Check:** with the test database, a run whose report has one waiting near
+spelling and the Ledger book it is near: *Merge* writes one `calibre_decisions`
+row, `merge`, with that book's id; *Separate* writes `separate` with none; a
+second press changes nothing; the next sync (`POST /api/calibre/sync`) renames
+the book or creates a new one to match, and logs it. In the browser the entry
+reads *Merged* or *Kept separate* after the press, each button is named for its
+book and 44px at 360px, and axe reports no violation.
 
 ---
 

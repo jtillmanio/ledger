@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import PaceSettings from "@/components/PaceSettings";
-import { readingSettings, volumeMapCounts } from "@/db/queries";
+import SettingsLink from "@/components/SettingsLink";
+import { lastCalibreSync, readingSettings, volumeMapCounts } from "@/db/queries";
 import { requireUserId } from "@/lib/auth";
+import { lastSyncedRow } from "@/lib/calibre-log";
 import { easternYear } from "@/lib/settings";
 
 export const dynamic = "force-dynamic";
@@ -9,14 +11,14 @@ export const metadata: Metadata = { title: "Settings · Ledger" };
 
 /**
  * Settings (task 2.0, F-21; mockup `settings`): *Reading pace*, whose minutes a day and words a
- * minute drive every capacity figure, and *Data*: the volume map's size and *Export everything*,
- * which moved here from the nav. Pace on the left and data on the right from 1024px. Both reads go
- * out together and neither is cached, so an edit shows on the next render with no redeploy. The
- * volume map's *Edit* is 3.9's.
+ * minute drive every capacity figure, and *Data*: the volume map's size, *Calibre* (task 4.4: when it
+ * last synced, a link to the log) and *Export everything*, which moved here from the nav. Pace on the
+ * left and data on the right from 1024px. The reads go out together and none is cached, so an edit
+ * shows on the next render with no redeploy. The volume map's *Edit* is 3.9's.
  */
 export default async function Settings() {
   const userId = await requireUserId();
-  const [settings, volume] = await Promise.all([readingSettings(userId), volumeMapCounts()]);
+  const [settings, volume, synced] = await Promise.all([readingSettings(userId), volumeMapCounts(), lastCalibreSync()]);
 
   return (
     <main className="settings">
@@ -33,6 +35,7 @@ export default async function Settings() {
               <span className="k">Volume map</span>
               <span className="v">{volume.rules} {volume.rules === 1 ? "rule" : "rules"} &middot; {volume.series} series</span>
             </div>
+            <SettingsLink href="/settings/calibre" name="Calibre" sub={lastSyncedRow(synced)} />
             <div className="frow">
               <span className="kv">
                 <span className="k">Export everything</span>

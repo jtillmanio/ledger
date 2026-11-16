@@ -1880,6 +1880,68 @@ export async function volumeMapCounts(): Promise<{ rules: number; series: number
   return row;
 }
 
+/** One sync run in the log's list (task 4.4, D-133): when, and how many came in, went out and wait. */
+export type CalibreRun = { id: number; ranAt: string; in: number; out: number; waiting: number };
+
+/**
+ * Every Calibre sync run, newest first, with its counts (task 4.4, D-133). The counts are the
+ * lengths of the report's lists, taken in SQL: none is stored (hard rule 2), and the reports
+ * themselves aren't loaded, so a long log stays one small read. A list a report lacks, or holds as
+ * anything but an array, counts 0: one odd row never takes the page down. `ranAt` is ISO; the page
+ * says it in Eastern.
+ */
+export async function calibreRuns(): Promise<CalibreRun[]> {
+  return sql<CalibreRun[]>`
+    SELECT id, to_char(ran_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS "ranAt",
+           CASE WHEN jsonb_typeof(report->'in') = 'array' THEN jsonb_array_length(report->'in') ELSE 0 END AS "in",
+           CASE WHEN jsonb_typeof(report->'out') = 'array' THEN jsonb_array_length(report->'out') ELSE 0 END AS "out",
+           CASE WHEN jsonb_typeof(report->'waiting') = 'array' THEN jsonb_array_length(report->'waiting') ELSE 0 END AS "waiting"
+    FROM calibre_syncs ORDER BY ran_at DESC, id DESC`;
+}
+
+/** The newest `limit` runs' reports as the sync stored them, newest first: the page lists each change by book. One read, not one per run. */
+export async function calibreReports(limit: number): Promise<{ id: number; report: import("./calibre-sync").SyncReport }[]> {
+  return sql<{ id: number; report: import("./calibre-sync").SyncReport }[]>`
+    SELECT id, report FROM calibre_syncs ORDER BY ran_at DESC, id DESC LIMIT ${limit}`;
+}
+
+/** When the last sync ran, as ISO, or null before any run: the dashboard's line and Settings' row read it. */
+export async function lastCalibreSync(): Promise<string | null> {
+  const [row] = await sql<{ at: string | null }[]>`
+    SELECT to_char(max(ran_at) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AS at FROM calibre_syncs`;
+  return row?.at ?? null;
+}
+
+/**
+ * The authors, as they stand now, of the books the newest `limit` runs created (task 4.4): a run's
+ * report names a created book by its title only, so the page asks who wrote it today, which shows
+ * a stray new spelling. Read beside the reports, in the same wave, by the same newest-`limit` rule.
+ * A book soft-deleted since has no entry.
+ */
+export async function createdBookAuthors(limit: number): Promise<Map<string, string | null>> {
+  const rows = await sql<{ id: string; author: string | null }[]>`
+    SELECT b.id, a.name AS author
+    FROM books b LEFT JOIN authors a ON a.id = b.author_id
+    WHERE b.deleted_at IS NULL AND b.id IN (
+      SELECT e->>'bookId'
+      FROM (SELECT report FROM calibre_syncs ORDER BY ran_at DESC, id DESC LIMIT ${limit}) s,
+           jsonb_array_elements(CASE WHEN jsonb_typeof(s.report->'in') = 'array' THEN s.report->'in' ELSE '[]'::jsonb END) e
+      WHERE e->>'kind' = 'created')`;
+  return new Map(rows.map((r) => [r.id, r.author]));
+}
+
+/**
+ * Live books Calibre doesn't have (task 4.4, D-90): `books.calibre_id` is NULL, so no sync has
+ * matched or made them. Derived, never stored; title order, with the author.
+ */
+export async function notInCalibre(): Promise<{ id: string; title: string; author: string | null }[]> {
+  return sql<{ id: string; title: string; author: string | null }[]>`
+    SELECT b.id, b.title, a.name AS author
+    FROM books b LEFT JOIN authors a ON a.id = b.author_id
+    WHERE b.deleted_at IS NULL AND b.calibre_id IS NULL
+    ORDER BY lower(b.title), b.id`;
+}
+
 /** One of your book shelves, for Add books opened from it (task 1.4c), or null. */
 export async function shelfFor(userId: string, shelfId: string) {
   const [row] = await sql<{ id: string; name: string }[]>`
