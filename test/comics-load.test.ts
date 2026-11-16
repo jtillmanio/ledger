@@ -53,10 +53,12 @@ function seedV1(): Seed {
     ]),
     run_tracks: T(["run_id", "track_id"], [["a", "avengers"], ["b", "avengers"], ["gone", "xmen"]]),
     volume_rules: T(["series", "run_id", "issue_from", "issue_to", "year"], [["Avengers", "a", null, null, 1963]]),
-    issues: T(["id", "label", "cover_date", "cover_date_source", "story_title", "story_title_source", "cover_url", "metron_id"], [
-      ["avengers-1963-1", "Avengers (1963) #1", "1963-09-01", "hand", "The Coming of the Avengers", "hand", null, null],
-      ["avengers-1963-2", "Avengers (1963) #2", null, null, null, null, null, null],
-      ["x-men-1963-1", "X-Men (1963) #1", null, null, null, null, null, null],
+    issues: T(["id", "label", "cover_date", "cover_date_source", "story_title", "story_title_source", "cover_url", "metron_id",
+      "story_arc", "story_arc_source", "store_date", "store_date_source"], [
+      ["avengers-1963-1", "Avengers (1963) #1", "1963-09-01", "hand", "The Coming of the Avengers", "hand", null, null,
+        null, null, null, null],
+      ["avengers-1963-2", "Avengers (1963) #2", null, null, null, null, null, null, null, null, null, null],
+      ["x-men-1963-1", "X-Men (1963) #1", null, null, null, null, null, null, null, null, null, null],
     ]),
     run_issues: T(["id", "run_id", "sequence", "issue_id", "type", "notes"], [
       [1, "a", 1, "avengers-1963-1", "core", null],
@@ -86,7 +88,8 @@ function seedV2(): Seed {
   s.runs.rows = s.runs.rows.filter((r) => r[0] !== "gone").map((r) => r[0] === "a" ? ["a", "Run A, retitled", ...r.slice(2)] : r);
   s.run_tracks.rows = s.run_tracks.rows.filter((r) => r[0] !== "gone");
   s.issues.rows = s.issues.rows.filter((r) => r[0] !== "x-men-1963-1")
-    .map((r) => r[0] === "avengers-1963-2" ? [r[0], r[1], null, null, "Kang!", "hand", null, null] : r);
+    .map((r) => r[0] === "avengers-1963-2" ? [r[0], r[1], null, null, "Kang!", "hand", null, null,
+      "Kang Dynasty", "metron", "1963-09-10", "metron"] : r);
   s.run_issues.rows = s.run_issues.rows.filter((r) => r[1] !== "gone")
     .map((r) => r[0] === 3 ? [3, "b", 1, "avengers-1963-2", "core", "Reread first"] : r);
   s.issue_progress.rows = [
@@ -259,6 +262,11 @@ describe.each(twins)("%s, task 1.29", (_name, run) => {
     expect(await sql`SELECT id, title FROM runs ORDER BY id`).toEqual([
       { id: "a", title: "Run A, retitled" }, { id: "b", title: "Run B" }]);
     expect((await sql`SELECT story_title FROM issues WHERE id = 'avengers-1963-2'`)[0].story_title).toBe("Kang!");
+    // Task 3.5 (TASK-078): the story arc and the store date ride the comics load.
+    expect(await sql`
+      SELECT story_arc, story_arc_source, store_date::text AS store_date, store_date_source
+      FROM issues WHERE id = 'avengers-1963-2'`).toEqual([
+      { story_arc: "Kang Dynasty", story_arc_source: "metron", store_date: "1963-09-10", store_date_source: "metron" }]);
     expect(await sql`SELECT count(*)::int AS n FROM issues WHERE id = 'x-men-1963-1'`).toEqual([{ n: 0 }]);
     expect((await sql`SELECT type, notes FROM run_issues WHERE id = 3`)[0]).toEqual({ type: "core", notes: "Reread first" });
     expect(await sql`

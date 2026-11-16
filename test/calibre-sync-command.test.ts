@@ -105,6 +105,8 @@ afterAll(async () => {
 type Fixture = {
   title: string; author: string; words?: number; read?: boolean; dateRead?: string;
   status?: string; owned?: string[];
+  /** Calibre's comments (HTML) and tags: the book's summary and subjects (task 3.5, TASK-078). */
+  comments?: string; tags?: string[];
 };
 type Columns = { status?: boolean; owned?: boolean };
 
@@ -125,6 +127,7 @@ function buildLibrary(folder: string, books: Fixture[], cols: Columns = {}) {
     CREATE TABLE identifiers (id INTEGER PRIMARY KEY, book INTEGER, type TEXT, val TEXT);
     CREATE TABLE tags (id INTEGER PRIMARY KEY, name TEXT NOT NULL UNIQUE);
     CREATE TABLE books_tags_link (id INTEGER PRIMARY KEY, book INTEGER, tag INTEGER);
+    CREATE TABLE comments (id INTEGER PRIMARY KEY, book INTEGER NOT NULL UNIQUE, text TEXT NOT NULL);
     CREATE TABLE custom_columns (id INTEGER PRIMARY KEY, label TEXT NOT NULL, name TEXT, datatype TEXT NOT NULL,
                                  is_multiple BOOL DEFAULT 0, normalized BOOL NOT NULL, display TEXT DEFAULT '{}');
   `);
@@ -160,6 +163,12 @@ function buildLibrary(folder: string, books: Fixture[], cols: Columns = {}) {
     if (b.dateRead) db.prepare(`INSERT INTO custom_column_${COL.read_date} (book, value) VALUES (?, ?)`).run(id, `${b.dateRead} 16:00:00+00:00`);
     if (b.status && cols.status !== false) linkText(COL.ledger_status, id, b.status);
     for (const o of cols.owned !== false ? b.owned ?? [] : []) linkText(COL.owned, id, o);
+    if (b.comments) db.prepare("INSERT INTO comments (book, text) VALUES (?, ?)").run(id, b.comments);
+    for (const t of b.tags ?? []) {
+      db.prepare("INSERT OR IGNORE INTO tags (name) VALUES (?)").run(t);
+      const { id: tid } = db.prepare("SELECT id FROM tags WHERE name = ?").get(t) as { id: number };
+      db.prepare("INSERT INTO books_tags_link (book, tag) VALUES (?, ?)").run(id, tid);
+    }
   });
   db.close();
 }
@@ -220,7 +229,7 @@ async function logRows() {
 
 async function ledgerSnapshot() {
   return {
-    books: await sql`SELECT id, title, author_id, calibre_id, word_count, word_count_source, deleted_at FROM books ORDER BY id`,
+    books: await sql`SELECT id, title, author_id, calibre_id, word_count, word_count_source, summary, subjects, deleted_at FROM books ORDER BY id`,
     status: await sql`SELECT book_id, status, finished_on::text, finished_on_precision FROM book_status ORDER BY book_id`,
     reads: await sql`SELECT book_id, finished_on::text, finished_on_precision, format FROM read_events ORDER BY id`,
     owned: await sql`SELECT book_id, format FROM owned_copies ORDER BY book_id, format`,
@@ -327,6 +336,39 @@ describe("npm run calibre:sync over a fixture library and the TEST database (4.4
     const logs = await logRows();
     expect(logs.length).toBe(2);
     expect(logs[1].report).toEqual(expect.objectContaining({ in: [], out: [], waiting: [], gone: [], skipped: [] }));
+  }, 120_000);
+
+  it("brings a book's comments and tags in as its summary and subjects; none stays NULL; a second run changes nothing (task 3.5)", async () => {
+    const books: Fixture[] = FOUR.map((b, i) => i === 0 ? {
+      ...b, tags: ["Space Opera", "Science Fiction"],
+      comments: "<div><p>On a remote, icy planet, the soldier known as <i>Breq</i> is drawing&nbsp;closer.</p><p>Once, she was the Justice of Toren.</p></div>",
+    } : b);
+    buildLibrary(library, books);
+    const first = await runSync();
+    expect(first.stderr).not.toMatch(/Traceback/);
+    expect(first.code).toBe(0);
+    expect(await sql`SELECT calibre_id, summary, subjects FROM books ORDER BY calibre_id`).toEqual([
+      {
+        calibre_id: 1, subjects: ["Science Fiction", "Space Opera"],
+        summary: "On a remote, icy planet, the soldier known as Breq is drawing closer.\n\nOnce, she was the Justice of Toren.",
+      },
+      { calibre_id: 2, summary: null, subjects: null }, // created: Calibre gives neither
+      { calibre_id: 3, summary: null, subjects: null },
+      { calibre_id: 4, summary: null, subjects: null },
+    ]);
+    const [log] = await logRows();
+    expect(log.report.in.find((c) => c.calibreId === 1)!.changes.filter((c) => ["summary", "subjects"].includes(c.field)))
+      .toEqual([
+        { field: "summary", from: null, to: "20 words" },
+        { field: "subjects", from: null, to: ["Science Fiction", "Space Opera"] },
+      ]);
+
+    const before = await ledgerSnapshot();
+    const second = await runSync();
+    expect(second.code).toBe(0);
+    expect(second.stdout).toMatch(/nothing changed/);
+    expect(await ledgerSnapshot()).toEqual(before);
+    expect((await logRows())[1].report.in).toEqual([]);
   }, 120_000);
 
   it.each([

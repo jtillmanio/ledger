@@ -10,13 +10,14 @@ enrich_comics.py — backfill issue metadata from Metron into sidecar CSVs.
 
 The default pass reads every distinct label in seed/issues.csv, finds its series
 on Metron, pulls that series' issue list, and writes:
-- cover_dates.csv    cover date per label (run_span derives run years from it)
+- cover_dates.csv    cover date per label (run_span derives run years from it),
+                     and the on-sale date (store_date) from the same listing
 - issue_details.csv  Metron issue id and cover URL per label
 - label_review.csv   proposed label corrections, each waiting for your decision:
                      year_added, oneshot_number, name_style, subtitle, wrong_volume
 
 --details requests each matched issue's detail page (one request per issue) and
-fills story titles into issue_details.csv and creator credits into
+fills story titles and story arcs into issue_details.csv and creator credits into
 issue_credits.csv, keeping six roles: writer, artist, inker, colorist, letterer,
 cover. Everything is keyed by label so `npm run extract` can fold it onto issues
 however the reading orders change.
@@ -32,8 +33,9 @@ When label_review.csv accepts a rename, every run first moves the existing rows
 in all three files from the old label to the new one, hand rows included.
 
 Rules it keeps:
-- Never overwrites a hand-entered value. A cover date or story title whose
-  source is anything but `metron` is left exactly as it is, and a (label, role)
+- Never overwrites a hand-entered value. A cover date, store date, story title
+  or story arc whose source is anything but `metron` is left exactly as it is,
+  and a (label, role)
   pair with any `hand` credit is left alone entirely.
 - Never renames a label. It proposes; extract applies only `accept`.
 - Backfill only. Nothing in the app calls Metron.
@@ -75,10 +77,16 @@ MAX_SEARCH_PAGES = 8        # a series-name search that needs more is too vague 
 REFRESH_AFTER_DAYS = 7      # --refresh leaves a detail page fetched this recently alone
 REFRESH_NOTES = {"credits": "no credits on Metron", "titles": "no story title on Metron"}
 
-COLUMNS = ["label", "cover_date", "source", "status", "metron_issue_id",
-           "metron_series_id", "note"]
-DETAIL_COLUMNS = ["label", "story_title", "story_title_source", "cover_url",
-                  "metron_issue_id", "status", "note"]
+# store_date is the on-sale date from the same issue-list entry as the cover
+# date, with its own source (task 3.5, TASK-078); story_arc is the detail page's
+# arc names joined with "; ", like story_title.
+COLUMNS = ["label", "cover_date", "source", "store_date", "store_date_source", "status",
+           "metron_issue_id", "metron_series_id", "note"]
+DETAIL_COLUMNS = ["label", "story_title", "story_title_source", "story_arc", "story_arc_source",
+                  "cover_url", "metron_issue_id", "status", "note"]
+# (value, source) pairs a hand value owns, per one-row-per-label file.
+DATE_HAND = (("cover_date", "source"), ("store_date", "store_date_source"))
+DETAIL_HAND = (("story_title", "story_title_source"), ("story_arc", "story_arc_source"))
 CREDIT_COLUMNS = ["label", "creator", "metron_creator_id", "role", "source"]
 REVIEW_COLUMNS = ["label", "proposed_label", "category", "runs", "evidence", "decision"]
 
@@ -218,18 +226,27 @@ def merge_rows(existing: dict[str, dict], fresh: dict[str, dict]) -> list[dict]:
     erase a date found earlier or copied in from Metron by hand. Everything else
     is replaced by the fresh result when there is one, and kept otherwise (a
     limited run doesn't erase earlier work).
+
+    The store date (task 3.5) follows the same rules on its own: a hand one
+    survives whatever happened to the cover date, a fresh Metron one fills or
+    refreshes it, and a lookup that found none never erases it.
     """
     out: dict[str, dict] = {}
     for label, row in existing.items():
         out[label] = row
     for label, row in fresh.items():
         old = existing.get(label)
-        if old and (old.get("cover_date") or "").strip():
-            if (old.get("source") or "").strip().lower() != "metron":
-                continue
-            if not (row.get("cover_date") or "").strip():
-                continue
-        out[label] = row
+        keep = bool(old and (old.get("cover_date") or "").strip() and (
+            (old.get("source") or "").strip().lower() != "metron"
+            or not (row.get("cover_date") or "").strip()))
+        new = dict(old if keep else row)
+        if is_hand(old, "store_date", "store_date_source"):
+            new["store_date"], new["store_date_source"] = old["store_date"], old["store_date_source"]
+        elif (row.get("store_date") or "").strip():
+            new["store_date"], new["store_date_source"] = row["store_date"], "metron"
+        elif old and (old.get("store_date") or "").strip():
+            new["store_date"], new["store_date_source"] = old["store_date"], old.get("store_date_source") or ""
+        out[label] = new
     return [out[k] for k in sorted(out)]
 
 
@@ -278,22 +295,32 @@ def story_title(detail: dict) -> str:
     return "; ".join(n.strip() for n in names if n and n.strip())
 
 
+def story_arc(detail: dict) -> str:
+    """The detail page's arcs (`[{id, name, modified}]`), names joined with "; ", once each."""
+    names: list[str] = []
+    for arc in detail.get("arcs") or []:
+        name = ((arc.get("name") if isinstance(arc, dict) else arc) or "").strip()
+        if name and name not in names:
+            names.append(name)
+    return "; ".join(names)
+
+
 def is_hand(row: dict | None, value: str, source: str) -> bool:
     return bool(row and (row.get(value) or "").strip()
                 and (row.get(source) or "").strip().lower() != "metron")
 
 
 def merge_details(existing: dict[str, dict], fresh: dict[str, dict]) -> list[dict]:
-    """issue_details.csv: a hand story title survives; Metron fields refresh."""
+    """issue_details.csv: a hand story title or story arc survives; Metron fields refresh."""
     out = dict(existing)
     for label, row in fresh.items():
         old = existing.get(label)
         new = {**(old or {}), **{k: v for k, v in row.items() if v not in (None, "")}}
         if old and old.get("status") == "detailed" and new.get("status") == "listed":
             new["status"] = "detailed"         # a date pass doesn't undo a details pass
-        if is_hand(old, "story_title", "story_title_source"):
-            new["story_title"] = old["story_title"]
-            new["story_title_source"] = old["story_title_source"]
+        for value, source in DETAIL_HAND:
+            if is_hand(old, value, source):
+                new[value], new[source] = old[value], old[source]
         out[label] = new
     return [out[k] for k in sorted(out)]
 
@@ -322,13 +349,19 @@ def merge_credits(existing: list[dict], fresh: dict[str, list[dict]]) -> list[di
 
 
 def rekey(rows: list[dict], renames: dict[str, str], one_per_label: bool,
-          hand: tuple[str, str] | None = None) -> tuple[list[dict], int]:
+          hand: tuple[tuple[str, str], ...] | tuple[str, str] | None = None) -> tuple[list[dict], int]:
     """Move sidecar rows from an old label to its accepted new label.
 
     one_per_label files (cover_dates, issue_details) keep one row per label: when
-    both spellings already have one, a hand value wins, otherwise the row already
-    under the new label does. Credit rows move and duplicates collapse.
+    both spellings already have one, the row holding a hand value wins (any of
+    the file's `hand` pairs), otherwise the row already under the new label does.
+    Credit rows move and duplicates collapse.
     """
+    pairs = (hand,) if hand and isinstance(hand[0], str) else (hand or ())
+
+    def handed(row: dict | None) -> bool:
+        return any(is_hand(row, value, source) for value, source in pairs)
+
     moved = 0
     if one_per_label:
         out: dict[str, dict] = {r["label"]: r for r in rows if r["label"] not in renames}
@@ -339,7 +372,7 @@ def rekey(rows: list[dict], renames: dict[str, str], one_per_label: bool,
             moved += 1
             r = {**r, "label": new}
             held = out.get(new)
-            if held is None or (hand and is_hand(r, *hand) and not is_hand(held, *hand)):
+            if held is None or (handed(r) and not handed(held)):
                 out[new] = r
         return [out[k] for k in sorted(out)], moved
     seen, out_rows = set(), []
@@ -514,8 +547,10 @@ def issue_dates(api: Metron, series_id: int, wanted: set[str]) -> dict[str, dict
 
 
 def row(label: str, status: str, note: str = "", date: str = "", issue_id=None,
-        series_id=None) -> dict:
+        series_id=None, store_date: str | None = None) -> dict:
+    store = (store_date or "").strip()
     return {"label": label, "cover_date": date, "source": "metron" if date else "",
+            "store_date": store, "store_date_source": "metron" if store else "",
             "status": status, "metron_issue_id": issue_id or "",
             "metron_series_id": series_id or "", "note": note}
 
@@ -579,7 +614,7 @@ def run(args) -> int:
                     if num in dates:
                         hit = dates[num]
                         results[label] = row(label, "matched", why, hit["cover_date"],
-                                             hit.get("id"), series["id"])
+                                             hit.get("id"), series["id"], hit.get("store_date"))
                         listings[label] = hit
                     else:
                         results[label] = row(label, "not_in_series",
@@ -728,12 +763,14 @@ def run_details(args, auth) -> int:
             detail = api.get(api.url(f"issue/{mid}/"),
                              REFRESH_AFTER_DAYS if mid in refresh else None)
             title = story_title(detail)
+            arc = story_arc(detail)
             mapped = map_credits(detail)
             notes = [x for x in (("no story title on Metron" if not title else ""),
                                  ("no credits on Metron" if not mapped else "")) if x]
             for label in by_issue[mid]:
                 details[label] = {"label": label, "story_title": title,
                                   "story_title_source": "metron" if title else "",
+                                  "story_arc": arc, "story_arc_source": "metron" if arc else "",
                                   "cover_url": detail.get("image") or "",
                                   "metron_issue_id": mid, "status": "detailed",
                                   "note": "; ".join(notes)}
@@ -752,8 +789,10 @@ def run_details(args, auth) -> int:
         return 1
 
     titled = sum(1 for d in details.values() if d["story_title"])
+    arced = sum(1 for d in details.values() if d["story_arc"])
     print(f"\n{done}/{len(ids)} issues detailed" + (f" — stopped: {stopped}" if stopped else ""))
     print(f"  labels with a story title   {titled:>6} of {len(details)}")
+    print(f"  labels with a story arc     {arced:>6} of {len(details)}")
     print(f"  labels with credits         {sum(1 for c in credits.values() if c):>6}")
     for role, c in roles.most_common():
         print(f"  {role:<27} {c:>6}")
@@ -804,8 +843,8 @@ def apply_renames(args) -> dict[str, str]:
             renames[label] = new
     if not renames:
         return renames
-    targets = [(Path(args.out), COLUMNS, True, ("cover_date", "source")),
-               (Path(args.details_out), DETAIL_COLUMNS, True, ("story_title", "story_title_source")),
+    targets = [(Path(args.out), COLUMNS, True, DATE_HAND),
+               (Path(args.details_out), DETAIL_COLUMNS, True, DETAIL_HAND),
                (Path(args.credits_out), CREDIT_COLUMNS, False, None)]
     for path, columns, one, hand in targets:
         if not path.exists():

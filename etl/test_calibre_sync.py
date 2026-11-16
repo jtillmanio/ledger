@@ -85,6 +85,8 @@ class Library(unittest.TestCase):
             "superseries": None, "superseriesIndex": None, "genres": [], "tags": [], "isbn": "9781635575637",
             "words": 85000, "pages": None, "type": "Book", "read": True, "dateRead": "2024-08-15",
             "precision": "exact", "ledgerStatus": None, "owned": [],
+            # Task 3.5 (TASK-078): Calibre's comments (`<p>About Piranesi</p>`) as plain text.
+            "summary": "About Piranesi",
         })
         self.assertEqual((gideon["read"], gideon["dateRead"], gideon["precision"], gideon["seriesIndex"]),
                          (None, None, None, None))

@@ -16,10 +16,11 @@ Safe fixes (applied with --fix, reported either way):
 - a sidecar label that is not a current label but is one after extract's cleanup
   (`#½` -> `#1⁄2`, en dash -> hyphen) or with `#1` appended is rekeyed to it
 - cover_dates.csv: a row shifted one column right (a status word in
-  metron_issue_id) is shifted back; a date with no source becomes `hand`; a row
+  metron_issue_id) is shifted back; a cover or store date with no source
+  becomes `hand`; a row
   with a Metron issue id (its own, or issue_details.csv's one-shot listing) that
   isn't `matched` becomes `matched`, so `--details` fetches its credits
-- issue_details.csv: a story title with no source becomes `hand`
+- issue_details.csv: a story title or story arc with no source becomes `hand`
 - issue_credits.csv: a role typed into metron_creator_id is moved back; role
   spellings map onto the six roles (`penciler` -> `artist`); a blank source
   becomes `hand`; a hand credit whose creator is a Metron creator gets that
@@ -178,7 +179,8 @@ def suggest(label: str, known: list[str]) -> str:
 
 
 def has_hand_value(row: dict) -> bool:
-    return "hand" in (row.get("source", "").lower(), row.get("story_title_source", "").lower())
+    return "hand" in (row.get(c, "").lower() for c in
+                      ("source", "store_date_source", "story_title_source", "story_arc_source"))
 
 
 def rekey(rows: list[dict], file: str, known: set[str], tolerated: set[str],
@@ -259,6 +261,20 @@ def fix_cover_dates(rows: list[dict], details: dict[str, dict], report: Report) 
             report.problem(f, "date with an unknown source", f"{label}: {source!r} — use hand")
         if cover and not ex.normalize_date(cover):
             report.problem(f, "unparseable date", f"{label}: {cover!r} — use 1987, 1987-03 or 1987-03-15")
+        store = r.get("store_date", "")
+        if store or r.get("store_date_source"):
+            store_source = r.get("store_date_source", "").lower()
+            if store and not store_source:
+                store_source = "hand"
+                report.fix(f, "store date with no source set to hand", f"{label}: {store}")
+            r["store_date_source"] = store_source
+            if store and store_source not in SOURCES:
+                report.problem(f, "store date with an unknown source", f"{label}: {store_source!r} — use hand")
+            if store and not ex.normalize_date(store):
+                report.problem(f, "unparseable store date", f"{label}: {store!r} — use 1987-03-15")
+            elif store and not ex.FULL_DAY_RE.match(store):
+                report.problem(f, "store date is not a full day",
+                               f"{label}: {store!r} — type the day, 1987-03-15, or leave it blank")
         if r.get("status") == "matched":
             continue
         mid = r.get("metron_issue_id", "")
@@ -284,6 +300,15 @@ def fix_details(rows: list[dict], report: Report) -> None:
         r["story_title_source"] = source
         if title and source not in SOURCES:
             report.problem(f, "story title with an unknown source", f"{r['label']}: {source!r}")
+        arc = r.get("story_arc", "")
+        if arc or r.get("story_arc_source"):
+            arc_source = r.get("story_arc_source", "").lower()
+            if arc and not arc_source:
+                arc_source = "hand"
+                report.fix(f, "story arc with no source set to hand", f"{r['label']}: {arc}")
+            r["story_arc_source"] = arc_source
+            if arc and arc_source not in SOURCES:
+                report.problem(f, "story arc with an unknown source", f"{r['label']}: {arc_source!r}")
 
 
 def fix_credits(rows: list[dict], report: Report) -> list[dict]:

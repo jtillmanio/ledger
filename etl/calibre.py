@@ -44,8 +44,9 @@ What it writes, in etl/data/ and committed like the other sidecars:
                        tags, type, read flag, date read (its Eastern day, D-67,
                        or a year) and precision (D-88); `confirmed` lists what
                        Hardcover agreed with, and `hardcover` is its series
-                       where it differs (task 1.14b, D-94). Comments stay out until
-                       books.summary exists (D-88). Then Calibre's id, page
+                       where it differs (task 1.14b, D-94). Comments stay out (D-88):
+                       records() reads them as plain text for the sync, which stores
+                       them in books.summary (task 3.5). Then Calibre's id, page
                        count, superseries (the universe) and subseries, each
                        grouping with its index (task 1.18b, D-90). Then its
                        genres: every #genre value, the full dotted path as
@@ -73,6 +74,7 @@ import csv
 import io
 import json
 import os
+import re
 import shutil
 import sqlite3
 import sys
@@ -80,6 +82,7 @@ import tempfile
 import time
 from collections import Counter
 from datetime import datetime, timezone
+from html.parser import HTMLParser
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -198,6 +201,12 @@ def records(db, columns: dict[str, str]) -> list[dict]:
                      "ORDER BY l.id")
     isbns = grouped("SELECT book, val FROM identifiers WHERE type = 'isbn' ORDER BY id")
     tags = grouped("SELECT l.book, t.name FROM books_tags_link l JOIN tags t ON t.id = l.tag ORDER BY t.name")
+    # Calibre's comments (HTML), as the sync's summary (task 3.5, TASK-078). Read
+    # here so the sync has them; never written to calibre_books.csv (D-88).
+    try:
+        comments = dict(db.execute("SELECT book, text FROM comments"))
+    except sqlite3.OperationalError:
+        comments = {}
     out = []
     for bid, title, index in db.execute("SELECT id, title, series_index FROM books ORDER BY id"):
         date_read, precision = read_date((dates[0] if dates else {}).get(bid), date_format)
@@ -212,11 +221,68 @@ def records(db, columns: dict[str, str]) -> list[dict]:
                     "genres": ex.genre_list((genre[0] if genre else {}).get(bid) or []),
                     "series": ex.clean((series.get(bid) or [None])[0]), "index": index,
                     "isbn": ex.clean((isbns.get(bid) or [None])[0]), "tags": tags.get(bid, []),
+                    "summary": summary_text(comments.get(bid)),
                     "words": ex.as_int((words[0] if words else {}).get(bid)),
                     "read": "" if flag is None else ("true" if flag else "false"),
                     "date_read": date_read, "precision": precision,
                     "type": ex.clean((kinds[0] if kinds else {}).get(bid)) or ""})
     return out
+
+
+class _Text(HTMLParser):
+    """Calibre's comments HTML as text: a block ends a paragraph, `<br>` a line."""
+
+    BLOCKS = {"p", "div", "li", "ul", "ol", "dl", "dt", "dd", "h1", "h2", "h3", "h4", "h5", "h6",
+              "blockquote", "pre", "table", "tr", "section", "article", "header", "footer", "hr"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.parts: list[str] = []
+        self.hidden = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in ("script", "style"):
+            self.hidden += 1
+        elif tag == "br":
+            self.parts.append("\n")
+        elif tag in self.BLOCKS:
+            self.parts.append("\n\n")
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style"):
+            self.hidden = max(0, self.hidden - 1)
+        elif tag in self.BLOCKS:
+            self.parts.append("\n\n")
+
+    def handle_data(self, data):
+        if not self.hidden:
+            self.parts.append(re.sub(r"\s+", " ", data))
+
+
+def summary_text(comments: str | None) -> str | None:
+    """A book's summary from Calibre's comments (task 3.5, TASK-078): plain text,
+    paragraphs split by one blank line, a line break kept, spaces collapsed, no
+    markup. Comments typed without markup keep their own line breaks. None when
+    there is no text."""
+    if not comments or not comments.strip():
+        return None
+    if re.search(r"<\s*[a-zA-Z/!]", comments):
+        parser = _Text()
+        parser.feed(comments)
+        parser.close()
+        text = "".join(parser.parts)
+    else:
+        text = comments.replace("\r\n", "\n").replace("\r", "\n")
+    paragraphs = []
+    for block in re.split(r"\n[^\S\n]*\n", text):
+        lines = [" ".join(line.split()) for line in block.split("\n")]
+        lines = [line for line in lines if line]
+        if lines:
+            paragraphs.append("\n".join(lines))
+    return "\n\n".join(paragraphs) or None
 
 
 def read_date(value, date_format: str) -> tuple[str, str]:

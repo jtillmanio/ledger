@@ -114,6 +114,8 @@ def record(r: dict, status, owned) -> dict:
         "subseries": r["subseries"], "subseriesIndex": number(r["subseries_index"]),
         "superseries": r["superseries"], "superseriesIndex": number(r["superseries_index"]),
         "genres": r["genres"], "tags": r["tags"], "isbn": r["isbn"],
+        # Calibre's comments as plain text (task 3.5, TASK-078): null when it has none, which clears.
+        "summary": r.get("summary"),
         "words": r["words"], "pages": r["pages"], "type": r["type"] or None,
         "read": {"true": True, "false": False}.get(r["read"]),
         "dateRead": r["date_read"] or None, "precision": r["precision"] if r["date_read"] else None,

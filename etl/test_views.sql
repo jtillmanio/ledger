@@ -1235,6 +1235,7 @@ END $$;
 -- so changing it is one write to the follow table, and follow_state follows it.
 -- 1.18b (D-90, D-91) adds Calibre's id and groupings: facts about the book.
 -- 2.10b adds added_at, when the book was added in the app: a fact about the book.
+-- 3.5 (TASK-078) adds summary and subjects, Calibre's comments and tags: facts about the book.
 DO $$
 DECLARE got text;
 BEGIN
@@ -1246,7 +1247,7 @@ BEGIN
   IF got IS DISTINCT FROM 'authors(id,name) book_series(author_id,id,name,total_books) '
                        || 'book_universes(id,name) books(added_at,author_id,book_type,calibre_id,cover_url,'
                        || 'deleted_at,hardcover_id,id,open_library_id,page_count,published_year,'
-                       || 'series_id,series_position,subseries_id,subseries_position,title,universe_id,'
+                       || 'series_id,series_position,subjects,subseries_id,subseries_position,summary,title,universe_id,'
                        || 'universe_position,word_count,word_count_source)' THEN
     RAISE EXCEPTION 'catalog columns changed (a per-user fact belongs in a follow or progress table): %', got;
   END IF;

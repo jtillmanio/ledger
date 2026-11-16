@@ -84,6 +84,13 @@ export const issues = pgTable("issues", {
   coverDateSource: text("cover_date_source"), // metron | hand; null when undated
   storyTitle: text("story_title"),          // Metron story names joined with "; "
   storyTitleSource: text("story_title_source"), // metron | hand; null when untitled
+  // Task 3.5 (TASK-078): Metron's story arcs, names joined with "; ", and the
+  // on-sale date (its issue list's store_date; cover_date is the date printed
+  // on the cover). Through issue_details.csv and cover_dates.csv like the rest.
+  storyArc: text("story_arc"),
+  storyArcSource: text("story_arc_source"),     // metron | hand; null when in no arc
+  storeDate: date("store_date", { mode: "string" }),
+  storeDateSource: text("store_date_source"),   // metron | hand; null when undated
   coverUrl: text("cover_url"),              // Metron image URL; never hand-entered
   // Not unique: before label review, two spellings of one comic can both match.
   metronId: integer("metron_id"),
@@ -99,6 +106,12 @@ export const issues = pgTable("issues", {
   storyTitleSource: check("issues_story_title_source_check", sql`
     (${t.storyTitle} IS NULL) = (${t.storyTitleSource} IS NULL)
     AND (${t.storyTitleSource} IS NULL OR ${t.storyTitleSource} IN ('metron', 'hand'))`),
+  storyArcSource: check("issues_story_arc_source_check", sql`
+    (${t.storyArc} IS NULL) = (${t.storyArcSource} IS NULL)
+    AND (${t.storyArcSource} IS NULL OR ${t.storyArcSource} IN ('metron', 'hand'))`),
+  storeDateSource: check("issues_store_date_source_check", sql`
+    (${t.storeDate} IS NULL) = (${t.storeDateSource} IS NULL)
+    AND (${t.storeDateSource} IS NULL OR ${t.storeDateSource} IN ('metron', 'hand'))`),
 }));
 
 // A named stretch of one run's reading order: "Days of Future Past". An era is
@@ -271,6 +284,12 @@ export const books = pgTable("books", {
   publishedYear: integer("published_year"),
   pageCount: integer("page_count"),
   coverUrl: text("cover_url"),
+  // Task 3.5 (TASK-078): Calibre's comments as plain text (paragraphs split by a
+  // blank line) and its tags, cleaned, once whatever the case, sorted. Written
+  // only by the Calibre sync (src/db/calibre-sync.ts), Calibre winning (D-87), so
+  // no source column; NULL when Calibre has none.
+  summary: text("summary"),
+  subjects: text("subjects").array(),
   // Not unique, like issues.metron_id: two records of one book can both match
   // until someone merges them.
   openLibraryId: text("open_library_id"),

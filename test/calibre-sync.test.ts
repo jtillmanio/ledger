@@ -100,7 +100,7 @@ function written(records: CalibreRecord[], result: SyncResult): CalibreRecord[] 
 async function snapshot() {
   return {
     books: await sql`SELECT id, title, author_id, series_id, series_position, universe_id, subseries_id, word_count,
-      word_count_source, page_count, calibre_id, deleted_at FROM books ORDER BY id`,
+      word_count_source, page_count, calibre_id, summary, subjects, deleted_at FROM books ORDER BY id`,
     authors: await sql`SELECT * FROM authors ORDER BY id`,
     status: await sql`SELECT book_id, status, finished_on::text, finished_on_precision FROM book_status ORDER BY book_id`,
     reads: await sql`SELECT book_id, finished_on::text, finished_on_precision, format FROM read_events ORDER BY id`,
@@ -335,6 +335,45 @@ describe("what Calibre owns of a book (D-87, D-90)", () => {
     expect(await sql`SELECT series_id, series_position, subseries_id FROM books WHERE id = 'mistborn'`)
       .toEqual([{ series_id: null, series_position: null, subseries_id: null }]);
     expect(cleared.report.in[0].changes.map((c) => c.field)).toEqual(["series", "series index", "subseries", "subseries index"]);
+  });
+
+  it("stores the comments as the summary and the tags as the subjects; none is NULL; the log names no text (task 3.5)", async () => {
+    const rec: CalibreRecord = {
+      calibreId: 1, title: "Mistborn", authors: ["Brandon Sanderson"],
+      summary: "  The Final Empire.\n\nA heist.  ", tags: ["Heist", "fantasy", "Fantasy", " Allomancy "],
+    };
+    const first = await sync(payloadOf([
+      rec,
+      { calibreId: 2, title: "Elantris", authors: ["Brandon Sanderson"], summary: "Fallen city.", tags: ["Cosmere"] },
+      { calibreId: 3, title: "Warbreaker", authors: ["Brandon Sanderson"], summary: null, tags: [] },
+    ]));
+    expect(await sql`SELECT calibre_id, summary, subjects FROM books ORDER BY calibre_id`).toEqual([
+      { calibre_id: 1, summary: "The Final Empire.\n\nA heist.", subjects: ["Allomancy", "fantasy", "Heist"] },
+      { calibre_id: 2, summary: "Fallen city.", subjects: ["Cosmere"] }, // created
+      { calibre_id: 3, summary: null, subjects: null },
+    ]);
+    const mistborn = first.report.in.find((c) => c.bookId === "mistborn")!;
+    expect(mistborn.changes).toEqual([
+      { field: "summary", from: null, to: "5 words" },
+      { field: "subjects", from: null, to: ["Allomancy", "fantasy", "Heist"] },
+    ]);
+    expect(JSON.stringify(first.report)).not.toContain("Final Empire");
+    expect((await sql`SELECT report::text AS r FROM calibre_syncs`).map((r) => r.r).join()).not.toContain("Final Empire");
+
+    // The same again changes nothing; Calibre clearing them clears them; a record without the fields leaves them.
+    const again = await sync(payloadOf([rec]));
+    expect(again.report.in).toEqual([]);
+    await sync(payloadOf([{ ...rec, summary: "", tags: [] }]));
+    expect(await sql`SELECT summary, subjects FROM books WHERE id = 'mistborn'`).toEqual([{ summary: null, subjects: null }]);
+    await sql`UPDATE books SET summary = 'Kept.', subjects = ${["Kept"]} WHERE id = 'mistborn'`;
+    await sync(payloadOf([{ calibreId: 1, title: "Mistborn", authors: ["Brandon Sanderson"] }]));
+    expect(await sql`SELECT summary, subjects FROM books WHERE id = 'mistborn'`).toEqual([{ summary: "Kept.", subjects: ["Kept"] }]);
+  });
+
+  it("refuses a summary that isn't text", async () => {
+    const res = await post(payloadOf([{ calibreId: 1, title: "Mistborn", authors: [], summary: 5 } as unknown as CalibreRecord]));
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: "records[0].summary must be text or null" });
   });
 
   it("a record repeating an earlier one's title and author is skipped, as calibre.py skips it", async () => {

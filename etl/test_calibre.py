@@ -900,6 +900,37 @@ class Shape(Case):
         self.assertNotIn("comments", row)
         self.assertNotIn("About Warbreaker", self.books_csv.read_text(encoding="utf-8"))
 
+    def test_records_carry_the_comments_as_a_plain_summary_for_the_sync(self):
+        """Task 3.5 (TASK-078): the sync's summary; a library with no comments table reads none."""
+        build_library(self.lib, [book("Warbreaker", "Brandon Sanderson")])
+        db = sqlite3.connect(self.lib / "metadata.db")
+        db.execute("INSERT INTO books (title, series_index) VALUES ('Elantris', 1)")
+        db.commit()
+        db.close()
+        cols = {"words": "#words", "date": "#date_read", "read": None, "type": None, "superseries": None,
+                "subseries": None, "pages": None, "genre": None}
+        with mock.patch("sys.stdout"):
+            recs = {r["title"]: r for r in cal.read_library(self.lib / "metadata.db", cols)}
+        self.assertEqual(recs["Warbreaker"]["summary"], "About Warbreaker")
+        self.assertIsNone(recs["Elantris"]["summary"])
+        db = sqlite3.connect(self.lib / "metadata.db")
+        db.execute("DROP TABLE comments")
+        db.commit()
+        db.close()
+        with mock.patch("sys.stdout"):
+            recs = cal.read_library(self.lib / "metadata.db", cols)
+        self.assertEqual([r["summary"] for r in recs], [None, None])
+
+    def test_summary_text_is_paragraphs_without_markup(self):
+        html = ('<div>\n<p>Two <b>sisters</b>,&nbsp;one   city.\n  A god&#8217;s return.</p>'
+                '<p>Line one<br/>Line two</p><script>x()</script><ul><li>A</li><li>B &amp; C</li></ul></div>')
+        self.assertEqual(cal.summary_text(html),
+                         "Two sisters, one city. A god’s return.\n\nLine one\nLine two\n\nA\n\nB & C")
+        self.assertEqual(cal.summary_text("Typed plainly.\r\nSecond line.\r\n\r\n\r\nNew paragraph."),
+                         "Typed plainly.\nSecond line.\n\nNew paragraph.")
+        for empty in (None, "", "   ", "<div><p> </p><br></div>"):
+            self.assertIsNone(cal.summary_text(empty), repr(empty))
+
     def test_an_isbn_hardcover_finds_is_confirmed(self):
         build_library(self.lib, [book("The Way of Kings", "Brandon Sanderson", series="The Stormlight Archive",
                                       isbn="9780765326355"),
