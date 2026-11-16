@@ -5,10 +5,18 @@
 
 /**
  * Paths that never change what Vercel builds. A commit touching only these gets
- * no deployment: the nightly backup, docs, design notes, CI and Claude config.
- * etl/ is not here: etl/views.sql ships with a release.
+ * no deployment: the nightly backup, docs, design notes, the tests and their
+ * runners' configs, CI and Claude config. A test-only push (a CI fix round) is
+ * the common case: each preview build costs a Neon branch and a Lighthouse run
+ * of every route against Vercel's Active CPU allowance, for an app that did not
+ * change. etl/ is not here: etl/views.sql ships with a release. Nor is
+ * scripts/: scripts/vercel-build.mjs runs in the build, and scripts/perf/ is
+ * what Lighthouse measures with.
  */
-const NO_BUILD = [/^backups\//, /^docs\//, /^design\//, /^\.github\//, /^\.claude\//, /\.md$/i];
+const NO_BUILD = [
+  /^backups\//, /^docs\//, /^design\//, /^test\//, /^(vitest|playwright)\.config\.ts$/,
+  /^\.github\//, /^\.claude\//, /\.md$/i,
+];
 
 /** True when any of these changed files affects the deployed app. */
 export function needsBuild(files) {
@@ -88,7 +96,7 @@ export function ignoredBuildStep(previousSha, git, { repoUrl } = {}) {
         : `nothing changed since ${label}, so this is a redeploy`,
     };
   }
-  return { build: false, why: `only backups, docs, design, CI or Claude config changed since ${label}` };
+  return { build: false, why: `only backups, docs, design, tests, CI or Claude config changed since ${label}` };
 }
 
 /** The commit status the Preview link workflow posts on a head Vercel skipped. */
@@ -123,7 +131,7 @@ export async function carriedPreview(commits, previewsOf, changedFiles) {
     if (deploymentNeedsBuild(files)) {
       return { carry: null, why: `${files.length} file(s) changed since ${short}, so Vercel builds the head` };
     }
-    return { carry: { sha, url: built.url }, why: `only backups, docs, design, CI or Claude config changed since ${short}` };
+    return { carry: { sha, url: built.url }, why: `only backups, docs, design, tests, CI or Claude config changed since ${short}` };
   }
   return { carry: null, why: "no earlier commit in the pull request has a preview" };
 }
@@ -134,7 +142,7 @@ export function carriedPreviewStatus(head, carry) {
     state: "success",
     context: CARRIED_PREVIEW_CONTEXT,
     target_url: carry.url,
-    description: `Vercel skipped ${head.slice(0, 7)} (docs or config only); ${carry.sha.slice(0, 7)}'s preview serves the same app`,
+    description: `Vercel skipped ${head.slice(0, 7)} (docs, tests or config only); ${carry.sha.slice(0, 7)}'s preview serves the same app`,
   };
 }
 

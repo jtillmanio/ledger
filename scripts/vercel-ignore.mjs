@@ -1,7 +1,7 @@
 // Vercel's Ignored Build Step (vercel.json ignoreCommand). Exit 0 skips the
 // build, exit 1 builds. Skips only when every file changed since this branch's
 // last deployment is one that never reaches the app: the nightly backup commit,
-// docs, design notes, CI and Claude config (scripts/lib/release.mjs).
+// docs, design notes, the tests, CI and Claude config (scripts/lib/release.mjs).
 //
 // VERCEL_GIT_PREVIOUS_SHA is the SHA of the branch's last successful
 // deployment, not of the commit being redeployed. A redeploy of the commit that

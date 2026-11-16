@@ -284,14 +284,14 @@ export function measurable({ eventName, environment, state, deploymentUrl, input
 /**
  * Why a preview's pull request needs no measuring, or null to measure. A PR
  * that changes only what Vercel never builds (`needsBuild`: backups, docs,
- * design, CI, Claude config) serves the app main already measured. A PR that
+ * design, tests, CI, Claude config) serves the app main already measured. A PR that
  * changes this workflow measures, so the workflow exercises itself. An empty
  * or unknown list (`null`: GitHub couldn't list them all) measures.
  */
 export function unchangedApp(files) {
   if (!files || files.length === 0 || needsBuild(files)) return null;
   if (files.includes(".github/workflows/lighthouse.yml")) return null;
-  return `it changes only backups, docs, design, CI or Claude config (${files.length} file(s)), so the preview serves main's app`;
+  return `it changes only backups, docs, design, tests, CI or Claude config (${files.length} file(s)), so the preview serves main's app`;
 }
 
 /** The rt_session pair (`rt_session=…`) from a login response's Set-Cookie headers, or null. */

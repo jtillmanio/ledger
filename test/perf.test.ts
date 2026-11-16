@@ -242,8 +242,9 @@ describe("unchangedApp (a docs-only PR is not measured)", () => {
   it("skips a PR that changes only what Vercel never builds", () => {
     // PR #117: a plan and its follow-ups. Vercel deployed its first push anyway.
     expect(unchangedApp(["docs/tasks/TASK-017-status-screens.md", "docs/05-roadmap.md", "docs/review/decisions.md"]))
-      .toMatch(/only backups, docs, design, CI or Claude config \(3 file\(s\)\)/);
+      .toMatch(/only backups, docs, design, tests, CI or Claude config \(3 file\(s\)\)/);
     expect(unchangedApp(["design/mockups-index.md", ".claude/rules/git.md", "CLAUDE.md"])).not.toBeNull();
+    expect(unchangedApp(["test/perf.test.ts", "test/e2e/books.spec.ts", "playwright.config.ts"])).not.toBeNull();
   });
 
   it("measures a PR that changes the app anywhere", () => {
