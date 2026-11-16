@@ -970,7 +970,8 @@ export type BookDetail = {
   finished_on: string | null; finished_on_precision: Precision;
   started_on: string | null; started_on_precision: Precision;
   notes: string | null;
-  /** Where a to-read book sits (`to_read_level`, D-37): its level and period; null unless to read. */
+  /** Where a to-read book sits (`to_read_level`, D-37): its level and period; null unless to read. A book
+   * with no status row is to read with a null level, which is Someday: `placeTag` draws it so. */
   plan_level: ToReadLevel | null; plan_period: string | null;
   /** The book shelves it is on, by name. */
   shelves: string[];

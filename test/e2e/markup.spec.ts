@@ -76,12 +76,15 @@ for (const path of NAVIGABLE) {
   });
 }
 
-test("/books/list: its rows are articles with no link, and the status controls have names (AC-4)", async ({ page }) => {
+test("/books/list: its rows are articles whose one link is the title's, to the book (task 3.5), and the status controls have names (AC-4)", async ({ page }) => {
   await page.goto("/books/list");
   const rows = await page.locator(".rows > .row.book-row").evaluateAll((els) =>
-    els.map((el) => ({ tag: el.tagName, links: el.querySelectorAll("a").length })));
+    els.map((el) => ({
+      tag: el.tagName,
+      links: [...el.querySelectorAll("a")].map((a) => ({ inTitle: Boolean(a.closest(".row-title")), toBook: /^\/book\/[^/]+$/.test(a.getAttribute("href") ?? "") })),
+    })));
   expect(rows.length).toBe(E2E_BOOK_COUNT);
-  for (const r of rows) expect(r).toEqual({ tag: "ARTICLE", links: 0 });
+  for (const r of rows) expect(r).toEqual({ tag: "ARTICLE", links: [{ inTitle: true, toBook: true }] });
   const buttons = await page.locator(".book-row button").all();
   expect(buttons.length, "each book row has status controls").toBeGreaterThan(0);
   for (const b of buttons) {

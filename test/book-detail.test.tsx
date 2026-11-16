@@ -101,6 +101,36 @@ describe("Reading history (AC-4)", () => {
   });
 });
 
+describe("Read again presses (AC-4)", () => {
+  it("posts Reading for this book through the status route, the status control's own write", async () => {
+    (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    const { act } = await import("react");
+    const { createRoot } = await import("react-dom/client");
+    const { default: ReadAgain } = await import("../src/components/ReadAgain");
+    const fetch = vi.fn(async () => new Response(JSON.stringify({
+      change: null, finish: null, start: { on: "2026-11-16", precision: "exact" }, format: null, offer: null,
+    }), { status: 200, headers: { "content-type": "application/json" } }));
+    vi.stubGlobal("fetch", fetch);
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+    try {
+      await act(async () => root.render(createElement(UndoProvider, null, createElement(ReadAgain, { bookId: "b1", title: "Elantris" }))));
+      const button = [...host.querySelectorAll("button")].find((b) => b.textContent === "Read again")!;
+      await act(async () => button.click());
+      expect(fetch).toHaveBeenCalledTimes(1);
+      const [url, init] = fetch.mock.calls[0] as unknown as [string, RequestInit];
+      expect(url).toBe("/api/progress/book");
+      expect(init.method).toBe("POST");
+      expect(JSON.parse(String(init.body))).toEqual({ bookId: "b1", status: "reading" });
+    } finally {
+      act(() => root.unmount());
+      host.remove();
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
 describe("Details and About (AC-5)", () => {
   const words = (doc: Document) => doc.querySelector(".detail .words");
 

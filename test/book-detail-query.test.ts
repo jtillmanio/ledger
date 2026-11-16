@@ -116,6 +116,20 @@ describe("bookDetail (AC-3, AC-4)", () => {
     });
   });
 
+  it("shows only this user's record: another user's status, reads and shelves stay out", async () => {
+    await sql`INSERT INTO users (id, name) VALUES ('other-user', 'Other')`;
+    await book("shared");
+    await sql`INSERT INTO book_status (user_id, book_id, status, notes, finished_on, finished_on_precision)
+              VALUES ('other-user', 'shared', 'read', 'Not yours.', '2024-01-02', 'exact')`;
+    await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, year_rank)
+              VALUES ('other-user', 'shared', '2024-01-02', 'exact', 1)`;
+    await sql`INSERT INTO shelves (id, name, user_id, kind) VALUES ('theirs', 'Theirs', 'other-user', 'books')`;
+    await sql`INSERT INTO shelf_books (shelf_id, book_id, ordinal) VALUES ('theirs', 'shared', 1)`;
+    expect(await q.bookDetail(USER, "shared")).toMatchObject({
+      status: "to_read", notes: null, finished_on: null, reads: 0, listens: 0, history: [], shelves: [],
+    });
+  });
+
   it("answers null for an unknown or removed book", async () => {
     await book("gone", { deleted_at: new Date() });
     expect(await q.bookDetail(USER, "gone")).toBeNull();

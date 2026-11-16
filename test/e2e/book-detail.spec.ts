@@ -161,7 +161,8 @@ test("an unknown or removed book renders the not-found page (AC-3)", CORE, async
 
 test("the Library's other routes under /books are not caught by the sheet", CORE, async ({ page }) => {
   await page.goto(LIST);
-  const plan = page.locator('a[href="/books/plan"]').first();
+  // The phone's tab row, the tablet's rail or the desktop sidebar: whichever this width draws.
+  const plan = page.locator('a[href="/books/plan"]:visible').first();
   await hydrated(plan);
   await plan.click();
   await expect(page).toHaveURL(/\/books\/plan$/);
@@ -276,18 +277,24 @@ test("a drag past a third dismisses it, a short one springs back (manual check, 
   await expect(page).toHaveURL(LIST);
 });
 
-test("reduced motion opens it by opacity alone (AC-6)", { tag: "@at-w390-reduced-motion" }, async ({ page }) => {
+test("reduced motion opens and closes it with no movement at all (AC-6, UX-N01)", { tag: "@at-w390-reduced-motion" }, async ({ page }) => {
   await page.goto(LIST);
-  await openFrom(page, FILLER[3].title);
-  const name = await sheet(page).evaluate((el) => getComputedStyle(el).animationName);
-  expect(name).toBe("rsheet-fade");
-  const props = await sheet(page).evaluate(() => {
-    const rule = [...document.styleSheets].flatMap((s) => { try { return [...s.cssRules]; } catch { return []; } })
-      .find((r) => r instanceof CSSKeyframesRule && r.name === "rsheet-fade") as CSSKeyframesRule | undefined;
-    return rule ? [...rule.cssRules].map((k) => (k as CSSKeyframeRule).style.cssText) : null;
+  const link = rowLink(page, FILLER[3].title);
+  await hydrated(link);
+  await link.click();
+  await expect(sheet(page)).toBeVisible();
+  // The moment it is there: nothing animates, nothing slides or scales, on the sheet or its scrim.
+  const motion = () => page.evaluate(() => {
+    const els = [...document.querySelectorAll(".rsheet-host, .rsheet-host *")];
+    return {
+      running: els.flatMap((el) => el.getAnimations()).length,
+      transform: getComputedStyle(document.querySelector(".rsheet")!).transform,
+    };
   });
-  expect(props).not.toBeNull();
-  for (const p of props!) expect(p).not.toContain("transform");
+  expect(await motion()).toEqual({ running: 0, transform: "none" });
+  await page.keyboard.press("Escape");
+  await expect(sheet(page)).toBeHidden();
+  await expect(page).toHaveURL(LIST);
 });
 
 test("the sheet at 360, 834 and 1280px, light and dark: geometry, contrast, axe and screenshots (AC-6)", ONCE, async ({ page }, info) => {
@@ -315,13 +322,24 @@ test("the sheet at 360, 834 and 1280px, light and dark: geometry, contrast, axe 
       await expectNoHorizontalScroll(page);
       await expectNoAxeViolations(page, AXE, '[role="dialog"]');
       expect(await contrastFailures(page), `${width}px ${colorScheme}`).toEqual([]);
+      // The hero name is Newsreader in the sheet as on the page (the feel pass): no action sheet's label.
+      const title = sheet(page).locator(".detail-title");
+      const sheetTitle = await title.evaluate((el) => ({ font: getComputedStyle(el).fontFamily, size: getComputedStyle(el).fontSize }));
+      expect(sheetTitle.font).toContain("Newsreader");
       await screenshot(page, info, `book-sheet-${width}-${colorScheme}`);
       await page.keyboard.press("Escape");
       await expect(sheet(page)).toBeHidden();
+
+      // The full page at the same width and theme: the same title, axe, contrast.
+      await page.goto(`/book/${FEATURE.id}`);
+      const pageTitle = page.locator(".detail:not([aria-busy]) .detail-title");
+      await expect(pageTitle).toBeVisible();
+      expect(await pageTitle.evaluate((el) => ({ font: getComputedStyle(el).fontFamily, size: getComputedStyle(el).fontSize })))
+        .toEqual(sheetTitle);
+      await expectNoHorizontalScroll(page);
+      await expectNoAxeViolations(page, AXE);
+      expect(await contrastFailures(page), `page ${width}px ${colorScheme}`).toEqual([]);
+      await screenshot(page, info, `book-page-${width}-${colorScheme}`);
     }
-    // The full page at the same width.
-    await page.goto(`/book/${FEATURE.id}`);
-    await expectNoAxeViolations(page, AXE);
-    await screenshot(page, info, `book-page-${width}`);
   }
 });

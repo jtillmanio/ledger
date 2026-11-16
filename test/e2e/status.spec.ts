@@ -343,8 +343,10 @@ test.describe("books", () => {
 
     const lane = panel(page).locator('section[data-plan="year"]');
     await expect(lane.locator(".row-title")).toHaveText(["E2E Plan Year"]);
-    // No handle or link (the lane has no order, D-37); 2.8's Place them and the status control (1.17b) are its buttons.
-    await expect(lane.locator("a, .drag")).toHaveCount(0);
+    // No handle and no link but the title's to its book (task 3.5): the lane has no order (D-37); 2.8's Place
+    // them and the status control (1.17b) are its buttons.
+    await expect(lane.locator("a:not(.book-link), .drag")).toHaveCount(0);
+    await expect(lane.locator(".row-title a.book-link")).toHaveAttribute("href", /^\/book\/[^/]+$/);
     await expect(lane.getByRole("button")).toHaveText(["Place them", "Status: to read"]);
     // Amber since 2.8 (1.9 drew it grey): the head resolves to --blocked, as the browser computes it; the book rows don't.
     const blocked = await tokenColour(page, "--blocked");
@@ -717,7 +719,8 @@ test.describe("the status control on the status screens (1.17b)", () => {
     await expect(page.locator(`ol[aria-label="Q1 2027"] .drag`)).toHaveCount(1);
     const lane = panel(page).locator('section[data-plan="year"]');
     await expect(lane.locator(".status-toggle")).toHaveText("Status: to read");
-    await expect(lane.locator("a, .drag")).toHaveCount(0);
+    // No handle; the one link is the title's to its book (task 3.5).
+    await expect(lane.locator("a:not(.book-link), .drag")).toHaveCount(0);
     await expect(panel(page).locator('section[data-plan="on_deck"] .status-toggle')).toHaveText("Status: to read");
 
     await open(page, "/books/status?tab=done");
