@@ -1,7 +1,7 @@
 ---
 id: TASK-087
 title: 4.3 Covers in the UI (3 of 3) — Show covers, and no image requested when data is reduced
-status: In progress
+status: Review
 depends_on: [TASK-085, TASK-086, TASK-045]
 size: M
 model: sonnet
@@ -29,7 +29,7 @@ Covers can be turned off in Settings, and with them off, or with the device aski
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves *with `prefers-reduced-data: reduce` emulated, or Show covers off, the spine makes zero image requests*. TASK-085 and TASK-086 prove the rest): Lighthouse CLS under 0.1 on the books page. No cover placeholder
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves *with `prefers-reduced-data: reduce` emulated, or Show covers off, the spine makes zero image requests*. TASK-085 and TASK-086 prove the rest): Lighthouse CLS under 0.1 on the books page. No cover placeholder
 renders a gradient or an identity hue, and no row renders both an `.edge` and a
 `.tag .sq`. On the spine, a row whose issue has a `cover_url` renders one
 `<img loading="lazy" alt="">` inside a 28×42 box, and a row without one renders
@@ -37,10 +37,10 @@ the issue number in the same box. Swapping one for the other changes no row's
 height (CLS under 0.1 on a 381-row spine). With `prefers-reduced-data: reduce`
 emulated, or *Show covers* off, the spine makes zero image requests. No cover
 element carries a `box-shadow` that resolves to `--halo`.
-- [ ] AC-2: With *Show covers* off, a spine with covers, the Library and both dashboards make zero requests to any image host (counted in the browser), and every cover slot renders its placeholder at the same size; turning it back on shows the covers after a reload.
-- [ ] AC-3: With `prefers-reduced-data: reduce` emulated and *Show covers* on, the spine makes zero image requests and renders placeholders.
-- [ ] AC-4: The setting is a real switch (`role="switch"` or a checkbox) named *Show covers* in Settings → Appearance, default on; its value survives a reload and is stored where the plan gate settled (on `reading_settings.show_covers`, or a per-device cookie).
-- [ ] AC-5: The Appearance section meets the UX floor (`docs/04-design.md` § 10. The UX floor): the switch 44px on the phone, its state not shown by colour alone, its saving and failed states drawn as Settings' other controls draw them; text 4.5:1 in both themes; axe reports no new violations; screenshots at 360px, 834px and 1280px, light and dark.
+- [x] AC-2: With *Show covers* off, a spine with covers, the Library and both dashboards make zero requests to any image host (counted in the browser), and every cover slot renders its placeholder at the same size; turning it back on shows the covers after a reload.
+- [x] AC-3: With `prefers-reduced-data: reduce` emulated and *Show covers* on, the spine makes zero image requests and renders placeholders.
+- [x] AC-4: The setting is a real switch (`role="switch"` or a checkbox) named *Show covers* in Settings → Appearance, default on; its value survives a reload and is stored where the plan gate settled (on `reading_settings.show_covers`, or a per-device cookie).
+- [x] AC-5: The Appearance section meets the UX floor (`docs/04-design.md` § 10. The UX floor): the switch 44px on the phone, its state not shown by colour alone, its saving and failed states drawn as Settings' other controls draw them; text 4.5:1 in both themes; axe reports no new violations; screenshots at 360px, 834px and 1280px, light and dark.
 
 ## Out of scope
 
@@ -64,8 +64,9 @@ element carries a `box-shadow` that resolves to `--halo`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- `reading_settings.show_covers` is left unused now that *Show covers* is a per-device cookie: say so in the data model and drop it with 6.18's column cleanup (approved at plan) → `docs/03-data-model.md` § 4.1, at close-out.
-- Candidate decision: *Show covers* is per device, a cookie, with the reduced-data signals (`prefers-reduced-data`, Save-Data) checked on the client; covers render only after hydration (approved at plan; decisions mode `propose`, so the wording is shown at close-out) → `docs/review/decisions.md`, at close-out.
+- `reading_settings.show_covers` is left unused now that *Show covers* is a per-device cookie: said in the data model, and 6.18 drops it with the `user_id` columns (approved at plan) → docs/03-data-model.md § 4 Proposed additions (the 3.6b, 3.6c, 4.3 row) and docs/05-roadmap.md § 6.18
+- Candidate decision: *Show covers* is per device, a cookie, with the reduced-data signals checked on the client, covers rendering only after hydration (approved at plan) → docs/review/decisions.md § D-156
+- The `prefers-reduced-data` media-query leg can only be proved in a Chromium launched with `--enable-blink-features=PrefersReducedData`; ui-verifier's stock browser could not, and test/e2e/covers-reduced-data.spec.ts proves it → not tracked: covered by that spec
 
 ## Plan
 
@@ -122,7 +123,7 @@ The server cannot see a media query, and covers render inside client components 
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 FAIL (env: vitest under a lowercase drive) → R2 FAIL(3: add-book.test.ts server HTML, calibre-page and query-budget `cookies()` outside a request) → fixed | Verify R3 PASS | Verify R4 PASS (after the review fix) | Audit R1 PASS (notes: one test title, fixed) | Spec R1 CHANGES (Appearance in the left column, not the mockup's right; comics slot sizes untested; dashboard-covers.spec.ts missing from the PR's list) → R2 APPROVE | UI R1 PASS (AC-2, AC-4, AC-5 and the Save-Data leg of AC-3 in the browser; the media-query leg is test/e2e/covers-reduced-data.spec.ts) | CI: see PR #274
 
 ## Blocked
 
@@ -130,7 +131,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 4 (R1 an environment failure)
+- Review rounds: 2 (spec-reviewer; schema-reviewer not needed, no schema or query change)
+- First-pass AC FAILs: 0 (one PLAN GAP: Appearance's column)
+- Plan revisions after approval: 0 recorded in the plan, but the work differs from it in five places, listed in the PR: the reduced-data browser tests are test/e2e/covers-reduced-data.spec.ts (Playwright forbids `launchOptions` in a describe); the switch's press and failure tests are in test/covers.test.tsx (happy-dom), settings.test.tsx holds the page markup; src/app/settings/loading.tsx; test/e2e/dashboard-covers.spec.ts (AC-2's dashboards); test/add-book.test.ts, calibre-page.test.tsx and query-budget.test.ts follow the new server HTML and the `cookies()` read

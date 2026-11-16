@@ -199,7 +199,7 @@ describe("the Show covers switch (AC-4, AC-5)", () => {
   const sw = () => container.querySelector<HTMLButtonElement>('button[role="switch"]')!;
   const press = () => act(() => { sw().click(); });
 
-  it("is a switch named Show covers, 44px tall by the shared .switch rule, on by default", () => {
+  it("is a switch named Show covers, on by default, with the shared .switch class (its 44px is test/e2e/settings.spec.ts)", () => {
     draw(true);
     expect(sw()).not.toBeNull();
     expect(sw().getAttribute("aria-checked")).toBe("true");
