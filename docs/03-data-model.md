@@ -701,7 +701,8 @@ the same PR (hard rule 7).
 | 3.5 | `books.summary` (text: Calibre's comments as plain text) and `books.subjects` (`text[]`: its tags), no source column, written only by the Calibre sync, NULL when Calibre has none; `issues.story_arc` (Metron's arc names joined `; `) with `story_arc_source` and `issues.store_date` (the on-sale day) with `store_date_source`, each the `metron \| hand` CHECK pair `cover_date` has, through `issue_details.csv` and `cover_dates.csv`. No down file: the migration only adds columns | Built (migration 0030, TASK-078); approved by the owner 2026-11-16; D-87, D-88, D-133 |
 | 3.6b, 3.6c, 4.3 | A per-user, per-run preference for *Show release dates* and *Hide read*; where *Show covers* is kept: settled by 4.3 as a per-device cookie (`ledger_covers`, D-156), so no column, and `reading_settings.show_covers` goes unused until 6.18's column cleanup drops it | Never a column on `runs` (2.1) |
 | 4.1 | `issues.summary` | Metron's summary |
-| 5.1, 8.6 | `shelves.description`, `shelf_books.note`, `shelf_titles.note` | Why an item is on a shelf |
+| 5.1 | `shelves.description` and `shelf_books.note`, both nullable text, no `user_id`; the note is the placement's, so one book on two shelves keeps two notes. A name already in use among your book shelves (case and spacing aside) is refused in the write, under the add lock, not by an index. No down file: the migration only adds columns | Built (migration 0031, TASK-095); approved by the owner 2026-11-16; 2.5e, D-91, D-139 |
+| 8.6 | `shelf_titles.note` | Why a title is on a shelf |
 | 5.6 | `edition_issues` | Parsed from each edition's issue text (2.6) |
 | 7.1 | `proposals` | Every AI proposal with its prompt, response and decision |
 | 7.8 | A placement's drafted note, with provenance | Asked at 7.8's plan gate |
@@ -845,7 +846,8 @@ CREATE TABLE shelf_titles (
   note     text,                         -- why it is on the shelf (5.1, 8.6)
   PRIMARY KEY (shelf_id, title_id)
 );
--- Shelf context (5.1): ALTER TABLE shelves ADD COLUMN description text;
+-- Shelf context (5.1): built, migration 0031 (TASK-095).
+--                      ALTER TABLE shelves ADD COLUMN description text;
 --                      ALTER TABLE shelf_books ADD COLUMN note text;
 
 -- Detail fields the APIs already return and we currently discard.

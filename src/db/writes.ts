@@ -1741,11 +1741,16 @@ export type BookItem = NewBook | { use: string };
  * `to_read` book with that period's plan row, one value (`2027-Q1` or `2027`,
  * D-38), at the end of a quarter. A format you own (task 5.17, D-132; *Paste a
  * list* only) is an `owned_copies` row, and a book the paste created is
- * Unlisted (D-152); it touches no plan and no status a book already had.
+ * Unlisted (D-152); it touches no plan and no status a book already had. A new
+ * shelf (task 5.1, *New shelf…*) is a `shelves` row made in the add's own
+ * transaction, then a shelf like any other: the entry the add answers names it
+ * as `{ kind: "shelf" }` with `newShelf`, so its undo removes the shelf too.
  */
 export type Destination =
   | { kind: "someday" } | { kind: "on_deck" } | { kind: "period"; period: Period } | { kind: "shelf"; shelfId: string }
-  | { kind: "owned"; format: OwnedFormat };
+  | { kind: "owned"; format: OwnedFormat } | { kind: "new_shelf"; name: string };
+/** A destination as an add wrote it: a new shelf is a shelf by then. */
+type Placed = Exclude<Destination, { kind: "new_shelf" }>;
 export const SOMEDAY: Destination = { kind: "someday" };
 
 /** The plan period an add puts its books in: On deck's, a year's or a quarter's; null for Someday or a shelf. */
@@ -1764,7 +1769,12 @@ export type AddedEntry = {
   /** Someday, On deck, a year or a quarter: Unlisted books this add moved to `to_read` (task 1.21), which its undo
    * puts back to `unlisted`. Absent from an entry that promoted none. */
   promoted?: string[];
+  /** The shelf in `destination` is one this add made (task 5.1, *New shelf…*): its undo removes it too. */
+  newShelf?: boolean;
 };
+
+/** An add refused before it wrote anything: the shelf isn't yours, or a new shelf's name is in use (`name`: the shelf that has it). */
+type Refused = { ok: false; reason: "no-shelf" } | { ok: false; reason: "taken"; name: string };
 
 export type AddBooksResult =
   | ({
@@ -1773,7 +1783,7 @@ export type AddBooksResult =
     matched: string[];
   } & AddedEntry)
   | { ok: false; reason: "gone"; missing: string[] }
-  | { ok: false; reason: "no-shelf" };
+  | Refused;
 
 /** A book to create, with what Hardcover, Open Library or the typist said about it. */
 export type BookRow = NewBook & {
@@ -1802,6 +1812,32 @@ async function ownShelf(tx: Tx, userId: string, shelfId: string) {
   const [shelf] = await tx.select({ id: shelves.id }).from(shelves)
     .where(and(eq(shelves.id, shelfId), eq(shelves.userId, userId), eq(shelves.kind, "books")));
   return shelf ?? null;
+}
+
+/**
+ * Refuses an add before it writes anything (called under `addLock`): a shelf
+ * that isn't one of your book shelves, or a new shelf's name already in use.
+ */
+async function refuseDestination(tx: Tx, userId: string, destination: Destination): Promise<Refused | null> {
+  if (destination.kind === "shelf" && !(await ownShelf(tx, userId, destination.shelfId))) {
+    return { ok: false, reason: "no-shelf" };
+  }
+  if (destination.kind === "new_shelf") {
+    const taken = await shelfNamed(tx, userId, shelfName(destination.name));
+    if (taken !== null) return { ok: false, reason: "taken", name: taken };
+  }
+  return null;
+}
+
+/**
+ * Where an add writes, once its checks have passed: a new shelf (task 5.1) is
+ * made now, in the add's transaction, and is a shelf from here on.
+ */
+async function placeDestination(tx: Tx, userId: string, destination: Destination): Promise<{ destination: Placed; newShelf?: true }> {
+  if (destination.kind !== "new_shelf") return { destination };
+  const made = await newShelf(tx, userId, destination.name);
+  if (!made.ok) throw new Error("placeDestination: the name was checked under the add lock");
+  return { destination: { kind: "shelf", shelfId: made.shelf.id }, newShelf: true };
 }
 
 /**
@@ -1945,15 +1981,15 @@ async function writeDestination(
  * (`createBooks`). Every book the add names then goes to `destination`
  * (`writeDestination`; Someday by default).
  *
- * Refuses, writing nothing, when a book a line was pointed at is gone, or the
- * shelf isn't one of this user's book shelves.
+ * Refuses, writing nothing, when a book a line was pointed at is gone, the
+ * shelf isn't one of this user's book shelves, or a new shelf's name is in use.
+ * A new shelf (task 5.1) is made once, for every line.
  */
-export async function addBooks(userId: string, items: BookItem[], destination: Destination = SOMEDAY): Promise<AddBooksResult> {
+export async function addBooks(userId: string, items: BookItem[], asked: Destination = SOMEDAY): Promise<AddBooksResult> {
   return db.transaction(async (tx) => {
     await addLock(tx);
-    if (destination.kind === "shelf" && !(await ownShelf(tx, userId, destination.shelfId))) {
-      return { ok: false, reason: "no-shelf" } as const;
-    }
+    const refused = await refuseDestination(tx, userId, asked);
+    if (refused) return refused;
 
     const uses = [...new Set(items.flatMap((i) => ("use" in i ? [i.use] : [])))];
     if (uses.length) {
@@ -1988,8 +2024,9 @@ export async function addBooks(userId: string, items: BookItem[], destination: D
       const i = f++;
       return exact.get(i) ?? createdAs.get(bookKey(item.title, item.author))!;
     }))];
-    const { added, statused, promoted } = await writeDestination(tx, userId, destination, named, created);
-    return { ok: true, destination, created, matched: [...matched], added, statused, promoted } as const;
+    const placed = await placeDestination(tx, userId, asked);
+    const { added, statused, promoted } = await writeDestination(tx, userId, placed.destination, named, created);
+    return { ok: true, ...placed, created, matched: [...matched], added, statused, promoted } as const;
   });
 }
 
@@ -2036,12 +2073,13 @@ export type AddBookResult =
     /** The inbox note this add resolved (task 1.4b), or null. */
     note: number | null;
   } & AddedEntry)
-  | { ok: false; reason: "gone" | "no-shelf" };
+  | { ok: false; reason: "gone" }
+  | Refused;
 
 /**
  * Add one book to a destination (task 1.4c; data model 2.15): your library's
  * row when you have it, else a new `books` row, then the destination row, in
- * one transaction.
+ * one transaction. A new shelf (task 5.1) is made in that transaction too.
  *
  * - A Hardcover result (task 1.4f) is your book when a live one has its
  *   `hardcover_id`, or its title and any of its authors (D-61); otherwise it is
@@ -2053,22 +2091,21 @@ export type AddBookResult =
  *   pages alone estimated as above, neither as no count.
  * - A reused book is left as it is: backfill is 4.2's, and never overwrites.
  *
- * Refuses, writing nothing, when the library row is gone or the shelf isn't
- * one of this user's book shelves.
+ * Refuses, writing nothing, when the library row is gone, the shelf isn't one
+ * of this user's book shelves, or a new shelf's name is in use.
  *
  * `note` is the inbox note the add came from (task 1.4b): it is resolved into
  * the book in the same transaction, the book reused or not.
  */
 export async function addBook(
-  userId: string, item: AddBookItem, destination: Destination, { note }: { note?: number } = {},
+  userId: string, item: AddBookItem, asked: Destination, { note }: { note?: number } = {},
 ): Promise<AddBookResult> {
   // A format you own is *Paste a list*'s alone (task 5.17; Search and By hand are 5.17b): POST /api/books refuses it.
-  if (destination.kind === "owned") throw new Error("addBook: an owned format is a paste's destination only");
+  if (asked.kind === "owned") throw new Error("addBook: an owned format is a paste's destination only");
   return db.transaction(async (tx) => {
     await addLock(tx);
-    if (destination.kind === "shelf" && !(await ownShelf(tx, userId, destination.shelfId))) {
-      return { ok: false, reason: "no-shelf" } as const;
-    }
+    const refused = await refuseDestination(tx, userId, asked);
+    if (refused) return refused;
 
     let id: string | null = null;
     let title: string;
@@ -2098,13 +2135,14 @@ export async function addBook(
 
     const created = row ? await createBooks(tx, [row]) : [];
     const bookIdNow = created[0] ?? id!;
-    const { added, statused, promoted } = await writeDestination(tx, userId, destination, [bookIdNow]);
+    const placed = await placeDestination(tx, userId, asked);
+    const { added, statused, promoted } = await writeDestination(tx, userId, placed.destination, [bookIdNow]);
     // A reused book's status, so the toast can say what it kept (*Already in your library · read*).
     const [had] = row ? [] : await tx.select({ status: bookStatus.status }).from(bookStatus)
       .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookIdNow)));
     const resolved = note === undefined ? null : await resolveNote(tx, userId, note, { bookId: bookIdNow });
     return {
-      ok: true, destination, bookId: bookIdNow, title, reused: !row, status: had?.status ?? null, created, added,
+      ok: true, ...placed, bookId: bookIdNow, title, reused: !row, status: had?.status ?? null, created, added,
       statused, promoted, note: resolved,
     } as const;
   });
@@ -2178,8 +2216,11 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
   if (added.length === 0 && created.length === 0) return false;
   const placed = new Set(added);
   if (created.some((id) => !placed.has(id))) return false;
+  // An add answers a new shelf as the shelf it made (task 5.1): an entry never names one.
+  if (destination.kind === "new_shelf") return false;
   if (destination.kind === "owned") return undoOwned(tx, userId, { ...entry, destination }, refused);
   const isShelf = destination.kind === "shelf";
+  if (entry.newShelf && !isShelf) return false;
   // On deck, a year or a quarter (task 2.3): the plan period the add wrote its rows in.
   const period = plannedIn(destination);
   const toPlan = period !== null;
@@ -2255,6 +2296,8 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
     const gone = await tx.delete(shelfBooks).where(shelfRows).returning({ bookId: shelfBooks.bookId });
     if (gone.length !== placed.size) throw refused;
   }
+  // A shelf this add made (task 5.1) goes with its book, while it is as the add left it.
+  if (isShelf && entry.newShelf && !(await dropBareShelf(tx, userId, destination.shelfId))) throw refused;
   if (period !== null) {
     for (const id of placed) if (!(await takeOutOfPlan(userId, id, period, tx))) throw refused;
   }
@@ -2329,6 +2372,227 @@ async function undoOwned(
     await tx.update(books).set({ deletedAt: sql`now()` }).where(and(inArray(books.id, created), isNull(books.deletedAt)));
   }
   return true;
+}
+
+/**
+ * Shelves (task 5.1, TASK-095; data model 2.5e). Every write to one shelf locks
+ * its `shelves` row first (`lockShelf`), so two writes to a shelf never
+ * interleave; a shelf is made under `addLock`, the lock every add takes, so a
+ * name is checked and taken in one step. The order is authored and stored,
+ * `ordinal` 1…N as the queue's (2.16); a note is the placement's, so the same
+ * book on two shelves keeps two notes. What is read on a shelf is derived
+ * (`shelf_progress`, `shelfList`), never written here.
+ */
+
+/** A shelf's name as stored and compared (task 5.1): NFKC, trimmed, its spaces collapsed. */
+export function shelfName(name: string): string {
+  return name.normalize("NFKC").trim().replace(/\s+/g, " ");
+}
+
+/** A new shelf, or the refusal: `name` is the shelf of yours that has the name already. */
+export type NewShelf = { ok: true; shelf: { id: string; name: string } } | { ok: false; reason: "taken"; name: string };
+
+/** Your book shelf already called `name` (as `shelfName` writes it), case and spacing aside; null when none is. */
+async function shelfNamed(tx: Tx, userId: string, name: string): Promise<string | null> {
+  const [row] = await tx.select({ name: shelves.name }).from(shelves).where(and(
+    eq(shelves.userId, userId), eq(shelves.kind, "books"),
+    sql`lower(regexp_replace(btrim(${shelves.name}), '\\s+', ' ', 'g')) = lower(${name})`,
+  )).orderBy(shelves.id).limit(1);
+  return row?.name ?? null;
+}
+
+/**
+ * Make an empty book shelf (called under `addLock`): refused when the name is
+ * in use (owner, 2026-11-16: in the write, no index). Its id is the name's
+ * slug, `-2`, `-3` while another shelf has it; never regenerated (as run ids).
+ */
+async function newShelf(tx: Tx, userId: string, raw: string): Promise<NewShelf> {
+  const name = shelfName(raw);
+  if (!name) throw new Error("newShelf: a shelf needs a name");
+  const taken = await shelfNamed(tx, userId, name);
+  if (taken !== null) return { ok: false, reason: "taken", name: taken };
+  const base = slug(name);
+  const used = new Set((await tx.select({ id: shelves.id }).from(shelves)
+    .where(or(eq(shelves.id, base), like(shelves.id, `${base}-%`)))).map((r) => r.id));
+  let id = base;
+  for (let n = 2; used.has(id); n++) id = `${base}-${n}`;
+  await tx.insert(shelves).values({ id, name, userId, kind: "books" });
+  return { ok: true, shelf: { id, name } };
+}
+
+/** *+ New shelf* (task 5.1): an empty book shelf, or the refusal when the name is in use, writing nothing. */
+export async function createShelf(userId: string, name: string): Promise<NewShelf> {
+  return db.transaction(async (tx) => {
+    await addLock(tx);
+    return newShelf(tx, userId, name);
+  });
+}
+
+/** One of your book shelves, locked for this write; null when it is missing, another reader's or a titles shelf. */
+async function lockShelf(tx: Tx, userId: string, shelfId: string) {
+  const [shelf] = await tx.select({ id: shelves.id, description: shelves.description }).from(shelves)
+    .where(and(eq(shelves.id, shelfId), eq(shelves.userId, userId), eq(shelves.kind, "books"))).for("update");
+  return shelf ?? null;
+}
+
+/**
+ * Delete a shelf a write made, while it is still bare: no book on it (a
+ * removed one included), no description and no follow. False, deleting
+ * nothing, otherwise: those are the user's since.
+ */
+async function dropBareShelf(tx: Tx, userId: string, shelfId: string): Promise<boolean> {
+  const shelf = await lockShelf(tx, userId, shelfId);
+  if (!shelf || shelf.description !== null) return false;
+  const [held, followed] = await Promise.all([
+    tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(eq(shelfBooks.shelfId, shelfId)).limit(1),
+    tx.select({ shelfId: shelfFollows.shelfId }).from(shelfFollows).where(eq(shelfFollows.shelfId, shelfId)).limit(1),
+  ]);
+  if (held.length + followed.length > 0) return false;
+  await tx.delete(shelves).where(eq(shelves.id, shelfId));
+  return true;
+}
+
+/**
+ * *+ New shelf*'s undo: the shelf goes while it is bare (`dropBareShelf`).
+ * Null when it isn't one of your book shelves; false, changing nothing, when
+ * it has gained a book, a description or a follow.
+ */
+export async function undoCreateShelf(userId: string, shelfId: string): Promise<boolean | null> {
+  return db.transaction(async (tx) => {
+    await addLock(tx);
+    if (!(await lockShelf(tx, userId, shelfId))) return null;
+    return dropBareShelf(tx, userId, shelfId);
+  });
+}
+
+/** A move on a shelf: its whole order before and after (removed books' rows too), which its undo puts back. */
+export type ShelfMove = { shelfId: string; bookId: string; before: string[]; after: string[] };
+
+/** Every row on the shelf in order, a removed book's included. */
+async function shelfOrder(tx: Tx, shelfId: string): Promise<string[]> {
+  return (await tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(eq(shelfBooks.shelfId, shelfId))
+    .orderBy(shelfBooks.ordinal, shelfBooks.bookId)).map((r) => r.bookId);
+}
+
+/** Number the shelf 1…N in `order`, which names each of its rows once. */
+async function setShelfOrder(tx: Tx, shelfId: string, order: string[]) {
+  const list = sql`ARRAY[${sql.join(order.map((id) => sql`${id}`), sql`, `)}]::text[]`;
+  await tx.update(shelfBooks).set({ ordinal: sql`array_position(${list}, ${shelfBooks.bookId})` })
+    .where(eq(shelfBooks.shelfId, shelfId));
+}
+
+/**
+ * Move a book to place `to` among the shelf's live books (clamped to 1…N),
+ * the books between closing up behind it: *Move to…*, *Move up*, *Move down*
+ * and a drop. A removed book's row keeps its place among its neighbours (it
+ * comes back there if the book does), and every row is renumbered 1…N. Null,
+ * writing nothing, when the shelf isn't one of your book shelves or the book
+ * isn't a live book on it.
+ */
+export async function moveOnShelf(userId: string, shelfId: string, bookId: string, to: number): Promise<ShelfMove | null> {
+  return db.transaction(async (tx) => {
+    if (!(await lockShelf(tx, userId, shelfId))) return null;
+    const before = await shelfOrder(tx, shelfId);
+    if (before.length === 0) return null;
+    const live = new Set((await tx.select({ id: books.id }).from(books)
+      .where(and(inArray(books.id, before), isNull(books.deletedAt)))).map((r) => r.id));
+    if (!live.has(bookId)) return null;
+    const others = before.filter((id) => id !== bookId);
+    const shown = others.filter((id) => live.has(id));
+    const after = [...others];
+    if (shown.length === 0) after.splice(before.indexOf(bookId), 0, bookId);
+    else {
+      const place = Math.min(Math.max(1, Math.trunc(to)), shown.length + 1);
+      // Before the live book now at that place, or just after the last live book.
+      const at = place <= shown.length ? after.indexOf(shown[place - 1]) : after.indexOf(shown[shown.length - 1]) + 1;
+      after.splice(at, 0, bookId);
+    }
+    await setShelfOrder(tx, shelfId, after);
+    return { shelfId, bookId, before, after };
+  });
+}
+
+/**
+ * A move's undo: the order before it, exactly, while the shelf is still in
+ * the order the move left. Null when the shelf isn't one of yours; false,
+ * changing nothing, when anything has moved, joined or left since.
+ */
+export async function undoShelfMove(userId: string, move: ShelfMove): Promise<boolean | null> {
+  return db.transaction(async (tx) => {
+    if (!(await lockShelf(tx, userId, move.shelfId))) return null;
+    const now = await shelfOrder(tx, move.shelfId);
+    const same = (a: string[], b: string[]) => a.length === b.length && a.every((id, i) => id === b[i]);
+    if (!same(now, move.after) || !same([...move.before].sort(), [...now].sort())) return false;
+    await setShelfOrder(tx, move.shelfId, move.before);
+    return true;
+  });
+}
+
+/** A note write on a shelf, as `saveShelfNote` made it: the note before and the note written. */
+export type ShelfNoteChange = { shelfId: string; bookId: string; prior: string | null; note: string | null };
+
+/** The book's place on the shelf, while the book is live. */
+async function placementNote(tx: Tx, shelfId: string, bookId: string) {
+  const [row] = await tx.select({ note: shelfBooks.note }).from(shelfBooks)
+    .innerJoin(books, and(eq(books.id, shelfBooks.bookId), isNull(books.deletedAt)))
+    .where(and(eq(shelfBooks.shelfId, shelfId), eq(shelfBooks.bookId, bookId)));
+  return row ?? null;
+}
+
+const placementRow = (shelfId: string, bookId: string) => and(eq(shelfBooks.shelfId, shelfId), eq(shelfBooks.bookId, bookId));
+
+/**
+ * Why a book is on a shelf (task 5.1): trimmed, and an empty note clears it
+ * (NULL). The note is this placement's alone; the same book on another shelf
+ * keeps its own. Null, writing nothing, when the shelf isn't one of your book
+ * shelves or the book isn't a live book on it.
+ */
+export async function saveShelfNote(userId: string, shelfId: string, bookId: string, text: string): Promise<ShelfNoteChange | null> {
+  const note = text.trim() || null;
+  return db.transaction(async (tx) => {
+    if (!(await lockShelf(tx, userId, shelfId))) return null;
+    const row = await placementNote(tx, shelfId, bookId);
+    if (!row) return null;
+    await tx.update(shelfBooks).set({ note }).where(placementRow(shelfId, bookId));
+    return { shelfId, bookId, prior: row.note, note };
+  });
+}
+
+/** Undo one note write: the note before comes back, unless the note has changed since. Null when the shelf isn't yours. */
+export async function undoShelfNote(userId: string, change: ShelfNoteChange): Promise<boolean | null> {
+  const { shelfId, bookId, prior, note } = change;
+  return db.transaction(async (tx) => {
+    if (!(await lockShelf(tx, userId, shelfId))) return null;
+    const row = await placementNote(tx, shelfId, bookId);
+    if (!row || row.note !== note) return false;
+    await tx.update(shelfBooks).set({ note: prior }).where(placementRow(shelfId, bookId));
+    return true;
+  });
+}
+
+/** A description write, as `saveShelfDescription` made it. */
+export type ShelfDescriptionChange = { shelfId: string; prior: string | null; description: string | null };
+
+/** What a shelf is for (task 5.1): trimmed, an empty one NULL. Null, writing nothing, when the shelf isn't one of your book shelves. */
+export async function saveShelfDescription(userId: string, shelfId: string, text: string): Promise<ShelfDescriptionChange | null> {
+  const description = text.trim() || null;
+  return db.transaction(async (tx) => {
+    const shelf = await lockShelf(tx, userId, shelfId);
+    if (!shelf) return null;
+    await tx.update(shelves).set({ description }).where(eq(shelves.id, shelfId));
+    return { shelfId, prior: shelf.description, description };
+  });
+}
+
+/** Undo one description write, unless it has changed since. Null when the shelf isn't yours. */
+export async function undoShelfDescription(userId: string, change: ShelfDescriptionChange): Promise<boolean | null> {
+  return db.transaction(async (tx) => {
+    const shelf = await lockShelf(tx, userId, change.shelfId);
+    if (!shelf) return null;
+    if (shelf.description !== change.description) return false;
+    await tx.update(shelves).set({ description: change.prior }).where(eq(shelves.id, change.shelfId));
+    return true;
+  });
 }
 
 /**

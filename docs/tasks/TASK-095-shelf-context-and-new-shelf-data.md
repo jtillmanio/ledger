@@ -1,14 +1,14 @@
 ---
 id: TASK-095
 title: 5.1 Shelves (1 of 3) — shelf context columns, creating and reordering shelves, and the shelf queries
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: add550d
 ---
 
 # TASK-095 — 5.1 Shelves (1 of 3) — shelf context columns, creating and reordering shelves, and the shelf queries
@@ -73,7 +73,38 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-16, with both columns and the name check in the write (option a, no index).
+
+**Steps**
+
+1. Schema: `shelves.description text` and `shelf_books.note text`, both nullable, no `user_id` (D-91); `npm run db:generate` makes migration 0031 (adds columns only: no down file).
+2. Create (`src/db/writes.ts`): `createShelf(userId, name)` makes an empty books shelf (TASK-096's *+ New shelf*); `undoCreateShelf` deletes it only while it has no `shelf_books` row, no description and no follow, else refuses. A `{ kind: "new_shelf", name }` destination in `addBook` and `addBooks` writes the shelf, any new book and its `shelf_books` row (ordinal 1, a paste's lines in order) in one transaction; the entry answers `destination: { kind: "shelf", shelfId }` and `newShelf: true`, and `undoAddBooks` removes the place, then the shelf, by the same rule. The id is `slug(name)`, `-2`, `-3` on a clash, never regenerated. A name already in use is checked in the write under `addLock`: case-insensitive, whitespace collapsed, among this user's books shelves; it writes nothing and answers `taken` with the existing shelf's name.
+3. Reorder: `moveOnShelf(userId, shelfId, bookId, to)`, `to` a place among the shelf's live books; a soft-deleted book's row keeps its place among its neighbours; every row renumbered 1…N. Answers `{ shelfId, bookId, before, after }` (full orders); `undoShelfMove` writes `before` back exactly, refusing unless the order is still `after`.
+4. Note and description: `saveShelfNote(userId, shelfId, bookId, text)` and `saveShelfDescription(userId, shelfId, text)` as `saveBookNote` (trimmed, empty is NULL), each answering a change its undo puts back unless the text changed since. A note is the placement's, so another shelf's row is untouched.
+5. Queries (`src/db/queries.ts`): `shelfList(userId)` (each books shelf's name, description, read/total from `shelf_progress`, follow state, and its next three unread: live, neither read nor DNF, in shelf order) and `shelfDetail(userId, id)` (the shelf and its live books in order, each with status, cover and note).
+6. Routes: `POST /api/shelves { name }` (409 with the reason when taken); new `src/app/api/shelves/[id]/route.ts` with `PATCH` `{ description }` | `{ bookId, note }` | `{ bookId, to }` | `{ undo: change }`, and `DELETE` (the create's undo). 400 malformed, 404 a shelf missing or not yours, 409 changed since; inside the passcode gate.
+7. Docs: `docs/03-data-model.md` § 4 row 5.1 → Built (migration 0031); `docs/02-architecture.md` § 5 adds `/api/shelves/[id]`.
+
+**Files**
+
+- `src/db/schema.ts`, `drizzle/0031_*.sql`, `drizzle/meta/*` — the two columns.
+- `src/db/writes.ts` — create (empty and as an add's destination), reorder, note, description, and their undos.
+- `src/db/queries.ts` — `shelfList`, `shelfDetail`.
+- `src/app/api/shelves/route.ts` — `POST`.
+- `src/app/api/shelves/[id]/route.ts` (new) — `PATCH`, `DELETE`.
+- `test/shelves.test.ts` (new).
+- `docs/03-data-model.md`, `docs/02-architecture.md` — not in Files likely touched: the built column row and the new route.
+
+**Test strategy** (`test/shelves.test.ts`, TEST database)
+
+- AC-1, AC-3: a new shelf with a book writes one row each, its undo leaves neither; a name in use (another case) writes nothing and says why; through `addBook`/`addBooks` and `POST /api/shelves`.
+- AC-2: note on A, B's NULL; empty is NULL; undo puts the prior back; the same for a description.
+- AC-4: 4th to 2nd, contiguous, undo exact.
+- AC-5: read, soft-deleted, DNF, four unread: the next three and the counts.
+- AC-6: 400, 404, 401 and the gate's redirect for both routes, each writing nothing.
+- `npm run check:migrations`.
+
+**Risks**: the `Destination` union gains a kind; every switch over it is checked by `tsc`. The add routes don't parse `new_shelf` yet (TASK-097 wires them).
 
 ## Review log
 

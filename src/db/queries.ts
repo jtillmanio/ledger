@@ -2080,6 +2080,76 @@ export async function bookShelves(userId: string) {
     SELECT id, name FROM shelves WHERE user_id = ${userId} AND kind = 'books' ORDER BY lower(name), id`;
 }
 
+/** A book a shelf names next (task 5.1). */
+export type ShelfNext = { id: string; title: string; author: string | null };
+
+/** A book shelf on the Shelves list (task 5.1): how far along it is and what is next on it. */
+export type ShelfSummary = {
+  id: string; name: string; description: string | null;
+  /** `shelf_progress`'s counts: live books only, a DNF counted in `total` and not in `read`. */
+  read: number; total: number;
+  followState: FollowState | null;
+  /** Its next three unread, in shelf order: live books neither read nor DNF (design § 14 → Shelves). */
+  next: ShelfNext[];
+};
+
+/**
+ * Your book shelves, by name (task 5.1), each with `shelf_progress`'s counts,
+ * how you follow it, and its next three unread in shelf order. Derived here,
+ * never stored (hard rule 2); a removed book is on no count or list (hard rule 4).
+ */
+export async function shelfList(userId: string): Promise<ShelfSummary[]> {
+  return sql<ShelfSummary[]>`
+    SELECT p.shelf_id AS id, p.name, s.description, p.books_read::int AS read, p.books_listed::int AS total,
+           p.follow_state AS "followState", COALESCE(n.next, '[]'::json) AS next
+    FROM shelf_progress p
+    JOIN shelves s ON s.id = p.shelf_id
+    LEFT JOIN LATERAL (
+      SELECT json_agg(json_build_object('id', x.id, 'title', x.title, 'author', x.author) ORDER BY x.ordinal, x.id) AS next
+      FROM (
+        SELECT b.id, b.title, a.name AS author, sb.ordinal
+        FROM shelf_books sb
+        JOIN books b ON b.id = sb.book_id AND b.deleted_at IS NULL
+        LEFT JOIN authors a ON a.id = b.author_id
+        LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+        WHERE sb.shelf_id = p.shelf_id AND (st.status IS NULL OR st.status NOT IN ('read', 'dnf'))
+        ORDER BY sb.ordinal, b.id
+        LIMIT 3
+      ) x
+    ) n ON true
+    WHERE p.user_id = ${userId}
+    ORDER BY lower(p.name), p.shelf_id`;
+}
+
+/** A book on a shelf's page (task 5.1): your status for it, and why it is on this shelf. */
+export type ShelfRow = {
+  id: string; title: string; author: string | null; status: string | null; coverUrl: string | null;
+  /** This placement's note: the same book on another shelf has its own. */
+  note: string | null;
+};
+
+/** One of your book shelves (task 5.1): its counts and follow as on the list, and its live books in shelf order. */
+export type ShelfDetail = Omit<ShelfSummary, "next"> & { books: ShelfRow[] };
+
+/** One of your book shelves with its live books in shelf order (task 5.1), or null when it isn't one. */
+export async function shelfDetail(userId: string, shelfId: string): Promise<ShelfDetail | null> {
+  const [shelf] = await sql<Omit<ShelfDetail, "books">[]>`
+    SELECT p.shelf_id AS id, p.name, s.description, p.books_read::int AS read, p.books_listed::int AS total,
+           p.follow_state AS "followState"
+    FROM shelf_progress p JOIN shelves s ON s.id = p.shelf_id
+    WHERE p.shelf_id = ${shelfId} AND p.user_id = ${userId}`;
+  if (!shelf) return null;
+  const rows = await sql<ShelfRow[]>`
+    SELECT b.id, b.title, a.name AS author, st.status, b.cover_url AS "coverUrl", sb.note
+    FROM shelf_books sb
+    JOIN books b ON b.id = sb.book_id AND b.deleted_at IS NULL
+    LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+    WHERE sb.shelf_id = ${shelfId}
+    ORDER BY sb.ordinal, b.id`;
+  return { ...shelf, books: [...rows] };
+}
+
 type BookMatchRow = {
   i: number;
   match_id: string | null; match_title: string | null; match_author: string | null; match_status: string | null;
