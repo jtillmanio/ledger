@@ -31,6 +31,13 @@ export default function Loading() {
               <span className="sk sk-val" style={{ width: "6rem" }} />
               <span className="sk sk-val" style={{ width: "7rem", marginLeft: "auto" }} />
             </div>
+            {/* Calibre (4.4) has two lines and a chevron: the row's height is the two lines'. */}
+            <div className="frow">
+              <span className="kv">
+                <span className="sk sk-k" style={{ width: "5rem" }} />
+                <span className="sk sk-k" style={{ width: "8rem" }} />
+              </span>
+            </div>
             <div className="frow">
               <span className="kv">
                 <span className="sk sk-k" style={{ width: "9rem" }} />
