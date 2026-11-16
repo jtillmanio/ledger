@@ -288,8 +288,8 @@ tables.
     | `/comics/runs` | 57,000 | 170,000 | 38 | 100 |
     | `/comics/status` | 24,000 | 175,000 | 35 | 100 |
     | `/books/status` | 24,000 | 175,400 | 35 | 100 |
-    | `/comics/bendis-disassembled` | 26,800 | 172,000 | 38 | 100 |
-    | `/comics/busiek-avengers` | 26,000 | 171,000 | 33 | 100 |
+    | `/comics/bendis-disassembled` | 26,800 | 172,000 | 50 | 100 |
+    | `/comics/busiek-avengers` | 28,000 | 171,000 | 72 | 100 |
     | `/books` | 19,000 | 175,000 | 36 | 100 |
     | `/books/list` | 74,000 | 170,000 | 64 | 100 |
     | `/books/plan` | 24,000 | 177,700 | 40 | 100 |
@@ -297,6 +297,18 @@ tables.
     | `/settings` | 16,000 | 173,000 | 32 | 100 |
     | `/watch` | 12,500 | 173,000 | 28 | 100 |
     <!-- /perf-budget -->
+
+    Task 4.3 (TASK-085, PR #269) raised the two run routes' requests, and the
+    large run's document + RSC: every spine row now draws a cover box, and a row
+    whose issue has a `cover_url` holds a lazy `<img>`, so the images within the
+    browser's lazy-load distance of the first screen are fetched on the load
+    (Metron's host, hotlinked, D-94). The PR's preview measured
+    `/comics/bendis-disassembled` at 42 requests (the budget was 38) and
+    `/comics/busiek-avengers` at 56 (33) and 26,490 bytes of document + RSC
+    (26,000), the bytes being each row's cover URL in the payload. The budgets
+    are those medians plus about 20%: 50 requests for the small run, 72 for the
+    large, 28,000 bytes for the large. The bytes of the small run and every JS
+    number are unchanged, and `/books/list` stayed inside its 64 (59 measured).
 
     Measured on 0.10's preview (2026-10-07, Lighthouse 13.5.0, Chrome 154),
     median of three: document + RSC 6,479 / 38,598 / 20,637 / 16,684 /
