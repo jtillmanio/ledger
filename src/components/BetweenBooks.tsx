@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { daysBetween, said } from "@/components/BooksNow";
+import { ArtCover } from "@/components/Cover";
 import StartBook from "@/components/StartBook";
 import type { KeepGoing, LastFinish, ShelfBook } from "@/db/queries";
 import { dayWhen } from "@/lib/format";
@@ -70,7 +71,7 @@ export default function BetweenBooks({ last, offer, quarter, today, keep = [] }:
       <div className={`between-band${last ? "" : " none"}`}>
         {last && (
           <span className="between-cover" aria-hidden="true">
-            <span className="cv none" />
+            <ArtCover url={last.cover_url} w={72} />
             <span className="between-check">✓</span>
           </span>
         )}
@@ -86,7 +87,7 @@ export default function BetweenBooks({ last, offer, quarter, today, keep = [] }:
       <div className="between-offer">
         {offer ? (
           <>
-            <span className="cv none" aria-hidden="true" />
+            <ArtCover url={offer.cover_url} w={36} />
             <span className="offer-body">
               <span className="offer-kick">Top of your {quarter} plan</span>
               <b className="offer-title">{offer.title}</b>

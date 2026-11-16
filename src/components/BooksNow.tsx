@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BookStatus from "@/components/BookStatus";
+import { ArtCover } from "@/components/Cover";
 import { Headphones } from "@/components/nav/Icons";
 import type { InHandBook, NextIn } from "@/db/queries";
 import { dayWhen } from "@/lib/format";
@@ -70,7 +71,7 @@ export default function BooksNow({ book, settings, next = null }: {
   return (
     <section className="now-hero" aria-labelledby="now-kick" data-slot="now">
       <div className="now-band">
-        <span className="now-cover" aria-hidden="true"><span className="cv none" /></span>
+        <span className="now-cover" aria-hidden="true"><ArtCover url={book.cover_url} w={112} /></span>
         <div className="now-body">
           <span className="now-kick" id="now-kick">
             {listening ? "Listening now" : "Reading now"}
