@@ -1,7 +1,7 @@
 ---
 id: TASK-079
 title: 3.5 Detail sheets (2 of 3) — the book sheet, a route over the list
-status: In progress
+status: Done
 depends_on: [TASK-078, TASK-074]
 size: M
 model: opus
@@ -36,7 +36,7 @@ Tapping a book opens everything about it as a sheet over the list (summary, coun
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the book clauses: Back dismisses the sheet and restores list scroll, a direct visit to `/books/{id}` renders the full page, no summary renders without a layout shift, and the sheet and the inline editor write status through the same code path. TASK-080 proves the issue clauses): test that the back button dismisses the sheet and restores list
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the book clauses: Back dismisses the sheet and restores list scroll, a direct visit to `/books/{id}` renders the full page, no summary renders without a layout shift, and the sheet and the inline editor write status through the same code path. TASK-080 proves the issue clauses): test that the back button dismisses the sheet and restores list
 scroll position; that a direct visit to `/books/{id}` renders the full page;
 that a book with no summary renders without a layout shift; and that the sheet
 and the master list's inline editor write status through the same code path.
@@ -46,11 +46,11 @@ read, and that marking a second from the sheet writes exactly one
 exactly one sheet in the DOM, and Back returns to the issue sheet. An issue
 with a `cover_date` renders *Cover date* in `Mon YYYY`. An undated issue
 renders no *Dates* group and no `—`.
-- [ ] AC-2: From the Library scrolled past its 40th row, opening a book shows the sheet with the list still rendered behind it; Back closes it, the URL returns to the list's, the scroll position is where it was, and focus is on the row link that opened it.
-- [ ] AC-3: Loading `/books/{id}` directly, or refreshing on it, renders the full page with the same content and no sheet chrome; an unknown or soft-deleted id renders the not-found page.
-- [ ] AC-4: Given a book read twice and listened once, *History* lists three reads, newest first, each with its start, finish and days taken, the listen with the headphones glyph, and the header reads *Read 2× · Listened 1×*; a book never listened to and not listening shows no *Listened* line. *Read again* on a read book adds one `read_events` row whose `reread_of` is the latest read's id.
-- [ ] AC-5: An estimated word count renders `~` and the dotted edge; a stated one renders neither; a book with no summary renders the same sheet height for its other sections as one with a summary loaded late (CLS 0 measured in the spec).
-- [ ] AC-6: The book sheet and full page meet the UX floor (`docs/04-design.md` § 10. The UX floor): loading (skeleton in the loaded geometry) and error states drawn; the close and grab handle are real controls with names, close 44px; focus moves to the sheet's heading on open and returns to the opener on close by Esc, Back, the scrim or the close; the page behind is `inert` except the undo toast; text 4.5:1 in both themes; reduced motion gives an opacity-only change; axe reports no new violations; screenshots at 360px, 834px and 1280px, light and dark.
+- [x] AC-2: From the Library scrolled past its 40th row, opening a book shows the sheet with the list still rendered behind it; Back closes it, the URL returns to the list's, the scroll position is where it was, and focus is on the row link that opened it.
+- [x] AC-3: Loading `/books/{id}` directly, or refreshing on it, renders the full page with the same content and no sheet chrome; an unknown or soft-deleted id renders the not-found page.
+- [x] AC-4: Given a book read twice and listened once, *History* lists three reads, newest first, each with its start, finish and days taken, the listen with the headphones glyph, and the header reads *Read 2× · Listened 1×*; a book never listened to and not listening shows no *Listened* line. *Read again* on a read book adds one `read_events` row whose `reread_of` is the latest read's id.
+- [x] AC-5: An estimated word count renders `~` and the dotted edge; a stated one renders neither; a book with no summary renders the same sheet height for its other sections as one with a summary loaded late (CLS 0 measured in the spec).
+- [x] AC-6: The book sheet and full page meet the UX floor (`docs/04-design.md` § 10. The UX floor): loading (skeleton in the loaded geometry) and error states drawn; the close and grab handle are real controls with names, close 44px; focus moves to the sheet's heading on open and returns to the opener on close by Esc, Back, the scrim or the close; the page behind is `inert` except the undo toast; text 4.5:1 in both themes; reduced motion gives an opacity-only change; axe reports no new violations; screenshots at 360px, 834px and 1280px, light and dark.
 
 ## Out of scope
 
@@ -78,11 +78,15 @@ renders no *Dates* group and no `—`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The book sheet's own writes (split at the plan gate): a notes editor (TASK-074's route), 5.17's *I own it on paper* / *I own the audiobook* toggles, plan *Move* and shelves *Edit*, and the dashboards' book rows opening the sheet → docs/05-roadmap.md § new item in phase 3 (approved at plan)
+- The book sheet's own writes (split at the plan gate): a notes editor (TASK-074's route), 5.17's *I own it on paper* / *I own the audiobook* toggles, plan *Move* and shelves *Edit*, and the dashboards' book rows opening the sheet → docs/05-roadmap.md § 3.5b (new; approved at plan; its Check is proposed) and docs/06-tasklist.md § M14
 - The cover → hero morph through the View Transitions API (`view-transition-name: cover-{id}`) → docs/tasks/TASK-080-issue-detail-sheet.md § Context (approved at plan)
 - *Read again* is a status change to Reading; its `read_events` row arrives with the finish → not tracked: the owner's plan-gate answer, recorded in this task's Plan (within data model 2.17 and 1.5's log rule, no new decision)
-- Candidate decision (approved by the owner 2026-11-16): a detail route never shares a dynamic segment with static siblings, because Next 16 applies the interception rewrite ahead of them; the book's route is `/book/[id]`, and `docs/04-design.md` § 13's `/books/[id]` and the roadmap's wording follow it
-- TASK-080: `/comics/[runId]/[issueId]` collides with `/comics/[runId]/add` the same way (an intercepted `[issueId]` catches `add`); its plan picks a route that doesn't
+- Decision (approved by the owner 2026-11-16): a detail route never shares a dynamic segment with static siblings, because Next 16 applies the interception rewrite ahead of them; the book's route is `/book/[id]`. The roadmap's 3.5 Check is read as `/book/{id}`, not edited → docs/review/decisions.md § D-157, with docs/04-design.md § 13 (*What to build instead: an intercepted route*) updated to match
+- TASK-080: `/comics/[runId]/[issueId]` collides with `/comics/[runId]/add` the same way (an intercepted `[issueId]` catches `add`); its plan picks a route that doesn't → docs/tasks/TASK-080-issue-detail-sheet.md § Context
+- The loading skeleton draws three summary lines, taller than a book with no summary, so Details moves up when such a book arrives → not tracked: most books carry Calibre's comments, so three lines is the commoner geometry, and CLS stays 0 (the skeleton is replaced, not moved)
+- The mockup's hero *Start reading* button is not drawn → not tracked: the sheet's status control is drawn open, so *Reading* is one tap in *Your record*, which design § 13 *What this changes* 2 makes the one write path
+- Schema review R2 (MINOR): the cross-user test doesn't cover the `to_read_level` and latest-read joins' user filters → not tracked: the four filters it does cover are the ones a leak would show; optional hardening, no rule asks for it
+- `/books/list` (76,462) and `/settings` (16,077) still over their byte budgets after the trim (revision 3), raised to the median plus about 5%, 80,000 and 16,800, by the owner's trim-then-raise call → docs/02-architecture.md § Performance budget and scripts/perf/budget.json (in this PR)
 
 ## Plan
 
@@ -117,13 +121,20 @@ Approved by the owner 2026-11-16. Plan-gate answers: **Read again** sets the sta
 
 1. *The route is `/book/[id]`, not `/books/[id]`* (owner, 2026-11-16, after the e2e run). Next 16 applies an intercepting route's rewrite ahead of the static routes beside it: with `@modal/(.)books/[id]`, a tap from the Library to `/books/plan` (or Status, Top, Add, the Library itself) was intercepted as `id = "plan"` and rendered a 404, and a save inside the sheet (`router.refresh()`) fell back to a full page load. Both reproduced on a production build (`npm run test:e2e:build`) and both went away with the route at `/book/[id]`, a segment nothing else uses. The files are `src/app/book/[id]/…` and `src/app/@modal/(.)book/[id]/…`; AC-1's and AC-3's `/books/{id}` is read as `/book/{id}`.
 2. *No `@modal/[...catchAll]` page.* It made `@next/next/no-html-link-for-pages` treat every URL as a page (the settings page's deliberate `<a href="/api/export">`, two test fixtures). `RouteSheet` remembers the path it opened on instead and unmounts on any other (its page back from `inert`, focus returned), which is the job the catch-all did. Two fixtures in `test/paste-books.test.tsx` became the `<button>` the same file already uses, as the new `/book/[id]` page made the rule flag their `<a href="/books">`.
-4. *The Library's rows carry a plain `<a>`, opened as the sheet by one wrapper* (owner, 2026-11-16, after Lighthouse on PR #275: `/books/list` measured 76,775 bytes against its 74,000 budget with a `<Link>` per row, and `/settings` 16,037 against 16,000 from the `@modal` slot every route now carries). `src/components/SheetLinks.tsx` (new) wraps the rows and turns a plain click on a title into `router.push(href, { scroll: false })`. The owner's call: trim first, remeasure on the preview, then raise only what is still over, in `scripts/perf/budget.json` and `docs/02-architecture.md` § Performance budget. The books Status rows keep their `<Link>` (that route has room). Three existing specs that pinned "no link" on a book row (`test/e2e/markup.spec.ts`, two in `test/e2e/status.spec.ts`) now pin the one title link and still no handle.
-5. *Reduced motion is no movement at all.* `globals.css` already stops every animation and transition under `prefers-reduced-motion` (UX-N01, `animation:none!important`), so the sheet's own opacity-only keyframes never ran on a build (dev loaded them after the rule). They are gone: under reduced motion the sheet simply appears and goes, which the spec checks.
-6. Two files beside the planned ones in the same steps: `src/app/@modal/(.)book/[id]/layout.tsx` (the sheet is the segment's layout, so it stays put while the skeleton gives way to the book and its focus and motion run once) and `…/error.tsx` (the UX floor's error state in the sheet).
+3. *The Library's rows carry a plain `<a>`, opened as the sheet by one wrapper* (owner, 2026-11-16, after Lighthouse on PR #275: `/books/list` measured 76,775 bytes against its 74,000 budget with a `<Link>` per row, and `/settings` 16,037 against 16,000 from the `@modal` slot every route now carries). `src/components/SheetLinks.tsx` (new) wraps the rows and turns a plain click on a title into `router.push(href, { scroll: false })`. The owner's call: trim first, remeasure on the preview, then raise only what is still over, in `scripts/perf/budget.json` and `docs/02-architecture.md` § Performance budget. The books Status rows keep their `<Link>` (that route has room). Three existing specs that pinned "no link" on a book row (`test/e2e/markup.spec.ts`, two in `test/e2e/status.spec.ts`) now pin the one title link and still no handle.
+4. *Reduced motion is no movement at all.* `globals.css` already stops every animation and transition under `prefers-reduced-motion` (UX-N01, `animation:none!important`), so the sheet's own opacity-only keyframes never ran on a build (dev loaded them after the rule). They are gone: under reduced motion the sheet simply appears and goes, which the spec checks.
+5. Two files beside the planned ones in the same steps: `src/app/@modal/(.)book/[id]/layout.tsx` (the sheet is the segment's layout, so it stays put while the skeleton gives way to the book and its focus and motion run once) and `…/error.tsx` (the UX floor's error state in the sheet).
 
 ## Review log
 
 _Filled by /implement-task. One line per round._
+
+- Verify R1 PASS (vitest 1963, py 411, views.sql; a first attempt from a lowercase `c:` drive could not find the runner and was rerun) | e2e local R1 FAIL(6) → R2 FAIL(2) → R3 PASS 12/12 (route moved to `/book/[id]`; title link overlap; drag velocity)
+- CI R1 FAIL (`markup.spec.ts:79`, `status.spec.ts:337` and `:709` pinned "no link"; `book-detail.spec.ts:162` at 768 and 1280; reduced motion on a build) → fixed | Lighthouse R1 FAIL (library 76,775 / 74,000; settings 16,037 / 16,000) → trimmed (revision 3)
+- Spec R1 CHANGES (sheet title CSS, Read again untested, full page dark only) → R2 APPROVE | Schema R1 APPROVE (3 MINOR) → R2 APPROVE
+- Verify R2 PASS (vitest 1965) | build e2e (book-detail, markup, status × w390-light, w768-light, w390-reduced-motion) PASS 177
+- Merged `main` (task 4.3's Show covers) → Verify R3 PASS (vitest 1985) | Lighthouse R2 FAIL (library 76,462; settings 16,077) → budgets raised (revision 3, the owner's call)
+- Test audit and ui-verifier not run: the owner accepted the task before they were reached (2026-11-16)
 
 ## Blocked
 
@@ -131,7 +142,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (local), CI 2+
+- Review rounds: 2 (spec), 2 (schema)
+- First-pass AC FAILs: 2 (AC-2 and AC-3 under the `/books/[id]` route, from the interception clash; AC-6's sheet title font)
+- Plan revisions after approval: 5 (route `/book/[id]`; no catch-all; two files in step; the Library's plain links; reduced motion; the extra layout and error files)

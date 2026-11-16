@@ -3504,6 +3504,29 @@ exactly one sheet in the DOM, and Back returns to the issue sheet. An issue
 with a `cover_date` renders *Cover date* in `Mon YYYY`. An undated issue
 renders no *Dates* group and no `—`.
 
+### ☐ 3.5b The book sheet's own writes · M
+*Split from 3.5 at TASK-079's plan gate (owner, 2026-11-16; PR #275).* The book
+sheet (`/book/{id}`, D-157) shows your notes, what you own, where the book sits
+in your plan and its shelves as text. This item makes each one editable there,
+each one write with an Undo, through the routes that already exist:
+
+- **Notes**: an editor in *Your record*, through TASK-074's
+  `POST /api/progress/book/note` (a book with no status row is refused, as the
+  route does today).
+- **What you own** (5.17, D-121, D-132): the row menu's two toggles, *I own it on
+  paper* and *I own the audiobook*, through `POST /api/books/owned`, as the
+  Library's `⋯` does (TASK-093). The ebook stays Calibre's, never toggled.
+- **Planned for** *Move* (the plan picker, 2.3) and **Shelves** *Edit*, from the
+  mockup `bookdetail`; a sheet opened from the sheet replaces it (D-34).
+- **The dashboards' book rows** (Now, On deck, the plan shelf, Top books) open the
+  sheet, as the Library's and the status tabs' rows do since 3.5.
+
+**Check:** test that saving a note from the sheet writes `book_status.notes`
+once and its Undo puts the old note back; that each owned toggle writes or
+deletes exactly one `owned_copies` row and its Undo reverses it; that opening
+*Move* from the sheet leaves exactly one sheet in the DOM; and that a book row on
+each books dashboard opens `/book/{id}` as a sheet.
+
 ### ☑ 3.4 Book ratings and top-books reorder · S
 Rating, notes, and the top-books rank reorder. **Status and finish date moved to
 1.5** (R1-03) — they are a daily-use flow and could not wait for Phase 3.

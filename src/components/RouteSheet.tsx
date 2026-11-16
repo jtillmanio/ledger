@@ -46,7 +46,7 @@ export function SheetHeading({ className, children }: { className?: string; chil
  * button. Below 1024px a bottom sheet (a tablet's centred, at most 640px,
  * D-33) that follows a drag 1:1 and dismisses past 30% of its height or a
  * flick over 0.5px/ms, else springs back; from 1024px a centred modal. The
- * motion is CSS on the `--dur-*` tokens, opacity only under reduced motion.
+ * motion is CSS on the `--dur-*` tokens; under reduced motion it simply appears and goes (UX-N01).
  *
  * It is a route, not a component: its history entry is the navigation's, so
  * the back button dismisses it, and every other close (the close, the grab
