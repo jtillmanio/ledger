@@ -272,6 +272,9 @@ def fix_cover_dates(rows: list[dict], details: dict[str, dict], report: Report) 
                 report.problem(f, "store date with an unknown source", f"{label}: {store_source!r} — use hand")
             if store and not ex.normalize_date(store):
                 report.problem(f, "unparseable store date", f"{label}: {store!r} — use 1987-03-15")
+            elif store and not ex.FULL_DAY_RE.match(store):
+                report.problem(f, "store date is not a full day",
+                               f"{label}: {store!r} — type the day, 1987-03-15, or leave it blank")
         if r.get("status") == "matched":
             continue
         mid = r.get("metron_issue_id", "")

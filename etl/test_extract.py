@@ -351,9 +351,12 @@ class StoryArcAndStoreDate(WorkbookCase):
             {"label": "Avengers (1998) #1", "cover_date": "1998-02-01", "source": "metron",
              "store_date": "1997-12-17", "store_date_source": "metron", "metron_issue_id": "701"},
             {"label": "Avengers (1998) #2", "cover_date": "", "source": "",
-             "store_date": "1998-01", "store_date_source": "hand", "metron_issue_id": ""},
+             "store_date": "1997-12-03", "store_date_source": "hand", "metron_issue_id": ""},
             {"label": "Avengers (1998) #3", "cover_date": "1998-04-01", "source": "metron",
              "store_date": "1998-02-11", "store_date_source": "", "metron_issue_id": ""},
+            # An on-sale date typed without its day would load as a guessed 1st: it loads nothing.
+            {"label": "Avengers (1998) #4", "cover_date": "", "source": "",
+             "store_date": "1998-03", "store_date_source": "hand", "metron_issue_id": ""},
         ]))
         ex.load_issue_details(write_csv([
             {"label": "Avengers (1998) #1", "story_title": "Once an Avenger", "story_title_source": "metron",
@@ -378,12 +381,22 @@ class StoryArcAndStoreDate(WorkbookCase):
                                    ("story_arc", "story_arc_source", "store_date", "store_date_source"))
         self.assertEqual(pick("Avengers (1998) #1"),
                          ("Once an Avenger; Busiek Avengers", "metron", "1997-12-17", "metron"))
-        self.assertEqual(pick("Avengers (1998) #2"), ("Mine", "hand", "1998-01-01", "hand"))
+        self.assertEqual(pick("Avengers (1998) #2"), ("Mine", "hand", "1997-12-03", "hand"))
         # A value with no source loads as nothing, and is reported (the CHECK would refuse it).
         self.assertEqual(pick("Avengers (1998) #3"), ("", "", "", ""))
         self.assertEqual(pick("Avengers (1998) #4"), ("", "", "", ""))
         self.assertIn("story arc without a valid source", self.reasons())
         self.assertIn("store date without a valid source", self.reasons())
+        self.assertIn("store date is not a full day", self.reasons())
+
+    def test_a_sidecar_row_with_only_a_hand_store_date_is_reported_hand_entered(self):
+        ex.STORE_DATES["Gone (2001) #9"] = ("2001-07-11", "hand")
+        ex.STORE_DATES["Gone (2001) #10"] = ("2001-08-08", "metron")
+        ex.COVER_DATES["Gone (2001) #10"] = ("2001-10-01", "metron", 1)
+        self.extract([("a", "Avengers (1998) #1", False, "Core", None)])
+        orphans = sorted(u["detail"].split(":")[0] for u in ex.UNRESOLVED
+                         if u["reason"] == "sidecar row for a label not in the sheet")
+        self.assertEqual(orphans, ["Gone (2001) #10", "Gone (2001) #9 (hand-entered)"])
 
     def test_loaders_name_the_same_columns_in_the_same_order(self):
         root = Path(__file__).parent

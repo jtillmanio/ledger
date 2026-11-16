@@ -430,6 +430,12 @@ class CoverDates(unittest.TestCase):
         self.assertEqual([r.get("store_date_source") for r in dates], ["hand", "metro", None])
         self.assertIn(("cover_dates.csv", "store date with no source set to hand"), report.fixes)
         self.assertIn(("cover_dates.csv", "store date with an unknown source"), report.problems)
+        # An on-sale date is a day: a month alone is reported, never guessed.
+        partial = [{"label": "D #1", "cover_date": "", "source": "", "store_date": "1986-12",
+                    "store_date_source": "hand", "status": "matched", "metron_issue_id": "8"}]
+        cs.fix_cover_dates(partial, {}, report)
+        self.assertIn(("cover_dates.csv", "store date is not a full day"), report.problems)
+        self.assertEqual(partial[0]["store_date"], "1986-12")
         details = [{"label": "A #1", "story_title": "", "story_title_source": "", "story_arc": "Born Again",
                     "story_arc_source": ""},
                    {"label": "B #1", "story_title": "", "story_title_source": ""}]

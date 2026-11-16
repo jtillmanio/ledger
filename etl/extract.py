@@ -121,6 +121,7 @@ COVER_DATES: dict[str, tuple[str, str, int | None]] = {}
 # label -> (store_date "YYYY-MM-DD", source): the on-sale date, from the same
 # file's store_date and store_date_source (task 3.5, TASK-078).
 STORE_DATES: dict[str, tuple[str, str]] = {}
+FULL_DAY_RE = re.compile(r"^\d{4}-\d{1,2}-\d{1,2}$")
 # run_id -> {"decision", "proposed_why", "final_why"}. From why_review.csv.
 WHY_REVIEW: dict[str, dict] = {}
 
@@ -168,6 +169,10 @@ def load_cover_dates(path) -> None:
                          f"{label}: source {store_source!r} — set it to hand or metron")
                 elif not store:
                     flag("cover_dates", "unparseable store date", f"{label}: {store_raw!r}")
+                elif not FULL_DAY_RE.match(store_raw):
+                    # An on-sale date is a day: a year or a month would load as a guessed 1st.
+                    flag("cover_dates", "store date is not a full day",
+                         f"{label}: {store_raw!r} — type the day, 1987-03-15, or leave it blank")
                 else:
                     STORE_DATES[label] = (store, store_source)
                     stores[store_source] += 1
@@ -806,8 +811,12 @@ def extract_comics(path: Path, out: Path) -> None:
     # Report, never delete: some are hand-typed, and removing them is the owner's call.
     for name, table in (("cover_dates", COVER_DATES), ("issue_details", ISSUE_DETAILS),
                         ("issue_credits", ISSUE_CREDITS)):
-        for lab in sorted(set(table) - sheet_labels):
-            hand = " (hand-entered)" if is_hand_entry(name, table[lab]) else ""
+        # cover_dates.csv holds the store date too (task 3.5): a row may have only that.
+        labels = set(table) | (set(STORE_DATES) if name == "cover_dates" else set())
+        for lab in sorted(labels - sheet_labels):
+            handed = is_hand_entry(name, table.get(lab)) or (
+                name == "cover_dates" and is_hand_entry("store_dates", STORE_DATES.get(lab)))
+            hand = " (hand-entered)" if handed else ""
             flag(name, "sidecar row for a label not in the sheet",
                  f"{lab}{hand}: delete it from {name}.csv if that comic is gone for good")
 
