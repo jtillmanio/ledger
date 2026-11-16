@@ -1,14 +1,14 @@
 ---
 id: TASK-086
 title: 4.3 Covers in the UI (2 of 3) — covers at the feel-pass sizes: the heroes, the shelf and the dashboard rows
-status: Ready
+status: In progress
 depends_on: [TASK-085, TASK-049]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 87f1423
 ---
 
 # TASK-086 — 4.3 Covers in the UI (2 of 3) — covers at the feel-pass sizes: the heroes, the shelf and the dashboard rows
@@ -67,9 +67,30 @@ element carries a `box-shadow` that resolves to `--halo`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- 2.4's comics hero and its *Since Tuesday* stack (30px) are not built, so this task adds no `--cover-stack` token (none in `design/tokens.css`) and no hero cover; 2.4 uses the run-cover rule settled here and takes the 30 width from `design/tokens.css` (approved at plan, 2026-11-16) → docs/05-roadmap.md § 2.4
+- Candidate decision: a run's cover is the cover of its lowest-sequence live placement whose issue has a `cover_url`; the placeholder only when none has one. Owner's choice at the plan gate, 2026-11-16, over sequence 1 strictly and a chosen cover (a schema change) (approved at plan, 2026-11-16) → docs/review/decisions.md § D-n
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+_Approved 2026-11-16 (owner): one task, not split, the books status screen's quarter rows (`PlanQuarter`) included; a run's cover is its first placement with one._
+
+**Steps**
+
+1. `src/components/Cover.tsx`: `ArtCover({ url, w })`, one `<span class="cv">` box either way: with a url an `<img loading="lazy" decoding="async" alt="" width={w} height={w*1.5}>` inside it, without one `cv none`. The slot's CSS sizes the box (`--cover-hero`, `--cover-shelf`, `--cover-row`, `aspect-ratio:2/3`), so a cover arriving changes no height.
+2. `src/app/globals.css`: `.cv > img` fills its box (`object-fit:cover`); `overflow:hidden` on the row boxes (`.deck-row .cv`, `.qrow .cv`, `.between-offer>.cv`) so the radius clips the art; `.qrow .cv` gets `--sh-cover` like the other slots. No gradient, nothing resolving to `--halo`.
+3. `src/db/queries.ts`: `QueueRow` and `upNext` gain `cover_url`: the issue cover of the run's lowest-`sequence` placement with `deleted_at IS NULL` whose issue has a `cover_url` (a LATERAL), null when none. `PlannedBook` and `booksUpNext` gain `b.cover_url` (the books status screen's quarter rows; `StatusBook`, shared with In flight, is unchanged). The books queries the dashboards read (`InHandBook`, `ShelfBook`, `LastFinish`) already select it.
+4. Real covers through `ArtCover`: `BooksNow` (hero, w 112), `BetweenBooks` (the last finish's cover, w 72, and the offer, w 36), `OnDeckRow` (36), `PlanShelf` (books Up next shelf, 112), `QueueShelf` (comics Up next shelf, 112), `QueueList` (comics queue rows, 36), `PlanQuarter` (books status screen's quarter rows, 36; `QuarterBook` gains `cover_url`).
+5. `design/mockups.html`: the `.k1`–`.k8` gradient covers leave the `home`, `queue` and `status` frames (TASK-085 left the dashboard frames to this task; `bdash` has none).
+
+**Files**: the six components, `Cover.tsx`, `queries.ts`, `globals.css`, `design/mockups.html` (not in *Files likely touched*: the redraw, `ui.redrawFiles`), `src/components/PlanShelf.tsx`, `src/components/QueueList.tsx` and `src/components/PlanQuarter.tsx` (not listed: the books shelf, the comics queue rows, the books quarter rows), `test/run-queue.test.ts`, `test/status.test.ts` (`booksUpNext` selects `cover_url`), `test/e2e/dashboard-covers.spec.ts` (new). ~11 source files: over the split line, kept whole by the owner (each component change is a one-line swap behind one helper).
+
+**Test strategy**
+
+- AC-3 (the rule): `test/run-queue.test.ts`, *upNext gives a run the cover of its first placement with one, skipping a coverless head and a deleted placement; null when none*; `test/status.test.ts`, *booksUpNext carries each planned book's cover_url*.
+- AC-2, AC-3, AC-4, AC-1's two clauses, AC-5: `test/e2e/dashboard-covers.spec.ts`, rows under `e2e-dc-` ids, covers from a fake host answered by `page.route` (as `covers.spec.ts`): the hero 2:3 at 112 / 150 / 168 by project width and the same height with and without a cover; shelf, On deck, comics queue and books quarter-row images lazy with `width`, `height`, `alt=""`; every cover and placeholder with no `background-image`, background `--sunk`, no `box-shadow` containing `--halo`'s value (light and dark projects); screenshots of reading, listening, between books, never finished, shelf full and empty, with covers and with placeholders, in every project; reduced motion and reduced transparency once each; 1440px content box 1056; axe; nothing `--danger`.
+- AC-1's CLS clause on `/books`: CI's Lighthouse gate.
+
+**Risks**: AC-5's matrix makes the new spec large; the existing dashboard specs already screenshot most states, so the new one adds the cover variants and leaves theirs alone.
 
 ## Review log
 
