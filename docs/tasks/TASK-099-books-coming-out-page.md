@@ -1,7 +1,7 @@
 ---
 id: TASK-099
 title: 5.7 Books coming out (1 of 2) — the Coming out page, Got it, and the nav item
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: sonnet
@@ -36,17 +36,17 @@ A *Coming out* page lists the books you want when they come out, *Out now* first
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves, on the test database and in the browser (0.11): the *Out now* and month groups, *Got it*'s one row, its removal and Undo, a `read` book never listed, and the screenshots. TASK-100 proves the dashboard line's counts):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves, on the test database and in the browser (0.11): the *Out now* and month groups, *Got it*'s one row, its removal and Undo, a `read` book never listed, and the screenshots. TASK-100 proves the dashboard line's counts):
 a released-yesterday book with no status renders under *Out now*;
 one due next month under that month; *Got it* writes one `to_read` row and
 removes the row from the list, and Undo restores it; a book already `read`
 never appears. The dashboard line's counts equal the list's. Screenshot at
 360px, 834px and 1280px.
-- [ ] AC-2: Given releases for a book due today (Eastern), one due in three months, one with NULL date, one soft-deleted and one whose book is `to_read`, the page groups the first under *Out now*, the second under its month's heading, the third under *No date yet*, and shows neither of the last two (an Unlisted book with a release follows the owner's plan-gate answer, with its own fixture).
-- [ ] AC-3: Given a wanted book, pressing *Got it* removes its row without a reload and the toast offers *Undo*; after *Undo* the row is back in its group and `book_status` holds no row for the book.
-- [ ] AC-4: *Coming out* shows under Books in the tab row, the rail and the sidebar, current on `/books/releases`.
-- [ ] AC-5: `design/mockups.html` gains the `releases` screen at phone, tablet and desktop with its empty state, and `design/mockups-index.md` lists it (task 5.7).
-- [ ] AC-6: The page meets the UX floor (`docs/04-design.md` § 10): empty state (*Nothing coming out* with one action, *Add a book*), loading skeletons at the loaded size, an error state; *Got it* a real button with the book in its name, ≥ 24px (44px on a phone row); text contrast in light and dark; screenshots at each `ui.viewports` width.
+- [x] AC-2: Given releases for a book due today (Eastern), one due in three months, one with NULL date, one soft-deleted and one whose book is `to_read`, the page groups the first under *Out now*, the second under its month's heading, the third under *No date yet*, and shows neither of the last two (an Unlisted book with a release follows the owner's plan-gate answer, with its own fixture).
+- [x] AC-3: Given a wanted book, pressing *Got it* removes its row without a reload and the toast offers *Undo*; after *Undo* the row is back in its group and `book_status` holds no row for the book.
+- [x] AC-4: *Coming out* shows under Books in the tab row, the rail and the sidebar, current on `/books/releases`.
+- [x] AC-5: `design/mockups.html` gains the `releases` screen at phone, tablet and desktop with its empty state, and `design/mockups-index.md` lists it (task 5.7).
+- [x] AC-6: The page meets the UX floor (`docs/04-design.md` § 10): empty state (*Nothing coming out* with one action, *Add a book*), loading skeletons at the loaded size, an error state; *Got it* a real button with the book in its name, ≥ 24px (44px on a phone row); text contrast in light and dark; screenshots at each `ui.viewports` width.
 
 ## Out of scope
 
@@ -73,8 +73,12 @@ never appears. The dashboard line's counts equal the list's. Screenshot at
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- F1 (approved at plan): every book on the workbook's *Coming Out* tab is held by extract's 1.20 hold (46 rows in `etl/data/book_hold.csv`: no Hardcover or Calibre record knows an unreleased book), and a held book loads no `releases` row, so `seed/releases.csv` is its header alone and *Coming out* lists nothing after a load (dev, 2026-11-17: 0 `releases` rows). `docs/cutover-parity.md` § `Coming Out` says "Loaded as `releases`". Owner action: decide the Coming Out rows in `book_hold.csv` (`keep` loads the book and its release). Placement: Owner checklist § Actions.
-- F2 (approved at plan): extract loads no undated Coming Out row (`etl/extract.py`, `if not bid or pd.isna(date): continue`), so *No date yet* fills only from TASK-100's add sheet (`release_date` NULL). Placement: `docs/tasks/TASK-100-coming-out-destination-and-dashboard-line.md` § Context.
+- F1 (approved at plan): every book on the workbook's *Coming Out* tab is held by extract's 1.20 hold (46 rows in `etl/data/book_hold.csv`: no Hardcover or Calibre record knows an unreleased book), and a held book loads no `releases` row, so `seed/releases.csv` is its header alone and *Coming out* lists nothing after a load (dev, 2026-11-17: 0 `releases` rows). `docs/cutover-parity.md` § `Coming Out` says "Loaded as `releases`". Owner action: decide the Coming Out rows in `book_hold.csv` (`keep` loads the book and its release) → docs/OWNER-CHECKLIST.md § Actions from follow-ups
+- F2 (approved at plan): extract loads no undated Coming Out row (`etl/extract.py`, `if not bid or pd.isna(date): continue`), so *No date yet* fills only from TASK-100's add sheet (`release_date` NULL) → docs/tasks/TASK-100-coming-out-destination-and-dashboard-line.md § Context
+- `src/lib/format.ts` (`releaseMonth`, `releaseDay`) and `test/query-budget.test.ts` (the route's budget) are outside the plan's file list → not tracked: two small additions done in this PR, disclosed in the commit message
+- The ui-verifier walk on the dev server wasn't run: the dev database has no `releases` row, and writing one directly (not through the app) needs the owner's say. `test/e2e/releases.spec.ts` covers the page on the test database at the core widths (axe, contrast, floor, Got it and Undo, screenshots); CI runs it at every width → not tracked: the owner's preview walk is the gate
+- A `release_date` that isn't ISO would head a group with `left(date, 7)` (schema-reviewer and spec-reviewer nits) → not tracked: extract writes only ISO dates and TASK-100's add sheet writes a date or NULL, so it can't happen today
+- `docs/kit-adoption.md:226` still names `upcomingReleases()` → not tracked: a historical inventory row, never edited after adoption
 
 ## Plan
 
@@ -110,7 +114,7 @@ Dev database at plan time (read-only count, 2026-11-17): 0 `releases` rows, so 0
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (tsc, lint, `test:no-e2e`; `releases.spec.ts` in w390-light, w390-dark, w768-light, w1280-light) | Schema R1 APPROVE | Spec R1 APPROVE (nit: the index line range, fixed at close-out) | Audit R1 PASS (minor: a direct test for the format helpers, added) | UI: ui-verifier not run, see Follow-ups | CI: pending at close-out, watched on the PR
 
 ## Blocked
 
@@ -118,7 +122,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0 (two files outside the plan's list, `src/lib/format.ts` and `test/query-budget.test.ts`, disclosed in the commit)

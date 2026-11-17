@@ -139,6 +139,25 @@ describe("Got it is a to_read write and Undo leaves no row (AC-3)", () => {
   });
 });
 
+describe("how a release is said", () => {
+  it("a month heading is the month's name and year, and a malformed one prints as stored", async () => {
+    const { releaseMonth } = await import("../src/lib/format");
+    expect(releaseMonth("2026-12")).toBe("December 2026");
+    expect(releaseMonth("2027-01")).toBe("January 2027");
+    expect(releaseMonth("2027-13")).toBe("2027-13");
+    expect(releaseMonth("Spring")).toBe("Spring");
+  });
+
+  it("a day is `17 Nov` this year and carries its year outside it; a malformed one prints as stored", async () => {
+    const { releaseDay } = await import("../src/lib/format");
+    const now = new Date("2026-11-17T12:00:00Z");
+    expect(releaseDay("2026-11-17", now)).toBe("17 Nov");
+    expect(releaseDay("2027-03-02", now)).toBe("2 Mar 2027");
+    expect(releaseDay("2027-03", now)).toBe("2027-03");
+    expect(releaseDay("TBA", now)).toBe("TBA");
+  });
+});
+
 describe("the page (AC-2, AC-6)", () => {
   async function page() {
     const { default: Releases } = await import("../src/app/books/releases/page");
