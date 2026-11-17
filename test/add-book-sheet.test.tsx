@@ -691,6 +691,19 @@ describe("Coming out (task 5.7, TASK-100: AC-2, AC-3, AC-6)", () => {
     expect(adds()[0].destination).toEqual({ kind: "release", date: null });
   });
 
+  it("a book you have on your list, or Unlisted, gets nothing, and the toast says where it is (owner, Q1)", async () => {
+    added = { ...added, bookId: BLADE.id, reused: true, status: "unlisted", created: [], added: [] };
+    await open();
+    await click(chip("Coming out"));
+    await click(noDate()!);
+    await search();
+    await click(resultButtons()[0]);
+    expect(adds()[0].destination).toEqual({ kind: "release", date: null });
+    expect(document.querySelector(".toast-label")!.textContent).toBe("Already in your library");
+    expect(document.querySelector(".toast-detail")!.textContent).toBe("The Blade Itself · Unlisted");
+    expect(document.querySelector(".toast-undo")).toBeNull();
+  });
+
   it("a search result says Add to Coming out and sends the date; a book already coming out says so", async () => {
     added = { ...added, bookId: BLADE.id, reused: true, status: null, created: [], added: [] };
     await open();

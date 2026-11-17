@@ -496,6 +496,31 @@ describe("Coming out (task 5.7, TASK-100)", () => {
     expect((await bookRows()).find((b) => b.id === "wind-and-truth-brandon-sanderson")!.removed).toBe(false);
   });
 
+  it("Undo waits for a Got it in flight, then refuses: the book stays, with its status and its release", async () => {
+    const done = await add(hand({ title: "Wind and Truth", author: "Brandon Sanderson" }), comingOut("2026-12-06"));
+    const id = "wind-and-truth-brandon-sanderson";
+    let undone: Promise<number> | null = null;
+    // A status write as saveBookStatus makes it (lockBook: the book FOR NO KEY UPDATE, no add lock), held open
+    // while the undo starts: the undo has to wait for it, and then see what it wrote.
+    await sql.begin(async (tx) => {
+      await tx`SELECT id FROM books WHERE id = ${id} AND deleted_at IS NULL FOR NO KEY UPDATE`;
+      undone = undo(done.body);
+      await new Promise((r) => setTimeout(r, 300));
+      await tx`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, ${id}, 'to_read')`;
+    });
+    expect(await undone).toBe(409);
+    expect(await releaseRows()).toEqual([{ book_id: id, release_date: "2026-12-06" }]);
+    expect((await bookRows()).find((b) => b.id === id)!.removed).toBe(false);
+  });
+
+  it("Undo is refused once Calibre has linked the book it made (task 4.4's sync would skip it for good)", async () => {
+    const done = await add(hand({ title: "Wind and Truth", author: "Brandon Sanderson" }), comingOut("2026-12-06"));
+    await sql`UPDATE books SET calibre_id = 4242 WHERE id = 'wind-and-truth-brandon-sanderson'`;
+    expect(await undo(done.body)).toBe(409);
+    expect(await releaseRows()).toEqual([{ book_id: "wind-and-truth-brandon-sanderson", release_date: "2026-12-06" }]);
+    expect((await bookRows()).find((b) => b.id === "wind-and-truth-brandon-sanderson")!.removed).toBe(false);
+  });
+
   it("Undo is refused when the release row isn't the one it wrote", async () => {
     const done = await add(hand({ title: "Wind and Truth", author: "Brandon Sanderson" }), comingOut("2026-12-06"));
     await sql`UPDATE releases SET release_date = '2027-01-10' WHERE book_id = 'wind-and-truth-brandon-sanderson'`;

@@ -44,6 +44,8 @@ const targetOf = (to: string): Target => (to === "someday" ? { kind: "someday" }
 
 const STATUS: Record<string, string> = {
   to_read: "on your to-read list", reading: "reading", listening: "listening", read: "read", dnf: "did not finish",
+  // A book you have but haven't listed (task 1.21): *Coming out* leaves it as it is, and says so (task 5.7).
+  unlisted: "Unlisted",
 };
 
 /**

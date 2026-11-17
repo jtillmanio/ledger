@@ -2363,7 +2363,8 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
  * soft-deleted (Hard rule 4). Refuses, changing nothing, when a row it wrote is
  * gone or re-dated, when a book it placed has a status since (*Got it*, or
  * anything else: the book is on your list now), or when a book it created has
- * gained a shelf, a plan row or a read. Called inside `undoInside`'s lock.
+ * gained a shelf, a plan row, a read, an owned format or a Calibre id. Called
+ * inside `undoInside`'s lock.
  */
 async function undoRelease(
   tx: Tx, userId: string, entry: AddedEntry & { destination: { kind: "release"; date: string | null } }, refused: symbol,
@@ -2371,6 +2372,15 @@ async function undoRelease(
   const { destination: { date }, created, added, statused } = entry;
   if (entry.promoted?.length || statused.length || added.length === 0) return false;
   const placed = new Set(added);
+  // FOR UPDATE, before anything is read: a status write (*Got it*, saveBookStatus) takes the book FOR NO KEY
+  // UPDATE without the add lock, so it waits here, and an undo that waited sees the status it wrote. Its absence
+  // can't guard a delete, so the lock is what makes the check hold.
+  const live = await tx.select({ id: books.id, calibreId: books.calibreId }).from(books)
+    .where(and(inArray(books.id, [...placed].sort()), isNull(books.deletedAt))).orderBy(books.id).for("update");
+  if (live.length !== placed.size) return false;
+  // A book the Calibre sync (4.4) has linked since is Calibre's now: removing it would make the sync skip it for good.
+  const made = new Set(created);
+  if (live.some((b) => made.has(b.id) && b.calibreId !== null)) return false;
   const rows = and(inArray(releases.bookId, added),
     date === null ? isNull(releases.releaseDate) : eq(releases.releaseDate, date));
   const ours = await tx.select({ bookId: releases.bookId }).from(releases).where(rows);
@@ -2379,9 +2389,6 @@ async function undoRelease(
     .where(and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, added))).limit(1);
   if (since.length) return false;
   if (created.length) {
-    const live = await tx.select({ id: books.id }).from(books)
-      .where(and(inArray(books.id, created), isNull(books.deletedAt)));
-    if (live.length !== new Set(created).size) return false;
     // A new book has nothing but its release: anything else came later.
     const later = await Promise.all([
       tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(inArray(shelfBooks.bookId, created)).limit(1),
