@@ -9,7 +9,7 @@ import { addHref } from "@/lib/last-run";
 export type NavGroup = "media" | "medium" | "global" | "foot";
 export type IconName =
   | "layout-dashboard" | "list-checks" | "layers" | "route" | "plus" | "calendar-range" | "library"
-  | "list-ordered" | "book-open" | "book" | "book-copy" | "tv" | "inbox" | "download" | "search" | "settings" | "film";
+  | "list-ordered" | "calendar-clock" | "book-open" | "book" | "book-copy" | "tv" | "inbox" | "download" | "search" | "settings" | "film";
 
 export interface NavItem {
   id: string;
@@ -64,6 +64,8 @@ export const NAV_ITEMS: NavItem[] = [
     id: "books-top", label: "Top", sideLabel: "Top books", href: "/books/top", icon: "list-ordered", enabled: true,
     group: "medium", medium: "books", noPrefetch: true,
   },
+  // The books you want when they come out (task 5.7, D-35). Neutral icon, like every nav icon: hue identifies data.
+  { id: "books-releases", label: "Coming out", href: "/books/releases", icon: "calendar-clock", enabled: true, group: "medium", medium: "books" },
   { id: "books-add", label: "Add", href: "/books/add", icon: "plus", enabled: true, group: "medium", medium: "books" },
 
   { id: "watch-dash", label: "Dashboard", href: "/watch", icon: "layout-dashboard", enabled: true, group: "medium", medium: "watch", dash: true },

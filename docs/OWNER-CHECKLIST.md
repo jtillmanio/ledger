@@ -296,6 +296,13 @@ tick them.
       file the sync uses (from TASK-082, 4.4, PR #267): until then the sync writes no
       `#read` or `#read_date` into Calibre, because extract still loads
       Calibre's reads (D-87) and a read the Ledger lacks would clear Calibre's.
+- [ ] Decide the workbook's *Coming Out* rows in `etl/data/book_hold.csv` (46
+      of them): extract's 1.20 hold keeps every one off the `books` table, and a
+      held book loads no `releases` row, so `/books/releases` lists nothing after
+      a load (dev, 2026-11-17: 0 `releases` rows) and `docs/cutover-parity.md`
+      § `Coming Out` ("Loaded as `releases`") isn't true yet. `keep` on a row
+      loads the book and its release on the next extract (from TASK-099, 5.7,
+      PR #285).
 
 ## Approvals from follow-ups
 

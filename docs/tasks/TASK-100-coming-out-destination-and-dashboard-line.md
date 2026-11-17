@@ -26,6 +26,7 @@ You can add a book you're waiting for straight to *Coming out*, with its release
 - **Not drawn yet:** the `add` frame gains the *Coming out* destination and its date field, and the `bdash` frames the rollup line, in this PR (`ui.redrawFiles`).
 - Design: `design/mockups.html` § `add`, § `bdash`; `design/STYLE_GUIDE.md` § 14 (the five slots); `docs/04-design.md` § 10 The UX floor, § 12 The dashboards.
 - Decisions: D-35, D-37, D-67.
+- *From TASK-099 (5.7, PR #285):* extract loads no undated Coming Out row (`etl/extract.py`, `if not bid or pd.isna(date): continue`), so *No date yet* on `/books/releases` fills only from this task's add sheet (`release_date` NULL). TASK-099's `wantedReleases(userId, today)` in `src/db/queries.ts` is the page's one query (live book, a `releases` row, no `book_status` row; `grp` is `out`, a `YYYY-MM` month or `none`): the dashboard line's two counts should come from it, so they equal the list's.
 
 ## Acceptance criteria
 

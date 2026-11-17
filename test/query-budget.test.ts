@@ -31,6 +31,8 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   // Top books (task 3.4b): the years and the year asked for (or this one), together; a second read only
   // when that year has no read, and the page opens the newest instead.
   "/books/top": { queries: 2, waves: 1 },
+  // Coming out (task 5.7): the wanted books, in one read.
+  "/books/releases": { queries: 1, waves: 1 },
   // Shelves (task 5.1): every shelf with its counts and next three, one read. A shelf's page: the shelf and
   // its books, together (the books read checks the shelf is yours itself).
   "/books/shelves": { queries: 1, waves: 1 },
@@ -127,6 +129,7 @@ const pages: [string, () => Promise<unknown>][] = [
     (await import("../src/app/books/plan/page")).default({ searchParams: Promise.resolve({}) })],
   ["/books/top", async () =>
     (await import("../src/app/books/top/page")).default({ searchParams: Promise.resolve({}) })],
+  ["/books/releases", async () => (await import("../src/app/books/releases/page")).default()],
   ["/books/shelves", async () => (await import("../src/app/books/shelves/page")).default()],
   ["/books/shelves/[id]", async () =>
     (await import("../src/app/books/shelves/[id]/page")).default({ params: Promise.resolve({ id: "s" }) })],

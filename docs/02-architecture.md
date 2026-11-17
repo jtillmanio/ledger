@@ -107,7 +107,7 @@ Every page. One dashboard per medium, with the lists one level down (design §11
 | `/books/plan` | Plan by quarter: the year as the full-size rail, the quarter in focus listed with *Move* (task 2.10); the capacity card, Rebalance and Accept join it (2.7, 2.8) |
 | `/books/shelves` | Your books shelves by name: each with `read / total` from `shelf_progress`, a meter, and its next three unread in shelf order; *+ New shelf* (task 5.1) |
 | `/books/shelves/[id]` | One shelf: its description, follow control and *+ Add to shelf* (Add books with the shelf chosen); its books in shelf order with each one's note, edited in place, and the reorder controls (task 5.1) |
-| `/books/releases` | Books coming out that you want, *Out now* then by month (task 5.7, D-35) |
+| `/books/releases` | Coming out: the books you want when they come out (a release and no status), *Out now* then by month, then *No date yet*; *Got it* moves one to Someday, with an Undo (D-35) |
 | `/books/series` | Every series with `read / total` from `series_progress` and its next unread book (task 5.9) |
 | `/books/series/[id]` | One series: its books in position order with status and dates, the next unread, gap rows (task 5.9) |
 | `/activity` | The reading log: every finished read, by month under year totals, across media (task 6.17) |

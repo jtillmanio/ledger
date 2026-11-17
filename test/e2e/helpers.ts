@@ -110,6 +110,12 @@ export const E2E_BOOK_COUNT = 2;
 // One Unlisted book (task 1.21): off Everything, on its own chip, found by a search.
 export const E2E_UNLISTED_ID = "e2e-unlisted";
 export const E2E_UNLISTED_TITLE = "E2E Unlisted Book";
+// Coming out (task 5.7): two of the Library's books with a release and no status. The first came out yesterday
+// (Eastern), the second is due next month; the Unlisted book above has a release too and is never listed.
+export const E2E_RELEASE_OUT_ID = "e2e-book-1";
+export const E2E_RELEASE_OUT_TITLE = "E2E Book 1";
+export const E2E_RELEASE_MONTH_ID = "e2e-book-2";
+export const E2E_RELEASE_MONTH_TITLE = "E2E Book 2";
 
 /**
  * Fails when axe finds a violation of any rule in `rules`, naming each rule and

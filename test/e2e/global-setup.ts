@@ -6,7 +6,7 @@ import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { markRead, testSql, truncateAll } from "../db";
 import {
   E2E_BOOK_COUNT, E2E_INBOX_COUNT, E2E_ISSUE_COUNT, E2E_LONG_LABEL, E2E_LONG_RUN_ID, E2E_READ_COUNT, E2E_RUN_ID, E2E_RUN_TITLE,
-  E2E_UNLISTED_ID, E2E_UNLISTED_TITLE,
+  E2E_RELEASE_MONTH_ID, E2E_RELEASE_OUT_ID, E2E_UNLISTED_ID, E2E_UNLISTED_TITLE,
 } from "./helpers";
 
 export default async function globalSetup() {
@@ -30,6 +30,13 @@ export default async function globalSetup() {
               SELECT 'e2e-book-' || n, 'E2E Book ' || n FROM generate_series(1, ${E2E_BOOK_COUNT}::int) n`;
     await sql`INSERT INTO books (id, title) VALUES (${E2E_UNLISTED_ID}, ${E2E_UNLISTED_TITLE})`;
     await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${E2E_USER}, ${E2E_UNLISTED_ID}, 'unlisted')`;
+    // Coming out (task 5.7): releases on books the Library already counts, so no row is added there. Book 1 came
+    // out yesterday (Eastern) and book 2 is due the 15th of next month: both wanted, with no status row. The
+    // Unlisted book has a release too, and never shows (a book with any status row isn't wanted).
+    await sql`INSERT INTO releases (book_id, release_date) VALUES
+      (${E2E_RELEASE_OUT_ID}, ((now() AT TIME ZONE 'America/New_York')::date - 1)::text),
+      (${E2E_RELEASE_MONTH_ID}, ((date_trunc('month', now() AT TIME ZONE 'America/New_York') + interval '1 month 14 days')::date)::text),
+      (${E2E_UNLISTED_ID}, ((now() AT TIME ZONE 'America/New_York')::date - 1)::text)`;
     for (let n = 1; n <= E2E_READ_COUNT; n++) await markRead(sql, E2E_USER, E2E_RUN_ID, `e2e-comic-${n}`);
   } finally {
     await sql.end();

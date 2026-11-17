@@ -1099,16 +1099,37 @@ export async function seriesProgress(userId: string) {
   `;
 }
 
-export async function upcomingReleases() {
-  return sql<{ id: string; title: string; author: string | null; release_date: string }[]>`
-    SELECT b.id, b.title, a.name AS author, rl.release_date
+/** A wanted book on *Coming out* (task 5.7). `grp` is `out`, a `YYYY-MM` month, or `none` for no date. */
+export type WantedRelease = {
+  id: string; title: string; author: string | null; series: string | null; series_position: number | null;
+  universe: string | null; cover_url: string | null;
+  /** The stored text, never cast: a malformed date prints as it was typed. NULL is announced but undated. */
+  release_date: string | null;
+  grp: string;
+};
+
+/**
+ * The books you want when they come out (task 5.7, D-35; owner, 2026-11-17): a live book with a `releases`
+ * row and no `book_status` row at all, so a book you have put anywhere (Someday, Reading, Read, DNF, even
+ * Unlisted) is not wanted. The page's order: *Out now* (a date on or before `today`), then each month
+ * ascending, then *No date yet*; inside a group by date, then title. `today` is the Eastern day
+ * (`today()`, task 1.16), a parameter so a test pins it. Dates compare as the text they are stored in.
+ */
+export async function wantedReleases(userId: string, today: string) {
+  return sql<WantedRelease[]>`
+    SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe, b.cover_url,
+           rl.release_date,
+           CASE WHEN rl.release_date IS NULL THEN 'none'
+                WHEN rl.release_date <= ${today} THEN 'out'
+                ELSE left(rl.release_date, 7) END AS grp
     FROM releases rl
-    JOIN books b        ON b.id = rl.book_id
-    LEFT JOIN authors a ON a.id = b.author_id
-    -- Today is the Eastern day (task 1.16), not the database's UTC one.
-    WHERE b.deleted_at IS NULL AND rl.release_date >= (now() AT TIME ZONE 'America/New_York')::date::text
-    ORDER BY rl.release_date
-    LIMIT 12
+    JOIN books b ON b.id = rl.book_id AND b.deleted_at IS NULL
+    LEFT JOIN authors a        ON a.id = b.author_id
+    LEFT JOIN book_series s    ON s.id = b.series_id
+    LEFT JOIN book_universes u ON u.id = b.universe_id
+    WHERE NOT EXISTS (SELECT 1 FROM book_status st WHERE st.book_id = b.id AND st.user_id = ${userId})
+    ORDER BY CASE WHEN rl.release_date IS NULL THEN 2 WHEN rl.release_date <= ${today} THEN 0 ELSE 1 END,
+             rl.release_date, b.title, b.id
   `;
 }
 
