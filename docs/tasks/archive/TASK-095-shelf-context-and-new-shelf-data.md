@@ -1,7 +1,7 @@
 ---
 id: TASK-095
 title: 5.1 Shelves (1 of 3) — shelf context columns, creating and reordering shelves, and the shelf queries
-status: Review
+status: Done
 depends_on: []
 size: M
 model: opus
@@ -77,7 +77,7 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 - Data model and architecture: the 5.1 columns are built, and `/api/shelves/[id]` is a route → docs/03-data-model.md § 4. Proposed additions (approved at plan); docs/02-architecture.md § 5. Routes and data access (approved at plan)
 - `test/schema-additions.test.ts` records the two approved columns in its column list (not in Files likely touched; spec review judged it justified) → not tracked: done in this PR
 - Schema review: `DELETE /api/shelves/<id>` removes any bare shelf of yours, not only one made this session; and `shelfNamed` collapses spaces in SQL but doesn't NFKC-fold a stored name → not tracked: accepted as is (a bare shelf holds nothing to lose; no shelf existed before this task, since extract and load write none and the app could make none)
-- Review round 1's lock-order and undo-`prior` notes → not tracked: done in this PR (commit f431abf)
+- Review round 1's lock-order and undo-`prior` notes → not tracked: done in this PR (commit 643b5f5)
 
 ## Plan
 
@@ -119,7 +119,7 @@ Approved by the owner 2026-11-16, with both columns and the name check in the wr
 _Filled by /implement-task. One line per round._
 
 - Verify R1 PASS (a first try from Git Bash ran vitest from `c:\`, every file "failed to find the runner"; rerun from `C:\`) | CI R1 PASS | rebased on main (#279 Lighthouse switch, #276 deps) | Verify R2 PASS
-- Spec R1 APPROVE (minor: an add to an existing shelf took no shelf lock) | Schema R1 APPROVE (5 minor: a lock-order deadlock in the add's undo, an undo's `prior` uncapped, `new_shelf` name validation for TASK-097, two accepted as is) → fixed in f431abf | Verify R3 PASS | Spec R2 APPROVE | Schema R2 APPROVE
+- Spec R1 APPROVE (minor: an add to an existing shelf took no shelf lock) | Schema R1 APPROVE (5 minor: a lock-order deadlock in the add's undo, an undo's `prior` uncapped, `new_shelf` name validation for TASK-097, two accepted as is) → fixed in 643b5f5 | Verify R3 PASS | Spec R2 APPROVE | Schema R2 APPROVE
 - Audit R1 PASS (46 of 46 shelf tests fail against the pre-task code; every AC proven)
 
 ## Blocked
