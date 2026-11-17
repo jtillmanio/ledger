@@ -259,6 +259,10 @@ route handler check, CLS and accessibility stay as 0.10 built them.
   links.
 - **After 1.30**, so that 1.30's budgets land first and this entry measures from
   them.
+- *From TASK-112 (0.14, PR #280):* since 0.14 a Lighthouse load blocks the RSC
+  prefetches and counts neither them nor their bytes (D-160), so this entry's
+  measurement is prefetch-free. A growth check against a baseline from before
+  0.14 shows a drop, not growth.
 
 **Check:** (proposed; the owner agrees it by merging or edits it first)
 `test/perf.test.ts` covers the growth gate on fixture metrics: a route 3,001
@@ -272,7 +276,7 @@ holds the shared JS once and `test/perf.test.ts` holds the table in
 adding the label turns the job green with no new push. The job passes on this
 entry's own PR, and `lighthouse-metrics` is kept 90 days.
 
-### ☐ 0.14 A measured deploy costs a third of what it did · M
+### ☑ 0.14 A measured deploy costs a third of what it did · M
 Owner, 2026-11-17 (D-158). The Vercel account's Fluid Active CPU reached about
 3h33m of the Hobby plan's 4 h in 30 days, shared with another project, and
 ledger's half was Lighthouse: about 22 s per measured deploy (Nov 16,

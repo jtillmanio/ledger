@@ -1,7 +1,7 @@
 ---
 id: TASK-112
 title: 0.14 A measured deploy costs a third of what it did
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: opus
@@ -31,11 +31,11 @@ A Lighthouse measurement of a preview spends about a third of the Vercel Active 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim): a hand run on this entry's PR (`gh workflow run lighthouse.yml --ref <branch>`) measures every route with one Lighthouse load and one tap run and passes. No Lighthouse load's network log holds a `_rsc=` request. On a throwaway branch, a `<Link href="/api/export">` put back in the nav still fails the job with that request named. On the preview, `/favicon.ico` (or the app icon) and `/robots.txt` answer 200 with no redirect to `/login`. Vercel Observability shows no `/_not-found` invocation during the run, and the run's Active CPU is a third or less of a 3-run measurement.
-- [ ] AC-2: `measure.mjs` with no `RUNS` set makes exactly one Lighthouse load and one tap run per route, and the merged `metrics.json` says `runs: 1`. `RUNS=3` still gives three of each, for a hand comparison. A test in `test/perf.test.ts` pins the default.
-- [ ] AC-3: The Lighthouse load's CLI arguments block Next's RSC prefetch requests (`_rsc=`), and the tap run's don't. A test in `test/perf.test.ts` fails if the block reaches the tap run or leaves the Lighthouse load.
-- [ ] AC-4: Signed out, `GET /robots.txt` returns 200 `text/plain` with `Disallow: /`, and `GET /favicon.ico` returns 200 with an image type. Neither goes through `proxy()`. `test/health.test.ts` (or the test that already pins the matcher) fails if either is matched.
-- [ ] AC-5: Every place that says "three runs per route" or "median of three" about how the job measures from now on says one run: the `lighthouse.yml` header, `measure.mjs`'s header, `docs/02-architecture.md` § Performance budget and `docs/GIT-PR.md`. The past measurements quoted as medians of three keep their wording.
+- [x] AC-1 (roadmap **Check:**, verbatim): a hand run on this entry's PR (`gh workflow run lighthouse.yml --ref <branch>`) measures every route with one Lighthouse load and one tap run and passes. No Lighthouse load's network log holds a `_rsc=` request. On a throwaway branch, a `<Link href="/api/export">` put back in the nav still fails the job with that request named. On the preview, `/favicon.ico` (or the app icon) and `/robots.txt` answer 200 with no redirect to `/login`. Vercel Observability shows no `/_not-found` invocation during the run, and the run's Active CPU is a third or less of a 3-run measurement.
+- [x] AC-2: `measure.mjs` with no `RUNS` set makes exactly one Lighthouse load and one tap run per route, and the merged `metrics.json` says `runs: 1`. `RUNS=3` still gives three of each, for a hand comparison. A test in `test/perf.test.ts` pins the default.
+- [x] AC-3: The Lighthouse load's CLI arguments block Next's RSC prefetch requests (`_rsc=`), and the tap run's don't. A test in `test/perf.test.ts` fails if the block reaches the tap run or leaves the Lighthouse load.
+- [x] AC-4: Signed out, `GET /robots.txt` returns 200 `text/plain` with `Disallow: /`, and `GET /favicon.ico` returns 200 with an image type. Neither goes through `proxy()`. `test/health.test.ts` (or the test that already pins the matcher) fails if either is matched.
+- [x] AC-5: Every place that says "three runs per route" or "median of three" about how the job measures from now on says one run: the `lighthouse.yml` header, `measure.mjs`'s header, `docs/02-architecture.md` § Performance budget and `docs/GIT-PR.md`. The past measurements quoted as medians of three keep their wording.
 
 ## Out of scope
 
@@ -67,7 +67,7 @@ A Lighthouse measurement of a preview spends about a third of the Vercel Active 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
 - 0.13 measures from 0.14's numbers: from 0.14 on a Lighthouse load leaves prefetches out, so a growth check against a pre-0.14 baseline shows a drop, not growth (approved at plan) → docs/05-roadmap.md § 0.13
-- Candidate decision: the Lighthouse load blocks Next's RSC prefetches (`_rsc=`); a blocked request is not counted in `requests` but its path still feeds the route-handler gate, and an `_rsc=` request that got a response fails the job (approved at plan) → docs/review/decisions.md
+- Candidate decision: the Lighthouse load blocks Next's RSC prefetches (`_rsc=`); a blocked request is not counted in `requests` but its path still feeds the route-handler gate, and an `_rsc=` request that got a response fails the job (approved at plan) → docs/review/decisions.md § D-160
 
 ## Plan
 
@@ -95,13 +95,15 @@ Approved 2026-11-17 (owner: approve, keep the task whole; AC-1's "no `_rsc=` req
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 PASS (`f689e8c`; e2e routes.spec.ts -g robots, w390-light, PASS) | rebased onto `9f3d6b1` (#278; decisions.md conflict: the owner's corrected D-158 kept, D-159 after it) | Verify R2 PASS (`30c8a55`) | Spec R1 APPROVE (AC-1 owner-pending) | Audit R1 PASS (all PROVEN) | two non-blocking points taken: a merged `runs: 1` assertion and `.route(`/`Network.` in the tap denylist | Verify R3 PASS | AC-1: owner checked 2026-11-17; hand run 44041394213 on `30c8a55` green, `runs: 1`, 1/1 loads and taps on 13 routes, 90 `_rsc=` entries all blocked (status -1), none sent, `/favicon.ico` 200 | CI: see PR #280
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (one per head: R1, the rebase, the test strengthening)
+- Review rounds: 1 (spec APPROVE, audit PASS)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0
