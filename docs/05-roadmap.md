@@ -4460,8 +4460,15 @@ it is converted.
   one-line note and *Skip*. For a run it sits at the foot of 2.12's completion
   screen (D-40), and the mark's undo toast stays, because it carries Undo. The
   rating control never fills `--ready`; it is an opinion, not progress. No celebration.
+  *From TASK-098 (5.5, PR #283):* the card is built: `src/components/ClosingCard.tsx`
+  (a labelled field opening on what is stored, *Save* and *Skip*, Esc as *Skip*,
+  *Retry* on a failed save), with a book's DNF reason as its first use. Its save
+  replaces the status's toast with one entry whose Undo takes back both writes in
+  one transaction (`withNote` in `useBookWrite`, `DELETE /api/progress/book` with
+  `note`), so the toast keeps the one Undo; a run's rating and note will want the
+  same shape over the mark's undo.
 
-- ☐ 5.5 DNF with a reason field · S. DNF opens the same closing card as 5.4
+- ☑ 5.5 DNF with a reason field · S. DNF opens the same closing card as 5.4
   with a reason field instead of a rating; DNF stays grey (UX-N13).
   *Pulled ahead of 1.26 by the owner (D-139), without 5.4:* 5.5 builds the
   closing card for a book, and 5.4 reuses it for a run's rating and note.

@@ -1,7 +1,7 @@
 ---
 id: TASK-098
 title: 5.5 DNF with a reason — the closing card for a book
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: sonnet
@@ -30,17 +30,17 @@ When you stop a book, a small closing card asks why. You can type a reason or sk
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim):
+- [x] AC-1 (roadmap **Check:**, verbatim):
 setting a book to DNF opens the closing card with a reason field
 and *Skip*; a typed reason saves, survives a reload and shows under the
 book's *Stopped* row on Done; *Skip* leaves the DNF with no reason; Undo of
 the DNF restores the prior status and the prior reason; nothing on the card
 or the row resolves to `--ready` or `--danger`.
-- [ ] AC-2: Given a reading book with no note, choosing DNF saves `dnf` at once and opens the card with its field focused; typing *Lost interest at the midpoint* and saving stores that text in `book_status.notes`, and Done's *Stopped* row shows it under the title after a reload.
-- [ ] AC-3: Given a book whose note reads *Gift from Sam*, choosing DNF opens the card with that text in the field; *Skip* leaves the note *Gift from Sam* and the status `dnf`.
-- [ ] AC-4: Given a reading book with no note, DNF then a typed reason then the toast's *Undo* leaves the book `reading` with its start date and a NULL note; a failed note save says so with *Retry* and leaves the DNF (R1-07).
-- [ ] AC-5: `design/mockups.html` draws the closing card in `blist` and the reason on a *Stopped* row in `status`, and `design/mockups-index.md` names them (task 5.5).
-- [ ] AC-6: The card meets the UX floor (`docs/04-design.md` § 10): the field has a visible label, *Save* and *Skip* are real buttons ≥ 24px (44px on a phone), Escape closes it as *Skip* and focus returns to the status control, the text meets contrast in light and dark, the card respects reduced motion, and there are screenshots at 360px and 1280px.
+- [x] AC-2: Given a reading book with no note, choosing DNF saves `dnf` at once and opens the card with its field focused; typing *Lost interest at the midpoint* and saving stores that text in `book_status.notes`, and Done's *Stopped* row shows it under the title after a reload.
+- [x] AC-3: Given a book whose note reads *Gift from Sam*, choosing DNF opens the card with that text in the field; *Skip* leaves the note *Gift from Sam* and the status `dnf`.
+- [x] AC-4: Given a reading book with no note, DNF then a typed reason then the toast's *Undo* leaves the book `reading` with its start date and a NULL note; a failed note save says so with *Retry* and leaves the DNF (R1-07).
+- [x] AC-5: `design/mockups.html` draws the closing card in `blist` and the reason on a *Stopped* row in `status`, and `design/mockups-index.md` names them (task 5.5).
+- [x] AC-6: The card meets the UX floor (`docs/04-design.md` § 10): the field has a visible label, *Save* and *Skip* are real buttons ≥ 24px (44px on a phone), Escape closes it as *Skip* and focus returns to the status control, the text meets contrast in light and dark, the card respects reduced motion, and there are screenshots at 360px and 1280px.
 
 ## Out of scope
 
@@ -65,7 +65,10 @@ or the row resolves to `--ready` or `--danger`.
 
 ## Follow-ups
 
-_Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+- 5.4 reuses the closing card and its one-Undo shape (a second write replaces the status's toast; both undone in one transaction) → docs/05-roadmap.md § 5.4
+- Candidate decision: a finish moment's extra write replaces the status's toast with one entry undone in one transaction → not tracked: written down for 5.4, its only reuser, in its roadmap entry; it applies D-139 and the one-toast rule (task 1.8b) and changes neither
+- `DELETE /api/progress/book` answers 500 to a body that isn't JSON (schema review, minor) → not tracked: there before this branch, and only a hand-made request reaches it
+- The `blist` desktop frame's comment and plan step 3's `amend` disagreed with what was built (spec review) → not tracked: done in this PR (plan revision)
 
 ## Plan
 
@@ -99,7 +102,7 @@ Approved 2026-11-17 (owner: kept whole, not split, though it is over 8 files: th
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (2054 tests; dnf-reason.spec 7/7 in w390-light) | CI R1 PASS (e2e full 8/8, tests, Vercel, Claude review: no issues) | Audit R1 PASS (13 discriminating, 1 regression guard) | Spec R1 APPROVE (2 wording notes, fixed) | Schema R1 APPROVE | Rebased on #282 → Verify R2 PASS (2069 tests) | UI R1: see the PR
 
 ## Blocked
 
@@ -107,7 +110,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (the second after the rebase onto #282)
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1 (wording: the hook's save is `withNote`, the query's field `reason`; the note check inlined in the status route rather than shared)
