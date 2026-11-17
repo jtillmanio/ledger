@@ -250,6 +250,11 @@ test("the destination and the line meet the floor: labelled, refused under the f
   await expect(date).toHaveAttribute("aria-invalid", "true");
   await expect(date).toBeFocused();
   await expect(page.locator("#release-date-err")).toHaveText("! Pick a release date, or No date yet");
+  // Under the field, at its left edge, at every width (ui-verifier, 1024px and up: it sat beside No date yet).
+  const field = (await date.boundingBox())!;
+  const refusal = (await page.locator("#release-date-err").boundingBox())!;
+  expect(Math.abs(refusal.x - field.x)).toBeLessThan(2);
+  expect(refusal.y).toBeGreaterThanOrEqual(field.y + field.height);
   const box = await none.boundingBox();
   expect(Math.min(box!.width, box!.height)).toBeGreaterThanOrEqual(24);
   await expectNoHorizontalScroll(page);

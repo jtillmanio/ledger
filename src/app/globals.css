@@ -1571,13 +1571,13 @@ input.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 .field-err span{font-weight:700}
 input.txt[aria-invalid="true"]{border-color:var(--danger)}
 /* Coming out's date (task 5.7): the field, then No date yet beside it, a real checkbox with a 24px target. */
-.reldate{display:flex;flex-wrap:wrap;align-items:flex-end;gap:0 1rem;margin:.25rem 0 0}
+.reldate{margin:.25rem 0 0}
+.reldate-row{display:flex;flex-wrap:wrap;align-items:flex-end;gap:0 1rem}
 .reldate .hfield{flex:0 1 12rem}
 .reldate .add-label{margin-top:.75rem}
 .reldate-none{display:flex;align-items:center;gap:.5rem;min-height:44px;font-size:.875rem;color:var(--ink-2)}
 .reldate-none input{width:24px;height:24px;margin:0;accent-color:var(--brand)}
 .reldate-none label{padding:.25rem 0;cursor:pointer}
-.reldate .field-err{flex-basis:100%}
 .hand-note{margin:.75rem 0 0}
 
 /* Covers in rows, and *metadata pending* (UX floor; STYLE_GUIDE § 9): a dashed

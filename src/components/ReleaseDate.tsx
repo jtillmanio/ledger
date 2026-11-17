@@ -27,6 +27,8 @@ export default function ReleaseDate({ value, onChange, error }: {
 }) {
   return (
     <div className="reldate">
+      {/* The field and No date yet side by side; the refusal on its own line under both, at every width. */}
+      <div className="reldate-row">
       <div className="hfield">
         <label htmlFor="release-date" className="add-label">Release date</label>
         <input id="release-date" type="date" className="txt" value={value.date}
@@ -37,6 +39,7 @@ export default function ReleaseDate({ value, onChange, error }: {
         <input id="release-none" type="checkbox" checked={value.none}
           onChange={(e) => onChange({ date: e.target.checked ? "" : value.date, none: e.target.checked })} />
         <label htmlFor="release-none">No date yet</label>
+      </div>
       </div>
       {error && <p id="release-date-err" className="field-err"><span aria-hidden="true">!</span> {RELEASE_REQUIRED}</p>}
     </div>
