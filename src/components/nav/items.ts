@@ -57,7 +57,8 @@ export const NAV_ITEMS: NavItem[] = [
   // The master list, named and given its own page (task 2.2e, D-110). `library` is Shelves' icon.
   { id: "books-library", label: "Library", href: "/books/list", icon: "book-copy", enabled: true, group: "medium", medium: "books" },
   { id: "books-plan", label: "Plan", href: "/books/plan", icon: "calendar-range", enabled: true, group: "medium", medium: "books", noPrefetch: true },
-  { id: "books-shelves", label: "Shelves", href: "/books/shelves", icon: "library", enabled: false, group: "medium", medium: "books" },
+  // Every books shelf, and each shelf's page under it (task 5.1).
+  { id: "books-shelves", label: "Shelves", href: "/books/shelves", icon: "library", enabled: true, group: "medium", medium: "books" },
   // Every year's whole reading list, ranked (task 3.4b, D-122). Never prefetched, as Plan: its chunks would ride on every books page.
   {
     id: "books-top", label: "Top", sideLabel: "Top books", href: "/books/top", icon: "list-ordered", enabled: true,

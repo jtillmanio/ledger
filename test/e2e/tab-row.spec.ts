@@ -72,7 +72,8 @@ test("with every books item enabled the row scrolls inside itself and the page d
   await page.goto("/books/list");
   await hydrated(page.locator("header.bar"));
   const all = tabRowItems(NAV_ITEMS.map((i) => ({ ...i, enabled: true })), "books");
-  expect(all.length).toBeGreaterThan(tabRowItems(ITEMS, "books").length);
+  // Since Shelves (task 5.1) every books item is on, so this is the row as drawn; a later item adds to it.
+  expect(all.length).toBeGreaterThanOrEqual(tabRowItems(ITEMS, "books").length);
   // NAV_ITEMS is compiled in and a disabled item has no route, so the row is drawn with every
   // item the way the rest of the page draws one: the same classes, no test-only route or switch.
   await row(page).evaluate((nav, items) => {
