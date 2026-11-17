@@ -216,7 +216,7 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
                 <details className="stopped">
                   <summary>Stopped <span className="mono n">{stopped.length}</span></summary>
                   <div className="rows">
-                    {stopped.map((b) => <StatusBookRow key={b.id} book={b} control={control(b)} />)}
+                    {stopped.map((b) => <StatusBookRow key={b.id} book={b} reason={b.reason} control={control(b)} />)}
                   </div>
                 </details>
               )}

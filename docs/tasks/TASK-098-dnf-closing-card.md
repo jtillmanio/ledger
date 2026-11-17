@@ -79,7 +79,7 @@ Approved 2026-11-17 (owner: kept whole, not split, though it is over 8 files: th
 3. `useBookWrite` answers `{ written, amend }`: `amend(note)` pushes the replacement entry (same label, detail *Reason saved*), whose undo sends `{ change, note }`, runs `onUndone`, refreshes.
 4. `src/components/ClosingCard.tsx` (new): a labelled one-line *Reason* field (focused, prefilled with the note), *Save* (`btn sec sm`, grey) and *Skip* (grey); Esc = Skip; focus back to the DNF button either way; unchanged text writes nothing; a failed note save keeps the card open with the error and *Retry* (R1-07), the DNF and its Undo left alone. Built so 5.4 can add a rating.
 5. `BookStatus.tsx`: DNF chosen from another status saves at once, then opens the card. (DNF is set nowhere else.)
-6. `booksDone` answers `note` for DNF rows only (`CASE WHEN st.status = 'dnf' THEN st.notes END`); `StatusBookRow` takes `reason` and draws a grey `.row-reason` under the title, nothing when null; `src/app/books/status/page.tsx` passes it; `src/app/globals.css` styles the card and the line.
+6. `booksDone` answers the note as `reason` for DNF rows only (`CASE WHEN st.status = 'dnf' THEN st.notes END`); `StatusBookRow` takes `reason` and draws a grey `.row-reason` under the title, nothing when null; `src/app/books/status/page.tsx` passes it; `src/app/globals.css` styles the card and the line.
 7. `design/mockups.html`: the card in `blist` (phone, desktop), the reason on a *Stopped* row in `status`; `design/mockups-index.md` names them.
 
 **Files** (not in *Files likely touched*: `src/db/writes.ts`, `src/app/api/progress/book/route.ts` for the shared undo and the note in the answer; `src/app/books/status/page.tsx`, `src/app/globals.css`; `test/dnf-reason.test.ts`)

@@ -21,7 +21,18 @@ export const NAMES: Record<BookStatusName, string> = {
 /** What the server answered to a save. */
 export type BookWritten = {
   change: unknown; finish: StoredDate | null; start: StoredDate; format: string | null; offer: FinishOffer | null;
+  /** The book's note, which a status write leaves as it was: the closing card opens on it (task 5.5). */
+  note: string | null;
 };
+
+/**
+ * Saves the book's note on top of the status just written (task 5.5: a DNF's reason). The
+ * status's toast is replaced by one entry whose Undo takes back the note and the status
+ * together (one transaction, `DELETE /api/progress/book` with `note`). Rejects, having
+ * written nothing and left the status's toast alone, when the note didn't save. The
+ * caller refreshes the page, as it held the status write's refresh while it asked.
+ */
+export type WithNote = (text: string) => Promise<void>;
 
 export type BookWriteArgs = {
   bookId: string;
@@ -48,8 +59,8 @@ export type BookWriteArgs = {
  * write through it, so the toast's copy and the undo live in one place.
  *
  * Resolves `{ refused }` when the server answers 400 (nothing was written;
- * `refused` is its reason) and `{ written }` when it saved. Anything else that
- * goes wrong throws, and nothing was written.
+ * `refused` is its reason) and `{ written, withNote }` when it saved. Anything else that
+ * goes wrong throws, and nothing was written. `withNote` is the closing card's save (task 5.5).
  */
 export function useBookWrite() {
   const router = useRouter();
@@ -57,7 +68,7 @@ export function useBookWrite() {
   const sorter = useRankSorter();
   return useCallback(async ({
     bookId, status, name, was, finish, start, onSaved, onUndone, refresh = true,
-  }: BookWriteArgs): Promise<{ refused: string } | { written: BookWritten }> => {
+  }: BookWriteArgs): Promise<{ refused: string } | { written: BookWritten; withNote: WithNote }> => {
     const res = await fetch("/api/progress/book", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -83,24 +94,38 @@ export function useBookWrite() {
         readId: appended, bookId, title: name, year, tag: "Just finished", opener, rest: follows, release: hold(),
       }),
     }] : [];
+    const label = `${name}: ${NAMES[status]}`;
+    /** The status's undo, and with `note` the note written on top of it, in one request. */
+    const undo = (note?: unknown) => async () => {
+      const back = await fetch("/api/progress/book", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ change: written.change, ...(note !== undefined && { note }) }),
+      });
+      if (!back.ok) throw new Error("undo failed");
+      // The read is gone: a sorter placing it closes, having written nothing.
+      if (appended !== null) sorter?.cancel(appended);
+      onUndone?.();
+      router.refresh();
+    };
     push({
-      label: `${name}: ${NAMES[status]}`,
+      label,
       detail: start ? `Started ${finishWords(start)}`
         : status === "read" && finish ? `Finished ${finishWords(finish)}` : `Was ${NAMES[was]}`,
-      undo: async () => {
-        const back = await fetch("/api/progress/book", {
-          method: "DELETE",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ change: written.change }),
-        });
-        if (!back.ok) throw new Error("undo failed");
-        // The read is gone: a sorter placing it closes, having written nothing.
-        if (appended !== null) sorter?.cancel(appended);
-        onUndone?.();
-        router.refresh();
-      },
+      undo: undo(),
       offer: [...rank, ...follows],
     });
-    return { written };
+    const withNote: WithNote = async (text) => {
+      const res = await fetch("/api/progress/book/note", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ bookId, note: text }),
+      });
+      if (!res.ok) throw new Error("note failed");
+      const { change: note } = (await res.json()) as { change: { note: string | null } };
+      // One toast at a time: this entry replaces the status's, and its Undo takes back both.
+      push({ label, detail: note.note === null ? "Reason cleared" : "Reason saved", undo: undo(note) });
+    };
+    return { written, withNote };
   }, [router, push, hold, sorter]);
 }

@@ -140,12 +140,14 @@ const asFinish = (d: { finishedOn: string | null; precision: Precision }) =>
  * and universe (task 2.2h, D-117; `followFinish`), in this transaction, so a
  * follow that can't be written leaves the book as it was.
  *
- * Answers null for a book that is missing or removed; otherwise the change, and
- * the start this write left on the read in progress or the read (`start`).
+ * Answers null for a book that is missing or removed; otherwise the change, the
+ * start this write left on the read in progress or the read (`start`), and the
+ * book's note, which no status write changes (`note`; task 5.5's closing card
+ * opens on it).
  */
 export async function saveBookStatus(
   userId: string, input: BookStatusInput, now = new Date(),
-): Promise<(BookStatusChange & { follows: FinishFollow[]; start: Finish }) | null> {
+): Promise<(BookStatusChange & { follows: FinishFollow[]; start: Finish; note: string | null }) | null> {
   const { bookId, status, finish, start, rating } = input;
   if (status === "read" && !finish && !start) throw new Error("saveBookStatus: read needs a finish date");
   if (start && !IN_PROGRESS.includes(status) && status !== "read") {
@@ -157,7 +159,7 @@ export async function saveBookStatus(
     const [before] = await tx
       .select({
         status: bookStatus.status, finishedOn: bookStatus.finishedOn, precision: bookStatus.finishedOnPrecision,
-        startedOn: bookStatus.startedOn, startPrecision: bookStatus.startedOnPrecision,
+        startedOn: bookStatus.startedOn, startPrecision: bookStatus.startedOnPrecision, notes: bookStatus.notes,
       })
       .from(bookStatus).where(mine);
     // The start of the read in progress, if one is held.
@@ -233,11 +235,14 @@ export async function saveBookStatus(
       ? await followFinish(tx, userId, bookId) : [];
     return {
       bookId, status,
-      prior: before
-        ? { ...before, precision: before.precision as Precision, startPrecision: before.startPrecision as Precision }
-        : null,
+      prior: before ? {
+        status: before.status, finishedOn: before.finishedOn, precision: before.precision as Precision,
+        startedOn: before.startedOn, startPrecision: before.startPrecision as Precision,
+      } : null,
       appended, format, edited, backfilled, follows,
       start: status === "read" || inProgress ? kept : held ?? kept,
+      // A status write leaves the note alone: the closing card opens on it (task 5.5).
+      note: before?.notes ?? null,
     };
   });
 }
@@ -258,14 +263,21 @@ export async function saveBookStatus(
  * back under a plan row it has gained since (task 1.21), or take the status
  * row of a book that had none, and has been planned since, out from under its
  * plan row (task 2.3).
+ *
+ * `note` (task 5.5): the reason the closing card wrote after a DNF, as
+ * `saveBookNote` answered it. Its earlier note comes back in this transaction,
+ * before the status, so the two are undone together or not at all; a note
+ * changed since refuses the whole undo. It must be the same book's.
  */
-export async function undoBookStatus(userId: string, change: BookStatusChange): Promise<boolean> {
+export async function undoBookStatus(userId: string, change: BookStatusChange, note?: NoteChange): Promise<boolean> {
   const { bookId, status, prior, appended, edited, backfilled, follows = [] } = change;
+  if (note && note.bookId !== bookId) throw new Error("undoBookStatus: the note is another book's");
   return db.transaction(async (tx) => {
     if (!(await lockBook(tx, bookId))) return false;
-    const [now] = await tx.select({ status: bookStatus.status }).from(bookStatus)
+    const [now] = await tx.select({ status: bookStatus.status, notes: bookStatus.notes }).from(bookStatus)
       .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId)));
     if (now?.status !== status) return false;
+    if (note && now.notes !== note.note) return false;
     // Back to Unlisted, or to no row at all, under a plan row would leave a planned book off your list (tasks 1.21, 2.3).
     if (prior === null || prior.status === "unlisted") {
       const [planned] = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
@@ -282,6 +294,12 @@ export async function undoBookStatus(userId: string, change: BookStatusChange): 
       if (ranked.length > 0) return false;
     }
 
+    // Nothing refuses past here, and returning false would still commit: the writes start now.
+    // The reason's note first, so a book that had no row still loses it only with no note on it (below).
+    if (note) {
+      await tx.update(bookStatus).set({ notes: note.prior })
+        .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId)));
+    }
     for (const id of [appended, backfilled]) {
       if (id !== null) await tx.delete(readEvents).where(eq(readEvents.id, id));
     }

@@ -322,6 +322,19 @@ describe("books Up next, Done and the level filter (roadmap 1.9 check)", () => {
       ["fin", "read", 2026], ["old", "read", 2024], ["nodate", "read", null], ["quit", "dnf", 2026],
     ]);
   });
+
+  it("a Stopped book carries its note as the reason; one with none, and a Read book's note, carry null (task 5.5)", async () => {
+    await book("why"); await status("why", "dnf");
+    await book("bare"); await status("bare", "dnf");
+    await book("kept"); await status("kept", "read", "2026-05-01");
+    await sql`UPDATE book_status SET notes = 'Lost interest at the midpoint' WHERE book_id = 'why'`;
+    await sql`UPDATE book_status SET notes = 'Reread the epilogue.' WHERE book_id = 'kept'`;
+
+    const done = await q.booksDone(USER);
+    expect(Object.fromEntries(done.map((b) => [b.id, b.reason]))).toEqual({
+      why: "Lost interest at the midpoint", bare: null, kept: null,
+    });
+  });
 });
 
 // Task 4.5b (D-124, AC-2): On deck by genre. The query gives each On deck book its top-level genres

@@ -8,7 +8,8 @@ import FinishDate, {
   dateWords, finishReason, initialFinish, localToday, storedDay, toChoice, type DateFor, type FinishValue,
 } from "@/components/FinishDate";
 import { Headphones } from "@/components/nav/Icons";
-import { NAMES, useBookWrite, type BookStatusName, type BookWritten } from "@/components/useBookWrite";
+import ClosingCard from "@/components/ClosingCard";
+import { NAMES, useBookWrite, type BookStatusName, type BookWritten, type WithNote } from "@/components/useBookWrite";
 import { startAfterFinish } from "@/lib/finish-date";
 import { listenGlyph, readWhen, type Precision } from "@/lib/format";
 
@@ -144,6 +145,8 @@ export default function BookStatus({
   /** The server's reason for refusing a save (a 400), shown under the control. */
   const [refused, setRefused] = useState<string | null>(null);
   const [showReads, setShowReads] = useState(false);
+  /** The DNF's closing card (task 5.5): the note it opens on, and the write that saves the reason. */
+  const [closing, setClosing] = useState<{ note: string | null; withNote: WithNote } | null>(null);
   const readButton = useRef<HTMLButtonElement>(null);
   const startedButton = useRef<HTMLButtonElement>(null);
   const finishedButton = useRef<HTMLButtonElement>(null);
@@ -219,7 +222,7 @@ export default function BookStatus({
 
   async function write(
     next: Status, dates: { finish?: FinishValue; start?: FinishValue } = {}, name = title, hold = false,
-  ): Promise<BookWritten | null> {
+  ): Promise<{ written: BookWritten; withNote: WithNote } | null> {
     setSaving(true);
     setFailed(false);
     setRefused(null);
@@ -237,8 +240,9 @@ export default function BookStatus({
         onUndone: () => {
           if (before.status === "unlisted") refocus = bookId;
           setSaved(before);
-          // The start offered after *Reading* has nothing left to set once the status is undone.
+          // The start offered after *Reading*, and the DNF's closing card, have nothing left to set once the status is undone.
           setEditing((e) => (e?.kind === "one" && e.fresh ? null : e));
+          setClosing(null);
           void reload();
         },
       });
@@ -247,7 +251,7 @@ export default function BookStatus({
         setRefused(`Not saved: ${done.refused}.`);
         return null;
       }
-      return done.written;
+      return done;
     } catch {
       setFailed(true);
       return null;
@@ -276,6 +280,7 @@ export default function BookStatus({
 
   async function choose(next: Status, button: HTMLButtonElement) {
     if (saving) return;
+    if (closing) closeCard(false);
     if (next === "read") {
       editBoth();
       return;
@@ -285,12 +290,24 @@ export default function BookStatus({
     if (next === saved.status) return;
     // Entering Reading or Listening stamps today; switching between the two keeps the start.
     const begins = IN_PROGRESS.includes(next) && !IN_PROGRESS.includes(saved.status);
-    // The page waits while *Started* is offered, so the row is still here to answer it.
-    const written = await write(next, undefined, undefined, begins);
-    if (written && begins) {
-      statusButton.current = button;
-      setEditing({ kind: "one", what: "start", value: startValue(written.start), opener: "status", fresh: true });
+    // DNF asks why (task 5.5).
+    const stops = next === "dnf";
+    // The page waits while *Started* or the closing card is offered, so the row is still here to answer it.
+    const done = await write(next, undefined, undefined, begins || stops);
+    if (!done) return;
+    statusButton.current = button;
+    if (begins) {
+      setEditing({ kind: "one", what: "start", value: startValue(done.written.start), opener: "status", fresh: true });
+    } else if (stops) {
+      setClosing({ note: done.written.note, withNote: done.withNote });
     }
+  }
+
+  /** Close the DNF's closing card: the page held its refresh while it was open. Focus goes back to DNF. */
+  function closeCard(focus = true) {
+    setClosing(null);
+    router.refresh();
+    if (focus) statusButton.current?.focus();
   }
 
   async function save() {
@@ -386,6 +403,7 @@ export default function BookStatus({
           aria-expanded={open} aria-controls={open ? panelId : undefined} onClick={() => {
             readTitle();
             if (open && editing) closeEditor(false);
+            if (open && closing) closeCard(false);
             setOpen((o) => !o);
           }}>
           <span className="sr-only">Status: </span>{badge(saved)}
@@ -410,6 +428,11 @@ export default function BookStatus({
             </button>
           ))}
         </div>
+        {/* DNF asks why (task 5.5): the reason is the book's note, and the toast's Undo takes back both. */}
+        {closing && (
+          <ClosingCard label="Why did you stop?" initial={closing.note}
+            onSave={closing.withNote} onClose={() => closeCard()} />
+        )}
         {/* The date line (task 1.17): each date a button named with the date it holds. */}
         {dated && (
           <p className="date-line">

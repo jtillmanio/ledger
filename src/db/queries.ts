@@ -769,12 +769,15 @@ export type DoneBook = StatusBook & {
   status: "read" | "dnf"; year: number | null;
   finished_on: string | null; finished_on_precision: Precision;
   started_on: string | null; started_on_precision: Precision; days_taken: number | null;
+  /** A stopped book's note, why it was stopped (task 5.5); null for a Read book and a DNF with none. */
+  reason: string | null;
 };
 
 /**
  * *Done* for books (task 1.9): `read` books, newest finish first and the undated
  * last (S-14), plus the `dnf` ones the screen folds under *Stopped*. The year is
  * the finish year, `extract(year FROM finished_on)`, never a stored column (D-21).
+ * A stopped book carries its note as `reason` (task 5.5): the closing card writes it.
  */
 export async function booksDone(userId: string) {
   return sql<DoneBook[]>`
@@ -789,7 +792,8 @@ export async function booksDone(userId: string) {
            COALESCE(CASE WHEN st.status = 'read' THEN lr.started_on_precision ELSE st.started_on_precision END, 'none')
              AS started_on_precision,
            CASE WHEN lr.started_on_precision = 'exact' AND lr.finished_on_precision = 'exact'
-                THEN lr.finished_on - lr.started_on END AS days_taken
+                THEN lr.finished_on - lr.started_on END AS days_taken,
+           CASE WHEN st.status = 'dnf' THEN st.notes END AS reason
     FROM book_status st
     JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
     LEFT JOIN authors a     ON a.id = b.author_id
