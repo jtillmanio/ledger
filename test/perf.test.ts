@@ -4,8 +4,8 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  aggregateRoute, apiPath, baselinePr, baselineRun, filesWithSecrets, findComment, gateProblems, MARKER,
-  measurable, median, mergeMetrics, renderComment, scrubLhr, sessionCookie, summariseLhr, unbudgeted, unchangedApp,
+  aggregateRoute, apiPath, baselinePr, baselineRun, filesWithSecrets, findComment, gateProblems, lighthouseArgs, MARKER,
+  measurable, measureRuns, median, mergeMetrics, renderComment, scrubLhr, sessionCookie, summariseLhr, unbudgeted, unchangedApp,
   type LoadSummary, type MeasuredRoute, type RouteBudget,
 } from "../scripts/perf/lib/perf.mjs";
 import { ROUTES } from "../scripts/perf/routes.mjs";
@@ -13,7 +13,7 @@ import { ROUTES } from "../scripts/perf/routes.mjs";
 const BASE = "https://ledger-abc123xyz-justin-tillman.vercel.app";
 
 /** A Lighthouse report cut down to the fields the job reads. */
-function lhr({ path = "/comics", requests = [] as { url: string; type: string; size: number; mime?: string }[], cls = 0.01, a11y = 0.95 } = {}) {
+function lhr({ path = "/comics", requests = [] as { url: string; type: string; size: number; mime?: string; status?: number }[], cls = 0.01, a11y = 0.95 } = {}) {
   return {
     finalDisplayedUrl: BASE + path,
     configSettings: { extraHeaders: { Cookie: "rt_session=owner.0123abcd", "x-vercel-protection-bypass": "bypass-secret-value" } },
@@ -28,7 +28,7 @@ function lhr({ path = "/comics", requests = [] as { url: string; type: string; s
         details: {
           items: [
             { url: BASE + path, resourceType: "Document", transferSize: 10_000, mimeType: "text/html", networkRequestTime: 100, networkEndTime: 700 },
-            ...requests.map((r) => ({ url: r.url.startsWith("http") ? r.url : BASE + r.url, resourceType: r.type, transferSize: r.size, mimeType: r.mime ?? "" })),
+            ...requests.map((r) => ({ url: r.url.startsWith("http") ? r.url : BASE + r.url, resourceType: r.type, transferSize: r.size, mimeType: r.mime ?? "", statusCode: r.status })),
           ],
         },
       },
@@ -38,7 +38,7 @@ function lhr({ path = "/comics", requests = [] as { url: string; type: string; s
 
 const load = (over: Partial<LoadSummary> = {}): LoadSummary => ({
   landedOn: "/comics", ttfb: 100, responseMs: 600, fcp: 900, lcp: 1400, tbt: 80, cls: 0.01, a11y: 95,
-  docRscBytes: 12_000, jsBytes: 140_000, requests: 15, apiRequests: [], ...over,
+  docRscBytes: 12_000, jsBytes: 140_000, requests: 15, apiRequests: [], rscSent: 0, ...over,
 });
 const route = (loads: LoadSummary[], over: Partial<MeasuredRoute> = {}): MeasuredRoute =>
   ({ path: "/comics", loads, taps: [{ ms: 900 }, { ms: 500 }, { ms: 450 }], ...over });
@@ -70,6 +70,78 @@ describe("summariseLhr", () => {
     expect(s.apiRequests).toEqual(["/api/export"]);
     expect(apiPath(`${BASE}/api/health`)).toBe("/api/health");
     expect(apiPath(`${BASE}/apis`)).toBeNull();
+  });
+});
+
+describe("one pass per route (task 0.14)", () => {
+  it("measures each route once unless RUNS says otherwise", () => {
+    expect(measureRuns({})).toBe(1);
+    expect(measureRuns({ RUNS: "" })).toBe(1);
+    // Three of each, for a hand comparison with the runs before 0.14.
+    expect(measureRuns({ RUNS: "3" })).toBe(3);
+    expect(() => measureRuns({ RUNS: "0" })).toThrow(/RUNS/);
+    expect(() => measureRuns({ RUNS: "two" })).toThrow(/RUNS/);
+  });
+
+  it("measure.mjs takes the count from measureRuns, for the Lighthouse loads and the tap runs alike", () => {
+    const src = readFileSync("scripts/perf/measure.mjs", "utf8");
+    expect(src).toMatch(/\nconst RUNS = measureRuns\(env\);\n/);
+    expect(src).not.toMatch(/env\.RUNS/);
+    const loads = src.slice(src.indexOf("for (const route of routes)"));
+    expect(loads).toMatch(/for \(let n = 1; n <= RUNS; n\+\+\) loads\.push\(lighthouse\(route, n\)\)/);
+    const taps = src.slice(src.indexOf("async function taps("), src.indexOf("const browser ="));
+    expect(taps).toMatch(/for \(let n = 1; n <= RUNS; n\+\+\)/);
+    expect(src).toMatch(/runs: RUNS/); // metrics.json says how many
+  });
+});
+
+describe("no prefetch in the Lighthouse load (task 0.14)", () => {
+  const args = lighthouseArgs({ url: `${BASE}/comics`, headerFile: "h/signed-in.json", outputPath: "raw/comics-1.json", chromeFlags: ["--headless=new", "--no-sandbox"] });
+
+  it("blocks Next's RSC requests in the Lighthouse load, and keeps 0.10's settings", () => {
+    expect(args[0]).toBe(`${BASE}/comics`);
+    expect(args).toContain("--blocked-url-patterns=*_rsc=*");
+    expect(args).toEqual(expect.arrayContaining([
+      "--form-factor=mobile", "--throttling-method=devtools", "--only-categories=performance,accessibility",
+      "--extra-headers=h/signed-in.json", "--output=json", "--output-path=raw/comics-1.json",
+      "--chrome-flags=--headless=new --no-sandbox",
+    ]));
+  });
+
+  it("measure.mjs runs Lighthouse with those arguments, and the tap run blocks nothing", () => {
+    const src = readFileSync("scripts/perf/measure.mjs", "utf8");
+    const lighthouse = src.slice(src.indexOf("function lighthouse("), src.indexOf("async function phoneTab("));
+    expect(lighthouse).toMatch(/spawnSync\(process\.execPath, \[lighthouseCli, \.\.\.lighthouseArgs\(/);
+    // The block is written once, in lighthouseArgs: nothing in measure.mjs adds another.
+    expect(src).not.toMatch(/blocked-url-patterns|_rsc=\*/);
+    // The tap run waits for every prefetch on purpose: that is where a prefetched route handler is caught.
+    const tap = src.slice(src.indexOf("async function phoneTab("), src.indexOf("const browser ="));
+    expect(tap).not.toMatch(/setBlockedURLs|setRequestInterception|blockedUrl|lighthouseArgs|abort\(|\.route\(|Network\./i);
+  });
+
+  it("leaves a blocked request out of the count, and still names a route handler it asked for", () => {
+    const s = summariseLhr(lhr({
+      requests: [
+        { url: "/_next/static/chunks/a.js", type: "Script", size: 70_000, status: 200 },
+        // How Lighthouse 13 logs a request Chrome blocked: listed, status -1, nothing transferred.
+        { url: "/books?_rsc=x1", type: "Fetch", size: 0, status: -1 },
+        { url: "/api/export?_rsc=y", type: "Fetch", size: 0, status: -1 },
+      ],
+    }));
+    expect(s.requests).toBe(2);
+    expect(s.rscSent).toBe(0);
+    expect(s.apiRequests).toEqual(["/api/export"]);
+    expect(gateProblems({ comics: aggregateRoute(route([s])) }, BUDGET))
+      .toEqual([expect.stringMatching(/^comics: requested the route handler \/api\/export/)]);
+  });
+
+  it("fails a route whose Lighthouse load sent an RSC request past the block", () => {
+    const s = summariseLhr(lhr({ requests: [{ url: "/books?_rsc=x1", type: "Fetch", size: 300, mime: "text/x-component", status: 200 }] }));
+    expect(s.rscSent).toBe(1);
+    expect(s.requests).toBe(2);
+    expect(gateProblems({ comics: aggregateRoute(route([s])) }, BUDGET))
+      .toEqual([expect.stringMatching(/^comics: a Lighthouse load sent 1 RSC request \(_rsc=\) past the block/)]);
+    expect(gateProblems({ comics: aggregateRoute(route([load()])) }, BUDGET)).toEqual([]);
   });
 });
 
@@ -164,6 +236,15 @@ describe("renderComment", () => {
     expect(md).toMatch(/No baseline/);
   });
 
+  it("says one run per route, and shows each number once, when it measured once (task 0.14)", () => {
+    const one = { ...current, runs: 1, routes: { comics: aggregateRoute(route([load()], { taps: [{ ms: 900 }] })) } };
+    const md = renderComment({ current: one, baseline: null, budget: BUDGET, problems: [] });
+    expect(md).toContain("devtools throttling (Slow 4G, 4× CPU) · one run per route");
+    expect(md).not.toMatch(/median/i);
+    expect(md).toContain("| `/comics` | 100 ms | 600 ms | 900 ms | 1.40 s | 80 ms | 900 ms |");
+    expect(md).not.toContain("first hit /");
+  });
+
   it("compares the timings with main's last run", () => {
     const baseline = { pr: 47, at: "2026-10-05T12:00:00Z", routes: { comics: { median: { lcp: 2000 }, tap: { median: 700 } } } };
     const md = renderComment({ current, baseline, budget: BUDGET, problems: [] });
@@ -211,6 +292,11 @@ describe("mergeMetrics (one job per route)", () => {
   it("keeps a route the list no longer names, last, and refuses nothing measured", () => {
     expect(Object.keys(mergeMetrics([part("old", "a"), part("login", "b")], ["login"]).routes)).toEqual(["login", "old"]);
     expect(() => mergeMetrics([], ["login"])).toThrow(/no route was measured/);
+  });
+
+  it("keeps the run count, so the merged metrics.json says runs: 1 (task 0.14)", () => {
+    const one = (id: string, at: string) => ({ ...part(id, at), runs: 1 });
+    expect(mergeMetrics([one("comics", "b"), one("login", "a")], ["login", "comics"]).runs).toBe(1);
   });
 });
 

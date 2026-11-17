@@ -259,6 +259,10 @@ route handler check, CLS and accessibility stay as 0.10 built them.
   links.
 - **After 1.30**, so that 1.30's budgets land first and this entry measures from
   them.
+- *From TASK-112 (0.14, PR #280):* since 0.14 a Lighthouse load blocks the RSC
+  prefetches and counts neither them nor their bytes (D-160), so this entry's
+  measurement is prefetch-free. A growth check against a baseline from before
+  0.14 shows a drop, not growth.
 
 **Check:** (proposed; the owner agrees it by merging or edits it first)
 `test/perf.test.ts` covers the growth gate on fixture metrics: a route 3,001
@@ -271,6 +275,56 @@ holds the shared JS once and `test/perf.test.ts` holds the table in
 5 KB or more on one route fails the Lighthouse job with that route named, and
 adding the label turns the job green with no new push. The job passes on this
 entry's own PR, and `lighthouse-metrics` is kept 90 days.
+
+### ☑ 0.14 A measured deploy costs a third of what it did · M
+Owner, 2026-11-17 (D-158). The Vercel account's Fluid Active CPU reached about
+3h33m of the Hobby plan's 4 h in 30 days, shared with another project, and
+ledger's half was Lighthouse: about 22 s per measured deploy (Nov 16,
+7am–7pm: 15 deploys). `LIGHTHOUSE_MODE` is off until each run is cheap.
+Each route costs `RUNS` (3) Lighthouse loads plus `RUNS` tap runs, and each
+tap run loads its source page fresh and waits for every prefetch, so about 78
+full page loads a deploy. Each load also fires Next's `<Link>` prefetches (the
+nav's four links rendered 2.3K times each in that window, `/comics/[runId]`
+4.6K: about 60% of the CPU) and, with no favicon in the app, a `/_not-found`
+render (781).
+
+- **One pass per route.** `RUNS` is 1: one Lighthouse load and one tap run.
+  Bytes, requests, CLS, accessibility and route handlers are what the job
+  gates; timings are reported, never gated.
+- **No prefetch in the Lighthouse load.** Its Next RSC prefetch requests
+  (`_rsc=`) are blocked. The tap run keeps them: it waits for them on purpose,
+  and it is where a route handler requested by a prefetch is caught.
+- **No render for the browser's own requests.** A placeholder static icon and a
+  static `robots.txt` (disallow all), outside the proxy matcher, so neither
+  renders `/_not-found` nor redirects to `/login`.
+
+**Check:** a hand run on this entry's PR (`gh workflow run lighthouse.yml --ref
+<branch>`) measures every route with one Lighthouse load and one tap run and
+passes. No Lighthouse load's network log holds a `_rsc=` request. On a
+throwaway branch, a `<Link href="/api/export">` put back in the nav still fails
+the job with that request named. On the preview, `/favicon.ico` (or the app
+icon) and `/robots.txt` answer 200 with no redirect to `/login`. Vercel
+Observability shows no `/_not-found` invocation during the run, and the run's
+Active CPU is a third or less of a 3-run measurement.
+
+### ☐ 0.14b Automatic runs are debounced and capped · M
+Owner, 2026-11-17 (D-158). Pushes in quick succession each get measured, and a
+busy month has no ceiling (37 measured deploys on 2026-11-10). Hand runs are
+the owner's decision and always measure.
+
+- **Debounce.** An automatic run waits a few minutes after the preview deploys,
+  then measures only if its commit is still the PR's head; otherwise it says
+  why and loads nothing.
+- **Monthly cap.** Automatic measured runs stop once a calendar month's count
+  reaches the repo variable `LIGHTHOUSE_MONTHLY_CAP` (a default when unset),
+  and the PR comment says so. A hand run measures past it.
+- **Nothing here turns `LIGHTHOUSE_MODE` on.**
+
+**Check:** tests pin both rules: a commit that is no longer the PR's head after
+the wait is not measured, and with a cap of N the next automatic run that month
+is skipped, with a PR comment giving the reason. A `dry_run` hand run on the PR
+prints what an automatic run would decide (wait and cap) and loads no page.
+Nothing turns `LIGHTHOUSE_MODE` on.
 
 ---
 

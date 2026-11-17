@@ -71,4 +71,18 @@ describe("proxy (the passcode gate)", () => {
     expect(out.status).toBe(307);
     expect(out.headers.get("location")).toBe("http://ledger.test/login?next=%2Fapi%2Fcalibre%2Fsync");
   });
+
+  it("leaves the browser's own requests, the icon and robots.txt, to static files outside the gate (task 0.14)", async () => {
+    const { config } = await import("../src/proxy");
+    const gated = new RegExp(`^${config.matcher[0].source}$`);
+    // Every page load asks for the icon; gated, robots.txt redirects to /login,
+    // and with no icon the request renders /_not-found on Vercel.
+    expect(gated.test("/favicon.ico")).toBe(false);
+    expect(gated.test("/robots.txt")).toBe(false);
+    const { readFileSync } = await import("node:fs");
+    expect(readFileSync("public/robots.txt", "utf8")).toMatch(/^User-agent: \*\nDisallow: \/\n$/);
+    // An ICO file: reserved 0, type 1 (icon), at least one image.
+    const ico = readFileSync("public/favicon.ico");
+    expect([ico.readUInt16LE(0), ico.readUInt16LE(2), ico.readUInt16LE(4) > 0]).toEqual([0, 1, true]);
+  });
 });

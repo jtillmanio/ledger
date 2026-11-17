@@ -30,6 +30,22 @@ test("a garbage session goes to /login for a page and gets 401 from a route hand
   }
 });
 
+test("signed out, the icon and robots.txt answer 200 with no trip to /login (task 0.14)", ONCE, async ({ browser, baseURL }) => {
+  const context = await browser.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+  try {
+    const robots = await context.request.get("/robots.txt", { maxRedirects: 0 });
+    expect(robots.status()).toBe(200);
+    expect(robots.headers()["content-type"]).toMatch(/^text\/plain/);
+    expect(await robots.text()).toMatch(/^Disallow: \/$/m);
+
+    const icon = await context.request.get("/favicon.ico", { maxRedirects: 0 });
+    expect(icon.status()).toBe(200);
+    expect(icon.headers()["content-type"]).toMatch(/^image\//);
+  } finally {
+    await context.close();
+  }
+});
+
 test("each route answers with its own screen", ONCE, async ({ page }) => {
   const h1 = page.getByRole("heading", { level: 1 });
 

@@ -60,8 +60,10 @@ After pushing, on GitHub:
   preview once it deploys and is green, and its PR comment shows nothing over
   budget. **Only while its switch is on** (D-158): the repo variable
   `LIGHTHOUSE_MODE` set to `on`; unset or anything else is off, and the gate is
-  skipped (say so in the PR). Each measured deploy spends about 22 s of the
-  Vercel account's 4 h a month of Active CPU. The owner runs it by hand with
+  skipped (say so in the PR). It measures each route with one Lighthouse
+  load (RSC prefetches blocked) and one tap run (task 0.14); before 0.14 a
+  measured deploy, three of each, spent about 22 s of the Vercel account's
+  4 h a month of Active CPU. The owner runs it by hand with
   `gh workflow run lighthouse.yml --ref <branch>` (that branch head's preview,
   reported on its PR), `-f url=<deployment>` or `-f dry_run=true` (plan only);
   Claude never flips the switch or dispatches a run unasked. It fails on a route handler requested during a load or prefetch,
