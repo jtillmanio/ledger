@@ -19,7 +19,7 @@ import ListLoading from "../../src/app/books/shelves/loading";
 import ShelfLoading from "../../src/app/books/shelves/[id]/loading";
 import { testSql, type TestSql } from "../db";
 import {
-  FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
+  FEEL, FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
 } from "./helpers";
 
 // Writes, and what it checks doesn't change with the width: runs once, in w390-light.
@@ -297,7 +297,7 @@ test("+ New shelf makes one and Undo removes it; a name in use writes nothing an
     Number((await sql`SELECT count(*) FROM shelves WHERE user_id = ${E2E_USER} AND lower(name) = lower(${FIVE.name})`)[0].count))).toBe(1);
 });
 
-test("the floor on the list, a shelf's page and an empty shelf: axe, contrast, 24px targets, nothing red, no sideways scroll; screenshots (AC-6)", FLOOR, async ({ page }, info) => {
+test("the floor on the list and a shelf's page: axe, contrast, 24px targets, nothing red, no sideways scroll; screenshots (AC-6)", FLOOR, async ({ page }, info) => {
   await open(page, "/books/shelves");
   await floor(page);
   await screenshot(page, info, "shelves-list");
@@ -311,8 +311,11 @@ test("the floor on the list, a shelf's page and an empty shelf: axe, contrast, 2
     expect(durations.every((d) => d.split(",").every((x) => parseFloat(x) === 0))).toBe(true);
   }
   await screenshot(page, info, "shelf-page");
+});
 
-  // A shelf with no books: one primary action, + Add to shelf, and no list.
+// An empty state is a feel-pass surface (design § 10): `@feel` runs it at 412px too, so the screenshots
+// cover every `ui.viewports` width.
+test("an empty shelf: one primary action, + Add to shelf, and no list; the floor; screenshots (AC-6)", FEEL, async ({ page }, info) => {
   await open(page, `/books/shelves/${EMPTY.id}`);
   const slate = page.locator(".slate");
   await expect(slate).toContainText("Nothing on this shelf yet");
