@@ -1963,6 +1963,8 @@ async function writeDestination(
   }
   if (destination.kind !== "shelf") throw new Error(`writeDestination: no destination ${destination.kind}`);
   const { shelfId } = destination;
+  // As every shelf write (task 5.1): a move reading the order waits for this add, and this add for it.
+  if (!(await lockShelf(tx, userId, shelfId))) throw new Error("writeDestination: the shelf was checked under the add lock");
   const there = new Set((await tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks)
     .where(and(eq(shelfBooks.shelfId, shelfId), inArray(shelfBooks.bookId, ids)))).map((r) => r.bookId));
   const [{ top }] = await tx.select({ top: sql<number>`COALESCE(MAX(${shelfBooks.ordinal}), 0)::int` })
@@ -2227,7 +2229,8 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
   if (toPlan && created.some((id) => !statused.includes(id))) return false;
   // Only Someday and the plan's levels (On deck, a year, a quarter) promote, and only books they placed and didn't create (task 1.21).
   if ([...promoted].some((id) => isShelf || !placed.has(id) || created.includes(id) || statused.includes(id))) return false;
-  if (isShelf && !(await ownShelf(tx, userId, destination.shelfId))) return false;
+  // Locked before its rows are read or deleted, in the order a move takes it (task 5.1): never the other way round.
+  if (isShelf && !(await lockShelf(tx, userId, destination.shelfId))) return false;
 
   // The statuses this add wrote: Someday's are its destination rows; a plan level names its own.
   // An Unlisted book it promoted had a status already: that goes back to `unlisted`, not away.

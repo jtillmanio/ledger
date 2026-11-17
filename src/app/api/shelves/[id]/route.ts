@@ -85,8 +85,8 @@ type Undo =
 
 const isId = (v: unknown): v is string => typeof v === "string" && v.length > 0 && v.length <= MAX_ID;
 const isText = (v: unknown): v is string => typeof v === "string" && v.length <= MAX_TEXT;
-/** What a change says was there before: anything stored, a longer text loaded earlier included. */
-const isStored = (v: unknown): v is string | null => v === null || typeof v === "string";
+/** A text a change says is stored: NULL, or what a write stores (trimmed, so never empty; at most MAX_TEXT). */
+const isStored = (v: unknown): v is string | null => v === null || (isText(v) && v !== "");
 const isOrder = (v: unknown): v is string[] => Array.isArray(v) && v.length > 0 && v.length <= MAX_BOOKS && v.every(isId);
 /** The object's keys are exactly these. */
 const keys = (o: Record<string, unknown>, ...names: string[]) =>
@@ -119,11 +119,11 @@ function parseUndo(raw: unknown, shelfId: string): Undo | undefined {
       ? { kind: "move", move: { shelfId, bookId: c.bookId, before: c.before, after: c.after } } : undefined;
   }
   if (keys(c, "shelfId", "bookId", "prior", "note")) {
-    return isId(c.bookId) && isStored(c.prior) && isStored(c.note) && (c.note === null || isText(c.note))
+    return isId(c.bookId) && isStored(c.prior) && isStored(c.note)
       ? { kind: "note", note: { shelfId, bookId: c.bookId, prior: c.prior, note: c.note } } : undefined;
   }
   if (keys(c, "shelfId", "prior", "description")) {
-    return isStored(c.prior) && isStored(c.description) && (c.description === null || isText(c.description))
+    return isStored(c.prior) && isStored(c.description)
       ? { kind: "description", description: { shelfId, prior: c.prior, description: c.description } } : undefined;
   }
   return undefined;

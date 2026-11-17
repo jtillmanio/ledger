@@ -378,6 +378,9 @@ describe("the routes refuse what they can't write (AC-6)", () => {
     ["two writes at once", { bookId: "dt1", note: "why", to: 2 }],
     ["an undo that names no change", { undo: { shelfId: "dark-tower" } }],
     ["an undo of another shelf's change", { undo: { shelfId: "favourites", prior: null, description: "x" } }],
+    ["an undo whose prior is empty (a write never stores one)", { undo: { shelfId: "dark-tower", prior: "", description: null } }],
+    ["an undo whose prior is past 10,000 characters",
+      { undo: { shelfId: "dark-tower", bookId: "dt1", prior: "x".repeat(10_001), note: null } }],
   ])("PATCH answers 400 for %s and writes nothing", async (_name, body) => {
     const before = await snapshot();
     expect((await patch("dark-tower", body)).status).toBe(400);
