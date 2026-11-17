@@ -1,7 +1,7 @@
 ---
 id: TASK-095
 title: 5.1 Shelves (1 of 3) — shelf context columns, creating and reordering shelves, and the shelf queries
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: opus
@@ -33,18 +33,18 @@ The Ledger can create a book shelf, put a book on a new shelf in one undoable wr
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:** lines, verbatim; this part proves their data clauses on the test database: the note's save and isolation, the new shelf's two rows, its Undo and the refused name. TASK-096 proves the reload and the rendering, TASK-097 the add sheet):
+- [x] AC-1 (roadmap **Check:** lines, verbatim; this part proves their data clauses on the test database: the note's save and isolation, the new shelf's two rows, its Undo and the refused name. TASK-096 proves the reload and the rendering, TASK-097 the add sheet):
 **Check (the context part):** a note saves, survives a reload and renders
 under its row; a shelf with no description renders no empty line; a note
 on one shelf does not appear on another shelf holding the same book.
 **Check (the new-shelf part):** *New shelf…* with a new name writes one
 `shelves` row and one `shelf_books` row; Undo leaves neither; a name
 already in use writes nothing and says why.
-- [ ] AC-2: Given a book on shelves A and B, when a note is saved on A, then `shelf_books` for (A, book) holds it and (B, book) holds NULL; saving an empty note stores NULL; its undo puts the prior note back. The same for a shelf's description.
-- [ ] AC-3: Given a new name, creating a shelf with a book writes exactly one `shelves` row (`kind = 'books'`, this user) and one `shelf_books` row at ordinal 1, and its undo deletes both; given a name already in use, the write answers a refusal naming the reason and leaves both tables unchanged.
-- [ ] AC-4: Given a shelf of four books at ordinals 1–4, moving the 4th to position 2 leaves ordinals 1–4 contiguous in the new order, and its undo restores the original order exactly.
-- [ ] AC-5: Given a shelf holding, in order, a read book, a soft-deleted book, a DNF book and four unread books, the shelf query's next three unread are the first three unread in shelf order, and its counts leave the soft-deleted book out.
-- [ ] AC-6: The new and changed routes answer 400 for a malformed body and 404 for a shelf that is missing or not this user's, writing nothing; a request without the passcode cookie gets the gate's answer.
+- [x] AC-2: Given a book on shelves A and B, when a note is saved on A, then `shelf_books` for (A, book) holds it and (B, book) holds NULL; saving an empty note stores NULL; its undo puts the prior note back. The same for a shelf's description.
+- [x] AC-3: Given a new name, creating a shelf with a book writes exactly one `shelves` row (`kind = 'books'`, this user) and one `shelf_books` row at ordinal 1, and its undo deletes both; given a name already in use, the write answers a refusal naming the reason and leaves both tables unchanged.
+- [x] AC-4: Given a shelf of four books at ordinals 1–4, moving the 4th to position 2 leaves ordinals 1–4 contiguous in the new order, and its undo restores the original order exactly.
+- [x] AC-5: Given a shelf holding, in order, a read book, a soft-deleted book, a DNF book and four unread books, the shelf query's next three unread are the first three unread in shelf order, and its counts leave the soft-deleted book out.
+- [x] AC-6: The new and changed routes answer 400 for a malformed body and 404 for a shelf that is missing or not this user's, writing nothing; a request without the passcode cookie gets the gate's answer.
 
 ## Out of scope
 
@@ -70,6 +70,14 @@ already in use writes nothing and says why.
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- TASK-096 draws on what this part built: `shelfList` / `shelfDetail`, `POST /api/shelves` and its `DELETE` undo, `PATCH /api/shelves/[id]` with `{ undo: change }`, and a move's `to` counting live books → docs/tasks/TASK-096-shelves-pages.md § Context
+- TASK-097 wires the `new_shelf` destination into `/api/books` and `/api/books/bulk`: `parseDestination` must refuse an empty name or one past `MAX_FIELD` with a 400 (the write throws on an empty one; schema review), the undo body carries `newShelf`, and both routes answer the `taken` refusal → docs/tasks/TASK-097-new-shelf-from-add-sheet.md § Context
+- Candidate decision: a shelf name in use is refused in the write under `addLock`, not by an index (owner's choice at the plan gate; approved for the log at close-out) → docs/review/decisions.md § D-159
+- Data model and architecture: the 5.1 columns are built, and `/api/shelves/[id]` is a route → docs/03-data-model.md § 4. Proposed additions (approved at plan); docs/02-architecture.md § 5. Routes and data access (approved at plan)
+- `test/schema-additions.test.ts` records the two approved columns in its column list (not in Files likely touched; spec review judged it justified) → not tracked: done in this PR
+- Schema review: `DELETE /api/shelves/<id>` removes any bare shelf of yours, not only one made this session; and `shelfNamed` collapses spaces in SQL but doesn't NFKC-fold a stored name → not tracked: accepted as is (a bare shelf holds nothing to lose; no shelf existed before this task, since extract and load write none and the app could make none)
+- Review round 1's lock-order and undo-`prior` notes → not tracked: done in this PR (commit f431abf)
 
 ## Plan
 
@@ -110,13 +118,17 @@ Approved by the owner 2026-11-16, with both columns and the name check in the wr
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 PASS (a first try from Git Bash ran vitest from `c:\`, every file "failed to find the runner"; rerun from `C:\`) | CI R1 PASS | rebased on main (#279 Lighthouse switch, #276 deps) | Verify R2 PASS
+- Spec R1 APPROVE (minor: an add to an existing shelf took no shelf lock) | Schema R1 APPROVE (5 minor: a lock-order deadlock in the add's undo, an undo's `prior` uncapped, `new_shelf` name validation for TASK-097, two accepted as is) → fixed in f431abf | Verify R3 PASS | Spec R2 APPROVE | Schema R2 APPROVE
+- Audit R1 PASS (46 of 46 shelf tests fail against the pre-task code; every AC proven)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (all PASS; R2 after the rebase, R3 after the review fixes)
+- Review rounds: 2 (spec and schema each APPROVE twice)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0 (the review fixes stayed inside the plan's files; `test/schema-additions.test.ts` gained two rows, see Follow-ups)

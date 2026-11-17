@@ -26,6 +26,7 @@ When adding a book, you can put it on a shelf that doesn't exist yet: name the s
 - **Not drawn yet:** the `add` frame (`powershell -NoProfile -File scripts/screen.ps1 add`) gains the picker's *New shelf…* with its name field and the refused name, in this PR (`ui.redrawFiles`).
 - Design: `design/mockups.html` § `add`; `docs/04-design.md` § 10 The UX floor.
 - Decisions: D-139; R1-07.
+- *From TASK-095 (5.1, PR #278):* the write is built, not wired. `addBook` and `addBooks` (`src/db/writes.ts`) take `{ kind: "new_shelf", name }`: one shelf, made in the add's transaction (a paste's lines all go on it, in order); the answer names it as `destination: { kind: "shelf", shelfId }` with `newShelf: true`, and `undoAddBooks` removes the place and then the shelf, refusing once the shelf has gained another book, a description or a follow. A name in use answers `{ ok: false, reason: "taken", name }` (the existing shelf's name; `POST /api/shelves` words it *You already have a shelf called Dark Tower.*). Still to do here: `parseDestination` (`src/lib/book-add.ts`) accepts `new_shelf` for `POST /api/books` and `/api/books/bulk`, refusing an empty name or one past `MAX_FIELD` with a 400 (the write throws on an empty one); the `DELETE /api/books` body and `undoAdd` carry `newShelf` back; and both add routes' `!result.ok` branches, which word only *gone* and *no shelf* today, answer `taken` with its reason (schema review of PR #278).
 
 ## Acceptance criteria
 
