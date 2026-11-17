@@ -7,14 +7,11 @@ import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { markRead, testSql, type TestSql } from "../db";
 import {
-  E2E_ISSUE_COUNT, E2E_LONG_LABEL, E2E_LONG_RUN_ID, E2E_READ_COUNT, E2E_RUN_ID, E2E_RUN_TITLE, contrastFailures,
-  expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour, toastSettled,
+  E2E_ISSUE_COUNT, E2E_LONG_LABEL, E2E_LONG_RUN_ID, E2E_READ_COUNT, E2E_RUN_ID, E2E_RUN_TITLE, FEEL, FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled, tokenColour,
 } from "./helpers";
 
 // Sets its own viewport: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
 const RUN = `/comics/${E2E_RUN_ID}`;
 const NEXT = E2E_READ_COUNT + 1; // the seeded run has its first three read, so #4 is next
 
@@ -62,7 +59,7 @@ async function stopTime(page: Page) {
 
 for (const where of ["dash", "run"] as const) {
   test.describe(where === "dash" ? "a dashboard" : "the run detail", () => {
-    test("the primary verb is in the bottom 96px, every target is 44px, and the bar's radius is 12px (AC-1, AC-2)", async ({ page }, testInfo) => {
+    test("the primary verb is in the bottom 96px, every target is 44px, and the bar's radius is 12px (AC-1, AC-2)", FEEL, async ({ page }, testInfo) => {
       await open(page, where);
       await expectNoHorizontalScroll(page);
       const vh = page.viewportSize()!.height;
@@ -98,7 +95,7 @@ for (const where of ["dash", "run"] as const) {
       await screenshot(page, testInfo, `thumb-${where}`);
     });
 
-    test("the slots are Mark · second · third, and the header is Search · second · Mark (AC-2)", async ({ page }) => {
+    test("the slots are Mark · second · third, and the header is Search · second · Mark (AC-2)", FLOOR, async ({ page }) => {
       await open(page, where);
       const names = (sel: string) => page.locator(sel).evaluateAll((els) =>
         els.map((el) => el.getAttribute("aria-label") ?? el.textContent?.trim()));
@@ -114,7 +111,7 @@ for (const where of ["dash", "run"] as const) {
       }
     });
 
-    test("the mark answers back: press, ✓ at 120ms and still at 700ms, the next label at 1.3s (AC-1)", async ({ page }, testInfo) => {
+    test("the mark answers back: press, ✓ at 120ms and still at 700ms, the next label at 1.3s (AC-1)", FEEL, async ({ page }, testInfo) => {
       await freeze(page);
       await open(page, where);
       const button = primary(page, where);
@@ -213,7 +210,7 @@ test("two marks in a row leave one toast, the first marked, and Undo takes back 
   await expect(page.locator(".toast")).toHaveCount(0);
 });
 
-test("a failed write reverts the verb at once and raises That didn't save with Retry (AC-1, R1-07)", CORE, async ({ page }, testInfo) => {
+test("a failed write reverts the verb at once and raises That didn't save with Retry (AC-1, R1-07)", async ({ page }, testInfo) => {
   await open(page, "run");
   await page.route("**/api/progress/issue", (route) => route.fulfill({ status: 500, body: "{}" }));
   await primary(page, "run").click();
@@ -226,7 +223,7 @@ test("a failed write reverts the verb at once and raises That didn't save with R
   expect(await readHere()).toEqual([1, 2, 3]);
 });
 
-test("the toast: pinned above the bar, a 12px rise, a 2px brand countdown over 8s, held on hover (AC-4)", async ({ page }, testInfo) => {
+test("the toast: pinned above the bar, a 12px rise, a 2px brand countdown over 8s, held on hover (AC-4)", FEEL, async ({ page }, testInfo) => {
   await open(page, "run");
   await primary(page, "run").click();
   const toast = page.locator(".toast");
@@ -294,7 +291,7 @@ test("the bar and the toast respect the safe area in the stylesheet itself (AC-4
   expect(rules.toast).toMatch(/var\(--actionbar-h\)\s*\+\s*8px\s*\+\s*env\(safe-area-inset-bottom/);
 });
 
-test("on a dashboard the toast clears the primary verb too, wherever the bar is drawn (AC-1)", async ({ page }) => {
+test("on a dashboard the toast clears the primary verb too, wherever the bar is drawn (AC-1)", FLOOR, async ({ page }) => {
   await open(page, "dash");
   test.skip(wide(page), "from 1024px a dashboard has no bar to clear");
   await primary(page, "dash").click();
@@ -305,7 +302,7 @@ test("on a dashboard the toast clears the primary verb too, wherever the bar is 
   expect(toast.y + toast.height, "the toast ends above the verb").toBeLessThanOrEqual(verb.y);
 });
 
-test("Undo hands focus back to the bar's verb, not to the page (AC-4)", CORE, async ({ page }) => {
+test("Undo hands focus back to the bar's verb, not to the page (AC-4)", async ({ page }) => {
   await open(page, "run");
   await primary(page, "run").click();
   const undo = page.locator(".toast-undo");
@@ -383,7 +380,7 @@ test("at 1100px a truncated primary keeps its full label as its accessible name 
   await expect(verb).toHaveAttribute("title", full);
 });
 
-test("on a run spanning two series the verb names the issue in full (AC-1, M-10)", CORE, async ({ page }) => {
+test("on a run spanning two series the verb names the issue in full (AC-1, M-10)", async ({ page }) => {
   await page.goto(`/comics/${E2E_LONG_RUN_ID}`);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   const verb = page.locator(".actionbar .mark");
@@ -407,7 +404,7 @@ test("an empty dashboard is Search · Start {next} and nothing else (AC-2)", ONC
   }
 });
 
-test("the batch sheet marks the next N in one request, and its Log a session says why it waits (AC-3)", async ({ page }) => {
+test("the batch sheet marks the next N in one request, and its Log a session says why it waits (AC-3)", FLOOR, async ({ page }) => {
   await open(page, "dash");
   const requests: string[] = [];
   page.on("request", (r) => { if (r.url().includes("/api/progress/") && r.method() === "POST") requests.push(r.url()); });
@@ -432,7 +429,7 @@ test("the batch sheet marks the next N in one request, and its Log a session say
   await expect.poll(() => readHere()).toEqual([1, 2, 3, 4, 5, 6, 7]);
 });
 
-test("Mark through… on the run detail opens the unread list, then the range sheet (AC-3)", CORE, async ({ page }) => {
+test("Mark through… on the run detail opens the unread list, then the range sheet (AC-3)", async ({ page }) => {
   await open(page, "run");
   await page.getByRole("button", { name: "Mark through…" }).click();
   const sheet = page.getByRole("dialog", { name: "Mark through…" });
@@ -449,7 +446,7 @@ test("Mark through… on the run detail opens the unread list, then the range sh
 const PAGES = [["/comics", "dash"], ["/watch", "dash"], [RUN, "run"]] as const;
 
 for (const [path, where] of PAGES) {
-  test(`${path}: every text node is 4.5:1 and the unchecked ring 3:1, at rest, with a toast and with the batch sheet (AC-1)`, async ({ page }, testInfo) => {
+  test(`${path}: every text node is 4.5:1 and the unchecked ring 3:1, at rest, with a toast and with the batch sheet (AC-1)`, FLOOR, async ({ page }, testInfo) => {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     const found: string[] = [];
@@ -471,7 +468,7 @@ for (const [path, where] of PAGES) {
     expect(found, `${testInfo.project.name} ${path}`).toEqual([]);
   });
 
-  test(`${path}: axe finds no new violation (AC-5)`, async ({ page }, testInfo) => {
+  test(`${path}: axe finds no new violation (AC-5)`, FEEL, async ({ page }, testInfo) => {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expectNoAxeViolations(page, [
@@ -482,7 +479,7 @@ for (const [path, where] of PAGES) {
   });
 }
 
-test("nothing on a dashboard resolves to --danger (AC-5)", async ({ page }) => {
+test("nothing on a dashboard resolves to --danger (AC-5)", FLOOR, async ({ page }) => {
   for (const path of ["/comics", "/watch"]) {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();

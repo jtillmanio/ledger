@@ -15,7 +15,7 @@ import Loading from "../../src/app/books/loading";
 import { today } from "../../src/lib/finish-date";
 import { testSql, type TestSql } from "../db";
 import {
-  computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
+  FEEL, computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
 } from "./helpers";
 
 // A check with no layout in it: runs once, in w390-light.
@@ -300,7 +300,7 @@ async function floor(page: Page) {
 test.describe("reading", () => {
   test.beforeEach(() => seed({ reading: true }));
 
-  test("the five slots in order, Now holding the book in hand, and the UX floor (AC-1, AC-5)", async ({ page }, info) => {
+  test("the five slots in order, Now holding the book in hand, and the UX floor (AC-1, AC-5)", FEEL, async ({ page }, info) => {
     await open(page);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Books");
     const slots = await page.locator("main [data-slot]").evaluateAll((els) => els.map((el) => el.getAttribute("data-slot")));
@@ -348,7 +348,7 @@ test.describe("reading", () => {
                          WHERE user_id = ${E2E_USER} AND book_id = 'e2e-dash-hero'`].map((r) => ({ ...r })),
   }));
 
-  test("Now carries the status control: Started opens a picker with 44px options on the phone, focus comes back, the floor holds (1.17b, AC-5, AC-6)", async ({ page }, info) => {
+  test("Now carries the status control: Started opens a picker with 44px options on the phone, focus comes back, the floor holds (1.17b, AC-5, AC-6)", FEEL, async ({ page }, info) => {
     await open(page);
     const now = page.locator(".now-hero");
     const toggle = now.locator(".status-toggle");
@@ -434,7 +434,7 @@ test.describe("reading", () => {
   });
 
   // Every project: the badge is the strip's widest content, so it is checked at every width and theme.
-  test("past capacity the figure is --blocked amber with what it is over, nothing is --danger, and nothing says behind (AC-3)", async ({ page }, info) => {
+  test("past capacity the figure is --blocked amber with what it is over, nothing is --danger, and nothing says behind (AC-3)", FEEL, async ({ page }, info) => {
     // 2M more words this quarter: far past any capacity Settings allows a quarter.
     await withSql(async (sql) => {
       await sql`INSERT INTO books (id, title, word_count, word_count_source) VALUES ('e2e-dash-big', 'E2E Dash Big', 2000000, 'stated')`;
@@ -536,7 +536,7 @@ test.describe("reading", () => {
   });
 
   // Every project: the list sheet and the picker it opens, at each width and theme, with the page's floor.
-  test("a strip stack opens its list sheet, choosing a book opens its picker, and the floor holds with each open (AC-3, AC-5)", async ({ page }, info) => {
+  test("a strip stack opens its list sheet, choosing a book opens its picker, and the floor holds with each open (AC-3, AC-5)", FEEL, async ({ page }, info) => {
     await seedStack();
     await open(page);
     const stack = strip(page).locator("button.stack");
@@ -656,7 +656,7 @@ test.describe("reading", () => {
 test.describe("between books", () => {
   test.beforeEach(() => seed({ between: true }));
 
-  test("names the last finish, and offers the quarter's lowest-ordinal book still to read, by name (AC-1, AC-5)", async ({ page }, info) => {
+  test("names the last finish, and offers the quarter's lowest-ordinal book still to read, by name (AC-1, AC-5)", FEEL, async ({ page }, info) => {
     await open(page);
     await expect(page.locator(".dash-lede")).toHaveText("Nothing on the go right now.");
     await expect(page.locator(".between-title")).toHaveText("Between books.");
@@ -694,7 +694,7 @@ test.describe("between books", () => {
 // every project (each width, light and dark, reduced motion), so their screenshots are the
 // feel pass's; reduced transparency is the describe at the end of this file.
 test.describe("next in what you follow as Reading (2.2d)", () => {
-  test("between books, Or keep going lists book 3 with its reason and a named, 44px Start (AC-1, AC-4)", async ({ page }, info) => {
+  test("between books, Or keep going lists book 3 with its reason and a named, 44px Start (AC-1, AC-4)", FEEL, async ({ page }, info) => {
     await seed({ between: true });
     await seedSaga({ twoInHand: false });
     await open(page);
@@ -733,7 +733,7 @@ test.describe("next in what you follow as Reading (2.2d)", () => {
     expect(await status()).toEqual([{ status: "to_read", started_on_precision: "none" }]);
   });
 
-  test("reading book 2, Now shows one Next in line naming book 3, a link to it (AC-1, AC-4)", async ({ page }, info) => {
+  test("reading book 2, Now shows one Next in line naming book 3, a link to it (AC-1, AC-4)", FEEL, async ({ page }, info) => {
     await seed({ reading: true });
     await seedSaga({ twoInHand: true });
     await open(page);
@@ -776,7 +776,7 @@ test.describe("where the book sits (2.2g)", () => {
 
   test.beforeEach(() => seed({ reading: true }));
 
-  test("a book in a universe, a series and a subseries draws three rows in order, each read / total its view's, filled with --ready (AC-1, AC-4, AC-5)", async ({ page }, info) => {
+  test("a book in a universe, a series and a subseries draws three rows in order, each read / total its view's, filled with --ready (AC-1, AC-4, AC-5)", FEEL, async ({ page }, info) => {
     await seedWhere();
     await open(page);
     await expect(rowsOf(page)).toHaveCount(3);
@@ -840,7 +840,7 @@ test.describe("where the book sits (2.2g)", () => {
     await expect(page.locator(".now-where")).toHaveCount(0);
   });
 
-  test("a standalone by an author followed Reading draws the author's row (AC-1)", async ({ page }, info) => {
+  test("a standalone by an author followed Reading draws the author's row (AC-1)", FEEL, async ({ page }, info) => {
     await seedWhere({ universe: false, series: false, author: "reading" });
     await open(page);
     await expect(names(page)).toHaveText(["Dash Author One"]);
@@ -987,7 +987,7 @@ test.describe("the book's place on its row (2.2j)", () => {
   const deckLine = (page: Page, title: string) => page.locator(".deck-row", { hasText: title }).locator(".row-sub");
   const cardLine = (page: Page, title: string) => page.locator('[data-slot="next"] .card', { hasText: title }).locator(".card-sub");
 
-  test("On deck and Up next read Author · Universe · Series #n, and the floor holds (AC-1, AC-5)", async ({ page }, info) => {
+  test("On deck and Up next read Author · Universe · Series #n, and the floor holds (AC-1, AC-5)", FEEL, async ({ page }, info) => {
     await open(page);
     await expect(deckLine(page, ALLOY)).toHaveText(ALLOY_LINE);
     await expect(deckLine(page, COVENANT_BOOK)).toHaveText(COVENANT_LINE);
@@ -1057,7 +1057,7 @@ test.describe("the book's place on its row (2.2j)", () => {
 test.describe("never finished, nothing planned", () => {
   test.beforeEach(seedEmpty);
 
-  test("Between books with no finished line, and an empty slate with one primary in Up next (AC-1, AC-5)", async ({ page }, info) => {
+  test("Between books with no finished line, and an empty slate with one primary in Up next (AC-1, AC-5)", FEEL, async ({ page }, info) => {
     await open(page);
     await expect(page.locator(".between-title")).toHaveText("Between books.");
     await expect(page.locator(".between-cover, .between-head .bdg")).toHaveCount(0);

@@ -19,10 +19,8 @@ import {
   computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
 } from "./helpers";
 
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
 // Sets its own viewport and theme: runs once, in w390-light.
-const FLOOR = { tag: "@at-w390-light" };
+const ONCE = { tag: "@at-w390-light" };
 
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
@@ -134,7 +132,7 @@ async function dangerCount(page: Page, scope: Locator) {
   }).length, danger);
 }
 
-test("Check, AC-3: accepting stores the date, the card turns .decide.settled, every over-rule part uses --hatch-settled; Undo removes it", CORE, async ({ page }) => {
+test("Check, AC-3: accepting stores the date, the card turns .decide.settled, every over-rule part uses --hatch-settled; Undo removes it", async ({ page }) => {
   await seed();
   const year = (await figures(String(Y)))!;
   // 118% of capacity, give or take a leap day.
@@ -191,7 +189,7 @@ test("Check, AC-3: accepting stores the date, the card turns .decide.settled, ev
   await expect(acceptButton(page)).toBeFocused();
 });
 
-test("Check, AC-4: an acceptance stored days ago still shows settled; a placement past the accepted total re-raises the flag", CORE, async ({ page }) => {
+test("Check, AC-4: an acceptance stored days ago still shows settled; a placement past the accepted total re-raises the flag", async ({ page }) => {
   await seed();
   const year = (await figures(String(Y)))!;
   const [stored] = await withSql((sql) => sql<{ accepted_at: Date }[]>`
@@ -212,7 +210,7 @@ test("Check, AC-4: an acceptance stored days ago still shows settled; a placemen
   expect(await acceptances(Y)).toHaveLength(1);
 });
 
-test("AC-2: four peers of one class and one size, each with its before/after; nothing red, nothing behind; focus on the heading and back", CORE, async ({ page }) => {
+test("AC-2: four peers of one class and one size, each with its before/after; nothing red, nothing behind; focus on the heading and back", async ({ page }) => {
   await seed();
   const year = (await figures(String(Y)))!;
   const quarters = await Promise.all([1, 2, 3, 4].map(async (n) => (await figures(q(n)))!.planned));
@@ -263,7 +261,7 @@ test("AC-2: four peers of one class and one size, each with its before/after; no
   expect(await sequence()).toEqual(before);
 });
 
-test("Check: Even out keeps the year's book count and its order; Move the overage moves it whole into the next year, with an Undo", CORE, async ({ page }) => {
+test("Check: Even out keeps the year's book count and its order; Move the overage moves it whole into the next year, with an Undo", async ({ page }) => {
   await seed();
   const seqBefore = await sequence();
   const yearBefore = (await figures(String(Y)))!;
@@ -294,7 +292,7 @@ test("Check: Even out keeps the year's book count and its order; Move the overag
   expect(await sequence()).toEqual(seqBefore);
 });
 
-test("Check: the dashboard's strip hatches this year's overage with --hatch-settled once the year is accepted, and carries no card", CORE, async ({ page }) => {
+test("Check: the dashboard's strip hatches this year's overage with --hatch-settled once the year is accepted, and carries no card", async ({ page }) => {
   await clean();
   // A book big enough to take this year past its capacity on its own, in this quarter.
   await withSql((sql) => addBook(sql, "now", 3_400_000, THIS_QUARTER, 1));
@@ -333,7 +331,7 @@ function contrast(a: string, b: string) {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-test("AC-5: the card and the sheet at 360, 834 and 1280px, light and dark: targets, contrast, the settled hatch at 3:1, axe, no scroll", FLOOR, async ({ page }, info) => {
+test("AC-5: the card and the sheet at 360, 834 and 1280px, light and dark: targets, contrast, the settled hatch at 3:1, axe, no scroll", ONCE, async ({ page }, info) => {
   await seed();
   for (const scheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: scheme });

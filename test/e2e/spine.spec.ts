@@ -2,11 +2,9 @@
 // loads at every width, in light and dark, with no sideways scroll. Each UI
 // task adds its own checks beside this one, on the helpers.
 import { expect, test } from "@playwright/test";
-import {
-  E2E_ISSUE_COUNT, E2E_RUN_ID, E2E_RUN_TITLE, expectNoAxeViolations, expectNoHorizontalScroll, screenshot,
-} from "./helpers";
+import { E2E_ISSUE_COUNT, E2E_RUN_ID, E2E_RUN_TITLE, FLOOR, expectNoAxeViolations, expectNoHorizontalScroll, screenshot } from "./helpers";
 
-test("signs in and loads the seeded spine", async ({ page }, testInfo) => {
+test("signs in and loads the seeded spine", FLOOR, async ({ page }, testInfo) => {
   await page.goto(`/comics/${E2E_RUN_ID}`);
 
   // Past the passcode gate, not bounced to /login.

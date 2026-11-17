@@ -18,9 +18,6 @@ import {
   computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
 } from "./helpers";
 
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
-
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
   "aria-prohibited-attr", "aria-valid-attr-value", "aria-hidden-focus", "landmark-unique", "duplicate-id-aria",
@@ -122,7 +119,7 @@ async function open(page: Page, url: string) {
   return s;
 }
 
-test("AC-1, AC-5: Up next's bare-year lane is amber with Place them; a year with none bare has neither lane nor button", CORE, async ({ page }) => {
+test("AC-1, AC-5: Up next's bare-year lane is amber with Place them; a year with none bare has neither lane nor button", async ({ page }) => {
   await seed();
   await page.goto("/books/status?tab=next");
   const held = lane(page);
@@ -150,7 +147,7 @@ test("AC-1, AC-5: Up next's bare-year lane is amber with Place them; a year with
   await expect(page.locator(".plan-place")).toHaveCount(0);
 });
 
-test("AC-2, AC-3, Check: largest first; a placement writes the quarter's next ordinal and grows its total; Skip writes nothing", CORE, async ({ page }) => {
+test("AC-2, AC-3, Check: largest first; a placement writes the quarter's next ordinal and grows its total; Skip writes nothing", async ({ page }) => {
   await seed();
   const s = await open(page, "/books/status?tab=next");
   // Focus starts on the sheet's heading (AC-6).
@@ -197,7 +194,7 @@ test("AC-2, AC-3, Check: largest first; a placement writes the quarter's next or
   await expect(lane(page).locator(".row-title")).toHaveText(["Place Middle"]);
 });
 
-test("Check, AC-3, AC-4: on /books/plan the fifth lane drops by one, Stop leaves the rest, and an over year's closing card says so in amber", CORE, async ({ page }) => {
+test("Check, AC-3, AC-4: on /books/plan the fifth lane drops by one, Stop leaves the rest, and an over year's closing card says so in amber", async ({ page }) => {
   await seed({ heavy: true });
   await page.goto(`/books/plan?year=${Y}`);
   await expect(fifthLane(page).locator(".bdg")).toHaveText("3 books");
@@ -244,7 +241,7 @@ test("Check, AC-3, AC-4: on /books/plan the fifth lane drops by one, Stop leaves
   await expect(fifthLane(page).locator(".bdg")).toHaveCount(0);
 });
 
-test("AC-6: Esc and Back close the sheet with focus back on Place them; every button is real, named and 44px on the phone", CORE, async ({ page }) => {
+test("AC-6: Esc and Back close the sheet with focus back on Place them; every button is real, named and 44px on the phone", async ({ page }) => {
   await seed();
   for (const how of ["Escape", "Back"] as const) {
     const s = await open(page, "/books/status?tab=next");
@@ -296,7 +293,7 @@ test("AC-6: screenshots at 360, 834 and 1280px, light and dark: no horizontal sc
   }
 });
 
-test("task 2.7: an over year's closing card offers Rebalance and Accept; Accept settles it with an Undo, Rebalance swaps the sheet", CORE, async ({ page }) => {
+test("task 2.7: an over year's closing card offers Rebalance and Accept; Accept settles it with an Undo, Rebalance swaps the sheet", async ({ page }) => {
   await seed({ heavy: true });
   let s = await open(page, `/books/plan?year=${Y}`);
   // Skip every book: nothing is written, and the card says the year is still over.

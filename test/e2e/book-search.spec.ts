@@ -15,12 +15,10 @@ import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
 import { easternYear } from "../../src/lib/settings";
 import RECORDED from "../fixtures/hardcover-piranesi.json";
-import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
+import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
 
 // Writes: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
   "aria-prohibited-attr", "aria-required-children", "aria-required-parent", "aria-valid-attr-value", "aria-hidden-focus",
@@ -118,7 +116,7 @@ const fromHardcover = (page: Page) => page.getByRole("list", { name: "From Hardc
 const statusLine = (page: Page) => page.locator("#book-search-wait .statusline");
 const searchRow = (sql: TestSql) => sql<{ fetched_at: Date }[]>`SELECT fetched_at FROM hardcover_cache WHERE key = ${SEARCH_KEY}`;
 
-test("searching piranesi lists Hardcover's books under From Hardcover, no compilation, and meets the UX floor (AC-1, AC-6)", async ({ page }, info) => {
+test("searching piranesi lists Hardcover's books under From Hardcover, no compilation, and meets the UX floor (AC-1, AC-6)", FLOOR, async ({ page }, info) => {
   await search(page, "piranesi");
   await expect(page.getByRole("heading", { name: /^From Hardcover/ })).toBeVisible();
   const rows = fromHardcover(page).getByRole("listitem");
@@ -150,7 +148,7 @@ test("searching piranesi lists Hardcover's books under From Hardcover, no compil
   await screenshot(page, info, "book-search-results");
 });
 
-test("a recorded 429 shows the rate-limited state while your library's books still list (AC-1, AC-6)", async ({ page }, info) => {
+test("a recorded 429 shows the rate-limited state while your library's books still list (AC-1, AC-6)", FLOOR, async ({ page }, info) => {
   await withSql((sql) => sql`INSERT INTO hardcover_cache (key, body) VALUES ('hold', ${sql.json({ retryAfter: 600 })})
     ON CONFLICT (key) DO UPDATE SET body = EXCLUDED.body, fetched_at = now()`);
   try {
@@ -167,7 +165,7 @@ test("a recorded 429 shows the rate-limited state while your library's books sti
   }
 });
 
-test("a search with no results says so, with By hand (AC-6)", async ({ page }, info) => {
+test("a search with no results says so, with By hand (AC-6)", FLOOR, async ({ page }, info) => {
   await search(page, NOTHING);
   await expect(statusLine(page)).toContainText(`Nothing in your library or on Hardcover for ${NOTHING}.`);
   await expect(statusLine(page).getByRole("button", { name: "Add it by hand" })).toBeVisible();
@@ -248,7 +246,7 @@ test("a result's Year or quarter… adds the book at the end of a quarter, and U
   await expect(row.getByRole("button", { name: `Year or quarter…: ${LIBRARY.title}`, exact: true })).not.toHaveAttribute("aria-disabled", "true");
 });
 
-test("typing pir and pausing lists results without Enter; pi asks nothing; piranesi typed quickly is one request (task 1.22, AC-1)", CORE, async ({ page }, info) => {
+test("typing pir and pausing lists results without Enter; pi asks nothing; piranesi typed quickly is one request (task 1.22, AC-1)", async ({ page }, info) => {
   await page.goto("/books/add");
   const box = page.getByRole("searchbox", { name: "Title or author" });
   await hydrated(box);
@@ -275,7 +273,7 @@ test("typing pir and pausing lists results without Enter; pi asks nothing; piran
   expect(requests).toEqual(["pir", "piranesi"]);
 });
 
-test("a library row's tag says where it sits and a Hardcover row's says Hardcover, each part of the row's name (task 1.22, AC-3)", async ({ page }, info) => {
+test("a library row's tag says where it sits and a Hardcover row's says Hardcover, each part of the row's name (task 1.22, AC-3)", FLOOR, async ({ page }, info) => {
   await search(page, "piranesi");
   // Piranesi itself, once the add has run, is yours: Someday, under In your library.
   await expect(page.getByRole("listitem", { name: /^Piranesi (Hardcover|Someday)$/ })).toBeVisible();

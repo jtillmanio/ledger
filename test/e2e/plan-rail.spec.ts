@@ -18,9 +18,7 @@ import { PlanRailSkeleton } from "../../src/components/Skeleton";
 import { today } from "../../src/lib/finish-date";
 import type { RailBook } from "../../src/lib/plan-rail";
 import { testSql, type TestSql } from "../db";
-import {
-  contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
-} from "./helpers";
+import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour } from "./helpers";
 
 // Sets its own viewport: runs once, in w390-light.
 const PHONE = { tag: "@at-w390-light" };
@@ -678,7 +676,7 @@ test("the error state is a neutral line with a way to try again (AC-6)", ONCE, a
 });
 
 // Every project: the page meets the UX floor in both themes at every width (AC-6).
-test("the page passes axe, holds 3:1 for the rail's hatch, rule and edges, and its words contrast 4.5:1 (AC-6)", async ({ page }, info) => {
+test("the page passes axe, holds 3:1 for the rail's hatch, rule and edges, and its words contrast 4.5:1 (AC-6)", FLOOR, async ({ page }, info) => {
   await seed();
   await open(page);
   await expectNoAxeViolations(page, AXE, "main");

@@ -15,9 +15,6 @@ import {
   computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
 } from "./helpers";
 
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
-
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
   "aria-prohibited-attr", "aria-valid-attr-value", "aria-hidden-focus", "landmark-unique", "duplicate-id-aria",
@@ -183,7 +180,7 @@ async function noDanger(page: Page, scope: Locator) {
   }).length, danger)).toBe(0);
 }
 
-test("Check, AC-1: the Check's groups, the Unlisted tag, no DNF and no book twice; Put in Q2, its budget and Undo; Fits the room left", CORE, async ({ page }) => {
+test("Check, AC-1: the Check's groups, the Unlisted tag, no DNF and no book twice; Put in Q2, its budget and Undo; Fits the room left", async ({ page }) => {
   await seed();
   const p = await open(page);
   await expect(p.getByRole("heading", { name: `Plan Q2 ${Y}` })).toBeVisible();
@@ -248,7 +245,7 @@ test("Check, AC-1: the Check's groups, the Unlisted tag, no DNF and no book twic
   await screenshot(page, test.info(), `plan-sheet-check-${page.viewportSize()!.width}`);
 });
 
-test("AC-2: Plan Y… opens the year with the bare year and four quarter chips; Plan this quarter… its quarter; Suggest the roomiest", CORE, async ({ page }) => {
+test("AC-2: Plan Y… opens the year with the bare year and four quarter chips; Plan this quarter… its quarter; Suggest the roomiest", async ({ page }) => {
   await seed();
   let p = await open(page, String(Y));
   await expect(p.getByRole("heading", { name: `Plan ${Y}` })).toBeVisible();
@@ -277,7 +274,7 @@ test("AC-2: Plan Y… opens the year with the bare year and four quarter chips; 
   await expect(panel(page).getByRole("heading", { name: `Plan Q4 ${Y}` })).toBeVisible();
 });
 
-test("AC-3: an over placement turns the line amber with Accept as a stretch year; accepting it settles the line; never behind", CORE, async ({ page }) => {
+test("AC-3: an over placement turns the line amber with Accept as a stretch year; accepting it settles the line; never behind", async ({ page }) => {
   await seed({ heavy: true });
   const p = await open(page);
   await expect(p.locator(".ps-budget")).not.toHaveAttribute("data-over");
@@ -303,7 +300,7 @@ test("AC-3: an over placement turns the line amber with Accept as a stretch year
   await noDanger(page, p);
 });
 
-test("AC-3: with the year still fitting, Accept as a stretch year is offered but held, with its reason", CORE, async ({ page }) => {
+test("AC-3: with the year still fitting, Accept as a stretch year is offered but held, with its reason", async ({ page }) => {
   await seed();
   const p = await open(page);
   await row(p, "u-3").getByRole("button", { name: /^Put in Q2/ }).click();
@@ -312,7 +309,7 @@ test("AC-3: with the year still fitting, Accept as a stretch year is offered but
   await expect(accept).toHaveAccessibleDescription(`${Y} as a whole still has room, so there is no year to accept.`);
 });
 
-test("AC-4: five then More; Not now hides a row until the sheet closes; a planned book shows its period and Move here", CORE, async ({ page }) => {
+test("AC-4: five then More; Not now hides a row until the sheet closes; a planned book shows its period and Move here", async ({ page }) => {
   await seed();
   let p = await open(page);
   const deck = group(p, "on_deck");
@@ -367,7 +364,7 @@ test("AC-5: from 1024px the sheet is a side rail beside the plan rail, and a pla
   await expect(page.locator("aside.plan-side")).toHaveCount(0);
 });
 
-test("AC-6: every control a named button, 44px on the phone; focus on the heading and back on the opener; loading and error drawn", CORE, async ({ page }) => {
+test("AC-6: every control a named button, 44px on the phone; focus on the heading and back on the opener; loading and error drawn", async ({ page }) => {
   await seed();
   const p = await open(page);
   const wide = page.viewportSize()!.width >= 1024;
@@ -432,7 +429,7 @@ test("AC-6: screenshots at 360, 834 and 1280px, light and dark: no horizontal sc
   }
 });
 
-test("AC-6: the empty state is a panel with one action", CORE, async ({ page }) => {
+test("AC-6: the empty state is a panel with one action", async ({ page }) => {
   await seed();
   await page.route("**/api/plan/suggestions**", (route) => route.fulfill({ json: { suggestions: [] } }));
   await page.goto(`/books/plan?year=${Y}`);

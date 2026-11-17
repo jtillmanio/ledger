@@ -9,13 +9,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
 import Loading from "../../src/app/books/list/loading";
-import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
+import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
 
 // A check with no layout in it: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
-
 const AXE = [
   "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role", "aria-prohibited-attr",
   "aria-valid-attr-value", "aria-hidden-focus", "landmark-unique", "duplicate-id-aria", "target-size", "label",
@@ -62,7 +59,7 @@ async function open(page: Page, path: string) {
   await hydrated(sort(page));
 }
 
-test("choosing Length updates the URL and the order, and a reload keeps both (AC-1)", async ({ page }, info) => {
+test("choosing Length updates the URL and the order, and a reload keeps both (AC-1)", FLOOR, async ({ page }, info) => {
   await open(page, "/books/list?q=E2E%20Srt");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Library");
   // Series, the default: no word count to rank, so the titles read alphabetically.
@@ -83,7 +80,7 @@ test("choosing Length updates the URL and the order, and a reload keeps both (AC
   await screenshot(page, info, "library-sort-length");
 });
 
-test("the reverse link flips the order, the empty book still last, and says which way it goes (AC-1, AC-5)", CORE, async ({ page }) => {
+test("the reverse link flips the order, the empty book still last, and says which way it goes (AC-1, AC-5)", async ({ page }) => {
   await open(page, "/books/list?q=E2E%20Srt&sort=length");
   const reverse = page.getByRole("link", { name: "Longest first; reverse to shortest first" });
   await expect(reverse).toBeVisible();
@@ -100,7 +97,7 @@ test("the reverse link flips the order, the empty book still last, and says whic
   await expect(page.getByRole("link", { name: "A–Z; reverse to Z–A" })).toBeVisible();
 });
 
-test("a chip and the search box keep the sort (AC-3)", CORE, async ({ page }) => {
+test("a chip and the search box keep the sort (AC-3)", async ({ page }) => {
   await open(page, "/books/list?sort=length&dir=asc");
   await page.getByRole("link", { name: "To read" }).click();
   await expect(page).toHaveURL(/status=to_read/);
@@ -117,14 +114,14 @@ test("a chip and the search box keep the sort (AC-3)", CORE, async ({ page }) =>
   await expect(ours(page)).toHaveText(["E2E Srt Short", "E2E Srt Mid", "E2E Srt Long", "E2E Srt Aardvark"]);
 });
 
-test("an unknown sort opens the list in its default order (AC-2)", CORE, async ({ page }) => {
+test("an unknown sort opens the list in its default order (AC-2)", async ({ page }) => {
   await page.goto("/books/list?q=E2E%20Srt&sort=banana&dir=sideways");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Library");
   await expect(sort(page)).toHaveValue("series");
   await expect(ours(page)).toHaveCount(4);
 });
 
-test("Sort is a named select and the reverse a named link, none under 24px, text 4.5:1 (AC-5)", async ({ page }, info) => {
+test("Sort is a named select and the reverse a named link, none under 24px, text 4.5:1 (AC-5)", FLOOR, async ({ page }, info) => {
   await open(page, "/books/list?sort=length");
   const reverse = page.getByRole("link", { name: /^Longest first; reverse/ });
   for (const control of [sort(page), reverse]) {

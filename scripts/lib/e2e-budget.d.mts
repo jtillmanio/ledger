@@ -1,0 +1,22 @@
+export const GROWTH_LIMIT_MS: number;
+export const SHARD_CEILING_MS: number;
+export const GROWTH_LABEL: "e2e-growth";
+export type Times = Record<string, number>;
+export function timesFromReport(report: unknown): Times;
+export function testOf(key: string): string;
+export type Comparison = {
+  runs: number;
+  measured: number;
+  projected: number;
+  perShard: number;
+  shards: number;
+  baseline: { runs: number; total: number } | null;
+  addedRuns: number;
+  removedRuns: number;
+  growth: number;
+  costliest: { test: string; projects: number; ms: number }[];
+};
+export function compareTimes(current: Times, baseline: Times | null, shards: number): Comparison;
+export function budgetProblems(c: Comparison): string[];
+export function min(ms: number): string;
+export function renderSummary(c: Comparison, opts: { problems: string[]; accepted: boolean; baselineRun: string }): string;

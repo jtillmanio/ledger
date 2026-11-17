@@ -20,6 +20,12 @@ and pushes again. Every push to `main` always gets the full suite. A later
 push that adds only docs (a close-out, an accept) skips the browser suite and
 the build when an earlier run on the branch passed every project and nothing
 else differs, `main` included (D-145): the scope job's log names that run.
+The `e2e-budget` job (D-161) then fails a PR that adds more than 3 minutes of
+browser-suite time, or whose suite passes 6 minutes a shard; its summary lists
+the costliest new tests. Tag each new test for what it checks (untagged
+behaviour, `FLOOR`, `FEEL`) before asking for more: the owner's `e2e-growth`
+label accepts the growth for one PR, and Claude asks for it in the PR body
+under **E2E growth** with the reason, and never adds it.
 Claude tells the owner the PR is done only when every gate it can check has
 passed, and lists the owner's gates in its report; when it stops with one
 failing, it turns the PR into a draft (`gh pr ready <n> --undo`).

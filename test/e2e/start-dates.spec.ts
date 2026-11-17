@@ -10,7 +10,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { markRead, testSql, type TestSql } from "../db";
 import {
-  computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
+  FLOOR, computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
 } from "./helpers";
 
 // Writes: runs once, in w390-light.
@@ -80,7 +80,7 @@ test.afterAll(clean);
 const bookRow = (page: Page, title: string) =>
   page.locator(".book-row", { has: page.locator(".row-title", { hasText: title }) });
 
-test("the master list: a book being read shows its start, a finished one its start, finish and days taken (AC-4)", async ({ page }, info) => {
+test("the master list: a book being read shows its start, a finished one its start, finish and days taken (AC-4)", FLOOR, async ({ page }, info) => {
   await page.goto("/books/list");
   await expect(bookRow(page, READING.title).locator(".row-dates")).toHaveText(/^Started 21 Oct( 2026)?$/);
   await expect(bookRow(page, READ.title).locator(".row-dates"))
@@ -98,7 +98,7 @@ test("the master list: a book being read shows its start, a finished one its sta
   await screenshot(page, info, "start-dates-list");
 });
 
-test("the date line: Started and Finished are buttons named with their dates; Started opens named radios, focus returns (AC-6)", async ({ page }, info) => {
+test("the date line: Started and Finished are buttons named with their dates; Started opens named radios, focus returns (AC-6)", FLOOR, async ({ page }, info) => {
   await page.goto("/books/list");
   const row = bookRow(page, READ.title);
   const toggle = row.locator(".status-toggle");
@@ -143,7 +143,7 @@ test("the date line: Started and Finished are buttons named with their dates; St
   expect(stored).toEqual([{ on: "2026-03-01" }]);
 });
 
-test("the run hero's span line: Started Mar 2026 while unread remain, Mar–Sep 2026 once read (AC-5)", async ({ page }, info) => {
+test("the run hero's span line: Started Mar 2026 while unread remain, Mar–Sep 2026 once read (AC-5)", FLOOR, async ({ page }, info) => {
   await page.goto(`/comics/${RUNS[0].id}`);
   await expect(page.locator(".runhero-span")).toHaveText("Started Mar 2026");
   await page.goto(`/comics/${RUNS[1].id}`);
@@ -158,7 +158,7 @@ test("the run hero's span line: Started Mar 2026 while unread remain, Mar–Sep 
   await screenshot(page, info, "start-dates-run-hero");
 });
 
-test("Done tabs: the run's row shows its span, the book's row its dates (AC-4, AC-5)", async ({ page }, info) => {
+test("Done tabs: the run's row shows its span, the book's row its dates (AC-4, AC-5)", FLOOR, async ({ page }, info) => {
   await page.goto("/comics/status?tab=done");
   const run = page.locator(".row", { has: page.locator(".row-title", { hasText: RUNS[1].title }) });
   await expect(run.locator(".row-sub")).toContainText("Read Mar–Sep 2026");
@@ -313,7 +313,7 @@ test.describe("the status control asks the dates (1.17b)", () => {
     await expect(row.getByRole("button", { name: /^All reads/ })).toHaveCount(0);
   });
 
-  test("Read's two pickers and the read list meet the floor at every width: 44px options, focus back, axe, contrast, no sideways scroll (AC-6)", async ({ page }, info) => {
+  test("Read's two pickers and the read list meet the floor at every width: 44px options, focus back, axe, contrast, no sideways scroll (AC-6)", FLOOR, async ({ page }, info) => {
     await page.goto("/books/list");
     const ask = await expand(page, ASK.title);
     const read = ask.getByRole("button", { name: "Read", exact: true });

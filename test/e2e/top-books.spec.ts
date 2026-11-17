@@ -10,9 +10,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
-import {
-  contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
-} from "./helpers";
+import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour } from "./helpers";
 
 // Writes or sets its own viewport: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
@@ -128,7 +126,7 @@ async function floor(page: Page) {
   expect(red).toEqual([]);
 }
 
-test("a past year lists its first ten, a divider, then every other read, none collapsed; Not ranked yet; No year (AC-1)", async ({ page }, info) => {
+test("a past year lists its first ten, a divider, then every other read, none collapsed; Not ranked yet; No year (AC-1)", FLOOR, async ({ page }, info) => {
   await open(page);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(`Best of ${YEAR}`);
   await expect(titles(page)).toHaveText([...RANKED, ...UNRANKED].map(titleOf));
@@ -161,7 +159,7 @@ test("a past year lists its first ten, a divider, then every other read, none co
   await screenshot(page, info, "top-books-no-year");
 });
 
-test("the chosen year is in the URL and survives a reload (AC-3)", { tag: "@core" }, async ({ page }) => {
+test("the chosen year is in the URL and survives a reload (AC-3)", async ({ page }) => {
   await open(page, "/books/top");
   const year = page.getByRole("combobox", { name: "Year" });
   // Newest first, No year last.
@@ -239,7 +237,7 @@ test("the row menu moves rank 11 to rank 4, and moving an unranked read up ranks
   await expect(page.getByRole("button", { name: `Reorder ${titleOf(UNRANKED[0])}, not ranked yet` })).toBeVisible();
 });
 
-test("handles are 44px named buttons on the phone; reduced motion stops the move animation (AC-6)", { tag: "@core" }, async ({ page }) => {
+test("handles are 44px named buttons on the phone; reduced motion stops the move animation (AC-6)", async ({ page }) => {
   await open(page);
   const handle = page.getByRole("button", { name: `Reorder ${titleOf(RANKED[0])}, rank 1` });
   await expect(handle).toHaveClass(/\bdrag\b/);

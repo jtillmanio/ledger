@@ -15,12 +15,8 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
 import {
-  computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot,
-  toastSettled, tokenColour,
+  FLOOR, computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled, tokenColour,
 } from "./helpers";
-
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
 
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
@@ -158,7 +154,7 @@ async function atLeast(locators: Locator, min: number) {
   }
 }
 
-test("Follow… opens a sheet headed by the title, each grouping checked as stored with its read / total (AC-3, AC-5; 2.2h AC-5)", async ({ page }, info) => {
+test("Follow… opens a sheet headed by the title, each grouping checked as stored with its read / total (AC-3, AC-5; 2.2h AC-5)", FLOOR, async ({ page }, info) => {
   await openLibrary(page);
   const { sheet } = await openFollow(page);
   const groups = sheet.getByRole("radiogroup");
@@ -191,7 +187,7 @@ test("Follow… opens a sheet headed by the title, each grouping checked as stor
   await screenshot(page, info, "follow-sheet");
 });
 
-test("the middle option reads On hold at 1 of 4 read and Tracking at 0 of 4 and 4 of 4, tracking stored each time (2.2h AC-5)", CORE, async ({ page }) => {
+test("the middle option reads On hold at 1 of 4 read and Tracking at 0 of 4 and 4 of 4, tracking stored each time (2.2h AC-5)", async ({ page }) => {
   const series = async () => {
     await openLibrary(page);
     const { sheet } = await openFollow(page);
@@ -218,14 +214,14 @@ test("the middle option reads On hold at 1 of 4 read and Tracking at 0 of 4 and 
   expect((await follows()).series).toBe("tracking");
 });
 
-test("a book with no series lists no series or subseries row", CORE, async ({ page }) => {
+test("a book with no series lists no series or subseries row", async ({ page }) => {
   await openLibrary(page);
   const { sheet } = await openFollow(page, LOOSE.title);
   await expect(sheet.getByRole("radiogroup")).toHaveCount(1);
   await expect(sheet.getByRole("radiogroup")).toHaveAccessibleName(`Following ${AUTHOR.name}`);
 });
 
-test("Esc, Back and Close each close the sheet and return focus to the row's ⋯ (AC-3)", CORE, async ({ page }) => {
+test("Esc, Back and Close each close the sheet and return focus to the row's ⋯ (AC-3)", async ({ page }) => {
   await openLibrary(page);
   let { more, sheet } = await openFollow(page);
   await page.keyboard.press("Escape");
@@ -244,7 +240,7 @@ test("Esc, Back and Close each close the sheet and return focus to the row's ⋯
   await expect(more).toBeFocused();
 });
 
-test("a change saves at once, and its Undo, live over the sheet, puts back the earlier state (AC-1, AC-2)", CORE, async ({ page }) => {
+test("a change saves at once, and its Undo, live over the sheet, puts back the earlier state (AC-1, AC-2)", async ({ page }) => {
   await openLibrary(page);
   const { sheet } = await openFollow(page);
   const universe = sheet.getByRole("radiogroup", { name: `Following ${UNIVERSE.name}` });
@@ -258,7 +254,7 @@ test("a change saves at once, and its Undo, live over the sheet, puts back the e
   await expect(sheet).toBeVisible();
 });
 
-test("Not following on a series is kept as off and shows as Not following; on the author it deletes the row (2.2h AC-4)", CORE, async ({ page }) => {
+test("Not following on a series is kept as off and shows as Not following; on the author it deletes the row (2.2h AC-4)", async ({ page }) => {
   await openLibrary(page);
   const { sheet } = await openFollow(page);
   await sheet.getByRole("radiogroup", { name: `Following ${SERIES.name}` }).getByText("Not following").click();
@@ -271,7 +267,7 @@ test("Not following on a series is kept as off and shows as Not following; on th
   await expect.poll(async () => (await follows()).author).toBe("reading");
 });
 
-test("a past read logged from To read follows nothing and offers Keep going? chips, reached by F6 and Tab; a chip writes Reading and its Undo leaves the finish (AC-1, AC-4, AC-5; 2.2h)", async ({ page }, info) => {
+test("a past read logged from To read follows nothing and offers Keep going? chips, reached by F6 and Tab; a chip writes Reading and its Undo leaves the finish (AC-1, AC-4, AC-5; 2.2h)", FLOOR, async ({ page }, info) => {
   await openLibrary(page);
   await finishInLibrary(page);
 
@@ -314,7 +310,7 @@ test("a past read logged from To read follows nothing and offers Keep going? chi
 test.describe("a finish from Reading follows (2.2h)", () => {
   test.beforeEach(() => setStatus(TWO.id, "reading"));
 
-  test("the toast says Now reading, a chip each, reached by F6 and Tab; a chip turns one off and its Undo restores reading (AC-1, AC-3, AC-6)", async ({ page }, info) => {
+  test("the toast says Now reading, a chip each, reached by F6 and Tab; a chip turns one off and its Undo restores reading (AC-1, AC-3, AC-6)", FLOOR, async ({ page }, info) => {
     await openLibrary(page);
     await finishInLibrary(page);
     await expect.poll(follows).toEqual({ series: "reading", subseries: "reading", universe: "reading", author: "reading" });
@@ -356,7 +352,7 @@ test.describe("a finish from Reading follows (2.2h)", () => {
     expect(await statusOf(TWO.id)).toBe("read");
   });
 
-  test("the finish's Undo restores the book and every follow it changed (AC-3)", CORE, async ({ page }) => {
+  test("the finish's Undo restores the book and every follow it changed (AC-3)", async ({ page }) => {
     await openLibrary(page);
     await finishInLibrary(page);
     await expect(nowRow(page)).toBeVisible();
@@ -365,7 +361,7 @@ test.describe("a finish from Reading follows (2.2h)", () => {
     await expect.poll(() => statusOf(TWO.id)).toBe("reading");
   });
 
-  test("In flight's Finished follows the same, and its toast says so (2.2f's finish)", CORE, async ({ page }) => {
+  test("In flight's Finished follows the same, and its toast says so (2.2f's finish)", async ({ page }) => {
     await page.goto("/books/status");
     const button = page.getByRole("button", { name: `Finished ${TWO.title}`, exact: true });
     await hydrated(button);
@@ -374,7 +370,7 @@ test.describe("a finish from Reading follows (2.2h)", () => {
     await expect.poll(follows).toEqual({ series: "reading", subseries: "reading", universe: "reading", author: "reading" });
   });
 
-  test("on the last book left in a Reading series, Done with still shows and writes tracking; nothing else followed, no Now reading (AC-3)", CORE, async ({ page }) => {
+  test("on the last book left in a Reading series, Done with still shows and writes tracking; nothing else followed, no Now reading (AC-3)", async ({ page }) => {
     await withSql(async (sql) => {
       await sql`UPDATE series_follows SET state = 'reading' WHERE series_id = ${SERIES.id}`;
       await sql`UPDATE book_status SET status = 'read' WHERE user_id = ${E2E_USER} AND book_id = ANY(${[BOOKS[2].id, BOOKS[3].id]}::text[])`;
@@ -386,7 +382,7 @@ test.describe("a finish from Reading follows (2.2h)", () => {
     await expect.poll(async () => (await follows()).series).toBe("tracking");
   });
 
-  test("at 360 the toast fits with a long series name and four chips, and Rank it (AC-6)", async ({ page }, info) => {
+  test("at 360 the toast fits with a long series name and four chips, and Rank it (AC-6)", FLOOR, async ({ page }, info) => {
     const long = "E2E Fo Series The Stormlight Archive Of Very Long Names Indeed";
     await withSql((sql) => sql`UPDATE book_series SET name = ${long} WHERE id = ${SERIES.id}`);
     await openLibrary(page);

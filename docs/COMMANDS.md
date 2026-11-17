@@ -136,10 +136,13 @@ npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in
                             # `npm run dev` first (both use .next; a dev run deletes .next/dev before it starts). Once per machine, and after a Playwright bump:
                             # `npx playwright install chromium`. Screenshots: test-results/screens/ (ignored). Pass
                             # arguments after --, e.g. `-- --project=w390-light`. A check that needs one project is
-                            # tagged `{ tag: "@at-<project>" }`, never skipped on testInfo.project.name. One whose outcome no
-                            # width or theme changes (a write, a request, the URL, focus, copy) is tagged `{ tag: "@core" }`:
-                            # the core projects only, in either scope (D-143). Untagged runs everywhere: axe, contrast,
-                            # colours, sizes, scroll, per-layout markup, §10 state screenshots. E2E_SERVER=start
+                            # tagged `{ tag: "@at-<project>" }`, never skipped on testInfo.project.name. Otherwise a test is
+                            # tagged for what it checks (D-161): untagged is behaviour (a write, a request, the URL, focus,
+                            # copy) at w390, w768, w1280, reduced motion and touch, light; FLOOR (helpers.ts: axe, contrast,
+                            # colours, sizes, scroll, per-layout markup) adds 360 and 1024; FEEL (a feel-pass surface's §10
+                            # screenshots) adds 412 too. No dark project runs them: contrast, axe's color-contrast and
+                            # screenshot check the other theme in place. CI's e2e-budget job fails a PR that adds over
+                            # 3 min of suite time or passes 6 min a shard (`e2e-growth` label accepts). E2E_SERVER=start
                             # serves an existing `npm run build` with `next start` instead (CI's shards do)
 npm run test:e2e:full       # the same at every project, 360-1280px light and dark (E2E_SCOPE=full): what CI runs
 npm run test:e2e:build      # `next build` with the suite's server environment, then the core projects against

@@ -9,14 +9,11 @@ import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql } from "../db";
 import {
-  computedStyle, contrastFailures, E2E_UNLISTED_ID, E2E_UNLISTED_TITLE, expectNoAxeViolations, expectNoHorizontalScroll,
-  hydrated, screenshot, tokenColour,
+  E2E_UNLISTED_ID, E2E_UNLISTED_TITLE, FLOOR, computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
 } from "./helpers";
 
 // Writes: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
   "aria-prohibited-attr", "aria-valid-attr-value", "aria-hidden-focus", "landmark-unique", "duplicate-id-aria",
@@ -41,7 +38,7 @@ const titles = (page: Page) => page.locator(".book-row .row-title");
 const row = (page: Page) => page.locator(".book-row", { has: page.locator(".row-title", { hasText: E2E_UNLISTED_TITLE }) });
 const addToSomeday = (page: Page) => row(page).getByRole("button", { name: "Add to Someday" });
 
-test("Everything leaves it out; the Unlisted chip, named with its count, lists it; a search finds it", CORE, async ({ page }) => {
+test("Everything leaves it out; the Unlisted chip, named with its count, lists it; a search finds it", async ({ page }) => {
   await page.goto("/books/list");
   await expect(titles(page).first()).toBeVisible();
   await expect(titles(page).filter({ hasText: E2E_UNLISTED_TITLE })).toHaveCount(0);
@@ -58,7 +55,7 @@ test("Everything leaves it out; the Unlisted chip, named with its count, lists i
   await expect(titles(page)).toHaveText([E2E_UNLISTED_TITLE]);
 });
 
-test("the Unlisted list meets the floor: a grey badge, a real Add to Someday at least 24px tall", async ({ page }, info) => {
+test("the Unlisted list meets the floor: a grey badge, a real Add to Someday at least 24px tall", FLOOR, async ({ page }, info) => {
   await page.goto("/books/list?status=unlisted");
   const badge = row(page).locator(".status-toggle");
   await expect(badge).toHaveText("Status: unlisted");

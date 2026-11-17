@@ -48,25 +48,49 @@ export const E2E_PROJECTS = [
 // motion and touch. What a local run (and /verify) checks; CI's full run is the gate.
 export const E2E_CORE = ["w390-light", "w390-dark", "w768-light", "w1280-light", "w390-reduced-motion", "w390-touch"];
 
-// The tag for a test whose outcome no width or theme changes (D-143): what a
-// screen does (a write, a request, the URL, focus, the keys, its copy), not how
-// it looks or fits. It runs in the core projects only, in either scope.
-export const CORE_TAG = "@core";
+// Each test runs where what it checks can change (D-161, amending D-143). A
+// project varies one thing: the width, the theme, the motion or the pointer.
+//
+// An untagged test checks what a screen does (a write, a request, the URL,
+// focus and the keys, its copy, a toast and its Undo). The theme changes none
+// of that, and 360 and 412 are 390's layout (no breakpoint between 360 and
+// 768), so it runs on the phone, the tablet and the desktop, with reduced
+// motion and with touch.
+export const E2E_BEHAVIOUR = ["w390-light", "w768-light", "w1280-light", "w390-reduced-motion", "w390-touch"];
+
+// `@floor`: the test checks how the screen fits or looks (the UX floor: axe,
+// contrast, sizes and positions, sideways scroll, markup a layout could change).
+// It runs at every layout, light: 360 (the tightest phone), 390, 768, 1024 (a
+// layout of its own, D-33) and 1280, with reduced motion and with touch. It
+// needs no dark project: `contrastFailures` and `screenshot` check the page in
+// both themes, switching the colour scheme in place.
+export const FLOOR_TAG = "@floor";
+export const E2E_FLOOR = ["w360-light", "w390-light", "w768-light", "w1024-light", "w1280-light", "w390-reduced-motion", "w390-touch"];
+
+// `@feel`: a feel-pass surface screenshotted in its states, which design §10
+// asks for at every width, 412 too (D-40): `@floor`'s projects and w412-light.
+export const FEEL_TAG = "@feel";
+export const E2E_FEEL = ["w360-light", "w390-light", "w412-light", "w768-light", "w1024-light", "w1280-light", "w390-reduced-motion", "w390-touch"];
 
 /**
- * The projects a scope runs, each with the grep that picks its tests. A test
- * with no tag runs in every project of the scope; one tagged `@core` runs in
- * the core projects only; one tagged `@at-<project>` runs only there (an
- * `@at-` tag wins over `@core`), and nowhere when the scope leaves that
- * project out. Playwright filters on the title path plus every tag (a
- * describe's too) before it schedules anything, so a test filtered out never
- * opens a page or runs a hook.
+ * The projects a scope runs, each with the grep that picks its tests. An
+ * untagged test runs in E2E_BEHAVIOUR, one tagged `@floor` in E2E_FLOOR, one
+ * tagged `@feel` in E2E_FEEL, each cut to the scope's projects. One tagged
+ * `@at-<project>` runs only there (an `@at-` tag wins over the others), and
+ * nowhere when the scope leaves that project out; a dark project runs only
+ * those. Playwright filters on the title path plus every tag (a describe's
+ * too) before it schedules anything, so a test filtered out never opens a page
+ * or runs a hook.
  */
 export function e2eProjects(scope) {
+  const only = (tag) => new RegExp(`^(?!.*@at-).*${tag}(?![\\w-])`);
+  const untagged = new RegExp(`^(?!.*@at-)(?!.*${FLOOR_TAG}(?![\\w-]))(?!.*${FEEL_TAG}(?![\\w-]))`);
   return E2E_PROJECTS.filter((p) => scope === "full" || E2E_CORE.includes(p.name)).map((p) => ({
     ...p,
     grep: [
-      E2E_CORE.includes(p.name) ? /^(?!.*@at-)/ : new RegExp(`^(?!.*@at-)(?!.*${CORE_TAG}(?![\\w-]))`),
+      ...(E2E_BEHAVIOUR.includes(p.name) ? [untagged] : []),
+      ...(E2E_FLOOR.includes(p.name) ? [only(FLOOR_TAG)] : []),
+      ...(E2E_FEEL.includes(p.name) ? [only(FEEL_TAG)] : []),
       new RegExp(`@at-${p.name}(?![\\w-])`),
     ],
   }));

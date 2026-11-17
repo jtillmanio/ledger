@@ -16,7 +16,7 @@ import Loading from "../../src/app/settings/loading";
 import { easternYear, formatWords, wordsPerYear } from "../../src/lib/settings";
 import { testSql } from "../db";
 import {
-  computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled,
+  FLOOR, computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled,
 } from "./helpers";
 
 // Writes or sets its own viewport: runs once, in w390-light.
@@ -62,7 +62,7 @@ async function open(page: Page) {
 
 test.afterAll(() => reset());
 
-test("one h1, and the three steppers are named groups of real buttons", async ({ page }) => {
+test("one h1, and the three steppers are named groups of real buttons", FLOOR, async ({ page }) => {
   await open(page);
   await expect(page.locator("h1")).toHaveCount(1);
   await expect(page.locator("h1")).toHaveText("Settings");
@@ -79,7 +79,7 @@ test("one h1, and the three steppers are named groups of real buttons", async ({
   }
 });
 
-test("Export everything is a plain a href=/api/export, and the nav has no Export", async ({ page }) => {
+test("Export everything is a plain a href=/api/export, and the nav has no Export", FLOOR, async ({ page }) => {
   await open(page);
   const link = page.getByRole("link", { name: "Download everything as JSON" });
   await expect(link).toHaveAttribute("href", "/api/export");
@@ -90,7 +90,7 @@ test("Export everything is a plain a href=/api/export, and the nav has no Export
   await expect(page.getByText(/\d+ rules? · \d+ series/)).toBeVisible();
 });
 
-test("Settings is current in the bar that is drawn: the phone's gear, the rail at 768, the sidebar from 1024", async ({ page }) => {
+test("Settings is current in the bar that is drawn: the phone's gear, the rail at 768, the sidebar from 1024", FLOOR, async ({ page }) => {
   await open(page);
   const width = page.viewportSize()!.width;
   const bar = width < 768 ? ".bar" : width < 1024 ? ".rail" : ".side";
@@ -207,7 +207,7 @@ test("a press waiting to be saved is sent when the screen is left", ONCE, async 
   await reset();
 });
 
-test("meets the floor: 44px rows, 32px buttons, contrast in this theme, axe, no sideways scroll", async ({ page }, info) => {
+test("meets the floor: 44px rows, 32px buttons, contrast in this theme, axe, no sideways scroll", FLOOR, async ({ page }, info) => {
   await open(page);
   for (const name of ["Minutes a day", "Words a minute", "Words per page"]) {
     for (const verb of ["Decrease", "Increase"] as const) {
@@ -234,7 +234,7 @@ test("meets the floor: 44px rows, 32px buttons, contrast in this theme, axe, no 
   await screenshot(page, info, "settings");
 });
 
-test("from 1024px pace is on the left and data on the right; below it they stack", async ({ page }) => {
+test("from 1024px pace is on the left and data on the right; below it they stack", FLOOR, async ({ page }) => {
   await open(page);
   const pace = (await page.getByRole("heading", { name: "Reading pace" }).boundingBox())!;
   const data = (await page.getByRole("heading", { name: "Data" }).boundingBox())!;
@@ -324,7 +324,7 @@ test("hold: a press held past a second sends one save with the final value (AC-1
   await reset();
 });
 
-test("the number and its input meet the floor: named, 24px+, same row height open or closed, no text selection, contrast, axe (AC-5)", async ({ page }, info) => {
+test("the number and its input meet the floor: named, 24px+, same row height open or closed, no text selection, contrast, axe (AC-5)", FLOOR, async ({ page }, info) => {
   await reset();
   await open(page);
   const rowOf = (name: string) => page.locator(".frow", { has: group(page, name) });
@@ -377,7 +377,7 @@ test("a key press on + steps once: Enter and Space each add one step, and nothin
 
 const showCovers = (page: Page) => page.getByRole("switch", { name: "Show covers" });
 
-test("Appearance holds one Show covers switch: 44px, on by default, its state in the knob and not the colour alone, 4.5:1 text, axe clean (AC-4, AC-5)", async ({ page }) => {
+test("Appearance holds one Show covers switch: 44px, on by default, its state in the knob and not the colour alone, 4.5:1 text, axe clean (AC-4, AC-5)", FLOOR, async ({ page }) => {
   await open(page);
   await expect(page.getByRole("heading", { level: 2, name: "Appearance" })).toBeVisible();
   const sw = showCovers(page);
@@ -410,7 +410,7 @@ test("the switch is keyboard-operable: Space toggles it, and focus stays on it",
   await expect(sw).toHaveAttribute("aria-checked", "true");
 });
 
-test("from 1024px pace is on the left and Appearance sits above Data on the right (the mockup's desktop); below it they stack pace, Appearance, Data", async ({ page }) => {
+test("from 1024px pace is on the left and Appearance sits above Data on the right (the mockup's desktop); below it they stack pace, Appearance, Data", FLOOR, async ({ page }) => {
   await open(page);
   const pace = (await page.getByRole("heading", { name: "Reading pace" }).boundingBox())!;
   const appearance = (await page.getByRole("heading", { name: "Appearance" }).boundingBox())!;

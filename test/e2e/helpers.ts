@@ -5,10 +5,95 @@
 //   computedStyle          what the browser resolved, custom properties too
 //   expectNoHorizontalScroll  the page is no wider than the viewport
 //   screenshot             PR evidence under a gitignored folder, never a baseline
+//   contrastFailures       4.5:1 text and 3:1 rings, as drawn
+//
+// The floor is checked in both themes in one run (D-161): in a test that no
+// `@at-` tag pins to a project, expectNoAxeViolations (its color-contrast
+// rule), contrastFailures and screenshot also switch the page to the other
+// colour scheme in place, check it there and switch back. So no test needs a
+// dark project of its own to prove dark; a pinned test picks its own themes.
 import AxeBuilder from "@axe-core/playwright";
-import { expect, type Locator, type Page, type TestInfo } from "@playwright/test";
+import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+
+// Where each test runs (scripts/lib/e2e.mjs, D-161). Untagged: what a screen
+// does, in five projects. FLOOR: how it fits or looks, at every layout. FEEL: a
+// feel-pass surface's state screenshots, at every width (design §10).
+export const FLOOR = { tag: "@floor" };
+export const FEEL = { tag: "@feel" };
+
+/**
+ * Waits for every transition and animation that ends (a colour read
+ * mid-transition is neither colour), but not for one that loops, and for no
+ * more than 3s.
+ */
+async function settled(page: Page) {
+  await page.evaluate(() => {
+    const ending = document.getAnimations().filter((a) => a.effect?.getComputedTiming().endTime !== Infinity);
+    const done = Promise.all(ending.map((a) => a.finished.catch(() => undefined)));
+    return Promise.race([done, new Promise((resolve) => setTimeout(resolve, 3_000))]);
+  });
+}
+
+/**
+ * The colour scheme the page follows when the running test checks both themes
+ * in place, else null: outside a test, in a test an `@at-` tag pins to a
+ * project, and on a page whose root sets `data-theme` (the media query no
+ * longer decides its colours).
+ */
+async function otherTheme(page: Page): Promise<{ now: "light" | "dark"; other: "light" | "dark" } | null> {
+  let tags: string[];
+  try {
+    tags = test.info().tags;
+  } catch {
+    return null;
+  }
+  if (tags.some((t) => t.startsWith("@at-"))) return null;
+  const now = await page.evaluate(() =>
+    document.documentElement.hasAttribute("data-theme") ? null : matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  if (now === null) return null;
+  return { now, other: now === "dark" ? "light" : "dark" };
+}
+
+const FREEZE = "e2e-theme-switch";
+
+/** Turns every CSS transition off (or back on), then applies the styles now, before anything is read. */
+async function freezeTransitions(page: Page, on: boolean) {
+  await page.evaluate(([id, freeze]) => {
+    if (freeze) {
+      const style = document.createElement("style");
+      style.id = id;
+      style.textContent = "*, *::before, *::after { transition: none !important; }";
+      document.head.append(style);
+    } else {
+      document.getElementById(id)?.remove();
+    }
+    document.getAnimations(); // flushes the pending style change
+  }, [FREEZE, on] as const);
+}
+
+/**
+ * Runs `check` with the page switched to its other colour scheme, then switches
+ * back, so what the test reads next is its own theme. Transitions are off for
+ * the switch both ways, so every colour lands at once: nothing is waited on,
+ * and a toast's countdown (an animation, not a transition) runs on untouched.
+ * Returns null, running nothing, when `otherTheme` says not to.
+ */
+export async function inOtherTheme<T>(page: Page, check: (scheme: "light" | "dark") => Promise<T>): Promise<T | null> {
+  const theme = await otherTheme(page);
+  if (theme === null) return null;
+  await freezeTransitions(page, true);
+  try {
+    await page.emulateMedia({ colorScheme: theme.other });
+    await page.evaluate(() => void document.getAnimations());
+    return await check(theme.other);
+  } finally {
+    await page.emulateMedia({ colorScheme: theme.now });
+    await page.evaluate(() => void document.getAnimations());
+    await freezeTransitions(page, false);
+  }
+}
 
 // The one run test/e2e/global-setup.ts seeds, for specs to load.
 export const E2E_RUN_ID = "e2e-run";
@@ -32,16 +117,22 @@ export const E2E_UNLISTED_TITLE = "E2E Unlisted Book";
  * and so does an id axe does not know: axe throws on it. `include` scopes the
  * run to one region: a fixed toast over a 360px page partly covers whatever
  * sits behind it, which target-size counts against those links, not the toast.
+ * When `rules` holds `color-contrast`, that rule runs in the other theme too
+ * (`inOtherTheme`); no other rule depends on the theme.
  */
 export async function expectNoAxeViolations(page: Page, rules: string[], include?: string) {
   if (rules.length === 0) throw new Error("expectNoAxeViolations needs the rules the check names.");
-  const builder = new AxeBuilder({ page }).withRules(rules);
-  const results = await (include ? builder.include(include) : builder).analyze();
-  if (results.violations.length === 0) return;
-  const lines = results.violations.map(
-    (v) => `${v.id} (${v.impact ?? "n/a"}): ${v.help}\n` + v.nodes.map((n) => `    ${n.target.join(" ")}`).join("\n"),
-  );
-  throw new Error(`axe found ${results.violations.length} violation(s) on ${page.url()}:\n${lines.join("\n")}`);
+  const run = async (ids: string[], theme: string) => {
+    const builder = new AxeBuilder({ page }).withRules(ids);
+    const results = await (include ? builder.include(include) : builder).analyze();
+    return results.violations.map(
+      (v) => `${theme}${v.id} (${v.impact ?? "n/a"}): ${v.help}\n` + v.nodes.map((n) => `    ${n.target.join(" ")}`).join("\n"),
+    );
+  };
+  const lines = await run(rules, "");
+  if (rules.includes("color-contrast")) lines.push(...((await inOtherTheme(page, (s) => run(["color-contrast"], `${s}: `))) ?? []));
+  if (lines.length === 0) return;
+  throw new Error(`axe found ${lines.length} violation(s) on ${page.url()}:\n${lines.join("\n")}`);
 }
 
 /** The resolved value of each property, by its CSS name: `background-color`, `--page`. */
@@ -69,12 +160,22 @@ export async function expectNoHorizontalScroll(page: Page) {
 /** Where screenshots go. Git ignores it, and Playwright empties it at the start of a run. */
 export const SCREENS_DIR = resolve("test-results", "screens");
 
-/** Writes `test-results/screens/<project>/<name>.png`, the whole page; returns the path. */
+/**
+ * Writes `test-results/screens/<project>/<name>.png`, the whole page; returns
+ * the path. Where the test checks both themes in place, it also writes
+ * `<name>.<other theme>.png` (`inOtherTheme`), so a light project's run leaves
+ * the dark screenshot design §10 asks for.
+ */
 export async function screenshot(page: Page, testInfo: TestInfo, name: string) {
-  const file = resolve(SCREENS_DIR, testInfo.project.name, `${name}.png`);
-  mkdirSync(dirname(file), { recursive: true });
-  // next dev draws its own badge in a corner; it is not the app.
-  await page.screenshot({ path: file, fullPage: true, style: "nextjs-portal { display: none !important; }" });
+  const shoot = async (fileName: string) => {
+    const file = resolve(SCREENS_DIR, testInfo.project.name, fileName);
+    mkdirSync(dirname(file), { recursive: true });
+    // next dev draws its own badge in a corner; it is not the app.
+    await page.screenshot({ path: file, fullPage: true, style: "nextjs-portal { display: none !important; }" });
+    return file;
+  };
+  const file = await shoot(`${name}.png`);
+  await inOtherTheme(page, (scheme) => shoot(`${name}.${scheme}.png`));
   return file;
 }
 
@@ -113,13 +214,18 @@ export function tokenColour(page: Page, token: string) {
  * It measures what the page settles on: it first waits for every transition
  * and animation that ends (a pressed chip read mid-transition is neither
  * colour), but not for one that loops, and for no more than 3s.
+ *
+ * Where the test checks both themes in place (`inOtherTheme`), it measures the
+ * other theme too, each of its lines starting with that theme's name.
  */
 export async function contrastFailures(page: Page): Promise<string[]> {
-  await page.evaluate(() => {
-    const ending = document.getAnimations().filter((a) => a.effect?.getComputedTiming().endTime !== Infinity);
-    const done = Promise.all(ending.map((a) => a.finished.catch(() => undefined)));
-    return Promise.race([done, new Promise((resolve) => setTimeout(resolve, 3_000))]);
-  });
+  await settled(page);
+  const here = await measureContrast(page);
+  const there = await inOtherTheme(page, async (scheme) => (await measureContrast(page)).map((line) => `${scheme}: ${line}`));
+  return [...here, ...(there ?? [])];
+}
+
+function measureContrast(page: Page): Promise<string[]> {
   return page.evaluate(() => {
     const ctx = document.createElement("canvas").getContext("2d", { willReadFrequently: true })!;
     type Rgba = [number, number, number, number];

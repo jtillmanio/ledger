@@ -6,13 +6,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
-import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, screenshot } from "./helpers";
+import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, screenshot } from "./helpers";
 
 // A check with no layout in it: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
-
 const AXE = [
   "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role", "aria-prohibited-attr",
   "aria-valid-attr-value", "landmark-unique", "duplicate-id-aria", "target-size",
@@ -64,7 +61,7 @@ async function open(page: Page, path = "/books/list") {
   await expect(chip(page, "E2E Gen Alpha")).toBeVisible();
 }
 
-test("a top-level chip lists the books tagged only with its subgenres, each row naming its own (AC-2, AC-3)", CORE, async ({ page }) => {
+test("a top-level chip lists the books tagged only with its subgenres, each row naming its own (AC-2, AC-3)", async ({ page }) => {
   await open(page);
   await chip(page, "E2E Gen Alpha").click();
   await expect(page).toHaveURL(/genre=E2E(\+|%20)Gen(\+|%20)Alpha/);
@@ -80,7 +77,7 @@ test("a top-level chip lists the books tagged only with its subgenres, each row 
   await expect(page.locator(".book-row .row-title")).toHaveText(["E2E Gen Deeper only"]);
 });
 
-test("the genre chips are named links in one row that scrolls sideways, never the page; none under 24px, 44px on the phone (AC-6)", async ({ page }, info) => {
+test("the genre chips are named links in one row that scrolls sideways, never the page; none under 24px, 44px on the phone (AC-6)", FLOOR, async ({ page }, info) => {
   await open(page);
   const width = page.viewportSize()!.width;
   const links = genres(page).getByRole("link");

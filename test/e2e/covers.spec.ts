@@ -8,7 +8,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
-import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour } from "./helpers";
+import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour } from "./helpers";
 
 // A check with no layout in it: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
@@ -105,7 +105,7 @@ const box = async (loc: ReturnType<Page["locator"]>) => {
   return { width: Math.round(b.width * 100) / 100, height: Math.round(b.height * 100) / 100 };
 };
 
-test("a spine row with a cover has one lazy 28×42 <img>, one without has its number in the same box (AC-2)", async ({ page }) => {
+test("a spine row with a cover has one lazy 28×42 <img>, one without has its number in the same box (AC-2)", FLOOR, async ({ page }) => {
   await fakeCovers(page);
   await openSpine(page, BIG);
   await expect(page.locator(".iss")).toHaveCount(BIG_ROWS);
@@ -137,7 +137,7 @@ test("a spine row with a cover has one lazy 28×42 <img>, one without has its nu
   expect(new Set(lefts.map((x) => Math.round(x))).size, `cover left edges ${lefts.join(", ")}`).toBe(1);
 });
 
-test("in compact density every cover box is 20×30 and the row keeps its height (AC-2)", async ({ page }) => {
+test("in compact density every cover box is 20×30 and the row keeps its height (AC-2)", FLOOR, async ({ page }) => {
   // Compact is the desktop's (globals.css: from 900px), so this sets its own width.
   await page.setViewportSize({ width: 1280, height: 800 });
   await fakeCovers(page);
@@ -152,7 +152,7 @@ test("in compact density every cover box is 20×30 and the row keeps its height 
   expect(a).toBe(b);
 });
 
-test("a swap changes no row's height: a 381-row spine scrolled end to end, every image arriving, shifts under 0.1 (AC-1)", async ({ page }) => {
+test("a swap changes no row's height: a 381-row spine scrolled end to end, every image arriving, shifts under 0.1 (AC-1)", FLOOR, async ({ page }) => {
   await page.addInitScript(() => {
     (window as unknown as { shift: number }).shift = 0;
     new PerformanceObserver((list) => {
@@ -184,7 +184,7 @@ test("a swap changes no row's height: a 381-row spine scrolled end to end, every
   expect(heights).toHaveLength(1);
 });
 
-test("no cover box is a gradient, an identity hue or a halo; the loaded and the loading box are --sunk (AC-1, AC-5)", async ({ page }) => {
+test("no cover box is a gradient, an identity hue or a halo; the loaded and the loading box are --sunk (AC-1, AC-5)", FLOOR, async ({ page }) => {
   await fakeCovers(page);
   for (const scheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
@@ -217,7 +217,7 @@ test("no cover box is a gradient, an identity hue or a halo; the loaded and the 
   }
 });
 
-test("the Library: a cover in the 28×42 box, initials without one, the dashed box and its line when pending (AC-3, AC-5)", async ({ page }) => {
+test("the Library: a cover in the 28×42 box, initials without one, the dashed box and its line when pending (AC-3, AC-5)", FLOOR, async ({ page }) => {
   await fakeCovers(page);
   await openLibrary(page);
   const row = (title: string) => page.locator(".book-row").filter({ has: page.locator(".row-title", { hasText: title }) });
@@ -238,7 +238,7 @@ test("the Library: a cover in the 28×42 box, initials without one, the dashed b
   expect(both).toBe(0);
 });
 
-test("the next-issue strip draws the next placement's cover, its number when it has none (AC-4)", async ({ page }) => {
+test("the next-issue strip draws the next placement's cover, its number when it has none (AC-4)", FLOOR, async ({ page }) => {
   await fakeCovers(page);
   await openSpine(page, WITH);
   const strip = page.locator(".nextis");
@@ -254,7 +254,7 @@ test("the next-issue strip draws the next placement's cover, its number when it 
   expect(await box(strip.locator(".rcv"))).toEqual({ width: 28, height: 42 });
 });
 
-test("axe finds nothing on the spine, the Library or the strip; the placeholder text is 4.5:1 (AC-6)", async ({ page }) => {
+test("axe finds nothing on the spine, the Library or the strip; the placeholder text is 4.5:1 (AC-6)", FLOOR, async ({ page }) => {
   await fakeCovers(page);
   for (const scheme of ["light", "dark"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
@@ -340,7 +340,7 @@ async function expectSpineWithoutImages(page: Page, seen: string[]) {
   await expect(page.locator("#p-3 .rcv")).toHaveText("3");
 }
 
-test("with Show covers off, the spine makes zero image requests and every box is its placeholder; on again after a reload, the covers come back (AC-1, AC-2)", async ({ page, baseURL }) => {
+test("with Show covers off, the spine makes zero image requests and every box is its placeholder; on again after a reload, the covers come back (AC-1, AC-2)", FLOOR, async ({ page, baseURL }) => {
   await fakeCovers(page);
   const seen = countImages(page, baseURL!);
   await page.context().addCookies([{ name: SHOW_COVERS, value: "off", url: baseURL! }]);
@@ -356,7 +356,7 @@ test("with Show covers off, the spine makes zero image requests and every box is
   expect(await box(page.locator("#p-3 .rcv"))).toEqual({ width: 28, height: 42 });
 });
 
-test("the Library and the next-issue strip make zero image requests with Show covers off, and draw their placeholders (AC-2)", async ({ page, baseURL }) => {
+test("the Library and the next-issue strip make zero image requests with Show covers off, and draw their placeholders (AC-2)", FLOOR, async ({ page, baseURL }) => {
   await fakeCovers(page);
   const seen = countImages(page, baseURL!);
   await page.context().addCookies([{ name: SHOW_COVERS, value: "off", url: baseURL! }]);

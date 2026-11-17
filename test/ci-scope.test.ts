@@ -168,7 +168,7 @@ describe("ci.yml gates only the browser suite and the build", () => {
 describe("ci.yml's check job is CI's verdict", () => {
   const verdict = (env: Record<string, string>) =>
     spawnSync("bash", ["-c", checkScript()], { env: { ...process.env, ...env }, encoding: "utf8" }).status;
-  const green = { SCOPE: "success", FULL: "true", TESTS: "success", E2E: "success" };
+  const green = { SCOPE: "success", FULL: "true", TESTS: "success", E2E: "success", BUDGET: "success" };
 
   it("runs whatever happened, after every job except the report", () => {
     const check = ciJob("check");
@@ -179,7 +179,13 @@ describe("ci.yml's check job is CI's verdict", () => {
 
   it("passes when every job passed, or the browser suite was skipped on a docs-only change", () => {
     expect(verdict(green)).toBe(0);
-    expect(verdict({ ...green, FULL: "false", E2E: "skipped" })).toBe(0);
+    expect(verdict({ ...green, FULL: "false", E2E: "skipped", BUDGET: "skipped" })).toBe(0);
+  });
+
+  it("fails when the browser suite ran green but its time budget failed or never ran (D-161)", () => {
+    expect(verdict({ ...green, BUDGET: "failure" })).toBe(1);
+    expect(verdict({ ...green, BUDGET: "skipped" })).toBe(1);
+    expect(verdict({ ...green, BUDGET: "cancelled" })).toBe(1);
   });
 
   it("fails when any job failed, was cancelled, or the browser suite was skipped when it should run", () => {
