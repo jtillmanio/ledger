@@ -116,7 +116,7 @@ describe("no prefetch in the Lighthouse load (task 0.14)", () => {
     expect(src).not.toMatch(/blocked-url-patterns|_rsc=\*/);
     // The tap run waits for every prefetch on purpose: that is where a prefetched route handler is caught.
     const tap = src.slice(src.indexOf("async function phoneTab("), src.indexOf("const browser ="));
-    expect(tap).not.toMatch(/setBlockedURLs|setRequestInterception|blockedUrl|lighthouseArgs|abort\(/i);
+    expect(tap).not.toMatch(/setBlockedURLs|setRequestInterception|blockedUrl|lighthouseArgs|abort\(|\.route\(|Network\./i);
   });
 
   it("leaves a blocked request out of the count, and still names a route handler it asked for", () => {
@@ -292,6 +292,11 @@ describe("mergeMetrics (one job per route)", () => {
   it("keeps a route the list no longer names, last, and refuses nothing measured", () => {
     expect(Object.keys(mergeMetrics([part("old", "a"), part("login", "b")], ["login"]).routes)).toEqual(["login", "old"]);
     expect(() => mergeMetrics([], ["login"])).toThrow(/no route was measured/);
+  });
+
+  it("keeps the run count, so the merged metrics.json says runs: 1 (task 0.14)", () => {
+    const one = (id: string, at: string) => ({ ...part(id, at), runs: 1 });
+    expect(mergeMetrics([one("comics", "b"), one("login", "a")], ["login", "comics"]).runs).toBe(1);
   });
 });
 
