@@ -1,7 +1,7 @@
 ---
 id: TASK-099
 title: 5.7 Books coming out (1 of 2) — the Coming out page, Got it, and the nav item
-status: Review
+status: Done
 depends_on: []
 size: M
 model: sonnet
