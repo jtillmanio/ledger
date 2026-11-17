@@ -618,3 +618,71 @@ describe("Where the book sits (2.2g): the rows' markup", () => {
     expect(out).not.toMatch(/danger|style="[^"]*#/);
   });
 });
+
+describe("Coming out on the rollup slot (task 5.7, TASK-100, AC-4)", () => {
+  /** The Eastern day the dashboard is read on: November 2026. */
+  const DAY = "2026-11-17";
+  const releasing = async (list: [string, string | null][]) => {
+    await books(...list.map(([id]) => ({ id })));
+    for (const [id, on] of list) await sql`INSERT INTO releases (book_id, release_date) VALUES (${id}, ${on})`;
+  };
+  const line = async (day = DAY) => {
+    const { comingOutCounts, default: ComingOutLine } = await import("../src/components/ComingOutLine");
+    const counts = comingOutCounts(await q.wantedReleases(USER, day), day);
+    const { createElement } = await import("react");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    return { counts, html: renderToStaticMarkup(createElement(ComingOutLine, counts)) };
+  };
+
+  it("two out now and three due this month: the line reads them, links to Coming out, and equals the list's groups", async () => {
+    await releasing([
+      ["out-1", "2026-11-16"], ["out-2", "2026-09-01"],
+      ["nov-1", "2026-11-18"], ["nov-2", "2026-11-25"], ["nov-3", "2026-11-30"],
+      ["dec-1", "2026-12-01"], ["undated", null],
+    ]);
+    // A book you have (any status) isn't wanted, so it counts nowhere.
+    await books({ id: "got-it" });
+    await sql`INSERT INTO releases (book_id, release_date) VALUES ('got-it', '2026-11-01')`;
+    await status("got-it", "to_read");
+
+    const { counts, html } = await line();
+    expect(counts).toEqual({ out: 2, month: 3 });
+    const list = await q.wantedReleases(USER, DAY);
+    expect(counts.out).toBe(list.filter((r) => r.grp === "out").length);
+    expect(counts.month).toBe(list.filter((r) => r.grp === "2026-11").length);
+    expect(html).toMatch(/<a [^>]*href="\/books\/releases"/);
+    expect(html.replace(/<[^>]+>/g, "")).toBe("2 out now · 3 coming this month →");
+    expect(html).toMatch(/<span aria-hidden="true">→<\/span>/);
+  });
+
+  it("with none of either the line is absent, even with later books waiting", async () => {
+    await releasing([["dec-1", "2026-12-01"], ["undated", null]]);
+    expect((await line()).html).toBe("");
+  });
+
+  it("a zero part is dropped (owner, Q4)", async () => {
+    await releasing([["nov-1", "2026-11-20"]]);
+    expect((await line()).html.replace(/<[^>]+>/g, "")).toBe("1 coming this month →");
+    await releasing([["out-1", "2026-11-01"]]);
+    expect((await line("2026-12-02")).html.replace(/<[^>]+>/g, "")).toBe("2 out now →");
+  });
+
+  it("the dashboard draws it inside the rollup slot, after the year's counts, the slots in their order", async () => {
+    await releasing([["out-1", "2026-11-16"], ["nov-1", "2026-11-18"]]);
+    vi.resetModules();
+    vi.doMock("@/lib/auth", async (orig) => ({ ...(await orig<typeof import("../src/lib/auth")>()), requireUserId: async () => USER }));
+    vi.doMock("@/lib/finish-date", async (orig) => ({ ...(await orig<typeof import("../src/lib/finish-date")>()), today: () => DAY }));
+    vi.doMock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, refresh: () => {} }), usePathname: () => "/books" }));
+    const { createElement } = await import("react");
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const Books = (await import("../src/app/books/page")).default;
+    const { UndoProvider } = await import("../src/components/Undo");
+    const html = renderToStaticMarkup(createElement(UndoProvider, null, await Books()));
+    const rollup = html.slice(html.indexOf('data-slot="rollup"'));
+    expect(rollup.slice(0, rollup.indexOf("</section>"))).toMatch(
+      /<\/dl><p class="coming-out"><a [^>]*href="\/books\/releases"[^>]*>1 out now · 1 coming this month/);
+    const slots = [...html.matchAll(/data-slot="([a-z]+)"/g)].map((m) => m[1]);
+    expect(slots).toEqual(["now", "next", "position", "situation", "rollup"]);
+    await (await import("../src/db")).sql.end();
+  });
+});

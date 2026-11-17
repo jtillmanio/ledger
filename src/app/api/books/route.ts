@@ -24,7 +24,8 @@ const MAX_COVER = 300;
  *   year, pages, coverUrl } }` or `{ hand: { title, author, series, position,
  *   pages, words } }`. The destination is *Add to*'s, Someday when absent. One
  *   transaction; the answer says whether the book was reused, and is what the
- *   undo sends back. `note`, an inbox note's id, resolves that note into the
+ *   undo sends back. *Coming out* is `{ kind: 'release', date }`, a real
+ *   `YYYY-MM-DD` or null for *no date yet* (task 5.7). `note`, an inbox note's id, resolves that note into the
  *   book in the same transaction (task 1.4b); the answer's `note` says it did.
  * - DELETE `{ destination, created, added, statused?, promoted?, note? }`: that
  *   add's undo, from an add here or a paste (`/api/books/bulk`, whose
@@ -39,13 +40,14 @@ export async function POST(req: Request) {
   if (!userId) return unauthorized();
   const body = await req.json().catch(() => null);
   const item = parseItem(body?.item);
-  const destination = parseDestination(body?.destination);
+  // *Coming out* (task 5.7) is one book's destination: here, never a paste's.
+  const destination = parseDestination(body?.destination, { release: true });
   const note = body?.note == null ? null : noteId(body.note);
   if (note === undefined) return NextResponse.json({ error: "note is an inbox note's id" }, { status: 400 });
   if (!item || !destination) {
     return NextResponse.json({
       error: "item is { use }, { hardcover: { hardcoverId, title, authors, year, pages, coverUrl } } or "
-        + "{ hand: { title, author, series, position, pages, words } }; " + destinationShapes(),
+        + "{ hand: { title, author, series, position, pages, words } }; " + destinationShapes({ release: true }),
     }, { status: 400 });
   }
   const result = await addBook(userId, item, destination, note === null ? {} : { note });
@@ -63,8 +65,8 @@ export async function DELETE(req: Request) {
   const userId = await apiUserId();
   if (!userId) return unauthorized();
   const body = await req.json().catch(() => null);
-  // A paste to a format you own (task 5.17) is undone here too.
-  const destination = parseDestination(body?.destination, { owned: true });
+  // A paste to a format you own (task 5.17) is undone here too, and an add to *Coming out* (task 5.7).
+  const destination = parseDestination(body?.destination, { owned: true, release: true });
   const created = ids(body?.created);
   const added = ids(body?.added);
   const statused = body?.statused === undefined ? [] : ids(body.statused);

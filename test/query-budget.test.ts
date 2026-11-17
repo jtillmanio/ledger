@@ -24,7 +24,8 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   // Task 2.2d adds *Or keep going* (follow_next) in the same wave; Now's *Next in* rides on Now's read.
   // Task 2.7 adds the year's stretch-year acceptance (one row), so the strip's overage can read settled.
   // Task 4.4 adds the last Calibre sync (one scalar row) for the stale-sync line, in the same wave.
-  "/books": { queries: 12, waves: 1 },
+  // Task 5.7 adds the wanted releases (Coming out's own query) for the rollup's line, in the same wave.
+  "/books": { queries: 13, waves: 1 },
   // The plan page (task 2.10): the year's capacity, the rail's books, the quarters' rows and your pace, together;
   // task 2.7 adds the year's acceptance row, for the capacity card and the settled hatch.
   "/books/plan": { queries: 5, waves: 1 },

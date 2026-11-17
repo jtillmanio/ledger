@@ -153,6 +153,7 @@ describe("Add to (AC-3)", () => {
     expect(dialog()!.querySelector(".pane-paste")!.hasAttribute("hidden")).toBe(false);
     expect(chips().map((c) => [c.textContent, c.getAttribute("aria-pressed"), c.getAttribute("aria-disabled")])).toEqual([
       ["Someday", "true", null], ["On deck", "false", null], ["Year or quarter…", "false", null], ["Shelf…", "false", null],
+      ["Coming out", "false", null], // task 5.7
     ]);
     expect(chip("On deck").hasAttribute("aria-describedby")).toBe(false);
     expect(chip("Year or quarter…").hasAttribute("aria-describedby")).toBe(false);
@@ -604,6 +605,103 @@ describe("By hand (AC-2)", () => {
       destination: { kind: "someday" },
     }]);
     expect(dialog()!.querySelector<HTMLInputElement>("#hand-title")!.value).toBe("");
+  });
+});
+
+describe("Coming out (task 5.7, TASK-100: AC-2, AC-3, AC-6)", () => {
+  const dateField = () => dialog()!.querySelector<HTMLInputElement>("#release-date");
+  const noDate = () => dialog()!.querySelector<HTMLInputElement>("#release-none");
+  const check = (el: HTMLInputElement) => click(el);
+  async function byHand(title = "Wind and Truth") {
+    await click(seg("By hand"));
+    await type(dialog()!.querySelector<HTMLInputElement>("#hand-title")!, title);
+    await type(dialog()!.querySelector<HTMLInputElement>("#hand-author")!, "Brandon Sanderson");
+  }
+
+  it("is offered in Search and By hand, not Paste; choosing it shows a labelled date field and a named No date yet", async () => {
+    await open();
+    expect(chip("Coming out")).toBeDefined();
+    expect(dateField()).toBeNull();
+    await click(chip("Coming out"));
+    expect(chip("Coming out").getAttribute("aria-pressed")).toBe("true");
+    expect(dateField()!.type).toBe("date");
+    expect(dialog()!.querySelector(`label[for="release-date"]`)!.textContent).toBe("Release date");
+    expect(noDate()!.type).toBe("checkbox");
+    expect(dialog()!.querySelector(`label[for="release-none"]`)!.textContent).toBe("No date yet");
+    await click(seg("By hand"));
+    expect(chip("Coming out").getAttribute("aria-pressed")).toBe("true");
+    expect(button("Add to Coming out")).toBeDefined();
+    // Paste a list is a list, and a release is one book's date (owner, Q3): leaving for it goes back to Someday.
+    await click(seg("Paste a list"));
+    expect(chips().map((c) => c.textContent)).not.toContain("Coming out");
+    expect(chip("Someday").getAttribute("aria-pressed")).toBe("true");
+    expect(dateField()).toBeNull();
+  });
+
+  it("with neither a date nor No date yet, the add is refused under the field, focus goes there, and nothing is sent", async () => {
+    await open();
+    await click(chip("Coming out"));
+    await byHand();
+    await submit(dialog()!.querySelector("form.byhand")!);
+    expect(dateField()!.getAttribute("aria-invalid")).toBe("true");
+    expect(document.getElementById(dateField()!.getAttribute("aria-describedby")!)!.textContent)
+      .toBe("! Pick a release date, or No date yet");
+    expect(document.activeElement).toBe(dateField());
+    expect(adds()).toEqual([]);
+    // What you typed is still there.
+    expect(dialog()!.querySelector<HTMLInputElement>("#hand-title")!.value).toBe("Wind and Truth");
+    // A date that isn't a calendar day is refused the same way.
+    await type(dateField()!, "2026-02-30");
+    await submit(dialog()!.querySelector("form.byhand")!);
+    expect(adds()).toEqual([]);
+    expect(dateField()!.getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it("By hand with a date sends it as the destination; the error clears once it is right", async () => {
+    added = { ...added, destination: { kind: "release", date: "2026-12-06" } };
+    await open();
+    await click(chip("Coming out"));
+    await byHand();
+    await submit(dialog()!.querySelector("form.byhand")!);
+    await type(dateField()!, "2026-12-06");
+    await submit(dialog()!.querySelector("form.byhand")!);
+    expect(adds()).toEqual([{
+      item: { hand: { title: "Wind and Truth", author: "Brandon Sanderson", series: null, position: null, pages: null, words: null } },
+      destination: { kind: "release", date: "2026-12-06" },
+    }]);
+    expect(dateField()!.hasAttribute("aria-invalid")).toBe(false);
+    expect(document.querySelector(".toast-label")!.textContent).toBe("Added to Coming out");
+    await click(document.querySelector(".toast-undo")!);
+    const [, init] = fetchMock.mock.calls.at(-1)!;
+    expect([init.method, JSON.parse(init.body).destination]).toEqual(["DELETE", { kind: "release", date: "2026-12-06" }]);
+  });
+
+  it("No date yet clears the date and sends null; typing a date unticks it", async () => {
+    await open();
+    await click(chip("Coming out"));
+    await type(dateField()!, "2026-12-06");
+    await check(noDate()!);
+    expect(noDate()!.checked).toBe(true);
+    expect(dateField()!.value).toBe("");
+    await type(dateField()!, "2027-01-02");
+    expect(noDate()!.checked).toBe(false);
+    await check(noDate()!);
+    await byHand();
+    await submit(dialog()!.querySelector("form.byhand")!);
+    expect(adds()[0].destination).toEqual({ kind: "release", date: null });
+  });
+
+  it("a search result says Add to Coming out and sends the date; a book already coming out says so", async () => {
+    added = { ...added, bookId: BLADE.id, reused: true, status: null, created: [], added: [] };
+    await open();
+    await click(chip("Coming out"));
+    await type(dateField()!, "2026-12-06");
+    await search();
+    expect(resultButtons()[0].textContent).toBe("Add to Coming out");
+    await click(resultButtons()[0]);
+    expect(adds()).toEqual([{ item: { use: BLADE.id }, destination: { kind: "release", date: "2026-12-06" } }]);
+    expect(document.querySelector(".toast-label")!.textContent).toBe("Already in your library");
+    expect(document.querySelector(".toast-detail")!.textContent).toBe("The Blade Itself · already on Coming out");
   });
 });
 

@@ -1,14 +1,14 @@
 ---
 id: TASK-100
 title: 5.7 Books coming out (2 of 2) — the add sheet's Coming out destination and the dashboard line
-status: Ready
+status: In progress
 depends_on: [TASK-099]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 45ddc3d
 ---
 
 # TASK-100 — 5.7 Books coming out (2 of 2) — the add sheet's Coming out destination and the dashboard line
@@ -68,7 +68,36 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-17 by the owner, with the four defaults below.
+
+**Owner's answers at the gate:**
+
+1. A reused book that already has a status (any: Someday, Read, Unlisted…) added to *Coming out*: nothing is written (it would never be listed); the toast says *Already in your library · read*.
+2. A book that already has a `releases` row: its date is kept, nothing is written; the toast says *already on Coming out*. Editing a date stays 3.5's.
+3. *Paste a list* does not offer *Coming out*: Search and By hand only (one book, one date), as the owned formats are Paste's alone. Switching to Paste with it chosen goes back to Someday.
+4. The dashboard line drops a zero part (*3 coming this month →*), and is absent when both are zero.
+
+**Steps**
+
+1. `src/db/writes.ts`: `Destination` gains `{ kind: "release"; date: string | null }`. `writeDestination` inserts the `releases` row (`ON CONFLICT DO NOTHING`) for a book with no `book_status` row (Q1, Q2); a created book gets no status. `undoInside` deletes only the row it wrote (`release_date IS NOT DISTINCT FROM` the date), then soft-deletes a created book; it refuses, changing nothing, when a book it placed has a status since (*Got it*), or a created one has a shelf or plan row. `addBooks` (Paste) throws on `release`, as `addBook` does on `owned` (Q3).
+2. `src/lib/book-add.ts`, `src/app/api/books/route.ts`: `Target` gains `{ kind: "release" }` (named *Coming out*); `parseDestination(…, { release: true })` accepts `date` as a real calendar `YYYY-MM-DD` or null; POST and DELETE `/api/books` pass it; `/api/books/bulk` still refuses it.
+3. `src/components/AddBooks.tsx` + new `src/components/ReleaseDate.tsx`: the *Coming out* chip after *Shelf…* in Search and By hand; under *Add to* a labelled *Release date* `<input type="date">` and a real *No date yet* checkbox, choosing one clears the other; a send with neither is refused under the field (*Pick a release date, or No date yet*) and focus goes there. The reuse toast says why nothing was written.
+4. `src/app/books/page.tsx` + new `src/components/ComingOutLine.tsx`: `wantedReleases(userId, day)` joins the one wave (`test/query-budget.test.ts`: `/books` 12 → 13, one wave). *Out now* = `grp === "out"`, *coming this month* = `grp === day.slice(0, 7)`. A grey link in the `rollup` slot after the `<dl>`, the `→` `aria-hidden`; Q4. Styles in `src/app/globals.css`.
+5. `design/mockups.html`, `design/mockups-index.md`: `add` gains the chip in its Search frames, a phone frame of By hand with *Coming out* and the date field, and a note; `bdash` the line in its 390, 834 and desktop rollups, and a note.
+
+**Files:** `src/db/writes.ts`, `src/lib/book-add.ts`, `src/app/api/books/route.ts`, `src/components/AddBooks.tsx`, `src/components/ReleaseDate.tsx` (new), `src/app/books/page.tsx`, `src/components/ComingOutLine.tsx` (new), `src/app/globals.css`, `design/mockups.html`, `design/mockups-index.md`; tests below. Not in "Files likely touched": the two new components, `globals.css`, `test/query-budget.test.ts`, `test/add-book-sheet.test.tsx`. `src/app/api/books/bulk/route.ts` stays untouched (Q3). `src/db/queries.ts` is untouched: the line reads `wantedReleases` as it is.
+
+**Test strategy**
+
+- AC-2, AC-3: `test/add-book.test.ts` (TEST database): by hand to *Coming out* next month → one `books`, one `releases` row with that date, no `book_status`, listed by `wantedReleases` under that month; Undo removes both; *No date yet* → NULL, grouped `none`; a reused book with a status or a release writes nothing; Undo refused after *Got it*; `/bulk` and a bad date refused (400).
+- AC-4: `test/books-dashboard.test.ts`: 2 out, 3 this month, 1 next month → counts { 2, 3 } equal the list's groups; the rendered line reads `2 out now · 3 coming this month` with `href="/books/releases"`; absent at zero; one zero dropped.
+- AC-6 (date field): `test/add-book-sheet.test.tsx`: the field and checkbox are named; an empty date is refused under the field and nothing is sent.
+- AC-1, AC-6 (browser): `test/e2e/releases.spec.ts`: by hand to *Coming out* → listed on the page → Undo removes it; the dashboard line's counts equal the page's group counts; axe; screenshots at 360, 834 and 1280, light and dark.
+- AC-5: checked in review (the frames and the index rows).
+
+**Risks:** the dashboard's added read (budget 13, one wave). A date input's look differs by browser; the screenshots pin Chromium's.
+
+**Size:** about 9 source files plus tests, no schema; the task is already the split's second half, so no further split.
 
 ## Review log
 

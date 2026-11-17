@@ -430,6 +430,104 @@ describe("Paste a list (task 1.4's, through 1.4c)", () => {
   });
 });
 
+describe("Coming out (task 5.7, TASK-100)", () => {
+  /** The page's Eastern day, pinned: next month is December. */
+  const TODAY = "2026-11-17";
+  const releaseRows = () => sql`SELECT book_id, release_date FROM releases ORDER BY book_id`;
+  const wanted = async () => (await import("../src/db/queries")).wantedReleases(USER, TODAY);
+  const comingOut = (date: string | null) => ({ kind: "release", date });
+
+  it("by hand with a date next month writes one books row, one releases row and no status; listed under that month; Undo removes both (AC-2)", async () => {
+    const before = (await bookRows()).length;
+    const done = await add(hand({ title: "Wind and Truth", author: "Brandon Sanderson" }), comingOut("2026-12-06"));
+    expect(done.status).toBe(200);
+    expect(done.body).toMatchObject({
+      destination: comingOut("2026-12-06"), created: ["wind-and-truth-brandon-sanderson"],
+      added: ["wind-and-truth-brandon-sanderson"], statused: [],
+    });
+    expect((await bookRows()).length).toBe(before + 1);
+    expect(await releaseRows()).toEqual([{ book_id: "wind-and-truth-brandon-sanderson", release_date: "2026-12-06" }]);
+    expect(await sql`SELECT 1 FROM book_status WHERE book_id = 'wind-and-truth-brandon-sanderson'`).toHaveLength(0);
+    expect((await wanted()).map((r) => [r.id, r.grp])).toEqual([["wind-and-truth-brandon-sanderson", "2026-12"]]);
+
+    expect(await undo(done.body)).toBe(200);
+    expect(await releaseRows()).toEqual([]);
+    expect((await bookRows()).find((b) => b.id === "wind-and-truth-brandon-sanderson")!.removed).toBe(true);
+    expect(await wanted()).toEqual([]);
+  });
+
+  it("with no date yet writes a NULL release_date, listed under No date yet (AC-3)", async () => {
+    const done = await add(hand({ title: "Doors of Stone", author: "Patrick Rothfuss" }), comingOut(null));
+    expect(done.status).toBe(200);
+    expect(await releaseRows()).toEqual([{ book_id: "doors-of-stone-patrick-rothfuss", release_date: null }]);
+    expect((await wanted()).map((r) => [r.id, r.grp])).toEqual([["doors-of-stone-patrick-rothfuss", "none"]]);
+    expect(await undo(done.body)).toBe(200);
+    expect(await releaseRows()).toEqual([]);
+  });
+
+  it("a reused book with no status gets the row, and its undo removes only that row", async () => {
+    await sql`INSERT INTO books (id, title, author_id) VALUES ('before-they-are-hanged', 'Before They Are Hanged', 'joe-abercrombie')`;
+    const done = await add({ use: "before-they-are-hanged" }, comingOut("2026-11-01"));
+    expect(done.body).toMatchObject({ reused: true, created: [], added: ["before-they-are-hanged"] });
+    expect((await wanted()).map((r) => [r.id, r.grp])).toEqual([["before-they-are-hanged", "out"]]);
+    expect(await undo(done.body)).toBe(200);
+    expect(await releaseRows()).toEqual([]);
+    expect((await bookRows()).find((b) => b.id === "before-they-are-hanged")!.removed).toBe(false);
+  });
+
+  it("a reused book that has a status writes nothing (owner, Q1); one that has a release keeps its date (Q2)", async () => {
+    const read = await add({ use: "the-blade-itself-joe-abercrombie" }, comingOut("2026-12-06"));
+    expect(read.body).toMatchObject({ reused: true, status: "read", created: [], added: [] });
+    expect(await releaseRows()).toEqual([]);
+
+    await sql`INSERT INTO books (id, title, author_id) VALUES ('before-they-are-hanged', 'Before They Are Hanged', 'joe-abercrombie')`;
+    await sql`INSERT INTO releases (book_id, release_date) VALUES ('before-they-are-hanged', '2027-03-01')`;
+    const again = await add({ use: "before-they-are-hanged" }, comingOut("2026-12-06"));
+    expect(again.body).toMatchObject({ reused: true, status: null, created: [], added: [] });
+    expect(await releaseRows()).toEqual([{ book_id: "before-they-are-hanged", release_date: "2027-03-01" }]);
+  });
+
+  it("Undo is refused, changing nothing, once Got it has given the book a status", async () => {
+    const done = await add(hand({ title: "Wind and Truth", author: "Brandon Sanderson" }), comingOut("2026-12-06"));
+    const { saveBookStatus } = await import("../src/db/writes");
+    await saveBookStatus(USER, { bookId: "wind-and-truth-brandon-sanderson", status: "to_read" });
+    expect(await undo(done.body)).toBe(409);
+    expect(await releaseRows()).toEqual([{ book_id: "wind-and-truth-brandon-sanderson", release_date: "2026-12-06" }]);
+    expect((await bookRows()).find((b) => b.id === "wind-and-truth-brandon-sanderson")!.removed).toBe(false);
+  });
+
+  it("Undo is refused when the release row isn't the one it wrote", async () => {
+    const done = await add(hand({ title: "Wind and Truth", author: "Brandon Sanderson" }), comingOut("2026-12-06"));
+    await sql`UPDATE releases SET release_date = '2027-01-10' WHERE book_id = 'wind-and-truth-brandon-sanderson'`;
+    expect(await undo(done.body)).toBe(409);
+    expect(await releaseRows()).toEqual([{ book_id: "wind-and-truth-brandon-sanderson", release_date: "2027-01-10" }]);
+  });
+
+  it("a date that isn't a real calendar day is refused, writing nothing", async () => {
+    for (const date of ["2026-02-30", "2026-13-01", "12/06/2026", "2026-12-6", "", 20261206]) {
+      const res = await add(hand({ title: "Wind and Truth", author: "Brandon Sanderson" }), comingOut(date as string));
+      expect(res.status, String(date)).toBe(400);
+    }
+    expect(await add(hand({ title: "Wind and Truth", author: "Brandon Sanderson" }), { kind: "release" })).toMatchObject({ status: 400 });
+    expect(await releaseRows()).toEqual([]);
+    expect((await bookRows()).map((b) => b.id)).toEqual(["the-blade-itself-joe-abercrombie"]);
+    // A leap day is a real one.
+    expect((await add(hand({ title: "Wind and Truth", author: "Brandon Sanderson" }), comingOut("2028-02-29"))).status).toBe(200);
+    expect(await releaseRows()).toEqual([{ book_id: "wind-and-truth-brandon-sanderson", release_date: "2028-02-29" }]);
+  });
+
+  it("Paste a list doesn't offer it: the bulk add refuses the destination (owner, Q3)", async () => {
+    const res = await bulk.POST(req("POST", {
+      items: [{ title: "Wind and Truth", author: "Brandon Sanderson", series: null, position: null }],
+      destination: comingOut("2026-12-06"),
+    }));
+    expect(res.status).toBe(400);
+    expect(await releaseRows()).toEqual([]);
+    // The same book and destination one at a time, as Search and By hand send it, is taken.
+    expect((await add(hand({ title: "Wind and Truth", author: "Brandon Sanderson" }), comingOut("2026-12-06"))).status).toBe(200);
+  });
+});
+
 describe("metadata pending wherever the row appears (AC-4)", () => {
   /** One row's HTML from a server render, found by its title. */
   const rowOf = (html: string, split: string, title: string) => {

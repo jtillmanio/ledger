@@ -2,13 +2,14 @@ import Link from "next/link";
 import BetweenBooks from "@/components/BetweenBooks";
 import BooksNow, { nowLede } from "@/components/BooksNow";
 import CalibreSyncLine from "@/components/CalibreSyncLine";
+import ComingOutLine, { comingOutCounts } from "@/components/ComingOutLine";
 import OnDeckRow from "@/components/OnDeckRow";
 import PlanShelf from "@/components/PlanShelf";
 import QuarterStrip from "@/components/QuarterStrip";
 import { DashboardVerbs, HeaderVerbs, ThumbBar, type BarConfig } from "@/components/ThumbBar";
 import {
   booksInHand, inboxCount, keepGoing, lastCalibreSync, lastFinish, onDeck, planAcceptance, planCapacity, quarterBlocks, quarterShelf,
-  readingSettings, yearSoFar,
+  readingSettings, wantedReleases, yearSoFar,
 } from "@/db/queries";
 import { requireUserId } from "@/lib/auth";
 import { today } from "@/lib/finish-date";
@@ -40,8 +41,9 @@ export default async function Books() {
   // Your pace is read once: Now's evenings use it, and so does an empty year's capacity.
   const pace = readingSettings(userId);
   // One wave (architecture § Operational posture): Now's *Next in* rides on booksInHand, and
-  // *Or keep going* (2.2d) leaves out the quarter's offer itself, so neither waits on another read.
-  const [hand, last, shelf, blocks, capacity, deck, soFar, settings, inbox, keep, acceptance, synced] = await Promise.all([
+  // *Or keep going* (2.2d) leaves out the quarter's offer itself, so neither waits on another read. The rollup's
+  // *Coming out* line (5.7) reads the page's own query, so its counts are the list's.
+  const [hand, last, shelf, blocks, capacity, deck, soFar, settings, inbox, keep, acceptance, synced, wanted] = await Promise.all([
     booksInHand(userId),
     lastFinish(userId),
     quarterShelf(userId, period),
@@ -54,6 +56,7 @@ export default async function Books() {
     keepGoing(userId, period, KEEP_ROWS),
     planAcceptance(year),
     lastCalibreSync(),
+    wantedReleases(userId, day),
   ]);
   // The strip's overage is grey once the year is accepted as a stretch year (task 2.7); the card itself is the plan page's.
   const settled = decisionState(capacity.year, acceptance?.acceptedTotal ?? null) === "settled";
@@ -115,7 +118,8 @@ export default async function Books() {
             )}
           </section>
 
-          {/* Three counts, all this year (§14.1 Rollup). Plain text until Stats (6.2) exists. */}
+          {/* Three counts, all this year (§14.1 Rollup). Plain text until Stats (6.2) exists. Then, when there is
+              any, the books you're waiting for that are out or due this month (task 5.7, D-35): grey, a link. */}
           <section className="year-so-far" aria-labelledby="year-head" data-slot="rollup">
             <h2 id="year-head">{year} so far</h2>
             <dl>
@@ -126,6 +130,7 @@ export default async function Books() {
               <div><dt>pages</dt><dd className="mono">{soFar.pages.toLocaleString()}</dd></div>
               <div><dt>new authors</dt><dd className="mono">{soFar.newAuthors.toLocaleString()}</dd></div>
             </dl>
+            <ComingOutLine {...comingOutCounts(wanted, day)} />
           </section>
         </aside>
       </div>

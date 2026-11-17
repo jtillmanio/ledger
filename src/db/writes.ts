@@ -1,7 +1,7 @@
 import { and, between, desc, eq, gt, gte, inArray, isNotNull, isNull, like, ne, notInArray, or, sql } from "drizzle-orm";
 import {
   db, authors, books, bookSeries, bookStatus, calibreDecisions, inbox, issueProgress, issues, readEvents, readingPlan, readingSettings, runIssues,
-  ownedCopies, planAcceptance, runQueue, runs, shelfBooks, seriesFollows, authorFollows, universeFollows, shelfFollows, subseriesFollows,
+  ownedCopies, planAcceptance, releases, runQueue, runs, shelfBooks, seriesFollows, authorFollows, universeFollows, shelfFollows, subseriesFollows,
   shelves, sql as pg, volumeRules,
 } from "./index";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
@@ -1763,10 +1763,13 @@ export type BookItem = NewBook | { use: string };
  * shelf (task 5.1, *New shelf…*) is a `shelves` row made in the add's own
  * transaction, then a shelf like any other: the entry the add answers names it
  * as `{ kind: "shelf" }` with `newShelf`, so its undo removes the shelf too.
+ * *Coming out* (task 5.7; Search and By hand only) is a `releases` row with
+ * that date (`YYYY-MM-DD`, or null for *no date yet*) for a book with no
+ * status, which a new book is left without, so it is wanted (D-35).
  */
 export type Destination =
   | { kind: "someday" } | { kind: "on_deck" } | { kind: "period"; period: Period } | { kind: "shelf"; shelfId: string }
-  | { kind: "owned"; format: OwnedFormat } | { kind: "new_shelf"; name: string };
+  | { kind: "owned"; format: OwnedFormat } | { kind: "new_shelf"; name: string } | { kind: "release"; date: string | null };
 /** A destination as an add wrote it: a new shelf is a shelf by then. */
 type Placed = Exclude<Destination, { kind: "new_shelf" }>;
 export const SOMEDAY: Destination = { kind: "someday" };
@@ -1779,7 +1782,8 @@ export type AddedEntry = {
   destination: Destination;
   /** `books` rows this add created. */
   created: string[];
-  /** Books whose destination row this add wrote: a status, a plan row, a place on the shelf, or an owned format's row. */
+  /** Books whose destination row this add wrote: a status, a plan row, a place on the shelf, an owned format's row,
+   * or a release. */
   added: string[];
   /** On deck, a year or a quarter: books this add also gave a `to_read` status, because they had none. A format
    * you own (task 5.17): the books it created, each given `unlisted`. */
@@ -1944,9 +1948,13 @@ async function promote(tx: Tx, userId: string, ids: string[]): Promise<string[]>
  * end of the shelf, and leaves an Unlisted book Unlisted. A format you own
  * (task 5.17) is that format's `owned_copies` row, once (a book that has it
  * keeps its row, and it isn't counted as this add's), and each book in
- * `created` is Unlisted (D-152); no other status, and no plan row. Returns the
- * books it wrote a destination row for, the statuses On deck (or the owned
- * format's creates) wrote, and the Unlisted books it moved.
+ * `created` is Unlisted (D-152); no other status, and no plan row. *Coming
+ * out* (task 5.7) is a `releases` row for a book with no status at all: a
+ * book you have put anywhere is not wanted, so it gets none (owner, at
+ * TASK-100's plan gate), and a book with a release keeps the date it has. It
+ * writes no status. Returns the books it wrote a destination row for, the
+ * statuses On deck (or the owned format's creates) wrote, and the Unlisted
+ * books it moved.
  */
 async function writeDestination(
   tx: Tx, userId: string, destination: Destination, ids: string[], created: string[] = [],
@@ -1960,6 +1968,15 @@ async function writeDestination(
       .values(created.map((bookId) => ({ userId, bookId, status: "unlisted" })))
       .onConflictDoNothing().returning({ bookId: bookStatus.bookId })).map((r) => r.bookId);
     return { added: ids.filter((id) => wrote.has(id)), statused, promoted: [] };
+  }
+  if (destination.kind === "release") {
+    const statused = new Set((await tx.select({ bookId: bookStatus.bookId }).from(bookStatus)
+      .where(and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, ids)))).map((r) => r.bookId));
+    const wanted = ids.filter((id) => !statused.has(id));
+    const wrote = wanted.length === 0 ? new Set<string>() : new Set((await tx.insert(releases)
+      .values(wanted.map((bookId) => ({ bookId, releaseDate: destination.date })))
+      .onConflictDoNothing().returning({ bookId: releases.bookId })).map((r) => r.bookId));
+    return { added: ids.filter((id) => wrote.has(id)), statused: [], promoted: [] };
   }
   if (destination.kind === "someday") {
     const promoted = await promote(tx, userId, ids);
@@ -2006,6 +2023,8 @@ async function writeDestination(
  * A new shelf (task 5.1) is made once, for every line.
  */
 export async function addBooks(userId: string, items: BookItem[], asked: Destination = SOMEDAY): Promise<AddBooksResult> {
+  // *Coming out* is one book and one date (task 5.7; owner, at TASK-100's plan gate): POST /api/books/bulk refuses it.
+  if (asked.kind === "release") throw new Error("addBooks: Coming out is Search's and By hand's destination only");
   return db.transaction(async (tx) => {
     await addLock(tx);
     const refused = await refuseDestination(tx, userId, asked);
@@ -2239,6 +2258,7 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
   // An add answers a new shelf as the shelf it made (task 5.1): an entry never names one.
   if (destination.kind === "new_shelf") return false;
   if (destination.kind === "owned") return undoOwned(tx, userId, { ...entry, destination }, refused);
+  if (destination.kind === "release") return undoRelease(tx, userId, { ...entry, destination }, refused);
   const isShelf = destination.kind === "shelf";
   if (entry.newShelf && !isShelf) return false;
   // On deck, a year or a quarter (task 2.3): the plan period the add wrote its rows in.
@@ -2331,6 +2351,48 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
       .returning({ bookId: bookStatus.bookId });
     if (back.length !== promoted.size) throw refused;
   }
+  if (created.length) {
+    await tx.update(books).set({ deletedAt: sql`now()` }).where(and(inArray(books.id, created), isNull(books.deletedAt)));
+  }
+  return true;
+}
+
+/**
+ * An add to *Coming out*, undone (task 5.7): the `releases` row it wrote goes,
+ * while it still has the date the add gave it, and a book it created is
+ * soft-deleted (Hard rule 4). Refuses, changing nothing, when a row it wrote is
+ * gone or re-dated, when a book it placed has a status since (*Got it*, or
+ * anything else: the book is on your list now), or when a book it created has
+ * gained a shelf, a plan row or a read. Called inside `undoInside`'s lock.
+ */
+async function undoRelease(
+  tx: Tx, userId: string, entry: AddedEntry & { destination: { kind: "release"; date: string | null } }, refused: symbol,
+): Promise<boolean> {
+  const { destination: { date }, created, added, statused } = entry;
+  if (entry.promoted?.length || statused.length || added.length === 0) return false;
+  const placed = new Set(added);
+  const rows = and(inArray(releases.bookId, added),
+    date === null ? isNull(releases.releaseDate) : eq(releases.releaseDate, date));
+  const ours = await tx.select({ bookId: releases.bookId }).from(releases).where(rows);
+  if (ours.length !== placed.size) return false;
+  const since = await tx.select({ bookId: bookStatus.bookId }).from(bookStatus)
+    .where(and(eq(bookStatus.userId, userId), inArray(bookStatus.bookId, added))).limit(1);
+  if (since.length) return false;
+  if (created.length) {
+    const live = await tx.select({ id: books.id }).from(books)
+      .where(and(inArray(books.id, created), isNull(books.deletedAt)));
+    if (live.length !== new Set(created).size) return false;
+    // A new book has nothing but its release: anything else came later.
+    const later = await Promise.all([
+      tx.select({ bookId: shelfBooks.bookId }).from(shelfBooks).where(inArray(shelfBooks.bookId, created)).limit(1),
+      tx.select({ bookId: readingPlan.bookId }).from(readingPlan).where(inArray(readingPlan.bookId, created)).limit(1),
+      tx.select({ id: readEvents.id }).from(readEvents).where(inArray(readEvents.bookId, created)).limit(1),
+      tx.select({ bookId: ownedCopies.bookId }).from(ownedCopies).where(inArray(ownedCopies.bookId, created)).limit(1),
+    ]);
+    if (later.some((r) => r.length)) return false;
+  }
+  const gone = await tx.delete(releases).where(rows).returning({ bookId: releases.bookId });
+  if (gone.length !== placed.size) throw refused;
   if (created.length) {
     await tx.update(books).set({ deletedAt: sql`now()` }).where(and(inArray(books.id, created), isNull(books.deletedAt)));
   }
