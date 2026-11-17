@@ -1,14 +1,14 @@
 ---
 id: TASK-099
 title: 5.7 Books coming out (1 of 2) — the Coming out page, Got it, and the nav item
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 24620a2
 ---
 
 # TASK-099 — 5.7 Books coming out (1 of 2) — the Coming out page, Got it, and the nav item
@@ -73,9 +73,40 @@ never appears. The dashboard line's counts equal the list's. Screenshot at
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- F1 (approved at plan): every book on the workbook's *Coming Out* tab is held by extract's 1.20 hold (46 rows in `etl/data/book_hold.csv`: no Hardcover or Calibre record knows an unreleased book), and a held book loads no `releases` row, so `seed/releases.csv` is its header alone and *Coming out* lists nothing after a load (dev, 2026-11-17: 0 `releases` rows). `docs/cutover-parity.md` § `Coming Out` says "Loaded as `releases`". Owner action: decide the Coming Out rows in `book_hold.csv` (`keep` loads the book and its release). Placement: Owner checklist § Actions.
+- F2 (approved at plan): extract loads no undated Coming Out row (`etl/extract.py`, `if not bid or pd.isna(date): continue`), so *No date yet* fills only from TASK-100's add sheet (`release_date` NULL). Placement: `docs/tasks/TASK-100-coming-out-destination-and-dashboard-line.md` § Context.
+
 ## Plan
 
 _Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+
+Approved 2026-11-17. **Plan-gate answer (owner): an Unlisted book with a release does not count as wanted** (as written: wanted = a `releases` row whose live book has no `book_status` row). AC-2's Unlisted fixture therefore asserts the book is *not* listed.
+
+Dev database at plan time (read-only count, 2026-11-17): 0 `releases` rows, so 0 books with a release and no status, and 0 Unlisted books with a release (see Follow-ups F1).
+
+**Steps**
+
+1. **Query** (`src/db/queries.ts`): replace `upcomingReleases` (no callers) with `wantedReleases(userId, today)`: live books (`deleted_at IS NULL`) with a `releases` row and `NOT EXISTS` a `book_status` row for the user; columns `id, title, author, series, series_position, universe, cover_url, release_date` and `grp`, computed in SQL on the text, never cast: `'out'` when `release_date <= today`, `left(release_date, 7)` (`YYYY-MM`) for a later date, `'none'` for NULL. Ordered *Out now*, then months ascending, then *No date yet*; inside a group by date, then title, then id. `today` is the Eastern day (`today()` from `src/lib/finish-date.ts`), a parameter so tests pin it.
+2. **Page** `src/app/books/releases/page.tsx` (server, `force-dynamic`): h1 *Coming out*; a `<section>` per group with an `h2.group-head` (*Out now*, the month as *December 2026* — a malformed `YYYY-MM` prints as stored —, *No date yet*) and a mono count; rows `article.row.book-row`: `RowCover` (initials fallback), the title a `Link` to `bookHref(id)` (`scroll={false}`, `prefetch={false}`), `bookSub` line, the date in mono (`dayWhen(…, "exact")` for a well-formed day, else the stored text), and **Got it**. Empty: `EmptySlate` *Nothing coming out* with one action, **Add a book** → `/books/add`. `loading.tsx`: h1 bar plus skeleton rows at the loaded size (`Skeleton.tsx` pieces). `error.tsx`: neutral `×` line and *Try again*, never red (as `books/top/error.tsx`).
+3. **`src/components/GotIt.tsx`** (client): wraps a row; **Got it** calls `useBookWrite` with `status: "to_read"`, `name: title`, `detail: "Was coming out"`; on save (`onSaved`) the row hides (no reload; `router.refresh` follows); `onUndone` shows it again. A refused or failed save keeps the row and shows a neutral inline line. The button is a real `<button>` named `Got it: <title>` (label-in-name), 44px on a phone row, ≥ 24px from 768px.
+4. **`src/components/useBookWrite.ts`** (not in "Files likely touched"): optional `detail?: string` in `BookWriteArgs` overriding the toast's *Was …* line, since `was` has no word for "no status".
+5. **Nav**: `src/components/nav/items.ts` gains `{ id: "books-releases", label: "Coming out", href: "/books/releases", icon: "calendar-clock", enabled: true, group: "medium", medium: "books" }` after Top, before Add; `src/components/nav/Icons.tsx` (not in "Files likely touched") gains Lucide's `calendar-clock` (neutral, `IconName` extended).
+6. **Docs and design**: `docs/02-architecture.md` § 5 route row drops "(task 5.7)"; `design/mockups.html` gains a `data-id="releases"` section, phone (a populated list and the empty state), 834 and desktop frames; `design/mockups-index.md` lists it. `src/app/globals.css` only if the row's verb needs a rule (tokens only).
+
+**Files**: `src/db/queries.ts`, `src/app/books/releases/{page,loading,error}.tsx` (new), `src/components/GotIt.tsx` (new), `src/components/useBookWrite.ts` (flagged), `src/components/nav/items.ts`, `src/components/nav/Icons.tsx` (flagged), `src/app/globals.css` (maybe), `design/mockups.html`, `design/mockups-index.md`, `docs/02-architecture.md`, `test/releases.test.ts` (new), `test/nav-items.test.tsx`, `test/e2e/releases.spec.ts` (new); any test that pins the books tab row (grep `test/` for `books-top`, `Top books`, the books item list).
+
+**Test strategy**
+
+- AC-1 (this part's clauses): `test/e2e/releases.spec.ts` — released-yesterday under *Out now*; next month under that month's heading; *Got it* removes the row without a reload, one `to_read` row stored; Undo restores the row and leaves no `book_status` row; a `read` book never appears; screenshots at 360, 834, 1280 (light and dark). The dashboard line's counts: TASK-100.
+- AC-2: `test/releases.test.ts` (TEST database) — `wantedReleases` with today, today + 3 months, NULL, soft-deleted, `to_read`, `read`, and Unlisted fixtures: groups `out`, the month, `none`; the last four absent.
+- AC-3: `test/e2e/releases.spec.ts` (row gone without reload, toast *Undo*, row back in its group, no `book_status` row) and `test/releases.test.ts` (the route: POST `to_read` writes one row; DELETE with its `change` leaves none).
+- AC-4: `test/nav-items.test.tsx` (item enabled, after Top, current on `/books/releases` in the tab row, rail and sidebar) and the e2e spec at 360, 834, 1280.
+- AC-5: manual — the `releases` section exists with phone, 834 and desktop frames and the empty state (`scripts/screen.ps1 releases`); the index row is present.
+- AC-6: e2e — axe, contrast in light and dark, *Got it* ≥ 44px at phone width and ≥ 24px wider, accessible name with the title, no horizontal scroll, screenshots at each `ui.viewports` width; vitest — the empty slate's copy and single action, `error.tsx` renders a `role="alert"` line and *Try again*, `loading.tsx` renders skeleton rows.
+
+**Risks / open questions**: e2e specs that pin the books tab row or sidebar list must gain the item. The dev page is empty until F1 is acted on, so the manual walk needs a temporary dev `releases` row, removed afterwards (data left as found).
+
+**Size check**: ~9 source files, over 8, but this is already part 1 of the owner's split, and the two flagged files are one-line changes; kept whole.
 
 ## Review log
 
