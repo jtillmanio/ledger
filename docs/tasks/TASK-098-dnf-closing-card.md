@@ -76,7 +76,7 @@ Approved 2026-11-17 (owner: kept whole, not split, though it is over 8 files: th
 **Steps**
 1. `saveBookStatus` reads `notes` in its `before` select and answers it; `POST /api/progress/book` answers `note` (the book's note, which a status write doesn't change); `BookWritten.note`.
 2. `undoBookStatus(userId, change, note?)`: in the same transaction, first checks `notes = note.note` and puts `note.prior` back, then the status undo (so a book that had no row still loses it only with a NULL note). The route validates `note` as the note route does.
-3. `useBookWrite` answers `{ written, amend }`: `amend(note)` pushes the replacement entry (same label, detail *Reason saved*), whose undo sends `{ change, note }`, runs `onUndone`, refreshes.
+3. `useBookWrite` answers `{ written, withNote }`: `withNote(text)` saves the note, then pushes the replacement entry (same label, detail *Reason saved*), whose undo sends `{ change, note }`, runs `onUndone`, refreshes.
 4. `src/components/ClosingCard.tsx` (new): a labelled one-line *Reason* field (focused, prefilled with the note), *Save* (`btn sec sm`, grey) and *Skip* (grey); Esc = Skip; focus back to the DNF button either way; unchanged text writes nothing; a failed note save keeps the card open with the error and *Retry* (R1-07), the DNF and its Undo left alone. Built so 5.4 can add a rating.
 5. `BookStatus.tsx`: DNF chosen from another status saves at once, then opens the card. (DNF is set nowhere else.)
 6. `booksDone` answers the note as `reason` for DNF rows only (`CASE WHEN st.status = 'dnf' THEN st.notes END`); `StatusBookRow` takes `reason` and draws a grey `.row-reason` under the title, nothing when null; `src/app/books/status/page.tsx` passes it; `src/app/globals.css` styles the card and the line.
