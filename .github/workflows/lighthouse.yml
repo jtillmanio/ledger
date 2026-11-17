@@ -23,16 +23,37 @@ name: Lighthouse
 # reads the live database through the app. A hand run there is the owner's call
 # (allow_production). Reports are this run's artifacts for 14 days and go
 # nowhere else: they hold the rendered pages, the library and reading history.
+#
+# The switch (D-158). Every page load here is a server render on Vercel, and
+# each one's link prefetches render more: a measured deploy cost about 22 s of
+# the Hobby plan's 4 h a month of Fluid Active CPU, shared with every project
+# on the account. So a preview is measured on its own only while the repo
+# variable LIGHTHOUSE_MODE is `on`; unset or anything else is off.
+#   gh variable set LIGHTHOUSE_MODE --body on      (or off)
+# A hand run measures whatever the switch says:
+#   gh workflow run lighthouse.yml --ref <branch>  that branch head's preview,
+#                                                  reported on its PR as if it
+#                                                  had just deployed
+#   ... -f url=<deployment URL>                    any deployment, summary only
+#   ... -f dry_run=true                            plan only: loads no page
+# GitHub runs a deployment's workflow from that deployment's commit, so a
+# branch cut before the switch still measures on its own until it is rebased;
+# while one is open, keep the workflow disabled (gh workflow disable
+# lighthouse.yml) and enable it to run by hand.
 on:
   deployment_status:
   workflow_dispatch:
     inputs:
       url:
-        description: "Deployment to measure, e.g. https://ledger-<id>-justin-tillman.vercel.app"
-        required: true
+        description: "Deployment to measure, e.g. https://ledger-<id>-justin-tillman.vercel.app. Blank: the preview of the branch you run this on"
+        required: false
         type: string
       allow_production:
         description: "The URL may be production (reads the live database through the app)"
+        type: boolean
+        default: false
+      dry_run:
+        description: "Plan only: say what would be measured, load no page"
         type: boolean
         default: false
 
@@ -41,42 +62,76 @@ permissions: {}
 jobs:
   plan:
     # Vercel sends a status for every deployment and every state; only a
-    # finished preview, or a hand run, gets this far. report.mjs plan checks
-    # again and refuses production's URL.
+    # finished preview while the switch is on, or a hand run, gets this far.
+    # report.mjs plan checks again and refuses production's URL.
     if: >-
       github.event_name == 'workflow_dispatch' ||
-      (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Preview')
+      (vars.LIGHTHOUSE_MODE == 'on' &&
+       github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Preview')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
+      deployments: read
       pull-requests: read
     outputs:
       url: ${{ steps.plan.outputs.url }}
       group: ${{ steps.plan.outputs.group }}
       routes: ${{ steps.plan.outputs.routes }}
+      # A hand run on a branch replays its preview's deployment_status, so the
+      # report answers the PR the way an automatic run does.
+      event: ${{ steps.preview.outputs.url && 'deployment_status' || github.event_name }}
     steps:
       - uses: actions/checkout@v7
         with: { ref: "${{ github.event.deployment.sha || github.sha }}" }
       - uses: actions/setup-node@v7
         with: { node-version-file: .nvmrc }
+      # Reads GitHub only, never the deployment: the newest Preview deployment
+      # of this commit whose status reached success.
+      - name: Find the branch's preview
+        id: preview
+        if: github.event_name == 'workflow_dispatch' && inputs.url == ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          url=""
+          for id in $(gh api "repos/$GITHUB_REPOSITORY/deployments?sha=$SHA&environment=Preview&per_page=20" --jq '.[].id'); do
+            url=$(gh api "repos/$GITHUB_REPOSITORY/deployments/$id/statuses?per_page=30" \
+              --jq '[.[] | select(.state == "success" and .environment_url != null and .environment_url != "")][0].environment_url // empty')
+            [ -n "$url" ] && break
+          done
+          if [ -z "$url" ]; then
+            echo "::error::${SHA:0:7} has no ready preview: Vercel skipped it (docs, tests or config only), or it is still building. Run again once it deploys, or pass -f url=<deployment URL>."
+            exit 1
+          fi
+          echo "Found ${SHA:0:7}'s preview: $url"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
       - name: Plan
         id: plan
         env:
           GH_TOKEN: ${{ github.token }}
           SHA: ${{ github.event.deployment.sha || github.sha }}
-          EVENT_NAME: ${{ github.event_name }}
-          DEPLOY_ENVIRONMENT: ${{ github.event.deployment.environment }}
-          DEPLOY_STATE: ${{ github.event.deployment_status.state }}
-          DEPLOY_URL: ${{ github.event.deployment_status.environment_url }}
+          EVENT_NAME: ${{ steps.preview.outputs.url && 'deployment_status' || github.event_name }}
+          DEPLOY_ENVIRONMENT: ${{ steps.preview.outputs.url && 'Preview' || github.event.deployment.environment }}
+          DEPLOY_STATE: ${{ steps.preview.outputs.url && 'success' || github.event.deployment_status.state }}
+          DEPLOY_URL: ${{ steps.preview.outputs.url || github.event.deployment_status.environment_url }}
           INPUT_URL: ${{ inputs.url }}
           ALLOW_PRODUCTION: ${{ inputs.allow_production }}
           PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
         run: node scripts/perf/report.mjs plan
+      - name: Dry run
+        if: inputs.dry_run && steps.plan.outputs.url
+        env:
+          URL: ${{ steps.plan.outputs.url }}
+          GROUP: ${{ steps.plan.outputs.group }}
+        run: |
+          echo "Dry run: would measure $URL ($GROUP). No page was loaded."
 
   measure:
     needs: plan
-    if: needs.plan.outputs.url
+    if: needs.plan.outputs.url && !inputs.dry_run
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -153,7 +208,7 @@ jobs:
     needs: [plan, measure]
     # Also when a route's job failed: its route is then reported as not
     # measured. Not when a newer push cancelled the measuring.
-    if: ${{ !cancelled() && needs.plan.outputs.url && needs.measure.result != 'cancelled' }}
+    if: ${{ !cancelled() && needs.plan.outputs.url && !inputs.dry_run && needs.measure.result != 'cancelled' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # The one job that writes anything: the PR comment.
@@ -167,7 +222,7 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       SHA: ${{ github.event.deployment.sha || github.sha }}
-      EVENT_NAME: ${{ github.event_name }}
+      EVENT_NAME: ${{ needs.plan.outputs.event }}
     steps:
       - uses: actions/checkout@v7
         with: { ref: "${{ github.event.deployment.sha || github.sha }}" }

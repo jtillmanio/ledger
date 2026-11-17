@@ -270,6 +270,50 @@ describe("unchangedApp (a docs-only PR is not measured)", () => {
   });
 });
 
+describe("the switch (D-158): a preview is measured on its own only while LIGHTHOUSE_MODE is on", () => {
+  const yml = readFileSync(".github/workflows/lighthouse.yml", "utf8");
+  /** One job's text, from its name to the next job's. */
+  const job = (name: string) => {
+    const jobs = yml.slice(yml.indexOf("\njobs:\n"));
+    const start = jobs.indexOf(`\n  ${name}:\n`);
+    const next = jobs.slice(start + 1).search(/\n {2}[\w-]+:\n/);
+    return next === -1 ? jobs.slice(start) : jobs.slice(start, start + 1 + next);
+  };
+  const ifOf = (name: string) => job(name).match(/\n {4}if: (>-\n(?: {6}.*\n)+|.*\n)/)![1].replace(/\s+/g, " ");
+
+  it("gates the deployment trigger on the switch, and leaves a hand run alone", () => {
+    const plan = ifOf("plan");
+    // Off unless the variable says `on`: unset is off, so a fresh fork or a
+    // forgotten variable costs nothing.
+    expect(plan).toMatch(/github\.event_name == 'workflow_dispatch' \|\| \(vars\.LIGHTHOUSE_MODE == 'on' && github\.event\.deployment_status\.state == 'success' && github\.event\.deployment\.environment == 'Preview'\)/);
+    expect(yml).not.toMatch(/LIGHTHOUSE_MODE != 'off'/);
+  });
+
+  it("a hand run needs no URL: it finds the branch head's preview from GitHub, without loading it", () => {
+    expect(yml).toMatch(/\n {6}url:\n(?: {8}.*\n)* {8}required: false\n/);
+    const plan = job("plan");
+    const find = plan.slice(plan.indexOf("- name: Find the branch's preview"), plan.indexOf("- name: Plan"));
+    expect(find).toMatch(/if: github\.event_name == 'workflow_dispatch' && inputs\.url == ''/);
+    expect(find).toMatch(/deployments\?sha=\$SHA&environment=Preview/);
+    expect(find).not.toMatch(/curl|vercel\.app/); // GitHub's API only: no request reaches the deployment
+    expect(plan).toMatch(/deployments: read/);
+  });
+
+  it("replays the found preview as its deployment_status, so the report answers the PR", () => {
+    const plan = job("plan");
+    expect(plan).toMatch(/EVENT_NAME: \$\{\{ steps\.preview\.outputs\.url && 'deployment_status' \|\| github\.event_name \}\}/);
+    expect(plan).toMatch(/DEPLOY_URL: \$\{\{ steps\.preview\.outputs\.url \|\| github\.event\.deployment_status\.environment_url \}\}/);
+    expect(plan).toMatch(/event: \$\{\{ steps\.preview\.outputs\.url && 'deployment_status' \|\| github\.event_name \}\}/);
+    expect(job("report")).toMatch(/EVENT_NAME: \$\{\{ needs\.plan\.outputs\.event \}\}/);
+  });
+
+  it("a dry run plans and loads no page: neither measure nor report runs", () => {
+    expect(yml).toMatch(/\n {6}dry_run:\n(?: {8}.*\n)* {8}type: boolean\n {8}default: false\n/);
+    expect(ifOf("measure")).toMatch(/needs\.plan\.outputs\.url && !inputs\.dry_run/);
+    expect(ifOf("report")).toMatch(/!inputs\.dry_run/);
+  });
+});
+
 describe("secrets stay out of the reports", () => {
   const secrets = ["bypass-secret-value", "owner.0123abcd", "correct horse battery"];
 

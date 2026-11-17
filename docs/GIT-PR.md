@@ -58,7 +58,13 @@ After pushing, on GitHub:
   which serves the same app. That pair passes the preview gate.
 - **Lighthouse** (`.github/workflows/lighthouse.yml`, task 0.10) runs on that
   preview once it deploys and is green, and its PR comment shows nothing over
-  budget. It fails on a route handler requested during a load or prefetch,
+  budget. **Only while its switch is on** (D-158): the repo variable
+  `LIGHTHOUSE_MODE` set to `on`; unset or anything else is off, and the gate is
+  skipped (say so in the PR). Each measured deploy spends about 22 s of the
+  Vercel account's 4 h a month of Active CPU. The owner runs it by hand with
+  `gh workflow run lighthouse.yml --ref <branch>` (that branch head's preview,
+  reported on its PR), `-f url=<deployment>` or `-f dry_run=true` (plan only);
+  Claude never flips the switch or dispatches a run unasked. It fails on a route handler requested during a load or prefetch,
   bytes or requests over `scripts/perf/budget.json`, CLS of 0.1 or more, or an
   accessibility score under the recorded one. A new top-level screen adds its
   route to `scripts/perf/routes.mjs` and its budget in the same PR.

@@ -126,7 +126,8 @@ Before pushing: `/verify` and the task's own **Check:** exactly as written. A
 branch that changes only docs, `.claude/`, `backups/` or root markdown runs
 `npm run verify:docs` instead of `/verify` (D-145): the tests that name a
 changed file, and the task-file parse. CI's `tests` job still runs whole.
-After pushing: CI green, the preview deployed, Lighthouse green. **Read
+After pushing: CI green, the preview deployed, Lighthouse green while its
+switch (`LIGHTHOUSE_MODE`, D-158) is on. **Read
 `docs/GIT-PR.md` before pushing** for the full checklist: reviewers, the
 up → down → up test, Lighthouse budgets, the UI preview walk, running a changed
 workflow with `--ref`, and what goes in the PR when something can only be
