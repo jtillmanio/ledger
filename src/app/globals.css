@@ -1934,7 +1934,8 @@ p.muted[id^="dnd-help"]{margin:.5rem 0 0}
 /* The dot ends a title, so a wrapped line never starts with one. */
 .shelf-next li:not(:last-child)::after{content:"·";margin-left:.375rem;color:var(--muted)}
 .shelves-aside{margin-top:.875rem;display:flex;flex-direction:column;gap:.625rem}
-.btn.wide{width:100%}
+/* Scoped: Paste a list's *Check* is a .btn.wide of its own. */
+.shelves-page .btn.wide{width:100%}
 .new-shelf .add-label{margin-top:0}
 .new-shelf .btnrow{margin-top:.625rem}
 .shelf-back{margin:0 0 .25rem;font-size:.8125rem}
@@ -1969,8 +1970,9 @@ p.muted[id^="dnd-help"]{margin:.5rem 0 0}
 .shelf-row .sk-rt{height:.9375rem}
 .shelf-row .sk-rm{height:.75rem}
 .shelf-row .sk-rs{height:.8125rem}
-.sk-btn{height:44px;border-radius:var(--r-md)}
-.sk-opts{height:32px;border-radius:var(--r-full)}
+/* Their own names: the shared .sk-btn is Settings' and the Inbox's 32px button. */
+.sk-shelfbtn{height:44px;border-radius:var(--r-md)}
+.sk-shelfopts{height:32px;border-radius:var(--r-full)}
 .qbody .sk-in{display:inline-block;vertical-align:middle;height:.75em;max-width:100%}
 @media (min-width:1024px){
   /* The rail spans both rows; the second row takes what it adds, so the heading's row stays its own height. */

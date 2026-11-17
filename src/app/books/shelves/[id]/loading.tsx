@@ -15,8 +15,8 @@ export default function Loading() {
         <div className="shelf-side">
           <Bar w="5rem" className="sk-line" />
           <span className="meter" />
-          <Bar w="18rem" className="sk-opts" />
-          <Bar w="9rem" className="sk-btn" />
+          <Bar w="18rem" className="sk-shelfopts" />
+          <Bar w="9rem" className="sk-shelfbtn" />
         </div>
         <div className="shelf-main shelf-books">
           <ol className="queue">

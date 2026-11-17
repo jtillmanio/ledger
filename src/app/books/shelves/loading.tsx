@@ -24,7 +24,7 @@ export default function Loading() {
             </li>
           ))}
         </ul>
-        <div className="shelves-aside"><Bar w="100%" className="sk-btn" /></div>
+        <div className="shelves-aside"><Bar w="100%" className="sk-shelfbtn" /></div>
       </div>
     </LoadingMain>
   );
