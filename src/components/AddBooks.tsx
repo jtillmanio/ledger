@@ -27,6 +27,9 @@ type Picker =
 
 type Added = Extract<AddBookResult, { ok: true }>;
 
+/** A shelf's page (task 5.1). */
+const shelfHref = (id: string) => `/books/shelves/${encodeURIComponent(id)}`;
+
 /** The plan picker, opened for Add books' *Year or quarter…* chip or for one result (task 2.3). */
 type Step = { what: "target" } | { what: "pick"; pick: Pick; words: number | null };
 
@@ -245,14 +248,16 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
       router.refresh();
     } else {
       // A format you own lands on the Library's Owned filter for it (task 5.17), where an Unlisted book shows too (D-152).
-      router.push(target.kind === "shelf" ? "/books/list"
+      // A shelf's books land on its page (task 5.1), where they joined the end of its order.
+      router.push(target.kind === "shelf" ? shelfHref(target.shelfId)
         : target.kind === "owned" ? `/books/list?owned=${target.format}` : AFTER_ADD);
     }
   }
 
+  // Opened from a shelf's *+ Add to shelf* (task 5.1), Cancel goes back to that shelf; otherwise to the Library.
   const cancel = (label: string) => (close
     ? <button type="button" className="btn sec" onClick={close}>{label}</button>
-    : <Link prefetch={false} href="/books/list" className="btn sec">{label}</Link>);
+    : <Link prefetch={false} href={initial.kind === "shelf" ? shelfHref(initial.shelfId) : "/books/list"} className="btn sec">{label}</Link>);
 
   // The plan picker for the open step: Add to's *Year or quarter…* sets the target, a result's adds that book.
   const pickerBody = (leave: () => void) => {

@@ -242,6 +242,34 @@ describe("Add to and undo (task 1.4c)", () => {
   });
 });
 
+// Task 5.1 (TASK-096): Add books opened from a shelf's *+ Add to shelf* goes back to that shelf's page.
+describe("opened from a shelf (task 5.1)", () => {
+  const mode = (name: string) => [...container.querySelectorAll<HTMLButtonElement>('[aria-label="Add by"] button')]
+    .find((b) => b.textContent === name)!;
+  const COSMERE = { kind: "shelf", shelfId: "cosmere", name: "Cosmere" } as const;
+
+  it("Cancel goes back to the shelf; opened from anywhere else, to the Library", async () => {
+    act(() => root.render(<UndoProvider><AddBooks initial={COSMERE} /></UndoProvider>));
+    await click(mode("Paste a list"));
+    const cancel = () => [...container.querySelectorAll("a")].find((a) => a.textContent === "Cancel")!;
+    expect(cancel().getAttribute("href")).toBe("/books/shelves/cosmere");
+    act(() => root.render(<UndoProvider><AddBooks initial={{ kind: "someday" }} /></UndoProvider>));
+    await click(mode("Paste a list"));
+    expect(cancel().getAttribute("href")).toBe("/books/list");
+  });
+
+  it("a paste to the shelf lands on its page, not the Library", async () => {
+    act(() => root.render(<UndoProvider><AddBooks initial={COSMERE} /></UndoProvider>));
+    await click(mode("Paste a list"));
+    await type("Golden Son - Pierce Brown");
+    await click(checkButton()!);
+    await click(confirmButton());
+    expect(confirms().at(-1)!.destination).toEqual({ kind: "shelf", shelfId: "cosmere" });
+    expect(router.push).toHaveBeenCalledWith("/books/shelves/cosmere");
+    expect(router.push).not.toHaveBeenCalledWith("/books/list");
+  });
+});
+
 // Task 5.17 (3 of 3, AC-5): *Physical copy* and *Audiobook*, Paste a list's alone.
 describe("Physical copy and Audiobook (task 5.17)", () => {
   const chip = (name: string) => [...container.querySelectorAll<HTMLButtonElement>(".addto .chip")]

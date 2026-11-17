@@ -2156,22 +2156,29 @@ export type ShelfRow = {
 /** One of your book shelves (task 5.1): its counts and follow as on the list, and its live books in shelf order. */
 export type ShelfDetail = Omit<ShelfSummary, "next"> & { books: ShelfRow[] };
 
-/** One of your book shelves with its live books in shelf order (task 5.1), or null when it isn't one. */
+/**
+ * One of your book shelves with its live books in shelf order (task 5.1), or null when it isn't one.
+ * The two reads go together, one wave (task 0.9's budget): the books read checks the shelf is yours
+ * itself, so it returns nothing for one that isn't.
+ */
 export async function shelfDetail(userId: string, shelfId: string): Promise<ShelfDetail | null> {
-  const [shelf] = await sql<Omit<ShelfDetail, "books">[]>`
-    SELECT p.shelf_id AS id, p.name, s.description, p.books_read::int AS read, p.books_listed::int AS total,
-           p.follow_state AS "followState"
-    FROM shelf_progress p JOIN shelves s ON s.id = p.shelf_id
-    WHERE p.shelf_id = ${shelfId} AND p.user_id = ${userId}`;
+  const [[shelf], rows] = await Promise.all([
+    sql<Omit<ShelfDetail, "books">[]>`
+      SELECT p.shelf_id AS id, p.name, s.description, p.books_read::int AS read, p.books_listed::int AS total,
+             p.follow_state AS "followState"
+      FROM shelf_progress p JOIN shelves s ON s.id = p.shelf_id
+      WHERE p.shelf_id = ${shelfId} AND p.user_id = ${userId}`,
+    sql<ShelfRow[]>`
+      SELECT b.id, b.title, a.name AS author, st.status, b.cover_url AS "coverUrl", sb.note
+      FROM shelf_books sb
+      JOIN shelves s ON s.id = sb.shelf_id AND s.user_id = ${userId} AND s.kind = 'books'
+      JOIN books b ON b.id = sb.book_id AND b.deleted_at IS NULL
+      LEFT JOIN authors a ON a.id = b.author_id
+      LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+      WHERE sb.shelf_id = ${shelfId}
+      ORDER BY sb.ordinal, b.id`,
+  ]);
   if (!shelf) return null;
-  const rows = await sql<ShelfRow[]>`
-    SELECT b.id, b.title, a.name AS author, st.status, b.cover_url AS "coverUrl", sb.note
-    FROM shelf_books sb
-    JOIN books b ON b.id = sb.book_id AND b.deleted_at IS NULL
-    LEFT JOIN authors a ON a.id = b.author_id
-    LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
-    WHERE sb.shelf_id = ${shelfId}
-    ORDER BY sb.ordinal, b.id`;
   return { ...shelf, books: [...rows] };
 }
 

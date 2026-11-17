@@ -3402,6 +3402,14 @@ field. The book Words field carries its `stated | estimated` flag in every
 state. The mockup draws the six on `bookdetail` (Words) and `spine` (the run
 *why*, an era name) in this PR.
 
+*From TASK-096 (5.1, PR #284):* `src/components/InlineText.tsx` is the pattern
+already in the app, on a shelf's notes and description: a button that reads as
+its text, a textarea on tap, blur or Enter saves, Esc leaves it as it was,
+shown at once and rolled back on failure with *Retry* and an Undo per save.
+It has the idle, editing and error behaviour but not the hover pencil, the
+saving spinner, the saved ✓ or the red error ring; this task can grow it into
+`.editable` rather than build a second one.
+
 **Check:** test asserts a failed PATCH restores the prior value in the DOM and
 renders the error state with a working Retry; that Esc while editing restores the
 value without a request; and that no `.editable` inside a dashboard route renders
