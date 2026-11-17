@@ -1920,6 +1920,72 @@ p.muted[id^="dnd-help"]{margin:.5rem 0 0}
 .qrow .btn.sm.toprank{align-self:center}
 @media (max-width:767px){ .qrow .btn.sm.toprank{min-height:44px} }
 
+/* --- Shelves (task 5.1; mockup `shelves`; design § 14 → Shelves) -------------------------
+   The list: a shelf a row, its read / total, its next three unread, a meter filled with --ready
+   (D-26). A shelf's page: the name and its description, the count, follow and + Add to shelf, then
+   its books with their notes. At 1024px and up New shelf and the explainer, and a shelf's count,
+   follow and Add, sit in the rail. */
+.shelves-head{margin-bottom:.75rem}
+.shelf-rows{list-style:none;margin:0;padding:0}
+.shelf-row .rt{min-height:24px;line-height:24px;overflow-wrap:anywhere}
+.shelf-row .rs{display:flex;flex-wrap:wrap;gap:0 .375rem}
+.shelf-next{display:contents;list-style:none;margin:0;padding:0}
+.shelf-next li{color:var(--ink-2)}
+/* The dot ends a title, so a wrapped line never starts with one. */
+.shelf-next li:not(:last-child)::after{content:"·";margin-left:.375rem;color:var(--muted)}
+.shelves-aside{margin-top:.875rem;display:flex;flex-direction:column;gap:.625rem}
+.btn.wide{width:100%}
+.new-shelf .add-label{margin-top:0}
+.new-shelf .btnrow{margin-top:.625rem}
+.shelf-back{margin:0 0 .25rem;font-size:.8125rem}
+.shelf-back a{display:inline-flex;align-items:center;min-height:24px;color:var(--muted);text-decoration:none}
+.shelf-back a:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:var(--r-sm)}
+.shelf-headtext{margin:.125rem 0 0}
+.shelf-side{margin:.75rem 0 1rem;display:flex;flex-direction:column;align-items:flex-start;gap:.5rem}
+.shelf-side .meter{align-self:stretch;margin-top:0}
+.shelf-sum{margin:0;font-size:.8125rem;color:var(--muted)}
+.shelf-sum .mono{color:var(--ink)}
+.shelf-side .opts{margin:0}
+.shelf-status{white-space:nowrap}
+/* Each row's handle and ⋯ are 44px on the phone, as on Top books; the shared .rowmenu-btn is 32px. */
+@media (max-width:767px){ .shelf-books .rowmenu-btn{min-width:44px;min-height:44px} }
+/* Text edited in place (InlineText): at rest a button that reads as its text, open a textarea. */
+.inline-text,.inline-add{display:block;min-height:24px;margin:0;padding:.125rem 0;border:0;border-radius:var(--r-sm);
+  background:none;font:inherit;text-align:left;color:inherit;cursor:text}
+.inline-text{width:100%}
+.inline-add{font-size:.8125rem;color:var(--muted);cursor:pointer}
+.inline-text:focus-visible,.inline-add:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+@media (hover:hover) and (pointer:fine){
+  .inline-text:hover{background:var(--raise)}
+  .inline-add:hover{color:var(--ink)}
+}
+.shelf-desc{display:block;font-size:.9375rem;color:var(--ink-2);white-space:pre-line;overflow-wrap:anywhere}
+.shelf-note{display:block;font-size:.8125rem;font-style:italic;color:var(--ink-2);white-space:pre-line;overflow-wrap:anywhere}
+.inline-field{display:block;width:100%;min-height:44px;margin:0;padding:.375rem .5rem;resize:vertical;font:inherit;
+  font-size:.875rem;color:var(--ink);background:var(--surface);border:1px solid var(--faint-deco);border-radius:var(--r-md)}
+.inline-field:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+/* The skeletons' bars, at the loaded lines' heights. */
+.shelf-row .sk{display:inline-block;vertical-align:middle;max-width:100%}
+.shelf-row .sk-rt{height:.9375rem}
+.shelf-row .sk-rm{height:.75rem}
+.shelf-row .sk-rs{height:.8125rem}
+.sk-btn{height:44px;border-radius:var(--r-md)}
+.sk-opts{height:32px;border-radius:var(--r-full)}
+.qbody .sk-in{display:inline-block;vertical-align:middle;height:.75em;max-width:100%}
+@media (min-width:1024px){
+  /* The rail spans both rows; the second row takes what it adds, so the heading's row stays its own height. */
+  .shelves-page,.shelf-page{display:grid;grid-template-columns:minmax(0,1fr) var(--aside-w);grid-template-rows:auto 1fr;
+    column-gap:2rem;align-items:start}
+  .shelves-page{grid-template-areas:"head aside" "list aside"}
+  .shelves-head{grid-area:head}
+  .shelves-list{grid-area:list}
+  .shelves-aside{grid-area:aside;margin-top:0;position:sticky;top:calc(var(--bar-h) + 1rem)}
+  .shelf-page{grid-template-areas:"head side" "main side"}
+  .shelf-head{grid-area:head}
+  .shelf-main{grid-area:main}
+  .shelf-side{grid-area:side;margin:0;position:sticky;top:calc(var(--bar-h) + 1rem)}
+}
+
 /* --- This or that (task 3.4b, D-101, TASK-077; mockup `thisorthat`) ---------------------
    The sorter sheet: the read being placed and one ranked read, side by side, each card a
    44px+ button; a mono count of the picks; Skip grey at the foot (DNF and Skip are grey).

@@ -1,14 +1,14 @@
 ---
 id: TASK-096
 title: 5.1 Shelves (2 of 3) — the Shelves list, a shelf's page with its notes and order, and the nav item
-status: Ready
+status: In progress
 depends_on: [TASK-095]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: e5c1411
 ---
 
 # TASK-096 — 5.1 Shelves (2 of 3) — the Shelves list, a shelf's page with its notes and order, and the nav item
@@ -72,9 +72,40 @@ already in use writes nothing and says why.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- `InlineText` (click, type, blur saves, Esc cancels) is there for 3.1 to reuse on its allow-listed fields (approved at plan) → docs/05-roadmap.md § 3.1
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-17.
+
+**Steps**
+1. Tests first, and confirm they fail: `test/nav-items.test.tsx` moves *Shelves* from off to on; `test/e2e/shelves.spec.ts` (new) builds its own E2E shelves: five books with the 1st and 3rd read, one all read, one with no description sharing a book with the five, and an empty one.
+2. Turn on `books-shelves` in `src/components/nav/items.ts`.
+3. `/books/shelves` (page, loading, error): each row has the name, `read / total` in mono, a `.meter` filled with `--ready`, *Next up* with the next three unread in shelf order (none when all read), and a link to the shelf. No coloured edge: a shelf has no hue of its own. At desktop width *+ New shelf* and the explainer sit in the rail. No shelves: an empty slate whose one action is *New shelf*. The error state is neutral, with *Try again*.
+4. `src/components/NewShelf.tsx`: a name field and *Create* through `POST /api/shelves`; a 409 shows its reason under the field; a new shelf pushes an Undo (`DELETE`).
+5. `/books/shelves/[id]` (page, loading, error): the name; the description only when there is one; `read / total` with its meter; *Reading · Tracking · Not following* (the radios pulled out of `FollowSheet.tsx` into a shared component); *+ Add to shelf* → `/books/add?shelf=<id>`. A shelf with no books: an empty slate whose action is *+ Add to shelf*. An unknown id is a 404.
+6. `src/components/ShelfBooks.tsx`: the books in `ReorderList`, each row's ordinal its live position (the API's `to`); a move answers its own undo (`PATCH { undo: change }`). A row shows title, author, status and its note.
+7. `src/components/InlineText.tsx`: 3.1's pattern as its roadmap entry states it (click the text, type, blur saves, Esc cancels, no Save button; shown at once, rolled back on failure), one Undo per save and a failure toast with *Retry*. Edits the note, and the description (none set: an *Add a description* button, never an empty line).
+8. The comment in `src/app/books/add/page.tsx`; styles in `src/app/globals.css` (tokens only); no reorder motion under reduced motion.
+9. `design/mockups.html` `shelves` frame redrawn (three unread per row, a shelf page with a description and a note, the empty state; phone, tablet, desktop) and its `design/mockups-index.md` row; both routes in `docs/02-architecture.md` § 5.
+
+**Files**: `src/app/books/shelves/{page,loading,error}.tsx`, `src/app/books/shelves/[id]/{page,loading,error}.tsx`, `src/components/{ShelfBooks,InlineText,NewShelf}.tsx`, `src/components/FollowSheet.tsx` (not in the likely list: the follow radios become shared), `src/components/nav/items.ts`, `src/app/books/add/page.tsx`, `src/app/globals.css` (not in the list: the styles), `design/mockups.html`, `design/mockups-index.md`, `docs/02-architecture.md`, `test/nav-items.test.tsx`, `test/e2e/shelves.spec.ts`.
+
+**Test strategy** (`test/e2e/shelves.spec.ts` unless named)
+- AC-1: a note saves, survives a reload and renders under its row; the no-description shelf has no description line; the shared book shows no note on the other shelf.
+- AC-2: the five-book row reads `2 / 5`, its meter's colour is the `--ready` token, and it names books 2, 4, 5 in order; the all-read shelf names none.
+- AC-3: *Move to top* on the last book; the order is checked, then after a reload, then *Undo* restores it.
+- AC-4: *Shelves* current at 360, 834 and 1280px on both routes (`test/nav-items.test.tsx` for the flag); *+ Add to shelf* opens Add with the shelf chosen.
+- AC-5: by inspection (spec-reviewer).
+- AC-6: axe, contrast, 24px targets, the empty list and an empty shelf, the error state, reduced motion, screenshots at each `ui.viewports` width.
+
+**Revisions after approval** (owner, 2026-11-17):
+1. The query budget (task 0.9): `/books/shelves` (1 query) and a shelf's page (2 queries) in `test/query-budget.test.ts` and `docs/02-architecture.md` § Performance budget, one wave each; `shelfDetail` (`src/db/queries.ts`) sends its two reads together, the books read checking the shelf is yours itself. Both routes join `test/loading-states.test.tsx`'s list.
+2. Add books opened from a shelf goes back to it: a paste to a shelf lands on `/books/shelves/<id>`, and Cancel from `?shelf=<id>` returns there (`src/components/AddBooks.tsx`, `test/paste-books.test.tsx`).
+
+Also changed, to keep existing tests true: `test/e2e/tab-row.spec.ts` (every books item is now on, so *all enabled* equals the drawn row) and `src/components/ShelfList.tsx` (the list page's body, so `test/shelves-page.test.tsx` can draw the no-shelves state the shared TEST database can't).
+
+**Decisions at the gate**: AC-3's *Move to…* is the ⋯ menu's *Move to top* (`ReorderList` has no *Move to…* picker). Description editing is included: otherwise the app cannot set one. Size: about 17 files, kept whole (already part 2 of a 3-way split; no schema; several files are one-liners).
 
 ## Review log
 

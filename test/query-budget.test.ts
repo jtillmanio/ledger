@@ -31,6 +31,10 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   // Top books (task 3.4b): the years and the year asked for (or this one), together; a second read only
   // when that year has no read, and the page opens the newest instead.
   "/books/top": { queries: 2, waves: 1 },
+  // Shelves (task 5.1): every shelf with its counts and next three, one read. A shelf's page: the shelf and
+  // its books, together (the books read checks the shelf is yours itself).
+  "/books/shelves": { queries: 1, waves: 1 },
+  "/books/shelves/[id]": { queries: 2, waves: 1 },
   "/inbox": { queries: 2, waves: 1 },
   // Task 4.4 adds the last Calibre sync (one scalar row) for the *Calibre* row, in the same wave.
   "/settings": { queries: 3, waves: 1 },
@@ -96,6 +100,8 @@ beforeEach(async () => {
   }
   await sql`INSERT INTO prereqs (run_id, prereq_run_id, type) VALUES ('a', 'p', 'hard')`;
   await sql`INSERT INTO books (id, title) VALUES ('b', 'Book')`;
+  await sql`INSERT INTO shelves (id, name, user_id, kind) VALUES ('s', 'Shelf', ${USER}, 'books')`;
+  await sql`INSERT INTO shelf_books (shelf_id, book_id, ordinal) VALUES ('s', 'b', 1)`;
 });
 
 async function measure(render: () => Promise<unknown>) {
@@ -121,6 +127,9 @@ const pages: [string, () => Promise<unknown>][] = [
     (await import("../src/app/books/plan/page")).default({ searchParams: Promise.resolve({}) })],
   ["/books/top", async () =>
     (await import("../src/app/books/top/page")).default({ searchParams: Promise.resolve({}) })],
+  ["/books/shelves", async () => (await import("../src/app/books/shelves/page")).default()],
+  ["/books/shelves/[id]", async () =>
+    (await import("../src/app/books/shelves/[id]/page")).default({ params: Promise.resolve({ id: "s" }) })],
   ["/inbox", async () => (await import("../src/app/inbox/page")).default()],
   ["/settings", async () => (await import("../src/app/settings/page")).default()],
   ["/settings/calibre", async () => (await import("../src/app/settings/calibre/page")).default()],
