@@ -549,6 +549,9 @@ export const shelves = pgTable("shelves", {
   name: text("name").notNull(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   kind: text("kind").notNull(),             // books | titles
+  // What the shelf is for (task 5.1, TASK-095): authored, NULL when there is none. A
+  // name in use is refused by the write (createShelf), not by an index (owner, 2026-11-16).
+  description: text("description"),
 }, (t) => ({
   kind: check("shelves_kind_check", sql`${t.kind} IN ('books', 'titles')`),
 }));
@@ -556,7 +559,10 @@ export const shelves = pgTable("shelves", {
 export const shelfBooks = pgTable("shelf_books", {
   shelfId: text("shelf_id").notNull().references(() => shelves.id, { onDelete: "cascade" }),
   bookId: text("book_id").notNull().references(() => books.id, { onDelete: "cascade" }),
-  ordinal: integer("ordinal").notNull(),    // position on the shelf
+  ordinal: integer("ordinal").notNull(),    // position on the shelf, 1…N (task 5.1: moveOnShelf)
+  // Why the book is on this shelf (task 5.1): the placement's, so the same book on two
+  // shelves keeps two notes. NULL when there is none.
+  note: text("note"),
 }, (t) => ({ pk: primaryKey({ columns: [t.shelfId, t.bookId] }) }));
 
 // Following a shelf (task 2.2c, D-108): the fourth follow table, as the three

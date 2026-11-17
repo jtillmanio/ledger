@@ -85,6 +85,9 @@ describe("columns", () => {
     ["issues", "story_arc_source", "text", "YES"],
     ["issues", "store_date", "date", "YES"],
     ["issues", "store_date_source", "text", "YES"],
+    // Task 5.1, part 1 (TASK-095): a shelf's context, as the owner approved it (2026-11-16).
+    ["shelves", "description", "text", "YES"],
+    ["shelf_books", "note", "text", "YES"],
   ];
 
   it("adds every column with its type and nullability", async () => {

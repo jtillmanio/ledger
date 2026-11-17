@@ -28,6 +28,7 @@ Shelves has its own screen: every shelf with how far along it is and its next th
 - Architecture: add `/books/shelves` and `/books/shelves/[id]` to `docs/02-architecture.md` § 5. Routes and data access.
 - Design: `design/mockups.html` § `shelves`; `design/STYLE_GUIDE.md` § 14 (Shelves); `design/LedgerDesktop.dc.html`; `docs/04-design.md` § 10 The UX floor; `.claude/rules/ui.md`.
 - Decisions: D-26, D-42, D-108, D-139; R1-06, R1-07.
+- *From TASK-095 (5.1, PR #278):* the data side is built. Read through `shelfList(userId)` (each books shelf by name: `description`, `read`, `total`, `followState`, `next` = the next three unread in shelf order) and `shelfDetail(userId, id)` (the shelf and its live `books`, each with `status`, `coverUrl` and this placement's `note`; null for a shelf not yours) in `src/db/queries.ts`. Writes: `POST /api/shelves { name }` (*+ New shelf*; 409 with the reason when the name is taken; undo is `DELETE /api/shelves/<id>`, refused once the shelf has a book, a description or a follow) and `PATCH /api/shelves/<id>` with `{ description }`, `{ bookId, note }` or `{ bookId, to }`, each answering `{ change }`; the Undo toast sends `PATCH { undo: change }` (409 when something changed since). A move's `to` counts the shelf's **live** books, the list the page draws, and its change carries the whole order before and after, so its undo is exact.
 
 ## Acceptance criteria
 

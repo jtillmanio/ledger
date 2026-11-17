@@ -125,7 +125,8 @@ Every page. One dashboard per medium, with the lists one level down (design §11
 **Route handlers** (`src/app/api/`): `/api/progress/{issue,range,book}`,
 `/api/progress/book/read` (a book's reads, and re-dating any one of them; task
 1.17b), `/api/runs/[runId]/issues`, `/api/metron/search`, `/api/books`,
-`/api/books/bulk`, `/api/books/search`, `/api/shelves`, `/api/inbox`,
+`/api/books/bulk`, `/api/books/search`, `/api/shelves`, `/api/shelves/[id]`
+(a shelf's description, notes and order, task 5.1), `/api/inbox`,
 `/api/settings`, `/api/export`, `/api/login`, `/api/health`. A page never links to one with
 `<Link>`, because a prefetch runs it (§ Operational posture).
 
