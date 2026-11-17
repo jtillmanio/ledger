@@ -1,14 +1,14 @@
 ---
 id: TASK-098
 title: 5.5 DNF with a reason — the closing card for a book
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 5b160fd
 ---
 
 # TASK-098 — 5.5 DNF with a reason — the closing card for a book
@@ -69,7 +69,33 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-17 (owner: kept whole, not split, though it is over 8 files: the roadmap Check is one contract).
+
+**The shared Undo.** One toast at a time, so the card's save can't push a second entry without committing the DNF's. Instead *Save* **replaces** the DNF's toast with one entry: the same label, detail *Reason saved*, a fresh 8 seconds, whose Undo is one request, `DELETE /api/progress/book` with `{ change, note }`, undoing the note and the status in **one transaction**. It refuses, changing nothing, if the note has changed since. So a reason can never come back without its status, or a status without its reason.
+
+**Steps**
+1. `saveBookStatus` reads `notes` in its `before` select and answers it; `POST /api/progress/book` answers `note` (the book's note, which a status write doesn't change); `BookWritten.note`.
+2. `undoBookStatus(userId, change, note?)`: in the same transaction, first checks `notes = note.note` and puts `note.prior` back, then the status undo (so a book that had no row still loses it only with a NULL note). The route validates `note` as the note route does.
+3. `useBookWrite` answers `{ written, amend }`: `amend(note)` pushes the replacement entry (same label, detail *Reason saved*), whose undo sends `{ change, note }`, runs `onUndone`, refreshes.
+4. `src/components/ClosingCard.tsx` (new): a labelled one-line *Reason* field (focused, prefilled with the note), *Save* (`btn sec sm`, grey) and *Skip* (grey); Esc = Skip; focus back to the DNF button either way; unchanged text writes nothing; a failed note save keeps the card open with the error and *Retry* (R1-07), the DNF and its Undo left alone. Built so 5.4 can add a rating.
+5. `BookStatus.tsx`: DNF chosen from another status saves at once, then opens the card. (DNF is set nowhere else.)
+6. `booksDone` answers `note` for DNF rows only (`CASE WHEN st.status = 'dnf' THEN st.notes END`); `StatusBookRow` takes `reason` and draws a grey `.row-reason` under the title, nothing when null; `src/app/books/status/page.tsx` passes it; `src/app/globals.css` styles the card and the line.
+7. `design/mockups.html`: the card in `blist` (phone, desktop), the reason on a *Stopped* row in `status`; `design/mockups-index.md` names them.
+
+**Files** (not in *Files likely touched*: `src/db/writes.ts`, `src/app/api/progress/book/route.ts` for the shared undo and the note in the answer; `src/app/books/status/page.tsx`, `src/app/globals.css`; `test/dnf-reason.test.ts`)
+- `src/components/ClosingCard.tsx` (new), `src/components/BookStatus.tsx`, `src/components/useBookWrite.ts`
+- `src/db/writes.ts`, `src/app/api/progress/book/route.ts`, `src/db/queries.ts`
+- `src/components/StatusBookRow.tsx`, `src/app/books/status/page.tsx`, `src/app/globals.css`
+- `design/mockups.html`, `design/mockups-index.md`
+- `test/status.test.ts`, `test/dnf-reason.test.ts` (new), `test/e2e/dnf-reason.spec.ts` (new)
+
+**Test strategy**
+- `test/status.test.ts`: `booksDone` answers the note for a DNF book; null for one without, and for a Read book (AC-1, AC-2).
+- `test/dnf-reason.test.ts`: the POST answers `note`; DNF → note → combined undo leaves `reading`, the start, NULL note; a prior note *Gift from Sam* comes back; the undo refuses, changing nothing, once the note changed since (AC-1, AC-3, AC-4).
+- `test/e2e/dnf-reason.spec.ts`: the card opens with the field focused; save → reload → *Stopped* shows it; *Skip* and Esc leave the note and return focus to DNF; Undo restores status and note; a failed note save shows *Retry*; the colour sweep (nothing resolves to `--ready` or `--danger`); axe light and dark; screenshots at 360 and 1280 (AC-1–AC-4, AC-6).
+- AC-5: the redrawn frames, read.
+
+**Risks**: a save after the DNF's toast ran out gives its Undo another 8 seconds, which is intended (Undo still takes back both). Clearing the field and saving clears the note; Undo puts it back.
 
 ## Review log
 
