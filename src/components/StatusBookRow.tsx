@@ -12,11 +12,13 @@ import { bookSub, listenGlyph, wordsK } from "@/lib/format";
  * is, *Listened* once it has a listen. `action` (task 2.2f) is a control at the
  * row's end, in the same `.row-verbs` the queue rows use. `control` (task 1.17b) is the
  * book's status control, under the sub-line; the page fills it for the rows that carry one.
+ * `reason` (task 5.5) is a *Stopped* row's: why the book was stopped, grey under the title;
+ * with none, no line is drawn.
  */
 /** A book's own route (task 3.5): its sheet from a list, its page on a direct load. */
 export const bookHref = (id: string) => `/book/${encodeURIComponent(id)}`;
 
-export default function StatusBookRow({ book, meta, dates = null, action, control }: {
+export default function StatusBookRow({ book, meta, dates = null, reason = null, action, control }: {
   book: {
     /** Links the title to the book's sheet (task 3.5). */
     id?: string;
@@ -26,6 +28,8 @@ export default function StatusBookRow({ book, meta, dates = null, action, contro
   };
   meta?: string | null;
   dates?: string | null;
+  /** Why a stopped book was stopped: its note (task 5.5). */
+  reason?: string | null;
   /** A control at the row's end (task 2.2f: *Finished* on In flight). Without one the row is unchanged. */
   action?: React.ReactNode;
   /** The status control under the row's text (task 1.17b). */
@@ -45,6 +49,7 @@ export default function StatusBookRow({ book, meta, dates = null, action, contro
         </span>
         {shown && <span className="row-meta mono">{shown}</span>}
       </span>
+      {reason && <span className="row-reason">{reason}</span>}
       {bookSub(book) && <span className="row-sub">{bookSub(book)}</span>}
       {dates && <span className="row-dates">{dates}</span>}
       {control && <div className="row-control">{control}</div>}

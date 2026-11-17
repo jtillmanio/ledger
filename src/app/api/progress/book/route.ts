@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   BOOK_STATUSES, IN_PROGRESS, RefusedStatus, SETTABLE_STATUSES, isAutoKind, saveBookStatus, undoBookStatus,
-  type BookStatusChange,
+  type BookStatusChange, type NoteChange,
 } from "@/db/writes";
 import { finishOffer } from "@/db/queries";
 import { apiUserId, unauthorized } from "@/lib/auth";
@@ -39,6 +39,9 @@ const STORED: readonly string[] = BOOK_STATUSES;
  * Listening has already followed the book's series, subseries and universe
  * (task 2.2h, D-117): `change.follows` says which, and `offer.now` names them
  * for the toast's *Now reading*. The undo puts them back with the finish.
+ *
+ * It also answers `note`, the book's note, which a status write leaves alone:
+ * a DNF's closing card opens on it (task 5.5).
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -72,20 +75,25 @@ export async function POST(req: Request) {
     throw e;
   }
   if (!saved) return NextResponse.json({ error: "no such book" }, { status: 404 });
-  const { start: stored, ...change } = saved;
+  const { start: stored, note, ...change } = saved;
   // The finish is saved: an offer that can't be read is no offer, never a failed finish.
   const offer = change.appended !== null ? await finishOffer(userId, bookId, change.follows).catch(() => null) : null;
-  return NextResponse.json({ ok: true, change, finish: finish ?? null, start: stored, format: change.format ?? null, offer });
+  return NextResponse.json({
+    ok: true, change, finish: finish ?? null, start: stored, format: change.format ?? null, offer, note,
+  });
 }
 
 /** A status change's undo: `{ change }` as the POST answered it. 409 when the
- * book's reading log has moved on since, and nothing is changed. */
+ * book's reading log has moved on since, and nothing is changed. With `note`, a
+ * note write's answer for the same book (the DNF's reason, task 5.5), the note
+ * before comes back in the same transaction, and a note changed since is a 409 too. */
 export async function DELETE(req: Request) {
   const userId = await apiUserId();
   if (!userId) return unauthorized();
-  const { change } = await req.json();
+  const { change, note } = await req.json();
   if (!validChange(change)) return bad("change is a status write's answer");
-  if (!(await undoBookStatus(userId, change))) {
+  if (note !== undefined && !validNote(note, change.bookId)) return bad("note is the same book's note write's answer");
+  if (!(await undoBookStatus(userId, change, note))) {
     return NextResponse.json({ error: "the book has changed since" }, { status: 409 });
   }
   return NextResponse.json({ ok: true });
@@ -98,6 +106,15 @@ function bad(error: string) {
 const isId = (n: unknown) => Number.isInteger(n) && (n as number) > 0 && (n as number) <= 2147483647;
 const asFinish = (o: Record<string, unknown>) => ({ on: o.finishedOn, precision: o.precision });
 const asStart = (o: Record<string, unknown>) => ({ on: o.startedOn, precision: o.startPrecision });
+
+const isText = (n: unknown) => n === null || typeof n === "string";
+
+/** A note write's answer (`/api/progress/book/note`) for this book: the note before and the note written. */
+function validNote(n: unknown, bookId: string): n is NoteChange {
+  if (typeof n !== "object" || n === null) return false;
+  const { bookId: of, prior, note } = n as Record<string, unknown>;
+  return of === bookId && isText(prior) && isText(note);
+}
 
 /** A follow a finish set (task 2.2h): its kind is one a finish follows, its prior no row or `tracking`. */
 function validFollow(f: unknown): boolean {
