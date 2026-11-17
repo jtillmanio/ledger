@@ -9,12 +9,7 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 import { testSql, type TestSql } from "../db";
-import {
-  contrastFailures, E2E_RUN_ID, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot,
-} from "./helpers";
-
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
+import { E2E_RUN_ID, FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
 
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
@@ -67,7 +62,7 @@ test.beforeEach(async ({ page }) => {
 
 const box = (page: Page) => page.getByRole("searchbox", { name: "Series and number" });
 
-test("typing thor 337-340 and pausing lists the catalog's row with its run count and Metron's with Metron, and meets the floor (AC-3, AC-4, AC-6)", async ({ page }, info) => {
+test("typing thor 337-340 and pausing lists the catalog's row with its run count and Metron's with Metron, and meets the floor (AC-3, AC-4, AC-6)", FLOOR, async ({ page }, info) => {
   await page.goto(`/comics/${E2E_RUN_ID}/add`);
   await hydrated(box(page));
   await expect(box(page)).toHaveAttribute("type", "search");
@@ -96,7 +91,7 @@ test("typing thor 337-340 and pausing lists the catalog's row with its run count
   await screenshot(page, info, "issue-search-as-you-type");
 });
 
-test("two characters ask nothing (AC-6)", CORE, async ({ page }) => {
+test("two characters ask nothing (AC-6)", async ({ page }) => {
   await page.goto(`/comics/${E2E_RUN_ID}/add`);
   await hydrated(box(page));
   const requests: string[] = [];

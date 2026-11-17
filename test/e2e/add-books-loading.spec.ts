@@ -7,9 +7,9 @@
 // Add books' own. Reads only, so it runs at every width. The unit test of the
 // same wait, with focus and the second open, is test/add-books-loading.test.tsx.
 import { expect, test } from "@playwright/test";
-import { hydrated } from "./helpers";
+import { FLOOR, hydrated } from "./helpers";
 
-test("Add books' sheet is its loaded size while its code loads, so nothing moves when it arrives (AC-5)", async ({ page }) => {
+test("Add books' sheet is its loaded size while its code loads, so nothing moves when it arrives (AC-5)", FLOOR, async ({ page }) => {
   // No rise animation to measure through: the sheet stands where it stops.
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/books/list");

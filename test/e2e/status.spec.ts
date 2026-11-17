@@ -14,12 +14,12 @@ import ComicsLoading from "../../src/app/comics/status/loading";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
 import { today } from "../../src/lib/finish-date";
-import { computedStyle, contrastFailures, E2E_BOOK_COUNT, E2E_RUN_ID, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled, tokenColour } from "./helpers";
+import {
+  E2E_BOOK_COUNT, E2E_RUN_ID, FEEL, FLOOR, computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled, tokenColour,
+} from "./helpers";
 
 // Writes or sets its own state: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
   "aria-prohibited-attr", "aria-required-children", "aria-required-parent", "aria-valid-attr-value", "aria-hidden-focus",
@@ -55,7 +55,7 @@ async function open(page: Page, path: string) {
 }
 
 test.describe("the empty slates (AC-4)", () => {
-  test("comics: all three, each with one primary action", async ({ page }, info) => {
+  test("comics: all three, each with one primary action", FEEL, async ({ page }, info) => {
     // Every live run goes out of sight for this test and comes back after it.
     const live = await db(async (sql) => (await sql`SELECT id FROM runs WHERE deleted_at IS NULL`).map((r) => r.id as string));
     await db((sql) => sql`UPDATE runs SET deleted_at = now() WHERE id = ANY(${live})`);
@@ -81,7 +81,7 @@ test.describe("the empty slates (AC-4)", () => {
     }
   });
 
-  test("books: all three, with the design §14 copy; Plan a book opens Add books on this quarter (task 2.3)", async ({ page }, info) => {
+  test("books: all three, with the design §14 copy; Plan a book opens Add books on this quarter (task 2.3)", FEEL, async ({ page }, info) => {
     await open(page, "/books/status");
     await expect(page.getByRole("heading", { level: 1, name: "Books by status" })).toBeVisible();
     for (const [name, title, body, action] of [
@@ -124,7 +124,7 @@ test.describe("the empty slates (AC-4)", () => {
 });
 
 test.describe("the tabs (AC-2)", () => {
-  test("the tab is in the URL and survives a reload; an unknown tab opens In flight", CORE, async ({ page }) => {
+  test("the tab is in the URL and survives a reload; an unknown tab opens In flight", async ({ page }) => {
     await open(page, "/comics/status?tab=done");
     await expect(tab(page, "Done")).toHaveAttribute("aria-selected", "true");
     await page.reload();
@@ -137,7 +137,7 @@ test.describe("the tabs (AC-2)", () => {
     await expect(page.locator(".tabs .tab-ink")).toHaveCount(1);
   });
 
-  test("the arrow keys, Home and End move along the strip and open the tab", CORE, async ({ page }) => {
+  test("the arrow keys, Home and End move along the strip and open the tab", async ({ page }) => {
     await open(page, "/comics/status");
     const strip = (name: string) => tab(page, name);
     await hydrated(strip("In flight"));
@@ -157,7 +157,7 @@ test.describe("the tabs (AC-2)", () => {
     await expect(strip("In flight")).toHaveAttribute("aria-selected", "true");
   });
 
-  test("44px tabs; the underline sits under the selected tab", async ({ page }) => {
+  test("44px tabs; the underline sits under the selected tab", FLOOR, async ({ page }) => {
     await open(page, "/comics/status?tab=next");
     for (const name of ["In flight", "Up next", "Done"]) {
       expect((await tab(page, name).boundingBox())!.height).toBeGreaterThanOrEqual(44);
@@ -226,7 +226,7 @@ test.describe("comics", () => {
     await db((sql) => sql`DELETE FROM issues WHERE id LIKE 'e2e-st-%'`);
   });
 
-  test("In flight: started runs with a meter and a button named for the target, in full", async ({ page }, info) => {
+  test("In flight: started runs with a meter and a button named for the target, in full", FEEL, async ({ page }, info) => {
     await open(page, "/comics/status");
     await expect(panel(page).locator("article.row .row-title")).toContainText(["E2E Run", "E2E St mid"]);
     const read = panel(page).getByRole("link", { name: "Read E2E St mid (2002) #4" });
@@ -241,7 +241,7 @@ test.describe("comics", () => {
     await screenshot(page, info, "comics-in-flight");
   });
 
-  test("Up next: the queue in order without the started run, then Ready, not queued; counts are the rows", async ({ page }, info) => {
+  test("Up next: the queue in order without the started run, then Ready, not queued; counts are the rows", FEEL, async ({ page }, info) => {
     await open(page, "/comics/status?tab=next");
     await expect(panel(page).locator("li.qrow .qtitle")).toHaveText(["E2E St q2", "E2E St held", "E2E St q1"]);
     // The blocked, queued run keeps its amber badge; the unqueued blocked run would be in neither list.
@@ -255,7 +255,7 @@ test.describe("comics", () => {
     await screenshot(page, info, "comics-up-next");
   });
 
-  test("Done: a run with every placement read, newest first", async ({ page }, info) => {
+  test("Done: a run with every placement read, newest first", FEEL, async ({ page }, info) => {
     await open(page, "/comics/status?tab=done");
     await expect(panel(page).locator("article.row .row-title")).toHaveText(["E2E St done"]);
     // When it was read: its span since task 1.17 (*Read Mar–Sep 2026*, one month alone *Read Nov 2026*).
@@ -265,12 +265,12 @@ test.describe("comics", () => {
     await screenshot(page, info, "comics-done");
   });
 
-  test("every tab's count is its row count", CORE, async ({ page }) => {
+  test("every tab's count is its row count", async ({ page }) => {
     await open(page, "/comics/status");
     expect(await counted(page, "In flight")).toBe(await panel(page).locator("article.row").count());
   });
 
-  test("the dashboard links to the matching tab, with N computed (AC-5)", CORE, async ({ page }) => {
+  test("the dashboard links to the matching tab, with N computed (AC-5)", async ({ page }) => {
     await page.goto("/comics");
     await expect(page.getByRole("heading", { level: 2, name: "Up next" })).toBeVisible();
     const flying = page.getByRole("link", { name: /^All \d+$/ }).first();
@@ -326,7 +326,7 @@ test.describe("books", () => {
     (await sql`SELECT book_id, ordinal FROM reading_plan WHERE user_id = ${E2E_USER} AND period = ${period} ORDER BY ordinal`)
       .map((r) => `${(r.book_id as string).slice(prefix.length)}:${r.ordinal}`));
 
-  test("In flight: what you are reading", async ({ page }, info) => {
+  test("In flight: what you are reading", FEEL, async ({ page }, info) => {
     await open(page, "/books/status");
     await expect(panel(page).locator("article.row .row-title")).toHaveText(["E2E Reading Now"]);
     expect(await counted(page, "In flight")).toBe(1);
@@ -334,7 +334,7 @@ test.describe("books", () => {
     await screenshot(page, info, "books-in-flight");
   });
 
-  test("Up next: quarters in order, the 2027 lane after them, amber with Place them and no handle, then On deck, then Someday", async ({ page }, info) => {
+  test("Up next: quarters in order, the 2027 lane after them, amber with Place them and no handle, then On deck, then Someday", FEEL, async ({ page }, info) => {
     await open(page, "/books/status?tab=next");
     await expect(panel(page).getByRole("heading", { level: 2 })).toHaveText([
       /^2027 · Q1\s*3 books$/, /^2027 · Q2\s*1 book$/, /^2027 · no quarter yet\s*1 book$/, /^On deck\s*1 book$/,
@@ -395,7 +395,7 @@ test.describe("books", () => {
     expect(await order("2027-Q2")).toEqual(["q2:1"]);
   });
 
-  test("Someday opens the master list at that level; the chips filter by level (AC-3)", CORE, async ({ page }) => {
+  test("Someday opens the master list at that level; the chips filter by level (AC-3)", async ({ page }) => {
     await open(page, "/books/status?tab=next");
     await page.getByRole("link", { name: /^Someday · 2 books/ }).click();
     await expect(page).toHaveURL(/\/books\/list\?status=to_read&level=someday$/);
@@ -419,7 +419,7 @@ test.describe("books", () => {
     await expect(titles).toHaveCount(8 + E2E_BOOK_COUNT);
   });
 
-  test("Done: by year, the undated last; DNF appears only under a collapsed Stopped", async ({ page }, info) => {
+  test("Done: by year, the undated last; DNF appears only under a collapsed Stopped", FEEL, async ({ page }, info) => {
     await open(page, "/books/status?tab=done");
     await expect(panel(page).getByRole("heading", { level: 2 })).toHaveText([/^2026\s*1$/, /^2024\s*1$/, /^No year\s*1$/]);
     await expect(panel(page).locator("section .rows article.row .row-title")).toHaveText(["E2E Done New", "E2E Done Old", "E2E Done Undated"]);
@@ -600,7 +600,7 @@ test.describe("Finished on In flight (2.2f)", () => {
     expect(await reads("a")).toEqual([]);
   });
 
-  test("AC-5: the button is at least 24px tall; a long title stays inside the row at 360", async ({ page }) => {
+  test("AC-5: the button is at least 24px tall; a long title stays inside the row at 360", FLOOR, async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 780 });
     await open(page, "/books/status");
     expect((await finish(page, "E2E Fin Alpha").boundingBox())!.height).toBeGreaterThanOrEqual(24);
@@ -732,7 +732,7 @@ test.describe("the status control on the status screens (1.17b)", () => {
     await expect(toggle(page, QUIT)).toHaveText("Status: DNF");
   });
 
-  test("AC-6: the control open on In flight, Up next and Done meets the floor; focus returns to what opened it", async ({ page }, info) => {
+  test("AC-6: the control open on In flight, Up next and Done meets the floor; focus returns to what opened it", FEEL, async ({ page }, info) => {
     // In flight: the date line's Started opens the picker.
     await open(page, "/books/status");
     const flight = await expand(page, FLIGHT);
@@ -939,7 +939,7 @@ test.describe("On deck by genre (4.5b)", () => {
     await expect(chip(page, FANTASY)).toBeVisible();
   }
 
-  test("a Fantasy and a Sci-Fi section, the book in both in each, then No genre; the tab counts it once (AC-1, AC-2)", CORE, async ({ page }) => {
+  test("a Fantasy and a Sci-Fi section, the book in both in each, then No genre; the tab counts it once (AC-1, AC-2)", async ({ page }) => {
     await openDeck(page);
     await expect(deck(page).getByRole("heading", { level: 2 })).toHaveText(/^On deck\s*4 books$/);
     await expect(deck(page).getByRole("heading", { level: 3 })).toHaveText([
@@ -957,7 +957,7 @@ test.describe("On deck by genre (4.5b)", () => {
     await expect(chips(page).locator("a[aria-current]")).toHaveCount(1);
   });
 
-  test("the Fantasy chip leaves only Fantasy, is in the URL, survives a reload and writes nothing (AC-1, AC-3)", CORE, async ({ page }) => {
+  test("the Fantasy chip leaves only Fantasy, is in the URL, survives a reload and writes nothing (AC-1, AC-3)", async ({ page }) => {
     await openDeck(page);
     const before = await counted(page, "Up next");
     const rows = () => db(async (sql) => ({
@@ -992,7 +992,7 @@ test.describe("On deck by genre (4.5b)", () => {
     expect(await rows()).toEqual(was);
   });
 
-  test("in the Library, To read · On deck then a genre chip lists only that genre's On deck books (AC-1, AC-4)", CORE, async ({ page }) => {
+  test("in the Library, To read · On deck then a genre chip lists only that genre's On deck books (AC-1, AC-4)", async ({ page }) => {
     await page.goto("/books/list");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Library");
     await page.getByRole("link", { name: "To read", exact: true }).click();
@@ -1004,7 +1004,7 @@ test.describe("On deck by genre (4.5b)", () => {
     await expect(page.getByRole("link", { name: "To read", exact: true })).toHaveAttribute("aria-current", "true");
   });
 
-  test("the chips are named links, 44px on the phone, in a row that never widens the page; the sections are headings (AC-5)", async ({ page }, info) => {
+  test("the chips are named links, 44px on the phone, in a row that never widens the page; the sections are headings (AC-5)", FEEL, async ({ page }, info) => {
     await openDeck(page);
     const width = page.viewportSize()!.width;
     const links = chips(page).getByRole("link");

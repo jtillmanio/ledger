@@ -4,7 +4,7 @@
 // need no layout run once (the w390-light project); the screenshots and the
 // sideways-scroll check run at every width, light and dark.
 import { expect, test } from "@playwright/test";
-import { E2E_RUN_ID, E2E_RUN_TITLE, expectNoHorizontalScroll, screenshot } from "./helpers";
+import { E2E_RUN_ID, E2E_RUN_TITLE, FLOOR, expectNoHorizontalScroll, screenshot } from "./helpers";
 
 // A check with no layout in it: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
@@ -135,7 +135,7 @@ test("no same-origin link on any page answers 404", ONCE, async ({ page }) => {
 });
 
 for (const [name, path] of [["comics-dashboard", "/comics"], ["comics-runs", "/comics/runs"], ["books-list", "/books/list"]]) {
-  test(`${path} fits the viewport`, async ({ page }, testInfo) => {
+  test(`${path} fits the viewport`, FLOOR, async ({ page }, testInfo) => {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expectNoHorizontalScroll(page);
@@ -145,7 +145,7 @@ for (const [name, path] of [["comics-dashboard", "/comics"], ["comics-runs", "/c
 
 // The status screens exist (task 1.9): each answers 200 and names itself, in the tab the URL asks for.
 for (const [path, h1] of [["/comics/status", "Runs by status"], ["/books/status", "Books by status"]]) {
-  test(`${path} answers with its h1 and a tab strip`, async ({ page }) => {
+  test(`${path} answers with its h1 and a tab strip`, FLOOR, async ({ page }) => {
     const res = await page.goto(path);
     expect(res?.status()).toBe(200);
     await expect(page.getByRole("heading", { level: 1, name: h1 })).toBeVisible();

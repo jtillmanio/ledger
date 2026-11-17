@@ -6,7 +6,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { testSql } from "../db";
 import {
-  E2E_INBOX_COUNT, E2E_LONG_RUN_ID, E2E_RUN_ID, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot,
+  E2E_INBOX_COUNT, E2E_LONG_RUN_ID, E2E_RUN_ID, FLOOR, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot,
 } from "./helpers";
 
 // Sets its own viewport: runs once, in w390-light.
@@ -38,7 +38,7 @@ const barHeight = (page: Page) =>
 
 test.describe("every width", () => {
   for (const path of DASHBOARDS) {
-    test(`${path} fits the width and is drawn (AC-1, AC-4)`, async ({ page }, testInfo) => {
+    test(`${path} fits the width and is drawn (AC-1, AC-4)`, FLOOR, async ({ page }, testInfo) => {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
       await expectNoHorizontalScroll(page);
@@ -46,7 +46,7 @@ test.describe("every width", () => {
     });
   }
 
-  test("the run page fits the width, its Resume, Add issues and ⋯ row too, with a long label", async ({ page }) => {
+  test("the run page fits the width, its Resume, Add issues and ⋯ row too, with a long label", FLOOR, async ({ page }) => {
     for (const run of [E2E_RUN_ID, E2E_LONG_RUN_ID]) {
       await page.goto(`/comics/${run}`);
       await expect(page.locator(".run-actions .resume")).toBeVisible();

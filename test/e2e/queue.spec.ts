@@ -8,12 +8,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
-import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
+import { FEEL, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
 
 // Writes or sets its own viewport: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
 const LIST = "/comics/status?tab=next";
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-prohibited-attr",
@@ -86,7 +84,7 @@ async function floor(page: Page) {
 }
 
 test.describe("the dashboard shelf", () => {
-  test("renders the queue's unstarted runs in ordinal order, Start on the first card only, no drag handle", async ({ page }, info) => {
+  test("renders the queue's unstarted runs in ordinal order, Start on the first card only, no drag handle", FEEL, async ({ page }, info) => {
     const order = [ids[2], ids[0], ids[1]];
     await queue(order);
     await openDashboard(page);
@@ -108,7 +106,7 @@ test.describe("the dashboard shelf", () => {
     await screenshot(page, info, "shelf-populated");
   });
 
-  test("a started run leaves the shelf and keeps its queue row; one card is still a shelf", async ({ page }, info) => {
+  test("a started run leaves the shelf and keeps its queue row; one card is still a shelf", FEEL, async ({ page }, info) => {
     await queue([ids[0], ids[1]]);
     await db((sql) => sql`INSERT INTO issue_progress (user_id, placement_id, completed_at, completed_at_precision)
                           SELECT ${E2E_USER}, id, NULL, 'none' FROM run_issues WHERE run_id = ${ids[0]}`);
@@ -125,7 +123,7 @@ test.describe("the dashboard shelf", () => {
     }
   });
 
-  test("empty: Nothing queued, with the computed count of ready runs, linking to Ready, not queued", async ({ page }, info) => {
+  test("empty: Nothing queued, with the computed count of ready runs, linking to Ready, not queued", FEEL, async ({ page }, info) => {
     await openList(page);
     const n = await page.locator("#ready-head .n").textContent();
     await openDashboard(page);
@@ -136,7 +134,7 @@ test.describe("the dashboard shelf", () => {
     await screenshot(page, info, "shelf-empty");
   });
 
-  test("overflowing: twelve covers scroll inside the frame, never the page", async ({ page }, info) => {
+  test("overflowing: twelve covers scroll inside the frame, never the page", FEEL, async ({ page }, info) => {
     await queue(ids);
     await openDashboard(page);
     await expect(cards(page)).toHaveCount(12);
@@ -220,7 +218,7 @@ test.describe("the shelf from 1024px (FP-D18)", () => {
 });
 
 test.describe("the queue list", () => {
-  test("the handle is a named button described by the help text; Space, Down, Down, Space moves 2 to 4", async ({ page }, info) => {
+  test("the handle is a named button described by the help text; Space, Down, Down, Space moves 2 to 4", FEEL, async ({ page }, info) => {
     await queue(ids.slice(0, 5));
     await openList(page);
     const handle = page.getByRole("button", { name: `Reorder ${titleOf(ids[1])}, position 2 of 5` });
@@ -248,7 +246,7 @@ test.describe("the queue list", () => {
     await expect(page.getByRole("button", { name: `Reorder ${titleOf(ids[1])}, position 4 of 5` })).toBeFocused();
   });
 
-  test("Esc mid-lift leaves the order unchanged", CORE, async ({ page }) => {
+  test("Esc mid-lift leaves the order unchanged", async ({ page }) => {
     await queue(ids.slice(0, 5));
     await openList(page);
     const handle = page.getByRole("button", { name: `Reorder ${titleOf(ids[1])}, position 2 of 5` });
@@ -345,7 +343,7 @@ test.describe("the queue list", () => {
     expect(await stored()).toEqual(ids.slice(0, 3).map((id, i) => `${id}:${i + 1}`));
   });
 
-  test("an empty queue is one slate with one action", async ({ page }, info) => {
+  test("an empty queue is one slate with one action", FEEL, async ({ page }, info) => {
     await openList(page);
     await expect(page.locator("#queue-head + .empty")).toContainText("Nothing queued.");
     await expect(page.locator("#queue-head + .empty").getByRole("link")).toHaveCount(1);

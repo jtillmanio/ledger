@@ -8,7 +8,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
-import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
+import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
 
 // Writes: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
@@ -74,7 +74,7 @@ async function paste(page: Page) {
   await box.fill(PASTE);
 }
 
-test("two pasted columns are Title and Author cells with names, the no-author reason tied to its cell (AC-1, AC-6)", async ({ page }, info) => {
+test("two pasted columns are Title and Author cells with names, the no-author reason tied to its cell (AC-1, AC-6)", FLOOR, async ({ page }, info) => {
   await paste(page);
   await expect(page.getByRole("textbox", { name: /^Title, line \d$/ })).toHaveCount(3);
   await expect(page.getByRole("textbox", { name: "Title, line 2" })).toHaveValue("E2E Paste - Two");
@@ -140,7 +140,7 @@ async function pasteOwned(page: Page) {
   await expect(page.locator(".review .vcheck")).toHaveText(["in library", "in library", "new"]);
 }
 
-test("Physical copy is a named, pressed choice and the confirm names it, at the UX floor (task 5.17, AC-5)", async ({ page }, info) => {
+test("Physical copy is a named, pressed choice and the confirm names it, at the UX floor (task 5.17, AC-5)", FLOOR, async ({ page }, info) => {
   await pasteOwned(page);
   await expect(page.locator(".review .vm")).toContainText([
     "In your library: marks it as owned on paper.", "In your library: marks it as owned on paper.", "New: creates the book, Unlisted.",

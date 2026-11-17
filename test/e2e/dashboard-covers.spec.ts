@@ -14,7 +14,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { today } from "../../src/lib/finish-date";
 import { testSql, type TestSql } from "../db";
-import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, screenshot, tokenColour } from "./helpers";
+import { FEEL, FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, screenshot, tokenColour } from "./helpers";
 
 // A check with no layout in it, or one that sets its own viewport: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
@@ -281,7 +281,7 @@ for (const cover of [true, false]) {
 
   test.describe(`books dashboard, ${variant}`, () => {
     for (const state of STATES) {
-      test(`${state}: every cover slot is its box, the image or the placeholder, and a cover is data (AC-2, AC-3, AC-4, AC-5)`, async ({ page }, info) => {
+      test(`${state}: every cover slot is its box, the image or the placeholder, and a cover is data (AC-2, AC-3, AC-4, AC-5)`, FEEL, async ({ page }, info) => {
         await seedBooks(state, cover);
         await fakeCovers(page);
         await openBooks(page);
@@ -330,7 +330,7 @@ for (const cover of [true, false]) {
       });
     }
 
-    test("the books status screen's quarter rows draw the book's cover or the placeholder at 36px (AC-3)", async ({ page }, info) => {
+    test("the books status screen's quarter rows draw the book's cover or the placeholder at 36px (AC-3)", FEEL, async ({ page }, info) => {
       await seedBooks("reading", cover);
       await fakeCovers(page);
       await page.goto("/books/status?tab=next");
@@ -349,7 +349,7 @@ for (const cover of [true, false]) {
   });
 
   test.describe(`comics dashboard, ${variant}`, () => {
-    test("the Up next shelf draws each run's cover at 112px and the queue rows at 36px (AC-3, AC-4, AC-5)", async ({ page }, info) => {
+    test("the Up next shelf draws each run's cover at 112px and the queue rows at 36px (AC-3, AC-4, AC-5)", FEEL, async ({ page }, info) => {
       await seedComics(cover);
       await fakeCovers(page);
       await openComics(page);
@@ -390,7 +390,7 @@ for (const cover of [true, false]) {
   });
 }
 
-test("a cover arriving moves nothing: the hero, the shelf and the On deck list are the same height with and without covers (AC-2)", async ({ page }) => {
+test("a cover arriving moves nothing: the hero, the shelf and the On deck list are the same height with and without covers (AC-2)", FLOOR, async ({ page }) => {
   await seedBooks("reading", true);
   await fakeCovers(page);
   const measure = async () => {

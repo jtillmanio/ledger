@@ -15,8 +15,6 @@ import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
 import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
 
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
 const ONCE = { tag: "@at-w390-light" };
 
 const AXE = [
@@ -84,7 +82,7 @@ async function openFrom(page: Page, title: string) {
     el.getAnimations().filter((a) => a.playState === "running").length)).toBe(0);
 }
 
-test("opens over the Library past its 40th row; Back closes it with the list's scroll and focus where they were (AC-1, AC-2)", CORE, async ({ page }) => {
+test("opens over the Library past its 40th row; Back closes it with the list's scroll and focus where they were (AC-1, AC-2)", async ({ page }) => {
   await page.goto(LIST);
   const target = FILLER[41];
   const link = rowLink(page, target.title);
@@ -110,7 +108,7 @@ test("opens over the Library past its 40th row; Back closes it with the list's s
   await expect(link).toBeFocused();
 });
 
-test("Esc, the scrim, the close and the grab handle each close it and put focus back on the row link (AC-6)", CORE, async ({ page }) => {
+test("Esc, the scrim, the close and the grab handle each close it and put focus back on the row link (AC-6)", async ({ page }) => {
   await page.goto(LIST);
   const ways: [string, (p: Page) => Promise<void>][] = [
     ["Esc", (p) => p.keyboard.press("Escape")],
@@ -132,7 +130,7 @@ test("Esc, the scrim, the close and the grab handle each close it and put focus 
   }
 });
 
-test("a direct visit, and a refresh, render the full page with the same content and no sheet (AC-1, AC-3)", CORE, async ({ page }) => {
+test("a direct visit, and a refresh, render the full page with the same content and no sheet (AC-1, AC-3)", async ({ page }) => {
   for (const visit of ["load", "refresh"] as const) {
     if (visit === "load") await page.goto(`/book/${FEATURE.id}`);
     else await page.reload();
@@ -151,7 +149,7 @@ test("a direct visit, and a refresh, render the full page with the same content 
   await expect(sheet(page).locator(".detail-history > li")).toHaveCount(3);
 });
 
-test("an unknown or removed book renders the not-found page (AC-3)", CORE, async ({ page }) => {
+test("an unknown or removed book renders the not-found page (AC-3)", async ({ page }) => {
   for (const id of ["e2e-bd-nope", GONE.id]) {
     await page.goto(`/book/${id}`);
     await expect(page.getByText("This page could not be found."), id).toBeVisible();
@@ -159,7 +157,7 @@ test("an unknown or removed book renders the not-found page (AC-3)", CORE, async
   }
 });
 
-test("the Library's other routes under /books are not caught by the sheet", CORE, async ({ page }) => {
+test("the Library's other routes under /books are not caught by the sheet", async ({ page }) => {
   await page.goto(LIST);
   // The phone's tab row, the tablet's rail or the desktop sidebar: whichever this width draws.
   const plan = page.locator('a[href="/books/plan"]:visible').first();
@@ -170,7 +168,7 @@ test("the Library's other routes under /books are not caught by the sheet", CORE
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
-test("the sheet and the Library row write status through the same route (AC-1)", CORE, async ({ page }) => {
+test("the sheet and the Library row write status through the same route (AC-1)", async ({ page }) => {
   const book = FILLER[4];
   const writes: { path: string; status: unknown }[] = [];
   page.on("request", (req) => {
@@ -199,7 +197,7 @@ test("the sheet and the Library row write status through the same route (AC-1)",
   expect(st.status).toBe("to_read");
 });
 
-test("behind the sheet the page is inert, all but the undo toast, which stays live (AC-6, D-63)", CORE, async ({ page }) => {
+test("behind the sheet the page is inert, all but the undo toast, which stays live (AC-6, D-63)", async ({ page }) => {
   const book = FILLER[6];
   await page.goto(LIST);
   await openFrom(page, book.title);
@@ -215,7 +213,7 @@ test("behind the sheet the page is inert, all but the undo toast, which stays li
   await expect(sheet(page)).toBeVisible();
 });
 
-test("a book with no summary opens with no layout shift (AC-5)", CORE, async ({ page }) => {
+test("a book with no summary opens with no layout shift (AC-5)", async ({ page }) => {
   await page.addInitScript(() => {
     const w = window as unknown as { __shift: number };
     w.__shift = 0;
@@ -241,7 +239,7 @@ test("a book with no summary opens with no layout shift (AC-5)", CORE, async ({ 
   expect(await page.evaluate(() => (window as unknown as { __shift: number }).__shift)).toBe(0);
 });
 
-test("an estimated word count shows its ~ and the dotted edge; a stated one neither (AC-5)", CORE, async ({ page }) => {
+test("an estimated word count shows its ~ and the dotted edge; a stated one neither (AC-5)", async ({ page }) => {
   await page.goto(`/book/${FEATURE.id}`);
   const est = page.locator(".detail .words");
   await expect(est).toHaveText("~65,000");

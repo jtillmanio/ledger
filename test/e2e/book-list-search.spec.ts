@@ -8,10 +8,7 @@
 import { expect, test, type Page, type Request } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
-import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
-
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
+import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
 
 const AXE = [
   "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role", "aria-prohibited-attr",
@@ -66,7 +63,7 @@ async function open(page: Page, path = "/books/list") {
   await hydrated(box(page));
 }
 
-test("typing pir and pausing narrows the list and puts ?q=pir in the URL, without Enter (AC-1, AC-5)", async ({ page }, info) => {
+test("typing pir and pausing narrows the list and puts ?q=pir in the URL, without Enter (AC-1, AC-5)", FLOOR, async ({ page }, info) => {
   await open(page);
   await expect(ours(page)).toHaveCount(3);
   await box(page).pressSequentially("pir", { delay: 60 });
@@ -79,7 +76,7 @@ test("typing pir and pausing narrows the list and puts ?q=pir in the URL, withou
   await screenshot(page, info, "book-list-search-pir");
 });
 
-test("typing pi and pausing makes no request; back under three after a search shows the whole list (AC-1, AC-5)", CORE, async ({ page }) => {
+test("typing pi and pausing makes no request; back under three after a search shows the whole list (AC-1, AC-5)", async ({ page }) => {
   await open(page);
   const requests = listRequests(page);
   await box(page).pressSequentially("pi", { delay: 60 });
@@ -96,7 +93,7 @@ test("typing pi and pausing makes no request; back under three after a search sh
   await expect(box(page)).toHaveValue("pi");
 });
 
-test("piranesi typed quickly is one search, not six, and one Back leaves the list (AC-1, AC-5)", CORE, async ({ page }) => {
+test("piranesi typed quickly is one search, not six, and one Back leaves the list (AC-1, AC-5)", async ({ page }) => {
   // The page before the list (/books itself redirects to the list).
   await page.goto("/books/status");
   await open(page);
@@ -110,7 +107,7 @@ test("piranesi typed quickly is one search, not six, and one Back leaves the lis
   await expect(page).toHaveURL(/\/books\/status$/);
 });
 
-test("a chip already chosen stays in the URL; a reload reads ?q= and shows the same list (AC-5)", CORE, async ({ page }) => {
+test("a chip already chosen stays in the URL; a reload reads ?q= and shows the same list (AC-5)", async ({ page }) => {
   await open(page, "/books/list?status=to_read");
   await box(page).pressSequentially("pir", { delay: 60 });
   await expect(page).toHaveURL(/\/books\/list\?status=to_read&q=pir$/);
@@ -127,7 +124,7 @@ test("a chip already chosen stays in the URL; a reload reads ?q= and shows the s
   await expect(box(page)).toHaveValue("");
 });
 
-test("the box is a named search input, and its searching state is a polite live region (AC-6)", CORE, async ({ page }) => {
+test("the box is a named search input, and its searching state is a polite live region (AC-6)", async ({ page }) => {
   await open(page);
   await expect(box(page)).toHaveAttribute("type", "search");
   await expect(page.locator(".list-searching")).toHaveAttribute("role", "status");

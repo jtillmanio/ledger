@@ -10,11 +10,8 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
 import {
-  computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
+  FLOOR, computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
 } from "./helpers";
-
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
 
 const AXE = [
   "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
@@ -75,7 +72,7 @@ async function inheritsText(page: Page, glyph: Locator) {
   for (const token of ["--ready", "--blocked", "--danger"]) expect(own.stroke, token).not.toBe(await tokenColour(page, token));
 }
 
-test("the master list: the glyph and the counts, apart (AC-1, AC-4, AC-6)", async ({ page }, info) => {
+test("the master list: the glyph and the counts, apart (AC-1, AC-4, AC-6)", FLOOR, async ({ page }, info) => {
   await page.goto("/books/list?q=E2E%20Au");
   const both = bookRow(page, BOTH.title);
   await expect(glyphs(both)).toHaveCount(1);
@@ -108,12 +105,12 @@ test("the master list: the glyph and the counts, apart (AC-1, AC-4, AC-6)", asyn
   await screenshot(page, info, "audiobooks-list");
 });
 
-test("the Reading chip lists Reading and Listening books both (AC-4)", CORE, async ({ page }) => {
+test("the Reading chip lists Reading and Listening books both (AC-4)", async ({ page }) => {
   await page.goto("/books/list?status=reading&q=E2E%20Au");
   await expect(page.locator(".book-row .row-title")).toHaveText([NOW.title, EYES.title]);
 });
 
-test("the status control offers Listening beside Reading, a real button with its name (AC-4, AC-6)", async ({ page }, info) => {
+test("the status control offers Listening beside Reading, a real button with its name (AC-4, AC-6)", FLOOR, async ({ page }, info) => {
   await page.goto("/books/list?q=E2E%20Au");
   const row = bookRow(page, NOW.title);
   const toggle = row.locator(".status-toggle");
@@ -136,7 +133,7 @@ test("the status control offers Listening beside Reading, a real button with its
   await screenshot(page, info, "audiobooks-control");
 });
 
-test("In flight lists a Listening book under Listening, not Reading (AC-1, AC-6)", async ({ page }, info) => {
+test("In flight lists a Listening book under Listening, not Reading (AC-1, AC-6)", FLOOR, async ({ page }, info) => {
   await page.goto("/books/status");
   const reading = page.locator('section[data-flight="reading"]');
   const listening = page.locator('section[data-flight="listening"]');
@@ -157,7 +154,7 @@ test("In flight lists a Listening book under Listening, not Reading (AC-1, AC-6)
   await screenshot(page, info, "audiobooks-in-flight");
 });
 
-test("Done: a book with a listen carries the glyph named Listened; one only read, none (AC-6)", async ({ page }, info) => {
+test("Done: a book with a listen carries the glyph named Listened; one only read, none (AC-6)", FLOOR, async ({ page }, info) => {
   await page.goto("/books/status?tab=done");
   const row = (title: string) => page.locator(".row", { has: page.locator(".row-title", { hasText: title }) });
   await expect(glyphs(row(HEARD.title))).toHaveAccessibleName("Listened");

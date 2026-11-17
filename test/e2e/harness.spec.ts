@@ -5,13 +5,11 @@
 import { expect, test } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import {
-  E2E_RUN_ID, computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, screenshot,
-} from "./helpers";
+import { E2E_RUN_ID, FLOOR, computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, screenshot } from "./helpers";
 
 const fixture = (name: string) => readFileSync(join(__dirname, "fixtures", name), "utf8");
 
-test("axe fails on button-name for an unnamed button", async ({ page }) => {
+test("axe fails on button-name for an unnamed button", FLOOR, async ({ page }) => {
   await page.setContent(fixture("unnamed-button.html"));
   await expect(expectNoAxeViolations(page, ["button-name"])).rejects.toThrow(/button-name[\s\S]*button/);
 
@@ -20,7 +18,7 @@ test("axe fails on button-name for an unnamed button", async ({ page }) => {
   await expectNoAxeViolations(page, ["button-name"]);
 });
 
-test("axe refuses an empty rule list and a rule id axe does not know", async ({ page }) => {
+test("axe refuses an empty rule list and a rule id axe does not know", FLOOR, async ({ page }) => {
   await page.setContent(fixture("unnamed-button.html"));
   await expect(expectNoAxeViolations(page, [])).rejects.toThrow(/needs the rules/);
   await expect(expectNoAxeViolations(page, ["buton-name"])).rejects.toThrow(/unknown rule `buton-name`/);
@@ -38,7 +36,7 @@ test("no-scroll fails on a page that overflows at 360px", { tag: ["@at-w360-ligh
 // A pressed chip measured while its colour still moves read 1.35:1 in TASK-064's
 // first full run; the same check passed once the transition ended. The helper
 // waits for every transition and animation that ends, and not for one that loops.
-test("contrast is measured once transitions end, without waiting on a looping animation", async ({ page }) => {
+test("contrast is measured once transitions end, without waiting on a looping animation", FLOOR, async ({ page }) => {
   await page.setContent(fixture("transition-contrast.html"));
   await page.locator(".chip").evaluate((el) => {
     el.classList.add("on");
@@ -51,7 +49,42 @@ test("contrast is measured once transitions end, without waiting on a looping an
   expect(Date.now() - started).toBeLessThan(5_000);
 });
 
-test("the helpers work together", async ({ page }, testInfo) => {
+// D-161: no dark project runs the floor, so the floor's own checks find a
+// failure only dark has, from a light project, and leave the page as it was.
+test("contrast, axe and the screenshot check the other theme in place, then switch back", FLOOR, async ({ page }, testInfo) => {
+  await page.setContent(fixture("dark-only-contrast.html"));
+  const own = await page.evaluate(() => matchMedia("(prefers-color-scheme: dark)").matches);
+  expect(own).toBe(false); // no project that runs the floor is dark (D-161)
+
+  const failures = await contrastFailures(page);
+  expect(failures).toHaveLength(1);
+  expect(failures[0]).toMatch(/^dark: p "Readable in light, not in dark" 1\.\d+:1/);
+  await expect(expectNoAxeViolations(page, ["color-contrast"])).rejects.toThrow(/dark: color-contrast/);
+
+  const file = await screenshot(page, testInfo, "dark-only");
+  expect(existsSync(file)).toBe(true);
+  expect(existsSync(file.replace(/\.png$/, ".dark.png"))).toBe(true);
+
+  // Back in its own theme afterwards, so what the test reads next is light: at
+  // once, with no 2s transition left running back to it, and transitions on again.
+  expect(await page.evaluate(() => matchMedia("(prefers-color-scheme: dark)").matches)).toBe(false);
+  expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
+  expect(await computedStyle(page.locator("p"), ["color", "transition-duration"])).toEqual({ color: "rgb(17, 17, 17)", "transition-duration": "2s, 2s" });
+
+  // A root that sets data-theme no longer follows the media query: nothing to switch.
+  await page.locator("html").evaluate((el) => el.setAttribute("data-theme", "light"));
+  expect(await contrastFailures(page)).toEqual([]);
+});
+
+test("a test pinned to a project checks only that project's theme", { tag: "@at-w390-light" }, async ({ page }, testInfo) => {
+  await page.setContent(fixture("dark-only-contrast.html"));
+  expect(await contrastFailures(page)).toEqual([]);
+  await expectNoAxeViolations(page, ["color-contrast"]);
+  const file = await screenshot(page, testInfo, "dark-only-pinned");
+  expect(existsSync(file.replace(/\.png$/, ".dark.png"))).toBe(false);
+});
+
+test("the helpers work together", FLOOR, async ({ page }, testInfo) => {
   await page.goto(`/comics/${E2E_RUN_ID}`);
 
   await expectNoAxeViolations(page, ["button-name", "document-title"]);

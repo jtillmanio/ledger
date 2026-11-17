@@ -18,7 +18,7 @@ import type { SyncReport } from "../../src/db/calibre-sync";
 import { today } from "../../src/lib/finish-date";
 import { testSql, type TestSql } from "../db";
 import {
-  computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
+  FLOOR, computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
 } from "./helpers";
 
 test.describe.configure({ mode: "serial" });
@@ -126,7 +126,7 @@ test("lists the runs newest first with counts, the newest open, and each change 
   await expect(runs.nth(2)).toContainText("Nothing changed.");
 });
 
-test("a run's details open and close from the keyboard with a named summary", async ({ page }) => {
+test("a run's details open and close from the keyboard with a named summary", FLOOR, async ({ page }) => {
   await threeRuns();
   await open(page);
   const back = page.locator(".calibre .lede .clink");
@@ -162,7 +162,7 @@ test("Settings says when it last synced", async ({ page }) => {
   await expect(page.getByRole("link", { name: /Calibre/ })).toContainText(/Last synced \d{1,2} [A-Z][a-z]{2}/);
 });
 
-test("before any run: one panel, one line, no button, and the floor holds (AC-5)", async ({ page }, info) => {
+test("before any run: one panel, one line, no button, and the floor holds (AC-5)", FLOOR, async ({ page }, info) => {
   await open(page);
   const panel = page.locator(".cempty");
   await expect(panel).toBeVisible();
@@ -176,7 +176,7 @@ test("before any run: one panel, one line, no button, and the floor holds (AC-5)
   await screenshot(page, info, "calibre-empty");
 });
 
-test("meets the floor with runs: 44px summaries, contrast in this theme, axe, no sideways scroll (AC-5)", async ({ page }, info) => {
+test("meets the floor with runs: 44px summaries, contrast in this theme, axe, no sideways scroll (AC-5)", FLOOR, async ({ page }, info) => {
   await threeRuns();
   await looseBook();
   await open(page);
@@ -194,7 +194,7 @@ test("meets the floor with runs: 44px summaries, contrast in this theme, axe, no
   await screenshot(page, info, "calibre-runs");
 });
 
-test("the Settings row is a 44px link with a name, and its link text has contrast (AC-4, AC-5)", async ({ page }) => {
+test("the Settings row is a 44px link with a name, and its link text has contrast (AC-4, AC-5)", FLOOR, async ({ page }) => {
   await open(page, "/settings");
   const box = (await page.getByRole("link", { name: /Calibre/ }).boundingBox())!;
   expect(box.height).toBeGreaterThanOrEqual(44);
@@ -246,7 +246,7 @@ test("the error state: a neutral line with a grey ×, a named Try again button, 
 
 // ---- the dashboard's line ----------------------------------------------------------------------
 
-test("at 8 days the books dashboard says Calibre last synced 8 days ago, in --muted, and it links to the page (AC-3)", async ({ page }) => {
+test("at 8 days the books dashboard says Calibre last synced 8 days ago, in --muted, and it links to the page (AC-3)", FLOOR, async ({ page }) => {
   await seedRuns([daysAgo(8), NOTHING]);
   await open(page, "/books");
   const line = page.locator(".sync-line");
@@ -278,7 +278,7 @@ test("at 7 days and at 6 days, and before any run, the dashboard has no such lin
   await expect(page.getByText(/Calibre last synced/)).toHaveCount(0);
 });
 
-test("the line passes contrast and axe, and nothing red (AC-3, AC-5)", async ({ page }) => {
+test("the line passes contrast and axe, and nothing red (AC-3, AC-5)", FLOOR, async ({ page }) => {
   await seedRuns([daysAgo(9), NOTHING]);
   await open(page, "/books");
   await expect(page.locator(".sync-line")).toBeVisible();

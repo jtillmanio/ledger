@@ -5,9 +5,7 @@
 // axe finds no nested-interactive, button-name or link-name violation. Runs at
 // every width, light and dark; the screenshots are the PR's evidence.
 import { expect, test } from "@playwright/test";
-import {
-  E2E_BOOK_COUNT, E2E_RUN_ID, computedStyle, expectNoAxeViolations, screenshot,
-} from "./helpers";
+import { E2E_BOOK_COUNT, E2E_RUN_ID, FLOOR, computedStyle, expectNoAxeViolations, screenshot } from "./helpers";
 
 const AXE_RULES = ["nested-interactive", "button-name", "link-name"];
 // The dashboards (the books one is a redirect to its list until 2.2) and the two list pages.
@@ -19,19 +17,19 @@ const HAS_CONTROLS = ["/comics/runs", "/books/list"];
 
 for (const path of PAGES) {
   test.describe(path, () => {
-    test("has exactly one h1", async ({ page }) => {
+    test("has exactly one h1", FLOOR, async ({ page }) => {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
     });
 
-    test("axe finds no nested-interactive, button-name or link-name violation (AC-1)", async ({ page }, testInfo) => {
+    test("axe finds no nested-interactive, button-name or link-name violation (AC-1)", FLOOR, async ({ page }, testInfo) => {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
       await expectNoAxeViolations(page, AXE_RULES);
       if (path !== "/watch") await screenshot(page, testInfo, `markup${path.replaceAll("/", "-")}`);
     });
 
-    test("nothing interactive sits inside a link, and no control is a styled span (AC-4)", async ({ page }) => {
+    test("nothing interactive sits inside a link, and no control is a styled span (AC-4)", FLOOR, async ({ page }) => {
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
       expect(await page.locator("a a, a button, a input, a [role='button']").count(), "an anchor holds a control").toBe(0);
@@ -44,7 +42,7 @@ for (const path of PAGES) {
 }
 
 for (const path of NAVIGABLE) {
-  test(`${path}: a row is article > a.row-link, and the link holds no control (AC-4)`, async ({ page }) => {
+  test(`${path}: a row is article > a.row-link, and the link holds no control (AC-4)`, FLOOR, async ({ page }) => {
     await page.goto(path);
     await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
     const rows = await page.locator(".rows > .row").evaluateAll((els) =>
@@ -59,7 +57,7 @@ for (const path of NAVIGABLE) {
     }
   });
 
-  test(`${path}: the row's link is stretched over the whole row (AC-4)`, async ({ page }) => {
+  test(`${path}: the row's link is stretched over the whole row (AC-4)`, FLOOR, async ({ page }) => {
     await page.goto(path);
     const row = page.locator(".rows > .row").first();
     const link = row.locator("a.row-link");
@@ -76,7 +74,7 @@ for (const path of NAVIGABLE) {
   });
 }
 
-test("/books/list: its rows are articles whose one link is the title's, to the book (task 3.5), and the status controls have names (AC-4)", async ({ page }) => {
+test("/books/list: its rows are articles whose one link is the title's, to the book (task 3.5), and the status controls have names (AC-4)", FLOOR, async ({ page }) => {
   await page.goto("/books/list");
   const rows = await page.locator(".rows > .row.book-row").evaluateAll((els) =>
     els.map((el) => ({

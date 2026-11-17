@@ -186,8 +186,58 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
+  # The browser suite's time budget (D-161): each test's time in each project,
+  # kept 90 days as `e2e-times` from every full run; on a PR, compared with
+  # main's latest (scripts/e2e-budget.mjs). It fails when the PR adds more than
+  # 3 minutes of suite time or a shard's tests would pass 6 minutes, unless the
+  # owner's `e2e-growth` label accepts it. A draft's core run records nothing.
+  e2e-budget:
+    needs: [scope, e2e]
+    if: needs.e2e.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # actions: read downloads main's recorded times from its run.
+    permissions:
+      contents: read
+      actions: read
+    env:
+      FULL_SCOPE: ${{ needs.scope.outputs.e2e_scope == 'full' }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: { node-version-file: .nvmrc, cache: npm }
+      - run: npm ci
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: e2e-blob-*
+          path: all-blob-reports
+          merge-multiple: true
+      - run: npx playwright merge-reports --reporter json ./all-blob-reports > e2e-results.json
+      - run: node scripts/e2e-budget.mjs record e2e-results.json e2e-times.json
+      - if: env.FULL_SCOPE == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-times
+          path: e2e-times.json
+          retention-days: 90
+      - name: Find main's recorded times
+        id: baseline
+        if: env.FULL_SCOPE == 'true' && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/e2e-budget.mjs baseline "$RUNNER_TEMP/baseline"
+      - name: Within the budget
+        if: env.FULL_SCOPE == 'true'
+        env:
+          # The e2e matrix's size (test/e2e-budget.test.ts keeps them equal).
+          SHARDS: 8
+          EVENT: ${{ github.event_name }}
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          BASELINE_RUN: ${{ steps.baseline.outputs.run_id }}
+        run: node scripts/e2e-budget.mjs check e2e-times.json "$RUNNER_TEMP/baseline/e2e-times.json"
+
   check:
-    needs: [scope, tests, e2e]
+    needs: [scope, tests, e2e, e2e-budget]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -199,13 +249,15 @@ jobs:
           E2E_SCOPE: ${{ needs.scope.outputs.e2e_scope }}
           TESTS: ${{ needs.tests.result }}
           E2E: ${{ needs.e2e.result }}
+          BUDGET: ${{ needs.e2e-budget.result }}
         run: |
-          echo "scope=$SCOPE (full=$FULL, browser suite: $E2E_SCOPE) tests=$TESTS e2e=$E2E"
+          echo "scope=$SCOPE (full=$FULL, browser suite: $E2E_SCOPE) tests=$TESTS e2e=$E2E budget=$BUDGET"
           [ "$SCOPE" = success ] || { echo "::error::scope: $SCOPE"; exit 1; }
           [ "$TESTS" = success ] || { echo "::error::tests: $TESTS"; exit 1; }
           if [ "$FULL" = true ]; then
             echo "Browser suite: the **$E2E_SCOPE** scope ($E2E)." >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
             [ "$E2E" = success ] || { echo "::error::e2e (and the build): $E2E"; exit 1; }
+            [ "$BUDGET" = success ] || { echo "::error::e2e-budget (the browser suite's time, D-161): $BUDGET"; exit 1; }
           else
             [ "$E2E" = skipped ] || { echo "::error::e2e ran or failed on a docs-only change: $E2E"; exit 1; }
           fi

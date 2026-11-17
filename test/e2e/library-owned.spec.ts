@@ -7,13 +7,10 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
-import { contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled } from "./helpers";
+import { FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled } from "./helpers";
 
 // A check with no layout in it: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
-// What a screen does, not how it looks or fits: the core projects only (D-143).
-const CORE = { tag: "@core" };
-
 const AXE = [
   "link-name", "button-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role", "aria-prohibited-attr",
   "aria-valid-attr-value", "aria-required-children", "aria-required-parent", "landmark-unique", "duplicate-id-aria",
@@ -93,7 +90,7 @@ async function menu(page: Page, title: string) {
   return page.getByRole("menu", { name: `More for ${title}`, exact: true });
 }
 
-test("each toggle writes its row, the sub-line says so without a reload, and Undo takes it back (AC-1, AC-2)", CORE, async ({ page }) => {
+test("each toggle writes its row, the sub-line says so without a reload, and Undo takes it back (AC-1, AC-2)", async ({ page }) => {
   await open(page, `/books/list?q=${encodeURIComponent(TOGGLE.title)}`);
   await expect(titles(page)).toHaveText([TOGGLE.title]);
   const sub = row(page, TOGGLE.title).locator(".row-sub");
@@ -140,12 +137,12 @@ test("each toggle writes its row, the sub-line says so without a reload, and Und
   await withSql((sql) => sql`DELETE FROM owned_copies WHERE book_id = ${TOGGLE.id}`);
 });
 
-test("a book with an ebook, a paper copy and an audiobook names all three (AC-2)", CORE, async ({ page }) => {
+test("a book with an ebook, a paper copy and an audiobook names all three (AC-2)", async ({ page }) => {
   await open(page, `/books/list?q=${encodeURIComponent("E2E Own All Three")}`);
   await expect(row(page, "E2E Own All Three").locator(".row-sub")).toHaveText("Physical · Audiobook · Ebook");
 });
 
-test("each Owned chip lists exactly its books, with Read and Title, and survives a reload (AC-1)", CORE, async ({ page }) => {
+test("each Owned chip lists exactly its books, with Read and Title, and survives a reload (AC-1)", async ({ page }) => {
   await open(page, `/books/list?status=read&sort=title&q=${encodeURIComponent("E2E Own")}`);
   // Every live read book of ours, the soft-deleted one nowhere.
   await expect(titles(page)).toHaveText(["E2E Own All Three", "E2E Own Audio", "E2E Own Ebook", "E2E Own Nothing", "E2E Own Paper"]);
@@ -178,7 +175,7 @@ test("each Owned chip lists exactly its books, with Read and Title, and survives
   await expect(titles(page)).toHaveCount(5);
 });
 
-test("Read + Physical + Title from the URL; a status chip and the sort keep owned, Everything clears it (AC-3)", CORE, async ({ page }) => {
+test("Read + Physical + Title from the URL; a status chip and the sort keep owned, Everything clears it (AC-3)", async ({ page }) => {
   await open(page, "/books/list?status=read&sort=title&owned=physical");
   await expect(statusChip(page, "Read")).toHaveAttribute("aria-current", "true");
   await expect(ownedChip(page, "Physical")).toHaveAttribute("aria-current", "true");
@@ -206,7 +203,7 @@ test("Read + Physical + Title from the URL; a status chip and the sort keep owne
   await expect(owned(page).locator('[aria-current="true"]')).toHaveCount(0);
 });
 
-test("an Owned chip with no match draws the list's empty state (AC-5)", CORE, async ({ page }) => {
+test("an Owned chip with no match draws the list's empty state (AC-5)", async ({ page }) => {
   await open(page, `/books/list?q=${encodeURIComponent("E2E Own Nothing")}`);
   await ownedChip(page, "Audiobook").click();
   await expect(page).toHaveURL(/owned=audio/);
@@ -214,7 +211,7 @@ test("an Owned chip with no match draws the list's empty state (AC-5)", CORE, as
   await expect(titles(page)).toHaveCount(0);
 });
 
-test("the Owned chips and the menu's items are named and big enough; axe and contrast hold (AC-5)", async ({ page }, info) => {
+test("the Owned chips and the menu's items are named and big enough; axe and contrast hold (AC-5)", FLOOR, async ({ page }, info) => {
   await open(page, `/books/list?owned=physical&q=${encodeURIComponent("E2E Own")}`);
   const width = page.viewportSize()!.width;
   // The UX floor: nothing interactive under 24px. The row is the status chips' size, a line of its own.

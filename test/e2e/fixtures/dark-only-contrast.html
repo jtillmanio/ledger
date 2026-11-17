@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Dark-only contrast</title>
+<style>
+  body { margin: 0; background: #ffffff; color: #111111; }
+  /* Slow on purpose: a switch that let it run would read a colour between the two themes, and leave it running. */
+  body, p { transition: color 2s, background-color 2s; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #111111; }
+    p { color: #333333; }
+  }
+</style>
+</head>
+<body>
+<main><p>Readable in light, not in dark</p></main>
+</body>
+</html>

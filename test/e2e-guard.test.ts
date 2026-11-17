@@ -4,7 +4,10 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, 
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { checkTestUrl } from "../scripts/lib/testdb.mjs";
-import { CORE_TAG, DEV_CACHE, E2E_CORE, E2E_HARDCOVER_TOKEN, E2E_PASSCODE, E2E_PORT, E2E_PROJECTS, e2eProjects, planE2e } from "../scripts/lib/e2e.mjs";
+import {
+  DEV_CACHE, E2E_BEHAVIOUR, E2E_CORE, E2E_FEEL, E2E_FLOOR, E2E_HARDCOVER_TOKEN, E2E_PASSCODE, E2E_PORT, E2E_PROJECTS, FEEL_TAG, FLOOR_TAG,
+  e2eProjects, planE2e,
+} from "../scripts/lib/e2e.mjs";
 import { planTestRun } from "../scripts/lib/test-files.mjs";
 import { ciJob } from "./ci-yml";
 
@@ -88,10 +91,35 @@ describe("e2eProjects: which project runs which test", () => {
     expect(E2E_CORE).toEqual(["w390-light", "w390-dark", "w768-light", "w1280-light", "w390-reduced-motion", "w390-touch"]);
   });
 
-  it("an untagged test runs in every project of the scope", () => {
+  it("an untagged test checks behaviour: the phone, the tablet, the desktop, reduced motion and touch, light only (D-161)", () => {
     const title = "w390-light queue.spec.ts the dashboard shelf renders the queue";
-    expect(runsIn("full", title)).toEqual(E2E_PROJECTS.map((p) => p.name));
-    expect(runsIn("core", title)).toEqual(E2E_CORE);
+    expect(E2E_BEHAVIOUR).toEqual(["w390-light", "w768-light", "w1280-light", "w390-reduced-motion", "w390-touch"]);
+    expect(runsIn("full", title)).toEqual(E2E_BEHAVIOUR);
+    expect(runsIn("core", title)).toEqual(E2E_BEHAVIOUR);
+  });
+
+  it("a test tagged @floor runs at every layout, light, with reduced motion and touch; never 412 or a dark project (D-161)", () => {
+    expect(FLOOR_TAG).toBe("@floor");
+    expect(runsIn("full", "the sheet meets the floor @floor")).toEqual(E2E_FLOOR);
+    expect(E2E_FLOOR).toEqual(["w360-light", "w390-light", "w768-light", "w1024-light", "w1280-light", "w390-reduced-motion", "w390-touch"]);
+    expect(runsIn("core", "the sheet meets the floor @floor")).toEqual(["w390-light", "w768-light", "w1280-light", "w390-reduced-motion", "w390-touch"]);
+    // A describe's tag counts the same as the test's own.
+    expect(runsIn("full", "the plan picker @floor › meets the floor")).toEqual(E2E_FLOOR);
+    // Only the tag itself: a longer word that starts with it is not @floor.
+    expect(runsIn("full", "x @floor-ish")).toEqual(E2E_BEHAVIOUR);
+  });
+
+  it("a test tagged @feel runs where @floor does, and at 412 (design §10, D-40, D-161)", () => {
+    expect(FEEL_TAG).toBe("@feel");
+    expect(E2E_FEEL).toEqual(["w360-light", "w390-light", "w412-light", "w768-light", "w1024-light", "w1280-light", "w390-reduced-motion", "w390-touch"]);
+    expect(runsIn("full", "the dashboard in each state @feel")).toEqual(E2E_FEEL);
+    expect(runsIn("full", "both @floor @feel")).toEqual(E2E_FEEL);
+  });
+
+  it("a dark project runs only the tests tagged for it: the floor checks dark in place", () => {
+    const dark = E2E_PROJECTS.map((p) => p.name).filter((n) => n.endsWith("-dark"));
+    for (const title of ["x", "x @floor", "x @feel"]) expect(runsIn("full", title).filter((n) => dark.includes(n))).toEqual([]);
+    expect(runsIn("full", "x @at-w1024-dark")).toEqual(["w1024-dark"]);
   });
 
   it("a test tagged @at-<project> runs there and nowhere else, and not at all when the scope leaves it out", () => {
@@ -103,31 +131,27 @@ describe("e2eProjects: which project runs which test", () => {
     expect(runsIn("full", "x @at-w390-reduced-motion")).toEqual(["w390-reduced-motion"]);
   });
 
-  it("a test tagged @core runs in the core projects only, in either scope (D-143)", () => {
-    expect(CORE_TAG).toBe("@core");
-    expect(runsIn("full", "Esc closes the sheet @core")).toEqual(E2E_CORE);
-    expect(runsIn("core", "Esc closes the sheet @core")).toEqual(E2E_CORE);
-    // A describe's tag counts the same as the test's own.
-    expect(runsIn("full", "the plan picker @core › Esc closes the sheet")).toEqual(E2E_CORE);
-    // Only the tag itself: a longer word that starts with it is not @core.
-    expect(runsIn("full", "x @core-ish")).toEqual(E2E_PROJECTS.map((p) => p.name));
+  it("an @at- tag wins over @floor and @feel, even at a width they leave out", () => {
+    expect(runsIn("full", "x @floor @at-w412-light")).toEqual(["w412-light"]);
+    expect(runsIn("full", "x @at-w390-light @feel")).toEqual(["w390-light"]);
+    expect(runsIn("core", "x @floor @at-w1024-light")).toEqual([]);
   });
 
-  it("an @at- tag wins over @core, even at a width core leaves out", () => {
-    expect(runsIn("full", "x @core @at-w1024-light")).toEqual(["w1024-light"]);
-    expect(runsIn("full", "x @at-w390-light @core")).toEqual(["w390-light"]);
-    expect(runsIn("core", "x @core @at-w1024-light")).toEqual([]);
-  });
-
-  it("every tag in the specs is @core or names a project, and some tests carry @core", () => {
+  it("every tag in the specs is @floor, @feel or names a project, and the specs use both", () => {
     const names = new Set(E2E_PROJECTS.map((p) => p.name));
-    const tags = specs.flatMap((f) =>
-      [...spec(f).matchAll(/\{ tag: (\[[^\]]*\]|"[^"]*") \}/g)].flatMap((m) =>
-        [...m[1].matchAll(/"([^"]+)"/g)].map((t) => ({ f, tag: t[1] }))));
+    const tags = [
+      ...specs.flatMap((f) =>
+        [...spec(f).matchAll(/\{ tag: (\[[^\]]*\]|"[^"]*") \}/g)].flatMap((m) =>
+          [...m[1].matchAll(/"([^"]+)"/g)].map((t) => ({ f, tag: t[1] })))),
+      // helpers.ts holds the shared FLOOR and FEEL details the specs import.
+      ...[...readFileSync(join(root, "test", "e2e", "helpers.ts"), "utf8").matchAll(/\{ tag: "([^"]+)" \}/g)].map((m) => ({ f: "helpers.ts", tag: m[1] })),
+    ];
     for (const { f, tag } of tags) {
-      expect(tag === CORE_TAG || (tag.startsWith("@at-") && names.has(tag.slice(4))), `${f}: ${tag}`).toBe(true);
+      expect(tag === FLOOR_TAG || tag === FEEL_TAG || (tag.startsWith("@at-") && names.has(tag.slice(4))), `${f}: ${tag}`).toBe(true);
     }
-    expect(tags.filter((t) => t.tag === CORE_TAG).length).toBeGreaterThan(0);
+    const used = specs.map(spec).join("\n");
+    expect(used).toMatch(/[(,] ?FLOOR[,)]/);
+    expect(used).toMatch(/[(,] ?FEEL[,)]/);
   });
 
   it("every @at- tag in the specs names a project", () => {
