@@ -328,6 +328,35 @@ Nothing turns `LIGHTHOUSE_MODE` on.
 
 ---
 
+### ☐ 0.14c Every page is measured · M
+Owner, 2026-11-17. Since Lighthouse was switched off (D-158), 5.1 drew
+`/books/shelves` and a shelf's page and 5.7 drew `/books/releases`, and none of
+them has a route in `scripts/perf/routes.mjs` or a budget. Five older pages
+never had one either: `/books/add`, `/books/top`, a book's page (`/book/[id]`),
+a run's *Add* (`/comics/[runId]/add`) and `/settings/calibre`. The guard in
+`test/perf.test.ts` checks only top-level folders (`/books` is measured, so
+everything under it passes), which is how all eight got past it.
+
+- **Every page gets a route and a budget**, each with a tap from a screen that
+  links to it.
+- **Budgets are measured, not guessed.** Each comes from the branch's preview
+  measured with `LIGHTHOUSE_MODE` on, so this entry finishes only after the
+  owner turns the switch back on (after 0.14b).
+- **The guard checks every depth.** A page that is deliberately not measured
+  is listed with its reason.
+- **Nothing here turns `LIGHTHOUSE_MODE` on.**
+
+**Check:** `scripts/perf/routes.mjs` and `scripts/perf/budget.json` have a route
+for each of `/books/releases`, `/books/shelves`, a shelf's page, `/books/add`,
+`/books/top`, a book's page, a run's *Add* and `/settings/calibre`, each with a
+tap from a screen that links to it, and each budget comes from a measured run
+of the branch's preview with `LIGHTHOUSE_MODE` on, not copied from another
+route. `test/perf.test.ts` fails when any `page.tsx` under `src/app/`, at any
+depth, is neither measured by a route nor listed as unmeasured with a reason.
+Nothing in this entry turns `LIGHTHOUSE_MODE` on.
+
+---
+
 ## Phase 1 — Daily use (build before anything clever)
 
 **Goal:** Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is two entries (D-128): 1.26 cuts the books over (START-HERE Step 14), after the rest of Phase 1, 2.11a and 1.11 and every entry 1.25's parity audit names for `Books.xlsx`, with the books entries the owner pulled ahead (D-132, D-133, D-139); 1.28 cuts the comics over later, after what it names for `Comics.xlsx`.** **Milestones:** M3–M9 (1.28 in M13).
