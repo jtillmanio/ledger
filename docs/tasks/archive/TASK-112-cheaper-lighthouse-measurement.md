@@ -1,7 +1,7 @@
 ---
 id: TASK-112
 title: 0.14 A measured deploy costs a third of what it did
-status: Review
+status: Done
 depends_on: []
 size: M
 model: opus
