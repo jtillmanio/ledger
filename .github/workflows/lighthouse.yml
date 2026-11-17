@@ -2,9 +2,10 @@ name: Lighthouse
 
 # Every preview measures itself (task 0.10). When Vercel reports a preview
 # deployment ready, this signs in to it, runs Lighthouse (mobile, devtools
-# throttling: Slow 4G, 4× CPU, three runs per route, median) and 0.9's tap →
-# next-paint runner over scripts/perf/routes.mjs, and answers the PR with one
-# comment, updated in place.
+# throttling: Slow 4G, 4× CPU, one run per route, Next's RSC prefetches
+# blocked) and 0.9's tap → next-paint runner (one run per route, prefetches
+# kept) over scripts/perf/routes.mjs, and answers the PR with one comment,
+# updated in place. Task 0.14 cut it from three runs of each to one.
 #
 #   plan     the URL (previews only), the routes, and the PR this run belongs to
 #   measure  one job per route, side by side: a run takes as long as its

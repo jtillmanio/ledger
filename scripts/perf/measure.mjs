@@ -1,8 +1,12 @@
 // Measures one deployment (task 0.10): Lighthouse on every route in routes.mjs,
 // then 0.9's tap → next-paint runner on the same profile. Run after login.mjs.
+// One Lighthouse load and one tap run per route (task 0.14). The Lighthouse
+// load blocks Next's RSC prefetches (lighthouseArgs); the tap run keeps them,
+// and is where a route handler a prefetch asks for is caught.
 //
 //   TARGET_URL=… HEADERS_DIR=… OUT_DIR=… CHROME_PATH=… APP_PASSCODE=… node scripts/perf/measure.mjs
-//   optional: RUNS (default 3), PERF_ROUTES=comics,books (a subset, for a local try)
+//   optional: RUNS (default 1; 3 for a hand comparison with the runs before 0.14),
+//             PERF_ROUTES=comics,books (a subset, for a local try)
 //
 // Writes OUT_DIR/reports/<route>-<n>.json and .html (Lighthouse's reports,
 // scrubbed of every header and secret) and OUT_DIR/metrics.json (numbers only:
@@ -15,7 +19,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer-core";
 import { ReportGenerator } from "lighthouse/report/generator/report-generator.js";
-import { apiPath, CPU_SLOWDOWN, NETWORK, scrubLhr, summariseLhr } from "./lib/perf.mjs";
+import { apiPath, CPU_SLOWDOWN, lighthouseArgs, measureRuns, NETWORK, scrubLhr, summariseLhr } from "./lib/perf.mjs";
 import { ROUTES } from "./routes.mjs";
 
 const env = process.env;
@@ -26,7 +30,7 @@ for (const k of ["TARGET_URL", "HEADERS_DIR", "OUT_DIR", "CHROME_PATH", "APP_PAS
   }
 }
 const base = new URL(env.TARGET_URL).origin;
-const RUNS = Number(env.RUNS ?? 3);
+const RUNS = measureRuns(env);
 const only = env.PERF_ROUTES?.split(",");
 const routes = ROUTES.filter((r) => !only || only.includes(r.id));
 
@@ -48,16 +52,13 @@ const chromeFlags = ["--headless=new", ...(env.CI === "true" ? ["--no-sandbox"] 
 const lighthouseCli = fileURLToPath(new URL("./node_modules/lighthouse/cli/index.js", import.meta.url));
 const lighthouseVersion = JSON.parse(readFileSync(new URL("./node_modules/lighthouse/package.json", import.meta.url), "utf8")).version;
 
-/** One Lighthouse load: mobile, devtools throttling (Slow 4G, 4× CPU), performance and accessibility. */
+/** One Lighthouse load (lighthouseArgs: mobile, devtools throttling, no RSC prefetches). */
 function lighthouse(route, n) {
   const name = `${route.id}-${n}`;
   const rawPath = join(raw, `${name}.json`);
-  const r = spawnSync(process.execPath, [
-    lighthouseCli, base + route.path,
-    "--form-factor=mobile", "--throttling-method=devtools", "--only-categories=performance,accessibility",
-    `--extra-headers=${headerFile(route.signedIn)}`, "--output=json", `--output-path=${rawPath}`,
-    "--disable-full-page-screenshot", "--quiet", `--chrome-flags=${chromeFlags.join(" ")}`,
-  ], { encoding: "utf8", env: { ...env, CHROME_PATH: env.CHROME_PATH }, timeout: 5 * 60_000 });
+  const r = spawnSync(process.execPath, [lighthouseCli, ...lighthouseArgs({
+    url: base + route.path, headerFile: headerFile(route.signedIn), outputPath: rawPath, chromeFlags,
+  })], { encoding: "utf8", env: { ...env, CHROME_PATH: env.CHROME_PATH }, timeout: 5 * 60_000 });
   if (r.status !== 0) {
     const why = (r.stderr || r.error?.message || "").trim().split("\n").slice(-1)[0];
     return { error: scrub(`Lighthouse exited ${r.status ?? r.signal}: ${why}`).slice(0, 300) };

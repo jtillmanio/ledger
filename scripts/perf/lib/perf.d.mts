@@ -1,5 +1,8 @@
 export const NETWORK: { download: number; upload: number; latency: number };
 export const CPU_SLOWDOWN: number;
+export function measureRuns(env: { RUNS?: string }): number;
+export const RSC_BLOCK: string;
+export function lighthouseArgs(args: { url: string; headerFile: string; outputPath: string; chromeFlags: string[] }): string[];
 export const CLS_LIMIT: number;
 export const MARKER: string;
 export const BUDGETED: { key: "docRscBytes" | "jsBytes" | "requests"; label: string; unit: "bytes" | "count" }[];
@@ -18,6 +21,7 @@ export interface LoadSummary {
   jsBytes: number;
   requests: number;
   apiRequests: string[];
+  rscSent: number;
 }
 export interface MeasuredRoute {
   path: string;
@@ -34,6 +38,7 @@ export interface RouteResult {
   median: Record<string, number | null>;
   tap: { first: number | null; median: number | null; rscBytes: number | null };
   apiRequests: string[];
+  rscSent: number;
 }
 export type RouteBudget = Partial<Record<"docRscBytes" | "jsBytes" | "requests" | "a11y", number | null>>;
 

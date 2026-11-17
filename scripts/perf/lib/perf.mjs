@@ -8,6 +8,44 @@ import { needsBuild } from "../../lib/release.mjs";
 export const NETWORK = { download: (1474.56 * 1024) / 8, upload: (675 * 1024) / 8, latency: 562.5 };
 export const CPU_SLOWDOWN = 4;
 
+/**
+ * Lighthouse loads and tap runs per route (task 0.14): one of each, unless
+ * RUNS says otherwise (RUNS=3 for a hand comparison with the runs before it).
+ * Bytes and requests barely move between loads (under 0.5%), and every load
+ * is a server render that spends the Vercel account's Active CPU.
+ */
+export function measureRuns(env) {
+  if (env.RUNS == null || env.RUNS === "") return 1;
+  const n = Number(env.RUNS);
+  if (!Number.isInteger(n) || n < 1) throw new Error(`RUNS must be a whole number of 1 or more, not ${env.RUNS}`);
+  return n;
+}
+
+/**
+ * Next's RSC requests carry `_rsc=`: a <Link> prefetch, and the payload a
+ * client navigation fetches. The Lighthouse load blocks them (task 0.14): each
+ * prefetch is a render on Vercel, and they were most of a measured deploy's
+ * Active CPU. Chrome never sends a blocked request, but Lighthouse still lists
+ * it (status -1, nothing transferred), so the route-handler gate still reads
+ * its path. The tap run keeps them: it waits for them on purpose.
+ */
+export const RSC_BLOCK = "*_rsc=*";
+
+/** One Lighthouse load's CLI arguments: mobile, devtools throttling (Slow 4G, 4× CPU), performance and accessibility. */
+export function lighthouseArgs({ url, headerFile, outputPath, chromeFlags }) {
+  return [
+    url,
+    "--form-factor=mobile", "--throttling-method=devtools", "--only-categories=performance,accessibility",
+    `--blocked-url-patterns=${RSC_BLOCK}`,
+    `--extra-headers=${headerFile}`, "--output=json", `--output-path=${outputPath}`,
+    "--disable-full-page-screenshot", "--quiet", `--chrome-flags=${chromeFlags.join(" ")}`,
+  ];
+}
+
+/** An RSC request Chrome blocked: Lighthouse lists it with status -1. */
+const isRsc = (q) => typeof q.url === "string" && q.url.includes("_rsc=");
+const isBlockedRsc = (q) => isRsc(q) && q.statusCode === -1;
+
 /** CLS at or over this fails the job (task 0.10). */
 export const CLS_LIMIT = 0.1;
 
@@ -50,9 +88,14 @@ export function apiPath(url) {
 
 const round = (v) => (typeof v === "number" && Number.isFinite(v) ? Math.round(v) : null);
 
-/** The numbers one Lighthouse report gives for its route; nothing of the page itself. */
+/**
+ * The numbers one Lighthouse report gives for its route; nothing of the page
+ * itself. A blocked RSC request never left the browser, so it is not counted;
+ * a route handler it asked for still is (apiRequests).
+ */
 export function summariseLhr(lhr) {
-  const items = (lhr.audits?.["network-requests"]?.details?.items ?? []).filter((q) => !isPreviewToolbar(q.url));
+  const logged = (lhr.audits?.["network-requests"]?.details?.items ?? []).filter((q) => !isPreviewToolbar(q.url));
+  const items = logged.filter((q) => !isBlockedRsc(q));
   const metrics = lhr.audits?.metrics?.details?.items?.[0] ?? {};
   const audit = (k) => lhr.audits?.[k]?.numericValue;
   const doc = items.find((q) => q.resourceType === "Document");
@@ -75,7 +118,9 @@ export function summariseLhr(lhr) {
     docRscBytes: bytes((q) => q.resourceType === "Document" || /text\/x-component/.test(q.mimeType ?? "")),
     jsBytes: bytes((q) => q.resourceType === "Script"),
     requests: items.length,
-    apiRequests: items.map((q) => apiPath(q.url)).filter(Boolean),
+    apiRequests: logged.map((q) => apiPath(q.url)).filter(Boolean),
+    // RSC requests the block let through: none, while it works (task 0.14).
+    rscSent: items.filter(isRsc).length,
   };
 }
 
@@ -111,6 +156,7 @@ export function aggregateRoute(measured) {
     median: med,
     tap: { first: firstTap, median: median(taps.map((t) => t.ms)), rscBytes: median(taps.map((t) => t.rscBytes)) },
     apiRequests: [...new Set([...loads.flatMap((l) => l.apiRequests), ...(measured.tapApiRequests ?? [])])],
+    rscSent: loads.reduce((n, l) => n + (l.rscSent ?? 0), 0),
   };
 }
 
@@ -129,6 +175,10 @@ export function gateProblems(routes, budget, expected = []) {
     for (const path of r.apiRequests) {
       problems.push(`${id}: requested the route handler ${path} during a page load or prefetch ` +
         "(a prefetch runs the handler: link it with a plain <a>, task 0.9)");
+    }
+    if (r.rscSent) {
+      problems.push(`${id}: a Lighthouse load sent ${r.rscSent} RSC request${r.rscSent > 1 ? "s" : ""} (_rsc=) past the block ` +
+        "(task 0.14): each one renders on Vercel. Check that Chrome still honours --blocked-url-patterns");
     }
     if (!r.runs) {
       problems.push(`${id}: not measured (${r.errors[0] ?? "no Lighthouse run finished"})`);
@@ -180,6 +230,9 @@ export function fmt(v, unit) {
  */
 export function renderComment({ current, baseline, budget, problems, missingBudget = [] }) {
   const ms = (v) => fmt(v, "ms");
+  // One run per route since task 0.14: its first hit is its only number.
+  const one = (current.runs ?? 3) === 1;
+  const pair = (first, med) => (one ? ms(med) : `${ms(first)} / ${ms(med)}`);
   const vsMain = (id, pick) => {
     const v = baseline?.routes?.[id] ? pick(baseline.routes[id]) : null;
     return v == null ? "" : ` (main ${ms(v)})`;
@@ -189,7 +242,7 @@ export function renderComment({ current, baseline, budget, problems, missingBudg
     `### Lighthouse — ${problems.length ? `❌ ${problems.length} problem${problems.length > 1 ? "s" : ""}` : "✅ within budget"}`,
     "",
     `\`${current.url}\` at \`${(current.sha ?? "").slice(0, 7)}\` · Lighthouse ${current.lighthouse} mobile, ` +
-      `devtools throttling (Slow 4G, 4× CPU) · ${current.runs ?? 3} runs per route, median`,
+      `devtools throttling (Slow 4G, 4× CPU) · ${one ? "one run per route" : `${current.runs ?? 3} runs per route, median`}`,
     "",
   ];
   if (problems.length) lines.push("**Fails the job:**", "", ...problems.map((p) => `- ${p}`), "");
@@ -198,7 +251,7 @@ export function renderComment({ current, baseline, budget, problems, missingBudg
       "add it to scripts/perf/budget.json and architecture § Operational posture, *Performance budget*.", "");
   }
   lines.push(
-    "**Gated** (median, against budget)", "",
+    `**Gated** (${one ? "" : "median, "}against budget)`, "",
     "| Route | Document + RSC | JS | Requests | CLS | Accessibility |",
     "|---|---|---|---|---|---|",
   );
@@ -210,22 +263,22 @@ export function renderComment({ current, baseline, budget, problems, missingBudg
       `${r.median.a11y ?? "–"} / ${b.a11y ?? "–"} |`);
   }
   lines.push(
-    "", "**Reported, never gated** (first hit / median)", "",
+    "", `**Reported, never gated**${one ? "" : " (first hit / median)"}`, "",
     `| Route | ${TIMINGS.map((t) => t.label).join(" | ")} | Tap → next paint |`,
     `|---|${TIMINGS.map(() => "---|").join("")}---|`,
   );
   for (const [id, r] of Object.entries(current.routes)) {
     const cells = TIMINGS.map(({ key }) =>
-      `${ms(r.first?.[key])} / ${ms(r.median[key])}${vsMain(id, (b) => b.median?.[key])}`);
-    cells.push(`${ms(r.tap.first)} / ${ms(r.tap.median)}${vsMain(id, (b) => b.tap?.median)}`);
+      `${pair(r.first?.[key], r.median[key])}${vsMain(id, (b) => b.median?.[key])}`);
+    cells.push(`${pair(r.tap.first, r.tap.median)}${vsMain(id, (b) => b.tap?.median)}`);
     lines.push(`| \`${r.path}\` | ${cells.join(" | ")} |`);
   }
   const failed = Object.entries(current.routes).flatMap(([id, r]) => [...new Set(r.errors)].map((e) => `- ${id}: ${e}`));
-  if (failed.length) lines.push("", "**Runs that did not finish** (left out of the medians above):", "", ...failed);
+  if (failed.length) lines.push("", `**Runs that did not finish** (left out of the ${one ? "numbers" : "medians"} above):`, "", ...failed);
   lines.push("", baseline
     ? `Compared with main's last run: PR #${baseline.pr}'s preview, ${String(baseline.at).slice(0, 10)}.`
     : "No baseline: no run of the last merged PR is still kept (artifacts last 14 days).",
-  "A preview's Neon branch is cold or warm by chance, so the first hit is reported, never gated. " +
+  `A preview's Neon branch is cold or warm by chance, so ${one ? "timings are" : "the first hit is"} reported, never gated. ` +
     "Reports are this run's artifacts.");
   return lines.join("\n");
 }

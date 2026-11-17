@@ -1,14 +1,14 @@
 ---
 id: TASK-112
 title: 0.14 A measured deploy costs a third of what it did
-status: Draft
+status: In progress
 depends_on: []
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 4764fb3
 ---
 
 # TASK-112 — 0.14 A measured deploy costs a third of what it did
@@ -66,9 +66,30 @@ A Lighthouse measurement of a preview spends about a third of the Vercel Active 
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- 0.13 measures from 0.14's numbers: from 0.14 on a Lighthouse load leaves prefetches out, so a growth check against a pre-0.14 baseline shows a drop, not growth (approved at plan) → docs/05-roadmap.md § 0.13
+- Candidate decision: the Lighthouse load blocks Next's RSC prefetches (`_rsc=`); a blocked request is not counted in `requests` but its path still feeds the route-handler gate, and an `_rsc=` request that got a response fails the job (approved at plan) → docs/review/decisions.md
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-17 (owner: approve, keep the task whole; AC-1's "no `_rsc=` request in the network log" is read as: every `_rsc=` entry in a Lighthouse load's log is blocked, status -1 and 0 bytes, and none reached the deployment, checked on every run by step 2).
+
+**Plan-gate evidence.**
+
+- The route-handler gate reads both: `summariseLhr` takes `apiRequests` from the Lighthouse load's network log and `aggregateRoute` adds the tap run's `tapApiRequests`. Lighthouse 13.6 with `--blocked-url-patterns=*_rsc=*` (tried locally on a test page): the server never receives the blocked requests, and the network log still lists each one (statusCode -1, transferSize 0), so `apiPath` still names a prefetched `/api/export?_rsc=`. Nothing is lost, including on the 8 routes whose page no tap starts from.
+- One load against the median of three, 6 measured previews of 2026-11-16 (13 routes, 234 loads): document + RSC within ±0.5% of its run's median, JS within 0.1%, requests identical. No single load crossed a budget its median did not. The one real loss is redundancy (a failed load now fails its route); none of the 6 runs had one, so no retry.
+- Blocking removes 8 to 22 `_rsc=` requests and 6 to 17 KB of RSC per route (`/comics`: 40 requests → 18, 29.6 KB → 13 KB; `/login` none). Budgets and the architecture table stay: 0.13 resets every ceiling to its own measurement plus 25%.
+
+**Steps.**
+
+1. `scripts/perf/lib/perf.mjs`: `measureRuns(env)` (RUNS, default 1) and `lighthouseArgs(...)` (the Lighthouse CLI arguments, with `--blocked-url-patterns=*_rsc=*`); `measure.mjs` uses both, so the loads and the tap runs both default to one, and the tap's browser has no block.
+2. `summariseLhr`: a blocked `_rsc=` entry (status -1) is left out of `requests`, its path still feeds `apiRequests`; `rscSent` counts `_rsc=` requests that got a response, and `gateProblems` fails a route where it is above 0.
+3. `renderComment`: with one run, "one run per route", and each timing shown once.
+4. `public/favicon.ico` (generated placeholder) and `public/robots.txt` (`Disallow: /`); the proxy matcher also leaves out `robots.txt`.
+5. Wording (AC-5): the `lighthouse.yml` header, the `measure.mjs` header, `docs/02-architecture.md` § Performance budget (and its "prefetches included"), `docs/GIT-PR.md`. Past "median of three" figures keep their wording.
+
+**Files.** `scripts/perf/measure.mjs`, `scripts/perf/lib/perf.mjs`, `scripts/perf/lib/perf.d.mts` (not in the likely list: the types for steps 1 and 2), `.github/workflows/lighthouse.yml`, `src/proxy.ts`, `public/favicon.ico` and `public/robots.txt` (new), `test/perf.test.ts`, `test/health.test.ts`, `test/e2e/routes.spec.ts` (the signed-out 200 check), `docs/02-architecture.md`, `docs/GIT-PR.md`. 12 files, no schema or UI; kept whole (owner) so one hand run checks it.
+
+**Tests.** AC-2, AC-3: `test/perf.test.ts` (the default of one and `RUNS=3`; the block in `lighthouseArgs`; a source check that `measure.mjs` spawns Lighthouse with it and that its tap code holds no block), plus the step 2 counting and gate. AC-4: `test/health.test.ts` (the matcher leaves out both) and `test/e2e/routes.spec.ts` (signed out, both 200 with no redirect, `text/plain` with `Disallow: /`, an image type). AC-5: by review. AC-1: the owner's hand run (costs Active CPU), which is also the changed-workflow gate.
 
 ## Review log
 

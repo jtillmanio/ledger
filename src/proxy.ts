@@ -24,6 +24,8 @@ export function proxy(req: NextRequest) {
 }
 
 // api/health is Release's smoke test and returns no data (app/api/health).
+// favicon.ico and robots.txt are static files in public/ (task 0.14): every
+// browser and crawler asks for them, so they never redirect to /login.
 //
 // A <Link> prefetch is not a visit, and Next hides its headers from proxy(), so
 // the matcher is the only place to tell them apart. Without this, the nav's
@@ -33,7 +35,7 @@ export function proxy(req: NextRequest) {
 export const config = {
   matcher: [
     {
-      source: "/((?!login|api/login|api/health|_next|favicon.ico).*)",
+      source: "/((?!login|api/login|api/health|_next|favicon.ico|robots.txt).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "next-router-segment-prefetch" },

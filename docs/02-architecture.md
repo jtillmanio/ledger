@@ -261,16 +261,22 @@ tables.
     its `loading.tsx`.
   - **Bytes, requests, layout shift and accessibility, on every preview** (task
     0.10, `.github/workflows/lighthouse.yml`). Each Vercel preview is measured
-    once it deploys: Lighthouse mobile, devtools throttling, three runs per
-    route, median, plus 0.9's tap → next-paint runner on the same profile
-    (`scripts/perf/`). The job fails only on what holds still between runs: a
+    once it deploys: Lighthouse mobile, devtools throttling, one run per route
+    with Next's RSC prefetches (`_rsc=`) blocked, plus 0.9's tap → next-paint
+    runner on the same profile, one run per route with prefetches kept
+    (`scripts/perf/`; task 0.14 cut both from three runs to one: bytes and
+    requests move under 0.5% between loads, and every load spends the Vercel
+    account's Active CPU). A Lighthouse load that sends an `_rsc=` request
+    past the block fails the job. The job fails only on what holds still between runs: a
     request to a route handler (`/api/*`) during a load or a prefetch, a page
     over the numbers below, CLS of 0.1 or more, or an accessibility score below
     the one recorded here. TTFB, response complete, FCP, LCP, TBT and tap → next
     paint are reported in one PR comment against the last merged PR's run, and
     never gated: a preview's Neon branch is cold or warm by chance. Document +
     RSC counts the HTML and every RSC payload the load fetched (prefetches
-    included); Vercel's preview toolbar is left out, since production never
+    included until 0.14; since then they are blocked, and neither they nor
+    their bytes count, though a route handler one asked for still fails the
+    job); Vercel's preview toolbar is left out, since production never
     serves it. The numbers are `scripts/perf/budget.json`
     (`test/perf.test.ts` holds this table to it); each is the median
     measured on 0.10's own preview plus 20%, and the accessibility score is the
