@@ -15,6 +15,20 @@ describe("needsBuild (vercel.json ignoreCommand)", () => {
     expect(needsBuild([".github/workflows/ci.yml", ".claude/rules/git.md"])).toBe(false);
   });
 
+  it("skips a push that changes only the tests or their runners' configs: a CI fix round", () => {
+    // Each preview build is a Neon branch plus a Lighthouse run of every route
+    // against Vercel's Active CPU allowance, for an app that did not change.
+    expect(needsBuild(["test/release.test.ts", "test/e2e/books.spec.ts", "test/fixtures/a.json"])).toBe(false);
+    expect(needsBuild(["vitest.config.ts", "playwright.config.ts", "docs/STATUS.md"])).toBe(false);
+  });
+
+  it("still builds for scripts: vercel-build runs in the build, and perf is what Lighthouse measures with", () => {
+    expect(needsBuild(["test/release.test.ts", "scripts/vercel-build.mjs"])).toBe(true);
+    expect(needsBuild(["scripts/perf/routes.mjs"])).toBe(true);
+    expect(needsBuild(["src/test/helper.ts"])).toBe(true);
+    expect(needsBuild(["next.config.ts"])).toBe(true);
+  });
+
   it("builds for app code, migrations, views and dependencies", () => {
     expect(needsBuild(["docs/05-roadmap.md", "src/app/comics/(dash)/page.tsx"])).toBe(true);
     expect(needsBuild(["drizzle/0005_a.sql"])).toBe(true);
@@ -55,7 +69,7 @@ describe("ignoredBuildStep (scripts/vercel-ignore.mjs)", () => {
   it("skips a docs-only commit by comparing with the branch's last deployment", () => {
     const g = git({ diffs: { abc1234def: ["docs/05-roadmap.md"] } });
     expect(ignoredBuildStep("abc1234def", g.run)).toEqual({
-      build: false, why: "only backups, docs, design, CI or Claude config changed since abc1234",
+      build: false, why: "only backups, docs, design, tests, CI or Claude config changed since abc1234",
     });
     expect(g.calls.some((c) => c[0] === "fetch")).toBe(false);
   });
@@ -63,7 +77,7 @@ describe("ignoredBuildStep (scripts/vercel-ignore.mjs)", () => {
   it("skips a docs-only branch on its first push, compared with main's tip", () => {
     const g = git({ diffs: { FETCH_HEAD: ["docs/tasks/TASK-017-status-screens.md", "docs/05-roadmap.md"] } });
     expect(ignoredBuildStep(undefined, g.run)).toEqual({
-      build: false, why: "only backups, docs, design, CI or Claude config changed since main",
+      build: false, why: "only backups, docs, design, tests, CI or Claude config changed since main",
     });
     expect(g.calls[0]).toEqual(["fetch", "--no-tags", "--depth=1", "origin", "main"]);
   });
@@ -95,7 +109,7 @@ describe("ignoredBuildStep (scripts/vercel-ignore.mjs)", () => {
         { FETCH_HEAD: ["docs/05-roadmap.md", "docs/tasks/TASK-073-library-and-now-js-budgets.md"] },
       );
       expect(ignoredBuildStep(undefined, g.run, { repoUrl: REPO })).toEqual({
-        build: false, why: "only backups, docs, design, CI or Claude config changed since main",
+        build: false, why: "only backups, docs, design, tests, CI or Claude config changed since main",
       });
       expect(g.calls.filter((c) => c[0] === "fetch")).toEqual([
         ["fetch", "--no-tags", "--depth=1", "origin", "main"],
@@ -156,7 +170,7 @@ describe("ignoredBuildStep (scripts/vercel-ignore.mjs)", () => {
     // never forces a build: that is the Redeploy dialog's box (START-HERE 10e).
     const g = git({ diffs: { abc1234def: ["docs/05-roadmap.md", "docs/tasks/TASK-035-redeploy-skipped-preview.md"] } });
     expect(ignoredBuildStep("abc1234def", g.run)).toEqual({
-      build: false, why: "only backups, docs, design, CI or Claude config changed since abc1234",
+      build: false, why: "only backups, docs, design, tests, CI or Claude config changed since abc1234",
     });
   });
 
@@ -205,7 +219,7 @@ describe("carriedPreview (.github/workflows/preview-link.yml)", () => {
       { "15c7062aa": ["docs/tasks/archive/TASK-049-books-dashboard.md"] });
     expect(await carriedPreview(["aa99233aa", "15c7062aa", "cdbbbd3aa"], f.previewsOf, f.changedFiles)).toEqual({
       carry: { sha: "15c7062aa", url: "https://ledger-mu380o0rd-justin-tillman.vercel.app" },
-      why: "only backups, docs, design, CI or Claude config changed since 15c7062",
+      why: "only backups, docs, design, tests, CI or Claude config changed since 15c7062",
     });
   });
 

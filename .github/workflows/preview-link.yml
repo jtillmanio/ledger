@@ -2,7 +2,7 @@ name: Preview link
 
 # Keeps a pull request linked to its preview when Vercel skips the head.
 # The Ignored Build Step (scripts/vercel-ignore.mjs) skips a push that changes
-# only backups, docs, design, CI or Claude config, such as a task's close-out.
+# only backups, docs, design, tests, CI or Claude config, such as a task's close-out.
 # The skipped head gets no GitHub deployment, and its `Vercel` status links to
 # the canceled build, so the PR shows "skipped" with no way to the preview that
 # still serves the same app. This posts a green `Preview (last build)` status
