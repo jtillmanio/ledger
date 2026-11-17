@@ -1,7 +1,7 @@
 ---
 id: TASK-096
 title: 5.1 Shelves (2 of 3) — the Shelves list, a shelf's page with its notes and order, and the nav item
-status: In progress
+status: Done
 depends_on: [TASK-095]
 size: M
 model: opus
@@ -32,18 +32,18 @@ Shelves has its own screen: every shelf with how far along it is and its next th
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:** lines, verbatim; this part proves, in the browser (0.11) on the test database: the note saves, survives a reload and renders under its row, a shelf with no description renders no empty line, and a note on one shelf is absent from another holding the same book. TASK-095 proves the data clauses, TASK-097 the add sheet's *New shelf…*):
+- [x] AC-1 (roadmap **Check:** lines, verbatim; this part proves, in the browser (0.11) on the test database: the note saves, survives a reload and renders under its row, a shelf with no description renders no empty line, and a note on one shelf is absent from another holding the same book. TASK-095 proves the data clauses, TASK-097 the add sheet's *New shelf…*):
 **Check (the context part):** a note saves, survives a reload and renders
 under its row; a shelf with no description renders no empty line; a note
 on one shelf does not appear on another shelf holding the same book.
 **Check (the new-shelf part):** *New shelf…* with a new name writes one
 `shelves` row and one `shelf_books` row; Undo leaves neither; a name
 already in use writes nothing and says why.
-- [ ] AC-2: Given a shelf of five books with the 1st and 3rd read, the Shelves list row reads `2 / 5`, its meter fills with `--ready`, and it names the 2nd, 4th and 5th books in shelf order; a shelf with every book read names none.
-- [ ] AC-3: Given a shelf's page, moving its last book to the top by *Move to…* redraws the order without a reload, survives a reload, and *Undo* puts the original order back.
-- [ ] AC-4: *Shelves* shows in the phone tab row, the tablet rail and the desktop sidebar under Books, current on `/books/shelves` and on a shelf's page; *+ Add to shelf* on a shelf's page opens Add books with that shelf chosen.
-- [ ] AC-5: `design/mockups.html`'s `shelves` frame draws three unread per row, a shelf's page with a description and a note, and the empty state, and `design/mockups-index.md`'s `shelves` row names them (task 5.1).
-- [ ] AC-6: Shelves and a shelf's page meet the UX floor (`docs/04-design.md` § 10): the empty state (no shelves: one primary action, *New shelf*) and a shelf with no books are drawn, loading skeletons at the loaded size, an error state; every control is a real button or link with a name, ≥ 24px; text contrast in light and dark; reduced motion on reorder; screenshots at each `ui.viewports` width.
+- [x] AC-2: Given a shelf of five books with the 1st and 3rd read, the Shelves list row reads `2 / 5`, its meter fills with `--ready`, and it names the 2nd, 4th and 5th books in shelf order; a shelf with every book read names none.
+- [x] AC-3: Given a shelf's page, moving its last book to the top by *Move to…* redraws the order without a reload, survives a reload, and *Undo* puts the original order back.
+- [x] AC-4: *Shelves* shows in the phone tab row, the tablet rail and the desktop sidebar under Books, current on `/books/shelves` and on a shelf's page; *+ Add to shelf* on a shelf's page opens Add books with that shelf chosen.
+- [x] AC-5: `design/mockups.html`'s `shelves` frame draws three unread per row, a shelf's page with a description and a note, and the empty state, and `design/mockups-index.md`'s `shelves` row names them (task 5.1).
+- [x] AC-6: Shelves and a shelf's page meet the UX floor (`docs/04-design.md` § 10): the empty state (no shelves: one primary action, *New shelf*) and a shelf with no books are drawn, loading skeletons at the loaded size, an error state; every control is a real button or link with a name, ≥ 24px; text contrast in light and dark; reduced motion on reorder; screenshots at each `ui.viewports` width.
 
 ## Out of scope
 
@@ -73,6 +73,10 @@ already in use writes nothing and says why.
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
 - `InlineText` (click, type, blur saves, Esc cancels) is there for 3.1 to reuse on its allow-listed fields (approved at plan) → docs/05-roadmap.md § 3.1
+- Both shelf routes in the query budget, and `shelfDetail` in one wave → not tracked: done in this PR (plan revision)
+- Add books opened from a shelf goes back to it after a paste or Cancel → not tracked: done in this PR (plan revision)
+- The development database lacked TASK-095's migration `0031_shelf_context`, so the first UI check couldn't load the page → not tracked: applied with the owner's OK (`npm run db:migrate`, 2026-11-17)
+- `test/e2e/tab-row.spec.ts:249` (the row at 280px) failed once locally, showing Inbox alone before the last medium arrived, and passed on the rerun and in CI → not tracked: seen once, not reproduced
 
 ## Plan
 
@@ -111,13 +115,20 @@ Also changed, to keep existing tests true: `test/e2e/tab-row.spec.ts` (every boo
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 FAIL(1: `query-budget`, a run that started before `shelfDetail` changed) → R2 PASS; touched specs (`shelves`, `tab-row`, `follows`) PASS in w390-light
+- Spec R1 CHANGES (AC-6: no screenshot at 412px) → fixed (empty shelf tagged `@feel`) → R2 APPROVE | Schema R1 APPROVE | Claude PR review: no issues
+- Audit R1 PASS (restoration OK)
+- CI R1 cancelled by the next push | CI R2 FAIL (`settings.spec.ts:249`: the shelves block redefined the shared `.sk-btn`) → fixed (own class names, `.btn.wide` scoped) | Verify R3 (after the fix)
+- UI R1 NOT RUN (the dev database lacked migration 0031) → migrated with the owner's OK → R2 re-run
+- Accepted by the owner, 2026-11-17
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 2 (spec), 1 (schema)
+- First-pass AC FAILs: 1 (AC-6, the 412px screenshot)
+- Plan revisions after approval: 2
