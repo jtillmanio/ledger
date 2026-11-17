@@ -24,6 +24,11 @@ npm run test:db:reset       # rebuild the TEST database: drizzle-kit migrate, th
 node scripts/worktree-slot.mjs  # worktree setup runs it: this worktree's own test database and e2e port
                             # in .env.worktree (ledger_test_2 / 3200, ...), loaded before .env; no-op in the main checkout
 npm run lint                # eslint, zero warnings
+gh variable set LIGHTHOUSE_MODE --body on   # Lighthouse measures every preview on its own; `off` (or unset) stops it (D-158).
+                            # Each measured deploy spends ~22 s of the Vercel account's 4 h/month Active CPU
+gh workflow run lighthouse.yml --ref <branch>  # measure that branch head's preview by hand, reported on its PR;
+                            # -f url=<deployment> for any deployment, -f dry_run=true to plan only (loads nothing).
+                            # While the workflow is disabled (D-158), `gh workflow enable lighthouse.yml` first
 npx tsc --noEmit            # typecheck
 node scripts/tsc-brief.mjs  # the same typecheck, first 10 errors only (the post-edit hook's verify.fast)
 npm run db:generate         # after editing src/db/schema.ts
