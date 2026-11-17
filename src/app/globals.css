@@ -1868,6 +1868,21 @@ h2.group-head{margin:2.25rem 0 .75rem}
 .row-text{display:block;flex:1;min-width:0;overflow-wrap:anywhere}
 .queued{white-space:nowrap}
 
+/* Coming out (task 5.7): a book row with its verb at the end. *Got it* is a 44px target on a phone and
+   32px from the tablet up (never under 24px); the text takes the rest and wraps. The row has no ⋯ menu,
+   so it gives back the 3.25rem the Library row keeps for one. A refused save's line sits under the button. */
+.rows .row.book-row.rel-row{align-items:center;padding-right:0}
+.rel-row .rb{flex:1;min-width:0;overflow-wrap:anywhere}
+.rel-got{display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;flex:0 0 auto;max-width:40%}
+.rel-got .btn{min-height:44px;min-width:4rem;box-shadow:none}
+.rel-got .row-sub{text-align:right;margin-top:0}
+@media (min-width:768px){ .rel-got .btn{min-height:32px} }
+.sk-head.rel-sk-head{height:1rem;margin:2.25rem 0 .75rem}
+.rows .row.sk-bookrow.rel-sk-row{align-items:center;padding-right:0}
+.rel-sk-row .rb{flex:1;min-width:0}
+.sk-gotit{flex:0 0 auto;width:4rem;height:44px;border-radius:var(--r-sm)}
+@media (min-width:768px){ .sk-gotit{height:32px} }
+
 /* The queue row, the one the dashboard's Reorder and the status tab share (M-08). */
 .queue{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
 .qrow{display:flex;align-items:center;gap:.5rem;min-height:56px;padding:.5rem 0;border-bottom:1px solid var(--rule);

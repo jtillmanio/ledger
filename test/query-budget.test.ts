@@ -31,6 +31,8 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   // Top books (task 3.4b): the years and the year asked for (or this one), together; a second read only
   // when that year has no read, and the page opens the newest instead.
   "/books/top": { queries: 2, waves: 1 },
+  // Coming out (task 5.7): the wanted books, in one read.
+  "/books/releases": { queries: 1, waves: 1 },
   "/inbox": { queries: 2, waves: 1 },
   // Task 4.4 adds the last Calibre sync (one scalar row) for the *Calibre* row, in the same wave.
   "/settings": { queries: 3, waves: 1 },
@@ -121,6 +123,7 @@ const pages: [string, () => Promise<unknown>][] = [
     (await import("../src/app/books/plan/page")).default({ searchParams: Promise.resolve({}) })],
   ["/books/top", async () =>
     (await import("../src/app/books/top/page")).default({ searchParams: Promise.resolve({}) })],
+  ["/books/releases", async () => (await import("../src/app/books/releases/page")).default()],
   ["/inbox", async () => (await import("../src/app/inbox/page")).default()],
   ["/settings", async () => (await import("../src/app/settings/page")).default()],
   ["/settings/calibre", async () => (await import("../src/app/settings/calibre/page")).default()],

@@ -58,6 +58,21 @@ export function dayWhen(on: string | null, precision: Precision, now = new Date(
   return `${Number(d)} ${MONTHS[Number(m) - 1]}${y === thisYear ? "" : ` ${y}`}`;
 }
 
+const MONTH_NAMES = [
+  "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December",
+];
+
+/** A `YYYY-MM` release month as its heading says it, *December 2026* (task 5.7); a malformed one prints as stored. */
+export function releaseMonth(ym: string): string {
+  const [, y, m] = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(ym) ?? [];
+  return y ? `${MONTH_NAMES[Number(m) - 1]} ${y}` : ym;
+}
+
+/** A release date as a row says it, `17 Nov` (`17 Nov 2027` outside this year): a well-formed day through `dayWhen`, else as stored. */
+export function releaseDay(on: string, now = new Date()): string {
+  return /^\d{4}-\d{2}-\d{2}$/.test(on) ? (dayWhen(on, "exact", now) ?? on) : on;
+}
+
 /** The Eastern day a moment fell on, `2026-09-14` (task 1.16): what `dayWhen` takes. */
 const easternDay = new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: ZONE });
 

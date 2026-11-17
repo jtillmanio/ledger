@@ -1,0 +1,136 @@
+// Task 5.7, 1 of 2 (TASK-099; D-35): Coming out in a real browser. A book released yesterday sits under Out now,
+// one due next month under its month, one with any status row (the Unlisted book, a read one) never shows;
+// Got it moves a book to Someday with no reload and one to_read row, Undo puts the row back and leaves no row;
+// the nav item is current on the page in whichever bar the width draws; and the page meets the UX floor.
+// The books are test/e2e/global-setup.ts's (two of the Library's, with releases, and the Unlisted book).
+import { expect, test, type Page } from "@playwright/test";
+import { E2E_USER } from "../../scripts/lib/e2e.mjs";
+import { testSql } from "../db";
+import {
+  E2E_RELEASE_MONTH_ID, E2E_RELEASE_MONTH_TITLE, E2E_RELEASE_OUT_ID, E2E_RELEASE_OUT_TITLE, E2E_UNLISTED_TITLE,
+  FLOOR, computedStyle, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
+} from "./helpers";
+
+// Writes: runs once, in w390-light.
+const ONCE = { tag: "@at-w390-light" };
+const AXE = [
+  "nested-interactive", "button-name", "link-name", "color-contrast", "aria-allowed-attr", "aria-allowed-role",
+  "aria-prohibited-attr", "aria-valid-attr-value", "aria-hidden-focus", "landmark-unique", "duplicate-id-aria",
+  "target-size", "heading-order", "label-content-name-mismatch",
+];
+
+/** Whatever a test did, both books are as global-setup left them: no status row. */
+async function reset() {
+  const sql = testSql();
+  try {
+    await sql`DELETE FROM book_status WHERE user_id = ${E2E_USER} AND book_id IN (${E2E_RELEASE_OUT_ID}, ${E2E_RELEASE_MONTH_ID})`;
+  } finally {
+    await sql.end();
+  }
+}
+
+test.beforeEach(reset);
+test.afterAll(reset);
+
+async function statusRows(id: string) {
+  const sql = testSql();
+  try {
+    return await sql`SELECT status FROM book_status WHERE user_id = ${E2E_USER} AND book_id = ${id}`;
+  } finally {
+    await sql.end();
+  }
+}
+
+/** The month heading the month book's stored release date falls under: *December 2026*. */
+async function monthHeading() {
+  const sql = testSql();
+  try {
+    const [{ release_date }] = await sql`SELECT release_date FROM releases WHERE book_id = ${E2E_RELEASE_MONTH_ID}`;
+    return new Date(`${release_date}T12:00:00Z`).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+  } finally {
+    await sql.end();
+  }
+}
+
+const section = (page: Page, heading: string) =>
+  page.locator("section", { has: page.getByRole("heading", { level: 2, name: heading }) });
+const gotIt = (page: Page, title: string) => page.getByRole("button", { name: `Got it: ${title}` });
+const rowTitles = (page: Page) => page.locator(".book-row .row-title");
+
+test("Out now holds the book released yesterday, its month the one due next month, and no book with a status", async ({ page }) => {
+  await page.goto("/books/releases");
+  await expect(page.getByRole("heading", { level: 1, name: "Coming out" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2 }).first()).toHaveText(/^Out now/);
+  await expect(section(page, "Out now").locator(".row-title")).toHaveText([E2E_RELEASE_OUT_TITLE]);
+  await expect(section(page, await monthHeading()).locator(".row-title")).toHaveText([E2E_RELEASE_MONTH_TITLE]);
+  // The Unlisted book has a release and a status row: not wanted.
+  await expect(rowTitles(page).filter({ hasText: E2E_UNLISTED_TITLE })).toHaveCount(0);
+  await expect(rowTitles(page)).toHaveCount(2);
+});
+
+test("a book that is already read never appears", ONCE, async ({ page }) => {
+  const sql = testSql();
+  try {
+    await sql`INSERT INTO book_status (user_id, book_id, status, finished_on, finished_on_precision)
+              VALUES (${E2E_USER}, ${E2E_RELEASE_OUT_ID}, 'read', '2026-01-10', 'exact')`;
+  } finally {
+    await sql.end();
+  }
+  await page.goto("/books/releases");
+  await expect(rowTitles(page)).toHaveText([E2E_RELEASE_MONTH_TITLE]);
+  await expect(page.getByRole("heading", { level: 2, name: /^Out now/ })).toHaveCount(0);
+});
+
+test("Coming out is current on its page in whichever bar the width draws", async ({ page }) => {
+  await page.goto("/books/releases");
+  const current = page.locator('a[href="/books/releases"][aria-current="page"]:visible');
+  await expect(current).toHaveCount(1);
+  await expect(current).toContainText("Coming out");
+});
+
+test("the page meets the floor: Got it is a real, named button of at least 24px (44px on a phone), no overflow, contrast and axe", FLOOR, async ({ page }, info) => {
+  await page.goto("/books/releases");
+  const button = gotIt(page, E2E_RELEASE_OUT_TITLE);
+  await expect(button).toHaveText("Got it");
+  expect(await button.evaluate((el) => el.tagName)).toBe("BUTTON");
+  const box = await button.boundingBox();
+  const phone = (page.viewportSize()?.width ?? 0) < 768;
+  expect(box!.height).toBeGreaterThanOrEqual(phone ? 44 : 24);
+  expect(box!.width).toBeGreaterThanOrEqual(24);
+
+  // The date is mono, and the verb is the brand's primary colour, never a state colour.
+  const date = page.locator(".book-row .row-meta").first();
+  expect((await computedStyle(date, ["font-family"]))["font-family"]).toMatch(/mono/i);
+  const { "background-color": background } = await computedStyle(button, ["background-color"]);
+  for (const token of ["--ready", "--blocked", "--danger"]) expect(background, token).not.toBe(await tokenColour(page, token));
+
+  await expectNoHorizontalScroll(page);
+  await expectNoAxeViolations(page, AXE);
+  expect(await contrastFailures(page)).toEqual([]);
+  await screenshot(page, info, "releases");
+});
+
+test("Got it removes the row with no reload and writes one to_read row; Undo brings it back and leaves no row", ONCE, async ({ page }, info) => {
+  await page.goto("/books/releases");
+  const button = gotIt(page, E2E_RELEASE_OUT_TITLE);
+  await hydrated(button);
+  // A marker on the window: a reload would lose it.
+  await page.evaluate(() => { (window as unknown as { stayed: boolean }).stayed = true; });
+
+  await button.click();
+  await expect(rowTitles(page).filter({ hasText: E2E_RELEASE_OUT_TITLE })).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 2, name: /^Out now/ })).toHaveCount(0);
+  expect(await page.evaluate(() => (window as unknown as { stayed?: boolean }).stayed)).toBe(true);
+  expect(await statusRows(E2E_RELEASE_OUT_ID)).toEqual([{ status: "to_read" }]);
+  // The month book is untouched, and focus went to a button, not the body.
+  await expect(rowTitles(page)).toHaveText([E2E_RELEASE_MONTH_TITLE]);
+  await expect(gotIt(page, E2E_RELEASE_MONTH_TITLE)).toBeFocused();
+  await expect(page.locator(".toast")).toContainText(`${E2E_RELEASE_OUT_TITLE}: to read`);
+  await expect(page.locator(".toast")).toContainText("Was coming out");
+  await screenshot(page, info, "releases-got-it");
+
+  await page.locator(".toast-undo").click();
+  await expect(section(page, "Out now").locator(".row-title")).toHaveText([E2E_RELEASE_OUT_TITLE]);
+  await expect.poll(() => statusRows(E2E_RELEASE_OUT_ID)).toEqual([]);
+  expect(await page.evaluate(() => (window as unknown as { stayed?: boolean }).stayed)).toBe(true);
+});

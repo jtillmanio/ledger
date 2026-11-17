@@ -5,6 +5,7 @@
 import { readFileSync } from "node:fs";
 import { renderToString } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { IconSprite } from "../src/components/nav/Icons";
 import MediaBar from "../src/components/nav/MediaBar";
 import NavRail from "../src/components/nav/NavRail";
 import Sidebar from "../src/components/nav/Sidebar";
@@ -24,6 +25,8 @@ const bars = (items?: NavItem[]) => ({
 });
 const flip = (id: string): NavItem[] => NAV_ITEMS.map((i) => (i.id === id ? { ...i, enabled: false } : i));
 const hrefOf = (id: string) => NAV_ITEMS.find((i) => i.id === id)!.href;
+/** The books items, in the order every bar draws them. */
+const BOOKS_ITEMS = ["books-dash", "books-status", "books-library", "books-plan", "books-top", "books-releases", "books-add"];
 
 describe("NAV_ITEMS (AC-2)", () => {
   beforeEach(() => { nav.pathname = "/comics"; });
@@ -52,7 +55,7 @@ describe("NAV_ITEMS (AC-2)", () => {
     expect(dash).toMatchObject({ href: "/books", enabled: true, dash: true });
     expect(visibleItems()).toContain(dash);
     expect(hrefOf("books")).toBe("/books");
-    expect(mediumItems(NAV_ITEMS, "books").map((i) => i.id)).toEqual(["books-dash", "books-status", "books-library", "books-plan", "books-top", "books-add"]);
+    expect(mediumItems(NAV_ITEMS, "books").map((i) => i.id)).toEqual(BOOKS_ITEMS);
     expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books")?.id).toBe("books-dash");
 
     nav.pathname = "/books";
@@ -87,7 +90,7 @@ describe("NAV_ITEMS (AC-2)", () => {
     // `library` is Shelves' icon: hue and icon identify, and two items never share one.
     expect(library.icon).not.toBe(NAV_ITEMS.find((i) => i.id === "books-shelves")!.icon);
     const books = mediumItems(NAV_ITEMS, "books").map((i) => i.id);
-    expect(books).toEqual(["books-dash", "books-status", "books-library", "books-plan", "books-top", "books-add"]);
+    expect(books).toEqual(BOOKS_ITEMS);
     expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books/list")?.id).toBe("books-library");
     expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books/status")?.id).toBe("books-status");
 
@@ -140,6 +143,29 @@ describe("NAV_ITEMS (AC-2)", () => {
     expect(side.indexOf(">Plan<")).toBeLessThan(side.indexOf(">Top books<"));
     const phone = renderToString(<MediaBar />);
     expect(current(phone).filter((a) => a.includes('href="/books/top"') && a.includes(">Top<"))).toHaveLength(1);
+  });
+
+  it("turns on Coming out (task 5.7, AC-4): after Top, before Add, to /books/releases, current there in every bar", () => {
+    const releases = NAV_ITEMS.find((i) => i.id === "books-releases")!;
+    expect(releases).toMatchObject({
+      label: "Coming out", href: "/books/releases", enabled: true, group: "medium", medium: "books", icon: "calendar-clock",
+    });
+    expect(visibleItems()).toContain(releases);
+    // No two items share an icon: hue and icon identify.
+    expect(NAV_ITEMS.filter((i) => i.icon === releases.icon)).toEqual([releases]);
+    expect(currentItem(mediumItems(NAV_ITEMS, "books"), "/books/releases")?.id).toBe("books-releases");
+    nav.pathname = "/books/releases";
+    const current = (html: string) => [...html.matchAll(/<a [^>]*aria-current="page"[^>]*>(?:(?!<\/a>).)*<\/a>/g)].map((m) => m[0]);
+    const { "the tablet rail": rail, "the sidebar": side } = bars();
+    for (const [name, html] of [["the tablet rail", rail], ["the sidebar", side]] as const) {
+      expect(current(html).filter((a) => a.includes('href="/books/releases"') && a.includes(">Coming out<")), name).toHaveLength(1);
+      expect(html.indexOf(">Top"), name).toBeLessThan(html.indexOf(">Coming out<"));
+      expect(html.indexOf(">Coming out<"), name).toBeLessThan(html.indexOf(">Add<"));
+    }
+    const phone = renderToString(<MediaBar />);
+    expect(current(phone).filter((a) => a.includes('href="/books/releases"') && a.includes(">Coming out<"))).toHaveLength(1);
+    // The sprite draws the icon the item names.
+    expect(renderToString(<IconSprite />)).toContain('id="i-calendar-clock"');
   });
 
   it("keeps the unbuilt screens out: Search, Tracks, Shelves", () => {

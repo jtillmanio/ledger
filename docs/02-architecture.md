@@ -105,7 +105,7 @@ Every page. One dashboard per medium, with the lists one level down (design §11
 | `/books/list` | Master list: search, filter by status, to-read level, year or genre, series completion |
 | `/books/add` | Add books: search Hardcover, paste a list, or by hand, with a destination (a quarter or year, On deck, Someday, or a shelf) |
 | `/books/plan` | Plan by quarter: the year as the full-size rail, the quarter in focus listed with *Move* (task 2.10); the capacity card, Rebalance and Accept join it (2.7, 2.8) |
-| `/books/releases` | Books coming out that you want, *Out now* then by month (task 5.7, D-35) |
+| `/books/releases` | Coming out: the books you want when they come out (a release and no status), *Out now* then by month, then *No date yet*; *Got it* moves one to Someday, with an Undo (D-35) |
 | `/books/series` | Every series with `read / total` from `series_progress` and its next unread book (task 5.9) |
 | `/books/series/[id]` | One series: its books in position order with status and dates, the next unread, gap rows (task 5.9) |
 | `/activity` | The reading log: every finished read, by month under year totals, across media (task 6.17) |

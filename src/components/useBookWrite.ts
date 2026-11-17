@@ -41,6 +41,8 @@ export type BookWriteArgs = {
   name: string;
   /** The status the book had, for the toast's *Was reading*. */
   was: BookStatusName;
+  /** Replaces the toast's *Was …* line where `was` has no word for it: *Coming out*'s *Got it* (task 5.7), a book with no status. */
+  detail?: string;
   finish?: FinishValue;
   start?: FinishValue;
   /** Runs once the server has saved, before the page refreshes. */
@@ -67,7 +69,7 @@ export function useBookWrite() {
   const { push, hold } = useUndo();
   const sorter = useRankSorter();
   return useCallback(async ({
-    bookId, status, name, was, finish, start, onSaved, onUndone, refresh = true,
+    bookId, status, name, was, detail, finish, start, onSaved, onUndone, refresh = true,
   }: BookWriteArgs): Promise<{ refused: string } | { written: BookWritten; withNote: WithNote }> => {
     const res = await fetch("/api/progress/book", {
       method: "POST",
@@ -111,7 +113,7 @@ export function useBookWrite() {
     push({
       label,
       detail: start ? `Started ${finishWords(start)}`
-        : status === "read" && finish ? `Finished ${finishWords(finish)}` : `Was ${NAMES[was]}`,
+        : status === "read" && finish ? `Finished ${finishWords(finish)}` : (detail ?? `Was ${NAMES[was]}`),
       undo: undo(),
       offer: [...rank, ...follows],
     });
