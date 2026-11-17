@@ -1,7 +1,7 @@
 ---
 id: TASK-098
 title: 5.5 DNF with a reason — the closing card for a book
-status: Review
+status: Done
 depends_on: []
 size: M
 model: sonnet
