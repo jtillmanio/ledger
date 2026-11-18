@@ -43,6 +43,10 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <path d="M5 7a2 2 0 0 0-2 2v11" /><path d="M5.803 18H5a2 2 0 0 0 0 4h9.5a.5.5 0 0 0 .5-.5V21" />
     <path d="M9 15V4a2 2 0 0 1 2-2h9.5a.5.5 0 0 1 .5.5v14a.5.5 0 0 1-.5.5H11a2 2 0 0 1 0-4h10" />
   </>),
+  "book-marked": (<>
+    <path d="M10 2v8l3-3 3 3V2" />
+    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20" />
+  </>),
   tv: (<><path d="m17 2-5 5-5-5" /><rect width="20" height="15" x="2" y="7" rx="2" /></>),
   inbox: (<>
     <polyline points="22 12 16 12 14 15 10 15 8 12 2 12" />

@@ -27,7 +27,7 @@ const flip = (id: string): NavItem[] => NAV_ITEMS.map((i) => (i.id === id ? { ..
 const hrefOf = (id: string) => NAV_ITEMS.find((i) => i.id === id)!.href;
 /** The books items, in the order every bar draws them. */
 const BOOKS_ITEMS = [
-  "books-dash", "books-status", "books-library", "books-plan", "books-shelves", "books-top", "books-releases", "books-add",
+  "books-dash", "books-status", "books-library", "books-plan", "books-shelves", "books-series", "books-top", "books-releases", "books-add",
 ];
 
 describe("NAV_ITEMS (AC-2)", () => {
@@ -186,6 +186,29 @@ describe("NAV_ITEMS (AC-2)", () => {
       }
       const side = bars()["the sidebar"];
       expect(side.indexOf(">Plan<")).toBeLessThan(side.indexOf(">Shelves<"));
+    }
+  });
+
+  it("turns on Series (task 5.9, AC-4): after Shelves, before Top, to /books/series, current there in every bar", () => {
+    const series = NAV_ITEMS.find((i) => i.id === "books-series")!;
+    expect(series).toMatchObject({
+      label: "Series", href: "/books/series", enabled: true, group: "medium", medium: "books", icon: "book-marked",
+    });
+    expect(visibleItems()).toContain(series);
+    // No two items share an icon, and the sprite draws the one this names.
+    expect(NAV_ITEMS.filter((i) => i.icon === series.icon)).toEqual([series]);
+    expect(renderToString(<IconSprite />)).toContain('id="i-book-marked"');
+    const books = mediumItems(NAV_ITEMS, "books");
+    expect(currentItem(books, "/books/series")?.id).toBe("books-series");
+    // Shelves' own href is not a prefix of it: /books/shelves is never current on /books/series.
+    expect(currentItem(books, "/books/shelves")?.id).toBe("books-shelves");
+    nav.pathname = "/books/series";
+    const current = (html: string) => [...html.matchAll(/<a [^>]*aria-current="page"[^>]*>(?:(?!<\/a>).)*<\/a>/g)].map((m) => m[0]);
+    for (const [name, html] of Object.entries(bars())) {
+      expect(current(html).filter((a) => a.includes('href="/books/series"') && a.includes(">Series<")), name).toHaveLength(1);
+      expect(current(html).filter((a) => a.includes(">Shelves<")), name).toHaveLength(0);
+      expect(html.indexOf(">Shelves<"), name).toBeLessThan(html.indexOf(">Series<"));
+      expect(html.indexOf(">Series<"), name).toBeLessThan(html.indexOf(">Top"));
     }
   });
 

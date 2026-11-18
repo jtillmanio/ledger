@@ -38,6 +38,8 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   // its books, together (the books read checks the shelf is yours itself).
   "/books/shelves": { queries: 1, waves: 1 },
   "/books/shelves/[id]": { queries: 2, waves: 1 },
+  // Series (task 5.9): every series with its counts and next unread, one read.
+  "/books/series": { queries: 1, waves: 1 },
   "/inbox": { queries: 2, waves: 1 },
   // Task 4.4 adds the last Calibre sync (one scalar row) for the *Calibre* row, in the same wave.
   "/settings": { queries: 3, waves: 1 },
@@ -134,6 +136,7 @@ const pages: [string, () => Promise<unknown>][] = [
   ["/books/shelves", async () => (await import("../src/app/books/shelves/page")).default()],
   ["/books/shelves/[id]", async () =>
     (await import("../src/app/books/shelves/[id]/page")).default({ params: Promise.resolve({ id: "s" }) })],
+  ["/books/series", async () => (await import("../src/app/books/series/page")).default()],
   ["/inbox", async () => (await import("../src/app/inbox/page")).default()],
   ["/settings", async () => (await import("../src/app/settings/page")).default()],
   ["/settings/calibre", async () => (await import("../src/app/settings/calibre/page")).default()],

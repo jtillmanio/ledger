@@ -1099,6 +1099,46 @@ export async function seriesProgress(userId: string) {
   `;
 }
 
+/** The book a series names next (task 5.9): its id, title and `series_position` (NULL when it has none). */
+export type SeriesNext = { id: string; title: string; position: number | null };
+
+/** A series on the Series list (task 5.9): how far through it you are and the next book to read. */
+export type SeriesSummary = {
+  id: string; name: string; author: string | null;
+  /** `series_progress`'s counts: live books only; `total` is the stated total, else the live books listed. */
+  read: number; total: number;
+  /** The lowest-position live book you have neither read, started nor set aside; none once it is complete. */
+  next: SeriesNext | null;
+};
+
+/**
+ * Every series you have a live book in (task 5.9; mockup `series`), in progress first, then not started,
+ * then complete, each by name. Counts come from `series_progress` (a NULL stated total counts the books
+ * listed; a removed book is on no count, hard rule 4). The next unread is `follow_next`'s set (status NULL,
+ * `to_read` or `unlisted`: a book in hand or a DNF is not named) at the lowest `series_position`, a book
+ * with none after every positioned one; a complete series has none. A series with more read than its
+ * stated total (4 / 3) is complete. All derived here, never stored (hard rule 2). `seriesProgress` stays
+ * for the Library's Series section, which keeps only series of more than one book.
+ */
+export async function seriesList(userId: string): Promise<SeriesSummary[]> {
+  return sql<SeriesSummary[]>`
+    SELECT p.series_id AS id, p.name, p.author, p.books_read::int AS read, p.total_books::int AS total,
+           CASE WHEN p.books_read >= p.total_books THEN NULL ELSE n.next END AS next
+    FROM series_progress p
+    LEFT JOIN LATERAL (
+      SELECT json_build_object('id', b.id, 'title', b.title, 'position', b.series_position) AS next
+      FROM books b
+      LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+      WHERE b.series_id = p.series_id AND b.deleted_at IS NULL
+        AND (st.status IS NULL OR st.status IN ('to_read', 'unlisted'))
+      ORDER BY b.series_position NULLS LAST, b.title, b.id
+      LIMIT 1
+    ) n ON true
+    WHERE p.user_id = ${userId} AND p.books_listed > 0
+    ORDER BY CASE WHEN p.books_read >= p.total_books THEN 2 WHEN p.books_read = 0 THEN 1 ELSE 0 END,
+             lower(p.name COLLATE "default"), p.series_id`;
+}
+
 /** A wanted book on *Coming out* (task 5.7). `grp` is `out`, a `YYYY-MM` month, or `none` for no date. */
 export type WantedRelease = {
   id: string; title: string; author: string | null; series: string | null; series_position: number | null;
