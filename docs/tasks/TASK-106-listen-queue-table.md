@@ -1,14 +1,14 @@
 ---
 id: TASK-106
 title: 5.14 A queue to listen next (1 of 2) — the listen_queue table, its writes and undo
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 0d1f967
 ---
 
 # TASK-106 — 5.14 A queue to listen next (1 of 2) — the listen_queue table, its writes and undo
@@ -65,9 +65,43 @@ audio read; each tab's count equals its rows. The export test passes with
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The roadmap's two plan-gate questions, answered by the owner at this plan gate (2026-11-18): a book may be on the reading plan and the listen queue at once; the books dashboard's *Up next* slot does **not** show the first queued listen (*Listen next* lives on the Up next tab only). TASK-107 draws to this. (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-18 (the new table, `position`; Listening, Read and DNF take a book off the queue; the dashboard slot shows no listen).
+
+**Steps**
+
+1. **Table** `listen_queue(book_id text PRIMARY KEY → books.id ON DELETE CASCADE, position integer NOT NULL)`, `UNIQUE (position) DEFERRABLE INITIALLY DEFERRED` hand-added to `drizzle/0032_listen_queue.sql` (as `0014_run_queue.sql`); no `user_id` (D-91), no `added_at`. Creates only: no down file.
+2. **Export**: `listen_queue` in `CATALOG_TABLES` (hard rule 7).
+3. **Writes** (`src/db/writes.ts`), copying `run_queue`'s, each one transaction behind one advisory lock (`ledger:listen-queue`): `queueListen` (at the end; a book already queued stays and answers its position; null for a missing or soft-deleted book), `moveListen` (to a position, clamped 1…N), `removeListen` (hard delete, the gap closes; answers the position it had), `restoreListen` (back at that position, clamped 1…N+1; a book queued again since is moved there). A soft-deleted book keeps its row, as `run_queue` does, so a restored book comes back to its place; TASK-107's reads filter `deleted_at` (hard rule 4).
+4. **Status hook**: `saveBookStatus` setting a queued book to `listening`, `read` or `dnf` deletes its row and closes the gap in the same transaction (under the queue lock), and the change carries the position it had (`unqueued`); `reading` and `to_read` leave it queued. `undoBookStatus` puts it back at that position in its transaction (moved there if queued again since). `/api/progress/book`'s `validChange` accepts `unqueued` (a position or absent/null).
+5. **Route** `src/app/api/listen-queue/route.ts`: POST `{ bookId }` (queue), POST `{ bookId, restore }` (remove's undo), PATCH `{ bookId, to }`, DELETE `{ bookId }`; answers `{ ok, position }` (+ `added` on a queue); 404 for a missing or soft-deleted book or one not queued; 400 for a malformed body; 401 without a session; inside the passcode gate.
+6. **Docs**: `docs/03-data-model.md` § 4 row (built), `docs/02-architecture.md` § 5 the route, `.claude/rules/schema.md` a bullet for the table.
+
+**Files**
+
+- `src/db/schema.ts`, `drizzle/0032_listen_queue.sql`, `drizzle/meta/*` — the table.
+- `src/db/export-tables.ts` — the table.
+- `src/db/writes.ts` — the four writes and the status hook.
+- `src/app/api/listen-queue/route.ts` (new) — the route.
+- `src/app/api/progress/book/route.ts` — *not in Files likely touched*: the undo validator accepts `unqueued`.
+- `test/listen-queue.test.ts` (new), `test/export-tables.test.ts`.
+- `test/comics-load.test.ts` — *not listed*: it names every table and fails on an unknown one; `listen_queue` joins `BOOK_TABLES` (load:comics leaves it alone).
+- `docs/03-data-model.md`; `docs/02-architecture.md` § 5 and `.claude/rules/schema.md` — *not listed*: the route and the table's rule, each in its one home.
+
+**Test strategy**
+
+- AC-1: `test/listen-queue.test.ts` › "three queued books are 1–3; Listening on #2 closes the gap and its undo restores the order".
+- AC-2: › "move #3 to 1 gives 3, 1, 2 and its undo 1, 2, 3; remove #2 closes the gap and its undo puts it back at 2".
+- AC-3: › "queueing a queued book leaves one row", "404 for a missing or soft-deleted book, writing nothing", "400 for a malformed body", "401 without a session", "inside the passcode gate" (the proxy, as `owned-copies.test.ts`).
+- AC-4: `test/export-tables.test.ts` › "exports listen_queue whole".
+- Also: Read and DNF from To read take it off, Reading leaves it; the order's UNIQUE is deferrable; `npm run check:migrations`.
+
+**Risks**: lock order: `saveBookStatus` row-locks the book, then takes the queue's advisory lock; the queue writes take the advisory lock and only read `books` (no row lock), so the two never wait on each other in opposite orders.
+
+**Size**: about 10 files, data side only, no UI; already the split half (TASK-107 is the UI), so not split again.
 
 ## Review log
 
