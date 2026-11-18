@@ -126,7 +126,9 @@ function validFollow(f: unknown): boolean {
 
 function validChange(c: unknown): c is BookStatusChange {
   if (typeof c !== "object" || c === null) return false;
-  const { bookId, status, prior, appended, edited, backfilled, follows } = c as Record<string, unknown>;
+  const { bookId, status, prior, appended, edited, backfilled, follows, unqueued } = c as Record<string, unknown>;
+  // The listen-queue position the write took the book off (task 5.14); missing from a change answered before 5.14.
+  if (unqueued !== undefined && unqueued !== null && !isId(unqueued)) return false;
   // Missing from a change answered before 2.2h, which followed nothing.
   if (follows !== undefined && !(Array.isArray(follows) && follows.every(validFollow))) return false;
   if (Array.isArray(follows) && follows.length > 0 && appended === null) return false;

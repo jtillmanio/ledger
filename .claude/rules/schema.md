@@ -246,6 +246,15 @@ Release, test isolation) and the Hard rules a reviewer checks.
   (unstarted, in flight, done) is derived through `run_queue_state` and never
   written to the queue. Nothing removes a queue row except the user.
   data model 2.16.
+- **The listen queue is an order too** (task 5.14, F-59). `listen_queue
+  (book_id, position)`, no `user_id` (D-91), contiguous from 1 with a
+  deferred UNIQUE like `run_queue`'s; never a format on `reading_plan`.
+  Write it only through the listen-queue helpers in `src/db/writes.ts`
+  (`queueListen`, `moveListen`, `removeListen`, `restoreListen`). Entering
+  Listening, Read or DNF (`saveBookStatus`) takes a queued book off in the same
+  transaction, and `undoBookStatus` puts it back where it was; a Read book
+  re-dated stays queued. A soft-deleted book keeps its row and every read
+  filters it out. `load` empties it through `books`' `CASCADE`.
 - **A why is authored, so it is stored.** `runs.why_source` is `hand` or
   `claude`. `hand` means Justin wrote or edited it and nothing automated may
   replace it. `claude` means a Claude draft accepted as-is; it may be

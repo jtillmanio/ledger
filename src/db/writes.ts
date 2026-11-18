@@ -1,6 +1,7 @@
 import { and, between, desc, eq, gt, gte, inArray, isNotNull, isNull, like, ne, notInArray, or, sql } from "drizzle-orm";
 import {
-  db, authors, books, bookSeries, bookStatus, calibreDecisions, inbox, issueProgress, issues, readEvents, readingPlan, readingSettings, runIssues,
+  db, authors, books, bookSeries, bookStatus, calibreDecisions, inbox, issueProgress, issues, listenQueue, readEvents, readingPlan,
+  readingSettings, runIssues,
   ownedCopies, planAcceptance, releases, runQueue, runs, shelfBooks, seriesFollows, authorFollows, universeFollows, shelfFollows, subseriesFollows,
   shelves, sql as pg, volumeRules,
 } from "./index";
@@ -73,6 +74,9 @@ export type BookStatusChange = {
    * state it had: `null` for no row. The undo puts each back. Missing from a change sent
    * before 2.2h, which followed nothing. */
   follows?: FinishFollow[];
+  /** The listen-queue position this write took the book off (task 5.14): entering Listening,
+   * Read or DNF unqueues it. Null when it wasn't queued; missing from a change sent before 5.14. */
+  unqueued?: number | null;
 };
 
 /** One follow a finish set to `reading`, and what it was before (task 2.2h). */
@@ -139,6 +143,10 @@ const asFinish = (d: { finishedOn: string | null; precision: Precision }) =>
  * A finish from Reading or Listening also follows the book's series, subseries
  * and universe (task 2.2h, D-117; `followFinish`), in this transaction, so a
  * follow that can't be written leaves the book as it was.
+ *
+ * Entering Listening, Read or DNF takes the book off the listen queue (task
+ * 5.14) in this transaction, the books after it closing the gap; `unqueued` is
+ * the position it had, and the undo puts it back there.
  *
  * Answers null for a book that is missing or removed; otherwise the change, the
  * start this write left on the read in progress or the read (`start`), and the
@@ -233,13 +241,20 @@ export async function saveBookStatus(
     // read appended from Reading or Listening, never a past read logged from To read.
     const follows = appended !== null && before && IN_PROGRESS.includes(before.status)
       ? await followFinish(tx, userId, bookId) : [];
+    // Entering Listening, Read or DNF takes the book off the listen queue (task 5.14); staying
+    // (a Read book re-dated) leaves it, so a book queued for a re-listen keeps its place.
+    let unqueued: number | null = null;
+    if (LEAVES_LISTEN_QUEUE.includes(status) && before?.status !== status) {
+      await lockListen(tx);
+      unqueued = await unqueueListen(tx, bookId);
+    }
     return {
       bookId, status,
       prior: before ? {
         status: before.status, finishedOn: before.finishedOn, precision: before.precision as Precision,
         startedOn: before.startedOn, startPrecision: before.startPrecision as Precision,
       } : null,
-      appended, format, edited, backfilled, follows,
+      appended, format, edited, backfilled, follows, unqueued,
       start: status === "read" || inProgress ? kept : held ?? kept,
       // A status write leaves the note alone: the closing card opens on it (task 5.5).
       note: before?.notes ?? null,
@@ -270,7 +285,7 @@ export async function saveBookStatus(
  * changed since refuses the whole undo. It must be the same book's.
  */
 export async function undoBookStatus(userId: string, change: BookStatusChange, note?: NoteChange): Promise<boolean> {
-  const { bookId, status, prior, appended, edited, backfilled, follows = [] } = change;
+  const { bookId, status, prior, appended, edited, backfilled, follows = [], unqueued = null } = change;
   if (note && note.bookId !== bookId) throw new Error("undoBookStatus: the note is another book's");
   return db.transaction(async (tx) => {
     if (!(await lockBook(tx, bookId))) return false;
@@ -337,6 +352,11 @@ export async function undoBookStatus(userId: string, change: BookStatusChange, n
       if (current?.state !== "reading") continue;
       if (f.prior === null) await row.drop();
       else await row.put(f.prior);
+    }
+    // Back on the listen queue where it was (task 5.14), moved there if it was queued again since.
+    if (unqueued !== null) {
+      await lockListen(tx);
+      await restoreListenIn(tx, bookId, unqueued);
     }
     return true;
   });
@@ -1745,6 +1765,132 @@ export async function restoreQueued(userId: string, runId: string, ordinal: numb
     return at;
   });
   return back === "queued" ? moveQueued(userId, runId, ordinal) : back;
+}
+
+/**
+ * The listen queue (task 5.14, F-59): the audiobooks you mean to listen to
+ * next, in order, the run queue's shape (data model 2.16) with no user_id
+ * (D-91). Every write goes through the helpers below, which keep `position`
+ * contiguous from 1, each in one transaction behind one lock (the order's
+ * UNIQUE is deferred to commit, so a renumber may pass through a duplicate).
+ * A status write that enters Listening, Read or DNF takes the book off in its
+ * own transaction (`saveBookStatus`), and its undo puts it back.
+ *
+ * Lock order: a status write row-locks the book (`lockBook`), then takes this
+ * lock. The queue's own writes take this lock and only read `books`, never
+ * lock its row, so the two never wait on each other in opposite orders.
+ */
+async function lockListen(tx: Tx) {
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext('ledger:listen-queue'))`);
+}
+
+async function inListen<T>(fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return db.transaction(async (tx) => {
+    await lockListen(tx);
+    return fn(tx);
+  });
+}
+
+/** A book that can be queued: real and not soft-deleted. */
+async function listenable(tx: Tx, bookId: string) {
+  const [book] = await tx.select({ id: books.id }).from(books)
+    .where(and(eq(books.id, bookId), isNull(books.deletedAt)));
+  return Boolean(book);
+}
+
+async function listenPosition(tx: Tx, bookId: string): Promise<number | null> {
+  const [row] = await tx.select({ position: listenQueue.position }).from(listenQueue).where(eq(listenQueue.bookId, bookId));
+  return row?.position ?? null;
+}
+
+/** Every row counts, a soft-deleted book's included: it keeps its position (the
+ * reads hide it) so a restored book comes back to its place. Don't filter it. */
+async function listenLength(tx: Tx) {
+  const [row] = await tx.select({ n: sql<number>`count(*)::int` }).from(listenQueue);
+  return row.n;
+}
+
+/** Shift the positions in `from…to` by `by`. */
+function shiftListen(tx: Tx, from: number, to: number, by: 1 | -1) {
+  return tx.update(listenQueue).set({ position: sql`${listenQueue.position} + ${by}` })
+    .where(between(listenQueue.position, from, to));
+}
+
+async function moveListenIn(tx: Tx, bookId: string, to: number): Promise<{ position: number; from: number } | null> {
+  const from = await listenPosition(tx, bookId);
+  if (from === null) return null;
+  const target = Math.min(Math.max(1, Math.trunc(to)), await listenLength(tx));
+  if (target < from) await shiftListen(tx, target, from - 1, 1);
+  else if (target > from) await shiftListen(tx, from + 1, target, -1);
+  if (target !== from) await tx.update(listenQueue).set({ position: target }).where(eq(listenQueue.bookId, bookId));
+  return { position: target, from };
+}
+
+/** Take a book off and close the gap; answers the position it had, or null when it wasn't queued. */
+async function unqueueListen(tx: Tx, bookId: string): Promise<number | null> {
+  const [gone] = await tx.delete(listenQueue).where(eq(listenQueue.bookId, bookId))
+    .returning({ position: listenQueue.position });
+  if (!gone) return null;
+  const n = await listenLength(tx);
+  await shiftListen(tx, gone.position + 1, n + 1, -1);
+  return gone.position;
+}
+
+/** Put a book back at `position` (clamped to 1…N+1), the books from there moving
+ * down one; a book queued again in the meantime is moved there instead. */
+async function restoreListenIn(tx: Tx, bookId: string, position: number): Promise<number> {
+  const moved = await moveListenIn(tx, bookId, position);
+  if (moved) return moved.position;
+  const n = await listenLength(tx);
+  const at = Math.min(Math.max(1, Math.trunc(position)), n + 1);
+  await shiftListen(tx, at, n, 1);
+  await tx.insert(listenQueue).values({ bookId, position: at });
+  return at;
+}
+
+/** The statuses that take a queued book off the listen queue on entering them
+ * (owner, TASK-106's plan gate): starting the listen, finishing, giving up. */
+export const LEAVES_LISTEN_QUEUE: readonly string[] = ["listening", "read", "dnf"];
+
+export type ListenQueued = { position: number; added: boolean };
+
+/**
+ * *Queue to listen*: the book joins the end. A book already queued stays where
+ * it is and answers its position. Null, writing nothing, for a missing or
+ * soft-deleted book.
+ */
+export async function queueListen(bookId: string): Promise<ListenQueued | null> {
+  return inListen(async (tx) => {
+    if (!(await listenable(tx, bookId))) return null;
+    const there = await listenPosition(tx, bookId);
+    if (there !== null) return { position: there, added: false };
+    const position = (await listenLength(tx)) + 1;
+    await tx.insert(listenQueue).values({ bookId, position });
+    return { position, added: true };
+  });
+}
+
+/** *Move to…*: a queued book to `to` (clamped to 1…N), the books between closing
+ * up behind it. Answers its new position and the one it had (the undo moves it
+ * back there); null when it isn't queued. */
+export async function moveListen(bookId: string, to: number): Promise<{ position: number; from: number } | null> {
+  return inListen((tx) => moveListenIn(tx, bookId, to));
+}
+
+/** *Remove*: a hard delete of the queue row (a queue row is a note to yourself,
+ * data model 2.16), the books after it closing the gap. Answers the position it
+ * had, which its undo sends back; null when it wasn't queued. */
+export async function removeListen(bookId: string): Promise<number | null> {
+  return inListen((tx) => unqueueListen(tx, bookId));
+}
+
+/** *Remove*'s undo: the book comes back at `position`, so the order is exactly
+ * what it was. Null, writing nothing, for a missing or soft-deleted book. */
+export async function restoreListen(bookId: string, position: number): Promise<number | null> {
+  return inListen(async (tx) => {
+    if (!(await listenable(tx, bookId))) return null;
+    return restoreListenIn(tx, bookId, position);
+  });
 }
 
 /** A pasted line to create, unless the library has the same title and author by now. */

@@ -525,6 +525,19 @@ export const runQueue = pgTable("run_queue", {
   order: unique("run_queue_order").on(t.userId, t.ordinal),
 }));
 
+// The audiobooks you mean to listen to next, in order (task 5.14, F-59): the
+// same shape as run_queue (data model 2.16), with no user_id (D-91). The order
+// is authored, so it is stored, contiguous from 1, and written only through
+// the listen-queue helpers in src/db/writes.ts. The order's UNIQUE is
+// DEFERRABLE INITIALLY DEFERRED in the migration, which drizzle can't express.
+// A soft-deleted book keeps its row; every read filters it out (hard rule 4).
+export const listenQueue = pgTable("listen_queue", {
+  bookId: text("book_id").primaryKey().references(() => books.id, { onDelete: "cascade" }),
+  position: integer("position").notNull(),
+}, (t) => ({
+  order: unique("listen_queue_order").on(t.position),
+}));
+
 /* ------------------------------------------------------------------ *
  * Per-user settings and curation
  * ------------------------------------------------------------------ */
