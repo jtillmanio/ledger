@@ -1,7 +1,7 @@
 ---
 id: TASK-102
 title: 5.9 Series (2 of 2) — a page per series, its gap rows, and every series name links to it
-status: In progress
+status: Done
 depends_on: [TASK-101]
 size: M
 model: sonnet
@@ -20,7 +20,7 @@ Every series has a page of its own: its books in order with their status and dat
 ## Context
 
 - Roadmap: `docs/05-roadmap.md` § 5.9 Series page from `series_progress` (M17), the *Every series is a link, to a page of its own* bullet (2026-10-20 intake: *series are clickable*). Feature F-38. Its **Check:** is the contract.
-- **Split, 2 of 3** (owner, at plan, 2026-11-18: past 8 files, `workflow.splitPolicy: split`). TASK-101 built the list and the nav item. This part draws `/books/series/[id]` and links the list's rows to it. TASK-115 links every other series name (AC-4's first clause moved there) and **its merge ticks 5.9**.
+- **Split, 2 of 3** (owner, at plan, 2026-11-18: past 8 files, `workflow.splitPolicy: split`). TASK-101 built the list and the nav item. This part draws `/books/series/[id]` and links the list's rows to it. TASK-125 links every other series name (AC-4's first clause moved there) and **its merge ticks 5.9**.
 - **The page** lists the series' live books in `series_position` order, each with its status and dates (1.17's start and finish, as the Library's row shows them; `src/lib/format.ts`), and marks the next unread (the lowest position not read, derived). A position between 1 and `total_books` with no book in the catalog is a grey gap row (*#4 not in your library · Add*), which opens Add books (1.4c) with the series named (`/books/add` with the series in the query; the plan names the parameter, as `?shelf=` and `?q=` are today in `src/app/books/add/page.tsx`). A fractional position (*2.5*) is a book, never a gap. A missing or unknown id is a 404 page (`notFound()`).
 - **Links:** wherever the app prints a series name, it links here: a Library row (`src/app/books/list/page.tsx`, `bookSub`/`bookPlace` in `src/lib/format.ts`), the books dashboard's *where the book sits* and *the book's place* lines (2.2g, 2.2j: `src/components/WhereItSits.tsx`, `src/components/OnDeckRow.tsx`), and TASK-101's list rows; 3.5's sheet (TASK-079) when it lands.
 - **The follow control is this task's** (owner, at conversion, 2026-11-15). The roadmap disagrees with itself: 5.9's bullet says *5.11 adds the follow control to this page*, while 5.11's *Amended by the second 2026-11-02 intake (D-108)* says 2.2c built the control and *5.9 [places it] on the series page*. The owner chose the later amendment. This page places 2.2c's control (`src/components/FollowSheet.tsx`, `POST /api/follows`, `setFollow`) and builds none of its own: a `role="radiogroup"` *Reading · Tracking · Not following*, whose middle choice reads *On hold* on a part-read series (D-118), and *Not following* stores `off` (D-117, D-127). 5.11 (TASK-103) places the same control on the author and universe pages.
@@ -33,7 +33,7 @@ Every series has a page of its own: its books in order with their status and dat
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the row's link shows only that series' books, the gap row for #3, and a series name in a list row linking to its page, in the browser (0.11) on the test database. TASK-101 proves the list's counts, meter and next-unread line):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the row's link shows only that series' books, the gap row for #3, and a series name in a list row linking to its page, in the browser (0.11) on the test database. TASK-101 proves the list's counts, meter and next-unread line):
 a series with 3 of 5 books read renders `3 / 5` and a meter
 filled with `--ready`; one with NULL `total_books` counts its listed books;
 a soft-deleted book is not counted; the next-unread line names the
@@ -41,11 +41,11 @@ lowest-position unread book, and a complete series has none. The row's link
 shows only that series' books. A series holding positions 1, 2 and 4 of 4
 renders a gap row for #3, and a series name in a list row links to its
 page. Screenshot at 360px, 834px and 1280px.
-- [ ] AC-2: Given a series with books at positions 1 (read), 2 (reading) and 4 (no status) of a stated 4, its page lists #1, #2, a grey gap row for #3 and #4 in that order, each book with its status, and marks #4 as next unread (#2 is in hand, not unread: the plan confirms which the marker names).
-- [ ] AC-3: Pressing *Add* on the gap row opens Add books with the series named; a series with NULL `total_books` draws no gap rows; a soft-deleted book is absent and its position is a gap.
-- [ ] AC-4: `/books/series/<unknown>` renders the not-found page. (*A Library row's series name and the books dashboard's series line are links to `/books/series/<id>`* moved to TASK-115, owner at plan, 2026-11-18.)
-- [ ] AC-5: The `series` frame in `design/mockups.html` draws the series page with a gap row, the next unread marked and the follow control, and `design/mockups-index.md` names it (task 5.9). On a series page with no follow, choosing *Reading* writes one `series_follows` row `reading`, still checked after a reload; *Not following* stores `off`, and `series_progress.follow_state` reads NULL; each write's toast *Undo* puts back the prior state.
-- [ ] AC-6: The page meets the UX floor (`docs/04-design.md` § 10): a series with no live books draws an empty state with *Add a book*, loading skeletons, an error state; gap rows are grey and their *Add* is a real link with a name, ≥ 24px; contrast in light and dark; screenshots at 360px, 834px and 1280px.
+- [x] AC-2: Given a series with books at positions 1 (read), 2 (reading) and 4 (no status) of a stated 4, its page lists #1, #2, a grey gap row for #3 and #4 in that order, each book with its status, and marks #4 as next unread (#2 is in hand, not unread: the plan confirms which the marker names).
+- [x] AC-3: Pressing *Add* on the gap row opens Add books with the series named; a series with NULL `total_books` draws no gap rows; a soft-deleted book is absent and its position is a gap.
+- [x] AC-4: `/books/series/<unknown>` renders the not-found page. (*A Library row's series name and the books dashboard's series line are links to `/books/series/<id>`* moved to TASK-125, owner at plan, 2026-11-18.)
+- [x] AC-5: The `series` frame in `design/mockups.html` draws the series page with a gap row, the next unread marked and the follow control, and `design/mockups-index.md` names it (task 5.9). On a series page with no follow, choosing *Reading* writes one `series_follows` row `reading`, still checked after a reload; *Not following* stores `off`, and `series_progress.follow_state` reads NULL; each write's toast *Undo* puts back the prior state.
+- [x] AC-6: The page meets the UX floor (`docs/04-design.md` § 10): a series with no live books draws an empty state with *Add a book*, loading skeletons, an error state; gap rows are grey and their *Add* is a real link with a name, ≥ 24px; contrast in light and dark; screenshots at 360px, 834px and 1280px.
 
 ## Out of scope
 
@@ -72,18 +72,20 @@ page. Screenshot at 360px, 834px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The split's third part: every other series name links to its page (a Library row, *where the book sits*, the *On deck* rows, the book sheet's Series line), `series_id` on those rows, and TASK-101's open question on the Library's own Series section; its merge ticks 5.9 (approved at plan) → docs/tasks/TASK-115-series-name-links.md (created at plan), and `docs/06-tasklist.md`'s 5.9 row names it
-- A gap row's *Add* opens Search with the series named (`?q=`); By hand could open with Series and # filled from the gap (approved at plan) → docs/tasks/TASK-115-series-name-links.md § Context
+- The split's third part: every other series name links to its page (a Library row, *where the book sits*, the *On deck* rows, the book sheet's Series line), `series_id` on those rows, and TASK-101's open question on the Library's own Series section; its merge ticks 5.9 (approved at plan) → docs/tasks/TASK-125-series-name-links.md (created at plan), and `docs/06-tasklist.md`'s 5.9 row names it
+- A gap row's *Add* opens Search with the series named (`?q=`); By hand could open with Series and # filled from the gap (approved at plan) → docs/tasks/TASK-125-series-name-links.md § Context
+- `generate_series(1, total_books)` in `seriesPage` has no upper bound, so a mistyped stated total would build a large array (schema review, MINOR) → not tracked: stated totals come from Calibre or the owner and are small, and a cap would silently drop real gap rows
+- The not-found browser test also passes with no route (audit advisory); the query's null answer carries AC-4 → not tracked: the guard still catches a missing `notFound()`, and the page's other tests open a known id
 
 ## Plan
 
-Approved 2026-11-18 by the owner, with the split (TASK-102 is 2 of 3; TASK-115 is 3 of 3 and takes AC-4's first clause).
+Approved 2026-11-18 by the owner, with the split (TASK-102 is 2 of 3; TASK-125 is 3 of 3 and takes AC-4's first clause).
 
 ### Decisions at plan (owner, 2026-11-18)
 
 1. **Next unread** is TASK-101's rule (`seriesList`, its decision 3): the lowest-`series_position` live book (NULLS LAST, then title, then id) whose status is NULL, `to_read` or `unlisted`; a book in hand (reading, listening) or a DNF is skipped; a complete series has none. In AC-2 the marker names **#4**. It is drawn as a *Next up* tag on that row.
 2. **Gaps** are the whole numbers 1…`total_books` (the stated total) with no live book at exactly that position, derived in the query (`generate_series`), never stored. A fractional position (*2.5*) is a book row placed between #2 and #3, never a gap. A NULL stated total draws no gaps. A series with no live books draws the empty state (*Add a book*), no gap rows.
-3. **A gap's *Add*** is a link to `/books/add?q=<series name>`: the existing `?q=` (Search's starting text), so Add books opens with the series named and `src/app/books/add/page.tsx` needs no change. By hand filled from the gap is a follow-up (TASK-115).
+3. **A gap's *Add*** is a link to `/books/add?q=<series name>`: the existing `?q=` (Search's starting text), so Add books opens with the series named and `src/app/books/add/page.tsx` needs no change. By hand filled from the gap is a follow-up (TASK-125).
 4. **Status** is the search result's tag words (`placeTag` in `src/lib/format.ts`: *Q1 2027*, *Someday*, *Reading*, *Read*, *DNF*, *Unlisted*, *Not on your list*), with ✓ on read and ◐ in hand, glyph plus text (as `ShelfBooks`' rows). Dates are `bookDates` (1.17), as the Library row. The title links to the book (`bookHref`, the sheet over the page).
 5. **The follow control** is 2.2c's: `ShelfFollow`'s body moves to `FollowOptions.tsx` as `FollowControl` (any `Grouping`), and the shelf page uses it unchanged. No new writes: `POST /api/follows` through `useFollowChange`.
 
@@ -108,7 +110,7 @@ Approved 2026-11-18 by the owner, with the split (TASK-102 is 2 of 3; TASK-115 i
 - `design/mockups.html`, `design/mockups-index.md` — the `series` frames (`ui.redrawFiles`).
 - `docs/02-architecture.md` (not in *Files likely touched*) — the budget line.
 - `test/series-page.test.ts`, `test/series-list.test.tsx`, `test/e2e/series.spec.ts`, `test/query-budget.test.ts`.
-- Not touched (moved to TASK-115 or by decision 3): `src/app/books/list/page.tsx`, `src/lib/format.ts`, `src/components/WhereItSits.tsx`, `src/components/OnDeckRow.tsx`, `src/app/books/add/page.tsx`.
+- Not touched (moved to TASK-125 or by decision 3): `src/app/books/list/page.tsx`, `src/lib/format.ts`, `src/components/WhereItSits.tsx`, `src/components/OnDeckRow.tsx`, `src/app/books/add/page.tsx`.
 
 ### Test strategy
 
@@ -122,6 +124,8 @@ Approved 2026-11-18 by the owner, with the split (TASK-102 is 2 of 3; TASK-115 i
 
 ### Plan revisions after approval
 
+1. A new test file, `test/series-books.test.tsx` (markup tests for the page body, its loading and error states; the plan put them in the e2e spec and `series-list.test.tsx`). Noted at the checkpoint, not asked: a test file outside the Files list.
+
 ### Risks
 
 - The e2e data: series and books under E2E ids no other spec uses, removed after the last test, as TASK-101's spec does.
@@ -129,7 +133,7 @@ Approved 2026-11-18 by the owner, with the split (TASK-102 is 2 of 3; TASK-115 i
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (tsc, lint, test:no-e2e; w390-light series spec 26/26; floor and state tests also w768-light, w1280-light) | CI R1 PASS (check, tests, e2e full 8/8, Vercel; the Claude PR review job errored with the account's 5-hour limit, not a code gate) | Schema R1 APPROVE (3 MINOR: comment reworded and two edge-case tests added, 32/32; the optional generate_series cap not taken) | Audit R1 PASS (tests fail on main, pass on the branch; tree restored; one advisory on AC-4's browser test, covered by the query test) | Spec R1 not run (rate limit hit mid-review) | UI not run (rate limit; the browser spec covers axe, contrast, 24px targets, nothing red, no sideways scroll at 390, 768 and 1280, and screenshots were read) | Rebased on main (#290, #291) with no conflicts; renumbered TASK-115 to TASK-125 because main's #291 took TASK-115 for 1.31 | Owner accepted, 2026-11-18, with spec-reviewer and ui-verifier not having run; the preview walk at 360-412px is the owner's.
 
 ## Blocked
 
@@ -137,7 +141,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1 (PASS)
+- Review rounds: 1 (schema APPROVE; spec and UI not run)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 1

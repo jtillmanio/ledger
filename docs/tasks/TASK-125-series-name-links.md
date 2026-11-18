@@ -1,5 +1,5 @@
 ---
-id: TASK-115
+id: TASK-125
 title: 5.9 Series (3 of 3) — every series name in the app links to its page
 status: Draft
 depends_on: [TASK-102]
@@ -11,7 +11,7 @@ plan_status: none
 planned_at_commit:
 ---
 
-# TASK-115 — 5.9 Series (3 of 3) — every series name in the app links to its page
+# TASK-125 — 5.9 Series (3 of 3) — every series name in the app links to its page
 
 ## Goal
 
