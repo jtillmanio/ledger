@@ -1,7 +1,7 @@
 ---
 id: TASK-097
 title: 5.1 Shelves (3 of 3) — New shelf… in the add sheet's Shelf picker
-status: In progress
+status: Review
 depends_on: [TASK-095]
 size: S
 model: sonnet
@@ -30,14 +30,14 @@ When adding a book, you can put it on a shelf that doesn't exist yet: name the s
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves it end to end in the browser (0.11) on the test database):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves it end to end in the browser (0.11) on the test database):
 **Check (the new-shelf part):** *New shelf…* with a new name writes one
 `shelves` row and one `shelf_books` row; Undo leaves neither; a name
 already in use writes nothing and says why.
-- [ ] AC-2: Given the add sheet with a search result, when *Shelf…* → *New shelf…* is chosen, a name typed and the book added, then the toast names the new shelf, *Shelves* lists it with `0 / 1` (the book unread), and *Undo* removes both the book's place and the shelf from the list.
-- [ ] AC-3: Given a shelf named *Dark Tower* exists, typing *Dark Tower* in *New shelf…* and adding shows the refusal under the name field, focus stays in the field, and no `shelves` or `shelf_books` row is written.
-- [ ] AC-4: The `add` frame in `design/mockups.html` draws *New shelf…*, its name field and the refused name, and `design/mockups-index.md`'s `add` row names them (task 5.1).
-- [ ] AC-5: The add sheet meets the UX floor (`docs/04-design.md` § 10) for this control: the name field has a visible label, the refusal is announced (`aria-describedby` or a live region), targets ≥ 24px, contrast in light and dark, screenshots at 360px and 1280px.
+- [x] AC-2: Given the add sheet with a search result, when *Shelf…* → *New shelf…* is chosen, a name typed and the book added, then the toast names the new shelf, *Shelves* lists it with `0 / 1` (the book unread), and *Undo* removes both the book's place and the shelf from the list.
+- [x] AC-3: Given a shelf named *Dark Tower* exists, typing *Dark Tower* in *New shelf…* and adding shows the refusal under the name field, focus stays in the field, and no `shelves` or `shelf_books` row is written.
+- [x] AC-4: The `add` frame in `design/mockups.html` draws *New shelf…*, its name field and the refused name, and `design/mockups-index.md`'s `add` row names them (task 5.1).
+- [x] AC-5: The add sheet meets the UX floor (`docs/04-design.md` § 10) for this control: the name field has a visible label, the refusal is announced (`aria-describedby` or a live region), targets ≥ 24px, contrast in light and dark, screenshots at 360px and 1280px.
 
 ## Out of scope
 
@@ -61,7 +61,12 @@ already in use writes nothing and says why.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-None at plan (approved at plan).
+- Schema review R1 (two minors): a new shelf's name went through `text()`, which rewrote dashes, so the taken check could miss a shelf made by `POST /api/shelves`; no route test refused the undo once the new shelf gained a book → not tracked: done in this PR (review round 2)
+- A long shelf name pushed a result's *Year or quarter…* past its card at 360px (`.res-btns` didn't wrap; predates this task) → not tracked: done in this PR (plan revision 1)
+- Rebased onto task 5.7 (#287), which added a `release` destination to the same functions: POST takes both, DELETE keeps `release` and never takes `new_shelf`; the New shelf frame is the `add` screen's fifth, after 5.7's → not tracked: done in this PR (merge resolution)
+- test-auditor: "an empty or over-long name is a 400" also passes on the pre-task code (the unknown kind was a 400 already) → not tracked: kept as a regression guard
+- `shelfLabel` (`src/lib/book-add.ts`) repeats `shelfName` (`src/db/writes.ts`) because the browser can't import writes.ts; each names the other → not tracked: accepted as is (two lines, one rule)
+- ui-verifier stopped part-way (a usage limit) after the add and before its report; the dev database was checked through the app afterwards and holds no shelf from the walk → not tracked: its checklist was run by Claude instead (see Review log)
 
 ## Plan
 
@@ -157,7 +162,7 @@ removes the shelf with `newShelf`); this part wires it to the routes and the scr
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS | Spec R1 CHANGES (rebase onto #287 only; every AC PASS) · Schema R1 APPROVE (2 MINOR) → rebased, both minors fixed → Verify R2 PASS | Spec R2 APPROVE · Schema R2 APPROVE | Audit R1 PASS (one guard) | UI: ui-verifier stopped by a usage limit mid-walk; its checklist run by Claude, not independent: new-shelf.spec.ts @floor green in CI at every floor project (axe, contrast light and dark, 24px, no sideways scroll), the 360 and 1280 screenshots match the add frame, releases.spec.ts green (Coming out intact) | CI R1 not run (PR conflicted with #287) → CI R2 PASS (every project, 8 shards) | Vercel preview pass
 
 ## Blocked
 
@@ -165,7 +170,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
+- Verify rounds: 2
+- Review rounds: 2
+- First-pass AC FAILs: 0
 - Plan revisions after approval: 1 (`.res-btns` wraps)
