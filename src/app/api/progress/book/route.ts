@@ -5,7 +5,8 @@ import {
 } from "@/db/writes";
 import { finishOffer } from "@/db/queries";
 import { apiUserId, unauthorized } from "@/lib/auth";
-import { isFinish, resolveFinish, resolveStart } from "@/lib/finish-date";
+import { PLAN_PERIOD } from "@/lib/book-add";
+import { isDay, isFinish, resolveFinish, resolveStart } from "@/lib/finish-date";
 
 export const runtime = "nodejs";
 
@@ -129,13 +130,11 @@ function validFollow(f: unknown): boolean {
     && (prior === null || prior === "tracking");
 }
 
-const isDay = (d: unknown) => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d);
-
-/** A plan row a park took the book out of (task 5.15): a period and its place, a positive ordinal or none. */
+/** A plan row a park took the book out of (task 5.15): a plan period and its place, a positive ordinal or none. */
 function validPlanRow(p: unknown): boolean {
   if (typeof p !== "object" || p === null) return false;
   const { period, ordinal } = p as Record<string, unknown>;
-  return typeof period === "string" && period !== "" && (ordinal === null || isId(ordinal));
+  return typeof period === "string" && PLAN_PERIOD.test(period) && (ordinal === null || isId(ordinal));
 }
 
 function validChange(c: unknown): c is BookStatusChange {

@@ -312,7 +312,8 @@ export async function saveBookStatus(
  * back under a plan row it has gained since (task 1.21), or take the status
  * row of a book that had none, and has been planned since, out from under its
  * plan row (task 2.3), or put a park's plan rows back in a period the book is in
- * again since (task 5.15).
+ * again since, or put a book back to Parked under a plan row it has gained since
+ * (task 5.15).
  *
  * A park's undo (task 5.15) clears `parked_on` with the status, puts each plan
  * row back at its place (`restoreToPlan`, so the quarter reads exactly as
@@ -333,8 +334,9 @@ export async function undoBookStatus(userId: string, change: BookStatusChange, n
       .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookId)));
     if (now?.status !== status) return false;
     if (note && now.notes !== note.note) return false;
-    // Back to Unlisted, or to no row at all, under a plan row would leave a planned book off your list (tasks 1.21, 2.3).
-    if (prior === null || prior.status === "unlisted") {
+    // Back to Unlisted or Parked, or to no row at all, under a plan row would leave a planned book off your
+    // list (tasks 1.21, 2.3, 5.15): a Parked book is in no plan.
+    if (prior === null || prior.status === "unlisted" || prior.status === "parked") {
       const [planned] = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
         .where(and(eq(readingPlan.userId, userId), eq(readingPlan.bookId, bookId))).limit(1);
       if (planned) return false;

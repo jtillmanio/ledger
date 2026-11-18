@@ -208,6 +208,15 @@ describe("the day it was parked, and parked mid-read (AC-3)", () => {
     expect(await row("b")).toMatchObject({ status: "parked", parked_on: "2026-06-01" });
   });
 
+  it("refuses the undo of leaving parked, changing nothing, once the book has been planned since", async () => {
+    await park("b");
+    const { change } = await (await post({ bookId: "b", status: "to_read" })).json();
+    await sql`INSERT INTO reading_plan (user_id, book_id, period, ordinal) VALUES (${USER}, 'b', '2027-Q1', 1)`;
+    expect((await undo(change)).status).toBe(409);
+    expect(await row("b")).toMatchObject({ status: "to_read", parked_on: null });
+    expect(await q1()).toEqual(["b:1"]);
+  });
+
   it("the database refuses a parked_on on any other status, and a parked book with none", async () => {
     await expect(sql`UPDATE book_status SET parked_on = '2026-06-01' WHERE book_id = 'a'`).rejects.toThrow();
     await expect(sql`UPDATE book_status SET status = 'parked' WHERE book_id = 'a'`).rejects.toThrow();
@@ -253,10 +262,22 @@ describe("what parking refuses (AC-4)", () => {
   it("an undo whose unplanned isn't a list of plan rows is malformed: 400", async () => {
     await planThree();
     const change = await park("b");
-    for (const unplanned of ["2027-Q1", [{ period: 7, ordinal: 2 }], [{ period: "2027-Q1", ordinal: 0 }]]) {
+    for (const unplanned of [
+      "2027-Q1", [{ period: 7, ordinal: 2 }], [{ period: "2027-Q1", ordinal: 0 }], [{ period: "2027-Q5", ordinal: 2 }],
+      [{ period: "someday", ordinal: null }],
+    ]) {
       expect((await undo({ ...change, unplanned })).status).toBe(400);
     }
     expect((await row("b")).status).toBe("parked");
+  });
+
+  it("an undo of leaving parked whose parkedOn isn't a real day is malformed: 400", async () => {
+    await park("b");
+    const { change } = await (await post({ bookId: "b", status: "to_read" })).json();
+    for (const parkedOn of [null, "2026-02-30", "yesterday"]) {
+      expect((await undo({ ...change, prior: { ...change.prior, parkedOn } })).status).toBe(400);
+    }
+    expect((await row("b")).status).toBe("to_read");
   });
 });
 
