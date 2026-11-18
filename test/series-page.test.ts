@@ -167,7 +167,7 @@ describe("more read than the stated total (AC-3)", () => {
 });
 
 describe("what it never does (hard rules 2 and 4)", () => {
-  it("sends one query and writes nothing", async () => {
+  it("writes nothing (the one query in one wave is test/query-budget.test.ts's)", async () => {
     await series("one", "One", null, [{ id: "x1", pos: 1 }]);
     const before = await sql`SELECT (SELECT count(*) FROM book_status) AS s, (SELECT count(*) FROM books) AS b, (SELECT count(*) FROM book_series) AS r`;
     await q.seriesList(USER);
