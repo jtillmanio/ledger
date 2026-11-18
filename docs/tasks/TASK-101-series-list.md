@@ -1,14 +1,14 @@
 ---
 id: TASK-101
 title: 5.9 Series (1 of 2) — the Series list from series_progress, and the nav item
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: db59bb8
 ---
 
 # TASK-101 — 5.9 Series (1 of 2) — the Series list from series_progress, and the nav item
@@ -69,9 +69,54 @@ page. Screenshot at 360px, 834px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The Library's own Series section (`src/app/books/list/page.tsx`, the foot of `/books/list`, fed by `seriesProgress`) duplicates `/books/series` once it exists: keep it, cut it, or make it a link here? Open question for TASK-102's plan, which edits that file (approved at plan) → docs/tasks/TASK-102-series-page.md § Context
+- AC-6's *each row's link has the series' name* is proved by TASK-102, which links this task's rows (owner, at plan: the rows ship unlinked here) (approved at plan) → docs/tasks/TASK-102-series-page.md § Context
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-18 by the owner (*approve with recommendations*): the four open questions resolved as recommended, recorded under Decisions at plan below.
+
+### Decisions at plan (owner, 2026-11-18)
+
+1. **Rows ship unlinked**, with no chevron: `/books/series/[id]` is TASK-102's, and its Context says it links these rows (R1-06's spirit: nothing leads to a missing screen). AC-6's *each row's link has the series' name* is proved by TASK-102 (a note goes to its Context at close-out); this task's rows carry the series name as their visible heading.
+2. **Every series with at least one live book** is listed (`books_listed > 0`). `seriesProgress`'s `total_books > 1` filter is not used: it would hide a NULL-total series with one listed book, which the Check counts.
+3. **Next unread** is `follow_next`'s set: the lowest-`series_position` live book (position NULLS LAST, then title, then id) whose status is NULL, `to_read` or `unlisted`. A book being read or listened to is in hand, and a DNF is set aside: neither is named (as TASK-102 AC-2: *#2 is in hand, not unread*). A series that isn't complete but has no such book (the rest in hand, or not in your library) draws no next line.
+4. **The meter is `.meter`**, the list-row meter the Shelves rows and their mockup use, not `.emeter` (the roadmap's word; `.emeter` is styled only inside `.era` and `.now-where`). It fills with `--ready` (D-26).
+
+### Steps
+
+1. **Query** `seriesList(userId): Promise<SeriesSummary[]>` in `src/db/queries.ts` (new; `seriesProgress` stays as it is, because the Library's Series section reads it): one read of `series_progress` for the user, `books_listed > 0`, with a `LEFT JOIN LATERAL` for the next unread (`{ id, title, position }` or null) as in decision 3. Order: in progress (`0 < books_read < total_books`), then not started (`books_read = 0`), then complete (`books_read >= total_books`), each by `lower(name)`, then id. Counts cast to `int`. Derived in the query, never stored (hard rule 2); live books only (hard rule 4, through the view and the lateral's `deleted_at IS NULL`).
+2. **The list** `src/components/SeriesList.tsx` (new), modelled on `ShelfList`. A `<main className="series-page">` with *Series* as its h1 and a lede, then `<ul className="group series-rows" aria-label="Your series">`. Each `li.row.series-row`: `.rh` with the name (`.rt`) and `read / total` (`.rm.mono`); the author (`.rs`) when there is one; *Next up* + the title + `#n` in mono, when there is a next; *✓ All read* (the glyph `aria-hidden`) when complete; a `.meter` whose `<i>` width is `fillShare(read, total)` (from `WhereItSits`), so `4 / 3` draws full and the counts stay true. No link, no chevron (decision 1). Empty: `EmptySlate` titled *No series yet*, its one action *Add a book* (a link to `/books/add`).
+3. **The route** `src/app/books/series/page.tsx` (`force-dynamic`, metadata *Series · Ledger*, `requireUserId`, one query), `loading.tsx` (the head and four rows in `--sunk` bars at the loaded geometry, as Shelves' loading), `error.tsx` (neutral, not red: *Couldn't load your series. Nothing was changed.* and *Try again*). `src/app/globals.css`: `.series-*` rules beside the `.shelf-row` ones, tokens only (hard rule 6); one column at every width (no rail aside: there is no action).
+4. **Nav**: in `src/components/nav/items.ts`, `{ id: "books-series", label: "Series", href: "/books/series", icon: "book-marked", enabled: true, group: "medium", medium: "books" }` after Shelves, before Top; `book-marked` added to `IconName` and drawn in `src/components/nav/Icons.tsx` (Lucide's paths, neutral, used by no other item).
+5. **Mockup**: a `series` screen in `design/mockups.html`, after `shelves`: a 360px populated phone frame (part-read rows with *Next up*, a not-started row, a complete row with *✓ All read*, one `4 / 3` row with a full meter), a 360px empty frame (*No series yet · Add a book*), an 834px tablet frame (*Series* current on the rail) and a desktop frame (current in the sidebar), with a notes block (decisions 1–4). `design/mockups-index.md` gains its row (task 5.9).
+6. **Budget**: `/books/series` 1 query, 1 wave in `test/query-budget.test.ts` (BUDGET and its route list) and in `docs/02-architecture.md` § Performance budget (*`/books/series` 1 (task 5.9: every series with its counts and next unread)*).
+
+### Files
+
+- `src/db/queries.ts` — `seriesList` and `SeriesSummary`.
+- `src/components/SeriesList.tsx` (new) — the page body.
+- `src/app/books/series/page.tsx`, `loading.tsx`, `error.tsx` (new) — the route and its states (`error.tsx` is not in *Files likely touched*: the UX floor's error state, AC-6).
+- `src/app/globals.css` — the `.series-*` rules (not in *Files likely touched*).
+- `src/components/nav/items.ts`, `src/components/nav/Icons.tsx` — the item and its icon (`Icons.tsx` not in *Files likely touched*).
+- `design/mockups.html`, `design/mockups-index.md` — the `series` screen (`ui.redrawFiles`).
+- `docs/02-architecture.md` — the budget line (not in *Files likely touched*).
+- `test/series-page.test.ts` (new), `test/nav-items.test.tsx`, `test/e2e/series.spec.ts` (new), `test/query-budget.test.ts` (not in *Files likely touched*).
+
+### Test strategy
+
+- **AC-1** (this part): `test/series-page.test.ts` on `TEST_DATABASE_URL` — *3 of 5 read reads 3 / 5*; *a NULL total counts its listed books*; *a soft-deleted book is not counted*; *the next unread is the lowest-position unread book, skipping read, reading, listening and DNF*; *a complete series names none*; *a series with no live book is not listed*. `test/e2e/series.spec.ts` — the row renders `3 / 5`, its meter's fill computes to `--ready`, the next-unread line names the book and the complete row names none; screenshots at 360, 834 and 1280px.
+- **AC-2**: `test/series-page.test.ts` — *part-read, then not started, then complete, and the complete one has no next*; the e2e spec checks the rows' order on the page.
+- **AC-3**: `test/series-page.test.ts` — *a stated total of 3 with 4 read reads 4 / 3*; the e2e spec — the row reads `4 / 3` and the meter's fill width equals its track's.
+- **AC-4**: `test/nav-items.test.tsx` — *turns on Series (task 5.9): after Shelves, before Top, to /books/series, current there in every bar*; the icon is unique and in the sprite; `BOOKS_ITEMS` gains `books-series`.
+- **AC-5**: manual — the `series` frames in `design/mockups.html` and the index row (spec-reviewer reads them).
+- **AC-6**: `test/e2e/series.spec.ts` — the empty state (*No series yet*, *Add a book* links to `/books/add`), the loading skeleton's rows at the loaded row height, the error state rendered (`error.tsx` through `renderToStaticMarkup`: the alert and *Try again*), axe, text contrast light and dark, no sideways scroll, nothing red; screenshots at each `ui.viewports` width. The row-link clause → TASK-102 (decision 1).
+- `test/query-budget.test.ts` — `/books/series` sends 1 query in 1 wave.
+
+### Risks
+
+- **The e2e data**: series made under E2E ids no other spec uses, removed after the last test, as `shelves.spec.ts` does; the dev and test databases hold real series, so assertions find rows by name, never by index on the whole list.
+- **Long list**: every series renders (no cut); one query, server-rendered. If the screenshot run shows it slow, that's a follow-up, not a cut here.
 
 ## Review log
 
