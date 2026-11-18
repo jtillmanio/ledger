@@ -1,14 +1,14 @@
 ---
 id: TASK-108
 title: 5.15 Parked (1 of 4) — the parked status, out of the plan and the listen queue, with an exact Undo
-status: Ready
+status: In progress
 depends_on: [TASK-106]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 5c47fd7
 ---
 
 # TASK-108 — 5.15 Parked (1 of 4) — the parked status, out of the plan and the listen queue, with an exact Undo
@@ -72,9 +72,29 @@ dashboard or the review resolves to `--danger`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- An add flow's *Use that* into On deck or a quarter (`writeDestination`) keeps a status the book has, so a parked book added there would be planned and still parked, on no rail (approved at plan)
+- Candidate decision: `book_status.parked_on` with its CHECK, set exactly while `parked`; parking only from To read, Reading or Listening; every plan row out and back with the undo; the Owned filters list Parked books as they list Unlisted (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-18, with: `book_status.parked_on` **with** the CHECK `(parked_on IS NOT NULL) = (status = 'parked')`; the Owned filters (*Physical · Audiobook · Ebook*) list Parked books, as they list Unlisted (D-152).
+
+**Steps**
+
+1. `src/db/schema.ts`: `book_status.parked_on date` (nullable) and the CHECK; `npm run db:generate` writes migration 0033 and its meta. No down file: it only adds a column and a constraint.
+2. `src/db/writes.ts`: `parked` joins `BOOK_STATUSES`, `SETTABLE_STATUSES` and `LEAVES_LISTEN_QUEUE`.
+3. `saveBookStatus`: `parked` only from `to_read`, `reading` or `listening` (anything else, no status row included, throws `RefusedStatus`: 400, nothing written; a missing or removed book stays null, 404). Entering it stamps `parked_on` (today, Eastern), deletes every plan row of the book behind the plan lock (each quarter closes up) and answers them as `unplanned: [{ period, ordinal }]`; the listen queue's `unqueued` as 5.14 does. Every other status clears `parked_on`; `prior` carries `parkedOn`. The start is left on `book_status`.
+4. `undoBookStatus`: refuses up front when the book holds a plan row in an `unplanned` period; otherwise puts back status, start, `parked_on`, each plan row at its place (`restoreToPlan`) and the queue position.
+5. `src/app/api/progress/book/route.ts`: POST accepts `parked`; `validChange` checks `unplanned` and `prior.parkedOn` (both optional, for a change sent before 5.15).
+6. `src/db/queries.ts`: *Everything* and the genre chips leave Parked out as they leave Unlisted; a search and the Owned filters but *Not owned* list it; `status: 'parked'` lists exactly the parked books; `listCounts` gains `parked`. `librarySearch` already answers the status.
+7. `src/lib/parked.ts` (new): `isParkedMidRead(row)`: Parked with a start held on `book_status` (1.17), derived, never stored (D-105).
+8. Docs: `docs/03-data-model.md` § 4 a 5.15 row; `.claude/rules/schema.md` a Parked paragraph beside Unlisted (not in Files likely touched: it is the data-model rules' one home).
+
+**Files**: `src/db/schema.ts`, `drizzle/0033_*.sql`, `drizzle/meta/*`, `src/db/writes.ts`, `src/db/queries.ts`, `src/app/api/progress/book/route.ts`, `src/lib/parked.ts` (new, flagged), `docs/03-data-model.md`, `.claude/rules/schema.md` (flagged), `test/parked.test.ts` (new).
+
+**Test strategy** (`test/parked.test.ts`, one `describe` per AC): AC-1 the 2nd of 3 in 2027 Q1 parked and undone; absent from `to_read_level`, `plan_period`, `booksInFlight`, `booksUpNext`, `booksDone`, `planSuggestions`; under `listBooks({ status: 'parked' })` and in `librarySearch` with `status: 'parked'`; `series_progress` `1 / 2`. AC-2 a queued Listening book at 2 of 3. AC-3 `parked_on` written, cleared, gone after undo; `isParkedMidRead`. AC-4 the route's POST (400 per status, 404 missing and removed). AC-5 the three tabs, `planCapacity`, `planSuggestions`, `listBooks` and *Everything*, `listCounts`. Plus `npm run check:migrations`.
+
+**Risks**: lock order (book row, then plan lock, then listen lock: no plan path may take the plan lock and then a book row); a `parked` status shown by a screen before TASK-109 draws it (only a search hit or an unreachable filter can).
 
 ## Review log
 

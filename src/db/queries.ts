@@ -550,7 +550,10 @@ export type OwnedKind = Exclude<OwnedFilter, "none">;
  * is a `calibre_id`, `none` is none of the three; anything else filters nothing.
  * Physical, Audiobook and Ebook list Unlisted books too, as a search does (they
  * are books you have); Not owned leaves them out, as *Everything* does (owner, at
- * TASK-092's plan gate). */
+ * TASK-092's plan gate). A Parked book (task 5.15, D-105) is listed as an
+ * Unlisted one is: under `status: "parked"`, its own chip, a search and the
+ * three owned filters, never *Everything*, a genre chip or Not owned (owner, at
+ * TASK-108's plan gate). */
 export async function listBooks(
   userId: string,
   opts: {
@@ -633,8 +636,9 @@ export async function listBooks(
       -- The Reading chip is every read in progress, by eye or by ear (task 1.23).
       AND (${status}::text IS NULL OR COALESCE(st.status,'to_read') = ${status}
            OR (${status} = 'reading' AND st.status = 'listening'))
+      -- Unlisted and Parked are off your list (tasks 1.21, 5.15): only their chip, a search or an owned filter lists them.
       AND (${status}::text IS NOT NULL OR ${q}::text IS NOT NULL OR ${ownedHasUnlisted}::boolean
-           OR st.status IS DISTINCT FROM 'unlisted')
+           OR st.status IS NULL OR st.status NOT IN ('unlisted', 'parked'))
       AND (${genre}::text  IS NULL
            OR EXISTS (SELECT 1 FROM book_genre_levels l
                       WHERE l.book_id = b.id AND lower(l.genre COLLATE "default") = lower(${genre})))
@@ -1067,21 +1071,26 @@ export type GenreChip = { genre: string; books: number };
  * top-level genres of the books *Everything* lists, from `book_genre_levels`
  * (task 4.5, D-98: Calibre's; a book with none makes no chip), most books first, one chip
  * per genre whatever its case. An Unlisted book makes no chip, as the genre
- * filter would not list it.
+ * filter would not list it. `parked` (task 5.15) counts the live Parked books,
+ * for TASK-109's *Parked · N* chip; a Parked book makes no genre chip either.
  */
-export async function listCounts(userId: string): Promise<{ unlisted: number; genres: GenreChip[] }> {
-  const [row] = await sql<{ unlisted: number; genres: GenreChip[] }[]>`
+export async function listCounts(userId: string): Promise<{ unlisted: number; parked: number; genres: GenreChip[] }> {
+  const [row] = await sql<{ unlisted: number; parked: number; genres: GenreChip[] }[]>`
     SELECT
       (SELECT COUNT(*)::int
        FROM book_status st
        JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
        WHERE st.user_id = ${userId} AND st.status = 'unlisted') AS unlisted,
+      (SELECT COUNT(*)::int
+       FROM book_status st
+       JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
+       WHERE st.user_id = ${userId} AND st.status = 'parked') AS parked,
       (SELECT COALESCE(json_agg(json_build_object('genre', c.genre, 'books', c.books)
                                 ORDER BY c.books DESC, lower(c.genre COLLATE "default"), c.genre), '[]'::json)
        FROM (SELECT min(l.genre) AS genre, COUNT(DISTINCT l.book_id)::int AS books
              FROM book_genre_levels l
              LEFT JOIN book_status st ON st.book_id = l.book_id AND st.user_id = ${userId}
-             WHERE l.depth = 1 AND st.status IS DISTINCT FROM 'unlisted'
+             WHERE l.depth = 1 AND (st.status IS NULL OR st.status NOT IN ('unlisted', 'parked'))
              GROUP BY lower(l.genre COLLATE "default")) c) AS genres
   `;
   return row;

@@ -15,10 +15,13 @@ import { evenQuarters } from "@/lib/plan-rail";
 import { DEFAULT_SETTINGS, wordsPerYear, type ReadingSettings, type SettingsPatch } from "@/lib/settings";
 
 /** Every `book_status.status` value. `unlisted` is the level below Someday (task 1.21, D-86): a
- * book you have but haven't put on your list. `listening` is Reading by ear (task 1.23, D-85). */
-export const BOOK_STATUSES = ["to_read", "reading", "listening", "read", "dnf", "unlisted"] as const;
+ * book you have but haven't put on your list. `listening` is Reading by ear (task 1.23, D-85).
+ * `parked` is put away on purpose (task 5.15, D-105): not now, but not gone. */
+export const BOOK_STATUSES = ["to_read", "reading", "listening", "read", "dnf", "unlisted", "parked"] as const;
 /** What a status write may set: never `unlisted`, which only an undo puts back (D-86). */
-export const SETTABLE_STATUSES = ["to_read", "reading", "listening", "read", "dnf"] as const;
+export const SETTABLE_STATUSES = ["to_read", "reading", "listening", "read", "dnf", "parked"] as const;
+/** The statuses a book may be parked from (task 5.15): on your list, not finished or given up. */
+export const PARKS_FROM: readonly string[] = ["to_read", "reading", "listening"];
 /** A read in progress (task 1.23): one state at a time, by eye or by ear. Each
  * carries the start (1.17), and switching between them keeps it. */
 export const IN_PROGRESS: readonly string[] = ["reading", "listening"];
@@ -58,6 +61,8 @@ export type BookStatusChange = {
   prior: {
     status: string; finishedOn: string | null; precision: Precision;
     startedOn: string | null; startPrecision: Precision;
+    /** The day it was parked (task 5.15), set exactly when `status` is `parked`; missing from a change sent before 5.15. */
+    parkedOn?: string | null;
   } | null;
   /** The read_events row this write appended. */
   appended: number | null;
@@ -77,6 +82,9 @@ export type BookStatusChange = {
   /** The listen-queue position this write took the book off (task 5.14): entering Listening,
    * Read or DNF unqueues it. Null when it wasn't queued; missing from a change sent before 5.14. */
   unqueued?: number | null;
+  /** The plan rows a park took the book out of (task 5.15), each with its place, which the undo
+   * puts back; empty for any other write, missing from a change sent before 5.15. */
+  unplanned?: PlanPrior[];
 };
 
 /** One follow a finish set to `reading`, and what it was before (task 2.2h). */
@@ -148,6 +156,15 @@ const asFinish = (d: { finishedOn: string | null; precision: Precision }) =>
  * 5.14) in this transaction, the books after it closing the gap; `unqueued` is
  * the position it had, and the undo puts it back there.
  *
+ * Parking (task 5.15, D-105) is only for a book To read, Reading or Listening
+ * (`PARKS_FROM`); any other, a book with no status row included, throws
+ * `RefusedStatus` and nothing is written. It stamps `parked_on` with today,
+ * Eastern, and takes the book out of every plan row it has behind the plan lock,
+ * each quarter closing up (`unplanned` holds each row's place for the undo), and
+ * off the listen queue. The start stays on `book_status`, so a book parked mid-read
+ * says so (`isParkedMidRead`) and picks up its read where it left it. Every other
+ * status clears `parked_on`.
+ *
  * Answers null for a book that is missing or removed; otherwise the change, the
  * start this write left on the read in progress or the read (`start`), and the
  * book's note, which no status write changes (`note`; task 5.5's closing card
@@ -168,8 +185,13 @@ export async function saveBookStatus(
       .select({
         status: bookStatus.status, finishedOn: bookStatus.finishedOn, precision: bookStatus.finishedOnPrecision,
         startedOn: bookStatus.startedOn, startPrecision: bookStatus.startedOnPrecision, notes: bookStatus.notes,
+        parkedOn: bookStatus.parkedOn,
       })
       .from(bookStatus).where(mine);
+    // Parked is put away from your list (task 5.15): never a book finished, given up, Unlisted or with no status.
+    if (status === "parked" && !(before && PARKS_FROM.includes(before.status))) {
+      throw new RefusedStatus("only a book to read, reading or listening can be parked");
+    }
     // The start of the read in progress, if one is held.
     const held: Finish | null = before && before.startPrecision !== "none"
       ? { on: before.startedOn, precision: before.startPrecision as Precision } : null;
@@ -234,9 +256,21 @@ export async function saveBookStatus(
       ...(status === "read" && NO_START),
       ...(inProgress && asStart(kept)),
       ...(rating !== undefined && { rating }),
+      // Set exactly while Parked (task 5.15, its CHECK): stamped on entering it, cleared on leaving it.
+      parkedOn: status === "parked" ? today(now) : null,
     };
     await tx.insert(bookStatus).values({ userId, bookId, ...set })
       .onConflictDoUpdate({ target: [bookStatus.userId, bookStatus.bookId], set });
+    // Parking takes the book out of its plan (task 5.15): every row, each quarter closing up, kept for the undo.
+    let unplanned: PlanPrior[] = [];
+    if (status === "parked") {
+      unplanned = await inPlan(userId, tx, async () => {
+        const rows = await tx.select({ period: readingPlan.period, ordinal: readingPlan.ordinal }).from(readingPlan)
+          .where(and(eq(readingPlan.userId, userId), eq(readingPlan.bookId, bookId))).orderBy(readingPlan.period);
+        await moveToSomeday(userId, bookId, tx);
+        return rows;
+      });
+    }
     // A finish in the app follows what the book belongs to (task 2.2h, D-117): only a
     // read appended from Reading or Listening, never a past read logged from To read.
     const follows = appended !== null && before && IN_PROGRESS.includes(before.status)
@@ -252,9 +286,9 @@ export async function saveBookStatus(
       bookId, status,
       prior: before ? {
         status: before.status, finishedOn: before.finishedOn, precision: before.precision as Precision,
-        startedOn: before.startedOn, startPrecision: before.startPrecision as Precision,
+        startedOn: before.startedOn, startPrecision: before.startPrecision as Precision, parkedOn: before.parkedOn,
       } : null,
-      appended, format, edited, backfilled, follows, unqueued,
+      appended, format, edited, backfilled, follows, unqueued, unplanned,
       start: status === "read" || inProgress ? kept : held ?? kept,
       // A status write leaves the note alone: the closing card opens on it (task 5.5).
       note: before?.notes ?? null,
@@ -277,7 +311,13 @@ export async function saveBookStatus(
  * ranked since (task 3.4b: its year would keep a gap), or it would put an Unlisted book
  * back under a plan row it has gained since (task 1.21), or take the status
  * row of a book that had none, and has been planned since, out from under its
- * plan row (task 2.3).
+ * plan row (task 2.3), or put a park's plan rows back in a period the book is in
+ * again since (task 5.15).
+ *
+ * A park's undo (task 5.15) clears `parked_on` with the status, puts each plan
+ * row back at its place (`restoreToPlan`, so the quarter reads exactly as
+ * before) and the book back on the listen queue; the undo of leaving Parked
+ * puts its `parked_on` back.
  *
  * `note` (task 5.5): the reason the closing card wrote after a DNF, as
  * `saveBookNote` answered it. Its earlier note comes back in this transaction,
@@ -285,7 +325,7 @@ export async function saveBookStatus(
  * changed since refuses the whole undo. It must be the same book's.
  */
 export async function undoBookStatus(userId: string, change: BookStatusChange, note?: NoteChange): Promise<boolean> {
-  const { bookId, status, prior, appended, edited, backfilled, follows = [], unqueued = null } = change;
+  const { bookId, status, prior, appended, edited, backfilled, follows = [], unqueued = null, unplanned = [] } = change;
   if (note && note.bookId !== bookId) throw new Error("undoBookStatus: the note is another book's");
   return db.transaction(async (tx) => {
     if (!(await lockBook(tx, bookId))) return false;
@@ -298,6 +338,13 @@ export async function undoBookStatus(userId: string, change: BookStatusChange, n
       const [planned] = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
         .where(and(eq(readingPlan.userId, userId), eq(readingPlan.bookId, bookId))).limit(1);
       if (planned) return false;
+    }
+    // A park's plan rows go back only to periods the book isn't in again (task 5.15).
+    if (unplanned.length > 0) {
+      const [again] = await tx.select({ bookId: readingPlan.bookId }).from(readingPlan)
+        .where(and(eq(readingPlan.userId, userId), eq(readingPlan.bookId, bookId),
+          inArray(readingPlan.period, unplanned.map((p) => p.period)))).limit(1);
+      if (again) return false;
     }
     const touched = appended ?? edited?.id ?? backfilled ?? null;
     if (touched !== null && (await latestRead(tx, userId, bookId))?.id !== touched) return false;
@@ -329,7 +376,7 @@ export async function undoBookStatus(userId: string, change: BookStatusChange, n
       await tx.update(bookStatus)
         .set({
           status: prior.status, finishedOn: prior.finishedOn, finishedOnPrecision: prior.precision,
-          startedOn: prior.startedOn, startedOnPrecision: prior.startPrecision,
+          startedOn: prior.startedOn, startedOnPrecision: prior.startPrecision, parkedOn: prior.parkedOn ?? null,
         })
         .where(mine);
     } else {
@@ -337,7 +384,8 @@ export async function undoBookStatus(userId: string, change: BookStatusChange, n
         .where(and(mine, isNull(bookStatus.rating), isNull(bookStatus.notes)))
         .returning({ bookId: bookStatus.bookId });
       if (gone.length === 0) {
-        await tx.update(bookStatus).set({ status: "to_read", finishedOn: null, finishedOnPrecision: "none", ...NO_START })
+        await tx.update(bookStatus)
+          .set({ status: "to_read", finishedOn: null, finishedOnPrecision: "none", ...NO_START, parkedOn: null })
           .where(mine);
       }
     }
@@ -352,6 +400,12 @@ export async function undoBookStatus(userId: string, change: BookStatusChange, n
       if (current?.state !== "reading") continue;
       if (f.prior === null) await row.drop();
       else await row.put(f.prior);
+    }
+    // Back in the plan where it was (task 5.15): the books from its place on move down one.
+    if (unplanned.length > 0) {
+      await inPlan(userId, tx, async () => {
+        for (const p of unplanned) await restoreToPlan(userId, bookId, p.period, p.ordinal, tx);
+      });
     }
     // Back on the listen queue where it was (task 5.14), moved there if it was queued again since.
     if (unqueued !== null) {
@@ -1849,8 +1903,9 @@ async function restoreListenIn(tx: Tx, bookId: string, position: number): Promis
 }
 
 /** The statuses that take a queued book off the listen queue on entering them
- * (owner, TASK-106's plan gate): starting the listen, finishing, giving up. */
-export const LEAVES_LISTEN_QUEUE: readonly string[] = ["listening", "read", "dnf"];
+ * (owner, TASK-106's plan gate): starting the listen, finishing, giving up, and
+ * parking it (task 5.15). */
+export const LEAVES_LISTEN_QUEUE: readonly string[] = ["listening", "read", "dnf", "parked"];
 
 export type ListenQueued = { position: number; added: boolean };
 
