@@ -1,7 +1,7 @@
 ---
 id: TASK-101
 title: 5.9 Series (1 of 2) — the Series list from series_progress, and the nav item
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: sonnet
@@ -31,7 +31,7 @@ A *Series* page lists every series you have books in, with how far through it yo
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the counts, the meter, the NULL total, the soft delete, the next-unread line and the screenshots of the list, on the test database and in the browser (0.11). TASK-102 proves the row's link, the gap row and a series name's link):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the counts, the meter, the NULL total, the soft delete, the next-unread line and the screenshots of the list, on the test database and in the browser (0.11). TASK-102 proves the row's link, the gap row and a series name's link):
 a series with 3 of 5 books read renders `3 / 5` and a meter
 filled with `--ready`; one with NULL `total_books` counts its listed books;
 a soft-deleted book is not counted; the next-unread line names the
@@ -39,11 +39,11 @@ lowest-position unread book, and a complete series has none. The row's link
 shows only that series' books. A series holding positions 1, 2 and 4 of 4
 renders a gap row for #3, and a series name in a list row links to its
 page. Screenshot at 360px, 834px and 1280px.
-- [ ] AC-2: Given one series part-read, one with nothing read and one complete, the page lists them in that order, and the complete one names no next book.
-- [ ] AC-3: Given a series with a stated `total_books` of 3 and 4 live books read, its row reads `4 / 3` and its meter is full, not overflowing.
-- [ ] AC-4: *Series* shows under Books in the tab row, the rail and the sidebar, current on `/books/series`.
-- [ ] AC-5: `design/mockups.html` gains the `series` screen at phone, tablet and desktop with its empty state, and `design/mockups-index.md` lists it (task 5.9).
-- [ ] AC-6: The page meets the UX floor (`docs/04-design.md` § 10): the empty state (*No series yet* with *Add a book*), loading skeletons at the loaded size, an error state; text contrast in light and dark; each row's link has the series' name; screenshots at each `ui.viewports` width.
+- [x] AC-2: Given one series part-read, one with nothing read and one complete, the page lists them in that order, and the complete one names no next book.
+- [x] AC-3: Given a series with a stated `total_books` of 3 and 4 live books read, its row reads `4 / 3` and its meter is full, not overflowing.
+- [x] AC-4: *Series* shows under Books in the tab row, the rail and the sidebar, current on `/books/series`.
+- [x] AC-5: `design/mockups.html` gains the `series` screen at phone, tablet and desktop with its empty state, and `design/mockups-index.md` lists it (task 5.9).
+- [x] AC-6: The page meets the UX floor (`docs/04-design.md` § 10): the empty state (*No series yet* with *Add a book*), loading skeletons at the loaded size, an error state; text contrast in light and dark; each row's link has the series' name; screenshots at each `ui.viewports` width.
 
 ## Out of scope
 
@@ -71,6 +71,10 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 - The Library's own Series section (`src/app/books/list/page.tsx`, the foot of `/books/list`, fed by `seriesProgress`) duplicates `/books/series` once it exists: keep it, cut it, or make it a link here? Open question for TASK-102's plan, which edits that file (approved at plan) → docs/tasks/TASK-102-series-page.md § Context
 - AC-6's *each row's link has the series' name* is proved by TASK-102, which links this task's rows (owner, at plan: the rows ship unlinked here) (approved at plan) → docs/tasks/TASK-102-series-page.md § Context
+- `test/e2e/shelves.spec.ts` › *a description is written in place* reloaded before the save landed and failed in CI twice on this branch (the new series spec moved it to shard 3/8) and locally on main's code; it now waits for the stored description → not tracked: done in this PR (plan revision)
+- The page renders every series at once (751 in the dev data, rows 104px tall); one query, server-rendered, not measured slow, and the plan's risk said to follow up only if a run shows it slow → not tracked: informational, no measurement shows it slow (revisit if Lighthouse or the budget flags `/books/series`)
+- A part-read series whose remaining books are all in hand or set aside draws no *Next up* line (*A Song of Ice and Fire*, 5 / 7, in the dev data), by plan decision 3 → not tracked: accepted as designed (owner, at plan)
+- `seriesList` treats a stated `total_books` of 0 as complete with a 0 / 0 meter (schema review, MINOR); it renders safely and the data was not checked for one → not tracked: corner case, guard `books_read >= total_books AND total_books > 0` if a 0 ever appears
 
 ## Plan
 
@@ -113,6 +117,12 @@ Approved 2026-11-18 by the owner (*approve with recommendations*): the four open
 - **AC-6**: `test/e2e/series.spec.ts` — the empty state (*No series yet*, *Add a book* links to `/books/add`), the loading skeleton's rows at the loaded row height, the error state rendered (`error.tsx` through `renderToStaticMarkup`: the alert and *Try again*), axe, text contrast light and dark, no sideways scroll, nothing red; screenshots at each `ui.viewports` width. The row-link clause → TASK-102 (decision 1).
 - `test/query-budget.test.ts` — `/books/series` sends 1 query in 1 wave.
 
+### Plan revisions after approval
+
+1. **`test/series-list.test.tsx` added** (not in the plan's files): the empty state, the row markup, the skeleton and the error state in vitest, as `shelves-page.test.tsx` does for Shelves. The e2e spec draws the empty and error states in place too.
+2. **`test/e2e/shelves.spec.ts` changed** (not in the plan's files): CI's browser suite failed twice on a race in an existing test, *a description is written in place*, which reloaded before the save landed. It now waits for the stored description (`descriptionOf`). Done under the CI-fix rule and reported to the owner, with no reply before the push.
+3. **`.series-row .sk` is `vertical-align:top`** (the plan said *at the loaded geometry*): the skeleton rows were 2.06px taller than the loaded ones with the shared middle alignment.
+
 ### Risks
 
 - **The e2e data**: series made under E2E ids no other spec uses, removed after the last test, as `shelves.spec.ts` does; the dev and test databases hold real series, so assertions find rows by name, never by index on the whole list.
@@ -120,7 +130,7 @@ Approved 2026-11-18 by the owner (*approve with recommendations*): the four open
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (after rerunning from `C:\`: the first run's lowercase drive made every vitest file fail to find the runner) | CI R1 FAIL (`shelves.spec.ts:205`, w390-light, shard 3/8: an existing test's race) → R2 FAIL (same test, 9da2ef5, comment-only change) → fixed in 8ec357c | Verify R2 PASS | Audit R1 PASS | Schema R1 APPROVE (2 MINOR: the doc comment reworded; `total_books = 0` left, see Follow-ups) | Spec R1 not run by the agent (weekly rate limit, resets Nov 21): the session ran the spec-reviewer's checklist itself, not independent: ACs against tests, hard rules 2–7 against the diff, scope against the plan → APPROVE | UI R1 PASS (AC-3, the empty, loading and error states are unreachable on the dev data and are proved by the tests; AC-5 read against the mockup) | CI R3 pending on 8ec357c and the close-out.
 
 ## Blocked
 
@@ -128,7 +138,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (the first run's lowercase-drive failure not counted)
+- Review rounds: 1 (schema APPROVE, UI PASS, spec self-check; spec-reviewer agent unavailable)
+- First-pass AC FAILs: 0 (one test-data slip in `series-page.test.ts` and two spec fixes found by the first runs, before any reviewer)
+- Plan revisions after approval: 3
