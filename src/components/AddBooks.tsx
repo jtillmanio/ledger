@@ -8,10 +8,11 @@ import BookSearch, { authorList, pickKey, type Outcome, type Pick } from "@/comp
 import ByHand from "@/components/ByHand";
 import PasteBooks, { AFTER_ADD } from "@/components/PasteBooks";
 import type { PickerBook, Verb } from "@/components/PlanPicker";
+import ReleaseDate, { NO_RELEASE, releaseDateOf, type ReleaseValue } from "@/components/ReleaseDate";
 import Sheet, { useSheetClose } from "@/components/Sheet";
 import { useUndo } from "@/components/Undo";
 import type { AddBookResult, AddedEntry, HandItem } from "@/db/writes";
-import { destinationOf, OWNED_CHOICES, OWNED_NAMES, targetName, undoAdd, type Target } from "@/lib/book-add";
+import { COMING_OUT, destinationOf, OWNED_CHOICES, OWNED_NAMES, targetName, undoAdd, type Target } from "@/lib/book-add";
 
 // Loaded on the first *Year or quarter…*, as the Library row's *Plan for…* loads it: every page with an
 // Add button carries Add books, and none of them should carry the picker until it opens (perf budget).
@@ -43,6 +44,8 @@ const targetOf = (to: string): Target => (to === "someday" ? { kind: "someday" }
 
 const STATUS: Record<string, string> = {
   to_read: "on your to-read list", reading: "reading", listening: "listening", read: "read", dnf: "did not finish",
+  // A book you have but haven't listed (task 1.21): *Coming out* leaves it as it is, and says so (task 5.7).
+  unlisted: "Unlisted",
 };
 
 /**
@@ -50,7 +53,9 @@ const STATUS: Record<string, string> = {
  * Paste a list · By hand*, Search first, then **Add to**, which names where a
  * book goes before you look for it. Someday is the default; *On deck* (task
  * 1.7) puts a to-read book next in line, with no year; a shelf is chosen
- * through *Shelf…*, or arrives chosen from a shelf's *+ Add to shelf*.
+ * through *Shelf…*, or arrives chosen from a shelf's *+ Add to shelf*. *Coming
+ * out* (task 5.7; Search and By hand, one book and one date) adds a book you're
+ * waiting for, with its release date or *No date yet*, to `/books/releases`.
  * *Year or quarter…* (2.3) opens the plan picker, which sets the target (a year, a
  * quarter, On deck or Someday); a result's own *Year or quarter…* opens it for that
  * one book and adds it there. In a sheet the picker is a step swapped inside the same
@@ -92,6 +97,9 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
   const [failed, setFailed] = useState<string | null>(null);
   // *Add it by hand* carries the search over: a new key remounts the form with it.
   const [hand, setHand] = useState({ key: 0, title: "" });
+  /** *Coming out*'s date (task 5.7), kept while you switch destinations; `releaseError` is the refusal under it. */
+  const [release, setRelease] = useState<ReleaseValue>(NO_RELEASE);
+  const [releaseError, setReleaseError] = useState(false);
   const router = useRouter();
   const { push, notify } = useUndo();
 
@@ -103,10 +111,14 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
     setPicker({ phase: "closed" });
   }
 
-  /** A format you own is *Paste a list*'s alone (task 5.17; Search and By hand are 5.17b): leaving it goes back to Someday. */
+  /**
+   * A format you own is *Paste a list*'s alone (task 5.17; Search and By hand are 5.17b), and *Coming out*
+   * Search's and By hand's (task 5.7): leaving for the other side goes back to Someday.
+   */
   function switchTo(next: Mode) {
     setMode(next);
     if (next !== "paste" && target.kind === "owned") choose({ kind: "someday" });
+    if (next === "paste" && target.kind === "release") choose({ kind: "someday" });
   }
 
   const stepHeading = (what: Step) => (what.what === "target" ? "Year or quarter" : what.pick.book.title);
@@ -156,8 +168,10 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
     const fromNote = resolved == null ? "" : " · inbox note resolved";
     const where = targetName(goes);
     if (created.length + added.length === 0) {
-      notify("Already in your library",
-        `${title} · ${goes.kind === "shelf" ? `already on ${where}` : STATUS[status ?? ""] ?? "kept as it was"}${fromNote}`);
+      // A book with a release keeps it, and one with a status isn't wanted: either way nothing was written (task 5.7).
+      const kept = goes.kind === "shelf" || (goes.kind === "release" && status === null) ? `already on ${where}`
+        : STATUS[status ?? ""] ?? "kept as it was";
+      notify("Already in your library", `${title} · ${kept}${fromNote}`);
       return;
     }
     const entry: AddedEntry = {
@@ -179,10 +193,18 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
   /** One add. `goes` is where it goes: the Add to target, or the level a result's own picker chose. */
   async function send(item: unknown, key?: string, goes: Target = target): Promise<Added | null> {
     setFailed(null);
+    // *Coming out* needs its date, or *No date yet*: refused under the field, with focus there, sending nothing.
+    const date = goes.kind === "release" ? releaseDateOf(release) : null;
+    if (date === undefined) {
+      setReleaseError(true);
+      document.getElementById("release-date")?.focus();
+      return null;
+    }
+    setReleaseError(false);
     try {
       const res = await fetch("/api/books", {
         method: "POST", headers: { "content-type": "application/json" },
-        body: JSON.stringify({ item, destination: destinationOf(goes), ...(noteId !== null && { note: noteId }) }),
+        body: JSON.stringify({ item, destination: destinationOf(goes, date), ...(noteId !== null && { note: noteId }) }),
       });
       if (res.status === 409) {
         setFailed("That book or shelf is gone. Nothing was written; search again.");
@@ -297,6 +319,11 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
           aria-expanded={picker.phase !== "closed"} aria-controls="addto-shelves" onClick={openPicker}>
           {target.kind === "shelf" ? target.name : "Shelf…"}
         </button>
+        {/* A book you're waiting for (task 5.7, D-35): one book and one date, so not *Paste a list*'s (owner, TASK-100). */}
+        {mode !== "paste" && (
+          <button type="button" className="chip" aria-pressed={target.kind === "release"}
+            onClick={() => choose({ kind: "release" })}>{COMING_OUT}</button>
+        )}
         {/* What you own (task 5.17, D-132): a paste marks each book, creating a new one Unlisted. */}
         {mode === "paste" && OWNED_CHOICES.map((format) => (
           <button key={format} type="button" className="chip"
@@ -324,6 +351,11 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
           </div>
         ))}
       </div>
+
+      {target.kind === "release" && (
+        <ReleaseDate value={release} error={releaseError}
+          onChange={(next) => { setRelease(next); setReleaseError(false); }} />
+      )}
 
       {failed && <p className="neutral-error add-failed" role="alert"><span aria-hidden="true">×</span> {failed}</p>}
 

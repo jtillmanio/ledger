@@ -134,3 +134,142 @@ test("Got it removes the row with no reload and writes one to_read row; Undo bri
   await expect.poll(() => statusRows(E2E_RELEASE_OUT_ID)).toEqual([]);
   expect(await page.evaluate(() => (window as unknown as { stayed?: boolean }).stayed)).toBe(true);
 });
+
+// Task 5.7, 2 of 2 (TASK-100): the add sheet's Coming out destination, and the dashboard's line.
+const ADDED_TITLE = "TASK-100 Waiting Book";
+
+/** The Eastern day (D-67), and the 15th of the month after it: *next month*, as AC-2 says. */
+function easternDays() {
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "America/New_York" }).format(new Date());
+  const [y, m] = today.split("-").map(Number);
+  const next = m === 12 ? `${y + 1}-01-15` : `${y}-${String(m + 1).padStart(2, "0")}-15`;
+  const heading = new Date(`${next}T12:00:00Z`).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+  return { today, next, heading };
+}
+
+/** The book the add test makes, gone whatever happened (test database only). */
+async function dropAdded() {
+  const sql = testSql();
+  try {
+    await sql`DELETE FROM books WHERE title = ${ADDED_TITLE}`;
+  } finally {
+    await sql.end();
+  }
+}
+
+/** Add books' full page on By hand, with Coming out chosen. */
+async function comingOutByHand(page: Page) {
+  await page.goto("/books/add");
+  const byHand = page.getByRole("button", { name: "By hand" });
+  await hydrated(byHand);
+  await byHand.click();
+  await page.getByRole("group", { name: "Add to" }).getByRole("button", { name: "Coming out" }).click();
+}
+
+test("By hand to Coming out with a date next month: the page lists it under that month, and Undo takes it away (AC-2)", ONCE, async ({ page, context }) => {
+  await dropAdded();
+  try {
+    const { next, heading } = easternDays();
+    await comingOutByHand(page);
+    await page.locator("#hand-title").fill(ADDED_TITLE);
+    await page.locator("#hand-author").fill("Hand Author");
+    await page.getByLabel("Release date").fill(next);
+    await page.getByRole("button", { name: "Add to Coming out" }).click();
+    await expect(page.locator(".toast-label")).toHaveText("Added to Coming out");
+
+    const sql = testSql();
+    try {
+      const rows = await sql`SELECT b.id, r.release_date, (SELECT count(*)::int FROM book_status s WHERE s.book_id = b.id) AS statuses
+                             FROM books b JOIN releases r ON r.book_id = b.id WHERE b.title = ${ADDED_TITLE} AND b.deleted_at IS NULL`;
+      expect(rows.map((r) => [r.release_date, r.statuses])).toEqual([[next, 0]]);
+    } finally {
+      await sql.end();
+    }
+    const list = await context.newPage();
+    await list.goto("/books/releases");
+    await expect(section(list, heading).locator(".row-title").filter({ hasText: ADDED_TITLE })).toHaveCount(1);
+
+    await page.locator(".toast-undo").click();
+    // Undo removed both: the release, and the book it made (soft-deleted).
+    await expect.poll(async () => {
+      const sql = testSql();
+      try {
+        return (await sql`SELECT (SELECT count(*)::int FROM releases r WHERE r.book_id = b.id) AS releases, b.deleted_at IS NOT NULL AS removed
+                          FROM books b WHERE b.title = ${ADDED_TITLE}`).map((r) => [r.releases, r.removed]);
+      } finally {
+        await sql.end();
+      }
+    }).toEqual([[0, true]]);
+    await list.reload();
+    await expect(list.locator(".row-title").filter({ hasText: ADDED_TITLE })).toHaveCount(0);
+  } finally {
+    await dropAdded();
+  }
+});
+
+test("the books dashboard's line counts what the page lists: out now and coming this month, linking there (AC-1, AC-4)", async ({ page }) => {
+  await page.goto("/books/releases");
+  // The rows, not the loading skeleton (the page streams in behind loading.tsx).
+  await expect(rowTitles(page).first()).toBeVisible();
+  const count = async (heading: RegExp) => {
+    const head = page.getByRole("heading", { level: 2, name: heading });
+    return (await head.count()) === 0 ? 0 : Number(await head.locator(".n").textContent());
+  };
+  const out = await count(/^Out now/);
+  // This month's group, as the page heads it (*November 2026*): only books due after today.
+  const { today } = easternDays();
+  const month = new Date(`${today.slice(0, 7)}-15T12:00:00Z`).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
+  const thisMonth = await count(new RegExp(`^${month}`));
+
+  await page.goto("/books");
+  const line = page.locator('[data-slot="rollup"] .coming-out a');
+  const parts = [out > 0 && `${out} out now`, thisMonth > 0 && `${thisMonth} coming this month`].filter(Boolean);
+  // global-setup's books: one released yesterday, so the line is there.
+  expect(out).toBeGreaterThan(0);
+  await expect(line).toHaveText(`${parts.join(" · ")} →`);
+  await expect(line).toHaveAttribute("href", "/books/releases");
+  await expect(line).toHaveAccessibleName(parts.join(" · "));
+});
+
+test("the destination and the line meet the floor: labelled, refused under the field, named, no red, axe and contrast (AC-6)", FLOOR, async ({ page }, info) => {
+  await comingOutByHand(page);
+  const date = page.getByLabel("Release date");
+  await expect(date).toHaveAttribute("type", "date");
+  const none = page.getByRole("checkbox", { name: "No date yet" });
+  await expect(none).toBeVisible();
+  // Keyboard: Space ticks No date yet; typing a day unticks it.
+  await none.focus();
+  await page.keyboard.press("Space");
+  await expect(none).toBeChecked();
+  await date.fill("2027-03-04");
+  await expect(none).not.toBeChecked();
+  await date.fill("");
+  await page.locator("#hand-title").fill("Never Sent");
+  await page.locator("#hand-author").fill("Hand Author");
+  await page.getByRole("button", { name: "Add to Coming out" }).click();
+  await expect(date).toHaveAttribute("aria-invalid", "true");
+  await expect(date).toBeFocused();
+  await expect(page.locator("#release-date-err")).toHaveText("! Pick a release date, or No date yet");
+  // Under the field, at its left edge, at every width (ui-verifier, 1024px and up: it sat beside No date yet).
+  const field = (await date.boundingBox())!;
+  const refusal = (await page.locator("#release-date-err").boundingBox())!;
+  expect(Math.abs(refusal.x - field.x)).toBeLessThan(2);
+  expect(refusal.y).toBeGreaterThanOrEqual(field.y + field.height);
+  const box = await none.boundingBox();
+  expect(Math.min(box!.width, box!.height)).toBeGreaterThanOrEqual(24);
+  await expectNoHorizontalScroll(page);
+  await expectNoAxeViolations(page, AXE);
+  expect(await contrastFailures(page)).toEqual([]);
+  await screenshot(page, info, "add-coming-out");
+
+  await page.goto("/books");
+  const line = page.locator('[data-slot="rollup"] .coming-out a');
+  await expect(line).toBeVisible();
+  expect(await line.evaluate((el) => el.tagName)).toBe("A");
+  const { color } = await computedStyle(line, ["color"]);
+  for (const token of ["--ready", "--blocked", "--danger"]) expect(color, token).not.toBe(await tokenColour(page, token));
+  expect((await line.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+  await expectNoAxeViolations(page, AXE);
+  expect(await contrastFailures(page)).toEqual([]);
+  await screenshot(page, info, "bdash-coming-out");
+});

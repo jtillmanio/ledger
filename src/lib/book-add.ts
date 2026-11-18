@@ -4,6 +4,7 @@
  */
 import { MAX_FIELD } from "@/lib/book-parse";
 import { normalizeLine } from "@/lib/bulk-parse";
+import { isDay } from "@/lib/finish-date";
 import { quarterName } from "@/lib/format";
 import type { AddedEntry, Destination, OwnedFormat } from "@/db/writes";
 
@@ -20,13 +21,18 @@ export const MAX_POSITION = 100_000;
 /**
  * Where the screen says an add is going: Someday, On deck (task 1.7), a year or a quarter (task 2.3,
  * one `period` value: `2027` or `2027-Q3`), a shelf by id and name, or a format you own
- * (*Physical copy*, *Audiobook*: *Paste a list* only, task 5.17).
+ * (*Physical copy*, *Audiobook*: *Paste a list* only, task 5.17), or *Coming out* (task 5.7: Search and By hand
+ * only), whose date the screen holds beside the target and sends with it.
  */
 export type Target =
   | { kind: "someday" } | { kind: "on_deck" }
   | { kind: "period"; period: string }
   | { kind: "shelf"; shelfId: string; name: string }
-  | { kind: "owned"; format: OwnedFormat };
+  | { kind: "owned"; format: OwnedFormat }
+  | { kind: "release" };
+
+/** *Coming out*'s name on the screen (task 5.7): the chip, *Add to Coming out*, the toast. */
+export const COMING_OUT = "Coming out";
 
 /** The owned destinations' names (task 5.17): the Library's *Owned* filter calls them *Physical* and *Audiobook*. */
 export const OWNED_NAMES: Record<OwnedFormat, string> = { physical: "Physical copy", audio: "Audiobook" };
@@ -35,16 +41,18 @@ export const OWNED_CHOICES = Object.keys(OWNED_NAMES) as OwnedFormat[];
 
 /** *Someday*, *On deck*, *Q3 2027*, *Cosmere*, *Physical copy*: the target's name on the screen. */
 export const targetName = (t: Target) => (t.kind === "someday" ? "Someday" : t.kind === "on_deck" ? "On deck"
-  : t.kind === "period" ? quarterName(t.period) : t.kind === "owned" ? OWNED_NAMES[t.format] : t.name);
+  : t.kind === "period" ? quarterName(t.period) : t.kind === "owned" ? OWNED_NAMES[t.format]
+    : t.kind === "release" ? COMING_OUT : t.name);
 
 /** *Add to Someday*, *Add to On deck*, *Add to Cosmere*: what every result's primary button says. */
 export const addTo = (t: Target) => `Add to ${targetName(t)}`;
 
-/** What a request sends for the screen's target. */
-export const destinationOf = (t: Target): Destination =>
+/** What a request sends for the screen's target; *Coming out* carries its release date, null for *no date yet*. */
+export const destinationOf = (t: Target, date: string | null = null): Destination =>
   (t.kind === "shelf" ? { kind: "shelf", shelfId: t.shelfId }
     : t.kind === "period" ? { kind: "period", period: t.period }
-      : t.kind === "owned" ? { kind: "owned", format: t.format } : { kind: t.kind });
+      : t.kind === "owned" ? { kind: "owned", format: t.format }
+        : t.kind === "release" ? { kind: "release", date } : { kind: t.kind });
 
 /**
  * An add's undo, from the screen (task 1.4c, AC-5): rejects when it couldn't,
@@ -70,19 +78,24 @@ export const SPLIT_PERIOD_KEYS = ["year", "quarter", "month"] as const;
 /** True when an object carries a year, a quarter or a month as a value of its own. */
 export const splitsPeriod = (o: Record<string, unknown>) => SPLIT_PERIOD_KEYS.some((k) => k in o);
 
-/** What a 400 says a destination may be; `owned` adds the paste's formats (task 5.17). */
-export const destinationShapes = ({ owned = false } = {}) =>
+/** What a 400 says a destination may be; `owned` adds the paste's formats (task 5.17), `release` *Coming out* (task 5.7). */
+export const destinationShapes = ({ owned = false, release = false } = {}) =>
   "destination is { kind: 'someday' }, { kind: 'on_deck' }, { kind: 'period', period: '2027-Q1' or '2027' }"
-  + (owned ? ", { kind: 'shelf', shelfId } or { kind: 'owned', format: 'physical' or 'audio' }" : " or { kind: 'shelf', shelfId }");
+  + (owned ? ", { kind: 'shelf', shelfId } or { kind: 'owned', format: 'physical' or 'audio' }"
+    : release ? ", { kind: 'shelf', shelfId } or { kind: 'release', date: 'YYYY-MM-DD' or null }" : " or { kind: 'shelf', shelfId }");
 
 /**
  * The destination a request names, or undefined when it names none properly. Missing means Someday.
- * A format you own (task 5.17) counts only where the caller says so: *Paste a list* and its undo.
+ * A format you own (task 5.17) counts only where the caller says so: *Paste a list* and its undo. So does
+ * *Coming out* (task 5.7): one book's add and its undo, with a real calendar day or null, and nothing else.
  */
-export function parseDestination(raw: unknown, { owned = false } = {}): Destination | undefined {
+export function parseDestination(raw: unknown, { owned = false, release = false } = {}): Destination | undefined {
   if (raw === undefined || raw === null) return { kind: "someday" };
   if (typeof raw !== "object") return undefined;
   const d = raw as Record<string, unknown>;
+  if (release && d.kind === "release") {
+    return "date" in d && (d.date === null || isDay(d.date)) ? { kind: "release", date: d.date as string | null } : undefined;
+  }
   if (owned && d.kind === "owned") {
     return d.format === "physical" || d.format === "audio" ? { kind: "owned", format: d.format } : undefined;
   }

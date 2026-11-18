@@ -2534,6 +2534,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
         <div><span class="tb-big tb-n">18</span><span class="tb-mu">books · 3 listened</span></div>
         <div><span class="tb-big tb-n">5,912</span><span class="tb-mu">pages</span></div>
         <div><span class="tb-big tb-n">6</span><span class="tb-mu">new authors</span></div>
+        <p class="tb-mu" style="margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:.8125rem"><a href="#" style="display:inline-flex;align-items:center;min-height:24px;color:var(--muted);text-decoration:underline;text-underline-offset:3px">2 out now · 3 coming this month <span aria-hidden="true">&rarr;</span></a></p>
       </section>
     </div>
   </div>
@@ -2734,6 +2735,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
         <div><span class="tb-big tb-n">18</span><span class="tb-mu">books · 3 listened</span></div>
         <div><span class="tb-big tb-n">5,912</span><span class="tb-mu">pages</span></div>
         <div><span class="tb-big tb-n">6</span><span class="tb-mu">new authors</span></div>
+        <p class="tb-mu" style="margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:.8125rem"><a href="#" style="display:inline-flex;align-items:center;min-height:24px;color:var(--muted);text-decoration:underline;text-underline-offset:3px">2 out now · 3 coming this month <span aria-hidden="true">&rarr;</span></a></p>
       </section>
     </div>
   </div>
@@ -2841,6 +2843,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
         <div><span class="tb-big tb-n">18</span><span class="tb-mu">books · 3 listened</span></div>
         <div><span class="tb-big tb-n">5,912</span><span class="tb-mu">pages</span></div>
         <div><span class="tb-big tb-n">6</span><span class="tb-mu">new authors</span></div>
+        <p class="tb-mu" style="margin:12px 0 0;padding-top:10px;border-top:1px solid var(--line);font-size:.8125rem"><a href="#" style="display:inline-flex;align-items:center;min-height:24px;color:var(--muted);text-decoration:underline;text-underline-offset:3px">2 out now · 3 coming this month <span aria-hidden="true">&rarr;</span></a></p>
       </section>
     </div>
     </div>
@@ -2921,6 +2924,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <li><b>This quarter</b> is the single-quarter strip (FP-D8): one block per planned book, its width its words against the quarter&rsquo;s capacity, read books in <code>--ready</code>, the book in hand outlined in <code>--brand</code>, and the dashed rule at 760k. The figure is 2.1&rsquo;s (<code>plan_capacity</code>): <i>3 of 7 read &middot; 615k planned &middot; 760k a quarter</i>. Past capacity (desktop <i>Between books</i> frame) the scale stretches to the plan, the rule moves in, and the figure turns <code>--blocked</code> amber with <i>52k over</i> beside it: a decision, never red, and the word &ldquo;behind&rdquo; appears nowhere. 2.2b (<b>redrawn</b>): the strip is the plan rail on its side (M-07). Its blocks are <code>button.qb</code>, each at its words along the strip; the part of the last block past the dashed rule is hatched in <code>--blocked</code> amber, so the books past capacity are the ones ranked last. A block under 24px stays drawn at its words and folds with its neighbours into a <code>+N</code> stack.</li>
     <li><b>On deck</b> is the books with no year yet. <b>Plan</b> moves one to the end of this quarter, with Undo. On the desktop it is hidden at rest with a fine pointer and shown on row hover or <code>:focus-within</code>, the row turning <code>--raise</code> (FP-D15; the first row is drawn hovered); with touch it is always shown.</li>
     <li><b>2026 so far</b> is three counts on <code>--raise</code>, all this year: books (with <i>3 listened</i> beside them), pages, and new authors (an author first read this year). Plain text until Stats (6.2) exists.</li>
+    <li><span class="chg">Task 5.7 (D-35):</span> <b>Coming out</b>, <i>notify me</i> in the app: under the three counts, one grey line, <i>2 out now &middot; 3 coming this month &rarr;</i>, a link to <code>/books/releases</code> (reading frames at 390, 834 and the desktop). Its counts are the page's own: <i>out now</i> is its <i>Out now</i> group (a date on or before today, Eastern), <i>coming this month</i> its group for this month (later this month). A zero part is left out, and with both zero there is no line (owner, at TASK-100's plan gate), so the other frames draw none. <code>--muted</code> text, underlined, never a state colour; the arrow is hidden from the name. The slots keep their order: it is part of the rollup. The digest email stays 7.6.</li>
     <li><b>The verbs.</b> Reading: <i>Log progress &middot; &#10003; finished &middot; search</i>, and on the desktop header <i>Search &middot; Finished it &middot; Log pages</i>, primary last. <i>Log progress</i> / <i>Log pages</i> are drawn unavailable (dimmed, <code>aria-disabled</code>, the reason <i>Logging pages arrives with sessions (2.1b)</i>). <i>&#10003; finished</i> finishes the book today in one tap, with Undo and 2.2c&rsquo;s offer. <i>Between books</i> drops <i>Finished it</i>; its primary names the offer in full, and below about 1100px it truncates and keeps the full title in its accessible name.</li>
     <li><b>Not here:</b> the capacity card with <b>Rebalance</b> and <b>Accept</b> (2.7) and <i>Place them</i> (2.8) live on <code>/books/plan</code> only (owner, at the plan gate, Q2); the <i>Place them</i> sheet frame moved to <code>plan</code>. The <i>Library</i> is reached from the tab row (phone), the rail and the sidebar.</li>
   </ul></div>
@@ -4388,7 +4392,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   <div class="wrap">
     <h1 class="t">Add books</h1>
     <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Search</span><span role="button" aria-pressed="false" tabindex="0">Paste a list</span><span role="button" aria-pressed="false" tabindex="0">By hand</span></span></div>
-    <div class="chips" style="margin-bottom:.75rem;align-items:center"><span class="rs" style="margin:0 .25rem 0 0">Add to</span><span class="chip" role="button" aria-pressed="true" tabindex="0" data-on>Someday</span><span class="chip" role="button" aria-pressed="false" tabindex="0">On deck</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Year or quarter…</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Shelf…</span></div>
+    <div class="chips" style="margin-bottom:.75rem;align-items:center"><span class="rs" style="margin:0 .25rem 0 0">Add to</span><span class="chip" role="button" aria-pressed="true" tabindex="0" data-on>Someday</span><span class="chip" role="button" aria-pressed="false" tabindex="0">On deck</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Year or quarter…</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Shelf…</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Coming out</span></div>
     <div class="search">&#9906; the blade itself</div>
     <p class="small muted" style="margin:.25rem 0 0">Matched against your library first, then Hardcover. Searches as you type.</p>
     <h3 class="s" style="margin-top:.75rem">In your library<span class="more">1</span></h3>
@@ -4453,7 +4457,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <div class="dk-2up"><div>
       <h1 class="t">Add books</h1>
       <div class="ctl"><span class="seg"><span role="button" aria-pressed="true" tabindex="0" data-on>Search</span><span role="button" aria-pressed="false" tabindex="0">Paste a list</span><span role="button" aria-pressed="false" tabindex="0">By hand</span></span></div>
-    <div class="chips" style="margin-bottom:.75rem;align-items:center"><span class="rs" style="margin:0 .25rem 0 0">Add to</span><span class="chip" role="button" aria-pressed="true" tabindex="0" data-on>Someday</span><span class="chip" role="button" aria-pressed="false" tabindex="0">On deck</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Year or quarter…</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Shelf…</span></div>
+    <div class="chips" style="margin-bottom:.75rem;align-items:center"><span class="rs" style="margin:0 .25rem 0 0">Add to</span><span class="chip" role="button" aria-pressed="true" tabindex="0" data-on>Someday</span><span class="chip" role="button" aria-pressed="false" tabindex="0">On deck</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Year or quarter…</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Shelf…</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Coming out</span></div>
       <div class="search">&#9906; the blade itself</div>
       <p class="small muted" style="margin:.25rem 0 0">Matched against your library first, then Hardcover. Searches as you type.</p>
       <h3 class="s" style="margin-top:.75rem">In your library<span class="more">1</span></h3>
@@ -4512,8 +4516,34 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   <div class="actionbar"><button class="btn sec" style="flex:0 0 auto">Cancel</button><button class="btn">Add 3 books to Physical copy</button></div>
 </div></div></div>
 
+<div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Status</a><a>Library</a><a aria-current="page">Add</a><a>Inbox</a></nav>
+  <div class="wrap">
+    <h1 class="t">Add books</h1>
+    <div class="ctl"><span class="seg"><span role="button" aria-pressed="false" tabindex="0">Search</span><span role="button" aria-pressed="false" tabindex="0">Paste a list</span><span role="button" aria-pressed="true" tabindex="0" data-on>By hand</span></span></div>
+    <div class="chips" style="margin-bottom:.5rem;align-items:center"><span class="rs" style="margin:0 .25rem 0 0">Add to</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Someday</span><span class="chip" role="button" aria-pressed="false" tabindex="0">On deck</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Year or quarter&hellip;</span><span class="chip" role="button" aria-pressed="false" tabindex="0">Shelf&hellip;</span><span class="chip" role="button" aria-pressed="true" tabindex="0" data-on>Coming out</span></div>
+    <div style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:0 1rem;margin-bottom:.25rem">
+      <div><div class="rs" style="font-weight:600;color:var(--ink-2);margin:.5rem 0 .375rem">Release date</div>
+        <div class="search" role="img" aria-label="Release date: 6 December 2026" style="min-width:11rem">12/06/2026<span style="float:right;color:var(--muted)">&#9638;</span></div></div>
+      <span role="checkbox" aria-checked="false" tabindex="0" style="display:inline-flex;align-items:center;gap:.5rem;min-height:44px;font-size:.875rem;color:var(--ink-2)"><span aria-hidden="true" style="width:20px;height:20px;border:1.5px solid var(--muted);border-radius:4px;display:inline-block"></span>No date yet</span>
+    </div>
+    <div class="rs" style="font-weight:600;color:var(--ink-2);margin:.75rem 0 .375rem">Title</div>
+    <div class="search">Wind and Truth</div>
+    <div class="rs" style="font-weight:600;color:var(--ink-2);margin:.75rem 0 .375rem">Author</div>
+    <div class="search">Brandon Sanderson</div>
+    <div style="display:grid;grid-template-columns:1fr 5.5rem;gap:0 .75rem">
+      <div><div class="rs" style="font-weight:600;color:var(--ink-2);margin:.75rem 0 .375rem">Series <span style="font-weight:400;color:var(--muted)">optional</span></div><div class="search">The Stormlight Archive</div></div>
+      <div><div class="rs" style="font-weight:600;color:var(--ink-2);margin:.75rem 0 .375rem"># <span style="font-weight:400;color:var(--muted)">optional</span></div><div class="search">5</div></div>
+    </div>
+    <p class="small muted" style="margin:.75rem 0 0">With neither a date nor <i>No date yet</i>, the add is refused under the field: <span style="color:var(--danger)"><b>!</b> Pick a release date, or No date yet</span></p>
+  </div>
+  <div class="actionbar"><button class="btn sec" style="flex:0 0 auto">Cancel</button><button class="btn">Add to Coming out</button></div>
+</div></div></div>
+
 <div class="notes"><h3>Add books</h3>
   <ul>
+    <li><span class="chg">Nov 2026 (D-35, task 5.7):</span> <b>Coming out</b>: in <b>Search</b> and <b>By hand</b>, <b>Add to</b> also offers <b>Coming out</b> after <b>Shelf&hellip;</b> (first two frames; fourth frame chosen, on By hand). Under <b>Add to</b> it opens a labelled <b>Release date</b> field and a real <b>No date yet</b> checkbox, one or the other: ticking it clears the day, typing a day unticks it. An add with neither, or a day that isn't one, is refused under the field (<i>Pick a release date, or No date yet</i>), focus on it, nothing written. The add creates the book (or reuses yours) and its <code>releases</code> row, and gives a new book no status, so it is wanted and listed on <code>releases</code>; a book you already have on your list, or one already coming out, gets nothing, and the toast says so (<i>The Blade Itself &middot; read</i>, <i>&middot; already on Coming out</i>). Undo removes the row and the book it made. <b>Paste a list</b> doesn't offer it (one book, one date; owner, at TASK-100's plan gate), and leaving for it with Coming out chosen goes back to Someday.</li>
     <li><span class="chg">Nov 2026 (D-132, task 5.17):</span> <b>What you own</b>: in <b>Paste a list</b>, <b>Add to</b> also offers <b>Physical copy</b> and <b>Audiobook</b> after <b>Shelf&hellip;</b> (third frame). A book you have is marked owned in that format whatever its status (<i>In your library: marks it as owned on paper.</i>, <i>marks the audiobook as yours.</i>), and a new one is created at <i>Unlisted</i> (D-152) with its copy; neither touches the plan or a status. The confirm names the format, <b>Add 3 books to Physical copy</b>, its toast <i>3 books added to Physical copy</i> with one Undo for the whole paste, and the full page then opens the Library's <i>Owned</i> filter for that format. Search and By hand don't offer them (5.17b); leaving Paste a list with one chosen puts Add to back on Someday.</li>
     <li><span class="chg">Nov 2026 (D-84, task 1.22):</span> <b>Searches as you type</b>: 3 characters and a 500 ms pause, Enter at once; a newer query drops the older one's answer. Every row has <b>one tag</b> saying where it came from, in text and in the row's name: a library book where it sits (<i>Someday</i>, <i>On deck</i>, <i>Q1 2027</i>, <i>2027</i>, <i>Reading</i>, <i>Read</i>, <i>DNF</i>, <i>Unlisted</i>, <i>Not on your list</i>), a Hardcover book <i>Hardcover</i>. Calibre is named only on a book it has that isn't on your list: <i>Unlisted · Calibre</i>. The shelf count and the word estimate are plain text beside the tag.</li>
     <li><span class="chg">Audiobooks (task 1.23):</span> a library book you have listened to, or are listening to, carries the headphones glyph beside its tag, an image named <i>Listened</i> or <i>Listening</i>, never in it: the row&rsquo;s name stays its title and its place. <i>Listening</i> is a place a tag can say, as <i>Reading</i> is.</li>
