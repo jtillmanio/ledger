@@ -74,6 +74,24 @@ describe("GET /api/export table list", () => {
     expect(rows).toEqual(["dune:audio", "dune:physical", "emma:audio"]);
   });
 
+  it("exports listen_queue whole: the listen order carries no user_id (task 5.14, D-91, AC-4)", async () => {
+    const cols = await sql<{ column_name: string }[]>`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'listen_queue'`;
+    expect(cols.map((c) => c.column_name).sort()).toEqual(["book_id", "position"]);
+    expect(CATALOG_TABLES).toContain("listen_queue");
+
+    await truncateAll(sql);
+    await sql`INSERT INTO users (id, name) VALUES (${USER}, 'Test')`;
+    await sql`INSERT INTO books (id, title) VALUES ('dune', 'Dune'), ('emma', 'Emma')`;
+    await sql`INSERT INTO listen_queue (book_id, position) VALUES ('emma', 1), ('dune', 2)`;
+    const res = await exportRoute.GET();
+    expect(res.status).toBe(200);
+    const body = await res.json() as Record<string, { book_id: string; position: number }[]>;
+    const rows = body.listen_queue.map((r) => `${r.book_id}:${r.position}`).sort();
+    expect(rows).toEqual(["dune:2", "emma:1"]);
+  });
+
   it("exports the Calibre sync's log and decisions whole, with no user_id (task 4.4, D-91, D-133, AC-5)", async () => {
     const cols = await sql<{ table_name: string; column_name: string }[]>`
       SELECT table_name, column_name FROM information_schema.columns

@@ -26,7 +26,7 @@ const BOOK_TABLES = [
   "users", "authors", "book_series", "book_universes", "book_subseries", "books", "book_genres",
   "releases", "external_lists", "book_status", "reading_plan", "series_follows", "author_follows",
   "universe_follows", "shelves", "shelf_books", "shelf_follows", "subseries_follows", "reading_settings",
-  "plan_acceptance", "owned_copies", "calibre_syncs", "calibre_decisions",
+  "plan_acceptance", "owned_copies", "calibre_syncs", "calibre_decisions", "listen_queue",
 ];
 // Two tables hold both media. Their books rows are books-side; their comics
 // rows go with the comics.
@@ -214,6 +214,7 @@ async function writeAppRows() {
     INSERT INTO shelf_follows VALUES ('favourites', 'reading');
     INSERT INTO subseries_follows VALUES ('earthsea-early', 'tracking');
     INSERT INTO owned_copies VALUES ('wizard', 'physical'), ('wizard', 'audio');
+    INSERT INTO listen_queue (book_id, position) VALUES ('tombs', 1), ('wizard', 2);
     INSERT INTO reading_settings (user_id, minutes_per_day) VALUES ('${OWNER}', 60);
     INSERT INTO inbox (user_id, raw_text, kind, resolved_at, book_id) VALUES ('${OWNER}', 'wizard of earthsea', 'books', now(), 'wizard');
     INSERT INTO inbox (user_id, raw_text, kind) VALUES ('${OWNER}', 'something to look up', NULL);
