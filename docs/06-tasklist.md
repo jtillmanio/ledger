@@ -346,7 +346,7 @@ with the task that first reads it.
 | ✅ | 0.14 → TASK-112 | A measured deploy costs a third of what it did | M | _Owner, 2026-11-17 (D-158); Phase 0's, listed here beside 0.13; not a cutover gate_ | — |
 |  | 0.14b → TASK-113 | Automatic runs are debounced and capped | M | _Owner, 2026-11-17 (D-158); Phase 0's, listed here beside 0.13; not a cutover gate_ | 0.14 |
 |  | 0.14c → TASK-114 | Every page is measured | M | _Owner, 2026-11-17; Phase 0's, listed here beside 0.13; not a cutover gate; finishes only once `LIGHTHOUSE_MODE` is back on_ | 0.14b |
-|  | 1.31 | Settle the Owner checklist before the books cutover | S | _Owner, 2026-11-14 (from TASK-084, PR #255); Check proposed_ | — |
+|  | 1.31 → TASK-115 | Settle the Owner checklist before the books cutover | S | _Owner, 2026-11-14 (from TASK-084, PR #255); Check proposed_ | — |
 |  | 1.26 → TASK-061 | Cut the books over from the Sheets | M | _The books cutover since 2026-11-08 (D-128)_ | 1.25, 1.14c, 1.17b, 1.29, and every open entry 1.25 names for `Books.xlsx`, with 4.4 and 5.17 (D-132, D-133) and what D-139 pulled ahead |
 
 # Next
@@ -375,8 +375,8 @@ with the task that first reads it.
 | ✅ | 2.2h → TASK-055 | Finishing a book follows it | M |  | 2.2c |
 | ✅ | 2.2i → TASK-052 | Every screen from a phone: the tab row | M |  | 1.8 |
 | ✅ | 2.2j → TASK-062 | The universe and series on a book's row | S | _Pulled ahead of 1.26 (D-139)_ | 2.2 |
-|  | 2.2k | The books page scrolls sideways with a full Up next shelf | S | _Pulled ahead of 1.26 (D-139)_ | 2.2 |
-|  | 2.2l | The universe and series on Add books' search results and the plan sheet | M |  | 2.2j |
+|  | 2.2k → TASK-116 | The books page scrolls sideways with a full Up next shelf | S | _Pulled ahead of 1.26 (D-139)_ | 2.2 |
+|  | 2.2l → TASK-117 | The universe and series on Add books' search results and the plan sheet | M |  | 2.2j |
 
 ## M11: Editing the plan — Next
 
@@ -441,10 +441,10 @@ with the task that first reads it.
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
 |  | 3.5 → TASK-078, TASK-079, TASK-080 | Detail sheets — books and issues | M |  | — |
-|  | 3.5b | The book sheet's own writes | M | _Split from TASK-079 (PR #275)_ | 3.5 |
+|  | 3.5b → TASK-118, TASK-119, TASK-120 | The book sheet's own writes | M | _Split from TASK-079 (PR #275)_ | 3.5 |
 | ✅ | 3.4 → TASK-074 | Book ratings and top-books reorder | S |  | — |
 | ✅ | 3.4b → TASK-075, TASK-076, TASK-091, TASK-077 | Rank a book when you finish it, and every year's top ten | M | _Pulled ahead of 1.26 (D-139)_ | 3.4, 1.5 |
-|  | 3.4c | A re-dated read leaves its old year's ranking | S | _From TASK-077 (PR #260)_ | 3.4b |
+|  | 3.4c → TASK-121 | A re-dated read leaves its old year's ranking | S | _From TASK-077 (PR #260)_ | 3.4b |
 |  | 3.6 | Eras on the run detail | M |  | — |
 |  | 3.6b | Spine rows — ordinal gutter and release dates | S |  | 0.8b |
 |  | 3.6c | Hide read in this run | S |  | 0.8a |
@@ -501,7 +501,7 @@ with the task that first reads it.
 |  | 5.14 → TASK-106, TASK-107 | Audiobooks: a queue to listen next | M | _Pulled ahead of 1.26 (D-139)_ | 1.23, 1.9 |
 |  | 5.15 → TASK-108, TASK-109, TASK-110, TASK-111 | Parked: put a book away, and review it on a schedule | M | _Pulled ahead of 1.26 (D-139)_ | 1.9, 1.17, 1.21, 2.2, 2.3 |
 | ✅ | 5.17 → TASK-092, TASK-093, TASK-094 | What you own: physical copies and audiobooks | M | _Pulled ahead of 1.26 (D-132)_ | 2.2e, 1.4, 1.21 |
-|  | 5.17b | Own it from Search and By hand | S | _From TASK-094 (PR #268)_ | 5.17 |
+|  | 5.17b → TASK-122, TASK-123 | Own it from Search and By hand | S | _From TASK-094 (PR #268)_ | 5.17 |
 
 ## M18: Comic surfaces — Later
 
