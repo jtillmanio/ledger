@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import EmptySlate from "@/components/EmptySlate";
-import ShelfBooks, { ShelfDescription, ShelfFollow } from "@/components/ShelfBooks";
+import { FollowControl } from "@/components/FollowOptions";
+import ShelfBooks, { ShelfDescription } from "@/components/ShelfBooks";
 import { shelfDetail, type Grouping } from "@/db/queries";
 import { requireUserId } from "@/lib/auth";
 
@@ -56,7 +57,7 @@ export default async function ShelfPage({ params }: Params) {
       <div className="shelf-side">
         <p className="shelf-sum"><span className="mono">{shelf.read} / {shelf.total}</span> read</p>
         <span className="meter" aria-hidden="true"><i style={{ width: `${pct}%` }} /></span>
-        <ShelfFollow grouping={grouping} />
+        <FollowControl grouping={grouping} />
         {shelf.books.length > 0 && <Link prefetch={false} className="btn shelf-add" href={add}>+ Add to shelf</Link>}
       </div>
       <div className="shelf-main shelf-books">

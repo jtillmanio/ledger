@@ -2,7 +2,8 @@
 // can't reach on the shared TEST database. With no series the page is an empty slate whose one action is
 // *Add a book*; a row reads `read / total`, names its next book or *All read*, and fills its meter with
 // the share read, whole at most (4 / 3 is full); the route's error state is a neutral line with a grey ×
-// and a real *Try again* that calls reset. The rows are not links yet (the second part of 5.9 links them).
+// and a real *Try again* that calls reset. Each row's name is a link to /books/series/<id>, named by the
+// series, and the row ends in a chevron (task 5.9, 2 of 3: TASK-102).
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -31,7 +32,7 @@ describe("the empty state (AC-6)", () => {
 describe("a row (AC-1, AC-2, AC-3)", () => {
   it("reads read / total, the author, and the next book with its position", () => {
     const html = render([row()]);
-    expect(html).toMatch(/<span class="rt">Stormlight<\/span>/);
+    expect(html).toMatch(/<a class="row-link rt" href="\/books\/series\/s">Stormlight<\/a>/);
     expect(html).toContain('<span class="rm mono">3 / 5</span>');
     expect(html).toContain("Brandon Sanderson");
     expect(html).toMatch(/Next up<\/span><span class="series-next-t">Oathbringer<\/span><span class="mono">#3<\/span>/);
@@ -61,11 +62,16 @@ describe("a row (AC-1, AC-2, AC-3)", () => {
     expect(inHand).not.toContain("All read");
   });
 
-  it("no author draws no author line; a row is no link and no chevron until the series page exists", () => {
-    const html = render([row({ author: null })]);
-    expect(html).not.toContain("Sanderson");
-    expect(html).not.toMatch(/<a [^>]*href=/);
-    expect(html).not.toContain("chev");
+  it("no author draws no author line", () => {
+    expect(render([row({ author: null })])).not.toContain("Sanderson");
+  });
+
+  it("the name is the row's one link, to the series' page, named by the series, and the row ends in a chevron", () => {
+    const html = render([row({ id: "stormlight", name: "Stormlight Archive" }), row({ id: "a b/c", name: "Odd id" })]);
+    const links = [...html.matchAll(/<a [^>]*href="([^"]*)"[^>]*>([^<]*)<\/a>/g)].map((m) => [m[1], m[2]]);
+    expect(links).toEqual([["/books/series/stormlight", "Stormlight Archive"], ["/books/series/a%20b%2Fc", "Odd id"]]);
+    expect(html).toMatch(/<a class="row-link rt" href="\/books\/series\/stormlight">Stormlight Archive<\/a>/);
+    expect(html.match(/<span class="chev" aria-hidden="true">/g)).toHaveLength(2);
   });
 
   it("the meter is aria-hidden: the count beside the name says it in words", () => {
@@ -79,6 +85,8 @@ describe("the loading skeleton (AC-6)", () => {
     expect(html).toContain("series-rows");
     expect(html.match(/class="row series-row"/g)).toHaveLength(4);
     expect(html).toContain('aria-hidden="true"');
+    // The chevron's box too, as the loaded row has one.
+    expect(html.match(/<span class="chev">/g)).toHaveLength(4);
   });
 });
 

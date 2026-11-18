@@ -2028,8 +2028,8 @@ p.muted[id^="dnd-help"]{margin:.5rem 0 0}
 
 /* --- Series (task 5.9; mockup `series`) --------------------------------------------------
    The list: a series a row, its read / total, its author, the next book to read and a meter filled with
-   --ready (D-26). One column at every width: there is no action to put in a rail. Rows are not links
-   until a series' own page exists (the second part of 5.9). */
+   --ready (D-26). One column at every width: there is no action to put in a rail. A row's name links to
+   the series' own page (`row-link`: the whole row is the target) and ends in a chevron. */
 .series-head{margin-bottom:.75rem}
 .series-rows{list-style:none;margin:0;padding:0}
 .series-row .rt{min-height:24px;line-height:24px;overflow-wrap:anywhere}
@@ -2041,6 +2041,32 @@ p.muted[id^="dnd-help"]{margin:.5rem 0 0}
 .series-row .sk-rt{height:.9375rem}
 .series-row .sk-rm{height:.75rem}
 .series-row .sk-rs{height:.8125rem}
+
+/* One series' page (task 5.9, 2 of 3; mockup `series`): ‹ Series, the name and author, `read / total`, a
+   meter filled with --ready (D-26) and the follow control, then its books in order. A gap row (a position the
+   series states and the library lacks) is grey (--faint, text-safe), never green or red, with a real *Add*.
+   At 1024px and up the count, meter and follow sit in a rail beside the list, as a shelf's do. */
+.sp-side{margin:.75rem 0 1rem;display:flex;flex-direction:column;align-items:flex-start;gap:.5rem}
+.sp-side .meter{align-self:stretch;margin-top:0}
+.sp-side .opts{margin:0}
+.sp-row .rt{display:block;min-height:24px;line-height:24px;overflow-wrap:anywhere}
+.sp-pos{margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)}
+.sp-status{display:flex;flex-wrap:wrap;gap:0 .625rem}
+.sp-status > span:first-child{white-space:nowrap}
+/* The next unread: a plain tag, glyph-free and not green (green is read), text on --raise. */
+.sp-tag{margin-left:auto;flex:0 0 auto;padding:0 .5rem;border-radius:var(--r-full);background:var(--raise);
+  font-size:.75rem;font-weight:600;line-height:1.25rem;color:var(--ink-2);white-space:nowrap}
+.sp-gap .rt,.sp-gap .sp-pos{font-weight:400;color:var(--faint)}
+.sp-row .sk{display:inline-block;vertical-align:top;max-width:100%}
+.sp-row .sk-rt{height:.9375rem}
+.sp-row .sk-rs{height:.8125rem}
+@media (min-width:1024px){
+  .series-detail{display:grid;grid-template-columns:minmax(0,1fr) var(--aside-w);grid-template-rows:auto 1fr;
+    grid-template-areas:"head side" "main side";column-gap:2rem;align-items:start}
+  .sp-head{grid-area:head}
+  .sp-main{grid-area:main}
+  .sp-side{grid-area:side;margin:0;position:sticky;top:calc(var(--bar-h) + 1rem)}
+}
 
 /* --- This or that (task 3.4b, D-101, TASK-077; mockup `thisorthat`) ---------------------
    The sorter sheet: the read being placed and one ranked read, side by side, each card a

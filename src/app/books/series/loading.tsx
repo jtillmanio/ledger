@@ -21,6 +21,7 @@ export default function Loading() {
                 <div className="rs"><Bar w="12rem" className="sk-rs" /></div>
                 <span className="meter" />
               </div>
+              <span className="chev" />
             </li>
           ))}
         </ul>

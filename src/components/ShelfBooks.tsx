@@ -1,12 +1,9 @@
 "use client";
 
-import { useState } from "react";
 import Cover from "@/components/Cover";
-import { FollowOptions, useFollowChange } from "@/components/FollowOptions";
 import InlineText, { type TextSave } from "@/components/InlineText";
 import ReorderList, { type MoveResult, type ReorderRow } from "@/components/ReorderList";
-import type { Grouping, ShelfRow } from "@/db/queries";
-import type { FollowState } from "@/db/writes";
+import type { ShelfRow } from "@/db/queries";
 
 /**
  * A shelf's page, its client parts (task 5.1; TASK-095's routes). Every write
@@ -98,16 +95,4 @@ export function ShelfDescription({ shelfId, name, description }: { shelfId: stri
       save={(text) => shelfWrite(shelfId, { description: text })}
     />
   );
-}
-
-/** *Reading · Tracking · Not following* for the shelf (task 2.2c), as the *Follow…* sheet draws it. */
-export function ShelfFollow({ grouping }: { grouping: Grouping }) {
-  const [g, setG] = useState(grouping);
-  const [seen, setSeen] = useState(grouping);
-  if (grouping !== seen) {
-    setSeen(grouping);
-    setG(grouping);
-  }
-  const change = useFollowChange((_g, state: FollowState | null) => setG((x) => ({ ...x, state })));
-  return <FollowOptions g={g} onChange={(state) => void change(g, state)} />;
 }

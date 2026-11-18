@@ -40,6 +40,8 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   "/books/shelves/[id]": { queries: 2, waves: 1 },
   // Series (task 5.9): every series with its counts and next unread, one read.
   "/books/series": { queries: 1, waves: 1 },
+  // One series' page (task 5.9, 2 of 3): its counts, follow, live books and gaps, one read.
+  "/books/series/[id]": { queries: 1, waves: 1 },
   "/inbox": { queries: 2, waves: 1 },
   // Task 4.4 adds the last Calibre sync (one scalar row) for the *Calibre* row, in the same wave.
   "/settings": { queries: 3, waves: 1 },
@@ -107,6 +109,9 @@ beforeEach(async () => {
   await sql`INSERT INTO books (id, title) VALUES ('b', 'Book')`;
   await sql`INSERT INTO shelves (id, name, user_id, kind) VALUES ('s', 'Shelf', ${USER}, 'books')`;
   await sql`INSERT INTO shelf_books (shelf_id, book_id, ordinal) VALUES ('s', 'b', 1)`;
+  // A series with a gap in it, for its page (task 5.9): book 'b' at #1 of a stated 2.
+  await sql`INSERT INTO book_series (id, name, total_books) VALUES ('ser', 'Series', 2)`;
+  await sql`UPDATE books SET series_id = 'ser', series_position = 1 WHERE id = 'b'`;
 });
 
 async function measure(render: () => Promise<unknown>) {
@@ -137,6 +142,8 @@ const pages: [string, () => Promise<unknown>][] = [
   ["/books/shelves/[id]", async () =>
     (await import("../src/app/books/shelves/[id]/page")).default({ params: Promise.resolve({ id: "s" }) })],
   ["/books/series", async () => (await import("../src/app/books/series/page")).default()],
+  ["/books/series/[id]", async () =>
+    (await import("../src/app/books/series/[id]/page")).default({ params: Promise.resolve({ id: "ser" }) })],
   ["/inbox", async () => (await import("../src/app/inbox/page")).default()],
   ["/settings", async () => (await import("../src/app/settings/page")).default()],
   ["/settings/calibre", async () => (await import("../src/app/settings/calibre/page")).default()],
