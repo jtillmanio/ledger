@@ -1,7 +1,7 @@
 ---
 id: TASK-097
 title: 5.1 Shelves (3 of 3) — New shelf… in the add sheet's Shelf picker
-status: Review
+status: Done
 depends_on: [TASK-095]
 size: S
 model: sonnet
