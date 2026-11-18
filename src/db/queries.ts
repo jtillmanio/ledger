@@ -1147,7 +1147,7 @@ export type SeriesBook = {
   status: string | null;
   /** `to_read_level`'s level and period, for the status tag (*Q1 2027*, *Someday*); null unless the book is to-read. */
   level: string | null; period: string | null;
-  /** The start shown and the latest read's finish, with their precisions, as `listBooks` reads them (task 1.17). */
+  /** The start shown (the read in progress's, or the latest read's once Read) and the finish stored on the status, with their precisions, as `listBooks` reads them (task 1.17). */
   started_on: string | null; started_on_precision: Precision;
   finished_on: string | null; finished_on_precision: Precision;
   days_taken: number | null;

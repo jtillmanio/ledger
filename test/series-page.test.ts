@@ -254,6 +254,18 @@ describe("one series' page: books, gaps and the next unread (AC-2)", () => {
     expect(t3).toMatchObject({ started_on: "2026-09-21", started_on_precision: "exact", finished_on: null, days_taken: null });
   });
 
+  it("a read whose latest read has no known date is none with a NULL date and no days taken, and another reader's reads never leak in", async () => {
+    await series("nodate", "No date", 2, [{ id: "n1", pos: 1, status: "read" }, { id: "n2", pos: 2, status: "read" }]);
+    await sql`INSERT INTO read_events (user_id, book_id, started_on_precision, finished_on_precision, format)
+              VALUES (${USER}, 'n1', 'none', 'none', 'text')`;
+    // Someone else's dated read of the other book must not give it a start or days taken.
+    await sql`INSERT INTO read_events (user_id, book_id, started_on, started_on_precision, finished_on, finished_on_precision, format)
+              VALUES (${OTHER}, 'n2', '2026-01-01', 'exact', '2026-01-05', 'exact', 'text')`;
+    const [n1, n2] = (await page("nodate"))!.books;
+    expect(n1).toMatchObject({ started_on: null, started_on_precision: "none", days_taken: null });
+    expect(n2).toMatchObject({ started_on: null, started_on_precision: "none", days_taken: null });
+  });
+
   it("carries the follow, a stored off reading NULL, and unread counts the live books neither read nor DNF", async () => {
     await series("fol", "Fol", 4, [{ id: "f1", pos: 1, status: "read" }, { id: "f2", pos: 2, status: "dnf" }, { id: "f3", pos: 3 }]);
     expect(await page("fol")).toMatchObject({ followState: null, unread: 1 });
