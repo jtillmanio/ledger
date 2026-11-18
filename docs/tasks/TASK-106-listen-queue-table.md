@@ -1,7 +1,7 @@
 ---
 id: TASK-106
 title: 5.14 A queue to listen next (1 of 2) — the listen_queue table, its writes and undo
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: opus
@@ -30,16 +30,16 @@ The Ledger keeps the order you mean to listen to audiobooks in: queue a book, mo
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check (proposed):**, verbatim; this part proves the `npm test` sentence and the export test on the test database. TASK-107 proves the browser sentence): (proposed; the owner agrees it by merging or edits it first)
+- [x] AC-1 (roadmap **Check (proposed):**, verbatim; this part proves the `npm test` sentence and the export test on the test database. TASK-107 proves the browser sentence): (proposed; the owner agrees it by merging or edits it first)
 `npm test`: queueing three books gives positions
 1–3; setting #2 to *Listening* leaves the other two at 1–2, and its undo
 restores all three in order. In the browser (0.11), Up next lists *Listen
 next* in queue order; Done's *Listened* chip lists only books with an
 audio read; each tab's count equals its rows. The export test passes with
 `listen_queue`.
-- [ ] AC-2: Given three queued books, moving #3 to position 1 gives the order 3, 1, 2 at positions 1–3, and its undo restores 1, 2, 3; removing #2 leaves 1–2 contiguous, and its undo puts it back at 2.
-- [ ] AC-3: Queueing a book already queued leaves one row at its position; queueing a missing or soft-deleted book writes nothing and answers 404; a malformed body answers 400; a request without the passcode cookie gets the gate's answer.
-- [ ] AC-4: `listen_queue` has no `user_id` column, is listed in `src/db/export-tables.ts`, and `GET /api/export` returns its rows (`test/export-tables.test.ts`).
+- [x] AC-2: Given three queued books, moving #3 to position 1 gives the order 3, 1, 2 at positions 1–3, and its undo restores 1, 2, 3; removing #2 leaves 1–2 contiguous, and its undo puts it back at 2.
+- [x] AC-3: Queueing a book already queued leaves one row at its position; queueing a missing or soft-deleted book writes nothing and answers 404; a malformed body answers 400; a request without the passcode cookie gets the gate's answer.
+- [x] AC-4: `listen_queue` has no `user_id` column, is listed in `src/db/export-tables.ts`, and `GET /api/export` returns its rows (`test/export-tables.test.ts`).
 
 ## Out of scope
 
@@ -65,7 +65,9 @@ audio read; each tab's count equals its rows. The export test passes with
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The roadmap's two plan-gate questions, answered by the owner at this plan gate (2026-11-18): a book may be on the reading plan and the listen queue at once; the books dashboard's *Up next* slot does **not** show the first queued listen (*Listen next* lives on the Up next tab only). TASK-107 draws to this. (approved at plan)
+- The roadmap's two plan-gate questions, answered by the owner at this plan gate (2026-11-18): a book may be on the reading plan and the listen queue at once; the books dashboard's *Up next* slot does **not** show the first queued listen (*Listen next* lives on the Up next tab only). TASK-107 draws to this. (approved at plan) → docs/tasks/TASK-107-listen-next-on-the-status-screens.md § Context
+- Schema review (MINOR): a soft-deleted book keeps its queue row and position, so part 2's reads must number the rows they show and turn a shown place into a stored one; the add undos soft-delete a created book without looking at the queue; queueListen takes no book row lock; no test races two queue writes. All matter only once TASK-107 reads the queue and adds *Queue to listen* to the add sheet → docs/tasks/TASK-107-listen-next-on-the-status-screens.md § Context
+- The two plan-gate answers as a decisions-log row → not tracked: recorded in docs/03-data-model.md § 4 (the 5.14 row) and TASK-107 § Context; no D-n proposed
 
 ## Plan
 
@@ -107,13 +109,15 @@ Approved by the owner 2026-11-18 (the new table, `position`; Listening, Read and
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 PASS | Spec R1 CHANGES (follow-up bullet had no destination; placed at close-out) | Schema R1 APPROVE (3 MINOR → TASK-107 § Context) | Audit R1 PASS | UI not run (ui: false, no UI files)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 1
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0 (one refinement inside the plan: only *entering* Listening, Read or DNF unqueues; PATCH also answers rom)
