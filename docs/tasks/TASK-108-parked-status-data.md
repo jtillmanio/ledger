@@ -72,8 +72,10 @@ dashboard or the review resolves to `--danger`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- An add flow's *Use that* into On deck or a quarter (`writeDestination`) keeps a status the book has, so a parked book added there would be planned and still parked, on no rail (approved at plan)
-- Candidate decision: `book_status.parked_on` with its CHECK, set exactly while `parked`; parking only from To read, Reading or Listening; every plan row out and back with the undo; the Owned filters list Parked books as they list Unlisted (approved at plan)
+- An add flow's *Use that* into On deck or a quarter (`writeDestination`) keeps a status the book has, so a parked book added there would be planned and still parked, on no rail; its `waiting` read also comes before the plan lock, so a park committing in between could leave the same state (approved at plan; the race from schema-reviewer R1) → docs/tasks/TASK-109-park-verb-and-parked-chip.md § Context
+- `queueListen` checks only that a book is live, so a Parked book can be queued after it was parked; whether *Queue to listen* refuses a Parked book, or unparks it, is the verbs' call (schema-reviewer R1) → docs/tasks/TASK-109-park-verb-and-parked-chip.md § Context
+- What this part built, for the verbs' plan (the change's `unplanned`, `PARKS_FROM`, `listCounts().parked`, `isParkedMidRead`) → docs/tasks/TASK-109-park-verb-and-parked-chip.md § Context
+- Candidate decision: `book_status.parked_on` with its CHECK, set exactly while `parked`; parking only from To read, Reading or Listening; every plan row out and back with the undo; the Owned filters list Parked books as they list Unlisted (approved at plan) → docs/review/decisions.md § D-163
 
 ## Plan
 
