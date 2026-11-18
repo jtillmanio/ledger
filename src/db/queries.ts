@@ -1114,9 +1114,10 @@ export type SeriesSummary = {
 /**
  * Every series you have a live book in (task 5.9; mockup `series`), in progress first, then not started,
  * then complete, each by name. Counts come from `series_progress` (a NULL stated total counts the books
- * listed; a removed book is on no count, hard rule 4). The next unread is `follow_next`'s set (status NULL,
- * `to_read` or `unlisted`: a book in hand or a DNF is not named) at the lowest `series_position`, a book
- * with none after every positioned one; a complete series has none. A series with more read than its
+ * listed; a removed book is on no count, hard rule 4). The next unread is `follow_next`'s status set (NULL,
+ * `to_read` or `unlisted`) at the lowest `series_position`, a book with none after every positioned one.
+ * Unlike `follow_next`, a book in hand (reading, listening) or a DNF is skipped, not blocking: the next
+ * eligible book is named (task 5.9 decision 3). A complete series has none. A series with more read than its
  * stated total (4 / 3) is complete. All derived here, never stored (hard rule 2). `seriesProgress` stays
  * for the Library's Series section, which keeps only series of more than one book.
  */
