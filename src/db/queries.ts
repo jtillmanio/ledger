@@ -1140,6 +1140,94 @@ export async function seriesList(userId: string): Promise<SeriesSummary[]> {
              lower(p.name COLLATE "default"), p.series_id`;
 }
 
+/** A live book on one series' page (task 5.9): where it sits, your status for it and the dates the Library row shows. */
+export type SeriesBook = {
+  id: string; title: string; position: number | null; coverUrl: string | null;
+  /** The raw `book_status.status`; null with no row (not on your list). */
+  status: string | null;
+  /** `to_read_level`'s level and period, for the status tag (*Q1 2027*, *Someday*); null unless the book is to-read. */
+  level: string | null; period: string | null;
+  /** The start shown and the latest read's finish, with their precisions, as `listBooks` reads them (task 1.17). */
+  started_on: string | null; started_on_precision: Precision;
+  finished_on: string | null; finished_on_precision: Precision;
+  days_taken: number | null;
+};
+
+/** One series' page (task 5.9): its counts and follow, its live books in order, the gap positions and the next unread. */
+export type SeriesPageData = {
+  id: string; name: string; author: string | null;
+  /** `series_progress`'s counts, as the list shows them. */
+  read: number; total: number;
+  /** Its live books neither read nor DNF: the follow control's *On hold* reads this (task 2.2h, D-118). */
+  unread: number;
+  /** `follow_state`: null for no follow and for a stored `off`. */
+  followState: FollowState | null;
+  /** Live books by `series_position`, a book with none after every positioned one, then title, then id. */
+  books: SeriesBook[];
+  /** The whole numbers 1…the stated total no live book holds, ascending; empty with no stated total. */
+  gaps: number[];
+  /** The book the page marks *Next up*: `seriesList`'s rule; null for a complete series. */
+  nextId: string | null;
+};
+
+/**
+ * One series' page (task 5.9; mockup `series`), or null when there is no such series. One read: the counts
+ * and follow from `series_progress` (your own row, since it is one per user), the live books with their
+ * status and dates as `listBooks` reads them (a soft-deleted book is on no list and leaves its position a
+ * gap, hard rule 4), and the gaps, which are derived here and never stored (hard rule 2): each whole number
+ * from 1 to the *stated* `total_books` that no live book sits at exactly. A fractional position (*2.5*) is
+ * a book, never a gap, and with no stated total there are no gaps. The next unread is `seriesList`'s rule
+ * (task 5.9 decision 3): the first book in order with no status, `to_read` or `unlisted`; a book in hand or
+ * a DNF is skipped; a complete series (`read >= total`) has none. A series with no live books answers its
+ * name and empty lists, which the page draws as an empty state.
+ */
+export async function seriesPage(userId: string, seriesId: string): Promise<SeriesPageData | null> {
+  const [row] = await sql<(Omit<SeriesPageData, "nextId">)[]>`
+    SELECT p.series_id AS id, p.name, p.author, p.books_read::int AS read, p.total_books::int AS total,
+           p.follow_state AS "followState",
+           (SELECT COUNT(*)::int FROM books k
+            LEFT JOIN book_status ks ON ks.book_id = k.id AND ks.user_id = ${userId}
+            WHERE k.series_id = p.series_id AND k.deleted_at IS NULL
+              AND (ks.status IS NULL OR ks.status NOT IN ('read', 'dnf'))) AS unread,
+           COALESCE((
+             SELECT json_agg(json_build_object(
+               'id', b.id, 'title', b.title, 'position', b.series_position, 'coverUrl', b.cover_url,
+               'status', st.status, 'level', tl.level, 'period', tl.period,
+               'started_on', (CASE WHEN st.status = 'read' THEN lr.started_on ELSE st.started_on END)::text,
+               'started_on_precision',
+                 COALESCE(CASE WHEN st.status = 'read' THEN lr.started_on_precision ELSE st.started_on_precision END, 'none'),
+               'finished_on', st.finished_on::text,
+               'finished_on_precision', COALESCE(st.finished_on_precision, 'none'),
+               'days_taken', CASE WHEN lr.started_on_precision = 'exact' AND lr.finished_on_precision = 'exact'
+                                  THEN lr.finished_on - lr.started_on END)
+               ORDER BY b.series_position NULLS LAST, b.title, b.id)
+             FROM books b
+             LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+             LEFT JOIN to_read_level tl ON tl.book_id = b.id AND tl.user_id = ${userId}
+             -- A Read book's latest read: its start and days taken (task 1.17), as the Library row.
+             LEFT JOIN LATERAL (
+               SELECT e.started_on, e.started_on_precision, e.finished_on, e.finished_on_precision
+               FROM read_events e
+               WHERE e.user_id = ${userId} AND e.book_id = b.id
+               ORDER BY e.id DESC
+               LIMIT 1
+             ) lr ON st.status = 'read'
+             WHERE b.series_id = p.series_id AND b.deleted_at IS NULL), '[]'::json) AS books,
+           COALESCE((
+             SELECT json_agg(g ORDER BY g)
+             FROM generate_series(1, bs.total_books) g
+             WHERE NOT EXISTS (SELECT 1 FROM books k
+                               WHERE k.series_id = p.series_id AND k.deleted_at IS NULL AND k.series_position = g)
+           ), '[]'::json) AS gaps
+    FROM series_progress p
+    JOIN book_series bs ON bs.id = p.series_id
+    WHERE p.series_id = ${seriesId} AND p.user_id = ${userId}`;
+  if (!row) return null;
+  const inHand = (b: SeriesBook) => b.status === null || b.status === "to_read" || b.status === "unlisted";
+  const nextId = row.read >= row.total ? null : (row.books.find(inHand)?.id ?? null);
+  return { ...row, nextId };
+}
+
 /** A wanted book on *Coming out* (task 5.7). `grp` is `out`, a `YYYY-MM` month, or `none` for no date. */
 export type WantedRelease = {
   id: string; title: string; author: string | null; series: string | null; series_position: number | null;

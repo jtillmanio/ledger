@@ -1,20 +1,24 @@
+import Link from "next/link";
 import EmptySlate from "@/components/EmptySlate";
 import { fillShare } from "@/components/WhereItSits";
 import type { SeriesSummary } from "@/db/queries";
+
+/** A series' own page (task 5.9): `/books/series/<id>`. */
+export const seriesHref = (id: string) => `/books/series/${encodeURIComponent(id)}`;
 
 export const SERIES_LEDE = "Every series you have books in, and the next one to read";
 
 /**
  * One series' row: its name, how far through it you are (`read / total` in mono), its author, the next book
- * to read or *All read*, and a meter. Not a link yet: a series' own page is task 5.9's second part, which
- * links these rows (owner, 2026-11-18; R1-06: nothing leads to a screen that isn't built).
+ * to read or *All read*, and a meter. The name is a link to the series' own page (task 5.9, 2 of 3), named by
+ * the series, and its `row-link` overlay makes the whole row the target; the chevron says so.
  */
 function SeriesRowItem({ s }: { s: SeriesSummary }) {
   return (
     <li className="row series-row">
       <div className="rb">
         <span className="rh">
-          <span className="rt">{s.name}</span>
+          <Link className="row-link rt" href={seriesHref(s.id)}>{s.name}</Link>
           <span className="rm mono">{s.read} / {s.total}</span>
         </span>
         {s.author && <div className="rs">{s.author}</div>}
@@ -31,6 +35,7 @@ function SeriesRowItem({ s }: { s: SeriesSummary }) {
             the count beside the name keeps the true figures. */}
         <span className="meter" aria-hidden="true"><i style={{ width: `${fillShare(s.read, s.total) * 100}%` }} /></span>
       </div>
+      <span className="chev" aria-hidden="true">&#8250;</span>
     </li>
   );
 }
