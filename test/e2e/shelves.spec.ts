@@ -96,6 +96,8 @@ const stored = (shelf: string) => withSql(async (sql) =>
     SELECT book_id, note FROM shelf_books WHERE shelf_id = ${shelf} ORDER BY ordinal, book_id`).map((r) => r.book_id));
 const noteOf = (shelf: string, book: string) => withSql(async (sql) =>
   (await sql<{ note: string | null }[]>`SELECT note FROM shelf_books WHERE shelf_id = ${shelf} AND book_id = ${book}`)[0]?.note ?? null);
+const descriptionOf = (shelf: string) => withSql(async (sql) =>
+  (await sql<{ description: string | null }[]>`SELECT description FROM shelves WHERE id = ${shelf}`)[0]?.description ?? null);
 
 const listRow = (page: Page, name: string) => page.locator(".shelf-rows > li").filter({ has: page.getByRole("link", { name, exact: true }) });
 const bookRows = (page: Page) => page.locator(".shelf-books ol.queue > li");
@@ -210,6 +212,8 @@ test("a description is written in place, and clearing it leaves no line (AC-1)",
   await page.getByRole("textbox", { name: `Description of ${BARE.name}` }).fill("Twos and sixes");
   await page.getByRole("textbox", { name: `Description of ${BARE.name}` }).press("Enter");
   await expect(page.locator(".shelf-desc")).toHaveText("Twos and sixes");
+  // The text shows before the save lands: a reload straight after would abort it (as the note and order tests wait too).
+  await expect.poll(() => descriptionOf(BARE.id)).toBe("Twos and sixes");
   await page.reload();
   await expect(page.locator(".shelf-desc")).toHaveText("Twos and sixes");
   const desc = page.getByRole("button", { name: `Description of ${BARE.name}: Twos and sixes` });
@@ -218,6 +222,7 @@ test("a description is written in place, and clearing it leaves no line (AC-1)",
   await page.getByRole("textbox", { name: `Description of ${BARE.name}` }).fill("");
   await page.getByRole("textbox", { name: `Description of ${BARE.name}` }).press("Enter");
   await expect(page.locator(".shelf-desc")).toHaveCount(0);
+  await expect.poll(() => descriptionOf(BARE.id)).toBeNull();
   await page.reload();
   await expect(page.locator(".shelf-desc")).toHaveCount(0);
 });

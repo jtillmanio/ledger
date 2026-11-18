@@ -2026,6 +2026,22 @@ p.muted[id^="dnd-help"]{margin:.5rem 0 0}
   .shelf-side{grid-area:side;margin:0;position:sticky;top:calc(var(--bar-h) + 1rem)}
 }
 
+/* --- Series (task 5.9; mockup `series`) --------------------------------------------------
+   The list: a series a row, its read / total, its author, the next book to read and a meter filled with
+   --ready (D-26). One column at every width: there is no action to put in a rail. Rows are not links
+   until a series' own page exists (the second part of 5.9). */
+.series-head{margin-bottom:.75rem}
+.series-rows{list-style:none;margin:0;padding:0}
+.series-row .rt{min-height:24px;line-height:24px;overflow-wrap:anywhere}
+.series-next{display:flex;flex-wrap:wrap;gap:0 .375rem}
+.series-next-k{color:var(--muted)}
+.series-next-t{color:var(--ink-2);overflow-wrap:anywhere}
+/* Top-aligned, so a bar never stretches the line the loaded text sets (the row stays the loaded row's height). */
+.series-row .sk{display:inline-block;vertical-align:top;max-width:100%}
+.series-row .sk-rt{height:.9375rem}
+.series-row .sk-rm{height:.75rem}
+.series-row .sk-rs{height:.8125rem}
+
 /* --- This or that (task 3.4b, D-101, TASK-077; mockup `thisorthat`) ---------------------
    The sorter sheet: the read being placed and one ranked read, side by side, each card a
    44px+ button; a mono count of the picks; Skip grey at the foot (DNF and Skip are grey).

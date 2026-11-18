@@ -28,6 +28,8 @@ Every series has a page of its own: its books in order with their status and dat
 - Architecture: `/books/series/[id]` is in `docs/02-architecture.md` § 5 (as task 5.9).
 - Design: `docs/04-design.md` § 10 The UX floor; `.claude/rules/ui.md` (gap rows are grey; a read-elsewhere hint is never green).
 - Decisions: D-42, D-90, D-108, D-119.
+- *From TASK-101 (5.9, PR #289), open question for the plan:* the Library's own Series section (`src/app/books/list/page.tsx`, the foot of `/books/list`, fed by `seriesProgress`) duplicates `/books/series` now that it exists. Keep it, cut it, or make it a link to the list? This task edits that file to link the series names, so the plan says which.
+- *From TASK-101 (5.9, PR #289):* the list's rows ship unlinked (owner, 2026-11-18: R1-06, nothing leads to a screen not built), so this task links every row of `/books/series` (`src/components/SeriesList.tsx`, the `.rt` name in `SeriesRowItem`) to `/books/series/[id]`, with the series' name as the link's accessible name, and adds the row's chevron. That proves AC-6's *each row's link has the series' name*, which TASK-101 defers here. TASK-101's `test/series-list.test.tsx` and `test/e2e/series.spec.ts` assert the rows are *not* links; this task changes those assertions with the link.
 
 ## Acceptance criteria
 
