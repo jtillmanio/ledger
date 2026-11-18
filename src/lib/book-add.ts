@@ -20,29 +20,34 @@ export const MAX_POSITION = 100_000;
 
 /**
  * Where the screen says an add is going: Someday, On deck (task 1.7), a year or a quarter (task 2.3,
- * one `period` value: `2027` or `2027-Q3`), a shelf by id and name, or a format you own
- * (*Physical copy*, *Audiobook*: *Paste a list* only, task 5.17), or *Coming out* (task 5.7: Search and By hand
- * only), whose date the screen holds beside the target and sends with it.
+ * one `period` value: `2027` or `2027-Q3`), a shelf by id and name, a format you own
+ * (*Physical copy*, *Audiobook*: *Paste a list* only, task 5.17), *Coming out* (task 5.7: Search and By hand
+ * only), whose date the screen holds beside the target and sends with it, or a shelf the add
+ * will make, by the name typed for it (*New shelf…*, task 5.1).
  */
 export type Target =
   | { kind: "someday" } | { kind: "on_deck" }
   | { kind: "period"; period: string }
   | { kind: "shelf"; shelfId: string; name: string }
   | { kind: "owned"; format: OwnedFormat }
-  | { kind: "release" };
+  | { kind: "release" }
+  | { kind: "new_shelf"; name: string };
 
 /** *Coming out*'s name on the screen (task 5.7): the chip, *Add to Coming out*, the toast. */
 export const COMING_OUT = "Coming out";
+
+/** A shelf's name as the write stores it (`shelfName` in `src/db/writes.ts`, which the browser can't import): NFKC, trimmed, spaces collapsed. */
+export const shelfLabel = (name: string) => name.normalize("NFKC").trim().replace(/\s+/g, " ");
 
 /** The owned destinations' names (task 5.17): the Library's *Owned* filter calls them *Physical* and *Audiobook*. */
 export const OWNED_NAMES: Record<OwnedFormat, string> = { physical: "Physical copy", audio: "Audiobook" };
 /** The formats *Paste a list* offers, in Add to's order (writes.ts's OWNED_FORMATS, which the browser can't import). */
 export const OWNED_CHOICES = Object.keys(OWNED_NAMES) as OwnedFormat[];
 
-/** *Someday*, *On deck*, *Q3 2027*, *Cosmere*, *Physical copy*: the target's name on the screen. */
+/** *Someday*, *On deck*, *Q3 2027*, *Cosmere*, *Physical copy*: the target's name on the screen. A new shelf not named yet is *a new shelf*. */
 export const targetName = (t: Target) => (t.kind === "someday" ? "Someday" : t.kind === "on_deck" ? "On deck"
   : t.kind === "period" ? quarterName(t.period) : t.kind === "owned" ? OWNED_NAMES[t.format]
-    : t.kind === "release" ? COMING_OUT : t.name);
+    : t.kind === "release" ? COMING_OUT : t.kind === "new_shelf" ? shelfLabel(t.name) || "a new shelf" : t.name);
 
 /** *Add to Someday*, *Add to On deck*, *Add to Cosmere*: what every result's primary button says. */
 export const addTo = (t: Target) => `Add to ${targetName(t)}`;
@@ -52,18 +57,21 @@ export const destinationOf = (t: Target, date: string | null = null): Destinatio
   (t.kind === "shelf" ? { kind: "shelf", shelfId: t.shelfId }
     : t.kind === "period" ? { kind: "period", period: t.period }
       : t.kind === "owned" ? { kind: "owned", format: t.format }
-        : t.kind === "release" ? { kind: "release", date } : { kind: t.kind });
+        : t.kind === "release" ? { kind: "release", date }
+          : t.kind === "new_shelf" ? { kind: "new_shelf", name: t.name } : { kind: t.kind });
 
 /**
  * An add's undo, from the screen (task 1.4c, AC-5): rejects when it couldn't,
  * and then nothing changed. `note` reopens the inbox note the add resolved (task 1.4b).
+ * An add that made its shelf (task 5.1) says so, and its undo removes the shelf too.
  */
 export async function undoAdd(entry: AddedEntry, note?: { id: number; bookId: string }) {
-  const { destination, created, added, statused, promoted } = entry;
+  const { destination, created, added, statused, promoted, newShelf } = entry;
   const res = await fetch("/api/books", {
     method: "DELETE", headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      destination, created, added, statused, ...(promoted?.length ? { promoted } : {}), ...(note && { note }),
+      destination, created, added, statused, ...(promoted?.length ? { promoted } : {}), ...(newShelf && { newShelf: true }),
+      ...(note && { note }),
     }),
   });
   if (!res.ok) throw new Error(String(res.status));
@@ -78,18 +86,29 @@ export const SPLIT_PERIOD_KEYS = ["year", "quarter", "month"] as const;
 /** True when an object carries a year, a quarter or a month as a value of its own. */
 export const splitsPeriod = (o: Record<string, unknown>) => SPLIT_PERIOD_KEYS.some((k) => k in o);
 
-/** What a 400 says a destination may be; `owned` adds the paste's formats (task 5.17), `release` *Coming out* (task 5.7). */
-export const destinationShapes = ({ owned = false, release = false } = {}) =>
-  "destination is { kind: 'someday' }, { kind: 'on_deck' }, { kind: 'period', period: '2027-Q1' or '2027' }"
-  + (owned ? ", { kind: 'shelf', shelfId } or { kind: 'owned', format: 'physical' or 'audio' }"
-    : release ? ", { kind: 'shelf', shelfId } or { kind: 'release', date: 'YYYY-MM-DD' or null }" : " or { kind: 'shelf', shelfId }");
+/**
+ * What a 400 says a destination may be; `owned` adds the paste's formats (task 5.17), `release` *Coming out*
+ * (task 5.7), `newShelf` a shelf the add makes (task 5.1).
+ */
+export const destinationShapes = ({ owned = false, release = false, newShelf = false } = {}) => {
+  const shapes = ["{ kind: 'someday' }", "{ kind: 'on_deck' }", "{ kind: 'period', period: '2027-Q1' or '2027' }", "{ kind: 'shelf', shelfId }"];
+  if (newShelf) shapes.push(`{ kind: 'new_shelf', name } (1 to ${MAX_FIELD} characters)`);
+  if (owned) shapes.push("{ kind: 'owned', format: 'physical' or 'audio' }");
+  if (release) shapes.push("{ kind: 'release', date: 'YYYY-MM-DD' or null }");
+  return `destination is ${shapes.slice(0, -1).join(", ")} or ${shapes.at(-1)}`;
+};
 
 /**
  * The destination a request names, or undefined when it names none properly. Missing means Someday.
  * A format you own (task 5.17) counts only where the caller says so: *Paste a list* and its undo. So does
  * *Coming out* (task 5.7): one book's add and its undo, with a real calendar day or null, and nothing else.
+ * A new shelf (task 5.1) counts only in an add (`POST /api/books`, `/api/books/bulk`), never an undo, and
+ * only with a name of 1 to MAX_FIELD characters as a shelf stores it (`shelfLabel`, not `text`, which
+ * would also rewrite dashes): the write throws on an empty one.
  */
-export function parseDestination(raw: unknown, { owned = false, release = false } = {}): Destination | undefined {
+export function parseDestination(
+  raw: unknown, { owned = false, release = false, newShelf = false } = {},
+): Destination | undefined {
   if (raw === undefined || raw === null) return { kind: "someday" };
   if (typeof raw !== "object") return undefined;
   const d = raw as Record<string, unknown>;
@@ -98,6 +117,10 @@ export function parseDestination(raw: unknown, { owned = false, release = false 
   }
   if (owned && d.kind === "owned") {
     return d.format === "physical" || d.format === "audio" ? { kind: "owned", format: d.format } : undefined;
+  }
+  if (newShelf && d.kind === "new_shelf") {
+    const name = typeof d.name === "string" ? shelfLabel(d.name) : "";
+    return name && name.length <= MAX_FIELD ? { kind: "new_shelf", name } : undefined;
   }
   if (d.kind === "someday") return { kind: "someday" };
   if (d.kind === "on_deck") return { kind: "on_deck" };

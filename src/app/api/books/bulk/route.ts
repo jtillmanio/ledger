@@ -17,8 +17,10 @@ export const runtime = "nodejs";
  * - POST `{ items, destination? }`: the confirm, in one transaction. An item is
  *   a line to create, `{ title, author, series, position }`, or `{ use: bookId }`.
  *   The destination is *Add to*'s (Someday when absent), or a format you own,
- *   `{ kind: 'owned', format: 'physical' | 'audio' }` (task 5.17). The answer
- *   is what the undo sends back to `DELETE /api/books`.
+ *   `{ kind: 'owned', format: 'physical' | 'audio' }` (task 5.17), or a shelf
+ *   the paste makes once for all its lines, `{ kind: 'new_shelf', name }`
+ *   (task 5.1; 409 `{ reason: 'taken', error }` when the name is in use). The
+ *   answer is what the undo sends back to `DELETE /api/books`.
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -50,13 +52,18 @@ export async function POST(req: Request) {
     return { title, author, series, position: series ? position : null };
   });
   // A format you own (task 5.17) is a paste's destination: a matched book gets its row, a new one is Unlisted with it.
-  const destination = parseDestination(body?.destination, { owned: true });
+  // A new shelf (task 5.1) is made once, for every line.
+  const destination = parseDestination(body?.destination, { owned: true, newShelf: true });
   if (!items || !destination) {
     return bad(`items is a list of 1 to ${MAX_LINES}: { title, author, series, position } or { use }; `
-      + destinationShapes({ owned: true }));
+      + destinationShapes({ owned: true, newShelf: true }));
   }
   const result = await addBooks(userId, items, destination);
   if (!result.ok) {
+    if (result.reason === "taken") {
+      // In `POST /api/shelves`'s words: the screen puts it under the name field.
+      return NextResponse.json({ reason: "taken", error: `You already have a shelf called ${result.name}.` }, { status: 409 });
+    }
     return result.reason === "gone"
       ? NextResponse.json(
         { error: "A book a line was pointed at is gone from your library. Nothing was written; check again.", missing: result.missing },

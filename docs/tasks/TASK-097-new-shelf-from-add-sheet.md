@@ -1,7 +1,7 @@
 ---
 id: TASK-097
 title: 5.1 Shelves (3 of 3) — New shelf… in the add sheet's Shelf picker
-status: Ready
+status: In progress
 depends_on: [TASK-095]
 size: S
 model: sonnet
@@ -120,6 +120,10 @@ removes the shelf with `newShelf`); this part wires it to the routes and the scr
 - `src/components/AddBooks.tsx`: *New shelf…*, the field, the refusal, the switch to the made shelf, the undo.
 - `src/components/PasteBooks.tsx` (**not in Files likely touched**): the paste to a new shelf, its undo and refusal.
 - `src/app/globals.css` (**not in Files likely touched**; only if the field needs spacing): reuse `.add-label`, `.txt`, `.field-err` first.
+  **Revision 1 (owner, 2026-11-18):** the field needed none (it is `.hfield`); `.res-btns` gains
+  `flex-wrap:wrap`, because a long shelf name on a result's primary pushed *Year or quarter…* past
+  its card at 360px (it predates this task; *New shelf…* makes long names common). Checked in
+  `test/e2e/new-shelf.spec.ts`'s floor test.
 - `design/mockups.html`, `design/mockups-index.md`: the `add` frame (`ui.redrawFiles`).
 - Tests: `test/add-book.test.ts`, `test/books-bulk.test.ts`, `test/add-book-sheet.test.tsx`, `test/paste-books.test.tsx`, `test/e2e/new-shelf.spec.ts` (new).
 
@@ -164,4 +168,4 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Verify rounds:
 - Review rounds:
 - First-pass AC FAILs:
-- Plan revisions after approval:
+- Plan revisions after approval: 1 (`.res-btns` wraps)

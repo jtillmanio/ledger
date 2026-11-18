@@ -44,7 +44,9 @@ beforeEach(() => {
         answers: (body.lines as { title: string }[]).map((l) => library[l.title.toLowerCase()] ?? { match: null, near: null }),
       });
     }
-    return Response.json({ ok: true, created: ["golden-son-pierce-brown"], matched: [], added: ["golden-son-pierce-brown"] });
+    // As the route answers: the destination the paste wrote to.
+    return Response.json({ ok: true, destination: body.destination, created: ["golden-son-pierce-brown"], matched: [],
+      added: ["golden-son-pierce-brown"] });
   });
   vi.stubGlobal("fetch", fetchMock);
   router.push.mockReset();
@@ -239,6 +241,61 @@ describe("Add to and undo (task 1.4c)", () => {
     const [url, init] = fetchMock.mock.calls.at(-1)!;
     expect([url, init.method, JSON.parse(init.body)]).toEqual(["/api/books", "DELETE",
       { destination: { kind: "shelf", shelfId: "cosmere" }, created: ["golden-son-pierce-brown"], added: ["golden-son-pierce-brown"] }]);
+  });
+});
+
+// Task 5.1 (TASK-097): a paste to *New shelf…* makes the shelf once for all its lines, one Undo for both.
+describe("a paste to a new shelf (task 5.1, TASK-097)", () => {
+  const MADE = { kind: "shelf", shelfId: "dark-tower" };
+  const render = (props: { hold?: () => boolean; refused?: (why: string) => void } = {}) => act(() => root.render(
+    <UndoProvider>
+      <PasteBooks level={3} target={{ kind: "new_shelf", name: "Dark Tower" }}
+        cancel={<button type="button" className="btn sec">Cancel</button>} onAdded={onAdded} {...props} />
+    </UndoProvider>));
+
+  it("sends the name once, and its Undo and onAdded name the shelf the paste made, with newShelf", async () => {
+    render();
+    await type("Golden Son - Pierce Brown");
+    await click(checkButton()!);
+    fetchMock.mockImplementationOnce(async () => Response.json({ ok: true, destination: MADE, newShelf: true,
+      created: ["golden-son-pierce-brown"], matched: [], added: ["golden-son-pierce-brown"] }));
+    await click(confirmButton());
+    expect(confirms().map((c) => c.destination)).toEqual([{ kind: "new_shelf", name: "Dark Tower" }]);
+    expect(onAdded).toHaveBeenCalledWith(MADE);
+    expect(container.querySelector(".toast-region .toast-label")!.textContent).toBe("1 book added to Dark Tower");
+
+    fetchMock.mockImplementationOnce(async () => Response.json({ ok: true }));
+    await click(container.querySelector(".toast-region .toast-undo")!);
+    const [url, init] = fetchMock.mock.calls.at(-1)!;
+    expect([url, init.method, JSON.parse(init.body)]).toEqual(["/api/books", "DELETE",
+      { destination: MADE, newShelf: true, created: ["golden-son-pierce-brown"], added: ["golden-son-pierce-brown"] }]);
+  });
+
+  it("a name in use hands its reason to refused, writes nothing, keeps the lines and gives the button back", async () => {
+    const refused = vi.fn();
+    render({ refused });
+    await type("Golden Son - Pierce Brown");
+    await click(checkButton()!);
+    fetchMock.mockImplementationOnce(async () =>
+      Response.json({ reason: "taken", error: "You already have a shelf called Dark Tower." }, { status: 409 }));
+    await click(confirmButton());
+    expect(refused).toHaveBeenCalledWith("You already have a shelf called Dark Tower.");
+    expect(onAdded).not.toHaveBeenCalled();
+    expect(container.querySelector(".add-failed")).toBeNull();
+    expect(container.querySelector(".toast-region .toast-label")).toBeNull();
+    expect(confirmButton().textContent).toBe("Add 1 book");
+    expect(confirmButton().hasAttribute("aria-disabled")).toBe(false);
+    // The lines keep their answers: no second check is asked for.
+    expect(checkButton()).toBeNull();
+  });
+
+  it("hold stops the confirm before it posts", async () => {
+    render({ hold: () => true });
+    await type("Golden Son - Pierce Brown");
+    await click(checkButton()!);
+    await click(confirmButton());
+    expect(confirms()).toEqual([]);
+    expect(confirmButton().textContent).toBe("Add 1 book");
   });
 });
 

@@ -209,6 +209,138 @@ describe("Add to (AC-3)", () => {
   });
 });
 
+// Task 5.1 (TASK-097): *New shelf…* ends the picker; the add makes the shelf, one Undo takes both.
+describe("New shelf… (task 5.1, TASK-097)", () => {
+  const picked = () => [...dialog()!.querySelectorAll<HTMLButtonElement>('[aria-label="Your shelves"] button')];
+  const nameField = () => dialog()!.querySelector<HTMLInputElement>("#addto-new-name");
+  const why = () => dialog()!.querySelector<HTMLElement>("#addto-new-why");
+  const DARK_TOWER = { destination: { kind: "shelf", shelfId: "dark-tower" }, newShelf: true };
+
+  async function newShelf() {
+    await click(chip("Shelf…"));
+    await click(picked().at(-1)!);
+    // The field takes focus on the next frame.
+    await act(async () => { await new Promise((r) => requestAnimationFrame(r)); });
+  }
+
+  it("is the picker's last choice; it shows a labelled Shelf name field, focused, and Shelf… stays pressed", async () => {
+    await open();
+    await newShelf();
+    expect(picked().map((b) => [b.textContent, b.getAttribute("aria-pressed")])).toEqual([
+      ["Cosmere", "false"], ["New shelf…", "true"]]);
+    expect(chip("Shelf…").getAttribute("aria-pressed")).toBe("true");
+    const field = nameField()!;
+    expect(dialog()!.querySelector(`label[for="${field.id}"]`)!.textContent).toBe("Shelf name");
+    expect(field.maxLength).toBe(300);
+    expect(document.activeElement).toBe(field);
+    // Outside the picker's polite live region: typing is not announced as a status.
+    expect(field.closest('[role="status"]')).toBeNull();
+  });
+
+  it("with no shelves, it follows No shelves yet", async () => {
+    await open();
+    fetchMock.mockImplementationOnce(async () => Response.json({ shelves: [] }));
+    await click(chip("Shelf…"));
+    expect(dialog()!.textContent).toContain("No shelves yet.");
+    expect(picked().map((b) => b.textContent)).toEqual(["New shelf…"]);
+  });
+
+  it("adding sends the name, the toast names the shelf, Shelf… becomes it, and Undo's DELETE carries newShelf, then puts New shelf… back", async () => {
+    added = { ...added, ...DARK_TOWER };
+    await open();
+    await newShelf();
+    await type(nameField()!, "  Dark   Tower ");
+    await search();
+    expect(resultButtons().map((b) => b.textContent)).toEqual(["Add to Dark Tower", "Add to Dark Tower"]);
+    await click(resultButtons()[1]);
+    expect(adds()).toEqual([{ item: { hardcover: SAKEY_ITEM }, destination: { kind: "new_shelf", name: "  Dark   Tower " } }]);
+    expect(document.querySelector(".toast-label")!.textContent).toBe("Added to Dark Tower");
+    expect(document.querySelector(".toast-detail")!.textContent).toBe("The Blade Itself · new shelf");
+    // The shelf is made: Add to is it now, and the open picker lists it, chosen, before New shelf….
+    expect(chip("Dark Tower").getAttribute("aria-pressed")).toBe("true");
+    expect(picked().map((b) => [b.textContent, b.getAttribute("aria-pressed")])).toEqual([
+      ["Cosmere", "false"], ["Dark Tower", "true"], ["New shelf…", "false"]]);
+    expect(nameField()).toBeNull();
+    expect(resultButtons()[1].textContent).toBe("✓ Added to Dark Tower");
+
+    await click(document.querySelector(".toast-undo")!);
+    const [, init] = fetchMock.mock.calls.at(-1)!;
+    expect([init.method, JSON.parse(init.body)]).toEqual(["DELETE", { ...DARK_TOWER, created: ["the-blade-itself-marcus-sakey"],
+      added: ["the-blade-itself-marcus-sakey"], statused: [] }]);
+    // The shelf is gone again: New shelf… is chosen with its name, the picker no longer lists it, the result is addable.
+    expect(picked().map((b) => [b.textContent, b.getAttribute("aria-pressed")])).toEqual([
+      ["Cosmere", "false"], ["New shelf…", "true"]]);
+    expect(nameField()!.value).toBe("Dark Tower");
+    expect(resultButtons()[1].textContent).toBe("Add to Dark Tower");
+  });
+
+  it("once the add has made the shelf, the next add goes to that shelf, not another new one", async () => {
+    added = { ...added, ...DARK_TOWER };
+    await open();
+    await newShelf();
+    await type(nameField()!, "Dark Tower");
+    await search();
+    await click(resultButtons()[1]);
+    added = { ...added, newShelf: undefined, bookId: BLADE.id, reused: true, created: [], added: [BLADE.id] };
+    await click(resultButtons()[0]);
+    expect(adds().map((a) => a.destination)).toEqual([
+      { kind: "new_shelf", name: "Dark Tower" }, { kind: "shelf", shelfId: "dark-tower" }]);
+    expect(document.querySelector(".toast-label")!.textContent).toBe("Added to Dark Tower");
+    expect(document.querySelector(".toast-detail")!.textContent).toBe("The Blade Itself · already in your library");
+  });
+
+  it("an empty name sends nothing and says so under the field, which takes focus; typing clears it", async () => {
+    await open();
+    await newShelf();
+    await search();
+    expect(resultButtons()[1].textContent).toBe("Add to a new shelf");
+    await click(resultButtons()[1]);
+    expect(adds()).toEqual([]);
+    expect(why()!.textContent).toBe("! Give the shelf a name.");
+    expect(why()!.getAttribute("role")).toBe("alert");
+    expect(why()!.className).toBe("field-err");
+    expect(nameField()!.getAttribute("aria-invalid")).toBe("true");
+    expect(nameField()!.getAttribute("aria-describedby")).toBe("addto-new-why");
+    expect(document.activeElement).toBe(nameField());
+    await type(nameField()!, "D");
+    expect(why()).toBeNull();
+    expect(nameField()!.hasAttribute("aria-invalid")).toBe(false);
+  });
+
+  it("a name in use: the route's reason under the field, focus on it, and nothing else changes", async () => {
+    const base = fetchMock.getMockImplementation() as (url: string, init?: RequestInit) => Promise<Response>;
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => (url === "/api/books" && init?.method === "POST"
+      ? Response.json({ reason: "taken", error: "You already have a shelf called Dark Tower." }, { status: 409 })
+      : base(url, init)));
+    await open();
+    await newShelf();
+    await type(nameField()!, "dark tower");
+    await search();
+    await click(resultButtons()[1]);
+    expect(adds()).toHaveLength(1);
+    expect(why()!.textContent).toBe("! You already have a shelf called Dark Tower.");
+    expect(nameField()!.getAttribute("aria-describedby")).toBe("addto-new-why");
+    expect(document.activeElement).toBe(nameField());
+    // Not the add's own failure line, no toast, and the result is still addable to the name typed.
+    expect(dialog()!.querySelector(".add-failed")).toBeNull();
+    expect(document.querySelector(".toast-label")).toBeNull();
+    expect(resultButtons()[1].textContent).toBe("Add to dark tower");
+    expect(picked().at(-1)!.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("a paste to a new shelf with no name sends nothing and says so under the field", async () => {
+    await open();
+    await click(seg("Paste a list"));
+    await newShelf();
+    await type(dialog()!.querySelector<HTMLTextAreaElement>("#books-text")!, "Golden Son - Pierce Brown");
+    await click(button("Check 1 line")!);
+    await click(button("Add 1 book")!);
+    expect(fetchMock.mock.calls.filter(([u, i]) => u === "/api/books/bulk" && !JSON.parse(i.body).dryRun)).toEqual([]);
+    expect(why()!.textContent).toBe("! Give the shelf a name.");
+    expect(document.activeElement).toBe(nameField());
+  });
+});
+
 /** Every library place a row can say, one book each (task 1.22, AC-3). */
 const at = (
   id: string, status: string | null, level: string | null, period: string | null, calibre = false, listened = false,
