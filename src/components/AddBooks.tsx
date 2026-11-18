@@ -11,8 +11,11 @@ import type { PickerBook, Verb } from "@/components/PlanPicker";
 import ReleaseDate, { NO_RELEASE, releaseDateOf, type ReleaseValue } from "@/components/ReleaseDate";
 import Sheet, { useSheetClose } from "@/components/Sheet";
 import { useUndo } from "@/components/Undo";
-import type { AddBookResult, AddedEntry, HandItem } from "@/db/writes";
-import { COMING_OUT, destinationOf, OWNED_CHOICES, OWNED_NAMES, targetName, undoAdd, type Target } from "@/lib/book-add";
+import type { AddBookResult, AddedEntry, Destination, HandItem } from "@/db/writes";
+import {
+  COMING_OUT, destinationOf, OWNED_CHOICES, OWNED_NAMES, shelfLabel, targetName, undoAdd, type Target,
+} from "@/lib/book-add";
+import { MAX_FIELD } from "@/lib/book-parse";
 
 // Loaded on the first *Year or quarter…*, as the Library row's *Plan for…* loads it: every page with an
 // Add button carries Add books, and none of them should carry the picker until it opens (perf budget).
@@ -53,7 +56,10 @@ const STATUS: Record<string, string> = {
  * Paste a list · By hand*, Search first, then **Add to**, which names where a
  * book goes before you look for it. Someday is the default; *On deck* (task
  * 1.7) puts a to-read book next in line, with no year; a shelf is chosen
- * through *Shelf…*, or arrives chosen from a shelf's *+ Add to shelf*. *Coming
+ * through *Shelf…*, or arrives chosen from a shelf's *+ Add to shelf*.
+ * *New shelf…* ends the shelves (task 5.1): a *Shelf name* field, and the
+ * add makes the shelf in its own write, one Undo removing both; from then on
+ * Add to is that shelf. A name in use is refused, the reason under the field. *Coming
  * out* (task 5.7; Search and By hand, one book and one date) adds a book you're
  * waiting for, with its release date or *No date yet*, to `/books/releases`.
  * *Year or quarter…* (2.3) opens the plan picker, which sets the target (a year, a
@@ -95,6 +101,9 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
   const lastOpener = useRef<HTMLElement | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
+  /** Why a new shelf's name can't be used (task 5.1): under the name field. */
+  const [why, setWhy] = useState<string | null>(null);
+  const nameField = useRef<HTMLInputElement>(null);
   // *Add it by hand* carries the search over: a new key remounts the form with it.
   const [hand, setHand] = useState({ key: 0, title: "" });
   /** *Coming out*'s date (task 5.7), kept while you switch destinations; `releaseError` is the refusal under it. */
@@ -108,7 +117,45 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
     // A result says what happened to it on the way to *that* destination.
     setOutcomes({});
     setWheres({});
+    setWhy(null);
     setPicker({ phase: "closed" });
+  }
+
+  /** *New shelf…* (task 5.1): the picker stays open with it chosen, and its name field takes focus. */
+  function chooseNew() {
+    if (target.kind !== "new_shelf") {
+      setTarget({ kind: "new_shelf", name: "" });
+      setOutcomes({});
+      setWheres({});
+    }
+    setWhy(null);
+    // The field mounts with the choice; it takes focus once it is there.
+    requestAnimationFrame(() => nameField.current?.focus());
+  }
+
+  /** The reason a new shelf's name can't be used, under its field, which takes focus. */
+  function refuse(reason: string) {
+    setWhy(reason);
+    nameField.current?.focus();
+  }
+
+  /** True, saying why, when `goes` is a new shelf with no name yet: then nothing is sent. */
+  function unnamed(goes: Target) {
+    if (goes.kind !== "new_shelf" || shelfLabel(goes.name)) return false;
+    refuse("Give the shelf a name.");
+    return true;
+  }
+
+  /** The add made its shelf (task 5.1): Add to is that shelf from now on, and an open picker lists it. */
+  function made(shelf: { id: string; name: string }) {
+    setTarget({ kind: "shelf", shelfId: shelf.id, name: shelf.name });
+    setPicker((p) => (p.phase === "open" ? { ...p, shelves: [...p.shelves, shelf] } : p));
+  }
+
+  /** Its undo removed the shelf: when Add to is still that shelf, it is *New shelf…* again, with the same name. */
+  function unmade(shelf: { id: string; name: string }) {
+    setTarget((t) => (t.kind === "shelf" && t.shelfId === shelf.id ? { kind: "new_shelf", name: shelf.name } : t));
+    setPicker((p) => (p.phase === "open" ? { ...p, shelves: p.shelves.filter((s) => s.id !== shelf.id) } : p));
   }
 
   /**
@@ -163,7 +210,7 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
   }
 
   /** The add's toast: one undo entry when it wrote anything, else what it found. Its undo clears the result's *Added*. */
-  function tell(result: Added, key: string | undefined, goes: Target) {
+  function tell(result: Added, key: string | undefined, goes: Target, shelf: { id: string; name: string } | null) {
     const { title, reused, status, created, added, bookId, note: resolved } = result;
     const fromNote = resolved == null ? "" : " · inbox note resolved";
     const where = targetName(goes);
@@ -176,15 +223,17 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
     }
     const entry: AddedEntry = {
       destination: result.destination, created, added, statused: result.statused, promoted: result.promoted,
+      ...(shelf && { newShelf: true }),
     };
     const reopen = resolved == null ? undefined : { id: resolved, bookId };
     push({
       label: `Added to ${where}`,
-      detail: `${reused ? `${title} · already in your library` : title}${fromNote}`,
+      detail: `${reused ? `${title} · already in your library` : title}${shelf ? " · new shelf" : ""}${fromNote}`,
       undo: async () => {
         await undoAdd(entry, reopen);
         // The result is addable again, whatever level it went to (task 1.7's reset, kept by task 2.3).
         if (key) setOutcomes((o) => Object.fromEntries(Object.entries(o).filter(([k]) => k !== key)));
+        if (shelf) unmade(shelf);
         router.refresh();
       },
     });
@@ -201,20 +250,29 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
       return null;
     }
     setReleaseError(false);
+    // A new shelf needs its name (task 5.1): said under its field, sending nothing.
+    if (unnamed(goes)) return null;
     try {
       const res = await fetch("/api/books", {
         method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ item, destination: destinationOf(goes, date), ...(noteId !== null && { note: noteId }) }),
       });
       if (res.status === 409) {
-        setFailed("That book or shelf is gone. Nothing was written; search again.");
+        const body = await res.json().catch(() => ({})) as { reason?: string; error?: string };
+        // A new shelf's name in use (task 5.1) is the field's to say; nothing was written.
+        if (body.reason === "taken" && body.error) refuse(body.error);
+        else setFailed("That book or shelf is gone. Nothing was written; search again.");
         return null;
       }
       if (!res.ok) throw new Error(String(res.status));
       const result = await res.json() as Added;
       // A note is resolved once: later adds here are plain adds.
       setNoteId(null);
-      tell(result, key, goes);
+      // The add made its shelf (task 5.1): named as the write stores it.
+      const shelf = result.newShelf && goes.kind === "new_shelf" && result.destination.kind === "shelf"
+        ? { id: result.destination.shelfId, name: shelfLabel(goes.name) } : null;
+      tell(result, key, goes, shelf);
+      if (shelf) made(shelf);
       router.refresh();
       return result;
     } catch {
@@ -264,15 +322,16 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
     requestAnimationFrame(() => document.getElementById("hand-title")?.focus());
   }
 
-  function pasted() {
+  /** A paste went through, to `went`: Add to's destination, or the shelf a new shelf became (task 5.1). */
+  function pasted(went: Destination) {
     if (close) {
       close();
       router.refresh();
     } else {
       // A format you own lands on the Library's Owned filter for it (task 5.17), where an Unlisted book shows too (D-152).
       // A shelf's books land on its page (task 5.1), where they joined the end of its order.
-      router.push(target.kind === "shelf" ? shelfHref(target.shelfId)
-        : target.kind === "owned" ? `/books/list?owned=${target.format}` : AFTER_ADD);
+      router.push(went.kind === "shelf" ? shelfHref(went.shelfId)
+        : went.kind === "owned" ? `/books/list?owned=${went.format}` : AFTER_ADD);
     }
   }
 
@@ -315,7 +374,7 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
           onClick={(e) => openStep({ what: "target" }, e.currentTarget)}>
           {target.kind === "period" ? targetName(target) : "Year or quarter…"}
         </button>
-        <button type="button" className="chip" aria-pressed={target.kind === "shelf"}
+        <button type="button" className="chip" aria-pressed={target.kind === "shelf" || target.kind === "new_shelf"}
           aria-expanded={picker.phase !== "closed"} aria-controls="addto-shelves" onClick={openPicker}>
           {target.kind === "shelf" ? target.name : "Shelf…"}
         </button>
@@ -339,18 +398,38 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
             <button type="button" className="linkbtn" onClick={openPicker}>Try again</button>
           </p>
         )}
-        {picker.phase === "open" && (picker.shelves.length === 0 ? (
-          <p className="small muted addto-pick">No shelves yet. You can still add to Someday.</p>
-        ) : (
-          <div className="addto addto-pick" role="group" aria-label="Your shelves">
-            {picker.shelves.map((s) => (
-              <button key={s.id} type="button" className="chip"
-                aria-pressed={target.kind === "shelf" && target.shelfId === s.id}
-                onClick={() => choose({ kind: "shelf", shelfId: s.id, name: s.name })}>{s.name}</button>
-            ))}
-          </div>
-        ))}
+        {picker.phase === "open" && (
+          <>
+            {picker.shelves.length === 0 && <p className="small muted addto-pick">No shelves yet. You can still add to Someday.</p>}
+            {/* *New shelf…* ends the list (task 5.1), there too when you have none. */}
+            <div className="addto addto-pick" role="group" aria-label="Your shelves">
+              {picker.shelves.map((s) => (
+                <button key={s.id} type="button" className="chip"
+                  aria-pressed={target.kind === "shelf" && target.shelfId === s.id}
+                  onClick={() => choose({ kind: "shelf", shelfId: s.id, name: s.name })}>{s.name}</button>
+              ))}
+              <button type="button" className="chip" aria-pressed={target.kind === "new_shelf"} onClick={chooseNew}>
+                New shelf…
+              </button>
+            </div>
+          </>
+        )}
       </div>
+      {/* The new shelf's name, outside the picker's live region: typing is not a status. */}
+      {target.kind === "new_shelf" && (
+        <div className="hfield addto-name">
+          <label htmlFor="addto-new-name" className="add-label">Shelf name</label>
+          <input ref={nameField} id="addto-new-name" type="text" className="txt" autoComplete="off" spellCheck={false}
+            maxLength={MAX_FIELD} value={target.name}
+            aria-invalid={why ? true : undefined} aria-describedby={why ? "addto-new-why" : undefined}
+            onChange={(e) => {
+              setTarget({ kind: "new_shelf", name: e.target.value });
+              setWhy(null);
+            }} />
+          {/* A name in use is a validation failure, so its line may be red (UX floor), as By hand's is. */}
+          {why && <p id="addto-new-why" className="field-err" role="alert"><span aria-hidden="true">!</span> {why}</p>}
+        </div>
+      )}
 
       {target.kind === "release" && (
         <ReleaseDate value={release} error={releaseError}
@@ -374,7 +453,8 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
           </div>
         </div>
         <div className="pane pane-paste" hidden={mode === "hand"}>
-          <PasteBooks level={level} target={target} cancel={cancel("Cancel")} onAdded={pasted} />
+          <PasteBooks level={level} target={target} cancel={cancel("Cancel")} onAdded={pasted}
+            hold={() => unnamed(target)} refused={refuse} />
         </div>
       </div>
     </div>

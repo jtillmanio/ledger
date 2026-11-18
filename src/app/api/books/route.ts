@@ -22,16 +22,20 @@ const MAX_COVER = 300;
  * - POST `{ item, destination? }`: an item is `{ use: bookId }` (a library
  *   book the search listed), `{ hardcover: { hardcoverId, title, authors,
  *   year, pages, coverUrl } }` or `{ hand: { title, author, series, position,
- *   pages, words } }`. The destination is *Add to*'s, Someday when absent. One
- *   transaction; the answer says whether the book was reused, and is what the
- *   undo sends back. *Coming out* is `{ kind: 'release', date }`, a real
- *   `YYYY-MM-DD` or null for *no date yet* (task 5.7). `note`, an inbox note's id, resolves that note into the
- *   book in the same transaction (task 1.4b); the answer's `note` says it did.
- * - DELETE `{ destination, created, added, statused?, promoted?, note? }`: that
+ *   pages, words } }`. The destination is *Add to*'s, Someday when absent, or
+ *   a shelf the add makes, `{ kind: 'new_shelf', name }` (*New shelf…*, task
+ *   5.1). One transaction; the answer says whether the book was reused, and is
+ *   what the undo sends back. *Coming out* is `{ kind: 'release', date }`, a real
+ *   `YYYY-MM-DD` or null for *no date yet* (task 5.7). `note`, an inbox note's id,
+ *   resolves that note into the book in the same transaction (task 1.4b); the
+ *   answer's `note` says it did. 409 `{ reason: 'taken', error }` when a new
+ *   shelf's name is in use.
+ * - DELETE `{ destination, created, added, statused?, promoted?, newShelf?, note? }`: that
  *   add's undo, from an add here or a paste (`/api/books/bulk`, whose
  *   destination may be a format you own, task 5.17; an add here never is);
  *   `statused` is the statuses an On deck add wrote (task 1.7), `promoted` the Unlisted books
- *   it moved onto your list (task 1.21). 409 when something changed
+ *   it moved onto your list (task 1.21), `newShelf` that the add made the shelf
+ *   (task 5.1), which then goes too. 409 when something changed
  *   since, and then nothing is changed. `note: { id, bookId }` reopens the
  *   note the add resolved.
  */
@@ -40,18 +44,22 @@ export async function POST(req: Request) {
   if (!userId) return unauthorized();
   const body = await req.json().catch(() => null);
   const item = parseItem(body?.item);
-  // *Coming out* (task 5.7) is one book's destination: here, never a paste's.
-  const destination = parseDestination(body?.destination, { release: true });
+  // *Coming out* (task 5.7) is one book's destination: here, never a paste's. A new shelf (task 5.1) is an add's alone.
+  const destination = parseDestination(body?.destination, { release: true, newShelf: true });
   const note = body?.note == null ? null : noteId(body.note);
   if (note === undefined) return NextResponse.json({ error: "note is an inbox note's id" }, { status: 400 });
   if (!item || !destination) {
     return NextResponse.json({
       error: "item is { use }, { hardcover: { hardcoverId, title, authors, year, pages, coverUrl } } or "
-        + "{ hand: { title, author, series, position, pages, words } }; " + destinationShapes({ release: true }),
+        + "{ hand: { title, author, series, position, pages, words } }; " + destinationShapes({ release: true, newShelf: true }),
     }, { status: 400 });
   }
   const result = await addBook(userId, item, destination, note === null ? {} : { note });
   if (!result.ok) {
+    // A new shelf's name in use (task 5.1), in `POST /api/shelves`'s words: the screen puts it under the name field.
+    if (result.reason === "taken") {
+      return NextResponse.json({ reason: "taken", error: `You already have a shelf called ${result.name}.` }, { status: 409 });
+    }
     return NextResponse.json({
       error: result.reason === "gone"
         ? "That book is gone from your library. Nothing was written; search again."
@@ -71,13 +79,18 @@ export async function DELETE(req: Request) {
   const added = ids(body?.added);
   const statused = body?.statused === undefined ? [] : ids(body.statused);
   const promoted = body?.promoted === undefined ? [] : ids(body.promoted);
+  // The add made its shelf (task 5.1): the undo removes it too. An undo never names a new shelf itself.
+  const newShelf = body?.newShelf === undefined ? false : typeof body.newShelf === "boolean" ? body.newShelf : undefined;
   const note = reopen(body?.note);
-  if (!destination || !created || !added || !statused || !promoted || created.length + added.length === 0 || note === undefined) {
+  if (!destination || !created || !added || !statused || !promoted || created.length + added.length === 0
+    || newShelf === undefined || note === undefined) {
     return NextResponse.json({
-      error: "destination, and created, added and (if any) statused and promoted: lists of book ids; note, if any, is { id, bookId }",
+      error: "destination, and created, added and (if any) statused and promoted: lists of book ids; newShelf, if any, "
+        + "is true or false; note, if any, is { id, bookId }",
     }, { status: 400 });
   }
-  if (!(await undoAddBooks(userId, { destination, created, added, statused, promoted }, note ? { note } : {}))) {
+  const entry = { destination, created, added, statused, promoted, ...(newShelf && { newShelf }) };
+  if (!(await undoAddBooks(userId, entry, note ? { note } : {}))) {
     return NextResponse.json({ error: "Something changed since that add. Nothing was undone." }, { status: 409 });
   }
   return NextResponse.json({ ok: true });

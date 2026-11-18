@@ -4451,7 +4451,7 @@ Not every item in Phases 5–7 has a **Check:** yet (follow-up from PR #57).
 item without one gets a Check written and agreed with the owner, here, before
 it is converted.
 
-- ☐ 5.1 Shelves (books only): create, add items, reorder · M. **+ Add to
+- ☑ 5.1 Shelves (books only): create, add items, reorder · M. **+ Add to
   shelf** opens the 1.4c sheet with the shelf preselected: search your library
   and Open Library (Hardcover after 1.4f, D-94), or add by hand. A book not yet in the catalog is created
   first, then shelved. Each shelf shows its **next three unread** in shelf

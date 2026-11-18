@@ -1559,7 +1559,8 @@ input.txt:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
   /* Each column's bar stays in its column. */
   main.add .addb .add-bar{margin:1.5rem 0 0;border:1px solid var(--rule);border-radius:var(--r-lg)}
 }
-.res-btns{margin-top:.5rem}
+/* A long destination (a shelf's name, task 5.1) wraps Year or quarter… under the primary, never past the card. */
+.res-btns{margin-top:.5rem;flex-wrap:wrap}
 .res-btns .btn{flex:0 0 auto}
 
 .byhand .hrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0 .75rem}

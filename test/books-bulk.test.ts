@@ -69,6 +69,42 @@ beforeEach(async () => {
 const req = (body: unknown) =>
   new Request("http://test/api/books/bulk", { method: "POST", body: JSON.stringify(body), headers: { "content-type": "application/json" } });
 
+describe("a paste to a new shelf (task 5.1, TASK-097)", () => {
+  const shelfRows = () => sql`SELECT id, name FROM shelves WHERE user_id = ${USER} ORDER BY id`;
+  const shelved = () => sql`SELECT shelf_id, book_id, ordinal FROM shelf_books ORDER BY shelf_id, ordinal`;
+  const LINES = [{ title: "The Gunslinger", author: "Stephen King", series: null, position: null },
+    { use: "dune-frank-herbert" }];
+
+  it("makes the shelf once for all its lines, in paste order, and one undo removes the places and the shelf", async () => {
+    const res = await route.POST(req({ items: LINES, destination: { kind: "new_shelf", name: "Dark Tower" } }));
+    expect(res.status).toBe(200);
+    const done = await res.json();
+    expect(done).toMatchObject({ destination: { kind: "shelf", shelfId: "dark-tower" }, newShelf: true });
+    expect(await shelfRows()).toEqual([{ id: "dark-tower", name: "Dark Tower" }]);
+    expect((await shelved()).map((s) => [s.shelf_id, s.book_id, s.ordinal])).toEqual([
+      ["dark-tower", "the-gunslinger-stephen-king", 1], ["dark-tower", "dune-frank-herbert", 2]]);
+
+    // Its undo is DELETE /api/books, as every paste's is.
+    const books = await import("../src/app/api/books/route");
+    const undone = await books.DELETE(new Request("http://test/api/books", {
+      method: "DELETE", body: JSON.stringify(done), headers: { "content-type": "application/json" } }));
+    expect(undone.status).toBe(200);
+    expect(await shelfRows()).toEqual([]);
+    expect(await shelved()).toEqual([]);
+  });
+
+  it("a name in use is a 409 that says why, writing nothing; an empty name is a 400", async () => {
+    await sql`INSERT INTO shelves (id, name, user_id, kind) VALUES ('dark-tower', 'Dark Tower', ${USER}, 'books')`;
+    const taken = await route.POST(req({ items: LINES, destination: { kind: "new_shelf", name: "dark tower" } }));
+    expect(taken.status).toBe(409);
+    expect(await taken.json()).toEqual({ reason: "taken", error: "You already have a shelf called Dark Tower." });
+    expect((await route.POST(req({ items: LINES, destination: { kind: "new_shelf", name: " " } }))).status).toBe(400);
+    expect(await shelfRows()).toEqual([{ id: "dark-tower", name: "Dark Tower" }]);
+    expect(await shelved()).toEqual([]);
+    expect((await sql`SELECT id FROM books WHERE id = 'the-gunslinger-stephen-king'`).length).toBe(0);
+  });
+});
+
 async function post(body: unknown) {
   const res = await route.POST(req(body));
   return { status: res.status, body: await res.json() };

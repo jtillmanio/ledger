@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import ReviewTable from "@/components/ReviewTable";
 import { useUndo } from "@/components/Undo";
-import type { AddedEntry } from "@/db/writes";
+import type { AddedEntry, Destination } from "@/db/writes";
 import { destinationOf, targetName, undoAdd, type Target } from "@/lib/book-add";
 import { bookKey, editBookLine, parseBooks, type BookCells } from "@/lib/book-parse";
 import { buildBookReview, rowKey, type BookAnswer, type BookAnswers, type BookRow, type Choices } from "@/lib/book-review";
@@ -25,21 +25,28 @@ export const AFTER_ADD = "/books/list?status=to_read";
  * undo onto the app's one stack (task 1.2): the statuses or shelf rows it
  * wrote go, and the books it created are removed. To *Physical copy* or
  * *Audiobook* (task 5.17) it marks each book owned, a new one Unlisted, and the
- * button names the format. Then `onAdded`: the sheet
- * closes, or the page goes to *To read*. The button stays *Adding…* until
- * then, so a second tap can't add again.
+ * button names the format. To *New shelf…* (task 5.1) the shelf is made once,
+ * for every line, and the undo removes it with them. Then `onAdded`, with
+ * where the books went: the sheet closes, or the page goes to *To read* (or
+ * the shelf). The button stays *Adding…* until then, so a second tap can't add
+ * again.
  *
  * Each line's title and author are two cells you can fix in place (task 1.4e),
  * so two spreadsheet columns paste straight in. The edits are kept apart from
  * the pasted lines: an edited line has a new title and author, so it is asked
  * again, and no other line is.
  */
-export default function PasteBooks({ level, target, cancel, onAdded }: {
+export default function PasteBooks({ level, target, cancel, onAdded, hold, refused }: {
   /** The section heading level: 2 under the page's h1, 3 under the sheet's h2. */
   level: 2 | 3;
   target: Target;
   cancel: React.ReactNode;
-  onAdded: () => void;
+  /** Where the books went: Add to's destination, or the shelf a new shelf became. */
+  onAdded: (destination: Destination) => void;
+  /** Asked before the confirm posts: true stops it (a new shelf with no name yet; Add books says why). */
+  hold?: () => boolean;
+  /** A new shelf's name is in use (task 5.1): the route's reason, for Add books to put under the name field. */
+  refused?: (why: string) => void;
 }) {
   const H = level === 2 ? "h2" : "h3";
   const [text, setText] = useState("");
@@ -139,6 +146,7 @@ export default function PasteBooks({ level, target, cancel, onAdded }: {
       reasonRef.current?.focus();
       return;
     }
+    if (hold?.()) return;
     setSaving(true);
     setFailed(null);
     try {
@@ -147,20 +155,28 @@ export default function PasteBooks({ level, target, cancel, onAdded }: {
         body: JSON.stringify({ items: review.writes, destination: destinationOf(target) }),
       });
       if (res.status === 409) {
+        const body = await res.json().catch(() => ({})) as { reason?: string; error?: string };
+        // A new shelf's name is in use (task 5.1): nothing was written, and the lines' answers still hold.
+        if (body.reason === "taken" && body.error) {
+          refused?.(body.error);
+          setSaving(false);
+          return;
+        }
         // A book a line pointed at, or the shelf, is gone: ask the library again.
         setAnswers(new Map());
         throw new Error("gone");
       }
       if (!res.ok) throw new Error(String(res.status));
-      const { created, added, statused, promoted } = await res.json() as AddedEntry;
-      const entry: AddedEntry = { destination: destinationOf(target), created, added, statused, promoted };
+      // The answer names where the books went: a new shelf (task 5.1) is the shelf it made by then.
+      const { destination, created, added, statused, promoted, newShelf } = await res.json() as AddedEntry;
+      const entry: AddedEntry = { destination, created, added, statused, promoted, ...(newShelf && { newShelf }) };
       const known = added.filter((id) => !created.includes(id)).length;
       const label = `${books(added.length)} added to ${where}`;
       const detail = known > 0 ? `${known} already in your library` : undefined;
       if (added.length + created.length > 0) {
         push({ label, detail, undo: async () => { await undoAdd(entry); router.refresh(); } });
       }
-      onAdded();
+      onAdded(destination);
     } catch (e) {
       setFailed(e instanceof Error && e.message === "gone"
         ? "A book you picked, or the shelf, is gone. Nothing was written; check your lines again."

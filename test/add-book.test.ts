@@ -252,6 +252,73 @@ describe("destinations", () => {
   });
 });
 
+describe("a new shelf (task 5.1, TASK-097: the roadmap's Check, the new-shelf part)", () => {
+  const shelfRows = () => sql`SELECT id, name FROM shelves WHERE user_id = ${USER} ORDER BY id`;
+  const NEW = { kind: "new_shelf", name: "  Dark   Tower " };
+
+  it("New shelf with a new name writes one shelves row and one shelf_books row; Undo leaves neither", async () => {
+    const before = await shelfRows();
+    const done = await add({ use: "the-blade-itself-joe-abercrombie" }, NEW);
+    expect(done.status).toBe(200);
+    // The answer names the shelf it made, so the undo can take it too.
+    expect(done.body).toMatchObject({ ok: true, destination: { kind: "shelf", shelfId: "dark-tower" }, newShelf: true });
+    expect(await shelfRows()).toEqual([...before, { id: "dark-tower", name: "Dark Tower" }]);
+    expect(await shelved()).toEqual([{ shelf_id: "dark-tower", book_id: "the-blade-itself-joe-abercrombie", ordinal: 1 }]);
+
+    // The screen sends the answer back as the undo, newShelf and all.
+    expect(await undo(done.body)).toBe(200);
+    expect(await shelfRows()).toEqual(before);
+    expect(await shelved()).toEqual([]);
+  });
+
+  it("a name already in use, in any case, is a 409 that says why and writes nothing", async () => {
+    const [shelvesBefore, booksBefore] = [await shelfRows(), await bookRows()];
+    const done = await add(hand({ title: "The Gunslinger", author: "Stephen King" }), { kind: "new_shelf", name: "COSMERE" });
+    expect(done.status).toBe(409);
+    expect(done.body).toEqual({ reason: "taken", error: "You already have a shelf called Cosmere." });
+    expect(await shelfRows()).toEqual(shelvesBefore);
+    expect(await bookRows()).toEqual(booksBefore);
+    expect(await shelved()).toEqual([]);
+  });
+
+  it("an empty or over-long name is a 400, writing nothing", async () => {
+    const before = await shelfRows();
+    for (const name of ["", "   ", "x".repeat(301), 7]) {
+      expect((await add({ use: "the-blade-itself-joe-abercrombie" }, { kind: "new_shelf", name })).status).toBe(400);
+    }
+    expect(await shelfRows()).toEqual(before);
+    expect(await shelved()).toEqual([]);
+  });
+
+  it("a name is stored as POST /api/shelves stores it: a dash stays a dash, and the same name is refused (schema review)", async () => {
+    const done = await add({ use: "the-blade-itself-joe-abercrombie" }, { kind: "new_shelf", name: "Sci–Fi  Reads" });
+    expect(done.status).toBe(200);
+    expect((await shelfRows()).map((s) => s.name)).toContain("Sci–Fi Reads");
+    const again = await add(hand({ title: "X", author: "Y" }), { kind: "new_shelf", name: "sci–fi reads" });
+    expect(again.status).toBe(409);
+    expect(again.body).toEqual({ reason: "taken", error: "You already have a shelf called Sci–Fi Reads." });
+  });
+
+  it("its undo is refused, changing nothing, once the new shelf has gained another book (schema review)", async () => {
+    const done = await add({ use: "the-blade-itself-joe-abercrombie" }, NEW);
+    await add(hand({ title: "Second", author: "Hand Author" }), { kind: "shelf", shelfId: "dark-tower" });
+    const before = await shelved();
+    expect(await undo(done.body)).toBe(409);
+    expect((await shelfRows()).map((s) => s.id)).toContain("dark-tower");
+    expect(await shelved()).toEqual(before);
+  });
+
+  it("an undo names the shelf the add made, never a new one; newShelf is a boolean", async () => {
+    const done = await add({ use: "the-blade-itself-joe-abercrombie" }, NEW);
+    const entry = done.body as Record<string, unknown>;
+    expect(await undo({ ...entry, destination: NEW })).toBe(400);
+    expect(await undo({ ...entry, newShelf: "yes" })).toBe(400);
+    // Without newShelf the place goes and the shelf stays: the undo takes only what it is told the add wrote.
+    expect(await undo({ ...entry, newShelf: undefined })).toBe(200);
+    expect((await shelfRows()).map((s) => s.id)).toContain("dark-tower");
+  });
+});
+
 describe("undo (AC-5)", () => {
   it("removes the shelf row and soft-deletes the book the add created", async () => {
     const done = await add({ hardcover: (await find("the way of kings")).hardcover[0] }, COSMERE);
