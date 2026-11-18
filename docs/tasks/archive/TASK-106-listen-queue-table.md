@@ -1,7 +1,7 @@
 ---
 id: TASK-106
 title: 5.14 A queue to listen next (1 of 2) — the listen_queue table, its writes and undo
-status: Review
+status: Done
 depends_on: []
 size: M
 model: opus
