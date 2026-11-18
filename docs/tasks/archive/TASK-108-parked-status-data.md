@@ -1,7 +1,7 @@
 ---
 id: TASK-108
 title: 5.15 Parked (1 of 4) — the parked status, out of the plan and the listen queue, with an exact Undo
-status: Review
+status: Done
 depends_on: [TASK-106]
 size: M
 model: opus
