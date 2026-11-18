@@ -4479,6 +4479,37 @@ it is converted.
     `shelves` row and one `shelf_books` row; Undo leaves neither; a name
     already in use writes nothing and says why.
 
+- ☐ 5.1b **Take a book off a shelf** · M. *From TASK-119 (3.5b, part 2):*
+  the book sheet's *Shelves Edit* needs to take a book off a shelf, and no
+  write does that today: 5.1 built create, add, reorder, a note and a
+  description (`src/db/writes.ts`), never removal (owner, 2026-11-18). Depends
+  on 5.1.
+  - **The write.** Taking a book off a shelf deletes its `shelf_books` row and
+    closes the gap, so the shelf's ordinals stay contiguous from 1, as
+    `moveOnShelf` keeps them. Its undo puts the row back at its old place with
+    its note, and refuses, changing nothing, once the shelf's order has moved
+    since (as `undoShelfMove` does). The book itself, its status, its plan and
+    its place on any other shelf are untouched. `shelf_books` has no
+    `deleted_at`: like `owned_copies` and a plan row, a shelf placement is the
+    owner's opinion, not a catalog row, so removing it deletes the row (the
+    plan gate confirms this against Hard rule 4; a new column is a stop-and-ask).
+  - **Where.** `PATCH /api/shelves/{id}` (or a `DELETE` with the book, chosen
+    at the plan gate), and the shelf page's `⋯` *Remove from shelf* beside
+    *Move to top · Move up · Move down* (`ReorderList` already offers the
+    caller's *Remove*), with an Undo toast. 3.5b's *Shelves Edit* (TASK-119)
+    uses the same write.
+  - **Not drawn yet.** The mockup's `shelves` frame gains the `⋯`'s *Remove
+    from shelf* and its toast before it is built.
+  - **Check:** (proposed; the owner agrees it by merging or edits it first)
+    on the test database, taking the third of five books off a shelf deletes
+    its one `shelf_books` row and leaves the shelf's ordinals 1–4 contiguous;
+    its Undo puts the row back at 3 with its note and the others back where
+    they were; the book, its status, its plan and its place on another shelf
+    are unchanged throughout; an Undo after the shelf has been reordered since
+    answers 409 and changes nothing. In the browser (0.11), the shelf page's
+    `⋯` *Remove from shelf* takes it off with an Undo toast; axe passes;
+    screenshots at 360px and 1280px.
+
 - ☐ 5.2 Tracks page from `track_progress` · S. `/comics/tracks`: 37 tracks, each
   drawn as a row of its blocks (D-29: cells sized by each block's issue count,
   14px floor, each filled by its own share read, `read / total` as text, counting

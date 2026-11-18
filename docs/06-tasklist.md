@@ -347,7 +347,7 @@ with the task that first reads it.
 |  | 0.14b → TASK-113 | Automatic runs are debounced and capped | M | _Owner, 2026-11-17 (D-158); Phase 0's, listed here beside 0.13; not a cutover gate_ | 0.14 |
 |  | 0.14c → TASK-114 | Every page is measured | M | _Owner, 2026-11-17; Phase 0's, listed here beside 0.13; not a cutover gate; finishes only once `LIGHTHOUSE_MODE` is back on_ | 0.14b |
 |  | 1.31 → TASK-115 | Settle the Owner checklist before the books cutover | S | _Owner, 2026-11-14 (from TASK-084, PR #255); Check proposed_ | — |
-|  | 1.26 → TASK-061 | Cut the books over from the Sheets | M | _The books cutover since 2026-11-08 (D-128)_ | 1.25, 1.14c, 1.17b, 1.29, and every open entry 1.25 names for `Books.xlsx`, with 4.4 and 5.17 (D-132, D-133) and what D-139 pulled ahead |
+|  | 1.26 → TASK-061 | Cut the books over from the Sheets | M | _The books cutover since 2026-11-08 (D-128)_ | 1.25, 1.14c, 1.17b, 1.29, 1.31, and every open entry 1.25 names for `Books.xlsx`, with 4.4 and 5.17 (D-132, D-133) and what D-139 pulled ahead |
 
 # Next
 
@@ -493,6 +493,7 @@ with the task that first reads it.
 | Done | # | Task | Size | Notes | Depends on |
 |---|---|---|---|---|---|
 | ✅ | 5.1 → TASK-095, TASK-096, TASK-097 | Shelves (books only): create, add items, reorder | M | _Pulled ahead of 1.26 (D-139)_ | — |
+|  | 5.1b → TASK-124 | Take a book off a shelf | M | _Owner, 2026-11-18 (for TASK-119, 3.5b's Shelves Edit); Check proposed_ | 5.1 |
 | ✅ | 5.5 → TASK-098 | DNF with a reason field | S | _Pulled ahead of 1.26 (D-139); builds the closing card 5.4 reuses_ | — |
 | ✅ | 5.7 → TASK-099, TASK-100 | Books coming out | M |  | 1.4c, 1.8 |
 |  | 5.9 → TASK-101, TASK-102 | Series page from `series_progress` | M |  | — |

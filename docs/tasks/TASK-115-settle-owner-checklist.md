@@ -25,7 +25,7 @@ Before the last full load of the books, every open owner decision, action and ap
 - 4.2's question is the item *Hardcover's matching misses real books (from TASK-084, 4.2, PR #255)* under *Decisions waiting on you*; the matching rule is `src/lib/book-match.ts` (the port of `enrich_books.decide`), shared by `etl/enrich_books.py` and `backfillBooks` (`.claude/rules/schema.md`, the backfill bullet).
 - `etl/data/book_details.csv` on `main` holds 2,000 rows with `source` `openlibrary` (2026-11-18). Only the owner's full `npm run enrich:books` run (1.14b, 1.14c, D-94, D-130) replaces them, then `npm run extract`. Hardcover's key is `HARDCOVER_API_TOKEN` (`docs/SERVICES.md`).
 - Decisions: D-94 (Open Library gone; Hardcover is the source), D-95 (cutover gated on parity), D-128 (books cut over first), D-130 (page counts from Hardcover), D-139 (the books work pulled ahead of 1.26).
-- `docs/tasks/TASK-061-books-cutover.md` (1.26) does not list this task in `depends_on`, and the tasklist's 1.26 row does not name 1.31 in *Depends on*. See the open question in the PR that created this file.
+- **1.26 waits on this task** (owner, 2026-11-18): 1.26's roadmap **Depends on** ends with 1.31, its tasklist row names it, and TASK-061 lists TASK-115 in `depends_on`.
 
 ## Acceptance criteria
 
