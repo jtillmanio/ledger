@@ -5220,6 +5220,9 @@ it is converted.
   universe, a book on three levels and a book on none. The result lands as
   `design/*.dc.html` from the design tool, which is what may change those files,
   and the mockup, then the build follows it.
+  *From 6.23 (2026-11-18):* the mediums review's part E asks for these frames
+  (`docs/design-briefs/2026-11-mediums-review.md`, `bdash`). If the owner picks one
+  there, this entry starts from that drawing.
   **Check:** (proposed; the owner agrees it by merging or edits it first) the
   design tool's frames cover phone, tablet and desktop, light and dark, the owner
   picks one, and Now and `/progress` match it; 2.2g's own Check still passes with
@@ -5237,6 +5240,42 @@ it is converted.
   with every menu item's box inside the viewport and the first item focused;
   a row at the top still opens downward; arrow keys, Esc and Tab behave as
   before.
+
+- ☐ 6.23 **Design review with Claude Design: the new mediums, and what was
+  drawn since the feel pass** · M. Owner, 2026-11-18 (owner: *write a prompt
+  to do a design review for the new mediums … also include any other design
+  that hasn't been done. Even if development is done, this can be a design
+  review of new features added since previous design*). Depends on nothing:
+  it can run any time, and 8.7, 9.0, 10.0 and 6.21 draw from it.
+  - **Why now.** The feel pass (D-40, 2026-10-05/06) drew comics, books and
+    watch on the phone, comics and books on the tablet and desktop, and
+    stopped. Since then each task drew its own frames in `design/mockups.html`
+    from the feel pass's text, never through the design tool. Watch has three
+    open conflicts (8.7) and no tablet or desktop frames. Music (9.0) and games
+    (10.0) are not drawn at all, and five media don't fit the phone's media bar.
+  - **The prompt** is `docs/design-briefs/2026-11-mediums-review.md`: parts A
+    (navigation for five media), B (watch), C (music), D (games), E (a review
+    of every frame drawn after 2026-10-06) and F (planned screens nobody has
+    drawn: `/progress`, Parked, the listen queue, comics' *Coming out*, the
+    prerequisite and volume-map editors, Activity, the offline states). The
+    owner runs it in Claude Design. Claude Code checks its inventory against
+    `main` first and cuts the roadmap excerpt it attaches.
+  - **What comes back is recorded the way the feel pass was:** the review
+    page and its PNGs land in `design/` as delivered, along with the style
+    guide and token changes. Those paths are protected, so the design tool is
+    what changes them. The owner's answers become decisions rows, and each
+    entry whose drawing changed gets a note pointing at its section. It draws
+    and doesn't build: 9.0's and 10.0's Checks (*the mockup gains each
+    screen*) stay with them, and so does `src/app/globals.css` following any
+    new token.
+  **Check:** (proposed; the owner agrees it by merging or edits it first) the
+  review page and its PNGs are in `design/` as the design tool delivered them,
+  covering the prompt's parts A–F at phone, tablet and desktop, light and dark;
+  `design/mockups-index.md` gains a section listing each `mockups.html` frame
+  the review supersedes and the roadmap entry that redraws it; the decisions
+  log records where four and five media sit in the navigation and the answers
+  to 8.7's three open questions; and each question the owner answered is a
+  decisions row or a *From 6.23* note in the roadmap entry it changes.
 
 - ☐ 6.9 **Revisit the theme** — do this near the end, once every screen exists
   and you have lived with it on a phone for a few weeks · M
@@ -5645,7 +5684,9 @@ nudge (*Still here when you want them.*), grey because paused has no colour
 meaning. A `caught_up` show (8.1) is never *Paused*, because it has nothing to
 watch until 8.9 finds a new season. And **2026 so far** is three this-year counts (films, seasons, shows
 finished). **Open, stop and ask before building**, because the drawing
-conflicts with rules that stand: (1) its Now has a one-cell-per-episode strip,
+conflicts with rules that stand (*from 6.23:* the mediums review's part B
+asks the design tool to resolve all three, and 6.23's decisions rows record
+the owner's answers): (1) its Now has a one-cell-per-episode strip,
 *S4 E3* and *Mark S4 E3 watched*, but the watchlist tracks seasons and never
 episodes (`.claude/rules/schema.md`, this phase's header); (2) its shelf has **Reorder**, but
 watch has no stored order (no queue table, and no period control by design);
@@ -5825,6 +5866,10 @@ The screens, phone, tablet and desktop, in the mockup:
   discography), situation (artists you want to listen to), and this year;
 - `/music/artist/[id]`, the album sheet, and the song ranker (9.4);
 - the empty first screen, a search, as watch's is.
+
+*From 6.23 (2026-11-18):* the mediums review's parts A and C draw these in the
+design tool first. This entry then draws the mockup's frames from that review,
+and the media-bar decision is 6.23's decisions row.
 
 **Check:** the mockup gains each screen at phone, tablet and desktop widths,
 `design/mockups-index.md` lists them, and the media-bar decision is in the
@@ -6017,6 +6062,9 @@ and in the sidebar, and draw at phone, tablet and desktop:
 - `/games/status`, the game sheet, the coming-out list (10.4), *Your
   platforms* in Settings, and the empty first screen, a search, as watch's
   is.
+
+*From 6.23 (2026-11-18):* the mediums review's parts A and D draw these in the
+design tool first, and this entry draws the mockup's frames from that review.
 
 **Check:** the mockup gains each screen at phone, tablet and desktop widths,
 `design/mockups-index.md` lists them, and where Games sits in the navigation

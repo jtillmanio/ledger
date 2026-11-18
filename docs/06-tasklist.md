@@ -573,6 +573,7 @@ with the task that first reads it.
 |  | 6.19 | Remove Open Library | S |  | 1.14b, 1.4f |
 |  | 6.20 | Last backup on Settings (proposed, from TASK-045) | S |  | 2.0 |
 |  | 6.21 | Redesign where the book sits, with Claude Design | M |  | 2.2g, 5.12 |
+|  | 6.23 → TASK-126 | Design review with Claude Design: the new mediums, and what was drawn since the feel pass | M | _Owner, 2026-11-18; runs any time, ahead of 8.7, 9.0 and 10.0; Check proposed_ | — |
 |  | 6.9 | Revisit the theme | M |  | — |
 
 ## M22: AI-assisted curation — Later

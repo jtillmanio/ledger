@@ -1,0 +1,187 @@
+---
+id: TASK-126
+title: 6.23 Design review with Claude Design — the new mediums, and what was drawn since the feel pass
+status: Ready
+depends_on: []
+size: M
+model: opus
+autonomy: attended
+ui: false
+plan_status: approved
+planned_at_commit: 5c47fd7
+---
+
+# TASK-126 — 6.23 Design review with Claude Design — the new mediums, and what was drawn since the feel pass
+
+## Goal
+
+The owner runs one design review in Claude Design that draws watch, music and
+games in the feel pass's language, settles where five media sit in the
+navigation, and reviews every screen drawn after the feel pass. Its result is
+in the repo, where 8.7, 9.0, 10.0, 6.21 and the other entries it touches can
+build from it.
+
+## Context
+
+- Roadmap: `docs/05-roadmap.md` § 6.23 (M21). Its **Check:** is the contract,
+  proposed and agreed by the owner merging the PR that added it.
+- **The prompt** is `docs/design-briefs/2026-11-mediums-review.md`: what to attach,
+  the text to paste, and the inventory behind parts A–F, checked against
+  `main` at `5c47fd7`.
+- **The precedent** is the feel pass (D-40): `design/handoff/README.md` records
+  what that delivery was and how it was recorded. `design/mockups-index.md`
+  § *Oct 2026, feel pass (D-40)* is the superseded-frames table this task
+  copies the form of. `docs/04-design.md` (the table of design files) lists
+  each design source.
+- **Protected paths.** `design/*.dc.html`, `design/STYLE_GUIDE.md`,
+  `design/tokens.css` and `design/screenshots/**` are in `protectedPaths`
+  (`.claude/kit.json`): *changes come from the design tool*. This task never
+  edits them. The owner puts the design tool's export there, and Claude Code
+  checks it and stages it as delivered (plan step 3). The owner approved that
+  route with this plan (2026-11-18).
+- **Size.** Seven files are written here: the brief, the excerpt,
+  `mockups-index.md`, `decisions.md`, `04-design.md`, `05-roadmap.md` and
+  `06-tasklist.md`. The rest are the design tool's delivery, staged as
+  exported.
+- **Who reads what comes out:** 8.7 (its three *stop and ask* conflicts), 8.8,
+  9.0, 10.0 (their Checks still need the mockup frames, drawn from this
+  review), 6.21 (*where the book sits*, part E) and 6.9 (the theme pass will
+  find the new accents measured).
+- Decisions: D-1 (which document wins), D-31, D-33, D-40, D-113, D-120,
+  D-123, D-28. The UX floor: `docs/04-design.md` § 10.
+
+## Acceptance criteria
+
+- [ ] AC-1 (roadmap **Check:**, verbatim): the
+  review page and its PNGs are in `design/` as the design tool delivered them,
+  covering the prompt's parts A–F at phone, tablet and desktop, light and dark;
+  `design/mockups-index.md` gains a section listing each `mockups.html` frame
+  the review supersedes and the roadmap entry that redraws it; the decisions
+  log records where four and five media sit in the navigation and the answers
+  to 8.7's three open questions; and each question the owner answered is a
+  decisions row or a *From 6.23* note in the roadmap entry it changes.
+- [ ] AC-2: Before the owner pastes the prompt, its inventory matches `main`
+  that day. The plan step 1 grep lists every roadmap entry whose text says
+  *not drawn yet*, *the mockup gains* or *the feel pass is silent*, and each
+  one is in part E, in part F, or named in the PR as drawn since. The grep's
+  output is in the PR.
+- [ ] AC-3: Opened in a browser with `design/support.js` beside it, the
+  delivered review page renders with no console errors and a heading for each
+  of parts A–F. Every PNG the hand-off note names exists under
+  `design/screenshots/` at that path.
+- [ ] AC-4: Each departure the design tool lists (MR-D1…) is marked accepted
+  or rejected in one decisions row, as D-40 lists D1–D14, and the new D-n rows
+  continue the log's numbering with no gap and no reuse.
+- [ ] AC-5: `git diff main -- docs/05-roadmap.md` changes no **Check:** line,
+  apart from 6.23's tick at close-out. Every other change is a *From 6.23*
+  note or a tick.
+- [ ] AC-6: Nothing under `src/`, `test/`, `etl/` or `drizzle/` changes, and
+  `npm run verify:docs` passes on the branch.
+
+## Out of scope
+
+- Drawing music's and games' frames into `design/mockups.html`. That is 9.0's
+  and 10.0's own Check, done from this review.
+- Building anything, including `src/app/globals.css` following a new token
+  (the task that first uses the token adopts it, as 1.8a did for palette 1c).
+- Redrawing any existing `mockups.html` frame. The index marks it superseded,
+  and its roadmap entry redraws it (standing rule 6).
+- Changing a design-tool file by hand. A fix goes back to the design tool.
+
+## Files likely touched
+
+- `docs/design-briefs/2026-11-mediums-review.md`: the inventory refreshed (step 1)
+  and a *Delivered* section (step 3).
+- `docs/design-briefs/2026-11-mediums-roadmap-excerpt.md` (new): the roadmap text
+  the prompt attaches.
+- `design/Ledger Mediums Review.dc.html`, any component pages it imports,
+  `design/screenshots/{phone,tablet,desktop}/` and `README.md`,
+  `design/STYLE_GUIDE.md`, `design/tokens.css`: delivered by the design tool
+  and staged as exported (protected; never edited here).
+- `design/mockups-index.md`: the *Nov 2026, mediums review* section.
+- `docs/review/decisions.md`: the owner's answers and the departures row.
+- `docs/04-design.md`: the review page in the table of design files.
+- `docs/05-roadmap.md`: *From 6.23* notes and 6.23's tick.
+- `docs/06-tasklist.md`: 6.23's Done cell at close-out.
+
+## Verification
+
+- Automated: `npm run verify:docs` (the task-file parse, and any test that
+  names a changed file).
+- Manual: open `design/Ledger Mediums Review.dc.html` in a browser. Parts A–F
+  render, light and dark, at each width, and the console is clean.
+- Manual (owner): walk the review page, accept or reject each MR-D, answer
+  each MR-Q.
+
+## Follow-ups
+
+_Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+## Plan
+
+Approved by the owner, 2026-11-18, with the task ("make this into an approved
+task"). The branch is `task/6.23-mediums-design-review`, in its own worktree.
+Attended throughout, because step 2 is the owner's.
+
+1. **Refresh the inventory (Claude Code).** On an up-to-date `main`, list the
+   roadmap entries whose text says *not drawn yet*, *the mockup gains* or *the
+   feel pass is silent*, with their tick, using the command in
+   `docs/design-briefs/2026-11-mediums-review.md` § *Inventory, as written*.
+   Compare the list with `design/mockups-index.md`. Move
+   anything drawn since `5c47fd7` (likely 5.14, 5.15 and 5.9 part 3, which
+   were in flight) from part F to part E, and add anything new. Then edit the
+   prompt's parts E and F and the inventory table to match. Paste the output
+   into the PR (AC-2).
+2. **Cut the excerpt (Claude Code).** `powershell -NoProfile -File
+   scripts/task.ps1 <id>` for each ID in the inventory table, Phases 8–10 in
+   full. Write them in that order to
+   `docs/design-briefs/2026-11-mediums-roadmap-excerpt.md` under a line saying it
+   is a copy and the roadmap wins (D-1). Commit steps 1–2 and hand the owner
+   the attach list and the prompt.
+3. **Run the review (owner, in Claude Design).** Paste the prompt with the
+   attachments. Iterate there for as long as the owner wants. Export the
+   review page (and any component pages it imports), every PNG, the style
+   guide and tokens if changed, and the hand-off note. The owner puts the
+   exported files into `design/` and `design/screenshots/`, and the hand-off
+   note into `docs/design-briefs/` as `2026-11-mediums-handoff.md`.
+4. **Record the delivery (Claude Code).** Check the export: the page renders
+   (AC-3), each PNG the note names exists, and `git diff` on `STYLE_GUIDE.md`
+   and `tokens.css` is listed file by file in the PR, with no edit by Claude
+   Code. Stage the delivered files by path. Add a *Delivered* section to the
+   brief (the date, every file and what it is, as
+   `design/handoff/README.md` does) and a row for the review page in
+   `docs/04-design.md`'s table of design files.
+5. **The owner's calls (owner, then Claude Code).** Claude Code lists every
+   MR-Q with the design tool's recommendation, and the owner answers each one.
+   Each answer is a decisions row: the navigation for four and five media,
+   8.7's three conflicts, and each other answer that changes a rule. Answers
+   that only settle one entry are a *From 6.23* note in that entry instead.
+   One more row lists every MR-D as accepted or rejected (AC-4). An MR-Q the
+   owner defers stays open as a note in its entry, worded as a question.
+6. **Supersede, don't redraw (Claude Code).** Add a *Nov 2026, mediums review*
+   section to `design/mockups-index.md`, in the form of the feel pass's table:
+   each `mockups.html` frame the review redraws, its section in the review
+   page, and the roadmap entry that will redraw it. Then add a *From 6.23*
+   note to each such entry (8.2–8.10, 9.0, 10.0, 6.21 and the parts-E and F
+   entries the review changed), naming the section. Never change a
+   **Check:** line (AC-5).
+7. **Close out.** Run `npm run verify:docs`. Spec review against this file.
+   Tick 6.23 in the roadmap and its Done cell in `docs/06-tasklist.md`, then
+   run `.claude/scripts/build-index.ps1`. Push and open the PR, ready for
+   review. Its Follow-ups include the new tokens for `globals.css` (→ the
+   first task that uses them) and any MR-Q left open (→ its entry).
+
+## Review log
+
+_Filled by /implement-task. One line per round._
+
+## Blocked
+
+_Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
+
+## Metrics
+
+- Verify rounds:
+- Review rounds:
+- First-pass AC FAILs:
+- Plan revisions after approval:
