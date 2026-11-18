@@ -1,7 +1,7 @@
 ---
 id: TASK-108
 title: 5.15 Parked (1 of 4) — the parked status, out of the plan and the listen queue, with an exact Undo
-status: In progress
+status: Review
 depends_on: [TASK-106]
 size: M
 model: opus
@@ -30,7 +30,7 @@ The Ledger can park a book: put it away on purpose, out of its plan and off the 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check (proposed):**, verbatim; this part proves, with `npm test`: the park of the 2nd of 3 in 2027 Q1 and its Undo, absence from `to_read_level`, `plan_period`, the status tabs' queries and 2.10b's suggestions, presence under `listBooks`'s *Parked* filter and in search, and `1 / 2`. TASK-109 proves the chip and tag in the browser, TASK-110 the cadence, TASK-111 the review and the dashboard line): (proposed; the owner agrees it by merging or edits it first)
+- [x] AC-1 (roadmap **Check (proposed):**, verbatim; this part proves, with `npm test`: the park of the 2nd of 3 in 2027 Q1 and its Undo, absence from `to_read_level`, `plan_period`, the status tabs' queries and 2.10b's suggestions, presence under `listBooks`'s *Parked* filter and in search, and `1 / 2`. TASK-109 proves the chip and tag in the browser, TASK-110 the cadence, TASK-111 the review and the dashboard line): (proposed; the owner agrees it by merging or edits it first)
 `npm test`: parking the 2nd of 3 books in 2027 Q1
 writes `parked`, removes its plan row and leaves Q1 at ordinals 1–2, and
 Undo restores `to_read` at position 2. A parked book is absent from
@@ -43,10 +43,10 @@ makes it not due. In the browser (0.11), the review's *Plan…* opens 2.3's
 picker, *Unlisted* writes `unlisted` and Undo puts back `parked`, and the
 dashboard line shows only when the review is due. Nothing on the
 dashboard or the review resolves to `--danger`.
-- [ ] AC-2: Given a queued listen at position 2 of 3 that is also `listening`, parking it writes `parked`, leaves the listen queue at 1–2, and its Undo restores `listening`, its start date and queue position 2.
-- [ ] AC-3: Parking writes `parked_on` as today's Eastern date (as approved), leaving `parked` clears it, and the undo of a park leaves no `parked_on`; a book parked from `reading` with a start and no finish since derives as *parked mid-read*.
-- [ ] AC-4: Parking a `read`, `dnf`, `unlisted` or status-less book is refused with 400 and writes nothing; a missing or soft-deleted book answers 404.
-- [ ] AC-5: `booksInFlight`, `booksUpNext` and `booksDone` return no parked book, `planCapacity` and `planSuggestions` leave it out, and `listBooks({ status: 'parked' })` returns exactly the parked books while *Everything* returns none of them.
+- [x] AC-2: Given a queued listen at position 2 of 3 that is also `listening`, parking it writes `parked`, leaves the listen queue at 1–2, and its Undo restores `listening`, its start date and queue position 2.
+- [x] AC-3: Parking writes `parked_on` as today's Eastern date (as approved), leaving `parked` clears it, and the undo of a park leaves no `parked_on`; a book parked from `reading` with a start and no finish since derives as *parked mid-read*.
+- [x] AC-4: Parking a `read`, `dnf`, `unlisted` or status-less book is refused with 400 and writes nothing; a missing or soft-deleted book answers 404.
+- [x] AC-5: `booksInFlight`, `booksUpNext` and `booksDone` return no parked book, `planCapacity` and `planSuggestions` leave it out, and `listBooks({ status: 'parked' })` returns exactly the parked books while *Everything* returns none of them.
 
 ## Out of scope
 
@@ -102,13 +102,18 @@ Approved by the owner 2026-11-18, with: `book_status.parked_on` **with** the CHE
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 PASS (vitest 2,215 passed, ETL 411 OK, `check:migrations`) | CI R1 PASS (be1b78a, every project)
+- Spec R1 CHANGES (two follow-ups without a destination) → placed at close-out | Schema R1 CHANGES (MAJOR: an unpark's undo under a plan row gained since; MINOR: the undo's period and day checks; two MINOR left as follow-ups) → fixed in 7bb92f6
+- Verify R2 PASS (2,217 passed, ETL 411 OK) | Schema R2 APPROVE | Audit R1 PASS (AC-1 to AC-5 proven; four line mutations each failed their tests)
+- Close-out follow-ups check APPROVE (4 bullets, 4 placed; no ticks due: 5.15 stays open until TASK-111)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2 (schema), 1 + close-out check (spec)
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0 (the review fix tightened the undo inside the approved step 4)
