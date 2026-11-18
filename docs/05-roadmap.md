@@ -4519,7 +4519,7 @@ it is converted.
 
 - ☐ 5.6 `edition_issues` parser: `"Avengers #500-503 and Avengers Finale"` into join rows · M
 
-- ☐ 5.7 **Books coming out** · M. D-35; product B1, B5; Review N UX-N26.
+- ☑ 5.7 **Books coming out** · M. D-35; product B1, B5; Review N UX-N26.
   Depends on 1.4c and 1.8. `/books/releases`: the books you want when they
   come out, read from the `releases` table (`book_id`, `release_date`; the
   workbook's *Coming Out* tab, 44 rows on the 2026-09-23 extract) that only the

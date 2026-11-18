@@ -1,7 +1,7 @@
 ---
 id: TASK-100
 title: 5.7 Books coming out (2 of 2) — the add sheet's Coming out destination and the dashboard line
-status: In progress
+status: Done
 depends_on: [TASK-099]
 size: M
 model: opus
@@ -30,17 +30,17 @@ You can add a book you're waiting for straight to *Coming out*, with its release
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves the dashboard line's counts equal the list's, on the test database and in the browser (0.11), and the add path that feeds both. TASK-099 proves the list, *Got it* and the screenshots):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves the dashboard line's counts equal the list's, on the test database and in the browser (0.11), and the add path that feeds both. TASK-099 proves the list, *Got it* and the screenshots):
 a released-yesterday book with no status renders under *Out now*;
 one due next month under that month; *Got it* writes one `to_read` row and
 removes the row from the list, and Undo restores it; a book already `read`
 never appears. The dashboard line's counts equal the list's. Screenshot at
 360px, 834px and 1280px.
-- [ ] AC-2: Given the add sheet, adding a new book by hand to *Coming out* with a date next month writes one `books` row and one `releases` row with that date and no `book_status` row, and the book shows on `/books/releases` under that month; *Undo* removes both rows.
-- [ ] AC-3: Adding with *no date yet* writes a `releases` row with NULL `release_date`, listed under *No date yet*.
-- [ ] AC-4: Given two wanted books out now and three due this month (Eastern), the books dashboard's rollup slot shows `2 out now · 3 coming this month →` linking to `/books/releases`; with none of either, the line is absent; the slots keep their order.
-- [ ] AC-5: The `add` and `bdash` frames in `design/mockups.html` draw the destination with its date field and the rollup line, and `design/mockups-index.md` names them (task 5.7).
-- [ ] AC-6: The destination and the line meet the UX floor (`docs/04-design.md` § 10): the date field is labelled and keyboard-operable, *no date yet* is a real control with a name, a bad date is refused under the field, the line is a real link with a name; contrast in light and dark; nothing on the dashboard resolves to `--danger`; screenshots at 360px, 834px and 1280px.
+- [x] AC-2: Given the add sheet, adding a new book by hand to *Coming out* with a date next month writes one `books` row and one `releases` row with that date and no `book_status` row, and the book shows on `/books/releases` under that month; *Undo* removes both rows.
+- [x] AC-3: Adding with *no date yet* writes a `releases` row with NULL `release_date`, listed under *No date yet*.
+- [x] AC-4: Given two wanted books out now and three due this month (Eastern), the books dashboard's rollup slot shows `2 out now · 3 coming this month →` linking to `/books/releases`; with none of either, the line is absent; the slots keep their order.
+- [x] AC-5: The `add` and `bdash` frames in `design/mockups.html` draw the destination with its date field and the rollup line, and `design/mockups-index.md` names them (task 5.7).
+- [x] AC-6: The destination and the line meet the UX floor (`docs/04-design.md` § 10): the date field is labelled and keyboard-operable, *no date yet* is a real control with a name, a bad date is refused under the field, the line is a real link with a name; contrast in light and dark; nothing on the dashboard resolves to `--danger`; screenshots at 360px, 834px and 1280px.
 
 ## Out of scope
 
@@ -65,6 +65,12 @@ never appears. The dashboard line's counts equal the list's. Screenshot at
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- Candidate decision: the owner's plan-gate rulings on *Coming out* (Search and By hand only; a book with any status or a release gets nothing; the undo's refusals; the line drops a zero part), approved by the owner at close-out → docs/review/decisions.md § D-162
+- `/books` query budget 12 → 13 (the line reads `wantedReleases` in the dashboard's one wave), which `test/query-budget.test.ts` requires to carry its reason → docs/02-architecture.md § Performance budget (fixed in this PR)
+- Schema review R1's lost-update race (undo vs *Got it*) and missing Calibre-id guard, and ui-verifier's misplaced refusal at 1024px and up → not tracked: done in this PR (review rounds)
+- The bulk add's refusal of `release` passes on the pre-task code too (`parseDestination`'s default refuses an unknown kind): a regression guard, not a discriminating test (test-auditor note) → not tracked: accepted as is; `bulk/route.ts` is untouched by design (Q3)
+- ui-verifier saw Space on a focused *No date yet* do nothing twice, then never again in four tries (and the floor spec's keyboard check passes in every CI project) → not tracked: not reproduced
 
 ## Plan
 
@@ -103,13 +109,21 @@ Approved 2026-11-17 by the owner, with the four defaults below.
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 PASS | CI R1 PASS (every project, 025bff1)
+- Spec R1 APPROVE (2 minor notes) | Schema R1 CHANGES (MAJOR: undo races Got it; MINOR: no Calibre-id guard) → fixed (38fe7ca)
+- Verify R2 PASS | Spec R2 APPROVE | Schema R2 APPROVE | CI R2 PASS
+- Audit R1 PASS (every AC test fails on 45ddc3d; tree restored)
+- UI R1 PASS, 360–1280, light and dark (note: the refusal sat beside *No date yet* from 1024px) → fixed (9c7dab3), its position pinned by the floor spec at every width (w390, w1280 run locally; every project in CI); not re-walked by ui-verifier
+- Verify R3 PASS | CI R3 PASS | Vercel preview pass | Lighthouse skipped (`LIGHTHOUSE_MODE` unset, D-158)
+- Owner accepted, 2026-11-17
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3
+- Review rounds: 2 (spec, schema); UI 1 plus a fix
+- First-pass AC FAILs: 0 (schema CHANGES on undo safety; one UI layout note at 1024px+)
+- Plan revisions after approval: 0 (the review fixes stay inside steps 1 and 3)
