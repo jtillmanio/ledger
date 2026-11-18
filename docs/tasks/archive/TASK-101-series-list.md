@@ -1,7 +1,7 @@
 ---
 id: TASK-101
 title: 5.9 Series (1 of 2) — the Series list from series_progress, and the nav item
-status: Review
+status: Done
 depends_on: []
 size: M
 model: sonnet
@@ -130,7 +130,7 @@ Approved 2026-11-18 by the owner (*approve with recommendations*): the four open
 
 ## Review log
 
-Verify R1 PASS (after rerunning from `C:\`: the first run's lowercase drive made every vitest file fail to find the runner) | CI R1 FAIL (`shelves.spec.ts:205`, w390-light, shard 3/8: an existing test's race) → R2 FAIL (same test, 9da2ef5, comment-only change) → fixed in 8ec357c | Verify R2 PASS | Audit R1 PASS | Schema R1 APPROVE (2 MINOR: the doc comment reworded; `total_books = 0` left, see Follow-ups) | Spec R1 not run by the agent (weekly rate limit, resets Nov 21): the session ran the spec-reviewer's checklist itself, not independent: ACs against tests, hard rules 2–7 against the diff, scope against the plan → APPROVE | UI R1 PASS (AC-3, the empty, loading and error states are unreachable on the dev data and are proved by the tests; AC-5 read against the mockup) | CI R3 pending on 8ec357c and the close-out.
+Verify R1 PASS (after rerunning from `C:\`: the first run's lowercase drive made every vitest file fail to find the runner) | CI R1 FAIL (`shelves.spec.ts:205`, w390-light, shard 3/8: an existing test's race) → R2 FAIL (same test, 9da2ef5, comment-only change) → fixed in 8ec357c | Verify R2 PASS | Audit R1 PASS | Schema R1 APPROVE (2 MINOR: the doc comment reworded; `total_books = 0` left, see Follow-ups) | Spec R1 not run by the agent (weekly rate limit, resets Nov 21): the session ran the spec-reviewer's checklist itself, not independent: ACs against tests, hard rules 2–7 against the diff, scope against the plan → APPROVE | UI R1 PASS (AC-3, the empty, loading and error states are unreachable on the dev data and are proved by the tests; AC-5 read against the mockup) | CI R3 PASS on 11ed95a (every project, 8 shards) | Accepted by the owner.
 
 ## Blocked
 
