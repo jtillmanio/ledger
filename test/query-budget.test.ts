@@ -42,6 +42,9 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   "/books/series": { queries: 1, waves: 1 },
   // One series' page (task 5.9, 2 of 3): its counts, follow, live books and gaps, one read.
   "/books/series/[id]": { queries: 1, waves: 1 },
+  // An author's and a universe's page (task 5.11): its counts, follow and live books, one read each.
+  "/books/authors/[id]": { queries: 1, waves: 1 },
+  "/books/universes/[id]": { queries: 1, waves: 1 },
   "/inbox": { queries: 2, waves: 1 },
   // Task 4.4 adds the last Calibre sync (one scalar row) for the *Calibre* row, in the same wave.
   "/settings": { queries: 3, waves: 1 },
@@ -112,6 +115,10 @@ beforeEach(async () => {
   // A series with a gap in it, for its page (task 5.9): book 'b' at #1 of a stated 2.
   await sql`INSERT INTO book_series (id, name, total_books) VALUES ('ser', 'Series', 2)`;
   await sql`UPDATE books SET series_id = 'ser', series_position = 1 WHERE id = 'b'`;
+  // Its author and universe, for their pages (task 5.11).
+  await sql`INSERT INTO authors (id, name) VALUES ('au', 'Author')`;
+  await sql`INSERT INTO book_universes (id, name) VALUES ('uni', 'Universe')`;
+  await sql`UPDATE books SET author_id = 'au', universe_id = 'uni', universe_position = 1 WHERE id = 'b'`;
 });
 
 async function measure(render: () => Promise<unknown>) {
@@ -144,6 +151,12 @@ const pages: [string, () => Promise<unknown>][] = [
   ["/books/series", async () => (await import("../src/app/books/series/page")).default()],
   ["/books/series/[id]", async () =>
     (await import("../src/app/books/series/[id]/page")).default({ params: Promise.resolve({ id: "ser" }) })],
+  ["/books/authors/[id]", async () =>
+    (await import("../src/app/books/authors/[id]/page")).default({ params: Promise.resolve({ id: "au" }) })],
+  ["/books/universes/[id]", async () =>
+    (await import("../src/app/books/universes/[id]/page")).default({
+      params: Promise.resolve({ id: "uni" }), searchParams: Promise.resolve({}),
+    })],
   ["/inbox", async () => (await import("../src/app/inbox/page")).default()],
   ["/settings", async () => (await import("../src/app/settings/page")).default()],
   ["/settings/calibre", async () => (await import("../src/app/settings/calibre/page")).default()],

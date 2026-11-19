@@ -497,7 +497,7 @@ with the task that first reads it.
 | ✅ | 5.5 → TASK-098 | DNF with a reason field | S | _Pulled ahead of 1.26 (D-139); builds the closing card 5.4 reuses_ | — |
 | ✅ | 5.7 → TASK-099, TASK-100 | Books coming out | M |  | 1.4c, 1.8 |
 |  | 5.9 → TASK-101, TASK-102, TASK-125 | Series page from `series_progress` | M |  | — |
-|  | 5.11 → TASK-103 | Author and universe pages, and the follow control | M |  | 1.15, 5.9 |
+| ✅ | 5.11 → TASK-103 | Author and universe pages, and the follow control | M |  | 1.15, 5.9 |
 |  | 5.12 → TASK-104, TASK-105 | In the middle of, and completed: one page for every medium | M |  | 1.9, 1.15, 2.2c, 2.2d |
 |  | 5.14 → TASK-106, TASK-107 | Audiobooks: a queue to listen next | M | _Pulled ahead of 1.26 (D-139)_ | 1.23, 1.9 |
 |  | 5.15 → TASK-108, TASK-109, TASK-110, TASK-111 | Parked: put a book away, and review it on a schedule | M | _Pulled ahead of 1.26 (D-139)_ | 1.9, 1.17, 1.21, 2.2, 2.3 |

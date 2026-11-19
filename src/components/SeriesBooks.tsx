@@ -14,7 +14,7 @@ export const seriesAddHref = (name: string) => `/books/add?q=${encodeURIComponen
 const GLYPH: Record<string, string> = { read: "✓ ", reading: "◐ ", listening: "◐ " };
 
 /** A position as the row prints it: whole numbers without a decimal, *2.5* as it is, nothing when there is none. */
-const positionText = (n: number | null) => (n === null ? null : `#${Number(n)}`);
+export const positionText = (n: number | null) => (n === null ? null : `#${Number(n)}`);
 
 type Entry = { kind: "book"; book: SeriesBook } | { kind: "gap"; n: number };
 
@@ -34,10 +34,17 @@ export function seriesEntries(books: SeriesBook[], gaps: number[]): Entry[] {
   return out;
 }
 
-function BookRowItem({ book, next }: { book: SeriesBook; next: boolean }) {
+/**
+ * One live book's row (task 5.9; task 5.11's author and universe pages draw it too): the cover, `lead` in mono
+ * before the title (a series' `#n` by default, an author's year), the title linking to the book, *Next up* on
+ * the next unread, an optional `where` line (*The Dark Tower #1*), then its status and dates.
+ */
+export function BookRowItem({ book, next, lead, where }: {
+  book: SeriesBook; next: boolean; lead?: string | null; where?: string;
+}) {
   const place = `${GLYPH[book.status ?? ""] ?? ""}${placeTag({ status: book.status, level: book.level, period: book.period, calibre: false })}`;
   const dates = book.status ? bookDates({ ...book, status: book.status }) : null;
-  const pos = positionText(book.position);
+  const pos = lead === undefined ? positionText(book.position) : lead;
   return (
     <li className={`row sp-row${next ? " sp-next-row" : ""}`}>
       <RowCover url={book.coverUrl} text={bookInitials(book.title)} />
@@ -49,6 +56,7 @@ function BookRowItem({ book, next }: { book: SeriesBook; next: boolean }) {
           </span>
           {next && <span className="sp-tag">Next up</span>}
         </span>
+        {where && <div className="rs">{where}</div>}
         <div className="rs sp-status">
           <span>{place}</span>
           {dates && <span>{dates}</span>}

@@ -4682,7 +4682,7 @@ it is converted.
     omnibus covers shows it under *Collected in* as *#1–24 of 60*, and the
     uncovered stretch as *#25–60*.
 
-- ☐ 5.11 **Author and universe pages, and the follow control** · M. Follow-up
+- ☑ 5.11 **Author and universe pages, and the follow control** · M. Follow-up
   from PR #58 (1.15's *Not here*); D-42, D-43; product B6. Depends on 1.15
   and 5.9. 1.15 adds `author_progress`, `universe_progress` and the three
   follow tables, and 5.9 draws series. This task draws an author page and a
