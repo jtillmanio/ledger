@@ -1,7 +1,7 @@
 ---
 id: TASK-107
 title: 5.14 A queue to listen next (2 of 2) — Queue to listen, Listen next on Up next, and Done's Listened chip
-status: Review
+status: Done
 depends_on: [TASK-106]
 size: M
 model: sonnet
