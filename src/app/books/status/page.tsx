@@ -3,16 +3,17 @@ import AddBooksButton from "@/components/AddBooksButton";
 import BookStatus from "@/components/BookStatus";
 import EmptySlate from "@/components/EmptySlate";
 import FinishBook from "@/components/FinishBook";
+import ListenNext from "@/components/ListenNext";
 import PlaceThem from "@/components/PlaceThem";
 import PlanQuarter from "@/components/PlanQuarter";
 import StatusBookRow from "@/components/StatusBookRow";
 import StatusTabs from "@/components/StatusTabs";
 import { requireUserId } from "@/lib/auth";
-import { booksDone, booksInFlight, booksUpNext, type DoneBook, type PlannedBook, type StatusBook } from "@/db/queries";
+import { booksDone, booksInFlight, booksListenNext, booksUpNext, type DoneBook, type PlannedBook, type StatusBook } from "@/db/queries";
 import { today } from "@/lib/finish-date";
 import { bookDates, quarterName, type Precision } from "@/lib/format";
 import { deckHref, deckSections, NO_GENRE } from "@/lib/on-deck";
-import { parseTab } from "@/lib/status-tabs";
+import { LISTEN_NEXT, listenedOnly, parseFormat, parseTab, upNextCount } from "@/lib/status-tabs";
 
 export const dynamic = "force-dynamic";
 
@@ -41,6 +42,9 @@ const kWords = (books: PlannedBook[]) => {
   const words = books.reduce((sum, b) => sum + (b.word_count ?? 0), 0);
   return words ? ` · ${Math.round(words / 1000)}k` : "";
 };
+/** The Done tab, *All*: its *Listened* chip adds `&format=audio` (task 5.14). */
+const DONE_HREF = "/books/status?tab=done";
+
 const nBooks = (n: number) => `${n.toLocaleString()} ${n === 1 ? "book" : "books"}`;
 
 /** A row's status control (task 1.17b, D-131): the title is the row's own, with no `⋯` beside it. */
@@ -65,21 +69,31 @@ function control(b: StatusBook & {
  * bare-year lane after its quarters (amber, no order, with *Place them*, task 2.8),
  * then On deck, and Someday as one row into the Library, never a list here
  * (D-37), the On deck group drawn by top-level genre with a chip per genre
- * (task 4.5b, D-124: `?genre=`, nothing stored); *Done* is read books by year finished, the undated last, with the
- * stopped ones folded under *Stopped*.
+ * (task 4.5b, D-124: `?genre=`, nothing stored), and after every level *Listen next*, the listen queue
+ * in its order with 1.10's controls, drawn only when it holds a book (task 5.14); *Done* is read books
+ * by year finished, the undated last, with the stopped ones folded under *Stopped*, and its chips
+ * *All · Listened* (`?format=audio`, task 5.14) keep every book or only those with an audio read.
+ * Each tab's count is the books it draws; a book on the plan and the queue counts once.
  */
-export default async function BooksStatus({ searchParams }: { searchParams: Promise<{ tab?: string; genre?: string }> }) {
-  const [{ tab: asked, genre: askedGenre }, userId] = await Promise.all([searchParams, requireUserId()]);
+export default async function BooksStatus({ searchParams }: {
+  searchParams: Promise<{ tab?: string; genre?: string; format?: string | string[] }>;
+}) {
+  const [{ tab: asked, genre: askedGenre, format: askedFormat }, userId] = await Promise.all([searchParams, requireUserId()]);
   const tab = parseTab(asked);
-  const [flying, { planned, someday }, finished] = await Promise.all([
-    booksInFlight(userId), booksUpNext(userId), booksDone(userId),
+  const format = parseFormat(askedFormat);
+  const [flying, { planned, someday }, listenNext, done] = await Promise.all([
+    booksInFlight(userId), booksUpNext(userId), booksListenNext(userId), booksDone(userId),
   ]);
   const groups = groupPlan(planned);
   // On deck by genre (task 4.5b): the chips, the sections and the books they draw. The tab counts the
   // distinct books it draws, so a book in two genre sections counts once and a chosen genre counts its own.
   const deckGroup = groups.find((g) => g.kind === "on_deck");
   const deck = deckSections(deckGroup?.books ?? [], typeof askedGenre === "string" ? askedGenre : null);
-  const drawn = planned.filter((b) => b.level !== "on_deck").length + (deckGroup ? deck.drawn : 0);
+  const deckIds = deckGroup ? [...new Set(deck.sections.flatMap((s) => s.books.map((b) => b.id)))] : [];
+  // Listen next (task 5.14) adds the queued books the plan doesn't already draw: a book on both counts once.
+  const drawn = upNextCount([...planned.filter((b) => b.level !== "on_deck").map((b) => b.id), ...deckIds], listenNext);
+  // Done's *Listened* chip (task 5.14) keeps the books with an audio read, the years and Stopped alike.
+  const finished = listenedOnly(done, format);
   const inFlight = [
     { key: "reading", name: "Reading", books: flying.filter((b) => b.status === "reading") },
     { key: "listening", name: "Listening", books: flying.filter((b) => b.status === "listening") },
@@ -191,16 +205,36 @@ export default async function BooksStatus({ searchParams }: { searchParams: Prom
                 </article>
               </div>
             )}
+            {listenNext.length > 0 && (
+              // After every level of the plan, in the order you gave it (task 5.14); absent with nothing queued.
+              <section aria-labelledby="listen-next" data-listen-next="">
+                <h2 id="listen-next" className="group-head">
+                  {LISTEN_NEXT} <span className="mono n">{nBooks(listenNext.length)}</span>
+                </h2>
+                <ListenNext rows={listenNext} />
+              </section>
+            )}
           </>
         )}
 
         {tab === "done" && (
-          finished.length === 0 ? (
+          done.length === 0 ? (
             <EmptySlate title="Nothing finished yet." href="/books/status?tab=inflight" label="Go to In flight">
               Finished books land here, by year.
             </EmptySlate>
           ) : (
             <>
+              {/* Real links, so the chip is in the URL and a reload keeps it; the chosen one carries aria-current (task 5.14). */}
+              <div className="filters genre-row done-format" role="group" aria-label="Done by format">
+                <Link prefetch={false} href={DONE_HREF} className="chip" aria-current={format === null || undefined}>All</Link>
+                <Link prefetch={false} href={`${DONE_HREF}&format=audio`} className="chip"
+                      aria-current={format === "audio" || undefined}>Listened</Link>
+              </div>
+              {finished.length === 0 && (
+                <EmptySlate title="Nothing listened to yet." href={DONE_HREF} label="Show all">
+                  A book you finish from Listening lands here.
+                </EmptySlate>
+              )}
               {[...years.entries()].map(([year, books]) => (
                 <section key={year} aria-labelledby={`done-${year.replace(/\s/g, "-")}`}>
                   <h2 id={`done-${year.replace(/\s/g, "-")}`} className="group-head">

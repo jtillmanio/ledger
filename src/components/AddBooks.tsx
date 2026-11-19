@@ -16,6 +16,7 @@ import {
   COMING_OUT, destinationOf, OWNED_CHOICES, OWNED_NAMES, shelfLabel, targetName, undoAdd, type Target,
 } from "@/lib/book-add";
 import { MAX_FIELD } from "@/lib/book-parse";
+import { useQueueListen } from "@/lib/listen-queue";
 
 // Loaded on the first *Year or quarter…*, as the Library row's *Plan for…* loads it: every page with an
 // Add button carries Add books, and none of them should carry the picker until it opens (perf budget).
@@ -68,6 +69,11 @@ const STATUS: Record<string, string> = {
  * sheet (D-34: never two), heading and focus moving to it, *‹ Add books* back; on
  * the full page it is a sheet of its own.
  *
+ * A result that is a book (a library one, or a Hardcover one once added) also
+ * offers *Queue to listen* (task 5.14), a second write with its own toast: one
+ * toast at a time, so it commits the add, and the add's undo never meets a book
+ * it queued.
+ *
  * Every add is one transaction on the server and pushes one undo onto the
  * app's stack (task 1.2, R1-09). A book you already have is reused, and the
  * toast says so. In a sheet (`close` given) the page behind refreshes after
@@ -96,6 +102,8 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
   const [outcomes, setOutcomes] = useState<Record<string, Outcome>>({});
   /** Where a result went when its own *Year or quarter…* sent it somewhere other than `target`. */
   const [wheres, setWheres] = useState<Record<string, Target>>({});
+  /** The book each added result became (task 5.14), for its *Queue to listen*. */
+  const [added, setAdded] = useState<Record<string, string>>({});
   const [step, setStep] = useState<{ what: Step; opener: HTMLElement } | null>(null);
   const stepped = useRef(false);
   const lastOpener = useRef<HTMLElement | null>(null);
@@ -111,6 +119,7 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
   const [releaseError, setReleaseError] = useState(false);
   const router = useRouter();
   const { push, notify } = useUndo();
+  const queueListen = useQueueListen();
 
   function choose(next: Target) {
     setTarget(next);
@@ -232,7 +241,10 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
       undo: async () => {
         await undoAdd(entry, reopen);
         // The result is addable again, whatever level it went to (task 1.7's reset, kept by task 2.3).
-        if (key) setOutcomes((o) => Object.fromEntries(Object.entries(o).filter(([k]) => k !== key)));
+        if (key) {
+          setOutcomes((o) => Object.fromEntries(Object.entries(o).filter(([k]) => k !== key)));
+          setAdded((a) => Object.fromEntries(Object.entries(a).filter(([k]) => k !== key)));
+        }
         if (shelf) unmade(shelf);
         router.refresh();
       },
@@ -294,6 +306,7 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
     setBusy(null);
     if (result) {
       setWheres((w) => ({ ...w, [key]: goes }));
+      setAdded((a) => ({ ...a, [key]: result.bookId }));
       setOutcomes((o) => ({ ...o, [key]: result.added.length ? "added" : "there" }));
     }
     return result !== null;
@@ -446,7 +459,7 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
           <div className="pane pane-search" hidden={mode !== "search"}>
             <BookSearch level={level} target={target} outcomes={outcomes} wheres={wheres} busy={busy}
               onAdd={(pick) => void addPick(pick)} onPlan={(pick, words, opener) => openStep({ what: "pick", pick, words }, opener)}
-              onByHand={byHand} initialQuery={query} />
+              onByHand={byHand} initialQuery={query} added={added} onListen={(id, title) => void queueListen(id, title)} />
           </div>
           <div className="pane pane-hand" hidden={mode !== "hand"}>
             <ByHand key={hand.key} target={target} title={hand.title} onSubmit={addByHand} cancel={cancel("Cancel")} />

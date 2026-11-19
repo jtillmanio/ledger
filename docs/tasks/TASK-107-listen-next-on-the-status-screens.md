@@ -1,14 +1,14 @@
 ---
 id: TASK-107
 title: 5.14 A queue to listen next (2 of 2) — Queue to listen, Listen next on Up next, and Done's Listened chip
-status: Ready
+status: In progress
 depends_on: [TASK-106]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 51c9ebf
 ---
 
 # TASK-107 — 5.14 A queue to listen next (2 of 2) — Queue to listen, Listen next on Up next, and Done's Listened chip
@@ -69,9 +69,47 @@ audio read; each tab's count equals its rows. The export test passes with
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- (approved at plan) Candidate decision: the add sheet's *Queue to listen* is a second action, and one toast at a time means an add's undo never meets a book it queued; the add undos stay as they are, and a book soft-deleted otherwise keeps its hidden queue row (TASK-106). → decisions log
+- (approved at plan) The book sheet doesn't say whether or where a book is queued; it offers *Queue to listen* only. Showing *#2 in Listen next* (and *Remove*) belongs with the sheet's own writes. → 3.5b's task (TASK-119) Context
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner, 2026-11-19 ("go with all recommendations"; the session runs on Opus by the owner's choice, the task says `sonnet`).
+
+**Decisions taken at the gate (the recommendations):**
+- *Move to…* is 1.10's controls as they are (`ReorderList`): the handle (drag, long-press, Space and the arrows) and the row menu's *Move to top · Move up · Move down*, plus *Remove from Listen next*. AC-3's "Move to… position 1" is *Move to top*. A drop sends the stored position of the row it lands on, so a soft-deleted book's hidden row keeps its place and the shown place (the list index, the `row_number` of the rows drawn) never prints a stored position.
+- *Listen next* is drawn after every plan level, Someday's closing row included, in queue order, absent with no books. It lists every queued book that isn't soft-deleted, whatever its status (a Read book re-dated stays queued, TASK-106). The Up next count is the plan's drawn books plus the queued books not already drawn in the plan (a book on both counts once).
+- The add sheet's verb is a second action, not a destination: *Queue to listen* on a result that has a book (a library result at once, a Hardcover one once added), a write of its own with its own toast. One toast at a time (task 1.8b) means its push commits the add, so an add's undo never meets a book it queued: `undoAddBooks`, `undoRelease` and `undoOwned` stay as they are. A book soft-deleted some other way keeps its hidden row, as TASK-106 chose.
+- The verb is offered for every status but *Listening* and *Parked* (entering either takes a book off). Its toast is *Added to Listen next* with the title, Undo a DELETE; a book already queued says *Already in Listen next* and writes nothing.
+- Done's chip row is *All · Listened*: real links, `?format=audio` in the URL, the chosen one `aria-current`, drawn whenever Done has a book. *Listened* keeps the years and *Stopped* with only books that have an audio read, and the Done count is what it draws; with none, *Nothing listened to yet.* links back to *All*.
+- The book sheet (TASK-079 merged) gets a *Listen next* line in *Your record* holding the same *Queue to listen* button. It doesn't say whether or where the book is queued (follow-up below).
+- The books dashboard is unchanged (TASK-106's gate).
+
+**Steps**
+1. `src/db/queries.ts`: `booksListenNext(userId)`, the queued books not soft-deleted in position order (`StatusBook` plus `ordinal` = the stored position, `status`, `cover_url`).
+2. `src/lib/status-tabs.ts`: `parseFormat` for `?format=`, `listenedOnly(done, on)` and `upNextCount(drawnIds, queue)`, pure, for the page and the unit tests.
+3. `src/lib/listen-queue.ts` (new, client-safe): the `/api/listen-queue` calls and `useQueueListen()`, the verb with its toast and undo, shared by the three surfaces.
+4. `src/components/ListenNext.tsx` (new): `ReorderList` over the queue (PATCH to move, DELETE/POST restore to remove), cover, title, glyph, the book's place and the status control.
+5. `src/app/books/status/page.tsx`: the *Listen next* section, the Up next count, the Done chip row and its filter, and the empty *Listened*.
+6. `src/components/BookRowMenu.tsx`: *Queue to listen*. `BookSearch.tsx` + `AddBooks.tsx`: the result's *Queue to listen*. `BookDetail.tsx` + `src/components/QueueListen.tsx` (new): the sheet's line.
+7. `design/mockups.html` + `design/mockups-index.md`: `status` (a 360 Up next frame with *Listen next*, a 360 Done frame with *Listened* chosen), `blist` (*Queue to listen* in the open `⋯`), `add` (the result's *Queue to listen*), `bookdetail` (the *Listen next* line), with notes.
+8. Tests (below), then `verify.full`.
+
+**Files** (not in "likely touched": `src/lib/listen-queue.ts`, `src/components/ListenNext.tsx`, `src/components/QueueListen.tsx`, `src/components/BookSearch.tsx`, `src/components/BookDetail.tsx`; `src/app/globals.css` only if a class is missing.) **Size:** about 11 files besides tests, UI only, no schema. This is already the second half of a split, and the redraw files are required, so it stays whole.
+
+**Test strategy**
+- AC-1 (counts, order, chip): `test/status.test.ts` › *books Listen next and Listened (roadmap 5.14 check)*: queue order, a soft-deleted book hidden and its place kept, `upNextCount` counting a planned and queued book once, `listenedOnly`. `test/e2e/listen-queue.spec.ts` › *Up next lists Listen next in queue order and each tab's count equals its rows* and *Done's Listened chip*.
+- AC-2: e2e › *Queue to listen from a row's ⋯ lists it last; Undo takes it off*.
+- AC-3: e2e › *Move to top on the third redraws 3, 1, 2 without a reload, and a reload keeps it*.
+- AC-4: e2e › *the Listened chip keeps only the listened book, is current and in the URL; All lists both*.
+- AC-5: manual review of the frames (the reviewer reads the diff of `design/mockups.html`).
+- AC-6: e2e › axe at 360 and 1280, light and dark, screenshots; no *Listen next* heading with an empty queue; the target sizes of the chip and menu items; the keyboard route on the handle; reduced motion (the reorder animates nothing).
+
+**Plan revision 1 (Phase 3, under the owner's "go with all recommendations"):** `/books/status` reads the listen queue as a fifth query in its one wave, so its budget goes from 4 to 5, with the reason in `docs/02-architecture.md` § Performance budget and beside it in `test/query-budget.test.ts` (both outside the plan's files); `test/library-page.test.tsx`'s mock of `@/db/queries` gains `booksListenNext`. Folding the queue into another query would only hide the cost.
+
+**Risks:** `ReorderList`'s undo moves back to the stored position it came from, which is right while the hidden rows don't move. No test races two queue writes (TASK-106's schema review); that isn't this task's.
+
+**Follow-ups (approved at plan):** see `## Follow-ups`.
 
 ## Review log
 

@@ -7,6 +7,7 @@ import type { LibraryHit } from "@/db/queries";
 import { addTo, type Target } from "@/lib/book-add";
 import { Headphones } from "@/components/nav/Icons";
 import { listenGlyph, placeTag } from "@/lib/format";
+import { queueable } from "@/lib/status-tabs";
 import type { HardcoverBook } from "@/lib/hardcover";
 import { useSearch } from "@/lib/use-search";
 
@@ -35,11 +36,16 @@ export const authorList = (names: string[]) =>
  * rate-limited, not set up and error are each a `role="status"` line, once per
  * request; rate-limited counts Hardcover's wait down, holds the search, and
  * retries once at 0. *Add it by hand* always works, with the query carried
- * over as the title.
+ * over as the title. *Queue to listen* (task 5.14) sits after *Year or quarter…* on
+ * a result that is a book already: a library one (not while Listening or Parked),
+ * or a Hardcover one once its add went through. It is a write of its own, with its
+ * own toast, so it commits the add (one toast at a time, task 1.8b).
  * `initialQuery` pre-fills the field (an inbox note's text, task 1.4b) and
  * searches nothing until it is typed in or submitted.
  */
-export default function BookSearch({ level, target, outcomes, wheres, busy, onAdd, onPlan, onByHand, initialQuery = "" }: {
+export default function BookSearch({
+  level, target, outcomes, wheres, busy, onAdd, onPlan, onByHand, initialQuery = "", added = {}, onListen,
+}: {
   /** The section heading level: 2 under the page's h1, 3 under the sheet's h2. */
   level: 2 | 3;
   initialQuery?: string;
@@ -53,6 +59,10 @@ export default function BookSearch({ level, target, outcomes, wheres, busy, onAd
   /** *Year or quarter…* on a result (task 2.3): the plan picker for this book, its words as the sheet will add them. */
   onPlan: (pick: Pick, words: number | null, opener: HTMLElement) => void;
   onByHand: (title: string) => void;
+  /** The book each added Hardcover result became, by result key: it can be queued once it exists (task 5.14). */
+  added?: Record<string, string>;
+  /** *Queue to listen* on a result with a book (task 5.14): a library result at once, a Hardcover one once added. */
+  onListen?: (bookId: string, title: string) => void;
 }) {
   const H = level === 2 ? "h2" : "h3";
   const uid = useId();
@@ -179,6 +189,8 @@ export default function BookSearch({ level, target, outcomes, wheres, busy, onAd
     const label = addTo(done ? (wheres[key] ?? target) : target);
     // The words a plan total would gain: the stated count, else pages at your words per page (50 or more).
     const words = lib?.word_count ?? (pages && pages >= 50 && answer ? pages * answer.wordsPerPage : null);
+    // The book this result is, once there is one: queueable (task 5.14).
+    const bookId = lib ? (queueable(lib.status) ? lib.id : null) : added[key] ?? null;
     const says = done === "added" ? label.replace(/^Add/, "Added") : done === "there" ? "Already there"
       : busy === key ? "Adding…" : label;
     return (
@@ -213,6 +225,13 @@ export default function BookSearch({ level, target, outcomes, wheres, busy, onAd
               onClick={(e) => { if (!done && busy === null) onPlan(pick, words, e.currentTarget); }}>
               Year or quarter…
             </button>
+            {onListen && bookId && (
+              <button type="button" className="btn sec sm res-listen"
+                aria-label={`Queue to listen: ${book.title}${subtitle ? `: ${subtitle}` : ""}`}
+                onClick={() => onListen(bookId, book.title)}>
+                Queue to listen
+              </button>
+            )}
           </div>
         </div>
       </li>

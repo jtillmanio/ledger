@@ -740,6 +740,9 @@ body:has(.actionbar){--actionbar-h:68px}               /* 12 + 44 + 12 */
 .detail .words[data-wc="estimated"]{padding-top:.125rem;border-top:1.5px dotted var(--muted)}
 .detail .frow .bdg{margin-left:auto}
 .detail-status{align-items:flex-start;flex-wrap:wrap}
+/* Task 5.14: the sheet's *Listen next* line, its *Queue to listen* where a value would sit. */
+.detail-listen{align-items:center}
+.detail-listen .btn{margin-left:auto;min-height:44px}
 .detail-control{flex:1 1 14rem;min-width:0}
 .detail-control .status-group{margin-top:.5rem}
 .detail-notes{display:block}

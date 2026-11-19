@@ -769,6 +769,35 @@ export async function booksUpNext(userId: string) {
   return { planned, someday: someday.n };
 }
 
+/** A book on Up next's *Listen next* (task 5.14). `ordinal` is its stored queue position, which
+ * a move sends back (`ReorderList`); the screen numbers the rows it draws and never prints it.
+ * `status` is null for a book with no status row. */
+export type ListenNextBook = StatusBook & {
+  ordinal: number; status: string | null; cover_url: string | null;
+};
+
+/**
+ * *Listen next* for books (task 5.14, F-59): the listen queue in its order,
+ * whatever each book's status (a Read book re-dated stays queued, TASK-106).
+ * A soft-deleted book keeps its row and its position, so a restored book comes
+ * back to its place: it is hidden here, and the positions shown run from 1 over
+ * the rows drawn.
+ */
+export async function booksListenNext(userId: string) {
+  return sql<ListenNextBook[]>`
+    SELECT b.id, b.title, a.name AS author, s.name AS series, b.series_position, u.name AS universe, b.word_count,
+           q.position AS ordinal, st.status, b.cover_url,
+           EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened
+    FROM listen_queue q
+    JOIN books b ON b.id = q.book_id AND b.deleted_at IS NULL
+    LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
+    LEFT JOIN authors a     ON a.id = b.author_id
+    LEFT JOIN book_series s ON s.id = b.series_id
+    LEFT JOIN book_universes u ON u.id = b.universe_id
+    ORDER BY q.position
+  `;
+}
+
 /** A finished or stopped book on *Done* (task 1.9). `year` is the finish year; null is *No year*.
  * The dates are the latest read's (task 1.17), for the row's dates line. */
 export type DoneBook = StatusBook & {

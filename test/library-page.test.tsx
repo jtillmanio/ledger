@@ -30,6 +30,7 @@ vi.mock("@/db/queries", () => ({
   booksInFlight: async () => [],
   booksUpNext: async () => ({ planned: [], someday: 12 }),
   booksDone: async () => [],
+  booksListenNext: async () => [],
 }));
 
 const { default: Library } = await import("../src/app/books/list/page");

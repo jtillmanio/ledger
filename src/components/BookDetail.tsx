@@ -2,12 +2,14 @@ import BookStatus from "@/components/BookStatus";
 import { Bar } from "@/components/Skeleton";
 import { bookInitials } from "@/components/Cover";
 import { Headphones } from "@/components/nav/Icons";
+import QueueListen from "@/components/QueueListen";
 import ReadAgain from "@/components/ReadAgain";
 import { SheetHeading } from "@/components/RouteSheet";
 import type { BookDetail as Book, HistoryRead } from "@/db/queries";
 import {
   bookPlace, dayWhen, listenGlyph, ownedWords, placeTag, readDays, readSummary,
 } from "@/lib/format";
+import { LISTEN_NEXT, queueable } from "@/lib/status-tabs";
 
 /** The *Reading history* header (task 1.23): reads and listens counted apart, and a listen in
  * progress, so the *Listened* part shows only with a listen or while the book is listened to. */
@@ -94,7 +96,9 @@ function Paragraphs({ text }: { text: string }) {
  * - **Your record**: the Library's own status control, open (`BookStatus`,
  *   one write path, design § 13 *What this changes* 2), whose date line is the
  *   start beside the finish; where it sits in your plan, its shelves, what you
- *   own and your notes, as text (their editors are a later item).
+ *   own and your notes, as text (their editors are a later item); and *Listen
+ *   next*, whose *Queue to listen* puts the book at the queue's end (task 5.14;
+ *   not while Listening or Parked). Where it is queued is 3.5b's to show.
  * - **Reading history**: every read newest first, each with its start, finish,
  *   days taken and its rank in its year; a listen carries the headphones glyph.
  *   A read book offers *Read again*.
@@ -170,6 +174,9 @@ export default function BookDetail({ book: b, as }: { book: Book; as: "sheet" | 
           </div>
         </div>
         {plan && <div className="frow"><span className="k">Planned for</span><span className="v">{plan}</span></div>}
+        {queueable(b.status) && (
+          <div className="frow detail-listen"><span className="k">{LISTEN_NEXT}</span><QueueListen bookId={b.id} title={b.title} /></div>
+        )}
         {b.shelves.length > 0 && (
           <div className="frow"><span className="k">Shelves</span><span className="v plain">{b.shelves.join(", ")}</span></div>
         )}
