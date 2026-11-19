@@ -81,7 +81,7 @@ Approved by the owner, 2026-11-18, with three answers at the gate: the name link
 3. Routes `src/app/books/authors/[id]/` and `src/app/books/universes/[id]/`: `page.tsx`, `loading.tsx`, `error.tsx` each, as `series/[id]`'s.
 4. `src/app/globals.css`: the group heading and the order switch, from tokens.
 5. `test/db.ts`: `truncateAll` gains `book_universes`.
-6. Tests (below). 7. `design/mockups.html` gains the `author` screen (author page at phone, tablet, desktop; universe by series and in order at phone; empty universe at phone) with notes; `design/mockups-index.md` its row; `docs/02-architecture.md` § 5 both routes.
+6. Tests (below). 7. `design/mockups.html` gains the `author` screen (author page at phone, tablet, desktop; universe by series at phone, tablet, desktop and in order at phone; empty universe at phone) with notes; `design/mockups-index.md` its row; `docs/02-architecture.md` § 5 both routes.
 
 **Files**: the 6 route files, `GroupingBooks.tsx`, `SeriesBooks.tsx` (export the row), `queries.ts`, `globals.css`, `test/db.ts`, the 2 tests, `mockups.html`, `mockups-index.md`, `02-architecture.md`. Not touched (moved to TASK-125): `src/app/books/list/page.tsx`, `src/lib/format.ts`. `SeriesBooks.tsx` and `globals.css` are outside "Files likely touched".
 
@@ -91,6 +91,8 @@ Approved by the owner, 2026-11-18, with three answers at the gate: the name link
 - AC-1, AC-3: the same file: *Reading on an author writes one row and shows in follow_state; Not following deletes it*; *Not following on a universe stores off and follow_state reads NULL* (through `POST /api/follows`, as `test/follows.test.ts` does). `test/e2e/author-universe.spec.ts`: choose *Reading*, reload, still checked, *Undo* puts the prior state back; universe *Not following*.
 - AC-4, AC-6: e2e: the empty universe (`0 / 0`, meter at 0, the slate), the loading skeleton at the loaded size, the error state, the order switch, axe, contrast light and dark, 24px targets, no sideways scroll, the radiogroup by keyboard, screenshots at each width.
 - AC-5: diff review (spec-reviewer), and `drizzle/` unchanged.
+
+**Changes beyond the file list (after the plan, small and in scope):** `test/query-budget.test.ts` and the Performance budget line in `docs/02-architecture.md` count both routes (1 query, 1 wave each), as every page is counted; `design/mockups.html`'s screen nav gains *Series* (missing since TASK-101/102, so that screen could not be opened) beside the new *Author & universe*; `design/mockups-index.md` has every row's line range recomputed (most were stale, and this branch's insertions shift them all). The skeleton is `GroupingSkeleton` in `GroupingBooks.tsx`, not a new file. Spec review R1 asked for AC-5's universe frames at 834px and desktop: drawn (*By series*).
 
 **Risks**: the universe switch is a URL parameter, so no client state; real universes on the test DB are found by name, never by index.
 

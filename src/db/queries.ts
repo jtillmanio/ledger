@@ -1264,7 +1264,11 @@ export type GroupingPageData = {
   nextId: string | null;
 };
 
-/** The next unread (task 5.11): `follow_next`'s rule, the first book in the page's order with no status, to read or Unlisted. */
+/**
+ * The next unread (task 5.11): `seriesPage`'s rule, the first book in the page's order with no status, to read
+ * or Unlisted, a book in hand or a DNF passed over. `follow_next` differs while you are mid-book: it names
+ * nothing when the first open book is in hand, where the page marks the next one after it.
+ */
 function groupingNext(row: Omit<GroupingPageData, "nextId">): GroupingPageData {
   const unread = (b: GroupingBook) => b.status === null || b.status === "to_read" || b.status === "unlisted";
   return { ...row, nextId: row.read >= row.total ? null : (row.books.find(unread)?.id ?? null) };

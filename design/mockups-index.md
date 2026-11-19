@@ -30,35 +30,35 @@ line numbers below drift after an edit.
 | `add` | Add books — search (Hardcover, task 1.4f); searches as you type, one place or source tag a row (task 1.22); the headphones glyph beside a listened book's tag (task 1.23); what you own: a third phone frame, *Paste a list* with *Add to*'s *Physical copy* chosen beside *Audiobook* (paste only), the review marking two books you have as owned on paper and creating one *Unlisted*, and *Add 3 books to Physical copy* (task 5.17, D-132); *Coming out* in *Add to* on the Search frames, and a fourth phone frame, *By hand* with *Coming out* chosen: the *Release date* field, *No date yet*, the refusal under the field, and *Add to Coming out* (task 5.7, D-35); a new shelf: a fifth frame, Search with *Shelf…* open with *New shelf…* chosen after your shelves, its *Shelf name* field holding *Dark Tower* and the refusal under it (*You already have a shelf called Dark Tower.*), the result's button *Add to Dark Tower* (task 5.1) | 4390–4581 |
 | `shelves` | Shelves — the list, each row with `read / total`, a `--ready` meter and its *next three unread* in shelf order (*✓ All read* names none), *+ New shelf* and the explainer in the desktop rail; a shelf's page: its description under the name, the count and meter, *Reading · On hold · Not following*, *+ Add to shelf*, its books with the reorder row and each book's note under it, one being edited in place, and the Undo toast; the empty states (no shelves: *+ New shelf*; a shelf with no books: *+ Add to shelf*, *Add a description*) and a name already in use; phone, 834 tablet (a shelf's page) and desktop frames (task 5.1, TASK-096) | 4584–4741 |
 | `series` | Series (task 5.9, F-38; D-26, D-90): every series you have books in, each row its name, author, `read / total` in mono, a `--ready` meter and the *next unread* book with its `#` (*✓ All read* names none; *4 / 3* draws a full meter); in progress first, then not started, then complete; each row a link to the series' page, with a chevron (task 5.9, part 2); 360px (populated), 360px empty state (*No series yet · Add a book*), 834px (*Series* current on the rail) and desktop (current in the sidebar) frames, then the series' own page (task 5.9, part 2): ‹ Series, the name, author, `read / total`, a `--ready` meter and 2.2c's follow control, its books in order with status and dates, *Next up* on the next unread, a grey gap row (*#6 not in your library · Add*) and a fractional position (*#4.5*) as a book; 360px, 360px with no books (*No books in this series yet · Add a book*), 834px and desktop (count, meter and follow in the rail) frames | 4811–5045 |
-| `author` | Author and universe pages (task 5.11, F-20; D-42, D-43, D-90, D-117, D-118): ‹ Library, the name and its kind, `read / total` in mono from `author_progress` / `universe_progress`, a `--ready` meter and 2.2c's follow control (*On hold* on something part-read; *Not following* deletes an author's row and stores a universe's `off`); an author's books by published year, the year in mono and where each belongs below the title, *Next up* on the earliest-published unread; a universe's books *By series* (one group per series, headed by its name as a link to the series' page, the books in no series last under *Not in a series*) or *In order* (universe positions, each row naming its series); an author at 390px, 834px and desktop (count, meter and follow in the rail), a universe by series and in order at 390px, and an empty universe at 390px (*0 / 0*, an empty meter, no control, *No books in Grishaverse yet · Calibre sync*) | 5047–5191 |
+| `author` | Author and universe pages (task 5.11, F-20; D-42, D-43, D-90, D-117, D-118): ‹ Library, the name and its kind, `read / total` in mono from `author_progress` / `universe_progress`, a `--ready` meter and 2.2c's follow control (*On hold* on something part-read; *Not following* deletes an author's row and stores a universe's `off`); an author's books by published year, the year in mono and where each belongs below the title, *Next up* on the earliest-published unread; a universe's books *By series* (one group per series, headed by its name as a link to the series' page, the books in no series last under *Not in a series*) or *In order* (universe positions, each row naming its series); an author at 390px, 834px and desktop (count, meter and follow in the rail), a universe by series at 390px, 834px and desktop and in order at 390px, and an empty universe at 390px (*0 / 0*, an empty meter, no control, *No books in Grishaverse yet · Calibre sync*) | 5047–5263 |
 | `thisorthat` | This or that: the finish's toast with *Rank it in 2026* first, above *Now reading*; the sorter sheet over the Library, *Which did you like more?*, the read being placed (*Just finished*) beside a ranked one (*#17*), each card a button, the mono *Pick 1 of at most 6*, grey *Skip*, the held toast above it; an empty year's *Make it #1*; *Rank it* on Top books' *Not ranked yet* rows (dark); 360 frames (task 3.4b, D-101, TASK-077) | 4744–4809 |
-| `top` | Top books; every year with a finished read in the select, then *No year*; *Best of 2026 so far*; the top ten, the divider (*Beyond the top ten*), the rest of the ranks, then *Not ranked yet*, none collapsed, each row with its handle and ⋯ (task 3.4b, D-122); *Rank it* on a *Not ranked yet* row is drawn in `thisorthat` | 5193–5304 |
-| `releases` | Coming out (task 5.7, D-35): *Out now*, then a group per month, then *No date yet*; each row a cover, title, author and place, the date in mono and **Got it**; 360px (populated), 360px empty state (*Nothing coming out · Add a book*), 834px (*Coming out* current on the rail) and desktop (current in the sidebar) frames | 5307–5410 |
-| `search` | Search | 5413–5523 |
-| `stats` | Stats | 5527–5774 |
-| `capture` | Quick capture | 5777–5875 |
-| `watchlist` | Watch dashboard | 5879–6132 |
-| `franchise` | Franchises | 6135–6261 |
-| `watchadd` | Search and add | 6264–6390 |
-| `bookdetail` | Book detail — a sheet, not a hover | 6393–6550 |
-| `titledetail` | Show detail — seasons | 6553–6699 |
-| `settings` | Settings; *Data* gains a *Calibre* row, *Last synced 14 Nov*, a link to the Calibre page (task 4.4, D-133) | 6702–6822 |
-| `calibre` | Settings → Calibre (task 4.4, D-133): the sync log, every run newest first as a disclosure (its Eastern date and time, *n in · n out · n waiting*; the newest open, its details by book: came in, went out *from → to*, waiting, gone, skipped, skipped columns *missing, or held until the books cutover*); *Not in Calibre* collapsed; the empty state (*No sync yet*, no button) and the error state (grey ×, *Try again*, never red); phone and desktop frames | 6825–6907 |
-| `telescope` | Telescope — floor, overflow, two-rail, empty, dense | 6909–7242 |
-| `tracks` | Tracks | 7243–7289 |
-| `queue` | Comics Up next (queue), Done → Stopped, empty queue | 7290–7354 |
-| `path` | Why blocked? and unlock preview | 7355–7407 |
-| `issuedetail` | Issue detail — sheet | 7408–7456 |
-| `krakoa` | Run detail — 641 issues, minimap, copy menu | 7457–7507 |
-| `batch` | Batch sheet; its undo toast in the two-line form with the 2px countdown bar (roadmap 1.2, 1.8b). The 834px thumb bars of every screen are 48px controls with 12px above and below (D-78) | 7508–7553 |
-| `session` | Reading sessions | 7554–7606 |
-| `dashextras` | Dashboard extras — tonight, since, inbox, timer chip | 7607–7654 |
-| `states` | Offline, loading, empty, metadata pending, all read here, covers in a row | 7655–7763 |
-| `apistates` | Live-API states — loading, rate-limited, error | 7764–7821 |
-| `rebalance` | Rebalance sheet and the settled stretch year, on Plan (task 2.7) | 7822–7874 |
-| `planmonth` | Plan rail — estimates, stacks, drag (month retired, D-38) | 7875–7924 |
-| `watchempty` | Watch — first run | 7925–7970 |
-| `palette` | Ctrl K — search and verbs | 7971–8021 |
+| `top` | Top books; every year with a finished read in the select, then *No year*; *Best of 2026 so far*; the top ten, the divider (*Beyond the top ten*), the rest of the ranks, then *Not ranked yet*, none collapsed, each row with its handle and ⋯ (task 3.4b, D-122); *Rank it* on a *Not ranked yet* row is drawn in `thisorthat` | 5265–5376 |
+| `releases` | Coming out (task 5.7, D-35): *Out now*, then a group per month, then *No date yet*; each row a cover, title, author and place, the date in mono and **Got it**; 360px (populated), 360px empty state (*Nothing coming out · Add a book*), 834px (*Coming out* current on the rail) and desktop (current in the sidebar) frames | 5379–5482 |
+| `search` | Search | 5485–5595 |
+| `stats` | Stats | 5599–5846 |
+| `capture` | Quick capture | 5849–5947 |
+| `watchlist` | Watch dashboard | 5951–6204 |
+| `franchise` | Franchises | 6207–6333 |
+| `watchadd` | Search and add | 6336–6462 |
+| `bookdetail` | Book detail — a sheet, not a hover | 6465–6622 |
+| `titledetail` | Show detail — seasons | 6625–6771 |
+| `settings` | Settings; *Data* gains a *Calibre* row, *Last synced 14 Nov*, a link to the Calibre page (task 4.4, D-133) | 6774–6894 |
+| `calibre` | Settings → Calibre (task 4.4, D-133): the sync log, every run newest first as a disclosure (its Eastern date and time, *n in · n out · n waiting*; the newest open, its details by book: came in, went out *from → to*, waiting, gone, skipped, skipped columns *missing, or held until the books cutover*); *Not in Calibre* collapsed; the empty state (*No sync yet*, no button) and the error state (grey ×, *Try again*, never red); phone and desktop frames | 6897–6979 |
+| `telescope` | Telescope — floor, overflow, two-rail, empty, dense | 6981–7314 |
+| `tracks` | Tracks | 7315–7361 |
+| `queue` | Comics Up next (queue), Done → Stopped, empty queue | 7362–7426 |
+| `path` | Why blocked? and unlock preview | 7427–7479 |
+| `issuedetail` | Issue detail — sheet | 7480–7528 |
+| `krakoa` | Run detail — 641 issues, minimap, copy menu | 7529–7579 |
+| `batch` | Batch sheet; its undo toast in the two-line form with the 2px countdown bar (roadmap 1.2, 1.8b). The 834px thumb bars of every screen are 48px controls with 12px above and below (D-78) | 7580–7625 |
+| `session` | Reading sessions | 7626–7678 |
+| `dashextras` | Dashboard extras — tonight, since, inbox, timer chip | 7679–7726 |
+| `states` | Offline, loading, empty, metadata pending, all read here, covers in a row | 7727–7835 |
+| `apistates` | Live-API states — loading, rate-limited, error | 7836–7893 |
+| `rebalance` | Rebalance sheet and the settled stretch year, on Plan (task 2.7) | 7894–7946 |
+| `planmonth` | Plan rail — estimates, stacks, drag (month retired, D-38) | 7947–7996 |
+| `watchempty` | Watch — first run | 7997–8042 |
+| `palette` | Ctrl K — search and verbs | 8043–8093 |
 
 ### Viewport frames (roadmap 1.8)
 
