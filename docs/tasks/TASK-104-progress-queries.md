@@ -1,7 +1,7 @@
 ---
 id: TASK-104
 title: 5.12 In the middle of, and completed (1 of 2) — the derived rows for books and comics
-status: In progress
+status: Review
 depends_on: []
 size: M
 model: opus
@@ -33,7 +33,7 @@ The Ledger can answer, without storing anything, what you're in the middle of, w
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves every data clause on the test database: membership of each tab and *On hold*, the one-book series, the author only when followed, the shelf, the run, nothing written, counts equal to the views, and the nesting parent. TASK-105 proves the *Books* chip, the drawn nesting and the screenshots):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves every data clause on the test database: membership of each tab and *On hold*, the one-book series, the author only when followed, the shelf, the run, nothing written, counts equal to the views, and the nesting parent. TASK-105 proves the *Books* chip, the drawn nesting and the screenshots):
 a series followed `reading` with 2 of 5 read is under *In the
 middle of* and the same series unfollowed is not; a series with 5 of 5
 read is under *Completed* whether followed or not, and a one-book
@@ -44,10 +44,10 @@ under *In the middle of*, and with 10 of 10 under *Completed*; the
 its view's. A series followed `tracking` with 2 of 5 read is under *On
 hold* and not above it, and at 0 of 5 it is on neither; a series under a
 listed universe nests beneath it. Screenshots at 360px and 1280px.
-- [ ] AC-2: Given the fixtures the Check names, the in-the-middle query returns exactly the reading-followed series, the followed shelf and the part-read run; the on-hold query exactly the tracking series at 2 of 5; the completed query exactly the 5-of-5 series, the 10-of-10 run and nothing for the one-book series.
-- [ ] AC-3: Given a universe followed `reading` and one of its series followed `reading`, both are returned and the series' parent is the universe; a series whose universe isn't returned has no parent.
-- [ ] AC-4: Given two in-the-middle rows whose latest reads are on different days, the more recent is first; a completed row carries the month of its last finish, and completed rows are ordered by it, newest first.
-- [ ] AC-5: The queries run with the statement counter showing no write (`test/query-budget.test.ts`'s pattern, or a transaction that asserts no row changed), and each row's `read` and `total` equal its progress view's for that id.
+- [x] AC-2: Given the fixtures the Check names, the in-the-middle query returns exactly the reading-followed series, the followed shelf and the part-read run; the on-hold query exactly the tracking series at 2 of 5; the completed query exactly the 5-of-5 series, the 10-of-10 run and nothing for the one-book series.
+- [x] AC-3: Given a universe followed `reading` and one of its series followed `reading`, both are returned and the series' parent is the universe; a series whose universe isn't returned has no parent.
+- [x] AC-4: Given two in-the-middle rows whose latest reads are on different days, the more recent is first; a completed row carries the month of its last finish, and completed rows are ordered by it, newest first.
+- [x] AC-5: The queries run with the statement counter showing no write (`test/query-budget.test.ts`'s pattern, or a transaction that asserts no row changed), and each row's `read` and `total` equal its progress view's for that id.
 
 ## Out of scope
 
@@ -70,7 +70,9 @@ listed universe nests beneath it. Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- TASK-105 Context note: `progressRows`'s shape and decisions a)–d), so the page builds on them; TASK-105 adds `/progress` to `test/query-budget.test.ts` (approved at plan)
+- TASK-105 Context note: `progressRows`'s shape, decisions a)–d), one-level nesting, nothing nesting under an author (the spec review's note), `/progress` into `test/query-budget.test.ts`, and the statement not yet timed at real scale (approved at plan) → docs/tasks/TASK-105-progress-page.md § Context
+- The plan-gate decisions a)–d) as decisions-log rows → not tracked: they apply D-109 and D-119 within this task and are recorded in its Plan and in TASK-105's Context; the owner chose the recommendation (no new D-n)
+- The schema review's two MINOR notes (next looked up per row; the universe rule's wording) → not tracked: done in this PR (cc2b810)
 
 ## Plan
 
@@ -102,7 +104,7 @@ _Approved 2026-11-19 (attended)._
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1 PASS (a first attempt from `c:` lost every vitest file to the lowercase-drive runner bug; rerun from `C:`) | CI R1 PASS (e72bce9) | Spec R1 CHANGES (follow-up bullet with no destination; fixed at close-out) | Schema R1 APPROVE (2 MINOR, both fixed in cc2b810) | Verify R2 PASS | CI R2 PASS (cc2b810) | Audit R1 not independent: the test-auditor hit a usage limit partway, tree confirmed clean; run by hand: every test fails before the task (no `progressRows`), 12 of 13 mutations caught, the 13th (next on hold) gives identical output, since `follow_next` holds Reading follows only | Spec R2 not re-run for the code: the fixes touched no AC
 
 ## Blocked
 
@@ -110,7 +112,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1 (spec, schema), fixes in 1 commit
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0 (one wording clarification to the nesting rule after the schema review)
