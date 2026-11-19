@@ -377,7 +377,7 @@ export const editionProgress = pgTable("edition_progress", {
 export const bookStatus = pgTable("book_status", {
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   bookId: text("book_id").notNull().references(() => books.id, { onDelete: "cascade" }),
-  status: text("status").notNull().default("to_read"), // to_read | reading | listening (task 1.23) | read | dnf | unlisted (below Someday, task 1.21, D-86; no CHECK)
+  status: text("status").notNull().default("to_read"), // to_read | reading | listening (task 1.23) | read | dnf | unlisted (below Someday, task 1.21, D-86) | parked (task 5.15, D-105); no CHECK
   // No year_rank: a rank belongs to a read (read_events.year_rank, task 3.4b, D-101).
   rating: doublePrecision("rating"),
   // A real date since migration 0004 (it was text and 100% NULL). Same rule as
@@ -394,6 +394,10 @@ export const bookStatus = pgTable("book_status", {
   startedOn: date("started_on", { mode: "string" }),
   startedOnPrecision: text("started_on_precision").notNull().default("none"), // exact | approximate | none
   notes: text("notes"),
+  // The Eastern day the book was parked (task 5.15, D-105): set exactly while the
+  // status is `parked`, by saveBookStatus on entering it, and cleared on leaving it.
+  // Whether it was parked mid-read is derived from the start above, never stored.
+  parkedOn: date("parked_on", { mode: "string" }),
 }, (t) => ({
   pk: primaryKey({ columns: [t.userId, t.bookId] }),
   precision: check("book_status_finished_on_precision_check", sql`
@@ -402,6 +406,7 @@ export const bookStatus = pgTable("book_status", {
   startPrecision: check("book_status_started_on_precision_check", sql`
     ${t.startedOnPrecision} IN ('exact', 'approximate', 'none')
     AND (${t.startedOn} IS NULL) = (${t.startedOnPrecision} = 'none')`),
+  parked: check("book_status_parked_on_check", sql`(${t.parkedOn} IS NOT NULL) = (${t.status} = 'parked')`),
 }));
 
 // The reading log (task 1.5, product #22): one row per finished read, so a

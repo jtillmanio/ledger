@@ -5,11 +5,13 @@ import {
 } from "@/db/writes";
 import { finishOffer } from "@/db/queries";
 import { apiUserId, unauthorized } from "@/lib/auth";
-import { isFinish, resolveFinish, resolveStart } from "@/lib/finish-date";
+import { PLAN_PERIOD } from "@/lib/book-add";
+import { isDay, isFinish, resolveFinish, resolveStart } from "@/lib/finish-date";
 
 export const runtime = "nodejs";
 
-/** What a POST may set; `unlisted` comes back only as an undo's prior status (task 1.21, D-86). */
+/** What a POST may set; `unlisted` comes back only as an undo's prior status (task 1.21, D-86).
+ * `parked` (task 5.15) is set only on a book To read, Reading or Listening: `saveBookStatus` refuses the rest. */
 const ALLOWED: readonly string[] = SETTABLE_STATUSES;
 const STORED: readonly string[] = BOOK_STATUSES;
 
@@ -42,6 +44,10 @@ const STORED: readonly string[] = BOOK_STATUSES;
  *
  * It also answers `note`, the book's note, which a status write leaves alone:
  * a DNF's closing card opens on it (task 5.5).
+ *
+ * `parked` (task 5.15, D-105) puts a book To read, Reading or Listening away:
+ * out of every plan row and off the listen queue, which `change.unplanned` and
+ * `change.unqueued` hold for the undo. Any other book is refused with a 400.
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -124,9 +130,19 @@ function validFollow(f: unknown): boolean {
     && (prior === null || prior === "tracking");
 }
 
+/** A plan row a park took the book out of (task 5.15): a plan period and its place, a positive ordinal or none. */
+function validPlanRow(p: unknown): boolean {
+  if (typeof p !== "object" || p === null) return false;
+  const { period, ordinal } = p as Record<string, unknown>;
+  return typeof period === "string" && PLAN_PERIOD.test(period) && (ordinal === null || isId(ordinal));
+}
+
 function validChange(c: unknown): c is BookStatusChange {
   if (typeof c !== "object" || c === null) return false;
-  const { bookId, status, prior, appended, edited, backfilled, follows, unqueued } = c as Record<string, unknown>;
+  const { bookId, status, prior, appended, edited, backfilled, follows, unqueued, unplanned } = c as Record<string, unknown>;
+  // The plan rows a park took the book out of (task 5.15); missing from a change answered before 5.15.
+  if (unplanned !== undefined && !(Array.isArray(unplanned) && unplanned.every(validPlanRow))) return false;
+  if (Array.isArray(unplanned) && unplanned.length > 0 && status !== "parked") return false;
   // The listen-queue position the write took the book off (task 5.14); missing from a change answered before 5.14.
   if (unqueued !== undefined && unqueued !== null && !isId(unqueued)) return false;
   // Missing from a change answered before 2.2h, which followed nothing.
@@ -139,6 +155,8 @@ function validChange(c: unknown): c is BookStatusChange {
     if (typeof prior !== "object") return false;
     const p = prior as Record<string, unknown>;
     if (!STORED.includes(p.status as string) || !isFinish(asFinish(p)) || !isFinish(asStart(p))) return false;
+    // The day it was parked (task 5.15): there exactly when the prior status is Parked.
+    if (p.status === "parked" ? !isDay(p.parkedOn) : !(p.parkedOn === undefined || p.parkedOn === null)) return false;
   }
   if (edited !== null) {
     if (typeof edited !== "object" || appended !== null) return false;
