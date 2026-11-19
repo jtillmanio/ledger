@@ -296,6 +296,8 @@ describe("reading_settings", () => {
     expect(row).toEqual({
       user_id: USER, minutes_per_day: 45, words_per_minute: 185, words_per_page: 275,
       theme: "system", show_covers: true,
+      // Task 5.15 (TASK-110, D-105): the parked review comes due quarterly until you choose, and has not happened yet.
+      parked_review: "quarterly", parked_reviewed_on: null,
     });
     expect(await sqlstate(() => sql`
       UPDATE reading_settings SET theme = 'sepia' WHERE user_id = ${USER}`)).toBe(CHECK);

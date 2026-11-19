@@ -42,7 +42,7 @@ line numbers below drift after an edit.
 | `watchadd` | Search and add | 6336–6462 |
 | `bookdetail` | Book detail — a sheet, not a hover | 6465–6622 |
 | `titledetail` | Show detail — seasons | 6625–6771 |
-| `settings` | Settings; *Data* gains a *Calibre* row, *Last synced 14 Nov*, a link to the Calibre page (task 4.4, D-133) | 6774–6894 |
+| `settings` | Settings; *Data* gains a *Calibre* row, *Last synced 14 Nov*, a link to the Calibre page (task 4.4, D-133); a *Parked* group under *Reading pace* holds *Review parked items: Monthly · Quarterly · Never*, Quarterly chosen by default, the label above the control on the phone and beside it on desktop (task 5.15, TASK-110, D-105) | 6774–6894 |
 | `calibre` | Settings → Calibre (task 4.4, D-133): the sync log, every run newest first as a disclosure (its Eastern date and time, *n in · n out · n waiting*; the newest open, its details by book: came in, went out *from → to*, waiting, gone, skipped, skipped columns *missing, or held until the books cutover*); *Not in Calibre* collapsed; the empty state (*No sync yet*, no button) and the error state (grey ×, *Try again*, never red); phone and desktop frames | 6897–6979 |
 | `telescope` | Telescope — floor, overflow, two-rail, empty, dense | 6981–7314 |
 | `tracks` | Tracks | 7315–7361 |

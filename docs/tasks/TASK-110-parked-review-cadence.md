@@ -1,14 +1,14 @@
 ---
 id: TASK-110
 title: 5.15 Parked (3 of 4) — the review's cadence in Settings, when it is due, and Done reviewing
-status: Ready
+status: In progress
 depends_on: [TASK-108]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: aefac9b
 ---
 
 # TASK-110 — 5.15 Parked (3 of 4) — the review's cadence in Settings, when it is due, and Done reviewing
@@ -73,9 +73,37 @@ dashboard or the review resolves to `--danger`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- `docs/03-data-model.md` § 4.1, the 5.15 row: record the two `reading_settings` columns as built (approved at plan).
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner 2026-11-18, with the plan's recommendations: (1) the two columns as below; (2) a month is a calendar month (31 Jan + 1 month = 28 Feb, as Postgres counts); (3) AC-4's "usual confirmation" is the app's Undo toast, *Review parked items: Monthly*, whose Undo puts the prior cadence back; (4) the row stays in this task (10 code files, past the 8-file line: the row is one small component and one page line, and keeps the cadence provable end to end).
+
+**Steps**
+1. Schema + migration 0034 (`npm run db:generate`): `reading_settings.parked_review text NOT NULL DEFAULT 'quarterly'` with `CHECK IN ('monthly','quarterly','never')`; `reading_settings.parked_reviewed_on date` (NULL until the first review). No `user_id` of their own (D-91). Add-only: no down file.
+2. `src/lib/parked.ts`: the due rule, one pure function `reviewDue({ cadence, reviewedOn, parked }, today)`: something parked, cadence not `never`, and no review yet or today ≥ reviewedOn + 1 or 3 calendar months (clamped to the month's end). `PARKED_CADENCES`, `DEFAULT_PARKED_CADENCE`, `addMonths`. Today is the Eastern day (`today()`, D-67).
+3. `src/db/queries.ts` `parkedReview(userId, now?)` → `{ cadence, reviewedOn, parked, due }`; `parked` counts `book_status.status = 'parked'` on books not deleted. TASK-111's dashboard line, Inbox row and review read it.
+4. `src/db/writes.ts`: `saveReadingSettings` takes `parkedReview`; `markParkedReviewed(userId, now?)` upserts today's Eastern day and answers `{ prior, reviewedOn }`; `undoParkedReviewed(userId, change)` puts `prior` back (NULL included), false when the date has changed since.
+5. Routes: `PATCH /api/settings` accepts `parkedReview` through `parseSettingsPatch` (`src/lib/settings.ts`); any other value is a 400 that writes nothing. `src/app/api/parked/review/route.ts` (new): POST records, DELETE `{ change }` undoes, 409 when changed since (the note route's pattern).
+6. `src/components/ParkedReviewSetting.tsx` (new) on `src/app/settings/page.tsx` under Reading pace (its own *Parked* heading): the `.seg` group of real buttons *Monthly · Quarterly · Never*, `aria-pressed`, named by the row's label; a choice saves at once and pushes the Undo toast; a failed save puts it back and raises the failed-write line with Retry.
+7. Redraw `settings` (phone and desk frames) in `design/mockups.html`; `design/mockups-index.md` names the row.
+8. `docs/03-data-model.md` § 4.1 row 5.15: the columns are built.
+
+**Files**: `src/db/schema.ts`, `drizzle/0034_*.sql` + `drizzle/meta/*`, `src/lib/parked.ts`, `src/lib/settings.ts` (not in Files likely touched: the patch parser lives there), `src/db/queries.ts`, `src/db/writes.ts`, `src/app/api/settings/route.ts`, `src/app/api/parked/review/route.ts` (new), `src/components/ParkedReviewSetting.tsx` (new, instead of growing `PaceSettings.tsx`), `src/app/settings/page.tsx`, `design/mockups.html`, `design/mockups-index.md`, `docs/03-data-model.md`, `test/parked-review.test.ts` (new), `test/settings.test.tsx`, `test/e2e/settings.spec.ts`.
+
+**Test strategy**
+- AC-1 (its due clauses), AC-2: `test/parked-review.test.ts` › "when the review is due" (fixed today): monthly + 40 days due; nothing parked not due; quarterly 40 not / 100 due; never; no review yet; month-end arithmetic.
+- AC-3: `test/parked-review.test.ts` › "Done reviewing": POST writes today's Eastern day, DELETE restores the prior (NULL and a date), 409 when changed; PATCH with a bad cadence is 400 and writes nothing; the CHECK refuses one in raw SQL.
+- AC-4: `test/settings.test.tsx` (row renders, Quarterly pressed by default; PATCH monthly saves, the next read sees it); `test/e2e/settings.spec.ts` (Monthly → toast → reload → still Monthly; Undo puts Quarterly back).
+- AC-5: `test/e2e/settings.spec.ts` floor test (named group, real buttons ≥ 24px, Tab + Enter/Space, contrast, axe); screenshots at 360 and 1280px by ui-verifier; the redraw by eye.
+
+**Risks**: production lags `main`; an add-only migration with defaults is safe on any version. Grep tests for pinned `reading_settings` column lists.
+
+**Revisions after approval** (each forced by an existing test or by the row not fitting; reported to the owner at the PR):
+- `src/app/settings/loading.tsx`: the *Parked* group's skeleton row, since the loading-state test compares every loaded row with its skeleton.
+- `src/app/globals.css`: `.frow-choice`, a container query that stacks the label above the control where the row is narrower than 26rem (a phone, and a settings column at 1024px), since the label and the three choices do not fit side by side there.
+- `test/schema-additions.test.ts` and `test/plan-acceptance.test.ts`: their pinned `reading_settings` row and column list gain the two columns.
+- Settings reads the cadence through `readingSettings` (which now carries `parkedReview`) instead of `parkedReview()`, keeping `/settings` at its 3-query budget (`test/query-budget.test.ts`); `parkedReview()` stays for TASK-111.
 
 ## Review log
 

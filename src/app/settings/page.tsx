@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import PaceSettings from "@/components/PaceSettings";
+import ParkedReviewSetting from "@/components/ParkedReviewSetting";
 import SettingsLink from "@/components/SettingsLink";
 import ShowCovers from "@/components/ShowCovers";
 import { lastCalibreSync, readingSettings, volumeMapCounts } from "@/db/queries";
@@ -14,7 +15,8 @@ export const metadata: Metadata = { title: "Settings · Ledger" };
 
 /**
  * Settings (task 2.0, F-21; mockup `settings`): *Reading pace*, whose minutes a day and words a
- * minute drive every capacity figure, *Appearance* (task 4.3: *Show covers*, a per-device cookie read
+ * minute drive every capacity figure, *Parked* under it (task 5.15, TASK-110: *Review parked items*,
+ * how often the parked review comes due), *Appearance* (task 4.3: *Show covers*, a per-device cookie read
  * here so the switch draws right on the first paint; Theme and Density are 6.11's), and *Data*: the volume map's size, *Calibre* (task 4.4: when it
  * last synced, a link to the log) and *Export everything*, which moved here from the nav. Pace on the
  * left, Appearance and data on the right from 1024px. The reads go out together and none is cached, so an edit
@@ -33,6 +35,10 @@ export default async function Settings() {
           <h1 className="t">Settings</h1>
           <h2 className="s">Reading pace</h2>
           <PaceSettings initial={settings} year={easternYear()} />
+          <h2 className="s">Parked</h2>
+          <div className="group">
+            <ParkedReviewSetting initial={settings.parkedReview} />
+          </div>
         </div>
         <div>
           <h2 className="s">Appearance</h2>

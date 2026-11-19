@@ -167,7 +167,10 @@ describe("the settled state is read, never stored (AC-1, AC-3)", () => {
     const by = (t: string) => cols.filter((c) => c.table_name === t).map((c) => c.column_name);
     expect(by("plan_acceptance")).toEqual(["year", "accepted_at", "accepted_total"]);
     expect(by("reading_plan")).toEqual(["user_id", "book_id", "period", "ordinal"]);
-    expect(by("reading_settings")).toEqual(["user_id", "minutes_per_day", "words_per_minute", "words_per_page", "theme", "show_covers"]);
+    // The parked review's cadence and last review (task 5.15, TASK-110) are settings, not a plan flag.
+    expect(by("reading_settings")).toEqual([
+      "user_id", "minutes_per_day", "words_per_minute", "words_per_page", "theme", "show_covers", "parked_review", "parked_reviewed_on",
+    ]);
   });
 });
 

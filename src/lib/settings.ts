@@ -6,6 +6,7 @@
 // the figure is derived from the three numbers (hard rule 2).
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
 import { today } from "@/lib/finish-date";
+import { isParkedCadence, type ParkedCadence } from "@/lib/parked";
 
 export interface ReadingSettings {
   minutesPerDay: number;
@@ -13,7 +14,10 @@ export interface ReadingSettings {
   wordsPerPage: number;
 }
 export type SettingKey = keyof ReadingSettings;
-export type SettingsPatch = Partial<ReadingSettings>;
+/** A write may also name the parked review's cadence (task 5.15, TASK-110), a choice rather than a number. */
+export type SettingsPatch = Partial<ReadingSettings> & { parkedReview?: ParkedCadence };
+/** What a settings write answers: the pace and the cadence, as stored. */
+export type SavedSettings = ReadingSettings & { parkedReview: ParkedCadence };
 
 export const DEFAULT_SETTINGS: ReadingSettings = {
   minutesPerDay: 45,
@@ -34,8 +38,9 @@ export const SETTING_KEYS = Object.keys(SETTING_BOUNDS) as SettingKey[];
 export const WORDS_PER_NOVEL = 100_000;
 
 /**
- * What `PATCH /api/settings` accepts: an object naming at least one setting, each an integer inside
- * its bound, and nothing else. One bad field refuses the lot, so a write is all or nothing.
+ * What `PATCH /api/settings` accepts: an object naming at least one setting, each pace setting an
+ * integer inside its bound and `parkedReview` one of the three cadences, and nothing else. One bad
+ * field refuses the lot, so a write is all or nothing.
  */
 export function parseSettingsPatch(body: unknown): { patch: SettingsPatch } | { error: string } {
   if (body === null || typeof body !== "object" || Array.isArray(body)) return { error: "send an object of settings" };
@@ -43,6 +48,11 @@ export function parseSettingsPatch(body: unknown): { patch: SettingsPatch } | { 
   if (given.length === 0) return { error: "name at least one setting" };
   const patch: SettingsPatch = {};
   for (const [key, value] of given) {
+    if (key === "parkedReview") {
+      if (!isParkedCadence(value)) return { error: "parkedReview is monthly, quarterly or never" };
+      patch.parkedReview = value;
+      continue;
+    }
     if (!(SETTING_KEYS as string[]).includes(key)) return { error: `${key} is not a setting` };
     const { min, max } = SETTING_BOUNDS[key as SettingKey];
     if (typeof value !== "number" || !Number.isInteger(value) || value < min || value > max) {

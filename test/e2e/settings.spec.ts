@@ -445,3 +445,103 @@ test("Settings with Show covers on and off at 360, 834 and 1280px, light and dar
     }
   }
 });
+
+// ---- Task 5.15, part 3 of 4 (TASK-110, D-105): how often the parked review comes due -----------
+
+const cadence = (page: Page) => group(page, "Review parked items");
+const choice = (page: Page, name: "Monthly" | "Quarterly" | "Never") => cadence(page).getByRole("button", { name, exact: true });
+
+async function storedCadence() {
+  const sql = testSql();
+  try {
+    const [row] = await sql`SELECT parked_review FROM reading_settings WHERE user_id = ${E2E_USER}`;
+    return (row?.parked_review ?? null) as string | null;
+  } finally {
+    await sql.end();
+  }
+}
+
+test("Review parked items: Quarterly by default; Monthly saves, raises the Undo toast and survives a reload; Undo puts Quarterly back (TASK-110 AC-4)", ONCE, async ({ page }) => {
+  await reset();
+  await open(page);
+  await expect(page.getByRole("heading", { level: 2, name: "Parked" })).toBeVisible();
+  await hydrated(choice(page, "Monthly"));
+  await expect(choice(page, "Quarterly")).toHaveAttribute("aria-pressed", "true");
+  await expect(choice(page, "Monthly")).toHaveAttribute("aria-pressed", "false");
+  await expect(choice(page, "Never")).toHaveAttribute("aria-pressed", "false");
+
+  await choice(page, "Monthly").click();
+  await expect(choice(page, "Monthly")).toHaveAttribute("aria-pressed", "true");
+  const toast = page.locator(".toast");
+  await expect(toast).toContainText("Review parked items: Monthly");
+  await expect.poll(storedCadence).toBe("monthly");
+
+  await page.reload();
+  await hydrated(choice(page, "Monthly"));
+  await expect(choice(page, "Monthly")).toHaveAttribute("aria-pressed", "true");
+  await expect(choice(page, "Quarterly")).toHaveAttribute("aria-pressed", "false");
+
+  // A choice made after the reload is undone by its own toast: the cadence before comes back.
+  await choice(page, "Never").click();
+  await expect.poll(storedCadence).toBe("never");
+  await toastSettled(page);
+  await toast.getByRole("button", { name: "Undo" }).click();
+  await expect.poll(storedCadence).toBe("monthly");
+  await expect(choice(page, "Monthly")).toHaveAttribute("aria-pressed", "true");
+  await reset();
+});
+
+test("Review parked items is keyboard-operable: Tab reaches each choice, Enter and Space choose it (TASK-110 AC-5)", ONCE, async ({ page }) => {
+  await reset();
+  await open(page);
+  await hydrated(choice(page, "Monthly"));
+  await choice(page, "Quarterly").focus();
+  await page.keyboard.press("Shift+Tab");
+  await expect(choice(page, "Monthly")).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(choice(page, "Monthly")).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(storedCadence).toBe("monthly");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await expect(choice(page, "Never")).toBeFocused();
+  await page.keyboard.press("Space");
+  await expect(choice(page, "Never")).toHaveAttribute("aria-pressed", "true");
+  await expect.poll(storedCadence).toBe("never");
+  await reset();
+});
+
+test("Review parked items meets the floor: a named group of three real buttons, each 24px+ on a 44px row, 4.5:1 text, axe clean, no sideways scroll (TASK-110 AC-5)", FLOOR, async ({ page }) => {
+  await open(page);
+  await expect(cadence(page).getByRole("button")).toHaveCount(3);
+  for (const name of ["Monthly", "Quarterly", "Never"] as const) {
+    const box = (await choice(page, name).boundingBox())!;
+    expect(box.height, `${name} height`).toBeGreaterThanOrEqual(24);
+    expect(box.width, `${name} width`).toBeGreaterThanOrEqual(24);
+    expect(await choice(page, name).evaluate((el) => el.tagName)).toBe("BUTTON");
+  }
+  const row = page.locator(".frow", { has: cadence(page) });
+  expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  // The row's label and the group sit side by side: the control never spills out of its row.
+  const rowBox = (await row.boundingBox())!;
+  const segBox = (await cadence(page).boundingBox())!;
+  expect(segBox.x + segBox.width).toBeLessThanOrEqual(rowBox.x + rowBox.width + 1);
+  expect(await contrastFailures(page)).toEqual([]);
+  await expectNoAxeViolations(page, AXE);
+  await expectNoHorizontalScroll(page);
+});
+
+// Sets its own viewports and themes: runs once, in w390-light.
+test("Settings with Review parked items at 360 and 1280px, light and dark (TASK-110 AC-5)", ONCE, async ({ page }, info) => {
+  await reset();
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    for (const [width, height] of [[360, 780], [1280, 800]]) {
+      await page.setViewportSize({ width, height });
+      await open(page);
+      await hydrated(choice(page, "Quarterly"));
+      await expectNoHorizontalScroll(page);
+      await cadence(page).scrollIntoViewIfNeeded();
+      await screenshot(page, info, `settings-parked-${width}-${colorScheme}`);
+    }
+  }
+});

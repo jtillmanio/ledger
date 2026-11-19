@@ -10,6 +10,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import { requireTestUrl } from "../scripts/lib/testdb.mjs";
 import Stepper from "../src/components/Stepper";
 import { UndoProvider } from "../src/components/Undo";
+import { DEFAULT_PARKED_CADENCE } from "../src/lib/parked";
 import { DEFAULT_SETTINGS, SETTING_BOUNDS, wordsPerYear } from "../src/lib/settings";
 import { testSql, truncateAll } from "./db";
 
@@ -64,7 +65,7 @@ const rows = () => sql`SELECT minutes_per_day, words_per_minute, words_per_page 
 describe("a user with no row (AC-1, AC-2)", () => {
   it("gets the column defaults, and the code's defaults are the column's", async () => {
     expect(await rows()).toHaveLength(0);
-    expect(await q.readingSettings(USER)).toEqual({ minutesPerDay: 45, wordsPerMinute: 185, wordsPerPage: 275 });
+    expect(await q.readingSettings(USER)).toEqual({ minutesPerDay: 45, wordsPerMinute: 185, wordsPerPage: 275, parkedReview: "quarterly" });
     const cols = await sql`
       SELECT column_name, column_default FROM information_schema.columns
       WHERE table_name = 'reading_settings' AND column_name IN ('minutes_per_day', 'words_per_minute', 'words_per_page')`;
@@ -85,7 +86,9 @@ describe("PATCH /api/settings", () => {
     expect((await q.readingSettings(USER)).minutesPerDay).toBe(45);
     const res = await patch({ minutesPerDay: 60 });
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true, settings: { minutesPerDay: 60, wordsPerMinute: 185, wordsPerPage: 275 } });
+    expect(await res.json()).toEqual({
+      ok: true, settings: { minutesPerDay: 60, wordsPerMinute: 185, wordsPerPage: 275, parkedReview: "quarterly" },
+    });
     expect(await rows()).toEqual([{ minutes_per_day: 60, words_per_minute: 185, words_per_page: 275 }]);
     expect((await q.readingSettings(USER)).minutesPerDay).toBe(60);
     // The other readers of the row see it too: add-book's words per page.
@@ -209,6 +212,29 @@ describe("the screen reads the row live (AC-2)", () => {
     expect(sw(await render())).toContain('aria-checked="false"');
     cookieJar.set("ledger_covers", "garbage");
     expect(sw(await render())).toContain('aria-checked="true"');
+  });
+
+  it("draws Parked with Review parked items: Monthly · Quarterly · Never, Quarterly chosen by default, the column's default (task 5.15, TASK-110, AC-4, AC-5)", async () => {
+    const [col] = await sql`
+      SELECT column_default FROM information_schema.columns
+      WHERE table_name = 'reading_settings' AND column_name = 'parked_review'`;
+    expect(col.column_default).toBe(`'${DEFAULT_PARKED_CADENCE}'::text`);
+    const Page = (await import("../src/app/settings/page")).default;
+    const render = async () => renderToStaticMarkup(<UndoProvider>{await Page()}</UndoProvider>);
+    const group = (html: string) => {
+      const label = html.match(/<span class="k" id="([^"]+)">Review parked items<\/span>/);
+      expect(label, "the row's label").not.toBeNull();
+      const seg = html.match(new RegExp(`<span class="seg" role="group" aria-labelledby="${label![1]}"[^>]*>([\\s\\S]*?)</span>`));
+      expect(seg, "a group named by the label").not.toBeNull();
+      return [...seg![1].matchAll(/<button type="button" aria-pressed="(true|false)">([^<]+)<\/button>/g)].map((m) => [m[2], m[1]]);
+    };
+    const first = await render();
+    expect(first).toMatch(/<h2[^>]*>Parked<\/h2>/);
+    expect(group(first)).toEqual([["Monthly", "false"], ["Quarterly", "true"], ["Never", "false"]]);
+    expect(await sql`SELECT 1 FROM reading_settings`).toHaveLength(0);
+
+    expect((await patch({ parkedReview: "monthly" })).status).toBe(200);
+    expect(group(await render())).toEqual([["Monthly", "true"], ["Quarterly", "false"], ["Never", "false"]]);
   });
 
   it("draws the volume map line and Export everything as a plain link", async () => {
