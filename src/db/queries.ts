@@ -2632,3 +2632,187 @@ export async function finishOffer(
     done: all.filter((g) => g.state === "reading" && g.unread === 0),
   };
 }
+
+/* ── In the middle of, and completed (task 5.12, F-69; D-108, D-109, D-118, D-119) ─────────── */
+
+/** What a `/progress` row is: a books grouping (D-42, 2.2c, 2.2h) or a comics run or track. */
+export type ProgressKind = "series" | "subseries" | "universe" | "author" | "shelf" | "run" | "track";
+
+/** The next thing in a row: a book (`follow_next`'s; `ordinal` null) or a run's resume pointer (task 1.6):
+ * the issue, its label and its place among the run's live placements, the n of the spine's `#p-n`. */
+export type ProgressNext = { id: string; label: string; ordinal: number | null };
+
+/** One `/progress` row (task 5.12). `read` and `total` are its progress view's, never recounted: a series'
+ * total is its stated `total_books` (as `follow_queue` reads it), every other books kind its live books, a run
+ * or a track its distinct issues. */
+export type ProgressRow = {
+  medium: "books" | "comics";
+  kind: ProgressKind;
+  id: string; name: string;
+  read: number; total: number;
+  /** In the middle of only: `follow_next`'s book (null while a book in hand is next), or a run's resume
+   * pointer; a track names none. Null on *On hold* (D-118) and *Completed*. */
+  next: ProgressNext | null;
+  /** The row it nests under (D-119), only when that row is listed in the same section: a series under the
+   * universe most of its live books are in, a subseries under its series. Null otherwise. */
+  parentKind: "universe" | "series" | null; parentId: string | null;
+  /** The latest dated read in it, its Eastern day (`YYYY-MM-DD`); null with none. Each list sorts on it. */
+  lastOn: string | null;
+  /** *Completed* only: the month of the last finish, `YYYY-MM`; null with no dated read. */
+  finishedMonth: string | null;
+};
+
+export type ProgressRows = { middle: ProgressRow[]; onHold: ProgressRow[]; completed: ProgressRow[] };
+
+/**
+ * Everything you are in the middle of, on hold and have completed (task 5.12), in one statement: derived
+ * from the progress views, nothing stored (hard rule 2), and a read only.
+ * - Books are *in the middle* only through a follow set to *Reading* (D-108, D-117): a series, subseries,
+ *   universe, author or shelf followed `reading` with a live book neither read nor DNF. *On hold* is a
+ *   `tracking` follow with a read book and one neither read nor DNF, the follow control's own rule (D-118).
+ *   *Completed* needs no follow (D-109): two live books or more, every one read (a series also its stated
+ *   total, so one still being written isn't done), and an author only when followed, with every book read.
+ * - Comics need no follow: a run part-read (`run_progress`'s `reading`, 1.9's In flight) or a track with some
+ *   of its issues read is in the middle; every issue read is completed. Placeholders are on no tab.
+ * Each list is the latest read first (`book_reads.finished_on` over the thing's live books, as
+ * `follow_queue.last_read_on`; the latest `issue_progress.completed_at`, its Eastern day), an undated one last,
+ * then by name. TASK-105 draws it.
+ */
+export async function progressRows(userId: string): Promise<ProgressRows> {
+  const rows = await sql<(ProgressRow & { section: "middle" | "on_hold" | "completed" })[]>`
+    WITH members AS (
+      -- Each books grouping's live books.
+      SELECT 'series'::text AS kind, b.series_id AS id, b.id AS book_id FROM books b
+      WHERE b.deleted_at IS NULL AND b.series_id IS NOT NULL
+      UNION ALL
+      SELECT 'subseries', b.subseries_id, b.id FROM books b WHERE b.deleted_at IS NULL AND b.subseries_id IS NOT NULL
+      UNION ALL
+      SELECT 'universe', b.universe_id, b.id FROM books b WHERE b.deleted_at IS NULL AND b.universe_id IS NOT NULL
+      UNION ALL
+      SELECT 'author', b.author_id, b.id FROM books b WHERE b.deleted_at IS NULL AND b.author_id IS NOT NULL
+      UNION ALL
+      SELECT 'shelf', sb.shelf_id, b.id
+      FROM shelf_books sb
+      JOIN shelves s ON s.id = sb.shelf_id AND s.user_id = ${userId} AND s.kind = 'books'
+      JOIN books b ON b.id = sb.book_id AND b.deleted_at IS NULL
+    ), last_read AS (
+      SELECT r.book_id, MAX(r.finished_on) AS last_on
+      FROM book_reads r WHERE r.user_id = ${userId} AND r.finished_on IS NOT NULL
+      GROUP BY r.book_id
+    ), tally AS (
+      -- unread is the follow control's: live books neither read nor DNF (D-118).
+      SELECT m.kind, m.id,
+             COUNT(*) FILTER (WHERE st.status IS NULL OR st.status NOT IN ('read', 'dnf'))::int AS unread,
+             MAX(lr.last_on) AS last_on
+      FROM members m
+      LEFT JOIN book_status st ON st.user_id = ${userId} AND st.book_id = m.book_id
+      LEFT JOIN last_read lr ON lr.book_id = m.book_id
+      GROUP BY m.kind, m.id
+    ), series_universe AS (
+      -- The universe most of a series' live books are in: books carry the universe, a series doesn't.
+      SELECT DISTINCT ON (b.series_id) b.series_id, b.universe_id
+      FROM books b
+      WHERE b.deleted_at IS NULL AND b.series_id IS NOT NULL AND b.universe_id IS NOT NULL
+      GROUP BY b.series_id, b.universe_id
+      ORDER BY b.series_id, COUNT(*) DESC, b.universe_id
+    ), groupings AS (
+      SELECT 'series'::text AS kind, p.series_id AS id, p.name, p.books_read::int AS read, p.total_books::int AS total,
+             p.books_listed::int AS listed, p.follow_state, 'universe'::text AS parent_kind, su.universe_id AS parent_id
+      FROM series_progress p LEFT JOIN series_universe su ON su.series_id = p.series_id
+      WHERE p.user_id = ${userId}
+      UNION ALL
+      SELECT 'subseries', p.subseries_id, p.name, p.books_read::int, p.books_listed::int, p.books_listed::int,
+             p.follow_state, 'series', p.series_id
+      FROM subseries_progress p WHERE p.user_id = ${userId}
+      UNION ALL
+      SELECT 'universe', p.universe_id, p.name, p.books_read::int, p.books_listed::int, p.books_listed::int,
+             p.follow_state, NULL, NULL
+      FROM universe_progress p WHERE p.user_id = ${userId}
+      UNION ALL
+      SELECT 'author', p.author_id, p.name, p.books_read::int, p.books_listed::int, p.books_listed::int,
+             p.follow_state, NULL, NULL
+      FROM author_progress p WHERE p.user_id = ${userId}
+      UNION ALL
+      SELECT 'shelf', p.shelf_id, p.name, p.books_read::int, p.books_listed::int, p.books_listed::int,
+             p.follow_state, NULL, NULL
+      FROM shelf_progress p WHERE p.user_id = ${userId}
+    ), book_rows AS (
+      SELECT g.*, t.last_on,
+             CASE
+               WHEN g.follow_state = 'reading' AND t.unread > 0 THEN 'middle'
+               WHEN g.follow_state = 'tracking' AND g.read > 0 AND t.unread > 0 THEN 'on_hold'
+               WHEN g.read = g.listed AND g.read >= g.total
+                    AND CASE WHEN g.kind = 'author' THEN g.follow_state IS NOT NULL AND g.listed > 0
+                             ELSE g.listed >= 2 END THEN 'completed'
+             END AS section
+      FROM groupings g
+      LEFT JOIN tally t ON t.kind = g.kind AND t.id = g.id
+    ), run_rows AS (
+      SELECT r.id, r.title AS name, rp.read_issues::int AS read, rp.total_issues::int AS total,
+             CASE rp.state WHEN 'reading' THEN 'middle' ELSE 'completed' END AS section,
+             (lr.last_at AT TIME ZONE 'America/New_York')::date AS last_on,
+             CASE WHEN rp.state = 'reading' THEN
+               json_build_object('id', nx.issue_id, 'label', nx.label, 'ordinal', nx.ordinal) END AS next
+      FROM runs r
+      JOIN run_progress rp ON rp.run_id = r.id AND rp.user_id = ${userId}
+      LEFT JOIN LATERAL (
+        SELECT MAX(p.completed_at) AS last_at
+        FROM live_run_issues ri
+        JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
+        WHERE ri.run_id = r.id
+      ) lr ON true
+      -- The resume pointer (task 1.6), by inFlightRuns' rule: the lowest sequence whose placement is unread.
+      LEFT JOIN LATERAL (
+        SELECT ri.issue_id, i.label,
+               (SELECT COUNT(*)::int FROM live_run_issues o
+                WHERE o.run_id = ri.run_id AND o.sequence <= ri.sequence) AS ordinal
+        FROM live_run_issues ri
+        JOIN issues i ON i.id = ri.issue_id
+        LEFT JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
+        WHERE ri.run_id = r.id AND p.placement_id IS NULL
+        ORDER BY ri.sequence
+        LIMIT 1
+      ) nx ON rp.state = 'reading'
+      WHERE r.deleted_at IS NULL AND NOT r.placeholder AND rp.state IN ('reading', 'read')
+    ), track_rows AS (
+      SELECT tp.track_id AS id, tp.track_name AS name, tp.read_issues::int AS read, tp.total_issues::int AS total,
+             CASE WHEN tp.read_issues = tp.total_issues THEN 'completed' ELSE 'middle' END AS section,
+             (lr.last_at AT TIME ZONE 'America/New_York')::date AS last_on
+      FROM track_progress tp
+      LEFT JOIN LATERAL (
+        SELECT MAX(p.completed_at) AS last_at
+        FROM run_tracks rt
+        JOIN runs r ON r.id = rt.run_id AND NOT r.placeholder AND r.deleted_at IS NULL
+        JOIN live_run_issues ri ON ri.run_id = r.id
+        JOIN issue_progress p ON p.placement_id = ri.id AND p.user_id = ${userId}
+        WHERE rt.track_id = tp.track_id
+      ) lr ON true
+      WHERE tp.user_id = ${userId} AND tp.read_issues > 0
+    ), listed AS (
+      SELECT br.section, 'books'::text AS medium, br.kind, br.id, br.name, br.read, br.total,
+             CASE WHEN br.section = 'middle' THEN
+               (SELECT json_build_object('id', fn.book_id, 'label', nb.title, 'ordinal', NULL)
+                FROM follow_next fn JOIN books nb ON nb.id = fn.book_id
+                WHERE fn.user_id = ${userId} AND fn.kind = br.kind AND fn.entity_id = br.id) END AS next,
+             br.parent_kind, br.parent_id, br.last_on
+      FROM book_rows br WHERE br.section IS NOT NULL
+      UNION ALL
+      SELECT rr.section, 'comics', 'run', rr.id, rr.name, rr.read, rr.total, rr.next, NULL, NULL, rr.last_on
+      FROM run_rows rr
+      UNION ALL
+      SELECT tr.section, 'comics', 'track', tr.id, tr.name, tr.read, tr.total, NULL, NULL, NULL, tr.last_on
+      FROM track_rows tr
+    )
+    SELECT l.section, l.medium, l.kind, l.id, l.name, l.read, l.total, l.next,
+           p.kind AS "parentKind", p.id AS "parentId",
+           l.last_on::text AS "lastOn",
+           CASE WHEN l.section = 'completed' THEN to_char(l.last_on, 'YYYY-MM') END AS "finishedMonth"
+    FROM listed l
+    -- A parent counts only when it is listed in the same section (D-119); otherwise the row stands alone.
+    LEFT JOIN listed p ON p.section = l.section AND p.kind = l.parent_kind AND p.id = l.parent_id
+    ORDER BY l.last_on DESC NULLS LAST, l.name, l.kind, l.id
+  `;
+  const out: ProgressRows = { middle: [], onHold: [], completed: [] };
+  for (const { section, ...row } of rows) out[section === "on_hold" ? "onHold" : section].push(row);
+  return out;
+}

@@ -1,14 +1,14 @@
 ---
 id: TASK-104
 title: 5.12 In the middle of, and completed (1 of 2) — the derived rows for books and comics
-status: Ready
+status: In progress
 depends_on: []
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 93eb573
 ---
 
 # TASK-104 — 5.12 In the middle of, and completed (1 of 2) — the derived rows for books and comics
@@ -70,9 +70,35 @@ listed universe nests beneath it. Screenshots at 360px and 1280px.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- TASK-105 Context note: `progressRows`'s shape and decisions a)–d), so the page builds on them; TASK-105 adds `/progress` to `test/query-budget.test.ts` (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+_Approved 2026-11-19 (attended)._
+
+**Steps**
+1. `test/progress-page.test.ts` first (fails: no export), on `TEST_DATABASE_URL`, fixtures for every data clause of the Check.
+2. `progressRows(userId)` in `src/db/queries.ts`: **one** raw SQL statement (one wave for TASK-105), returning `{ middle, onHold, completed }` of `ProgressRow { medium, kind, id, name, read, total, next, parentKind, parentId, lastOn, finishedMonth }`.
+   - Books, counts from the views: series `books_read / total_books` (as `follow_queue`), the others `books_read / books_listed`. *Unread* = live books neither read nor DNF (the follow control's `unread`, so On hold matches its label, D-118).
+   - In the middle: `follow_state = 'reading'` and unread > 0; next = `follow_next` (null while a book is in hand).
+   - On hold: `tracking`, read >= 1 and unread >= 1; no next.
+   - Completed: series, universe, shelf, subseries with >= 2 live books and `books_read = books_listed` (a series also >= `total_books`); authors only when followed, every listed book read.
+   - Comics: runs from `run_progress` (`reading` → middle, `read` → completed; placeholders out) with 1.6's resume pointer (label + ordinal); tracks from `track_progress`, 0 < read < total → middle, read = total > 0 → completed.
+   - Order: `lastOn` = latest dated read (Eastern day): `book_reads.finished_on` over the thing's live books (follow_queue's rule), or the latest `issue_progress.completed_at`; newest first, undated last, then name, id. `finishedMonth` (YYYY-MM) on completed rows.
+   - Nesting (D-119): subseries → its series; series → the universe most of its live books are in; a parent only when listed in the same section, else null.
+3. `verify.full`, commit, push, PR.
+
+**Files:** `src/db/queries.ts`; `test/progress-page.test.ts` (new). No view change.
+
+**Test strategy**
+- AC-1 + AC-2: a describe per clause (reading 2/5 in, unfollowed out; 5/5 completed followed or not, one-book not; author only when followed; shelf 1/3 reading in; run 3/10 middle, 10/10 completed; tracking 2/5 on hold only, 0/5 neither).
+- AC-3: universe + its series both reading → nested; universe unfollowed → series has no parent.
+- AC-4: two middle rows on different days, newest first; completed rows carry `finishedMonth`, ordered by it.
+- AC-5: the `@/db/index` mock (query-budget's pattern) records exactly one statement and no INSERT/UPDATE/DELETE; a row-count snapshot of the progress and follow tables is unchanged; each row's read/total equals its view's row.
+
+**Decisions taken at the gate:** a) subseries are rows, nested under their series; b) tracks have no next thing; c) runs don't nest under tracks; d) a series whose stated `total_books` exceeds its live books, all read, is on neither tab.
+
+**Risks:** one long statement; time it on the test database before pushing.
 
 ## Review log
 
