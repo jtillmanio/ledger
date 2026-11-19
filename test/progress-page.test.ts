@@ -307,6 +307,13 @@ describe("rows nest under a listed parent (D-119; AC-3)", () => {
     expect(find((await q.progressRows(USER)).middle, "series", "split")).toMatchObject({ parentKind: "universe", parentId: "cos" });
   });
 
+  it("books with no universe have no say: a series with 2 of 5 books in a universe nests under it", async () => {
+    await series("part", 5, 1, { universe: "cos", follow: "reading" });
+    await sql`UPDATE books SET universe_id = NULL, universe_position = NULL WHERE id IN ('part-3', 'part-4', 'part-5')`;
+    await follow("universe", "cos", "reading");
+    expect(find((await q.progressRows(USER)).middle, "series", "part")).toMatchObject({ parentKind: "universe", parentId: "cos" });
+  });
+
   it("a subseries nests under its series; completed rows nest the same way", async () => {
     await series("disc", 4, 1, { subseries: "watch", follow: "reading" });
     await follow("subseries", "watch", "reading");

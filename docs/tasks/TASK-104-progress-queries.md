@@ -85,7 +85,7 @@ _Approved 2026-11-19 (attended)._
    - Completed: series, universe, shelf, subseries with >= 2 live books and `books_read = books_listed` (a series also >= `total_books`); authors only when followed, every listed book read.
    - Comics: runs from `run_progress` (`reading` → middle, `read` → completed; placeholders out) with 1.6's resume pointer (label + ordinal); tracks from `track_progress`, 0 < read < total → middle, read = total > 0 → completed.
    - Order: `lastOn` = latest dated read (Eastern day): `book_reads.finished_on` over the thing's live books (follow_queue's rule), or the latest `issue_progress.completed_at`; newest first, undated last, then name, id. `finishedMonth` (YYYY-MM) on completed rows.
-   - Nesting (D-119): subseries → its series; series → the universe most of its live books are in; a parent only when listed in the same section, else null.
+   - Nesting (D-119): subseries → its series; series → the universe most of its live books in a universe are in (a book with none has no say; worded so after the schema review); a parent only when listed in the same section, else null.
 3. `verify.full`, commit, push, PR.
 
 **Files:** `src/db/queries.ts`; `test/progress-page.test.ts` (new). No view change.

@@ -2654,7 +2654,7 @@ export type ProgressRow = {
    * pointer; a track names none. Null on *On hold* (D-118) and *Completed*. */
   next: ProgressNext | null;
   /** The row it nests under (D-119), only when that row is listed in the same section: a series under the
-   * universe most of its live books are in, a subseries under its series. Null otherwise. */
+   * universe most of its books in a universe are in, a subseries under its series. Null otherwise. */
   parentKind: "universe" | "series" | null; parentId: string | null;
   /** The latest dated read in it, its Eastern day (`YYYY-MM-DD`); null with none. Each list sorts on it. */
   lastOn: string | null;
@@ -2709,7 +2709,8 @@ export async function progressRows(userId: string): Promise<ProgressRows> {
       LEFT JOIN last_read lr ON lr.book_id = m.book_id
       GROUP BY m.kind, m.id
     ), series_universe AS (
-      -- The universe most of a series' live books are in: books carry the universe, a series doesn't.
+      -- A series' universe: books carry the universe, a series doesn't. The universe most of its live books
+      -- in a universe are in (a book Calibre gives no #superseries has no say), then by id.
       SELECT DISTINCT ON (b.series_id) b.series_id, b.universe_id
       FROM books b
       WHERE b.deleted_at IS NULL AND b.series_id IS NOT NULL AND b.universe_id IS NOT NULL
@@ -2747,6 +2748,11 @@ export async function progressRows(userId: string): Promise<ProgressRows> {
              END AS section
       FROM groupings g
       LEFT JOIN tally t ON t.kind = g.kind AND t.id = g.id
+    ), book_next AS (
+      -- Each Reading follow's next book, read once rather than once per row (follow_next is one per follow).
+      SELECT fn.kind, fn.entity_id, fn.book_id, nb.title
+      FROM follow_next fn JOIN books nb ON nb.id = fn.book_id
+      WHERE fn.user_id = ${userId}
     ), run_rows AS (
       SELECT r.id, r.title AS name, rp.read_issues::int AS read, rp.total_issues::int AS total,
              CASE rp.state WHEN 'reading' THEN 'middle' ELSE 'completed' END AS section,
@@ -2790,12 +2796,12 @@ export async function progressRows(userId: string): Promise<ProgressRows> {
       WHERE tp.user_id = ${userId} AND tp.read_issues > 0
     ), listed AS (
       SELECT br.section, 'books'::text AS medium, br.kind, br.id, br.name, br.read, br.total,
-             CASE WHEN br.section = 'middle' THEN
-               (SELECT json_build_object('id', fn.book_id, 'label', nb.title, 'ordinal', NULL)
-                FROM follow_next fn JOIN books nb ON nb.id = fn.book_id
-                WHERE fn.user_id = ${userId} AND fn.kind = br.kind AND fn.entity_id = br.id) END AS next,
+             CASE WHEN br.section = 'middle' AND nx.book_id IS NOT NULL THEN
+               json_build_object('id', nx.book_id, 'label', nx.title, 'ordinal', NULL) END AS next,
              br.parent_kind, br.parent_id, br.last_on
-      FROM book_rows br WHERE br.section IS NOT NULL
+      FROM book_rows br
+      LEFT JOIN book_next nx ON nx.kind = br.kind AND nx.entity_id = br.id
+      WHERE br.section IS NOT NULL
       UNION ALL
       SELECT rr.section, 'comics', 'run', rr.id, rr.name, rr.read, rr.total, rr.next, NULL, NULL, rr.last_on
       FROM run_rows rr
