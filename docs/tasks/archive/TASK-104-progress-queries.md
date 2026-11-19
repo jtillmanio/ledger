@@ -1,7 +1,7 @@
 ---
 id: TASK-104
 title: 5.12 In the middle of, and completed (1 of 2) — the derived rows for books and comics
-status: Review
+status: Done
 depends_on: []
 size: M
 model: opus
