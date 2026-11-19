@@ -1,7 +1,7 @@
 ---
 id: TASK-110
 title: 5.15 Parked (3 of 4) — the review's cadence in Settings, when it is due, and Done reviewing
-status: In progress
+status: Review
 depends_on: [TASK-108]
 size: M
 model: opus
@@ -30,7 +30,7 @@ You choose how often to review what you've parked (monthly, quarterly or never),
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check (proposed):**, verbatim; this part proves, with `npm test`: with a monthly cadence, one parked book and a last review 40 days ago the review is due; with nothing parked it is not; *Done reviewing* makes it not due. TASK-108 and TASK-109 prove the status, TASK-111 the review and the dashboard line): (proposed; the owner agrees it by merging or edits it first)
+- [x] AC-1 (roadmap **Check (proposed):**, verbatim; this part proves, with `npm test`: with a monthly cadence, one parked book and a last review 40 days ago the review is due; with nothing parked it is not; *Done reviewing* makes it not due. TASK-108 and TASK-109 prove the status, TASK-111 the review and the dashboard line): (proposed; the owner agrees it by merging or edits it first)
 `npm test`: parking the 2nd of 3 books in 2027 Q1
 writes `parked`, removes its plan row and leaves Q1 at ordinals 1–2, and
 Undo restores `to_read` at position 2. A parked book is absent from
@@ -43,10 +43,10 @@ makes it not due. In the browser (0.11), the review's *Plan…* opens 2.3's
 picker, *Unlisted* writes `unlisted` and Undo puts back `parked`, and the
 dashboard line shows only when the review is due. Nothing on the
 dashboard or the review resolves to `--danger`.
-- [ ] AC-2: With a quarterly cadence, one parked book and a last review 40 days ago, the review is not due; at 100 days it is; with *never* it is never due; with no review yet and one parked book it is due.
-- [ ] AC-3: *Done reviewing* writes today's Eastern date to `parked_reviewed_on`, and its undo puts the prior value (NULL included) back; a value other than the three cadences is refused by the route with 400 and by the CHECK.
-- [ ] AC-4: Settings shows *Review parked items* with *Monthly · Quarterly · Never*, *Quarterly* chosen by default; choosing *Monthly* saves, survives a reload, and raises the settings' usual confirmation.
-- [ ] AC-5: The Settings row meets the UX floor (`docs/04-design.md` § 10): a labelled radiogroup or segmented control operable by keyboard, targets ≥ 24px, contrast in light and dark, screenshots at 360px and 1280px; the `settings` frame in `design/mockups.html` draws the row and `design/mockups-index.md` names it (task 5.15).
+- [x] AC-2: With a quarterly cadence, one parked book and a last review 40 days ago, the review is not due; at 100 days it is; with *never* it is never due; with no review yet and one parked book it is due.
+- [x] AC-3: *Done reviewing* writes today's Eastern date to `parked_reviewed_on`, and its undo puts the prior value (NULL included) back; a value other than the three cadences is refused by the route with 400 and by the CHECK.
+- [x] AC-4: Settings shows *Review parked items* with *Monthly · Quarterly · Never*, *Quarterly* chosen by default; choosing *Monthly* saves, survives a reload, and raises the settings' usual confirmation.
+- [x] AC-5: The Settings row meets the UX floor (`docs/04-design.md` § 10): a labelled radiogroup or segmented control operable by keyboard, targets ≥ 24px, contrast in light and dark, screenshots at 360px and 1280px; the `settings` frame in `design/mockups.html` draws the row and `design/mockups-index.md` names it (task 5.15).
 
 ## Out of scope
 
@@ -73,7 +73,10 @@ dashboard or the review resolves to `--danger`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- `docs/03-data-model.md` § 4.1, the 5.15 row: record the two `reading_settings` columns as built (approved at plan).
+- The 5.15 row of the proposed additions records the two `reading_settings` columns as built and the due rule (approved at plan) → docs/03-data-model.md § 4.1 By task
+- The lasting rule (the two columns, calendar months, one `reviewDue`, *Done reviewing* and its undo, the Undo toast on a settings choice, `.frow-choice`), approved by the owner at close-out → docs/review/decisions.md § D-164
+- Schema review MINOR: a first-ever *Done reviewing* sent twice at once reads `prior = null` both times (the `FOR UPDATE` locks no row yet), so one undo could 409 → not tracked: unreachable with one user, and the day written is the same either way
+- ui-verifier left the row's loading and failed-save paths and reduced motion unwalked → not tracked: the loading skeleton is pinned by `test/e2e/settings.spec.ts` (the loaded rows' size, every row), the failed-save line is the pace steppers' shared `undo.fail`, and the row has no motion of its own
 
 ## Plan
 
@@ -109,13 +112,17 @@ Approved by the owner 2026-11-18, with the plan's recommendations: (1) the two c
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 FAIL(2: `/settings` query budget 4 > 3; `plan-acceptance` pinned `reading_settings` columns) → R2 PASS (2265 tests) | settings e2e (w390-light, floor also w360/w1024/w1280) PASS
+- CI R1 PASS (every project, 8 shards; tests; Vercel preview)
+- Schema R1 APPROVE (1 MINOR, not tracked) | Spec R1 APPROVE (2 wording notes fixed in 3f3301f, test-only) | Audit R1 PASS | UI R1 PASS (all six widths, light and dark; dev DB left on Quarterly)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 4 (the skeleton row, `.frow-choice`, two pinned test lists, the cadence through `readingSettings`; listed under the Plan)
