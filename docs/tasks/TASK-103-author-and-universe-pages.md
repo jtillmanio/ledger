@@ -1,14 +1,14 @@
 ---
 id: TASK-103
 title: 5.11 Author and universe pages, and the follow control on them
-status: Ready
+status: In progress
 depends_on: [TASK-102]
 size: M
 model: opus
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: aefac9b
 ---
 
 # TASK-103 — 5.11 Author and universe pages, and the follow control on them
@@ -38,7 +38,7 @@ user, survives a reload, and shows in the view's `follow_state`. *Not
 following* deletes the row. No count or state column is added.
 - [ ] AC-2: Given an author with 4 live books, 1 read and 1 soft-deleted, the author page reads `1 / 3` (the soft-deleted book left out), a `--ready` meter, and names the earliest-published unread book as next; the universe page does the same from `universe_progress`.
 - [ ] AC-3: On an author page with no follow, choosing *Reading* writes one `author_follows` row `reading`; after a reload *Reading* is checked; *Not following* deletes it. On a universe page, *Not following* stores `off` and `universe_progress.follow_state` reads NULL. Each write raises the undo toast and its *Undo* puts the prior state back.
-- [ ] AC-4: An author's name in a Library row links to its page; a universe with no live books renders its page with `0 / 0`, no meter fill and an empty state, never an error.
+- [ ] AC-4: A universe with no live books renders its page with `0 / 0`, no meter fill and an empty state, never an error. (*An author's name in a Library row links to its page* moved to TASK-125, owner at plan, 2026-11-18: it edits the same Library row as TASK-125's series links.)
 - [ ] AC-5: `design/mockups.html` gains the author and universe pages at phone, tablet and desktop, and `design/mockups-index.md` lists them (task 5.11); `docs/02-architecture.md` § 5 lists both routes; no migration is added.
 - [ ] AC-6: Both pages meet the UX floor (`docs/04-design.md` § 10): empty state, loading skeletons, an error state, the radiogroup operable by keyboard with its name, targets ≥ 24px, contrast in light and dark, screenshots at each `ui.viewports` width.
 
@@ -66,9 +66,33 @@ following* deletes the row. No count or state column is added.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- Every author and universe name links to its page (a Library row, *where the book sits*, the follow sheet), with TASK-125's series links in the same row code; AC-4's first clause moved there (approved at plan)
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner, 2026-11-18, with three answers at the gate: the name links go to TASK-125; the 5.15 worktree was removed for its test slot; a universe page offers both orders.
+
+**Settled at the gate (the Grishaverse question, from TASK-023):** 4.4's sync (`src/db/calibre-sync.ts`) already sets `books.universe_id` and `universe_position` from Calibre's `#superseries` (D-90, D-133). A book joins a universe by setting `#superseries` in Calibre and running `npm run calibre:sync`; nothing in the app sets it, and nothing new is built.
+
+**Steps**
+
+1. `src/db/queries.ts`: `authorPage(userId, id)` and `universePage(userId, id)`, each `{ id, name, read, total, unread, followState, books, nextId }` in `seriesPage`'s shape. Counts and `followState` from `author_progress` / `universe_progress` (your row); `unread` the live books neither read nor DNF (`bookGroupings`' rule, for *On hold*); books with status, level and dates as `seriesPage` reads them, plus `published_year` (author) or `universe_position` and the series' id, name and position (universe). Order: an author's by `published_year` NULLS LAST, title, id; a universe's by `universe_position` NULLS LAST, title, id (`follow_queue`'s). Next unread: the first in that order with no status, `to_read` or `unlisted` (`follow_next`'s rule); none when `read >= total`. Unknown id → null.
+2. `src/components/GroupingBooks.tsx` (new): the page in `SeriesBooks`' shape: *‹ Library*, the name, `read / total` in mono, a `--ready` meter, `FollowControl`, the rows (`SeriesBooks`' row, exported, with the year or `#position` in the mono slot), *Next up*. The control is drawn when the page has a live book or a stored follow (POST refuses following something with no live book). A universe page has *By series · In order* (links, `?order=flat`): by series, one group per series headed by its name (a link to its series page), groups by their earliest `universe_position`, books with no series last under *Not in a series*; in order, one list with each row's series and `#n` on its second line. No live books: an `EmptySlate`.
+3. Routes `src/app/books/authors/[id]/` and `src/app/books/universes/[id]/`: `page.tsx`, `loading.tsx`, `error.tsx` each, as `series/[id]`'s.
+4. `src/app/globals.css`: the group heading and the order switch, from tokens.
+5. `test/db.ts`: `truncateAll` gains `book_universes`.
+6. Tests (below). 7. `design/mockups.html` gains the `author` screen (author page at phone, tablet, desktop; universe by series and in order at phone; empty universe at phone) with notes; `design/mockups-index.md` its row; `docs/02-architecture.md` § 5 both routes.
+
+**Files**: the 6 route files, `GroupingBooks.tsx`, `SeriesBooks.tsx` (export the row), `queries.ts`, `globals.css`, `test/db.ts`, the 2 tests, `mockups.html`, `mockups-index.md`, `02-architecture.md`. Not touched (moved to TASK-125): `src/app/books/list/page.tsx`, `src/lib/format.ts`. `SeriesBooks.tsx` and `globals.css` are outside "Files likely touched".
+
+**Test strategy**
+
+- AC-1, AC-2: `test/author-universe-pages.test.ts`: *an author page reads its view's counts, leaves a removed book out and names the earliest-published unread as next*; the same for a universe from `universe_progress` by `universe_position`; *a universe with no live books reads 0 / 0 with no next*.
+- AC-1, AC-3: the same file: *Reading on an author writes one row and shows in follow_state; Not following deletes it*; *Not following on a universe stores off and follow_state reads NULL* (through `POST /api/follows`, as `test/follows.test.ts` does). `test/e2e/author-universe.spec.ts`: choose *Reading*, reload, still checked, *Undo* puts the prior state back; universe *Not following*.
+- AC-4, AC-6: e2e: the empty universe (`0 / 0`, meter at 0, the slate), the loading skeleton at the loaded size, the error state, the order switch, axe, contrast light and dark, 24px targets, no sideways scroll, the radiogroup by keyboard, screenshots at each width.
+- AC-5: diff review (spec-reviewer), and `drizzle/` unchanged.
+
+**Risks**: the universe switch is a URL parameter, so no client state; real universes on the test DB are found by name, never by index.
 
 ## Review log
 

@@ -1237,6 +1237,130 @@ export async function seriesPage(userId: string, seriesId: string): Promise<Seri
   return { ...row, nextId };
 }
 
+/** A live book on an author's or a universe's page (task 5.11): a series page's row, and where else it sits. */
+export type GroupingBook = SeriesBook & {
+  /** `published_year`: an author's page orders by it and prints it where a series page prints `#n`. */
+  year: number | null;
+  seriesId: string | null; series: string | null; seriesPosition: number | null;
+  universe: string | null;
+};
+
+/**
+ * An author's or a universe's page (task 5.11; D-42, D-43): its counts and follow, its live books in order,
+ * and the next unread. `position` on each book is its `universe_position` on a universe's page and null on an
+ * author's.
+ */
+export type GroupingPageData = {
+  kind: "author" | "universe";
+  id: string; name: string;
+  /** `author_progress`'s or `universe_progress`'s counts: neither has a stated total, so the total is the live books. */
+  read: number; total: number;
+  /** Its live books neither read nor DNF: the follow control's *On hold* reads this (task 2.2h, D-118). */
+  unread: number;
+  /** `follow_state`: null for no follow, and for a universe's stored `off` (D-117, D-127). */
+  followState: FollowState | null;
+  books: GroupingBook[];
+  /** The book the page marks *Next up*; null when everything is read. */
+  nextId: string | null;
+};
+
+/** The next unread (task 5.11): `follow_next`'s rule, the first book in the page's order with no status, to read or Unlisted. */
+function groupingNext(row: Omit<GroupingPageData, "nextId">): GroupingPageData {
+  const unread = (b: GroupingBook) => b.status === null || b.status === "to_read" || b.status === "unlisted";
+  return { ...row, nextId: row.read >= row.total ? null : (row.books.find(unread)?.id ?? null) };
+}
+
+/**
+ * One author's page (task 5.11; mockup `author`), or null when there is no such author. One read, as
+ * `seriesPage`: the counts and follow from `author_progress` (your row), and the live books in
+ * `follow_queue`'s order for an author, `published_year` (none last), then title, then id. A soft-deleted
+ * book is on no count and no list (hard rule 4). Everything is derived; nothing is stored (hard rule 2).
+ */
+export async function authorPage(userId: string, authorId: string): Promise<GroupingPageData | null> {
+  const [row] = await sql<(Omit<GroupingPageData, "nextId">)[]>`
+    SELECT 'author' AS kind, p.author_id AS id, p.name, p.books_read::int AS read, p.books_listed::int AS total,
+           p.follow_state AS "followState",
+           (SELECT COUNT(*)::int FROM books k
+            LEFT JOIN book_status ks ON ks.book_id = k.id AND ks.user_id = ${userId}
+            WHERE k.author_id = p.author_id AND k.deleted_at IS NULL
+              AND (ks.status IS NULL OR ks.status NOT IN ('read', 'dnf'))) AS unread,
+           COALESCE((
+             SELECT json_agg(json_build_object(
+               'id', b.id, 'title', b.title, 'position', NULL, 'coverUrl', b.cover_url,
+               'year', b.published_year, 'seriesId', b.series_id, 'series', s.name,
+               'seriesPosition', b.series_position, 'universe', u.name,
+               'status', st.status, 'level', tl.level, 'period', tl.period,
+               'started_on', (CASE WHEN st.status = 'read' THEN lr.started_on ELSE st.started_on END)::text,
+               'started_on_precision',
+                 COALESCE(CASE WHEN st.status = 'read' THEN lr.started_on_precision ELSE st.started_on_precision END, 'none'),
+               'finished_on', st.finished_on::text,
+               'finished_on_precision', COALESCE(st.finished_on_precision, 'none'),
+               'days_taken', CASE WHEN lr.started_on_precision = 'exact' AND lr.finished_on_precision = 'exact'
+                                  THEN lr.finished_on - lr.started_on END)
+               ORDER BY b.published_year NULLS LAST, b.title, b.id)
+             FROM books b
+             LEFT JOIN book_series s     ON s.id = b.series_id
+             LEFT JOIN book_universes u  ON u.id = b.universe_id
+             LEFT JOIN book_status st    ON st.book_id = b.id AND st.user_id = ${userId}
+             LEFT JOIN to_read_level tl  ON tl.book_id = b.id AND tl.user_id = ${userId}
+             LEFT JOIN LATERAL (
+               SELECT e.started_on, e.started_on_precision, e.finished_on, e.finished_on_precision
+               FROM read_events e
+               WHERE e.user_id = ${userId} AND e.book_id = b.id
+               ORDER BY e.id DESC
+               LIMIT 1
+             ) lr ON st.status = 'read'
+             WHERE b.author_id = p.author_id AND b.deleted_at IS NULL), '[]'::json) AS books
+    FROM author_progress p
+    WHERE p.author_id = ${authorId} AND p.user_id = ${userId}`;
+  return row ? groupingNext(row) : null;
+}
+
+/**
+ * One universe's page (task 5.11; mockup `author`), or null when there is no such universe. As `authorPage`,
+ * from `universe_progress`, the books in `follow_queue`'s order for a universe: `universe_position` (none
+ * last), then title, then id. Which books are in a universe is Calibre's `#superseries` alone (D-90), set by
+ * 4.4's sync; a universe with none answers its name and no books, drawn as an empty state.
+ */
+export async function universePage(userId: string, universeId: string): Promise<GroupingPageData | null> {
+  const [row] = await sql<(Omit<GroupingPageData, "nextId">)[]>`
+    SELECT 'universe' AS kind, p.universe_id AS id, p.name, p.books_read::int AS read, p.books_listed::int AS total,
+           p.follow_state AS "followState",
+           (SELECT COUNT(*)::int FROM books k
+            LEFT JOIN book_status ks ON ks.book_id = k.id AND ks.user_id = ${userId}
+            WHERE k.universe_id = p.universe_id AND k.deleted_at IS NULL
+              AND (ks.status IS NULL OR ks.status NOT IN ('read', 'dnf'))) AS unread,
+           COALESCE((
+             SELECT json_agg(json_build_object(
+               'id', b.id, 'title', b.title, 'position', b.universe_position, 'coverUrl', b.cover_url,
+               'year', b.published_year, 'seriesId', b.series_id, 'series', s.name,
+               'seriesPosition', b.series_position, 'universe', p.name,
+               'status', st.status, 'level', tl.level, 'period', tl.period,
+               'started_on', (CASE WHEN st.status = 'read' THEN lr.started_on ELSE st.started_on END)::text,
+               'started_on_precision',
+                 COALESCE(CASE WHEN st.status = 'read' THEN lr.started_on_precision ELSE st.started_on_precision END, 'none'),
+               'finished_on', st.finished_on::text,
+               'finished_on_precision', COALESCE(st.finished_on_precision, 'none'),
+               'days_taken', CASE WHEN lr.started_on_precision = 'exact' AND lr.finished_on_precision = 'exact'
+                                  THEN lr.finished_on - lr.started_on END)
+               ORDER BY b.universe_position NULLS LAST, b.title, b.id)
+             FROM books b
+             LEFT JOIN book_series s     ON s.id = b.series_id
+             LEFT JOIN book_status st    ON st.book_id = b.id AND st.user_id = ${userId}
+             LEFT JOIN to_read_level tl  ON tl.book_id = b.id AND tl.user_id = ${userId}
+             LEFT JOIN LATERAL (
+               SELECT e.started_on, e.started_on_precision, e.finished_on, e.finished_on_precision
+               FROM read_events e
+               WHERE e.user_id = ${userId} AND e.book_id = b.id
+               ORDER BY e.id DESC
+               LIMIT 1
+             ) lr ON st.status = 'read'
+             WHERE b.universe_id = p.universe_id AND b.deleted_at IS NULL), '[]'::json) AS books
+    FROM universe_progress p
+    WHERE p.universe_id = ${universeId} AND p.user_id = ${userId}`;
+  return row ? groupingNext(row) : null;
+}
+
 /** A wanted book on *Coming out* (task 5.7). `grp` is `out`, a `YYYY-MM` month, or `none` for no date. */
 export type WantedRelease = {
   id: string; title: string; author: string | null; series: string | null; series_position: number | null;

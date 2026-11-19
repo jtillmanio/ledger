@@ -2067,6 +2067,13 @@ p.muted[id^="dnd-help"]{margin:.5rem 0 0}
   .sp-main{grid-area:main}
   .sp-side{grid-area:side;margin:0;position:sticky;top:calc(var(--bar-h) + 1rem)}
 }
+/* An author's and a universe's page (task 5.11; mockup `author`) in the series page's shape. A universe's
+   order switch is the Library's chips; *By series* heads each group with its series' name, a link to its
+   page, at least 24px tall; the books in no series come last under a plain heading. */
+.gp-order{margin:0 0 .75rem}
+.gp-group + .gp-group{margin-top:1.25rem}
+.gp-head{margin:0 0 .375rem;font-size:.875rem;font-weight:600;line-height:24px;color:var(--ink-2)}
+.gp-head a{display:inline-block;min-height:24px}
 
 /* --- This or that (task 3.4b, D-101, TASK-077; mockup `thisorthat`) ---------------------
    The sorter sheet: the read being placed and one ranked read, side by side, each card a

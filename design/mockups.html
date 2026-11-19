@@ -1095,6 +1095,8 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   <button data-s="finishoffer">Finish &mdash; Keep going?</button>
   <button data-s="add">Add books</button>
   <button data-s="shelves">Shelves</button>
+  <button data-s="series">Series</button>
+  <button data-s="author">Author &amp; universe</button>
   <button data-s="top">Top books</button>
   <button data-s="thisorthat">This or that</button>
 
@@ -5039,6 +5041,152 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <li><b>Next up</b> is the list's rule: the first book in order you have neither read, started nor set aside. In the frames <i>#4 Wizard and Glass</i> is marked; a book in hand or a DNF is passed over; a complete series marks none.</li>
     <li><b>A gap row</b> is a position the series states and your library lacks (<i>#6 not in your library</i>): grey, never green or red, so it can't be taken for a read book, with a real <i>Add</i> (named <i>Add #6 of The Dark Tower</i>, at least 24px) that opens Add books with the series' name in the search. A series with no stated total draws none; a removed book's position is a gap; a fractional position (<i>#4.5</i>) is a book between its neighbours, never a gap. Gaps are derived and never stored.</li>
     <li><b>The page's states:</b> a series with no live books (<i>Mistborn</i>) is one slate, <i>No books in this series yet</i>, whose one action is <i>Add a book</i>, with no gap rows; loading is skeleton rows at the loaded size; the error is a grey &times; and <i>Try again</i>, never red; an unknown series is the not-found page.</li>
+  </ul></div>
+</section>
+
+<section class="screen" data-id="author">
+<div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <div class="wrap">
+    <p class="lede" style="margin:0 0 .25rem"><a href="#">&lsaquo; Library</a></p>
+    <h1 class="t">Stephen King</h1>
+    <p class="lede">Author</p>
+    <p class="lede" style="margin-top:.75rem"><span class="mono" style="color:var(--ink)">3 / 6</span> read</p>
+    <div class="meter"><i style="width:50%"></i></div>
+    <div class="opts" role="radiogroup" aria-label="Following Stephen King"><b data-on>Reading</b><b>On hold</b><b>Not following</b></div>
+    <div class="group" style="margin-top:1rem" role="list" aria-label="Books by Stephen King">
+      <article class="row"><span class="cv s ph">C</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1974</span><a class="book-link" href="#">Carrie</a></span></span><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span> <span>Finished Mar 2019</span></div></div></article>
+      <article class="row"><span class="cv s ph">TS</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1977</span><a class="book-link" href="#">The Shining</a></span></span><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span> <span>Started 2 Jan &middot; finished 20 Jan &middot; 18 days</span></div></div></article>
+      <article class="row"><span class="cv s ph">TG</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1982</span><a class="book-link" href="#">The Gunslinger</a></span></span><div class="rs">The Dark Tower #1</div><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span></div></div></article>
+      <article class="row"><span class="cv s ph">IT</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1986</span><a class="book-link" href="#">It</a></span><span style="margin-left:auto;flex:0 0 auto;padding:0 .5rem;border-radius:var(--r-full);background:var(--raise);font-size:.75rem;font-weight:600;line-height:1.25rem;color:var(--ink-2);white-space:nowrap">Next up</span></span><div class="rs"><span>Q1 2027</span></div></div></article>
+      <article class="row"><span class="cv s ph">DOT</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1987</span><a class="book-link" href="#">The Drawing of the Three</a></span></span><div class="rs">The Dark Tower #2</div><div class="rs"><span>Someday</span></div></div></article>
+      <article class="row"><span class="cv s ph">NT</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1991</span><a class="book-link" href="#">Needful Things</a></span></span><div class="rs"><span>Not on your list</span></div></div></article>
+    </div>
+  </div>
+</div></div></div>
+<div class="frame" data-w="tab"><div class="frame-in"><div class="app" data-theme="light" data-medium="books"><nav class="rail" aria-label="Main"><span class="rail-word" aria-hidden="true">L</span><div class="rg"><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg></span><span class="rl">Dashboard</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 7a2 2 0 0 0-2 2v11"/><path d="M5.803 18H5a2 2 0 0 0 0 4h9.5a.5.5 0 0 0 .5-.5V21"/><path d="M9 15V4a2 2 0 0 1 2-2h9.5a.5.5 0 0 1 .5.5v14a.5.5 0 0 1-.5.5H11a2 2 0 0 1 0-4h10"/></svg></span><span class="rl">Library</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M10 2v8l3-3 3 3V2"/><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/></svg></span><span class="rl">Series</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M11 5h10"/><path d="M11 12h10"/><path d="M11 19h10"/><path d="M4 4h1v5"/><path d="M4 9h2"/><path d="M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02"/></svg></span><span class="rl">Top</span></a><a class="ri"><span class="pill"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span><span class="rl">Add</span></a></div></nav><div class="tabmain">
+  <div class="wrap">
+    <p class="lede" style="margin:0 0 .25rem"><a href="#">&lsaquo; Library</a></p>
+    <h1 class="t">Stephen King</h1>
+    <p class="lede">Author</p>
+    <p class="lede" style="margin-top:.75rem"><span class="mono" style="color:var(--ink)">3 / 6</span> read</p>
+    <div class="meter"><i style="width:50%"></i></div>
+    <div class="opts" role="radiogroup" aria-label="Following Stephen King"><b data-on>Reading</b><b>On hold</b><b>Not following</b></div>
+    <div class="group" style="margin-top:1rem" role="list" aria-label="Books by Stephen King">
+      <article class="row"><span class="cv s ph">C</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1974</span><a class="book-link" href="#">Carrie</a></span></span><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span> <span>Finished Mar 2019</span></div></div></article>
+      <article class="row"><span class="cv s ph">TS</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1977</span><a class="book-link" href="#">The Shining</a></span></span><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span> <span>Started 2 Jan &middot; finished 20 Jan &middot; 18 days</span></div></div></article>
+      <article class="row"><span class="cv s ph">TG</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1982</span><a class="book-link" href="#">The Gunslinger</a></span></span><div class="rs">The Dark Tower #1</div><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span></div></div></article>
+      <article class="row"><span class="cv s ph">IT</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1986</span><a class="book-link" href="#">It</a></span><span style="margin-left:auto;flex:0 0 auto;padding:0 .5rem;border-radius:var(--r-full);background:var(--raise);font-size:.75rem;font-weight:600;line-height:1.25rem;color:var(--ink-2);white-space:nowrap">Next up</span></span><div class="rs"><span>Q1 2027</span></div></div></article>
+      <article class="row"><span class="cv s ph">DOT</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1987</span><a class="book-link" href="#">The Drawing of the Three</a></span></span><div class="rs">The Dark Tower #2</div><div class="rs"><span>Someday</span></div></div></article>
+      <article class="row"><span class="cv s ph">NT</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1991</span><a class="book-link" href="#">Needful Things</a></span></span><div class="rs"><span>Not on your list</span></div></div></article>
+    </div>
+  </div>
+</div></div></div></div>
+<div class="frame" data-w="desk"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
+    <aside class="side"><div class="brand">Ledger</div>
+    <a>Search<span class="kbd">Ctrl K</span></a>
+    <a>Inbox<span class="kbd">6</span></a>
+    <div class="grp">Books</div>
+    <a><i class="ico" aria-hidden="true">&#8962;</i>Dashboard</a>
+    <a><i class="ico" aria-hidden="true">&#8801;</i>Status</a>
+    <a><i class="ico" aria-hidden="true">&#9776;</i>Library</a>
+    <a><i class="ico" aria-hidden="true">&#9636;</i>Plan</a>
+    <a><i class="ico" aria-hidden="true">&#9636;</i>Shelves</a>
+    <a><i class="ico" aria-hidden="true">&#9783;</i>Series</a>
+    <a><i class="ico" aria-hidden="true">&#9733;</i>Top books</a>
+    <a><i class="ico" aria-hidden="true">&#9719;</i>Coming out</a>
+    <a><i class="ico" aria-hidden="true">&#43;</i>Add</a>
+    <div class="grp">&nbsp;</div>
+    <a>Settings</a>
+    <div class="syncpill" role="status" aria-live="polite" data-state="online">Synced</div>
+    </aside>
+  <div class="main"><div class="wrap">
+    <div class="dk"><div>
+    <p class="lede" style="margin:0 0 .25rem"><a href="#">&lsaquo; Library</a></p>
+    <h1 class="t">Stephen King</h1>
+    <p class="lede">Author</p>
+    <div class="group" style="margin-top:1rem" role="list" aria-label="Books by Stephen King">
+      <article class="row"><span class="cv s ph">C</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1974</span><a class="book-link" href="#">Carrie</a></span></span><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span> <span>Finished Mar 2019</span></div></div></article>
+      <article class="row"><span class="cv s ph">TS</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1977</span><a class="book-link" href="#">The Shining</a></span></span><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span> <span>Started 2 Jan &middot; finished 20 Jan &middot; 18 days</span></div></div></article>
+      <article class="row"><span class="cv s ph">TG</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1982</span><a class="book-link" href="#">The Gunslinger</a></span></span><div class="rs">The Dark Tower #1</div><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span></div></div></article>
+      <article class="row"><span class="cv s ph">IT</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1986</span><a class="book-link" href="#">It</a></span><span style="margin-left:auto;flex:0 0 auto;padding:0 .5rem;border-radius:var(--r-full);background:var(--raise);font-size:.75rem;font-weight:600;line-height:1.25rem;color:var(--ink-2);white-space:nowrap">Next up</span></span><div class="rs"><span>Q1 2027</span></div></div></article>
+      <article class="row"><span class="cv s ph">DOT</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1987</span><a class="book-link" href="#">The Drawing of the Three</a></span></span><div class="rs">The Dark Tower #2</div><div class="rs"><span>Someday</span></div></div></article>
+      <article class="row"><span class="cv s ph">NT</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">1991</span><a class="book-link" href="#">Needful Things</a></span></span><div class="rs"><span>Not on your list</span></div></div></article>
+    </div>
+    </div><div class="dk-rail">
+    <p class="lede" style="margin-top:.875rem"><span class="mono" style="color:var(--ink)">3 / 6</span> read</p>
+    <div class="meter"><i style="width:50%"></i></div>
+    <div class="opts" role="radiogroup" aria-label="Following Stephen King"><b data-on>Reading</b><b>On hold</b><b>Not following</b></div>
+    </div></div>
+  </div></div>
+</div></div></div>
+<div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <div class="wrap">
+    <p class="lede" style="margin:0 0 .25rem"><a href="#">&lsaquo; Library</a></p>
+    <h1 class="t">Cosmere</h1>
+    <p class="lede">Universe</p>
+    <p class="lede" style="margin-top:.75rem"><span class="mono" style="color:var(--ink)">3 / 6</span> read</p>
+    <div class="meter"><i style="width:50%"></i></div>
+    <div class="opts" role="radiogroup" aria-label="Following Cosmere"><b data-on>Reading</b><b>On hold</b><b>Not following</b></div>
+    <div class="filters" role="navigation" aria-label="Order" style="margin-top:1rem"><a class="chip" href="#" aria-current="true">By series</a><a class="chip" href="#">In order</a></div>
+    <h2 style="margin:1.25rem 0 .375rem;font-size:.875rem;font-weight:600;line-height:24px;color:var(--ink-2)"><a href="#">Mistborn</a></h2>
+    <div class="group" style="margin-top:0" role="list" aria-label="Books in Mistborn">
+      <article class="row"><span class="cv s ph">TFE</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">#1</span><a class="book-link" href="#">The Final Empire</a></span></span><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span></div></div></article>
+      <article class="row"><span class="cv s ph">WOA</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">#2</span><a class="book-link" href="#">The Well of Ascension</a></span><span style="margin-left:auto;flex:0 0 auto;padding:0 .5rem;border-radius:var(--r-full);background:var(--raise);font-size:.75rem;font-weight:600;line-height:1.25rem;color:var(--ink-2);white-space:nowrap">Next up</span></span><div class="rs"><span>Q1 2027</span></div></div></article>
+      <article class="row"><span class="cv s ph">HOA</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">#3</span><a class="book-link" href="#">The Hero of Ages</a></span></span><div class="rs"><span>Someday</span></div></div></article>
+    </div>
+    <h2 style="margin:1.25rem 0 .375rem;font-size:.875rem;font-weight:600;line-height:24px;color:var(--ink-2)"><a href="#">The Stormlight Archive</a></h2>
+    <div class="group" style="margin-top:0" role="list" aria-label="Books in The Stormlight Archive">
+      <article class="row"><span class="cv s ph">WOK</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">#1</span><a class="book-link" href="#">The Way of Kings</a></span></span><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span></div></div></article>
+    </div>
+    <h2 style="margin:1.25rem 0 .375rem;font-size:.875rem;font-weight:600;line-height:24px;color:var(--ink-2)">Not in a series</h2>
+    <div class="group" style="margin-top:0" role="list" aria-label="Books in Cosmere in no series">
+      <article class="row"><span class="cv s ph">EL</span><div class="rb"><span class="rh"><span class="rt"><a class="book-link" href="#">Elantris</a></span></span><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span></div></div></article>
+      <article class="row"><span class="cv s ph">WB</span><div class="rb"><span class="rh"><span class="rt"><a class="book-link" href="#">Warbreaker</a></span></span><div class="rs"><span>Not on your list</span></div></div></article>
+    </div>
+  </div>
+</div></div></div>
+<div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <div class="wrap">
+    <p class="lede" style="margin:0 0 .25rem"><a href="#">&lsaquo; Library</a></p>
+    <h1 class="t">Cosmere</h1>
+    <p class="lede">Universe</p>
+    <p class="lede" style="margin-top:.75rem"><span class="mono" style="color:var(--ink)">3 / 6</span> read</p>
+    <div class="meter"><i style="width:50%"></i></div>
+    <div class="opts" role="radiogroup" aria-label="Following Cosmere"><b data-on>Reading</b><b>On hold</b><b>Not following</b></div>
+    <div class="filters" role="navigation" aria-label="Order" style="margin-top:1rem"><a class="chip" href="#">By series</a><a class="chip" href="#" aria-current="true">In order</a></div>
+    <div class="group" style="margin-top:.25rem" role="list" aria-label="Books in Cosmere">
+      <article class="row"><span class="cv s ph">EL</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">#1</span><a class="book-link" href="#">Elantris</a></span></span><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span></div></div></article>
+      <article class="row"><span class="cv s ph">TFE</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">#2</span><a class="book-link" href="#">The Final Empire</a></span></span><div class="rs">Mistborn #1</div><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span></div></div></article>
+      <article class="row"><span class="cv s ph">WOA</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">#3</span><a class="book-link" href="#">The Well of Ascension</a></span><span style="margin-left:auto;flex:0 0 auto;padding:0 .5rem;border-radius:var(--r-full);background:var(--raise);font-size:.75rem;font-weight:600;line-height:1.25rem;color:var(--ink-2);white-space:nowrap">Next up</span></span><div class="rs">Mistborn #2</div><div class="rs"><span>Q1 2027</span></div></div></article>
+      <article class="row"><span class="cv s ph">HOA</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">#4</span><a class="book-link" href="#">The Hero of Ages</a></span></span><div class="rs">Mistborn #3</div><div class="rs"><span>Someday</span></div></div></article>
+      <article class="row"><span class="cv s ph">WB</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">#5</span><a class="book-link" href="#">Warbreaker</a></span></span><div class="rs"><span>Not on your list</span></div></div></article>
+      <article class="row"><span class="cv s ph">WOK</span><div class="rb"><span class="rh"><span class="rt"><span class="mono" style="margin-right:.375rem;font-size:.8125rem;font-weight:400;color:var(--muted)">#6</span><a class="book-link" href="#">The Way of Kings</a></span></span><div class="rs">The Stormlight Archive #1</div><div class="rs"><span><span aria-hidden="true">&#10003;</span> Read</span></div></div></article>
+    </div>
+  </div>
+</div></div></div>
+<div class="frame" data-w="phone"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <div class="wrap">
+    <p class="lede" style="margin:0 0 .25rem"><a href="#">&lsaquo; Library</a></p>
+    <h1 class="t">Grishaverse</h1>
+    <p class="lede">Universe</p>
+    <p class="lede" style="margin-top:.75rem"><span class="mono" style="color:var(--ink)">0 / 0</span> read</p>
+    <div class="meter"><i style="width:0%"></i></div>
+    <div class="slate" style="margin-top:1rem"><b>No books in Grishaverse yet</b><p>A book joins Grishaverse when its superseries in Calibre names it, at the next sync.</p><a class="btn sm" href="#">Calibre sync</a></div>
+  </div>
+</div></div></div>
+
+<div class="notes"><h3>Author and universe pages</h3>
+  <ul>
+    <li><b>Task 5.11 (F-20, product B6; D-42, D-43):</b> an author and a universe each get a page in the series page's shape: <i>&lsaquo; Library</i>, the name and its kind, <span class="mono">read / total</span> in mono from <code>author_progress</code> or <code>universe_progress</code> (live books only, a book with no status unread; neither has a stated total), a meter filled with <code>--ready</code> (D-26) and 2.2c's follow control. Nothing here is stored (hard rule 2). The old <code>shelves</code> frame's <i>Stephen King</i> and <i>Cosmere</i> rows are these pages (D-42).</li>
+    <li><b>The follow control</b> is 2.2c's, placed here, not a new one: <i>Reading &middot; Tracking &middot; Not following</i>, the middle reading <i>On hold</i> on something part-read (D-118). <i>Not following</i> on an author deletes the row (an author is never followed for you); on a universe it is a stored <code>off</code> (D-117, D-127), which the view reads as no follow. Each change saves at once with an Undo.</li>
+    <li><b>An author's books</b> come by published year (none last, then title), the year in mono where a series page prints <code>#n</code>, and where each belongs below the title (<i>The Dark Tower #1</i>). <b>Next up</b> is the earliest-published book you have neither read, started nor set aside, as <i>Or keep going</i> picks it.</li>
+    <li><b>A universe's books</b> (Calibre's superseries, D-90) can be read two ways (owner, at 5.11's plan): <i>By series</i>, the default, one group per series headed by its name (a link to the series' page), the groups in the order their first book comes in the universe and each by series position, the books in no series last under <i>Not in a series</i>; or <i>In order</i>, the universe's own positions, each row naming its series. <b>Next up</b> follows the universe's positions either way.</li>
+    <li><b>Empty:</b> a universe with no live books (Grishaverse, until Calibre names its books) reads <span class="mono">0 / 0</span> with an empty meter and one slate whose action is the Calibre sync, never an error; with nothing to follow it draws no control. An author with no live books says <i>No books by &hellip; yet</i> with <i>Add a book</i>.</li>
+    <li><b>States:</b> loading is skeleton rows at the loaded size; the error is a grey &times; and <i>Try again</i>, never red; an unknown author or universe is the not-found page. At 1024px and up the count, meter and follow sit in the rail beside the list. The frames: an author at phone, tablet and desktop; a universe by series and in order at phone; an empty universe at phone.</li>
   </ul></div>
 </section>
 
