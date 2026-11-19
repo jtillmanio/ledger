@@ -1,7 +1,7 @@
 ---
 id: TASK-107
 title: 5.14 A queue to listen next (2 of 2) — Queue to listen, Listen next on Up next, and Done's Listened chip
-status: In progress
+status: Review
 depends_on: [TASK-106]
 size: M
 model: sonnet
@@ -32,18 +32,18 @@ From a book's row or the add sheet you can queue an audiobook to listen next and
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check (proposed):**, verbatim; this part proves the browser sentence on the test database: *Listen next* in queue order, the *Listened* chip, each tab's count. TASK-106 proves the `npm test` sentence and the export): (proposed; the owner agrees it by merging or edits it first)
+- [x] AC-1 (roadmap **Check (proposed):**, verbatim; this part proves the browser sentence on the test database: *Listen next* in queue order, the *Listened* chip, each tab's count. TASK-106 proves the `npm test` sentence and the export): (proposed; the owner agrees it by merging or edits it first)
 `npm test`: queueing three books gives positions
 1–3; setting #2 to *Listening* leaves the other two at 1–2, and its undo
 restores all three in order. In the browser (0.11), Up next lists *Listen
 next* in queue order; Done's *Listened* chip lists only books with an
 audio read; each tab's count equals its rows. The export test passes with
 `listen_queue`.
-- [ ] AC-2: Given a to-read book, choosing *Queue to listen* from its `⋯` raises an undo toast and Up next's *Listen next* lists it last; *Undo* takes it off.
-- [ ] AC-3: Given three queued books, *Move to…* position 1 on the third redraws *Listen next* as 3, 1, 2 without a reload, and the order survives a reload.
-- [ ] AC-4: Given one book read as text and one listened, Done's *Listened* chip lists only the listened book, the chip is current (`aria-pressed` or `aria-current`) and in the URL, and *All* lists both.
-- [ ] AC-5: The `status`, `blist` and `add` frames in `design/mockups.html` draw *Listen next*, the *Listened* chip and *Queue to listen*, and `design/mockups-index.md` names them (task 5.14).
-- [ ] AC-6: The status screen and the verbs meet the UX floor (`docs/04-design.md` § 10): *Listen next* with no books is absent (not an empty heading), the chip and menu items are real controls with names, ≥ 24px, *Move to…* has a keyboard route, contrast in light and dark, reduced motion on reorder, screenshots at 360px and 1280px.
+- [x] AC-2: Given a to-read book, choosing *Queue to listen* from its `⋯` raises an undo toast and Up next's *Listen next* lists it last; *Undo* takes it off.
+- [x] AC-3: Given three queued books, *Move to…* position 1 on the third redraws *Listen next* as 3, 1, 2 without a reload, and the order survives a reload.
+- [x] AC-4: Given one book read as text and one listened, Done's *Listened* chip lists only the listened book, the chip is current (`aria-pressed` or `aria-current`) and in the URL, and *All* lists both.
+- [x] AC-5: The `status`, `blist` and `add` frames in `design/mockups.html` draw *Listen next*, the *Listened* chip and *Queue to listen*, and `design/mockups-index.md` names them (task 5.14).
+- [x] AC-6: The status screen and the verbs meet the UX floor (`docs/04-design.md` § 10): *Listen next* with no books is absent (not an empty heading), the chip and menu items are real controls with names, ≥ 24px, *Move to…* has a keyboard route, contrast in light and dark, reduced motion on reorder, screenshots at 360px and 1280px.
 
 ## Out of scope
 
@@ -69,8 +69,10 @@ audio read; each tab's count equals its rows. The export test passes with
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- (approved at plan) Candidate decision: the add sheet's *Queue to listen* is a second action, and one toast at a time means an add's undo never meets a book it queued; the add undos stay as they are, and a book soft-deleted otherwise keeps its hidden queue row (TASK-106). → decisions log
-- (approved at plan) The book sheet doesn't say whether or where a book is queued; it offers *Queue to listen* only. Showing *#2 in Listen next* (and *Remove*) belongs with the sheet's own writes. → 3.5b's task (TASK-119) Context
+- (approved at plan) Candidate decision: the add sheet's *Queue to listen* is a second action, and one toast at a time means an add's undo never meets a book it queued; the add undos stay as they are, and a book soft-deleted otherwise keeps its hidden queue row (TASK-106). → docs/review/decisions.md § D-165
+- (approved at plan) The book sheet doesn't say whether or where a book is queued; it offers *Queue to listen* only. Showing *#2 in Listen next* (and *Remove*) belongs with the sheet's own writes. → docs/tasks/TASK-119-book-sheet-move-and-shelves.md § Context
+- The book sheet's rows don't follow its own status change until a reload: after *Listening*, *Planned for* and *Listen next* stay drawn (UI walk; *Planned for* did before this task). → docs/tasks/TASK-119-book-sheet-move-and-shelves.md § Context
+- No test races two queue writes, and `queueListen` takes no book row lock (TASK-106's schema review, repeated in this plan's Risks). → not tracked: TASK-106's own finding, outside this task's UI scope, and already recorded in TASK-106's archived task file
 
 ## Plan
 
@@ -107,13 +109,15 @@ Approved by the owner, 2026-11-19 ("go with all recommendations"; the session ru
 
 **Plan revision 1 (Phase 3, under the owner's "go with all recommendations"):** `/books/status` reads the listen queue as a fifth query in its one wave, so its budget goes from 4 to 5, with the reason in `docs/02-architecture.md` § Performance budget and beside it in `test/query-budget.test.ts` (both outside the plan's files); `test/library-page.test.tsx`'s mock of `@/db/queries` gains `booksListenNext`. Folding the queue into another query would only hide the cost.
 
+**Plan revision 2 (Phase 5, the UI walk):** the Listen next row's `⋯` was the shared 32px on the phone; `src/app/globals.css` raises it to 44px under 768px, as Top books and Shelves do, and the AC-3 browser test asserts it.
+
 **Risks:** `ReorderList`'s undo moves back to the stored position it came from, which is right while the hidden rows don't move. No test races two queue writes (TASK-106's schema review); that isn't this task's.
 
 **Follow-ups (approved at plan):** see `## Follow-ups`.
 
 ## Review log
 
-_Filled by /implement-task. One line per round._
+Verify R1–R2 FAIL (library-page mock, query budget 5 > 4) → R3 PASS | Audit R1 CHANGES (2 NON-DISCRIMINATING: empty-queue absence, axe scan) → R2 PASS | Schema R1 APPROVE | Spec R1 CHANGES (Follow-ups bullets' destinations) → close-out check | UI R1 PASS (phone ⋯ 32px → fixed, plan revision 2) | Rebased on b2e3071 (5.12, #297) → verify PASS
 
 ## Blocked
 
@@ -121,7 +125,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 3 (then 2 more after the audit's test changes and the rebase, both PASS)
+- Review rounds: 1 (spec, schema, UI) + the close-out check
+- First-pass AC FAILs: 0 (AC-6's phone ⋯ was under the 44px floor, not under 24px; fixed in plan revision 2)
+- Plan revisions after approval: 2
