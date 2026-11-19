@@ -1,7 +1,7 @@
 ---
 id: TASK-103
 title: 5.11 Author and universe pages, and the follow control on them
-status: Review
+status: Done
 depends_on: [TASK-102]
 size: M
 model: opus
