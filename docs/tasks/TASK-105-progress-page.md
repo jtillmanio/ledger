@@ -31,6 +31,13 @@ One page, beside Inbox, shows everything you're in the middle of and everything 
 - Architecture: add `/progress` to `docs/02-architecture.md` § 5.
 - Design: `design/STYLE_GUIDE.md` § 14–§ 16 (the feel pass: empty and caught-up states, completion has no celebration); `docs/04-design.md` § 10 The UX floor; `.claude/rules/ui.md`.
 - Decisions: D-40, D-108, D-109, D-118, D-119, D-120; R1-06.
+- *From TASK-104 (5.12, PR #297):* the rows are `progressRows(userId)` in `src/db/queries.ts`, one read-only statement returning `{ middle, onHold, completed }` of `ProgressRow` (`medium` books|comics, `kind`, `id`, `name`, `read`, `total`, `next`, `parentKind`, `parentId`, `lastOn`, `finishedMonth`), each list newest read first. `next` is `{ id, label, ordinal }`: a book (`ordinal` null), or a run's resume pointer (the issue, its label, the `#p-n` ordinal). Decided at TASK-104's plan gate:
+  - (a) subseries are rows of their own, `kind: "subseries"`, nested under their series;
+  - (b) a track names no next thing;
+  - (c) runs never nest under tracks;
+  - (d) a series whose stated `total_books` is above its live books, all read, is on neither tab.
+
+  Nesting is one level, and only under a parent listed in the same section. A series' parent is the universe most of its books that have one are in. Nothing nests under an author: the roadmap's nesting names only universe → series → subseries, though D-119's meters put a followed author outermost. Build the tree from `parentKind`/`parentId`: a child doesn't always sort directly beneath its parent. `finishedMonth` is `YYYY-MM`, the Eastern month. `/progress` goes into `test/query-budget.test.ts` here, as one query in one wave. The statement was not timed at real scale (the test database holds fixtures only), so watch its time on the dev data in the UI walk.
 
 ## Acceptance criteria
 
