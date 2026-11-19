@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useUndo } from "@/components/Undo";
 import type { Grouping } from "@/db/queries";
 import type { FollowState } from "@/db/writes";
@@ -58,4 +59,21 @@ export function useFollowChange(show: (g: Grouping, state: FollowState | null) =
       fail({ label: `Couldn't save ${g.name}. Nothing changed.`, retry: () => void change(g, state) });
     }
   };
+}
+
+/**
+ * The follow control of a page of its own (task 5.1's shelf, task 5.9's series): *Reading · Tracking · Not
+ * following* for one `Grouping`, saved at once through `POST /api/follows` with an undo that puts the prior
+ * state back (`useFollowChange`, task 2.2c). It holds the state it draws, and takes the server's again when
+ * the page hands it a new one (a reload, an undo that revalidates).
+ */
+export function FollowControl({ grouping }: { grouping: Grouping }) {
+  const [g, setG] = useState(grouping);
+  const [seen, setSeen] = useState(grouping);
+  if (grouping !== seen) {
+    setSeen(grouping);
+    setG(grouping);
+  }
+  const change = useFollowChange((_g, state: FollowState | null) => setG((x) => ({ ...x, state })));
+  return <FollowOptions g={g} onChange={(state) => void change(g, state)} />;
 }

@@ -1,0 +1,2 @@
+ALTER TABLE "book_status" ADD COLUMN "parked_on" date;--> statement-breakpoint
+ALTER TABLE "book_status" ADD CONSTRAINT "book_status_parked_on_check" CHECK (("book_status"."parked_on" IS NOT NULL) = ("book_status"."status" = 'parked'));

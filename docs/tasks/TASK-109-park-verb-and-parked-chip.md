@@ -27,6 +27,9 @@ From a book's status control or its row you can park it, with an Undo; the Libra
 - **Not drawn yet:** the mockup gains the *Park* verb on the status control, the *Parked · N* chip and a parked row in `blist`, at phone, tablet and desktop widths, before they are built; `design/mockups-index.md` lists them (`ui.redrawFiles`).
 - Design: `design/mockups.html` § `blist`; `docs/04-design.md` § 10 The UX floor.
 - Decisions: D-83, D-105, D-110.
+- *From TASK-108 (5.15, PR #293):* what TASK-108 built, for this plan: `parked` is in `SETTABLE_STATUSES`; `saveBookStatus` refuses it (400) unless the book is `to_read`, `reading` or `listening` (`PARKS_FROM`); the change answers `unplanned` (every plan row it took out, with its place) beside `unqueued`, and `undoBookStatus` puts both back; `listCounts().parked` is the chip's count; `listBooks({ status: "parked" })` is its list; `isParkedMidRead` (`src/lib/parked.ts`) says whether the start was held (D-163).
+- *From TASK-108 (5.15, PR #293), open question for the plan:* an add flow's *Use that* into On deck or a quarter (`writeDestination`, Add books' search) keeps a status the book has, so a parked book added there becomes planned and still parked, on no rail; its `waiting` read also comes before the plan lock, so a park committing in between could leave the same state. Should an add to a plan level move a Parked book to `to_read` (as it moves an Unlisted one), refuse it, or leave it?
+- *From TASK-108 (5.15, PR #293), open question for the plan:* `queueListen` (`/api/listen-queue`) checks only that a book is live, so a Parked book can be queued after it was parked. Should *Queue to listen* refuse a Parked book, unpark it, or leave it?
 
 ## Acceptance criteria
 

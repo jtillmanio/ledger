@@ -251,7 +251,7 @@ Release, test isolation) and the Hard rules a reviewer checks.
   deferred UNIQUE like `run_queue`'s; never a format on `reading_plan`.
   Write it only through the listen-queue helpers in `src/db/writes.ts`
   (`queueListen`, `moveListen`, `removeListen`, `restoreListen`). Entering
-  Listening, Read or DNF (`saveBookStatus`) takes a queued book off in the same
+  Listening, Read, DNF or Parked (`saveBookStatus`) takes a queued book off in the same
   transaction, and `undoBookStatus` puts it back where it was; a Read book
   re-dated stays queued. A soft-deleted book keeps its row and every read
   filters it out. `load` empties it through `books`' `CASCADE`.
@@ -288,6 +288,18 @@ Release, test isolation) and the Hard rules a reviewer checks.
   (`SETTABLE_STATUSES`).
   *Add to Someday*, or an add to Someday or On deck, moves it to `to_read`;
   a shelf leaves it Unlisted. No CHECK constrains the column.
+  **Beside it sits Parked** (task 5.15, D-105): `status = 'parked'`, put away
+  on purpose, *not now, but not gone*. A status write sets it, and only on a
+  book To read, Reading or Listening (`PARKS_FROM`); any other is refused.
+  `book_status.parked_on` is the Eastern day it was parked, set exactly while
+  Parked (its CHECK), written and cleared only by `saveBookStatus`. Parking
+  takes the book out of every plan row (each quarter closes up) and off the
+  listen queue in the status write's transaction, and `undoBookStatus` puts
+  each back at its place. The start stays, so *parked mid-read* is derived
+  (`isParkedMidRead`), never stored. Like Unlisted it has no level and is on
+  no plan, status tab, dashboard, suggestion or *Everything*; its own chip, a
+  search and the owned filters (*Not owned* aside) list it, and the progress
+  views count it unread.
 - **Blocks group runs inside a track; eras section issues inside a run.** Both
   are tables, both are optional, and both are ordered — `blocks(track_id,
   number, name?)` and `eras(run_id, ordinal, name)`. Era membership goes on the
