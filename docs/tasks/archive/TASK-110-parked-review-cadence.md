@@ -1,7 +1,7 @@
 ---
 id: TASK-110
 title: 5.15 Parked (3 of 4) — the review's cadence in Settings, when it is due, and Done reviewing
-status: Review
+status: Done
 depends_on: [TASK-108]
 size: M
 model: opus
