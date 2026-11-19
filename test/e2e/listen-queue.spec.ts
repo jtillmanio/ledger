@@ -170,6 +170,8 @@ test("Move to top on the third redraws Listen next as 3, 1, 2 without a reload, 
     await page.evaluate(() => { (window as unknown as { stayed: boolean }).stayed = true; });
     const more = listenNext(page).getByRole("button", { name: `More for ${THREE.title}`, exact: true });
     await hydrated(more);
+    // The row's ⋯ is 44px on the phone (the UX floor), as on Top books and Shelves; this project is 390px wide.
+    expect((await more.boundingBox())!.height).toBeGreaterThanOrEqual(44);
     await more.click();
     const menu = page.getByRole("menu", { name: `More for ${THREE.title}` });
     await expect(menu.getByRole("menuitem")).toHaveText(["Move to top", "Move up", "Remove from Listen next"]);

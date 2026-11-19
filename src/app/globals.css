@@ -2003,6 +2003,8 @@ p.muted[id^="dnd-help"]{margin:.5rem 0 0}
 .shelf-status{white-space:nowrap}
 /* Each row's handle and ⋯ are 44px on the phone, as on Top books; the shared .rowmenu-btn is 32px. */
 @media (max-width:767px){ .shelf-books .rowmenu-btn{min-width:44px;min-height:44px} }
+/* Listen next's ⋯ too (task 5.14), as on Top books and Shelves. */
+@media (max-width:767px){ [data-listen-next] .rowmenu-btn{min-width:44px;min-height:44px} }
 /* Text edited in place (InlineText): at rest a button that reads as its text, open a textarea. */
 .inline-text,.inline-add{display:block;min-height:24px;margin:0;padding:.125rem 0;border:0;border-radius:var(--r-sm);
   background:none;font:inherit;text-align:left;color:inherit;cursor:text}
