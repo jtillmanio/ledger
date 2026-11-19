@@ -461,7 +461,7 @@ async function storedCadence() {
   }
 }
 
-test("Review parked items: Quarterly by default; Monthly saves, raises the Undo toast and survives a reload; Undo puts Quarterly back (TASK-110 AC-4)", ONCE, async ({ page }) => {
+test("Review parked items: Quarterly by default; Monthly saves, raises the Undo toast and survives a reload; a later choice's Undo puts the cadence before back (TASK-110 AC-4)", ONCE, async ({ page }) => {
   await reset();
   await open(page);
   await expect(page.getByRole("heading", { level: 2, name: "Parked" })).toBeVisible();
@@ -521,7 +521,7 @@ test("Review parked items meets the floor: a named group of three real buttons, 
   }
   const row = page.locator(".frow", { has: cadence(page) });
   expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-  // The row's label and the group sit side by side: the control never spills out of its row.
+  // Side by side where the row is wide, stacked where it is narrow: either way the control never spills out of its row.
   const rowBox = (await row.boundingBox())!;
   const segBox = (await cadence(page).boundingBox())!;
   expect(segBox.x + segBox.width).toBeLessThanOrEqual(rowBox.x + rowBox.width + 1);
