@@ -115,6 +115,12 @@ test("Listen next with nothing queued is absent, not an empty heading (AC-6)", O
     await expect(listenNext(page)).toHaveCount(0);
     await expect(page.getByText("Listen next")).toHaveCount(0);
     expect(await counted(page, "Up next")).toBe(1);
+    // The control: one queued book brings the group back, so the absence above is the empty queue's, not a missing group.
+    await db((sql) => sql`INSERT INTO listen_queue (book_id, position) VALUES (${ONE.id}, 1)`);
+    await page.reload();
+    await expect(listenNext(page).getByRole("heading", { level: 2 })).toHaveText(/^Listen next\s*1 book$/);
+    await expect(queueTitles(page)).toHaveText([ONE.title]);
+    expect(await counted(page, "Up next")).toBe(2);
   } finally {
     await resetQueue();
   }
@@ -281,6 +287,10 @@ test("Up next and Done at 360 and 1280px, light and dark: axe, contrast and scre
       for (const [path, name] of [["/books/status?tab=next", "up-next"], ["/books/status?tab=done&format=audio", "done-listened"]] as const) {
         await open(page, path);
         await expect(panel(page)).toBeVisible();
+        // The scan covers the new UI: Listen next's rows on Up next, the chosen Listened chip on Done.
+        if (name === "up-next") await expect(queueTitles(page)).toHaveText([ONE.title, TWO.title, THREE.title]);
+        else await expect(page.getByRole("group", { name: "Done by format" }).getByRole("link", { name: "Listened" }))
+          .toHaveAttribute("aria-current", "true");
         await expectNoHorizontalScroll(page);
         await expectNoAxeViolations(page, AXE);
         expect(await contrastFailures(page), `${name} ${width}px ${colorScheme}`).toEqual([]);
