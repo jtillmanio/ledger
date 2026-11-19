@@ -1,7 +1,7 @@
 ---
 id: TASK-103
 title: 5.11 Author and universe pages, and the follow control on them
-status: In progress
+status: Review
 depends_on: [TASK-102]
 size: M
 model: opus
@@ -31,16 +31,16 @@ Every author and every universe has a page in the series page's shape, with how 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim):
+- [x] AC-1 (roadmap **Check:**, verbatim):
 an author page and a universe page list their books with the
 counts from their views. Setting *Reading* writes one follow row for the
 user, survives a reload, and shows in the view's `follow_state`. *Not
 following* deletes the row. No count or state column is added.
-- [ ] AC-2: Given an author with 4 live books, 1 read and 1 soft-deleted, the author page reads `1 / 3` (the soft-deleted book left out), a `--ready` meter, and names the earliest-published unread book as next; the universe page does the same from `universe_progress`.
-- [ ] AC-3: On an author page with no follow, choosing *Reading* writes one `author_follows` row `reading`; after a reload *Reading* is checked; *Not following* deletes it. On a universe page, *Not following* stores `off` and `universe_progress.follow_state` reads NULL. Each write raises the undo toast and its *Undo* puts the prior state back.
-- [ ] AC-4: A universe with no live books renders its page with `0 / 0`, no meter fill and an empty state, never an error. (*An author's name in a Library row links to its page* moved to TASK-125, owner at plan, 2026-11-18: it edits the same Library row as TASK-125's series links.)
-- [ ] AC-5: `design/mockups.html` gains the author and universe pages at phone, tablet and desktop, and `design/mockups-index.md` lists them (task 5.11); `docs/02-architecture.md` § 5 lists both routes; no migration is added.
-- [ ] AC-6: Both pages meet the UX floor (`docs/04-design.md` § 10): empty state, loading skeletons, an error state, the radiogroup operable by keyboard with its name, targets ≥ 24px, contrast in light and dark, screenshots at each `ui.viewports` width.
+- [x] AC-2: Given an author with 4 live books, 1 read and 1 soft-deleted, the author page reads `1 / 3` (the soft-deleted book left out), a `--ready` meter, and names the earliest-published unread book as next; the universe page does the same from `universe_progress`.
+- [x] AC-3: On an author page with no follow, choosing *Reading* writes one `author_follows` row `reading`; after a reload *Reading* is checked; *Not following* deletes it. On a universe page, *Not following* stores `off` and `universe_progress.follow_state` reads NULL. Each write raises the undo toast and its *Undo* puts the prior state back.
+- [x] AC-4: A universe with no live books renders its page with `0 / 0`, no meter fill and an empty state, never an error. (*An author's name in a Library row links to its page* moved to TASK-125, owner at plan, 2026-11-18: it edits the same Library row as TASK-125's series links.)
+- [x] AC-5: `design/mockups.html` gains the author and universe pages at phone, tablet and desktop, and `design/mockups-index.md` lists them (task 5.11); `docs/02-architecture.md` § 5 lists both routes; no migration is added.
+- [x] AC-6: Both pages meet the UX floor (`docs/04-design.md` § 10): empty state, loading skeletons, an error state, the radiogroup operable by keyboard with its name, targets ≥ 24px, contrast in light and dark, screenshots at each `ui.viewports` width.
 
 ## Out of scope
 
@@ -66,7 +66,9 @@ following* deletes the row. No count or state column is added.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- Every author and universe name links to its page (a Library row, *where the book sits*, the follow sheet), with TASK-125's series links in the same row code; AC-4's first clause moved there (approved at plan)
+- Every author and universe name links to its page (a Library row, *where the book sits*, the follow sheet), with TASK-125's series links in the same row code; AC-4's first clause moved there (approved at plan) → docs/tasks/TASK-125-series-name-links.md § Context
+- The dashboard's *Or keep going* (`follow_next`) names nothing while the first open book of a follow is in hand; the page marks the next unread after it (`seriesPage`'s rule, as the series page does), so the two can differ mid-book → not tracked: the series page already works this way, and `follow_next`'s comment says why it differs
+- No index on `books.author_id` or `books.universe_id` (schema review, MINOR): each page scans `books`, as `author_progress` and `universe_progress` do; at ~1,400 books it costs nothing → not tracked: no measurable cost at this size
 
 ## Plan
 
@@ -92,7 +94,7 @@ Approved by the owner, 2026-11-18, with three answers at the gate: the name link
 - AC-4, AC-6: e2e: the empty universe (`0 / 0`, meter at 0, the slate), the loading skeleton at the loaded size, the error state, the order switch, axe, contrast light and dark, 24px targets, no sideways scroll, the radiogroup by keyboard, screenshots at each width.
 - AC-5: diff review (spec-reviewer), and `drizzle/` unchanged.
 
-**Changes beyond the file list (after the plan, small and in scope):** `test/query-budget.test.ts` and the Performance budget line in `docs/02-architecture.md` count both routes (1 query, 1 wave each), as every page is counted; `design/mockups.html`'s screen nav gains *Series* (missing since TASK-101/102, so that screen could not be opened) beside the new *Author & universe*; `design/mockups-index.md` has every row's line range recomputed (most were stale, and this branch's insertions shift them all). The skeleton is `GroupingSkeleton` in `GroupingBooks.tsx`, not a new file. Spec review R1 asked for AC-5's universe frames at 834px and desktop: drawn (*By series*).
+**Changes beyond the file list (after the plan, small and in scope):** `test/query-budget.test.ts` and the Performance budget line in `docs/02-architecture.md` count both routes (1 query, 1 wave each), as every page is counted; `design/mockups.html`'s screen nav gains *Series* (missing since TASK-101/102, so that screen could not be opened) beside the new *Author & universe*; `design/mockups-index.md` has every row's line range recomputed (most were stale, and this branch's insertions shift them all). The skeleton is `GroupingSkeleton` in `GroupingBooks.tsx`, not a new file. Spec review R1 asked for AC-5's universe frames at 834px and desktop: drawn (*By series*). UI review R1 found no gap between the lede and the list at 1024px and up (the side moves to the rail): `.sp-main` takes the mockup's 1rem there, which the series page shares.
 
 **Risks**: the universe switch is a URL parameter, so no client state; real universes on the test DB are found by name, never by index.
 
@@ -100,13 +102,16 @@ Approved by the owner, 2026-11-18, with three answers at the gate: the name link
 
 _Filled by /implement-task. One line per round._
 
+- Verify R1 PASS | CI R1 cancelled (superseded by the R2 push) | Schema R1 APPROVE (comment wording, MINOR → fixed) | Spec R1 CHANGES (AC-5 universe frames at 834px and desktop, follow-up destination, unexplained files) → fixed | CI R2 PASS (every width, light and dark) | Spec R2 APPROVE | Audit R1 PASS | UI R1 CHANGES (desktop gap under the lede) → fixed, both specs PASS at w1280 | Verify R2 PASS | Close-out follow-ups check APPROVE | Schema not re-run: no data-layer change after its APPROVE (the comment only)
+- UI R1 notes not acted on: the empty universe could not be walked (no empty universe on the dev database; `test/e2e/author-universe.spec.ts` covers it at every width); a one-word title link (*It*) is 12px wide, inline text under the target-size exception, as on the series page.
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2
+- Review rounds: 2 (spec), 1 (schema), 1 (UI), 1 (audit)
+- First-pass AC FAILs: 1 (AC-5, the universe frames at 834px and desktop)
+- Plan revisions after approval: 2 (the files beyond the list, recorded in the Plan; the desktop gap)

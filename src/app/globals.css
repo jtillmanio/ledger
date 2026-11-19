@@ -2064,7 +2064,8 @@ p.muted[id^="dnd-help"]{margin:.5rem 0 0}
   .series-detail{display:grid;grid-template-columns:minmax(0,1fr) var(--aside-w);grid-template-rows:auto 1fr;
     grid-template-areas:"head side" "main side";column-gap:2rem;align-items:start}
   .sp-head{grid-area:head}
-  .sp-main{grid-area:main}
+  /* With the count, meter and follow in the rail, nothing sits between the lede and the list: the mockup's 1rem. */
+  .sp-main{grid-area:main;margin-top:1rem}
   .sp-side{grid-area:side;margin:0;position:sticky;top:calc(var(--bar-h) + 1rem)}
 }
 /* An author's and a universe's page (task 5.11; mockup `author`) in the series page's shape. A universe's
