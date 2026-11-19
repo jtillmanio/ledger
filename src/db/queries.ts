@@ -5,7 +5,9 @@ import { FRESH_DAYS } from "@/lib/metron";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
 import { parseSort, type Dir, type Sort } from "@/lib/library-sort";
 import { decisionState, type RailBook } from "@/lib/plan-rail";
-import { DEFAULT_SETTINGS, wordsPerYear, type ReadingSettings } from "@/lib/settings";
+import { DEFAULT_SETTINGS, wordsPerYear, type ReadingSettings, type SavedSettings } from "@/lib/settings";
+import { today } from "@/lib/finish-date";
+import { DEFAULT_PARKED_CADENCE, isParkedCadence, reviewDue, type ParkedReviewState } from "@/lib/parked";
 
 /* Raw SQL against the views in etl/views.sql. Drizzle's query builder is used
  * for writes; reads that join three or four views are clearer as SQL. */
@@ -1666,13 +1668,42 @@ export async function wordsPerPage(userId: string): Promise<number> {
 
 /**
  * Your reading pace (task 2.0): the row, or the column defaults when you have none yet. Never
- * cached: another screen reads an edit on its next render, with no redeploy.
+ * cached: another screen reads an edit on its next render, with no redeploy. It carries the parked
+ * review's cadence too (task 5.15, TASK-110), so Settings draws its row with no query of its own.
  */
-export async function readingSettings(userId: string): Promise<ReadingSettings> {
-  const [row] = await sql<{ minutesPerDay: number; wordsPerMinute: number; wordsPerPage: number }[]>`
-    SELECT minutes_per_day AS "minutesPerDay", words_per_minute AS "wordsPerMinute", words_per_page AS "wordsPerPage"
+export async function readingSettings(userId: string): Promise<SavedSettings> {
+  const [row] = await sql<{ minutesPerDay: number; wordsPerMinute: number; wordsPerPage: number; parkedReview: string }[]>`
+    SELECT minutes_per_day AS "minutesPerDay", words_per_minute AS "wordsPerMinute", words_per_page AS "wordsPerPage",
+           parked_review AS "parkedReview"
     FROM reading_settings WHERE user_id = ${userId}`;
-  return row ?? DEFAULT_SETTINGS;
+  if (!row) return { ...DEFAULT_SETTINGS, parkedReview: DEFAULT_PARKED_CADENCE };
+  return { ...row, parkedReview: isParkedCadence(row.parkedReview) ? row.parkedReview : DEFAULT_PARKED_CADENCE };
+}
+
+/** The parked review as the app reads it (task 5.15, TASK-110): its state and whether it is due. */
+export type ParkedReview = ParkedReviewState & { due: boolean };
+
+/**
+ * The parked review (task 5.15, TASK-110, D-105): the cadence and the last review from your settings
+ * row (the column defaults when you have none), how many live books are Parked, and whether the
+ * review is due on the Eastern day of `now`, decided only by `reviewDue`. Never cached. TASK-111's
+ * dashboard line, Inbox row and `/parked` read this.
+ */
+export async function parkedReview(userId: string, now = new Date()): Promise<ParkedReview> {
+  const [row] = await sql<{ cadence: string | null; reviewedOn: string | null; parked: number }[]>`
+    SELECT
+      (SELECT parked_review FROM reading_settings WHERE user_id = ${userId}) AS cadence,
+      (SELECT parked_reviewed_on::text FROM reading_settings WHERE user_id = ${userId}) AS "reviewedOn",
+      (SELECT COUNT(*)::int
+       FROM book_status st
+       JOIN books b ON b.id = st.book_id AND b.deleted_at IS NULL
+       WHERE st.user_id = ${userId} AND st.status = 'parked') AS parked`;
+  const state: ParkedReviewState = {
+    cadence: isParkedCadence(row.cadence) ? row.cadence : DEFAULT_PARKED_CADENCE,
+    reviewedOn: row.reviewedOn,
+    parked: row.parked,
+  };
+  return { ...state, due: reviewDue(state, today(now)) };
 }
 
 /** One `plan_capacity` row: a year (`quarter` null) or one of its quarters (task 2.1). */

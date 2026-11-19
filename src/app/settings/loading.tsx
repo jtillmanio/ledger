@@ -22,6 +22,15 @@ export default function Loading() {
               <span className="sk sk-title" style={{ width: "70%" }} />
             </div>
           </div>
+          {/* Parked (5.15, TASK-110): one row, Review parked items, with its three-way control. */}
+          <span className="sk sk-line sk-head" style={{ width: "4rem" }} />
+          <div className="group" aria-hidden="true">
+            {/* .frow-choice stacks it where the row is narrow, as the loaded row does. */}
+            <div className="frow frow-choice">
+              <span className="kv"><span className="sk sk-k" style={{ width: "8rem" }} /></span>
+              <span className="sk sk-seg" />
+            </div>
+          </div>
         </div>
         <div aria-hidden="true">
           {/* Appearance (4.3): one row, Show covers, with its 44px switch. */}

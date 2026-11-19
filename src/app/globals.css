@@ -1669,6 +1669,18 @@ textarea.txt.capture-field[aria-invalid="true"]{border-color:var(--danger)}
   display:flex;align-items:center;gap:.5rem}
 .settings .frow .v{margin-left:auto}
 .settings .frow .btn{flex:0 0 auto;min-height:32px;text-decoration:none}
+/* A row whose control is a three-way .seg (task 5.15, TASK-110: Review parked items): label and
+   control side by side where the row is wide enough, and stacked where it is not (a phone, or a
+   settings column at 1024px), the control then the row's full width, its choices sharing it. */
+.frow-choice{container-type:inline-size;flex-wrap:wrap;row-gap:.5rem}
+.frow-choice>:first-child{flex:1 1 auto;min-width:0}
+.frow-choice>:last-child{flex:0 0 auto;margin-left:auto}
+.frow-choice .sk-seg{width:13.5rem;height:34px;border-radius:var(--r-md)}
+/* The row is its own container, so the query reads the row's width and restyles its children. */
+@container (max-width:26rem){
+  .frow-choice>:first-child,.frow-choice>:last-child{flex:1 1 100%;margin-left:0}
+  .frow-choice .seg button{flex:1 1 0}
+}
 .stepper-wrap{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;min-width:0}
 .stepper-why{text-align:right}
 .settings .stepper{margin-left:0;background:var(--sunk)}

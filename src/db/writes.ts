@@ -12,7 +12,8 @@ import type { Precision } from "@/lib/format";
 import type { Kind } from "@/lib/inbox";
 import { bookId, issueSlug, slug } from "@/lib/issue-slug";
 import { evenQuarters } from "@/lib/plan-rail";
-import { DEFAULT_SETTINGS, wordsPerYear, type ReadingSettings, type SettingsPatch } from "@/lib/settings";
+import type { ParkedCadence } from "@/lib/parked";
+import { DEFAULT_SETTINGS, wordsPerYear, type SavedSettings, type SettingsPatch } from "@/lib/settings";
 
 /** Every `book_status.status` value. `unlisted` is the level below Someday (task 1.21, D-86): a
  * book you have but haven't put on your list. `listening` is Reading by ear (task 1.23, D-85).
@@ -2891,17 +2892,47 @@ export async function undoShelfDescription(userId: string, change: ShelfDescript
 /**
  * Saves the settings you changed (task 2.0). The first edit inserts your row, every later one
  * changes only the fields it names, and the answer is the row as stored, so a client can put its
- * steppers back to it.
+ * steppers back to it. The parked review's cadence (task 5.15, TASK-110) is written the same way.
  */
-export async function saveReadingSettings(userId: string, patch: SettingsPatch): Promise<ReadingSettings> {
+export async function saveReadingSettings(userId: string, patch: SettingsPatch): Promise<SavedSettings> {
   if (Object.keys(patch).length === 0) throw new Error("saveReadingSettings: name at least one setting");
   const [row] = await db.insert(readingSettings).values({ userId, ...patch })
     .onConflictDoUpdate({ target: readingSettings.userId, set: patch })
     .returning({
       minutesPerDay: readingSettings.minutesPerDay, wordsPerMinute: readingSettings.wordsPerMinute,
-      wordsPerPage: readingSettings.wordsPerPage,
+      wordsPerPage: readingSettings.wordsPerPage, parkedReview: readingSettings.parkedReview,
     });
-  return row;
+  return { ...row, parkedReview: row.parkedReview as ParkedCadence };
+}
+
+/** A *Done reviewing* as `markParkedReviewed` made it: the last review before and the day written. */
+export type ParkedReviewChange = { prior: string | null; reviewedOn: string };
+
+/**
+ * *Done reviewing* (task 5.15, TASK-110, D-105): records the parked review on the Eastern day
+ * (D-67), whatever is left parked, inserting your settings row if you have none. Answers the change,
+ * which `undoParkedReviewed` takes to put the last review before back.
+ */
+export async function markParkedReviewed(userId: string, now = new Date()): Promise<ParkedReviewChange> {
+  const reviewedOn = today(now);
+  return db.transaction(async (tx) => {
+    const [before] = await tx.select({ on: readingSettings.parkedReviewedOn }).from(readingSettings)
+      .where(eq(readingSettings.userId, userId)).for("update");
+    await tx.insert(readingSettings).values({ userId, parkedReviewedOn: reviewedOn })
+      .onConflictDoUpdate({ target: readingSettings.userId, set: { parkedReviewedOn: reviewedOn } });
+    return { prior: before?.on ?? null, reviewedOn };
+  });
+}
+
+/**
+ * Undo one *Done reviewing*: the last review before comes back, NULL included. False, writing
+ * nothing, when the review date is no longer the one this change wrote (another review since).
+ */
+export async function undoParkedReviewed(userId: string, change: ParkedReviewChange): Promise<boolean> {
+  const done = await db.update(readingSettings).set({ parkedReviewedOn: change.prior })
+    .where(and(eq(readingSettings.userId, userId), eq(readingSettings.parkedReviewedOn, change.reviewedOn)))
+    .returning({ userId: readingSettings.userId });
+  return done.length === 1;
 }
 
 /** The formats you can own a copy in (task 5.17, D-132). The ebook is `books.calibre_id`, never a row. */

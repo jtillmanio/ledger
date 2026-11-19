@@ -555,8 +555,14 @@ export const readingSettings = pgTable("reading_settings", {
   wordsPerPage: integer("words_per_page").notNull().default(275),
   theme: text("theme").notNull().default("system"),                       // system | light | dark
   showCovers: boolean("show_covers").notNull().default(true),
+  // The parked review (task 5.15, TASK-110, D-105): how often it comes due, and the Eastern day
+  // (D-67) of the last *Done reviewing*, NULL before the first. Whether it is due is derived
+  // (src/lib/parked.ts reviewDue), never stored. No user_id of their own (D-91): the row's key is 6.18's.
+  parkedReview: text("parked_review").notNull().default("quarterly"),    // monthly | quarterly | never
+  parkedReviewedOn: date("parked_reviewed_on"),
 }, (t) => ({
   theme: check("reading_settings_theme_check", sql`${t.theme} IN ('system', 'light', 'dark')`),
+  parkedReview: check("reading_settings_parked_review_check", sql`${t.parkedReview} IN ('monthly', 'quarterly', 'never')`),
 }));
 
 // A shelf is the user's own grouping, typed rather than polymorphic
