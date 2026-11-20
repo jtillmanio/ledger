@@ -31,6 +31,8 @@ const AXE = [
 ];
 
 const ONCE = { tag: "@at-w390-light" };
+// What the page does (rows, chips, On hold, Completed) is checked once; how it fits and looks (D-161) runs at every layout:
+// the nesting's indent, the floor, the skeleton's size and the nav's current item are `@floor`, the states `@feel`.
 const AUTHOR = { id: "e2e-pg-author", name: "E2E Pg Author" };
 const UNI = { id: "e2e-pg-uni", name: "E2E Pg Universe" };
 
@@ -154,7 +156,7 @@ async function floor(page: Page) {
   expect(small).toEqual([]);
 }
 
-test("opens on In the middle of with the series, the shelf and the run: kind, read / total and next (AC-1, AC-2)", FLOOR, async ({ page }) => {
+test("opens on In the middle of with the series, the shelf and the run: kind, read / total and next (AC-1, AC-2)", ONCE, async ({ page }) => {
   await open(page);
   await expect(tablist(page).getByRole("tab", { name: /^In the middle of/ })).toHaveAttribute("aria-selected", "true");
 
@@ -199,7 +201,7 @@ test("a series nests beneath the universe listed beside it, indented (AC-1, D-11
   await expect(page.locator(".prog-rows > .prog-li > .prog-item .prog-name", { hasText: PART.name })).toHaveCount(0);
 });
 
-test("the Books chip hides the run, Comics the books rows; the chip and the tab survive a reload (AC-1, AC-2)", FLOOR, async ({ page }) => {
+test("the Books chip hides the run, Comics the books rows; the chip and the tab survive a reload (AC-1, AC-2)", ONCE, async ({ page }) => {
   await open(page);
   await expect(chips(page).getByRole("link", { name: "All" })).toHaveAttribute("aria-current", "true");
   await chips(page).getByRole("link", { name: "Books", exact: true }).click();
@@ -227,7 +229,7 @@ test("the Books chip hides the run, Comics the books rows; the chip and the tab 
   await expect(page).toHaveURL(/\/progress\?tab=completed$/);
 });
 
-test("On hold is a collapsed button with its count; it opens onto the series followed Tracking at 2 / 5 (AC-3)", FLOOR, async ({ page }) => {
+test("On hold is a collapsed button with its count; it opens onto the series followed Tracking at 2 / 5 (AC-3)", ONCE, async ({ page }) => {
   await open(page);
   const hold = page.getByRole("button", { name: /^On hold/ });
   await expect(hold).toHaveAttribute("aria-expanded", "false");
@@ -253,7 +255,7 @@ test("On hold is a collapsed button with its count; it opens onto the series fol
   await expect(held.filter({ visible: true })).toHaveCount(0);
 });
 
-test("Completed lists the 5-of-5 series and the 10-of-10 run with their finish's month; a row with a page is a link (AC-4)", FLOOR, async ({ page }) => {
+test("Completed lists the 5-of-5 series and the 10-of-10 run with their finish's month; a row with a page is a link (AC-4)", ONCE, async ({ page }) => {
   await open(page, "?tab=completed");
   const done = item(page, DONE.name);
   await expect(done.locator(".rm")).toHaveText("5 / 5");
