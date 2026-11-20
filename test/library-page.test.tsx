@@ -150,16 +150,8 @@ describe("the Library's Parked chip (task 5.15, AC-1, AC-6)", () => {
       queries.parked = 2;
     }
   });
-
-  it("with nothing parked, ?status=parked draws the list's empty state", async () => {
-    queries.parked = 0;
-    try {
-      const { doc } = await render({ status: "parked" });
-      expect(doc.querySelector(".rows .empty")?.textContent).toBe("Nothing matches. Try a broader filter.");
-    } finally {
-      queries.parked = 2;
-    }
-  });
+  // ?status=parked with none draws the list's empty state: test/e2e/parked.spec.ts's floor test, on the real
+  // database (a unit test here would mock listBooks to nothing and pass without the chip).
 });
 
 // Task 4.5 (D-98): the genre chips are the genres the data has, and a row shows the genre listBooks gives it.
