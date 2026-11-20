@@ -1,14 +1,14 @@
 ---
 id: TASK-116
 title: 2.2k The books page scrolls sideways with a full Up next shelf
-status: Ready
+status: In progress
 depends_on: [TASK-049]
 size: S
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: 7e681c7
 ---
 
 # TASK-116 — 2.2k The books page scrolls sideways with a full Up next shelf
@@ -60,7 +60,54 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner, 2026-11-20. Worktree `.claude/worktrees/task-2.2k-up-next-shelf`, branch `task/2.2k-up-next-shelf-sideways-scroll`, test DB `ledger_test_4` (its `.env.worktree`), dev-server port 3116.
+
+### Exploration: **not reproduced** on `main` (7e681c7)
+
+A throwaway spec (not committed) measured `/books` on the test database at 360, 390, 412 and 768px:
+
+- **Current `main`:** `documentElement.scrollWidth` = viewport in every case. Tried: six plain cards; six with two-line titles and a long author · universe · series line; seven with long text, real (fake-host) covers and a book in hand; the shelf scrolled to its end; a sideways wheel on the page (`scrollX` stayed 0). At 1024 and 1280 (fine pointer, nine cards) ‹ › rendered and › paged the shelf (scrollLeft 512 / 480) with no page overflow.
+- **With #213's fix removed** (`.shelf .card{position:static}` injected): `scrollWidth` 640 at 360/390/412 with six cards, 872 at 768 with seven, which is TASK-051's report exactly (PR #214: "392 to 640", "768px with seven").
+- **Development database (`npm run dev`):** nothing planned this quarter, so the shelf is empty; no overflow at any width.
+- **What fixed it:** PR #213 (task 2.2g, d40a477) gave `.shelf .card` `position:relative` (`src/app/globals.css` § the comics Up next queue, the comment above `.shelf .card`), so the card's absolute `.sr-only` ordinal is clipped by the row instead of widening the page. TASK-051 planned and checked on b2889c3 (#211), before #213; #213 merged an hour before #214.
+
+So: no CSS or markup changes; AC-2's "fails on `main`" clause does not apply; its seed and inside-the-box clauses do.
+
+### Steps
+
+1. `test/e2e/books-dashboard.spec.ts`, new `describe("a full Up next shelf (2.2k)")`:
+   - Fixture on top of `seed({ reading: true })`: One and Three get a long author, universe and series (ids `e2e-dash-full-*`, so `clean` removes them); new books with two-line titles and the same long line fill the shelf to six cards below 768px and seven from 768px; every card has a cover on the fake host (`page.route`, as `dashboard-covers.spec.ts`).
+   - **AC-1, AC-2, AC-5** (`FEEL`, every width project): card count 6 / 7; `expectNoHorizontalScroll`; each card scrolled into view lies inside the viewport and its `.card-title` and `.sr-only` boxes lie inside `ul.shelf`'s box (x and right edge); `floor()` (axe, contrast, no `--danger`, targets); `screenshot(page, info, "2.2k-books-full-shelf")`.
+   - **AC-3** (`ONCE`, 360px set in the test): `ul.shelf` `scrollWidth > clientWidth`; scroll to the end, the last card is whole inside the shelf and the viewport.
+   - **AC-3** (`DESK`, 1280): ‹ › render; › raises `scrollLeft`, ‹ brings it back to 0.
+2. `test/e2e/queue.spec.ts`, **AC-4** (`ONCE`, 360px): six runs queued, no sideways scroll, each card 112px wide, 12px apart.
+3. Discrimination: delete `position:relative` from `.shelf .card` locally, confirm the new tests fail (page width and `.sr-only` outside the shelf), restore. Record it in the PR; the test-auditor is told the same (the pre-task tree equals `main`, so a before/after run proves nothing here).
+
+### Files
+
+- `test/e2e/books-dashboard.spec.ts`: steps 1 (AC-1, 2, 3, 5)
+- `test/e2e/queue.spec.ts`: step 2 (AC-4)
+- Close-out: this task file, `docs/05-roadmap.md` § 2.2k tick, `docs/06-tasklist.md` M10 Done cell if its tasks are all Done
+
+### Test strategy
+
+| AC | Proof |
+| --- | --- |
+| AC-1 | books-dashboard.spec.ts › a full Up next shelf (2.2k) › FEEL test, every width project in CI; locally w360/w390/w412/w768-light |
+| AC-2 | the same test's seed and inside-the-shelf checks; the PR names the outcome (not reproduced, #213) |
+| AC-3 | the 360 scroll-to-end test and the 1280 pager test |
+| AC-4 | queue.spec.ts › six runs at 360 |
+| AC-5 | the FEEL test's `floor()` and screenshot at every `ui.viewports` width |
+| Manual | owner: seven planned, `/books` at 390px, swipe sideways: the page stays, the shelf scrolls and snaps |
+
+### Risks / open questions
+
+- ui-verifier needs a full shelf on the dev DB: plan seven On deck books into the quarter through the app and move each back to On deck after (dev-DB exception, data left as found). If the dev DB has fewer than seven On deck, skip the walk and rely on the FEEL screenshots plus the owner's preview walk.
+- Size: S, two spec files; no split.
+
+### Follow-ups found at plan
+
+None.
 
 ## Review log
 
