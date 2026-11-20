@@ -1,7 +1,7 @@
 ---
 id: TASK-115
 title: 1.31 Settle the Owner checklist before the books cutover
-status: Draft
+status: Ready
 depends_on: []
 size: S
 model: opus

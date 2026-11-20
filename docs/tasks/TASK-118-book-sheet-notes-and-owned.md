@@ -1,7 +1,7 @@
 ---
 id: TASK-118
 title: 3.5b The book sheet's own writes (1 of 3) — notes and what you own
-status: Draft
+status: Ready
 depends_on: [TASK-079]
 size: M
 model: sonnet

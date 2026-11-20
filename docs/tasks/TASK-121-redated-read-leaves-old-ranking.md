@@ -1,7 +1,7 @@
 ---
 id: TASK-121
 title: 3.4c A re-dated read leaves its old year's ranking
-status: Draft
+status: Ready
 depends_on: [TASK-077]
 size: M
 model: opus

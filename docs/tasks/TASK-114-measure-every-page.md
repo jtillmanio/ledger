@@ -1,7 +1,7 @@
 ---
 id: TASK-114
 title: 0.14c Every page is measured
-status: Draft
+status: Ready
 depends_on: [TASK-113]
 size: M
 model: opus
