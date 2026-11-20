@@ -1,14 +1,14 @@
 ---
 id: TASK-123
 title: 5.17b Own it from Search and By hand (2 of 2) — the chips, the button and the paste review on screen
-status: Ready
+status: In progress
 depends_on: [TASK-122]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: b2e7229
 ---
 
 # TASK-123 — 5.17b Own it from Search and By hand (2 of 2) — the chips, the button and the paste review on screen
@@ -63,7 +63,46 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-20 (owner). Branch `task/5.17b-own-it-from-search-screens`.
+
+What is already in: every result's button and By hand's submit read `addTo(target)`, so they say *Add to Physical copy* / *Add to Audiobook* once the target survives the switch; `buildBookReview` (TASK-122) already gives *Already owned on paper.* and counts only the rows it writes, and `PasteBooks` reads `review.count`. The screen change is `AddBooks.tsx`.
+
+### Steps
+
+1. **Redraw first** (`ui.redrawFiles`): `design/mockups.html` `add` gains a sixth phone frame, Search with *Physical copy* chosen (all seven chips: Someday, On deck, Year or quarter…, Shelf…, Coming out, Physical copy, Audiobook) and a library result's *Add to Physical copy*; the third frame's review shows one line *Already owned on paper.*, *2 will be added* and *Add 2 books to Physical copy*; a notes line (task 5.17b). `design/mockups-index.md` § `add` says what was added.
+2. **Tests first, failing:**
+   - New `test/e2e/add-books-owned.spec.ts`, with its own fixtures (a library book with a status, one that already has its `physical` row, a seeded `hardcover_cache` row under its own key and Hardcover id): AC-2 (Paste → *Physical copy* → Search → By hand keeps `aria-pressed="true"`; both chips in all three modes); AC-3 (Search *Audiobook* on a library result: toast naming the book with Undo, its Library row ends *Audiobook*; By hand *Physical copy*: the submit reads *Add to Physical copy*, the typed book is under *Unlisted* and *Physical*); AC-1 (library book with a status → one `physical` row, status unchanged; Hardcover result and typed book → one `unlisted` book each with its row; Undo removes exactly that; a book that had the row gets none written and no Undo, and keeps its row; an add to Someday whose created book gains a `calibre_id` by SQL: Undo's toast says *Couldn't undo…*, the book stays). Writes run once (`@at-w390-light`).
+   - AC-5: a FLOOR test (every width) in Search with *Physical copy* chosen: chips are named toggles ≥ 44px on a phone, axe, no sideways scroll at 360px, nothing on `--danger`; screenshots at 360px and 1280px.
+   - `test/e2e/paste-books.spec.ts`: AC-4, a paste to *Physical copy* of three lines, one already with its `physical` row → *Already owned on paper.*, *Add 2 books to Physical copy*, toast *2 books added to Physical copy*; the paste review's screenshot at 360px and 1280px (AC-5).
+3. **`src/components/AddBooks.tsx`**: `switchTo` keeps an owned target in every mode (only *Coming out* leaving for Paste goes back to Someday); the two owned chips are drawn in all three modes; the comment above `switchTo` says so. `src/lib/book-add.ts:24`'s `Target` doc no longer says *Paste a list only*.
+4. **The toast when nothing is written** (owner approved at plan): an owned add to a book that already has the row says *Already in your library* · *already owned on paper* / *already own the audiobook* (a small map in `src/lib/book-add.ts`), not the book's status.
+
+### Files
+
+- `src/components/AddBooks.tsx`: `switchTo`, the chips in every mode, the toast's wording
+- `src/lib/book-add.ts`: the `Target` doc; the owned *already* wording
+- `design/mockups.html`, `design/mockups-index.md`: the redraw
+- `test/e2e/add-books-owned.spec.ts` (**new**, not in Files likely touched): Search and By hand, AC-1–AC-3, AC-5; kept apart from `book-search.spec.ts`, whose later tests depend on its Piranesi state
+- `test/e2e/paste-books.spec.ts`: AC-4, the paste review's screenshots
+- No change: `BookSearch.tsx`, `ByHand.tsx`, `PasteBooks.tsx`
+
+### Test strategy
+
+| AC | Where |
+|---|---|
+| AC-1 | `add-books-owned.spec.ts` (writes once); TASK-122's `test/add-book.test.ts` holds the database-level proof |
+| AC-2 | `add-books-owned.spec.ts` |
+| AC-3 | `add-books-owned.spec.ts` |
+| AC-4 | `paste-books.spec.ts` |
+| AC-5 | FLOOR tests in both specs, fixed 360px and 1280px screenshots |
+
+### Risks
+
+- Browser suite time (the suite is due a trim): write tests stay in `w390-light`; only the floor test runs at every width.
+
+### Follow-ups found at plan
+
+None.
 
 ## Review log
 
