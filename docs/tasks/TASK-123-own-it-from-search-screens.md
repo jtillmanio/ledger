@@ -25,6 +25,7 @@ In Add books, *Physical copy* and *Audiobook* stay available in Search and By ha
 - The paste review: `src/components/PasteBooks.tsx` (*Add N books to …*) over `src/lib/book-review.ts`, which TASK-122 changes to mark *Already owned on paper* and count only the rows it will write.
 - **Not drawn yet.** `design/mockups.html` `add`'s frames draw *Physical copy* in *Paste a list* only (task 5.17's third phone frame). `ui.redrawFiles`: before it is built, the frame gains Search with *Physical copy* chosen and a result's *Add to Physical copy*, and the paste review's *Already owned on paper*; `design/mockups-index.md` § `add` says what was added.
 - Toasts and Undo follow the paste's (TASK-094); the undo route is TASK-122's.
+- *From TASK-122 (5.17b, PR #310):* the API is in: `POST /api/books` takes `{ kind: 'owned', format }`, and its answer is the undo `DELETE /api/books` takes. A library book that already has the row answers `added: []`, so the screen offers no Undo, as for a Someday add to a book with a status. The review's reasons are *Already owned on paper.* and *Already own the audiobook.* (`OWNED_ALREADY` in `src/lib/book-review.ts`). Two comments still say an owned format is *Paste a list*'s alone, and change with the screen: `src/components/AddBooks.tsx:171` (above `switchTo`) and the `Target` doc in `src/lib/book-add.ts:24`.
 - UX floor: `docs/04-design.md` § 10.
 - Decisions: D-132, D-152, D-83 (Unlisted).
 

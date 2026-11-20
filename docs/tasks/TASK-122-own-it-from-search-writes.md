@@ -1,7 +1,7 @@
 ---
 id: TASK-122
 title: 5.17b Own it from Search and By hand (1 of 2) — the writes, the paste check and the sync's refusal
-status: In progress
+status: Review
 depends_on: [TASK-094]
 size: M
 model: opus
@@ -31,11 +31,11 @@ One book added to *Physical copy* or *Audiobook* records that you own it, whethe
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves, on the test database, the writes behind each clause: the library book's one row and no status change, the two `unlisted` creations, each undo, the paste's *already owned*, the 409. TASK-123 proves the same through the screens, with the screenshots): (proposed; the owner agrees it by merging or edits it first) with *Physical copy* chosen, Search's *Add to Physical copy* on a library book with a status writes one `physical` row and changes no status. On a Hardcover result, and on a typed book the library lacks, it creates one `unlisted` book with its row. Undo removes exactly what each add wrote, and leaves a row the book had before. A paste whose matched book already has the row counts it as already owned. Undoing an add to Someday whose created book has since gained a `calibre_id` answers 409 and changes nothing. Screenshots at 360px and 1280px.
-- [ ] AC-2: `POST /api/books` with `destination: { owned: "physical" }` (and `"audio"`): for a library book with status `to_read`, writes one `owned_copies` row and leaves `book_status` and `reading_plan` as they were; for a Hardcover result and a typed book, creates one `books` row with `book_status.status = 'unlisted'` and one `owned_copies` row. Its answer's undo, sent to `DELETE /api/books`, deletes only those rows (and the created book); for a library book that already had the row, the add writes nothing and the undo deletes nothing.
-- [ ] AC-3: `addBook` no longer throws on an owned destination; the error string *an owned format is a paste's destination only* is gone from the source.
-- [ ] AC-4: `bookMatches` answers, for each matched book, the formats it owns (`physical`, `audio`; the ebook is not one). Given a paste of three lines to *Physical copy*, one matching a book that already has its `physical` row, one matching a book without it, one new: the review marks the first *Already owned on paper*, its count is 2, and the paste then writes two `owned_copies` rows (and one `unlisted` book), matching the count.
-- [ ] AC-5: Given an add to Someday that created a book, then `calibre_id` set on that book, the add's undo through `DELETE /api/books` answers 409 with *Something changed since that add. Nothing was undone.* and the book, its status and its plan row are unchanged. The same for an add to On deck, a quarter and a shelf.
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves, on the test database, the writes behind each clause: the library book's one row and no status change, the two `unlisted` creations, each undo, the paste's *already owned*, the 409. TASK-123 proves the same through the screens, with the screenshots): (proposed; the owner agrees it by merging or edits it first) with *Physical copy* chosen, Search's *Add to Physical copy* on a library book with a status writes one `physical` row and changes no status. On a Hardcover result, and on a typed book the library lacks, it creates one `unlisted` book with its row. Undo removes exactly what each add wrote, and leaves a row the book had before. A paste whose matched book already has the row counts it as already owned. Undoing an add to Someday whose created book has since gained a `calibre_id` answers 409 and changes nothing. Screenshots at 360px and 1280px.
+- [x] AC-2: `POST /api/books` with `destination: { owned: "physical" }` (and `"audio"`): for a library book with status `to_read`, writes one `owned_copies` row and leaves `book_status` and `reading_plan` as they were; for a Hardcover result and a typed book, creates one `books` row with `book_status.status = 'unlisted'` and one `owned_copies` row. Its answer's undo, sent to `DELETE /api/books`, deletes only those rows (and the created book); for a library book that already had the row, the add writes nothing and the undo deletes nothing.
+- [x] AC-3: `addBook` no longer throws on an owned destination; the error string *an owned format is a paste's destination only* is gone from the source.
+- [x] AC-4: `bookMatches` answers, for each matched book, the formats it owns (`physical`, `audio`; the ebook is not one). Given a paste of three lines to *Physical copy*, one matching a book that already has its `physical` row, one matching a book without it, one new: the review marks the first *Already owned on paper*, its count is 2, and the paste then writes two `owned_copies` rows (and one `unlisted` book), matching the count.
+- [x] AC-5: Given an add to Someday that created a book, then `calibre_id` set on that book, the add's undo through `DELETE /api/books` answers 409 with *Something changed since that add. Nothing was undone.* and the book, its status and its plan row are unchanged. The same for an add to On deck, a quarter and a shelf.
 
 ## Out of scope
 
@@ -60,6 +60,10 @@ One book added to *Physical copy* or *Audiobook* records that you own it, whethe
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- Two comments still say an owned format is *Paste a list*'s alone (`src/components/AddBooks.tsx:171`, the `Target` doc in `src/lib/book-add.ts:24`); they change with the screen, with what TASK-123 needs from this API → docs/tasks/TASK-123-own-it-from-search-screens.md § Context
+- The Calibre refusal in `undoInside` is tested through a single add's undo only, not a paste's (schema review R1, minor) → not tracked: a paste's undo is the same `DELETE /api/books` → `undoInside` path the four AC-5 tests drive
+- Roadmap 5.17b and its task list row stay open: the Check's screen clauses and screenshots are TASK-123's → not tracked: ticked by TASK-123's close-out (`ticks.md`)
 
 ## Plan
 
@@ -91,6 +95,7 @@ Approved 2026-11-20.
 _Filled by /implement-task. One line per round._
 
 - Verify R1 FAIL (`test/books-dashboard.test.ts:407`, a 5 s timeout while another session ran beside it; untouched by this diff, 49/49 alone) → R2 PASS (tsc, lint, vitest 2444 passed, Python 411 OK)
+- Spec R1 APPROVE | Schema R1 APPROVE (2 minor: a paste-route test of the Calibre refusal, the AC-3 grep proves only the string; neither changed) | Audit R1 PASS (17 of 17 new tests fail on the pre-task code) | CI R1 see the PR
 
 ## Blocked
 
@@ -98,7 +103,7 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 2 (R1 an unrelated timeout under load)
+- Review rounds: 1
+- First-pass AC FAILs: 0
+- Plan revisions after approval: 0
