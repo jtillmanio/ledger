@@ -6,6 +6,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { requireTestUrl } from "../scripts/lib/testdb.mjs";
 import { deckSections } from "../src/lib/on-deck";
+import { listenedOnly, parseFormat, upNextCount } from "../src/lib/status-tabs";
 import { markRead, testSql, truncateAll } from "./db";
 
 const USER = "test-user";
@@ -418,5 +419,86 @@ describe("On deck by genre (roadmap 4.5b check)", () => {
   it("one spelling per genre whatever its case", () => {
     const view = deckSections([{ id: "a", genres: ["Fantasy"] }, { id: "b", genres: ["fantasy"] }]);
     expect(view.chips).toEqual([{ genre: "Fantasy", books: 2 }]);
+  });
+});
+
+// Task 5.14 (TASK-107): Up next's *Listen next*, in queue order, and Done's *Listened* chip.
+// A soft-deleted book keeps its queue row and position (TASK-106), so the read hides it and
+// the screen numbers the rows it draws; a book on the plan and the queue counts once.
+describe("books Listen next and Listened (roadmap 5.14 check)", () => {
+  const listen = async (...books: string[]) => { for (const id of books) await w.queueListen(id); };
+
+  it("Listen next is the queue in its order, whatever the order the books were made in", async () => {
+    for (const id of ["a", "b", "c"]) { await book(id); await status(id, "to_read"); }
+    await listen("c", "a", "b");
+    const rows = await q.booksListenNext(USER);
+    expect(rows.map((r) => [r.id, r.ordinal])).toEqual([["c", 1], ["a", 2], ["b", 3]]);
+  });
+
+  it("a soft-deleted book is hidden and keeps its stored place; a move to a shown row's ordinal lands there", async () => {
+    for (const id of ["a", "gone", "b", "c"]) await book(id);
+    await listen("a", "gone", "b", "c");
+    await sql`UPDATE books SET deleted_at = now() WHERE id = 'gone'`;
+
+    const rows = await q.booksListenNext(USER);
+    expect(rows.map((r) => r.id)).toEqual(["a", "b", "c"]);
+    expect(rows.map((r) => r.ordinal)).toEqual([1, 3, 4]);
+
+    // *Move to top* on c sends the stored ordinal of the row it lands on (a's 1), never its shown place.
+    await w.moveListen("c", rows[0].ordinal);
+    expect((await q.booksListenNext(USER)).map((r) => r.id)).toEqual(["c", "a", "b"]);
+    const [kept] = await sql`SELECT position FROM listen_queue WHERE book_id = 'gone'`;
+    expect(kept.position).toBe(3);
+  });
+
+  it("a queued book carries its status, its cover and its listen, and a book with no status row is listed too", async () => {
+    await sql`INSERT INTO books (id, title, cover_url) VALUES ('cov', 'Covered', 'https://img.test/c.jpg')`;
+    await status("cov", "read", "2026-02-01");
+    await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, format)
+              VALUES (${USER}, 'cov', '2026-02-01', 'exact', 'audio')`;
+    await book("bare");
+    await listen("cov", "bare");
+    const rows = await q.booksListenNext(USER);
+    expect(rows.map((r) => ({ id: r.id, status: r.status, cover: r.cover_url, listened: r.listened }))).toEqual([
+      { id: "cov", status: "read", cover: "https://img.test/c.jpg", listened: true },
+      { id: "bare", status: null, cover: null, listened: false },
+    ]);
+  });
+
+  it("setting #2 to Listening takes it off Listen next and the other two read 1–2", async () => {
+    for (const id of ["a", "b", "c"]) { await book(id); await status(id, "to_read"); }
+    await listen("a", "b", "c");
+    await w.saveBookStatus(USER, { bookId: "b", status: "listening" });
+    expect((await q.booksListenNext(USER)).map((r) => [r.id, r.ordinal])).toEqual([["a", 1], ["c", 2]]);
+  });
+
+  it("the Up next count is the plan it draws plus the queued books not already in it: a book on both counts once", async () => {
+    for (const id of ["p", "both", "l"]) { await book(id); await status(id, "to_read"); }
+    await plan("p", "2027-Q1");
+    await plan("both", "2027-Q1");
+    await listen("both", "l");
+    const [{ planned }, queued] = await Promise.all([q.booksUpNext(USER), q.booksListenNext(USER)]);
+    expect(upNextCount(planned.map((b) => b.id), queued)).toBe(3);
+    expect(upNextCount([], queued)).toBe(2);
+    expect(upNextCount(planned.map((b) => b.id), [])).toBe(2);
+  });
+
+  it("the Listened chip keeps only the books with an audio read, Stopped ones included; All keeps them all", async () => {
+    for (const id of ["eye", "ear", "quit"]) await book(id);
+    await status("eye", "read", "2026-03-01");
+    await status("ear", "read", "2026-04-01");
+    await status("quit", "dnf", "2026-05-01");
+    await sql`INSERT INTO read_events (user_id, book_id, finished_on, finished_on_precision, format) VALUES
+              (${USER}, 'eye', '2026-03-01', 'exact', 'text'), (${USER}, 'ear', '2026-04-01', 'exact', 'audio'),
+              (${USER}, 'quit', '2026-05-01', 'exact', 'audio')`;
+    const done = await q.booksDone(USER);
+    expect(listenedOnly(done, "audio").map((b) => b.id)).toEqual(["ear", "quit"]);
+    expect(listenedOnly(done, null).map((b) => b.id)).toEqual(["ear", "eye", "quit"]);
+  });
+
+  it("?format= is audio or nothing: anything else lists every Done book", () => {
+    expect(parseFormat("audio")).toBe("audio");
+    expect(parseFormat(["audio", "text"])).toBe("audio");
+    for (const v of [undefined, "", "text", "AUDIO", ["text"]]) expect(parseFormat(v)).toBeNull();
   });
 });

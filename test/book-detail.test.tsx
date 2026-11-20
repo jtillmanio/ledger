@@ -212,4 +212,14 @@ describe("one layout, two chromes", () => {
     expect(text(row("Owned")!.querySelector(".v"))).toBe("Physical · Ebook");
     expect(text(row("Notes")!.querySelector(".lede"))).toBe("Start after Q4 clears.");
   });
+
+  it("offers Queue to listen under Listen next, named for the book, but not while Listening or Parked (task 5.14)", () => {
+    const listen = (b: Book) => [...render(b).querySelectorAll(".detail-record .frow")].find((r) => text(r.querySelector(".k")) === "Listen next");
+    for (const status of ["to_read", "reading", "read", "dnf"] as const) {
+      const button = listen(book({ status }))?.querySelector("button");
+      expect(button?.getAttribute("aria-label"), status).toBe("Queue to listen: The Way of Kings");
+      expect(text(button!), status).toBe("Queue to listen");
+    }
+    for (const status of ["listening", "parked"] as const) expect(listen(book({ status: status as Book["status"] })), status).toBeUndefined();
+  });
 });

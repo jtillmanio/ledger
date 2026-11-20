@@ -5,6 +5,8 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import Menu, { type MenuItem } from "@/components/Menu";
 import { useUndo } from "@/components/Undo";
+import { useQueueListen } from "@/lib/listen-queue";
+import { queueable } from "@/lib/status-tabs";
 
 // Loaded on the first *Follow…* or *Plan for…*: a Library of 500 rows carries none of it until then.
 const FollowSheet = dynamic(() => import("@/components/FollowSheet"), { ssr: false });
@@ -44,7 +46,9 @@ const held = (owned: readonly OwnedCopy[]): Record<OwnedCopy, boolean> => ({
 /**
  * A Library row's `⋯` (task 2.2c; mockup `follow`), named *More for <title>*,
  * whose items are *Plan for…* (task 2.3; a to-read book only), which opens the
- * plan picker, *Follow…*, which opens the sheet of what the book belongs to, and
+ * plan picker, *Queue to listen* (task 5.14; not while Listening or Parked), which
+ * puts it at the end of Up next's *Listen next* with an undo toast, *Follow…*, which
+ * opens the sheet of what the book belongs to, and
  * what you own (task 5.17, D-132): *I own it on paper* and *I own the audiobook*,
  * whatever the status. Each says which way it goes (*I don't own it on paper*
  * once you do), is one write with an undo toast whose Undo posts the server's
@@ -59,6 +63,7 @@ export default function BookRowMenu({ bookId, status = "to_read", owned = [] }: 
 }) {
   const router = useRouter();
   const { push, fail } = useUndo();
+  const queueListen = useQueueListen();
   const wrap = useRef<HTMLSpanElement>(null);
   const [title, setTitle] = useState("this book");
   const [open, setOpen] = useState<{ sheet: "follow" | "plan"; opener: HTMLButtonElement } | null>(null);
@@ -100,6 +105,8 @@ export default function BookRowMenu({ bookId, status = "to_read", owned = [] }: 
 
   const items: MenuItem[] = [
     ...(status === "to_read" ? [{ label: "Plan for…", onSelect: (opener: HTMLButtonElement) => setOpen({ sheet: "plan", opener }) }] : []),
+    // The listen queue (task 5.14): at its end, an undo toast; not while Listening or Parked.
+    ...(queueable(status) ? [{ label: "Queue to listen", onSelect: () => void queueListen(bookId, title) }] : []),
     { label: "Follow…", onSelect: (opener) => setOpen({ sheet: "follow", opener }) },
     ...(["physical", "audio"] as const).map((format): MenuItem => ({
       label: have[format] ? COPY[format].disown : COPY[format].own,

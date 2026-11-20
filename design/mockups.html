@@ -3137,6 +3137,64 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   </div>
 </div></div></div>
 
+<!-- Task 5.14 (TASK-107, F-59): books Up next at 360 with Listen next, the listen queue, after every level of the
+     plan (Someday's closing row included), in the order you gave it, with 1.10's handle and row menu; absent with
+     nothing queued. The count is the books drawn, a book on the plan and the queue counted once. -->
+<div class="frame fin-f" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books" style="position:relative">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Dashboard</a><a aria-current="page">Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
+  <div class="wrap">
+    <h1 class="t">Books by status</h1>
+    <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="false">In flight<span class="n">3</span></span><span role="tab" aria-selected="true" data-on>Up next<span class="n">177</span></span><span role="tab" aria-selected="false">Done<span class="n">348</span></span></span></div>
+    <div class="group">
+      <div class="ghead">2026 · Q4<span class="n">2 books · 486k</span></div>
+      <div class="row"><span class="edge" style="background:var(--t5)"></span><button class="drag" aria-label="Reorder The Way of Kings, position 1 of 2 in Q4 2026">&#8942;&#8942;</button><span class="cv m ph">WOK</span>
+        <div class="rb"><span class="rh"><span class="rt">The Way of Kings</span><span class="rm">387k</span></span>
+          <div class="rs">Brandon Sanderson · Stormlight Archive #1</div></div><button class="menubtn" aria-haspopup="menu" aria-label="More for The Way of Kings">&#8943;</button></div>
+      <div class="row"><div class="rb"><span class="rs">+ 1 more in Q4 · On deck below</span></div></div>
+    </div>
+    <div class="group">
+      <a class="row" href="#"><div class="rb"><span class="rh"><span class="rt">Someday</span><span class="rm">1,130 books</span></span>
+        <div class="rs">The rest of your to-read list, not planned. Opens the Library.</div></div><span class="chev">&#8250;</span></a>
+    </div>
+    <div class="group">
+      <div class="ghead">Listen next<span class="n">3 books</span></div>
+      <div class="row"><span class="edge" style="background:var(--t5)"></span><button class="drag" aria-label="Reorder Project Hail Mary, position 1 of 3 in Listen next" aria-describedby="dnd-help-listen">&#8942;&#8942;</button><span class="cv m ph">PHM</span>
+        <div class="rb"><span class="rh"><span class="rt">Project Hail Mary</span><span class="rm">146k</span></span>
+          <div class="rs">Andy Weir</div></div><button class="menubtn" aria-haspopup="menu" aria-label="More for Project Hail Mary">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--t2)"></span><button class="drag" aria-label="Reorder The Hobbit, position 2 of 3 in Listen next" aria-describedby="dnd-help-listen">&#8942;&#8942;</button><span class="cv m ph">THM</span>
+        <div class="rb"><span class="rh"><span class="rt">The Hobbit</span><span class="rm">95k</span></span>
+          <div class="rs">J. R. R. Tolkien · Middle-earth</div></div><button class="menubtn" aria-haspopup="menu" aria-label="More for The Hobbit">&#8943;</button></div>
+      <div class="row"><span class="edge" style="background:var(--t3)"></span><button class="drag" aria-label="Reorder Dune, position 3 of 3 in Listen next" aria-describedby="dnd-help-listen">&#8942;&#8942;</button><span class="cv m ph">DUN</span>
+        <div class="rb"><span class="rh"><span class="rt">Dune</span><span class="rm">188k</span></span>
+          <div class="rs">Frank Herbert · Dune #1</div></div><button class="menubtn" aria-haspopup="menu" aria-label="More for Dune" aria-expanded="true">&#8943;</button></div>
+    </div>
+    <div class="menu" role="menu" aria-label="More for Dune, position 3 of 3" style="position:absolute;right:.875rem;bottom:2.5rem;z-index:5;width:230px"><div class="opt" role="menuitem" tabindex="0" style="box-shadow:var(--focus-ring)">Move to top</div><div class="opt" role="menuitem" tabindex="-1">Move up</div><div class="opt" role="menuitem" tabindex="-1" style="color:var(--danger)">Remove from Listen next</div></div>
+    <p id="dnd-help-listen" class="sr-only">Space lifts a row, arrows move it within Listen next, Space drops it, Esc cancels.</p>
+  </div>
+</div></div></div>
+<!-- Task 5.14 (TASK-107): books Done at 360 with Listened chosen: All · Listened, real links with ?format=audio,
+     the chosen one aria-current; the years and Stopped keep only books with an audio read, and the count is what it
+     draws. Grey chips, no hue. With none: Nothing listened to yet., one link back to All. -->
+<div class="frame fin-f" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
+  <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)">&#9906;</span></nav>
+  <nav class="tabrow" aria-label="Screens"><a>Dashboard</a><a aria-current="page">Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
+  <div class="wrap">
+    <h1 class="t">Books by status</h1>
+    <div class="ctl"><span class="seg" role="tablist" aria-label="Status"><span role="tab" aria-selected="false">In flight<span class="n">3</span></span><span role="tab" aria-selected="false">Up next<span class="n">177</span></span><span role="tab" aria-selected="true" data-on>Done<span class="n">61</span></span></span></div>
+    <div class="chips" role="group" aria-label="Done by format" style="margin:1rem 0 .75rem"><span class="chip">All</span><span class="chip" data-on aria-current="true">Listened</span></div>
+    <div class="group">
+      <div class="ghead">2026<span class="n">9 books</span></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Project Hail Mary <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listened" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">146k</span></span>
+        <div class="rs">Andy Weir</div>
+        <div class="rs" style="font-size:.75rem">Started 2 Oct &middot; finished 19 Oct &middot; 17 days</div></div></div>
+      <div class="row"><div class="rb"><span class="rh"><span class="rt">Warbreaker <svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listened" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="rm">226k</span></span>
+        <div class="rs">Brandon Sanderson &middot; Cosmere</div></div></div>
+      <div class="row"><div class="rb"><span class="rs">+ 7 more in 2026 &middot; earlier years below</span></div></div>
+    </div>
+  </div>
+</div></div></div>
+
 <div class="frame fin-f" data-w="p360"><div class="frame-in"><div class="app" data-theme="light" data-medium="books">
   <nav class="bar" aria-label="Media"><span class="home">Ledger</span><a class="tab">Comics</a><a class="tab" aria-current="page">Books</a><a class="tab">Watch</a><span class="iconbtn" role="img" aria-label="Search (Ctrl K)"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></nav>
   <nav class="tabrow" aria-label="Screens"><a>Dashboard</a><a aria-current="page">Status</a><a>Library</a><a>Plan</a><a>Shelves</a><a>Top</a><a>Add</a><a>Inbox</a></nav>
@@ -3240,6 +3298,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
     <li><span class="chg">Nov 2026, task 2.2f:</span> a book's <i>In flight</i> rows carry <b>Finished</b>, named for the book, at the row's right where a comic's carries <b>Read #N</b>; the last frames draw it at 360, 834 and desktop. One tap writes today, with no date step: it is the Library's finish, so the toast says the same and carries <b>Keep going?</b>, and a listen is logged as one. A different date is set from the Library's <i>Finished</i>. The row leaves for <i>Done</i> and both counts move (second 360 frame). Focus goes to the next row's <b>Finished</b>; with no row left, to the <i>In flight</i> tab, above <i>Nothing in flight.</i> In flight has no other status control.</li>
     <li><b>Film &amp; TV.</b> <i>In flight</i> is shows mid-season-list (state derived from <code>show_progress</code>) and films marked watching. <i>Up next</i> is to-watch, with the dashboard's film/TV and genre filters. <i>Done</i> is watched.</li>
     <li><b>Stopped isn't hidden.</b> DNF books and dropped titles collapse under <i>Stopped</i> at the foot of Done. Finished is finished, even when it wasn't the ending you planned. <span class="chg">Nov 2026, task 5.5 (D-139; the books Done frame at 360, after the desktop frame):</span> a stopped book&rsquo;s reason, its note as the DNF&rsquo;s closing card wrote it (<code>blist</code>), sits grey under its title; a book with none draws no line. Never red, never green.</li>
+    <li><span class="chg">Nov 2026, task 5.14 (F-59; the two books frames at 360 after <i>Stopped</i>):</span> books <i>Up next</i> ends with <b>Listen next</b>, the audiobooks you mean to listen to next, after every level of the plan, Someday&rsquo;s row included, in the order you gave them. Each row has 1.10&rsquo;s handle (drag, a long press, or Space and the arrows) and row menu, <b>Move to top &middot; Move up &middot; Move down</b> and <b>Remove from Listen next</b> (red: a removal), each with its Undo; the places named are the rows drawn, 1 to N. Every queued book is listed whatever its status, and its status control starts it: <i>Listening</i> takes it off the queue. With nothing queued the group is absent, never an empty heading. A book on the plan and the queue is in both and counted once on the tab. <i>Done</i> gains the chips <b>All &middot; Listened</b>: real links, the choice in the URL (<code>?format=audio</code>), the chosen one current; <i>Listened</i> keeps only the books with an audio read, by year and under <i>Stopped</i> alike, and the tab counts what it draws. <i>In flight</i> already has <b>Listening</b> (1.23). The books dashboard&rsquo;s <i>Up next</i> slot doesn&rsquo;t show the queue (owner, TASK-106).</li>
     <li><b>Counts on the tabs, in mono.</b> They are tabular data, and they are the answer to "how much is in flight" before you tap anything.</li>
     <li>The dashboard is still where you start. Its <b>Also in flight</b> and <b>Ready when you are → All 41</b> headers link here, to the matching tab. The master list still exists for searching the whole catalog; this screen is for seeing where everything stands.</li>
     <li>The comics tab keeps the thumb bar, because marking the next issue of an in-flight run is the most likely thing to do from this screen.</li>
@@ -3880,7 +3939,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
           <div style="margin-top:.375rem"><span class="bdg dn">read Jan 2024</span></div></div>
         <button class="menubtn" aria-haspopup="menu" aria-label="More for The Emperor&rsquo;s Soul">&#8943;</button></div>
     </div>
-    <div class="menu" role="menu" aria-label="More for Warbreaker" style="position:absolute;right:.875rem;top:15.5rem;z-index:5;width:230px"><div class="opt" role="menuitem" tabindex="-1">Follow&hellip;</div><div class="opt" role="menuitem" tabindex="0" style="box-shadow:var(--focus-ring)">I don&rsquo;t own it on paper</div><div class="opt" role="menuitem" tabindex="-1">I don&rsquo;t own the audiobook</div></div>
+    <div class="menu" role="menu" aria-label="More for Warbreaker" style="position:absolute;right:.875rem;top:15.5rem;z-index:5;width:230px"><div class="opt" role="menuitem" tabindex="-1">Queue to listen</div><div class="opt" role="menuitem" tabindex="-1">Follow&hellip;</div><div class="opt" role="menuitem" tabindex="0" style="box-shadow:var(--focus-ring)">I don&rsquo;t own it on paper</div><div class="opt" role="menuitem" tabindex="-1">I don&rsquo;t own the audiobook</div></div>
     <div class="toast" role="status" aria-live="polite" style="margin:.75rem 0 0"><span class="tl"><span>You own the audiobook</span><span class="t2">Warbreaker</span></span><u>Undo</u></div>
   </div>
 </div></div></div>
@@ -4059,7 +4118,8 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   </div></div>
 </div></div></div>
 
-<div class="notes"><h3>Library</h3>
+<div class="notes">
+<p><span class="chg">Nov 2026, task 5.14 (F-59):</span> a row&rsquo;s <code>&#8943;</code> carries <b>Queue to listen</b> (the frame with <i>I don&rsquo;t own it on paper</i> open), after <i>Plan for&hellip;</i> on a to-read book and before <i>Follow&hellip;</i>, on every status but <i>Listening</i> and <i>Parked</i>. It puts the book at the end of <i>Listen next</i> on the status screen&rsquo;s <i>Up next</i>; the toast says <i>Added to Listen next</i> with the title, and its Undo takes it off. A book already queued stays where it is: <i>Already in Listen next</i>, nothing to undo.</p><h3>Library</h3>
   <p><span class="chg">v3 changes:</span> the expanded row is visibly expanded — raised background, status buttons, two real actions.</p>
   <ul>
     <li><span class="chg">Nov 2026 (D-84, task 1.22):</span> The box <b>searches as you type</b>, as the add flows do: 3 characters and a 500 ms pause, Enter at once. It replaces <code>?q=</code> without a history entry per keystroke, keeping the chips chosen, so one Back leaves the list; under 3 characters the whole list shows again. <i>Searching…</i> is said once a search, politely. Your library only: it asks no outside API.</li>
@@ -4402,8 +4462,8 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
       <div class="row"><span class="cv m k2">BTH</span>
         <div class="rb"><span class="rh"><span class="rt">Before They Are Hanged</span><span class="rm">2007</span></span>
           <div class="rs">Joe Abercrombie · First Law #2 · 543 pages</div>
-          <div style="margin-top:.375rem;display:flex;gap:.3125rem;flex-wrap:wrap;align-items:center"><span class="tag">Q1 2027</span><svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listened" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg><span class="small faint">on 1 shelf</span></div></div>
-        <button class="btn sec sm">Add</button></div>
+          <div style="margin-top:.375rem;display:flex;gap:.3125rem;flex-wrap:wrap;align-items:center"><span class="tag">Q1 2027</span><svg viewBox="0 0 24 24" width="16" height="16" role="img" aria-label="Listened" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.1875em"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg><span class="small faint">on 1 shelf</span></div>
+          <div class="btnrow" style="margin-top:.5rem;flex-wrap:wrap"><button class="btn sm">Add to Someday</button><button class="btn sec sm">Year or quarter&hellip;</button><button class="btn sec sm">Queue to listen</button></div></div></div>
     </div>
     <h3 class="s" style="margin-top:.75rem">From Hardcover<span class="more">2 new</span></h3>
     <div class="group">
@@ -4564,7 +4624,8 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   </div>
 </div></div></div>
 
-<div class="notes"><h3>Add books</h3>
+<div class="notes">
+<p><span class="chg">Nov 2026, task 5.14 (F-59; the first frame&rsquo;s library result):</span> a result that is a book already, one from your library or a Hardcover one once its add went through, carries <b>Queue to listen</b> after <i>Year or quarter&hellip;</i> (not while the book is <i>Listening</i> or <i>Parked</i>). It is a second write, not an <i>Add to</i> destination, with its own toast, <i>Added to Listen next</i>, and Undo; one toast at a time, so it commits the add, and the add&rsquo;s Undo never meets a book it queued.</p><h3>Add books</h3>
   <ul>
     <li><span class="chg">Nov 2026 (task 5.1, D-139):</span> <b>New shelf&hellip;</b> ends <b>Shelf&hellip;</b>'s list of your shelves (fifth frame), after <i>No shelves yet</i> too when you have none. Choosing it keeps <b>Shelf&hellip;</b> pressed and opens a <b>Shelf name</b> field under the list, which takes focus; every result's button then names it, <b>Add to Dark Tower</b> (<i>Add to a new shelf</i> until it has a name). The add makes the shelf and puts the book on it in one write; its toast is <i>Added to Dark Tower</i>, <i>The Gunslinger &middot; new shelf</i>, and its one <b>Undo</b> removes the place and the shelf. From then on Add to is that shelf. A paste to a new shelf makes it once for all its lines, one Undo for the paste. A name you already have, in any case, writes nothing: the reason sits under the field in red (a validation failure), announced, and focus goes back to the field; with no name, <i>Give the shelf a name.</i> A long name wraps the result's <b>Year or quarter&hellip;</b> under its primary.</li>
     <li><span class="chg">Nov 2026 (D-35, task 5.7):</span> <b>Coming out</b>: in <b>Search</b> and <b>By hand</b>, <b>Add to</b> also offers <b>Coming out</b> after <b>Shelf&hellip;</b> (first two frames; fourth frame chosen, on By hand). Under <b>Add to</b> it opens a labelled <b>Release date</b> field and a real <b>No date yet</b> checkbox, one or the other: ticking it clears the day, typing a day unticks it. An add with neither, or a day that isn't one, is refused under the field (<i>Pick a release date, or No date yet</i>), focus on it, nothing written. The add creates the book (or reuses yours) and its <code>releases</code> row, and gives a new book no status, so it is wanted and listed on <code>releases</code>; a book you already have on your list, or one already coming out, gets nothing, and the toast says so (<i>The Blade Itself &middot; read</i>, <i>&middot; already on Coming out</i>). Undo removes the row and the book it made. <b>Paste a list</b> doesn't offer it (one book, one date; owner, at TASK-100's plan gate), and leaving for it with Coming out chosen goes back to Someday.</li>
@@ -6511,6 +6572,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
         <div class="frow"><span class="k">Status</span>
           <div class="opts" role="radiogroup" style="margin:0 0 0 auto"><b role="radio" aria-checked="true" tabindex="0" data-on>To read</b><b role="radio" aria-checked="false" tabindex="0">Reading</b><b role="radio" aria-checked="false" tabindex="0">Read</b><b role="radio" aria-checked="false" tabindex="0" class="dnf">DNF</b></div></div>
         <div class="frow"><span class="k">Planned for</span><span class="v">2027 Q1</span><button class="btn sec sm">Move</button></div>
+<div class="frow"><span class="k">Listen next</span><button class="btn sec sm" style="margin-left:auto">Queue to listen</button></div>
         <div class="frow"><span class="k">Shelves</span><span class="v" style="font-weight:400;font-size:.8125rem">Cosmere</span><button class="btn sec sm">Edit</button></div>
         <div class="frow" style="display:block"><span class="k" style="width:auto">Notes</span>
           <p class="lede" style="margin:.3125rem 0 0">Been putting this off for years. Start after Q4 clears.</p></div>
@@ -6596,6 +6658,7 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
         <div class="frow"><span class="k">Status</span>
           <div class="opts" role="radiogroup" style="margin:0 0 0 auto"><b role="radio" aria-checked="true" tabindex="0" data-on>To read</b><b role="radio" aria-checked="false" tabindex="0">Reading</b><b role="radio" aria-checked="false" tabindex="0">Read</b><b role="radio" aria-checked="false" tabindex="0" class="dnf">DNF</b></div></div>
         <div class="frow"><span class="k">Planned for</span><span class="v">2027 Q1</span><button class="btn sec sm">Move</button></div>
+<div class="frow"><span class="k">Listen next</span><button class="btn sec sm" style="margin-left:auto">Queue to listen</button></div>
         <div class="frow"><span class="k">Shelves</span><span class="v" style="font-weight:400;font-size:.8125rem">Cosmere</span><button class="btn sec sm">Edit</button></div>
         <div class="frow" style="display:block"><span class="k" style="width:auto">Notes</span>
           <p class="lede" style="margin:.3125rem 0 0">Been putting this off for years. Start after Q4 clears.</p></div>
@@ -6608,7 +6671,8 @@ body[data-vp="phone"] .screen[data-id="status"] .frame.fin-f[data-w="p360"]{disp
   </div></div>
 </div></div></div>
 
-<div class="notes"><h3>Book detail — a sheet, not a hover</h3>
+<div class="notes">
+<p><span class="chg">Nov 2026, task 5.14 (F-59):</span> <i>Your record</i> gains <b>Listen next</b>, under <i>Planned for</i>, with <b>Queue to listen</b>: the Library row&rsquo;s verb, the same toast and Undo; absent while the book is <i>Listening</i> or <i>Parked</i>. It doesn&rsquo;t say whether or where the book is queued yet: that is the sheet&rsquo;s own writes (3.5b).</p><h3>Book detail — a sheet, not a hover</h3>
   <p><span class="chg">Your question answered:</span> a hover popup is the wrong shape here. A sheet over the list is the right one.</p>
   <ul>
     <li><b>Desktop:</b> On desktop the same intercepted route renders as a centred dialogue over the dimmed list rather than a bottom sheet. A right-hand panel was considered — it keeps the list usable — but it makes the detail permanently narrow, and the detail is the thing you came for.</li>

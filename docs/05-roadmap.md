@@ -4795,7 +4795,7 @@ it is converted.
     their read state. A soft-deleted placement is not listed, freeform labels do
     not appear, and no page render calls Metron.
 
-- ☐ 5.14 **Audiobooks: a queue to listen next** · M. Owner intake, 2026-11-01
+- ☑ 5.14 **Audiobooks: a queue to listen next** · M. Owner intake, 2026-11-01
   (owner: *audio books has a tracking system: what I'm reading, a queue for
   up next, what I've read*). Depends on 1.23 and 1.9. 1.23 builds two of the
   three: *Listening* is its own group on In flight, and a finished listen is

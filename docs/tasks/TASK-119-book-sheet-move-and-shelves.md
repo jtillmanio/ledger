@@ -27,6 +27,7 @@ From a book's sheet you can move it in your plan and change which shelves hold i
 - Shelves are books only (5.1, TASK-095 to TASK-097); `shelf_books` keys on the book, ordered.
 - UX floor: `docs/04-design.md` § 10; § 13 (the detail sheet).
 - Decisions: D-34, D-157, D-37 (plan levels), D-139.
+- *From TASK-107 (5.14, PR #298):* the sheet's *Your record* now has a *Listen next* line with *Queue to listen* (`QueueListen`, `useQueueListen` in `src/lib/listen-queue.ts`), offered for every status but *Listening* and *Parked*. It doesn't say whether or where the book is already queued. Showing *#2 in Listen next* and a *Remove* belongs with the sheet's own writes: decide at this plan whether this task draws them (`booksListenNext` in `src/db/queries.ts` has the order; `DELETE /api/listen-queue` removes) or leaves them out. The sheet's rows don't follow its own status change until a reload: after *Listening* is chosen, *Planned for* and the *Listen next* line stay on screen (the UI walk, 2026-11-19); a fresh load hides them.
 
 ## Acceptance criteria
 

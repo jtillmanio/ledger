@@ -15,7 +15,8 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   "/comics": { queries: 7, waves: 1 },
   // Status (task 1.9): all three tabs' rows in one wave, so the counts on the strip are the rows.
   "/comics/status": { queries: 4, waves: 1 },
-  "/books/status": { queries: 4, waves: 1 },
+  // Task 5.14 adds *Listen next* (the listen queue, one read) for Up next and its count, in the same wave.
+  "/books/status": { queries: 5, waves: 1 },
   "/comics/runs": { queries: 2, waves: 1 },
   "/comics/[runId]": { queries: 3, waves: 1 },
   "/books/list": { queries: 5, waves: 1 },
