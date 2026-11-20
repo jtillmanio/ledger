@@ -1,7 +1,7 @@
 ---
 id: TASK-111
 title: 5.15 Parked (5 of 5) — the /parked review, the dashboard line and the Inbox row
-status: Review
+status: Done
 depends_on: [TASK-109, TASK-110, TASK-127]
 size: M
 model: sonnet
