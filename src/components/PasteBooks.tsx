@@ -168,8 +168,8 @@ export default function PasteBooks({ level, target, cancel, onAdded, hold, refus
       }
       if (!res.ok) throw new Error(String(res.status));
       // The answer names where the books went: a new shelf (task 5.1) is the shelf it made by then.
-      const { destination, created, added, statused, promoted, newShelf } = await res.json() as AddedEntry;
-      const entry: AddedEntry = { destination, created, added, statused, promoted, ...(newShelf && { newShelf }) };
+      const { destination, created, added, statused, promoted, unparked, newShelf } = await res.json() as AddedEntry;
+      const entry: AddedEntry = { destination, created, added, statused, promoted, unparked, ...(newShelf && { newShelf }) };
       const known = added.filter((id) => !created.includes(id)).length;
       const label = `${books(added.length)} added to ${where}`;
       const detail = known > 0 ? `${known} already in your library` : undefined;

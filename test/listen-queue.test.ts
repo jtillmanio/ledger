@@ -262,3 +262,19 @@ describe("what a queue write refuses (AC-3)", () => {
     expect(out.headers.get("location")).toBe("http://ledger.test/login?next=%2Fapi%2Flisten-queue");
   });
 });
+
+// TASK-127 (5.15, D-105): a Parked book is put away, so *Queue to listen* refuses it at the API as the UI
+// already hides the verb (`queueable`); a To read book still queues.
+describe("queueing a Parked book (TASK-127, AC-5)", () => {
+  it("refuses a Parked book with 400 and writes no listen_queue row", async () => {
+    expect((await setStatus({ bookId: "b", status: "parked" })).status).toBe(200);
+    const res = await add("b");
+    expect(res.status).toBe(400);
+    expect(await order()).toEqual([]);
+  });
+
+  it("still queues a To read book", async () => {
+    expect((await add("b")).status).toBe(200);
+    expect(await order()).toEqual(["b:1"]);
+  });
+});

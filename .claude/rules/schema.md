@@ -284,22 +284,31 @@ Release, test isolation) and the Hard rules a reviewer checks.
   *Audiobook* and *Ebook* owned filters list it; D-152). The progress
   views count it unread. Only an undo writes `unlisted` (and the Calibre
   import, 1.18, and a paste to *Physical copy* or *Audiobook*, which creates
-  its new books Unlisted, task 5.17, D-152): a status write never sets it
-  (`SETTABLE_STATUSES`).
+  its new books Unlisted, task 5.17, D-152), with one status write: the parked
+  review's *Unlisted* sets it **from Parked only** (task 5.15, `UNLISTS_FROM`;
+  any other status is refused, and its undo puts back `parked` and the day).
+  The status control never sets it (`SETTABLE_STATUSES`).
   *Add to Someday*, or an add to Someday or On deck, moves it to `to_read`;
   a shelf leaves it Unlisted. No CHECK constrains the column.
   **Beside it sits Parked** (task 5.15, D-105): `status = 'parked'`, put away
   on purpose, *not now, but not gone*. A status write sets it, and only on a
   book To read, Reading or Listening (`PARKS_FROM`); any other is refused.
   `book_status.parked_on` is the Eastern day it was parked, set exactly while
-  Parked (its CHECK), written and cleared only by `saveBookStatus`. Parking
+  Parked (its CHECK), set only by `saveBookStatus`, which also clears it
+  (an add's `promote` clears it on an unpark, and the undos put it back). Parking
   takes the book out of every plan row (each quarter closes up) and off the
   listen queue in the status write's transaction, and `undoBookStatus` puts
   each back at its place. The start stays, so *parked mid-read* is derived
   (`isParkedMidRead`), never stored. Like Unlisted it has no level and is on
   no plan, status tab, dashboard, suggestion or *Everything*; its own chip, a
   search and the owned filters (*Not owned* aside) list it, and the progress
-  views count it unread.
+  views count it unread. **A Parked book's add to Someday or a plan level
+  moves it to `to_read`** and plans it, as it moves an Unlisted one
+  (`writeDestination`: `parked_on` cleared with the status, the add's entry
+  naming it in `unparked` with its day, the status read again under the plan
+  lock so a park that commits meanwhile is kept); the add's undo puts back
+  `parked` and the day. The listen queue refuses a Parked book (`queueListen`,
+  400).
 - **Blocks group runs inside a track; eras section issues inside a run.** Both
   are tables, both are optional, and both are ordered — `blocks(track_id,
   number, name?)` and `eras(run_id, ordinal, name)`. Era membership goes on the
