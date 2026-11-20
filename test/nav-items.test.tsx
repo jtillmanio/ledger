@@ -341,12 +341,12 @@ const tabRow = (html: string) => /<nav aria-label="Screens"[^>]*>(.*?)<\/nav>/.e
 const labels = (html: string) => [...html.matchAll(/<a [^>]*>([^<]*)<\/a>/g)].map((m) => m[1]);
 
 describe("the tab row (2.2i, AC-2)", () => {
-  it("lists mediumItems then Inbox, inside header.bar, for each medium", () => {
+  it("lists mediumItems then Inbox and Progress, inside header.bar, for each medium", () => {
     for (const [path, medium] of [["/comics", "comics"], ["/books/list", "books"], ["/watch", "watch"]] as const) {
       nav.pathname = path;
       const html = renderToString(<MediaBar />);
       const row = tabRow(html);
-      const expected = [...mediumItems(NAV_ITEMS, medium), NAV_ITEMS.find((i) => i.id === "inbox")!];
+      const expected = [...mediumItems(NAV_ITEMS, medium), ...["inbox", "progress"].map((id) => NAV_ITEMS.find((i) => i.id === id)!)];
       expect(labels(row), medium).toEqual(expected.map((i) => i.label));
       expect([...row.matchAll(/href="([^"]+)"/g)].map((m) => m[1]), medium).toEqual(expected.map((i) => i.href));
       expect(html.indexOf("<header"), medium).toBeLessThan(html.indexOf('aria-label="Screens"'));
@@ -365,7 +365,7 @@ describe("the tab row (2.2i, AC-2)", () => {
   it("marks the current item, Inbox on /inbox, and none on /settings, where the gear is current", () => {
     nav.pathname = "/inbox";
     const inbox = renderToString(<MediaBar lastMedium="books" />);
-    expect(labels(tabRow(inbox))).toEqual([...mediumItems(NAV_ITEMS, "books").map((i) => i.label), "Inbox"]);
+    expect(labels(tabRow(inbox))).toEqual([...mediumItems(NAV_ITEMS, "books").map((i) => i.label), "Inbox", "Progress"]);
     expect(tabRow(inbox)).toMatch(/href="\/inbox"[^>]*aria-current="page"|aria-current="page"[^>]*href="\/inbox"/);
     expect(tabRow(inbox).match(/aria-current/g)).toHaveLength(1);
     nav.pathname = "/settings";
@@ -374,16 +374,57 @@ describe("the tab row (2.2i, AC-2)", () => {
     expect(settings).toMatch(/href="\/settings"[^>]*aria-current="page"|aria-current="page"[^>]*href="\/settings"/);
   });
 
-  it("is Inbox alone until the last medium arrives, and the same height class either way", () => {
+  it("is the global items alone until the last medium arrives, and the same height class either way", () => {
     nav.pathname = "/settings";
-    expect(labels(tabRow(renderToString(<MediaBar />)))).toEqual(["Inbox"]);
-    expect(tabRowItems(NAV_ITEMS, null).map((i) => i.id)).toEqual(["inbox"]);
+    expect(labels(tabRow(renderToString(<MediaBar />)))).toEqual(["Inbox", "Progress"]);
+    expect(tabRowItems(NAV_ITEMS, null).map((i) => i.id)).toEqual(["inbox", "progress"]);
   });
 
   it("a screen's own medium wins over the last one", () => {
     nav.pathname = "/watch";
     expect(labels(tabRow(renderToString(<MediaBar lastMedium="books" />)))).toContain("Dashboard");
     expect(labels(tabRow(renderToString(<MediaBar lastMedium="books" />)))).not.toContain("Library");
+  });
+});
+
+describe("Progress (task 5.12, AC-5)", () => {
+  const item = NAV_ITEMS.find((i) => i.id === "progress")!;
+  const current = (html: string) => [...html.matchAll(/<a [^>]*aria-current="page"[^>]*>(?:(?!<\/a>).)*<\/a>/g)].map((m) => m[0]);
+
+  it("is an enabled global item to /progress, drawn after Inbox", () => {
+    expect(item).toMatchObject({ href: "/progress", group: "global", enabled: true, label: "Progress" });
+    const ids = visibleItems().filter((i) => i.group === "global").map((i) => i.id);
+    expect(ids).toEqual(["inbox", "progress"]);
+  });
+
+  it("is in the rail and the sidebar beside Inbox, and in the phone's tab row", () => {
+    nav.pathname = "/books/list";
+    for (const [name, html] of Object.entries(bars())) {
+      if (name === "the phone bar") expect(labels(tabRow(html)).slice(-2), name).toEqual(["Inbox", "Progress"]);
+      else expect(html.indexOf('href="/progress"'), name).toBeGreaterThan(html.indexOf('href="/inbox"'));
+      expect(html, name).toContain('href="/progress"');
+    }
+  });
+
+  it("is current on /progress in the rail, the sidebar and the tab row, and nowhere else", () => {
+    nav.pathname = "/progress";
+    for (const [name, html] of Object.entries(bars())) {
+      const links = current(name === "the phone bar" ? tabRow(html) : html);
+      expect(links.filter((a) => a.includes('href="/progress"')), name).toHaveLength(1);
+      expect(links.filter((a) => a.includes('href="/inbox"')), name).toHaveLength(0);
+    }
+    nav.pathname = "/inbox";
+    for (const html of Object.values(bars())) expect(current(html).filter((a) => a.includes('href="/progress"'))).toHaveLength(0);
+  });
+
+  it("is a neutral icon the sprite defines", () => {
+    expect(renderToString(<IconSprite />)).toContain(`id="i-${item.icon}"`);
+  });
+
+  it("is in no medium's set: a screen under a medium keeps Progress out of its own items", () => {
+    for (const medium of ["comics", "books", "watch"] as const) {
+      expect(mediumItems(NAV_ITEMS, medium).map((i) => i.id)).not.toContain("progress");
+    }
   });
 });
 

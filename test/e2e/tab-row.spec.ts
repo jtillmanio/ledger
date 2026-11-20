@@ -1,5 +1,5 @@
 // Task 2.2i (D-120): the phone's tab row, in a real browser. Below 768px a row under the media bar
-// lists every enabled screen of the medium you are in, then Inbox, so no screen needs a typed URL.
+// lists every enabled screen of the medium you are in, then Inbox and Progress (task 5.12), so no screen needs a typed URL.
 // Every check sets its own viewport and runs once (the w390-light project); the row is built from
 // NAV_ITEMS here too, so an item a later task flips on is covered without editing this file.
 import { expect, test, type Page } from "@playwright/test";
@@ -35,13 +35,13 @@ async function tap(page: Page, href: string, label: string) {
 }
 
 for (const media of MEDIA) {
-  test(`from ${media.label}'s first screen, every item of the row, Inbox and Settings are tapped to (AC-1)`, ONCE, async ({ page }) => {
+  test(`from ${media.label}'s first screen, every item of the row, Inbox, Progress and Settings are tapped to (AC-1)`, ONCE, async ({ page }) => {
     await size(page, 360);
     await page.goto(media.href);
     await hydrated(page.locator("header.bar"));
     const list = tabRowItems(ITEMS, media.medium!);
     expect(list.length, "at least the medium's own item and Inbox").toBeGreaterThanOrEqual(2);
-    // The row is exactly the items NAV_ITEMS enables for this medium, then Inbox.
+    // The row is exactly the items NAV_ITEMS enables for this medium, then Inbox and Progress.
     await expect(row(page).getByRole("link")).toHaveText(list.map((i) => i.label));
 
     for (const item of list) {
@@ -54,8 +54,8 @@ for (const media of MEDIA) {
       if (expected) await expect(current(page)).toHaveText(expected.label);
       expect(expected, `${item.label} is current somewhere`).toBeDefined();
     }
-    // The last tap was Inbox: the row still lists this medium's screens.
-    await expect(page).toHaveURL(/\/inbox$/);
+    // The last tap was Progress (task 5.12): the row still lists this medium's screens.
+    await expect(page).toHaveURL(/\/progress$/);
     await expect(row(page).getByRole("link")).toHaveText(list.map((i) => i.label));
 
     // Settings is the gear; the row stays and marks none of its items.

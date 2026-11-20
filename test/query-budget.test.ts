@@ -46,6 +46,8 @@ const BUDGET: Record<string, { queries: number; waves: number }> = {
   // An author's and a universe's page (task 5.11): its counts, follow and live books, one read each.
   "/books/authors/[id]": { queries: 1, waves: 1 },
   "/books/universes/[id]": { queries: 1, waves: 1 },
+  // Progress (task 5.12): every row of both tabs and On hold, for books and comics, in one statement.
+  "/progress": { queries: 1, waves: 1 },
   "/inbox": { queries: 2, waves: 1 },
   // Task 4.4 adds the last Calibre sync (one scalar row) for the *Calibre* row, in the same wave.
   "/settings": { queries: 3, waves: 1 },
@@ -158,6 +160,8 @@ const pages: [string, () => Promise<unknown>][] = [
     (await import("../src/app/books/universes/[id]/page")).default({
       params: Promise.resolve({ id: "uni" }), searchParams: Promise.resolve({}),
     })],
+  ["/progress", async () =>
+    (await import("../src/app/progress/page")).default({ searchParams: Promise.resolve({}) })],
   ["/inbox", async () => (await import("../src/app/inbox/page")).default()],
   ["/settings", async () => (await import("../src/app/settings/page")).default()],
   ["/settings/calibre", async () => (await import("../src/app/settings/calibre/page")).default()],
