@@ -1,7 +1,7 @@
 ---
 id: TASK-105
 title: 5.12 In the middle of, and completed (2 of 2) — the /progress page, its tabs and chips
-status: In progress
+status: Review
 depends_on: [TASK-104]
 size: M
 model: sonnet
@@ -41,7 +41,7 @@ One page, beside Inbox, shows everything you're in the middle of and everything 
 
 ## Acceptance criteria
 
-- [ ] AC-1 (roadmap **Check:**, verbatim; this part proves, in the browser (0.11) on the test database: the *Books* chip hides the run, a series under a listed universe nests beneath it, *On hold* drawn below *In the middle of*, and the screenshots. TASK-104 proves the membership and counts):
+- [x] AC-1 (roadmap **Check:**, verbatim; this part proves, in the browser (0.11) on the test database: the *Books* chip hides the run, a series under a listed universe nests beneath it, *On hold* drawn below *In the middle of*, and the screenshots. TASK-104 proves the membership and counts):
 a series followed `reading` with 2 of 5 read is under *In the
 middle of* and the same series unfollowed is not; a series with 5 of 5
 read is under *Completed* whether followed or not, and a one-book
@@ -52,11 +52,11 @@ under *In the middle of*, and with 10 of 10 under *Completed*; the
 its view's. A series followed `tracking` with 2 of 5 read is under *On
 hold* and not above it, and at 0 of 5 it is on neither; a series under a
 listed universe nests beneath it. Screenshots at 360px and 1280px.
-- [ ] AC-2: Given the Check's fixtures, `/progress` opens on *In the middle of* with the series, the shelf and the run, each with its kind, `read / total` and next thing; *Books* hides the run and *Comics* hides the books rows; the choice and the tab survive a reload.
-- [ ] AC-3: *On hold* is collapsed with its count, a real button with `aria-expanded`; expanding it lists the tracking series at 2 of 5.
-- [ ] AC-4: *Completed* lists the 5-of-5 series and the 10-of-10 run, each with *finished <Mon YYYY>*; a row with a page is a link to it.
-- [ ] AC-5: *Progress* shows in the global part of the rail and the sidebar beside Inbox and in the phone's navigation, current on `/progress`; the books and comics dashboards' rollups link to it; `design/mockups.html` draws `/progress` at phone, tablet and desktop, and `design/mockups-index.md` lists it (task 5.12).
-- [ ] AC-6: The page meets the UX floor (`docs/04-design.md` § 10): each tab's empty state with one action, loading skeletons, an error state, the tablist and chips operable by keyboard with names, targets ≥ 24px, contrast in light and dark, nothing red, screenshots at 360px and 1280px (and the other `ui.viewports` widths).
+- [x] AC-2: Given the Check's fixtures, `/progress` opens on *In the middle of* with the series, the shelf and the run, each with its kind, `read / total` and next thing; *Books* hides the run and *Comics* hides the books rows; the choice and the tab survive a reload.
+- [x] AC-3: *On hold* is collapsed with its count, a real button with `aria-expanded`; expanding it lists the tracking series at 2 of 5.
+- [x] AC-4: *Completed* lists the 5-of-5 series and the 10-of-10 run, each with *finished <Mon YYYY>*; a row with a page is a link to it.
+- [x] AC-5: *Progress* shows in the global part of the rail and the sidebar beside Inbox and in the phone's navigation, current on `/progress`; the books and comics dashboards' rollups link to it; `design/mockups.html` draws `/progress` at phone, tablet and desktop, and `design/mockups-index.md` lists it (task 5.12).
+- [x] AC-6: The page meets the UX floor (`docs/04-design.md` § 10): each tab's empty state with one action, loading skeletons, an error state, the tablist and chips operable by keyboard with names, targets ≥ 24px, contrast in light and dark, nothing red, screenshots at 360px and 1280px (and the other `ui.viewports` widths).
 
 ## Out of scope
 
@@ -81,6 +81,13 @@ listed universe nests beneath it. Screenshots at 360px and 1280px.
 ## Follow-ups
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
+
+- The phone tab row's new shape (medium items, then Inbox, then Progress) makes D-120's text out of date → docs/OWNER-CHECKLIST.md § Approvals from follow-ups (PR #300)
+- A track row draws no meter (D-29; roadmap 5.12's "each row an `.emeter`" has this one exception, owner's call at spec review) → docs/OWNER-CHECKLIST.md § Approvals from follow-ups (PR #300)
+- The `progress` perf budget (24,000 / 175,400 / 35 / 100) is Books status's, copied, never measured: Lighthouse is off (D-158), and its first run on the owner's switch shows whether it holds → not tracked: the budget is a ceiling, and a run on the owner's switch reports any overage
+- Subseries and track rows have no page yet, so they are text → not tracked: already in this task's Out of scope; the rows link where a page exists, so 5.2's track page and a subseries page need no change here
+- `progressRows` answered in 250–730 ms on the dev data (ui-verifier; the dashboards about 100–215 ms), 19 On hold rows drawn hidden → not tracked: nothing near a problem; watch it as the library grows
+- The mockup index's line ranges drift (17 rows were already off on main) → not tracked: the scripts compute them fresh, and the index says so
 
 ## Plan
 
@@ -189,13 +196,15 @@ not to split further.
 
 _Filled by /implement-task. One line per round._
 
+Verify R1 FAIL (perf.test.ts: route list) → R2 PASS | CI R1 FAIL (releases.spec, w1280-light: the Progress link shared `.coming-out`) → fixed | Verify R3 PASS | CI R2 FAIL (e2e-budget 6.1 > 6.0 min a shard) → behaviour tests retagged | CI R3 FAIL (e2e-budget, 6.1) → states and the Completed floor run once, markup.spec additions dropped | Rebased on 69064bc (task 5.15), Verify R4 PASS | Audit R1 PASS (markup.spec additions non-discriminating: dropped) | Spec R1 CHANGES (track meter vs D-29) → owner chose no meter → fixed | UI R1 PASS (comics link was ink, not grey → fixed)
+
 ## Blocked
 
 _Only if status is Blocked: what failed, what was tried, best hypothesis, decision needed._
 
 ## Metrics
 
-- Verify rounds:
-- Review rounds:
-- First-pass AC FAILs:
-- Plan revisions after approval:
+- Verify rounds: 4
+- Review rounds: 2
+- First-pass AC FAILs: 0 (one rule violation, D-29)
+- Plan revisions after approval: 0
