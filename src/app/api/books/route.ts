@@ -15,6 +15,8 @@ const INT_MAX = 2_147_483_647;
 /** Authors a Hardcover result lists, at most. */
 const MAX_AUTHORS = 10;
 const MAX_COVER = 300;
+/** What an add may name: a format you own (task 5.17b), *Coming out* (task 5.7) and a new shelf (task 5.1) too. */
+const ADD_SHAPES = { owned: true, release: true, newShelf: true } as const;
 
 /**
  * Add one book to a destination (task 1.4c, 1.4f; data model 2.15), from a
@@ -29,11 +31,13 @@ const MAX_COVER = 300;
  *   what the undo sends back. *Coming out* is `{ kind: 'release', date }`, a real
  *   `YYYY-MM-DD` or null for *no date yet* (task 5.7). `note`, an inbox note's id,
  *   resolves that note into the book in the same transaction (task 1.4b); the
- *   answer's `note` says it did. 409 `{ reason: 'taken', error }` when a new
+ *   answer's `note` says it did. A format you own, `{ kind: 'owned', format }`
+ *   (*Physical copy*, *Audiobook*; task 5.17b), writes that format's row: a
+ *   library book keeps its status, a created one is Unlisted (D-152). 409 `{ reason: 'taken', error }` when a new
  *   shelf's name is in use.
  * - DELETE `{ destination, created, added, statused?, promoted?, unparked?, newShelf?, note? }`: that
- *   add's undo, from an add here or a paste (`/api/books/bulk`, whose
- *   destination may be a format you own, task 5.17; an add here never is);
+ *   add's undo, from an add here or a paste (`/api/books/bulk`); its
+ *   destination may be a format you own (task 5.17, and here task 5.17b);
  *   `statused` is the statuses an On deck add wrote (task 1.7), `promoted` the Unlisted books
  *   it moved onto your list (task 1.21), `unparked` the Parked books it moved there
  *   (task 5.15, `[{ bookId, parkedOn }]`: the undo puts back `parked` and the day), `newShelf` that the add made the shelf
@@ -47,13 +51,14 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const item = parseItem(body?.item);
   // *Coming out* (task 5.7) is one book's destination: here, never a paste's. A new shelf (task 5.1) is an add's alone.
-  const destination = parseDestination(body?.destination, { release: true, newShelf: true });
+  // A format you own (task 5.17b) is a paste's and an add's.
+  const destination = parseDestination(body?.destination, ADD_SHAPES);
   const note = body?.note == null ? null : noteId(body.note);
   if (note === undefined) return NextResponse.json({ error: "note is an inbox note's id" }, { status: 400 });
   if (!item || !destination) {
     return NextResponse.json({
       error: "item is { use }, { hardcover: { hardcoverId, title, authors, year, pages, coverUrl } } or "
-        + "{ hand: { title, author, series, position, pages, words } }; " + destinationShapes({ release: true, newShelf: true }),
+        + "{ hand: { title, author, series, position, pages, words } }; " + destinationShapes(ADD_SHAPES),
     }, { status: 400 });
   }
   const result = await addBook(userId, item, destination, note === null ? {} : { note });
@@ -75,7 +80,7 @@ export async function DELETE(req: Request) {
   const userId = await apiUserId();
   if (!userId) return unauthorized();
   const body = await req.json().catch(() => null);
-  // A paste to a format you own (task 5.17) is undone here too, and an add to *Coming out* (task 5.7).
+  // An add or a paste to a format you own (task 5.17, 5.17b) is undone here, and an add to *Coming out* (task 5.7).
   const destination = parseDestination(body?.destination, { owned: true, release: true });
   const created = ids(body?.created);
   const added = ids(body?.added);

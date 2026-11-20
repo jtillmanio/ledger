@@ -414,15 +414,47 @@ describe("Physical copy and Audiobook (task 5.17)", () => {
     expect(await owned()).toEqual([]);
   });
 
-  it("is the paste's alone: a single add to an owned format is a 400, writing nothing", async () => {
+  it("is a single add's too (task 5.17b): one add to an owned format writes its row and no status", async () => {
     const before = await counts();
     const res = await one.POST(new Request("http://test/api/books", {
       method: "POST", headers: { "content-type": "application/json" },
       body: JSON.stringify({ item: { use: "dune-frank-herbert" }, destination: PHYSICAL }),
     }));
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
     expect(await counts()).toEqual(before);
-    expect(await owned()).toEqual([]);
+    expect(await owned()).toEqual([["dune-frank-herbert", "physical"]]);
+  });
+
+  it("the check answers each match's owned formats, physical then audio, and an ebook is not one (task 5.17b, AC-4)", async () => {
+    await sql`INSERT INTO owned_copies (book_id, format) VALUES ('dune-frank-herbert', 'audio'), ('dune-frank-herbert', 'physical'),
+              ('hyperion-dan-simmons', 'audio')`;
+    await sql`UPDATE books SET calibre_id = 77 WHERE id = 'dune-frank-herbert'`;
+    await sql`UPDATE books SET calibre_id = 78 WHERE id = 'red-rising-pierce-brown'`;
+    const { status, body } = await post({ dryRun: true, lines: [
+      { title: "Dune", author: "Frank Herbert" }, { title: "Hyperion", author: "Dan Simmons" },
+      { title: "Red Rising", author: "Pierce Brown" }, { title: "Hyperionn", author: "Somebody" },
+    ] });
+    expect(status).toBe(200);
+    const answers = body.answers as BookAnswer[];
+    expect(answers.map((a) => a.match?.owned ?? null)).toEqual([["physical", "audio"], ["audio"], [], null]);
+    // A near match carries them too: *Use that* points the line at it.
+    expect(answers[3].near).toMatchObject({ bookId: "hyperion-dan-simmons", owned: ["audio"] });
+  });
+
+  it("a paste whose matched book already has the row counts it as already owned, and writes what it counted (task 5.17b, AC-4)", async () => {
+    await sql`INSERT INTO owned_copies (book_id, format) VALUES ('dune-frank-herbert', 'physical')`;
+    const r = await review("Dune - Frank Herbert\nRed Rising - Pierce Brown\nThe Fifth Season - N. K. Jemisin", {}, "physical");
+    expect(r.rows[0].why).toBe("Already owned on paper.");
+    expect(r.rows[0].groups[0].choice).toBe("skip");
+    expect(r.count).toBe(2);
+    const before = await owned();
+    const { status, body } = await post({ items: r.writes, destination: PHYSICAL });
+    expect(status).toBe(200);
+    expect(body.added).toHaveLength(r.count);
+    const [fresh] = body.created as string[];
+    expect(await statusOf(fresh)).toBe("unlisted");
+    expect((await owned()).length - before.length).toBe(2);
+    expect(await owned()).toEqual([["dune-frank-herbert", "physical"], ["red-rising-pierce-brown", "physical"], [fresh, "physical"]].sort());
   });
 
   it("refuses the undo, changing nothing, once a book it created has been put on your list or owned another way", async () => {

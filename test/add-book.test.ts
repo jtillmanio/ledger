@@ -475,6 +475,120 @@ describe("a year or quarter (task 2.3, AC-5; the Check's Flip, R3-08)", () => {
   });
 });
 
+describe("Physical copy and Audiobook from Search and By hand (task 5.17b, TASK-122: AC-1, AC-2, AC-3)", () => {
+  const owned = async () => (await sql<{ book_id: string; format: string }[]>`
+    SELECT book_id, format FROM owned_copies ORDER BY book_id, format`).map((r) => [r.book_id, r.format]);
+  const plan = () => sql`SELECT book_id, period, ordinal FROM reading_plan ORDER BY book_id, period`;
+
+  for (const format of ["physical", "audio"] as const) {
+    const OWNED = { kind: "owned", format };
+
+    it(`${format}: a library book with a status gets one row, its status and plan row as they were; Undo removes only the row`, async () => {
+      await sql`INSERT INTO books (id, title, author_id) VALUES ('red-seas', 'Red Seas', 'joe-abercrombie')`;
+      await sql`INSERT INTO book_status (user_id, book_id, status) VALUES (${USER}, 'red-seas', 'to_read')`;
+      await sql`INSERT INTO reading_plan (user_id, book_id, period) VALUES (${USER}, 'red-seas', '2027')`;
+      const [statusBefore, planBefore] = [await statuses(), await plan()];
+
+      const done = await add({ use: "red-seas" }, OWNED);
+      expect(done.status).toBe(200);
+      expect(done.body).toMatchObject({
+        ok: true, reused: true, status: "to_read", destination: OWNED, created: [], added: ["red-seas"], statused: [],
+      });
+      expect(await owned()).toEqual([["red-seas", format]]);
+      expect(await statuses()).toEqual(statusBefore);
+      expect(await plan()).toEqual(planBefore);
+
+      expect(await undo(done.body)).toBe(200);
+      expect(await owned()).toEqual([]);
+      expect(await statuses()).toEqual(statusBefore);
+      expect(await plan()).toEqual(planBefore);
+      expect((await bookRows()).find((b) => b.id === "red-seas")!.removed).toBe(false);
+    });
+
+    it(`${format}: a Hardcover result the library lacks is created Unlisted with its row; Undo removes both and the book`, async () => {
+      const wok = (await find("the way of kings")).hardcover[0];
+      const done = await add({ hardcover: wok }, OWNED);
+      const id = "the-way-of-kings-brandon-sanderson";
+      expect(done.status).toBe(200);
+      expect(done.body).toMatchObject({ ok: true, reused: false, created: [id], added: [id], statused: [id] });
+      expect((await bookRows()).filter((b) => b.id === id)).toEqual([expect.objectContaining({ hardcover_id: 386446, removed: false })]);
+      expect(await statuses()).toContainEqual({ book_id: id, status: "unlisted" });
+      expect(await owned()).toEqual([[id, format]]);
+      expect(await plan()).toEqual([]);
+
+      expect(await undo(done.body)).toBe(200);
+      expect(await owned()).toEqual([]);
+      expect((await statuses()).map((s) => s.book_id)).not.toContain(id);
+      expect((await bookRows()).find((b) => b.id === id)!.removed).toBe(true);
+    });
+
+    it(`${format}: a typed book the library lacks is created Unlisted with its row; Undo removes both and the book`, async () => {
+      const done = await add(hand({ title: "Fresh", author: "Hand Author", pages: 300 }), OWNED);
+      expect(done.status).toBe(200);
+      expect(done.body).toMatchObject({ ok: true, reused: false, created: ["fresh-hand-author"], added: ["fresh-hand-author"],
+        statused: ["fresh-hand-author"] });
+      expect(await statuses()).toContainEqual({ book_id: "fresh-hand-author", status: "unlisted" });
+      expect(await owned()).toEqual([["fresh-hand-author", format]]);
+      expect(await plan()).toEqual([]);
+
+      expect(await undo(done.body)).toBe(200);
+      expect(await owned()).toEqual([]);
+      expect((await statuses()).map((s) => s.book_id)).not.toContain("fresh-hand-author");
+      expect((await bookRows()).find((b) => b.id === "fresh-hand-author")!.removed).toBe(true);
+    });
+  }
+
+  it("a library book that already had the row: the add writes nothing and its undo deletes nothing; the other format still writes", async () => {
+    await sql`INSERT INTO owned_copies (book_id, format) VALUES ('the-blade-itself-joe-abercrombie', 'physical')`;
+    const again = await add({ use: "the-blade-itself-joe-abercrombie" }, { kind: "owned", format: "physical" });
+    expect(again.status).toBe(200);
+    expect(again.body).toMatchObject({ ok: true, reused: true, status: "read", created: [], added: [], statused: [] });
+    expect(await owned()).toEqual([["the-blade-itself-joe-abercrombie", "physical"]]);
+    // Nothing was written, so there is nothing to undo (as a Someday add to a book with a status).
+    expect(await undo(again.body)).toBe(400);
+    expect(await owned()).toEqual([["the-blade-itself-joe-abercrombie", "physical"]]);
+
+    const audio = await add({ use: "the-blade-itself-joe-abercrombie" }, { kind: "owned", format: "audio" });
+    expect(audio.body).toMatchObject({ created: [], added: ["the-blade-itself-joe-abercrombie"] });
+    expect(await undo(audio.body)).toBe(200);
+    // The row the book had before stays.
+    expect(await owned()).toEqual([["the-blade-itself-joe-abercrombie", "physical"]]);
+    expect(await statuses()).toEqual([{ book_id: "the-blade-itself-joe-abercrombie", status: "read" }]);
+  });
+
+  it("addBook no longer refuses an owned destination: its message is gone from the source (AC-3)", async () => {
+    const { readdirSync, readFileSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const root = join(process.cwd(), "src");
+    const files = (readdirSync(root, { recursive: true }) as string[]).filter((f) => /\.tsx?$/.test(f));
+    expect(files.length).toBeGreaterThan(10);
+    for (const f of files) expect(readFileSync(join(root, f), "utf8"), f).not.toContain("an owned format is a paste's destination only");
+  });
+});
+
+describe("an add's undo refuses a book the Calibre sync linked since (task 5.17b, TASK-122: AC-5)", () => {
+  const plan = () => sql`SELECT book_id, period, ordinal FROM reading_plan ORDER BY book_id, period`;
+  const destinations: [string, unknown][] = [
+    ["Someday", undefined], ["On deck", { kind: "on_deck" }], ["a quarter", { kind: "period", period: "2027-Q2" }], ["a shelf", COSMERE],
+  ];
+  for (const [name, destination] of destinations) {
+    it(`${name}: answers 409 and changes nothing once the created book has a calibre_id`, async () => {
+      const done = await add(hand({ title: "Fresh", author: "Hand Author" }), destination);
+      expect(done.status).toBe(200);
+      expect(done.body.created).toEqual(["fresh-hand-author"]);
+      await sql`UPDATE books SET calibre_id = 4242 WHERE id = 'fresh-hand-author'`;
+      const before = [await bookRows(), await statuses(), await plan(), await shelved()];
+
+      const res = await books.DELETE(req("DELETE", done.body));
+      expect(res.status).toBe(409);
+      expect(await res.json()).toEqual({ error: "Something changed since that add. Nothing was undone." });
+      expect([await bookRows(), await statuses(), await plan(), await shelved()]).toEqual(before);
+      expect((await bookRows()).find((b) => b.id === "fresh-hand-author")!.removed).toBe(false);
+      expect(await sql`SELECT calibre_id FROM books WHERE id = 'fresh-hand-author'`).toEqual([{ calibre_id: 4242 }]);
+    });
+  }
+});
+
 describe("undo names only what an add wrote", () => {
   it("refuses a created book the add didn't also place, changing nothing", async () => {
     const done = await add(hand({ title: "Fresh", author: "Hand Author" }));

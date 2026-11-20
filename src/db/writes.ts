@@ -2377,6 +2377,9 @@ export type AddBookResult =
  *   otherwise it is created with what you typed: a word count as `stated`,
  *   pages alone estimated as above, neither as no count.
  * - A reused book is left as it is: backfill is 4.2's, and never overwrites.
+ * - To a format you own (*Physical copy*, *Audiobook*; task 5.17b) a library
+ *   book gets that format's row whatever its status, and a created one is
+ *   Unlisted with its row (D-152), as a paste's are (`writeDestination`).
  *
  * Refuses, writing nothing, when the library row is gone, the shelf isn't one
  * of this user's book shelves, or a new shelf's name is in use.
@@ -2387,8 +2390,6 @@ export type AddBookResult =
 export async function addBook(
   userId: string, item: AddBookItem, asked: Destination, { note }: { note?: number } = {},
 ): Promise<AddBookResult> {
-  // A format you own is *Paste a list*'s alone (task 5.17; Search and By hand are 5.17b): POST /api/books refuses it.
-  if (asked.kind === "owned") throw new Error("addBook: an owned format is a paste's destination only");
   return db.transaction(async (tx) => {
     await addLock(tx);
     const refused = await refuseDestination(tx, userId, asked);
@@ -2423,7 +2424,8 @@ export async function addBook(
     const created = row ? await createBooks(tx, [row]) : [];
     const bookIdNow = created[0] ?? id!;
     const placed = await placeDestination(tx, userId, asked);
-    const { added, statused, promoted, unparked } = await writeDestination(tx, userId, placed.destination, [bookIdNow]);
+    // A format you own (task 5.17b) gives a book it created `unlisted` (D-152); every other destination ignores `created`.
+    const { added, statused, promoted, unparked } = await writeDestination(tx, userId, placed.destination, [bookIdNow], created);
     // A reused book's status, so the toast can say what it kept (*Already in your library · read*).
     const [had] = row ? [] : await tx.select({ status: bookStatus.status }).from(bookStatus)
       .where(and(eq(bookStatus.userId, userId), eq(bookStatus.bookId, bookIdNow)));
@@ -2478,7 +2480,7 @@ async function newBookRow(tx: Tx, userId: string, item: Exclude<AddBookItem, { u
  * is no longer a bare `to_read` (it gained a rating, a note, a finish, or a
  * plan row it didn't write), a book it promoted is no longer `to_read`, or has
  * a read or a plan row it didn't write, a shelf or `on_deck` row is gone, or a book it
- * created has gained another status, shelf or plan row. A `created` book the
+ * created has gained another status, shelf or plan row, or a Calibre id (task 5.17b). A `created` book the
  * add didn't also place (and, On deck, give its status) is not one it made,
  * and is refused too.
  */
@@ -2586,8 +2588,10 @@ async function undoInside(tx: Tx, userId: string, entry: AddedEntry, refused: sy
   }
 
   if (created.length) {
+    // A book the Calibre sync (4.4) has linked since is Calibre's now: removing it would make the sync skip it for
+    // good (task 5.17b), as undoOwned and undoRelease refuse it. The sync takes the add lock, so this check holds.
     const live = await tx.select({ id: books.id }).from(books)
-      .where(and(inArray(books.id, created), isNull(books.deletedAt)));
+      .where(and(inArray(books.id, created), isNull(books.deletedAt), isNull(books.calibreId)));
     if (live.length !== new Set(created).size) return false;
     // A new book has nothing but the rows this add wrote: its own status for
     // Someday, that and its plan row (On deck, a year or a quarter), or its place on this shelf. Anything

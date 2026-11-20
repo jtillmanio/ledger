@@ -1,14 +1,14 @@
 ---
 id: TASK-122
 title: 5.17b Own it from Search and By hand (1 of 2) — the writes, the paste check and the sync's refusal
-status: Ready
+status: In progress
 depends_on: [TASK-094]
 size: M
 model: opus
 autonomy: attended
 ui: false
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: e591e5d
 ---
 
 # TASK-122 — 5.17b Own it from Search and By hand (1 of 2) — the writes, the paste check and the sync's refusal
@@ -63,11 +63,34 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved 2026-11-20.
+
+### Steps
+
+1. `addBook` (`src/db/writes.ts`): drop the owned throw and its string (AC-3); pass `created` to `writeDestination`, so the owned branch gives a created book `unlisted` (AC-2).
+2. `POST /api/books`: `parseDestination(…, { owned: true, release: true, newShelf: true })`; its 400 shapes gain owned; the doc comments' "an add here never is" go.
+3. `undoInside`: the created-book liveness check also requires `calibre_id IS NULL`, so the route answers 409 and nothing changes (AC-5). The sync takes the same add lock, so no extra lock.
+4. `bookMatches` (`src/db/queries.ts`): `match` and `near` each carry `owned: OwnedFormat[]` from `owned_copies` (array_agg, physical before audio) (AC-4).
+5. `src/lib/book-review.ts`: `LibraryBook.owned?`; to a format the matched book already has, the row says *Already owned on paper.* / *Already own the audiobook.*, decides Skip, writes and counts nothing; a near *Use that* that already has it isn't counted (AC-4).
+6. `.claude/rules/schema.md` *What you own*: `addBook` writes owned rows too.
+
+**Files**: `src/db/writes.ts`, `src/db/queries.ts`, `src/lib/book-review.ts`, `src/app/api/books/route.ts`, `.claude/rules/schema.md` (not in Files likely touched: the rule's home), `test/add-book.test.ts`, `test/books-bulk.test.ts`, `test/book-review.test.ts`.
+
+### Test strategy
+
+- AC-1/AC-2: `test/add-book.test.ts` § "Physical copy and Audiobook from Search and By hand (task 5.17b)": library `to_read` book → one row, status and plan unchanged, undo removes only it; Hardcover result and typed book → `unlisted` + row, undo removes both and soft-deletes; book that had the row → `added: []`, undo (empty) answers 400 and the row stays; physical and audio.
+- AC-3: the above, plus a source grep for the string.
+- AC-4: `test/books-bulk.test.ts`: the three-line paste through the real dry run (first marked *Already owned on paper*, count 2, two rows and one `unlisted` book written); `bookMatches`' `owned` (an ebook isn't one). `test/book-review.test.ts`: both wordings, the count, near *Use that*.
+- AC-5: `test/add-book.test.ts`: Someday, On deck, `2027-Q2`, a shelf: add → set `calibre_id` → undo 409 with the message; book, status, plan and shelf rows unchanged.
+- Changed: `books-bulk.test.ts` "a single add to an owned format is a 400" becomes a 200 writing the row (AC-3 makes it wrong).
+
+**Risks**: AC-2's "the undo deletes nothing" for a book that already had the row is the existing 400 for an empty undo (no new no-op 200 path).
 
 ## Review log
 
 _Filled by /implement-task. One line per round._
+
+- Verify R1 FAIL (`test/books-dashboard.test.ts:407`, a 5 s timeout while another session ran beside it; untouched by this diff, 49/49 alone) → R2 PASS (tsc, lint, vitest 2444 passed, Python 411 OK)
 
 ## Blocked
 

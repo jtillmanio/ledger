@@ -1,5 +1,5 @@
 import { sql } from "./index";
-import type { AutoKind, FollowKind, FollowState } from "./writes";
+import type { AutoKind, FollowKind, FollowState, OwnedFormat } from "./writes";
 import { readWhen, runSpan, type Precision } from "@/lib/format";
 import { FRESH_DAYS } from "@/lib/metron";
 import { DEFAULT_WORDS_PER_PAGE } from "@/lib/book-add";
@@ -2519,7 +2519,9 @@ export async function shelfDetail(userId: string, shelfId: string): Promise<Shel
 type BookMatchRow = {
   i: number;
   match_id: string | null; match_title: string | null; match_author: string | null; match_status: string | null;
+  match_owned: OwnedFormat[] | null;
   near_id: string | null; near_title: string | null; near_author: string | null; near_status: string | null;
+  near_owned: OwnedFormat[] | null;
   near_similarity: number | null;
 };
 
@@ -2527,9 +2529,11 @@ type BookMatchRow = {
  * Add books, *Paste a list* (task 1.4): for each pasted title and author, the
  * live book with the same title and author (case-insensitive, D-25), else the
  * live book whose title is closest at `pg_trgm` similarity ≥ 0.4, each with
- * your status for it. `%` (pg_trgm's default 0.3) lets `books_title_gin_trgm`
- * find the candidates; the 0.4 is applied to them. Answers come back in the
- * order asked.
+ * your status for it and the formats you own it in (`owned`: `physical`, then
+ * `audio`; task 5.17b, so a paste to one says *already owned*; the ebook is
+ * `calibre_id`, D-90, and not one). `%` (pg_trgm's default 0.3) lets
+ * `books_title_gin_trgm` find the candidates; the 0.4 is applied to them.
+ * Answers come back in the order asked.
  */
 export async function bookMatches(userId: string, lines: { title: string; author: string | null }[]) {
   if (lines.length === 0) return [];
@@ -2541,7 +2545,11 @@ export async function bookMatches(userId: string, lines: { title: string; author
     )
     SELECT q.i,
            m.id AS match_id, m.title AS match_title, m.author AS match_author, m.status AS match_status,
+           ARRAY(SELECT o.format FROM owned_copies o WHERE o.book_id = m.id
+                 ORDER BY o.format = 'audio', o.format) AS match_owned,
            n.id AS near_id, n.title AS near_title, n.author AS near_author, n.status AS near_status,
+           ARRAY(SELECT o.format FROM owned_copies o WHERE o.book_id = n.id
+                 ORDER BY o.format = 'audio', o.format) AS near_owned,
            n.similarity AS near_similarity
     FROM q
     LEFT JOIN LATERAL (
@@ -2568,9 +2576,12 @@ export async function bookMatches(userId: string, lines: { title: string; author
   `;
   return rows.map((r) => ({
     match: r.match_id === null ? null
-      : { bookId: r.match_id, title: r.match_title!, author: r.match_author, status: r.match_status },
+      : { bookId: r.match_id, title: r.match_title!, author: r.match_author, status: r.match_status, owned: r.match_owned ?? [] },
     near: r.near_id === null ? null
-      : { bookId: r.near_id, title: r.near_title!, author: r.near_author, status: r.near_status, similarity: r.near_similarity! },
+      : {
+        bookId: r.near_id, title: r.near_title!, author: r.near_author, status: r.near_status, owned: r.near_owned ?? [],
+        similarity: r.near_similarity!,
+      },
   }));
 }
 

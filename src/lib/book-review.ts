@@ -12,14 +12,19 @@
  * an Unlisted one, which joins Someday as a book with no status does (task 1.21).
  *
  * To a format you own (`owned`, task 5.17) a book you have is marked owned
- * whatever its status, and a new one is created Unlisted (D-152).
+ * whatever its status, and a new one is created Unlisted (D-152). A book that
+ * owns that format already is *already owned*: skipped, and not counted, so
+ * *Add N books* counts only the rows the paste writes (task 5.17b).
  */
 import type { OwnedFormat } from "@/db/writes";
 import { bookKey, type BookCells, type BookLine } from "./book-parse";
 import type { Group, Option } from "./bulk-review";
 
-/** A library book, as the check names it. `status` is yours, null when it has none. */
-export type LibraryBook = { bookId: string; title: string; author: string | null; status: string | null };
+/**
+ * A library book, as the check names it. `status` is yours, null when it has none; `owned` the formats you own it
+ * in (task 5.17b), none when absent.
+ */
+export type LibraryBook = { bookId: string; title: string; author: string | null; status: string | null; owned?: OwnedFormat[] };
 
 /** What the library check said about one title and author. */
 export type BookAnswer = {
@@ -92,12 +97,21 @@ const MARKS: Record<OwnedFormat, string> = {
   audio: "In your library: marks the audiobook as yours.",
 };
 
+/** A book you have that owns the format already (task 5.17b): nothing to write. */
+const OWNED_ALREADY: Record<OwnedFormat, string> = {
+  physical: "Already owned on paper.",
+  audio: "Already own the audiobook.",
+};
+
 export function buildBookReview(
   lines: BookLine[],
   { answers, choices, owned = null }: { answers: BookAnswers; choices: Choices; owned?: OwnedFormat | null },
 ): BookReview {
-  /** A book you have joins the destination: always for a format you own, else only with no status or Unlisted. */
-  const joins = (status: string | null) => owned !== null || !status || status === "unlisted";
+  /**
+   * A book you have joins the destination: for a format you own, unless it owns it already (task 5.17b); else
+   * only with no status or Unlisted.
+   */
+  const joins = (b: LibraryBook) => (owned !== null ? !b.owned?.includes(owned) : !b.status || b.status === "unlisted");
   const unchecked = new Map<string, { title: string; author: string | null }>();
   const writes: BookWrite[] = [];
   const seen = new Map<string, number>(); // book key → the line that writes or keeps it
@@ -152,8 +166,8 @@ export function buildBookReview(
       row.check = "in library";
       seen.set(bk, line.line);
       // An Unlisted book (task 1.21) is in your library but not on your list: it joins Someday.
-      if (!joins(match.status)) {
-        row.why = `Already in your library (${STATUS[match.status!] ?? match.status}).`;
+      if (!joins(match)) {
+        row.why = owned ? OWNED_ALREADY[owned] : `Already in your library (${STATUS[match.status!] ?? match.status}).`;
         decide([SKIP], "skip");
       } else {
         row.why = owned ? MARKS[owned] : "In your library, not on your list yet: adds it to Someday.";
@@ -188,7 +202,7 @@ export function buildBookReview(
       seen.set(bk, line.line);
     } else if (choice === "use" && near) {
       writes.push({ line: line.line, use: near.bookId });
-      if (joins(near.status) && !used.has(near.bookId)) count++;
+      if (joins(near) && !used.has(near.bookId)) count++;
       used.add(near.bookId);
       seen.set(bk, line.line);
     }
