@@ -1,7 +1,7 @@
 ---
 id: TASK-117
 title: 2.2l The universe and series on Add books' search results and the plan sheet
-status: Review
+status: Done
 depends_on: [TASK-062, TASK-064]
 size: M
 model: sonnet
