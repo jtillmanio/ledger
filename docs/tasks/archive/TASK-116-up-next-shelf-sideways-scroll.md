@@ -1,7 +1,7 @@
 ---
 id: TASK-116
 title: 2.2k The books page scrolls sideways with a full Up next shelf
-status: Review
+status: Done
 depends_on: [TASK-049]
 size: S
 model: sonnet
