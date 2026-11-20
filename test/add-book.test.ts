@@ -191,6 +191,21 @@ describe("adding a Hardcover result to the Cosmere shelf (AC-1)", () => {
   });
 });
 
+describe("a library hit's universe (task 2.2l, AC-2)", () => {
+  it("is the universe's name for a book in one, null for a book in none, beside its series and position", async () => {
+    await sql`INSERT INTO authors (id, name) VALUES ('bs', 'Brandon Sanderson')`;
+    await sql`INSERT INTO book_universes (id, name) VALUES ('cosmere', 'Cosmere')`;
+    await sql`INSERT INTO book_series (id, name) VALUES ('mistborn', 'Mistborn')`;
+    await sql`INSERT INTO books (id, title, author_id, universe_id, series_id, series_position, page_count)
+              VALUES ('mb4', 'The Alloy of Law', 'bs', 'cosmere', 'mistborn', 4, 330),
+                     ('lone', 'A Lone Alloy', 'bs', NULL, NULL, NULL, 250)`;
+    const hits = (await find("alloy")).library;
+    expect(hits.map((b) => [b.id, b.universe, b.series, b.series_position, b.page_count])).toEqual([
+      // By title, as the search orders them.
+      ["lone", null, null, null, 250], ["mb4", "Cosmere", "Mistborn", 4, 330]]);
+  });
+});
+
 describe("word counts (AC-2)", () => {
   it("a Hardcover result with pages is estimated at pages × words_per_page", async () => {
     await sql`INSERT INTO reading_settings (user_id, words_per_page) VALUES (${USER}, 300)`;

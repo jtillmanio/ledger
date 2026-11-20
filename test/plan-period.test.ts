@@ -435,9 +435,20 @@ describe("GET /api/plan?bookId= is the picker's book (task 2.3, part 2, AC-2)", 
     const rows = await planRows();
     expect(await book("b")).toEqual({ status: 200, body: { book: {
       id: "b", title: "Beta", author: "Ann Author", status: "to_read", level: "quarter", period: "2027-Q1",
-      words: 150_000, estimated: false,
+      universe: null, series: null, series_position: null, words: 150_000, estimated: false,
     } } });
     expect(await planRows()).toEqual(rows);
+  });
+
+  it("answers the book's universe, series and position for the header's line (task 2.2l, AC-2)", async () => {
+    await sql`INSERT INTO book_universes (id, name) VALUES ('cosmere', 'Cosmere')`;
+    await sql`INSERT INTO book_series (id, name) VALUES ('mistborn', 'Mistborn')`;
+    await sql`UPDATE books SET universe_id = 'cosmere', series_id = 'mistborn', series_position = 4 WHERE id = 'a'`;
+    await sql`UPDATE books SET series_id = 'mistborn' WHERE id = 'b'`;
+    expect((await book("a")).body.book).toMatchObject({ universe: "Cosmere", series: "Mistborn", series_position: 4 });
+    // A series with no universe, and no position yet: each is its own column.
+    expect((await book("b")).body.book).toMatchObject({ universe: null, series: "Mistborn", series_position: null });
+    expect((await book("c")).body.book).toMatchObject({ universe: null, series: null, series_position: null });
   });
 
   it("estimates a Someday book's words from its pages at your words per page, and says so; under 50 pages it has none", async () => {

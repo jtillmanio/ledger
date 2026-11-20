@@ -96,8 +96,8 @@ describe("ownedWords (task 5.17)", () => {
 
 /**
  * AC-3: one builder of the line. A template that prints `#${…position…}` anywhere in `src/` outside
- * `src/lib/format.ts` is a second one. Add books' search results (`BookSearch.tsx`) build their own line
- * (author · series #n · pages) and are a tracked follow-up, so they are exempt by name. So are the bulk-entry
+ * `src/lib/format.ts` is a second one. Add books' search results (`BookSearch.tsx`) read it through
+ * `bookSub` too (task 2.2l), so no file is exempt but the bulk-entry
  * parser (`book-parse.ts` echoes a typed line back as a cell, `Title (Series #n)`) and the review's explanation
  * (`book-review.ts`, *in Series at #n*): neither is a stored book's place on a row.
  */
@@ -112,7 +112,7 @@ describe("no other builder of a book's place line (task 2.2j, AC-3)", () => {
     }
   })(src);
   const EXEMPT = new Set([
-    "src/lib/format.ts", "src/components/BookSearch.tsx", "src/lib/book-parse.ts", "src/lib/book-review.ts",
+    "src/lib/format.ts", "src/lib/book-parse.ts", "src/lib/book-review.ts",
   ]);
   const BUILDER = /#\$\{[^}]*[pP]osition[^}]*\}/;
 

@@ -37,6 +37,13 @@ const BOOKS = [
 ] as const;
 const [A, B, C, D, S, G] = BOOKS;
 const IDS = BOOKS.map((b) => b.id);
+// Someday belongs to a universe and a series whose name is long and does not contain the universe's (task 2.2l, D-134):
+// its header, and its Add books search row, read author · universe · series #4.
+const UNIVERSE = { id: "e2e-pk-universe", name: "E2E Pk Cosmere" };
+const SERIES = { id: "e2e-pk-series", name: "The Unreasonably Long Chronicles of Everything and Nothing, Second Cycle", position: 4 };
+const PLACE = `${AUTHOR.name} · ${UNIVERSE.name} · ${SERIES.name} #${SERIES.position}`;
+/** Add books' search for it: the library answers, and Hardcover's cached answer is empty, so no request leaves. */
+const SEARCH = { q: "e2e pk someday", key: "search:e2e pk someday" };
 
 async function withSql<T>(work: (sql: TestSql) => Promise<T>): Promise<T> {
   const sql = testSql();
@@ -50,6 +57,9 @@ async function withSql<T>(work: (sql: TestSql) => Promise<T>): Promise<T> {
 const clean = () => withSql(async (sql) => {
   await sql`DELETE FROM books WHERE id = ANY(${IDS}::text[])`;
   await sql`DELETE FROM authors WHERE id = ${AUTHOR.id}`;
+  await sql`DELETE FROM book_series WHERE id = ${SERIES.id}`;
+  await sql`DELETE FROM book_universes WHERE id = ${UNIVERSE.id}`;
+  await sql`DELETE FROM hardcover_cache WHERE key = ${SEARCH.key}`;
 });
 
 // The E2E user's reading settings, as an earlier spec left them (settings.spec.ts writes them): put
@@ -63,9 +73,14 @@ test.beforeAll(async () => {
     [savedSettings] = await sql`SELECT * FROM reading_settings WHERE user_id = ${E2E_USER}`;
     await sql`DELETE FROM reading_settings WHERE user_id = ${E2E_USER}`;
     await sql`INSERT INTO authors (id, name) VALUES (${AUTHOR.id}, ${AUTHOR.name})`;
+    await sql`INSERT INTO book_universes (id, name) VALUES (${UNIVERSE.id}, ${UNIVERSE.name})`;
+    await sql`INSERT INTO book_series (id, name) VALUES (${SERIES.id}, ${SERIES.name})`;
+    await sql`INSERT INTO hardcover_cache (key, body) VALUES (${SEARCH.key}, ${sql.json({ found: 0, hits: [] })})`;
     for (const b of BOOKS) {
-      await sql`INSERT INTO books (id, title, author_id, word_count, word_count_source)
-                VALUES (${b.id}, ${b.title}, ${AUTHOR.id}, ${b.words}, 'stated')`;
+      const placed = b.id === S.id;
+      await sql`INSERT INTO books (id, title, author_id, word_count, word_count_source, universe_id, series_id, series_position)
+                VALUES (${b.id}, ${b.title}, ${AUTHOR.id}, ${b.words}, 'stated', ${placed ? UNIVERSE.id : null},
+                        ${placed ? SERIES.id : null}, ${placed ? SERIES.position : null})`;
     }
   });
 });
@@ -422,6 +437,51 @@ test("text is 4.5:1 and the chip outlines 3:1; axe finds nothing; the page does 
   });
   expect(ratio).toBeGreaterThanOrEqual(3);
   await screenshot(page, info, "plan-picker");
+});
+
+/** A line wraps: no ellipsis, no clipping, and it is not wider than the sheet it sits in. */
+const wraps = (line: Locator) => line.evaluate((el) => {
+  const css = getComputedStyle(el);
+  return { ellipsis: css.textOverflow === "ellipsis", nowrap: css.whiteSpace === "nowrap" || css.whiteSpace === "pre",
+    clipped: el.scrollWidth > el.clientWidth };
+});
+
+test("a book in a universe and a long series: the sheet from the Library's ⋯ and from Add books' search read the same line, and it wraps (task 2.2l, AC-1, AC-4, AC-5)", FLOOR, async ({ page }, info) => {
+  const header = `${PLACE} · 90k words`;
+  const floor = async () => {
+    await settled(page);
+    expect(await contrastFailures(page)).toEqual([]);
+    await expectNoAxeViolations(page, AXE);
+    await expectNoHorizontalScroll(page);
+  };
+  await openLibrary(page);
+  const { sheet } = await openPlan(page, S.title);
+  await expect(sheet.locator(".pp-by")).toHaveText(header);
+  expect(await wraps(sheet.locator(".pp-by"))).toEqual({ ellipsis: false, nowrap: false, clipped: false });
+  await floor();
+  await screenshot(page, info, "plan-picker-universe-library");
+  await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
+
+  // The same book found in Add books: its row's line, then the same header from its Year or quarter….
+  await page.goto("/books/add");
+  const box = page.getByRole("searchbox", { name: "Title or author" });
+  await hydrated(box);
+  await box.fill(SEARCH.q);
+  await box.press("Enter");
+  const row = page.getByRole("list", { name: "In your library" }).getByRole("listitem");
+  await expect(row).toHaveCount(1);
+  await expect(row.locator(".rs")).toHaveText(PLACE);
+  expect(await wraps(row.locator(".rs"))).toEqual({ ellipsis: false, nowrap: false, clipped: false });
+  await floor();
+  await screenshot(page, info, "book-search-universe-library");
+  const opener = row.getByRole("button", { name: `Year or quarter…: ${S.title}`, exact: true });
+  await hydrated(opener);
+  await opener.click();
+  const fromSearch = page.getByRole("dialog", { name: S.title });
+  await expect(fromSearch.locator(".pp-by")).toHaveText(header);
+  expect(await wraps(fromSearch.locator(".pp-by"))).toEqual({ ellipsis: false, nowrap: false, clipped: false });
+  await floor();
 });
 
 // Sets its own viewport and scheme: runs once, in w390-light, and takes each of the three widths in both themes.

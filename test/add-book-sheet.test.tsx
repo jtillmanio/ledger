@@ -28,7 +28,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => router }));
 
 const BLADE: LibraryHit = {
   id: "the-blade-itself-joe-abercrombie", title: "The Blade Itself", author: "Joe Abercrombie", series: "First Law",
-  series_position: 1, published_year: null, page_count: null, word_count: null, word_count_source: null,
+  series_position: 1, universe: null, published_year: null, page_count: null, word_count: null, word_count_source: null,
   cover_url: null, hardcover_id: null, pending: true, status: "read", level: null, period: null, calibre: false, shelves: 2,
   listened: false,
 };
@@ -607,6 +607,59 @@ describe("Search (AC-2, AC-6)", () => {
     expect(document.querySelector(".toast-label")!.textContent).toBe("Already in your library");
     expect(document.querySelector(".toast-detail")!.textContent).toBe("The Blade Itself · read");
     expect(document.querySelector(".toast-undo")).toBeNull();
+  });
+});
+
+describe("A library result names its universe and series (task 2.2l, D-134)", () => {
+  const MISTBORN: LibraryHit = {
+    ...BLADE, id: "the-well-of-ascension-brandon-sanderson", title: "The Well of Ascension", author: "Brandon Sanderson",
+    universe: "Cosmere", series: "Mistborn", series_position: 4, page_count: 330, status: "to_read", level: "someday",
+  };
+  const rs = () => [...dialog()!.querySelectorAll(".pane-search .row.res .rs")].map((el) => el.textContent);
+  const planFor = async (i: number) => {
+    await click(dialog()!.querySelectorAll<HTMLButtonElement>(".res-plan")[i]);
+    await vi.waitFor(() => {
+      if (!dialog()?.querySelector(".pp-chips .pp-chip")) throw new Error("the picker hasn't loaded");
+    });
+    await act(async () => {});
+    return dialog()!.querySelector(".pp-by")!.textContent;
+  };
+
+  it("is author · universe · series #n, then its pages; the plan sheet's header is the same line, then its words (AC-1)", async () => {
+    searchAnswer = () => Response.json(answer({ library: [MISTBORN], hardcover: [] }));
+    await open();
+    await search("mistborn");
+    expect(rs()).toEqual(["Brandon Sanderson · Cosmere · Mistborn #4 · 330 pages"]);
+    expect(await planFor(0)).toBe("Brandon Sanderson · Cosmere · Mistborn #4 · ~91k words");
+  });
+
+  it("a hit with no universe reads as it does today, and a Hardcover hit is unchanged (AC-1)", async () => {
+    await open();
+    await search();
+    expect(rs()).toEqual(["Joe Abercrombie · First Law #1", "Marcus Sakey · 320 pages"]);
+  });
+
+  it("names a series that contains the universe's name once; no series and no universe is author · pages (AC-3)", async () => {
+    const WATCH: LibraryHit = {
+      ...MISTBORN, id: "night-watch", title: "Night Watch", author: "Terry Pratchett", universe: "Discworld",
+      series: "Discworld City Watch", series_position: 2, page_count: 400,
+    };
+    const LONE: LibraryHit = {
+      ...MISTBORN, id: "a-lone-book", title: "A Lone Book", author: "Some Author", universe: null, series: null,
+      series_position: null, page_count: 250,
+    };
+    searchAnswer = () => Response.json(answer({ library: [WATCH, LONE], hardcover: [] }));
+    await open();
+    await search("book");
+    expect(rs()).toEqual(["Terry Pratchett · Discworld City Watch #2 · 400 pages", "Some Author · 250 pages"]);
+    // The sheet's header is a line only this task draws, and it names the series once too.
+    expect(await planFor(0)).toBe("Terry Pratchett · Discworld City Watch #2 · ~110k words");
+  });
+
+  it("a Hardcover result's plan sheet stays author · words (AC-4)", async () => {
+    await open();
+    await search();
+    expect(await planFor(1)).toBe("Marcus Sakey · ~88k words");
   });
 });
 

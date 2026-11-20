@@ -1635,6 +1635,8 @@ export async function runChoices() {
 /** A library book Add books' *Search* lists (task 1.4c). */
 export type LibraryHit = {
   id: string; title: string; author: string | null; series: string | null; series_position: number | null;
+  /** The book's universe (D-90), for the line `bookSub` draws (task 2.2l, D-134); null for a book in none. */
+  universe: string | null;
   published_year: number | null; page_count: number | null; word_count: number | null;
   word_count_source: "stated" | "estimated" | null; cover_url: string | null; hardcover_id: number | null;
   /** No external record yet: *metadata pending*. */
@@ -1666,7 +1668,7 @@ export async function librarySearch(
   // Each word, its LIKE wildcards escaped, must appear somewhere in title and author.
   const words = q.toLowerCase().split(/\s+/).filter(Boolean).map((w) => `%${w.replace(/[\\%_]/g, "\\$&")}%`);
   return sql<LibraryHit[]>`
-    SELECT b.id, b.title, a.name AS author, bs.name AS series, b.series_position,
+    SELECT b.id, b.title, a.name AS author, bs.name AS series, b.series_position, u.name AS universe,
            b.published_year, b.page_count, b.word_count, b.word_count_source, b.cover_url, b.hardcover_id,
            (b.open_library_id IS NULL AND b.hardcover_id IS NULL) AS pending,
            st.status, tl.level, tl.period, (b.calibre_id IS NOT NULL) AS calibre, EXISTS (SELECT 1 FROM read_events e WHERE e.user_id = ${userId} AND e.book_id = b.id AND e.format = 'audio') AS listened,
@@ -1675,6 +1677,7 @@ export async function librarySearch(
     FROM books b
     LEFT JOIN authors a ON a.id = b.author_id
     LEFT JOIN book_series bs ON bs.id = b.series_id
+    LEFT JOIN book_universes u ON u.id = b.universe_id
     LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
     LEFT JOIN to_read_level tl ON tl.book_id = b.id AND tl.user_id = ${userId}
     WHERE b.deleted_at IS NULL AND (
@@ -1893,6 +1896,8 @@ export async function planOverage(userId: string, year: number): Promise<{ books
 /** One book as the plan picker needs it (task 2.3): its words and where it sits now. */
 export type PlanBook = {
   id: string; title: string; author: string | null; status: string | null;
+  /** Where it belongs, for the header's line (`bookSub`; task 2.2l, D-134). */
+  universe: string | null; series: string | null; series_position: number | null;
   /** `to_read_level`'s level and period; null unless the book is to read. */
   level: ToReadLevel | null; period: string | null;
   /** The stated count, else pages x your words per page (50 pages or more), as `plan_book_words` reads it; null when unknown. */
@@ -1909,12 +1914,15 @@ export type PlanBook = {
 export async function planBook(userId: string, bookId: string): Promise<PlanBook | null> {
   const [row] = await sql<PlanBook[]>`
     SELECT b.id, b.title, a.name AS author, st.status, tl.level, tl.period,
+           bu.name AS universe, bs.name AS series, b.series_position,
            COALESCE(b.word_count, CASE WHEN b.page_count >= 50
                                        THEN b.page_count * COALESCE(rs.words_per_page, ${DEFAULT_WORDS_PER_PAGE}) END) AS words,
            CASE WHEN b.word_count IS NOT NULL THEN b.word_count_source = 'estimated'
                 ELSE b.page_count >= 50 END AS estimated
     FROM books b
     LEFT JOIN authors a ON a.id = b.author_id
+    LEFT JOIN book_series bs ON bs.id = b.series_id
+    LEFT JOIN book_universes bu ON bu.id = b.universe_id
     LEFT JOIN book_status st ON st.book_id = b.id AND st.user_id = ${userId}
     LEFT JOIN to_read_level tl ON tl.book_id = b.id AND tl.user_id = ${userId}
     LEFT JOIN reading_settings rs ON rs.user_id = ${userId}

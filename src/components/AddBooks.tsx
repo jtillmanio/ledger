@@ -362,6 +362,10 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
       ? { author: null, words: null, estimated: false }
       : {
         author: what.pick.kind === "library" ? what.pick.book.author : authorList(what.pick.book.authors),
+        // A library pick says where it belongs, as its row does; a Hardcover result has no universe and stays as it was.
+        ...(what.pick.kind === "library"
+          ? { universe: what.pick.book.universe, series: what.pick.book.series, series_position: what.pick.book.series_position }
+          : {}),
         words: what.words, estimated: what.pick.kind === "hardcover" || what.pick.book.word_count === null,
       };
     return <PlanPickerBody book={book} verb={verb} onConfirm={(to) => planned(what, to, leave)} onCancel={leave} />;
