@@ -359,6 +359,9 @@ const PLACES: [LibraryHit, string][] = [
   [at("dnf", "dnf", null, null), "DNF"],
   [at("unlisted", "unlisted", null, null), "Unlisted"],
   [at("unlisted-calibre", "unlisted", null, null, true), "Unlisted · Calibre"],
+  // Put away on purpose (task 5.15, TASK-109 AC-4): Calibre is named only on an Unlisted book.
+  [at("parked", "parked", null, null), "Parked"],
+  [at("parked-calibre", "parked", null, null, true), "Parked"],
   [at("shelf-only", null, null, null), "Not on your list"],
 ];
 /** A row's accessible name, as aria-labelledby builds it. */

@@ -44,7 +44,7 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
   const level = status === "to_read" ? TO_READ_LEVELS.find((l) => l === levelParam) : undefined;
   // What you own (task 5.17, D-132): a value it doesn't know filters nothing, and no link carries it on.
   const owned = OWNED_FILTERS.find((o) => o === ownedParam);
-  const [books, series, { unlisted, genres }, inbox] = await Promise.all([
+  const [books, series, { unlisted, parked, genres }, inbox] = await Promise.all([
     listBooks(userId, { status, genre, q, level, owned, ...order }),
     seriesProgress(userId),
     listCounts(userId),
@@ -89,6 +89,14 @@ export default async function Books({ searchParams }: { searchParams: Promise<Se
           <Link prefetch={false} href={libraryHref({ status: "unlisted", owned, ...order })} className="chip" aria-current={status === "unlisted"}
                 aria-label={`Unlisted, ${unlisted} ${unlisted === 1 ? "book" : "books"}`}>
             Unlisted <span className="n">{unlisted}</span>
+          </Link>
+        )}
+        {/* The books put away on purpose (task 5.15, D-105), as Unlisted's: only this chip, a search and the
+            owned filters list them. None, no chip; ?status=parked then draws the empty state. */}
+        {parked > 0 && (
+          <Link prefetch={false} href={libraryHref({ status: "parked", owned, ...order })} className="chip" aria-current={status === "parked"}
+                aria-label={`Parked, ${parked} ${parked === 1 ? "book" : "books"}`}>
+            Parked <span className="n">{parked}</span>
           </Link>
         )}
         {/* The order (task 2.2e, D-110): in the URL with the filters, so a reload keeps it. */}

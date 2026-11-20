@@ -117,7 +117,8 @@ test("the status control offers Listening beside Reading, a real button with its
   await hydrated(toggle);
   await toggle.click();
   const group = row.getByRole("group", { name: `Status of ${NOW.title}` });
-  await expect(group.getByRole("button")).toHaveText(["To read", "Reading", "Listening", "Read", "DNF"]);
+  // *Park* follows DNF on a book it can put away, Listening included (task 5.15, TASK-109).
+  await expect(group.getByRole("button")).toHaveText(["To read", "Reading", "Listening", "Read", "DNF", "Park"]);
   const listening = group.getByRole("button", { name: "Listening" });
   await expect(listening).toHaveAttribute("aria-pressed", "true");
   expect((await listening.boundingBox())!.height).toBeGreaterThanOrEqual(24);

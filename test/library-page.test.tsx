@@ -12,7 +12,8 @@ import { genreChipHref, libraryHref, parseSort, reverseName } from "../src/lib/l
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }) }));
 vi.mock("@/lib/auth", () => ({ requireUserId: async () => "test-user" }));
 
-const queries = vi.hoisted(() => ({ listBooks: vi.fn(async () => [] as unknown[]) }));
+/** `parked` is listCounts' Parked count (task 5.15): a test sets it, and puts it back. */
+const queries = vi.hoisted(() => ({ listBooks: vi.fn(async () => [] as unknown[]), parked: 2 }));
 vi.mock("@/db/queries", () => ({
   listBooks: queries.listBooks,
   TO_READ_LEVELS: ["quarter", "year", "on_deck", "someday"],
@@ -24,6 +25,7 @@ vi.mock("@/db/queries", () => ({
   // The genres of the listed books (task 4.5): not the old hard-coded ten.
   listCounts: async () => ({
     unlisted: 3,
+    parked: queries.parked,
     genres: [{ genre: "Fantasy", books: 9 }, { genre: "Young Adult", books: 4 }, { genre: "Sci-Fi", books: 1 }],
   }),
   inboxCount: async () => 0,
@@ -63,9 +65,9 @@ describe("the Library page (AC-3, AC-4)", () => {
     // The reverse link is the one that changes the direction: it is checked on its own below.
     const chips = [...doc.querySelectorAll<HTMLAnchorElement>("a.chip")].filter((a) => !a.closest(".sort"))
       .map((a) => a.getAttribute("href")!).filter((h) => h.startsWith("/books/list"));
-    // Everything, Reading, To read, Read, Unlisted, the five levels, the four Owned chips (task 5.17) and three
-    // genres: no year chip (task 3.4b, D-122).
-    expect(chips).toHaveLength(17);
+    // Everything, Reading, To read, Read, Unlisted, Parked (task 5.15), the five levels, the four Owned chips
+    // (task 5.17) and three genres: no year chip (task 3.4b, D-122).
+    expect(chips).toHaveLength(18);
     for (const href of chips) {
       const p = new URL(href, "http://x").searchParams;
       expect(p.get("sort"), href).toBe("length");
@@ -109,6 +111,54 @@ describe("the Library page (AC-3, AC-4)", () => {
     }]);
     const { doc } = await render({});
     expect(doc.querySelector(".row-meta")?.textContent).toContain("~202k");
+  });
+});
+
+// Task 5.15, part 2 of 4 (TASK-109, D-105, D-110): the books put away on purpose have a chip of their
+// own after Unlisted, named with its count, in the URL with the sort and the Owned filter.
+describe("the Library's Parked chip (task 5.15, AC-1, AC-6)", () => {
+  const filterChips = (doc: Document) => [...doc.querySelectorAll<HTMLAnchorElement>(".filters:not([role]) > a.chip")];
+  const parkedChip = (doc: Document) => [...doc.querySelectorAll<HTMLAnchorElement>("a.chip")]
+    .find((a) => a.getAttribute("aria-label")?.startsWith("Parked"));
+
+  it("follows Unlisted, named Parked with its count, and links to status=parked", async () => {
+    const { doc } = await render({});
+    const names = filterChips(doc).map((a) => a.getAttribute("aria-label") ?? a.textContent);
+    expect(names).toEqual(["Everything", "Reading", "To read", "Read", "Unlisted, 3 books", "Parked, 2 books"]);
+    const chip = parkedChip(doc)!;
+    expect(chip.textContent).toBe("Parked 2");
+    expect(chip.querySelector(".n")?.textContent).toBe("2");
+    expect(chip.getAttribute("href")).toBe("/books/list?status=parked");
+    expect(chip.getAttribute("aria-current")).toBe("false");
+  });
+
+  it("is current when chosen, and keeps the sort and the Owned filter", async () => {
+    const { doc } = await render({ status: "parked", owned: "audio", sort: "length", dir: "asc" });
+    const chip = parkedChip(doc)!;
+    expect(chip.getAttribute("aria-current")).toBe("true");
+    expect(chip.getAttribute("href")).toBe("/books/list?status=parked&owned=audio&sort=length&dir=asc");
+    expect(queries.listBooks).toHaveBeenLastCalledWith("test-user", expect.objectContaining({ status: "parked" }));
+  });
+
+  it("says book for one, and is not drawn when nothing is parked", async () => {
+    queries.parked = 1;
+    try {
+      expect(parkedChip((await render({})).doc)?.getAttribute("aria-label")).toBe("Parked, 1 book");
+      queries.parked = 0;
+      expect(parkedChip((await render({})).doc)).toBeUndefined();
+    } finally {
+      queries.parked = 2;
+    }
+  });
+
+  it("with nothing parked, ?status=parked draws the list's empty state", async () => {
+    queries.parked = 0;
+    try {
+      const { doc } = await render({ status: "parked" });
+      expect(doc.querySelector(".rows .empty")?.textContent).toBe("Nothing matches. Try a broader filter.");
+    } finally {
+      queries.parked = 2;
+    }
   });
 });
 

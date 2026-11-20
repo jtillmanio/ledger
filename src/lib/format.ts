@@ -172,13 +172,14 @@ export function quarterName(period: string): string {
 
 const PLACE: Record<string, string> = {
   someday: "Someday", on_deck: "On deck", reading: "Reading", listening: "Listening", read: "Read", dnf: "DNF",
-  unlisted: "Unlisted",
+  unlisted: "Unlisted", parked: "Parked",
 };
 
 /**
  * Where a library book sits, as a search result's one tag says it (task 1.22):
  * a to-read book's level from `to_read_level` (*Q1 2027*, *2027*, *On deck*,
- * *Someday*), else its status (*Reading*, *Read*, *DNF*, *Unlisted*), and *Not
+ * *Someday*), else its status (*Reading*, *Read*, *DNF*, *Unlisted*, *Parked*:
+ * task 5.15), and *Not
  * on your list* with no status. Calibre is named only where it tells you
  * something, a book it has that isn't on your list: *Unlisted · Calibre*.
  */

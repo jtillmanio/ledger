@@ -255,6 +255,13 @@ describe("what parking refuses (AC-4)", () => {
     expect((await post({ bookId: "b", status: "parked" })).status).toBe(400);
   });
 
+  // TASK-109 (AC-3): the status control and the row's ⋯ offer *Park* by the browser's twin of PARKS_FROM.
+  it("the UI's parkable offers Park for exactly the statuses the server parks from", async () => {
+    const { PARKS_FROM, BOOK_STATUSES } = await import("../src/db/writes");
+    expect(BOOK_STATUSES.filter((s) => parked.parkable(s))).toEqual([...PARKS_FROM]);
+    expect(parked.parkable(null)).toBe(false);
+  });
+
   it.each([["a missing book", "nobody"], ["a soft-deleted book", "gone"]])("%s answers 404", async (_name, bookId) => {
     expect((await post({ bookId, status: "parked" })).status).toBe(404);
   });
