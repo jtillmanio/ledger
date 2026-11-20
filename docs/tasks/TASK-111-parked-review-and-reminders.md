@@ -8,7 +8,7 @@ model: sonnet
 autonomy: attended
 ui: true
 plan_status: approved
-planned_at_commit: 3f7a31d
+planned_at_commit: e591e5d
 ---
 
 # TASK-111 — 5.15 Parked (5 of 5) — the /parked review, the dashboard line and the Inbox row
@@ -75,12 +75,14 @@ dashboard or the review resolves to `--danger`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- The *From TASK-127* note's undo fixes (Context): `restoreListen`, `undoInside` and `undoBookStatus` back to `parked` leaving a `listen_queue` row; `undoMoveIn` refusing only `unlisted`, not `parked`; the unlocked status read in `undoBookStatus` (check first: it now takes `lockBook` on the book row), and the rule in `.claude/rules/schema.md`. Its own work, not this task's: a new phase-5 roadmap item with a proposed **Check:** (destination 4), written at close-out. (approved at plan, owner 2026-11-20)
+
 ## Plan
 
 Approved by the owner 2026-11-20, with the plan gate's answers: split in two (the writes are TASK-127, which this depends on); the Library's *Parked · N* chip stays a filter, and with it on a grey *Review parked →* line links to `/parked` (no nav item); the dashboards' inbox chip counts notes only.
 
 **Steps**
-1. `src/db/queries.ts` `parkedBooks(userId)`: every live Parked book, oldest `parked_on` first (then title): id, title, author, `parked_on`, `started_on_precision`. `src/lib/parked.ts` `parkedAge(parkedOn, today)`: *Parked today*, *Parked 3 days*, *Parked 2 weeks*, *Parked 4 months*, *Parked 1 year* (calendar months, `addMonths`).
+1. `src/db/queries.ts` `parkedBooks(userId)`: every live Parked book, oldest `parked_on` first (then title): id, title, author, `universe`, `series`, `series_position` (the row's line and the picker's header, `bookSub`, as 2.2l's `PlanBook` carries them: D-134, revision 1), `parked_on`, `started_on_precision`. `src/lib/parked.ts` `parkedAge(parkedOn, today)`: *Parked today*, *Parked 3 days*, *Parked 2 weeks*, *Parked 4 months*, *Parked 1 year* (calendar months, `addMonths`).
 2. `/parked` (`src/app/parked/page.tsx`): `parkedBooks` and `parkedReview` together; the heading, a grey *Last reviewed …* line (or *Not reviewed yet*), a *Books* group of `ParkedRow`s, and *Done reviewing* (`src/components/ParkedDone.tsx`: `POST /api/parked/review`, its Undo `DELETE` with the change, a failed save's neutral line with Retry). Nothing parked: a calm slate, *Nothing parked.* with one action, **Open the Library**. `loading.tsx`: skeleton rows at the loaded size. `error.tsx` if the app's shared error boundary doesn't cover the route.
 3. `src/components/ParkedRow.tsx`: the title, author and *Parked 4 months*; three real buttons, each naming its book (`aria-label`), ≥ 44px on a phone row:
    - **Keep parked**: writes nothing (the Check needs nothing stored); the row folds to *Kept parked*, and the Undo toast unfolds it.
@@ -100,6 +102,8 @@ Approved by the owner 2026-11-20, with the plan gate's answers: split in two (th
 - AC-4 server side: `test/books-dashboard.test.ts` and `test/inbox.test.ts` (the line and the row only when due); `test/parked-review.test.ts` › `parkedBooks` order and `parkedAge`; `test/query-budget.test.ts` (the new budgets).
 - AC-5: by eye (the redraw), and `docs/02-architecture.md` read by the spec-reviewer.
 
+**Re-checked 2026-11-20 at `e591e5d` (owner):** the plan was stale against 2.2l (#305: `PlanBook` and the picker's header gained the book's universe and series; step 1 now carries them) and the *From TASK-127* note, which goes to its own roadmap item (Follow-ups) and changes nothing here.
+
 **Risks**: the `/books` budget test and the Lighthouse budget for `/books` (one more query, a few hundred bytes); e2e fixtures must set `reading_settings` and `parked_on` on the test database only. TASK-100's *Coming out* line is already in the slot: the parked line goes after it, as drawn.
 
 ## Review log
@@ -115,4 +119,4 @@ _Only if status is Blocked: what failed, what was tried, best hypothesis, decisi
 - Verify rounds:
 - Review rounds:
 - First-pass AC FAILs:
-- Plan revisions after approval:
+- Plan revisions after approval: 1 (step 1's `bookSub` fields, after 2.2l; owner 2026-11-20)
