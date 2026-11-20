@@ -20,6 +20,10 @@ npm run verify:docs         # a docs-only branch's check instead of verify.full 
 node scripts/test-files.mjs <files> [-- <playwright args>]
                             # the given test files, any runner; specs in one project (w390-light) unless the args
                             # name a --project. /verify runs the specs a branch touched this way; the test-auditor too
+npm run drift               # before merging a PR that is behind main: "merge as-is" (exit 0) or "update first"
+                            # (exit 1) with why: a conflict, a file both changed, a migration on each side, a
+                            # dependency bump or shared code on main. `-- <PR number>` checks that PR without
+                            # checking it out; `-- --base <ref> --no-fetch` works offline
 npm run test:db:reset       # rebuild the TEST database: drizzle-kit migrate, then etl/views.sql
 node scripts/worktree-slot.mjs  # worktree setup runs it: this worktree's own test database and e2e port
                             # in .env.worktree (ledger_test_2 / 3200, ...), loaded before .env; no-op in the main checkout
