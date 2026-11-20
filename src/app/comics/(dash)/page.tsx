@@ -64,10 +64,10 @@ export default async function Comics() {
         {issuesRead.toLocaleString()} of {issuesTotal.toLocaleString()} issues read
         {" · "}{readyTotal} runs unlocked and waiting
       </p>
-      {/* The rollup's links: every run, and everything in the middle of or finished (task 5.12). */}
-      <p className="small">
-        <Link href="/comics/runs">All runs</Link>
-        {" · "}<Link href="/progress?medium=comics" prefetch={false}>In the middle of · Completed</Link>
+      <p className="small"><Link href="/comics/runs">All runs</Link></p>
+      {/* Everything in the middle of and everything finished (task 5.12): a grey link, as the books rollup's. */}
+      <p className="small progress-line">
+        <Link href="/progress?medium=comics" prefetch={false}>In the middle of · Completed <span aria-hidden="true">→</span></Link>
       </p>
       {/* Notes jotted and not yet resolved (task 1.4b, mockup `dashextras`); none, no chip. */}
       {inbox > 0 && (

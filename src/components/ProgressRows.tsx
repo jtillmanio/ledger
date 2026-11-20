@@ -9,7 +9,7 @@ const MEDIUM_NAME = { books: "Books", comics: "Comics" } as const;
 
 /**
  * One row of /progress (task 5.12, D-109): the medium's glyph, the kind, the name, `read / total` in mono, a
- * meter filled with --ready (D-26) and, on *In the middle of*, the next thing named or, on *Completed*, the
+ * meter filled with --ready (D-26; a track has none, D-29) and, on *In the middle of*, the next thing named or, on *Completed*, the
  * finish's month. The name is a link where the thing has a page (`rowHref`), and its `row-link` overlay makes
  * the whole row the target; a row with no page yet is text. The figure is the visible text, so the meter says
  * nothing to a screen reader. A row's own rows nest beneath it in a list of their own (D-119).

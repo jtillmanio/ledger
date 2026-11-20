@@ -311,6 +311,17 @@ Planning-doc edits and candidate decisions waiting for your yes
 session, and that session or the next `/track-follow-ups` run makes the change
 and notes where it went.
 
+- [ ] Amend D-120 in `docs/review/decisions.md` (from TASK-105, 5.12, PR #300):
+      the phone's tab row is now the medium's enabled items, then every item of
+      the global group (*Inbox*, then *Progress*), not *Inbox* alone. Record a
+      new row (next free D-n from `.claude/scripts/next-id.ps1`) and add
+      "Amended by D-n" to D-120's row, the only edit to an old row.
+- [ ] Record a decision in `docs/review/decisions.md` (next free D-n; from
+      TASK-105, 5.12, PR #300; owner, at spec review, 2026-11-20): `/progress`
+      draws a *track* row with no meter, `read / total` as text only, because
+      D-29 forbids one bar against a whole track. Roadmap 5.12's "each row an
+      `.emeter`" holds for every kind but a track; its **Check:** is unchanged.
+      D-29 is not amended.
 - [ ] Record a decision in `docs/review/decisions.md` (next free D-n; from
       TASK-082, 4.4, PR #267): the Calibre sync holds the Ledger's reads back
       until the books cutover. `npm run calibre:sync` writes no `#read` or

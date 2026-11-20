@@ -4708,7 +4708,7 @@ it is converted.
     user, survives a reload, and shows in the view's `follow_state`. *Not
     following* deletes the row. No count or state column is added.
 
-- ☐ 5.12 **In the middle of, and completed: one page for every medium** · M.
+- ☑ 5.12 **In the middle of, and completed: one page for every medium** · M.
   Backlog intake, 2026-10-20 (owner: *series, authors and tracks I'm in the
   middle of*, where "tracks" means both universes and ordered shelves);
   rewritten by the second 2026-11-02 intake (owner: *a page to see all the
