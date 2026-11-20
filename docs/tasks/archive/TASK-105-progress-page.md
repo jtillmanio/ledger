@@ -1,7 +1,7 @@
 ---
 id: TASK-105
 title: 5.12 In the middle of, and completed (2 of 2) — the /progress page, its tabs and chips
-status: Review
+status: Done
 depends_on: [TASK-104]
 size: M
 model: sonnet
