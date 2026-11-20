@@ -22,6 +22,8 @@ export const FLOOR_TAG: "@floor";
 export const E2E_FLOOR: string[];
 export const FEEL_TAG: "@feel";
 export const E2E_FEEL: string[];
+export const MOTION_TAG: "@motion";
+export const MOTION_PROJECT: "w390-reduced-motion";
 export function e2eProjects(scope: E2eScope): (E2eProject & { grep: RegExp[] })[];
 export type E2ePlan =
   | { error: string; scope?: undefined; clear?: undefined; serverCommand?: undefined; serverEnv?: undefined; baseUrl?: undefined }

@@ -61,16 +61,26 @@ export const E2E_BEHAVIOUR = ["w390-light", "w768-light", "w1280-light", "w390-r
 // `@floor`: the test checks how the screen fits or looks (the UX floor: axe,
 // contrast, sizes and positions, sideways scroll, markup a layout could change).
 // It runs at every layout, light: 360 (the tightest phone), 390, 768, 1024 (a
-// layout of its own, D-33) and 1280, with reduced motion and with touch. It
-// needs no dark project: `contrastFailures` and `screenshot` check the page in
-// both themes, switching the colour scheme in place.
+// layout of its own, D-33) and 1280, and with touch, which draws the controls a
+// hover hides at rest. It needs no dark project: `contrastFailures` and
+// `screenshot` check the page in both themes, switching the colour scheme in
+// place. Not with reduced motion, which changes motion and no layout or colour
+// (D-167): a floor or feel test that reads the project's own motion setting says
+// so with `@motion`.
 export const FLOOR_TAG = "@floor";
-export const E2E_FLOOR = ["w360-light", "w390-light", "w768-light", "w1024-light", "w1280-light", "w390-reduced-motion", "w390-touch"];
+export const E2E_FLOOR = ["w360-light", "w390-light", "w768-light", "w1024-light", "w1280-light", "w390-touch"];
+
+// `@motion`: the test also runs at w390-reduced-motion, where an untagged one
+// does already. For a `@floor` or `@feel` test whose assertions read the
+// project's `prefers-reduced-motion` (so the reduced branch runs only there).
+// An `@at-` tag still wins.
+export const MOTION_TAG = "@motion";
+export const MOTION_PROJECT = "w390-reduced-motion";
 
 // `@feel`: a feel-pass surface screenshotted in its states, which design §10
 // asks for at every width, 412 too (D-40): `@floor`'s projects and w412-light.
 export const FEEL_TAG = "@feel";
-export const E2E_FEEL = ["w360-light", "w390-light", "w412-light", "w768-light", "w1024-light", "w1280-light", "w390-reduced-motion", "w390-touch"];
+export const E2E_FEEL = ["w360-light", "w390-light", "w412-light", "w768-light", "w1024-light", "w1280-light", "w390-touch"];
 
 /**
  * The projects a scope runs, each with the grep that picks its tests. An
@@ -91,6 +101,7 @@ export function e2eProjects(scope) {
       ...(E2E_BEHAVIOUR.includes(p.name) ? [untagged] : []),
       ...(E2E_FLOOR.includes(p.name) ? [only(FLOOR_TAG)] : []),
       ...(E2E_FEEL.includes(p.name) ? [only(FEEL_TAG)] : []),
+      ...(p.name === MOTION_PROJECT ? [only(MOTION_TAG)] : []),
       new RegExp(`@at-${p.name}(?![\\w-])`),
     ],
   }));

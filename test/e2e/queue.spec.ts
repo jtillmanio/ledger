@@ -8,7 +8,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { testSql, type TestSql } from "../db";
-import { FEEL, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
+import { FEEL, FEEL_MOTION, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot } from "./helpers";
 
 // Writes or sets its own viewport: runs once, in w390-light.
 const ONCE = { tag: "@at-w390-light" };
@@ -84,7 +84,7 @@ async function floor(page: Page) {
 }
 
 test.describe("the dashboard shelf", () => {
-  test("renders the queue's unstarted runs in ordinal order, Start on the first card only, no drag handle", FEEL, async ({ page }, info) => {
+  test("renders the queue's unstarted runs in ordinal order, Start on the first card only, no drag handle", FEEL_MOTION, async ({ page }, info) => {
     const order = [ids[2], ids[0], ids[1]];
     await queue(order);
     await openDashboard(page);
