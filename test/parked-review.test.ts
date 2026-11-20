@@ -256,6 +256,23 @@ describe("parkedBooks: what /parked lists (TASK-111 AC-2)", () => {
   });
 });
 
+describe("the Inbox row's line: N parked, and since when it has been due (TASK-111 AC-4)", () => {
+  it("monthly, reviewed 40 days ago: due since a month after that review; never reviewed: just the count; never: no day", async () => {
+    const { reviewDueOn } = await import("../src/lib/parked");
+    const { parkedReviewLine } = await import("../src/lib/inbox");
+    expect(reviewDueOn({ cadence: "monthly", reviewedOn: ago(40) })).toBe("2027-03-03");
+    expect(reviewDueOn({ cadence: "quarterly", reviewedOn: "2026-11-30" })).toBe("2027-02-28");
+    expect(reviewDueOn({ cadence: "monthly", reviewedOn: null })).toBeNull();
+    expect(reviewDueOn({ cadence: "never", reviewedOn: ago(40) })).toBeNull();
+    expect(parkedReviewLine({ cadence: "monthly", reviewedOn: ago(40), parked: 3 }, NOW)).toBe("3 parked · due since 3 Mar");
+    expect(parkedReviewLine({ cadence: "quarterly", reviewedOn: null, parked: 1 }, NOW)).toBe("1 parked");
+    // The day it fell due agrees with the due rule: due on it, not the day before.
+    const state = { cadence: "monthly" as const, reviewedOn: ago(40), parked: 3 };
+    expect(reviewDue(state, "2027-03-03")).toBe(true);
+    expect(reviewDue(state, "2027-03-02")).toBe(false);
+  });
+});
+
 describe("parkedAge: how long a book has been parked (TASK-111 AC-2)", () => {
   it("today, days, weeks, calendar months, then years", async () => {
     const { parkedAge } = await import("../src/lib/parked");

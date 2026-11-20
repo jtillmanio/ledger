@@ -10,7 +10,11 @@
 // are made here, under ids the rest of the suite doesn't use, and the settings row is put back as found
 // after the last test; the browser suite runs one file at a time, so no other spec sees them.
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
+import ParkedError from "../../src/app/parked/error";
+import ParkedLoading from "../../src/app/parked/loading";
 import { addMonths } from "../../src/lib/parked";
 import { testSql, type TestSql } from "../db";
 import {
@@ -299,11 +303,17 @@ test("the review meets the floor at every width, light and dark: real named butt
     await screenshot(page, info, `parked-review-${width}`);
   }
 
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/books");
-  await expect(line(page)).toBeVisible();
-  await expectNoDanger(page);
-  await screenshot(page, info, "parked-line-books-390");
+  // The dashboard's line meets the floor too: a real link, ≥ 24px, axe and contrast in both themes.
+  for (const width of [390, 1280]) {
+    await page.setViewportSize({ width, height: width === 390 ? 844 : 800 });
+    await page.goto("/books");
+    await expect(line(page)).toBeVisible();
+    expect((await line(page).boundingBox())!.height).toBeGreaterThanOrEqual(24);
+    await expectNoAxeViolations(page, AXE, '[data-slot="rollup"]');
+    expect(await contrastFailures(page), `/books ${width}px`).toEqual([]);
+    await expectNoDanger(page);
+    await screenshot(page, info, `parked-line-books-${width}`);
+  }
 
   // Nothing parked: a calm slate with one action, and no Done reviewing.
   await db((sql) => sql`UPDATE book_status SET status = 'to_read', parked_on = NULL WHERE user_id = ${E2E_USER} AND book_id LIKE ${P + "%"}`);
@@ -318,4 +328,42 @@ test("the review meets the floor at every width, light and dark: real named butt
   await expectNoAxeViolations(page, AXE);
   await expectNoDanger(page);
   await screenshot(page, info, "parked-review-empty-360");
+});
+
+/** Puts `markup` where the page's <main> is: a state the shared database can't produce on demand. */
+async function swapMain(page: Page, markup: string) {
+  // After hydration: a swap before it is a mismatch, and React draws its own tree over it.
+  await hydrated(page.locator(".parked-verbs button").first());
+  await page.evaluate((m) => { document.querySelector("main")!.outerHTML = m; }, markup);
+}
+
+test("the error state: a neutral line and a real Try again, never red; the floor (AC-6)", ONCE, async ({ page }, info) => {
+  for (const [width, height] of [[360, 780], [1280, 800]] as const) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/parked");
+    await swapMain(page, renderToStaticMarkup(ParkedError({ error: new Error("boom"), reset: () => {} })));
+    await expect(page.locator("main").getByRole("alert")).toHaveText("× Couldn't load what you've parked. Nothing was changed.");
+    const retry = page.getByRole("button", { name: "Try again", exact: true });
+    await expect(retry).toBeVisible();
+    expect((await retry.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+    await expectNoHorizontalScroll(page);
+    await expectNoAxeViolations(page, AXE);
+    expect(await contrastFailures(page), `${width}px`).toEqual([]);
+    await expectNoDanger(page);
+    await screenshot(page, info, `parked-review-error-${width}`);
+  }
+});
+
+test("the loading skeleton's row is the loaded row's size, within 2px, on a phone and the desktop (AC-6)", ONCE, async ({ page }, info) => {
+  for (const [width, height] of [[360, 780], [1280, 800]] as const) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/parked");
+    await expect(row(page, OLD.title)).toBeVisible();
+    const loaded = (await row(page, OLD.title).boundingBox())!;
+    await swapMain(page, renderToStaticMarkup(createElement(ParkedLoading)));
+    await expect(page.locator(".parked-sk-row").first()).toBeVisible();
+    const sk = (await page.locator(".parked-sk-row").first().boundingBox())!;
+    expect(Math.abs(sk.height - loaded.height), `${width}px: skeleton ${sk.height}px, loaded ${loaded.height}px`).toBeLessThanOrEqual(2);
+    await screenshot(page, info, `parked-review-loading-${width}`);
+  }
 });

@@ -75,7 +75,7 @@ dashboard or the review resolves to `--danger`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
-- The *From TASK-127* note's undo fixes (Context): `restoreListen`, `undoInside` and `undoBookStatus` back to `parked` leaving a `listen_queue` row; `undoMoveIn` refusing only `unlisted`, not `parked`; the unlocked status read in `undoBookStatus` (check first: it now takes `lockBook` on the book row), and the rule in `.claude/rules/schema.md`. Its own work, not this task's: a new phase-5 roadmap item with a proposed **Check:** (destination 4), written at close-out. (approved at plan, owner 2026-11-20)
+- The *From TASK-127* note's undo fixes (Context): `restoreListen`, `undoInside` and `undoBookStatus` back to `parked` leaving a `listen_queue` row; `undoMoveIn` refusing only `unlisted`, not `parked`; the unlocked status read in `undoBookStatus` (check first: it now takes `lockBook` on the book row), and the rule in `.claude/rules/schema.md`. Schema-reviewer (TASK-111, R1): `/parked` makes the listen-queue half reachable from a screen: a review verb (*Plan…* or *Unlisted*), then *Queue to listen* on that book, then the verb's Undo leaves a Parked book in `listen_queue` (`undoInside` and `undoBookStatus` back to `parked`; fix: take the book off the queue under `lockListen`, or refuse). Its own work, not this task's: a new phase-5 roadmap item with a proposed **Check:** (destination 4), written at close-out. (approved at plan, owner 2026-11-20)
 
 ## Plan
 
@@ -112,7 +112,8 @@ Approved by the owner 2026-11-20, with the plan gate's answers: split in two (th
 
 _Filled by /implement-task. One line per round._
 
-- Verify R1 FAIL(3) (issue-search.test.tsx: a CSS comment naming --danger; perf.test.ts: /parked not in the route list; e2e-shards.test.ts: the new spec unrecorded) → fixed | Verify R2 PASS (129 files, 2439 tests; parked-review.spec.ts 7/7 in w390-light; mockup-tablet.spec.ts 20/20 in w1280-light)
+- Verify R1 FAIL(3) (issue-search.test.tsx: a CSS comment naming --danger; perf.test.ts: /parked not in the route list; e2e-shards.test.ts: the new spec unrecorded) → fixed | Verify R2 PASS (129 files, 2439 tests; parked-review.spec.ts 7/7 in w390-light; mockup-tablet.spec.ts 20/20 in w1280-light) | CI R1 PASS (d08dc40: 10/10 shards, tests, check; Vercel preview deployed)
+- Schema R1 APPROVE (one MAJOR outside the diff: the listen-queue undo gap is now reachable from /parked → added to the approved follow-up) | Spec R1 CHANGES (AC-6 UNTESTED: the error state, the skeleton at its loaded size, the line's floor; optional: *due since*) → tests added | Verify R3 PASS (129 files, 2440 tests; parked-review.spec.ts 9/9)
 
 ## Blocked
 
