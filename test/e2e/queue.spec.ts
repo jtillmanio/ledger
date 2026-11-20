@@ -143,6 +143,23 @@ test.describe("the dashboard shelf", () => {
     await screenshot(page, info, "shelf-overflowing");
   });
 
+  // Task 2.2k (AC-4): the books shelf shares this CSS, and a fix there must leave the comics shelf as it
+  // was: no sideways scroll with six runs at 360px, cards 112px wide and 12px apart.
+  test("six runs at 360px: the page keeps the screen's width, cards 112px wide and 12px apart", ONCE, async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 780 });
+    await queue(ids.slice(0, 6));
+    await openDashboard(page);
+    await expect(cards(page)).toHaveCount(6);
+    await expectNoHorizontalScroll(page);
+    expect(await shelf(page).evaluate((el) => el.scrollWidth > el.clientWidth), "the shelf scrolls").toBe(true);
+    const boxes = await cards(page).evaluateAll((els) => els.map((el) => el.getBoundingClientRect()).map((b) => ({ x: b.x, w: b.width })));
+    for (const [i, b] of boxes.entries()) {
+      expect(b.w, `card ${i + 1} width`).toBe(112);
+      if (i > 0) expect(b.x - (boxes[i - 1].x + boxes[i - 1].w), `gap before card ${i + 1}`).toBe(12);
+    }
+    await expectNoHorizontalScroll(page);
+  });
+
   test("Start follows the link and sends no POST", ONCE, async ({ page }) => {
     await queue([ids[3]]);
     await openDashboard(page);

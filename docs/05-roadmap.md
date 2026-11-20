@@ -2500,7 +2500,7 @@ Sanderson · Cosmere · Mistborn #4*, and the same book reads the same on its
 status tab and in the Library. There is no horizontal scroll at 360px, axe
 passes, and nothing resolves to `--danger`. Screenshots at 360px and 1280px.
 
-### ☐ 2.2k The books page scrolls sideways with a full Up next shelf · S
+### ☑ 2.2k The books page scrolls sideways with a full Up next shelf · S
 *Pulled ahead of 1.26 by the owner (D-139).*
 
 Found by TASK-051's UI check, not caused by it (the shelf's CSS is unchanged
