@@ -232,7 +232,7 @@ export default function AddBooks({ initial, close, onHeading, query = "", note =
     }
     const entry: AddedEntry = {
       destination: result.destination, created, added, statused: result.statused, promoted: result.promoted,
-      ...(shelf && { newShelf: true }),
+      unparked: result.unparked, ...(shelf && { newShelf: true }),
     };
     const reopen = resolved == null ? undefined : { id: resolved, bookId };
     push({

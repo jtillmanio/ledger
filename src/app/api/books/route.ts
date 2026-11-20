@@ -4,7 +4,8 @@ import { count, destinationShapes, MAX_ID, MAX_PAGES, MAX_POSITION, MAX_WORDS, p
 import { MAX_LINES } from "@/lib/book-parse";
 import { noteId } from "@/lib/inbox";
 import { COVERS } from "@/lib/hardcover";
-import { addBook, undoAddBooks, type AddBookItem } from "@/db/writes";
+import { addBook, undoAddBooks, type AddBookItem, type Unparked } from "@/db/writes";
+import { isDay } from "@/lib/finish-date";
 
 export const runtime = "nodejs";
 
@@ -30,11 +31,12 @@ const MAX_COVER = 300;
  *   resolves that note into the book in the same transaction (task 1.4b); the
  *   answer's `note` says it did. 409 `{ reason: 'taken', error }` when a new
  *   shelf's name is in use.
- * - DELETE `{ destination, created, added, statused?, promoted?, newShelf?, note? }`: that
+ * - DELETE `{ destination, created, added, statused?, promoted?, unparked?, newShelf?, note? }`: that
  *   add's undo, from an add here or a paste (`/api/books/bulk`, whose
  *   destination may be a format you own, task 5.17; an add here never is);
  *   `statused` is the statuses an On deck add wrote (task 1.7), `promoted` the Unlisted books
- *   it moved onto your list (task 1.21), `newShelf` that the add made the shelf
+ *   it moved onto your list (task 1.21), `unparked` the Parked books it moved there
+ *   (task 5.15, `[{ bookId, parkedOn }]`: the undo puts back `parked` and the day), `newShelf` that the add made the shelf
  *   (task 5.1), which then goes too. 409 when something changed
  *   since, and then nothing is changed. `note: { id, bookId }` reopens the
  *   note the add resolved.
@@ -79,17 +81,18 @@ export async function DELETE(req: Request) {
   const added = ids(body?.added);
   const statused = body?.statused === undefined ? [] : ids(body.statused);
   const promoted = body?.promoted === undefined ? [] : ids(body.promoted);
+  const unparked = body?.unparked === undefined ? [] : parseUnparked(body.unparked);
   // The add made its shelf (task 5.1): the undo removes it too. An undo never names a new shelf itself.
   const newShelf = body?.newShelf === undefined ? false : typeof body.newShelf === "boolean" ? body.newShelf : undefined;
   const note = reopen(body?.note);
-  if (!destination || !created || !added || !statused || !promoted || created.length + added.length === 0
+  if (!destination || !created || !added || !statused || !promoted || !unparked || created.length + added.length === 0
     || newShelf === undefined || note === undefined) {
     return NextResponse.json({
-      error: "destination, and created, added and (if any) statused and promoted: lists of book ids; newShelf, if any, "
-        + "is true or false; note, if any, is { id, bookId }",
+      error: "destination, and created, added and (if any) statused and promoted: lists of book ids; unparked, if any, "
+        + "is a list of { bookId, parkedOn }; newShelf, if any, is true or false; note, if any, is { id, bookId }",
     }, { status: 400 });
   }
-  const entry = { destination, created, added, statused, promoted, ...(newShelf && { newShelf }) };
+  const entry = { destination, created, added, statused, promoted, ...(unparked.length && { unparked }), ...(newShelf && { newShelf }) };
   if (!(await undoAddBooks(userId, entry, note ? { note } : {}))) {
     return NextResponse.json({ error: "Something changed since that add. Nothing was undone." }, { status: 409 });
   }
@@ -146,4 +149,17 @@ function reopen(raw: unknown): { id: number; bookId: string } | null | undefined
 function ids(raw: unknown): string[] | undefined {
   if (!Array.isArray(raw) || raw.length > MAX_LINES) return undefined;
   return raw.every((v) => typeof v === "string" && v.length > 0 && v.length <= MAX_ID) ? raw as string[] : undefined;
+}
+
+/** The Parked books an add unparked (task 5.15): `{ bookId, parkedOn }` each, a real day, or undefined when malformed. */
+function parseUnparked(raw: unknown): Unparked[] | undefined {
+  if (!Array.isArray(raw) || raw.length > MAX_LINES) return undefined;
+  const out: Unparked[] = [];
+  for (const v of raw) {
+    if (typeof v !== "object" || v === null) return undefined;
+    const { bookId, parkedOn } = v as Record<string, unknown>;
+    if (typeof bookId !== "string" || !bookId || bookId.length > MAX_ID || !isDay(parkedOn)) return undefined;
+    out.push({ bookId, parkedOn });
+  }
+  return out;
 }

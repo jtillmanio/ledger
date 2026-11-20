@@ -10,9 +10,9 @@ import { isDay, isFinish, resolveFinish, resolveStart } from "@/lib/finish-date"
 
 export const runtime = "nodejs";
 
-/** What a POST may set; `unlisted` comes back only as an undo's prior status (task 1.21, D-86).
- * `parked` (task 5.15) is set only on a book To read, Reading or Listening: `saveBookStatus` refuses the rest. */
-const ALLOWED: readonly string[] = SETTABLE_STATUSES;
+/** What a POST may set. `parked` (task 5.15) is set only on a book To read, Reading or Listening, and `unlisted`
+ * (the parked review's *Unlisted*, D-86, D-105) only on a Parked one: `saveBookStatus` refuses the rest. */
+const ALLOWED: readonly string[] = [...SETTABLE_STATUSES, "unlisted"];
 const STORED: readonly string[] = BOOK_STATUSES;
 
 /**
@@ -48,6 +48,8 @@ const STORED: readonly string[] = BOOK_STATUSES;
  * `parked` (task 5.15, D-105) puts a book To read, Reading or Listening away:
  * out of every plan row and off the listen queue, which `change.unplanned` and
  * `change.unqueued` hold for the undo. Any other book is refused with a 400.
+ * `unlisted` (task 5.15) lets a Parked book go: from Parked only, any other book is
+ * a 400; its undo puts back `parked` and the day.
  */
 export async function POST(req: Request) {
   const userId = await apiUserId();
@@ -158,6 +160,8 @@ function validChange(c: unknown): c is BookStatusChange {
     // The day it was parked (task 5.15): there exactly when the prior status is Parked.
     if (p.status === "parked" ? !isDay(p.parkedOn) : !(p.parkedOn === undefined || p.parkedOn === null)) return false;
   }
+  // The one write that sets `unlisted` comes from Parked (task 5.15): any other change claiming it is forged.
+  if (status === "unlisted" && (prior === null || (prior as Record<string, unknown>).status !== "parked")) return false;
   if (edited !== null) {
     if (typeof edited !== "object" || appended !== null) return false;
     const e = edited as Record<string, unknown>;

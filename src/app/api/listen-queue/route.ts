@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { apiUserId, unauthorized } from "@/lib/auth";
-import { moveListen, queueListen, removeListen, restoreListen } from "@/db/writes";
+import { RefusedStatus, moveListen, queueListen, removeListen, restoreListen } from "@/db/writes";
 
 export const runtime = "nodejs";
 
@@ -12,7 +12,7 @@ export const runtime = "nodejs";
  *
  * - POST `{ bookId }`: *Queue to listen*, at the end. A book already queued
  *   stays put (`added: false`). 404, writing nothing, for a missing or
- *   soft-deleted book.
+ *   soft-deleted book; 400, writing nothing, for a Parked book (task 5.15).
  * - POST `{ bookId, restore: n }`: *Remove*'s undo, back at position n.
  * - PATCH `{ bookId, to: n }`: *Move to…*. Answers `from`, the position it had,
  *   which the undo moves it back to. 404 when not queued.
@@ -31,7 +31,13 @@ export async function POST(req: Request) {
     const position = await restoreListen(bookId, restore);
     return position === null ? noBook() : NextResponse.json({ ok: true, position });
   }
-  const queued = await queueListen(bookId);
+  let queued;
+  try {
+    queued = await queueListen(bookId);
+  } catch (e) {
+    if (e instanceof RefusedStatus) return bad(e.message);
+    throw e;
+  }
   return queued === null ? noBook() : NextResponse.json({ ok: true, ...queued });
 }
 

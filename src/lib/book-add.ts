@@ -66,11 +66,13 @@ export const destinationOf = (t: Target, date: string | null = null): Destinatio
  * An add that made its shelf (task 5.1) says so, and its undo removes the shelf too.
  */
 export async function undoAdd(entry: AddedEntry, note?: { id: number; bookId: string }) {
-  const { destination, created, added, statused, promoted, newShelf } = entry;
+  const { destination, created, added, statused, promoted, unparked, newShelf } = entry;
   const res = await fetch("/api/books", {
     method: "DELETE", headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      destination, created, added, statused, ...(promoted?.length ? { promoted } : {}), ...(newShelf && { newShelf: true }),
+      destination, created, added, statused, ...(promoted?.length ? { promoted } : {}),
+      // A Parked book the add unparked goes back to Parked, on its day (task 5.15).
+      ...(unparked?.length ? { unparked } : {}), ...(newShelf && { newShelf: true }),
       ...(note && { note }),
     }),
   });

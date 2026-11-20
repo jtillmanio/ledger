@@ -1,7 +1,7 @@
 ---
 id: TASK-127
 title: 5.15 Parked (4 of 5) — the unparking writes, Unlisted from Parked and the listen queue's refusal
-status: Ready
+status: In progress
 depends_on: [TASK-109, TASK-110]
 size: M
 model: sonnet
@@ -73,6 +73,8 @@ Approved by the owner 2026-11-20 at TASK-111's plan gate, as the first half of i
 6. `.claude/rules/schema.md`: the two sentences of AC-6, in *Below Someday sits Unlisted* and *Beside it sits Parked*.
 
 **Files**: `src/db/writes.ts`, `src/app/api/progress/book/route.ts`, `src/app/api/listen-queue/route.ts`, `src/app/api/books/route.ts` (only if the undo's parser needs `unparked`), `.claude/rules/schema.md`, `test/parked.test.ts`, `test/listen-queue.test.ts`.
+
+**Plan revision 1 (owner, 2026-11-20, in the session):** the add's undo body is built by hand in four client files that copy the entry's fields one by one, so none would send `unparked` and an Undo from Add books, Paste a list or the plan sheet would leave a Parked book To read. Step 7: pass `unparked` through in `src/lib/book-add.ts` (`undoAdd`), `src/components/AddBooks.tsx`, `src/components/PasteBooks.tsx` and `src/components/PlanSheet.tsx`; `test/parked.test.ts` › "the screen's own undoAdd sends the unparked list" pins `undoAdd`'s body.
 
 **Test strategy**
 - AC-1: `test/parked.test.ts` › "an add unparks a Parked book": a book parked from `to_read`, added by `{ use }` to `2027-Q1` (two books already there: ordinal 3), `2027`, `on_deck` and Someday; status, `parked_on`, plan rows, `unparked`.

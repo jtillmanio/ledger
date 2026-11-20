@@ -308,12 +308,15 @@ async function write(s: PlanSuggestion, to: string): Promise<(() => Promise<void
     });
     if (res.status === 409) return "moved";
     if (!res.ok) throw new Error(String(res.status));
-    const entry = await res.json() as { destination: unknown; created: string[]; added: string[]; statused: string[]; promoted?: string[] };
+    const entry = await res.json() as {
+      destination: unknown; created: string[]; added: string[]; statused: string[]; promoted?: string[];
+      unparked?: { bookId: string; parkedOn: string }[];
+    };
     if (entry.added.length === 0) return "already";
-    const { destination, created, added, statused, promoted = [] } = entry;
+    const { destination, created, added, statused, promoted = [], unparked = [] } = entry;
     return async () => {
       const back = await fetch("/api/books", {
-        method: "DELETE", headers: json, body: JSON.stringify({ destination, created, added, statused, promoted }),
+        method: "DELETE", headers: json, body: JSON.stringify({ destination, created, added, statused, promoted, unparked }),
       });
       if (!back.ok) throw new Error(String(back.status));
     };
