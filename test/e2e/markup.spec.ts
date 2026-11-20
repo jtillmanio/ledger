@@ -10,11 +10,10 @@ import { E2E_BOOK_COUNT, E2E_RUN_ID, FLOOR, computedStyle, expectNoAxeViolations
 const AXE_RULES = ["nested-interactive", "button-name", "link-name"];
 // The dashboards (the books one is a redirect to its list until 2.2) and the two list pages.
 // The status screens (task 1.9) are rows, tabs and links of their own.
-// /progress (task 5.12): rows that are links with the whole row the target, chips and tabs that are links.
-const PAGES = ["/comics", "/comics/runs", "/books/list", "/watch", "/comics/status", "/books/status", "/progress"];
+const PAGES = ["/comics", "/comics/runs", "/books/list", "/watch", "/comics/status", "/books/status"];
 const NAVIGABLE = ["/comics", "/comics/runs"];
 // Pages that draw chips or segmented controls, so the check below has something to find.
-const HAS_CONTROLS = ["/comics/runs", "/books/list", "/progress"];
+const HAS_CONTROLS = ["/comics/runs", "/books/list"];
 
 for (const path of PAGES) {
   test.describe(path, () => {

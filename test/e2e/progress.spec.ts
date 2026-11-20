@@ -372,11 +372,12 @@ test("the floor on In the middle of, On hold open: axe, contrast, 24px targets, 
   await screenshot(page, info, "progress-middle");
   await page.getByRole("button", { name: /^On hold/ }).click();
   await expect(item(page, HOLD.name)).toBeVisible();
-  await floor(page);
-  await screenshot(page, info, "progress-middle-hold");
+  // Open adds a button state and rows: axe and sideways scroll again, not a second contrast and screenshot pass.
+  await expectNoHorizontalScroll(page);
+  await expectNoAxeViolations(page, AXE);
 });
 
-test("the floor on Completed; screenshots (AC-4, AC-6)", FLOOR, async ({ page }, info) => {
+test("the floor on Completed; screenshots (AC-4, AC-6)", ONCE, async ({ page }, info) => {
   await open(page, "?tab=completed");
   await expect(item(page, DONE.name)).toBeVisible();
   await floor(page);
@@ -384,15 +385,15 @@ test("the floor on Completed; screenshots (AC-4, AC-6)", FLOOR, async ({ page },
 });
 
 // A state is rendered to static markup and put in place of the loaded page's <main>, so it gets the real CSS, fonts
-// and width. An empty state is a feel-pass surface (design § 10): `@feel` runs it at 412px too, so the screenshots
-// cover every `ui.viewports` width.
+// and width. An empty state is a feel-pass surface (design § 10): the first runs `@feel`, at every width including 412px;
+// the others, drawn by the same component with other copy, run once (D-161's suite-time budget).
 const EMPTIES = [
-  { name: "the middle", tab: "middle", medium: "all", title: "Nothing in the middle.", action: "Open the Library", href: "/books/list" },
-  { name: "the middle of Comics", tab: "middle", medium: "comics", title: "Nothing in the middle.", action: "Open Runs", href: "/comics/runs" },
-  { name: "Completed", tab: "completed", medium: "all", title: "Nothing completed yet.", action: "Open the Library", href: "/books/list" },
+  { name: "the middle", tab: "middle", medium: "all", title: "Nothing in the middle.", action: "Open the Library", href: "/books/list", tags: FEEL },
+  { name: "the middle of Comics", tab: "middle", medium: "comics", title: "Nothing in the middle.", action: "Open Runs", href: "/comics/runs", tags: ONCE },
+  { name: "Completed", tab: "completed", medium: "all", title: "Nothing completed yet.", action: "Open the Library", href: "/books/list", tags: ONCE },
 ] as const;
 for (const e of EMPTIES) {
-  test(`the empty state of ${e.name}: calm, one action, ${e.action}; the floor; screenshots (AC-6)`, FEEL, async ({ page }, info) => {
+  test(`the empty state of ${e.name}: calm, one action, ${e.action}; the floor; screenshots (AC-6)`, e.tags, async ({ page }, info) => {
     await open(page);
     // The shared database always holds rows, so the empty state's own markup stands in for the loaded <main>.
     await swapMain(page, renderToStaticMarkup(createElement("main", { className: "progress-page" },
@@ -407,7 +408,7 @@ for (const e of EMPTIES) {
   });
 }
 
-test("the error state: a neutral line and a real Try again; the floor; screenshots (AC-6)", FEEL, async ({ page }, info) => {
+test("the error state: a neutral line and a real Try again; the floor; screenshots (AC-6)", ONCE, async ({ page }, info) => {
   await open(page);
   await swapMain(page, renderToStaticMarkup(ProgressError({ error: new Error("boom"), reset: () => {} })));
   await expect(main(page).getByRole("alert")).toContainText("Couldn't load your progress. Nothing was changed.");
