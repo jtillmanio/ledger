@@ -1,8 +1,9 @@
 # Git: branches, commits, PRs
 
-Loaded for every session (no `paths`). The repo is private on a free plan, so
-`main` has no branch protection: these rules are the only thing keeping it
-clean. Follow them without being asked.
+Loaded for every session (no `paths`). GitHub's `protect-main` ruleset
+(*Project notes*) blocks a direct push, a force push and a red merge; these
+rules keep Claude from trying, and cover what the ruleset can't see. Follow
+them without being asked.
 
 The kit's skills follow these rules through the switches in
 `.claude/kit.json` (`workflow.staging`, `commitFormat`, `branchPrefixes`,
@@ -163,15 +164,24 @@ Step 13), which migrates the live database and promotes the build. Never start
 it yourself, dry run included, unless the owner says to for that release: it
 reads and writes the live database.
 
-Rebase a branch on `main` only when it conflicts or is stale enough to matter;
-after a rebase, push with `--force-with-lease`, never `--force`, and only to
-your own branch.
+The ruleset doesn't require a branch to be up to date with `main`, so a PR
+can merge while behind. Before merging one that is, run `npm run drift --
+<PR number>`: "merge as-is", or "update first" with the reason (a conflict, a
+file both sides changed, a migration on each side, a dependency bump or
+shared code on `main`). Rebase a branch on `main` only then; after a rebase,
+push with `--force-with-lease`, never `--force`, and only to your own branch,
+and wait for `check` again.
 
 ## Project notes
 
-- No branch protection is available on this repository (rulesets return 403
-  on a private free-plan repo): these rules and the `Bash(...)` and
-  `PowerShell(...)` deny rules in `.claude/settings.json` are the only guard.
+- `main` is protected by the repository ruleset `protect-main` (2026-11-20,
+  possible since the repo went public): no deletion, no force push, linear
+  history, a PR with squash as the only merge method and every review thread
+  resolved, and the `check` (GitHub Actions) and `Vercel` checks green. Its
+  bypass list is empty on purpose: Claude runs `gh` as the owner, so an admin
+  bypass would be Claude's too. Branches need not be up to date with `main`
+  (see *Merging*). Keep the `Bash(...)` and `PowerShell(...)` deny rules in
+  `.claude/settings.json` anyway: they stop Claude before GitHub has to.
 - Files never to commit are listed under *Staging*: `.env*`, `seed/`, the
   Metron, Open Library, Hardcover and Fandom caches, and `backups/`.
 - `--force-with-lease` after a rebase is allowed (`workflow.allowForceWithLease`
