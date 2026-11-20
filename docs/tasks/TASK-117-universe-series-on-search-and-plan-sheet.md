@@ -1,14 +1,14 @@
 ---
 id: TASK-117
 title: 2.2l The universe and series on Add books' search results and the plan sheet
-status: Ready
+status: In progress
 depends_on: [TASK-062, TASK-064]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: e01e95d
 ---
 
 # TASK-117 — 2.2l The universe and series on Add books' search results and the plan sheet
@@ -64,7 +64,33 @@ _Work noticed during this task and deliberately left out. Each bullet ends `→ 
 
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+Approved by the owner, 2026-11-20. Kept whole past the size check (about 12 files, 4 of them source): the roadmap's one Check covers both screens, and the source change is about 30 lines.
+
+### Steps
+
+1. `src/db/queries.ts`: `librarySearch` adds `LEFT JOIN book_universes u ON u.id = b.universe_id` and `u.name AS universe`, as 2.2j's queries do; `LibraryHit` gains `universe: string | null`. `planBook` adds `LEFT JOIN book_series` and `book_universes` and answers `universe`, `series` and `series_position`; `PlanBook` gains them.
+2. `src/components/BookSearch.tsx`: a library hit's line is `bookSub(lib)`, then *N pages*. A Hardcover hit's is `bookSub({ author: authorList(authors), universe: null, series, series_position: position })`, then *N pages*: the same text it prints today, with no `#${…position…}` template left in the file.
+3. `src/components/PlanPicker.tsx`: `PickerBook` gains optional `universe`, `series` and `series_position`. The header is `bookSub(book)`, then ` · ` and the words; `MoveBody` passes them from `planBook`.
+4. `src/components/AddBooks.tsx`: `pickerBody` passes a library pick's universe, series and position. A Hardcover pick passes its authors only, so it stays *author(s) · words* (AC-4).
+5. `design/mockups.html`: redraw one library row in `add` and the header in `moveplan` as *author · universe · series #n*. `design/mockups-index.md` notes it (task 2.2l, D-134), as 2.2j did.
+
+### Files
+
+- `src/db/queries.ts`, `src/components/BookSearch.tsx`, `src/components/PlanPicker.tsx`, `src/components/AddBooks.tsx`: steps 1–4
+- `design/mockups.html`, `design/mockups-index.md`: step 5 (not in Files likely touched: `ui.redrawFiles`)
+- `test/format.test.ts`: the source scan stops exempting `BookSearch.tsx`
+- `test/add-book-sheet.test.tsx`: the search lines and the sheet header from a library result (not in Files likely touched)
+- `test/add-book.test.ts`: AC-2's `universe` on a hit, through the search route
+- `test/plan-period.test.ts`: AC-2's `planBook` fields, in `GET /api/plan?bookId=` (not in Files likely touched)
+- `test/e2e/book-search.spec.ts`, `test/e2e/plan-picker.spec.ts`: AC-1's browser part, AC-4, AC-5
+
+### Test strategy
+
+- AC-1 (`npm test`), AC-3: `test/add-book-sheet.test.tsx`. The Sanderson / Cosmere / Mistborn #4 / 330 pages line; a hit with no universe as today; the Discworld City Watch #2 hit names it once; a hit with no series and no universe reads *author · N pages*; the existing Hardcover test is unchanged. The same book's plan sheet header, from its *Year or quarter…*, reads *Brandon Sanderson · Cosmere · Mistborn #4* and its words.
+- AC-1, the source scan: `test/format.test.ts` › no other builder of a book's place line. This fails before the change.
+- AC-2: `test/add-book.test.ts` gives the universe's name, or null, for a hit. `test/plan-period.test.ts` › `GET /api/plan?bookId=` gives `universe`, `series` and `series_position`.
+- AC-4: `test/e2e/book-search.spec.ts`, with one E2E library book in a universe and a long series. Its sheet header from the search result and from the Library's `⋯` *Plan for…* match; a Hardcover result's stays *authors · words*.
+- AC-1's browser part, AC-5: in both specs, the long line wraps at 360px, with no horizontal scroll, axe and contrast passing, and screenshots at 360 and 1280px.
 
 ## Review log
 
