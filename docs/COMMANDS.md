@@ -143,12 +143,21 @@ npm run test:e2e            # the browser suite (task 0.11): Playwright + axe in
                             # tagged `{ tag: "@at-<project>" }`, never skipped on testInfo.project.name. Otherwise a test is
                             # tagged for what it checks (D-161): untagged is behaviour (a write, a request, the URL, focus,
                             # copy) at w390, w768, w1280, reduced motion and touch, light; FLOOR (helpers.ts: axe, contrast,
-                            # colours, sizes, scroll, per-layout markup) adds 360 and 1024; FEEL (a feel-pass surface's §10
-                            # screenshots) adds 412 too. No dark project runs them: contrast, axe's color-contrast and
-                            # screenshot check the other theme in place. CI's e2e-budget job fails a PR that adds over
+                            # colours, sizes, scroll, per-layout markup) adds 360 and 1024 and runs with neither reduced motion nor
+                            # touch; FEEL (a feel-pass surface's §10 screenshots) adds 412 too. A FLOOR or FEEL test whose
+                            # assertions read the project's own prefers-reduced-motion uses FLOOR_MOTION or FEEL_MOTION
+                            # (`@motion`: also reduced motion), and one that needs the coarse pointer adds `@touch` (D-167). No dark project runs them: contrast, axe's color-contrast
+                            # and screenshot check the other theme in place. CI's e2e-budget job fails a PR that adds over
                             # 3 min of suite time or passes 6 min a shard (`e2e-growth` label accepts). E2E_SERVER=start
-                            # serves an existing `npm run build` with `next start` instead (CI's shards do)
+                            # serves an existing `npm run build` with `next start` instead (CI's shards do). E2E_SHARD=n/N
+                            # runs only the spec files shard n of N holds, balanced by recorded time (CI's ten shards, D-167)
 npm run test:e2e:full       # the same at every project, 360-1280px light and dark (E2E_SCOPE=full): what CI runs
+npm run e2e:plan -- <e2e-times.json>... [--list <list.json>]
+                            # rewrites test/e2e/shard-times.json, the times CI's shard plan balances by, as the mean of the
+                            # `e2e-times` artifacts given (D-167; three or more: one run's times move 30% between runs);
+                            # --list is `npm run test:e2e:full -- --list --reporter=json` saved to a file, so only tests the
+                            # suite schedules today count. The e2e-budget job's summary says when the plan has drifted
+                            # (slowest shard over 1.25x the mean in that run)
 npm run test:e2e:build      # `next build` with the suite's server environment, then the core projects against
                             # `next start` over that build (--build, D-97): no route compiles on its first
                             # request, and never a stale build. test:all's browser step; arguments after --.

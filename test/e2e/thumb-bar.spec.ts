@@ -7,7 +7,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { E2E_USER } from "../../scripts/lib/e2e.mjs";
 import { markRead, testSql, type TestSql } from "../db";
 import {
-  E2E_ISSUE_COUNT, E2E_LONG_LABEL, E2E_LONG_RUN_ID, E2E_READ_COUNT, E2E_RUN_ID, E2E_RUN_TITLE, FEEL, FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled, tokenColour,
+  E2E_ISSUE_COUNT, E2E_LONG_LABEL, E2E_LONG_RUN_ID, E2E_READ_COUNT, E2E_RUN_ID, E2E_RUN_TITLE, FEEL, FEEL_MOTION, FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, toastSettled, tokenColour,
 } from "./helpers";
 
 // Sets its own viewport: runs once, in w390-light.
@@ -111,7 +111,7 @@ for (const where of ["dash", "run"] as const) {
       }
     });
 
-    test("the mark answers back: press, ✓ at 120ms and still at 700ms, the next label at 1.3s (AC-1)", FEEL, async ({ page }, testInfo) => {
+    test("the mark answers back: press, ✓ at 120ms and still at 700ms, the next label at 1.3s (AC-1)", FEEL_MOTION, async ({ page }, testInfo) => {
       await freeze(page);
       await open(page, where);
       const button = primary(page, where);
@@ -223,7 +223,7 @@ test("a failed write reverts the verb at once and raises That didn't save with R
   expect(await readHere()).toEqual([1, 2, 3]);
 });
 
-test("the toast: pinned above the bar, a 12px rise, a 2px brand countdown over 8s, held on hover (AC-4)", FEEL, async ({ page }, testInfo) => {
+test("the toast: pinned above the bar, a 12px rise, a 2px brand countdown over 8s, held on hover (AC-4)", FEEL_MOTION, async ({ page }, testInfo) => {
   await open(page, "run");
   await primary(page, "run").click();
   const toast = page.locator(".toast");

@@ -22,6 +22,10 @@ import { dirname, resolve } from "node:path";
 // feel-pass surface's state screenshots, at every width (design §10).
 export const FLOOR = { tag: "@floor" };
 export const FEEL = { tag: "@feel" };
+// The same, for a test whose assertions read the project's own prefers-reduced-motion:
+// it also runs at w390-reduced-motion, which FLOOR and FEEL leave out (D-167).
+export const FLOOR_MOTION = { tag: ["@floor", "@motion"] };
+export const FEEL_MOTION = { tag: ["@feel", "@motion"] };
 
 /**
  * Waits for every transition and animation that ends (a colour read

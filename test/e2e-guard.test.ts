@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { checkTestUrl } from "../scripts/lib/testdb.mjs";
 import {
-  DEV_CACHE, E2E_BEHAVIOUR, E2E_CORE, E2E_FEEL, E2E_FLOOR, E2E_HARDCOVER_TOKEN, E2E_PASSCODE, E2E_PORT, E2E_PROJECTS, FEEL_TAG, FLOOR_TAG,
+  DEV_CACHE, E2E_BEHAVIOUR, E2E_CORE, E2E_FEEL, E2E_FLOOR, E2E_HARDCOVER_TOKEN, E2E_PASSCODE, E2E_PORT, E2E_PROJECTS, FEEL_TAG, FLOOR_TAG, MOTION_TAG, TOUCH_TAG,
   e2eProjects, planE2e,
 } from "../scripts/lib/e2e.mjs";
 import { planTestRun } from "../scripts/lib/test-files.mjs";
@@ -98,11 +98,11 @@ describe("e2eProjects: which project runs which test", () => {
     expect(runsIn("core", title)).toEqual(E2E_BEHAVIOUR);
   });
 
-  it("a test tagged @floor runs at every layout, light, with reduced motion and touch; never 412 or a dark project (D-161)", () => {
+  it("a test tagged @floor runs at every layout, light; never 412, reduced motion, touch or a dark project (D-161, D-167)", () => {
     expect(FLOOR_TAG).toBe("@floor");
     expect(runsIn("full", "the sheet meets the floor @floor")).toEqual(E2E_FLOOR);
-    expect(E2E_FLOOR).toEqual(["w360-light", "w390-light", "w768-light", "w1024-light", "w1280-light", "w390-reduced-motion", "w390-touch"]);
-    expect(runsIn("core", "the sheet meets the floor @floor")).toEqual(["w390-light", "w768-light", "w1280-light", "w390-reduced-motion", "w390-touch"]);
+    expect(E2E_FLOOR).toEqual(["w360-light", "w390-light", "w768-light", "w1024-light", "w1280-light"]);
+    expect(runsIn("core", "the sheet meets the floor @floor")).toEqual(["w390-light", "w768-light", "w1280-light"]);
     // A describe's tag counts the same as the test's own.
     expect(runsIn("full", "the plan picker @floor › meets the floor")).toEqual(E2E_FLOOR);
     // Only the tag itself: a longer word that starts with it is not @floor.
@@ -111,9 +111,36 @@ describe("e2eProjects: which project runs which test", () => {
 
   it("a test tagged @feel runs where @floor does, and at 412 (design §10, D-40, D-161)", () => {
     expect(FEEL_TAG).toBe("@feel");
-    expect(E2E_FEEL).toEqual(["w360-light", "w390-light", "w412-light", "w768-light", "w1024-light", "w1280-light", "w390-reduced-motion", "w390-touch"]);
+    expect(E2E_FEEL).toEqual(["w360-light", "w390-light", "w412-light", "w768-light", "w1024-light", "w1280-light"]);
     expect(runsIn("full", "the dashboard in each state @feel")).toEqual(E2E_FEEL);
     expect(runsIn("full", "both @floor @feel")).toEqual(E2E_FEEL);
+  });
+
+  it("@motion adds reduced motion to a @floor or @feel test that reads the project's own motion setting (D-167)", () => {
+    expect(MOTION_TAG).toBe("@motion");
+    // In the project order, as e2eProjects lists them.
+    const order = E2E_PROJECTS.map((p) => p.name);
+    const withMotion = (names: string[]) => [...names, "w390-reduced-motion"].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    expect(runsIn("full", "x @floor @motion")).toEqual(withMotion(E2E_FLOOR));
+    expect(runsIn("full", "x @feel @motion")).toEqual(withMotion(E2E_FEEL));
+    expect(runsIn("core", "x @floor @motion")).toEqual(["w390-light", "w768-light", "w1280-light", "w390-reduced-motion"]);
+    // An untagged test already runs there: the tag adds nothing. Only the tag itself counts.
+    expect(runsIn("full", "x @motion")).toEqual(E2E_BEHAVIOUR);
+    expect(runsIn("full", "x @floor @motion-ish")).toEqual(E2E_FLOOR);
+    // An @at- tag still wins.
+    expect(runsIn("full", "x @floor @motion @at-w1024-light")).toEqual(["w1024-light"]);
+  });
+
+  it("@touch does the same for w390-touch: a @floor or @feel test that needs the coarse pointer (D-167)", () => {
+    expect(TOUCH_TAG).toBe("@touch");
+    const order = E2E_PROJECTS.map((p) => p.name);
+    const sorted = (names: string[]) => names.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    expect(runsIn("full", "x @floor @touch")).toEqual(sorted([...E2E_FLOOR, "w390-touch"]));
+    expect(runsIn("full", "x @feel @touch")).toEqual(sorted([...E2E_FEEL, "w390-touch"]));
+    expect(runsIn("full", "x @floor @motion @touch")).toEqual(sorted([...E2E_FLOOR, "w390-reduced-motion", "w390-touch"]));
+    expect(runsIn("full", "x @touch")).toEqual(E2E_BEHAVIOUR);
+    expect(runsIn("full", "x @floor @touch-ish")).toEqual(E2E_FLOOR);
+    expect(runsIn("full", "x @floor @touch @at-w1024-light")).toEqual(["w1024-light"]);
   });
 
   it("a dark project runs only the tests tagged for it: the floor checks dark in place", () => {
@@ -137,21 +164,55 @@ describe("e2eProjects: which project runs which test", () => {
     expect(runsIn("core", "x @floor @at-w1024-light")).toEqual([]);
   });
 
-  it("every tag in the specs is @floor, @feel or names a project, and the specs use both", () => {
+  it("every tag in the specs is @floor, @feel, @motion, @touch or names a project, and the specs use @floor, @feel and @motion", () => {
     const names = new Set(E2E_PROJECTS.map((p) => p.name));
     const tags = [
       ...specs.flatMap((f) =>
         [...spec(f).matchAll(/\{ tag: (\[[^\]]*\]|"[^"]*") \}/g)].flatMap((m) =>
           [...m[1].matchAll(/"([^"]+)"/g)].map((t) => ({ f, tag: t[1] })))),
-      // helpers.ts holds the shared FLOOR and FEEL details the specs import.
-      ...[...readFileSync(join(root, "test", "e2e", "helpers.ts"), "utf8").matchAll(/\{ tag: "([^"]+)" \}/g)].map((m) => ({ f: "helpers.ts", tag: m[1] })),
+      // helpers.ts holds the shared FLOOR, FEEL and *_MOTION details the specs import.
+      ...[...readFileSync(join(root, "test", "e2e", "helpers.ts"), "utf8").matchAll(/\{ tag: (\[[^\]]*\]|"[^"]*") \}/g)].flatMap((m) =>
+        [...m[1].matchAll(/"([^"]+)"/g)].map((t) => ({ f: "helpers.ts", tag: t[1] }))),
     ];
     for (const { f, tag } of tags) {
-      expect(tag === FLOOR_TAG || tag === FEEL_TAG || (tag.startsWith("@at-") && names.has(tag.slice(4))), `${f}: ${tag}`).toBe(true);
+      expect(tag === FLOOR_TAG || tag === FEEL_TAG || tag === MOTION_TAG || tag === TOUCH_TAG || (tag.startsWith("@at-") && names.has(tag.slice(4))), `${f}: ${tag}`).toBe(true);
     }
     const used = specs.map(spec).join("\n");
     expect(used).toMatch(/[(,] ?FLOOR[,)]/);
     expect(used).toMatch(/[(,] ?FEEL[,)]/);
+    expect(used).toMatch(/[(,] ?(FLOOR|FEEL)_MOTION[,)]/);
+  });
+
+  it("a @floor or @feel test that reads the project's own reduced motion says so with @motion (D-167)", () => {
+    // Reduced motion no longer runs @floor or @feel: without the tag such a test would lose its reduced branch.
+    const reads = /matchMedia\("\(prefers-reduced-motion: reduce\)"\)\.matches|await reduced\(page\)/;
+    const offenders: string[] = [];
+    for (const f of specs) {
+      const lines = spec(f).split("\n");
+      lines.forEach((line, i) => {
+        if (!reads.test(line)) return;
+        let j = i;
+        while (j > 0 && !/^\s*(test|test\.describe)\(/.test(lines[j])) j--;
+        if (/[(,] ?(FLOOR|FEEL)[,)]/.test(lines[j])) offenders.push(`${f}:${i + 1}`);
+      });
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("a @floor or @feel test that needs the touch pointer says so with @touch (D-167)", () => {
+    // w390-touch no longer runs @floor or @feel: a test that reads hasTouch or the coarse pointer would lose it.
+    const reads = /\bhasTouch\b|\bisMobile\b|\(pointer: ?coarse\)|\(hover: ?none\)/;
+    const offenders: string[] = [];
+    for (const f of specs) {
+      const lines = spec(f).split("\n");
+      lines.forEach((line, i) => {
+        if (!reads.test(line)) return;
+        let j = i;
+        while (j > 0 && !/^\s*(test|test\.describe)\(/.test(lines[j])) j--;
+        if (/[(,] ?(FLOOR|FEEL)[,)]/.test(lines[j])) offenders.push(`${f}:${i + 1}`);
+      });
+    }
+    expect(offenders).toEqual([]);
   });
 
   it("every @at- tag in the specs names a project", () => {
@@ -333,7 +394,7 @@ describe("wiring: test:all runs it, the docs name it, its output is ignored", ()
     const e2e = ciJob("e2e");
     const build = e2e.indexOf("npm run build");
     const install = e2e.indexOf("npx playwright install chromium");
-    const run = e2e.indexOf("npm run test:e2e -- --shard=${{ matrix.shard }}/${{ strategy.job-total }}");
+    const run = e2e.indexOf("npm run test:e2e -- --reporter=list,blob");
     expect(build).toBeGreaterThan(-1);
     expect(install).toBeGreaterThan(build);
     expect(run).toBeGreaterThan(install);

@@ -19,7 +19,7 @@ import ListLoading from "../../src/app/books/shelves/loading";
 import ShelfLoading from "../../src/app/books/shelves/[id]/loading";
 import { testSql, type TestSql } from "../db";
 import {
-  FEEL, FLOOR, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
+  FEEL, FLOOR, FLOOR_MOTION, contrastFailures, expectNoAxeViolations, expectNoHorizontalScroll, hydrated, screenshot, tokenColour,
 } from "./helpers";
 
 // Writes, and what it checks doesn't change with the width: runs once, in w390-light.
@@ -302,7 +302,7 @@ test("+ New shelf makes one and Undo removes it; a name in use writes nothing an
     Number((await sql`SELECT count(*) FROM shelves WHERE user_id = ${E2E_USER} AND lower(name) = lower(${FIVE.name})`)[0].count))).toBe(1);
 });
 
-test("the floor on the list and a shelf's page: axe, contrast, 24px targets, nothing red, no sideways scroll; screenshots (AC-6)", FLOOR, async ({ page }, info) => {
+test("the floor on the list and a shelf's page: axe, contrast, 24px targets, nothing red, no sideways scroll; screenshots (AC-6)", FLOOR_MOTION, async ({ page }, info) => {
   await open(page, "/books/shelves");
   await floor(page);
   await screenshot(page, info, "shelves-list");
