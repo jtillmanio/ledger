@@ -153,6 +153,38 @@ describe("to a format you own (task 5.17)", () => {
     expect(used.writes).toEqual([{ line: 1, use: WIND.bookId }]);
     expect(used.count).toBe(1);
   });
+
+  // Task 5.17b (TASK-122, AC-4): the check says what a matched book already owns, and the count is only what will be written.
+  it("a book that already has the format is already owned: skipped, not written, not counted", () => {
+    const text = "The Name of the Wind - Patrick Rothfuss\nDune - Frank Herbert\nGolden Son - Pierce Brown";
+    const given: [string, string | null, BookAnswer][] = [
+      ["The Name of the Wind", "Patrick Rothfuss", { match: { ...WIND, status: "read", owned: ["physical"] }, near: null }],
+      ["Dune", "Frank Herbert", { match: { bookId: "dune", title: "Dune", author: "Frank Herbert", status: null, owned: ["audio"] }, near: null }],
+      ["Golden Son", "Pierce Brown", none],
+    ];
+    const r = owned(text, given, "physical");
+    expect(r.rows[0]).toMatchObject({ kind: "ok", check: "in library", why: "Already owned on paper." });
+    expect(r.rows[0].groups[0].options.map((o) => o.id)).toEqual(["skip"]);
+    // Owning the audiobook is not owning it on paper.
+    expect(r.rows[1].why).toBe("In your library: marks it as owned on paper.");
+    expect(r.writes).toEqual([{ line: 2, use: "dune" }, { line: 3, title: "Golden Son", author: "Pierce Brown", series: null, position: null }]);
+    expect(r.count).toBe(2);
+
+    const audio = owned(text, given, "audio");
+    expect(audio.rows.map((x) => x.why)).toEqual(
+      ["In your library: marks the audiobook as yours.", "Already own the audiobook.", "New: creates the book, Unlisted."]);
+    expect(audio.writes.map((w) => ("use" in w ? w.use : w.title))).toEqual([WIND.bookId, "Golden Son"]);
+    expect(audio.count).toBe(2);
+  });
+
+  it("Use that on a near book that already has the format isn't counted", () => {
+    const owning: BookAnswer = { match: null, near: { ...WIND, status: "read", similarity: 0.78, owned: ["audio"] } };
+    const asked: [string, string | null, BookAnswer][] = [["The Name of the Wint", "Patrick Rothfuss", owning]];
+    const first = owned("The Name of the Wint - Patrick Rothfuss", asked, "audio");
+    const used = owned("The Name of the Wint - Patrick Rothfuss", asked, "audio", { [first.rows[0].key]: "use" });
+    expect(used.count).toBe(0);
+    expect(owned("The Name of the Wint - Patrick Rothfuss", asked, "physical", { [first.rows[0].key]: "use" }).count).toBe(1);
+  });
 });
 
 describe("a malformed line", () => {

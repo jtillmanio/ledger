@@ -353,10 +353,13 @@ Release, test isolation) and the Hard rules a reviewer checks.
   format you own, whatever the book's status (owning an audiobook is not
   listening to it); no `user_id`, never a column on `books`. The ebook is
   `books.calibre_id` being set (D-90), never a row. Written through
-  `setOwned` in `src/db/writes.ts`, and by *Paste a list* to *Physical copy*
-  or *Audiobook* (`addBooks` through `writeDestination`: a row once, a book
-  that has the format keeps its row and it isn't the paste's) with its undo
-  (`undoOwned`, which deletes only the rows the paste wrote; task 5.17). Not
+  `setOwned` in `src/db/writes.ts`, and by an add to *Physical copy* or
+  *Audiobook*, from *Paste a list* (`addBooks`, task 5.17) or *Search* and *By
+  hand* (`addBook`, task 5.17b), both through `writeDestination`: a row once,
+  a book that has the format keeps its row and it isn't the add's, a created
+  book is Unlisted. Its undo is `undoOwned`, which deletes only the rows the
+  add wrote. The dry run (`bookMatches`) answers each match's owned formats,
+  so the paste's review counts a book that has the row as already owned. Not
   owning a format any more deletes its
   row (it is no catalog row), and a soft-deleted book takes no writes and is
   in no owned filter. `load` empties it through `books`' `CASCADE`; extract
