@@ -132,7 +132,7 @@ export default async function Books() {
             </dl>
             <ComingOutLine {...comingOutCounts(wanted, day)} />
             {/* Everything in the middle of and everything finished (task 5.12): a grey link, as *Coming out*'s line. */}
-            <p className="coming-out progress-link">
+            <p className="progress-link">
               <Link href="/progress?medium=books" prefetch={false}>In the middle of · Completed <span aria-hidden="true">→</span></Link>
             </p>
           </section>

@@ -2331,12 +2331,12 @@ section[data-plan="year"] h2.group-head{color:var(--blocked)}
 .year-so-far dt{font-size:.75rem;line-height:1rem;color:var(--muted)}
 .year-so-far dd{margin:0;font:500 28px/32px var(--mono);letter-spacing:-.02em;color:var(--ink)}
 /* The books you're waiting for (task 5.7): grey text and a link, never a state colour. */
-.year-so-far .coming-out{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:.8125rem;line-height:1.25rem}
-.year-so-far .coming-out a{display:inline-flex;align-items:center;gap:.25rem;min-height:24px;color:var(--muted);
+.year-so-far .coming-out,.year-so-far .progress-link{margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line);font-size:.8125rem;line-height:1.25rem}
+.year-so-far .coming-out a,.year-so-far .progress-link a{display:inline-flex;align-items:center;gap:.25rem;min-height:24px;color:var(--muted);
   text-decoration:underline;text-decoration-color:var(--faint-deco);text-underline-offset:3px}
-.year-so-far .coming-out a:hover{color:var(--ink)}
-/* Two such lines (task 5.12): the second sits under the first without a second rule. */
-.year-so-far .coming-out + .coming-out{margin-top:.25rem;padding-top:0;border-top:0}
+.year-so-far .coming-out a:hover,.year-so-far .progress-link a:hover{color:var(--ink)}
+/* Task 5.12's *Progress* link is a grey line like *Coming out*'s: under it, it takes no second rule. */
+.year-so-far .coming-out + .progress-link{margin-top:.25rem;padding-top:0;border-top:0}
 
 /* The tablet (§14.5): the horizontal hero around 150 × 225, and the side rail stacked as two columns, 1.5 : 1. */
 @media (min-width:768px){

@@ -33,7 +33,10 @@ function Node({ node, tab }: { node: ProgressNode; tab: ProgressTab }) {
             <span className="bdg dn prog-kind">{row.kind}</span>
             <span className="rm mono">{row.read} / {row.total}</span>
           </span>
-          <span className="emeter" aria-hidden="true"><i style={{ width: `${fillShare(row.read, row.total) * 100}%` }} /></span>
+          {/* A track is never drawn as one bar against the whole track (D-29): its `read / total` stays as text. */}
+          {row.kind !== "track" && (
+            <span className="emeter" aria-hidden="true"><i style={{ width: `${fillShare(row.read, row.total) * 100}%` }} /></span>
+          )}
           {tab === "middle" && row.next && <div className="rs prog-next">Next: {row.next.label}</div>}
           {when && <div className="rs prog-next">{when}</div>}
         </div>
