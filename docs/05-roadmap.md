@@ -357,6 +357,62 @@ Nothing in this entry turns `LIGHTHOUSE_MODE` on.
 
 ---
 
+### ☐ 0.15 The browser suite runs by area, with a critical set always · L
+Owner, 2026-11-20 (from the shard-time work after TASK-127, PR #304; **amends
+D-80, D-141 and D-161**). Every ready PR runs every project of every spec: main's
+suite is 2,084 test runs and 51.6 minutes, 6.5 a shard at eight against D-161's
+6.0 ceiling, and watch, music and games (8.8, 9.3, 10.1) each add a medium's
+worth. Trimming the same suite (balanced shards, fewer duplicate projects) buys a
+few minutes once; this entry makes the cost of a PR follow what the PR touches.
+
+- **Every spec belongs to one area**: `books`, `comics`, `watch`, `music`,
+  `games`, or `shared` (the shell, the thumb bar, the status control, Add books,
+  settings, the sheets and every other control more than one medium uses). A
+  folder or a tag, whichever `playwright.config.ts` and `scripts/lib/e2e.mjs` can
+  read; a spec with none fails a test, so a new one can't leave the suite.
+- **A path selects the areas it can break.** `scripts/lib/ci-scope.mjs` maps a
+  changed path to areas: a medium's routes, components and specs select that
+  medium; **anything shared or unmapped selects every area**: `src/db/**`,
+  `src/lib/**`, `etl/views.sql`, the shared components, `src/app/globals.css`,
+  `src/proxy.ts`, `package.json` and the lockfile, Next and Playwright config,
+  `test/e2e/helpers.ts`, `.github/**`. The map fails toward *all*, never toward
+  *none*, and the scope job prints which areas it chose and why.
+- **A critical set always runs**, tagged `@critical`, at the core projects, in
+  every PR whatever it touches: sign-in, each medium's dashboard loading, the
+  add flow, a status write and its Undo, the navigation between media, and an
+  error state. It is small (a few minutes of suite time in total) and each
+  medium that lands adds its own entries to it.
+- **A PR runs its affected areas at full scope** (every project the tags say,
+  D-161) **plus the critical set**. A push to `main` runs everything, and so does
+  a PR labelled `e2e:full`, one that selects every area, and a scheduled nightly
+  run on `main`: the net under the map. A PR the owner or Claude judges risky
+  (a refactor with no clear area) gets the label before merge, since a failure
+  found only after merge means reverting `main`.
+- **The time budget follows the area** (D-161): each area is compared with
+  `main`'s recording of that area, so growth in one medium is named and a
+  one-area PR can't fail on another's size. The per-shard ceiling applies to the
+  run that PR actually made.
+- **Not chosen:** running the core projects only on PRs: it saves about 22% of
+  the suite (the 360, 412 and 1024 px checks) and grows with every medium just
+  the same.
+
+**Check:** tests pin the map and the plan: a change only under a medium's own
+routes, components and specs selects that medium and the critical set, and
+runs none of another medium's specs; a change under `src/db/`, `etl/views.sql`,
+`src/lib/`, a shared component, `globals.css`, `package.json`, the Playwright
+config or `.github/` selects every area; an unmapped path selects every area; a
+docs-only change still skips the suite (D-145); a push to `main` and the
+`e2e:full` label select every area; the critical set runs at the core projects
+in every PR; a spec file with no area fails `test/e2e-guard.test.ts`. The
+scope job's log and summary name the areas chosen and why. On a branch that
+changes only a comics screen, CI runs the comics specs and the critical set and
+no books spec, and its browser time is under half of a full run's.
+`.claude/rules/git.md`'s *Test on the branch* section says which PRs run what.
+Decision row recorded (next free D-n), amending D-80, D-141 and D-161.
+*(Check proposed by Claude; the owner agrees it by promoting the entry, or edits it first.)*
+
+---
+
 ## Phase 1 — Daily use (build before anything clever)
 
 **Goal:** Everything needed to stop using the Sheets: marking, adding, the inbox, dates, the shell and clean book data. **Cutover is two entries (D-128): 1.26 cuts the books over (START-HERE Step 14), after the rest of Phase 1, 2.11a and 1.11 and every entry 1.25's parity audit names for `Books.xlsx`, with the books entries the owner pulled ahead (D-132, D-133, D-139); 1.28 cuts the comics over later, after what it names for `Comics.xlsx`.** **Milestones:** M3–M9 (1.28 in M13).
