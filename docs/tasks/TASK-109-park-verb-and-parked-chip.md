@@ -1,14 +1,14 @@
 ---
 id: TASK-109
 title: 5.15 Parked (2 of 4) — Park on the status control and the row, the Parked chip and the search tag
-status: Ready
+status: In progress
 depends_on: [TASK-108]
 size: M
 model: sonnet
 autonomy: attended
 ui: true
-plan_status: none
-planned_at_commit:
+plan_status: approved
+planned_at_commit: ae89713
 ---
 
 # TASK-109 — 5.15 Parked (2 of 4) — Park on the status control and the row, the Parked chip and the search tag
@@ -74,9 +74,42 @@ dashboard or the review resolves to `--danger`.
 
 _Work noticed during this task and deliberately left out. Each bullet ends `→ <path> § <section>` (where it was placed) or `→ not tracked: <reason>`. See `.claude/skills/track-follow-ups/classify.md`; the PR's Follow-ups section is copied from here._
 
+- An add to a plan level (On deck, a year, a quarter: `writeDestination`, Add books' *Use that*) moves a Parked book to `to_read` and plans it, as it moves an Unlisted one, re-reading the status under the plan lock so a park committing in between can't leave a planned Parked book; TASK-111's *Plan…* needs the same unparking (owner, at TASK-109's plan gate) (approved at plan) → `docs/tasks/TASK-111-parked-review-and-reminders.md` § Context
+- `queueListen` (`/api/listen-queue`) refuses a Parked book (400), as the UI already hides *Queue to listen* for one (`queueable`) (owner, at TASK-109's plan gate) (approved at plan) → `docs/tasks/TASK-111-parked-review-and-reminders.md` § Context
+
 ## Plan
 
-_Written by /plan-batch or /implement-task Phase 1. Approved by the user (plan_status: approved) before any code is written._
+_Approved by the owner 2026-11-20._
+
+**Steps**
+
+1. **Labels.** `BookStatusName` and `NAMES` (`src/components/useBookWrite.ts`) gain `parked` (*parked*); `PLACE` in `src/lib/format.ts` gains *Parked* (Add books' search tag through `placeTag`). `parkable(status)` in `src/lib/parked.ts`: `to_read`, `reading`, `listening` — the client twin of `PARKS_FROM`, with a test that they agree.
+2. **The status control** (`src/components/BookStatus.tsx`). *Park* after DNF, grey (the `dnf` class), drawn while `parkable(status)` or the book is Parked (then `aria-pressed`). A Parked book's badge is grey (`dn`), as Unlisted's. One write through `useBookWrite`, toast *<title>: parked · Was to read*, its Undo the server's (TASK-108 puts back status, plan rows and queue). An Undo that brings back a row the park took off the list puts focus on its status badge (the Unlisted `refocus` pattern). It reaches the Library, Now, the status screens and the book sheet (TASK-079 merged) through the one component.
+3. **The row's `⋯`** (`src/components/BookRowMenu.tsx`). *Park* for a parkable book; `BookStatus` hands the menu its own park, so both routes are one write and one Undo.
+4. **The chip** (`src/app/books/list/page.tsx`). *Parked · N* after *Unlisted · N* from `listCounts().parked`, named *Parked, N book(s)*, `libraryHref({ status: "parked", owned, ...order })`, `aria-current` when chosen, absent at 0; `?status=parked` with none draws the list's empty state.
+5. **The redraw.** `design/mockups.html` `blist`: *Park* on the expanded control, the *Parked · N* chip and a Parked row (grey badge), at phone, tablet and desktop, plus a notes entry; `design/mockups-index.md`'s `blist` row names them (task 5.15).
+
+**Files**
+
+- `src/components/useBookWrite.ts`, `src/lib/format.ts`, `src/lib/parked.ts` (not in Files likely touched: `parkable`) — labels and the rule.
+- `src/components/BookStatus.tsx`, `src/components/BookRowMenu.tsx` — *Park*.
+- `src/app/books/list/page.tsx` — the chip.
+- `design/mockups.html`, `design/mockups-index.md` — `blist` redraw.
+- `test/format.test.ts` (not listed), `test/library-page.test.tsx`, `test/e2e/parked.spec.ts` (new).
+- Listed but unchanged: `src/lib/library-sort.ts` (`libraryHref` already carries any status), `src/components/BookListSearch.tsx` (the Library row's badge is its tag), `src/components/BookSearch.tsx` (gets *Parked* through `placeTag`).
+
+**Test strategy**
+
+- AC-1 (this part's clauses), AC-4: `test/format.test.ts` — `placeTag` of a Parked book is *Parked*; `test/e2e/parked.spec.ts` — the chip lists a parked book, the Library box lists it with the *parked* badge, Add books' search tags it *Parked* under *In your library*.
+- AC-2: `parked.spec.ts` seeds its own three to-read books in one quarter (deleted after); *Park* on the 2nd → *Parked, N+1* lists it without a reload; *Undo* → `to_read`, back in the quarter at ordinal 2.
+- AC-3: `parked.spec.ts` — *Park* in the control and the `⋯` for to-read, reading and listening, absent for read, DNF and Unlisted; its colour and background are not `--danger` or `--blocked`. `test/parked.test.ts` (or `format.test.ts`) — `parkable` agrees with `PARKS_FROM`.
+- AC-5: manual / spec-reviewer reads the `blist` frames and the index row.
+- AC-6: `test/library-page.test.tsx` — the chip's name, count, href (sort and owned kept), absent at 0; `parked.spec.ts` — empty state at `?status=parked`, the chip and *Park* real controls ≥ 24px with names, axe, contrast light and dark, screenshots at 360 and 1280.
+
+**Risks**
+
+- A book with no `book_status` row shows as to read and is offered *Park*; the server refuses (no row isn't in `PARKS_FROM`) and the control says why under it.
+- Size: 11 files, over the split threshold; kept whole (owner, at plan): already 2 of 4, UI only, and the redraw ships in the same PR (`ui.redrawFiles`).
 
 ## Review log
 
